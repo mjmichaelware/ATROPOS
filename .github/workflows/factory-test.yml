@@ -1,0 +1,12 @@
+name: Factory CI
+on: [push, pull_request]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with: { java-version: '17', distribution: 'temurin' }
+      - name: Build Factory
+        run: ./gradlew clean jar
