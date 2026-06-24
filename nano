@@ -1,0 +1,46 @@
+package atropos.cli.ui
+
+import atropos.core.AtroposConfig
+
+class AnsiTerminalEngine {
+    
+    fun clearScreen() {
+        print("\u001B[H\u001B[2J")
+        System.out.flush()
+    }
+
+    fun renderHeader() {
+        println("\u001B[35m╭───────────────────────────────────────────────╮\u001B[0m")
+        println("\u001B[35m│   A T R O P O S   ·   factory console           │\u001B[0m")
+        println("\u001B[35m╰───────────────────────────────────────────────╯\u001B[0m")
+        println("\u001B[90mAutomated Topological Repair & Ontological Optimization Swarm\u001B[0m")
+        println("\u001B[90mv2.0.0-rc.1   ·   type /help for commands\u001B[0m\n")
+    }
+
+    fun renderStatusMatrix(config: AtroposConfig, activeProvider: String) {
+        val keys = config.keys
+        println("\u001B[36msession\u001B[0m")
+        
+        // Active execution model tracking
+        val modelDisplay = when(activeProvider.lowercase()) {
+            "groq" -> "llama-3.3-70b-versatile"
+            "openai" -> "gpt-4o"
+            "anthropic" -> "claude-3-7-sonnet-latest"
+            "xai" -> "grok-2-latest"
+            else -> "unknown"
+        }
+        
+        println("├─ \u001B[90mmodel\u001B[0m    \u001B[32m$modelDisplay\u001B[0m")
+        println("├─ \u001B[90madapter\u001B[0m  \u001B[35m${activeProvider.uppercase()} Cloud Gateway\u001B[0m")
+        
+        // Gateway state routing diagnostics
+        val groqStatus = if (keys.groq.isNotEmpty()) "\u001B[32m● online\u001B[0m" else "\u001B[31m○ offline\u001B[0m"
+        val openAiStatus = if (keys.openai.isNotEmpty()) "\u001B[32m● online\u001B[0m" else "\u001B[31m○ offline\u001B[0m"
+        val anthropicStatus = if (keys.anthropic.isNotEmpty()) "\u001B[32m● online\u001B[0m" else "\u001B[31m○ offline\u001B[0m"
+        val xAiStatus = if (keys.xai.isNotEmpty()) "\u001B[32m● online\u001B[0m" else "\u001B[31m○ offline\u001B[0m"
+        
+        println("├─ \u001B[90mgateways\u001B[0m [Groq: $groqStatus | OpenAI: $openAiStatus | Anthropic: $anthropicStatus | xAI: $xAiStatus]")
+        println("├─ \u001B[90mcwd\u001B[0m      \u001B[33m${System.getProperty("user.dir")}\u001B[0m")
+        println("└─ \u001B[90mlakehouse\u001B[0m \u001B[34m${config.lakehouse.mountPath}\u001B[0m\n")
+    }
+}
