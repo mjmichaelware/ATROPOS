@@ -1,3 +1,2 @@
 #!/data/data/com.termux/files/usr/bin/bash
-DIR="$(cd "$(dirname "$0")" && pwd)"
-java -cp "$DIR/ATROPOS.jar" atropos.cli.MainKt "$@"
+exec java -jar "$HOME/ATROPOS/atropos.jar" "$@"
