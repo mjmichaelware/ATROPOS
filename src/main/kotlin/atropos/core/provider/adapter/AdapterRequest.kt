@@ -7,14 +7,9 @@ data class AdapterRequest(
     val prompt: String,
     val context: String = "",
     val dryRun: Boolean = true,
-    val requestId: String = "local-${System.currentTimeMillis()}"
-)
-
-data class AdapterModel(
-    val id: String,
-    val role: String,
-    val freeOnlySafe: Boolean = true,
-    val notes: String = ""
+    val deadlineEpochMs: Long = System.currentTimeMillis() + task.maxLatencyMs,
+    val liveNetworkAllowed: Boolean = System.getenv()["ATROPOS_LIVE_PROVIDER_TESTS"] == "1",
+    val metadata: Map<String, String> = emptyMap()
 )
 
 data class AdapterStatus(
@@ -24,5 +19,5 @@ data class AdapterStatus(
     val dryRunOnly: Boolean,
     val modelCount: Int,
     val health: String,
-    val detail: String = ""
+    val detail: String
 )

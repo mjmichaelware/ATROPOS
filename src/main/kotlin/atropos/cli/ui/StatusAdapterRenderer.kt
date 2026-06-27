@@ -8,14 +8,19 @@ class StatusAdapterRenderer(
 ) {
     fun render(): String {
         val statuses = facade.adapterStatus()
-        val out = mutableListOf<String>()
-        out += "adapters: ${statuses.size}"
-        out += "implemented: ${statuses.count { it.implemented }}"
-        out += "configured: ${statuses.count { it.configured }}"
-        out += "dry_run: ${statuses.count { it.dryRunOnly }}"
-        out += "columns: provider implemented configured dry_run models health detail"
-        statuses.forEach { out += line(it) }
-        return out.joinToString("\n")
+        val implemented = statuses.count { it.implemented }
+        val configured = statuses.count { it.configured }
+        val dryRun = statuses.count { it.dryRunOnly }
+        return buildString {
+            appendLine("adapters:")
+            appendLine("  total: ${statuses.size}")
+            appendLine("  implemented: $implemented")
+            appendLine("  configured: $configured")
+            appendLine("  dry_run: $dryRun")
+            appendLine("  kernel: fixture-backed, live network opt-in")
+            appendLine("columns: provider implemented configured dry_run models health detail")
+            statuses.forEach { appendLine(line(it)) }
+        }
     }
 
     private fun line(status: AdapterStatus): String =

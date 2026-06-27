@@ -1,322 +1,292 @@
 package atropos.core.provider.adapter
 
 import atropos.core.provider.ApiCapability
-import atropos.core.provider.CostMode
 import atropos.core.provider.NormalizedProviderFailureType
 import atropos.core.provider.ProviderCallResult
 import atropos.core.provider.ProviderDescriptor
-import atropos.core.provider.ProviderDescriptorRegistry
+import atropos.core.provider.ProviderErrorNormalizer
 import atropos.core.provider.ProviderFailure
+import atropos.core.provider.ProviderTask
+import atropos.core.provider.ProviderUsage
+import java.util.Locale
 
-abstract class BaseScaffoldAdapter(
-    final override val providerId: String,
-    registry: ProviderDescriptorRegistry,
-    final override val models: List<AdapterModel>,
-    private val envVars: List<String> = emptyList(),
-    private val dryRunOnly: Boolean = true,
-    private val implemented: Boolean = true,
-    descriptorOverride: ProviderDescriptor? = null
-) : ProviderAdapter {
-    final override val descriptor: ProviderDescriptor =
-        descriptorOverride ?: registry.getById(providerId)
-            ?: error("missing descriptor for adapter: $providerId")
+data class AdapterModel(
+    val id: String,
+    val free: Boolean,
+    val capabilities: Set<ApiCapability>
+)
 
-    final override val capabilities: Set<ApiCapability> =
-        descriptor.capabilities
+data class AdapterFixtureResult(
+    val providerId: String,
+    val fixture: String,
+    val passed: Boolean,
+    val detail: String
+)
 
-    final override fun status(): AdapterStatus {
-        val configured = envVars.all { System.getenv(it).orEmpty().isNotBlank() }
-        val health = when {
-            dryRunOnly -> "dry_run"
-            configured -> "configured"
-            else -> "missing_key"
+object AdapterJson {
+    fun buildChatRequest(
+        model: String,
+        prompt: String,
+        context: String
+    ): String = buildString {
+        append("{")
+        append("\"model\":\"").append(escape(model)).append("\",")
+        append("\"messages\":[")
+        append("{\"role\":\"system\",\"content\":\"").append(escape(context.ifBlank { "ATROPOS local-first provider adapter" })).append("\"},")
+        append("{\"role\":\"user\",\"content\":\"").append(escape(prompt)).append("\"}")
+        append("]}")
+    }
+
+    fun parseOpenAiCompatibleSuccess(providerId: String, json: String): ProviderCallResult {
+        if (json.isBlank()) {
+            return ProviderCallResult.Failure(
+                ProviderFailure(providerId, NormalizedProviderFailureType.EMPTY_RESPONSE, "$providerId empty response")
+            )
         }
-        return AdapterStatus(
+
+        val content = stringField(json, "content")
+        if (content.isNullOrBlank()) {
+            return ProviderCallResult.Failure(
+                ProviderFailure(providerId, NormalizedProviderFailureType.MALFORMED_RESPONSE, "$providerId missing assistant content")
+            )
+        }
+
+        return ProviderCallResult.Success(
             providerId = providerId,
-            implemented = implemented,
-            configured = configured,
-            dryRunOnly = dryRunOnly,
-            modelCount = models.size,
-            health = health,
-            detail = envVars.joinToString(",").ifBlank { "no-env-required" }
+            content = content,
+            usage = ProviderUsage(
+                inputTokens = intField(json, "prompt_tokens") ?: 0,
+                outputTokens = intField(json, "completion_tokens") ?: 0
+            ),
+            model = stringField(json, "model"),
+            requestId = stringField(json, "id")
         )
     }
 
-    final override fun complete(request: AdapterRequest): ProviderCallResult {
-        if (!canHandle(request)) {
-            return ProviderCallResult.Failure(
-                ProviderFailure(
-                    providerId = providerId,
-                    type = NormalizedProviderFailureType.MALFORMED_RESPONSE,
-                    cleanSummary = "$providerId cannot handle ${request.task.capability.name.lowercase()}",
-                    terminal = true
-                )
-            )
-        }
+    fun parseOpenAiCompatibleError(providerId: String, json: String): ProviderFailure {
+        val message = stringField(json, "message") ?: json
+        return ProviderErrorNormalizer().normalize(providerId, message)
+    }
 
-        if (dryRunOnly || request.dryRun) {
-            return ProviderCallResult.LocalOnly(
-                task = request.task,
-                content = "adapter=$providerId dry_run task=${request.task.kind.name.lowercase()} model=${models.firstOrNull()?.id ?: "none"}"
-            )
-        }
+    private fun stringField(json: String, name: String): String? {
+        val regex = Regex(""""$name"\s*:\s*"((?:\\.|[^"\\])*)"""")
+        return regex.find(json)?.groupValues?.get(1)?.let(::unescape)
+    }
 
-        val status = status()
-        if (!status.configured) {
-            return ProviderCallResult.Failure(
-                ProviderFailure(
-                    providerId = providerId,
-                    type = NormalizedProviderFailureType.AUTH_FAILED,
-                    cleanSummary = "$providerId missing required key",
-                    terminal = true
-                )
-            )
-        }
+    private fun intField(json: String, name: String): Int? {
+        val regex = Regex(""""$name"\s*:\s*([0-9]+)""")
+        return regex.find(json)?.groupValues?.get(1)?.toIntOrNull()
+    }
 
-        return ProviderCallResult.LocalOnly(
-            task = request.task,
-            content = "adapter=$providerId configured scaffold; HTTP implementation intentionally deferred"
+    private fun escape(value: String): String = buildString {
+        value.forEach { ch ->
+            when (ch) {
+                '\\' -> append("\\\\")
+                '"' -> append("\\\"")
+                '\n' -> append("\\n")
+                '\r' -> append("\\r")
+                '\t' -> append("\\t")
+                else -> append(ch)
+            }
+        }
+    }
+
+    private fun unescape(value: String): String {
+        val out = StringBuilder()
+        var i = 0
+        while (i < value.length) {
+            val ch = value[i]
+            if (ch == '\\' && i + 1 < value.length) {
+                when (value[i + 1]) {
+                    '\\' -> out.append('\\')
+                    '"' -> out.append('"')
+                    'n' -> out.append('\n')
+                    'r' -> out.append('\r')
+                    't' -> out.append('\t')
+                    else -> out.append(value[i + 1])
+                }
+                i += 2
+            } else {
+                out.append(ch)
+                i += 1
+            }
+        }
+        return out.toString()
+    }
+}
+
+object AdapterKernelFixtures {
+    private val successJson = """
+        {
+          "id": "fixture-request",
+          "model": "fixture-model",
+          "choices": [
+            {
+              "message": {
+                "role": "assistant",
+                "content": "fixture response"
+              }
+            }
+          ],
+          "usage": {
+            "prompt_tokens": 5,
+            "completion_tokens": 7
+          }
+        }
+    """.trimIndent()
+
+    private val authJson = """{"error":{"message":"invalid api key","type":"invalid_request_error"}}"""
+    private val rateJson = """{"error":{"message":"rate limit exceeded","type":"rate_limit_error"}}"""
+    private val billingJson = """{"error":{"message":"insufficient_quota","type":"billing_error"}}"""
+    private val malformedJson = """{"choices":[{"message":{}}]}"""
+
+    fun runAll(providerId: String = "groq"): List<AdapterFixtureResult> {
+        val success = AdapterJson.parseOpenAiCompatibleSuccess(providerId, successJson)
+        val auth = AdapterJson.parseOpenAiCompatibleError(providerId, authJson)
+        val rate = AdapterJson.parseOpenAiCompatibleError(providerId, rateJson)
+        val billing = AdapterJson.parseOpenAiCompatibleError(providerId, billingJson)
+        val malformed = AdapterJson.parseOpenAiCompatibleSuccess(providerId, malformedJson)
+        val empty = AdapterJson.parseOpenAiCompatibleSuccess(providerId, "")
+
+        return listOf(
+            AdapterFixtureResult(providerId, "success", success is ProviderCallResult.Success && success.content == "fixture response", success.toString()),
+            AdapterFixtureResult(providerId, "auth_failure", auth.type == NormalizedProviderFailureType.AUTH_FAILED, auth.toString()),
+            AdapterFixtureResult(providerId, "rate_limit", rate.type == NormalizedProviderFailureType.RATE_LIMITED, rate.toString()),
+            AdapterFixtureResult(providerId, "billing", billing.type == NormalizedProviderFailureType.BILLING_REQUIRED, billing.toString()),
+            AdapterFixtureResult(providerId, "malformed", malformed is ProviderCallResult.Failure && malformed.failure.type == NormalizedProviderFailureType.MALFORMED_RESPONSE, malformed.toString()),
+            AdapterFixtureResult(providerId, "empty", empty is ProviderCallResult.Failure && empty.failure.type == NormalizedProviderFailureType.EMPTY_RESPONSE, empty.toString())
         )
     }
 }
 
-class LocalMockAdapter(registry: ProviderDescriptorRegistry) :
-    BaseScaffoldAdapter(
-        providerId = "local",
-        registry = registry,
-        models = listOf(AdapterModel("local-toolchain", "local compile/git probes")),
-        envVars = emptyList(),
-        dryRunOnly = false
-    ),
-    ChatProviderAdapter,
-    CodeProviderAdapter,
-    StorageProviderAdapter
+private abstract class BaseKernelAdapter(
+    final override val descriptor: ProviderDescriptor,
+    private val env: Map<String, String> = System.getenv(),
+    private val liveTransportImplemented: Boolean = false,
+    private val defaultModel: String = "${descriptor.id}-default",
+    private val modelIds: List<String> = listOf(defaultModel)
+) : ProviderAdapter {
+    private val normalizer = ProviderErrorNormalizer()
 
-class OllamaScaffoldAdapter(registry: ProviderDescriptorRegistry) :
-    BaseScaffoldAdapter(
-        providerId = "ollama",
-        registry = registry,
-        models = listOf(
-            AdapterModel("qwen2.5-coder", "local code fallback"),
-            AdapterModel("llama3.2", "local chat fallback")
-        ),
-        envVars = listOf("OLLAMA_HOST", "OLLAMA_MODEL"),
-        dryRunOnly = true
-    ),
-    ChatProviderAdapter,
-    CodeProviderAdapter
+    override fun status(): AdapterStatus {
+        val configured = descriptor.isLocal || descriptor.requiredEnv.all { env[it].isNullOrBlank().not() }
+        val health = when {
+            descriptor.isLocal -> "ready"
+            !implemented() -> "contract_only"
+            configured -> "kernel_ready"
+            else -> "missing_key"
+        }
 
-class GroqScaffoldAdapter(registry: ProviderDescriptorRegistry) :
-    BaseScaffoldAdapter(
-        providerId = "groq",
-        registry = registry,
-        models = listOf(
-            AdapterModel("llama-3.3-70b-versatile", "fast chat"),
-            AdapterModel("qwen/qwen3-32b", "fast code draft")
-        ),
-        envVars = listOf("GROQ_API_KEY"),
-        dryRunOnly = true
-    ),
-    ChatProviderAdapter,
-    CodeProviderAdapter
+        return AdapterStatus(
+            providerId = descriptor.id,
+            implemented = implemented(),
+            configured = configured,
+            dryRunOnly = !liveTransportImplemented,
+            modelCount = modelIds.size,
+            health = health,
+            detail = when {
+                descriptor.isLocal -> "local adapter"
+                liveTransportImplemented -> "live transport available"
+                implemented() -> "fixture-backed adapter kernel; live network opt-in deferred"
+                else -> "descriptor registered; provider-specific schema pending"
+            }
+        )
+    }
 
-class GeminiScaffoldAdapter(registry: ProviderDescriptorRegistry) :
-    BaseScaffoldAdapter(
-        providerId = "gemini",
-        registry = registry,
-        models = listOf(
-            AdapterModel("gemini-2.5-flash", "large context"),
-            AdapterModel("gemini-2.5-flash-lite", "cheap large context")
-        ),
-        envVars = listOf("GEMINI_API_KEY"),
-        dryRunOnly = true
-    ),
-    ChatProviderAdapter,
-    CodeProviderAdapter
+    override fun complete(request: AdapterRequest): ProviderCallResult {
+        if (!canHandle(request)) {
+            return ProviderCallResult.Failure(
+                ProviderFailure(
+                    providerId = descriptor.id,
+                    type = NormalizedProviderFailureType.MALFORMED_RESPONSE,
+                    cleanSummary = "${descriptor.id} cannot handle ${request.task.capability.name.lowercase(Locale.US)}"
+                )
+            )
+        }
 
-class OpenRouterScaffoldAdapter(registry: ProviderDescriptorRegistry) :
-    BaseScaffoldAdapter(
-        providerId = "openrouter",
-        registry = registry,
-        models = listOf(
-            AdapterModel("deepseek/deepseek-r1:free", "free reasoning"),
-            AdapterModel("qwen/qwen-2.5-coder-32b-instruct:free", "free code")
-        ),
-        envVars = listOf("OPENROUTER_API_KEY"),
-        dryRunOnly = true
-    ),
-    ChatProviderAdapter,
-    CodeProviderAdapter
+        if (request.dryRun) {
+            return ProviderCallResult.Success(
+                providerId = descriptor.id,
+                content = dryRunContent(request),
+                usage = ProviderUsage(),
+                model = modelIds.firstOrNull(),
+                requestId = "dry-run-${descriptor.id}"
+            )
+        }
 
-class GitHubModelsScaffoldAdapter(registry: ProviderDescriptorRegistry) :
-    BaseScaffoldAdapter(
-        providerId = "github_models",
-        registry = registry,
-        models = listOf(
-            AdapterModel("gpt-4o-mini", "github hosted chat"),
-            AdapterModel("deepseek-r1", "github hosted reasoning")
-        ),
-        envVars = listOf("GITHUB_MODELS_TOKEN"),
-        dryRunOnly = true
-    ),
-    ChatProviderAdapter,
-    CodeProviderAdapter
+        if (!request.liveNetworkAllowed || !liveTransportImplemented) {
+            return ProviderCallResult.Queued(
+                task = request.task,
+                earliestRetryEpochMs = System.currentTimeMillis() + 300_000L,
+                reason = "${descriptor.id} live network disabled; dry-run kernel is available"
+            )
+        }
 
-class CloudflareAiScaffoldAdapter(registry: ProviderDescriptorRegistry) :
-    BaseScaffoldAdapter(
-        providerId = "cloudflare_ai",
-        registry = registry,
-        models = listOf(
-            AdapterModel("@cf/meta/llama-3.1-8b-instruct", "edge chat"),
-            AdapterModel("@cf/baai/bge-base-en-v1.5", "edge embeddings")
-        ),
-        envVars = listOf("CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ACCOUNT_ID"),
-        dryRunOnly = true
-    ),
-    ChatProviderAdapter,
-    EmbeddingProviderAdapter,
-    EdgeExecutionAdapter
+        return ProviderCallResult.Failure(
+            normalizer.normalize(descriptor.id, "${descriptor.id} live transport unavailable")
+        )
+    }
 
-class HuggingFaceScaffoldAdapter(registry: ProviderDescriptorRegistry) :
-    BaseScaffoldAdapter(
-        providerId = "huggingface",
-        registry = registry,
-        models = listOf(
-            AdapterModel("Qwen/Qwen2.5-Coder-32B-Instruct", "open code"),
-            AdapterModel("BAAI/bge-base-en-v1.5", "open embeddings")
-        ),
-        envVars = listOf("HUGGINGFACE_API_KEY"),
-        dryRunOnly = true
-    ),
-    ChatProviderAdapter,
-    CodeProviderAdapter,
-    EmbeddingProviderAdapter,
-    AssetProviderAdapter
+    protected open fun implemented(): Boolean = false
 
-class NvidiaNimScaffoldAdapter(registry: ProviderDescriptorRegistry) :
-    BaseScaffoldAdapter(
-        providerId = "nvidia",
-        registry = registry,
-        models = listOf(
-            AdapterModel("meta/llama-3.1-70b-instruct", "nim chat"),
-            AdapterModel("qwen/qwen2.5-coder-32b-instruct", "nim code")
-        ),
-        envVars = listOf("NVIDIA_API_KEY"),
-        dryRunOnly = true
-    ),
-    ChatProviderAdapter,
-    CodeProviderAdapter
+    protected open fun dryRunContent(request: AdapterRequest): String =
+        "adapter=${descriptor.id} kernel_dry_run task=${request.task.kind.name.lowercase(Locale.US)} model=${modelIds.firstOrNull() ?: "none"} deadline=${request.deadlineEpochMs}"
+}
 
-class DeepInfraScaffoldAdapter(registry: ProviderDescriptorRegistry) :
-    BaseScaffoldAdapter(
-        providerId = "deepinfra",
-        registry = registry,
-        models = listOf(
-            AdapterModel("meta-llama/Meta-Llama-3.1-70B-Instruct", "open chat"),
-            AdapterModel("Qwen/Qwen2.5-Coder-32B-Instruct", "open code")
-        ),
-        envVars = listOf("DEEPINFRA_API_KEY"),
-        dryRunOnly = true
-    ),
-    ChatProviderAdapter,
-    CodeProviderAdapter,
-    EmbeddingProviderAdapter
+private class LocalKernelAdapter(
+    descriptor: ProviderDescriptor
+) : BaseKernelAdapter(
+    descriptor = descriptor,
+    liveTransportImplemented = true,
+    defaultModel = "local-toolchain",
+    modelIds = listOf("local-toolchain")
+), ChatProviderAdapter, CodeProviderAdapter, StorageProviderAdapter, EdgeExecutionAdapter {
+    override fun implemented(): Boolean = true
 
-class SiliconFlowScaffoldAdapter(registry: ProviderDescriptorRegistry) :
-    BaseScaffoldAdapter(
-        providerId = "siliconflow",
-        registry = registry,
-        models = listOf(
-            AdapterModel("deepseek-ai/DeepSeek-R1", "reasoning"),
-            AdapterModel("Qwen/Qwen2.5-Coder-32B-Instruct", "code")
-        ),
-        envVars = listOf("SILICONFLOW_API_KEY"),
-        dryRunOnly = true
-    ),
-    ChatProviderAdapter,
-    CodeProviderAdapter,
-    AssetProviderAdapter
+    override fun complete(request: AdapterRequest): ProviderCallResult =
+        ProviderCallResult.LocalOnly(
+            task = request.task,
+            content = "local adapter ready task=${request.task.kind.name.lowercase(Locale.US)}"
+        )
+}
 
-class CerebrasScaffoldAdapter(registry: ProviderDescriptorRegistry) :
-    BaseScaffoldAdapter(
-        providerId = "cerebras",
-        registry = registry,
-        models = listOf(
-            AdapterModel("llama3.1-8b", "fast syntax"),
-            AdapterModel("llama-3.3-70b", "fast chat")
-        ),
-        envVars = listOf("CEREBRAS_API_KEY"),
-        dryRunOnly = true
-    ),
-    ChatProviderAdapter,
-    CodeProviderAdapter
+private class OpenAiCompatibleKernelAdapter(
+    descriptor: ProviderDescriptor
+) : BaseKernelAdapter(
+    descriptor = descriptor,
+    liveTransportImplemented = false,
+    defaultModel = "${descriptor.id}-free",
+    modelIds = listOf("${descriptor.id}-free", "${descriptor.id}-fallback")
+), ChatProviderAdapter, CodeProviderAdapter {
+    override fun implemented(): Boolean = true
 
-class SambaNovaScaffoldAdapter(registry: ProviderDescriptorRegistry) :
-    BaseScaffoldAdapter(
-        providerId = "sambanova",
-        registry = registry,
-        models = listOf(
-            AdapterModel("Meta-Llama-3.1-70B-Instruct", "fast structured output"),
-            AdapterModel("Qwen2.5-Coder-32B-Instruct", "fast code")
-        ),
-        envVars = listOf("SAMBANOVA_API_KEY"),
-        dryRunOnly = true
-    ),
-    ChatProviderAdapter,
-    CodeProviderAdapter
+    override fun canHandle(request: AdapterRequest): Boolean =
+        request.task.capability in capabilities &&
+            capabilities.any { it == ApiCapability.CHAT || it == ApiCapability.CODE || it == ApiCapability.REPAIR || it == ApiCapability.PLAN }
 
-class JinaReaderScaffoldAdapter(registry: ProviderDescriptorRegistry) :
-    BaseScaffoldAdapter(
-        providerId = "jina",
-        registry = registry,
-        models = listOf(
-            AdapterModel("jina-reader", "URL to clean markdown"),
-            AdapterModel("jina-embeddings-v3", "embeddings")
-        ),
-        envVars = listOf("JINA_API_KEY"),
-        dryRunOnly = true
-    ),
-    SearchProviderAdapter,
-    EmbeddingProviderAdapter
+    fun fixtureResults(): List<AdapterFixtureResult> =
+        AdapterKernelFixtures.runAll(descriptor.id)
+}
 
-class SerpApiScaffoldAdapter(registry: ProviderDescriptorRegistry) :
-    BaseScaffoldAdapter(
-        providerId = "serpapi",
-        registry = registry,
-        models = listOf(AdapterModel("google-search", "scarce web lookup")),
-        envVars = listOf("SERPAPI_API_KEY"),
-        dryRunOnly = true
-    ),
-    SearchProviderAdapter
+private class DescriptorOnlyKernelAdapter(
+    descriptor: ProviderDescriptor
+) : BaseKernelAdapter(
+    descriptor = descriptor,
+    liveTransportImplemented = false,
+    defaultModel = "${descriptor.id}-descriptor",
+    modelIds = emptyList()
+), ChatProviderAdapter, CodeProviderAdapter, SearchProviderAdapter, StorageProviderAdapter, EdgeExecutionAdapter, AssetProviderAdapter {
+    override fun implemented(): Boolean = false
 
-class GoogleDriveScaffoldAdapter(registry: ProviderDescriptorRegistry) :
-    BaseScaffoldAdapter(
-        providerId = "google_drive",
-        registry = registry,
-        models = listOf(AdapterModel("drive-v3", "optional source-doc sync")),
-        envVars = listOf("GOOGLE_APPLICATION_CREDENTIALS"),
-        dryRunOnly = true
-    ),
-    StorageProviderAdapter
+    override fun canHandle(request: AdapterRequest): Boolean =
+        request.task.capability in capabilities
+}
 
-class LocalScraperScaffoldAdapter(registry: ProviderDescriptorRegistry) :
-    BaseScaffoldAdapter(
-        providerId = "local_scraper",
-        registry = registry,
-        descriptorOverride = ProviderDescriptor(
-            id = "local_scraper",
-            displayName = "Local Scraper",
-            costMode = CostMode.LOCAL,
-            quotaTier = 0,
-            capabilities = setOf(ApiCapability.READER, ApiCapability.WEB, ApiCapability.LOCAL_TOOL),
-            requiredEnv = emptyList(),
-            fallbackChain = listOf("local"),
-            endpointId = "local.scraper",
-            isLocal = true,
-            notes = "local degraded docs fallback"
-        ),
-        models = listOf(AdapterModel("local-reader", "local source-doc fallback")),
-        envVars = emptyList(),
-        dryRunOnly = false
-    ),
-    SearchProviderAdapter
+fun buildKernelAdapter(descriptor: ProviderDescriptor): ProviderAdapter {
+    val openAiCompatible = setOf("groq", "openrouter", "deepinfra", "siliconflow")
+    return when {
+        descriptor.isLocal || descriptor.id == "local" -> LocalKernelAdapter(descriptor)
+        descriptor.id in openAiCompatible -> OpenAiCompatibleKernelAdapter(descriptor)
+        else -> DescriptorOnlyKernelAdapter(descriptor)
+    }
+}

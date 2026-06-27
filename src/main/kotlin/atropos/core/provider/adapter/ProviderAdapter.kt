@@ -5,10 +5,9 @@ import atropos.core.provider.ProviderCallResult
 import atropos.core.provider.ProviderDescriptor
 
 interface ProviderAdapter {
-    val providerId: String
     val descriptor: ProviderDescriptor
-    val capabilities: Set<ApiCapability>
-    val models: List<AdapterModel>
+    val providerId: String get() = descriptor.id
+    val capabilities: Set<ApiCapability> get() = descriptor.capabilities
 
     fun status(): AdapterStatus
 

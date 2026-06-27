@@ -17,6 +17,7 @@ import atropos.core.provider.QuotaLedger
 import atropos.core.provider.RoutePolicy
 import atropos.core.provider.RoutePolicyDecision
 import atropos.core.provider.StaticProviderDescriptorRegistry
+import java.util.Locale
 
 data class AdapterRouteResult(
     val prompt: String,
@@ -73,8 +74,9 @@ class AdapterRouteFacade(
 
         val note = when {
             adapter == null -> "no adapter selected; local degraded mode"
-            status?.dryRunOnly == true -> "adapter scaffold only; real HTTP deferred"
-            else -> "adapter available"
+            status?.implemented == true && status.dryRunOnly -> "adapter kernel ready; live network opt-in deferred"
+            status?.implemented == true -> "adapter implemented"
+            else -> "descriptor registered; provider-specific adapter pending"
         }
 
         return AdapterRouteResult(
@@ -89,7 +91,7 @@ class AdapterRouteFacade(
     private fun researchOverride(task: ProviderTask, prompt: String): AdapterRouteResult? {
         if (task.kind != ProviderTaskKind.WEB_DOCS_LOOKUP) return null
 
-        val ordered = listOf("jina", "serpapi", "local_scraper")
+        val ordered = listOf("jina", "serpapi", "local")
         val candidates = ordered.mapNotNull { providerId ->
             val adapter = adapterRegistry.getByProviderId(providerId) ?: return@mapNotNull null
             val descriptor = adapter.descriptor
@@ -98,7 +100,7 @@ class AdapterRouteFacade(
                 provider = descriptor,
                 quota = quota,
                 eligible = quota.availableAt(System.currentTimeMillis()),
-                reason = if (quota.availableAt(System.currentTimeMillis())) "research_priority" else quota.state.name.lowercase()
+                reason = if (quota.availableAt(System.currentTimeMillis())) "research_priority" else quota.state.name.lowercase(Locale.US)
             )
         }
 
@@ -119,7 +121,7 @@ class AdapterRouteFacade(
             selected = selected?.provider,
             eligible = candidates.filter { it.eligible },
             skipped = candidates.filterNot { it.eligible },
-            degraded = selected?.provider?.id == "local_scraper",
+            degraded = selected?.provider?.id == "local",
             queued = selected == null,
             queueReason = if (selected == null) "no research adapter available" else null
         )
@@ -129,7 +131,7 @@ class AdapterRouteFacade(
             decision = decision,
             adapterStatus = selectedStatus,
             dryRunResult = selectedResult,
-            note = "research route priority: jina -> serpapi -> local_scraper"
+            note = "research route priority: jina -> serpapi -> local"
         )
     }
 
@@ -141,9 +143,9 @@ class AdapterRouteFacade(
         val decision = result.decision
         val out = mutableListOf<String>()
 
-        out += "route: ${decision.task.kind.name.lowercase()} -> ${decision.selectedProviderId ?: "local_degraded"}"
-        out += "capability: ${decision.task.capability.name.lowercase()}"
-        out += "policy: ${costPolicy.name.lowercase()}"
+        out += "route: ${decision.task.kind.name.lowercase(Locale.US)} -> ${decision.selectedProviderId ?: "local_degraded"}"
+        out += "capability: ${decision.task.capability.name.lowercase(Locale.US)}"
+        out += "policy: ${costPolicy.name.lowercase(Locale.US)}"
         out += "adapter: ${result.adapterStatus?.providerId ?: "none"}"
         out += "adapter health: ${result.adapterStatus?.health ?: "none"}"
         out += "note: ${result.note}"
@@ -153,7 +155,7 @@ class AdapterRouteFacade(
             out += "  none"
         } else {
             decision.eligible.take(10).forEach {
-                out += "  ${it.provider.id} reason=${it.reason} state=${it.quota?.state?.name?.lowercase() ?: "quota_unknown"}"
+                out += "  ${it.provider.id} reason=${it.reason} state=${it.quota?.state?.name?.lowercase(Locale.US) ?: "quota_unknown"}"
             }
         }
 
@@ -162,7 +164,7 @@ class AdapterRouteFacade(
             out += "  none"
         } else {
             decision.skipped.take(14).forEach {
-                out += "  ${it.provider.id} reason=${it.reason} state=${it.quota?.state?.name?.lowercase() ?: "quota_unknown"}"
+                out += "  ${it.provider.id} reason=${it.reason} state=${it.quota?.state?.name?.lowercase(Locale.US) ?: "quota_unknown"}"
             }
         }
 
