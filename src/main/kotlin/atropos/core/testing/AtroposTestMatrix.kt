@@ -36,6 +36,8 @@ class AtroposTestMatrix(
 ) {
     fun run(): TestMatrixResult {
         root.mkdirs()
+        val runRoot = File(root, "run-${now()}-${System.nanoTime()}")
+        runRoot.mkdirs()
         val registry = StaticProviderDescriptorRegistry()
         val seed = FileQuotaLedger.seedFromDescriptors(registry)
         val rows = mutableListOf<TestMatrixRow>()
@@ -75,13 +77,13 @@ class AtroposTestMatrix(
         ).decide(ProviderTask(ProviderTaskKind.ARCHITECTURE_PLAN, ApiCapability.PLAN, "design", true))
         row("paid_lock", paidRoute.skipped.any { it.provider.id == "anthropic" && it.reason == "blocked_by_cost_policy" }, "anthropic_blocked=${paidRoute.skipped.any { it.provider.id == "anthropic" }}")
 
-        val gate = EmergencyPaidGate(File(root, "paid"), now = now)
+        val gate = EmergencyPaidGate(File(runRoot, "paid"), now = now)
         val unlock = gate.unlock("anthropic", "1m", "matrix")
         row("emergency_unlock", gate.isProviderUnlocked("anthropic"), "expires=${unlock.expiresAtEpochMs}")
 
-        val expiredGate = EmergencyPaidGate(File(root, "expired-paid"), now = { 10_000L })
+        val expiredGate = EmergencyPaidGate(File(runRoot, "expired-paid"), now = { 10_000L })
         expiredGate.unlock("anthropic", "1m", "matrix")
-        val expiredCheck = EmergencyPaidGate(File(root, "expired-paid"), now = { 71_000L })
+        val expiredCheck = EmergencyPaidGate(File(runRoot, "expired-paid"), now = { 71_000L })
         row("emergency_unlock_expiry", !expiredCheck.isProviderUnlocked("anthropic"), "expired=${!expiredCheck.isProviderUnlocked("anthropic")}")
 
         val raw = "Authorization: Bearer " + "A".repeat(24) + " api_key=" + "s" + "k-" + "B".repeat(24)
@@ -98,18 +100,18 @@ class AtroposTestMatrix(
         ).decide(ProviderTask(ProviderTaskKind.LOCAL_ONLY, ApiCapability.LOCAL_TOOL, "startup", true))
         row("local_only_startup", localOnly.selectedProviderId == "local", "selected=${localOnly.selectedProviderId}")
 
-        val memory = LocalMemoryStore(File(root, "memory"), env = emptyMap())
+        val memory = LocalMemoryStore(File(runRoot, "memory"), env = emptyMap())
         memory.remember(atropos.core.memory.MemoryKind.NOTE, "no supabase", "local jsonl works")
         val memoryStatus = memory.status()
         row("no_supabase_memory", memoryStatus.totalRecords == 1 && !memoryStatus.supabaseConfigured, "records=${memoryStatus.totalRecords}")
 
-        val secrets = DefaultSecretSource.create(env = emptyMap(), localRoot = File(root, "secrets")).status(listOf("GOOGLE_APPLICATION_CREDENTIALS"))
+        val secrets = DefaultSecretSource.create(env = emptyMap(), localRoot = File(runRoot, "secrets")).status(listOf("GOOGLE_APPLICATION_CREDENTIALS"))
         row("no_google_secrets", secrets.configured == 0 && secrets.missing.contains("GOOGLE_APPLICATION_CREDENTIALS"), "configured=${secrets.configured}")
 
         val widths = listOf(40, 80, 120)
         row("status_width_snapshots", widths.all { it >= 40 }, "widths=${widths.joinToString(",")}")
 
-        val queue = LocalWorkQueue(File(root, "queue"), env = emptyMap())
+        val queue = LocalWorkQueue(File(runRoot, "queue"), env = emptyMap())
         val item = queue.enqueue("matrix local echo", listOf("sh", "-c", "printf matrix"))
         val run = queue.runNext(5_000L)
         row("termux_narrow_compile_lane", item.id.isNotBlank() && run?.exitCode == 0, "exit=${run?.exitCode}")

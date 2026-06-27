@@ -3,6 +3,12 @@ package atropos.core.ops
 import atropos.core.provider.StaticProviderDescriptorRegistry
 import java.io.File
 
+data class OpsVerificationResult(
+    val passed: Boolean,
+    val checked: List<String>,
+    val missing: List<String>
+)
+
 data class OpsExportResult(
     val root: File,
     val providerTiers: File,
@@ -28,6 +34,22 @@ class DeploymentOps(
         addendum.writeText(renderAddendum())
 
         return OpsExportResult(root, tiers, models, migration, addendum)
+    }
+
+    fun verify(): OpsVerificationResult {
+        val export = export()
+        val files = listOf(
+            export.providerTiers,
+            export.providerModels,
+            export.quotaMigration,
+            export.sourceAddendum
+        )
+        val missing = files.filterNot { it.isFile && it.length() > 0L }.map { it.path }
+        return OpsVerificationResult(
+            passed = missing.isEmpty(),
+            checked = files.map { it.path },
+            missing = missing
+        )
     }
 
     fun status(): String {

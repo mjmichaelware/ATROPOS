@@ -128,3 +128,52 @@ class FileQuotaLedger(private val file: File, seed: List<ProviderQuotaRecord> = 
         }
     }
 }
+
+
+data class QuotaBackupResult(
+    val file: File,
+    val records: Int
+)
+
+class QuotaLedgerBackup(
+    private val registry: ProviderDescriptorRegistry = StaticProviderDescriptorRegistry(),
+    private val root: File = File(".atropos/quota-backups")
+) {
+    fun backup(target: File = defaultBackupFile()): QuotaBackupResult {
+        target.parentFile?.mkdirs()
+        val rows = FileQuotaLedger.seedFromDescriptors(registry)
+        target.writeText(
+            rows.joinToString("\n") { record ->
+                listOf(
+                    record.providerId,
+                    record.costMode.name,
+                    record.quotaWeight,
+                    record.configured,
+                    record.verified,
+                    record.state.name,
+                    record.usedRequests,
+                    record.usedTokens,
+                    record.cooldownUntilEpochMs ?: "",
+                    record.resetAtEpochMs ?: "",
+                    record.lastErrorClass ?: "",
+                    record.lastErrorSummary ?: "",
+                    record.successScore,
+                    record.paidLocked
+                ).joinToString("\t")
+            } + "\n"
+        )
+        return QuotaBackupResult(target, rows.size)
+    }
+
+    fun restore(source: File): QuotaBackupResult {
+        require(source.isFile) { "quota backup not found: ${source.path}" }
+        val records = source.readLines().count { it.isNotBlank() }
+        val restored = File(root, "restored-quota-ledger.tsv")
+        restored.parentFile?.mkdirs()
+        restored.writeText(source.readText())
+        return QuotaBackupResult(restored, records)
+    }
+
+    private fun defaultBackupFile(): File =
+        File(root, "quota-ledger-${System.currentTimeMillis()}.tsv")
+}

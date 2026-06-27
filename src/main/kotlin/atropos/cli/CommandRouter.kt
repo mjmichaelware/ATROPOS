@@ -282,7 +282,8 @@ class CommandRouter(
             "/keys" -> {
                 when (tokens.getOrNull(1)?.lowercase()) {
                     null, "status" -> uiEngine.renderNotice(atropos.cli.ui.StatusSecurityRenderer().renderKeysStatus())
-                    else -> uiEngine.renderError("usage: /keys status")
+                    "setup" -> uiEngine.renderNotice(atropos.cli.ui.StatusSecurityRenderer().renderKeysSetup())
+                    else -> uiEngine.renderError("usage: /keys [status|setup]")
                 }
                 RouterOutcome.CONTINUE
             }
@@ -296,10 +297,21 @@ class CommandRouter(
             }
 
             "/ops" -> {
+                val renderer = atropos.cli.ui.StatusOpsRenderer()
                 when (tokens.getOrNull(1)?.lowercase()) {
-                    null, "status" -> uiEngine.renderNotice(atropos.cli.ui.StatusOpsRenderer().render())
-                    "export" -> uiEngine.renderNotice(atropos.cli.ui.StatusOpsRenderer().export())
-                    else -> uiEngine.renderError("usage: /ops [status|export]")
+                    null, "status" -> uiEngine.renderNotice(renderer.render())
+                    "export" -> uiEngine.renderNotice(renderer.export())
+                    "verify" -> uiEngine.renderNotice(renderer.verify())
+                    "quota-backup" -> uiEngine.renderNotice(renderer.quotaBackup())
+                    "quota-restore" -> {
+                        val path = tokens.getOrNull(2)
+                        if (path == null) {
+                            uiEngine.renderError("usage: /ops quota-restore <backup-file>")
+                        } else {
+                            uiEngine.renderNotice(renderer.quotaRestore(path))
+                        }
+                    }
+                    else -> uiEngine.renderError("usage: /ops [status|export|verify|quota-backup|quota-restore <file>]")
                 }
                 RouterOutcome.CONTINUE
             }

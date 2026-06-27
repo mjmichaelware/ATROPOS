@@ -1,6 +1,7 @@
 package atropos.cli.ui
 
 import atropos.core.security.DefaultSecretSource
+import atropos.core.security.KeySetupHelper
 import atropos.core.security.RedactionFilter
 
 class StatusSecurityRenderer(private val filter: RedactionFilter = RedactionFilter()) {
@@ -27,6 +28,18 @@ class StatusSecurityRenderer(private val filter: RedactionFilter = RedactionFilt
             appendLine("  findings: ${report.summary()}")
             appendLine("  fingerprint: ${filter.stableFingerprint(value)}")
             appendLine("  text: ${report.redacted}")
+        }
+    }
+
+    fun renderKeysSetup(): String {
+        val result = KeySetupHelper().setup()
+        return buildString {
+            appendLine("keys setup:")
+            appendLine("  root: ${result.root.path}")
+            appendLine("  template: ${result.template.path}")
+            appendLine("  readme: ${result.readme.path}")
+            appendLine("  names: ${result.names.size}")
+            appendLine("  raw values: never written by setup")
         }
     }
 
