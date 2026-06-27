@@ -130,12 +130,15 @@ class CommandRouter(
                     "assets" -> uiEngine.renderNotice(atropos.cli.ui.StatusAssetsRenderer().render())
                     "paid" -> uiEngine.renderNotice(atropos.cli.ui.StatusPaidEmergencyRenderer().render())
                     "factory" -> uiEngine.renderNotice(atropos.cli.ui.AppFactoryPlanRenderer().renderStatus())
+                    "security" -> uiEngine.renderNotice(atropos.cli.ui.StatusSecurityRenderer().render())
+                    "tests" -> uiEngine.renderNotice(atropos.cli.ui.TestMatrixRenderer().render())
+                    "ops" -> uiEngine.renderNotice(atropos.cli.ui.StatusOpsRenderer().render())
                     null -> {
                         uiEngine.renderStatusMatrix(config, activeProvider.name)
                         uiEngine.renderNotice("usage ${sessionTracker.promptCount} prompts | ~${sessionTracker.estimatedTokens} tokens")
                         uiEngine.renderNotice(statusRenderer.renderDefaultStatusSummary())
                     }
-                    else -> uiEngine.renderError("usage: /status [quota|route <task>|failures|adapters|assets|paid|factory|memory|ci|queue|endpoints]")
+                    else -> uiEngine.renderError("usage: /status [quota|route <task>|failures|adapters|assets|paid|factory|memory|ci|queue|security|tests|ops|endpoints]")
                 }
                 RouterOutcome.CONTINUE
             }
@@ -263,6 +266,40 @@ class CommandRouter(
                         }
                     }
                     else -> uiEngine.renderError("usage: /factory [status|plan|run] <prompt>")
+                }
+                RouterOutcome.CONTINUE
+            }
+
+            "/security" -> {
+                when (tokens.getOrNull(1)?.lowercase()) {
+                    "redact" -> uiEngine.renderNotice(atropos.cli.ui.StatusSecurityRenderer().renderRedaction(tokens.drop(2).joinToString(" ")))
+                    null, "status" -> uiEngine.renderNotice(atropos.cli.ui.StatusSecurityRenderer().render())
+                    else -> uiEngine.renderError("usage: /security [status|redact <text>]")
+                }
+                RouterOutcome.CONTINUE
+            }
+
+            "/keys" -> {
+                when (tokens.getOrNull(1)?.lowercase()) {
+                    null, "status" -> uiEngine.renderNotice(atropos.cli.ui.StatusSecurityRenderer().renderKeysStatus())
+                    else -> uiEngine.renderError("usage: /keys status")
+                }
+                RouterOutcome.CONTINUE
+            }
+
+            "/tests" -> {
+                when (tokens.getOrNull(1)?.lowercase()) {
+                    null, "matrix" -> uiEngine.renderNotice(atropos.cli.ui.TestMatrixRenderer().render())
+                    else -> uiEngine.renderError("usage: /tests matrix")
+                }
+                RouterOutcome.CONTINUE
+            }
+
+            "/ops" -> {
+                when (tokens.getOrNull(1)?.lowercase()) {
+                    null, "status" -> uiEngine.renderNotice(atropos.cli.ui.StatusOpsRenderer().render())
+                    "export" -> uiEngine.renderNotice(atropos.cli.ui.StatusOpsRenderer().export())
+                    else -> uiEngine.renderError("usage: /ops [status|export]")
                 }
                 RouterOutcome.CONTINUE
             }
