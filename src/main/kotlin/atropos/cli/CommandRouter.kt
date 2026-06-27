@@ -4,6 +4,7 @@ package atropos.cli
 import atropos.cli.commands.VerifyCommand
 import atropos.cli.commands.VerifyCommandHandler
 import atropos.cli.session.QuotaSessionTracker
+import atropos.cli.shell.ShellCommandRunner
 import atropos.cli.ui.AnsiTerminalEngine
 import atropos.cli.ui.MarkdownRenderer
 import atropos.core.AIProvider
@@ -27,7 +28,8 @@ class CommandRouter(
     private val providerResolver: (String) -> AIProvider = { ProviderFactory(config).getProvider(it) },
     private val rateResolver: (String) -> Double = { 0.0 },
     private val markdownRenderer: MarkdownRenderer = MarkdownRenderer(),
-    private val verifyCommand: VerifyCommandHandler = VerifyCommand(uiEngine)
+    private val verifyCommand: VerifyCommandHandler = VerifyCommand(uiEngine),
+    private val shellRunner: ShellCommandRunner = ShellCommandRunner()
 ) {
     private var activeProvider = providerResolver(config.runtime.defaultProvider)
 
@@ -90,6 +92,48 @@ class CommandRouter(
         return LexResult.Success(tokens)
     }
 
+
+    private fun renderShell(result: atropos.cli.shell.ShellCommandResult) {
+        uiEngine.renderNotice(shellRunner.render(result))
+    }
+
+    private fun runBangShell(original: String): RouterOutcome {
+        val command = original.trimStart().removePrefix("!").trim()
+        if (command.isBlank()) {
+            uiEngine.renderError("usage: !<command>")
+            return RouterOutcome.CONTINUE
+        }
+
+        return when (val result = lex(command)) {
+            is LexResult.Error -> {
+                uiEngine.renderError("shell lex: ${result.message}")
+                RouterOutcome.CONTINUE
+            }
+            is LexResult.Success -> {
+                renderShell(shellRunner.run(result.tokens))
+                RouterOutcome.CONTINUE
+            }
+        }
+    }
+
+    private fun runShellTokens(tokens: List<String>): RouterOutcome {
+        if (tokens.isEmpty()) {
+            uiEngine.renderError("usage: /shell <command>")
+        } else {
+            renderShell(shellRunner.run(tokens))
+        }
+        return RouterOutcome.CONTINUE
+    }
+
+    private fun changeShellDirectory(tokens: List<String>): RouterOutcome {
+        if (tokens.size > 2) {
+            uiEngine.renderError("usage: /cd [directory]")
+        } else {
+            renderShell(shellRunner.changeDirectory(tokens.getOrNull(1)))
+        }
+        return RouterOutcome.CONTINUE
+    }
+
     fun handleInput(input: String): RouterOutcome {
         if (input.isBlank()) return RouterOutcome.CONTINUE
         return when (val result = lex(input)) {
@@ -103,13 +147,39 @@ class CommandRouter(
 
     private fun route(original: String, tokens: List<String>): RouterOutcome {
         if (tokens.isEmpty()) return RouterOutcome.CONTINUE
+        if (original.trimStart().startsWith("!")) return runBangShell(original)
 
         return when (tokens.first().lowercase()) {
             "/exit", "/quit", "exit" -> RouterOutcome.EXIT
 
+            "/pwd" -> {
+                uiEngine.renderNotice("cwd: ${shellRunner.currentDirectory()}")
+                RouterOutcome.CONTINUE
+            }
+
+            "/cd" -> changeShellDirectory(tokens)
+
+            "/ls" -> {
+                renderShell(shellRunner.list(tokens.drop(1)))
+                RouterOutcome.CONTINUE
+            }
+
+            "/git" -> {
+                if (tokens.getOrNull(1)?.lowercase() == "status" && tokens.size == 2) {
+                    renderShell(shellRunner.gitStatus())
+                } else {
+                    uiEngine.renderError("usage: /git status")
+                }
+                RouterOutcome.CONTINUE
+            }
+
+            "/shell" -> runShellTokens(tokens.drop(1))
+
             "/help" -> {
                 uiEngine.renderHelp()
                 uiEngine.renderNotice("  /verify <narrow|wide>")
+                uiEngine.renderNotice("  !<command> | /shell <command>")
+                uiEngine.renderNotice("  /pwd | /cd [dir] | /ls [args] | /git status")
                 RouterOutcome.CONTINUE
             }
 

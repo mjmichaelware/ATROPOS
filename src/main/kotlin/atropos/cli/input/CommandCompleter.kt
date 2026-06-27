@@ -17,6 +17,12 @@ class CommandCompleter(
     private val commands = listOf(
         "/exit",
         "/help",
+        "/shell",
+        "/pwd",
+        "/ls",
+        "/git status",
+        "/git",
+        "/cd",
         "/paid",
         "/paid status",
         "/paid lock",
