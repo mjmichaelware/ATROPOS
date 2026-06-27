@@ -403,6 +403,127 @@ object DataInfraJson {
     }
 }
 
+
+enum class AssetProviderSchema {
+    HUGGINGFACE,
+    FAL,
+    REPLICATE
+}
+
+data class AssetProviderSpec(
+    val providerId: String,
+    val displayName: String,
+    val schema: AssetProviderSchema,
+    val endpoint: String,
+    val requiredEnv: List<String>,
+    val defaultModel: String,
+    val fallbackModels: List<String>
+) {
+    val models: List<String> = (listOf(defaultModel) + fallbackModels).distinct()
+}
+
+object AssetProviderCatalog {
+    private val specs = listOf(
+        AssetProviderSpec(
+            providerId = "huggingface",
+            displayName = "Hugging Face",
+            schema = AssetProviderSchema.HUGGINGFACE,
+            endpoint = "https://api-inference.huggingface.co/models/{model}",
+            requiredEnv = listOf("HUGGINGFACE_API_KEY"),
+            defaultModel = "stabilityai/stable-diffusion-xl-base-1.0",
+            fallbackModels = listOf("black-forest-labs/FLUX.1-schnell")
+        ),
+        AssetProviderSpec(
+            providerId = "fal",
+            displayName = "Fal.ai",
+            schema = AssetProviderSchema.FAL,
+            endpoint = "https://fal.run/{model}",
+            requiredEnv = listOf("FAL_AI_API_KEY"),
+            defaultModel = "fal-ai/flux/schnell",
+            fallbackModels = listOf("fal-ai/fast-sdxl")
+        ),
+        AssetProviderSpec(
+            providerId = "replicate",
+            displayName = "Replicate",
+            schema = AssetProviderSchema.REPLICATE,
+            endpoint = "https://api.replicate.com/v1/predictions",
+            requiredEnv = listOf("REPLICATE_API_TOKEN"),
+            defaultModel = "black-forest-labs/flux-schnell",
+            fallbackModels = listOf("stability-ai/sdxl")
+        )
+    )
+
+    fun get(providerId: String): AssetProviderSpec? =
+        specs.firstOrNull { it.providerId == providerId }
+
+    fun all(): List<AssetProviderSpec> = specs
+}
+
+object AssetProviderJson {
+    fun buildPromptRequest(prompt: String): String = buildString {
+        append("{")
+        append("\"input\":{\"prompt\":\"").append(escape(prompt.ifBlank { "ATROPOS local asset" })).append("\"}")
+        append("}")
+    }
+
+    fun parseAssetResult(providerId: String, json: String): ProviderCallResult {
+        if (json.isBlank()) {
+            return ProviderCallResult.Failure(
+                ProviderFailure(providerId, NormalizedProviderFailureType.EMPTY_RESPONSE, "$providerId empty response")
+            )
+        }
+        if (json.contains("\"error\"")) {
+            return ProviderCallResult.Failure(ProviderErrorNormalizer().normalize(providerId, stringField(json, "message") ?: json))
+        }
+        val output = stringField(json, "url")
+            ?: stringField(json, "output")
+            ?: stringField(json, "artifact")
+        if (output.isNullOrBlank()) {
+            return ProviderCallResult.Failure(
+                ProviderFailure(providerId, NormalizedProviderFailureType.MALFORMED_RESPONSE, "$providerId missing asset output")
+            )
+        }
+        return ProviderCallResult.Success(
+            providerId = providerId,
+            content = output,
+            usage = ProviderUsage(),
+            model = stringField(json, "model"),
+            requestId = stringField(json, "id")
+        )
+    }
+
+    private fun stringField(json: String, name: String): String? {
+        val regex = Regex(""""$name"\s*:\s*"((?:\\.|[^"\\])*)"""")
+        return regex.find(json)?.groupValues?.get(1)?.let(::unescape)
+    }
+
+    private fun escape(value: String): String =
+        value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t")
+
+    private fun unescape(value: String): String {
+        val out = StringBuilder()
+        var i = 0
+        while (i < value.length) {
+            val ch = value[i]
+            if (ch == '\\' && i + 1 < value.length) {
+                when (value[i + 1]) {
+                    '\\' -> out.append('\\')
+                    '"' -> out.append('"')
+                    'n' -> out.append('\n')
+                    'r' -> out.append('\r')
+                    't' -> out.append('\t')
+                    else -> out.append(value[i + 1])
+                }
+                i += 2
+            } else {
+                out.append(ch)
+                i += 1
+            }
+        }
+        return out.toString()
+    }
+}
+
 object AdapterJson {
     fun buildChatRequest(model: String, prompt: String, context: String): String = buildString {
         append("{")
@@ -625,6 +746,34 @@ object DataInfraKernelFixtures {
 
     fun runDataInfraResearchFamily(): List<AdapterFixtureResult> =
         DataInfraResearchProviderCatalog.all().flatMap { runAll(it.providerId) }
+}
+
+
+object AssetProviderFixtures {
+    private val successJson = """{"id":"asset-fixture","model":"asset-model","url":"local://asset-fixture.svg"}"""
+    private val authJson = """{"error":{"message":"unauthorized token"}}"""
+    private val malformedJson = """{"result":{}}"""
+
+    fun runAll(providerId: String): List<AdapterFixtureResult> {
+        val success = AssetProviderJson.parseAssetResult(providerId, successJson)
+        val auth = ProviderErrorNormalizer().normalize(providerId, authJson)
+        val malformed = AssetProviderJson.parseAssetResult(providerId, malformedJson)
+        val empty = AssetProviderJson.parseAssetResult(providerId, "")
+        val timeout = ProviderErrorNormalizer().normalize(providerId, "timeout while calling provider")
+        val cancelled = ProviderFailure(providerId, NormalizedProviderFailureType.CANCELLED, "$providerId cancelled")
+
+        return listOf(
+            AdapterFixtureResult(providerId, "success", success is ProviderCallResult.Success, success.toString()),
+            AdapterFixtureResult(providerId, "provider_error_auth", auth.type == NormalizedProviderFailureType.AUTH_FAILED, auth.toString()),
+            AdapterFixtureResult(providerId, "malformed", malformed is ProviderCallResult.Failure && malformed.failure.type == NormalizedProviderFailureType.MALFORMED_RESPONSE, malformed.toString()),
+            AdapterFixtureResult(providerId, "empty", empty is ProviderCallResult.Failure && empty.failure.type == NormalizedProviderFailureType.EMPTY_RESPONSE, empty.toString()),
+            AdapterFixtureResult(providerId, "timeout", timeout.type == NormalizedProviderFailureType.TIMEOUT, timeout.toString()),
+            AdapterFixtureResult(providerId, "cancelled", cancelled.type == NormalizedProviderFailureType.CANCELLED, cancelled.toString())
+        )
+    }
+
+    fun runAssetFamily(): List<AdapterFixtureResult> =
+        AssetProviderCatalog.all().flatMap { runAll(it.providerId) }
 }
 
 private abstract class BaseKernelAdapter(
@@ -1144,6 +1293,55 @@ private class LocalFallbackDataInfraAdapter(
     }
 }
 
+
+private class AssetKernelAdapter(
+    descriptor: ProviderDescriptor,
+    private val spec: AssetProviderSpec,
+    env: Map<String, String> = System.getenv()
+) : BaseKernelAdapter(
+    descriptor = descriptor,
+    env = env,
+    transportImplemented = true,
+    defaultModel = spec.defaultModel,
+    modelIds = spec.models
+), AssetProviderAdapter {
+    override fun implemented(): Boolean = true
+
+    override fun canHandle(request: AdapterRequest): Boolean =
+        request.task.capability in setOf(ApiCapability.ASSET, ApiCapability.VISION)
+
+    override fun status(): AdapterStatus {
+        val configured = spec.requiredEnv.all { env[it].isNullOrBlank().not() }
+        return AdapterStatus(
+            providerId = descriptor.id,
+            implemented = true,
+            configured = configured,
+            dryRunOnly = false,
+            modelCount = spec.models.size,
+            health = if (configured) "live_ready" else "optional_off",
+            detail = "${spec.displayName} asset adapter; local SVG/Text/ANSI remains primary"
+        )
+    }
+
+    override fun dryRunContent(request: AdapterRequest): String =
+        "provider=${descriptor.id} schema=${spec.schema.name.lowercase(Locale.US)} mode=dry_run model=${spec.defaultModel} prompt_chars=${request.prompt.length}"
+
+    override fun liveComplete(request: AdapterRequest): ProviderCallResult {
+        if (spec.requiredEnv.any { env[it].isNullOrBlank() }) {
+            return ProviderCallResult.LocalOnly(
+                task = request.task,
+                content = "${descriptor.id} optional asset provider not configured; use local asset generator"
+            )
+        }
+
+        return ProviderCallResult.Queued(
+            task = request.task,
+            earliestRetryEpochMs = System.currentTimeMillis() + 300_000L,
+            reason = "${descriptor.id} remote asset generation queued; local asset generator is primary"
+        )
+    }
+}
+
 private class DescriptorOnlyKernelAdapter(
     descriptor: ProviderDescriptor
 ) : BaseKernelAdapter(descriptor = descriptor),
@@ -1180,6 +1378,8 @@ fun buildKernelAdapter(descriptor: ProviderDescriptor): ProviderAdapter =
             SerpApiKernelAdapter(descriptor, DataInfraResearchProviderCatalog.get(descriptor.id)!!)
         DataInfraResearchProviderCatalog.get(descriptor.id) != null ->
             LocalFallbackDataInfraAdapter(descriptor, DataInfraResearchProviderCatalog.get(descriptor.id)!!)
+        AssetProviderCatalog.get(descriptor.id) != null ->
+            AssetKernelAdapter(descriptor, AssetProviderCatalog.get(descriptor.id)!!)
         else ->
             DescriptorOnlyKernelAdapter(descriptor)
     }

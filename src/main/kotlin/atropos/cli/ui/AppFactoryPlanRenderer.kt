@@ -14,9 +14,10 @@ class AppFactoryPlanRenderer(
             appendLine("  worker: free-first provider route")
             appendLine("  validator: local kotlinc first")
             appendLine("  repair: local stderr before LLM")
-            appendLine("  assets: local text/ansi/svg optional")
+            appendLine("  assets: local text/ansi/svg primary; remote asset providers optional")
             appendLine("  memory: local memory root")
             appendLine("  ci: local queue, remote optional")
+            appendLine("  final acceptance: ready")
         }
     }
 }
