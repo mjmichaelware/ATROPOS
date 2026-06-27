@@ -22,3 +22,5 @@ out/
 lakehouse_build/
 data/cache/
 tmp-*.jar
+
+.atropos/
