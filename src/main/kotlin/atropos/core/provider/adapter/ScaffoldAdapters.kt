@@ -11,7 +11,7 @@ import atropos.core.provider.ProviderUsage
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.HttpURLConnection
-import java.net.URL
+import java.net.URI
 import java.util.Locale
 
 data class AdapterModel(
@@ -88,6 +88,159 @@ object OpenAiCompatibleProviderCatalog {
         specs.firstOrNull { it.providerId == providerId }
 
     fun all(): List<OpenAiCompatibleProviderSpec> = specs
+}
+
+
+enum class NonOpenAiProviderSchema {
+    GEMINI,
+    GITHUB_MODELS,
+    CLOUDFLARE_AI,
+    CLOUDFLARE_WORKERS
+}
+
+data class NonOpenAiProviderSpec(
+    val providerId: String,
+    val displayName: String,
+    val schema: NonOpenAiProviderSchema,
+    val endpoint: String,
+    val defaultModel: String,
+    val fallbackModels: List<String>,
+    val requiredEnv: List<String>
+) {
+    val models: List<String> = (listOf(defaultModel) + fallbackModels).distinct()
+}
+
+object NonOpenAiFreeProviderCatalog {
+    private val specs = listOf(
+        NonOpenAiProviderSpec(
+            providerId = "gemini",
+            displayName = "Google Gemini",
+            schema = NonOpenAiProviderSchema.GEMINI,
+            endpoint = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
+            defaultModel = "gemini-1.5-flash",
+            fallbackModels = listOf("gemini-1.5-flash-8b"),
+            requiredEnv = listOf("GEMINI_API_KEY")
+        ),
+        NonOpenAiProviderSpec(
+            providerId = "github_models",
+            displayName = "GitHub Models",
+            schema = NonOpenAiProviderSchema.GITHUB_MODELS,
+            endpoint = "https://models.inference.ai.azure.com/chat/completions",
+            defaultModel = "gpt-4o-mini",
+            fallbackModels = listOf("Phi-3.5-mini-instruct"),
+            requiredEnv = listOf("GITHUB_MODELS_TOKEN")
+        ),
+        NonOpenAiProviderSpec(
+            providerId = "cloudflare_ai",
+            displayName = "Cloudflare AI",
+            schema = NonOpenAiProviderSchema.CLOUDFLARE_AI,
+            endpoint = "https://api.cloudflare.com/client/v4/accounts/{account}/ai/run/{model}",
+            defaultModel = "@cf/meta/llama-3.1-8b-instruct",
+            fallbackModels = listOf("@cf/mistral/mistral-7b-instruct-v0.1"),
+            requiredEnv = listOf("CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ACCOUNT_ID")
+        ),
+        NonOpenAiProviderSpec(
+            providerId = "cloudflare_workers",
+            displayName = "Cloudflare Workers",
+            schema = NonOpenAiProviderSchema.CLOUDFLARE_WORKERS,
+            endpoint = "cloudflare-workers-deployment-manifest",
+            defaultModel = "worker-module",
+            fallbackModels = listOf("pages-function"),
+            requiredEnv = listOf("CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ACCOUNT_ID")
+        )
+    )
+
+    fun get(providerId: String): NonOpenAiProviderSpec? =
+        specs.firstOrNull { it.providerId == providerId }
+
+    fun all(): List<NonOpenAiProviderSpec> = specs
+}
+
+object NonOpenAiJson {
+    fun buildGeminiRequest(prompt: String, context: String): String = buildString {
+        append("{")
+        append("\"contents\":[{\"parts\":[")
+        append("{\"text\":\"").append(escape(context.ifBlank { "ATROPOS local-first provider adapter" })).append("\"},")
+        append("{\"text\":\"").append(escape(prompt)).append("\"}")
+        append("]}],")
+        append("\"generationConfig\":{\"temperature\":0.2}")
+        append("}")
+    }
+
+    fun buildCloudflareAiRequest(prompt: String, context: String): String = buildString {
+        append("{")
+        append("\"messages\":[")
+        append("{\"role\":\"system\",\"content\":\"").append(escape(context.ifBlank { "ATROPOS local-first provider adapter" })).append("\"},")
+        append("{\"role\":\"user\",\"content\":\"").append(escape(prompt)).append("\"}")
+        append("]}")
+    }
+
+    fun parseTextResult(providerId: String, json: String): ProviderCallResult {
+        if (json.isBlank()) {
+            return ProviderCallResult.Failure(
+                ProviderFailure(providerId, NormalizedProviderFailureType.EMPTY_RESPONSE, "$providerId empty response")
+            )
+        }
+        if (json.contains("\"error\"")) {
+            return ProviderCallResult.Failure(ProviderErrorNormalizer().normalize(providerId, stringField(json, "message") ?: json))
+        }
+        val text = stringField(json, "text")
+            ?: stringField(json, "response")
+            ?: stringField(json, "content")
+        if (text.isNullOrBlank()) {
+            return ProviderCallResult.Failure(
+                ProviderFailure(providerId, NormalizedProviderFailureType.MALFORMED_RESPONSE, "$providerId missing text result")
+            )
+        }
+        return ProviderCallResult.Success(
+            providerId = providerId,
+            content = text,
+            usage = ProviderUsage(),
+            model = stringField(json, "model"),
+            requestId = stringField(json, "id")
+        )
+    }
+
+    private fun stringField(json: String, name: String): String? {
+        val regex = Regex(""""$name"\s*:\s*"((?:\\.|[^"\\])*)"""")
+        return regex.find(json)?.groupValues?.get(1)?.let(::unescape)
+    }
+
+    fun escape(value: String): String = buildString {
+        value.forEach { ch ->
+            when (ch) {
+                '\\' -> append("\\\\")
+                '"' -> append("\\\"")
+                '\n' -> append("\\n")
+                '\r' -> append("\\r")
+                '\t' -> append("\\t")
+                else -> append(ch)
+            }
+        }
+    }
+
+    private fun unescape(value: String): String {
+        val out = StringBuilder()
+        var i = 0
+        while (i < value.length) {
+            val ch = value[i]
+            if (ch == '\\' && i + 1 < value.length) {
+                when (value[i + 1]) {
+                    '\\' -> out.append('\\')
+                    '"' -> out.append('"')
+                    'n' -> out.append('\n')
+                    'r' -> out.append('\r')
+                    't' -> out.append('\t')
+                    else -> out.append(value[i + 1])
+                }
+                i += 2
+            } else {
+                out.append(ch)
+                i += 1
+            }
+        }
+        return out.toString()
+    }
 }
 
 object AdapterJson {
@@ -236,6 +389,44 @@ object AdapterKernelFixtures {
 
     fun runOpenAiCompatibleFamily(): List<AdapterFixtureResult> =
         OpenAiCompatibleProviderCatalog.all().flatMap { runAll(it.providerId) }
+}
+
+
+object NonOpenAiKernelFixtures {
+    private val geminiSuccess = """{"candidates":[{"content":{"parts":[{"text":"gemini fixture response"}]}}]}"""
+    private val cloudflareSuccess = """{"success":true,"result":{"response":"cloudflare fixture response"}}"""
+    private val githubSuccess = """{"id":"fixture","model":"github-fixture","choices":[{"message":{"content":"github fixture response"}}]}"""
+    private val authJson = """{"error":{"message":"unauthorized api key"}}"""
+    private val malformedJson = """{"result":{}}"""
+
+    fun runAll(providerId: String): List<AdapterFixtureResult> {
+        val spec = NonOpenAiFreeProviderCatalog.get(providerId)
+            ?: return listOf(AdapterFixtureResult(providerId, "missing_spec", false, "missing spec"))
+
+        val success = when (spec.schema) {
+            NonOpenAiProviderSchema.GEMINI -> NonOpenAiJson.parseTextResult(providerId, geminiSuccess)
+            NonOpenAiProviderSchema.GITHUB_MODELS -> AdapterJson.parseOpenAiCompatibleSuccess(providerId, githubSuccess)
+            NonOpenAiProviderSchema.CLOUDFLARE_AI,
+            NonOpenAiProviderSchema.CLOUDFLARE_WORKERS -> NonOpenAiJson.parseTextResult(providerId, cloudflareSuccess)
+        }
+        val auth = ProviderErrorNormalizer().normalize(providerId, authJson)
+        val malformed = NonOpenAiJson.parseTextResult(providerId, malformedJson)
+        val empty = NonOpenAiJson.parseTextResult(providerId, "")
+        val timeout = ProviderErrorNormalizer().normalize(providerId, "timeout while calling provider")
+        val cancelled = ProviderFailure(providerId, NormalizedProviderFailureType.CANCELLED, "$providerId cancelled")
+
+        return listOf(
+            AdapterFixtureResult(providerId, "success", success is ProviderCallResult.Success, success.toString()),
+            AdapterFixtureResult(providerId, "provider_error_auth", auth.type == NormalizedProviderFailureType.AUTH_FAILED, auth.toString()),
+            AdapterFixtureResult(providerId, "malformed", malformed is ProviderCallResult.Failure && malformed.failure.type == NormalizedProviderFailureType.MALFORMED_RESPONSE, malformed.toString()),
+            AdapterFixtureResult(providerId, "empty", empty is ProviderCallResult.Failure && empty.failure.type == NormalizedProviderFailureType.EMPTY_RESPONSE, empty.toString()),
+            AdapterFixtureResult(providerId, "timeout", timeout.type == NormalizedProviderFailureType.TIMEOUT, timeout.toString()),
+            AdapterFixtureResult(providerId, "cancelled", cancelled.type == NormalizedProviderFailureType.CANCELLED, cancelled.toString())
+        )
+    }
+
+    fun runNonOpenAiFreeFamily(): List<AdapterFixtureResult> =
+        NonOpenAiFreeProviderCatalog.all().flatMap { runAll(it.providerId) }
 }
 
 private abstract class BaseKernelAdapter(
@@ -405,7 +596,7 @@ private class OpenAiCompatibleKernelAdapter(
             )
 
         return try {
-            val connection = (URL(spec.baseUrl).openConnection() as HttpURLConnection)
+            val connection = (URI(spec.baseUrl).toURL().openConnection() as HttpURLConnection)
             connection.requestMethod = "POST"
             connection.connectTimeout = remainingMs(request).coerceIn(1_000, 30_000).toInt()
             connection.readTimeout = remainingMs(request).coerceIn(1_000, 60_000).toInt()
@@ -441,6 +632,177 @@ private class OpenAiCompatibleKernelAdapter(
         request.deadlineEpochMs - System.currentTimeMillis()
 }
 
+
+private abstract class NonOpenAiFreeKernelAdapter(
+    descriptor: ProviderDescriptor,
+    protected val spec: NonOpenAiProviderSpec,
+    env: Map<String, String> = System.getenv()
+) : BaseKernelAdapter(
+    descriptor = descriptor,
+    env = env,
+    transportImplemented = true,
+    defaultModel = spec.defaultModel,
+    modelIds = spec.models
+) {
+    override fun implemented(): Boolean = true
+
+    override fun status(): AdapterStatus {
+        val configured = spec.requiredEnv.all { env[it].isNullOrBlank().not() }
+        return AdapterStatus(
+            providerId = descriptor.id,
+            implemented = true,
+            configured = configured,
+            dryRunOnly = false,
+            modelCount = spec.models.size,
+            health = if (configured) "live_ready" else "needs_${spec.requiredEnv.joinToString("_").lowercase(Locale.US)}",
+            detail = "${spec.displayName} ${spec.schema.name.lowercase(Locale.US)} adapter; live opt-in; model=${spec.defaultModel}"
+        )
+    }
+
+    override fun dryRunContent(request: AdapterRequest): String =
+        "provider=${descriptor.id} schema=${spec.schema.name.lowercase(Locale.US)} mode=dry_run model=${spec.defaultModel} prompt_chars=${request.prompt.length} deadline=${request.deadlineEpochMs}"
+
+    protected fun missingSecret(): ProviderCallResult.Failure =
+        ProviderCallResult.Failure(
+            ProviderFailure(
+                providerId = descriptor.id,
+                type = NormalizedProviderFailureType.AUTH_FAILED,
+                cleanSummary = "${descriptor.id} missing ${spec.requiredEnv.joinToString("+")}",
+                terminal = true
+            )
+        )
+
+    protected fun readResponse(connection: HttpURLConnection): Pair<Int, String> {
+        val code = connection.responseCode
+        val stream = if (code in 200..299) connection.inputStream else connection.errorStream
+        val raw = stream?.use { input ->
+            BufferedReader(InputStreamReader(input, Charsets.UTF_8)).readText()
+        }.orEmpty()
+        return code to raw
+    }
+
+    protected fun remainingMs(request: AdapterRequest): Int =
+        (request.deadlineEpochMs - System.currentTimeMillis()).coerceIn(1_000, 60_000).toInt()
+}
+
+private class GeminiKernelAdapter(
+    descriptor: ProviderDescriptor,
+    spec: NonOpenAiProviderSpec,
+    env: Map<String, String> = System.getenv()
+) : NonOpenAiFreeKernelAdapter(descriptor, spec, env), ChatProviderAdapter {
+    override fun canHandle(request: AdapterRequest): Boolean =
+        request.task.capability in setOf(ApiCapability.CHAT, ApiCapability.PLAN, ApiCapability.LARGE_CONTEXT, ApiCapability.VISION)
+
+    override fun liveComplete(request: AdapterRequest): ProviderCallResult {
+        val key = env["GEMINI_API_KEY"]?.takeIf { it.isNotBlank() } ?: return missingSecret()
+        return try {
+            val url = spec.endpoint.replace("{model}", spec.defaultModel) + "?key=$key"
+            val connection = (URI(url).toURL().openConnection() as HttpURLConnection)
+            connection.requestMethod = "POST"
+            connection.connectTimeout = remainingMs(request)
+            connection.readTimeout = remainingMs(request)
+            connection.doOutput = true
+            connection.setRequestProperty("Content-Type", "application/json")
+            val body = NonOpenAiJson.buildGeminiRequest(request.prompt, request.context)
+            connection.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
+            val (code, raw) = readResponse(connection)
+            if (code in 200..299) NonOpenAiJson.parseTextResult(descriptor.id, raw)
+            else ProviderCallResult.Failure(ProviderErrorNormalizer().normalize(descriptor.id, raw.ifBlank { "HTTP $code" }))
+        } catch (failure: java.net.SocketTimeoutException) {
+            ProviderCallResult.Failure(ProviderFailure(descriptor.id, NormalizedProviderFailureType.TIMEOUT, "${descriptor.id} timed out", retryAfterMs = 60_000))
+        } catch (failure: Exception) {
+            ProviderCallResult.Failure(ProviderErrorNormalizer().normalize(descriptor.id, failure.message ?: failure.javaClass.simpleName))
+        }
+    }
+}
+
+private class GithubModelsKernelAdapter(
+    descriptor: ProviderDescriptor,
+    spec: NonOpenAiProviderSpec,
+    env: Map<String, String> = System.getenv()
+) : NonOpenAiFreeKernelAdapter(descriptor, spec, env), ChatProviderAdapter, CodeProviderAdapter, EdgeExecutionAdapter {
+    override fun canHandle(request: AdapterRequest): Boolean =
+        request.task.capability in setOf(ApiCapability.CHAT, ApiCapability.CODE, ApiCapability.PLAN, ApiCapability.CI)
+
+    override fun liveComplete(request: AdapterRequest): ProviderCallResult {
+        val key = env["GITHUB_MODELS_TOKEN"]?.takeIf { it.isNotBlank() } ?: return missingSecret()
+        return try {
+            val connection = (URI(spec.endpoint).toURL().openConnection() as HttpURLConnection)
+            connection.requestMethod = "POST"
+            connection.connectTimeout = remainingMs(request)
+            connection.readTimeout = remainingMs(request)
+            connection.doOutput = true
+            connection.setRequestProperty("Authorization", "Bearer $key")
+            connection.setRequestProperty("Content-Type", "application/json")
+            val body = AdapterJson.buildChatRequest(spec.defaultModel, request.prompt, request.context)
+            connection.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
+            val (code, raw) = readResponse(connection)
+            if (code in 200..299) AdapterJson.parseOpenAiCompatibleSuccess(descriptor.id, raw)
+            else ProviderCallResult.Failure(AdapterJson.parseOpenAiCompatibleError(descriptor.id, raw.ifBlank { "HTTP $code" }))
+        } catch (failure: java.net.SocketTimeoutException) {
+            ProviderCallResult.Failure(ProviderFailure(descriptor.id, NormalizedProviderFailureType.TIMEOUT, "${descriptor.id} timed out", retryAfterMs = 60_000))
+        } catch (failure: Exception) {
+            ProviderCallResult.Failure(ProviderErrorNormalizer().normalize(descriptor.id, failure.message ?: failure.javaClass.simpleName))
+        }
+    }
+}
+
+private class CloudflareAiKernelAdapter(
+    descriptor: ProviderDescriptor,
+    spec: NonOpenAiProviderSpec,
+    env: Map<String, String> = System.getenv()
+) : NonOpenAiFreeKernelAdapter(descriptor, spec, env), ChatProviderAdapter, EmbeddingProviderAdapter, EdgeExecutionAdapter {
+    override fun canHandle(request: AdapterRequest): Boolean =
+        request.task.capability in setOf(ApiCapability.CHAT, ApiCapability.EMBED, ApiCapability.EDGE)
+
+    override fun liveComplete(request: AdapterRequest): ProviderCallResult {
+        val token = env["CLOUDFLARE_API_TOKEN"]?.takeIf { it.isNotBlank() } ?: return missingSecret()
+        val account = env["CLOUDFLARE_ACCOUNT_ID"]?.takeIf { it.isNotBlank() } ?: return missingSecret()
+        return try {
+            val endpoint = spec.endpoint
+                .replace("{account}", account)
+                .replace("{model}", spec.defaultModel)
+            val connection = (URI(endpoint).toURL().openConnection() as HttpURLConnection)
+            connection.requestMethod = "POST"
+            connection.connectTimeout = remainingMs(request)
+            connection.readTimeout = remainingMs(request)
+            connection.doOutput = true
+            connection.setRequestProperty("Authorization", "Bearer $token")
+            connection.setRequestProperty("Content-Type", "application/json")
+            val body = NonOpenAiJson.buildCloudflareAiRequest(request.prompt, request.context)
+            connection.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
+            val (code, raw) = readResponse(connection)
+            if (code in 200..299) NonOpenAiJson.parseTextResult(descriptor.id, raw)
+            else ProviderCallResult.Failure(ProviderErrorNormalizer().normalize(descriptor.id, raw.ifBlank { "HTTP $code" }))
+        } catch (failure: java.net.SocketTimeoutException) {
+            ProviderCallResult.Failure(ProviderFailure(descriptor.id, NormalizedProviderFailureType.TIMEOUT, "${descriptor.id} timed out", retryAfterMs = 60_000))
+        } catch (failure: Exception) {
+            ProviderCallResult.Failure(ProviderErrorNormalizer().normalize(descriptor.id, failure.message ?: failure.javaClass.simpleName))
+        }
+    }
+}
+
+private class CloudflareWorkersKernelAdapter(
+    descriptor: ProviderDescriptor,
+    spec: NonOpenAiProviderSpec,
+    env: Map<String, String> = System.getenv()
+) : NonOpenAiFreeKernelAdapter(descriptor, spec, env), StorageProviderAdapter, EdgeExecutionAdapter {
+    override fun canHandle(request: AdapterRequest): Boolean =
+        request.task.capability in setOf(ApiCapability.EDGE, ApiCapability.STORAGE, ApiCapability.SECRET)
+
+    override fun liveComplete(request: AdapterRequest): ProviderCallResult {
+        if (spec.requiredEnv.any { env[it].isNullOrBlank() }) return missingSecret()
+        return ProviderCallResult.Queued(
+            task = request.task,
+            earliestRetryEpochMs = System.currentTimeMillis() + 300_000L,
+            reason = "cloudflare worker deployment requires explicit deployment target"
+        )
+    }
+
+    override fun dryRunContent(request: AdapterRequest): String =
+        "provider=${descriptor.id} schema=cloudflare_workers mode=dry_run manifest=worker-module capability=${request.task.capability.name.lowercase(Locale.US)}"
+}
+
 private class DescriptorOnlyKernelAdapter(
     descriptor: ProviderDescriptor
 ) : BaseKernelAdapter(descriptor = descriptor),
@@ -463,6 +825,14 @@ fun buildKernelAdapter(descriptor: ProviderDescriptor): ProviderAdapter =
                 descriptor = descriptor,
                 spec = OpenAiCompatibleProviderCatalog.get(descriptor.id)!!
             )
+        NonOpenAiFreeProviderCatalog.get(descriptor.id)?.schema == NonOpenAiProviderSchema.GEMINI ->
+            GeminiKernelAdapter(descriptor, NonOpenAiFreeProviderCatalog.get(descriptor.id)!!)
+        NonOpenAiFreeProviderCatalog.get(descriptor.id)?.schema == NonOpenAiProviderSchema.GITHUB_MODELS ->
+            GithubModelsKernelAdapter(descriptor, NonOpenAiFreeProviderCatalog.get(descriptor.id)!!)
+        NonOpenAiFreeProviderCatalog.get(descriptor.id)?.schema == NonOpenAiProviderSchema.CLOUDFLARE_AI ->
+            CloudflareAiKernelAdapter(descriptor, NonOpenAiFreeProviderCatalog.get(descriptor.id)!!)
+        NonOpenAiFreeProviderCatalog.get(descriptor.id)?.schema == NonOpenAiProviderSchema.CLOUDFLARE_WORKERS ->
+            CloudflareWorkersKernelAdapter(descriptor, NonOpenAiFreeProviderCatalog.get(descriptor.id)!!)
         else ->
             DescriptorOnlyKernelAdapter(descriptor)
     }
