@@ -74,8 +74,8 @@ class AdapterRouteFacade(
 
         val note = when {
             adapter == null -> "no adapter selected; local degraded mode"
-            status?.implemented == true && status.dryRunOnly -> "adapter kernel ready; live network opt-in deferred"
-            status?.implemented == true -> "adapter implemented"
+            status?.implemented == true && status.dryRunOnly -> "adapter kernel ready; fixture lane active"
+            status?.implemented == true -> "adapter implemented; live tests opt-in"
             else -> "descriptor registered; provider-specific adapter pending"
         }
 

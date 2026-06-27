@@ -74,7 +74,7 @@ class CommandCompleter(
         "/verify"
     )
 
-    private val providers = listOf("anthropic", "groq", "ollama", "openai", "xai")
+    private val providers = listOf("anthropic", "groq", "openrouter", "deepinfra", "siliconflow", "ollama", "openai", "xai")
 
     fun complete(buffer: String, cursor: Int): Completion {
         val position = cursor.coerceIn(0, buffer.length)
