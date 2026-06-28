@@ -2,6 +2,7 @@
 package atropos.cli.ui
 
 import atropos.cli.config.ConfigurationManager
+import atropos.cli.input.CommandRegistry
 import atropos.cli.session.QuotaSessionTracker
 import atropos.core.AtroposConfig
 import atropos.core.verification.VerificationResult
@@ -93,7 +94,7 @@ class AnsiTerminalEngine(
         if (!reactive) return
 
         canvas.initialize(
-            useAlternateScreen = true
+            useAlternateScreen = useAlternateScreen
         )
 
         resizePoller.scheduleAtFixedRate({
@@ -135,17 +136,19 @@ class AnsiTerminalEngine(
         suggestion: String,
         inputMode: String,
         provider: String,
-        tracker: QuotaSessionTracker
+        tracker: QuotaSessionTracker,
+        paletteSelection: Int = 0
     ) {
         this.mode = inputMode
         this.provider = provider
         this.tracker = tracker
 
         composer.update(
-            buffer,
-            suggestion,
-            cursor,
-            inputMode
+            buffer = buffer,
+            suggestion = suggestion,
+            cursor = cursor,
+            mode = inputMode,
+            paletteSelection = paletteSelection
         )
 
         requestFrameLocked()
@@ -162,7 +165,8 @@ class AnsiTerminalEngine(
         "",
         mode,
         provider,
-        tracker
+        tracker,
+        0
     )
 
     @Synchronized
@@ -371,16 +375,13 @@ class AnsiTerminalEngine(
 
     @Synchronized
     fun renderHelp() {
-        listOf(
-            theme.brand("commands"),
-            "  /help",
-            "  /status",
-            "  /use <groq|openai|anthropic|xai|ollama>",
-            "  /verify <narrow|wide>",
-            "  /exit"
-        ).forEach(
-            transcriptBuffer::append
+        transcriptBuffer.append(
+            theme.brand("commands")
         )
+        CommandRegistry.helpLines()
+            .forEach(
+                transcriptBuffer::append
+            )
 
         requestFrameLocked()
     }

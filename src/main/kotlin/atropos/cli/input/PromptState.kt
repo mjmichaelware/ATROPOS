@@ -28,17 +28,31 @@ sealed class PromptEffect {
     ) : PromptEffect()
 }
 
+private enum class HistoryLane {
+    PROMPT,
+    SLASH,
+    SHELL
+}
+
 class PromptState(
     private val historyLimit: Int = 100,
     private val maximumBufferLength: Int =
         1024 * 1024
 ) {
     private val buffer = StringBuilder()
-    private val history =
-        mutableListOf<String>()
+    private val histories = mutableMapOf(
+        HistoryLane.PROMPT to mutableListOf<String>(),
+        HistoryLane.SLASH to mutableListOf<String>(),
+        HistoryLane.SHELL to mutableListOf<String>()
+    )
 
     private var historyIndex = -1
     private var savedBuffer = ""
+    private var activeHistoryLane: HistoryLane? = null
+    private var lastCommittedLane = HistoryLane.PROMPT
+    private var slashSelection = 0
+    private var slashDismissed = false
+    private var reverseSearchNeedle = ""
 
     var cursor: Int = 0
         private set
@@ -54,6 +68,16 @@ class PromptState(
         require(maximumBufferLength > 0)
     }
 
+    fun suggestionSelection(): Int =
+        if (isSlashSuggestionActive()) slashSelection else 0
+
+    fun clampSuggestionSelection(maximumInclusive: Int) {
+        slashSelection = slashSelection.coerceIn(
+            0,
+            maximumInclusive.coerceAtLeast(0)
+        )
+    }
+
     fun apply(event: KeyEvent): PromptEffect {
         return when (event) {
             is KeyEvent.Printable ->
@@ -63,9 +87,7 @@ class PromptState(
                 insertEvent(event.text)
 
             is KeyEvent.InvalidInput ->
-                PromptEffect.InputError(
-                    event.reason
-                )
+                PromptEffect.InputError(event.reason)
 
             is KeyEvent.UnknownEscape ->
                 PromptEffect.None
@@ -112,12 +134,23 @@ class PromptState(
             }
 
             KeyEvent.ArrowUp -> {
-                historyUp()
+                if (isSlashSuggestionActive()) {
+                    slashSelection =
+                        (slashSelection - 1).coerceAtLeast(0)
+                } else {
+                    historyUp()
+                }
+
                 PromptEffect.Redraw
             }
 
             KeyEvent.ArrowDown -> {
-                historyDown()
+                if (isSlashSuggestionActive()) {
+                    slashSelection++
+                } else {
+                    historyDown()
+                }
+
                 PromptEffect.Redraw
             }
 
@@ -149,8 +182,16 @@ class PromptState(
                 }
             }
 
-            KeyEvent.Escape ->
-                PromptEffect.None
+            KeyEvent.CtrlR -> {
+                reverseSearch()
+                PromptEffect.Redraw
+            }
+
+            KeyEvent.Escape -> {
+                slashDismissed = true
+                slashSelection = 0
+                PromptEffect.Redraw
+            }
         }
     }
 
@@ -166,6 +207,9 @@ class PromptState(
         detachHistory()
         buffer.insert(cursor, text)
         cursor += text.length
+        slashSelection = 0
+        slashDismissed = false
+        reverseSearchNeedle = ""
         return true
     }
 
@@ -182,6 +226,8 @@ class PromptState(
 
         buffer.delete(previous, cursor)
         cursor = previous
+        slashSelection = 0
+        slashDismissed = false
     }
 
     fun delete() {
@@ -196,6 +242,8 @@ class PromptState(
         )
 
         buffer.delete(cursor, next)
+        slashSelection = 0
+        slashDismissed = false
     }
 
     fun moveLeft() {
@@ -240,30 +288,40 @@ class PromptState(
     }
 
     fun historyUp() {
+        val lane = currentHistoryLane()
+        val history = histories.getValue(lane)
+
         if (history.isEmpty()) return
 
-        if (historyIndex == -1) {
+        if (
+            historyIndex == -1 ||
+            activeHistoryLane != lane
+        ) {
             savedBuffer = buffer.toString()
+            historyIndex = -1
+            activeHistoryLane = lane
         }
 
-        if (historyIndex <
-            history.lastIndex
-        ) {
+        if (historyIndex < history.lastIndex) {
             historyIndex++
         }
 
-        loadHistory()
+        loadHistory(lane)
     }
 
     fun historyDown() {
+        val lane =
+            activeHistoryLane ?: currentHistoryLane()
+
         when {
             historyIndex > 0 -> {
                 historyIndex--
-                loadHistory()
+                loadHistory(lane)
             }
 
             historyIndex == 0 -> {
                 historyIndex = -1
+                activeHistoryLane = null
                 buffer.clear()
                 buffer.append(savedBuffer)
                 cursor = buffer.length
@@ -274,15 +332,17 @@ class PromptState(
     fun commit(): String {
         val result = buffer.toString()
 
-        if (result.isNotBlank() &&
-            history.lastOrNull() != result
-        ) {
-            history += result
+        if (result.isNotBlank()) {
+            val lane = classify(result)
+            lastCommittedLane = lane
+            val history = histories.getValue(lane)
 
-            while (history.size >
-                historyLimit
-            ) {
-                history.removeAt(0)
+            if (history.lastOrNull() != result) {
+                history += result
+
+                while (history.size > historyLimit) {
+                    history.removeAt(0)
+                }
             }
         }
 
@@ -295,6 +355,10 @@ class PromptState(
         cursor = 0
         historyIndex = -1
         savedBuffer = ""
+        activeHistoryLane = null
+        slashSelection = 0
+        slashDismissed = false
+        reverseSearchNeedle = ""
     }
 
     private fun insertEvent(
@@ -310,20 +374,107 @@ class PromptState(
         }
     }
 
-    private fun loadHistory() {
+    private fun loadHistory(
+        lane: HistoryLane
+    ) {
+        val history = histories.getValue(lane)
+        if (historyIndex == -1) return
+
         val sourceIndex =
-            history.lastIndex -
-                historyIndex
+            history.lastIndex - historyIndex
+
+        if (sourceIndex !in history.indices) return
 
         buffer.clear()
         buffer.append(history[sourceIndex])
         cursor = buffer.length
+        slashSelection = 0
+        slashDismissed = false
     }
 
     private fun detachHistory() {
         if (historyIndex == -1) return
 
         historyIndex = -1
+        activeHistoryLane = null
         savedBuffer = ""
+    }
+
+    private fun reverseSearch() {
+        val lane = currentHistoryLane()
+        val history = histories.getValue(lane)
+
+        if (history.isEmpty()) return
+
+        if (reverseSearchNeedle.isEmpty()) {
+            reverseSearchNeedle =
+                buffer.toString().trim()
+        }
+
+        val match = history.asReversed().firstOrNull {
+            reverseSearchNeedle.isEmpty() ||
+                it.contains(
+                    reverseSearchNeedle,
+                    ignoreCase = true
+                )
+        } ?: return
+
+        buffer.clear()
+        buffer.append(match)
+        cursor = buffer.length
+        activeHistoryLane = lane
+        historyIndex = -1
+    }
+
+    private fun currentHistoryLane(): HistoryLane =
+        if (buffer.isEmpty()) {
+            lastCommittedLane
+        } else {
+            classify(buffer.toString())
+        }
+
+    private fun classify(
+        value: String
+    ): HistoryLane {
+        val trimmed = value.trimStart()
+
+        return when {
+            trimmed.startsWith("!") ->
+                HistoryLane.SHELL
+
+            trimmed.startsWith("/shell") ->
+                HistoryLane.SHELL
+
+            trimmed.startsWith("/pwd") ->
+                HistoryLane.SHELL
+
+            trimmed.startsWith("/cd") ->
+                HistoryLane.SHELL
+
+            trimmed.startsWith("/ls") ->
+                HistoryLane.SHELL
+
+            trimmed.startsWith("/git") ->
+                HistoryLane.SHELL
+
+            trimmed.startsWith("/") ->
+                HistoryLane.SLASH
+
+            else ->
+                HistoryLane.PROMPT
+        }
+    }
+
+    private fun isSlashSuggestionActive(): Boolean {
+        if (slashDismissed) return false
+
+        val beforeCursor = buffer.substring(
+            0,
+            cursor.coerceIn(0, buffer.length)
+        ).trimStart()
+
+        return beforeCursor.startsWith("/") &&
+            beforeCursor.none(Char::isWhitespace) &&
+            !beforeCursor.contains('\n')
     }
 }

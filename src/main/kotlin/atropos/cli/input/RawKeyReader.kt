@@ -28,6 +28,7 @@ sealed class KeyEvent {
     object Escape : KeyEvent()
     object CtrlC : KeyEvent()
     object CtrlD : KeyEvent()
+    object CtrlR : KeyEvent()
     object ArrowLeft : KeyEvent()
     object ArrowRight : KeyEvent()
     object ArrowUp : KeyEvent()
@@ -82,6 +83,7 @@ class RawKeyReader(
 
             3 -> KeyEvent.CtrlC
             4 -> KeyEvent.CtrlD
+            18 -> KeyEvent.CtrlR
             9 -> KeyEvent.Tab
             10, 13 -> KeyEvent.Enter
             8, 127 -> KeyEvent.Backspace

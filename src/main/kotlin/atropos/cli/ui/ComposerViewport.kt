@@ -15,8 +15,15 @@ class ComposerViewport(
     private var suggestion = ""
     private var cursor = 0
     private var mode = "ASK"
+    private var paletteSelection = 0
 
-    fun update(buffer: String, suggestion: String, cursor: Int, mode: String) {
+    fun update(
+        buffer: String,
+        suggestion: String,
+        cursor: Int,
+        mode: String,
+        paletteSelection: Int = 0
+    ) {
         this.buffer = TerminalText.sanitize(buffer)
         this.suggestion = TerminalText.sanitize(suggestion).replace('\n', ' ')
         this.cursor = safeCursorBoundary(
@@ -24,15 +31,17 @@ class ComposerViewport(
             cursor.coerceIn(0, this.buffer.length)
         )
         this.mode = mode.uppercase()
+        this.paletteSelection = paletteSelection.coerceAtLeast(0)
     }
 
-    fun render(width: Int): ComposerSnapshot = renderMultiline(width, 4)
+    fun render(width: Int): ComposerSnapshot =
+        renderMultiline(width, 4)
 
     fun renderMultiline(width: Int, maximumLines: Int): ComposerSnapshot {
         val safeWidth = width.coerceAtLeast(1)
         val limit = maximumLines.coerceAtLeast(1)
         val badge = "[${mode.lowercase()}] "
-        val prompt = "› "
+        val prompt = "> "
         val prefixPlain = badge + prompt
         val before = buffer.substring(0, cursor)
         val after = buffer.substring(cursor)
@@ -44,7 +53,7 @@ class ComposerViewport(
             safeWidth
         )
         var absoluteRow = cursorPosition.first
-        var cursorColumn = cursorPosition.second
+        val cursorColumn = cursorPosition.second
 
         while (wrapped.size <= absoluteRow) {
             wrapped += ""
@@ -65,11 +74,17 @@ class ComposerViewport(
 
     fun mode(): String = mode
 
-    fun commandQuery(): String? {
+    fun commandQuery(): CommandPaletteQuery? {
         val value = buffer.trimStart()
-        return value.takeIf {
-            it.startsWith("/") && !it.contains(' ') && !it.contains('\n')
-        }
+        return value
+            .takeIf {
+                it.startsWith("/") &&
+                    !it.contains(' ') &&
+                    !it.contains('\n')
+            }
+            ?.let {
+                CommandPaletteQuery(it, paletteSelection)
+            }
     }
 
     private fun cursorPosition(value: String, width: Int): Pair<Int, Int> {
@@ -103,7 +118,8 @@ class ComposerViewport(
         var position = requested.coerceIn(0, value.length)
         if (position in 1 until value.length &&
             Character.isLowSurrogate(value[position]) &&
-            Character.isHighSurrogate(value[position - 1])) {
+            Character.isHighSurrogate(value[position - 1])
+        ) {
             position--
         }
         return position

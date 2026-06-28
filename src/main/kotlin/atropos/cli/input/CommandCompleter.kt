@@ -6,114 +6,112 @@ import java.nio.file.Path
 
 data class Completion(
     val insertion: String = "",
-    val preview: String = ""
+    val preview: String = "",
+    val selectedIndex: Int = 0,
+    val options: List<String> = emptyList()
 )
 
 class CommandCompleter(
     workspace: Path = Path.of(".")
 ) {
-    private val root = workspace.toAbsolutePath().normalize()
+    private val root =
+        workspace.toAbsolutePath().normalize()
 
-    private val commands = listOf(
-        "/exit",
-        "/help",
-        "/shell",
-        "/pwd",
-        "/ls",
-        "/git status",
-        "/git",
-        "/cd",
-        "/paid",
-        "/paid status",
-        "/paid lock",
-        "/paid unlock",
-        "/providers",
-        "/providers descriptors",
-        "/providers validate",
-        "/quit",
-        "/route",
-        "/status",
-        "/status adapters",
-        "/status assets",
-        "/status ci",
-        "/status endpoints",
-        "/status factory",
-        "/status failures",
-        "/status memory",
-        "/status paid",
-        "/status quota",
-        "/status queue",
-        "/status route",
-        "/status security",
-        "/status tests",
-        "/status ops",
-        "/security",
-        "/security redact",
-        "/keys",
-        "/keys status",
-        "/keys setup",
-        "/tests",
-        "/tests matrix",
-        "/ops",
-        "/ops export",
-        "/ops status",
-        "/ops quota-restore",
-        "/ops quota-backup",
-        "/ops verify",
-        "/assets",
-        "/assets ansi",
-        "/assets status",
-        "/assets svg",
-        "/assets text",
-        "/ci",
-        "/ci local compile",
-        "/ci run next",
-        "/factory",
-        "/factory plan",
-        "/factory run",
-        "/factory status",
-        "/memory",
-        "/memory remember",
-        "/memory search",
-        "/swarm",
-        "/use",
-        "/verify"
-    )
+    private val commands: List<String> =
+        CommandRegistry.commands()
 
-    private val providers = listOf("anthropic", "groq", "openrouter", "deepinfra", "siliconflow", "gemini", "github_models", "cloudflare_ai", "cloudflare_workers", "jina", "serpapi", "supabase", "pinecone", "google_drive", "github_actions", "google_cloud_free", "huggingface", "fal", "replicate", "ollama", "openai", "xai")
+    private val providers: List<String> =
+        CommandRegistry.providers
 
-    fun complete(buffer: String, cursor: Int): Completion {
-        val position = cursor.coerceIn(0, buffer.length)
-        val prefix = buffer.substring(0, position)
+    fun complete(
+        buffer: String,
+        cursor: Int,
+        selectedIndex: Int = 0
+    ): Completion {
+        val position = cursor.coerceIn(
+            0,
+            buffer.length
+        )
+        val prefix = buffer.substring(
+            0,
+            position
+        )
 
-        if (prefix.startsWith("/") && prefix.none(Char::isWhitespace)) return select(prefix, commands)
+        if (
+            prefix.startsWith("/") &&
+            prefix.none(Char::isWhitespace)
+        ) {
+            return select(
+                prefix,
+                commands,
+                selectedIndex,
+                fuzzy = true
+            )
+        }
 
         if (prefix.startsWith("/verify ")) {
-            val scopePrefix = prefix.removePrefix("/verify ")
-            if (scopePrefix.none(Char::isWhitespace)) return select(scopePrefix, listOf("narrow", "wide"))
+            val scopePrefix =
+                prefix.removePrefix("/verify ")
+
+            if (scopePrefix.none(Char::isWhitespace)) {
+                return select(
+                    scopePrefix,
+                    listOf("narrow", "wide"),
+                    selectedIndex
+                )
+            }
         }
 
         if (prefix.startsWith("/use ")) {
-            val providerPrefix = prefix.removePrefix("/use ")
-            if (providerPrefix.none(Char::isWhitespace)) return select(providerPrefix, providers)
+            val providerPrefix =
+                prefix.removePrefix("/use ")
+
+            if (providerPrefix.none(Char::isWhitespace)) {
+                return select(
+                    providerPrefix,
+                    providers,
+                    selectedIndex,
+                    fuzzy = true
+                )
+            }
         }
 
-        return completePath(prefix)
+        return completePath(
+            prefix,
+            selectedIndex
+        )
     }
 
-    private fun completePath(prefix: String): Completion {
+    private fun completePath(
+        prefix: String,
+        selectedIndex: Int
+    ): Completion {
         val marker = prefix.lastIndexOf('@')
         if (marker < 0) return Completion()
 
         val fragment = prefix.substring(marker + 1)
-        if (fragment.any(Char::isWhitespace)) return Completion()
+        if (fragment.any(Char::isWhitespace)) {
+            return Completion()
+        }
 
         val slash = fragment.lastIndexOf('/')
-        val parent = if (slash >= 0) fragment.substring(0, slash + 1) else ""
-        val namePrefix = if (slash >= 0) fragment.substring(slash + 1) else fragment
-        val directory = root.resolve(parent.ifEmpty { "." }).normalize()
+        val parent =
+            if (slash >= 0) fragment.substring(0, slash + 1)
+            else ""
 
-        if (!directory.startsWith(root) || !Files.isDirectory(directory)) return Completion()
+        val namePrefix =
+            if (slash >= 0) fragment.substring(slash + 1)
+            else fragment
+
+        val directory =
+            root.resolve(parent.ifEmpty { "." }).normalize()
+
+        if (
+            !directory.startsWith(root) ||
+            !Files.isDirectory(directory)
+        ) {
+            return Completion()
+        }
 
         val stream = try {
             Files.list(directory)
@@ -125,31 +123,86 @@ class CommandCompleter(
             stream.map { path ->
                 val name = path.fileName.toString()
                 if (Files.isDirectory(path)) "$name/" else name
-            }.filter { it.startsWith(namePrefix) }
-                .sorted()
-                .toList()
+            }.filter {
+                it.startsWith(namePrefix)
+            }.sorted().toList()
         } finally {
             stream.close()
         }
 
-        return select(namePrefix, candidates)
+        return select(
+            namePrefix,
+            candidates,
+            selectedIndex
+        )
     }
 
-    private fun select(prefix: String, values: List<String>): Completion {
-        val matches = values.filter { it.startsWith(prefix) }
+    private fun select(
+        prefix: String,
+        values: List<String>,
+        selectedIndex: Int = 0,
+        fuzzy: Boolean = false
+    ): Completion {
+        val matches = values.filter {
+            it.startsWith(prefix) ||
+                (
+                    fuzzy &&
+                        it.contains(
+                            prefix,
+                            ignoreCase = true
+                        )
+                    )
+        }
+
         if (matches.isEmpty()) return Completion()
 
-        val common = matches.drop(1).fold(matches.first()) { left, right -> commonPrefix(left, right) }
-        if (common.length <= prefix.length) return Completion()
+        val selected =
+            selectedIndex.coerceIn(0, matches.lastIndex)
 
-        val insertion = common.substring(prefix.length)
-        return Completion(insertion, insertion)
+        val common = matches.drop(1).fold(matches.first()) {
+                left,
+                right ->
+
+            commonPrefix(left, right)
+        }
+
+        val target =
+            if (
+                common.length > prefix.length &&
+                matches.all { it.startsWith(prefix) }
+            ) {
+                common
+            } else {
+                matches[selected]
+            }
+
+        val insertion =
+            target.substring(
+                prefix.length.coerceAtMost(target.length)
+            )
+
+        return Completion(
+            insertion = insertion,
+            preview = insertion,
+            selectedIndex = selected,
+            options = matches
+        )
     }
 
-    private fun commonPrefix(left: String, right: String): String {
+    private fun commonPrefix(
+        left: String,
+        right: String
+    ): String {
         val limit = minOf(left.length, right.length)
         var index = 0
-        while (index < limit && left[index] == right[index]) index++
+
+        while (
+            index < limit &&
+            left[index] == right[index]
+        ) {
+            index++
+        }
+
         return left.substring(0, index)
     }
 }

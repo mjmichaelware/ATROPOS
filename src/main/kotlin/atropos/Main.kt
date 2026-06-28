@@ -4,7 +4,11 @@ package atropos
 import atropos.cli.CommandRouter
 import atropos.cli.RouterOutcome
 import atropos.cli.config.ConfigurationManager
-import atropos.cli.input.*
+import atropos.cli.input.CommandCompleter
+import atropos.cli.input.PromptEffect
+import atropos.cli.input.PromptState
+import atropos.cli.input.RawKeyReader
+import atropos.cli.input.TerminalModeManager
 import atropos.cli.session.QuotaSessionTracker
 import atropos.cli.ui.AnsiTerminalEngine
 import atropos.core.AtroposConfig
@@ -60,15 +64,34 @@ private fun runInteractive(
         FileInputStream("/dev/tty").use { input ->
             val keys = RawKeyReader(input)
 
+            fun completionForPrompt() =
+                completer.complete(
+                    prompt.text,
+                    prompt.cursor,
+                    prompt.suggestionSelection()
+                )
+
             fun redraw() {
-                val completion = completer.complete(prompt.text, prompt.cursor)
+                val completion = completionForPrompt()
+                prompt.clampSuggestionSelection(
+                    if (completion.options.isEmpty()) 0
+                    else completion.options.lastIndex
+                )
+
+                val selected = completer.complete(
+                    prompt.text,
+                    prompt.cursor,
+                    prompt.suggestionSelection()
+                )
+
                 ui.redrawPrompt(
                     buffer = prompt.text,
                     cursor = prompt.cursor,
-                    suggestion = completion.preview,
+                    suggestion = selected.preview,
                     inputMode = prompt.mode.name,
                     provider = router.currentProviderName,
-                    tracker = tracker
+                    tracker = tracker,
+                    paletteSelection = selected.selectedIndex
                 )
             }
 
@@ -82,12 +105,15 @@ private fun runInteractive(
 
                 when {
                     effect is PromptEffect.Complete -> {
-                        val completion = completer.complete(
-                            prompt.text,
-                            prompt.cursor
+                        val completion = completionForPrompt()
+                        prompt.clampSuggestionSelection(
+                            if (completion.options.isEmpty()) 0
+                            else completion.options.lastIndex
                         )
-                        if (completion.insertion.isNotEmpty()) {
-                            prompt.insert(completion.insertion)
+
+                        val selected = completionForPrompt()
+                        if (selected.insertion.isNotEmpty()) {
+                            prompt.insert(selected.insertion)
                         }
                         redraw()
                     }
