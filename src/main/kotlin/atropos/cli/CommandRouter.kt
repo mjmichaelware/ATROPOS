@@ -183,6 +183,11 @@ class CommandRouter(
                 RouterOutcome.CONTINUE
             }
 
+            "/dashboard" -> {
+                uiEngine.renderStatusMatrix(config, activeProvider.name)
+                RouterOutcome.CONTINUE
+            }
+
             "/status" -> {
                 val statusRenderer = atropos.cli.ui.StatusQuotaRenderer()
                 when (tokens.getOrNull(1)?.lowercase()) {

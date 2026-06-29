@@ -5,11 +5,14 @@ import atropos.cli.CommandRouter
 import atropos.cli.RouterOutcome
 import atropos.cli.config.ConfigurationManager
 import atropos.cli.input.CommandCompleter
+import atropos.cli.input.KeyEvent
 import atropos.cli.input.PromptEffect
 import atropos.cli.input.PromptState
 import atropos.cli.input.RawKeyReader
 import atropos.cli.input.TerminalModeManager
 import atropos.cli.session.QuotaSessionTracker
+import atropos.cli.session.ScreenId
+import atropos.cli.session.SessionTabs
 import atropos.cli.ui.AnsiTerminalEngine
 import atropos.core.AtroposConfig
 import java.io.FileInputStream
@@ -54,6 +57,10 @@ private fun runInteractive(
     val completer = CommandCompleter(
         java.nio.file.Path.of(capabilities.workspace)
     )
+    val tabs = SessionTabs(
+        initialProvider = router.currentProviderName,
+        initialWorkingDirectory = capabilities.workspace
+    )
 
     ui.initializeReactive()
     ui.renderWelcome(config, router.currentProviderName)
@@ -71,6 +78,14 @@ private fun runInteractive(
                     prompt.suggestionSelection()
                 )
 
+            fun preserveTabState() {
+                tabs.preservePrompt(
+                    buffer = prompt.text,
+                    cursor = prompt.cursor,
+                    selectedSuggestion = prompt.suggestionSelection()
+                )
+            }
+
             fun redraw() {
                 val completion = completionForPrompt()
                 prompt.clampSuggestionSelection(
@@ -84,14 +99,18 @@ private fun runInteractive(
                     prompt.suggestionSelection()
                 )
 
+                preserveTabState()
+
                 ui.redrawPrompt(
                     buffer = prompt.text,
                     cursor = prompt.cursor,
                     suggestion = selected.preview,
                     inputMode = prompt.mode.name,
-                    provider = router.currentProviderName,
+                    provider = tabs.active.provider,
                     tracker = tracker,
-                    paletteSelection = selected.selectedIndex
+                    paletteSelection = selected.selectedIndex,
+                    activeScreen = tabs.active.screen.title,
+                    activeTab = "tab ${tabs.active.id}"
                 )
             }
 
@@ -101,6 +120,35 @@ private fun runInteractive(
                 val key = keys.readKey() ?: break
                 val submitted = prompt.text
                 val submittedMode = prompt.mode.name
+
+                when (key) {
+                    KeyEvent.CtrlT -> {
+                        preserveTabState()
+                        tabs.openTab(
+                            screen = ScreenId.CHAT,
+                            provider = router.currentProviderName,
+                            workingDirectory = tabs.active.workingDirectory
+                        )
+                        ui.renderNotice(
+                            "tab ${tabs.active.id}: ${tabs.active.title}"
+                        )
+                        redraw()
+                        continue@inputLoop
+                    }
+
+                    KeyEvent.CtrlTab -> {
+                        preserveTabState()
+                        tabs.switchNext()
+                        ui.renderNotice(
+                            "tab ${tabs.active.id}: ${tabs.active.title}"
+                        )
+                        redraw()
+                        continue@inputLoop
+                    }
+
+                    else -> Unit
+                }
+
                 val effect = prompt.apply(key)
 
                 when {
@@ -125,6 +173,7 @@ private fun runInteractive(
                                 break@inputLoop
                             }
                         }
+                        tabs.switchTo(ScreenId.DASHBOARD)
                         redraw()
                     }
 

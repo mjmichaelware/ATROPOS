@@ -19,5 +19,7 @@ data class SessionPresentationState(
     val tokens: MetricValue,
     val cost: MetricValue,
     val activeOperation: String?,
-    val repository: RepositoryState = RepositoryState.unknown()
+    val repository: RepositoryState = RepositoryState.unknown(),
+    val activeScreen: String = "Dashboard",
+    val activeTab: String = "tab 1"
 )

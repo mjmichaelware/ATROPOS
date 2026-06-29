@@ -29,6 +29,8 @@ sealed class KeyEvent {
     object CtrlC : KeyEvent()
     object CtrlD : KeyEvent()
     object CtrlR : KeyEvent()
+    object CtrlT : KeyEvent()
+    object CtrlTab : KeyEvent()
     object ArrowLeft : KeyEvent()
     object ArrowRight : KeyEvent()
     object ArrowUp : KeyEvent()
@@ -84,6 +86,7 @@ class RawKeyReader(
             3 -> KeyEvent.CtrlC
             4 -> KeyEvent.CtrlD
             18 -> KeyEvent.CtrlR
+            20 -> KeyEvent.CtrlT
             9 -> KeyEvent.Tab
             10, 13 -> KeyEvent.Enter
             8, 127 -> KeyEvent.Backspace
@@ -162,6 +165,9 @@ class RawKeyReader(
 
                     "3~" -> KeyEvent.Delete
                     "Z" -> KeyEvent.ShiftTab
+                    "9;5u", "27;5;9~", "1;5I" ->
+                        KeyEvent.CtrlTab
+
                     "200~" -> parseBracketedPaste()
 
                     else ->

@@ -9,6 +9,7 @@ data class CommandEntry(
 object CommandRegistry {
     val entries: List<CommandEntry> = listOf(
         CommandEntry("/help", "commands"),
+        CommandEntry("/dashboard", "return to dashboard"),
         CommandEntry("/status", "session status"),
         CommandEntry("/status adapters", "provider adapter matrix"),
         CommandEntry("/status assets", "asset route status"),

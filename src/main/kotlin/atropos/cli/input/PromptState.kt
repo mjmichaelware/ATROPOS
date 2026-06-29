@@ -187,6 +187,12 @@ class PromptState(
                 PromptEffect.Redraw
             }
 
+            KeyEvent.CtrlT ->
+                PromptEffect.None
+
+            KeyEvent.CtrlTab ->
+                PromptEffect.None
+
             KeyEvent.Escape -> {
                 slashDismissed = true
                 slashSelection = 0

@@ -54,15 +54,19 @@ class StatusBarRenderer(
         val tokens = state.tokens.text()
         val cost = state.cost.text()
         val workspace = TerminalText.compactPath(state.workspace)
+        val tab = TerminalText.sanitize(state.activeTab)
+        val screen = TerminalText.sanitize(state.activeScreen)
+        val tabScreen = "$tab:$screen"
         val operation = state.activeOperation
             ?.let(TerminalText::sanitize)
             ?.takeIf(String::isNotBlank)
             ?.let { "op:$it" }
 
         val selected = listOf(
-            listOfNotNull("ATROPOS", provider, mode, "$tokens tok", cost, workspace, operation),
-            listOfNotNull(provider, mode, "$tokens tok", workspace, operation),
-            listOf(provider, mode, "$tokens tok"),
+            listOfNotNull("ATROPOS", provider, mode, tabScreen, "$tokens tok", cost, workspace, operation),
+            listOfNotNull(provider, mode, tabScreen, "$tokens tok", workspace, operation),
+            listOfNotNull(provider, mode, tabScreen, "$tokens tok"),
+            listOf(provider, mode, tabScreen),
             listOf(provider, mode)
         ).map { it.joinToString(" · ") }
             .firstOrNull { TerminalText.cellWidth(" $it") <= safeWidth }

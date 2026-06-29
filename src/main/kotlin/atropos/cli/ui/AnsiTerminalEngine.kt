@@ -83,6 +83,8 @@ class AnsiTerminalEngine(
     private var activity: String? = null
     private var verificationState:
         String? = null
+    private var activeScreen = "Dashboard"
+    private var activeTab = "tab 1"
 
     @Synchronized
     fun initializeReactive(
@@ -137,11 +139,15 @@ class AnsiTerminalEngine(
         inputMode: String,
         provider: String,
         tracker: QuotaSessionTracker,
-        paletteSelection: Int = 0
+        paletteSelection: Int = 0,
+        activeScreen: String = "Dashboard",
+        activeTab: String = "tab 1"
     ) {
         this.mode = inputMode
         this.provider = provider
         this.tracker = tracker
+        this.activeScreen = activeScreen
+        this.activeTab = activeTab
 
         composer.update(
             buffer = buffer,
@@ -166,7 +172,9 @@ class AnsiTerminalEngine(
         mode,
         provider,
         tracker,
-        0
+        0,
+        activeScreen,
+        activeTab
     )
 
     @Synchronized
@@ -440,7 +448,9 @@ class AnsiTerminalEngine(
             tracker = tracker,
             activity = activity,
             verificationState =
-                verificationState
+                verificationState,
+            activeScreen = activeScreen,
+            activeTab = activeTab
         )
 
         canvas.render(frame)

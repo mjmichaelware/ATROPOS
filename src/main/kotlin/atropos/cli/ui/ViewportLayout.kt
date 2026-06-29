@@ -21,7 +21,9 @@ class ViewportLayout(
         workspace: String,
         tracker: QuotaSessionTracker,
         activity: String?,
-        verificationState: String?
+        verificationState: String?,
+        activeScreen: String = "Dashboard",
+        activeTab: String = "tab 1"
     ): ScreenFrame {
         val safeWidth = width.coerceIn(36, 160)
         val safeHeight = height.coerceAtLeast(12)
@@ -38,7 +40,9 @@ class ViewportLayout(
                 ?.let { MetricValue.Known("$" + String.format("%.4f", it)) }
                 ?: MetricValue.Unknown,
             activeOperation = operation,
-            repository = workspaceInspector.inspect(workspace)
+            repository = workspaceInspector.inspect(workspace),
+            activeScreen = activeScreen,
+            activeTab = activeTab
         )
 
         frame.setLine(0, statusBar.header(state, safeWidth))
