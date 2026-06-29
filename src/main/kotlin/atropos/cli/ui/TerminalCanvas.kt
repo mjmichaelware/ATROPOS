@@ -64,7 +64,7 @@ class SttyTerminalGeometryProvider :
 
         return TerminalGeometry(
             rows.coerceAtLeast(12),
-            columns.coerceIn(36, 160)
+            columns.coerceAtLeast(36)
         )
     }
 }

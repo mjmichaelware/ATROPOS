@@ -25,7 +25,7 @@ class ViewportLayout(
         activeScreen: String = "Dashboard",
         activeTab: String = "tab 1"
     ): ScreenFrame {
-        val safeWidth = width.coerceIn(36, 160)
+        val safeWidth = width.coerceAtLeast(36)
         val safeHeight = height.coerceAtLeast(12)
         val frame = ScreenFrame(safeWidth, safeHeight)
         val operation = activity?.let(TerminalText::stripAnsi) ?: verificationState

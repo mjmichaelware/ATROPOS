@@ -35,15 +35,15 @@ class LandingRenderer(
         )
 
         out += when {
-            width >= 132 -> columns(panels, 4, width)
-            width >= 88 -> columns(panels, 3, width)
-            width >= 64 -> columns(panels, 2, width)
+            width >= 140 -> columns(panels, 4, width)
+            width >= 100 -> columns(panels, 3, width)
+            width >= 60 -> columns(panels, 2, width)
             else -> panels.flatten()
         }
 
         out += actionRail(width)
 
-        while (out.size < targetHeight) out += filler(out.size, width)
+        out += lowerPanels(state, truth, width, targetHeight - out.size)
         return out.take(targetHeight)
     }
 
@@ -218,11 +218,88 @@ class LandingRenderer(
         return output
     }
 
-    private fun filler(index: Int, width: Int): String =
-        when (index % 4) {
-            0 -> theme.subdued("· ".repeat((width / 2).coerceAtLeast(18)))
-            1 -> theme.metadata("ready") + theme.subdued(" · local root · quota ledger · route policy · provider descriptors")
-            2 -> theme.subdued("truthful empty-space fill: no synthetic workers, no fake progress")
-            else -> ""
+    private fun lowerPanels(
+        state: SessionPresentationState,
+        truth: WorkbenchTruth,
+        width: Int,
+        availableRows: Int
+    ): List<String> {
+        if (availableRows <= 0) return emptyList()
+
+        val panels = listOf(
+            usefulPanel(
+                "RECENT COMMANDS",
+                state.commands.ifEmpty {
+                    listOf("/dashboard", "/status", "/providers", "/route")
+                }.take(4)
+            ),
+            usefulPanel(
+                "ROUTE TRACE",
+                listOf(
+                    "provider ${state.provider.lowercase()}",
+                    "screen ${state.activeScreen.lowercase()}",
+                    state.activeOperation ?: "operation ready"
+                )
+            ),
+            usefulPanel(
+                "PROVIDER HEALTH",
+                truth.providers.take(4).map { provider ->
+                    val status = when {
+                        provider.configured -> "configured"
+                        provider.implemented -> "missing key"
+                        else -> "not installed"
+                    }
+                    "${provider.name} $status"
+                }
+            ),
+            usefulPanel(
+                "TAB ACTIVITY",
+                listOf(
+                    state.activeTab,
+                    state.activeScreen,
+                    "prompt preserved across redraw"
+                )
+            )
+        )
+
+        val rows = when {
+            width < 60 -> panels.flatten()
+            width < 100 -> compactColumns(panels, 2, width)
+            else -> compactColumns(panels, 4, width)
         }
+
+        return rows.take(availableRows)
+    }
+
+    private fun usefulPanel(title: String, rows: List<String>): List<String> =
+        listOf(theme.brand("[" + title + "]")) +
+            rows.map {
+                theme.metadata("  ") + TerminalText.sanitize(it)
+            }
+
+    private fun compactColumns(
+        panels: List<List<String>>,
+        count: Int,
+        width: Int
+    ): List<String> {
+        val columnWidth = (width / count).coerceAtLeast(20)
+        val output = mutableListOf<String>()
+
+        panels.chunked(count).forEach { group ->
+            val height = group.maxOf { it.size }
+            for (rowIndex in 0 until height) {
+                output += group.joinToString("") { panel ->
+                    TerminalText.padEnd(
+                        TerminalText.ellipsize(
+                            panel.getOrElse(rowIndex) { "" },
+                            columnWidth - 1
+                        ),
+                        columnWidth
+                    )
+                }.trimEnd()
+            }
+        }
+
+        return output
+    }
 }
