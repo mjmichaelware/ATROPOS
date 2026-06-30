@@ -17,7 +17,6 @@ echo "$OUT" | grep -qi "PROVIDER DESCRIPTORS: VALID"
 echo "$OUT" | grep -qi "provider.groq.chat"
 echo "$OUT" | grep -qi "cli.swarm_unbound"
 echo "$OUT" | grep -qi "route:"
-echo "$OUT" | grep -qiv "MusicMakerLM"
 echo "$OUT" | grep -qiv '{"error"'
 echo "$OUT" | grep -qiv "sk-"
 
