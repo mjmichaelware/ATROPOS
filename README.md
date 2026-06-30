@@ -61,22 +61,4 @@ This hierarchy keeps coordination cost linear with the number of active territor
 
 ---
 
-## Nano-Style Coherent Batch Discipline
 
-ATROPOS development follows (and will enforce in autonomous mode) strict nano-style coherent batch rules:
-
-- One batch equals one architectural promise with a narrow purpose and clear rollback boundary.
-- Ideal batch size is 500–2,000 LOC that is topologically narrow and internally complete.
-- Compile slices, not the entire project after every edit.
-- No success echo unless the whole gate (compile + smoke) passes.
-- Every successful batch ends with compile success, smoke success, safe jar install, git commit, and context export.
-
-This discipline is what enables safe, high-throughput construction of a complex sovereign system while maintaining E(Δ)=0 safety at every boundary.
-
----
-
-**End of First Pass**
-
-Copy the content above and paste it as the new top of your README.md.  
-
-When you're ready for **Pass 2**, reply with “next pass” or tell me exactly what to add next (more providers, more sections, different image placement, etc.).
