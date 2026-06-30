@@ -292,3 +292,17 @@ By using explicit territory assignment, preventive Director-level monitoring, co
 It is designed to support long-duration, high-parallelism, deterministic, and verifiable autonomous software engineering work while remaining local-first and independent.
 
 **ATROPOS is independent. It is sovereign. It is deterministic. It is built to last.**
+
+---
+
+## Visual Overview
+
+![Main Hero Banner](docs/assets/imported/20260629_190733/image-14.jpg)
+
+![Hierarchy Overview](docs/assets/imported/20260629_190733/image-19.jpg)
+
+![Local-First Sovereign Concept](docs/assets/imported/20260629_190733/image-25.jpg)
+
+These visuals represent the core principles behind ATROPOS: strong E(Δ)=0 verification, clear hierarchical territory boundaries, and a local-first sovereign architecture.
+
+---
