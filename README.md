@@ -130,3 +130,58 @@ Structural verification (Tree-sitter + DLOI symbol graph) runs before any LLM es
 Persistent cognitive memory stores not only successful patches but also normalized failure signatures linked to specific DLOI addresses. This creates clean training signals for future self-improvement components.
 
 ---
+
+## Why the Hierarchical Territory Model Is Structurally Superior
+
+Most current coding agent systems (Codex CLI, Claude Code Agent Teams, Google Antigravity, OpenSwarm, AgentsMesh, and similar projects) have converged on the same coordination pattern: worktree isolation combined with LLM-mediated messaging (task lists, mailboxes, dynamic subagent spawning, and reviewer agents).
+
+This pattern creates several predictable problems at scale:
+
+- **Coordination cost grows super-linearly** with the number of agents and the length of the session. Every task claim, status update, conflict notification, and synthesis step consumes model context and tokens.
+- **Drift detection is reactive**. Problems are usually discovered after changes have already been made, either through reviewer agents or test failures.
+- **Global visibility is fragmented**. No single component holds a clean, up-to-date picture of all active work. Visibility is scattered across many LLM contexts.
+- **Information flow is uncontrolled**. Agents can request or receive information outside their intended scope, increasing hallucination surface and audit difficulty.
+- **Verification is post-hoc**. Most systems rely on LLM review or external harness code after work is already done.
+
+These are not minor implementation issues. They are direct consequences of choosing probabilistic generation for coordination, scope control, drift detection, and information routing — functions that should be narrow, deterministic, and inspectable state operations.
+
+ATROPOS takes the opposite approach. It moves coordination out of the LLM layer and into explicit, inspectable architecture:
+
+- Territory is assigned at dispatch time and stored with the task record.
+- A Director layer continuously inspects diffs from active worktrees against assigned territories at low computational cost.
+- Drift becomes visible the moment it appears, not after a reviewer agent or test failure.
+- The HR Router forces any cross-territory information request through policy checks, redaction, and logging.
+- Most agents never need to know what other agents are doing.
+
+This produces lower token cost per unit of engineering work, earlier and cheaper drift detection, concentrated global visibility, controlled information flow, and cleaner signals for any future self-improving components.
+
+---
+
+## Nano-Style Coherent Batch Discipline (Current Implementation)
+
+ATROPOS development follows a strict nano-style coherent batch discipline that will also govern autonomous operation in later phases.
+
+Core rules:
+- One batch equals one architectural promise with a narrow purpose and clear rollback boundary.
+- Ideal batch size is 500–2,000 LOC that is topologically narrow and internally complete.
+- Compile slices, not the entire project after every small edit.
+- No success signal unless the full gate (narrow compile + smoke) passes.
+- Every successful batch ends with compile success, smoke success, safe jar installation, git commit, and context export.
+
+This discipline is what makes it possible to safely construct a complex sovereign system at high throughput while maintaining E(Δ)=0 safety at every step. It turns implicit workflow hygiene into an enforceable architectural primitive.
+
+---
+
+## Current Termux-Native Reactive TUI
+
+ATROPOS already includes a fully reactive terminal interface built specifically for Termux constraints:
+
+- Persistent tabs and screens (Dashboard, Chat, Providers, Factory, Logs, Keys, Shell)
+- Command palette with fuzzy search and arrow navigation
+- Separate history lanes for prompts, slash commands, and shell commands
+- Responsive layout that reflows cleanly when terminal size changes (including Termux pinch-zoom)
+- First-class shell bridge with timeout, cwd state, redaction, and allowlisting
+- Provider and key doctor commands that report truthful state without leaking secrets
+
+The interface treats terminal size as live input and recomputes card layout, truncation rules, and lower-panel allocation on every redraw. This makes it genuinely usable on mobile Termux environments where font scale and screen size frequently change.
+
