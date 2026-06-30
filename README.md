@@ -185,3 +185,61 @@ ATROPOS already includes a fully reactive terminal interface built specifically 
 
 The interface treats terminal size as live input and recomputes card layout, truncation rules, and lower-panel allocation on every redraw. This makes it genuinely usable on mobile Termux environments where font scale and screen size frequently change.
 
+---
+
+## Deterministic Verification + DLOI Addressing
+
+ATROPOS uses DLOI (Dewey-style Ontological Addressing) so source documents and codebase symbols exist in one shared address space. Tasks can be routed to exact source sections and exact AST symbols without relying on cosine similarity or RAG guesswork.
+
+Structural verification runs before any LLM escalation. Using Tree-sitter and the DLOI symbol graph, the system checks:
+- Import consistency
+- Type and structure invariants
+- Known pattern violations in the codebase
+
+Only cases that cannot be resolved deterministically escalate to an LLM reviewer. This keeps verification reproducible and significantly reduces token spend on review.
+
+---
+
+## Persistent Cognitive Memory
+
+ATROPOS maintains persistent memory across sessions, including:
+- Batch records and task history
+- Normalized failure signatures (error patterns + the prompt/context that triggered them)
+- DLOI-linked notes and observations
+- Successful repair patterns
+
+This memory is queryable by agents during planning. Workers can ask questions like “what did we try last time we touched the routing layer?” instead of starting from zero. Compaction policies prevent unbounded growth while preserving useful signals.
+
+This design creates much cleaner training data for any future self-improving components compared to diffuse multi-agent chat logs.
+
+---
+
+## Security & Redaction System
+
+ATROPOS runs a central redaction layer before any output reaches the UI, logs, prompts, diffs, history, or status screens. It redacts:
+- API keys and tokens
+- Bearer / OAuth credentials
+- Private keys and signed URLs
+- Full local credential paths
+- Raw provider auth payloads
+- Stack traces containing environment variables
+
+Secrets never appear in visible output, even in error paths. Redaction is applied consistently across the entire system rather than in scattered places.
+
+---
+
+## Current Capabilities Summary
+
+ATROPOS already delivers:
+- Strict hierarchical territory model with preventive drift detection
+- Director-level global visibility and diff monitoring
+- Controlled information flow through the HR Router
+- Full provider registry with 30+ agents and fixture-backed routing
+- Deterministic verification using Tree-sitter + DLOI before LLM escalation
+- Persistent cognitive memory with failure signatures
+- Reactive Termux TUI with responsive layout and shell bridge
+- Nano-style coherent batch discipline with E(Δ)=0 gates
+- Complete redaction and secret isolation
+
+All of this runs locally-first with a strong free-only default and explicit paid-emergency unlock only.
+
