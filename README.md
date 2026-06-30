@@ -243,3 +243,52 @@ ATROPOS already delivers:
 
 All of this runs locally-first with a strong free-only default and explicit paid-emergency unlock only.
 
+---
+
+## 20-Phase Blueprint Overview
+
+ATROPOS development follows a clear 20-phase blueprint. The system has completed foundational phases covering:
+
+- Provider activation and doctor tooling
+- Quota ledger and free-first routing
+- Secret handling and redaction hardening
+- Deterministic verification and DLOI addressing
+- Persistent memory and cognitive state
+- Reactive Termux TUI with responsive layout
+- Nano-style coherent batch discipline with E(Δ)=0 gates
+
+Later phases focus on expanding hierarchy enforcement, self-build loops, multimodal capabilities, and full autonomous operation while preserving the same gated, verifiable process used to reach the current state.
+
+---
+
+## Current Status (Post-Pass-4)
+
+ATROPOS currently includes a working reactive Termux TUI, complete provider routing with 30+ agents, deterministic verification foundation, persistent memory, central redaction, and strict nano-batch discipline. All work is executed through gated passes with context export after every success.
+
+**Pass 5 (In Progress)** focuses on final provider activation tooling:
+- `/keys doctor` with truthful state reporting
+- Provider verification commands (single and bulk)
+- Opt-in live testing
+- Clear activation state rendering (configured / verified / rate-limited / invalid / locked)
+
+---
+
+## Independence & License
+
+ATROPOS is released under the **GNU Affero General Public License v3.0 (AGPL-3.0-only)**.
+
+It is fully independent and not affiliated with OpenAI, Anthropic, Google, xAI, Groq, or any other provider company. Providers function as interchangeable reasoning backends. ATROPOS owns routing, memory, verification, tools, files, policy, secrets, execution, and acceptance.
+
+The architecture deliberately avoids hard dependencies on any single remote service. All development follows source document authority and the 20-phase blueprint.
+
+---
+
+## Closing Statement
+
+ATROPOS represents a deliberate architectural departure from the dominant pattern of chatty, LLM-mediated multi-agent systems.
+
+By using explicit territory assignment, preventive Director-level monitoring, controlled information flow through the HR Router, deterministic verification, and nano-style coherent batch discipline, it directly addresses the structural contradictions that limit current tools at scale.
+
+It is designed to support long-duration, high-parallelism, deterministic, and verifiable autonomous software engineering work while remaining local-first and independent.
+
+**ATROPOS is independent. It is sovereign. It is deterministic. It is built to last.**
