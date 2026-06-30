@@ -61,4 +61,72 @@ This hierarchy keeps coordination cost linear with the number of active territor
 
 ---
 
+## What ATROPOS Actually Is Right Now
 
+ATROPOS is a local-first, deterministic, multi-provider, multi-agent software-development engine and sovereign CLI/TUI control plane. It is not a chat wrapper. It is not a thin orchestration layer. It owns routing, memory, verification, tools, files, policy, secrets, execution, and acceptance.
+
+The system is built around a strict hierarchical territory model. Work is dispatched with explicit allowed paths (territory). A Director layer continuously monitors diffs from active worktrees against those territories for preventive drift detection. Most agents operate strictly inside their assigned territory and do not need visibility into other agents’ work. Cross-boundary information requests are forced through a single auditable HR Router that applies redaction and scope validation.
+
+ATROPOS already includes:
+- A complete provider descriptor registry with 30+ providers
+- RoutePolicy and SQLite-backed QuotaLedger for free-first routing that does not collapse
+- Central redaction that runs before UI rendering, logs, prompts, diffs, and status output
+- Deterministic verification foundation using Tree-sitter and DLOI addressing
+- Persistent cognitive memory (batch records, failure signatures, DLOI-linked notes)
+- Reactive Termux-native TUI with persistent tabs, command palette, history navigation, and responsive layout that reflows on pinch-zoom
+
+All development follows a strict nano-style coherent batch discipline with E(Δ)=0 gates. Every batch must pass narrow compile + smoke before widening. Context is exported after every successful gated pass.
+
+---
+
+## Full Provider Registry (30+ Agents & Capabilities)
+
+ATROPOS maintains a validated registry of over 30 providers used across different task types:
+
+**Free / Cooldown Eligible (Strongly Preferred)**
+- groq — Chat, Code, Repair, Plan
+- openrouter — Chat, Code, Repair, Plan
+- gemini — Chat, Plan, Large Context, Vision
+- github_models — Chat, Code, Plan, CI
+- cloudflare_ai — Chat, Embed, Edge
+- jina — Reader, Web, Embed
+- huggingface — Chat, Embed, Vision, Asset
+- deepinfra — Chat, Code, Repair, Embed
+- siliconflow — Chat, Code, Asset
+- nvidia — Chat, Code, Repair
+- sambanova — Chat, Code, Repair
+- cerebras — Chat, Code, Repair
+
+**Credit Pool**
+- fal — Asset, Vision
+- replicate — Asset, Vision
+
+**Paid Locked (Require Explicit Unlock)**
+- anthropic — Chat, Code, Repair, Plan, Large Context
+- openai — Chat, Code, Repair, Plan, Vision, Embed
+- xai — Chat, Plan
+- deepseek_direct — Chat, Code, Repair
+- cohere — Chat, Plan, Embed
+- mistral — Chat, Code, Repair
+
+**Infrastructure & Specialized**
+- serpapi — Web search
+- supabase — Database, Vector DB, Edge, Storage
+- pinecone — Vector DB
+- github_actions — CI, Edge
+- google_cloud_free — Secret, Storage, Edge
+- ollama — Local fallback (when available)
+
+Every provider has success, auth-failure, rate-limit, malformed, timeout, and dry-run fixtures. RoutePolicy explains exactly why a provider was chosen or skipped. QuotaLedger + cooldown tracking prevents collapse during long-running work.
+
+---
+
+## Deterministic Verification & DLOI Addressing
+
+ATROPOS uses DLOI (Dewey-style Ontological Addressing) so source documents and codebase symbols share one address space. The system can route tasks to exact source sections and exact AST symbols without cosine-RAG guesswork.
+
+Structural verification (Tree-sitter + DLOI symbol graph) runs before any LLM escalation. Import consistency, type/structure invariants, and known pattern violations are checked deterministically. Only inconclusive cases escalate to an LLM reviewer. This keeps verification reproducible and reduces token spend on review.
+
+Persistent cognitive memory stores not only successful patches but also normalized failure signatures linked to specific DLOI addresses. This creates clean training signals for future self-improvement components.
+
+---
