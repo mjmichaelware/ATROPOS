@@ -4,6 +4,7 @@ import atropos.cli.ui.AnsiTerminalEngine
 import atropos.core.AtroposConfig
 import atropos.core.agent.AgentPatchExtractor
 import atropos.core.agent.AgentService
+import atropos.core.agent.AgentRunService
 import java.nio.file.Files
 
 sealed class AgentCommandOutcome {
@@ -19,7 +20,8 @@ class AgentCommand(
     private val ui: AnsiTerminalEngine,
     private val config: AtroposConfig = AtroposConfig.load(),
     private val activeProviderName: () -> String,
-    private val service: AgentService = AgentService(config)
+    private val service: AgentService = AgentService(config),
+    private val runService: AgentRunService = AgentRunService(config)
 ) : AgentCommandHandler {
     private val patchExtractor = AgentPatchExtractor()
 
@@ -29,14 +31,55 @@ class AgentCommand(
 
     override fun execute(tokens: List<String>): AgentCommandOutcome {
         if (tokens.size < 2) {
-            return invalid("usage: /agent [status|ask <task>|patch [--provider <name>] <task>|apply [--check|--verify] <patch-id|latest>|verify [<patch-id|latest>]|repair [<patch-id|latest>]]")
+            return invalid("usage: /agent [status|run <task>|jobs|job <id>|ask <task>|patch [--provider <name>] <task>|apply [--check|--verify] <patch-id|latest>|verify [<patch-id|latest>]|repair [<patch-id|latest>]]")
         }
 
         return when (tokens[1].lowercase()) {
+            "run" -> {
+                val task = tokens.drop(2).joinToString(" ").trim()
+                if (task.isBlank()) {
+                    return invalid("usage: /agent run <task>")
+                }
+
+                ui.startSpinner("Planning durable agent job")
+                return try {
+                    val result = runService.run(activeProviderName(), task)
+                    lastKnownPatchId = result.appliedPatchId ?: result.patchId ?: lastKnownPatchId
+                    val rendered = formatBlock("AGENT RUN", result.render())
+                    ui.renderNotice(rendered)
+                    AgentCommandOutcome.Completed(rendered)
+                } catch (failure: Exception) {
+                    val message = failure.message ?: "agent run failed"
+                    ui.renderError(message)
+                    AgentCommandOutcome.Invalid(message)
+                } finally {
+                    ui.stopSpinner()
+                }
+            }
+
             "status" -> {
                 val snapshot = service.status(activeProviderName())
                 lastKnownPatchId = snapshot.lastPatchId ?: lastKnownPatchId
                 val rendered = formatBlock("AGENT STATUS", snapshot.render())
+                ui.renderNotice(rendered)
+                AgentCommandOutcome.Completed(rendered)
+            }
+
+            "jobs" -> {
+                val rendered = formatBlock("AGENT JOBS", runService.renderJobs())
+                ui.renderNotice(rendered)
+                AgentCommandOutcome.Completed(rendered)
+            }
+
+            "job" -> {
+                val jobReference = parseReference(tokens.drop(2))
+                if (jobReference == null) {
+                    return invalid("usage: /agent job [<id|latest>]")
+                }
+
+                val job = runService.resolveJob(jobReference)
+                    ?: return invalid("job not found: $jobReference")
+                val rendered = formatBlock("AGENT JOB", job.render())
                 ui.renderNotice(rendered)
                 AgentCommandOutcome.Completed(rendered)
             }
@@ -197,7 +240,7 @@ class AgentCommand(
                 }
             }
 
-            else -> invalid("usage: /agent [status|ask <task>|patch [--provider <name>] <task>|apply [--check|--verify] <patch-id|latest>|verify [<patch-id|latest>]|repair [<patch-id|latest>]]")
+            else -> invalid("usage: /agent [status|run <task>|jobs|job <id>|ask <task>|patch [--provider <name>] <task>|apply [--check|--verify] <patch-id|latest>|verify [<patch-id|latest>]|repair [<patch-id|latest>]]")
         }
     }
 
