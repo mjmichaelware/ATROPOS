@@ -201,6 +201,9 @@ class AgentService(
     fun repair(activeProviderName: String, patchReference: String): AgentPatchRunResult =
         repairService.repair(activeProviderName, patchReference)
 
+    fun previewRepair(patchReference: String): AgentPatchRunResult? =
+        repairService.previewRepair(patchReference)
+
     fun applyPatch(
         patchReference: String,
         checkOnly: Boolean,

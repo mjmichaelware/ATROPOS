@@ -90,6 +90,13 @@ class AgentCommand(
                     return invalid("usage: /agent repair [<patch-id|latest>]")
                 }
 
+                val preview = service.previewRepair(patchReference)
+                if (preview != null) {
+                    val rendered = formatBlock("AGENT REPAIR", preview.render())
+                    ui.renderNotice(rendered)
+                    return AgentCommandOutcome.Completed(rendered)
+                }
+
                 ui.startSpinner("Preparing repair patch")
                 return try {
                     val result = service.repair(activeProviderName(), patchReference)

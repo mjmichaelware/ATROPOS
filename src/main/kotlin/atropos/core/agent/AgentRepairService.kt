@@ -13,10 +13,24 @@ class AgentRepairService(
     private val verificationStore: AgentVerificationStore = AgentVerificationStore(collector.repoRoot),
     private val patchExtractor: AgentPatchExtractor = AgentPatchExtractor()
 ) {
+    fun previewRepair(patchReference: String): AgentPatchRunResult? {
+        val patch = patchStore.resolvePatchSnapshot(patchReference)
+            ?: return noRepairTarget(patchId = null)
+
+        val verification = verificationStore.latestRecord(patch.id)
+            ?: return noRepairTarget(patchId = patch.id)
+
+        if (verification.passed) {
+            return noRepairTarget(patchId = patch.id)
+        }
+
+        return null
+    }
+
     fun repair(activeProviderName: String, patchReference: String): AgentPatchRunResult {
         val patch = patchStore.resolvePatchSnapshot(patchReference)
             ?: return AgentPatchRunResult(
-                providerName = "local_fallback",
+                providerName = "none",
                 contextByteCount = 0,
                 diffByteCount = 0,
                 patchId = null,
@@ -30,10 +44,10 @@ class AgentRepairService(
             )
 
         val verification = verificationStore.latestRecord(patch.id)
-            ?: return noRepairTarget(activeProviderName, patch.id)
+            ?: return noRepairTarget(patch.id)
 
         if (verification.passed) {
-            return noRepairTarget(activeProviderName, patch.id)
+            return noRepairTarget(patch.id)
         }
 
         val selection = selector.select(activeProviderName)
@@ -241,12 +255,12 @@ class AgentRepairService(
             responsePreview = responsePreview
         )
 
-    private fun noRepairTarget(activeProviderName: String, patchId: String): AgentPatchRunResult =
+    private fun noRepairTarget(patchId: String?): AgentPatchRunResult =
         AgentPatchRunResult(
-            providerName = activeProviderName,
+            providerName = "none",
             contextByteCount = 0,
             diffByteCount = 0,
-            patchId = null,
+            patchId = patchId,
             patchPath = null,
             checkResult = null,
             retryAttempted = false,
