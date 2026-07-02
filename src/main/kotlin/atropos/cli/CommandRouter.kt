@@ -3,6 +3,7 @@ package atropos.cli
 
 import atropos.cli.commands.VerifyCommand
 import atropos.cli.commands.VerifyCommandHandler
+import atropos.cli.commands.AgentCommand
 import atropos.cli.session.QuotaSessionTracker
 import atropos.cli.shell.ShellCommandRunner
 import atropos.cli.ui.AnsiTerminalEngine
@@ -35,6 +36,12 @@ class CommandRouter(
 
     var currentProviderName: String = activeProvider.name
         private set
+
+    private val agentCommand = AgentCommand(
+        ui = uiEngine,
+        config = config,
+        activeProviderName = { currentProviderName }
+    )
 
     internal fun lex(input: String): LexResult {
         val tokens = mutableListOf<String>()
@@ -238,6 +245,11 @@ class CommandRouter(
                     }
                     else -> uiEngine.renderNotice(ProviderDecisionEngine().providersReport(config))
                 }
+                RouterOutcome.CONTINUE
+            }
+
+            "/agent" -> {
+                agentCommand.execute(tokens)
                 RouterOutcome.CONTINUE
             }
 
@@ -455,7 +467,7 @@ class CommandRouter(
                 }
 
             val provider = providerResolver(routedProvider)
-            val response = provider.complete(prompt, "CLI Context")
+            val response = provider.complete(prompt, "")
             uiEngine.renderNotice(markdownRenderer.render(response))
         } catch (failure: Exception) {
             uiEngine.renderError(failure.message ?: "provider dispatch failed")

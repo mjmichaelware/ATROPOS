@@ -226,10 +226,11 @@ class ProviderCascadeRouter(
         requestedProvider: String,
         prompt: String,
         context: String,
+        providerOrderOverride: List<String>? = null,
         onFailure: (ProviderError) -> Unit = {}
     ): ProviderCascadeResult {
         val ollamaStatus = OllamaHealthProbe().probe()
-        val order = providerOrder(requestedProvider)
+        val order = providerOrder(requestedProvider, providerOrderOverride)
         val errors = mutableListOf<ProviderError>()
         val blocked = mutableSetOf<String>()
 
@@ -281,12 +282,21 @@ class ProviderCascadeRouter(
         throw RuntimeException(cleanAggregate)
     }
 
-    private fun providerOrder(requestedProvider: String): List<String> {
+    fun providerOrderPreview(requestedProvider: String, providerOrderOverride: List<String>? = null): List<String> =
+        providerOrder(requestedProvider, providerOrderOverride)
+
+    private fun providerOrder(requestedProvider: String, providerOrderOverride: List<String>? = null): List<String> {
+        if (!providerOrderOverride.isNullOrEmpty()) {
+            return providerOrderOverride.map { it.trim().lowercase() }
+                .filter { it.isNotBlank() }
+                .distinct()
+        }
+
         val configured = System.getenv("ATROPOS_PROVIDER_ORDER")
             ?.split(",")
             ?.map { it.trim().lowercase() }
             ?.filter { it.isNotBlank() }
-            ?: listOf("groq", "openai", "anthropic", "xai", "ollama")
+            ?: listOf("groq", "github_models", "cloudflare_ai", "ollama")
 
         return (listOf(requestedProvider.lowercase()) + configured)
             .filter {
@@ -295,6 +305,10 @@ class ProviderCascadeRouter(
                     "openai",
                     "anthropic",
                     "xai",
+                    "github_models",
+                    "cloudflare_ai",
+                    "sambanova",
+                    "deepseek_direct",
                     "ollama"
                 )
             }

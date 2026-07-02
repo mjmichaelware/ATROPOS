@@ -24,3 +24,6 @@ data/cache/
 tmp-*.jar
 
 .atropos/
+.atropos/secrets/
+.atropos/config.json
+.env.atropos

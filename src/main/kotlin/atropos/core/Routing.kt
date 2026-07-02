@@ -30,7 +30,11 @@ class ProviderDecisionEngine {
                 "groq" to config.keys.groq.isNotBlank(),
                 "openai" to config.keys.openai.isNotBlank(),
                 "anthropic" to config.keys.anthropic.isNotBlank(),
-                "xai" to config.keys.xai.isNotBlank()
+                "xai" to config.keys.xai.isNotBlank(),
+                "github_models" to envConfigured("GITHUB_MODELS_TOKEN"),
+                "cloudflare_ai" to (envConfigured("CLOUDFLARE_API_TOKEN") && envConfigured("CLOUDFLARE_ACCOUNT_ID")),
+                "sambanova" to envConfigured("SAMBANOVA_API_KEY"),
+                "deepseek_direct" to envConfigured("DEEPSEEK_API_KEY")
             ),
             ollama = OllamaHealthProbe().probe()
         )
@@ -58,35 +62,38 @@ class ProviderDecisionEngine {
             TaskClass.PRIVACY_LOCAL -> RouteDecision("ollama", task, "privacy/local request")
             TaskClass.VERIFY_OR_BUILD -> RouteDecision("ollama", task, "local verifier/build should run before paid LLM")
             TaskClass.VISION_OR_MULTIMODAL -> when {
-                ok("openai") -> RouteDecision("openai", task, "vision-capable cloud route")
+                ok("github_models") -> RouteDecision("github_models", task, "free cloud route")
+                ok("cloudflare_ai") -> RouteDecision("cloudflare_ai", task, "free cloud route")
                 else -> RouteDecision("ollama", task, "no implemented vision provider selected; local fallback")
             }
             TaskClass.CHEAP_FAST -> when {
                 ok("groq") -> RouteDecision("groq", task, "fast/cheap cloud key configured")
-                ok("openai") -> RouteDecision("openai", task, "cloud fallback configured")
+                ok("github_models") -> RouteDecision("github_models", task, "free cloud fallback configured")
+                ok("cloudflare_ai") -> RouteDecision("cloudflare_ai", task, "free cloud fallback configured")
                 else -> RouteDecision("ollama", task, "no fast cloud key available")
             }
             TaskClass.SMALL_CHAT -> when {
                 ok("groq") -> RouteDecision("groq", task, "low-latency chat")
-                ok("openai") -> RouteDecision("openai", task, "cloud chat fallback")
-                ok("anthropic") -> RouteDecision("anthropic", task, "cloud chat fallback")
+                ok("github_models") -> RouteDecision("github_models", task, "free cloud chat fallback")
+                ok("cloudflare_ai") -> RouteDecision("cloudflare_ai", task, "free cloud chat fallback")
                 else -> RouteDecision("ollama", task, "local chat fallback")
             }
             TaskClass.CODING -> when {
-                ok("anthropic") -> RouteDecision("anthropic", task, "coding/debugging priority")
-                ok("openai") -> RouteDecision("openai", task, "coding fallback")
                 ok("groq") -> RouteDecision("groq", task, "fast coding fallback")
+                ok("github_models") -> RouteDecision("github_models", task, "free coding fallback")
+                ok("cloudflare_ai") -> RouteDecision("cloudflare_ai", task, "free coding fallback")
                 else -> RouteDecision("ollama", task, "local coding fallback")
             }
             TaskClass.LONG_REASONING -> when {
-                ok("anthropic") -> RouteDecision("anthropic", task, "deep reasoning priority")
-                ok("openai") -> RouteDecision("openai", task, "deep reasoning fallback")
+                ok("github_models") -> RouteDecision("github_models", task, "free reasoning fallback")
+                ok("cloudflare_ai") -> RouteDecision("cloudflare_ai", task, "free reasoning fallback")
+                ok("groq") -> RouteDecision("groq", task, "fast reasoning fallback")
                 else -> RouteDecision("ollama", task, "local long-reasoning fallback")
             }
             TaskClass.UNKNOWN -> when {
-                ok("anthropic") -> RouteDecision("anthropic", task, "default strongest configured route")
-                ok("openai") -> RouteDecision("openai", task, "default configured route")
                 ok("groq") -> RouteDecision("groq", task, "default fast configured route")
+                ok("github_models") -> RouteDecision("github_models", task, "default free cloud route")
+                ok("cloudflare_ai") -> RouteDecision("cloudflare_ai", task, "default free cloud route")
                 else -> RouteDecision("ollama", task, "default local route")
             }
         }
@@ -102,8 +109,15 @@ class ProviderDecisionEngine {
             "openai: ${mark("openai")}",
             "anthropic: ${mark("anthropic")}",
             "xai: ${mark("xai")}",
+            "github_models: ${mark("github_models")}",
+            "cloudflare_ai: ${mark("cloudflare_ai")}",
+            "sambanova: ${mark("sambanova")}",
+            "deepseek_direct: ${mark("deepseek_direct")}",
             "ollama: $ollama",
             "gemini: not installed"
         ).joinToString("\n")
     }
+
+    private fun envConfigured(name: String): Boolean =
+        System.getenv(name).isNullOrBlank().not()
 }

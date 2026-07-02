@@ -29,7 +29,7 @@ class FrameDiffRenderer(
 
             if (
                 force ||
-                old.getOrNull(index) != line
+                old?.getOrNull(index) != line
             ) {
                 out.print(
                     "\u001B[${index + 1};1H"
