@@ -5,6 +5,7 @@ class LandingRenderer(
     private val theme: TerminalTheme
 ) {
     private val truthProbe = WorkbenchTruthProbe()
+    private val agentProbe = AgentWorkbenchProbe()
 
     fun render(state: SessionPresentationState, terminalWidth: Int): List<String> =
         render(state, terminalWidth, 32)
@@ -13,6 +14,10 @@ class LandingRenderer(
         val width = terminalWidth.coerceAtLeast(36)
         val targetHeight = terminalHeight.coerceAtLeast(12)
         val truth = truthProbe.probe(state.workspace)
+        val agentTruth = agentProbe.probe(
+            state.workspace,
+            groqConfigured = truth.providers.firstOrNull { it.name == "groq" }?.configured == true
+        )
         val out = mutableListOf<String>()
 
         out += logo(width)
@@ -23,14 +28,14 @@ class LandingRenderer(
             workspacePanel(state, truth),
             providersPanel(truth),
             routingPanel(),
+            agentPanel(agentTruth),
+            patchApplyPanel(agentTruth.patch),
             quotaPanel(),
-            researchPanel(truth),
-            factoryPanel(truth),
             commandsPanel(),
-            indexPanel(truth),
             sourceDocsPanel(truth),
             verificationPanel(truth),
             sessionPanel(state),
+            tabsPanel(state),
             legendPanel()
         )
 
@@ -38,13 +43,13 @@ class LandingRenderer(
             width >= 140 -> columns(panels, 4, width)
             width >= 100 -> columns(panels, 3, width)
             width >= 60 -> columns(panels, 2, width)
-            else -> panels.flatten()
+            else -> panels.flatten().map { TerminalText.ellipsize(it, width) }
         }
 
         out += actionRail(width)
 
         out += lowerPanels(state, truth, width, targetHeight - out.size)
-        return out.take(targetHeight)
+        return out.take(targetHeight).map { TerminalText.ellipsize(it, width) }
     }
 
     private fun logo(width: Int): List<String> {
@@ -107,41 +112,56 @@ class LandingRenderer(
             row("status", warn("UI next batch"))
         ))
 
-    private fun researchPanel(truth: WorkbenchTruth): List<String> =
-        panel("RESEARCH", listOf(
-            row("status", if (truth.masterMap && truth.astDb) good("ready") else warn("pending index")),
-            row("master", if (truth.masterMap) good("present") else bad("missing")),
-            row("corpus", if (truth.lakehouseMounted) good("mounted") else warn("not mounted")),
-            row("docs", "${truth.corpusFiles} detected"),
-            row("ast db", if (truth.astDb) good("built") else bad("not built"))
+    private fun agentPanel(agent: AgentWorkbenchTruth): List<String> =
+        panel("AGENT", listOf(
+            row("ask", good("available") + " " + theme.subdued("(local fallback)")),
+            row("patch", if (agent.patchAvailable) good("available") else warn("no provider key")),
+            row("apply", good("available") + " " + theme.subdued("(local git)")),
+            row("order", agent.patchProviderOrder.joinToString(" -> ").ifBlank { "none configured" }),
+            row("paid", if (agent.paidLocked) bad("locked") else warn("unlocked"))
         ))
 
-    private fun factoryPanel(truth: WorkbenchTruth): List<String> =
-        panel("APP FACTORY", listOf(
-            row("planner", "descriptor route ready"),
-            row("compiler", source(truth.selfImprovingLoop)),
-            row("solver", source(truth.constraintSolver)),
-            row("immunity", source(truth.immunityEngine)),
-            row("factory", warn("orchestration next"))
+    private fun patchApplyPanel(patch: AgentPatchWorkbenchTruth): List<String> =
+        panel("PATCH/APPLY", listOf(
+            row("latest", patch.latestPatchId?.let { TerminalText.ellipsize(it, 18) } ?: "none"),
+            row(
+                "check",
+                when (patch.checkStatus) {
+                    "OK" -> good("OK")
+                    "FAILED" -> bad("FAILED")
+                    else -> warn("NOT RUN")
+                }
+            ),
+            row(
+                "apply",
+                when (patch.applyState) {
+                    "applied" -> good("applied")
+                    "refused" -> bad("refused")
+                    "checked only" -> warn("checked only")
+                    else -> warn("not attempted")
+                }
+            ),
+            row("changed", patch.changedPathsCount?.let { "$it paths" } ?: "unknown"),
+            row("next", theme.code(patch.nextCommand))
         ))
 
     private fun commandsPanel(): List<String> =
         panel("COMMANDS", listOf(
+            row("/agent", "ask | patch | apply"),
             row("/providers", "inventory"),
-            row("descriptors", "provider grid"),
-            row("validate", "contract check"),
             row("/status", "endpoints"),
             row("/verify", "toolchain"),
+            row("/tabs", "list open tabs"),
             row("/exit", "close")
         ))
 
-    private fun indexPanel(truth: WorkbenchTruth): List<String> =
-        panel("INDEX", listOf(
-            row("router", source(truth.ontologicalRouter)),
-            row("indexer", source(truth.latentIndexer)),
-            row("delta", source(truth.deltaTracker)),
-            row("ast", if (truth.astDb) good("built") else bad("not built")),
-            row("sqlite", warn("not verified"))
+    private fun tabsPanel(state: SessionPresentationState): List<String> =
+        panel("TABS", listOf(
+            row("active", "${state.activeTab}:${state.activeScreen}"),
+            row("open", "${state.openTabCount} tab" + if (state.openTabCount == 1) "" else "s"),
+            row("/tabs", "list open tabs"),
+            row("/tab new", "open a tab"),
+            row("/home", "return to dashboard")
         ))
 
     private fun sourceDocsPanel(truth: WorkbenchTruth): List<String> =
@@ -184,10 +204,14 @@ class LandingRenderer(
         listOf(
             "",
             theme.subdued("─".repeat(width)),
-            theme.metadata("next ") + theme.code("/providers descriptors") +
-                theme.metadata(" · ") + theme.code("/providers validate") +
-                theme.metadata(" · ") + theme.code("/status endpoints") +
-                theme.metadata(" · ") + theme.code("/verify narrow")
+            TerminalText.ellipsize(
+                theme.metadata("next ") + theme.code("/tabs") +
+                    theme.metadata(" · ") + theme.code("/agent status") +
+                    theme.metadata(" · ") + theme.code("/status endpoints") +
+                    theme.metadata(" · ") + theme.code("/verify narrow") +
+                    theme.metadata(" · ") + theme.code("/home"),
+                width
+            )
         )
 
     private fun panel(title: String, rows: List<String>): List<String> =
@@ -210,7 +234,10 @@ class LandingRenderer(
             val height = group.maxOf { it.size }
             for (rowIndex in 0 until height) {
                 output += group.joinToString("") { panel ->
-                    TerminalText.padEnd(panel.getOrElse(rowIndex) { "" }, columnWidth)
+                    TerminalText.padEnd(
+                        TerminalText.ellipsize(panel.getOrElse(rowIndex) { "" }, columnWidth - 1),
+                        columnWidth
+                    )
                 }.trimEnd()
             }
             output += ""
@@ -255,15 +282,15 @@ class LandingRenderer(
             usefulPanel(
                 "TAB ACTIVITY",
                 listOf(
-                    state.activeTab,
-                    state.activeScreen,
+                    "${state.activeTab}:${state.activeScreen}",
+                    "${state.openTabCount} " + (if (state.openTabCount == 1) "tab" else "tabs") + " open",
                     "prompt preserved across redraw"
                 )
             )
         )
 
         val rows = when {
-            width < 60 -> panels.flatten()
+            width < 60 -> panels.flatten().map { TerminalText.ellipsize(it, width) }
             width < 100 -> compactColumns(panels, 2, width)
             else -> compactColumns(panels, 4, width)
         }

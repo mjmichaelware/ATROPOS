@@ -60,11 +60,12 @@ class SessionTabs(
     fun openTab(
         screen: ScreenId = active.screen,
         provider: String = active.provider,
-        workingDirectory: String = active.workingDirectory
+        workingDirectory: String = active.workingDirectory,
+        title: String = screen.title
     ): SessionTab {
         val tab = SessionTab(
             id = nextId++,
-            title = screen.title,
+            title = title.trim().ifBlank { screen.title },
             screen = screen,
             provider = provider,
             workingDirectory = workingDirectory
@@ -77,6 +78,56 @@ class SessionTabs(
 
     fun switchNext(): SessionTab {
         activeIndex = (activeIndex + 1) % tabs.size
+        return active
+    }
+
+    fun switchPrev(): SessionTab {
+        activeIndex = (activeIndex - 1 + tabs.size) % tabs.size
+        return active
+    }
+
+    fun switchToId(id: Int): SessionTab? {
+        val index = tabs.indexOfFirst { it.id == id }
+        if (index < 0) return null
+        activeIndex = index
+        return active
+    }
+
+    fun renameTab(id: Int, title: String): Boolean {
+        val cleaned = title.trim()
+        if (cleaned.isBlank()) return false
+        val index = tabs.indexOfFirst { it.id == id }
+        if (index < 0) return false
+        tabs[index] = tabs[index].copy(title = cleaned)
+        return true
+    }
+
+    fun closeTab(id: Int): Boolean {
+        if (tabs.size <= 1) return false
+        val index = tabs.indexOfFirst { it.id == id }
+        if (index < 0) return false
+
+        tabs.removeAt(index)
+        activeIndex = when {
+            activeIndex > index -> activeIndex - 1
+            activeIndex >= tabs.size -> tabs.lastIndex
+            else -> activeIndex
+        }
+        return true
+    }
+
+    fun goHome(): SessionTab {
+        val dashboardIndex = tabs.indexOfFirst { it.screen == ScreenId.DASHBOARD }
+        if (dashboardIndex >= 0) {
+            activeIndex = dashboardIndex
+        } else {
+            replaceActive(
+                active.copy(
+                    title = ScreenId.DASHBOARD.title,
+                    screen = ScreenId.DASHBOARD
+                )
+            )
+        }
         return active
     }
 

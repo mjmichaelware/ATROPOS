@@ -6,7 +6,10 @@ import atropos.cli.input.CommandRegistry
 import atropos.cli.session.QuotaSessionTracker
 import atropos.core.AtroposConfig
 import atropos.core.verification.VerificationResult
+import java.io.FileDescriptor
+import java.io.FileOutputStream
 import java.io.PrintStream
+import java.nio.charset.StandardCharsets
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
@@ -14,8 +17,10 @@ class AnsiTerminalEngine(
     private val capabilities:
         ConfigurationManager =
             ConfigurationManager(),
-    private val out: PrintStream = System.out,
-    private val errors: PrintStream = System.err,
+    private val out: PrintStream =
+        PrintStream(FileOutputStream(FileDescriptor.out), true, StandardCharsets.UTF_8),
+    private val errors: PrintStream =
+        PrintStream(FileOutputStream(FileDescriptor.err), true, StandardCharsets.UTF_8),
     geometryProvider:
         TerminalGeometryProvider =
             SttyTerminalGeometryProvider()
@@ -37,6 +42,8 @@ class AnsiTerminalEngine(
         )
     private val welcome =
         WelcomePanel(theme)
+    private val dashboardWorkspaceInspector =
+        CachingGitWorkspaceInspector()
     private val transcriptBuffer =
         TranscriptBuffer()
     private val composer =
@@ -85,6 +92,8 @@ class AnsiTerminalEngine(
         String? = null
     private var activeScreen = "Dashboard"
     private var activeTab = "tab 1"
+    private var openTabCount = 1
+    private var activePatchId: String? = null
 
     @Synchronized
     fun initializeReactive(
@@ -141,13 +150,15 @@ class AnsiTerminalEngine(
         tracker: QuotaSessionTracker,
         paletteSelection: Int = 0,
         activeScreen: String = "Dashboard",
-        activeTab: String = "tab 1"
+        activeTab: String = "tab 1",
+        openTabCount: Int = 1
     ) {
         this.mode = inputMode
         this.provider = provider
         this.tracker = tracker
         this.activeScreen = activeScreen
         this.activeTab = activeTab
+        this.openTabCount = openTabCount
 
         composer.update(
             buffer = buffer,
@@ -174,8 +185,15 @@ class AnsiTerminalEngine(
         tracker,
         0,
         activeScreen,
-        activeTab
+        activeTab,
+        openTabCount
     )
+
+    @Synchronized
+    fun updateAgentPatchState(patchId: String?) {
+        activePatchId = patchId?.takeIf { it.isNotBlank() }
+        requestFrameLocked()
+    }
 
     @Synchronized
     fun commitPrompt(
@@ -239,6 +257,45 @@ class AnsiTerminalEngine(
     fun renderHeader() {
         if (reactive) requestFrameLocked()
         else emitPlain("ATROPOS")
+    }
+
+    @Synchronized
+    fun renderDashboard(
+        activeProvider: String,
+        activeTab: String,
+        activeScreen: String,
+        openTabCount: Int
+    ) {
+        provider = activeProvider
+        this.activeTab = activeTab
+        this.activeScreen = activeScreen
+        this.openTabCount = openTabCount
+
+        if (reactive) {
+            val state = SessionPresentationState(
+                provider = provider,
+                mode = mode,
+                workspace = workspace,
+                commands = listOf("/agent status", "/tabs", "/status", "/verify"),
+                tokens = tracker.estimatedTokens.takeIf { it > 0 }
+                    ?.let { MetricValue.Known(it.toString()) } ?: MetricValue.Unknown,
+                cost = tracker.estimatedCostUsd().takeIf { it > 0.0 }
+                    ?.let { MetricValue.Known("$" + String.format("%.4f", it)) }
+                    ?: MetricValue.Unknown,
+                activeOperation = null,
+                repository = dashboardWorkspaceInspector.inspect(workspace),
+                activeScreen = activeScreen,
+                activeTab = activeTab,
+                openTabCount = openTabCount,
+                activePatchId = activePatchId
+            )
+
+            welcome.render(state, canvas.width, (canvas.height * 2 / 3).coerceAtLeast(14))
+                .forEach(transcriptBuffer::append)
+            requestFrameLocked()
+        } else {
+            emitPlain("dashboard: $activeTab:$activeScreen · ${provider.lowercase()} · ${TerminalText.compactPath(workspace)}")
+        }
     }
 
     @Synchronized
@@ -450,7 +507,9 @@ class AnsiTerminalEngine(
             verificationState =
                 verificationState,
             activeScreen = activeScreen,
-            activeTab = activeTab
+            activeTab = activeTab,
+            openTabCount = openTabCount,
+            activePatchId = activePatchId
         )
 
         canvas.render(frame)

@@ -61,10 +61,14 @@ class StatusBarRenderer(
             ?.let(TerminalText::sanitize)
             ?.takeIf(String::isNotBlank)
             ?.let { "op:$it" }
+        val patch = state.activePatchId
+            ?.let(TerminalText::sanitize)
+            ?.takeIf(String::isNotBlank)
+            ?.let { "patch:$it" } ?: "patch:none"
 
         val selected = listOf(
-            listOfNotNull("ATROPOS", provider, mode, tabScreen, "$tokens tok", cost, workspace, operation),
-            listOfNotNull(provider, mode, tabScreen, "$tokens tok", workspace, operation),
+            listOfNotNull("ATROPOS", provider, mode, tabScreen, "$tokens tok", cost, workspace, patch, operation),
+            listOfNotNull(provider, mode, tabScreen, "$tokens tok", workspace, patch, operation),
             listOfNotNull(provider, mode, tabScreen, "$tokens tok"),
             listOf(provider, mode, tabScreen),
             listOf(provider, mode)

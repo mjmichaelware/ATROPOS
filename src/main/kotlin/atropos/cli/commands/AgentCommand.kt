@@ -2,7 +2,9 @@ package atropos.cli.commands
 
 import atropos.cli.ui.AnsiTerminalEngine
 import atropos.core.AtroposConfig
+import atropos.core.agent.AgentPatchExtractor
 import atropos.core.agent.AgentService
+import java.nio.file.Files
 
 sealed class AgentCommandOutcome {
     data class Completed(val text: String) : AgentCommandOutcome()
@@ -19,6 +21,12 @@ class AgentCommand(
     private val activeProviderName: () -> String,
     private val service: AgentService = AgentService(config)
 ) : AgentCommandHandler {
+    private val patchExtractor = AgentPatchExtractor()
+
+    /** Last patch id ATROPOS has knowledge of, surfaced to the status line. Never implies a patch was applied. */
+    var lastKnownPatchId: String? = null
+        private set
+
     override fun execute(tokens: List<String>): AgentCommandOutcome {
         if (tokens.size < 2) {
             return invalid("usage: /agent [status|ask <task>|patch [--provider <name>] <task>|apply [--check] <patch-id|latest>]")
@@ -27,8 +35,10 @@ class AgentCommand(
         return when (tokens[1].lowercase()) {
             "status" -> {
                 val snapshot = service.status(activeProviderName())
-                ui.renderNotice(snapshot.render())
-                AgentCommandOutcome.Completed(snapshot.render())
+                lastKnownPatchId = snapshot.lastPatchId ?: lastKnownPatchId
+                val rendered = formatBlock("AGENT STATUS", snapshot.render())
+                ui.renderNotice(rendered)
+                AgentCommandOutcome.Completed(rendered)
             }
 
             "ask" -> {
@@ -40,8 +50,9 @@ class AgentCommand(
                 ui.startSpinner("Collecting repo context")
                 return try {
                     val result = service.ask(activeProviderName(), task)
-                    ui.renderNotice(result.render())
-                    AgentCommandOutcome.Completed(result.render())
+                    val rendered = formatBlock("AGENT ASK", result.render())
+                    ui.renderNotice(rendered)
+                    AgentCommandOutcome.Completed(rendered)
                 } catch (failure: Exception) {
                     val message = failure.message ?: "agent ask failed"
                     ui.renderError(message)
@@ -64,8 +75,19 @@ class AgentCommand(
                 ui.startSpinner("Collecting repo context")
                 return try {
                     val result = service.patch(activeProviderName(), task, patchRequest.providerOverride)
-                    ui.renderNotice(result.render())
-                    AgentCommandOutcome.Completed(result.render())
+                    lastKnownPatchId = result.patchId ?: lastKnownPatchId
+                    val body = buildString {
+                        append(result.render())
+                        changedPathsPreview(result.patchPath)?.let {
+                            appendLine()
+                            append("Changed paths: $it")
+                        }
+                        appendLine()
+                        append("Next command: ${nextPatchCommand(result)}")
+                    }
+                    val rendered = formatBlock("AGENT PATCH", body)
+                    ui.renderNotice(rendered)
+                    AgentCommandOutcome.Completed(rendered)
                 } catch (failure: Exception) {
                     val message = failure.message ?: "agent patch failed"
                     ui.renderError(message)
@@ -84,8 +106,20 @@ class AgentCommand(
                 ui.startSpinner("Validating stored patch")
                 return try {
                     val result = service.applyPatch(applyRequest.patchReference, applyRequest.checkOnly)
-                    ui.renderNotice(result.render())
-                    AgentCommandOutcome.Completed(result.render())
+                    lastKnownPatchId = result.patchId ?: lastKnownPatchId
+                    val body = buildString {
+                        append(result.render())
+                        if (result.applied) {
+                            appendLine()
+                            append("No commit created: changes are in the working tree only.")
+                        }
+                    }
+                    val rendered = formatBlock(
+                        if (applyRequest.checkOnly) "AGENT APPLY --CHECK" else "AGENT APPLY",
+                        body
+                    )
+                    ui.renderNotice(rendered)
+                    AgentCommandOutcome.Completed(rendered)
                 } catch (failure: Exception) {
                     val message = failure.message ?: "agent apply failed"
                     ui.renderError(message)
@@ -97,6 +131,53 @@ class AgentCommand(
 
             else -> invalid("usage: /agent [status|ask <task>|patch [--provider <name>] <task>|apply [--check] <patch-id|latest>]")
         }
+    }
+
+    private fun changedPathsPreview(patchPath: java.nio.file.Path?, limit: Int = 6): String? {
+        if (patchPath == null || !Files.isRegularFile(patchPath)) return null
+        val diffText = runCatching { Files.readString(patchPath) }.getOrNull() ?: return null
+        val paths = patchExtractor.extract(diffText)?.touchedPaths ?: return null
+        if (paths.isEmpty()) return null
+        val shown = paths.take(limit).joinToString(", ")
+        val remaining = paths.size - limit
+        return if (remaining > 0) "$shown (+$remaining more)" else shown
+    }
+
+    private fun nextPatchCommand(result: atropos.core.agent.AgentPatchRunResult): String = when {
+        result.patchId == null -> "/agent patch <task>"
+        result.checkResult == null -> "/agent apply --check ${result.patchId}"
+        result.checkResult.passed -> "/agent apply --check ${result.patchId}  (check already OK)"
+        else -> "/agent patch <task>  (git apply --check failed, regenerate)"
+    }
+
+    private fun formatBlock(title: String, body: String): String = buildString {
+        appendLine("── $title ──")
+        body.lineSequence().forEach { line -> append(wrapLine(line)).append('\n') }
+    }.trimEnd()
+
+    // Only very long unbroken lines are pre-wrapped; the reactive renderer already
+    // wraps every transcript line at the live terminal width, so wrapping shorter
+    // lines here too would double-wrap and mangle the output.
+    private fun wrapLine(line: String, width: Int = 320): String {
+        if (line.length <= width) return line
+        val leading = line.takeWhile { it == ' ' }
+        val words = line.trim().split(Regex("\\s+")).filter { it.isNotEmpty() }
+        if (words.isEmpty()) return line
+
+        val available = (width - leading.length).coerceAtLeast(10)
+        val segments = mutableListOf<String>()
+        val current = StringBuilder()
+        for (word in words) {
+            if (current.isNotEmpty() && current.length + 1 + word.length > available) {
+                segments += current.toString()
+                current.clear()
+            }
+            if (current.isNotEmpty()) current.append(' ')
+            current.append(word)
+        }
+        if (current.isNotEmpty()) segments += current.toString()
+
+        return leading + segments.joinToString("\n$leading  ")
     }
 
     private data class PatchRequest(

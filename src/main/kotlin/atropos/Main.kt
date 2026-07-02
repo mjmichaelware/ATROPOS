@@ -12,7 +12,6 @@ import atropos.cli.input.RawKeyReader
 import atropos.cli.input.TerminalModeManager
 import atropos.cli.session.QuotaSessionTracker
 import atropos.cli.session.ScreenId
-import atropos.cli.session.SessionTabs
 import atropos.cli.ui.AnsiTerminalEngine
 import atropos.core.AtroposConfig
 import java.io.FileInputStream
@@ -57,10 +56,7 @@ private fun runInteractive(
     val completer = CommandCompleter(
         java.nio.file.Path.of(capabilities.workspace)
     )
-    val tabs = SessionTabs(
-        initialProvider = router.currentProviderName,
-        initialWorkingDirectory = capabilities.workspace
-    )
+    val tabs = router.tabs
 
     ui.initializeReactive()
     ui.renderWelcome(config, router.currentProviderName)
@@ -109,8 +105,9 @@ private fun runInteractive(
                     provider = tabs.active.provider,
                     tracker = tracker,
                     paletteSelection = selected.selectedIndex,
-                    activeScreen = tabs.active.screen.title,
-                    activeTab = "tab ${tabs.active.id}"
+                    activeScreen = tabs.active.title,
+                    activeTab = "tab ${tabs.active.id}",
+                    openTabCount = tabs.snapshot().tabs.size
                 )
             }
 
@@ -173,7 +170,6 @@ private fun runInteractive(
                                 break@inputLoop
                             }
                         }
-                        tabs.switchTo(ScreenId.DASHBOARD)
                         redraw()
                     }
 

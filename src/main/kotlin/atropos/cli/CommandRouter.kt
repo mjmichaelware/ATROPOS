@@ -5,6 +5,8 @@ import atropos.cli.commands.VerifyCommand
 import atropos.cli.commands.VerifyCommandHandler
 import atropos.cli.commands.AgentCommand
 import atropos.cli.session.QuotaSessionTracker
+import atropos.cli.session.ScreenId
+import atropos.cli.session.SessionTabs
 import atropos.cli.shell.ShellCommandRunner
 import atropos.cli.ui.AnsiTerminalEngine
 import atropos.cli.ui.MarkdownRenderer
@@ -41,6 +43,11 @@ class CommandRouter(
         ui = uiEngine,
         config = config,
         activeProviderName = { currentProviderName }
+    )
+
+    val tabs = SessionTabs(
+        initialProvider = activeProvider.name,
+        initialWorkingDirectory = shellRunner.currentDirectory()
     )
 
     internal fun lex(input: String): LexResult {
@@ -187,11 +194,28 @@ class CommandRouter(
                 uiEngine.renderNotice("  /verify <narrow|wide>")
                 uiEngine.renderNotice("  !<command> | /shell <command>")
                 uiEngine.renderNotice("  /pwd | /cd [dir] | /ls [args] | /git status")
+                uiEngine.renderNotice("  /home | /dashboard | /tabs | /tab [new <name>|<n>|rename|close|next|prev]")
                 RouterOutcome.CONTINUE
             }
 
-            "/dashboard" -> {
-                uiEngine.renderStatusMatrix(config, activeProvider.name)
+            "/dashboard", "/home" -> {
+                tabs.goHome()
+                uiEngine.renderDashboard(
+                    activeProvider = activeProvider.name,
+                    activeTab = "tab ${tabs.active.id}",
+                    activeScreen = tabs.active.title,
+                    openTabCount = tabs.snapshot().tabs.size
+                )
+                RouterOutcome.CONTINUE
+            }
+
+            "/tabs" -> {
+                uiEngine.renderNotice(renderTabsList())
+                RouterOutcome.CONTINUE
+            }
+
+            "/tab" -> {
+                handleTabCommand(tokens.drop(1))
                 RouterOutcome.CONTINUE
             }
 
@@ -250,6 +274,7 @@ class CommandRouter(
 
             "/agent" -> {
                 agentCommand.execute(tokens)
+                uiEngine.updateAgentPatchState(agentCommand.lastKnownPatchId)
                 RouterOutcome.CONTINUE
             }
 
@@ -434,6 +459,90 @@ class CommandRouter(
                 if (tokens.first().startsWith("/")) uiEngine.renderError("unknown command: ${tokens.first()}")
                 else dispatch(original)
                 RouterOutcome.CONTINUE
+            }
+        }
+    }
+
+    private fun renderTabsList(): String = buildString {
+        appendLine("open tabs (${tabs.snapshot().tabs.size}):")
+        tabs.snapshot().tabs.forEach { tab ->
+            val marker = if (tab.id == tabs.active.id) "*" else " "
+            appendLine("  $marker ${tab.id}: ${tab.title}  [${tab.screen.title}]  provider=${tab.provider}")
+        }
+        append("commands: /tab new <name> | /tab <n> | /tab rename <n> <name> | /tab close <n> | /tab next | /tab prev | /home")
+    }
+
+    private fun handleTabCommand(args: List<String>) {
+        if (args.isEmpty()) {
+            uiEngine.renderError("usage: /tab [new <name>|<n>|rename <n> <name>|close <n>|next|prev]")
+            return
+        }
+
+        when (val action = args[0].lowercase()) {
+            "new" -> {
+                val name = args.drop(1).joinToString(" ").trim()
+                if (name.isBlank()) {
+                    uiEngine.renderError("usage: /tab new <name>")
+                    return
+                }
+                val tab = tabs.openTab(
+                    screen = ScreenId.CHAT,
+                    provider = currentProviderName,
+                    workingDirectory = tabs.active.workingDirectory,
+                    title = name
+                )
+                uiEngine.renderNotice("opened tab ${tab.id}: ${tab.title}")
+            }
+
+            "rename" -> {
+                val id = args.getOrNull(1)?.toIntOrNull()
+                val name = args.drop(2).joinToString(" ").trim()
+                if (id == null || name.isBlank()) {
+                    uiEngine.renderError("usage: /tab rename <n> <name>")
+                    return
+                }
+                if (tabs.renameTab(id, name)) {
+                    uiEngine.renderNotice("tab $id renamed to $name")
+                } else {
+                    uiEngine.renderError("no such tab: $id")
+                }
+            }
+
+            "close" -> {
+                val id = args.getOrNull(1)?.toIntOrNull()
+                if (id == null) {
+                    uiEngine.renderError("usage: /tab close <n>")
+                    return
+                }
+                if (tabs.closeTab(id)) {
+                    uiEngine.renderNotice("closed tab $id · active tab ${tabs.active.id}: ${tabs.active.title}")
+                } else {
+                    uiEngine.renderError("cannot close tab $id (not found, or it is the last remaining tab)")
+                }
+            }
+
+            "next" -> {
+                tabs.switchNext()
+                uiEngine.renderNotice("tab ${tabs.active.id}: ${tabs.active.title}")
+            }
+
+            "prev" -> {
+                tabs.switchPrev()
+                uiEngine.renderNotice("tab ${tabs.active.id}: ${tabs.active.title}")
+            }
+
+            else -> {
+                val id = action.toIntOrNull()
+                if (id == null) {
+                    uiEngine.renderError("usage: /tab [new <name>|<n>|rename <n> <name>|close <n>|next|prev]")
+                    return
+                }
+                val switched = tabs.switchToId(id)
+                if (switched == null) {
+                    uiEngine.renderError("no such tab: $id")
+                } else {
+                    uiEngine.renderNotice("tab ${switched.id}: ${switched.title}")
+                }
             }
         }
     }

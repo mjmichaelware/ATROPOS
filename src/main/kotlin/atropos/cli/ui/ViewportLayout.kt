@@ -23,7 +23,9 @@ class ViewportLayout(
         activity: String?,
         verificationState: String?,
         activeScreen: String = "Dashboard",
-        activeTab: String = "tab 1"
+        activeTab: String = "tab 1",
+        openTabCount: Int = 1,
+        activePatchId: String? = null
     ): ScreenFrame {
         val safeWidth = width.coerceAtLeast(36)
         val safeHeight = height.coerceAtLeast(12)
@@ -42,7 +44,9 @@ class ViewportLayout(
             activeOperation = operation,
             repository = workspaceInspector.inspect(workspace),
             activeScreen = activeScreen,
-            activeTab = activeTab
+            activeTab = activeTab,
+            openTabCount = openTabCount,
+            activePatchId = activePatchId
         )
 
         frame.setLine(0, statusBar.header(state, safeWidth))

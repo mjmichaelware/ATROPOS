@@ -10,6 +10,13 @@ object CommandRegistry {
     val entries: List<CommandEntry> = listOf(
         CommandEntry("/help", "commands"),
         CommandEntry("/dashboard", "return to dashboard"),
+        CommandEntry("/home", "return to dashboard"),
+        CommandEntry("/tabs", "list open tabs"),
+        CommandEntry("/tab new", "open a new tab"),
+        CommandEntry("/tab rename", "rename a tab"),
+        CommandEntry("/tab close", "close a tab"),
+        CommandEntry("/tab next", "switch to next tab"),
+        CommandEntry("/tab prev", "switch to previous tab"),
         CommandEntry("/status", "session status"),
         CommandEntry("/status adapters", "provider adapter matrix"),
         CommandEntry("/status assets", "asset route status"),

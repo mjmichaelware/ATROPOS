@@ -21,5 +21,7 @@ data class SessionPresentationState(
     val activeOperation: String?,
     val repository: RepositoryState = RepositoryState.unknown(),
     val activeScreen: String = "Dashboard",
-    val activeTab: String = "tab 1"
+    val activeTab: String = "tab 1",
+    val openTabCount: Int = 1,
+    val activePatchId: String? = null
 )
