@@ -64,6 +64,7 @@ data class AgentPatchRunResult(
     val rejectionReason: String? = null,
     val responsePreview: String? = null,
     val failureSummary: String? = null,
+    val sourceVerificationId: String? = null,
     val message: String? = null
 ) {
     fun render(): String = buildString {
@@ -86,6 +87,7 @@ data class AgentPatchRunResult(
                 }
             }
         )
+        sourceVerificationId?.takeIf { it.isNotBlank() }?.let { appendLine("Source verification: $it") }
         failureSummary?.takeIf { it.isNotBlank() }?.let { appendLine("fallback summary: $it") }
         message?.takeIf { it.isNotBlank() }?.let { appendLine(it.trimEnd()) }
     }.trimEnd()
@@ -97,7 +99,10 @@ class AgentService(
     private val router: ProviderCascadeRouter = ProviderCascadeRouter(ProviderFactory(config)),
     private val selector: AgentProviderSelector = AgentProviderSelector(config),
     private val patchExtractor: AgentPatchExtractor = AgentPatchExtractor(),
-    private val patchStore: AgentPatchStore = AgentPatchStore(collector.repoRoot)
+    private val patchStore: AgentPatchStore = AgentPatchStore(collector.repoRoot),
+    private val verificationStore: AgentVerificationStore = AgentVerificationStore(collector.repoRoot),
+    private val verifier: AgentVerifier = AgentVerifier(config, collector, patchStore, verificationStore),
+    private val repairService: AgentRepairService = AgentRepairService(config, collector, router, selector, patchStore, verificationStore, patchExtractor)
 ) {
     fun status(activeProviderName: String): AgentStatusSnapshot {
         val selection = selector.select(activeProviderName)
@@ -161,12 +166,13 @@ class AgentService(
 
             val result = acceptance.result
             val extraction = acceptance.extraction
+            val normalizedDiff = patchStore.normalizeProviderDiff(extraction.diff)
 
             val record = patchStore.createRecord(
                 provider = result.providerName,
                 task = prompt,
                 contextBytes = snapshot.byteCount,
-                diff = extraction.diff
+                diff = normalizedDiff
             )
             val check = patchStore.runGitApplyCheck(record.diffFile)
             patchStore.writeMeta(record, check)
@@ -189,8 +195,25 @@ class AgentService(
         }
     }
 
-    fun applyPatch(patchReference: String, checkOnly: Boolean): AgentPatchApplyResult =
-        patchStore.applyPatch(patchReference, checkOnly)
+    fun verify(patchReference: String): AgentVerificationRunResult =
+        verifier.verify(patchReference)
+
+    fun repair(activeProviderName: String, patchReference: String): AgentPatchRunResult =
+        repairService.repair(activeProviderName, patchReference)
+
+    fun applyPatch(
+        patchReference: String,
+        checkOnly: Boolean,
+        verifyAfterApply: Boolean = false
+    ): AgentPatchApplyResult {
+        val applied = patchStore.applyPatch(patchReference, checkOnly)
+        if (checkOnly || !verifyAfterApply || !applied.applied) {
+            return applied
+        }
+
+        val verification = verifier.verify(applied.patchId ?: patchReference)
+        return applied.copy(verificationResult = verification)
+    }
 
     private data class PatchAttempt(
         val result: atropos.core.ProviderCascadeResult,

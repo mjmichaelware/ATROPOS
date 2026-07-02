@@ -29,7 +29,7 @@ class AgentCommand(
 
     override fun execute(tokens: List<String>): AgentCommandOutcome {
         if (tokens.size < 2) {
-            return invalid("usage: /agent [status|ask <task>|patch [--provider <name>] <task>|apply [--check] <patch-id|latest>]")
+            return invalid("usage: /agent [status|ask <task>|patch [--provider <name>] <task>|apply [--check|--verify] <patch-id|latest>|verify [<patch-id|latest>]|repair [<patch-id|latest>]]")
         }
 
         return when (tokens[1].lowercase()) {
@@ -39,6 +39,28 @@ class AgentCommand(
                 val rendered = formatBlock("AGENT STATUS", snapshot.render())
                 ui.renderNotice(rendered)
                 AgentCommandOutcome.Completed(rendered)
+            }
+
+            "verify" -> {
+                val patchReference = parseReference(tokens.drop(2))
+                if (patchReference == null) {
+                    return invalid("usage: /agent verify [<patch-id|latest>]")
+                }
+
+                ui.startSpinner("Running deterministic verification")
+                return try {
+                    val result = service.verify(patchReference)
+                    lastKnownPatchId = result.patchId ?: lastKnownPatchId
+                    val rendered = formatBlock("AGENT VERIFY", result.render())
+                    ui.renderNotice(rendered)
+                    AgentCommandOutcome.Completed(rendered)
+                } catch (failure: Exception) {
+                    val message = failure.message ?: "agent verify failed"
+                    ui.renderError(message)
+                    AgentCommandOutcome.Invalid(message)
+                } finally {
+                    ui.stopSpinner()
+                }
             }
 
             "ask" -> {
@@ -55,6 +77,28 @@ class AgentCommand(
                     AgentCommandOutcome.Completed(rendered)
                 } catch (failure: Exception) {
                     val message = failure.message ?: "agent ask failed"
+                    ui.renderError(message)
+                    AgentCommandOutcome.Invalid(message)
+                } finally {
+                    ui.stopSpinner()
+                }
+            }
+
+            "repair" -> {
+                val patchReference = parseReference(tokens.drop(2))
+                if (patchReference == null) {
+                    return invalid("usage: /agent repair [<patch-id|latest>]")
+                }
+
+                ui.startSpinner("Preparing repair patch")
+                return try {
+                    val result = service.repair(activeProviderName(), patchReference)
+                    lastKnownPatchId = result.patchId ?: lastKnownPatchId
+                    val rendered = formatBlock("AGENT REPAIR", result.render())
+                    ui.renderNotice(rendered)
+                    AgentCommandOutcome.Completed(rendered)
+                } catch (failure: Exception) {
+                    val message = failure.message ?: "agent repair failed"
                     ui.renderError(message)
                     AgentCommandOutcome.Invalid(message)
                 } finally {
@@ -100,12 +144,25 @@ class AgentCommand(
             "apply" -> {
                 val applyRequest = parseApplyRequest(tokens.drop(2))
                 if (applyRequest.patchReference.isBlank()) {
-                    return invalid("usage: /agent apply [--check] <patch-id|latest>")
+                    return invalid("usage: /agent apply [--check|--verify] <patch-id|latest>")
+                }
+                if (applyRequest.checkOnly && applyRequest.verifyAfterApply) {
+                    return invalid("/agent apply supports either --check or --verify, not both")
                 }
 
-                ui.startSpinner("Validating stored patch")
+                ui.startSpinner(
+                    when {
+                        applyRequest.checkOnly -> "Validating stored patch"
+                        applyRequest.verifyAfterApply -> "Applying and verifying stored patch"
+                        else -> "Applying stored patch"
+                    }
+                )
                 return try {
-                    val result = service.applyPatch(applyRequest.patchReference, applyRequest.checkOnly)
+                    val result = service.applyPatch(
+                        applyRequest.patchReference,
+                        applyRequest.checkOnly,
+                        applyRequest.verifyAfterApply
+                    )
                     lastKnownPatchId = result.patchId ?: lastKnownPatchId
                     val body = buildString {
                         append(result.render())
@@ -115,7 +172,11 @@ class AgentCommand(
                         }
                     }
                     val rendered = formatBlock(
-                        if (applyRequest.checkOnly) "AGENT APPLY --CHECK" else "AGENT APPLY",
+                        when {
+                            applyRequest.checkOnly -> "AGENT APPLY --CHECK"
+                            applyRequest.verifyAfterApply -> "AGENT APPLY --VERIFY"
+                            else -> "AGENT APPLY"
+                        },
                         body
                     )
                     ui.renderNotice(rendered)
@@ -129,7 +190,7 @@ class AgentCommand(
                 }
             }
 
-            else -> invalid("usage: /agent [status|ask <task>|patch [--provider <name>] <task>|apply [--check] <patch-id|latest>]")
+            else -> invalid("usage: /agent [status|ask <task>|patch [--provider <name>] <task>|apply [--check|--verify] <patch-id|latest>|verify [<patch-id|latest>]|repair [<patch-id|latest>]]")
         }
     }
 
@@ -185,6 +246,12 @@ class AgentCommand(
         val task: String = ""
     )
 
+    private data class ApplyRequest(
+        val patchReference: String = "",
+        val checkOnly: Boolean = false,
+        val verifyAfterApply: Boolean = false
+    )
+
     private val patchProviderAllowList = setOf("github_models", "sambanova", "cloudflare_ai", "groq")
 
     private fun parsePatchRequest(args: List<String>): PatchRequest {
@@ -218,29 +285,35 @@ class AgentCommand(
         return PatchRequest(providerOverride = providerOverride?.takeIf { it.isNotBlank() }, task = task)
     }
 
-    private data class ApplyRequest(
-        val checkOnly: Boolean = false,
-        val patchReference: String = ""
-    )
+    private fun parseReference(args: List<String>): String? {
+        if (args.isEmpty()) return "latest"
+        if (args.size == 1 && !args[0].startsWith("--")) return args[0].trim().takeIf { it.isNotBlank() }
+        return null
+    }
 
     private fun parseApplyRequest(args: List<String>): ApplyRequest {
-        if (args.isEmpty()) return ApplyRequest()
+        if (args.isEmpty()) return ApplyRequest(patchReference = "latest")
 
         var checkOnly = false
+        var verifyAfterApply = false
         var patchReference: String? = null
 
         for (token in args) {
             when {
                 token == "--check" -> checkOnly = true
+                token == "--verify" -> verifyAfterApply = true
+                token.startsWith("--check=") -> checkOnly = token.substringAfter("=", "true").trim().toBooleanStrictOrNull() ?: true
+                token.startsWith("--verify=") -> verifyAfterApply = token.substringAfter("=", "true").trim().toBooleanStrictOrNull() ?: true
                 token.startsWith("--") -> return ApplyRequest()
-                patchReference == null -> patchReference = token
+                patchReference == null -> patchReference = token.trim()
                 else -> return ApplyRequest()
             }
         }
 
         return ApplyRequest(
+            patchReference = patchReference?.takeIf { it.isNotBlank() } ?: "latest",
             checkOnly = checkOnly,
-            patchReference = patchReference?.trim().orEmpty()
+            verifyAfterApply = verifyAfterApply
         )
     }
 

@@ -43,6 +43,7 @@ data class AgentPatchApplyResult(
     val checkOnly: Boolean,
     val applied: Boolean,
     val checkResult: AgentPatchCheckResult? = null,
+    val verificationResult: AgentVerificationRunResult? = null,
     val applyExitCode: Int? = null,
     val applyOutput: String? = null,
     val refusalReason: String? = null,
@@ -71,6 +72,17 @@ data class AgentPatchApplyResult(
         }
         checkResult?.let {
             appendLine("git apply --check: ${it.statusText}${it.output.takeIf { output -> output.isNotBlank() }?.let { output -> " :: $output" } ?: ""}")
+        }
+        verificationResult?.let {
+            appendLine("verification patch id: ${it.patchId ?: "none"}")
+            it.verificationId?.let { id -> appendLine("verification id: $id") }
+            it.command?.let { command -> appendLine("verification command: $command") }
+            appendLine("verification changed paths: ${it.changedPaths.joinToString(", ").ifBlank { "none" }}")
+            it.exitCode?.let { exit -> appendLine("verification exit code: $exit") }
+            if (it.durationMillis > 0) appendLine("verification duration ms: ${it.durationMillis}")
+            appendLine("verification result: ${if (it.passed) "PASSED" else "FAILED"}")
+            it.metaFile?.let { meta -> appendLine("verification metadata: $meta") }
+            it.refusalReason?.takeIf { reason -> reason.isNotBlank() }?.let { reason -> appendLine("verification refusal reason: $reason") }
         }
         applyExitCode?.let { appendLine("git apply exit code: $it") }
         logFile?.let { appendLine("Apply log: $it") }
@@ -181,6 +193,33 @@ class AgentPatchStore(
             exitCode = exitCode,
             output = compactOutput(output)
         )
+    }
+
+    fun normalizeProviderDiff(diffText: String): String {
+        val extraction = extractor.extract(diffText) ?: return diffText.trimEnd() + "\n"
+        val diff = extraction.diff
+        if (!isContextlessAddOnlyPatch(diff, extraction.touchedPaths)) {
+            return diff.trimEnd() + "\n"
+        }
+
+        val path = extraction.touchedPaths.singleOrNull()?.let(::normalizeRelativePath) ?: return diff.trimEnd() + "\n"
+        val target = repoRoot.resolve(path).normalize()
+        if (!target.startsWith(repoRoot) || !Files.isRegularFile(target)) {
+            return diff.trimEnd() + "\n"
+        }
+
+        val addedLines = diff.lineSequence()
+            .filter { line -> line.startsWith("+") && !line.startsWith("+++") }
+            .map { line -> line.removePrefix("+") }
+            .toList()
+        if (addedLines.isEmpty()) {
+            return diff.trimEnd() + "\n"
+        }
+
+        val originalLines = runCatching { Files.readAllLines(target, StandardCharsets.UTF_8) }
+            .getOrElse { return diff.trimEnd() + "\n" }
+
+        return buildAppendPatch(path, originalLines, addedLines)
     }
 
     fun runGitApply(diffFile: Path): AgentPatchCheckResult {
@@ -434,5 +473,47 @@ class AgentPatchStore(
         if (raw.isBlank()) return "no output"
         val lines = raw.lineSequence().take(maxLines).joinToString(" | ").trim()
         return if (lines.length <= maxChars) lines else lines.take(maxChars - 3) + "..."
+    }
+
+    private fun isContextlessAddOnlyPatch(diff: String, touchedPaths: List<String>): Boolean {
+        if (touchedPaths.size != 1) return false
+
+        var sawHunk = false
+        for (line in diff.lineSequence()) {
+            when {
+                line.startsWith("@@") -> sawHunk = true
+                line.startsWith("+") && !line.startsWith("+++") -> continue
+                line.startsWith("--- ") || line.startsWith("+++ ") || line.startsWith("diff --git ") -> continue
+                line.startsWith("\\ No newline at end of file") -> continue
+                line.isBlank() -> continue
+                sawHunk -> return false
+                else -> return false
+            }
+        }
+
+        return sawHunk
+    }
+
+    private fun normalizeRelativePath(path: String): String =
+        path.removePrefix("a/").removePrefix("b/").trim().trim('"').trim('\'')
+
+    private fun buildAppendPatch(
+        relativePath: String,
+        originalLines: List<String>,
+        addedLines: List<String>
+    ): String {
+        val contextSize = minOf(3, originalLines.size)
+        val contextLines = originalLines.takeLast(contextSize)
+        val originalStartLine = if (originalLines.isEmpty()) 0 else originalLines.size - contextSize + 1
+        val originalCount = contextLines.size
+        val newCount = originalCount + addedLines.size
+
+        return buildString {
+            appendLine("--- a/$relativePath")
+            appendLine("+++ b/$relativePath")
+            appendLine("@@ -$originalStartLine,$originalCount +$originalStartLine,$newCount @@")
+            contextLines.forEach { appendLine(" $it") }
+            addedLines.forEach { appendLine("+$it") }
+        }
     }
 }

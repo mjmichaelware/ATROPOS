@@ -70,6 +70,28 @@ class AgentContextCollector(
         )
     }
 
+    fun collectRepair(taskHint: String? = null, fileHints: List<String> = emptyList()): AgentContextSnapshot {
+        val hintedFiles = (taskHintFiles(taskHint) + fileHints.mapNotNull { resolveHint(it) }).distinct()
+        val files = hintedFiles.ifEmpty {
+            listOf(repoRoot.resolve("README.md").normalize())
+        }
+        val builder = StringBuilder(contextCapBytes)
+        var truncated = false
+
+        truncated = appendSection(builder, "# Repo Root\n${repoRoot}\n", truncated)
+        truncated = appendSection(builder, "# Git Status\n${gitStatus()}\n", truncated)
+        truncated = appendSection(builder, "# File Snapshots\n${patchSources(files)}\n", truncated)
+        truncated = appendSection(builder, "# Shallow Tree\n${shallowTree()}\n", truncated)
+
+        val rendered = builder.toString()
+        return AgentContextSnapshot(
+            repoRoot = repoRoot,
+            text = rendered,
+            byteCount = rendered.toByteArray(Charsets.UTF_8).size,
+            truncated = truncated
+        )
+    }
+
     private fun selectedSources(files: List<Path>): String = buildString {
         for (file in files) {
             if (!Files.isRegularFile(file)) continue
@@ -108,6 +130,15 @@ class AgentContextCollector(
             .forEach { candidates.add(it) }
 
         return candidates.toList()
+    }
+
+    private fun resolveHint(value: String): Path? {
+        val candidate = runCatching {
+            val path = Path.of(value.trim())
+            if (path.isAbsolute) path.normalize() else repoRoot.resolve(path).normalize()
+        }.getOrNull() ?: return null
+        if (!candidate.startsWith(repoRoot)) return null
+        return if (Files.isRegularFile(candidate)) candidate else null
     }
 
     private fun gitStatus(): String =
