@@ -1,10 +1,20 @@
 package atropos.cli.commands
 
 import atropos.cli.ui.AnsiTerminalEngine
+import atropos.cli.ui.AgentJobEvent
+import atropos.cli.ui.AgentJobRenderer
+import atropos.cli.ui.AgentJobStatus as UiAgentJobStatus
+import atropos.cli.ui.AgentJobSummary
+import atropos.cli.ui.TerminalTheme
+import atropos.cli.config.ConfigurationManager
 import atropos.core.AtroposConfig
 import atropos.core.agent.AgentPatchExtractor
+import atropos.core.agent.AgentJobRecord
 import atropos.core.agent.AgentService
 import atropos.core.agent.AgentRunService
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.nio.file.Path
 import java.nio.file.Files
 
 sealed class AgentCommandOutcome {
@@ -24,6 +34,10 @@ class AgentCommand(
     private val runService: AgentRunService = AgentRunService(config)
 ) : AgentCommandHandler {
     private val patchExtractor = AgentPatchExtractor()
+    private val jobRenderer = AgentJobRenderer(TerminalTheme(ConfigurationManager()))
+    private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss").withZone(ZoneId.systemDefault())
+    private val repoRoot = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize()
+    private val patchDirectory = repoRoot.resolve(".atropos/agent/patches").normalize()
 
     /** Last patch id ATROPOS has knowledge of, surfaced to the status line. Never implies a patch was applied. */
     var lastKnownPatchId: String? = null
@@ -31,7 +45,7 @@ class AgentCommand(
 
     override fun execute(tokens: List<String>): AgentCommandOutcome {
         if (tokens.size < 2) {
-            return invalid("usage: /agent [status|run <task>|jobs|job <id>|ask <task>|patch [--provider <name>] <task>|apply [--check|--verify] <patch-id|latest>|verify [<patch-id|latest>]|repair [<patch-id|latest>]]")
+            return invalid("usage: /agent [status|run <task>|jobs|job <id> [--raw]|ask <task>|patch [--provider <name>] <task>|apply [--check|--verify] <patch-id|latest>|verify [<patch-id|latest>]|repair [<patch-id|latest>]]")
         }
 
         return when (tokens[1].lowercase()) {
@@ -45,7 +59,9 @@ class AgentCommand(
                 return try {
                     val result = runService.run(activeProviderName(), task)
                     lastKnownPatchId = result.appliedPatchId ?: result.patchId ?: lastKnownPatchId
-                    val rendered = formatBlock("AGENT RUN", result.render())
+                    val rendered = renderRendererOutput(
+                        jobRenderer.renderRunSummary(result.toJobSummary(), terminalWidth())
+                    )
                     ui.renderNotice(rendered)
                     AgentCommandOutcome.Completed(rendered)
                 } catch (failure: Exception) {
@@ -66,20 +82,40 @@ class AgentCommand(
             }
 
             "jobs" -> {
-                val rendered = formatBlock("AGENT JOBS", runService.renderJobs())
+                val jobs = runService.listJobs()
+                val rendered = renderRendererOutput(
+                    jobRenderer.renderJobsList(jobs.map { it.toJobSummary() }, terminalWidth())
+                )
                 ui.renderNotice(rendered)
                 AgentCommandOutcome.Completed(rendered)
             }
 
             "job" -> {
-                val jobReference = parseReference(tokens.drop(2))
+                val jobRequest = parseJobRequest(tokens.drop(2))
+                val jobReference = jobRequest.reference
                 if (jobReference == null) {
-                    return invalid("usage: /agent job [<id|latest>]")
+                    return invalid("usage: /agent job [<id|latest>] [--raw]")
                 }
 
                 val job = runService.resolveJob(jobReference)
                     ?: return invalid("job not found: $jobReference")
-                val rendered = formatBlock("AGENT JOB", job.render())
+                val rendered = if (jobRequest.raw) {
+                    formatBlock("AGENT JOB RAW", job.render())
+                } else {
+                    buildString {
+                        append(
+                            renderRendererOutput(
+                                jobRenderer.renderJobDetail(
+                                    job.toJobSummary(),
+                                    job.timelineEntries(),
+                                    terminalWidth()
+                                )
+                            )
+                        )
+                        appendLine()
+                        append("raw: /agent job ${job.id} --raw")
+                    }.trimEnd()
+                }
                 ui.renderNotice(rendered)
                 AgentCommandOutcome.Completed(rendered)
             }
@@ -240,7 +276,7 @@ class AgentCommand(
                 }
             }
 
-            else -> invalid("usage: /agent [status|run <task>|jobs|job <id>|ask <task>|patch [--provider <name>] <task>|apply [--check|--verify] <patch-id|latest>|verify [<patch-id|latest>]|repair [<patch-id|latest>]]")
+            else -> invalid("usage: /agent [status|run <task>|jobs|job <id> [--raw]|ask <task>|patch [--provider <name>] <task>|apply [--check|--verify] <patch-id|latest>|verify [<patch-id|latest>]|repair [<patch-id|latest>]]")
         }
     }
 
@@ -265,6 +301,9 @@ class AgentCommand(
         appendLine("── $title ──")
         body.lineSequence().forEach { line -> append(wrapLine(line)).append('\n') }
     }.trimEnd()
+
+    private fun renderRendererOutput(lines: List<String>): String =
+        lines.joinToString("\n").trimEnd()
 
     // Only very long unbroken lines are pre-wrapped; the reactive renderer already
     // wraps every transcript line at the live terminal width, so wrapping shorter
@@ -302,7 +341,15 @@ class AgentCommand(
         val verifyAfterApply: Boolean = false
     )
 
+    private data class JobRequest(
+        val reference: String? = null,
+        val raw: Boolean = false
+    )
+
     private val patchProviderAllowList = setOf("github_models", "sambanova", "cloudflare_ai", "groq")
+
+    private fun terminalWidth(): Int =
+        System.getenv("COLUMNS")?.toIntOrNull()?.coerceAtLeast(40) ?: 80
 
     private fun parsePatchRequest(args: List<String>): PatchRequest {
         if (args.isEmpty()) return PatchRequest(task = "")
@@ -341,6 +388,25 @@ class AgentCommand(
         return null
     }
 
+    private fun parseJobRequest(args: List<String>): JobRequest {
+        if (args.isEmpty()) return JobRequest(reference = "latest")
+
+        var raw = false
+        val referenceParts = mutableListOf<String>()
+
+        for (token in args) {
+            when {
+                token == "--raw" || token.equals("raw", ignoreCase = true) -> raw = true
+                token.startsWith("--raw=") -> raw = token.substringAfter("=", "true").trim().toBooleanStrictOrNull() ?: true
+                token.startsWith("--") -> return JobRequest()
+                else -> referenceParts += token.trim()
+            }
+        }
+
+        val reference = referenceParts.joinToString(" ").trim().ifBlank { "latest" }
+        return JobRequest(reference = reference, raw = raw)
+    }
+
     private fun parseApplyRequest(args: List<String>): ApplyRequest {
         if (args.isEmpty()) return ApplyRequest(patchReference = "latest")
 
@@ -366,6 +432,110 @@ class AgentCommand(
             verifyAfterApply = verifyAfterApply
         )
     }
+
+    private fun AgentJobRecord.toJobSummary(): AgentJobSummary =
+        AgentJobSummary(
+            id = id,
+            task = task,
+            status = toUiStatus(),
+            provider = provider.takeIf { it.isNotBlank() },
+            patchId = displayPatchId(),
+            startedAt = formatInstant(startedAt),
+            updatedAt = formatInstant(updatedAt),
+            changedPathsCount = changedPathsCount(),
+            note = note()
+        )
+
+    private fun AgentJobRecord.timelineEntries(): List<AgentJobEvent> = buildList {
+        addEvent(planAt, UiAgentJobStatus.PLANNING, null)
+        addEvent(patchAt, UiAgentJobStatus.PATCHING, null)
+        addEvent(applyAt, UiAgentJobStatus.APPLYING, applyNote())
+        addEvent(verificationAt, UiAgentJobStatus.VERIFYING, verificationNote())
+        addEvent(repairAt, UiAgentJobStatus.REPAIRING, repairNote())
+        finishedAt?.let { finished ->
+            add(
+                AgentJobEvent(
+                    at = formatInstant(finished),
+                    status = toUiStatus(),
+                    note = terminalNote()
+                )
+            )
+        }
+    }.distinctBy { it.at to it.status to it.note }
+
+    private fun MutableList<AgentJobEvent>.addEvent(
+        instant: java.time.Instant?,
+        status: UiAgentJobStatus,
+        note: String?
+    ) {
+        if (instant != null) {
+            add(
+                AgentJobEvent(
+                    at = formatInstant(instant),
+                    status = status,
+                    note = note
+                )
+            )
+        }
+    }
+
+    private fun AgentJobRecord.toUiStatus(): UiAgentJobStatus = when (status) {
+        atropos.core.agent.AgentJobStatus.PLANNING -> UiAgentJobStatus.PLANNING
+        atropos.core.agent.AgentJobStatus.PATCHING -> UiAgentJobStatus.PATCHING
+        atropos.core.agent.AgentJobStatus.APPLYING -> UiAgentJobStatus.APPLYING
+        atropos.core.agent.AgentJobStatus.REPAIRING -> UiAgentJobStatus.REPAIRING
+        atropos.core.agent.AgentJobStatus.COMPLETED -> UiAgentJobStatus.PASSED
+        atropos.core.agent.AgentJobStatus.FAILED -> if (looksRefused()) UiAgentJobStatus.REFUSED else UiAgentJobStatus.FAILED
+    }
+
+    private fun AgentJobRecord.looksRefused(): Boolean {
+        val text = listOfNotNull(failureReason, result, patchResult, applyResult, repairResult)
+            .joinToString(" ")
+            .lowercase()
+        return text.contains("refus") ||
+            text.contains("unsafe") ||
+            text.contains("forbidden") ||
+            text.contains("no unified diff") ||
+            text.contains("bad diff") ||
+            text.contains("invalid patch")
+    }
+
+    private fun AgentJobRecord.displayPatchId(): String? =
+        appliedPatchId?.takeIf { it.isNotBlank() }
+            ?: patchId?.takeIf { it.isNotBlank() }
+
+    private fun AgentJobRecord.changedPathsCount(): Int? {
+        val patchId = displayPatchId() ?: return null
+        val diffFile = patchDirectory.resolve("$patchId.diff").normalize()
+        if (!diffFile.startsWith(patchDirectory) || !Files.isRegularFile(diffFile)) return null
+        val diffText = runCatching { Files.readString(diffFile) }.getOrNull() ?: return null
+        return patchExtractor.extract(diffText)?.touchedPaths?.size
+    }
+
+    private fun AgentJobRecord.note(): String? =
+        when (status) {
+            atropos.core.agent.AgentJobStatus.FAILED -> failureReason?.takeIf { it.isNotBlank() } ?: result
+            else -> null
+        }?.takeIf { it.isNotBlank() }
+
+    private fun AgentJobRecord.terminalNote(): String? =
+        when (toUiStatus()) {
+            UiAgentJobStatus.PASSED -> result?.takeIf { it.isNotBlank() }
+            UiAgentJobStatus.FAILED, UiAgentJobStatus.REFUSED -> failureReason?.takeIf { it.isNotBlank() } ?: result
+            else -> null
+        }?.takeIf { it.isNotBlank() }
+
+    private fun AgentJobRecord.applyNote(): String? =
+        applyResult?.lineSequence()?.firstOrNull { it.isNotBlank() }?.trim()?.takeIf { it.isNotBlank() }
+
+    private fun AgentJobRecord.verificationNote(): String? =
+        verificationId?.takeIf { it.isNotBlank() }?.let { "verification $it" }
+
+    private fun AgentJobRecord.repairNote(): String? =
+        repairId?.takeIf { it.isNotBlank() }?.let { "repair $it" }
+
+    private fun formatInstant(instant: java.time.Instant?): String =
+        instant?.let { timeFormatter.format(it) } ?: "unknown"
 
     private fun invalid(message: String): AgentCommandOutcome.Invalid {
         ui.renderError(message)
