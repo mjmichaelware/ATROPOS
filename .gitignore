@@ -27,3 +27,4 @@ tmp-*.jar
 # Generated build and runtime files
 __pycache__/
 *.py[cod]
+/atropos.jar
