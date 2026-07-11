@@ -109,6 +109,17 @@ class AgentJobStore(
             appendLine("patchResultB64=${encode(record.patchResult.orEmpty())}")
             appendLine("applyResultB64=${encode(record.applyResult.orEmpty())}")
             appendLine("repairResultB64=${encode(record.repairResult.orEmpty())}")
+            appendLine("smokeCommandB64=${encode(record.smokeCommand.orEmpty())}")
+            appendLine("smokeExitCode=${record.smokeExitCode ?: ""}")
+            appendLine("smokeDurationMillis=${record.smokeDurationMillis ?: ""}")
+            appendLine("smokeStdoutB64=${encode(record.smokeStdout.orEmpty())}")
+            appendLine("smokeStderrB64=${encode(record.smokeStderr.orEmpty())}")
+            appendLine("smokePassed=${record.smokePassed ?: ""}")
+            appendLine("smokeResultB64=${encode(record.smokeResult.orEmpty())}")
+            appendLine("finalReportB64=${encode(record.finalReport.orEmpty())}")
+            appendLine("commitProposalB64=${encode(record.commitProposal.orEmpty())}")
+            appendLine("nextSuggestedCommandB64=${encode(record.nextSuggestedCommand.orEmpty())}")
+            appendLine("contextExportPathB64=${encode(record.contextExportPath.orEmpty())}")
             appendLine("metaFile=${record.metaFile.fileName}")
         }
         Files.writeString(tmp, content, StandardCharsets.UTF_8)
@@ -170,6 +181,17 @@ class AgentJobStore(
             patchResult = decode(fields["patchResultB64"]).takeIf { it.isNotBlank() },
             applyResult = decode(fields["applyResultB64"]).takeIf { it.isNotBlank() },
             repairResult = decode(fields["repairResultB64"]).takeIf { it.isNotBlank() },
+            smokeCommand = decode(fields["smokeCommandB64"]).takeIf { it.isNotBlank() },
+            smokeExitCode = fields["smokeExitCode"]?.takeIf { it.isNotBlank() }?.toIntOrNull(),
+            smokeDurationMillis = fields["smokeDurationMillis"]?.takeIf { it.isNotBlank() }?.toLongOrNull(),
+            smokeStdout = decode(fields["smokeStdoutB64"]).takeIf { it.isNotBlank() },
+            smokeStderr = decode(fields["smokeStderrB64"]).takeIf { it.isNotBlank() },
+            smokePassed = fields["smokePassed"]?.takeIf { it.isNotBlank() }?.toBooleanStrictOrNull(),
+            smokeResult = decode(fields["smokeResultB64"]).takeIf { it.isNotBlank() },
+            finalReport = decode(fields["finalReportB64"]).takeIf { it.isNotBlank() },
+            commitProposal = decode(fields["commitProposalB64"]).takeIf { it.isNotBlank() },
+            nextSuggestedCommand = decode(fields["nextSuggestedCommandB64"]).takeIf { it.isNotBlank() },
+            contextExportPath = decode(fields["contextExportPathB64"]).takeIf { it.isNotBlank() },
             metaFile = metaFile
         )
     }

@@ -45,19 +45,19 @@ class AgentCommand(
 
     override fun execute(tokens: List<String>): AgentCommandOutcome {
         if (tokens.size < 2) {
-            return invalid("usage: /agent [status|run <task>|jobs|job <id> [--raw]|ask <task>|patch [--provider <name>] <task>|apply [--check|--verify] <patch-id|latest>|verify [<patch-id|latest>]|repair [<patch-id|latest>]]")
+            return invalid("usage: /agent [status|run [--smoke <command>] <task>|jobs|job <id> [--raw]|ask <task>|patch [--provider <name>] <task>|apply [--check|--verify] <patch-id|latest>|verify [<patch-id|latest>]|repair [<patch-id|latest>]]")
         }
 
         return when (tokens[1].lowercase()) {
             "run" -> {
-                val task = tokens.drop(2).joinToString(" ").trim()
-                if (task.isBlank()) {
-                    return invalid("usage: /agent run <task>")
+                val runRequest = parseRunRequest(tokens.drop(2))
+                if (runRequest.task.isBlank()) {
+                    return invalid("usage: /agent run [--smoke <command>] <task>")
                 }
 
                 ui.startSpinner("Planning durable agent job")
                 return try {
-                    val result = runService.run(activeProviderName(), task)
+                    val result = runService.run(activeProviderName(), runRequest.task, runRequest.smokeCommand)
                     lastKnownPatchId = result.appliedPatchId ?: result.patchId ?: lastKnownPatchId
                     val rendered = renderRendererOutput(
                         jobRenderer.renderRunSummary(result.toJobSummary(), terminalWidth())
@@ -276,7 +276,7 @@ class AgentCommand(
                 }
             }
 
-            else -> invalid("usage: /agent [status|run <task>|jobs|job <id> [--raw]|ask <task>|patch [--provider <name>] <task>|apply [--check|--verify] <patch-id|latest>|verify [<patch-id|latest>]|repair [<patch-id|latest>]]")
+            else -> invalid("usage: /agent [status|run [--smoke <command>] <task>|jobs|job <id> [--raw]|ask <task>|patch [--provider <name>] <task>|apply [--check|--verify] <patch-id|latest>|verify [<patch-id|latest>]|repair [<patch-id|latest>]]")
         }
     }
 
@@ -433,6 +433,44 @@ class AgentCommand(
         )
     }
 
+    private fun parseRunRequest(args: List<String>): RunRequest {
+        if (args.isEmpty()) return RunRequest(task = "")
+
+        var smokeCommand: String? = null
+        val taskParts = mutableListOf<String>()
+        var index = 0
+
+        while (index < args.size) {
+            val token = args[index]
+            when {
+                token == "--smoke" -> {
+                    val smoke = args.getOrNull(index + 1)?.trim()
+                    if (smoke.isNullOrBlank() || smoke.startsWith("--")) {
+                        return RunRequest()
+                    }
+                    smokeCommand = smoke
+                    index += 2
+                }
+                token.startsWith("--smoke=") -> {
+                    val smoke = token.substringAfter("=").trim()
+                    if (smoke.isBlank()) return RunRequest()
+                    smokeCommand = smoke
+                    index++
+                }
+                token.startsWith("--") -> return RunRequest()
+                else -> {
+                    taskParts += token
+                    index++
+                }
+            }
+        }
+
+        return RunRequest(
+            smokeCommand = smokeCommand?.takeIf { it.isNotBlank() },
+            task = taskParts.joinToString(" ").trim()
+        )
+    }
+
     private fun AgentJobRecord.toJobSummary(): AgentJobSummary =
         AgentJobSummary(
             id = id,
@@ -440,6 +478,13 @@ class AgentCommand(
             status = toUiStatus(),
             provider = provider.takeIf { it.isNotBlank() },
             patchId = displayPatchId(),
+            verificationId = verificationId?.takeIf { it.isNotBlank() },
+            smokeCommand = smokeCommand?.takeIf { it.isNotBlank() },
+            smokeSummary = smokeSummary(),
+            finalReport = finalReport?.takeIf { it.isNotBlank() },
+            commitProposal = commitProposal?.takeIf { it.isNotBlank() },
+            nextSuggestedCommand = nextSuggestedCommand?.takeIf { it.isNotBlank() },
+            contextExportPath = contextExportPath?.takeIf { it.isNotBlank() },
             startedAt = formatInstant(startedAt),
             updatedAt = formatInstant(updatedAt),
             changedPathsCount = changedPathsCount(),
@@ -486,10 +531,11 @@ class AgentCommand(
         atropos.core.agent.AgentJobStatus.REPAIRING -> UiAgentJobStatus.REPAIRING
         atropos.core.agent.AgentJobStatus.COMPLETED -> UiAgentJobStatus.PASSED
         atropos.core.agent.AgentJobStatus.FAILED -> if (looksRefused()) UiAgentJobStatus.REFUSED else UiAgentJobStatus.FAILED
+        atropos.core.agent.AgentJobStatus.REFUSED -> UiAgentJobStatus.REFUSED
     }
 
     private fun AgentJobRecord.looksRefused(): Boolean {
-        val text = listOfNotNull(failureReason, result, patchResult, applyResult, repairResult)
+        val text = listOfNotNull(failureReason, result, patchResult, applyResult, repairResult, smokeResult, finalReport)
             .joinToString(" ")
             .lowercase()
         return text.contains("refus") ||
@@ -514,14 +560,20 @@ class AgentCommand(
 
     private fun AgentJobRecord.note(): String? =
         when (status) {
-            atropos.core.agent.AgentJobStatus.FAILED -> failureReason?.takeIf { it.isNotBlank() } ?: result
-            else -> null
+            atropos.core.agent.AgentJobStatus.FAILED,
+            atropos.core.agent.AgentJobStatus.REFUSED -> failureReason?.takeIf { it.isNotBlank() }
+                ?: finalReport?.takeIf { it.isNotBlank() }
+                ?: smokeSummary()
+                ?: result
+            else -> finalReport?.takeIf { it.isNotBlank() }
+                ?: smokeSummary()
+                ?: result
         }?.takeIf { it.isNotBlank() }
 
     private fun AgentJobRecord.terminalNote(): String? =
         when (toUiStatus()) {
-            UiAgentJobStatus.PASSED -> result?.takeIf { it.isNotBlank() }
-            UiAgentJobStatus.FAILED, UiAgentJobStatus.REFUSED -> failureReason?.takeIf { it.isNotBlank() } ?: result
+            UiAgentJobStatus.PASSED -> finalReport?.takeIf { it.isNotBlank() } ?: result?.takeIf { it.isNotBlank() }
+            UiAgentJobStatus.FAILED, UiAgentJobStatus.REFUSED -> failureReason?.takeIf { it.isNotBlank() } ?: finalReport?.takeIf { it.isNotBlank() } ?: result
             else -> null
         }?.takeIf { it.isNotBlank() }
 
@@ -534,6 +586,21 @@ class AgentCommand(
     private fun AgentJobRecord.repairNote(): String? =
         repairId?.takeIf { it.isNotBlank() }?.let { "repair $it" }
 
+    private fun AgentJobRecord.smokeSummary(): String? {
+        smokeResult?.takeIf { it.isNotBlank() }?.let { return it }
+        smokeCommand?.takeIf { it.isNotBlank() }?.let { command ->
+            val resultText = when {
+                smokePassed == true -> "passed"
+                smokePassed == false && smokeExitCode != null -> "failed exit ${smokeExitCode}"
+                smokePassed == false -> "failed"
+                else -> "not run"
+            }
+            val durationText = smokeDurationMillis?.let { "${it} ms" } ?: "unknown duration"
+            return "$resultText · $command · $durationText"
+        }
+        return null
+    }
+
     private fun formatInstant(instant: java.time.Instant?): String =
         instant?.let { timeFormatter.format(it) } ?: "unknown"
 
@@ -541,4 +608,9 @@ class AgentCommand(
         ui.renderError(message)
         return AgentCommandOutcome.Invalid(message)
     }
+
+    private data class RunRequest(
+        val smokeCommand: String? = null,
+        val task: String = ""
+    )
 }

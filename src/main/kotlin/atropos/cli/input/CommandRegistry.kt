@@ -29,6 +29,7 @@ object CommandRegistry {
         CommandEntry("/agent", "agent bridge"),
         CommandEntry("/agent status", "agent bridge status"),
         CommandEntry("/agent run", "durable agent job runner"),
+        CommandEntry("/agent run --smoke", "durable agent job runner with local smoke"),
         CommandEntry("/agent jobs", "recent agent jobs"),
         CommandEntry("/agent job", "agent job details (use --raw for full record)"),
         CommandEntry("/agent job --raw", "full raw agent job record"),
