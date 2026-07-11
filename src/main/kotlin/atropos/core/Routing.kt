@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core
 
+import atropos.core.provider.ProviderTruthService
+
 enum class TaskClass {
     SMALL_CHAT,
     CODING,
@@ -25,17 +27,9 @@ data class ProviderInventory(
 
 class ProviderDecisionEngine {
     fun inventory(config: AtroposConfig): ProviderInventory {
+        val truth = ProviderTruthService(config).snapshot()
         return ProviderInventory(
-            configured = mapOf(
-                "groq" to config.keys.groq.isNotBlank(),
-                "openai" to config.keys.openai.isNotBlank(),
-                "anthropic" to config.keys.anthropic.isNotBlank(),
-                "xai" to config.keys.xai.isNotBlank(),
-                "github_models" to envConfigured("GITHUB_MODELS_TOKEN"),
-                "cloudflare_ai" to (envConfigured("CLOUDFLARE_API_TOKEN") && envConfigured("CLOUDFLARE_ACCOUNT_ID")),
-                "sambanova" to envConfigured("SAMBANOVA_API_KEY"),
-                "deepseek_direct" to envConfigured("DEEPSEEK_API_KEY")
-            ),
+            configured = truth.records.associate { it.id to it.keyPresent },
             ollama = OllamaHealthProbe().probe()
         )
     }
@@ -100,24 +94,7 @@ class ProviderDecisionEngine {
     }
 
     fun providersReport(config: AtroposConfig): String {
-        val inv = inventory(config)
-        fun mark(name: String): String = if (inv.configured[name] == true) "configured" else "missing"
-        val ollama = if (inv.ollama.online) "online ${inv.ollama.selectedModel} (${inv.ollama.models.size} models)" else "offline"
-        return listOf(
-            "providers:",
-            "groq: ${mark("groq")}",
-            "openai: ${mark("openai")}",
-            "anthropic: ${mark("anthropic")}",
-            "xai: ${mark("xai")}",
-            "github_models: ${mark("github_models")}",
-            "cloudflare_ai: ${mark("cloudflare_ai")}",
-            "sambanova: ${mark("sambanova")}",
-            "deepseek_direct: ${mark("deepseek_direct")}",
-            "ollama: $ollama",
-            "gemini: not installed"
-        ).joinToString("\n")
+        return ProviderTruthService(config).snapshot().renderInventory()
     }
 
-    private fun envConfigured(name: String): Boolean =
-        System.getenv(name).isNullOrBlank().not()
 }

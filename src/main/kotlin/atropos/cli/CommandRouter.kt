@@ -222,7 +222,11 @@ class CommandRouter(
             "/status" -> {
                 val statusRenderer = atropos.cli.ui.StatusQuotaRenderer()
                 when (tokens.getOrNull(1)?.lowercase()) {
-                    "endpoints" -> uiEngine.renderNotice(StatusEndpointRenderer(StaticOperationRegistry()).render())
+                    "endpoints" -> uiEngine.renderNotice(
+                        StatusEndpointRenderer(
+                            atropos.core.provider.ProviderTruthService(config).endpointRegistry()
+                        ).render()
+                    )
                     "quota" -> uiEngine.renderNotice(statusRenderer.renderQuota())
                     "route" -> {
                         val task = tokens.drop(2).joinToString(" ").trim()
@@ -251,6 +255,9 @@ class CommandRouter(
 
             "/providers" -> {
                 when (tokens.getOrNull(1)?.lowercase()) {
+                    "inventory" -> uiEngine.renderNotice(
+                        atropos.core.provider.ProviderTruthService(config).snapshot(currentProviderName).renderInventory()
+                    )
                     "descriptors" -> uiEngine.renderNotice(
                         atropos.cli.ui.StatusProviderDescriptorRenderer(
                             atropos.core.provider.StaticProviderDescriptorRegistry()
