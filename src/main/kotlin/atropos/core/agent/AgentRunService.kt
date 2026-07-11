@@ -12,7 +12,12 @@ class AgentRunService(
     private val smokeRunner: AgentSmokeRunner = AgentSmokeRunner(collector.repoRoot),
     private val contextExporter: AgentContextExportStore = AgentContextExportStore(collector.repoRoot)
 ) {
-    fun run(activeProviderName: String, task: String, smokeCommand: String? = null): AgentJobRecord {
+    fun run(
+        activeProviderName: String,
+        task: String,
+        smokeCommand: String? = null,
+        hooks: AgentRunHooks = AgentRunHooks.NONE
+    ): AgentJobRecord {
         val smokeRequested = smokeCommand?.trim()?.takeIf { it.isNotBlank() }
         if (smokeRequested != null) {
             val smokeRefusal = smokeRunner.validate(smokeRequested)
@@ -20,13 +25,16 @@ class AgentRunService(
                 return refuseUnsafeSmoke(task, smokeRequested, smokeRefusal)
             }
         }
+        hooks.checkpoint(AgentQueueCheckpoint.PREFLIGHT_PASSED, null, "smoke preflight passed")
 
         val startedAt = Instant.now()
         val baselineStatus = captureRepoStatus()
         var job = jobStore.createJob(task = task, provider = activeProviderName)
         job = persist(job.copy(status = AgentJobStatus.PLANNING, updatedAt = startedAt))
+        hooks.checkpoint(AgentQueueCheckpoint.CLAIMED, job, "job record created")
 
         try {
+            hooks.beforeStage(AgentQueueCheckpoint.PLANNED, job)
             val planPrompt = buildPlanPrompt(task)
             val planResult = agentService.ask(activeProviderName, planPrompt)
             val planAt = Instant.now()
@@ -40,7 +48,9 @@ class AgentRunService(
                     result = "plan captured from ${planResult.providerName}"
                 )
             )
+            hooks.checkpoint(AgentQueueCheckpoint.PLANNED, job, "planning completed")
 
+            hooks.beforeStage(AgentQueueCheckpoint.PATCH_GENERATED, job)
             val patchTask = buildPatchTask(task, planResult.answerText)
             val providerPatchResult = agentService.patch(activeProviderName, patchTask)
             val patchResult = providerPatchResult.takeIf { it.patchId != null && it.checkResult?.passed != false }
@@ -57,6 +67,7 @@ class AgentRunService(
                     patchResult = patchResult.render()
                 )
             )
+            hooks.checkpoint(AgentQueueCheckpoint.PATCH_GENERATED, job, "patch generated")
 
             val patchId = patchResult.patchId
             if (patchId.isNullOrBlank()) {
@@ -68,6 +79,7 @@ class AgentRunService(
                 return finalizeRun(job, task, smokeCommand, null, baselineStatus)
             }
 
+            hooks.beforeStage(AgentQueueCheckpoint.PATCH_APPLIED, job)
             val applyResult = agentService.applyPatch(patchId, checkOnly = false, verifyAfterApply = true)
             val applyAt = Instant.now()
             val initialVerificationId = applyResult.verificationResult?.verificationId
@@ -93,6 +105,12 @@ class AgentRunService(
                     }
                 )
             )
+            if (applyResult.applied) {
+                hooks.checkpoint(AgentQueueCheckpoint.PATCH_APPLIED, job, "patch applied")
+            }
+            if (applyResult.verificationResult?.passed == true) {
+                hooks.checkpoint(AgentQueueCheckpoint.VERIFIED, job, "verification passed")
+            }
 
             if (applyResult.applied && applyResult.verificationResult?.passed == true) {
                 job = complete(job)
@@ -105,6 +123,7 @@ class AgentRunService(
                     ?: applyResult.applyOutput
                     ?: "verification failed"
 
+                hooks.beforeStage(AgentQueueCheckpoint.REPAIR_GENERATED, job)
                 val repairResult = agentService.repair(activeProviderName, patchId)
                 val repairAt = Instant.now()
                 job = persist(
@@ -117,6 +136,7 @@ class AgentRunService(
                         repairResult = repairResult.render()
                     )
                 )
+                hooks.checkpoint(AgentQueueCheckpoint.REPAIR_GENERATED, job, "repair generated")
 
                 val repairPatchId = repairResult.patchId
                 if (repairPatchId.isNullOrBlank()) {
@@ -128,6 +148,7 @@ class AgentRunService(
                     return finalizeRun(job, task, smokeCommand, null, baselineStatus)
                 }
 
+                hooks.beforeStage(AgentQueueCheckpoint.REPAIR_APPLIED, job)
                 val repairedApply = agentService.applyPatch(repairPatchId, checkOnly = false, verifyAfterApply = true)
                 val repairedAt = Instant.now()
                 val repairedVerificationId = repairedApply.verificationResult?.verificationId
@@ -153,6 +174,12 @@ class AgentRunService(
                         }
                     )
                 )
+                if (repairedApply.applied) {
+                    hooks.checkpoint(AgentQueueCheckpoint.REPAIR_APPLIED, job, "repair patch applied")
+                }
+                if (repairedApply.verificationResult?.passed == true) {
+                    hooks.checkpoint(AgentQueueCheckpoint.REVERIFIED, job, "repair verification passed")
+                }
 
                 if (job.status != AgentJobStatus.COMPLETED) {
                     val failureReason = repairedApply.verificationResult?.refusalReason
@@ -167,6 +194,7 @@ class AgentRunService(
             val smokeExecution = if (smokeCommand.isNullOrBlank()) {
                 null
             } else if (job.status == AgentJobStatus.COMPLETED) {
+                hooks.beforeStage(AgentQueueCheckpoint.SMOKE_PASSED, job)
                 smokeRunner.run(smokeCommand)
             } else {
                 null
@@ -191,12 +219,23 @@ class AgentRunService(
                         result = if (smokePassed) job.result else "smoke failed"
                     )
                 )
+                hooks.checkpoint(
+                    if (smokePassed) AgentQueueCheckpoint.SMOKE_PASSED else AgentQueueCheckpoint.SMOKE_FAILED,
+                    job,
+                    smokeExecution.summary()
+                )
             }
 
-            return finalizeRun(job, task, smokeCommand, smokeExecution, baselineStatus)
+            val final = finalizeRun(job, task, smokeCommand, smokeExecution, baselineStatus)
+            hooks.checkpoint(AgentQueueCheckpoint.FINALIZED, final, "final report persisted")
+            return final
+        } catch (cancelled: AgentRunCancelledException) {
+            throw cancelled
         } catch (failure: Exception) {
             job = fail(job, compactFailureSummary(failure.message), "agent run failed")
-            return finalizeRun(job, task, smokeCommand, null, baselineStatus)
+            val final = finalizeRun(job, task, smokeCommand, null, baselineStatus)
+            hooks.checkpoint(AgentQueueCheckpoint.FINALIZED, final, "failed final report persisted")
+            return final
         }
     }
 

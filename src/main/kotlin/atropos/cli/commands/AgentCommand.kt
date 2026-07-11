@@ -5,11 +5,15 @@ import atropos.cli.ui.AgentJobEvent
 import atropos.cli.ui.AgentJobRenderer
 import atropos.cli.ui.AgentJobStatus as UiAgentJobStatus
 import atropos.cli.ui.AgentJobSummary
+import atropos.cli.ui.AgentQueueRenderer
 import atropos.cli.ui.TerminalTheme
 import atropos.cli.config.ConfigurationManager
 import atropos.core.AtroposConfig
 import atropos.core.agent.AgentPatchExtractor
 import atropos.core.agent.AgentJobRecord
+import atropos.core.agent.AgentQueueDoctor
+import atropos.core.agent.AgentQueueRecord
+import atropos.core.agent.AgentQueueService
 import atropos.core.agent.AgentService
 import atropos.core.agent.AgentRunService
 import java.time.ZoneId
@@ -31,10 +35,12 @@ class AgentCommand(
     private val config: AtroposConfig = AtroposConfig.load(),
     private val activeProviderName: () -> String,
     private val service: AgentService = AgentService(config),
-    private val runService: AgentRunService = AgentRunService(config)
+    private val runService: AgentRunService = AgentRunService(config),
+    private val queueService: AgentQueueService = AgentQueueService(config)
 ) : AgentCommandHandler {
     private val patchExtractor = AgentPatchExtractor()
     private val jobRenderer = AgentJobRenderer(TerminalTheme(ConfigurationManager()))
+    private val queueRenderer = AgentQueueRenderer(TerminalTheme(ConfigurationManager()))
     private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss").withZone(ZoneId.systemDefault())
     private val repoRoot = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize()
     private val patchDirectory = repoRoot.resolve(".atropos/agent/patches").normalize()
@@ -45,7 +51,7 @@ class AgentCommand(
 
     override fun execute(tokens: List<String>): AgentCommandOutcome {
         if (tokens.size < 2) {
-            return invalid("usage: /agent [status|run [--smoke <command>] <task>|jobs|job <id> [--raw]|ask <task>|patch [--provider <name>] <task>|apply [--check|--verify] <patch-id|latest>|verify [<patch-id|latest>]|repair [<patch-id|latest>]]")
+            return invalid(agentUsage())
         }
 
         return when (tokens[1].lowercase()) {
@@ -72,6 +78,21 @@ class AgentCommand(
                     ui.stopSpinner()
                 }
             }
+
+            "enqueue" -> {
+                val request = parseRunRequest(tokens.drop(2))
+                if (request.task.isBlank()) {
+                    return invalid("usage: /agent enqueue [--smoke <command>] <task>")
+                }
+                val record = queueService.enqueue(request.task, request.smokeCommand)
+                val rendered = renderRendererOutput(
+                    queueRenderer.renderDetail(record, terminalWidth())
+                )
+                ui.renderNotice(rendered)
+                AgentCommandOutcome.Completed(rendered)
+            }
+
+            "queue" -> handleQueueCommand(tokens.drop(2))
 
             "status" -> {
                 val snapshot = service.status(activeProviderName())
@@ -276,9 +297,130 @@ class AgentCommand(
                 }
             }
 
-            else -> invalid("usage: /agent [status|run [--smoke <command>] <task>|jobs|job <id> [--raw]|ask <task>|patch [--provider <name>] <task>|apply [--check|--verify] <patch-id|latest>|verify [<patch-id|latest>]|repair [<patch-id|latest>]]")
+            else -> invalid(agentUsage())
         }
     }
+
+    private fun agentUsage(): String =
+        "usage: /agent [status|run [--smoke <command>] <task>|enqueue [--smoke <command>] <task>|queue [show|run|resume|cancel|recover|doctor]|jobs|job <id> [--raw]|ask <task>|patch [--provider <name>] <task>|apply [--check|--verify] <patch-id|latest>|verify [<patch-id|latest>]|repair [<patch-id|latest>]]"
+
+    private fun handleQueueCommand(args: List<String>): AgentCommandOutcome {
+        return when (args.getOrNull(0)?.lowercase()) {
+            null -> {
+                val rendered = renderRendererOutput(queueRenderer.renderList(queueService.list(), terminalWidth()))
+                ui.renderNotice(rendered)
+                AgentCommandOutcome.Completed(rendered)
+            }
+            "show" -> {
+                val request = parseQueueShowRequest(args.drop(1))
+                val reference = request.reference ?: return invalid("usage: /agent queue show [<queue-id|latest>] [--raw]")
+                val record = queueService.resolve(reference) ?: return invalid("queue entry not found: $reference")
+                val rendered = if (request.raw) {
+                    formatBlock("AGENT QUEUE RAW", record.renderRaw())
+                } else {
+                    buildString {
+                        append(renderRendererOutput(queueRenderer.renderDetail(record, terminalWidth())))
+                        appendLine()
+                        append("raw: /agent queue show ${record.id} --raw")
+                    }.trimEnd()
+                }
+                ui.renderNotice(rendered)
+                AgentCommandOutcome.Completed(rendered)
+            }
+            "run" -> handleQueueRun(args.drop(1))
+            "resume" -> {
+                val reference = parseReference(args.drop(1)) ?: return invalid("usage: /agent queue resume [<queue-id|latest>]")
+                ui.startSpinner("Resuming queued agent work")
+                return try {
+                    val result = queueService.resume(activeProviderName(), reference)
+                    result.jobRecord?.let { lastKnownPatchId = it.appliedPatchId ?: it.patchId ?: lastKnownPatchId }
+                    val rendered = renderQueueRunResult("AGENT QUEUE RESUME", result)
+                    ui.renderNotice(rendered)
+                    AgentCommandOutcome.Completed(rendered)
+                } finally {
+                    ui.stopSpinner()
+                }
+            }
+            "cancel" -> {
+                val reference = parseReference(args.drop(1)) ?: return invalid("usage: /agent queue cancel [<queue-id|latest>]")
+                val record = queueService.cancel(reference)
+                    ?: return invalid("queue entry not found: $reference")
+                val rendered = renderRendererOutput(queueRenderer.renderDetail(record, terminalWidth()))
+                ui.renderNotice(rendered)
+                AgentCommandOutcome.Completed(rendered)
+            }
+            "recover" -> {
+                val result = queueService.recover()
+                val rendered = formatBlock("AGENT QUEUE RECOVER", result.render())
+                ui.renderNotice(rendered)
+                AgentCommandOutcome.Completed(rendered)
+            }
+            "doctor" -> {
+                val result = AgentQueueDoctor().run()
+                val rendered = formatBlock("AGENT QUEUE DOCTOR", result.render())
+                if (result.passed) {
+                    ui.renderNotice(rendered)
+                    AgentCommandOutcome.Completed(rendered)
+                } else {
+                    ui.renderError(rendered)
+                    AgentCommandOutcome.Invalid(rendered)
+                }
+            }
+            else -> invalid("usage: /agent queue [show <queue-id|latest> [--raw]|run next|run --max <count>|resume <queue-id|latest>|cancel <queue-id|latest>|recover|doctor]")
+        }
+    }
+
+    private fun handleQueueRun(args: List<String>): AgentCommandOutcome {
+        return when {
+            args.size == 1 && args[0].equals("next", ignoreCase = true) -> {
+                ui.startSpinner("Running next queued agent job")
+                try {
+                    val result = queueService.runNext(activeProviderName())
+                    result.jobRecord?.let { lastKnownPatchId = it.appliedPatchId ?: it.patchId ?: lastKnownPatchId }
+                    val rendered = renderQueueRunResult("AGENT QUEUE RUN", result)
+                    ui.renderNotice(rendered)
+                    AgentCommandOutcome.Completed(rendered)
+                } finally {
+                    ui.stopSpinner()
+                }
+            }
+            args.size == 2 && args[0] == "--max" -> {
+                val max = args[1].toIntOrNull()
+                    ?: return invalid("usage: /agent queue run --max <1-${atropos.core.agent.AgentQueueDefaults.MAX_RUN_COUNT}>")
+                ui.startSpinner("Running queued agent batch")
+                try {
+                    val result = queueService.runMax(activeProviderName(), max)
+                    result.results.mapNotNull { it.jobRecord }.lastOrNull()?.let {
+                        lastKnownPatchId = it.appliedPatchId ?: it.patchId ?: lastKnownPatchId
+                    }
+                    val rendered = formatBlock("AGENT QUEUE RUN", result.render())
+                    ui.renderNotice(rendered)
+                    AgentCommandOutcome.Completed(rendered)
+                } finally {
+                    ui.stopSpinner()
+                }
+            }
+            else -> invalid("usage: /agent queue run next | /agent queue run --max <count>")
+        }
+    }
+
+    private fun renderQueueRunResult(title: String, result: atropos.core.agent.AgentQueueRunResult): String = buildString {
+        appendLine("── $title ──")
+        appendLine(result.message)
+        val record = result.queueRecord
+        if (record != null) {
+            queueRenderer.renderDetail(record, terminalWidth()).forEach { appendLine(it) }
+        }
+        val job = result.jobRecord
+        if (job != null) {
+            appendLine()
+            appendLine("job: ${job.id}")
+            appendLine("provider: ${job.provider}")
+            appendLine("patch: ${job.appliedPatchId ?: job.patchId ?: "none"}")
+            appendLine("verification: ${job.verificationId ?: "none"}")
+            appendLine("smoke: ${job.smokeResult ?: "none"}")
+        }
+    }.trimEnd()
 
     private fun changedPathsPreview(patchPath: java.nio.file.Path?, limit: Int = 6): String? {
         if (patchPath == null || !Files.isRegularFile(patchPath)) return null
@@ -406,6 +548,9 @@ class AgentCommand(
         val reference = referenceParts.joinToString(" ").trim().ifBlank { "latest" }
         return JobRequest(reference = reference, raw = raw)
     }
+
+    private fun parseQueueShowRequest(args: List<String>): JobRequest =
+        parseJobRequest(args)
 
     private fun parseApplyRequest(args: List<String>): ApplyRequest {
         if (args.isEmpty()) return ApplyRequest(patchReference = "latest")
