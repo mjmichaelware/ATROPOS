@@ -9,7 +9,8 @@ enum class AgentJobStatus {
     APPLYING,
     REPAIRING,
     COMPLETED,
-    FAILED
+    FAILED,
+    REFUSED
 }
 
 data class AgentJobRecord(
@@ -36,6 +37,17 @@ data class AgentJobRecord(
     val patchResult: String? = null,
     val applyResult: String? = null,
     val repairResult: String? = null,
+    val smokeCommand: String? = null,
+    val smokeExitCode: Int? = null,
+    val smokeDurationMillis: Long? = null,
+    val smokeStdout: String? = null,
+    val smokeStderr: String? = null,
+    val smokePassed: Boolean? = null,
+    val smokeResult: String? = null,
+    val finalReport: String? = null,
+    val commitProposal: String? = null,
+    val nextSuggestedCommand: String? = null,
+    val contextExportPath: String? = null,
     val metaFile: Path
 ) {
     fun render(): String = buildString {
@@ -58,11 +70,24 @@ data class AgentJobRecord(
         appendLine("repair at: ${repairAt ?: "none"}")
         appendLine("result: ${result ?: "none"}")
         appendLine("failure reason: ${failureReason ?: "none"}")
+        appendLine("smoke command: ${smokeCommand ?: "none"}")
+        appendLine("smoke exit code: ${smokeExitCode ?: "none"}")
+        appendLine("smoke duration ms: ${smokeDurationMillis ?: "none"}")
+        appendLine("smoke passed: ${smokePassed ?: "none"}")
+        appendLine("smoke result: ${smokeResult ?: "none"}")
+        appendLine("smoke stdout: ${smokeStdout ?: "none"}")
+        appendLine("smoke stderr: ${smokeStderr ?: "none"}")
+        appendLine("final report: ${finalReport ?: "none"}")
+        appendLine("commit proposal: ${commitProposal ?: "none"}")
+        appendLine("next suggested command: ${nextSuggestedCommand ?: "none"}")
+        appendLine("context export path: ${contextExportPath ?: "none"}")
         appendLine("record file: $metaFile")
         renderBlock("plan", plan)?.let { appendLine(it) }
         renderBlock("patch result", patchResult)?.let { appendLine(it) }
         renderBlock("apply result", applyResult)?.let { appendLine(it) }
         renderBlock("repair result", repairResult)?.let { appendLine(it) }
+        renderBlock("final report", finalReport)?.let { appendLine(it) }
+        renderBlock("commit proposal", commitProposal)?.let { appendLine(it) }
     }.trimEnd()
 
     fun renderSummaryLine(): String = buildString {
@@ -70,6 +95,9 @@ data class AgentJobRecord(
         appliedPatchId?.takeIf { it.isNotBlank() && it != patchId }?.let { append(" applied=$it") }
         verificationId?.takeIf { it.isNotBlank() }?.let { append(" verify=$it") }
         repairId?.takeIf { it.isNotBlank() }?.let { append(" repair=$it") }
+        smokeResult?.takeIf { it.isNotBlank() }?.let { append(" smoke=${truncate(it, 60)}") }
+        finalReport?.takeIf { it.isNotBlank() }?.let { append(" final=${truncate(it, 60)}") }
+        nextSuggestedCommand?.takeIf { it.isNotBlank() }?.let { append(" next=${truncate(it, 60)}") }
         append(" | ${truncate(task, 72)}")
         failureReason?.takeIf { it.isNotBlank() }?.let { append(" | failure=${truncate(it, 72)}") }
     }
@@ -88,4 +116,3 @@ data class AgentJobRecord(
         return collapsed.take(maxChars - 3) + "..."
     }
 }
-

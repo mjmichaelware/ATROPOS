@@ -29,6 +29,13 @@ data class AgentJobSummary(
     val status: AgentJobStatus,
     val provider: String? = null,
     val patchId: String? = null,
+    val verificationId: String? = null,
+    val smokeCommand: String? = null,
+    val smokeSummary: String? = null,
+    val finalReport: String? = null,
+    val commitProposal: String? = null,
+    val nextSuggestedCommand: String? = null,
+    val contextExportPath: String? = null,
     val startedAt: String? = null,
     val updatedAt: String? = null,
     val changedPathsCount: Int? = null,
@@ -54,6 +61,17 @@ class AgentJobRenderer(
         out += row("task", TerminalText.ellipsize(job.task, valueWidth(safeWidth)), safeWidth)
         out += row("provider", job.provider ?: theme.subdued("pending"), safeWidth)
         out += row("patch", job.patchId ?: theme.subdued("none yet"), safeWidth)
+        out += row("verification", job.verificationId ?: theme.subdued("none yet"), safeWidth)
+        job.smokeCommand?.takeIf { it.isNotBlank() }?.let {
+            out += row("smoke cmd", TerminalText.ellipsize(it, valueWidth(safeWidth)), safeWidth)
+        }
+        out += row("smoke", job.smokeSummary ?: theme.subdued("not run"), safeWidth)
+        job.finalReport?.takeIf { it.isNotBlank() }?.let {
+            out += row("final", TerminalText.ellipsize(it, valueWidth(safeWidth)), safeWidth)
+        }
+        job.commitProposal?.takeIf { it.isNotBlank() }?.let {
+            out += row("commit", TerminalText.ellipsize(it, valueWidth(safeWidth)), safeWidth)
+        }
         job.note?.takeIf { it.isNotBlank() }?.let {
             out += row("note", TerminalText.ellipsize(it, valueWidth(safeWidth)), safeWidth)
         }
@@ -89,9 +107,23 @@ class AgentJobRenderer(
         out += row("task", TerminalText.ellipsize(job.task, valueWidth(safeWidth)), safeWidth)
         out += row("provider", job.provider ?: theme.subdued("pending"), safeWidth)
         out += row("patch", job.patchId ?: theme.subdued("none yet"), safeWidth)
+        out += row("verification", job.verificationId ?: theme.subdued("none yet"), safeWidth)
+        job.smokeCommand?.takeIf { it.isNotBlank() }?.let {
+            out += row("smoke cmd", TerminalText.ellipsize(it, valueWidth(safeWidth)), safeWidth)
+        }
+        out += row("smoke", job.smokeSummary ?: theme.subdued("not run"), safeWidth)
+        job.finalReport?.takeIf { it.isNotBlank() }?.let {
+            out += row("final", TerminalText.ellipsize(it, valueWidth(safeWidth)), safeWidth)
+        }
+        job.commitProposal?.takeIf { it.isNotBlank() }?.let {
+            out += row("commit", TerminalText.ellipsize(it, valueWidth(safeWidth)), safeWidth)
+        }
         out += row("changed", job.changedPathsCount?.let { "$it paths" } ?: "unknown", safeWidth)
         out += row("started", job.startedAt ?: theme.subdued("unknown"), safeWidth)
         out += row("updated", job.updatedAt ?: theme.subdued("unknown"), safeWidth)
+        job.contextExportPath?.takeIf { it.isNotBlank() }?.let {
+            out += row("context", TerminalText.ellipsize(it, valueWidth(safeWidth)), safeWidth)
+        }
         job.note?.takeIf { it.isNotBlank() }?.let {
             out += row("note", TerminalText.ellipsize(it, valueWidth(safeWidth)), safeWidth)
         }
@@ -111,17 +143,18 @@ class AgentJobRenderer(
         return out.map { TerminalText.ellipsize(it, safeWidth) }
     }
 
-    private fun nextCommand(job: AgentJobSummary): String = when (job.status) {
-        AgentJobStatus.QUEUED,
-        AgentJobStatus.PLANNING,
-        AgentJobStatus.PATCHING,
-        AgentJobStatus.APPLYING,
-        AgentJobStatus.VERIFYING,
-        AgentJobStatus.REPAIRING -> "/agent job ${job.id}  (check progress)"
-        AgentJobStatus.PASSED -> "git status --short  (review changes)"
-        AgentJobStatus.FAILED -> "/agent job ${job.id}  (see failure detail)"
-        AgentJobStatus.REFUSED -> "/agent job ${job.id}  (see refusal reason)"
-    }
+    private fun nextCommand(job: AgentJobSummary): String =
+        job.nextSuggestedCommand?.takeIf { it.isNotBlank() } ?: when (job.status) {
+            AgentJobStatus.QUEUED,
+            AgentJobStatus.PLANNING,
+            AgentJobStatus.PATCHING,
+            AgentJobStatus.APPLYING,
+            AgentJobStatus.VERIFYING,
+            AgentJobStatus.REPAIRING -> "/agent job ${job.id}  (check progress)"
+            AgentJobStatus.PASSED -> "git status --short  (review changes)"
+            AgentJobStatus.FAILED -> "/agent job ${job.id}  (see failure detail)"
+            AgentJobStatus.REFUSED -> "/agent job ${job.id}  (see refusal reason)"
+        }
 
     private fun statusBadge(status: AgentJobStatus): String {
         val paint: (String) -> String = when (status) {
@@ -191,6 +224,9 @@ class AgentJobRenderer(
         jobs.forEach { job ->
             out += TerminalText.ellipsize(statusBadge(job.status) + " " + job.id, width)
             out += TerminalText.ellipsize(theme.subdued("  ") + job.task, width)
+            job.note?.takeIf { it.isNotBlank() }?.let {
+                out += TerminalText.ellipsize(theme.subdued("  ") + it, width)
+            }
         }
         return out
     }
