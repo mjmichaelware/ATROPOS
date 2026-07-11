@@ -92,6 +92,9 @@ class KeySetupHelper(
 ) {
     fun setup(names: List<String> = defaultNames()): KeySetupResult {
         root.mkdirs()
+        root.setReadable(true, true)
+        root.setWritable(true, true)
+        root.setExecutable(true, true)
         val template = File(root, "secrets.template")
         val readme = File(root, "README.txt")
         val distinct = names.map { it.trim() }.filter { it.isNotBlank() }.distinct().sorted()
@@ -107,6 +110,10 @@ class KeySetupHelper(
                 appendLine("Configured values are displayed only as <configured:source>.")
             }
         )
+        template.setReadable(true, true)
+        template.setWritable(true, true)
+        readme.setReadable(true, true)
+        readme.setWritable(true, true)
 
         return KeySetupResult(root, template, readme, distinct)
     }
@@ -121,6 +128,16 @@ class KeySetupHelper(
             "CLOUDFLARE_ACCOUNT_ID",
             "JINA_API_KEY",
             "SERPAPI_API_KEY",
+            "SAMBANOVA_API_KEY",
+            "CEREBRAS_API_KEY",
+            "NVIDIA_API_KEY",
+            "DEEPINFRA_API_KEY",
+            "HUGGINGFACE_API_KEY",
+            "SILICONFLOW_API_KEY",
+            "SUPABASE_URL",
+            "SUPABASE_ANON_KEY",
+            "PINECONE_API_KEY",
+            "GITHUB_TOKEN",
             "GOOGLE_APPLICATION_CREDENTIALS"
         )
     }

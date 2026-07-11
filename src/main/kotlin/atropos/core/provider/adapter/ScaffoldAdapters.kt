@@ -1355,31 +1355,35 @@ private class DescriptorOnlyKernelAdapter(
     override fun implemented(): Boolean = false
 }
 
-fun buildKernelAdapter(descriptor: ProviderDescriptor): ProviderAdapter =
+fun buildKernelAdapter(
+    descriptor: ProviderDescriptor,
+    env: Map<String, String> = System.getenv()
+): ProviderAdapter =
     when {
         descriptor.isLocal || descriptor.id == "local" || descriptor.id == "ollama" ->
             LocalKernelAdapter(descriptor)
         OpenAiCompatibleProviderCatalog.get(descriptor.id) != null ->
             OpenAiCompatibleKernelAdapter(
                 descriptor = descriptor,
-                spec = OpenAiCompatibleProviderCatalog.get(descriptor.id)!!
+                spec = OpenAiCompatibleProviderCatalog.get(descriptor.id)!!,
+                env = env
             )
         NonOpenAiFreeProviderCatalog.get(descriptor.id)?.schema == NonOpenAiProviderSchema.GEMINI ->
-            GeminiKernelAdapter(descriptor, NonOpenAiFreeProviderCatalog.get(descriptor.id)!!)
+            GeminiKernelAdapter(descriptor, NonOpenAiFreeProviderCatalog.get(descriptor.id)!!, env)
         NonOpenAiFreeProviderCatalog.get(descriptor.id)?.schema == NonOpenAiProviderSchema.GITHUB_MODELS ->
-            GithubModelsKernelAdapter(descriptor, NonOpenAiFreeProviderCatalog.get(descriptor.id)!!)
+            GithubModelsKernelAdapter(descriptor, NonOpenAiFreeProviderCatalog.get(descriptor.id)!!, env)
         NonOpenAiFreeProviderCatalog.get(descriptor.id)?.schema == NonOpenAiProviderSchema.CLOUDFLARE_AI ->
-            CloudflareAiKernelAdapter(descriptor, NonOpenAiFreeProviderCatalog.get(descriptor.id)!!)
+            CloudflareAiKernelAdapter(descriptor, NonOpenAiFreeProviderCatalog.get(descriptor.id)!!, env)
         NonOpenAiFreeProviderCatalog.get(descriptor.id)?.schema == NonOpenAiProviderSchema.CLOUDFLARE_WORKERS ->
-            CloudflareWorkersKernelAdapter(descriptor, NonOpenAiFreeProviderCatalog.get(descriptor.id)!!)
+            CloudflareWorkersKernelAdapter(descriptor, NonOpenAiFreeProviderCatalog.get(descriptor.id)!!, env)
         DataInfraResearchProviderCatalog.get(descriptor.id)?.schema == DataInfraProviderSchema.JINA_READER ->
-            JinaReaderKernelAdapter(descriptor, DataInfraResearchProviderCatalog.get(descriptor.id)!!)
+            JinaReaderKernelAdapter(descriptor, DataInfraResearchProviderCatalog.get(descriptor.id)!!, env)
         DataInfraResearchProviderCatalog.get(descriptor.id)?.schema == DataInfraProviderSchema.SERPAPI_WEB ->
-            SerpApiKernelAdapter(descriptor, DataInfraResearchProviderCatalog.get(descriptor.id)!!)
+            SerpApiKernelAdapter(descriptor, DataInfraResearchProviderCatalog.get(descriptor.id)!!, env)
         DataInfraResearchProviderCatalog.get(descriptor.id) != null ->
-            LocalFallbackDataInfraAdapter(descriptor, DataInfraResearchProviderCatalog.get(descriptor.id)!!)
+            LocalFallbackDataInfraAdapter(descriptor, DataInfraResearchProviderCatalog.get(descriptor.id)!!, env)
         AssetProviderCatalog.get(descriptor.id) != null ->
-            AssetKernelAdapter(descriptor, AssetProviderCatalog.get(descriptor.id)!!)
+            AssetKernelAdapter(descriptor, AssetProviderCatalog.get(descriptor.id)!!, env)
         else ->
             DescriptorOnlyKernelAdapter(descriptor)
     }

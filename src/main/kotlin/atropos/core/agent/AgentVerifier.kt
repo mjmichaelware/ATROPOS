@@ -1,6 +1,10 @@
 package atropos.core.agent
 
 import atropos.core.AtroposConfig
+import atropos.core.memory.LocalMemoryStore
+import atropos.core.policy.ExecutionPolicyEngine
+import atropos.core.policy.ExecutionPolicyRequest
+import atropos.core.policy.PolicyActionClass
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.nio.file.Files
@@ -18,7 +22,9 @@ class AgentVerifier(
     private val javaHome: String = System.getenv("JAVA_HOME")?.takeIf { it.isNotBlank() } ?: "/data/data/com.termux/files/usr",
     private val timeoutMillis: Long = 900_000,
     private val maxOutputBytes: Int = 128 * 1024,
-    private val maxOutputLines: Int = 3_000
+    private val maxOutputLines: Int = 3_000,
+    private val policyEngine: ExecutionPolicyEngine = ExecutionPolicyEngine(collector.repoRoot),
+    private val memoryStore: LocalMemoryStore = LocalMemoryStore(collector.repoRoot.resolve(".atropos/memory").toFile())
 ) {
     fun verify(reference: String): AgentVerificationRunResult {
         val patch = resolvePatch(reference)
@@ -51,6 +57,19 @@ class AgentVerifier(
             stderr = stderr,
             passed = passed,
             failureReason = failureReason
+        )
+        memoryStore.rememberVerification(
+            subjectId = record.id,
+            title = "verification ${if (passed) "passed" else "failed"}",
+            body = buildString {
+                appendLine("patch=${patch.id}")
+                appendLine("passed=$passed")
+                appendLine("exit=${execution.exitCode ?: "none"}")
+                appendLine("duration=${execution.durationMillis}")
+                appendLine("changed=${patch.extraction.touchedPaths.joinToString(", ").ifBlank { "none" }}")
+                appendLine("failure=${failureReason ?: "none"}")
+            }.trimEnd(),
+            tags = listOf("agent", "verification", if (passed) "passed" else "failed")
         )
 
         return AgentVerificationRunResult(
@@ -102,6 +121,24 @@ class AgentVerifier(
     private fun runVerificationCommand(): VerificationExecution {
         val started = System.nanoTime()
         val command = listOf("./gradlew", "test", "jar", "--no-daemon")
+        val policy = policyEngine.evaluate(
+            ExecutionPolicyRequest(
+                actionClass = PolicyActionClass.BUILD_TEST,
+                command = command,
+                cwd = collector.repoRoot
+            )
+        )
+        if (!policy.allowed) {
+            return VerificationExecution(
+                command = command,
+                exitCode = null,
+                timedOut = false,
+                durationMillis = elapsed(started),
+                stdout = CapturedText("", false),
+                stderr = CapturedText("", false),
+                launchError = policy.reason
+            )
+        }
         val process = try {
             ProcessBuilder(command)
                 .directory(collector.repoRoot.toFile())

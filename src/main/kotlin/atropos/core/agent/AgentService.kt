@@ -3,6 +3,10 @@ package atropos.core.agent
 import atropos.core.AtroposConfig
 import atropos.core.ProviderCascadeRouter
 import atropos.core.ProviderFactory
+import atropos.core.memory.LocalMemoryStore
+import atropos.core.policy.ExecutionPolicyEngine
+import atropos.core.policy.ExecutionPolicyRequest
+import atropos.core.policy.PolicyActionClass
 import atropos.core.provider.ProviderTruthService
 import java.nio.file.Path
 
@@ -107,7 +111,9 @@ class AgentService(
     private val providerTruthService: ProviderTruthService = ProviderTruthService(config),
     private val verificationStore: AgentVerificationStore = AgentVerificationStore(collector.repoRoot),
     private val verifier: AgentVerifier = AgentVerifier(config, collector, patchStore, verificationStore),
-    private val repairService: AgentRepairService = AgentRepairService(config, collector, router, selector, patchStore, verificationStore, patchExtractor)
+    private val repairService: AgentRepairService = AgentRepairService(config, collector, router, selector, patchStore, verificationStore, patchExtractor),
+    private val policyEngine: ExecutionPolicyEngine = ExecutionPolicyEngine(collector.repoRoot),
+    private val memoryStore: LocalMemoryStore = LocalMemoryStore(collector.repoRoot.resolve(".atropos/memory").toFile())
 ) {
     fun status(activeProviderName: String): AgentStatusSnapshot {
         val selection = selector.select(activeProviderName)
@@ -138,7 +144,14 @@ class AgentService(
                 requestedProvider = selection.askOrder.firstOrNull() ?: "groq",
                 prompt = task.trim(),
                 context = AgentPromptContract.build(snapshot.text),
-                providerOrderOverride = selection.askOrder
+                providerOrderOverride = selection.askOrder,
+                beforeAttempt = { provider -> enforceProviderPolicy(provider, task, "ask") }
+            )
+            memoryStore.rememberRoute(
+                subjectId = result.providerName,
+                title = "agent ask route",
+                body = "task=${task.trim()}\nprovider=${result.providerName}\nerrors=${result.errors.joinToString(" | ") { it.cleanMessage }}",
+                tags = listOf("agent", "ask", "route")
             )
 
             AgentRunResult(
@@ -147,6 +160,13 @@ class AgentService(
                 contextByteCount = snapshot.byteCount
             )
         } catch (failure: Exception) {
+            memoryStore.rememberFailure(
+                subjectType = "agent_ask",
+                subjectId = null,
+                title = "agent ask failed",
+                body = compactFailureSummary(failure.message),
+                tags = listOf("agent", "ask", "failure")
+            )
             AgentRunResult(
                 providerName = "local_fallback",
                 answerText = fallbackAnswer(task, snapshot),
@@ -184,6 +204,12 @@ class AgentService(
             )
             val check = patchStore.runGitApplyCheck(record.diffFile)
             patchStore.writeMeta(record, check)
+            memoryStore.rememberRoute(
+                subjectId = result.providerName,
+                title = "agent patch route",
+                body = "task=${prompt.trim()}\nprovider=${result.providerName}\npatch=${record.id}\ncheck=${check.statusText}",
+                tags = listOf("agent", "patch", "route")
+            )
 
             AgentPatchRunResult(
                 providerName = result.providerName,
@@ -194,6 +220,13 @@ class AgentService(
                 checkResult = check
             )
         } catch (failure: Exception) {
+            memoryStore.rememberFailure(
+                subjectType = "agent_patch",
+                subjectId = null,
+                title = "agent patch failed",
+                body = compactFailureSummary(failure.message),
+                tags = listOf("agent", "patch", "failure")
+            )
             localPatchFailure(
                 providerName = "local_fallback",
                 contextByteCount = snapshot.byteCount,
@@ -326,7 +359,8 @@ class AgentService(
             requestedProvider = provider,
             prompt = prompt,
             context = context,
-            providerOrderOverride = listOf(provider)
+            providerOrderOverride = listOf(provider),
+            beforeAttempt = { candidate -> enforceProviderPolicy(candidate, prompt, "patch") }
         )
 
     private fun validatePatchAttempt(
@@ -405,5 +439,24 @@ class AgentService(
         if (!hasContextEcho) return trimmed
 
         return "Yes. ATROPOS supplied bounded repo context, so I can reason over the workspace snapshot without direct filesystem access."
+    }
+
+    private fun enforceProviderPolicy(provider: String, prompt: String, operation: String) {
+        val decision = policyEngine.evaluate(
+            ExecutionPolicyRequest(
+                actionClass = PolicyActionClass.PROVIDER_CALL,
+                providerId = provider,
+                paidProvider = provider in paidProviders,
+                metadata = mapOf(
+                    "operation" to operation,
+                    "prompt_length" to prompt.length.toString()
+                )
+            )
+        )
+        require(decision.allowed) { decision.reason }
+    }
+
+    private companion object {
+        val paidProviders = setOf("openai", "anthropic", "xai", "mistral", "cohere", "deepseek_direct")
     }
 }

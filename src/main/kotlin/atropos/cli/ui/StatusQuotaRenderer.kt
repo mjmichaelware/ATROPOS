@@ -71,6 +71,8 @@ class StatusQuotaRenderer(
         out += "selected: ${decision.selectedProviderId ?: "none"}"
         out += "queued: ${decision.queued}"
         out += "degraded: ${decision.degraded}"
+        out += "final outcome: ${finalOutcome(decision)}"
+        out += "fallback reason: ${fallbackReason(decision)}"
         decision.queueReason?.let { out += "queue reason: $it" }
 
         out += ""
@@ -87,8 +89,7 @@ class StatusQuotaRenderer(
         if (decision.skipped.isEmpty()) {
             out += "  none"
         } else {
-            decision.skipped.take(16).forEach { out += "  ${eligibilityLine(it)}" }
-            if (decision.skipped.size > 16) out += "  ... ${decision.skipped.size - 16} more"
+            decision.skipped.forEach { out += "  ${eligibilityLine(it)}" }
         }
 
         out += ""
@@ -174,7 +175,10 @@ class StatusQuotaRenderer(
         val quota = item.quota
         val state = quota?.state?.name?.lowercase() ?: "quota_unknown"
         val cost = provider.costMode.name.lowercase()
-        return "${provider.id.padEnd(18)} cost=$cost q=${provider.quotaTier} state=$state reason=${item.reason}"
+        val paidLock = quota?.paidLocked ?: provider.isPaidLocked()
+        val reset = formatEpoch(quota?.resetAtEpochMs)
+        val cooldown = formatEpoch(quota?.cooldownUntilEpochMs)
+        return "${provider.id.padEnd(18)} cost=$cost q=${provider.quotaTier} state=$state reason=${item.reason} reset=$reset cooldown=$cooldown paid_locked=$paidLock"
     }
 
     private fun renderFallbackChain(decision: RoutePolicyDecision): String {
@@ -185,6 +189,21 @@ class StatusQuotaRenderer(
         chain += "local degraded mode"
         return "  " + chain.joinToString(" -> ")
     }
+
+    private fun fallbackReason(decision: RoutePolicyDecision): String =
+        when {
+            decision.selectedProviderId == null -> decision.queueReason ?: "no eligible provider"
+            decision.skipped.isEmpty() -> "primary route eligible"
+            else -> decision.skipped.joinToString("; ") { "${it.provider.id}:${it.reason}" }
+        }
+
+    private fun finalOutcome(decision: RoutePolicyDecision): String =
+        when {
+            decision.selectedProviderId != null -> "selected ${decision.selectedProviderId}"
+            decision.queued -> "queued ${decision.queueReason ?: "no eligible provider"}"
+            decision.degraded -> "offline degraded mode"
+            else -> "no route"
+        }
 
     private fun renderLocalHealthLines(): String {
         val probe = LocalToolchainProbe(workspace)

@@ -12,10 +12,11 @@ interface ProviderAdapterRegistry {
 }
 
 class StaticProviderAdapterRegistry(
-    descriptorRegistry: ProviderDescriptorRegistry = StaticProviderDescriptorRegistry()
+    descriptorRegistry: ProviderDescriptorRegistry = StaticProviderDescriptorRegistry(),
+    private val env: Map<String, String> = System.getenv()
 ) : ProviderAdapterRegistry {
     private val adapters: List<ProviderAdapter> =
-        descriptorRegistry.getAll().map(::buildKernelAdapter)
+        descriptorRegistry.getAll().map { buildKernelAdapter(it, env) }
 
     override fun getAll(): List<ProviderAdapter> =
         adapters

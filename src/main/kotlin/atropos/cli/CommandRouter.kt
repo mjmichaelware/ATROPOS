@@ -220,7 +220,14 @@ class CommandRouter(
             }
 
             "/status" -> {
-                val statusRenderer = atropos.cli.ui.StatusQuotaRenderer()
+                val quotaRegistry = atropos.core.provider.StaticProviderDescriptorRegistry()
+                val statusRenderer = atropos.cli.ui.StatusQuotaRenderer(
+                    registry = quotaRegistry,
+                    ledger = atropos.core.provider.FileQuotaLedger(
+                        java.io.File(".atropos/provider/quota-ledger.tsv"),
+                        atropos.core.provider.FileQuotaLedger.seedFromDescriptors(quotaRegistry)
+                    )
+                )
                 when (tokens.getOrNull(1)?.lowercase()) {
                     "endpoints" -> uiEngine.renderNotice(
                         StatusEndpointRenderer(
@@ -272,6 +279,24 @@ class CommandRouter(
                         } else {
                             uiEngine.renderNotice("PROVIDER DESCRIPTORS: INVALID")
                             violations.forEach { uiEngine.renderNotice("  - ${it.id}: ${it.message}") }
+                        }
+                    }
+                    "verify" -> {
+                        val service = atropos.core.provider.ProviderActivationService(config = config)
+                        val reference = tokens.getOrNull(2)
+                        when {
+                            reference == null -> uiEngine.renderError("usage: /providers verify <id|all>")
+                            reference.equals("all", ignoreCase = true) -> uiEngine.renderNotice(service.renderVerifyAll())
+                            else -> uiEngine.renderNotice(service.verify(reference).render())
+                        }
+                    }
+                    "live-test" -> {
+                        val providerId = tokens.getOrNull(2)
+                        if (providerId == null) {
+                            uiEngine.renderError("usage: /providers live-test <id>")
+                        } else {
+                            val service = atropos.core.provider.ProviderActivationService(config = config)
+                            uiEngine.renderNotice(service.liveTest(providerId).render())
                         }
                     }
                     else -> uiEngine.renderNotice(ProviderDecisionEngine().providersReport(config))
@@ -399,10 +424,12 @@ class CommandRouter(
             }
 
             "/keys" -> {
+                val service = atropos.core.security.KeyDoctorService.create()
                 when (tokens.getOrNull(1)?.lowercase()) {
-                    null, "status" -> uiEngine.renderNotice(atropos.cli.ui.StatusSecurityRenderer().renderKeysStatus())
-                    "setup" -> uiEngine.renderNotice(atropos.cli.ui.StatusSecurityRenderer().renderKeysSetup())
-                    else -> uiEngine.renderError("usage: /keys [status|setup]")
+                    null, "status" -> uiEngine.renderNotice(service.renderStatus())
+                    "setup" -> uiEngine.renderNotice(service.renderSetup())
+                    "doctor" -> uiEngine.renderNotice(service.renderDoctor())
+                    else -> uiEngine.renderError("usage: /keys [status|setup|doctor]")
                 }
                 RouterOutcome.CONTINUE
             }
@@ -438,7 +465,59 @@ class CommandRouter(
             "/route" -> {
                 val prompt = tokens.drop(1).joinToString(" ").trim()
                 if (prompt.isBlank()) uiEngine.renderError("/route requires a prompt")
-                else uiEngine.renderNotice(atropos.core.provider.adapter.AdapterRouteFacade().renderRoute(prompt))
+                else {
+                    val registry = atropos.core.provider.StaticProviderDescriptorRegistry()
+                    val ledger = atropos.core.provider.FileQuotaLedger(
+                        java.io.File(".atropos/provider/quota-ledger.tsv"),
+                        atropos.core.provider.FileQuotaLedger.seedFromDescriptors(registry)
+                    )
+                    uiEngine.renderNotice(
+                        atropos.core.provider.adapter.AdapterRouteFacade(
+                            descriptorRegistry = registry,
+                            ledger = ledger
+                        ).renderRoute(prompt)
+                    )
+                }
+                RouterOutcome.CONTINUE
+            }
+
+            "/dloi" -> {
+                when (tokens.getOrNull(1)?.lowercase()) {
+                    "lookup" -> {
+                        val address = tokens.drop(2).joinToString(" ").trim()
+                        if (address.isBlank()) {
+                            uiEngine.renderError("usage: /dloi lookup <document#section@Lstart[-end]>")
+                        } else {
+                            val result = runCatching { atropos.dloi.DloiService().lookup(address).render() }
+                            uiEngine.renderNotice(result.getOrElse { "dloi error: ${it.message ?: it.javaClass.simpleName}" })
+                        }
+                    }
+                    "resolve" -> {
+                        val task = tokens.drop(2).joinToString(" ").trim()
+                        if (task.isBlank()) {
+                            uiEngine.renderError("usage: /dloi resolve <task text>")
+                        } else {
+                            val result = runCatching { atropos.dloi.DloiService().resolveTask(task).render() }
+                            uiEngine.renderNotice(result.getOrElse { "dloi error: ${it.message ?: it.javaClass.simpleName}" })
+                        }
+                    }
+                    else -> uiEngine.renderError("usage: /dloi [lookup <address>|resolve <task>]")
+                }
+                RouterOutcome.CONTINUE
+            }
+
+            "/ast" -> {
+                when (tokens.getOrNull(1)?.lowercase()) {
+                    "lookup" -> {
+                        val query = tokens.drop(2).joinToString(" ").trim()
+                        if (query.isBlank()) {
+                            uiEngine.renderError("usage: /ast lookup <symbol>")
+                        } else {
+                            uiEngine.renderNotice(atropos.ast.AstSymbolGraph().lookup(query).render())
+                        }
+                    }
+                    else -> uiEngine.renderError("usage: /ast lookup <symbol>")
+                }
                 RouterOutcome.CONTINUE
             }
 
