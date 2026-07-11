@@ -11,6 +11,8 @@ import atropos.cli.config.ConfigurationManager
 import atropos.core.AtroposConfig
 import atropos.core.agent.AgentPatchExtractor
 import atropos.core.agent.AgentJobRecord
+import atropos.core.agent.AgentDaemonDoctor
+import atropos.core.agent.AgentDaemonService
 import atropos.core.agent.AgentQueueDoctor
 import atropos.core.agent.AgentQueueRecord
 import atropos.core.agent.AgentQueueService
@@ -36,7 +38,8 @@ class AgentCommand(
     private val activeProviderName: () -> String,
     private val service: AgentService = AgentService(config),
     private val runService: AgentRunService = AgentRunService(config),
-    private val queueService: AgentQueueService = AgentQueueService(config)
+    private val queueService: AgentQueueService = AgentQueueService(config),
+    private val daemonService: AgentDaemonService = AgentDaemonService(config)
 ) : AgentCommandHandler {
     private val patchExtractor = AgentPatchExtractor()
     private val jobRenderer = AgentJobRenderer(TerminalTheme(ConfigurationManager()))
@@ -93,6 +96,8 @@ class AgentCommand(
             }
 
             "queue" -> handleQueueCommand(tokens.drop(2))
+
+            "daemon" -> handleDaemonCommand(tokens.drop(2))
 
             "status" -> {
                 val snapshot = service.status(activeProviderName())
@@ -302,7 +307,59 @@ class AgentCommand(
     }
 
     private fun agentUsage(): String =
-        "usage: /agent [status|run [--smoke <command>] <task>|enqueue [--smoke <command>] <task>|queue [show|run|resume|cancel|recover|doctor]|jobs|job <id> [--raw]|ask <task>|patch [--provider <name>] <task>|apply [--check|--verify] <patch-id|latest>|verify [<patch-id|latest>]|repair [<patch-id|latest>]]"
+        "usage: /agent [status|run [--smoke <command>] <task>|enqueue [--smoke <command>] <task>|queue [show|run|resume|cancel|recover|doctor]|daemon [once|foreground|start|stop|status|doctor]|jobs|job <id> [--raw]|ask <task>|patch [--provider <name>] <task>|apply [--check|--verify] <patch-id|latest>|verify [<patch-id|latest>]|repair [<patch-id|latest>]]"
+
+    private fun handleDaemonCommand(args: List<String>): AgentCommandOutcome {
+        return when (args.getOrNull(0)?.lowercase()) {
+            "once" -> {
+                ui.startSpinner("Running daemon once")
+                try {
+                    val result = daemonService.once(activeProviderName())
+                    val rendered = formatBlock("AGENT DAEMON ONCE", result.render())
+                    ui.renderNotice(rendered)
+                    AgentCommandOutcome.Completed(rendered)
+                } finally {
+                    ui.stopSpinner()
+                }
+            }
+            "foreground" -> {
+                val result = daemonService.foreground(activeProviderName())
+                val rendered = formatBlock("AGENT DAEMON FOREGROUND", result.render())
+                ui.renderNotice(rendered)
+                AgentCommandOutcome.Completed(rendered)
+            }
+            "start" -> {
+                val result = daemonService.start()
+                val rendered = formatBlock("AGENT DAEMON START", result.render())
+                if (result.ok) ui.renderNotice(rendered) else ui.renderError(rendered)
+                if (result.ok) AgentCommandOutcome.Completed(rendered) else AgentCommandOutcome.Invalid(rendered)
+            }
+            "stop" -> {
+                val result = daemonService.stop()
+                val rendered = formatBlock("AGENT DAEMON STOP", result.render())
+                ui.renderNotice(rendered)
+                AgentCommandOutcome.Completed(rendered)
+            }
+            null, "status" -> {
+                val result = daemonService.status()
+                val rendered = formatBlock("AGENT DAEMON STATUS", result.render())
+                ui.renderNotice(rendered)
+                AgentCommandOutcome.Completed(rendered)
+            }
+            "doctor" -> {
+                val result = AgentDaemonDoctor().run()
+                val rendered = formatBlock("AGENT DAEMON DOCTOR", result.render())
+                if (result.passed) {
+                    ui.renderNotice(rendered)
+                    AgentCommandOutcome.Completed(rendered)
+                } else {
+                    ui.renderError(rendered)
+                    AgentCommandOutcome.Invalid(rendered)
+                }
+            }
+            else -> invalid("usage: /agent daemon [once|foreground|start|stop|status|doctor]")
+        }
+    }
 
     private fun handleQueueCommand(args: List<String>): AgentCommandOutcome {
         return when (args.getOrNull(0)?.lowercase()) {

@@ -3,6 +3,7 @@ package atropos.core.agent
 import atropos.core.AtroposConfig
 import atropos.core.ProviderCascadeRouter
 import atropos.core.ProviderFactory
+import atropos.core.provider.ProviderTruthService
 import java.nio.file.Path
 
 data class AgentStatusSnapshot(
@@ -17,7 +18,8 @@ data class AgentStatusSnapshot(
     val paidAutomaticModeLocked: Boolean,
     val localFallbackEnabled: Boolean,
     val doctorTruthSource: String,
-    val knownActiveProviders: List<String>
+    val knownActiveProviders: List<String>,
+    val providerTruthReport: String
 ) {
     fun render(): String = buildString {
         appendLine("agent status:")
@@ -33,6 +35,7 @@ data class AgentStatusSnapshot(
         appendLine("  local fallback: ${if (localFallbackEnabled) "enabled" else "disabled"}")
         appendLine("  last doctor truth source: $doctorTruthSource")
         appendLine("  known active doctor providers: ${knownActiveProviders.joinToString(", ")}")
+        appendLine(providerTruthReport.prependIndent("  "))
     }.trimEnd()
 }
 
@@ -100,12 +103,16 @@ class AgentService(
     private val selector: AgentProviderSelector = AgentProviderSelector(config),
     private val patchExtractor: AgentPatchExtractor = AgentPatchExtractor(),
     private val patchStore: AgentPatchStore = AgentPatchStore(collector.repoRoot),
+    private val jobStore: AgentJobStore = AgentJobStore(collector.repoRoot),
+    private val providerTruthService: ProviderTruthService = ProviderTruthService(config),
     private val verificationStore: AgentVerificationStore = AgentVerificationStore(collector.repoRoot),
     private val verifier: AgentVerifier = AgentVerifier(config, collector, patchStore, verificationStore),
     private val repairService: AgentRepairService = AgentRepairService(config, collector, router, selector, patchStore, verificationStore, patchExtractor)
 ) {
     fun status(activeProviderName: String): AgentStatusSnapshot {
         val selection = selector.select(activeProviderName)
+        val lastActualProvider = jobStore.latest()?.provider?.takeIf { it.isNotBlank() }
+        val truth = providerTruthService.snapshot(activeProviderName, lastActualProvider)
         return AgentStatusSnapshot(
             activeProvider = activeProviderName,
             providerOrder = selection.askOrder,
@@ -118,7 +125,8 @@ class AgentService(
             paidAutomaticModeLocked = selection.paidAutomaticModeLocked,
             localFallbackEnabled = selection.localFallbackEnabled,
             doctorTruthSource = selection.doctorTruthSource,
-            knownActiveProviders = selection.knownActiveProviders
+            knownActiveProviders = selection.knownActiveProviders,
+            providerTruthReport = truth.renderInventory()
         )
     }
 

@@ -14,9 +14,17 @@ import atropos.cli.session.QuotaSessionTracker
 import atropos.cli.session.ScreenId
 import atropos.cli.ui.AnsiTerminalEngine
 import atropos.core.AtroposConfig
+import atropos.core.agent.AgentDaemonService
 import java.io.FileInputStream
 
-fun main() {
+fun main(args: Array<String>) {
+    if (args.firstOrNull() == "--agent-daemon-foreground") {
+        val config = AtroposConfig.load()
+        val result = AgentDaemonService(config).foreground(config.runtime.defaultProvider)
+        println(result.render())
+        return
+    }
+
     val capabilities = ConfigurationManager()
     val ui = AnsiTerminalEngine(capabilities)
     val tracker = QuotaSessionTracker()
