@@ -3,6 +3,10 @@ package atropos.core.agent
 import atropos.core.AtroposConfig
 import atropos.core.ProviderCascadeRouter
 import atropos.core.ProviderFactory
+import atropos.core.memory.LocalMemoryStore
+import atropos.core.policy.ExecutionPolicyEngine
+import atropos.core.policy.ExecutionPolicyRequest
+import atropos.core.policy.PolicyActionClass
 
 class AgentRepairService(
     private val config: AtroposConfig = AtroposConfig.load(),
@@ -11,7 +15,9 @@ class AgentRepairService(
     private val selector: AgentProviderSelector = AgentProviderSelector(config),
     private val patchStore: AgentPatchStore = AgentPatchStore(collector.repoRoot),
     private val verificationStore: AgentVerificationStore = AgentVerificationStore(collector.repoRoot),
-    private val patchExtractor: AgentPatchExtractor = AgentPatchExtractor()
+    private val patchExtractor: AgentPatchExtractor = AgentPatchExtractor(),
+    private val policyEngine: ExecutionPolicyEngine = ExecutionPolicyEngine(collector.repoRoot),
+    private val memoryStore: LocalMemoryStore = LocalMemoryStore(collector.repoRoot.resolve(".atropos/memory").toFile())
 ) {
     fun previewRepair(patchReference: String): AgentPatchRunResult? {
         val patch = patchStore.resolvePatchSnapshot(patchReference)
@@ -124,6 +130,12 @@ class AgentRepairService(
         )
         val check = patchStore.runGitApplyCheck(record.diffFile)
         patchStore.writeMeta(record, check)
+        memoryStore.rememberRepair(
+            subjectId = record.id,
+            title = "agent repair route",
+            body = "verification=$sourceVerificationId\nprovider=${result.providerName}\npatch=${record.id}\ncheck=${check.statusText}",
+            tags = listOf("agent", "repair", "route")
+        )
 
         return AgentPatchRunResult(
             providerName = result.providerName,
@@ -187,7 +199,8 @@ class AgentRepairService(
             requestedProvider = provider,
             prompt = prompt,
             context = context,
-            providerOrderOverride = listOf(provider)
+            providerOrderOverride = listOf(provider),
+            beforeAttempt = { candidate -> enforceProviderPolicy(candidate, prompt) }
         )
 
     private fun validatePatchAttempt(
@@ -246,6 +259,21 @@ class AgentRepairService(
     private fun containsDiffHeader(text: String): Boolean =
         text.contains("diff --git ") || text.contains("\n--- ") || text.trimStart().startsWith("--- ")
 
+    private fun enforceProviderPolicy(provider: String, prompt: String) {
+        val decision = policyEngine.evaluate(
+            ExecutionPolicyRequest(
+                actionClass = PolicyActionClass.PROVIDER_CALL,
+                providerId = provider,
+                paidProvider = provider in paidProviders,
+                metadata = mapOf(
+                    "operation" to "repair",
+                    "prompt_length" to prompt.length.toString()
+                )
+            )
+        )
+        require(decision.allowed) { decision.reason }
+    }
+
     private fun PatchAttempt.copy(retryAttempted: Boolean): PatchAttempt =
         PatchAttempt(
             result = result,
@@ -301,4 +329,8 @@ class AgentRepairService(
     private fun refusalForMissingPatch(reference: String): String =
         if (reference.trim().isBlank()) "no patch id exists"
         else "patch not found: ${reference.trim()}"
+
+    private companion object {
+        val paidProviders = setOf("openai", "anthropic", "xai", "mistral", "cohere", "deepseek_direct")
+    }
 }

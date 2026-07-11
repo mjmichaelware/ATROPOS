@@ -227,6 +227,7 @@ class ProviderCascadeRouter(
         prompt: String,
         context: String,
         providerOrderOverride: List<String>? = null,
+        beforeAttempt: (String) -> Unit = {},
         onFailure: (ProviderError) -> Unit = {}
     ): ProviderCascadeResult {
         val ollamaStatus = OllamaHealthProbe().probe()
@@ -250,6 +251,7 @@ class ProviderCascadeRouter(
             }
 
             try {
+                beforeAttempt(provider)
                 val aiProvider = factory.getProvider(provider)
                 val response = aiProvider.complete(prompt, context)
 

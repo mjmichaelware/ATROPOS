@@ -1,5 +1,8 @@
 package atropos.core.agent
 
+import atropos.core.policy.ExecutionPolicyEngine
+import atropos.core.policy.ExecutionPolicyRequest
+import atropos.core.policy.PolicyActionClass
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
@@ -101,7 +104,8 @@ data class AgentPatchApplyResult(
 class AgentPatchStore(
     private val repoRoot: Path = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize(),
     private val clock: () -> Instant = { Instant.now() },
-    private val extractor: AgentPatchExtractor = AgentPatchExtractor()
+    private val extractor: AgentPatchExtractor = AgentPatchExtractor(),
+    private val policyEngine: ExecutionPolicyEngine = ExecutionPolicyEngine(repoRoot)
 ) {
     private val patchDir = repoRoot.resolve(".atropos/agent/patches").normalize()
     private val formatter = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss")
@@ -181,6 +185,17 @@ class AgentPatchStore(
     }
 
     fun runGitApplyCheck(diffFile: Path): AgentPatchCheckResult {
+        val policy = policyEngine.evaluate(
+            ExecutionPolicyRequest(
+                actionClass = PolicyActionClass.PATCH_APPLY,
+                command = listOf("git", "apply", "--check", diffFile.toString()),
+                cwd = repoRoot,
+                targetPaths = listOf(repoRoot.relativize(diffFile).toString())
+            )
+        )
+        if (!policy.allowed) {
+            return AgentPatchCheckResult(false, 126, policy.reason)
+        }
         val process = ProcessBuilder("git", "apply", "--check", diffFile.toString())
             .directory(repoRoot.toFile())
             .redirectErrorStream(true)
@@ -223,6 +238,17 @@ class AgentPatchStore(
     }
 
     fun runGitApply(diffFile: Path): AgentPatchCheckResult {
+        val policy = policyEngine.evaluate(
+            ExecutionPolicyRequest(
+                actionClass = PolicyActionClass.PATCH_APPLY,
+                command = listOf("git", "apply", diffFile.toString()),
+                cwd = repoRoot,
+                targetPaths = listOf(repoRoot.relativize(diffFile).toString())
+            )
+        )
+        if (!policy.allowed) {
+            return AgentPatchCheckResult(false, 126, policy.reason)
+        }
         val process = ProcessBuilder("git", "apply", diffFile.toString())
             .directory(repoRoot.toFile())
             .redirectErrorStream(true)
@@ -243,6 +269,15 @@ class AgentPatchStore(
 
         val command = mutableListOf("git", "status", "--porcelain", "--untracked-files=all", "--")
         command.addAll(cleanPaths)
+        val policy = policyEngine.evaluate(
+            ExecutionPolicyRequest(
+                actionClass = PolicyActionClass.GIT,
+                command = command,
+                cwd = repoRoot,
+                targetPaths = cleanPaths
+            )
+        )
+        if (!policy.allowed) return policy.reason
 
         val process = ProcessBuilder(command)
             .directory(repoRoot.toFile())
@@ -284,6 +319,25 @@ class AgentPatchStore(
             diffText = diffText,
             extraction = extraction
         )
+
+        val mutationPolicy = policyEngine.evaluate(
+            ExecutionPolicyRequest(
+                actionClass = PolicyActionClass.PATCH_APPLY,
+                command = listOf("git", "apply", snapshot.patchFile.toString()),
+                cwd = repoRoot,
+                targetPaths = snapshot.extraction.touchedPaths
+            )
+        )
+        if (!mutationPolicy.allowed) {
+            return AgentPatchApplyResult(
+                patchId = snapshot.id,
+                patchFile = snapshot.patchFile,
+                changedPaths = snapshot.extraction.touchedPaths,
+                checkOnly = checkOnly,
+                applied = false,
+                refusalReason = mutationPolicy.reason
+            )
+        }
 
         val validationFailure = extractor.validate(snapshot.extraction.diff)
         if (validationFailure != null) {

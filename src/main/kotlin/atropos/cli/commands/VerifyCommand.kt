@@ -26,6 +26,7 @@ class VerifyCommand(
     )
 ) : VerifyCommandHandler {
     private val root = workspace.toAbsolutePath().normalize()
+    private val deterministicVerifier = DeterministicVerifier(root)
 
     override fun execute(tokens: List<String>): VerifyCommandOutcome {
         if (tokens.size != 2) {
@@ -42,6 +43,19 @@ class VerifyCommand(
             createRequest(scope)
         } catch (failure: Exception) {
             return invalid(failure.message ?: "unable to create verification request")
+        }
+
+        val deterministic = deterministicVerifier.verify(
+            sourcePaths = request.command.drop(3).map(Path::of)
+        )
+        if (!deterministic.passed) {
+            ui.renderError("deterministic verification failed")
+            deterministic.findings.forEach { finding ->
+                ui.renderNotice(
+                    "${finding.invariantId} ${finding.severity.name.lowercase()}: ${finding.evidence} :: ${finding.remediation}"
+                )
+            }
+            return invalid("deterministic verification failed")
         }
 
         ui.startSpinner("Verifying ${scope.name.lowercase()} scope")

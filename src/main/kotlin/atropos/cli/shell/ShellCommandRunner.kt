@@ -1,6 +1,9 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.cli.shell
 
+import atropos.core.policy.ExecutionPolicyEngine
+import atropos.core.policy.ExecutionPolicyRequest
+import atropos.core.policy.PolicyActionClass
 import atropos.core.security.RedactionFilter
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -23,7 +26,8 @@ data class ShellCommandResult(
 class ShellCommandRunner(
     initialDirectory: Path = Path.of(System.getProperty("user.dir") ?: "."),
     private val timeoutMs: Long = 15_000L,
-    private val redactionFilter: RedactionFilter = RedactionFilter()
+    private val redactionFilter: RedactionFilter = RedactionFilter(),
+    private val policyEngine: ExecutionPolicyEngine = ExecutionPolicyEngine(initialDirectory.toAbsolutePath().normalize())
 ) {
     private var cwd: File = initialDirectory.toFile().canonicalFile
 
@@ -71,6 +75,24 @@ class ShellCommandRunner(
                 elapsedMs = 0L,
                 timedOut = false,
                 output = "shell: empty command"
+            )
+        }
+
+        val policy = policyEngine.evaluate(
+            ExecutionPolicyRequest(
+                actionClass = if (cleaned.firstOrNull() == "git") PolicyActionClass.GIT else PolicyActionClass.SHELL,
+                command = cleaned,
+                cwd = cwd.toPath()
+            )
+        )
+        if (!policy.allowed) {
+            return ShellCommandResult(
+                command = cleaned,
+                cwd = cwd.path,
+                exitCode = 126,
+                elapsedMs = 0L,
+                timedOut = false,
+                output = policy.reason
             )
         }
 

@@ -1,6 +1,10 @@
 package atropos.core.agent
 
 import atropos.core.AtroposConfig
+import atropos.ast.AstSymbolGraph
+import atropos.ast.AstSymbolKind
+import atropos.core.memory.LocalMemoryStore
+import atropos.dloi.DloiService
 import java.time.Instant
 
 class AgentRunService(
@@ -10,7 +14,10 @@ class AgentRunService(
     private val patchStore: AgentPatchStore = AgentPatchStore(collector.repoRoot),
     private val jobStore: AgentJobStore = AgentJobStore(collector.repoRoot),
     private val smokeRunner: AgentSmokeRunner = AgentSmokeRunner(collector.repoRoot),
-    private val contextExporter: AgentContextExportStore = AgentContextExportStore(collector.repoRoot)
+    private val contextExporter: AgentContextExportStore = AgentContextExportStore(collector.repoRoot),
+    private val memoryStore: LocalMemoryStore = LocalMemoryStore(collector.repoRoot.resolve(".atropos/memory").toFile()),
+    private val dloiService: DloiService = DloiService(collector.repoRoot),
+    private val astSymbolGraph: AstSymbolGraph = AstSymbolGraph(collector.repoRoot)
 ) {
     fun run(
         activeProviderName: String,
@@ -29,6 +36,7 @@ class AgentRunService(
 
         val startedAt = Instant.now()
         val baselineStatus = captureRepoStatus()
+        val sourceEvidence = resolveSourceEvidence(task)
         var job = jobStore.createJob(task = task, provider = activeProviderName)
         job = persist(job.copy(status = AgentJobStatus.PLANNING, updatedAt = startedAt))
         hooks.checkpoint(AgentQueueCheckpoint.CLAIMED, job, "job record created")
@@ -76,7 +84,7 @@ class AgentRunService(
                     ?: patchResult.message
                     ?: "patch generation failed"
                 job = fail(job, failureReason, "patch generation failed before apply")
-                return finalizeRun(job, task, smokeCommand, null, baselineStatus)
+                return finalizeRun(job, task, smokeCommand, null, baselineStatus, sourceEvidence)
             }
 
             hooks.beforeStage(AgentQueueCheckpoint.PATCH_APPLIED, job)
@@ -145,7 +153,7 @@ class AgentRunService(
                         ?: repairResult.message
                         ?: applyFailure
                     job = fail(job, failureReason, "repair generation failed after verification failure")
-                    return finalizeRun(job, task, smokeCommand, null, baselineStatus)
+                    return finalizeRun(job, task, smokeCommand, null, baselineStatus, sourceEvidence)
                 }
 
                 hooks.beforeStage(AgentQueueCheckpoint.REPAIR_APPLIED, job)
@@ -226,14 +234,14 @@ class AgentRunService(
                 )
             }
 
-            val final = finalizeRun(job, task, smokeCommand, smokeExecution, baselineStatus)
+            val final = finalizeRun(job, task, smokeCommand, smokeExecution, baselineStatus, sourceEvidence)
             hooks.checkpoint(AgentQueueCheckpoint.FINALIZED, final, "final report persisted")
             return final
         } catch (cancelled: AgentRunCancelledException) {
             throw cancelled
         } catch (failure: Exception) {
             job = fail(job, compactFailureSummary(failure.message), "agent run failed")
-            val final = finalizeRun(job, task, smokeCommand, null, baselineStatus)
+            val final = finalizeRun(job, task, smokeCommand, null, baselineStatus, sourceEvidence)
             hooks.checkpoint(AgentQueueCheckpoint.FINALIZED, final, "failed final report persisted")
             return final
         }
@@ -259,6 +267,7 @@ class AgentRunService(
             status = AgentJobStatus.REFUSED,
             provider = "none"
         )
+        val sourceEvidence = resolveSourceEvidence(task)
         val refused = persist(
             created.copy(
                 status = AgentJobStatus.REFUSED,
@@ -270,11 +279,12 @@ class AgentRunService(
                 smokeCommand = smokeCommand,
                 smokePassed = false,
                 smokeResult = smokeExecution.summary(),
-                finalReport = buildFinalReport(refusedForReport, task, smokeCommand, smokeExecution, emptyList()),
+                finalReport = buildFinalReport(refusedForReport, task, smokeCommand, smokeExecution, emptyList(), sourceEvidence, emptyList()),
                 commitProposal = null,
                 nextSuggestedCommand = buildSafeSmokeCommandSuggestion(task)
             )
         )
+        rememberFinalOutcome(refused, emptyList(), sourceEvidence, emptyList())
 
         val contextPath = contextExporter.write(refused, emptyList())
         return persist(refused.copy(contextExportPath = contextPath.toString()))
@@ -285,9 +295,11 @@ class AgentRunService(
         task: String,
         smokeCommand: String?,
         smokeExecution: AgentSmokeExecutionResult?,
-        baselineStatus: Set<String>
+        baselineStatus: Set<String>,
+        sourceEvidence: String?
     ): AgentJobRecord {
         val changedFiles = changedFilesSince(baselineStatus)
+        val impactedSymbols = impactedSymbolEvidence(changedFiles)
         val smokeRequested = smokeCommand?.trim()?.takeIf { it.isNotBlank() }
         val smokeSummary = when {
             smokeExecution != null -> smokeExecution.summary()
@@ -304,11 +316,12 @@ class AgentRunService(
                 smokeStderr = smokeExecution?.stderr?.takeIf { it.isNotBlank() } ?: job.smokeStderr,
                 smokePassed = smokePassed,
                 smokeResult = smokeSummary ?: job.smokeResult,
-                finalReport = buildFinalReport(job, task, smokeRequested, smokeExecution, changedFiles),
+                finalReport = buildFinalReport(job, task, smokeRequested, smokeExecution, changedFiles, sourceEvidence, impactedSymbols),
                 commitProposal = buildCommitProposal(task, smokeRequested, changedFiles, smokeExecution),
                 nextSuggestedCommand = buildNextSuggestedCommand(task, smokeRequested, changedFiles, job, smokeExecution)
             )
         )
+        rememberFinalOutcome(finalRecord, changedFiles, sourceEvidence, impactedSymbols)
 
         val contextPath = contextExporter.write(finalRecord, changedFiles)
         return persist(finalRecord.copy(contextExportPath = contextPath.toString()))
@@ -348,7 +361,9 @@ class AgentRunService(
         task: String,
         smokeCommand: String?,
         smokeExecution: AgentSmokeExecutionResult?,
-        changedFiles: List<String>
+        changedFiles: List<String>,
+        sourceEvidence: String?,
+        impactedSymbols: List<String>
     ): String = buildString {
         appendLine("status: ${renderFinalStatus(job.status)}")
         appendLine("task: ${compactTask(task)}")
@@ -356,6 +371,8 @@ class AgentRunService(
         appendLine("patch: ${job.appliedPatchId ?: job.patchId ?: "none"}")
         appendLine("verification: ${job.verificationId ?: "none"}")
         appendLine("smoke: ${smokeExecution?.summary() ?: smokeCommand?.let { "not run" } ?: "not requested"}")
+        appendLine("source: ${sourceEvidence ?: "unresolved"}")
+        appendLine("impacted symbols: ${impactedSymbols.joinToString(", ").ifBlank { "none" }}")
         appendLine("changed files: ${changedFiles.joinToString(", ").ifBlank { "none" }}")
     }.trimEnd()
 
@@ -498,6 +515,51 @@ class AgentRunService(
         val path: String,
         val content: String
     )
+
+    private fun resolveSourceEvidence(task: String): String? =
+        runCatching { dloiService.resolveTask(task).provenance }.getOrNull()
+            ?.also { provenance ->
+                memoryStore.rememberSourceDecision(
+                    subjectId = provenance,
+                    title = "agent source resolution",
+                    body = "task=${task.trim()}\nprovenance=$provenance",
+                    tags = listOf("agent", "source", "dloi")
+                )
+            }
+
+    private fun impactedSymbolEvidence(changedFiles: List<String>): List<String> =
+        runCatching {
+            astSymbolGraph.impactedByPaths(changedFiles)
+                .filter { it.kind != AstSymbolKind.FILE }
+                .map { "${collector.repoRoot.relativize(it.file)}:${it.qualifiedName}" }
+                .distinct()
+                .sorted()
+                .take(20)
+        }.getOrDefault(emptyList())
+
+    private fun rememberFinalOutcome(
+        record: AgentJobRecord,
+        changedFiles: List<String>,
+        sourceEvidence: String?,
+        impactedSymbols: List<String>
+    ) {
+        memoryStore.rememberJob(
+            subjectId = record.id,
+            title = "agent job finalized",
+            body = buildString {
+                appendLine("status=${record.status}")
+                appendLine("provider=${record.provider}")
+                appendLine("patch=${record.appliedPatchId ?: record.patchId ?: "none"}")
+                appendLine("verification=${record.verificationId ?: "none"}")
+                appendLine("smoke=${record.smokeResult ?: "none"}")
+                appendLine("source=${sourceEvidence ?: "unresolved"}")
+                appendLine("impacted=${impactedSymbols.joinToString(", ").ifBlank { "none" }}")
+                appendLine("changed=${changedFiles.joinToString(", ").ifBlank { "none" }}")
+                appendLine("failure=${record.failureReason ?: "none"}")
+            }.trimEnd(),
+            tags = listOf("agent", "job", record.status.name.lowercase())
+        )
+    }
 
     private fun synthesizeLocalPatch(task: String): AgentPatchRunResult? {
         val request = parseLocalCreateTask(task) ?: return null

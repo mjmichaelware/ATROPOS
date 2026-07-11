@@ -1,6 +1,10 @@
 package atropos.core.agent
 
 import atropos.core.AtroposConfig
+import atropos.core.memory.LocalMemoryStore
+import atropos.core.policy.ExecutionPolicyEngine
+import atropos.core.policy.ExecutionPolicyRequest
+import atropos.core.policy.PolicyActionClass
 import java.time.Instant
 
 data class AgentQueueRunResult(
@@ -33,9 +37,12 @@ class AgentQueueService(
     private val smokeRunner: AgentSmokeRunner = AgentSmokeRunner(collector.repoRoot),
     private val store: AgentQueueStore = AgentQueueStore(collector.repoRoot),
     private val recovery: AgentQueueRecovery = AgentQueueRecovery(store),
-    private val clock: () -> Instant = { Instant.now() }
+    private val clock: () -> Instant = { Instant.now() },
+    private val policyEngine: ExecutionPolicyEngine = ExecutionPolicyEngine(collector.repoRoot),
+    private val memoryStore: LocalMemoryStore = LocalMemoryStore(collector.repoRoot.resolve(".atropos/memory").toFile())
 ) {
     fun enqueue(task: String, smokeCommand: String? = null): AgentQueueRecord {
+        enforceQueuePolicy("enqueue", task)
         val smoke = smokeCommand?.trim()?.takeIf { it.isNotBlank() }
         val refusal = smoke?.let { smokeRunner.validate(it) }
         if (refusal != null) {
@@ -46,9 +53,10 @@ class AgentQueueService(
                 checkpoint = AgentQueueCheckpoint.FINALIZED,
                 provider = "none",
                 failureReason = refusal
-            )
+            ).also { rememberQueue(it, "enqueue refused") }
         }
         return store.createEntry(task = task, smokeCommand = smoke)
+            .also { rememberQueue(it, "enqueued") }
     }
 
     fun list(limit: Int = 20): List<AgentQueueRecord> = store.listEntries(limit)
@@ -58,6 +66,7 @@ class AgentQueueService(
     fun latest(): AgentQueueRecord? = store.latest()
 
     fun runNext(activeProviderName: String): AgentQueueRunResult {
+        enforceQueuePolicy("run_next")
         val selected = claimNextEligible()
             ?: return AgentQueueRunResult(null, message = "queue empty or selection lock busy", ran = false)
         if (selected.state == AgentQueueState.FAILED) {
@@ -67,6 +76,7 @@ class AgentQueueService(
     }
 
     fun runMax(activeProviderName: String, maxCount: Int): AgentQueueBatchResult {
+        enforceQueuePolicy("run_max", maxCount.toString())
         if (maxCount !in 1..AgentQueueDefaults.MAX_RUN_COUNT) {
             return AgentQueueBatchResult(
                 emptyList(),
@@ -87,6 +97,7 @@ class AgentQueueService(
     }
 
     fun resume(activeProviderName: String, reference: String): AgentQueueRunResult {
+        enforceQueuePolicy("resume", reference)
         recovery.recover()
         val record = store.resolve(reference)
             ?: return AgentQueueRunResult(null, message = "queue entry not found: $reference", ran = false)
@@ -115,11 +126,15 @@ class AgentQueueService(
     }
 
     fun cancel(reference: String, reason: String = "operator cancelled queue entry"): AgentQueueRecord? {
+        enforceQueuePolicy("cancel", reference)
         val record = store.resolve(reference) ?: return null
-        return store.cancel(record, reason)
+        return store.cancel(record, reason)?.also { rememberQueue(it, "cancelled") }
     }
 
-    fun recover(): AgentQueueRecoveryResult = recovery.recover()
+    fun recover(): AgentQueueRecoveryResult {
+        enforceQueuePolicy("recover")
+        return recovery.recover()
+    }
 
     fun storageSummary(): String = buildString {
         appendLine("root: ${store.queueRoot()}")
@@ -199,11 +214,13 @@ class AgentQueueService(
         return try {
             val job = runService.run(activeProviderName, queueRecord.task, queueRecord.smokeCommand, hooks)
             val terminal = finalizeFromJob(queueRecord, job)
+            rememberQueue(terminal, "finalized")
             AgentQueueRunResult(terminal, job, "queue entry finalized as ${terminal.state}", ran = true)
         } catch (_: AgentRunCancelledException) {
             AgentQueueRunResult(queueRecord, null, "queue entry cancelled before next stage", ran = true)
         } catch (failure: Exception) {
             val failed = finalizeInterrupted(queueRecord, failure.message ?: failure.javaClass.simpleName)
+            rememberQueue(failed, "interrupted")
             AgentQueueRunResult(failed, null, failed.failureReason ?: "queue execution interrupted", ran = true)
         }
     }
@@ -280,4 +297,35 @@ class AgentQueueService(
 
     private fun backoffSeconds(attempts: Int): Long =
         (5L * attempts.coerceAtLeast(1)).coerceAtMost(60L)
+
+    private fun enforceQueuePolicy(operation: String, detail: String = "") {
+        val decision = policyEngine.evaluate(
+            ExecutionPolicyRequest(
+                actionClass = PolicyActionClass.QUEUE,
+                metadata = mapOf(
+                    "operation" to operation,
+                    "detail" to detail
+                )
+            )
+        )
+        require(decision.allowed) { decision.reason }
+    }
+
+    private fun rememberQueue(record: AgentQueueRecord, title: String) {
+        memoryStore.rememberQueue(
+            subjectId = record.id,
+            title = title,
+            body = buildString {
+                appendLine("state=${record.state}")
+                appendLine("checkpoint=${record.checkpoint}")
+                appendLine("attempts=${record.attempts}/${record.maxAttempts}")
+                appendLine("job=${record.jobId ?: "none"}")
+                appendLine("provider=${record.provider ?: "none"}")
+                appendLine("patch=${record.patchId ?: "none"}")
+                appendLine("verification=${record.verificationId ?: "none"}")
+                appendLine("failure=${record.failureReason ?: "none"}")
+            }.trimEnd(),
+            tags = listOf("agent", "queue", record.state.name.lowercase())
+        )
+    }
 }

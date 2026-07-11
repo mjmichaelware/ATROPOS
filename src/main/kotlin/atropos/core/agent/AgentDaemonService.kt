@@ -1,6 +1,10 @@
 package atropos.core.agent
 
 import atropos.core.AtroposConfig
+import atropos.core.memory.LocalMemoryStore
+import atropos.core.policy.ExecutionPolicyEngine
+import atropos.core.policy.ExecutionPolicyRequest
+import atropos.core.policy.PolicyActionClass
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
@@ -11,9 +15,12 @@ class AgentDaemonService(
     private val config: AtroposConfig = AtroposConfig.load(),
     private val repoRoot: Path = Path.of(System.getenv("ATROPOS_ROOT") ?: System.getProperty("user.dir")).toAbsolutePath().normalize(),
     private val store: AgentDaemonStore = AgentDaemonStore(repoRoot),
-    private val queueService: AgentQueueService = AgentQueueService(config)
+    private val queueService: AgentQueueService = AgentQueueService(config),
+    private val policyEngine: ExecutionPolicyEngine = ExecutionPolicyEngine(repoRoot),
+    private val memoryStore: LocalMemoryStore = LocalMemoryStore(repoRoot.resolve(".atropos/memory").toFile())
 ) {
     fun once(activeProviderName: String): AgentDaemonCommandResult {
+        enforceDaemonPolicy("once")
         val pollSeconds = store.validatePollSeconds(null)
         val lock = store.tryLock() ?: return AgentDaemonCommandResult(false, "daemon lock is held by another instance", store.readState())
         lock.use {
@@ -31,11 +38,13 @@ class AgentDaemonService(
                     stopRequested = false
                 )
             )
+            rememberDaemon(record, "once")
             return AgentDaemonCommandResult(result.ran || result.queueRecord == null, "daemon once: ${result.message}", record)
         }
     }
 
     fun foreground(activeProviderName: String, pollSecondsOverride: Long? = null): AgentDaemonCommandResult {
+        enforceDaemonPolicy("foreground")
         val pollSeconds = store.validatePollSeconds(pollSecondsOverride)
         val lock = store.tryLock() ?: return AgentDaemonCommandResult(false, "daemon lock is held by another instance", store.readState())
         lock.use {
@@ -76,6 +85,7 @@ class AgentDaemonService(
                     )
                 )
                 store.clearStopRequest()
+                rememberDaemon(record, "foreground stopped")
                 return AgentDaemonCommandResult(true, "daemon foreground stopped gracefully", record)
             } catch (failure: Exception) {
                 val failed = store.writeState(
@@ -84,6 +94,7 @@ class AgentDaemonService(
                         lastMessage = failure.message ?: failure.javaClass.simpleName
                     )
                 )
+                rememberDaemon(failed, "foreground failed")
                 return AgentDaemonCommandResult(false, "daemon foreground failed: ${failure.message ?: failure.javaClass.simpleName}", failed)
             } finally {
                 releaseWakeLockIfRequested()
@@ -92,6 +103,7 @@ class AgentDaemonService(
     }
 
     fun start(): AgentDaemonCommandResult {
+        enforceDaemonPolicy("start")
         if (store.tryLock()?.use { false } == null) {
             return AgentDaemonCommandResult(false, "daemon lock is held by another instance", store.readState())
         }
@@ -117,7 +129,8 @@ class AgentDaemonService(
         val deadline = System.currentTimeMillis() + 5000L
         while (System.currentTimeMillis() < deadline) {
             val state = store.readState()
-            if (state?.state in setOf(AgentDaemonState.RUNNING, AgentDaemonState.PAUSED)) {
+            if (state != null && state.state in setOf(AgentDaemonState.RUNNING, AgentDaemonState.PAUSED)) {
+                rememberDaemon(state, "started")
                 return AgentDaemonCommandResult(true, "daemon started pid=${process.pid()}", state)
             }
             Thread.sleep(250L)
@@ -126,6 +139,7 @@ class AgentDaemonService(
     }
 
     fun stop(): AgentDaemonCommandResult {
+        enforceDaemonPolicy("stop")
         store.requestStop()
         store.tryLock()?.use {
             val stopped = store.writeState(
@@ -138,6 +152,7 @@ class AgentDaemonService(
                     )
             )
             store.clearStopRequest()
+            rememberDaemon(stopped, "stop acknowledged")
             return AgentDaemonCommandResult(true, "daemon was not running; stop acknowledged", stopped)
         }
 
@@ -146,12 +161,14 @@ class AgentDaemonService(
         while (System.nanoTime() < deadline) {
             state = store.readState()
             if (state?.state in setOf(AgentDaemonState.STOPPED, AgentDaemonState.FAILED)) {
+                state?.let { rememberDaemon(it, "stopped") }
                 return AgentDaemonCommandResult(true, "daemon stopped", state)
             }
             val released = store.tryLock()
             if (released != null) {
                 released.close()
                 state = store.readState()
+                state?.let { rememberDaemon(it, "lock released") }
                 return AgentDaemonCommandResult(true, "daemon lock released", state)
             }
             Thread.sleep(500L)
@@ -160,6 +177,7 @@ class AgentDaemonService(
     }
 
     fun status(): AgentDaemonCommandResult {
+        enforceDaemonPolicy("status")
         val state = store.readState()
         val message = when {
             state == null -> "daemon state: none"
@@ -170,6 +188,7 @@ class AgentDaemonService(
     }
 
     fun pause(paused: Boolean): AgentDaemonCommandResult {
+        enforceDaemonPolicy(if (paused) "pause" else "resume")
         val state = store.readState() ?: return AgentDaemonCommandResult(false, "daemon state not found")
         val next = store.writeState(
             state.copy(
@@ -178,6 +197,7 @@ class AgentDaemonService(
                 lastMessage = if (paused) "daemon paused" else "daemon resumed"
             )
         )
+        rememberDaemon(next, if (paused) "paused" else "resumed")
         return AgentDaemonCommandResult(true, next.lastMessage ?: "pause updated", next)
     }
 
@@ -195,5 +215,33 @@ class AgentDaemonService(
     private fun stopWaitSeconds(): Long {
         val raw = System.getenv("ATROPOS_AGENT_DAEMON_STOP_WAIT_SECONDS")?.trim()?.toLongOrNull()
         return raw?.coerceIn(1L, 300L) ?: 180L
+    }
+
+    private fun enforceDaemonPolicy(operation: String) {
+        val decision = policyEngine.evaluate(
+            ExecutionPolicyRequest(
+                actionClass = PolicyActionClass.DAEMON,
+                metadata = mapOf("operation" to operation)
+            )
+        )
+        require(decision.allowed) { decision.reason }
+    }
+
+    private fun rememberDaemon(record: AgentDaemonRecord, title: String) {
+        memoryStore.rememberDetailed(
+            kind = atropos.core.memory.MemoryKind.SESSION,
+            title = "daemon $title",
+            body = buildString {
+                appendLine("instance=${record.instanceId}")
+                appendLine("state=${record.state}")
+                appendLine("poll=${record.pollSeconds}")
+                appendLine("queue=${record.lastQueueId ?: "none"}")
+                appendLine("job=${record.lastJobId ?: "none"}")
+                appendLine("message=${record.lastMessage ?: "none"}")
+            }.trimEnd(),
+            tags = listOf("agent", "daemon", record.state.name.lowercase()),
+            subjectType = "daemon",
+            subjectId = record.instanceId
+        )
     }
 }

@@ -1,5 +1,8 @@
 package atropos.core.agent
 
+import atropos.core.policy.ExecutionPolicyEngine
+import atropos.core.policy.ExecutionPolicyRequest
+import atropos.core.policy.PolicyActionClass
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.nio.file.Path
@@ -29,7 +32,8 @@ class AgentSmokeRunner(
     private val timeoutMillis: Long = (System.getenv("ATROPOS_SMOKE_TIMEOUT_SECONDS") ?: "120").toLongOrNull()
         ?.coerceAtLeast(10)?.times(1000) ?: 120_000L,
     private val maxOutputBytes: Int = 48 * 1024,
-    private val maxOutputLines: Int = 1_000
+    private val maxOutputLines: Int = 1_000,
+    private val policyEngine: ExecutionPolicyEngine = ExecutionPolicyEngine(repoRoot)
 ) {
     fun validate(command: String): String? {
         val trimmed = command.trim()
@@ -119,6 +123,20 @@ class AgentSmokeRunner(
         }
 
         val tokens = trimmed.split(Regex("\\s+")).filter { it.isNotBlank() }
+        val policy = policyEngine.evaluate(
+            ExecutionPolicyRequest(
+                actionClass = PolicyActionClass.SMOKE,
+                command = tokens,
+                cwd = repoRoot
+            )
+        )
+        if (!policy.allowed) {
+            return AgentSmokeExecutionResult(
+                command = trimmed,
+                passed = false,
+                refusalReason = policy.reason
+            )
+        }
         val startedAt = System.nanoTime()
         val process = try {
             ProcessBuilder(tokens)
