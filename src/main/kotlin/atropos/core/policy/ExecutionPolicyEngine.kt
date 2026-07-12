@@ -66,9 +66,11 @@ data class ExecutionPolicyAuditRecord(
         append("\tcommand=").append(redactionFilter.redact(request.command.joinToString(" ")).replace('\t', ' '))
         append("\tpaths=").append(redactionFilter.redact(request.targetPaths.joinToString(",")).replace('\t', ' '))
         append("\tmeta=").append(
-            request.metadata.entries.joinToString(",") { (key, value) ->
-                "${key.trim()}=${redactionFilter.redact(value).replace(',', ' ')}"
-            }
+            redactionFilter.redact(
+                request.metadata.entries.joinToString(",") { (key, value) ->
+                    "${key.trim()}=${value.replace(',', ' ')}"
+                }
+            )
         )
     }
 }
