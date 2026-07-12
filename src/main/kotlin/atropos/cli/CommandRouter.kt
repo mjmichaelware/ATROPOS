@@ -4,6 +4,7 @@ package atropos.cli
 import atropos.cli.commands.VerifyCommand
 import atropos.cli.commands.VerifyCommandHandler
 import atropos.cli.commands.AgentCommand
+import atropos.cli.commands.HierarchyCommand
 import atropos.cli.session.QuotaSessionTracker
 import atropos.cli.session.ScreenId
 import atropos.cli.session.SessionTabs
@@ -44,6 +45,8 @@ class CommandRouter(
         config = config,
         activeProviderName = { currentProviderName }
     )
+
+    private val hierarchyCommand = HierarchyCommand()
 
     val tabs = SessionTabs(
         initialProvider = activeProvider.name,
@@ -533,6 +536,16 @@ class CommandRouter(
 
             "/verify" -> {
                 verifyCommand.execute(tokens)
+                RouterOutcome.CONTINUE
+            }
+
+            "/director", "/territory", "/hr", "/auditor", "/custodian", "/hierarchy", "/dag" -> {
+                uiEngine.renderNotice(hierarchyCommand.execute(tokens))
+                RouterOutcome.CONTINUE
+            }
+
+            "/snapshot", "/inspect", "/platform", "/artifact", "/autonomous" -> {
+                uiEngine.renderNotice(hierarchyCommand.execute(tokens))
                 RouterOutcome.CONTINUE
             }
 
