@@ -5,9 +5,10 @@ import atropos.core.ProviderCascadeResult
 import atropos.core.ProviderCascadeRouter
 import atropos.core.ProviderFactory
 import atropos.core.memory.LocalMemoryStore
+import atropos.core.policy.AgencyDisposition
+import atropos.core.policy.BoundedAgencyGate
 import atropos.core.policy.ExecutionPolicyEngine
-import atropos.core.policy.ExecutionPolicyRequest
-import atropos.core.policy.PolicyActionClass
+import atropos.core.policy.ProviderActionProposals
 import atropos.core.provider.ContextAttestationService
 import atropos.core.provider.ContextEnvelopeFactory
 import atropos.core.provider.ProviderTruthService
@@ -117,7 +118,7 @@ class AgentService(
     private val verificationStore: AgentVerificationStore = AgentVerificationStore(collector.repoRoot),
     private val verifier: AgentVerifier = AgentVerifier(config, collector, patchStore, verificationStore),
     private val repairService: AgentRepairService = AgentRepairService(config, collector, router, selector, patchStore, verificationStore, patchExtractor),
-    private val policyEngine: ExecutionPolicyEngine = ExecutionPolicyEngine(collector.repoRoot),
+    private val agencyGate: BoundedAgencyGate = BoundedAgencyGate(ExecutionPolicyEngine(collector.repoRoot)),
     private val memoryStore: LocalMemoryStore = LocalMemoryStore(collector.repoRoot.resolve(".atropos/memory").toFile()),
     private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
@@ -533,22 +534,14 @@ class AgentService(
         return "Yes. ATROPOS supplied bounded repo context, so I can reason over the workspace snapshot without direct filesystem access."
     }
 
+    /**
+     * The provider call is proposed, not performed: the gate decides, and a
+     * refusal throws before any prompt leaves the process.
+     */
     private fun enforceProviderPolicy(provider: String, prompt: String, operation: String) {
-        val decision = policyEngine.evaluate(
-            ExecutionPolicyRequest(
-                actionClass = PolicyActionClass.PROVIDER_CALL,
-                providerId = provider,
-                paidProvider = provider in paidProviders,
-                metadata = mapOf(
-                    "operation" to operation,
-                    "prompt_length" to prompt.length.toString()
-                )
-            )
+        val decision = agencyGate.evaluate(
+            ProviderActionProposals.forCall(provider, operation, prompt.length)
         )
-        require(decision.allowed) { decision.reason }
-    }
-
-    private companion object {
-        val paidProviders = setOf("openai", "anthropic", "xai", "mistral", "cohere", "deepseek_direct")
+        require(decision.disposition == AgencyDisposition.ALLOWED) { decision.reason }
     }
 }

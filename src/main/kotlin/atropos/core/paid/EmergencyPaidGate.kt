@@ -1,5 +1,6 @@
 package atropos.core.paid
 
+import atropos.core.policy.ProviderActionProposals
 import java.io.File
 import java.util.Locale
 
@@ -25,7 +26,13 @@ class EmergencyPaidGate(
 ) {
     private val stateFile = File(root, "paid-unlock.state")
     private val auditFile = File(root, "paid-audit.jsonl")
-    private val paidProviders = listOf("anthropic", "openai", "xai", "mistral", "cohere", "deepseek_direct")
+    /**
+     * Read from the single canonical set rather than restated here. A local
+     * copy could drift from the one the policy engine actually locks, and this
+     * gate would then report a different set than the one being enforced.
+     * Sorted so the displayed order does not depend on how the set is written.
+     */
+    private val paidProviders = ProviderActionProposals.PAID_PROVIDERS.sorted()
 
     fun status(): PaidGateStatus {
         root.mkdirs()
