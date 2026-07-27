@@ -5,6 +5,9 @@ import atropos.core.policy.ActionActor
 import atropos.core.policy.AgencyDisposition
 import atropos.core.policy.BoundedAgencyGate
 import atropos.core.policy.ExecutionPolicyEngine
+import atropos.core.territory.TerritoryGrantService
+import atropos.core.territory.TerritoryService
+import atropos.core.territory.TerritoryStore
 import atropos.core.policy.PolicyActionClass
 import java.nio.file.Files
 import java.nio.file.Path
@@ -35,7 +38,14 @@ class DagNodeProposalsTest {
     ): AgencyDisposition? {
         val repoRoot = repo()
         val proposal = DagNodeProposals.forNode(action, payload, territory, repoRoot, TEST_ACTOR) ?: return null
-        return BoundedAgencyGate(ExecutionPolicyEngine(repoRoot)).evaluate(proposal).disposition
+
+        // The dispatcher grants the node its declared territory, exactly as
+        // DagExecutionService does before evaluating. Without this the node
+        // holds nothing and is refused — which Batch 8 proves separately.
+        val grants = TerritoryGrantService(TerritoryService(TerritoryStore(repoRoot)))
+        grants.grantToNode(ActionActor.HumanOwner, TEST_ACTOR, territory)
+
+        return BoundedAgencyGate(ExecutionPolicyEngine(repoRoot), grants).evaluate(proposal).disposition
     }
 
     @Test

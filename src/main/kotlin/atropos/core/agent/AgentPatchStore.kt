@@ -2,6 +2,10 @@ package atropos.core.agent
 
 import atropos.core.security.RedactionFilter
 import atropos.core.policy.ActionActor
+import atropos.core.territory.GrantResult
+import atropos.core.territory.TerritoryGrantService
+import atropos.core.territory.TerritoryService
+import atropos.core.territory.TerritoryStore
 import atropos.core.policy.ActionProposal
 import atropos.core.policy.AgencyDisposition
 import atropos.core.policy.BoundedAgencyGate
@@ -133,7 +137,9 @@ class AgentPatchStore(
     private val repoRoot: Path = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize(),
     private val clock: () -> Instant = { Instant.now() },
     private val extractor: AgentPatchExtractor = AgentPatchExtractor(),
-    private val agencyGate: BoundedAgencyGate = BoundedAgencyGate(ExecutionPolicyEngine(repoRoot)),
+    private val territoryGrants: TerritoryGrantService =
+        TerritoryGrantService(TerritoryService(TerritoryStore(repoRoot))),
+    private val agencyGate: BoundedAgencyGate = BoundedAgencyGate(ExecutionPolicyEngine(repoRoot), territoryGrants),
     private val redactionFilter: RedactionFilter = RedactionFilter(),
     /** Shares [agencyGate], so exactly one policy engine serves this store. */
     private val agency: TypedToolExecutor = TypedToolExecutor(agencyGate),
@@ -325,11 +331,10 @@ class AgentPatchStore(
         if (cleanPaths.isEmpty()) return ""
 
         return runThroughAgency(
-            PatchActionProposals.statusForPaths(
-                cleanPaths,
-                repoRoot,
-                ActionActor.HierarchyNode(role = "patch", nodeId = "status")
-            ),
+            // A read-only status report rendered for the operator. It mutates
+            // nothing, and attributing it to a work item would territory-bound
+            // a read — the operator is the one who asked.
+            PatchActionProposals.statusForPaths(cleanPaths, repoRoot, ActionActor.HumanOwner),
             compact = false
         ).output
     }
@@ -367,11 +372,34 @@ class AgentPatchStore(
 
         // Pre-authorisation: the gate judges the mutation's blast radius before
         // anything is read, checked, or written.
+        val patchActor = ActionActor.HierarchyNode(role = "patch", nodeId = snapshot.id)
+
+        // Grant-on-dispatch: applying a stored patch is dispatched by the
+        // operator, so the patch is granted exactly the paths its diff touches,
+        // narrowed from the owner's territory and bound to this patch id.
+        val grant = territoryGrants.grantToNode(
+            dispatcher = ActionActor.HumanOwner,
+            node = patchActor,
+            requestedPrefixes = snapshot.extraction.touchedPaths
+        )
+        if (grant is GrantResult.Refused) {
+            return AgentPatchApplyResult(
+                patchId = snapshot.id,
+                patchFile = snapshot.patchFile,
+                changedPaths = snapshot.extraction.touchedPaths,
+                checkOnly = checkOnly,
+                applied = false,
+                refusalReason = grant.reason,
+                disposition = AgencyDisposition.POLICY_BLOCKED,
+                proposalId = null
+            )
+        }
+
         val mutationProposal = PatchActionProposals.applyStored(
             patchFile = snapshot.patchFile,
             repoRoot = repoRoot,
             touchedPaths = snapshot.extraction.touchedPaths,
-            actor = ActionActor.HierarchyNode(role = "patch", nodeId = snapshot.id)
+            actor = patchActor
         )
         val mutationDecision = agencyGate.evaluate(mutationProposal)
         if (mutationDecision.disposition != AgencyDisposition.ALLOWED) {

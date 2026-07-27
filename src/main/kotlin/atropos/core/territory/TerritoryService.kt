@@ -18,6 +18,35 @@ class TerritoryService(
         return assignment
     }
 
+    /**
+     * Records a grant delegated from [parent] and bound to one work item.
+     *
+     * Kept here so all assignment persistence stays with the one owner;
+     * [atropos.core.territory.TerritoryGrantService] decides *whether* to
+     * delegate, this only writes the result.
+     */
+    fun assignChild(
+        ownerId: String,
+        ownerRole: String,
+        allowedPrefix: String,
+        parent: TerritoryAssignment,
+        boundActorIdentity: String
+    ): TerritoryAssignment {
+        val assignment = TerritoryAssignment(
+            ownerId = ownerId,
+            ownerRole = ownerRole,
+            allowedPrefix = allowedPrefix,
+            // A child inherits its parent's denials: narrowing may not widen.
+            deniedPatterns = parent.deniedPatterns,
+            parentTerritoryId = parent.id,
+            expiresAt = parent.expiresAt,
+            readOnly = parent.readOnly,
+            boundActorIdentity = boundActorIdentity
+        )
+        store.saveAssignment(assignment)
+        return assignment
+    }
+
     fun revoke(id: String) {
         store.removeAssignment(id)
     }

@@ -12,6 +12,9 @@ import atropos.core.planning.NodeResult
 import atropos.core.planning.PlanningGraphPlugin
 import atropos.core.planning.Territory
 import atropos.core.policy.ActionActor
+import atropos.core.territory.GrantResult
+import atropos.core.territory.TerritoryGrantService
+import atropos.core.territory.TerritoryService
 import atropos.core.policy.AgencyDisposition
 import atropos.core.policy.BoundedAgencyGate
 import atropos.core.policy.ExecutionPolicyEngine
@@ -25,7 +28,9 @@ class DagExecutionService(
     private val queueService: AgentQueueService = AgentQueueService(config),
     private val runService: AgentRunService = AgentRunService(config),
     private val continuationService: GoalContinuationService = GoalContinuationService(repoRoot),
-    private val agencyGate: BoundedAgencyGate = BoundedAgencyGate(ExecutionPolicyEngine(repoRoot)),
+    private val territoryGrants: TerritoryGrantService =
+        TerritoryGrantService(TerritoryService(atropos.core.territory.TerritoryStore(repoRoot))),
+    private val agencyGate: BoundedAgencyGate = BoundedAgencyGate(ExecutionPolicyEngine(repoRoot), territoryGrants),
     private val memoryStore: LocalMemoryStore = LocalMemoryStore(repoRoot.resolve(".atropos/memory").toFile()),
     private val batchDefiner: InternalBatchDefiner = InternalBatchDefiner(),
     private val planningGraph: PlanningGraphPlugin = InternalPlanningGraphPlugin(repoRoot, store),
@@ -100,14 +105,36 @@ class DagExecutionService(
         // Every node that executes anything must be authorised by the single
         // permission authority. Nodes run through `sh -c`, so this is where an
         // unauthorised command is stopped — before any executor is dispatched.
+        val nodeActor = ActionActor.HierarchyNode(role = "dag-executor", nodeId = node.id)
         val proposal = DagNodeProposals.forNode(
             action = node.action,
             actionPayload = node.actionPayload,
             territory = node.territory,
             repoRoot = repoRoot,
-            actor = ActionActor.HierarchyNode(role = "dag-executor", nodeId = node.id)
+            actor = nodeActor
         )
         if (proposal != null) {
+            // Grant-on-dispatch: the node is handed a slice of the operator's
+            // territory, narrowed to what it declared and bound to this node.
+            // A node that declared nothing gets nothing and cannot run — it
+            // would otherwise execute unbounded.
+            when (val grant = territoryGrants.grantToNode(ActionActor.HumanOwner, nodeActor, node.territory)) {
+                is GrantResult.Refused -> {
+                    completeNode(
+                        claimed,
+                        NodeResult(
+                            nodeId = claimed.id,
+                            success = false,
+                            message = grant.reason,
+                            finalState = DagNodeState.BLOCKED,
+                            failureReason = grant.reason
+                        )
+                    )
+                    return DagNodeExecutionResult(node.id, DagNodeState.BLOCKED, false, grant.reason)
+                }
+                is GrantResult.Granted -> Unit
+            }
+
             val decision = agencyGate.evaluate(proposal)
             if (decision.disposition != AgencyDisposition.ALLOWED) {
                 completeNode(
