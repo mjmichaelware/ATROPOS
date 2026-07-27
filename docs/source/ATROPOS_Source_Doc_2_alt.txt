@@ -1,0 +1,1456 @@
+﻿ATROPOS Source Doc. 2
+(Workflow)
+
+
+
+
+Dense, Decoupled, High-Throughput Termux Workflow for 1,000+ LOC Batches
+
+
+[START .200
+
+
+1. Purpose
+
+
+This workflow is designed for building a decoupled Kotlin/JVM application on Termux ARM64 where:
+
+
+- code is generated and landed in large, dense batches
+- each batch can exceed 1,000 lines of code
+- architecture is split into phases, tiers, batches, and steps
+- syntax and compile errors are caught early with narrow smoke tests
+- full rebuilds are minimized
+- the codebase remains modular enough that one broken file does not poison the whole system
+
+
+This is not a hobby workflow. This is a production-style batch synthesis workflow for a codebase that is being expanded aggressively and semi-programmatically.
+
+
+The main problem it solves is this:
+
+
+If you try to add 1,000+ lines at a time without strong boundaries, the entire repo becomes a single unstable blob. Every change causes cascading errors, compile times increase, debugging becomes chaotic, and the terminal loop becomes psychologically exhausting.
+
+
+This workflow prevents that.
+
+
+---
+
+
+2. Core Principles
+
+
+2.1 Decoupling first, implementation second
+
+
+Never generate giant integrated code first.
+
+
+Always generate in this order:
+
+
+1. contracts
+2. models
+3. utilities
+4. adapters
+5. engines
+6. orchestrators
+7. interface layers
+8. runtime loops
+
+
+That keeps dependency direction clean.
+
+
+A file should mostly depend inward, not sideways.
+
+
+---
+
+
+2.2 Compile slices, not the universe
+
+
+You do not run a whole-project compile after every edit.
+
+
+You run:
+
+
+- file-level reasoning
+- then slice-level smoke compile
+- then batch-level compile
+- then phase-level compile
+- only occasionally full-project compile
+
+
+This is the single biggest performance improvement in your workflow.
+
+
+---
+
+
+2.3 One batch = one architectural promise
+
+
+A batch is not “some files.”
+
+
+A batch is:
+
+
+- one dependency slice
+- one compile unit
+- one architectural boundary
+- one rollback point
+
+
+Good example:
+
+
+- Batch 1: data routing, CAS, delta tracking
+- Batch 2: provider gateway, orchestrator, worker synthesis
+- Batch 3: CLI shell, session control, compilation loop
+
+
+Bad example:
+
+
+- one data file
+- one UI file
+- one HTTP provider
+- one parser
+- one random helper
+
+
+That creates mixed failures and meaningless build signals.
+
+
+---
+
+
+2.4 Large output is allowed; unclear output is not
+
+
+You want 1,000+ LOC per landed batch. That is fine.
+
+
+But the batch must still be:
+
+
+- topologically coherent
+- independently testable
+- locally compilable
+- internally dense
+- externally narrow
+
+
+A big batch is good.
+A muddy batch is bad.
+
+
+---
+
+
+3. The Four-Level Build Cadence
+
+
+Level A: Edit Check
+
+
+Use this after small changes inside a file or a tightly related set of files.
+
+
+Goal:
+Catch syntax and direct dependency errors immediately.
+
+
+Scope:
+Only the changed file plus its direct dependencies.
+
+
+Example:
+If you change "Provider.kt", compile:
+
+
+- "Config.kt"
+- "Provider.kt"
+- any directly referenced swarm files if needed
+
+
+This is your fastest feedback loop.
+
+
+---
+
+
+Level B: Slice Smoke Test
+
+
+Use this after finishing a coherent mini-cluster of files.
+
+
+Goal:
+Verify the local architectural slice compiles.
+
+
+Scope:
+One subsystem.
+
+
+Examples:
+
+
+- all "atropos/data/*"
+- core provider + swarm
+- CLI command + terminal UI
+- compiler loop + immunity engine
+
+
+This is the default checkpoint after meaningful work.
+
+
+---
+
+
+Level C: Batch Verification
+
+
+Use this once an entire planned batch is landed.
+
+
+Goal:
+Verify that the whole batch and the layers below it compile together.
+
+
+Scope:
+Batch N + all prerequisite lower layers.
+
+
+Example:
+For Batch 2:
+
+
+- "core/*"
+- "data/*"
+
+
+But not yet unrelated UI or runtime surfaces.
+
+
+---
+
+
+Level D: Project Compile
+
+
+Use this only:
+
+
+- after multiple successful batches
+- before commit checkpoints
+- before deployment work
+- before major merges
+- before handing control to the next subsystem
+
+
+This is not the default loop.
+This is a milestone loop.
+
+
+---
+
+
+4. The Structural Hierarchy
+
+
+Phase
+
+
+A major product era.
+
+
+Examples:
+
+
+- Phase 1: Data foundation
+- Phase 2: Intelligence swarm
+- Phase 3: Runtime shell
+- Phase 4: self-improvement loop
+- Phase 5: UI/operator surface
+
+
+A phase may contain several tiers or batches.
+
+
+---
+
+
+Tier
+
+
+A dependency altitude inside a phase.
+
+
+Example inside a single phase:
+
+
+- Tier 0: contracts and models
+- Tier 1: adapters and providers
+- Tier 2: orchestration and execution
+- Tier 3: user-facing control surfaces
+
+
+Tiers matter because lower tiers must stabilize before upper tiers rely on them.
+
+
+---
+
+
+Batch
+
+
+The practical unit of code landing.
+
+
+A batch should have:
+
+
+- a narrow purpose
+- a direct compile command
+- a rollback boundary
+- a named architectural role
+
+
+Ideal batch size:
+
+
+- 3 to 8 files
+- 500 to 2,000 LOC total
+- one topological slice
+
+
+---
+
+
+Step
+
+
+A micro-action within a batch.
+
+
+Steps are things like:
+
+
+1. inspect existing contracts
+2. write files
+3. smoke compile
+4. adjust symbols
+5. recompile
+6. run wider batch compile
+7. checkpoint
+
+
+---
+
+
+5. Recommended Batch Template
+
+
+Every batch should follow the same pattern.
+
+
+Step 1: Boundary Definition
+
+
+Before writing code, define:
+
+
+- what files belong in the batch
+- which lower-layer files they can depend on
+- which upper-layer files they must not touch
+- what compile command proves the batch is valid
+
+
+If this is not clear, the batch is not ready.
+
+
+---
+
+
+Step 2: Contract Audit
+
+
+Read existing files that the new files must match.
+
+
+For Kotlin this means checking:
+
+
+- class names
+- constructor signatures
+- package declarations
+- field names
+- existing config shape
+- return types
+- public method names
+- any call sites already present
+
+
+This prevents fake code generation.
+
+
+---
+
+
+Step 3: Code Synthesis
+
+
+Write the full batch in one dense pass.
+
+
+Rules:
+
+
+- do not generate placeholder methods unless explicitly temporary
+- do not invent config keys that do not exist
+- do not rename existing public contracts casually
+- keep package boundaries exact
+- do not spread logic across random helper files unless the batch plan included them
+
+
+This is where you land the 1,000+ LOC if the slice supports it.
+
+
+---
+
+
+Step 4: Narrow Compile
+
+
+Compile only the files needed to validate the newly written slice.
+
+
+This is the fast smoke test.
+
+
+If this fails, do not escalate to wider compiles.
+
+
+Fix locally first.
+
+
+---
+
+
+Step 5: Batch Compile
+
+
+Compile the whole batch plus all lower dependencies.
+
+
+This confirms topological integrity.
+
+
+---
+
+
+Step 6: Checkpoint
+
+
+After a successful batch compile:
+
+
+- inspect git diff
+- review file boundaries
+- confirm no accidental spillover
+- optionally commit
+
+
+---
+
+
+6. Recommended File Organization Discipline
+
+
+6.1 Keep directories semantically pure
+
+
+Example structure:
+
+
+- "atropos/data/..."
+- "atropos/core/..."
+- "atropos/core/swarm/..."
+- "atropos/cli/..."
+- "atropos/runtime/..."
+
+
+Do not let:
+
+
+- CLI logic drift into data
+- provider HTTP logic drift into orchestration
+- config parsing drift into worker logic
+- AST or delta logic drift into UI
+
+
+---
+
+
+6.2 Every file should answer one question
+
+
+Examples:
+
+
+- "Provider.kt" answers: how do I talk to model providers?
+- "DirectorOrchestrator.kt" answers: how do I turn specs into ordered work?
+- "WorkerCodeSynthesizer.kt" answers: how do I fan out generation?
+- "CodebaseDeltaTreeTracker.kt" answers: how do I measure code changes?
+
+
+If one file answers three questions, split it.
+
+
+---
+
+
+6.3 Use stable public seams
+
+
+Public seams should change rarely.
+
+
+Examples:
+
+
+- constructor inputs
+- data classes
+- interface method names
+- config property names
+- package locations of key services
+
+
+If these change constantly, every batch becomes a repair batch.
+
+
+---
+
+
+7. The Fast Workflow You Actually Want
+
+
+7.1 Micro loop
+
+
+Use for single-file or two-file edits.
+
+
+1. overwrite file
+2. compile only the affected files
+3. fix direct errors
+4. repeat
+
+
+This should take seconds, not minutes.
+
+
+---
+
+
+7.2 Slice loop
+
+
+Use for 3 to 8 files that form a coherent subsystem.
+
+
+1. write all files in the slice
+2. compile slice only
+3. fix symbol drift
+4. recompile
+5. when stable, widen one level
+
+
+This is the main developer loop.
+
+
+---
+
+
+7.3 Batch loop
+
+
+Use when landing a major feature group.
+
+
+1. confirm lower layers are green
+2. write the full batch
+3. smoke compile
+4. batch compile
+5. inspect diff
+6. checkpoint commit
+
+
+---
+
+
+7.4 Milestone loop
+
+
+Use before merges, major transitions, or deployments.
+
+
+1. compile all relevant phases
+2. run any runtime checks
+3. verify config wiring
+4. commit/tag
+5. move to next phase
+
+
+---
+
+
+8. The 1,000+ LOC Batch Strategy
+
+
+If your goal is dense large-batch insertion, do not do it randomly.
+
+
+Use this pattern:
+
+
+8.1 1,000 LOC should be one slice, not one file
+
+
+A good 1,000-line batch is:
+
+
+- 4 files at 250 lines each
+- 5 files at 200 lines each
+- 3 files at 330 lines each
+
+
+This is much safer than one 1,000-line monolith.
+
+
+---
+
+
+8.2 The batch must be internally complete
+
+
+A dense batch should include:
+
+
+- all models
+- all helpers
+- all engines
+- all local parsing/utilities
+  that the batch needs
+
+
+That way the compile surface is narrow and predictable.
+
+
+---
+
+
+8.3 Lower the external dependency count
+
+
+The more a batch depends on unrelated files, the more fragile it becomes.
+
+
+For dense batches:
+
+
+- depend on stable config
+- stable core contracts
+- stable data models
+- already-verified utilities
+
+
+Avoid depending on half-finished neighboring layers.
+
+
+---
+
+
+8.4 Batch prompt discipline
+
+
+When collaborating between systems, the input specification for a batch should state:
+
+
+- exact file paths
+- exact package names
+- known existing contracts
+- prohibited renames
+- compile target
+- required runtime constraints
+- what must remain compatible
+
+
+Without that, high-volume code generation becomes drift.
+
+
+---
+
+
+9. Collaboration Model: NotebookLM + ChatGPT
+
+
+The most effective division of labor is this:
+
+
+NotebookLM role
+
+
+Use it for:
+
+
+- structural decomposition
+- batch planning
+- dependency ordering
+- architecture extraction from source docs
+- phase/tier/batch planning
+- system memory of blueprint intent
+
+
+ChatGPT role
+
+
+Use it for:
+
+
+- exact Kotlin syntax
+- contract preservation
+- compile-safe edits
+- terminal block generation
+- refactors
+- error-driven corrections
+- code density with local correctness
+
+
+Best combined loop
+
+
+1. NotebookLM defines the batch
+2. you bring that plan here
+3. I normalize it against real files and compile reality
+4. I output exact terminal blocks
+5. you run smoke compile
+6. we fix only real compiler collisions
+7. when green, move to next batch
+
+
+This is the correct relationship.
+
+
+NotebookLM should not be trusted as final compiler truth.
+I should not be trusted to invent architecture outside your docs.
+Together, that gives you speed and correctness.
+
+
+---
+
+
+10. The Required Prompt Format for Large Batches
+
+
+For future 1,000+ LOC batches, your incoming batch prompt should contain:
+
+
+A. Batch identity
+
+
+- phase
+- tier
+- batch name
+- objective
+
+
+B. File list
+
+
+Exact file paths only.
+
+
+C. Existing dependencies
+
+
+Which current files must remain compatible.
+
+
+D. Existing contracts
+
+
+Paste:
+
+
+- constructor signatures
+- config classes
+- interface definitions
+- currently referenced method names
+
+
+E. Constraints
+
+
+Examples:
+
+
+- pure Kotlin/JDK only
+- no external deps
+- no deletions
+- must compile on Termux ARM64
+- preserve caller compatibility
+
+
+F. Verification target
+
+
+The exact compile command.
+
+
+That makes dense generation reliable.
+
+
+---
+
+
+11. What to Do When a Batch Fails
+
+
+Never panic-rewrite the whole batch.
+
+
+Use failure triage.
+
+
+Failure Class 1: Symbol mismatch
+
+
+Examples:
+
+
+- wrong field names
+- wrong config property names
+- wrong package name
+- wrong constructor
+
+
+Fix:
+patch only the mismatched seam.
+
+
+---
+
+
+Failure Class 2: Contract drift
+
+
+Examples:
+
+
+- changed method arity
+- changed data class layout
+- changed public model names
+
+
+Fix:
+restore compatibility unless the batch intentionally included a migration plan.
+
+
+---
+
+
+Failure Class 3: Missing imports / namespace issues
+
+
+Fix locally.
+Do not redesign.
+
+
+---
+
+
+Failure Class 4: Architecture violation
+
+
+Examples:
+
+
+- core depending on UI
+- data depending on runtime
+- worker depending on CLI rendering
+
+
+Fix the dependency direction, not just the syntax.
+
+
+---
+
+
+Failure Class 5: Batch too broad
+
+
+If too many unrelated errors appear, the batch was oversized in dependency breadth, not necessarily line count.
+
+
+Split the batch into:
+
+
+- contracts
+- engines
+- orchestration
+- interface
+
+
+Then compile sequentially.
+
+
+---
+
+
+12. Commit Strategy
+
+
+Do not commit every file edit.
+
+
+Commit when:
+
+
+- a slice compiles
+- a batch compiles
+- a phase boundary is crossed
+- a stable checkpoint is reached
+
+
+Recommended commit types:
+
+
+- "batch(data): stabilize CAS router and delta tracker"
+- "batch(core): add provider gateway and swarm synthesizer"
+- "repair(core): align Provider with Config ApiKeys"
+- "phase(cli): land command router and terminal engine"
+
+
+This keeps git history meaningful.
+
+
+---
+
+
+13. Recommended Daily Rhythm
+
+
+For a heavy build day:
+
+
+Pass 1
+
+
+Plan the next 1 to 3 batches.
+
+
+Pass 2
+
+
+Land the first batch with narrow compile.
+
+
+Pass 3
+
+
+Expand to wider batch compile.
+
+
+Pass 4
+
+
+Land second batch.
+
+
+Pass 5
+
+
+Run a broader milestone compile.
+
+
+Pass 6
+
+
+Commit clean checkpoints.
+
+
+This creates momentum without chaos.
+
+
+---
+
+
+14. Example Practical Workflow for ATROPOS
+
+
+Phase 1: Data Foundation
+
+
+Tier 0
+
+
+- routing
+- storage
+- delta tracking
+
+
+Batch
+
+
+- "OntologicalAddressRouter.kt"
+- "CloudLakehouseSyncEngine.kt"
+- "CodebaseDeltaTreeTracker.kt"
+
+
+Compile:
+data-only
+
+
+---
+
+
+Phase 2: Intelligence Swarm
+
+
+Tier 1
+
+
+- config compatibility
+- provider gateway
+- director orchestration
+- worker synthesis
+
+
+Batch
+
+
+- "Provider.kt"
+- "DirectorOrchestrator.kt"
+- "WorkerCodeSynthesizer.kt"
+
+
+Compile:
+core slice + data prerequisite
+
+
+---
+
+
+Phase 3: Runtime Control
+
+
+Tier 2
+
+
+- command parsing
+- ANSI terminal rendering
+- quota/session tracking
+- compilation repair loop
+
+
+Compile:
+runtime slice + core + data
+
+
+---
+
+
+Phase 4: Self-Improvement
+
+
+Tier 3
+
+
+- build feedback
+- compiler error digestion
+- retry policy
+- immunity engine
+
+
+Compile:
+runtime + learning loop + lower tiers
+
+
+---
+
+
+15. Terminal Practice Rules
+
+
+Rule 1
+
+
+Use single terminal blocks per step.
+
+
+Rule 2
+
+
+Write files first, then compile second.
+Do not mix compile and overwrite in messy ways unless intentional.
+
+
+Rule 3
+
+
+Always keep a narrow smoke compile command handy.
+
+
+Rule 4
+
+
+When a compile fails, dump the relevant local files immediately instead of guessing.
+
+
+Rule 5
+
+
+Do not run whole-project compiles when a narrow compile is already red.
+
+
+---
+
+
+16. The Exact Workflow to Use Going Forward
+
+
+Phase
+
+
+Choose one architectural phase.
+
+
+Tier
+
+
+Choose one dependency altitude within that phase.
+
+
+Batch
+
+
+Choose 3 to 8 tightly related files.
+
+
+Step 1
+
+
+Audit existing contracts.
+
+
+Step 2
+
+
+Generate the full batch in one dense pass.
+
+
+Step 3
+
+
+Run narrow smoke compile.
+
+
+Step 4
+
+
+Repair only real compile errors.
+
+
+Step 5
+
+
+Run wider batch compile.
+
+
+Step 6
+
+
+Checkpoint commit.
+
+
+Step 7
+
+
+Advance to next batch.
+
+
+That is the workflow.
+
+
+---
+
+
+17. Condensed Operating Version
+
+
+Use this as the day-to-day memory model:
+
+
+Plan in phases. Build in tiers. Land in batches. Repair in steps. Compile narrowly. Widen only after green. Commit only at stable checkpoints.
+
+
+And for dense generation:
+
+
+1,000+ LOC is acceptable only when the batch is topologically narrow, internally complete, and slice-compilable.
+
+
+---
+
+
+18. Minimal Command Workflow Pattern
+
+
+Use this structure every time:
+
+
+1. inspect current contracts
+2. overwrite target files
+3. compile touched slice only
+4. fix actual errors
+5. compile wider slice
+6. inspect diff
+7. commit checkpoint
+
+
+That is the fastest sustainable workflow for this Kotlin/Termux project.
+
+
+---
+
+
+19. Final Rule
+
+
+The real productivity multiplier is not “write more code faster.”
+
+
+It is:
+
+
+write bigger coherent batches, while shrinking the number of places that can fail at once.
+
+
+That is how you scale dense application construction without drowning in repair noise.Use this as the operating spec. For the next step, the cleanest move is for me to turn this into a copy-paste ATROPOS batch template you can reuse every time before asking for the next 1,000-line terminal block.
+
+
+END .200]
+
+
+[START .205
+Addendum: Steps 20–39
+
+
+20. Lock the toolchain at the repo edge, not in your head: pin Kotlin, Gradle, Java target, and wrapper versions together; Kotlin’s CLI and docs now show standalone compiler releases independently, while Gradle/Kotlin build behavior depends on plugin+daemon+JDK alignment, so version drift should be treated as architecture drift, not a minor setup detail. 
+
+
+
+
+21. Separate three execution modes and never mix their expectations: kotlinc for micro-smoke checks, ./gradlew for slice/batch verification, and GitHub Actions for branch protection; the Kotlin compiler is ideal for immediate JVM syntax validation, but Kotlin incremental compilation, build cache, and configuration cache are Gradle-layer optimizations, not raw kotlinc features. 
+
+
+
+
+22. Treat Termux as a constrained Linux edge host, not as a desktop clone: keep packages current, assume mirror issues can poison builds, and prefer a small trusted base (termux-tools,git,openjdk,clang,wget,unzip) before you scale the repo; Termux itself recommends APT-based package management and explicitly advises pkg upgrade after mirror changes. 
+
+
+
+
+23. Build on a “two-lane” repository model: /src for product code and /ops or /scripts for generation, verification, export, and repair tooling; this prevents the meta-system that writes code from polluting the application dependency graph, which is essential once batch output exceeds human-scale review size.
+
+
+
+
+24. Add a “contract-first prebatch” before every 1000+ LOC batch: extract package names, public constructors, config fields, interfaces, and file paths into a tiny immutable brief; generation should consume that brief and be forbidden from inventing adjacent APIs.
+
+
+
+
+25. Introduce a four-artifact batch record for every major landing: PLAN.md,FILES.txt,VERIFY.sh,ROLLBACK.txt; one tells you intent, one tells you exact scope, one proves the slice, one lets you unwind without thinking. Dense generation without a rollback artifact eventually becomes unrecoverable.
+
+
+
+
+26. Define batch admissibility mathematically: a batch may be large in lines but small in dependency radius; reject any batch that creates new imports in more than one architectural direction or touches more than one vertical lane (data,core,runtime,ui) unless the whole point of the batch is boundary creation.
+
+
+
+
+27. Distinguish “compile surface” from “edit surface”: you may edit 8 files, but your compile surface should include only the edited files plus direct dependencies plus stable lower layers; this is the computer-science version of minimizing the cut set in a graph.
+
+
+
+
+28. Prefer “interface wedges” for future-heavy modules: before generating a subsystem likely to fan out, land a narrow interface file and one minimal implementation shell so future batches target a stable seam instead of rewriting concrete classes repeatedly.
+
+
+
+
+29. Use Gradle’s configuration cache only after the build logic is disciplined; Gradle states it is not enabled by default, may require plugin/build changes, and caches configuration-phase results separately from task outputs, so enable it as a phase milestone, not as a first-day ritual. 
+
+
+
+
+30. Use the build cache only after your local repeat-build behavior is already clean; Gradle explicitly says task output caching assumes your build already behaves correctly with incremental/up-to-date checks, so cache adoption is a correctness multiplier, not a correctness substitute. 
+
+
+
+
+31. Turn every batch into three commands and never improvise beyond them: write,smoke,widen; if a failure occurs, patch only until smoke passes again, then retry widen; this removes panic-driven exploratory command sprawl.
+
+
+
+
+32. Move memory pressure decisions into gradle.properties: Kotlin’s Gradle path runs through the Kotlin daemon and inherits or overrides JVM arguments from Gradle, so heap sizing, metaspace, and daemon args should live in source-controlled build config instead of ad hoc shell history. 
+
+
+
+
+33. Use Git branches as phase boundaries, not just feature names: phase/data-foundation,phase/intelligence-swarm,phase/runtime-shell; inside each phase branch, batch names become commits or tags. This aligns architectural review with Git topology and makes regression bisects meaningful.
+
+
+
+
+34. Protect main with a minimum CI invariant: GitHub’s Gradle CI docs frame Actions as the place to catch commit/PR failures against the default branch, so your local Termux loop should optimize speed while GitHub optimizes trust. 
+
+
+
+
+35. Split verification into local deterministic checks and remote reproducibility checks: local verifies “does this compile here right now on the phone,” remote verifies “does this survive a clean machine with pinned workflow steps.” Those are different questions and both matter.
+
+
+
+
+36. Add a generated-file quarantine rule: any file produced by a model should land under an explicit batch command and show up in git diff in one contiguous window; never let a model write opportunistically into already-dirty files without a scope manifest.
+
+
+
+
+37. Create a “symbol census” command for large Kotlin repos: after each dense batch, extract all package,class,interface,object,fun,data class headers into a flat report; this is the fastest way to spot duplicate concepts, accidental renames, and parallel implementations before they metastasize.
+
+
+
+
+38. For Termux specifically, bias toward JVM/Kotlin modules that can be smoke-checked with kotlinc and only escalate to Android-specific or plugin-heavy Gradle logic when the pure Kotlin core is green; pocket hardware rewards narrower host assumptions and punishes premature build complexity. 
+
+
+
+
+39. Formalize your dense-generation loop as Research→Contracts→Batch Spec→Code Drop→Smoke Compile→Symbol Repair→Wider Compile→Diff Audit→Checkpoint Commit→Phase Review; the throughput target is not “1000 lines fast,” it is “1000 lines with bounded uncertainty,” because that is the threshold where large-batch software starts behaving like engineering instead of improvisation.
+
+
+
+
+
+
+The practical rule tying this addendum to the first 19 steps is: first document the graph, then generate the slice, then prove only the slice, then widen trust outward one ring at a time.
+END .205]
+
+
+[START .210
+Addendum-II:40–60
+
+
+40."wrapper>system";always prefer "./gradlew" for reproducibility and reserve bare "gradle" for host diagnostics only, because wrapper pinning constrains version entropy while host-gradle silently widens it.
+41."cli!=gradle";use "kotlinc" as syntax/ABI smoke lane and "gradlew" as stateful build lane; never infer Gradle-cache health from raw "kotlinc" success because compiler validity and build-graph validity are distinct execution domains.
+42."hotpath=min(cutset)";for each batch compute the minimal compile cut: "{edited_files ∪ direct_contracts ∪ required_lower_layers}" and prohibit opportunistic inclusion beyond that set; throughput scales with boundary sharpness, not with CPU optimism.
+43."termux=hostile_to_bloat";keep phone-host assumptions explicit: low thermal budget, intermittent I/O, smaller RAM headroom, resumable shell sessions, and non-desktop filesystem behavior; optimize for restartability before raw speed.
+44."gradle.properties=control_plane";move daemon heap, metaspace, Kotlin daemon args, build reports, and feature toggles into committed properties so performance state becomes versioned architecture rather than shell folklore.
+45."config-cache≠default";enable configuration cache only after build logic is declarative enough to satisfy cache requirements; treat first enablement as a compatibility project, not a flag flip.
+46."build-cache=ci_push/dev_pull";mirror Gradle’s recommended topology: CI populates remote cache from clean builds, developers primarily consume it; this prevents poisoned local state from being promoted upstream.
+47."report_or_it_didnt_happen";turn on Kotlin build reports before performance tuning so non-incremental causes, compiler mode, and phase timings are inspectable artifacts rather than anecdotes.
+48."big-file=perf-smell";when a batch compiles but remains slow, split oversized Kotlin files by cohesive declarations rather than micro-optimizing flags first; official Kotlin guidance explicitly points to source reorganization when incremental builds still drag.
+49."one-batch-one-proof";every dense batch should emit exactly one authoritative verification command, one expected artifact, one failure dump command, one rollback reference; extra rituals increase noise without increasing certainty.
+50."branching=phase-encoded";name branches by architecture strata ("phase/x-tier/y-batch/z") so branch history itself becomes a dependency log; bisecting then maps directly onto system topology instead of feature prose.
+51."ci=branch-health-not-local-comfort";GitHub Actions should answer only one question: “does this change remain healthy against the protected branch on a clean runner?”; all convenience checks belong local, all trust checks belong remote.
+52."sha-pin-third-party-actions";for Actions dependencies, pin by commit SHA, not floating tags, because GitHub explicitly warns third-party actions may change without warning; workflow reproducibility is part of supply-chain hygiene.
+53."arch-awareness";separate host architecture concerns from product architecture concerns: Termux/aarch64 constraints should influence tool selection and build cadence, but should not leak into pure Kotlin core APIs unless the runtime contract truly depends on host ABI.
+54."contracts_before_context";for LLM-assisted codegen, pass signatures and invariants before long architectural prose; model error rate grows faster with ambiguous seams than with reduced narrative richness.
+55."manifest_every_drop";large codegen batches require a scope manifest containing exact paths, package names, public seams, forbidden renames, allowed imports, verification target, and dependency direction; omit any of these and repair cost explodes superlinearly.
+56."quarantine_generated_edits";never mix model-written files with hand-edited unrelated files in the same unreviewed diff window; generated deltas should remain spatially and temporally attributable until compiled and audited.
+57."symbol-census_after_batch";after each dense landing, regenerate a flat inventory of packages/types/functions and diff it against prior census to catch duplicate abstractions, accidental forks, and stealth renames before behavioral bugs appear.
+58."infra-lane≠product-lane";keep workflow scripts, codegen helpers, release logic, CI config, and repository-maintenance tools outside product namespaces; meta-automation must depend on the app, never the reverse.
+59."failure-taxonomy-first";triage compile failures in this order:"name/symbol","package/import","constructor/arity","generic/type variance","cyclic dependency","toolchain mismatch","cache contamination"; debugging speed comes from ordered elimination, not cleverness.
+60."throughput=lines/(uncertainty*radius)";to sustain 1000+ LOC batches, optimize not only generation volume but uncertainty radius: fewer touched seams, fewer ambiguous imports, fewer mutable contracts, fewer verification targets; clean speed is graph compression under proof, not maximal text emission.
+END .210]
+
+
+[START .215
+Final Addendum:61–120
+
+
+61."LOC_TARGET!=DESIGN_TARGET";treat "1000+LOC" only as batch throughput capacity;acceptance="behavior+contracts+tests+integration";reject filler, repeated wrappers, ceremonial comments, speculative interfaces, empty models, pass-through layers, duplicated helpers, and code written solely to satisfy volume.
+62."FILE_SOFT_CAP=350;FILE_HARD_CAP=500";crossing soft cap triggers cohesion review;crossing hard cap requires documented exception for generated tables/parsers/protocol maps;otherwise split by contract/model/policy/adapter/engine/controller/view while preserving one-way dependencies.
+63."BATCH_DENSITY=implemented_behavior/nonblank_LOC";count executable rules, validation, failure handling, tests, and real integrations as value;count imports, formatting, license headers, trivial accessors, repetitive DTO conversion, and generated scaffolding as neutral overhead, never progress.
+64."NO_ARTIFICIAL_BOILERPLATE";before creating any class require "{owner,reason_to_change,callers,state,public_contract,test}";if two proposed files share all six, merge them;if one file has multiple unrelated owners or reasons, split it.
+65."NO_PREMATURE_ABSTRACTION";create an interface only for a real boundary:platform,provider,storage,clock,network,process,filesystem,serialization,or independently testable policy;one implementation plus no substitution pressure remains concrete.
+66."NO_PLACEHOLDER_GREEN";ban production "TODO()","NotImplementedError",constant-success returns,fabricated lists,swallowed exceptions,and hardcoded sample deltas;temporary implementations must be named "Fake*",live in tests,or be guarded by an explicit feature flag that defaults off.
+67."VERTICAL_COMPLETENESS";a feature is not complete because 1000 lines compile;it must traverse "intent→validated command/request→use case→port→adapter→typed result→state/output→observable failure→test";missing links block acceptance.
+68."DECOUPLING_TEST";for every file ask “can this compile/test with its inward contracts and fakes?”;if not, identify hidden global state,static environment reads,direct terminal rendering,filesystem coupling,or provider-specific types and inject that boundary.
+69."CYCLE_ZERO";generate package dependency edges after every batch;reject "data→ui","domain→cli","core→platform-view",bidirectional module edges,and callbacks that secretly reconstruct cycles;break cycles with inward-owned contracts or immutable events.
+70."OWNERSHIP_UNIQUE";one concept gets one canonical type and package;before generation query the symbol census for synonyms;reject duplicate "Result/Response/State/Manager/Service/Engine" concepts unless their bounded contexts and conversions are explicit.
+71."ENDPOINT_DEFINITION";endpoint means every externally invocable operation including HTTP route,provider call,CLI subcommand,IPC message,repository operation,or UI intent;each receives a globally unique stable operation ID and one discoverable registry entry.
+72."ENDPOINT_MANIFEST";each operation declares "{id,owner,input,output,error_set,auth,side_effect,idempotency,timeout,cancellation,retry,rate_limit,observability,version,tests}";code generation is forbidden when any required field is unknown.
+73."ENDPOINT_SLICE";implement endpoint-specific contract,use case,transport adapter,and tests;centralize shared authentication,serialization,logging,retry,and error mapping as middleware/interceptors so completeness does not become duplicated boilerplate.
+74."SCHEMA_FIRST";model requests/responses as typed values with explicit required/optional fields,bounds,formats,defaults,and unknown-field policy;validate at the boundary once;never pass untrusted maps or raw JSON into domain logic.
+75."RESPONSE_TOTALITY";every endpoint declares at least one success response and every reachable failure response;OpenAPI requires a Responses Object with at least one response,so undocumented “whatever exception happened” behavior is invalid. "OpenAPI 3.1.1" (https://spec.openapis.org/oas/v3.1.1.html)
+76."ERROR_ALGEBRA";use a closed domain error set such as "Validation,Unauthorized,Forbidden,NotFound,Conflict,RateLimited,Unavailable,Timeout,Cancelled,Internal";transport layers map it to HTTP/CLI/UI representations without exposing stack traces,secrets,provider payloads,or filesystem paths.
+77."HTTP_SEMANTICS";choose methods/status codes by meaning;retry automatically only when the operation is defined idempotent or protected by an idempotency key;never retry unsafe mutations merely because a socket timed out. "RFC 9110" (https://www.rfc-editor.org/rfc/rfc9110.html)
+78."TIME_BUDGET_PROPAGATION";one caller deadline flows through orchestration,provider,storage,and subprocess layers;children receive remaining time,not fresh full timeouts;timeout triggers cancellation and resource closure rather than abandoned work.
+79."RETRY_POLICY";retry only classified transient faults;use bounded attempts,exponential backoff,jitter,server "Retry-After",deadline awareness,and cancellation;authentication,validation,permission,and deterministic compiler failures are terminal.
+80."PAGINATION_CONTRACT";collections with unbounded growth require cursor/page contract,stable ordering,limit ceiling,and continuation semantics;never load a lakehouse namespace,Git history,logs,or model result set into memory without a bound.
+81."STREAM_CONTRACT";streaming endpoints define chunk type,maximum chunk size,ordering,backpressure,cancellation,partial-failure behavior,digest verification,and terminal event;“stream=true” without a consumer protocol is incomplete.
+82."PROVIDER_DECODE";HTTP 2xx is transport success,not semantic success;provider adapters must parse the provider envelope,extract assistant content/usage/request ID/finish reason,normalize errors,and reject malformed or empty bodies before returning domain output.
+83."NO_MANUAL_JSON";manual string concatenation/escaping is prohibited for production API payloads;use a structured serializer/parser with fixtures for quotes,Unicode,control characters,nesting,nulls,and unknown fields;provider schema changes must fail visibly.
+84."AUTH_BOUNDARY";credentials enter only through an injected vault/config port;never place tokens in constructors’ "toString",exceptions,command history,URLs,Git diffs,telemetry,or model prompts;redaction runs before persistence and display.
+85."ENDPOINT_PARITY_MATRIX";maintain rows="operations",columns="contract,implementation,CLI,HTTP/UI exposure,auth,error mapping,unit test,contract test,integration test,docs";any empty required cell means the endpoint does not exist operationally.
+86."EXPLICIT_API";enable Kotlin explicit API mode at stable module boundaries so public visibility and public types are deliberate rather than inferred. "Kotlin API guidance" (https://kotlinlang.org/docs/api-guidelines-simplicity.html)
+87."ABI_GATE";record and compare public ABI before accepting signature changes;Kotlin’s Gradle tooling supports ABI validation and "checkKotlinAbi";update dumps only after reviewing intentional compatibility impact. "Kotlin ABI validation" (https://kotlinlang.org/docs/gradle-binary-compatibility-validation.html)
+88."COMPATIBILITY_3D";evaluate source,binary,and behavioral compatibility independently;adding a default parameter or changing an inferred return type can still break compiled consumers,so preserve old overloads or perform an explicit versioned migration. "Kotlin compatibility" (https://kotlinlang.org/docs/api-guidelines-backward-compatibility.html)
+89."VISIBILITY_MINIMUM";default implementation declarations to "private"/"internal";promote to "public" only through the endpoint/module contract;never leak provider SDK,HTTP client,JSON,Gradle,Android,or Apple platform types through core APIs.
+90."IMPORT_DETERMINISM";derive imports from actual symbols and indexed package paths;ban wildcard imports,unused imports,duplicate aliases,and same-simple-name ambiguity;after moves,search old FQNs and compile every direct consumer before deleting compatibility shims.
+91."PATH_PACKAGE_INVARIANT";for "src/.../kotlin",package must equal the canonical namespace implied by ownership;CI compares package declarations,file locations,and duplicate FQNs;case-only path differences are rejected because Android/Linux and macOS filesystems can disagree.
+92."TYPE_BOUNDARIES";use sealed result hierarchies/value classes/enums for finite states instead of magic strings;parse strings once at transport/config boundaries;domain functions consume validated types and return typed outcomes.
+93."NULL_POLICY";nullable means absence is valid and modeled;failure uses typed error,not "null";do not use "!!" outside proven invariants;platform/provider nullability is normalized in its adapter before reaching shared logic.
+94."CONCURRENCY_OWNERSHIP";when coroutines are introduced,use structured scopes,injected dispatchers,cooperative cancellation,and bounded concurrency;ban orphan threads,unbounded executors,"GlobalScope",and blocking network/process work on UI or orchestration event loops.
+95."DEPENDENCY_EXPOSURE";in modular Gradle builds prefer "implementation";use "api" only when a dependency type appears in the module’s public ABI,which reduces classpath leakage and unnecessary downstream recompilation. "Gradle Java Library" (https://docs.gradle.org/current/userguide/java_library_plugin.html)
+96."CLI_PARSE!=STRING_SPLIT";parse argv or a lexical token stream preserving quotes,escapes,empty arguments,Unicode,and "--";never reconstruct commands as shell strings;invoke subprocesses with argument arrays to prevent injection and whitespace corruption.
+97."CLI_STREAM_DISCIPLINE";machine/primary output→"stdout";diagnostics/progress/errors→"stderr";success→exit "0";classified failures→stable nonzero codes;support "--quiet","--verbose",and machine-readable "--json". "CLI Guidelines" (https://clig.dev/)
+98."CLI_TTY_AWARE";disable ANSI,animation,spinners,and cursor control when output is not a TTY,when "NO_COLOR" is set,when "TERM=dumb",or when "--no-color" is supplied;never contaminate piped JSON/text with HUD escape sequences. "CLI Guidelines" (https://clig.dev/)
+99."CLI_PIPEABILITY";support "-" for stdin/stdout where meaningful;process incrementally;preserve backpressure;do not close caller-owned standard streams;never require temporary files merely to connect two commands.
+100."CLI_HELP_CONTRACT";root and every subcommand implement "-h/--help",usage,arguments,defaults,environment precedence,examples,and exit codes;invalid invocation prints concise actionable help without a stack trace.
+101."CLI_CONFIG_PRECEDENCE";define deterministic order "flags>environment>workspace-config>user-config>defaults";report effective configuration with secrets redacted;unknown keys and conflicting sources fail rather than silently choosing.
+102."CLI_CWD_EXPLICIT";resolve workspace once to canonical path;pass it into services;never scatter reliance on process working directory,"$HOME",or Termux absolute paths through domain code.
+103."SUBPROCESS_SAFETY";drain stdout/stderr concurrently,apply timeout/cancellation,close stdin,wait for termination,capture bounded tails,and preserve original exit status;never call "waitFor()" while a full pipe can deadlock the child.
+104."SIGNAL_AND_CANCEL";Ctrl-C cancels the active operation,closes streams,terminates descendants with bounded grace,and returns a stable interrupt code;it must not corrupt CAS files,indexes,Git state,or terminal modes.
+105."MUTATION_GUARDS";destructive CLI operations require "--dry-run",scope preview,noninteractive "--yes" policy,and atomic/transactional execution;interactive confirmation must never appear when stdin is piped.
+106."HIG_NAMESPACE";keep "HIG_ATROPOS=Heuristic-Ingestion-Gap=0" separate from "HIG_APPLE=Human-Interface-Guidelines";the former governs evidence/address resolution,the latter governs Apple presentation;neither substitutes for Android guidance or platform testing.
+107."PLATFORM_SPLIT";share domain,use cases,endpoint contracts,and serializable UI-state protocols;place Android UI in Android source sets and Apple-specific UI/adapters in "iosMain"/SwiftUI boundaries;KMP supports shared logic or shared UI,but iOS execution/signing still requires Apple/Xcode tooling. "Kotlin Multiplatform" (https://kotlinlang.org/docs/multiplatform.html) "iOS setup" (https://kotlinlang.org/docs/multiplatform/multiplatform-create-first-app.html)
+108."UI_UDF";render immutable state downward and emit typed user events upward;Android recommends screen-level state holders/ViewModels with observable state such as "StateFlow";views do not call repositories/providers directly. "Android UI architecture" (https://developer.android.com/topic/architecture/ui-layer)
+109."ADAPTIVE_NOT_STRETCHED";choose navigation/layout from current window size,posture,input,and available space,not phone/tablet labels;replace components or pane count when necessary instead of proportionally stretching one layout. "Android adaptive apps" (https://developer.android.com/develop/ui/compose/build-adaptive-apps)
+110."SYSTEM_GEOMETRY";Android handles status/navigation/cutout/IME insets under edge-to-edge;Apple respects safe areas,Dynamic Island,camera housing,toolbars,and resizable windows;content may extend behind system chrome,critical controls may not be obscured. Android 15 enforces edge-to-edge for apps targeting SDK 35+. "Android edge-to-edge" (https://developer.android.com/develop/ui/views/layout/edge-to-edge) "Apple layout" (https://developer.apple.com/design/human-interface-guidelines/layout)
+111."INTERACTION_ACCESS";use native semantic controls before custom drawing;minimum hit regions follow platform guidance,including Apple’s 44×44pt baseline;every control exposes role,label,state,value,action,focus order,disabled/busy/error state,and nonvisual feedback. "Apple UI guidance" (https://developer.apple.com/design/tips/) "Compose accessibility" (https://developer.android.com/develop/ui/compose/accessibility)
+112."TYPE_AND_LOCALE_STRESS";support Dynamic Type/font scaling,RTL,locale-expanded text,Unicode,high contrast,dark/light themes,and keyboard/pointer/stylus input;wrap before truncating,avoid fixed text heights,and test smallest/largest supported windows and font scales.
+113."MOTION_POLICY";motion communicates state or spatial continuity,never essential information;honor reduced-motion settings,permit interruption,preserve gesture direction,and pair critical feedback with semantic/text/haptic alternatives. "Apple motion" (https://developer.apple.com/design/human-interface-guidelines/motion)
+114."UI_STATE_TOTALITY";every screen models "initial/loading/content/empty/partial/error/offline/permission-denied/session-expired";state survives rotation/window resizing/process recreation where appropriate;retry is explicit and cannot duplicate mutations.
+115."UI_ACCEPTANCE_MATRIX";verify phone/tablet/foldable/resizable-window,portrait/landscape,light/dark,largest text,RTL,TalkBack/VoiceOver,keyboard,pointer,offline,slow/error responses,IME/system-bar overlap,and screenshot/semantics regressions before calling UX complete.
+116."CI_GRAPH";map CI jobs to module DAG:format/static checks→contract/unit tests→slice compilation→integration tests→packaging;fail fast within a lane while keeping independent lanes parallel;local Termux proves speed,clean GitHub runners prove reproducibility.
+117."PROTECTED_TRUST";protect "main";require exact CI checks,up-to-date branch policy where appropriate,review,and no force-push/deletion;required checks must pass before merge. "GitHub protected branches" (https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches)
+118."WORKFLOW_SECURITY";give Actions minimum "permissions",pin third-party actions by immutable commit SHA,protect ".github/workflows" with CODEOWNERS,use OIDC instead of long-lived cloud keys,and prevent untrusted PR code from accessing secrets. "GitHub secure use" (https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions)
+119."CI_CONCURRENCY";cancel obsolete validation runs by branch/PR concurrency group;serialize deployments per environment;gate production through protected environments so secrets become available only after protection rules pass. "GitHub concurrency" (https://docs.github.com/en/actions/concepts/workflows-and-actions/concurrency) "Deployment protection" (https://docs.github.com/en/actions/how-tos/deploy/configure-and-manage-deployments/control-deployments)
+120."FINAL_ACCEPTANCE";accept batch iff "real_behavior>=spec ∧ fake_success=0 ∧ unresolved_endpoint_cells=0 ∧ cycles=0 ∧ ABI_drift=reviewed ∧ narrow_tests=green ∧ wider_tests=green ∧ UI_matrix=green_when_applicable ∧ secrets=0 ∧ diff_scope=manifest";LOC is reported only as throughput telemetry,never as proof.
+END .215]
