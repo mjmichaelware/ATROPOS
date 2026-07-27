@@ -1,0 +1,235 @@
+name: Rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Rollback target (api | worker | vercel)
+        required: true
+        type: choice
+        options:
+          - api
+          - worker
+          - vercel
+      environment:
+        description: Deployment environment
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+      revision:
+        description: Immutable revision or deployment ID to roll back to
+        required: true
+        type: string
+      dry-run:
+        description: Dry run (no changes applied)
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: rollback-${{ github.event.inputs.environment }}-${{ github.event.inputs.target }}
+  cancel-in-progress: true
+
+env:
+  REGION: us-central1
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    outputs:
+      valid: ${{ steps.check.outputs.valid }}
+
+    steps:
+      - id: check
+        env:
+          TARGET: ${{ github.event.inputs.target }}
+          ENV: ${{ github.event.inputs.environment }}
+          REVISION: ${{ github.event.inputs.revision }}
+          DRY_RUN: ${{ github.event.inputs.dry-run }}
+        run: |
+          ERRORS=""
+          if [ -z "$TARGET" ]; then ERRORS="$ERRORS\n- target is required"; fi
+          if [ -z "$ENV" ]; then ERRORS="$ERRORS\n- environment is required"; fi
+          if [ -z "$REVISION" ]; then ERRORS="$ERRORS\n- revision is required"; fi
+          if [ "$REVISION" = "latest" ]; then ERRORS="$ERRORS\n- revision cannot be 'latest'"; fi
+          if [ "$REVISION" = "HEAD" ]; then ERRORS="$ERRORS\n- revision cannot be 'HEAD'"; fi
+          case "$TARGET" in
+            api|worker|vercel) ;;
+            *) ERRORS="$ERRORS\n- target must be api, worker, or vercel";;
+          esac
+          case "$ENV" in
+            staging|production) ;;
+            *) ERRORS="$ERRORS\n- environment must be staging or production";;
+          esac
+          if [ -n "$ERRORS" ]; then
+            echo -e "ROLLBACK VALIDATION FAILED:$ERRORS"
+            echo "valid=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          echo "ROLLBACK VALIDATION PASSED"
+          echo "Target: $TARGET, Environment: $ENV, Revision: $REVISION, Dry-run: $DRY_RUN"
+          echo "valid=true" >> $GITHUB_OUTPUT
+
+  rollback-api:
+    needs: validate
+    if: github.event.inputs.target == 'api'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: ${{ github.event.inputs.environment }}
+
+    steps:
+      - uses: google-github-actions/auth@71f986410dfbc7added4569d411d040a91dc6935 # v2.1.8
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@77e7a554d41e2ee56fc945c52dfd3f33d12def9a # v2.1.4
+
+      - name: List available revisions
+        run: |
+          gcloud run revisions list --service=specgraph-api --region=${{ env.REGION }} \
+            --format='table(name,status.status,metadata.creationTimestamp)' \
+            --limit=10
+
+      - name: Verify target revision exists
+        run: |
+          gcloud run revisions describe "specgraph-api-${{ github.event.inputs.revision }}" \
+            --region="${{ env.REGION }}" > /dev/null 2>&1 || {
+            echo "ERROR: Revision specgraph-api-${{ github.event.inputs.revision }} not found"
+            echo "Available revisions:"
+            gcloud run revisions list --service=specgraph-api --region=${{ env.REGION }} --format='value(name)'
+            exit 1
+          }
+
+      - name: Rollback (dry-run)
+        if: github.event.inputs.dry-run == 'true'
+        run: |
+          echo "DRY RUN: Would roll back specgraph-api to revision specgraph-api-${{ github.event.inputs.revision }}"
+          echo "Command: gcloud run services update-traffic specgraph-api --region=${{ env.REGION }} --to-revisions=specgraph-api-${{ github.event.inputs.revision }}=100"
+          echo "NO CHANGES APPLIED"
+
+      - name: Rollback (execute)
+        if: github.event.inputs.dry-run != 'true'
+        run: |
+          echo "Rolling back specgraph-api to revision specgraph-api-${{ github.event.inputs.revision }}"
+          gcloud run services update-traffic specgraph-api \
+            --region="${{ env.REGION }}" \
+            --to-revisions="specgraph-api-${{ github.event.inputs.revision }}=100"
+          echo "Rollback applied"
+
+      - name: Verify rollback
+        if: github.event.inputs.dry-run != 'true'
+        run: |
+          URL=$(gcloud run services describe specgraph-api --region="${{ env.REGION }}" --format='value(status.url)')
+          for i in $(seq 1 6); do
+            STATUS=$(curl -s -o /dev/null -w '%{http_code}' "$URL/health" 2>/dev/null || echo "000")
+            if [ "$STATUS" = "200" ]; then
+              echo "Rollback verified: health check passed"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "WARNING: Rollback applied but health verification incomplete"
+          echo "Manual verification recommended"
+
+  rollback-worker:
+    needs: validate
+    if: github.event.inputs.target == 'worker'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: ${{ github.event.inputs.environment }}
+
+    steps:
+      - uses: google-github-actions/auth@71f986410dfbc7added4569d411d040a91dc6935 # v2.1.8
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@77e7a554d41e2ee56fc945c52dfd3f33d12def9a # v2.1.4
+
+      - name: Verify target revision image exists
+        run: |
+          gcloud artifacts docker images list "${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/specgraph-images/specgraph-operation-worker" \
+            --filter="tags=${{ github.event.inputs.revision }}" \
+            --format='value(tags)' | grep -q "${{ github.event.inputs.revision }}" || {
+            echo "WARNING: Image with tag ${{ github.event.inputs.revision }} not confirmed"
+            echo "Proceeding with redeployment of previous image."
+          }
+
+      - name: Rollback worker (dry-run)
+        if: github.event.inputs.dry-run == 'true'
+        run: |
+          echo "DRY RUN: Would redeploy specgraph-operation-worker with image tag ${{ github.event.inputs.revision }}"
+          echo "NO CHANGES APPLIED"
+
+      - name: Rollback worker (execute)
+        if: github.event.inputs.dry-run != 'true'
+        run: |
+          echo "Rolling back specgraph-operation-worker to image revision ${{ github.event.inputs.revision }}"
+          gcloud run jobs deploy specgraph-operation-worker \
+            --region="${{ env.REGION }}" \
+            --image="${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/specgraph-images/specgraph-operation-worker:${{ github.event.inputs.revision }}" \
+            --labels="commit-sha=${{ github.event.inputs.revision }},component=worker,rollback=true"
+          echo "Worker rollback applied"
+
+  rollback-vercel:
+    needs: validate
+    if: github.event.inputs.target == 'vercel'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: ${{ github.event.inputs.environment }}
+
+    defaults:
+      run:
+        working-directory: apps/web
+
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22"
+
+      - name: List Vercel deployments
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          npx vercel list --token="$VERCEL_TOKEN" 2>&1 | head -20
+
+      - name: Rollback Vercel (dry-run)
+        if: github.event.inputs.dry-run == 'true'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          echo "DRY RUN: Would roll back Vercel to deployment ${{ github.event.inputs.revision }}"
+          echo "Command: npx vercel rollback ${{ github.event.inputs.revision }} --token=VERCEL_TOKEN"
+          echo "NO CHANGES APPLIED"
+
+      - name: Rollback Vercel (execute)
+        if: github.event.inputs.dry-run != 'true'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          echo "Rolling back Vercel to deployment ${{ github.event.inputs.revision }}"
+          npx vercel rollback "${{ github.event.inputs.revision }}" --token="$VERCEL_TOKEN" 2>&1
+          echo "Vercel rollback applied"
+
+      - name: Verify Vercel rollback
+        if: github.event.inputs.dry-run != 'true'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          CURRENT=$(npx vercel list --token="$VERCEL_TOKEN" 2>&1 | head -5)
+          echo "Current deployments after rollback:"
+          echo "$CURRENT"

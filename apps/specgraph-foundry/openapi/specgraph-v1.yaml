@@ -1,0 +1,6238 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "SpecGraph Foundry API v1",
+    "version": "1.0.0",
+    "description": "Authoritative machine-readable contract for the currently implemented authenticated SpecGraph Foundry hosted API."
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:8787",
+      "description": "Local development server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Public"
+    },
+    {
+      "name": "Identity"
+    },
+    {
+      "name": "Projects"
+    },
+    {
+      "name": "Sources"
+    },
+    {
+      "name": "Atoms"
+    },
+    {
+      "name": "Research"
+    },
+    {
+      "name": "Planning"
+    },
+    {
+      "name": "Handoff"
+    },
+    {
+      "name": "Execution"
+    },
+    {
+      "name": "Routing"
+    },
+    {
+      "name": "Workspaces"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "operationId": "getHealth",
+        "tags": [
+          "Public"
+        ],
+        "summary": "Get public service health",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Service health summary",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health/live": {
+      "get": {
+        "operationId": "getHealthLive",
+        "tags": [
+          "Public"
+        ],
+        "summary": "Get process liveness",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Process can respond",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthProbeResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health/startup": {
+      "get": {
+        "operationId": "getHealthStartup",
+        "tags": [
+          "Public"
+        ],
+        "summary": "Get startup readiness without dependency detail leakage",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Startup checks are ready",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthProbeResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Startup checks are unavailable",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthProbeResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "operationId": "getHealthReady",
+        "tags": [
+          "Public"
+        ],
+        "summary": "Get dependency readiness without sensitive details",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Dependencies are ready",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthProbeResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Readiness checks are unavailable",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthProbeResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/version": {
+      "get": {
+        "operationId": "getVersion",
+        "tags": [
+          "Public"
+        ],
+        "summary": "Get public API version metadata",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Version metadata",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/me": {
+      "get": {
+        "operationId": "getCurrentUser",
+        "tags": [
+          "Identity"
+        ],
+        "summary": "Get the authenticated user identity",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current authenticated user",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/v1/projects": {
+      "get": {
+        "operationId": "listProjects",
+        "tags": [
+          "Projects"
+        ],
+        "summary": "List owned projects",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PageLimit"
+          },
+          {
+            "$ref": "#/components/parameters/PageCursor"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Owned project list",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "x-page-limit": {
+                "$ref": "#/components/headers/PageLimit"
+              },
+              "x-page-count": {
+                "$ref": "#/components/headers/PageCount"
+              },
+              "x-has-more": {
+                "$ref": "#/components/headers/HasMore"
+              },
+              "x-next-cursor": {
+                "$ref": "#/components/headers/NextCursor"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObjectListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createProject",
+        "tags": [
+          "Projects"
+        ],
+        "summary": "Create a project",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectCreateRequest"
+              },
+              "example": {
+                "slug": "demo-project",
+                "name": "Demo Project",
+                "description": "Synthetic project example"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created project",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FreeformObject"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}": {
+      "get": {
+        "operationId": "getProject",
+        "tags": [
+          "Projects"
+        ],
+        "summary": "Get a single owned project",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProjectId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Project detail",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FreeformObject"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/workspace": {
+      "get": {
+        "operationId": "getProjectWorkspace",
+        "tags": [
+          "Workspaces"
+        ],
+        "summary": "Get the aggregate project workspace",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProjectId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Aggregate project workspace",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FreeformObject"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/readiness": {
+      "get": {
+        "operationId": "getProjectReadiness",
+        "tags": [
+          "Workspaces"
+        ],
+        "summary": "Get the project readiness summary",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProjectId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Project readiness summary",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FreeformObject"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/source-workspace": {
+      "get": {
+        "operationId": "getSourceWorkspace",
+        "tags": [
+          "Workspaces",
+          "Sources"
+        ],
+        "summary": "Get the source workspace for a project",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProjectId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Source workspace",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceWorkspaceResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/research-workspace": {
+      "get": {
+        "operationId": "getResearchWorkspace",
+        "tags": [
+          "Workspaces",
+          "Research"
+        ],
+        "summary": "Get the research workspace for a project",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProjectId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Research workspace",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResearchWorkspaceResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/planning-workspace": {
+      "get": {
+        "operationId": "getPlanningWorkspace",
+        "tags": [
+          "Workspaces",
+          "Planning"
+        ],
+        "summary": "Get the planning workspace for a project",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProjectId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Planning workspace",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanningWorkspaceResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/handoff-workspace": {
+      "get": {
+        "operationId": "getHandoffWorkspace",
+        "tags": [
+          "Workspaces",
+          "Handoff"
+        ],
+        "summary": "Get the handoff workspace for a project",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProjectId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Handoff workspace",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HandoffWorkspaceResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/documents": {
+      "get": {
+        "operationId": "listProjectDocuments",
+        "tags": [
+          "Sources"
+        ],
+        "summary": "List source documents for a project",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProjectId"
+          },
+          {
+            "$ref": "#/components/parameters/PageLimit"
+          },
+          {
+            "$ref": "#/components/parameters/PageCursor"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Project document list",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "x-page-limit": {
+                "$ref": "#/components/headers/PageLimit"
+              },
+              "x-page-count": {
+                "$ref": "#/components/headers/PageCount"
+              },
+              "x-has-more": {
+                "$ref": "#/components/headers/HasMore"
+              },
+              "x-next-cursor": {
+                "$ref": "#/components/headers/NextCursor"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObjectListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      },
+      "post": {
+        "operationId": "ingestProjectDocument",
+        "tags": [
+          "Sources"
+        ],
+        "summary": "Ingest a UTF-8 source document for a project",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProjectId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IngestDocumentRequest"
+              },
+              "example": {
+                "title": "Requirements",
+                "content": "# Requirements\n\nThe system must preserve provenance.\n",
+                "media_type": "text/markdown",
+                "chunk_bytes": 32768
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Ingested document",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FreeformObject"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/source-uploads": {
+      "post": {
+        "operationId": "createSourceUploadIntent",
+        "tags": [
+          "Sources"
+        ],
+        "summary": "Create a private source upload intent",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProjectId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SourceUploadCreateRequest"
+              },
+              "example": {
+                "filename": "report.docx",
+                "media_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                "byte_size": 2048,
+                "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created private upload intent",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceUploadIntentResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaType"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/v1/documents/{document_id}": {
+      "get": {
+        "operationId": "getDocument",
+        "tags": [
+          "Sources"
+        ],
+        "summary": "Get a source document",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/DocumentId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Source document",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FreeformObject"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/v1/documents/{document_id}/verify": {
+      "get": {
+        "operationId": "verifyDocument",
+        "tags": [
+          "Sources"
+        ],
+        "summary": "Verify a source document",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/DocumentId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Document verification result",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FreeformObject"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/v1/documents/{document_id}/extract": {
+      "post": {
+        "operationId": "extractDocumentAtoms",
+        "tags": [
+          "Sources",
+          "Atoms"
+        ],
+        "summary": "Extract atoms from a source document asynchronously",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/DocumentId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "202": {
+            "description": "Operation accepted",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              },
+              "Location": {
+                "$ref": "#/components/headers/Location"
+              },
+              "Retry-After": {
+                "$ref": "#/components/headers/RetryAfter"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/documents/{document_id}/atoms": {
+      "get": {
+        "operationId": "listDocumentAtoms",
+        "tags": [
+          "Atoms"
+        ],
+        "summary": "List atoms derived from a document",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/DocumentId"
+          },
+          {
+            "$ref": "#/components/parameters/PageLimit"
+          },
+          {
+            "$ref": "#/components/parameters/PageCursor"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Document atom list",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "x-page-limit": {
+                "$ref": "#/components/headers/PageLimit"
+              },
+              "x-page-count": {
+                "$ref": "#/components/headers/PageCount"
+              },
+              "x-has-more": {
+                "$ref": "#/components/headers/HasMore"
+              },
+              "x-next-cursor": {
+                "$ref": "#/components/headers/NextCursor"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObjectListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/v1/documents/{document_id}/atoms/export": {
+      "get": {
+        "operationId": "exportDocumentAtoms",
+        "tags": [
+          "Atoms"
+        ],
+        "summary": "Render a document's extracted atoms as downloadable text/PDF files",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/DocumentId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Base64-encoded text and PDF renderings of every atom extracted from this document",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AtomsExportResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/v1/documents/{document_id}/provenance": {
+      "get": {
+        "operationId": "getDocumentProvenance",
+        "tags": [
+          "Workspaces",
+          "Sources"
+        ],
+        "summary": "Get complete document provenance",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/DocumentId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Document provenance view",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentProvenanceResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/v1/source-uploads/{upload_id}": {
+      "get": {
+        "operationId": "getSourceUpload",
+        "tags": [
+          "Sources"
+        ],
+        "summary": "Get owner-scoped source upload status",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UploadId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Source upload status",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceUploadStatusResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/v1/source-uploads/{upload_id}/finalize": {
+      "post": {
+        "operationId": "finalizeSourceUpload",
+        "tags": [
+          "Sources"
+        ],
+        "summary": "Finalize a private source upload into immutable source authority asynchronously",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/UploadId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaType"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "202": {
+            "description": "Operation accepted",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              },
+              "Location": {
+                "$ref": "#/components/headers/Location"
+              },
+              "Retry-After": {
+                "$ref": "#/components/headers/RetryAfter"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/atoms/{atom_id}": {
+      "get": {
+        "operationId": "getAtom",
+        "tags": [
+          "Atoms"
+        ],
+        "summary": "Get a single atom",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/AtomId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Atom detail",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FreeformObject"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/research-tasks": {
+      "get": {
+        "operationId": "listProjectResearchTasks",
+        "tags": [
+          "Research"
+        ],
+        "summary": "List research tasks for a project",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProjectId"
+          },
+          {
+            "$ref": "#/components/parameters/PageLimit"
+          },
+          {
+            "$ref": "#/components/parameters/PageCursor"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Research task list",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "x-page-limit": {
+                "$ref": "#/components/headers/PageLimit"
+              },
+              "x-page-count": {
+                "$ref": "#/components/headers/PageCount"
+              },
+              "x-has-more": {
+                "$ref": "#/components/headers/HasMore"
+              },
+              "x-next-cursor": {
+                "$ref": "#/components/headers/NextCursor"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObjectListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/research-tasks/claim": {
+      "post": {
+        "operationId": "claimProjectResearchTask",
+        "tags": [
+          "Research"
+        ],
+        "summary": "Claim a research task lease",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProjectId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResearchClaimRequest"
+              },
+              "example": {
+                "worker_id": "worker-1",
+                "lease_seconds": 900
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Claimed research task",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "task"
+                  ],
+                  "properties": {
+                    "task": {
+                      "$ref": "#/components/schemas/FreeformObject"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/gap-matrix": {
+      "get": {
+        "operationId": "getProjectGapMatrix",
+        "tags": [
+          "Research"
+        ],
+        "summary": "Get the project completeness gap matrix",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProjectId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Gap matrix",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FreeformObject"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/v1/research-tasks/{task_id}": {
+      "get": {
+        "operationId": "getResearchTask",
+        "tags": [
+          "Research"
+        ],
+        "summary": "Get a research task",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TaskId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Research task detail",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FreeformObject"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/v1/research-tasks/{task_id}/heartbeat": {
+      "post": {
+        "operationId": "heartbeatResearchTask",
+        "tags": [
+          "Research"
+        ],
+        "summary": "Renew a research task lease",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TaskId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResearchHeartbeatRequest"
+              },
+              "example": {
+                "worker_id": "worker-1",
+                "lease_seconds": 900
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated research task lease",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FreeformObject"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/v1/research-tasks/{task_id}/evidence": {
+      "post": {
+        "operationId": "addResearchEvidence",
+        "tags": [
+          "Research"
+        ],
+        "summary": "Add evidence to a research task",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TaskId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvidenceCreateRequest"
+              },
+              "example": {
+                "worker_id": "worker-1",
+                "source_uri": "https://example.test/spec",
+                "source_title": "Synthetic Standard",
+                "excerpt": "The system must preserve provenance.",
+                "publisher": "Example",
+                "evidence_type": "STANDARD",
+                "reliability": 0.95
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created evidence record",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FreeformObject"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/v1/research-tasks/{task_id}/complete": {
+      "post": {
+        "operationId": "completeResearchTask",
+        "tags": [
+          "Research"
+        ],
+        "summary": "Complete a research task asynchronously",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TaskId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResearchCompleteRequest"
+              },
+              "example": {
+                "worker_id": "worker-1",
+                "conclusion": "Durable provenance is required.",
+                "applicability": "APPLICABLE",
+                "confidence": 0.94,
+                "evidence_ids": [
+                  "00000000-0000-4000-8000-000000000001"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "202": {
+            "description": "Operation accepted",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              },
+              "Location": {
+                "$ref": "#/components/headers/Location"
+              },
+              "Retry-After": {
+                "$ref": "#/components/headers/RetryAfter"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/research-tasks/{task_id}/fail": {
+      "post": {
+        "operationId": "failResearchTask",
+        "tags": [
+          "Research"
+        ],
+        "summary": "Fail a research task attempt",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TaskId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResearchFailRequest"
+              },
+              "example": {
+                "worker_id": "worker-1",
+                "error_message": "Synthetic upstream issue",
+                "retryable": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Failed research task state",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FreeformObject"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/relations": {
+      "get": {
+        "operationId": "listProjectRelations",
+        "tags": [
+          "Planning"
+        ],
+        "summary": "List authority relations for a project",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProjectId"
+          },
+          {
+            "$ref": "#/components/parameters/PageLimit"
+          },
+          {
+            "$ref": "#/components/parameters/PageCursor"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Authority relation list",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "x-page-limit": {
+                "$ref": "#/components/headers/PageLimit"
+              },
+              "x-page-count": {
+                "$ref": "#/components/headers/PageCount"
+              },
+              "x-has-more": {
+                "$ref": "#/components/headers/HasMore"
+              },
+              "x-next-cursor": {
+                "$ref": "#/components/headers/NextCursor"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObjectListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createProjectRelation",
+        "tags": [
+          "Planning"
+        ],
+        "summary": "Create an authority relation",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProjectId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RelationCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created authority relation",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FreeformObject"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/plans": {
+      "get": {
+        "operationId": "listProjectPlans",
+        "tags": [
+          "Planning"
+        ],
+        "summary": "List plan versions for a project",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProjectId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Plan version list",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObjectListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      },
+      "post": {
+        "operationId": "synthesizeProjectPlan",
+        "tags": [
+          "Planning"
+        ],
+        "summary": "Synthesize a new project plan asynchronously",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProjectId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlanSynthesizeRequest"
+              },
+              "example": {
+                "allow_open_research": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "202": {
+            "description": "Operation accepted",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              },
+              "Location": {
+                "$ref": "#/components/headers/Location"
+              },
+              "Retry-After": {
+                "$ref": "#/components/headers/RetryAfter"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/plans/{plan_id}": {
+      "get": {
+        "operationId": "getPlan",
+        "tags": [
+          "Planning"
+        ],
+        "summary": "Get a plan version",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PlanId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Plan version detail",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FreeformObject"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/v1/plans/{plan_id}/verify": {
+      "post": {
+        "operationId": "verifyPlan",
+        "tags": [
+          "Planning"
+        ],
+        "summary": "Verify a plan version asynchronously",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PlanId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "202": {
+            "description": "Operation accepted",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              },
+              "Location": {
+                "$ref": "#/components/headers/Location"
+              },
+              "Retry-After": {
+                "$ref": "#/components/headers/RetryAfter"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/bindings": {
+      "get": {
+        "operationId": "listProjectBindings",
+        "tags": [
+          "Handoff"
+        ],
+        "summary": "List project integration bindings",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProjectId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Integration binding list Each editable item includes an etag field.",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObjectListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createProjectBinding",
+        "tags": [
+          "Handoff"
+        ],
+        "summary": "Create or update an integration binding",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProjectId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatch"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BindingCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created or updated integration binding",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              },
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FreeformObject"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "412": {
+            "$ref": "#/components/responses/PreconditionFailed"
+          },
+          "428": {
+            "$ref": "#/components/responses/PreconditionRequired"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/exports": {
+      "get": {
+        "operationId": "listProjectExports",
+        "tags": [
+          "Handoff"
+        ],
+        "summary": "List exports for a project",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProjectId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Export list",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObjectListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/v1/plans/{plan_id}/exports": {
+      "post": {
+        "operationId": "exportPlan",
+        "tags": [
+          "Handoff"
+        ],
+        "summary": "Create an export from a plan asynchronously",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PlanId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlanExportRequest"
+              },
+              "example": {
+                "output_root": "export-root"
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "202": {
+            "description": "Operation accepted",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              },
+              "Location": {
+                "$ref": "#/components/headers/Location"
+              },
+              "Retry-After": {
+                "$ref": "#/components/headers/RetryAfter"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/exports/{export_id}": {
+      "get": {
+        "operationId": "getExport",
+        "tags": [
+          "Handoff"
+        ],
+        "summary": "Get an export",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ExportId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Export detail",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FreeformObject"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/v1/exports/{export_id}/verify": {
+      "post": {
+        "operationId": "verifyExport",
+        "tags": [
+          "Handoff"
+        ],
+        "summary": "Verify an export asynchronously",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ExportId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "202": {
+            "description": "Operation accepted",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              },
+              "Location": {
+                "$ref": "#/components/headers/Location"
+              },
+              "Retry-After": {
+                "$ref": "#/components/headers/RetryAfter"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/exports/{export_id}/download": {
+      "get": {
+        "operationId": "downloadExportArtifacts",
+        "tags": [
+          "Handoff"
+        ],
+        "summary": "Create short-lived verified artifact download URLs",
+        "description": "Returns one short-lived signed URL per verified private export artifact. URLs are transient, owner-scoped, and never persisted.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ExportId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Verified artifact download targets",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportDownloadResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/v1/plans/{plan_id}/execution-runs": {
+      "post": {
+        "operationId": "startExecutionRun",
+        "tags": [
+          "Execution"
+        ],
+        "summary": "Start an execution run from a plan asynchronously",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/PlanId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExecutionRunCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "202": {
+            "description": "Operation accepted",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              },
+              "Location": {
+                "$ref": "#/components/headers/Location"
+              },
+              "Retry-After": {
+                "$ref": "#/components/headers/RetryAfter"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/execution-runs": {
+      "get": {
+        "operationId": "listProjectExecutionRuns",
+        "tags": [
+          "Execution"
+        ],
+        "summary": "List execution runs for a project",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProjectId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Execution run list",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObjectListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/v1/execution-runs/{run_id}": {
+      "get": {
+        "operationId": "getExecutionRun",
+        "tags": [
+          "Execution"
+        ],
+        "summary": "Get an execution run",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RunId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Execution run detail",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FreeformObject"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/v1/execution-runs/{run_id}/claim": {
+      "post": {
+        "operationId": "claimExecutionRunNode",
+        "tags": [
+          "Execution"
+        ],
+        "summary": "Claim work within an execution run",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RunId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExecutionClaimRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Claimed execution work",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "claim"
+                  ],
+                  "properties": {
+                    "claim": {
+                      "$ref": "#/components/schemas/FreeformObject"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/v1/execution-runs/{run_id}/verify": {
+      "post": {
+        "operationId": "verifyExecutionRun",
+        "tags": [
+          "Execution"
+        ],
+        "summary": "Verify an execution run asynchronously",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RunId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "202": {
+            "description": "Operation accepted",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              },
+              "Location": {
+                "$ref": "#/components/headers/Location"
+              },
+              "Retry-After": {
+                "$ref": "#/components/headers/RetryAfter"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/execution-nodes/{run_node_id}/heartbeat": {
+      "post": {
+        "operationId": "heartbeatExecutionNode",
+        "tags": [
+          "Execution"
+        ],
+        "summary": "Renew an execution node lease",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RunNodeId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExecutionHeartbeatRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated execution node lease",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FreeformObject"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/v1/execution-nodes/{run_node_id}/receipts": {
+      "post": {
+        "operationId": "submitExecutionReceipt",
+        "tags": [
+          "Execution"
+        ],
+        "summary": "Submit a receipt for execution work",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/RunNodeId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReceiptCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created execution receipt",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FreeformObject"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/routing-policy": {
+      "get": {
+        "operationId": "getRoutingPolicy",
+        "tags": [
+          "Routing"
+        ],
+        "summary": "Get routing policy for a project",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProjectId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Routing policy",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FreeformObject"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      },
+      "post": {
+        "operationId": "setRoutingPolicy",
+        "tags": [
+          "Routing"
+        ],
+        "summary": "Set routing policy for a project",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProjectId"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatch"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RoutingPolicyRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated routing policy",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FreeformObject"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "412": {
+            "$ref": "#/components/responses/PreconditionFailed"
+          },
+          "428": {
+            "$ref": "#/components/responses/PreconditionRequired"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/providers": {
+      "get": {
+        "operationId": "listProjectProviders",
+        "tags": [
+          "Routing"
+        ],
+        "summary": "List provider configurations for a project",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProjectId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Provider configuration list Each editable item includes an etag field.",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObjectListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createProjectProvider",
+        "tags": [
+          "Routing"
+        ],
+        "summary": "Create or update a provider configuration",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProjectId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatch"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProviderCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created or updated provider configuration",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              },
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FreeformObject"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "412": {
+            "$ref": "#/components/responses/PreconditionFailed"
+          },
+          "428": {
+            "$ref": "#/components/responses/PreconditionRequired"
+          }
+        }
+      }
+    },
+    "/v1/providers/{provider_id}/health": {
+      "post": {
+        "operationId": "recordProviderHealth",
+        "tags": [
+          "Routing"
+        ],
+        "summary": "Record provider health status",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProviderId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProviderHealthRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Recorded provider health",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FreeformObject"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/renderers": {
+      "get": {
+        "operationId": "listProjectRenderers",
+        "tags": [
+          "Routing"
+        ],
+        "summary": "List renderer configurations for a project",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProjectId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Renderer configuration list Each editable item includes an etag field.",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObjectListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createProjectRenderer",
+        "tags": [
+          "Routing"
+        ],
+        "summary": "Create or update a renderer configuration",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProjectId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatch"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RendererCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created or updated renderer configuration",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              },
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FreeformObject"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "412": {
+            "$ref": "#/components/responses/PreconditionFailed"
+          },
+          "428": {
+            "$ref": "#/components/responses/PreconditionRequired"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/renderers/select": {
+      "post": {
+        "operationId": "selectProjectRenderer",
+        "tags": [
+          "Routing"
+        ],
+        "summary": "Select a renderer for a territory",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProjectId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RendererSelectRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Selected renderer",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "renderer"
+                  ],
+                  "properties": {
+                    "renderer": {
+                      "$ref": "#/components/schemas/FreeformObject"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/paid-unlocks": {
+      "post": {
+        "operationId": "grantProjectPaidUnlock",
+        "tags": [
+          "Routing"
+        ],
+        "summary": "Grant a paid route unlock",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProjectId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaidUnlockRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created paid unlock",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FreeformObject"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/route-decisions": {
+      "post": {
+        "operationId": "createProjectRouteDecision",
+        "tags": [
+          "Routing"
+        ],
+        "summary": "Create a route decision",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProjectId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RouteDecisionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created route decision",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FreeformObject"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/v1/route-decisions/{decision_id}": {
+      "get": {
+        "operationId": "getRouteDecision",
+        "tags": [
+          "Routing"
+        ],
+        "summary": "Get a route decision",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/DecisionId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Route decision detail",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FreeformObject"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/v1/operations/{operation_id}": {
+      "get": {
+        "operationId": "getOperation",
+        "tags": [
+          "Workspaces"
+        ],
+        "summary": "Get an asynchronous operation",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/OperationId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operation status",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Operation"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/v1/operations/{operation_id}/cancel": {
+      "post": {
+        "operationId": "cancelOperation",
+        "tags": [
+          "Workspaces"
+        ],
+        "summary": "Request operation cancellation",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/OperationId"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cancellation accepted or terminal state returned",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "Idempotency-Replayed": {
+                "$ref": "#/components/headers/IdempotencyReplayed"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Operation"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/operations": {
+      "get": {
+        "operationId": "listProjectOperations",
+        "tags": [
+          "Workspaces"
+        ],
+        "summary": "List project operations",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ProjectId"
+          },
+          {
+            "$ref": "#/components/parameters/PageLimit"
+          },
+          {
+            "$ref": "#/components/parameters/PageCursor"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Bounded operation list",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              },
+              "x-page-limit": {
+                "$ref": "#/components/headers/PageLimit"
+              },
+              "x-page-count": {
+                "$ref": "#/components/headers/PageCount"
+              },
+              "x-has-more": {
+                "$ref": "#/components/headers/HasMore"
+              },
+              "x-next-cursor": {
+                "$ref": "#/components/headers/NextCursor"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "items"
+                  ],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Operation"
+                      }
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "headers": {
+      "RequestId": {
+        "description": "Request correlation identifier.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "PageLimit": {
+        "description": "Effective page limit.",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        }
+      },
+      "PageCount": {
+        "description": "Number of items returned in the response body.",
+        "schema": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "HasMore": {
+        "description": "Whether another page is available.",
+        "schema": {
+          "type": "boolean"
+        }
+      },
+      "NextCursor": {
+        "description": "Opaque cursor for the next page, present only when another page is available.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "ETag": {
+        "description": "Strong entity tag for an editable resource representation.",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "IdempotencyReplayed": {
+        "description": "Whether the response was replayed from a prior successful idempotent request.",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "true",
+            "false"
+          ]
+        }
+      },
+      "Location": {
+        "description": "Operation status URL",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "RetryAfter": {
+        "description": "Suggested polling interval in seconds",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 30
+        }
+      }
+    },
+    "parameters": {
+      "ProjectId": {
+        "name": "project_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "DocumentId": {
+        "name": "document_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "UploadId": {
+        "name": "upload_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "AtomId": {
+        "name": "atom_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "TaskId": {
+        "name": "task_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "PlanId": {
+        "name": "plan_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "ExportId": {
+        "name": "export_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "RunId": {
+        "name": "run_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "RunNodeId": {
+        "name": "run_node_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "ProviderId": {
+        "name": "provider_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "DecisionId": {
+        "name": "decision_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      "PageLimit": {
+        "name": "limit",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 50
+        },
+        "description": "Maximum number of items to return."
+      },
+      "PageCursor": {
+        "name": "cursor",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "description": "Opaque cursor for the next page."
+      },
+      "IdempotencyKey": {
+        "name": "Idempotency-Key",
+        "in": "header",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 200,
+          "pattern": "^[!-~]+$"
+        },
+        "description": "Client-supplied replay key for retry-safe mutation requests."
+      },
+      "IfMatch": {
+        "name": "If-Match",
+        "in": "header",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "minLength": 3
+        },
+        "description": "Strong ETag required when updating an existing editable resource."
+      },
+      "OperationId": {
+        "name": "operation_id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    },
+    "schemas": {
+      "FreeformObject": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "ObjectListResponse": {
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FreeformObject"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "HealthResponse": {
+        "type": "object",
+        "required": [
+          "status",
+          "service",
+          "version",
+          "backend"
+        ],
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "service": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          },
+          "backend": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "HealthProbeResponse": {
+        "type": "object",
+        "required": [
+          "status",
+          "service"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "ready",
+              "unavailable"
+            ]
+          },
+          "service": {
+            "type": "string"
+          },
+          "checks": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "enum": [
+                "ready",
+                "unavailable"
+              ]
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "VersionResponse": {
+        "type": "object",
+        "required": [
+          "service",
+          "version",
+          "api_version"
+        ],
+        "properties": {
+          "service": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          },
+          "api_version": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "User": {
+        "type": "object",
+        "required": [
+          "id",
+          "email",
+          "role"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "email": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "email"
+          },
+          "role": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UserResponse": {
+        "type": "object",
+        "required": [
+          "user"
+        ],
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/User"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ErrorDetails": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "ErrorObject": {
+        "type": "object",
+        "required": [
+          "code",
+          "message",
+          "request_id",
+          "details"
+        ],
+        "properties": {
+          "code": {
+            "$ref": "#/components/schemas/ErrorCode"
+          },
+          "message": {
+            "type": "string"
+          },
+          "request_id": {
+            "type": "string"
+          },
+          "details": {
+            "$ref": "#/components/schemas/ErrorDetails"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ErrorEnvelope": {
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorObject"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProjectCreateRequest": {
+        "type": "object",
+        "required": [
+          "slug",
+          "name"
+        ],
+        "properties": {
+          "slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "IngestDocumentRequest": {
+        "type": "object",
+        "required": [
+          "title",
+          "content"
+        ],
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "media_type": {
+            "type": "string"
+          },
+          "chunk_bytes": {
+            "type": "integer"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SourceUploadCreateRequest": {
+        "type": "object",
+        "required": [
+          "filename",
+          "media_type",
+          "byte_size",
+          "sha256"
+        ],
+        "properties": {
+          "filename": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "media_type": {
+            "type": "string",
+            "enum": [
+              "application/json",
+              "application/pdf",
+              "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+              "application/xhtml+xml",
+              "application/x-yaml",
+              "application/yaml",
+              "text/html",
+              "text/markdown",
+              "text/plain",
+              "text/x-c",
+              "text/x-c++src",
+              "text/x-go",
+              "text/x-java-source",
+              "text/x-python",
+              "text/x-rustsrc",
+              "text/yaml"
+            ]
+          },
+          "byte_size": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SourceUploadIntentResponse": {
+        "type": "object",
+        "required": [
+          "id",
+          "project_id",
+          "status",
+          "bucket",
+          "object_path",
+          "filename",
+          "media_type",
+          "byte_size",
+          "signed_upload_url",
+          "signed_url_expires_at",
+          "required_upload_headers"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "project_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string"
+          },
+          "bucket": {
+            "type": "string"
+          },
+          "object_path": {
+            "type": "string"
+          },
+          "filename": {
+            "type": "string"
+          },
+          "media_type": {
+            "type": "string"
+          },
+          "byte_size": {
+            "type": "integer"
+          },
+          "signed_upload_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "signed_url_expires_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "required_upload_headers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "SourceUploadStatusResponse": {
+        "type": "object",
+        "required": [
+          "id",
+          "project_id",
+          "status",
+          "bucket",
+          "object_path",
+          "filename",
+          "media_type",
+          "byte_size",
+          "created_at",
+          "updated_at",
+          "expires_at",
+          "failure_code",
+          "finalized_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "project_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string"
+          },
+          "bucket": {
+            "type": "string"
+          },
+          "object_path": {
+            "type": "string"
+          },
+          "filename": {
+            "type": "string"
+          },
+          "media_type": {
+            "type": "string"
+          },
+          "byte_size": {
+            "type": "integer"
+          },
+          "failure_code": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "document_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "document_route": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "finalized_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SourceUploadFinalizeResponse": {
+        "type": "object",
+        "required": [
+          "upload_id",
+          "status",
+          "document_id",
+          "document_route",
+          "document",
+          "raw_authority",
+          "derivation"
+        ],
+        "properties": {
+          "upload_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string"
+          },
+          "document_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "document_route": {
+            "type": "string"
+          },
+          "document": {
+            "$ref": "#/components/schemas/FreeformObject"
+          },
+          "raw_authority": {
+            "$ref": "#/components/schemas/RawAuthoritySummary"
+          },
+          "derivation": {
+            "$ref": "#/components/schemas/DerivationSummary"
+          }
+        },
+        "additionalProperties": false
+      },
+      "RawAuthoritySummary": {
+        "type": "object",
+        "required": [
+          "source_upload_id",
+          "bucket",
+          "object_path",
+          "original_media_type",
+          "byte_count",
+          "sha256"
+        ],
+        "properties": {
+          "source_upload_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "bucket": {
+            "type": "string"
+          },
+          "object_path": {
+            "type": "string"
+          },
+          "original_media_type": {
+            "type": "string"
+          },
+          "byte_count": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        },
+        "additionalProperties": false
+      },
+      "DerivationLocatorPreview": {
+        "type": "object",
+        "required": [
+          "kind",
+          "ordinal",
+          "label",
+          "derived_byte_start",
+          "derived_byte_end",
+          "derived_line_start",
+          "derived_line_end"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string"
+          },
+          "ordinal": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "label": {
+            "type": "string"
+          },
+          "derived_byte_start": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "derived_byte_end": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "derived_line_start": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "derived_line_end": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "additionalProperties": false
+      },
+      "DerivationSummary": {
+        "type": "object",
+        "required": [
+          "adapter_name",
+          "adapter_version",
+          "detected_media_type",
+          "derived_byte_count",
+          "derived_sha256",
+          "locator_kind",
+          "locators_preview",
+          "locators_count",
+          "locators_has_more",
+          "created_at"
+        ],
+        "properties": {
+          "adapter_name": {
+            "type": "string"
+          },
+          "adapter_version": {
+            "type": "string"
+          },
+          "detected_media_type": {
+            "type": "string"
+          },
+          "derived_byte_count": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "derived_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "locator_kind": {
+            "type": "string"
+          },
+          "locators_preview": {
+            "type": "array",
+            "maxItems": 5,
+            "items": {
+              "$ref": "#/components/schemas/DerivationLocatorPreview"
+            }
+          },
+          "locators_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "locators_has_more": {
+            "type": "boolean"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ResearchClaimRequest": {
+        "type": "object",
+        "required": [
+          "worker_id"
+        ],
+        "properties": {
+          "worker_id": {
+            "type": "string"
+          },
+          "lease_seconds": {
+            "type": "integer"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ResearchHeartbeatRequest": {
+        "type": "object",
+        "required": [
+          "worker_id"
+        ],
+        "properties": {
+          "worker_id": {
+            "type": "string"
+          },
+          "lease_seconds": {
+            "type": "integer"
+          }
+        },
+        "additionalProperties": false
+      },
+      "EvidenceCreateRequest": {
+        "type": "object",
+        "required": [
+          "worker_id",
+          "source_uri",
+          "source_title",
+          "excerpt"
+        ],
+        "properties": {
+          "worker_id": {
+            "type": "string"
+          },
+          "source_uri": {
+            "type": "string"
+          },
+          "source_title": {
+            "type": "string"
+          },
+          "excerpt": {
+            "type": "string"
+          },
+          "publisher": {
+            "type": "string"
+          },
+          "evidence_type": {
+            "type": "string"
+          },
+          "reliability": {
+            "type": "number"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ResearchCompleteRequest": {
+        "type": "object",
+        "required": [
+          "worker_id",
+          "conclusion",
+          "applicability",
+          "confidence",
+          "evidence_ids"
+        ],
+        "properties": {
+          "worker_id": {
+            "type": "string"
+          },
+          "conclusion": {
+            "type": "string"
+          },
+          "applicability": {
+            "type": "string"
+          },
+          "confidence": {
+            "type": "number"
+          },
+          "evidence_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "ResearchFailRequest": {
+        "type": "object",
+        "required": [
+          "worker_id",
+          "error_message"
+        ],
+        "properties": {
+          "worker_id": {
+            "type": "string"
+          },
+          "error_message": {
+            "type": "string"
+          },
+          "retryable": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "RelationCreateRequest": {
+        "type": "object",
+        "required": [
+          "from_atom_id",
+          "to_atom_id",
+          "relation_type"
+        ],
+        "properties": {
+          "from_atom_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "to_atom_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "relation_type": {
+            "type": "string"
+          },
+          "rationale": {
+            "type": "string"
+          },
+          "confidence": {
+            "type": "number"
+          },
+          "inferred": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PlanSynthesizeRequest": {
+        "type": "object",
+        "properties": {
+          "allow_open_research": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "BindingCreateRequest": {
+        "type": "object",
+        "required": [
+          "system_name",
+          "binding_type",
+          "config"
+        ],
+        "properties": {
+          "system_name": {
+            "type": "string"
+          },
+          "binding_type": {
+            "type": "string"
+          },
+          "config": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PlanExportRequest": {
+        "type": "object",
+        "properties": {
+          "output_root": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ArtifactManifestSummary": {
+        "type": "object",
+        "required": [
+          "id",
+          "state",
+          "manifest_version",
+          "aggregate_sha256",
+          "total_bytes",
+          "artifact_count",
+          "artifacts_preview",
+          "artifacts_has_more"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "GENERATED",
+              "STORED",
+              "VERIFIED",
+              "INVALID"
+            ]
+          },
+          "manifest_version": {
+            "type": "string"
+          },
+          "aggregate_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "total_bytes": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "artifact_count": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "artifacts_preview": {
+            "type": "array",
+            "maxItems": 5,
+            "items": {
+              "$ref": "#/components/schemas/ArtifactSummary"
+            }
+          },
+          "artifacts_has_more": {
+            "type": "boolean"
+          },
+          "verified_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ArtifactSummary": {
+        "type": "object",
+        "required": [
+          "name",
+          "media_type",
+          "byte_length",
+          "sha256"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "media_type": {
+            "type": "string"
+          },
+          "byte_length": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ExportDownloadResponse": {
+        "type": "object",
+        "required": [
+          "export_id",
+          "manifest_id",
+          "expires_in",
+          "artifacts"
+        ],
+        "properties": {
+          "export_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "manifest_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "expires_in": {
+            "type": "integer",
+            "minimum": 30,
+            "maximum": 900
+          },
+          "artifacts": {
+            "type": "array",
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ArtifactSummary"
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "signed_download_url",
+                    "expires_at"
+                  ],
+                  "properties": {
+                    "signed_download_url": {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    "expires_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              ]
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "ExecutionRunCreateRequest": {
+        "type": "object",
+        "required": [
+          "runtime_system",
+          "runtime_run_id"
+        ],
+        "properties": {
+          "runtime_system": {
+            "type": "string"
+          },
+          "runtime_run_id": {
+            "type": "string"
+          },
+          "export_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ExecutionClaimRequest": {
+        "type": "object",
+        "required": [
+          "worker_id"
+        ],
+        "properties": {
+          "worker_id": {
+            "type": "string"
+          },
+          "run_node_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "lease_seconds": {
+            "type": "integer"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ExecutionHeartbeatRequest": {
+        "type": "object",
+        "required": [
+          "worker_id"
+        ],
+        "properties": {
+          "worker_id": {
+            "type": "string"
+          },
+          "lease_seconds": {
+            "type": "integer"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ReceiptCreateRequest": {
+        "type": "object",
+        "required": [
+          "worker_id",
+          "actor_system",
+          "outcome",
+          "summary",
+          "evidence"
+        ],
+        "properties": {
+          "worker_id": {
+            "type": "string"
+          },
+          "actor_system": {
+            "type": "string"
+          },
+          "outcome": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "evidence": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "RoutingPolicyRequest": {
+        "type": "object",
+        "properties": {
+          "allow_offline_degraded": {
+            "type": "boolean"
+          },
+          "paid_emergency_enabled": {
+            "type": "boolean"
+          },
+          "max_paid_decisions_per_unlock": {
+            "type": "integer"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProviderCreateRequest": {
+        "type": "object",
+        "required": [
+          "name",
+          "provider_class",
+          "cost_class"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "provider_class": {
+            "type": "string"
+          },
+          "cost_class": {
+            "type": "string"
+          },
+          "territories": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "priority": {
+            "type": "integer"
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProviderHealthRequest": {
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "latency_ms": {
+            "type": "number"
+          },
+          "error_message": {
+            "type": "string"
+          },
+          "cooldown_seconds": {
+            "type": "integer"
+          }
+        },
+        "additionalProperties": false
+      },
+      "RendererCreateRequest": {
+        "type": "object",
+        "required": [
+          "name",
+          "renderer_type"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "renderer_type": {
+            "type": "string"
+          },
+          "territories": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "priority": {
+            "type": "integer"
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "RendererSelectRequest": {
+        "type": "object",
+        "required": [
+          "territory"
+        ],
+        "properties": {
+          "territory": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PaidUnlockRequest": {
+        "type": "object",
+        "required": [
+          "actor_id",
+          "reason",
+          "ttl_seconds"
+        ],
+        "properties": {
+          "actor_id": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "ttl_seconds": {
+            "type": "integer"
+          },
+          "max_decisions": {
+            "type": "integer"
+          },
+          "provider_id": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "additionalProperties": false
+      },
+      "RouteDecisionRequest": {
+        "type": "object",
+        "required": [
+          "territory"
+        ],
+        "properties": {
+          "territory": {
+            "type": "string"
+          },
+          "offline_capable": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "WorkspacePreviewMetadata": {
+        "type": "object",
+        "properties": {
+          "documents_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "documents_has_more": {
+            "type": "boolean"
+          },
+          "documents_route": {
+            "type": "string"
+          },
+          "uploads_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "uploads_has_more": {
+            "type": "boolean"
+          },
+          "uploads_route": {
+            "type": "string"
+          },
+          "tasks_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "tasks_has_more": {
+            "type": "boolean"
+          },
+          "tasks_route": {
+            "type": "string"
+          },
+          "relations_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "relations_has_more": {
+            "type": "boolean"
+          },
+          "relations_route": {
+            "type": "string"
+          },
+          "plans_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "plans_has_more": {
+            "type": "boolean"
+          },
+          "plans_route": {
+            "type": "string"
+          },
+          "bindings_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "bindings_has_more": {
+            "type": "boolean"
+          },
+          "bindings_route": {
+            "type": "string"
+          },
+          "exports_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "exports_has_more": {
+            "type": "boolean"
+          },
+          "exports_route": {
+            "type": "string"
+          },
+          "execution_runs_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "execution_runs_has_more": {
+            "type": "boolean"
+          },
+          "execution_runs_route": {
+            "type": "string"
+          },
+          "providers_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "providers_has_more": {
+            "type": "boolean"
+          },
+          "providers_route": {
+            "type": "string"
+          },
+          "renderers_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "renderers_has_more": {
+            "type": "boolean"
+          },
+          "renderers_route": {
+            "type": "string"
+          },
+          "sections_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "sections_has_more": {
+            "type": "boolean"
+          },
+          "chunks_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "chunks_has_more": {
+            "type": "boolean"
+          },
+          "atoms_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "atoms_has_more": {
+            "type": "boolean"
+          },
+          "atoms_route": {
+            "type": "string"
+          },
+          "ingestion_runs_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "ingestion_runs_has_more": {
+            "type": "boolean"
+          },
+          "extraction_runs_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "extraction_runs_has_more": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": true
+      },
+      "SourceWorkspaceResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/FreeformObject"
+          },
+          {
+            "$ref": "#/components/schemas/WorkspacePreviewMetadata"
+          }
+        ]
+      },
+      "ResearchWorkspaceResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/FreeformObject"
+          },
+          {
+            "$ref": "#/components/schemas/WorkspacePreviewMetadata"
+          }
+        ]
+      },
+      "PlanningWorkspaceResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/FreeformObject"
+          },
+          {
+            "$ref": "#/components/schemas/WorkspacePreviewMetadata"
+          }
+        ]
+      },
+      "HandoffWorkspaceResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/FreeformObject"
+          },
+          {
+            "$ref": "#/components/schemas/WorkspacePreviewMetadata"
+          }
+        ]
+      },
+      "DocumentProvenanceResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/FreeformObject"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "provenance": {
+                "type": "object",
+                "required": [
+                  "sha256",
+                  "byte_start",
+                  "byte_end",
+                  "line_start",
+                  "line_end",
+                  "raw_authority",
+                  "derivation"
+                ],
+                "properties": {
+                  "sha256": {
+                    "type": "string",
+                    "pattern": "^[0-9a-f]{64}$"
+                  },
+                  "byte_start": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "byte_end": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "line_start": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "line_end": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "raw_authority": {
+                    "oneOf": [
+                      {
+                        "$ref": "#/components/schemas/RawAuthoritySummary"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "derivation": {
+                    "oneOf": [
+                      {
+                        "$ref": "#/components/schemas/DerivationSummary"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          {
+            "$ref": "#/components/schemas/WorkspacePreviewMetadata"
+          }
+        ]
+      },
+      "AtomsExportFile": {
+        "type": "object",
+        "required": [
+          "filename",
+          "media_type",
+          "byte_length",
+          "base64"
+        ],
+        "properties": {
+          "filename": {
+            "type": "string"
+          },
+          "media_type": {
+            "type": "string"
+          },
+          "byte_length": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "base64": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "AtomsExportResponse": {
+        "type": "object",
+        "required": [
+          "document_id",
+          "atom_count",
+          "text",
+          "pdf"
+        ],
+        "properties": {
+          "document_id": {
+            "type": "string"
+          },
+          "atom_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "text": {
+            "$ref": "#/components/schemas/AtomsExportFile"
+          },
+          "pdf": {
+            "$ref": "#/components/schemas/AtomsExportFile"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ErrorCode": {
+        "type": "string",
+        "enum": [
+          "AUTHENTICATION_REQUIRED",
+          "INVALID_AUTHORIZATION",
+          "AUTHENTICATION_FAILED",
+          "VALIDATION_ERROR",
+          "NOT_FOUND",
+          "CONFLICT",
+          "METHOD_NOT_ALLOWED",
+          "ROUTE_NOT_FOUND",
+          "REQUEST_TARGET_TOO_LARGE",
+          "HEADERS_TOO_LARGE",
+          "PAYLOAD_TOO_LARGE",
+          "INVALID_JSON",
+          "JSON_LIMIT_EXCEEDED",
+          "TOO_MANY_REQUESTS",
+          "SERVER_BUSY",
+          "REQUEST_TIMEOUT",
+          "DEPENDENCY_UNAVAILABLE",
+          "INTERNAL_ERROR",
+          "IDEMPOTENCY_KEY_REQUIRED",
+          "INVALID_IDEMPOTENCY_KEY",
+          "IDEMPOTENCY_KEY_REUSED",
+          "IDEMPOTENCY_IN_PROGRESS",
+          "UPLOAD_EXPIRED",
+          "UPLOAD_STATE_CONFLICT",
+          "UPLOAD_INTEGRITY_MISMATCH",
+          "SOURCE_TOO_LARGE",
+          "INVALID_DOCUMENT",
+          "DOCUMENT_ENCRYPTED",
+          "DOCUMENT_LIMIT_EXCEEDED",
+          "NO_EXTRACTABLE_TEXT",
+          "INVALID_SOURCE_ENCODING",
+          "INVALID_FILENAME",
+          "PRECONDITION_REQUIRED",
+          "INVALID_PRECONDITION",
+          "PRECONDITION_FAILED",
+          "ARTIFACT_NOT_VERIFIED",
+          "ARTIFACT_INTEGRITY_FAILED",
+          "ARTIFACT_LIMIT_EXCEEDED",
+          "ARTIFACT_ALREADY_EXISTS",
+          "STORAGE_UNAVAILABLE",
+          "OPERATION_NOT_FOUND",
+          "OPERATION_CONFLICT",
+          "OPERATION_CANCELLED",
+          "OPERATION_TIMED_OUT",
+          "OPERATION_IN_PROGRESS",
+          "WORKER_LEASE_LOST"
+        ]
+      },
+      "OperationState": {
+        "type": "string",
+        "enum": [
+          "QUEUED",
+          "CLAIMED",
+          "RUNNING",
+          "SUCCEEDED",
+          "FAILED",
+          "CANCEL_REQUESTED",
+          "CANCELLED",
+          "TIMED_OUT"
+        ]
+      },
+      "Operation": {
+        "type": "object",
+        "required": [
+          "id",
+          "project_id",
+          "operation_type",
+          "state",
+          "phase",
+          "progress_current",
+          "progress_total",
+          "attempt_count",
+          "max_attempts",
+          "created_at",
+          "updated_at",
+          "timeout_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "project_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "operation_type": {
+            "type": "string"
+          },
+          "state": {
+            "$ref": "#/components/schemas/OperationState"
+          },
+          "phase": {
+            "type": "string"
+          },
+          "progress_current": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "progress_total": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "attempt_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "max_attempts": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "timeout_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "started_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "finished_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "cancel_requested_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "result": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "error_code": {
+            "type": "string"
+          },
+          "error_message": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "OperationResponse": {
+        "type": "object",
+        "required": [
+          "operation"
+        ],
+        "properties": {
+          "operation": {
+            "$ref": "#/components/schemas/Operation"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Malformed request or validation failure",
+        "headers": {
+          "x-request-id": {
+            "$ref": "#/components/headers/RequestId"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Authentication is missing, invalid, or malformed",
+        "headers": {
+          "x-request-id": {
+            "$ref": "#/components/headers/RequestId"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "The route or owner-scoped resource is not visible",
+        "headers": {
+          "x-request-id": {
+            "$ref": "#/components/headers/RequestId"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "The requested mutation conflicts with stored state",
+        "headers": {
+          "x-request-id": {
+            "$ref": "#/components/headers/RequestId"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      },
+      "RequestTargetTooLarge": {
+        "description": "The request target exceeded the configured limit",
+        "headers": {
+          "x-request-id": {
+            "$ref": "#/components/headers/RequestId"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      },
+      "HeadersTooLarge": {
+        "description": "The request headers exceeded configured count or byte limits",
+        "headers": {
+          "x-request-id": {
+            "$ref": "#/components/headers/RequestId"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      },
+      "PayloadTooLarge": {
+        "description": "The request body exceeded the configured limit",
+        "headers": {
+          "x-request-id": {
+            "$ref": "#/components/headers/RequestId"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      },
+      "TooManyRequests": {
+        "description": "The request exceeded the per-instance rate limit",
+        "headers": {
+          "x-request-id": {
+            "$ref": "#/components/headers/RequestId"
+          },
+          "Retry-After": {
+            "$ref": "#/components/headers/RetryAfter"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      },
+      "UnsupportedMediaType": {
+        "description": "The declared or detected media type is unsupported for this route",
+        "headers": {
+          "x-request-id": {
+            "$ref": "#/components/headers/RequestId"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      },
+      "RequestTimeout": {
+        "description": "The application detected request deadline expiry",
+        "headers": {
+          "x-request-id": {
+            "$ref": "#/components/headers/RequestId"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      },
+      "DependencyUnavailable": {
+        "description": "A required dependency was unavailable",
+        "headers": {
+          "x-request-id": {
+            "$ref": "#/components/headers/RequestId"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      },
+      "InternalError": {
+        "description": "Unexpected internal failure",
+        "headers": {
+          "x-request-id": {
+            "$ref": "#/components/headers/RequestId"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      },
+      "PreconditionRequired": {
+        "description": "The mutation requires If-Match for an existing editable resource.",
+        "headers": {
+          "x-request-id": {
+            "$ref": "#/components/headers/RequestId"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      },
+      "PreconditionFailed": {
+        "description": "The supplied If-Match value does not match the current editable resource version.",
+        "headers": {
+          "x-request-id": {
+            "$ref": "#/components/headers/RequestId"
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      }
+    }
+  }
+}
