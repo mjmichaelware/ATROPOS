@@ -20,6 +20,10 @@ export function ExecutionFindingsList({ findings }: { findings: ExecutionFinding
 
   return (
     <div className="sg-findings-list">
+      <p className="sg-muted">
+        Findings are what independent verification actually caught — a mismatch, a missing dependency, a receipt that didn&apos;t validate. An Error blocks the run from counting as verified; a
+        Warning doesn&apos;t block it but is worth a look.
+      </p>
       <div className="sg-graph-command-group" role="group" aria-label="Execution finding severity filter">
         <Button type="button" variant={filter === "all" ? "verified" : "quiet"} aria-pressed={filter === "all"} onClick={() => setFilter("all")}>
           All ({findings.length})

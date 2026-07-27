@@ -90,4 +90,41 @@ export type OperationResponse = {
   operation: OperationLike & FreeformRecord;
 };
 
+// POST /v1/source-uploads/{id}/finalize is registered as an async
+// operation (finalize_source_upload is in ASYNC_OPERATION_TYPES server-side)
+// and is dispatched that way whenever the operations/worker infrastructure
+// is configured - which it is in every real deployment. That means the
+// response is normally a 202 `OperationResponse` with a `location` header
+// to poll. A direct 201 `FinalizedUpload` body only happens if that
+// infrastructure is absent, which callers should treat as a fallback, not
+// the expected shape.
+export type FinalizedUpload = {
+  upload_id: string;
+  status: string;
+  document_id: string;
+  document_route: string;
+  document: SourceDocument;
+  raw_authority?: RawAuthoritySummary;
+  derivation?: DerivationSummary;
+};
+
+export type FinalizedUploadOperationResult = {
+  document_id: string;
+  status: string;
+};
+
 export type PageResult<T> = ApiResult<{ items: T[] }>;
+
+export type AtomsExportFile = {
+  filename: string;
+  media_type: string;
+  byte_length: number;
+  base64: string;
+};
+
+export type AtomsExportBundle = {
+  document_id: string;
+  atom_count: number;
+  text: AtomsExportFile;
+  pdf: AtomsExportFile;
+};

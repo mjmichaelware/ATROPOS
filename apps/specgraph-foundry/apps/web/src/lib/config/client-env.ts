@@ -26,7 +26,20 @@ const publicEnvSchema = z.object({
 
 export type PublicEnv = z.infer<typeof publicEnvSchema>;
 
-export function readPublicEnv(source: Record<string, string | undefined> = process.env): PublicEnv {
+// Next.js only inlines NEXT_PUBLIC_* variables into the browser bundle where
+// `process.env.NEXT_PUBLIC_X` appears as a literal, static member expression
+// in source. Reading through an indirect variable (as the old
+// `source = process.env` default parameter did) is not guaranteed to be
+// replaced at build time, so each key is listed explicitly here.
+function defaultPublicEnvSource(): Record<string, string | undefined> {
+  return {
+    NEXT_PUBLIC_SPECGRAPH_API_URL: process.env.NEXT_PUBLIC_SPECGRAPH_API_URL,
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  };
+}
+
+export function readPublicEnv(source: Record<string, string | undefined> = defaultPublicEnvSource()): PublicEnv {
   const result = publicEnvSchema.safeParse({
     NEXT_PUBLIC_SPECGRAPH_API_URL: source.NEXT_PUBLIC_SPECGRAPH_API_URL ?? "http://127.0.0.1:8787",
     NEXT_PUBLIC_SUPABASE_URL: source.NEXT_PUBLIC_SUPABASE_URL,

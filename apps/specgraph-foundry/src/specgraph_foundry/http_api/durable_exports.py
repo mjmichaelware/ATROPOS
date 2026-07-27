@@ -7,6 +7,7 @@ import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Callable
 
 from ..database import Database
 from ..errors import NotFoundError, ValidationError
@@ -16,6 +17,7 @@ from .artifact_storage import (
     ArtifactAlreadyExistsError,
     ArtifactIntegrityError,
     ArtifactStorageClient,
+    ArtifactStoragePermanentError,
     ArtifactStorageUnavailableError,
     StoredArtifact,
     artifact_object_path,
@@ -23,6 +25,7 @@ from .artifact_storage import (
     sha256_bytes,
     validate_artifact_name,
 )
+from .operations import OperationCancelled
 
 
 MANIFEST_VERSION = "specgraph.artifact.manifest.v1"
@@ -63,6 +66,7 @@ class DurableExportService:
         owner_id: str,
         authorization: str,
         plan_id: str,
+        on_progress: Callable[[int, int], None] | None = None,
     ) -> dict[str, object]:
         with tempfile.TemporaryDirectory(
             prefix="specgraph-export-"
@@ -92,12 +96,41 @@ class DurableExportService:
                 manifest=manifest,
             )
 
+            # Every artifact needs one upload call and one verified-download
+            # call - each a real HTTP round trip to Supabase Storage. With
+            # 12 artifacts per export that's up to 24 sequential requests,
+            # which can comfortably exceed a single operation lease window
+            # if nothing renews the lease in between. Reporting progress
+            # after every individual request both keeps the lease alive
+            # (each checkpoint call renews it) and gives real, granular
+            # status instead of one static "exporting" message for however
+            # long this loop takes.
+            total_steps = max(1, len(artifacts) * 2)
+            completed_steps = 0
+
+            def report() -> None:
+                nonlocal completed_steps
+                completed_steps += 1
+                if on_progress is not None:
+                    on_progress(completed_steps, total_steps)
+
             try:
                 for artifact in artifacts:
-                    self.storage.upload(
-                        authorization=authorization,
-                        artifact=artifact,
-                    )
+                    try:
+                        self.storage.upload(
+                            authorization=authorization,
+                            artifact=artifact,
+                        )
+                    except ArtifactAlreadyExistsError:
+                        # A previous failed attempt partially uploaded
+                        # artifacts for this export_id. Verify the
+                        # existing object has the right content - the
+                        # outer except will fire if it doesn't match.
+                        self.storage.verified_download(
+                            authorization=authorization,
+                            artifact=artifact,
+                        )
+                    report()
 
                 self._mark_objects(
                     export_id,
@@ -109,13 +142,24 @@ class DurableExportService:
                         authorization=authorization,
                         artifact=artifact,
                     )
-            except ArtifactAlreadyExistsError:
-                self._mark_invalid(export_id)
-                raise
+                    report()
             except (
                 ArtifactIntegrityError,
+                ArtifactStoragePermanentError,
                 ArtifactStorageUnavailableError,
             ):
+                self._mark_invalid(export_id)
+                raise
+            except OperationCancelled:
+                # report() calls context.checkpoint() after every artifact
+                # now, which can raise OperationCancelled mid-loop if
+                # cancellation was requested while artifacts were still
+                # being uploaded/verified. Without this, that exception
+                # skipped both except clauses above and left the export
+                # row and manifest stuck in CREATED/GENERATED/STORED with
+                # only some objects uploaded - never VERIFIED, never
+                # INVALID, and not retried, since the operation itself
+                # (a separate row) is already terminal (CANCELLED).
                 self._mark_invalid(export_id)
                 raise
 
@@ -130,6 +174,7 @@ class DurableExportService:
         owner_id: str,
         authorization: str,
         export_id: str,
+        on_progress: Callable[[int, int], None] | None = None,
     ) -> dict[str, object]:
         manifest = self._manifest_row(
             owner_id=owner_id,
@@ -138,6 +183,8 @@ class DurableExportService:
         artifacts = self._stored_artifacts(
             manifest,
         )
+        total_steps = max(1, len(artifacts))
+        completed_steps = 0
 
         try:
             for artifact in artifacts:
@@ -145,10 +192,16 @@ class DurableExportService:
                     authorization=authorization,
                     artifact=artifact,
                 )
+                completed_steps += 1
+                if on_progress is not None:
+                    on_progress(completed_steps, total_steps)
         except (
             ArtifactIntegrityError,
             ArtifactStorageUnavailableError,
         ):
+            self._mark_invalid(export_id)
+            raise
+        except OperationCancelled:
             self._mark_invalid(export_id)
             raise
 
@@ -169,16 +222,30 @@ class DurableExportService:
         owner_id: str | None = None,
     ) -> dict[str, object]:
         if owner_id is not None:
-            self._manifest_row(
-                owner_id=owner_id,
-                export_id=export_id,
-            )
+            # Exports created before durable artifact storage/manifests
+            # existed (or through any path that never persisted a manifest
+            # row) have no artifact_manifests row at all - list_exports()
+            # already tolerates that below. Treating "no manifest row" as
+            # "not authorized" here would incorrectly 404 a real, valid
+            # export instead of just skipping this best-effort ownership
+            # cross-check; the actual export lookup right below applies no
+            # owner filtering of its own.
+            try:
+                self._manifest_row(
+                    owner_id=owner_id,
+                    export_id=export_id,
+                )
+            except NotFoundError:
+                pass
         export = self.exports.get_export(export_id)
         export["output_path"] = None
         export["artifacts"] = []
-        export["artifact_manifest"] = self._manifest_summary(
-            export_id
-        )
+        try:
+            export["artifact_manifest"] = self._manifest_summary(
+                export_id
+            )
+        except NotFoundError:
+            export["artifact_manifest"] = None
         return export
 
     def list_exports(
@@ -203,10 +270,16 @@ class DurableExportService:
         authorization: str,
         export_id: str,
     ) -> dict[str, object]:
-        manifest = self._manifest_row(
-            owner_id=owner_id,
-            export_id=export_id,
-        )
+        try:
+            manifest = self._manifest_row(
+                owner_id=owner_id,
+                export_id=export_id,
+            )
+        except NotFoundError:
+            raise ValidationError(
+                "This export was created before cloud downloads were available. "
+                "Generate a new export to download the build plan."
+            )
         if str(manifest["state"]) != "VERIFIED":
             raise ArtifactNotVerifiedError(
                 "artifact manifest is not verified"

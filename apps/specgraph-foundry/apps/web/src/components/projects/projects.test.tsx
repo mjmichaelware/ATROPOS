@@ -42,8 +42,18 @@ beforeEach(() => {
   });
   createProject.mockResolvedValue({ body: { id: "22222222-2222-2222-2222-222222222222", slug: "new", name: "New" } });
   getProject.mockResolvedValue({ body: { id: "11111111-1111-1111-1111-111111111111", slug: "alpha", name: "Alpha" } });
-  getWorkspace.mockResolvedValue({ body: { sources_count: 1, atoms_count: 2, latest_document: { title: "Doc" } } });
-  getReadiness.mockResolvedValue({ body: { readiness: "READY_TO_PLAN" } });
+  // Shape matches ProjectWorkspaceService.get() exactly (workspace.py):
+  // counts/latest/readiness are nested objects, never flat *_count keys or
+  // a bare readiness string - a prior version of this fixture used the
+  // wrong flat shape and matched a real bug in the components under test.
+  getWorkspace.mockResolvedValue({
+    body: {
+      counts: { documents: 1, atoms: 2, dimensions: 4, resolved_dimensions: 3, not_applicable_dimensions: 0, plans: 1, verified_plans: 0, exports: 0, verified_exports: 0, execution_runs: 0, verified_execution_runs: 0 },
+      latest: { document: { id: "doc-1", title: "Doc" }, plan: null, export: null, execution_run: null, route_decision: null },
+      readiness: { status: "READY_TO_PLAN", next_action: "SYNTHESIZE_PLAN", stages: [{ name: "SOURCE", status: "COMPLETE", count: 1 }, { name: "ATOMS", status: "COMPLETE", count: 2 }, { name: "RESEARCH", status: "COMPLETE", open_dimensions: 0 }, { name: "PLANNING", status: "READY", count: 1 }, { name: "INTEGRATION", status: "BLOCKED", count: 0 }, { name: "EXPORT", status: "BLOCKED", count: 0 }, { name: "EXECUTION", status: "BLOCKED", count: 0 }] },
+    },
+  });
+  getReadiness.mockResolvedValue({ body: { readiness: { status: "READY_TO_PLAN", next_action: "SYNTHESIZE_PLAN", stages: [{ name: "SOURCE", status: "COMPLETE", count: 1 }, { name: "ATOMS", status: "COMPLETE", count: 2 }, { name: "RESEARCH", status: "COMPLETE", open_dimensions: 0 }, { name: "PLANNING", status: "READY", count: 1 }, { name: "INTEGRATION", status: "BLOCKED", count: 0 }, { name: "EXPORT", status: "BLOCKED", count: 0 }, { name: "EXECUTION", status: "BLOCKED", count: 0 }] } } });
   getOperations.mockResolvedValue({ body: { items: [{ id: "op", state: "QUEUED", operation_type: "extract_document_atoms" }] } });
 });
 
@@ -55,14 +65,18 @@ describe("projects experience", () => {
     expect(listProjects).toHaveBeenCalled();
   });
 
-  it("creates a project and navigates to its command center", async () => {
+  it("creates a project from just a name, deriving the slug automatically", async () => {
     renderProject(<ProjectCreateForm />);
-    await userEvent.type(screen.getByLabelText("Slug"), "new-project");
+    expect(screen.queryByLabelText("Slug")).not.toBeInTheDocument();
     await userEvent.type(screen.getByLabelText("Name"), "New Project");
     await userEvent.click(screen.getByRole("button", { name: "Create project" }));
     await waitFor(() => {
       expect(push).toHaveBeenCalledWith("/projects/22222222-2222-2222-2222-222222222222");
     });
+    expect(createProject).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ name: "New Project", slug: "new-project" }),
+    );
   });
 
   it("renders command center from authoritative API data", async () => {
@@ -70,6 +84,17 @@ describe("projects experience", () => {
     expect(await screen.findByRole("heading", { name: "Alpha" })).toBeInTheDocument();
     expect(screen.getByText("Ready to plan")).toBeInTheDocument();
     expect(screen.getByText("extract_document_atoms")).toBeInTheDocument();
+    // Regression: the project's own UUID (needed for SPECGRAPH_PROJECT_ID in
+    // external scripts) was never surfaced anywhere in the app.
+    expect(screen.getByText("11111111-1111-1111-1111-111111111111")).toBeInTheDocument();
+    // Regression: readiness/counts/latest all nest their real data one level
+    // deeper than the components used to read (workspace.counts.*,
+    // workspace.latest.*, and readiness as an object, not a plain string) -
+    // every one of these previously rendered as 0/"None yet"/"Unknown
+    // readiness" against this exact fixture shape.
+    expect(screen.getByText("Extraction")).toBeInTheDocument();
+    expect(screen.getAllByText("COMPLETE").length).toBeGreaterThan(0);
+    expect(screen.getByText("Doc")).toBeInTheDocument();
   });
 
   it("has no serious or critical axe violations on the command center", async () => {

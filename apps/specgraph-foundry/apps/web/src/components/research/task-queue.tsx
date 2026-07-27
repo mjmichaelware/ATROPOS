@@ -28,10 +28,18 @@ export function TaskQueue({
   }
   return (
     <section className="sg-task-queue" aria-label="Research task queue">
+      <p className="sg-muted">
+        One task exists per atom-dimension pair. A task closes when someone — you, or an automated provider configured in Routing — records a real conclusion (Applicable or Not applicable)
+        backed by real evidence. Nothing here is guessed; every closed task stays linked to what actually justified it.
+      </p>
       <TaskFilters value={filter} onChange={setFilter} />
-      <div className="sg-task-list">
-        {filtered.map((task) => <TaskCard key={task.id} projectId={projectId} task={task} />)}
-      </div>
+      {filtered.length === 0 ? (
+        <p className="sg-muted">No tasks on this page match the &quot;{filter}&quot; filter — try a different filter or the next page.</p>
+      ) : (
+        <div className="sg-task-list">
+          {filtered.map((task) => <TaskCard key={task.id} projectId={projectId} task={task} />)}
+        </div>
+      )}
       <TaskPagination canBack={canBack} hasNext={page?.pagination.hasMore} onBack={onBack} onNext={onNext} />
     </section>
   );

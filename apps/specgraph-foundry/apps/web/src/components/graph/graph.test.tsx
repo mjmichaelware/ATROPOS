@@ -98,7 +98,7 @@ describe("GraphWorkspace", () => {
   it("renders the empty state when no plan and no relations exist", async () => {
     listProjectRelations.mockResolvedValueOnce({ body: { items: [] } });
     renderGraph();
-    expect(await screen.findByText("No authority relations recorded")).toBeInTheDocument();
+    expect(await screen.findByText("Your source's connections will show up here")).toBeInTheDocument();
   });
 
   it("renders the accessible list with real relation data and switches view modes", async () => {

@@ -72,9 +72,6 @@ class FakeArtifactTransport:
         parsed = urlparse(request.full_url)
         path = unquote(parsed.path)
         prefix = "/storage/v1/object/export-artifacts/"
-        auth_prefix = (
-            "/storage/v1/object/authenticated/export-artifacts/"
-        )
         sign_prefix = "/storage/v1/object/sign/export-artifacts/"
 
         if request.get_method() == "POST" and path.startswith(prefix):
@@ -100,8 +97,8 @@ class FakeArtifactTransport:
                 url=request.full_url,
             )
 
-        if request.get_method() == "GET" and path.startswith(auth_prefix):
-            object_path = path[len(auth_prefix) :]
+        if request.get_method() == "GET" and path.startswith(prefix):
+            object_path = path[len(prefix) :]
             if object_path not in self.objects:
                 raise HTTPError(
                     request.full_url,
@@ -273,6 +270,31 @@ class DurableArtifactTest(unittest.TestCase):
                 path.startswith(f"{self.principal.user_id}/{self.project_id}/")
             )
 
+    def test_get_export_survives_a_missing_artifact_manifest_row(self) -> None:
+        # Exports created through any path that never persisted an
+        # artifact_manifests row (e.g. pre-dating durable artifact storage)
+        # must still be viewable - list_exports already tolerates this;
+        # get_export previously raised NotFoundError and surfaced as a
+        # broken detail view for an otherwise real, valid export.
+        created = self.request(
+            "POST",
+            f"/v1/plans/{self.plan_id}/exports",
+            {},
+            idempotency_key="durable-export-key-0005",
+        )
+        export_id = str(created.body["id"])
+        with self.database.connect() as connection:
+            connection.execute(
+                "DELETE FROM artifact_manifests WHERE export_id = ?",
+                (export_id,),
+            )
+
+        response = self.request("GET", f"/v1/exports/{export_id}")
+
+        self.assertEqual(response.status, 200)
+        self.assertEqual(response.body["id"], export_id)
+        self.assertIsNone(response.body["artifact_manifest"])
+
     def test_replay_does_not_duplicate_artifacts(self) -> None:
         key = "durable-export-key-0002"
         first = self.request(
@@ -298,6 +320,46 @@ class DurableArtifactTest(unittest.TestCase):
                 "SELECT COUNT(*) AS value FROM artifact_manifests"
             ).fetchone()["value"]
         self.assertEqual(manifest_count, 1)
+
+    def test_cancellation_mid_export_marks_the_partial_export_invalid(self) -> None:
+        # export_plan() now reports progress after every individual
+        # artifact upload/verify (so long exports keep their operation
+        # lease alive and show real progress) - operations.progress()
+        # raises OperationCancelled if cancellation was requested while
+        # that loop is still running. Regression test that this no longer
+        # skips past both existing except clauses and leaves the export
+        # row / manifest stuck in a non-terminal state with only some
+        # objects uploaded.
+        from specgraph_foundry.http_api.operations import OperationCancelled
+
+        calls = 0
+
+        def cancel_after_first_artifact(current: int, total: int) -> None:
+            nonlocal calls
+            calls += 1
+            if calls == 1:
+                raise OperationCancelled("operation cancellation requested")
+
+        with self.assertRaises(OperationCancelled):
+            self.durable_exports.export_plan(
+                owner_id=self.principal.user_id,
+                authorization="Bearer valid",
+                plan_id=self.plan_id,
+                on_progress=cancel_after_first_artifact,
+            )
+
+        with self.database.connect() as connection:
+            manifest_state = connection.execute(
+                "SELECT state FROM artifact_manifests"
+            ).fetchone()["state"]
+            object_states = {
+                row["state"]
+                for row in connection.execute(
+                    "SELECT state FROM storage_objects"
+                ).fetchall()
+            }
+        self.assertEqual(manifest_state, "INVALID")
+        self.assertEqual(object_states, {"INVALID"})
 
     def test_tampered_download_blocks_verification(self) -> None:
         original = self.request(
@@ -402,6 +464,37 @@ class DurableArtifactTest(unittest.TestCase):
             idempotency_key="durable-run-key-0006",
         )
         self.assertEqual(allowed.status, 201)
+
+    def test_download_legacy_export_returns_actionable_error(self) -> None:
+        # Exports created before durable artifact storage have no
+        # artifact_manifests row. Calling download() must raise
+        # ValidationError (→ HTTP 400 with a helpful message) not
+        # NotFoundError (→ HTTP 404 "resource not found"), so the UI can
+        # surface "generate a new export" guidance instead of a dead end.
+        from specgraph_foundry.errors import ValidationError
+
+        fake_export_id = str(uuid.uuid4())
+        with self.assertRaises(ValidationError) as ctx:
+            self.durable_exports.download(
+                owner_id=self.principal.user_id,
+                authorization="Bearer valid",
+                export_id=fake_export_id,
+            )
+        self.assertIn("Generate a new export", str(ctx.exception))
+
+    def test_download_legacy_export_via_http_returns_400(self) -> None:
+        # Same check exercised through the full HTTP dispatch layer, confirming
+        # the gateway maps the ValidationError to a 400 (not a 404).
+        fake_export_id = str(uuid.uuid4())
+        response = self.request(
+            "GET",
+            f"/v1/exports/{fake_export_id}/download",
+        )
+        self.assertEqual(response.status, 400)
+        self.assertIn(
+            "Generate a new export",
+            str(response.body),
+        )
 
 
 if __name__ == "__main__":

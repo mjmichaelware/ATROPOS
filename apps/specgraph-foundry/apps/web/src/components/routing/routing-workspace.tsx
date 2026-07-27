@@ -42,7 +42,11 @@ export function RoutingWorkspace({ projectId }: { projectId: string }) {
       <header className="sg-source-hero sg-graph-hero">
         <p className="sg-micro-label">Routing</p>
         <h1>{String(workspace.data?.body.project?.name ?? "Project")}</h1>
-        <p>Policy, providers, renderers, unlocks, and decisions use only real server-authoritative routing state.</p>
+        <p>
+          Providers are the free, local, or paid backends this project can use to automatically research and
+          classify atoms against each dimension — the Research workspace uses whichever ones you enable here.
+          Everything below reflects what&apos;s actually configured right now, not a preview.
+        </p>
         <Button type="button" variant="secondary" onClick={() => { void workspace.refetch(); void providers.refetch(); void renderers.refetch(); }}>
           Refresh
         </Button>

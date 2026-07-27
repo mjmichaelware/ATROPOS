@@ -47,12 +47,21 @@ function RoutingPolicyForm({
 
   return (
     <form className="sg-planning-form" onSubmit={(event) => void save(event)} aria-label="Routing policy">
+      <p className="sg-muted">
+        This is the order routing is allowed to fall back through when its first choice isn&apos;t available: your local toolchain, then a free-ready provider, then a free-fallback provider,
+        then a cooldown queue if everything free is temporarily unhealthy. The two toggles below control what happens after that — nothing here spends money without you also completing an
+        explicit unlock on the Unlocks tab.
+      </p>
       <label>
         <input type="checkbox" checked={allowOfflineDegraded} onChange={(event) => setAllowOfflineDegraded(event.target.checked)} /> Allow offline degraded routing
       </label>
+      <p className="sg-muted sg-micro-label">If every free provider is unavailable, routing is allowed to stop and report degraded instead of silently waiting or guessing an answer.</p>
       <label>
         <input type="checkbox" checked={paidEmergencyEnabled} onChange={(event) => setPaidEmergencyEnabled(event.target.checked)} /> Enable paid emergency routing
       </label>
+      <p className="sg-muted sg-micro-label">
+        Even with this on, a paid provider is never used automatically — it only becomes reachable after someone explicitly grants a time-boxed unlock on the Unlocks tab.
+      </p>
       <label htmlFor="max-paid-decisions">
         Max paid decisions per unlock
         <input
@@ -64,6 +73,7 @@ function RoutingPolicyForm({
           onChange={(event) => setMaxPaidDecisions(Number(event.target.value))}
         />
       </label>
+      <p className="sg-muted sg-micro-label">A hard ceiling on how many paid calls a single unlock can spend, regardless of how long its time window lasts.</p>
       {conflict ? (
         <Alert tone="warning" title="Conflict">
           <p>{conflict}</p>

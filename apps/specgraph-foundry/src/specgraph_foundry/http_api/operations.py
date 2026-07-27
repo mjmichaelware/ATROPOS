@@ -5,6 +5,7 @@ import hmac
 import json
 import secrets
 import socket
+import sqlite3
 import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -34,7 +35,7 @@ ACTIVE_STATES = {
     "CANCEL_REQUESTED",
 }
 
-MAX_JSON_BYTES = 64 * 1024
+MAX_JSON_BYTES = 14 * 1024 * 1024
 MAX_ERROR_MESSAGE = 240
 
 
@@ -143,74 +144,106 @@ class OperationStore:
             operation_type=operation_type,
             request=request,
         )
-        now = utc_now()
-        now_text = now.isoformat()
-        timeout_at = (
-            now + timedelta(seconds=self.settings.timeout_seconds)
-        ).isoformat()
-        operation_id = str(uuid.uuid4())
 
-        with self.database.connect() as connection:
-            connection.execute("BEGIN IMMEDIATE")
-            existing = connection.execute(
-                """
-                SELECT *
-                FROM operations
-                WHERE owner_id = ?
-                  AND operation_type = ?
-                  AND fingerprint = ?
-                """,
-                (owner_id, operation_type, fingerprint),
-            ).fetchone()
-            if existing is not None:
-                return self._public(dict(existing))
+        # Loops at most twice in practice: BEGIN IMMEDIATE alone would be
+        # enough to prevent this race on SQLite (it takes a write lock
+        # up front), but on the hosted Postgres path "BEGIN IMMEDIATE" is
+        # translated to a plain BEGIN under READ COMMITTED, so two
+        # concurrent requests (e.g. a double-click) can both pass the
+        # SELECT below before either commits its INSERT. The active-state
+        # partial unique index still catches that at the database level;
+        # this retries the read-then-write cycle instead of surfacing the
+        # resulting IntegrityError as a 500, exactly like
+        # IdempotencyStore's claim() does for the same race.
+        while True:
+            now = utc_now()
+            now_text = now.isoformat()
+            timeout_at = (
+                now + timedelta(seconds=self.settings.timeout_seconds)
+            ).isoformat()
+            operation_id = str(uuid.uuid4())
 
-            connection.execute(
-                """
-                INSERT INTO operations(
-                    id,
-                    owner_id,
-                    project_id,
-                    operation_type,
-                    fingerprint,
-                    state,
-                    phase,
-                    progress_current,
-                    progress_total,
-                    attempt_count,
-                    max_attempts,
-                    next_attempt_at,
-                    timeout_at,
-                    request_json,
-                    created_at,
-                    updated_at
-                )
-                VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-                """,
-                (
-                    operation_id,
-                    owner_id,
-                    project_id,
-                    operation_type,
-                    fingerprint,
-                    "QUEUED",
-                    "queued",
-                    0,
-                    1,
-                    0,
-                    self.settings.max_attempts,
-                    now_text,
-                    timeout_at,
-                    safe_json(request),
-                    now_text,
-                    now_text,
-                ),
-            )
-            row = connection.execute(
-                "SELECT * FROM operations WHERE id = ?",
-                (operation_id,),
-            ).fetchone()
-        return self._public(dict(row))
+            with self.database.connect() as connection:
+                connection.execute("BEGIN IMMEDIATE")
+                # Only dedupe against an operation that is still in flight
+                # (QUEUED/CLAIMED/RUNNING/CANCEL_REQUESTED). The fingerprint
+                # is a pure function of (owner, type, request) and several
+                # operation types - synthesize_project_plan, verify_plan,
+                # verify_export - have a request shape that stays identical
+                # across legitimate re-submissions (e.g. re-synthesizing a
+                # project's plan after completing research, or re-verifying
+                # after fixing an issue) even though the real, current
+                # server-side state they act on has changed. Matching
+                # against a TERMINAL prior operation here would silently
+                # replay that operation's original result forever,
+                # regardless of a fresh Idempotency-Key, and would
+                # permanently block a plan/export from ever reaching a
+                # different outcome once it had failed or been blocked
+                # once.
+                existing = connection.execute(
+                    """
+                    SELECT *
+                    FROM operations
+                    WHERE owner_id = ?
+                      AND operation_type = ?
+                      AND fingerprint = ?
+                      AND state IN ('QUEUED','CLAIMED','RUNNING','CANCEL_REQUESTED')
+                    """,
+                    (owner_id, operation_type, fingerprint),
+                ).fetchone()
+                if existing is not None:
+                    return self._public(dict(existing))
+
+                try:
+                    connection.execute(
+                        """
+                        INSERT INTO operations(
+                            id,
+                            owner_id,
+                            project_id,
+                            operation_type,
+                            fingerprint,
+                            state,
+                            phase,
+                            progress_current,
+                            progress_total,
+                            attempt_count,
+                            max_attempts,
+                            next_attempt_at,
+                            timeout_at,
+                            request_json,
+                            created_at,
+                            updated_at
+                        )
+                        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                        """,
+                        (
+                            operation_id,
+                            owner_id,
+                            project_id,
+                            operation_type,
+                            fingerprint,
+                            "QUEUED",
+                            "queued",
+                            0,
+                            1,
+                            0,
+                            self.settings.max_attempts,
+                            now_text,
+                            timeout_at,
+                            safe_json(request),
+                            now_text,
+                            now_text,
+                        ),
+                    )
+                except sqlite3.IntegrityError:
+                    continue
+
+                row = connection.execute(
+                    "SELECT * FROM operations WHERE id = ?",
+                    (operation_id,),
+                ).fetchone()
+            return self._public(dict(row))
 
     def get(
         self,
@@ -419,6 +452,9 @@ class OperationStore:
             lease_token=lease_token,
         )
 
+    def _renewed_lease_expiry(self) -> str:
+        return (utc_now() + timedelta(seconds=self.settings.lease_seconds)).isoformat()
+
     def start(
         self,
         lease: OperationLease,
@@ -435,6 +471,7 @@ class OperationStore:
                 "progress_current": 0,
                 "progress_total": max(1, total),
                 "started_at": iso_now(),
+                "lease_expires_at": self._renewed_lease_expiry(),
             },
         )
 
@@ -442,11 +479,20 @@ class OperationStore:
         self,
         lease: OperationLease,
     ) -> dict[str, object]:
+        # _leased_update() rejects any call once lease_expires_at has
+        # passed - only claim() ever set that field before this fix, so
+        # heartbeat() updated heartbeat_at (an observability timestamp)
+        # without ever actually extending the deadline it's meant to keep
+        # alive. Any handler whose real work took longer than
+        # lease_seconds (e.g. export_plan uploading many artifacts to
+        # Supabase Storage) would hit WorkerLeaseLost on its next
+        # checkpoint call no matter how often it heartbeat.
         return self._leased_update(
             lease,
             expected_states={"CLAIMED", "RUNNING", "CANCEL_REQUESTED"},
             assignments={
                 "heartbeat_at": iso_now(),
+                "lease_expires_at": self._renewed_lease_expiry(),
             },
         )
 
@@ -468,6 +514,7 @@ class OperationStore:
                 "progress_current": current,
                 "progress_total": total,
                 "heartbeat_at": iso_now(),
+                "lease_expires_at": self._renewed_lease_expiry(),
             },
         )
         if str(row["state"]) == "CANCEL_REQUESTED":
@@ -660,29 +707,45 @@ class OperationStore:
         expected_states: set[str],
         assignments: dict[str, object],
     ) -> dict[str, object]:
-        row = self._lease_row(lease)
-        if str(row["state"]) not in expected_states:
-            raise ConflictError("operation state does not allow this transition")
-
-        now = utc_now()
-        if row["lease_expires_at"] is None or parse_time(
-            str(row["lease_expires_at"])
-        ) <= now:
-            raise WorkerLeaseLost("worker lease expired")
+        # Read, validate, and write inside a single connection so that no
+        # concurrent recover_expired() call can sneak between the SELECT
+        # and the UPDATE and clear our lease fields while we're holding
+        # an apparently-valid row in memory.
+        token_hash = self.hash_lease_token(lease.lease_token)
+        op_id = lease.operation["id"]
 
         assignments = dict(assignments)
+        now = utc_now()
         assignments["updated_at"] = now.isoformat()
         columns = ", ".join(f"{key} = ?" for key in assignments)
-        values = list(assignments.values())
-        values.extend(
-            [
-                row["id"],
-                lease.worker_id,
-                self.hash_lease_token(lease.lease_token),
-                str(row["state"]),
-            ]
-        )
+
         with self.database.connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            row = connection.execute(
+                """
+                SELECT *
+                FROM operations
+                WHERE id = ?
+                  AND worker_id = ?
+                  AND lease_token_hash = ?
+                """,
+                (op_id, lease.worker_id, token_hash),
+            ).fetchone()
+
+            if row is None:
+                raise WorkerLeaseLost("worker lease is not current")
+
+            state = str(row["state"])
+            if state not in expected_states:
+                raise ConflictError("operation state does not allow this transition")
+
+            if row["lease_expires_at"] is None or parse_time(
+                str(row["lease_expires_at"])
+            ) <= now:
+                raise WorkerLeaseLost("worker lease expired")
+
+            values = list(assignments.values())
+            values.extend([op_id, lease.worker_id, token_hash, state])
             updated = connection.execute(
                 f"""
                 UPDATE operations
@@ -698,7 +761,7 @@ class OperationStore:
                 raise WorkerLeaseLost("worker lease is no longer current")
             stored = connection.execute(
                 "SELECT * FROM operations WHERE id = ?",
-                (row["id"],),
+                (op_id,),
             ).fetchone()
         return dict(stored)
 

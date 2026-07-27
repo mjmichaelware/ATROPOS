@@ -9,9 +9,10 @@ from ..execution import ExecutionService
 from ..planning import PlanningService
 from ..research import ResearchService
 from .database import RequestScopedDatabase
+from .artifact_storage import ArtifactStoragePermanentError
 from .durable_exports import DurableExportService
 from .models import Principal
-from .operations import OperationCancelled, OperationLease, OperationStore
+from .operations import OperationCancelled, OperationLease, OperationStore, WorkerLeaseLost
 from .source_uploads import SourceUploadService
 
 
@@ -49,12 +50,20 @@ class HandlerContext:
         current: int,
         total: int,
     ) -> None:
-        self.operations.progress(
-            self.lease,
-            phase=phase,
-            current=current,
-            total=total,
-        )
+        try:
+            self.operations.progress(
+                self.lease,
+                phase=phase,
+                current=current,
+                total=total,
+            )
+        except (WorkerLeaseLost, OperationCancelled):
+            raise
+        except Exception:
+            # Transient DB error (e.g. psycopg.OperationalError on a slow or
+            # flaky connection). The background heartbeat thread keeps the
+            # lease alive independently; progress updates are best-effort.
+            pass
 
 
 class OperationHandlerRegistry:
@@ -161,7 +170,7 @@ class OperationHandlerRegistry:
 
         operation_type = str(row["operation_type"])
         if operation_type == "finalize_source_upload":
-            return self._finalize_source_upload(context, path_params)
+            return self._finalize_source_upload(context, path_params, payload)
         if operation_type == "extract_document_atoms":
             return self._extract_document_atoms(context, path_params)
         if operation_type == "complete_research_task":
@@ -185,14 +194,21 @@ class OperationHandlerRegistry:
         self,
         context: HandlerContext,
         path_params: dict[str, object],
+        payload: dict[str, object],
     ) -> dict[str, object]:
         if context.source_uploads is None:
             raise DependencyUnavailable("source upload worker is unavailable")
         context.checkpoint("finalizing_source", 1, 3)
+        raw_base64 = payload.get("raw_base64")
         result = context.source_uploads.finalize(
             owner_id=context.owner_id,
             authorization=context.authorization,
             upload_id=str(path_params["upload_id"]),
+            raw_base64=(
+                raw_base64
+                if isinstance(raw_base64, str)
+                else None
+            ),
         )
         context.checkpoint("source_finalized", 3, 3)
         return {
@@ -270,7 +286,7 @@ class OperationHandlerRegistry:
         context.checkpoint("plan_verified", 2, 2)
         return {
             "plan_id": result["plan_id"],
-            "valid": result["valid"],
+            "valid": result["error_count"] == 0,
             "status": result["status"],
         }
 
@@ -281,13 +297,25 @@ class OperationHandlerRegistry:
     ) -> dict[str, object]:
         if context.durable_exports is None:
             raise DependencyUnavailable("export worker is unavailable")
-        context.checkpoint("exporting_plan", 1, 3)
+
+        # Reporting progress once per artifact (not just once at the
+        # start and once at the end) matters for more than visibility:
+        # every checkpoint call renews the operation's lease. Exporting
+        # uploads and verifies every artifact over real HTTP round trips
+        # to Supabase Storage - with a dozen artifacts that easily
+        # exceeds a single lease window if nothing renews it in between,
+        # which previously surfaced as the operation silently losing its
+        # lease mid-export and getting stuck retrying.
+        def report_export_progress(current: int, total: int) -> None:
+            context.checkpoint("uploading_and_verifying_artifacts", current, total)
+
         result = context.durable_exports.export_plan(
             owner_id=context.owner_id,
             authorization=context.authorization,
             plan_id=str(path_params["plan_id"]),
+            on_progress=report_export_progress,
         )
-        context.checkpoint("export_verified", 3, 3)
+        context.checkpoint("export_verified", 1, 1)
         return {
             "export_id": result["id"],
             "status": result["status"],
@@ -301,13 +329,17 @@ class OperationHandlerRegistry:
     ) -> dict[str, object]:
         if context.durable_exports is None:
             raise DependencyUnavailable("export worker is unavailable")
-        context.checkpoint("verifying_export_artifacts", 1, 2)
+
+        def report_verify_progress(current: int, total: int) -> None:
+            context.checkpoint("verifying_export_artifacts", current, total)
+
         result = context.durable_exports.verify_export(
             owner_id=context.owner_id,
             authorization=context.authorization,
             export_id=str(path_params["export_id"]),
+            on_progress=report_verify_progress,
         )
-        context.checkpoint("export_artifacts_verified", 2, 2)
+        context.checkpoint("export_artifacts_verified", 1, 1)
         return {
             "export_id": result["export_id"],
             "valid": result["valid"],
@@ -376,6 +408,8 @@ def classify_error(error: Exception) -> tuple[str, str, bool]:
         return "OPERATION_CANCELLED", "operation cancellation requested", False
     if isinstance(error, DependencyUnavailable):
         return "DEPENDENCY_UNAVAILABLE", "required dependency is unavailable", True
+    if isinstance(error, ArtifactStoragePermanentError):
+        return "STORAGE_CONFIGURATION_ERROR", "artifact storage configuration error", False
     if isinstance(error, NotFoundError):
         return "NOT_FOUND", "resource not found", False
     if isinstance(error, ConflictError):

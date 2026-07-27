@@ -21,13 +21,27 @@ describe("signed download URL validation", () => {
   it("opens a validated URL via the provided explicit-action implementation and never returns the URL itself", () => {
     const openImpl = vi.fn();
     const url = SUPABASE_URL + "/storage/v1/object/sign/x";
-    const result = openSignedDownload(url, SUPABASE_URL, openImpl);
+    const result = openSignedDownload(url, SUPABASE_URL, undefined, openImpl);
     expect(result).toBe(true);
     expect(openImpl).toHaveBeenCalledWith(url);
   });
 
+  it("accepts a URL matching the API origin when apiUrl is provided", () => {
+    const API_URL = "https://api.example.run";
+    const openImpl = vi.fn();
+    const url = API_URL + "/v1/artifact-downloads/tok.sig";
+    const result = openSignedDownload(url, SUPABASE_URL, API_URL, openImpl);
+    expect(result).toBe(true);
+    expect(openImpl).toHaveBeenCalledWith(url);
+  });
+
+  it("rejects a URL that matches neither Supabase nor API origin", () => {
+    const API_URL = "https://api.example.run";
+    expect(openSignedDownload("https://evil.example/x", SUPABASE_URL, API_URL, vi.fn())).toBe(false);
+  });
+
   it("fails closed (returns false) for an invalid signed URL instead of throwing", () => {
-    expect(openSignedDownload("https://evil.example/x", SUPABASE_URL, vi.fn())).toBe(false);
+    expect(openSignedDownload("https://evil.example/x", SUPABASE_URL, undefined, vi.fn())).toBe(false);
   });
 
   it("flags a download as likely expired near its expiry boundary", () => {

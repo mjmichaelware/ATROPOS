@@ -1,6 +1,8 @@
 name: Deploy Cloud Run Worker
 
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
     inputs:
       environment:
@@ -21,7 +23,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: deploy-cloud-run-worker-${{ github.event.inputs.environment || 'staging' }}
+  group: deploy-cloud-run-worker-${{ github.event.inputs.environment || 'production' }}
   cancel-in-progress: true
 
 env:
@@ -34,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
-    environment: ${{ github.event.inputs.environment || 'staging' }}
+    environment: ${{ github.event.inputs.environment || 'production' }}
 
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -79,9 +81,9 @@ jobs:
             --cpu=1 \
             --memory=512Mi \
             --service-account="${{ vars.GCP_RUNTIME_SERVICE_ACCOUNT }}" \
-            --set-env-vars="SPECGRAPH_LOG_FORMAT=json,SPECGRAPH_OPERATION_TIMEOUT_SECONDS=1800,SPECGRAPH_OPERATION_LEASE_SECONDS=60,SPECGRAPH_OPERATION_HEARTBEAT_SECONDS=15" \
+            --set-env-vars="SPECGRAPH_LOG_FORMAT=json,SPECGRAPH_OPERATION_TIMEOUT_SECONDS=1800,SPECGRAPH_OPERATION_LEASE_SECONDS=300,SPECGRAPH_OPERATION_HEARTBEAT_SECONDS=15,SPECGRAPH_OPERATION_MAX_ATTEMPTS=5,SPECGRAPH_ARTIFACT_MAX_BYTES=104857600" \
             --set-secrets="SPECGRAPH_DATABASE_URL=SPECGRAPH_DATABASE_URL:latest,SUPABASE_URL=SUPABASE_URL:latest,SUPABASE_ANON_KEY=SUPABASE_ANON_KEY:latest,SPECGRAPH_CURSOR_SIGNING_KEY=SPECGRAPH_CURSOR_SIGNING_KEY:latest,SPECGRAPH_WORKER_STORAGE_TOKEN=SPECGRAPH_WORKER_STORAGE_TOKEN:latest" \
-            --labels="commit-sha=${{ github.sha }},component=worker,environment=${{ github.event.inputs.environment || 'staging' }}"
+            --labels="commit-sha=${{ github.sha }},component=worker,environment=${{ github.event.inputs.environment || 'production' }}"
 
       - name: Smoke test job definition
         run: |

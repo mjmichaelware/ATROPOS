@@ -45,6 +45,10 @@ export function RelationForm({
 
   return (
     <form className="sg-planning-form" onSubmit={(event) => void submit(event)} aria-label="Create authority relation">
+      <p className="sg-muted">
+        A relation is a real dependency between two atoms — one REQUIRES, CONFLICTS_WITH, or SUPERSEDES another. These are what turn a flat list of atoms into an actual authority graph, and what a
+        plan&apos;s execution order gets built from. A relation that would create a cycle is caught below before you can submit it.
+      </p>
       <div className="sg-field">
         <Label htmlFor="relation-from">Source atom</Label>
         <select

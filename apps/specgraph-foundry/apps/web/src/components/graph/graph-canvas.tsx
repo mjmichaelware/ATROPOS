@@ -2,7 +2,7 @@
 
 import { Background, BackgroundVariant, MiniMap, ReactFlow, applyNodeChanges, useReactFlow, type Node, type NodeChange } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef } from "react";
+import { forwardRef, useCallback, useImperativeHandle, useMemo, useState } from "react";
 import type { LayoutPosition } from "@/lib/graph/schemas";
 import type { RendererEdge, RendererNode } from "@/lib/graph/transform";
 import { computeZoomTier, graphSizeTier } from "@/lib/graph/zoom";
@@ -35,8 +35,16 @@ export const GraphCanvas = forwardRef<
   }
 >(function GraphCanvas({ nodes, edges, selectedId, reducedMotion, onSelectNode, onSelectEdge, onNodeMoved, onZoomChange }, ref) {
   const instance = useReactFlow();
-  const zoomRef = useRef(1);
   const nodeCount = nodes.length;
+  // Detail tier as reactive state, not a ref read inside useMemo: a ref
+  // mutation doesn't invalidate a memo, so nodes previously rendered with
+  // tier frozen at whatever zoom happened to be true at the last
+  // nodes/nodeCount/selectedId change - not the actual current zoom. That
+  // let full labels stay "on" (or "off") regardless of real zoom level,
+  // rendering them at a density with no room to avoid overlapping each
+  // other. Storing the tier itself (not raw zoom) keeps re-renders rare,
+  // since React skips a state update when the new value === the old one.
+  const [tier, setTier] = useState(() => computeZoomTier(1, nodeCount));
 
   useImperativeHandle(
     ref,
@@ -56,7 +64,6 @@ export const GraphCanvas = forwardRef<
   );
 
   const flowNodes = useMemo<Node<SgFlowNodeData>[]>(() => {
-    const tier = computeZoomTier(zoomRef.current, nodeCount);
     return nodes.map((node) => ({
       id: node.id,
       type: "sgNode",
@@ -64,7 +71,7 @@ export const GraphCanvas = forwardRef<
       data: { ...node.data, tier, isSelected: node.id === selectedId },
       selected: node.id === selectedId,
     }));
-  }, [nodes, nodeCount, selectedId]);
+  }, [nodes, selectedId, tier]);
 
   const flowEdges = useMemo(
     () =>
@@ -115,7 +122,7 @@ export const GraphCanvas = forwardRef<
           onSelectEdge(undefined);
         }}
         onMove={(_, viewport) => {
-          zoomRef.current = viewport.zoom;
+          setTier(computeZoomTier(viewport.zoom, nodeCount));
           onZoomChange(viewport.zoom);
         }}
         minZoom={0.05}
@@ -128,7 +135,16 @@ export const GraphCanvas = forwardRef<
         aria-label="Graph canvas"
       >
         <Background variant={BackgroundVariant.Dots} gap={24} size={1} className="sg-graph-background" />
-        <MiniMap className="sg-graph-minimap" pannable zoomable nodeColor={() => "var(--sg-graph-atom)"} aria-label="Graph overview" />
+        <MiniMap
+          className="sg-graph-minimap"
+          pannable
+          zoomable
+          nodeColor={() => "var(--sg-graph-atom)"}
+          maskColor="color-mix(in srgb, var(--sg-canvas) 55%, transparent)"
+          maskStrokeColor="var(--sg-accent-2)"
+          maskStrokeWidth={2}
+          aria-label="Graph overview"
+        />
       </ReactFlow>
     </div>
   );

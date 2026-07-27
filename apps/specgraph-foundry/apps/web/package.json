@@ -37,7 +37,7 @@
     "@xyflow/react": "12.11.2",
     "clsx": "2.1.1",
     "elkjs": "0.11.1",
-    "next": "16.2.10",
+    "next": "16.2.11",
     "react": "19.2.7",
     "react-dom": "19.2.7",
     "react-hook-form": "7.81.0",
@@ -64,5 +64,11 @@
     "typescript": "5.9.3",
     "vite": "6.4.3",
     "vitest": "3.2.7"
+  },
+  "overrides": {
+    "js-yaml": "4.3.0",
+    "sharp": "0.35.3",
+    "postcss": "8.5.21",
+    "minimatch": "10.2.5"
   }
 }

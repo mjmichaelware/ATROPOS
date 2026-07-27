@@ -20,47 +20,48 @@ describe("PwaRegistration feature detection and registration gating", () => {
 
   it("does not attempt registration outside production", () => {
     vi.stubEnv("NODE_ENV", "test");
-    const register = vi.fn().mockResolvedValue({ addEventListener: vi.fn(), waiting: null });
-    vi.stubGlobal("navigator", { ...window.navigator, onLine: true, serviceWorker: { register, addEventListener: vi.fn(), removeEventListener: vi.fn() } });
+    const register = vi.fn().mockResolvedValue({ addEventListener: vi.fn(), update: vi.fn() });
+    vi.stubGlobal("navigator", { ...window.navigator, onLine: true, serviceWorker: { register, addEventListener: vi.fn(), removeEventListener: vi.fn(), getRegistration: vi.fn() } });
     render(<PwaRegistration />);
     expect(register).not.toHaveBeenCalled();
   });
 });
 
-describe("PwaRegistration update-ready flow", () => {
+describe("PwaRegistration auto-update flow", () => {
   beforeEach(() => {
     vi.stubEnv("NODE_ENV", "production");
   });
 
-  it("shows a user-controlled refresh action when a waiting worker exists, and never reloads without it", async () => {
-    const postMessage = vi.fn();
-    const swAddEventListener = vi.fn();
-    const swRemoveEventListener = vi.fn();
-    const register = vi.fn().mockResolvedValue({
-      waiting: { postMessage },
-      addEventListener: vi.fn(),
+  it("registers the worker and reloads the page as soon as a new worker takes control", async () => {
+    const register = vi.fn().mockResolvedValue({ addEventListener: vi.fn(), update: vi.fn() });
+    let controllerChangeHandler: (() => void) | undefined;
+    const swAddEventListener = vi.fn((event: string, handler: () => void) => {
+      if (event === "controllerchange") controllerChangeHandler = handler;
     });
+    const swRemoveEventListener = vi.fn();
+    const reload = vi.fn();
     vi.stubGlobal("navigator", {
       ...window.navigator,
       onLine: true,
-      serviceWorker: { register, controller: {}, addEventListener: swAddEventListener, removeEventListener: swRemoveEventListener },
+      serviceWorker: { register, controller: {}, addEventListener: swAddEventListener, removeEventListener: swRemoveEventListener, getRegistration: vi.fn().mockResolvedValue(undefined) },
     });
+    vi.stubGlobal("location", { ...window.location, reload });
 
     render(<PwaRegistration />);
-    expect(await screen.findByText("A new version of SpecGraph Foundry is ready.")).toBeInTheDocument();
-    const button = screen.getByRole("button", { name: "Refresh to update" });
-
-    await act(async () => {
-      button.click();
-    });
-    expect(postMessage).toHaveBeenCalledWith({ type: "SKIP_WAITING" });
-    // No reload happens until a real controllerchange event fires.
+    await waitFor(() => expect(register).toHaveBeenCalledWith("/sw.js", { updateViaCache: "none" }));
     expect(swAddEventListener).toHaveBeenCalledWith("controllerchange", expect.any(Function));
+
+    act(() => controllerChangeHandler?.());
+    expect(reload).toHaveBeenCalledTimes(1);
+
+    // A second controllerchange (should not happen, but must never double-reload) is a no-op.
+    act(() => controllerChangeHandler?.());
+    expect(reload).toHaveBeenCalledTimes(1);
   });
 
   it("registration failure is nonfatal and does not throw or crash the tree", async () => {
     const register = vi.fn().mockRejectedValue(new Error("network unreachable at 10.0.0.1 with token abc123"));
-    vi.stubGlobal("navigator", { ...window.navigator, onLine: true, serviceWorker: { register, addEventListener: vi.fn(), removeEventListener: vi.fn() } });
+    vi.stubGlobal("navigator", { ...window.navigator, onLine: true, serviceWorker: { register, addEventListener: vi.fn(), removeEventListener: vi.fn(), getRegistration: vi.fn() } });
     render(<PwaRegistration />);
     await waitFor(() => expect(register).toHaveBeenCalled());
     // Nothing further to assert: the promise rejection is swallowed, no raw error text is rendered.

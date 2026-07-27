@@ -57,6 +57,10 @@ export function RouteDecisionPanel({ projectId }: { projectId: string }) {
 
   return (
     <div className="sg-planning-form">
+      <p className="sg-muted">
+        A route decision is the server actually applying the fallback chain from Policy for one territory, right now, and recording exactly which provider and renderer it picked and why. This
+        isn&apos;t a preview or a simulation — creating one is a real routing decision, logged with its own ID you can look up again below.
+      </p>
       <form
         className="sg-planning-form"
         aria-label="Create route decision"

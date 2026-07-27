@@ -346,6 +346,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/documents/{document_id}/atoms/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Render a document's extracted atoms as downloadable text/PDF files */
+        get: operations["exportDocumentAtoms"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/documents/{document_id}/provenance": {
         parameters: {
             query?: never;
@@ -1407,6 +1424,18 @@ export interface components {
                 derivation: components["schemas"]["DerivationSummary"] | null;
             };
         } & components["schemas"]["WorkspacePreviewMetadata"];
+        AtomsExportFile: {
+            filename: string;
+            media_type: string;
+            byte_length: number;
+            base64: string;
+        };
+        AtomsExportResponse: {
+            document_id: string;
+            atom_count: number;
+            text: components["schemas"]["AtomsExportFile"];
+            pdf: components["schemas"]["AtomsExportFile"];
+        };
         /** @enum {string} */
         ErrorCode: "AUTHENTICATION_REQUIRED" | "INVALID_AUTHORIZATION" | "AUTHENTICATION_FAILED" | "VALIDATION_ERROR" | "NOT_FOUND" | "CONFLICT" | "METHOD_NOT_ALLOWED" | "ROUTE_NOT_FOUND" | "REQUEST_TARGET_TOO_LARGE" | "HEADERS_TOO_LARGE" | "PAYLOAD_TOO_LARGE" | "INVALID_JSON" | "JSON_LIMIT_EXCEEDED" | "TOO_MANY_REQUESTS" | "SERVER_BUSY" | "REQUEST_TIMEOUT" | "DEPENDENCY_UNAVAILABLE" | "INTERNAL_ERROR" | "IDEMPOTENCY_KEY_REQUIRED" | "INVALID_IDEMPOTENCY_KEY" | "IDEMPOTENCY_KEY_REUSED" | "IDEMPOTENCY_IN_PROGRESS" | "UPLOAD_EXPIRED" | "UPLOAD_STATE_CONFLICT" | "UPLOAD_INTEGRITY_MISMATCH" | "SOURCE_TOO_LARGE" | "INVALID_DOCUMENT" | "DOCUMENT_ENCRYPTED" | "DOCUMENT_LIMIT_EXCEEDED" | "NO_EXTRACTABLE_TEXT" | "INVALID_SOURCE_ENCODING" | "INVALID_FILENAME" | "PRECONDITION_REQUIRED" | "INVALID_PRECONDITION" | "PRECONDITION_FAILED" | "ARTIFACT_NOT_VERIFIED" | "ARTIFACT_INTEGRITY_FAILED" | "ARTIFACT_LIMIT_EXCEEDED" | "ARTIFACT_ALREADY_EXISTS" | "STORAGE_UNAVAILABLE" | "OPERATION_NOT_FOUND" | "OPERATION_CONFLICT" | "OPERATION_CANCELLED" | "OPERATION_TIMED_OUT" | "OPERATION_IN_PROGRESS" | "WORKER_LEASE_LOST";
         /** @enum {string} */
@@ -2290,6 +2319,33 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ObjectListResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            500: components["responses"]["InternalError"];
+            503: components["responses"]["DependencyUnavailable"];
+        };
+    };
+    exportDocumentAtoms: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: components["parameters"]["DocumentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Base64-encoded text and PDF renderings of every atom extracted from this document */
+            200: {
+                headers: {
+                    "x-request-id": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AtomsExportResponse"];
                 };
             };
             401: components["responses"]["Unauthorized"];

@@ -58,6 +58,7 @@ function PlanningOverview({ workspace }: { workspace: PlanningWorkspace | undefi
 }
 
 export function PlanningRail({
+  projectId,
   tab,
   onTabChange,
   workspace,
@@ -78,6 +79,7 @@ export function PlanningRail({
   loadedNodeIds,
   onFocusNode,
 }: {
+  projectId: string;
   tab: PlanningTab;
   onTabChange: (tab: PlanningTab) => void;
   workspace: PlanningWorkspace | undefined;
@@ -125,7 +127,7 @@ export function PlanningRail({
             panel: (
               <div className="sg-planning-form">
                 <SynthesisPanel pending={synthesizePending} onSynthesize={onSynthesize} />
-                <PlanHistory plans={plans} selectedPlanId={selectedPlanId} onSelect={onSelectPlan} />
+                <PlanHistory projectId={projectId} plans={plans} selectedPlanId={selectedPlanId} onSelect={onSelectPlan} />
               </div>
             ),
           },
