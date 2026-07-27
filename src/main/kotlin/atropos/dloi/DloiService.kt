@@ -165,7 +165,19 @@ class DloiService(
         runCatching { indexer.ensureIndexed() }
 
         val extractedRoot = repoRoot.resolve(".atropos/context-cache/source-index/v1/extracted")
-        if (!extractedRoot.exists()) return emptyList()
+        if (!extractedRoot.exists()) {
+            // Priority #6 fallback: if the index cache doesn't exist but
+            // docs/source/ does, build the index from the real authority files.
+            // This lifts the hard stop documented in PHASE10_PRIORITY6_HARDSTOP.md.
+            val sourceDir = repoRoot.resolve("docs/source")
+            if (sourceDir.exists()) {
+                SourceAuthorityIndexer(repoRoot).index()
+                // Re-check after indexing
+                if (!extractedRoot.exists()) return emptyList()
+            } else {
+                return emptyList()
+            }
+        }
         val docs = Files.walk(extractedRoot).use { stream ->
             stream.filter { Files.isRegularFile(it) && it.fileName.toString().endsWith(".json") }
                 .sorted()
