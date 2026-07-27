@@ -53,18 +53,6 @@ object ContextAttestationService {
         // Parse the response
         val parsed = ProviderResponseContextParser.parse(providerResponse, envelope)
 
-        // Check for unsolicited mythology
-        if (parsed.mythologyDetected) {
-            return VerifiedResult.Rejected(
-                failure = TypedContextFailure.MythologyAnswer(
-                    providerId = envelope.providerId,
-                    reason = "provider returned Greek mythology content without explicit mythology request"
-                ),
-                envelope = envelope,
-                providerResponse = redactionFilter.redact(parsed.cleanedResponse)
-            )
-        }
-
         // Check attestation presence
         val attestation = parsed.attestation
         if (attestation == null) {
