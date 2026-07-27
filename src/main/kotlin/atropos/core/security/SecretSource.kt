@@ -30,10 +30,10 @@ class EnvSecretSource(private val env: Map<String, String> = System.getenv()) : 
 }
 
 class LocalFileSecretSource(private val root: File = File(".atropos/secrets")) : SecretSource {
+    private val vault = TokenIsolationVault(root.toPath())
+
     override fun lookup(name: String): SecretLookup {
-        val safeName = name.replace(Regex("[^A-Za-z0-9_.-]"), "_")
-        val file = File(root, "$safeName.secret")
-        val value = if (file.isFile) file.readText().trim().takeIf { it.isNotBlank() } else null
+        val value = runCatching { vault.readSecret(name) }.getOrNull()
         return SecretLookup(name, value, "local_file", value != null)
     }
 }
@@ -90,13 +90,13 @@ data class KeySetupResult(
 class KeySetupHelper(
     private val root: File = File(".atropos/secrets")
 ) {
+    private val vault = TokenIsolationVault(root.toPath())
+
     fun setup(names: List<String> = defaultNames()): KeySetupResult {
-        root.mkdirs()
-        root.setReadable(true, true)
-        root.setWritable(true, true)
-        root.setExecutable(true, true)
-        val template = File(root, "secrets.template")
-        val readme = File(root, "README.txt")
+        val rootPath = vault.rootPath()
+        val rootDir = rootPath.toFile()
+        val template = rootPath.resolve("secrets.template").toFile()
+        val readme = rootPath.resolve("README.txt").toFile()
         val distinct = names.map { it.trim() }.filter { it.isNotBlank() }.distinct().sorted()
 
         template.writeText(distinct.joinToString("\n") { "$it=" } + "\n")
@@ -115,7 +115,7 @@ class KeySetupHelper(
         readme.setReadable(true, true)
         readme.setWritable(true, true)
 
-        return KeySetupResult(root, template, readme, distinct)
+        return KeySetupResult(rootDir, template, readme, distinct)
     }
 
     companion object {

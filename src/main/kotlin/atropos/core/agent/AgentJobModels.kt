@@ -49,6 +49,8 @@ data class AgentJobRecord(
     val commitProposal: String? = null,
     val nextSuggestedCommand: String? = null,
     val contextExportPath: String? = null,
+    val sourceEvidence: String? = null,
+    val impactedSymbols: List<String> = emptyList(),
     val metaFile: Path
 ) {
     fun render(): String = buildString {
@@ -83,6 +85,8 @@ data class AgentJobRecord(
         appendLine("commit proposal: ${commitProposal?.let(filter::redact) ?: "none"}")
         appendLine("next suggested command: ${nextSuggestedCommand?.let(filter::redact) ?: "none"}")
         appendLine("context export path: ${contextExportPath?.let(filter::redact) ?: "none"}")
+        appendLine("source evidence: ${sourceEvidence?.let(filter::redact) ?: "unresolved"}")
+        appendLine("impacted symbols: ${impactedSymbols.joinToString(", ") { filter.redact(it) }.ifBlank { "none" }}")
         appendLine("record file: $metaFile")
         renderBlock("plan", plan)?.let { appendLine(it) }
         renderBlock("patch result", patchResult)?.let { appendLine(it) }
@@ -100,6 +104,8 @@ data class AgentJobRecord(
         repairId?.takeIf { it.isNotBlank() }?.let { append(" repair=$it") }
         smokeResult?.takeIf { it.isNotBlank() }?.let { append(" smoke=${truncate(filter.redact(it), 60)}") }
         finalReport?.takeIf { it.isNotBlank() }?.let { append(" final=${truncate(filter.redact(it), 60)}") }
+        sourceEvidence?.takeIf { it.isNotBlank() }?.let { append(" source=${truncate(filter.redact(it), 48)}") }
+        impactedSymbols.firstOrNull()?.let { append(" impacted=${truncate(filter.redact(it), 48)}") }
         nextSuggestedCommand?.takeIf { it.isNotBlank() }?.let { append(" next=${truncate(filter.redact(it), 60)}") }
         append(" | ${truncate(filter.redact(task), 72)}")
         failureReason?.takeIf { it.isNotBlank() }?.let { append(" | failure=${truncate(filter.redact(it), 72)}") }

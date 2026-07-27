@@ -82,7 +82,8 @@ private data class DloiLineRecord(
 )
 
 class DloiService(
-    private val repoRoot: Path = Path.of(".").toAbsolutePath().normalize()
+    private val repoRoot: Path = Path.of(".").toAbsolutePath().normalize(),
+    private val taskResolver: DloiTaskResolver = DloiTaskResolver()
 ) {
     /**
      * Resolve an exact DLOI address and return a typed [DloiLookupResult].
@@ -149,13 +150,8 @@ class DloiService(
     }
 
     fun resolveTask(task: String): DloiResolution {
-        val normalized = task.trim()
-        val authority = loadDocuments().firstOrNull { it.id == "authority" }
-            ?: error("authority document not found")
-        val sections = authority.sections
-        val section = sections.firstOrNull { normalized.contains(it.title, ignoreCase = true) }
-            ?: error("unable to prove authoritative source section for task")
-        return lookup("${authority.sourceId}#${section.id}@L${section.lineStart}-${section.lineEnd}")
+        val match = taskResolver.resolve(task, loadDocuments())
+        return lookup("${match.document.sourceId}#${match.section.id}@L${match.section.lineStart}-${match.section.lineEnd}")
     }
 
     fun loadDocuments(): List<DloiDocument> {
@@ -540,11 +536,6 @@ class DloiService(
         }
         return builder.toString()
     }
-
-    private fun slug(value: String): String =
-        value.lowercase()
-            .replace(Regex("[^a-z0-9]+"), "_")
-            .trim('_')
 
     private data class ParsedDloiAddress(
         val documentId: String,

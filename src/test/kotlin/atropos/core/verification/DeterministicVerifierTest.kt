@@ -32,6 +32,8 @@ class DeterministicVerifierTest {
         assertTrue(result.findings.any { it.invariantId == "duplicate_imports" })
         assertTrue(result.findings.any { it.invariantId == "import_reconciliation" })
         assertTrue(result.findings.any { it.invariantId == "shell_safety" })
+        assertTrue(result.findings.first { it.invariantId == "package_path_invariant" }.evidence.contains("expected="))
+        assertTrue(result.findings.first { it.invariantId == "package_path_invariant" }.evidence.contains("observed="))
         assertTrue(result.findings.all { it.evidence.isNotBlank() })
         assertTrue(result.findings.all { it.remediation.isNotBlank() })
         assertTrue(result.findings.all { it.classification == DeterministicClassification.DETERMINISTIC })

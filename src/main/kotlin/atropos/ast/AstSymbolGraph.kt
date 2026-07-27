@@ -1,5 +1,7 @@
 package atropos.ast
 
+import atropos.core.parser.KotlinDeclarationKind
+import atropos.core.parser.TreeSitterGrammarBridge
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
@@ -83,7 +85,8 @@ data class AstLookupResult(
 }
 
 class AstSymbolGraph(
-    private val repoRoot: Path = Path.of(".").toAbsolutePath().normalize()
+    private val repoRoot: Path = Path.of(".").toAbsolutePath().normalize(),
+    private val parser: TreeSitterGrammarBridge = TreeSitterGrammarBridge()
 ) {
     fun build(): List<AstSymbol> {
         val sourceRoot = repoRoot.resolve("src/main/kotlin")
@@ -171,27 +174,21 @@ class AstSymbolGraph(
     }
 
     private fun parseFile(path: Path): List<AstSymbol> {
-        val lines = path.toFile().readLines(StandardCharsets.UTF_8)
-        val packageName = lines.firstOrNull { it.trimStart().startsWith("package ") }
-            ?.removePrefix("package ")
-            ?.trim()
-            .orEmpty()
-        val imports = lines.filter { it.trimStart().startsWith("import ") }
-            .map { it.removePrefix("import ").trim() }
+        val source = Files.readString(path, StandardCharsets.UTF_8)
+        val tree = parser.parseTree(source)
         val relative = repoRoot.relativize(path).invariantSeparatorsPathString
-        val expectedPathSuffix = expectedPathSuffix(packageName, path)
+        val expectedPathSuffix = expectedPathSuffix(tree.packageName, path)
         val packagePathInvariantHolds = relative.endsWith(expectedPathSuffix)
         val symbols = mutableListOf<AstSymbol>()
-        var offset = 0
 
         symbols += AstSymbol(
             kind = AstSymbolKind.FILE,
             name = path.fileName.toString(),
-            qualifiedName = "${packageName}.${path.fileName}",
+            qualifiedName = "${tree.packageName}.${path.fileName}",
             file = path,
-            packageName = packageName,
-            imports = imports,
-            dependencyRefs = imports,
+            packageName = tree.packageName,
+            imports = tree.imports,
+            dependencyRefs = tree.imports,
             expectedPathSuffix = expectedPathSuffix,
             packagePathInvariantHolds = packagePathInvariantHolds,
             line = 1,
@@ -199,35 +196,33 @@ class AstSymbolGraph(
             offset = 0
         )
 
-        lines.forEachIndexed { index, line ->
-            val lineNumber = index + 1
-            fun add(kind: AstSymbolKind, regex: Regex) {
-                regex.find(line)?.let { match ->
-                    val name = match.groupValues[1]
-                    val qualified = if (packageName.isBlank()) name else "$packageName.$name"
-                    symbols += AstSymbol(
-                        kind = kind,
-                        name = name,
-                        qualifiedName = qualified,
-                        file = path,
-                        packageName = packageName,
-                        imports = imports,
-                        dependencyRefs = imports,
-                        expectedPathSuffix = expectedPathSuffix,
-                        packagePathInvariantHolds = packagePathInvariantHolds,
-                        line = lineNumber,
-                        column = match.range.first + 1,
-                        offset = offset + match.range.first
-                    )
-                }
+        tree.declarations.forEach { declaration ->
+            val kind = when (declaration.kind) {
+                KotlinDeclarationKind.CLASS -> AstSymbolKind.CLASS
+                KotlinDeclarationKind.OBJECT -> AstSymbolKind.OBJECT
+                KotlinDeclarationKind.INTERFACE -> AstSymbolKind.INTERFACE
+                KotlinDeclarationKind.FUNCTION -> AstSymbolKind.FUNCTION
+                KotlinDeclarationKind.PROPERTY -> AstSymbolKind.PROPERTY
             }
-
-            add(AstSymbolKind.CLASS, Regex("""\bclass\s+([A-Za-z_][A-Za-z0-9_]*)"""))
-            add(AstSymbolKind.OBJECT, Regex("""\bobject\s+([A-Za-z_][A-Za-z0-9_]*)"""))
-            add(AstSymbolKind.INTERFACE, Regex("""\binterface\s+([A-Za-z_][A-Za-z0-9_]*)"""))
-            add(AstSymbolKind.FUNCTION, Regex("""\bfun\s+([A-Za-z_][A-Za-z0-9_]*)\s*\("""))
-            add(AstSymbolKind.PROPERTY, Regex("""\b(?:val|var)\s+([A-Za-z_][A-Za-z0-9_]*)"""))
-            offset += line.length + 1
+            val qualified = if (tree.packageName.isBlank()) {
+                declaration.name
+            } else {
+                "${tree.packageName}.${declaration.name}"
+            }
+            symbols += AstSymbol(
+                kind = kind,
+                name = declaration.name,
+                qualifiedName = qualified,
+                file = path,
+                packageName = tree.packageName,
+                imports = tree.imports,
+                dependencyRefs = tree.imports,
+                expectedPathSuffix = expectedPathSuffix,
+                packagePathInvariantHolds = packagePathInvariantHolds,
+                line = declaration.line,
+                column = declaration.column,
+                offset = declaration.offset
+            )
         }
         return symbols
     }

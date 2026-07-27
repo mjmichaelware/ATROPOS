@@ -63,6 +63,8 @@ data class AgentQueueRecord(
     val repairId: String? = null,
     val contextExportPath: String? = null,
     val finalJobResult: String? = null,
+    val sourceEvidence: String? = null,
+    val impactedSymbols: List<String> = emptyList(),
     val failureReason: String? = null,
     val nextEligibleAt: Instant? = null,
     val lease: AgentQueueLease? = null,
@@ -106,6 +108,8 @@ data class AgentQueueRecord(
         appendLine("repair id: ${repairId ?: "none"}")
         appendLine("context export path: ${contextExportPath?.let(filter::redact) ?: "none"}")
         appendLine("final job result: ${finalJobResult?.let(filter::redact) ?: "none"}")
+        appendLine("source evidence: ${sourceEvidence?.let(filter::redact) ?: "unresolved"}")
+        appendLine("impacted symbols: ${impactedSymbols.joinToString(", ") { filter.redact(it) }.ifBlank { "none" }}")
         appendLine("failure reason: ${failureReason?.let(filter::redact) ?: "none"}")
         appendLine("next eligible at: ${nextEligibleAt ?: "none"}")
         appendLine("lease owner: ${lease?.owner ?: "none"}")

@@ -17,6 +17,7 @@ class GoalRunStore(
     private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     private val runsRoot = repoRoot.resolve(".atropos/runs").normalize()
+    private val legacySelfHostRunsRoot = repoRoot.resolve(".atropos/self-hosting/runs").normalize()
 
     fun runsRoot(): Path = runsRoot
 
@@ -45,20 +46,18 @@ class GoalRunStore(
 
     fun resolve(reference: String): GoalRunRecord? {
         val id = resolveRunId(reference) ?: return null
-        val metaFile = runsRoot.resolve("$id.meta").normalize()
-        if (!metaFile.startsWith(runsRoot) || !Files.isRegularFile(metaFile)) return null
-        return parseRecord(metaFile)
+        return runMetaFiles().firstOrNull { it.fileName.toString() == "$id.meta" }?.let(::parseRecord)
     }
 
     fun latest(): GoalRunRecord? = listRuns(1).firstOrNull()
 
     fun listRuns(limit: Int = 20): List<GoalRunRecord> {
-        if (!Files.isDirectory(runsRoot)) return emptyList()
-        val files = Files.list(runsRoot).use { stream -> stream.toList() }
-        return files
-            .filter { it.fileName.toString().endsWith(".meta") && it.fileName.toString().startsWith("goal-") }
+        return runMetaFiles()
             .mapNotNull { parseRecord(it) }
-            .sortedByDescending { it.createdAt }
+            .sortedWith(
+                compareByDescending<GoalRunRecord> { it.updatedAt }
+                    .thenByDescending { it.createdAt }
+            )
             .take(limit.coerceAtLeast(1))
     }
 
@@ -156,6 +155,21 @@ class GoalRunStore(
 
     private fun parseInstant(value: String?): Instant? =
         value?.takeIf { it.isNotBlank() }?.let { runCatching { Instant.parse(it) }.getOrNull() }
+
+    private fun runMetaFiles(): List<Path> {
+        val roots = listOf(runsRoot, legacySelfHostRunsRoot)
+        return roots
+            .filter { Files.isDirectory(it) }
+            .flatMap { root ->
+                Files.list(root).use { stream ->
+                    stream
+                        .filter { Files.isRegularFile(it) }
+                        .filter { it.fileName.toString().endsWith(".meta") }
+                        .toList()
+                }
+            }
+            .distinctBy { it.normalize().toString() }
+    }
 
     private fun encode(text: String): String =
         java.util.Base64.getEncoder().encodeToString(text.toByteArray(StandardCharsets.UTF_8))

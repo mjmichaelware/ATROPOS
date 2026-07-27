@@ -21,8 +21,15 @@ class GoalContinuationService(
     }
 
     fun continueRun(goalRunId: String, request: GoalContinuationRequest): GoalContinuationResult {
+        if (request.goalRunId != goalRunId) {
+            return GoalContinuationResult(
+                false,
+                "goal run id mismatch: expected $goalRunId but received ${request.goalRunId}"
+            )
+        }
         val record = store.resolve(goalRunId)
             ?: return GoalContinuationResult(false, "goal run not found: $goalRunId")
+        val now = clock()
         if (record.isTerminal()) {
             return GoalContinuationResult(false, "goal run already terminal: ${record.terminalCondition}", record)
         }
@@ -38,22 +45,42 @@ class GoalContinuationService(
             rememberGoal(terminal, "retry budget exhausted")
             return GoalContinuationResult(false, "retry budget exhausted", terminal, GoalTerminalCondition.RETRY_BUDGET_EXHAUSTED)
         }
+        val expectedContinuationIndex = record.continuationCount + 1
+        if (request.continuationIndex != expectedContinuationIndex) {
+            return GoalContinuationResult(
+                false,
+                "continuation index mismatch: expected $expectedContinuationIndex but received ${request.continuationIndex}",
+                record
+            )
+        }
 
         if (record.shouldCooldown()) {
             val cooldownUntil = (record.lastContinuationAt ?: record.createdAt).plusSeconds(cooldownSeconds)
-            if (cooldownUntil.isAfter(clock())) {
+            if (cooldownUntil.isAfter(now)) {
                 return GoalContinuationResult(false, "cooldown active until $cooldownUntil", record)
             }
         }
 
         if (record.lastProviderResponseId != null && request.lastResponseSummary != null) {
-            if (record.lastProviderResponseId == request.lastResponseSummary.take(64)) {
+            val duplicateWindowUntil = (record.lastContinuationAt ?: record.updatedAt).plusSeconds(duplicateWindowSeconds)
+            if (record.lastProviderResponseId == request.lastResponseSummary.take(64) && duplicateWindowUntil.isAfter(now)) {
                 return GoalContinuationResult(false, "duplicate continuation prevented (same response id)", record)
             }
         }
-
-        val now = clock()
-        val nextIndex = record.continuationCount + 1
+        val nextIndex = expectedContinuationIndex
+        val resumedFromRecovery = record.status == GoalRunStatus.RECOVERY_REQUIRED
+        val resumedEvidence = if (resumedFromRecovery) {
+            listOf(
+                buildString {
+                    append("recovery_resumed_at=").append(now)
+                    record.activePhase?.takeIf { it.isNotBlank() }?.let { append(" phase=").append(it) }
+                    record.currentNodeId?.takeIf { it.isNotBlank() }?.let { append(" node=").append(it) }
+                    record.lastVerifiedCheckpoint?.takeIf { it.isNotBlank() }?.let { append(" checkpoint=").append(it) }
+                }
+            )
+        } else {
+            emptyList()
+        }
         val updated = store.update(
             record.copy(
                 status = GoalRunStatus.CONTINUING,
@@ -62,10 +89,21 @@ class GoalContinuationService(
                 lastProviderResponseId = request.lastResponseSummary?.take(64),
                 lastContinuationAt = now,
                 provider = request.provider ?: record.provider,
-                updatedAt = now
+                updatedAt = now,
+                finishedAt = null,
+                failureReason = if (resumedFromRecovery) null else record.failureReason,
+                evidence = if (resumedEvidence.isEmpty()) {
+                    record.evidence
+                } else {
+                    (record.evidence + resumedEvidence)
+                        .map { it.trim() }
+                        .filter { it.isNotBlank() }
+                        .distinct()
+                        .takeLast(40)
+                }
             )
         )
-        rememberGoal(updated, "continued #$nextIndex")
+        rememberGoal(updated, if (resumedFromRecovery) "recovery resumed #$nextIndex" else "continued #$nextIndex")
         return GoalContinuationResult(true, "continuation #$nextIndex", updated)
     }
 
@@ -92,6 +130,34 @@ class GoalContinuationService(
         return GoalContinuationResult(true, "goal run completed: $condition", updated, condition)
     }
 
+    fun markRecoveryRequired(goalRunId: String, reason: String, recoveryEvidence: List<String> = emptyList()): GoalContinuationResult {
+        val record = store.resolve(goalRunId)
+            ?: return GoalContinuationResult(false, "goal run not found: $goalRunId")
+        val now = clock()
+        val evidenceEntry = buildString {
+            append("recovery_required_at=").append(now)
+            record.activePhase?.takeIf { it.isNotBlank() }?.let { append(" phase=").append(it) }
+            record.currentNodeId?.takeIf { it.isNotBlank() }?.let { append(" node=").append(it) }
+            record.lastVerifiedCheckpoint?.takeIf { it.isNotBlank() }?.let { append(" checkpoint=").append(it) }
+            append(" reason=").append(reason)
+        }
+        val updated = store.update(
+            record.copy(
+                status = GoalRunStatus.RECOVERY_REQUIRED,
+                terminalCondition = null,
+                finishedAt = null,
+                failureReason = reason,
+                evidence = (record.evidence + evidenceEntry + recoveryEvidence)
+                    .map { it.trim() }
+                    .filter { it.isNotBlank() }
+                    .distinct()
+                    .takeLast(40)
+            )
+        )
+        rememberGoal(updated, "recovery required")
+        return GoalContinuationResult(true, "goal run marked recovery required", updated)
+    }
+
     fun listRuns(limit: Int = 20): GoalRunListResult {
         val runs = store.listRuns(limit)
         return GoalRunListResult(runs, "${runs.size} goal run(s)")
@@ -111,6 +177,10 @@ class GoalContinuationService(
                 record.terminalCondition?.let { appendLine("terminal=$it") }
                 appendLine("continuations=${record.continuationCount}")
                 appendLine("provider=${record.provider ?: "none"}")
+                appendLine("phase=${record.activePhase ?: "none"}")
+                appendLine("node=${record.currentNodeId ?: "none"}")
+                appendLine("checkpoint=${record.lastVerifiedCheckpoint ?: "none"}")
+                appendLine("evidence=${record.evidence.size}")
                 appendLine("failure=${record.failureReason ?: "none"}")
             }.trimEnd(),
             tags = listOf("agent", "goal", record.status.name.lowercase()),

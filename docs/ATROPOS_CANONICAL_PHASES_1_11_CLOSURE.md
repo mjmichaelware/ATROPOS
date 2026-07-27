@@ -278,6 +278,7 @@ live evidence. Historical notes remain for audit continuity.
     `c4ea91b2dc49b56a0613374ca9b81bed89d7c4386c1beb2b9cfd795c8a70f9e7`
   - `src/main/kotlin/atropos/core/security/SecretSource.kt`
     `1ca9a8ba9dae9534790663a378f07063250d1575a595ff61675ee84c08a70b06`
+  - `src/main/kotlin/atropos/core/security/TokenIsolationVault.kt`
   - `src/main/kotlin/atropos/core/security/KeyDoctorService.kt`
     `612890a7189204915229526a5301d5e779e01256143616ccb89edf6b99736fd6`
   - `src/main/kotlin/atropos/cli/input/PromptState.kt`
@@ -363,11 +364,18 @@ live evidence. Historical notes remain for audit continuity.
     - provider-bound agent ask/patch prompts are redacted before provider
       calls and before durable route persistence
     - secret-bearing diffs are refused before patch persistence
+    - local `.atropos/secrets/*.secret` reads now flow through the canonical
+      `TokenIsolationVault` owner instead of a constant-success stub
+    - vault writes are atomic, normalized under `.atropos/secrets`, and apply
+      owner-only best-effort filesystem permissions before becoming readable
     - added pending milestone tests:
       - `src/test/kotlin/atropos/cli/input/PromptStateTest.kt`
         `86f54199144ab5e1d7a079a9f398a29098ffadb2e1790dedabe35a4a72f40a63`
       - `src/test/kotlin/atropos/core/agent/AgentSecurityRedactionSurfaceTest.kt`
         `1e5ded99a0c24b972c8fe5cae1663b3657708bfb9b0e4b5116b4a185c699cb25`
+      - `src/test/kotlin/atropos/core/security/TokenIsolationVaultTest.kt`
+      - `src/test/kotlin/atropos/core/security/KeyDoctorServiceTest.kt`
+        now covers vault-backed local secret setup/root handling
     - Pending proof remains unchanged: do not run a standalone Phase 4 gate;
       carry these tests into the consolidated Milestone A Phase 1-11
       acceptance boundary after Phases 6-11 implementation is complete.
@@ -420,15 +428,21 @@ live evidence. Historical notes remain for audit continuity.
 - Implementation evidence:
   - `src/main/kotlin/atropos/dloi/DloiService.kt`
     `68a399c6635d9bde1b42414deddcaa48f70a1c3babb2d1406bee7d20fe5111d4`
+  - `src/main/kotlin/atropos/dloi/DloiTaskResolver.kt`
   - `src/test/kotlin/atropos/dloi/DloiServiceTest.kt`
     `be4284c9c3d53297e38b2646e3c93ddee2a1ca931ee2c47cc4d4f6566f284b85`
+  - `src/test/kotlin/atropos/dloi/DloiTaskResolverTest.kt`
 - Implemented assertions awaiting milestone verification:
   - source-index-backed document map loading from persisted authority metadata
   - exact source-id and stable section-id resolution in addition to document aliases
   - line-address parsing and bounded extraction
   - paragraph and page selector support from indexed coordinates
   - provenance records exact source id, section id, path, and bounded spans
-  - task-to-source resolution returns the authoritative indexed section
+  - task-to-source resolution returns only a unique authoritative indexed section
+  - explicit section ids and document aliases constrain task resolution without
+    falling through to title-substring guessing
+  - ambiguous task-to-section matches fail closed instead of selecting the first
+    matching heading
   - refusal on unproven section rather than blind ingestion
 - Missing evidence:
   - the new DLOI exact-coordinate assertions have not yet been run under the
@@ -445,8 +459,10 @@ live evidence. Historical notes remain for audit continuity.
 - Implementation evidence:
   - `src/main/kotlin/atropos/ast/AstSymbolGraph.kt`
     `b7f26fafc43ef509b06d5064cb7349f4fb8cb5137cd3a3094515b5ecd78ef481`
+  - `src/main/kotlin/atropos/core/parser/TreeSitterGrammarBridge.kt`
   - `src/test/kotlin/atropos/ast/AstSymbolGraphTest.kt`
     `5320b423fabcbfc16f67f6f1f856adeca19e04ae3fda0406023c3994845a8f66`
+  - `src/test/kotlin/atropos/core/parser/TreeSitterGrammarBridgeTest.kt`
 - Implemented assertions awaiting milestone verification:
   - exact impacted-file symbol lookup
   - package/path invariant is attached to graph nodes with expected path suffixes
@@ -454,6 +470,8 @@ live evidence. Historical notes remain for audit continuity.
   - function-symbol discovery for the impacted file
   - import reconciliation classifies local exact, external, wildcard, ambiguous,
     and unresolved imports without guessing package paths
+  - parser extraction for package/import/declaration offsets now flows through
+    the live `TreeSitterGrammarBridge` seam instead of a constant-string stub
 - Missing evidence:
   - the new AST impact assertions have not yet been run under the required
     single milestone Gradle verification.
@@ -469,16 +487,20 @@ live evidence. Historical notes remain for audit continuity.
 - Implementation evidence:
   - `src/main/kotlin/atropos/core/verification/DeterministicVerifier.kt`
     `1fca4677578f4f8f81067d88d00477dad830fe26c2b5f368e02f5b316c7560e3`
+  - `src/main/kotlin/atropos/core/verifier/ConstraintSolverEvaluator.kt`
   - `src/test/kotlin/atropos/core/verification/DeterministicVerifierTest.kt`
     `5f0d09a06eae4e4c329e57dbdc2a49e7dcf41fbf31d6bf59e94deddabcba504e`
+  - `src/test/kotlin/atropos/core/verifier/ConstraintSolverEvaluatorTest.kt`
 - Implemented assertions awaiting milestone verification:
   - broken package path, duplicate import, shell safety, invalid DLOI address,
     forbidden paths, and malformed patch structure are caught deterministically
   - wildcard, ambiguous, and unresolved imports are rejected from the AST
     reconciliation surface before provider review
-  - every finding carries evidence, remediation, and deterministic
+  - every finding carries expected/observed evidence, remediation, and deterministic
     classification
   - out-of-repository source paths are refused before model review
+  - the verifier now evaluates deterministic invariant predicates through the
+    live `ConstraintSolverEvaluator` seam instead of a constant-true stub
 - Missing evidence:
   - the expanded deterministic-verifier assertions have not yet been run under
     the required single milestone Gradle verification.
@@ -486,22 +508,31 @@ live evidence. Historical notes remain for audit continuity.
     only; no compile or test command was run in order to preserve Milestone A
     cadence.
 
-### Phase 9 - IMPLEMENTED_UNPROVEN
+### Phase 9 - PROVEN
 
 - Canonical gate: Persistent Memory.
 - Source authority: `97cff09c0f362337` `[S0011]` lines 40-42.
-- Classification: `IMPLEMENTED_UNPROVEN`.
+- Classification: `PROVEN`.
 - Implementation evidence:
   - `src/main/kotlin/atropos/core/memory/LocalMemoryStore.kt`
+  - `src/main/kotlin/atropos/core/knowledge/SelfImprovingCompilationLoop.kt`
   - `src/test/kotlin/atropos/core/memory/LocalMemoryStoreTest.kt`
-- Implemented assertions awaiting milestone verification:
-  - restart persistence and redaction
-  - corrupt-line reporting and compaction
-  - route, failure, repair, verification, and tool records queryable after
-    restart
-- Missing evidence:
-  - the expanded memory restart assertions have not yet been run under the
-    required single milestone Gradle verification.
+- Focused gate:
+  - Command:
+    `JAVA_HOME=/data/data/com.termux/files/usr ./gradlew test --tests atropos.core.memory.LocalMemoryStoreTest --no-daemon --max-workers=1`
+  - Result: `BUILD SUCCESSFUL in 2m 20s`, 4 actionable tasks, 3 executed,
+    1 up-to-date.
+  - Result file:
+    - `build/test-results/test/TEST-atropos.core.memory.LocalMemoryStoreTest.xml`
+  - Test assertions proved:
+    - restart persistence and redaction
+    - corrupt-line reporting and compaction
+    - sessions, threads, batches, jobs, queue records, route outcomes,
+      failure signatures, successful repairs, verification outcomes, source
+      decisions, tool results, summaries, recovery records, and reward records
+      remain queryable after restart
+    - verification reward and penalty persistence now flows through the
+      canonical `LocalMemoryStore` surface via `AtomicRewardRecorder`
 
 ### Phase 10 - IMPLEMENTED_UNPROVEN
 
@@ -511,12 +542,23 @@ live evidence. Historical notes remain for audit continuity.
 - Implementation evidence:
   - `src/main/kotlin/atropos/core/policy/ExecutionPolicyEngine.kt`
   - `src/test/kotlin/atropos/core/policy/ExecutionPolicyEngineTest.kt`
+  - `src/main/kotlin/atropos/core/policy/ActionProposal.kt`
+  - `src/main/kotlin/atropos/core/policy/BoundedAgencyGate.kt`
+  - `src/main/kotlin/atropos/core/policy/ToolExecutionResult.kt`
+  - `src/main/kotlin/atropos/core/policy/TypedToolExecutor.kt`
+  - `src/test/kotlin/atropos/core/policy/TypedToolExecutorTest.kt`
 - Implemented assertions awaiting milestone verification:
   - destructive shell and forbidden mutation denial
   - paid-provider lock enforcement
   - all policy action classes produce audited decisions
   - network action requires approval
   - audit output redacts secret-bearing metadata
+  - typed action proposals now convert into bounded execution-policy requests
+    through one canonical contract
+  - bounded agency decisions classify allowed, policy-blocked, and
+    approval-required outcomes before any bound executor runs
+  - typed tool execution remains honest when no executor is bound and does not
+    fabricate successful side effects
 - Missing evidence:
   - the expanded policy assertions have not yet been run under the required
     single milestone Gradle verification.
@@ -535,6 +577,119 @@ live evidence. Historical notes remain for audit continuity.
 - Implemented assertions awaiting milestone verification:
   - bounded unsafe-smoke refusal before provider or compiler work
   - durable job record, final report, next safe action, and context export
+  - source-evidence provenance and impacted-symbol context persist as first-class
+    job fields instead of surviving only inside final report text and memory
+  - queue checkpoint and finalization records now retain the same source and
+    impacted-symbol evidence, so continuation and recovery do not need to
+    reopen job state just to recover authoritative self-build context
+  - crash recovery now marks interrupted goal runs as typed
+    `RECOVERY_REQUIRED` state with exact phase/node/checkpoint evidence on the
+    canonical goal record instead of collapsing them into an untyped terminal
+    failure
+  - self-host resume now routes through the canonical goal-continuation path,
+    clearing recovery-required failure state, incrementing continuation count,
+    and recording `recovery_resumed_at=...` evidence instead of bypassing run
+    continuity during resume
+  - resumable self-host goal selection now prefers `RECOVERY_REQUIRED` runs by
+    default and honors an explicit goal id, rather than resuming the first
+    unfinished self-host run blindly
+  - the default unfinished self-host ordering is now canonicalized, so
+    `status`, `watch`, `stop`, and `resume` all prefer `RECOVERY_REQUIRED`
+    runs consistently instead of each command relying on ad hoc unfinished-run
+    ordering
+  - `watch` and `stop` now resolve their target goals through the same
+    canonical self-host service rules as `resume`, including explicit goal-id
+    handling and terminal-goal refusal for stop
+  - `status` and `/agent self-host verify` now resolve goals through the same
+    canonical self-host-only selector, so explicit non-self-host goal ids are
+    rejected and default inspection cannot drift to generic goal records
+  - self-host history and fallback status resolution now filter the full run
+    set before applying limits, so newer generic goal runs cannot hide older
+    self-host recovery state from status, history, benchmark, or other default
+    self-host inspection paths
+  - the benchmark command now computes from full self-host history rather than
+    an arbitrary 50-run window, so completed/failed/cancelled/recovery totals
+    and continuation averages remain truthful even after longer self-host
+    campaigns
+  - the learned command now reads actual self-host memory evidence
+    (`selfhost_goal` and `selfhost_dag_eval`) instead of an unreachable
+    `selfhost_experience` subject bucket, so persisted self-build experience is
+    visible again through the canonical self-host surface
+  - benchmark verdict classification now comes from a dedicated self-host
+    benchmark summary instead of a loose `completed >= 1` heuristic, so mixed
+    outcomes remain `PARTIAL_EVIDENCE` until failures, cancellations, and
+    recovery debt are cleared
+  - stale self-host command/service state left behind by the observability
+    rewiring has been removed, including the dead worktree dependency and the
+    unused resume-evaluation temporary, so the Phase 11 surface no longer
+    advertises dormant ownership it does not actually use
+  - the benchmark command now labels its verdict as batch evidence rather than
+    crossover status, matching the narrower Phase 11 self-build contract and
+    avoiding premature inside-out completion claims
+  - self-host learned retrieval now uses an exact full-snapshot subject-type
+    memory query instead of filtering after the global 5,000-record cap, so
+    unrelated newer memory cannot hide older self-build evidence
+  - the watch command now falls back to canonical goal status when the journal
+    is empty, so a newly started or lightly observed self-host run does not
+    present as information-free merely because no event file has been written
+  - journal run discovery now keys off actual `events.journal` presence rather
+    than the `goal-*` prefix, so self-host `shg-*` runs are discoverable
+    through shared observability paths instead of being silently hidden
+  - self-host goals now write into the canonical run-store root and the run
+    store also discovers legacy self-host metadata, so `shg-*` runs are
+    resolvable through the same durable controller path instead of splitting
+    self-host truth across incompatible storage locations
+  - successful self-host start and stop commands now append lifecycle journal
+    events, so controller provenance begins at goal creation and remains
+    explicit at operator cancellation instead of appearing only after resume
+  - canonical goal-run ordering now prefers `updatedAt` over `createdAt`, so a
+    resumed or recovered self-host run remains the latest durable controller
+    truth instead of being hidden behind a newer but colder run
+  - self-host start now removes the `--phase` flag and its value from the
+    persisted task text before goal creation, so command metadata does not leak
+    into the canonical task name or lifecycle journal payload
+  - run observer status now records actual startup failures through
+    `RunObserverState.lastError`, so a failed observer bind or startup path
+    remains truthful instead of collapsing into a silent stopped state with no
+    error surface; static evidence recorded in
+    `src/main/kotlin/atropos/core/observability/RunObserver.kt`,
+    `src/test/kotlin/atropos/core/observability/RunObserverTest.kt`, and
+    `git diff --check`
+  - `/agent observe status` now includes the observer `lastError` field and
+    `/agent observe open` now refuses when the observer is not running, so a
+    failed observer start no longer advertises a dashboard URL that cannot be
+    served; static evidence recorded in
+    `src/main/kotlin/atropos/cli/commands/AgentCommand.kt`,
+    `src/test/kotlin/atropos/cli/commands/AgentCommandObservabilityTest.kt`,
+    and `git diff --check`
+  - `/agent self-host status` now accepts an explicit self-host goal id and
+    routes it through the canonical self-host-only selector, so terminal
+    self-host runs remain directly inspectable and explicit non-self-host goal
+    ids are rejected on the command surface; static evidence recorded in
+    `src/main/kotlin/atropos/cli/commands/SelfHostCommand.kt`,
+    `src/test/kotlin/atropos/cli/commands/SelfHostCommandTest.kt`, and
+    `git diff --check`
+  - self-host usage/help text now advertises the actual explicit goal-id
+    selectors for `status`, `watch`, `resume`, `stop`, and `verify`, so the
+    command surface no longer hides implemented self-host targeting
+    capabilities; static evidence recorded in
+    `src/main/kotlin/atropos/cli/commands/SelfHostCommand.kt`,
+    `src/test/kotlin/atropos/cli/commands/SelfHostCommandTest.kt`, and
+    `git diff --check`
+  - self-host command dispatch now accepts the real `/agent self-host` token
+    path in addition to direct `self-host` tokens, so the canonical
+    `AgentCommand` route no longer falls through to invalid-usage output at the
+    handler boundary; static evidence recorded in
+    `src/main/kotlin/atropos/cli/commands/SelfHostCommand.kt`,
+    `src/test/kotlin/atropos/cli/commands/SelfHostCommandTest.kt`, and
+    `git diff --check`
+  - default `/agent self-host status` now routes through the canonical
+    self-host-only selector, so a newer generic goal cannot steal default
+    status inspection and the latest terminal self-host run remains directly
+    inspectable when no unfinished self-host runs remain; static evidence
+    recorded in `src/main/kotlin/atropos/cli/commands/SelfHostCommand.kt`,
+    `src/test/kotlin/atropos/cli/commands/SelfHostCommandTest.kt`, and
+    `git diff --check`
   - restart-safe latest-job resolution
   - final outcome persisted to memory with source and status evidence
 - Missing evidence:
@@ -587,7 +742,7 @@ live evidence. Historical notes remain for audit continuity.
   - Phase 6: `IMPLEMENTED_UNPROVEN`.
   - Phase 7: `IMPLEMENTED_UNPROVEN`.
   - Phase 8: `IMPLEMENTED_UNPROVEN`.
-  - Phase 9: `IMPLEMENTED_UNPROVEN`.
+  - Phase 9: `PROVEN`.
   - Phase 10: `IMPLEMENTED_UNPROVEN`.
   - Phase 11: `IMPLEMENTED_UNPROVEN`.
 
@@ -777,37 +932,45 @@ Observed test evidence:
 - Canonical goal: DLOI source router
 - Required components: coordinate model, document identity, address parsing, exact extraction, provenance, failure on unprovable address
 - Current evidence:
-  - no canonical `src/main/kotlin/atropos/dloi` package present
-  - `src/main/kotlin/atropos/data` exists but is not a DLOI authority package
+  - `src/main/kotlin/atropos/dloi/DloiService.kt`
+  - `src/main/kotlin/atropos/dloi/DloiTaskResolver.kt`
+  - `src/main/kotlin/atropos/dloi/HigZeroGuard.kt`
+  - `src/test/kotlin/atropos/dloi/DloiServiceTest.kt`
+  - `src/test/kotlin/atropos/dloi/DloiTaskResolverTest.kt`
+  - `src/test/kotlin/atropos/dloi/HigZeroGuardTest.kt`
 - Missing gaps:
-  - No canonical Phase 6 source document in repository/exported context
-  - No DLOI package root present
-  - No focused tests under `src/test/kotlin`
+  - focused DLOI assertions remain unproven until the consolidated Milestone A
+    acceptance boundary
 - Exact files implementing the gap:
-  - `src/main/kotlin/atropos/dloi/` (missing)
-  - `src/test/kotlin/`
+  - `src/main/kotlin/atropos/dloi/`
+  - `src/test/kotlin/atropos/dloi/`
 - Focused verification:
-  - package surface audit
+  - source-query authority audit
+  - static code/test surface audit
 - Final status: WORKING
-- Blocking reason, if any: none yet; implementation in progress
+- Blocking reason, if any: none external; proof deferred to Milestone A
 
 ### Phase 7
 
 - Canonical goal: AST symbol graph
 - Required components: deterministic source scanner, symbol nodes, references, impacted-symbol resolution, graph persistence/rebuild
 - Current evidence:
-  - no canonical `src/main/kotlin/atropos/ast` package present
+  - `src/main/kotlin/atropos/ast/AstSymbolGraph.kt`
+  - `src/main/kotlin/atropos/core/parser/TreeSitterGrammarBridge.kt`
+  - `src/test/kotlin/atropos/ast/AstSymbolGraphTest.kt`
+  - `src/test/kotlin/atropos/core/parser/TreeSitterGrammarBridgeTest.kt`
 - Missing gaps:
-  - No canonical Phase 7 source document in repository/exported context
-  - No AST package root present
-  - No focused tests under `src/test/kotlin`
+  - focused AST/parser assertions remain unproven until the consolidated
+    Milestone A acceptance boundary
 - Exact files implementing the gap:
-  - `src/main/kotlin/atropos/ast/` (missing)
-  - `src/test/kotlin/`
+  - `src/main/kotlin/atropos/ast/`
+  - `src/main/kotlin/atropos/core/parser/`
+  - `src/test/kotlin/atropos/ast/`
+  - `src/test/kotlin/atropos/core/parser/`
 - Focused verification:
-  - package surface audit
+  - static code/test surface audit
 - Final status: WORKING
-- Blocking reason, if any: none yet; implementation in progress
+- Blocking reason, if any: none external; proof deferred to Milestone A
 
 ### Phase 8
 
@@ -815,37 +978,42 @@ Observed test evidence:
 - Required components: structural invariant checks with deterministic/undecidable classification and pre-provider refusal
 - Current evidence:
   - `src/main/kotlin/atropos/core/verification`
+  - `src/main/kotlin/atropos/core/verifier/ConstraintSolverEvaluator.kt`
+  - `src/test/kotlin/atropos/core/verification/DeterministicVerifierTest.kt`
+  - `src/test/kotlin/atropos/core/verifier/ConstraintSolverEvaluatorTest.kt`
   - `src/main/kotlin/atropos/cli/input/CommandRegistry.kt` includes `/verify narrow` and `/verify wide`
-  - `docs/pass9-verifier-smoke.md`
 - Missing gaps:
-  - No canonical Phase 8 source document in repository/exported context
-  - No focused verifier tests under `src/test/kotlin`
-  - Existing smoke artifact is not canonical authority
+  - focused verifier assertions remain unproven until the consolidated
+    Milestone A acceptance boundary
 - Exact files implementing the gap:
   - `src/main/kotlin/atropos/core/verification/`
+  - `src/main/kotlin/atropos/core/verifier/`
   - `src/main/kotlin/atropos/cli/commands/`
-  - `src/test/kotlin/`
+  - `src/test/kotlin/atropos/core/verification/`
+  - `src/test/kotlin/atropos/core/verifier/`
 - Focused verification:
-  - command/test surface audit
+  - static code/test surface audit
 - Final status: WORKING
-- Blocking reason, if any: none yet; implementation in progress
+- Blocking reason, if any: none external; proof deferred to Milestone A
 
 ### Phase 9
 
 - Canonical goal: Persistent memory
-- Required components: durable sessions/threads/jobs/routes/failures/repairs/tool results/compaction/schema handling/corruption handling
+- Required components: durable sessions/threads/batches/jobs/routes/failures/repairs/tool results/reward records/compaction/schema handling/corruption handling
 - Current evidence:
   - `src/main/kotlin/atropos/core/memory/LocalMemoryStore.kt`
+  - `src/main/kotlin/atropos/core/knowledge/SelfImprovingCompilationLoop.kt`
   - `/memory` command in `src/main/kotlin/atropos/cli/input/CommandRegistry.kt`
-- Missing gaps:
-  - No canonical Phase 9 source document in repository/exported context
-  - No focused restart persistence tests under `src/test/kotlin`
-  - No authoritative evidence that all required record classes are queryable after restart
-- Exact files implementing the gap:
+- Exact files implementing the proof:
   - `src/main/kotlin/atropos/core/memory/LocalMemoryStore.kt`
-  - `src/main/kotlin/atropos/cli/CommandRouter.kt`
-  - `src/test/kotlin/`
+  - `src/main/kotlin/atropos/core/knowledge/SelfImprovingCompilationLoop.kt`
+  - `src/test/kotlin/atropos/core/memory/LocalMemoryStoreTest.kt`
 - Focused verification:
+  - `JAVA_HOME=/data/data/com.termux/files/usr ./gradlew test --tests atropos.core.memory.LocalMemoryStoreTest --no-daemon --max-workers=1`
+  - `build/test-results/test/TEST-atropos.core.memory.LocalMemoryStoreTest.xml`
+  - expanded restart smoke covers sessions, threads, batches, jobs, queue
+    records, routes, failures, repairs, verification, source decisions, tool
+    results, summaries, recovery, and reward records
   - `rg -n '/memory|LocalMemoryStore' src/main/kotlin`
 - Final status: WORKING
 - Blocking reason, if any: none yet; implementation in progress
@@ -855,21 +1023,23 @@ Observed test evidence:
 - Canonical goal: Execution policy engine
 - Required components: policy model, allow/deny/approval rules, destructive classifications, action audit, provider/tool/network policy
 - Current evidence:
-  - `docs/ATROPOS_PASS10_JOB_UI_SPEC.md` exists but is explicitly UI-only
-  - `src/main/kotlin/atropos/cli/input/CommandRegistry.kt`
+  - `src/main/kotlin/atropos/core/policy/ExecutionPolicyEngine.kt`
+  - `src/main/kotlin/atropos/core/policy/ActionProposal.kt`
+  - `src/main/kotlin/atropos/core/policy/BoundedAgencyGate.kt`
+  - `src/main/kotlin/atropos/core/policy/ToolExecutionResult.kt`
+  - `src/main/kotlin/atropos/core/policy/TypedToolExecutor.kt`
+  - `src/test/kotlin/atropos/core/policy/ExecutionPolicyEngineTest.kt`
+  - `src/test/kotlin/atropos/core/policy/TypedToolExecutorTest.kt`
 - Missing gaps:
-  - No canonical non-UI Phase 10 source document in repository/exported context
-  - Existing Pass 10 document explicitly does not implement backend behavior
-  - No focused tests under `src/test/kotlin`
+  - focused policy assertions remain unproven until the consolidated
+    Milestone A acceptance boundary
 - Exact files implementing the gap:
-  - `src/main/kotlin/atropos/core/policy/` (missing)
-  - `src/main/kotlin/atropos/cli/commands/`
-  - `src/test/kotlin/`
+  - `src/main/kotlin/atropos/core/policy/`
+  - `src/test/kotlin/atropos/core/policy/`
 - Focused verification:
-  - `sed -n '1,220p' docs/ATROPOS_PASS10_JOB_UI_SPEC.md`
-  - package surface audit
+  - static code/test surface audit
 - Final status: WORKING
-- Blocking reason, if any: none yet; implementation in progress
+- Blocking reason, if any: none external; proof deferred to Milestone A
 
 ### Phase 11
 
@@ -879,6 +1049,16 @@ Observed test evidence:
   - `docs/ATROPOS_PASS11_SELF_BUILD_LOOP.md`
   - `src/main/kotlin/atropos/core/agent/`
   - queue and daemon command surface present
+  - `src/main/kotlin/atropos/cli/commands/SelfHostCommand.kt` now reloads the
+    goal record after `selectNextDagNode()` fails, so `/agent self-host resume`
+    observes terminal completion or failure emitted during DAG selection instead
+    of reporting against a stale pre-selection snapshot
+  - terminal `/agent self-host resume` exits now append lifecycle journal
+    evidence before returning, so verified-complete and terminal-failure
+    selection outcomes remain durable in the shared controller provenance stream
+  - `src/test/kotlin/atropos/cli/commands/SelfHostCommandTest.kt` includes a
+    regression for the terminal-DAG resume path, with compile proof deferred to
+    Milestone A
 - Missing gaps:
   - Existing Pass 11 document is concise and not a full canonical Phases 1-11 authority set
   - No focused `src/test/kotlin` suite for full bounded self-build acceptance
@@ -890,6 +1070,7 @@ Observed test evidence:
 - Focused verification:
   - `sed -n '1,260p' docs/ATROPOS_PASS11_SELF_BUILD_LOOP.md`
   - command/test surface audit
+  - `git diff --check`
 - Final status: WORKING
 - Blocking reason, if any: none yet; implementation in progress
 

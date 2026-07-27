@@ -22,7 +22,9 @@ class AgentSecurityRedactionSurfaceTest {
                 failureReason = "secret=$secret",
                 smokeCommand = "cat $path",
                 smokeStdout = "token=$secret",
-                finalReport = "task uses $path and api_key=$secret"
+                finalReport = "task uses $path and api_key=$secret",
+                sourceEvidence = "doc secret=$secret path=$path",
+                impactedSymbols = listOf("src/secret.kt:token=$secret", "src/secret.kt:path=$path")
             )
         )
         val reopenedJob = jobStore.resolve("latest") ?: error("missing job")
@@ -33,6 +35,9 @@ class AgentSecurityRedactionSurfaceTest {
         assertTrue(reopenedJob.task.contains("<redacted"))
         assertFalse(jobSummary.contains(secret))
         assertFalse(jobSummary.contains("client_secret-prod.json"))
+        assertFalse(reopenedJob.sourceEvidence.orEmpty().contains(secret))
+        assertFalse(reopenedJob.impactedSymbols.joinToString("\n").contains(secret))
+        assertFalse(reopenedJob.impactedSymbols.joinToString("\n").contains("client_secret-prod.json"))
 
         val queueStore = AgentQueueStore(repoRoot)
         val queue = queueStore.createEntry("queue secret=$secret path=$path", "cat $path", failureReason = "token=$secret")
@@ -50,7 +55,9 @@ class AgentSecurityRedactionSurfaceTest {
                 task = "task secret=$secret path=$path",
                 nextSuggestedCommand = "echo $secret",
                 commitProposal = "commit with $path",
-                finalReport = "report $secret"
+                finalReport = "report $secret",
+                sourceEvidence = "source secret=$secret path=$path",
+                impactedSymbols = listOf("impact $secret", "impact $path")
             ),
             listOf("secrets/$path")
         )

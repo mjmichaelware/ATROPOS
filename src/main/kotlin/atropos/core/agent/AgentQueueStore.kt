@@ -111,7 +111,11 @@ class AgentQueueStore(
                     .filter { it.fileName.toString().startsWith("queue-") && it.fileName.toString().endsWith(".meta") }
                     .toList()
                     .map { parseRecord(it) }
-                    .sortedByDescending { it.id }
+                    .sortedWith(
+                        compareByDescending<AgentQueueRecord> { it.updatedAt }
+                            .thenByDescending { it.createdAt }
+                            .thenByDescending { it.id }
+                    )
                     .take(limit.coerceAtLeast(0))
             }
         } catch (_: Exception) {
@@ -332,6 +336,8 @@ class AgentQueueStore(
         appendLine("repairId=${record.repairId ?: ""}")
         appendLine("contextExportPathB64=${encode(record.contextExportPath.orEmpty())}")
         appendLine("finalJobResultB64=${encode(record.finalJobResult.orEmpty())}")
+        appendLine("sourceEvidenceB64=${encode(record.sourceEvidence.orEmpty())}")
+        appendLine("impactedSymbolsB64=${encode(record.impactedSymbols.joinToString("\n"))}")
         appendLine("failureReasonB64=${encode(record.failureReason.orEmpty())}")
         appendLine("nextEligibleAt=${record.nextEligibleAt ?: ""}")
         appendLine("leaseToken=${record.lease?.token ?: ""}")
@@ -386,6 +392,12 @@ class AgentQueueStore(
                 repairId = fields["repairId"]?.takeIf { it.isNotBlank() },
                 contextExportPath = decode(fields["contextExportPathB64"]).takeIf { it.isNotBlank() },
                 finalJobResult = decode(fields["finalJobResultB64"]).takeIf { it.isNotBlank() },
+                sourceEvidence = decode(fields["sourceEvidenceB64"]).takeIf { it.isNotBlank() },
+                impactedSymbols = decode(fields["impactedSymbolsB64"])
+                    .lineSequence()
+                    .map { it.trim() }
+                    .filter { it.isNotBlank() }
+                    .toList(),
                 failureReason = decode(fields["failureReasonB64"]).takeIf { it.isNotBlank() },
                 nextEligibleAt = parseInstant(fields["nextEligibleAt"]),
                 lease = lease,
@@ -486,6 +498,11 @@ class AgentQueueStore(
             smokeCommand = sanitizeText(record.smokeCommand, 2_000),
             contextExportPath = sanitizeText(record.contextExportPath, 1_024),
             finalJobResult = sanitizeText(record.finalJobResult, 8_000),
+            sourceEvidence = sanitizeText(record.sourceEvidence, 2_000),
+            impactedSymbols = record.impactedSymbols
+                .mapNotNull { sanitizeText(it, 512) }
+                .distinct()
+                .take(20),
             failureReason = sanitizeText(record.failureReason, 4_000),
             cancellationReason = sanitizeText(record.cancellationReason, 4_000),
             corruptReason = sanitizeText(record.corruptReason, 2_000)

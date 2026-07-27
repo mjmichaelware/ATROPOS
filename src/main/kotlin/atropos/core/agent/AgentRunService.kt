@@ -281,6 +281,8 @@ class AgentRunService(
                 smokeCommand = smokeCommand,
                 smokePassed = false,
                 smokeResult = smokeExecution.summary(),
+                sourceEvidence = sourceEvidence,
+                impactedSymbols = emptyList(),
                 finalReport = buildFinalReport(refusedForReport, task, smokeCommand, smokeExecution, emptyList(), sourceEvidence, emptyList()),
                 commitProposal = null,
                 nextSuggestedCommand = buildSafeSmokeCommandSuggestion(task)
@@ -318,6 +320,8 @@ class AgentRunService(
                 smokeStderr = smokeExecution?.stderr?.takeIf { it.isNotBlank() } ?: job.smokeStderr,
                 smokePassed = smokePassed,
                 smokeResult = smokeSummary ?: job.smokeResult,
+                sourceEvidence = sourceEvidence,
+                impactedSymbols = impactedSymbols,
                 finalReport = buildFinalReport(job, task, smokeRequested, smokeExecution, changedFiles, sourceEvidence, impactedSymbols),
                 commitProposal = buildCommitProposal(task, smokeRequested, changedFiles, smokeExecution),
                 nextSuggestedCommand = buildNextSuggestedCommand(task, smokeRequested, changedFiles, job, smokeExecution)

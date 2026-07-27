@@ -6,7 +6,6 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
 import java.time.Instant
-import java.util.concurrent.atomic.AtomicLong
 
 class EventJournalService(
     private val repoRoot: Path = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize(),
@@ -14,7 +13,6 @@ class EventJournalService(
     private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     private val runsRoot = repoRoot.resolve(".atropos/runs").normalize()
-    private val globalSequence = AtomicLong(0)
 
     fun record(
         runId: String,
@@ -34,7 +32,7 @@ class EventJournalService(
         Files.createDirectories(runDir)
         val journalFile = runDir.resolve("events.journal")
 
-        val sequence = globalSequence.incrementAndGet()
+        val sequence = nextSequence(journalFile)
         val now = clock()
         val record = EventJournalRecord(
             sequence = sequence,
@@ -72,7 +70,7 @@ class EventJournalService(
 
         return Files.readAllLines(journalFile, StandardCharsets.UTF_8)
             .mapNotNull { EventJournalRecord.fromJournalLine(it) }
-            .filter { it.sequence >= offset }
+            .filter { it.sequence > offset }
             .takeLast(limit.coerceAtLeast(1))
     }
 
@@ -99,11 +97,24 @@ class EventJournalService(
         return Files.list(runsRoot).use { stream ->
             stream
                 .filter { Files.isDirectory(it) }
+                .filter { Files.isRegularFile(it.resolve("events.journal")) }
                 .map { it.fileName.toString() }
-                .filter { it.startsWith("goal-") }
                 .sorted()
                 .toList()
         }
+    }
+
+    fun latestRunId(): String? {
+        return latestRunIds(1).firstOrNull()
+    }
+
+    fun latestRunIds(limit: Int = 20): List<String> {
+        val runIds = listRunIds()
+        if (runIds.isEmpty()) return emptyList()
+        return runIds.sortedWith(
+            compareBy<String> { summary(it)?.lastEvent ?: Instant.EPOCH }
+                .thenBy { it }
+        ).takeLast(limit.coerceAtLeast(1)).asReversed()
     }
 
     fun transcript(runId: String, limit: Int = 100): String = buildString {
@@ -125,4 +136,15 @@ class EventJournalService(
 
     fun commandEvents(runId: String, limit: Int = 50): List<EventJournalRecord> =
         readEventsByCategory(runId, EventCategory.COMMAND, limit)
+
+    private fun nextSequence(journalFile: Path): Long {
+        if (!Files.isRegularFile(journalFile)) return 1L
+        val lastSequence = Files.readAllLines(journalFile, StandardCharsets.UTF_8)
+            .asReversed()
+            .firstNotNullOfOrNull { line ->
+                EventJournalRecord.fromJournalLine(line)?.sequence
+            }
+            ?: 0L
+        return lastSequence + 1L
+    }
 }

@@ -28,7 +28,8 @@ enum class MemoryKind {
     REPAIR,
     TOOL,
     SUMMARY,
-    RECOVERY
+    RECOVERY,
+    REWARD
 }
 
 data class MemoryRecord(
@@ -121,6 +122,15 @@ class LocalMemoryStore(
     fun rememberJob(subjectId: String, title: String, body: String, tags: List<String> = emptyList()): MemoryRecord =
         rememberDetailed(MemoryKind.JOB, title, body, tags, subjectType = "job", subjectId = subjectId)
 
+    fun rememberSession(subjectId: String, title: String, body: String, tags: List<String> = emptyList()): MemoryRecord =
+        rememberDetailed(MemoryKind.SESSION, title, body, tags, subjectType = "session", subjectId = subjectId)
+
+    fun rememberThread(subjectId: String, title: String, body: String, tags: List<String> = emptyList()): MemoryRecord =
+        rememberDetailed(MemoryKind.THREAD, title, body, tags, subjectType = "thread", subjectId = subjectId)
+
+    fun rememberBatch(subjectId: String, title: String, body: String, tags: List<String> = emptyList()): MemoryRecord =
+        rememberDetailed(MemoryKind.BATCH, title, body, tags, subjectType = "batch", subjectId = subjectId)
+
     fun rememberQueue(subjectId: String, title: String, body: String, tags: List<String> = emptyList()): MemoryRecord =
         rememberDetailed(MemoryKind.QUEUE, title, body, tags, subjectType = "queue", subjectId = subjectId)
 
@@ -142,6 +152,26 @@ class LocalMemoryStore(
     fun rememberToolResult(subjectId: String, title: String, body: String, tags: List<String> = emptyList()): MemoryRecord =
         rememberDetailed(MemoryKind.TOOL, title, body, tags, subjectType = "tool", subjectId = subjectId)
 
+    fun rememberSummary(subjectId: String, title: String, body: String, tags: List<String> = emptyList()): MemoryRecord =
+        rememberDetailed(MemoryKind.SUMMARY, title, body, tags, subjectType = "summary", subjectId = subjectId)
+
+    fun rememberRecovery(subjectId: String, title: String, body: String, tags: List<String> = emptyList()): MemoryRecord =
+        rememberDetailed(MemoryKind.RECOVERY, title, body, tags, subjectType = "recovery", subjectId = subjectId)
+
+    fun rememberReward(
+        subjectId: String,
+        title: String,
+        body: String,
+        tags: List<String> = emptyList()
+    ): MemoryRecord = rememberDetailed(
+        MemoryKind.REWARD,
+        title,
+        body,
+        tags,
+        subjectType = "reward",
+        subjectId = subjectId
+    )
+
     fun all(limit: Int = 200): List<MemoryRecord> {
         val safeLimit = limit.coerceIn(1, 5000)
         return readSnapshot().records.takeLast(safeLimit)
@@ -159,6 +189,18 @@ class LocalMemoryStore(
         return all(5000)
             .asReversed()
             .filter { it.subjectType == normalizedType && it.subjectId == normalizedId }
+            .take(limit.coerceIn(1, 200))
+    }
+
+    fun findBySubjectTypes(subjectTypes: Set<String>, limit: Int = 20): List<MemoryRecord> {
+        val normalizedTypes = subjectTypes
+            .map { it.trim().lowercase(Locale.US) }
+            .filter { it.isNotBlank() }
+            .toSet()
+        if (normalizedTypes.isEmpty()) return emptyList()
+        return readSnapshot().records
+            .asReversed()
+            .filter { record -> record.subjectType in normalizedTypes }
             .take(limit.coerceIn(1, 200))
     }
 
