@@ -1,0 +1,156 @@
+from typing import List, Dict, Any, Optional
+from .statement_segmentation import StatementIR
+
+EXECUTABLE_ROLES = {
+    "NORMATIVE_REQUIREMENT",
+    "CONSTRAINT",
+    "PROHIBITION",
+    "DESIGN_DECISION",
+    "ARCHITECTURAL_PRINCIPLE",
+    "REMEDIATION_REQUIREMENT"
+}
+
+class RequirementCandidacy:
+    def __init__(
+        self,
+        statement: StatementIR,
+        role: str,
+        is_candidate: bool,
+        actor: Optional[str] = None,
+        trigger: Optional[str] = None,
+        behavior: Optional[str] = None,
+        ears_pattern: Optional[str] = None,
+        rejection_reason: Optional[str] = None
+    ):
+        self.statement = statement
+        self.role = role
+        self.is_candidate = is_candidate
+        self.actor = actor or "system"  # Inherited default actor if not specified
+        self.trigger = trigger
+        self.behavior = behavior
+        self.ears_pattern = ears_pattern
+        self.rejection_reason = rejection_reason
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "statement": self.statement.to_dict(),
+            "role": self.role,
+            "is_candidate": self.is_candidate,
+            "actor": self.actor,
+            "trigger": self.trigger,
+            "behavior": self.behavior,
+            "ears_pattern": self.ears_pattern,
+            "rejection_reason": self.rejection_reason
+        }
+
+def evaluate_candidacy(
+    stmt: StatementIR,
+    role: str,
+    is_inherited: bool = False
+) -> RequirementCandidacy:
+    """
+    Check if the discourse role is executable.
+    Parse simple EARS structure (Ubiquitous, Event-driven, etc.).
+    EARS templates:
+    - Ubiquitous: The <system> shall <do something>
+    - Event-driven: When <trigger>, the <system> shall <do something>
+    - State-driven: While <state>, the <system> shall <do something>
+    """
+    if role not in EXECUTABLE_ROLES:
+        return RequirementCandidacy(
+            stmt, role, is_candidate=False,
+            rejection_reason=f"Discourse role '{role}' is not executable."
+        )
+
+    text = stmt.canonical_text
+
+    # Very simple deterministic parser for EARS-like elements
+    trigger = None
+    actor = None
+    behavior = text
+    ears_pattern = "Ubiquitous"
+
+    # Event-driven
+    if text.lower().startswith("when ") or " when " in text.lower():
+        ears_pattern = "Event-driven"
+        parts = re_split_when(text)
+        if parts:
+            trigger, behavior = parts
+
+    # State-driven
+    elif text.lower().startswith("while ") or " while " in text.lower():
+        ears_pattern = "State-driven"
+        parts = re_split_while(text)
+        if parts:
+            trigger, behavior = parts
+
+    # Extract candidate actor (supporting multi-word system/component nouns)
+    actor = None
+    actor_matches = []
+
+    # Pattern 1: 'the <actor> shall|must|should|will'
+    actor_match = re.search(r"\b(?:the|a|an)\s+([a-zA-Z0-9_\-\s]{1,30}?)\s+(?:shall|must|should|will)\b", text, re.IGNORECASE)
+    if actor_match:
+        actor_matches.append(actor_match.group(1).strip())
+
+    # Pattern 2: bare system actor keyword directly before modal verb ('System must', 'API shall')
+    bare_match = re.search(r"\b([a-zA-Z0-9_\-]{2,30}?)\s+(?:shall|must|should|will|may|can)\b", text, re.IGNORECASE)
+    if bare_match:
+        actor_matches.append(bare_match.group(1).strip())
+
+    SYSTEM_ACTORS = {
+        "system", "service", "module", "component", "worker", "api", "screen", "ui", "ux",
+        "database", "application", "app", "server", "client", "process", "driver", "handler",
+        "builder", "validator", "compiler", "executor", "verifier", "registry", "provider",
+        "tool", "auth", "manager", "kernel", "daemon", "agent", "parser", "schema", "config",
+        "configuration", "migration", "user", "artifact", "resource", "policy", "file",
+        "encryption", "framework", "middleware", "pipeline", "template", "encoder",
+        "decoder", "adapter", "connector", "gateway", "proxy", "cache",
+    }
+
+    for candidate_actor in actor_matches:
+        if any(keyword in candidate_actor.lower() for keyword in SYSTEM_ACTORS):
+            actor = candidate_actor
+            break
+
+    # Fallback: detect any system actor keyword in the statement text
+    if not actor:
+        text_lower = text.lower()
+        for keyword in SYSTEM_ACTORS:
+            if re.search(r"\b" + re.escape(keyword) + r"\b", text_lower):
+                actor = keyword
+                break
+
+    # Standalone requirements without system context get rejected
+    if not is_inherited and not actor:
+        return RequirementCandidacy(
+            stmt, role, is_candidate=False,
+            rejection_reason="Standalone statement lacks a valid system/architectural actor context."
+        )
+
+    if not actor:
+        actor = "system"
+
+    return RequirementCandidacy(
+        statement=stmt,
+        role=role,
+        is_candidate=True,
+        actor=actor,
+        trigger=trigger,
+        behavior=behavior,
+        ears_pattern=ears_pattern
+    )
+
+import re
+
+def re_split_when(text: str) -> Optional[tuple[str, str]]:
+    match = re.search(r"^(?:when)\s+(.+?),\s*(?:the|a)\s+(.+)$", text, re.IGNORECASE)
+    if match:
+        return match.group(1), match.group(2)
+    return None
+
+def re_split_while(text: str) -> Optional[tuple[str, str]]:
+    match = re.search(r"^(?:while)\s+(.+?),\s*(?:the|a)\s+(.+)$", text, re.IGNORECASE)
+    if match:
+        return match.group(1), match.group(2)
+    return None
