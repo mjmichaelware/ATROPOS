@@ -1,5 +1,8 @@
 package atropos.cli.ui
 
+import atropos.cli.config.ConfigurationManager
+import atropos.cli.ui.design.Breakpoint
+import atropos.cli.ui.design.Health
 import atropos.core.provider.adapter.AdapterKernelFixtures
 import atropos.core.provider.adapter.AdapterRouteFacade
 import atropos.core.provider.adapter.AdapterStatus
@@ -12,13 +15,15 @@ import atropos.core.provider.adapter.NonOpenAiKernelFixtures
 import atropos.core.provider.adapter.OpenAiCompatibleProviderCatalog
 
 class StatusAdapterRenderer(
-    private val facade: AdapterRouteFacade = AdapterRouteFacade()
+    private val facade: AdapterRouteFacade = AdapterRouteFacade(),
+    private val theme: TerminalTheme = TerminalTheme(ConfigurationManager())
 ) {
-    fun render(): String {
+    private val surface get() = theme.surface
+
+    fun render(): String = render(DEFAULT_WIDTH)
+
+    fun render(width: Int): String {
         val statuses = facade.adapterStatus()
-        val implemented = statuses.count { it.implemented }
-        val configured = statuses.count { it.configured }
-        val dryRunOnly = statuses.count { it.dryRunOnly }
         val openAiIds = OpenAiCompatibleProviderCatalog.all().map { it.providerId }.toSet()
         val nonOpenAiIds = NonOpenAiFreeProviderCatalog.all().map { it.providerId }.toSet()
         val dataInfraIds = DataInfraResearchProviderCatalog.all().map { it.providerId }.toSet()
@@ -29,26 +34,99 @@ class StatusAdapterRenderer(
                 DataInfraKernelFixtures.runDataInfraResearchFamily().filterNot { it.passed } +
                 AssetProviderFixtures.runAssetFamily().filterNot { it.passed }
 
-        return buildString {
-            appendLine("adapters:")
-            appendLine("  total: ${statuses.size}")
-            appendLine("  implemented: $implemented")
-            appendLine("  configured: $configured")
-            appendLine("  dry_run_only: $dryRunOnly")
-            appendLine("  openai_compatible: ${ready(statuses, openAiIds)}/${openAiIds.size}")
-            appendLine("  non_openai_free: ${ready(statuses, nonOpenAiIds)}/${nonOpenAiIds.size}")
-            appendLine("  data_infra_research: ${ready(statuses, dataInfraIds)}/${dataInfraIds.size}")
-            appendLine("  asset_providers: ${ready(statuses, assetIds)}/${assetIds.size}")
-            appendLine("  fixture_failures: ${fixtureFailures.size}")
-            appendLine("  kernel: fixture-backed transports, live tests opt-in")
-            appendLine("columns: provider implemented configured dry_run_only models health detail")
-            statuses.forEach { appendLine(line(it)) }
+        val lines = buildList {
+            add(surface.sectionHeading("ADAPTERS", width))
+            add(surface.row("total", statuses.size.toString(), width))
+            add(surface.statusRow("implemented", "${statuses.count { it.implemented }}", Health.VERIFIED, width))
+            add(surface.statusRow("configured", "${statuses.count { it.configured }}", Health.VERIFIED, width))
+            add(surface.statusRow("dry run", "${statuses.count { it.dryRunOnly }}", Health.PENDING, width))
+            add(family("openai", statuses, openAiIds, width))
+            add(family("non-openai", statuses, nonOpenAiIds, width))
+            add(family("data infra", statuses, dataInfraIds, width))
+            add(family("assets", statuses, assetIds, width))
+            add(
+                surface.statusRow(
+                    "fixtures",
+                    if (fixtureFailures.isEmpty()) "all passing" else "${fixtureFailures.size} failing",
+                    if (fixtureFailures.isEmpty()) Health.VERIFIED else Health.ERROR,
+                    width
+                )
+            )
+            add(surface.hint("fixture-backed transports · live tests opt-in", width))
+            add("")
+
+            if (statuses.isEmpty()) {
+                addAll(surface.emptyState("no adapters registered", "/providers descriptors", width))
+            } else {
+                addAll(detail(statuses, width))
+            }
         }
+
+        return lines.joinToString("\n").trimEnd()
     }
 
-    private fun ready(statuses: List<AdapterStatus>, ids: Set<String>): Int =
-        statuses.count { it.providerId in ids && it.implemented }
+    /** Stacks at phone width, tabulates when there is room. */
+    private fun detail(statuses: List<AdapterStatus>, width: Int): List<String> =
+        if (Breakpoint.of(width) == Breakpoint.COMPACT) {
+            statuses.flatMap { status ->
+                listOf(
+                    TerminalText.ellipsize(
+                        surface.badge(healthLabel(status), health(status)) + " " + status.providerId,
+                        width
+                    ),
+                    surface.hint("  ${status.modelCount} models · ${status.detail}", width)
+                )
+            }
+        } else {
+            surface.table(
+                headers = listOf("PROVIDER", "STATE", "MODELS", "DETAIL"),
+                rows = statuses.map { status ->
+                    listOf(
+                        status.providerId,
+                        surface.badge(healthLabel(status), health(status)),
+                        status.modelCount.toString(),
+                        status.detail
+                    )
+                },
+                widths = listOf(20, 14, 8, (width - 44).coerceAtLeast(10)),
+                totalWidth = width
+            )
+        }
 
-    private fun line(status: AdapterStatus): String =
-        "  ${status.providerId.padEnd(18)} implemented=${status.implemented} configured=${status.configured} dry_run_only=${status.dryRunOnly} models=${status.modelCount} health=${status.health} detail=${status.detail}"
+    private fun family(
+        label: String,
+        statuses: List<AdapterStatus>,
+        ids: Set<String>,
+        width: Int
+    ): String {
+        val ready = statuses.count { it.providerId in ids && it.implemented }
+        return surface.statusRow(
+            label,
+            "$ready/${ids.size}",
+            when {
+                ids.isEmpty() -> Health.UNKNOWN
+                ready == ids.size -> Health.VERIFIED
+                ready == 0 -> Health.ERROR
+                else -> Health.PENDING
+            },
+            width
+        )
+    }
+
+    private fun health(status: AdapterStatus): Health = when {
+        !status.implemented -> Health.ERROR
+        status.configured -> Health.VERIFIED
+        else -> Health.PENDING
+    }
+
+    private fun healthLabel(status: AdapterStatus): String = when {
+        !status.implemented -> "not built"
+        status.dryRunOnly -> "dry run"
+        status.configured -> "configured"
+        else -> "no key"
+    }
+
+    private companion object {
+        const val DEFAULT_WIDTH = 80
+    }
 }

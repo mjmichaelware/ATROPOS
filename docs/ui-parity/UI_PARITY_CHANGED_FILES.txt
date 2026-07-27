@@ -1,0 +1,40 @@
+# UI Parity Changed Files
+# Reference: sst/opencode @ 7534d23551f665e65080809975b4ca5c7d63807b
+
+## Batch A — docs + evidence only
+docs/ui-parity/ATROPOS_DESIGN_SYSTEM_SPEC.md
+docs/ui-parity/ATROPOS_ONLY_SURFACES.md
+docs/ui-parity/OPENCODE_COMPLETE_SURFACE_MATRIX.json
+docs/ui-parity/OPENCODE_COMPLETE_SURFACE_MATRIX.md
+docs/ui-parity/OPENCODE_REFERENCE_LOCK.md
+docs/ui-parity/UI_PARITY_BLOCKERS.md
+docs/ui-parity/UI_PARITY_CHANGED_FILES.txt
+docs/ui-parity/baseline/agent-status-120col.txt
+docs/ui-parity/baseline/agent-status-160col.txt
+docs/ui-parity/baseline/agent-status-40col.txt
+docs/ui-parity/baseline/agent-status-80col.txt
+docs/ui-parity/baseline/help-120col.txt
+docs/ui-parity/baseline/help-160col.txt
+docs/ui-parity/baseline/help-40col.txt
+docs/ui-parity/baseline/help-80col.txt
+docs/ui-parity/baseline/index.json
+docs/ui-parity/baseline/landing-120col.txt
+docs/ui-parity/baseline/landing-160col.txt
+docs/ui-parity/baseline/landing-40col.txt
+docs/ui-parity/baseline/landing-80col.txt
+docs/ui-parity/baseline/providers-120col.txt
+docs/ui-parity/baseline/providers-160col.txt
+docs/ui-parity/baseline/providers-40col.txt
+docs/ui-parity/baseline/providers-80col.txt
+docs/ui-parity/baseline/tabs-120col.txt
+docs/ui-parity/baseline/tabs-160col.txt
+docs/ui-parity/baseline/tabs-40col.txt
+docs/ui-parity/baseline/tabs-80col.txt
+docs/ui-parity/ui-parity-checkpoint.json
+
+## Batch B — design system (production code)
+src/main/kotlin/atropos/cli/ui/design/DesignTokens.kt
+src/main/kotlin/atropos/cli/ui/design/ThemePalette.kt
+src/main/kotlin/atropos/cli/ui/design/Surface.kt
+src/main/kotlin/atropos/cli/ui/TerminalTheme.kt
+src/main/kotlin/atropos/cli/ui/StatusAdapterRenderer.kt

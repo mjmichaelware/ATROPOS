@@ -1,0 +1,44 @@
+┃  ask /providers                       
+┃  PROVIDERS                            
+┃  groq: missing                        
+┃  openai: missing                      
+┃  anthropic: missing                   
+┃  xai: missing                         
+┃  github_models: missing               
+┃  cloudflare_ai: missing               
+┃  sambanova: missing                   
+┃  deepseek_direct: missing             
+┃  ollama: offline                      
+┃  gemini: not installed                
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+┃                                       
+┃  ask · groq                           
+╹                                       
+/home/user/ATROPOS                 /help

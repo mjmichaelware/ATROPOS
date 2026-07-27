@@ -1,0 +1,74 @@
+{
+ "reference_commit": "7534d23551f665e65080809975b4ca5c7d63807b",
+ "reference_repo": "https://github.com/sst/opencode",
+ "reference_commit_date": "2026-07-25T08:21:12+00:00",
+ "reference_license": "MIT",
+ "starting_head": "b4c0f5b31b37735eccd9b6418ec95689b1b23a68",
+ "current_head": "b4c0f5b31b37735eccd9b6418ec95689b1b23a68",
+ "active_batch": "B",
+ "batch_a_status": "COMPLETE",
+ "batches_not_started": [
+  "C",
+  "D",
+  "E",
+  "F",
+  "G",
+  "H",
+  "I",
+  "J"
+ ],
+ "total_rows": 167,
+ "rows_by_status": {
+  "DISCOVERED": 161,
+  "BLOCKED_NO_TARGET_SURFACE": 6
+ },
+ "completed_rows": 0,
+ "incomplete_rows": 167,
+ "blockers": [
+  "B-001",
+  "B-002",
+  "B-003",
+  "B-004",
+  "B-005"
+ ],
+ "hard_blockers": [
+  "B-001",
+  "B-002",
+  "B-005"
+ ],
+ "baseline_captures": 20,
+ "baseline_widths": [
+  40,
+  80,
+  120,
+  160
+ ],
+ "baseline_overflow_failures": 0,
+ "files": [
+  "docs/ui-parity/OPENCODE_REFERENCE_LOCK.md",
+  "docs/ui-parity/OPENCODE_COMPLETE_SURFACE_MATRIX.json",
+  "docs/ui-parity/OPENCODE_COMPLETE_SURFACE_MATRIX.md",
+  "docs/ui-parity/UI_PARITY_BLOCKERS.md",
+  "docs/ui-parity/ATROPOS_ONLY_SURFACES.md",
+  "docs/ui-parity/UI_PARITY_CHANGED_FILES.txt",
+  "docs/ui-parity/baseline/"
+ ],
+ "next_exact_action": "Migrate remaining 27 plain-text Status*Renderer classes onto theme.surface primitives using StatusAdapterRenderer as the reference pattern, then move the 12 theme-consuming renderers off ad-hoc layout onto primitives.",
+ "generated": "2026-07-27T01:25:34.640399+00:00",
+ "batch_b_status": "DESIGN SYSTEM LANDED; renderer migration 1/28",
+ "blockers_downgraded": {
+  "B-001": "Does NOT block the design system. Tokens/primitives are client-agnostic; any future client inherits them. Still blocks *client parity* until a multi-client product decision is made.",
+  "B-002": "Does NOT block the design system. Still blocks ATROPOS-only screen CONTENT (what a DAG node shows), not its styling."
+ },
+ "design_system": {
+  "roles": 22,
+  "themes": 2,
+  "color_tiers": 4,
+  "primitives": 12,
+  "width_safety_cases": 752,
+  "width_safety_failures": 0,
+  "renderers_migrated": 1,
+  "renderers_total": 40,
+  "baseline_regression": "none (byte-identical except live file counts)"
+ }
+}

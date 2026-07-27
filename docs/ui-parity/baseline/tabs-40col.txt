@@ -1,0 +1,44 @@
+┃  ask /tabs                            
+┃  OPEN TABS (1)                        
+┃  * 1 Dashboard  [Dashboard]  provider…
+┃  commands: /tab new <name> | /tab <n>…
+┃  ask /tab new Agent                   
+┃  opened tab 2: Agent                  
+┃  ask /tab 2                           
+┃  tab 2: Agent                         
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+┃                                       
+┃  ask · groq                           
+╹                                       
+/home/user/ATROPOS  ▤ tab 2:Agent  /help
