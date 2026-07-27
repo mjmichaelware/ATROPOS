@@ -41,4 +41,4 @@ rect, groq
                                         
 ────────────────────────────────────────
 [ask] >                                 
- groq · ask · tab 1:Dashboard · -- tok
+/home/user/ATROPOS                 /help

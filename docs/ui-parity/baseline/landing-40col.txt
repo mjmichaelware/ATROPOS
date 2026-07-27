@@ -1,34 +1,34 @@
  ATROPOS             groq · ask · /help 
 [ask] › /home                           
-ATROPOS                                 
-deterministic app-factory CLI           
+█▀▀█ ▀▀█▀▀ █▀▀█                         
+█▄▄█   █   █▄▄▀                         
+▀  ▀ ▀▀▀▀▀ ▀▀▀▀                         
 local-first · free-first · quota-aware …
                                         
-╭─ WORKSPACE                            
-│ path        /home/user/ATROPOS        
-│ git         claude/pass10-job-ui-2026…
-│ kotlin      117 files                 
-│ mode        ask                       
-│ provider    groq                      
-╰────────────────────────────           
-╭─ PROVIDERS                            
-│ groq        missing key fast chat / c…
-│ openai      missing key general reaso…
-│ anthropic   missing key coding / deep…
-│ xai         missing key alternate clo…
-│ ollama      configured local privacy …
-│ gemini      not installed not install…
-╰────────────────────────────           
-╭─ ROUTING                              
-│ current     legacy route wired        
-│ macro-a     policy compiled           
-│ fast        groq first                
-│ large       gemini first              
-│ paid        locked                    
-│ preview     /route <prompt>           
-╰────────────────────────────           
-╭─ AGENT                                
-│ ask         available (local fallback)
+┃  WORKSPACE                            
+┃  path        /home/user/ATROPOS       
+┃  git         claude/pass10-job-ui-202…
+┃  kotlin      120 files                
+┃  mode        ask                      
+┃  provider    groq                     
+                                        
+┃  PROVIDERS                            
+┃  groq        missing key fast chat / …
+┃  openai      missing key general reas…
+┃  anthropic   missing key coding / dee…
+┃  xai         missing key alternate cl…
+┃  ollama      configured local privacy…
+┃  gemini      not installed not instal…
+                                        
+┃  ROUTING                              
+┃  current     legacy route wired       
+┃  macro-a     policy compiled          
+┃  fast        groq first               
+┃  large       gemini first             
+┃  paid        locked                   
+┃  preview     /route <prompt>          
+                                        
+┃  AGENT                                
                                         
                                         
                                         
@@ -41,4 +41,4 @@ local-first · free-first · quota-aware …
                                         
 ────────────────────────────────────────
 [ask] >                                 
- groq · ask · tab 1:Dashboard · -- tok
+/home/user/ATROPOS                 /help

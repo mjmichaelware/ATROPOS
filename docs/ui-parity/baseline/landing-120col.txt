@@ -1,34 +1,34 @@
  ATROPOS                                                                                             groq · ask · /help 
 [ask] › /home                                                                                                           
- █████╗ ████████╗██████╗  ██████╗ ██████╗  ██████╗ ███████╗                                                             
-██╔══██╗╚══██╔══╝██╔══██╗██╔═══██╗██╔══██╗██╔═══██╗██╔════╝                                                             
-███████║   ██║   ██████╔╝██║   ██║██████╔╝██║   ██║███████╗                                                             
-██╔══██║   ██║   ██╔══██╗██║   ██║██╔═══╝ ██║   ██║╚════██║                                                             
-██║  ██║   ██║   ██║  ██║╚██████╔╝██║     ╚██████╔╝███████║                                                             
-╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝ ╚═╝      ╚═════╝ ╚══════╝                                                             
+█▀▀█ ▀▀█▀▀ █▀▀█ █▀▀█ █▀▀█ █▀▀█ █▀▀▀                                                                                     
+█▄▄█   █   █▄▄▀ █  █ █▄▄█ █  █ ▀▀▀█                                                                                     
+▀  ▀ ▀▀▀▀▀ ▀▀▀▀ ▀▀▀▀ ▀▀▀▀ ▀▀▀▀ ▀▀▀▀                                                                                     
 local-first · free-first · quota-aware · truthful app-factory workbench                                                 
                                                                                                                         
-╭─ WORKSPACE                            ╭─ PROVIDERS                            ╭─ ROUTING                              
-│ path        /home/user/ATROPOS        │ groq        missing key fast chat / … │ current     legacy route wired        
-│ git         claude/pass10-job-ui-202… │ openai      missing key general reas… │ macro-a     policy compiled           
-│ kotlin      117 files                 │ anthropic   missing key coding / dee… │ fast        groq first                
-│ mode        ask                       │ xai         missing key alternate cl… │ large       gemini first              
-│ provider    groq                      │ ollama      configured local privacy… │ paid        locked                    
-╰────────────────────────────           │ gemini      not installed not instal… │ preview     /route <prompt>           
-                                        ╰────────────────────────────           ╰────────────────────────────           
+┃  WORKSPACE                            ┃  PROVIDERS                            ┃  ROUTING                              
+┃  path        /home/user/ATROPOS       ┃  groq        missing key fast chat /… ┃  current     legacy route wired       
+┃  git         claude/pass10-job-ui-20… ┃  openai      missing key general rea… ┃  macro-a     policy compiled          
+┃  kotlin      120 files                ┃  anthropic   missing key coding / de… ┃  fast        groq first               
+┃  mode        ask                      ┃  xai         missing key alternate c… ┃  large       gemini first             
+┃  provider    groq                     ┃  ollama      configured local privac… ┃  paid        locked                   
+                                        ┃  gemini      not installed not insta… ┃  preview     /route <prompt>          
                                                                                                                         
-╭─ AGENT                                ╭─ PATCH/APPLY                          ╭─ QUOTA CORE                           
-│ ask         available (local fallbac… │ latest      none                      │ mode        free-first                
-│ patch       no provider key           │ check       NOT RUN                   │ ledger      compiled                  
-│ apply       available (local git)     │ apply       not attempted             │ cooldown    tracked                   
-│ order       none configured           │ changed     unknown                   │ fallback    nonblocking               
-│ paid        locked                    │ next        /agent patch <task>       │ status      UI next batch             
-╰────────────────────────────           ╰────────────────────────────           ╰────────────────────────────           
+┃  AGENT                                ┃  PATCH/APPLY                          ┃  QUOTA CORE                           
+┃  ask         available (local fallba… ┃  latest      none                     ┃  mode        free-first               
+┃  patch       no provider key          ┃  check       NOT RUN                  ┃  ledger      compiled                 
+┃  apply       available (local git)    ┃  apply       not attempted            ┃  cooldown    tracked                  
+┃  order       none configured          ┃  changed     unknown                  ┃  fallback    nonblocking              
+┃  paid        locked                   ┃  next        /agent patch <task>      ┃  status      UI next batch            
                                                                                                                         
-╭─ COMMANDS                             ╭─ SOURCE DOCS                          ╭─ VERIFY                               
-│ /agent      ask | patch | apply       │ ATROPOS     3 files                   │ tests       source present            
-│ /providers  inventory                 │ map         missing                   │ compile     checked by gate           
-│ /status     endpoints                 │ .300        provider grid             │ json        raw leaks blocked         
+┃  COMMANDS                             ┃  SOURCE DOCS                          ┃  VERIFY                               
+┃  /agent      ask | patch | apply      ┃  ATROPOS     4 files                  ┃  tests       source present           
+┃  /providers  inventory                ┃  map         missing                  ┃  compile     checked by gate          
+┃  /status     endpoints                ┃  .300        provider grid            ┃  json        raw leaks blocked        
+┃  /verify     toolchain                ┃  .305        phase plan               ┃  secrets     not rendered             
+┃  /tabs       list open tabs           ┃  .315        workflow rules           ┃  rollback    enabled                  
+┃  /exit       close                                                                                                    
+                                                                                                                        
+┃  SESSION                              ���  TABS                                 ┃  LEGEND                             
                                                                                                                         
                                                                                                                         
                                                                                                                         
@@ -41,4 +41,4 @@ local-first · free-first · quota-aware · truthful app-factory workbench
                                                                                                                         
 ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 [ask] >                                                                                                                 
- ATROPOS · groq · ask · tab 1:Dashboard · -- tok · -- · /home/user/ATROPOS · patch:none
+/home/user/ATROPOS                                                               ◇ groq  ▸ ask  ▤ tab 1:Dashboard  /help

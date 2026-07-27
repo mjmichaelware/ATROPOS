@@ -41,4 +41,4 @@ on
 ew <name>|<n>|rename|close|next|prev]   
 ────────────────────────────────────────
 [ask] >                                 
- groq · ask · tab 1:Dashboard · -- tok
+/home/user/ATROPOS                 /help

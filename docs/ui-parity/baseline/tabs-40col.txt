@@ -41,4 +41,4 @@ tab rename <n> <name> | /tab close <n> |
                                         
 ────────────────────────────────────────
 [ask] >                                 
- groq · ask · tab 2:Agent · -- tok
+/home/user/ATROPOS  ▤ tab 2:Agent  /help

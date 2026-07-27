@@ -98,10 +98,18 @@ object ThemeCatalog {
             Role.TEXT_MUTED to RoleStyle("90", "38;5;239", "38;2;82;82;91"),
             Role.TEXT_INVERSE to RoleStyle("30", "38;5;16", "38;2;9;9;11"),
 
+            Role.STATUS_IDLE to RoleStyle("90", "38;5;243", "38;2;113;113;122"),
+            Role.STATUS_CANCELLED to RoleStyle("9;90", "9;38;5;243", "9;38;2;113;113;122"),
+            Role.STATUS_RUNNING to RoleStyle("1;36", "1;38;5;51", "1;38;2;34;211;238"),
+            Role.STATUS_WAITING to RoleStyle("33", "38;5;179", "38;2;217;164;65"),
+            Role.STATUS_FAILED to RoleStyle("1;31", "1;38;5;203", "1;38;2;239;68;68"),
+            Role.STATUS_COMPLETE to RoleStyle("1;32", "1;38;5;42", "1;38;2;34;197;94"),
+            Role.STATUS_UNKNOWN to RoleStyle("90", "38;5;243", "38;2;113;113;122"),
+            Role.INFO to RoleStyle("36", "38;5;74", "38;2;56;164;220"),
+
             Role.STATUS_VERIFIED to RoleStyle("1;32", "1;38;5;42", "1;38;2;34;197;94"),
             Role.STATUS_PENDING to RoleStyle("33", "38;5;179", "38;2;217;164;65"),
             Role.STATUS_ERROR to RoleStyle("1;31", "1;38;5;203", "1;38;2;239;68;68"),
-            Role.STATUS_UNKNOWN to RoleStyle("90", "38;5;243", "38;2;113;113;122"),
 
             Role.SURFACE_HEADER to RoleStyle("46;30", "48;5;235;38;5;250", "48;2;24;24;27;38;2;212;212;216"),
             Role.SURFACE_FOOTER to RoleStyle("46;30", "48;5;235;38;5;245", "48;2;24;24;27;38;2;161;161;170"),
@@ -136,10 +144,18 @@ object ThemeCatalog {
             Role.TEXT_MUTED to RoleStyle("37", "38;5;247", "38;2;140;140;150"),
             Role.TEXT_INVERSE to RoleStyle("97", "38;5;231", "38;2;250;250;250"),
 
+            Role.STATUS_IDLE to RoleStyle("90", "38;5;245", "38;2;113;113;122"),
+            Role.STATUS_CANCELLED to RoleStyle("9;90", "9;38;5;245", "9;38;2;113;113;122"),
+            Role.STATUS_RUNNING to RoleStyle("36", "38;5;30", "38;2;14;116;144"),
+            Role.STATUS_WAITING to RoleStyle("33", "38;5;136", "38;2;161;98;7"),
+            Role.STATUS_FAILED to RoleStyle("31", "38;5;160", "38;2;185;28;28"),
+            Role.STATUS_COMPLETE to RoleStyle("32", "38;5;28", "38;2;21;128;61"),
+            Role.STATUS_UNKNOWN to RoleStyle("90", "38;5;245", "38;2;113;113;122"),
+            Role.INFO to RoleStyle("36", "38;5;25", "38;2;29;110;175"),
+
             Role.STATUS_VERIFIED to RoleStyle("32", "38;5;28", "38;2;21;128;61"),
             Role.STATUS_PENDING to RoleStyle("33", "38;5;136", "38;2;161;98;7"),
             Role.STATUS_ERROR to RoleStyle("31", "38;5;160", "38;2;185;28;28"),
-            Role.STATUS_UNKNOWN to RoleStyle("90", "38;5;245", "38;2;113;113;122"),
 
             Role.SURFACE_HEADER to RoleStyle("46;30", "48;5;254;38;5;235", "48;2;228;228;231;38;2;24;24;27"),
             Role.SURFACE_FOOTER to RoleStyle("46;30", "48;5;254;38;5;241", "48;2;228;228;231;38;2;82;82;91"),
