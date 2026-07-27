@@ -1,8 +1,9 @@
 package atropos.core.agent
 
+import atropos.core.policy.AgencyDisposition
+import atropos.core.policy.BoundedAgencyGate
 import atropos.core.policy.ExecutionPolicyEngine
-import atropos.core.policy.ExecutionPolicyRequest
-import atropos.core.policy.PolicyActionClass
+import atropos.core.policy.VerificationActionProposals
 import atropos.core.security.RedactionFilter
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
@@ -34,7 +35,7 @@ class AgentSmokeRunner(
         ?.coerceAtLeast(10)?.times(1000) ?: 120_000L,
     private val maxOutputBytes: Int = 48 * 1024,
     private val maxOutputLines: Int = 1_000,
-    private val policyEngine: ExecutionPolicyEngine = ExecutionPolicyEngine(repoRoot),
+    private val agencyGate: BoundedAgencyGate = BoundedAgencyGate(ExecutionPolicyEngine(repoRoot)),
     private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     fun validate(command: String): String? {
@@ -125,18 +126,18 @@ class AgentSmokeRunner(
         }
 
         val tokens = trimmed.split(Regex("\\s+")).filter { it.isNotBlank() }
-        val policy = policyEngine.evaluate(
-            ExecutionPolicyRequest(
-                actionClass = PolicyActionClass.SMOKE,
-                command = tokens,
-                cwd = repoRoot
-            )
+        // Pre-authorisation: these tokens came from free text, so the gate
+        // decides before the process is built. `validate` above still runs
+        // first — bounded agency adds an authority, it does not replace the
+        // syntactic refusals.
+        val decision = agencyGate.evaluate(
+            VerificationActionProposals.smoke(tokens, repoRoot)
         )
-        if (!policy.allowed) {
+        if (decision.disposition != AgencyDisposition.ALLOWED) {
             return AgentSmokeExecutionResult(
                 command = trimmed,
                 passed = false,
-                refusalReason = policy.reason
+                refusalReason = decision.reason
             )
         }
         val startedAt = System.nanoTime()

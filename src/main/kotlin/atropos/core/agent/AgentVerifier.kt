@@ -2,9 +2,10 @@ package atropos.core.agent
 
 import atropos.core.AtroposConfig
 import atropos.core.memory.LocalMemoryStore
+import atropos.core.policy.AgencyDisposition
+import atropos.core.policy.BoundedAgencyGate
 import atropos.core.policy.ExecutionPolicyEngine
-import atropos.core.policy.ExecutionPolicyRequest
-import atropos.core.policy.PolicyActionClass
+import atropos.core.policy.VerificationActionProposals
 import atropos.core.security.RedactionFilter
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
@@ -24,7 +25,7 @@ class AgentVerifier(
     private val timeoutMillis: Long = 900_000,
     private val maxOutputBytes: Int = 128 * 1024,
     private val maxOutputLines: Int = 3_000,
-    private val policyEngine: ExecutionPolicyEngine = ExecutionPolicyEngine(collector.repoRoot),
+    private val agencyGate: BoundedAgencyGate = BoundedAgencyGate(ExecutionPolicyEngine(collector.repoRoot)),
     private val memoryStore: LocalMemoryStore = LocalMemoryStore(collector.repoRoot.resolve(".atropos/memory").toFile()),
     private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
@@ -123,14 +124,12 @@ class AgentVerifier(
     private fun runVerificationCommand(): VerificationExecution {
         val started = System.nanoTime()
         val command = listOf("./gradlew", "test", "jar", "--no-daemon")
-        val policy = policyEngine.evaluate(
-            ExecutionPolicyRequest(
-                actionClass = PolicyActionClass.BUILD_TEST,
-                command = command,
-                cwd = collector.repoRoot
-            )
+        // Pre-authorisation: the gate decides before the process is built, so a
+        // refusal returns with nothing spawned.
+        val decision = agencyGate.evaluate(
+            VerificationActionProposals.buildTest(command, collector.repoRoot)
         )
-        if (!policy.allowed) {
+        if (decision.disposition != AgencyDisposition.ALLOWED) {
             return VerificationExecution(
                 command = command,
                 exitCode = null,
@@ -138,7 +137,7 @@ class AgentVerifier(
                 durationMillis = elapsed(started),
                 stdout = CapturedText("", false),
                 stderr = CapturedText("", false),
-                launchError = policy.reason
+                launchError = decision.reason
             )
         }
         val process = try {
