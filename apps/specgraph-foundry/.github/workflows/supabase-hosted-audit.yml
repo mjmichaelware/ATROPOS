@@ -53,23 +53,23 @@ jobs:
           PYTHONPATH: src
         run: |
           python -c "
-from pathlib import Path
-migrations = sorted(Path('supabase/migrations').glob('*.sql'))
-if not migrations:
-    print('No Supabase migrations found')
-    exit(0)
-print(f'Found {len(migrations)} migrations')
-for m in migrations:
-    print(f'  {m.name}')
-prev = ''
-for m in migrations:
-    name = m.stem.split('_')[0]
-    if prev and name <= prev:
-        print(f'ORDER ERROR: {m.name} after {prev}')
-        exit(1)
-    prev = name
-print('Migration ordering OK')
-"
+          from pathlib import Path
+          migrations = sorted(Path('supabase/migrations').glob('*.sql'))
+          if not migrations:
+              print('No Supabase migrations found')
+              exit(0)
+          print(f'Found {len(migrations)} migrations')
+          for m in migrations:
+              print(f'  {m.name}')
+          prev = ''
+          for m in migrations:
+              name = m.stem.split('_')[0]
+              if prev and name <= prev:
+                  print(f'ORDER ERROR: {m.name} after {prev}')
+                  exit(1)
+              prev = name
+          print('Migration ordering OK')
+          "
 
       - name: Run hosted release audit
         env:
@@ -90,34 +90,36 @@ print('Migration ordering OK')
           echo "Supabase hosted audit credentials present. Full audit would execute here."
 
       - name: Verify RLS contracts
-        run: python -c "
-from pathlib import Path
-migrations = sorted(Path('supabase/migrations').glob('*.sql'))
-rls_found = 0
-for m in migrations:
-    content = m.read_text()
-    if 'enable_row_level_security' in content or 'CREATE POLICY' in content:
-        rls_found += 1
-print(f'RLS policies found in {rls_found} migration files')
-"
+        run: |
+          python -c "
+          from pathlib import Path
+          migrations = sorted(Path('supabase/migrations').glob('*.sql'))
+          rls_found = 0
+          for m in migrations:
+              content = m.read_text()
+              if 'enable_row_level_security' in content or 'CREATE POLICY' in content:
+                  rls_found += 1
+          print(f'RLS policies found in {rls_found} migration files')
+          "
 
       - name: Verify Storage contracts
-        run: python -c "
-from pathlib import Path
-migrations = sorted(Path('supabase/migrations').glob('*.sql'))
-storage_found = 0
-bucket_refs = set()
-for m in migrations:
-    content = m.read_text()
-    if 'storage' in content.lower() or 'bucket' in content.lower():
-        storage_found += 1
-        for line in content.split('\n'):
-            if 'bucket' in line.lower():
-                bucket_refs.add(line.strip())
-print(f'Storage references found in {storage_found} migration files')
-for ref in sorted(bucket_refs):
-    print(f'  {ref[:120]}')
-"
+        run: |
+          python -c "
+          from pathlib import Path
+          migrations = sorted(Path('supabase/migrations').glob('*.sql'))
+          storage_found = 0
+          bucket_refs = set()
+          for m in migrations:
+              content = m.read_text()
+              if 'storage' in content.lower() or 'bucket' in content.lower():
+                  storage_found += 1
+                  for line in content.split('\n'):
+                      if 'bucket' in line.lower():
+                          bucket_refs.add(line.strip())
+          print(f'Storage references found in {storage_found} migration files')
+          for ref in sorted(bucket_refs):
+              print(f'  {ref[:120]}')
+          "
 
       - name: Sanitized audit report
         run: |

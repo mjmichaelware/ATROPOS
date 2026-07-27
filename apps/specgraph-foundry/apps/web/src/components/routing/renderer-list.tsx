@@ -21,7 +21,13 @@ export function RendererList({ projectId, renderers, onChanged }: { projectId: s
 
   return (
     <div className="sg-planning-form">
-      {renderers.length === 0 ? <p className="sg-muted">No renderers are configured yet.</p> : null}
+      <p className="sg-muted">
+        A renderer turns a verified plan into a specific output format — an export package, a report, a diagram — for one territory (a named scope, like a document type or a target system). Each
+        territory picks one active renderer at a time; selecting a new one below for a territory replaces whichever was picked before.
+      </p>
+      {renderers.length === 0 ? (
+        <p className="sg-muted">No renderers are configured yet. Add one below, then select it for a territory to make it the active one.</p>
+      ) : null}
       <ul className="sg-plan-history" aria-label="Renderer configurations">
         {renderers.map((renderer) => (
           <li key={renderer.id}>

@@ -16,7 +16,11 @@ export function BindingList({ projectId, bindings, onChanged }: { projectId: str
 
   return (
     <div className="sg-planning-form">
-      {bindings.length === 0 ? <p className="sg-muted">No integration bindings are configured yet.</p> : null}
+      <p className="sg-muted">
+        A binding connects this project to a real external system — where an execution run actually gets carried out. Nothing here can start a run on its own; a binding just has to exist and be
+        enabled before the Runs tab can target it.
+      </p>
+      {bindings.length === 0 ? <p className="sg-muted">No integration bindings are configured yet. Add one below before you can start an execution run.</p> : null}
       <ul className="sg-plan-history" aria-label="Integration bindings">
         {bindings.map((binding) => (
           <li key={binding.id}>

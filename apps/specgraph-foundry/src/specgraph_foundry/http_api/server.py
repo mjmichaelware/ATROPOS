@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import sys
 import time
 import threading
@@ -17,9 +18,13 @@ from .gateway import (
     new_request,
 )
 from .artifact_storage import (
-    ArtifactStorageClient,
     ArtifactStorageSettings,
 )
+from .database_artifact_storage import (
+    DatabaseArtifactStorageClient,
+    verify_artifact_token,
+)
+from .worker_trigger import CloudRunWorkerTrigger
 from .durable_exports import DurableExportService
 from .models import ApiResponse
 from .operation_handlers import OperationHandlerRegistry
@@ -51,6 +56,10 @@ DEFAULT_MAX_REQUEST_BYTES = 2 * 1024 * 1024
 DEFAULT_MAX_SOURCE_BYTES = 10 * 1024 * 1024
 DEFAULT_MAX_ARTIFACT_BYTES = 10 * 1024 * 1024
 
+_ARTIFACT_DOWNLOAD_RE = re.compile(
+    r"^/v1/artifact-downloads/[A-Za-z0-9_\-]+\.[A-Za-z0-9_\-]+$"
+)
+
 
 def parse_allowed_hosts() -> tuple[str, ...]:
     raw = os.environ.get(
@@ -77,9 +86,41 @@ def parse_allowed_origins() -> set[str]:
     }
 
 
+def _derive_api_base_url() -> str:
+    for host in parse_allowed_hosts():
+        if host not in ("127.0.0.1", "localhost"):
+            return f"https://{host}"
+    port = os.environ.get("SPECGRAPH_PORT", "8080")
+    return f"http://127.0.0.1:{port}"
+
+
+# Vercel mints a brand-new per-deployment URL
+# (specgraph-foundry-<hash>-mjmichaelwares-projects.vercel.app) on every
+# deploy, distinct from the stable production alias. An exact-match
+# allowlist would reject every deployment URl except the one alias that
+# was configured, forever, regardless of how many times a client retries
+# or clears cache - the browser is simply on a different origin the
+# server has never been told about. Auth on this API is bearer-token
+# only (no cookies are sent cross-origin), so allowing this project's own
+# deployment subdomains carries the same risk as allowing the alias
+# itself: an attacker would still need to have already obtained a valid
+# token, which this origin check does not grant.
+_VERCEL_PROJECT_DEPLOYMENT_ORIGIN = re.compile(
+    r"^https://specgraph-foundry-[a-z0-9]+-mjmichaelwares-projects\.vercel\.app$"
+)
+
+
+def is_origin_allowed(origin: str, allowed_origins: set[str]) -> bool:
+    if origin in allowed_origins:
+        return True
+    return bool(_VERCEL_PROJECT_DEPLOYMENT_ORIGIN.match(origin))
+
+
 def build_application() -> tuple[
     AuthenticatedApi,
     Settings,
+    Database,
+    str,
 ]:
     settings = Settings.from_environment()
 
@@ -148,15 +189,13 @@ def build_application() -> tuple[
             ),
         ),
     )
+    _signing_key = os.environ.get("SPECGRAPH_CURSOR_SIGNING_KEY", "")
     durable_exports = DurableExportService(
         database,
-        ArtifactStorageClient(
-            storage_client,
+        DatabaseArtifactStorageClient(
+            database,
             ArtifactStorageSettings(
-                bucket=os.environ.get(
-                    "SPECGRAPH_EXPORT_BUCKET",
-                    "export-artifacts",
-                ),
+                bucket="database",
                 max_artifact_bytes=int(
                     os.environ.get(
                         "SPECGRAPH_ARTIFACT_MAX_BYTES",
@@ -170,6 +209,8 @@ def build_application() -> tuple[
                     )
                 ),
             ),
+            api_base_url=_derive_api_base_url(),
+            signing_key=_signing_key,
         ),
     )
     operation_settings = OperationSettings(
@@ -230,6 +271,17 @@ def build_application() -> tuple[
         ),
     )
 
+    worker_trigger: CloudRunWorkerTrigger | None = None
+    _worker_project = os.environ.get("SPECGRAPH_GCP_PROJECT_ID", "")
+    _worker_region = os.environ.get("SPECGRAPH_GCP_REGION", "")
+    _worker_job = os.environ.get("SPECGRAPH_WORKER_JOB_NAME", "")
+    if _worker_project and _worker_region and _worker_job:
+        worker_trigger = CloudRunWorkerTrigger(
+            project_id=_worker_project,
+            region=_worker_region,
+            job_name=_worker_job,
+        )
+
     return (
         AuthenticatedApi(
             database,
@@ -241,9 +293,12 @@ def build_application() -> tuple[
             durable_exports=durable_exports,
             operations=operations,
             operation_handlers=operation_handlers,
+            worker_trigger=worker_trigger,
             enforce_mutation_guards=True,
         ),
         settings,
+        database,
+        _signing_key,
     )
 
 
@@ -251,6 +306,8 @@ def serve(
     application: AuthenticatedApi,
     host: str,
     port: int,
+    artifact_db: Database | None = None,
+    artifact_signing_key: str = "",
 ) -> None:
     allowed_origins = (
         parse_allowed_origins()
@@ -386,8 +443,7 @@ def serve(
 
             if (
                 origin
-                and origin
-                not in allowed_origins
+                and not is_origin_allowed(origin, allowed_origins)
             ):
                 self._send(
                     ApiResponse(
@@ -651,6 +707,19 @@ def serve(
 
                 payload = parsed
 
+            raw_path = self.path.split("?", 1)[0]
+            if (
+                self.command == "GET"
+                and artifact_db is not None
+                and _ARTIFACT_DOWNLOAD_RE.match(raw_path)
+            ):
+                token = raw_path.rsplit("/", 1)[-1]
+                self._serve_artifact_download(
+                    token, artifact_db, artifact_signing_key
+                )
+                semaphore.release()
+                return
+
             request = new_request(
                 method=self.command,
                 raw_path=self.path,
@@ -735,8 +804,7 @@ def serve(
 
             if (
                 origin
-                and origin
-                in allowed_origins
+                and is_origin_allowed(origin, allowed_origins)
             ):
                 self._cors_headers(origin)
 
@@ -765,6 +833,93 @@ def serve(
 
             if self.command != "HEAD":
                 self.wfile.write(encoded)
+
+        def _serve_artifact_download(
+            self,
+            token: str,
+            db: Database,
+            signing_key: str,
+        ) -> None:
+            object_path = verify_artifact_token(token, signing_key)
+            if object_path is None:
+                self._send(
+                    ApiResponse(
+                        status=404,
+                        body={
+                            "error": {
+                                "code": "NOT_FOUND",
+                                "message": "artifact not found or token expired",
+                                "details": {},
+                            }
+                        },
+                    )
+                )
+                return
+
+            try:
+                with db.connect() as connection:
+                    row = connection.execute(
+                        "SELECT data, media_type FROM artifact_blobs WHERE object_path = ?",
+                        (object_path,),
+                    ).fetchone()
+            except Exception:
+                self._send(
+                    ApiResponse(
+                        status=503,
+                        body={
+                            "error": {
+                                "code": "SERVICE_UNAVAILABLE",
+                                "message": "artifact storage unavailable",
+                                "details": {},
+                            }
+                        },
+                    )
+                )
+                return
+
+            if row is None:
+                self._send(
+                    ApiResponse(
+                        status=404,
+                        body={
+                            "error": {
+                                "code": "NOT_FOUND",
+                                "message": "artifact not found",
+                                "details": {},
+                            }
+                        },
+                    )
+                )
+                return
+
+            raw = row["data"]
+            data = bytes(raw) if isinstance(raw, (memoryview, bytearray)) else raw
+            media_type = str(row["media_type"])
+            filename = object_path.rsplit("/", 1)[-1]
+            self._send_binary(data, media_type=media_type, filename=filename)
+
+        def _send_binary(
+            self,
+            data: bytes,
+            *,
+            media_type: str,
+            filename: str,
+        ) -> None:
+            self.send_response(200)
+            self._security_headers()
+            origin = self.headers.get("origin")
+            if origin and is_origin_allowed(origin, allowed_origins):
+                self._cors_headers(origin)
+            self.send_header("content-type", media_type)
+            self.send_header("content-length", str(len(data)))
+            self.send_header(
+                "content-disposition",
+                f'attachment; filename="{filename}"',
+            )
+            self.send_header("cache-control", "private, no-store")
+            self.end_headers()
+            if self.command != "HEAD":
+                self.wfile.write(data)
 
         def _security_headers(self) -> None:
             for key, value in security_headers().items():
@@ -847,7 +1002,7 @@ def serve(
 
 
 def main() -> int:
-    application, settings = (
+    application, settings, artifact_db, signing_key = (
         build_application()
     )
 
@@ -855,6 +1010,8 @@ def main() -> int:
         application,
         settings.host,
         settings.port,
+        artifact_db=artifact_db,
+        artifact_signing_key=signing_key,
     )
 
     return 0

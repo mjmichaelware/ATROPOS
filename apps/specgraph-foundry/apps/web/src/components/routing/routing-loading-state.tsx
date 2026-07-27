@@ -1,5 +1,15 @@
-import { Skeleton } from "@/components/ui/skeleton";
+import { SkeletonCard, SkeletonHero, SkeletonTabs } from "@/components/ui/loading-skeleton";
 
 export function RoutingLoadingState() {
-  return <Skeleton style={{ height: "24rem" }} aria-label="Loading routing workspace" />;
+  return (
+    <section aria-label="Loading routing workspace" aria-busy="true">
+      <SkeletonHero />
+      <SkeletonTabs count={3} />
+      <div style={{ display: "flex", flexDirection: "column", gap: "var(--sg-space-3)" }}>
+        <SkeletonCard wide />
+        <SkeletonCard />
+        <SkeletonCard wide />
+      </div>
+    </section>
+  );
 }

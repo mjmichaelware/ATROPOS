@@ -10,6 +10,7 @@ from specgraph_foundry.http_api.gateway import AuthenticatedApi, new_request
 from specgraph_foundry.http_api.models import Principal
 from specgraph_foundry.http_api.operation_handlers import OperationHandlerRegistry
 from specgraph_foundry.http_api.operations import OperationSettings, OperationStore
+from specgraph_foundry.http_api.worker import run_once
 from specgraph_foundry.http_api.workspace import ProjectWorkspaceService
 from specgraph_foundry.ingestion import IngestionService
 from specgraph_foundry.planning import PlanningService
@@ -127,6 +128,44 @@ class OperationsApiTest(unittest.TestCase):
         )
         self.assertEqual(conflict.status, 409)
 
+    def test_fresh_submission_after_terminal_operation_is_not_stuck_replaying_forever(self) -> None:
+        # A duplicate-submission guard keyed only on (owner, type, request)
+        # must not outlive the operation it originally guarded: once that
+        # operation reaches a terminal state, a later request with the
+        # identical shape (a different Idempotency-Key, since a real client
+        # never reuses a key on purpose) has to be able to run again and
+        # reflect whatever has changed server-side since - e.g.
+        # synthesize_project_plan being re-run after research is resolved,
+        # or verify_plan being re-run after a fix. Regression test for a
+        # bug where the operations table's UNIQUE(owner_id, operation_type,
+        # fingerprint) constraint applied unconditionally, so a second,
+        # legitimate submission with the same request shape either replayed
+        # the first (now stale) operation's result forever or crashed with
+        # a database integrity error.
+        first = self.request(
+            "POST",
+            f"/v1/documents/{self.document_id}/extract",
+            {},
+            key="operation-fresh-key-01",
+        )
+        self.assertEqual(first.status, 202)
+        first_operation_id = str(first.body["operation"]["id"])
+        self.assertTrue(run_once(self.operations, self.registry, "worker-a"))
+        finished = self.request("GET", f"/v1/operations/{first_operation_id}")
+        self.assertEqual(finished.body["operation"]["state"], "SUCCEEDED")
+
+        second = self.request(
+            "POST",
+            f"/v1/documents/{self.document_id}/extract",
+            {},
+            key="operation-fresh-key-02",
+        )
+        self.assertEqual(second.status, 202)
+        self.assertEqual(second.headers["idempotency-replayed"], "false")
+        second_operation_id = str(second.body["operation"]["id"])
+        self.assertNotEqual(first_operation_id, second_operation_id)
+        self.assertEqual(second.body["operation"]["state"], "QUEUED")
+
     def test_get_list_and_cancel_are_owner_scoped(self) -> None:
         created = self.request(
             "POST",
@@ -137,6 +176,11 @@ class OperationsApiTest(unittest.TestCase):
         operation_id = created.body["operation"]["id"]
         got = self.request("GET", f"/v1/operations/{operation_id}")
         self.assertEqual(got.status, 200)
+        # Every pollOperation() caller in the frontend expects this nested
+        # under "operation", matching the 202 submission response shape -
+        # a regression test for the flat shape this endpoint used to return.
+        self.assertEqual(got.body["operation"]["id"], operation_id)
+        self.assertIn("state", got.body["operation"])
         listed = self.request(
             "GET",
             f"/v1/projects/{self.project_id}/operations?limit=1",

@@ -51,7 +51,12 @@ export class SpecGraphApiClient {
 
   constructor(private readonly options: ApiClientOptions) {
     this.baseUrl = new URL(options.baseUrl);
-    this.fetchImpl = options.fetchImpl ?? fetch;
+    // Native fetch requires `this` to be the window/global object internally
+    // (a WebIDL brand check). Storing the bare function reference and later
+    // calling it as `this.fetchImpl(...)` invokes it with the API client
+    // instance as `this` instead, which throws "Illegal invocation" - bind
+    // it to the global object explicitly so it carries its own receiver.
+    this.fetchImpl = options.fetchImpl ?? fetch.bind(globalThis);
     this.retryAfterCapSeconds = options.retryAfterCapSeconds ?? 30;
     this.requestTimeoutMs = options.requestTimeoutMs ?? 20_000;
   }
@@ -70,22 +75,73 @@ export class SpecGraphApiClient {
       if (options.retryGet === false || normalized instanceof SpecGraphApiError) {
         throw normalized;
       }
-      return attempt();
+      try {
+        return await attempt();
+      } catch (retryError) {
+        // The first attempt's failure is normalized above, but this retry
+        // itself was previously left unguarded - a raw fetch() network
+        // error (e.g. "TypeError: Failed to fetch", the browser's own
+        // message when a mobile tab is backgrounded mid-request) would
+        // escape straight to the caller instead of becoming the same
+        // friendly DependencyFailureError every other failure path
+        // produces.
+        throw normalizeUnknownError(retryError);
+      }
     }
   }
 
   async pollOperation<T extends { operation: OperationLike }>(
     operationUrl: string,
-    options: { signal?: AbortSignal; timeoutMs?: number; intervalMs?: number } = {},
+    options: { signal?: AbortSignal; timeoutMs?: number; intervalMs?: number; onProgress?: (operation: T["operation"]) => void } = {},
   ): Promise<ApiResult<T>> {
     const started = Date.now();
-    const timeoutMs = options.timeoutMs ?? 60_000;
-    const intervalMs = Math.max(500, Math.min(options.intervalMs ?? 2_000, 30_000));
+    // The worker that processes queued operations only runs on its own
+    // schedule (currently every ~2 minutes via Cloud Scheduler), not
+    // on-demand. A short default here means polling gives up before the
+    // worker ever gets a chance to claim the operation - every caller of
+    // pollOperation (extraction, research completion, plan synthesis and
+    // verification, handoff export, execution runs, source upload
+    // finalize) needs a budget that comfortably spans more than one tick.
+    const timeoutMs = options.timeoutMs ?? 300_000;
+    const intervalMs = Math.max(500, Math.min(options.intervalMs ?? 5_000, 30_000));
+    // This loop runs for however long the worker takes to pick up and
+    // finish the operation - legitimately minutes. A mobile browser
+    // backgrounding the tab mid-wait (the user switches apps rather than
+    // stare at a spinner) commonly causes one poll tick's fetch() to fail
+    // outright when the tab resumes, even though the operation itself is
+    // still fine server-side. Failing the whole wait on one bad tick would
+    // discard everything already waited for, so a bounded number of
+    // consecutive transient failures are tolerated with backoff before
+    // giving up - a real API error response (SpecGraphApiError) or an
+    // explicit abort still fails immediately, since retrying won't change
+    // either outcome.
+    let consecutiveFailures = 0;
+    const maxConsecutiveFailures = 5;
     while (Date.now() - started < timeoutMs) {
-      const result = await this.request<T>({ path: operationUrl, signal: options.signal });
+      let result: ApiResult<T>;
+      try {
+        result = await this.request<T>({ path: operationUrl, signal: options.signal });
+        consecutiveFailures = 0;
+      } catch (error) {
+        if (error instanceof SpecGraphApiError || error instanceof RequestAbortError) {
+          throw error;
+        }
+        consecutiveFailures += 1;
+        if (consecutiveFailures > maxConsecutiveFailures) {
+          throw error;
+        }
+        await delay(Math.min(intervalMs * consecutiveFailures, 30_000), options.signal);
+        continue;
+      }
       if (TERMINAL_OPERATION_STATES.has(result.body.operation.state)) {
         return result;
       }
+      // Real, non-terminal operation state (QUEUED/CLAIMED/RUNNING, plus
+      // whatever phase/progress fields the backend attaches) surfaced on
+      // every tick, so a caller can show live status instead of a single
+      // static message for however long this loop runs - which can
+      // legitimately be minutes.
+      options.onProgress?.(result.body.operation);
       await delay(result.retryAfter ? result.retryAfter * 1000 : intervalMs, options.signal);
     }
     throw new RequestTimeoutError("Operation polling timed out");

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { describeClientError } from "@/lib/api/errors";
 import type { OperationLike } from "@/lib/api/operations";
 import { createProjectApiClient } from "@/lib/projects/api";
 import { addResearchEvidence, claimResearchTask, completeResearchTask, heartbeatResearchTask } from "@/lib/research/api";
@@ -24,6 +25,7 @@ export function TaskInspector({ projectId, taskId }: { projectId: string; taskId
   const workerId = useRef(createResearchWorkerId());
   const [claimed, setClaimed] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [messageTone, setMessageTone] = useState<"info" | "danger">("info");
   const [operation, setOperation] = useState<Record<string, unknown> | undefined>();
 
   useEffect(() => {
@@ -51,27 +53,50 @@ export function TaskInspector({ projectId, taskId }: { projectId: string; taskId
 
   async function claim() {
     const client = createProjectApiClient();
-    const result = await claimResearchTask(client, projectId, workerId.current, client.createIdempotencyKey());
-    setClaimed(true);
-    setMessage(`Claim accepted for ${String(result.body.task.id ?? taskId)}.`);
-    await taskQuery.refetch();
+    try {
+      const result = await claimResearchTask(client, projectId, workerId.current, client.createIdempotencyKey());
+      setClaimed(true);
+      setMessageTone("info");
+      setMessage(`Claim accepted for ${String(result.body.task.id ?? taskId)}.`);
+      await taskQuery.refetch();
+    } catch (error) {
+      setMessageTone("danger");
+      setMessage(`Claim did not complete. (${describeClientError(error)})`);
+    }
   }
 
   async function addEvidence(input: EvidenceInput) {
     const client = createProjectApiClient();
-    await addResearchEvidence(client, taskId, workerId.current, input, client.createIdempotencyKey());
-    setMessage("Evidence recorded. Refreshing authoritative task state.");
-    await taskQuery.refetch();
+    try {
+      await addResearchEvidence(client, taskId, workerId.current, input, client.createIdempotencyKey());
+      setMessageTone("info");
+      setMessage("Evidence recorded. Refreshing authoritative task state.");
+      await taskQuery.refetch();
+    } catch (error) {
+      setMessageTone("danger");
+      setMessage(`Evidence was not recorded. (${describeClientError(error)})`);
+    }
   }
 
   async function complete(input: ConclusionInput) {
     const client = createProjectApiClient();
-    const accepted = await completeResearchTask(client, taskId, workerId.current, input, client.createIdempotencyKey());
-    setOperation(accepted.body.operation);
-    const terminal = accepted.location ? await client.pollOperation<{ operation: OperationLike & Record<string, unknown> }>(accepted.location) : accepted;
-    setOperation(terminal.body.operation);
-    setMessage(`Completion operation ${String(terminal.body.operation.state ?? "finished")}.`);
-    await taskQuery.refetch();
+    try {
+      // complete_research_task is an async operation: the worker that
+      // processes it only runs on its own schedule, so this poll can
+      // legitimately take minutes, not seconds.
+      const accepted = await completeResearchTask(client, taskId, workerId.current, input, client.createIdempotencyKey());
+      setOperation(accepted.body.operation);
+      const terminal = accepted.location ? await client.pollOperation<{ operation: OperationLike & Record<string, unknown> }>(accepted.location) : accepted;
+      setOperation(terminal.body.operation);
+      // pollOperation resolves (does not throw) for every terminal state,
+      // including FAILED/CANCELLED/TIMED_OUT - only SUCCEEDED counts as success.
+      setMessageTone(terminal.body.operation.state === "SUCCEEDED" ? "info" : "danger");
+      setMessage(`Completion operation ${String(terminal.body.operation.state ?? "finished")}.`);
+      await taskQuery.refetch();
+    } catch (error) {
+      setMessageTone("danger");
+      setMessage(`Completion did not finish. (${describeClientError(error)})`);
+    }
   }
 
   return (
@@ -82,7 +107,15 @@ export function TaskInspector({ projectId, taskId }: { projectId: string; taskId
         <p>Evidence, conclusions, and lease state are separate from immutable source authority.</p>
         <Button type="button" variant="primary" disabled={claimed} onClick={() => void claim()}>{claimed ? "Claimed in this tab" : "Claim task"}</Button>
       </header>
-      {message ? <Alert tone="info">{message}</Alert> : null}
+      {task.canonical_statement ? (
+        <section className="sg-hud-panel" aria-label="Atom under research">
+          {task.kind || task.modality ? (
+            <p className="sg-micro-label">{[task.kind, task.modality].filter(Boolean).join(" · ")}</p>
+          ) : null}
+          <p>{task.canonical_statement}</p>
+        </section>
+      ) : null}
+      {message ? <Alert tone={messageTone}>{message}</Alert> : null}
       <div className="sg-research-detail-grid">
         <div>
           <ResearchTimeline task={task} />

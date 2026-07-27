@@ -21,7 +21,14 @@ export function ProviderList({ projectId, providers, onChanged }: { projectId: s
 
   return (
     <div className="sg-planning-form">
-      {providers.length === 0 ? <p className="sg-muted">No providers are configured yet.</p> : null}
+      <p className="sg-muted">
+        Each provider here is a research backend — a local model or a free/paid API — that routing can call to automatically classify atoms against a research dimension. Health status matters:
+        READY providers are tried first, DEGRADED and COOLDOWN ones are skipped until they recover, and UNAVAILABLE ones are skipped entirely. Recording health below is how you tell routing what
+        you&apos;ve actually observed.
+      </p>
+      {providers.length === 0 ? (
+        <p className="sg-muted">No providers are configured yet. Add one below to enable automated research in the Research workspace.</p>
+      ) : null}
       <ul className="sg-plan-history" aria-label="Routing providers">
         {providers.map((provider) => (
           <li key={provider.id}>

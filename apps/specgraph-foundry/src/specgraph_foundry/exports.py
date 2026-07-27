@@ -15,6 +15,7 @@ from .errors import (
     ValidationError,
 )
 from .planning import PlanningService
+from .rendering import markdown_to_plain_text
 from .research import ResearchService
 
 
@@ -1456,6 +1457,11 @@ class ExportService:
             "implementation_blueprint.md": (
                 markdown.encode("utf-8")
             ),
+            "implementation_blueprint.txt": (
+                markdown_to_plain_text(
+                    markdown
+                ).encode("utf-8")
+            ),
         }
 
         artifact_metadata = {
@@ -1869,6 +1875,100 @@ class ExportService:
         }
 
     @staticmethod
+    def _build_execution_plan_section(
+        plan: dict[str, object],
+    ) -> list[str]:
+        # atropos_handoff.json already carries the full DAG (nodes, edges,
+        # ready_node_ids) as structured JSON, but the human/LLM-readable
+        # blueprint previously only mapped each atom to the graph node it
+        # produced - it never rendered the graph itself: what every node
+        # actually is, what depends on what, or what can start right now.
+        # A build agent working from the PDF/text alone had no execution
+        # order to follow, only a flat list of requirements. This section
+        # is that missing DAG walk-through.
+        execution_graph = plan["execution_graph"]
+        nodes = list(execution_graph["nodes"])
+        edges = list(execution_graph["edges"])
+        ready_nodes = list(plan["ready_nodes"])
+        nodes_by_id = {
+            str(node["id"]): node
+            for node in nodes
+        }
+
+        def describe_node(node_id: object) -> str:
+            node = nodes_by_id.get(str(node_id))
+            if node is None:
+                return f"`{node_id}`"
+            return (
+                f"`{node['node_key']}` "
+                f"({node['node_type']}, "
+                f"{node['status']}): "
+                f"{node['title']}"
+            )
+
+        lines = [
+            "## Execution Plan (DAG)",
+            "",
+            (
+                "This is the build plan itself, not just the "
+                "requirements it was built from: every node Atropos (or "
+                "any executing agent) must complete, what each node "
+                "depends on, and what is safe to start immediately. "
+                "Nodes only ever run CONTRACT before IMPLEMENTATION "
+                "before VERIFICATION for a given requirement, and "
+                "dependencies below are the enforced (acyclic) order - "
+                "nothing may start before its predecessors reach "
+                "COMPLETE."
+            ),
+            "",
+            f"- Total nodes: {len(nodes)}",
+            f"- Total dependencies: {len(edges)}",
+            f"- Ready to start now: {len(ready_nodes)}",
+            "",
+            "### Ready to start now",
+            "",
+        ]
+
+        if ready_nodes:
+            for node in ready_nodes:
+                lines.append(f"- {describe_node(node['id'])}")
+        else:
+            lines.append(
+                "- None - every node is either already complete or "
+                "waiting on a predecessor."
+            )
+
+        lines.extend(["", "### Nodes", ""])
+
+        for node in nodes:
+            lines.append(
+                f"- `{node['node_key']}` "
+                f"[{node['status']}] "
+                f"({node['node_type']}): "
+                f"{node['title']}"
+            )
+
+        lines.extend(["", "### Dependencies", ""])
+
+        if edges:
+            for edge in edges:
+                lines.append(
+                    f"- {describe_node(edge['from_node_id'])} "
+                    f"MUST COMPLETE before "
+                    f"{describe_node(edge['to_node_id'])} "
+                    f"can start "
+                    f"({edge['edge_type']})."
+                )
+                rationale = edge.get("rationale")
+                if rationale:
+                    lines.append(f"  - Why: {rationale}")
+        else:
+            lines.append("- No dependencies recorded.")
+
+        lines.append("")
+        return lines
+
+    @staticmethod
     def _build_markdown(
         project: dict[str, object],
         plan: dict[str, object],
@@ -1918,9 +2018,20 @@ class ExportService:
                 f"{plan['open_dimension_count']}"
             ),
             "",
-            "## Atomic Requirements",
-            "",
         ]
+
+        lines.extend(
+            ExportService._build_execution_plan_section(
+                plan=plan,
+            )
+        )
+
+        lines.extend(
+            [
+                "## Atomic Requirements",
+                "",
+            ]
+        )
 
         for index, item in enumerate(
             traceability,

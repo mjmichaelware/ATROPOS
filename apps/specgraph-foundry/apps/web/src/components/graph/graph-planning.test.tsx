@@ -154,9 +154,9 @@ describe("GraphWorkspace planning integration", () => {
   it("requires an explicit open-research choice before enabling synthesis", async () => {
     renderGraph();
     fireEvent.click(await screen.findByRole("tab", { name: "Plans" }));
-    expect(screen.getByRole("button", { name: "Synthesize plan" })).toBeDisabled();
-    fireEvent.click(screen.getByLabelText(/Require all research resolved/));
-    expect(screen.getByRole("button", { name: "Synthesize plan" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Build plan" })).toBeDisabled();
+    fireEvent.click(screen.getByLabelText(/Wait until every research task is finished/));
+    expect(screen.getByRole("button", { name: "Build plan" })).toBeEnabled();
   });
 
   it("synthesizes a plan, puts the returned plan ID in the URL, and preserves the graph on failure", async () => {
@@ -164,8 +164,8 @@ describe("GraphWorkspace planning integration", () => {
     pollOperation.mockResolvedValue({ body: { operation: { state: "SUCCEEDED", result: { plan_id: "plan-new", status: "DRAFT" } } } });
     renderGraph();
     fireEvent.click(await screen.findByRole("tab", { name: "Plans" }));
-    fireEvent.click(screen.getByLabelText(/Require all research resolved/));
-    fireEvent.click(screen.getByRole("button", { name: "Synthesize plan" }));
+    fireEvent.click(screen.getByLabelText(/Wait until every research task is finished/));
+    fireEvent.click(screen.getByRole("button", { name: "Build plan" }));
     await waitFor(() => expect(routerReplace).toHaveBeenCalledWith(expect.stringContaining("plan=plan-new"), { scroll: false }));
   });
 

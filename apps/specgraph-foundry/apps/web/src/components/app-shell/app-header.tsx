@@ -21,7 +21,7 @@ export function AppHeader({ userEmail }: { userEmail?: string }) {
       </nav>
       {userEmail ? (
         <div className="sg-account">
-          <span>{userEmail}</span>
+          <span className="sg-account-email">{userEmail}</span>
           <SignOutButton />
         </div>
       ) : (

@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { OperationLike } from "@/lib/api/operations";
+import { describeOperationProgress, type OperationLike } from "@/lib/api/operations";
 import { createProjectApiClient } from "@/lib/projects/api";
 import { queryKeys } from "@/lib/query/keys";
 import { createProjectRelation, synthesizePlan, verifyPlan } from "./api";
@@ -16,14 +16,17 @@ export function useCreateRelationMutation(projectId: string) {
   });
 }
 
-export function useSynthesizePlanMutation(projectId: string) {
+export function useSynthesizePlanMutation(projectId: string, onProgress?: (message: string) => void) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (allowOpenResearch: boolean) => {
       const client = createProjectApiClient();
+      onProgress?.("Plan synthesis queued — waiting for a worker to pick it up.");
       const accepted = await synthesizePlan(client, projectId, allowOpenResearch, client.createIdempotencyKey());
       const terminal = accepted.location
-        ? await client.pollOperation<{ operation: OperationLike & FreeformRecord }>(accepted.location)
+        ? await client.pollOperation<{ operation: OperationLike & FreeformRecord }>(accepted.location, {
+            onProgress: (operation) => onProgress?.(describeOperationProgress("Plan synthesis", operation)),
+          })
         : accepted;
       return terminal;
     },
@@ -36,15 +39,18 @@ export function useSynthesizePlanMutation(projectId: string) {
   });
 }
 
-export function useVerifyPlanMutation(projectId: string, planId: string | undefined) {
+export function useVerifyPlanMutation(projectId: string, planId: string | undefined, onProgress?: (message: string) => void) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async () => {
       if (!planId) throw new Error("No plan selected");
       const client = createProjectApiClient();
+      onProgress?.("Plan verification queued — waiting for a worker to pick it up.");
       const accepted = await verifyPlan(client, planId, client.createIdempotencyKey());
       const terminal = accepted.location
-        ? await client.pollOperation<{ operation: OperationLike & FreeformRecord }>(accepted.location)
+        ? await client.pollOperation<{ operation: OperationLike & FreeformRecord }>(accepted.location, {
+            onProgress: (operation) => onProgress?.(describeOperationProgress("Plan verification", operation)),
+          })
         : accepted;
       return terminal;
     },

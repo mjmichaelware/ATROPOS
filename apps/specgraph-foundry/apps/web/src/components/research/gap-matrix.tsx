@@ -6,17 +6,17 @@ import { gapRows } from "@/lib/research/gaps";
 import type { GapCell, GapMatrix as GapMatrixType } from "@/lib/research/schemas";
 import { GapMatrixCell } from "./gap-matrix-cell";
 
-export function GapMatrix({ matrix }: { matrix?: GapMatrixType }) {
+export function GapMatrix({ projectId, matrix }: { projectId: string; matrix?: GapMatrixType }) {
   const [selected, setSelected] = useState<GapCell | null>(null);
   const rows = gapRows(matrix);
   if (rows.length === 0) {
-    return <HudPanel title="Gap field" status="Empty"><p>No atom/dimension gaps were returned by the API.</p></HudPanel>;
+    return <HudPanel title="Nothing to check yet" status="Empty"><p>Extract atoms from a source document and their research gaps will show up here.</p></HudPanel>;
   }
   return (
     <section className="sg-gap-field" aria-labelledby="gap-matrix-title">
-      <HudPanel title="Gap field" status={`${rows.length} atom rows`}>
-        <h2 id="gap-matrix-title">Atom by dimension matrix</h2>
-        <p className="sg-muted">Cells are built only from the gap-matrix response. The list below is the accessible equivalent of the HUD field.</p>
+      <HudPanel title="Research gaps at a glance" status={`${rows.length} atoms`}>
+        <h2 id="gap-matrix-title">Every atom, every dimension, one view</h2>
+        <p className="sg-muted">Each row is an atom; each cell is one of the 16 dimensions it&apos;s checked against. Click a cell to see its status and jump to that task.</p>
       </HudPanel>
       {/* This is a labeled collection of independently-focusable status
           buttons, not an interactive spreadsheet with arrow-key cell
@@ -27,21 +27,23 @@ export function GapMatrix({ matrix }: { matrix?: GapMatrixType }) {
         {rows.map((row) => (
           <article key={row.atom.id} className="sg-gap-row">
             <header>
-              <strong>{String(row.atom.label ?? row.atom.text ?? row.atom.id)}</strong>
+              <strong>{String(row.atom.canonical_statement ?? row.atom.label ?? row.atom.text ?? row.atom.id)}</strong>
               <span>{row.cells.length} dimensions</span>
             </header>
             <div className="sg-gap-cells">
-              {row.cells.map((cell, index) => <GapMatrixCell key={`${row.atom.id}-${cell.dimension ?? index}`} cell={cell} onSelect={setSelected} />)}
+              {row.cells.map((cell, index) => (
+                <GapMatrixCell key={`${row.atom.id}-${cell.dimension ?? index}`} projectId={projectId} cell={cell} onSelect={setSelected} />
+              ))}
             </div>
           </article>
         ))}
       </div>
       <aside className="sg-gap-inspector" aria-live="polite">
-        <strong>Selected gap</strong>
+        <strong>Selected dimension</strong>
         {selected ? (
-          <p>{String(selected.dimension ?? selected.dimension_id ?? "Dimension")} is {String(selected.status ?? "UNKNOWN")}.</p>
+          <p>{String(selected.dimension ?? selected.dimension_id ?? "This dimension")} is currently {String(selected.status ?? "UNKNOWN").toLowerCase()}.</p>
         ) : (
-          <p>Select a cell to inspect its backend-returned status.</p>
+          <p>Click any cell above to see its status here.</p>
         )}
       </aside>
     </section>

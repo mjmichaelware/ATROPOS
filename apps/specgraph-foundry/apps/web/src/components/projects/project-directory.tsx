@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { DataGrid } from "@/components/visual/data-grid";
 import { Skeleton } from "@/components/ui/skeleton";
+import { describeClientError } from "@/lib/api/errors";
 import { useProjectsPage } from "@/lib/projects/queries";
 import { ProjectCard } from "./project-card";
 import { ProjectEmptyState } from "./project-empty-state";
@@ -17,15 +19,20 @@ export function ProjectDirectory() {
     return <Skeleton style={{ height: "14rem" }} />;
   }
   if (query.isError) {
-    return <ProjectErrorState onRetry={() => void query.refetch()} />;
+    return <ProjectErrorState detail={describeClientError(query.error)} onRetry={() => void query.refetch()} />;
   }
   const projects = query.data?.body.items ?? [];
   if (projects.length === 0) {
     return <ProjectEmptyState />;
   }
   return (
-    <section aria-labelledby="projects-title">
-      <h1 id="projects-title">Projects</h1>
+    <section className="sg-source-workspace" aria-labelledby="projects-title">
+      <DataGrid />
+      <header className="sg-source-hero">
+        <p className="sg-micro-label">Command center</p>
+        <h1 id="projects-title">Projects</h1>
+        <p>Every source-to-verified-execution pipeline you&rsquo;re running, in one place. Open one to pick up research, planning, or handoff exactly where you left off.</p>
+      </header>
       <div className="sg-project-grid">
         {projects.map((project) => (
           <ProjectCard key={project.id} project={project} />

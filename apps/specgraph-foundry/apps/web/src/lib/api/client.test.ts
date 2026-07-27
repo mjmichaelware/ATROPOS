@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { SpecGraphApiClient } from "./client";
-import { SpecGraphApiError, RequestTimeoutError } from "./errors";
+import { DependencyFailureError, SpecGraphApiError, RequestTimeoutError } from "./errors";
 import { errorEnvelope, jsonResponse } from "@/test/factories";
 
 describe("SpecGraphApiClient", () => {
@@ -74,6 +74,63 @@ describe("SpecGraphApiClient", () => {
     expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
 
+  it("normalizes a GET request's failure even when the built-in retry also fails (regression: raw 'Failed to fetch' reaching the UI)", async () => {
+    // A real browser's fetch() throws a bare TypeError("Failed to fetch")
+    // for a network-level failure - e.g. a mobile tab backgrounded
+    // mid-request. request()'s single built-in GET retry previously called
+    // attempt() a second time with no try/catch around it, so if that
+    // retry also failed, the raw TypeError escaped unnormalized straight
+    // to the caller instead of becoming the same DependencyFailureError
+    // every other failure path produces.
+    const fetchImpl = vi.fn(async () => {
+      throw new TypeError("Failed to fetch");
+    });
+    const client = new SpecGraphApiClient({ baseUrl: "http://127.0.0.1:8787", fetchImpl });
+    const error = await client.request({ path: "/v1/projects" }).catch((thrown: unknown) => thrown);
+    expect(error).toBeInstanceOf(DependencyFailureError);
+    expect((error as Error).message).not.toContain("Failed to fetch");
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+
+  it("tolerates a bounded run of transient poll failures instead of failing the whole wait on one bad tick", async () => {
+    // pollOperation can legitimately run for minutes while a worker picks
+    // up the operation. A mobile browser backgrounding the tab for a
+    // moment mid-wait can make a single poll tick's request fail outright
+    // even though the operation itself is still fine server-side -
+    // failing the entire wait (and discarding everything already waited
+    // for) on one bad tick would be far more disruptive than briefly
+    // retrying.
+    let calls = 0;
+    const fetchImpl = vi.fn(async () => {
+      calls += 1;
+      // Each poll tick makes up to 2 fetch() calls (request()'s own
+      // built-in GET retry), so fail the first 2 ticks entirely (4 calls)
+      // before succeeding on the 3rd tick.
+      if (calls <= 4) {
+        throw new TypeError("Failed to fetch");
+      }
+      return jsonResponse({ operation: { state: "SUCCEEDED" } });
+    });
+    const client = new SpecGraphApiClient({ baseUrl: "http://127.0.0.1:8787", fetchImpl });
+    const result = await client.pollOperation<{ operation: { state: "SUCCEEDED" } }>("/v1/operations/1", {
+      intervalMs: 1,
+      timeoutMs: 5_000,
+    });
+    expect(result.body.operation.state).toBe("SUCCEEDED");
+  });
+
+  it("does not retry a real API error response inside pollOperation", async () => {
+    const fetchImpl = vi.fn(async () => jsonResponse(errorEnvelope("NOT_FOUND"), { status: 404 }));
+    const client = new SpecGraphApiClient({ baseUrl: "http://127.0.0.1:8787", fetchImpl });
+    await expect(
+      client.pollOperation<{ operation: { state: "SUCCEEDED" } }>("/v1/operations/missing", { intervalMs: 1, timeoutMs: 5_000 }),
+    ).rejects.toBeInstanceOf(SpecGraphApiError);
+    // One request() call, which itself makes at most 2 fetch() calls for a
+    // GET (the built-in single retry) - a 404 must not be retried by the
+    // poll loop's own transient-failure tolerance.
+    expect(fetchImpl.mock.calls.length).toBeLessThanOrEqual(2);
+  });
+
   it("turns client timeouts into typed timeout errors", async () => {
     const fetchImpl = vi.fn(
       (_url: RequestInfo | URL, init?: RequestInit) =>
@@ -88,5 +145,25 @@ describe("SpecGraphApiClient", () => {
     );
     const client = new SpecGraphApiClient({ baseUrl: "http://127.0.0.1:8787", fetchImpl, requestTimeoutMs: 1 });
     await expect(client.request({ path: "/health/ready" })).rejects.toBeInstanceOf(RequestTimeoutError);
+  });
+
+  it("calls the default fetch with a receiver, not detached (regression: browsers throw 'Illegal invocation' for bare fetch refs)", async () => {
+    // Real browsers' native fetch has an internal brand check requiring
+    // `this` to be the window/global object. Simulate that here: throw
+    // unless invoked with globalThis as the receiver, exactly like a real
+    // browser would for a fetch reference stored and called as a method.
+    const brandedFetch = function (this: unknown) {
+      if (this !== globalThis) {
+        throw new TypeError("Failed to execute 'fetch' on 'Window': Illegal invocation");
+      }
+      return Promise.resolve(jsonResponse({ items: [] }));
+    };
+    vi.stubGlobal("fetch", brandedFetch);
+    try {
+      const client = new SpecGraphApiClient({ baseUrl: "http://127.0.0.1:8787" });
+      await expect(client.request({ path: "/v1/projects" })).resolves.toMatchObject({ body: { items: [] } });
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });

@@ -61,6 +61,51 @@ a {
   container-name: sg-shell;
 }
 
+/* Persistent, per-route-tinted ambient wash behind every authenticated
+   screen - fixed and z-index: -1 (a sibling of .sg-shell, not a
+   descendant) specifically so it never becomes a clipping/scroll
+   ancestor of .sg-header, which relies on position: sticky. Color comes
+   from --sg-route-accent (set by RouteAccent's [data-accent] on <html>,
+   themes.css), so it shifts per section - Sources/Research/Graph/
+   Routing/Handoff/Execution each read differently - and cross-fades via
+   the same site-wide background-color transition already defined on
+   :root, without any extra JS. */
+.sg-shell-ambient {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  background: var(--sg-canvas);
+  transition: background-color var(--sg-duration-morph) var(--sg-ease-standard);
+}
+
+/* Reuses the splash screen's proven, reduced-motion-safe drifting-blob
+   animation (.sg-splash-blob / sg-splash-drift) so every authenticated
+   screen gets genuine, slow, ambient motion - not just a static tint -
+   tinted by --sg-route-accent so it cross-fades per section exactly like
+   the flat gradient it replaces did. */
+.sg-shell-blob-a {
+  inline-size: 34rem;
+  block-size: 34rem;
+  inset-block-start: -10rem;
+  inset-inline-start: -8rem;
+  background: var(--sg-route-accent, var(--sg-accent-2));
+  opacity: 0.22;
+  transition: background-color var(--sg-duration-morph) var(--sg-ease-standard);
+}
+
+.sg-shell-blob-b {
+  inline-size: 30rem;
+  block-size: 30rem;
+  inset-block-end: -12rem;
+  inset-inline-end: -10rem;
+  background: var(--sg-route-accent, var(--sg-accent-2));
+  opacity: 0.16;
+  animation-duration: 24s;
+  animation-delay: -9s;
+  transition: background-color var(--sg-duration-morph) var(--sg-ease-standard);
+}
+
 .sg-header {
   position: sticky;
   top: var(--sg-space-3);
@@ -74,6 +119,26 @@ a {
   border: 1px solid var(--sg-border);
   border-radius: var(--sg-radius-lg);
   backdrop-filter: blur(var(--sg-blur));
+}
+
+/* Every direct child of the header must be allowed to shrink below its
+   content size (the flex default is min-width: auto, which refuses to
+   shrink past intrinsic content width) - otherwise an arbitrarily long
+   sign-in email is exactly the kind of unbounded user data that forces
+   the header, and with it the whole page, wider than the viewport. */
+.sg-header > * {
+  min-width: 0;
+}
+
+.sg-account {
+  min-width: 0;
+}
+
+.sg-account-email {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 .sg-brand,
@@ -96,6 +161,16 @@ a {
   border-radius: 999px;
   background: var(--sg-accent);
   box-shadow: 0 0 0 6px color-mix(in srgb, var(--sg-accent), transparent 78%);
+}
+
+/* The full primary nav duplicates what's already reachable through the
+   Menu dialog (.sg-mobile-panel) below 760px - shown here unconditionally
+   forced the header row wider than the viewport on phone widths, letting
+   the whole page pan/scroll sideways. Re-enabled at the same 760px point
+   .sg-mobile-nav hides at, in both the container-query and @supports-not
+   fallback breakpoints below. */
+.sg-header-nav {
+  display: none;
 }
 
 .sg-header-nav a,
@@ -185,6 +260,19 @@ a {
   background: var(--sg-elevated);
   border: 1px solid var(--sg-border);
   border-radius: var(--sg-radius-lg);
+}
+
+.sg-mobile-panel-brand {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  margin-inline: auto;
+  margin-block-end: var(--sg-space-2);
+  border-radius: var(--sg-radius-pill);
+  color: var(--sg-accent);
+  background: color-mix(in srgb, var(--sg-accent) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--sg-accent) 30%, transparent);
 }
 
 .sg-skip-link {
@@ -317,7 +405,7 @@ a:focus-visible {
   border-radius: var(--sg-radius-sm);
   background: linear-gradient(90deg, var(--sg-elevated), var(--sg-border), var(--sg-elevated));
   background-size: 200% 100%;
-  animation: sg-skeleton var(--sg-duration-normal) var(--sg-ease) infinite;
+  animation: sg-skeleton 1.6s linear infinite;
 }
 
 .sg-status {
@@ -343,6 +431,29 @@ a:focus-visible {
 .sg-status-warning { color: var(--sg-warning); }
 .sg-status-danger { color: var(--sg-danger); }
 .sg-status-info { color: var(--sg-info); }
+
+/* Beacon pulse for a genuinely RUNNING status (real backend enum value,
+   never a decorative default) - a radiating ring driven by currentColor
+   so it inherits whichever tone the badge already carries. Automatically
+   reduced-motion-safe via the blanket animation-duration override in
+   themes.css. */
+.sg-status-mark-live {
+  position: relative;
+}
+
+.sg-status-mark-live::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: currentColor;
+  animation: sg-status-beacon 1.8s var(--sg-ease-standard) infinite;
+}
+
+@keyframes sg-status-beacon {
+  0% { transform: scale(1); opacity: 0.55; }
+  100% { transform: scale(2.6); opacity: 0; }
+}
 
 .sg-hero {
   display: grid;
@@ -384,14 +495,32 @@ a:focus-visible {
 }
 
 .sg-auth-page {
+  position: relative;
   min-height: 100vh;
   display: grid;
   place-items: center;
   padding: var(--sg-space-5);
+  overflow: clip;
+}
+
+.sg-auth-home-link {
+  position: absolute;
+  inset-block-start: max(var(--sg-space-5), var(--sg-safe-top));
+  inset-inline-start: max(var(--sg-space-5), var(--sg-safe-left));
+  color: var(--sg-text-secondary);
+  font-weight: var(--sg-weight-medium);
+  text-decoration: none;
+  transition: color var(--sg-duration-normal) var(--sg-ease-standard);
+}
+
+.sg-auth-home-link:hover,
+.sg-auth-home-link:focus-visible {
+  color: var(--sg-accent-2);
 }
 
 .sg-auth-card {
   width: min(100%, 34rem);
+  animation: sg-reveal var(--sg-duration-slow) var(--sg-ease-standard) both;
 }
 
 .sg-form,
@@ -434,7 +563,9 @@ a:focus-visible {
 }
 
 .sg-project-card {
-  display: block;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sg-space-3);
   min-height: var(--sg-touch-target);
   padding: var(--sg-space-4);
   color: var(--sg-text-primary);
@@ -442,6 +573,52 @@ a:focus-visible {
   background: var(--sg-surface);
   border: 1px solid var(--sg-border);
   border-radius: var(--sg-radius-lg);
+  transition: border-color var(--sg-duration-press) var(--sg-ease-standard);
+}
+
+.sg-project-card-icon {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--sg-radius-pill);
+  color: var(--sg-accent);
+  background: color-mix(in srgb, var(--sg-accent) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--sg-accent) 30%, transparent);
+}
+
+.sg-project-card-body {
+  display: grid;
+  gap: var(--sg-space-1);
+  min-inline-size: 0;
+}
+
+.sg-project-card-body h2 {
+  margin: 0;
+}
+
+.sg-project-card-slug {
+  color: var(--sg-text-muted);
+  font-size: var(--sg-type-sm);
+}
+
+.sg-project-card-description {
+  color: var(--sg-text-secondary);
+}
+
+.sg-project-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sg-space-3);
+  margin-block-start: var(--sg-space-2);
+}
+
+.sg-project-card-open {
+  color: var(--sg-accent);
+  font-size: var(--sg-type-sm);
+  white-space: nowrap;
 }
 
 .sg-project-card p,
@@ -473,6 +650,37 @@ a:focus-visible {
   font-size: var(--sg-type-lg-fluid, var(--sg-type-lg));
   font-weight: var(--sg-weight-bold);
   font-variant-numeric: tabular-nums;
+}
+
+.sg-readiness-stages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sg-space-3);
+  list-style: none;
+  padding: 0;
+  margin: var(--sg-space-4) 0 0;
+}
+
+.sg-readiness-stages li {
+  display: flex;
+}
+
+.sg-readiness-stages li > *,
+.sg-readiness-stages a {
+  display: flex;
+  align-items: center;
+  gap: var(--sg-space-2);
+  padding: var(--sg-space-2) var(--sg-space-3);
+  border: 1px solid var(--sg-border);
+  border-radius: var(--sg-radius-md);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color var(--sg-duration-press) var(--sg-ease-standard);
+}
+
+.sg-readiness-stages a:hover,
+.sg-readiness-stages a:focus-visible {
+  border-color: var(--sg-route-accent, var(--sg-accent));
 }
 
 @keyframes sg-skeleton {
@@ -519,6 +727,10 @@ a:focus-visible {
     .sg-mobile-nav {
       display: none;
     }
+
+    .sg-header-nav {
+      display: flex;
+    }
   }
 }
 
@@ -543,6 +755,10 @@ a:focus-visible {
 
     .sg-mobile-nav {
       display: none;
+    }
+
+    .sg-header-nav {
+      display: flex;
     }
   }
 }
@@ -585,8 +801,58 @@ a:focus-visible {
   background: radial-gradient(circle at 12% 18%, color-mix(in srgb, var(--sg-accent-2) 22%, transparent), transparent 28%), radial-gradient(circle at 88% 8%, color-mix(in srgb, var(--sg-derivation) 20%, transparent), transparent 30%), linear-gradient(135deg, color-mix(in srgb, var(--sg-surface) 88%, transparent), color-mix(in srgb, var(--sg-canvas) 96%, transparent));
   box-shadow: var(--sg-shadow-md), var(--sg-glow);
 }
+
+/* Shared across every workspace hero (Sources/Research/Routing/Handoff/
+   Execution/Projects) since they all use this one class - a slow rotating
+   highlight sweep behind the content, standing in for the "living
+   instrument" feel without claiming to represent any specific data field.
+   clip'd by the hero's own overflow so it never bleeds into surrounding
+   layout, and z-index'd behind the text/controls. */
+.sg-source-hero::before {
+  content: "";
+  position: absolute;
+  inset: -40%;
+  z-index: 0;
+  background: conic-gradient(from 0deg, transparent 0deg, color-mix(in srgb, var(--sg-route-accent, var(--sg-accent-2)) 16%, transparent) 60deg, transparent 140deg, transparent 360deg);
+  animation: sg-hero-sheen 34s linear infinite;
+  pointer-events: none;
+}
+
+.sg-source-hero > * {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes sg-hero-sheen {
+  to { transform: rotate(360deg); }
+}
+
+/* The blanket *{} reduced-motion override in themes.css does not reliably
+   reach ::before/::after generated content in every engine, so this one
+   is disabled explicitly rather than relying on that rule alone. */
+@media (prefers-reduced-motion: reduce) {
+  .sg-source-hero::before {
+    animation: none;
+  }
+}
+
 .sg-source-hero h1 { max-inline-size: 12ch; margin: 0; font-size: clamp(2.5rem, 9vw, 6.2rem); line-height: 0.92; letter-spacing: -0.08em; }
 .sg-source-hero p { max-inline-size: 64ch; }
+
+.sg-hero-title-row {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: var(--sg-space-3);
+}
+
+.sg-hero-title-row h1 {
+  margin: 0;
+}
+
+.sg-hero-title-row .sg-help-hint {
+  margin-block-end: 0.5em;
+}
 
 .sg-micro-label,
 .sg-hud-panel-header,
@@ -680,7 +946,45 @@ a:focus-visible {
 .sg-provenance-node[data-selected] { border-color: var(--sg-accent-2); box-shadow: var(--sg-glow); }
 .sg-signal-line { inline-size: 3rem; block-size: 1px; background: linear-gradient(90deg, var(--sg-accent-2), var(--sg-derivation)); }
 .sg-signal-line[data-active] { animation: sg-scan var(--sg-duration-slow) var(--sg-ease) infinite alternate; }
-.sg-metric-orbit { display: grid; place-items: center; inline-size: 7rem; block-size: 7rem; border: 1px solid var(--sg-border); border-radius: 50%; }
+.sg-metric-orbit {
+  position: relative;
+  display: grid;
+  place-items: center;
+  inline-size: 7rem;
+  block-size: 7rem;
+  border-radius: 50%;
+}
+
+.sg-metric-orbit-fill {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(var(--sg-accent) calc(var(--sg-orbit-value, 0) * 1%), color-mix(in srgb, var(--sg-border) 70%, transparent) 0);
+  /* Glow radius is a direct function of the real percentage this ring
+     represents - a ring near 0% has no bloom, a ring near 100% blooms
+     visibly, so the light itself is reporting the number, not decorating it. */
+  box-shadow: 0 0 calc(var(--sg-orbit-value, 0) * 0.22px) calc(var(--sg-orbit-value, 0) * 0.05px) color-mix(in srgb, var(--sg-accent) 55%, transparent);
+  transition: background var(--sg-duration-slow) var(--sg-ease-standard), box-shadow var(--sg-duration-slow) var(--sg-ease-standard);
+}
+
+.sg-metric-orbit-fill::after {
+  content: "";
+  position: absolute;
+  inset: 0.5rem;
+  border-radius: 50%;
+  background: var(--sg-surface);
+  box-shadow: inset 0 0 0 1px var(--sg-border);
+}
+
+.sg-metric-orbit strong,
+.sg-metric-orbit small {
+  position: relative;
+  z-index: 1;
+}
+
+.sg-metric-orbit small {
+  color: var(--sg-text-secondary);
+}
 .sg-reveal { animation: sg-reveal var(--sg-duration-normal) var(--sg-ease) both; }
 .sg-sheet { position: fixed; inset-inline: 0; inset-block-end: 0; z-index: var(--sg-z-overlay); max-block-size: 92dvh; overflow: auto; padding: var(--sg-space-5); border-start-start-radius: var(--sg-radius-lg); border-start-end-radius: var(--sg-radius-lg); background: var(--sg-overlay); backdrop-filter: blur(var(--sg-blur)); }
 .sg-tooltip { padding: var(--sg-space-2) var(--sg-space-3); border: 1px solid var(--sg-border); border-radius: var(--sg-radius-sm); background: var(--sg-elevated); color: var(--sg-text-primary); }
@@ -836,6 +1140,27 @@ a:focus-visible {
 .sg-gap-cell[data-status="not_applicable"] { border-color: var(--sg-text-muted); }
 .sg-gap-cell[data-status="open"] { border-color: var(--sg-warning); }
 
+.sg-gap-cell-row {
+  display: flex;
+  align-items: stretch;
+  gap: var(--sg-space-2);
+}
+
+.sg-gap-cell-row .sg-gap-cell {
+  flex: 1;
+}
+
+.sg-gap-cell-open {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-inline-size: var(--sg-touch-target);
+  min-block-size: var(--sg-touch-target);
+  border: 1px solid var(--sg-border);
+  border-radius: var(--sg-radius-md);
+  color: var(--sg-text-primary);
+}
+
 .sg-gap-inspector {
   padding: var(--sg-space-4);
   border-inline-start: 3px solid var(--sg-derivation);
@@ -943,6 +1268,48 @@ a:focus-visible {
 .sg-graph-empty {
   display: grid;
   gap: var(--sg-space-3);
+  justify-items: start;
+}
+
+.sg-graph-empty-icon {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: var(--sg-radius-pill);
+  font-size: var(--sg-type-lg);
+  color: var(--sg-accent-2);
+  background: var(--sg-semantic-planning-subtle, var(--sg-surface));
+  border: 1px solid var(--sg-semantic-planning-border, var(--sg-border));
+  box-shadow: var(--sg-glow);
+}
+
+.sg-graph-empty[data-tone="execution"] .sg-graph-empty-icon {
+  color: var(--sg-accent);
+  background: var(--sg-semantic-verified-subtle, var(--sg-surface));
+  border-color: var(--sg-semantic-verified-border, var(--sg-border));
+}
+
+.sg-help-hint {
+  display: inline-grid;
+  place-items: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-inline-start: var(--sg-space-2);
+  border-radius: var(--sg-radius-pill);
+  border: 1px solid var(--sg-border);
+  background: var(--sg-surface);
+  color: var(--sg-text-secondary);
+  font-size: var(--sg-type-xs);
+  line-height: 1;
+  cursor: help;
+  transition: border-color var(--sg-duration-normal) var(--sg-ease-standard), color var(--sg-duration-normal) var(--sg-ease-standard);
+}
+
+.sg-help-hint:hover,
+.sg-help-hint:focus-visible {
+  color: var(--sg-accent-2);
+  border-color: var(--sg-accent-2);
 }
 
 .sg-graph-layout-shell {
@@ -1313,25 +1680,298 @@ a:focus-visible {
   background: var(--sg-elevated);
 }
 
-.sg-update-banner {
+/* ---------------------------------------------------------------------
+   Splash intro: full-viewport overlay shown once per page load before
+   the marketing landing content. Dismisses on timeout, any keypress, or
+   any pointer press; a visible "Enter" button covers users who land
+   here without a mouse/keyboard event firing globally. The landing
+   content underneath is always present in the DOM (never blocked from
+   assistive tech), so this is a purely decorative, skippable layer.
+   --------------------------------------------------------------------- */
+.sg-splash {
   position: fixed;
-  inset-inline: var(--sg-space-4);
-  inset-block-end: max(var(--sg-space-4), var(--sg-safe-bottom));
+  inset: 0;
   z-index: var(--sg-z-overlay);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--sg-space-4);
-  flex-wrap: wrap;
-  padding: var(--sg-space-4);
-  background: var(--sg-elevated);
-  border: 1px solid var(--sg-border);
-  border-radius: var(--sg-radius-lg);
-  box-shadow: var(--sg-shadow-md);
+  display: grid;
+  place-items: center;
+  gap: var(--sg-space-6);
+  padding: var(--sg-space-5);
+  overflow: clip;
+  background:
+    radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--sg-accent-2) 16%, transparent), transparent 60%),
+    var(--sg-canvas);
 }
 
-@media (prefers-reduced-transparency: reduce) {
-  .sg-update-banner {
-    background: var(--sg-surface);
+.sg-splash-ambient {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.sg-splash-blob {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(64px);
+  opacity: 0.32;
+  animation: sg-splash-drift 16s var(--sg-ease-standard) infinite;
+}
+
+.sg-splash-blob-a {
+  inline-size: 26rem;
+  block-size: 26rem;
+  inset-block-start: -8rem;
+  inset-inline-start: -6rem;
+  background: var(--sg-accent-2);
+}
+
+.sg-splash-blob-b {
+  inline-size: 22rem;
+  block-size: 22rem;
+  inset-block-end: -10rem;
+  inset-inline-end: -8rem;
+  background: var(--sg-derivation);
+  animation-duration: 20s;
+  animation-delay: -7s;
+}
+
+@keyframes sg-splash-drift {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(3rem, 2rem) scale(1.08);
+  }
+  66% {
+    transform: translate(-2.5rem, 3rem) scale(0.96);
+  }
+}
+
+.sg-splash-mark {
+  display: grid;
+  justify-items: center;
+  gap: var(--sg-space-3);
+  text-align: center;
+  view-transition-name: sg-splash-mark;
+}
+
+.sg-splash-glyph {
+  overflow: visible;
+  margin-block-end: var(--sg-space-2);
+}
+
+.sg-splash-glyph-edge {
+  stroke: color-mix(in srgb, var(--sg-accent-2) 75%, transparent);
+  stroke-dasharray: 40;
+  stroke-dashoffset: 40;
+  animation: sg-splash-draw 460ms var(--sg-ease-standard) forwards;
+}
+
+.sg-splash-glyph-edge:nth-of-type(2) {
+  animation-delay: 110ms;
+}
+
+.sg-splash-glyph-edge:nth-of-type(3) {
+  animation-delay: 220ms;
+}
+
+.sg-splash-glyph-node {
+  fill: var(--sg-accent);
+  transform-origin: center;
+  transform-box: fill-box;
+  opacity: 0;
+  animation: sg-splash-node-pop 460ms var(--sg-ease-spring) forwards;
+  animation-delay: 300ms;
+}
+
+.sg-splash-glyph-node:nth-of-type(2) {
+  animation-delay: 390ms;
+}
+
+.sg-splash-glyph-node:nth-of-type(3) {
+  animation-delay: 480ms;
+  filter: drop-shadow(0 0 14px color-mix(in srgb, var(--sg-accent), transparent 45%));
+}
+
+.sg-splash-title {
+  margin: 0;
+  font-family: var(--sg-font-display, var(--sg-font-sans));
+  font-size: clamp(3rem, 6vw + 1rem, 7rem);
+  font-weight: var(--sg-weight-bold);
+  letter-spacing: -0.03em;
+  line-height: 1;
+  animation: sg-splash-in 640ms var(--sg-ease-spring) 680ms both;
+}
+
+.sg-splash-tagline {
+  margin: 0;
+  color: var(--sg-text-secondary);
+  font-size: var(--sg-type-lg-fluid, var(--sg-type-lg));
+  animation: sg-reveal var(--sg-duration-slow) var(--sg-ease-standard) 1080ms both;
+}
+
+.sg-splash-skip {
+  position: fixed;
+  inset-block-end: max(var(--sg-space-6), var(--sg-safe-bottom));
+  animation: sg-reveal var(--sg-duration-slow) var(--sg-ease-standard) 700ms both;
+}
+
+@keyframes sg-splash-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes sg-splash-node-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1.18);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes sg-splash-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sg-splash {
+    display: none;
+  }
+}
+
+/* ---------------------------------------------------------------------
+   Landing page: consumer-facing marketing content, not a backend status
+   readout. Reuses the same HUD-glow hero pattern as sg-source-hero and
+   the same card grid as everywhere else in the app for visual
+   consistency, just centered and scaled up for a first-visit moment.
+   --------------------------------------------------------------------- */
+.sg-landing {
+  position: relative;
+  display: grid;
+  gap: var(--sg-space-7);
+  padding-block: var(--sg-space-6);
+  overflow: clip;
+}
+
+.sg-landing-ambient {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.sg-landing-feature-icon {
+  display: grid;
+  place-items: center;
+  inline-size: 3rem;
+  block-size: 3rem;
+  margin-block-end: var(--sg-space-2);
+  border-radius: var(--sg-radius-md);
+  color: var(--sg-accent-2);
+  background: color-mix(in srgb, var(--sg-accent-2) 14%, var(--sg-surface));
+  border: 1px solid color-mix(in srgb, var(--sg-accent-2) 30%, var(--sg-border));
+}
+
+.sg-landing-hero {
+  position: relative;
+  overflow: clip;
+  display: grid;
+  justify-items: center;
+  gap: var(--sg-space-4);
+  padding: clamp(2.5rem, 8vw, 6rem) clamp(1.5rem, 6vw, 4rem);
+  text-align: center;
+  border: 1px solid color-mix(in srgb, var(--sg-accent-2) 28%, var(--sg-border));
+  border-radius: calc(var(--sg-radius-lg) * 1.4);
+  background:
+    radial-gradient(circle at 18% 12%, color-mix(in srgb, var(--sg-accent-2) 20%, transparent), transparent 32%),
+    radial-gradient(circle at 84% 8%, color-mix(in srgb, var(--sg-derivation) 18%, transparent), transparent 34%),
+    linear-gradient(135deg, color-mix(in srgb, var(--sg-surface) 88%, transparent), color-mix(in srgb, var(--sg-canvas) 96%, transparent));
+  box-shadow: var(--sg-shadow-md), var(--sg-glow);
+}
+
+.sg-landing-title {
+  margin: 0;
+  font-family: var(--sg-font-display, var(--sg-font-sans));
+  font-size: clamp(3rem, 5vw + 1.5rem, 6.5rem);
+  font-weight: var(--sg-weight-bold);
+  letter-spacing: -0.03em;
+  line-height: 0.98;
+}
+
+.sg-landing-tagline {
+  max-width: 32ch;
+  margin: 0;
+  font-size: var(--sg-type-lg-fluid, var(--sg-type-lg));
+  font-weight: var(--sg-weight-medium);
+  color: var(--sg-text-primary);
+}
+
+.sg-landing-lede {
+  max-width: var(--sg-measure);
+  margin: 0;
+  color: var(--sg-text-secondary);
+}
+
+.sg-landing-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--sg-space-3);
+  margin-block-start: var(--sg-space-2);
+}
+
+.sg-landing-feature {
+  animation: sg-reveal var(--sg-duration-slow) var(--sg-ease-standard) both;
+}
+
+.sg-landing-feature:nth-child(2) { animation-delay: calc(var(--sg-stagger-step) * 1); }
+.sg-landing-feature:nth-child(3) { animation-delay: calc(var(--sg-stagger-step) * 2); }
+.sg-landing-feature:nth-child(4) { animation-delay: calc(var(--sg-stagger-step) * 3); }
+.sg-landing-feature:nth-child(5) { animation-delay: calc(var(--sg-stagger-step) * 4); }
+
+.sg-landing-feature h2 {
+  margin: 0 0 var(--sg-space-2);
+  font-size: var(--sg-type-lg-fluid, var(--sg-type-lg));
+}
+
+.sg-landing-feature p {
+  margin: 0;
+  color: var(--sg-text-secondary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sg-splash-mark,
+  .sg-splash-tagline,
+  .sg-splash-skip,
+  .sg-splash-glyph-edge,
+  .sg-splash-glyph-node,
+  .sg-splash-blob,
+  .sg-landing-hero,
+  .sg-landing-feature {
+    animation: none !important;
+  }
+
+  .sg-splash-glyph-edge {
+    stroke-dashoffset: 0;
+  }
+
+  .sg-splash-glyph-node {
+    opacity: 1;
+    transform: none;
   }
 }

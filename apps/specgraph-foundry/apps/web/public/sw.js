@@ -19,6 +19,12 @@ const RUNTIME_CACHE_MAX_ENTRIES = 60;
 const NEVER_CACHE_PATH_PREFIXES = ["/v1/", "/api/", "/auth/"];
 
 self.addEventListener("install", (event) => {
+  // Activate a newly installed worker immediately instead of waiting for
+  // every open tab to close, so a new deployment never sits idle behind an
+  // old one — paired with clients.claim() in activate() and the controlled
+  // reload in pwa-registration.tsx, this guarantees no stale frontend is
+  // ever left showing.
+  self.skipWaiting();
   event.waitUntil(
     caches
       .open(SHELL_CACHE)

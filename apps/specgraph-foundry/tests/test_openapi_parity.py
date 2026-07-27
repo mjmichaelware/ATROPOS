@@ -43,6 +43,7 @@ EXPECTED_OPERATIONS = {
     ("GET", "/v1/documents/{document_id}/verify"),
     ("POST", "/v1/documents/{document_id}/extract"),
     ("GET", "/v1/documents/{document_id}/atoms"),
+    ("GET", "/v1/documents/{document_id}/atoms/export"),
     ("GET", "/v1/documents/{document_id}/provenance"),
     ("GET", "/v1/source-uploads/{upload_id}"),
     ("POST", "/v1/source-uploads/{upload_id}/finalize"),
@@ -168,7 +169,7 @@ class OpenApiParityTest(unittest.TestCase):
         )
         self.assertEqual(
             len(operation_ids),
-            68,
+            69,
         )
 
     def test_inventory_matches_implementation(

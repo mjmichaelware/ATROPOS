@@ -116,7 +116,7 @@ describe("ExecutionRunDetail", () => {
     renderRunDetail();
     fireEvent.click(await screen.findByRole("button", { name: "Verify run" }));
     await waitFor(() => expect(verifyExecutionRun).toHaveBeenCalledWith(expect.anything(), "run-1", "idempotency-key"));
-    await waitFor(() => expect(pollOperation).toHaveBeenCalledWith("/v1/operations/op-3"));
+    await waitFor(() => expect(pollOperation).toHaveBeenCalledWith("/v1/operations/op-3", expect.objectContaining({ onProgress: expect.any(Function) })));
   });
 
   it("preserves prior run state when verification fails", async () => {

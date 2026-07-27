@@ -248,10 +248,10 @@ class FakeStorageTransport:
             )
 
         if path.startswith(
-            "/storage/v1/object/authenticated/"
+            "/storage/v1/object/"
         ):
             suffix = path.removeprefix(
-                "/storage/v1/object/authenticated/"
+                "/storage/v1/object/"
             )
             bucket, _, object_path = suffix.partition(
                 "/"

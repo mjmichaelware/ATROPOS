@@ -63,7 +63,18 @@ beforeEach(() => {
       summary: { open_dimensions: 1, resolved_dimensions: 1, not_applicable_dimensions: 1 },
       dimensions: ["safety", "provenance"],
       atoms: [
-        { id: "atom-1", text: "The system preserves provenance.", document_id: "doc-1", dimensions: { safety: "OPEN", provenance: { status: "RESOLVED" } } },
+        {
+          id: "atom-1",
+          text: "The system preserves provenance.",
+          canonical_statement: "The system preserves provenance.",
+          kind: "FUNCTIONAL",
+          modality: "TEXT",
+          document_id: "doc-1",
+          dimensions: {
+            safety: { status: "OPEN", task_id: "task-1" },
+            provenance: { status: "RESOLVED", task_id: "task-2" },
+          },
+        },
       ],
     },
   });
@@ -77,6 +88,9 @@ beforeEach(() => {
       atom_id: "atom-1",
       dimension: "safety",
       status: "PENDING",
+      canonical_statement: "The system preserves provenance.",
+      kind: "FUNCTIONAL",
+      modality: "TEXT",
       evidence: [{ id: "ev-1", source_uri: "https://example.test/spec", source_title: "Spec", excerpt: "Evidence" }],
     },
   });
@@ -90,8 +104,11 @@ beforeEach(() => {
 describe("research workspace", () => {
   it("renders overview, gap matrix, bounded task pagination, and authority separation", async () => {
     renderResearch(<ResearchWorkspace projectId="project-1" />);
-    expect(await screen.findByRole("heading", { name: "Gap-field research instrument" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Fill in what your sources don't say yet" })).toBeInTheDocument();
     expect(screen.getByText("Source authority: immutable uploaded source and provenance.")).toBeInTheDocument();
+    // Regression: the Research overview never linked to Routing, so a
+    // provider-driven automation path had no discovery path from Research.
+    expect(screen.getByRole("link", { name: "Routing" })).toHaveAttribute("href", "/projects/project-1/routing");
     fireEvent.click(screen.getByRole("tab", { name: "Gap matrix" }));
     expect(screen.getByLabelText("Research gap matrix")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("tab", { name: "Task queue" }));
@@ -100,9 +117,42 @@ describe("research workspace", () => {
     expect(listResearchTasks).toHaveBeenCalled();
   });
 
+  it("links atom dimension badges and gap matrix cells straight to their research task", async () => {
+    // Regression test: gap cells used to render as inert status badges/buttons
+    // with no way to navigate to the underlying task - "I can't even open
+    // them." Both the atoms-and-dimensions view and the gap matrix now link
+    // through to /projects/{projectId}/research/tasks/{taskId} whenever the
+    // API returns a task_id for that cell.
+    renderResearch(<ResearchWorkspace projectId="project-1" />);
+    expect(await screen.findByRole("heading", { name: "Fill in what your sources don't say yet" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("tab", { name: "Atoms and dimensions" }));
+    // Regression: atom cards used to render the literal string "Atom" for
+    // every card (a label/text vs. canonical_statement field mismatch) -
+    // the card must show the atom's actual statement.
+    expect(screen.getByRole("heading", { name: "The system preserves provenance." })).toBeInTheDocument();
+    // Each dimension badge's accessible name includes the dimension itself
+    // (not just the shared "Open"/"Resolved" status text) so screen-reader
+    // and keyboard link-list users can tell multiple gap links apart.
+    expect(screen.getByRole("link", { name: "safety: Open" })).toHaveAttribute("href", "/projects/project-1/research/tasks/task-1");
+
+    fireEvent.click(screen.getByRole("tab", { name: "Gap matrix" }));
+    expect(screen.getByRole("link", { name: "Go to research task for safety" })).toHaveAttribute(
+      "href",
+      "/projects/project-1/research/tasks/task-1",
+    );
+
+    // The navigation link must not swallow the pre-existing local-preview
+    // interaction: selecting the cell body still updates the inspector aside.
+    fireEvent.click(screen.getByRole("button", { name: /safety/ }));
+    expect(await screen.findByText("safety is currently open.")).toBeInTheDocument();
+  });
+
   it("claims a task, records evidence, requires NOT_APPLICABLE justification, and polls completion", async () => {
     renderResearch(<TaskInspector projectId="project-1" taskId="task-1" />);
     expect(await screen.findByRole("heading", { name: "safety" })).toBeInTheDocument();
+    // Regression: opening a task via the "OPEN" link used to show only an
+    // empty claim/evidence form with no indication of what the atom says.
+    expect(screen.getByText("The system preserves provenance.")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Claim task" }));
     await waitFor(() => expect(claimResearchTask).toHaveBeenCalled());
     fireEvent.change(screen.getByLabelText("Evidence URL"), { target: { value: "https://example.test/research" } });
@@ -122,7 +172,7 @@ describe("research workspace", () => {
 
   it("has no serious or critical axe violations, including the gap matrix panel", async () => {
     const { container } = renderResearch(<ResearchWorkspace projectId="project-1" />);
-    await screen.findByRole("heading", { name: "Gap-field research instrument" });
+    await screen.findByRole("heading", { name: "Fill in what your sources don't say yet" });
     fireEvent.click(screen.getByRole("tab", { name: "Gap matrix" }));
     expect(screen.getByLabelText("Research gap matrix")).toBeInTheDocument();
     await expectNoSeriousAxeViolations(container);
