@@ -1,6 +1,7 @@
 package atropos.core.agent
 
 import atropos.core.security.RedactionFilter
+import atropos.core.policy.ActionActor
 import atropos.core.policy.ActionProposal
 import atropos.core.policy.AgencyDisposition
 import atropos.core.policy.BoundedAgencyGate
@@ -228,7 +229,18 @@ class AgentPatchStore(
     }
 
     fun runGitApplyCheck(diffFile: Path): AgentPatchCheckResult =
-        runThroughAgency(PatchActionProposals.applyCheck(diffFile, repoRoot))
+        runThroughAgency(PatchActionProposals.applyCheck(diffFile, repoRoot, patchActor(diffFile)))
+
+    /**
+     * The actor for patch work is the patch itself: it is model-authored, and
+     * the patch id is the only identifier that actually exists at every call
+     * site. It is carried in the diff's filename, `<id>.diff`.
+     */
+    private fun patchActor(diffFile: Path): ActionActor =
+        ActionActor.HierarchyNode(
+            role = "patch",
+            nodeId = diffFile.fileName.toString().removeSuffix(".diff")
+        )
 
     /**
      * Runs a git proposal, but only if the system authorised it.
@@ -306,14 +318,18 @@ class AgentPatchStore(
     }
 
     fun runGitApply(diffFile: Path): AgentPatchCheckResult =
-        runThroughAgency(PatchActionProposals.apply(diffFile, repoRoot))
+        runThroughAgency(PatchActionProposals.apply(diffFile, repoRoot, patchActor(diffFile)))
 
     fun runGitStatusForPaths(paths: List<String>): String {
         val cleanPaths = paths.map { it.trim() }.filter { it.isNotBlank() }
         if (cleanPaths.isEmpty()) return ""
 
         return runThroughAgency(
-            PatchActionProposals.statusForPaths(cleanPaths, repoRoot),
+            PatchActionProposals.statusForPaths(
+                cleanPaths,
+                repoRoot,
+                ActionActor.HierarchyNode(role = "patch", nodeId = "status")
+            ),
             compact = false
         ).output
     }
@@ -354,7 +370,8 @@ class AgentPatchStore(
         val mutationProposal = PatchActionProposals.applyStored(
             patchFile = snapshot.patchFile,
             repoRoot = repoRoot,
-            touchedPaths = snapshot.extraction.touchedPaths
+            touchedPaths = snapshot.extraction.touchedPaths,
+            actor = ActionActor.HierarchyNode(role = "patch", nodeId = snapshot.id)
         )
         val mutationDecision = agencyGate.evaluate(mutationProposal)
         if (mutationDecision.disposition != AgencyDisposition.ALLOWED) {

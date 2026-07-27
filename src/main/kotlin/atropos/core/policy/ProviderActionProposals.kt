@@ -31,10 +31,16 @@ object ProviderActionProposals {
      * @param promptLength recorded for the audit trail; the prompt itself is
      *   never carried into policy metadata.
      */
-    fun forCall(provider: String, operation: String, promptLength: Int): ActionProposal =
+    fun forCall(
+        provider: String,
+        operation: String,
+        promptLength: Int,
+        actor: ActionActor
+    ): ActionProposal =
         ActionProposal(
             id = nextId(),
             actionClass = PolicyActionClass.PROVIDER_CALL,
+            actor = actor,
             providerId = provider,
             paidProvider = isPaid(provider),
             metadata = mapOf(

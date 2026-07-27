@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.agent
 
+import atropos.core.policy.ActionActor
 import atropos.core.policy.BoundedAgencyGate
 import atropos.core.policy.ExecutionPolicyDecision
 import atropos.core.policy.ExecutionPolicyEngine
@@ -155,19 +156,20 @@ class AgentSmokeBoundedAgencyTest {
 
         val build = VerificationActionProposals.buildTest(
             listOf("./gradlew", "test", "jar", "--no-daemon"),
-            repoRoot
+            repoRoot,
+            ActionActor.HierarchyNode("verify", "p1")
         )
         assertEquals(PolicyActionClass.BUILD_TEST, build.actionClass)
         assertEquals(listOf("./gradlew", "test", "jar", "--no-daemon"), build.command)
         assertEquals(PolicyDecisionType.ALLOW, engine.evaluate(build.toRequest()).decision)
 
-        val smoke = VerificationActionProposals.smoke(listOf("echo", "ok"), repoRoot)
+        val smoke = VerificationActionProposals.smoke(listOf("echo", "ok"), repoRoot, ActionActor.HumanOwner)
         assertEquals(PolicyActionClass.SMOKE, smoke.actionClass)
         assertEquals(PolicyDecisionType.ALLOW, engine.evaluate(smoke.toRequest()).decision)
 
         // The action classes are not interchangeable: the engine restricts
         // BUILD_TEST to a known launcher.
-        val wrongClass = VerificationActionProposals.buildTest(listOf("echo", "ok"), repoRoot)
+        val wrongClass = VerificationActionProposals.buildTest(listOf("echo", "ok"), repoRoot, ActionActor.HumanOwner)
         assertEquals(PolicyDecisionType.DENY, engine.evaluate(wrongClass.toRequest()).decision)
     }
 }

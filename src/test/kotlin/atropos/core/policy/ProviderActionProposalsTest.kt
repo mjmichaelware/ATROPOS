@@ -22,7 +22,7 @@ class ProviderActionProposalsTest {
         val gate = gate()
         ProviderActionProposals.PAID_PROVIDERS.forEach { provider ->
             val decision = gate.evaluate(
-                ProviderActionProposals.forCall(provider, "patch", 128)
+                ProviderActionProposals.forCall(provider, "patch", 128, ActionActor.HumanOwner)
             )
             assertEquals(
                 AgencyDisposition.POLICY_BLOCKED,
@@ -36,7 +36,7 @@ class ProviderActionProposalsTest {
     @Test
     fun free_providers_are_allowed_through_the_gate() {
         val decision = gate().evaluate(
-            ProviderActionProposals.forCall("groq", "patch", 128)
+            ProviderActionProposals.forCall("groq", "patch", 128, ActionActor.HumanOwner)
         )
         assertEquals(AgencyDisposition.ALLOWED, decision.disposition)
     }
@@ -44,14 +44,14 @@ class ProviderActionProposalsTest {
     @Test
     fun a_blank_provider_is_still_refused() {
         val decision = gate().evaluate(
-            ProviderActionProposals.forCall("", "patch", 1)
+            ProviderActionProposals.forCall("", "patch", 1, ActionActor.HumanOwner)
         )
         assertEquals(AgencyDisposition.POLICY_BLOCKED, decision.disposition)
     }
 
     @Test
     fun proposal_reproduces_the_previous_policy_request() {
-        val proposal = ProviderActionProposals.forCall("groq", "repair", 4_096)
+        val proposal = ProviderActionProposals.forCall("groq", "repair", 4_096, ActionActor.HumanOwner)
 
         assertEquals(PolicyActionClass.PROVIDER_CALL, proposal.actionClass)
         assertEquals("groq", proposal.providerId)
@@ -68,8 +68,8 @@ class ProviderActionProposalsTest {
     @Test
     fun paid_flag_tracks_the_single_canonical_set() {
         assertTrue(ProviderActionProposals.isPaid("openai"))
-        assertTrue(ProviderActionProposals.forCall("anthropic", "patch", 1).paidProvider)
+        assertTrue(ProviderActionProposals.forCall("anthropic", "patch", 1, ActionActor.HumanOwner).paidProvider)
         assertFalse(ProviderActionProposals.isPaid("groq"))
-        assertFalse(ProviderActionProposals.forCall("groq", "patch", 1).paidProvider)
+        assertFalse(ProviderActionProposals.forCall("groq", "patch", 1, ActionActor.HumanOwner).paidProvider)
     }
 }

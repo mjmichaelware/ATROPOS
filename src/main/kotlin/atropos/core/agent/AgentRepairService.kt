@@ -5,6 +5,7 @@ import atropos.core.ProviderCascadeRouter
 import atropos.core.ProviderFactory
 import atropos.core.memory.LocalMemoryStore
 import atropos.core.policy.AgencyDisposition
+import atropos.core.policy.ActionActor
 import atropos.core.policy.BoundedAgencyGate
 import atropos.core.policy.ExecutionPolicyEngine
 import atropos.core.policy.ProviderActionProposals
@@ -87,7 +88,8 @@ class AgentRepairService(
             body = body,
             contextByteCount = contextSnapshot.byteCount,
             sourceVerificationId = verification.id,
-            noRepairMessage = "no failed verification to repair."
+            noRepairMessage = "no failed verification to repair.",
+            patchId = patch.id
         )
     }
 
@@ -110,9 +112,10 @@ class AgentRepairService(
         body: String,
         contextByteCount: Int,
         sourceVerificationId: String,
-        noRepairMessage: String
+        noRepairMessage: String,
+        patchId: String
     ): AgentPatchRunResult {
-        val cascade = runPatchCascade(patchOrder, prompt, body, sourceVerificationId)
+        val cascade = runPatchCascade(patchOrder, prompt, body, sourceVerificationId, patchId)
         val acceptance = cascade.success ?: return localPatchFailure(
             providerName = cascade.failure?.result?.providerName ?: patchOrder.firstOrNull() ?: "local_fallback",
             contextByteCount = contextByteCount,
@@ -156,13 +159,14 @@ class AgentRepairService(
         patchOrder: List<String>,
         prompt: String,
         body: String,
-        sourceVerificationId: String
+        sourceVerificationId: String,
+        patchId: String
     ): PatchCascadeResult {
         var lastFailure: PatchAttempt? = null
 
         for (provider in patchOrder) {
             val initial = try {
-                runPatchAttempt(provider, prompt, body)
+                runPatchAttempt(provider, prompt, body, patchId)
             } catch (failure: Exception) {
                 lastFailure = buildExceptionFailure(provider, failure, retryAttempted = false)
                 continue
@@ -177,7 +181,7 @@ class AgentRepairService(
                 appendLine("Include file headers, at least one @@ hunk header, and the added or removed line(s).")
             }
             val retry = try {
-                runPatchAttempt(provider, retryPrompt.trimEnd(), body)
+                runPatchAttempt(provider, retryPrompt.trimEnd(), body, patchId)
             } catch (failure: Exception) {
                 lastFailure = buildExceptionFailure(provider, failure, retryAttempted = true)
                 continue
@@ -196,14 +200,15 @@ class AgentRepairService(
     private fun runPatchAttempt(
         provider: String,
         prompt: String,
-        context: String
+        context: String,
+        patchId: String
     ): atropos.core.ProviderCascadeResult =
         router.completeWithCascade(
             requestedProvider = provider,
             prompt = prompt,
             context = context,
             providerOrderOverride = listOf(provider),
-            beforeAttempt = { candidate -> enforceProviderPolicy(candidate, prompt) }
+            beforeAttempt = { candidate -> enforceProviderPolicy(candidate, prompt, patchId) }
         )
 
     private fun validatePatchAttempt(
@@ -266,9 +271,14 @@ class AgentRepairService(
      * The repair provider call is proposed, not performed: the gate decides,
      * and a refusal throws before any prompt leaves the process.
      */
-    private fun enforceProviderPolicy(provider: String, prompt: String) {
+    private fun enforceProviderPolicy(provider: String, prompt: String, patchId: String) {
         val decision = agencyGate.evaluate(
-            ProviderActionProposals.forCall(provider, "repair", prompt.length)
+            ProviderActionProposals.forCall(
+                provider,
+                "repair",
+                prompt.length,
+                ActionActor.HierarchyNode(role = "repair", nodeId = patchId)
+            )
         )
         require(decision.disposition == AgencyDisposition.ALLOWED) { decision.reason }
     }

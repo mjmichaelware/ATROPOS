@@ -2,6 +2,7 @@
 package atropos.core.agent
 
 import atropos.core.policy.AgencyDisposition
+import atropos.core.policy.ActionActor
 import atropos.core.policy.BoundedAgencyGate
 import atropos.core.policy.ExecutionPolicyDecision
 import atropos.core.policy.ExecutionPolicyEngine
@@ -188,7 +189,7 @@ class AgentPatchBoundedAgencyTest {
 
         // The engine denies PATCH_APPLY without target paths, so a proposal that
         // dropped targetPaths would silently flip a verdict.
-        val proposal = atropos.core.policy.PatchActionProposals.applyCheck(file, repoRoot)
+        val proposal = atropos.core.policy.PatchActionProposals.applyCheck(file, repoRoot, ActionActor.HierarchyNode("patch", "p1"))
         assertEquals(PolicyActionClass.PATCH_APPLY, proposal.actionClass)
         assertEquals(listOf("sample.diff"), proposal.targetPaths)
         assertEquals(listOf("git", "apply", "--check", file.toString()), proposal.command)

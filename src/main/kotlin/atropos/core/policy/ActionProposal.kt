@@ -3,6 +3,11 @@ package atropos.core.policy
 data class ActionProposal(
     val id: String,
     val actionClass: PolicyActionClass,
+    /**
+     * Who is asking. Required and without a default, so an unattributed action
+     * cannot be constructed — territory has to know whose territory applies.
+     */
+    val actor: ActionActor,
     val command: List<String> = emptyList(),
     val cwd: String? = null,
     val targetPaths: List<String> = emptyList(),

@@ -6,6 +6,7 @@ import atropos.core.ProviderCascadeRouter
 import atropos.core.ProviderFactory
 import atropos.core.memory.LocalMemoryStore
 import atropos.core.policy.AgencyDisposition
+import atropos.core.policy.ActionActor
 import atropos.core.policy.BoundedAgencyGate
 import atropos.core.policy.ExecutionPolicyEngine
 import atropos.core.policy.ProviderActionProposals
@@ -540,7 +541,9 @@ class AgentService(
      */
     private fun enforceProviderPolicy(provider: String, prompt: String, operation: String) {
         val decision = agencyGate.evaluate(
-            ProviderActionProposals.forCall(provider, operation, prompt.length)
+            // The operator initiated this; the provider performs the work but
+            // is not the actor.
+            ProviderActionProposals.forCall(provider, operation, prompt.length, ActionActor.HumanOwner)
         )
         require(decision.disposition == AgencyDisposition.ALLOWED) { decision.reason }
     }
