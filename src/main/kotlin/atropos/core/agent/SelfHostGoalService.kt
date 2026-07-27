@@ -290,6 +290,17 @@ class SelfHostGoalService(
                 val completed = if (failedCount > 0 || blockedCount > 0) {
                     completeGoal(goalId, GoalTerminalCondition.TERMINAL_FAILURE, "$failedCount failed, $blockedCount blocked nodes")
                 } else {
+                    // Verified completion has to be backed by evidence, so the
+                    // loop records what it actually observed — which nodes
+                    // terminated and how — before it claims the goal is proven
+                    // done. Previously it asserted verified completion having
+                    // written nothing down.
+                    addEvidence(
+                        goalId,
+                        "dag=$dagId nodes=${dag.nodes.size} complete=" +
+                            dag.nodes.count { it.state == DagNodeState.COMPLETE } +
+                            " not-applicable=" + dag.nodes.count { it.state == DagNodeState.NOT_APPLICABLE }
+                    )
                     completeGoal(goalId, GoalTerminalCondition.VERIFIED_COMPLETE, "all nodes complete")
                 }
                 if (completed.ok) {
