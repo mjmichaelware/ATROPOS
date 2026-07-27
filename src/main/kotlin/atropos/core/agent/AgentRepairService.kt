@@ -6,6 +6,8 @@ import atropos.core.ProviderFactory
 import atropos.core.memory.LocalMemoryStore
 import atropos.core.policy.AgencyDisposition
 import atropos.core.policy.ActionActor
+import atropos.core.provider.ContextAttestationService
+import atropos.core.provider.ContextEnvelopeFactory
 import atropos.core.policy.BoundedAgencyGate
 import atropos.core.policy.ExecutionPolicyEngine
 import atropos.core.policy.ProviderActionProposals
@@ -171,7 +173,7 @@ class AgentRepairService(
                 lastFailure = buildExceptionFailure(provider, failure, retryAttempted = false)
                 continue
             }
-            val accepted = validatePatchAttempt(initial)
+            val accepted = validatePatchAttempt(initial, task = prompt)
             if (accepted != null) return PatchCascadeResult(success = accepted)
 
             val retryPrompt = buildString {
@@ -186,7 +188,7 @@ class AgentRepairService(
                 lastFailure = buildExceptionFailure(provider, failure, retryAttempted = true)
                 continue
             }
-            val retryAccepted = validatePatchAttempt(retry)
+            val retryAccepted = validatePatchAttempt(retry, task = prompt)
             if (retryAccepted != null) {
                 return PatchCascadeResult(success = retryAccepted.copy(retryAttempted = true))
             }
@@ -211,10 +213,22 @@ class AgentRepairService(
             beforeAttempt = { candidate -> enforceProviderPolicy(candidate, prompt, patchId) }
         )
 
+    /**
+     * Turns a repair response into a patch, but only if the provider proved it
+     * answered against the context it was given.
+     *
+     * Repair was the one live path where model output became a repository
+     * mutation without its response ever being checked against its envelope. An
+     * unattested repair is refused here rather than downstream, so the patch is
+     * never stored.
+     */
     private fun validatePatchAttempt(
         result: atropos.core.ProviderCascadeResult,
-        retryAttempted: Boolean = false
+        retryAttempted: Boolean = false,
+        task: String = ""
     ): PatchAttempt? {
+        if (!attested(result, task)) return null
+
         val extraction = patchExtractor.extract(result.response) ?: return null
         if (!extraction.hasHunkBody) {
             return null
@@ -226,6 +240,35 @@ class AgentRepairService(
         }
 
         return PatchAttempt(result, extraction, retryAttempted)
+    }
+
+    /**
+     * Verifies the response against the envelope the call was made under.
+     *
+     * A rejection is persisted as a typed context failure, the same record
+     * `AgentService` writes, so drift on the repair path is as visible as drift
+     * anywhere else.
+     */
+    private fun attested(result: atropos.core.ProviderCascadeResult, task: String): Boolean {
+        val envelope = ContextEnvelopeFactory.createSimple(
+            providerId = result.providerName,
+            modelId = "",
+            task = task,
+            repoRoot = collector.repoRoot
+        )
+        return when (val verified = ContextAttestationService.verify(envelope, result.response)) {
+            is ContextAttestationService.VerifiedResult.Accepted -> true
+            is ContextAttestationService.VerifiedResult.Rejected -> {
+                memoryStore.rememberFailure(
+                    subjectType = "context_failure",
+                    subjectId = null,
+                    title = verified.failure::class.simpleName ?: "ContextFailure",
+                    body = "repair ${verified.failure.providerId}: ${verified.failure.reason}",
+                    tags = listOf("context", "attestation", "failure", "repair")
+                )
+                false
+            }
+        }
     }
 
     private fun buildPatchFailure(
