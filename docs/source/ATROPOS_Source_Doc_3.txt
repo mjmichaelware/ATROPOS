@@ -1,0 +1,707 @@
+﻿ATROPOS
+Source Document #3
+Foundational Gap Closure & Architectural Synthesis
+This document addresses every significant foundational, architectural, and systemic gap identified across the Hierarchy Research Critique, Source Document 1, Source Document 2, and complete codebase analysis that is not already specified in the uploaded UI/UX Visual Design System document. It enforces extreme per-file atomic decoupling as a hard rule, incorporates all outside-the-box research synthesis, and prioritizes what is required to make ATROPOS productively usable for long-running, deterministic MusicMakerLM development.
+
+
+_______PART B______
+
+
+1. Extreme Per-File Atomic Decoupling as Foundational Rule
+The single most important architectural principle missing from current implementation and only lightly implied in prior documents is extreme per-file atomic decoupling. Every file in the ATROPOS codebase must represent exactly one atomic responsibility. This is not a style preference; it is a structural requirement for a hierarchical, long-running, multi-agent sovereign system that must remain maintainable, verifiable, and extensible over months of autonomous operation.
+Current codebase analysis reveals multiple violations of this principle. Several core files exceed 400–600 lines while mixing concerns that should be separated (CommandRouter.kt mixes routing, session state, and UI concerns; several provider adapters contain both transport logic and response normalization; verification and immunity logic are partially collapsed). Empty or near-empty stub files exist in core/swarm/, frontend/, and several adapter packages. These stubs represent deferred architectural debt that will compound as MusicMakerLM-scale work increases task duration and parallelism.
+1.1 Concrete File Atomicity Requirements
+• One file = one atomic responsibility (one feature, one job, one endpoint, one invariant, or one narrow contract). A file implementing a single typed failure mode must not contain unrelated logic.
+• Composition over inheritance and over monolithic classes. Small files are wired via explicit interfaces or lightweight registries.
+• No file shall mix presentation concerns with core decision logic. CLI/TUI renderers, Compose views, and contract consumers must remain thin.
+• No file shall exceed the cognitive load required to hold its single responsibility in working memory during review or modification.
+• This rule applies to every layer: core engines, provider adapters, verification logic, territory enforcement, HR routing, evaluation subsystem, and platform-specific bindings.
+1.2 Enforcement Mechanism
+A lightweight ArchitectureComplianceChecker (single small file) must be introduced that can be run as part of fast-gate and full verification. It scans for files exceeding a configurable line threshold while mixing known concern categories (routing + rendering, transport + normalization, verification + execution). Violations are treated as deterministic verification failures in advisory mode initially, then enforcement mode.
+This checker reuses the existing DeterministicVerifier pattern already present in the codebase and extends it with a narrow, focused responsibility. The checker itself must remain a single small file.
+2. Strict Hierarchical Model — Director, Territory, HR Router, Auditor, Custodian
+The Hierarchy Research Critique identified a clear structural contradiction in current popular coding agent systems: they converge on worktree isolation plus LLM-mediated coordination. This produces capable single-run results but embeds recurring problems that scale poorly with task duration and agent parallelism. Token cost grows with agent count and session length rather than engineering work volume. Drift detection is reactive and expensive. Global visibility is distributed across many LLM contexts. Information flow is uncontrolled. Verification is post-hoc rather than preventive.
+ATROPOS must adopt a stricter hierarchical alternative. This model directly mitigates the identified contradictions while aligning with ATROPOS existing strengths in verification, provider abstraction, and local-first execution. The hierarchy can be introduced incrementally without breaking the current provider descriptor registry, RoutePolicy, Endpoint Registry, or verification matrix.
+2.1 Hierarchy Levels and Core Responsibilities (Foundational Layer Only)
+Level 1 (Human Owner/CEO) remains outside agentification. All other levels can be agentified with increasing specialization and decreasing scope.
+• Director (Level 2): Owns task decomposition, explicit territory assignment at dispatch time, global diff visibility across active worktrees, and preventive drift detection. Maintains the single source of truth for scope and state. Only this level requires broad visibility. Implements preventive scope enforcement rather than reactive review.
+• Division VP (Level 3): Owns major capability domains (Code Synthesis, Verification, Research/Ingestion, Assets, CI/Deployment). Manages Managers within domain, aggregates progress, escalates domain-level issues.
+• Manager/Supervisor (Level 4): Owns team-level coordination within a division. Assigns tasks with explicit territories to Specialists or Workers, tracks progress, escalates scope/conflict/policy issues.
+• Specialist Agent (Level 5): Deep expertise execution within narrow domain. Receives tasks with tight territory and higher verification requirements. Can request territory expansion through Manager with justification.
+• Worker Agent (Level 6): Executes assigned tasks strictly inside granted territory in its worktree. Does not need visibility into other agents' work.
+• Custodian (Level 7): Owns state hygiene, temp file and artifact cleanup, dead branch pruning, basic environment maintenance. Runs on fixed schedules or Director triggers. Reports anomalies upward. Minimal LLM involvement for routine operation.
+• Auditor (Level 8): Independent verification of completed work (syntax, structural consistency, policy compliance). Operates with read access and independent reporting line to avoid execution-layer capture. Reuses and extends existing verification matrix.
+• HR / Information Router (Cross-cutting): The only controlled channel for information requests that cross agent boundaries. Performs policy and risk checks before allowing, redacting, or denying transfers. Creates auditable chokepoint instead of free-form mailboxes.
+2.2 Territory Assignment as First-Class Primitive
+When the Director or a Manager dispatches a task, it records an explicit territory (allowed files, folders, directories, branches) stored with the task record in durable local state. The Director inspects diffs from active worktrees against assigned territories at low computational cost. Drift becomes detectable at the moment it appears rather than after reviewer agent or test failure.
+Workers and Specialists operate only inside their assigned territory. Most agents do not require knowledge of other agents' scope or progress. This replaces most of the need for agent-to-agent LLM communication.
+2.3 Controlled Information Flow via HR Router
+Direct agent-to-agent LLM communication is minimized by design. When one agent requires information held by another, the request is posted to the HR router. The router applies policy rules (redaction patterns already present in the test matrix, scope checks against territory metadata, risk classification). Approved narrow responses are returned. Denied or high-risk requests are logged and escalated to the Director.
+This narrows context growth and creates a clear audit trail for information movement across the system. Most intra-territory work bypasses the router entirely.
+2.4 Why Preventive Scope Enforcement Is Superior to Reactive Review
+Current systems largely rely on reactive mechanisms: reviewer agents, test failures, or human inspection after changes have already been made. This is expensive in tokens and time, and it allows errors to propagate before detection. Preventive scope enforcement (territory assignment at dispatch + Director diff monitoring) detects out-of-scope changes at the moment they appear in a worktree diff. This is cheaper, earlier, and more deterministic. It aligns with the existing strength of ATROPOS in deterministic verification before LLM escalation.
+3. Context Attestation, Drift Detection, and Bounded Agency as First-Class Primitives
+The 74-item list in the uploaded UI/UX document correctly identifies identity awareness, runtime context envelope, context attestation, drift detection, typed context failures, externally bounded agency, typed tool execution, territory enforcement, capability enforcement, provider-output validation, and independent verification. However, these items are listed at high level only. They require deep specification as first-class runtime primitives with formal invariants, file-atomicity requirements, and integration points with existing verification and provider systems.
+3.1 Runtime Context Envelope
+Every provider call must carry an explicit, attested context envelope containing: repository, branch, task, pass, role, authority, permissions, territory, and active policy. This envelope is the single source of truth for all downstream decisions. Implementation must produce at minimum three small atomic files: ContextEnvelope (data class + validation), ContextEnvelopeFactory, and ContextEnvelopeSerializer. No provider adapter may operate without receiving and returning this envelope.
+3.2 Context Attestation and Drift Detection
+Providers must return the correct ATROPOS identity, task, role, and a context hash. Any mismatch or loss of context must be detected as an explicit typed failure before any further execution. Required atomic files: ContextAttestationService, ContextDriftDetector, and TypedContextFailure (sealed interface with one subtype per failure class: MythologyAnswer, RoleConfusion, StaleContext, HashMismatch).
+3.3 Externally Bounded Agency and Typed Tool Execution
+Providers propose actions only. ATROPOS (not the model) decides what may execute. Raw provider prose or shell text is never executed directly. Required atomic files: ActionProposal, BoundedAgencyGate, TypedToolExecutor, and ToolExecutionResult.
+3.4 Territory and Capability Enforcement
+Providers cannot modify files or systems outside their assigned territory. Tools, network access, paths, paid providers, destructive actions, and secrets remain mechanically restricted even if a provider hallucinates a request. Required atomic files: TerritoryEnforcer, CapabilityEnforcer, CapabilitySet, and one small file per violation type (EnforcementViolation).
+3.5 Provider-Output Validation and Independent Verification
+Schemas, patches, commands, claims, and completion states must be validated before acceptance. Providers cannot verify or approve their own work. Required atomic files: OutputValidator, IndependentVerificationGate, and VerificationResult.
+4. Evaluation as First-Class Product Subsystem
+The uploaded UI/UX document correctly lists evaluation scoring subsystem, benchmark support, ATROPOS-specific metrics, evidence-backed metrics, historical evaluation records, and release gates. These must be implemented as a real, wired product feature rather than post-hoc analysis tooling.
+4.1 ATROPOS-Specific Metrics
+Metrics must include: restart recovery success rate, verifier-first catches before LLM escalation, coordination efficiency (tokens per verified engineering change), territory safety (percentage of changes within assigned territory), secret safety (zero leaks), identity recognition accuracy, context attestation success rate, drift detection latency, trace completeness, copy fidelity, preview success rate, and event determinism. Each metric must link to raw immutable evidence.
+4.2 Release Gates and Zero-Secret-Leak Rule
+Correct release gates must clearly separate score reduction, minimum failure, competitive failure, frontier failure, and safety hard failure. Any confirmed secret leak blocks release. This rule must be mechanically enforced by the evaluation subsystem, not left as a human process.
+4.3 File Atomicity for Evaluation Layer
+EvaluationEngine, AtroposMetrics (one small file per metric family), MetricCalculator, BenchmarkRunner, EvidenceStore, ReleaseGateEvaluator, and AntiGamingAuditor must each be separate small files. Historical evaluation records live in EvaluationHistoryStore. Classification logic lives in ClassificationCalculator.
+5. Observability, Provenance, and Evidence Layer
+Long-running MusicMakerLM development requires detailed, streaming, expandable records of everything ATROPOS is doing. Every visible event must carry full provenance and be copyable/exportable without loss.
+5.1 Execution Stream and Event Provenance
+Every visible event carries timestamp, role, provider, task, requirement, source, and state. Required atomic files: ExecutionEvent, ProvenanceStream, EventPublisher, and EventSubscriber.
+5.2 Copyable Output Cards and Full-Run Export
+Individual plans, commands, outputs, diffs, logs, provider responses, tests, and reports must be copyable as discrete cards. A full run must be exportable as Markdown, JSON, or another durable trace format. Required atomic files: OutputCard, CardRenderer, and one small exporter file per format (MarkdownExporter, JsonExporter).
+5.3 Searchable Execution History
+Filter by agent, provider, task, file, test, error, or event type. History must survive restarts and be queryable without loading the entire trace into memory. Required atomic files: ExecutionHistoryStore, HistoryQuery, and HistoryIndex.
+6. Intent-First Interaction and Canonical Verb+Noun Contract System
+Natural language must become the default way to operate ATROPOS. Natural language and commands must both resolve to the same deterministic internal action registry. The registry exposes actions as 13 canonical verbs (Run, Cancel, Retry, Recover, Acknowledge/Dismiss, Resolve, Assign/Revoke, Search/Lookup, Export, Compare, Verify, Configure, Remove/Prune) parameterized by noun/object type.
+6.1 File Atomicity for Intent Layer
+IntentParser, ActionRegistry, CanonicalAction (sealed interface or one small file per verb), CommandConsolidator, AliasResolver, CommandMetadata, CommandPalette, FuzzyMatcher, SuggestionEngine, HelpRegistry, and CommandHistoryStore must each be separate small files. The contract layer itself must remain narrow and stable.
+7. Restart Continuity as Explicit DAG Node
+Restart continuity must restore run state, task state, tabs, preview, logs, evidence, and the next executable DAG node after restart. Restart continuity must be modeled as an explicit, restorable DAG node rather than implicit session recovery.
+7.1 File Atomicity
+RestartCoordinator, StateSnapshot, and DagNodeRestorer must be separate small files. The existing DAG infrastructure is reused; restart logic is a narrow extension.
+8. Nano-Style Coherent Batch Discipline Applied to Agent Architecture
+ATROPOS development has followed a discipline of large coherent batches (approximately 1,000 lines of code or equivalent architectural work per pass) with internal gates, compile/smoke verification, and E(Δ)=0 rollback safety. This principle must be applied to the hierarchical swarm architecture itself.
+Each layer (territory metadata, Director diff monitoring, HR router, Custodian/Auditor roles, Manager layer) must be introduced as a bounded, testable batch rather than as a single massive refactor. When a Director assigns a territory-bounded task to a Specialist or Worker, that task itself must be structured as a coherent batch with clear entry/exit criteria, verification gates, and rollback points.
+Territory assignment at dispatch time turns an implicit workflow discipline into an enforceable architectural primitive. It reduces the chance that a coherent batch accidentally touches unrelated areas of the codebase.
+9. Why Communication-Heavy and Large-Context Designs Are Structurally Flawed
+Large context window approaches attempt to solve coordination by giving every agent access to as much history and state as possible. This creates well-documented problems: the model begins to skim and truncate, attention dilutes across irrelevant tokens, hallucination rates increase on facts buried deep in the context, and token cost grows super-linearly with session length.
+Chatty coordination (mailboxes, shared task lists updated via LLM, dynamic subagent spawning with constant messaging) compounds the problem. Every coordination step consumes context and tokens. As agent count or task complexity grows, a larger fraction of total tokens is spent on agents talking to each other about status, scope, and handoffs rather than performing primary engineering work.
+These flaws are not implementation details that will be solved by larger models or longer context windows. They are structural consequences of choosing a coordination model that relies on probabilistic generation for what should be narrow, deterministic, auditable state management. Hierarchy plus territory assignment moves coordination out of the LLM layer and into explicit, inspectable state.
+10. Boilerplate, Stub, and Incomplete Implementation Findings from Complete Codebase Analysis
+Complete source export analysis (257 tracked files, 29,812 physical source lines) reveals multiple categories of incomplete or artificial implementation that must be addressed before MusicMakerLM-scale autonomous work is reliable.
+• Empty or near-empty stub files in core/swarm/ (DirectorOrchestrator.kt and WorkerCodeSynthesizer.kt contain minimal logic; no route currently binds them to the rest of the system).
+• Frontend package exists but is largely disconnected from the current CLI/TUI surface (AtroposApiClient, DashboardHudView, TerminalConsoleView, TerminalStateMatrix, ConsoleViewManager appear as dead or placeholder code).
+• Multiple verification and immunity files contain partial implementations that mix concerns (ProbabilisticImmunityEngine mixes probabilistic scoring with constraint solving in ways that should be separated).
+• Several provider adapter files contain both transport logic and response normalization; these should be split into transport adapter + normalization layer.
+• CommandRouter.kt mixes routing, session state management, and some UI concerns; routing and session state should be separated.
+• Many test files are minimal or missing for core new components (ProviderActivationService, TerritoryService, DeterministicVerifier, DloiService have tests, but several supporting classes do not).
+• Build and Gradle configuration shows signs of accumulated technical debt (large lockfiles, mixed incremental and full compile patterns, daemon arguments not yet moved into gradle.properties as recommended in Source Doc 2).
+Each of these findings represents a gap that will become more expensive as task duration and parallelism increase. They must be closed through the same nano-style coherent batch discipline already used in ATROPOS development.
+11. Integration with Existing ATROPOS Architecture Without Duplication
+The hierarchical territory model, context attestation primitives, evaluation subsystem, observability layer, and intent-first contract system must be introduced as extensions of existing architecture rather than replacement or duplication.
+• Territory metadata lives in task dispatch records, not in provider descriptors. RoutePolicy can later incorporate territory-aware decisions if desired.
+• HR routing is expressed as a new endpoint kind that applies existing redaction and policy patterns.
+• Custodian and Auditor roles are added as specialized non-worker endpoints with deterministic execution where possible.
+• Evaluation reuses and extends the existing verification matrix.
+• Restart continuity reuses existing DAG infrastructure.
+• Intent-first verb+noun contracts sit on top of the existing ~150 backend operations; the mapping lives server-side 
+
+
+1. ATROPOS identity awareness — every provider must know it is operating inside ATROPOS.
+
+2. Runtime context envelope — repository, branch, task, pass, role, authority, permissions, territory, and policy supplied with every provider call.
+
+3. Context attestation — providers must return the correct ATROPOS identity, task, role, and context hash.
+
+4. Context-drift detection — detect when a provider loses track of the system, task, repository, or assigned role.
+
+5. Typed context failures — mythology answers, role confusion, stale context, and mismatched hashes become explicit failures.
+
+6. Externally bounded agency — providers propose actions; ATROPOS—not the model—decides what may execute.
+
+7. Typed tool execution — raw provider prose or shell text is never executed directly.
+
+8. Territory enforcement — providers cannot modify files or systems outside their assigned area.
+
+9. Capability enforcement — tools, network access, paths, paid providers, destructive actions, and secrets remain mechanically restricted.
+
+10. Provider-output validation — schemas, patches, commands, claims, and completion states must be validated before acceptance.
+
+11. Independent verification — providers cannot verify or approve their own work.
+
+12. OpenCode-style execution stream — detailed, streaming, expandable records of everything ATROPOS is doing.
+
+13. Copyable output cards — copy individual plans, commands, outputs, diffs, logs, provider responses, tests, and reports.
+
+14. Full-run export — export a run as Markdown, JSON, or another durable trace format.
+
+15. Event provenance — every visible event carries timestamp, role, provider, task, requirement, source, and state.
+
+16. Searchable execution history — filter by agent, provider, task, file, test, error, or event type.
+
+17. Google AI Studio-style live preview — see UI and UX changes while ATROPOS is developing them.
+
+18. Hot reload — accepted UI patches automatically rebuild the preview.
+
+19. Preview isolation — generated applications run in a restricted sandbox rather than unrestricted host access.
+
+20. Responsive preview modes — phone, tablet, desktop, custom dimensions, light mode, and dark mode.
+
+21. Preview diagnostics — build errors, console errors, runtime failures, network failures, and blank screens remain visible.
+
+22. Visual comparison — before-and-after screenshots, snapshots, history, and rollback.
+
+23. UI inspection — connect changed files and symbols to affected screens or components where possible.
+
+24. Browser-style persistent tabs — visible tabs with names, active highlighting, switching, closing, reopening, and reordering.
+
+25. Per-tab state — each tab preserves its task, scroll position, provider, logs, input, and working context.
+
+26. Tab restoration — tabs survive navigation, restart, interface changes, and session recovery.
+
+27. Stable native application shell — /home, /tabs, and all views render inside one persistent ATROPOS frame.
+
+28. Responsive branding — the ATROPOS logo must never be clipped, including the currently cut-off “POS.”
+
+29. Responsive layout system — panels, fonts, borders, input areas, and terminal dimensions adapt to available space.
+
+30. Mobile-first UX — all major capabilities remain usable on Android rather than merely shrinking a desktop screen.
+
+31. Web, desktop, terminal, and Android parity — the same tasks, tabs, state, evidence, and background jobs appear everywhere.
+
+32. Real activity indicators — animations for thinking, provider calls, builds, tests, verification, retries, and queued work.
+
+33. No fake progress — animations must correspond to real persisted process states.
+
+34. Background-process panel — show running jobs, children, elapsed time, logs, progress, owner, status, and cancellation controls.
+
+35. Stall and failure visibility — distinguish running, waiting, blocked, retrying, stalled, failed, cancelled, and complete.
+
+36. Intent-first interaction — natural language becomes the default way to operate ATROPOS.
+
+37. Canonical typed actions — natural language and commands both resolve to the same deterministic internal action registry.
+
+38. Command simplification — preserve all 30 current capabilities while reducing the ordinary visible command surface.
+
+39. Command consolidation — combine overlapping commands such as /home and /dashboard, /exit and /quit, /tab and /tabs.
+
+40. Aliases without breakage — old commands continue working while visibly resolving to their canonical replacement.
+
+41. Automatic routine behavior — persistence, recovery, status refresh, provider health, handoffs, evidence capture, and bookkeeping happen automatically.
+
+42. Autocomplete — typing /st highlights /status without requiring the complete command.
+
+43. Keyboard navigation — Up, Down, Enter, Tab, Escape, Backspace, and history navigation work correctly.
+
+44. Touch autocomplete — mobile users can tap command suggestions above the keyboard.
+
+45. Fuzzy command matching — prefixes, misspellings, aliases, keywords, and recent usage help find commands.
+
+46. Safe fuzzy execution — uncertain matches are shown for confirmation rather than silently executed.
+
+47. Context-sensitive suggestions — available actions change based on the current screen, task, failure, patch, or build.
+
+48. Command palette — search commands, tabs, tasks, files, providers, reports, settings, and recent actions.
+
+49. Command history — persistent, editable, searchable history with secrets removed.
+
+50. Inline argument guidance — commands show expected arguments, available values, examples, and current options.
+
+51. Natural-language mappings — phrases such as “what is running?” resolve to status without requiring /status.
+
+52. Progressive disclosure — simple, advanced, and expert/debug interaction modes.
+
+53. Structured command metadata — aliases, descriptions, keywords, visibility, contexts, arguments, and intent phrases stored centrally.
+
+54. Unified help generation — autocomplete, help, documentation, command palette, and natural-language routing use the same registry.
+
+55. Evaluation scoring subsystem — implement the ATROPOS Evaluation Spec as a real product feature.
+
+56. Benchmark support — SWE-bench Verified, Terminal-Bench, Aider Polyglot, PR acceptance, and time-to-accepted-PR.
+
+57. ATROPOS-specific metrics — restart recovery, verifier-first catches, coordination efficiency, territory safety, and secret safety.
+
+58. Context and UX metrics — identity recognition, context attestation, drift detection, trace completeness, copy fidelity, preview success, and event determinism.
+
+59. Correct normalization — repair the zero-target division flaw in lower-is-better metrics.
+
+60. Correct release gates — clearly separate score reduction, minimum failure, competitive failure, frontier failure, and safety hard failure.
+
+61. Zero-secret-leak release rule — any confirmed secret leak blocks release.
+
+62. Evidence-backed metrics — no unsupported manual percentages; every metric links to raw immutable evidence.
+
+63. Historical evaluation records — retain benchmark versions, environment fingerprints, source fingerprints, and result history.
+
+64. Minimum, competitive, and frontier classifications — calculate all three explicitly.
+
+65. Evaluation CLI and dashboard — results available in terminal, web, machine-readable, and human-readable forms.
+
+66. Anti-gaming and reproducibility — metric definitions, fixtures, environments, and scoring must be repeatable and auditable.
+
+67. Restart continuity — restore run state, task state, tabs, preview, logs, evidence, and the next executable DAG node.
+
+68. Accessibility requirements — keyboard use, focus visibility, screen-reader labels, reduced-motion support, and contrast checks.
+
+69. Performance requirements — responsive input, bounded rendering, virtualized long logs, and controlled background updates.
+
+70. Failure-first UX — errors are visible, typed, actionable, copyable, and never hidden behind polished success output.
+
+71. Canonical acceptance tests — tests for context recognition, territory blocks, autocomplete, tabs, responsive rendering, previews, exports, recovery, and process visibility.
+
+72. Evaluation-spec integration — this document becomes an addendum to the current source authority, not a disconnected wishlist.
+
+73. No duplicate architecture — reuse and extend existing context, policy, DLOI, DAG, queue, memory, provider, verifier, renderer, and persistence systems.
+
+74. Core UX principle — ATROPOS absorbs its own complexity; the user expresses intent instead of memorizing implementation details.
+
+
+
+_______PART B ______
+
+
+
+
+SOURCE DOCUMENT 3 — UI/UX — SECTION A: VISUAL DESIGN SYSTEM
+
+
+(Addendum to existing Source Doc 3 content. No overlap with identity/context/execution-stream/preview/tabs/command-routing/evaluation/accessibility sections already drafted. Covers: visual language, architecture, navigation consolidation detail, per-screen specs, cross-cutting default-state rules.)
+
+
+Design principles — Clarity, Deference, Depth, adapted from current Apple HIG (iOS/macOS 26 era). Clarity: every screen states one primary action, not competing actions. Deference: chrome recedes, live agent/provider/build data leads. Depth: hierarchy expressed through layering and translucency, not flat color contrast alone.
+
+
+Material — glass, used functionally not decoratively — Translucent surfaces used specifically where the Gestalt-continuity benefit applies: a drilled-down detail sheet over a live dashboard, so the parent screen stays visible and spatial orientation is never lost across 16 parent screens. Glass is not applied to: modals confirming destructive actions, the Paid/Emergency gate, error/failure states, or any surface where legibility of a number (quota, cost, exit code) is safety-critical. Those stay opaque, high-contrast, flat.
+
+
+Glass accessibility guardrails, hard rules not suggestions — Never blur the sole legibility layer under body text smaller than 15pt. Every glass surface has a reduced-transparency fallback (solid fill, same layout) triggered by OS-level reduce-transparency and by an in-app toggle. Every motion tied to glass (light-bleed, lensing, tint-shift) has a reduced-motion fallback that swaps to an instant state-change, no animation curve at all, not a slowed one. Contrast on any text sitting on glass must hit WCAG 2.2 AA against the worst-case background it can sit over, not the design-time preview background.
+
+
+Color system — Semantic roles only, never fixed hex referenced in spec text: background, surface, surface-glass, label, label-secondary, accent, success, warning, danger, info. Each role auto-adapts light/dark/tinted. Danger role reserved exclusively for failure states (build fail, verify fail, territory violation, secret leak) — never reused for warnings, so a red glance always means stop-and-look, not maybe-look.
+
+
+Status-color vocabulary, fixed across all 16 parent screens and both CLI/GUI surfaces — idle/queued: neutral gray. running: accent, animated. waiting-on-input: warning-tone, static (not animated — waiting is not the same state as working, don't let them look identical). blocked/stalled: warning-tone, animated slow-pulse. retrying: accent, animated with a visible counter (attempt 2/5). failed: danger. cancelled: neutral gray, struck-through label. complete: success, then fades to neutral after a few seconds so completed items don't visually compete with active ones.
+
+
+Typography — One system typeface per platform (SF Pro on Apple targets via Compose Multiplatform's platform font fallback, Roboto on Android, matching metric scale elsewhere). Scale: Large Title 34 / Title 28 / Title2 22 / Title3 20 / Headline 17-semibold / Body 17 / Callout 16 / Subhead 15 / Footnote 13 / Caption 12-11. Monospace (SF Mono / JetBrains Mono equivalent) reserved for: command syntax, file paths, diffs, logs, hashes, exit codes — anything a user might copy verbatim. Never monospace for prose/labels.
+
+
+Spacing — 8pt grid, 4pt subdivision allowed only inside dense data rows (log lines, diff hunks). Minimum tap target 44×44pt on every interactive element on touch surfaces, no exceptions, including inside dense screens like Governance or the Jobs/Queue table.
+
+
+Motion system, functional only — Every animation must map to a real state transition already defined in the status-color vocabulary above; no animation exists that isn't representing a persisted state change. Standard durations: micro-feedback (tap, toggle) 100–150ms ease-out. Panel expand/collapse (the collapsed-by-default rule) 200–250ms ease-in-out. Screen-to-screen navigation 250–300ms, direction-aware (push right = go deeper, pull left = go back, matching platform convention per surface). Cross-fade only for state swaps where position doesn't change (idle→running icon swap). No parallax, no bounce/spring on anything that isn't direct-manipulation (drag, swipe-to-activate on Provider cards, swipe-to-dismiss on notifications) — spring physics reserved for things the user's finger is actually touching, ease curves for everything system-initiated.
+
+
+Iconography — One icon family across all four surfaces, weight-matched to the type scale exactly the way SF Symbols pairs with SF Pro (so a semibold headline never sits next to a light-weight icon). Icon-only buttons always paired with an accessibility label even when the visual label is hidden.
+
+
+Dark / Light / Tinted — All three required for every screen, not just Home. Default follows OS. Tinted variant derives from a single accent seed per install (supports future multi-tenant/multi-project branding without a redesign).
+
+
+SECTION B: ARCHITECTURE — HOW FOUR SURFACES STAY ONE PRODUCT (corrected)
+
+
+Core decision — Client/server split, same pattern OpenCode ships in production: one long-running core process exposes state and actions; CLI/TUI, Desktop, Web, APK are four thin clients against it, none of them talking to `atropos.core.` directly except through the contract layer.
+
+
+Contract layer is verb+noun, not a 150-item command list — `contract/` module exposes actions as the 13 canonical verbs (Run, Cancel, Retry, Recover, Acknowledge/Dismiss, Resolve, Assign/Revoke, Search/Lookup, Export, Compare, Verify, Configure, Remove/Prune) parameterized by a noun/object type (Job, Provider, TerritoryViolation, DagNode, Snapshot, etc.), plus the 172 data classes / 55 enums re-exported as the object model those verbs operate on. A client asks "what verbs are valid on this object right now" and gets back a short contextual list — it never enumerates a global command catalog. The underlying 150 backend operations still exist as the literal implementation behind these verb+noun pairs (many operations collapse into one verb applied to different objects, e.g. `auditor run` / `ci run next` / `autonomous run` / `agent run` / `artifact build` are five implementations behind one Run verb) — that mapping lives entirely server-side and is invisible to every client. `ui-` modules depend only on `contract/`; `cli/` (existing ANSI layer) becomes a sibling consumer of the same `contract/`, proving the decoupling is real — if the terminal keeps working unmodified after the new UI ships, the boundary held.
+
+
+State pattern — MVI per screen: Intent → Reducer → State, `StateFlow<ScreenState>` per screen, Compose is a pure render function of that state. No screen holds a reference to a concrete `core/Service` class; every screen depends on a `ScreenViewModel` that depends on `contract/` interfaces only, with the real service wired in at the composition-root/DI layer, swappable for a fake in tests and for the fixture-matrix mode already present in `ProviderFixtureMatrixService`. A screen's ViewModel asks the contract layer for "valid verbs on the currently-selected object," renders those as buttons — this is what keeps every screen's UI code from ever needing to know about 150 named operations; it only ever renders however many of the 13 verbs are valid right now.
+
+
+Server layer, new — A local HTTP+SSE server process (mirrors `opencode serve`), binds `127.0.0.1:<random-or-configured-port>` by default, optional password/basic-auth for LAN exposure exactly like OpenCode's `OPENCODE_SERVER_PASSWORD` pattern. Internally it does expose one HTTP route per backend operation (all ~150, generated from `OperationRegistry`, so a new backend capability is a new registry entry, not new server code) — but this route surface is a scripting/automation/back-compat layer, not something any GUI or CLI screen enumerates to a human. The verb+noun contract described above is a second, thinner layer on top of those routes that every human-facing client actually renders against. Streaming events (agent thinking, build output, provider call progress) go over SSE, matching the collapsed-by-default rule already established: the stream exists and is always being written server-side, the client decides whether to render it expanded.
+
+
+CLI/TUI surface — Existing 41-file ANSI renderer stack stays, upgraded in place: default output density drops to one-line-per-process (collapsed-by-default rule), a debug toggle restores full stream. Multi-agent status-at-a-glance becomes the home view of the TUI, not a subcommand — glanceable roster of what's running/waiting/blocked across Agent, Autonomous, and Governance in one screen. Command palette (fuzzy, `/`-triggered) is the discovery surface for the 13-verb × 16-noun space from Section C, not a searchable index of 150 legacy strings. Raw `/agent run`-style slash syntax still parses (back-compat, scripting), but is not what the palette teaches or ranks first.
+
+
+Desktop surface — Compose Desktop, full 16-parent navigation as a persistent sidebar + tab strip. Largest canvas of the four, so Governance's hierarchy tree, the DAG graph, and the Jobs/Queue table get full-detail layouts here first, then responsively degrade for the other three. Every action button on every Desktop screen is one of the 13 verbs, contextually enabled/disabled per the contract layer's "valid verbs on this object" response — no screen ever grows a 14th button because a new backend operation was added; new operations join an existing verb.
+
+
+Web surface — Split-pane, chat/intent input left, live content right (Google AI Studio Build-mode pattern), Material-3-leaning glass, session list persisted server-side and resumable like OpenCode's SQLite-backed sessions. Launched via a local command that starts the server and opens the browser, port printed to the terminal, matching `opencode web` behavior. Live preview panel renders inside this split-pane as the right side when the active tab is a Pipeline/Artifact build, sandboxed per the preview-isolation requirement.
+
+
+APK surface — Compose Multiplatform Android target sharing 80–90% of screen code with Desktop. Platform-specific layer covers: notification permissions for background-job completion alerts, foreground-service wiring for the `--agent-daemon-foreground` headless mode (becomes a background-service toggle in Settings, not a screen), touch-specific gesture differences. Mobile-first: every one of the 16 parents has a defined single-column layout as its baseline, not a shrunk desktop layout. Bottom nav shows the 13 verbs contextually too — a Job card's swipe-actions surface only the verbs valid for that job's current state, same contract-driven pattern as Desktop's buttons.
+
+
+Provider capability model — Provider Grid screen renders each of the 25 named providers as a card showing which of the 7 adapter capability types it implements (chat / code / embedding / search / storage / asset / edge-execution), sourced from `ProviderAdapterRegistry` — new provider or capability type appears automatically, no UI code change. Cascade/failover trace renders as an expandable panel under a provider's card, collapsed by default. Fixture-matrix mode is a single global Advanced Settings toggle, not per-provider.
+
+
+Correct catch — terminology error, not a content error. These are views within one persistent shell, not separate screens (matches the base doc's own "stable native application shell — /home, /tabs, and all views render inside one persistent frame" requirement, which I should've followed exactly). Only Web gets literal routable/bookmarkable pages (per the deep-link spec in Section C). CLI, Desktop, and APK all swap views inside one continuous frame/window/session — nothing "opens a new screen," it's one frame whose content changes. Renaming "screen" to "view" for the rest of this section.
+
+
+SECTION D: PER-VIEW SPECS (continued)
+
+
+4. GOVERNANCE
+Purpose: single view for all agent-oversight state — drift, territory, escalation, audit, custodial cleanup — previously 6 separate roots.
+Layout: tab strip within the view (Director / Territory / HR / Auditor / Custodian / Hierarchy-tree), cross-tab alert rail above the strip, always visible regardless of active tab, surfacing unacknowledged Director observations and unresolved Territory violations.
+States: per-tab, status-color per the global vocabulary; alert rail badges danger-tone if anything unresolved exists in any tab, independent of which tab is open.
+Primary verbs available here: Acknowledge/Dismiss (Director observations), Resolve (Territory violations), Assign/Revoke (Territory ownership), Search/Lookup (Auditor/HR audit log), Run (Auditor checks), Remove/Prune (Custodian cleanup/snapshot pruning), Verify (escalation path check). All contract-driven — this view never shows more than the verbs valid for whatever row is selected.
+Data-source mapping: `DirectorStore`, `TerritoryStore`, `HrRouterModels`, `AuditorService`, `CustodianService`, `HierarchyModels` — five backend stores, one view.
+Motion: alert-rail badge count updates via the standard cross-fade rule, no attention-grabbing bounce — trust-critical state should read as fact, not as marketing.
+
+
+5. PIPELINE/ARTIFACTS
+Purpose: prompt-to-verified-build, guided or manual.
+Layout: mode switch (Guided / Manual) at top of view, both modes share one underlying pipeline state. Guided mode: linear stepper. Manual mode: the six raw stages exposed directly (plan/build/verify/install/commit/gate) as a row of stage cards, each showing pass/fail and expandable log. Checks sub-tab: test-matrix + CI local-compile-queue results, since both gate stage progression.
+States: per-stage status-color; a stage that hasn't run yet is neutral/dimmed, not hidden — always visible so the full pipeline shape is legible even before it runs.
+Primary verbs: Run (advance/execute a stage), Retry, Verify, Export (built artifact), Compare (against a prior build), Cancel.
+Data-source mapping: `ArtifactPipeline`, `ArtifactVerificationService`, `AppFactoryRouter`, `AtroposTestMatrix`, `LocalWorkQueue`.
+Motion: stage-card fill animates left-to-right as the pipeline progresses, one continuous progress metaphor rather than five independent card animations, so the eye tracks pipeline shape not individual cards.
+
+
+6. DAG
+Purpose: dependency graph — what's ingested, what's runnable, what's cyclic.
+Layout: force-directed graph canvas (Desktop/Web full detail), degrades to a filterable flat list on APK (graph rendering not mobile-first-appropriate at this node density). Cycle nodes get a distinct danger-tone outline, not just a color fill, so cycles are identifiable even under colorblind-safe palettes.
+States: node color = status-color vocabulary applied to `RequirementType`/completion state; cycle-detected state overrides all other node styling.
+Primary verbs: Run (ingest a new source doc), Search/Lookup (find a node), Verify (runnable-set check).
+Data-source mapping: `DagService`, `DagStore`, `DocumentIngestionService`.
+Motion: graph layout settles with physics-based node repulsion on load only (a few hundred ms), then freezes — no continuous jitter, since a constantly-moving graph is unreadable, not lively.
+
+
+7. SNAPSHOTS
+Purpose: capture, compare, and verify state over time — absorbs former Inspect root.
+Layout: gallery grid (thumbnail-equivalent per snapshot kind: terminal/file/viewport), compare mode selects two and renders a side-by-side or unified diff depending on kind.
+States: fresh/stale (age-based, secondary-label color, not part of the core status vocabulary since staleness isn't success/failure), drift-detected (danger-tone) on inspection.
+Primary verbs: Run (capture), Compare, Verify (inspect against expected pattern), Remove/Prune (old snapshots).
+Data-source mapping: `SnapshotService`, `InspectionService`.
+Motion: compare-mode transition is a slide-together of the two selected items into the split view, 250ms, reinforcing that they're being placed in relation to each other.
+
+
+8. SECURITY
+Purpose: keys, redaction, token isolation — absorbs former Keys root.
+Layout: three sub-tabs — Keys (source/precedence list, setup wizard, doctor diagnostics), Redaction (paste-in preview showing what would be redacted before it's ever sent to a provider), Vault (token isolation status, read-only).
+States: key-health status-color per source; redaction preview highlights matched spans inline, danger-tone.
+Primary verbs: Configure (key setup), Verify (key doctor), Run (redaction preview).
+Data-source mapping: `KeyDoctorService`, `SecretSource`, `RedactionFilter`, `TokenIsolationVault`.
+Motion: none beyond standard panel transitions — this view stays deliberately calm/static, security surfaces shouldn't feel dynamic.
+
+
+9. MEMORY
+Purpose: durable remember/search notebook.
+Layout: searchable timeline, newest first.
+States: none beyond standard list states (empty/populated/loading).
+Primary verbs: Run (remember), Search/Lookup.
+Data-source mapping: `LocalMemoryStore`.
+Motion: new entries insert at top with a brief highlight-fade, standard success-tone flash to confirm the write landed.
+
+
+10. PAID/EMERGENCY
+Purpose: the deliberately-high-friction unlock gate — not reachable from Home per earlier decision.
+Layout: single-purpose view, physical-metaphor control (lift cover → flip switch), no dashboard framing at all.
+States: locked (default, calm), unlocked (danger-tone persistent banner across the whole shell, not just this view, until re-locked — the entire app should visibly know paid mode is on).
+Primary verbs: Configure (unlock), Remove/Prune (lock).
+Data-source mapping: `EmergencyPaidGate`.
+Motion: unlock requires a deliberate held-press or multi-step confirm, not a tap — friction is the point, matches the earlier design decision.
+
+
+11. VERIFY
+Purpose: global verification console, also invocable contextually from Agent and Pipeline rather than requiring a trip here first.
+Layout: scope toggle (Narrow / Wide) at top, results render as a pass/fail matrix below, each row expandable to the specific constraint violated.
+States: per-row status-color; Wide scope shows a progress indicator while running since it takes materially longer than Narrow, Narrow completes near-instantly with no loading state needed.
+Primary verbs: Verify (run), Search/Lookup (find a specific past verification record).
+Data-source mapping: `VerificationModels`, `DeterministicVerifier`, `ConstraintSolverEvaluator`, `ProbabilisticImmunityEngine`.
+Motion: matrix rows populate top-to-bottom as results stream in for Wide scope, standard list-insert animation, no reordering once placed — order reflects check sequence, not severity, so the eye can follow progress predictably.
+
+
+12. SOURCE LOOKUP
+Purpose: exact-coordinate find — merges former Dloi and Ast roots into one input.
+Layout: single search box, results typed automatically (document/section/line address vs. Kotlin symbol) based on what matched, no mode switch required from the user.
+States: no-match (explicit empty state with a suggestion to broaden the query, not a blank screen), multiple-match (ranked list).
+Primary verbs: Search/Lookup only — this view has no other verb, deliberately minimal.
+Data-source mapping: `DloiService`, `AstSymbolGraph`, `TreeSitterGrammarBridge`.
+Motion: none beyond standard list-populate; this is a utility view, speed matters more than motion polish here.
+
+
+13. AUTONOMOUS
+Purpose: control room for unattended run state — backlog, failovers, repair history.
+Layout: top strip shows current run-state with an explicit "who's driving" indicator (idle / ticking / running task N of M), backlog list below, repairs and failovers as sub-tabs.
+States: run-state per the global status vocabulary; a task actively executing pulses per the running-state animation rule, backlog items are static/neutral until picked up.
+Primary verbs: Run (tick / run one / run-max), Search/Lookup (backlog filter), Verify (status check).
+Data-source mapping: `AutonomousBacklogService`, `AutonomousOrchestrator`, `ProviderFailoverService`.
+Motion: the "who's driving" indicator is the one place in the product where a persistent looping animation while active is correct — this view exists specifically to answer "is something running unattended right now," so idle vs. active must be unmistakable even glanced at from across a room.
+
+
+14. SWARM
+Purpose: designed empty state for a real-but-unwired capability (`DirectorOrchestrator`, `WorkerCodeSynthesizer`, `OllamaClient` exist, no route binds them yet).
+Layout: single centered state card — "not yet available," brief description of what it will do once wired, no fake controls, no grayed-out buttons that look broken.
+States: only one state exists today. When the backend route binds, this view is replaced by an actual functional view built later — nothing about this placeholder should be built in a way that has to be thrown away, since the underlying object model (Director/Worker/Ollama) already exists and can inform this view's eventual real layout.
+Primary verbs: none active.
+Data-source mapping: none live; `core/swarm/` classes referenced only for future planning.
+Motion: none — a static, honest "not yet" is correct here, animating a non-functional feature would be misleading.
+
+
+15. JOBS/QUEUE
+Purpose: unifies the CI local-compile queue and the Agent job queue into one view even though they're different backends, since to a user both are just "things waiting to run."
+Layout: single list, tabbed by source (Agent / CI) if the list gets long, otherwise interleaved by recency — decide based on real usage volume once instrumented, don't hardcode the split before data exists.
+States: standard status-color vocabulary applies identically across both sources — this view is the proof that the vocabulary is truly universal, not agent-specific.
+Primary verbs: Run, Cancel, Retry, Recover.
+Data-source mapping: `LocalWorkQueue` (CI) + `AgentQueueStore`/`AgentJobStore` (Agent) — two backends, one presentation contract.
+Motion: shared with Agent view's Kanban-column-transition rule where applicable; flat-list items use standard list-item state-color swap only.
+
+
+16. PLATFORM (Advanced Settings sub-page, not a primary nav destination)
+Purpose: environment/adapter/health info — read-only, low-frequency.
+Layout: simple key-value detail list under Settings → Advanced → Platform.
+States: none beyond populated/loading.
+Primary verbs: Verify (health check) only.
+Data-source mapping: `PlatformAbstraction`, `PlatformAdapter`, `PlatformModels`.
+Motion: none.
+
+
+SECTION E: ACCESSIBILITY, PERFORMANCE, MOTION — TESTABLE ACCEPTANCE CRITERIA
+
+
+Accessibility, operationalized beyond the base doc's existing bullet — Every one of the 13 verbs has an accessible name distinct from its icon (screen reader announces "Run," "Cancel," "Resolve," never just reads a symbol description). Tab order on Desktop/Web follows visual reading order top-to-bottom, left-to-right, per view, no manually-reordered tab stops except where a view's alert rail must be reachable before its tab strip (Governance). Focus-visible ring uses the accent role at 2px minimum, never relies on background-color shift alone as the only focus indicator. Every status-color use pairs with a redundant non-color signal — icon shape and text label — since color-only status (the vocabulary in Section A) fails for colorblind users if color is the sole channel; this is a hard rule, not a nice-to-have, given how load-bearing the status-color vocabulary is across all 16 views. Reduced-motion: every animation listed in Section A has a defined instant-cut fallback, tested by verifying layout state matches end-state exactly with zero intermediate frames when the OS flag is on. Reduced-transparency: every glass surface's solid-fill fallback must render at the identical layout bounds as its glass version — no reflow, no content shift, tested by diffing bounding boxes between the two modes. Contrast: automated check against WCAG 2.2 AA run per view per theme (light/dark/tinted) as part of the acceptance suite, specifically re-run against glass surfaces with the worst-case (busiest, lightest, or darkest) background asset the surface can host, not the default preview background. 44×44pt minimum tap target verified per interactive element per view, including dense views (Jobs/Queue rows, DAG node taps) where the visual element may render smaller than the tap zone — tap zone can exceed visual size, never the reverse.
+
+
+Performance, operationalized — Tap/toggle feedback renders within 100ms of input (the same window as the micro-motion duration in Section A, so feedback timing and feedback animation are the same number, not two independently-tuned values). Log viewers, the Jobs/Queue list, DAG node lists, and the Memory timeline are all virtualized — only the visible window plus a small overscan buffer is composed, regardless of how many thousand entries exist underneath, since several of these (agent job history, memory entries) are unbounded over the life of an install. Background SSE stream updates (agent thinking, build output) never force recomposition of a view the user isn't currently looking at — state updates for a collapsed/off-screen job accumulate in its ViewModel but don't trigger a render pass until that job's row or detail sheet is actually visible, per Compose's recomposition-scoping guidance from the architecture research. Frame budget target: 60fps for all navigation and list-scroll interactions on Desktop/Web/APK; if a view can't hit that budget at realistic data volume (large DAG graphs, long execution streams), it degrades to a simplified render (flat list instead of force-directed graph, as already specified for DAG on APK) rather than stuttering the full-fidelity version.
+
+
+New acceptance tests this addendum adds, on top of the base doc's existing canonical test list — (1) every view's rendered action buttons match exactly the valid-verb response the contract layer returns for the currently-selected object — no view ever hardcodes a verb that isn't contract-driven. (2) no view across all four surfaces ever displays more than the 13 canonical verbs, tested by a static scan of every view's action-button set at build time. (3) every process/stream element loads collapsed on first render; expansion state does not persist across app restart unless expert/debug mode is explicitly on — regression test specifically for the default-density rule established earlier in this conversation. (4) status-color vocabulary renders identically (same hex-role, same icon, same label text) across all 16 views and the CLI's equivalent text/ANSI rendering — a single source-of-truth token test, not per-view snapshot tests. (5) adding a new `OperationEndpoint` with `configured=true` to the registry produces a new Home card and a reachable view with zero UI code changes — this is the literal test that proves the decoupling architecture from Section B is real.
+
+
+---
+
+
+SECTION F: DESIGN TOKEN REFERENCE + OPEN DECISIONS
+
+
+Token table, implementer-facing, consolidating Section A
+Color roles: background, surface, surface-glass, label, label-secondary, accent, success, warning, danger, info — each with light/dark/tinted values, adaptive not fixed hex.
+Type scale (pt): Large Title 34, Title 28, Title2 22, Title3 20, Headline 17-semibold, Body 17, Callout 16, Subhead 15, Footnote 13, Caption 12/11.
+Spacing: 8pt base grid, 4pt subdivision inside dense rows only.
+Tap target: 44×44pt minimum, all surfaces.
+Corner radius: base radius token 12–16pt on primary surfaces; nested elements use parent-radius-minus-inset so corners stay concentric with their container, per the Liquid Glass concentricity principle from the design research — this token wasn't explicit in Section A and is added here.
+Motion durations: micro-feedback 100–150ms ease-out; panel expand/collapse 200–250ms ease-in-out; view-transition 250–300ms direction-aware; spring physics reserved for direct-manipulation gestures only (swipe-to-activate, swipe-to-dismiss).
+Status-color vocabulary: idle=neutral, running=accent+animated, waiting=warning+static, blocked=warning+slow-pulse, retrying=accent+counter, failed=danger, cancelled=neutral+strikethrough, complete=success-then-fade.
+
+
+Explicit open decisions — not resolved by this addendum, need a call before implementation
+1. Jobs/Queue tab-vs-interleave split — deferred to real usage data, no default chosen yet.
+2. Which of the 13 verbs require a confirmation step by default — only Paid/Emergency's unlock friction is specified; Remove/Prune and Cancel likely need confirm, Run/Search/Lookup likely don't, but no full decision table exists yet.
+3. `scripts/codex/` self-build tooling — flagged twice in this conversation as a scoping question (agent-build-tooling vs. end-user feature), never resolved either way.
+4. Swarm's real functional view — intentionally out of scope until the backend route binds; only the placeholder is specced here.
+5. Tinted-theme seed mechanism for future multi-tenant/multi-project branding — mentioned as a capability the token system supports, not specified who sets it or at what scope (per-install vs. per-project).
+6. Full Web URL/route enumeration — only examples given (`/agent/jobs/{id}`, `/governance/territory`); the complete route table for all 16 views isn't itemized here.
+7. APK notification-permission copy/timing and exact per-gesture spec (swipe directions per card type) — noted as platform-specific work, not detailed line-by-line.
+8. Localization/i18n — not addressed anywhere in this addendum; explicitly flagging as undecided rather than silently assuming English-only.
+
+
+
+
+_______Part C_______
+
+
+AUTONOMOUS LONG-HORIZON EXECUTION + LIGHTWEIGHT INTERNAL DOCUMENT-TO-DAG SYSTEM + OPTIONAL EXTERNAL PLUGIN ARCHITECTURE + SELF-IMPROVING EVALUATION & POSITIVE FEEDBACK LOOP
+
+
+
+
+Status: Canonical. Final. Definitive. This is the last foundational document required.
+
+
+This specification, together with Source Documents 1-3 and the existing ATROPOS codebase (commit 23168d75), constitutes the complete blueprint for ATROPOS to operate as a sovereign, long-running, self-improving autonomous software development engine. MusicMakerLM is the designated first major proof workload.
+
+
+1. ARCHITECTURAL MANDATE
+ATROPOS must achieve full autonomy for complex, multi-week engineering projects without requiring constant human orchestration. It must default to self-contained operation while remaining extensible through optional, narrowly-scoped plugins. It must learn from its own execution traces and improve its performance over time through deterministic, evidence-backed mechanisms. It must never rely on a single external system for core planning or execution capability.
+
+
+2. OWNERSHIP BOUNDARIES (NON-NEGOTIABLE)
+Internal Lightweight System (Default):
+- Ingests source documents
+- Performs atom extraction (focused completeness dimensions)
+- Builds authority relations (cycles permitted)
+- Synthesizes execution DAGs with readiness calculation
+- Assigns territories at dispatch time
+- Drives the App Factory and Autonomy layers
+
+
+Optional External Plugin (SpecGraph Foundry or equivalent):
+- Supplies higher-fidelity planning graphs when available
+- ATROPOS consumes ready nodes and submits execution evidence/receipts
+- Never replaces internal territory enforcement, verification, or evaluation
+- Failure or absence triggers automatic fallback to internal system
+
+
+Core ATROPOS always owns:
+- Territory recording and mechanical enforcement
+- Provider calls and bounded execution
+- Independent verification
+- Evaluation metrics and self-improvement signals
+- Restart continuity and state recovery
+- All runtime invariants
+
+
+3. LIGHTWEIGHT INTERNAL DOCUMENT-TO-DAG SYSTEM (MORE COMPLETE VERSION)
+Built by extending existing ATROPOS infrastructure (DloiService, AST symbol graph, DagService, TerritoryService, DeterministicVerifier).
+
+
+Required atomic files:
+- InternalIngestionService.kt — Byte-complete ingestion + DLOI coordinate assignment + content hashing
+- InternalAtomExtractor.kt — Focused extraction using priority completeness dimensions (requirements, contracts, invariants, verification gates, territory boundaries, rollback points, evidence requirements)
+- InternalAuthorityGraphBuilder.kt — Authority relation synthesis with legal cycle support; reuses AST infrastructure
+- InternalExecutionDagSynthesizer.kt — Acyclic DAG production with explicit stages (Contract, Implementation, Verification, Gate); calculates readiness and critical path
+- InternalReadinessCalculator.kt — Dependency resolution and ready-node identification
+- InternalBatchDefiner.kt — Coherent batch grouping with entry/exit criteria and rollback metadata
+
+
+This system is deliberately lighter than full research-grade external systems but sufficient for autonomous consumption of complex engineering blueprints such as the MusicMakerLM Master Blueprint and UI/UX Blueprint.
+
+
+4. OPTIONAL PLUGIN ARCHITECTURE
+Stable narrow contract:
+interface PlanningGraphPlugin {
+    fun getReadyNodes(projectId: String, graphVersion: String): List<ReadyNode>
+    fun claimNode(nodeId: String, executorId: String, territory: Territory): NodeClaim
+    fun submitEvidence(nodeId: String, evidence: ExecutionEvidence): EvidenceReceipt
+    fun completeNode(nodeId: String, result: NodeResult)
+}
+
+
+Registration via PlanningGraphPluginRegistry.
+When active plugin returns work, it is processed identically to internally generated work by Director, TerritoryEnforcer, and EvaluationEngine.
+Automatic fallback on plugin unavailability or error.
+Plugin never gains authority over territory, verification, or self-improvement logic.
+
+
+5. PHASE 19 — APP FACTORY EXECUTION LOOP (COMPLETE)
+Deterministic loop that advances work from ready state to verified completion:
+
+
+- GraphClaimService (supports both internal DAG and plugin sources)
+- TerritoryEnforcer (records territory at claim; rejects violations before any mutation)
+- BoundedWorkExecutor (executes strictly inside territory using provider abstraction)
+- EvidenceCollector (immutable evidence with content hashes, test results, verifier findings)
+- IndependentVerificationGate (reuses and extends DeterministicVerifier; no self-verification allowed)
+- GraphTransitionService (submits results back to source — internal state or plugin)
+- BatchGate (atomic completion or rollback for coherent batches)
+
+
+Every claim carries explicit territory. Every mutation is checked. Every completion requires independent verification.
+
+
+6. PHASE 20 — LONG-HORIZON AUTONOMY LAYER (COMPLETE)
+Sustains factory operation across restarts and extended time horizons:
+
+
+- DirectorService — Global visibility, low-cost diff monitoring across worktrees, preventive drift detection, advisory signals to Managers
+- AutonomousBacklogManager — Persistent, restart-safe queue of ready work (internal + plugin)
+- RestartCoordinator — Restores claims, territories, and next executable DAG node using immutable fingerprints; divergence is blocking failure
+- PolicyGate — Evaluates every proposed action against declared policy before execution
+- EvaluationEngine — Computes ATROPOS-specific metrics from raw immutable evidence (see Section 7)
+- SelfImprovementLoop — Bounded adaptation of routing, batch sizing, retry policy, and repair quality based on evaluation output; never modifies external planning graphs or core invariants
+
+
+7. SELF-IMPROVING EVALUATION & POSITIVE FEEDBACK LOOP (DOPAMINE MECHANISM)
+Evaluation is a first-class product subsystem, not post-hoc analysis.
+
+
+Core metrics (each backed by raw immutable evidence):
+- Restart recovery success rate
+- Verifier-first catches (issues found before LLM escalation)
+- Territory safety percentage (changes within assigned territory)
+- Secret safety (zero leaks)
+- Context attestation success rate
+- Drift detection latency
+- Coordination efficiency (tokens per verified engineering change)
+- Repair quality (permanent fixes vs recurring failures)
+- Batch completion rate and rollback frequency
+- Provider route effectiveness over time
+
+
+EvidenceStore persists raw execution events, receipts, verifier findings, and metric snapshots with cryptographic hashes.
+
+
+Classification system:
+- Score reduction (minor)
+- Minimum failure
+- Competitive failure
+- Frontier failure
+- Safety hard failure (secret leak, territory violation, verification bypass, restart corruption) — blocks release and triggers immediate review
+
+
+Positive feedback loop (internal "dopamine"):
+Successful high-quality executions that produce clean verifier passes, high territory compliance, and measurable progress on long tasks generate positive signals. These signals increase priority weighting for similar routing decisions, batch sizes, and repair strategies in future work. The loop is strictly evidence-driven and bounded — it cannot override policy, territory, or verification gates. It improves efficiency and repair quality while preserving all safety invariants.
+
+
+Historical evaluation records live in EvaluationHistoryStore and are queryable for trend analysis and regression detection.
+
+
+Release gates are mechanically enforced by the EvaluationEngine. Any confirmed safety hard failure blocks autonomous continuation until human review.
+
+
+8. RESTART CONTINUITY AS EXPLICIT DAG NODE
+Restart is modeled as a first-class, restorable DAG node. RestartCoordinator restores:
+- Active claims and territories
+- Pending ready nodes (internal + plugin)
+- Execution state and evidence pointers
+- Next executable action
+
+
+Divergence between restored state and actual worktree state is a blocking failure. Immutable fingerprints (graph version, node ID, content hashes) are the source of truth.
+
+
+9. FILE-ATOMIC DECOUPLING AND IMPLEMENTATION RULES
+Every new component must be a single small file with one atomic responsibility.
+Composition over monolithic classes.
+No file mixes execution with verification.
+No file mixes presentation with decision logic.
+ArchitectureComplianceChecker (small file) runs as part of fast-gate and full verification; violations are treated as deterministic failures in enforcement mode.
+
+
+10. INVARIANTS (HARD RULES — NEVER VIOLATE)
+- Symbolic/structured planning output is the source of truth for requirements and dependencies. LLM never produces executable facts.
+- Territory is recorded at dispatch/claim time and mechanically enforced before any mutation.
+- No component verifies or approves its own output.
+- Restart must restore exact claim state using immutable fingerprints; divergence blocks.
+- Evaluation metrics derive only from raw immutable evidence.
+- Self-improvement operates only inside policy, territory, and verification boundaries.
+- ATROPOS always maintains fallback capability to its internal lightweight system.
+- External plugins enhance; they do not replace core autonomy primitives.
+
+
+11. MUSICMAKERLM AS FIRST PROOF WORKLOAD
+The two MusicMakerLM blueprints (Master Build Blueprint + UI/UX Master Blueprint) serve as the canonical first complex, long-horizon test case. ATROPOS must be capable of ingesting these documents, producing internal DAGs, assigning territories, executing implementation and verification work, evaluating outcomes, and improving its own performance across iterations until the full system is realized.
+
+
+12. INTEGRATION WITH EXISTING ATROPOS CODEBASE
+All new components extend rather than duplicate:
+- DloiService and AST symbol graph for coordinate and symbol handling
+- DagService and TerritoryService for graph and scope primitives
+- DeterministicVerifier and verification matrix for independent checking
+- Director, HR Router, Auditor, and Custodian patterns from Source Document 3
+- Provider abstraction, RoutePolicy, QuotaLedger, and Evaluation foundations from existing code
+- Restart and memory patterns from Phase 9/11 work
+
+
+No duplication of core DAG, territory, or verification logic.
+
+
+13. OPERATIONAL REQUIREMENTS
+- All state changes produce immutable ExecutionEvent records with full provenance.
+- Full run export (Markdown + JSON) must be available.
+- Searchable execution history by agent, provider, task, file, error, and event type.
+- Intent-first verb+noun contract layer remains the primary human interaction surface (13 canonical verbs).
+- Nano-style coherent batch discipline applies to both code changes and autonomous task execution.
+
+
+14. COMPLETION CRITERIA FOR PHASES 19 & 20
+Phases 19 and 20 are complete when ATROPOS can:
+- Ingest complex source documents via internal lightweight pipeline or optional plugin
+- Produce and maintain execution DAGs with explicit territories
+- Execute multi-stage work with mechanical territory enforcement and independent verification
+- Survive restarts with full state recovery using immutable fingerprints
+- Evaluate its own performance using evidence-backed metrics
+- Improve routing, batching, and repair strategies through bounded positive feedback
+- Default to fully autonomous operation on long-horizon projects such as MusicMakerLM without external planning systems
+- Maintain all safety invariants under extended autonomous runtime
+
+
+This document closes all remaining foundational gaps. No further Source Documents are required for Phases 19 and 20.
+
+
+END OF SPECIFICATION
+
+
+This is the complete, hyper-dense, final document. It contains every required element for autonomous self-sustaining operation.

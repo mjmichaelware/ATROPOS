@@ -26,11 +26,21 @@ class DloiTaskResolver {
         }.distinctBy { it.document.sourceId to it.section.id }
 
         require(matches.isNotEmpty()) { "unable to prove authoritative source section for task" }
-        require(matches.size == 1) {
-            "ambiguous authoritative source section for task: " +
-                matches.joinToString(", ") { "${it.document.sourceId}#${it.section.id}" }
+
+        // The authority document wins when several documents describe the same
+        // phase. The blueprint set deliberately restates the same phases, so
+        // without precedence every phase task is ambiguous — and the alias
+        // table already names which document is authoritative.
+        val authoritative = matches.filter { match ->
+            documentAliases(match.document).contains("authority")
         }
-        return matches.single()
+        val resolved = if (authoritative.size == 1) authoritative else matches
+
+        require(resolved.size == 1) {
+            "ambiguous authoritative source section for task: " +
+                resolved.joinToString(", ") { "${it.document.sourceId}#${it.section.id}" }
+        }
+        return resolved.single()
     }
 
     private fun matchesSection(
@@ -52,9 +62,9 @@ class DloiTaskResolver {
         return when {
             normalized.contains("canonical_phases_1_11_authority") ||
                 normalized.contains("codex_cli_build_blueprint_over_time") ->
-                setOf("authority", dloiSlug(document.sourceId), normalized)
+                setOf("authority", document.sourceId, dloiSlug(document.sourceId), normalized)
             normalized.contains("canonical_phases_1_11_closure") ->
-                setOf("closure", dloiSlug(document.sourceId), normalized)
+                setOf("closure", document.sourceId, dloiSlug(document.sourceId), normalized)
             else -> setOf(dloiSlug(document.sourceId), normalized)
         }
     }

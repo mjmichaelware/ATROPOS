@@ -1,0 +1,335 @@
+# ATROPOS 100% Completion Blueprint
+
+**Status:** Definitive, source-authoritative, non-duplicating completion map  
+**Target:** Absolute completion of the vision defined by Source Documents 1–3, the 94-atom DAG, Hierarchy Research, and App Factory / long-horizon autonomy goals  
+**Rule:** Completing every phase in this document to its stated acceptance gate reaches 100% of the currently defined vision.
+
+---
+
+## 1. Purpose and Absolute Completion Definition
+
+This document is the single ordered blueprint required to move ATROPOS from its current state (~60%) to absolute completion (100%).
+
+**Absolute completion is reached only when all of the following are true simultaneously:**
+
+1. Every Source Docs 1–2 atom (94 atoms) is mapped to exact source coordinates, implementation symbols, behavioral tests, immutable evidence, and a passing acceptance gate.
+2. Every applicable Source Doc 3 requirement (74 items) is implemented with the same rigor.
+3. All Hierarchy Research patterns are absorbed into the existing phases without parallel architecture.
+4. Every critical stub is eliminated (`ConstraintSolverEvaluator`, `TokenIsolationVault`, `TreeSitterGrammarBridge`, and any remaining constant-true or empty implementations).
+5. Extreme per-file atomic decoupling is enforced across the entire tree (no remaining multi-thousand-line mixed-concern files).
+6. The installed runtime proves:
+   - Inside-out self-build (Phase 11)
+   - Lovable/Base44-class full-stack natural-language app generation with live preview, testing, and deployment (Phase 19)
+   - Long-horizon autonomous continuation across interruptions with restart continuity and evidence-backed evaluation (Phase 20)
+7. Final Git state is clean. No untracked implementation debt remains. No fake-success paths remain.
+
+This document does not invent replacement phases. It expands the existing 21-phase map (Phase 0–20) with the exact gap-closure order, missing atomic components, and acceptance predicates required for 100%.
+
+---
+
+## 2. Non-Duplication Law (Hard Rule)
+
+Before any new class or file is added:
+
+1. Resolve the exact source requirement and acceptance predicate.
+2. Query the current symbol graph and direct callers.
+3. Select the existing semantic owner.
+4. Extend or compose that owner.
+5. Add a new atomic component only when no existing owner can satisfy the responsibility without mixing concerns.
+6. Never create a second DAG, territory system, verifier, policy engine, memory root, queue, journal, provider registry, or artifact pipeline.
+7. If a Source Doc 3 name overlaps an existing subsystem, implement it as a narrow facade/contract over that subsystem.
+8. Update the source-to-code ledger, tests, evidence, and symbol census in the same batch.
+
+---
+
+## 3. Five Dependency Horizons
+
+| Horizon | Phases | Purpose |
+|---------|--------|---------|
+| I — Truthful foundation | 0–10 | Make every claim about readiness, security, verification, and source authority true |
+| II — Inside-out crossover | 11–16 | Enable ATROPOS to improve itself under strict hierarchy and territory |
+| III — Visual and platform reach | 17–18 | Multimodal evidence + multi-platform clients |
+| IV — Lovable/Base44-class App Factory | 19 | Natural-language full-stack app generation with live proof |
+| V — Long-horizon sovereign autonomy | 20 | Multi-day/week verified continuation, evaluation, restart, self-improvement |
+
+---
+
+## 4. Critical Current Debt That Must Be Closed Early
+
+These items currently prevent truthful claims of completion. They are ordered by blocking power:
+
+1. **ConstraintSolverEvaluator** — three-line constant-true stub. Must become a real deterministic constraint evaluator or be removed and replaced by explicit invariant checks inside DeterministicVerifier.
+2. **TokenIsolationVault** — three-line constant-true stub. Must become real local secret isolation.
+3. **TreeSitterGrammarBridge** — effectively empty. Must become real deterministic parsing or an equally deterministic alternative that feeds AstSymbolGraph.
+4. **ScaffoldAdapters.kt (~1,390 lines)** — must be split into atomic transport, request, response-normalization, and error-mapping files.
+5. **DirectorOrchestrator / WorkerCodeSynthesizer** — paths that allow models to invent file plans or write provider output directly. Must be retired or rewritten to respect territory, source authority, and independent verification.
+6. **Large mixed-concern files** (AgentCommand.kt, AgentRunService.kt, AgentPatchStore.kt, DloiService.kt, and others) — must be brought under extreme atomic decoupling.
+
+---
+
+## 5. Extreme Per-File Atomic Decoupling Campaign (Cross-Cutting)
+
+This is elevated to a first-class, continuous requirement rather than a side note.
+
+**Rule:** One file = one atomic responsibility. No file may mix presentation, decision logic, transport, normalization, verification, and persistence.
+
+**Enforcement mechanism:**
+- `ArchitectureComplianceChecker` must be expanded into a fast-gate and full-verification rule.
+- Configurable line thresholds + concern-category detection (routing + rendering, transport + normalization, verification + execution, etc.).
+- Violations begin as advisory, then become blocking.
+- Every Phase 0–20 batch that touches code must leave the tree in a better or equal atomicity state.
+
+**Explicit split targets (must be completed before Phase 19 is declared done):**
+- ScaffoldAdapters → separate transport / request / normalization / error-mapping files per provider family.
+- Remaining large agent and DLOI files → extract single-responsibility components.
+- Any new file created after this blueprint must itself obey the one-responsibility rule.
+
+---
+
+## 6. Canonical Ordered Blueprint (Phases 0–20)
+
+### Phase 0 — Baseline Lock
+**Current:** PARTIAL / VERIFY  
+**Outcome:** One truthful, reproducible repository and toolchain baseline.  
+**Reuse:** build.gradle.kts, Gradle wrapper, CI workflow, fast-gate/smoke/safe-JAR scripts, tests.  
+**Gap closure:** Pin Kotlin/JDK/Gradle matrix; remove tracked build/cache residue; record fingerprints; eliminate placeholder-green and stale generated scripts; prove clean compile, focused tests, packaged JAR, installed-runtime smoke, secret scan, clean Git status.  
+**Acceptance gate:** Fresh clone on Termux and clean CI produce the same accepted JAR. No untracked implementation required. No artifact falsely reported complete.
+
+### Phase 1 — Provider Activation Doctor
+**Current:** STRONG PARTIAL / VERIFY  
+**Outcome:** Provider readiness is explicit multi-field fact, never a single Boolean.  
+**Reuse:** ProviderActivationService, ProviderActivationStore, descriptors, KeyDoctor, status renderers.  
+**Gap closure:** Unify descriptor presence, adapter presence, fixture support, dry-run, key-source, live verification, endpoint health, quota/cooldown, route eligibility, and last actual use into one durable readiness report. Every status field must be proven from executable evidence.  
+**Acceptance gate:** Every registered provider has a deterministic doctor report and cannot be marked ready merely because a descriptor or API key exists.
+
+### Phase 2 — Provider Transport Completion
+**Current:** PARTIAL  
+**Outcome:** Normalized, replaceable transports with no vendor coupling in core logic.  
+**Reuse:** Adapter interfaces/registry/facade, ScaffoldAdapters (to be split), result/failure models, redaction.  
+**Gap closure:** Split the ~1,390-line ScaffoldAdapters concentration into atomic files; finish real transports only where configured; keep unsupported providers typed and unavailable; remove manual/fabricated success paths.  
+**Acceptance gate:** Each transport passes success, auth failure, rate limit, billing, timeout, malformed, empty, cancellation, and redaction fixtures. Provider prose never becomes execution.
+
+### Phase 3 — Quota Ledger and Route Truth
+**Current:** STRONG PARTIAL / VERIFY  
+**Outcome:** Local-first, free-first, explainable routing with graceful degradation.  
+**Reuse:** QuotaLedger, RoutePolicy, FreeModeGuard, EmergencyPaidGate, ProviderFailoverService.  
+**Gap closure:** Record every usage/failure event; complete capability-specific fallback chains; queue when all free providers are unavailable; prove cooldown/reset; make route explanations show every selected and skipped provider; forbid accidental paid calls mechanically.  
+**Acceptance gate:** Route law is enforced: local toolchain → free ready provider → free fallback → cooldown queue → offline degraded mode → explicitly unlocked paid emergency only.
+
+### Phase 4 — Secret and Security Hardening
+**Current:** PARTIAL — CRITICAL STUB REMAINS  
+**Outcome:** Raw-secret output and unsafe execution are mechanically impossible.  
+**Reuse:** SecretSource, RedactionFilter, KeyDoctorService, shell bounds, policy rules.  
+**Gap closure:** Replace TokenIsolationVault constant-success stub with real local secret isolation; redact before UI, prompts, logs, queue, memory, history, exports, diffs, and evidence; add secret-diff and staged-content gates; bound cwd, environment, output, time, retries, cancellation, and network.  
+**Acceptance gate:** A secret can be configured and used without appearing in any persisted or displayed surface. Any confirmed leak is a release-blocking safety failure.
+
+### Phase 5 — Provider Fixture Matrix
+**Current:** PARTIAL / VERIFY  
+**Outcome:** Provider behavior is proven offline before any live call.  
+**Reuse:** ProviderFixtureMatrixService, activation fixtures/tests.  
+**Gap closure:** Cover every registered adapter and every normalized outcome; add context-attestation, redaction, quota, fallback, and cancellation fixtures; separate offline fixture proof from optional live verification.  
+**Acceptance gate:** All providers pass the offline matrix. Live tests run only by explicit opt-in and cannot redefine fixture truth.
+
+### Phase 6 — DLOI Source Router
+**Current:** STRONG PARTIAL  
+**Outcome:** Exact source authority and source-to-code trace is the root of every task.  
+**Reuse:** DloiService, HigZeroGuard, OntologicalAddressRouter, source-query/index scripts.  
+**Gap closure:** Formalize SourceDocumentRegistry; register every source document, section ID, hash, version, and authority relation; make every requirement resolve to exact sections and code symbols; finish durable source-to-code completion traces; prohibit blind semantic fallback when exact authority is required.  
+**Acceptance gate:** Every executable requirement has a durable source coordinate and typed no-match behavior. Search may discover candidates but never becomes authority.
+
+### Phase 7 — AST Symbol Graph
+**Current:** PARTIAL — PARSER STUB REMAINS  
+**Outcome:** Deterministic code intelligence for symbols, imports, callers, dependencies, and impact.  
+**Reuse:** AstSymbolGraph, import reconciliation, symbol tests.  
+**Gap closure:** Replace TreeSitterGrammarBridge stub with real deterministic parsing (or equivalent); record byte/line offsets, packages, classes, functions, imports, callers, references, dependency edges, and DLOI coordinates; expose exact symbol lookup and impact queries.  
+**Acceptance gate:** ATROPOS can resolve a source requirement to exact code symbols, find direct callers/references, detect duplicate concepts, and generate a reproducible symbol census.
+
+### Phase 8 — Deterministic Verifier
+**Current:** STRONG PARTIAL — CRITICAL STUB REMAINS  
+**Outcome:** Verification is independent, deterministic, failure-first, and incapable of fake success.  
+**Reuse:** DeterministicVerifier, ArchitectureComplianceChecker, VerifiedCompletionGate, ProbabilisticImmunityEngine.  
+**Gap closure:** Replace ConstraintSolverEvaluator constant-true stub; create IndependentVerificationGate as thin composition over existing verifier/gate systems (not a second verifier); enforce no self-approval; prove rollback and no-success-after-failure; cover syntax, structure, territory, policy, security, source trace, packaging, runtime, and architectural atomicity.  
+**Acceptance gate:** A failed assertion blocks completion and promotion. Each assertion names the invariant, expected value, observed value, evidence, and responsible requirement.
+
+### Phase 9 — Persistent Memory
+**Current:** PARTIAL  
+**Outcome:** Useful project memory, source knowledge, failure signatures, and evidence persist without making vector search authoritative.  
+**Reuse:** LocalMemoryStore, DLOI, context-cache scripts, lakehouse/Drive tooling.  
+**Gap closure:** Finish CAS/content hashing, bounded compaction, failure-signature memory, DLOI-linked memories, 1,024-token source chunking with overlap where required, optional sqlite-vec, and deterministic forgetting/retention. Keep all cloud storage optional.  
+**Acceptance gate:** Memory survives restart, remains queryable by exact project/task/symbol coordinates, never exposes secrets, and cannot override source authority or verification.
+
+### Phase 10 — Execution Policy Engine
+**Current:** PARTIAL  
+**Outcome:** Provider suggestions become typed, policy-checked proposals rather than raw machine control.  
+**Reuse:** ExecutionPolicyEngine, AutonomyPolicyExtensions, shell runner, patch path checks, endpoint registry.  
+**Gap closure:** Add atomic contracts ActionProposal, BoundedAgencyGate, TypedToolExecutor, ToolExecutionResult; add CapabilitySet / CapabilityEnforcer / EnforcementViolation; treat any PolicyGate as facade over the existing engine; define project-local policy-as-data; never execute raw provider prose or shell text.  
+**Acceptance gate:** Every side effect follows: schema validation → context validation → source/DAG validation → territory → redaction → policy/approval → typed tool adapter → verifier → evidence.
+
+### Phase 11 — Self-Build Loop
+**Current:** STRONG PARTIAL — CROSSOVER NOT PROVEN  
+**Outcome:** ATROPOS can plan, patch, test, repair, package, and continue work on itself.  
+**Reuse:** Agent ask/patch/apply, repair, queue, daemon, goal stores, self-host goal service, provider-session supervisor, worktree service, crash recovery, journals, completion gate.  
+**Gap closure:** Apply context attestation to every ask/patch/repair/daemon/provider path; add controlled iterative code-reading requests; remove direct worker writes; unify goal → DAG node → context → patch → candidate worktree → independent verification → promotion/rollback → next node; prove installed-JAR continuation.  
+**Acceptance gate:** ATROPOS completes one real bounded improvement to its own code from a durable goal, survives interruption, promotes only verified work, and automatically advances without an external agent orchestrating the sequence.
+
+### Phase 12 — Director Advisory Mode
+**Current:** PARTIAL  
+**Outcome:** Cheap global visibility and preventive drift detection without giving workers global context.  
+**Reuse:** DirectorService, observations/store/models, diff snapshots.  
+**Gap closure:** Bind Director observations to active goals, claims, worktrees, source requirements, and territories; add low-cost continuous diff monitoring; distinguish advisory from enforcement; ensure Director does not generate executable facts.  
+**Acceptance gate:** The Director detects scope drift before promotion and produces an auditable advisory tied to exact files, territory, task, and evidence.
+
+### Phase 13 — Territory Enforcement
+**Current:** PARTIAL  
+**Outcome:** Scope is recorded at dispatch and out-of-territory mutation is blocked before it happens.  
+**Reuse:** TerritoryService, TerritoryStore, IsolatedWorktreeService, patch-path checks.  
+**Gap closure:** Implement TerritoryEnforcer as narrow gate around existing service/worktree/patch systems; attach territory to every claim and job; check create/edit/delete/rename/shell operations before mutation; support controlled expansion requests; make violations blocking in enforcement mode.  
+**Acceptance gate:** A provider cannot modify, create, delete, rename, execute, or read protected paths outside its assigned territory. Every denied attempt is recorded.
+
+### Phase 14 — HR Information Router
+**Current:** PARTIAL  
+**Outcome:** Cross-boundary information movement is narrow, redacted, policy-checked, and auditable.  
+**Reuse:** HrRouterService, request/response/risk/audit models, endpoint registry, redaction and policy systems.  
+**Gap closure:** Bind requests to real agent identities, territories, tasks, and source coordinates; prevent free-form agent mailboxes from becoming the coordination layer; add escalation and response-size limits.  
+**Acceptance gate:** All cross-territory information requests are approved, narrowed, redacted, denied, or escalated through one durable audit path.
+
+### Phase 15 — Auditor and Custodian
+**Current:** PARTIAL  
+**Outcome:** Independent verification and deterministic hygiene are separated from execution agents.  
+**Reuse:** AuditorService, CustodianService, verification and Director systems.  
+**Gap closure:** Bind Auditor findings to completion gates and immutable evidence; restrict Custodian to explicit safe cleanup policies; ensure neither can silently mutate source authority or approve its own work; schedule routine deterministic tasks without LLM use.  
+**Acceptance gate:** Auditor can block promotion independently. Custodian can clean only allowed artifacts and reports every action.
+
+### Phase 16 — Manager / Specialist / Worker Hierarchy
+**Current:** EARLY PARTIAL  
+**Outcome:** Strict hierarchy with decreasing scope and increasing specialization.  
+**Reuse:** Hierarchy roles/registry/snapshots, Director, Territory, HR, Auditor, Custodian, provider routing.  
+**Gap closure:** Add durable Division VP and Manager assignment/progress services; distinguish Specialist from Worker verification requirements; make dispatch carry task, source, territory, capabilities, budget, acceptance, rollback, and parent authority; retire or rework DirectorOrchestrator and WorkerCodeSynthesizer paths that let models invent file plans or write directly.  
+**Acceptance gate:** A Director decomposes; a Manager dispatches; a bounded Specialist/Worker executes in an isolated territory; Auditor verifies; HR controls cross-boundary context; Human Owner remains final authority.
+
+### Phase 17 — Multimodal Runtime
+**Current:** EARLY PARTIAL  
+**Outcome:** Interfaces, screenshots, assets, browser behavior, and visual state are first-class evidence.  
+**Reuse:** Snapshot, inspection, multimodal models, local asset generation, artifact verification.  
+**Gap closure:** Add controlled browser actuation, screenshot/DOM/component inspection, console/network capture, viewport fixtures, before/after visual comparison, accessibility and responsive checks, and policy-isolated preview execution.  
+**Acceptance gate:** ATROPOS can launch an isolated preview, interact with it, capture visual/runtime evidence, detect blank/error states, and attach results to the originating requirement and patch.
+
+### Phase 18 — Multiplatform Expansion
+**Current:** MISSING / VERY EARLY  
+**Outcome:** One core product exposed through CLI, web, desktop, and Android surfaces.  
+**Reuse:** Platform models/abstractions/adapters and the terminal design system.  
+**Gap closure:** Create actual KMP/shared-core boundaries; separate presentation from decisions; add server/API contracts; build real web, desktop, and Android clients; preserve tabs, tasks, evidence, preview, jobs, and state across surfaces; add Docker and distribution paths. Do not create duplicate business logic per client.  
+**Acceptance gate:** The same durable project/run can be opened and controlled from terminal, web, desktop, and Android with equivalent truth and no client-specific fork of core orchestration.
+
+### Phase 19 — App Factory Completion (Lovable/Base44-class)
+**Current:** EARLY PARTIAL  
+**Outcome:** Natural-language full-stack app building that meets or exceeds Lovable/Base44 while remaining local-first and deterministic.  
+**Reuse:** AppFactoryRouter, artifact pipeline/verification, assets, planning graph, agent loop, provider routing, DLOI/AST, worktrees, UI primitives, multimodal inspection.  
+
+**Required product capabilities (acceptance is not met by plan printing alone):**
+- Natural-language project creation and iterative editing
+- Real source tree, editable code, exact project paths, and Git history
+- Live preview with hot reload, responsive viewports, console/network/build diagnostics, screenshots, and rollback
+- Frontend pages, components, navigation, state, forms, and design-system generation
+- Database/entity/schema and migration planning with explicit security rules
+- Authentication, sessions, roles, permissions, and authorization
+- Backend functions, APIs, scheduled/background tasks, storage, realtime behavior, and integrations
+- Environment and secret management with zero raw-secret exposure
+- Browser-driven user-flow testing and deterministic backend verification
+- GitHub import/sync/export, local development, cloning, templates, and portable ownership
+- Packaging, hosting/deployment, preview/live environments, domains, HTTPS, and release rollback
+- Activity monitor showing every plan, provider call, tool action, diff, test, verifier result, artifact, and deployment state
+
+**Missing atomic components (compose, do not duplicate):**
+- ProjectRegistry / RepositoryBinding / GitHubBinding
+- LivePreviewService / BrowserActuator / VisualComparison
+- GraphClaimService / GraphTransitionService (adapters over existing DAG)
+- BoundedWorkExecutor (compose AgentService + ExecutionPolicyEngine + TerritoryService + IsolatedWorktreeService)
+- EvidenceCollector (unify journal, verification, artifact, run-observer evidence)
+- BatchGate (compose current completion, rollback, verification, and artifact gates)
+- IntentParser / ActionRegistry / AliasResolver / FuzzyMatcher / SuggestionEngine / HelpRegistry / CommandHistoryStore (built over CanonicalVerb, command registry, palette, PromptState)
+
+**Acceptance gate:** From one natural-language request, ATROPOS creates a new project, plans a full-stack application, generates and edits real code, provisions or configures backend contracts, launches a live preview, tests real user flows, fixes failures, commits verified changes, packages/deploys the app, and leaves the project portable and owned by the user. ATROPOS must then exceed that class of builder through exact source authority, deterministic verification, replaceable providers, phone-first operation, strict territories, independent auditing, cross-platform clients, self-hosting, and long-horizon continuation.
+
+### Phase 20 — Full Autonomous ATROPOS
+**Current:** EARLY PARTIAL  
+**Outcome:** Verified engineering sustained over days or weeks, including self-improvement, restart recovery, optional planning plugins, and self-hosting.  
+**Reuse:** Autonomous backlog/orchestrator/failover, internal planning classes/plugin contract, self-host goals, queues/daemon, crash recovery, Director/Territory/HR/Auditor/Custodian, event journal, memory.
+
+**Gap closure:**
+- PlanningGraphPluginRegistry around the existing PlanningGraphPlugin contract
+- RestartCoordinator / StateSnapshot / DagNodeRestorer (compose CrashRecoveryService + DAG/goal/session/worktree stores)
+- Full EvaluationEngine + metric calculators + EvidenceStore + ReleaseGateEvaluator + AntiGamingAuditor + EvaluationHistoryStore
+- Bounded self-improvement loop over routing, batch size, retry, and repair (evidence changes weights; invariants remain immutable)
+- Enforce immutable fingerprints and safety hard-fail stops
+- Prove internal fallback when external planning plugins are absent
+
+**Observability requirements (must be first-class, not afterthoughts):**
+- OpenCode-style execution stream with full provenance on every visible event
+- Copyable output cards for plans, commands, outputs, diffs, logs, provider responses, tests, and reports
+- Full-run export as Markdown and JSON (and other durable formats)
+- Searchable execution history (filter by agent, provider, task, file, test, error, event type) that survives restart and does not require loading the entire trace into memory
+
+**Evaluation requirements (must be a real product subsystem):**
+- ATROPOS-specific metrics: restart recovery success, verifier-first catches before LLM escalation, coordination efficiency (tokens per verified change), territory safety, secret safety (zero leaks), identity recognition accuracy, context attestation success, drift detection latency, trace completeness, copy fidelity, preview success, event determinism
+- Evidence-backed metrics (every score links to raw immutable evidence)
+- Historical evaluation records
+- Correct release gates that separate score reduction, minimum failure, competitive failure, frontier failure, and safety hard failure
+- Zero-secret-leak rule is mechanically enforced and release-blocking
+- Anti-gaming and reproducibility (metric definitions, fixtures, environments, and scoring must be repeatable and auditable)
+- Evaluation CLI and dashboard surfaces
+
+**Acceptance gate (Phase 20 final crossover proofs):**
+- **Self-host proof:** ATROPOS closes a real ATROPOS requirement through its own durable loop and runs the newly installed JAR.
+- **Greenfield factory proof:** one prompt creates, previews, tests, commits, packages, and deploys a new full-stack application.
+- **Long-horizon proof:** a multi-document workload continues across interruptions until all runnable DAG nodes are verified.
+- **Recovery proof:** process death or phone restart restores the exact claim, territory, worktree, evidence pointers, and next action.
+- **Safety proof:** mythology/context drift, secret leakage, out-of-territory changes, self-verification, fake success, and policy bypass are blocked.
+- **Fallback proof:** external planning plugins and cloud providers can disappear without destroying core planning or execution.
+- **Learning proof:** evidence changes bounded routing, retry, batch-size, or repair weights while invariants remain immutable.
+
+---
+
+## 7. Missing Components Justified by Source Authority (Compose, Do Not Duplicate)
+
+| Component family | Phase | Implementation rule |
+|---|---:|---|
+| ActionProposal / BoundedAgencyGate / TypedToolExecutor / ToolExecutionResult | 10 | Thin typed execution contracts around existing policy and tool paths |
+| CapabilitySet / CapabilityEnforcer / EnforcementViolation | 10/13 | Add without duplicating provider capabilities or TerritoryService |
+| OutputValidator | 8/10 | Schema/claim validator composed with current patch extraction and verifier |
+| IndependentVerificationGate | 8 | Orchestration facade over DeterministicVerifier + VerifiedCompletionGate only |
+| PlanningGraphPluginRegistry | 20 | Registry around existing PlanningGraphPlugin contract |
+| GraphClaimService / GraphTransitionService | 19 | Adapters over existing internal DAG/plugin sources |
+| BoundedWorkExecutor | 19 | Compose AgentService + ExecutionPolicyEngine + TerritoryService + IsolatedWorktreeService |
+| EvidenceCollector | 19/20 | Unify journal, verification, artifact, and run-observer evidence |
+| BatchGate | 19 | Compose current completion, rollback, verification, and artifact gates |
+| RestartCoordinator / StateSnapshot / DagNodeRestorer | 20 | Compose CrashRecoveryService + DAG/goal/session/worktree stores |
+| EvaluationEngine + metric/release/history components | 20 | New subsystem; derive only from immutable existing evidence |
+| IntentParser / ActionRegistry / aliases/fuzzy/help/history | 19 | Build over existing CanonicalVerb, command registry, palette, PromptState |
+| ProjectRegistry / RepositoryBinding / GitHubBinding | 19 | New durable multi-project control plane (no current semantic owner) |
+| LivePreviewService / BrowserActuator / VisualComparison | 17/19 | Controlled preview/browser subsystem over snapshots, inspection, artifacts, and policy |
+| ArchitectureComplianceChecker expansion | 0–20 continuous | Enforce extreme per-file atomic decoupling as a gate |
+
+---
+
+## 8. Source Coverage Appendices
+
+### Appendix A — 94 Source Docs 1–2 Atom Coverage
+(Identical mapping as the prior blueprint; every atom is assigned to one or more phases above. Completion of the phases above satisfies every atom.)
+
+### Appendix B — Source Doc 3 Requirement Coverage
+(Identical mapping of all 74 requirements into the phases above. Completion of the phases above satisfies every requirement.)
+
+### Appendix C — Research Additions Absorbed Without New Phases
+All eight major Hierarchy Research patterns are absorbed into Phases 6–8, 9–10, 11, 13–16, 17, 19, and 20 exactly as previously stated. No parallel architecture is created.
+
+---
+
+## 9. Final Statement of 100%
+
+When every phase in this document has passed its acceptance gate, every critical stub has been eliminated, extreme per-file atomic decoupling has been enforced, and the seven Phase 20 crossover proofs have been demonstrated on the installed runtime, ATROPOS will have reached **100% of the vision defined by Source Documents 1–3, the 94-atom DAG, the Hierarchy Research, and the App Factory / long-horizon autonomy goals**.
+
+No additional architectural phase is required beyond what is specified here. Any future requirements that emerge only during the final proofs become new source authority and are handled under the same non-duplication and phase discipline.
+
+**This is the 100% completion blueprint.**
+
