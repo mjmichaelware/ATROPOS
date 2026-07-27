@@ -6,6 +6,8 @@ import atropos.core.territory.GrantResult
 import atropos.core.territory.TerritoryGrantService
 import atropos.core.territory.TerritoryService
 import atropos.core.territory.TerritoryStore
+import atropos.core.auditor.AuditSeverity
+import atropos.core.auditor.AuditorService
 import atropos.core.policy.ActionProposal
 import atropos.core.policy.AgencyDisposition
 import atropos.core.policy.BoundedAgencyGate
@@ -141,6 +143,12 @@ class AgentPatchStore(
         TerritoryGrantService(TerritoryService(TerritoryStore(repoRoot))),
     private val agencyGate: BoundedAgencyGate = BoundedAgencyGate(ExecutionPolicyEngine(repoRoot), territoryGrants),
     private val redactionFilter: RedactionFilter = RedactionFilter(),
+    /**
+     * A fresh auditor per apply. [AuditorService] accumulates findings in
+     * mutable state, so a shared instance would let one patch's findings refuse
+     * another's.
+     */
+    private val auditorFactory: () -> AuditorService = { AuditorService(repoRoot) },
     /** Shares [agencyGate], so exactly one policy engine serves this store. */
     private val agency: TypedToolExecutor = TypedToolExecutor(agencyGate),
     /**
@@ -284,6 +292,38 @@ class AgentPatchStore(
      * mutation awaiting an authority nobody has asked yet, and collapsing it
      * into the blocked code would erase the difference an approval flow needs.
      */
+    /**
+     * Refuses the apply when the Auditor raises a blocking finding.
+     *
+     * @return the refusal to return, or `null` when nothing blocks.
+     */
+    private fun auditRefusal(snapshot: AgentPatchSnapshot, checkOnly: Boolean): AgentPatchApplyResult? {
+        val files = snapshot.extraction.touchedPaths
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
+            .map { repoRoot.resolve(it).toString() }
+            .distinct()
+        if (files.isEmpty()) return null
+
+        val auditor = auditorFactory()
+        auditor.auditSecrets(files)
+        val blocking = auditor.report().findings.filter {
+            it.severity == AuditSeverity.FAILURE || it.severity == AuditSeverity.CRITICAL
+        }
+        if (blocking.isEmpty()) return null
+
+        val reason = "auditor blocked apply: " + blocking.joinToString("; ") { "${it.check} ${it.message}" }
+        return AgentPatchApplyResult(
+            patchId = snapshot.id,
+            patchFile = snapshot.patchFile,
+            changedPaths = snapshot.extraction.touchedPaths,
+            checkOnly = checkOnly,
+            applied = false,
+            refusalReason = reason,
+            disposition = AgencyDisposition.POLICY_BLOCKED
+        )
+    }
+
     private fun refusedCheck(proposal: ActionProposal, outcome: ToolExecutionResult): AgentPatchCheckResult =
         AgentPatchCheckResult(
             passed = false,
@@ -377,10 +417,16 @@ class AgentPatchStore(
         // Grant-on-dispatch: applying a stored patch is dispatched by the
         // operator, so the patch is granted exactly the paths its diff touches,
         // narrowed from the owner's territory and bound to this patch id.
+        // The apply writes the touched paths and reads the stored diff, so the
+        // grant must cover both. Granting only the touched paths left the
+        // apply-check proposal — which declares the diff file as its target —
+        // refused by its own territory.
+        val patchFilePath = runCatching { repoRoot.relativize(snapshot.patchFile).toString() }
+            .getOrElse { snapshot.patchFile.toString() }
         val grant = territoryGrants.grantToNode(
             dispatcher = ActionActor.HumanOwner,
             node = patchActor,
-            requestedPrefixes = snapshot.extraction.touchedPaths
+            requestedPrefixes = snapshot.extraction.touchedPaths + patchFilePath
         )
         if (grant is GrantResult.Refused) {
             return AgentPatchApplyResult(
@@ -497,6 +543,12 @@ class AgentPatchStore(
                 checkResult = checkResult
             )
         }
+
+        // The Auditor reviews what the patch would put in the tree, immediately
+        // before the mutation. Territory, policy and diff validation have all
+        // already allowed this apply; the Auditor can only subtract from that,
+        // never grant it. A check-only run mutates nothing and is not audited.
+        auditRefusal(snapshot, checkOnly = false)?.let { return it }
 
         val applyResult = runGitApply(snapshot.patchFile)
         if (!applyResult.passed) {
