@@ -3,6 +3,8 @@ package atropos.cli.ui
 
 import atropos.cli.input.CommandEntry
 import atropos.cli.input.CommandRegistry
+import atropos.cli.ui.design.Glyphs
+import atropos.cli.ui.design.Role
 
 data class CommandPaletteQuery(
     val text: String,
@@ -19,23 +21,36 @@ class CommandPaletteRenderer(
         return render(paletteQuery, width, maximumRows)
     }
 
+    /**
+     * Command palette in the pinned reference's dialog shape: a titled panel on
+     * a raised surface, rows padded two columns in, the selected row carrying
+     * the accent selection fill.
+     *
+     * The reference titles this dialog "Commands" and renders it as a
+     * DialogSelect over a panel background rather than as a bare inline list.
+     */
     fun render(query: CommandPaletteQuery?, width: Int, maximumRows: Int): List<String> {
         if (query == null || maximumRows <= 0) return emptyList()
 
-        val matches = CommandRegistry
-            .slashMatches(query.text)
-            .take(maximumRows)
-
+        // One row is spent on the title, matching the reference's dialog header.
+        val rowBudget = (maximumRows - 1).coerceAtLeast(1)
+        val matches = CommandRegistry.slashMatches(query.text).take(rowBudget)
         if (matches.isEmpty()) return emptyList()
 
         val selected = query.selectedIndex.coerceIn(0, matches.lastIndex)
+        val pad = " ".repeat(Glyphs.RAIL_PADDING)
 
-        return matches.mapIndexed { index, item ->
-            renderItem(
-                item = item,
-                width = width,
-                selected = index == selected
+        return buildList {
+            add(
+                TerminalText.padEnd(
+                    theme.paint(Role.BRAND, pad + "Commands") +
+                        theme.subdued("  ${matches.size}"),
+                    width
+                )
             )
+            matches.forEachIndexed { index, item ->
+                add(renderItem(item, width, index == selected))
+            }
         }
     }
 
@@ -44,21 +59,29 @@ class CommandPaletteRenderer(
         width: Int,
         selected: Boolean
     ): String {
-        val marker = if (selected) "> " else "  "
+        val pad = " ".repeat(Glyphs.RAIL_PADDING)
         val available = (
-            width -
-                TerminalText.cellWidth(marker) -
-                TerminalText.cellWidth(item.command) -
-                3
+            width - TerminalText.cellWidth(pad) -
+                TerminalText.cellWidth(item.command) - 3
             ).coerceAtLeast(0)
         val description = TerminalText.ellipsize(item.description, available)
-        val plain = marker + item.command +
-            if (description.isEmpty()) "" else " · $description"
 
         return if (selected) {
-            theme.selection(TerminalText.padEnd(plain, width))
+            // Reference fills the whole selected row with the accent.
+            theme.paint(
+                Role.ACCENT_SELECTION,
+                TerminalText.padEnd(
+                    pad + item.command +
+                        if (description.isEmpty()) "" else "  $description",
+                    width
+                )
+            )
         } else {
-            theme.metadata(plain)
+            TerminalText.padEnd(
+                pad + theme.strong(item.command) +
+                    if (description.isEmpty()) "" else theme.subdued("  $description"),
+                width
+            )
         }
     }
 }
