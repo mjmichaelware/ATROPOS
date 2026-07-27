@@ -5,7 +5,9 @@ import atropos.ast.AstSymbolGraph
 import atropos.ast.AstSymbolKind
 import atropos.core.memory.LocalMemoryStore
 import atropos.core.security.RedactionFilter
+import atropos.dloi.DloiLookupResult
 import atropos.dloi.DloiService
+import atropos.dloi.HigZeroGuard
 import java.time.Instant
 
 class AgentRunService(
@@ -18,6 +20,8 @@ class AgentRunService(
     private val contextExporter: AgentContextExportStore = AgentContextExportStore(collector.repoRoot),
     private val memoryStore: LocalMemoryStore = LocalMemoryStore(collector.repoRoot.resolve(".atropos/memory").toFile()),
     private val dloiService: DloiService = DloiService(collector.repoRoot),
+    /** The only way this service reaches DLOI: failures arrive typed, not thrown. */
+    private val higZeroGuard: HigZeroGuard = HigZeroGuard(dloiService),
     private val astSymbolGraph: AstSymbolGraph = AstSymbolGraph(collector.repoRoot),
     private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
@@ -281,7 +285,7 @@ class AgentRunService(
                 smokeCommand = smokeCommand,
                 smokePassed = false,
                 smokeResult = smokeExecution.summary(),
-                sourceEvidence = sourceEvidence,
+                sourceEvidence = sourceEvidence.provenanceOrNull,
                 impactedSymbols = emptyList(),
                 finalReport = buildFinalReport(refusedForReport, task, smokeCommand, smokeExecution, emptyList(), sourceEvidence, emptyList()),
                 commitProposal = null,
@@ -300,7 +304,7 @@ class AgentRunService(
         smokeCommand: String?,
         smokeExecution: AgentSmokeExecutionResult?,
         baselineStatus: Set<String>,
-        sourceEvidence: String?
+        sourceEvidence: SourceEvidence
     ): AgentJobRecord {
         val changedFiles = changedFilesSince(baselineStatus)
         val impactedSymbols = impactedSymbolEvidence(changedFiles)
@@ -320,7 +324,7 @@ class AgentRunService(
                 smokeStderr = smokeExecution?.stderr?.takeIf { it.isNotBlank() } ?: job.smokeStderr,
                 smokePassed = smokePassed,
                 smokeResult = smokeSummary ?: job.smokeResult,
-                sourceEvidence = sourceEvidence,
+                sourceEvidence = sourceEvidence.provenanceOrNull,
                 impactedSymbols = impactedSymbols,
                 finalReport = buildFinalReport(job, task, smokeRequested, smokeExecution, changedFiles, sourceEvidence, impactedSymbols),
                 commitProposal = buildCommitProposal(task, smokeRequested, changedFiles, smokeExecution),
@@ -368,7 +372,7 @@ class AgentRunService(
         smokeCommand: String?,
         smokeExecution: AgentSmokeExecutionResult?,
         changedFiles: List<String>,
-        sourceEvidence: String?,
+        sourceEvidence: SourceEvidence,
         impactedSymbols: List<String>
     ): String = buildString {
         appendLine("status: ${renderFinalStatus(job.status)}")
@@ -377,7 +381,7 @@ class AgentRunService(
         appendLine("patch: ${job.appliedPatchId ?: job.patchId ?: "none"}")
         appendLine("verification: ${job.verificationId ?: "none"}")
         appendLine("smoke: ${smokeExecution?.summary()?.let(redactionFilter::redact) ?: smokeCommand?.let { "not run" } ?: "not requested"}")
-        appendLine("source: ${sourceEvidence?.let(redactionFilter::redact) ?: "unresolved"}")
+        appendLine("source: ${sourceEvidence.describe(redactionFilter::redact)}")
         appendLine("impacted symbols: ${impactedSymbols.joinToString(", ") { redactionFilter.redact(it) }.ifBlank { "none" }}")
         appendLine("changed files: ${changedFiles.joinToString(", ") { redactionFilter.redact(it) }.ifBlank { "none" }}")
     }.trimEnd()
@@ -522,16 +526,38 @@ class AgentRunService(
         val content: String
     )
 
-    private fun resolveSourceEvidence(task: String): String? =
-        runCatching { dloiService.resolveTask(task).provenance }.getOrNull()
-            ?.also { provenance ->
+    /**
+     * Traces a task to its authoritative source section.
+     *
+     * Resolution goes through [HigZeroGuard], so a failure arrives as a typed
+     * [DloiLookupResult.NoMatch] carrying its reason rather than as an exception
+     * this method would have to swallow. The reason is kept: it used to be
+     * dropped, and the run then reported bare `unresolved`, which reads exactly
+     * like a task that needed no source at all.
+     */
+    private fun resolveSourceEvidence(task: String): SourceEvidence =
+        when (val result = higZeroGuard.resolveTask(task)) {
+            is DloiLookupResult.Resolved -> {
+                val provenance = result.resolution.provenance
                 memoryStore.rememberSourceDecision(
                     subjectId = provenance,
                     title = "agent source resolution",
                     body = "task=${task.trim()}\nprovenance=$provenance",
                     tags = listOf("agent", "source", "dloi")
                 )
+                SourceEvidence.Resolved(provenance)
             }
+
+            is DloiLookupResult.NoMatch -> {
+                memoryStore.rememberSourceDecision(
+                    subjectId = "unresolved",
+                    title = "agent source unresolved",
+                    body = "task=${task.trim()}\nreason=${result.reason}",
+                    tags = listOf("agent", "source", "dloi", "unresolved")
+                )
+                SourceEvidence.Unresolved(result.reason)
+            }
+        }
 
     private fun impactedSymbolEvidence(changedFiles: List<String>): List<String> =
         runCatching {
@@ -546,7 +572,7 @@ class AgentRunService(
     private fun rememberFinalOutcome(
         record: AgentJobRecord,
         changedFiles: List<String>,
-        sourceEvidence: String?,
+        sourceEvidence: SourceEvidence,
         impactedSymbols: List<String>
     ) {
         memoryStore.rememberJob(
@@ -558,7 +584,7 @@ class AgentRunService(
                 appendLine("patch=${record.appliedPatchId ?: record.patchId ?: "none"}")
                 appendLine("verification=${record.verificationId ?: "none"}")
                 appendLine("smoke=${record.smokeResult ?: "none"}")
-                appendLine("source=${sourceEvidence ?: "unresolved"}")
+                appendLine("source=${sourceEvidence.describe()}")
                 appendLine("impacted=${impactedSymbols.joinToString(", ").ifBlank { "none" }}")
                 appendLine("changed=${changedFiles.joinToString(", ").ifBlank { "none" }}")
                 appendLine("failure=${record.failureReason ?: "none"}")
