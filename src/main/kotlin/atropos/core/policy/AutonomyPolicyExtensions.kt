@@ -40,11 +40,18 @@ data class AutonomyPolicyRule(
     val requiresExplicitOverride: Boolean = false
 )
 
+/**
+ * An advisory opinion. **Not** permission.
+ *
+ * Only [ExecutionPolicyEngine], reached through [BoundedAgencyGate], may permit
+ * a side effect. The fields are named `advisory*` so no caller can read this as
+ * authorisation by accident.
+ */
 data class AutonomyPolicyDecision(
     val id: String,
     val actionClass: AutonomyActionClass,
-    val allowed: Boolean,
-    val policyBlocked: Boolean,
+    val advisoryAllowed: Boolean,
+    val advisoryBlocked: Boolean,
     val reason: String,
     val decodedAt: Instant
 )
@@ -53,12 +60,20 @@ data class AutonomyPolicyAuditRecord(
     val decidedAt: Instant,
     val actionClass: AutonomyActionClass,
     val decisionId: String,
-    val allowed: Boolean,
-    val policyBlocked: Boolean,
+    val advisoryAllowed: Boolean,
+    val advisoryBlocked: Boolean,
     val reason: String,
     val metadata: Map<String, String> = emptyMap()
 )
 
+/**
+ * Advisory autonomy guidance. It holds no permission authority.
+ *
+ * It once exposed `evaluateExecutionPolicy`, which translated an
+ * [ExecutionPolicyRequest] into its own verdict and made it a rival authority
+ * over side effects. That bridge is gone: [advise] returns an opinion and writes
+ * an audit trail, and nothing may gate execution on it.
+ */
 class AutonomyPolicyEngine(
     private val repoRoot: Path = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize(),
     private val redactionFilter: RedactionFilter = RedactionFilter()
@@ -91,7 +106,8 @@ class AutonomyPolicyEngine(
         AutonomyActionClass.NETWORK_ACCESS to AutonomyPolicyRule(AutonomyActionClass.NETWORK_ACCESS, false, "network access not auto-allowed")
     )
 
-    fun evaluate(actionClass: AutonomyActionClass, metadata: Map<String, String> = emptyMap()): AutonomyPolicyDecision {
+    /** Returns advice. Callers must not use it to authorise a side effect. */
+    fun advise(actionClass: AutonomyActionClass, metadata: Map<String, String> = emptyMap()): AutonomyPolicyDecision {
         val rule = defaultRules[actionClass]
             ?: AutonomyPolicyRule(actionClass, false, "unknown action class, denied by default")
         val id = "apol-" + UUID.randomUUID().toString().take(12)
@@ -99,52 +115,13 @@ class AutonomyPolicyEngine(
         val decision = AutonomyPolicyDecision(
             id = id,
             actionClass = actionClass,
-            allowed = rule.allowed && !rule.requiresExplicitOverride,
-            policyBlocked = !rule.allowed,
+            advisoryAllowed = rule.allowed && !rule.requiresExplicitOverride,
+            advisoryBlocked = !rule.allowed,
             reason = if (rule.allowed) rule.reason else rule.reason,
             decodedAt = now
         )
-        audit(AutonomyPolicyAuditRecord(now, actionClass, id, decision.allowed, decision.policyBlocked, decision.reason, metadata))
+        audit(AutonomyPolicyAuditRecord(now, actionClass, id, decision.advisoryAllowed, decision.advisoryBlocked, decision.reason, metadata))
         return decision
-    }
-
-    fun evaluateExecutionPolicy(request: ExecutionPolicyRequest, autonomyContext: Map<String, String> = emptyMap()): AutonomyPolicyDecision {
-        val actionClass = mapExecutionToAutonomy(request.actionClass, request)
-        return evaluate(actionClass, autonomyContext + request.metadata)
-    }
-
-    private fun mapExecutionToAutonomy(actionClass: PolicyActionClass, request: ExecutionPolicyRequest): AutonomyActionClass {
-        return when (actionClass) {
-            PolicyActionClass.SHELL -> {
-                val cmd = request.command.joinToString(" ").lowercase()
-                when {
-                    cmd.contains("git push --force") || cmd.contains("git force") -> AutonomyActionClass.FORCE_PUSH
-                    cmd.contains("git reset --hard") -> AutonomyActionClass.HARD_RESET
-                    cmd.contains("git clean") -> AutonomyActionClass.GIT_CLEAN
-                    cmd.contains("git commit") -> AutonomyActionClass.COMMIT_CHANGES
-                    cmd.contains("git push") -> AutonomyActionClass.PUSH_CHANGES
-                    cmd.startsWith("git ") -> AutonomyActionClass.RUN_COMMAND
-                    else -> AutonomyActionClass.RUN_COMMAND
-                }
-            }
-            PolicyActionClass.GIT -> AutonomyActionClass.RUN_COMMAND
-            PolicyActionClass.FILE_MUTATION -> AutonomyActionClass.WRITE_FILE
-            PolicyActionClass.PATCH_APPLY -> AutonomyActionClass.APPLY_PATCH
-            PolicyActionClass.BUILD_TEST -> {
-                when {
-                    request.command.firstOrNull()?.lowercase()?.contains("test") == true -> AutonomyActionClass.RUN_TEST
-                    else -> AutonomyActionClass.RUN_BUILD
-                }
-            }
-            PolicyActionClass.PROVIDER_CALL -> {
-                if (request.paidProvider) AutonomyActionClass.PAID_PROVIDER
-                else AutonomyActionClass.RUN_COMMAND
-            }
-            PolicyActionClass.NETWORK -> AutonomyActionClass.NETWORK_ACCESS
-            PolicyActionClass.DAEMON -> AutonomyActionClass.DAEMON_CONTROL
-            PolicyActionClass.QUEUE -> AutonomyActionClass.QUEUE_CONTROL
-            PolicyActionClass.SMOKE -> AutonomyActionClass.RUN_TEST
-        }
     }
 
     fun policyBlockedReason(actionClass: AutonomyActionClass, metadata: Map<String, String> = emptyMap()): String {
@@ -161,8 +138,8 @@ class AutonomyPolicyEngine(
                     decidedAt = runCatching { Instant.parse(parts[0]) }.getOrNull() ?: return@mapNotNull null,
                     actionClass = runCatching { AutonomyActionClass.valueOf(parts[1]) }.getOrNull() ?: return@mapNotNull null,
                     decisionId = parts[2],
-                    allowed = parts[3].toBooleanStrictOrNull() ?: return@mapNotNull null,
-                    policyBlocked = parts[4].toBooleanStrictOrNull() ?: return@mapNotNull null,
+                    advisoryAllowed = parts[3].toBooleanStrictOrNull() ?: return@mapNotNull null,
+                    advisoryBlocked = parts[4].toBooleanStrictOrNull() ?: return@mapNotNull null,
                     reason = parts.getOrElse(5) { "" }
                 )
             }
@@ -175,8 +152,8 @@ class AutonomyPolicyEngine(
             append(record.decidedAt)
             append('\t').append(record.actionClass.name)
             append('\t').append(record.decisionId)
-            append('\t').append(record.allowed)
-            append('\t').append(record.policyBlocked)
+            append('\t').append(record.advisoryAllowed)
+            append('\t').append(record.advisoryBlocked)
             append('\t').append(redactionFilter.redact(record.reason).replace('\t', ' '))
             if (record.metadata.isNotEmpty()) {
                 append('\t').append(

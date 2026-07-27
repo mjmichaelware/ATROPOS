@@ -67,7 +67,8 @@ class AgentCommand(
     private val dagStore: DagStore = DagStore(),
     private val journal: EventJournalService = EventJournalService(),
     private val observer: RunObserver = RunObserver(config),
-    private val policyEngine: AutonomyPolicyEngine = AutonomyPolicyEngine(),
+    /** Advisory guidance only. Execution permission comes from BoundedAgencyGate. */
+    private val autonomyAdvisor: AutonomyPolicyEngine = AutonomyPolicyEngine(),
     private val recoveryService: CrashRecoveryService = CrashRecoveryService(config),
     private val worktreeService: IsolatedWorktreeService = IsolatedWorktreeService(),
     private val completionGate: VerifiedCompletionGate = VerifiedCompletionGate(config)
@@ -1238,19 +1239,23 @@ class AgentCommand(
     private fun handlePolicyCommand(args: List<String>): AgentCommandOutcome {
         return when (args.getOrNull(0)?.lowercase()) {
             null, "audit" -> {
-                val audit = policyEngine.latestAudit()
-                val text = audit.joinToString("\n") { "${it.decidedAt} ${it.actionClass} allowed=${it.allowed} blocked=${it.policyBlocked} ${it.reason}" }.ifEmpty { "no audit records" }
-                ui.renderNotice(formatBlock("POLICY AUDIT", text))
+                val audit = autonomyAdvisor.latestAudit()
+                val text = audit.joinToString("\n") { "${it.decidedAt} ${it.actionClass} advisory_allowed=${it.advisoryAllowed} advisory_blocked=${it.advisoryBlocked} ${it.reason}" }.ifEmpty { "no audit records" }
+                ui.renderNotice(formatBlock("AUTONOMY ADVISORY AUDIT", text))
                 AgentCommandOutcome.Completed(text)
             }
             "check" -> {
                 val action = args.getOrNull(1)?.let { runCatching { AutonomyActionClass.valueOf(it.uppercase()) }.getOrNull() }
                     ?: return invalid("usage: /agent policy check <ActionClass>")
                 val desc = args.drop(2).joinToString(" ")
-                val decision = policyEngine.evaluate(action, mapOf("description" to desc))
-                val text = "action=$action allowed=${decision.allowed} blocked=${decision.policyBlocked} reason=${decision.reason}"
-                ui.renderNotice(formatBlock("POLICY CHECK", text))
-                if (decision.allowed) AgentCommandOutcome.Completed(text) else AgentCommandOutcome.Invalid(text)
+                // Advisory only. This reports guidance; it authorises nothing.
+                // Execution permission comes from BoundedAgencyGate alone.
+                val decision = autonomyAdvisor.advise(action, mapOf("description" to desc))
+                val text = "action=$action advisory_allowed=${decision.advisoryAllowed} " +
+                    "advisory_blocked=${decision.advisoryBlocked} reason=${decision.reason} " +
+                    "(advisory only — not an execution permit)"
+                ui.renderNotice(formatBlock("AUTONOMY ADVICE", text))
+                if (decision.advisoryAllowed) AgentCommandOutcome.Completed(text) else AgentCommandOutcome.Invalid(text)
             }
             else -> invalid("usage: /agent policy [audit|check]")
         }

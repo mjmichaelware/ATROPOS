@@ -10,7 +10,6 @@ import atropos.core.dag.DagNodeState
 import atropos.core.dag.DagStore
 import atropos.core.memory.LocalMemoryStore
 import atropos.core.policy.AutonomyActionClass
-import atropos.core.policy.AutonomyPolicyEngine
 import atropos.core.security.RedactionFilter
 import atropos.core.worktree.IsolatedWorktreeService
 import java.nio.file.Files
@@ -40,7 +39,6 @@ class VerifiedCompletionGate(
     private val runService: AgentRunService = AgentRunService(config),
     private val continuationService: GoalContinuationService = GoalContinuationService(repoRoot),
     private val worktreeService: IsolatedWorktreeService = IsolatedWorktreeService(repoRoot),
-    private val policyEngine: AutonomyPolicyEngine = AutonomyPolicyEngine(repoRoot),
     private val memoryStore: LocalMemoryStore = LocalMemoryStore(repoRoot.resolve(".atropos/memory").toFile()),
     private val clock: () -> Instant = { Instant.now() }
 ) {
