@@ -28,3 +28,20 @@ tmp-*.jar
 __pycache__/
 *.py[cod]
 /atropos.jar
+# SpecGraph local/private runtime state
+apps/specgraph-foundry/.env
+apps/specgraph-foundry/.env.*
+apps/specgraph-foundry/artifacts/
+apps/specgraph-foundry/.supabase/
+apps/specgraph-foundry/supabase/.branches/
+apps/specgraph-foundry/supabase/.temp/
+apps/specgraph-foundry/**/secrets.local.*
+apps/specgraph-foundry/**/specgraph.env
+.env
+.env.*
+!.env.example
+# ATROPOS local/private runtime state
+.atropos/cache/
+*.secret
+*.secrets
+*.local.env
