@@ -7,7 +7,7 @@ local-first · free-first · quota-aware …
 ╭─ WORKSPACE                            
 │ path        /home/user/ATROPOS        
 │ git         claude/pass10-job-ui-2026…
-│ kotlin      114 files                 
+│ kotlin      117 files                 
 │ mode        ask                       
 │ provider    groq                      
 ╰────────────────────────────           

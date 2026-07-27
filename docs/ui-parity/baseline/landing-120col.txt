@@ -11,7 +11,7 @@ local-first · free-first · quota-aware · truthful app-factory workbench
 ╭─ WORKSPACE                            ╭─ PROVIDERS                            ╭─ ROUTING                              
 │ path        /home/user/ATROPOS        │ groq        missing key fast chat / … │ current     legacy route wired        
 │ git         claude/pass10-job-ui-202… │ openai      missing key general reas… │ macro-a     policy compiled           
-│ kotlin      114 files                 │ anthropic   missing key coding / dee… │ fast        groq first                
+│ kotlin      117 files                 │ anthropic   missing key coding / dee… │ fast        groq first                
 │ mode        ask                       │ xai         missing key alternate cl… │ large       gemini first              
 │ provider    groq                      │ ollama      configured local privacy… │ paid        locked                    
 ╰────────────────────────────           │ gemini      not installed not instal… │ preview     /route <prompt>           
@@ -26,7 +26,7 @@ local-first · free-first · quota-aware · truthful app-factory workbench
 ╰────────────────────────────           ╰────────────────────────────           ╰────────────────────────────           
                                                                                                                         
 ╭─ COMMANDS                             ╭─ SOURCE DOCS                          ╭─ VERIFY                               
-│ /agent      ask | patch | apply       │ ATROPOS     2 files                   │ tests       source present            
+│ /agent      ask | patch | apply       │ ATROPOS     3 files                   │ tests       source present            
 │ /providers  inventory                 │ map         missing                   │ compile     checked by gate           
 │ /status     endpoints                 │ .300        provider grid             │ json        raw leaks blocked         
                                                                                                                         
