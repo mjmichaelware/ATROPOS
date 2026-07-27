@@ -1,0 +1,149 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - phase-3-production-application
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+          - "3.11"
+          - "3.13"
+
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: pip install -e ".[postgres]"
+
+      - name: Git diff check
+        run: git diff --check
+
+      - name: Compile
+        env:
+          PYTHONPATH: src
+        run: python -m compileall -q src scripts tests
+
+      - name: Test
+        env:
+          PYTHONPATH: src
+        run: PYTHONWARNINGS=error::ResourceWarning python -m unittest discover -s tests -v
+
+      - name: Verify licenses
+        run: python scripts/check_licenses.py
+
+      - name: Hosted audit contracts
+        run: python scripts/check_hosted_audit_contracts.py
+
+      - name: PostgreSQL boolean SQL
+        run: python scripts/check_postgres_boolean_sql.py
+
+      - name: CLI smoke
+        env:
+          PYTHONPATH: src
+        run: |
+          python -m specgraph_foundry init
+          python -m specgraph_foundry demo
+
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    defaults:
+      run:
+        working-directory: apps/web
+
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Generated API types
+        run: npm run api:types:check
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit and component tests
+        run: npm test
+
+      - name: Browser spec inventory
+        run: npm run e2e:list
+
+      - name: Build
+        run: npm run build:termux
+
+      - name: Audit
+        run: npm audit --audit-level=high
+
+  deployment-checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.11"
+
+      - name: Workflow policy checks
+        run: |
+          for wf in .github/workflows/*.yml; do
+            name=$(basename "$wf")
+            grep -E '^\s+-?\s*uses:' "$wf" 2>/dev/null | while IFS= read -r line; do
+              action=$(echo "$line" | sed 's/.*uses:\s*//')
+              tag=$(echo "$action" | sed 's/.*@//')
+              len=$(echo -n "$tag" | wc -c | tr -d ' ')
+              if echo "$action" | grep -q '/' && [ "$len" -lt 40 ] 2>/dev/null; then
+                echo "UNPINNED: $name: $action (tag length=$len)"
+                exit 1
+              fi
+            done || true
+          done
+          echo "WORKFLOW POLICY CHECKS PASSED"
+
+      - name: Dockerfile validation
+        run: |
+          for df in Dockerfile.api Dockerfile.worker; do
+            if [ ! -f "$df" ]; then echo "MISSING $df"; exit 1; fi
+            head -1 "$df" | grep -q '^FROM python:3.11-slim@sha256:' || { echo "$df does not pin base"; exit 1; }
+            echo "$df: valid"
+          done
+
+      - name: .dockerignore exists
+        run: test -f .dockerignore || { echo "MISSING .dockerignore"; exit 1; }
+
+      - name: vercel.json exists
+        run: test -f vercel.json || test -f apps/web/vercel.json || { echo "Missing vercel.json"; exit 1; }

@@ -1,0 +1,91 @@
+name: Deploy Cloud Run Worker
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Deployment environment
+        required: true
+        default: staging
+        type: choice
+        options:
+          - staging
+          - production
+      sha:
+        description: Commit SHA to deploy
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: deploy-cloud-run-worker-${{ github.event.inputs.environment || 'production' }}
+  cancel-in-progress: true
+
+env:
+  REGION: ${{ vars.GCP_REGION }}
+  WORKER_JOB_NAME: ${{ vars.CLOUD_RUN_WORKER_SERVICE }}
+  ARTIFACT_REGISTRY_REPO: ${{ vars.GCP_ARTIFACT_REPOSITORY }}
+
+jobs:
+  deploy-worker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    environment: ${{ github.event.inputs.environment || 'production' }}
+
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.event.inputs.sha || github.sha }}
+
+      - name: Verify release SHA
+        run: |
+          EXPECTED="${{ github.event.inputs.sha || github.sha }}"
+          ACTUAL="$(git rev-parse HEAD)"
+          if [ "$EXPECTED" != "$ACTUAL" ]; then
+            echo "SHA MISMATCH: expected $EXPECTED, got $ACTUAL"
+            exit 1
+          fi
+          echo "SHA verified: $ACTUAL"
+
+      - uses: google-github-actions/auth@71f986410dfbc7added4569d411d040a91dc6935 # v2.1.8
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@77e7a554d41e2ee56fc945c52dfd3f33d12def9a # v2.1.4
+
+      - name: Configure Docker
+        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+
+      - name: Build and push
+        env:
+          IMAGE_TAG: ${{ env.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ env.ARTIFACT_REGISTRY_REPO }}/${{ env.WORKER_JOB_NAME }}:${{ github.sha }}
+        run: |
+          docker build -f Dockerfile.worker -t "$IMAGE_TAG" .
+          docker push "$IMAGE_TAG"
+
+      - name: Deploy Cloud Run Job
+        run: |
+          gcloud run jobs deploy "${{ env.WORKER_JOB_NAME }}" \
+            --image="${{ env.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ env.ARTIFACT_REGISTRY_REPO }}/${{ env.WORKER_JOB_NAME }}:${{ github.sha }}" \
+            --region="${{ env.REGION }}" \
+            --tasks=1 \
+            --max-retries=0 \
+            --task-timeout=1900s \
+            --cpu=1 \
+            --memory=512Mi \
+            --service-account="${{ vars.GCP_RUNTIME_SERVICE_ACCOUNT }}" \
+            --set-env-vars="SPECGRAPH_LOG_FORMAT=json,SPECGRAPH_OPERATION_TIMEOUT_SECONDS=1800,SPECGRAPH_OPERATION_LEASE_SECONDS=300,SPECGRAPH_OPERATION_HEARTBEAT_SECONDS=15,SPECGRAPH_OPERATION_MAX_ATTEMPTS=5,SPECGRAPH_ARTIFACT_MAX_BYTES=104857600" \
+            --set-secrets="SPECGRAPH_DATABASE_URL=SPECGRAPH_DATABASE_URL:latest,SUPABASE_URL=SUPABASE_URL:latest,SUPABASE_ANON_KEY=SUPABASE_ANON_KEY:latest,SPECGRAPH_CURSOR_SIGNING_KEY=SPECGRAPH_CURSOR_SIGNING_KEY:latest,SPECGRAPH_WORKER_STORAGE_TOKEN=SPECGRAPH_WORKER_STORAGE_TOKEN:latest" \
+            --labels="commit-sha=${{ github.sha }},component=worker,environment=${{ github.event.inputs.environment || 'production' }}"
+
+      - name: Smoke test job definition
+        run: |
+          gcloud run jobs describe "${{ env.WORKER_JOB_NAME }}" --region="${{ env.REGION }}" --format='value(name)'
+          echo "Worker job deployed successfully"
