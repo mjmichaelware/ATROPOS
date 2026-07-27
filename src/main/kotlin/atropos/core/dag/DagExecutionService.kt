@@ -28,6 +28,8 @@ class DagExecutionService(
     private val queueService: AgentQueueService = AgentQueueService(config),
     private val runService: AgentRunService = AgentRunService(config),
     private val continuationService: GoalContinuationService = GoalContinuationService(repoRoot),
+    private val credentialGuard: atropos.core.security.CredentialDiffGuard =
+        atropos.core.security.CredentialDiffGuard(),
     private val territoryGrants: TerritoryGrantService =
         TerritoryGrantService(TerritoryService(atropos.core.territory.TerritoryStore(repoRoot))),
     private val agencyGate: BoundedAgencyGate = BoundedAgencyGate(ExecutionPolicyEngine(repoRoot), territoryGrants),
@@ -294,13 +296,37 @@ class DagExecutionService(
         }
     }
 
+    private val checkEvaluator by lazy {
+        DagNodeCheckEvaluator(repoRoot, agencyGate, territoryGrants, credentialGuard)
+    }
+
+    /**
+     * Runs a check node.
+     *
+     * These three actions used to complete unconditionally with "check passed".
+     * The verdict now comes from [DagNodeCheckEvaluator], and a failing check
+     * fails the node rather than reporting success.
+     */
     private fun executeCheck(node: DagNode, original: DagNode): DagNodeExecutionResult {
         val running = store.writeNode(node.copy(state = DagNodeState.RUNNING))
+        val outcome = checkEvaluator.evaluate(
+            original,
+            ActionActor.HierarchyNode(role = "dag-executor", nodeId = original.id)
+        )
+
+        val state = if (outcome.passed) DagNodeState.COMPLETE else DagNodeState.FAILED
         completeNode(
             running,
-            NodeResult(original.id, true, "check passed", DagNodeState.COMPLETE, result = "check passed")
+            NodeResult(
+                nodeId = original.id,
+                success = outcome.passed,
+                message = outcome.detail,
+                finalState = state,
+                result = outcome.detail,
+                failureReason = if (outcome.passed) null else outcome.detail
+            )
         )
-        return DagNodeExecutionResult(original.id, DagNodeState.COMPLETE, true, "check passed")
+        return DagNodeExecutionResult(original.id, state, outcome.passed, outcome.detail)
     }
 
     private fun executeGate(node: DagNode, original: DagNode): DagNodeExecutionResult {
