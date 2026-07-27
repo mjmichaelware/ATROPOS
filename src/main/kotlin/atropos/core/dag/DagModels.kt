@@ -1,5 +1,6 @@
 package atropos.core.dag
 
+import java.nio.file.Path
 import java.security.MessageDigest
 import java.time.Instant
 import java.util.UUID
@@ -132,3 +133,171 @@ data class HIGReport(
         }
     }
 }
+
+enum class DagNodeState {
+    PENDING,
+    READY,
+    CLAIMED,
+    RUNNING,
+    VERIFYING,
+    COMPLETE,
+    FAILED,
+    BLOCKED,
+    NOT_APPLICABLE,
+    CANCELLED;
+
+    val terminal: Boolean
+        get() = this in setOf(COMPLETE, FAILED, BLOCKED, NOT_APPLICABLE, CANCELLED)
+}
+
+enum class DagNodeAction {
+    CREATE_FILE,
+    EDIT_FILE,
+    RUN_COMMAND,
+    RUN_TEST,
+    RUN_BUILD,
+    VERIFY,
+    PROVIDER_CALL,
+    POLICY_CHECK,
+    SECRET_CHECK,
+    TERRITORY_CHECK,
+    COMPILE_GATE,
+    SMOKE_GATE,
+    ACCEPTANCE_GATE
+}
+
+data class DagNode(
+    val id: String,
+    val dagId: String? = null,
+    val label: String,
+    val dependencies: List<String> = emptyList(),
+    val territory: List<String> = emptyList(),
+    val action: DagNodeAction = DagNodeAction.RUN_COMMAND,
+    val actionPayload: String? = null,
+    val expectedOutputs: List<String> = emptyList(),
+    val maxAttempts: Int = 2,
+    val retryDelaySeconds: Long = 15L,
+    val state: DagNodeState = DagNodeState.PENDING,
+    val claimToken: String? = null,
+    val claimOwner: String? = null,
+    val claimExpiresAt: Instant? = null,
+    val attempts: Int = 0,
+    val result: String? = null,
+    val failureReason: String? = null,
+    val childJobId: String? = null,
+    val lastMessage: String? = null,
+    val createdAt: Instant,
+    val updatedAt: Instant,
+    val finishedAt: Instant? = null,
+    val metaFile: Path
+) {
+    fun isReady(dependencyStates: Map<String, DagNodeState>): Boolean {
+        if (state != DagNodeState.PENDING && state != DagNodeState.READY) return false
+        return dependencies.all { depId ->
+            val depState = dependencyStates[depId]
+            depState == DagNodeState.COMPLETE || depState == DagNodeState.NOT_APPLICABLE
+        }
+    }
+
+    fun render(): String = buildString {
+        appendLine("node id: $id")
+        appendLine("dag id: ${dagId ?: "none"}")
+        appendLine("label: $label")
+        appendLine("dependencies: ${dependencies.joinToString(", ").ifEmpty { "none" }}")
+        appendLine("territory: ${territory.joinToString(", ").ifEmpty { "none" }}")
+        appendLine("action: $action")
+        appendLine("state: $state")
+        appendLine("attempts: $attempts/$maxAttempts")
+        appendLine("claim owner: ${claimOwner ?: "none"}")
+        appendLine("claim token: ${claimToken ?: "none"}")
+        appendLine("claim expires: ${claimExpiresAt ?: "none"}")
+        appendLine("child job: ${childJobId ?: "none"}")
+        appendLine("result: ${result ?: "none"}")
+        appendLine("failure: ${failureReason ?: "none"}")
+        appendLine("last message: ${lastMessage ?: "none"}")
+        appendLine("created: $createdAt")
+        appendLine("updated: $updatedAt")
+        appendLine("finished: ${finishedAt ?: "none"}")
+        appendLine("record file: $metaFile")
+    }.trimEnd()
+}
+
+data class DagDefinition(
+    val id: String,
+    val label: String,
+    val projectId: String? = null,
+    val nodes: List<DagNode>,
+    val createdAt: Instant,
+    val updatedAt: Instant,
+    val metaFile: Path
+) {
+    fun findNode(nodeId: String): DagNode? = nodes.find { it.id == nodeId }
+
+    fun findReadyNodes(): List<DagNode> {
+        val allStates = nodes.associate { it.id to it.state }
+        return nodes.filter { it.isReady(allStates) }
+    }
+
+    fun findParallelReadyNodes(): List<List<DagNode>> {
+        val ready = findReadyNodes()
+        val groups = mutableListOf<List<DagNode>>()
+        val assigned = mutableSetOf<String>()
+        for (node in ready) {
+            if (node.id in assigned) continue
+            val group = mutableListOf(node)
+            assigned.add(node.id)
+            for (other in ready) {
+                if (other.id in assigned) continue
+                val territoryOverlap = node.territory.any { territory -> other.territory.contains(territory) }
+                if (!territoryOverlap) {
+                    group.add(other)
+                    assigned.add(other.id)
+                }
+            }
+            groups.add(group)
+        }
+        return groups
+    }
+
+    fun render(): String = buildString {
+        appendLine("DAG: $id ($label)")
+        appendLine("project: ${projectId ?: "none"}")
+        appendLine("nodes: ${nodes.size}")
+        appendLine()
+        nodes.forEach { node ->
+            appendLine("  ${node.id}: ${node.label} [${node.state}] deps=[${node.dependencies.joinToString(", ")}]")
+        }
+        appendLine()
+        appendLine("ready: ${findReadyNodes().map { it.id }}")
+    }.trimEnd()
+}
+
+data class DagExecutionResult(
+    val dagId: String,
+    val ok: Boolean,
+    val completedNodes: Int,
+    val failedNodes: Int,
+    val blockedNodes: Int,
+    val message: String,
+    val nodeResults: List<DagNodeExecutionResult>? = emptyList()
+)
+
+data class DagNodeExecutionResult(
+    val nodeId: String,
+    val state: DagNodeState,
+    val ok: Boolean,
+    val message: String,
+    val result: String? = null
+)
+
+data class DagStatus(
+    val dagId: String,
+    val totalNodes: Int,
+    val completedNodes: Int,
+    val failedNodes: Int,
+    val blockedNodes: Int,
+    val pendingNodes: Int,
+    val runningNodes: Int,
+    val readyNodes: List<String>,
+    val message: String
+)
