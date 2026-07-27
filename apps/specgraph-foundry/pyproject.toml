@@ -1,0 +1,28 @@
+[project]
+name = "specgraph-foundry"
+version = "1.0.0"
+description = "Source-authority compiler and execution-DAG platform"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "Apache-2.0"}
+authors = [
+  {name = "Michael Alonzo Ware"}
+]
+dependencies = [
+  "pypdf==4.3.1",
+]
+
+[project.scripts]
+specgraph = "specgraph_foundry.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[project.optional-dependencies]
+postgres = [
+  "psycopg>=3.2,<4",
+]
