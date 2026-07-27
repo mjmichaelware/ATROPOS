@@ -175,6 +175,15 @@ data class DagNode(
     val action: DagNodeAction = DagNodeAction.RUN_COMMAND,
     val actionPayload: String? = null,
     val expectedOutputs: List<String> = emptyList(),
+    /**
+     * Completion checks this node is explicitly permitted to skip.
+     *
+     * Verification is fail-closed: a check with nothing to inspect fails rather
+     * than reporting safety it did not establish. Naming a check here is the
+     * node contract stating that the check genuinely does not apply. Empty by
+     * default, so silence is never consent.
+     */
+    val optionalChecks: Set<String> = emptySet(),
     val maxAttempts: Int = 2,
     val retryDelaySeconds: Long = 15L,
     val state: DagNodeState = DagNodeState.PENDING,

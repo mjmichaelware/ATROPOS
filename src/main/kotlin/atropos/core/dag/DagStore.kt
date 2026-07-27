@@ -323,6 +323,9 @@ class DagStore(private val root: Path = Path.of(System.getProperty("user.dir")))
                 action = DagNodeAction.valueOf(fields["action"].orEmpty()),
                 actionPayload = decode(fields["actionPayloadB64"]).takeIf { it.isNotBlank() },
                 expectedOutputs = fields["expectedOutputs"]?.split("|")?.filter { it.isNotBlank() } ?: emptyList(),
+                // Absent on nodes written before fail-closed verification: they
+                // opted out of nothing.
+                optionalChecks = fields["optionalChecks"]?.split("|")?.filter { it.isNotBlank() }?.toSet() ?: emptySet(),
                 maxAttempts = fields["maxAttempts"]?.toIntOrNull() ?: 2,
                 retryDelaySeconds = fields["retryDelaySeconds"]?.toLongOrNull() ?: 15L,
                 state = DagNodeState.valueOf(fields["state"].orEmpty()),
@@ -351,6 +354,7 @@ class DagStore(private val root: Path = Path.of(System.getProperty("user.dir")))
         appendLine("action=${node.action}")
         appendLine("actionPayloadB64=${encode(node.actionPayload.orEmpty())}")
         appendLine("expectedOutputs=${node.expectedOutputs.joinToString("|")}")
+        appendLine("optionalChecks=${node.optionalChecks.joinToString("|")}")
         appendLine("maxAttempts=${node.maxAttempts}")
         appendLine("retryDelaySeconds=${node.retryDelaySeconds}")
         appendLine("state=${node.state}")
