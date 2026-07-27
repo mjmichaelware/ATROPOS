@@ -15,6 +15,7 @@ import atropos.cli.session.ScreenId
 import atropos.cli.ui.AnsiTerminalEngine
 import atropos.core.AtroposConfig
 import atropos.core.agent.AgentDaemonService
+import atropos.core.recovery.RuntimeContinuitySupervisor
 import java.io.FileInputStream
 
 fun main(args: Array<String>) {
@@ -31,6 +32,15 @@ fun main(args: Array<String>) {
 
     try {
         val config = AtroposConfig.load()
+
+        // Long-horizon continuity: durable state left behind by a previous
+        // process is repaired before the runtime serves anything. This used to
+        // require an operator to type `/agent recover`, which meant stale
+        // leases and interrupted runs survived indefinitely if nobody thought
+        // to ask.
+        val continuity = RuntimeContinuitySupervisor()
+        continuity.startupNotice(continuity.ensureRecovered())?.let(ui::renderNotice)
+
         val router = CommandRouter(
             config = config,
             uiEngine = ui,
