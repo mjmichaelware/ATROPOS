@@ -1,0 +1,44 @@
+ ATROPOS                                                                                             groq · ask · /help 
+[ask] › /tabs                                                                                                           
+• open tabs (1):                                                                                                        
+  * 1: Dashboard  [Dashboard]  provider=groq                                                                            
+commands: /tab new <name> | /tab <n> | /tab rename <n> <name> | /tab close <n> | /tab next | /tab prev | /home          
+[ask] › /tab new Agent                                                                                                  
+• opened tab 2: Agent                                                                                                   
+[ask] › /tab 2                                                                                                          
+• tab 2: Agent                                                                                                          
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+────────────────────────────��──────────────────────────────────────────────────────────────────────────────────────────
+[ask] >                                                                                                                 
+ ATROPOS · groq · ask · tab 2:Agent · -- tok · -- · /home/user/ATROPOS · patch:none

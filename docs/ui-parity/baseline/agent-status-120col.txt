@@ -1,0 +1,44 @@
+ ATROPOS                                                                                             groq · ask · /help 
+[ask] › /agent status                                                                                                   
+• ── AGENT STATUS ──                                                                                                    
+agent status:                                                                                                           
+  active provider: groq                                                                                                 
+  provider order for /agent ask: ollama                                                                                 
+  provider order for /agent patch: none                                                                                 
+  repo root: /home/user/ATROPOS                                                                                         
+  patch directory: /home/user/ATROPOS/.atropos/agent/patches                                                            
+  last patch id: none                                                                                                   
+  context cap bytes: 81920                                                                                              
+  repo ownership: ATROPOS owns repo read/write; providers only see bounded context                                      
+  paid automatic mode: locked                                                                                           
+  local fallback: enabled                                                                                               
+  last doctor truth source: 30-provider doctor (2026-06-29)                                                             
+  known active doctor providers: github_models, cloudflare_workers_ai, huggingface, sambanova, github_actions, cloudflar
+e_workers, pinecone, openai, deepseek_direct, groq                                                                      
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+[ask] >                                                                                                                 
+ ATROPOS · groq · ask · tab 1:Dashboard · -- tok · -- · /home/user/ATROPOS · patch:none

@@ -1,0 +1,59 @@
+{
+ "reference_commit": "7534d23551f665e65080809975b4ca5c7d63807b",
+ "reference_repo": "https://github.com/sst/opencode",
+ "reference_commit_date": "2026-07-25T08:21:12+00:00",
+ "reference_license": "MIT",
+ "starting_head": "b4c0f5b31b37735eccd9b6418ec95689b1b23a68",
+ "current_head": "b4c0f5b31b37735eccd9b6418ec95689b1b23a68",
+ "active_batch": "A",
+ "batch_a_status": "COMPLETE",
+ "batches_not_started": [
+  "B",
+  "C",
+  "D",
+  "E",
+  "F",
+  "G",
+  "H",
+  "I",
+  "J"
+ ],
+ "total_rows": 167,
+ "rows_by_status": {
+  "DISCOVERED": 161,
+  "BLOCKED_NO_TARGET_SURFACE": 6
+ },
+ "completed_rows": 0,
+ "incomplete_rows": 167,
+ "blockers": [
+  "B-001",
+  "B-002",
+  "B-003",
+  "B-004",
+  "B-005"
+ ],
+ "hard_blockers": [
+  "B-001",
+  "B-002",
+  "B-005"
+ ],
+ "baseline_captures": 20,
+ "baseline_widths": [
+  40,
+  80,
+  120,
+  160
+ ],
+ "baseline_overflow_failures": 0,
+ "files": [
+  "docs/ui-parity/OPENCODE_REFERENCE_LOCK.md",
+  "docs/ui-parity/OPENCODE_COMPLETE_SURFACE_MATRIX.json",
+  "docs/ui-parity/OPENCODE_COMPLETE_SURFACE_MATRIX.md",
+  "docs/ui-parity/UI_PARITY_BLOCKERS.md",
+  "docs/ui-parity/ATROPOS_ONLY_SURFACES.md",
+  "docs/ui-parity/UI_PARITY_CHANGED_FILES.txt",
+  "docs/ui-parity/baseline/"
+ ],
+ "next_exact_action": "Resolve B-001 (product decision on multi-client) and B-002 (supply governance docs). Then Batch B: derive ATROPOS_DESIGN_SYSTEM_SPEC.md tokens from the 37 pinned theme token sets and refactor hard-coded ANSI in TerminalTheme.kt onto them.",
+ "generated": "2026-07-27T01:25:34.640399+00:00"
+}
