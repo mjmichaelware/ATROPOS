@@ -1,9 +1,13 @@
 package atropos.core.agent
 
 import atropos.core.security.RedactionFilter
+import atropos.core.policy.ActionProposal
+import atropos.core.policy.AgencyDisposition
+import atropos.core.policy.BoundedAgencyGate
 import atropos.core.policy.ExecutionPolicyEngine
-import atropos.core.policy.ExecutionPolicyRequest
-import atropos.core.policy.PolicyActionClass
+import atropos.core.policy.PatchActionProposals
+import atropos.core.policy.ToolExecutionResult
+import atropos.core.policy.TypedToolExecutor
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
@@ -26,7 +30,15 @@ data class AgentPatchRecord(
 data class AgentPatchCheckResult(
     val passed: Boolean,
     val exitCode: Int,
-    val output: String
+    val output: String,
+    /**
+     * How bounded agency disposed of the proposal. Carried so a refusal is a
+     * typed outcome a compositor can act on — an `APPROVAL_REQUIRED` patch is
+     * something an operator could still authorise, which a bare exit code
+     * cannot express. `null` where no proposal was made.
+     */
+    val disposition: AgencyDisposition? = null,
+    val proposalId: String? = null
 ) {
     val statusText: String
         get() = if (passed) "OK" else "FAILED"
@@ -51,7 +63,10 @@ data class AgentPatchApplyResult(
     val applyExitCode: Int? = null,
     val applyOutput: String? = null,
     val refusalReason: String? = null,
-    val logFile: Path? = null
+    val logFile: Path? = null,
+    /** Bounded-agency disposition of the mutation proposal; `null` if none was made. */
+    val disposition: AgencyDisposition? = null,
+    val proposalId: String? = null
 ) {
     fun render(): String = buildString {
         val filter = RedactionFilter()
@@ -103,12 +118,34 @@ data class AgentPatchApplyResult(
     }.trimEnd()
 }
 
+/**
+ * Stores and applies provider-authored patches.
+ *
+ * This store holds no execution authority. Every patch inspection, mutation and
+ * status read is stated as an [ActionProposal] and handed to
+ * [TypedToolExecutor]; the store never asks the policy engine anything itself.
+ * That matters more here than anywhere else in the tree: a shell command is
+ * typed by the operator, but a diff is written by a model, so this is the site
+ * where "never execute raw provider prose" is actually enforced.
+ */
 class AgentPatchStore(
     private val repoRoot: Path = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize(),
     private val clock: () -> Instant = { Instant.now() },
     private val extractor: AgentPatchExtractor = AgentPatchExtractor(),
-    private val policyEngine: ExecutionPolicyEngine = ExecutionPolicyEngine(repoRoot),
-    private val redactionFilter: RedactionFilter = RedactionFilter()
+    private val agencyGate: BoundedAgencyGate = BoundedAgencyGate(ExecutionPolicyEngine(repoRoot)),
+    private val redactionFilter: RedactionFilter = RedactionFilter(),
+    /** Shares [agencyGate], so exactly one policy engine serves this store. */
+    private val agency: TypedToolExecutor = TypedToolExecutor(agencyGate),
+    /**
+     * Process spawn seam. Exists so a test can prove a refused proposal never
+     * reaches a real [ProcessBuilder]; production always uses the default.
+     */
+    private val spawn: (List<String>, Path) -> Process = { command, directory ->
+        ProcessBuilder(command)
+            .directory(directory.toFile())
+            .redirectErrorStream(true)
+            .start()
+    }
 ) {
     private val patchDir = repoRoot.resolve(".atropos/agent/patches").normalize()
     private val formatter = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss")
@@ -190,31 +227,56 @@ class AgentPatchStore(
         )
     }
 
-    fun runGitApplyCheck(diffFile: Path): AgentPatchCheckResult {
-        val policy = policyEngine.evaluate(
-            ExecutionPolicyRequest(
-                actionClass = PolicyActionClass.PATCH_APPLY,
-                command = listOf("git", "apply", "--check", diffFile.toString()),
-                cwd = repoRoot,
-                targetPaths = listOf(repoRoot.relativize(diffFile).toString())
-            )
-        )
-        if (!policy.allowed) {
-            return AgentPatchCheckResult(false, 126, policy.reason)
-        }
-        val process = ProcessBuilder("git", "apply", "--check", diffFile.toString())
-            .directory(repoRoot.toFile())
-            .redirectErrorStream(true)
-            .start()
+    fun runGitApplyCheck(diffFile: Path): AgentPatchCheckResult =
+        runThroughAgency(PatchActionProposals.applyCheck(diffFile, repoRoot))
 
-        val output = process.inputStream.bufferedReader().readText().trim()
-        val exitCode = process.waitFor()
-        return AgentPatchCheckResult(
-            passed = exitCode == 0,
-            exitCode = exitCode,
-            output = compactOutput(output)
-        )
+    /**
+     * Runs a git proposal, but only if the system authorised it.
+     *
+     * The executor lambda is the only place a process can be born, and the gate
+     * decides whether it is ever invoked.
+     */
+    private fun runThroughAgency(
+        proposal: ActionProposal,
+        /** Status reads returned full output before bounded agency; keep it that way. */
+        compact: Boolean = true
+    ): AgentPatchCheckResult {
+        var executed: AgentPatchCheckResult? = null
+        val outcome = agency.execute(proposal) {
+            val process = spawn(proposal.command, repoRoot)
+            val output = process.inputStream.bufferedReader().readText().trim()
+            val exitCode = process.waitFor()
+            val result = AgentPatchCheckResult(
+                passed = exitCode == 0,
+                exitCode = exitCode,
+                output = if (compact) compactOutput(output) else output,
+                disposition = AgencyDisposition.ALLOWED,
+                proposalId = proposal.id
+            )
+            executed = result
+            result.output
+        }
+        return executed ?: refusedCheck(proposal, outcome)
     }
+
+    /**
+     * Refusal rendered from the system's decision.
+     *
+     * `APPROVAL_REQUIRED` keeps its own exit code: it is not a denial, it is a
+     * mutation awaiting an authority nobody has asked yet, and collapsing it
+     * into the blocked code would erase the difference an approval flow needs.
+     */
+    private fun refusedCheck(proposal: ActionProposal, outcome: ToolExecutionResult): AgentPatchCheckResult =
+        AgentPatchCheckResult(
+            passed = false,
+            exitCode = when (outcome.disposition) {
+                AgencyDisposition.APPROVAL_REQUIRED -> EXIT_APPROVAL_REQUIRED
+                else -> EXIT_POLICY_BLOCKED
+            },
+            output = outcome.refusalReason ?: outcome.policyDecision.reason,
+            disposition = outcome.disposition,
+            proposalId = proposal.id
+        )
 
     fun normalizeProviderDiff(diffText: String): String {
         val extraction = extractor.extract(diffText) ?: return diffText.trimEnd() + "\n"
@@ -243,56 +305,17 @@ class AgentPatchStore(
         return buildAppendPatch(path, originalLines, addedLines)
     }
 
-    fun runGitApply(diffFile: Path): AgentPatchCheckResult {
-        val policy = policyEngine.evaluate(
-            ExecutionPolicyRequest(
-                actionClass = PolicyActionClass.PATCH_APPLY,
-                command = listOf("git", "apply", diffFile.toString()),
-                cwd = repoRoot,
-                targetPaths = listOf(repoRoot.relativize(diffFile).toString())
-            )
-        )
-        if (!policy.allowed) {
-            return AgentPatchCheckResult(false, 126, policy.reason)
-        }
-        val process = ProcessBuilder("git", "apply", diffFile.toString())
-            .directory(repoRoot.toFile())
-            .redirectErrorStream(true)
-            .start()
-
-        val output = process.inputStream.bufferedReader().readText().trim()
-        val exitCode = process.waitFor()
-        return AgentPatchCheckResult(
-            passed = exitCode == 0,
-            exitCode = exitCode,
-            output = compactOutput(output)
-        )
-    }
+    fun runGitApply(diffFile: Path): AgentPatchCheckResult =
+        runThroughAgency(PatchActionProposals.apply(diffFile, repoRoot))
 
     fun runGitStatusForPaths(paths: List<String>): String {
         val cleanPaths = paths.map { it.trim() }.filter { it.isNotBlank() }
         if (cleanPaths.isEmpty()) return ""
 
-        val command = mutableListOf("git", "status", "--porcelain", "--untracked-files=all", "--")
-        command.addAll(cleanPaths)
-        val policy = policyEngine.evaluate(
-            ExecutionPolicyRequest(
-                actionClass = PolicyActionClass.GIT,
-                command = command,
-                cwd = repoRoot,
-                targetPaths = cleanPaths
-            )
-        )
-        if (!policy.allowed) return policy.reason
-
-        val process = ProcessBuilder(command)
-            .directory(repoRoot.toFile())
-            .redirectErrorStream(true)
-            .start()
-
-        val output = process.inputStream.bufferedReader().readText().trim()
-        process.waitFor()
-        return output
+        return runThroughAgency(
+            PatchActionProposals.statusForPaths(cleanPaths, repoRoot),
+            compact = false
+        ).output
     }
 
     fun applyPatch(reference: String, checkOnly: Boolean): AgentPatchApplyResult {
@@ -326,22 +349,24 @@ class AgentPatchStore(
             extraction = extraction
         )
 
-        val mutationPolicy = policyEngine.evaluate(
-            ExecutionPolicyRequest(
-                actionClass = PolicyActionClass.PATCH_APPLY,
-                command = listOf("git", "apply", snapshot.patchFile.toString()),
-                cwd = repoRoot,
-                targetPaths = snapshot.extraction.touchedPaths
-            )
+        // Pre-authorisation: the gate judges the mutation's blast radius before
+        // anything is read, checked, or written.
+        val mutationProposal = PatchActionProposals.applyStored(
+            patchFile = snapshot.patchFile,
+            repoRoot = repoRoot,
+            touchedPaths = snapshot.extraction.touchedPaths
         )
-        if (!mutationPolicy.allowed) {
+        val mutationDecision = agencyGate.evaluate(mutationProposal)
+        if (mutationDecision.disposition != AgencyDisposition.ALLOWED) {
             return AgentPatchApplyResult(
                 patchId = snapshot.id,
                 patchFile = snapshot.patchFile,
                 changedPaths = snapshot.extraction.touchedPaths,
                 checkOnly = checkOnly,
                 applied = false,
-                refusalReason = mutationPolicy.reason
+                refusalReason = mutationDecision.reason,
+                disposition = mutationDecision.disposition,
+                proposalId = mutationProposal.id
             )
         }
 
@@ -575,5 +600,13 @@ class AgentPatchStore(
             contextLines.forEach { appendLine(" $it") }
             addedLines.forEach { appendLine("+$it") }
         }
+    }
+
+    private companion object {
+        /** Refused by policy. Unchanged from before bounded agency. */
+        const val EXIT_POLICY_BLOCKED = 126
+
+        /** Withheld pending an authority that has not been asked. Distinct on purpose. */
+        const val EXIT_APPROVAL_REQUIRED = 125
     }
 }
