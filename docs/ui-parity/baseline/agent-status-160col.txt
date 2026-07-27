@@ -1,7 +1,3 @@
-┃  providers inventory:                                                                                                                                         
-┃  selected provider    groq                                                                                                                                    
-┃  descriptors          29                                                                                                                                      
-┃  adapters             9                                                                                                                                       
 ┃  executable providers 0                                                                                                                                       
 ┃  healthy providers    0                                                                                                                                       
 ┃  ask candidates       ollama                                                                                                                                  
@@ -37,6 +33,10 @@
 ┃  fal                  category=asset cost=credit_pool key=no descriptor=yes adapter=no executable=no health=auth_failed ask=no patch=no paid=free missing=FAL…
 ┃  replicate            category=asset cost=credit_pool key=no descriptor=yes adapter=no executable=no health=auth_failed ask=no patch=no paid=free missing=REP…
 ┃  serpapi              category=web cost=credit_pool key=no descriptor=yes adapter=no executable=no health=auth_failed ask=no patch=no paid=free missing=SERPA…
+┃  ── CONTEXT ATTESTATION ──                                                                                                                                    
+┃  identity    ATROPOS injected into every provider call                                                                                                        
+┃  last failure · unknown                                                                                                                                       
+┃  no context failure recorded                                                                                                                                  
                                                                                                                                                                 
 ┃                                                                                                                                                               
 ┃  ask · groq                                                                                                                                                   

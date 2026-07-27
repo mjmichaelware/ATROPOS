@@ -75,10 +75,13 @@ class AgentCommand(
     private val repoRoot = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize()
     private val selfHostHandler: SelfHostCommand = SelfHostCommand(ui, config, repoRoot)
     private val patchExtractor = AgentPatchExtractor()
+    private val attestationRenderer = atropos.cli.ui.ContextAttestationRenderer(TerminalTheme(ConfigurationManager()))
     private val jobRenderer = AgentJobRenderer(TerminalTheme(ConfigurationManager()))
     private val queueRenderer = AgentQueueRenderer(TerminalTheme(ConfigurationManager()))
     private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss").withZone(ZoneId.systemDefault())
     private val patchDirectory = repoRoot.resolve(".atropos/agent/patches").normalize()
+
+    private companion object { const val ATTESTATION_WIDTH = 80 }
 
     /** Last patch id ATROPOS has knowledge of, surfaced to the status line. Never implies a patch was applied. */
     var lastKnownPatchId: String? = null
@@ -208,6 +211,12 @@ class AgentCommand(
                 lastKnownPatchId = snapshot.lastPatchId ?: lastKnownPatchId
                 val rendered = formatBlock("AGENT STATUS", snapshot.render())
                 ui.renderNotice(rendered)
+                // Requirement 5: typed context failures must be explicit, not
+                // only journaled. Surfaces the last recorded attestation failure.
+                ui.renderNotice(
+                    attestationRenderer.renderStatusRowsFromMemory(ATTESTATION_WIDTH)
+                        .joinToString("\n")
+                )
                 AgentCommandOutcome.Completed(rendered)
             }
 
