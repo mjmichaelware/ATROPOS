@@ -82,6 +82,10 @@ Prefer local toolchain work first, then free ready providers, then free fallback
 
 Do not auto-spend paid provider capacity. Do not silently unlock paid routes. Require explicit intent and truthful status.
 
+### Parallel Provider Execution Law
+
+To prevent long-running tasks from taking hours, execute research tasks and provider queries in parallel across all available ready providers. Do not run provider operations sequentially when parallel lanes are configured and available.
+
 ### Exact-Source and DLOI Law
 
 Never treat a corpus claim as current truth unless it resolves to exact source coordinates. Use source IDs, section IDs, line/page/paragraph spans, and deterministic query commands. No blind whole-corpus injection.

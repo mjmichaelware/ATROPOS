@@ -1201,7 +1201,7 @@ class AtomService:
                             rel["relation_type"],
                             rel["rationale"],
                             float(rel.get("confidence", 1.0)),
-                            1 if rel.get("inferred", True) else 0,
+                            bool(rel.get("inferred", True)),
                             created_at
                         )
                     )
@@ -1233,7 +1233,7 @@ class AtomService:
                             "REQUIRES",
                             dep["evidence"],
                             1.0,
-                            1,
+                            True,
                             created_at
                         )
                     )
