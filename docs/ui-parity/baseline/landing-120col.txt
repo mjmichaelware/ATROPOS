@@ -1,6 +1,5 @@
- ATROPOS                                                                                             groq · ask · /help 
-[ask] › /home                                                                                                           
-█▀▀█ ▀▀█▀▀ █▀▀█ █▀▀█ █▀▀█ █▀▀█ █▀▀▀                                                                                     
+┃  ask /home                                                                                                            
+█▀▀█ ▀▀█▀▀ █▀���█ █▀▀█ █▀▀█ █▀▀█ █▀▀▀                                                                                   
 █▄▄█   █   █▄▄▀ █  █ █▄▄█ █  █ ▀▀▀█                                                                                     
 ▀  ▀ ▀▀▀▀▀ ▀▀▀▀ ▀▀▀▀ ▀▀▀▀ ▀▀▀▀ ▀▀▀▀                                                                                     
 local-first · free-first · quota-aware · truthful app-factory workbench                                                 
@@ -8,7 +7,7 @@ local-first · free-first · quota-aware · truthful app-factory workbench
 ┃  WORKSPACE                            ┃  PROVIDERS                            ┃  ROUTING                              
 ┃  path        /home/user/ATROPOS       ┃  groq        missing key fast chat /… ┃  current     legacy route wired       
 ┃  git         claude/pass10-job-ui-20… ┃  openai      missing key general rea… ┃  macro-a     policy compiled          
-┃  kotlin      120 files                ┃  anthropic   missing key coding / de… ┃  fast        groq first               
+┃  kotlin      121 files                ┃  anthropic   missing key coding / de… ┃  fast        groq first               
 ┃  mode        ask                      ┃  xai         missing key alternate c… ┃  large       gemini first             
 ┃  provider    groq                     ┃  ollama      configured local privac… ┃  paid        locked                   
                                         ┃  gemini      not installed not insta… ┃  preview     /route <prompt>          
@@ -28,7 +27,7 @@ local-first · free-first · quota-aware · truthful app-factory workbench
 ┃  /tabs       list open tabs           ┃  .315        workflow rules           ┃  rollback    enabled                  
 ┃  /exit       close                                                                                                    
                                                                                                                         
-┃  SESSION                              ���  TABS                                 ┃  LEGEND                             
+┃  SESSION                              ┃  TABS                                 ┃  LEGEND                               
                                                                                                                         
                                                                                                                         
                                                                                                                         
@@ -39,6 +38,7 @@ local-first · free-first · quota-aware · truthful app-factory workbench
                                                                                                                         
                                                                                                                         
                                                                                                                         
-────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-[ask] >                                                                                                                 
+┃                                                                                                                       
+┃  ask · groq                                                                                                           
+╹                                                                                                                       
 /home/user/ATROPOS                                                               ◇ groq  ▸ ask  ▤ tab 1:Dashboard  /help

@@ -1,16 +1,15 @@
- ATROPOS                                                                                                                                     groq · ask · /help 
-[ask] › /providers                                                                                                                                              
-• providers:                                                                                                                                                    
-groq: missing                                                                                                                                                   
-openai: missing                                                                                                                                                 
-anthropic: missing                                                                                                                                              
-xai: missing                                                                                                                                                    
-github_models: missing                                                                                                                                          
-cloudflare_ai: missing                                                                                                                                          
-sambanova: missing                                                                                                                                              
-deepseek_direct: missing                                                                                                                                        
-ollama: offline                                                                                                                                                 
-gemini: not installed                                                                                                                                           
+┃  ask /providers                                                                                                                                               
+┃  PROVIDERS                                                                                                                                                    
+┃  groq: missing                                                                                                                                                
+┃  openai: missing                                                                                                                                              
+┃  anthropic: missing                                                                                                                                           
+┃  xai: missing                                                                                                                                                 
+┃  github_models: missing                                                                                                                                       
+┃  cloudflare_ai: missing                                                                                                                                       
+┃  sambanova: missing                                                                                                                                           
+┃  deepseek_direct: missing                                                                                                                                     
+┃  ollama: offline                                                                                                                                              
+┃  gemini: not installed                                                                                                                                        
                                                                                                                                                                 
                                                                                                                                                                 
                                                                                                                                                                 
@@ -39,6 +38,7 @@ gemini: not installed
                                                                                                                                                                 
                                                                                                                                                                 
                                                                                                                                                                 
-────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-[ask] >                                                                                                                                                         
+┃                                                                                                                                                               
+┃  ask · groq                                                                                                                                                   
+╹                                                                                                                                                               
 /home/user/ATROPOS                                                                                                       ◇ groq  ▸ ask  ▤ tab 1:Dashboard  /help

@@ -1,5 +1,4 @@
- ATROPOS             groq · ask · /help 
-[ask] › /home                           
+┃  ask /home                            
 █▀▀█ ▀▀█▀▀ █▀▀█                         
 █▄▄█   █   █▄▄▀                         
 ▀  ▀ ▀▀▀▀▀ ▀▀▀▀                         
@@ -8,7 +7,7 @@ local-first · free-first · quota-aware …
 ┃  WORKSPACE                            
 ┃  path        /home/user/ATROPOS       
 ┃  git         claude/pass10-job-ui-202…
-┃  kotlin      120 files                
+┃  kotlin      121 files                
 ┃  mode        ask                      
 ┃  provider    groq                     
                                         
@@ -39,6 +38,7 @@ local-first · free-first · quota-aware …
                                         
                                         
                                         
-────────────────────────────────────────
-[ask] >                                 
+┃                                       
+┃  ask · groq                           
+╹                                       
 /home/user/ATROPOS                 /help

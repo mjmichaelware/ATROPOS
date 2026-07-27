@@ -1,5 +1,4 @@
- ATROPOS                                                                                                                                     groq · ask · /help 
-[ask] › /home                                                                                                                                                   
+┃  ask /home                                                                                                                                                    
 █▀▀█ ▀▀█▀▀ █▀▀█ █▀▀█ █▀▀█ █▀▀█ █▀▀▀                                                                                                                             
 █▄▄█   █   █▄▄▀ █  █ █▄▄█ █  █ ▀▀▀█                                                                                                                             
 ▀  ▀ ▀▀▀▀▀ ▀▀▀▀ ▀▀▀▀ ▀▀▀▀ ▀▀▀▀ ▀▀▀▀                                                                                                                             
@@ -8,7 +7,7 @@ local-first · free-first · quota-aware · truthful app-factory workbench
 ┃  WORKSPACE                            ┃  PROVIDERS                            ┃  ROUTING                              ┃  AGENT                                
 ┃  path        /home/user/ATROPOS       ┃  groq        missing key fast chat /… ┃  current     legacy route wired       ┃  ask         available (local fallba… 
 ┃  git         claude/pass10-job-ui-20… ┃  openai      missing key general rea… ┃  macro-a     policy compiled          ┃  patch       no provider key          
-┃  kotlin      120 files                ┃  anthropic   missing key coding / de… ┃  fast        groq first               ┃  apply       available (local git)    
+┃  kotlin      121 files                ┃  anthropic   missing key coding / de… ┃  fast        groq first               ┃  apply       available (local git)    
 ┃  mode        ask                      ┃  xai         missing key alternate c… ┃  large       gemini first             ┃  order       none configured          
 ┃  provider    groq                     ┃  ollama      configured local privac… ┃  paid        locked                   ┃  paid        locked                   
                                         ┃  gemini      not installed not insta… ┃  preview     /route <prompt>                                                  
@@ -39,6 +38,7 @@ local-first · free-first · quota-aware · truthful app-factory workbench
                                                                                                                                                                 
                                                                                                                                                                 
                                                                                                                                                                 
-────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-[ask] >                                                                                                                                                         
+┃                                                                                                                                                               
+┃  ask · groq                                                                                                                                                   
+╹                                                                                                                                                               
 /home/user/ATROPOS                                                                                                       ◇ groq  ▸ ask  ▤ tab 1:Dashboard  /help

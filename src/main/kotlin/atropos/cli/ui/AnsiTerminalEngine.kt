@@ -424,14 +424,18 @@ class AnsiTerminalEngine(
             return
         }
 
+        // Legacy `header:` + indented `key: value` output is re-rendered into
+        // the reference's rail block layout so every surface reads the same.
+        val shaped = RailBlockFormatter.format(message, theme, canvas.width)
+
         transcriptBuffer.append(
             when {
                 message.startsWith(
                     "provider switched",
                     ignoreCase = true
-                ) -> transcript.success(message)
+                ) -> transcript.success(shaped)
 
-                else -> transcript.notice(message)
+                else -> transcript.notice(shaped)
             }
         )
 
