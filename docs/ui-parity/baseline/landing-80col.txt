@@ -1,34 +1,34 @@
  ATROPOS                                                     groq · ask · /help 
 [ask] › /home                                                                   
- █████╗ ████████╗██████╗  ██████╗ ██████╗  ██████╗ ███████╗                     
-██╔══██╗╚══██╔══╝██╔══██╗██╔═══██╗██╔══██╗██╔═══██╗██╔════╝                     
-███████║   ██║   ██████╔╝██║   ██║██████╔╝██║   ██║███████╗                     
-██╔══██║   ██║   ██╔══██╗██║   ██║██╔═══╝ ██║   ██║╚════██║                     
-██║  ██║   ██║   ██║  ██║╚██████╔╝██║     ╚██████╔╝███████║                     
-╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝ ╚═╝      ╚═════╝ ╚══════╝                     
+█▀▀█ ▀▀█▀▀ █▀▀█ █▀▀█ █▀▀█ █▀▀█ █▀▀▀                                             
+█▄▄█   █   █▄▄▀ █  █ █▄▄█ █  █ ▀▀▀█                                             
+▀  ▀ ▀▀▀▀▀ ▀▀▀▀ ▀▀▀▀ ▀▀▀▀ ▀▀▀▀ ▀▀▀▀                                             
 local-first · free-first · quota-aware · truthful app-factory workbench         
                                                                                 
-╭─ WORKSPACE                            ╭─ PROVIDERS                            
-│ path        /home/user/ATROPOS        │ groq        missing key fast chat / … 
-│ git         claude/pass10-job-ui-202… │ openai      missing key general reas… 
-│ kotlin      117 files                 │ anthropic   missing key coding / dee… 
-│ mode        ask                       │ xai         missing key alternate cl… 
-│ provider    groq                      │ ollama      configured local privacy… 
-╰────────────────────────────           │ gemini      not installed not instal… 
-                                        ╰────────────────────────────           
+┃  WORKSPACE                            ┃  PROVIDERS                            
+┃  path        /home/user/ATROPOS       ┃  groq        missing key fast chat /… 
+┃  git         claude/pass10-job-ui-20… ┃  openai      missing key general rea… 
+┃  kotlin      120 files                ┃  anthropic   missing key coding / de… 
+┃  mode        ask                      ┃  xai         missing key alternate c… 
+┃  provider    groq                     ┃  ollama      configured local privac… 
+                                        ┃  gemini      not installed not insta… 
                                                                                 
-╭─ ROUTING                              ╭─ AGENT                                
-│ current     legacy route wired        │ ask         available (local fallbac… 
-│ macro-a     policy compiled           │ patch       no provider key           
-│ fast        groq first                │ apply       available (local git)     
-│ large       gemini first              │ order       none configured           
-│ paid        locked                    │ paid        locked                    
-│ preview     /route <prompt>           ╰────────────────────────────           
-╰────────────────────────────                                                   
+┃  ROUTING                              ┃  AGENT                                
+┃  current     legacy route wired       ┃  ask         available (local fallba… 
+┃  macro-a     policy compiled          ┃  patch       no provider key          
+┃  fast        groq first               ┃  apply       available (local git)    
+┃  large       gemini first             ┃  order       none configured          
+┃  paid        locked                   ┃  paid        locked                   
+┃  preview     /route <prompt>                                                  
                                                                                 
-╭─ PATCH/APPLY                          ╭─ QUOTA CORE                           
-│ latest      none                      │ mode        free-first                
-│ check       NOT RUN                   │ ledger      compiled                  
+┃  PATCH/APPLY                          ┃  QUOTA CORE                           
+┃  latest      none                     ┃  mode        free-first               
+┃  check       NOT RUN                  ┃  ledger      compiled                 
+┃  apply       not attempted            ┃  cooldown    tracked                  
+┃  changed     unknown                  ┃  fallback    nonblocking              
+┃  next        /agent patch <task>      ┃  status      UI next batch            
+                                                                                
+┃  COMMANDS                             ┃  SOURCE DOCS                          
                                                                                 
                                                                                 
                                                                                 
@@ -41,4 +41,4 @@ local-first · free-first · quota-aware · truthful app-factory workbench
                                                                                 
 ────────────────────────────────────────────────────────────────────────────────
 [ask] >                                                                         
- groq · ask · tab 1:Dashboard · -- tok · /home/user/ATROPOS · patch:none
+/home/user/ATROPOS                       ◇ groq  ▸ ask  ▤ tab 1:Dashboard  /help

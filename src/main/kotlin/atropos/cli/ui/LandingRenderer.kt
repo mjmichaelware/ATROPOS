@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.cli.ui
 
+import atropos.cli.ui.design.Role
+
 class LandingRenderer(
     private val theme: TerminalTheme
 ) {
@@ -43,7 +45,10 @@ class LandingRenderer(
             width >= 140 -> columns(panels, 4, width)
             width >= 100 -> columns(panels, 3, width)
             width >= 60 -> columns(panels, 2, width)
-            else -> panels.flatten().map { TerminalText.ellipsize(it, width) }
+            // Reference separates stacked blocks with marginTop=1.
+            else -> panels
+                .flatMap { it + listOf("") }
+                .map { TerminalText.ellipsize(it, width) }
         }
 
         out += actionRail(width)
@@ -52,27 +57,56 @@ class LandingRenderer(
         return out.take(targetHeight).map { TerminalText.ellipsize(it, width) }
     }
 
+    /**
+     * ATROPOS wordmark in the pinned reference's logo language: block letters
+     * split into a muted left half and a bright bold right half, with the
+     * reference's mark characters standing in for shaded cells —
+     * `_` a shadow cell, `^` an upper half-block, `~` a shadowed upper half,
+     * `,` a shadowed lower half.
+     *
+     * ATROPOS keeps its own wordmark and cyan identity; only the rendering
+     * technique is shared. Degrades by height so the logo is never clipped on a
+     * phone (requirement 28: the logo must never be cut off).
+     */
     private fun logo(width: Int): List<String> {
         val full = listOf(
-            " █████╗ ████████╗██████╗  ██████╗ ██████╗  ██████╗ ███████╗",
-            "██╔══██╗╚══██╔══╝██╔══██╗██╔═══██╗██╔══██╗██╔═══██╗██╔════╝",
-            "███████║   ██║   ██████╔╝██║   ██║██████╔╝██║   ██║███████╗",
-            "██╔══██║   ██║   ██╔══██╗██║   ██║██╔═══╝ ██║   ██║╚════██║",
-            "██║  ██║   ██║   ██║  ██║╚██████╔╝██║     ╚██████╔╝███████║",
-            "╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝ ╚═╝      ╚═════╝ ╚══════╝"
+            "█▀▀█ ▀▀█▀▀ █▀▀█ █▀▀█ █▀▀█ █▀▀█ █▀▀▀",
+            "█▄▄█ __█__ █▄▄▀ █__█ █▄▄█ █__█ ▀▀▀█",
+            "▀__▀ ~~▀~~ ▀~~▀ ▀▀▀▀ ▀~~~ ▀▀▀▀ ▀▀▀▀"
         )
         val medium = listOf(
-            " █████╗ ████████╗██████╗  ██████╗",
-            "██╔══██╗╚══██╔══╝██╔══██╗██╔═══██╗",
-            "███████║   ██║   ██████╔╝██║   ██║",
-            "██╔══██║   ██║   ██╔══██╗██║   ██║",
-            "██║  ██║   ██║   ██║  ██║╚██████╔╝",
-            "╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝",
-            "ATROPOS"
+            "█▀▀█ ▀▀█▀▀ █▀▀█",
+            "█▄▄█ __█__ █▄▄▀",
+            "▀__▀ ~~▀~~ ▀~~▀"
         )
-        val compact = listOf("ATROPOS", "deterministic app-factory CLI")
-        return (if (width >= 72) full else if (width >= 44) medium else compact).map(theme::brand)
+
+        val lines = when {
+            width >= 44 -> full
+            width >= 24 -> medium
+            else -> return listOf(theme.paint(Role.BRAND, "ATROPOS"))
+        }
+
+        // Reference technique: left portion muted, right portion bright+bold.
+        val splitAt = lines.first().length / 2
+        return lines.map { line ->
+            val left = renderMarks(line.take(splitAt), Role.BRAND_MUTED)
+            val right = renderMarks(line.drop(splitAt), Role.BRAND)
+            TerminalText.ellipsize(left + right, width)
+        }
     }
+
+    /** Expands the reference's `_^~,` mark characters into shaded cells. */
+    private fun renderMarks(segment: String, role: Role): String =
+        segment.map { ch ->
+            when (ch) {
+                '_' -> theme.paint(Role.TEXT_MUTED, " ")
+                '^' -> theme.paint(role, "▀")
+                '~' -> theme.paint(Role.TEXT_MUTED, "▀")
+                ',' -> theme.paint(Role.TEXT_MUTED, "▄")
+                ' ' -> " "
+                else -> theme.paint(role, ch.toString())
+            }
+        }.joinToString("")
 
     private fun workspacePanel(state: SessionPresentationState, truth: WorkbenchTruth): List<String> =
         panel("WORKSPACE", listOf(
@@ -214,10 +248,13 @@ class LandingRenderer(
             )
         )
 
+    /**
+     * A dashboard block in the reference's layout: coloured left rail, two
+     * columns of padding, no enclosing frame. Composed through [Surface.block]
+     * so every surface picks up rail changes at once.
+     */
     private fun panel(title: String, rows: List<String>): List<String> =
-        listOf(theme.brand("╭─ $title")) +
-            rows.map { theme.metadata("│ ") + it } +
-            listOf(theme.subdued("╰" + "─".repeat(28)))
+        theme.surface.block(title, rows, PANEL_WIDTH)
 
     private fun row(label: String, value: String): String =
         theme.metadata(TerminalText.padEnd(label, 11)) + " " + value
@@ -299,10 +336,7 @@ class LandingRenderer(
     }
 
     private fun usefulPanel(title: String, rows: List<String>): List<String> =
-        listOf(theme.brand("[" + title + "]")) +
-            rows.map {
-                theme.metadata("  ") + TerminalText.sanitize(it)
-            }
+        theme.surface.block(title, rows.map(TerminalText::sanitize), PANEL_WIDTH)
 
     private fun compactColumns(
         panels: List<List<String>>,
@@ -328,5 +362,10 @@ class LandingRenderer(
         }
 
         return output
+    }
+
+    private companion object {
+        /** Nominal per-column block width; columns() clips to the real column. */
+        const val PANEL_WIDTH = 40
     }
 }

@@ -26,14 +26,37 @@ enum class Role {
     /** Copy drawn on an inverted/filled surface. */
     TEXT_INVERSE,
 
-    /** Verified / present / passed. Never used for "probably fine". */
-    STATUS_VERIFIED,
-    /** Defined / pending / in-progress. */
-    STATUS_PENDING,
-    /** Missing / locked / failed / refused. */
-    STATUS_ERROR,
-    /** Not wired, not probed, genuinely unknown. Never rendered as success. */
+    /**
+     * Status roles backing the Source Doc 3 Section A vocabulary. See [RunState],
+     * which is the only supported way to render them — it forces a redundant
+     * glyph and label alongside the colour.
+     *
+     * `STATUS_FAILED` maps to the `danger` role, which Section A reserves
+     * **exclusively** for failure states so "a red glance always means
+     * stop-and-look, not maybe-look". Never reuse it for warnings.
+     */
+    STATUS_IDLE,
+    /** Cancelled: neutral ink plus SGR 9 crossed-out, per Section A. */
+    STATUS_CANCELLED,
+    STATUS_RUNNING,
+    STATUS_WAITING,
+    STATUS_FAILED,
+    STATUS_COMPLETE,
     STATUS_UNKNOWN,
+
+    /** Informational, non-status emphasis (Section F `info` role). */
+    INFO,
+
+    // Retained aliases for pre-spec call sites. STATUS_VERIFIED/PENDING/ERROR
+    // predate the Section A vocabulary; they resolve to the same inks as
+    // COMPLETE/WAITING/FAILED so no surface changes appearance, but new code
+    // must use RunState so the colour-blind redundancy rule cannot be bypassed.
+    /** @deprecated Use [RunState.COMPLETE]. */
+    STATUS_VERIFIED,
+    /** @deprecated Use [RunState.WAITING] or [RunState.BLOCKED]. */
+    STATUS_PENDING,
+    /** @deprecated Use [RunState.FAILED]. */
+    STATUS_ERROR,
 
     /** Chrome backgrounds: header and footer bars. */
     SURFACE_HEADER,
@@ -103,11 +126,23 @@ enum class Breakpoint(val minColumns: Int) {
     }
 }
 
-/** Box-drawing vocabulary. Renderers never inline these glyphs. */
+/**
+ * Glyph vocabulary. Renderers never inline these.
+ *
+ * Layout follows the pinned reference's TUI, which draws **no boxes**: its
+ * `EmptyBorder` is blank and the only structural glyph is a heavy vertical
+ * rail (`SplitBorder`) on the left edge of a block, followed by two spaces of
+ * padding, with blocks separated by one blank line. Enclosing card frames are
+ * deliberately absent — hierarchy comes from the rail, indentation and colour,
+ * not from drawn borders.
+ */
 object Glyphs {
-    const val CARD_TOP_LEFT = "╭"
-    const val CARD_BOTTOM_LEFT = "╰"
-    const val CARD_EDGE = "│"
+    /** Left rail marking a content block. The reference's only border glyph. */
+    const val RAIL = "┃"
+
+    /** Padding between the rail and block content, in columns. */
+    const val RAIL_PADDING = 2
+
     const val RULE = "─"
     const val SECTION_MARK = "──"
     const val ELLIPSIS = "…"
@@ -115,9 +150,7 @@ object Glyphs {
 
     /** ASCII fallbacks for terminals that cannot render box-drawing characters. */
     object Ascii {
-        const val CARD_TOP_LEFT = "+"
-        const val CARD_BOTTOM_LEFT = "+"
-        const val CARD_EDGE = "|"
+        const val RAIL = "|"
         const val RULE = "-"
         const val SECTION_MARK = "--"
         const val ELLIPSIS = "..."

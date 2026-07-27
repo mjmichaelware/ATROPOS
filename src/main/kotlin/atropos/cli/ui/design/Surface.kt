@@ -91,36 +91,80 @@ class Surface(private val paint: Painter) {
     fun badge(text: String, health: Health): String =
         paint.paint(health.role, "[$text]")
 
-    // ---- cards --------------------------------------------------------------
+    /**
+     * Renders a [RunState] with colour **and** the two redundant non-colour
+     * channels Source Doc 3 Section E requires: glyph shape and text label.
+     *
+     * This is the only supported way to render the status vocabulary. Because
+     * the glyph and label are emitted unconditionally, the signal survives
+     * `NO_COLOR`, `TERM=dumb`, and monochrome terminals (Doc 2 rule 124), and
+     * cannot regress into colour-only rendering.
+     *
+     * @param attempt current retry attempt, required by Section A for
+     *   [RunState.RETRYING] ("animated with a visible counter").
+     * @param ofAttempts total attempts, rendered as `2/5`.
+     */
+    fun runState(
+        state: RunState,
+        attempt: Int? = null,
+        ofAttempts: Int? = null
+    ): String {
+        val glyph = if (asciiOnly) state.asciiGlyph else state.glyph
+        val label = state.label
+        val counter = when {
+            state != RunState.RETRYING -> ""
+            attempt != null && ofAttempts != null -> " $attempt/$ofAttempts"
+            attempt != null -> " $attempt"
+            else -> ""
+        }
+        return paint.paint(state.role, "$glyph $label$counter")
+    }
+
+
+    // ---- blocks -------------------------------------------------------------
 
     /**
-     * Bordered card. Body lines are clipped to the inner width, so a card can
-     * never push a dashboard column past its right edge.
+     * A content block in the pinned reference's layout language: a coloured
+     * left rail, two columns of padding, then content. No enclosing frame —
+     * the reference's `EmptyBorder` is blank and hierarchy is carried by the
+     * rail, indentation and colour instead of drawn borders.
+     *
+     * The [railRole] identifies the block's kind the way the reference tints a
+     * rail per agent/message type, so blocks are distinguishable at a glance
+     * without any box chrome.
+     *
+     * Body lines are clipped to the inner width, so a block can never push a
+     * column past its right edge.
      */
-    fun card(title: String, body: List<String>, width: Int): List<String> {
-        val inner = (width - 2).coerceAtLeast(Spacing.MIN_WIDTH - 2)
-        val top = paint.paint(
-            Role.BRAND,
-            glyph(Glyphs.CARD_TOP_LEFT, Glyphs.Ascii.CARD_TOP_LEFT) +
-                glyph(Glyphs.RULE, Glyphs.Ascii.RULE) + " " + title
-        )
-        val edge = paint.paint(
-            Role.BORDER_SUBTLE,
-            glyph(Glyphs.CARD_EDGE, Glyphs.Ascii.CARD_EDGE)
-        )
-        val bottom = paint.paint(
-            Role.BORDER_SUBTLE,
-            glyph(Glyphs.CARD_BOTTOM_LEFT, Glyphs.Ascii.CARD_BOTTOM_LEFT) +
-                glyph(Glyphs.RULE, Glyphs.Ascii.RULE)
-                    .repeat((width - 1).coerceIn(0, Spacing.CARD_WIDTH))
-        )
+    fun block(
+        title: String?,
+        body: List<String>,
+        width: Int,
+        railRole: Role = Role.BRAND
+    ): List<String> {
+        val railGlyph = glyph(Glyphs.RAIL, Glyphs.Ascii.RAIL)
+        val rail = paint.paint(railRole, railGlyph)
+        val pad = " ".repeat(Glyphs.RAIL_PADDING)
+        val inner = (width - railGlyph.length - Glyphs.RAIL_PADDING).coerceAtLeast(8)
 
         return buildList {
-            add(TerminalText.ellipsize(top, width))
-            body.forEach { add(TerminalText.ellipsize("$edge ${TerminalText.ellipsize(it, inner)}", width)) }
-            add(TerminalText.ellipsize(bottom, width))
+            title?.takeIf { it.isNotBlank() }?.let {
+                add(TerminalText.ellipsize(rail + pad + paint.paint(Role.BRAND, it), width))
+            }
+            body.forEach {
+                add(TerminalText.ellipsize(rail + pad + TerminalText.ellipsize(it, inner), width))
+            }
         }
     }
+
+    /**
+     * Retained name for existing call sites; renders as a [block].
+     *
+     * The reference draws no card frames, so this no longer emits corners or a
+     * closing rule. Call sites keep working and inherit the new layout.
+     */
+    fun card(title: String, body: List<String>, width: Int): List<String> =
+        block(title, body, width)
 
     // ---- columns ------------------------------------------------------------
 

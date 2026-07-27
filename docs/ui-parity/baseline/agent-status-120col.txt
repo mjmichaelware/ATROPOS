@@ -41,4 +41,4 @@ e_workers, pinecone, openai, deepseek_direct, groq
                                                                                                                         
 ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 [ask] >                                                                                                                 
- ATROPOS · groq · ask · tab 1:Dashboard · -- tok · -- · /home/user/ATROPOS · patch:none
+/home/user/ATROPOS                                                               ◇ groq  ▸ ask  ▤ tab 1:Dashboard  /help
