@@ -1,0 +1,355 @@
+﻿ATROPOS Source Doc. 1
+
+
+
+
+[Start .100
+Google Cloud Services
+
+
+Project name: Atropos' Lakehouse
+Project number: 477505766408
+Project ID: atropos-lakehouse
+
+
+Service Role Account Email: atropos-service@atropos-lakehouse.iam.gserviceaccount.com
+
+
+O’auth: 115699790669054326884
+
+
+
+
+
+
+End .100]
+
+
+[Start 1.0.0:
+Tree 
+▲ ATROPOS CORE ARCHITECTURE FACTORY MANIFEST
+Generated on: 2026-06-23 at 1:21 AM MST
+──────────────────────────────────────────────────────────────────────────────────
+SECTION 1: VISUAL CODEBASE STRUCTURE WITH MATRIX FILE SIZES
+
+
+[3.4K]  ./
+├── [3.4K]  cli/
+│   ├── [3.4K]  commands/
+│   │   ├── [7.6K]  CommandRouter.kt
+│   │   └── [ 554]  VerifyCommand.kt
+│   ├── [3.4K]  config/
+│   │   └── [ 272]  ConfigurationManager.kt
+│   ├── [3.4K]  errors/
+│   │   └── [ 222]  SystemExceptionHandler.kt
+│   ├── [3.4K]  session/
+│   │   └── [ 519]  QuotaSessionTracker.kt
+│   ├── [3.4K]  ui/
+│   │   └── [3.7K]  AnsiTerminalEngine.kt
+│   └── [ 331]  Main.kt
+├── [3.4K]  core/
+│   ├── [3.4K]  adapter/
+│   │   └── [ 526]  HardwareProfileAdapter.kt
+│   ├── [3.4K]  knowledge/
+│   │   └── [ 658]  SelfImprovingCompilationLoop.kt
+│   ├── [3.4K]  parser/
+│   │   └── [ 272]  TreeSitterGrammarBridge.kt
+│   ├── [3.4K]  security/
+│   │   └── [1.1K]  TokenIsolationVault.kt
+│   ├── [3.4K]  swarm/
+│   │   ├── [ 313]  DirectorOrchestrator.kt
+│   │   └── [ 216]  WorkerCodeSynthesizer.kt
+│   └── [3.4K]  verifier/
+│       ├── [ 209]  ConstraintSolverEvaluator.kt
+│       └── [ 677]  ProbabilisticImmunityEngine.kt
+├── [3.4K]  data/
+│   ├── [3.4K]  cache/
+│   │   └── [ 282]  CodebaseDeltaTreeTracker.kt
+│   ├── [3.4K]  indexer/
+│   │   └── [ 571]  LatentOntologicalIndexer.kt
+│   ├── [3.4K]  lakehouse/
+│   │   └── [ 276]  OntologicalAddressRouter.kt
+│   └── [3.4K]  storage/
+│       └── [ 782]  CloudLakehouseSyncEngine.kt
+├── [3.4K]  docs/
+│   └── [3.4K]  assets/
+├── [3.4K]  frontend/
+│   ├── [3.4K]  api/
+│   │   └── [ 352]  AtroposApiClient.kt
+│   ├── [3.4K]  components/
+│   │   ├── [ 291]  DashboardHudView.kt
+│   │   └── [ 178]  TerminalConsoleView.kt
+│   ├── [3.4K]  model/
+│   │   └── [ 229]  TerminalStateMatrix.kt
+│   └── [3.4K]  view/
+│       └── [ 402]  ConsoleViewManager.kt
+├── [3.4K]  tests/
+│   ├── [3.4K]  cli/
+│   │   └── [ 110]  CommandRouterTest.kt
+│   ├── [3.4K]  core/
+│   │   └── [ 111]  ImmunityEngineTest.kt
+│   └── [3.4K]  data/
+│       └── [ 115]  OntologicalIndexTest.kt
+├── [ 348]  LICENSE
+├── [ 10K]  README.md
+├── [ 104]  atropos*
+├── [ 42K]  atropos-factory-proof.jar
+├── [   0]  build.gradle.kts
+└── [ 87M]  kotlin-compiler-1.9.24.zip
+
+
+30 directories, 33 files
+
+
+
+
+──────────────────────────────────────────────────────────────────────────────────
+SECTION 2: INSTITUTIONAL COMPONENT METADATA (PERMS │ BYTES │ NODE PATH)
+
+
+-rw-------.  │ 348          │ ./LICENSE
+-rw-------.  │ 10631        │ ./README.md
+-rwx------.  │ 104          │ ./atropos
+-rw-------.  │ 43435        │ ./atropos-factory-proof.jar
+-rw-------.  │ 0            │ ./build.gradle.kts
+-rw-------.  │ 331          │ ./cli/Main.kt
+-rw-------.  │ 7736         │ ./cli/commands/CommandRouter.kt
+-rw-------.  │ 554          │ ./cli/commands/VerifyCommand.kt
+-rw-------.  │ 272          │ ./cli/config/ConfigurationManager.kt
+-rw-------.  │ 222          │ ./cli/errors/SystemExceptionHandler.kt
+-rw-------.  │ 519          │ ./cli/session/QuotaSessionTracker.kt
+-rw-------.  │ 3766         │ ./cli/ui/AnsiTerminalEngine.kt
+-rw-------.  │ 526          │ ./core/adapter/HardwareProfileAdapter.kt
+-rw-------.  │ 658          │ ./core/knowledge/SelfImprovingCompilationLoop.kt
+-rw-------.  │ 272          │ ./core/parser/TreeSitterGrammarBridge.kt
+-rw-------.  │ 1083         │ ./core/security/TokenIsolationVault.kt
+-rw-------.  │ 313          │ ./core/swarm/DirectorOrchestrator.kt
+-rw-------.  │ 216          │ ./core/swarm/WorkerCodeSynthesizer.kt
+-rw-------.  │ 209          │ ./core/verifier/ConstraintSolverEvaluator.kt
+-rw-------.  │ 677          │ ./core/verifier/ProbabilisticImmunityEngine.kt
+-rw-------.  │ 282          │ ./data/cache/CodebaseDeltaTreeTracker.kt
+-rw-------.  │ 571          │ ./data/indexer/LatentOntologicalIndexer.kt
+-rw-------.  │ 276          │ ./data/lakehouse/OntologicalAddressRouter.kt
+-rw-------.  │ 782          │ ./data/storage/CloudLakehouseSyncEngine.kt
+-rw-------.  │ 352          │ ./frontend/api/AtroposApiClient.kt
+-rw-------.  │ 291          │ ./frontend/components/DashboardHudView.kt
+-rw-------.  │ 178          │ ./frontend/components/TerminalConsoleView.kt
+-rw-------.  │ 229          │ ./frontend/model/TerminalStateMatrix.kt
+-rw-------.  │ 402          │ ./frontend/view/ConsoleViewManager.kt
+-rw-------.  │ 91056044     │ ./kotlin-compiler-1.9.24.zip
+-rw-------.  │ 110          │ ./tests/cli/CommandRouterTest.kt
+-rw-------.  │ 111          │ ./tests/core/ImmunityEngineTest.kt
+-rw-------.  │ 115          │ ./tests/data/OntologicalIndexTest.kt
+End 1.0.0]
+
+
+[Start 1.0.1:
+<ATROPOS_MACHINE_STATE_HANDOFF_PAYLOAD_V2.0.0_RC1>
+<SYS_METADATA>
+PROJECT_ALIAS: ATROPOS (Automated Topological Repair & Ontological Optimization Swarm).
+PLATFORM_ARCHITECTURE: Android-Native ARM64 Host Environment with Extensible x86/x86_64 Cross-Compilation Backplane.
+LICENSE_ENFORCEMENT: GNU Affero General Public License v3 (AGPL-3.0).
+TARGET_ACCURACY_BOUNDS: 95.00% - 98.00% Deterministic Compilation Verification.
+THROUGHPUT_CAPACITY: 1,500 - 5,000 LOC continuous generation per single execution pass.
+</SYS_METADATA>
+<MATHEMATICAL_EXECUTION_CONSTRAINTS>
+STATE_ALIGNED_MARKOV_DECISION_PROCESS: The ATROPOS agent operates strictly within a State-Aligned Markov Decision Process (MDP) mapped against a non-differentiable deterministic compiler.
+TOPOLOGICAL_MUTATION_VECTORS: The codebase repository is represented as a directed graph of symbol nodes G = (V, E).
+Code modifications are not parsed as strings; they are isolated as minimal topological mutations (\Delta_t) between structural snapshots.
+TREE_EDIT_DISTANCE: 
+
+
+The context optimization engine leverages this delta to strip unchanged code branches, routinely saving up to 94.2% in prompt context weight.
+DETERMINISTIC_STATE_TRANSITION: 
+
+
+REINFORCEMENT_ENERGY_MINIMIZATION: No \Delta_t is committed to physical storage if the system energy exceeds zero.
+ZERO_ENERGY_CONSTRAINT_EQUATION: 
+
+
+Where \text{HIG} represents Heuristic Ingestion Gaps and \text{HUD} represents Hardware/User-space Disconnects.
+ERROR_GRADIENT_EXTRACTION: If E(\Delta) > 0, the ProbabilisticImmunityEngine captures the gradient of the standard error stream natively from the host toolchain:
+
+
+
+
+If $ E(\Delta) > 0 , the ProbabilisticImmunityEngine captures the gradient of the standard error stream ( \nabla E$) natively from the toolchain (./gradlew assembleDebug or kotlinc).
+The sub-graph containing the exact compilation failure is sliced and fed back into the optimization loop.
+The micro-context containing only the broken function signature and the exact stderr coordinate is routed back to the Worker Node for an instant, localized repair loop.
+</MATHEMATICAL_EXECUTION_CONSTRAINTS>
+<DETERMINISTIC_LATENT_ONTOLOGICAL_INDEX_MATRIX>
+HEURISTIC_INGESTION_GAP_ELIMINATION: The engine strictly prohibits the use of Heuristic Ingestion Gaps (HIG) or vector similarity probability guessing (RAG).
+Codebase awareness is driven by multi-tier coordinate addressing.
+TAXONOMIC_ADDRESSING_PROTOCOL: 
+
+
+DOMAIN_X: High-level Language/Platform constraint (e.g., 621 = Android Kotlin Runtime).
+CATEGORY_Y: Functional Module/Library (e.g., 420 = Asynchronous Network Sockets).
+LEAF_NODE_Z: Explicit AST Symbol Signature (e.g., 011 = UnixDomainSocketBridge).
+SQLITE_RELATIONAL_SCHEMA_DEFINITION:
+CREATE TABLE ast_symbol_graph (
+node_id TEXT PRIMARY KEY,       -- SHA-256 Hash of Symbol Signature
+dloi_address TEXT NOT NULL,     -- 9-digit taxonomic coordinate
+symbol_type TEXT NOT NULL,      -- ENUM: CLASS, INTERFACE, METHOD, FIELD
+file_path TEXT NOT NULL,        -- Absolute path in VFS
+byte_offset_start INTEGER,      -- Tree-Sitter boundaries
+byte_offset_end INTEGER,
+dependency_refs TEXT            -- JSON array of linked node_ids
+);
+CREATE INDEX idx_dloi ON ast_symbol_graph(dloi_address);
+AST_NAMESPACE_RECONCILER: Models do not "guess" package imports; the AST reconciler queries the DLOI index and injects the absolute string path deterministically.
+</DETERMINISTIC_LATENT_ONTOLOGICAL_INDEX_MATRIX>
+<TOPOLOGICAL_FILE_STRUCTURE_VFS_GRAPH>
+The current application skeleton is partitioned into 30 decoupled 101 computer science modules across 5 primary execution domains.
+[CLI_CONTROL_PLANE]
+cli/Main.kt: Primary application entry point and intent router.
+cli/commands/CommandRouter.kt: Quote-aware lexical state analyzer and slash-command interceptor (/F1, /swarm).
+cli/commands/VerifyCommand.kt: Direct hook for localized toolchain verification.
+cli/config/ConfigurationManager.kt: Manages environment variables and workspace path tracking.
+cli/errors/SystemExceptionHandler.kt: Catches java.lang.SecurityException and standard runtime faults.
+cli/session/QuotaSessionTracker.kt: Dynamically calculates session token costs and prompt cache reuse metrics.
+cli/ui/AnsiTerminalEngine.kt: Draws the full-screen interactive matrix console using ANSI color boundaries.
+[DECISION_AND_VERIFICATION_CORE]
+core/adapter/HardwareProfileAdapter.kt: Dynamically toggles capabilities for low-RAM mobile edge nodes vs. high-performance workstations.
+core/indexer/LatentOntologicalIndexer.kt: Maps internal variables to the 5TB reference matrix via concurrent read/write locks.
+core/knowledge/SelfImprovingCompilationLoop.kt: The Progressive Learning Engine evaluating positive/negative reinforcement vectors.
+core/parser/TreeSitterGrammarBridge.kt: Generates explicit Abstract Syntax Tree (AST) symbol dependency graphs natively.
+core/security/TokenIsolationVault.kt: Hardware-salted AES-GCM 256-bit encryption vault for API provider credentials.
+core/swarm/DirectorOrchestrator.kt: The Supervisor node for complex structural dependency planning.
+core/swarm/WorkerCodeSynthesizer.kt: The concurrent fan-out node driving high-velocity code implementations.
+core/verifier/ConstraintSolverEvaluator.kt: Static mathematical evaluation of syntax boundaries.
+core/verifier/ProbabilisticImmunityEngine.kt: Captures local subprocess stderr outputs and extracts line-level anomaly data.
+[DATA_AND_MEMORY_SUBSYSTEM]
+data/cache/CodebaseDeltaTreeTracker.kt: Evaluates structural mutation vectors via TED.
+data/indexer/LatentOntologicalIndexer.kt: Manages multi-tier coordinate index taxonomies.
+data/lakehouse/OntologicalAddressRouter.kt: Handles the DLOI classification scheme routing.
+data/storage/CloudLakehouseSyncEngine.kt: Manages lazy-loading delta replication from Supabase/GCS object storage.
+[INTERACTIVE_FRONTEND_VIEW]
+frontend/api/AtroposApiClient.kt: Dispatches asynchronous mutation intents.
+frontend/components/DashboardHudView.kt: Renders the top-level metric HUD.
+frontend/components/TerminalConsoleView.kt: Renders the streaming console interface.
+frontend/model/TerminalStateMatrix.kt: Handles state synchronization for the UI parameters.
+frontend/view/ConsoleViewManager.kt: Orchestrates view lifecycles and layout rendering.
+[VALIDATION_TEST_SUITE]
+tests/cli/CommandRouterTest.kt: Unit tests for lexical parser loops.
+tests/core/ImmunityEngineTest.kt: Validates subprocess logging and error capture.
+tests/data/OntologicalIndexTest.kt: Verifies deterministic DLOI numerical address targeting.
+</TOPOLOGICAL_FILE_STRUCTURE_VFS_GRAPH>
+<SWARM_ORCHESTRATION_IPC_PROTOCOL>
+ASYNC_DECOUPLING: Tasks are decoupled using an asynchronous Fan-Out/Fan-In schema to bypass context dilution.
+[NODE_ALPHA_DIRECTOR]
+ENGINE_TARGET: xAI/Grok API.
+ROLE: Strategic Supervisor and Topological Dependency Planner.
+INPUT_STATE: Raw 12,000-word engineering specifications and unformatted blueprint logic.
+OUTPUT_STATE: Outputs hierarchical Directed Acyclic Graph (DAG) task lists ordered by topological dependencies.
+[NODE_BETA_WORKER_SYNTHESIZER_CLUSTER]
+ENGINE_TARGET: Groq Llama-3.3-70B Parallel Clusters.
+ROLE: Concurrent Code Drafting and High-Velocity Sub-Agent Execution.
+INPUT_STATE: Isolated AST Context Slice + DAG Instruction Node.
+OUTPUT_STATE: Compiles separate files simultaneously at blazing inference speeds without blocking main thread execution.
+[NODE_GAMMA_VALIDATOR_GUARD]
+ENGINE_TARGET: Ollama on-device local execution.
+ROLE: Zero-Cost Adversarial Evaluator and Import Reconciler.
+INPUT_STATE: Worker Synthesis Byte Stream + Local Tree-Sitter Headers.
+OUTPUT_STATE: Audits formatting, parses AST import headers, and performs syntax validation directly on the ARM64 device before allowing cloud tokens to be spent on compiler tests. Returns Boolean(Syntax_Valid) + Missing_Imports[].
+</SWARM_ORCHESTRATION_IPC_PROTOCOL>
+<REINFORCEMENT_LEARNING_DOPAMINE_CIRCUIT>
+RLHF_PIPELINE: The SelfImprovingCompilationLoop.kt maps execution feedback to persistent weights.
+REWARD_VECTOR: When a worker node successfully drafts a module that generates a $BUILD SUCCESSFUL standard output on the first pass, log a +1.0 positive reinforcement vector to local SQLite.
+PENALTY_VECTOR: When a build fails, log a -1.0 penalty and store the stderr string.
+CLOSED_LOOP_ALIGNMENT: The agent must continuously fine-tune its own input prompt prefix templates based on this historical deterministic data, adjusting temperature, top_p, and few-shot examples automatically depending on the node's rolling success rate.
+</REINFORCEMENT_LEARNING_DOPAMINE_CIRCUIT>
+<CLOUD_LAKEHOUSE_CAS_REPLICATION_ENGINE>
+KNOWLEDGE_LAKEHOUSE: The 5-Terabyte global knowledge matrix is synchronized via Content-Addressable Storage (CAS).
+TRANSPORT_MECHANISM: Memory-Mapped I/O (mmap) via Android NDK.
+DEDUPLICATION_PROTOCOL: Assets stored by SHA-256 hash. Identical SDK dependencies across projects are stored globally once.
+SHADOW_LOG_REPLICATION: The local device streams compact quantized embedding shards natively, eliminating full repository downloads.
+STORAGE_TARGETS: Expand CloudLakehouseSyncEngine.kt to interface with Supabase/GCS utilizing Content-Addressable Storage (CAS) logic.
+MAP_COMPRESSION: Map the 5-Terabyte global knowledge lakehouse to local device storage using Memory-Mapped I/O (mmap) chunks via Android NDK.
+</CLOUD_LAKEHOUSE_CAS_REPLICATION_ENGINE>
+<DEEP_RESEARCH_ARCHITECTURE_INTEGRATIONS>
+DECOMPOSED_ATTENTION_MATRICES: System separates agent focus into a "Viewer Node" (navigates the Tree-Sitter symbol graph and isolates surgical context) and an "Editor Node" (receives context slice to generate precise code). This prevents attention fragmentation inherent in monolithic conversational models.
+DETERMINISTIC_GRAPH_MAPPING: Complete elimination of standard cosine-similarity RAG faults. Utilizing local Tree-Sitter to extract exact symbol-level facts, resolving package namespaces, interface contracts, and variable scopes directly without heuristic guessing.
+EXECUTION_AWARE_RUNTIME_VERIFICATION: Treating validation as a non-differentiable evaluator within an offline reinforcement loop (inspired by LLM4Cov/MPC-Coder paradigms). Code blocks must pass iterative compiler checks to satisfy the E(\Delta) = 0 constraint before committing to physical disk logic.
+SEQUENTIAL_MONTE_CARLO_PROGRAM_SAMPLING: Modeling multi-file code synthesis as a branching probability tree. Tracking state mutations via TED calculations, calculating downstream impact radius automatically, and pruning failed algorithmic branches based on deterministic compiler log interceptions.
+</DEEP_RESEARCH_ARCHITECTURE_INTEGRATIONS>
+<AGPL3_LEGAL_ENFORCEMENT_PERIMETER>
+COPYLEFT_SHIELD: Protect the IP and mathematical engine parameters.
+CLOUD_LOOPHOLE_CLOSURE: The architecture must continuously evaluate its own deployment to ensure corporate entities cannot strip the UI, host the Swarm engines on remote cloud clusters, and sell the API compute without releasing their derivative backend architectures to the public.
+NATIVE_INTERCEPT_SHELL_WRAPPERS: Evolve CommandRouter.kt into a full-scale Bash/Zsh terminal intercept wrapper.
+Intercept native host environment flags (e.g., git, cd, gh) natively. Ensure ATROPOS operates as a sovereign OS-level control deck where codebase manipulation, swarm deployment, and Git version control are unified in a single prompt context.
+</AGPL3_LEGAL_ENFORCEMENT_PERIMETER>
+<SYSTEM_EXECUTION_STATE_END_OF_RECORD>
+END MACHINE ENCODED STATE HANDOFF [ATROPOS_v2.0.0-rc.1]
+</SYSTEM_EXECUTION_STATE_END_OF_RECORD>
+</ATROPOS_MACHINE_STATE_HANDOFF_PAYLOAD_V2.0.0_RC1>
+End 1.0.1]
+
+
+[START 1.0.2
+Source Document 01: Multi-Agent Orchestration & Termux Runtime Architecture
+This document serves as the foundational architectural blueprint for deploying a highly concurrent, 5-API multi-agent framework directly on an aArch64 environment (Termux). It defines the strict protocols for state management, task delegation, and execution constraints required to achieve 95-98% code generation accuracy.
+
+
+1. The Directed Acyclic Graph (DAG) Execution Model
+To surpass the limitations of linear text generation, the system mandates a topological dependency planner. The orchestration layer does not generate code; it generates tasks. These tasks are mapped onto a Directed Acyclic Graph (DAG) to ensure prerequisites are satisfied before execution nodes are triggered.
+1.1 The Orchestrator Node (Strategic Supervisor)
+The Orchestrator is responsible for blueprinting and syntax validation planning. It intercepts the user's initial prompt and breaks the requested application down into atomic, isolated components.
+Input: Natural language intent or partial pseudocode.
+Processing: Semantic chunking and dependency mapping.
+Output: A JSON-formatted manifest of execution nodes, ordered by topological prerequisites.
+
+
+2. The 5-API Swarm Delegation Matrix
+Task splitting is critical for preserving context windows and maximizing inference speed. By decoupling the generation plane from the orchestration plane, the system can utilize concurrent API calls.
+API Provider
+Assigned Role / Core Skill
+Execution Plane
+Priority Level
+ 
+Anthropic (Claude 3.5 Sonnet/Opus)
+Orchestrator, Architectural Planning, Diff Verification
+Cloud (Synchronous)
+P0 - Critical Path
+xAI (Grok)
+Alternative Orchestrator, Real-time API documentation routing
+Cloud (Synchronous)
+P1 - Secondary Planning
+Groq (Llama 3 / Mixtral)
+High-Velocity Code Worker, AST Chunk Generation
+Cloud (Asynchronous Fan-out)
+P0 - Throughput
+OpenAI (GPT-4o)
+Syntax parsing, edge-case refactoring, specialized language models
+Cloud (Asynchronous Fan-out)
+P1 - Worker Node
+Ollama 3.2
+Local Validation Guard, Adversarial Evaluator
+On-Device (aArch64)
+P0 - Gatekeeper
+
+
+
+
+3. On-Device State Management (The Dopamine Circuit)
+The system's learning mechanism relies on an Environmental Reward Engine. Because the CLI operates within Termux, it has direct access to standard output (stdout) and standard error (stderr) streams from local compilers.
+3.1 Reinforcement Protocol
+Compilation Attempt: The worker node finishes a code chunk and the Termux environment attempts to compile or parse it using native tools (e.g., Tree-sitter).
+Vector Assignment: If the compilation succeeds with exit code 0, a +1.0 reinforcement vector is logged to the local SQLite database.
+Penalty and Correction: If exit code is >0, a -1.0 penalty is logged alongside the stderr trace. This trace is immediately routed to the OpenAI/Groq workers for an isolated diff-correction pass.
+// Example Execution Trace for the Dopamine Circuit
+function evaluateSubprocess(exitCode: Int, stderr: String): RewardVector {
+    if (exitCode == 0) {
+        return RewardVector(score = 1.0, trace = null)
+    } else {
+        val parsedError = ErrorParser.extractASTAnomaly(stderr)
+        return RewardVector(score = -1.0, trace = parsedError)
+    }
+}
+
+
+4. Integration with Google Cloud Platform and Firebase
+The lake house architecture demands separation between the compute plane (the phone) and the data plane. Leveraging Google Cloud Platform (GCP) and Firebase infrastructure allows the device to pull highly compact, pre-calculated text vector embedding shards without exceeding local memory limits.
+4.1 Delta Replication Strategy
+Instead of downloading massive repositories locally, the Termux agent maintains a lightweight index. When an import statement or specific framework knowledge is required, it requests a precise chunk from the centralized Firebase/GCP storage buckets via secure API gateways.
+END 1.0.2]

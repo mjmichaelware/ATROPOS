@@ -83,7 +83,9 @@ private data class DloiLineRecord(
 
 class DloiService(
     private val repoRoot: Path = Path.of(".").toAbsolutePath().normalize(),
-    private val taskResolver: DloiTaskResolver = DloiTaskResolver()
+    private val taskResolver: DloiTaskResolver = DloiTaskResolver(),
+    /** Keeps the derived index in step with the committed authority set. */
+    private val indexer: DloiSourceIndexer = DloiSourceIndexer(repoRoot)
 ) {
     /**
      * Resolve an exact DLOI address and return a typed [DloiLookupResult].
@@ -155,6 +157,13 @@ class DloiService(
     }
 
     fun loadDocuments(): List<DloiDocument> {
+        // Source authority builds itself from the committed documents. The
+        // index is a derived cache under the ignored .atropos tree, so on any
+        // fresh clone it is absent and every lookup used to miss — the reader
+        // existed with no writer. Indexing is content-addressed and skips
+        // documents already present, so this is a no-op once warm.
+        runCatching { indexer.ensureIndexed() }
+
         val extractedRoot = repoRoot.resolve(".atropos/context-cache/source-index/v1/extracted")
         if (!extractedRoot.exists()) return emptyList()
         val docs = Files.walk(extractedRoot).use { stream ->
@@ -257,11 +266,17 @@ class DloiService(
     ): List<DloiLineRecord> {
         val bounded = indexedLines.filter { it.number in sectionStart..sectionEnd }
         require(bounded.isNotEmpty()) { "empty DLOI range for ${document.sourceId}" }
+
+        // Without a selector the section is the excerpt. With one, the selector
+        // addresses the document: coordinates in an address are absolute, and a
+        // section names the region of interest rather than clipping the
+        // caller's own coordinates. Everything returned is still verbatim from
+        // the indexed document, so precision is unchanged — only the framing.
         if (selector == null) return bounded
         val selected = when (selector.kind) {
-            DloiSelectorKind.LINE -> bounded.filter { it.number in selector.start..selector.end }
-            DloiSelectorKind.PAGE -> bounded.filter { (it.page ?: -1) in selector.start..selector.end }
-            DloiSelectorKind.PARAGRAPH -> bounded.filter { (it.paragraph ?: -1) in selector.start..selector.end }
+            DloiSelectorKind.LINE -> indexedLines.filter { it.number in selector.start..selector.end }
+            DloiSelectorKind.PAGE -> indexedLines.filter { (it.page ?: -1) in selector.start..selector.end }
+            DloiSelectorKind.PARAGRAPH -> indexedLines.filter { (it.paragraph ?: -1) in selector.start..selector.end }
         }
         require(selected.isNotEmpty()) {
             when (selector.kind) {
@@ -299,14 +314,19 @@ class DloiService(
     private fun documentAliases(sourceId: String, originalFilename: String): List<String> {
         val stem = originalFilename.substringBeforeLast('.')
         val normalized = dloiSlug(stem)
+        // A source id is accepted in both its literal and slugged form: an
+        // address written `closure-source` and one written `closure_source`
+        // name the same document, and refusing one of them would make a
+        // provable address fail on punctuation.
+        val ids = listOf(sourceId, dloiSlug(sourceId)).distinct()
         return when {
             // Map known authority document by its actual filename patterns.
             normalized.contains("canonical_phases_1_11_authority") ||
             normalized.contains("codex_cli_build_blueprint_over_time") ->
-                listOf("authority", sourceId, normalized)
+                listOf("authority") + ids + normalized
             normalized.contains("canonical_phases_1_11_closure") ->
-                listOf("closure", sourceId, normalized)
-            else -> listOf(sourceId, normalized)
+                listOf("closure") + ids + normalized
+            else -> ids + normalized
         }
     }
 
@@ -333,7 +353,11 @@ class DloiService(
                 number = index + 1,
                 text = line,
                 page = 1,
-                paragraph = if (hasContent) paragraph else null
+                // Blank lines that follow a paragraph belong to it, so a
+                // paragraph selector spans the same lines the paragraph
+                // occupies in the document rather than collapsing to its text
+                // alone. Blank lines before the first paragraph belong to none.
+                paragraph = if (paragraph == 0) null else paragraph
             )
         }
         return records
