@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="420" viewBox="0 0 1280 420">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#070b18"/>
+      <stop offset="55%" stop-color="#111d3d"/>
+      <stop offset="100%" stop-color="#2b1450"/>
+    </linearGradient>
+    <linearGradient id="edge" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#62d8ff"/>
+      <stop offset="50%" stop-color="#938aff"/>
+      <stop offset="100%" stop-color="#ed77ff"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1280" height="420" rx="28" fill="url(#bg)"/>
+
+  <g opacity="0.12" stroke="#cbd5ff">
+    <path d="M0 70H1280M0 140H1280M0 210H1280M0 280H1280M0 350H1280"/>
+    <path d="M120 0V420M280 0V420M440 0V420M600 0V420M760 0V420M920 0V420M1080 0V420"/>
+  </g>
+
+  <g fill="none" stroke="url(#edge)" stroke-width="4">
+    <path d="M90 305C185 305 185 145 300 145"/>
+    <path d="M300 145C430 145 430 225 550 225"/>
+    <path d="M300 145C430 145 430 330 550 330"/>
+    <path d="M550 225C690 225 680 110 820 110"/>
+    <path d="M550 225C690 225 690 240 820 240"/>
+    <path d="M550 330C690 330 700 350 820 350"/>
+    <path d="M820 110C960 110 950 230 1090 230"/>
+    <path d="M820 240C960 240 950 230 1090 230"/>
+    <path d="M820 350C960 350 960 230 1090 230"/>
+  </g>
+
+  <g fill="#101b38" stroke="#75ddff" stroke-width="3">
+    <circle cx="90" cy="305" r="18"/>
+    <circle cx="300" cy="145" r="22"/>
+    <circle cx="550" cy="225" r="24"/>
+    <circle cx="550" cy="330" r="18"/>
+    <circle cx="820" cy="110" r="18"/>
+    <circle cx="820" cy="240" r="22"/>
+    <circle cx="820" cy="350" r="18"/>
+    <circle cx="1090" cy="230" r="28"/>
+  </g>
+
+  <text x="70" y="70" fill="#ffffff" font-family="sans-serif" font-size="52" font-weight="700">
+    SpecGraph Foundry
+  </text>
+
+  <text x="72" y="116" fill="#c9d4ff" font-family="sans-serif" font-size="22">
+    Compile source authority into research-enriched, verifiable execution DAGs.
+  </text>
+
+  <text x="72" y="392" fill="#9eafe8" font-family="monospace" font-size="15">
+    API-first • provider-independent • renderer-independent • restart-safe
+  </text>
+</svg>

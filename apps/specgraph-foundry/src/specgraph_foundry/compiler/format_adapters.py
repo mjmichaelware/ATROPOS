@@ -1,0 +1,187 @@
+import re
+from typing import List, Dict, Any
+from .source_coordinates import SourceCoordinates
+from .document_ir import DocumentNode, generate_stable_id
+
+# Common Markdown regexes
+HEADING_RE = re.compile(r"^\s{0,3}(#{1,6})\s+(.+?)\s*$")
+SETEXT_HEADING_1_RE = re.compile(r"^={3,}\s*$")
+SETEXT_HEADING_2_RE = re.compile(r"^-{3,}\s*$")
+BULLET_LIST_ITEM_RE = re.compile(r"^\s*([-*+])\s+(.+)$")
+NUMBERED_LIST_ITEM_RE = re.compile(r"^\s*(\d+)[.)]\s+(.+)$")
+SEPARATOR_RE = re.compile(r"^\s*(?:-{3,}|_{3,}|\*{3,}|__PART [A-Z]__|_+PART [A-Z]_+|END OF SPECIFICATION)\s*$", re.IGNORECASE)
+LABEL_RE = re.compile(r"^\s*(?:[a-zA-Z0-9_\-\s#]+):\s*$")
+BLANK_RE = re.compile(r"^\s*$")
+
+def parse_markdown_to_ir(project_id: str, source_sha256: str, text: str) -> DocumentNode:
+    raw_bytes = text.encode("utf-8")
+    lines = text.splitlines(keepends=True)
+
+    # Compute line starts
+    starts = [0]
+    for index, byte in enumerate(raw_bytes):
+        if byte == 10 and index + 1 < len(raw_bytes):
+            starts.append(index + 1)
+
+    def get_line_byte_offsets(line_idx: int) -> tuple[int, int]:
+        start = starts[line_idx]
+        if line_idx + 1 < len(starts):
+            end = starts[line_idx + 1]
+        else:
+            end = len(raw_bytes)
+        return start, end
+
+    nodes: List[DocumentNode] = []
+    inside_code_block = False
+    code_block_lines: List[str] = []
+    code_block_start_line = 0
+    code_block_start_byte = 0
+
+    current_paragraph_lines: List[str] = []
+    current_paragraph_start_line = 0
+    current_paragraph_start_byte = 0
+
+    def flush_paragraph():
+        nonlocal current_paragraph_lines
+        if current_paragraph_lines:
+            para_text = "".join(current_paragraph_lines).strip()
+            if para_text:
+                end_byte = current_paragraph_start_byte + len(para_text.encode("utf-8"))
+                coords = SourceCoordinates(
+                    byte_start=current_paragraph_start_byte,
+                    byte_end=end_byte,
+                    line_start=current_paragraph_start_line + 1,
+                    line_end=current_paragraph_start_line + len(current_paragraph_lines)
+                )
+                node_id = generate_stable_id(project_id, source_sha256, "PARAGRAPH", coords)
+                nodes.append(DocumentNode(node_id, "PARAGRAPH", para_text, coords))
+            current_paragraph_lines = []
+
+    for i, line in enumerate(lines):
+        line_bytes_start, line_bytes_end = get_line_byte_offsets(i)
+        stripped = line.strip()
+
+        # Check code block fences
+        if stripped.startswith("```") or stripped.startswith("~~~"):
+            if inside_code_block:
+                # End code block
+                inside_code_block = False
+                code_text = "".join(code_block_lines).strip()
+                coords = SourceCoordinates(
+                    byte_start=code_block_start_byte,
+                    byte_end=line_bytes_end,
+                    line_start=code_block_start_line + 1,
+                    line_end=i + 1
+                )
+                node_id = generate_stable_id(project_id, source_sha256, "CODE_BLOCK", coords)
+                nodes.append(DocumentNode(node_id, "CODE_BLOCK", code_text, coords))
+                code_block_lines = []
+            else:
+                # Start code block
+                flush_paragraph()
+                inside_code_block = True
+                code_block_start_line = i
+                code_block_start_byte = line_bytes_start
+            continue
+
+        if inside_code_block:
+            code_block_lines.append(line)
+            continue
+
+        # Check for blank lines/separators
+        if BLANK_RE.match(line):
+            flush_paragraph()
+            continue
+
+        if SEPARATOR_RE.match(stripped):
+            flush_paragraph()
+            coords = SourceCoordinates(
+                byte_start=line_bytes_start,
+                byte_end=line_bytes_end,
+                line_start=i + 1,
+                line_end=i + 1
+            )
+            node_id = generate_stable_id(project_id, source_sha256, "SEPARATOR", coords)
+            nodes.append(DocumentNode(node_id, "SEPARATOR", stripped, coords))
+            continue
+
+        if LABEL_RE.match(stripped):
+            lower_stripped = stripped.lower()
+            contains_modal = any(m in lower_stripped for m in ["must", "shall", "should", "may", "prohibited", "required"])
+            word_count = len(stripped.split())
+            if not contains_modal and word_count <= 4:
+                flush_paragraph()
+                coords = SourceCoordinates(
+                    byte_start=line_bytes_start,
+                    byte_end=line_bytes_end,
+                    line_start=i + 1,
+                    line_end=i + 1
+                )
+                node_id = generate_stable_id(project_id, source_sha256, "LABEL", coords)
+                nodes.append(DocumentNode(node_id, "LABEL", stripped, coords))
+                continue
+
+        # Check for headings
+        heading_match = HEADING_RE.match(line.rstrip())
+        if heading_match:
+            flush_paragraph()
+            level = len(heading_match.group(1))
+            heading_text = heading_match.group(2)
+            coords = SourceCoordinates(
+                byte_start=line_bytes_start,
+                byte_end=line_bytes_end,
+                line_start=i + 1,
+                line_end=i + 1
+            )
+            node_id = generate_stable_id(project_id, source_sha256, "HEADING", coords)
+            nodes.append(DocumentNode(node_id, "HEADING", heading_text, coords, metadata={"level": level}))
+            continue
+
+        # Check for bullet list items
+        bullet_match = BULLET_LIST_ITEM_RE.match(line)
+        if bullet_match:
+            flush_paragraph()
+            item_text = bullet_match.group(2).strip()
+            coords = SourceCoordinates(
+                byte_start=line_bytes_start,
+                byte_end=line_bytes_end,
+                line_start=i + 1,
+                line_end=i + 1
+            )
+            node_id = generate_stable_id(project_id, source_sha256, "LIST_ITEM", coords)
+            nodes.append(DocumentNode(node_id, "LIST_ITEM", item_text, coords))
+            continue
+
+        # Check for numbered list items
+        numbered_match = NUMBERED_LIST_ITEM_RE.match(line)
+        if numbered_match:
+            flush_paragraph()
+            item_text = numbered_match.group(2).strip()
+            coords = SourceCoordinates(
+                byte_start=line_bytes_start,
+                byte_end=line_bytes_end,
+                line_start=i + 1,
+                line_end=i + 1
+            )
+            node_id = generate_stable_id(project_id, source_sha256, "LIST_ITEM", coords)
+            nodes.append(DocumentNode(node_id, "LIST_ITEM", item_text, coords, metadata={"ordinal": int(numbered_match.group(1))}))
+            continue
+
+        # Append to current paragraph block
+        if not current_paragraph_lines:
+            current_paragraph_start_line = i
+            current_paragraph_start_byte = line_bytes_start
+        current_paragraph_lines.append(line)
+
+    flush_paragraph()
+
+    # Create root document node
+    doc_coords = SourceCoordinates(0, len(raw_bytes), 1, len(lines))
+    doc_id = generate_stable_id(project_id, source_sha256, "DOCUMENT", doc_coords)
+    root = DocumentNode(doc_id, "DOCUMENT", "", doc_coords, children=nodes)
+
+    # Assign parent IDs
+    for node in nodes:
+        node.parent_id = doc_id
+
+    return root
