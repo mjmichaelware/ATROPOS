@@ -122,11 +122,20 @@ class GoalContinuationService(
         val record = store.resolve(goalRunId)
             ?: return GoalContinuationResult(false, "goal run not found: $goalRunId")
 
-        if (condition == GoalTerminalCondition.VERIFIED_COMPLETE && record.evidence.isEmpty()) {
-            return GoalContinuationResult(
-                false,
-                "goal run $goalRunId cannot be marked verified-complete: no evidence was recorded"
-            )
+        if (condition == GoalTerminalCondition.VERIFIED_COMPLETE) {
+            // Recovery bookkeeping proves the run was *interrupted*, not that
+            // the work was *done*. `markRecoveryRequired` writes those entries
+            // into the same evidence list, so a crashed run would otherwise
+            // satisfy the gate on the strength of its own crash.
+            val substantive = record.evidence.filterNot(::isRecoveryBookkeeping)
+            if (substantive.isEmpty()) {
+                val why = if (record.evidence.isEmpty()) {
+                    "no evidence was recorded"
+                } else {
+                    "the only evidence is recovery bookkeeping, which proves interruption, not completion"
+                }
+                return GoalContinuationResult(false, "goal run $goalRunId cannot be marked verified-complete: $why")
+            }
         }
 
         val now = clock()
@@ -147,6 +156,23 @@ class GoalContinuationService(
         )
         rememberGoal(updated, "completed: $condition")
         return GoalContinuationResult(true, "goal run completed: $condition", updated, condition)
+    }
+
+    /**
+     * Entries written by the recovery path rather than by the work itself.
+     *
+     * Kept in one place so [completeRun] and [markRecoveryRequired] cannot
+     * drift apart about what counts as proof of completion.
+     */
+    private fun isRecoveryBookkeeping(entry: String): Boolean {
+        val normalized = entry.trim().lowercase()
+        return normalized.startsWith("recovery_required_at=") ||
+            normalized.startsWith("recovery=") ||
+            normalized.startsWith("recoveredat=") ||
+            normalized.startsWith("continuations=") ||
+            normalized.startsWith("phase=") ||
+            normalized.startsWith("node=") ||
+            normalized.startsWith("checkpoint=")
     }
 
     fun markRecoveryRequired(goalRunId: String, reason: String, recoveryEvidence: List<String> = emptyList()): GoalContinuationResult {

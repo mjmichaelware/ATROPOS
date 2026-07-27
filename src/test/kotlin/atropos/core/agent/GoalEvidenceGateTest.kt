@@ -49,6 +49,40 @@ class GoalEvidenceGateTest {
     }
 
     @Test
+    fun recovery_bookkeeping_alone_does_not_count_as_proof_of_completion() {
+        val f = fixture()
+        val run = f.service.startRun("prove something")
+
+        // Exactly what CrashRecoveryService writes for an interrupted run.
+        f.service.markRecoveryRequired(
+            run.id,
+            "interrupted: recovered during crash recovery",
+            listOf("recovery=crash", "recoveredAt=now", "continuations=2", "phase=build", "node=node-3")
+        )
+        assertTrue(f.store.resolve(run.id)!!.evidence.isNotEmpty(), "recovery did record entries")
+
+        val result = f.service.completeRun(run.id, GoalTerminalCondition.VERIFIED_COMPLETE)
+
+        assertTrue(!result.ok, "a crash must not become proof the work was done")
+        assertTrue(result.message.contains("recovery bookkeeping"), result.message)
+    }
+
+    @Test
+    fun recovered_work_can_still_complete_once_real_evidence_exists() {
+        val f = fixture()
+        val run = f.service.startRun("prove something")
+        f.service.markRecoveryRequired(run.id, "interrupted", listOf("recovery=crash"))
+
+        val recovered = f.store.resolve(run.id)!!
+        f.store.update(recovered.copy(evidence = recovered.evidence + "compile: BUILD SUCCESSFUL"))
+
+        val result = f.service.completeRun(run.id, GoalTerminalCondition.VERIFIED_COMPLETE)
+
+        assertTrue(result.ok, "recovery must not permanently bar completion: ${result.message}")
+        assertEquals(GoalRunStatus.COMPLETED, result.record?.status)
+    }
+
+    @Test
     fun the_evidence_gate_applies_only_to_verified_completion() {
         // Blocked, cancelled and failed are statements about *not* completing;
         // requiring proof of work for them would be nonsense.
