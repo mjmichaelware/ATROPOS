@@ -3,6 +3,7 @@ package atropos.core.agent
 import atropos.core.policy.ExecutionPolicyEngine
 import atropos.core.policy.ExecutionPolicyRequest
 import atropos.core.policy.PolicyActionClass
+import atropos.core.security.RedactionFilter
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.nio.file.Path
@@ -33,7 +34,8 @@ class AgentSmokeRunner(
         ?.coerceAtLeast(10)?.times(1000) ?: 120_000L,
     private val maxOutputBytes: Int = 48 * 1024,
     private val maxOutputLines: Int = 1_000,
-    private val policyEngine: ExecutionPolicyEngine = ExecutionPolicyEngine(repoRoot)
+    private val policyEngine: ExecutionPolicyEngine = ExecutionPolicyEngine(repoRoot),
+    private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     fun validate(command: String): String? {
         val trimmed = command.trim()
@@ -243,22 +245,5 @@ class AgentSmokeRunner(
         }
     }
 
-    private fun redactSensitiveOutput(text: String): String {
-        if (text.isBlank()) return text
-
-        val redactions = listOf(
-            Regex("""(?i)(api[_-]?key|token|secret|password|credential|client_secret|authorization)\s*[:=]\s*([^\s'"]+)"""),
-            Regex("""(?i)(bearer\s+)[A-Za-z0-9._\-+/=]+"""),
-            Regex("""(?i)(GITHUB_MODELS_TOKEN|CLOUDFLARE_API_TOKEN|CLOUDFLARE_ACCOUNT_ID|SAMBANOVA_API_KEY|DEEPSEEK_API_KEY|OPENAI_API_KEY|ANTHROPIC_API_KEY|XAI_API_KEY|GROQ_API_KEY)\s*[:=]\s*([^\s'"]+)""")
-        )
-
-        var redacted = text
-        for (pattern in redactions) {
-            redacted = pattern.replace(redacted) { match ->
-                val prefix = match.groupValues.getOrNull(1).orEmpty()
-                if (prefix.isBlank()) "<redacted>" else "${prefix.trimEnd()}: <redacted>"
-            }
-        }
-        return redacted
-    }
+    private fun redactSensitiveOutput(text: String): String = redactionFilter.redact(text)
 }

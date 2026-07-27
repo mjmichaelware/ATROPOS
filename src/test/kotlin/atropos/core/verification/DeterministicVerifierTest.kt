@@ -14,6 +14,8 @@ class DeterministicVerifierTest {
             source,
             """
             package wrong.pkg
+            import example.*
+            import example.missing.Type
             import kotlin.text.StringBuilder
             import kotlin.text.StringBuilder
             fun bad() = "x"
@@ -28,6 +30,7 @@ class DeterministicVerifierTest {
 
         assertTrue(result.findings.any { it.invariantId == "package_path_invariant" })
         assertTrue(result.findings.any { it.invariantId == "duplicate_imports" })
+        assertTrue(result.findings.any { it.invariantId == "import_reconciliation" })
         assertTrue(result.findings.any { it.invariantId == "shell_safety" })
         assertTrue(result.findings.all { it.evidence.isNotBlank() })
         assertTrue(result.findings.all { it.remediation.isNotBlank() })

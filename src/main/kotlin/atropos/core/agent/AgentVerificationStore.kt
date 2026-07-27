@@ -1,5 +1,6 @@
 package atropos.core.agent
 
+import atropos.core.security.RedactionFilter
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
@@ -38,30 +39,30 @@ data class AgentVerificationRunResult(
     val refusalReason: String? = null
 ) {
     fun render(): String = buildString {
+        val filter = RedactionFilter()
         appendLine("Patch id: ${patchId ?: "none"}")
         verificationId?.let { appendLine("Verification id: $it") }
-        command?.let { appendLine("Command: $it") }
-        patchFile?.let { appendLine("Patch path: $it") }
-        appendLine("Changed paths: ${changedPaths.joinToString(", ").ifBlank { "none" }}")
+        command?.let { appendLine("Command: ${filter.redact(it)}") }
+        patchFile?.let { appendLine("Patch path: ${filter.redact(it.toString())}") }
+        appendLine("Changed paths: ${changedPaths.joinToString(", ") { filter.redact(it) }.ifBlank { "none" }}")
         exitCode?.let { appendLine("Exit code: $it") }
         if (durationMillis > 0) appendLine("Duration ms: $durationMillis")
         appendLine("Result: ${if (passed) "PASSED" else "FAILED"}")
         if (stdout.isNotBlank()) appendLine("stdout: ${compact(stdout)}")
         if (stderr.isNotBlank()) appendLine("stderr: ${compact(stderr)}")
         metaFile?.let { appendLine("Verification metadata: $it") }
-        refusalReason?.takeIf { it.isNotBlank() }?.let { appendLine("Refusal reason: $it") }
+        refusalReason?.takeIf { it.isNotBlank() }?.let { appendLine("Refusal reason: ${filter.redact(it)}") }
     }.trimEnd()
 
     private fun compact(text: String, maxChars: Int = 600): String {
-        val collapsed = text.replace(Regex("\\s+"), " ").trim()
-        if (collapsed.length <= maxChars) return collapsed
-        return collapsed.take(maxChars - 3) + "..."
+        return RedactionFilter().compact(text, maxChars)
     }
 }
 
 class AgentVerificationStore(
     private val repoRoot: Path = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize(),
-    private val clock: () -> Instant = { Instant.now() }
+    private val clock: () -> Instant = { Instant.now() },
+    private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     private val verificationDir = repoRoot.resolve(".atropos/agent/patches").normalize()
     private val formatter = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss-SSS")
@@ -88,14 +89,14 @@ class AgentVerificationStore(
             id = id,
             patchId = patchId,
             createdAt = createdAt,
-            command = command.trim(),
+            command = redactionFilter.redact(command.trim()),
             exitCode = exitCode,
             durationMillis = durationMillis,
-            changedPaths = changedPaths.map { it.trim() }.filter { it.isNotBlank() }.distinct(),
-            stdout = stdout,
-            stderr = stderr,
+            changedPaths = changedPaths.map { redactionFilter.redact(it.trim()) }.filter { it.isNotBlank() }.distinct(),
+            stdout = redactionFilter.redact(stdout),
+            stderr = redactionFilter.redact(stderr),
             passed = passed,
-            failureReason = failureReason?.trim()?.takeIf { it.isNotBlank() },
+            failureReason = failureReason?.trim()?.takeIf { it.isNotBlank() }?.let(redactionFilter::redact),
             metaFile = metaFile
         )
         writeRecord(record)

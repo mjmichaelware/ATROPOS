@@ -4,6 +4,7 @@ import atropos.core.AtroposConfig
 import atropos.ast.AstSymbolGraph
 import atropos.ast.AstSymbolKind
 import atropos.core.memory.LocalMemoryStore
+import atropos.core.security.RedactionFilter
 import atropos.dloi.DloiService
 import java.time.Instant
 
@@ -17,7 +18,8 @@ class AgentRunService(
     private val contextExporter: AgentContextExportStore = AgentContextExportStore(collector.repoRoot),
     private val memoryStore: LocalMemoryStore = LocalMemoryStore(collector.repoRoot.resolve(".atropos/memory").toFile()),
     private val dloiService: DloiService = DloiService(collector.repoRoot),
-    private val astSymbolGraph: AstSymbolGraph = AstSymbolGraph(collector.repoRoot)
+    private val astSymbolGraph: AstSymbolGraph = AstSymbolGraph(collector.repoRoot),
+    private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     fun run(
         activeProviderName: String,
@@ -370,10 +372,10 @@ class AgentRunService(
         appendLine("provider: ${job.provider}")
         appendLine("patch: ${job.appliedPatchId ?: job.patchId ?: "none"}")
         appendLine("verification: ${job.verificationId ?: "none"}")
-        appendLine("smoke: ${smokeExecution?.summary() ?: smokeCommand?.let { "not run" } ?: "not requested"}")
-        appendLine("source: ${sourceEvidence ?: "unresolved"}")
-        appendLine("impacted symbols: ${impactedSymbols.joinToString(", ").ifBlank { "none" }}")
-        appendLine("changed files: ${changedFiles.joinToString(", ").ifBlank { "none" }}")
+        appendLine("smoke: ${smokeExecution?.summary()?.let(redactionFilter::redact) ?: smokeCommand?.let { "not run" } ?: "not requested"}")
+        appendLine("source: ${sourceEvidence?.let(redactionFilter::redact) ?: "unresolved"}")
+        appendLine("impacted symbols: ${impactedSymbols.joinToString(", ") { redactionFilter.redact(it) }.ifBlank { "none" }}")
+        appendLine("changed files: ${changedFiles.joinToString(", ") { redactionFilter.redact(it) }.ifBlank { "none" }}")
     }.trimEnd()
 
     private fun buildCommitProposal(
@@ -386,7 +388,7 @@ class AgentRunService(
         if (changedFiles.isEmpty()) {
             appendLine("  none")
         } else {
-            changedFiles.forEach { path -> appendLine("  - $path") }
+            changedFiles.forEach { path -> appendLine("  - ${redactionFilter.redact(path)}") }
         }
         appendLine("suggested commit message:")
         appendLine("  ${buildCommitMessage(task, smokeCommand, smokeExecution)}")
@@ -416,11 +418,11 @@ class AgentRunService(
     ): String {
         return when {
             smokeExecution != null && !smokeExecution.passed ->
-                smokeCommand?.takeIf { it.isNotBlank() }?.let { "review smoke failure, then rerun /agent run --smoke \"${escapeQuotes(it)}\" ${compactTask(task, 48)}" }
+                smokeCommand?.takeIf { it.isNotBlank() }?.let { "review smoke failure, then rerun /agent run --smoke \"${escapeQuotes(redactionFilter.redact(it))}\" ${compactTask(task, 48)}" }
                     ?: "review smoke failure, then rerun /agent run"
             job.status == AgentJobStatus.COMPLETED && changedFiles.isNotEmpty() -> {
                 val commitMessage = buildCommitMessage(task, smokeCommand, smokeExecution)
-                "git add ${changedFiles.joinToString(" ")} && git commit -m \"${escapeQuotes(commitMessage)}\""
+                "git add ${changedFiles.joinToString(" ") { redactionFilter.redact(it) }} && git commit -m \"${escapeQuotes(commitMessage)}\""
             }
             job.status == AgentJobStatus.COMPLETED -> "git status --short"
             job.status == AgentJobStatus.FAILED -> "/agent repair ${job.patchId ?: "latest"}"
@@ -470,7 +472,7 @@ class AgentRunService(
     }
 
     private fun compactTask(task: String, maxChars: Int = 80): String {
-        val collapsed = task.replace(Regex("\\s+"), " ").trim()
+        val collapsed = redactionFilter.redact(task).replace(Regex("\\s+"), " ").trim()
         if (collapsed.length <= maxChars) return collapsed
         return collapsed.take(maxChars - 3) + "..."
     }
@@ -612,7 +614,7 @@ class AgentRunService(
     }
 
     private fun compactFailureSummary(message: String?): String =
-        message?.trim().takeUnless { it.isNullOrBlank() } ?: "agent run failed"
+        message?.trim()?.takeUnless { it.isBlank() }?.let { redactionFilter.compact(it, 240) } ?: "agent run failed"
 
     private fun buildSafeSmokeCommandSuggestion(task: String): String =
         "choose a safe smoke command, then rerun /agent run --smoke \"<safe smoke command>\" ${compactTask(task, 48)}"

@@ -1,5 +1,6 @@
 package atropos.core.agent
 
+import atropos.core.security.RedactionFilter
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
@@ -28,6 +29,8 @@ data class AgentQueueDoctorResult(
 }
 
 class AgentQueueDoctor {
+    private val redactionFilter = RedactionFilter()
+
     fun run(): AgentQueueDoctorResult {
         val checks = mutableListOf<AgentQueueDoctorCheck>()
         val fixture = Files.createTempDirectory("atropos-queue-doctor-")
@@ -151,7 +154,7 @@ class AgentQueueDoctor {
     }
 
     private fun check(name: String, passed: Boolean, detail: String): AgentQueueDoctorCheck =
-        AgentQueueDoctorCheck(name = name, passed = passed, detail = detail.replace(Regex("\\s+"), " ").take(240))
+        AgentQueueDoctorCheck(name = name, passed = passed, detail = redactionFilter.compact(detail, 240))
 
     private fun deleteFixture(path: Path): Boolean =
         runCatching {

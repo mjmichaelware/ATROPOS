@@ -1,5 +1,6 @@
 package atropos.core.agent
 
+import atropos.core.security.RedactionFilter
 import java.nio.file.Path
 import java.time.Instant
 
@@ -89,9 +90,10 @@ data class AgentQueueRecord(
     }
 
     fun renderRaw(): String = buildString {
+        val filter = RedactionFilter()
         appendLine("queue id: $id")
-        appendLine("task: $task")
-        appendLine("smoke command: ${smokeCommand ?: "none"}")
+        appendLine("task: ${filter.redact(task)}")
+        appendLine("smoke command: ${smokeCommand?.let(filter::redact) ?: "none"}")
         appendLine("state: $state")
         appendLine("checkpoint: $checkpoint")
         appendLine("attempts: $attempts")
@@ -102,9 +104,9 @@ data class AgentQueueRecord(
         appendLine("applied patch id: ${appliedPatchId ?: "none"}")
         appendLine("verification id: ${verificationId ?: "none"}")
         appendLine("repair id: ${repairId ?: "none"}")
-        appendLine("context export path: ${contextExportPath ?: "none"}")
-        appendLine("final job result: ${finalJobResult ?: "none"}")
-        appendLine("failure reason: ${failureReason ?: "none"}")
+        appendLine("context export path: ${contextExportPath?.let(filter::redact) ?: "none"}")
+        appendLine("final job result: ${finalJobResult?.let(filter::redact) ?: "none"}")
+        appendLine("failure reason: ${failureReason?.let(filter::redact) ?: "none"}")
         appendLine("next eligible at: ${nextEligibleAt ?: "none"}")
         appendLine("lease owner: ${lease?.owner ?: "none"}")
         appendLine("lease token fingerprint: ${lease?.fingerprint() ?: "none"}")
@@ -112,14 +114,14 @@ data class AgentQueueRecord(
         appendLine("lease heartbeat at: ${lease?.heartbeatAt ?: "none"}")
         appendLine("lease expires at: ${lease?.expiresAt ?: "none"}")
         appendLine("cancellation requested: $cancellationRequested")
-        appendLine("cancellation reason: ${cancellationReason ?: "none"}")
+        appendLine("cancellation reason: ${cancellationReason?.let(filter::redact) ?: "none"}")
         appendLine("cancelled at: ${cancelledAt ?: "none"}")
         appendLine("recovery count: $recoveryCount")
         appendLine("last attempt at: ${lastAttemptAt ?: "none"}")
         appendLine("created at: $createdAt")
         appendLine("updated at: $updatedAt")
         appendLine("finished at: ${finishedAt ?: "none"}")
-        appendLine("corrupt reason: ${corruptReason ?: "none"}")
+        appendLine("corrupt reason: ${corruptReason?.let(filter::redact) ?: "none"}")
         appendLine("next recommended command: ${nextCommand()}")
         appendLine("record file: $metaFile")
     }.trimEnd()

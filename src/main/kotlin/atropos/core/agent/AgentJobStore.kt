@@ -1,5 +1,6 @@
 package atropos.core.agent
 
+import atropos.core.security.RedactionFilter
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
@@ -11,7 +12,8 @@ import java.util.Base64
 
 class AgentJobStore(
     private val repoRoot: Path = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize(),
-    private val clock: () -> Instant = { Instant.now() }
+    private val clock: () -> Instant = { Instant.now() },
+    private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     private val jobDir = repoRoot.resolve(".atropos/agent/jobs").normalize()
     private val formatter = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss-SSS")
@@ -23,7 +25,8 @@ class AgentJobStore(
         Files.createDirectories(jobDir)
         val createdAt = clock()
         val id = nextJobId(createdAt, provider)
-        val record = AgentJobRecord(
+        val record = sanitizeRecord(
+            AgentJobRecord(
             id = id,
             task = task.trim(),
             status = AgentJobStatus.PLANNING,
@@ -32,14 +35,16 @@ class AgentJobStore(
             updatedAt = createdAt,
             startedAt = createdAt,
             metaFile = jobDir.resolve("$id.meta")
+            )
         )
         writeRecord(record)
         return record
     }
 
     fun update(record: AgentJobRecord): AgentJobRecord {
-        writeRecord(record)
-        return record
+        val sanitized = sanitizeRecord(record)
+        writeRecord(sanitized)
+        return sanitized
     }
 
     fun resolve(reference: String): AgentJobRecord? {
@@ -129,6 +134,28 @@ class AgentJobStore(
             Files.move(tmp, record.metaFile, StandardCopyOption.REPLACE_EXISTING)
         }
     }
+
+    private fun sanitizeRecord(record: AgentJobRecord): AgentJobRecord =
+        record.copy(
+            task = sanitizeText(record.task, 8_000).orEmpty(),
+            result = sanitizeText(record.result, 8_000),
+            failureReason = sanitizeText(record.failureReason, 4_000),
+            plan = sanitizeText(record.plan, 12_000),
+            patchResult = sanitizeText(record.patchResult, 12_000),
+            applyResult = sanitizeText(record.applyResult, 12_000),
+            repairResult = sanitizeText(record.repairResult, 12_000),
+            smokeCommand = sanitizeText(record.smokeCommand, 2_000),
+            smokeStdout = sanitizeText(record.smokeStdout, 12_000),
+            smokeStderr = sanitizeText(record.smokeStderr, 12_000),
+            smokeResult = sanitizeText(record.smokeResult, 4_000),
+            finalReport = sanitizeText(record.finalReport, 8_000),
+            commitProposal = sanitizeText(record.commitProposal, 8_000),
+            nextSuggestedCommand = sanitizeText(record.nextSuggestedCommand, 4_000),
+            contextExportPath = sanitizeText(record.contextExportPath, 1_024)
+        )
+
+    private fun sanitizeText(value: String?, maxChars: Int): String? =
+        value?.takeIf { it.isNotBlank() }?.let { redactionFilter.redact(it.trim()).take(maxChars) }
 
     private fun parseRecord(metaFile: Path): AgentJobRecord? {
         val fields = try {

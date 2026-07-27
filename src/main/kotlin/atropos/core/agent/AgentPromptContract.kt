@@ -1,5 +1,10 @@
 package atropos.core.agent
 
+import atropos.core.provider.ContextAttestationService
+import atropos.core.provider.ContextEnvelope
+import atropos.core.provider.ContextEnvelopeFactory
+import java.nio.file.Path
+
 object AgentPromptContract {
     const val SYSTEM_TEXT =
         "You are an ATROPOS reasoning provider. ATROPOS has read the local repo and supplied bounded context. " +
@@ -17,20 +22,50 @@ object AgentPromptContract {
         "No explanation. No prose before or after. No secrets. Stay inside allowed repo paths. Do not edit .env, secrets, " +
         "credentials, jars, build outputs, or git metadata. Prefer narrow diffs that fix the failed verification."
 
-    fun build(context: String): String =
-        if (context.isBlank()) {
+    fun build(
+        context: String,
+        providerId: String = "groq",
+        modelId: String = "",
+        task: String = "",
+        repoRoot: Path = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize(),
+        explicitMythologyRequest: Boolean = false
+    ): String {
+        val envelope = ContextEnvelopeFactory.createSimple(
+            providerId = providerId,
+            modelId = modelId,
+            task = task.ifBlank { "general reasoning" },
+            repoRoot = repoRoot
+        )
+        val corePrompt = if (context.isBlank()) {
             SYSTEM_TEXT
         } else {
             SYSTEM_TEXT + "\n\nRepository context:\n" + context.trim()
         }
+        return ContextAttestationService.injectContext(envelope, corePrompt, explicitMythologyRequest)
+    }
 
-    fun buildPatch(context: String): String =
-        if (context.isBlank()) {
+    fun buildPatch(
+        context: String,
+        providerId: String = "groq",
+        modelId: String = "",
+        task: String = "",
+        repoRoot: Path = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize()
+    ): String {
+        val envelope = ContextEnvelopeFactory.createSimple(
+            providerId = providerId,
+            modelId = modelId,
+            task = task.ifBlank { "patch generation" },
+            repoRoot = repoRoot
+        )
+        val corePrompt = if (context.isBlank()) {
             PATCH_SYSTEM_TEXT
         } else {
             PATCH_SYSTEM_TEXT + "\n\nRepository context:\n" + context.trim()
         }
+        return ContextAttestationService.injectContext(envelope, corePrompt)
+    }
 
+    @JvmOverloads
     fun buildRepair(
         patchId: String,
         changedPaths: List<String>,
@@ -39,7 +74,10 @@ object AgentPromptContract {
         durationMillis: Long,
         stdout: String,
         stderr: String,
-        context: String
+        context: String,
+        providerId: String = "groq",
+        modelId: String = "",
+        repoRoot: Path = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize()
     ): String {
         val verificationBlock = buildString {
             appendLine("Patch id: $patchId")
@@ -53,11 +91,19 @@ object AgentPromptContract {
             appendLine(stderr.ifBlank { "(empty)" })
         }
 
-        return if (context.isBlank()) {
+        val corePrompt = if (context.isBlank()) {
             REPAIR_SYSTEM_TEXT + "\n\nVerification failure:\n" + verificationBlock.trimEnd()
         } else {
             REPAIR_SYSTEM_TEXT + "\n\nVerification failure:\n" + verificationBlock.trimEnd() +
                 "\n\nRepository context:\n" + context.trim()
         }
+
+        val envelope = ContextEnvelopeFactory.createSimple(
+            providerId = providerId,
+            modelId = modelId,
+            task = "repair patch $patchId",
+            repoRoot = repoRoot
+        )
+        return ContextAttestationService.injectContext(envelope, corePrompt)
     }
 }

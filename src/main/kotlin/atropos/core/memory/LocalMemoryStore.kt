@@ -27,7 +27,8 @@ enum class MemoryKind {
     VERIFICATION,
     REPAIR,
     TOOL,
-    SUMMARY
+    SUMMARY,
+    RECOVERY
 }
 
 data class MemoryRecord(

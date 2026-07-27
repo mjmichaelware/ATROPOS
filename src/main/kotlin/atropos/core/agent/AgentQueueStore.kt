@@ -1,5 +1,6 @@
 package atropos.core.agent
 
+import atropos.core.security.RedactionFilter
 import java.net.InetAddress
 import java.nio.ByteBuffer
 import java.nio.channels.FileChannel
@@ -28,7 +29,8 @@ data class AgentQueueLeaseResult(
 class AgentQueueStore(
     private val repoRoot: Path = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize(),
     private val clock: () -> Instant = { Instant.now() },
-    queueRootOverride: Path? = null
+    queueRootOverride: Path? = null,
+    private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     private val queueRoot = (queueRootOverride ?: repoRoot.resolve(".atropos/agent/queue")).normalize()
     private val entriesDir = queueRoot.resolve("entries").normalize()
@@ -55,7 +57,8 @@ class AgentQueueStore(
         Files.createDirectories(entriesDir)
         val now = clock()
         val id = nextQueueId(now)
-        val record = AgentQueueRecord(
+        val record = sanitizeRecord(
+            AgentQueueRecord(
             id = id,
             task = task.trim(),
             smokeCommand = smokeCommand?.trim()?.takeIf { it.isNotBlank() },
@@ -67,6 +70,7 @@ class AgentQueueStore(
             updatedAt = now,
             finishedAt = if (state.terminal) now else null,
             metaFile = entriesDir.resolve("$id.meta")
+            )
         )
         writeRecord(record)
         appendEvent(record, "created", null, state, "queue entry created")
@@ -82,7 +86,7 @@ class AgentQueueStore(
         if (previousState != null) {
             AgentQueueTransitions.requireTransition(previousState, record.state)
         }
-        val updated = record.copy(updatedAt = clock())
+        val updated = sanitizeRecord(record.copy(updatedAt = clock()))
         writeRecord(updated)
         appendEvent(updated, eventType, previousState, updated.state, message)
         return updated
@@ -473,11 +477,20 @@ class AgentQueueStore(
         value.replace(Regex("[^A-Za-z0-9._-]"), "_").ifBlank { "event" }
 
     private fun sanitizeEventMessage(value: String): String {
-        val redacted = value
-            .replace(Regex("""(?i)(token|secret|password|credential|authorization|api[_-]?key)\s*[:=]\s*[^\s]+"""), "$1=<redacted>")
-            .replace(Regex("""(?i)Bearer\s+[A-Za-z0-9._-]{20,}"""), "Bearer <redacted>")
-            .replace(Regex("\\s+"), " ")
-            .trim()
-        return redacted.take(240)
+        return redactionFilter.compact(value, 240)
     }
+
+    private fun sanitizeRecord(record: AgentQueueRecord): AgentQueueRecord =
+        record.copy(
+            task = sanitizeText(record.task, 8_000).orEmpty(),
+            smokeCommand = sanitizeText(record.smokeCommand, 2_000),
+            contextExportPath = sanitizeText(record.contextExportPath, 1_024),
+            finalJobResult = sanitizeText(record.finalJobResult, 8_000),
+            failureReason = sanitizeText(record.failureReason, 4_000),
+            cancellationReason = sanitizeText(record.cancellationReason, 4_000),
+            corruptReason = sanitizeText(record.corruptReason, 2_000)
+        )
+
+    private fun sanitizeText(value: String?, maxChars: Int): String? =
+        value?.takeIf { it.isNotBlank() }?.let { redactionFilter.redact(it.trim()).take(maxChars) }
 }

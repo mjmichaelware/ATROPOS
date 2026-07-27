@@ -7,6 +7,7 @@ import atropos.core.memory.LocalMemoryStore
 import atropos.core.policy.ExecutionPolicyEngine
 import atropos.core.policy.ExecutionPolicyRequest
 import atropos.core.policy.PolicyActionClass
+import atropos.core.security.RedactionFilter
 
 class AgentRepairService(
     private val config: AtroposConfig = AtroposConfig.load(),
@@ -17,7 +18,8 @@ class AgentRepairService(
     private val verificationStore: AgentVerificationStore = AgentVerificationStore(collector.repoRoot),
     private val patchExtractor: AgentPatchExtractor = AgentPatchExtractor(),
     private val policyEngine: ExecutionPolicyEngine = ExecutionPolicyEngine(collector.repoRoot),
-    private val memoryStore: LocalMemoryStore = LocalMemoryStore(collector.repoRoot.resolve(".atropos/memory").toFile())
+    private val memoryStore: LocalMemoryStore = LocalMemoryStore(collector.repoRoot.resolve(".atropos/memory").toFile()),
+    private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     fun previewRepair(patchReference: String): AgentPatchRunResult? {
         val patch = patchStore.resolvePatchSnapshot(patchReference)
@@ -237,7 +239,7 @@ class AgentRepairService(
             extraction = extraction ?: AgentPatchExtraction("", emptyList(), false),
             retryAttempted = retryAttempted,
             rejectionReason = rejectionReason,
-            responsePreview = patchExtractor.preview(result.response)
+            responsePreview = redactionFilter.redact(patchExtractor.preview(result.response))
         )
     }
 
@@ -323,7 +325,7 @@ class AgentRepairService(
     private fun compactFailureSummary(message: String?): String =
         message?.trim()
             .takeUnless { it.isNullOrBlank() }
-            ?.let { if (it.length > 240) it.take(237) + "..." else it }
+            ?.let { redactionFilter.compact(it, 240) }
             ?: "provider cascade failed"
 
     private fun refusalForMissingPatch(reference: String): String =

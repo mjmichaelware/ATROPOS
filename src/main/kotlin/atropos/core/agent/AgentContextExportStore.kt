@@ -1,11 +1,13 @@
 package atropos.core.agent
 
+import atropos.core.security.RedactionFilter
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 
 class AgentContextExportStore(
-    private val repoRoot: Path = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize()
+    private val repoRoot: Path = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize(),
+    private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     private val exportDir = repoRoot.resolve(".atropos/agent/context").normalize()
 
@@ -24,16 +26,16 @@ class AgentContextExportStore(
 
     private fun render(record: AgentJobRecord, changedFiles: List<String>): String = buildString {
         appendLine("latest job id: ${record.id}")
-        appendLine("task: ${record.task}")
-        appendLine("changed files: ${changedFiles.joinToString(", ").ifBlank { "none" }}")
+        appendLine("task: ${redactionFilter.redact(record.task)}")
+        appendLine("changed files: ${changedFiles.joinToString(", ") { redactionFilter.redact(it) }.ifBlank { "none" }}")
         appendLine("verification id: ${record.verificationId ?: "none"}")
-        appendLine("smoke result: ${record.smokeResult ?: "none"}")
+        appendLine("smoke result: ${record.smokeResult?.let(redactionFilter::redact) ?: "none"}")
         appendLine("final status: ${renderStatus(record.status)}")
-        appendLine("next recommended pass/action: ${record.nextSuggestedCommand ?: "none"}")
+        appendLine("next recommended pass/action: ${record.nextSuggestedCommand?.let(redactionFilter::redact) ?: "none"}")
         appendLine("commit proposal:")
-        appendLine(record.commitProposal ?: "none")
+        appendLine(record.commitProposal?.let(redactionFilter::redact) ?: "none")
         appendLine("final report:")
-        appendLine(record.finalReport ?: "none")
+        appendLine(record.finalReport?.let(redactionFilter::redact) ?: "none")
         appendLine("context export path: ${exportDir.resolve("${record.id}.txt")}")
     }.trimEnd() + "\n"
 

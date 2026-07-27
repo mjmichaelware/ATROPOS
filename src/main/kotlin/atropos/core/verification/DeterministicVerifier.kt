@@ -1,6 +1,7 @@
 package atropos.core.verification
 
 import atropos.ast.AstSymbolGraph
+import atropos.ast.AstImportStatus
 import atropos.cli.input.CommandRegistry
 import atropos.core.agent.AgentPatchExtractor
 import atropos.core.agent.AgentSmokeRunner
@@ -69,6 +70,7 @@ class DeterministicVerifier(
             if (path.extension == "kt" && Files.isRegularFile(path)) {
                 findings += checkPackagePathInvariant(path)
                 findings += checkDuplicateImports(path)
+                findings += checkImportReconciliation(path)
                 findings += checkAstImpact(path)
             }
         }
@@ -133,6 +135,44 @@ class DeterministicVerifier(
                 evidence = "duplicate import",
                 remediation = "remove repeated import"
             )
+        }
+    }
+
+    private fun checkImportReconciliation(path: Path): List<DeterministicFinding> {
+        val relative = repoRoot.relativize(path).invariantSeparatorsPathString
+        val reconciliation = astGraph.reconcileImports(relative)
+        return reconciliation.resolutions.mapNotNull { resolution ->
+            when (resolution.status) {
+                AstImportStatus.LOCAL_EXACT,
+                AstImportStatus.EXTERNAL -> null
+
+                AstImportStatus.WILDCARD -> finding(
+                    invariantId = "import_reconciliation",
+                    severity = DiagnosticSeverity.ERROR,
+                    file = relative,
+                    symbolOrLocation = resolution.importPath,
+                    evidence = "wildcard import is not deterministic",
+                    remediation = "replace wildcard import with an exact import"
+                )
+
+                AstImportStatus.AMBIGUOUS -> finding(
+                    invariantId = "import_reconciliation",
+                    severity = DiagnosticSeverity.ERROR,
+                    file = relative,
+                    symbolOrLocation = resolution.importPath,
+                    evidence = "ambiguous import matches ${resolution.matches.joinToString(", ")}",
+                    remediation = "select one exact package path and import it explicitly"
+                )
+
+                AstImportStatus.UNRESOLVED -> finding(
+                    invariantId = "import_reconciliation",
+                    severity = DiagnosticSeverity.ERROR,
+                    file = relative,
+                    symbolOrLocation = resolution.importPath,
+                    evidence = "import cannot be reconciled against the local symbol graph",
+                    remediation = "fix the import path or add the missing symbol before provider review"
+                )
+            }
         }
     }
 

@@ -2,9 +2,11 @@ package atropos.cli.ui
 
 import atropos.core.agent.AgentQueueRecord
 import atropos.core.agent.AgentQueueState
+import atropos.core.security.RedactionFilter
 
 class AgentQueueRenderer(
-    private val theme: TerminalTheme
+    private val theme: TerminalTheme,
+    private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     fun renderList(entries: List<AgentQueueRecord>, width: Int): List<String> {
         val safeWidth = width.coerceAtLeast(40)
@@ -23,7 +25,7 @@ class AgentQueueRenderer(
                     "${entry.attempts}/${entry.maxAttempts}".padEnd(6) +
                     (entry.jobId ?: "none").padEnd(18) +
                     entry.checkpoint.name.padEnd(18) +
-                    compact(entry.task, safeWidth - 76)
+                    compact(redactionFilter.redact(entry.task), safeWidth - 76)
             }
         } else {
             entries.forEach { entry ->
@@ -31,7 +33,7 @@ class AgentQueueRenderer(
                 val eligible = entry.nextEligibleAt?.let { " next=$it" } ?: ""
                 out += "${badge(entry.state)} ${entry.id} attempts=${entry.attempts}/${entry.maxAttempts}$lease"
                 out += theme.subdued("  checkpoint=${entry.checkpoint} job=${entry.jobId ?: "none"}$eligible")
-                out += "  ${compact(entry.task, safeWidth - 2)}"
+                out += "  ${compact(redactionFilter.redact(entry.task), safeWidth - 2)}"
             }
         }
         return out.map { TerminalText.ellipsize(it, safeWidth) }
@@ -42,25 +44,25 @@ class AgentQueueRenderer(
         val out = mutableListOf<String>()
         out += divider("QUEUE ${entry.id}", safeWidth)
         out += row("state", badge(entry.state), safeWidth)
-        out += row("task", entry.task, safeWidth)
-        out += row("smoke", entry.smokeCommand ?: theme.subdued("none"), safeWidth)
+        out += row("task", redactionFilter.redact(entry.task), safeWidth)
+        out += row("smoke", entry.smokeCommand?.let(redactionFilter::redact) ?: theme.subdued("none"), safeWidth)
         out += row("checkpoint", entry.checkpoint.name, safeWidth)
         out += row("attempts", "${entry.attempts}/${entry.maxAttempts}", safeWidth)
         out += row("job", entry.jobId ?: theme.subdued("none"), safeWidth)
         out += row("provider", entry.provider ?: theme.subdued("none"), safeWidth)
         out += row("patch", entry.appliedPatchId ?: entry.patchId ?: theme.subdued("none"), safeWidth)
         out += row("verification", entry.verificationId ?: theme.subdued("none"), safeWidth)
-        out += row("lease owner", entry.lease?.owner ?: theme.subdued("none"), safeWidth)
+        out += row("lease owner", entry.lease?.owner?.let(redactionFilter::redact) ?: theme.subdued("none"), safeWidth)
         out += row("lease exp", entry.lease?.expiresAt?.toString() ?: theme.subdued("none"), safeWidth)
         out += row("cancel", cancellationText(entry), safeWidth)
-        entry.failureReason?.takeIf { it.isNotBlank() }?.let { out += row("failure", it, safeWidth) }
+        entry.failureReason?.takeIf { it.isNotBlank() }?.let { out += row("failure", redactionFilter.redact(it), safeWidth) }
         out += row("next", theme.code(entry.nextCommand()), safeWidth)
         return out.map { TerminalText.ellipsize(it, safeWidth) }
     }
 
     private fun cancellationText(entry: AgentQueueRecord): String =
         if (entry.cancellationRequested) {
-            "requested${entry.cancellationReason?.let { ": $it" } ?: ""}"
+            "requested${entry.cancellationReason?.let { ": ${redactionFilter.redact(it)}" } ?: ""}"
         } else {
             "none"
         }

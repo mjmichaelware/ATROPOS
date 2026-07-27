@@ -1,5 +1,6 @@
 package atropos.core.agent
 
+import atropos.core.security.RedactionFilter
 import java.nio.file.Path
 import java.time.Instant
 
@@ -51,8 +52,9 @@ data class AgentJobRecord(
     val metaFile: Path
 ) {
     fun render(): String = buildString {
+        val filter = RedactionFilter()
         appendLine("job id: $id")
-        appendLine("task: $task")
+        appendLine("task: ${filter.redact(task)}")
         appendLine("status: $status")
         appendLine("provider: $provider")
         appendLine("patch id: ${patchId ?: "none"}")
@@ -68,19 +70,19 @@ data class AgentJobRecord(
         appendLine("apply at: ${applyAt ?: "none"}")
         appendLine("verification at: ${verificationAt ?: "none"}")
         appendLine("repair at: ${repairAt ?: "none"}")
-        appendLine("result: ${result ?: "none"}")
-        appendLine("failure reason: ${failureReason ?: "none"}")
-        appendLine("smoke command: ${smokeCommand ?: "none"}")
+        appendLine("result: ${result?.let(filter::redact) ?: "none"}")
+        appendLine("failure reason: ${failureReason?.let(filter::redact) ?: "none"}")
+        appendLine("smoke command: ${smokeCommand?.let(filter::redact) ?: "none"}")
         appendLine("smoke exit code: ${smokeExitCode ?: "none"}")
         appendLine("smoke duration ms: ${smokeDurationMillis ?: "none"}")
         appendLine("smoke passed: ${smokePassed ?: "none"}")
-        appendLine("smoke result: ${smokeResult ?: "none"}")
-        appendLine("smoke stdout: ${smokeStdout ?: "none"}")
-        appendLine("smoke stderr: ${smokeStderr ?: "none"}")
-        appendLine("final report: ${finalReport ?: "none"}")
-        appendLine("commit proposal: ${commitProposal ?: "none"}")
-        appendLine("next suggested command: ${nextSuggestedCommand ?: "none"}")
-        appendLine("context export path: ${contextExportPath ?: "none"}")
+        appendLine("smoke result: ${smokeResult?.let(filter::redact) ?: "none"}")
+        appendLine("smoke stdout: ${smokeStdout?.let(filter::redact) ?: "none"}")
+        appendLine("smoke stderr: ${smokeStderr?.let(filter::redact) ?: "none"}")
+        appendLine("final report: ${finalReport?.let(filter::redact) ?: "none"}")
+        appendLine("commit proposal: ${commitProposal?.let(filter::redact) ?: "none"}")
+        appendLine("next suggested command: ${nextSuggestedCommand?.let(filter::redact) ?: "none"}")
+        appendLine("context export path: ${contextExportPath?.let(filter::redact) ?: "none"}")
         appendLine("record file: $metaFile")
         renderBlock("plan", plan)?.let { appendLine(it) }
         renderBlock("patch result", patchResult)?.let { appendLine(it) }
@@ -91,15 +93,16 @@ data class AgentJobRecord(
     }.trimEnd()
 
     fun renderSummaryLine(): String = buildString {
+        val filter = RedactionFilter()
         append("$id | $status | provider=$provider | patch=${patchId ?: "none"}")
         appliedPatchId?.takeIf { it.isNotBlank() && it != patchId }?.let { append(" applied=$it") }
         verificationId?.takeIf { it.isNotBlank() }?.let { append(" verify=$it") }
         repairId?.takeIf { it.isNotBlank() }?.let { append(" repair=$it") }
-        smokeResult?.takeIf { it.isNotBlank() }?.let { append(" smoke=${truncate(it, 60)}") }
-        finalReport?.takeIf { it.isNotBlank() }?.let { append(" final=${truncate(it, 60)}") }
-        nextSuggestedCommand?.takeIf { it.isNotBlank() }?.let { append(" next=${truncate(it, 60)}") }
-        append(" | ${truncate(task, 72)}")
-        failureReason?.takeIf { it.isNotBlank() }?.let { append(" | failure=${truncate(it, 72)}") }
+        smokeResult?.takeIf { it.isNotBlank() }?.let { append(" smoke=${truncate(filter.redact(it), 60)}") }
+        finalReport?.takeIf { it.isNotBlank() }?.let { append(" final=${truncate(filter.redact(it), 60)}") }
+        nextSuggestedCommand?.takeIf { it.isNotBlank() }?.let { append(" next=${truncate(filter.redact(it), 60)}") }
+        append(" | ${truncate(filter.redact(task), 72)}")
+        failureReason?.takeIf { it.isNotBlank() }?.let { append(" | failure=${truncate(filter.redact(it), 72)}") }
     }
 
     private fun renderBlock(label: String, value: String?): String? {

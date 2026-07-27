@@ -1,5 +1,6 @@
 package atropos.core.agent
 
+import atropos.core.security.RedactionFilter
 import java.net.InetAddress
 import java.nio.ByteBuffer
 import java.nio.channels.FileChannel
@@ -16,7 +17,8 @@ import java.util.UUID
 class AgentDaemonStore(
     private val repoRoot: Path = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize(),
     private val clock: () -> Instant = { Instant.now() },
-    daemonRootOverride: Path? = null
+    daemonRootOverride: Path? = null,
+    private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     private val daemonRoot = (daemonRootOverride ?: repoRoot.resolve(".atropos/agent/daemon")).normalize()
     private val stateFile = daemonRoot.resolve("state.meta")
@@ -195,10 +197,7 @@ class AgentDaemonStore(
     }
 
     private fun sanitize(value: String): String =
-        value.replace(Regex("""(?i)(token|secret|password|credential|authorization|api[_-]?key)\s*[:=]\s*[^\s]+"""), "$1=<redacted>")
-            .replace(Regex("\\s+"), " ")
-            .trim()
-            .take(320)
+        redactionFilter.compact(value, 320)
 }
 
 class AgentDaemonLock(
