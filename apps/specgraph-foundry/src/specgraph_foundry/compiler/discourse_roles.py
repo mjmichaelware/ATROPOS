@@ -45,6 +45,21 @@ def classify_discourse_role(
     """
     text = stmt.canonical_text.strip()
 
+    # 0. Structural exclusion patterns check
+    text_lower = text.lower()
+    structural_forbidden = [
+        "source document #3",
+        "purpose:",
+        "layout:",
+        "motion:",
+        "states:",
+        "data-source mapping:",
+        "end of specification",
+    ]
+    for pattern in structural_forbidden:
+        if pattern in text_lower:
+            return "OUT_OF_SCOPE"
+
     # 0. Heading/Markdown Title detection
     if HEADING_RE.match(text) or text.startswith("#"):
         return "HEADING"
