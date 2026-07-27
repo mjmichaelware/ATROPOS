@@ -1,0 +1,33 @@
+FROM python:3.11-slim@sha256:baf89808ec37adeaab83cec287adb4a2afa4a11c1d51e961c7ec737877e61af6 AS base
+LABEL org.opencontainers.image.source="https://github.com/mjmichaelware/specgraph-foundry"
+LABEL org.opencontainers.image.description="SpecGraph Foundry operation worker"
+LABEL com.specgraph.component="worker"
+
+RUN addgroup --system --gid 1001 specgraph && \
+    adduser --system --uid 1001 --gid 1001 --no-create-home specgraph
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+WORKDIR /app
+
+COPY pyproject.toml README.md ./
+COPY src/ src/
+COPY scripts/check_licenses.py scripts/
+COPY LICENSES/ LICENSES/
+COPY LICENSE NOTICE THIRD_PARTY_NOTICES.md ./
+
+RUN pip install --no-cache-dir -e ".[postgres]" 2>&1 | tail -5
+
+RUN python -m compileall -q src scripts
+
+RUN rm -rf /root/.cache/pip
+
+USER specgraph
+ENV PORT=8080
+ENV SPECGRAPH_LOG_FORMAT=json
+
+ENTRYPOINT ["python", "-m", "specgraph_foundry.http_api.worker"]
+CMD ["--drain", "--max-operations", "100"]

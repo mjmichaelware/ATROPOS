@@ -1,0 +1,106 @@
+name: Deploy Vercel
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Deployment environment
+        required: true
+        default: preview
+        type: choice
+        options:
+          - preview
+          - production
+      sha:
+        description: Commit SHA to deploy
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  deployments: write
+
+concurrency:
+  group: deploy-vercel-${{ github.event.inputs.environment || 'preview' }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    environment: ${{ github.event.inputs.environment == 'production' && 'production' || 'staging' }}
+
+    defaults:
+      run:
+        working-directory: apps/web
+
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.event.inputs.sha || github.sha }}
+
+      - name: Verify release SHA
+        run: |
+          EXPECTED="${{ github.event.inputs.sha || github.sha }}"
+          ACTUAL="$(git rev-parse HEAD)"
+          if [ "$EXPECTED" != "$ACTUAL" ]; then
+            echo "SHA MISMATCH: expected $EXPECTED, got $ACTUAL"
+            exit 1
+          fi
+          echo "SHA verified: $ACTUAL"
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Check generated API types
+        run: npm run api:types:check
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Audit
+        run: npm audit --audit-level=high
+
+      - name: Deploy to Vercel
+        id: deploy
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+        run: |
+          if [ "${{ github.event.inputs.environment }}" = "production" ]; then
+            npx vercel --prod --token="$VERCEL_TOKEN" --yes 2>&1 | tee /tmp/vercel-deploy.log
+          else
+            npx vercel --token="$VERCEL_TOKEN" --yes 2>&1 | tee /tmp/vercel-deploy.log
+          fi
+          DEPLOY_URL=$(grep -oE 'https://[a-zA-Z0-9.-]+\.vercel\.app' /tmp/vercel-deploy.log | head -1)
+          echo "deploy_url=$DEPLOY_URL" >> $GITHUB_OUTPUT
+
+      - name: Smoke test
+        env:
+          DEPLOY_URL: ${{ steps.deploy.outputs.deploy_url }}
+        run: |
+          if [ -z "$DEPLOY_URL" ]; then
+            echo "ERROR: Vercel did not return a deployment URL."
+            exit 1
+          fi
+          URL="$DEPLOY_URL"
+          curl -sf "$URL/" > /dev/null || { echo "Vercel deploy smoke failed"; exit 1; }
+          curl -sf "$URL/health" > /dev/null 2>&1 || echo "Health endpoint note: not all Vercel deployments expose /health"
+          echo "Vercel deployment smoke passed: $URL"

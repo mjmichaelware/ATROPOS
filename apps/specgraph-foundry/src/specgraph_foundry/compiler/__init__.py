@@ -1,0 +1,248 @@
+from typing import List, Dict, Any, Optional
+from .source_coordinates import SourceCoordinates
+from .document_ir import DocumentNode, generate_stable_id, STRUCTURAL_ROLES
+from .format_adapters import parse_markdown_to_ir
+from .structural_validation import StructuralValidator, ValidationFinding, QuarantineResult
+from .statement_segmentation import segment_document_node, StatementIR
+from .discourse_roles import classify_discourse_role
+from .requirement_candidates import evaluate_candidacy, RequirementCandidacy
+from .atomic_decomposition import decompose_requirement, AtomicRequirement
+from .requirement_ir import CanonicalRequirementIR
+from .requirement_quality import analyze_quality, convert_defect_findings
+from .semantic_types import classify_orthogonal_types
+from .provenance import ProvGraph
+from .source_authority import AuthorityRegistry, SourceAuthority
+from .semantic_relations import evaluate_semantic_relation, SemanticRelation
+from .artifact_contracts import extract_artifact_ports
+from .dependency_compiler import compile_dependencies, DependencyEdge
+from .graph_validation import validate_graph_invariants
+from .shacl_validation import validate_graph as validate_shacl
+from .unresolved_tracker import UnresolvedTracker, detect_unresolved_candidacy
+from .execution_dag import build_execution_dag
+from .applicability import ApplicabilityTracker, evaluate_research_applicability
+from .compiler_replay import CompilerEventLog
+from .compiler_fingerprints import generate_fingerprint
+
+
+class SpecGraphCompiler:
+    def __init__(self, project_id: str, compiler_namespace: str = "specgraph-v1"):
+        self.project_id = project_id
+        self.compiler_namespace = compiler_namespace
+        self.event_log = CompilerEventLog()
+        self.prov_graph = ProvGraph()
+        self.authority_registry = AuthorityRegistry()
+
+    def compile(self, filename: str, content: bytes, media_type: str = "text/markdown") -> Dict[str, Any]:
+        source_sha256 = generate_fingerprint(content)
+        pass_fp = source_sha256[:16]
+        self.event_log.record_event("RawSourceIngestion", content, {"sha256": source_sha256, "filename": filename, "media_type": media_type})
+
+        self.prov_graph.add_entity(f"doc-raw-{source_sha256[:16]}", "RawSource", filename, {"sha256": source_sha256})
+        self.prov_graph.add_agent("compiler-agent", "Compiler", "SpecGraph Compiler")
+
+        text_content = content.decode("utf-8", errors="strict")
+        root_node = parse_markdown_to_ir(self.project_id, source_sha256, text_content)
+        self.event_log.record_event("FormatAdapter", text_content, root_node.to_dict())
+
+        validator = StructuralValidator(source_sha256=source_sha256, raw_content=content)
+        quarantine_result = validator.validate(root_node)
+        self.event_log.record_event("StructuralValidation", root_node.to_dict(), quarantine_result.to_dict())
+
+        quarantined_ids = set(n.node_id for n, _ in quarantine_result.quarantined)
+        def _prune_quarantined(node):
+            node.children = [c for c in node.children if c.node_id not in quarantined_ids]
+            for child in node.children:
+                _prune_quarantined(child)
+        _prune_quarantined(root_node)
+
+        statements = segment_document_node(self.project_id, source_sha256, root_node)
+        self.event_log.record_event("StatementSegmentation", root_node.to_dict(), [s.to_dict() for s in statements])
+
+        unresolved_tracker = UnresolvedTracker(self.project_id, source_sha256, pass_fp)
+
+        classified_statements = []
+        last_introducing_role = None
+        last_introducing_modality = None
+        statement_modalities = {}
+        inherited_statements = set()
+        for stmt in statements:
+            parent_node = next((n for n in root_node.children if n.node_id == stmt.parent_node_id), None)
+            parent_role = parent_node.role if parent_node else "UNKNOWN"
+
+            intrinsic_role = classify_discourse_role(stmt, parent_role)
+
+            EXCLUSION_ROLES = {
+                "TITLE", "HEADING", "SECTION_HEADER", "SEPARATOR", "METADATA",
+                "DOCUMENT_METADATA", "STATUS_WORD", "RATIONALE", "EXAMPLE",
+                "NOTE", "WARNING", "BACKGROUND", "OBSERVATION", "DEFECT_FINDING",
+                "CODE_SAMPLE", "INCOMPLETE_FRAGMENT", "FRAGMENT", "CAPTION",
+                "TABLE_HEADER", "OUT_OF_SCOPE", "OPEN_QUESTION",
+            }
+
+            if intrinsic_role in EXCLUSION_ROLES:
+                role = intrinsic_role
+                last_introducing_role = None
+                last_introducing_modality = None
+            elif parent_role == "LIST_ITEM" and last_introducing_role:
+                role = last_introducing_role
+                inherited_statements.add(stmt.statement_id)
+                if last_introducing_modality:
+                    statement_modalities[stmt.statement_id] = last_introducing_modality
+            else:
+                role = intrinsic_role
+                if stmt.canonical_text.strip().endswith(":") and role in {"NORMATIVE_REQUIREMENT", "CONSTRAINT", "PROHIBITION"}:
+                    last_introducing_role = role
+                    intro_text_lower = stmt.canonical_text.lower()
+                    if "must not" in intro_text_lower or "shall not" in intro_text_lower or "should not" in intro_text_lower or "never" in intro_text_lower:
+                        last_introducing_modality = "MUST_NOT"
+                    elif "shall" in intro_text_lower:
+                        last_introducing_modality = "SHALL"
+                    elif "must" in intro_text_lower or "required" in intro_text_lower or "mandatory" in intro_text_lower:
+                        last_introducing_modality = "MUST"
+                    elif "should" in intro_text_lower:
+                        last_introducing_modality = "SHOULD"
+                    elif "may" in intro_text_lower or "optional" in intro_text_lower:
+                        last_introducing_modality = "MAY"
+                    else:
+                        last_introducing_modality = "UNSPECIFIED"
+                else:
+                    if parent_role != "LIST_ITEM":
+                        last_introducing_role = None
+                        last_introducing_modality = None
+
+            if role == "UNRESOLVED":
+                has_modal = any(kw in stmt.canonical_text.lower()
+                                for kw in ["must", "shall", "should", "may"])
+                has_actor = any(kw in stmt.canonical_text.lower()
+                                for kw in ["system", "service", "api", "module", "component"])
+                detect_unresolved_candidacy(
+                    stmt_text=stmt.canonical_text,
+                    role=role,
+                    coordinates=stmt.coordinates,
+                    tracker=unresolved_tracker,
+                    modal_present=has_modal,
+                    actor_present=has_actor,
+                )
+
+            classified_statements.append((stmt, role))
+
+        self.event_log.record_event(
+            "DiscourseRoleClassification",
+            [s.to_dict() for s in statements],
+            [{"statement_id": s.statement_id, "role": r} for s, r in classified_statements]
+        )
+
+        all_candidacies = []
+        candidates = []
+        for stmt, role in classified_statements:
+            is_inh = stmt.statement_id in inherited_statements
+            cand = evaluate_candidacy(stmt, role, is_inherited=is_inh)
+            all_candidacies.append(cand)
+            if cand.is_candidate:
+                candidates.append(cand)
+
+        self.event_log.record_event(
+            "RequirementCandidacy",
+            [s.to_dict() for s, _ in classified_statements],
+            {"candidacies": [c.to_dict() for c in all_candidacies], "candidate_count": len(candidates)}
+        )
+
+        atomic_requirements = []
+        for cand in candidates:
+            atomics = decompose_requirement(self.project_id, source_sha256, cand)
+            atomic_requirements.extend(atomics)
+
+        self.event_log.record_event("AtomicDecomposition", [c.to_dict() for c in candidates], [a.to_dict() for a in atomic_requirements])
+
+        canonical_reqs: List[CanonicalRequirementIR] = []
+        for req in atomic_requirements:
+            inherited_mod = statement_modalities.get(req.candidacy.statement.statement_id)
+            types = classify_orthogonal_types(req.canonical_statement, inherited_modality=inherited_mod)
+            ports = extract_artifact_ports(req.canonical_statement)
+
+            produced_art = [p.artifact_name for p in ports if p.port_type == "PRODUCES"]
+            consumed_art = [p.artifact_name for p in ports if p.port_type == "CONSUMES"]
+            target_art = [p.artifact_name for p in ports if p.port_type == "EXPOSES"]
+
+            quality_findings = analyze_quality(req.canonical_statement)
+
+            canonical_reqs.append(CanonicalRequirementIR(
+                stable_id=req.requirement_id,
+                coordinates=req.coordinates,
+                original_statement=req.candidacy.statement.exact_quote,
+                canonical_statement=req.canonical_statement,
+                actor=req.candidacy.actor,
+                force=types["modality"],
+                trigger=req.candidacy.trigger,
+                domains=types["all_domains"],
+                target_artifacts=target_art,
+                produced_artifacts=produced_art,
+                consumed_artifacts=consumed_art,
+                verification_methods=types["all_verifications"],
+                quality_findings=quality_findings,
+            ))
+
+        self.event_log.record_event("CanonicalRequirementIR", [a.to_dict() for a in atomic_requirements], [r.to_dict() for r in canonical_reqs])
+
+        semantic_relations: List[SemanticRelation] = []
+        for i, req_a in enumerate(canonical_reqs):
+            for req_b in canonical_reqs[i+1:]:
+                rel = evaluate_semantic_relation(req_a, req_b, self.authority_registry)
+                if rel:
+                    semantic_relations.append(rel)
+
+        self.event_log.record_event("DuplicateAndConflictResolution", [r.to_dict() for r in canonical_reqs], [rel.to_dict() for rel in semantic_relations])
+
+        authority_nodes = [{
+            "id": r.stable_id, "title": r.canonical_statement,
+            "canonical_statement": r.canonical_statement,
+            "coordinates": r.coordinates.to_dict() if r.coordinates else {},
+            "node_type": "ATOM",
+        } for r in canonical_reqs]
+        authority_edges = [{"from_node_id": rel.from_req_id, "to_node_id": rel.to_req_id, "edge_type": rel.relation_type} for rel in semantic_relations]
+
+        dependency_edges = compile_dependencies(canonical_reqs, [rel.to_dict() for rel in semantic_relations])
+        self.event_log.record_event("DependencyCompilation", [r.to_dict() for r in canonical_reqs], [d.to_dict() for d in dependency_edges])
+
+        all_edges = authority_edges + [{"from_node_id": d.from_id, "to_node_id": d.to_id, "edge_type": d.rule} for d in dependency_edges]
+        validation_findings = validate_graph_invariants(nodes=authority_nodes, edges=all_edges, enforce_acyclic=True)
+        self.event_log.record_event("GraphValidation", authority_nodes, validation_findings)
+
+        shacl_result = validate_shacl({
+            "nodes": authority_nodes,
+            "edges": all_edges,
+            "proposals": [],
+        })
+        self.event_log.record_event("SHACLValidation", {"nodes": len(authority_nodes), "edges": len(all_edges)}, shacl_result)
+
+        exec_dag = build_execution_dag(
+            atoms=[r.to_dict() for r in canonical_reqs],
+            authority_edges=authority_edges,
+            resolved_unresolved_ids=set(),
+        )
+
+        applicability = ApplicabilityTracker()
+        for req_dict in [r.to_dict() for r in canonical_reqs]:
+            app_state = evaluate_research_applicability(req_dict)
+            applicability.set_applicability(req_dict["stable_id"], app_state)
+
+        defect_remediations = convert_defect_findings(
+            findings=[],
+            statements=[{"role": r, "canonical_text": s.canonical_text, "coordinates": s.coordinates.to_dict()}
+                        for s, r in classified_statements],
+        )
+
+        return {
+            "fingerprint": generate_fingerprint([r.to_dict() for r in canonical_reqs]),
+            "requirements": [r.to_dict() for r in canonical_reqs],
+            "relations": [rel.to_dict() for rel in semantic_relations],
+            "dependencies": [d.to_dict() for d in dependency_edges],
+            "validation_findings": validation_findings,
+            "shacl_validation": shacl_result,
+            "execution_dag": exec_dag,
+            "applicability": applicability.to_list(),
+            "defect_remediations": defect_remediations,
+            "unresolved_records": unresolved_tracker.to_list(),
+            "structural_validation": quarantine_result.to_dict(),
+            "event_log": self.event_log.to_list(),
+        }

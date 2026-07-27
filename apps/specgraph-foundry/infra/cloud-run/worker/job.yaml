@@ -1,0 +1,65 @@
+apiVersion: run.googleapis.com/v1
+kind: Job
+metadata:
+  name: specgraph-operation-worker
+  annotations:
+    specgraph.openai.com/deployment-status: "template-only-group-08"
+    specgraph.openai.com/deployed-by: "pending-group-19"
+spec:
+  template:
+    metadata:
+      annotations:
+        run.googleapis.com/execution-environment: gen2
+    spec:
+      taskCount: 1
+      template:
+        spec:
+          serviceAccountName: SPECGRAPH_WORKER_SERVICE_ACCOUNT_PLACEHOLDER
+          maxRetries: 0
+          timeoutSeconds: 1900
+          containers:
+            - image: SPECGRAPH_API_IMAGE_PLACEHOLDER
+              command:
+                - python
+                - -m
+                - specgraph_foundry.http_api.worker
+              args:
+                - --drain
+                - --max-operations
+                - "100"
+              resources:
+                limits:
+                  cpu: "1"
+                  memory: 512Mi
+              env:
+                - name: SPECGRAPH_DATABASE_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: SPECGRAPH_DATABASE_URL_SECRET_PLACEHOLDER
+                      key: latest
+                - name: SUPABASE_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: SUPABASE_URL_SECRET_PLACEHOLDER
+                      key: latest
+                - name: SUPABASE_ANON_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: SUPABASE_ANON_KEY_SECRET_PLACEHOLDER
+                      key: latest
+                - name: SPECGRAPH_CURSOR_SIGNING_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: SPECGRAPH_CURSOR_SIGNING_KEY_SECRET_PLACEHOLDER
+                      key: latest
+                - name: SPECGRAPH_WORKER_STORAGE_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: SPECGRAPH_WORKER_STORAGE_TOKEN_SECRET_PLACEHOLDER
+                      key: latest
+                - name: SPECGRAPH_OPERATION_TIMEOUT_SECONDS
+                  value: "1800"
+                - name: SPECGRAPH_OPERATION_LEASE_SECONDS
+                  value: "60"
+                - name: SPECGRAPH_OPERATION_HEARTBEAT_SECONDS
+                  value: "15"
