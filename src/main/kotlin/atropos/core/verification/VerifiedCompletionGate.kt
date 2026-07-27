@@ -4,7 +4,6 @@ import atropos.core.AtroposConfig
 import atropos.core.agent.AgentRunService
 import atropos.core.agent.GoalContinuationService
 import atropos.core.agent.GoalTerminalCondition
-import atropos.core.dag.DagExecutionService
 import atropos.core.dag.DagNode
 import atropos.core.dag.DagNodeState
 import atropos.core.dag.DagStore
@@ -35,11 +34,17 @@ class VerifiedCompletionGate(
     private val config: AtroposConfig = AtroposConfig.load(),
     private val repoRoot: Path = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize(),
     private val dagStore: DagStore = DagStore(repoRoot),
-    private val dagService: DagExecutionService = DagExecutionService(config, repoRoot),
     private val runService: AgentRunService = AgentRunService(config),
     private val continuationService: GoalContinuationService = GoalContinuationService(repoRoot),
     private val worktreeService: IsolatedWorktreeService = IsolatedWorktreeService(repoRoot),
     private val memoryStore: LocalMemoryStore = LocalMemoryStore(repoRoot.resolve(".atropos/memory").toFile()),
+    /**
+     * A fresh auditor per evaluation. [atropos.core.auditor.AuditorService]
+     * accumulates findings in mutable state, so a shared instance would let one
+     * node's findings refuse another's completion.
+     */
+    private val auditorFactory: () -> atropos.core.auditor.AuditorService =
+        { atropos.core.auditor.AuditorService() },
     private val clock: () -> Instant = { Instant.now() }
 ) {
     fun evaluateNode(node: DagNode): CompletionGateReport {
@@ -69,6 +74,12 @@ class VerifiedCompletionGate(
         // Gate 8: No unresolved required dimension
         gates.add(checkUnresolvedDimensions(node))
 
+        // Gate 9: no blocking Auditor finding
+        gates.add(checkAuditorFindings(node))
+
+        // The Auditor can only ever subtract: completion needs every gate, so a
+        // clean audit never makes a failing node completable. That is what
+        // "cannot approve its own work" means here.
         val allPassed = gates.all { it.passed }
         return CompletionGateReport(
             nodeId = node.id,
@@ -101,13 +112,13 @@ class VerifiedCompletionGate(
     }
 
     fun reVerifyNode(dagId: String, nodeId: String): CompletionGateReport {
-        val dag = dagService.readDag(dagId) ?: return CompletionGateReport(nodeId, false, emptyList(), "DAG not found")
+        val dag = dagStore.readDag(dagId) ?: return CompletionGateReport(nodeId, false, emptyList(), "DAG not found")
         val node = dag.findNode(nodeId) ?: return CompletionGateReport(nodeId, false, emptyList(), "node not found")
         return evaluateNode(node)
     }
 
     fun detectFalseCompletions(dagId: String): List<String> {
-        val dag = dagService.readDag(dagId) ?: return emptyList()
+        val dag = dagStore.readDag(dagId) ?: return emptyList()
         val falseCompletions = mutableListOf<String>()
         for (node in dag.nodes) {
             if (node.state == DagNodeState.COMPLETE) {
@@ -128,7 +139,7 @@ class VerifiedCompletionGate(
 
     private fun checkFocusedTests(node: DagNode): GateResult {
         if (node.actionPayload.isNullOrBlank()) {
-            return GateResult(node.id, true, "Focused Tests", "no tests required (skipped)", clock())
+            return nothingToInspect(node, FOCUSED_TESTS, "no payload to derive a focused test from")
         }
         val testCommand = "./gradlew test --tests *${node.label.replace(" ", "")}*"
         val result = runCatching {
@@ -138,9 +149,13 @@ class VerifiedCompletionGate(
                 .start()
             val exitCode = proc.waitFor()
             exitCode == 0
-        }.getOrDefault(true) // skip if no matching test
-        return GateResult(node.id, result, "Focused Tests",
-            if (result) "tests passed" else "no matching focused test found (acceptable)", clock())
+        }.getOrElse {
+            // The run failed to start. Nothing was established, so nothing is
+            // claimed: this used to pass on exception.
+            return GateResult(node.id, false, FOCUSED_TESTS, "focused test run failed to start: ${it.message}", clock())
+        }
+        return GateResult(node.id, result, FOCUSED_TESTS,
+            if (result) "tests passed" else "focused tests failed", clock())
     }
 
     private fun checkDeterministicVerification(node: DagNode): GateResult {
@@ -183,24 +198,31 @@ class VerifiedCompletionGate(
                 .redirectErrorStream(true)
                 .start()
             proc.inputStream.bufferedReader().readText()
-        }.getOrDefault("")
+        }.getOrElse {
+            // An unreadable diff is not a clean diff. This used to fall back to
+            // an empty string, which read as "nothing changed, all clear".
+            return GateResult(node.id, false, TERRITORY_AND_SECRETS,
+                "could not read the working diff: ${it.message}", clock())
+        }
+
+        val changed = gitDiff.lineSequence().filter { it.isNotBlank() }.toList()
+        if (node.territory.isEmpty()) {
+            return nothingToInspect(node, TERRITORY_AND_SECRETS, "node declared no territory to check changes against")
+        }
 
         val secretPatterns = listOf("secret", "token", "credential", "password", "api.key", "auth")
         val violations = mutableListOf<String>()
-        for (path in gitDiff.lineSequence().filter { it.isNotBlank() }) {
+        for (path in changed) {
             val fileName = path.substringAfterLast('/').lowercase()
             if (secretPatterns.any { fileName.contains(it) }) {
                 violations.add(path)
             }
         }
 
-        // Territory check
-        val territoryOk = node.territory.isEmpty() || gitDiff.lineSequence().filter { it.isNotBlank() }.all { path ->
-            node.territory.any { path.startsWith(it) }
-        }
+        val territoryOk = changed.all { path -> node.territory.any { path.startsWith(it) } }
 
         val passed = violations.isEmpty() && territoryOk
-        return GateResult(node.id, passed, "Territory & Secrets",
+        return GateResult(node.id, passed, TERRITORY_AND_SECRETS,
             when {
                 violations.isNotEmpty() -> "secret patterns in ${violations.joinToString(", ")}"
                 !territoryOk -> "files outside territory"
@@ -217,14 +239,75 @@ class VerifiedCompletionGate(
 
     private fun checkExpectedOutputs(node: DagNode): GateResult {
         if (node.expectedOutputs.isEmpty()) {
-            return GateResult(node.id, true, "Expected Outputs", "no expected outputs defined", clock())
+            return nothingToInspect(node, EXPECTED_OUTPUTS, "node declared no expected outputs")
         }
         val allExist = node.expectedOutputs.all { path ->
             Files.exists(repoRoot.resolve(path))
         }
-        return GateResult(node.id, allExist, "Expected Outputs",
+        return GateResult(node.id, allExist, EXPECTED_OUTPUTS,
             if (allExist) "all outputs exist" else "missing: ${node.expectedOutputs.filter { !Files.exists(repoRoot.resolve(it)) }.joinToString(", ")}",
             clock())
+    }
+
+    /**
+     * Asks the Auditor about the files this node touched.
+     *
+     * `FAILURE` and `CRITICAL` findings refuse completion; warnings and passes
+     * do not. The Auditor is consulted at the completion boundary rather than
+     * on every intermediate step.
+     */
+    private fun checkAuditorFindings(node: DagNode): GateResult {
+        val files = (node.territory + node.expectedOutputs)
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
+            .map { repoRoot.resolve(it).toString() }
+            .distinct()
+
+        if (files.isEmpty()) {
+            return nothingToInspect(node, AUDITOR, "node named no files for the auditor to review")
+        }
+
+        val auditor = auditorFactory()
+        auditor.auditSecrets(files)
+        auditor.auditDeterministic(files)
+
+        val blocking = auditor.report().findings.filter {
+            it.severity == atropos.core.auditor.AuditSeverity.FAILURE ||
+                it.severity == atropos.core.auditor.AuditSeverity.CRITICAL
+        }
+
+        return GateResult(
+            node.id,
+            blocking.isEmpty(),
+            AUDITOR,
+            if (blocking.isEmpty()) {
+                "auditor raised no blocking finding across ${files.size} file(s)"
+            } else {
+                "auditor blocked: " + blocking.joinToString("; ") { "${it.check} ${it.message}" }
+            },
+            clock()
+        )
+    }
+
+    /**
+     * A check that established nothing.
+     *
+     * Fail-closed by default: claiming safety without inspecting anything is how
+     * a gate looks like it works while guarding nothing. A node may opt a check
+     * out explicitly through [DagNode.optionalChecks], and only then.
+     */
+    private fun nothingToInspect(node: DagNode, gateName: String, why: String): GateResult =
+        if (gateName in node.optionalChecks) {
+            GateResult(node.id, true, gateName, "$why (declared optional by the node contract)", clock())
+        } else {
+            GateResult(node.id, false, gateName, "$why; nothing was verified", clock())
+        }
+
+    private companion object {
+        const val FOCUSED_TESTS = "Focused Tests"
+        const val TERRITORY_AND_SECRETS = "Territory & Secrets"
+        const val EXPECTED_OUTPUTS = "Expected Outputs"
+        const val AUDITOR = "Auditor Findings"
     }
 
     private fun checkUnresolvedDimensions(node: DagNode): GateResult {
