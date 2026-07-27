@@ -441,8 +441,7 @@ CREATE TABLE IF NOT EXISTS operations (
     error_message TEXT,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
-    CHECK(progress_current <= progress_total),
-    UNIQUE(owner_id, operation_type, fingerprint)
+    CHECK(progress_current <= progress_total)
 );
 
 CREATE INDEX IF NOT EXISTS idx_operations_owner
@@ -1306,6 +1305,92 @@ class Database:
                     ON DELETE SET NULL
                     """
                 )
+
+            self._drop_operations_fingerprint_uniqueness(
+                connection
+            )
+
+    @staticmethod
+    def _drop_operations_fingerprint_uniqueness(
+        connection: object,
+    ) -> None:
+        """Rebuild ``operations`` without the fingerprint uniqueness slot.
+
+        Earlier schemas declared
+        ``UNIQUE(owner_id, operation_type, fingerprint)``. A fingerprint
+        identifies a *request*, not a lifetime: once an operation has
+        finished, submitting the same request again is a new operation.
+        The constraint made that permanently impossible, so a caller who
+        ran a plan, got a result, and asked for it again was refused by
+        the database with no way to proceed.
+
+        SQLite cannot drop a table constraint in place, so the table is
+        rebuilt and the rows copied across. `CREATE TABLE IF NOT EXISTS`
+        above leaves an existing table untouched, which is why a
+        pre-existing database still carries the old shape at this point.
+        """
+        schema = connection.execute(  # type: ignore[attr-defined]
+            """
+            SELECT sql
+            FROM sqlite_master
+            WHERE type = 'table'
+              AND name = 'operations'
+            """
+        ).fetchone()
+
+        if schema is None:
+            return
+
+        if "UNIQUE(owner_id, operation_type, fingerprint)" not in str(
+            schema["sql"]
+        ):
+            return
+
+        columns = [
+            str(row["name"])
+            for row in connection.execute(  # type: ignore[attr-defined]
+                "PRAGMA table_info(operations)"
+            ).fetchall()
+        ]
+        column_list = ", ".join(columns)
+
+        rebuilt = (
+            str(schema["sql"])
+            .replace(
+                "CREATE TABLE operations",
+                "CREATE TABLE operations_rebuilt",
+                1,
+            )
+            .replace(
+                ",\n            UNIQUE(owner_id, operation_type, fingerprint)",
+                "",
+            )
+            .replace(
+                ", UNIQUE(owner_id, operation_type, fingerprint)",
+                "",
+            )
+        )
+
+        if "UNIQUE(owner_id, operation_type, fingerprint)" in rebuilt:
+            # The declaration is present in a layout this rewrite does not
+            # recognise. Rebuilding on a guess could silently drop a
+            # different constraint, so the old table is left intact and
+            # the caller keeps the schema it already had.
+            return
+
+        connection.executescript(  # type: ignore[attr-defined]
+            f"""
+            {rebuilt};
+            INSERT INTO operations_rebuilt ({column_list})
+                SELECT {column_list} FROM operations;
+            DROP TABLE operations;
+            ALTER TABLE operations_rebuilt RENAME TO operations;
+            CREATE INDEX IF NOT EXISTS idx_operations_owner
+                ON operations(owner_id, project_id, created_at, id);
+            CREATE INDEX IF NOT EXISTS idx_operations_claim
+                ON operations(state, next_attempt_at, created_at, id);
+            """
+        )
 
     def _validate_postgres_schema(self) -> None:
         with self.connect() as connection:

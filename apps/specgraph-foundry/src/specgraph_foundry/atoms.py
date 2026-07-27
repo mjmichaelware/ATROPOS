@@ -1,3 +1,4 @@
+import base64
 import hashlib
 import json
 import re
@@ -6,7 +7,12 @@ import uuid
 from datetime import UTC, datetime
 
 from .database import Database
+from .rendering import (
+    markdown_to_plain_text,
+    render_markdown_pdf,
+)
 from .errors import (
+    ConflictError,
     NotFoundError,
     ValidationError,
 )
@@ -720,14 +726,19 @@ class AtomService:
                     f"document not found: {document_id}"
                 )
 
+            # Every run for this (document, extractor, source) triple is
+            # considered, not only completed ones. A run left RUNNING by
+            # another worker still occupies the uniqueness slot, so
+            # filtering to COMPLETE here meant the insert below was the
+            # first thing to notice the clash - and it noticed by raising
+            # a raw sqlite3 error at the caller.
             existing = connection.execute(
                 """
-                SELECT id
+                SELECT id, status
                 FROM extraction_runs
                 WHERE document_id = ?
                   AND extractor_version = ?
                   AND source_sha256 = ?
-                  AND status = 'COMPLETE'
                 """,
                 (
                     document_id,
@@ -737,8 +748,15 @@ class AtomService:
             ).fetchone()
 
             if existing is not None:
-                return self.get_extraction(
-                    str(existing["id"])
+                if str(existing["status"]) == "COMPLETE":
+                    return self.get_extraction(
+                        str(existing["id"])
+                    )
+
+                raise ConflictError(
+                    "extraction already in progress for document "
+                    f"{document_id}: run {existing['id']} is "
+                    f"{existing['status']}"
                 )
 
             sections = [
@@ -823,35 +841,46 @@ class AtomService:
         created_at = utc_now()
 
         with self.database.connect() as connection:
-            connection.execute(
-                """
-                INSERT INTO extraction_runs(
-                    id,
-                    project_id,
-                    document_id,
-                    extractor_version,
-                    source_sha256,
-                    status,
-                    scanned_bytes,
-                    scanned_lines,
-                    statement_count,
-                    created_at
+            try:
+                connection.execute(
+                    """
+                    INSERT INTO extraction_runs(
+                        id,
+                        project_id,
+                        document_id,
+                        extractor_version,
+                        source_sha256,
+                        status,
+                        scanned_bytes,
+                        scanned_lines,
+                        statement_count,
+                        created_at
+                    )
+                    VALUES(?,?,?,?,?,?,?,?,?,?)
+                    """,
+                    (
+                        run_id,
+                        document["project_id"],
+                        document_id,
+                        EXTRACTOR_VERSION,
+                        document["sha256"],
+                        "RUNNING",
+                        int(document["byte_count"]),
+                        int(document["line_count"]),
+                        len(requirements),
+                        created_at,
+                    ),
                 )
-                VALUES(?,?,?,?,?,?,?,?,?,?)
-                """,
-                (
-                    run_id,
-                    document["project_id"],
-                    document_id,
-                    EXTRACTOR_VERSION,
-                    document["sha256"],
-                    "RUNNING",
-                    int(document["byte_count"]),
-                    int(document["line_count"]),
-                    len(requirements),
-                    created_at,
-                ),
-            )
+            except sqlite3.IntegrityError as conflict:
+                # The check above runs in an earlier transaction, so two
+                # workers can both pass it and race to this insert. The
+                # uniqueness constraint is what actually decides the
+                # winner; the loser reports a conflict rather than
+                # surfacing a driver error to the caller.
+                raise ConflictError(
+                    "extraction already in progress for document "
+                    f"{document_id}"
+                ) from conflict
 
             # Persist Compiler Run
             connection.execute(
@@ -1582,6 +1611,130 @@ class AtomService:
             has_more,
             boundary_item,
         )
+
+    def export_atoms_bundle(
+        self,
+        document_id: str,
+    ) -> dict[str, object]:
+        """Render a document's extracted atoms as a downloadable bundle.
+
+        Returns the same content in two encodings so a caller can hand a
+        reviewer either one without re-rendering: ``text`` for diffing and
+        grepping, ``pdf`` for circulation. Both are base64 so the bundle
+        survives a JSON transport unchanged.
+
+        A document that genuinely produced zero atoms is reported as such
+        in the rendered body. An empty file is indistinguishable from a
+        broken extraction, and a reviewer who cannot tell the difference
+        will assume the wrong one.
+        """
+        with self.database.connect() as connection:
+            document = connection.execute(
+                """
+                SELECT
+                    id,
+                    title,
+                    sha256
+                FROM source_documents
+                WHERE id = ?
+                """,
+                (document_id,),
+            ).fetchone()
+
+            if document is None:
+                raise NotFoundError(
+                    f"document not found: {document_id}"
+                )
+
+            rows = connection.execute(
+                """
+                SELECT
+                    ordinal,
+                    kind,
+                    modality,
+                    status,
+                    canonical_statement
+                FROM atoms
+                WHERE document_id = ?
+                ORDER BY ordinal
+                """,
+                (document_id,),
+            ).fetchall()
+
+        atoms = [
+            dict(row)
+            for row in rows
+        ]
+        markdown = self._render_atoms_markdown(
+            dict(document),
+            atoms,
+        )
+
+        return {
+            "document_id": document_id,
+            "atom_count": len(atoms),
+            "text": self._encoded_file(
+                markdown_to_plain_text(markdown).encode("utf-8"),
+                "text/plain",
+            ),
+            "pdf": self._encoded_file(
+                render_markdown_pdf(markdown),
+                "application/pdf",
+            ),
+        }
+
+    @staticmethod
+    def _render_atoms_markdown(
+        document: dict[str, object],
+        atoms: list[dict[str, object]],
+    ) -> str:
+        title = str(
+            document.get("title")
+            or document.get("id")
+        )
+        lines = [
+            f"# Extracted atoms: {title}",
+            "",
+            f"Document: {document.get('id')}",
+            f"Source sha256: {document.get('sha256')}",
+            f"Atoms: {len(atoms)}",
+            "",
+        ]
+
+        if not atoms:
+            lines.append(
+                "No candidate statements were found in this document. "
+                "The extraction completed successfully and produced zero "
+                "atoms, which is a result rather than a failure."
+            )
+            return "\n".join(lines) + "\n"
+
+        for atom in atoms:
+            # The ordinal is written without a number sign: the plain-text
+            # rendering strips markdown headings but leaves inline text
+            # alone, and a stray marker would read as a heading.
+            lines.append(
+                f"{atom['ordinal']}. {atom['canonical_statement']}"
+            )
+            lines.append(
+                f"   kind={atom['kind']} "
+                f"modality={atom['modality']} "
+                f"status={atom['status']}"
+            )
+            lines.append("")
+
+        return "\n".join(lines) + "\n"
+
+    @staticmethod
+    def _encoded_file(
+        payload: bytes,
+        media_type: str,
+    ) -> dict[str, object]:
+        return {
+            "base64": base64.b64encode(payload).decode("ascii"),
+            "byte_length": len(payload),
+            "media_type": media_type,
+        }
 
     @staticmethod
     def _normalize_task(
