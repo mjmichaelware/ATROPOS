@@ -4,9 +4,10 @@ import atropos.core.AtroposConfig
 import atropos.core.ProviderCascadeRouter
 import atropos.core.ProviderFactory
 import atropos.core.memory.LocalMemoryStore
+import atropos.core.policy.AgencyDisposition
+import atropos.core.policy.BoundedAgencyGate
 import atropos.core.policy.ExecutionPolicyEngine
-import atropos.core.policy.ExecutionPolicyRequest
-import atropos.core.policy.PolicyActionClass
+import atropos.core.policy.ProviderActionProposals
 import atropos.core.security.RedactionFilter
 
 class AgentRepairService(
@@ -17,7 +18,7 @@ class AgentRepairService(
     private val patchStore: AgentPatchStore = AgentPatchStore(collector.repoRoot),
     private val verificationStore: AgentVerificationStore = AgentVerificationStore(collector.repoRoot),
     private val patchExtractor: AgentPatchExtractor = AgentPatchExtractor(),
-    private val policyEngine: ExecutionPolicyEngine = ExecutionPolicyEngine(collector.repoRoot),
+    private val agencyGate: BoundedAgencyGate = BoundedAgencyGate(ExecutionPolicyEngine(collector.repoRoot)),
     private val memoryStore: LocalMemoryStore = LocalMemoryStore(collector.repoRoot.resolve(".atropos/memory").toFile()),
     private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
@@ -261,19 +262,15 @@ class AgentRepairService(
     private fun containsDiffHeader(text: String): Boolean =
         text.contains("diff --git ") || text.contains("\n--- ") || text.trimStart().startsWith("--- ")
 
+    /**
+     * The repair provider call is proposed, not performed: the gate decides,
+     * and a refusal throws before any prompt leaves the process.
+     */
     private fun enforceProviderPolicy(provider: String, prompt: String) {
-        val decision = policyEngine.evaluate(
-            ExecutionPolicyRequest(
-                actionClass = PolicyActionClass.PROVIDER_CALL,
-                providerId = provider,
-                paidProvider = provider in paidProviders,
-                metadata = mapOf(
-                    "operation" to "repair",
-                    "prompt_length" to prompt.length.toString()
-                )
-            )
+        val decision = agencyGate.evaluate(
+            ProviderActionProposals.forCall(provider, "repair", prompt.length)
         )
-        require(decision.allowed) { decision.reason }
+        require(decision.disposition == AgencyDisposition.ALLOWED) { decision.reason }
     }
 
     private fun PatchAttempt.copy(retryAttempted: Boolean): PatchAttempt =
@@ -332,7 +329,4 @@ class AgentRepairService(
         if (reference.trim().isBlank()) "no patch id exists"
         else "patch not found: ${reference.trim()}"
 
-    private companion object {
-        val paidProviders = setOf("openai", "anthropic", "xai", "mistral", "cohere", "deepseek_direct")
-    }
 }
