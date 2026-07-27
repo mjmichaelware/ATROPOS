@@ -189,11 +189,11 @@ live evidence. Historical notes remain for audit continuity.
       - fixture/normalization behavior: provider fixture matrix
   - Phase 3 is the earliest unproven gate after this record.
 
-### Phase 3 - IMPLEMENTED_UNPROVEN
+### Phase 3 - PROVEN
 
 - Canonical gate: Quota Ledger + Route Truth.
 - Source authority: `97cff09c0f362337` `[S0005]` lines 22-24.
-- Classification: `IMPLEMENTED_UNPROVEN`.
+- Classification: `PROVEN`.
 - Implementation evidence:
   - `src/main/kotlin/atropos/core/provider/QuotaLedger.kt`
     `d0ea66efacdf1bfa1778719d9b4f7ce809ae6fcdb05427920161edede7a33bd1`
@@ -203,6 +203,8 @@ live evidence. Historical notes remain for audit continuity.
     `658ab3c4e7e3a2bdb53b1e9a1fbbdb758746efb38adbf34be49727440ab976a9`
   - `src/main/kotlin/atropos/cli/CommandRouter.kt`
     `9d67e57beae6b9f12c25c2d9672cea53e817678d7b630a5243bb756d4aea52fe`
+  - `src/main/kotlin/atropos/cli/ui/StatusQuotaRenderer.kt`
+    `29100a223dd977aaa843f03f50b54eca72f6926a07a79b5b80ecd0ac9c4ec26d`
 - Command surface evidence:
   - `/status quota`
   - `/status route <task>`
@@ -223,7 +225,7 @@ live evidence. Historical notes remain for audit continuity.
     - skipped-provider reasons include `groq:cooldown`
 - Relevant input hash at proof time:
   - `src/test/kotlin/atropos/core/provider/QuotaLedgerRouteTruthTest.kt`
-    `4296030ce3dca6905601de36382d325d190c0eb0e893e29376e8c992819fead4`
+    `4c9a0bf2effc99bc461ea6d6b32698e4a48eed1d47d0ae0fcd397e097028a4ca`
 - Notes:
   - Evidence tightening on 2026-07-11:
     - The recorded route gate proves quota persistence, cooldown persistence,
@@ -250,7 +252,21 @@ live evidence. Historical notes remain for audit continuity.
         contains the deterministic route explanation assertion.
       - Direct harness proof was not accepted and must not be retried in this
         phase campaign.
-  - Phase 3 remains unproven after this correction.
+  - Missing Phase 3 verification completed on 2026-07-12:
+    - Command:
+      `JAVA_HOME=/data/data/com.termux/files/usr/lib/jvm/java-21-openjdk bash scripts/codex/fast-gate.sh focused -- ./gradlew test --tests atropos.core.provider.QuotaLedgerRouteTruthTest.route_explanation_reports_selected_skipped_fallback_cooldown_reset_paid_lock_and_outcome`
+    - Gate cache key:
+      `5b4e54dd9f8947a7293f534cc1f14e99b0a9b828cb5107db76597195ee57e895`
+    - Result: `BUILD SUCCESSFUL in 4m 2s`, 4 actionable tasks, 3 executed,
+      1 up-to-date.
+    - Result file:
+      - `build/test-results/test/TEST-atropos.core.provider.QuotaLedgerRouteTruthTest.xml`
+        `c1a5c559a2065256a2be21768d5d8a734e56309ac51d7c5f5adcfd0e74b7d2e4`
+    - Test assertion proved:
+      - one deterministic route report includes the selected provider, final
+        outcome, full skipped-provider reasons, fallback reason, cooldown,
+        reset, and paid-lock state.
+  - Phase 4 is the earliest unproven gate after this record.
 
 ### Phase 4 - IMPLEMENTED_UNPROVEN
 
@@ -259,17 +275,43 @@ live evidence. Historical notes remain for audit continuity.
 - Classification: `IMPLEMENTED_UNPROVEN`.
 - Implementation evidence:
   - `src/main/kotlin/atropos/core/security/RedactionFilter.kt`
-    `cf741d2b1ab9169576df731d350bb82c79dbfa72dcfaa5f0055fbeb90f1ab45d`
+    `c4ea91b2dc49b56a0613374ca9b81bed89d7c4386c1beb2b9cfd795c8a70f9e7`
   - `src/main/kotlin/atropos/core/security/SecretSource.kt`
     `1ca9a8ba9dae9534790663a378f07063250d1575a595ff61675ee84c08a70b06`
   - `src/main/kotlin/atropos/core/security/KeyDoctorService.kt`
     `612890a7189204915229526a5301d5e779e01256143616ccb89edf6b99736fd6`
+  - `src/main/kotlin/atropos/cli/input/PromptState.kt`
+    `37e0ea9c3c3acceb10d9abe408efb9e5e82b88ff12ed600616dcbe96eaff4bc6`
   - `src/main/kotlin/atropos/cli/shell/ShellCommandRunner.kt`
     `95bc62fe96f7b69efa4206eb15d8097c660516bb576fded247fad8880130f079`
+  - `src/main/kotlin/atropos/core/agent/AgentJobStore.kt`
+    `a9805492db55d72efd50448eb8ede211a5af033c00abe4b1592f09c5d1cf6efa`
+  - `src/main/kotlin/atropos/core/agent/AgentQueueStore.kt`
+    `1dcb4346e44e9bfda39fe45dfd7577cdb99c2bc9c6a98a6097eb2af702e253b1`
+  - `src/main/kotlin/atropos/core/agent/AgentContextExportStore.kt`
+    `64d9fce7940aa83006bdaf3733850b85b65d99b247f9cd778ffb4235864d971c`
+  - `src/main/kotlin/atropos/core/agent/AgentPatchStore.kt`
+    `33cc857a5a61a62d2d1d1c80cdbb34be8ec09dfff5e782c556e937c6a89b4fc1`
+  - `src/main/kotlin/atropos/core/agent/AgentService.kt`
+    `929428e27e9302989c9d745f5e7e1fed0550b14c6cdf438f06a7bd37cb87744c`
+  - `src/main/kotlin/atropos/core/agent/AgentRunService.kt`
+    `473168f2f9edf5c99aa5edbd5d872ce3f523819e8e2136cdffe8d7d8a0485c1e`
+  - `src/main/kotlin/atropos/core/agent/AgentRepairService.kt`
+    `09923fe5688f4a34524c8a2f3caa868b711a1375682d4ec22cf0b3628d43cb0f`
   - `src/main/kotlin/atropos/core/provider/ProviderFailure.kt`
-    `f190408b2060ae56d1982970fb4f8d9524e4227143e5ec422fb15c883e7f7555`
+    `c6bc80f266c14528ed1ebfd4d35b4e8d7cd0edee5a9018811e205d35f1f56cf9`
   - `src/main/kotlin/atropos/core/agent/AgentDaemonStore.kt`
-    `c52b51e5a010ef363fbfe060c4295bdffcdeda0999402a57c40380702c5f0bf3`
+    `4aa98a027fb8e850548bdc877d19e5d115a87ba5619ea914d44d0a305e38d1b9`
+  - `src/main/kotlin/atropos/core/agent/AgentSmokeRunner.kt`
+    `6af5d8c0131d75eecbe342f87c0ec06d2baa777803a91735b6260d09fe8f0ab4`
+  - `src/main/kotlin/atropos/core/agent/AgentVerifier.kt`
+    `b95ccd3b5b0508845edcf10f8f57ff1c4cb61681c62418f41ba2781bf0e1bb4d`
+  - `src/main/kotlin/atropos/core/agent/AgentDaemonDoctor.kt`
+    `7c31a05d812ba7e43dc0818b181be40b0665097259eb2347f8586827984f0a20`
+  - `src/main/kotlin/atropos/core/agent/AgentQueueDoctor.kt`
+    `dafba05f46dfbc3557d6b611653ed2e0c18f8fc9ea927fbd3f6625daad157270`
+  - `src/main/kotlin/atropos/core/agent/AgentVerificationStore.kt`
+    `7096ea355a05c02515ba362e9e79eca5cb30675833902a5aee991f8984ad7e2b`
 - Command surface evidence:
   - `/security status`
   - `/security redact <text>`
@@ -313,7 +355,24 @@ live evidence. Historical notes remain for audit continuity.
       - `src/test/kotlin/atropos/core/security/RedactionFilterTest.kt`
         contains `redacts_every_canonical_surface_without_raw_secret_output`
         covering UI, logs, history, memory, queue, prompts, diffs, and status.
-  - Phase 4 remains unproven after this correction.
+  - Phase 4 implementation slice advanced on 2026-07-12 without running a
+    new gate, per Milestone A compile cadence:
+    - prompt history now stores redacted entries before recall
+    - agent job, queue, patch, context-export, daemon, smoke, verifier, and
+      provider-failure surfaces now route through the central redactor
+    - provider-bound agent ask/patch prompts are redacted before provider
+      calls and before durable route persistence
+    - secret-bearing diffs are refused before patch persistence
+    - added pending milestone tests:
+      - `src/test/kotlin/atropos/cli/input/PromptStateTest.kt`
+        `86f54199144ab5e1d7a079a9f398a29098ffadb2e1790dedabe35a4a72f40a63`
+      - `src/test/kotlin/atropos/core/agent/AgentSecurityRedactionSurfaceTest.kt`
+        `1e5ded99a0c24b972c8fe5cae1663b3657708bfb9b0e4b5116b4a185c699cb25`
+    - Pending proof remains unchanged: do not run a standalone Phase 4 gate;
+      carry these tests into the consolidated Milestone A Phase 1-11
+      acceptance boundary after Phases 6-11 implementation is complete.
+  - Phase 4 implementation accounting is now complete. Pending work for Phase
+    4 is proof only at the Milestone A consolidated acceptance boundary.
 
 ### Phase 5 - PROVEN
 
@@ -360,15 +419,23 @@ live evidence. Historical notes remain for audit continuity.
 - Classification: `IMPLEMENTED_UNPROVEN`.
 - Implementation evidence:
   - `src/main/kotlin/atropos/dloi/DloiService.kt`
+    `68a399c6635d9bde1b42414deddcaa48f70a1c3babb2d1406bee7d20fe5111d4`
   - `src/test/kotlin/atropos/dloi/DloiServiceTest.kt`
+    `be4284c9c3d53297e38b2646e3c93ddee2a1ca931ee2c47cc4d4f6566f284b85`
 - Implemented assertions awaiting milestone verification:
-  - exact document and section identity resolution
+  - source-index-backed document map loading from persisted authority metadata
+  - exact source-id and stable section-id resolution in addition to document aliases
   - line-address parsing and bounded extraction
-  - provenance path plus exact line span
+  - paragraph and page selector support from indexed coordinates
+  - provenance records exact source id, section id, path, and bounded spans
+  - task-to-source resolution returns the authoritative indexed section
   - refusal on unproven section rather than blind ingestion
 - Missing evidence:
   - the new DLOI exact-coordinate assertions have not yet been run under the
     required single milestone Gradle verification.
+  - This implementation slice was advanced on 2026-07-12 by static inspection
+    only; no compile or test command was run in order to preserve Milestone A
+    cadence.
 
 ### Phase 7 - IMPLEMENTED_UNPROVEN
 
@@ -377,14 +444,22 @@ live evidence. Historical notes remain for audit continuity.
 - Classification: `IMPLEMENTED_UNPROVEN`.
 - Implementation evidence:
   - `src/main/kotlin/atropos/ast/AstSymbolGraph.kt`
+    `b7f26fafc43ef509b06d5064cb7349f4fb8cb5137cd3a3094515b5ecd78ef481`
   - `src/test/kotlin/atropos/ast/AstSymbolGraphTest.kt`
+    `5320b423fabcbfc16f67f6f1f856adeca19e04ae3fda0406023c3994845a8f66`
 - Implemented assertions awaiting milestone verification:
   - exact impacted-file symbol lookup
-  - package, file path, import dependency, line, column, and offset metadata
+  - package/path invariant is attached to graph nodes with expected path suffixes
+  - package, file path, import dependency refs, line, column, and offset metadata
   - function-symbol discovery for the impacted file
+  - import reconciliation classifies local exact, external, wildcard, ambiguous,
+    and unresolved imports without guessing package paths
 - Missing evidence:
   - the new AST impact assertions have not yet been run under the required
     single milestone Gradle verification.
+  - This implementation slice was advanced on 2026-07-12 by static inspection
+    only; no compile or test command was run in order to preserve Milestone A
+    cadence.
 
 ### Phase 8 - IMPLEMENTED_UNPROVEN
 
@@ -393,16 +468,23 @@ live evidence. Historical notes remain for audit continuity.
 - Classification: `IMPLEMENTED_UNPROVEN`.
 - Implementation evidence:
   - `src/main/kotlin/atropos/core/verification/DeterministicVerifier.kt`
+    `1fca4677578f4f8f81067d88d00477dad830fe26c2b5f368e02f5b316c7560e3`
   - `src/test/kotlin/atropos/core/verification/DeterministicVerifierTest.kt`
+    `5f0d09a06eae4e4c329e57dbdc2a49e7dcf41fbf31d6bf59e94deddabcba504e`
 - Implemented assertions awaiting milestone verification:
   - broken package path, duplicate import, shell safety, invalid DLOI address,
     forbidden paths, and malformed patch structure are caught deterministically
+  - wildcard, ambiguous, and unresolved imports are rejected from the AST
+    reconciliation surface before provider review
   - every finding carries evidence, remediation, and deterministic
     classification
   - out-of-repository source paths are refused before model review
 - Missing evidence:
   - the expanded deterministic-verifier assertions have not yet been run under
     the required single milestone Gradle verification.
+  - This implementation slice was advanced on 2026-07-12 by static inspection
+    only; no compile or test command was run in order to preserve Milestone A
+    cadence.
 
 ### Phase 9 - IMPLEMENTED_UNPROVEN
 
@@ -499,7 +581,7 @@ live evidence. Historical notes remain for audit continuity.
 - Post-milestone classification:
   - Phase 1: `PROVEN`.
   - Phase 2: `PROVEN`.
-  - Phase 3: `IMPLEMENTED_UNPROVEN`.
+  - Phase 3: `PROVEN`.
   - Phase 4: `IMPLEMENTED_UNPROVEN`.
   - Phase 5: `PROVEN`.
   - Phase 6: `IMPLEMENTED_UNPROVEN`.
@@ -635,19 +717,21 @@ Observed test evidence:
   - `src/main/kotlin/atropos/core/provider/QuotaLedger.kt`
   - `src/main/kotlin/atropos/cli/input/CommandRegistry.kt`
   - `src/main/kotlin/atropos/core/provider/RoutePolicy.kt`
+  - `src/main/kotlin/atropos/cli/ui/StatusQuotaRenderer.kt`
+  - `src/test/kotlin/atropos/core/provider/QuotaLedgerRouteTruthTest.kt`
 - Missing gaps:
-  - No canonical Phase 3 source document in repository/exported context
-  - No authoritative route-law closure evidence for every skipped-provider reason and cooldown queue outcome
-  - No focused tests under `src/test/kotlin`
+  - none for canonical Phase 3 closure
 - Exact files implementing the gap:
   - `src/main/kotlin/atropos/core/provider/QuotaLedger.kt`
   - `src/main/kotlin/atropos/core/provider/RoutePolicy.kt`
   - `src/main/kotlin/atropos/cli/CommandRouter.kt`
-  - `src/test/kotlin/`
+  - `src/main/kotlin/atropos/cli/ui/StatusQuotaRenderer.kt`
+  - `src/test/kotlin/atropos/core/provider/QuotaLedgerRouteTruthTest.kt`
 - Focused verification:
-  - `rg -n 'status quota|status route|route' src/main/kotlin`
-- Final status: WORKING
-- Blocking reason, if any: none yet; implementation in progress
+  - `python3 scripts/codex/source-query.py phase 3 --limit 5`
+  - `JAVA_HOME=/data/data/com.termux/files/usr/lib/jvm/java-21-openjdk bash scripts/codex/fast-gate.sh focused -- ./gradlew test --tests atropos.core.provider.QuotaLedgerRouteTruthTest.route_explanation_reports_selected_skipped_fallback_cooldown_reset_paid_lock_and_outcome`
+- Final status: PROVEN
+- Blocking reason, if any: none
 
 ### Phase 4
 

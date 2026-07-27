@@ -18,6 +18,26 @@ import atropos.core.agent.AgentQueueRecord
 import atropos.core.agent.AgentQueueService
 import atropos.core.agent.AgentService
 import atropos.core.agent.AgentRunService
+import atropos.core.agent.GoalContinuationService
+import atropos.core.agent.GoalTerminalCondition
+import atropos.core.agent.ProviderSessionSupervisor
+import atropos.core.agent.AgentRuntimeKind
+import atropos.core.agent.SupervisedSessionState
+import atropos.core.agent.SupervisedSessionStore
+import atropos.core.dag.DagExecutionService
+import atropos.core.dag.DagNode
+import atropos.core.dag.DagNodeAction
+import atropos.core.dag.DagNodeState
+import atropos.core.dag.DagStore
+import atropos.core.journal.EventJournalService
+import atropos.core.observability.RunObserver
+import atropos.core.policy.AutonomyActionClass
+import atropos.core.policy.AutonomyPolicyEngine
+import atropos.core.recovery.CrashRecoveryService
+import atropos.core.worktree.IsolatedWorktreeService
+import atropos.core.verification.VerifiedCompletionGate
+import atropos.bootstrap.BootstrapAcceptanceDag
+import atropos.cli.commands.SelfHostCommand
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.nio.file.Path
@@ -39,18 +59,102 @@ class AgentCommand(
     private val service: AgentService = AgentService(config),
     private val runService: AgentRunService = AgentRunService(config),
     private val queueService: AgentQueueService = AgentQueueService(config),
-    private val daemonService: AgentDaemonService = AgentDaemonService(config)
+    private val daemonService: AgentDaemonService = AgentDaemonService(config),
+    private val sessionSupervisor: ProviderSessionSupervisor = ProviderSessionSupervisor(),
+    private val sessionStore: SupervisedSessionStore = SupervisedSessionStore(),
+    private val continuationService: GoalContinuationService = GoalContinuationService(),
+    private val dagService: DagExecutionService = DagExecutionService(config),
+    private val dagStore: DagStore = DagStore(),
+    private val journal: EventJournalService = EventJournalService(),
+    private val observer: RunObserver = RunObserver(config),
+    private val policyEngine: AutonomyPolicyEngine = AutonomyPolicyEngine(),
+    private val recoveryService: CrashRecoveryService = CrashRecoveryService(config),
+    private val worktreeService: IsolatedWorktreeService = IsolatedWorktreeService(),
+    private val completionGate: VerifiedCompletionGate = VerifiedCompletionGate(config)
 ) : AgentCommandHandler {
+    private val repoRoot = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize()
+    private val selfHostHandler: SelfHostCommand = SelfHostCommand(ui, config, repoRoot)
     private val patchExtractor = AgentPatchExtractor()
     private val jobRenderer = AgentJobRenderer(TerminalTheme(ConfigurationManager()))
     private val queueRenderer = AgentQueueRenderer(TerminalTheme(ConfigurationManager()))
     private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss").withZone(ZoneId.systemDefault())
-    private val repoRoot = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize()
     private val patchDirectory = repoRoot.resolve(".atropos/agent/patches").normalize()
 
     /** Last patch id ATROPOS has knowledge of, surfaced to the status line. Never implies a patch was applied. */
     var lastKnownPatchId: String? = null
         private set
+
+    /**
+     * Handle short input queries about ATROPOS identity and state.
+     *
+     * Returns a rendered status string if the input is a short query about
+     * ATROPOS, or null to pass through to normal provider dispatch.
+     */
+    private fun handleAtroposShortInput(task: String): String? {
+        val lower = task.trim().lowercase()
+
+        // Explicit Greek mythology request — allow through to provider
+        if ((lower.contains("greek") || lower.contains("mythology") || lower.contains("myth")) &&
+            (lower.contains("atropos") || lower.contains("fate") || lower.contains("moirai"))
+        ) {
+            return null
+        }
+
+        // "ATROPOS" alone — report current state
+        if (lower == "atropos" || lower == "what is atropos" || lower == "what is atropos doing?" ||
+            lower == "what is atropos doing" || lower == "who is atropos" || lower == "who are you" ||
+            lower == "what are you" || lower == "tell me about yourself"
+        ) {
+            val snapshot = service.status(activeProviderName())
+            val goals = continuationService.listRuns(10).runs
+            val sessions = sessionStore.listSessions()
+            val activeSessions = sessions.count { it.state == SupervisedSessionState.IDLE || it.state == SupervisedSessionState.BUSY }
+
+            return buildString {
+                appendLine("I am ATROPOS — a local-first autonomous software engineering engine.")
+                appendLine()
+                appendLine("Repository: ${repoRoot.fileName}")
+                appendLine("Repository root: $repoRoot")
+                appendLine("Active provider: ${snapshot.activeProvider}")
+                appendLine("Provider order: ${snapshot.providerOrder.joinToString(" -> ").ifBlank { "none" }}")
+                appendLine("Patch provider order: ${snapshot.patchProviderOrder.joinToString(" -> ").ifBlank { "none" }}")
+                appendLine("Last patch: ${snapshot.lastPatchId ?: "none"}")
+                appendLine("Owns repo read/write: ${if (snapshot.ownsRepoReadWrite) "yes" else "no"}")
+                appendLine()
+                if (goals.isNotEmpty()) {
+                    appendLine("Active goals: ${goals.size}")
+                    goals.take(3).forEach { goal: atropos.core.agent.GoalRunRecord ->
+                        appendLine("  ${goal.id}: ${goal.status} (phase ${goal.activePhase ?: "?"})")
+                    }
+                }
+                if (activeSessions > 0) {
+                    appendLine("Active provider sessions: $activeSessions")
+                }
+                appendLine()
+                appendLine("Type /help to see available commands.")
+                appendLine("Type /agent status for detailed agent state.")
+                appendLine("Type /status route for provider routing.")
+            }.trimEnd()
+        }
+
+        // "Fix ATROPOS" — remain in repository context
+        if (lower.startsWith("fix atropos")) {
+            return buildString {
+                appendLine("ATROPOS is the current repository and autonomous software engine.")
+                appendLine()
+                appendLine("To fix something specific, describe the task. For example:")
+                appendLine("  /agent ask refactor the prompt builder in AgentPromptContract.kt")
+                appendLine("  /agent patch add null check to AgentService.ask()")
+                appendLine("  /agent run --smoke './gradlew compileKotlin' fix the compile error")
+                appendLine()
+                appendLine("All work remains inside this repository at:")
+                appendLine("  $repoRoot")
+            }.trimEnd()
+        }
+
+        // Not a short input — pass through
+        return null
+    }
 
     override fun execute(tokens: List<String>): AgentCommandOutcome {
         if (tokens.size < 2) {
@@ -172,6 +276,14 @@ class AgentCommand(
                 val task = tokens.drop(2).joinToString(" ").trim()
                 if (task.isBlank()) {
                     return invalid("usage: /agent ask <task>")
+                }
+
+                // Short-input handler for ATROPOS identity queries
+                val shortInputResult = handleAtroposShortInput(task)
+                if (shortInputResult != null) {
+                    val rendered = formatBlock("AGENT ASK", shortInputResult)
+                    ui.renderNotice(rendered)
+                    return AgentCommandOutcome.Completed(rendered)
                 }
 
                 ui.startSpinner("Collecting repo context")
@@ -302,12 +414,26 @@ class AgentCommand(
                 }
             }
 
+            "session" -> handleSessionCommand(tokens.drop(2))
+            "runs" -> handleRunsCommand(tokens.drop(2))
+            "watch" -> handleWatchCommand(tokens.drop(2))
+            "tree" -> handleTreeCommand(tokens.drop(2))
+            "transcript" -> handleTranscriptCommand(tokens.drop(2))
+            "diff" -> handleAgentDiffCommand(tokens.drop(2))
+            "tests" -> handleAgentTestsCommand(tokens.drop(2))
+            "observe" -> handleObserveCommand(tokens.drop(2))
+            "dag" -> handleDagCommand(tokens.drop(2))
+            "recover" -> handleRecoverCommand(tokens.drop(2))
+            "worktree" -> handleWorktreeCommand(tokens.drop(2))
+            "gate" -> handleGateCommand(tokens.drop(2))
+            "goal" -> handleGoalCommand(tokens.drop(2))
+            "self-host" -> selfHostHandler.execute(tokens)
             else -> invalid(agentUsage())
         }
     }
 
     private fun agentUsage(): String =
-        "usage: /agent [status|run [--smoke <command>] <task>|enqueue [--smoke <command>] <task>|queue [show|run|resume|cancel|recover|doctor]|daemon [once|foreground|start|stop|status|doctor]|jobs|job <id> [--raw]|ask <task>|patch [--provider <name>] <task>|apply [--check|--verify] <patch-id|latest>|verify [<patch-id|latest>]|repair [<patch-id|latest>]]"
+        "usage: /agent [status|run|enqueue|queue|daemon|jobs|job|ask|patch|apply|verify|repair|session|runs|watch|tree|transcript|diff|tests|observe|dag|recover|worktree|gate|goal|self-host]"
 
     private fun handleDaemonCommand(args: List<String>): AgentCommandOutcome {
         return when (args.getOrNull(0)?.lowercase()) {
@@ -805,6 +931,390 @@ class AgentCommand(
 
     private fun formatInstant(instant: java.time.Instant?): String =
         instant?.let { timeFormatter.format(it) } ?: "unknown"
+
+    // --- Session (M1) ---
+    private fun handleSessionCommand(args: List<String>): AgentCommandOutcome {
+        return when (args.getOrNull(0)?.lowercase()) {
+            null, "status" -> {
+                val text = sessionSupervisor.status()
+                ui.renderNotice(formatBlock("SESSIONS", text))
+                AgentCommandOutcome.Completed(text)
+            }
+            "create" -> {
+                val result = sessionSupervisor.createSession(AgentRuntimeKind.OPENCODE, args.getOrNull(1)?.toIntOrNull())
+                ui.renderNotice(formatBlock("SESSION CREATE", result.message))
+                if (result.ok) AgentCommandOutcome.Completed(result.message) else AgentCommandOutcome.Invalid(result.message)
+            }
+            "connect" -> {
+                val sid = args.getOrNull(1) ?: return invalid("usage: /agent session connect <session-id> <provider-session-id>")
+                val psid = args.getOrNull(2) ?: return invalid("usage: /agent session connect <session-id> <provider-session-id>")
+                val result = sessionSupervisor.connectSession(sid, psid)
+                ui.renderNotice(formatBlock("SESSION CONNECT", result.message))
+                if (result.ok) AgentCommandOutcome.Completed(result.message) else AgentCommandOutcome.Invalid(result.message)
+            }
+            "mark" -> {
+                val sid = args.getOrNull(1) ?: return invalid("usage: /agent session mark <session-id> <state> [reason]")
+                val state = args.getOrNull(2)?.lowercase() ?: return invalid("usage: /agent session mark <session-id> <state>")
+                val reason = args.drop(3).joinToString(" ").ifBlank { "manual mark" }
+                val result = when (state) {
+                    "idle" -> sessionSupervisor.markBusy(sid)
+                    "busy" -> sessionSupervisor.markBusy(sid)
+                    "failed" -> sessionSupervisor.markFailed(sid, reason)
+                    "complete" -> sessionSupervisor.markComplete(sid)
+                    "unavailable" -> sessionSupervisor.markUnavailable(sid, reason)
+                    else -> return invalid("invalid state: $state (idle/busy/failed/complete/unavailable)")
+                }
+                ui.renderNotice(formatBlock("SESSION MARK", result.message))
+                if (result.ok) AgentCommandOutcome.Completed(result.message) else AgentCommandOutcome.Invalid(result.message)
+            }
+            "heartbeat" -> {
+                val sid = args.getOrNull(1) ?: return invalid("usage: /agent session heartbeat <session-id>")
+                val result = sessionSupervisor.heartbeat(sid)
+                ui.renderNotice(formatBlock("SESSION HEARTBEAT", result.message))
+                if (result.ok) AgentCommandOutcome.Completed(result.message) else AgentCommandOutcome.Invalid(result.message)
+            }
+            "show" -> {
+                val sid = args.getOrNull(1) ?: return invalid("usage: /agent session show <session-id>")
+                val record = sessionSupervisor.readSession(sid)
+                if (record == null) return invalid("session not found: $sid")
+                ui.renderNotice(formatBlock("SESSION", record.render()))
+                AgentCommandOutcome.Completed(record.render())
+            }
+            else -> invalid("usage: /agent session [status|create|connect|mark|heartbeat|show]")
+        }
+    }
+
+    // --- Goal Runs (M2) ---
+    private fun handleGoalCommand(args: List<String>): AgentCommandOutcome {
+        return when (args.getOrNull(0)?.lowercase()) {
+            null, "list" -> {
+                val runs = continuationService.listRuns()
+                ui.renderNotice(formatBlock("GOAL RUNS", runs.message + "\n" + runs.runs.joinToString("\n") { it.renderSummaryLine() }))
+                AgentCommandOutcome.Completed(runs.message)
+            }
+            "start" -> {
+                val task = args.drop(1).joinToString(" ").ifBlank { return invalid("usage: /agent goal start <task>") }
+                val run = continuationService.startRun(task)
+                ui.renderNotice(formatBlock("GOAL START", "run: ${run.id}"))
+                AgentCommandOutcome.Completed("started: ${run.id}")
+            }
+            "complete" -> {
+                val rid = args.getOrNull(1) ?: return invalid("usage: /agent goal complete <run-id> <condition>")
+                val cond = args.getOrNull(2)?.let { runCatching { GoalTerminalCondition.valueOf(it.uppercase()) }.getOrNull() }
+                    ?: GoalTerminalCondition.VERIFIED_COMPLETE
+                val result = continuationService.completeRun(rid, cond)
+                ui.renderNotice(formatBlock("GOAL COMPLETE", result.message))
+                if (result.ok) AgentCommandOutcome.Completed(result.message) else AgentCommandOutcome.Invalid(result.message)
+            }
+            "show" -> {
+                val rid = args.getOrNull(1) ?: return invalid("usage: /agent goal show <run-id>")
+                val run = continuationService.resolveRun(rid) ?: return invalid("run not found: $rid")
+                ui.renderNotice(formatBlock("GOAL RUN", run.render()))
+                AgentCommandOutcome.Completed(run.render())
+            }
+            else -> invalid("usage: /agent goal [list|start|complete|show]")
+        }
+    }
+
+    // --- Observability (M6) ---
+    private fun handleRunsCommand(args: List<String>): AgentCommandOutcome {
+        val text = observer.listRuns()
+        ui.renderNotice(formatBlock("RUNS", text))
+        return AgentCommandOutcome.Completed(text)
+    }
+
+    private fun handleWatchCommand(args: List<String>): AgentCommandOutcome {
+        val ref = args.getOrNull(0) ?: "latest"
+        val runId = if (ref == "latest") continuationService.latestRun()?.id else ref
+        if (runId == null) return invalid("no runs to watch")
+        val events = journal.readEvents(runId, 20)
+        val text = events.joinToString("\n") { it.render() }
+        ui.renderNotice(formatBlock("WATCH $runId", text))
+        return AgentCommandOutcome.Completed(text)
+    }
+
+    private fun handleTreeCommand(args: List<String>): AgentCommandOutcome {
+        val ref = args.getOrNull(0) ?: "latest"
+        val runId = if (ref == "latest") continuationService.latestRun()?.id else ref
+        if (runId == null) return invalid("no runs")
+        val text = observer.tree(runId)
+        ui.renderNotice(formatBlock("TREE $runId", text))
+        return AgentCommandOutcome.Completed(text)
+    }
+
+    private fun handleTranscriptCommand(args: List<String>): AgentCommandOutcome {
+        val ref = args.getOrNull(0) ?: "latest"
+        val runId = if (ref == "latest") continuationService.latestRun()?.id else ref
+        if (runId == null) return invalid("no runs")
+        val text = observer.transcript(runId)
+        ui.renderNotice(formatBlock("TRANSCRIPT $runId", text))
+        return AgentCommandOutcome.Completed(text)
+    }
+
+    private fun handleAgentDiffCommand(args: List<String>): AgentCommandOutcome {
+        val ref = args.getOrNull(0) ?: "latest"
+        val runId = if (ref == "latest") continuationService.latestRun()?.id else ref
+        if (runId == null) return invalid("no runs")
+        val text = observer.diffLog(runId)
+        ui.renderNotice(formatBlock("DIFF $runId", text))
+        return AgentCommandOutcome.Completed(text)
+    }
+
+    private fun handleAgentTestsCommand(args: List<String>): AgentCommandOutcome {
+        val ref = args.getOrNull(0) ?: "latest"
+        val runId = if (ref == "latest") continuationService.latestRun()?.id else ref
+        if (runId == null) return invalid("no runs")
+        val text = observer.testLog(runId)
+        ui.renderNotice(formatBlock("TESTS $runId", text))
+        return AgentCommandOutcome.Completed(text)
+    }
+
+    private fun handleObserveCommand(args: List<String>): AgentCommandOutcome {
+        return when (args.getOrNull(0)?.lowercase()) {
+            null, "status" -> {
+                val state = observer.status()
+                ui.renderNotice(formatBlock("OBSERVER", "port=${state.dashboardPort} running=${state.running} clients=${state.connectedClients}"))
+                AgentCommandOutcome.Completed("observer status: running=${state.running} clients=${state.connectedClients}")
+            }
+            "start" -> {
+                val msg = observer.start(args.getOrNull(1)?.toIntOrNull() ?: 4197)
+                ui.renderNotice(formatBlock("OBSERVER START", msg))
+                AgentCommandOutcome.Completed(msg)
+            }
+            "stop" -> {
+                val msg = observer.stop()
+                ui.renderNotice(formatBlock("OBSERVER STOP", msg))
+                AgentCommandOutcome.Completed(msg)
+            }
+            "open" -> {
+                val msg = "dashboard: http://127.0.0.1:${observer.status().dashboardPort}"
+                ui.renderNotice(formatBlock("OBSERVER OPEN", msg))
+                AgentCommandOutcome.Completed(msg)
+            }
+            else -> invalid("usage: /agent observe [status|start|stop|open]")
+        }
+    }
+
+    // --- DAG (M4) ---
+    private fun handleDagCommand(args: List<String>): AgentCommandOutcome {
+        return when (args.getOrNull(0)?.lowercase()) {
+            null, "list" -> {
+                val dags = dagService.listDags()
+                val text = dags.joinToString("\n") { "${it.id}: ${it.label} (${it.nodes.size} nodes)" }.ifEmpty { "no DAGs" }
+                ui.renderNotice(formatBlock("DAGS", text))
+                AgentCommandOutcome.Completed(text)
+            }
+            "create" -> {
+                val label = args.getOrNull(1) ?: return invalid("usage: /agent dag create <label> [--node <id>,<dep1,dep2>,<action>]...")
+                val name = label
+                val nodes = mutableListOf<DagNode>()
+                var idx = 2
+                while (idx < args.size) {
+                    when (args[idx]) {
+                        "--node" -> {
+                            val parts = args.getOrNull(idx + 1)?.split(",", limit = 3) ?: return invalid("invalid node spec")
+                            val nodeId = parts.getOrElse(0) { "n${nodes.size + 1}" }
+                            val deps = parts.getOrElse(1) { "" }.split("+").filter { it.isNotBlank() }
+                            val action = runCatching { DagNodeAction.valueOf(parts.getOrElse(2) { "RUN_COMMAND" }.uppercase()) }.getOrNull() ?: DagNodeAction.RUN_COMMAND
+                            val now = java.time.Instant.now()
+                            nodes.add(
+                                DagNode(
+                                    id = nodeId, label = nodeId, dependencies = deps, action = action,
+                                    actionPayload = null, createdAt = now, updatedAt = now,
+                                    metaFile = dagStore.dagDir().resolve("$nodeId.meta")
+                                )
+                            )
+                            idx += 2
+                        }
+                        else -> break
+                    }
+                }
+                if (nodes.isEmpty()) return invalid("at least one --node required")
+                val dag = dagService.createDag(name, nodes)
+                ui.renderNotice(formatBlock("DAG CREATE", "${dag.id} with ${dag.nodes.size} nodes"))
+                AgentCommandOutcome.Completed("created: ${dag.id}")
+            }
+            "run" -> {
+                val dagId = args.getOrNull(1) ?: return invalid("usage: /agent dag run <dag-id>")
+                val result = dagService.evaluateDag(dagId)
+                ui.renderNotice(formatBlock("DAG RUN", result.message))
+                if (result.ok) AgentCommandOutcome.Completed(result.message) else AgentCommandOutcome.Invalid(result.message)
+            }
+            "show" -> {
+                val dagId = args.getOrNull(1) ?: return invalid("usage: /agent dag show <dag-id>")
+                val dag = dagService.readDag(dagId) ?: return invalid("DAG not found: $dagId")
+                ui.renderNotice(formatBlock("DAG", dag.render()))
+                AgentCommandOutcome.Completed(dag.render())
+            }
+            "status" -> {
+                val dagId = args.getOrNull(1) ?: return invalid("usage: /agent dag status <dag-id>")
+                val status = dagService.status(dagId) ?: return invalid("DAG not found: $dagId")
+                ui.renderNotice(formatBlock("DAG STATUS", "${status.message}\ncompleted=${status.completedNodes} failed=${status.failedNodes} blocked=${status.blockedNodes} pending=${status.pendingNodes} running=${status.runningNodes} ready=${status.readyNodes}"))
+                AgentCommandOutcome.Completed(status.message)
+            }
+            "recover" -> {
+                val count = dagService.recoverStaleClaims()
+                ui.renderNotice(formatBlock("DAG RECOVER", "recovered $count stale claims"))
+                AgentCommandOutcome.Completed("recovered $count stale claims")
+            }
+            "node" -> {
+                val nodeId = args.getOrNull(1) ?: return invalid("usage: /agent dag node <node-id>")
+                val node = dagService.readNode(nodeId) ?: return invalid("node not found: $nodeId")
+                ui.renderNotice(formatBlock("DAG NODE", node.render()))
+                AgentCommandOutcome.Completed(node.render())
+            }
+            "delete" -> {
+                val dagId = args.getOrNull(1) ?: return invalid("usage: /agent dag delete <dag-id>")
+                dagStore.deleteDag(dagId)
+                ui.renderNotice(formatBlock("DAG DELETE", "deleted: $dagId"))
+                AgentCommandOutcome.Completed("deleted: $dagId")
+            }
+            "bootstrap" -> {
+                ui.startSpinner("Running bootstrap acceptance DAG")
+                return try {
+                    val acceptanceDag = BootstrapAcceptanceDag(config, repoRoot)
+                    val result = acceptanceDag.createAndRun()
+                    val text = buildString {
+                        appendLine("Bootstrap acceptance: ${if (result.passed) "PASSED" else "FAILED"}")
+                        appendLine("nodes attempted: ${result.nodesAttempted}")
+                        appendLine("nodes passed: ${result.nodesPassed}")
+                        appendLine("nodes failed: ${result.nodesFailed}")
+                        if (result.details.isNotEmpty()) {
+                            appendLine()
+                            appendLine("details:")
+                            result.details.forEach { appendLine("  $it") }
+                        }
+                    }.trimEnd()
+                    ui.renderNotice(formatBlock("BOOTSTRAP DAG", text))
+                    if (result.passed) AgentCommandOutcome.Completed(text) else AgentCommandOutcome.Invalid(text)
+                } catch (e: Exception) {
+                    val message = "bootstrap DAG failed: ${e.message}"
+                    ui.renderError(message)
+                    AgentCommandOutcome.Invalid(message)
+                } finally {
+                    ui.stopSpinner()
+                }
+            }
+            else -> invalid("usage: /agent dag [list|create|run|show|status|recover|node|delete|bootstrap]")
+        }
+    }
+
+    // --- Recovery (M7) ---
+    private fun handleRecoverCommand(args: List<String>): AgentCommandOutcome {
+        val report = recoveryService.recover()
+        val text = recoveryService.renderReport(report)
+        ui.renderNotice(formatBlock("RECOVERY", text))
+        return if (report.errors.isEmpty()) AgentCommandOutcome.Completed(text) else AgentCommandOutcome.Invalid(text)
+    }
+
+    // --- Policy (M3) ---
+    private fun handlePolicyCommand(args: List<String>): AgentCommandOutcome {
+        return when (args.getOrNull(0)?.lowercase()) {
+            null, "audit" -> {
+                val audit = policyEngine.latestAudit()
+                val text = audit.joinToString("\n") { "${it.decidedAt} ${it.actionClass} allowed=${it.allowed} blocked=${it.policyBlocked} ${it.reason}" }.ifEmpty { "no audit records" }
+                ui.renderNotice(formatBlock("POLICY AUDIT", text))
+                AgentCommandOutcome.Completed(text)
+            }
+            "check" -> {
+                val action = args.getOrNull(1)?.let { runCatching { AutonomyActionClass.valueOf(it.uppercase()) }.getOrNull() }
+                    ?: return invalid("usage: /agent policy check <ActionClass>")
+                val desc = args.drop(2).joinToString(" ")
+                val decision = policyEngine.evaluate(action, mapOf("description" to desc))
+                val text = "action=$action allowed=${decision.allowed} blocked=${decision.policyBlocked} reason=${decision.reason}"
+                ui.renderNotice(formatBlock("POLICY CHECK", text))
+                if (decision.allowed) AgentCommandOutcome.Completed(text) else AgentCommandOutcome.Invalid(text)
+            }
+            else -> invalid("usage: /agent policy [audit|check]")
+        }
+    }
+
+    // --- Worktree (M8) ---
+    private fun handleWorktreeCommand(args: List<String>): AgentCommandOutcome {
+        return when (args.getOrNull(0)?.lowercase()) {
+            null, "list" -> {
+                val wts = worktreeService.listWorktrees()
+                val text = wts.joinToString("\n") { "${it.id}: job=${it.jobId} verified=${it.verified} rolledBack=${it.rolledBack} merged=${it.mergedBack}" }.ifEmpty { "no worktrees" }
+                ui.renderNotice(formatBlock("WORKTREES", text))
+                AgentCommandOutcome.Completed(text)
+            }
+            "create" -> {
+                val jobId = args.getOrNull(1) ?: return invalid("usage: /agent worktree create <job-id> [--territory path,...]")
+                val territoryIdx = args.indexOf("--territory")
+                val territory = if (territoryIdx >= 0) args.getOrNull(territoryIdx + 1)?.split(",")?.filter { it.isNotBlank() } ?: emptyList() else emptyList()
+                val result = worktreeService.createWorktree(jobId, territory)
+                ui.renderNotice(formatBlock("WORKTREE CREATE", result.message))
+                if (result.ok) AgentCommandOutcome.Completed(result.message) else AgentCommandOutcome.Invalid(result.message)
+            }
+            "rollback" -> {
+                val wid = args.getOrNull(1) ?: return invalid("usage: /agent worktree rollback <worktree-id>")
+                val result = worktreeService.rollback(wid)
+                ui.renderNotice(formatBlock("WORKTREE ROLLBACK", result.message))
+                if (result.ok) AgentCommandOutcome.Completed(result.message) else AgentCommandOutcome.Invalid(result.message)
+            }
+            "merge" -> {
+                val wid = args.getOrNull(1) ?: return invalid("usage: /agent worktree merge <worktree-id>")
+                val verification = args.getOrNull(2) ?: "git diff --check"
+                val result = worktreeService.verifyAndMerge(wid, verification)
+                ui.renderNotice(formatBlock("WORKTREE MERGE", result.message))
+                if (result.ok) AgentCommandOutcome.Completed(result.message) else AgentCommandOutcome.Invalid(result.message)
+            }
+            "show" -> {
+                val wid = args.getOrNull(1) ?: return invalid("usage: /agent worktree show <worktree-id>")
+                val wt = worktreeService.readWorktree(wid) ?: return invalid("worktree not found: $wid")
+                val text = buildString {
+                    appendLine("id: ${wt.id}")
+                    appendLine("job: ${wt.jobId}")
+                    appendLine("path: ${wt.worktreePath}")
+                    appendLine("baseline: ${wt.baselineCommit ?: "none"}")
+                    appendLine("territory: ${wt.territory.joinToString(", ").ifEmpty { "none" }}")
+                    appendLine("verified: ${wt.verified}")
+                    appendLine("rolled back: ${wt.rolledBack}")
+                    appendLine("merged back: ${wt.mergedBack}")
+                    appendLine("applied patches: ${wt.appliedPatches.size}")
+                }.trimEnd()
+                ui.renderNotice(formatBlock("WORKTREE", text))
+                AgentCommandOutcome.Completed(text)
+            }
+            else -> invalid("usage: /agent worktree [list|create|rollback|merge|show]")
+        }
+    }
+
+    // --- Gate (M9) ---
+    private fun handleGateCommand(args: List<String>): AgentCommandOutcome {
+        return when (args.getOrNull(0)?.lowercase()) {
+            null, "check" -> {
+                val nodeId = args.getOrNull(1) ?: return invalid("usage: /agent gate check <node-id>")
+                val node = dagService.readNode(nodeId) ?: return invalid("node not found: $nodeId")
+                val report = completionGate.evaluateNode(node)
+                val text = buildString {
+                    appendLine("can complete: ${report.canComplete}")
+                    appendLine("message: ${report.message}")
+                    report.gateResults.forEach { g ->
+                        appendLine("  ${if (g.passed) "PASS" else "FAIL"} ${g.gateName}: ${g.detail}")
+                    }
+                }.trimEnd()
+                ui.renderNotice(formatBlock("GATE CHECK", text))
+                if (report.canComplete) AgentCommandOutcome.Completed(text) else AgentCommandOutcome.Invalid(text)
+            }
+            "verify" -> {
+                val dagId = args.getOrNull(1) ?: return invalid("usage: /agent gate verify <dag-id>")
+                val falseCompletions = completionGate.detectFalseCompletions(dagId)
+                val text = if (falseCompletions.isEmpty()) "no false completions detected" else "false completions: ${falseCompletions.joinToString(", ")}"
+                ui.renderNotice(formatBlock("GATE VERIFY", text))
+                if (falseCompletions.isEmpty()) AgentCommandOutcome.Completed(text) else AgentCommandOutcome.Invalid(text)
+            }
+            "complete" -> {
+                val nodeId = args.getOrNull(1) ?: return invalid("usage: /agent gate complete <node-id>")
+                val node = dagService.readNode(nodeId) ?: return invalid("node not found: $nodeId")
+                val newState = completionGate.markCompleteAfterVerification(node)
+                val text = "node $nodeId state: $newState"
+                ui.renderNotice(formatBlock("GATE COMPLETE", text))
+                if (newState == DagNodeState.COMPLETE) AgentCommandOutcome.Completed(text) else AgentCommandOutcome.Invalid(text)
+            }
+            else -> invalid("usage: /agent gate [check|verify|complete]")
+        }
+    }
 
     private fun invalid(message: String): AgentCommandOutcome.Invalid {
         ui.renderError(message)

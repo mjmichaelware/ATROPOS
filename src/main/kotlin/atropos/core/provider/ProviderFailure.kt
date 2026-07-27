@@ -1,5 +1,7 @@
 package atropos.core.provider
 
+import atropos.core.security.RedactionFilter
+
 enum class NormalizedProviderFailureType {
     AUTH_FAILED,
     RATE_LIMITED,
@@ -24,11 +26,10 @@ data class ProviderFailure(
 )
 
 object ProviderRedactor {
+    private val redactionFilter = RedactionFilter()
+
     fun redact(value: String): String =
-        value
-            .replace(Regex("""\b""" + "s" + "k-" + """[A-Za-z0-9_\-]{12,}"""), "<redacted>")
-            .replace(Regex("""(?i)bearer\s+[A-Za-z0-9_\-\.]{12,}"""), "Bearer <redacted>")
-            .replace(Regex("""(?i)(api[_-]?key|token|secret|password)["']?\s*[:=]\s*["']?[^"'\s,}]+"""), "$1=<redacted>")
+        redactionFilter.redact(value)
             .replace(Regex("""http://127\.0\.0\.1:\d+"""), "local service")
             .take(320)
 }

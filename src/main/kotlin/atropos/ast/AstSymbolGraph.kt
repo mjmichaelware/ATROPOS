@@ -22,10 +22,48 @@ data class AstSymbol(
     val file: Path,
     val packageName: String,
     val imports: List<String>,
+    val dependencyRefs: List<String>,
+    val expectedPathSuffix: String,
+    val packagePathInvariantHolds: Boolean,
     val line: Int,
     val column: Int,
     val offset: Int
 )
+
+enum class AstImportStatus {
+    LOCAL_EXACT,
+    EXTERNAL,
+    WILDCARD,
+    AMBIGUOUS,
+    UNRESOLVED
+}
+
+data class AstImportResolution(
+    val importPath: String,
+    val status: AstImportStatus,
+    val matches: List<String>,
+    val expectedPathSuffixes: List<String>
+)
+
+data class AstImportReconciliationResult(
+    val file: Path,
+    val packageName: String,
+    val packagePathInvariantHolds: Boolean,
+    val resolutions: List<AstImportResolution>
+) {
+    fun render(): String = buildString {
+        appendLine("ast-imports:")
+        appendLine("  file: ${file.invariantSeparatorsPathString}")
+        appendLine("  package: $packageName")
+        appendLine("  package_path_invariant: $packagePathInvariantHolds")
+        resolutions.forEach { resolution ->
+            appendLine(
+                "  import ${resolution.importPath} status=${resolution.status.name.lowercase()} " +
+                    "matches=${resolution.matches.joinToString(",").ifBlank { "none" }}"
+            )
+        }
+    }.trimEnd()
+}
 
 data class AstLookupResult(
     val query: String,
@@ -73,6 +111,65 @@ class AstSymbolGraph(
         return build().filter { it.file.normalize() in normalized }
     }
 
+    fun reconcileImports(path: String): AstImportReconciliationResult {
+        val target = repoRoot.resolve(path).normalize()
+        val symbols = build()
+        val fileSymbols = symbols.filter { it.file.normalize() == target }
+        require(fileSymbols.isNotEmpty()) { "unknown Kotlin source: $path" }
+        val fileSymbol = fileSymbols.first { it.kind == AstSymbolKind.FILE }
+        val symbolIndex = symbols
+            .filter { it.kind == AstSymbolKind.CLASS || it.kind == AstSymbolKind.OBJECT || it.kind == AstSymbolKind.INTERFACE }
+            .groupBy { it.qualifiedName }
+        val simpleNameIndex = symbols
+            .filter { it.kind == AstSymbolKind.CLASS || it.kind == AstSymbolKind.OBJECT || it.kind == AstSymbolKind.INTERFACE }
+            .groupBy { it.name }
+        val resolutions = fileSymbol.imports.distinct().sorted().map { importPath ->
+            when {
+                importPath.endsWith(".*") -> AstImportResolution(
+                    importPath = importPath,
+                    status = AstImportStatus.WILDCARD,
+                    matches = emptyList(),
+                    expectedPathSuffixes = emptyList()
+                )
+                isExternalImport(importPath) -> AstImportResolution(
+                    importPath = importPath,
+                    status = AstImportStatus.EXTERNAL,
+                    matches = emptyList(),
+                    expectedPathSuffixes = emptyList()
+                )
+                symbolIndex.containsKey(importPath) -> {
+                    val matches = symbolIndex.getValue(importPath)
+                    AstImportResolution(
+                        importPath = importPath,
+                        status = if (matches.size == 1) AstImportStatus.LOCAL_EXACT else AstImportStatus.AMBIGUOUS,
+                        matches = matches.map { it.qualifiedName }.sorted(),
+                        expectedPathSuffixes = matches.map { it.expectedPathSuffix }.distinct().sorted()
+                    )
+                }
+                else -> {
+                    val simpleName = importPath.substringAfterLast('.')
+                    val matches = simpleNameIndex[simpleName].orEmpty()
+                    AstImportResolution(
+                        importPath = importPath,
+                        status = when {
+                            matches.isEmpty() -> AstImportStatus.UNRESOLVED
+                            matches.size == 1 -> AstImportStatus.LOCAL_EXACT
+                            else -> AstImportStatus.AMBIGUOUS
+                        },
+                        matches = matches.map { it.qualifiedName }.sorted(),
+                        expectedPathSuffixes = matches.map { it.expectedPathSuffix }.distinct().sorted()
+                    )
+                }
+            }
+        }
+        return AstImportReconciliationResult(
+            file = target,
+            packageName = fileSymbol.packageName,
+            packagePathInvariantHolds = fileSymbol.packagePathInvariantHolds,
+            resolutions = resolutions
+        )
+    }
+
     private fun parseFile(path: Path): List<AstSymbol> {
         val lines = path.toFile().readLines(StandardCharsets.UTF_8)
         val packageName = lines.firstOrNull { it.trimStart().startsWith("package ") }
@@ -81,6 +178,9 @@ class AstSymbolGraph(
             .orEmpty()
         val imports = lines.filter { it.trimStart().startsWith("import ") }
             .map { it.removePrefix("import ").trim() }
+        val relative = repoRoot.relativize(path).invariantSeparatorsPathString
+        val expectedPathSuffix = expectedPathSuffix(packageName, path)
+        val packagePathInvariantHolds = relative.endsWith(expectedPathSuffix)
         val symbols = mutableListOf<AstSymbol>()
         var offset = 0
 
@@ -91,6 +191,9 @@ class AstSymbolGraph(
             file = path,
             packageName = packageName,
             imports = imports,
+            dependencyRefs = imports,
+            expectedPathSuffix = expectedPathSuffix,
+            packagePathInvariantHolds = packagePathInvariantHolds,
             line = 1,
             column = 1,
             offset = 0
@@ -109,6 +212,9 @@ class AstSymbolGraph(
                         file = path,
                         packageName = packageName,
                         imports = imports,
+                        dependencyRefs = imports,
+                        expectedPathSuffix = expectedPathSuffix,
+                        packagePathInvariantHolds = packagePathInvariantHolds,
                         line = lineNumber,
                         column = match.range.first + 1,
                         offset = offset + match.range.first
@@ -125,4 +231,18 @@ class AstSymbolGraph(
         }
         return symbols
     }
+
+    private fun expectedPathSuffix(packageName: String, path: Path): String =
+        if (packageName.isBlank()) {
+            path.fileName.toString()
+        } else {
+            packageName.replace('.', '/') + "/" + path.fileName
+        }
+
+    private fun isExternalImport(importPath: String): Boolean =
+        importPath.startsWith("java.") ||
+            importPath.startsWith("javax.") ||
+            importPath.startsWith("kotlin.") ||
+            importPath.startsWith("android.") ||
+            importPath.startsWith("androidx.")
 }

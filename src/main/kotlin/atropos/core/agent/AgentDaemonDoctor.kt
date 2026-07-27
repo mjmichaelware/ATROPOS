@@ -1,5 +1,6 @@
 package atropos.core.agent
 
+import atropos.core.security.RedactionFilter
 import java.nio.file.Files
 import java.time.Instant
 import java.util.Comparator
@@ -26,6 +27,8 @@ data class AgentDaemonDoctorResult(
 }
 
 class AgentDaemonDoctor {
+    private val redactionFilter = RedactionFilter()
+
     fun run(): AgentDaemonDoctorResult {
         val checks = mutableListOf<AgentDaemonDoctorCheck>()
         val fixture = Files.createTempDirectory("atropos-daemon-doctor-")
@@ -81,5 +84,5 @@ class AgentDaemonDoctor {
     }
 
     private fun check(name: String, passed: Boolean, detail: String): AgentDaemonDoctorCheck =
-        AgentDaemonDoctorCheck(name, passed, detail.replace(Regex("\\s+"), " ").take(240))
+        AgentDaemonDoctorCheck(name, passed, redactionFilter.compact(detail, 240))
 }

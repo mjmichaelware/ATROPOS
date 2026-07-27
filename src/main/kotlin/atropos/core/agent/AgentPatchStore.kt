@@ -1,5 +1,6 @@
 package atropos.core.agent
 
+import atropos.core.security.RedactionFilter
 import atropos.core.policy.ExecutionPolicyEngine
 import atropos.core.policy.ExecutionPolicyRequest
 import atropos.core.policy.PolicyActionClass
@@ -53,15 +54,16 @@ data class AgentPatchApplyResult(
     val logFile: Path? = null
 ) {
     fun render(): String = buildString {
+        val filter = RedactionFilter()
         appendLine("Patch id: ${patchId ?: "none"}")
         appendLine("Patch path: ${patchFile ?: "none"}")
-        appendLine("Changed paths: ${changedPaths.joinToString(", ").ifBlank { "none" }}")
+        appendLine("Changed paths: ${changedPaths.joinToString(", ") { filter.redact(it) }.ifBlank { "none" }}")
         if (checkOnly) {
             appendLine(
                 if (checkResult?.passed == true && refusalReason.isNullOrBlank()) {
                     "APPLY CHECK OK"
                 } else {
-                    "APPLY CHECK FAILED: ${refusalReason ?: checkResult?.output ?: "unknown"}"
+                    "APPLY CHECK FAILED: ${filter.redact(refusalReason ?: checkResult?.output ?: "unknown")}"
                 }
             )
         } else {
@@ -69,23 +71,23 @@ data class AgentPatchApplyResult(
                 if (applied) {
                     "APPLY OK"
                 } else {
-                    "APPLY REFUSED: ${refusalReason ?: checkResult?.output ?: "unknown"}"
+                    "APPLY REFUSED: ${filter.redact(refusalReason ?: checkResult?.output ?: "unknown")}"
                 }
             )
         }
         checkResult?.let {
-            appendLine("git apply --check: ${it.statusText}${it.output.takeIf { output -> output.isNotBlank() }?.let { output -> " :: $output" } ?: ""}")
+            appendLine("git apply --check: ${it.statusText}${it.output.takeIf { output -> output.isNotBlank() }?.let { output -> " :: ${filter.redact(output)}" } ?: ""}")
         }
         verificationResult?.let {
             appendLine("verification patch id: ${it.patchId ?: "none"}")
             it.verificationId?.let { id -> appendLine("verification id: $id") }
-            it.command?.let { command -> appendLine("verification command: $command") }
-            appendLine("verification changed paths: ${it.changedPaths.joinToString(", ").ifBlank { "none" }}")
+            it.command?.let { command -> appendLine("verification command: ${filter.redact(command)}") }
+            appendLine("verification changed paths: ${it.changedPaths.joinToString(", ") { path -> filter.redact(path) }.ifBlank { "none" }}")
             it.exitCode?.let { exit -> appendLine("verification exit code: $exit") }
             if (it.durationMillis > 0) appendLine("verification duration ms: ${it.durationMillis}")
             appendLine("verification result: ${if (it.passed) "PASSED" else "FAILED"}")
             it.metaFile?.let { meta -> appendLine("verification metadata: $meta") }
-            it.refusalReason?.takeIf { reason -> reason.isNotBlank() }?.let { reason -> appendLine("verification refusal reason: $reason") }
+            it.refusalReason?.takeIf { reason -> reason.isNotBlank() }?.let { reason -> appendLine("verification refusal reason: ${filter.redact(reason)}") }
         }
         applyExitCode?.let { appendLine("git apply exit code: $it") }
         logFile?.let { appendLine("Apply log: $it") }
@@ -97,7 +99,7 @@ data class AgentPatchApplyResult(
             }
             appendLine("Next command to verify: $verifyCommand")
         }
-        refusalReason?.takeIf { it.isNotBlank() && !checkOnly }?.let { appendLine("Refusal reason: $it") }
+        refusalReason?.takeIf { it.isNotBlank() && !checkOnly }?.let { appendLine("Refusal reason: ${filter.redact(it)}") }
     }.trimEnd()
 }
 
@@ -105,7 +107,8 @@ class AgentPatchStore(
     private val repoRoot: Path = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize(),
     private val clock: () -> Instant = { Instant.now() },
     private val extractor: AgentPatchExtractor = AgentPatchExtractor(),
-    private val policyEngine: ExecutionPolicyEngine = ExecutionPolicyEngine(repoRoot)
+    private val policyEngine: ExecutionPolicyEngine = ExecutionPolicyEngine(repoRoot),
+    private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     private val patchDir = repoRoot.resolve(".atropos/agent/patches").normalize()
     private val formatter = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss")
@@ -118,12 +121,15 @@ class AgentPatchStore(
         val diffFile = patchDir.resolve("$id.diff")
         val metaFile = patchDir.resolve("$id.meta")
         val renderedDiff = diff.trimEnd() + "\n"
+        require(!redactionFilter.report(renderedDiff).changed) {
+            "patch diff contains secret-bearing content and was refused before persistence"
+        }
         Files.writeString(diffFile, renderedDiff, StandardCharsets.UTF_8)
         return AgentPatchRecord(
             id = id,
             provider = provider,
             createdAt = createdAt,
-            task = task.trim(),
+            task = redactionFilter.redact(task.trim()).take(8_000),
             contextBytes = contextBytes,
             diffBytes = renderedDiff.toByteArray(StandardCharsets.UTF_8).size,
             patchDir = patchDir,
@@ -137,12 +143,12 @@ class AgentPatchStore(
             appendLine("id=${record.id}")
             appendLine("provider=${record.provider}")
             appendLine("createdAt=${record.createdAt}")
-            appendLine("task=${record.task.replace("\n", " ").trim()}")
+            appendLine("task=${redactionFilter.compact(record.task.replace("\n", " ").trim(), 1_000)}")
             appendLine("contextBytes=${record.contextBytes}")
             appendLine("diffBytes=${record.diffBytes}")
             appendLine("gitApplyCheckStatus=${check.statusText}")
             appendLine("gitApplyCheckExitCode=${check.exitCode}")
-            appendLine("gitApplyCheckOutput=${compactOutput(check.output)}")
+            appendLine("gitApplyCheckOutput=${redactionFilter.compact(compactOutput(check.output), 2_000)}")
             appendLine("diffFile=${record.diffFile.fileName}")
         }
         Files.writeString(record.metaFile, content, StandardCharsets.UTF_8)

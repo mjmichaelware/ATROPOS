@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.cli.input
 
+import atropos.core.security.RedactionFilter
+
 enum class InputMode {
     ASK,
     PLAN,
@@ -37,7 +39,8 @@ private enum class HistoryLane {
 class PromptState(
     private val historyLimit: Int = 100,
     private val maximumBufferLength: Int =
-        1024 * 1024
+        1024 * 1024,
+    private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     private val buffer = StringBuilder()
     private val histories = mutableMapOf(
@@ -342,9 +345,10 @@ class PromptState(
             val lane = classify(result)
             lastCommittedLane = lane
             val history = histories.getValue(lane)
+            val historyValue = redactionFilter.redact(result)
 
-            if (history.lastOrNull() != result) {
-                history += result
+            if (history.lastOrNull() != historyValue) {
+                history += historyValue
 
                 while (history.size > historyLimit) {
                     history.removeAt(0)

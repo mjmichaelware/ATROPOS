@@ -17,7 +17,8 @@ class AgentDaemonService(
     private val store: AgentDaemonStore = AgentDaemonStore(repoRoot),
     private val queueService: AgentQueueService = AgentQueueService(config),
     private val policyEngine: ExecutionPolicyEngine = ExecutionPolicyEngine(repoRoot),
-    private val memoryStore: LocalMemoryStore = LocalMemoryStore(repoRoot.resolve(".atropos/memory").toFile())
+    private val memoryStore: LocalMemoryStore = LocalMemoryStore(repoRoot.resolve(".atropos/memory").toFile()),
+    private val sessionSupervisor: ProviderSessionSupervisor = ProviderSessionSupervisor(repoRoot)
 ) {
     fun once(activeProviderName: String): AgentDaemonCommandResult {
         enforceDaemonPolicy("once")
@@ -25,9 +26,13 @@ class AgentDaemonService(
         val lock = store.tryLock() ?: return AgentDaemonCommandResult(false, "daemon lock is held by another instance", store.readState())
         lock.use {
             store.clearStopRequest()
+            sessionSupervisor.createSession(AgentRuntimeKind.OPENCODE, port = 4096)
             var record = store.writeState(store.initialRecord(AgentDaemonState.RUNNING, pollSeconds, "daemon once started"))
             queueService.recover()
             val result = queueService.runNext(activeProviderName)
+            for (s in sessionSupervisor.listSessions()) {
+                sessionSupervisor.markComplete(s.id)
+            }
             record = store.writeState(
                 record.copy(
                     state = AgentDaemonState.STOPPED,
@@ -52,6 +57,7 @@ class AgentDaemonService(
             var record = store.writeState(store.initialRecord(AgentDaemonState.RUNNING, pollSeconds, "foreground daemon started"))
             acquireWakeLockIfRequested()
             try {
+                sessionSupervisor.createSession(AgentRuntimeKind.OPENCODE, port = 4096)
                 while (!store.stopRequested()) {
                     record = if (record.paused) {
                         store.heartbeat(record.copy(state = AgentDaemonState.PAUSED), "daemon paused")
@@ -63,6 +69,15 @@ class AgentDaemonService(
                             "queue cycle finished queue=${result.queueRecord?.id ?: "none"} " +
                                 "job=${result.jobRecord?.id ?: "none"} message=${result.message}"
                         )
+                        val supervisorSessions = sessionSupervisor.listSessions()
+                        for (s in supervisorSessions) {
+                            if (s.isStale(java.time.Instant.now())) {
+                                sessionSupervisor.recoverStaleSession(s.id)
+                                store.appendDaemonLog("recovered stale supervisor session ${s.id}")
+                            } else if (s.isLive(java.time.Instant.now())) {
+                                sessionSupervisor.heartbeat(s.id, "daemon cycle")
+                            }
+                        }
                         store.heartbeat(
                             record.copy(
                                 state = AgentDaemonState.RUNNING,
@@ -75,6 +90,9 @@ class AgentDaemonService(
                     }
                     if (store.stopRequested()) break
                     Thread.sleep(pollSeconds * 1000L)
+                }
+                for (s in sessionSupervisor.listSessions()) {
+                    sessionSupervisor.markComplete(s.id)
                 }
                 record = store.writeState(
                     record.copy(

@@ -1,13 +1,18 @@
 package atropos.core.agent
 
 import atropos.core.AtroposConfig
+import atropos.core.ProviderCascadeResult
 import atropos.core.ProviderCascadeRouter
 import atropos.core.ProviderFactory
 import atropos.core.memory.LocalMemoryStore
 import atropos.core.policy.ExecutionPolicyEngine
 import atropos.core.policy.ExecutionPolicyRequest
 import atropos.core.policy.PolicyActionClass
+import atropos.core.provider.ContextAttestationService
+import atropos.core.provider.ContextEnvelopeFactory
 import atropos.core.provider.ProviderTruthService
+import atropos.core.provider.TypedContextFailure
+import atropos.core.security.RedactionFilter
 import java.nio.file.Path
 
 data class AgentStatusSnapshot(
@@ -113,7 +118,8 @@ class AgentService(
     private val verifier: AgentVerifier = AgentVerifier(config, collector, patchStore, verificationStore),
     private val repairService: AgentRepairService = AgentRepairService(config, collector, router, selector, patchStore, verificationStore, patchExtractor),
     private val policyEngine: ExecutionPolicyEngine = ExecutionPolicyEngine(collector.repoRoot),
-    private val memoryStore: LocalMemoryStore = LocalMemoryStore(collector.repoRoot.resolve(".atropos/memory").toFile())
+    private val memoryStore: LocalMemoryStore = LocalMemoryStore(collector.repoRoot.resolve(".atropos/memory").toFile()),
+    private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     fun status(activeProviderName: String): AgentStatusSnapshot {
         val selection = selector.select(activeProviderName)
@@ -139,24 +145,70 @@ class AgentService(
     fun ask(activeProviderName: String, task: String): AgentRunResult {
         val snapshot = collector.collect()
         val selection = selector.select(activeProviderName)
+        val sanitizedTask = redactionFilter.redact(task.trim())
+        val providerId = selection.askOrder.firstOrNull() ?: "groq"
         return try {
             val result = router.completeWithCascade(
-                requestedProvider = selection.askOrder.firstOrNull() ?: "groq",
-                prompt = task.trim(),
-                context = AgentPromptContract.build(snapshot.text),
+                requestedProvider = providerId,
+                prompt = sanitizedTask,
+                context = AgentPromptContract.build(
+                    context = snapshot.text,
+                    providerId = providerId,
+                    task = sanitizedTask,
+                    repoRoot = collector.repoRoot
+                ),
                 providerOrderOverride = selection.askOrder,
-                beforeAttempt = { provider -> enforceProviderPolicy(provider, task, "ask") }
+                beforeAttempt = { provider -> enforceProviderPolicy(provider, sanitizedTask, "ask") }
             )
+
+            // Build the envelope that was sent for attestation verification
+            val envelope = ContextEnvelopeFactory.createSimple(
+                providerId = result.providerName,
+                modelId = "",
+                task = sanitizedTask,
+                repoRoot = collector.repoRoot
+            )
+
+            // Verify provider response attestation
+            val verified = ContextAttestationService.verify(envelope, result.response)
+            val displayText: String
+            val providerDisplayName: String
+            when (verified) {
+                is ContextAttestationService.VerifiedResult.Accepted -> {
+                    displayText = verified.cleanedResponse
+                    providerDisplayName = result.providerName
+                }
+                is ContextAttestationService.VerifiedResult.Rejected -> {
+                    // Persist the context failure and fall back
+                    memoryStore.rememberFailure(
+                        subjectType = "context_failure",
+                        subjectId = null,
+                        title = verified.failure::class.simpleName ?: "ContextFailure",
+                        body = "${verified.failure.providerId}: ${verified.failure.reason}",
+                        tags = listOf("context", "attestation", "failure")
+                    )
+                    // Try once more with corrective compact context, then fall back to local
+                    val retryResult = retryWithCompactContext(providerId, sanitizedTask, snapshot.text)
+                    if (retryResult != null) {
+                        displayText = redactionFilter.redact(normalizeAgentAnswer(retryResult.response.trim()))
+                        providerDisplayName = retryResult.providerName
+                    } else {
+                        displayText = fallbackAnswer(sanitizedTask, snapshot)
+                        providerDisplayName = "local_fallback"
+                    }
+                }
+            }
+
             memoryStore.rememberRoute(
-                subjectId = result.providerName,
+                subjectId = providerDisplayName,
                 title = "agent ask route",
-                body = "task=${task.trim()}\nprovider=${result.providerName}\nerrors=${result.errors.joinToString(" | ") { it.cleanMessage }}",
+                body = "task=$sanitizedTask\nprovider=$providerDisplayName",
                 tags = listOf("agent", "ask", "route")
             )
 
             AgentRunResult(
-                providerName = result.providerName,
-                answerText = normalizeAgentAnswer(result.response.trim()),
+                providerName = providerDisplayName,
+                answerText = redactionFilter.redact(normalizeAgentAnswer(displayText.trim())),
                 contextByteCount = snapshot.byteCount
             )
         } catch (failure: Exception) {
@@ -169,17 +221,57 @@ class AgentService(
             )
             AgentRunResult(
                 providerName = "local_fallback",
-                answerText = fallbackAnswer(task, snapshot),
+                answerText = fallbackAnswer(sanitizedTask, snapshot),
                 contextByteCount = snapshot.byteCount,
                 failureSummary = compactFailureSummary(failure.message)
             )
         }
     }
 
+    /**
+     * Retry a provider call with compact corrective context after an
+     * attestation failure.
+     */
+    private fun retryWithCompactContext(
+        providerId: String,
+        sanitizedTask: String,
+        context: String
+    ): ProviderCascadeResult? {
+        return try {
+            val compactContext = "ATROPOS: retrying after context attestation failure. " +
+                "The previous response was rejected. You are operating inside the ATROPOS software " +
+                "engine. ATROPOS refers to this repository and runtime, not Greek mythology. " +
+                "Include the required attestation block in your response.\n\n" + context
+            router.completeWithCascade(
+                requestedProvider = providerId,
+                prompt = sanitizedTask,
+                context = AgentPromptContract.build(
+                    context = compactContext,
+                    providerId = providerId,
+                    task = sanitizedTask,
+                    repoRoot = collector.repoRoot
+                ),
+                beforeAttempt = { provider -> enforceProviderPolicy(provider, sanitizedTask, "ask") }
+            ).let { result ->
+                val retryEnvelope = ContextEnvelopeFactory.createSimple(
+                    providerId = result.providerName,
+                    modelId = "",
+                    task = sanitizedTask,
+                    repoRoot = collector.repoRoot
+                )
+                val retryVerified = ContextAttestationService.verify(retryEnvelope, result.response)
+                when (retryVerified) {
+                    is ContextAttestationService.VerifiedResult.Accepted -> result
+                    is ContextAttestationService.VerifiedResult.Rejected -> null
+                }
+            }
+        } catch (_: Exception) { null }
+    }
+
     fun patch(activeProviderName: String, task: String, patchProviderOverride: String? = null): AgentPatchRunResult {
         val snapshot = collector.collectPatch(task)
         val selection = selector.select(activeProviderName, patchProviderOverride)
-        val prompt = task.trim()
+        val prompt = redactionFilter.redact(task.trim())
 
         return try {
             val cascade = runPatchCascade(selection.patchOrder, prompt, snapshot.text)
@@ -276,7 +368,7 @@ class AgentService(
         appendLine("Yes. ATROPOS supplied repo context, so I can see the workspace through that bounded snapshot.")
         appendLine("I do not have direct filesystem access, but the collected context includes git status, a shallow tree, and selected provider/routing/agent source files.")
         appendLine("I can use this context to reason about the code, draft a patch, or inspect a specific file next.")
-        appendLine("Task: ${task.trim().ifBlank { "(blank task)" }}")
+        appendLine("Task: ${redactionFilter.redact(task.trim().ifBlank { "(blank task)" })}")
         appendLine("Context bytes: ${snapshot.byteCount}")
     }.trimEnd()
 
@@ -305,7 +397,7 @@ class AgentService(
     private fun compactFailureSummary(message: String?): String =
         message?.trim()
             .takeUnless { it.isNullOrBlank() }
-            ?.let { if (it.length > 240) it.take(237) + "..." else it }
+            ?.let { redactionFilter.compact(it, 240) }
             ?: "provider cascade failed"
 
     private fun runPatchCascade(
@@ -397,7 +489,7 @@ class AgentService(
             extraction = extraction ?: AgentPatchExtraction("", emptyList(), false),
             retryAttempted = retryAttempted,
             rejectionReason = rejectionReason,
-            responsePreview = patchExtractor.preview(result.response)
+            responsePreview = redactionFilter.redact(patchExtractor.preview(result.response))
         )
     }
 

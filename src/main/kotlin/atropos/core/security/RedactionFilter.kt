@@ -25,6 +25,12 @@ data class RedactionReport(
 class RedactionFilter {
     fun redact(value: String): String = report(value).redacted
 
+    fun compact(value: String, maxChars: Int = 240): String {
+        val collapsed = redact(value).replace(Regex("\\s+"), " ").trim()
+        if (collapsed.length <= maxChars) return collapsed
+        return collapsed.take(maxChars.coerceAtLeast(4) - 3) + "..."
+    }
+
     fun report(value: String): RedactionReport {
         var text = value
         val findings = mutableListOf<RedactionFinding>()
