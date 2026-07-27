@@ -75,6 +75,26 @@ class ContextAttestationRenderer(
         }.joinToString("\n")
     }
 
+    /**
+     * One-line advisory shown *above* an answer that failed attestation but is
+     * still being displayed.
+     *
+     * Conversational prompts use this rather than [renderRejection]: the
+     * envelope's purpose is to shape how a provider answers, and discarding a
+     * usable answer leaves the operator with nothing. Strict rejection stays
+     * where correctness is load-bearing — patch generation and apply — while
+     * chat degrades to a visible warning.
+     */
+    fun renderAdvisory(failure: TypedContextFailure, width: Int): String {
+        val railGlyph = if (asciiOnly()) Glyphs.Ascii.RAIL else Glyphs.RAIL
+        return TerminalText.ellipsize(
+            theme.paint(Role.STATUS_WAITING, railGlyph) + "  " +
+                theme.warning("unattested") + " " +
+                theme.subdued("${kindLabel(failure)} · answer shown unverified"),
+            width
+        )
+    }
+
     /** A single accepted-attestation line, for status surfaces. */
     fun renderAccepted(attestation: ContextAttestation, width: Int): String =
         TerminalText.ellipsize(

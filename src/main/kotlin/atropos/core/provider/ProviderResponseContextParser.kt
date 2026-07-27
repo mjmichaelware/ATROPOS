@@ -35,7 +35,7 @@ object ProviderResponseContextParser {
             "greek mythology", "greek god", "greek goddess",
             "zeus", "hades", "poseidon", "athena", "apollo", "artemis",
             "ares", "aphrodite", "hermes", "dionysus", "demeter", "hestia",
-            "the three fates", "the fates", "clotho", "lachesis", "atropos",
+            "the three fates", "clotho", "lachesis",
             "moirai", "titan", "olympus", "mount olympus",
             "son of zeus", "daughter of zeus", "wife of zeus",
             "trident", "underworld", "river styx"
@@ -49,7 +49,7 @@ object ProviderResponseContextParser {
                 "greek mythology", "the three fates", "the fates",
                 "moirai", "cut the thread", "thread of life",
                 "goddess of fate", "daughter of zeus", "daughter of the night",
-                "she who cannot be turned", "inevitable", "death"
+                "she who cannot be turned"
             )
             mythologyIndicators.any { indicator ->
                 // Find Atropos near the indicator
@@ -60,9 +60,19 @@ object ProviderResponseContextParser {
             }
         }
 
-        val generalMythology = mythologyTerms.any { lower.contains(it) }
+        // Corroboration required. A single incidental term (a provider naming
+        // a library "athena", or discussing a "titan" instance size) must not
+        // reject an otherwise valid engineering answer. Unambiguous phrases
+        // stand alone; weak single tokens do not.
+        val strongTerms = listOf(
+            "greek mythology", "greek god", "greek goddess",
+            "the three fates", "moirai", "mount olympus",
+            "son of zeus", "daughter of zeus", "wife of zeus", "river styx"
+        )
+        val strongMythology = strongTerms.any { lower.contains(it) }
+        val weakHits = mythologyTerms.count { lower.contains(it) }
 
-        return atroposMythology || generalMythology
+        return atroposMythology || strongMythology || weakHits >= 2
     }
 
     /**

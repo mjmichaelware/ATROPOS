@@ -720,28 +720,58 @@ class CommandRouter(
 
             val response = provider.complete(prompt, context)
 
-            // Requirement 5: typed context failures must be explicit.
-            when (
-                val verified =
-                    atropos.core.provider.ContextAttestationService.verify(envelope, response)
-            ) {
+            // The envelope exists to shape how a provider answers, not to
+            // delete answers. A rejection therefore retries once with a
+            // stronger corrective instruction, and only if that also fails do
+            // we surface the response *with* a warning — never swallow it.
+            // Discarding a usable answer is a worse failure than an unattested
+            // one, and leaves the operator with nothing to act on.
+            val verified =
+                atropos.core.provider.ContextAttestationService.verify(envelope, response)
+
+            when (verified) {
                 is atropos.core.provider.ContextAttestationService.VerifiedResult.Accepted ->
                     uiEngine.renderNotice(markdownRenderer.render(verified.cleanedResponse))
 
-                is atropos.core.provider.ContextAttestationService.VerifiedResult.Rejected ->
+                is atropos.core.provider.ContextAttestationService.VerifiedResult.Rejected -> {
                     if (mythologyRequested) {
-                        // The operator explicitly asked about the myth; the
-                        // answer is correct for the question actually posed.
+                        // The operator asked about the myth; this answer is correct
+                        // for the question actually posed.
                         uiEngine.renderNotice(markdownRenderer.render(response))
                     } else {
-                        uiEngine.renderError(
-                            attestationRenderer.renderRejection(
-                                verified.failure,
-                                envelope,
-                                ATTESTATION_WIDTH
+                        val corrective = buildString {
+                            appendLine(context)
+                            appendLine()
+                            appendLine(
+                                "Your previous reply did not satisfy the ATROPOS context contract. " +
+                                    "ATROPOS is this software repository and runtime, not the Greek " +
+                                    "mythological figure. Answer the task in that context and include " +
+                                    "the attestation block exactly as specified."
                             )
-                        )
+                        }
+                        val retry = runCatching { provider.complete(prompt, corrective) }.getOrNull()
+                        val retryVerified = retry?.let {
+                            atropos.core.provider.ContextAttestationService.verify(envelope, it)
+                        }
+
+                        if (retryVerified is
+                                atropos.core.provider.ContextAttestationService.VerifiedResult.Accepted
+                        ) {
+                            uiEngine.renderNotice(markdownRenderer.render(retryVerified.cleanedResponse))
+                        } else {
+                            // Still unattested. Show the answer, flagged, so the
+                            // operator can judge it — attestation is advisory on
+                            // conversational prompts, enforcing on patch/apply.
+                            uiEngine.renderNotice(
+                                attestationRenderer.renderAdvisory(
+                                    verified.failure,
+                                    ATTESTATION_WIDTH
+                                )
+                            )
+                            uiEngine.renderNotice(markdownRenderer.render(retry ?: response))
+                        }
                     }
+                }
             }
         } catch (failure: Exception) {
             uiEngine.renderError(failure.message ?: "provider dispatch failed")
