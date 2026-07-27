@@ -1,0 +1,44 @@
+ ATROPOS             groq · ask · /help 
+ication                                 
+  /verify wide               wide verifi
+cation                                  
+  /keys                      key status 
+  /keys setup                local secre
+t template setup                        
+  /keys status               key source 
+status                                  
+  /factory                   factory sta
+tus                                     
+  /factory plan              bounded app
+-factory plan                           
+  /factory run               queue app-f
+actory run                              
+  /memory                    memory stat
+us                                      
+  /paid                      paid emerge
+ncy gate                                
+  /paid status               paid emerge
+ncy status                              
+  /pwd                       show shell 
+cwd                                     
+  /cd                        change shel
+l cwd                                   
+  /ls                        list files 
+through shell bridge                    
+  /git status                git status 
+through shell bridge                    
+  /shell                     run explici
+t shell command                         
+  /exit                      close sessi
+on                                      
+  /quit                      close sessi
+on                                      
+•   /verify <narrow|wide>               
+•   !<command> | /shell <command>       
+•   /pwd | /cd [dir] | /ls [args] | /git
+ status                                 
+•   /home | /dashboard | /tabs | /tab [n
+ew <name>|<n>|rename|close|next|prev]   
+────────────────────────────────────────
+[ask] >                                 
+ groq · ask · tab 1:Dashboard · -- tok
