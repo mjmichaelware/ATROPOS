@@ -84,8 +84,8 @@ class DagStore(private val root: Path = Path.of(System.getProperty("user.dir")))
             updatedAt = now,
             metaFile = dagDir.resolve("dag.meta")
         )
-        writeDefinition(definition)
         normalizedNodes.forEach(::writeNode)
+        writeDefinition(definition)
         return definition
     }
 
