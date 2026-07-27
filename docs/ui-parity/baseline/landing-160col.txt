@@ -2,7 +2,7 @@
 [ask] › /home                                                                                                                                                   
  █████╗ ████████╗██████╗  ██████╗ ██████╗  ██████╗ ███████╗                                                                                                     
 ██╔══██╗╚══██╔══╝██╔══██╗██╔═══██╗██╔══██╗██╔═══██╗██╔════╝                                                                                                     
-███████║   ██║   ██████╔╝██║   ██║██████╔╝██��   ██║███████╗                                                                                                    
+█████���█║   ██║   ██████╔╝██║   ██║██████╔╝██║   ██║███████╗                                                                                                   
 ██╔══██║   ██║   ██╔══██╗██║   ██║██╔═══╝ ██║   ██║╚════██║                                                                                                     
 ██║  ██║   ██║   ██║  ██║╚██████╔╝██║     ╚██████╔╝███████║                                                                                                     
 ╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝ ╚═╝      ╚═════╝ ╚══════╝                                                                                                     
@@ -11,14 +11,14 @@ local-first · free-first · quota-aware · truthful app-factory workbench
 ╭─ WORKSPACE                            ╭─ PROVIDERS                            ╭─ ROUTING                              ╭─ AGENT                                
 │ path        /home/user/ATROPOS        │ groq        missing key fast chat / … │ current     legacy route wired        │ ask         available (local fallbac… 
 │ git         claude/pass10-job-ui-202… │ openai      missing key general reas… │ macro-a     policy compiled           │ patch       no provider key           
-│ kotlin      114 files                 │ anthropic   missing key coding / dee… │ fast        groq first                │ apply       available (local git)     
+│ kotlin      117 files                 │ anthropic   missing key coding / dee… │ fast        groq first                │ apply       available (local git)     
 │ mode        ask                       │ xai         missing key alternate cl… │ large       gemini first              │ order       none configured           
 │ provider    groq                      │ ollama      configured local privacy… │ paid        locked                    │ paid        locked                    
 ╰────────────────────────────           │ gemini      not installed not instal… │ preview     /route <prompt>           ╰────────────────────────────           
                                         ╰────────────────────────────           ╰────────────────────────────                                                   
                                                                                                                                                                 
 ╭─ PATCH/APPLY                          ╭─ QUOTA CORE                           ╭─ COMMANDS                             ╭─ SOURCE DOCS                          
-│ latest      none                      │ mode        free-first                │ /agent      ask | patch | apply       │ ATROPOS     2 files                   
+│ latest      none                      │ mode        free-first                │ /agent      ask | patch | apply       │ ATROPOS     3 files                   
 │ check       NOT RUN                   │ ledger      compiled                  │ /providers  inventory                 │ map         missing                   
 │ apply       not attempted             │ cooldown    tracked                   │ /status     endpoints                 │ .300        provider grid             
 │ changed     unknown                   │ fallback    nonblocking               │ /verify     toolchain                 │ .305        phase plan                

@@ -5,10 +5,9 @@
  "reference_license": "MIT",
  "starting_head": "b4c0f5b31b37735eccd9b6418ec95689b1b23a68",
  "current_head": "b4c0f5b31b37735eccd9b6418ec95689b1b23a68",
- "active_batch": "A",
+ "active_batch": "B",
  "batch_a_status": "COMPLETE",
  "batches_not_started": [
-  "B",
   "C",
   "D",
   "E",
@@ -54,6 +53,22 @@
   "docs/ui-parity/UI_PARITY_CHANGED_FILES.txt",
   "docs/ui-parity/baseline/"
  ],
- "next_exact_action": "Resolve B-001 (product decision on multi-client) and B-002 (supply governance docs). Then Batch B: derive ATROPOS_DESIGN_SYSTEM_SPEC.md tokens from the 37 pinned theme token sets and refactor hard-coded ANSI in TerminalTheme.kt onto them.",
- "generated": "2026-07-27T01:25:34.640399+00:00"
+ "next_exact_action": "Migrate remaining 27 plain-text Status*Renderer classes onto theme.surface primitives using StatusAdapterRenderer as the reference pattern, then move the 12 theme-consuming renderers off ad-hoc layout onto primitives.",
+ "generated": "2026-07-27T01:25:34.640399+00:00",
+ "batch_b_status": "DESIGN SYSTEM LANDED; renderer migration 1/28",
+ "blockers_downgraded": {
+  "B-001": "Does NOT block the design system. Tokens/primitives are client-agnostic; any future client inherits them. Still blocks *client parity* until a multi-client product decision is made.",
+  "B-002": "Does NOT block the design system. Still blocks ATROPOS-only screen CONTENT (what a DAG node shows), not its styling."
+ },
+ "design_system": {
+  "roles": 22,
+  "themes": 2,
+  "color_tiers": 4,
+  "primitives": 12,
+  "width_safety_cases": 752,
+  "width_safety_failures": 0,
+  "renderers_migrated": 1,
+  "renderers_total": 40,
+  "baseline_regression": "none (byte-identical except live file counts)"
+ }
 }

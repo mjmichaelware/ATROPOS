@@ -2,33 +2,66 @@
 package atropos.cli.ui
 
 import atropos.cli.config.ConfigurationManager
+import atropos.cli.ui.design.ColorTier
+import atropos.cli.ui.design.Role
+import atropos.cli.ui.design.Surface
+import atropos.cli.ui.design.ThemeCatalog
+import atropos.cli.ui.design.ThemePalette
 
+/**
+ * Resolves semantic [Role]s to SGR sequences for the active theme and terminal
+ * capability tier.
+ *
+ * The named helpers below are the historical renderer API and are kept so every
+ * existing call site keeps working; they are now thin aliases over roles, so
+ * they pick up theme and capability changes for free. New renderers should
+ * prefer [surface] and [paint] directly.
+ */
 class TerminalTheme(
-    private val capabilities: ConfigurationManager
+    private val capabilities: ConfigurationManager,
+    private val palette: ThemePalette = ThemeCatalog.byId(System.getenv("ATROPOS_THEME")),
+    private val tierOverride: ColorTier? = null
 ) {
     val colorEnabled: Boolean
         get() = capabilities.isColorEnabled
 
-    fun brand(text: String): String = style(text, "1;36")
-    fun success(text: String): String = style(text, "1;32")
-    fun error(text: String): String = style(text, "1;31")
-    fun warning(text: String): String = style(text, "33")
-    fun metadata(text: String): String = style(text, "38;5;245")
-    fun subdued(text: String): String = style(text, "38;5;239")
-    fun strong(text: String): String = style(text, "1;37")
-    fun path(text: String): String = style(text, "36")
-    fun code(text: String): String = style(text, "38;5;252")
-    fun headerBrand(text: String): String = style(text, "1;36;48;5;235")
-    fun headerText(text: String): String = style(text, "38;5;250;48;5;235")
-    fun footer(text: String): String = style(text, "38;5;245;48;5;235")
-    fun selection(text: String): String = style(text, "30;46")
+    /** Terminal capability tier, re-read each call so a theme switch takes effect live. */
+    val tier: ColorTier
+        get() = tierOverride ?: ColorTier.detect(
+            colorEnabled = capabilities.isColorEnabled,
+            term = System.getenv("TERM"),
+            colorterm = System.getenv("COLORTERM")
+        )
+
+    val themeId: String get() = palette.id
+    val themeName: String get() = palette.displayName
+
+    /** Composition primitives bound to this theme. */
+    val surface: Surface = Surface { role, text -> paint(role, text) }
+        .also { it.asciiOnly = System.getenv("ATROPOS_ASCII").isNullOrBlank().not() }
+
+    /** Paints text with a semantic role. The single styling entry point. */
+    fun paint(role: Role, text: String): String {
+        if (text.isEmpty()) return text
+        val sgr = palette.style(role, tier)
+        return if (sgr.isEmpty()) text else "\u001B[${sgr}m$text\u001B[0m"
+    }
+
+    // ---- established renderer API (aliases over roles) ----------------------
+
+    fun brand(text: String): String = paint(Role.BRAND, text)
+    fun success(text: String): String = paint(Role.STATUS_VERIFIED, text)
+    fun error(text: String): String = paint(Role.STATUS_ERROR, text)
+    fun warning(text: String): String = paint(Role.STATUS_PENDING, text)
+    fun metadata(text: String): String = paint(Role.TEXT_SECONDARY, text)
+    fun subdued(text: String): String = paint(Role.TEXT_MUTED, text)
+    fun strong(text: String): String = paint(Role.TEXT_PRIMARY, text)
+    fun path(text: String): String = paint(Role.PATH, text)
+    fun code(text: String): String = paint(Role.CODE, text)
+    fun headerBrand(text: String): String = paint(Role.BRAND, text)
+    fun headerText(text: String): String = paint(Role.SURFACE_HEADER, text)
+    fun footer(text: String): String = paint(Role.SURFACE_FOOTER, text)
+    fun selection(text: String): String = paint(Role.ACCENT_SELECTION, text)
 
     fun reset(): String = if (colorEnabled) "\u001B[0m" else ""
-
-    private fun style(text: String, code: String): String =
-        if (colorEnabled && text.isNotEmpty()) {
-            "\u001B[${code}m$text\u001B[0m"
-        } else {
-            text
-        }
 }
