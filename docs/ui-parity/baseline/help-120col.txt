@@ -1,5 +1,3 @@
- ATROPOS                                                                                             groq · ask · /help 
-  /status failures           provider failure summary                                                                   
   /status quota              quota ledger                                                                               
   /providers                 provider inventory                                                                         
   /providers descriptors     provider contract grid                                                                     
@@ -35,10 +33,12 @@
   /shell                     run explicit shell command                                                                 
   /exit                      close session                                                                              
   /quit                      close session                                                                              
-•   /verify <narrow|wide>                                                                                               
-•   !<command> | /shell <command>                                                                                       
-•   /pwd | /cd [dir] | /ls [args] | /git status                                                                         
-•   /home | /dashboard | /tabs | /tab [new <name>|<n>|rename|close|next|prev]                                           
-────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-[ask] >                                                                                                                 
+┃  /verify <narrow|wide>                                                                                                
+┃  !<command> | /shell <command>                                                                                        
+┃  /pwd | /cd [dir] | /ls [args] | /git status                                                                          
+┃  /home | /dashboard | /tabs | /tab [new <name>|<n>|rename|close|next|prev]                                            
+                                                                                                                        
+┃                                                                                                                       
+┃  ask · groq                                                                                                           
+╹                                                                                                                       
 /home/user/ATROPOS                                                               ◇ groq  ▸ ask  ▤ tab 1:Dashboard  /help

@@ -1,5 +1,4 @@
- ATROPOS                                                     groq · ask · /help 
-[ask] › /home                                                                   
+┃  ask /home                                                                    
 █▀▀█ ▀▀█▀▀ █▀▀█ █▀▀█ █▀▀█ █▀▀█ █▀▀▀                                             
 █▄▄█   █   █▄▄▀ █  █ █▄▄█ █  █ ▀▀▀█                                             
 ▀  ▀ ▀▀▀▀▀ ▀▀▀▀ ▀▀▀▀ ▀▀▀▀ ▀▀▀▀ ▀▀▀▀                                             
@@ -8,7 +7,7 @@ local-first · free-first · quota-aware · truthful app-factory workbench
 ┃  WORKSPACE                            ┃  PROVIDERS                            
 ┃  path        /home/user/ATROPOS       ┃  groq        missing key fast chat /… 
 ┃  git         claude/pass10-job-ui-20… ┃  openai      missing key general rea… 
-┃  kotlin      120 files                ┃  anthropic   missing key coding / de… 
+┃  kotlin      121 files                ┃  anthropic   missing key coding / de… 
 ┃  mode        ask                      ┃  xai         missing key alternate c… 
 ┃  provider    groq                     ┃  ollama      configured local privac… 
                                         ┃  gemini      not installed not insta… 
@@ -39,6 +38,7 @@ local-first · free-first · quota-aware · truthful app-factory workbench
                                                                                 
                                                                                 
                                                                                 
-────────────────────────────────────────────────────────────────────────────────
-[ask] >                                                                         
+┃                                                                               
+┃  ask · groq                                                                   
+╹                                                                               
 /home/user/ATROPOS                       ◇ groq  ▸ ask  ▤ tab 1:Dashboard  /help

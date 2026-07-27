@@ -1,4 +1,4 @@
- ATROPOS             groq · ask · /help 
+  /verify narrow             quick verif
 ication                                 
   /verify wide               wide verifi
 cation                                  
@@ -33,12 +33,12 @@ t shell command
 on                                      
   /quit                      close sessi
 on                                      
-•   /verify <narrow|wide>               
-•   !<command> | /shell <command>       
-•   /pwd | /cd [dir] | /ls [args] | /git
- status                                 
-•   /home | /dashboard | /tabs | /tab [n
-ew <name>|<n>|rename|close|next|prev]   
-────────────────────────────────────────
-[ask] >                                 
+┃  /verify <narrow|wide>                
+┃  !<command> | /shell <command>        
+┃  /pwd | /cd [dir] | /ls [args] | /git…
+┃  /home | /dashboard | /tabs | /tab [n…
+                                        
+┃                                       
+┃  ask · groq                           
+╹                                       
 /home/user/ATROPOS                 /help
