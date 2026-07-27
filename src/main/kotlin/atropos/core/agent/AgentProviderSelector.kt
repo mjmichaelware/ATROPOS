@@ -2,6 +2,7 @@ package atropos.core.agent
 
 import atropos.core.AtroposConfig
 import atropos.core.OllamaHealthProbe
+import atropos.core.provider.ProviderCascadeOrder
 
 data class AgentProviderSelection(
     val askOrder: List<String>,
@@ -73,6 +74,10 @@ class AgentProviderSelector(
             patchConfigured += "cloudflare_ai"
         }
         if (config.keys.groq.isNotBlank()) patchConfigured += "groq"
+        // Local-first applies to patch generation as well. The previous patch
+        // order named no local provider at all, so a working local model was
+        // never asked even when every remote one was unreachable.
+        if (ollamaProbe()) patchConfigured += "ollama"
 
         val requestedPatchProvider = patchProviderOverride?.trim()?.lowercase().orEmpty()
         val patchOrder = buildList {
@@ -93,9 +98,21 @@ class AgentProviderSelector(
             .filter { it.isNotBlank() }
             .distinct()
 
+        // Local-first, then free-first. The hand-written lists above express a
+        // preference between peers; cost ordering outranks that preference, and
+        // paid-locked providers are removed rather than attempted.
+        val orderedAsk = ProviderCascadeOrder.order(finalOrder).ifEmpty { listOf("ollama") }
+        val orderedPatch = if (requestedPatchProvider.isNotBlank()) {
+            // An explicit override stays first: the operator named it.
+            listOf(requestedPatchProvider) +
+                ProviderCascadeOrder.order(patchOrder.filterNot { it == requestedPatchProvider })
+        } else {
+            ProviderCascadeOrder.order(patchOrder)
+        }
+
         return AgentProviderSelection(
-            askOrder = finalOrder.ifEmpty { listOf("ollama") },
-            patchOrder = patchOrder,
+            askOrder = orderedAsk,
+            patchOrder = orderedPatch,
             doctorTruthSource = doctorTruthSource,
             knownActiveProviders = knownActive
         )

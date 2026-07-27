@@ -107,9 +107,28 @@ class GoalContinuationService(
         return GoalContinuationResult(true, "continuation #$nextIndex", updated)
     }
 
+    /**
+     * Closes a goal run.
+     *
+     * `VERIFIED_COMPLETE` is the one condition that asserts the work was
+     * *proven* done, so it requires evidence to have been recorded. A run that
+     * finished having gathered nothing has verified nothing, and letting it
+     * claim verified completion is the fail-closed rule from decision F applied
+     * to the goal boundary. Every other terminal condition — blocked,
+     * cancelled, failed — is a statement about *not* completing and needs no
+     * evidence.
+     */
     fun completeRun(goalRunId: String, condition: GoalTerminalCondition, reason: String? = null): GoalContinuationResult {
         val record = store.resolve(goalRunId)
             ?: return GoalContinuationResult(false, "goal run not found: $goalRunId")
+
+        if (condition == GoalTerminalCondition.VERIFIED_COMPLETE && record.evidence.isEmpty()) {
+            return GoalContinuationResult(
+                false,
+                "goal run $goalRunId cannot be marked verified-complete: no evidence was recorded"
+            )
+        }
+
         val now = clock()
         val updated = store.update(
             record.copy(
