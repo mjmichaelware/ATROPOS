@@ -47,40 +47,55 @@ class StatusBarRenderer(
         width
     )
 
+    /**
+     * Footer in the pinned reference's shape: working directory on the left in
+     * muted ink, compact status pills on the right, each prefixed by its own
+     * symbol so the signal is not colour-only.
+     *
+     * The reference renders e.g. `△ 2 Permissions`, `• 3 LSP`, `⊙ 1 MCP` and a
+     * trailing muted `/status`. ATROPOS substitutes its own truthful pills —
+     * provider, mode, tab, tokens and patch state — and keeps the trailing
+     * affordance. Pills drop right-to-left as width shrinks so the directory is
+     * never the first thing lost.
+     */
     fun footer(state: SessionPresentationState, width: Int): String {
         val safeWidth = width.coerceAtLeast(1)
-        val provider = state.provider.lowercase()
-        val mode = state.mode.lowercase()
-        val tokens = state.tokens.text()
-        val cost = state.cost.text()
-        val workspace = TerminalText.compactPath(state.workspace)
-        val tab = TerminalText.sanitize(state.activeTab)
-        val screen = TerminalText.sanitize(state.activeScreen)
-        val tabScreen = "$tab:$screen"
-        val operation = state.activeOperation
-            ?.let(TerminalText::sanitize)
-            ?.takeIf(String::isNotBlank)
-            ?.let { "op:$it" }
-        val patch = state.activePatchId
-            ?.let(TerminalText::sanitize)
-            ?.takeIf(String::isNotBlank)
-            ?.let { "patch:$it" } ?: "patch:none"
 
-        val selected = listOf(
-            listOfNotNull("ATROPOS", provider, mode, tabScreen, "$tokens tok", cost, workspace, patch, operation),
-            listOfNotNull(provider, mode, tabScreen, "$tokens tok", workspace, patch, operation),
-            listOfNotNull(provider, mode, tabScreen, "$tokens tok"),
-            listOf(provider, mode, tabScreen),
-            listOf(provider, mode)
-        ).map { it.joinToString(" · ") }
-            .firstOrNull { TerminalText.cellWidth(" $it") <= safeWidth }
-            ?: "$provider · $mode"
+        val directory = TerminalText.compactPath(state.workspace)
+        val tab = "${TerminalText.sanitize(state.activeTab)}:${TerminalText.sanitize(state.activeScreen)}"
 
-        return theme.footer(
-            TerminalText.padEnd(
-                TerminalText.ellipsize(" $selected", safeWidth),
-                safeWidth
-            )
-        )
+        // Right-hand pills, least important last so they shed first.
+        val pills = buildList {
+            add(theme.metadata("◇ ") + theme.strong(state.provider.lowercase()))
+            add(theme.metadata("▸ ") + theme.strong(state.mode.lowercase()))
+            add(theme.metadata("▤ ") + theme.strong(tab))
+            state.tokens.text().takeIf { it != "--" }?.let {
+                add(theme.metadata("⋯ ") + theme.strong("$it tok"))
+            }
+            state.activePatchId?.takeIf { it.isNotBlank() }?.let {
+                add(theme.metadata("⊙ ") + theme.strong(TerminalText.ellipsize(it, 18)))
+            }
+            state.activeOperation
+                ?.let(TerminalText::sanitize)
+                ?.takeIf(String::isNotBlank)
+                ?.let { add(theme.warning("△ ") + theme.strong(it)) }
+            add(theme.subdued("/help"))
+        }
+
+        // Shed pills from the left of the right-hand group until it fits.
+        var kept = pills
+        var right = kept.joinToString("  ")
+        val left = theme.subdued(directory)
+        fun fits() = TerminalText.cellWidth(left) + 2 + TerminalText.cellWidth(right) <= safeWidth
+        while (kept.size > 1 && !fits()) {
+            kept = kept.drop(1)
+            right = kept.joinToString("  ")
+        }
+
+        val gap = (safeWidth - TerminalText.cellWidth(left) - TerminalText.cellWidth(right))
+            .coerceAtLeast(1)
+        val line = if (fits()) left + " ".repeat(gap) + right else TerminalText.ellipsize(left, safeWidth)
+
+        return TerminalText.padEnd(TerminalText.ellipsize(line, safeWidth), safeWidth)
     }
 }

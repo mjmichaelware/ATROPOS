@@ -49,17 +49,18 @@ class ViewportLayout(
             activePatchId = activePatchId
         )
 
-        frame.setLine(0, statusBar.header(state, safeWidth))
 
         val footerRow = safeHeight - 1
         val composerSnapshot = composer.renderMultiline(safeWidth, (safeHeight / 3).coerceIn(1, 4))
+        val metaLines = composer.metaRow(provider, safeWidth)
         val paletteLines = palette.render(composer.commandQuery(), safeWidth, 5)
-        val composerHeight = composerSnapshot.lines.size
+        val composerHeight = composerSnapshot.lines.size + metaLines.size
         val paletteHeight = paletteLines.size
         val composerStart = footerRow - composerHeight
         val paletteStart = composerStart - paletteHeight
+        // Reference is gap-driven: one blank row, no rule.
         val separatorRow = (paletteStart - 1).coerceAtLeast(2)
-        val transcriptStart = 1
+        val transcriptStart = 0
         val transcriptHeight = (separatorRow - transcriptStart).coerceAtLeast(1)
 
         if (transcript.isEmpty) {
@@ -80,7 +81,6 @@ class ViewportLayout(
             }
         }
 
-        frame.setLine(separatorRow, theme.subdued("─".repeat(safeWidth)))
 
         paletteLines.forEachIndexed { index, line ->
             val row = paletteStart + index
@@ -90,10 +90,13 @@ class ViewportLayout(
         composerSnapshot.lines.forEachIndexed { index, line ->
             frame.setLine(composerStart + index, line)
         }
+        metaLines.forEachIndexed { index, line ->
+            frame.setLine(composerStart + composerSnapshot.lines.size + index, line)
+        }
 
         frame.setLine(footerRow, statusBar.footer(state, safeWidth))
         frame.cursorX = composerSnapshot.cursorColumn
-        frame.cursorY = composerStart + composerSnapshot.cursorRow + 1
+        frame.cursorY = composerStart + composerSnapshot.cursorRow
         frame.showCursor = true
         return frame
     }

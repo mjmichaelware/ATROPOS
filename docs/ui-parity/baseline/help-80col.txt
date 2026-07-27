@@ -1,0 +1,44 @@
+  /status quota              quota ledger                                       
+  /providers                 provider inventory                                 
+  /providers descriptors     provider contract grid                             
+  /providers validate        provider descriptor validation                     
+  /agent                     agent bridge                                       
+  /agent status              agent bridge status                                
+  /agent ask                 agent bridge ask                                   
+  /agent patch               agent bridge patch placeholder                     
+  /agent apply               agent bridge safe patch apply                      
+  /agent apply --check       agent bridge patch validation                      
+  /agent apply --verify      agent bridge patch apply and verify                
+  /agent verify              agent bridge verification                          
+  /agent repair              agent bridge repair                                
+  /route                     preview routing decision                           
+  /use                       switch provider                                    
+  /use auto                  automatic routing                                  
+  /verify                    verification scope                                 
+  /verify narrow             quick verification                                 
+  /verify wide               wide verification                                  
+  /keys                      key status                                         
+  /keys setup                local secret template setup                        
+  /keys status               key source status                                  
+  /factory                   factory status                                     
+  /factory plan              bounded app-factory plan                           
+  /factory run               queue app-factory run                              
+  /memory                    memory status                                      
+  /paid                      paid emergency gate                                
+  /paid status               paid emergency status                              
+  /pwd                       show shell cwd                                     
+  /cd                        change shell cwd                                   
+  /ls                        list files through shell bridge                    
+  /git status                git status through shell bridge                    
+  /shell                     run explicit shell command                         
+  /exit                      close session                                      
+  /quit                      close session                                      
+┃  /verify <narrow|wide>                                                        
+┃  !<command> | /shell <command>                                                
+┃  /pwd | /cd [dir] | /ls [args] | /git status                                  
+┃  /home | /dashboard | /tabs | /tab [new <name>|<n>|rename|close|next|prev]    
+                                                                                
+┃                                                                               
+┃  ask · groq                                                                   
+╹                                                                               
+/home/user/ATROPOS                       ◇ groq  ▸ ask  ▤ tab 1:Dashboard  /help

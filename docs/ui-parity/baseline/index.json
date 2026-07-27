@@ -1,0 +1,82 @@
+{
+ "landing@40": {
+  "file": "landing-40col.txt",
+  "overflow_lines": []
+ },
+ "landing@80": {
+  "file": "landing-80col.txt",
+  "overflow_lines": []
+ },
+ "landing@120": {
+  "file": "landing-120col.txt",
+  "overflow_lines": []
+ },
+ "landing@160": {
+  "file": "landing-160col.txt",
+  "overflow_lines": []
+ },
+ "tabs@40": {
+  "file": "tabs-40col.txt",
+  "overflow_lines": []
+ },
+ "tabs@80": {
+  "file": "tabs-80col.txt",
+  "overflow_lines": []
+ },
+ "tabs@120": {
+  "file": "tabs-120col.txt",
+  "overflow_lines": []
+ },
+ "tabs@160": {
+  "file": "tabs-160col.txt",
+  "overflow_lines": []
+ },
+ "agent-status@40": {
+  "file": "agent-status-40col.txt",
+  "overflow_lines": []
+ },
+ "agent-status@80": {
+  "file": "agent-status-80col.txt",
+  "overflow_lines": []
+ },
+ "agent-status@120": {
+  "file": "agent-status-120col.txt",
+  "overflow_lines": []
+ },
+ "agent-status@160": {
+  "file": "agent-status-160col.txt",
+  "overflow_lines": []
+ },
+ "help@40": {
+  "file": "help-40col.txt",
+  "overflow_lines": []
+ },
+ "help@80": {
+  "file": "help-80col.txt",
+  "overflow_lines": []
+ },
+ "help@120": {
+  "file": "help-120col.txt",
+  "overflow_lines": []
+ },
+ "help@160": {
+  "file": "help-160col.txt",
+  "overflow_lines": []
+ },
+ "providers@40": {
+  "file": "providers-40col.txt",
+  "overflow_lines": []
+ },
+ "providers@80": {
+  "file": "providers-80col.txt",
+  "overflow_lines": []
+ },
+ "providers@120": {
+  "file": "providers-120col.txt",
+  "overflow_lines": []
+ },
+ "providers@160": {
+  "file": "providers-160col.txt",
+  "overflow_lines": []
+ }
+}

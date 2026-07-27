@@ -1,0 +1,44 @@
+┃  ask /home                                                                                                            
+                                                                                                                        
+█▀▀█ ▀▀█▀▀ █▀▀█ █▀▀█ █▀▀█ █▀▀█ █▀▀▀                                                                                     
+█▄▄█   █   █▄▄▀ █  █ █▄▄█ █  █ ▀▀▀█                                                                                     
+▀  ▀ ▀▀▀▀▀ ▀▀▀▀ ▀▀▀▀ ▀▀▀▀ ▀▀▀▀ ▀▀▀▀                                                                                     
+                                                                                                                        
+● Tip Use /providers to see which providers are configured and free                                                     
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+                                                                                                                        
+┃                                                                                                                       
+┃  ask · groq                                                                                                           
+╹                                                                                                                       
+/home/user/ATROPOS                                                               ◇ groq  ▸ ask  ▤ tab 1:Dashboard  /help
