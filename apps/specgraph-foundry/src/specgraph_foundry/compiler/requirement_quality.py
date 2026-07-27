@@ -1,5 +1,5 @@
 import re
-from typing import List, Dict, Any
+from typing import Any, Dict, List, Optional
 
 VAGUE_TERMS = {
     "easy", "simple", "fast", "efficient", "flexible", "user-friendly", "robust",
