@@ -2,10 +2,12 @@
 
 import { useReducer } from "react";
 import { Button } from "@/components/ui/button";
+import { describeClientError } from "@/lib/api/errors";
 import { createProjectApiClient } from "@/lib/projects/api";
 import { createUploadIntent, finalizeUpload } from "@/lib/sources/api";
 import { validateSourceFile } from "@/lib/sources/file-validation";
-import { sha256Hex } from "@/lib/sources/hash";
+import { fileToBase64, sha256Hex } from "@/lib/sources/hash";
+import type { FinalizedUpload, OperationResponse } from "@/lib/sources/schemas";
 import { uploadToSignedUrl } from "@/lib/sources/upload";
 import { uploadReducer, type UploadItem } from "@/lib/sources/upload-machine";
 import { SourceDropZone } from "./source-drop-zone";
@@ -49,18 +51,36 @@ export function SourceUploadPanel({ projectId, onComplete }: { projectId: string
         });
         dispatch({ type: "transition", id, phase: "UPLOAD_COMPLETE" });
         dispatch({ type: "transition", id, phase: "FINALIZE_QUEUED" });
-        const finalize = await finalizeUpload(client, intent.body.id, client.createIdempotencyKey());
-        dispatch({ type: "transition", id, phase: "FINALIZING", message: String(finalize.body.operation.phase ?? "queued") });
-        const operation = finalize.location ? await client.pollOperation(finalize.location) : finalize;
+        dispatch({ type: "transition", id, phase: "FINALIZING" });
+        // Sending our own copy of the bytes lets the server verify them
+        // directly instead of reading the object back from Supabase
+        // Storage, whose authenticated download route has been unreliable.
+        const rawBase64 = await fileToBase64(file);
+        const accepted = await finalizeUpload(client, intent.body.id, client.createIdempotencyKey(), rawBase64);
+        // finalize_source_upload is an async operation: the worker that
+        // processes it only runs on its own schedule, so this poll can
+        // legitimately take minutes, not seconds.
+        const terminal = accepted.location
+          ? await client.pollOperation<OperationResponse>(accepted.location, { timeoutMs: 240_000, intervalMs: 5_000 })
+          : accepted;
+        const body = terminal.body;
+        const isOperation = typeof body === "object" && body !== null && "operation" in body;
+        const status = isOperation
+          ? ((body as OperationResponse).operation.result as { status?: string } | undefined)?.status ?? (body as OperationResponse).operation.state
+          : (body as FinalizedUpload).status;
+        const succeeded = status === "FINALIZED" || status === "SUCCEEDED";
+        dispatch({ type: "transition", id, phase: succeeded ? "FINALIZED" : "FAILED", message: status });
+        if (succeeded) {
+          dispatch({ type: "transition", id, phase: "COMPLETE" });
+        }
+        onComplete();
+      } catch (error) {
         dispatch({
           type: "transition",
           id,
-          phase: operation.body.operation.state === "SUCCEEDED" ? "COMPLETE" : "FAILED",
-          message: operation.body.operation.state,
+          phase: "FAILED",
+          message: `Upload did not complete. Server authority remains unchanged. (${describeClientError(error)})`,
         });
-        onComplete();
-      } catch {
-        dispatch({ type: "transition", id, phase: "FAILED", message: "Upload did not complete. Server authority remains unchanged." });
       }
     }
   }

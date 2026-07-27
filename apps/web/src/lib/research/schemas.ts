@@ -41,6 +41,9 @@ export type GapAtom = FreeformRecord & {
   id: string;
   text?: string;
   label?: string;
+  canonical_statement?: string;
+  kind?: string;
+  modality?: string;
   source_document_id?: string;
   document_id?: string;
   line_start?: number;
@@ -62,6 +65,9 @@ export type ResearchTask = FreeformRecord & {
   atom_id?: string;
   dimension?: string;
   status?: string;
+  canonical_statement?: string;
+  kind?: string;
+  modality?: string;
   worker_id?: string | null;
   lease_expires_at?: string | null;
   attempt_count?: number;

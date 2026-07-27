@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Tabs } from "@/components/ui/tabs";
+import { Tooltip } from "@/components/ui/tooltip";
 import { useOnlineStatus } from "@/lib/graph/connectivity";
 import { useHandoffWorkspace } from "@/lib/handoff/queries";
 import { BindingList } from "./binding-list";
@@ -16,9 +18,17 @@ import { HandoffOverview } from "./handoff-overview";
 
 type HandoffTab = "overview" | "bindings" | "exports" | "runs";
 
+const HANDOFF_TABS: HandoffTab[] = ["overview", "bindings", "exports", "runs"];
+
+function initialTabFromSearchParams(searchParams: URLSearchParams): HandoffTab {
+  const requested = searchParams.get("tab");
+  return HANDOFF_TABS.includes(requested as HandoffTab) ? (requested as HandoffTab) : "overview";
+}
+
 export function HandoffWorkspace({ projectId }: { projectId: string }) {
   const online = useOnlineStatus();
-  const [tab, setTab] = useState<HandoffTab>("overview");
+  const searchParams = useSearchParams();
+  const [tab, setTab] = useState<HandoffTab>(() => initialTabFromSearchParams(searchParams));
   const workspace = useHandoffWorkspace(projectId);
 
   if (!online) {
@@ -37,9 +47,16 @@ export function HandoffWorkspace({ projectId }: { projectId: string }) {
   return (
     <section className="sg-graph-workspace" aria-label="Handoff workspace">
       <header className="sg-source-hero sg-graph-hero">
-        <p className="sg-micro-label">Handoff</p>
+        <p className="sg-micro-label">
+          Handoff
+          <Tooltip label="An export is a signed, checksummed package of a verified plan you can download. An execution run hands that same plan to a connected system and tracks it through to independent verification.">
+            <button type="button" className="sg-help-hint" aria-label="What's the difference between an export and a run?">
+              ?
+            </button>
+          </Tooltip>
+        </p>
         <h1>{String(body?.project?.name ?? "Project")}</h1>
-        <p>Bindings, exports, and execution runs use only real backend-authoritative state.</p>
+        <p>Send a verified plan out into the real world — package it as an export, or hand it off to a connected system to run.</p>
         <Button type="button" variant="secondary" onClick={() => void workspace.refetch()}>
           Refresh
         </Button>

@@ -4,20 +4,34 @@ const CONTROL_PATTERN = new RegExp("[\\x00-\\x1f\\x7f]", "g");
  * Validates an ephemeral signed export-artifact download URL before it is
  * opened. Signed URLs are single-purpose and time-limited; this function
  * only validates shape/origin, it never persists the URL.
+ *
+ * Accepts URLs from the Supabase Storage origin (legacy) or from the
+ * SpecGraph API origin (database-backed artifacts).
  */
-export function validateSignedDownloadUrl(value: string, supabaseUrl: string) {
+export function validateSignedDownloadUrl(value: string, supabaseUrl: string, apiUrl?: string) {
   const target = new URL(value);
   const supabase = new URL(supabaseUrl);
   if (target.protocol !== "https:" && target.hostname !== "127.0.0.1" && target.hostname !== "localhost") {
     throw new Error("signed download target must use HTTPS");
   }
-  if (target.origin !== supabase.origin) {
-    throw new Error("signed download target origin does not match Supabase");
+  const isSupabaseOrigin = target.origin === supabase.origin;
+  const isApiOrigin = apiUrl ? target.origin === new URL(apiUrl).origin : false;
+  if (!isSupabaseOrigin && !isApiOrigin) {
+    throw new Error("signed download target origin is not trusted");
   }
   if (target.username || target.password || target.hash) {
     throw new Error("signed download target is not safe");
   }
   return target;
+}
+
+function triggerAnchorDownload(url: string): void {
+  const link = document.createElement("a");
+  link.href = url;
+  link.rel = "noopener noreferrer";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
 }
 
 /**
@@ -28,10 +42,11 @@ export function validateSignedDownloadUrl(value: string, supabaseUrl: string) {
 export function openSignedDownload(
   value: string,
   supabaseUrl: string,
-  openImpl: (url: string) => void = (url) => window.open(url, "_blank", "noopener,noreferrer"),
+  apiUrl?: string,
+  openImpl: (url: string) => void = triggerAnchorDownload,
 ): boolean {
   try {
-    const target = validateSignedDownloadUrl(value, supabaseUrl);
+    const target = validateSignedDownloadUrl(value, supabaseUrl, apiUrl);
     openImpl(target.toString());
     return true;
   } catch {

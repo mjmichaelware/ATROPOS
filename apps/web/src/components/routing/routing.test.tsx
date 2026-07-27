@@ -115,7 +115,36 @@ describe("RoutingWorkspace", () => {
       expect(createOrUpdateProvider).toHaveBeenCalledWith(
         expect.anything(),
         "project-1",
-        expect.objectContaining({ name: "New provider" }),
+        expect.objectContaining({ name: "New provider", territories: ["*"], priority: 0 }),
+        "idempotency-key",
+        undefined,
+      ),
+    );
+  });
+
+  it("sends parsed territories and priority for a new provider", async () => {
+    // Regression test: the provider form used to omit territories/priority
+    // entirely, even though the backend requires them - configure_provider()
+    // would reject a provider with no territory. Confirms the comma-separated
+    // territories field is parsed into a real array and priority into a number.
+    createOrUpdateProvider.mockResolvedValue({ body: { id: "provider-3" }, etag: "provider-etag-3" });
+    renderRouting();
+    fireEvent.click(await screen.findByRole("tab", { name: "Providers" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add provider" }));
+    fireEvent.change(screen.getByLabelText("Name"), { target: { value: "sambanova-8b" } });
+    fireEvent.change(screen.getByLabelText("Provider class"), { target: { value: "FREE_READY_PROVIDER" } });
+    fireEvent.change(screen.getByLabelText("Cost class"), { target: { value: "FREE" } });
+    fireEvent.change(screen.getByLabelText("Territories"), { target: { value: "RESEARCH_CLASSIFICATION, DOCUMENT_PARSING" } });
+    fireEvent.change(screen.getByLabelText("Priority"), { target: { value: "5" } });
+    fireEvent.click(screen.getByRole("button", { name: "Create provider" }));
+    await waitFor(() =>
+      expect(createOrUpdateProvider).toHaveBeenCalledWith(
+        expect.anything(),
+        "project-1",
+        expect.objectContaining({
+          territories: ["RESEARCH_CLASSIFICATION", "DOCUMENT_PARSING"],
+          priority: 5,
+        }),
         "idempotency-key",
         undefined,
       ),

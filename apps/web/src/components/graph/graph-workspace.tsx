@@ -76,8 +76,9 @@ export function GraphWorkspace({ projectId }: { projectId: string }) {
   const [mutationError, setMutationError] = useState<string | undefined>();
 
   const createRelation = useCreateRelationMutation(projectId);
-  const synthesize = useSynthesizePlanMutation(projectId);
-  const verify = useVerifyPlanMutation(projectId, effectivePlanId);
+  const [progressMessage, setProgressMessage] = useState<string | undefined>();
+  const synthesize = useSynthesizePlanMutation(projectId, setProgressMessage);
+  const verify = useVerifyPlanMutation(projectId, effectivePlanId, setProgressMessage);
 
   const [layoutVersion, setLayoutVersion] = useState(0);
   const [layoutError, setLayoutError] = useState<string | undefined>();
@@ -283,7 +284,13 @@ export function GraphWorkspace({ projectId }: { projectId: string }) {
           <p>{mutationError}</p>
         </Alert>
       ) : null}
-      <VisuallyHidden role="status">{announcement}</VisuallyHidden>
+      {(synthesize.isPending || verify.isPending) && progressMessage ? (
+        <p role="status" aria-live="polite" className="sg-micro-label">
+          {progressMessage}
+        </p>
+      ) : (
+        <VisuallyHidden role="status">{announcement}</VisuallyHidden>
+      )}
       <GraphHeader
         projectName={projectName}
         mode={urlState.mode}
@@ -295,6 +302,7 @@ export function GraphWorkspace({ projectId }: { projectId: string }) {
         onRefresh={refetchAll}
       />
       <PlanningRail
+        projectId={projectId}
         tab={planningTab}
         onTabChange={setPlanningTab}
         workspace={workspace.data?.body}

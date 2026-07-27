@@ -231,6 +231,63 @@ class HttpApiTest(unittest.TestCase):
             "gateway-project",
         )
 
+    def test_atoms_export_route_returns_downloadable_text_and_pdf(
+        self,
+    ) -> None:
+        created = self.request(
+            "POST",
+            "/v1/projects",
+            {
+                "slug": "atoms-export-project",
+                "name": "Atoms Export Project",
+            },
+        )
+        project_id = created.body["id"]
+
+        document = self.request(
+            "POST",
+            f"/v1/projects/{project_id}/documents",
+            {
+                "title": "Contract",
+                "content": "The worker must extract atoms.\n",
+            },
+        )
+        document_id = document.body["id"]
+
+        extracted = self.request(
+            "POST",
+            f"/v1/documents/{document_id}/extract",
+            {},
+        )
+        self.assertEqual(extracted.status, 200)
+
+        response = self.request(
+            "GET",
+            f"/v1/documents/{document_id}/atoms/export",
+        )
+
+        self.assertEqual(response.status, 200)
+        self.assertEqual(response.body["document_id"], document_id)
+        self.assertEqual(response.body["atom_count"], 1)
+        self.assertEqual(response.body["text"]["media_type"], "text/plain")
+        self.assertEqual(response.body["pdf"]["media_type"], "application/pdf")
+
+        import base64
+
+        pdf_bytes = base64.b64decode(response.body["pdf"]["base64"])
+        self.assertTrue(pdf_bytes.startswith(b"%PDF"))
+
+    def test_atoms_export_route_requires_auth(
+        self,
+    ) -> None:
+        response = self.request(
+            "GET",
+            "/v1/documents/does-not-exist/atoms/export",
+            authenticated=False,
+        )
+
+        self.assertEqual(response.status, 401)
+
     def test_request_database_uses_user(
         self,
     ) -> None:

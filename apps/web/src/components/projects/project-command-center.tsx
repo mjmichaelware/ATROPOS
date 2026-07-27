@@ -5,6 +5,8 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { projectSections } from "@/components/navigation/routes";
+import { CopyableId } from "@/components/ui/copyable-id";
+import { describeClientError } from "@/lib/api/errors";
 import { useProjectCommandCenter } from "@/lib/projects/queries";
 import { writeRecentProjectId } from "@/lib/projects/selection";
 import { ProjectCounts } from "./project-counts";
@@ -23,17 +25,22 @@ export function ProjectCommandCenter({ projectId }: { projectId: string }) {
     return <Skeleton style={{ height: "18rem" }} />;
   }
   if (project.isError) {
-    return <ProjectErrorState title="Project not found" onRetry={() => void project.refetch()} />;
+    return <ProjectErrorState title="Project not found" detail={describeClientError(project.error)} onRetry={() => void project.refetch()} />;
   }
   const projectBody = project.data?.body;
   const workspaceBody = workspace.data?.body ?? {};
-  const readinessState = String(readiness.data?.body.readiness ?? workspaceBody.readiness ?? "UNKNOWN");
+  // getReadiness/getWorkspace both nest the real readiness payload as an
+  // object (status/next_action/stages) under a `readiness` key - never a
+  // plain string. Passed through untouched here so ProjectReadiness can
+  // render the actual pipeline, not a stringified "[object Object]".
+  const readinessData = (readiness.data?.body.readiness ?? workspaceBody.readiness) as { status?: string; next_action?: string; stages?: Array<{ name: string; status: string; count?: number; open_dimensions?: number }> } | undefined;
   return (
     <section aria-labelledby="command-title">
       <div className="sg-page-heading">
         <div>
           <h1 id="command-title">{projectBody?.name ?? "Project"}</h1>
           <p>{projectBody?.slug}</p>
+          <CopyableId value={projectBody?.id} label="Project ID" />
         </div>
         <Button type="button" variant="secondary" onClick={() => void Promise.all([project.refetch(), workspace.refetch(), readiness.refetch(), operations.refetch()])}>
           Refresh
@@ -47,12 +54,11 @@ export function ProjectCommandCenter({ projectId }: { projectId: string }) {
           ))}
       </div>
       <div className="sg-grid sg-bento">
-        <ProjectReadiness state={readinessState} />
+        <ProjectReadiness projectId={projectId} readiness={readinessData} />
         <ProjectCounts workspace={workspaceBody} />
-        <ProjectLatest workspace={workspaceBody} />
+        <ProjectLatest projectId={projectId} workspace={workspaceBody} />
       </div>
       <ProjectOperations operations={operations.data?.body.items ?? []} />
-      <p className="sg-muted">Sources, Research, the Graph foundation, Handoff, and Routing are active workspaces. Later visual-polish, accessibility, and deployment surfaces remain deferred.</p>
     </section>
   );
 }

@@ -1,14 +1,19 @@
 from __future__ import annotations
 
 import argparse
+import logging
 import os
 import signal
 import sys
+import threading
 import time
+
+logger = logging.getLogger(__name__)
 
 from ..config import Settings
 from ..database import Database
-from .artifact_storage import ArtifactStorageClient, ArtifactStorageSettings
+from .artifact_storage import ArtifactStorageSettings
+from .database_artifact_storage import DatabaseArtifactStorageClient
 from .durable_exports import DurableExportService
 from .operation_handlers import OperationHandlerRegistry, classify_error
 from .operations import (
@@ -68,7 +73,7 @@ def build_worker_components() -> tuple[
     storage = SupabaseStorageClient(
         os.environ.get("SUPABASE_URL", ""),
         os.environ.get("SUPABASE_ANON_KEY", ""),
-        timeout_seconds=float(os.environ.get("SPECGRAPH_STORAGE_TIMEOUT_SECONDS", "10")),
+        timeout_seconds=float(os.environ.get("SPECGRAPH_STORAGE_TIMEOUT_SECONDS", "30")),
     )
     source_uploads = SourceUploadService(
         database,
@@ -81,13 +86,15 @@ def build_worker_components() -> tuple[
     )
     durable_exports = DurableExportService(
         database,
-        ArtifactStorageClient(
-            storage,
+        DatabaseArtifactStorageClient(
+            database,
             ArtifactStorageSettings(
-                bucket=os.environ.get("SPECGRAPH_EXPORT_BUCKET", "export-artifacts"),
+                bucket="database",
                 max_artifact_bytes=int(os.environ.get("SPECGRAPH_ARTIFACT_MAX_BYTES", str(10 * 1024 * 1024))),
                 download_ttl_seconds=int(os.environ.get("SPECGRAPH_ARTIFACT_DOWNLOAD_TTL_SECONDS", "300")),
             ),
+            api_base_url=os.environ.get("SPECGRAPH_API_BASE_URL", ""),
+            signing_key=os.environ.get("SPECGRAPH_CURSOR_SIGNING_KEY", ""),
         ),
     )
     store = OperationStore(
@@ -111,27 +118,67 @@ def run_once(
     store: OperationStore,
     registry: OperationHandlerRegistry,
     worker_id: str,
+    settings: OperationSettings | None = None,
 ) -> bool:
+    if settings is None:
+        settings = OperationSettings()
     lease = store.claim(worker_id=worker_id)
     if lease is None:
         return False
+
+    # Keep the lease alive in a background thread so that long-running
+    # artifact uploads/downloads don't expire the lease between checkpoints.
+    done = threading.Event()
+
+    def _heartbeat() -> None:
+        while not done.wait(settings.heartbeat_seconds):
+            try:
+                store.heartbeat(lease)
+            except WorkerLeaseLost:
+                # Lease definitively gone — stop trying.
+                break
+            except Exception:
+                # Transient error (network hiccup, DB timeout, etc.).
+                # Keep the loop alive so the next interval gets another try;
+                # the lease window is wide enough to absorb a few failures.
+                pass
+
+    heartbeat = threading.Thread(target=_heartbeat, daemon=True)
+    heartbeat.start()
+
     try:
         store.start(lease, phase="starting", total=1)
         result = registry.run(store, lease)
         store.succeed(lease, result=result)
     except WorkerLeaseLost:
-        return True
+        pass
     except Exception as error:
         code, message, retryable = classify_error(error)
-        if code == "OPERATION_CANCELLED":
-            store.mark_cancelled(lease)
-        else:
-            store.fail(
-                lease,
-                code=code,
-                message=message,
-                retryable=retryable,
-            )
+        logger.error(
+            "operation handler raised %s: %s (code=%s retryable=%s)",
+            type(error).__name__,
+            error,
+            code,
+            retryable,
+            exc_info=True,
+        )
+        try:
+            if code == "OPERATION_CANCELLED":
+                store.mark_cancelled(lease)
+            else:
+                store.fail(
+                    lease,
+                    code=code,
+                    message=message,
+                    retryable=retryable,
+                )
+        except Exception:
+            # DB unavailable when recording the failure; recover_expired
+            # will reset the operation once the lease window closes.
+            pass
+    finally:
+        done.set()
+
     return True
 
 
@@ -143,7 +190,7 @@ def main(argv: list[str] | None = None) -> int:
 
     processed = 0
     while not STOP_REQUESTED:
-        claimed = run_once(store, registry, worker_id)
+        claimed = run_once(store, registry, worker_id, settings)
         if claimed:
             processed += 1
         if args.once:

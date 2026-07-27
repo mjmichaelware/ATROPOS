@@ -10,6 +10,10 @@ export function AppShell({ children, userEmail }: { children: ReactNode; userEma
     <>
       <SkipLink />
       <RouteAccent />
+      <div className="sg-shell-ambient" aria-hidden="true">
+        <span className="sg-splash-blob sg-shell-blob-a" />
+        <span className="sg-splash-blob sg-shell-blob-b" />
+      </div>
       <div className="sg-shell">
         <AppHeader userEmail={userEmail} />
         <div className="sg-mobile-nav">

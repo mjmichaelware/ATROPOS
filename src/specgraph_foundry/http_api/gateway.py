@@ -86,6 +86,7 @@ from .source_uploads import (
     UploadIntegrityMismatchError,
     UploadStateConflictError,
 )
+from .worker_trigger import CloudRunWorkerTrigger
 from .workspace import (
     ProjectWorkspaceService,
 )
@@ -139,6 +140,7 @@ class AuthenticatedApi:
         durable_exports: DurableExportService | None = None,
         operations: OperationStore | None = None,
         operation_handlers: OperationHandlerRegistry | None = None,
+        worker_trigger: CloudRunWorkerTrigger | None = None,
         *,
         enforce_mutation_guards: bool = False,
     ) -> None:
@@ -157,6 +159,7 @@ class AuthenticatedApi:
         self.durable_exports = durable_exports
         self.operations = operations
         self.operation_handlers = operation_handlers
+        self.worker_trigger = worker_trigger
 
     def dispatch(
         self,
@@ -666,12 +669,20 @@ class AuthenticatedApi:
                 and parts[3] == "finalize"
                 and request.method == "POST"
             ):
+                raw_base64 = request.payload.get(
+                    "raw_base64"
+                )
                 body = self.source_uploads.finalize(
                     owner_id=principal_user_id,
                     authorization=(
                         request.authorization or ""
                     ),
                     upload_id=parts[2],
+                    raw_base64=(
+                        raw_base64
+                        if isinstance(raw_base64, str)
+                        else None
+                    ),
                 )
                 response = self._success_response(
                     status=201,
@@ -1083,12 +1094,22 @@ class AuthenticatedApi:
                 and parts[:2] == ["v1", "operations"]
                 and request.method == "GET"
             ):
+                # Every frontend caller of pollOperation() - extraction,
+                # research completion, plan synthesis/verification, handoff,
+                # execution, source upload finalization - independently and
+                # consistently expects this nested under "operation", matching
+                # the shape the 202 submission response already uses. Returning
+                # the operation flat here (as this endpoint used to) makes
+                # pollOperation's very first status check crash with
+                # "Cannot read properties of undefined (reading 'state')".
                 return ApiResponse(
                     status=200,
-                    body=self.operations.get(
-                        owner_id=principal_user_id,
-                        operation_id=parts[2],
-                    ),
+                    body={
+                        "operation": self.operations.get(
+                            owner_id=principal_user_id,
+                            operation_id=parts[2],
+                        )
+                    },
                     headers=common_headers,
                 )
 
@@ -1209,6 +1230,8 @@ class AuthenticatedApi:
                 operation_type=route.operation,
                 request=safe_request,
             )
+            if self.worker_trigger is not None:
+                self.worker_trigger.kick()
         except NotFoundError:
             failure = not_found_response(
                 request_id=request.request_id

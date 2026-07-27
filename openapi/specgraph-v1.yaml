@@ -1168,6 +1168,54 @@
         }
       }
     },
+    "/v1/documents/{document_id}/atoms/export": {
+      "get": {
+        "operationId": "exportDocumentAtoms",
+        "tags": [
+          "Atoms"
+        ],
+        "summary": "Render a document's extracted atoms as downloadable text/PDF files",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/DocumentId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Base64-encoded text and PDF renderings of every atom extracted from this document",
+            "headers": {
+              "x-request-id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AtomsExportResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "503": {
+            "$ref": "#/components/responses/DependencyUnavailable"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
     "/v1/documents/{document_id}/provenance": {
       "get": {
         "operationId": "getDocumentProvenance",
@@ -5746,6 +5794,56 @@
             "$ref": "#/components/schemas/WorkspacePreviewMetadata"
           }
         ]
+      },
+      "AtomsExportFile": {
+        "type": "object",
+        "required": [
+          "filename",
+          "media_type",
+          "byte_length",
+          "base64"
+        ],
+        "properties": {
+          "filename": {
+            "type": "string"
+          },
+          "media_type": {
+            "type": "string"
+          },
+          "byte_length": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "base64": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "AtomsExportResponse": {
+        "type": "object",
+        "required": [
+          "document_id",
+          "atom_count",
+          "text",
+          "pdf"
+        ],
+        "properties": {
+          "document_id": {
+            "type": "string"
+          },
+          "atom_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "text": {
+            "$ref": "#/components/schemas/AtomsExportFile"
+          },
+          "pdf": {
+            "$ref": "#/components/schemas/AtomsExportFile"
+          }
+        },
+        "additionalProperties": false
       },
       "ErrorCode": {
         "type": "string",

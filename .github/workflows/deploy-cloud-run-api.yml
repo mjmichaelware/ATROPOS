@@ -1,6 +1,8 @@
 name: Deploy Cloud Run API
 
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
     inputs:
       environment:
@@ -21,7 +23,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: deploy-cloud-run-${{ github.event.inputs.environment || 'staging' }}
+  group: deploy-cloud-run-${{ github.event.inputs.environment || 'production' }}
   cancel-in-progress: true
 
 env:
@@ -34,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
-    environment: ${{ github.event.inputs.environment || 'staging' }}
+    environment: ${{ github.event.inputs.environment || 'production' }}
 
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -143,6 +145,24 @@ jobs:
         run: |
           gcloud artifacts docker images scan "$IMAGE_TAG" --uri-output-file=/tmp/scan_result.json || echo "SCAN_UNAVAILABLE"
 
+      - name: Determine service host
+        id: host
+        run: |
+          EXISTING_URL="$(
+            gcloud run services describe "${{ env.API_SERVICE_NAME }}" \
+              --region="${{ env.REGION }}" \
+              --format='value(status.url)' 2>/dev/null || true
+          )"
+
+          if [ -n "$EXISTING_URL" ]; then
+            HOST="$(echo "$EXISTING_URL" | sed -E 's#^https?://##')"
+          else
+            HOST="${{ env.API_SERVICE_NAME }}-${{ vars.GCP_PROJECT_NUMBER }}.${{ env.REGION }}.run.app"
+          fi
+
+          echo "host=$HOST" >> "$GITHUB_OUTPUT"
+          echo "Resolved service host: $HOST"
+
       - name: Deploy to Cloud Run
         id: deploy
         env:
@@ -162,10 +182,10 @@ jobs:
             --ingress=all \
             --no-cpu-throttling \
             --service-account="${{ vars.GCP_RUNTIME_SERVICE_ACCOUNT }}" \
-            --set-env-vars="^@^SPECGRAPH_HOST=0.0.0.0@SPECGRAPH_PORT=8080@SPECGRAPH_ALLOWED_HOSTS=${{ env.API_SERVICE_NAME }}-${{ vars.GCP_PROJECT_NUMBER }}.${{ env.REGION }}.run.app,127.0.0.1,localhost@SPECGRAPH_LOG_FORMAT=json@SPECGRAPH_LOG_LEVEL=INFO@SPECGRAPH_RATE_LIMIT_ENABLED=true@SPECGRAPH_RATE_LIMIT_REQUESTS=120@SPECGRAPH_RATE_LIMIT_WINDOW_SECONDS=60@SPECGRAPH_REQUEST_DEADLINE_SECONDS=25" \
+            --set-env-vars="^@^SPECGRAPH_HOST=0.0.0.0@SPECGRAPH_PORT=8080@SPECGRAPH_ALLOWED_HOSTS=${{ steps.host.outputs.host }},${{ env.API_SERVICE_NAME }}-${{ vars.GCP_PROJECT_NUMBER }}.${{ env.REGION }}.run.app,127.0.0.1,localhost@SPECGRAPH_ALLOWED_ORIGINS=${{ vars.SPECGRAPH_WEB_ORIGIN }}@SPECGRAPH_LOG_FORMAT=json@SPECGRAPH_LOG_LEVEL=INFO@SPECGRAPH_RATE_LIMIT_ENABLED=true@SPECGRAPH_RATE_LIMIT_REQUESTS=120@SPECGRAPH_RATE_LIMIT_WINDOW_SECONDS=60@SPECGRAPH_REQUEST_DEADLINE_SECONDS=25@SPECGRAPH_MAX_JSON_STRING_BYTES=14000000@SPECGRAPH_MAX_REQUEST_BYTES=16000000@SPECGRAPH_GCP_PROJECT_ID=${{ vars.GCP_PROJECT_ID }}@SPECGRAPH_GCP_REGION=${{ vars.GCP_REGION }}@SPECGRAPH_WORKER_JOB_NAME=${{ vars.CLOUD_RUN_WORKER_SERVICE }}" \
             --set-secrets="SPECGRAPH_DATABASE_URL=SPECGRAPH_DATABASE_URL:latest,SUPABASE_URL=SUPABASE_URL:latest,SUPABASE_ANON_KEY=SUPABASE_ANON_KEY:latest,SUPABASE_SERVICE_ROLE_KEY=SUPABASE_SERVICE_ROLE_KEY:latest,SPECGRAPH_CURSOR_SIGNING_KEY=SPECGRAPH_CURSOR_SIGNING_KEY:latest,SPECGRAPH_WORKER_STORAGE_TOKEN=SPECGRAPH_WORKER_STORAGE_TOKEN:latest" \
-            --revision-suffix="${{ github.sha }}" \
-            --labels="commit-sha=${{ github.sha }},component=api,environment=${{ github.event.inputs.environment || 'staging' }}" \
+            --revision-suffix="${{ github.run_id }}" \
+            --labels="commit-sha=${{ github.sha }},component=api,environment=${{ github.event.inputs.environment || 'production' }}" \
 
 
       - name: Health check
@@ -208,5 +228,5 @@ jobs:
           echo "Post-deployment checks failed. Rolling back traffic..."
           gcloud run services update-traffic "${{ env.API_SERVICE_NAME }}" \
             --region="${{ env.REGION }}" \
-            --to-latest=false
+            --no-to-latest
           echo "Rollback initiated. Previous healthy revision retains traffic."

@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { Tooltip } from "@/components/ui/tooltip";
 import { useOnlineStatus } from "@/lib/graph/connectivity";
 import { useExecutionRunDetail } from "@/lib/execution/queries";
 import { useVerifyExecutionRunMutation } from "@/lib/execution/mutations";
@@ -17,7 +19,8 @@ import { ExecutionReceiptList } from "./execution-receipt-list";
 export function ExecutionRunDetail({ projectId, runId }: { projectId: string; runId: string }) {
   const online = useOnlineStatus();
   const run = useExecutionRunDetail(runId);
-  const verify = useVerifyExecutionRunMutation(projectId, runId);
+  const [progressMessage, setProgressMessage] = useState<string | undefined>();
+  const verify = useVerifyExecutionRunMutation(projectId, runId, setProgressMessage);
 
   if (!online) {
     return <ExecutionOfflineState />;
@@ -38,7 +41,14 @@ export function ExecutionRunDetail({ projectId, runId }: { projectId: string; ru
   return (
     <section className="sg-graph-workspace" aria-label="Execution run detail">
       <header className="sg-source-hero sg-graph-hero">
-        <p className="sg-micro-label">Execution run</p>
+        <p className="sg-micro-label">
+          Execution run
+          <Tooltip label="This page tracks one plan being carried out by a connected runtime system, stage by stage. Verify run asks the server to independently check every receipt and stage against the plan itself — it doesn't just trust what the runtime reported.">
+            <button type="button" className="sg-help-hint" aria-label="What does this page track, and what does Verify run do?">
+              ?
+            </button>
+          </Tooltip>
+        </p>
         <h1>
           {body?.runtime_system ?? "Unknown runtime"} · <span className="sg-mono">{runId.slice(0, 8)}</span>
         </h1>
@@ -54,6 +64,11 @@ export function ExecutionRunDetail({ projectId, runId }: { projectId: string; ru
           </Button>
         </div>
       </header>
+      {verify.isPending && progressMessage ? (
+        <p role="status" aria-live="polite" className="sg-micro-label">
+          {progressMessage}
+        </p>
+      ) : null}
       {verify.isError ? (
         <Alert tone="danger" title="Verification failed">
           <p>{verify.error instanceof Error ? verify.error.message : "The run could not be verified. Its previous state is unchanged."}</p>

@@ -1,7 +1,9 @@
+import sqlite3
 import tempfile
 import unittest
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from unittest.mock import PropertyMock, patch
 
 from specgraph_foundry.atoms import AtomService, DIMENSIONS
 from specgraph_foundry.database import Database
@@ -75,6 +77,72 @@ class ResearchTest(unittest.TestCase):
             refreshed["lease_owner"],
             "worker-a",
         )
+
+    def test_claim_locks_row_on_postgres(self) -> None:
+        # database.py downgrades "BEGIN IMMEDIATE" to a plain "BEGIN" for
+        # PostgreSQL, since that lock mode is SQLite-only - claim_task must
+        # compensate with "FOR UPDATE SKIP LOCKED" on the row select so two
+        # concurrent workers can't both claim the same PENDING task. This
+        # test's connection is still real SQLite (no live Postgres in this
+        # suite), which doesn't understand that clause - so forcing
+        # is_postgres=True and observing a syntax error is exactly the
+        # evidence that the clause is actually sent on that code path.
+        with patch.object(
+            Database,
+            "is_postgres",
+            new_callable=PropertyMock,
+            return_value=True,
+        ):
+            with self.assertRaises(sqlite3.OperationalError):
+                self.research.claim_task(
+                    str(self.project["id"]),
+                    "worker-a",
+                    300,
+                )
+
+    def test_expired_reclaim_does_not_clobber_a_fresh_claim(self) -> None:
+        # Race window this guards: worker B reclaims an expired task and
+        # re-claims it (status=CLAIMED, fresh lease) inside one
+        # transaction; a concurrent worker C's UPDATE for the *same*
+        # expired-reclaim, if it only matched "WHERE id = ?", would still
+        # apply after B commits and blindly stomp the row back to PENDING,
+        # wiping B's claim. Simulating worker C's UPDATE directly (rather
+        # than orchestrating real thread timing, which can't be made
+        # deterministic) against a task that's already been freshly
+        # re-claimed proves the added status/lease-expiration guard makes
+        # that UPDATE a no-op instead of clobbering it.
+        task = self.research.claim_task(
+            str(self.project["id"]),
+            "worker-b",
+            300,
+        )
+        task_id = str(task["id"])
+
+        # worker-b's claim is fresh: CLAIMED, lease in the future.
+        with self.database.connect() as connection:
+            cursor = connection.execute(
+                """
+                UPDATE research_tasks
+                SET status = 'PENDING',
+                    lease_owner = NULL,
+                    lease_expires_at = NULL,
+                    updated_at = ?
+                WHERE id = ?
+                  AND status = 'CLAIMED'
+                  AND lease_expires_at IS NOT NULL
+                  AND lease_expires_at <= ?
+                """,
+                (
+                    datetime.now(UTC).isoformat(),
+                    task_id,
+                    datetime.now(UTC).isoformat(),
+                ),
+            )
+            self.assertEqual(cursor.rowcount, 0)
+
+        refreshed = self.research.get_task(task_id)
+        self.assertEqual(refreshed["status"], "CLAIMED")
+        self.assertEqual(refreshed["lease_owner"], "worker-b")
 
     def test_expired_task_is_reclaimed(self) -> None:
         task = self.research.claim_task(

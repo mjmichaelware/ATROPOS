@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+import base64
+import binascii
 import hashlib
 import json
 import re
+import time
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from hmac import compare_digest
@@ -138,10 +142,13 @@ class SourceUploadService:
         database: Database,
         storage: SupabaseStorageClient,
         settings: SourceUploadSettings,
+        *,
+        sleep: Callable[[float], None] = time.sleep,
     ) -> None:
         self.database = database
         self.storage = storage
         self.settings = settings
+        self._sleep = sleep
         self.ingestion = IngestionService(database)
         self.security_limits = DocumentSecurityLimits(
             max_original_bytes=settings.max_source_bytes
@@ -407,6 +414,7 @@ class SourceUploadService:
         owner_id: str,
         authorization: str,
         upload_id: str,
+        raw_base64: str | None = None,
     ) -> dict[str, object]:
         row = self._claim_for_finalization(
             owner_id=owner_id,
@@ -421,34 +429,45 @@ class SourceUploadService:
                 upload_status="FINALIZED",
             )
 
-        try:
-            downloaded = self.storage.download_object(
-                authorization=authorization,
-                bucket=str(upload["bucket"]),
-                object_path=str(upload["object_path"]),
-                max_bytes=self.settings.max_source_bytes,
-            )
-        except StorageObjectMissingError as error:
-            self._restore_pending(upload_id)
-            raise UploadStateConflictError(
-                "upload bytes are not available"
-            ) from error
-        except StorageObjectTooLargeError as error:
-            self._mark_failed(
+        if raw_base64 is not None:
+            # The browser already holds the exact bytes it just PUT to
+            # Supabase Storage - verifying against those directly avoids
+            # depending on Supabase's authenticated download route, which
+            # has been observed reporting a freshly-uploaded object as
+            # missing well past any reasonable consistency window.
+            downloaded = self._decode_client_provided_bytes(
+                raw_base64,
                 upload_id,
-                "SOURCE_TOO_LARGE",
             )
-            raise ValidationError(
-                "source exceeds the configured maximum"
-            ) from error
-        except (
-            StorageDependencyError,
-            StorageProtocolError,
-        ) as error:
-            self._restore_pending(upload_id)
-            raise UploadDependencyUnavailableError(
-                "storage dependency is unavailable"
-            ) from error
+        else:
+            try:
+                downloaded = self._download_with_retry(
+                    authorization=authorization,
+                    bucket=str(upload["bucket"]),
+                    object_path=str(upload["object_path"]),
+                    max_bytes=self.settings.max_source_bytes,
+                )
+            except StorageObjectMissingError as error:
+                self._restore_pending(upload_id)
+                raise UploadStateConflictError(
+                    "upload bytes are not available"
+                ) from error
+            except StorageObjectTooLargeError as error:
+                self._mark_failed(
+                    upload_id,
+                    "SOURCE_TOO_LARGE",
+                )
+                raise ValidationError(
+                    "source exceeds the configured maximum"
+                ) from error
+            except (
+                StorageDependencyError,
+                StorageProtocolError,
+            ) as error:
+                self._restore_pending(upload_id)
+                raise UploadDependencyUnavailableError(
+                    "storage dependency is unavailable"
+                ) from error
 
         expected_bytes = int(upload["expected_bytes"])
         expected_sha256 = str(upload["expected_sha256"])
@@ -865,6 +884,62 @@ class SourceUploadService:
                     )
 
                 return refreshed
+
+    # Supabase Storage's backend can briefly report a just-uploaded object
+    # as missing before it is consistently readable through its
+    # authenticated download route, even well after the upload PUT and
+    # its ObjectCreated lifecycle event have completed. Retry a bounded
+    # number of times before surfacing the failure - the total delay
+    # stays well within SPECGRAPH_REQUEST_DEADLINE_SECONDS.
+    _DOWNLOAD_RETRY_DELAYS_SECONDS = (0.0, 1.0, 2.0, 4.0, 4.0)
+
+    def _download_with_retry(
+        self,
+        **kwargs: object,
+    ) -> DownloadedObject:
+        last_error: StorageObjectMissingError | None = None
+        for delay in self._DOWNLOAD_RETRY_DELAYS_SECONDS:
+            if delay:
+                self._sleep(delay)
+            try:
+                return self.storage.download_object(**kwargs)
+            except StorageObjectMissingError as error:
+                last_error = error
+        assert last_error is not None
+        raise last_error
+
+    def _decode_client_provided_bytes(
+        self,
+        raw_base64: str,
+        upload_id: str,
+    ) -> DownloadedObject:
+        try:
+            data = base64.b64decode(
+                raw_base64,
+                validate=True,
+            )
+        except (binascii.Error, ValueError) as error:
+            self._mark_failed(
+                upload_id,
+                "INVALID_DOCUMENT",
+            )
+            raise InvalidDocumentUploadError(
+                "uploaded source bytes are not valid base64"
+            ) from error
+
+        if len(data) > self.settings.max_source_bytes:
+            self._mark_failed(
+                upload_id,
+                "SOURCE_TOO_LARGE",
+            )
+            raise ValidationError(
+                "source exceeds the configured maximum"
+            )
+
+        return DownloadedObject(
+            data=data,
+            media_type=None,
+        )
 
     def _restore_pending(
         self,

@@ -8,6 +8,10 @@ export function HandoffOverview({ workspace }: { workspace: HandoffWorkspace | u
   const counts = workspace.counts ?? {};
   return (
     <div className="sg-planning-overview">
+      <p className="sg-muted">
+        This is the state of everything downstream of a verified plan: how many connected systems (bindings) are configured, how many signed exports have been generated and verified, and how many
+        real execution runs have been started and independently checked.
+      </p>
       <dl>
         <div>
           <dt>Bindings</dt>

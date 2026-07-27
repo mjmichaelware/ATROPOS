@@ -165,6 +165,17 @@ class Api:
                 }
 
             if (
+                len(parts) == 5
+                and parts[:2] == ["v1", "documents"]
+                and parts[3] == "atoms"
+                and parts[4] == "export"
+                and method == "GET"
+            ):
+                return 200, self.atoms.export_atoms_bundle(
+                    parts[2]
+                )
+
+            if (
                 len(parts) == 3
                 and parts[:2] == ["v1", "atoms"]
                 and method == "GET"

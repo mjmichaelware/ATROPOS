@@ -61,6 +61,9 @@ export function SignInForm({ nextPath = "/projects" }: { nextPath?: string }) {
         Send magic link
       </Button>
       <Link href={"/auth/recovery" as Route}>Forgot password?</Link>
+      <p>
+        Don&apos;t have an account? <Link href={"/auth/sign-up" as Route}>Create one</Link>
+      </p>
     </form>
   );
 }

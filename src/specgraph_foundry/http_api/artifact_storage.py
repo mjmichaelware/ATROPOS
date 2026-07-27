@@ -13,6 +13,7 @@ from .storage import (
     StorageDependencyError,
     StorageObjectMissingError,
     StorageObjectTooLargeError,
+    StoragePermanentError,
     StorageProtocolError,
     SupabaseStorageClient,
 )
@@ -23,10 +24,21 @@ ARTIFACT_MEDIA_TYPES = {
     ".json": "application/json",
     ".md": "text/markdown",
     ".sha256": "text/plain",
+    ".txt": "text/plain",
+    ".pdf": "application/pdf",
 }
 
 
 class ArtifactStorageUnavailableError(RuntimeError):
+    pass
+
+
+class ArtifactStoragePermanentError(RuntimeError):
+    """Raised when storage permanently rejects an upload (4xx, not 409).
+
+    Unlike ArtifactStorageUnavailableError, this indicates a configuration
+    or authorization problem that won't resolve on retry.
+    """
     pass
 
 
@@ -103,6 +115,7 @@ def validate_artifact_name(name: str) -> str:
         "integration_bindings.json",
         "atropos_handoff.json",
         "implementation_blueprint.md",
+        "implementation_blueprint.txt",
         "manifest.json",
         "checksums.sha256",
     }:
@@ -117,6 +130,10 @@ def media_type_for_name(name: str) -> str:
         return ARTIFACT_MEDIA_TYPES[".md"]
     if name.endswith(".sha256"):
         return ARTIFACT_MEDIA_TYPES[".sha256"]
+    if name.endswith(".txt"):
+        return ARTIFACT_MEDIA_TYPES[".txt"]
+    if name.endswith(".pdf"):
+        return ARTIFACT_MEDIA_TYPES[".pdf"]
     raise ValidationError("artifact media type is unsupported")
 
 
@@ -160,6 +177,10 @@ class ArtifactStorageClient:
                 data=artifact.data,
                 media_type=artifact.media_type,
             )
+        except StoragePermanentError as error:
+            raise ArtifactStoragePermanentError(
+                f"artifact storage upload permanently rejected: {error}"
+            ) from error
         except StorageProtocolError as error:
             if "already exists" in str(error):
                 raise ArtifactAlreadyExistsError(
@@ -224,6 +245,7 @@ class ArtifactStorageClient:
                 bucket=self.settings.bucket,
                 object_path=object_path,
                 ttl_seconds=self.settings.download_ttl_seconds,
+                force_download=True,
             )
         except (
             StorageDependencyError,

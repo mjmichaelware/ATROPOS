@@ -38,16 +38,16 @@ export function ResearchWorkspace({ projectId }: { projectId: string }) {
       <DataGrid />
       <header className="sg-source-hero sg-research-hero">
         <p className="sg-micro-label">Research workspace</p>
-        <h1 id="research-workspace-title">Gap-field research instrument</h1>
-        <p>Atoms, dimensions, tasks, evidence, and conclusions stay API-authoritative and visually separate from source authority.</p>
+        <h1 id="research-workspace-title">Fill in what your sources don&apos;t say yet</h1>
+        <p>Every atom gets checked against 16 dimensions. Answer them here — by hand or automatically — and each conclusion stays traceable back to real evidence.</p>
         <ResearchCommandBar onRefresh={refresh} />
       </header>
       <ResearchTabs
         value={tab}
         onChange={setTab}
-        overview={<ResearchOverview workspace={workspace.data?.body} matrix={matrixBody} />}
+        overview={<ResearchOverview projectId={projectId} workspace={workspace.data?.body} matrix={matrixBody} />}
         atoms={<div className="sg-research-split"><AtomDirectory projectId={projectId} matrix={matrixBody} /><DimensionPanel matrix={matrixBody} /></div>}
-        matrix={<GapMatrix matrix={matrixBody} />}
+        matrix={<GapMatrix projectId={projectId} matrix={matrixBody} />}
         tasks={<TaskQueue projectId={projectId} page={tasks.data} canBack={cursorStack.length > 0} onBack={() => setCursorStack((stack) => stack.slice(0, -1))} onNext={() => {
           const next = tasks.data?.pagination.nextCursor;
           if (next) setCursorStack((stack) => [...stack, next]);

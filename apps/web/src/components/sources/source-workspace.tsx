@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip } from "@/components/ui/tooltip";
 import { DataGrid } from "@/components/visual/data-grid";
 import { HudPanel } from "@/components/visual/hud-panel";
 import { useProjectCommandCenter } from "@/lib/projects/queries";
@@ -34,14 +35,21 @@ export function SourceWorkspace({ projectId }: { projectId: string }) {
       <DataGrid />
       <header className="sg-source-hero">
         <p className="sg-micro-label">Source authority</p>
-        <h1 id="source-workspace-title">Immutable source observatory</h1>
-        <p>Original bytes, derivations, sections, chunks, atoms, and operations stay visually distinct and API-authoritative.</p>
+        <div className="sg-hero-title-row">
+          <h1 id="source-workspace-title">Your original documents, never altered</h1>
+          <Tooltip label="Extraction reads a document to pull out individual factual claims (called atoms) with their exact location in the text. It never edits or replaces the file you uploaded.">
+            <button type="button" className="sg-help-hint" aria-label="What does extraction mean?">
+              ?
+            </button>
+          </Tooltip>
+        </div>
+        <p>Everything you upload stays exactly as you uploaded it. Extraction and research build on top of it — they never rewrite it.</p>
         <SourceCommandBar onUpload={() => setTab("upload")} onRefresh={refresh} />
       </header>
       <div className="sg-source-metrics">
-        <HudPanel title="Documents" status={String(workspace.data?.body.documents_count ?? documents.data?.body.items.length ?? 0)}><p>Bounded library pages only.</p></HudPanel>
-        <HudPanel title="Uploads" status={String(workspace.data?.body.uploads_count ?? 0)}><p>No signed URLs are displayed.</p></HudPanel>
-        <HudPanel title="Atoms" status={String(workspace.data?.body.atoms_count ?? 0)}><p>Extraction remains operation-driven.</p></HudPanel>
+        <HudPanel title="Documents" status={String(workspace.data?.body.documents_count ?? documents.data?.body.items.length ?? 0)}><p>Everything you&apos;ve uploaded to this project.</p></HudPanel>
+        <HudPanel title="Uploads" status={String(workspace.data?.body.uploads_count ?? 0)}><p>In progress or recently finished.</p></HudPanel>
+        <HudPanel title="Atoms" status={String(workspace.data?.body.atoms_count ?? 0)}><p>Individual claims extracted so far, ready for research.</p></HudPanel>
       </div>
       <SourceTabs
         value={tab}

@@ -42,6 +42,16 @@ export type SpecGraphClientError =
   | RequestTimeoutError
   | RequestAbortError;
 
+export function describeClientError(error: unknown): string {
+  if (error instanceof SpecGraphApiError) {
+    return `${error.status} ${error.code}: ${error.message}`;
+  }
+  if (error instanceof Error) {
+    return `${error.name}: ${error.message}`;
+  }
+  return "Unknown error";
+}
+
 export function normalizeUnknownError(error: unknown): SpecGraphClientError {
   if (
     error instanceof SpecGraphApiError ||

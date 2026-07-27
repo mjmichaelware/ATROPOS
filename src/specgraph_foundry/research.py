@@ -185,7 +185,18 @@ class ResearchService:
             for row in expired:
                 task_id = str(row["id"])
 
-                connection.execute(
+                # WHERE id = ? alone isn't enough: on PostgreSQL (where
+                # BEGIN IMMEDIATE is just a plain BEGIN, see below) a second
+                # worker's UPDATE here can block on this row, then resume
+                # after a third worker has already reclaimed *and*
+                # re-claimed it as CLAIMED, and blindly stomp that fresh
+                # claim back to PENDING since id-only matches regardless of
+                # the row's current state. Re-checking status/expiration in
+                # the WHERE clause makes this a no-op once another
+                # transaction has already reclaimed the same row, and the
+                # rowcount check below skips emitting a misleading
+                # LEASE_EXPIRED event for a reclaim that didn't happen.
+                cursor = connection.execute(
                     """
                     UPDATE research_tasks
                     SET status = 'PENDING',
@@ -193,18 +204,32 @@ class ResearchService:
                         lease_expires_at = NULL,
                         updated_at = ?
                     WHERE id = ?
+                      AND status = 'CLAIMED'
+                      AND lease_expires_at IS NOT NULL
+                      AND lease_expires_at <= ?
                     """,
-                    (now.isoformat(), task_id),
+                    (now.isoformat(), task_id, now.isoformat()),
                 )
 
-                self._event(
-                    connection,
-                    task_id,
-                    "LEASE_EXPIRED",
-                    None,
-                    {},
-                )
+                if cursor.rowcount > 0:
+                    self._event(
+                        connection,
+                        task_id,
+                        "LEASE_EXPIRED",
+                        None,
+                        {},
+                    )
 
+            # BEGIN IMMEDIATE gives SQLite an upfront write lock, so a plain
+            # SELECT here is already safe against concurrent claimers. On
+            # PostgreSQL, database.py downgrades BEGIN IMMEDIATE to a plain
+            # BEGIN (no such lock mode exists there) - without FOR UPDATE
+            # SKIP LOCKED, two concurrent transactions can both select the
+            # same PENDING row before either commits its UPDATE, and both
+            # believe they claimed it. SKIP LOCKED is a no-op under SQLite's
+            # single-writer model but is invalid SQLite syntax, so it can
+            # only be sent on the PostgreSQL path.
+            lock_clause = " FOR UPDATE SKIP LOCKED" if self.database.is_postgres else ""
             task = connection.execute(
                 """
                 SELECT *
@@ -213,7 +238,8 @@ class ResearchService:
                   AND status = 'PENDING'
                 ORDER BY priority, created_at, id
                 LIMIT 1
-                """,
+                """
+                + lock_clause,
                 (project_id,),
             ).fetchone()
 

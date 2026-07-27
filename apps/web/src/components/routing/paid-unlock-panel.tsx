@@ -34,6 +34,11 @@ export function PaidUnlockPanel({ projectId, providers }: { projectId: string; p
 
   return (
     <div className="sg-planning-form" aria-label="Grant paid route unlock">
+      <p className="sg-muted">
+        Paid providers sit at the very bottom of the routing fallback chain, and routing can never reach them on its own — even with paid emergency routing enabled in Policy, a paid provider stays
+        unreachable until a real person grants a time-boxed unlock right here, with a reason on record. When the TTL below expires, or the max-decisions ceiling from Policy is hit, the unlock
+        simply ends.
+      </p>
       <Alert tone="warning" title="Paid routing requires explicit confirmation">
         <p>Unlocks are never purchased or granted automatically. Select a real provider to see its cost class before confirming.</p>
       </Alert>

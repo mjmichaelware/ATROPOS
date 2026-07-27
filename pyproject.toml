@@ -10,6 +10,7 @@ authors = [
 ]
 dependencies = [
   "pypdf==4.3.1",
+  "fpdf2==2.7.9",
 ]
 
 [project.scripts]
@@ -24,5 +25,5 @@ where = ["src"]
 
 [project.optional-dependencies]
 postgres = [
-  "psycopg>=3.2,<4",
+  "psycopg[binary]>=3.2,<4",
 ]
