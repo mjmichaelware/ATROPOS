@@ -1242,3 +1242,12 @@ def main() -> int:
     )
 
     return 0
+
+
+# `python -m specgraph_foundry.cli <command>` imports this module rather than
+# running it, so without this guard every such invocation exited 0 having done
+# nothing at all. A command that silently succeeds without acting is worse than
+# one that fails: the caller's `set -e` never fires and the next step runs on
+# state that was never created.
+if __name__ == "__main__":
+    raise SystemExit(main())
