@@ -70,49 +70,51 @@ class LandingRenderer(
         return TerminalText.ellipsize(theme.warning("● Tip ") + body, width)
     }
 
-    /**
-     * ATROPOS wordmark in the pinned reference's logo language: block letters
-     * split into a muted left half and a bright bold right half, with the
-     * reference's mark characters standing in for shaded cells —
-     * `_` a shadow cell, `^` an upper half-block, `~` a shadowed upper half,
-     * `,` a shadowed lower half.
-     *
-     * ATROPOS keeps its own wordmark and cyan identity; only the rendering
-     * technique is shared. Degrades by height so the logo is never clipped on a
-     * phone (requirement 28: the logo must never be cut off).
-     */
     private fun logo(width: Int): List<String> {
+        // Clean 3-row block letterforms. `_` marks a letter counter (the
+        // enclosed hole) and renders as a shadow-filled cell, not a gap — the
+        // reference's technique. Drawing it blank is what made the wordmark
+        // read as disconnected chunks.
         val full = listOf(
-            "█▀▀█ ▀▀█▀▀ █▀▀█ █▀▀█ █▀▀█ █▀▀█ █▀▀▀",
-            "█▄▄█ __█__ █▄▄▀ █__█ █▄▄█ █__█ ▀▀▀█",
-            "▀__▀ ~~▀~~ ▀~~▀ ▀▀▀▀ ▀~~~ ▀▀▀▀ ▀▀▀▀"
+            "█▀█ ▀█▀ █▀█ █▀█ █▀█ █▀█ █▀▀",
+            "█▀█  █  █▀▄ █_█ █▀▀ █_█ ▀▀█",
+            "▀ ▀  ▀  ▀ ▀ ▀▀▀ ▀   ▀▀▀ ▀▀▀"
         )
-        val medium = listOf(
-            "█▀▀█ ▀▀█▀▀ █▀▀█",
-            "█▄▄█ __█__ █▄▄▀",
-            "▀__▀ ~~▀~~ ▀~~▀"
+        val compact = listOf(
+            "█▀█ ▀█▀ █▀█",
+            "█▀█  █  █▀▄",
+            "▀ ▀  ▀  ▀ ▀"
         )
 
         val lines = when {
-            width >= 44 -> full
-            width >= 24 -> medium
+            width >= 30 -> full
+            width >= 14 -> compact
             else -> return listOf(theme.paint(Role.BRAND, "ATROPOS"))
         }
 
-        // Reference technique: left portion muted, right portion bright+bold.
-        val splitAt = lines.first().length / 2
+        // Reference technique: muted left half, bright right half.
+        val split = lines.first().length / 2
         return lines.map { line ->
-            val left = renderMarks(line.take(splitAt), Role.BRAND_MUTED)
-            val right = renderMarks(line.drop(splitAt), Role.BRAND)
-            TerminalText.ellipsize(left + right, width)
+            TerminalText.ellipsize(
+                renderMarks(line.take(split), Role.BRAND_MUTED) +
+                    renderMarks(line.drop(split), Role.BRAND),
+                width
+            )
         }
     }
 
-    /** Expands the reference's `_^~,` mark characters into shaded cells. */
+    /**
+     * Expands mark characters into shaded cells.
+     *
+     * `_` is a letter counter: a filled shadow cell, never whitespace. The
+     * reference draws it as a space over a shadow background; with a
+     * foreground-only palette the equivalent is a dim block, which keeps the
+     * letterform closed instead of punching a hole through it.
+     */
     private fun renderMarks(segment: String, role: Role): String =
         segment.map { ch ->
             when (ch) {
-                '_' -> theme.paint(Role.TEXT_MUTED, " ")
+                '_' -> theme.paint(Role.TEXT_MUTED, "█")
                 '^' -> theme.paint(role, "▀")
                 '~' -> theme.paint(Role.TEXT_MUTED, "▀")
                 ',' -> theme.paint(Role.TEXT_MUTED, "▄")
