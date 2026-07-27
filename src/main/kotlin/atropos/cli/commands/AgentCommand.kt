@@ -1025,7 +1025,7 @@ class AgentCommand(
 
     private fun handleWatchCommand(args: List<String>): AgentCommandOutcome {
         val ref = args.getOrNull(0) ?: "latest"
-        val runId = if (ref == "latest") continuationService.latestRun()?.id else ref
+        val runId = resolveObservedRunId(ref)
         if (runId == null) return invalid("no runs to watch")
         val events = journal.readEvents(runId, 20)
         val text = events.joinToString("\n") { it.render() }
@@ -1035,7 +1035,7 @@ class AgentCommand(
 
     private fun handleTreeCommand(args: List<String>): AgentCommandOutcome {
         val ref = args.getOrNull(0) ?: "latest"
-        val runId = if (ref == "latest") continuationService.latestRun()?.id else ref
+        val runId = resolveObservedRunId(ref)
         if (runId == null) return invalid("no runs")
         val text = observer.tree(runId)
         ui.renderNotice(formatBlock("TREE $runId", text))
@@ -1044,7 +1044,7 @@ class AgentCommand(
 
     private fun handleTranscriptCommand(args: List<String>): AgentCommandOutcome {
         val ref = args.getOrNull(0) ?: "latest"
-        val runId = if (ref == "latest") continuationService.latestRun()?.id else ref
+        val runId = resolveObservedRunId(ref)
         if (runId == null) return invalid("no runs")
         val text = observer.transcript(runId)
         ui.renderNotice(formatBlock("TRANSCRIPT $runId", text))
@@ -1053,7 +1053,7 @@ class AgentCommand(
 
     private fun handleAgentDiffCommand(args: List<String>): AgentCommandOutcome {
         val ref = args.getOrNull(0) ?: "latest"
-        val runId = if (ref == "latest") continuationService.latestRun()?.id else ref
+        val runId = resolveObservedRunId(ref)
         if (runId == null) return invalid("no runs")
         val text = observer.diffLog(runId)
         ui.renderNotice(formatBlock("DIFF $runId", text))
@@ -1062,19 +1062,28 @@ class AgentCommand(
 
     private fun handleAgentTestsCommand(args: List<String>): AgentCommandOutcome {
         val ref = args.getOrNull(0) ?: "latest"
-        val runId = if (ref == "latest") continuationService.latestRun()?.id else ref
+        val runId = resolveObservedRunId(ref)
         if (runId == null) return invalid("no runs")
         val text = observer.testLog(runId)
         ui.renderNotice(formatBlock("TESTS $runId", text))
         return AgentCommandOutcome.Completed(text)
     }
 
+    private fun resolveObservedRunId(reference: String): String? {
+        if (!reference.equals("latest", ignoreCase = true)) return reference
+        return journal.latestRunId() ?: continuationService.latestRun()?.id
+    }
+
     private fun handleObserveCommand(args: List<String>): AgentCommandOutcome {
         return when (args.getOrNull(0)?.lowercase()) {
             null, "status" -> {
                 val state = observer.status()
-                ui.renderNotice(formatBlock("OBSERVER", "port=${state.dashboardPort} running=${state.running} clients=${state.connectedClients}"))
-                AgentCommandOutcome.Completed("observer status: running=${state.running} clients=${state.connectedClients}")
+                val text = buildString {
+                    append("port=${state.dashboardPort} running=${state.running} clients=${state.connectedClients}")
+                    state.lastError?.let { append(" lastError=$it") }
+                }
+                ui.renderNotice(formatBlock("OBSERVER", text))
+                AgentCommandOutcome.Completed("observer status: $text")
             }
             "start" -> {
                 val msg = observer.start(args.getOrNull(1)?.toIntOrNull() ?: 4197)
@@ -1087,7 +1096,16 @@ class AgentCommand(
                 AgentCommandOutcome.Completed(msg)
             }
             "open" -> {
-                val msg = "dashboard: http://127.0.0.1:${observer.status().dashboardPort}"
+                val state = observer.status()
+                if (!state.running) {
+                    val msg = buildString {
+                        append("observer not running")
+                        state.lastError?.let { append(": $it") }
+                    }
+                    ui.renderError(msg)
+                    return AgentCommandOutcome.Invalid(msg)
+                }
+                val msg = "dashboard: http://127.0.0.1:${state.dashboardPort}"
                 ui.renderNotice(formatBlock("OBSERVER OPEN", msg))
                 AgentCommandOutcome.Completed(msg)
             }

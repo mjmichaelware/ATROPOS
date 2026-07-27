@@ -6,6 +6,8 @@ import atropos.cli.input.CommandRegistry
 import atropos.core.agent.AgentPatchExtractor
 import atropos.core.agent.AgentSmokeRunner
 import atropos.core.security.RedactionFilter
+import atropos.core.verifier.ConstraintSolverEvaluator
+import atropos.core.verifier.DeterministicConstraint
 import atropos.dloi.DloiService
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
@@ -56,7 +58,8 @@ class DeterministicVerifier(
     private val astGraph: AstSymbolGraph = AstSymbolGraph(repoRoot),
     private val smokeRunner: AgentSmokeRunner = AgentSmokeRunner(repoRoot),
     private val patchExtractor: AgentPatchExtractor = AgentPatchExtractor(),
-    private val redactionFilter: RedactionFilter = RedactionFilter()
+    private val redactionFilter: RedactionFilter = RedactionFilter(),
+    private val constraintEvaluator: ConstraintSolverEvaluator = ConstraintSolverEvaluator()
 ) {
     fun verify(
         sourcePaths: List<Path>,
@@ -85,18 +88,16 @@ class DeterministicVerifier(
 
     private fun checkSourceScope(path: Path): List<DeterministicFinding> {
         val normalized = path.toAbsolutePath().normalize()
-        if (!normalized.startsWith(repoRoot)) {
-            return listOf(
-                finding(
-                    invariantId = "source_scope",
-                    severity = DiagnosticSeverity.ERROR,
-                    file = normalized.invariantSeparatorsPathString,
-                    evidence = "path outside repository root",
-                    remediation = "limit verification to repository files"
-                )
+        return constraintEvaluator.evaluate(
+            DeterministicConstraint(
+                invariantId = "source_scope",
+                satisfied = normalized.startsWith(repoRoot),
+                expected = "path under ${repoRoot.invariantSeparatorsPathString}",
+                observed = normalized.invariantSeparatorsPathString,
+                remediation = "limit verification to repository files",
+                file = normalized.invariantSeparatorsPathString
             )
-        }
-        return emptyList()
+        )
     }
 
     private fun checkPackagePathInvariant(path: Path): List<DeterministicFinding> {
@@ -105,20 +106,17 @@ class DeterministicVerifier(
         val packageName = packageLine.removePrefix("package ").trim()
         val relative = repoRoot.relativize(path).invariantSeparatorsPathString
         val expectedSuffix = packageName.replace('.', '/') + "/" + path.fileName
-        return if (!relative.endsWith(expectedSuffix)) {
-            listOf(
-                finding(
-                    invariantId = "package_path_invariant",
-                    severity = DiagnosticSeverity.ERROR,
-                    file = relative,
-                    symbolOrLocation = packageName,
-                    evidence = "expected path suffix $expectedSuffix",
-                    remediation = "align Kotlin package with file path"
-                )
+        return constraintEvaluator.evaluate(
+            DeterministicConstraint(
+                invariantId = "package_path_invariant",
+                satisfied = relative.endsWith(expectedSuffix),
+                expected = expectedSuffix,
+                observed = relative,
+                remediation = "align Kotlin package with file path",
+                file = relative,
+                symbolOrLocation = packageName
             )
-        } else {
-            emptyList()
-        }
+        )
     }
 
     private fun checkDuplicateImports(path: Path): List<DeterministicFinding> {
@@ -196,37 +194,31 @@ class DeterministicVerifier(
 
     private fun checkCommandRegistryIntegrity(): List<DeterministicFinding> {
         val commands = CommandRegistry.commands()
-        return if (commands.size != commands.distinct().size) {
-            listOf(
-                finding(
-                    invariantId = "command_registry_integrity",
-                    severity = DiagnosticSeverity.ERROR,
-                    file = "src/main/kotlin/atropos/cli/input/CommandRegistry.kt",
-                    evidence = "duplicate slash command entries detected",
-                    remediation = "deduplicate command registry"
-                )
+        return constraintEvaluator.evaluate(
+            DeterministicConstraint(
+                invariantId = "command_registry_integrity",
+                satisfied = commands.size == commands.distinct().size,
+                expected = "all slash command entries unique",
+                observed = "commands=${commands.size} distinct=${commands.distinct().size}",
+                remediation = "deduplicate command registry",
+                file = "src/main/kotlin/atropos/cli/input/CommandRegistry.kt"
             )
-        } else {
-            emptyList()
-        }
+        )
     }
 
     private fun checkRedactionInvariant(): List<DeterministicFinding> {
         val sample = "Authorization: Bearer " + "A".repeat(24) + " sk-" + "B".repeat(24)
         val redacted = redactionFilter.redact(sample)
-        return if (redacted.contains("A".repeat(24)) || redacted.contains("B".repeat(24))) {
-            listOf(
-                finding(
-                    invariantId = "redaction",
-                    severity = DiagnosticSeverity.ERROR,
-                    file = "src/main/kotlin/atropos/core/security/RedactionFilter.kt",
-                    evidence = "raw secret still present after redaction",
-                    remediation = "expand redaction coverage"
-                )
+        return constraintEvaluator.evaluate(
+            DeterministicConstraint(
+                invariantId = "redaction",
+                satisfied = !redacted.contains("A".repeat(24)) && !redacted.contains("B".repeat(24)),
+                expected = "redacted output omits raw bearer and api key material",
+                observed = redacted,
+                remediation = "expand redaction coverage",
+                file = "src/main/kotlin/atropos/core/security/RedactionFilter.kt"
             )
-        } else {
-            emptyList()
-        }
+        )
     }
 
     private fun checkForbiddenPaths(paths: List<Path>): List<DeterministicFinding> {
@@ -234,13 +226,17 @@ class DeterministicVerifier(
         return paths.mapNotNull { path ->
             val relative = repoRoot.relativize(path.toAbsolutePath().normalize()).invariantSeparatorsPathString
             banned.firstOrNull { token -> relative.contains(token) || relative.endsWith(token) }?.let { token ->
-                finding(
-                    invariantId = "forbidden_path",
-                    severity = DiagnosticSeverity.ERROR,
-                    file = relative,
-                    evidence = "path matches forbidden token $token",
-                    remediation = "remove forbidden file from deterministic scope"
-                )
+                constraintEvaluator.evaluate(
+                    DeterministicConstraint(
+                        invariantId = "forbidden_path",
+                        satisfied = false,
+                        expected = "path outside forbidden tokens ${banned.joinToString(",")}",
+                        observed = relative,
+                        remediation = "remove forbidden file from deterministic scope",
+                        file = relative,
+                        symbolOrLocation = token
+                    )
+                ).single()
             }
         }
     }

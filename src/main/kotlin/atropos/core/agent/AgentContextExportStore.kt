@@ -27,6 +27,8 @@ class AgentContextExportStore(
     private fun render(record: AgentJobRecord, changedFiles: List<String>): String = buildString {
         appendLine("latest job id: ${record.id}")
         appendLine("task: ${redactionFilter.redact(record.task)}")
+        appendLine("source: ${record.sourceEvidence?.let(redactionFilter::redact) ?: "unresolved"}")
+        appendLine("impacted symbols: ${record.impactedSymbols.joinToString(", ") { redactionFilter.redact(it) }.ifBlank { "none" }}")
         appendLine("changed files: ${changedFiles.joinToString(", ") { redactionFilter.redact(it) }.ifBlank { "none" }}")
         appendLine("verification id: ${record.verificationId ?: "none"}")
         appendLine("smoke result: ${record.smokeResult?.let(redactionFilter::redact) ?: "none"}")

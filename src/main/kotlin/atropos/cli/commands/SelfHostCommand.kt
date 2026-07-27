@@ -2,17 +2,11 @@ package atropos.cli.commands
 
 import atropos.cli.ui.AnsiTerminalEngine
 import atropos.core.AtroposConfig
-import atropos.core.agent.GoalRunRecord
 import atropos.core.agent.GoalTerminalCondition
 import atropos.core.agent.SelfHostGoalService
-import atropos.core.agent.SelfHostResult
 import atropos.core.dag.DagExecutionService
-import atropos.core.dag.DagNode
-import atropos.core.dag.DagNodeAction
 import atropos.core.journal.EventJournalService
-import atropos.core.memory.LocalMemoryStore
 import atropos.core.verification.VerifiedCompletionGate
-import atropos.core.worktree.IsolatedWorktreeService
 import java.nio.file.Path
 
 class SelfHostCommand(
@@ -22,22 +16,24 @@ class SelfHostCommand(
     private val selfHostService: SelfHostGoalService = SelfHostGoalService(repoRoot),
     private val dagService: DagExecutionService = DagExecutionService(config, repoRoot),
     private val journal: EventJournalService = EventJournalService(repoRoot),
-    private val worktreeService: IsolatedWorktreeService = IsolatedWorktreeService(repoRoot),
-    private val completionGate: VerifiedCompletionGate = VerifiedCompletionGate(config, repoRoot),
-    private val memoryStore: LocalMemoryStore = LocalMemoryStore(repoRoot.resolve(".atropos/memory").toFile())
+    private val completionGate: VerifiedCompletionGate = VerifiedCompletionGate(config, repoRoot)
 ) : AgentCommandHandler {
 
     override fun execute(tokens: List<String>): AgentCommandOutcome {
-        if (tokens.size < 2 || tokens[0].lowercase() != "self-host") {
+        val normalized = when {
+            tokens.size >= 2 && tokens[0].lowercase() == "/agent" && tokens[1].lowercase() == "self-host" -> tokens.drop(1)
+            else -> tokens
+        }
+        if (normalized.size < 2 || normalized[0].lowercase() != "self-host") {
             return AgentCommandOutcome.Invalid(usage())
         }
-        return when (tokens[1].lowercase()) {
-            "start" -> handleStart(tokens.drop(2))
-            "status" -> handleStatus()
-            "watch" -> handleWatch(tokens.drop(2))
-            "resume" -> handleResume(tokens.drop(2))
-            "stop" -> handleStop(tokens.drop(2))
-            "verify" -> handleVerify(tokens.drop(2))
+        return when (normalized[1].lowercase()) {
+            "start" -> handleStart(normalized.drop(2))
+            "status" -> handleStatus(normalized.drop(2))
+            "watch" -> handleWatch(normalized.drop(2))
+            "resume" -> handleResume(normalized.drop(2))
+            "stop" -> handleStop(normalized.drop(2))
+            "verify" -> handleVerify(normalized.drop(2))
             "history" -> handleHistory()
             "learned" -> handleLearned()
             "benchmark" -> handleBenchmark()
@@ -46,39 +42,79 @@ class SelfHostCommand(
     }
 
     private fun usage(): String =
-        "usage: /agent self-host [start|status|watch|resume|stop|verify|history|learned|benchmark]"
+        buildString {
+            appendLine("usage: /agent self-host <command>")
+            appendLine("  start <goal-name> [--phase <phase>]")
+            appendLine("  status [goal-id]")
+            appendLine("  watch [goal-id]")
+            appendLine("  resume [goal-id]")
+            appendLine("  stop [goal-id]")
+            appendLine("  verify [goal-id]")
+            appendLine("  history")
+            appendLine("  learned")
+            append("  benchmark")
+        }
 
     private fun handleStart(args: List<String>): AgentCommandOutcome {
-        val goalName = args.joinToString(" ").ifBlank {
-            return AgentCommandOutcome.Invalid("usage: /agent self-host start <goal-name> [--phase <phase>]")
-        }
         val phaseIndex = args.indexOf("--phase")
         val phase = if (phaseIndex >= 0) args.getOrNull(phaseIndex + 1) ?: "1" else "1"
+        val goalTokens = if (phaseIndex >= 0) {
+            args.filterIndexed { index, _ -> index != phaseIndex && index != phaseIndex + 1 }
+        } else {
+            args
+        }
+        val goalName = goalTokens.joinToString(" ").ifBlank {
+            return AgentCommandOutcome.Invalid("usage: /agent self-host start <goal-name> [--phase <phase>]")
+        }
 
         val result = selfHostService.startGoal(goalName, phase)
         if (!result.ok) {
             ui.renderError(result.message)
             return AgentCommandOutcome.Invalid(result.message)
         }
-        ui.renderNotice("self-host goal started: ${result.goal?.record?.id}")
+        val startedGoal = result.goal?.record
+        if (startedGoal != null) {
+            journal.record(
+                goalId = startedGoal.id,
+                runId = startedGoal.id,
+                category = atropos.core.journal.EventCategory.LIFECYCLE,
+                payload = "started: phase=${startedGoal.activePhase ?: phase} task=${startedGoal.task}"
+            )
+        }
+        ui.renderNotice("self-host goal started: ${startedGoal?.id}")
         return AgentCommandOutcome.Completed(result.message)
     }
 
-    private fun handleStatus(): AgentCommandOutcome {
-        val goals = selfHostService.loadUnfinishedGoals()
-        val text = buildString {
-            if (goals.isEmpty()) {
+    private fun handleStatus(args: List<String>): AgentCommandOutcome {
+        val requestedGoalId = args.getOrNull(0)?.takeIf { it.isNotBlank() }
+        val selected = selfHostService.resolveStatusGoal(requestedGoalId)
+        if (!selected.ok) {
+            if (requestedGoalId != null) {
+                return AgentCommandOutcome.Invalid(selected.message)
+            }
+            val history = selfHostService.history(5)
+            val text = buildString {
                 appendLine("no active self-host goals")
-                val history = selfHostService.history(5)
                 if (history.isNotEmpty()) {
                     appendLine()
                     appendLine("recent history:")
                     history.forEach { appendLine("  ${it.renderSummaryLine()}") }
                 }
+            }.trimEnd()
+            ui.renderNotice("SELF-HOST STATUS\n$text")
+            return AgentCommandOutcome.Completed(text)
+        }
+
+        val status = selfHostService.status(selected.goal?.record?.id)
+        val goals = selfHostService.loadUnfinishedGoals()
+        val text = buildString {
+            if (requestedGoalId != null || goals.isEmpty()) {
+                append(renderStatusDetails(status))
             } else {
                 appendLine("active self-host goals:")
                 goals.forEach { goal ->
-                    appendLine("  ${goal.record.renderSummaryLine()}")
+                    val marker = if (goal.record.id == status.goalId) "*" else " "
+                    appendLine("$marker ${goal.record.renderSummaryLine()}")
                     val status = selfHostService.status(goal.record.id)
                     appendLine("  phase: ${status.phase ?: "none"} node: ${status.currentNodeId ?: "none"}")
                     status.dagStatus?.let { dag ->
@@ -88,76 +124,124 @@ class SelfHostCommand(
                         }
                     }
                 }
+                appendLine()
+                appendLine("selected status:")
+                append(renderStatusDetails(status))
             }
-        }
+        }.trimEnd()
         ui.renderNotice("SELF-HOST STATUS\n$text")
         return AgentCommandOutcome.Completed(text)
     }
 
     private fun handleWatch(args: List<String>): AgentCommandOutcome {
-        val goalId = args.getOrNull(0) ?: selfHostService.loadUnfinishedGoals().firstOrNull()?.record?.id
-        if (goalId == null) {
-            return AgentCommandOutcome.Invalid("no self-host goals to watch")
+        val selected = selfHostService.resolveWatchGoal(args.getOrNull(0)?.takeIf { it.isNotBlank() })
+        if (!selected.ok) {
+            return AgentCommandOutcome.Invalid(selected.message)
         }
+        val goalId = selected.goal?.record?.id ?: return AgentCommandOutcome.Invalid("no self-host goal selected")
         val events = journal.readEvents(goalId, 20)
-        val text = events.joinToString("\n") { it.render() }.ifEmpty { "no events for goal $goalId" }
+        val text = if (events.isNotEmpty()) {
+            events.joinToString("\n") { it.render() }
+        } else {
+            val status = selfHostService.status(goalId)
+            buildString {
+                appendLine("no events for goal $goalId")
+                appendLine("status: ${status.status}")
+                appendLine("phase: ${status.phase ?: "none"}")
+                appendLine("node: ${status.currentNodeId ?: "none"}")
+                append("terminal: ${status.terminalCondition ?: "none"}")
+            }
+        }
         ui.renderNotice("SELF-HOST WATCH $goalId\n$text")
         return AgentCommandOutcome.Completed(text)
     }
 
     private fun handleResume(args: List<String>): AgentCommandOutcome {
-        val goals = selfHostService.loadUnfinishedGoals()
-        if (goals.isEmpty()) {
-            return AgentCommandOutcome.Invalid("no unfinished self-host goals to resume")
+        val requestedGoalId = args.getOrNull(0)?.takeIf { it.isNotBlank() }
+        val selected = selfHostService.resolveResumableGoal(requestedGoalId)
+        if (!selected.ok) {
+            return AgentCommandOutcome.Invalid(selected.message)
         }
-        val goal = goals.first()
-        val record = goal.record
+        val record = selected.goal?.record ?: return AgentCommandOutcome.Invalid("no resumable self-host goal found")
 
         ui.startSpinner("Resuming self-host goal ${record.id}")
         try {
-            val selectResult = selfHostService.selectNextDagNode(record.id)
+            val resumed = selfHostService.resumeGoal(record.id, compactState = "self-host resume")
+            if (!resumed.ok) {
+                ui.renderError("resume: ${resumed.message}")
+                return AgentCommandOutcome.Invalid(resumed.message)
+            }
+            var resumedRecord = resumed.goal?.record ?: record
+
+            val selectResult = selfHostService.selectNextDagNode(resumedRecord.id)
             if (!selectResult.ok) {
-                if (record.terminalCondition == GoalTerminalCondition.VERIFIED_COMPLETE) {
-                    val text = "self-host goal ${record.id} completed: all DAG nodes done"
+                resumedRecord = selfHostService.loadGoal(resumedRecord.id).goal?.record
+                    ?: selfHostService.status(resumedRecord.id).let { status ->
+                        resumedRecord.copy(
+                            status = status.status,
+                            terminalCondition = status.terminalCondition,
+                            currentNodeId = status.currentNodeId
+                        )
+                    }
+                if (resumedRecord.terminalCondition == GoalTerminalCondition.VERIFIED_COMPLETE) {
+                    val text = "self-host goal ${resumedRecord.id} completed: all DAG nodes done"
+                    journal.record(
+                        goalId = resumedRecord.id,
+                        runId = resumedRecord.id,
+                        category = atropos.core.journal.EventCategory.LIFECYCLE,
+                        payload = "resumed: terminal=VERIFIED_COMPLETE reason=${resumedRecord.failureReason ?: "all nodes done"}"
+                    )
                     ui.renderNotice(text)
                     return AgentCommandOutcome.Completed(text)
+                }
+                if (resumedRecord.terminalCondition == GoalTerminalCondition.TERMINAL_FAILURE) {
+                    val text = "self-host goal ${resumedRecord.id} failed: ${resumedRecord.failureReason ?: selectResult.message}"
+                    journal.record(
+                        goalId = resumedRecord.id,
+                        runId = resumedRecord.id,
+                        category = atropos.core.journal.EventCategory.LIFECYCLE,
+                        payload = "resumed: terminal=TERMINAL_FAILURE reason=${resumedRecord.failureReason ?: selectResult.message}"
+                    )
+                    ui.renderError(text)
+                    return AgentCommandOutcome.Invalid(text)
                 }
                 ui.renderError("resume: ${selectResult.message}")
                 return AgentCommandOutcome.Invalid(selectResult.message)
             }
 
             val currentNodeId = selectResult.goal?.record?.currentNodeId ?: return AgentCommandOutcome.Invalid("no node selected")
-            val result = dagService.evaluateDag(record.dagId ?: return AgentCommandOutcome.Invalid("no DAG assigned"))
-            val dag = dagService.readDag(record.dagId!!)
+            val dagId = resumedRecord.dagId ?: return AgentCommandOutcome.Invalid("no DAG assigned")
+            dagService.evaluateDag(dagId)
+            val dag = dagService.readDag(dagId)
 
             val completed = dag?.nodes?.count { it.state == atropos.core.dag.DagNodeState.COMPLETE } ?: 0
             val failed = dag?.nodes?.count { it.state == atropos.core.dag.DagNodeState.FAILED } ?: 0
             val total = dag?.nodes?.size ?: 0
 
             val text = buildString {
-                appendLine("resumed goal: ${record.id}")
-                appendLine("phase: ${record.activePhase}")
+                appendLine("resumed goal: ${resumedRecord.id}")
+                appendLine("phase: ${resumedRecord.activePhase}")
                 appendLine("current node: $currentNodeId")
                 appendLine("DAG: $completed/$total completed, $failed failed")
 
                 // Check for false completions
-                val falseCompletions = completionGate.detectFalseCompletions(record.dagId)
+                val falseCompletions = completionGate.detectFalseCompletions(dagId)
                 if (falseCompletions.isNotEmpty()) {
                     appendLine("WARNING: false completions detected: ${falseCompletions.joinToString(", ")}")
                 }
 
                 if (total > 0 && completed + failed == total) {
                     if (failed == 0) {
-                        selfHostService.completeGoal(record.id, GoalTerminalCondition.VERIFIED_COMPLETE, "all nodes done")
+                        selfHostService.completeGoal(resumedRecord.id, GoalTerminalCondition.VERIFIED_COMPLETE, "all nodes done")
                         appendLine("goal complete: all DAG nodes verified")
                     } else {
-                        selfHostService.completeGoal(record.id, GoalTerminalCondition.TERMINAL_FAILURE, "$failed failed nodes")
+                        selfHostService.completeGoal(resumedRecord.id, GoalTerminalCondition.TERMINAL_FAILURE, "$failed failed nodes")
                         appendLine("goal failed: $failed nodes failed")
                     }
                 }
             }
             ui.renderNotice("SELF-HOST RESUME\n$text")
-            journal.record(goalId = record.id, runId = record.id,
+            journal.record(goalId = resumedRecord.id, runId = resumedRecord.id,
                 category = atropos.core.journal.EventCategory.LIFECYCLE,
                 payload = "resumed: node=$currentNodeId completed=$completed failed=$failed")
             return AgentCommandOutcome.Completed(text)
@@ -171,23 +255,33 @@ class SelfHostCommand(
     }
 
     private fun handleStop(args: List<String>): AgentCommandOutcome {
-        val goals = selfHostService.loadUnfinishedGoals()
-        if (goals.isEmpty()) {
-            return AgentCommandOutcome.Invalid("no active self-host goals to stop")
+        val selected = selfHostService.resolveStoppableGoal(args.getOrNull(0)?.takeIf { it.isNotBlank() })
+        if (!selected.ok) {
+            return AgentCommandOutcome.Invalid(selected.message)
         }
-        val goalId = args.getOrNull(0) ?: goals.first().record.id
+        val goalId = selected.goal?.record?.id ?: return AgentCommandOutcome.Invalid("no stoppable self-host goal selected")
         val result = selfHostService.completeGoal(goalId, GoalTerminalCondition.CANCELLED, "operator stopped")
         if (!result.ok) {
             ui.renderError(result.message)
             return AgentCommandOutcome.Invalid(result.message)
         }
+        journal.record(
+            goalId = goalId,
+            runId = goalId,
+            category = atropos.core.journal.EventCategory.CANCELLATION,
+            payload = "stopped: operator requested cancellation"
+        )
         ui.renderNotice("self-host goal $goalId stopped")
         return AgentCommandOutcome.Completed(result.message)
     }
 
     private fun handleVerify(args: List<String>): AgentCommandOutcome {
-        val goalId = args.getOrNull(0)
-        val status = selfHostService.status(goalId)
+        val goalId = args.getOrNull(0)?.takeIf { it.isNotBlank() }
+        val selected = selfHostService.resolveStatusGoal(goalId)
+        if (!selected.ok) {
+            return AgentCommandOutcome.Invalid(selected.message)
+        }
+        val status = selfHostService.status(selected.goal?.record?.id)
 
         val dagStatus = status.dagStatus
         val text = buildString {
@@ -224,7 +318,7 @@ class SelfHostCommand(
     }
 
     private fun handleLearned(): AgentCommandOutcome {
-        val experiences = memoryStore.findBySubject("selfhost_experience", "", 20)
+        val experiences = selfHostService.learned(20)
         val text = if (experiences.isEmpty()) {
             "no learned experiences yet"
         } else {
@@ -235,24 +329,33 @@ class SelfHostCommand(
     }
 
     private fun handleBenchmark(): AgentCommandOutcome {
-        val goals = selfHostService.history(50)
-        val completed = goals.count { it.terminalCondition == GoalTerminalCondition.VERIFIED_COMPLETE }
-        val failed = goals.count { it.terminalCondition == GoalTerminalCondition.TERMINAL_FAILURE }
-        val cancelled = goals.count { it.terminalCondition == GoalTerminalCondition.CANCELLED }
-        val totalContinuations = goals.sumOf { it.continuationCount }
-        val avgContinuations = if (goals.isNotEmpty()) totalContinuations.toDouble() / goals.size else 0.0
+        val benchmark = selfHostService.benchmark()
 
         val text = buildString {
             appendLine("self-host benchmark:")
-            appendLine("  total goals: ${goals.size}")
-            appendLine("  completed: $completed")
-            appendLine("  failed: $failed")
-            appendLine("  cancelled: $cancelled")
-            appendLine("  total continuations: $totalContinuations")
-            appendLine("  avg continuations/goal: ${"%.1f".format(avgContinuations)}")
-            appendLine("  crossover status: ${if (completed >= 1) "NOMINALLY_ACHIEVABLE" else "NOT_ACHIEVED"}")
+            appendLine("  total goals: ${benchmark.totalGoals}")
+            appendLine("  completed: ${benchmark.completed}")
+            appendLine("  failed: ${benchmark.failed}")
+            appendLine("  cancelled: ${benchmark.cancelled}")
+            appendLine("  recovery required: ${benchmark.recoveryRequired}")
+            appendLine("  total continuations: ${benchmark.totalContinuations}")
+            appendLine("  avg continuations/goal: ${"%.1f".format(benchmark.avgContinuations)}")
+            appendLine("  batch evidence status: ${benchmark.status}")
         }
         ui.renderNotice("SELF-HOST BENCHMARK\n$text")
         return AgentCommandOutcome.Completed(text)
     }
+
+    private fun renderStatusDetails(status: atropos.core.agent.SelfHostStatus): String = buildString {
+        appendLine("${status.goalId}: ${status.status} (phase ${status.phase ?: "?"})")
+        appendLine("phase: ${status.phase ?: "none"}")
+        appendLine("node: ${status.currentNodeId ?: "none"}")
+        appendLine("terminal: ${status.terminalCondition ?: "none"}")
+        status.dagStatus?.let { dag ->
+            appendLine("DAG: ${dag.completedNodes}/${dag.totalNodes} completed ${dag.failedNodes} failed ${dag.blockedNodes} blocked")
+            if (dag.readyNodes.isNotEmpty()) {
+                appendLine("ready: ${dag.readyNodes.joinToString(", ")}")
+            }
+        }
+    }.trimEnd()
 }

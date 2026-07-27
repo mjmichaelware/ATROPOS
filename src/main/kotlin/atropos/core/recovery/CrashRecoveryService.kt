@@ -7,12 +7,10 @@ import atropos.core.agent.AgentQueueService
 import atropos.core.agent.AgentQueueStore
 import atropos.core.agent.GoalContinuationService
 import atropos.core.agent.GoalRunStore
-import atropos.core.agent.GoalTerminalCondition
 import atropos.core.agent.ProviderSessionSupervisor
 import atropos.core.dag.DagExecutionService
 import atropos.core.dag.DagStore
 import atropos.core.memory.LocalMemoryStore
-import atropos.core.security.RedactionFilter
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
@@ -47,8 +45,7 @@ class CrashRecoveryService(
     private val dagStore: DagStore = DagStore(repoRoot),
     private val memoryStore: LocalMemoryStore = LocalMemoryStore(repoRoot.resolve(".atropos/memory").toFile()),
     private val daemonService: AgentDaemonService = AgentDaemonService(config),
-    private val clock: () -> Instant = { Instant.now() },
-    private val redactionFilter: RedactionFilter = RedactionFilter()
+    private val clock: () -> Instant = { Instant.now() }
 ) {
     fun recover(): RecoveryReport {
         val errors = mutableListOf<String>()
@@ -82,11 +79,22 @@ class CrashRecoveryService(
         // 4. Handle interrupted goal runs
         var interruptedRuns = 0
         runCatching {
-            val runs = goalRunStore.listRuns(50)
+            val runs = goalRunStore.listRuns(Int.MAX_VALUE)
             for (run in runs) {
                 if (run.status == atropos.core.agent.GoalRunStatus.RUNNING || run.status == atropos.core.agent.GoalRunStatus.CONTINUING) {
                     if (run.lastContinuationAt != null && run.lastContinuationAt.plusSeconds(300).isBefore(now)) {
-                        continuationService.completeRun(run.id, GoalTerminalCondition.TERMINAL_FAILURE, "interrupted: recovered during crash recovery")
+                        continuationService.markRecoveryRequired(
+                            run.id,
+                            "interrupted: recovered during crash recovery",
+                            listOf(
+                                "recovery=crash",
+                                "recoveredAt=$now",
+                                "continuations=${run.continuationCount}",
+                                "phase=${run.activePhase ?: "none"}",
+                                "node=${run.currentNodeId ?: "none"}",
+                                "checkpoint=${run.lastVerifiedCheckpoint ?: "none"}"
+                            )
+                        )
                         interruptedRuns++
                     }
                 }

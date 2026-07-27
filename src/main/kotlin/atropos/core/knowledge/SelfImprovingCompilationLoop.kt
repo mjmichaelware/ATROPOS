@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.knowledge
 
+import atropos.core.memory.LocalMemoryStore
 import atropos.core.verification.*
 import atropos.core.verifier.ProbabilisticImmunityEngine
 import java.io.ByteArrayOutputStream
@@ -128,7 +129,8 @@ class JdkVerificationProcessExecutor : VerificationProcessExecutor {
 
 class AtomicRewardRecorder(
     workspace: Path,
-    relativePath: Path = Path.of(".atropos", "verification", "rewards.tsv")
+    relativePath: Path = Path.of(".atropos", "verification", "rewards.tsv"),
+    private val memoryStore: LocalMemoryStore = LocalMemoryStore(workspace.resolve(".atropos/memory").toFile())
 ) : RewardRecorder {
     private val root = workspace.toAbsolutePath().normalize()
     private val target = root.resolve(relativePath).normalize()
@@ -176,6 +178,15 @@ class AtomicRewardRecorder(
                 StandardCopyOption.REPLACE_EXISTING
             )
         }
+
+        val direction = if (event.reward >= 0.0) "reward" else "penalty"
+        val exitCode = event.exitCode?.toString() ?: "none"
+        memoryStore.rememberReward(
+            subjectId = event.scope.name.lowercase(),
+            title = "verification $direction ${event.reward}",
+            body = "scope=${event.scope.name.lowercase()} exitCode=$exitCode timedOut=${event.timedOut} durationMs=${event.durationMillis}",
+            tags = listOf("verification", direction, event.scope.name.lowercase())
+        )
     }
 }
 

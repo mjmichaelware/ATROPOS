@@ -8,6 +8,7 @@ import atropos.core.RuntimeConfig
 import atropos.core.memory.LocalMemoryStore
 import atropos.dloi.DloiService
 import java.nio.file.Files
+import java.nio.charset.StandardCharsets
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -46,14 +47,21 @@ class AgentSelfBuildLoopTest {
         assertTrue(job.smokeResult.orEmpty().contains("refused"))
         assertTrue(job.finalReport.orEmpty().contains("status: refused"))
         assertTrue(job.finalReport.orEmpty().contains("source: unresolved"))
+        assertEquals("unresolved", job.sourceEvidence ?: "unresolved")
+        assertTrue(job.impactedSymbols.isEmpty())
         assertTrue(job.finalReport.orEmpty().contains("changed files: none"))
         assertTrue(job.nextSuggestedCommand.orEmpty().contains("safe smoke command"))
         val contextExportPath = assertNotNull(job.contextExportPath)
         assertTrue(Files.isRegularFile(repoRoot.resolve(contextExportPath)))
+        val contextExport = Files.readString(repoRoot.resolve(contextExportPath), StandardCharsets.UTF_8)
+        assertTrue(contextExport.contains("source: unresolved"))
+        assertTrue(contextExport.contains("impacted symbols: none"))
 
         val reopenedJob = assertNotNull(AgentJobStore(repoRoot).resolve("latest"))
         assertEquals(job.id, reopenedJob.id)
         assertEquals(AgentJobStatus.REFUSED, reopenedJob.status)
+        assertEquals("unresolved", reopenedJob.sourceEvidence ?: "unresolved")
+        assertTrue(reopenedJob.impactedSymbols.isEmpty())
         assertTrue(
             LocalMemoryStore(root = repoRoot.resolve(".atropos/memory").toFile(), env = emptyMap())
                 .findBySubject("job", job.id)

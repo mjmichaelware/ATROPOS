@@ -282,6 +282,8 @@ class AgentQueueService(
             repairId = job.repairId ?: repairId,
             contextExportPath = job.contextExportPath ?: contextExportPath,
             finalJobResult = job.result ?: finalJobResult,
+            sourceEvidence = job.sourceEvidence ?: sourceEvidence,
+            impactedSymbols = if (job.impactedSymbols.isNotEmpty()) job.impactedSymbols else impactedSymbols,
             failureReason = job.failureReason ?: failureReason
         )
     }
@@ -323,6 +325,8 @@ class AgentQueueService(
                 appendLine("provider=${record.provider ?: "none"}")
                 appendLine("patch=${record.patchId ?: "none"}")
                 appendLine("verification=${record.verificationId ?: "none"}")
+                appendLine("source=${record.sourceEvidence ?: "unresolved"}")
+                appendLine("impacted=${record.impactedSymbols.joinToString(", ").ifBlank { "none" }}")
                 appendLine("failure=${record.failureReason ?: "none"}")
             }.trimEnd(),
             tags = listOf("agent", "queue", record.state.name.lowercase())

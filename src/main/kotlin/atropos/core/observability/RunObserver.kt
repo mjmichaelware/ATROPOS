@@ -40,6 +40,7 @@ class RunObserver(
 ) {
     private val running = AtomicBoolean(false)
     private val serverRef = java.util.concurrent.atomic.AtomicReference<AsynchronousServerSocketChannel?>(null)
+    private val lastErrorRef = java.util.concurrent.atomic.AtomicReference<String?>(null)
     private val clients = CopyOnWriteArrayList<AsynchronousSocketChannel>()
     private val executor = Executors.newCachedThreadPool()
     private var port = 4197
@@ -47,6 +48,7 @@ class RunObserver(
     fun start(desiredPort: Int = 4197): String {
         if (running.get()) return "observer already running on port $port"
         port = desiredPort
+        lastErrorRef.set(null)
         running.set(true)
         executor.submit { runServer() }
         return "observer starting on 127.0.0.1:$port"
@@ -65,18 +67,24 @@ class RunObserver(
     fun status(): RunObserverState = RunObserverState(
         dashboardPort = port,
         running = running.get(),
-        connectedClients = clients.size
+        connectedClients = clients.size,
+        lastError = lastErrorRef.get()
     )
 
     fun listRuns(limit: Int = 20): String = buildString {
-        val runs = continuationService.listRuns(limit)
-        if (runs.runs.isEmpty()) {
-            appendLine("no goal runs recorded")
+        val runIds = journal.latestRunIds(limit)
+        if (runIds.isEmpty()) {
+            appendLine("no journaled runs recorded")
             return@buildString
         }
-        appendLine("goal runs:")
-        runs.runs.forEach { run ->
-            appendLine("  ${run.renderSummaryLine()}")
+        appendLine("journaled runs:")
+        runIds.forEach { runId ->
+            val summary = journal.summary(runId)
+            if (summary == null) {
+                appendLine("  $runId")
+            } else {
+                appendLine("  $runId events=${summary.eventCount} last=${summary.lastEvent ?: "none"}")
+            }
         }
     }.trimEnd()
 
@@ -128,6 +136,8 @@ class RunObserver(
             }
         } catch (e: Exception) {
             if (running.get()) {
+                lastErrorRef.set(e.message ?: "unknown error")
+                running.set(false)
                 memoryStore.rememberDetailed(
                     kind = atropos.core.memory.MemoryKind.NOTE,
                     title = "observer server error",
@@ -177,11 +187,16 @@ class RunObserver(
         appendLine("Clients: ${clients.size}")
         appendLine("Running: ${running.get()}")
         appendLine("---")
-        val runs = continuationService.listRuns(5)
-        if (runs.runs.isNotEmpty()) {
+        val runs = journal.latestRunIds(5)
+        if (runs.isNotEmpty()) {
             appendLine("Recent runs:")
-            runs.runs.forEach { run ->
-                appendLine("  ${run.id}: ${run.status} cont=${run.continuationCount}")
+            runs.forEach { runId ->
+                val summary = journal.summary(runId)
+                if (summary == null) {
+                    appendLine("  $runId")
+                } else {
+                    appendLine("  $runId: events=${summary.eventCount} last=${summary.lastEvent ?: "none"}")
+                }
             }
         }
         val dags = dagService.listDags()

@@ -16,6 +16,7 @@ enum class GoalTerminalCondition {
 enum class GoalRunStatus {
     RUNNING,
     CONTINUING,
+    RECOVERY_REQUIRED,
     COMPLETED,
     FAILED,
     BLOCKED,

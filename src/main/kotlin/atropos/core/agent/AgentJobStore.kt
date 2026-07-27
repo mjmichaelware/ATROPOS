@@ -66,7 +66,11 @@ class AgentJobStore(
                     .filter { it.fileName.toString().endsWith(".meta") && it.fileName.toString().startsWith("job-") }
                     .toList()
                     .mapNotNull { parseRecord(it) }
-                    .sortedByDescending { it.id }
+                    .sortedWith(
+                        compareByDescending<AgentJobRecord> { it.updatedAt }
+                            .thenByDescending { it.createdAt }
+                            .thenByDescending { it.id }
+                    )
                     .take(limit.coerceAtLeast(0))
             }
         } catch (_: Exception) {
@@ -125,6 +129,8 @@ class AgentJobStore(
             appendLine("commitProposalB64=${encode(record.commitProposal.orEmpty())}")
             appendLine("nextSuggestedCommandB64=${encode(record.nextSuggestedCommand.orEmpty())}")
             appendLine("contextExportPathB64=${encode(record.contextExportPath.orEmpty())}")
+            appendLine("sourceEvidenceB64=${encode(record.sourceEvidence.orEmpty())}")
+            appendLine("impactedSymbolsB64=${encode(record.impactedSymbols.joinToString("\n"))}")
             appendLine("metaFile=${record.metaFile.fileName}")
         }
         Files.writeString(tmp, content, StandardCharsets.UTF_8)
@@ -151,7 +157,12 @@ class AgentJobStore(
             finalReport = sanitizeText(record.finalReport, 8_000),
             commitProposal = sanitizeText(record.commitProposal, 8_000),
             nextSuggestedCommand = sanitizeText(record.nextSuggestedCommand, 4_000),
-            contextExportPath = sanitizeText(record.contextExportPath, 1_024)
+            contextExportPath = sanitizeText(record.contextExportPath, 1_024),
+            sourceEvidence = sanitizeText(record.sourceEvidence, 2_000),
+            impactedSymbols = record.impactedSymbols
+                .mapNotNull { sanitizeText(it, 512) }
+                .distinct()
+                .take(20)
         )
 
     private fun sanitizeText(value: String?, maxChars: Int): String? =
@@ -219,6 +230,12 @@ class AgentJobStore(
             commitProposal = decode(fields["commitProposalB64"]).takeIf { it.isNotBlank() },
             nextSuggestedCommand = decode(fields["nextSuggestedCommandB64"]).takeIf { it.isNotBlank() },
             contextExportPath = decode(fields["contextExportPathB64"]).takeIf { it.isNotBlank() },
+            sourceEvidence = decode(fields["sourceEvidenceB64"]).takeIf { it.isNotBlank() },
+            impactedSymbols = decode(fields["impactedSymbolsB64"])
+                .lineSequence()
+                .map { it.trim() }
+                .filter { it.isNotBlank() }
+                .toList(),
             metaFile = metaFile
         )
     }

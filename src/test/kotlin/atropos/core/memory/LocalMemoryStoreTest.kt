@@ -59,19 +59,70 @@ class LocalMemoryStoreTest {
         val root = Files.createTempDirectory("atropos-memory-restart-").toFile()
         val store = LocalMemoryStore(root = root, env = emptyMap())
 
+        store.rememberSession("session-1", "session state", "provider=groq goal=bootstrap")
+        store.rememberThread("thread-1", "thread state", "continuation thread")
+        store.rememberBatch("batch-1", "batch state", "phase=9 restart memory")
+        store.rememberJob("job-1", "job state", "status=running")
+        store.rememberQueue("queue-1", "queue state", "checkpoint=patch_applied")
         store.rememberRoute("route-1", "route decision", "selected=groq fallback=openrouter")
         store.rememberFailure("repair", "failure-1", "compile failure", "failure signature")
         store.rememberRepair("repair-1", "repair result", "fixed symbol")
         store.rememberVerification("verify-1", "verification result", "passed=true")
+        store.rememberSourceDecision("source-1", "source decision", "section=S0011")
         store.rememberToolResult("tool-1", "tool call", "command=deterministic verifier")
+        store.rememberSummary("summary-1", "summary state", "phase 9 persisted")
+        store.rememberRecovery("recovery-1", "recovery state", "stale lease reclaimed")
+        store.rememberReward("narrow", "verification reward +1.0", "scope=narrow exitCode=0 timedOut=false durationMs=42")
 
         val reopened = LocalMemoryStore(root = root, env = emptyMap())
 
-        assertEquals(5, reopened.status().totalRecords)
+        assertEquals(14, reopened.status().totalRecords)
+        assertEquals("session state", reopened.findBySubject("session", "session-1").first().title)
+        assertEquals("thread state", reopened.findBySubject("thread", "thread-1").first().title)
+        assertEquals("batch state", reopened.findBySubject("batch", "batch-1").first().title)
+        assertEquals("job state", reopened.findBySubject("job", "job-1").first().title)
+        assertEquals("queue state", reopened.findBySubject("queue", "queue-1").first().title)
         assertEquals("route decision", reopened.findBySubject("route", "route-1").first().title)
         assertEquals("compile failure", reopened.findBySubject("repair", "failure-1").first().title)
         assertEquals("repair result", reopened.latestByKind(MemoryKind.REPAIR).first().title)
         assertEquals("verification result", reopened.latestByKind(MemoryKind.VERIFICATION).first().title)
+        assertEquals("source decision", reopened.findBySubject("source", "source-1").first().title)
+        assertEquals("summary state", reopened.findBySubject("summary", "summary-1").first().title)
+        assertEquals("recovery state", reopened.findBySubject("recovery", "recovery-1").first().title)
+        assertEquals("verification reward +1.0", reopened.findBySubject("reward", "narrow").first().title)
         assertTrue(reopened.search("deterministic verifier").any { it.record.kind == MemoryKind.TOOL })
+        assertTrue(reopened.search("verification reward").any { it.record.kind == MemoryKind.REWARD })
+    }
+
+    @Test
+    fun findBySubjectTypes_reads_full_snapshot_before_limiting() {
+        val root = Files.createTempDirectory("atropos-memory-subject-types-").toFile()
+        val store = LocalMemoryStore(root = root, env = emptyMap())
+
+        store.rememberDetailed(
+            kind = MemoryKind.BATCH,
+            title = "self-host evaluation",
+            body = "goal=shg-1",
+            tags = listOf("selfhost"),
+            subjectType = "selfhost_dag_eval",
+            subjectId = "shg-1"
+        )
+        repeat(5005) { index ->
+            store.rememberDetailed(
+                kind = MemoryKind.SUMMARY,
+                title = "generic summary $index",
+                body = "body $index",
+                tags = listOf("generic"),
+                subjectType = "summary",
+                subjectId = "summary-$index"
+            )
+        }
+
+        val reopened = LocalMemoryStore(root = root, env = emptyMap())
+        val found = reopened.findBySubjectTypes(setOf("selfhost_dag_eval"), limit = 5)
+
+        assertEquals(1, found.size)
+        assertEquals("selfhost_dag_eval", found.first().subjectType)
+        assertEquals("shg-1", found.first().subjectId)
     }
 }
