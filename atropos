@@ -1,2 +1,8 @@
 #!/data/data/com.termux/files/usr/bin/bash
-exec java -jar "$HOME/ATROPOS/atropos.jar" "$@"
+set -euo pipefail
+SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+JAVA_BIN="${JAVA_HOME:-/data/data/com.termux/files/usr/lib/jvm/java-21-openjdk}/bin/java"
+if [ ! -x "$JAVA_BIN" ]; then
+  JAVA_BIN="$(command -v java)"
+fi
+exec "$JAVA_BIN" -jar "$SCRIPT_DIR/atropos.jar" "$@"
