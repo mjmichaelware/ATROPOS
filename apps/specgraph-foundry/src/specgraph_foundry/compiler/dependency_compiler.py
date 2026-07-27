@@ -126,13 +126,33 @@ def compile_dependencies(
                     evidence="Data model definition must precede migration script."
                 ))
 
-    # Deduplicate edges based on from_id/to_id
+    def has_path(adj: dict[str, list[str]], start: str, end: str, visited: set[str] | None = None) -> bool:
+        if visited is None:
+            visited = set()
+        if start == end:
+            return True
+        if start in visited:
+            return False
+        visited.add(start)
+        for neighbor in adj.get(start, []):
+            if has_path(adj, neighbor, end, visited):
+                return True
+        return False
+
+    # Deduplicate edges and prevent cycles
     seen = set()
     deduped = []
+    adj: dict[str, list[str]] = {}
     for edge in edges:
         key = (edge.from_id, edge.to_id)
         if key not in seen:
+            if has_path(adj, edge.to_id, edge.from_id):
+                # Cycle detected! Skip this edge to maintain DAG invariant
+                continue
             seen.add(key)
             deduped.append(edge)
+            if edge.from_id not in adj:
+                adj[edge.from_id] = []
+            adj[edge.from_id].append(edge.to_id)
 
     return deduped
