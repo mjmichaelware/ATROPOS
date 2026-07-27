@@ -737,7 +737,9 @@ class CommandRouter(
                     if (mythologyRequested) {
                         // The operator asked about the myth; this answer is correct
                         // for the question actually posed.
-                        uiEngine.renderNotice(markdownRenderer.render(response))
+                        val shownMyth = atropos.core.provider.ProviderResponseContextParser
+                            .parse(response, envelope).cleanedResponse
+                        uiEngine.renderNotice(markdownRenderer.render(shownMyth))
                     } else {
                         val corrective = buildString {
                             appendLine(context)
@@ -768,7 +770,11 @@ class CommandRouter(
                                     ATTESTATION_WIDTH
                                 )
                             )
-                            uiEngine.renderNotice(markdownRenderer.render(retry ?: response))
+                            // Show the cleaned text: the attestation block is
+                            // internal plumbing and must never reach the operator.
+                            val shown = atropos.core.provider.ProviderResponseContextParser
+                                .parse(retry ?: response, envelope).cleanedResponse
+                            uiEngine.renderNotice(markdownRenderer.render(shown))
                         }
                     }
                 }

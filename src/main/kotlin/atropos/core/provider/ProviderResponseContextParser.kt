@@ -6,6 +6,22 @@ package atropos.core.provider
  * and any Greek mythology content for checking.
  */
 object ProviderResponseContextParser {
+    /*
+     * Deliberately contains no keyword or content heuristics.
+     *
+     * Whether a provider actually received and understood its context is
+     * proven deterministically by the attestation block it must echo back —
+     * system identity, repository, role, context version and context hash.
+     * A provider that drifted cannot produce a matching hash.
+     *
+     * An earlier version scored the prose against a Greek-mythology word list.
+     * That is not a deterministic contract: it guessed at meaning, could never
+     * be complete, and misfired constantly — "shades" matched "hades",
+     * "shares" matched "ares", and the system's own name appeared in the list,
+     * so the more correctly a provider identified itself as ATROPOS the more
+     * certainly it was rejected. Verification belongs to the envelope contract,
+     * not to string matching.
+     */
 
     /**
      * Parse the response text and return a result indicating whether
@@ -13,66 +29,13 @@ object ProviderResponseContextParser {
      */
     fun parse(response: String, envelope: ContextEnvelope): ParsedProviderResponse {
         val attestation = ContextEnvelopeSerializer.parseAttestation(response)
-        val mythologyDetected = detectMythology(response, envelope)
         val cleanedResponse = stripAttestationBlock(response)
 
         return ParsedProviderResponse(
             rawResponse = response,
             cleanedResponse = cleanedResponse,
-            attestation = attestation,
-            mythologyDetected = mythologyDetected
+            attestation = attestation
         )
-    }
-
-    /**
-     * Detect unsolicited Greek mythology references in the response.
-     * Returns true if the response contains Greek mythology content
-     * that was NOT explicitly requested.
-     */
-    private fun detectMythology(response: String, envelope: ContextEnvelope): Boolean {
-        val lower = response.lowercase()
-        val mythologyTerms = listOf(
-            "greek mythology", "greek god", "greek goddess",
-            "zeus", "hades", "poseidon", "athena", "apollo", "artemis",
-            "ares", "aphrodite", "hermes", "dionysus", "demeter", "hestia",
-            "the three fates", "clotho", "lachesis",
-            "moirai", "titan", "olympus", "mount olympus",
-            "son of zeus", "daughter of zeus", "wife of zeus",
-            "trident", "underworld", "river styx"
-        )
-
-        // Check for "ATROPOS" specifically in a mythological context
-        val atroposMythology = run {
-            if (!lower.contains("atropos")) return@run false
-            // "Atropos" in mythology context but not as the software engine
-            val mythologyIndicators = listOf(
-                "greek mythology", "the three fates", "the fates",
-                "moirai", "cut the thread", "thread of life",
-                "goddess of fate", "daughter of zeus", "daughter of the night",
-                "she who cannot be turned"
-            )
-            mythologyIndicators.any { indicator ->
-                // Find Atropos near the indicator
-                val atroposIdx = lower.indexOf("atropos")
-                val indicatorIdx = lower.indexOf(indicator)
-                atroposIdx >= 0 && indicatorIdx >= 0 &&
-                    kotlin.math.abs(atroposIdx - indicatorIdx) < 200
-            }
-        }
-
-        // Corroboration required. A single incidental term (a provider naming
-        // a library "athena", or discussing a "titan" instance size) must not
-        // reject an otherwise valid engineering answer. Unambiguous phrases
-        // stand alone; weak single tokens do not.
-        val strongTerms = listOf(
-            "greek mythology", "greek god", "greek goddess",
-            "the three fates", "moirai", "mount olympus",
-            "son of zeus", "daughter of zeus", "wife of zeus", "river styx"
-        )
-        val strongMythology = strongTerms.any { lower.contains(it) }
-        val weakHits = mythologyTerms.count { lower.contains(it) }
-
-        return atroposMythology || strongMythology || weakHits >= 2
     }
 
     /**
@@ -107,6 +70,5 @@ object ProviderResponseContextParser {
 data class ParsedProviderResponse(
     val rawResponse: String,
     val cleanedResponse: String,
-    val attestation: ContextAttestation?,
-    val mythologyDetected: Boolean
+    val attestation: ContextAttestation?
 )
