@@ -14,7 +14,15 @@ data class TerritoryAssignment(
     val expiresAt: Instant? = null,
     val parentTerritoryId: String? = null,
     val maxFileSizeBytes: Long = 1024 * 1024,
-    val readOnly: Boolean = false
+    val readOnly: Boolean = false,
+    /**
+     * The actor identity this grant authorises, when it was issued at dispatch.
+     *
+     * A child grant is bound to one dispatched work item, so it cannot be
+     * reused by a different node. `null` for durable operator-assigned
+     * territory, which is held by an owner rather than a work item.
+     */
+    val boundActorIdentity: String? = null
 ) {
     fun allows(path: String): Boolean {
         if (!path.startsWith(allowedPrefix)) return false

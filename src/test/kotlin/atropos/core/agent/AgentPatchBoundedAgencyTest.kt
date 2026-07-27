@@ -10,6 +10,9 @@ import atropos.core.policy.ExecutionPolicyRequest
 import atropos.core.policy.PolicyActionClass
 import atropos.core.policy.PolicyDecisionType
 import atropos.core.policy.TypedToolExecutor
+import atropos.core.territory.TerritoryGrantService
+import atropos.core.territory.TerritoryService
+import atropos.core.territory.TerritoryStore
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
@@ -48,15 +51,28 @@ class AgentPatchBoundedAgencyTest {
             )
     }
 
+    /**
+     * Builds a store whose gate and dispatcher share one territory root, and
+     * pre-grants the patch actors these tests exercise — the dispatcher's job
+     * in production. Territory is proven separately; these tests are about what
+     * the policy decision does once territory is satisfied.
+     */
     private fun storeFor(
         repoRoot: Path,
         decision: PolicyDecisionType,
         reason: String,
         spawns: SpawnCounter
     ): AgentPatchStore {
-        val gate = BoundedAgencyGate(FixedDecisionEngine(repoRoot, decision, reason))
+        val grants = TerritoryGrantService(TerritoryService(TerritoryStore(repoRoot)))
+        grants.grantToNode(
+            ActionActor.HumanOwner,
+            ActionActor.HierarchyNode("patch", "sample"),
+            listOf("sample.diff")
+        )
+        val gate = BoundedAgencyGate(FixedDecisionEngine(repoRoot, decision, reason), grants)
         return AgentPatchStore(
             repoRoot = repoRoot,
+            territoryGrants = grants,
             agencyGate = gate,
             agency = TypedToolExecutor(gate),
             spawn = spawns.seam
@@ -166,9 +182,11 @@ class AgentPatchBoundedAgencyTest {
     fun real_policy_verdicts_are_unchanged_by_the_gate() {
         val repoRoot = repo()
         val spawns = SpawnCounter()
-        val gate = BoundedAgencyGate(ExecutionPolicyEngine(repoRoot))
+        val grants = TerritoryGrantService(TerritoryService(TerritoryStore(repoRoot)))
+        val gate = BoundedAgencyGate(ExecutionPolicyEngine(repoRoot), grants)
         val store = AgentPatchStore(
             repoRoot = repoRoot,
+            territoryGrants = grants,
             agencyGate = gate,
             agency = TypedToolExecutor(gate),
             spawn = spawns.seam

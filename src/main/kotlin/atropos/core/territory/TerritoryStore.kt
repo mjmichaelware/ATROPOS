@@ -76,7 +76,7 @@ class TerritoryStore(private val root: Path = Path.of(System.getProperty("user.d
 internal fun TerritoryAssignment.toStoreLine(): String {
     val pats = allowedFilePatterns.joinToString(",")
     val den = deniedPatterns.joinToString(",")
-    return listOf(id, ownerId, ownerRole, allowedPrefix, pats, den, grantedAt.toString(), expiresAt?.toString().orEmpty(), parentTerritoryId.orEmpty(), maxFileSizeBytes.toString(), readOnly.toString()).joinToString("\t")
+    return listOf(id, ownerId, ownerRole, allowedPrefix, pats, den, grantedAt.toString(), expiresAt?.toString().orEmpty(), parentTerritoryId.orEmpty(), maxFileSizeBytes.toString(), readOnly.toString(), boundActorIdentity.orEmpty()).joinToString("\t")
 }
 
 internal fun parseAssignmentLine(line: String): TerritoryAssignment? {
@@ -91,7 +91,10 @@ internal fun parseAssignmentLine(line: String): TerritoryAssignment? {
             expiresAt = parts[7].takeIf { it.isNotBlank() }?.let { java.time.Instant.parse(it) },
             parentTerritoryId = parts[8].takeIf { it.isNotBlank() },
             maxFileSizeBytes = parts[9].toLong(),
-            readOnly = parts[10].toBoolean()
+            readOnly = parts[10].toBoolean(),
+            // Absent in lines written before grant-on-dispatch; those are
+            // durable operator grants, which are bound to no work item.
+            boundActorIdentity = parts.getOrNull(11)?.takeIf { it.isNotBlank() }
         )
     } catch (_: Exception) { null }
 }
