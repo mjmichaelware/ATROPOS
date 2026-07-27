@@ -69,7 +69,16 @@ class DeterministicVerifier(
     ): DeterministicVerificationResult {
         val findings = mutableListOf<DeterministicFinding>()
         sourcePaths.forEach { path ->
-            findings += checkSourceScope(path)
+            val scopeFindings = checkSourceScope(path)
+            findings += scopeFindings
+
+            // A file outside the repository is not in the symbol graph, so the
+            // analyses below have nothing to reason over — `reconcileImports`
+            // would raise rather than report, turning the finding just recorded
+            // into a crash. The out-of-scope finding stands and still fails the
+            // run; skipping analysis withholds no verdict.
+            if (scopeFindings.isNotEmpty()) return@forEach
+
             if (path.extension == "kt" && Files.isRegularFile(path)) {
                 findings += checkPackagePathInvariant(path)
                 findings += checkDuplicateImports(path)

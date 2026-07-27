@@ -30,7 +30,18 @@ data class AuditReport(
     val summary: String get() = "$passed passed, $warnings warnings, $failures failures"
 }
 
-class AuditorService {
+class AuditorService(
+    /**
+     * The repository the audited files belong to.
+     *
+     * [DeterministicVerifier] treats paths outside its root as out-of-scope
+     * findings, so an auditor rooted somewhere else reports every file it was
+     * given as out of scope. Defaulting the verifier's root instead of passing
+     * this one made that misconfiguration invisible while the verifier still
+     * crashed on such paths and the failure was swallowed as a warning.
+     */
+    private val repoRoot: Path = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize()
+) {
     private val findings = mutableListOf<AuditFinding>()
 
     fun auditTerritories(territories: List<TerritoryAssignment>): List<AuditFinding> {
@@ -66,7 +77,7 @@ class AuditorService {
     }
 
     fun auditDeterministic(files: List<String>): List<AuditFinding> {
-        val verifier = DeterministicVerifier()
+        val verifier = DeterministicVerifier(repoRoot)
         val results = mutableListOf<AuditFinding>()
         val paths = files.mapNotNull { f ->
             try { Path.of(f) } catch (_: Exception) { null }

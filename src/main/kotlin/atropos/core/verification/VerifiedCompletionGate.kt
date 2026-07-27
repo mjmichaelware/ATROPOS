@@ -44,7 +44,7 @@ class VerifiedCompletionGate(
      * node's findings refuse another's completion.
      */
     private val auditorFactory: () -> atropos.core.auditor.AuditorService =
-        { atropos.core.auditor.AuditorService() },
+        { atropos.core.auditor.AuditorService(repoRoot) },
     private val clock: () -> Instant = { Instant.now() }
 ) {
     fun evaluateNode(node: DagNode): CompletionGateReport {
