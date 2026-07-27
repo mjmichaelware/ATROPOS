@@ -11,8 +11,9 @@ import atropos.core.planning.InternalPlanningGraphPlugin
 import atropos.core.planning.NodeResult
 import atropos.core.planning.PlanningGraphPlugin
 import atropos.core.planning.Territory
-import atropos.core.policy.AutonomyActionClass
-import atropos.core.policy.AutonomyPolicyEngine
+import atropos.core.policy.AgencyDisposition
+import atropos.core.policy.BoundedAgencyGate
+import atropos.core.policy.ExecutionPolicyEngine
 import java.nio.file.Path
 import java.time.Instant
 
@@ -23,7 +24,7 @@ class DagExecutionService(
     private val queueService: AgentQueueService = AgentQueueService(config),
     private val runService: AgentRunService = AgentRunService(config),
     private val continuationService: GoalContinuationService = GoalContinuationService(repoRoot),
-    private val policyEngine: AutonomyPolicyEngine = AutonomyPolicyEngine(repoRoot),
+    private val agencyGate: BoundedAgencyGate = BoundedAgencyGate(ExecutionPolicyEngine(repoRoot)),
     private val memoryStore: LocalMemoryStore = LocalMemoryStore(repoRoot.resolve(".atropos/memory").toFile()),
     private val batchDefiner: InternalBatchDefiner = InternalBatchDefiner(),
     private val planningGraph: PlanningGraphPlugin = InternalPlanningGraphPlugin(repoRoot, store),
@@ -95,23 +96,30 @@ class DagExecutionService(
         }
         val claimed = store.readNode(node.id) ?: return DagNodeExecutionResult(node.id, node.state, false, "claimed node disappeared")
 
-        // Policy check
-        val policyDecision = policyEngine.evaluate(
-            AutonomyActionClass.DAG_CONTROL,
-            mapOf("dagId" to dag.id, "nodeId" to node.id, "action" to node.action.name)
+        // Every node that executes anything must be authorised by the single
+        // permission authority. Nodes run through `sh -c`, so this is where an
+        // unauthorised command is stopped — before any executor is dispatched.
+        val proposal = DagNodeProposals.forNode(
+            action = node.action,
+            actionPayload = node.actionPayload,
+            territory = node.territory,
+            repoRoot = repoRoot
         )
-        if (!policyDecision.allowed) {
-            completeNode(
-                claimed,
-                NodeResult(
-                    nodeId = claimed.id,
-                    success = false,
-                    message = policyDecision.reason,
-                    finalState = DagNodeState.BLOCKED,
-                    failureReason = policyDecision.reason
+        if (proposal != null) {
+            val decision = agencyGate.evaluate(proposal)
+            if (decision.disposition != AgencyDisposition.ALLOWED) {
+                completeNode(
+                    claimed,
+                    NodeResult(
+                        nodeId = claimed.id,
+                        success = false,
+                        message = decision.reason,
+                        finalState = DagNodeState.BLOCKED,
+                        failureReason = decision.reason
+                    )
                 )
-            )
-            return DagNodeExecutionResult(node.id, DagNodeState.BLOCKED, false, policyDecision.reason)
+                return DagNodeExecutionResult(node.id, DagNodeState.BLOCKED, false, decision.reason)
+            }
         }
 
         // Execute based on action type
