@@ -1,33 +1,33 @@
 ┃  ask /home                                                                    
+                                                                                
 █▀▀█ ▀▀█▀▀ █▀▀█ █▀▀█ █▀▀█ █▀▀█ █▀▀▀                                             
 █▄▄█   █   █▄▄▀ █  █ █▄▄█ █  █ ▀▀▀█                                             
 ▀  ▀ ▀▀▀▀▀ ▀▀▀▀ ▀▀▀▀ ▀▀▀▀ ▀▀▀▀ ▀▀▀▀                                             
-local-first · free-first · quota-aware · truthful app-factory workbench         
                                                                                 
-┃  WORKSPACE                            ┃  PROVIDERS                            
-┃  path        /home/user/ATROPOS       ┃  groq        missing key fast chat /… 
-┃  git         claude/pass10-job-ui-20… ┃  openai      missing key general rea… 
-┃  kotlin      121 files                ┃  anthropic   missing key coding / de… 
-┃  mode        ask                      ┃  xai         missing key alternate c… 
-┃  provider    groq                     ┃  ollama      configured local privac… 
-                                        ┃  gemini      not installed not insta… 
+● Tip Use /providers to see which providers are configured and free             
                                                                                 
-┃  ROUTING                              ┃  AGENT                                
-┃  current     legacy route wired       ┃  ask         available (local fallba… 
-┃  macro-a     policy compiled          ┃  patch       no provider key          
-┃  fast        groq first               ┃  apply       available (local git)    
-┃  large       gemini first             ┃  order       none configured          
-┃  paid        locked                   ┃  paid        locked                   
-┃  preview     /route <prompt>                                                  
                                                                                 
-┃  PATCH/APPLY                          ┃  QUOTA CORE                           
-┃  latest      none                     ┃  mode        free-first               
-┃  check       NOT RUN                  ┃  ledger      compiled                 
-┃  apply       not attempted            ┃  cooldown    tracked                  
-┃  changed     unknown                  ┃  fallback    nonblocking              
-┃  next        /agent patch <task>      ┃  status      UI next batch            
                                                                                 
-┃  COMMANDS                             ┃  SOURCE DOCS                          
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
                                                                                 
                                                                                 
                                                                                 

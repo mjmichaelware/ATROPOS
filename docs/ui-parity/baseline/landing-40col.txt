@@ -1,33 +1,33 @@
 ┃  ask /home                            
+                                        
 █▀▀█ ▀▀█▀▀ █▀▀█                         
 █▄▄█   █   █▄▄▀                         
 ▀  ▀ ▀▀▀▀▀ ▀▀▀▀                         
-local-first · free-first · quota-aware …
                                         
-┃  WORKSPACE                            
-┃  path        /home/user/ATROPOS       
-┃  git         claude/pass10-job-ui-202…
-┃  kotlin      121 files                
-┃  mode        ask                      
-┃  provider    groq                     
+● Tip Use /providers to see which provi…
                                         
-┃  PROVIDERS                            
-┃  groq        missing key fast chat / …
-┃  openai      missing key general reas…
-┃  anthropic   missing key coding / dee…
-┃  xai         missing key alternate cl…
-┃  ollama      configured local privacy…
-┃  gemini      not installed not instal…
                                         
-┃  ROUTING                              
-┃  current     legacy route wired       
-┃  macro-a     policy compiled          
-┃  fast        groq first               
-┃  large       gemini first             
-┃  paid        locked                   
-┃  preview     /route <prompt>          
                                         
-┃  AGENT                                
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
                                         
                                         
                                         

@@ -1,31 +1,31 @@
 ┃  ask /home                                                                                                                                                    
+                                                                                                                                                                
 █▀▀█ ▀▀█▀▀ █▀▀█ █▀▀█ █▀▀█ █▀▀█ █▀▀▀                                                                                                                             
 █▄▄█   █   █▄▄▀ █  █ █▄▄█ █  █ ▀▀▀█                                                                                                                             
 ▀  ▀ ▀▀▀▀▀ ▀▀▀▀ ▀▀▀▀ ▀▀▀▀ ▀▀▀▀ ▀▀▀▀                                                                                                                             
-local-first · free-first · quota-aware · truthful app-factory workbench                                                                                         
                                                                                                                                                                 
-┃  WORKSPACE                            ┃  PROVIDERS                            ┃  ROUTING                              ┃  AGENT                                
-┃  path        /home/user/ATROPOS       ┃  groq        missing key fast chat /… ┃  current     legacy route wired       ┃  ask         available (local fallba… 
-┃  git         claude/pass10-job-ui-20… ┃  openai      missing key general rea… ┃  macro-a     policy compiled          ┃  patch       no provider key          
-┃  kotlin      121 files                ┃  anthropic   missing key coding / de… ┃  fast        groq first               ┃  apply       available (local git)    
-┃  mode        ask                      ┃  xai         missing key alternate c… ┃  large       gemini first             ┃  order       none configured          
-┃  provider    groq                     ┃  ollama      configured local privac… ┃  paid        locked                   ┃  paid        locked                   
-                                        ┃  gemini      not installed not insta… ┃  preview     /route <prompt>                                                  
+● Tip Use /providers to see which providers are configured and free                                                                                             
                                                                                                                                                                 
-┃  PATCH/APPLY                          ┃  QUOTA CORE                           ┃  COMMANDS                             ┃  SOURCE DOCS                          
-┃  latest      none                     ┃  mode        free-first               ┃  /agent      ask | patch | apply      ┃  ATROPOS     4 files                  
-┃  check       NOT RUN                  ┃  ledger      compiled                 ┃  /providers  inventory                ┃  map         missing                  
-┃  apply       not attempted            ┃  cooldown    tracked                  ┃  /status     endpoints                ┃  .300        provider grid            
-┃  changed     unknown                  ┃  fallback    nonblocking              ┃  /verify     toolchain                ┃  .305        phase plan               
-┃  next        /agent patch <task>      ┃  status      UI next batch            ┃  /tabs       list open tabs           ┃  .315        workflow rules           
-                                                                                ┃  /exit       close                                                            
                                                                                                                                                                 
-┃  VERIFY                               ┃  SESSION                              ┃  TABS                                 ┃  LEGEND                               
-┃  tests       source present           ┃  operation   ready                    ┃  active      tab 1:Dashboard          ┃  green       verified/present         
-┃  compile     checked by gate          ┃  mode        ask                      ┃  open        1 tab                    ┃  amber       defined/pending          
-┃  json        raw leaks blocked        ┃  provider    groq                     ┃  /tabs       list open tabs           ┃  red         missing/locked           
-┃  secrets     not rendered             ┃  tokens      --                       ┃  /tab new    open a tab               ┃  truth       disk-backed claims       
-┃  rollback    enabled                  ┃  cost        --                       ┃  /home       return to dashboard      ┃  next        status quota UI          
+                                                                                                                                                                
+                                                                                                                                                                
+                                                                                                                                                                
+                                                                                                                                                                
+                                                                                                                                                                
+                                                                                                                                                                
+                                                                                                                                                                
+                                                                                                                                                                
+                                                                                                                                                                
+                                                                                                                                                                
+                                                                                                                                                                
+                                                                                                                                                                
+                                                                                                                                                                
+                                                                                                                                                                
+                                                                                                                                                                
+                                                                                                                                                                
+                                                                                                                                                                
+                                                                                                                                                                
+                                                                                                                                                                
                                                                                                                                                                 
                                                                                                                                                                 
                                                                                                                                                                 
