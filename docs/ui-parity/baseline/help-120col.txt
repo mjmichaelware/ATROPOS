@@ -1,38 +1,38 @@
-┃  /status quota          quota ledger                                                                                  
-┃  /providers             provider inventory                                                                            
-┃  /providers descriptors provider contract grid                                                                        
-┃  /providers validate    provider descriptor validation                                                                
-┃  /agent                 agent bridge                                                                                  
-┃  /agent status          agent bridge status                                                                           
-┃  /agent ask             agent bridge ask                                                                              
-┃  /agent patch           agent bridge patch placeholder                                                                
-┃  /agent apply           agent bridge safe patch apply                                                                 
-┃  /agent apply --check   agent bridge patch validation                                                                 
-┃  /agent apply --verify  agent bridge patch apply and verify                                                           
-┃  /agent verify          agent bridge verification                                                                     
-┃  /agent repair          agent bridge repair                                                                           
-┃  /route                 preview routing decision                                                                      
-┃  /use                   switch provider                                                                               
-┃  /use auto              automatic routing                                                                             
-┃  /verify                verification scope                                                                            
-┃  /verify narrow         quick verification                                                                            
-┃  /verify wide           wide verification                                                                             
-┃  /keys                  key status                                                                                    
-┃  /keys setup            local secret template setup                                                                   
-┃  /keys status           key source status                                                                             
-┃  /factory               factory status                                                                                
-┃  /factory plan          bounded app-factory plan                                                                      
-┃  /factory run           queue app-factory run                                                                         
-┃  /memory                memory status                                                                                 
-┃  /paid                  paid emergency gate                                                                           
-┃  /paid status           paid emergency status                                                                         
-┃  /pwd                   show shell cwd                                                                                
-┃  /cd                    change shell cwd                                                                              
-┃  /ls                    list files through shell bridge                                                               
-┃  /git status            git status through shell bridge                                                               
-┃  /shell                 run explicit shell command                                                                    
-┃  /exit                  close session                                                                                 
-┃  /quit                  close session                                                                                 
+┃  /dag ingest                ingest a source document into the DAG                                                     
+┃  /dag nodes                 list DAG nodes                                                                            
+┃  /dag runnable              list runnable DAG nodes                                                                   
+┃  /dag cycles                detect dependency cycles in the DAG                                                       
+┃  /dag hig                   Hierarchical Implementation Gap report                                                    
+┃  /dag snapshot              current DAG snapshot                                                                      
+┃  /snapshot                  multimodal snapshot status                                                                
+┃  /snapshot capture          capture a terminal/file/viewport snapshot                                                 
+┃  /snapshot compare          compare two snapshots                                                                     
+┃  /snapshot list             list recent snapshots                                                                     
+┃  /snapshot report           inspection report                                                                         
+┃  /inspect                   inspection service status                                                                 
+┃  /inspect file              inspect file for drift against prior snapshot                                             
+┃  /inspect dag               verify DAG state against expected completions                                             
+┃  /inspect viewport          verify viewport content contains expected pattern                                         
+┃  /inspect full              run full multimodal inspection                                                            
+┃  /platform                  platform descriptor and environment                                                       
+┃  /platform adapters         list available platform adapters                                                          
+┃  /platform health           platform health status                                                                    
+┃  /platform env              platform environment details                                                              
+┃  /artifact                  artifact pipeline status                                                                  
+┃  /artifact plan             plan an artifact build from prompt                                                        
+┃  /artifact build            build artifacts from plan                                                                 
+┃  /artifact verify           verify artifact integrity                                                                 
+┃  /artifact install          install artifact to target directory                                                      
+┃  /artifact commit           prepare commit candidate from artifacts                                                   
+┃  /artifact gate             run acceptance gate on artifact                                                           
+┃  /autonomous                autonomous orchestrator status                                                            
+┃  /autonomous init           initialize autonomous session                                                             
+┃  /autonomous tick           run one autonomous orchestrator tick                                                      
+┃  /autonomous run            run one eligible autonomous task                                                          
+┃  /autonomous run-max        run up to N autonomous tasks                                                              
+┃  /autonomous backlog        show autonomous task backlog                                                              
+┃  /autonomous repairs        show repair history                                                                       
+┃  /autonomous failovers      show provider failover history                                                            
 ┃  /verify <narrow|wide>                                                                                                
 ┃  !<command> | /shell <command>                                                                                        
 ┃  /pwd | /cd [dir] | /ls [args] | /git status                                                                          
