@@ -1,9 +1,13 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.cli.shell
 
+import atropos.core.policy.ActionProposal
+import atropos.core.policy.AgencyDisposition
+import atropos.core.policy.BoundedAgencyGate
 import atropos.core.policy.ExecutionPolicyEngine
-import atropos.core.policy.ExecutionPolicyRequest
-import atropos.core.policy.PolicyActionClass
+import atropos.core.policy.ShellActionProposals
+import atropos.core.policy.ToolExecutionResult
+import atropos.core.policy.TypedToolExecutor
 import atropos.core.security.RedactionFilter
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -18,16 +22,48 @@ data class ShellCommandResult(
     val exitCode: Int,
     val elapsedMs: Long,
     val timedOut: Boolean,
-    val output: String
+    val output: String,
+    /**
+     * How bounded agency disposed of the proposal, when one was made.
+     *
+     * Carried so a refusal is a typed outcome a compositor can act on — an
+     * `APPROVAL_REQUIRED` result is something a future dialog can offer to
+     * escalate, which a bare exit code could never express. `null` for paths
+     * that make no proposal at all, such as `cd` and the empty command.
+     */
+    val disposition: AgencyDisposition? = null,
+    val proposalId: String? = null,
+    val policyReason: String? = null
 ) {
     val passed: Boolean = exitCode == 0 && !timedOut
 }
 
+/**
+ * Runs bounded local shell commands.
+ *
+ * This runner holds no execution authority. It states an intent as an
+ * [ActionProposal], hands it to [TypedToolExecutor], and renders whatever the
+ * system decided — it never asks the policy engine anything directly. That is
+ * the externally-bounded-agency contract: the caller proposes, the system
+ * decides, and nothing reaches [ProcessBuilder] that was not authorised.
+ */
 class ShellCommandRunner(
     initialDirectory: Path = Path.of(System.getProperty("user.dir") ?: "."),
     private val timeoutMs: Long = 15_000L,
     private val redactionFilter: RedactionFilter = RedactionFilter(),
-    private val policyEngine: ExecutionPolicyEngine = ExecutionPolicyEngine(initialDirectory.toAbsolutePath().normalize())
+    private val agency: TypedToolExecutor = TypedToolExecutor(
+        BoundedAgencyGate(ExecutionPolicyEngine(initialDirectory.toAbsolutePath().normalize()))
+    ),
+    /**
+     * Process spawn seam. Exists so a test can prove a refused proposal never
+     * reaches a real [ProcessBuilder]; production always uses the default.
+     */
+    private val spawn: (List<String>, File) -> Process = { command, directory ->
+        ProcessBuilder(command)
+            .directory(directory)
+            .redirectErrorStream(true)
+            .start()
+    }
 ) {
     private var cwd: File = initialDirectory.toFile().canonicalFile
 
@@ -78,32 +114,53 @@ class ShellCommandRunner(
             )
         }
 
-        val policy = policyEngine.evaluate(
-            ExecutionPolicyRequest(
-                actionClass = if (cleaned.firstOrNull() == "git") PolicyActionClass.GIT else PolicyActionClass.SHELL,
-                command = cleaned,
-                cwd = cwd.toPath()
-            )
-        )
-        if (!policy.allowed) {
-            return ShellCommandResult(
-                command = cleaned,
-                cwd = cwd.path,
-                exitCode = 126,
-                elapsedMs = 0L,
-                timedOut = false,
-                output = policy.reason
-            )
+        val proposal = ShellActionProposals.forCommand(cleaned, cwd.toPath())
+
+        // The executor lambda is the only place a process can be born, and the
+        // gate decides whether it is ever invoked.
+        var executed: ShellCommandResult? = null
+        val outcome = agency.execute(proposal) {
+            val result = spawnAndCollect(cleaned, proposal)
+            executed = result
+            result.output
         }
 
+        return executed ?: refusal(cleaned, proposal, outcome)
+    }
+
+    /**
+     * Refusal rendered from the system's decision.
+     *
+     * `APPROVAL_REQUIRED` keeps its own exit code: it is not a denial, it is an
+     * action awaiting an authority that has not been asked yet, and collapsing
+     * it into the blocked code would erase the difference the approval flow
+     * depends on.
+     */
+    private fun refusal(
+        command: List<String>,
+        proposal: ActionProposal,
+        outcome: ToolExecutionResult
+    ): ShellCommandResult = ShellCommandResult(
+        command = command,
+        cwd = cwd.path,
+        exitCode = when (outcome.disposition) {
+            AgencyDisposition.APPROVAL_REQUIRED -> EXIT_APPROVAL_REQUIRED
+            else -> EXIT_POLICY_BLOCKED
+        },
+        elapsedMs = 0L,
+        timedOut = false,
+        output = outcome.refusalReason ?: outcome.policyDecision.reason,
+        disposition = outcome.disposition,
+        proposalId = proposal.id,
+        policyReason = outcome.policyDecision.reason
+    )
+
+    private fun spawnAndCollect(cleaned: List<String>, proposal: ActionProposal): ShellCommandResult {
         val started = System.currentTimeMillis()
         val output = ByteArrayOutputStream()
 
         return try {
-            val process = ProcessBuilder(cleaned)
-                .directory(cwd)
-                .redirectErrorStream(true)
-                .start()
+            val process = spawn(cleaned, cwd)
 
             val reader = thread(
                 start = true,
@@ -139,7 +196,9 @@ class ShellCommandRunner(
                 exitCode = exit,
                 elapsedMs = elapsed,
                 timedOut = !completed,
-                output = cleanOutput(output)
+                output = cleanOutput(output),
+                disposition = AgencyDisposition.ALLOWED,
+                proposalId = proposal.id
             )
         } catch (failure: Exception) {
             ShellCommandResult(
@@ -148,7 +207,9 @@ class ShellCommandRunner(
                 exitCode = 127,
                 elapsedMs = System.currentTimeMillis() - started,
                 timedOut = false,
-                output = failure.message ?: failure.javaClass.simpleName
+                output = failure.message ?: failure.javaClass.simpleName,
+                disposition = AgencyDisposition.ALLOWED,
+                proposalId = proposal.id
             )
         }
     }
@@ -168,6 +229,14 @@ class ShellCommandRunner(
             appendLine("  command: $command")
             appendLine("  exit: $status")
             appendLine("  elapsed_ms: ${result.elapsedMs}")
+            // Only refusals carry a disposition line: an allowed command renders
+            // exactly as it always has, so nothing that already worked changes.
+            result.disposition
+                ?.takeIf { it != AgencyDisposition.ALLOWED }
+                ?.let {
+                    appendLine("  disposition: ${it.name.lowercase()}")
+                    result.proposalId?.let { id -> appendLine("  proposal: $id") }
+                }
             appendLine("  output:")
             body.lines().forEach { appendLine("    $it") }
         }.trimEnd()
@@ -202,5 +271,11 @@ class ShellCommandRunner(
         const val MAX_OUTPUT_BYTES = 64 * 1024
         const val MAX_RENDER_CHARS = 12_000
         const val MAX_OUTPUT_LINES = 120
+
+        /** Refused by policy. Unchanged from before bounded agency. */
+        const val EXIT_POLICY_BLOCKED = 126
+
+        /** Withheld pending an authority that has not been asked. Distinct on purpose. */
+        const val EXIT_APPROVAL_REQUIRED = 125
     }
 }

@@ -101,12 +101,22 @@ class ExecutionPolicyAuditStore(
     }
 }
 
-class ExecutionPolicyEngine(
+/**
+ * The single policy authority. There is exactly one of these in the tree and
+ * there must never be a second.
+ *
+ * `evaluate` is `open` purely so tests can drive a caller through a chosen
+ * disposition — `APPROVAL_REQUIRED` is unreachable for the SHELL and GIT action
+ * classes, so without this seam the approval branch of a shell caller could not
+ * be exercised. Overriding it in production code would be a second policy
+ * engine and is prohibited.
+ */
+open class ExecutionPolicyEngine(
     private val repoRoot: Path = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize(),
     private val auditStore: ExecutionPolicyAuditStore = ExecutionPolicyAuditStore(repoRoot),
     private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
-    fun evaluate(request: ExecutionPolicyRequest): ExecutionPolicyDecision {
+    open fun evaluate(request: ExecutionPolicyRequest): ExecutionPolicyDecision {
         val decision = decide(request)
         auditStore.append(ExecutionPolicyAuditRecord(Instant.now(), request, decision))
         return decision

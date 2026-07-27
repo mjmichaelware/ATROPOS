@@ -91,8 +91,9 @@ class SelfHostCommandTest {
         val service = SelfHostGoalService(repoRoot = repoRoot, store = store, clock = { base.plusSeconds(tick++) })
 
         val started = service.startGoal("watchable goal", "11")
-        val goalId = started.goal?.record?.id ?: error("missing started goal")
-        store.update(started.goal.record.copy(currentNodeId = "node-7"))
+        val startedGoal = started.goal ?: error("missing started goal")
+        val goalId = startedGoal.record.id
+        store.update(startedGoal.record.copy(currentNodeId = "node-7"))
 
         val command = buildCommand(repoRoot, service)
         val result = command.execute(listOf("self-host", "watch", goalId))
@@ -116,9 +117,10 @@ class SelfHostCommandTest {
         val service = SelfHostGoalService(repoRoot = repoRoot, store = store, clock = { base.plusSeconds(tick++) })
 
         val started = service.startGoal("inspectable goal", "11")
-        val goalId = started.goal?.record?.id ?: error("missing started goal")
+        val startedGoal = started.goal ?: error("missing started goal")
+        val goalId = startedGoal.record.id
         store.update(
-            started.goal.record.copy(
+            startedGoal.record.copy(
                 status = GoalRunStatus.COMPLETED,
                 terminalCondition = GoalTerminalCondition.VERIFIED_COMPLETE,
                 currentNodeId = "node-9"
@@ -167,9 +169,10 @@ class SelfHostCommandTest {
         val service = SelfHostGoalService(repoRoot = repoRoot, store = store, clock = { base.plusSeconds(tick++) })
 
         val selfHostStarted = service.startGoal("terminal self-host goal", "11")
-        val selfHostGoalId = selfHostStarted.goal?.record?.id ?: error("missing self-host goal")
+        val selfHostGoal = selfHostStarted.goal ?: error("missing self-host goal")
+        val selfHostGoalId = selfHostGoal.record.id
         store.update(
-            selfHostStarted.goal.record.copy(
+            selfHostGoal.record.copy(
                 status = GoalRunStatus.COMPLETED,
                 terminalCondition = GoalTerminalCondition.VERIFIED_COMPLETE,
                 currentNodeId = "node-terminal"
