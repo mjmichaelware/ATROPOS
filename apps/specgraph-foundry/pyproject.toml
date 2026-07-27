@@ -11,6 +11,11 @@ authors = [
 dependencies = [
   "pypdf==4.3.1",
   "fpdf2==2.7.9",
+  # pypdf and fpdf2 both import `cryptography` at module load for optional
+  # PDF encryption. Without a working `_cffi_backend` that import does not
+  # raise a normal ImportError - it panics inside pyo3 and deadlocks the
+  # process, which turns every PDF test into a hang rather than a failure.
+  "cffi>=1.16",
 ]
 
 [project.scripts]
