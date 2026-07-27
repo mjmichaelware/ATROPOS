@@ -33,7 +33,9 @@ class CommandRouter(
     private val rateResolver: (String) -> Double = { 0.0 },
     private val markdownRenderer: MarkdownRenderer = MarkdownRenderer(),
     private val verifyCommand: VerifyCommandHandler = VerifyCommand(uiEngine),
-    private val shellRunner: ShellCommandRunner = ShellCommandRunner()
+    private val shellRunner: ShellCommandRunner = ShellCommandRunner(),
+    /** The only way this router reaches DLOI: failures arrive typed, not thrown. */
+    private val higZeroGuard: atropos.dloi.HigZeroGuard = atropos.dloi.HigZeroGuard(atropos.dloi.DloiService())
 ) {
     private var activeProvider = providerResolver(config.runtime.defaultProvider)
 
@@ -116,6 +118,18 @@ class CommandRouter(
         return LexResult.Success(tokens)
     }
 
+
+    /**
+     * Renders a DLOI outcome.
+     *
+     * A miss is reported as a miss with its reason. It is never filled in with
+     * a nearest match — that is the whole point of routing through the guard.
+     */
+    private fun renderDloi(result: atropos.dloi.DloiLookupResult, query: String): String = when (result) {
+        is atropos.dloi.DloiLookupResult.Resolved -> result.resolution.render()
+        is atropos.dloi.DloiLookupResult.NoMatch ->
+            "dloi: no exact match for '${query.trim()}'\n  reason: ${result.reason}\n  no nearest-match substitute is offered"
+    }
 
     private fun renderShell(result: atropos.cli.shell.ShellCommandResult) {
         uiEngine.renderNotice(shellRunner.render(result))
@@ -498,8 +512,7 @@ class CommandRouter(
                         if (address.isBlank()) {
                             uiEngine.renderError("usage: /dloi lookup <document#section@Lstart[-end]>")
                         } else {
-                            val result = runCatching { atropos.dloi.DloiService().lookup(address).render() }
-                            uiEngine.renderNotice(result.getOrElse { "dloi error: ${it.message ?: it.javaClass.simpleName}" })
+                            uiEngine.renderNotice(renderDloi(higZeroGuard.resolve(address), address))
                         }
                     }
                     "resolve" -> {
@@ -507,8 +520,7 @@ class CommandRouter(
                         if (task.isBlank()) {
                             uiEngine.renderError("usage: /dloi resolve <task text>")
                         } else {
-                            val result = runCatching { atropos.dloi.DloiService().resolveTask(task).render() }
-                            uiEngine.renderNotice(result.getOrElse { "dloi error: ${it.message ?: it.javaClass.simpleName}" })
+                            uiEngine.renderNotice(renderDloi(higZeroGuard.resolveTask(task), task))
                         }
                     }
                     else -> uiEngine.renderError("usage: /dloi [lookup <address>|resolve <task>]")

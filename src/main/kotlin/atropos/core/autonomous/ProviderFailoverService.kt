@@ -5,13 +5,11 @@ import atropos.core.provider.ProviderDescriptorRegistry
 import atropos.core.provider.StaticProviderDescriptorRegistry
 import atropos.core.provider.QuotaLedger
 import atropos.core.provider.adapter.AdapterRouteFacade
-import atropos.dloi.DloiService
 
 class ProviderFailoverService(
     private val backlog: AutonomousBacklogService = AutonomousBacklogService(),
     private val activationService: ProviderActivationService? = null,
     private val descriptorRegistry: ProviderDescriptorRegistry = StaticProviderDescriptorRegistry(),
-    private val dloiService: DloiService = DloiService()
 ) {
     data class FailoverPlan(
         val primaryId: String,

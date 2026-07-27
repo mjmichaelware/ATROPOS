@@ -55,6 +55,8 @@ data class DeterministicVerificationResult(
 class DeterministicVerifier(
     private val repoRoot: Path = Path.of(".").toAbsolutePath().normalize(),
     private val dloiService: DloiService = DloiService(repoRoot),
+    /** The only way this verifier reaches DLOI: failures arrive typed, not thrown. */
+    private val higZeroGuard: atropos.dloi.HigZeroGuard = atropos.dloi.HigZeroGuard(dloiService),
     private val astGraph: AstSymbolGraph = AstSymbolGraph(repoRoot),
     private val smokeRunner: AgentSmokeRunner = AgentSmokeRunner(repoRoot),
     private val patchExtractor: AgentPatchExtractor = AgentPatchExtractor(),
@@ -287,17 +289,17 @@ class DeterministicVerifier(
     }
 
     private fun checkDloiAddress(address: String): List<DeterministicFinding> {
-        return try {
-            dloiService.lookup(address)
-            emptyList()
-        } catch (failure: Exception) {
-            listOf(
+        // Through the guard, so an unresolvable address is a typed NoMatch
+        // rather than an exception this method has to interpret.
+        return when (val result = higZeroGuard.resolve(address)) {
+            is atropos.dloi.DloiLookupResult.Resolved -> emptyList()
+            is atropos.dloi.DloiLookupResult.NoMatch -> listOf(
                 finding(
                     invariantId = "dloi_address",
                     severity = DiagnosticSeverity.ERROR,
                     file = "docs/ATROPOS_CANONICAL_PHASES_1_11_AUTHORITY.md",
                     symbolOrLocation = address,
-                    evidence = failure.message ?: failure.javaClass.simpleName,
+                    evidence = result.reason,
                     remediation = "use a provable document#section@Lstart-end address"
                 )
             )
