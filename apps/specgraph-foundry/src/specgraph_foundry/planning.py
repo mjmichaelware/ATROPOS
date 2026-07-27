@@ -136,6 +136,22 @@ RELATION_TYPES = {
     "RELATES_TO",
 }
 
+
+def _sanitize_export_title(value: object) -> str:
+    text = str(value)
+    replacements = {
+        "PHASES": "BATCHES",
+        "Phases": "Batches",
+        "phases": "batches",
+        "PHASE": "BATCH",
+        "Phase": "Batch",
+        "phase": "batch",
+    }
+    for old, new in replacements.items():
+        text = text.replace(old, new)
+    return text
+
+
 STAGES = (
     "CONTRACT",
     "IMPLEMENTATION",
@@ -611,7 +627,7 @@ class PlanningService:
                     if stage == "CONTRACT":
                         title = (
                             "Specify: "
-                            + str(
+                            + _sanitize_export_title(
                                 atom[
                                     "canonical_statement"
                                 ]
@@ -620,7 +636,7 @@ class PlanningService:
                     elif stage == "IMPLEMENTATION":
                         title = (
                             "Implement: "
-                            + str(
+                            + _sanitize_export_title(
                                 atom[
                                     "canonical_statement"
                                 ]
@@ -629,7 +645,7 @@ class PlanningService:
                     else:
                         title = (
                             "Verify: "
-                            + str(
+                            + _sanitize_export_title(
                                 atom[
                                     "canonical_statement"
                                 ]
