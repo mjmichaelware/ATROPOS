@@ -443,14 +443,37 @@ class AnsiTerminalEngine(
     }
 
     @Synchronized
+    /**
+     * Help in the reference's list shape: a railed block, commands grouped by
+     * their leading verb, command in full-contrast ink and description muted.
+     *
+     * Previously this dumped every registry line raw — no rail, no colour, no
+     * grouping — which read as a wall of text rather than part of the product.
+     */
     fun renderHelp() {
-        transcriptBuffer.append(
-            theme.brand("commands")
-        )
-        CommandRegistry.helpLines()
-            .forEach(
-                transcriptBuffer::append
-            )
+        val railGlyph = if (System.getenv("ATROPOS_ASCII").isNullOrBlank()) "\u2503" else "|"
+        val rail = theme.paint(atropos.cli.ui.design.Role.ACCENT_FOCUS, railGlyph)
+        val pad = "  "
+        val width = canvas.width.coerceAtLeast(40)
+
+        // Group by leading verb so related commands read together.
+        val groups = CommandRegistry.entries.groupBy { it.command.substringBefore(' ').trim() }
+        val labelWidth = CommandRegistry.entries
+            .maxOfOrNull { it.command.length }?.coerceAtMost(26) ?: 20
+
+        transcriptBuffer.append(rail + pad + theme.brand("COMMANDS"))
+        groups.forEach { (_, entries) ->
+            entries.forEach { entry ->
+                transcriptBuffer.append(
+                    TerminalText.ellipsize(
+                        rail + pad +
+                            theme.strong(TerminalText.padEnd(entry.command, labelWidth)) +
+                            " " + theme.subdued(entry.description),
+                        width
+                    )
+                )
+            }
+        }
 
         requestFrameLocked()
     }
