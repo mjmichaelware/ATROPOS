@@ -17,10 +17,11 @@ import java.util.UUID
  */
 object VerificationActionProposals {
     /** A build/test run, e.g. `./gradlew test jar --no-daemon`. */
-    fun buildTest(command: List<String>, repoRoot: Path): ActionProposal =
+    fun buildTest(command: List<String>, repoRoot: Path, actor: ActionActor): ActionProposal =
         ActionProposal(
             id = nextId("verify"),
             actionClass = PolicyActionClass.BUILD_TEST,
+            actor = actor,
             command = command,
             cwd = repoRoot.toString()
         )
@@ -32,10 +33,15 @@ object VerificationActionProposals {
      * proposed rather than run: it is the closest thing in the tree to raw
      * provider prose reaching a process.
      */
-    fun smoke(tokens: List<String>, repoRoot: Path): ActionProposal =
+    fun smoke(
+        tokens: List<String>,
+        repoRoot: Path,
+        actor: ActionActor = ActionActor.HumanOwner
+    ): ActionProposal =
         ActionProposal(
             id = nextId("smoke"),
             actionClass = PolicyActionClass.SMOKE,
+            actor = actor,
             command = tokens,
             cwd = repoRoot.toString()
         )

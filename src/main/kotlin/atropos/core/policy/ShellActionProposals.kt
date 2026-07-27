@@ -22,10 +22,15 @@ object ShellActionProposals {
      * @param command already-cleaned argv; callers strip blanks first.
      * @param cwd the directory the command would run in.
      */
-    fun forCommand(command: List<String>, cwd: Path): ActionProposal =
+    fun forCommand(
+        command: List<String>,
+        cwd: Path,
+        actor: ActionActor = ActionActor.HumanOwner
+    ): ActionProposal =
         ActionProposal(
             id = nextId(),
             actionClass = classify(command),
+            actor = actor,
             command = command,
             cwd = cwd.toString()
         )

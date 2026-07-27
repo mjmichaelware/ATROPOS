@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.dag
 
+import atropos.core.policy.ActionActor
 import atropos.core.policy.AgencyDisposition
 import atropos.core.policy.BoundedAgencyGate
 import atropos.core.policy.ExecutionPolicyEngine
@@ -23,6 +24,8 @@ import kotlin.test.assertTrue
  */
 class DagNodeProposalsTest {
 
+    private val TEST_ACTOR = ActionActor.HierarchyNode("dag-executor", "node-1")
+
     private fun repo(): Path = Files.createTempDirectory("atropos-dag-agency-")
 
     private fun disposition(
@@ -31,7 +34,7 @@ class DagNodeProposalsTest {
         territory: List<String> = emptyList()
     ): AgencyDisposition? {
         val repoRoot = repo()
-        val proposal = DagNodeProposals.forNode(action, payload, territory, repoRoot) ?: return null
+        val proposal = DagNodeProposals.forNode(action, payload, territory, repoRoot, TEST_ACTOR) ?: return null
         return BoundedAgencyGate(ExecutionPolicyEngine(repoRoot)).evaluate(proposal).disposition
     }
 
@@ -112,7 +115,7 @@ class DagNodeProposalsTest {
     @Test
     fun a_provider_call_node_proposes_a_free_provider() {
         val proposal = DagNodeProposals.forNode(
-            DagNodeAction.PROVIDER_CALL, "do the thing", emptyList(), repo()
+            DagNodeAction.PROVIDER_CALL, "do the thing", emptyList(), repo(), TEST_ACTOR
         )
         assertNotNull(proposal)
         assertEquals(PolicyActionClass.PROVIDER_CALL, proposal.actionClass)
@@ -126,7 +129,7 @@ class DagNodeProposalsTest {
     @Test
     fun command_nodes_are_proposed_as_shell_because_that_is_what_runs_them() {
         val proposal = DagNodeProposals.forNode(
-            DagNodeAction.RUN_BUILD, "./gradlew build", listOf("src"), repo()
+            DagNodeAction.RUN_BUILD, "./gradlew build", listOf("src"), repo(), TEST_ACTOR
         )
         assertNotNull(proposal)
         assertEquals(PolicyActionClass.SHELL, proposal.actionClass)
@@ -137,7 +140,7 @@ class DagNodeProposalsTest {
     @Test
     fun only_the_non_executing_actions_skip_the_gate() {
         DagNodeAction.entries.forEach { action ->
-            val proposal = DagNodeProposals.forNode(action, "./gradlew test", listOf("src"), repo())
+            val proposal = DagNodeProposals.forNode(action, "./gradlew test", listOf("src"), repo(), TEST_ACTOR)
             if (DagNodeProposals.executesNothing(action)) {
                 assertNull(proposal, "$action executes nothing and makes no proposal")
             } else {

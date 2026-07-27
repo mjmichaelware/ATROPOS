@@ -3,6 +3,7 @@ package atropos.core.agent
 import atropos.core.AtroposConfig
 import atropos.core.memory.LocalMemoryStore
 import atropos.core.policy.AgencyDisposition
+import atropos.core.policy.ActionActor
 import atropos.core.policy.BoundedAgencyGate
 import atropos.core.policy.ExecutionPolicyEngine
 import atropos.core.policy.VerificationActionProposals
@@ -39,7 +40,7 @@ class AgentVerifier(
                 refusalReason = refusalForMissingPatch(reference)
             )
 
-        val execution = runVerificationCommand()
+        val execution = runVerificationCommand(patch.id)
         val passed = execution.exitCode == 0 && !execution.timedOut && execution.launchError == null
         val stdout = redactSensitiveOutput(execution.stdout.text)
         val stderr = redactSensitiveOutput(execution.stderr.text)
@@ -121,13 +122,17 @@ class AgentVerifier(
         val truncated: Boolean
     )
 
-    private fun runVerificationCommand(): VerificationExecution {
+    private fun runVerificationCommand(patchId: String): VerificationExecution {
         val started = System.nanoTime()
         val command = listOf("./gradlew", "test", "jar", "--no-daemon")
         // Pre-authorisation: the gate decides before the process is built, so a
         // refusal returns with nothing spawned.
         val decision = agencyGate.evaluate(
-            VerificationActionProposals.buildTest(command, collector.repoRoot)
+            VerificationActionProposals.buildTest(
+                command,
+                collector.repoRoot,
+                ActionActor.HierarchyNode(role = "verify", nodeId = patchId)
+            )
         )
         if (decision.disposition != AgencyDisposition.ALLOWED) {
             return VerificationExecution(

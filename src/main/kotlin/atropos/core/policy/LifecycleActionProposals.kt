@@ -15,18 +15,20 @@ import java.util.UUID
  */
 object LifecycleActionProposals {
     /** A daemon lifecycle transition, e.g. `"start"`, `"stop"`, `"poll"`. */
-    fun daemon(operation: String): ActionProposal =
+    fun daemon(operation: String, service: String = "daemon"): ActionProposal =
         ActionProposal(
             id = nextId("daemon"),
             actionClass = PolicyActionClass.DAEMON,
+            actor = ActionActor.SystemService(service),
             metadata = mapOf("operation" to operation)
         )
 
     /** A durable-queue transition, e.g. `"enqueue"`, `"lease"`, `"complete"`. */
-    fun queue(operation: String, detail: String = ""): ActionProposal =
+    fun queue(operation: String, detail: String = "", service: String = "queue"): ActionProposal =
         ActionProposal(
             id = nextId("queue"),
             actionClass = PolicyActionClass.QUEUE,
+            actor = ActionActor.SystemService(service),
             metadata = mapOf(
                 "operation" to operation,
                 "detail" to detail

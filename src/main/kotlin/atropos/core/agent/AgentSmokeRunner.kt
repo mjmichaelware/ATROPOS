@@ -1,6 +1,7 @@
 package atropos.core.agent
 
 import atropos.core.policy.AgencyDisposition
+import atropos.core.policy.ActionActor
 import atropos.core.policy.BoundedAgencyGate
 import atropos.core.policy.ExecutionPolicyEngine
 import atropos.core.policy.VerificationActionProposals
@@ -114,7 +115,14 @@ class AgentSmokeRunner(
         return null
     }
 
-    fun run(command: String): AgentSmokeExecutionResult {
+    /**
+     * @param actor who asked. Smoke commands are operator-supplied by default;
+     *   an automated run passes its own identity.
+     */
+    fun run(
+        command: String,
+        actor: ActionActor = ActionActor.HumanOwner
+    ): AgentSmokeExecutionResult {
         val trimmed = command.trim()
         val refusal = validate(trimmed)
         if (refusal != null) {
@@ -131,7 +139,7 @@ class AgentSmokeRunner(
         // first — bounded agency adds an authority, it does not replace the
         // syntactic refusals.
         val decision = agencyGate.evaluate(
-            VerificationActionProposals.smoke(tokens, repoRoot)
+            VerificationActionProposals.smoke(tokens, repoRoot, actor)
         )
         if (decision.disposition != AgencyDisposition.ALLOWED) {
             return AgentSmokeExecutionResult(

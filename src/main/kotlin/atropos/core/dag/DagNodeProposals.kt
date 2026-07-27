@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.dag
 
+import atropos.core.policy.ActionActor
 import atropos.core.policy.ActionProposal
 import atropos.core.policy.PolicyActionClass
 import atropos.core.policy.ProviderActionProposals
@@ -35,12 +36,14 @@ object DagNodeProposals {
         action: DagNodeAction,
         actionPayload: String?,
         territory: List<String>,
-        repoRoot: Path
+        repoRoot: Path,
+        actor: ActionActor
     ): ActionProposal? = when (action) {
         DagNodeAction.CREATE_FILE,
         DagNodeAction.EDIT_FILE -> ActionProposal(
             id = nextId("dag-write"),
             actionClass = PolicyActionClass.FILE_MUTATION,
+            actor = actor,
             cwd = repoRoot.toString(),
             // The engine denies a mutation with no declared targets. A node that
             // never declared its territory is exactly that case.
@@ -56,6 +59,7 @@ object DagNodeProposals {
         DagNodeAction.ACCEPTANCE_GATE -> ActionProposal(
             id = nextId("dag-run"),
             actionClass = PolicyActionClass.SHELL,
+            actor = actor,
             command = tokenise(actionPayload),
             cwd = repoRoot.toString(),
             targetPaths = territory
@@ -64,6 +68,7 @@ object DagNodeProposals {
         DagNodeAction.PROVIDER_CALL -> ActionProposal(
             id = nextId("dag-provider"),
             actionClass = PolicyActionClass.PROVIDER_CALL,
+            actor = actor,
             cwd = repoRoot.toString(),
             providerId = DAG_PROVIDER,
             paidProvider = ProviderActionProposals.isPaid(DAG_PROVIDER)

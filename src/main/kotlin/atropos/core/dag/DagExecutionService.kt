@@ -11,6 +11,7 @@ import atropos.core.planning.InternalPlanningGraphPlugin
 import atropos.core.planning.NodeResult
 import atropos.core.planning.PlanningGraphPlugin
 import atropos.core.planning.Territory
+import atropos.core.policy.ActionActor
 import atropos.core.policy.AgencyDisposition
 import atropos.core.policy.BoundedAgencyGate
 import atropos.core.policy.ExecutionPolicyEngine
@@ -103,7 +104,8 @@ class DagExecutionService(
             action = node.action,
             actionPayload = node.actionPayload,
             territory = node.territory,
-            repoRoot = repoRoot
+            repoRoot = repoRoot,
+            actor = ActionActor.HierarchyNode(role = "dag-executor", nodeId = node.id)
         )
         if (proposal != null) {
             val decision = agencyGate.evaluate(proposal)

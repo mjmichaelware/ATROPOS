@@ -18,19 +18,21 @@ import java.util.UUID
  */
 object PatchActionProposals {
     /** `git apply --check` — proves a patch would apply, mutating nothing. */
-    fun applyCheck(diffFile: Path, repoRoot: Path): ActionProposal =
+    fun applyCheck(diffFile: Path, repoRoot: Path, actor: ActionActor): ActionProposal =
         patchProposal(
             command = listOf("git", "apply", "--check", diffFile.toString()),
             repoRoot = repoRoot,
-            targetPaths = listOf(repoRoot.relativize(diffFile).toString())
+            targetPaths = listOf(repoRoot.relativize(diffFile).toString()),
+            actor = actor
         )
 
     /** `git apply` — the mutation itself. */
-    fun apply(diffFile: Path, repoRoot: Path): ActionProposal =
+    fun apply(diffFile: Path, repoRoot: Path, actor: ActionActor): ActionProposal =
         patchProposal(
             command = listOf("git", "apply", diffFile.toString()),
             repoRoot = repoRoot,
-            targetPaths = listOf(repoRoot.relativize(diffFile).toString())
+            targetPaths = listOf(repoRoot.relativize(diffFile).toString()),
+            actor = actor
         )
 
     /**
@@ -40,18 +42,25 @@ object PatchActionProposals {
      * so the engine judges the blast radius of the mutation and not the diff's
      * own location.
      */
-    fun applyStored(patchFile: Path, repoRoot: Path, touchedPaths: List<String>): ActionProposal =
+    fun applyStored(
+        patchFile: Path,
+        repoRoot: Path,
+        touchedPaths: List<String>,
+        actor: ActionActor
+    ): ActionProposal =
         patchProposal(
             command = listOf("git", "apply", patchFile.toString()),
             repoRoot = repoRoot,
-            targetPaths = touchedPaths
+            targetPaths = touchedPaths,
+            actor = actor
         )
 
     /** Read-only `git status` scoped to the paths a patch touched. */
-    fun statusForPaths(paths: List<String>, repoRoot: Path): ActionProposal =
+    fun statusForPaths(paths: List<String>, repoRoot: Path, actor: ActionActor): ActionProposal =
         ActionProposal(
             id = nextId(),
             actionClass = PolicyActionClass.GIT,
+            actor = actor,
             command = listOf("git", "status", "--porcelain", "--untracked-files=all", "--") + paths,
             cwd = repoRoot.toString(),
             targetPaths = paths
@@ -60,10 +69,12 @@ object PatchActionProposals {
     private fun patchProposal(
         command: List<String>,
         repoRoot: Path,
-        targetPaths: List<String>
+        targetPaths: List<String>,
+        actor: ActionActor
     ): ActionProposal = ActionProposal(
         id = nextId(),
         actionClass = PolicyActionClass.PATCH_APPLY,
+        actor = actor,
         command = command,
         cwd = repoRoot.toString(),
         targetPaths = targetPaths

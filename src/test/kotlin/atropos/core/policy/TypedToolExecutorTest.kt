@@ -16,6 +16,7 @@ class TypedToolExecutorTest {
             ActionProposal(
                 id = "proposal-paid",
                 actionClass = PolicyActionClass.PROVIDER_CALL,
+                actor = ActionActor.HumanOwner,
                 providerId = "openai",
                 paidProvider = true
             )
@@ -34,6 +35,7 @@ class TypedToolExecutorTest {
             ActionProposal(
                 id = "proposal-network",
                 actionClass = PolicyActionClass.NETWORK,
+                actor = ActionActor.HumanOwner,
                 networkTarget = "https://example.invalid"
             )
         )
@@ -53,6 +55,7 @@ class TypedToolExecutorTest {
             ActionProposal(
                 id = "proposal-shell",
                 actionClass = PolicyActionClass.SHELL,
+                actor = ActionActor.HumanOwner,
                 command = listOf("pwd")
             )
         ) { "ok" }
