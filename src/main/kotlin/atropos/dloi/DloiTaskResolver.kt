@@ -1,11 +1,11 @@
 package atropos.dloi
 
-internal data class DloiTaskMatch(
+data class DloiTaskMatch(
     val document: DloiDocument,
     val section: DloiSection
 )
 
-internal class DloiTaskResolver {
+class DloiTaskResolver {
     fun resolve(task: String, documents: List<DloiDocument>): DloiTaskMatch {
         val normalizedTask = task.trim()
         require(normalizedTask.isNotBlank()) { "missing task text for authoritative resolution" }
@@ -70,7 +70,7 @@ internal class DloiTaskResolver {
     }
 }
 
-internal fun dloiSlug(value: String): String =
+fun dloiSlug(value: String): String =
     value.lowercase()
         .replace(Regex("[^a-z0-9]+"), "_")
         .trim('_')

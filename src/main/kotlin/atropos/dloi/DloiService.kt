@@ -174,9 +174,9 @@ class DloiService(
         val trimmed = address.trim()
         val documentAndRest = trimmed.split("@", limit = 2)
         val docAndSection = documentAndRest[0].split("#", limit = 2)
-        val documentId = slug(docAndSection[0])
+        val documentId = dloiSlug(docAndSection[0])
         require(documentId.isNotBlank()) { "missing DLOI document id" }
-        val sectionId = docAndSection.getOrNull(1)?.trim()?.takeIf { it.isNotBlank() }?.let(::slug)
+        val sectionId = docAndSection.getOrNull(1)?.trim()?.takeIf { it.isNotBlank() }?.let(::dloiSlug)
         val selector = parseSelector(documentAndRest.getOrNull(1)?.trim())
         return ParsedDloiAddress(documentId, sectionId, selector)
     }
@@ -298,7 +298,7 @@ class DloiService(
 
     private fun documentAliases(sourceId: String, originalFilename: String): List<String> {
         val stem = originalFilename.substringBeforeLast('.')
-        val normalized = slug(stem)
+        val normalized = dloiSlug(stem)
         return when {
             // Map known authority document by its actual filename patterns.
             normalized.contains("canonical_phases_1_11_authority") ||
@@ -311,10 +311,10 @@ class DloiService(
     }
 
     private fun sectionAliases(section: DloiSection): Set<String> {
-        val titleSlug = slug(section.title)
+        val titleSlug = dloiSlug(section.title)
         // Short alias: slug of heading before the first colon, e.g. "Phase 1:…" -> "phase_1"
-        val shortAlias = section.title.split(":").firstOrNull()?.let { slug(it) }
-        return setOfNotNull(section.id, slug(section.id), titleSlug, shortAlias)
+        val shortAlias = section.title.split(":").firstOrNull()?.let { dloiSlug(it) }
+        return setOfNotNull(section.id, dloiSlug(section.id), titleSlug, shortAlias)
     }
 
     private fun plainLines(lines: List<String>): List<DloiLineRecord> {
