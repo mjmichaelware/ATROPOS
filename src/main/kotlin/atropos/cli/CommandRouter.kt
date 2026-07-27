@@ -48,6 +48,13 @@ class CommandRouter(
 
     private val hierarchyCommand = HierarchyCommand()
 
+    private val attestationRenderer =
+        atropos.cli.ui.ContextAttestationRenderer(
+            atropos.cli.ui.TerminalTheme(atropos.cli.config.ConfigurationManager())
+        )
+
+    private companion object { const val ATTESTATION_WIDTH = 80 }
+
     val tabs = SessionTabs(
         initialProvider = activeProvider.name,
         initialWorkingDirectory = shellRunner.currentDirectory()
@@ -661,6 +668,18 @@ class CommandRouter(
         }
     }
 
+    /**
+     * True when the operator is genuinely asking about the Greek myth rather
+     * than this system, so the attestation gate should not treat a mythology
+     * answer as drift.
+     */
+    private fun isExplicitMythologyRequest(prompt: String): Boolean {
+        val lower = prompt.lowercase()
+        return (lower.contains("greek") || lower.contains("mythology") ||
+            lower.contains("myth") || lower.contains("moirai") || lower.contains("fates")) &&
+            lower.contains("atropos")
+    }
+
     private fun dispatch(prompt: String) {
         sessionTracker.recordPrompt(prompt, rateResolver(activeProvider.name))
         uiEngine.startSpinner("Thinking")
@@ -675,8 +694,55 @@ class CommandRouter(
                 }
 
             val provider = providerResolver(routedProvider)
-            val response = provider.complete(prompt, "")
-            uiEngine.renderNotice(markdownRenderer.render(response))
+
+            // Requirement 1: every provider must know it is operating inside
+            // ATROPOS. This path previously sent an empty context, so a plain
+            // prompt told the provider nothing and "what is atropos" came back
+            // as Greek mythology. It now carries the same attested envelope
+            // /agent ask uses, with an explicit escape hatch so a genuine
+            // mythology question still works.
+            val repoRoot = java.nio.file.Path.of(shellRunner.currentDirectory())
+                .toAbsolutePath().normalize()
+            val mythologyRequested = isExplicitMythologyRequest(prompt)
+            val envelope = atropos.core.provider.ContextEnvelopeFactory.createSimple(
+                providerId = routedProvider,
+                modelId = "",
+                task = prompt,
+                repoRoot = repoRoot
+            )
+            val context = atropos.core.agent.AgentPromptContract.build(
+                context = "",
+                providerId = routedProvider,
+                task = prompt,
+                repoRoot = repoRoot,
+                explicitMythologyRequest = mythologyRequested
+            )
+
+            val response = provider.complete(prompt, context)
+
+            // Requirement 5: typed context failures must be explicit.
+            when (
+                val verified =
+                    atropos.core.provider.ContextAttestationService.verify(envelope, response)
+            ) {
+                is atropos.core.provider.ContextAttestationService.VerifiedResult.Accepted ->
+                    uiEngine.renderNotice(markdownRenderer.render(verified.cleanedResponse))
+
+                is atropos.core.provider.ContextAttestationService.VerifiedResult.Rejected ->
+                    if (mythologyRequested) {
+                        // The operator explicitly asked about the myth; the
+                        // answer is correct for the question actually posed.
+                        uiEngine.renderNotice(markdownRenderer.render(response))
+                    } else {
+                        uiEngine.renderError(
+                            attestationRenderer.renderRejection(
+                                verified.failure,
+                                envelope,
+                                ATTESTATION_WIDTH
+                            )
+                        )
+                    }
+            }
         } catch (failure: Exception) {
             uiEngine.renderError(failure.message ?: "provider dispatch failed")
         } finally {
