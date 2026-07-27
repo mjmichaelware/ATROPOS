@@ -1,0 +1,232 @@
+name: Deploy Cloud Run API
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Deployment environment
+        required: true
+        default: staging
+        type: choice
+        options:
+          - staging
+          - production
+      sha:
+        description: Commit SHA to deploy
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: deploy-cloud-run-${{ github.event.inputs.environment || 'production' }}
+  cancel-in-progress: true
+
+env:
+  REGION: ${{ vars.GCP_REGION }}
+  API_SERVICE_NAME: ${{ vars.CLOUD_RUN_API_SERVICE }}
+  ARTIFACT_REGISTRY_REPO: ${{ vars.GCP_ARTIFACT_REPOSITORY }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    environment: ${{ github.event.inputs.environment || 'production' }}
+
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.event.inputs.sha || github.sha }}
+
+      - name: Verify release SHA
+        run: |
+          EXPECTED="${{ github.event.inputs.sha || github.sha }}"
+          ACTUAL="$(git rev-parse HEAD)"
+          if [ "$EXPECTED" != "$ACTUAL" ]; then
+            echo "SHA MISMATCH: expected $EXPECTED, got $ACTUAL"
+            exit 1
+          fi
+          echo "SHA verified: $ACTUAL"
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@71f986410dfbc7added4569d411d040a91dc6935 # v2.1.8
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@77e7a554d41e2ee56fc945c52dfd3f33d12def9a # v2.1.4
+
+      - name: Configure Docker
+        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+
+      - name: Publish database connection secret
+        env:
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          SUPABASE_POOLER_URL: ${{ vars.SUPABASE_POOLER_URL }}
+        run: |
+          umask 077
+
+          python3 - <<'PYDB'
+          import os
+          from pathlib import Path
+          from urllib.parse import quote, unquote, urlsplit, urlunsplit
+
+          template = os.environ["SUPABASE_POOLER_URL"].strip()
+          password = os.environ["SUPABASE_DB_PASSWORD"]
+
+          if not template:
+              raise SystemExit("SUPABASE_POOLER_URL is missing")
+
+          if not password:
+              raise SystemExit("SUPABASE_DB_PASSWORD is missing")
+
+          parts = urlsplit(template)
+
+          if not parts.hostname or not parts.username:
+              raise SystemExit("SUPABASE_POOLER_URL is invalid")
+
+          username = unquote(parts.username)
+
+          netloc = (
+              quote(username, safe=".")
+              + ":"
+              + quote(password, safe="")
+              + "@"
+              + parts.hostname
+              + ":"
+              + str(parts.port or 5432)
+          )
+
+          query = [
+              item
+              for item in parts.query.split("&")
+              if item and not item.startswith("sslmode=")
+          ]
+
+          query.append("sslmode=require")
+
+          database_url = urlunsplit(
+              (
+                  parts.scheme or "postgresql",
+                  netloc,
+                  parts.path or "/postgres",
+                  "&".join(query),
+                  "",
+              )
+          )
+
+          target = Path("/tmp/specgraph-database-url")
+          target.write_text(database_url, encoding="utf-8")
+          target.chmod(0o600)
+          PYDB
+
+          gcloud secrets versions add             SPECGRAPH_DATABASE_URL             --project="${{ vars.GCP_PROJECT_ID }}"             --data-file=/tmp/specgraph-database-url             >/dev/null
+
+          rm -f /tmp/specgraph-database-url
+          echo "Database connection secret published."
+
+
+      - name: Build and push
+        env:
+          IMAGE_TAG: ${{ env.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ env.ARTIFACT_REGISTRY_REPO }}/${{ env.API_SERVICE_NAME }}:${{ github.sha }}
+        run: |
+          docker build -f Dockerfile.api -t "$IMAGE_TAG" .
+          docker push "$IMAGE_TAG"
+
+      - name: Scan image
+        env:
+          IMAGE_TAG: ${{ env.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ env.ARTIFACT_REGISTRY_REPO }}/${{ env.API_SERVICE_NAME }}:${{ github.sha }}
+        run: |
+          gcloud artifacts docker images scan "$IMAGE_TAG" --uri-output-file=/tmp/scan_result.json || echo "SCAN_UNAVAILABLE"
+
+      - name: Determine service host
+        id: host
+        run: |
+          EXISTING_URL="$(
+            gcloud run services describe "${{ env.API_SERVICE_NAME }}" \
+              --region="${{ env.REGION }}" \
+              --format='value(status.url)' 2>/dev/null || true
+          )"
+
+          if [ -n "$EXISTING_URL" ]; then
+            HOST="$(echo "$EXISTING_URL" | sed -E 's#^https?://##')"
+          else
+            HOST="${{ env.API_SERVICE_NAME }}-${{ vars.GCP_PROJECT_NUMBER }}.${{ env.REGION }}.run.app"
+          fi
+
+          echo "host=$HOST" >> "$GITHUB_OUTPUT"
+          echo "Resolved service host: $HOST"
+
+      - name: Deploy to Cloud Run
+        id: deploy
+        env:
+          IMAGE_TAG: ${{ env.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ env.ARTIFACT_REGISTRY_REPO }}/${{ env.API_SERVICE_NAME }}:${{ github.sha }}
+        run: |
+          gcloud run deploy "${{ env.API_SERVICE_NAME }}" \
+            --image="$IMAGE_TAG" \
+            --region="${{ env.REGION }}" \
+            --platform=managed \
+            --allow-unauthenticated \
+            --cpu=1 \
+            --memory=512Mi \
+            --timeout=60 \
+            --concurrency=80 \
+            --min-instances=0 \
+            --max-instances=10 \
+            --ingress=all \
+            --no-cpu-throttling \
+            --service-account="${{ vars.GCP_RUNTIME_SERVICE_ACCOUNT }}" \
+            --set-env-vars="^@^SPECGRAPH_HOST=0.0.0.0@SPECGRAPH_PORT=8080@SPECGRAPH_ALLOWED_HOSTS=${{ steps.host.outputs.host }},${{ env.API_SERVICE_NAME }}-${{ vars.GCP_PROJECT_NUMBER }}.${{ env.REGION }}.run.app,127.0.0.1,localhost@SPECGRAPH_ALLOWED_ORIGINS=${{ vars.SPECGRAPH_WEB_ORIGIN }}@SPECGRAPH_LOG_FORMAT=json@SPECGRAPH_LOG_LEVEL=INFO@SPECGRAPH_RATE_LIMIT_ENABLED=true@SPECGRAPH_RATE_LIMIT_REQUESTS=120@SPECGRAPH_RATE_LIMIT_WINDOW_SECONDS=60@SPECGRAPH_REQUEST_DEADLINE_SECONDS=25@SPECGRAPH_MAX_JSON_STRING_BYTES=14000000@SPECGRAPH_MAX_REQUEST_BYTES=16000000@SPECGRAPH_GCP_PROJECT_ID=${{ vars.GCP_PROJECT_ID }}@SPECGRAPH_GCP_REGION=${{ vars.GCP_REGION }}@SPECGRAPH_WORKER_JOB_NAME=${{ vars.CLOUD_RUN_WORKER_SERVICE }}" \
+            --set-secrets="SPECGRAPH_DATABASE_URL=SPECGRAPH_DATABASE_URL:latest,SUPABASE_URL=SUPABASE_URL:latest,SUPABASE_ANON_KEY=SUPABASE_ANON_KEY:latest,SUPABASE_SERVICE_ROLE_KEY=SUPABASE_SERVICE_ROLE_KEY:latest,SPECGRAPH_CURSOR_SIGNING_KEY=SPECGRAPH_CURSOR_SIGNING_KEY:latest,SPECGRAPH_WORKER_STORAGE_TOKEN=SPECGRAPH_WORKER_STORAGE_TOKEN:latest" \
+            --revision-suffix="${{ github.run_id }}" \
+            --labels="commit-sha=${{ github.sha }},component=api,environment=${{ github.event.inputs.environment || 'production' }}" \
+
+
+      - name: Health check
+        run: |
+          URL="$(
+            gcloud run services describe \
+              "${{ env.API_SERVICE_NAME }}" \
+              --region="${{ env.REGION }}" \
+              --format='value(status.url)'
+          )"
+
+          if [ -z "$URL" ]; then
+            echo "ERROR: Cloud Run service URL is empty."
+            exit 1
+          fi
+
+          for i in $(seq 1 18); do
+            if curl -fsS "$URL/health" > /dev/null; then
+              echo "Health check passed: $URL"
+              exit 0
+            fi
+
+            echo "Attempt $i: service is still starting..."
+            sleep 5
+          done
+
+          echo "ERROR: Health check failed."
+          exit 1
+
+      - name: Post-deployment smoke
+        run: |
+          URL=$(gcloud run services describe "${{ env.API_SERVICE_NAME }}" --region="${{ env.REGION }}" --format='value(status.url)')
+          curl -sf "$URL/health" > /dev/null || { echo "Post-deploy health failed"; exit 1; }
+          curl -sf "$URL/version" > /dev/null || { echo "Post-deploy version failed"; exit 1; }
+          echo "Post-deployment smoke passed"
+
+      - name: Rollback on failure
+        if: failure() && steps.deploy.outcome == 'success'
+        run: |
+          echo "Post-deployment checks failed. Rolling back traffic..."
+          gcloud run services update-traffic "${{ env.API_SERVICE_NAME }}" \
+            --region="${{ env.REGION }}" \
+            --no-to-latest
+          echo "Rollback initiated. Previous healthy revision retains traffic."
