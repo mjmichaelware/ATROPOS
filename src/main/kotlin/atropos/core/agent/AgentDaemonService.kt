@@ -2,9 +2,10 @@ package atropos.core.agent
 
 import atropos.core.AtroposConfig
 import atropos.core.memory.LocalMemoryStore
+import atropos.core.policy.AgencyDisposition
+import atropos.core.policy.BoundedAgencyGate
 import atropos.core.policy.ExecutionPolicyEngine
-import atropos.core.policy.ExecutionPolicyRequest
-import atropos.core.policy.PolicyActionClass
+import atropos.core.policy.LifecycleActionProposals
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
@@ -16,7 +17,7 @@ class AgentDaemonService(
     private val repoRoot: Path = Path.of(System.getenv("ATROPOS_ROOT") ?: System.getProperty("user.dir")).toAbsolutePath().normalize(),
     private val store: AgentDaemonStore = AgentDaemonStore(repoRoot),
     private val queueService: AgentQueueService = AgentQueueService(config),
-    private val policyEngine: ExecutionPolicyEngine = ExecutionPolicyEngine(repoRoot),
+    private val agencyGate: BoundedAgencyGate = BoundedAgencyGate(ExecutionPolicyEngine(repoRoot)),
     private val memoryStore: LocalMemoryStore = LocalMemoryStore(repoRoot.resolve(".atropos/memory").toFile()),
     private val sessionSupervisor: ProviderSessionSupervisor = ProviderSessionSupervisor(repoRoot)
 ) {
@@ -235,14 +236,10 @@ class AgentDaemonService(
         return raw?.coerceIn(1L, 300L) ?: 180L
     }
 
+    /** The lifecycle transition is proposed; the gate decides. */
     private fun enforceDaemonPolicy(operation: String) {
-        val decision = policyEngine.evaluate(
-            ExecutionPolicyRequest(
-                actionClass = PolicyActionClass.DAEMON,
-                metadata = mapOf("operation" to operation)
-            )
-        )
-        require(decision.allowed) { decision.reason }
+        val decision = agencyGate.evaluate(LifecycleActionProposals.daemon(operation))
+        require(decision.disposition == AgencyDisposition.ALLOWED) { decision.reason }
     }
 
     private fun rememberDaemon(record: AgentDaemonRecord, title: String) {

@@ -2,9 +2,10 @@ package atropos.core.agent
 
 import atropos.core.AtroposConfig
 import atropos.core.memory.LocalMemoryStore
+import atropos.core.policy.AgencyDisposition
+import atropos.core.policy.BoundedAgencyGate
 import atropos.core.policy.ExecutionPolicyEngine
-import atropos.core.policy.ExecutionPolicyRequest
-import atropos.core.policy.PolicyActionClass
+import atropos.core.policy.LifecycleActionProposals
 import java.time.Instant
 
 data class AgentQueueRunResult(
@@ -38,7 +39,7 @@ class AgentQueueService(
     private val store: AgentQueueStore = AgentQueueStore(collector.repoRoot),
     private val recovery: AgentQueueRecovery = AgentQueueRecovery(store),
     private val clock: () -> Instant = { Instant.now() },
-    private val policyEngine: ExecutionPolicyEngine = ExecutionPolicyEngine(collector.repoRoot),
+    private val agencyGate: BoundedAgencyGate = BoundedAgencyGate(ExecutionPolicyEngine(collector.repoRoot)),
     private val memoryStore: LocalMemoryStore = LocalMemoryStore(collector.repoRoot.resolve(".atropos/memory").toFile())
 ) {
     fun enqueue(task: String, smokeCommand: String? = null): AgentQueueRecord {
@@ -300,17 +301,10 @@ class AgentQueueService(
     private fun backoffSeconds(attempts: Int): Long =
         (5L * attempts.coerceAtLeast(1)).coerceAtMost(60L)
 
+    /** The queue transition is proposed; the gate decides. */
     private fun enforceQueuePolicy(operation: String, detail: String = "") {
-        val decision = policyEngine.evaluate(
-            ExecutionPolicyRequest(
-                actionClass = PolicyActionClass.QUEUE,
-                metadata = mapOf(
-                    "operation" to operation,
-                    "detail" to detail
-                )
-            )
-        )
-        require(decision.allowed) { decision.reason }
+        val decision = agencyGate.evaluate(LifecycleActionProposals.queue(operation, detail))
+        require(decision.disposition == AgencyDisposition.ALLOWED) { decision.reason }
     }
 
     private fun rememberQueue(record: AgentQueueRecord, title: String) {
