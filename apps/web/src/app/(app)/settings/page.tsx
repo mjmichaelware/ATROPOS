@@ -1,76 +1,135 @@
 'use client';
 
+import { useState } from 'react';
+import { SixAnswersPanel, SixAnswer } from '@/components/ui/six-answers-panel';
+import { InformationLevels, InformationLevel } from '@/components/ui/information-levels';
 import { ThemeCustomizer } from '@/components/settings/theme-customizer';
 
 export default function SettingsPage() {
+  const [infoLevel, setInfoLevel] = useState<InformationLevel>(2);
+
+  const settingsAnswers: SixAnswer = {
+    objective: 'Configure ATROPOS behavior, appearance, privacy, and advanced preferences.',
+    currentOperation: 'Ready to customize your ATROPOS experience.',
+    reasoning: 'Settings control how you interact with ATROPOS and what information is displayed.',
+    progress: { percent: 100, stage: 'Configured' },
+    nextAction: 'Adjust theme, information depth, or export your data.',
+  };
+
   return (
-    <div className="settings-page">
-      <h1>Settings</h1>
+    <div className="space-y-8 p-8 max-w-4xl mx-auto">
+      {/* Page Context */}
+      <section className="space-y-3">
+        <h1 className="text-3xl font-bold text-sg-neutral-900 dark:text-sg-neutral-50">
+          Settings
+        </h1>
+        <SixAnswersPanel answers={settingsAnswers} compact={false} />
+      </section>
 
-      <div className="settings-grid">
-        <section className="settings-section">
-          <h2>Theme & Appearance</h2>
-          <ThemeCustomizer />
-        </section>
+      {/* Theme Settings */}
+      <section className="space-y-4">
+        <div className="border-b border-sg-neutral-200 dark:border-sg-neutral-800 pb-3">
+          <h2 className="text-2xl font-semibold text-sg-neutral-900 dark:text-sg-neutral-50">
+            Theme & Appearance
+          </h2>
+        </div>
+        <ThemeCustomizer />
+      </section>
 
-        <section className="settings-section">
-          <h2>Profile</h2>
-          <div className="setting-item">
-            <label>Email</label>
-            <input type="email" disabled placeholder="user@example.com" />
-          </div>
-        </section>
+      {/* Information Depth */}
+      <section className="space-y-4">
+        <div className="border-b border-sg-neutral-200 dark:border-sg-neutral-800 pb-3">
+          <h2 className="text-2xl font-semibold text-sg-neutral-900 dark:text-sg-neutral-50">
+            Information Depth
+          </h2>
+          <p className="text-sm text-sg-neutral-600 dark:text-sg-neutral-400 mt-1">
+            Control how much technical detail is shown on each page
+          </p>
+        </div>
+        <InformationLevels
+          currentLevel={infoLevel}
+          onLevelChange={setInfoLevel}
+          compact={false}
+        />
+      </section>
 
-        <section className="settings-section">
-          <h2>Privacy & Security</h2>
-          <div className="setting-item">
-            <label>
-              <input type="checkbox" />
-              Share analytics
+      {/* User Preferences */}
+      <section className="space-y-4">
+        <div className="border-b border-sg-neutral-200 dark:border-sg-neutral-800 pb-3">
+          <h2 className="text-2xl font-semibold text-sg-neutral-900 dark:text-sg-neutral-50">
+            User Preferences
+          </h2>
+        </div>
+        <div className="bg-sg-neutral-50 dark:bg-sg-neutral-900 border border-sg-neutral-200 dark:border-sg-neutral-800 rounded-lg p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <label className="text-sg-neutral-900 dark:text-sg-neutral-50 font-semibold">
+              Keyboard shortcuts enabled
             </label>
+            <input type="checkbox" defaultChecked className="w-5 h-5" />
           </div>
-        </section>
-      </div>
+          <div className="flex items-center justify-between">
+            <label className="text-sg-neutral-900 dark:text-sg-neutral-50 font-semibold">
+              Auto-save projects
+            </label>
+            <input type="checkbox" defaultChecked className="w-5 h-5" />
+          </div>
+          <div className="flex items-center justify-between">
+            <label className="text-sg-neutral-900 dark:text-sg-neutral-50 font-semibold">
+              Show confirmation for irreversible actions
+            </label>
+            <input type="checkbox" defaultChecked className="w-5 h-5" />
+          </div>
+          <div className="flex items-center justify-between">
+            <label className="text-sg-neutral-900 dark:text-sg-neutral-50 font-semibold">
+              Enable notifications
+            </label>
+            <input type="checkbox" defaultChecked className="w-5 h-5" />
+          </div>
+        </div>
+      </section>
 
-      <style jsx>{`
-        .settings-page h1 { margin: 0 0 var(--sg-space-5); }
+      {/* Privacy & Data */}
+      <section className="space-y-4">
+        <div className="border-b border-sg-neutral-200 dark:border-sg-neutral-800 pb-3">
+          <h2 className="text-2xl font-semibold text-sg-neutral-900 dark:text-sg-neutral-50">
+            Privacy & Data
+          </h2>
+        </div>
+        <div className="bg-sg-neutral-50 dark:bg-sg-neutral-900 border border-sg-neutral-200 dark:border-sg-neutral-800 rounded-lg p-6 space-y-3">
+          <button className="px-4 py-2 border border-sg-neutral-300 dark:border-sg-neutral-700 rounded-lg hover:bg-sg-neutral-100 dark:hover:bg-sg-neutral-800 transition-colors text-sm font-semibold">
+            Export All Data
+          </button>
+          <button className="px-4 py-2 border border-sg-neutral-300 dark:border-sg-neutral-700 rounded-lg hover:bg-sg-neutral-100 dark:hover:bg-sg-neutral-800 transition-colors text-sm font-semibold">
+            Clear Local Cache
+          </button>
+          <button className="px-4 py-2 border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900 transition-colors text-sm font-semibold">
+            Delete All Projects
+          </button>
+        </div>
+      </section>
 
-        .settings-grid {
-          display: grid;
-          gap: var(--sg-space-5);
-        }
-
-        .settings-section {
-          padding: var(--sg-space-4);
-          border: 1px solid var(--sg-border);
-          border-radius: var(--sg-radius-lg);
-          background: var(--sg-surface);
-        }
-
-        .settings-section h2 {
-          margin: 0 0 var(--sg-space-3);
-          font-size: var(--sg-type-lg);
-        }
-
-        .setting-item {
-          display: grid;
-          gap: var(--sg-space-2);
-          margin-bottom: var(--sg-space-3);
-
-          label {
-            font-weight: var(--sg-weight-medium);
-            font-size: var(--sg-type-sm);
-          }
-
-          input {
-            padding: var(--sg-space-2) var(--sg-space-3);
-            border: 1px solid var(--sg-border);
-            border-radius: var(--sg-radius-md);
-            background: var(--sg-elevated);
-            color: var(--sg-text-primary);
-          }
-        }
-      `}</style>
+      {/* Developer Options */}
+      <section className="space-y-4">
+        <div className="border-b border-sg-neutral-200 dark:border-sg-neutral-800 pb-3">
+          <h2 className="text-2xl font-semibold text-sg-neutral-900 dark:text-sg-neutral-50">
+            Developer Options
+          </h2>
+        </div>
+        <div className="bg-sg-neutral-50 dark:bg-sg-neutral-900 border border-sg-neutral-200 dark:border-sg-neutral-800 rounded-lg p-6 space-y-3">
+          <div className="flex items-center justify-between">
+            <label className="text-sg-neutral-900 dark:text-sg-neutral-50 font-semibold">
+              Show Developer Tools in Navigation
+            </label>
+            <input type="checkbox" className="w-5 h-5" />
+          </div>
+          <div className="flex items-center justify-between">
+            <label className="text-sg-neutral-900 dark:text-sg-neutral-50 font-semibold">
+              Enable Debug Logging
+            </label>
+            <input type="checkbox" className="w-5 h-5" />
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
