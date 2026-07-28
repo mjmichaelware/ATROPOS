@@ -6,6 +6,7 @@ import { SignOutButton } from "@/components/auth/sign-out-button";
 import { NavLinks } from "@/components/navigation/nav-links";
 import { globalRoutes } from "@/components/navigation/routes";
 import { useNavItems } from "@/components/navigation/use-nav-items";
+import { CommandPalette } from "@/components/ui/command-palette";
 
 export function AppHeader({ userEmail }: { userEmail?: string }) {
   const { global } = useNavItems();
@@ -19,6 +20,7 @@ export function AppHeader({ userEmail }: { userEmail?: string }) {
       <nav aria-label="Primary" className="sg-header-nav">
         <NavLinks items={items} />
       </nav>
+      <CommandPalette />
       {userEmail ? (
         <div className="sg-account">
           <span className="sg-account-email">{userEmail}</span>
