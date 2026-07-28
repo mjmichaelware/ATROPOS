@@ -1,0 +1,80 @@
+/* ATROPOS Theme Variants - Red Color Scheme */
+/* Auto-generated from tokens.json - DO NOT EDIT MANUALLY */
+
+:root[data-theme="light"],
+:root[data-theme="system"] {
+  color-scheme: light;
+  --sg-surface-canvas: #f9fafb;
+  --sg-surface-elevated: #ffffff;
+  --sg-surface-overlay: #f3f4f6;
+  --sg-text-primary: #030712;
+  --sg-text-secondary: #4b5563;
+  --sg-text-muted: #6b7280;
+  --sg-border: #e5e7eb;
+}
+
+:root[data-theme="dark"],
+:root[data-theme="system"] {
+  @media (prefers-color-scheme: dark) {
+    color-scheme: dark;
+    --sg-surface-canvas: #030712;
+    --sg-surface-elevated: #111827;
+    --sg-surface-overlay: #1f2937;
+    --sg-text-primary: #f9fafb;
+    --sg-text-secondary: #9ca3af;
+    --sg-text-muted: #6b7280;
+    --sg-border: #374151;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --sg-surface-canvas: #030712;
+  --sg-surface-elevated: #111827;
+  --sg-surface-overlay: #1f2937;
+  --sg-text-primary: #f9fafb;
+  --sg-text-secondary: #9ca3af;
+  --sg-text-muted: #6b7280;
+  --sg-border: #374151;
+}
+
+:root[data-theme="high-contrast"] {
+  color-scheme: dark;
+  --sg-surface-canvas: #000;
+  --sg-surface-elevated: #000;
+  --sg-surface-overlay: #1a1a1a;
+  --sg-text-primary: #fff;
+  --sg-text-secondary: #e0e0e0;
+  --sg-text-muted: #a0a0a0;
+  --sg-border: #fff;
+  --sg-brand-primary: #ef4444;
+  --sg-status-success: #4ade80;
+  --sg-status-warning: #fbbf24;
+  --sg-status-danger: #f87171;
+  --sg-status-info: #60a5fa;
+}
+
+/* Default to light mode if no theme specified */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    --sg-surface-canvas: #f9fafb;
+    --sg-surface-elevated: #ffffff;
+    --sg-surface-overlay: #f3f4f6;
+    --sg-text-primary: #030712;
+    --sg-text-secondary: #4b5563;
+    --sg-text-muted: #6b7280;
+    --sg-border: #e5e7eb;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --sg-surface-canvas: #030712;
+    --sg-surface-elevated: #111827;
+    --sg-surface-overlay: #1f2937;
+    --sg-text-primary: #f9fafb;
+    --sg-text-secondary: #9ca3af;
+    --sg-text-muted: #6b7280;
+    --sg-border: #374151;
+  }
+}

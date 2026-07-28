@@ -1,0 +1,229 @@
+/* ATROPOS Design Tokens - Generated CSS Variables */
+/* Primary Color: RED - Shared across web and CLI */
+/* Auto-generated from tokens.json - DO NOT EDIT MANUALLY */
+
+:root {
+  --sg-colors-red-50: #fef2f2;
+  --sg-colors-red-100: #fee2e2;
+  --sg-colors-red-200: #fecaca;
+  --sg-colors-red-300: #fca5a5;
+  --sg-colors-red-400: #f87171;
+  --sg-colors-red-500: #ef4444;
+  --sg-colors-red-600: #dc2626;
+  --sg-colors-red-700: #b91c1c;
+  --sg-colors-red-800: #991b1b;
+  --sg-colors-red-900: #7f1d1d;
+  --sg-colors-red-950: #4c0519;
+  --sg-colors-gray-50: #f9fafb;
+  --sg-colors-gray-100: #f3f4f6;
+  --sg-colors-gray-200: #e5e7eb;
+  --sg-colors-gray-300: #d1d5db;
+  --sg-colors-gray-400: #9ca3af;
+  --sg-colors-gray-500: #6b7280;
+  --sg-colors-gray-600: #4b5563;
+  --sg-colors-gray-700: #374151;
+  --sg-colors-gray-800: #1f2937;
+  --sg-colors-gray-900: #111827;
+  --sg-colors-gray-950: #030712;
+  --sg-colors-green-50: #f0fdf4;
+  --sg-colors-green-100: #dcfce7;
+  --sg-colors-green-200: #bbf7d0;
+  --sg-colors-green-300: #86efac;
+  --sg-colors-green-400: #4ade80;
+  --sg-colors-green-500: #22c55e;
+  --sg-colors-green-600: #16a34a;
+  --sg-colors-green-700: #15803d;
+  --sg-colors-green-800: #166534;
+  --sg-colors-green-900: #145231;
+  --sg-colors-amber-50: #fffbeb;
+  --sg-colors-amber-100: #fef3c7;
+  --sg-colors-amber-200: #fde68a;
+  --sg-colors-amber-300: #fcd34d;
+  --sg-colors-amber-400: #fbbf24;
+  --sg-colors-amber-500: #f59e0b;
+  --sg-colors-amber-600: #d97706;
+  --sg-colors-amber-700: #b45309;
+  --sg-colors-amber-800: #92400e;
+  --sg-colors-amber-900: #78350f;
+  --sg-colors-blue-50: #eff6ff;
+  --sg-colors-blue-100: #dbeafe;
+  --sg-colors-blue-200: #bfdbfe;
+  --sg-colors-blue-300: #93c5fd;
+  --sg-colors-blue-400: #60a5fa;
+  --sg-colors-blue-500: #3b82f6;
+  --sg-colors-blue-600: #2563eb;
+  --sg-colors-blue-700: #1d4ed8;
+  --sg-colors-blue-800: #1e40af;
+  --sg-colors-blue-900: #1e3a8a;
+  --sg-colors-cyan-50: #ecf9ff;
+  --sg-colors-cyan-100: #d3f0ff;
+  --sg-colors-cyan-200: #a8e0ff;
+  --sg-colors-cyan-300: #77cbff;
+  --sg-colors-cyan-400: #4fb0ff;
+  --sg-colors-cyan-500: #0096ff;
+  --sg-colors-cyan-600: #0078d4;
+  --sg-colors-cyan-700: #0063b1;
+  --sg-colors-cyan-800: #004b87;
+  --sg-colors-cyan-900: #003d6b;
+  --sg-semantic-surface-canvas-light: #f9fafb;
+  --sg-semantic-surface-canvas-dark: #030712;
+  --sg-semantic-surface-elevated-light: {colors.gray.0};
+  --sg-semantic-surface-elevated-dark: #111827;
+  --sg-semantic-surface-overlay-light: #f3f4f6;
+  --sg-semantic-surface-overlay-dark: #1f2937;
+  --sg-semantic-text-primary-light: #030712;
+  --sg-semantic-text-primary-dark: #f9fafb;
+  --sg-semantic-text-secondary-light: #4b5563;
+  --sg-semantic-text-secondary-dark: #9ca3af;
+  --sg-semantic-text-muted-light: #6b7280;
+  --sg-semantic-text-muted-dark: #6b7280;
+  --sg-semantic-text-inverse-light: #f9fafb;
+  --sg-semantic-text-inverse-dark: #030712;
+  --sg-semantic-border-light: #e5e7eb;
+  --sg-semantic-border-dark: #374151;
+  --sg-semantic-brand-primary: #dc2626;
+  --sg-semantic-brand-primaryLight: #f87171;
+  --sg-semantic-brand-primaryDark: #991b1b;
+  --sg-semantic-brand-hover: #b91c1c;
+  --sg-semantic-brand-active: #7f1d1d;
+  --sg-semantic-brand-muted: #fee2e2;
+  --sg-semantic-brand-mutedDark: #7f1d1d;
+  --sg-semantic-status-success: #16a34a;
+  --sg-semantic-status-warning: #d97706;
+  --sg-semantic-status-danger: #dc2626;
+  --sg-semantic-status-info: #2563eb;
+  --sg-semantic-status-pending: #6b7280;
+  --sg-semantic-domain-source: #0096ff;
+  --sg-semantic-domain-research: #f59e0b;
+  --sg-semantic-domain-planning: #3b82f6;
+  --sg-semantic-domain-verified: #16a34a;
+  --sg-semantic-domain-blocked: #dc2626;
+  --sg-semantic-domain-unknown: #6b7280;
+  --sg-spacing-0: 0;
+  --sg-spacing-1: 0.25rem;
+  --sg-spacing-2: 0.5rem;
+  --sg-spacing-3: 0.75rem;
+  --sg-spacing-4: 1rem;
+  --sg-spacing-6: 1.5rem;
+  --sg-spacing-8: 2rem;
+  --sg-spacing-12: 3rem;
+  --sg-spacing-16: 4rem;
+  --sg-spacing-20: 5rem;
+  --sg-spacing-24: 6rem;
+  --sg-spacing-32: 8rem;
+  --sg-spacing-40: 10rem;
+  --sg-spacing-48: 12rem;
+  --sg-spacing-56: 14rem;
+  --sg-spacing-64: 16rem;
+  --sg-sizing-full: 100%;
+  --sg-sizing-screen: 100vw;
+  --sg-sizing-screenHeight: 100vh;
+  --sg-sizing-min: min-content;
+  --sg-sizing-max: max-content;
+  --sg-sizing-fit: fit-content;
+  --sg-typography-fontFamily-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  --sg-typography-fontFamily-mono: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+  --sg-typography-fontSize-xs: 0.75rem;
+  --sg-typography-fontSize-sm: 0.875rem;
+  --sg-typography-fontSize-base: 1rem;
+  --sg-typography-fontSize-lg: 1.125rem;
+  --sg-typography-fontSize-xl: 1.25rem;
+  --sg-typography-fontSize-2xl: 1.5rem;
+  --sg-typography-fontSize-3xl: 1.875rem;
+  --sg-typography-fontSize-4xl: 2.25rem;
+  --sg-typography-fontSize-5xl: 3rem;
+  --sg-typography-lineHeight-none: 1;
+  --sg-typography-lineHeight-tight: 1.25;
+  --sg-typography-lineHeight-snug: 1.375;
+  --sg-typography-lineHeight-normal: 1.5;
+  --sg-typography-lineHeight-relaxed: 1.625;
+  --sg-typography-lineHeight-loose: 2;
+  --sg-typography-fontWeight-thin: 100;
+  --sg-typography-fontWeight-extralight: 200;
+  --sg-typography-fontWeight-light: 300;
+  --sg-typography-fontWeight-normal: 400;
+  --sg-typography-fontWeight-medium: 500;
+  --sg-typography-fontWeight-semibold: 600;
+  --sg-typography-fontWeight-bold: 700;
+  --sg-typography-fontWeight-extrabold: 800;
+  --sg-typography-fontWeight-black: 900;
+  --sg-motion-duration-instant: 0ms;
+  --sg-motion-duration-fast: 100ms;
+  --sg-motion-duration-normal: 200ms;
+  --sg-motion-duration-slow: 300ms;
+  --sg-motion-duration-reveal: 500ms;
+  --sg-motion-duration-morph: 700ms;
+  --sg-motion-duration-press: 50ms;
+  --sg-motion-easing-ease: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --sg-motion-easing-easeIn: cubic-bezier(0.42, 0, 1, 1);
+  --sg-motion-easing-easeOut: cubic-bezier(0, 0, 0.58, 1);
+  --sg-motion-easing-easeInOut: cubic-bezier(0.42, 0, 0.58, 1);
+  --sg-motion-easing-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --sg-motion-easing-linear: linear;
+  --sg-radii-none: 0;
+  --sg-radii-sm: 0.125rem;
+  --sg-radii-base: 0.25rem;
+  --sg-radii-md: 0.375rem;
+  --sg-radii-lg: 0.5rem;
+  --sg-radii-xl: 0.75rem;
+  --sg-radii-2xl: 1rem;
+  --sg-radii-3xl: 1.5rem;
+  --sg-radii-full: 9999px;
+  --sg-shadows-none: none;
+  --sg-shadows-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --sg-shadows-base: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  --sg-shadows-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --sg-shadows-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  --sg-shadows-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  --sg-shadows-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  --sg-shadows-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.05);
+  --sg-zIndex-hide: -1;
+  --sg-zIndex-base: 0;
+  --sg-zIndex-docked: 10;
+  --sg-zIndex-sticky: 20;
+  --sg-zIndex-fixed: 30;
+  --sg-zIndex-backdrop: 40;
+  --sg-zIndex-offscreen: 50;
+  --sg-zIndex-modal: 60;
+  --sg-zIndex-popover: 70;
+  --sg-zIndex-skipLink: 80;
+  --sg-zIndex-toast: 90;
+  --sg-zIndex-tooltip: 100;
+  --sg-breakpoints-xs: 0px;
+  --sg-breakpoints-sm: 640px;
+  --sg-breakpoints-md: 768px;
+  --sg-breakpoints-lg: 1024px;
+  --sg-breakpoints-xl: 1280px;
+  --sg-breakpoints-2xl: 1536px;
+}
+
+/* High Contrast Theme */
+@media (prefers-contrast: more) {
+  :root {
+    --sg-text-primary-light: #000;
+    --sg-text-primary-dark: #fff;
+    --sg-border-light: #000;
+    --sg-border-dark: #fff;
+    --sg-brand-primary: #dc2626;
+  }
+}
+
+/* Reduced Motion Theme */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --sg-motion-duration-instant: 0ms;
+    --sg-motion-duration-fast: 1ms;
+    --sg-motion-duration-normal: 1ms;
+    --sg-motion-duration-slow: 1ms;
+    --sg-motion-duration-reveal: 1ms;
+    --sg-motion-duration-morph: 1ms;
+    --sg-motion-duration-press: 1ms;
+  }
+}
+
+/* Reduced Transparency Support */
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    /* Fallbacks for opacity values */
+  }
+}
