@@ -6,6 +6,8 @@ import java.util.UUID
 
 enum class CrossBoundaryRisk { LOW, MEDIUM, HIGH, CRITICAL }
 
+enum class HrRouteAction { APPROVED, NARROWED, DENIED, ESCALATED }
+
 enum class InformationKind {
     SOURCE_CODE,
     DEPENDENCY,
@@ -38,6 +40,7 @@ data class CrossBoundaryResponse(
     val redactedContent: String? = null,
     val risk: CrossBoundaryRisk = CrossBoundaryRisk.LOW,
     val reason: String,
+    val action: HrRouteAction = if (approved) HrRouteAction.APPROVED else HrRouteAction.DENIED,
     val timestamp: Instant = Instant.now()
 )
 
@@ -48,6 +51,7 @@ data class HrRouterAuditEntry(
     val kind: InformationKind,
     val risk: CrossBoundaryRisk,
     val approved: Boolean,
+    val action: HrRouteAction = if (approved) HrRouteAction.APPROVED else HrRouteAction.DENIED,
     val reason: String,
     val timestamp: Instant
 )
@@ -60,22 +64,42 @@ class HrRouterService(
 
     fun route(request: CrossBoundaryRequest): CrossBoundaryResponse {
         val risk = assessRisk(request)
-        val approved = risk.ordinal < CrossBoundaryRisk.CRITICAL.ordinal
-        val redacted = if (approved) {
-            redactionFilter.redact(request.query)
-        } else null
+        val action = when (risk) {
+            CrossBoundaryRisk.LOW -> HrRouteAction.APPROVED
+            CrossBoundaryRisk.MEDIUM -> HrRouteAction.ESCALATED
+            CrossBoundaryRisk.HIGH -> HrRouteAction.NARROWED
+            CrossBoundaryRisk.CRITICAL -> HrRouteAction.DENIED
+        }
+        val approved = action == HrRouteAction.APPROVED || action == HrRouteAction.NARROWED
+        val redacted = when (action) {
+            HrRouteAction.APPROVED -> redactionFilter.redact(request.query)
+            HrRouteAction.NARROWED -> narrow(request)
+            HrRouteAction.DENIED,
+            HrRouteAction.ESCALATED -> null
+        }
+        val reason = when (action) {
+            HrRouteAction.APPROVED -> "approved with redaction"
+            HrRouteAction.NARROWED -> "approved with narrowing and redaction"
+            HrRouteAction.ESCALATED -> "escalated to Human Owner: risk=$risk"
+            HrRouteAction.DENIED -> "denied: risk=$risk"
+        }
 
         auditLog += HrRouterAuditEntry(
             requestId = request.id, sourceOwnerId = request.sourceOwnerId,
             targetOwnerId = request.targetOwnerId, kind = request.kind,
-            risk = risk, approved = approved, reason = if (approved) "approved with redaction" else "denied: risk=$risk",
+            risk = risk, approved = approved, action = action, reason = reason,
             timestamp = Instant.now()
         )
 
         return CrossBoundaryResponse(
             requestId = request.id, approved = approved,
-            redactedContent = redacted, risk = risk,
-            reason = if (approved) "content redacted and released" else "cross-boundary request denied: $risk risk"
+            redactedContent = redacted, risk = risk, action = action,
+            reason = when (action) {
+                HrRouteAction.APPROVED -> "content redacted and released"
+                HrRouteAction.NARROWED -> "content narrowed, redacted, and released"
+                HrRouteAction.ESCALATED -> "cross-boundary request escalated to Human Owner"
+                HrRouteAction.DENIED -> "cross-boundary request denied: $risk risk"
+            }
         )
     }
 
@@ -110,5 +134,21 @@ class HrRouterService(
         val approved = auditLog.count { it.approved }
         val denied = auditLog.count { !it.approved }
         return "HR Router: $approved approved, $denied denied, ${auditLog.size} total"
+    }
+
+    private fun narrow(request: CrossBoundaryRequest): String {
+        val allowedPaths = request.requestedPaths
+            .filterNot { path -> secretKeywords.any { path.lowercase().contains(it) } || path.contains(".env") }
+            .take(5)
+        val query = redactionFilter.redact(request.query)
+            .lineSequence()
+            .filterNot { line -> secretKeywords.any { line.lowercase().contains(it) } }
+            .take(20)
+            .joinToString("\n")
+            .ifBlank { "request narrowed: sensitive content withheld" }
+        return buildString {
+            append(query)
+            if (allowedPaths.isNotEmpty()) append("\npaths=").append(allowedPaths.joinToString(","))
+        }.take(2000)
     }
 }

@@ -17,6 +17,17 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class SelfHostGoalServiceTest {
+    private fun initializeGitRepo(repoRoot: java.nio.file.Path) {
+        ProcessBuilder("git", "init")
+            .directory(repoRoot.toFile())
+            .redirectErrorStream(true)
+            .start()
+            .waitFor()
+        Files.createDirectories(repoRoot.resolve("src/main/kotlin/atropos"))
+        Files.createDirectories(repoRoot.resolve("src/test/kotlin/atropos"))
+        Files.writeString(repoRoot.resolve("src/main/kotlin/atropos/Main.kt"), "fun main() {}\n")
+    }
+
     @Test
     fun resumeGoal_routes_self_host_recovery_through_continuation_service() {
         val repoRoot = Files.createTempDirectory("atropos-self-host-resume-")
@@ -53,6 +64,86 @@ class SelfHostGoalServiceTest {
         assertNull(resumed.failureReason)
         assertTrue(resumed.evidence.any { it == "recovery=crash" })
         assertTrue(resumed.evidence.any { it.contains("recovery_resumed_at=$now") && it.contains("node=node-10") })
+    }
+
+    @Test
+    fun startGoal_creates_a_durable_cradle_bootstrap_dag() {
+        val repoRoot = Files.createTempDirectory("atropos-self-host-start-dag-")
+        initializeGitRepo(repoRoot)
+        val base = Instant.parse("2026-07-27T07:03:00Z")
+        var tick = 0L
+        val store = GoalRunStore(repoRoot, clock = { base.plusSeconds(tick++) })
+        val service = SelfHostGoalService(repoRoot = repoRoot, store = store, clock = { base.plusSeconds(tick++) })
+
+        val result = service.startGoal("build ATROPOS from natural language", "11")
+
+        assertTrue(result.ok)
+        val goal = result.goal ?: error("missing started goal")
+        val dag = goal.dag ?: error("missing bootstrap DAG")
+        assertEquals(dag.id, goal.record.dagId)
+        assertEquals(dag.id, store.resolve(goal.record.id)?.dagId)
+        assertEquals(listOf("src/main/kotlin/atropos", "src/test/kotlin/atropos"), goal.record.territory)
+        assertEquals(1, dag.nodes.size)
+        assertEquals(DagNodeAction.VERIFY, dag.nodes.single().action)
+        assertTrue(dag.nodes.single().actionPayload.orEmpty().contains("git status --short"))
+    }
+
+    @Test
+    fun advanceGoal_runs_one_attested_verification_node_and_records_completion_evidence() {
+        val repoRoot = Files.createTempDirectory("atropos-self-host-advance-")
+        initializeGitRepo(repoRoot)
+        val base = Instant.parse("2026-07-27T07:04:00Z")
+        var tick = 0L
+        val store = GoalRunStore(repoRoot, clock = { base.plusSeconds(tick++) })
+        val service = SelfHostGoalService(repoRoot = repoRoot, store = store, clock = { base.plusSeconds(tick++) })
+
+        val started = service.startGoal("advance one bounded cradle node", "11")
+        val goalId = started.goal?.record?.id ?: error("missing goal id")
+        val result = service.advanceGoal(goalId)
+
+        assertTrue(result.ok, result.message)
+        val reopened = store.resolve(goalId) ?: error("missing advanced goal")
+        assertEquals(GoalRunStatus.COMPLETED, reopened.status)
+        assertEquals(GoalTerminalCondition.VERIFIED_COMPLETE, reopened.terminalCondition)
+        assertTrue(reopened.evidence.any { it.startsWith("context_attestation system=ATROPOS") })
+        assertEquals(started.goal?.record?.currentNodeId, reopened.currentNodeId)
+
+        val dagId = reopened.dagId ?: error("missing DAG id")
+        val dag = DagExecutionService(repoRoot = repoRoot).readDag(dagId) ?: error("missing DAG")
+        assertEquals(DagNodeState.COMPLETE, dag.nodes.single().state)
+        assertTrue(dag.nodes.single().result != null)
+
+        val learned = service.learned(10)
+        assertTrue(learned.any { it.subjectType == "selfhost_dag_eval" && it.body.contains("attestation:") })
+    }
+
+    @Test
+    fun advanceNextResumableGoal_prefers_recovery_required_self_host_work() {
+        val repoRoot = Files.createTempDirectory("atropos-self-host-auto-advance-")
+        initializeGitRepo(repoRoot)
+        val base = Instant.parse("2026-07-27T07:06:00Z")
+        var tick = 0L
+        val store = GoalRunStore(repoRoot, clock = { base.plusSeconds(tick++) })
+        val service = SelfHostGoalService(repoRoot = repoRoot, store = store, clock = { base.plusSeconds(tick++) })
+
+        val running = service.startGoal("ordinary running self-host goal", "11").goal?.record
+            ?: error("missing running goal")
+        val recovery = service.startGoal("recovered self-host goal", "11").goal?.record
+            ?: error("missing recovery goal")
+        store.update(
+            recovery.copy(
+                status = GoalRunStatus.RECOVERY_REQUIRED,
+                failureReason = "interrupted"
+            )
+        )
+
+        val result = service.advanceNextResumableGoal()
+
+        assertTrue(result.ok, result.message)
+        assertEquals(recovery.id, result.goal?.record?.id)
+        assertEquals(GoalRunStatus.RUNNING, store.resolve(running.id)?.status)
+        assertEquals(GoalRunStatus.COMPLETED, store.resolve(recovery.id)?.status)
+        assertTrue(store.resolve(recovery.id)?.evidence.orEmpty().any { it.startsWith("context_attestation system=ATROPOS") })
     }
 
     @Test

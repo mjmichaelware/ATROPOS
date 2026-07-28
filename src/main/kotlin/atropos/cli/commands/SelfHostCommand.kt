@@ -166,84 +166,45 @@ class SelfHostCommand(
 
         ui.startSpinner("Resuming self-host goal ${record.id}")
         try {
-            val resumed = selfHostService.resumeGoal(record.id, compactState = "self-host resume")
-            if (!resumed.ok) {
-                ui.renderError("resume: ${resumed.message}")
-                return AgentCommandOutcome.Invalid(resumed.message)
-            }
-            var resumedRecord = resumed.goal?.record ?: record
-
-            val selectResult = selfHostService.selectNextDagNode(resumedRecord.id)
-            if (!selectResult.ok) {
-                resumedRecord = selfHostService.loadGoal(resumedRecord.id).goal?.record
-                    ?: selfHostService.status(resumedRecord.id).let { status ->
-                        resumedRecord.copy(
-                            status = status.status,
-                            terminalCondition = status.terminalCondition,
-                            currentNodeId = status.currentNodeId
-                        )
-                    }
-                if (resumedRecord.terminalCondition == GoalTerminalCondition.VERIFIED_COMPLETE) {
-                    val text = "self-host goal ${resumedRecord.id} completed: all DAG nodes done"
-                    journal.record(
-                        goalId = resumedRecord.id,
-                        runId = resumedRecord.id,
-                        category = atropos.core.journal.EventCategory.LIFECYCLE,
-                        payload = "resumed: terminal=VERIFIED_COMPLETE reason=${resumedRecord.failureReason ?: "all nodes done"}"
-                    )
-                    ui.renderNotice(text)
-                    return AgentCommandOutcome.Completed(text)
-                }
-                if (resumedRecord.terminalCondition == GoalTerminalCondition.TERMINAL_FAILURE) {
-                    val text = "self-host goal ${resumedRecord.id} failed: ${resumedRecord.failureReason ?: selectResult.message}"
-                    journal.record(
-                        goalId = resumedRecord.id,
-                        runId = resumedRecord.id,
-                        category = atropos.core.journal.EventCategory.LIFECYCLE,
-                        payload = "resumed: terminal=TERMINAL_FAILURE reason=${resumedRecord.failureReason ?: selectResult.message}"
-                    )
-                    ui.renderError(text)
-                    return AgentCommandOutcome.Invalid(text)
-                }
-                ui.renderError("resume: ${selectResult.message}")
-                return AgentCommandOutcome.Invalid(selectResult.message)
-            }
-
-            val currentNodeId = selectResult.goal?.record?.currentNodeId ?: return AgentCommandOutcome.Invalid("no node selected")
-            val dagId = resumedRecord.dagId ?: return AgentCommandOutcome.Invalid("no DAG assigned")
-            dagService.evaluateDag(dagId)
-            val dag = dagService.readDag(dagId)
-
+            val advanced = selfHostService.advanceNextResumableGoal(record.id, compactState = "self-host resume")
+            val resumedRecord = advanced.goal?.record ?: record
+            val dagId = resumedRecord.dagId
+            val dag = dagId?.let { dagService.readDag(it) }
+            val currentNodeId = resumedRecord.currentNodeId ?: "none"
             val completed = dag?.nodes?.count { it.state == atropos.core.dag.DagNodeState.COMPLETE } ?: 0
             val failed = dag?.nodes?.count { it.state == atropos.core.dag.DagNodeState.FAILED } ?: 0
+            val blocked = dag?.nodes?.count { it.state == atropos.core.dag.DagNodeState.BLOCKED } ?: 0
             val total = dag?.nodes?.size ?: 0
 
             val text = buildString {
                 appendLine("resumed goal: ${resumedRecord.id}")
                 appendLine("phase: ${resumedRecord.activePhase}")
                 appendLine("current node: $currentNodeId")
-                appendLine("DAG: $completed/$total completed, $failed failed")
+                appendLine("DAG: $completed/$total completed, $failed failed, $blocked blocked")
+                appendLine("advance: ${advanced.message}")
 
                 // Check for false completions
-                val falseCompletions = completionGate.detectFalseCompletions(dagId)
-                if (falseCompletions.isNotEmpty()) {
-                    appendLine("WARNING: false completions detected: ${falseCompletions.joinToString(", ")}")
-                }
-
-                if (total > 0 && completed + failed == total) {
-                    if (failed == 0) {
-                        selfHostService.completeGoal(resumedRecord.id, GoalTerminalCondition.VERIFIED_COMPLETE, "all nodes done")
-                        appendLine("goal complete: all DAG nodes verified")
-                    } else {
-                        selfHostService.completeGoal(resumedRecord.id, GoalTerminalCondition.TERMINAL_FAILURE, "$failed failed nodes")
-                        appendLine("goal failed: $failed nodes failed")
+                if (dagId != null) {
+                    val falseCompletions = completionGate.detectFalseCompletions(dagId)
+                    if (falseCompletions.isNotEmpty()) {
+                        appendLine("WARNING: false completions detected: ${falseCompletions.joinToString(", ")}")
                     }
                 }
+            }
+            if (!advanced.ok) {
+                ui.renderError("resume: ${advanced.message}")
+                journal.record(
+                    goalId = resumedRecord.id,
+                    runId = resumedRecord.id,
+                    category = atropos.core.journal.EventCategory.LIFECYCLE,
+                    payload = "resumed: failed node=$currentNodeId reason=${advanced.message}"
+                )
+                return AgentCommandOutcome.Invalid(text)
             }
             ui.renderNotice("SELF-HOST RESUME\n$text")
             journal.record(goalId = resumedRecord.id, runId = resumedRecord.id,
                 category = atropos.core.journal.EventCategory.LIFECYCLE,
-                payload = "resumed: node=$currentNodeId completed=$completed failed=$failed")
+                payload = "resumed: node=$currentNodeId completed=$completed failed=$failed blocked=$blocked terminal=${resumedRecord.terminalCondition ?: "none"}")
             return AgentCommandOutcome.Completed(text)
         } catch (e: Exception) {
             val text = "resume failed: ${e.message}"

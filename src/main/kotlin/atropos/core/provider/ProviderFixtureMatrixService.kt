@@ -42,6 +42,9 @@ class ProviderFixtureMatrixService(
         lines += "quota_exhausted" to (
             normalizer.normalize(providerId, "quota exhausted").type == NormalizedProviderFailureType.QUOTA_EXHAUSTED
             )
+        lines += "auth_failed" to (
+            normalizer.normalize(providerId, "401 unauthorized invalid api key").type == NormalizedProviderFailureType.AUTH_FAILED
+            )
         lines += "rate_limited" to (
             normalizer.normalize(providerId, "rate limit exceeded").type == NormalizedProviderFailureType.RATE_LIMITED
             )
@@ -51,7 +54,20 @@ class ProviderFixtureMatrixService(
         lines += "unavailable" to (
             normalizer.normalize(providerId, "connection refused").type == NormalizedProviderFailureType.UNAVAILABLE
             )
+        lines += "timeout" to (
+            normalizer.normalize(providerId, "request timed out").type == NormalizedProviderFailureType.TIMEOUT
+            )
+        lines += "malformed_response" to (
+            normalizer.normalize(providerId, "invalid json malformed response").type == NormalizedProviderFailureType.MALFORMED_RESPONSE
+            )
+        lines += "empty_response" to (
+            normalizer.normalize(providerId, "").type == NormalizedProviderFailureType.EMPTY_RESPONSE
+            )
+        lines += "cancellation" to (
+            normalizer.normalize(providerId, "request cancelled by caller").type == NormalizedProviderFailureType.CANCELLED
+            )
         lines += "redaction" to runRedactionFixture(providerId)
+        lines += "attestation" to runAttestationFixture(providerId)
 
         val distinct = linkedMapOf<String, Boolean>()
         lines.forEach { (name, passed) -> distinct[name] = distinct[name] ?: passed }
@@ -120,5 +136,21 @@ class ProviderFixtureMatrixService(
             !failure.cleanSummary.contains("B".repeat(24)) &&
             !failure.cleanSummary.contains("C".repeat(24)) &&
             failure.cleanSummary.contains("<redacted>")
+    }
+
+    private fun runAttestationFixture(providerId: String): Boolean {
+        val block = ContextEnvelopeSerializer.attestationBlock(
+            systemIdentity = "ATROPOS",
+            repository = "ATROPOS",
+            taskOrNodeId = "fixture-node",
+            role = "worker",
+            contextVersion = "1.0",
+            contextHash = "fixture-hash-$providerId"
+        )
+        val parsed = ContextEnvelopeSerializer.parseAttestation("fixture response\n$block")
+        return parsed?.systemIdentity == "ATROPOS" &&
+            parsed.repository == "ATROPOS" &&
+            parsed.taskOrNodeId == "fixture-node" &&
+            parsed.contextHash == "fixture-hash-$providerId"
     }
 }

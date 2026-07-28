@@ -73,3 +73,26 @@ data class ComposeFrameCapture(
     val renderTimeMs: Long = 0,
     val capturedAt: Instant = Instant.now()
 )
+
+enum class BrowserEvidenceStatus {
+    CAPTURED,
+    POLICY_BLOCKED,
+    UNSUPPORTED,
+    FAILED
+}
+
+data class BrowserEvidenceRequest(
+    val url: String,
+    val expectedText: String? = null,
+    val actorId: String = "browser-evidence",
+    val timeoutMillis: Long = 10_000
+)
+
+data class BrowserEvidenceResult(
+    val status: BrowserEvidenceStatus,
+    val snapshot: SnapshotReference? = null,
+    val inspection: MultimodalInspection? = null,
+    val message: String
+) {
+    val ok: Boolean get() = status == BrowserEvidenceStatus.CAPTURED && inspection?.passed != false
+}

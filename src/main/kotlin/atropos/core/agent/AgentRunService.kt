@@ -2,10 +2,8 @@ package atropos.core.agent
 
 import atropos.core.AtroposConfig
 import atropos.ast.AstSymbolGraph
-import atropos.ast.AstSymbolKind
 import atropos.core.memory.LocalMemoryStore
 import atropos.core.security.RedactionFilter
-import atropos.dloi.DloiLookupResult
 import atropos.dloi.DloiService
 import atropos.dloi.HigZeroGuard
 import java.time.Instant
@@ -23,7 +21,12 @@ class AgentRunService(
     /** The only way this service reaches DLOI: failures arrive typed, not thrown. */
     private val higZeroGuard: HigZeroGuard = HigZeroGuard(dloiService),
     private val astSymbolGraph: AstSymbolGraph = AstSymbolGraph(collector.repoRoot),
-    private val redactionFilter: RedactionFilter = RedactionFilter()
+    private val redactionFilter: RedactionFilter = RedactionFilter(),
+    private val reporter: AgentRunReporter = AgentRunReporter(redactionFilter),
+    private val repoStatus: AgentRunRepoStatus = AgentRunRepoStatus(collector.repoRoot),
+    private val sourceResolver: AgentRunSourceResolver = AgentRunSourceResolver(collector.repoRoot, higZeroGuard, astSymbolGraph, memoryStore),
+    private val outcomeMemory: AgentRunOutcomeMemory = AgentRunOutcomeMemory(memoryStore),
+    private val localPatchSynthesizer: AgentLocalPatchSynthesizer = AgentLocalPatchSynthesizer(patchStore)
 ) {
     fun run(
         activeProviderName: String,
@@ -41,8 +44,8 @@ class AgentRunService(
         hooks.checkpoint(AgentQueueCheckpoint.PREFLIGHT_PASSED, null, "smoke preflight passed")
 
         val startedAt = Instant.now()
-        val baselineStatus = captureRepoStatus()
-        val sourceEvidence = resolveSourceEvidence(task)
+        val baselineStatus = repoStatus.capture()
+        val sourceEvidence = sourceResolver.resolveSourceEvidence(task)
         var job = jobStore.createJob(task = task, provider = activeProviderName)
         job = persist(job.copy(status = AgentJobStatus.PLANNING, updatedAt = startedAt))
         hooks.checkpoint(AgentQueueCheckpoint.CLAIMED, job, "job record created")
@@ -68,7 +71,7 @@ class AgentRunService(
             val patchTask = buildPatchTask(task, planResult.answerText)
             val providerPatchResult = agentService.patch(activeProviderName, patchTask)
             val patchResult = providerPatchResult.takeIf { it.patchId != null && it.checkResult?.passed != false }
-                ?: synthesizeLocalPatch(task)
+                ?: localPatchSynthesizer.synthesize(task)
                 ?: providerPatchResult
             val patchAt = Instant.now()
             job = persist(
@@ -273,7 +276,7 @@ class AgentRunService(
             status = AgentJobStatus.REFUSED,
             provider = "none"
         )
-        val sourceEvidence = resolveSourceEvidence(task)
+        val sourceEvidence = sourceResolver.resolveSourceEvidence(task)
         val refused = persist(
             created.copy(
                 status = AgentJobStatus.REFUSED,
@@ -287,12 +290,12 @@ class AgentRunService(
                 smokeResult = smokeExecution.summary(),
                 sourceEvidence = sourceEvidence.provenanceOrNull,
                 impactedSymbols = emptyList(),
-                finalReport = buildFinalReport(refusedForReport, task, smokeCommand, smokeExecution, emptyList(), sourceEvidence, emptyList()),
+                finalReport = reporter.buildFinalReport(refusedForReport, task, smokeCommand, smokeExecution, emptyList(), sourceEvidence, emptyList()),
                 commitProposal = null,
-                nextSuggestedCommand = buildSafeSmokeCommandSuggestion(task)
+                nextSuggestedCommand = reporter.buildSafeSmokeCommandSuggestion(task)
             )
         )
-        rememberFinalOutcome(refused, emptyList(), sourceEvidence, emptyList())
+        outcomeMemory.rememberFinalOutcome(refused, emptyList(), sourceEvidence, emptyList())
 
         val contextPath = contextExporter.write(refused, emptyList())
         return persist(refused.copy(contextExportPath = contextPath.toString()))
@@ -306,8 +309,8 @@ class AgentRunService(
         baselineStatus: Set<String>,
         sourceEvidence: SourceEvidence
     ): AgentJobRecord {
-        val changedFiles = changedFilesSince(baselineStatus)
-        val impactedSymbols = impactedSymbolEvidence(changedFiles)
+        val changedFiles = repoStatus.changedFilesSince(baselineStatus)
+        val impactedSymbols = sourceResolver.impactedSymbolEvidence(changedFiles)
         val smokeRequested = smokeCommand?.trim()?.takeIf { it.isNotBlank() }
         val smokeSummary = when {
             smokeExecution != null -> smokeExecution.summary()
@@ -326,12 +329,12 @@ class AgentRunService(
                 smokeResult = smokeSummary ?: job.smokeResult,
                 sourceEvidence = sourceEvidence.provenanceOrNull,
                 impactedSymbols = impactedSymbols,
-                finalReport = buildFinalReport(job, task, smokeRequested, smokeExecution, changedFiles, sourceEvidence, impactedSymbols),
-                commitProposal = buildCommitProposal(task, smokeRequested, changedFiles, smokeExecution),
-                nextSuggestedCommand = buildNextSuggestedCommand(task, smokeRequested, changedFiles, job, smokeExecution)
+                finalReport = reporter.buildFinalReport(job, task, smokeRequested, smokeExecution, changedFiles, sourceEvidence, impactedSymbols),
+                commitProposal = reporter.buildCommitProposal(task, smokeRequested, changedFiles, smokeExecution),
+                nextSuggestedCommand = reporter.buildNextSuggestedCommand(task, smokeRequested, changedFiles, job, smokeExecution)
             )
         )
-        rememberFinalOutcome(finalRecord, changedFiles, sourceEvidence, impactedSymbols)
+        outcomeMemory.rememberFinalOutcome(finalRecord, changedFiles, sourceEvidence, impactedSymbols)
 
         val contextPath = contextExporter.write(finalRecord, changedFiles)
         return persist(finalRecord.copy(contextExportPath = contextPath.toString()))
@@ -366,137 +369,6 @@ class AgentRunService(
     private fun persist(record: AgentJobRecord): AgentJobRecord =
         jobStore.update(record)
 
-    private fun buildFinalReport(
-        job: AgentJobRecord,
-        task: String,
-        smokeCommand: String?,
-        smokeExecution: AgentSmokeExecutionResult?,
-        changedFiles: List<String>,
-        sourceEvidence: SourceEvidence,
-        impactedSymbols: List<String>
-    ): String = buildString {
-        appendLine("status: ${renderFinalStatus(job.status)}")
-        appendLine("task: ${compactTask(task)}")
-        appendLine("provider: ${job.provider}")
-        appendLine("patch: ${job.appliedPatchId ?: job.patchId ?: "none"}")
-        appendLine("verification: ${job.verificationId ?: "none"}")
-        appendLine("smoke: ${smokeExecution?.summary()?.let(redactionFilter::redact) ?: smokeCommand?.let { "not run" } ?: "not requested"}")
-        appendLine("source: ${sourceEvidence.describe(redactionFilter::redact)}")
-        appendLine("impacted symbols: ${impactedSymbols.joinToString(", ") { redactionFilter.redact(it) }.ifBlank { "none" }}")
-        appendLine("changed files: ${changedFiles.joinToString(", ") { redactionFilter.redact(it) }.ifBlank { "none" }}")
-    }.trimEnd()
-
-    private fun buildCommitProposal(
-        task: String,
-        smokeCommand: String?,
-        changedFiles: List<String>,
-        smokeExecution: AgentSmokeExecutionResult?
-    ): String = buildString {
-        appendLine("files to stage:")
-        if (changedFiles.isEmpty()) {
-            appendLine("  none")
-        } else {
-            changedFiles.forEach { path -> appendLine("  - ${redactionFilter.redact(path)}") }
-        }
-        appendLine("suggested commit message:")
-        appendLine("  ${buildCommitMessage(task, smokeCommand, smokeExecution)}")
-    }.trimEnd()
-
-    private fun buildCommitMessage(
-        task: String,
-        smokeCommand: String?,
-        smokeExecution: AgentSmokeExecutionResult?
-    ): String {
-        val core = compactTask(task, 60)
-        val smokeSuffix = when {
-            smokeExecution?.passed == true -> " smoke"
-            smokeExecution != null -> " smoke-failed"
-            smokeCommand != null -> " smoke-pending"
-            else -> ""
-        }
-        return "ATROPOS pass 11: $core$smokeSuffix".trim()
-    }
-
-    private fun buildNextSuggestedCommand(
-        task: String,
-        smokeCommand: String?,
-        changedFiles: List<String>,
-        job: AgentJobRecord,
-        smokeExecution: AgentSmokeExecutionResult?
-    ): String {
-        return when {
-            smokeExecution != null && !smokeExecution.passed ->
-                smokeCommand?.takeIf { it.isNotBlank() }?.let { "review smoke failure, then rerun /agent run --smoke \"${escapeQuotes(redactionFilter.redact(it))}\" ${compactTask(task, 48)}" }
-                    ?: "review smoke failure, then rerun /agent run"
-            job.status == AgentJobStatus.COMPLETED && changedFiles.isNotEmpty() -> {
-                val commitMessage = buildCommitMessage(task, smokeCommand, smokeExecution)
-                "git add ${changedFiles.joinToString(" ") { redactionFilter.redact(it) }} && git commit -m \"${escapeQuotes(commitMessage)}\""
-            }
-            job.status == AgentJobStatus.COMPLETED -> "git status --short"
-            job.status == AgentJobStatus.FAILED -> "/agent repair ${job.patchId ?: "latest"}"
-            else -> "/agent job ${job.id}"
-        }
-    }
-
-    private fun changedFilesSince(baseline: Set<String>): List<String> {
-        val current = captureRepoStatus()
-        return (current - baseline)
-            .filter { isStageableChange(it) }
-            .sorted()
-    }
-
-    private fun captureRepoStatus(): Set<String> {
-        val process = ProcessBuilder("git", "status", "--porcelain", "--untracked-files=all")
-            .directory(collector.repoRoot.toFile())
-            .redirectErrorStream(true)
-            .start()
-        val output = process.inputStream.bufferedReader().readText().trimEnd()
-        process.waitFor()
-        return output.lineSequence()
-            .mapNotNull { parsePorcelainPath(it) }
-            .toSet()
-    }
-
-    private fun parsePorcelainPath(line: String): String? {
-        if (line.length < 4) return null
-        val path = line.substring(3).trim()
-        if (path.isBlank()) return null
-        return path.substringAfter(" -> ", path)
-    }
-
-    private fun isStageableChange(path: String): Boolean {
-        val normalized = path.replace('\\', '/')
-        val name = normalized.substringAfterLast('/')
-        if (normalized.startsWith(".atropos/") || normalized == ".atropos") return false
-        if (normalized.startsWith(".gradle/") || normalized == ".gradle") return false
-        if (normalized.startsWith("build/") || normalized == "build") return false
-        if (name.endsWith(".jar") || name.endsWith(".class")) return false
-        if (name.endsWith(".png") || name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".gif") || name.endsWith(".zip")) return false
-        if (normalized == ".env" || normalized.startsWith(".env.")) return false
-        if (name.contains("token", ignoreCase = true)) return false
-        if (name.contains("secret", ignoreCase = true)) return false
-        if (name.contains("credential", ignoreCase = true)) return false
-        return true
-    }
-
-    private fun compactTask(task: String, maxChars: Int = 80): String {
-        val collapsed = redactionFilter.redact(task).replace(Regex("\\s+"), " ").trim()
-        if (collapsed.length <= maxChars) return collapsed
-        return collapsed.take(maxChars - 3) + "..."
-    }
-
-    private fun escapeQuotes(text: String): String = text.replace("\"", "\\\"")
-
-    private fun renderFinalStatus(status: AgentJobStatus): String = when (status) {
-        AgentJobStatus.COMPLETED -> "passed"
-        AgentJobStatus.FAILED -> "failed"
-        AgentJobStatus.REFUSED -> "refused"
-        AgentJobStatus.PLANNING,
-        AgentJobStatus.PATCHING,
-        AgentJobStatus.APPLYING,
-        AgentJobStatus.REPAIRING -> status.name.lowercase()
-    }
-
     private fun buildPlanPrompt(task: String): String = buildString {
         appendLine("Create a short implementation plan for this ATROPOS job.")
         appendLine("Return reasoning only, no diff.")
@@ -521,131 +393,6 @@ class AgentRunService(
         verificationId?.let { append(" verification=$it") }
     }
 
-    private data class LocalPatchRequest(
-        val path: String,
-        val content: String
-    )
-
-    /**
-     * Traces a task to its authoritative source section.
-     *
-     * Resolution goes through [HigZeroGuard], so a failure arrives as a typed
-     * [DloiLookupResult.NoMatch] carrying its reason rather than as an exception
-     * this method would have to swallow. The reason is kept: it used to be
-     * dropped, and the run then reported bare `unresolved`, which reads exactly
-     * like a task that needed no source at all.
-     */
-    private fun resolveSourceEvidence(task: String): SourceEvidence =
-        when (val result = higZeroGuard.resolveTask(task)) {
-            is DloiLookupResult.Resolved -> {
-                val provenance = result.resolution.provenance
-                memoryStore.rememberSourceDecision(
-                    subjectId = provenance,
-                    title = "agent source resolution",
-                    body = "task=${task.trim()}\nprovenance=$provenance",
-                    tags = listOf("agent", "source", "dloi")
-                )
-                SourceEvidence.Resolved(provenance)
-            }
-
-            is DloiLookupResult.NoMatch -> {
-                memoryStore.rememberSourceDecision(
-                    subjectId = "unresolved",
-                    title = "agent source unresolved",
-                    body = "task=${task.trim()}\nreason=${result.reason}",
-                    tags = listOf("agent", "source", "dloi", "unresolved")
-                )
-                SourceEvidence.Unresolved(result.reason)
-            }
-        }
-
-    private fun impactedSymbolEvidence(changedFiles: List<String>): List<String> =
-        runCatching {
-            astSymbolGraph.impactedByPaths(changedFiles)
-                .filter { it.kind != AstSymbolKind.FILE }
-                .map { "${collector.repoRoot.relativize(it.file)}:${it.qualifiedName}" }
-                .distinct()
-                .sorted()
-                .take(20)
-        }.getOrDefault(emptyList())
-
-    private fun rememberFinalOutcome(
-        record: AgentJobRecord,
-        changedFiles: List<String>,
-        sourceEvidence: SourceEvidence,
-        impactedSymbols: List<String>
-    ) {
-        memoryStore.rememberJob(
-            subjectId = record.id,
-            title = "agent job finalized",
-            body = buildString {
-                appendLine("status=${record.status}")
-                appendLine("provider=${record.provider}")
-                appendLine("patch=${record.appliedPatchId ?: record.patchId ?: "none"}")
-                appendLine("verification=${record.verificationId ?: "none"}")
-                appendLine("smoke=${record.smokeResult ?: "none"}")
-                appendLine("source=${sourceEvidence.describe()}")
-                appendLine("impacted=${impactedSymbols.joinToString(", ").ifBlank { "none" }}")
-                appendLine("changed=${changedFiles.joinToString(", ").ifBlank { "none" }}")
-                appendLine("failure=${record.failureReason ?: "none"}")
-            }.trimEnd(),
-            tags = listOf("agent", "job", record.status.name.lowercase())
-        )
-    }
-
-    private fun synthesizeLocalPatch(task: String): AgentPatchRunResult? {
-        val request = parseLocalCreateTask(task) ?: return null
-        val diff = buildCreateFileDiff(request.path, request.content)
-        val normalizedDiff = patchStore.normalizeProviderDiff(diff)
-        val record = patchStore.createRecord(
-            provider = "local_fallback",
-            task = task,
-            contextBytes = 0,
-            diff = normalizedDiff
-        )
-        val check = patchStore.runGitApplyCheck(record.diffFile)
-        patchStore.writeMeta(record, check)
-
-        return AgentPatchRunResult(
-            providerName = "local_fallback",
-            contextByteCount = 0,
-            diffByteCount = record.diffBytes,
-            patchId = record.id,
-            patchPath = record.diffFile,
-            checkResult = check,
-            failureSummary = if (check.passed) null else "local fallback patch did not pass git apply --check",
-            message = if (check.passed) null else "local fallback patch failed validation"
-        )
-    }
-
-    private fun parseLocalCreateTask(task: String): LocalPatchRequest? {
-        val line = task.lineSequence().firstOrNull()?.trim().orEmpty()
-        if (line.isBlank()) return null
-
-        val match = Regex(
-            """(?i)^create\s+(.+?)\s+containing\s+exactly\s+one\s+line:\s*(.+)$"""
-        ).find(line) ?: return null
-        val path = match.groupValues.getOrNull(1)?.trim().orEmpty()
-        val content = match.groupValues.getOrNull(2)?.trim().orEmpty()
-        if (path.isBlank() || content.isBlank()) return null
-        if (path.contains("..") || path.startsWith("/") || path.startsWith("\\")) return null
-        return LocalPatchRequest(path = path, content = content)
-    }
-
-    private fun buildCreateFileDiff(path: String, content: String): String {
-        val lines = content.replace("\r\n", "\n").replace('\r', '\n').lineSequence().toList()
-        val safeLines = if (lines.isEmpty()) listOf("") else lines
-        return buildString {
-            appendLine("--- /dev/null")
-            appendLine("+++ b/$path")
-            appendLine("@@ -0,0 +1,${safeLines.size} @@")
-            safeLines.forEach { line -> appendLine("+$line") }
-        }.trimEnd() + "\n"
-    }
-
     private fun compactFailureSummary(message: String?): String =
         message?.trim()?.takeUnless { it.isBlank() }?.let { redactionFilter.compact(it, 240) } ?: "agent run failed"
-
-    private fun buildSafeSmokeCommandSuggestion(task: String): String =
-        "choose a safe smoke command, then rerun /agent run --smoke \"<safe smoke command>\" ${compactTask(task, 48)}"
 }

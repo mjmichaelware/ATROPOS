@@ -111,6 +111,7 @@ class IsolatedWorktreeService(
 
     fun applyPatch(worktreeId: String, patchContent: String): Boolean {
         val record = readRecord(worktreeId) ?: return false
+        if (!patchInsideTerritory(record, patchContent)) return false
         return runCatching {
             val proc = ProcessBuilder("sh", "-c", "git apply")
                 .directory(record.worktreePath.toFile())
@@ -198,6 +199,11 @@ class IsolatedWorktreeService(
             diffProc.waitFor()
 
             if (diff.isNotBlank()) {
+                val changed = extractPatchPaths(diff)
+                val outside = firstOutsideTerritory(record, changed)
+                if (outside != null) {
+                    return WorktreeRollbackResult(false, "territory violation before merge: $outside")
+                }
                 val applyProc = ProcessBuilder("sh", "-c", "git apply")
                     .directory(repoRoot.toFile())
                     .redirectErrorStream(true)
@@ -249,6 +255,35 @@ class IsolatedWorktreeService(
     }
 
     fun readWorktree(worktreeId: String): WorktreeRecord? = readRecord(worktreeId)
+
+    private fun patchInsideTerritory(record: WorktreeRecord, patchContent: String): Boolean {
+        val paths = extractPatchPaths(patchContent)
+        return firstOutsideTerritory(record, paths) == null
+    }
+
+    private fun firstOutsideTerritory(record: WorktreeRecord, paths: List<String>): String? {
+        if (paths.isEmpty()) return null
+        if (record.territory.isEmpty()) return paths.first()
+        return paths.firstOrNull { path ->
+            record.territory.none { territory ->
+                path == territory || path.startsWith(territory.trimEnd('/') + "/")
+            }
+        }
+    }
+
+    private fun extractPatchPaths(patchContent: String): List<String> =
+        patchContent.lineSequence()
+            .mapNotNull { line ->
+                when {
+                    line.startsWith("+++ b/") -> line.removePrefix("+++ b/")
+                    line.startsWith("--- a/") -> line.removePrefix("--- a/")
+                    line.startsWith("diff --git ") -> line.substringAfter(" b/", missingDelimiterValue = "")
+                    else -> ""
+                }.takeIf { it.isNotBlank() && it != "/dev/null" }
+            }
+            .map { it.trim() }
+            .distinct()
+            .toList()
 
     private fun readRecord(worktreeId: String): WorktreeRecord? {
         val id = worktreeId.trim().removeSuffix(".meta")

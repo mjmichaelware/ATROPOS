@@ -110,12 +110,13 @@ class AgentCommand(
             lower == "what are you" || lower == "tell me about yourself"
         ) {
             val snapshot = service.status(activeProviderName())
-            val goals = continuationService.listRuns(10).runs
+            val goals = continuationService.listRuns(Int.MAX_VALUE).runs
+            val selfHostGoals = goals.filter { it.provider == "self-host" }
             val sessions = sessionStore.listSessions()
             val activeSessions = sessions.count { it.state == SupervisedSessionState.IDLE || it.state == SupervisedSessionState.BUSY }
 
             return buildString {
-                appendLine("I am ATROPOS — a local-first autonomous software engineering engine.")
+                appendLine("ATROPOS runtime state")
                 appendLine()
                 appendLine("Repository: ${repoRoot.fileName}")
                 appendLine("Repository root: $repoRoot")
@@ -124,9 +125,13 @@ class AgentCommand(
                 appendLine("Patch provider order: ${snapshot.patchProviderOrder.joinToString(" -> ").ifBlank { "none" }}")
                 appendLine("Last patch: ${snapshot.lastPatchId ?: "none"}")
                 appendLine("Owns repo read/write: ${if (snapshot.ownsRepoReadWrite) "yes" else "no"}")
+                appendLine("Self-host goals: ${selfHostGoals.size}")
+                selfHostGoals.firstOrNull()?.let { goal ->
+                    appendLine("Self-host current: ${goal.id} ${goal.status} phase=${goal.activePhase ?: "none"} node=${goal.currentNodeId ?: "none"}")
+                }
                 appendLine()
                 if (goals.isNotEmpty()) {
-                    appendLine("Active goals: ${goals.size}")
+                    appendLine("Recent goal runs: ${goals.size}")
                     goals.take(3).forEach { goal: atropos.core.agent.GoalRunRecord ->
                         appendLine("  ${goal.id}: ${goal.status} (phase ${goal.activePhase ?: "?"})")
                     }

@@ -16,8 +16,11 @@ def render_markdown_pdf(markdown: str) -> bytes:
     # anything this function actually uses. A module-level import here
     # would force every caller of this module to pay for that import even
     # when never rendering a PDF.
-    from fpdf import FPDF
-    from fpdf.enums import XPos, YPos
+    try:
+        from fpdf import FPDF
+        from fpdf.enums import XPos, YPos
+    except ModuleNotFoundError:
+        return _render_minimal_pdf(markdown)
 
     # fpdf2's core fonts (Helvetica/Times/Courier) only cover
     # Latin-1/WinAnsi - no Unicode TTF is bundled with this app, so source
@@ -64,3 +67,69 @@ def render_markdown_pdf(markdown: str) -> bytes:
             pdf.multi_cell(0, 6, safe_line, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
 
     return bytes(pdf.output())
+
+
+def _render_minimal_pdf(markdown: str) -> bytes:
+    plain = markdown_to_plain_text(markdown)
+    lines = [
+        _pdf_escape(line[:100])
+        for line in plain.splitlines()[:90]
+    ]
+    stream_lines = [
+        "BT",
+        "/F1 10 Tf",
+        "50 800 Td",
+        "14 TL",
+    ]
+    for index, line in enumerate(lines):
+        if index > 0:
+            stream_lines.append("T*")
+        stream_lines.append(f"({line}) Tj")
+    stream_lines.append("ET")
+    stream = "\n".join(stream_lines).encode("latin-1")
+    objects = [
+        b"<< /Type /Catalog /Pages 2 0 R >>",
+        b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        (
+            b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] "
+            b"/Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>"
+        ),
+        b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+        (
+            f"<< /Length {len(stream)} >>\nstream\n".encode("ascii")
+            + stream
+            + b"\nendstream"
+        ),
+    ]
+    output = bytearray(b"%PDF-1.4\n")
+    offsets = [0]
+    for number, obj in enumerate(objects, start=1):
+        offsets.append(len(output))
+        output.extend(f"{number} 0 obj\n".encode("ascii"))
+        output.extend(obj)
+        output.extend(b"\nendobj\n")
+    xref_offset = len(output)
+    output.extend(f"xref\n0 {len(objects) + 1}\n".encode("ascii"))
+    output.extend(b"0000000000 65535 f \n")
+    for offset in offsets[1:]:
+        output.extend(f"{offset:010d} 00000 n \n".encode("ascii"))
+    output.extend(
+        (
+            "trailer\n"
+            f"<< /Size {len(objects) + 1} /Root 1 0 R >>\n"
+            "startxref\n"
+            f"{xref_offset}\n"
+            "%%EOF\n"
+        ).encode("ascii")
+    )
+    return bytes(output)
+
+
+def _pdf_escape(value: str) -> str:
+    return (
+        value.replace("\\", "\\\\")
+        .replace("(", "\\(")
+        .replace(")", "\\)")
+        .encode("latin-1", errors="replace")
+        .decode("latin-1")
+    )

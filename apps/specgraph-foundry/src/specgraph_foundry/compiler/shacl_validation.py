@@ -1,5 +1,6 @@
 from typing import List, Dict, Any, Optional, Set, Tuple
 from hashlib import sha256
+from abc import ABC, abstractmethod
 
 
 SHACL_VERSION = "specgraph-shacl-v1"
@@ -27,7 +28,7 @@ class ShapeViolation:
         }
 
 
-class Shape:
+class Shape(ABC):
     def __init__(self, shape_id: str, description: str,
                  node_type: str, version: str = SHACL_VERSION):
         self.shape_id = shape_id
@@ -35,8 +36,9 @@ class Shape:
         self.node_type = node_type
         self.version = version
 
+    @abstractmethod
     def validate(self, node: Dict[str, Any]) -> List[ShapeViolation]:
-        raise NotImplementedError
+        return []
 
 
 class RequirementShape(Shape):

@@ -22,6 +22,8 @@ class HrRouterServiceTest {
             InformationKind.MEMORY_QUERY, "what is the API token for groq?")
         assertTrue(resp.approved)
         assertEquals(CrossBoundaryRisk.HIGH, resp.risk)
+        assertEquals(HrRouteAction.NARROWED, resp.action)
+        assertTrue(resp.redactedContent?.contains("token") != true)
     }
 
     @Test
@@ -32,6 +34,25 @@ class HrRouterServiceTest {
             paths = listOf(".env.production"))
         assertFalse(resp.approved)
         assertEquals(CrossBoundaryRisk.CRITICAL, resp.risk)
+        assertEquals(HrRouteAction.DENIED, resp.action)
+    }
+
+    @Test
+    fun mediumRiskConfigurationEscalatesToHumanOwner() {
+        val svc = HrRouterService()
+        val resp = svc.request(
+            "agent-a",
+            "terr-1",
+            "agent-b",
+            "terr-2",
+            InformationKind.CONFIGURATION,
+            "need routing config only"
+        )
+
+        assertFalse(resp.approved)
+        assertEquals(CrossBoundaryRisk.MEDIUM, resp.risk)
+        assertEquals(HrRouteAction.ESCALATED, resp.action)
+        assertTrue(resp.reason.contains("Human Owner"))
     }
 
     @Test
@@ -42,5 +63,6 @@ class HrRouterServiceTest {
             paths = listOf(".env.production"))
         assertEquals(2, svc.auditLog().size)
         assertEquals(1, svc.auditLog().count { it.approved })
+        assertTrue(svc.auditLog().all { it.action in HrRouteAction.entries })
     }
 }

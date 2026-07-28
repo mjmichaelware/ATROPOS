@@ -1,0 +1,24 @@
+requirement	surface	capability	current_state	current_paths	gap	target	acceptance
+HOE-0001	CLI_TUI	Six continuous answers	PARTIAL	src/main/kotlin/atropos/cli/ui	MISSING_COMPOSITION	Objective, activity, reason, progress, next action, evidence visible together	Focused renderer tests at 40/80/120/160 columns
+HOE-0001	WEB	Six continuous answers	ABSENT	apps/atropos-web	MISSING	Home and Project views answer all six questions	Component tests and browser route proof
+HOE-0002	CLI_TUI	Primary navigation spine	PARTIAL	src/main/kotlin/atropos/cli/CommandRouter.kt;src/main/kotlin/atropos/cli/ui	MISSING_PROJECT_IA	Home, Projects, Work, Conversations, Files, Agents, Models, Automation, History, Settings, Developer Tools	Command registry and snapshot proof
+HOE-0002	WEB	Primary navigation spine	ABSENT	apps/atropos-web	MISSING	ATROPOS-owned navigation independent of SpecGraph	Route registry tests
+HOE-0003	ALL	Project durable boundary	PARTIAL	src/main/kotlin/atropos/core	MISSING_PRESENTATION_PROJECT_MODEL	Shared project presentation contract	Restart and projection tests
+HOE-0004	CLI_TUI	Status vocabulary	PARTIAL	src/main/kotlin/atropos/cli/ui/design/RunState.kt	DRIFT_AUDIT_REQUIRED	User-progress vocabulary with non-color semantics	Status mapping tests
+HOE-0004	WEB	Status vocabulary	ABSENT	apps/atropos-web	MISSING	Shared status presentation	Accessible component tests
+HOE-0005	ALL	Evidence affordance	PARTIAL	src/main/kotlin/atropos/cli/ui/VerificationRenderer.kt	MISSING_GLOBAL_LINKAGE	Every completion claim links to evidence	Completion rendering tests
+HOE-0006	ALL	Why How Evidence actions	ABSENT		MISSING	Typed explainability actions	Command and component tests
+HOE-0007	CLI_TUI	Command palette	PARTIAL	src/main/kotlin/atropos/cli/ui/CommandPaletteRenderer.kt	MISSING_COMPLETE_ACTION_COVERAGE	Every primary action reachable	Registry parity test
+HOE-0007	WEB	Command palette	ABSENT	apps/atropos-web	MISSING	Every primary action reachable	Keyboard component tests
+HOE-0008	ALL	Progressive disclosure	PARTIAL	src/main/kotlin/atropos/cli/ui	MISSING_CANONICAL_LEVELS	Simple, Professional, Engineering, Internal	Projection tests
+HOE-0009	ALL	Workspace persistence	PARTIAL	src/main/kotlin/atropos/core/recovery	MISSING_UI_STATE_PROJECTION	Restore view state without replacing runtime authority	Recovery tests
+HOE-0010	ALL	Recovery report	PARTIAL	src/main/kotlin/atropos/core/recovery/RuntimeContinuitySupervisor.kt	MISSING_PRIMARY_SURFACE	User sees restored work and attention items	Focused recovery presentation tests
+HOE-0011	ALL	First-class terminals	PARTIAL	src/main/kotlin/atropos/cli	MISSING_PROJECT_LINKAGE	Terminal linked to project, workflow, agent, evidence	Typed terminal session tests
+HOE-0012	ALL	Actionable notifications	PARTIAL	src/main/kotlin/atropos/cli/ui/ToastRenderer.kt	MISSING_NOTIFICATION_MODEL	Categorized persistent actionable notifications	Notification tests
+HOE-0013	ALL	Project trust indicators	PARTIAL	src/main/kotlin/atropos/cli/ui	MISSING_UNIFIED_TRUST_PROJECTION	Authority, evidence, policy, checkpoint, recovery, silent-failure state	Trust projection tests
+HOE-0014	ALL	Developer Tools	PARTIAL	apps/specgraph-foundry/apps/web	MISSING_ATROPOS_CONTAINER	SpecGraph and inspectors mounted as secondary tools	Route and ownership tests
+HOE-0015	WEB	Session and tab model	ABSENT	apps/atropos-web	MISSING	ATROPOS local-first sessions and project tabs	State restoration tests
+HOE-0017	ALL	Secret-safe rendering	PARTIAL	src/main/kotlin/atropos/core/security	AUDIT_REQUIRED	No secret values in ordinary surfaces	Redaction tests
+HOE-0018	ALL	Delta register	PARTIAL	docs/ui-parity/phase0/HOE_DELTA_REGISTER.tsv	IN_PROGRESS	Re-auditable path-fingerprinted register	Inventory script proof
+HOE-0019	ALL	Accessibility	PARTIAL	src/main/kotlin/atropos/cli/ui;apps/specgraph-foundry/apps/web	MISSING_ATROPOS_WEB_PROOF	Keyboard, contrast, motion, labels, non-color status	Focused surface tests
+HOE-0020	ALL	SpecGraph remains secondary	PARTIAL	docs/ui-parity/phase0/WEB_MERGE_ARCHITECTURE.md	IN_PROGRESS	SpecGraph mounted under Developer Tools	Ownership and route tests

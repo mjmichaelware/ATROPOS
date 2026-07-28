@@ -265,6 +265,14 @@ class DurableArtifactTest(unittest.TestCase):
             len(self.transport.objects),
             manifest["artifact_count"],
         )
+        self.assertTrue(
+            any(
+                path.endswith(
+                    "/export_proof_summary.json"
+                )
+                for path in self.transport.objects
+            )
+        )
         for path in self.transport.objects:
             self.assertTrue(
                 path.startswith(f"{self.principal.user_id}/{self.project_id}/")
@@ -404,6 +412,14 @@ class DurableArtifactTest(unittest.TestCase):
         self.assertIn(
             "signed_download_url",
             response.body["artifacts"][0],
+        )
+        artifact_names = {
+            artifact["name"]
+            for artifact in response.body["artifacts"]
+        }
+        self.assertIn(
+            "export_proof_summary.json",
+            artifact_names,
         )
         with self.database.connect() as connection:
             raw = "\n".join(

@@ -76,6 +76,18 @@ class AutonomousBacklogService(
         persistTasks()
     }
 
+    fun skip(taskId: String, reason: String) {
+        val idx = tasks.indexOfFirst { it.id == taskId }
+        if (idx >= 0) {
+            tasks[idx] = tasks[idx].copy(
+                state = AutonomousTaskState.SKIPPED,
+                completedAt = Instant.now(),
+                result = reason
+            )
+            persistTasks()
+        }
+    }
+
     fun markEligible(taskId: String) {
         val idx = tasks.indexOfFirst { it.id == taskId }
         if (idx >= 0 && tasks[idx].state == AutonomousTaskState.PENDING) {

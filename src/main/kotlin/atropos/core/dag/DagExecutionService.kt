@@ -1,15 +1,15 @@
 package atropos.core.dag
 
 import atropos.core.AtroposConfig
+import atropos.core.agent.AgentContextCollector
 import atropos.core.agent.AgentQueueService
-import atropos.core.agent.AgentRunService
+import atropos.core.agent.AgentService
 import atropos.core.agent.GoalContinuationService
 import atropos.core.memory.LocalMemoryStore
-import atropos.core.planning.ExecutionEvidence
 import atropos.core.planning.InternalBatchDefiner
-import atropos.core.planning.InternalPlanningGraphPlugin
 import atropos.core.planning.NodeResult
 import atropos.core.planning.PlanningGraphPlugin
+import atropos.core.planning.PlanningGraphPluginRegistry
 import atropos.core.planning.Territory
 import atropos.core.policy.ActionActor
 import atropos.core.territory.GrantResult
@@ -26,7 +26,7 @@ class DagExecutionService(
     private val repoRoot: Path = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize(),
     private val store: DagStore = DagStore(repoRoot),
     private val queueService: AgentQueueService = AgentQueueService(config),
-    private val runService: AgentRunService = AgentRunService(config),
+    private val agentService: AgentService = AgentService(config, collector = AgentContextCollector(repoRoot = repoRoot)),
     private val continuationService: GoalContinuationService = GoalContinuationService(repoRoot),
     private val credentialGuard: atropos.core.security.CredentialDiffGuard =
         atropos.core.security.CredentialDiffGuard(),
@@ -35,9 +35,15 @@ class DagExecutionService(
     private val agencyGate: BoundedAgencyGate = BoundedAgencyGate(ExecutionPolicyEngine(repoRoot), territoryGrants),
     private val memoryStore: LocalMemoryStore = LocalMemoryStore(repoRoot.resolve(".atropos/memory").toFile()),
     private val batchDefiner: InternalBatchDefiner = InternalBatchDefiner(),
-    private val planningGraph: PlanningGraphPlugin = InternalPlanningGraphPlugin(repoRoot, store),
+    private val planningGraph: PlanningGraphPlugin = PlanningGraphPluginRegistry(
+        fallback = PlanningGraphPluginRegistry.internalFallback(repoRoot, store)
+    ).resolve().plugin,
     private val clock: () -> Instant = { Instant.now() }
 ) {
+    private val finisher = DagNodeFinisher(planningGraph)
+    private val shellExecutor = DagNodeShellExecutor(repoRoot, store, finisher, ::territoryViolation, ::extractCandidatePaths)
+    private val providerNodeExecutor = DagProviderNodeExecutor(agentService, memoryStore, finisher)
+
     fun createDag(label: String, nodes: List<DagNode>, projectId: String? = null): DagDefinition {
         val dag = store.createDag(label, nodes, projectId)
         memoryStore.rememberDetailed(
@@ -88,6 +94,25 @@ class DagExecutionService(
         }
     }
 
+    fun evaluateNode(dagId: String, nodeId: String): DagNodeExecutionResult {
+        val dag = store.readDag(dagId) ?: return DagNodeExecutionResult(nodeId, DagNodeState.FAILED, false, "DAG not found: $dagId")
+        if (dag.findNode(nodeId) == null) {
+            return DagNodeExecutionResult(nodeId, DagNodeState.FAILED, false, "node not found in DAG $dagId: $nodeId")
+        }
+        val locked = store.tryLock() ?: return DagNodeExecutionResult(nodeId, DagNodeState.BLOCKED, false, "DAG lock held by another instance")
+
+        return locked.use {
+            val latestDag = store.readDag(dagId) ?: return@use DagNodeExecutionResult(nodeId, DagNodeState.FAILED, false, "DAG vanished during node execution")
+            val node = latestDag.findNode(nodeId)
+                ?: return@use DagNodeExecutionResult(nodeId, DagNodeState.FAILED, false, "node vanished during execution: $nodeId")
+            val ready = latestDag.findReadyNodes().map { it.id }.toSet()
+            if (node.id !in ready) {
+                return@use DagNodeExecutionResult(node.id, node.state, false, "node is not ready: ${node.state}")
+            }
+            executeNode(node, latestDag)
+        }
+    }
+
     private fun executeNode(node: DagNode, dag: DagDefinition): DagNodeExecutionResult {
         if (node.state != DagNodeState.READY && node.state != DagNodeState.PENDING) {
             return DagNodeExecutionResult(node.id, node.state, false, "node already in state ${node.state}")
@@ -122,7 +147,7 @@ class DagExecutionService(
             // would otherwise execute unbounded.
             when (val grant = territoryGrants.grantToNode(ActionActor.HumanOwner, nodeActor, node.territory)) {
                 is GrantResult.Refused -> {
-                    completeNode(
+                    finisher.complete(
                         claimed,
                         NodeResult(
                             nodeId = claimed.id,
@@ -139,7 +164,7 @@ class DagExecutionService(
 
             val decision = agencyGate.evaluate(proposal)
             if (decision.disposition != AgencyDisposition.ALLOWED) {
-                completeNode(
+                finisher.complete(
                     claimed,
                     NodeResult(
                         nodeId = claimed.id,
@@ -175,19 +200,19 @@ class DagExecutionService(
         val running = store.writeNode(node.copy(state = DagNodeState.RUNNING))
         try {
             if (original.actionPayload.isNullOrBlank()) {
-                completeNode(running, NodeResult(original.id, false, "no action payload", DagNodeState.FAILED, failureReason = "no action payload"))
+                finisher.complete(running, NodeResult(original.id, false, "no action payload", DagNodeState.FAILED, failureReason = "no action payload"))
                 return DagNodeExecutionResult(original.id, DagNodeState.FAILED, false, "no action payload")
             }
 
             val parsed = parseFileMutation(original.actionPayload)
-                ?: return failNode(running, original, "unsupported file mutation payload")
+                ?: return finisher.fail(running, original, "unsupported file mutation payload")
             val territoryFailure = territoryViolation(original, listOf(parsed.path.toString()))
             if (territoryFailure != null) {
-                return failNode(running, original, territoryFailure)
+                return finisher.fail(running, original, territoryFailure)
             }
             parsed.path.parent?.let { java.nio.file.Files.createDirectories(it) }
             java.nio.file.Files.writeString(parsed.path, parsed.content + "\n")
-            completeNode(
+            finisher.complete(
                 running,
                 NodeResult(
                     nodeId = original.id,
@@ -200,101 +225,21 @@ class DagExecutionService(
             )
             return DagNodeExecutionResult(original.id, DagNodeState.COMPLETE, true, "file mutation applied", parsed.path.toString())
         } catch (e: Exception) {
-            return failNode(running, original, e.message ?: "file mutation failed")
+            return finisher.fail(running, original, e.message ?: "file mutation failed")
         }
     }
 
-    private fun executeRunCommand(node: DagNode, original: DagNode): DagNodeExecutionResult {
-        val running = store.writeNode(node.copy(state = DagNodeState.RUNNING))
-        try {
-            val command = original.actionPayload ?: "echo no command specified"
-            val territoryFailure = territoryViolation(original, extractCandidatePaths(command) + original.expectedOutputs)
-            if (territoryFailure != null) {
-                return failNode(running, original, territoryFailure)
-            }
-            val process = ProcessBuilder("sh", "-c", command)
-                .directory(repoRoot.toFile())
-                .redirectErrorStream(true)
-                .start()
-            val output = process.inputStream.bufferedReader().readText().trimEnd()
-            val exitCode = process.waitFor()
-            val success = exitCode == 0
-            val state = if (success) DagNodeState.COMPLETE else DagNodeState.FAILED
-            completeNode(
-                running,
-                NodeResult(
-                    nodeId = original.id,
-                    success = success,
-                    message = output.take(200),
-                    finalState = state,
-                    result = output.take(2000),
-                    failureReason = if (success) null else "exit code $exitCode"
-                ),
-                relatedPaths = extractCandidatePaths(command)
-            )
-            return DagNodeExecutionResult(original.id, state, success, output.take(200))
-        } catch (e: Exception) {
-            return failNode(running, original, e.message ?: "command failed")
-        }
-    }
+    private fun executeRunCommand(node: DagNode, original: DagNode): DagNodeExecutionResult =
+        shellExecutor.runCommand(node, original)
 
-    private fun executeBuildTest(node: DagNode, original: DagNode): DagNodeExecutionResult {
-        val running = store.writeNode(node.copy(state = DagNodeState.RUNNING))
-        try {
-            val command = original.actionPayload ?: "./gradlew test"
-            val process = ProcessBuilder("sh", "-c", command)
-                .directory(repoRoot.toFile())
-                .redirectErrorStream(true)
-                .start()
-            val output = process.inputStream.bufferedReader().readText().trimEnd()
-            val exitCode = process.waitFor()
-            val success = exitCode == 0
-            val state = if (success) DagNodeState.COMPLETE else DagNodeState.FAILED
-            completeNode(
-                running,
-                NodeResult(
-                    nodeId = original.id,
-                    success = success,
-                    message = output.take(200),
-                    finalState = state,
-                    result = output.take(2000),
-                    failureReason = if (success) null else "exit code $exitCode"
-                )
-            )
-            return DagNodeExecutionResult(original.id, state, success, output.take(200))
-        } catch (e: Exception) {
-            return failNode(running, original, e.message ?: "build/test failed")
-        }
-    }
 
-    private fun executeVerify(node: DagNode, original: DagNode): DagNodeExecutionResult {
-        val verifying = store.writeNode(node.copy(state = DagNodeState.VERIFYING))
-        try {
-            val command = original.actionPayload ?: "./gradlew test"
-            val process = ProcessBuilder("sh", "-c", command)
-                .directory(repoRoot.toFile())
-                .redirectErrorStream(true)
-                .start()
-            val output = process.inputStream.bufferedReader().readText().trimEnd()
-            val exitCode = process.waitFor()
-            val success = exitCode == 0
-            val state = if (success) DagNodeState.COMPLETE else DagNodeState.FAILED
-            completeNode(
-                verifying,
-                NodeResult(
-                    nodeId = original.id,
-                    success = success,
-                    message = if (success) "verification passed" else "verification failed",
-                    finalState = state,
-                    result = output.take(2000),
-                    failureReason = if (success) null else "verification failed"
-                )
-            )
-            return DagNodeExecutionResult(original.id, state, success, if (success) "verification passed" else "verification failed")
-        } catch (e: Exception) {
-            return failNode(verifying, original, e.message ?: "verify failed")
-        }
-    }
+    private fun executeBuildTest(node: DagNode, original: DagNode): DagNodeExecutionResult =
+        shellExecutor.buildTest(node, original)
+
+
+    private fun executeVerify(node: DagNode, original: DagNode): DagNodeExecutionResult =
+        shellExecutor.verify(node, original)
+
 
     private val checkEvaluator by lazy {
         DagNodeCheckEvaluator(repoRoot, agencyGate, territoryGrants, credentialGuard)
@@ -315,7 +260,7 @@ class DagExecutionService(
         )
 
         val state = if (outcome.passed) DagNodeState.COMPLETE else DagNodeState.FAILED
-        completeNode(
+        finisher.complete(
             running,
             NodeResult(
                 nodeId = original.id,
@@ -329,95 +274,13 @@ class DagExecutionService(
         return DagNodeExecutionResult(original.id, state, outcome.passed, outcome.detail)
     }
 
-    private fun executeGate(node: DagNode, original: DagNode): DagNodeExecutionResult {
-        val running = store.writeNode(node.copy(state = DagNodeState.RUNNING))
-        try {
-            val command = original.actionPayload ?: "./gradlew compileKotlin"
-            val process = ProcessBuilder("sh", "-c", command)
-                .directory(repoRoot.toFile())
-                .redirectErrorStream(true)
-                .start()
-            val output = process.inputStream.bufferedReader().readText().trimEnd()
-            val exitCode = process.waitFor()
-            val success = exitCode == 0
-            val state = if (success) DagNodeState.COMPLETE else DagNodeState.FAILED
-            completeNode(
-                running,
-                NodeResult(
-                    nodeId = original.id,
-                    success = success,
-                    message = if (success) "gate passed" else "gate failed",
-                    finalState = state,
-                    result = output.take(2000),
-                    failureReason = if (success) null else "gate failed: exit $exitCode"
-                )
-            )
-            return DagNodeExecutionResult(original.id, state, success, if (success) "gate passed" else "gate failed")
-        } catch (e: Exception) {
-            return failNode(running, original, e.message ?: "gate crashed")
-        }
-    }
+    private fun executeGate(node: DagNode, original: DagNode): DagNodeExecutionResult =
+        shellExecutor.gate(node, original)
 
-    private fun executeProviderCall(node: DagNode, original: DagNode): DagNodeExecutionResult {
-        val running = store.writeNode(node.copy(state = DagNodeState.RUNNING))
-        val task = original.actionPayload ?: original.label
 
-        return try {
-            // Execute the provider call through AgentRunService.
-            // Attestation verification already happens inside AgentService.ask()
-            // which is called by AgentRunService.run(). Context envelope injection
-            // happens inside AgentPromptContract which is used by AgentService.
-            val job = runService.run("groq", task, smokeCommand = null)
+    private fun executeProviderCall(node: DagNode, original: DagNode): DagNodeExecutionResult =
+        providerNodeExecutor.execute(node, original, store)
 
-            // Check the job result for failure
-            val childJobId = job.id
-            val hasFailure = job.failureReason != null || job.status == atropos.core.agent.AgentJobStatus.FAILED
-
-            if (hasFailure) {
-                memoryStore.rememberDetailed(
-                    kind = atropos.core.memory.MemoryKind.SESSION,
-                    title = "DAG provider call failed: ${original.id}",
-                    body = job.failureReason ?: "unknown failure",
-                    tags = listOf("dag", "provider", "failed"),
-                    subjectType = "dag_node",
-                    subjectId = original.id
-                )
-                completeNode(
-                    running.copy(childJobId = childJobId),
-                    NodeResult(
-                        nodeId = original.id,
-                        success = false,
-                        message = job.failureReason ?: "provider run failed",
-                        finalState = DagNodeState.FAILED,
-                        failureReason = job.failureReason ?: "provider run failed"
-                    )
-                )
-                DagNodeExecutionResult(original.id, DagNodeState.FAILED, false, job.failureReason ?: "provider run failed")
-            } else {
-                memoryStore.rememberDetailed(
-                    kind = atropos.core.memory.MemoryKind.BATCH,
-                    title = "DAG provider call completed: ${original.id}",
-                    body = "job=$childJobId task=${task.take(100)}",
-                    tags = listOf("dag", "provider", "completed"),
-                    subjectType = "dag_node",
-                    subjectId = original.id
-                )
-                completeNode(
-                    running.copy(childJobId = childJobId),
-                    NodeResult(
-                        nodeId = original.id,
-                        success = true,
-                        message = "provider call completed: $childJobId",
-                        finalState = DagNodeState.COMPLETE,
-                        result = "provider job completed: $childJobId"
-                    )
-                )
-                DagNodeExecutionResult(original.id, DagNodeState.COMPLETE, true, "provider call completed: $childJobId")
-            }
-        } catch (e: Exception) {
-            failNode(running, original, e.message ?: "provider call failed")
-        }
-    }
 
     fun recoverStaleClaims(): Int {
         val dags = store.listDags()
@@ -461,32 +324,9 @@ class DagExecutionService(
     fun readDag(dagId: String): DagDefinition? = store.readDag(dagId)
     fun readNode(nodeId: String): DagNode? = store.readNode(nodeId)
 
-    private fun completeNode(node: DagNode, result: NodeResult, relatedPaths: List<String> = emptyList()) {
-        planningGraph.submitEvidence(
-            node.id,
-            ExecutionEvidence(
-                nodeId = node.id,
-                kind = if (result.success) "completion" else "failure",
-                detail = result.message,
-                relatedPaths = relatedPaths
-            )
-        )
-        planningGraph.completeNode(node.id, result)
-    }
 
-    private fun failNode(node: DagNode, original: DagNode, message: String): DagNodeExecutionResult {
-        completeNode(
-            node,
-            NodeResult(
-                nodeId = original.id,
-                success = false,
-                message = message,
-                finalState = DagNodeState.FAILED,
-                failureReason = message
-            )
-        )
-        return DagNodeExecutionResult(original.id, DagNodeState.FAILED, false, message)
-    }
+
+
 
     private fun territoryViolation(node: DagNode, candidatePaths: List<String>): String? {
         if (node.territory.isEmpty()) return null

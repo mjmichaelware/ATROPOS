@@ -173,6 +173,11 @@ class ExportTest(unittest.TestCase):
         )
 
         self.assertIn(
+            "export_proof_summary.json",
+            paths,
+        )
+
+        self.assertIn(
             "implementation_blueprint.md",
             paths,
         )
@@ -219,6 +224,86 @@ class ExportTest(unittest.TestCase):
                 ]
             )
 
+    def test_export_proof_summary_is_complete(
+        self,
+    ) -> None:
+        result = self.exports.export_plan(
+            str(self.plan["id"]),
+            self.output_root,
+        )
+
+        directory = Path(
+            str(result["output_path"])
+        )
+
+        proof = json.loads(
+            (
+                directory
+                / "export_proof_summary.json"
+            ).read_text(
+                encoding="utf-8"
+            )
+        )
+
+        self.assertEqual(
+            proof["schema_version"],
+            "specgraph.export.proof-summary.v1",
+        )
+
+        self.assertEqual(
+            proof["plan_status"],
+            "VERIFIED",
+        )
+
+        self.assertEqual(
+            proof["acceptance"][
+                "traceability_items"
+            ],
+            self.plan["atom_count"],
+        )
+
+        self.assertEqual(
+            len(
+                proof[
+                    "proof_summary_sha256"
+                ]
+            ),
+            64,
+        )
+
+        checksums = (
+            directory
+            / "checksums.sha256"
+        ).read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn(
+            "export_proof_summary.json",
+            checksums,
+        )
+
+        manifest = json.loads(
+            (
+                directory
+                / "manifest.json"
+            ).read_text(
+                encoding="utf-8"
+            )
+        )
+
+        self.assertEqual(
+            manifest["proof_summary"]["path"],
+            "export_proof_summary.json",
+        )
+
+        self.assertEqual(
+            manifest["proof_summary"]["sha256"],
+            manifest["artifacts"][
+                "export_proof_summary.json"
+            ]["sha256"],
+        )
+
     def test_tampering_is_detected(
         self,
     ) -> None:
@@ -259,6 +344,235 @@ class ExportTest(unittest.TestCase):
 
         self.assertIn(
             "ARTIFACT_CHECKSUM_MISMATCH",
+            codes,
+        )
+
+    def test_checksum_file_mismatch_is_detected(
+        self,
+    ) -> None:
+        result = self.exports.export_plan(
+            str(self.plan["id"]),
+            self.output_root,
+        )
+
+        directory = Path(
+            str(result["output_path"])
+        )
+
+        (
+            directory
+            / "checksums.sha256"
+        ).write_text(
+            (
+                "0" * 64
+                + " manifest.json\n"
+            ),
+            encoding="utf-8",
+        )
+
+        verification = (
+            self.exports.verify_export(
+                str(result["id"])
+            )
+        )
+
+        codes = {
+            finding["code"]
+            for finding
+            in verification["findings"]
+        }
+
+        self.assertIn(
+            "CHECKSUM_FILE_MISMATCH",
+            codes,
+        )
+
+    def test_malformed_checksum_file_is_detected(
+        self,
+    ) -> None:
+        result = self.exports.export_plan(
+            str(self.plan["id"]),
+            self.output_root,
+        )
+
+        directory = Path(
+            str(result["output_path"])
+        )
+
+        (
+            directory
+            / "checksums.sha256"
+        ).write_text(
+            "not a checksum file\n",
+            encoding="utf-8",
+        )
+
+        verification = (
+            self.exports.verify_export(
+                str(result["id"])
+            )
+        )
+
+        codes = {
+            finding["code"]
+            for finding
+            in verification["findings"]
+        }
+
+        self.assertIn(
+            "CHECKSUM_FILE_INVALID",
+            codes,
+        )
+
+    def test_invalid_export_proof_summary_is_detected(
+        self,
+    ) -> None:
+        result = self.exports.export_plan(
+            str(self.plan["id"]),
+            self.output_root,
+        )
+
+        directory = Path(
+            str(result["output_path"])
+        )
+
+        (
+            directory
+            / "export_proof_summary.json"
+        ).write_text(
+            "{not-json",
+            encoding="utf-8",
+        )
+
+        verification = (
+            self.exports.verify_export(
+                str(result["id"])
+            )
+        )
+
+        codes = {
+            finding["code"]
+            for finding
+            in verification["findings"]
+        }
+
+        self.assertIn(
+            "EXPORT_PROOF_SUMMARY_INVALID",
+            codes,
+        )
+
+    def test_export_proof_summary_internal_checksum_mismatch_is_detected(
+        self,
+    ) -> None:
+        result = self.exports.export_plan(
+            str(self.plan["id"]),
+            self.output_root,
+        )
+
+        directory = Path(
+            str(result["output_path"])
+        )
+
+        proof_path = (
+            directory
+            / "export_proof_summary.json"
+        )
+        proof = json.loads(
+            proof_path.read_text(
+                encoding="utf-8"
+            )
+        )
+        proof[
+            "proof_summary_sha256"
+        ] = "0" * 64
+        proof_path.write_text(
+            json.dumps(
+                proof,
+                sort_keys=True,
+            ),
+            encoding="utf-8",
+        )
+
+        verification = (
+            self.exports.verify_export(
+                str(result["id"])
+            )
+        )
+
+        codes = {
+            finding["code"]
+            for finding
+            in verification["findings"]
+        }
+
+        self.assertIn(
+            "EXPORT_PROOF_SUMMARY_CHECKSUM_MISMATCH",
+            codes,
+        )
+
+    def test_manifest_proof_summary_pointer_is_verified(
+        self,
+    ) -> None:
+        result = self.exports.export_plan(
+            str(self.plan["id"]),
+            self.output_root,
+        )
+
+        directory = Path(
+            str(result["output_path"])
+        )
+        manifest_path = (
+            directory
+            / "manifest.json"
+        )
+        manifest = json.loads(
+            manifest_path.read_text(
+                encoding="utf-8"
+            )
+        )
+        manifest["proof_summary"][
+            "path"
+        ] = "wrong.json"
+        manifest_path.write_text(
+            json.dumps(
+                manifest,
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        import hashlib
+
+        manifest_sha = hashlib.sha256(
+            manifest_path.read_bytes()
+        ).hexdigest()
+        with self.database.connect() as connection:
+            connection.execute(
+                """
+                UPDATE exports
+                SET manifest_sha256 = ?
+                WHERE id = ?
+                """,
+                (
+                    manifest_sha,
+                    str(result["id"]),
+                ),
+            )
+
+        verification = (
+            self.exports.verify_export(
+                str(result["id"])
+            )
+        )
+        codes = {
+            finding["code"]
+            for finding
+            in verification["findings"]
+        }
+        self.assertIn(
+            "MANIFEST_PROOF_SUMMARY_INVALID",
             codes,
         )
 

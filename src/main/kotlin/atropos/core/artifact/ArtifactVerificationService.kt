@@ -28,20 +28,27 @@ class ArtifactVerificationService(
 
     fun finalizeCommit(message: String, artifactIds: List<String>, proofIds: List<String>, territoryCheck: Boolean = false, secretCheck: Boolean = false): CommitCandidate {
         var candidate = pipeline.prepareCommit(message, artifactIds, proofIds)
+        var ready = true
 
         if (territoryCheck && territoryService != null) {
             val violations = candidate.files.mapNotNull { file ->
                 val assignments = territoryService.getAll()
                 assignments.firstOrNull { !it.allows(file) }?.let { "territory violation: $file outside ${it.allowedPrefix}" }
             }
-            candidate = candidate.copy(territoryChecked = true, readyForCommit = violations.isEmpty())
+            ready = ready && violations.isEmpty()
+            candidate = candidate.copy(territoryChecked = true)
+        } else if (territoryCheck) {
+            ready = false
+            candidate = candidate.copy(territoryChecked = false)
         }
 
         if (secretCheck) {
             val secretHits = candidate.message.let { redactionFilter.redact(it) }
-            candidate = candidate.copy(secretScanned = true, readyForCommit = candidate.readyForCommit && secretHits != candidate.message)
+            ready = ready && secretHits == candidate.message
+            candidate = candidate.copy(secretScanned = true)
         }
 
+        candidate = candidate.copy(readyForCommit = ready && (territoryCheck || secretCheck))
         return candidate
     }
 

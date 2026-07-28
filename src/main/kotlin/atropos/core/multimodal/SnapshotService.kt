@@ -39,12 +39,12 @@ class SnapshotService(
         return ref
     }
 
-    fun captureViewport(viewport: ViewportCapture): SnapshotReference {
+    fun captureViewport(viewport: ViewportCapture, source: String? = null): SnapshotReference {
         val content = viewport.content
         val hash = SnapshotReference.hash(content.toByteArray(StandardCharsets.UTF_8))
         val ref = SnapshotReference(
             kind = SnapshotKind.COMPOSITE_VIEWPORT,
-            source = "viewport:${viewport.width}x${viewport.height}",
+            source = source ?: "viewport:${viewport.width}x${viewport.height}",
             contentHash = hash,
             byteSize = content.length,
             metadata = mapOf(
