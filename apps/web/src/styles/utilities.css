@@ -1,0 +1,77 @@
+.focus-ring:focus-visible {
+  outline: 3px solid var(--sg-focus);
+  outline-offset: 3px;
+}
+
+.interactive {
+  min-height: var(--sg-touch-target);
+  min-width: var(--sg-touch-target);
+}
+
+.surface {
+  background: var(--sg-surface);
+  border: 1px solid var(--sg-border);
+  border-radius: var(--sg-radius-lg);
+  box-shadow: var(--sg-shadow-sm);
+}
+
+/* Container-query root: any component that should adapt to the space it is
+   actually placed in (not the viewport) opts in with this class plus a
+   --sg-container-name matching its @container rules. */
+.sg-container {
+  container-type: inline-size;
+}
+
+/* PRESS motion primitive. Collapses to a no-op automatically under
+   prefers-reduced-motion because --sg-scale-press/--sg-duration-press
+   collapse to 1 / 1ms in themes.css — no JS branch needed. */
+.sg-pressable {
+  transition: transform var(--sg-duration-press) var(--sg-ease-standard), box-shadow var(--sg-duration-press) var(--sg-ease-standard);
+  transform: translateZ(0) scale(1);
+}
+
+.sg-pressable:active {
+  transform: scale(var(--sg-scale-press));
+}
+
+@media (any-pointer: coarse) {
+  .sg-pressable:active {
+    transform: scale(1);
+  }
+}
+
+/* SELECTION motion primitive: precise focus frame + depth, non-color. */
+.sg-selectable[data-selected="true"] {
+  border-color: var(--sg-route-accent, var(--sg-accent));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--sg-route-accent, var(--sg-accent)) 55%, transparent), var(--sg-shadow-sm);
+}
+
+.sg-safe-area {
+  padding-inline: max(var(--sg-space-4), var(--sg-safe-left)) max(var(--sg-space-4), var(--sg-safe-right));
+  padding-block-end: max(var(--sg-space-4), var(--sg-safe-bottom));
+}
+
+.sg-measure {
+  max-inline-size: var(--sg-measure);
+}
+
+.sg-tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+.sg-visible-hover {
+  opacity: 1;
+}
+
+@media (any-hover: hover) and (any-pointer: fine) {
+  .sg-hover-reveal {
+    opacity: 0;
+    transition: opacity var(--sg-duration-press) var(--sg-ease-standard);
+  }
+
+  .sg-hover-reveal-group:hover .sg-hover-reveal,
+  .sg-hover-reveal-group:focus-within .sg-hover-reveal,
+  .sg-hover-reveal:focus-visible {
+    opacity: 1;
+  }
+}
