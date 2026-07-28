@@ -1,0 +1,39 @@
+{
+  "name": "@atropos/design-tokens",
+  "version": "1.0.0",
+  "description": "ATROPOS shared design tokens - RED theme for web, CLI, and mobile surfaces",
+  "main": "./src/index.ts",
+  "types": "./src/index.d.ts",
+  "files": [
+    "src",
+    "dist"
+  ],
+  "exports": {
+    ".": "./src/index.ts",
+    "./tokens": "./src/tokens.json",
+    "./theme": "./src/customization/runtimeThemeMixin.ts",
+    "./web": {
+      "import": "./src/web/tokens.css"
+    },
+    "./cli": "./src/cli/DesignTokens.kt"
+  },
+  "scripts": {
+    "generate": "node build/scripts/generate-tokens.js",
+    "generate:watch": "nodemon --watch src/tokens.json --exec 'npm run generate'",
+    "build": "npm run generate",
+    "dev": "npm run generate:watch"
+  },
+  "keywords": [
+    "design-tokens",
+    "design-system",
+    "atropos",
+    "red-theme",
+    "css-variables",
+    "typescript"
+  ],
+  "author": "ATROPOS",
+  "license": "AGPL-3.0-only",
+  "devDependencies": {
+    "nodemon": "^3.0.0"
+  }
+}
