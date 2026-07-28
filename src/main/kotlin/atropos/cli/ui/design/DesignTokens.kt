@@ -181,6 +181,7 @@ object DesignTokens {
     const val labelWidthDense: Int = 12
     const val gutter: Int = 2
     const val continuationIndent: Int = 2
+    const val minWidth: Int = 40
   }
 
   // Theme Preferences
