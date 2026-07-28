@@ -158,6 +158,159 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _parse_checksums_file(
+    path: Path,
+) -> dict[str, str] | None:
+    observed: dict[str, str] = {}
+    try:
+        lines = path.read_text(
+            encoding="utf-8",
+        ).splitlines()
+    except UnicodeDecodeError:
+        return None
+
+    for line in lines:
+        if not line.strip():
+            continue
+        parts = line.split()
+        if len(parts) != 2:
+            return None
+        checksum, relative_path = parts
+        if (
+            len(checksum) != 64
+            or any(
+                char
+                not in "0123456789abcdef"
+                for char in checksum
+            )
+        ):
+            return None
+        if relative_path in observed:
+            return None
+        observed[relative_path] = checksum
+    return observed
+
+
+def _build_export_proof_summary(
+    project_id: str,
+    plan: dict[str, object],
+    artifacts: dict[str, bytes],
+    traceability: list[dict[str, object]],
+    authority_payload: dict[str, object],
+    execution_payload: dict[str, object],
+) -> dict[str, object]:
+    artifact_hashes = {
+        name: sha256_bytes(content)
+        for name, content
+        in sorted(artifacts.items())
+    }
+    traceability_hash = sha256_bytes(
+        canonical_json_bytes(
+            {"items": traceability}
+        )
+    )
+    authority_hash = sha256_bytes(
+        canonical_json_bytes(
+            authority_payload
+        )
+    )
+    execution_hash = sha256_bytes(
+        canonical_json_bytes(
+            execution_payload
+        )
+    )
+    payload = {
+        "schema_version": "specgraph.export.proof-summary.v1",
+        "project_id": project_id,
+        "plan_id": plan["id"],
+        "plan_status": plan["status"],
+        "plan_input_fingerprint": plan["input_fingerprint"],
+        "atom_count": plan["atom_count"],
+        "artifact_count": len(artifacts),
+        "artifact_hashes": artifact_hashes,
+        "traceability_sha256": traceability_hash,
+        "authority_graph_sha256": authority_hash,
+        "execution_graph_sha256": execution_hash,
+        "acceptance": {
+            "plan_status_verified": plan["status"] == "VERIFIED",
+            "traceability_items": len(traceability),
+            "artifact_hashes_present": all(
+                len(value) == 64
+                for value in artifact_hashes.values()
+            ),
+        },
+        "verifier_identity": "specgraph.export.proof-summary.v1",
+    }
+    return {
+        **payload,
+        "proof_summary_sha256": sha256_bytes(
+            canonical_json_bytes(payload)
+        ),
+    }
+
+
+def _verify_export_proof_summary(
+    path: Path,
+) -> list[dict[str, object]]:
+    try:
+        proof = json.loads(
+            path.read_text(
+                encoding="utf-8"
+            )
+        )
+    except (
+        UnicodeDecodeError,
+        json.JSONDecodeError,
+    ):
+        return [
+            {
+                "severity": "ERROR",
+                "code": "EXPORT_PROOF_SUMMARY_INVALID",
+                "message": (
+                    "export_proof_summary.json is not valid UTF-8 JSON."
+                ),
+                "artifact_path": "export_proof_summary.json",
+            }
+        ]
+
+    if not isinstance(proof, dict):
+        return [
+            {
+                "severity": "ERROR",
+                "code": "EXPORT_PROOF_SUMMARY_INVALID",
+                "message": (
+                    "export_proof_summary.json must contain an object."
+                ),
+                "artifact_path": "export_proof_summary.json",
+            }
+        ]
+
+    observed = proof.get(
+        "proof_summary_sha256"
+    )
+    payload = {
+        key: value
+        for key, value
+        in proof.items()
+        if key != "proof_summary_sha256"
+    }
+    expected = sha256_bytes(
+        canonical_json_bytes(payload)
+    )
+    if observed != expected:
+        return [
+            {
+                "severity": "ERROR",
+                "code": "EXPORT_PROOF_SUMMARY_CHECKSUM_MISMATCH",
+                "message": (
+                    "export_proof_summary.json internal checksum does not match."
+                ),
+                "artifact_path": "export_proof_summary.json",
+            }
+        ]
+    return []
+
+
 def contains_sensitive_key(
     value: object,
 ) -> bool:
@@ -766,6 +919,47 @@ class ExportService:
                             }
                         )
                     else:
+                        proof_summary = manifest.get(
+                            "proof_summary",
+                            {},
+                        )
+                        if (
+                            not isinstance(
+                                proof_summary,
+                                dict,
+                            )
+                            or proof_summary.get(
+                                "path"
+                            )
+                            != "export_proof_summary.json"
+                            or proof_summary.get(
+                                "sha256"
+                            )
+                            != expected_artifacts.get(
+                                "export_proof_summary.json",
+                                {},
+                            ).get("sha256")
+                        ):
+                            findings.append(
+                                {
+                                    "severity": (
+                                        "ERROR"
+                                    ),
+                                    "code": (
+                                        "MANIFEST_PROOF_"
+                                        "SUMMARY_INVALID"
+                                    ),
+                                    "message": (
+                                        "Manifest proof "
+                                        "summary pointer "
+                                        "is invalid."
+                                    ),
+                                    "artifact_path": (
+                                        "manifest.json"
+                                    ),
+                                }
+                            )
+
                         for (
                             relative_path,
                             expected,
@@ -890,6 +1084,20 @@ class ExportService:
                                     }
                                 )
 
+                        proof_summary_path = (
+                            output_directory
+                            / "export_proof_summary.json"
+                        )
+                        if proof_summary_path.is_file():
+                            proof_findings = (
+                                _verify_export_proof_summary(
+                                    proof_summary_path
+                                )
+                            )
+                            findings.extend(
+                                proof_findings
+                            )
+
                         expected_names = set(
                             expected_artifacts
                         ) | {
@@ -958,6 +1166,76 @@ class ExportService:
                         ),
                     }
                 )
+            elif isinstance(
+                manifest,
+                dict,
+            ):
+                expected_artifacts = manifest.get(
+                    "artifacts",
+                    {},
+                )
+                if isinstance(
+                    expected_artifacts,
+                    dict,
+                ):
+                    expected_checksums = {
+                        relative_path: metadata.get(
+                            "sha256"
+                        )
+                        for relative_path, metadata
+                        in expected_artifacts.items()
+                        if isinstance(metadata, dict)
+                    }
+                    expected_checksums[
+                        "manifest.json"
+                    ] = sha256_file(
+                        manifest_path
+                    )
+                    observed_checksums = (
+                        _parse_checksums_file(
+                            checksum_path
+                        )
+                    )
+
+                    if observed_checksums is None:
+                        findings.append(
+                            {
+                                "severity": "ERROR",
+                                "code": (
+                                    "CHECKSUM_FILE_"
+                                    "INVALID"
+                                ),
+                                "message": (
+                                    "checksums.sha256 "
+                                    "is malformed."
+                                ),
+                                "artifact_path": (
+                                    "checksums.sha256"
+                                ),
+                            }
+                        )
+                    elif (
+                        observed_checksums
+                        != expected_checksums
+                    ):
+                        findings.append(
+                            {
+                                "severity": "ERROR",
+                                "code": (
+                                    "CHECKSUM_FILE_"
+                                    "MISMATCH"
+                                ),
+                                "message": (
+                                    "checksums.sha256 "
+                                    "does not match the "
+                                    "manifest artifact "
+                                    "checksums."
+                                ),
+                                "artifact_path": (
+                                    "checksums.sha256"
+                                ),
+                            }
+                        )
 
         valid = not any(
             finding["severity"] == "ERROR"
@@ -1463,6 +1741,18 @@ class ExportService:
                 ).encode("utf-8")
             ),
         }
+        artifact_values[
+            "export_proof_summary.json"
+        ] = canonical_json_bytes(
+            _build_export_proof_summary(
+                project_id=project_id,
+                plan=plan,
+                artifacts=artifact_values,
+                traceability=traceability,
+                authority_payload=authority_payload,
+                execution_payload=execution_payload,
+            )
+        )
 
         artifact_metadata = {
             name: {
@@ -1504,6 +1794,15 @@ class ExportService:
             "artifact_count": len(
                 artifact_values
             ),
+            "proof_summary": {
+                "path": "export_proof_summary.json",
+                "sha256": artifact_metadata[
+                    "export_proof_summary.json"
+                ]["sha256"],
+                "verifier_identity": (
+                    "specgraph.export.proof-summary.v1"
+                ),
+            },
             "artifacts": (
                 artifact_metadata
             ),

@@ -45,4 +45,27 @@ class TreeSitterGrammarBridgeTest {
         assertTrue(tree.declarations.all { it.column > 0 })
         assertTrue(tree.declarations.all { it.offset >= 0 })
     }
+
+    @Test
+    fun parse_tree_handles_modifiers_type_parameters_and_multiple_declarations_per_line() {
+        val code = """
+                package sample.modifiers
+                import kotlin.collections.List
+
+                data class Box<T>(val item: T)
+                sealed interface Event
+                private object Holder { const val ID = "x"; fun <T> map(input: T) = input }
+                fun String.asBox() = Box(this)
+        """.trimIndent()
+
+        val tree = bridge.parseTree(code)
+
+        assertEquals("sample.modifiers", tree.packageName)
+        assertTrue(tree.declarations.any { it.kind == KotlinDeclarationKind.CLASS && it.name == "Box" })
+        assertTrue(tree.declarations.any { it.kind == KotlinDeclarationKind.INTERFACE && it.name == "Event" })
+        assertTrue(tree.declarations.any { it.kind == KotlinDeclarationKind.OBJECT && it.name == "Holder" })
+        assertTrue(tree.declarations.any { it.kind == KotlinDeclarationKind.PROPERTY && it.name == "ID" })
+        assertTrue(tree.declarations.any { it.kind == KotlinDeclarationKind.FUNCTION && it.name == "map" })
+        assertTrue(tree.declarations.any { it.kind == KotlinDeclarationKind.FUNCTION && it.name == "asBox" })
+    }
 }

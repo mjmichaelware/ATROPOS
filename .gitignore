@@ -45,3 +45,4 @@ apps/specgraph-foundry/**/specgraph.env
 *.secret
 *.secrets
 *.local.env
+.aider*

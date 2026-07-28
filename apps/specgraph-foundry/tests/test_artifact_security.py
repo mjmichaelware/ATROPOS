@@ -66,6 +66,12 @@ class ArtifactSecurityTest(unittest.TestCase):
             "owner-123/project-123/export-123/manifest.json",
         )
 
+    def test_export_proof_summary_is_part_of_export_contract(self) -> None:
+        self.assertEqual(
+            validate_artifact_name("export_proof_summary.json"),
+            "export_proof_summary.json",
+        )
+
     def test_ttl_and_size_are_bounded(self) -> None:
         ArtifactStorageSettings(
             bucket="export-artifacts",

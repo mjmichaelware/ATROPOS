@@ -32,7 +32,20 @@ class DirectorStore(private val root: Path = Path.of(System.getProperty("user.di
     private fun DirectorObservation.toJsonLine(): String {
         val fp = filePaths.joinToString("|") { it.replace("|", "%7C") }
         val sym = symbols.joinToString("|") { it.replace("|", "%7C") }
-        return listOf(id, kind.name, severity.name, source, details.replace('\n', ' '), fp, sym, timestamp.toString(), acknowledged.toString(), dismissed.toString()).joinToString("\t")
+        return listOf(
+            id,
+            kind.name,
+            severity.name,
+            source,
+            details.replace('\n', ' '),
+            fp,
+            sym,
+            timestamp.toString(),
+            acknowledged.toString(),
+            dismissed.toString(),
+            goalId.orEmpty(),
+            territoryId.orEmpty()
+        ).joinToString("\t")
     }
 
     private fun parseJsonLine(line: String): DirectorObservation? {
@@ -46,6 +59,8 @@ class DirectorStore(private val root: Path = Path.of(System.getProperty("user.di
                 severity = DriftSeverity.valueOf(parts[2]),
                 source = parts[3],
                 details = parts[4],
+                goalId = parts.getOrNull(10)?.takeIf { it.isNotBlank() },
+                territoryId = parts.getOrNull(11)?.takeIf { it.isNotBlank() },
                 filePaths = if (parts[5].isBlank()) emptyList() else parts[5].split("|").map { it.replace("%7C", "|") },
                 symbols = if (parts[6].isBlank()) emptyList() else parts[6].split("|").map { it.replace("%7C", "|") },
                 timestamp = java.time.Instant.parse(parts[7]),

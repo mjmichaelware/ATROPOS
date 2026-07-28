@@ -8,11 +8,8 @@ from pathlib import Path
 
 from _lib import (
     abbreviate,
-    ensure_dir,
-    indexed_lines_from_text,
     load_index,
     read_text,
-    slice_indexed_lines,
 )
 
 
@@ -74,9 +71,10 @@ def source_matches(source: dict, allowed: list[str] | None) -> bool:
     return any(sid.startswith(prefix) for prefix in allowed)
 
 
-def build_section_excerpt(source: dict, normalized_text: str, section: dict) -> str:
-    lines = slice_indexed_lines(normalized_text, source["kind"], section["start_line"], section["end_line"])
-    text = "\n".join(line.text for line in lines)
+def build_section_excerpt_from_lines(lines: list[str], section: dict) -> str:
+    start = max(1, int(section["start_line"]))
+    end = max(start, int(section["end_line"]))
+    text = "\n".join(lines[start - 1 : end])
     return text.strip("\n")
 
 
@@ -124,14 +122,22 @@ def result_record(source: dict, section: dict, excerpt: str, score: int, reasons
 
 
 def search_query(index: dict, terms: list[str], source_ids: list[str] | None, limit: int) -> list[dict]:
-    texts = load_source_texts(index)
     results: list[dict] = []
+    lowered_terms = [term.lower() for term in terms]
     for source in index["sources"]:
         if not source_matches(source, source_ids):
             continue
-        normalized = texts[source["source_id"]]
+        normalized = read_text(Path(source["normalized_path"]))
+        heading_text = "\n".join(
+            "\n".join(section["heading_path"]) if section["heading_path"] else (section.get("heading") or "")
+            for section in source["sections"]
+        )
+        cheap_haystack = f"{source['original_filename']}\n{heading_text}\n{normalized}".lower()
+        if not any(term in cheap_haystack for term in lowered_terms):
+            continue
+        source_lines = normalized.splitlines()
         for section in source["sections"]:
-            excerpt = build_section_excerpt(source, normalized, section)
+            excerpt = build_section_excerpt_from_lines(source_lines, section)
             score, reasons = score_section(source, section, excerpt, terms)
             if not reasons:
                 continue
@@ -238,13 +244,13 @@ def main() -> int:
     if args.cmd == "source":
         source_id = args.source_id
         results = []
-        texts = load_source_texts(index)
         for source in index["sources"]:
             if not source["source_id"].startswith(source_id):
                 continue
-            normalized = texts[source["source_id"]]
+            normalized = read_text(Path(source["normalized_path"]))
+            source_lines = normalized.splitlines()
             for section in source["sections"][: args.limit]:
-                excerpt = build_section_excerpt(source, normalized, section)
+                excerpt = build_section_excerpt_from_lines(source_lines, section)
                 score, reasons = score_section(source, section, excerpt, [source_id, source["original_filename"]])
                 results.append(result_record(source, section, excerpt, score, reasons))
         results.sort(key=lambda row: (row["source_id"], row["section_id"]))

@@ -1,6 +1,6 @@
 from typing import List, Dict, Any, Optional, Set, Tuple
-from hashlib import sha256
 from collections import defaultdict, deque
+from .compiler_fingerprints import generate_fingerprint
 
 
 class ExecutionNode:
@@ -143,12 +143,19 @@ def build_execution_dag(
     # Compute READY vs BLOCKED
     ready_states = _compute_readiness(execution_nodes, execution_edges)
 
-    payload = f"execution-dag-v1:{len(execution_nodes)}:{len(execution_edges)}"
-    fingerprint = sha256(payload.encode("utf-8")).hexdigest()[:16]
+    nodes_payload = [n.to_dict() for n in execution_nodes.values()]
+    edges_payload = [e.to_dict() for e in execution_edges]
+    fingerprint = generate_fingerprint({
+        "schema": "execution-dag-v1",
+        "nodes": nodes_payload,
+        "edges": edges_payload,
+        "execution_order": order,
+        "ready_states": ready_states,
+    })[:16]
 
     return {
-        "nodes": [n.to_dict() for n in execution_nodes.values()],
-        "edges": [e.to_dict() for e in execution_edges],
+        "nodes": nodes_payload,
+        "edges": edges_payload,
         "execution_order": order,
         "ready_states": ready_states,
         "fingerprint": fingerprint,
@@ -167,8 +174,6 @@ def _break_cycles(
         if key in edge_set:
             continue
         adj = defaultdict(list)
-        for nid in node_ids:
-            pass
         for existing in acyclic:
             adj[existing.from_id].append(existing.to_id)
         adj[e.from_id].append(e.to_id)

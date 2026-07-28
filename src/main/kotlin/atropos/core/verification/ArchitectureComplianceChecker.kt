@@ -113,6 +113,20 @@ class ArchitectureComplianceChecker(
         )
     }
 
+    fun checkFiles(files: List<File>): ArchitectureComplianceReport {
+        val kotlinFiles = files
+            .filter { it.isFile && it.extension == "kt" }
+            .distinctBy { it.toPath().toAbsolutePath().normalize().toString() }
+
+        val violations = kotlinFiles.mapNotNull(::inspect)
+
+        return ArchitectureComplianceReport(
+            scannedFiles = kotlinFiles.size,
+            violations = violations.sortedByDescending { it.physicalLines },
+            enforcing = enforcing
+        )
+    }
+
     private fun inspect(file: File): ArchitectureViolation? {
         val text = runCatching { file.readText() }.getOrNull() ?: return null
         val lines = text.lineSequence().count()

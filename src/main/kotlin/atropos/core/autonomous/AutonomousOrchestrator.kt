@@ -31,7 +31,8 @@ class AutonomousOrchestrator(
     private val artifactPipeline: ArtifactPipeline = ArtifactPipeline(),
     private val artifactVerification: ArtifactVerificationService = ArtifactVerificationService(),
     private val inspectionService: InspectionService = InspectionService(),
-    private val memory: LocalMemoryStore = LocalMemoryStore()
+    private val memory: LocalMemoryStore = LocalMemoryStore(),
+    private val learningAdvisor: AutonomousLearningAdvisor = AutonomousLearningAdvisor()
 ) {
     private val session = AutonomousSession()
     private val stopConditions = mutableListOf<StopCondition>()
@@ -80,29 +81,30 @@ class AutonomousOrchestrator(
             return "No eligible tasks; checking for new work..."
         }
 
-        val task = eligible.first()
+        val task = learningAdvisor.rank(eligible, backlog.repairHistory(), backlog.failoverHistory()).first()
         val claimed = backlog.claim(task.id) ?: return "Task ${task.id} already claimed"
 
-        val result = execute(task)
+        val result = execute(claimed)
         return result
     }
 
     fun runOnce(blocking: Boolean = false): String {
         val eligible = backlog.eligible()
         if (eligible.isEmpty()) return "No eligible tasks"
-        val task = eligible.first()
-        backlog.claim(task.id)
-        return execute(task)
+        val task = learningAdvisor.rank(eligible, backlog.repairHistory(), backlog.failoverHistory()).first()
+        val claimed = backlog.claim(task.id) ?: return "Task ${task.id} already claimed"
+        return execute(claimed)
     }
 
     fun runMax(count: Int): String {
         val results = mutableListOf<String>()
-        repeat(count) {
+        val learnedCount = learningAdvisor.recommendedBatchSize(count, backlog.repairHistory())
+        repeat(learnedCount) {
             val eligible = backlog.eligible()
             if (eligible.isEmpty()) return@repeat
-            val task = eligible.first()
-            backlog.claim(task.id)
-            results += execute(task)
+            val task = learningAdvisor.rank(eligible, backlog.repairHistory(), backlog.failoverHistory()).first()
+            val claimed = backlog.claim(task.id) ?: return@repeat
+            results += execute(claimed)
         }
         return results.joinToString("\n")
     }
@@ -132,6 +134,18 @@ class AutonomousOrchestrator(
 
     private fun execute(task: AutonomousTask): String {
         val startTime = System.currentTimeMillis()
+        val learningDecision = learningAdvisor.inspect(task, backlog.repairHistory(), backlog.failoverHistory())
+        if (!learningDecision.accepted) {
+            backlog.skip(task.id, learningDecision.reason)
+            memory.rememberFailure(
+                subjectType = "autonomous",
+                subjectId = task.id,
+                title = "autonomous-learning-stop",
+                body = learningDecision.reason,
+                tags = listOf("autonomous", "learning", "invariant", "stop")
+            )
+            return "[STOP] ${task.kind.name}: ${learningDecision.reason}"
+        }
 
         return try {
             val result = when (task.kind) {
@@ -155,8 +169,14 @@ class AutonomousOrchestrator(
             memory.rememberToolResult(
                 subjectId = task.id,
                 title = "auto-${task.kind.name}",
-                body = result,
-                tags = listOf("autonomous", task.kind.name)
+                body = "$result\nlearning=${learningDecision.reason}",
+                tags = listOf("autonomous", task.kind.name, "learning")
+            )
+            memory.rememberReward(
+                subjectId = task.id,
+                title = "autonomous-learning-evidence",
+                body = "success=true durationMs=$duration ${learningDecision.reason}",
+                tags = listOf("autonomous", "learning", task.kind.name)
             )
             updateHigStopCondition()
             "[OK] ${task.kind.name}: $result (${duration}ms)"
@@ -164,6 +184,12 @@ class AutonomousOrchestrator(
             val duration = System.currentTimeMillis() - startTime
             backlog.fail(task.id, e.message ?: e.javaClass.simpleName)
             backlog.recordRepair(task.id, e.message ?: "unknown", "auto-retry on failure", false, duration)
+            memory.rememberReward(
+                subjectId = task.id,
+                title = "autonomous-learning-evidence",
+                body = "success=false durationMs=$duration ${learningDecision.reason} failure=${e.message ?: e.javaClass.simpleName}",
+                tags = listOf("autonomous", "learning", task.kind.name, "failure")
+            )
             updateSessionCounts(false)
             "[FAIL] ${task.kind.name}: ${e.message} (${duration}ms)"
         }
@@ -194,8 +220,11 @@ class AutonomousOrchestrator(
     private fun executeProviderFailover(task: AutonomousTask): String {
         val primary = task.context["primary"] ?: "groq"
         val fallback = task.context["fallback"] ?: "openrouter"
-        val failoverEvent = backlog.recordFailover(primary, fallback, "simulated failover test", true)
-        return "Failover: $primary -> $fallback (${failoverEvent.id})"
+        val service = ProviderFailoverService(backlog = backlog)
+        val plan = service.assess(primary) ?: throw RuntimeException("no failover route available for $primary")
+        val selectedFallback = if (fallback == plan.primaryId) plan.fallbackId else fallback
+        val failoverEvent = service.failover(primary, selectedFallback, plan.reason)
+        return "Failover: $primary -> $selectedFallback (${failoverEvent.id})"
     }
 
     private fun executeRepairRetry(task: AutonomousTask): String {

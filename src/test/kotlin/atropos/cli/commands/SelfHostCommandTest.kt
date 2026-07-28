@@ -25,6 +25,17 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class SelfHostCommandTest {
+    private fun initializeGitRepo(repoRoot: java.nio.file.Path) {
+        ProcessBuilder("git", "init")
+            .directory(repoRoot.toFile())
+            .redirectErrorStream(true)
+            .start()
+            .waitFor()
+        Files.createDirectories(repoRoot.resolve("src/main/kotlin/atropos"))
+        Files.createDirectories(repoRoot.resolve("src/test/kotlin/atropos"))
+        Files.writeString(repoRoot.resolve("src/main/kotlin/atropos/Main.kt"), "fun main() {}\n")
+    }
+
     private fun buildCommand(
         repoRoot: java.nio.file.Path,
         service: SelfHostGoalService
@@ -80,6 +91,34 @@ class SelfHostCommandTest {
 
         assertTrue(text.contains("batch evidence status: PARTIAL_EVIDENCE"))
         assertTrue(!text.contains("crossover status:"))
+    }
+
+    @Test
+    fun `self-host start then resume advances the cradle bootstrap DAG`() {
+        val repoRoot = Files.createTempDirectory("atropos-self-host-command-cradle-")
+        initializeGitRepo(repoRoot)
+        val base = Instant.parse("2026-07-27T08:00:00Z")
+        var tick = 0L
+        val store = GoalRunStore(repoRoot, clock = { base.plusSeconds(tick++) })
+        val service = SelfHostGoalService(repoRoot = repoRoot, store = store, clock = { base.plusSeconds(tick++) })
+        val command = buildCommand(repoRoot, service)
+
+        val started = command.execute(listOf("/agent", "self-host", "start", "prove", "cradle", "self-build", "--phase", "11"))
+        assertTrue(started is AgentCommandOutcome.Completed)
+        val goal = service.history(1).single()
+
+        val resumed = command.execute(listOf("/agent", "self-host", "resume", goal.id))
+        val text = when (resumed) {
+            is AgentCommandOutcome.Completed -> resumed.text
+            is AgentCommandOutcome.Invalid -> resumed.message
+        }
+        val reopened = store.resolve(goal.id) ?: error("missing goal")
+
+        assertTrue(resumed is AgentCommandOutcome.Completed, text)
+        assertTrue(text.contains("advance: advanced and completed: all nodes complete"), text)
+        assertEquals(GoalRunStatus.COMPLETED, reopened.status)
+        assertEquals(GoalTerminalCondition.VERIFIED_COMPLETE, reopened.terminalCondition)
+        assertTrue(reopened.evidence.any { it.startsWith("context_attestation system=ATROPOS") })
     }
 
     @Test

@@ -1,0 +1,54 @@
+package atropos.core.artifact
+
+import java.nio.file.Files
+import java.time.Instant
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
+
+class SafeJarSwapGateTest {
+    @Test
+    fun refuses_to_promote_when_verification_evidence_failed() {
+        val root = Files.createTempDirectory("atropos-jar-swap-refuse-")
+        val candidate = root.resolve("candidate.jar")
+        val target = root.resolve("atropos.jar")
+        Files.writeString(candidate, "new jar")
+        Files.writeString(target, "old jar")
+        val gate = SafeJarSwapGate(clock = { Instant.parse("2026-07-27T10:00:00Z") })
+
+        val result = gate.promote(
+            candidate,
+            target,
+            listOf(JarSwapEvidence(false, "compile", "compile failed"))
+        )
+
+        assertTrue(!result.promoted)
+        assertTrue(result.message.contains("refused"), result.message)
+        assertEquals("old jar", Files.readString(target))
+    }
+
+    @Test
+    fun promotes_verified_candidate_and_preserves_previous_jar() {
+        val root = Files.createTempDirectory("atropos-jar-swap-promote-")
+        val candidate = root.resolve("candidate.jar")
+        val target = root.resolve("atropos.jar")
+        Files.writeString(candidate, "new jar")
+        Files.writeString(target, "old jar")
+        val gate = SafeJarSwapGate(clock = { Instant.parse("2026-07-27T10:05:00Z") })
+
+        val result = gate.promote(
+            candidate,
+            target,
+            listOf(
+                JarSwapEvidence(true, "compile", "compile passed"),
+                JarSwapEvidence(true, "smoke", "jar smoke passed")
+            )
+        )
+
+        assertTrue(result.promoted, result.message)
+        assertEquals("new jar", Files.readString(target))
+        val backup = result.backupJar ?: error("missing backup")
+        assertEquals("old jar", Files.readString(backup))
+        assertTrue(result.evidence.any { it.kind == "candidate_exists" && it.passed })
+    }
+}
