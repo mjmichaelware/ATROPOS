@@ -1,0 +1,45 @@
+name: android-apk
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'apps/atropos-android/**'
+      - '.github/workflows/android-apk.yml'
+      - 'settings.gradle.kts'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Ensure Gradle wrapper executable
+        run: chmod +x gradlew || true
+
+      - name: Assemble debug APK
+        run: |
+          # Minimal standalone build if monorepo AGP wiring is incomplete:
+          mkdir -p /tmp/atropos-android-build
+          cp -a apps/atropos-android /tmp/atropos-android-build/app
+          cd /tmp/atropos-android-build
+          # If root monorepo AGP is wired, prefer:
+          # cd $GITHUB_WORKSPACE && ./gradlew :apps:atropos-android:assembleDebug
+          # Fallback skeleton uses gradle init in follow-up; for now try module from repo root:
+          cd $GITHUB_WORKSPACE
+          ./gradlew :apps:atropos-android:assembleDebug --stacktrace || ./gradlew assembleDebug --stacktrace
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: atropos-android-debug
+          path: |
+            apps/atropos-android/build/outputs/apk/**/*.apk
+            **/outputs/apk/**/*.apk
