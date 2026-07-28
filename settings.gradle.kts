@@ -1,1 +1,0 @@
-include(":apps:atropos-android")
