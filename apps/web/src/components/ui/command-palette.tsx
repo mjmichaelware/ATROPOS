@@ -1,279 +1,279 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import { Search, ArrowRight, Settings, Home, FileText, Users, Zap, Clock } from 'lucide-react';
+import { useProjects, useWorkItems } from '@/lib/api-atropos/hooks';
 
-interface Command {
+interface CommandItem {
   id: string;
   label: string;
   description?: string;
-  category: string;
+  icon: React.ReactNode;
   action: () => void;
-  shortcut?: string;
+  category: 'navigation' | 'project' | 'task' | 'action';
+  keywords?: string[];
 }
 
 export function CommandPalette() {
+  const router = useRouter();
+  const { data: projects } = useProjects();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const [selected, setSelected] = useState(0);
-  const router = useRouter();
+  const [selectedIndex, setSelectedIndex] = useState(0);
 
-  const commands: Command[] = [
+  // Navigation commands
+  const navigationCommands: CommandItem[] = [
     {
       id: 'home',
       label: 'Go to Home',
+      description: 'View system status and recent activity',
+      icon: <Home className="w-4 h-4" />,
+      action: () => {
+        router.push('/');
+        setOpen(false);
+      },
       category: 'navigation',
-      shortcut: 'Cmd+H',
-      action: () => router.push('/'),
+      keywords: ['home', 'dashboard'],
     },
     {
       id: 'projects',
-      label: 'Go to Projects',
+      label: 'View All Projects',
+      description: 'Browse all projects',
+      icon: <FileText className="w-4 h-4" />,
+      action: () => {
+        router.push('/projects');
+        setOpen(false);
+      },
       category: 'navigation',
-      shortcut: 'Cmd+P',
-      action: () => router.push('/projects'),
+      keywords: ['projects', 'list'],
+    },
+    {
+      id: 'models',
+      label: 'Models & Providers',
+      description: 'View provider configuration',
+      icon: <Zap className="w-4 h-4" />,
+      action: () => {
+        router.push('/models');
+        setOpen(false);
+      },
+      category: 'navigation',
+      keywords: ['models', 'providers'],
+    },
+    {
+      id: 'history',
+      label: 'View History',
+      description: 'Browse all events and activity',
+      icon: <Clock className="w-4 h-4" />,
+      action: () => {
+        router.push('/history');
+        setOpen(false);
+      },
+      category: 'navigation',
+      keywords: ['history', 'events', 'log'],
     },
     {
       id: 'settings',
-      label: 'Open Settings',
-      category: 'navigation',
-      action: () => router.push('/settings'),
-    },
-    {
-      id: 'toggle-theme',
-      label: 'Toggle Dark/Light',
-      category: 'theme',
+      label: 'Settings',
+      description: 'Configure preferences and workspace',
+      icon: <Settings className="w-4 h-4" />,
       action: () => {
-        const current = localStorage.getItem('atropos-theme-customization');
-        if (current) {
-          const theme = JSON.parse(current);
-          theme.mode = theme.mode === 'dark' ? 'light' : 'dark';
-          localStorage.setItem('atropos-theme-customization', JSON.stringify(theme));
-          window.location.reload();
-        }
+        router.push('/settings');
+        setOpen(false);
       },
+      category: 'navigation',
+      keywords: ['settings', 'preferences', 'config'],
     },
   ];
 
-  const filtered = commands.filter(
-    cmd =>
-      cmd.label.toLowerCase().includes(search.toLowerCase()) ||
-      cmd.description?.toLowerCase().includes(search.toLowerCase())
+  // Project commands
+  const projectCommands: CommandItem[] = useMemo(
+    () =>
+      projects?.map((project) => ({
+        id: `project-${project.id}`,
+        label: project.name,
+        description: project.status,
+        icon: <FileText className="w-4 h-4" />,
+        action: () => {
+          router.push(`/projects/${project.id}/work`);
+          setOpen(false);
+        },
+        category: 'project' as const,
+        keywords: [project.name.toLowerCase()],
+      })) ?? [],
+    [projects, router]
   );
 
+  // All commands
+  const allCommands = useMemo(
+    () => [...navigationCommands, ...projectCommands],
+    [navigationCommands, projectCommands]
+  );
+
+  // Filter commands based on search
+  const filteredCommands = useMemo(() => {
+    if (!search) return allCommands;
+
+    const query = search.toLowerCase();
+    return allCommands.filter((cmd) => {
+      const matchesLabel = cmd.label.toLowerCase().includes(query);
+      const matchesDescription = cmd.description?.toLowerCase().includes(query);
+      const matchesKeywords = cmd.keywords?.some((kw) => kw.includes(query));
+      return matchesLabel || matchesDescription || matchesKeywords;
+    });
+  }, [search, allCommands]);
+
+  // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Cmd+K or Ctrl+K opens palette
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
-        setOpen(!open);
+        setOpen((prev) => !prev);
         setSearch('');
-        setSelected(0);
+        setSelectedIndex(0);
       }
 
-      if (!open) return;
+      // Escape closes palette
+      if (e.key === 'Escape' && open) {
+        setOpen(false);
+      }
 
-      switch (e.key) {
-        case 'ArrowDown':
-          e.preventDefault();
-          setSelected(prev => (prev + 1) % filtered.length);
-          break;
-        case 'ArrowUp':
-          e.preventDefault();
-          setSelected(prev => (prev - 1 + filtered.length) % filtered.length);
-          break;
-        case 'Enter':
-          e.preventDefault();
-          if (filtered[selected]) {
-            filtered[selected].action();
-            setOpen(false);
-          }
-          break;
-        case 'Escape':
-          e.preventDefault();
-          setOpen(false);
-          break;
+      // Arrow keys navigate
+      if (open && e.key === 'ArrowDown') {
+        e.preventDefault();
+        setSelectedIndex((prev) => (prev + 1) % filteredCommands.length);
+      }
+      if (open && e.key === 'ArrowUp') {
+        e.preventDefault();
+        setSelectedIndex((prev) =>
+          prev === 0 ? filteredCommands.length - 1 : prev - 1
+        );
+      }
+
+      // Enter executes command
+      if (open && e.key === 'Enter' && filteredCommands.length > 0) {
+        e.preventDefault();
+        filteredCommands[selectedIndex].action();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [open, filtered, selected]);
+  }, [open, filteredCommands, selectedIndex]);
 
   if (!open) {
     return (
       <button
-        className="command-palette-trigger"
         onClick={() => setOpen(true)}
-        title="Open command palette (Cmd+K)"
+        className="hidden md:flex items-center gap-2 px-3 py-2 rounded-lg border border-sg-neutral-300 dark:border-sg-neutral-700 hover:bg-sg-neutral-50 dark:hover:bg-sg-neutral-900 transition-colors text-sm text-sg-neutral-600 dark:text-sg-neutral-400"
       >
-        ⌘K
+        <Search className="w-4 h-4" />
+        <span>Search... Cmd+K</span>
       </button>
     );
   }
 
   return (
     <>
-      <div className="command-palette-overlay" onClick={() => setOpen(false)} />
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+        onClick={() => setOpen(false)}
+      />
 
-      <div className="command-palette">
-        <input
-          autoFocus
-          type="text"
-          placeholder="Type a command or search..."
-          value={search}
-          onChange={e => {
-            setSearch(e.target.value);
-            setSelected(0);
-          }}
-          className="command-input"
-        />
+      {/* Palette */}
+      <div className="fixed top-1/4 left-1/2 -translate-x-1/2 z-50 w-full max-w-md">
+        <div className="bg-white dark:bg-sg-neutral-900 rounded-lg shadow-lg border border-sg-neutral-200 dark:border-sg-neutral-800 overflow-hidden">
+          {/* Search input */}
+          <div className="flex items-center gap-3 px-4 py-3 border-b border-sg-neutral-200 dark:border-sg-neutral-800">
+            <Search className="w-5 h-5 text-sg-neutral-400" />
+            <input
+              autoFocus
+              type="text"
+              placeholder="Search projects, commands..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setSelectedIndex(0);
+              }}
+              className="flex-1 bg-transparent outline-none text-sg-neutral-900 dark:text-sg-neutral-50 placeholder-sg-neutral-500"
+            />
+            <span className="text-xs text-sg-neutral-500">ESC</span>
+          </div>
 
-        <div className="command-list">
-          {filtered.length === 0 ? (
-            <div className="command-empty">No commands found</div>
-          ) : (
-            filtered.map((cmd, idx) => (
-              <button
-                key={cmd.id}
-                className={`command-item ${selected === idx ? 'selected' : ''}`}
-                onClick={() => {
-                  cmd.action();
-                  setOpen(false);
-                }}
-              >
-                <div className="command-info">
-                  <div className="command-label">{cmd.label}</div>
-                  {cmd.description && (
-                    <div className="command-description">{cmd.description}</div>
-                  )}
-                </div>
-                {cmd.shortcut && (
-                  <div className="command-shortcut">{cmd.shortcut}</div>
-                )}
-              </button>
-            ))
-          )}
+          {/* Results */}
+          <div className="max-h-96 overflow-y-auto">
+            {filteredCommands.length === 0 ? (
+              <div className="px-4 py-8 text-center text-sg-neutral-600 dark:text-sg-neutral-400">
+                <p>No commands found</p>
+              </div>
+            ) : (
+              <div className="py-2">
+                {/* Group by category */}
+                {Object.entries(
+                  filteredCommands.reduce(
+                    (groups, cmd) => {
+                      if (!groups[cmd.category]) groups[cmd.category] = [];
+                      groups[cmd.category].push(cmd);
+                      return groups;
+                    },
+                    {} as Record<string, CommandItem[]>
+                  )
+                ).map(([category, commands]) => (
+                  <div key={category}>
+                    <div className="px-4 py-2 text-xs font-semibold text-sg-neutral-600 dark:text-sg-neutral-400 uppercase tracking-wider">
+                      {category}
+                    </div>
+                    {commands.map((cmd, idx) => {
+                      const isSelected =
+                        filteredCommands.indexOf(cmd) === selectedIndex;
+                      return (
+                        <button
+                          key={cmd.id}
+                          onClick={cmd.action}
+                          className={`w-full flex items-center gap-3 px-4 py-2 text-left transition-colors ${
+                            isSelected
+                              ? 'bg-sg-red-100 dark:bg-sg-red-900/20 text-sg-red-900 dark:text-sg-red-100'
+                              : 'text-sg-neutral-900 dark:text-sg-neutral-50 hover:bg-sg-neutral-100 dark:hover:bg-sg-neutral-800'
+                          }`}
+                        >
+                          <div className="flex-shrink-0 w-5 h-5 text-sg-neutral-500">
+                            {cmd.icon}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium">{cmd.label}</p>
+                            {cmd.description && (
+                              <p className="text-xs opacity-75">{cmd.description}</p>
+                            )}
+                          </div>
+                          {isSelected && (
+                            <ArrowRight className="w-4 h-4 flex-shrink-0" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="px-4 py-2 border-t border-sg-neutral-200 dark:border-sg-neutral-800 text-xs text-sg-neutral-500 flex items-center justify-between">
+            <div className="flex gap-2">
+              <kbd className="px-2 py-1 bg-sg-neutral-100 dark:bg-sg-neutral-800 rounded">
+                ↑↓
+              </kbd>
+              <span>Navigate</span>
+              <kbd className="px-2 py-1 bg-sg-neutral-100 dark:bg-sg-neutral-800 rounded">
+                Enter
+              </kbd>
+              <span>Select</span>
+            </div>
+          </div>
         </div>
       </div>
-
-      <style jsx>{`
-        .command-palette-trigger {
-          padding: var(--sg-space-2) var(--sg-space-3);
-          background: var(--sg-border);
-          border: 1px solid var(--sg-border);
-          border-radius: var(--sg-radius-md);
-          cursor: pointer;
-          font-size: var(--sg-type-sm);
-          color: var(--sg-text-secondary);
-          font-family: var(--sg-font-mono);
-
-          &:hover {
-            background: color-mix(in srgb, var(--sg-accent) 14%, var(--sg-surface));
-            border-color: var(--sg-accent);
-          }
-        }
-
-        .command-palette-overlay {
-          position: fixed;
-          inset: 0;
-          background: rgba(0, 0, 0, 0.5);
-          z-index: 999;
-        }
-
-        .command-palette {
-          position: fixed;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          width: 90%;
-          max-width: 600px;
-          max-height: 400px;
-          background: var(--sg-elevated);
-          border: 1px solid var(--sg-border);
-          border-radius: var(--sg-radius-lg);
-          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-          z-index: 1000;
-          display: flex;
-          flex-direction: column;
-          overflow: hidden;
-        }
-
-        .command-input {
-          padding: var(--sg-space-3);
-          border: none;
-          border-bottom: 1px solid var(--sg-border);
-          background: transparent;
-          color: var(--sg-text-primary);
-          font-size: var(--sg-type-base);
-
-          &:focus {
-            outline: none;
-            border-bottom-color: var(--sg-accent);
-          }
-
-          &::placeholder {
-            color: var(--sg-text-muted);
-          }
-        }
-
-        .command-list {
-          overflow-y: auto;
-          max-height: 300px;
-        }
-
-        .command-empty {
-          padding: var(--sg-space-4);
-          text-align: center;
-          color: var(--sg-text-muted);
-          font-size: var(--sg-type-sm);
-        }
-
-        .command-item {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          width: 100%;
-          padding: var(--sg-space-3);
-          border: none;
-          background: transparent;
-          color: inherit;
-          text-align: left;
-          cursor: pointer;
-          transition: background-color 0.2s;
-
-          &:hover,
-          &.selected {
-            background: var(--sg-surface);
-          }
-        }
-
-        .command-info {
-          display: flex;
-          flex-direction: column;
-          gap: 2px;
-          flex: 1;
-        }
-
-        .command-label {
-          font-weight: var(--sg-weight-medium);
-          font-size: var(--sg-type-sm);
-          color: var(--sg-text-primary);
-        }
-
-        .command-description {
-          font-size: var(--sg-type-xs);
-          color: var(--sg-text-secondary);
-        }
-
-        .command-shortcut {
-          font-family: var(--sg-font-mono);
-          font-size: var(--sg-type-xs);
-          color: var(--sg-text-muted);
-          padding: var(--sg-space-1) var(--sg-space-2);
-          background: var(--sg-border);
-          border-radius: 3px;
-        }
-      `}</style>
     </>
   );
 }
