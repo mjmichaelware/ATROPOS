@@ -1,50 +1,88 @@
 'use client';
 
-import { Metadata } from 'next';
+import { useEffect, useMemo } from 'react';
 import { ProjectHeader } from '@/components/project/project-header';
 import { SixAnswersPanel, SixAnswer } from '@/components/ui/six-answers-panel';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { ControlVerbs, ControlVerb } from '@/components/ui/control-verbs';
+import { useProject, useWorkItems } from '@/lib/api-atropos/hooks';
+import { useAppContext } from '@/lib/contexts/app-context';
 import { Plus, Filter } from 'lucide-react';
 
 export default function WorkPage({ params }: { params: { id: string } }) {
-  // Example project data (TODO: Replace with real API call)
-  const projectName = `Project ${params.id}`;
-  const projectStatus = 'planning' as const;
+  const { data: project, loading: projectLoading, error: projectError } = useProject(params.id);
+  const { data: workItems, loading: itemsLoading, error: itemsError } = useWorkItems(params.id);
+  const { addError } = useAppContext();
 
-  const projectAnswers: SixAnswer = {
+  useEffect(() => {
+    if (projectError) {
+      addError({
+        message: 'Failed to load project',
+        context: 'Work page',
+        can_retry: true,
+      });
+    }
+  }, [projectError, addError]);
+
+  useEffect(() => {
+    if (itemsError) {
+      addError({
+        message: 'Failed to load work items',
+        context: 'Work page',
+        can_retry: true,
+      });
+    }
+  }, [itemsError, addError]);
+
+  const todoItems = workItems?.filter((item) => item.status === 'todo') ?? [];
+  const inProgressItems = workItems?.filter((item) => item.status === 'working') ?? [];
+  const doneItems = workItems?.filter((item) => item.status === 'completed') ?? [];
+  const completedPercent = workItems
+    ? Math.round((doneItems.length / workItems.length) * 100)
+    : 0;
+
+  const projectAnswers: SixAnswer = project?.six_answers || {
     objective: 'Execute the planned workflow for this project with autonomous agents.',
-    currentOperation: 'No active work items. Ready to assign or create tasks.',
+    currentOperation: workItems && workItems.length > 0
+      ? `${workItems.length} work item${workItems.length !== 1 ? 's' : ''}`
+      : 'No active work items. Ready to assign or create tasks.',
     reasoning: 'Work items represent the human-directed tasks that ATROPOS executes with autonomous agents.',
-    progress: { percent: 0, stage: 'Planning' },
-    nextAction: 'Create your first work item to begin autonomous execution.',
-    evidence: {
-      link: '#',
-      label: 'View work execution history',
-    },
+    progress: { percent: completedPercent, stage: project?.status ?? 'Planning' },
+    nextAction: workItems && workItems.length > 0
+      ? 'Review and prioritize work items'
+      : 'Create your first work item to begin autonomous execution.',
+    evidence: project?.evidence,
   };
 
   const trustIndicators = {
     authorityVerified: true,
-    evidenceVerified: true,
-    verificationComplete: false,
+    evidenceVerified: !projectError && !itemsError,
+    verificationComplete: workItems && workItems.length === doneItems.length,
     policyCompliant: true,
     checkpointCurrent: true,
     recoveryAvailable: false,
-    noSilentFailures: true,
+    noSilentFailures: !projectError && !itemsError,
   };
 
   const workAnswers: SixAnswer = {
     objective: 'Display active goals, queued work, approvals, and pending decisions.',
-    currentOperation: 'Idle - No work items to display.',
+    currentOperation:
+      workItems && workItems.length > 0
+        ? `${inProgressItems.length} in progress, ${todoItems.length} queued`
+        : 'Idle - No work items to display.',
     reasoning: 'Work is the human queue of attention, not the internal scheduler log.',
-    progress: { percent: 0, stage: 'Idle' },
-    nextAction: 'Create a new work item or import existing tasks.',
+    progress: {
+      percent: completedPercent,
+      stage: workItems && workItems.length > 0 ? 'In progress' : 'Idle',
+    },
+    nextAction: workItems && workItems.length > 0
+      ? 'Monitor active work and approvals'
+      : 'Create a new work item or import existing tasks.',
   };
 
   const handleControlAction = (verb: ControlVerb) => {
     console.log('Control action:', verb);
-    // TODO: Wire to actual API
+    // TODO: Wire to actual API via useProjectActions hook
   };
 
   return (
@@ -88,37 +126,118 @@ export default function WorkPage({ params }: { params: { id: string } }) {
           <h3 className="text-lg font-semibold text-sg-neutral-900 dark:text-sg-neutral-50">
             Work Items
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* To Do Column */}
-            <div className="bg-sg-neutral-50 dark:bg-sg-neutral-900 border border-sg-neutral-200 dark:border-sg-neutral-800 rounded-lg p-4">
-              <h4 className="text-sm font-semibold text-sg-neutral-700 dark:text-sg-neutral-300 uppercase tracking-wider mb-4">
-                To Do
-              </h4>
-              <div className="min-h-[200px] flex items-center justify-center">
-                <p className="text-sm text-sg-neutral-500 text-center">No work items</p>
+          {itemsLoading ? (
+            <p className="text-sg-neutral-600 dark:text-sg-neutral-400">Loading work items...</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* To Do Column */}
+              <div className="bg-sg-neutral-50 dark:bg-sg-neutral-900 border border-sg-neutral-200 dark:border-sg-neutral-800 rounded-lg p-4">
+                <h4 className="text-sm font-semibold text-sg-neutral-700 dark:text-sg-neutral-300 uppercase tracking-wider mb-4">
+                  To Do ({todoItems.length})
+                </h4>
+                <div className="space-y-2 min-h-[200px]">
+                  {todoItems.length === 0 ? (
+                    <p className="text-sm text-sg-neutral-500 text-center py-8">No items</p>
+                  ) : (
+                    todoItems.map((item) => (
+                      <div
+                        key={item.id}
+                        className="p-3 bg-white dark:bg-sg-neutral-800 rounded border border-sg-neutral-200 dark:border-sg-neutral-700 hover:border-sg-red-400 dark:hover:border-sg-red-600 transition-colors cursor-pointer"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <h5 className="font-medium text-sm text-sg-neutral-900 dark:text-sg-neutral-50">
+                            {item.title}
+                          </h5>
+                          <StatusBadge status={item.status} size="sm" />
+                        </div>
+                        {item.description && (
+                          <p className="text-xs text-sg-neutral-600 dark:text-sg-neutral-400 mt-1">
+                            {item.description.substring(0, 50)}...
+                          </p>
+                        )}
+                        <div className="flex items-center justify-between mt-2">
+                          <span className="text-xs text-sg-neutral-500">
+                            Priority:{' '}
+                            <span className="font-medium capitalize">{item.priority}</span>
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
-            </div>
 
-            {/* In Progress Column */}
-            <div className="bg-sg-neutral-50 dark:bg-sg-neutral-900 border border-sg-neutral-200 dark:border-sg-neutral-800 rounded-lg p-4">
-              <h4 className="text-sm font-semibold text-sg-neutral-700 dark:text-sg-neutral-300 uppercase tracking-wider mb-4">
-                In Progress
-              </h4>
-              <div className="min-h-[200px] flex items-center justify-center">
-                <p className="text-sm text-sg-neutral-500 text-center">No work items</p>
+              {/* In Progress Column */}
+              <div className="bg-sg-neutral-50 dark:bg-sg-neutral-900 border border-sg-neutral-200 dark:border-sg-neutral-800 rounded-lg p-4">
+                <h4 className="text-sm font-semibold text-sg-neutral-700 dark:text-sg-neutral-300 uppercase tracking-wider mb-4">
+                  In Progress ({inProgressItems.length})
+                </h4>
+                <div className="space-y-2 min-h-[200px]">
+                  {inProgressItems.length === 0 ? (
+                    <p className="text-sm text-sg-neutral-500 text-center py-8">No items</p>
+                  ) : (
+                    inProgressItems.map((item) => (
+                      <div
+                        key={item.id}
+                        className="p-3 bg-white dark:bg-sg-neutral-800 rounded border border-sg-amber-200 dark:border-sg-amber-800 hover:border-sg-amber-400 dark:hover:border-sg-amber-600 transition-colors cursor-pointer"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <h5 className="font-medium text-sm text-sg-neutral-900 dark:text-sg-neutral-50">
+                            {item.title}
+                          </h5>
+                          <StatusBadge status={item.status} size="sm" />
+                        </div>
+                        {item.progress !== undefined && (
+                          <div className="mt-2">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs text-sg-neutral-600 dark:text-sg-neutral-400">
+                                Progress
+                              </span>
+                              <span className="text-xs font-semibold text-sg-amber-600">
+                                {item.progress}%
+                              </span>
+                            </div>
+                            <div className="w-full bg-sg-neutral-200 dark:bg-sg-neutral-700 rounded-full h-1">
+                              <div
+                                className="bg-sg-amber-500 h-full rounded-full transition-all"
+                                style={{ width: `${item.progress}%` }}
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
-            </div>
 
-            {/* Done Column */}
-            <div className="bg-sg-neutral-50 dark:bg-sg-neutral-900 border border-sg-neutral-200 dark:border-sg-neutral-800 rounded-lg p-4">
-              <h4 className="text-sm font-semibold text-sg-neutral-700 dark:text-sg-neutral-300 uppercase tracking-wider mb-4">
-                Done
-              </h4>
-              <div className="min-h-[200px] flex items-center justify-center">
-                <p className="text-sm text-sg-neutral-500 text-center">No work items</p>
+              {/* Done Column */}
+              <div className="bg-sg-neutral-50 dark:bg-sg-neutral-900 border border-sg-neutral-200 dark:border-sg-neutral-800 rounded-lg p-4">
+                <h4 className="text-sm font-semibold text-sg-neutral-700 dark:text-sg-neutral-300 uppercase tracking-wider mb-4">
+                  Done ({doneItems.length})
+                </h4>
+                <div className="space-y-2 min-h-[200px]">
+                  {doneItems.length === 0 ? (
+                    <p className="text-sm text-sg-neutral-500 text-center py-8">No items</p>
+                  ) : (
+                    doneItems.map((item) => (
+                      <div
+                        key={item.id}
+                        className="p-3 bg-white dark:bg-sg-neutral-800 rounded border border-sg-green-200 dark:border-sg-green-800 hover:border-sg-green-400 dark:hover:border-sg-green-600 transition-colors cursor-pointer"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <h5 className="font-medium text-sm text-sg-neutral-900 dark:text-sg-neutral-50 line-through">
+                            {item.title}
+                          </h5>
+                          <StatusBadge status={item.status} size="sm" />
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </section>
       </div>
     </div>
