@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { ChevronDown, Zap, Network, Shield, Eye, RotateCcw } from 'lucide-react';
+import { MemoryLayersInspector } from './memory-layers-inspector';
 
 interface InspectorProps {
   title: string;
@@ -173,6 +174,9 @@ export function AllInspectors() {
       <PolicyInspector />
       <SourceAuthorityInspector />
       <RecoveryInspector />
+      <div className="border border-sg-neutral-200 dark:border-sg-neutral-800 rounded-lg overflow-hidden">
+        <MemoryLayersInspector />
+      </div>
     </div>
   );
 }
