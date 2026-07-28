@@ -11,6 +11,7 @@ import {
   Approval,
   Notification,
   AppError,
+  File,
 } from './types';
 import {
   projectOperations,
@@ -20,6 +21,7 @@ import {
   approvalOperations,
   notificationOperations,
   errorOperations,
+  fileOperations,
 } from './operations';
 
 interface UseDataState<T> {
@@ -114,6 +116,14 @@ export function useNotifications() {
 
 export function useErrors(projectId?: string) {
   return useData(() => errorOperations.list(projectId), [projectId]);
+}
+
+export function useFiles(projectId: string, path?: string) {
+  return useData(() => fileOperations.list(projectId, path), [projectId, path]);
+}
+
+export function useFile(projectId: string, fileId: string) {
+  return useData(() => fileOperations.get(projectId, fileId), [projectId, fileId]);
 }
 
 // Action hooks with callbacks

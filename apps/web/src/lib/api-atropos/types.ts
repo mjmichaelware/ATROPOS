@@ -90,6 +90,19 @@ export interface Conversation {
   message_count: number;
 }
 
+export interface File {
+  id: string;
+  project_id: string;
+  name: string;
+  path: string;
+  type: 'file' | 'directory';
+  size?: number;
+  mime_type?: string;
+  created_at: string;
+  updated_at: string;
+  content?: string;
+}
+
 export interface Approval {
   id: string;
   project_id?: string;

@@ -12,6 +12,7 @@ import {
   Approval,
   Notification,
   AppError,
+  File,
 } from './types';
 
 export const projectOperations = {
@@ -211,5 +212,42 @@ export const errorOperations = {
 
   async dismiss(id: string): Promise<void> {
     await atroposApi.delete(`/errors/${id}`);
+  },
+};
+
+export const fileOperations = {
+  async list(projectId: string, path?: string): Promise<File[]> {
+    const endpoint = path
+      ? `/projects/${projectId}/files?path=${encodeURIComponent(path)}`
+      : `/projects/${projectId}/files`;
+    return atroposApi.get<File[]>(endpoint);
+  },
+
+  async get(projectId: string, fileId: string): Promise<File> {
+    return atroposApi.get<File>(`/projects/${projectId}/files/${fileId}`);
+  },
+
+  async create(projectId: string, data: Partial<File>): Promise<File> {
+    return atroposApi.post<File>(`/projects/${projectId}/files`, data);
+  },
+
+  async upload(projectId: string, file: globalThis.File): Promise<File> {
+    const formData = new FormData();
+    formData.append('file', file);
+    const url = `/projects/${projectId}/files/upload`;
+    const response = await fetch(`/api/atropos${url}`, {
+      method: 'POST',
+      body: formData,
+    });
+    if (!response.ok) throw new Error('Upload failed');
+    return response.json();
+  },
+
+  async update(projectId: string, fileId: string, data: Partial<File>): Promise<File> {
+    return atroposApi.put<File>(`/projects/${projectId}/files/${fileId}`, data);
+  },
+
+  async delete(projectId: string, fileId: string): Promise<void> {
+    await atroposApi.delete(`/projects/${projectId}/files/${fileId}`);
   },
 };
