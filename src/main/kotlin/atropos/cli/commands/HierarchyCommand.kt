@@ -26,6 +26,8 @@ import atropos.core.platform.Platform
 import atropos.core.platform.PlatformAdapterRegistry
 import atropos.core.artifact.ArtifactPipeline
 import atropos.core.artifact.ArtifactVerificationService
+import atropos.core.artifact.JarSwapEvidence
+import atropos.core.artifact.SafeJarSwapGate
 import atropos.core.autonomous.AutonomousOrchestrator
 import atropos.core.autonomous.AutonomousBacklogService
 import atropos.core.autonomous.AutonomousTaskKind
@@ -46,6 +48,7 @@ class HierarchyCommand {
     private val inspectionService = InspectionService()
     private val artifactPipeline = ArtifactPipeline()
     private val artifactVerification = ArtifactVerificationService()
+    private val jarSwapGate = SafeJarSwapGate()
     private val autonomousOrchestrator = AutonomousOrchestrator()
     private val autonomousBacklog = AutonomousBacklogService()
 
@@ -377,6 +380,24 @@ System commands (all phases):
             else {
                 val result = artifactVerification.runAcceptanceGate(args[1])
                 "Acceptance gate: ${if (result.passed) "PASS" else "FAIL"} - ${result.message}"
+            }
+        }
+        "promote-jar" -> {
+            if (args.size < 4) {
+                "usage: /artifact promote-jar <candidate-jar> <target-jar> <verification-id> [verification-id...]"
+            } else {
+                val evidenceIds = args.drop(3).toSet()
+                val evidence = artifactPipeline.report().verifications
+                    .filter { it.id in evidenceIds }
+                    .map { JarSwapEvidence(it.passed, it.kind.name, "${it.id}: ${it.evidence}") }
+                if (evidence.size != evidenceIds.size) {
+                    val found = artifactPipeline.report().verifications.map { it.id }.toSet()
+                    val missing = evidenceIds.filterNot { it in found }
+                    "JAR promote refused: missing verification evidence ${missing.joinToString(",")}"
+                } else {
+                    val result = jarSwapGate.promote(Path.of(args[1]), Path.of(args[2]), evidence)
+                    "JAR promote: ${if (result.promoted) "PROMOTED" else "REFUSED"} - ${result.message}"
+                }
             }
         }
         else -> {

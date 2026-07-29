@@ -22,6 +22,8 @@ data class DirectorObservation(
     val severity: DriftSeverity,
     val source: String,
     val details: String,
+    val goalId: String? = null,
+    val territoryId: String? = null,
     val filePaths: List<String> = emptyList(),
     val symbols: List<String> = emptyList(),
     val timestamp: Instant = Instant.now(),
@@ -43,4 +45,10 @@ data class DiffSnapshot(
     val changedFiles: List<String>,
     val timestamp: Instant,
     val totalChanges: Int
+)
+
+data class DirectorPromotionAdvisory(
+    val allowed: Boolean,
+    val blockingObservations: List<DirectorObservation>,
+    val message: String
 )

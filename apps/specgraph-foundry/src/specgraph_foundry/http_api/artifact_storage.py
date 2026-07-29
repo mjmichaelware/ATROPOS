@@ -112,6 +112,7 @@ def validate_artifact_name(name: str) -> str:
         "authority_graph.json",
         "execution_graph.json",
         "traceability.json",
+        "export_proof_summary.json",
         "integration_bindings.json",
         "atropos_handoff.json",
         "implementation_blueprint.md",

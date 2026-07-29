@@ -26,21 +26,23 @@ class TreeSitterGrammarBridge {
     fun parseTree(code: String): KotlinParseTree {
         val lines = code.lines()
         val packageName = lines.firstOrNull { it.trimStart().startsWith("package ") }
+            ?.trim()
             ?.removePrefix("package ")
             ?.trim()
             .orEmpty()
         val imports = lines.filter { it.trimStart().startsWith("import ") }
-            .map { it.removePrefix("import ").trim() }
+            .map { it.trim().removePrefix("import ").trim() }
 
         val declarations = mutableListOf<KotlinDeclaration>()
         var offset = 0
         lines.forEachIndexed { index, line ->
             val lineNumber = index + 1
-            collect(KotlinDeclarationKind.CLASS, CLASS_PATTERN, line, lineNumber, offset, declarations)
-            collect(KotlinDeclarationKind.OBJECT, OBJECT_PATTERN, line, lineNumber, offset, declarations)
-            collect(KotlinDeclarationKind.INTERFACE, INTERFACE_PATTERN, line, lineNumber, offset, declarations)
-            collect(KotlinDeclarationKind.FUNCTION, FUNCTION_PATTERN, line, lineNumber, offset, declarations)
-            collect(KotlinDeclarationKind.PROPERTY, PROPERTY_PATTERN, line, lineNumber, offset, declarations)
+            val searchable = line.substringBefore("//")
+            collect(KotlinDeclarationKind.CLASS, CLASS_PATTERN, searchable, lineNumber, offset, declarations)
+            collect(KotlinDeclarationKind.OBJECT, OBJECT_PATTERN, searchable, lineNumber, offset, declarations)
+            collect(KotlinDeclarationKind.INTERFACE, INTERFACE_PATTERN, searchable, lineNumber, offset, declarations)
+            collect(KotlinDeclarationKind.FUNCTION, FUNCTION_PATTERN, searchable, lineNumber, offset, declarations)
+            collect(KotlinDeclarationKind.PROPERTY, PROPERTY_PATTERN, searchable, lineNumber, offset, declarations)
             offset += line.length + 1
         }
 
@@ -59,22 +61,23 @@ class TreeSitterGrammarBridge {
         lineOffset: Int,
         sink: MutableList<KotlinDeclaration>
     ) {
-        pattern.find(line)?.let { match ->
+        pattern.findAll(line).forEach { match ->
+            val nameGroup = match.groups[1] ?: return@forEach
             sink += KotlinDeclaration(
                 kind = kind,
-                name = match.groupValues[1],
+                name = nameGroup.value,
                 line = lineNumber,
-                column = match.range.first + 1,
-                offset = lineOffset + match.range.first
+                column = nameGroup.range.first + 1,
+                offset = lineOffset + nameGroup.range.first
             )
         }
     }
 
     private companion object {
-        val CLASS_PATTERN = Regex("""\bclass\s+([A-Za-z_][A-Za-z0-9_]*)""")
-        val OBJECT_PATTERN = Regex("""\bobject\s+([A-Za-z_][A-Za-z0-9_]*)""")
-        val INTERFACE_PATTERN = Regex("""\binterface\s+([A-Za-z_][A-Za-z0-9_]*)""")
-        val FUNCTION_PATTERN = Regex("""\bfun\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(""")
-        val PROPERTY_PATTERN = Regex("""\b(?:val|var)\s+([A-Za-z_][A-Za-z0-9_]*)""")
+        val CLASS_PATTERN = Regex("""\b(?:data|sealed|open|abstract|value|inner|enum|annotation|private|internal|public|protected|\s)*class\s+([A-Za-z_][A-Za-z0-9_]*)""")
+        val OBJECT_PATTERN = Regex("""\b(?:data|private|internal|public|protected|\s)*object\s+([A-Za-z_][A-Za-z0-9_]*)""")
+        val INTERFACE_PATTERN = Regex("""\b(?:fun|sealed|private|internal|public|protected|\s)*interface\s+([A-Za-z_][A-Za-z0-9_]*)""")
+        val FUNCTION_PATTERN = Regex("""\bfun\s+(?:<[^>]+>\s*)?(?:[A-Za-z_][A-Za-z0-9_]*\.)?([A-Za-z_][A-Za-z0-9_]*)\s*\(""")
+        val PROPERTY_PATTERN = Regex("""\b(?:private|internal|public|protected|override|lateinit|const|abstract|open|\s)*(?:val|var)\s+([A-Za-z_][A-Za-z0-9_]*)""")
     }
 }

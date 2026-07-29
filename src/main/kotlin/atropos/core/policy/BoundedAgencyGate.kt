@@ -16,10 +16,12 @@ data class AgencyDecision(
 class BoundedAgencyGate(
     private val policyEngine: ExecutionPolicyEngine = ExecutionPolicyEngine(),
     private val territory: atropos.core.territory.TerritoryGrantService =
-        atropos.core.territory.TerritoryGrantService()
+        atropos.core.territory.TerritoryGrantService(),
+    private val capabilityEnforcer: CapabilityEnforcer = CapabilityEnforcer()
 ) {
     fun evaluate(proposal: ActionProposal): AgencyDecision {
         territoryRefusal(proposal)?.let { return it }
+        capabilityRefusal(proposal)?.let { return it }
 
         val decision = policyEngine.evaluate(proposal.toRequest())
         val disposition = when (decision.decision) {
@@ -32,6 +34,22 @@ class BoundedAgencyGate(
             policyDecision = decision,
             disposition = disposition,
             reason = decision.reason
+        )
+    }
+
+    private fun capabilityRefusal(proposal: ActionProposal): AgencyDecision? {
+        val violation = capabilityEnforcer.evaluate(proposal) ?: return null
+        return AgencyDecision(
+            proposal = proposal,
+            policyDecision = ExecutionPolicyDecision(
+                id = "capability",
+                decision = PolicyDecisionType.DENY,
+                actionClass = proposal.actionClass,
+                destructive = false,
+                reason = violation.reason
+            ),
+            disposition = AgencyDisposition.POLICY_BLOCKED,
+            reason = violation.reason
         )
     }
 

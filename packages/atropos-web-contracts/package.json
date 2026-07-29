@@ -1,0 +1,11 @@
+{
+  "name": "@atropos/web-contracts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Framework-neutral presentation contracts shared by ATROPOS TUI and Web.",
+  "scripts": {
+    "validate": "node scripts/validate-contracts.mjs",
+    "test": "node --test tests/contracts.test.mjs"
+  }
+}

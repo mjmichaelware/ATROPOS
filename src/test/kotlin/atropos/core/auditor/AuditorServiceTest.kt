@@ -31,4 +31,20 @@ class AuditorServiceTest {
         assertTrue(report.passed >= 1)
         assertEquals(0, report.failures)
     }
+
+    @Test
+    fun auditorBlocksPromotionOnFailuresAndSelfApproval() {
+        val auditor = AuditorService()
+        auditor.auditTerritories(listOf(
+            TerritoryAssignment(id = "t1", ownerId = "o1", ownerRole = "WORKER", allowedPrefix = "")
+        ))
+
+        val blockedByFinding = auditor.blockPromotion(claimedBy = "worker", auditedBy = "auditor")
+        val blockedBySelfApproval = AuditorService().blockPromotion(claimedBy = "worker", auditedBy = "worker")
+
+        assertTrue(!blockedByFinding.allowed)
+        assertTrue(blockedByFinding.blockingFindings.any { it.check == "territory-prefix" })
+        assertTrue(!blockedBySelfApproval.allowed)
+        assertTrue(blockedBySelfApproval.blockingFindings.any { it.check == "auditor-independence" })
+    }
 }

@@ -1,5 +1,6 @@
 package atropos.core.auditor
 
+import atropos.core.AtroposRepoRootLocator
 import atropos.core.security.RedactionFilter
 import atropos.core.territory.TerritoryAssignment
 import atropos.core.verification.DeterministicVerifier
@@ -30,6 +31,12 @@ data class AuditReport(
     val summary: String get() = "$passed passed, $warnings warnings, $failures failures"
 }
 
+data class AuditorPromotionDecision(
+    val allowed: Boolean,
+    val blockingFindings: List<AuditFinding>,
+    val message: String
+)
+
 class AuditorService(
     /**
      * The repository the audited files belong to.
@@ -40,7 +47,7 @@ class AuditorService(
      * this one made that misconfiguration invisible while the verifier still
      * crashed on such paths and the failure was swallowed as a warning.
      */
-    private val repoRoot: Path = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize()
+    private val repoRoot: Path = AtroposRepoRootLocator.resolve()
 ) {
     private val findings = mutableListOf<AuditFinding>()
 
@@ -104,5 +111,24 @@ class AuditorService(
         val warnings = findings.count { it.severity == AuditSeverity.WARNING || it.severity == AuditSeverity.INFO }
         val failures = findings.count { it.severity == AuditSeverity.FAILURE || it.severity == AuditSeverity.CRITICAL }
         return AuditReport(findings = findings.toList(), passed = passed, warnings = warnings, failures = failures)
+    }
+
+    fun blockPromotion(report: AuditReport = report(), claimedBy: String? = null, auditedBy: String? = "auditor"): AuditorPromotionDecision {
+        val blocking = report.findings.filter {
+            it.severity == AuditSeverity.FAILURE || it.severity == AuditSeverity.CRITICAL
+        }.toMutableList()
+        if (claimedBy != null && auditedBy != null && claimedBy == auditedBy) {
+            blocking += AuditFinding(
+                check = "auditor-independence",
+                severity = AuditSeverity.CRITICAL,
+                message = "promotion cannot be audited by the same actor that claimed the work",
+                evidence = "claimedBy=$claimedBy auditedBy=$auditedBy"
+            )
+        }
+        return AuditorPromotionDecision(
+            allowed = blocking.isEmpty(),
+            blockingFindings = blocking,
+            message = if (blocking.isEmpty()) "auditor promotion gate passed" else "auditor promotion gate blocked: ${blocking.size} findings"
+        )
     }
 }

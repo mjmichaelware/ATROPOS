@@ -54,4 +54,74 @@ class HierarchyRegistryTest {
         val snap = reg.snapshot()
         assertEquals(2, snap.agents.size)
     }
+
+    @Test
+    fun dispatchCarriesSourceTerritoryBudgetAcceptanceRollbackAndParentAuthority() {
+        val reg = HierarchyRegistry()
+        val manager = AgentRecord(name = "manager", role = HierarchyRole.MANAGER)
+        val worker = AgentRecord(
+            name = "worker",
+            role = HierarchyRole.WORKER,
+            capabilities = listOf("kotlin", "verification")
+        )
+        reg.register(manager)
+        reg.register(worker)
+
+        val contract = HierarchyDispatchContract(
+            parentAuthorityId = manager.id,
+            assigneeId = worker.id,
+            sourceCoordinates = listOf("97cff09c0f362337:S0013@L46-L48"),
+            territory = listOf("src/main/kotlin/atropos/core/agent"),
+            capabilities = listOf("kotlin"),
+            budgetTokens = 1200,
+            acceptanceCriteria = listOf("focused test exists", "diff scoped"),
+            rollbackPlan = "revert exact files in this dispatch"
+        )
+        val result = reg.dispatch(contract)
+
+        assertTrue(result is HierarchyDispatchResult.Accepted)
+        assertEquals(AgentStatus.ASSIGNED, reg.get(worker.id)?.status)
+        assertEquals(contract.taskId, reg.get(worker.id)?.currentTaskId)
+        assertEquals(listOf(contract), reg.dispatchHistory())
+    }
+
+    @Test
+    fun dispatchRefusesMissingContractFieldsAndInvalidAuthorityDirection() {
+        val reg = HierarchyRegistry()
+        val workerA = AgentRecord(name = "worker-a", role = HierarchyRole.WORKER, capabilities = listOf("kotlin"))
+        val workerB = AgentRecord(name = "worker-b", role = HierarchyRole.WORKER, capabilities = listOf("kotlin"))
+        reg.register(workerA)
+        reg.register(workerB)
+
+        val missing = reg.dispatch(
+            HierarchyDispatchContract(
+                parentAuthorityId = workerA.id,
+                assigneeId = workerB.id,
+                sourceCoordinates = emptyList(),
+                territory = listOf("src"),
+                capabilities = listOf("kotlin"),
+                budgetTokens = 100,
+                acceptanceCriteria = listOf("done"),
+                rollbackPlan = "none"
+            )
+        )
+        val invalidDirection = reg.dispatch(
+            HierarchyDispatchContract(
+                parentAuthorityId = workerA.id,
+                assigneeId = workerB.id,
+                sourceCoordinates = listOf("source:S1@L1-L2"),
+                territory = listOf("src"),
+                capabilities = listOf("kotlin"),
+                budgetTokens = 100,
+                acceptanceCriteria = listOf("done"),
+                rollbackPlan = "revert exact files"
+            )
+        )
+
+        assertTrue(missing is HierarchyDispatchResult.Refused)
+        assertTrue((missing as HierarchyDispatchResult.Refused).reason.contains("sourceCoordinates"))
+        assertTrue(invalidDirection is HierarchyDispatchResult.Refused)
+        assertTrue((invalidDirection as HierarchyDispatchResult.Refused).reason.contains("cannot dispatch"))
+        assertEquals(AgentStatus.IDLE, reg.get(workerB.id)?.status)
+    }
 }

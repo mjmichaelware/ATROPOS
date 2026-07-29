@@ -1,11 +1,12 @@
 package atropos.core.planning
 
+import atropos.core.AtroposRepoRootLocator
 import atropos.core.dag.DagDefinition
 import atropos.core.dag.DagStore
 import java.nio.file.Path
 
 class InternalPlanningGraphService(
-    private val repoRoot: Path = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize(),
+    private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
     private val ingestionService: InternalIngestionService = InternalIngestionService(),
     private val atomExtractor: InternalAtomExtractor = InternalAtomExtractor(),
     private val authorityGraphBuilder: InternalAuthorityGraphBuilder = InternalAuthorityGraphBuilder(),

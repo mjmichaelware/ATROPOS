@@ -1,5 +1,6 @@
 package atropos.dloi
 
+import atropos.core.AtroposRepoRootLocator
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
@@ -82,10 +83,12 @@ private data class DloiLineRecord(
 )
 
 class DloiService(
-    private val repoRoot: Path = Path.of(".").toAbsolutePath().normalize(),
+    private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
     private val taskResolver: DloiTaskResolver = DloiTaskResolver(),
     /** Keeps the derived index in step with the committed authority set. */
-    private val indexer: DloiSourceIndexer = DloiSourceIndexer(repoRoot)
+    private val indexer: DloiSourceIndexer = DloiSourceIndexer(repoRoot),
+    private val aliases: DloiAliasResolver = DloiAliasResolver(),
+    private val indexedDocumentLoader: DloiIndexedDocumentLoader = DloiIndexedDocumentLoader(aliases)
 ) {
     /**
      * Resolve an exact DLOI address and return a typed [DloiLookupResult].
@@ -110,10 +113,10 @@ class DloiService(
 
     fun lookup(address: String): DloiResolution {
         val parsed = parse(address)
-        val document = loadDocuments().firstOrNull { parsed.documentId in documentAliases(it) }
+        val document = loadDocuments().firstOrNull { parsed.documentId in aliases.documentAliases(it) }
             ?: error("unknown DLOI document: ${parsed.documentId}")
         val section = parsed.sectionId?.let { sectionId ->
-            document.sections.firstOrNull { sectionAliases(it).contains(sectionId) }
+            document.sections.firstOrNull { aliases.sectionAliases(it).contains(sectionId) }
                 ?: error("unknown DLOI section: ${parsed.sectionId}")
         }
         val indexedLines = indexedLines(document)
@@ -169,11 +172,11 @@ class DloiService(
         val docs = Files.walk(extractedRoot).use { stream ->
             stream.filter { Files.isRegularFile(it) && it.fileName.toString().endsWith(".json") }
                 .sorted()
-                .map(::loadIndexedDocument)
+                .map(indexedDocumentLoader::load)
                 .toList()
         }
         // Deduplicate by primary alias: prefer text kind over docx/doc.
-        return docs.groupBy { documentAliases(it.sourceId, it.originalFilename).first() }
+        return docs.groupBy { aliases.documentAliases(it.sourceId, it.originalFilename).first() }
             .values.map { group ->
                 group.firstOrNull { it.kind == "text" } ?: group.first()
             }
@@ -209,42 +212,6 @@ class DloiService(
         val end = parts.getOrNull(1)?.removePrefix("L")?.removePrefix("PG")?.removePrefix("PARA")?.toIntOrNull() ?: start
         require(start <= end) { "invalid DLOI selector: $selectorSpec" }
         return DloiSelector(kind, start, end)
-    }
-
-    private fun loadIndexedDocument(path: Path): DloiDocument {
-        val json = Files.readString(path, StandardCharsets.UTF_8)
-        val sourceId = extractJsonString(json, "source_id")
-        val originalFilename = extractJsonString(json, "original_filename")
-        val kind = extractJsonString(json, "kind")
-        val normalizedPath = Path.of(extractJsonString(json, "normalized_path"))
-        val lineCount = extractJsonInt(json, "line_count")
-        val pageCount = extractJsonIntOrNull(json, "page_count")
-        val paragraphCount = extractJsonIntOrNull(json, "paragraph_count")
-        val sectionsBlock = extractSectionsBlock(json)
-        val sections = extractSectionObjects(sectionsBlock).map { obj ->
-            DloiSection(
-                id = extractJsonString(obj, "section_id"),
-                title = extractJsonStringOrNull(obj, "heading") ?: "",
-                lineStart = extractJsonInt(obj, "start_line"),
-                lineEnd = extractJsonInt(obj, "end_line"),
-                pageStart = extractJsonIntOrNull(obj, "start_page"),
-                pageEnd = extractJsonIntOrNull(obj, "end_page"),
-                paragraphStart = extractJsonIntOrNull(obj, "start_paragraph"),
-                paragraphEnd = extractJsonIntOrNull(obj, "end_paragraph")
-            )
-        }.toList()
-        val id = documentAliases(sourceId, originalFilename).first()
-        return DloiDocument(
-            id = id,
-            sourceId = sourceId,
-            originalFilename = originalFilename,
-            kind = kind,
-            path = normalizedPath,
-            sections = sections,
-            lineCount = lineCount,
-            pageCount = pageCount,
-            paragraphCount = paragraphCount
-        )
     }
 
     private fun indexedLines(document: DloiDocument): List<DloiLineRecord> {
@@ -306,35 +273,6 @@ class DloiService(
         if (paragraphs.isNotEmpty()) {
             append(" paragraphs=${paragraphs.first()}-${paragraphs.last()}")
         }
-    }
-
-    private fun documentAliases(document: DloiDocument): Set<String> =
-        documentAliases(document.sourceId, document.originalFilename).toSet()
-
-    private fun documentAliases(sourceId: String, originalFilename: String): List<String> {
-        val stem = originalFilename.substringBeforeLast('.')
-        val normalized = dloiSlug(stem)
-        // A source id is accepted in both its literal and slugged form: an
-        // address written `closure-source` and one written `closure_source`
-        // name the same document, and refusing one of them would make a
-        // provable address fail on punctuation.
-        val ids = listOf(sourceId, dloiSlug(sourceId)).distinct()
-        return when {
-            // Map known authority document by its actual filename patterns.
-            normalized.contains("canonical_phases_1_11_authority") ||
-            normalized.contains("codex_cli_build_blueprint_over_time") ->
-                listOf("authority") + ids + normalized
-            normalized.contains("canonical_phases_1_11_closure") ->
-                listOf("closure") + ids + normalized
-            else -> ids + normalized
-        }
-    }
-
-    private fun sectionAliases(section: DloiSection): Set<String> {
-        val titleSlug = dloiSlug(section.title)
-        // Short alias: slug of heading before the first colon, e.g. "Phase 1:…" -> "phase_1"
-        val shortAlias = section.title.split(":").firstOrNull()?.let { dloiSlug(it) }
-        return setOfNotNull(section.id, dloiSlug(section.id), titleSlug, shortAlias)
     }
 
     private fun plainLines(lines: List<String>): List<DloiLineRecord> {
@@ -399,195 +337,9 @@ class DloiService(
         return records
     }
 
-    private fun extractSectionsBlock(json: String): String {
-        val marker = "\"sections\": ["
-        val start = json.indexOf(marker)
-        require(start >= 0) { "missing DLOI sections block" }
-        val contentStart = start + marker.length
-        var depth = 1
-        var cursor = contentStart
-        var inString = false
-        while (cursor < json.length && depth > 0) {
-            val ch = json[cursor]
-            when {
-                ch == '"' && cursor > 0 && json[cursor - 1] != '\\' -> inString = !inString
-                !inString && ch == '[' -> depth += 1
-                !inString && ch == ']' -> depth -= 1
-            }
-            cursor += 1
-        }
-        require(depth == 0) { "unterminated DLOI sections block" }
-        return json.substring(contentStart, cursor - 1)
-    }
-
-    private fun extractJsonString(json: String, field: String): String {
-        val raw = extractRawJsonValue(json, field)
-            ?: error("missing DLOI string field: $field")
-        if (!raw.startsWith('"')) error("null/unexpected DLOI string field: $field")
-        return decodeJsonString(raw.substring(1, raw.length - 1))
-    }
-
-    private fun extractJsonStringOrNull(json: String, field: String): String? {
-        val raw = extractRawJsonValue(json, field) ?: return null
-        if (raw == "null") return null
-        if (!raw.startsWith('"')) return null
-        return decodeJsonString(raw.substring(1, raw.length - 1))
-    }
-
-    private fun extractJsonInt(json: String, field: String): Int =
-        extractJsonIntOrNull(json, field) ?: error("missing DLOI int field: $field")
-
-    private fun extractJsonIntOrNull(json: String, field: String): Int? {
-        val raw = extractRawJsonValue(json, field) ?: return null
-        return raw.toIntOrNull()
-    }
-
-    /** Find the value of a top-level JSON field without using regex. */
-    private fun extractRawJsonValue(json: String, field: String): String? {
-        val fieldMarker = "\"$field\""
-        var pos = json.indexOf(fieldMarker)
-        if (pos < 0) return null
-        pos = json.indexOf(':', pos + fieldMarker.length)
-        if (pos < 0) return null
-        pos++ // skip ':'
-        // skip whitespace
-        while (pos < json.length && json[pos].isWhitespace()) pos++
-        if (pos >= json.length) return null
-        val first = json[pos]
-        return if (first == '"') {
-            // string value - extract until unescaped closing quote
-            val start = pos
-            pos++ // skip opening quote
-            while (pos < json.length) {
-                val ch = json[pos]
-                if (ch == '\\') {
-                    pos += 2 // skip escaped char
-                } else if (ch == '"') {
-                    pos++ // include closing quote
-                    return json.substring(start, pos)
-                } else {
-                    pos++
-                }
-            }
-            null // unterminated string
-        } else if (first == 'n' && json.regionMatches(pos, "null", 0, 4)) {
-            "null"
-        } else if (first == '-' || first.isDigit()) {
-            // number - extract digits, dots, minus
-            val start = pos
-            while (pos < json.length && (json[pos].isDigit() || json[pos] == '-' || json[pos] == '.')) pos++
-            json.substring(start, pos)
-        } else if (first == '{') {
-            // object - extract matching braces
-            val start = pos
-            var depth = 1
-            pos++
-            while (pos < json.length && depth > 0) {
-                val ch = json[pos]
-                when {
-                    ch == '"' && pos > 0 && json[pos - 1] != '\\' -> {
-                        // skip string content
-                        pos++
-                        while (pos < json.length) {
-                            val sc = json[pos]
-                            if (sc == '\\') pos += 2
-                            else if (sc == '"') break
-                            else pos++
-                        }
-                    }
-                    ch == '{' -> depth++
-                    ch == '}' -> depth--
-                }
-                pos++
-            }
-            if (depth == 0) json.substring(start, pos) else null
-        } else if (first == '[') {
-            // array - extract matching brackets
-            val start = pos
-            var depth = 1
-            pos++
-            while (pos < json.length && depth > 0) {
-                val ch = json[pos]
-                when {
-                    ch == '"' && pos > 0 && json[pos - 1] != '\\' -> {
-                        pos++
-                        while (pos < json.length) {
-                            val sc = json[pos]
-                            if (sc == '\\') pos += 2
-                            else if (sc == '"') break
-                            else pos++
-                        }
-                    }
-                    ch == '[' -> depth++
-                    ch == ']' -> depth--
-                }
-                pos++
-            }
-            if (depth == 0) json.substring(start, pos) else null
-        } else {
-            null
-        }
-    }
-
-    private fun decodeJsonString(raw: String): String {
-        val builder = StringBuilder(raw.length)
-        var index = 0
-        while (index < raw.length) {
-            val char = raw[index]
-            if (char != '\\') {
-                builder.append(char)
-                index += 1
-                continue
-            }
-            val escaped = raw.getOrNull(index + 1) ?: break
-            when (escaped) {
-                '\\' -> builder.append('\\')
-                '"' -> builder.append('"')
-                '/' -> builder.append('/')
-                'b' -> builder.append('\b')
-                'f' -> builder.append('\u000C')
-                'n' -> builder.append('\n')
-                'r' -> builder.append('\r')
-                't' -> builder.append('\t')
-                'u' -> {
-                    val hex = raw.substring(index + 2, index + 6)
-                    builder.append(hex.toInt(16).toChar())
-                    index += 4
-                }
-                else -> builder.append(escaped)
-            }
-            index += 2
-        }
-        return builder.toString()
-    }
-
     private data class ParsedDloiAddress(
         val documentId: String,
         val sectionId: String?,
         val selector: DloiSelector?
     )
-
-    private fun extractSectionObjects(sectionsBlock: String): Sequence<String> = sequence {
-        var cursor = 0
-        while (cursor < sectionsBlock.length) {
-            // Find next '{' that starts an object.
-            val objStart = sectionsBlock.indexOf('{', cursor)
-            if (objStart < 0) break
-            var depth = 1
-            var scan = objStart + 1
-            var inStr = false
-            while (scan < sectionsBlock.length && depth > 0) {
-                val ch = sectionsBlock[scan]
-                when {
-                    ch == '"' && scan > 0 && sectionsBlock[scan - 1] != '\\' -> inStr = !inStr
-                    !inStr && ch == '{' -> depth += 1
-                    !inStr && ch == '}' -> depth -= 1
-                }
-                scan += 1
-            }
-            if (depth != 0) break
-            yield(sectionsBlock.substring(objStart, scan))
-            cursor = scan
-        }
-    }
 }

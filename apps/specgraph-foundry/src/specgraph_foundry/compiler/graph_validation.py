@@ -2,7 +2,47 @@ from collections import defaultdict, deque
 from typing import List, Dict, Any, Tuple, Optional, Set
 
 class GraphValidationError(Exception):
-    pass
+    """Raised when graph invariants cannot be satisfied."""
+
+
+class GraphMetrics:
+    def __init__(
+        self,
+        node_count: int,
+        edge_count: int,
+        root_node_ids: List[str],
+        terminal_node_ids: List[str],
+        reachable_from_roots_count: int,
+        terminal_reachable_from_roots_count: int,
+        duplicate_edge_count: int,
+        self_loop_count: int,
+        missing_endpoint_count: int,
+        dangling_node_ids: List[str],
+    ):
+        self.node_count = node_count
+        self.edge_count = edge_count
+        self.root_node_ids = root_node_ids
+        self.terminal_node_ids = terminal_node_ids
+        self.reachable_from_roots_count = reachable_from_roots_count
+        self.terminal_reachable_from_roots_count = terminal_reachable_from_roots_count
+        self.duplicate_edge_count = duplicate_edge_count
+        self.self_loop_count = self_loop_count
+        self.missing_endpoint_count = missing_endpoint_count
+        self.dangling_node_ids = dangling_node_ids
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "node_count": self.node_count,
+            "edge_count": self.edge_count,
+            "root_node_ids": self.root_node_ids,
+            "terminal_node_ids": self.terminal_node_ids,
+            "reachable_from_roots_count": self.reachable_from_roots_count,
+            "terminal_reachable_from_roots_count": self.terminal_reachable_from_roots_count,
+            "duplicate_edge_count": self.duplicate_edge_count,
+            "self_loop_count": self.self_loop_count,
+            "missing_endpoint_count": self.missing_endpoint_count,
+            "dangling_node_ids": self.dangling_node_ids,
+        }
 
 def kahn_topological_sort(
     nodes: List[str],
@@ -165,3 +205,76 @@ def validate_graph_invariants(
             })
 
     return findings
+
+
+def compute_graph_metrics(
+    nodes: List[Dict[str, Any]],
+    edges: List[Dict[str, Any]],
+) -> Dict[str, Any]:
+    node_ids = sorted({str(node["id"]) for node in nodes})
+    node_id_set = set(node_ids)
+    outgoing: Dict[str, Set[str]] = {node_id: set() for node_id in node_ids}
+    incoming: Dict[str, Set[str]] = {node_id: set() for node_id in node_ids}
+    seen_edges: Set[Tuple[str, str, str]] = set()
+    duplicate_edge_count = 0
+    self_loop_count = 0
+    missing_endpoint_count = 0
+    valid_edge_count = 0
+
+    for edge in edges:
+        from_id = str(edge.get("from_node_id", ""))
+        to_id = str(edge.get("to_node_id", ""))
+        edge_type = str(edge.get("edge_type") or edge.get("relation_type") or edge.get("rule") or "")
+        key = (from_id, to_id, edge_type)
+
+        if key in seen_edges:
+            duplicate_edge_count += 1
+            continue
+        seen_edges.add(key)
+
+        if from_id == to_id:
+            self_loop_count += 1
+            continue
+        if from_id not in node_id_set or to_id not in node_id_set:
+            missing_endpoint_count += 1
+            continue
+
+        outgoing[from_id].add(to_id)
+        incoming[to_id].add(from_id)
+        valid_edge_count += 1
+
+    root_node_ids = sorted(node_id for node_id in node_ids if not incoming[node_id])
+    terminal_node_ids = sorted(node_id for node_id in node_ids if not outgoing[node_id])
+    dangling_node_ids = sorted(
+        node_id
+        for node_id in node_ids
+        if not incoming[node_id] and not outgoing[node_id]
+    )
+
+    reachable: Set[str] = set()
+    queue = deque(root_node_ids)
+    while queue:
+        node_id = queue.popleft()
+        if node_id in reachable:
+            continue
+        reachable.add(node_id)
+        for next_id in sorted(outgoing.get(node_id, set())):
+            queue.append(next_id)
+
+    terminal_reachable = sorted(
+        node_id
+        for node_id in terminal_node_ids
+        if node_id in reachable
+    )
+    return GraphMetrics(
+        node_count=len(node_ids),
+        edge_count=valid_edge_count,
+        root_node_ids=root_node_ids,
+        terminal_node_ids=terminal_node_ids,
+        reachable_from_roots_count=len(reachable),
+        terminal_reachable_from_roots_count=len(terminal_reachable),
+        duplicate_edge_count=duplicate_edge_count,
+        self_loop_count=self_loop_count,
+        missing_endpoint_count=missing_endpoint_count,
+        dangling_node_ids=dangling_node_ids,
+    ).to_dict()

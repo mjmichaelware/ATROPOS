@@ -1,6 +1,24 @@
 from typing import List, Dict, Any, Optional
 from .source_coordinates import SourceCoordinates
 
+TRUTHFUL_COMPLETION_STATES = {
+    "NOT_STARTED",
+    "READY",
+    "IMPLEMENTING",
+    "IMPLEMENTED_UNCOMPILED",
+    "COMPILED",
+    "TESTED",
+    "VERIFIED",
+    "BLOCKED",
+    "REJECTED",
+}
+
+EXTRACTION_DECISIONS = {
+    "ACCEPTED",
+    "REJECTED",
+}
+
+
 class CanonicalRequirementIR:
     def __init__(
         self,
@@ -28,7 +46,25 @@ class CanonicalRequirementIR:
         authority_state: str = "PROPOSED",
         ambiguity_state: str = "RESOLVED",
         quality_findings: Optional[List[Dict[str, str]]] = None,
-        provenance_chain: Optional[List[Dict[str, str]]] = None
+        provenance_chain: Optional[List[Dict[str, str]]] = None,
+        source_document_id: Optional[str] = None,
+        source_version: Optional[str] = None,
+        source_sha256: Optional[str] = None,
+        source_artifact_id: Optional[str] = None,
+        extraction_decision: str = "ACCEPTED",
+        extraction_rejection_reason: Optional[str] = None,
+        authority_classification: str = "SOURCE_AUTHORITY",
+        predecessor_ids: Optional[List[str]] = None,
+        successor_ids: Optional[List[str]] = None,
+        execution_node_id: Optional[str] = None,
+        semantic_owner: Optional[str] = None,
+        implementation_symbols: Optional[List[Dict[str, str]]] = None,
+        behavioral_tests: Optional[List[Dict[str, str]]] = None,
+        evidence_refs: Optional[List[Dict[str, str]]] = None,
+        acceptance_predicate: Optional[str] = None,
+        completion_state: str = "NOT_STARTED",
+        verifier_identity: str = "specgraph.compiler.v1",
+        artifact_hashes: Optional[Dict[str, str]] = None
     ):
         self.stable_id = stable_id
         self.coordinates = coordinates
@@ -55,6 +91,34 @@ class CanonicalRequirementIR:
         self.ambiguity_state = ambiguity_state
         self.quality_findings = quality_findings or []
         self.provenance_chain = provenance_chain or []
+        self.source_document_id = source_document_id
+        self.source_version = source_version
+        self.source_sha256 = source_sha256
+        self.source_artifact_id = source_artifact_id
+        if extraction_decision not in EXTRACTION_DECISIONS:
+            raise ValueError(f"invalid extraction_decision: {extraction_decision}")
+        if extraction_decision == "REJECTED" and not extraction_rejection_reason:
+            raise ValueError("rejected extraction requires extraction_rejection_reason")
+        self.extraction_decision = extraction_decision
+        self.extraction_rejection_reason = extraction_rejection_reason
+        self.authority_classification = authority_classification
+        self.predecessor_ids = predecessor_ids or []
+        self.successor_ids = successor_ids or []
+        self.execution_node_id = execution_node_id
+        self.semantic_owner = semantic_owner
+        self.implementation_symbols = implementation_symbols or []
+        self.behavioral_tests = behavioral_tests or []
+        self.evidence_refs = evidence_refs or []
+        self.acceptance_predicate = acceptance_predicate
+        if completion_state not in TRUTHFUL_COMPLETION_STATES:
+            raise ValueError(f"invalid completion_state: {completion_state}")
+        if completion_state == "VERIFIED" and (
+            not self.behavioral_tests or not self.evidence_refs
+        ):
+            raise ValueError("VERIFIED atoms require behavioral_tests and evidence_refs")
+        self.completion_state = completion_state
+        self.verifier_identity = verifier_identity
+        self.artifact_hashes = artifact_hashes or {}
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -83,4 +147,22 @@ class CanonicalRequirementIR:
             "ambiguity_state": self.ambiguity_state,
             "quality_findings": self.quality_findings,
             "provenance_chain": self.provenance_chain,
+            "source_document_id": self.source_document_id,
+            "source_version": self.source_version,
+            "source_sha256": self.source_sha256,
+            "source_artifact_id": self.source_artifact_id,
+            "extraction_decision": self.extraction_decision,
+            "extraction_rejection_reason": self.extraction_rejection_reason,
+            "authority_classification": self.authority_classification,
+            "predecessor_ids": self.predecessor_ids,
+            "successor_ids": self.successor_ids,
+            "execution_node_id": self.execution_node_id,
+            "semantic_owner": self.semantic_owner,
+            "implementation_symbols": self.implementation_symbols,
+            "behavioral_tests": self.behavioral_tests,
+            "evidence_refs": self.evidence_refs,
+            "acceptance_predicate": self.acceptance_predicate,
+            "completion_state": self.completion_state,
+            "verifier_identity": self.verifier_identity,
+            "artifact_hashes": self.artifact_hashes,
         }

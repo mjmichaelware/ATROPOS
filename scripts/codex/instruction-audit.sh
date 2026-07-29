@@ -113,9 +113,9 @@ def check_hierarchy() -> list[str]:
 
 
 def check_provider_query() -> list[str]:
-    payload = source_query_json("search", "free-first", "route law", "paid locked", "paid emergency", "RoutePolicy", "--limit", "16")
+    payload = source_query_json("search", "free-first", "route law", "paid lock", "paid_locked", "paid emergency", "RoutePolicy", "--limit", "64")
     text = json.dumps(payload["results"], ensure_ascii=False)
-    required = ["free-first", "RoutePolicy", "paid locked", "paid emergency", "route law"]
+    required = ["free-first", "RoutePolicy", "paid lock", "paid_locked", "paid emergency", "route law"]
     missing = [term for term in required if term not in text]
     if missing:
         raise AssertionError(f"provider terms missing: {missing}")
@@ -173,8 +173,15 @@ def check_resume_handoff() -> dict:
         raise AssertionError("handoff missing dirty/untracked sections")
     if "src/main/" not in text:
         raise AssertionError("handoff did not capture tracked source dirt")
-    if "scripts/codex/source-index.py" not in text and "AGENTS.md" not in text:
-        raise AssertionError("handoff did not capture untracked bootstrap files")
+    untracked_proc = run(["git", "ls-files", "--others", "--exclude-standard"], check=False)
+    untracked = [line for line in untracked_proc.stdout.splitlines() if line.strip()]
+    missing_untracked = []
+    for path in untracked:
+        parent = f"{Path(path).parent.as_posix()}/"
+        if path not in text and parent not in text:
+            missing_untracked.append(path)
+    if missing_untracked:
+        raise AssertionError(f"handoff did not capture current untracked files: {missing_untracked}")
     return {"handoff": str(handoff_path)}
 
 

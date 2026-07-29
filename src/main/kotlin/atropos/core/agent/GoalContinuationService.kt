@@ -1,12 +1,13 @@
 package atropos.core.agent
 
+import atropos.core.AtroposRepoRootLocator
 import atropos.core.memory.LocalMemoryStore
 import atropos.core.security.RedactionFilter
 import java.nio.file.Path
 import java.time.Instant
 
 class GoalContinuationService(
-    private val repoRoot: Path = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize(),
+    private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
     private val store: GoalRunStore = GoalRunStore(repoRoot),
     private val memoryStore: LocalMemoryStore = LocalMemoryStore(repoRoot.resolve(".atropos/memory").toFile()),
     private val clock: () -> Instant = { Instant.now() }

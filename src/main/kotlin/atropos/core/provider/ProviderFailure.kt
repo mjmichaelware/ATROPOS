@@ -53,6 +53,8 @@ class ProviderErrorNormalizer {
                 ProviderFailure(providerId, NormalizedProviderFailureType.MODEL_MISSING, "$providerId model missing", terminal = true)
             "timeout" in lower || "timed out" in lower ->
                 ProviderFailure(providerId, NormalizedProviderFailureType.TIMEOUT, "$providerId timed out", retryAfterMs = 60_000)
+            "cancel" in lower || "cancelled" in lower || "canceled" in lower ->
+                ProviderFailure(providerId, NormalizedProviderFailureType.CANCELLED, "$providerId cancelled")
             "connection refused" in lower || "unavailable" in lower || "offline" in lower ->
                 ProviderFailure(providerId, NormalizedProviderFailureType.UNAVAILABLE, "$providerId unavailable", retryAfterMs = 120_000)
             "malformed" in lower || "invalid json" in lower ->

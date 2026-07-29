@@ -1,5 +1,6 @@
 package atropos.core.artifact
 
+import atropos.core.AtroposRepoRootLocator
 import atropos.core.execution.LocalWorkQueue
 import atropos.core.factory.AppFactoryRouter
 import atropos.core.factory.FactoryPlan
@@ -7,6 +8,7 @@ import atropos.core.memory.LocalMemoryStore
 import atropos.core.memory.MemoryKind
 import atropos.core.platform.JvmPlatformAbstraction
 import atropos.core.platform.PlatformAbstraction
+import atropos.core.project.ProjectRegistry
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
@@ -19,9 +21,50 @@ class ArtifactPipeline(
     private val platform: PlatformAbstraction = JvmPlatformAbstraction(),
     private val factoryRouter: AppFactoryRouter = AppFactoryRouter(),
     private val memory: LocalMemoryStore = LocalMemoryStore(),
-    private val queue: LocalWorkQueue = LocalWorkQueue()
+    private val queue: LocalWorkQueue = LocalWorkQueue(),
+    private val projectRegistry: ProjectRegistry = ProjectRegistry()
 ) {
     fun plan(prompt: String): FactoryPlan = factoryRouter.plan(prompt)
+
+    fun runFactory(prompt: String, installDir: String? = null): AppFactoryRun {
+        val plan = plan(prompt)
+        val project = projectRegistry.register(plan.intent, kind = "app-factory").record
+        val startedAt = Instant.now()
+        val report = build(plan)
+        val artifactVerificationEvidence = report.artifacts.map { verify(it.id) }
+        val verificationEvidence = report.verifications + artifactVerificationEvidence
+        val readyArtifacts = report.artifacts.filter { it.state == ArtifactState.READY }
+        val installProof = installDir
+            ?.takeIf { readyArtifacts.isNotEmpty() }
+            ?.let { install(readyArtifacts.first().id, it) }
+        val commitCandidate = prepareCommit(
+            message = "ATROPOS factory: ${plan.intent}",
+            artifactIds = report.artifacts.map { it.id },
+            proofIds = listOfNotNull(installProof?.id)
+        )
+        val success = readyArtifacts.isNotEmpty() &&
+            artifactVerificationEvidence.all { it.passed } &&
+            (installDir == null || installProof?.verified == true)
+        val run = AppFactoryRun(
+            prompt = plan.prompt,
+            planId = plan.id,
+            projectId = project.id,
+            artifacts = report.artifacts,
+            verifications = verificationEvidence,
+            installProof = installProof,
+            commitCandidate = commitCandidate,
+            startedAt = startedAt,
+            completedAt = Instant.now(),
+            success = success
+        )
+        memory.rememberToolResult(
+            subjectId = run.id,
+            title = "app-factory-run ${plan.intent}",
+            body = "project=${project.id}\nplan=${plan.id}\nartifacts=${run.artifacts.size}\nverifications=${run.verifications.size}\ninstall=${installProof?.id ?: "none"}\nsuccess=${run.success}",
+            tags = listOf("artifact", "factory", "proof")
+        )
+        return run
+    }
 
     fun build(plan: FactoryPlan): ArtifactReport {
         val artifacts = mutableListOf<Artifact>()
@@ -204,7 +247,7 @@ class ArtifactPipeline(
     }
 }
 
-class ArtifactStore(private val root: Path = Path.of(System.getProperty("user.dir"))) {
+class ArtifactStore(private val root: Path = AtroposRepoRootLocator.resolve()) {
     private val artDir = root.resolve(".atropos/artifacts")
     private val artFile = artDir.resolve("artifacts.jsonl")
     private val verFile = artDir.resolve("verifications.jsonl")

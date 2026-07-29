@@ -1,5 +1,6 @@
 package atropos.core.worktree
 
+import atropos.core.AtroposRepoRootLocator
 import atropos.core.memory.LocalMemoryStore
 import atropos.core.security.RedactionFilter
 import java.nio.charset.StandardCharsets
@@ -38,7 +39,7 @@ data class WorktreeRollbackResult(
 )
 
 class IsolatedWorktreeService(
-    private val repoRoot: Path = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize(),
+    private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
     private val memoryStore: LocalMemoryStore = LocalMemoryStore(repoRoot.resolve(".atropos/memory").toFile()),
     private val clock: () -> Instant = { Instant.now() },
     private val redactionFilter: RedactionFilter = RedactionFilter()
@@ -55,7 +56,8 @@ class IsolatedWorktreeService(
                     .directory(repoRoot.toFile())
                     .redirectErrorStream(true)
                     .start()
-                proc.inputStream.bufferedReader().readText().trim()
+                val output = proc.inputStream.bufferedReader().readText().trim()
+                if (proc.waitFor() == 0) output else null
             }.getOrNull()
 
             // Capture dirty state
@@ -69,15 +71,28 @@ class IsolatedWorktreeService(
 
             val id = "wt-" + UUID.randomUUID().toString().take(12)
             val wtDir = worktreeRoot.resolve(id)
-            Files.createDirectories(wtDir)
 
-            // Create worktree using git worktree
-            runCatching {
+            if (baselineCommit.isNullOrBlank()) {
+                return WorktreeCreateResult(false, "failed to create worktree: baseline commit unavailable")
+            }
+
+            val worktreeOutput = runCatching {
                 ProcessBuilder("git", "worktree", "add", "--detach", wtDir.toString(), baselineCommit ?: "HEAD")
                     .directory(repoRoot.toFile())
                     .redirectErrorStream(true)
                     .start()
-                    .waitFor()
+                    .let { proc ->
+                        val output = proc.inputStream.bufferedReader().readText()
+                        proc.waitFor() to output
+                    }
+            }.getOrElse { failure ->
+                return WorktreeCreateResult(false, "failed to create worktree: ${failure.message}")
+            }
+            if (worktreeOutput.first != 0 || !Files.exists(wtDir.resolve(".git"))) {
+                return WorktreeCreateResult(
+                    false,
+                    "failed to create worktree: ${redactionFilter.compact(worktreeOutput.second)}"
+                )
             }
 
             val now = clock()
@@ -111,6 +126,7 @@ class IsolatedWorktreeService(
 
     fun applyPatch(worktreeId: String, patchContent: String): Boolean {
         val record = readRecord(worktreeId) ?: return false
+        if (!patchInsideTerritory(record, patchContent)) return false
         return runCatching {
             val proc = ProcessBuilder("sh", "-c", "git apply")
                 .directory(record.worktreePath.toFile())
@@ -198,6 +214,11 @@ class IsolatedWorktreeService(
             diffProc.waitFor()
 
             if (diff.isNotBlank()) {
+                val changed = extractPatchPaths(diff)
+                val outside = firstOutsideTerritory(record, changed)
+                if (outside != null) {
+                    return WorktreeRollbackResult(false, "territory violation before merge: $outside")
+                }
                 val applyProc = ProcessBuilder("sh", "-c", "git apply")
                     .directory(repoRoot.toFile())
                     .redirectErrorStream(true)
@@ -249,6 +270,35 @@ class IsolatedWorktreeService(
     }
 
     fun readWorktree(worktreeId: String): WorktreeRecord? = readRecord(worktreeId)
+
+    private fun patchInsideTerritory(record: WorktreeRecord, patchContent: String): Boolean {
+        val paths = extractPatchPaths(patchContent)
+        return firstOutsideTerritory(record, paths) == null
+    }
+
+    private fun firstOutsideTerritory(record: WorktreeRecord, paths: List<String>): String? {
+        if (paths.isEmpty()) return null
+        if (record.territory.isEmpty()) return paths.first()
+        return paths.firstOrNull { path ->
+            record.territory.none { territory ->
+                path == territory || path.startsWith(territory.trimEnd('/') + "/")
+            }
+        }
+    }
+
+    private fun extractPatchPaths(patchContent: String): List<String> =
+        patchContent.lineSequence()
+            .mapNotNull { line ->
+                when {
+                    line.startsWith("+++ b/") -> line.removePrefix("+++ b/")
+                    line.startsWith("--- a/") -> line.removePrefix("--- a/")
+                    line.startsWith("diff --git ") -> line.substringAfter(" b/", missingDelimiterValue = "")
+                    else -> ""
+                }.takeIf { it.isNotBlank() && it != "/dev/null" }
+            }
+            .map { it.trim() }
+            .distinct()
+            .toList()
 
     private fun readRecord(worktreeId: String): WorktreeRecord? {
         val id = worktreeId.trim().removeSuffix(".meta")

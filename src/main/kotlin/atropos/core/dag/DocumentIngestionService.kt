@@ -1,5 +1,6 @@
 package atropos.core.dag
 
+import atropos.core.AtroposRepoRootLocator
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
@@ -8,7 +9,7 @@ import java.security.MessageDigest
 
 class DocumentIngestionService(
     private val dagService: DagService = DagService(),
-    private val repoRoot: Path = Path.of(System.getProperty("user.dir"))
+    private val repoRoot: Path = AtroposRepoRootLocator.resolve()
 ) {
     private val supportedFormats = setOf("txt", "md", "json", "yaml", "yml", "xml", "csv", "kt", "kts", "java", "gradle", "properties")
 

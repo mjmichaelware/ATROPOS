@@ -1,5 +1,6 @@
 package atropos.core.agent
 
+import atropos.core.AtroposRepoRootLocator
 import atropos.core.security.RedactionFilter
 import java.net.InetAddress
 import java.nio.ByteBuffer
@@ -15,7 +16,7 @@ import java.time.Instant
 import java.util.UUID
 
 class SupervisedSessionStore(
-    private val repoRoot: Path = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize(),
+    private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
     private val clock: () -> Instant = { Instant.now() },
     private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {

@@ -73,21 +73,19 @@ class AgentRepairService(
             fileHints = patch.extraction.touchedPaths
         )
 
-        val body = AgentPromptContract.buildRepair(
-            patchId = patch.id,
-            changedPaths = patch.extraction.touchedPaths,
-            failedCommand = verification.command,
-            exitCode = verification.exitCode,
-            durationMillis = verification.durationMillis,
-            stdout = verification.stdout,
-            stderr = verification.stderr,
-            context = contextSnapshot.text
-        )
-
         return runRepairCascade(
             patchOrder = selection.patchOrder,
             prompt = "Repair the verification failure by returning only a unified diff.",
-            body = body,
+            repairContext = RepairPromptContext(
+                patchId = patch.id,
+                changedPaths = patch.extraction.touchedPaths,
+                failedCommand = verification.command,
+                exitCode = verification.exitCode,
+                durationMillis = verification.durationMillis,
+                stdout = verification.stdout,
+                stderr = verification.stderr,
+                context = contextSnapshot.text
+            ),
             contextByteCount = contextSnapshot.byteCount,
             sourceVerificationId = verification.id,
             noRepairMessage = "no failed verification to repair.",
@@ -108,16 +106,29 @@ class AgentRepairService(
         val failure: PatchAttempt? = null
     )
 
+    private data class RepairPromptContext(
+        val patchId: String,
+        val changedPaths: List<String>,
+        val failedCommand: String,
+        val exitCode: Int?,
+        val durationMillis: Long,
+        val stdout: String,
+        val stderr: String,
+        val context: String
+    ) {
+        val attestationTask: String get() = "repair patch $patchId"
+    }
+
     private fun runRepairCascade(
         patchOrder: List<String>,
         prompt: String,
-        body: String,
+        repairContext: RepairPromptContext,
         contextByteCount: Int,
         sourceVerificationId: String,
         noRepairMessage: String,
         patchId: String
     ): AgentPatchRunResult {
-        val cascade = runPatchCascade(patchOrder, prompt, body, sourceVerificationId, patchId)
+        val cascade = runPatchCascade(patchOrder, prompt, repairContext, sourceVerificationId, patchId)
         val acceptance = cascade.success ?: return localPatchFailure(
             providerName = cascade.failure?.result?.providerName ?: patchOrder.firstOrNull() ?: "local_fallback",
             contextByteCount = contextByteCount,
@@ -160,7 +171,7 @@ class AgentRepairService(
     private fun runPatchCascade(
         patchOrder: List<String>,
         prompt: String,
-        body: String,
+        repairContext: RepairPromptContext,
         sourceVerificationId: String,
         patchId: String
     ): PatchCascadeResult {
@@ -168,12 +179,12 @@ class AgentRepairService(
 
         for (provider in patchOrder) {
             val initial = try {
-                runPatchAttempt(provider, prompt, body, patchId)
+                runPatchAttempt(provider, prompt, repairContext, patchId)
             } catch (failure: Exception) {
                 lastFailure = buildExceptionFailure(provider, failure, retryAttempted = false)
                 continue
             }
-            val accepted = validatePatchAttempt(initial, task = prompt)
+            val accepted = validatePatchAttempt(initial, task = repairContext.attestationTask)
             if (accepted != null) return PatchCascadeResult(success = accepted)
 
             val retryPrompt = buildString {
@@ -183,12 +194,12 @@ class AgentRepairService(
                 appendLine("Include file headers, at least one @@ hunk header, and the added or removed line(s).")
             }
             val retry = try {
-                runPatchAttempt(provider, retryPrompt.trimEnd(), body, patchId)
+                runPatchAttempt(provider, retryPrompt.trimEnd(), repairContext, patchId)
             } catch (failure: Exception) {
                 lastFailure = buildExceptionFailure(provider, failure, retryAttempted = true)
                 continue
             }
-            val retryAccepted = validatePatchAttempt(retry, task = prompt)
+            val retryAccepted = validatePatchAttempt(retry, task = repairContext.attestationTask)
             if (retryAccepted != null) {
                 return PatchCascadeResult(success = retryAccepted.copy(retryAttempted = true))
             }
@@ -202,13 +213,24 @@ class AgentRepairService(
     private fun runPatchAttempt(
         provider: String,
         prompt: String,
-        context: String,
+        repairContext: RepairPromptContext,
         patchId: String
     ): atropos.core.ProviderCascadeResult =
         router.completeWithCascade(
             requestedProvider = provider,
             prompt = prompt,
-            context = context,
+            context = AgentPromptContract.buildRepair(
+                patchId = repairContext.patchId,
+                changedPaths = repairContext.changedPaths,
+                failedCommand = repairContext.failedCommand,
+                exitCode = repairContext.exitCode,
+                durationMillis = repairContext.durationMillis,
+                stdout = repairContext.stdout,
+                stderr = repairContext.stderr,
+                context = repairContext.context,
+                providerId = provider,
+                repoRoot = collector.repoRoot
+            ),
             providerOrderOverride = listOf(provider),
             beforeAttempt = { candidate -> enforceProviderPolicy(candidate, prompt, patchId) }
         )
@@ -262,7 +284,7 @@ class AgentRepairService(
                 memoryStore.rememberFailure(
                     subjectType = "context_failure",
                     subjectId = null,
-                    title = verified.failure::class.simpleName ?: "ContextFailure",
+                    title = verified.failure.javaClass.simpleName,
                     body = "repair ${verified.failure.providerId}: ${verified.failure.reason}",
                     tags = listOf("context", "attestation", "failure", "repair")
                 )

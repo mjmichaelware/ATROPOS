@@ -1,5 +1,6 @@
 package atropos.core.director
 
+import atropos.core.AtroposRepoRootLocator
 import atropos.core.territory.TerritoryAssignment
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
@@ -9,10 +10,28 @@ import java.security.MessageDigest
 
 class DirectorService(
     private val store: DirectorStore = DirectorStore(),
-    private val repoRoot: Path = Path.of(System.getProperty("user.dir"))
+    private val repoRoot: Path = AtroposRepoRootLocator.resolve()
 ) {
-    fun observe(kind: ObservationKind, severity: DriftSeverity, source: String, details: String, files: List<String> = emptyList(), symbols: List<String> = emptyList()): DirectorObservation {
-        val obs = DirectorObservation(kind = kind, severity = severity, source = source, details = details, filePaths = files, symbols = symbols)
+    fun observe(
+        kind: ObservationKind,
+        severity: DriftSeverity,
+        source: String,
+        details: String,
+        files: List<String> = emptyList(),
+        symbols: List<String> = emptyList(),
+        goalId: String? = null,
+        territoryId: String? = null
+    ): DirectorObservation {
+        val obs = DirectorObservation(
+            kind = kind,
+            severity = severity,
+            source = source,
+            details = details,
+            goalId = goalId,
+            territoryId = territoryId,
+            filePaths = files,
+            symbols = symbols
+        )
         store.appendObservation(obs)
         return obs
     }
@@ -72,6 +91,28 @@ class DirectorService(
             observations = observations,
             summary = "${observations.size} active observations, $violations territory violations",
             territoryViolations = violations
+        )
+    }
+
+    fun advisoryBeforePromotion(goalId: String? = null, territoryIds: List<String> = emptyList(), files: List<String> = emptyList()): DirectorPromotionAdvisory {
+        val observations = store.unacknowledged().filter { observation ->
+            val goalMatches = goalId == null || observation.goalId == null || observation.goalId == goalId
+            val territoryMatches = territoryIds.isEmpty() || observation.territoryId == null || observation.territoryId in territoryIds
+            val fileMatches = files.isEmpty() || observation.filePaths.isEmpty() || observation.filePaths.any { it in files }
+            goalMatches && territoryMatches && fileMatches
+        }
+        val blocking = observations.filter {
+            it.severity == DriftSeverity.CRITICAL ||
+                it.kind in setOf(ObservationKind.TERRITORY_VIOLATION, ObservationKind.POLICY_VIOLATION, ObservationKind.MISSING_GATE)
+        }
+        return DirectorPromotionAdvisory(
+            allowed = blocking.isEmpty(),
+            blockingObservations = blocking,
+            message = if (blocking.isEmpty()) {
+                "director advisory: no blocking drift"
+            } else {
+                "director advisory: ${blocking.size} blocking observations before promotion"
+            }
         )
     }
 
@@ -149,5 +190,18 @@ class DirectorService(
 internal fun DirectorObservation.toStoreLine(): String {
     val fp = filePaths.joinToString("|") { it.replace("|", "%7C") }
     val sym = symbols.joinToString("|") { it.replace("|", "%7C") }
-    return listOf(id, kind.name, severity.name, source, details.replace('\n', ' '), fp, sym, timestamp.toString(), acknowledged.toString(), dismissed.toString()).joinToString("\t")
+    return listOf(
+        id,
+        kind.name,
+        severity.name,
+        source,
+        details.replace('\n', ' '),
+        fp,
+        sym,
+        timestamp.toString(),
+        acknowledged.toString(),
+        dismissed.toString(),
+        goalId.orEmpty(),
+        territoryId.orEmpty()
+    ).joinToString("\t")
 }

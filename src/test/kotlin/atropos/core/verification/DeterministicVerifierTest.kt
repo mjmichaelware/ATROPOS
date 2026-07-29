@@ -108,4 +108,43 @@ class DeterministicVerifierTest {
 
         assertTrue(!result.passed, "out of scope is a failure, not an exemption")
     }
+
+    @Test
+    fun forbidden_path_check_does_not_throw_after_source_scope_failure() {
+        val root = Files.createTempDirectory("atropos-deterministic-outside-forbidden-")
+        val outsideBuild = Files.createTempDirectory("build-outside-").resolve("Fake.jar")
+        Files.writeString(outsideBuild, "not a real jar")
+
+        val result = DeterministicVerifier(root).verify(sourcePaths = listOf(outsideBuild))
+
+        assertTrue(result.findings.any { it.invariantId == "source_scope" })
+        assertTrue(!result.passed)
+    }
+
+    @Test
+    fun architecture_atomicity_blocks_large_mixed_concern_source() {
+        val root = Files.createTempDirectory("atropos-deterministic-architecture-")
+        val source = root.resolve("src/main/kotlin/example/MixedTransport.kt")
+        Files.createDirectories(source.parent)
+        Files.writeString(
+            source,
+            buildString {
+                appendLine("package example")
+                appendLine("import java.net.HttpURLConnection")
+                appendLine("class MixedTransport {")
+                appendLine("    fun normalizeResponse(json: String): String = json")
+                appendLine("    fun call(conn: HttpURLConnection): Int {")
+                appendLine("        conn.connect()")
+                appendLine("        return conn.responseCode")
+                appendLine("    }")
+                repeat(410) { idx -> appendLine("    fun line$idx(): Int = $idx") }
+                appendLine("}")
+            }
+        )
+
+        val result = DeterministicVerifier(root).verify(sourcePaths = listOf(source))
+
+        assertTrue(result.findings.any { it.invariantId == "file.atomic.single_responsibility" })
+        assertTrue(!result.passed)
+    }
 }
