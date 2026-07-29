@@ -103,8 +103,10 @@ export default function Home() {
                 Create Project
               </p>
               <p className="text-sm text-sg-neutral-600 dark:text-sg-neutral-400">
-                Not available yet: ATROPOS has no project store, so projects
-                cannot be created from this surface.
+                Create one from the engine:{' '}
+                <code className="font-mono text-xs">/project new &lt;name&gt; &lt;objective&gt;</code>.
+                Browser-initiated creation is not wired yet — a write reaching
+                the engine from a page needs explicit attribution first.
               </p>
             </div>
           </div>

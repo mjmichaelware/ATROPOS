@@ -64,6 +64,10 @@ const READ_ONLY_COMMANDS: readonly string[] = [
   '/tabs',
   '/agent status',
   '/agent queue list',
+  // Read-only project surface. `/project new` and `/project status` mutate and
+  // are deliberately absent: a write reachable from the browser needs explicit
+  // attribution (§13), which this bridge does not yet carry.
+  '/project list',
   '/help',
 ];
 
