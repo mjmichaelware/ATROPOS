@@ -1,5 +1,6 @@
 package atropos.core.policy
 
+import atropos.core.AtroposRepoRootLocator
 import atropos.core.security.RedactionFilter
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
@@ -75,7 +76,7 @@ data class AutonomyPolicyAuditRecord(
  * an audit trail, and nothing may gate execution on it.
  */
 class AutonomyPolicyEngine(
-    private val repoRoot: Path = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize(),
+    private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
     private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     private val policyRoot = repoRoot.resolve(".atropos/policy").normalize()

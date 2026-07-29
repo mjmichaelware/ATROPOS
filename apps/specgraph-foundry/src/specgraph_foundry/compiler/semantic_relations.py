@@ -1,5 +1,6 @@
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 from .requirement_ir import CanonicalRequirementIR
+from .compiler_fingerprints import generate_fingerprint
 
 class SemanticRelation:
     def __init__(
@@ -17,13 +18,26 @@ class SemanticRelation:
         self.rationale = rationale
         self.confidence = confidence
         self.inferred = inferred
+        self.relation_id = f"rel-{generate_fingerprint(self.identity_payload())[:16]}"
 
-    def to_dict(self) -> Dict[str, Any]:
+    def identity_payload(self) -> Dict[str, Any]:
         return {
             "from_atom_id": self.from_req_id,
             "to_atom_id": self.to_req_id,
             "relation_type": self.relation_type,
             "rationale": self.rationale,
+            "confidence": self.confidence,
+            "inferred": self.inferred,
+        }
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "id": self.relation_id,
+            "from_atom_id": self.from_req_id,
+            "to_atom_id": self.to_req_id,
+            "relation_type": self.relation_type,
+            "rationale": self.rationale,
+            "rationale_sha256": generate_fingerprint(self.rationale),
             "confidence": self.confidence,
             "inferred": self.inferred
         }
@@ -50,6 +64,19 @@ def evaluate_semantic_relation(
 
     # 1. Exact canonical equivalence
     if text_a == text_b:
+        supersession = _authority_supersession_relation(
+            req_a,
+            req_b,
+            precedence_resolver,
+            1.0,
+        )
+        if supersession:
+            return supersession
+        if getattr(req_a, "source_document_id", None) != getattr(req_b, "source_document_id", None):
+            return SemanticRelation(
+                req_a.stable_id, req_b.stable_id, "EXACT_MATCH",
+                "Identical canonical statement text across unresolved source authorities.",
+            )
         return SemanticRelation(
             req_a.stable_id, req_b.stable_id, "DUPLICATES",
             "Identical canonical statement text."
@@ -80,14 +107,39 @@ def evaluate_semantic_relation(
                 f"Statement '{req_a.stable_id}' adds constraints to '{req_b.stable_id}'."
             )
 
+    equivalence = _lexical_equivalence(text_a, text_b)
+
     # 4. Supersedes
-    # If precedence_resolver is provided and resolves doc precedence
-    if precedence_resolver:
-        # If we have a relation or close equivalence but they belong to different documents
-        # Let's say one supersedes another
-        pass
+    # If precedence_resolver is provided and resolves doc precedence.
+    if precedence_resolver and equivalence[0] in {"EXACT_MATCH", "CLOSE_MATCH"}:
+        supersession = _authority_supersession_relation(
+            req_a,
+            req_b,
+            precedence_resolver,
+            equivalence[1],
+        )
+        if supersession:
+            return supersession
 
     # Simple word overlap heuristic for close match
+    relation_type, confidence = equivalence
+    if relation_type == "EXACT_MATCH":
+        return SemanticRelation(
+            req_a.stable_id, req_b.stable_id, "EXACT_MATCH",
+            f"High lexical similarity ({confidence:.2f}) indicating semantic equivalence.",
+            confidence=confidence,
+        )
+    if relation_type == "CLOSE_MATCH":
+        return SemanticRelation(
+            req_a.stable_id, req_b.stable_id, "CLOSE_MATCH",
+            f"Moderate lexical similarity ({confidence:.2f}) indicating potential overlap.",
+            confidence=confidence,
+        )
+
+    return None
+
+
+def _lexical_equivalence(text_a: str, text_b: str) -> Tuple[str, float]:
     words_a = set(text_a.split())
     words_b = set(text_b.split())
     intersection = words_a.intersection(words_b)
@@ -95,14 +147,39 @@ def evaluate_semantic_relation(
     jaccard = len(intersection) / len(union) if union else 0.0
 
     if jaccard > 0.8:
-        return SemanticRelation(
-            req_a.stable_id, req_b.stable_id, "EXACT_MATCH",
-            f"High lexical similarity ({jaccard:.2f}) indicating semantic equivalence."
-        )
-    elif jaccard > 0.5:
-        return SemanticRelation(
-            req_a.stable_id, req_b.stable_id, "CLOSE_MATCH",
-            f"Moderate lexical similarity ({jaccard:.2f}) indicating potential overlap."
-        )
+        return "EXACT_MATCH", jaccard
+    if jaccard > 0.5:
+        return "CLOSE_MATCH", jaccard
+    return "", jaccard
 
+
+def _authority_supersession_relation(
+    req_a: CanonicalRequirementIR,
+    req_b: CanonicalRequirementIR,
+    precedence_resolver: Any,
+    confidence: float,
+) -> Optional[SemanticRelation]:
+    if not precedence_resolver:
+        return None
+
+    doc_a = getattr(req_a, "source_document_id", None)
+    doc_b = getattr(req_b, "source_document_id", None)
+    if not doc_a or not doc_b or doc_a == doc_b:
+        return None
+
+    winner = precedence_resolver.resolve_precedence(doc_a, doc_b)
+    if winner == doc_a:
+        return SemanticRelation(
+            req_a.stable_id, req_b.stable_id, "SUPERSEDES",
+            f"Source authority '{doc_a}' has precedence over '{doc_b}'.",
+            confidence=confidence,
+            inferred=False,
+        )
+    if winner == doc_b:
+        return SemanticRelation(
+            req_b.stable_id, req_a.stable_id, "SUPERSEDES",
+            f"Source authority '{doc_b}' has precedence over '{doc_a}'.",
+            confidence=confidence,
+            inferred=False,
+        )
     return None

@@ -1,5 +1,6 @@
 package atropos.core.multimodal
 
+import atropos.core.AtroposRepoRootLocator
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
@@ -8,7 +9,7 @@ import java.time.Instant
 
 class SnapshotService(
     private val store: SnapshotStore = SnapshotStore(),
-    private val repoRoot: Path = Path.of(System.getProperty("user.dir"))
+    private val repoRoot: Path = AtroposRepoRootLocator.resolve()
 ) {
     fun captureTerminal(content: String, source: String = "terminal"): SnapshotReference {
         val hash = SnapshotReference.hash(content.toByteArray(StandardCharsets.UTF_8))
@@ -39,12 +40,12 @@ class SnapshotService(
         return ref
     }
 
-    fun captureViewport(viewport: ViewportCapture): SnapshotReference {
+    fun captureViewport(viewport: ViewportCapture, source: String? = null): SnapshotReference {
         val content = viewport.content
         val hash = SnapshotReference.hash(content.toByteArray(StandardCharsets.UTF_8))
         val ref = SnapshotReference(
             kind = SnapshotKind.COMPOSITE_VIEWPORT,
-            source = "viewport:${viewport.width}x${viewport.height}",
+            source = source ?: "viewport:${viewport.width}x${viewport.height}",
             contentHash = hash,
             byteSize = content.length,
             metadata = mapOf(
@@ -115,7 +116,7 @@ class SnapshotService(
     }
 }
 
-class SnapshotStore(private val root: Path = Path.of(System.getProperty("user.dir"))) {
+class SnapshotStore(private val root: Path = AtroposRepoRootLocator.resolve()) {
     private val snapDir = root.resolve(".atropos/multimodal")
     private val indexFile = snapDir.resolve("snapshots.jsonl")
 

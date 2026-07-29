@@ -49,4 +49,40 @@ class DirectorServiceTest {
         svc.dismiss(obs2.id)
         assertEquals(0, store.unacknowledged().size)
     }
+
+    @Test
+    fun promotionAdvisoryBindsObservationsToGoalTerritoryAndFiles() {
+        val dir = java.nio.file.Files.createTempDirectory("director-promotion-")
+        val store = DirectorStore(dir)
+        val svc = DirectorService(store, dir)
+
+        svc.observe(
+            ObservationKind.TERRITORY_VIOLATION,
+            DriftSeverity.WARNING,
+            "test",
+            "outside territory",
+            files = listOf("src/main/kotlin/atropos/core/agent/SelfHostGoalService.kt"),
+            goalId = "goal-1",
+            territoryId = "terr-core"
+        )
+        svc.observe(
+            ObservationKind.DIFF_DRIFT,
+            DriftSeverity.ADVISORY,
+            "test",
+            "unrelated",
+            files = listOf("docs/readme.md"),
+            goalId = "goal-2",
+            territoryId = "terr-docs"
+        )
+
+        val advisory = svc.advisoryBeforePromotion(
+            goalId = "goal-1",
+            territoryIds = listOf("terr-core"),
+            files = listOf("src/main/kotlin/atropos/core/agent/SelfHostGoalService.kt")
+        )
+
+        assertEquals(false, advisory.allowed)
+        assertEquals(1, advisory.blockingObservations.size)
+        assertEquals("goal-1", store.readAll().first { it.kind == ObservationKind.TERRITORY_VIOLATION }.goalId)
+    }
 }

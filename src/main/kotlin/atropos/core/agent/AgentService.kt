@@ -13,99 +13,7 @@ import atropos.core.policy.ProviderActionProposals
 import atropos.core.provider.ContextAttestationService
 import atropos.core.provider.ContextEnvelopeFactory
 import atropos.core.provider.ProviderTruthService
-import atropos.core.provider.TypedContextFailure
 import atropos.core.security.RedactionFilter
-import java.nio.file.Path
-
-data class AgentStatusSnapshot(
-    val activeProvider: String,
-    val providerOrder: List<String>,
-    val patchProviderOrder: List<String>,
-    val repoRoot: Path,
-    val patchDirectory: Path,
-    val lastPatchId: String?,
-    val contextCapBytes: Int,
-    val ownsRepoReadWrite: Boolean,
-    val paidAutomaticModeLocked: Boolean,
-    val localFallbackEnabled: Boolean,
-    val doctorTruthSource: String,
-    val knownActiveProviders: List<String>,
-    val providerTruthReport: String
-) {
-    fun render(): String = buildString {
-        appendLine("agent status:")
-        appendLine("  active provider: $activeProvider")
-        appendLine("  provider order for /agent ask: ${providerOrder.joinToString(" -> ").ifBlank { "none" }}")
-        appendLine("  provider order for /agent patch: ${patchProviderOrder.joinToString(" -> ").ifBlank { "none" }}")
-        appendLine("  repo root: $repoRoot")
-        appendLine("  patch directory: $patchDirectory")
-        appendLine("  last patch id: ${lastPatchId ?: "none"}")
-        appendLine("  context cap bytes: $contextCapBytes")
-        appendLine("  repo ownership: ${if (ownsRepoReadWrite) "ATROPOS owns repo read/write; providers only see bounded context" else "unknown"}")
-        appendLine("  paid automatic mode: ${if (paidAutomaticModeLocked) "locked" else "unlocked"}")
-        appendLine("  local fallback: ${if (localFallbackEnabled) "enabled" else "disabled"}")
-        appendLine("  last doctor truth source: $doctorTruthSource")
-        appendLine("  known active doctor providers: ${knownActiveProviders.joinToString(", ")}")
-        appendLine(providerTruthReport.prependIndent("  "))
-    }.trimEnd()
-}
-
-data class AgentRunResult(
-    val providerName: String,
-    val answerText: String,
-    val contextByteCount: Int,
-    val failureSummary: String? = null
-) {
-    fun render(): String = buildString {
-        appendLine("Provider used: $providerName")
-        appendLine("context bytes: $contextByteCount")
-        failureSummary?.takeIf { it.isNotBlank() }?.let {
-            appendLine("fallback summary: $it")
-        }
-        appendLine("answer:")
-        appendLine(answerText.trimEnd())
-    }.trimEnd()
-}
-
-data class AgentPatchRunResult(
-    val providerName: String,
-    val contextByteCount: Int,
-    val diffByteCount: Int,
-    val patchId: String?,
-    val patchPath: Path?,
-    val checkResult: AgentPatchCheckResult?,
-    val retryAttempted: Boolean = false,
-    val rejectionReason: String? = null,
-    val responsePreview: String? = null,
-    val failureSummary: String? = null,
-    val sourceVerificationId: String? = null,
-    val message: String? = null
-) {
-    fun render(): String = buildString {
-        appendLine("Patch id: ${patchId ?: "none"}")
-        appendLine("Provider used: $providerName")
-        appendLine("Context bytes: $contextByteCount")
-        appendLine("Diff bytes: $diffByteCount")
-        appendLine("Patch path: ${patchPath ?: "none"}")
-        appendLine("Retry attempted: ${if (retryAttempted) "yes" else "no"}")
-        if (patchId == null) {
-            rejectionReason?.takeIf { it.isNotBlank() }?.let { appendLine("Rejection reason: $it") }
-            responsePreview?.takeIf { it.isNotBlank() }?.let { appendLine("Response preview: $it") }
-        }
-        appendLine(
-            when (val result = checkResult) {
-                null -> "Patch check: NOT RUN"
-                else -> {
-                    val output = result.output.takeIf { value -> value.isNotBlank() }
-                    "Patch check: ${result.statusText}${output?.let { compact -> " :: $compact" } ?: ""}"
-                }
-            }
-        )
-        sourceVerificationId?.takeIf { it.isNotBlank() }?.let { appendLine("Source verification: $it") }
-        failureSummary?.takeIf { it.isNotBlank() }?.let { appendLine("fallback summary: $it") }
-        message?.takeIf { it.isNotBlank() }?.let { appendLine(it.trimEnd()) }
-    }.trimEnd()
-}
 
 class AgentService(
     private val config: AtroposConfig = AtroposConfig.load(),
@@ -123,6 +31,15 @@ class AgentService(
     private val memoryStore: LocalMemoryStore = LocalMemoryStore(collector.repoRoot.resolve(".atropos/memory").toFile()),
     private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
+    private val patchCascadeRunner = AgentPatchCascadeRunner(
+        router = router,
+        patchExtractor = patchExtractor,
+        redactionFilter = redactionFilter,
+        repoRoot = collector.repoRoot,
+        memoryStore = memoryStore,
+        authorizeProvider = ::enforceProviderPolicy
+    )
+
     fun status(activeProviderName: String): AgentStatusSnapshot {
         val selection = selector.select(activeProviderName)
         val lastActualProvider = jobStore.latest()?.provider?.takeIf { it.isNotBlank() }
@@ -185,7 +102,7 @@ class AgentService(
                     memoryStore.rememberFailure(
                         subjectType = "context_failure",
                         subjectId = null,
-                        title = verified.failure::class.simpleName ?: "ContextFailure",
+                        title = verified.failure.javaClass.simpleName,
                         body = "${verified.failure.providerId}: ${verified.failure.reason}",
                         tags = listOf("context", "attestation", "failure")
                     )
@@ -276,7 +193,7 @@ class AgentService(
         val prompt = redactionFilter.redact(task.trim())
 
         return try {
-            val cascade = runPatchCascade(selection.patchOrder, prompt, snapshot.text)
+            val cascade = patchCascadeRunner.run(selection.patchOrder, prompt, snapshot.text)
             val acceptance = cascade.success ?: return localPatchFailure(
                 providerName = cascade.failure?.result?.providerName ?: selection.patchOrder.firstOrNull() ?: "local_fallback",
                 contextByteCount = snapshot.byteCount,
@@ -353,19 +270,6 @@ class AgentService(
         return applied.copy(verificationResult = verification)
     }
 
-    private data class PatchAttempt(
-        val result: atropos.core.ProviderCascadeResult,
-        val extraction: AgentPatchExtraction,
-        val retryAttempted: Boolean,
-        val rejectionReason: String? = null,
-        val responsePreview: String? = null
-    )
-
-    private data class PatchCascadeResult(
-        val success: PatchAttempt? = null,
-        val failure: PatchAttempt? = null
-    )
-
     private fun fallbackAnswer(task: String, snapshot: AgentContextSnapshot): String = buildString {
         appendLine("Yes. ATROPOS supplied repo context, so I can see the workspace through that bounded snapshot.")
         appendLine("I do not have direct filesystem access, but the collected context includes git status, a shallow tree, and selected provider/routing/agent source files.")
@@ -401,126 +305,6 @@ class AgentService(
             .takeUnless { it.isNullOrBlank() }
             ?.let { redactionFilter.compact(it, 240) }
             ?: "provider cascade failed"
-
-    private fun runPatchCascade(
-        patchOrder: List<String>,
-        prompt: String,
-        context: String
-    ): PatchCascadeResult {
-        val body = AgentPromptContract.buildPatch(context)
-        var lastFailure: PatchAttempt? = null
-
-        for (provider in patchOrder) {
-            val initial = try {
-                runPatchAttempt(provider, prompt, body)
-            } catch (failure: Exception) {
-                lastFailure = buildExceptionFailure(provider, failure, retryAttempted = false)
-                continue
-            }
-            val accepted = validatePatchAttempt(initial)
-            if (accepted != null) return PatchCascadeResult(success = accepted)
-
-            val retryPrompt = buildString {
-                appendLine(prompt)
-                appendLine()
-                appendLine("Your previous response was rejected because no unified diff was found. Return ONLY a valid unified diff for the same task.")
-                appendLine("Include file headers, at least one @@ hunk header, and the added or removed line(s).")
-            }
-            val retry = try {
-                runPatchAttempt(provider, retryPrompt.trimEnd(), body)
-            } catch (failure: Exception) {
-                lastFailure = buildExceptionFailure(provider, failure, retryAttempted = true)
-                continue
-            }
-            val retryAccepted = validatePatchAttempt(retry)
-            if (retryAccepted != null) {
-                return PatchCascadeResult(success = retryAccepted.copy(retryAttempted = true))
-            }
-
-            val failure = buildPatchFailure(provider, retry, retryAttempted = true)
-            lastFailure = failure
-        }
-
-        return PatchCascadeResult(failure = lastFailure)
-    }
-
-    private fun runPatchAttempt(
-        provider: String,
-        prompt: String,
-        context: String
-    ): atropos.core.ProviderCascadeResult =
-        router.completeWithCascade(
-            requestedProvider = provider,
-            prompt = prompt,
-            context = context,
-            providerOrderOverride = listOf(provider),
-            beforeAttempt = { candidate -> enforceProviderPolicy(candidate, prompt, "patch") }
-        )
-
-    private fun validatePatchAttempt(
-        result: atropos.core.ProviderCascadeResult,
-        retryAttempted: Boolean = false
-    ): PatchAttempt? {
-        val extraction = patchExtractor.extract(result.response) ?: return null
-        if (!extraction.hasHunkBody) {
-            return null
-        }
-
-        val validationFailure = patchExtractor.validate(extraction.diff)
-        if (validationFailure != null) {
-            return null
-        }
-
-        return PatchAttempt(result, extraction, retryAttempted)
-    }
-
-    private fun buildPatchFailure(
-        provider: String,
-        result: atropos.core.ProviderCascadeResult,
-        retryAttempted: Boolean
-    ): PatchAttempt {
-        val extraction = patchExtractor.extract(result.response)
-        val rejectionReason = when {
-            extraction == null -> if (containsDiffHeader(result.response)) "diff body missing" else "no unified diff found"
-            !extraction.hasHunkBody -> "diff body missing"
-            else -> patchExtractor.validate(extraction.diff) ?: "unknown patch rejection"
-        }
-
-        return PatchAttempt(
-            result = result,
-            extraction = extraction ?: AgentPatchExtraction("", emptyList(), false),
-            retryAttempted = retryAttempted,
-            rejectionReason = rejectionReason,
-            responsePreview = redactionFilter.redact(patchExtractor.preview(result.response))
-        )
-    }
-
-    private fun buildExceptionFailure(
-        provider: String,
-        failure: Exception,
-        retryAttempted: Boolean
-    ): PatchAttempt {
-        val message = compactFailureSummary(failure.message)
-        return PatchAttempt(
-            result = atropos.core.ProviderCascadeResult(providerName = provider, response = "", errors = emptyList()),
-            extraction = AgentPatchExtraction("", emptyList(), false),
-            retryAttempted = retryAttempted,
-            rejectionReason = message,
-            responsePreview = message
-        )
-    }
-
-    private fun containsDiffHeader(text: String): Boolean =
-        text.contains("diff --git ") || text.contains("\n--- ") || text.trimStart().startsWith("--- ")
-
-    private fun PatchAttempt.copy(retryAttempted: Boolean): PatchAttempt =
-        PatchAttempt(
-            result = result,
-            extraction = extraction,
-            retryAttempted = retryAttempted,
-            rejectionReason = rejectionReason,
-            responsePreview = responsePreview
-        )
 
     private fun normalizeAgentAnswer(answer: String): String {
         val trimmed = answer.trim()

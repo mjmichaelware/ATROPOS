@@ -13,6 +13,7 @@ import atropos.core.dag.DagNodeState
 import atropos.core.agent.GoalRunStatus
 import atropos.core.agent.GoalRunStore
 import atropos.core.agent.GoalTerminalCondition
+import atropos.core.agent.SelfHostAutonomousRunResult
 import atropos.core.agent.SelfHostGoalService
 import atropos.core.journal.EventCategory
 import atropos.core.journal.EventJournalService
@@ -25,9 +26,41 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class SelfHostCommandTest {
+    private fun initializeGitRepo(repoRoot: java.nio.file.Path) {
+        ProcessBuilder("git", "init")
+            .directory(repoRoot.toFile())
+            .redirectErrorStream(true)
+            .start()
+            .waitFor()
+        Files.createDirectories(repoRoot.resolve("src/main/kotlin/atropos"))
+        Files.createDirectories(repoRoot.resolve("src/test/kotlin/atropos"))
+        Files.writeString(repoRoot.resolve("src/main/kotlin/atropos/Main.kt"), "fun main() {}\n")
+        ProcessBuilder("git", "config", "user.email", "atropos@example.invalid")
+            .directory(repoRoot.toFile())
+            .redirectErrorStream(true)
+            .start()
+            .waitFor()
+        ProcessBuilder("git", "config", "user.name", "ATROPOS Test")
+            .directory(repoRoot.toFile())
+            .redirectErrorStream(true)
+            .start()
+            .waitFor()
+        ProcessBuilder("git", "add", ".")
+            .directory(repoRoot.toFile())
+            .redirectErrorStream(true)
+            .start()
+            .waitFor()
+        ProcessBuilder("git", "commit", "-m", "initial")
+            .directory(repoRoot.toFile())
+            .redirectErrorStream(true)
+            .start()
+            .waitFor()
+    }
+
     private fun buildCommand(
         repoRoot: java.nio.file.Path,
-        service: SelfHostGoalService
+        service: SelfHostGoalService,
+        selfHostRunner: ((String) -> SelfHostAutonomousRunResult)? = null
     ): SelfHostCommand {
         val ui = AnsiTerminalEngine(
             capabilities = ConfigurationManager(),
@@ -43,7 +76,8 @@ class SelfHostCommandTest {
             ui = ui,
             config = config,
             repoRoot = repoRoot,
-            selfHostService = service
+            selfHostService = service,
+            selfHostRunner = selfHostRunner ?: { prompt -> service.runNaturalLanguageSelfBuild(prompt) }
         )
     }
 
@@ -80,6 +114,53 @@ class SelfHostCommandTest {
 
         assertTrue(text.contains("batch evidence status: PARTIAL_EVIDENCE"))
         assertTrue(!text.contains("crossover status:"))
+    }
+
+    @Test
+    fun `self-host start then resume advances the cradle bootstrap DAG`() {
+        val repoRoot = Files.createTempDirectory("atropos-self-host-command-cradle-")
+        initializeGitRepo(repoRoot)
+        val base = Instant.parse("2026-07-27T08:00:00Z")
+        var tick = 0L
+        val store = GoalRunStore(repoRoot, clock = { base.plusSeconds(tick++) })
+        val service = SelfHostGoalService(repoRoot = repoRoot, store = store, clock = { base.plusSeconds(tick++) })
+        val command = buildCommand(repoRoot, service)
+
+        val started = command.execute(listOf("/agent", "self-host", "start", "prove", "cradle", "self-build", "--phase", "11"))
+        assertTrue(started is AgentCommandOutcome.Completed)
+        val goal = service.history(1).single()
+
+        val firstResume = command.execute(listOf("/agent", "self-host", "resume", goal.id))
+        val firstText = when (firstResume) {
+            is AgentCommandOutcome.Completed -> firstResume.text
+            is AgentCommandOutcome.Invalid -> firstResume.message
+        }
+        assertTrue(firstResume is AgentCommandOutcome.Completed, firstText)
+        assertTrue(firstText.contains("advance: DAG node evaluation:"), firstText)
+
+        val secondResume = command.execute(listOf("/agent", "self-host", "resume", goal.id))
+        val secondText = when (secondResume) {
+            is AgentCommandOutcome.Completed -> secondResume.text
+            is AgentCommandOutcome.Invalid -> secondResume.message
+        }
+        assertTrue(secondResume is AgentCommandOutcome.Completed, secondText)
+
+        val resumed = command.execute(listOf("/agent", "self-host", "resume", goal.id))
+        val text = when (resumed) {
+            is AgentCommandOutcome.Completed -> resumed.text
+            is AgentCommandOutcome.Invalid -> resumed.message
+        }
+        val reopened = store.resolve(goal.id) ?: error("missing goal")
+
+        assertTrue(resumed is AgentCommandOutcome.Completed, text)
+        assertTrue(text.contains("advance: advanced and completed: all nodes complete"), text)
+        assertEquals(GoalRunStatus.COMPLETED, reopened.status)
+        assertEquals(GoalTerminalCondition.VERIFIED_COMPLETE, reopened.terminalCondition)
+        assertTrue(reopened.evidence.any { it.startsWith("context_attestation system=ATROPOS") })
+        val marker = repoRoot.resolve("src/main/kotlin/atropos/core/agent/SelfHostCradleRuntimeState.kt")
+        val test = repoRoot.resolve("src/test/kotlin/atropos/core/agent/SelfHostCradleRuntimeStateTest.kt")
+        assertTrue(Files.readString(marker).contains("LAST_SELF_HOST_GOAL: String = \"${goal.id}\""))
+        assertTrue(Files.readString(test).contains("records_latest_self_host_goal_and_phase"))
     }
 
     @Test
@@ -138,6 +219,64 @@ class SelfHostCommandTest {
         assertTrue(text.contains("$goalId: COMPLETED"))
         assertTrue(text.contains("terminal: VERIFIED_COMPLETE"))
         assertTrue(text.contains("node: node-9"))
+    }
+
+    @Test
+    fun `self-host next reports promotion boundary for verified source goal`() {
+        val repoRoot = Files.createTempDirectory("atropos-self-host-command-next-")
+        val base = Instant.parse("2026-07-27T08:13:00Z")
+        var tick = 0L
+        val store = GoalRunStore(repoRoot, clock = { base.plusSeconds(tick++) })
+        val service = SelfHostGoalService(repoRoot = repoRoot, store = store, clock = { base.plusSeconds(tick++) })
+        val started = service.startGoal("next action goal", "11").goal ?: error("missing goal")
+        store.update(
+            started.record.copy(
+                status = GoalRunStatus.COMPLETED,
+                terminalCondition = GoalTerminalCondition.VERIFIED_COMPLETE,
+                currentNodeId = "node-promote"
+            )
+        )
+
+        val command = buildCommand(repoRoot, service)
+        val result = command.execute(listOf("self-host", "next", started.record.id))
+        val text = when (result) {
+            is AgentCommandOutcome.Completed -> result.text
+            is AgentCommandOutcome.Invalid -> result.message
+        }
+
+        assertTrue(result is AgentCommandOutcome.Completed)
+        assertTrue(text.contains("next: PROMOTE_JAR"), text)
+        assertTrue(text.contains("goal: ${started.record.id}"), text)
+    }
+
+    @Test
+    fun `self-host run delegates natural-language prompt to core runner`() {
+        val repoRoot = Files.createTempDirectory("atropos-self-host-command-run-")
+        val store = GoalRunStore(repoRoot)
+        val service = SelfHostGoalService(repoRoot = repoRoot, store = store)
+        var capturedPrompt: String? = null
+        val command = buildCommand(repoRoot, service) { prompt ->
+            capturedPrompt = prompt
+            SelfHostAutonomousRunResult(
+                ok = true,
+                message = "self-host run promoted verified jar",
+                goal = null,
+                promotion = null,
+                evidenceBundle = null,
+                steps = listOf("started", "promoted")
+            )
+        }
+
+        val result = command.execute(listOf("self-host", "run", "make", "ATROPOS", "build", "itself"))
+        val text = when (result) {
+            is AgentCommandOutcome.Completed -> result.text
+            is AgentCommandOutcome.Invalid -> result.message
+        }
+
+        assertTrue(result is AgentCommandOutcome.Completed)
+        assertEquals("make ATROPOS build itself", capturedPrompt)
+        assertTrue(text.contains("self-host run promoted verified jar"), text)
+        assertTrue(text.contains("started"), text)
     }
 
     @Test
@@ -293,6 +432,27 @@ class SelfHostCommandTest {
         assertEquals("7", reopened.activePhase)
         assertTrue(events.first().payload.contains("task=phase 11 goal"))
         assertTrue(!events.first().payload.contains("--phase"))
+    }
+
+    @Test
+    fun `self-host start defaults natural language goals to phase 11`() {
+        val repoRoot = Files.createTempDirectory("atropos-self-host-command-start-default-")
+        val base = Instant.parse("2026-07-27T08:26:00Z")
+        var tick = 0L
+        val store = GoalRunStore(repoRoot, clock = { base.plusSeconds(tick++) })
+        val service = SelfHostGoalService(repoRoot = repoRoot, store = store, clock = { base.plusSeconds(tick++) })
+        val command = buildCommand(repoRoot, service)
+
+        val result = command.execute(listOf("self-host", "start", "build", "ATROPOS", "from", "inside"))
+        val text = when (result) {
+            is AgentCommandOutcome.Completed -> result.text
+            is AgentCommandOutcome.Invalid -> result.message
+        }
+        val goalId = text.substringAfterLast(": ").trim()
+
+        val reopened = store.resolve(goalId) ?: error("missing started goal")
+        assertEquals("11", reopened.activePhase)
+        assertEquals("build ATROPOS from inside", reopened.task)
     }
 
     @Test

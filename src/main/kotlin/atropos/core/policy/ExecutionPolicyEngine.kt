@@ -1,5 +1,6 @@
 package atropos.core.policy
 
+import atropos.core.AtroposRepoRootLocator
 import atropos.core.security.RedactionFilter
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
@@ -76,7 +77,7 @@ data class ExecutionPolicyAuditRecord(
 }
 
 class ExecutionPolicyAuditStore(
-    private val repoRoot: Path = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize(),
+    private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
     private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     private val policyRoot = repoRoot.resolve(".atropos/policy").normalize()
@@ -112,7 +113,7 @@ class ExecutionPolicyAuditStore(
  * engine and is prohibited.
  */
 open class ExecutionPolicyEngine(
-    private val repoRoot: Path = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize(),
+    private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
     private val auditStore: ExecutionPolicyAuditStore = ExecutionPolicyAuditStore(repoRoot),
     private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {

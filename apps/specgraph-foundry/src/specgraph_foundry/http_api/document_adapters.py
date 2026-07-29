@@ -574,7 +574,10 @@ class DocumentAdapterRegistry:
 
         return DocumentDerivation(
             adapter_name="pypdf_text",
-            adapter_version=metadata.version("pypdf"),
+            adapter_version=_dependency_version(
+                "pypdf",
+                fallback="local-compat-1",
+            ),
             detected_media_type=PDF_MIME_TYPE,
             derived_text=derived_text,
             metadata=self._metadata(
@@ -711,3 +714,13 @@ class DocumentAdapterRegistry:
             metadata["page_count"] = page_count
 
         return metadata
+
+
+def _dependency_version(
+    name: str,
+    fallback: str,
+) -> str:
+    try:
+        return metadata.version(name)
+    except metadata.PackageNotFoundError:
+        return fallback

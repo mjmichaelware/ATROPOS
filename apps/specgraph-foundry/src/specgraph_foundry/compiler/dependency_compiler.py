@@ -1,6 +1,7 @@
 import re
 from typing import List, Dict, Any, Optional
 from .requirement_ir import CanonicalRequirementIR
+from .compiler_fingerprints import generate_fingerprint
 
 DEPENDENCY_PHRASES = [
     r"\bdepends\s+on\b",
@@ -24,13 +25,24 @@ class DependencyEdge:
         self.to_id = to_id
         self.rule = rule
         self.evidence = evidence
+        self.edge_id = f"dep-{generate_fingerprint(self.identity_payload())[:16]}"
 
-    def to_dict(self) -> Dict[str, Any]:
+    def identity_payload(self) -> Dict[str, str]:
         return {
             "from_node_id": self.from_id,
             "to_node_id": self.to_id,
             "rule": self.rule,
-            "evidence": self.evidence
+            "evidence": self.evidence,
+        }
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "id": self.edge_id,
+            "from_node_id": self.from_id,
+            "to_node_id": self.to_id,
+            "rule": self.rule,
+            "evidence": self.evidence,
+            "evidence_sha256": generate_fingerprint(self.evidence),
         }
 
 def compile_dependencies(

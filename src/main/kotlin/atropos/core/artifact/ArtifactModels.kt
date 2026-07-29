@@ -88,6 +88,7 @@ data class AppFactoryRun(
     val id: String = "run-${UUID.randomUUID().toString().take(12)}",
     val prompt: String,
     val planId: String,
+    val projectId: String? = null,
     val artifacts: List<Artifact> = emptyList(),
     val verifications: List<VerificationEvidence> = emptyList(),
     val installProof: InstallProof? = null,

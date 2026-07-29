@@ -61,7 +61,8 @@ class DeterministicVerifier(
     private val smokeRunner: AgentSmokeRunner = AgentSmokeRunner(repoRoot),
     private val patchExtractor: AgentPatchExtractor = AgentPatchExtractor(),
     private val redactionFilter: RedactionFilter = RedactionFilter(),
-    private val constraintEvaluator: ConstraintSolverEvaluator = ConstraintSolverEvaluator()
+    private val constraintEvaluator: ConstraintSolverEvaluator = ConstraintSolverEvaluator(),
+    private val architectureComplianceChecker: ArchitectureComplianceChecker = ArchitectureComplianceChecker(enforcing = true)
 ) {
     fun verify(
         sourcePaths: List<Path>,
@@ -91,6 +92,7 @@ class DeterministicVerifier(
         findings += checkCommandRegistryIntegrity()
         findings += checkRedactionInvariant()
         findings += checkForbiddenPaths(sourcePaths)
+        findings += checkArchitectureCompliance(sourcePaths)
         patchText?.let { findings += checkPatchStructure(it) }
         shellCommand?.let { findings += checkShellSafety(it) }
         dloiAddress?.let { findings += checkDloiAddress(it) }
@@ -235,7 +237,9 @@ class DeterministicVerifier(
     private fun checkForbiddenPaths(paths: List<Path>): List<DeterministicFinding> {
         val banned = listOf(".gradle/", "build/", ".jar", ".atropos/secrets", ".git/")
         return paths.mapNotNull { path ->
-            val relative = repoRoot.relativize(path.toAbsolutePath().normalize()).invariantSeparatorsPathString
+            val normalized = path.toAbsolutePath().normalize()
+            if (!normalized.startsWith(repoRoot)) return@mapNotNull null
+            val relative = repoRoot.relativize(normalized).invariantSeparatorsPathString
             banned.firstOrNull { token -> relative.contains(token) || relative.endsWith(token) }?.let { token ->
                 constraintEvaluator.evaluate(
                     DeterministicConstraint(
@@ -249,6 +253,28 @@ class DeterministicVerifier(
                     )
                 ).single()
             }
+        }
+    }
+
+    private fun checkArchitectureCompliance(paths: List<Path>): List<DeterministicFinding> {
+        val inScope = paths.map { it.toAbsolutePath().normalize() }
+            .filter { it.startsWith(repoRoot) && Files.isRegularFile(it) && it.extension == "kt" }
+        if (inScope.isEmpty()) return emptyList()
+
+        val report = architectureComplianceChecker.checkFiles(inScope.map { it.toFile() })
+        val severity = if (report.blocksBuild) DiagnosticSeverity.ERROR else DiagnosticSeverity.WARNING
+        return report.violations.map { violation ->
+            val file = runCatching {
+                val normalized = Path.of(violation.path).toAbsolutePath().normalize()
+                if (normalized.startsWith(repoRoot)) repoRoot.relativize(normalized).invariantSeparatorsPathString else violation.path
+            }.getOrElse { violation.path }
+            finding(
+                invariantId = violation.invariant,
+                severity = severity,
+                file = file,
+                evidence = "expected=one atomic responsibility observed=${violation.observed}",
+                remediation = "split transport, normalization, routing, rendering, verification, and execution into single-responsibility files"
+            )
         }
     }
 

@@ -1,5 +1,6 @@
 package atropos.core.agent
 
+import atropos.core.AtroposRepoRootLocator
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.TimeUnit
@@ -12,7 +13,7 @@ data class AgentContextSnapshot(
 )
 
 class AgentContextCollector(
-    val repoRoot: Path = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize(),
+    val repoRoot: Path = AtroposRepoRootLocator.resolve(),
     val contextCapBytes: Int = 80 * 1024
 ) {
     private val selectedSourceFiles = listOf(

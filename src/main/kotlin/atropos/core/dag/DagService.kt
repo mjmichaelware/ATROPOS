@@ -1,5 +1,6 @@
 package atropos.core.dag
 
+import atropos.core.AtroposRepoRootLocator
 import java.security.MessageDigest
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
@@ -7,7 +8,7 @@ import java.nio.file.Path
 
 class DagService(
     private val store: DagStore = DagStore(),
-    private val repoRoot: Path = Path.of(System.getProperty("user.dir"))
+    private val repoRoot: Path = AtroposRepoRootLocator.resolve()
 ) {
     private val nodeMap = mutableMapOf<String, DAGNode>()
 

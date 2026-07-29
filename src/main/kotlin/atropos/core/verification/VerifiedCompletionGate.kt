@@ -1,6 +1,7 @@
 package atropos.core.verification
 
 import atropos.core.AtroposConfig
+import atropos.core.AtroposRepoRootLocator
 import atropos.core.agent.AgentRunService
 import atropos.core.agent.GoalContinuationService
 import atropos.core.agent.GoalTerminalCondition
@@ -32,7 +33,7 @@ data class CompletionGateReport(
 
 class VerifiedCompletionGate(
     private val config: AtroposConfig = AtroposConfig.load(),
-    private val repoRoot: Path = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize(),
+    private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
     private val dagStore: DagStore = DagStore(repoRoot),
     private val runService: AgentRunService = AgentRunService(config),
     private val continuationService: GoalContinuationService = GoalContinuationService(repoRoot),
@@ -232,9 +233,35 @@ class VerifiedCompletionGate(
 
     private fun checkAcceptanceEvidence(node: DagNode): GateResult {
         val evidenceDir = repoRoot.resolve("docs/bootstrap")
-        val hasEvidence = Files.isDirectory(evidenceDir)
+        val hasBootstrapEvidence = Files.isDirectory(evidenceDir)
+        val selfHostEvidence = selfHostEvidenceBundle(node)
+        val hasEvidence = hasBootstrapEvidence || selfHostEvidence != null
         return GateResult(node.id, hasEvidence, "Acceptance Evidence",
-            if (hasEvidence) "evidence directory exists" else "no evidence directory", clock())
+            when {
+                hasBootstrapEvidence -> "evidence directory exists"
+                selfHostEvidence != null -> "self-host evidence bundle exists: $selfHostEvidence"
+                else -> "no evidence directory or self-host evidence bundle"
+            }, clock())
+    }
+
+    private fun selfHostEvidenceBundle(node: DagNode): String? {
+        val goalId = inferSelfHostGoalId(node.id) ?: return null
+        val evidenceRoot = repoRoot.resolve(".atropos/self-hosting/evidence").normalize()
+        val bundleDir = evidenceRoot.resolve(goalId).normalize()
+        if (!bundleDir.startsWith(evidenceRoot)) return null
+        val markdown = bundleDir.resolve("bundle.md")
+        val json = bundleDir.resolve("bundle.json")
+        val markdownOk = Files.isRegularFile(markdown) && Files.size(markdown) > 0L
+        val jsonOk = Files.isRegularFile(json) && Files.size(json) > 0L
+        return if (markdownOk && jsonOk) bundleDir.toString() else null
+    }
+
+    private fun inferSelfHostGoalId(nodeId: String): String? {
+        if (!nodeId.startsWith("shg-")) return null
+        val suffix = nodeId.removePrefix("shg-")
+        val token = suffix.substringBefore("-")
+        if (token.isBlank()) return null
+        return "shg-$token"
     }
 
     private fun checkExpectedOutputs(node: DagNode): GateResult {

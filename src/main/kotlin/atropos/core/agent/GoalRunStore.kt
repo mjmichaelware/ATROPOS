@@ -1,5 +1,6 @@
 package atropos.core.agent
 
+import atropos.core.AtroposRepoRootLocator
 import atropos.core.security.RedactionFilter
 import java.nio.ByteBuffer
 import java.nio.channels.FileChannel
@@ -12,7 +13,7 @@ import java.time.Instant
 import java.util.UUID
 
 class GoalRunStore(
-    private val repoRoot: Path = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize(),
+    private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
     private val clock: () -> Instant = { Instant.now() },
     private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
@@ -34,14 +35,12 @@ class GoalRunStore(
             updatedAt = now,
             metaFile = runsRoot.resolve("$id.meta")
         )
-        writeRecord(record)
-        return record
+        return writeRecord(record)
     }
 
     fun update(record: GoalRunRecord): GoalRunRecord {
         val updated = record.copy(updatedAt = clock())
-        writeRecord(updated)
-        return updated
+        return writeRecord(updated)
     }
 
     fun resolve(reference: String): GoalRunRecord? {
@@ -61,54 +60,62 @@ class GoalRunStore(
             .take(limit.coerceAtLeast(1))
     }
 
-    private fun writeRecord(record: GoalRunRecord) {
+    private fun writeRecord(record: GoalRunRecord): GoalRunRecord {
         Files.createDirectories(runsRoot)
-        val tmp = Files.createTempFile(runsRoot, record.id, ".tmp")
+        val safe = sanitize(record)
+        val tmp = Files.createTempFile(runsRoot, safe.id, ".tmp")
         val content = buildString {
-            appendLine("id=${record.id}")
-            appendLine("goalId=${record.goalId ?: ""}")
-            appendLine("projectId=${record.projectId ?: ""}")
-            appendLine("dagId=${record.dagId ?: ""}")
-            appendLine("atomId=${record.atomId ?: ""}")
-            appendLine("taskB64=${encode(record.task)}")
-            appendLine("provider=${record.provider ?: ""}")
-            appendLine("status=${record.status}")
-            appendLine("terminalCondition=${record.terminalCondition ?: ""}")
-            appendLine("continuationCount=${record.continuationCount}")
-            appendLine("maxContinuations=${record.maxContinuations}")
-            appendLine("lastContinuationAt=${record.lastContinuationAt ?: ""}")
-            appendLine("compactStateB64=${encode(record.compactState.orEmpty())}")
-            appendLine("lastProviderResponseId=${record.lastProviderResponseId ?: ""}")
-            appendLine("failureReasonB64=${encode(record.failureReason.orEmpty())}")
-            appendLine("parentRunId=${record.parentRunId ?: ""}")
-            appendLine("runId=${record.runId ?: ""}")
-            appendLine("baselineCommit=${record.baselineCommit ?: ""}")
-            appendLine("dirtyStateFingerprint=${record.dirtyStateFingerprint ?: ""}")
-            appendLine("activePhase=${record.activePhase ?: ""}")
-            appendLine("currentNodeId=${record.currentNodeId ?: ""}")
-            appendLine("territory=${record.territory.joinToString(",")}")
-            appendLine("evidenceB64=${encode(record.evidence.joinToString("|"))}")
-            appendLine("retryBudget=${record.retryBudget}")
-            appendLine("lastVerifiedCheckpoint=${record.lastVerifiedCheckpoint ?: ""}")
-            appendLine("createdAt=${record.createdAt}")
-            appendLine("updatedAt=${record.updatedAt}")
-            appendLine("finishedAt=${record.finishedAt ?: ""}")
+            appendLine("id=${safe.id}")
+            appendLine("goalId=${safe.goalId ?: ""}")
+            appendLine("projectId=${safe.projectId ?: ""}")
+            appendLine("dagId=${safe.dagId ?: ""}")
+            appendLine("atomId=${safe.atomId ?: ""}")
+            appendLine("taskB64=${encode(safe.task)}")
+            appendLine("provider=${safe.provider ?: ""}")
+            appendLine("status=${safe.status}")
+            appendLine("terminalCondition=${safe.terminalCondition ?: ""}")
+            appendLine("continuationCount=${safe.continuationCount}")
+            appendLine("maxContinuations=${safe.maxContinuations}")
+            appendLine("lastContinuationAt=${safe.lastContinuationAt ?: ""}")
+            appendLine("compactStateB64=${encode(safe.compactState.orEmpty())}")
+            appendLine("lastProviderResponseId=${safe.lastProviderResponseId ?: ""}")
+            appendLine("failureReasonB64=${encode(safe.failureReason.orEmpty())}")
+            appendLine("parentRunId=${safe.parentRunId ?: ""}")
+            appendLine("runId=${safe.runId ?: ""}")
+            appendLine("baselineCommit=${safe.baselineCommit ?: ""}")
+            appendLine("dirtyStateFingerprint=${safe.dirtyStateFingerprint ?: ""}")
+            appendLine("activePhase=${safe.activePhase ?: ""}")
+            appendLine("currentNodeId=${safe.currentNodeId ?: ""}")
+            appendLine("territory=${safe.territory.joinToString(",")}")
+            appendLine("evidenceB64=${encode(safe.evidence.joinToString("|"))}")
+            safe.evidence.forEach { appendLine("evidenceEntryB64=${encode(it)}") }
+            appendLine("retryBudget=${safe.retryBudget}")
+            appendLine("lastVerifiedCheckpoint=${safe.lastVerifiedCheckpoint ?: ""}")
+            appendLine("createdAt=${safe.createdAt}")
+            appendLine("updatedAt=${safe.updatedAt}")
+            appendLine("finishedAt=${safe.finishedAt ?: ""}")
         }
         Files.writeString(tmp, content, StandardCharsets.UTF_8)
         try {
-            Files.move(tmp, record.metaFile, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
+            Files.move(tmp, safe.metaFile, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
         } catch (_: Exception) {
-            Files.move(tmp, record.metaFile, StandardCopyOption.REPLACE_EXISTING)
+            Files.move(tmp, safe.metaFile, StandardCopyOption.REPLACE_EXISTING)
         }
+        return safe
     }
 
     private fun parseRecord(metaFile: Path): GoalRunRecord? {
-        val fields = runCatching {
+        val pairs = runCatching {
             Files.readAllLines(metaFile, StandardCharsets.UTF_8).mapNotNull { line ->
                 val index = line.indexOf('=')
                 if (index <= 0) null else line.substring(0, index) to line.substring(index + 1)
-            }.toMap()
+            }
         }.getOrNull() ?: return null
+        val fields = pairs.toMap()
+        val evidenceEntries = pairs
+            .filter { it.first == "evidenceEntryB64" }
+            .mapNotNull { decode(it.second).takeIf { decoded -> decoded.isNotBlank() } }
+        val legacyEvidence = decode(fields["evidenceB64"]).split("|").filter { it.isNotBlank() }
         return runCatching {
             GoalRunRecord(
                 id = fields["id"].orEmpty(),
@@ -133,7 +140,7 @@ class GoalRunStore(
                 activePhase = fields["activePhase"]?.takeIf { it.isNotBlank() },
                 currentNodeId = fields["currentNodeId"]?.takeIf { it.isNotBlank() },
                 territory = fields["territory"]?.split(",")?.filter { it.isNotBlank() } ?: emptyList(),
-                evidence = decode(fields["evidenceB64"]).split("|").filter { it.isNotBlank() },
+                evidence = evidenceEntries.ifEmpty { legacyEvidence },
                 retryBudget = fields["retryBudget"]?.toIntOrNull() ?: 10,
                 lastVerifiedCheckpoint = fields["lastVerifiedCheckpoint"]?.takeIf { it.isNotBlank() },
                 createdAt = parseInstant(fields["createdAt"]) ?: Instant.EPOCH,
@@ -143,6 +150,17 @@ class GoalRunStore(
             )
         }.getOrNull()
     }
+
+    private fun sanitize(record: GoalRunRecord): GoalRunRecord =
+        record.copy(
+            task = redactionFilter.redact(record.task).trim(),
+            provider = record.provider?.let(redactionFilter::redact),
+            compactState = record.compactState?.let(redactionFilter::redact),
+            failureReason = record.failureReason?.let(redactionFilter::redact),
+            territory = record.territory.map(redactionFilter::redact),
+            evidence = record.evidence.map(redactionFilter::redact),
+            lastVerifiedCheckpoint = record.lastVerifiedCheckpoint?.let(redactionFilter::redact)
+        )
 
     private fun resolveRunId(reference: String): String? {
         val trimmed = reference.trim()

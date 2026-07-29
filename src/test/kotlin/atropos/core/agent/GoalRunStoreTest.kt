@@ -101,4 +101,32 @@ class GoalRunStoreTest {
         assertEquals(warmedOlder.id, store.latest()?.id)
         assertEquals(warmedOlder.id, store.resolve("latest")?.id)
     }
+
+    @Test
+    fun update_redacts_durable_fields_and_preserves_pipe_bearing_evidence_entries() {
+        val repoRoot = Files.createTempDirectory("atropos-goal-run-redaction-")
+        val store = GoalRunStore(repoRoot)
+        val secret = "sk-ABCDEFGHIJKLMNOPQRSTUVWX"
+        val run = store.createGoalRun("self-host token=$secret", provider = "self-host")
+
+        val updated = store.update(
+            run.copy(
+                failureReason = "api_key=$secret",
+                compactState = "compact token=$secret",
+                evidence = listOf(
+                    "promotion_gate node=n1 canComplete=true | Compile Gate=PASS:ok",
+                    "secret=$secret"
+                )
+            )
+        )
+        val rawMeta = Files.readString(updated.metaFile, StandardCharsets.UTF_8)
+        val reopened = store.resolve(updated.id) ?: error("missing run")
+
+        assertTrue(!rawMeta.contains(secret), rawMeta)
+        assertTrue(!reopened.task.contains(secret), reopened.task)
+        assertTrue(!reopened.failureReason.orEmpty().contains(secret))
+        assertEquals(2, reopened.evidence.size)
+        assertTrue(reopened.evidence.first().contains("| Compile Gate=PASS:ok"), reopened.evidence.joinToString("\n"))
+        assertTrue(reopened.evidence.none { it.contains(secret) })
+    }
 }

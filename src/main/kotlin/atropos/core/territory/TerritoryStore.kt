@@ -1,11 +1,12 @@
 package atropos.core.territory
 
+import atropos.core.AtroposRepoRootLocator
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 
-class TerritoryStore(private val root: Path = Path.of(System.getProperty("user.dir"))) {
+class TerritoryStore(private val root: Path = AtroposRepoRootLocator.resolve()) {
     private val assignmentsPath = root.resolve(".atropos/territory/assignments.jsonl")
     private val violationsPath = root.resolve(".atropos/territory/violations.jsonl")
 

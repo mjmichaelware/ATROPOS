@@ -1,5 +1,6 @@
 package atropos.core.agent
 
+import atropos.core.AtroposRepoRootLocator
 import atropos.core.policy.AgencyDisposition
 import atropos.core.policy.ActionActor
 import atropos.core.policy.BoundedAgencyGate
@@ -31,7 +32,7 @@ data class AgentSmokeExecutionResult(
 }
 
 class AgentSmokeRunner(
-    private val repoRoot: Path = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize(),
+    private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
     private val timeoutMillis: Long = (System.getenv("ATROPOS_SMOKE_TIMEOUT_SECONDS") ?: "120").toLongOrNull()
         ?.coerceAtLeast(10)?.times(1000) ?: 120_000L,
     private val maxOutputBytes: Int = 48 * 1024,

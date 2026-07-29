@@ -1,0 +1,9 @@
+surface	owner	current_root	target_role	write_policy
+ATROPOS_CLI_TUI	ATROPOS	src/main/kotlin/atropos/cli/ui	Sovereign terminal operating environment	ATROPOS_UI_BATCH_ONLY
+ATROPOS_CLI_COMMANDS	ATROPOS	src/main/kotlin/atropos/cli	Typed command and navigation integration	ATROPOS_UI_BATCH_ONLY
+ATROPOS_WEB	ATROPOS	apps/atropos-web	Human operating environment web surface	ATROPOS_WEB_BATCH_ONLY
+ATROPOS_WEB_CONTRACTS	ATROPOS	packages/atropos-web-contracts	Shared presentation contracts and safe cross-surface projections	SHARED_CONTRACT_BATCH_ONLY
+SPECGRAPH_WEB	SPECGRAPH	apps/specgraph-foundry/apps/web	Embedded compiler and Developer Tools workspace	SPECGRAPH_AGENT_ONLY
+UI_PARITY_DOCS	ATROPOS	docs/ui-parity	Presentation authority, inventory, deltas, baselines, evidence	ATROPOS_UI_BATCH_ONLY
+BACKEND_RUNTIME	ATROPOS	src/main/kotlin/atropos/core	Read-only presentation source unless observability contract explicitly requires change	NO_UI_DIRECT_WRITE
+SPECGRAPH_BACKEND	SPECGRAPH	apps/specgraph-foundry/src	Read-only from ATROPOS UI batches	SPECGRAPH_AGENT_ONLY

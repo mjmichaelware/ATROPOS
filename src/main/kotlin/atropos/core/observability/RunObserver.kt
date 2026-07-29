@@ -1,6 +1,7 @@
 package atropos.core.observability
 
 import atropos.core.AtroposConfig
+import atropos.core.AtroposRepoRootLocator
 import atropos.core.agent.AgentRunService
 import atropos.core.agent.GoalContinuationService
 import atropos.core.agent.GoalRunRecord
@@ -31,7 +32,7 @@ data class RunObserverState(
 
 class RunObserver(
     private val config: AtroposConfig = AtroposConfig.load(),
-    private val repoRoot: Path = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize(),
+    private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
     private val runService: AgentRunService = AgentRunService(config),
     private val continuationService: GoalContinuationService = GoalContinuationService(repoRoot),
     private val dagService: DagExecutionService = DagExecutionService(config, repoRoot),

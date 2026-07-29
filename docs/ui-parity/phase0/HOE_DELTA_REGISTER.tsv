@@ -42,4 +42,35 @@ UI-DELTA-WEB-017	WEB	Shared StatusBadge contract	apps/web/src/components/ui/stat
 UI-DELTA-WEB-018	WEB	Routes render (build proof)	apps/web	next build succeeds and routes render	DONE	next build --webpack: compiled successfully, 33 routes emitted	build had never passed: (app) and (application) both claimed /projects with different slug names, which Next refuses to compile
 UI-DELTA-WEB-021	WEB	Authentication on ATROPOS surfaces (§13)	apps/web/src/app/(app)/layout.tsx	Every ATROPOS route requires a verified user	DONE	layout redirects to /auth/sign-in when getVerifiedUser() is null	the guard existed only on the deleted (application) layout, so the whole (app) group was served unauthenticated and the SpecGraph move would have inherited that gap
 UI-DELTA-WEB-022	WEB	Project creation affordance	apps/web/src/app/(app)/page.tsx; apps/web/src/app/(app)/projects/page.tsx	Create a project from the ATROPOS surface	MISSING	none	/projects/new belonged to SpecGraph and moved with it; ATROPOS has no project store, so the surface states creation is unavailable rather than linking to SpecGraph's form or a dead route
-UI-DELTA-AND-001	ANDROID	HOE shell	ABSENT	Claude-density primary column + local bridge, sideload-ready	DEFERRED	none	permanently deferred by operator instruction: Android is out of scope for this engagement. No Android module exists in-repo and none is implied by any web or CLI row
+UI-DELTA-AND-001	ANDROID	HOE shell	apps/atropos-android/ (MainActivity.kt, AndroidManifest.xml, build.gradle.kts, CI assembleDebug workflow)	Claude-density primary column + local bridge, sideload-ready	DEFERRED	commit 30889b1 on main	CORRECTED 2026-07-29: an earlier row recorded Android as ABSENT. A real native shell exists on main with a CI APK workflow. HOE chrome (six answers, approvals, bridge client) is not built on it; deferred by operator instruction rather than absent
+
+# ---------------------------------------------------------------------------
+# HOE atom view (supersedes the pre-work HOE-000x rows carried on main before
+# the 2026-07-29 merge; those recorded ATROPOS Web as ABSENT at
+# apps/atropos-web, which was true when written and is not now — the shell is
+# apps/web). Kept as a second view so the register answers both "which delta"
+# and "which constitution atom".
+# Schema: ATOM	Surface	Status	Path	Note
+HOE-0001	CLI	DONE	src/main/kotlin/atropos/cli/ui/HomeStateProvider.kt	six answers bound to the durable agent queue
+HOE-0001	WEB	DONE	apps/web/src/components/ui/six-answers-panel.tsx	mounted on every primary route
+HOE-0002	CLI	DONE	src/main/kotlin/atropos/cli/CommandRouter.kt	/home and /dashboard reach the cockpit
+HOE-0002	WEB	DONE	apps/web/src/components/navigation/routes.ts	spine drives sidebar, header, mobile sheet and palette
+HOE-0003	ALL	MISSING	see UI-DELTA-CLI-008, UI-DELTA-WEB-016	no durable project store on either surface
+HOE-0004	CLI	DONE	src/main/kotlin/atropos/cli/ui/design/RunState.kt	colour + glyph + label
+HOE-0004	WEB	DONE	apps/web/src/components/ui/status-badge.tsx	canonical vocabulary, icon and label
+HOE-0005	WEB	DONE	apps/web/src/components/atropos/work-item-card.tsx	unverifiable completion is marked
+HOE-0006	WEB	DONE	apps/web/src/components/ui/why-how-evidence.tsx	How reads "not provided" per UI-DELTA-WEB-020
+HOE-0007	WEB	DONE	apps/web/src/components/ui/command-palette.tsx	derived from the spine
+HOE-0008	WEB	DONE	apps/web/src/components/atropos/work-item-card.tsx	levels add, never remove
+HOE-0009	WEB	DONE	apps/web/src/lib/contexts/session-state-context.tsx	workspace survives reload
+HOE-0010	WEB	DONE	apps/web/src/components/atropos/recovery-ribbon.tsx	reports the engine's continuity line
+HOE-0011	WEB	MISSING	ABSENT	no PTY over the bridge; exposing one is the RCE the allowlist prevents
+HOE-0012	WEB	DONE	apps/web/src/components/notifications/notification-display.tsx	mounted in the provider tree
+HOE-0013	WEB	DONE	apps/web/src/components/ui/trust-indicators.tsx	unknown renders as unknown
+HOE-0014	WEB	DONE	apps/web/src/app/(app)/developer/page.tsx	preference-gated, inspectors present
+HOE-0015	WEB	DONE	apps/web/src/components/layout/session-tab-bar.tsx	tabs, persistence, palette
+HOE-0016	ANDROID	PARTIAL	apps/atropos-android/	real shell exists (MainActivity, manifest, CI APK); HOE chrome not yet built
+HOE-0017	CLI	DONE	src/main/kotlin/atropos/cli/ui/HomeStateProvider.kt	queue text redacted before display
+HOE-0018	ALL	DONE	docs/ui-parity/phase0/HOE_DELTA_REGISTER.tsv	this file
+HOE-0019	ALL	DONE	apps/web/src/styles/themes.css	reduced motion, high contrast, labels
+HOE-0020	WEB	DONE	apps/web/src/app/(app)/developer/specgraph/	SpecGraph only under Developer Tools
