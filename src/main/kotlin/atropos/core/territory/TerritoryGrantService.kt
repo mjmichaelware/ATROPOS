@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.territory
 
+import atropos.core.director.DirectorService
 import atropos.core.policy.ActionActor
 
 /** Outcome of asking for a territory grant. */
@@ -21,7 +22,7 @@ sealed interface GrantResult {
  * with [TerritoryService] and [TerritoryStore]; nothing here duplicates them.
  */
 class TerritoryGrantService(
-    private val service: TerritoryService = TerritoryService(),
+    private val service: TerritoryService = TerritoryService(director = DirectorService()),
     /**
      * The scope the human owner holds. Empty string means the whole repository:
      * [TerritoryAssignment.allows] tests `path.startsWith(prefix)`, and every

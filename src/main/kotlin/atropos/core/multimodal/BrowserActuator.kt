@@ -1,5 +1,6 @@
 package atropos.core.multimodal
 
+import atropos.core.AtroposRepoRootLocator
 import atropos.core.policy.ActionActor
 import atropos.core.policy.ActionProposal
 import atropos.core.policy.AgencyDisposition
@@ -9,7 +10,7 @@ import atropos.core.policy.PolicyActionClass
 import java.nio.file.Path
 
 class BrowserActuator(
-    private val repoRoot: Path = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize(),
+    private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
     private val snapshotService: SnapshotService = SnapshotService(SnapshotStore(repoRoot), repoRoot),
     private val agencyGate: BoundedAgencyGate = BoundedAgencyGate(ExecutionPolicyEngine(repoRoot))
 ) {

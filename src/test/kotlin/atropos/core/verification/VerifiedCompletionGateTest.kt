@@ -109,6 +109,43 @@ class VerifiedCompletionGateTest {
     }
 
     @Test
+    fun self_host_evidence_bundle_satisfies_acceptance_evidence_gate() {
+        val root = repo()
+        val goalId = "shg-abc123"
+        val evidenceDir = root.resolve(".atropos/self-hosting/evidence/$goalId")
+        Files.createDirectories(evidenceDir)
+        Files.writeString(evidenceDir.resolve("bundle.md"), "# evidence\n", StandardCharsets.UTF_8)
+        Files.writeString(evidenceDir.resolve("bundle.json"), "{\"goalId\":\"$goalId\"}\n", StandardCharsets.UTF_8)
+
+        val result = gateNamed(
+            root,
+            node().copy(id = "$goalId-source-marker"),
+            "Acceptance Evidence"
+        )
+
+        assertTrue(result.passed, result.detail)
+        assertTrue(result.detail.contains("self-host evidence bundle exists"), result.detail)
+    }
+
+    @Test
+    fun incomplete_self_host_evidence_bundle_does_not_satisfy_acceptance_gate() {
+        val root = repo()
+        val goalId = "shg-def456"
+        val evidenceDir = root.resolve(".atropos/self-hosting/evidence/$goalId")
+        Files.createDirectories(evidenceDir)
+        Files.writeString(evidenceDir.resolve("bundle.md"), "# evidence\n", StandardCharsets.UTF_8)
+
+        val result = gateNamed(
+            root,
+            node().copy(id = "$goalId-source-marker"),
+            "Acceptance Evidence"
+        )
+
+        assertFalse(result.passed)
+        assertTrue(result.detail.contains("no evidence directory or self-host evidence bundle"), result.detail)
+    }
+
+    @Test
     fun an_explicit_opt_out_in_the_node_contract_is_honoured() {
         val root = repo()
         val optedOut = gateNamed(

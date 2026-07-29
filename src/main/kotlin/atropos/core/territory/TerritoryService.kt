@@ -1,10 +1,10 @@
 package atropos.core.territory
 
-import java.nio.file.Path
+import atropos.core.director.DirectorService
 
 class TerritoryService(
     private val store: TerritoryStore = TerritoryStore(),
-    private val director: atropos.core.director.DirectorService? = null
+    private val director: DirectorService? = null
 ) {
     fun assign(ownerId: String, ownerRole: String, allowedPrefix: String, parentId: String? = null, expiresInMinutes: Long? = null): TerritoryAssignment {
         val assignment = TerritoryAssignment(

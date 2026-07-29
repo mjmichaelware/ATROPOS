@@ -1,5 +1,6 @@
 package atropos.core.hr
 
+import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -8,7 +9,7 @@ import kotlin.test.assertFalse
 class HrRouterServiceTest {
     @Test
     fun lowRiskRequestApproved() {
-        val svc = HrRouterService()
+        val svc = service()
         val resp = svc.request("src-agent", "terr-a", "dest-agent", "terr-b",
             InformationKind.SOURCE_CODE, "file line 42")
         assertTrue(resp.approved)
@@ -17,7 +18,7 @@ class HrRouterServiceTest {
 
     @Test
     fun secretKeywordTriggersHighRisk() {
-        val svc = HrRouterService()
+        val svc = service()
         val resp = svc.request("agent-1", "terr-x", "agent-2", "terr-y",
             InformationKind.MEMORY_QUERY, "what is the API token for groq?")
         assertTrue(resp.approved)
@@ -28,7 +29,7 @@ class HrRouterServiceTest {
 
     @Test
     fun credentialPathTriggersCriticalRisk() {
-        val svc = HrRouterService()
+        val svc = service()
         val resp = svc.request("agent-a", "terr-1", "agent-b", "terr-2",
             InformationKind.CONFIGURATION, "need .env values",
             paths = listOf(".env.production"))
@@ -39,7 +40,7 @@ class HrRouterServiceTest {
 
     @Test
     fun mediumRiskConfigurationEscalatesToHumanOwner() {
-        val svc = HrRouterService()
+        val svc = service()
         val resp = svc.request(
             "agent-a",
             "terr-1",
@@ -57,7 +58,7 @@ class HrRouterServiceTest {
 
     @Test
     fun auditLogTracksAllRequests() {
-        val svc = HrRouterService()
+        val svc = service()
         svc.request("a1", "t1", "a2", "t2", InformationKind.SOURCE_CODE, "hello")
         svc.request("a3", "t3", "a4", "t4", InformationKind.CREDENTIAL_REFERENCE, "file content",
             paths = listOf(".env.production"))
@@ -65,4 +66,19 @@ class HrRouterServiceTest {
         assertEquals(1, svc.auditLog().count { it.approved })
         assertTrue(svc.auditLog().all { it.action in HrRouteAction.entries })
     }
+
+    @Test
+    fun auditLogSurvivesServiceRestart() {
+        val root = Files.createTempDirectory("atropos-hr-router-durable-")
+        val first = service(root)
+        first.request("a1", "t1", "a2", "t2", InformationKind.SOURCE_CODE, "hello")
+
+        val second = service(root)
+
+        assertEquals(1, second.auditLog().size)
+        assertEquals(HrRouteAction.APPROVED, second.auditLog().single().action)
+    }
+
+    private fun service(root: java.nio.file.Path = Files.createTempDirectory("atropos-hr-router-")): HrRouterService =
+        HrRouterService(auditStore = HrRouterAuditStore(root))
 }

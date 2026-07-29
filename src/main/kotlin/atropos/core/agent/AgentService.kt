@@ -31,7 +31,14 @@ class AgentService(
     private val memoryStore: LocalMemoryStore = LocalMemoryStore(collector.repoRoot.resolve(".atropos/memory").toFile()),
     private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
-    private val patchCascadeRunner = AgentPatchCascadeRunner(router, patchExtractor, redactionFilter, ::enforceProviderPolicy)
+    private val patchCascadeRunner = AgentPatchCascadeRunner(
+        router = router,
+        patchExtractor = patchExtractor,
+        redactionFilter = redactionFilter,
+        repoRoot = collector.repoRoot,
+        memoryStore = memoryStore,
+        authorizeProvider = ::enforceProviderPolicy
+    )
 
     fun status(activeProviderName: String): AgentStatusSnapshot {
         val selection = selector.select(activeProviderName)
@@ -95,7 +102,7 @@ class AgentService(
                     memoryStore.rememberFailure(
                         subjectType = "context_failure",
                         subjectId = null,
-                        title = verified.failure::class.simpleName ?: "ContextFailure",
+                        title = verified.failure.javaClass.simpleName,
                         body = "${verified.failure.providerId}: ${verified.failure.reason}",
                         tags = listOf("context", "attestation", "failure")
                     )

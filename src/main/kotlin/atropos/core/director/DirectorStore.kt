@@ -1,11 +1,12 @@
 package atropos.core.director
 
+import atropos.core.AtroposRepoRootLocator
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 
-class DirectorStore(private val root: Path = Path.of(System.getProperty("user.dir"))) {
+class DirectorStore(private val root: Path = AtroposRepoRootLocator.resolve()) {
     private val storePath = root.resolve(".atropos/director/observations.jsonl")
 
     fun appendObservation(obs: DirectorObservation) {

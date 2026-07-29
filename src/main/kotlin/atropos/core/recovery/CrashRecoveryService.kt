@@ -1,6 +1,7 @@
 package atropos.core.recovery
 
 import atropos.core.AtroposConfig
+import atropos.core.AtroposRepoRootLocator
 import atropos.core.agent.AgentDaemonService
 import atropos.core.agent.AgentQueueRecovery
 import atropos.core.agent.AgentQueueService
@@ -34,7 +35,7 @@ enum class RecoveryOutcome {
 
 class CrashRecoveryService(
     private val config: AtroposConfig = AtroposConfig.load(),
-    private val repoRoot: Path = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize(),
+    private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
     private val queueService: AgentQueueService = AgentQueueService(config),
     private val queueStore: AgentQueueStore = AgentQueueStore(repoRoot),
     private val queueRecovery: AgentQueueRecovery = AgentQueueRecovery(queueStore),

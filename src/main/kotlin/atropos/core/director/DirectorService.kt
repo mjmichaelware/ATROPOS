@@ -1,5 +1,6 @@
 package atropos.core.director
 
+import atropos.core.AtroposRepoRootLocator
 import atropos.core.territory.TerritoryAssignment
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
@@ -9,7 +10,7 @@ import java.security.MessageDigest
 
 class DirectorService(
     private val store: DirectorStore = DirectorStore(),
-    private val repoRoot: Path = Path.of(System.getProperty("user.dir"))
+    private val repoRoot: Path = AtroposRepoRootLocator.resolve()
 ) {
     fun observe(
         kind: ObservationKind,

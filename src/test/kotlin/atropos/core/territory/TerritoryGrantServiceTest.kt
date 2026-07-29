@@ -1,6 +1,9 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.territory
 
+import atropos.core.director.DirectorService
+import atropos.core.director.DirectorStore
+import atropos.core.director.ObservationKind
 import atropos.core.policy.ActionActor
 import atropos.core.policy.ActionProposal
 import atropos.core.policy.AgencyDisposition
@@ -24,9 +27,9 @@ import kotlin.test.assertTrue
  */
 class TerritoryGrantServiceTest {
 
-    private fun fixture(rootPrefix: String = ""): Pair<TerritoryGrantService, TerritoryService> {
+    private fun fixture(rootPrefix: String = "", director: DirectorService? = null): Pair<TerritoryGrantService, TerritoryService> {
         val root: Path = Files.createTempDirectory("atropos-territory-")
-        val service = TerritoryService(TerritoryStore(root))
+        val service = TerritoryService(TerritoryStore(root), director)
         return TerritoryGrantService(service, rootPrefix) to service
     }
 
@@ -148,6 +151,19 @@ class TerritoryGrantServiceTest {
         assertEquals(1, violations.size)
         assertEquals("src/secret/A.kt", violations.single().filePath)
         assertTrue(violations.single().reason.contains("territory refusal"))
+    }
+
+    @Test
+    fun wired_director_receives_territory_refusal_observation() {
+        val directorRoot = Files.createTempDirectory("atropos-territory-director-")
+        val director = DirectorService(DirectorStore(directorRoot), directorRoot)
+        val (grants, _) = fixture(director = director)
+
+        gateOver(grants).evaluate(proposalFor(node(), listOf("src/secret/A.kt")))
+
+        val advisory = director.advisoryBeforePromotion(files = listOf("src/secret/A.kt"))
+        assertEquals(false, advisory.allowed)
+        assertTrue(advisory.blockingObservations.any { it.kind == ObservationKind.TERRITORY_VIOLATION })
     }
 
     @Test

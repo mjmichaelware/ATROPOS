@@ -1,5 +1,6 @@
 package atropos.core.artifact
 
+import atropos.core.AtroposRepoRootLocator
 import atropos.core.execution.LocalWorkQueue
 import atropos.core.factory.AppFactoryRouter
 import atropos.core.factory.FactoryPlan
@@ -246,7 +247,7 @@ class ArtifactPipeline(
     }
 }
 
-class ArtifactStore(private val root: Path = Path.of(System.getProperty("user.dir"))) {
+class ArtifactStore(private val root: Path = AtroposRepoRootLocator.resolve()) {
     private val artDir = root.resolve(".atropos/artifacts")
     private val artFile = artDir.resolve("artifacts.jsonl")
     private val verFile = artDir.resolve("verifications.jsonl")

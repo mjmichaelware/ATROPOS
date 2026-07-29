@@ -1,6 +1,7 @@
 package atropos.core.dag
 
 import atropos.core.AtroposConfig
+import atropos.core.AtroposRepoRootLocator
 import atropos.core.agent.AgentContextCollector
 import atropos.core.agent.AgentQueueService
 import atropos.core.agent.AgentService
@@ -23,7 +24,7 @@ import java.time.Instant
 
 class DagExecutionService(
     private val config: AtroposConfig = AtroposConfig.load(),
-    private val repoRoot: Path = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize(),
+    private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
     private val store: DagStore = DagStore(repoRoot),
     private val queueService: AgentQueueService = AgentQueueService(config),
     private val agentService: AgentService = AgentService(config, collector = AgentContextCollector(repoRoot = repoRoot)),

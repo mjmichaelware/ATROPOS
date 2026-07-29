@@ -1,5 +1,6 @@
 package atropos.core.planning
 
+import atropos.core.AtroposRepoRootLocator
 import atropos.core.dag.DagNodeState
 import atropos.core.dag.DagStore
 import java.nio.charset.StandardCharsets
@@ -7,7 +8,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 
 class InternalPlanningGraphPlugin(
-    private val repoRoot: Path = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize(),
+    private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
     private val store: DagStore = DagStore(repoRoot),
     private val readinessCalculator: InternalReadinessCalculator = InternalReadinessCalculator()
 ) : PlanningGraphPlugin {

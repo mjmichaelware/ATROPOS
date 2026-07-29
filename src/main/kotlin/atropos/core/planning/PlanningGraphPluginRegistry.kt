@@ -1,5 +1,6 @@
 package atropos.core.planning
 
+import atropos.core.AtroposRepoRootLocator
 import atropos.core.dag.DagStore
 import java.nio.file.Path
 
@@ -53,7 +54,7 @@ class PlanningGraphPluginRegistry(
 
     companion object {
         fun internalFallback(
-            repoRoot: Path = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize(),
+            repoRoot: Path = AtroposRepoRootLocator.resolve(),
             store: DagStore = DagStore(repoRoot)
         ): PlanningGraphPluginRegistration =
             PlanningGraphPluginRegistration(

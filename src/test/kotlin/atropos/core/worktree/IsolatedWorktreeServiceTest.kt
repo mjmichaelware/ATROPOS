@@ -5,8 +5,25 @@ import java.nio.file.Files
 import java.time.Instant
 import kotlin.test.Test
 import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class IsolatedWorktreeServiceTest {
+    @Test
+    fun createWorktreeFailsWhenBaselineCommitIsUnavailable() {
+        val root = Files.createTempDirectory("atropos-worktree-no-baseline-")
+        ProcessBuilder("git", "init")
+            .directory(root.toFile())
+            .redirectErrorStream(true)
+            .start()
+            .waitFor()
+        val service = IsolatedWorktreeService(root, memoryStore = LocalMemoryStore(root.resolve(".atropos/memory").toFile(), env = emptyMap()))
+
+        val result = service.createWorktree("job-no-baseline", listOf("src/main/kotlin/atropos"))
+
+        assertFalse(result.ok)
+        assertTrue(result.message.contains("baseline commit unavailable"), result.message)
+    }
+
     @Test
     fun applyPatchRefusesOutOfTerritoryPatchBeforeMutation() {
         val root = Files.createTempDirectory("atropos-worktree-territory-")

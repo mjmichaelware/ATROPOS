@@ -1,5 +1,6 @@
 package atropos.core.dag
 
+import atropos.core.AtroposRepoRootLocator
 import java.nio.ByteBuffer
 import java.nio.channels.FileChannel
 import java.nio.charset.StandardCharsets
@@ -10,7 +11,7 @@ import java.nio.file.StandardOpenOption
 import java.time.Instant
 import java.util.UUID
 
-class DagStore(private val root: Path = Path.of(System.getProperty("user.dir"))) {
+class DagStore(private val root: Path = AtroposRepoRootLocator.resolve()) {
     private val authorityDagDir = root.resolve(".atropos/dag")
     private val nodesPath = authorityDagDir.resolve("nodes.jsonl")
     private val docPath = authorityDagDir.resolve("documents.jsonl")

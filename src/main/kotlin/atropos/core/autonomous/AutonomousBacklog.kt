@@ -1,5 +1,6 @@
 package atropos.core.autonomous
 
+import atropos.core.AtroposRepoRootLocator
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
@@ -7,7 +8,7 @@ import java.nio.file.StandardCopyOption
 import java.time.Instant
 
 class AutonomousBacklogService(
-    private val root: Path = Path.of(System.getProperty("user.dir"))
+    private val root: Path = AtroposRepoRootLocator.resolve()
 ) {
     private val backlogDir = root.resolve(".atropos/autonomous")
     private val taskFile = backlogDir.resolve("tasks.jsonl")

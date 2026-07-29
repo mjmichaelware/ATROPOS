@@ -1,5 +1,6 @@
 package atropos.core.custodian
 
+import atropos.core.AtroposRepoRootLocator
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
@@ -22,7 +23,7 @@ data class CustodianReport(
 )
 
 class CustodianService(
-    private val repoRoot: Path = Path.of(System.getProperty("user.dir"))
+    private val repoRoot: Path = AtroposRepoRootLocator.resolve()
 ) {
     private val protectedDirs = setOf(".atropos/agent", ".atropos/memory", ".atropos/policy", ".atropos/backups")
     private val tempPatterns = listOf("*.tmp", "*.temp", "*.swp", "*.tmp_*")

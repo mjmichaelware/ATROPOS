@@ -1,5 +1,6 @@
 package atropos.core.evidence
 
+import atropos.core.AtroposRepoRootLocator
 import atropos.core.artifact.ArtifactPipeline
 import atropos.core.evaluation.EvaluationHistoryStore
 import atropos.core.journal.EventJournalService
@@ -47,7 +48,7 @@ data class EvidenceBundle(
 }
 
 class EvidenceCollector(
-    private val repoRoot: Path = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize(),
+    private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
     private val artifactPipeline: ArtifactPipeline = ArtifactPipeline(),
     private val journal: EventJournalService = EventJournalService(repoRoot),
     private val evaluationHistory: EvaluationHistoryStore = EvaluationHistoryStore(repoRoot),

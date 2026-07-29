@@ -1,5 +1,6 @@
 package atropos.core.multimodal
 
+import atropos.core.AtroposRepoRootLocator
 import atropos.core.dag.DagService
 import atropos.core.dag.DAGNodeState
 import atropos.core.director.DirectorService
@@ -14,7 +15,7 @@ class InspectionService(
     private val snapshotService: SnapshotService = SnapshotService(),
     private val dagService: DagService = DagService(),
     private val directorService: DirectorService? = null,
-    private val repoRoot: Path = Path.of(System.getProperty("user.dir"))
+    private val repoRoot: Path = AtroposRepoRootLocator.resolve()
 ) {
     private val inspectionHistory = mutableListOf<MultimodalInspection>()
 

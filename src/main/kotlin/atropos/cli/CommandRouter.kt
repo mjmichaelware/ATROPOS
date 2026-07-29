@@ -5,25 +5,16 @@ import atropos.cli.commands.VerifyCommand
 import atropos.cli.commands.VerifyCommandHandler
 import atropos.cli.commands.AgentCommand
 import atropos.cli.commands.HierarchyCommand
+import atropos.cli.commands.SelfHostNaturalLanguageRouter
 import atropos.cli.session.QuotaSessionTracker
-import atropos.cli.session.ScreenId
 import atropos.cli.session.SessionTabs
 import atropos.cli.shell.ShellCommandRunner
 import atropos.cli.ui.AnsiTerminalEngine
-import atropos.cli.ui.MarkdownRenderer
 import atropos.core.AIProvider
 import atropos.core.AtroposConfig
-import atropos.core.ProviderDecisionEngine
 import atropos.core.ProviderFactory
-import atropos.core.endpoint.StaticOperationRegistry
-import atropos.cli.ui.StatusEndpointRenderer
 
 enum class RouterOutcome { CONTINUE, EXIT }
-
-sealed class LexResult {
-    data class Success(val tokens: List<String>) : LexResult()
-    data class Error(val message: String) : LexResult()
-}
 
 class CommandRouter(
     private val config: AtroposConfig,
@@ -31,7 +22,6 @@ class CommandRouter(
     private val sessionTracker: QuotaSessionTracker,
     private val providerResolver: (String) -> AIProvider = { ProviderFactory(config).getProvider(it) },
     private val rateResolver: (String) -> Double = { 0.0 },
-    private val markdownRenderer: MarkdownRenderer = MarkdownRenderer(),
     private val verifyCommand: VerifyCommandHandler = VerifyCommand(uiEngine),
     private val shellRunner: ShellCommandRunner = ShellCommandRunner(),
     /** The only way this router reaches DLOI: failures arrive typed, not thrown. */
@@ -49,128 +39,39 @@ class CommandRouter(
     )
 
     private val hierarchyCommand = HierarchyCommand()
-
-    private val attestationRenderer =
-        atropos.cli.ui.ContextAttestationRenderer(
-            atropos.cli.ui.TerminalTheme(atropos.cli.config.ConfigurationManager())
-        )
-
-    private companion object { const val ATTESTATION_WIDTH = 80 }
+    private val selfHostNaturalLanguageRouter = SelfHostNaturalLanguageRouter()
+    private val statusCommand = StatusCommandHandler(config, uiEngine, sessionTracker)
+    private val providerCommand = ProviderCommandHandler(config, uiEngine)
+    private val dloiCommand = DloiCommandHandler(uiEngine, higZeroGuard)
+    private val shellCommand = ShellCommandHandler(uiEngine, shellRunner)
+    private val paidCommand = PaidCommandHandler(uiEngine)
+    private val memoryCommand = MemoryCommandHandler(uiEngine)
+    private val ciCommand = CiCommandHandler(uiEngine)
+    private val assetCommand = AssetCommandHandler(uiEngine)
+    private val factoryCommand = FactoryCommandHandler(uiEngine)
+    private val securityCommand = SecurityCommandHandler(uiEngine)
+    private val keysCommand = KeysCommandHandler(uiEngine)
+    private val testsCommand = TestsCommandHandler(uiEngine)
+    private val opsCommand = OpsCommandHandler(uiEngine)
+    private val routeCommand = RouteCommandHandler(uiEngine)
+    private val astCommand = AstCommandHandler(uiEngine)
+    private val providerChatDispatcher = ProviderChatDispatcher(
+        config = config,
+        uiEngine = uiEngine,
+        sessionTracker = sessionTracker,
+        providerResolver = providerResolver,
+        rateResolver = rateResolver,
+        cwd = shellCommand::currentDirectory
+    )
 
     val tabs = SessionTabs(
         initialProvider = activeProvider.name,
-        initialWorkingDirectory = shellRunner.currentDirectory()
+        initialWorkingDirectory = shellCommand.currentDirectory()
     )
 
-    internal fun lex(input: String): LexResult {
-        val tokens = mutableListOf<String>()
-        val token = StringBuilder()
-        var quote: Char? = null
-        var started = false
-        var index = 0
+    private val tabCommand = TabCommandHandler(uiEngine, tabs) { currentProviderName }
 
-        while (index < input.length) {
-            val ch = input[index]
-            if (quote != null) {
-                when {
-                    ch == quote -> quote = null
-                    ch == '\\' && quote == '"' -> {
-                        index++
-                        if (index >= input.length) return LexResult.Error("Trailing escape character")
-                        token.append(input[index])
-                        started = true
-                    }
-                    else -> {
-                        token.append(ch)
-                        started = true
-                    }
-                }
-            } else {
-                when {
-                    ch.isWhitespace() -> {
-                        if (started) {
-                            tokens += token.toString()
-                            token.clear()
-                            started = false
-                        }
-                    }
-                    ch == '\'' || ch == '"' -> {
-                        quote = ch
-                        started = true
-                    }
-                    ch == '\\' -> {
-                        index++
-                        if (index >= input.length) return LexResult.Error("Trailing escape character")
-                        token.append(input[index])
-                        started = true
-                    }
-                    else -> {
-                        token.append(ch)
-                        started = true
-                    }
-                }
-            }
-            index++
-        }
-
-        if (quote != null) return LexResult.Error("Unterminated quote")
-        if (started) tokens += token.toString()
-        return LexResult.Success(tokens)
-    }
-
-
-    /**
-     * Renders a DLOI outcome.
-     *
-     * A miss is reported as a miss with its reason. It is never filled in with
-     * a nearest match — that is the whole point of routing through the guard.
-     */
-    private fun renderDloi(result: atropos.dloi.DloiLookupResult, query: String): String = when (result) {
-        is atropos.dloi.DloiLookupResult.Resolved -> result.resolution.render()
-        is atropos.dloi.DloiLookupResult.NoMatch ->
-            "dloi: no exact match for '${query.trim()}'\n  reason: ${result.reason}\n  no nearest-match substitute is offered"
-    }
-
-    private fun renderShell(result: atropos.cli.shell.ShellCommandResult) {
-        uiEngine.renderNotice(shellRunner.render(result))
-    }
-
-    private fun runBangShell(original: String): RouterOutcome {
-        val command = original.trimStart().removePrefix("!").trim()
-        if (command.isBlank()) {
-            uiEngine.renderError("usage: !<command>")
-            return RouterOutcome.CONTINUE
-        }
-
-        return when (val result = lex(command)) {
-            is LexResult.Error -> {
-                uiEngine.renderError("shell lex: ${result.message}")
-                RouterOutcome.CONTINUE
-            }
-            is LexResult.Success -> {
-                renderShell(shellRunner.run(result.tokens))
-                RouterOutcome.CONTINUE
-            }
-        }
-    }
-
-    private fun runShellTokens(tokens: List<String>): RouterOutcome {
-        if (tokens.isEmpty()) {
-            uiEngine.renderError("usage: /shell <command>")
-        } else {
-            renderShell(shellRunner.run(tokens))
-        }
-        return RouterOutcome.CONTINUE
-    }
-
-    private fun changeShellDirectory(tokens: List<String>): RouterOutcome {
-        if (tokens.size > 2) {
-            uiEngine.renderError("usage: /cd [directory]")
-        } else {
-            renderShell(shellRunner.changeDirectory(tokens.getOrNull(1)))
-        }
-        return RouterOutcome.CONTINUE
-    }
+    internal fun lex(input: String): LexResult = CommandLexer.lex(input)
 
     fun handleInput(input: String): RouterOutcome {
         if (input.isBlank()) return RouterOutcome.CONTINUE
@@ -185,33 +86,20 @@ class CommandRouter(
 
     private fun route(original: String, tokens: List<String>): RouterOutcome {
         if (tokens.isEmpty()) return RouterOutcome.CONTINUE
-        if (original.trimStart().startsWith("!")) return runBangShell(original)
+        if (original.trimStart().startsWith("!")) return shellCommand.bang(original)
 
         return when (tokens.first().lowercase()) {
             "/exit", "/quit", "exit" -> RouterOutcome.EXIT
 
-            "/pwd" -> {
-                uiEngine.renderNotice("cwd: ${shellRunner.currentDirectory()}")
-                RouterOutcome.CONTINUE
-            }
+            "/pwd" -> shellCommand.pwd()
 
-            "/cd" -> changeShellDirectory(tokens)
+            "/cd" -> shellCommand.cd(tokens)
 
-            "/ls" -> {
-                renderShell(shellRunner.list(tokens.drop(1)))
-                RouterOutcome.CONTINUE
-            }
+            "/ls" -> shellCommand.ls(tokens)
 
-            "/git" -> {
-                if (tokens.getOrNull(1)?.lowercase() == "status" && tokens.size == 2) {
-                    renderShell(shellRunner.gitStatus())
-                } else {
-                    uiEngine.renderError("usage: /git status")
-                }
-                RouterOutcome.CONTINUE
-            }
+            "/git" -> shellCommand.git(tokens)
 
-            "/shell" -> runShellTokens(tokens.drop(1))
+            "/shell" -> shellCommand.shell(tokens.drop(1))
 
             "/help" -> {
                 uiEngine.renderHelp()
@@ -233,98 +121,17 @@ class CommandRouter(
                 RouterOutcome.CONTINUE
             }
 
-            "/tabs" -> {
-                uiEngine.renderNotice(renderTabsList())
-                RouterOutcome.CONTINUE
-            }
+            "/tabs" -> tabCommand.list()
 
-            "/tab" -> {
-                handleTabCommand(tokens.drop(1))
-                RouterOutcome.CONTINUE
-            }
+            "/tab" -> tabCommand.handle(tokens.drop(1))
 
             "/status" -> {
-                val quotaRegistry = atropos.core.provider.StaticProviderDescriptorRegistry()
-                val statusRenderer = atropos.cli.ui.StatusQuotaRenderer(
-                    registry = quotaRegistry,
-                    ledger = atropos.core.provider.FileQuotaLedger(
-                        java.io.File(".atropos/provider/quota-ledger.tsv"),
-                        atropos.core.provider.FileQuotaLedger.seedFromDescriptors(quotaRegistry)
-                    )
-                )
-                when (tokens.getOrNull(1)?.lowercase()) {
-                    "endpoints" -> uiEngine.renderNotice(
-                        StatusEndpointRenderer(
-                            atropos.core.provider.ProviderTruthService(config).endpointRegistry()
-                        ).render()
-                    )
-                    "quota" -> uiEngine.renderNotice(statusRenderer.renderQuota())
-                    "route" -> {
-                        val task = tokens.drop(2).joinToString(" ").trim()
-                        if (task.isBlank()) uiEngine.renderError("/status route requires a task")
-                        else uiEngine.renderNotice(statusRenderer.renderRoute(task))
-                    }
-                    "failures" -> uiEngine.renderNotice(statusRenderer.renderFailures())
-                    "adapters" -> uiEngine.renderNotice(atropos.cli.ui.StatusAdapterRenderer().render())
-                    "memory" -> uiEngine.renderNotice(atropos.cli.ui.StatusMemoryRenderer().render())
-                    "ci", "queue" -> uiEngine.renderNotice(atropos.cli.ui.StatusCiRenderer().render())
-                    "assets" -> uiEngine.renderNotice(atropos.cli.ui.StatusAssetsRenderer().render())
-                    "paid" -> uiEngine.renderNotice(atropos.cli.ui.StatusPaidEmergencyRenderer().render())
-                    "factory" -> uiEngine.renderNotice(atropos.cli.ui.AppFactoryPlanRenderer().renderStatus())
-                    "security" -> uiEngine.renderNotice(atropos.cli.ui.StatusSecurityRenderer().render())
-                    "tests" -> uiEngine.renderNotice(atropos.cli.ui.TestMatrixRenderer().render())
-                    "ops" -> uiEngine.renderNotice(atropos.cli.ui.StatusOpsRenderer().render())
-                    null -> {
-                        uiEngine.renderStatusMatrix(config, activeProvider.name)
-                        uiEngine.renderNotice("usage ${sessionTracker.promptCount} prompts | ~${sessionTracker.estimatedTokens} tokens")
-                        uiEngine.renderNotice(statusRenderer.renderDefaultStatusSummary())
-                    }
-                    else -> uiEngine.renderError("usage: /status [quota|route <task>|failures|adapters|assets|paid|factory|memory|ci|queue|security|tests|ops|endpoints]")
-                }
+                statusCommand.execute(tokens, activeProvider.name)
                 RouterOutcome.CONTINUE
             }
 
             "/providers" -> {
-                when (tokens.getOrNull(1)?.lowercase()) {
-                    "inventory" -> uiEngine.renderNotice(
-                        atropos.core.provider.ProviderTruthService(config).snapshot(currentProviderName).renderInventory()
-                    )
-                    "descriptors" -> uiEngine.renderNotice(
-                        atropos.cli.ui.StatusProviderDescriptorRenderer(
-                            atropos.core.provider.StaticProviderDescriptorRegistry()
-                        ).render()
-                    )
-                    "validate" -> {
-                        val violations = atropos.core.provider.ProviderDescriptorValidator(
-                            atropos.core.provider.StaticProviderDescriptorRegistry()
-                        ).validate()
-                        if (violations.isEmpty()) {
-                            uiEngine.renderNotice("PROVIDER DESCRIPTORS: VALID")
-                        } else {
-                            uiEngine.renderNotice("PROVIDER DESCRIPTORS: INVALID")
-                            violations.forEach { uiEngine.renderNotice("  - ${it.id}: ${it.message}") }
-                        }
-                    }
-                    "verify" -> {
-                        val service = atropos.core.provider.ProviderActivationService(config = config)
-                        val reference = tokens.getOrNull(2)
-                        when {
-                            reference == null -> uiEngine.renderError("usage: /providers verify <id|all>")
-                            reference.equals("all", ignoreCase = true) -> uiEngine.renderNotice(service.renderVerifyAll())
-                            else -> uiEngine.renderNotice(service.verify(reference).render())
-                        }
-                    }
-                    "live-test" -> {
-                        val providerId = tokens.getOrNull(2)
-                        if (providerId == null) {
-                            uiEngine.renderError("usage: /providers live-test <id>")
-                        } else {
-                            val service = atropos.core.provider.ProviderActivationService(config = config)
-                            uiEngine.renderNotice(service.liveTest(providerId).render())
-                        }
-                    }
-                    else -> uiEngine.renderNotice(ProviderDecisionEngine().providersReport(config))
-                }
+                providerCommand.execute(tokens, currentProviderName)
                 RouterOutcome.CONTINUE
             }
 
@@ -334,214 +141,32 @@ class CommandRouter(
                 RouterOutcome.CONTINUE
             }
 
-            "/paid" -> {
-                val gate = atropos.core.paid.EmergencyPaidGate()
-                when (tokens.getOrNull(1)?.lowercase()) {
-                    null, "status" -> uiEngine.renderNotice(atropos.cli.ui.StatusPaidEmergencyRenderer(gate).render())
-                    "unlock" -> {
-                        val provider = tokens.getOrNull(2)
-                        val duration = tokens.getOrNull(3)
-                        val reason = tokens.drop(4).joinToString(" ").removePrefix("reason=").ifBlank { "manual emergency unlock" }
-                        if (provider == null || duration == null) {
-                            uiEngine.renderError("usage: /paid unlock <provider> <duration> reason=\"...\"")
-                        } else {
-                            try {
-                                val unlock = gate.unlock(provider, duration, reason)
-                                uiEngine.renderNotice("unlocked ${unlock.providerId} until ${unlock.expiresAtEpochMs}")
-                            } catch (failure: IllegalArgumentException) {
-                                uiEngine.renderError(failure.message ?: "paid unlock failed")
-                            }
-                        }
-                    }
-                    "lock" -> uiEngine.renderNotice(if (gate.lock()) "paid emergency locked" else "paid emergency already locked")
-                    else -> uiEngine.renderError("usage: /paid [status|unlock <provider> <duration> reason=\"...\"|lock]")
-                }
-                RouterOutcome.CONTINUE
-            }
+            "/paid" -> paidCommand.execute(tokens)
 
-            "/memory" -> {
-                when (tokens.getOrNull(1)?.lowercase()) {
-                    "remember" -> {
-                        val title = tokens.getOrNull(2) ?: "note"
-                        val body = tokens.drop(3).joinToString(" ").ifBlank { title }
-                        val record = atropos.core.memory.LocalMemoryStore().remember(
-                            atropos.core.memory.MemoryKind.NOTE,
-                            title,
-                            body,
-                            listOf("cli")
-                        )
-                        uiEngine.renderNotice("memory remembered: ${record.id}")
-                    }
-                    "search" -> {
-                        val hits = atropos.core.memory.LocalMemoryStore().search(tokens.drop(2).joinToString(" "))
-                        uiEngine.renderNotice(atropos.cli.ui.StatusMemoryRenderer().renderSearch(hits))
-                    }
-                    else -> uiEngine.renderNotice(atropos.cli.ui.StatusMemoryRenderer().render())
-                }
-                RouterOutcome.CONTINUE
-            }
+            "/memory" -> memoryCommand.execute(tokens)
 
-            "/ci" -> {
-                val queue = atropos.core.execution.LocalWorkQueue()
-                when (tokens.drop(1).joinToString(" ").lowercase()) {
-                    "local compile" -> uiEngine.renderNotice("queued local compile: ${queue.enqueueLocalCompile().id}")
-                    "run next" -> {
-                        val result = queue.runNext()
-                        if (result == null) uiEngine.renderNotice("queue empty")
-                        else uiEngine.renderNotice("job ${result.item.id} exit=${result.exitCode}\n${result.outputTail}")
-                    }
-                    else -> uiEngine.renderNotice(atropos.cli.ui.StatusCiRenderer().render())
-                }
-                RouterOutcome.CONTINUE
-            }
+            "/ci" -> ciCommand.execute(tokens)
 
-            "/assets" -> {
-                val generator = atropos.core.assets.LocalAssetGenerator()
-                when (tokens.getOrNull(1)?.lowercase()) {
-                    null, "status" -> uiEngine.renderNotice(atropos.cli.ui.StatusAssetsRenderer(generator).render())
-                    "text", "ansi", "svg" -> {
-                        val kind = when (tokens[1].lowercase()) {
-                            "ansi" -> atropos.core.assets.AssetKind.ANSI
-                            "svg" -> atropos.core.assets.AssetKind.SVG
-                            else -> atropos.core.assets.AssetKind.TEXT
-                        }
-                        val name = tokens.getOrNull(2) ?: kind.name.lowercase()
-                        val prompt = tokens.drop(3).joinToString(" ").ifBlank { name }
-                        val artifact = generator.generate(atropos.core.assets.AssetRequest(kind, name, prompt, listOf("cli")))
-                        uiEngine.renderNotice("asset written: ${artifact.file.path} bytes=${artifact.bytes}")
-                    }
-                    else -> uiEngine.renderError("usage: /assets [status|text|ansi|svg] <name> <prompt>")
-                }
-                RouterOutcome.CONTINUE
-            }
+            "/assets" -> assetCommand.execute(tokens)
 
-            "/factory" -> {
-                val renderer = atropos.cli.ui.AppFactoryPlanRenderer()
-                when (tokens.getOrNull(1)?.lowercase()) {
-                    null, "status" -> uiEngine.renderNotice(renderer.renderStatus())
-                    "plan" -> {
-                        val prompt = tokens.drop(2).joinToString(" ")
-                        if (prompt.isBlank()) uiEngine.renderError("/factory plan requires a prompt")
-                        else uiEngine.renderNotice(renderer.renderPlan(prompt))
-                    }
-                    "run" -> {
-                        val prompt = tokens.drop(2).joinToString(" ")
-                        if (prompt.isBlank()) {
-                            uiEngine.renderError("/factory run requires a prompt")
-                        } else {
-                            uiEngine.renderNotice("factory run queued:")
-                            uiEngine.renderNotice(renderer.renderRun(prompt))
-                        }
-                    }
-                    else -> uiEngine.renderError("usage: /factory [status|plan|run] <prompt>")
-                }
-                RouterOutcome.CONTINUE
-            }
+            "/factory" -> factoryCommand.execute(tokens)
 
-            "/security" -> {
-                when (tokens.getOrNull(1)?.lowercase()) {
-                    "redact" -> uiEngine.renderNotice(atropos.cli.ui.StatusSecurityRenderer().renderRedaction(tokens.drop(2).joinToString(" ")))
-                    null, "status" -> uiEngine.renderNotice(atropos.cli.ui.StatusSecurityRenderer().render())
-                    else -> uiEngine.renderError("usage: /security [status|redact <text>]")
-                }
-                RouterOutcome.CONTINUE
-            }
+            "/security" -> securityCommand.execute(tokens)
 
-            "/keys" -> {
-                val service = atropos.core.security.KeyDoctorService.create()
-                when (tokens.getOrNull(1)?.lowercase()) {
-                    null, "status" -> uiEngine.renderNotice(service.renderStatus())
-                    "setup" -> uiEngine.renderNotice(service.renderSetup())
-                    "doctor" -> uiEngine.renderNotice(service.renderDoctor())
-                    else -> uiEngine.renderError("usage: /keys [status|setup|doctor]")
-                }
-                RouterOutcome.CONTINUE
-            }
+            "/keys" -> keysCommand.execute(tokens)
 
-            "/tests" -> {
-                when (tokens.getOrNull(1)?.lowercase()) {
-                    null, "matrix" -> uiEngine.renderNotice(atropos.cli.ui.TestMatrixRenderer().render())
-                    else -> uiEngine.renderError("usage: /tests matrix")
-                }
-                RouterOutcome.CONTINUE
-            }
+            "/tests" -> testsCommand.execute(tokens)
 
-            "/ops" -> {
-                val renderer = atropos.cli.ui.StatusOpsRenderer()
-                when (tokens.getOrNull(1)?.lowercase()) {
-                    null, "status" -> uiEngine.renderNotice(renderer.render())
-                    "export" -> uiEngine.renderNotice(renderer.export())
-                    "verify" -> uiEngine.renderNotice(renderer.verify())
-                    "quota-backup" -> uiEngine.renderNotice(renderer.quotaBackup())
-                    "quota-restore" -> {
-                        val path = tokens.getOrNull(2)
-                        if (path == null) {
-                            uiEngine.renderError("usage: /ops quota-restore <backup-file>")
-                        } else {
-                            uiEngine.renderNotice(renderer.quotaRestore(path))
-                        }
-                    }
-                    else -> uiEngine.renderError("usage: /ops [status|export|verify|quota-backup|quota-restore <file>]")
-                }
-                RouterOutcome.CONTINUE
-            }
+            "/ops" -> opsCommand.execute(tokens)
 
-            "/route" -> {
-                val prompt = tokens.drop(1).joinToString(" ").trim()
-                if (prompt.isBlank()) uiEngine.renderError("/route requires a prompt")
-                else {
-                    val registry = atropos.core.provider.StaticProviderDescriptorRegistry()
-                    val ledger = atropos.core.provider.FileQuotaLedger(
-                        java.io.File(".atropos/provider/quota-ledger.tsv"),
-                        atropos.core.provider.FileQuotaLedger.seedFromDescriptors(registry)
-                    )
-                    uiEngine.renderNotice(
-                        atropos.core.provider.adapter.AdapterRouteFacade(
-                            descriptorRegistry = registry,
-                            ledger = ledger
-                        ).renderRoute(prompt)
-                    )
-                }
-                RouterOutcome.CONTINUE
-            }
+            "/route" -> routeCommand.execute(tokens)
 
             "/dloi" -> {
-                when (tokens.getOrNull(1)?.lowercase()) {
-                    "lookup" -> {
-                        val address = tokens.drop(2).joinToString(" ").trim()
-                        if (address.isBlank()) {
-                            uiEngine.renderError("usage: /dloi lookup <document#section@Lstart[-end]>")
-                        } else {
-                            uiEngine.renderNotice(renderDloi(higZeroGuard.resolve(address), address))
-                        }
-                    }
-                    "resolve" -> {
-                        val task = tokens.drop(2).joinToString(" ").trim()
-                        if (task.isBlank()) {
-                            uiEngine.renderError("usage: /dloi resolve <task text>")
-                        } else {
-                            uiEngine.renderNotice(renderDloi(higZeroGuard.resolveTask(task), task))
-                        }
-                    }
-                    else -> uiEngine.renderError("usage: /dloi [lookup <address>|resolve <task>]")
-                }
+                dloiCommand.execute(tokens)
                 RouterOutcome.CONTINUE
             }
 
-            "/ast" -> {
-                when (tokens.getOrNull(1)?.lowercase()) {
-                    "lookup" -> {
-                        val query = tokens.drop(2).joinToString(" ").trim()
-                        if (query.isBlank()) {
-                            uiEngine.renderError("usage: /ast lookup <symbol>")
-                        } else {
-                            uiEngine.renderNotice(atropos.ast.AstSymbolGraph().lookup(query).render())
-                        }
-                    }
-                    else -> uiEngine.renderError("usage: /ast lookup <symbol>")
-                }
-                RouterOutcome.CONTINUE
-            }
+            "/ast" -> astCommand.execute(tokens)
 
             "/use" -> {
                 if (tokens.size == 2 && tokens[1].lowercase() == "auto") {
@@ -575,92 +200,21 @@ class CommandRouter(
 
             else -> {
                 if (tokens.first().startsWith("/")) uiEngine.renderError("unknown command: ${tokens.first()}")
-                else dispatch(original)
+                else {
+                    val selfHostTokens = selfHostNaturalLanguageRouter.route(tokens)
+                    when {
+                        selfHostTokens != null -> {
+                            agentCommand.execute(selfHostTokens)
+                            uiEngine.updateAgentPatchState(agentCommand.lastKnownPatchId)
+                        }
+                        tokens.size == 1 && tokens.first().equals("ATROPOS", ignoreCase = true) -> {
+                            agentCommand.execute(listOf("/agent", "ask", "ATROPOS"))
+                            uiEngine.updateAgentPatchState(agentCommand.lastKnownPatchId)
+                        }
+                        else -> providerChatDispatcher.dispatch(original, currentProviderName)
+                    }
+                }
                 RouterOutcome.CONTINUE
-            }
-        }
-    }
-
-    private fun renderTabsList(): String = buildString {
-        appendLine("open tabs (${tabs.snapshot().tabs.size}):")
-        tabs.snapshot().tabs.forEach { tab ->
-            val marker = if (tab.id == tabs.active.id) "*" else " "
-            appendLine("  $marker ${tab.id}: ${tab.title}  [${tab.screen.title}]  provider=${tab.provider}")
-        }
-        append("commands: /tab new <name> | /tab <n> | /tab rename <n> <name> | /tab close <n> | /tab next | /tab prev | /home")
-    }
-
-    private fun handleTabCommand(args: List<String>) {
-        if (args.isEmpty()) {
-            uiEngine.renderError("usage: /tab [new <name>|<n>|rename <n> <name>|close <n>|next|prev]")
-            return
-        }
-
-        when (val action = args[0].lowercase()) {
-            "new" -> {
-                val name = args.drop(1).joinToString(" ").trim()
-                if (name.isBlank()) {
-                    uiEngine.renderError("usage: /tab new <name>")
-                    return
-                }
-                val tab = tabs.openTab(
-                    screen = ScreenId.CHAT,
-                    provider = currentProviderName,
-                    workingDirectory = tabs.active.workingDirectory,
-                    title = name
-                )
-                uiEngine.renderNotice("opened tab ${tab.id}: ${tab.title}")
-            }
-
-            "rename" -> {
-                val id = args.getOrNull(1)?.toIntOrNull()
-                val name = args.drop(2).joinToString(" ").trim()
-                if (id == null || name.isBlank()) {
-                    uiEngine.renderError("usage: /tab rename <n> <name>")
-                    return
-                }
-                if (tabs.renameTab(id, name)) {
-                    uiEngine.renderNotice("tab $id renamed to $name")
-                } else {
-                    uiEngine.renderError("no such tab: $id")
-                }
-            }
-
-            "close" -> {
-                val id = args.getOrNull(1)?.toIntOrNull()
-                if (id == null) {
-                    uiEngine.renderError("usage: /tab close <n>")
-                    return
-                }
-                if (tabs.closeTab(id)) {
-                    uiEngine.renderNotice("closed tab $id · active tab ${tabs.active.id}: ${tabs.active.title}")
-                } else {
-                    uiEngine.renderError("cannot close tab $id (not found, or it is the last remaining tab)")
-                }
-            }
-
-            "next" -> {
-                tabs.switchNext()
-                uiEngine.renderNotice("tab ${tabs.active.id}: ${tabs.active.title}")
-            }
-
-            "prev" -> {
-                tabs.switchPrev()
-                uiEngine.renderNotice("tab ${tabs.active.id}: ${tabs.active.title}")
-            }
-
-            else -> {
-                val id = action.toIntOrNull()
-                if (id == null) {
-                    uiEngine.renderError("usage: /tab [new <name>|<n>|rename <n> <name>|close <n>|next|prev]")
-                    return
-                }
-                val switched = tabs.switchToId(id)
-                if (switched == null) {
-                    uiEngine.renderError("no such tab: $id")
-                } else {
-                    uiEngine.renderNotice("tab ${switched.id}: ${switched.title}")
-                }
             }
         }
     }
@@ -680,121 +234,4 @@ class CommandRouter(
         }
     }
 
-    /**
-     * True when the operator is genuinely asking about the Greek myth rather
-     * than this system, so the attestation gate should not treat a mythology
-     * answer as drift.
-     */
-    private fun isExplicitMythologyRequest(prompt: String): Boolean {
-        val lower = prompt.lowercase()
-        return (lower.contains("greek") || lower.contains("mythology") ||
-            lower.contains("myth") || lower.contains("moirai") || lower.contains("fates")) &&
-            lower.contains("atropos")
-    }
-
-    private fun dispatch(prompt: String) {
-        sessionTracker.recordPrompt(prompt, rateResolver(activeProvider.name))
-        uiEngine.startSpinner("Thinking")
-        try {
-            val routedProvider =
-                if (currentProviderName.lowercase() == "auto") {
-                    val decision = ProviderDecisionEngine().decide(prompt, config)
-                    uiEngine.renderNotice("route: ${decision.taskClass.name.lowercase()} -> ${decision.provider} (${decision.reason})")
-                    decision.provider
-                } else {
-                    currentProviderName
-                }
-
-            val provider = providerResolver(routedProvider)
-
-            // Requirement 1: every provider must know it is operating inside
-            // ATROPOS. This path previously sent an empty context, so a plain
-            // prompt told the provider nothing and "what is atropos" came back
-            // as Greek mythology. It now carries the same attested envelope
-            // /agent ask uses, with an explicit escape hatch so a genuine
-            // mythology question still works.
-            val repoRoot = java.nio.file.Path.of(shellRunner.currentDirectory())
-                .toAbsolutePath().normalize()
-            val mythologyRequested = isExplicitMythologyRequest(prompt)
-            val envelope = atropos.core.provider.ContextEnvelopeFactory.createSimple(
-                providerId = routedProvider,
-                modelId = "",
-                task = prompt,
-                repoRoot = repoRoot
-            )
-            val context = atropos.core.agent.AgentPromptContract.build(
-                context = "",
-                providerId = routedProvider,
-                task = prompt,
-                repoRoot = repoRoot,
-                explicitMythologyRequest = mythologyRequested
-            )
-
-            val response = provider.complete(prompt, context)
-
-            // The envelope exists to shape how a provider answers, not to
-            // delete answers. A rejection therefore retries once with a
-            // stronger corrective instruction, and only if that also fails do
-            // we surface the response *with* a warning — never swallow it.
-            // Discarding a usable answer is a worse failure than an unattested
-            // one, and leaves the operator with nothing to act on.
-            val verified =
-                atropos.core.provider.ContextAttestationService.verify(envelope, response)
-
-            when (verified) {
-                is atropos.core.provider.ContextAttestationService.VerifiedResult.Accepted ->
-                    uiEngine.renderNotice(markdownRenderer.render(verified.cleanedResponse))
-
-                is atropos.core.provider.ContextAttestationService.VerifiedResult.Rejected -> {
-                    if (mythologyRequested) {
-                        // The operator asked about the myth; this answer is correct
-                        // for the question actually posed.
-                        val shownMyth = atropos.core.provider.ProviderResponseContextParser
-                            .parse(response, envelope).cleanedResponse
-                        uiEngine.renderNotice(markdownRenderer.render(shownMyth))
-                    } else {
-                        val corrective = buildString {
-                            appendLine(context)
-                            appendLine()
-                            appendLine(
-                                "Your previous reply did not satisfy the ATROPOS context contract. " +
-                                    "ATROPOS is this software repository and runtime, not the Greek " +
-                                    "mythological figure. Answer the task in that context and include " +
-                                    "the attestation block exactly as specified."
-                            )
-                        }
-                        val retry = runCatching { provider.complete(prompt, corrective) }.getOrNull()
-                        val retryVerified = retry?.let {
-                            atropos.core.provider.ContextAttestationService.verify(envelope, it)
-                        }
-
-                        if (retryVerified is
-                                atropos.core.provider.ContextAttestationService.VerifiedResult.Accepted
-                        ) {
-                            uiEngine.renderNotice(markdownRenderer.render(retryVerified.cleanedResponse))
-                        } else {
-                            // Still unattested. Show the answer, flagged, so the
-                            // operator can judge it — attestation is advisory on
-                            // conversational prompts, enforcing on patch/apply.
-                            uiEngine.renderNotice(
-                                attestationRenderer.renderAdvisory(
-                                    verified.failure,
-                                    ATTESTATION_WIDTH
-                                )
-                            )
-                            // Show the cleaned text: the attestation block is
-                            // internal plumbing and must never reach the operator.
-                            val shown = atropos.core.provider.ProviderResponseContextParser
-                                .parse(retry ?: response, envelope).cleanedResponse
-                            uiEngine.renderNotice(markdownRenderer.render(shown))
-                        }
-                    }
-                }
-            }
-        } catch (failure: Exception) {
-            uiEngine.renderError(failure.message ?: "provider dispatch failed")
-        } finally {
-            uiEngine.stopSpinner()
-        }
-    }
 }

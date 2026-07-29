@@ -1,5 +1,6 @@
 package atropos.core.agent
 
+import atropos.core.AtroposRepoRootLocator
 import atropos.core.auditor.AuditorService
 import atropos.core.policy.ActionActor
 import atropos.core.policy.AgencyDisposition
@@ -30,7 +31,7 @@ import java.time.format.DateTimeFormatter
  * where "never execute raw provider prose" is actually enforced.
  */
 class AgentPatchStore(
-    private val repoRoot: Path = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize(),
+    private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
     private val clock: () -> Instant = { Instant.now() },
     private val extractor: AgentPatchExtractor = AgentPatchExtractor(),
     private val diffNormalizer: AgentPatchDiffNormalizer = AgentPatchDiffNormalizer(repoRoot, extractor),
