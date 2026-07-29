@@ -25,19 +25,55 @@ const IconMap = {
   XOctagon,
 };
 
-interface StatusBadgeProps {
+export type StatusTone = 'neutral' | 'success' | 'warning' | 'danger' | 'info';
+
+/**
+ * Canonical form: the §3.3 status vocabulary, icon + label, colour-independent.
+ */
+interface CanonicalStatusBadgeProps {
   status: CanonicalStatus;
   size?: 'sm' | 'md' | 'lg';
   showIcon?: boolean;
   className?: string;
 }
 
-export function StatusBadge({
-  status,
-  size = 'md',
-  showIcon = true,
-  className = '',
-}: StatusBadgeProps) {
+/**
+ * Tone form, kept for SpecGraph surfaces whose subjects (a binding being
+ * enabled, an export succeeding) are not project progress and so have no
+ * canonical status to map onto.
+ *
+ * This contract was previously deleted rather than extended, which broke
+ * every SpecGraph consumer. Both forms are supported so neither surface has
+ * to lie about what its badge means.
+ */
+interface ToneStatusBadgeProps {
+  tone?: StatusTone;
+  label: string;
+  className?: string;
+}
+
+export type StatusBadgeProps = CanonicalStatusBadgeProps | ToneStatusBadgeProps;
+
+function isCanonical(props: StatusBadgeProps): props is CanonicalStatusBadgeProps {
+  return 'status' in props;
+}
+
+export function StatusBadge(props: StatusBadgeProps) {
+  if (!isCanonical(props)) {
+    const { tone = 'neutral', label, className = '' } = props;
+    const isLive = label.toUpperCase() === 'RUNNING';
+    return (
+      <span className={`sg-status sg-status-${tone} ${className}`} role="status">
+        <span
+          aria-hidden="true"
+          className={`sg-status-mark ${isLive ? 'sg-status-mark-live' : ''}`}
+        />
+        <span>{label}</span>
+      </span>
+    );
+  }
+
+  const { status, size = 'md', showIcon = true, className = '' } = props;
   const def = getStatusDef(status);
   const IconComponent = IconMap[def.icon as keyof typeof IconMap];
 

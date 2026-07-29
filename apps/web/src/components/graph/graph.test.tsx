@@ -15,7 +15,7 @@ let currentSearchParams = new URLSearchParams();
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ replace: routerReplace }),
-  usePathname: () => "/projects/project-1/graph",
+  usePathname: () => "/developer/specgraph/project-1/graph",
   useSearchParams: () => currentSearchParams,
 }));
 

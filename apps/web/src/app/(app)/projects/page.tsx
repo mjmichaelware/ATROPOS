@@ -4,8 +4,11 @@ import { useEffect } from 'react';
 import { Plus, Folder } from 'lucide-react';
 import { SixAnswersPanel, SixAnswer } from '@/components/ui/six-answers-panel';
 import { StatusBadge } from '@/components/ui/status-badge';
+import { WhyHowEvidence } from '@/components/ui/why-how-evidence';
+import { globalRoutes } from '@/components/navigation/routes';
 import { useProjects } from '@/lib/api-atropos/hooks';
 import { useAppContext } from '@/lib/contexts/app-context';
+import type { CanonicalStatus } from '@/lib/status-system';
 import Link from 'next/link';
 
 export default function ProjectsPage() {
@@ -22,7 +25,9 @@ export default function ProjectsPage() {
     }
   }, [error, addError]);
 
-  const activeProjects = projects?.filter((p) => p.status !== 'archived') ?? [];
+  // §3.3 has no 'archived' status; active means "not in a terminal state".
+  const TERMINAL: CanonicalStatus[] = ['completed', 'failed', 'cancelled'];
+  const activeProjects = projects?.filter((p) => !TERMINAL.includes(p.status)) ?? [];
   const completedCount = projects?.filter((p) => p.status === 'completed').length ?? 0;
 
   const pageAnswers: SixAnswer = {
@@ -39,10 +44,6 @@ export default function ProjectsPage() {
       projects && projects.length > 0
         ? 'Select a project to view work items or create a new one'
         : 'Create your first project to begin autonomous work',
-    evidence: {
-      link: '/history',
-      label: 'View project history and events',
-    },
   };
 
   return (
@@ -55,16 +56,14 @@ export default function ProjectsPage() {
         <SixAnswersPanel answers={pageAnswers} compact={false} />
       </section>
 
-      {/* Create Project Button */}
-      <div className="flex gap-3">
-        <Link
-          href="/projects/new"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-sg-red-600 text-white rounded-lg hover:bg-sg-red-700 transition-colors font-semibold"
-        >
-          <Plus className="w-5 h-5" />
-          Create Project
-        </Link>
-      </div>
+      {/* Creation is not offered: there is no ATROPOS project store behind
+          this surface, and a button that cannot do what it says is the same
+          defect as a dead evidence link. */}
+      <p className="flex items-center gap-2 text-sm text-sg-neutral-600 dark:text-sg-neutral-400">
+        <Plus className="h-4 w-4" aria-hidden="true" />
+        Create a project from the engine:{' '}
+        <code className="font-mono text-xs">/project new &lt;name&gt; &lt;objective&gt;</code>
+      </p>
 
       {/* Projects Grid */}
       {loading ? (
@@ -81,29 +80,35 @@ export default function ProjectsPage() {
             Create your first project to start autonomous work
           </p>
           <Link
-            href="/projects/new"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-sg-red-600 text-white rounded-lg hover:bg-sg-red-700 transition-colors"
+            href={globalRoutes.projects}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sg-neutral-600 dark:text-sg-neutral-400"
+            aria-disabled="true"
           >
             <Plus className="w-4 h-4" />
-            Create First Project
+            Create the first project with /project new in the engine
           </Link>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* The card is a container rather than one big link: §5.3's
+              explainability controls are buttons, and nesting them inside an
+              anchor is both invalid markup and unreachable by keyboard. */}
           {projects?.map((project) => (
-            <Link
+            <div
               key={project.id}
-              href={`/projects/${project.id}/work`}
-              className="block p-4 border border-sg-neutral-200 dark:border-sg-neutral-800 rounded-lg hover:border-sg-red-400 dark:hover:border-sg-red-600 transition-colors hover:shadow-md dark:hover:shadow-lg"
+              className="space-y-3 p-4 border border-sg-neutral-200 dark:border-sg-neutral-800 rounded-lg hover:border-sg-red-400 dark:hover:border-sg-red-600 transition-colors hover:shadow-md dark:hover:shadow-lg"
             >
-              <div className="flex items-start justify-between mb-2">
-                <h3 className="font-semibold text-sg-neutral-900 dark:text-sg-neutral-50">
+              <div className="flex items-start justify-between">
+                <Link
+                  href={`/projects/${project.id}/work`}
+                  className="font-semibold text-sg-neutral-900 dark:text-sg-neutral-50 hover:text-sg-red-600"
+                >
                   {project.name}
-                </h3>
+                </Link>
                 <StatusBadge status={project.status} size="sm" />
               </div>
               {project.description && (
-                <p className="text-sm text-sg-neutral-600 dark:text-sg-neutral-400 mb-3">
+                <p className="text-sm text-sg-neutral-600 dark:text-sg-neutral-400">
                   {project.description}
                 </p>
               )}
@@ -112,7 +117,12 @@ export default function ProjectsPage() {
                   {project.six_answers.progress.percent}% complete
                 </div>
               )}
-            </Link>
+              <WhyHowEvidence
+                answers={project.six_answers}
+                evidence={project.evidence}
+                subject={`"${project.name}"`}
+              />
+            </div>
           ))}
         </div>
       )}

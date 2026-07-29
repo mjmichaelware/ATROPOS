@@ -2,27 +2,19 @@
 
 import { ChevronRightIcon, ChevronDownIcon } from 'lucide-react';
 import { useState } from 'react';
+import type { SixAnswers } from '@/lib/api-atropos/types';
+import { EvidenceLinking } from '@/components/ui/evidence-linking';
 
-export interface SixAnswer {
-  /** What am I trying to accomplish? */
-  objective?: string;
-  /** What is ATROPOS doing? */
-  currentOperation?: string;
-  /** Why is it doing that? */
-  reasoning?: string;
-  /** How far along is it? */
-  progress?: {
-    percent: number;
-    stage?: string;
-  };
-  /** What should I do next? */
-  nextAction?: string;
-  /** Can I inspect the evidence? */
-  evidence?: {
-    link?: string;
-    label?: string;
-  };
-}
+/**
+ * The six continuous answers of Source Document 4 §0.1.
+ *
+ * This panel previously declared its own shape whose `evidence` was a single
+ * `{link,label}`, while the API returned `Evidence[]`. The two drifted and
+ * every project page failed to compile against one or the other. §10.3 makes
+ * evidence a first-class browsable trail rather than one link, so the API
+ * shape is the single source of truth and this panel renders it.
+ */
+export type SixAnswer = SixAnswers;
 
 interface SixAnswersPanelProps {
   answers: SixAnswer;
@@ -136,23 +128,29 @@ export function SixAnswersPanel({
       )}
 
       {/* 6. Evidence */}
-      {answers.evidence && (
-        <div className="space-y-1">
-          <label className="block text-xs font-semibold text-sg-neutral-600 dark:text-sg-neutral-400 uppercase tracking-wider">
-            Can I inspect the evidence?
-          </label>
-          {answers.evidence.link ? (
-            <a
-              href={answers.evidence.link}
-              className="text-sm text-sg-red-600 hover:text-sg-red-700 dark:hover:text-sg-red-500 underline transition-colors"
-            >
-              {answers.evidence.label || 'View evidence'}
-            </a>
-          ) : (
-            <p className="text-sm text-sg-neutral-500 italic">No evidence available</p>
-          )}
-        </div>
-      )}
+      <div className="space-y-1">
+        <label className="block text-xs font-semibold text-sg-neutral-600 dark:text-sg-neutral-400 uppercase tracking-wider">
+          Can I inspect the evidence?
+        </label>
+        {answers.evidence && answers.evidence.length > 0 ? (
+          // §10.3: the full trail, not a single link.
+          <EvidenceLinking
+            evidence={answers.evidence.map((item) => ({
+              id: item.id,
+              type: item.type,
+              title: item.title,
+              timestamp: item.timestamp,
+              link: item.link,
+            }))}
+          />
+        ) : (
+          // §0.9 / no-fake-data: absence of evidence is stated, never implied
+          // by an empty region the operator has to interpret.
+          <p className="text-sm text-sg-neutral-500 italic">
+            No evidence recorded yet.
+          </p>
+        )}
+      </div>
     </div>
   );
 }

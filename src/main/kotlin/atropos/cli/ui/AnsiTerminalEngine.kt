@@ -417,6 +417,27 @@ class AnsiTerminalEngine(
         requestFrameLocked()
     }
 
+    /** Current viewport width, so callers can lay out to the real terminal. */
+    val viewportWidth: Int
+        get() = canvas.width
+
+    /**
+     * Emits pre-composed lines verbatim.
+     *
+     * [renderNotice] reshapes legacy `header:` text through
+     * [RailBlockFormatter]; a surface that already laid itself out to
+     * [viewportWidth] must not be reshaped again, or its columns move.
+     */
+    @Synchronized
+    fun renderBlock(lines: List<String>) {
+        if (!reactive) {
+            lines.forEach(::emitPlain)
+            return
+        }
+        lines.forEach(transcriptBuffer::append)
+        requestFrameLocked()
+    }
+
     @Synchronized
     fun renderNotice(message: String) {
         if (!reactive) {

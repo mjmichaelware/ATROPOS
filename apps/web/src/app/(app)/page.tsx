@@ -48,10 +48,6 @@ export default function Home() {
     nextAction: projects && projects.length > 0
       ? 'Select a project to view work items or create a new one'
       : 'Create your first project to begin work',
-    evidence: {
-      link: '/history',
-      label: 'View system initialization log',
-    },
   };
 
   const trustIndicators = {
@@ -100,20 +96,20 @@ export default function Home() {
           Quick Actions
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <button
-            onClick={() => router.push('/projects/new')}
-            className="flex items-center gap-3 p-4 border border-sg-neutral-200 dark:border-sg-neutral-800 rounded-lg hover:bg-sg-neutral-50 dark:hover:bg-sg-neutral-900 transition-colors"
-          >
-            <Plus className="w-5 h-5 text-sg-red-600" />
+          <div className="flex items-center gap-3 rounded-lg border border-sg-neutral-200 p-4 dark:border-sg-neutral-800">
+            <Plus className="h-5 w-5 text-sg-neutral-400" />
             <div className="text-left">
               <p className="font-semibold text-sg-neutral-900 dark:text-sg-neutral-50">
                 Create Project
               </p>
               <p className="text-sm text-sg-neutral-600 dark:text-sg-neutral-400">
-                Start new autonomous work
+                Create one from the engine:{' '}
+                <code className="font-mono text-xs">/project new &lt;name&gt; &lt;objective&gt;</code>.
+                Browser-initiated creation is not wired yet — a write reaching
+                the engine from a page needs explicit attribution first.
               </p>
             </div>
-          </button>
+          </div>
 
           {activeProjects.length > 0 && (
             <button

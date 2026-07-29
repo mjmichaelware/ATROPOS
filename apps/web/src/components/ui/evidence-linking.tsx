@@ -1,8 +1,19 @@
 import { Link2, FileText, Hash, Clock, User, MapPin } from 'lucide-react';
+import type { EvidenceType as ApiEvidenceType } from '@/lib/api-atropos/types';
+
+/**
+ * Evidence kinds are the API's vocabulary, not this component's.
+ *
+ * This component originally declared its own union ('decision' | 'error' |
+ * 'checkpoint') that no producer emitted. Mapping the API's kinds onto it
+ * would have invented a categorisation the runtime never made, so the API
+ * vocabulary is used directly.
+ */
+export type { EvidenceType } from '@/lib/api-atropos/types';
 
 export interface Evidence {
   id: string;
-  type: 'artifact' | 'decision' | 'approval' | 'error' | 'checkpoint';
+  type: ApiEvidenceType;
   title: string;
   timestamp: string;
   actor?: string;
@@ -40,14 +51,14 @@ export function EvidenceLinking({
     switch (type) {
       case 'artifact':
         return <FileText className="w-4 h-4" />;
-      case 'decision':
-        return <MapPin className="w-4 h-4" />;
-      case 'approval':
+      case 'verification':
         return <Hash className="w-4 h-4" />;
-      case 'error':
-        return <Link2 className="w-4 h-4" />;
-      case 'checkpoint':
+      case 'approval':
+        return <MapPin className="w-4 h-4" />;
+      case 'execution':
         return <Clock className="w-4 h-4" />;
+      case 'reference':
+        return <Link2 className="w-4 h-4" />;
       default:
         return <FileText className="w-4 h-4" />;
     }
@@ -57,14 +68,14 @@ export function EvidenceLinking({
     switch (type) {
       case 'artifact':
         return 'text-sg-blue-600';
-      case 'decision':
-        return 'text-sg-purple-600';
+      case 'verification':
+        return 'text-sg-green-600';
       case 'approval':
         return 'text-sg-amber-600';
-      case 'error':
-        return 'text-sg-red-600';
-      case 'checkpoint':
-        return 'text-sg-green-600';
+      case 'execution':
+        return 'text-sg-purple-600';
+      case 'reference':
+        return 'text-sg-neutral-600';
       default:
         return 'text-sg-neutral-600';
     }
@@ -74,14 +85,14 @@ export function EvidenceLinking({
     switch (type) {
       case 'artifact':
         return 'Artifact';
-      case 'decision':
-        return 'Decision';
+      case 'verification':
+        return 'Verification';
       case 'approval':
         return 'Approval';
-      case 'error':
-        return 'Error';
-      case 'checkpoint':
-        return 'Checkpoint';
+      case 'execution':
+        return 'Execution';
+      case 'reference':
+        return 'Reference';
       default:
         return 'Evidence';
     }
