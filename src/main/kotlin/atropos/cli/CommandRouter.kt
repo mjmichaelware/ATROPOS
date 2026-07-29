@@ -5,6 +5,7 @@ import atropos.cli.commands.VerifyCommand
 import atropos.cli.commands.VerifyCommandHandler
 import atropos.cli.commands.AgentCommand
 import atropos.cli.commands.HierarchyCommand
+import atropos.cli.commands.ProjectCommandHandler
 import atropos.cli.commands.SelfHostNaturalLanguageRouter
 import atropos.cli.session.QuotaSessionTracker
 import atropos.cli.session.SessionTabs
@@ -39,6 +40,16 @@ class CommandRouter(
     )
 
     private val hierarchyCommand = HierarchyCommand()
+
+    private val theme =
+        atropos.cli.ui.TerminalTheme(atropos.cli.config.ConfigurationManager())
+
+    private val dashboardRenderer = atropos.cli.ui.DashboardRenderer(theme)
+
+    private val homeStateProvider = atropos.cli.ui.HomeStateProvider()
+
+    private val projectCommand = ProjectCommandHandler(uiEngine)
+
     private val selfHostNaturalLanguageRouter = SelfHostNaturalLanguageRouter()
     private val statusCommand = StatusCommandHandler(config, uiEngine, sessionTracker)
     private val providerCommand = ProviderCommandHandler(config, uiEngine)
@@ -106,18 +117,34 @@ class CommandRouter(
                 uiEngine.renderNotice("  /verify <narrow|wide>")
                 uiEngine.renderNotice("  !<command> | /shell <command>")
                 uiEngine.renderNotice("  /pwd | /cd [dir] | /ls [args] | /git status")
+                uiEngine.renderNotice("  /project [list|new|show|status|objective|history]")
                 uiEngine.renderNotice("  /home | /dashboard | /tabs | /tab [new <name>|<n>|rename|close|next|prev]")
                 RouterOutcome.CONTINUE
             }
 
             "/dashboard", "/home" -> {
                 tabs.goHome()
+                // §0.1: Home answers the six continuous questions without the
+                // operator searching for them.
+                uiEngine.renderBlock(
+                    dashboardRenderer.render(
+                        homeStateProvider.capture(activeProvider.name),
+                        uiEngine.viewportWidth
+                    )
+                )
                 uiEngine.renderDashboard(
                     activeProvider = activeProvider.name,
                     activeTab = "tab ${tabs.active.id}",
                     activeScreen = tabs.active.title,
                     openTabCount = tabs.snapshot().tabs.size
                 )
+                RouterOutcome.CONTINUE
+            }
+
+            "/project", "/projects" -> {
+                // §2.2: every meaningful activity belongs to a project, and
+                // that boundary is reachable from the terminal, not only the web.
+                projectCommand.execute(tokens.drop(1))
                 RouterOutcome.CONTINUE
             }
 

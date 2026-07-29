@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, use } from 'react';
 import { ProjectHeader } from '@/components/project/project-header';
 import { SixAnswersPanel, SixAnswer } from '@/components/ui/six-answers-panel';
 import { ControlVerb } from '@/components/ui/control-verbs';
@@ -8,10 +8,11 @@ import { useProject, useConversations } from '@/lib/api-atropos/hooks';
 import { useAppContext } from '@/lib/contexts/app-context';
 import { MessageSquare, MessageCircle } from 'lucide-react';
 
-export default function ConversationsPage({ params }: { params: { id: string } }) {
-  const { data: project, loading: projectLoading, error: projectError } = useProject(params.id);
+export default function ConversationsPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id: projectId } = use(params);
+  const { data: project, loading: projectLoading, error: projectError } = useProject(projectId);
   const { data: conversations, loading: convsLoading, error: convsError } = useConversations(
-    params.id
+    projectId
   );
   const { addError } = useAppContext();
 
@@ -62,14 +63,13 @@ export default function ConversationsPage({ params }: { params: { id: string } }
     nextAction: conversations && conversations.length > 0
       ? 'Review and search conversations'
       : 'Create your first project conversation.',
-    evidence: { link: '/history', label: 'View conversation evidence' },
   };
 
   return (
     <div className="space-y-8">
       <ProjectHeader
-        projectName={`Project ${params.id}`}
-        projectId={params.id}
+        projectName={`Project ${projectId}`}
+        projectId={projectId}
         status="planning"
         answers={projectAnswers}
         trustIndicators={{

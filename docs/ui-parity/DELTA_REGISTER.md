@@ -298,3 +298,63 @@ Based on Section 15 acceptance gates and criticality:
 5. **Ongoing:** Progressive disclosure, explainability, recovery UX
 
 This register will be re-audited after each completion to track progress.
+
+---
+
+# Batch 2026-07-29 — CLI Home cockpit bound to real state
+
+Scope: HOE-A01 (six continuous answers) and HOE-A04 (status vocabulary) on the
+CLI surface only. Rows below are the only rows this batch changed.
+
+## Correction to a previously recorded row
+
+`AG-5` was recorded as `ABSENT — "CLI has design tokens, no UI layer"`. That was
+wrong when written: `src/main/kotlin/atropos/cli/ui/` already held 45+ renderers.
+The real CLI gap was never absence of a UI layer — it was that the Home cockpit
+rendered fixed strings. Re-audits should not trust the earlier AG-5 evidence
+column.
+
+## Changed rows (§14.1 schema)
+
+| ID | Surface | Capability | Current path(s) | Target behaviour | Gap | Evidence | Acceptance check |
+|----|---------|------------|-----------------|------------------|-----|----------|------------------|
+| UI-DELTA-CLI-001 | CLI | Six continuous answers on Home | `cli/ui/DashboardRenderer.kt`, `cli/ui/HomeStateProvider.kt` | Home answers §0.1 Q1–Q6 from durable state, without search | DONE | `HomeStateProviderTest` (6 tests) | `/home` prints Objective/Doing/Why/Progress/Next/Evidence |
+| UI-DELTA-CLI-002 | CLI | Home reachable from the router | `cli/CommandRouter.kt:225` | `/home` and `/dashboard` render the cockpit | DONE | route proof: `echo /home \| java -jar build/libs/ATROPOS.jar` | cockpit appears above the dashboard frame |
+| UI-DELTA-CLI-003 | CLI | Status vocabulary is user-progress oriented (§3.3) | `cli/ui/HomeStateProvider.kt` `asRunState()` | Queue enums map to Section A `RunState`; no `RETRY_WAIT`/`LEASED` jargon on screen | DONE | `HomeStateProviderTest`, `DashboardRendererWidthTest.status_survives_without_colour` | operator sees `retrying 2/5`, not `retry_wait` |
+| UI-DELTA-CLI-004 | CLI | Colour is never the sole status channel (§9.2) | `cli/ui/DashboardRenderer.kt` `renderWork` | Work rows render through `Surface.runState` (colour + glyph + label) | DONE | `DashboardRendererWidthTest.status_survives_without_colour` | `ColorTier.NONE` emits no SGR and still reads `retrying` |
+| UI-DELTA-CLI-005 | CLI | Narrow-terminal operability (gate 6) | `cli/ui/DashboardRenderer.kt` | No cockpit line overflows 40/80/120/160 columns | DONE | `DashboardRendererWidthTest.no_line_overflows_any_baseline_width` | clipped, never wrapped; hidden rows declared as `+N more` |
+| UI-DELTA-CLI-006 | CLI | Unreadable state is not reported as calm state (§4.1) | `cli/ui/HomeStateProvider.kt` `readQueue()` | An unreadable queue reports `unreadable`, never "no work" | DONE | `HomeStateProviderTest.unreadable_queue_is_never_reported_as_an_idle_queue` | `queueReadable=false` ⇒ ERROR health on Objective and Next |
+| UI-DELTA-CLI-007 | CLI | Secrets never rendered in ordinary views (§13) | `cli/ui/HomeStateProvider.kt` `task()` | Queue task text is redacted before display | DONE | `HomeStateProviderTest.queue_task_text_is_redacted_before_it_reaches_the_cockpit` | API-key-shaped text does not reach the cockpit |
+| UI-DELTA-CLI-008 | CLI | Project model on Home | ABSENT | Home summarises projects, not just the agent queue | MISSING | — | no CLI project store exists; the cockpit deliberately renders no project section rather than fabricating one |
+
+## Known limitations recorded rather than hidden
+
+- `AgentQueueStore.listEntries` catches its own IO failures and returns an empty
+  list, so a *corrupt individual entry* still degrades to "fewer rows" with no
+  operator-visible fault. `HomeStateProvider` can only distinguish an unreadable
+  queue *directory*. Closing this fully requires a core change to the store's
+  error reporting and is out of scope for a presentation batch.
+- `CachingGitWorkspaceInspector` is bounded at 750 ms. On a cold cache in a large
+  repository `git status` exceeds that budget and the cockpit honestly reports
+  `Repository unavailable` rather than blocking.
+- Provider *identity* is shown; provider *health* is not probed by Home, so no
+  health is claimed for it.
+
+## Path fingerprints
+
+```
+cff3142165a6391f2a72d3837ecb041003127594df0272cb9cc39ced19a4a1c1  src/main/kotlin/atropos/cli/ui/DashboardRenderer.kt
+c3e33f8c415b1c2aa509915a2552caa944cc33de2babc65b9ab334ca24bdbb1b  src/main/kotlin/atropos/cli/ui/HomeStateProvider.kt
+4f0befd37b43813afcb460d5684ab1361e8f917a1143d02e909ec93920effa2b  src/main/kotlin/atropos/cli/ui/AnsiTerminalEngine.kt
+ba43f36530c49ad29ade67f4944d9ea72cc1aec594048778a0fcbbdf3a230b5f  src/main/kotlin/atropos/cli/CommandRouter.kt
+ffc00156d99202dde3c3988aa9273e14177aa0a3f6b63f93fb5e672a38c5513b  src/test/kotlin/atropos/cli/ui/HomeStateProviderTest.kt
+e90a2004c7c3b2b7178cf6ff57bcafc197a1108b61364ae6f68889513981f79c  src/test/kotlin/atropos/cli/ui/DashboardRendererWidthTest.kt
+```
+
+## Suite state at batch close
+
+`gradle test` — 257 tests, 5 failing. All 5 fail identically on a clean tree
+(`git stash` + rerun) and are unrelated to this batch: `AstSymbolGraphTest`,
+`AgentSecurityRedactionSurfaceTest`, `ProviderActivationServiceTest` (2),
+`ProviderFixtureMatrixServiceTest`. This batch introduced no regression and did
+not fix them.

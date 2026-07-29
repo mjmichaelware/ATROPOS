@@ -4,7 +4,8 @@ import { ChevronDown, ChevronRight } from 'lucide-react';
 export interface ProgressiveDisclosureProps {
   title: string;
   level?: 'simple' | 'detailed' | 'expert';
-  children: React.ReactNode;
+  /** Optional: a section may instead supply the per-level content below. */
+  children?: React.ReactNode;
   simpleContent?: React.ReactNode;
   detailedContent?: React.ReactNode;
   expertContent?: React.ReactNode;

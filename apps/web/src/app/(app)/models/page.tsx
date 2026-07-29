@@ -11,7 +11,6 @@ export default function ModelsPage() {
     reasoning: 'Models surface is presentation of routing reality, not a second policy engine. Shows every available provider and current selection reasoning.',
     progress: { percent: 0, stage: 'Setup' },
     nextAction: 'Configure available providers and set routing preferences.',
-    evidence: { link: '/settings', label: 'Configure providers' },
   };
 
   const providerAnswers: SixAnswer = {

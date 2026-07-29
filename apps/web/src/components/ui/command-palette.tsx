@@ -4,6 +4,13 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, ArrowRight, Settings, Home, FileText, Users, Zap, Clock } from 'lucide-react';
 import { useProjects, useWorkItems } from '@/lib/api-atropos/hooks';
+import {
+  developerToolsItem,
+  navigationSpine,
+  projectSections,
+} from '@/components/navigation/routes';
+import { useOptionalSessionState } from '@/lib/contexts/session-state-context';
+import { COMMON_SHORTCUTS, useKeyboardShortcuts } from '@/lib/hooks/use-keyboard-shortcuts';
 
 interface CommandItem {
   id: string;
@@ -18,73 +25,83 @@ interface CommandItem {
 export function CommandPalette() {
   const router = useRouter();
   const { data: projects } = useProjects();
+  // Chrome must not take down the shell over an optional preference: with
+  // no provider, Developer Tools stay hidden and no project is active.
+  const session = useOptionalSessionState()?.session;
+
+  // §5.4: the palette must be reachable from the keyboard anywhere in the app.
+  useKeyboardShortcuts([
+    {
+      ...COMMON_SHORTCUTS.COMMAND_PALETTE,
+      handler: () => {
+        setOpen((prev) => !prev);
+        setSearch('');
+        setSelectedIndex(0);
+      },
+    },
+  ]);
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   // Navigation commands
-  const navigationCommands: CommandItem[] = [
-    {
-      id: 'home',
-      label: 'Go to Home',
-      description: 'View system status and recent activity',
+  //
+  // §5.4 requires the palette to reach every primary action. It is derived
+  // from the same spine the sidebar renders rather than a hand-kept copy: a
+  // second hardcoded list is how Automation and Developer Tools went missing
+  // from here while existing as routes.
+  const navigationCommands: CommandItem[] = useMemo(() => {
+    const spine = navigationSpine.map((item) => ({
+      id: item.id,
+      label: item.label,
+      description: `Go to ${item.label}`,
       icon: <Home className="w-4 h-4" />,
       action: () => {
-        router.push('/');
+        router.push(item.href);
         setOpen(false);
       },
-      category: 'navigation',
-      keywords: ['home', 'dashboard'],
-    },
-    {
-      id: 'projects',
-      label: 'View All Projects',
-      description: 'Browse all projects',
-      icon: <FileText className="w-4 h-4" />,
-      action: () => {
-        router.push('/projects');
-        setOpen(false);
-      },
-      category: 'navigation',
-      keywords: ['projects', 'list'],
-    },
-    {
-      id: 'models',
-      label: 'Models & Providers',
-      description: 'View provider configuration',
-      icon: <Zap className="w-4 h-4" />,
-      action: () => {
-        router.push('/models');
-        setOpen(false);
-      },
-      category: 'navigation',
-      keywords: ['models', 'providers'],
-    },
-    {
-      id: 'history',
-      label: 'View History',
-      description: 'Browse all events and activity',
-      icon: <Clock className="w-4 h-4" />,
-      action: () => {
-        router.push('/history');
-        setOpen(false);
-      },
-      category: 'navigation',
-      keywords: ['history', 'events', 'log'],
-    },
-    {
-      id: 'settings',
-      label: 'Settings',
-      description: 'Configure preferences and workspace',
-      icon: <Settings className="w-4 h-4" />,
-      action: () => {
-        router.push('/settings');
-        setOpen(false);
-      },
-      category: 'navigation',
-      keywords: ['settings', 'preferences', 'config'],
-    },
-  ];
+      category: 'navigation' as const,
+      keywords: [item.id, item.label.toLowerCase()],
+    }));
+
+    // §2.10: only offered once the operator has opted in, so the palette does
+    // not reintroduce a surface the navigation deliberately hides.
+    if (session?.developerToolsEnabled) {
+      spine.push({
+        id: developerToolsItem.id,
+        label: developerToolsItem.label,
+        description: 'Inspectors, SpecGraph subsystem, runtime internals',
+        icon: <Settings className="w-4 h-4" />,
+        action: () => {
+          router.push(developerToolsItem.href);
+          setOpen(false);
+        },
+        category: 'navigation' as const,
+        keywords: ['developer', 'tools', 'inspector', 'specgraph'],
+      });
+    }
+
+    // Project sections are reachable only when a project is actually open.
+    if (session?.activeProjectId) {
+      const projectId = session.activeProjectId;
+      projectSections.forEach((section) => {
+        spine.push({
+          id: `section-${section.id}`,
+          label: `${section.label} (current project)`,
+          description: `Open ${section.label} for the active project`,
+          icon: <FileText className="w-4 h-4" />,
+          action: () => {
+            router.push(section.build(projectId));
+            setOpen(false);
+          },
+          category: 'navigation' as const,
+          keywords: [section.id, section.label.toLowerCase(), 'project'],
+        });
+      });
+    }
+
+    return spine;
+  }, [router, session?.developerToolsEnabled, session?.activeProjectId]);
 
   // Project commands
   const projectCommands: CommandItem[] = useMemo(
@@ -126,13 +143,9 @@ export function CommandPalette() {
   // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Cmd+K or Ctrl+K opens palette
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        setOpen((prev) => !prev);
-        setSearch('');
-        setSelectedIndex(0);
-      }
+      // Cmd/Ctrl+K is a global binding and lives in useKeyboardShortcuts. The
+      // keys below are modal-scoped: they only mean anything while the palette
+      // is open, so they stay with the palette.
 
       // Escape closes palette
       if (e.key === 'Escape' && open) {

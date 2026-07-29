@@ -2,21 +2,18 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { projectSections } from '@/components/navigation/routes';
 
-interface Tab {
-  id: string;
-  label: string;
-  href: string;
-  icon?: string;
-}
-
-const PROJECT_TABS: Tab[] = [
-  { id: 'work', label: 'Work', icon: '⚙️' },
-  { id: 'conversations', label: 'Conversations', icon: '💬' },
-  { id: 'files', label: 'Files', icon: '📁' },
-  { id: 'agents', label: 'Agents', icon: '🤖' },
-  { id: 'specgraph', label: 'SpecGraph', icon: '🔗' },
-];
+// The tabs are the §2.2-2.6 project spine, taken from the shared route table
+// rather than restated here. SpecGraph is deliberately absent: §1.3 and §12.2
+// keep compiler subsystems under Developer Tools, never in a project's tab
+// strip.
+const TAB_ICONS: Record<string, string> = {
+  work: '⚙️',
+  conversations: '💬',
+  files: '📁',
+  agents: '🤖',
+};
 
 interface SessionTabBarProps {
   projectId: string;
@@ -41,7 +38,7 @@ export function SessionTabBar({ projectId, activeTab = 'work' }: SessionTabBarPr
   return (
     <div className="session-tab-bar">
       <div className="tab-list" role="tablist">
-        {PROJECT_TABS.map(tab => (
+        {projectSections.map(tab => (
           <div
             key={tab.id}
             className={`tab ${activeTab === tab.id ? 'active' : ''}`}
@@ -49,11 +46,13 @@ export function SessionTabBar({ projectId, activeTab = 'work' }: SessionTabBarPr
             aria-selected={activeTab === tab.id}
           >
             <Link
-              href={`/projects/${projectId}/${tab.id}`}
+              href={tab.build(projectId)}
               className="tab-link"
               onClick={() => toggleTab(tab.id)}
             >
-              {tab.icon && <span className="tab-icon">{tab.icon}</span>}
+              {TAB_ICONS[tab.id] && (
+                <span className="tab-icon" aria-hidden="true">{TAB_ICONS[tab.id]}</span>
+              )}
               <span className="tab-label">{tab.label}</span>
             </Link>
             {openTabs.includes(tab.id) && openTabs.length > 1 && (

@@ -9,13 +9,32 @@
     "dist"
   ],
   "exports": {
-    ".": "./src/index.ts",
-    "./tokens": "./src/tokens.json",
-    "./theme": "./src/customization/runtimeThemeMixin.ts",
-    "./web": {
-      "import": "./src/web/tokens.css"
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
     },
-    "./cli": "./src/cli/DesignTokens.kt"
+    "./tokens": {
+      "default": "./src/tokens.json"
+    },
+    "./theme": {
+      "types": "./src/customization/runtimeThemeMixin.ts",
+      "import": "./src/customization/runtimeThemeMixin.ts",
+      "default": "./src/customization/runtimeThemeMixin.ts"
+    },
+    "./web": {
+      "style": "./src/web/tokens.css",
+      "import": "./src/web/tokens.css",
+      "default": "./src/web/tokens.css"
+    },
+    "./web/themes": {
+      "style": "./src/web/themes.css",
+      "import": "./src/web/themes.css",
+      "default": "./src/web/themes.css"
+    },
+    "./cli": {
+      "default": "./src/cli/DesignTokens.kt"
+    }
   },
   "scripts": {
     "generate": "node build/scripts/generate-tokens.js",

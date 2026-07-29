@@ -4,9 +4,13 @@ import { useState } from 'react';
 import { SixAnswersPanel, SixAnswer } from '@/components/ui/six-answers-panel';
 import { InformationLevels, InformationLevel } from '@/components/ui/information-levels';
 import { ThemeCustomizer } from '@/components/settings/theme-customizer';
+import { useSessionState } from '@/lib/contexts/session-state-context';
 
 export default function SettingsPage() {
-  const [infoLevel, setInfoLevel] = useState<InformationLevel>(2);
+  const { session, setDeveloperTools, setInformationLevel } = useSessionState();
+  // The picker drives the real, persisted level rather than local state that
+  // nothing consumed.
+  const infoLevel = session.informationLevel as InformationLevel;
 
   const settingsAnswers: SixAnswer = {
     objective: 'Configure ATROPOS behavior, appearance, privacy, and advanced preferences.',
@@ -48,7 +52,7 @@ export default function SettingsPage() {
         </div>
         <InformationLevels
           currentLevel={infoLevel}
-          onLevelChange={setInfoLevel}
+          onLevelChange={setInformationLevel}
           compact={false}
         />
       </section>
@@ -117,17 +121,24 @@ export default function SettingsPage() {
         </div>
         <div className="bg-sg-neutral-50 dark:bg-sg-neutral-900 border border-sg-neutral-200 dark:border-sg-neutral-800 rounded-lg p-6 space-y-3">
           <div className="flex items-center justify-between">
-            <label className="text-sg-neutral-900 dark:text-sg-neutral-50 font-semibold">
+            <label
+              htmlFor="developer-tools-toggle"
+              className="text-sg-neutral-900 dark:text-sg-neutral-50 font-semibold"
+            >
               Show Developer Tools in Navigation
             </label>
-            <input type="checkbox" className="w-5 h-5" />
+            <input
+              id="developer-tools-toggle"
+              type="checkbox"
+              className="w-5 h-5"
+              checked={session.developerToolsEnabled}
+              onChange={(event) => setDeveloperTools(event.target.checked)}
+            />
           </div>
-          <div className="flex items-center justify-between">
-            <label className="text-sg-neutral-900 dark:text-sg-neutral-50 font-semibold">
-              Enable Debug Logging
-            </label>
-            <input type="checkbox" className="w-5 h-5" />
-          </div>
+          <p className="text-sm text-sg-neutral-600 dark:text-sg-neutral-400">
+            Reveals inspectors and the SpecGraph subsystem. Hidden by default so
+            everyday work is not competing with runtime internals.
+          </p>
         </div>
       </section>
     </div>
