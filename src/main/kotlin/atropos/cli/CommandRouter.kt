@@ -50,10 +50,15 @@ class CommandRouter(
 
     private val hierarchyCommand = HierarchyCommand()
 
+    private val theme =
+        atropos.cli.ui.TerminalTheme(atropos.cli.config.ConfigurationManager())
+
     private val attestationRenderer =
-        atropos.cli.ui.ContextAttestationRenderer(
-            atropos.cli.ui.TerminalTheme(atropos.cli.config.ConfigurationManager())
-        )
+        atropos.cli.ui.ContextAttestationRenderer(theme)
+
+    private val dashboardRenderer = atropos.cli.ui.DashboardRenderer(theme)
+
+    private val homeStateProvider = atropos.cli.ui.HomeStateProvider()
 
     private companion object { const val ATTESTATION_WIDTH = 80 }
 
@@ -224,6 +229,14 @@ class CommandRouter(
 
             "/dashboard", "/home" -> {
                 tabs.goHome()
+                // §0.1: Home answers the six continuous questions without the
+                // operator searching for them.
+                uiEngine.renderBlock(
+                    dashboardRenderer.render(
+                        homeStateProvider.capture(activeProvider.name),
+                        uiEngine.viewportWidth
+                    )
+                )
                 uiEngine.renderDashboard(
                     activeProvider = activeProvider.name,
                     activeTab = "tab ${tabs.active.id}",
