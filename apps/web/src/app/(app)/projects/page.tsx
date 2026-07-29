@@ -61,7 +61,8 @@ export default function ProjectsPage() {
           defect as a dead evidence link. */}
       <p className="flex items-center gap-2 text-sm text-sg-neutral-600 dark:text-sg-neutral-400">
         <Plus className="h-4 w-4" aria-hidden="true" />
-        Project creation is not available from this surface yet.
+        Create a project from the engine:{' '}
+        <code className="font-mono text-xs">/project new &lt;name&gt; &lt;objective&gt;</code>
       </p>
 
       {/* Projects Grid */}
@@ -84,7 +85,7 @@ export default function ProjectsPage() {
             aria-disabled="true"
           >
             <Plus className="w-4 h-4" />
-            Project creation is not available from this surface yet
+            Create the first project with /project new in the engine
           </Link>
         </div>
       ) : (

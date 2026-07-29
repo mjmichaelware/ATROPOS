@@ -5,6 +5,7 @@ import atropos.cli.commands.VerifyCommand
 import atropos.cli.commands.VerifyCommandHandler
 import atropos.cli.commands.AgentCommand
 import atropos.cli.commands.HierarchyCommand
+import atropos.cli.commands.ProjectCommandHandler
 import atropos.cli.commands.SelfHostNaturalLanguageRouter
 import atropos.cli.session.QuotaSessionTracker
 import atropos.cli.session.SessionTabs
@@ -46,6 +47,8 @@ class CommandRouter(
     private val dashboardRenderer = atropos.cli.ui.DashboardRenderer(theme)
 
     private val homeStateProvider = atropos.cli.ui.HomeStateProvider()
+
+    private val projectCommand = ProjectCommandHandler(uiEngine)
 
     private val selfHostNaturalLanguageRouter = SelfHostNaturalLanguageRouter()
     private val statusCommand = StatusCommandHandler(config, uiEngine, sessionTracker)
@@ -114,6 +117,7 @@ class CommandRouter(
                 uiEngine.renderNotice("  /verify <narrow|wide>")
                 uiEngine.renderNotice("  !<command> | /shell <command>")
                 uiEngine.renderNotice("  /pwd | /cd [dir] | /ls [args] | /git status")
+                uiEngine.renderNotice("  /project [list|new|show|status|objective|history]")
                 uiEngine.renderNotice("  /home | /dashboard | /tabs | /tab [new <name>|<n>|rename|close|next|prev]")
                 RouterOutcome.CONTINUE
             }
@@ -134,6 +138,13 @@ class CommandRouter(
                     activeScreen = tabs.active.title,
                     openTabCount = tabs.snapshot().tabs.size
                 )
+                RouterOutcome.CONTINUE
+            }
+
+            "/project", "/projects" -> {
+                // §2.2: every meaningful activity belongs to a project, and
+                // that boundary is reachable from the terminal, not only the web.
+                projectCommand.execute(tokens.drop(1))
                 RouterOutcome.CONTINUE
             }
 
