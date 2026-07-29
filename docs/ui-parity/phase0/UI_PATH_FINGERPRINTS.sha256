@@ -1,6 +1,6 @@
 # ATROPOS UI path fingerprints
-# Generated 2026-07-29. Re-run to detect drift without re-reading the tree.
-# Covers presentation paths touched by the CLI Home batch and web batches 1-2 only.
+# Regenerated 2026-07-29T10:29:40Z at close of CLI+Web engagement.
+# Covers every presentation path this engagement touched.
 cff3142165a6391f2a72d3837ecb041003127594df0272cb9cc39ced19a4a1c1  src/main/kotlin/atropos/cli/ui/DashboardRenderer.kt
 c3e33f8c415b1c2aa509915a2552caa944cc33de2babc65b9ab334ca24bdbb1b  src/main/kotlin/atropos/cli/ui/HomeStateProvider.kt
 4f0befd37b43813afcb460d5684ab1361e8f917a1143d02e909ec93920effa2b  src/main/kotlin/atropos/cli/ui/AnsiTerminalEngine.kt
@@ -8,29 +8,31 @@ ba43f36530c49ad29ade67f4944d9ea72cc1aec594048778a0fcbbdf3a230b5f  src/main/kotli
 ffc00156d99202dde3c3988aa9273e14177aa0a3f6b63f93fb5e672a38c5513b  src/test/kotlin/atropos/cli/ui/HomeStateProviderTest.kt
 e90a2004c7c3b2b7178cf6ff57bcafc197a1108b61364ae6f68889513981f79c  src/test/kotlin/atropos/cli/ui/DashboardRendererWidthTest.kt
 b09588b2ebcdf1d10f1df710890578ce3f395c7389b2fe11176a549a58b28095  apps/web/src/lib/bridge/engine.ts
+c6dc81ec9e7e1ddd83e2f4abcb5d3aa8e39ec14e151f2b6411dc44aaec8ac7fd  apps/web/src/lib/bridge/continuity.ts
+d055566c08f1fedfc58a503dbbee13f238a594c7182a4670263af592e7ad5623  apps/web/src/lib/bridge/recovery.test.ts
 f02d5a5d69b21fac5a2d56872b725344ba7170e1a62f56cd2779efc03010b0f6  apps/web/src/app/api/atropos/status/route.ts
 f5f8d9064d773ff3d07b24b7a1ec4a693a61305f7e743912329f7e466e77615a  apps/web/src/app/api/atropos/command/route.ts
+2e7122c6d2641c67e310d379d23d6af8207a5c66874fe20e69b627e9f9e962d1  apps/web/src/app/api/atropos/recovery/route.ts
+46ec994498c440ea52beb704db9c969790234ab69b9eb79bfd13b225130711af  apps/web/src/app/(app)/layout.tsx
 a5700bb823e3e200b08c7554c89308fc3563aa20039e24c4e9a62482f02f1e34  apps/web/src/lib/hooks/use-engine-status.ts
+8276dadd82c065d27a516bf0f8be7308746ef8a3ba6e16ff65af6163dc8bbaa1  apps/web/src/lib/hooks/use-keyboard-shortcuts.ts
+6cb090249176200d74c4d4d8608b9f2e1c672ff294ea408e48a72d7c06105470  apps/web/src/lib/contexts/session-state-context.tsx
 2479f1a64464f353b58f5cfdb7854073effc7b7008548e58662bd0ecadc940e6  apps/web/src/components/atropos/engine-status-banner.tsx
-21192d0524b19687d87635769886cd8d6210ed7e7d929d3733bc21bb64a149d8  apps/web/src/components/navigation/routes.ts
-bad1e9de4ca284c77be064983778a4656341fac61f17b4cae71bd7d7a5d3ee74  apps/web/src/components/navigation/use-nav-items.ts
+89b6075bb2ed130390abd550b519b8d8aec8e5fe62b491c978eb272b96d88cf6  apps/web/src/components/atropos/recovery-ribbon.tsx
+0e5785a9035c9256906c65ac70208f48ae4aa6f6194d6925fda020e9e2724589  apps/web/src/components/atropos/work-item-card.tsx
+763964b2bd82ee3e4fe01733bf68b25e77e5b42e01e066e6b79d61e5b2a2f40a  apps/web/src/components/atropos/progressive-disclosure.test.tsx
+1a07539f523d860a88c13b2ff7bbc22546baaf0f044fb83a60357ff36d792921  apps/web/src/components/navigation/routes.ts
+2b4e48a459164db2c3391b0b5bae6f2d0ddd19373210e7c60ace59453ea85c52  apps/web/src/components/navigation/use-nav-items.ts
+16e7b2cc56b68ed4291a2734559943aa7667cc86dbc883c344cf95be0c084a6f  apps/web/src/components/navigation/route-utils.ts
 bcdf32b4efb9ffe9237d752236c19dd58dc1e80173445a0a90664862a605b221  apps/web/src/components/dev-tools/specgraph-entry.tsx
-2a363f9d86dd1f77e688de1b8c80257118caf43e8617520054d3b5f02d47d8c6  apps/web/src/components/ui/command-palette.tsx
+b0e79f0a5b21f65b330cc02c110fb1e4adfb69d930e1037ebf60e9f720a87f54  apps/web/src/components/ui/command-palette.tsx
 9063806ee0cca208a229033322682668b9c581f0c99ce1a4e1e93abb44b3cf70  apps/web/src/components/ui/six-answers-panel.tsx
 fbf615d34f9b189402321d8b37d3d9822c5bde0edab5a7ab8953d146a78ddd48  apps/web/src/components/ui/evidence-linking.tsx
+aa82418dda306fa26adcebbbee62b49cd1caee2a96e34cdcc8e17028c8fb663d  apps/web/src/components/ui/why-how-evidence.tsx
+df3dd5db577d37a5e3ff2950f48159410639cdae6bc05e68dfae2b0aba2e435c  apps/web/src/components/ui/why-how-evidence.test.tsx
 f272411444e02e189557f3ab5f7a3980ad0039013e1b002bd4f5b3ddf9ad98ac  apps/web/src/components/ui/trust-indicators.tsx
 5ad5e50e50d3463066cda138363054f4e030e1c16785e4843b2e94659d26185d  apps/web/src/components/ui/status-badge.tsx
-faad94858f5eb1a1cbfd521b949e65239ffd87d1dd2ae28ad58471e32f4232c5  apps/web/src/lib/contexts/session-state-context.tsx
-976ed48960cec86bb30a454d70ba0c5774cfce3ab7b9dffaa50f5ca9e8f32e54  apps/web/src/app/api/atropos/recovery/route.ts
-89b6075bb2ed130390abd550b519b8d8aec8e5fe62b491c978eb272b96d88cf6  apps/web/src/components/atropos/recovery-ribbon.tsx
-8276dadd82c065d27a516bf0f8be7308746ef8a3ba6e16ff65af6163dc8bbaa1  apps/web/src/lib/hooks/use-keyboard-shortcuts.ts
-20cc834aa4f6a4b04b40d973e742c7bba8158b9448640d8878c6ca4c56fc32ec  apps/web/src/lib/bridge/recovery.test.ts
+7fe95b1d0744fe9f5dd627e5f4a39a6268665458c994c090c509431636508295  apps/web/src/components/ui/progressive-disclosure.tsx
 af8cfedca289c38b46a9b73dbc6215b60f16b229700d341a8092dcf620a1bfa0  apps/web/src/components/app-shell/app-shell.tsx
-aa82418dda306fa26adcebbbee62b49cd1caee2a96e34cdcc8e17028c8fb663d  apps/web/src/components/ui/why-how-evidence.tsx
-52b0def5ba3a0e72b45e3ba43e06a94dcd19fae0e294e8b027d50ce15694a4ab  apps/web/src/components/atropos/work-item-card.tsx
-df3dd5db577d37a5e3ff2950f48159410639cdae6bc05e68dfae2b0aba2e435c  apps/web/src/components/ui/why-how-evidence.test.tsx
-46ec994498c440ea52beb704db9c969790234ab69b9eb79bfd13b225130711af  apps/web/src/app/(app)/layout.tsx
-1a07539f523d860a88c13b2ff7bbc22546baaf0f044fb83a60357ff36d792921  apps/web/src/components/navigation/routes.ts
-16e7b2cc56b68ed4291a2734559943aa7667cc86dbc883c344cf95be0c084a6f  apps/web/src/components/navigation/route-utils.ts
 36021730f415483780fbe6be655d674458894281e12e5aa9e7aace31cca57996  apps/web/next.config.ts
-c6dc81ec9e7e1ddd83e2f4abcb5d3aa8e39ec14e151f2b6411dc44aaec8ac7fd  apps/web/src/lib/bridge/continuity.ts
+e5fc568a9d036b02643409cf9efa41e01f0ca2e11d1e3dc01e89026834f1e5c5  docs/ui-parity/phase0/HOE_DELTA_REGISTER.tsv
