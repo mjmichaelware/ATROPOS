@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { Plus, Folder } from 'lucide-react';
 import { SixAnswersPanel, SixAnswer } from '@/components/ui/six-answers-panel';
 import { StatusBadge } from '@/components/ui/status-badge';
+import { WhyHowEvidence } from '@/components/ui/why-how-evidence';
 import { useProjects } from '@/lib/api-atropos/hooks';
 import { useAppContext } from '@/lib/contexts/app-context';
 import type { CanonicalStatus } from '@/lib/status-system';
@@ -89,20 +90,25 @@ export default function ProjectsPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* The card is a container rather than one big link: §5.3's
+              explainability controls are buttons, and nesting them inside an
+              anchor is both invalid markup and unreachable by keyboard. */}
           {projects?.map((project) => (
-            <Link
+            <div
               key={project.id}
-              href={`/projects/${project.id}/work`}
-              className="block p-4 border border-sg-neutral-200 dark:border-sg-neutral-800 rounded-lg hover:border-sg-red-400 dark:hover:border-sg-red-600 transition-colors hover:shadow-md dark:hover:shadow-lg"
+              className="space-y-3 p-4 border border-sg-neutral-200 dark:border-sg-neutral-800 rounded-lg hover:border-sg-red-400 dark:hover:border-sg-red-600 transition-colors hover:shadow-md dark:hover:shadow-lg"
             >
-              <div className="flex items-start justify-between mb-2">
-                <h3 className="font-semibold text-sg-neutral-900 dark:text-sg-neutral-50">
+              <div className="flex items-start justify-between">
+                <Link
+                  href={`/projects/${project.id}/work`}
+                  className="font-semibold text-sg-neutral-900 dark:text-sg-neutral-50 hover:text-sg-red-600"
+                >
                   {project.name}
-                </h3>
+                </Link>
                 <StatusBadge status={project.status} size="sm" />
               </div>
               {project.description && (
-                <p className="text-sm text-sg-neutral-600 dark:text-sg-neutral-400 mb-3">
+                <p className="text-sm text-sg-neutral-600 dark:text-sg-neutral-400">
                   {project.description}
                 </p>
               )}
@@ -111,7 +117,12 @@ export default function ProjectsPage() {
                   {project.six_answers.progress.percent}% complete
                 </div>
               )}
-            </Link>
+              <WhyHowEvidence
+                answers={project.six_answers}
+                evidence={project.evidence}
+                subject={`"${project.name}"`}
+              />
+            </div>
           ))}
         </div>
       )}

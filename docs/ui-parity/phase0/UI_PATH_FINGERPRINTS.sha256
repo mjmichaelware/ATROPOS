@@ -26,3 +26,6 @@ faad94858f5eb1a1cbfd521b949e65239ffd87d1dd2ae28ad58471e32f4232c5  apps/web/src/l
 8276dadd82c065d27a516bf0f8be7308746ef8a3ba6e16ff65af6163dc8bbaa1  apps/web/src/lib/hooks/use-keyboard-shortcuts.ts
 20cc834aa4f6a4b04b40d973e742c7bba8158b9448640d8878c6ca4c56fc32ec  apps/web/src/lib/bridge/recovery.test.ts
 af8cfedca289c38b46a9b73dbc6215b60f16b229700d341a8092dcf620a1bfa0  apps/web/src/components/app-shell/app-shell.tsx
+aa82418dda306fa26adcebbbee62b49cd1caee2a96e34cdcc8e17028c8fb663d  apps/web/src/components/ui/why-how-evidence.tsx
+52b0def5ba3a0e72b45e3ba43e06a94dcd19fae0e294e8b027d50ce15694a4ab  apps/web/src/components/atropos/work-item-card.tsx
+df3dd5db577d37a5e3ff2950f48159410639cdae6bc05e68dfae2b0aba2e435c  apps/web/src/components/ui/why-how-evidence.test.tsx
