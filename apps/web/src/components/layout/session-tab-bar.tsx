@@ -10,12 +10,13 @@ interface Tab {
   icon?: string;
 }
 
+// SpecGraph is deliberately absent: §1.3 and §12.2 keep compiler subsystems
+// under Developer Tools, never in a project's primary tab strip.
 const PROJECT_TABS: Tab[] = [
-  { id: 'work', label: 'Work', icon: '⚙️' },
-  { id: 'conversations', label: 'Conversations', icon: '💬' },
-  { id: 'files', label: 'Files', icon: '📁' },
-  { id: 'agents', label: 'Agents', icon: '🤖' },
-  { id: 'specgraph', label: 'SpecGraph', icon: '🔗' },
+  { id: 'work', label: 'Work', href: 'work', icon: '⚙️' },
+  { id: 'conversations', label: 'Conversations', href: 'conversations', icon: '💬' },
+  { id: 'files', label: 'Files', href: 'files', icon: '📁' },
+  { id: 'agents', label: 'Agents', href: 'agents', icon: '🤖' },
 ];
 
 interface SessionTabBarProps {

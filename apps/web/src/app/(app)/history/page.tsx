@@ -11,7 +11,6 @@ export default function HistoryPage() {
       'History is permanent and searchable by timestamp, actor, action, evidence, affected artifacts, and result. Events never deleted.',
     progress: { percent: 0, stage: 'Recording' },
     nextAction: 'Create a project or workflow to begin recording events.',
-    evidence: { link: '#', label: 'Download history export' },
   };
 
   const eventAnswers: SixAnswer = {

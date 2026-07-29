@@ -156,7 +156,7 @@ export function applyThemeCustomization(theme: ThemeCustomization): void {
 
   // Get color palette (custom or predefined)
   const palette = theme.customPalette
-    ? (theme.customPalette as ColorPalette)
+    ? (theme.customPalette as unknown as ColorPalette)
     : colorPalettes[theme.primaryColor] || colorPalettes.red;
 
   // Apply primary color shades
@@ -217,9 +217,9 @@ export function getColorPalette(name: string): ColorPalette | null {
  */
 export function createUseThemeCustomization(React: any) {
   return function useThemeCustomization() {
-    const [theme, setTheme] = React.useState<ThemeCustomization>(
+    const [theme, setTheme] = React.useState(
       () => loadThemeCustomization()
-    );
+    ) as [ThemeCustomization, (value: ThemeCustomization) => void];
 
     const updateTheme = React.useCallback(
       (updates: Partial<ThemeCustomization>) => {

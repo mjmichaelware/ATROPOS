@@ -6,6 +6,7 @@ import { SixAnswersPanel, SixAnswer } from '@/components/ui/six-answers-panel';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { useProjects } from '@/lib/api-atropos/hooks';
 import { useAppContext } from '@/lib/contexts/app-context';
+import type { CanonicalStatus } from '@/lib/status-system';
 import Link from 'next/link';
 
 export default function ProjectsPage() {
@@ -22,7 +23,9 @@ export default function ProjectsPage() {
     }
   }, [error, addError]);
 
-  const activeProjects = projects?.filter((p) => p.status !== 'archived') ?? [];
+  // §3.3 has no 'archived' status; active means "not in a terminal state".
+  const TERMINAL: CanonicalStatus[] = ['completed', 'failed', 'cancelled'];
+  const activeProjects = projects?.filter((p) => !TERMINAL.includes(p.status)) ?? [];
   const completedCount = projects?.filter((p) => p.status === 'completed').length ?? 0;
 
   const pageAnswers: SixAnswer = {
@@ -39,10 +42,6 @@ export default function ProjectsPage() {
       projects && projects.length > 0
         ? 'Select a project to view work items or create a new one'
         : 'Create your first project to begin autonomous work',
-    evidence: {
-      link: '/history',
-      label: 'View project history and events',
-    },
   };
 
   return (

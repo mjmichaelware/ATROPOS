@@ -57,7 +57,6 @@ export default function FilesPage({ params }: { params: { id: string } }) {
       stage: files && files.length > 0 ? 'Active' : 'Idle',
     },
     nextAction: 'Upload or create your first project file.',
-    evidence: { link: '/history', label: 'View file change history' },
   };
 
   return (

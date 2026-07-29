@@ -12,10 +12,6 @@ export default function DevToolsPage() {
       'Developer Tools expose advanced systems without polluting primary navigation. For system inspection and debugging only.',
     progress: { percent: 100, stage: 'Ready' },
     nextAction: 'Select a project to inspect its runtime state, or review system-level metrics.',
-    evidence: {
-      link: '#',
-      label: 'View developer documentation',
-    },
   };
 
   return (
