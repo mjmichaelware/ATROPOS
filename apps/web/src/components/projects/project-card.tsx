@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { projectRoute } from "@/components/navigation/routes";
+import { specGraphProjectRoute } from "@/components/navigation/routes";
 import type { Project } from "@/lib/projects/schemas";
 
 export function ProjectCard({ project }: { project: Project }) {
   const created = project.created_at ? new Date(project.created_at).toLocaleDateString() : "Unknown date";
   return (
-    <Link className="sg-project-card sg-pressable" href={projectRoute(project.id)}>
+    <Link className="sg-project-card sg-pressable" href={specGraphProjectRoute(project.id)}>
       <span className="sg-project-card-icon" aria-hidden="true">
         <svg viewBox="0 0 32 32" width="20" height="20" fill="none">
           <line x1="16" y1="7" x2="8" y2="23" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />

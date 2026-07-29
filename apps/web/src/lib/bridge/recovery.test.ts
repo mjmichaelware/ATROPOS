@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseContinuity } from '@/app/api/atropos/recovery/route';
+import { parseContinuity } from '@/lib/bridge/continuity';
 
 /**
  * The fixtures below are the two strings

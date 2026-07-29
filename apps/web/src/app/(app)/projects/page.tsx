@@ -5,6 +5,7 @@ import { Plus, Folder } from 'lucide-react';
 import { SixAnswersPanel, SixAnswer } from '@/components/ui/six-answers-panel';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { WhyHowEvidence } from '@/components/ui/why-how-evidence';
+import { globalRoutes } from '@/components/navigation/routes';
 import { useProjects } from '@/lib/api-atropos/hooks';
 import { useAppContext } from '@/lib/contexts/app-context';
 import type { CanonicalStatus } from '@/lib/status-system';
@@ -55,16 +56,13 @@ export default function ProjectsPage() {
         <SixAnswersPanel answers={pageAnswers} compact={false} />
       </section>
 
-      {/* Create Project Button */}
-      <div className="flex gap-3">
-        <Link
-          href="/projects/new"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-sg-red-600 text-white rounded-lg hover:bg-sg-red-700 transition-colors font-semibold"
-        >
-          <Plus className="w-5 h-5" />
-          Create Project
-        </Link>
-      </div>
+      {/* Creation is not offered: there is no ATROPOS project store behind
+          this surface, and a button that cannot do what it says is the same
+          defect as a dead evidence link. */}
+      <p className="flex items-center gap-2 text-sm text-sg-neutral-600 dark:text-sg-neutral-400">
+        <Plus className="h-4 w-4" aria-hidden="true" />
+        Project creation is not available from this surface yet.
+      </p>
 
       {/* Projects Grid */}
       {loading ? (
@@ -81,11 +79,12 @@ export default function ProjectsPage() {
             Create your first project to start autonomous work
           </p>
           <Link
-            href="/projects/new"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-sg-red-600 text-white rounded-lg hover:bg-sg-red-700 transition-colors"
+            href={globalRoutes.projects}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sg-neutral-600 dark:text-sg-neutral-400"
+            aria-disabled="true"
           >
             <Plus className="w-4 h-4" />
-            Create First Project
+            Project creation is not available from this surface yet
           </Link>
         </div>
       ) : (

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, use } from 'react';
 import { ProjectHeader } from '@/components/project/project-header';
 import { SixAnswersPanel, SixAnswer } from '@/components/ui/six-answers-panel';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -9,9 +9,10 @@ import { useProject, useAgents } from '@/lib/api-atropos/hooks';
 import { useAppContext } from '@/lib/contexts/app-context';
 import { Users, Plus } from 'lucide-react';
 
-export default function AgentsPage({ params }: { params: { id: string } }) {
-  const { data: project, loading: projectLoading, error: projectError } = useProject(params.id);
-  const { data: agents, loading: agentsLoading, error: agentsError } = useAgents(params.id);
+export default function AgentsPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id: projectId } = use(params);
+  const { data: project, loading: projectLoading, error: projectError } = useProject(projectId);
+  const { data: agents, loading: agentsLoading, error: agentsError } = useAgents(projectId);
   const { addError } = useAppContext();
 
   useEffect(() => {
@@ -61,8 +62,8 @@ export default function AgentsPage({ params }: { params: { id: string } }) {
   return (
     <div className="space-y-8">
       <ProjectHeader
-        projectName={`Project ${params.id}`}
-        projectId={params.id}
+        projectName={`Project ${projectId}`}
+        projectId={projectId}
         status="planning"
         answers={projectAnswers}
         trustIndicators={{

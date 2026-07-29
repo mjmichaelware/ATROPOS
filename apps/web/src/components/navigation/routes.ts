@@ -10,12 +10,14 @@ import type { Route } from "next";
 export const globalRoutes = {
   home: "/" as Route,
   projects: "/projects" as Route,
-  newProject: "/projects/new" as Route,
+  /** SpecGraph's project create form, which moved with its directory. */
+  newProject: "/developer/specgraph/new" as Route,
   models: "/models" as Route,
   automation: "/automation" as Route,
   history: "/history" as Route,
   settings: "/settings" as Route,
-  devTools: "/dev-tools" as Route,
+  devTools: "/developer" as Route,
+  specGraph: "/developer/specgraph" as Route,
   signIn: "/auth/sign-in" as Route,
 };
 
@@ -51,36 +53,47 @@ export function projectRoute(projectId: string): Route {
   return `/projects/${projectId}` as Route;
 }
 
+/**
+ * SpecGraph workspaces live under Developer Tools.
+ *
+ * They previously occupied `/projects/[projectId]/...`, which collided with
+ * the ATROPOS `/projects/[id]/...` tree: two route groups claimed the same
+ * path with different slug names, which Next refuses to build.
+ */
+export function specGraphProjectRoute(projectId: string): Route {
+  return `/developer/specgraph/${projectId}` as Route;
+}
+
 export function projectSourcesRoute(projectId: string): Route {
-  return `/projects/${projectId}/sources` as Route;
+  return `${specGraphProjectRoute(projectId)}/sources` as Route;
 }
 
 export function projectDocumentRoute(projectId: string, documentId: string): Route {
-  return `/projects/${projectId}/sources/${documentId}` as Route;
+  return `${specGraphProjectRoute(projectId)}/sources/${documentId}` as Route;
 }
 
 export function projectResearchRoute(projectId: string): Route {
-  return `/projects/${projectId}/research` as Route;
+  return `${specGraphProjectRoute(projectId)}/research` as Route;
 }
 
 export function projectTaskRoute(projectId: string, taskId: string): Route {
-  return `/projects/${projectId}/research/tasks/${taskId}` as Route;
+  return `${specGraphProjectRoute(projectId)}/research/tasks/${taskId}` as Route;
 }
 
 export function projectGraphRoute(projectId: string): Route {
-  return `/projects/${projectId}/graph` as Route;
+  return `${specGraphProjectRoute(projectId)}/graph` as Route;
 }
 
 export function projectHandoffRoute(projectId: string): Route {
-  return `/projects/${projectId}/handoff` as Route;
+  return `${specGraphProjectRoute(projectId)}/handoff` as Route;
 }
 
 export function projectExecutionRoute(projectId: string, runId: string): Route {
-  return `/projects/${projectId}/executions/${runId}` as Route;
+  return `${specGraphProjectRoute(projectId)}/executions/${runId}` as Route;
 }
 
 export function projectRoutingRoute(projectId: string): Route {
-  return `/projects/${projectId}/routing` as Route;
+  return `${specGraphProjectRoute(projectId)}/routing` as Route;
 }
 
 export function projectWorkRoute(projectId: string): Route {
@@ -127,8 +140,8 @@ export const specGraphSections: ProjectSection[] = [
     id: "overview",
     label: "Overview",
     accent: "neutral",
-    build: projectRoute,
-    matches: (pathname, projectId) => pathname === projectRoute(projectId),
+    build: specGraphProjectRoute,
+    matches: (pathname, projectId) => pathname === specGraphProjectRoute(projectId),
   },
   {
     id: "sources",
@@ -159,7 +172,7 @@ export const specGraphSections: ProjectSection[] = [
     // Execution-run detail pages are reached from the Handoff workspace's
     // Runs tab (there is no standalone `/executions` index route), so they
     // count as part of the Handoff section for active-state purposes.
-    matches: (pathname, projectId) => startsWithSegment(pathname, projectHandoffRoute(projectId)) || startsWithSegment(pathname, `/projects/${projectId}/executions`),
+    matches: (pathname, projectId) => startsWithSegment(pathname, projectHandoffRoute(projectId)) || startsWithSegment(pathname, `${specGraphProjectRoute(projectId)}/executions`),
   },
   {
     id: "routing",
@@ -212,7 +225,7 @@ export function activeProjectSection(pathname: string, projectId: string): Proje
 
 export function isActiveGlobalRoute(pathname: string, route: Route): boolean {
   if (route === globalRoutes.projects) {
-    return pathname === globalRoutes.projects || (pathname.startsWith("/projects/") && !pathname.startsWith(globalRoutes.newProject));
+    return pathname === globalRoutes.projects || pathname.startsWith("/projects/");
   }
   return pathname === route;
 }

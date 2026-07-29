@@ -149,6 +149,18 @@ export function SessionStateProvider({ children }: { children: React.ReactNode }
   );
 }
 
+/**
+ * Session state when a provider is present, `undefined` otherwise.
+ *
+ * Navigation needs one preference (whether Developer Tools are revealed) and
+ * must still render without a provider — in isolation, in tests, and on any
+ * surface mounted outside the app tree. Those callers take the safe default
+ * rather than crashing the chrome.
+ */
+export function useOptionalSessionState() {
+  return useContext(SessionStateContext);
+}
+
 export function useSessionState() {
   const context = useContext(SessionStateContext);
   if (!context) {

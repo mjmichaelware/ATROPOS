@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, use } from 'react';
 import { ProjectHeader } from '@/components/project/project-header';
 import { SixAnswersPanel, SixAnswer } from '@/components/ui/six-answers-panel';
 import { WorkItemCard } from '@/components/atropos/work-item-card';
@@ -10,9 +10,10 @@ import { useProject, useWorkItems } from '@/lib/api-atropos/hooks';
 import { useAppContext } from '@/lib/contexts/app-context';
 import { Plus, Filter } from 'lucide-react';
 
-export default function WorkPage({ params }: { params: { id: string } }) {
-  const { data: project, loading: projectLoading, error: projectError } = useProject(params.id);
-  const { data: workItems, loading: itemsLoading, error: itemsError } = useWorkItems(params.id);
+export default function WorkPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id: projectId } = use(params);
+  const { data: project, loading: projectLoading, error: projectError } = useProject(projectId);
+  const { data: workItems, loading: itemsLoading, error: itemsError } = useWorkItems(projectId);
   const { addError } = useAppContext();
 
   useEffect(() => {
@@ -93,7 +94,7 @@ export default function WorkPage({ params }: { params: { id: string } }) {
       {/* Project Header */}
       <ProjectHeader
         projectName={project?.name ?? 'Unknown project'}
-        projectId={params.id}
+        projectId={projectId}
         status={project?.status ?? 'idle'}
         answers={projectAnswers}
         trustIndicators={trustIndicators}

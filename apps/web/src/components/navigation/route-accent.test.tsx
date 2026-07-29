@@ -12,7 +12,7 @@ afterEach(() => {
 describe("RouteAccent", () => {
   it("tags the root element with the active project section's accent", async () => {
     const { RouteAccent } = await import("./route-accent");
-    mockUsePathname.mockReturnValue("/projects/proj-1/sources");
+    mockUsePathname.mockReturnValue("/developer/specgraph/proj-1/sources");
     render(<RouteAccent />);
     expect(document.documentElement.dataset.accent).toBe("sources");
   });
@@ -26,7 +26,7 @@ describe("RouteAccent", () => {
 
   it("reflects the routing section's accent on the routing route", async () => {
     const { RouteAccent } = await import("./route-accent");
-    mockUsePathname.mockReturnValue("/projects/proj-1/routing");
+    mockUsePathname.mockReturnValue("/developer/specgraph/proj-1/routing");
     render(<RouteAccent />);
     expect(document.documentElement.dataset.accent).toBe("routing");
   });
