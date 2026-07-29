@@ -7,8 +7,10 @@ import { ThemeCustomizer } from '@/components/settings/theme-customizer';
 import { useSessionState } from '@/lib/contexts/session-state-context';
 
 export default function SettingsPage() {
-  const [infoLevel, setInfoLevel] = useState<InformationLevel>(2);
-  const { session, setDeveloperTools } = useSessionState();
+  const { session, setDeveloperTools, setInformationLevel } = useSessionState();
+  // The picker drives the real, persisted level rather than local state that
+  // nothing consumed.
+  const infoLevel = session.informationLevel as InformationLevel;
 
   const settingsAnswers: SixAnswer = {
     objective: 'Configure ATROPOS behavior, appearance, privacy, and advanced preferences.',
@@ -50,7 +52,7 @@ export default function SettingsPage() {
         </div>
         <InformationLevels
           currentLevel={infoLevel}
-          onLevelChange={setInfoLevel}
+          onLevelChange={setInformationLevel}
           compact={false}
         />
       </section>
