@@ -39,6 +39,7 @@ class VerifiedCompletionGate(
     private val continuationService: GoalContinuationService = GoalContinuationService(repoRoot),
     private val worktreeService: IsolatedWorktreeService = IsolatedWorktreeService(repoRoot),
     private val memoryStore: LocalMemoryStore = LocalMemoryStore(repoRoot.resolve(".atropos/memory").toFile()),
+    private val compileGate: GovernedCompileGate = GovernedCompileGate(repoRoot),
     /**
      * A fresh auditor per evaluation. [atropos.core.auditor.AuditorService]
      * accumulates findings in mutable state, so a shared instance would let one
@@ -178,18 +179,16 @@ class VerifiedCompletionGate(
         }
     }
 
+    /**
+     * Delegates to the single governed compile owner.
+     *
+     * This used to run its own raw `./gradlew compileKotlin`: an ungoverned tool
+     * call that no policy could refuse and no evidence recorded. The gate keeps
+     * its verdict; the process no longer belongs to it.
+     */
     private fun checkCompileGate(node: DagNode): GateResult {
-        val result = runCatching {
-            val proc = ProcessBuilder("./gradlew", "compileKotlin")
-                .directory(repoRoot.toFile())
-                .redirectErrorStream(true)
-                .start()
-            val output = proc.inputStream.bufferedReader().readText()
-            val exitCode = proc.waitFor()
-            Pair(exitCode == 0, output.take(200))
-        }.getOrNull() ?: Pair(false, "compile command failed to start")
-        return GateResult(node.id, result.first, "Compile Gate",
-            if (result.first) "compilation succeeded" else "compile failed: ${result.second}", clock())
+        val result = compileGate.verify(node.id)
+        return GateResult(node.id, result.passed, "Compile Gate", result.message.take(240), clock())
     }
 
     private fun checkTerritoryAndSecrets(node: DagNode): GateResult {

@@ -397,7 +397,11 @@ class SelfHostGoalService(
         if (!selected.ok) return selected
         val record = selected.goal?.record
             ?: return SelfHostResult(false, "no resumable self-host goal selected")
-        return advanceGoal(record.id, compactState, suppliedEnvelope ?: contextEnvelopeForCurrentNode(record.id))
+        // Do not build the envelope here. [advanceGoal] selects the next ready
+        // node first and then attests it; an envelope captured now describes the
+        // node that just finished, and preflight correctly refuses it as a
+        // mismatch. Only an explicitly supplied envelope is passed through.
+        return advanceGoal(record.id, compactState, suppliedEnvelope)
     }
 
     fun planNextAction(goalId: String? = null): SelfHostNextAction {
@@ -461,7 +465,9 @@ class SelfHostGoalService(
             planNextAction(record.id).evidenceLine()
         )
         store.update(record.copy(evidence = record.evidence + evidence))
-        return advanceNextResumableGoal(record.id, compactState, contextEnvelopeForCurrentNode(record.id))
+        // Same reason as above: the envelope must be built after node selection,
+        // not from the pre-recovery current node.
+        return advanceNextResumableGoal(record.id, compactState)
     }
 
     fun exportEvidenceBundle(goalId: String): SelfHostEvidenceBundleResult {
@@ -476,7 +482,9 @@ class SelfHostGoalService(
         SelfHostAutonomousRunner(
             service = this,
             jarLocator = SelfHostRuntimeJarLocator(repoRoot),
-            jarBuilder = SelfHostCandidateJarBuilder(repoRoot)
+            jarBuilder = SelfHostCandidateJarBuilder(repoRoot),
+            compileGate = atropos.core.verification.GovernedCompileGate(repoRoot),
+            proofBuilder = SelfHostRunProofBuilder(repoRoot)
         ).run(prompt, phase)
 
     fun history(limit: Int = 20): List<GoalRunRecord> =

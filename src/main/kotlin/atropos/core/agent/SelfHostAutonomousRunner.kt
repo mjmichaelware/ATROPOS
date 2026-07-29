@@ -1,11 +1,45 @@
 package atropos.core.agent
 
+import atropos.core.verification.GovernedCompileGate
+import atropos.core.verification.GovernedCompileGateResult
+
 class SelfHostAutonomousRunner(
     private val service: SelfHostGoalService,
     private val jarLocator: SelfHostRuntimeJarLocator,
-    private val jarBuilder: SelfHostCandidateJarBuilder? = null
+    private val jarBuilder: SelfHostCandidateJarBuilder? = null,
+    /**
+     * The compile gate between "source was mutated" and "a jar may be promoted".
+     * Null leaves [SelfHostRunPredicate.COMPILE_GATE_PASSED] unmet, so a caller
+     * that omits it can never reach a VERIFIED proof.
+     */
+    private val compileGate: GovernedCompileGate? = null,
+    private val proofBuilder: SelfHostRunProofBuilder? = null
 ) {
-    fun run(prompt: String, phase: String = "11", maxAdvances: Int = 25): SelfHostAutonomousRunResult {
+    /**
+     * Runs the chain, then attaches the operator-facing proof.
+     *
+     * The proof is built after the chain settles so that every exit — refusal,
+     * compile failure, stop-before-promotion, or promotion — carries the same
+     * evidence about what is actually on disk.
+     */
+    fun run(prompt: String, phase: String = "11", maxAdvances: Int = 25): SelfHostAutonomousRunResult =
+        attachProof(runChain(prompt, phase, maxAdvances))
+
+    private fun attachProof(result: SelfHostAutonomousRunResult): SelfHostAutonomousRunResult {
+        val builder = proofBuilder ?: return result
+        val goalId = result.goal?.record?.id ?: return result
+        val proof = builder.build(
+            goalId = goalId,
+            dag = result.goal.dag,
+            compileGate = result.compileGate,
+            evidenceMarkdownPath = result.evidenceBundle?.markdownPath?.toString(),
+            evidenceJsonPath = result.evidenceBundle?.jsonPath?.toString()
+        )
+        service.addEvidence(goalId, proof.evidenceLine())
+        return result.copy(proof = proof)
+    }
+
+    private fun runChain(prompt: String, phase: String, maxAdvances: Int): SelfHostAutonomousRunResult {
         val steps = mutableListOf<String>()
         val started = service.startGoal(prompt, phase)
         steps += started.message
@@ -44,6 +78,33 @@ class SelfHostAutonomousRunner(
             )
         }
 
+        // The compile gate sits between a real source mutation and any jar
+        // promotion. A nonzero exit stops the chain here: nothing downstream may
+        // treat an uncompilable tree as verified.
+        var compileResult: GovernedCompileGateResult? = null
+        compileGate?.let { gate ->
+            val compiled = gate.verify(goalId)
+            compileResult = compiled
+            service.addEvidence(goalId, compiled.evidenceLine())
+            steps += "compile gate: passed=${compiled.passed} exit=${compiled.exitCode ?: "none"} command=${compiled.commandLine()}"
+            if (!compiled.passed) {
+                val stopped = service.stopForExternalInput(goalId, compiled.message)
+                service.addEvidence(goalId, service.planNextAction(goalId).evidenceLine())
+                val bundle = service.exportEvidenceBundle(goalId)
+                steps += stopped.message
+                steps += bundle.message
+                return SelfHostAutonomousRunResult(
+                    ok = false,
+                    message = "self-host mutated source but the compile gate refused promotion: ${compiled.message}",
+                    goal = service.resolveStatusGoal(goalId).goal ?: stopped.goal,
+                    promotion = null,
+                    evidenceBundle = bundle,
+                    steps = steps,
+                    compileGate = compiled
+                )
+            }
+        }
+
         var builtCandidateJar: java.nio.file.Path? = null
         jarBuilder?.let { builder ->
             val built = builder.build(goalId)
@@ -61,7 +122,8 @@ class SelfHostAutonomousRunner(
                     goal = service.resolveStatusGoal(goalId).goal ?: stopped.goal,
                     promotion = null,
                     evidenceBundle = bundle,
-                    steps = steps
+                    steps = steps,
+                    compileGate = compileResult
                 )
             }
             builtCandidateJar = built.candidateJar
@@ -83,7 +145,8 @@ class SelfHostAutonomousRunner(
                 goal = refreshed,
                 promotion = null,
                 evidenceBundle = bundle,
-                steps = steps
+                steps = steps,
+                compileGate = compileResult
             )
         }
         val paths = jarPaths.paths ?: run {
@@ -95,7 +158,8 @@ class SelfHostAutonomousRunner(
                 goal = stopped.goal ?: service.resolveStatusGoal(goalId).goal,
                 promotion = null,
                 evidenceBundle = bundle,
-                steps = steps + stopped.message + bundle.message
+                steps = steps + stopped.message + bundle.message,
+                compileGate = compileResult
             )
         }
         val candidateJar = builtCandidateJar ?: paths.candidateJar
@@ -111,7 +175,8 @@ class SelfHostAutonomousRunner(
                 goal = stopped.goal ?: service.resolveStatusGoal(goalId).goal,
                 promotion = null,
                 evidenceBundle = prePromotionBundle,
-                steps = steps
+                steps = steps,
+                compileGate = compileResult
             )
         }
         val promotion = service.promoteVerifiedJar(
@@ -136,7 +201,8 @@ class SelfHostAutonomousRunner(
             goal = refreshed ?: stopped?.goal ?: promotion.goal,
             promotion = promotion,
             evidenceBundle = bundle,
-            steps = steps
+            steps = steps,
+            compileGate = compileResult
         )
     }
 

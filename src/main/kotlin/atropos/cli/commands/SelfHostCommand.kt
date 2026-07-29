@@ -19,7 +19,8 @@ class SelfHostCommand(
     private val selfHostRunner: (String) -> SelfHostAutonomousRunResult = { prompt -> selfHostService.runNaturalLanguageSelfBuild(prompt) },
     private val dagService: DagExecutionService = DagExecutionService(config, repoRoot),
     private val journal: EventJournalService = EventJournalService(repoRoot),
-    private val completionGate: VerifiedCompletionGate = VerifiedCompletionGate(config, repoRoot)
+    private val completionGate: VerifiedCompletionGate = VerifiedCompletionGate(config, repoRoot),
+    private val proofRenderer: SelfHostRunProofRenderer = SelfHostRunProofRenderer()
 ) : AgentCommandHandler {
 
     override fun execute(tokens: List<String>): AgentCommandOutcome {
@@ -245,6 +246,9 @@ class SelfHostCommand(
                     appendLine("evidence markdown: ${it.markdownPath ?: "none"}")
                     appendLine("evidence json: ${it.jsonPath ?: "none"}")
                 }
+                // The Phase 11 acceptance chain, printed where the operator typed
+                // the prompt: mutated paths, git status, compile gate exit.
+                result.proof?.let { appendLine(proofRenderer.render(it)) }
                 appendLine("steps:")
                 result.steps.forEach { appendLine("  - $it") }
             }.trimEnd()

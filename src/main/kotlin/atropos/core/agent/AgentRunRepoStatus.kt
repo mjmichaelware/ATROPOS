@@ -5,6 +5,11 @@ import java.nio.file.Path
 class AgentRunRepoStatus(
     private val repoRoot: Path
 ) {
+    /** One porcelain row: the two-character status code and the path it names. */
+    data class RepoStatusLine(val code: String, val path: String) {
+        fun render(): String = "$code $path"
+    }
+
     fun changedFilesSince(baseline: Set<String>): List<String> {
         val current = capture()
         return (current - baseline)
@@ -12,7 +17,16 @@ class AgentRunRepoStatus(
             .sorted()
     }
 
-    fun capture(): Set<String> {
+    fun capture(): Set<String> = statusLines().map { it.path }.toSet()
+
+    /**
+     * The porcelain rows with their status codes preserved.
+     *
+     * [capture] discards the codes because it only answers "which paths moved".
+     * A mutation proof has to show the operator the same `git status` evidence a
+     * human would read, so the code has to survive.
+     */
+    fun statusLines(): List<RepoStatusLine> {
         val process = ProcessBuilder("git", "status", "--porcelain", "--untracked-files=all")
             .directory(repoRoot.toFile())
             .redirectErrorStream(true)
@@ -20,8 +34,11 @@ class AgentRunRepoStatus(
         val output = process.inputStream.bufferedReader().readText().trimEnd()
         process.waitFor()
         return output.lineSequence()
-            .mapNotNull { parsePorcelainPath(it) }
-            .toSet()
+            .mapNotNull { line ->
+                val path = parsePorcelainPath(line) ?: return@mapNotNull null
+                RepoStatusLine(code = line.take(2).trim(), path = path)
+            }
+            .toList()
     }
 
     private fun parsePorcelainPath(line: String): String? {

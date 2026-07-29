@@ -33,6 +33,11 @@ Scope: Phase 11 self-host backend, provider context binding, recovery, proof scr
 | Advance completion | `SelfHostGoalService.advanceGoal` | `src/main/kotlin/atropos/core/agent/SelfHostGoalService.kt:347`-`389` | Selects/evaluates one ready node and completes verified DAG | Failed or blocked nodes complete the goal as terminal failure at `376`-`381` |
 | Autonomous NL runner | `SelfHostGoalService.runNaturalLanguageSelfBuild` | `src/main/kotlin/atropos/core/agent/SelfHostGoalService.kt:472`-`480` | Instantiates `SelfHostAutonomousRunner` with jar locator and builder | No direct success path; delegates all control to runner |
 | Autonomous loop | `SelfHostAutonomousRunner.run` | `src/main/kotlin/atropos/core/agent/SelfHostAutonomousRunner.kt:8`-`45` | Starts goal, advances ready nodes, exports evidence if not verified | Non-verified terminal state stops before promotion and exports bundle at `32`-`44` |
+| Governed compile gate between mutation and promotion | `GovernedCompileGate.verify` | `src/main/kotlin/atropos/core/verification/GovernedCompileGate.kt:26`-`96` | Runs `./gradlew compileKotlin` through `TypedToolExecutor` + `BoundedAgencyGate`; nonzero exit stops the chain in `SelfHostAutonomousRunner.runChain` before any jar build | Policy refusal, process that never started, missing exit marker, and nonzero exit all return `passed=false` with a null-or-observed exit code; covered by `GovernedCompileGateTest` |
+| Compile gate wired into the run chain | `SelfHostAutonomousRunner.runChain` | `src/main/kotlin/atropos/core/agent/SelfHostAutonomousRunner.kt:88`-`112` | Adds compile evidence, then permits `SelfHostCandidateJarBuilder.build` | Failed gate calls `stopForExternalInput`, exports the bundle, and returns `ok=false` before promotion |
+| Interactive run proof assembly | `SelfHostRunProofBuilder.build` | `src/main/kotlin/atropos/core/agent/SelfHostRunProofBuilder.kt:24`-`85` | Produces `SelfHostRunProof` for `SelfHostAutonomousRunner.attachProof` | Absent output, no declared outputs, invisible-to-git mutation, or missing/failed compile gate each leave a named predicate unmet, so the verdict is `PARTIAL` |
+| Git status codes preserved for proof | `AgentRunRepoStatus.statusLines` | `src/main/kotlin/atropos/core/agent/AgentRunRepoStatus.kt:16`-`45` | Feeds `SelfHostRunProofBuilder` porcelain code + path | Unreadable status yields an empty list, which leaves `GIT_STATUS_VISIBLE` unmet rather than passing |
+| Operator-visible proof rendering | `SelfHostRunProofRenderer.render` | `src/main/kotlin/atropos/cli/commands/SelfHostRunProofRenderer.kt:16`-`54` | Printed by `SelfHostCommand.handleRun` where the operator typed the prompt | Unmet predicates render as `[UNMET]`; a gate that never ran renders as `compile gate: not run` |
 | Policy-bounded candidate JAR build hook | `SelfHostCandidateJarBuilder.build` | `src/main/kotlin/atropos/core/agent/SelfHostCandidateJarBuilder.kt:32`-`74` | Uses `TypedToolExecutor` + `BoundedAgencyGate` and returns candidate jar | Policy refusal, nonzero exit, missing/empty jar all return typed `ok=false` at `43`-`67` |
 | Installed/candidate JAR locator | `SelfHostRuntimeJarLocator.resolve` | `src/main/kotlin/atropos/core/agent/SelfHostRuntimeJarLocator.kt:22`-`42` | Provides `candidateJar` and `targetJar` to promotion | Missing candidate or installed runtime returns typed unavailable at `33`-`40` |
 | Pre-promotion bundle | `SelfHostAutonomousRunner.run` | `src/main/kotlin/atropos/core/agent/SelfHostAutonomousRunner.kt:103`-`116` | Calls `SelfHostGoalService.exportEvidenceBundle` before promotion | Failed bundle export stops before promotion |
@@ -374,3 +379,33 @@ The installed proof sandbox also wrote restart snapshots under:
 Code-level MISSING on the causal chain: none found in A-E, provider source-ingest, focused recovery tests, sandbox proof, or installed-runtime proof.
 
 Phase 11 inside-out self-build PROVEN in sandbox and installed-runtime sandbox via NL prompt + real source mutation; live device install remains operator deployment work.
+
+## Interactive Path Acceptance Predicate (2026-07-29)
+
+The Phase 11 predicate is `NL → mutate → compile gate → git status`, and it must hold *inside* the JAR the operator is running. Three gaps closed this batch:
+
+1. **No compile gate existed in the run chain.** The bootstrap DAG mutated Kotlin sources and went straight to candidate-jar promotion. `GovernedCompileGate` now sits between the two, and a nonzero exit stops the chain before promotion. It is the single governed owner of the compile: `VerifiedCompletionGate.checkCompileGate` delegates to it instead of running its own raw `ProcessBuilder("./gradlew", "compileKotlin")`, which no policy could refuse and no evidence recorded.
+2. **The predicate was not visible where the prompt was typed.** `SelfHostRunProof` carries the mutated paths with sha256, the porcelain `git status` rows, the compile exit code, and the named predicate set; `SelfHostCommand.handleRun` prints it. `PARTIAL` with an explicit `[UNMET]` list is the honest outcome whenever a predicate does not hold.
+3. **`/agent self-host resume` failed on its second advance.** `advanceNextResumableGoal` and `recoverAndContinue` built the context envelope *before* `advanceGoal` selected the next ready node, so `SelfHostContextPreflight` correctly refused an envelope naming the node that had just completed. Both now let `advanceGoal` build the envelope after selection. This failure reproduced on `aea5a96` before any change in this batch.
+
+Proof command:
+
+```bash
+./gradlew jar
+scripts/selfhost-installed-proof.sh build/libs/ATROPOS.jar
+```
+
+Result: `ATROPOS_SELFHOST_INSTALLED_PROOF_OK` (exit 0), with five assertions added to the script that did not exist before. The JAR's own stdout must contain `compile gate: passed=true exit=0`, `verdict: VERIFIED`, zero `[UNMET]` predicates, a `git status:` section, and the mutated marker proven present with a hash. Recorded values:
+
+| Field | Value |
+| --- | --- |
+| Compile gate | `compile gate: passed=true exit=0 command=./gradlew compileKotlin` |
+| Run proof verdict | `verdict: VERIFIED` |
+| Marker sha256 | `fba38072b69e15652493ca9a29bb056b4c06fdfd9e61136dfe4b3749c24e7fdb` |
+| Mutation status | `?? src/main/kotlin/atropos/core/agent/SelfHostCradleRuntimeState.kt \| ?? src/test/kotlin/atropos/core/agent/SelfHostCradleRuntimeStateTest.kt` |
+| Evidence Markdown sha256 | `d8c4a112d8bbdeb5f3bca84148a213b5e619eb7175bb346d32a82ef464397b6f` |
+| Evidence JSON sha256 | `a0cc0f28589fac4e89f261ed992c4df1050aedb0fe2cb6df0eb28f7c2b142409` |
+
+Focused verification: 117 tests across `atropos.core.agent.SelfHost*`, `atropos.cli.commands.SelfHost*`, `atropos.core.verification.*`, `atropos.core.policy.*`, and `SelfHostInsideOutSandboxProofTest`, 0 failures; 16 of them new for the compile gate, proof builder, and renderer. `./gradlew compileKotlin` exits 0.
+
+Scope limit stated honestly: the sandbox proof runs against the sandbox's stub `gradlew`, so the compile-gate *wiring* is what the sandbox proves; the real `./gradlew compileKotlin` zero exit was verified in this repository. Phase 11 is not 100% — batch planning breadth and repair-loop coverage were not touched by this batch, and live device install remains operator deployment work.
