@@ -3,15 +3,16 @@ import { SessionTabBar } from '@/components/layout/session-tab-bar';
 
 interface ProjectLayoutProps {
   children: ReactNode;
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
-export default function ProjectLayout({ children, params }: ProjectLayoutProps) {
+export default async function ProjectLayout({ children, params }: ProjectLayoutProps) {
+  const { id } = await params;
   return (
     <div className="project-layout">
-      <SessionTabBar projectId={params.id} />
+      <SessionTabBar projectId={id} />
       <div className="project-content">
         {children}
       </div>
