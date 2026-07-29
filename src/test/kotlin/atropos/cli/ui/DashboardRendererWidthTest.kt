@@ -42,6 +42,16 @@ class DashboardRendererWidthTest {
                 ),
                 evidence = DashboardRenderer.Answer("7 linked · .atropos/agent/queue", Health.VERIFIED)
             ),
+            projects = (1..9).map { index ->
+                DashboardRenderer.ProjectSummary(
+                    id = "project-%012d".format(index),
+                    name = "a deliberately long project name that must be clipped $index",
+                    status = RunState.RUNNING,
+                    statusLabel = "working",
+                    objective = "a long objective that should never push the row past the right edge",
+                    completionIsVerifiable = false
+                )
+            },
             runningWork = (1..12).map { index ->
                 DashboardRenderer.WorkItem(
                     id = "queue-20260729-121314-%03d".format(index),
@@ -93,6 +103,16 @@ class DashboardRendererWidthTest {
                 )
             }
         }
+    }
+
+    @Test
+    fun an_unreadable_project_registry_is_reported_not_hidden() {
+        val unreadable = crowdedState().copy(projects = emptyList(), projectsReadable = false)
+        val plain = renderer().render(unreadable, 80).map { TerminalText.stripAnsi(it) }
+
+        // An empty section would read as "no projects", which is a different
+        // fact from "the registry could not be read".
+        assertTrue(plain.any { it.contains("unreadable") }, "$plain")
     }
 
     @Test

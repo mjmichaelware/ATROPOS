@@ -26,6 +26,7 @@ class HomeStateProviderTest {
             repoRoot = repoRoot,
             queueStore = AgentQueueStore(repoRoot),
             queueEntriesDir = repoRoot.resolve(".atropos/agent/queue").resolve("entries"),
+            projectRegistry = atropos.core.project.ProjectRegistry(repoRoot),
             // The git probe shells out and is bounded by a timeout; the six
             // answers must not depend on it.
             workspaceInspector = WorkspaceInspector { RepositoryState.unknown() },
@@ -138,5 +139,54 @@ class HomeStateProviderTest {
             objective.contains("SUPERSECRETVALUE"),
             "§13: secrets never appear in ordinary views, got: $objective"
         )
+    }
+
+    // ---- CLI-010: the project section on Home -------------------------------
+
+    @Test
+    fun a_stated_project_objective_outranks_the_queue_task() {
+        val repoRoot = Files.createTempDirectory("atropos-home-project-objective-")
+        val registry = atropos.core.project.ProjectRegistry(repoRoot)
+        registry.register(name = "cascade", objective = "retire the legacy router")
+
+        // A running queue entry exists too; §3.2 puts the objective first.
+        val store = AgentQueueStore(repoRoot)
+        val entry = store.createEntry(task = "apply patch 3 of 9", smokeCommand = null)
+        store.update(entry.copy(state = AgentQueueState.RUNNING))
+
+        val state = provider(repoRoot).capture(activeProvider = "groq")
+
+        assertEquals("retire the legacy router", state.answers.objective.value)
+        assertEquals(1, state.projects.size)
+        assertTrue(state.projectsReadable)
+    }
+
+    @Test
+    fun a_finished_project_is_not_offered_as_the_current_objective() {
+        val repoRoot = Files.createTempDirectory("atropos-home-project-terminal-")
+        val registry = atropos.core.project.ProjectRegistry(repoRoot)
+        val project = registry.register(name = "done", objective = "already achieved").record
+        registry.setStatus(project, atropos.core.project.ProjectStatus.COMPLETED)
+
+        val state = provider(repoRoot).capture(activeProvider = "groq")
+
+        // The objective was stated, but it is not what the operator is
+        // currently trying to accomplish.
+        assertTrue(state.answers.objective.value.startsWith("no active project"), state.answers.objective.value)
+        assertEquals(1, state.projects.size)
+    }
+
+    @Test
+    fun a_completion_without_evidence_is_carried_to_the_cockpit() {
+        val repoRoot = Files.createTempDirectory("atropos-home-project-unverified-")
+        val registry = atropos.core.project.ProjectRegistry(repoRoot)
+        val project = registry.register(name = "claims done").record
+        registry.setStatus(project, atropos.core.project.ProjectStatus.COMPLETED)
+
+        val summary = provider(repoRoot).capture(activeProvider = "groq").projects.single()
+
+        // §3.4 travels with the record rather than being re-derived by the view.
+        assertTrue(!summary.completionIsVerifiable)
+        assertEquals("completed", summary.statusLabel)
     }
 }
