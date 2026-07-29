@@ -10,6 +10,7 @@ import {
   projectSections,
 } from '@/components/navigation/routes';
 import { useSessionState } from '@/lib/contexts/session-state-context';
+import { COMMON_SHORTCUTS, useKeyboardShortcuts } from '@/lib/hooks/use-keyboard-shortcuts';
 
 interface CommandItem {
   id: string;
@@ -25,6 +26,18 @@ export function CommandPalette() {
   const router = useRouter();
   const { data: projects } = useProjects();
   const { session } = useSessionState();
+
+  // §5.4: the palette must be reachable from the keyboard anywhere in the app.
+  useKeyboardShortcuts([
+    {
+      ...COMMON_SHORTCUTS.COMMAND_PALETTE,
+      handler: () => {
+        setOpen((prev) => !prev);
+        setSearch('');
+        setSelectedIndex(0);
+      },
+    },
+  ]);
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -128,13 +141,9 @@ export function CommandPalette() {
   // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Cmd+K or Ctrl+K opens palette
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        setOpen((prev) => !prev);
-        setSearch('');
-        setSelectedIndex(0);
-      }
+      // Cmd/Ctrl+K is a global binding and lives in useKeyboardShortcuts. The
+      // keys below are modal-scoped: they only mean anything while the palette
+      // is open, so they stay with the palette.
 
       // Escape closes palette
       if (e.key === 'Escape' && open) {

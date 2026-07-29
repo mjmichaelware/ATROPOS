@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { RouteAccent } from "@/components/navigation/route-accent";
 import { EngineStatusBanner } from "@/components/atropos/engine-status-banner";
+import { RecoveryRibbon } from "@/components/atropos/recovery-ribbon";
 import { AppHeader } from "./app-header";
 import { AppSidebar } from "./app-sidebar";
 import { MobileNavigation } from "./mobile-navigation";
@@ -24,6 +25,7 @@ export function AppShell({ children, userEmail }: { children: ReactNode; userEma
           <AppSidebar />
           <main id="main-content" tabIndex={-1} className="sg-main">
             <EngineStatusBanner />
+            <RecoveryRibbon />
             {children}
           </main>
         </div>
