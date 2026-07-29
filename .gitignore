@@ -45,3 +45,9 @@ apps/specgraph-foundry/**/specgraph.env
 *.secret
 *.secrets
 *.local.env
+
+# Node / web surface build artefacts
+node_modules/
+.next/
+next-env.d.ts
+*.tsbuildinfo

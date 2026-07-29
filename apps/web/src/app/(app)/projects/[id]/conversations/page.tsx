@@ -62,7 +62,6 @@ export default function ConversationsPage({ params }: { params: { id: string } }
     nextAction: conversations && conversations.length > 0
       ? 'Review and search conversations'
       : 'Create your first project conversation.',
-    evidence: { link: '/history', label: 'View conversation evidence' },
   };
 
   return (

@@ -1,6 +1,6 @@
 'use client';
 
-import { Shield, CheckCircle2, AlertCircle, Info } from 'lucide-react';
+import { Shield, CheckCircle2, AlertCircle, Info, HelpCircle } from 'lucide-react';
 
 export interface TrustIndicators {
   /** Authority has been verified */
@@ -70,13 +70,19 @@ export function TrustIndicators({
     },
   ];
 
+  // §4.2 lists three states, not two. An indicator nobody probed is unknown,
+  // and unknown is displayed rather than dropped: a hidden indicator reads as
+  // an absent requirement, which is how a fabricated `true` used to hide here.
   const activeItems = items.filter(
-    (item) => indicators[item.key as keyof TrustIndicators]
+    (item) => indicators[item.key as keyof TrustIndicators] === true
   );
 
   const failedItems = items.filter(
-    (item) =>
-      indicators[item.key as keyof TrustIndicators] === false
+    (item) => indicators[item.key as keyof TrustIndicators] === false
+  );
+
+  const unknownItems = items.filter(
+    (item) => indicators[item.key as keyof TrustIndicators] === undefined
   );
 
   if (compact && activeItems.length === items.length) {
@@ -122,6 +128,18 @@ export function TrustIndicators({
         >
           <AlertCircle className="w-3 h-3" aria-hidden="true" />
           {!compact && <span>{item.label}</span>}
+        </div>
+      ))}
+
+      {/* Unknown (neutral) indicators: not probed, so nothing is claimed. */}
+      {unknownItems.map((item) => (
+        <div
+          key={item.key}
+          className={`inline-flex items-center ${sizeClass} px-2 py-1 rounded-full bg-sg-neutral-100 dark:bg-sg-neutral-800 text-sg-neutral-600 dark:text-sg-neutral-400`}
+          title={`${item.label} - not verified`}
+        >
+          <HelpCircle className="w-3 h-3" aria-hidden="true" />
+          {!compact && <span>{item.label}: unknown</span>}
         </div>
       ))}
     </div>

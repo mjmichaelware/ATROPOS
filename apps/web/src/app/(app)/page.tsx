@@ -48,10 +48,6 @@ export default function Home() {
     nextAction: projects && projects.length > 0
       ? 'Select a project to view work items or create a new one'
       : 'Create your first project to begin work',
-    evidence: {
-      link: '/history',
-      label: 'View system initialization log',
-    },
   };
 
   const trustIndicators = {

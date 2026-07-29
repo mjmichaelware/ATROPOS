@@ -4,6 +4,7 @@ import { useEffect, useMemo } from 'react';
 import { ProjectHeader } from '@/components/project/project-header';
 import { SixAnswersPanel, SixAnswer } from '@/components/ui/six-answers-panel';
 import { StatusBadge } from '@/components/ui/status-badge';
+import type { TrustIndicators } from '@/components/ui/trust-indicators';
 import { ControlVerbs, ControlVerb } from '@/components/ui/control-verbs';
 import { useProject, useWorkItems } from '@/lib/api-atropos/hooks';
 import { useAppContext } from '@/lib/contexts/app-context';
@@ -34,7 +35,7 @@ export default function WorkPage({ params }: { params: { id: string } }) {
     }
   }, [itemsError, addError]);
 
-  const todoItems = workItems?.filter((item) => item.status === 'todo') ?? [];
+  const todoItems = workItems?.filter((item) => item.status === 'idle') ?? [];
   const inProgressItems = workItems?.filter((item) => item.status === 'working') ?? [];
   const doneItems = workItems?.filter((item) => item.status === 'completed') ?? [];
   const completedPercent = workItems
@@ -54,14 +55,16 @@ export default function WorkPage({ params }: { params: { id: string } }) {
     evidence: project?.evidence,
   };
 
-  const trustIndicators = {
-    authorityVerified: true,
-    evidenceVerified: !projectError && !itemsError,
-    verificationComplete: workItems && workItems.length === doneItems.length,
-    policyCompliant: true,
-    checkpointCurrent: true,
-    recoveryAvailable: false,
-    noSilentFailures: !projectError && !itemsError,
+  // §4.2: only indicators this page can actually observe are claimed. The
+  // rest are left undefined and render as "unknown" — asserting authority,
+  // policy or checkpoint state that nothing verified is the exact false green
+  // this surface is meant to expose.
+  const trustIndicators: TrustIndicators = {
+    evidenceVerified: projectError || itemsError ? false : undefined,
+    verificationComplete: workItems
+      ? workItems.length === doneItems.length
+      : undefined,
+    noSilentFailures: projectError || itemsError ? false : undefined,
   };
 
   const workAnswers: SixAnswer = {
@@ -89,9 +92,9 @@ export default function WorkPage({ params }: { params: { id: string } }) {
     <div className="space-y-8">
       {/* Project Header */}
       <ProjectHeader
-        projectName={projectName}
+        projectName={project?.name ?? 'Unknown project'}
         projectId={params.id}
-        status={projectStatus}
+        status={project?.status ?? 'idle'}
         answers={projectAnswers}
         trustIndicators={trustIndicators}
         availableActions={['pause', 'cancel', 'inspect']}

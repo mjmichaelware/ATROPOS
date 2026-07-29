@@ -18,7 +18,18 @@ export function WorkspaceLayout({ children, projectId, activeTab }: WorkspaceLay
 
   return (
     <div className="workspace-layout">
-      <AppHeader onInspectorToggle={() => setInspectorOpen(!inspectorOpen)} />
+      <AppHeader />
+      {/* AppHeader is the shared shell header and owns no inspector state, so
+          the toggle lives with the pane it controls. */}
+      <button
+        type="button"
+        onClick={() => setInspectorOpen(!inspectorOpen)}
+        aria-expanded={inspectorOpen}
+        aria-controls="workspace-inspector"
+        className="self-end px-3 py-1 text-sm text-sg-neutral-600 hover:text-sg-red-600"
+      >
+        {inspectorOpen ? 'Hide inspector' : 'Show inspector'}
+      </button>
 
       {projectId && (
         <SessionTabBar projectId={projectId} activeTab={activeTab} />

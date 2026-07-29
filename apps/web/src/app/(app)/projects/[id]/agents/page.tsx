@@ -56,7 +56,6 @@ export default function AgentsPage({ params }: { params: { id: string } }) {
       stage: agents && agents.length > 0 ? 'Managing agents' : 'Idle',
     },
     nextAction: agents && agents.length > 0 ? 'Monitor agent workload and performance' : 'Assign agents to project tasks.',
-    evidence: { link: '/history', label: 'View agent history and artifacts' },
   };
 
   return (

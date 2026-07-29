@@ -10,7 +10,6 @@ export default function AutomationPage() {
     reasoning: 'Automation dashboard shows recurring execution history, trigger configuration, and checkpoint state.',
     progress: { percent: 0, stage: 'Setup' },
     nextAction: 'Create your first automated workflow.',
-    evidence: { link: '/history', label: 'View automation history' },
   };
 
   const workflowAnswers: SixAnswer = {
