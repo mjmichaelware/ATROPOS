@@ -2,6 +2,7 @@
 
 import { SixAnswersPanel, SixAnswer } from '@/components/ui/six-answers-panel';
 import { AllInspectors } from '@/components/dev-tools/inspectors';
+import { SpecGraphEntry } from '@/components/dev-tools/specgraph-entry';
 import { AlertCircle } from 'lucide-react';
 
 export default function DevToolsPage() {
@@ -48,57 +49,16 @@ export default function DevToolsPage() {
         <AllInspectors />
       </section>
 
-      {/* Documentation Links */}
+      {/* SpecGraph subsystem — §1.3, §12.2: available here, never primary IA. */}
       <section className="space-y-4">
         <h2 className="text-2xl font-semibold text-sg-neutral-900 dark:text-sg-neutral-50">
-          Resources
+          SpecGraph subsystem
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <a
-            href="#"
-            className="block p-4 border border-sg-neutral-200 dark:border-sg-neutral-800 rounded-lg hover:border-sg-red-400 dark:hover:border-sg-red-600 transition-colors"
-          >
-            <h3 className="font-semibold text-sg-neutral-900 dark:text-sg-neutral-50 mb-1">
-              Runtime API Documentation
-            </h3>
-            <p className="text-sm text-sg-neutral-600 dark:text-sg-neutral-400">
-              Learn about ATROPOS runtime internals, DAG execution, and checkpoint semantics
-            </p>
-          </a>
-          <a
-            href="#"
-            className="block p-4 border border-sg-neutral-200 dark:border-sg-neutral-800 rounded-lg hover:border-sg-red-400 dark:hover:border-sg-red-600 transition-colors"
-          >
-            <h3 className="font-semibold text-sg-neutral-900 dark:text-sg-neutral-50 mb-1">
-              SpecGraph Integration
-            </h3>
-            <p className="text-sm text-sg-neutral-600 dark:text-sg-neutral-400">
-              Understand how SpecGraph compiler and DLOI systems interact with ATROPOS
-            </p>
-          </a>
-          <a
-            href="#"
-            className="block p-4 border border-sg-neutral-200 dark:border-sg-neutral-800 rounded-lg hover:border-sg-red-400 dark:hover:border-sg-red-600 transition-colors"
-          >
-            <h3 className="font-semibold text-sg-neutral-900 dark:text-sg-neutral-50 mb-1">
-              Policy and Authority
-            </h3>
-            <p className="text-sm text-sg-neutral-600 dark:text-sg-neutral-400">
-              Deep dive into ATROPOS policy engine, safety boundaries, and source authority
-            </p>
-          </a>
-          <a
-            href="#"
-            className="block p-4 border border-sg-neutral-200 dark:border-sg-neutral-800 rounded-lg hover:border-sg-red-400 dark:hover:border-sg-red-600 transition-colors"
-          >
-            <h3 className="font-semibold text-sg-neutral-900 dark:text-sg-neutral-50 mb-1">
-              Recovery and Checkpoints
-            </h3>
-            <p className="text-sm text-sg-neutral-600 dark:text-sg-neutral-400">
-              Understand checkpoint format, recovery protocols, and state verification
-            </p>
-          </a>
-        </div>
+        <p className="text-sm text-sg-neutral-600 dark:text-sg-neutral-400">
+          Compiler outputs, source authority and dependency graphs. ATROPOS
+          coordinates this subsystem; it is not the application itself.
+        </p>
+        <SpecGraphEntry />
       </section>
     </div>
   );

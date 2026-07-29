@@ -11,7 +11,40 @@ export const globalRoutes = {
   home: "/" as Route,
   projects: "/projects" as Route,
   newProject: "/projects/new" as Route,
+  models: "/models" as Route,
+  automation: "/automation" as Route,
+  history: "/history" as Route,
+  settings: "/settings" as Route,
+  devTools: "/dev-tools" as Route,
   signIn: "/auth/sign-in" as Route,
+};
+
+/**
+ * The §2.0 navigation spine.
+ *
+ * Home, Projects, Models, Automation, History and Settings are first-class.
+ * Developer Tools is carried separately because §2.10 hides it by default.
+ *
+ * These routes already existed as pages but appeared in no navigation, so the
+ * only way to reach them was to type the URL. A page that nothing links to is
+ * not a shipped surface.
+ */
+export type SpineItem = { id: string; label: string; href: Route };
+
+export const navigationSpine: SpineItem[] = [
+  { id: "home", label: "Home", href: globalRoutes.home },
+  { id: "projects", label: "Projects", href: globalRoutes.projects },
+  { id: "models", label: "Models", href: globalRoutes.models },
+  { id: "automation", label: "Automation", href: globalRoutes.automation },
+  { id: "history", label: "History", href: globalRoutes.history },
+  { id: "settings", label: "Settings", href: globalRoutes.settings },
+];
+
+/** §2.10: hidden until the operator asks for it. */
+export const developerToolsItem: SpineItem = {
+  id: "dev-tools",
+  label: "Developer Tools",
+  href: globalRoutes.devTools,
 };
 
 export function projectRoute(projectId: string): Route {
@@ -50,6 +83,22 @@ export function projectRoutingRoute(projectId: string): Route {
   return `/projects/${projectId}/routing` as Route;
 }
 
+export function projectWorkRoute(projectId: string): Route {
+  return `/projects/${projectId}/work` as Route;
+}
+
+export function projectConversationsRoute(projectId: string): Route {
+  return `/projects/${projectId}/conversations` as Route;
+}
+
+export function projectFilesRoute(projectId: string): Route {
+  return `/projects/${projectId}/files` as Route;
+}
+
+export function projectAgentsRoute(projectId: string): Route {
+  return `/projects/${projectId}/agents` as Route;
+}
+
 export type SectionAccent = "neutral" | "sources" | "research" | "planning" | "handoff" | "execution" | "routing";
 
 export type ProjectSection = {
@@ -65,7 +114,15 @@ function startsWithSegment(pathname: string, base: string): boolean {
   return pathname === base || pathname.startsWith(`${base}/`);
 }
 
-export const projectSections: ProjectSection[] = [
+/**
+ * SpecGraph's own workspaces.
+ *
+ * §1.3 and §12.2: SpecGraph is an engine inside ATROPOS, not the application
+ * identity. These sections used to *be* the project navigation, which made a
+ * compiler subsystem the primary information architecture. They are retained
+ * in full and reached through Developer Tools instead.
+ */
+export const specGraphSections: ProjectSection[] = [
   {
     id: "overview",
     label: "Overview",
@@ -113,8 +170,44 @@ export const projectSections: ProjectSection[] = [
   },
 ];
 
+/**
+ * The §2.2–2.6 project spine: what a human directs, not what a compiler emits.
+ */
+export const projectSections: ProjectSection[] = [
+  {
+    id: "work",
+    label: "Work",
+    accent: "neutral",
+    build: projectWorkRoute,
+    matches: (pathname, projectId) => startsWithSegment(pathname, projectWorkRoute(projectId)),
+  },
+  {
+    id: "conversations",
+    label: "Conversations",
+    accent: "research",
+    build: projectConversationsRoute,
+    matches: (pathname, projectId) => startsWithSegment(pathname, projectConversationsRoute(projectId)),
+  },
+  {
+    id: "files",
+    label: "Files",
+    accent: "sources",
+    build: projectFilesRoute,
+    matches: (pathname, projectId) => startsWithSegment(pathname, projectFilesRoute(projectId)),
+  },
+  {
+    id: "agents",
+    label: "Agents",
+    accent: "execution",
+    build: projectAgentsRoute,
+    matches: (pathname, projectId) => startsWithSegment(pathname, projectAgentsRoute(projectId)),
+  },
+];
+
 export function activeProjectSection(pathname: string, projectId: string): ProjectSection | undefined {
-  return projectSections.find((section) => section.matches(pathname, projectId));
+  return [...projectSections, ...specGraphSections].find((section) =>
+    section.matches(pathname, projectId)
+  );
 }
 
 export function isActiveGlobalRoute(pathname: string, route: Route): boolean {

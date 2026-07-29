@@ -7,6 +7,8 @@ export interface SessionState {
   openTabs: string[];
   viewportState: Record<string, any>;
   simpleModeEnabled: boolean;
+  /** §2.10: Developer Tools are hidden until the operator opts in. */
+  developerToolsEnabled: boolean;
   lastActivityTime: number;
 }
 
@@ -17,6 +19,7 @@ interface SessionStateContextType {
   removeTab: (projectId: string) => void;
   setViewportState: (projectId: string, state: any) => void;
   setSimpleMode: (enabled: boolean) => void;
+  setDeveloperTools: (enabled: boolean) => void;
   clearSession: () => void;
 }
 
@@ -27,6 +30,7 @@ const DEFAULT_SESSION: SessionState = {
   openTabs: [],
   viewportState: {},
   simpleModeEnabled: true,
+  developerToolsEnabled: false,
   lastActivityTime: Date.now(),
 };
 
@@ -110,6 +114,14 @@ export function SessionStateProvider({ children }: { children: React.ReactNode }
     }));
   };
 
+  const setDeveloperTools = (enabled: boolean) => {
+    setSession((prev) => ({
+      ...prev,
+      developerToolsEnabled: enabled,
+      lastActivityTime: Date.now(),
+    }));
+  };
+
   const clearSession = () => {
     setSession(DEFAULT_SESSION);
     try {
@@ -124,6 +136,7 @@ export function SessionStateProvider({ children }: { children: React.ReactNode }
       value={{
         session,
         setActiveProject,
+        setDeveloperTools,
         addTab,
         removeTab,
         setViewportState,
