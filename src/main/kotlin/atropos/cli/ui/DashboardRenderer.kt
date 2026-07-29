@@ -2,189 +2,198 @@
 package atropos.cli.ui
 
 import atropos.cli.ui.design.Breakpoint
+import atropos.cli.ui.design.Health
 import atropos.cli.ui.design.Role
+import atropos.cli.ui.design.RunState
 import atropos.cli.ui.design.Spacing
+import atropos.cli.ui.design.Surface
 
 /**
- * ATROPOS HOE (Human Operating Environment) dashboard.
- * Presents the six continuous answers and operative cockpit at CLI startup.
+ * ATROPOS HOE (Human Operating Environment) Home cockpit.
+ *
+ * Source Document 4 §0.1: the interface shall always answer six questions
+ * without requiring the user to search. This renderer draws those answers and
+ * nothing else claims to know them.
+ *
+ * It is a pure renderer: it never reads state. [HomeStateProvider] captures the
+ * state so that what appears here is what the runtime actually reported,
+ * including the reports of not knowing.
  */
 class DashboardRenderer(
     private val theme: TerminalTheme
 ) {
-    data class ProjectMetrics(
-        val name: String,
-        val status: String,
-        val progress: Int,
-        val taskCount: Int,
-        val goalCount: Int
+    /** A single answer plus its non-fabricated confidence. */
+    data class Answer(
+        val value: String,
+        val health: Health = Health.UNKNOWN
+    ) {
+        companion object {
+            val UNKNOWN = Answer("unknown", Health.UNKNOWN)
+        }
+    }
+
+    /** The six continuous answers of Source Document 4 §0.1, in order. */
+    data class SixAnswers(
+        val objective: Answer = Answer.UNKNOWN,
+        val doing: Answer = Answer.UNKNOWN,
+        val why: Answer = Answer.UNKNOWN,
+        val progress: Answer = Answer.UNKNOWN,
+        val next: Answer = Answer.UNKNOWN,
+        val evidence: Answer = Answer.UNKNOWN
     )
 
+    /**
+     * [state] is the Section A vocabulary rather than a raw runtime enum name,
+     * so the queue reads as user progress and renders through the three
+     * redundant channels [Surface.runState] guarantees.
+     */
     data class WorkItem(
         val id: String,
         val title: String,
-        val status: String,
-        val priority: String
+        val state: RunState,
+        val detail: String,
+        val attempt: Int? = null,
+        val maxAttempts: Int? = null
     )
 
     data class DashboardState(
-        val activeProjects: List<ProjectMetrics> = emptyList(),
+        val answers: SixAnswers = SixAnswers(),
         val runningWork: List<WorkItem> = emptyList(),
-        val pendingApprovals: Int = 0,
         val queuedItems: Int = 0,
         val failedItems: Int = 0,
-        val providerHealth: String = "unknown",
-        val memoryUsage: Int = 0
+        /** False when the durable queue could not be read — not the same as empty. */
+        val queueReadable: Boolean = true,
+        val provider: String = "unknown",
+        val repository: RepositoryState = RepositoryState.unknown(),
+        val heapUsedMb: Long = 0,
+        val heapMaxMb: Long = 0
     )
 
     fun render(state: DashboardState, width: Int): List<String> {
-        val safeWidth = width.coerceIn(40, 200)
+        val safeWidth = width.coerceIn(Spacing.MIN_WIDTH, 200)
         val bp = Breakpoint.of(safeWidth)
         val output = mutableListOf<String>()
 
-        output += theme.surface.sectionHeading("ATROPOS", safeWidth, Role.BRAND)
-        output += ""
+        output += theme.surface.sectionHeading("HOME", safeWidth, Role.BRAND)
+        output += renderSixAnswers(state.answers, safeWidth, bp)
 
-        // Six continuous answers
-        output += theme.surface.sectionHeading("Questions", safeWidth, Role.BRAND)
-        output += renderSixAnswers(safeWidth)
-        output += ""
-
-        // Projects summary
-        if (state.activeProjects.isNotEmpty()) {
-            output += theme.surface.sectionHeading("Projects", safeWidth, Role.BRAND)
-            output += renderProjects(state.activeProjects, safeWidth)
-            output += ""
-        }
-
-        // Work summary
         if (state.runningWork.isNotEmpty()) {
-            output += theme.surface.sectionHeading("Running", safeWidth, Role.BRAND)
-            output += renderWork(state.runningWork, safeWidth, bp)
             output += ""
+            output += theme.surface.sectionHeading("WORK", safeWidth, Role.BRAND)
+            output += renderWork(state.runningWork, safeWidth, bp)
         }
 
-        // Queue status
-        output += theme.surface.sectionHeading("Status", safeWidth, Role.BRAND)
-        output += renderQueue(
-            running = state.runningWork.size,
-            queued = state.queuedItems,
-            failed = state.failedItems,
-            approvals = state.pendingApprovals,
-            safeWidth
-        )
         output += ""
-
-        // System health
-        output += theme.surface.sectionHeading("System", safeWidth, Role.BRAND)
-        output += renderSystemHealth(state, safeWidth)
+        output += theme.surface.sectionHeading("SYSTEM", safeWidth, Role.BRAND)
+        output += renderSystem(state, safeWidth)
 
         return output
     }
 
-    private fun renderSixAnswers(width: Int): List<String> {
-        val output = mutableListOf<String>()
-        // The six questions from ATROPOS HOE:
-        // 1. What am I working on? → Current project
-        // 2. What's my next action? → Top goal/task
-        // 3. What's blocking me? → Approvals/errors
-        // 4. Who's involved? → Agents/team
-        // 5. What evidence do I have? → Recent artifacts
-        // 6. What changed? → Recent activity
-
-        output += theme.surface.row("Working on", "No project selected", width)
-        output += theme.surface.row("Next action", "Create or select project", width)
-        output += theme.surface.row("Blocked by", "No approvals pending", width)
-        output += theme.surface.row("Team", "0 agents assigned", width)
-        output += theme.surface.row("Evidence", "0 artifacts", width)
-        output += theme.surface.row("Changed", "No activity yet", width)
-
-        return output
+    /**
+     * The six questions are labelled with their own words so the operator can
+     * map answer to question without the spec in hand. Wide terminals also get
+     * the full question as a subdued suffix — progressive disclosure by width,
+     * never by hiding an answer.
+     */
+    private fun renderSixAnswers(
+        answers: SixAnswers,
+        width: Int,
+        bp: Breakpoint
+    ): List<String> {
+        val questions = bp >= Breakpoint.WIDE
+        return listOf(
+            answerRow("Objective", "what am I trying to accomplish", answers.objective, width, questions),
+            answerRow("Doing", "what is ATROPOS doing", answers.doing, width, questions),
+            answerRow("Why", "why is it doing that", answers.why, width, questions),
+            answerRow("Progress", "how far along is it", answers.progress, width, questions),
+            answerRow("Next", "what should I do next", answers.next, width, questions),
+            answerRow("Evidence", "can I inspect the evidence", answers.evidence, width, questions)
+        )
     }
 
-    private fun renderProjects(projects: List<ProjectMetrics>, width: Int): List<String> {
-        val output = mutableListOf<String>()
-        for (project in projects.take(3)) {
-            val statusRole = when (project.status.lowercase()) {
-                "active" -> Role.STATUS_RUNNING
-                "completed" -> Role.STATUS_COMPLETE
-                "failed" -> Role.STATUS_FAILED
-                else -> Role.STATUS_IDLE
-            }
-            val statusPainted = theme.paint(statusRole, project.status)
-            output += theme.surface.row(
-                project.name,
-                "$statusPainted ${project.progress}% [${project.taskCount}T/${project.goalCount}G]",
-                width
-            )
-        }
-        return output
+    private fun answerRow(
+        label: String,
+        question: String,
+        answer: Answer,
+        width: Int,
+        withQuestion: Boolean
+    ): String {
+        // The answer text is always self-describing, so the health colour is a
+        // second channel rather than the only one (§9.2, colour-independent).
+        val painted = theme.paint(answer.health.role, answer.value)
+        val suffix = if (withQuestion) " " + theme.subdued("· $question") else ""
+        return theme.surface.row(label, painted + suffix, width)
     }
 
     private fun renderWork(work: List<WorkItem>, width: Int, bp: Breakpoint): List<String> {
-        val output = mutableListOf<String>()
-        for (item in work.take(bp.maxWorkItems())) {
-            val role = when (item.status.lowercase()) {
-                "running" -> Role.STATUS_RUNNING
-                "waiting" -> Role.STATUS_WAITING
-                else -> Role.STATUS_IDLE
-            }
-            val statusPainted = theme.paint(role, item.status)
-            output += theme.surface.row(
-                TerminalText.ellipsize(item.title, Spacing.LABEL_WIDTH),
-                "$statusPainted ${item.priority}",
+        val shown = work.take(bp.maxWorkItems())
+        val output = shown.map { item ->
+            val status = theme.surface.runState(item.state, item.attempt, item.maxAttempts)
+            theme.surface.row(
+                TerminalText.ellipsize(item.id, Spacing.LABEL_WIDTH),
+                "$status ${theme.subdued(item.detail)} ${item.title}",
                 width
             )
+        }.toMutableList()
+
+        // Never silently truncate the queue: a hidden item is an unanswered
+        // question about what ATROPOS is doing.
+        val hidden = work.size - shown.size
+        if (hidden > 0) {
+            output += theme.surface.row("", theme.subdued("+$hidden more · /agent queue list"), width)
         }
         return output
     }
 
-    private fun renderQueue(running: Int, queued: Int, failed: Int, approvals: Int, width: Int): List<String> {
+    private fun renderSystem(state: DashboardState, width: Int): List<String> {
         val output = mutableListOf<String>()
+
+        output += theme.surface.statusRow("Queue", queueSummary(state), queueHealth(state), width)
+
+        // Provider identity is known; provider health is not measured here, so
+        // it is not claimed here.
+        output += theme.surface.row("Provider", state.provider, width)
+
+        val repo = state.repository
+        val repoText = when {
+            !repo.available -> "unavailable"
+            !repo.isRepository -> "not a repository"
+            else -> listOfNotNull(
+                repo.branch,
+                repo.changedFiles?.let { if (it == 0) "clean" else "$it changed" }
+            ).joinToString(" · ").ifBlank { "unknown" }
+        }
         output += theme.surface.statusRow(
-            "Running",
-            running.toString(),
-            if (running > 0) atropos.cli.ui.design.Health.VERIFIED else atropos.cli.ui.design.Health.UNKNOWN,
+            "Repository",
+            repoText,
+            if (repo.available) Health.ofNullable(repo.clean) else Health.UNKNOWN,
             width
         )
-        output += theme.surface.statusRow(
-            "Queued",
-            queued.toString(),
-            if (queued > 0) atropos.cli.ui.design.Health.PENDING else atropos.cli.ui.design.Health.VERIFIED,
+
+        // Megabytes, not a percentage: real usage rounds to 0% and an operator
+        // reasonably reads a zero as a broken probe.
+        output += theme.surface.row(
+            "Heap",
+            if (state.heapMaxMb > 0) "${state.heapUsedMb}/${state.heapMaxMb} MB" else "unknown",
             width
         )
-        if (failed > 0) {
-            output += theme.surface.statusRow(
-                "Failed",
-                failed.toString(),
-                atropos.cli.ui.design.Health.ERROR,
-                width
-            )
-        }
-        if (approvals > 0) {
-            output += theme.surface.statusRow(
-                "Approvals",
-                approvals.toString(),
-                atropos.cli.ui.design.Health.PENDING,
-                width
-            )
-        }
         return output
     }
 
-    private fun renderSystemHealth(state: DashboardState, width: Int): List<String> {
-        val output = mutableListOf<String>()
-        val providerHealth = when (state.providerHealth.lowercase()) {
-            "healthy" -> atropos.cli.ui.design.Health.VERIFIED
-            "degraded" -> atropos.cli.ui.design.Health.PENDING
-            "unhealthy" -> atropos.cli.ui.design.Health.ERROR
-            else -> atropos.cli.ui.design.Health.UNKNOWN
-        }
-        output += theme.surface.statusRow("Provider", state.providerHealth, providerHealth, width)
-        output += theme.surface.row("Memory", "${state.memoryUsage}%", width)
-        return output
+    private fun queueSummary(state: DashboardState): String {
+        if (!state.queueReadable) return "unreadable"
+        return "${state.runningWork.size} open · ${state.queuedItems} queued · ${state.failedItems} failed"
     }
 
+    private fun queueHealth(state: DashboardState): Health = when {
+        !state.queueReadable -> Health.ERROR
+        state.failedItems > 0 -> Health.ERROR
+        state.runningWork.isNotEmpty() -> Health.PENDING
+        else -> Health.VERIFIED
+    }
+
+    /** Termux-narrow terminals show fewer rows; the overflow count still shows. */
     private fun Breakpoint.maxWorkItems(): Int = when (this) {
         Breakpoint.COMPACT -> 2
         Breakpoint.MEDIUM -> 4
