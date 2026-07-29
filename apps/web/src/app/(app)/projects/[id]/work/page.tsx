@@ -3,7 +3,7 @@
 import { useEffect, useMemo } from 'react';
 import { ProjectHeader } from '@/components/project/project-header';
 import { SixAnswersPanel, SixAnswer } from '@/components/ui/six-answers-panel';
-import { StatusBadge } from '@/components/ui/status-badge';
+import { WorkItemCard } from '@/components/atropos/work-item-card';
 import type { TrustIndicators } from '@/components/ui/trust-indicators';
 import { ControlVerbs, ControlVerb } from '@/components/ui/control-verbs';
 import { useProject, useWorkItems } from '@/lib/api-atropos/hooks';
@@ -143,28 +143,7 @@ export default function WorkPage({ params }: { params: { id: string } }) {
                     <p className="text-sm text-sg-neutral-500 text-center py-8">No items</p>
                   ) : (
                     todoItems.map((item) => (
-                      <div
-                        key={item.id}
-                        className="p-3 bg-white dark:bg-sg-neutral-800 rounded border border-sg-neutral-200 dark:border-sg-neutral-700 hover:border-sg-red-400 dark:hover:border-sg-red-600 transition-colors cursor-pointer"
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <h5 className="font-medium text-sm text-sg-neutral-900 dark:text-sg-neutral-50">
-                            {item.title}
-                          </h5>
-                          <StatusBadge status={item.status} size="sm" />
-                        </div>
-                        {item.description && (
-                          <p className="text-xs text-sg-neutral-600 dark:text-sg-neutral-400 mt-1">
-                            {item.description.substring(0, 50)}...
-                          </p>
-                        )}
-                        <div className="flex items-center justify-between mt-2">
-                          <span className="text-xs text-sg-neutral-500">
-                            Priority:{' '}
-                            <span className="font-medium capitalize">{item.priority}</span>
-                          </span>
-                        </div>
-                      </div>
+                      <WorkItemCard key={item.id} item={item} />
                     ))
                   )}
                 </div>
@@ -180,35 +159,7 @@ export default function WorkPage({ params }: { params: { id: string } }) {
                     <p className="text-sm text-sg-neutral-500 text-center py-8">No items</p>
                   ) : (
                     inProgressItems.map((item) => (
-                      <div
-                        key={item.id}
-                        className="p-3 bg-white dark:bg-sg-neutral-800 rounded border border-sg-amber-200 dark:border-sg-amber-800 hover:border-sg-amber-400 dark:hover:border-sg-amber-600 transition-colors cursor-pointer"
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <h5 className="font-medium text-sm text-sg-neutral-900 dark:text-sg-neutral-50">
-                            {item.title}
-                          </h5>
-                          <StatusBadge status={item.status} size="sm" />
-                        </div>
-                        {item.progress !== undefined && (
-                          <div className="mt-2">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-xs text-sg-neutral-600 dark:text-sg-neutral-400">
-                                Progress
-                              </span>
-                              <span className="text-xs font-semibold text-sg-amber-600">
-                                {item.progress}%
-                              </span>
-                            </div>
-                            <div className="w-full bg-sg-neutral-200 dark:bg-sg-neutral-700 rounded-full h-1">
-                              <div
-                                className="bg-sg-amber-500 h-full rounded-full transition-all"
-                                style={{ width: `${item.progress}%` }}
-                              />
-                            </div>
-                          </div>
-                        )}
-                      </div>
+                      <WorkItemCard key={item.id} item={item} />
                     ))
                   )}
                 </div>
@@ -224,17 +175,7 @@ export default function WorkPage({ params }: { params: { id: string } }) {
                     <p className="text-sm text-sg-neutral-500 text-center py-8">No items</p>
                   ) : (
                     doneItems.map((item) => (
-                      <div
-                        key={item.id}
-                        className="p-3 bg-white dark:bg-sg-neutral-800 rounded border border-sg-green-200 dark:border-sg-green-800 hover:border-sg-green-400 dark:hover:border-sg-green-600 transition-colors cursor-pointer"
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <h5 className="font-medium text-sm text-sg-neutral-900 dark:text-sg-neutral-50 line-through">
-                            {item.title}
-                          </h5>
-                          <StatusBadge status={item.status} size="sm" />
-                        </div>
-                      </div>
+                      <WorkItemCard key={item.id} item={item} />
                     ))
                   )}
                 </div>
