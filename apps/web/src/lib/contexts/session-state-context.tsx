@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
 export interface SessionState {
   activeProjectId: string | null;
@@ -9,6 +9,14 @@ export interface SessionState {
   simpleModeEnabled: boolean;
   /** §2.10: Developer Tools are hidden until the operator opts in. */
   developerToolsEnabled: boolean;
+  /**
+   * §5.0 disclosure level, 1 Simple to 4 Internal.
+   *
+   * Persisted because §8.0 requires a screen to preserve state until
+   * intentionally reset; a level that resets on reload is a preference the
+   * operator has to re-state every visit.
+   */
+  informationLevel: 1 | 2 | 3 | 4;
   lastActivityTime: number;
 }
 
@@ -20,6 +28,7 @@ interface SessionStateContextType {
   setViewportState: (projectId: string, state: any) => void;
   setSimpleMode: (enabled: boolean) => void;
   setDeveloperTools: (enabled: boolean) => void;
+  setInformationLevel: (level: 1 | 2 | 3 | 4) => void;
   clearSession: () => void;
 }
 
@@ -31,6 +40,7 @@ const DEFAULT_SESSION: SessionState = {
   viewportState: {},
   simpleModeEnabled: true,
   developerToolsEnabled: false,
+  informationLevel: 2,
   lastActivityTime: Date.now(),
 };
 
@@ -45,8 +55,10 @@ export function SessionStateProvider({ children }: { children: React.ReactNode }
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
-        const parsed = JSON.parse(stored) as SessionState;
-        setSession(parsed);
+        const parsed = JSON.parse(stored) as Partial<SessionState>;
+        // Stored state written by an earlier build lacks fields added since;
+        // spreading it over the defaults keeps those defined.
+        setSession({ ...DEFAULT_SESSION, ...parsed });
       }
     } catch (error) {
       console.error('Failed to load session state:', error);
@@ -65,24 +77,24 @@ export function SessionStateProvider({ children }: { children: React.ReactNode }
     }
   }, [session, isLoaded]);
 
-  const setActiveProject = (projectId: string | null) => {
+  const setActiveProject = useCallback((projectId: string | null) => {
     setSession((prev) => ({
       ...prev,
       activeProjectId: projectId,
       lastActivityTime: Date.now(),
     }));
-  };
+  }, []);
 
-  const addTab = (projectId: string) => {
+  const addTab = useCallback((projectId: string) => {
     setSession((prev) => ({
       ...prev,
       openTabs: prev.openTabs.includes(projectId) ? prev.openTabs : [...prev.openTabs, projectId],
       activeProjectId: projectId,
       lastActivityTime: Date.now(),
     }));
-  };
+  }, []);
 
-  const removeTab = (projectId: string) => {
+  const removeTab = useCallback((projectId: string) => {
     setSession((prev) => {
       const newTabs = prev.openTabs.filter((id) => id !== projectId);
       return {
@@ -93,9 +105,9 @@ export function SessionStateProvider({ children }: { children: React.ReactNode }
         lastActivityTime: Date.now(),
       };
     });
-  };
+  }, []);
 
-  const setViewportState = (projectId: string, state: any) => {
+  const setViewportState = useCallback((projectId: string, state: any) => {
     setSession((prev) => ({
       ...prev,
       viewportState: {
@@ -104,32 +116,40 @@ export function SessionStateProvider({ children }: { children: React.ReactNode }
       },
       lastActivityTime: Date.now(),
     }));
-  };
+  }, []);
 
-  const setSimpleMode = (enabled: boolean) => {
+  const setSimpleMode = useCallback((enabled: boolean) => {
     setSession((prev) => ({
       ...prev,
       simpleModeEnabled: enabled,
       lastActivityTime: Date.now(),
     }));
-  };
+  }, []);
 
-  const setDeveloperTools = (enabled: boolean) => {
+  const setDeveloperTools = useCallback((enabled: boolean) => {
     setSession((prev) => ({
       ...prev,
       developerToolsEnabled: enabled,
       lastActivityTime: Date.now(),
     }));
-  };
+  }, []);
 
-  const clearSession = () => {
+  const setInformationLevel = useCallback((level: 1 | 2 | 3 | 4) => {
+    setSession((prev) => ({
+      ...prev,
+      informationLevel: level,
+      lastActivityTime: Date.now(),
+    }));
+  }, []);
+
+  const clearSession = useCallback(() => {
     setSession(DEFAULT_SESSION);
     try {
       localStorage.removeItem(STORAGE_KEY);
     } catch (error) {
       console.error('Failed to clear session state:', error);
     }
-  };
+  }, []);
 
   return (
     <SessionStateContext.Provider
@@ -137,6 +157,7 @@ export function SessionStateProvider({ children }: { children: React.ReactNode }
         session,
         setActiveProject,
         setDeveloperTools,
+        setInformationLevel,
         addTab,
         removeTab,
         setViewportState,
