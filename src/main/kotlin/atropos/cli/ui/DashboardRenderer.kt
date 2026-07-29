@@ -56,8 +56,27 @@ class DashboardRenderer(
         val maxAttempts: Int? = null
     )
 
+    /**
+     * One project as the cockpit shows it.
+     *
+     * [completionIsVerifiable] carries §3.4 forward: a project claiming
+     * completion that no evidence corroborates is displayed as an unverified
+     * claim rather than as done.
+     */
+    data class ProjectSummary(
+        val id: String,
+        val name: String,
+        val status: RunState,
+        val statusLabel: String,
+        val objective: String,
+        val completionIsVerifiable: Boolean
+    )
+
     data class DashboardState(
         val answers: SixAnswers = SixAnswers(),
+        val projects: List<ProjectSummary> = emptyList(),
+        /** False when the project registry could not be read — not the same as none. */
+        val projectsReadable: Boolean = true,
         val runningWork: List<WorkItem> = emptyList(),
         val queuedItems: Int = 0,
         val failedItems: Int = 0,
@@ -76,6 +95,14 @@ class DashboardRenderer(
 
         output += theme.surface.sectionHeading("HOME", safeWidth, Role.BRAND)
         output += renderSixAnswers(state.answers, safeWidth, bp)
+
+        // §3.2: the interface begins with objectives. Projects come before the
+        // queue because the queue is how the objective is being pursued.
+        if (!state.projectsReadable || state.projects.isNotEmpty()) {
+            output += ""
+            output += theme.surface.sectionHeading("PROJECTS", safeWidth, Role.BRAND)
+            output += renderProjects(state, safeWidth, bp)
+        }
 
         if (state.runningWork.isNotEmpty()) {
             output += ""
@@ -124,6 +151,48 @@ class DashboardRenderer(
         val painted = theme.paint(answer.health.role, answer.value)
         val suffix = if (withQuestion) " " + theme.subdued("· $question") else ""
         return theme.surface.row(label, painted + suffix, width)
+    }
+
+    private fun renderProjects(
+        state: DashboardState,
+        width: Int,
+        bp: Breakpoint
+    ): List<String> {
+        if (!state.projectsReadable) {
+            return listOf(
+                theme.surface.statusRow(
+                    "Registry",
+                    "unreadable · .atropos/projects",
+                    Health.ERROR,
+                    width
+                )
+            )
+        }
+
+        val shown = state.projects.take(bp.maxProjects())
+        val output = shown.map { project ->
+            val status = theme.surface.runState(project.status)
+            // The objective is the point of the project, so it is shown next
+            // to the name wherever the terminal is wide enough to hold it.
+            val trailer = if (bp >= Breakpoint.WIDE && project.objective.isNotBlank()) {
+                " " + theme.subdued(project.objective)
+            } else {
+                ""
+            }
+            val warning = if (project.completionIsVerifiable) "" else
+                " " + theme.paint(Role.STATUS_ERROR, "[unverified]")
+            theme.surface.row(
+                TerminalText.ellipsize(project.name, Spacing.LABEL_WIDTH),
+                "$status$warning$trailer",
+                width
+            )
+        }.toMutableList()
+
+        val hidden = state.projects.size - shown.size
+        if (hidden > 0) {
+            output += theme.surface.row("", theme.subdued("+$hidden more · /project list"), width)
+        }
+        return output
     }
 
     private fun renderWork(work: List<WorkItem>, width: Int, bp: Breakpoint): List<String> {
@@ -191,6 +260,13 @@ class DashboardRenderer(
         state.failedItems > 0 -> Health.ERROR
         state.runningWork.isNotEmpty() -> Health.PENDING
         else -> Health.VERIFIED
+    }
+
+    private fun Breakpoint.maxProjects(): Int = when (this) {
+        Breakpoint.COMPACT -> 2
+        Breakpoint.MEDIUM -> 3
+        Breakpoint.WIDE -> 5
+        Breakpoint.ULTRA -> 8
     }
 
     /** Termux-narrow terminals show fewer rows; the overflow count still shows. */

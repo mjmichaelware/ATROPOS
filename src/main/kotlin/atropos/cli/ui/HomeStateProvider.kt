@@ -7,6 +7,9 @@ import atropos.core.agent.AgentQueueCheckpoint
 import atropos.core.agent.AgentQueueRecord
 import atropos.core.agent.AgentQueueState
 import atropos.core.agent.AgentQueueStore
+import atropos.core.project.ProjectRecord
+import atropos.core.project.ProjectRegistry
+import atropos.core.project.ProjectStatus
 import atropos.core.security.RedactionFilter
 import java.nio.file.Files
 import java.nio.file.Path
@@ -28,6 +31,7 @@ class HomeStateProvider(
         Path.of(System.getProperty("user.dir", ".")).toAbsolutePath().normalize(),
     private val queueStore: AgentQueueStore = AgentQueueStore(repoRoot),
     private val queueEntriesDir: Path = repoRoot.resolve(EVIDENCE_PATH).resolve("entries"),
+    private val projectRegistry: ProjectRegistry = ProjectRegistry(repoRoot),
     private val workspaceInspector: WorkspaceInspector = CachingGitWorkspaceInspector(),
     /** Seam: the OS ignores permission bits for root, so readability is injectable. */
     private val queueReadable: (Path) -> Boolean = { Files.isReadable(it) },
@@ -46,6 +50,7 @@ class HomeStateProvider(
         workspace: String = repoRoot.toString()
     ): DashboardRenderer.DashboardState {
         val queue = readQueue()
+        val projects = readProjects()
 
         val repository = try {
             workspaceInspector.inspect(workspace)
@@ -65,13 +70,24 @@ class HomeStateProvider(
 
         return DashboardRenderer.DashboardState(
             answers = DashboardRenderer.SixAnswers(
-                objective = objective(queue, active, pending),
+                objective = objective(queue, active, pending, projects),
                 doing = doing(queue, active, pending),
                 why = why(queue, active),
                 progress = progress(queue, active, failed.size),
                 next = next(queue, active, pending, failed),
                 evidence = evidence(queue)
             ),
+            projects = projects.orEmpty().map { project ->
+                DashboardRenderer.ProjectSummary(
+                    id = project.id,
+                    name = project.name,
+                    status = project.status.asRunState(),
+                    statusLabel = project.status.canonical,
+                    objective = redactionFilter.compact(project.objective, TASK_WIDTH),
+                    completionIsVerifiable = project.completionIsVerifiable
+                )
+            },
+            projectsReadable = projects != null,
             runningWork = pending.map { record ->
                 DashboardRenderer.WorkItem(
                     id = record.id,
@@ -132,12 +148,37 @@ class HomeStateProvider(
     private fun objective(
         queue: List<AgentQueueRecord>?,
         active: AgentQueueRecord?,
-        pending: List<AgentQueueRecord>
-    ): DashboardRenderer.Answer = when {
-        queue == null -> unreadable()
-        active != null -> DashboardRenderer.Answer(task(active), Health.VERIFIED)
-        pending.isNotEmpty() -> DashboardRenderer.Answer(task(pending.first()), Health.PENDING)
-        else -> DashboardRenderer.Answer("no objective queued", Health.UNKNOWN)
+        pending: List<AgentQueueRecord>,
+        projects: List<ProjectRecord>?
+    ): DashboardRenderer.Answer {
+        // §3.2: "The interface always begins with objectives rather than
+        // implementation details." A project objective is the operator's own
+        // answer to Q1, so it outranks whatever the queue happens to be doing.
+        val stated = projects?.firstOrNull { it.objective.isNotBlank() && !it.status.terminal }
+        if (stated != null) {
+            return DashboardRenderer.Answer(
+                redactionFilter.compact(stated.objective, TASK_WIDTH),
+                Health.VERIFIED
+            )
+        }
+
+        return when {
+            queue == null -> unreadable()
+            active != null -> DashboardRenderer.Answer(task(active), Health.VERIFIED)
+            pending.isNotEmpty() -> DashboardRenderer.Answer(task(pending.first()), Health.PENDING)
+            // Distinguish "a project exists but nobody stated its objective"
+            // from "every project is finished". Both are projectless states for
+            // Q1, but they need different next actions.
+            projects?.any { !it.status.terminal } == true -> DashboardRenderer.Answer(
+                "no objective stated · /project objective <id> <text>",
+                Health.PENDING
+            )
+            projects?.isNotEmpty() == true -> DashboardRenderer.Answer(
+                "no active project · /project new <name> <objective>",
+                Health.UNKNOWN
+            )
+            else -> DashboardRenderer.Answer("no objective queued", Health.UNKNOWN)
+        }
     }
 
     /** 2. What is ATROPOS doing? */
@@ -253,6 +294,31 @@ class HomeStateProvider(
     }
 
     // ---- helpers ------------------------------------------------------------
+
+    /**
+     * Returns the project list, or `null` when the registry could not be read.
+     *
+     * Same discipline as the queue: an unreadable registry is a fault, not an
+     * empty workspace, and the two must not collapse into one another (§4.1).
+     */
+    private fun readProjects(): List<ProjectRecord>? = try {
+        projectRegistry.list()
+    } catch (_: Exception) {
+        null
+    }
+
+    /** §3.3 project vocabulary rendered through the Section A channels. */
+    private fun ProjectStatus.asRunState(): RunState = when (this) {
+        ProjectStatus.IDLE -> RunState.IDLE
+        ProjectStatus.PLANNING -> RunState.QUEUED
+        ProjectStatus.WAITING -> RunState.WAITING
+        ProjectStatus.WORKING -> RunState.RUNNING
+        ProjectStatus.REVIEW_REQUIRED -> RunState.WAITING
+        ProjectStatus.BLOCKED -> RunState.BLOCKED
+        ProjectStatus.COMPLETED -> RunState.COMPLETE
+        ProjectStatus.FAILED -> RunState.FAILED
+        ProjectStatus.CANCELLED -> RunState.CANCELLED
+    }
 
     /**
      * Translates the runtime's queue enum into the Section A status vocabulary

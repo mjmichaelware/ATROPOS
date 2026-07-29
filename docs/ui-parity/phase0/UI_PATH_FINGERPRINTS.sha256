@@ -41,3 +41,5 @@ d6b41afeaaaa8d97980c2a7cb527c4ec370b795c771b560c28f1a81d6d3a6cb1  src/main/kotli
 65f7f8353cb9df5353ee559692ad2bd3f16d1ff8a63a27766ab602726f9735e3  src/main/kotlin/atropos/core/project/ProjectModels.kt
 9fb3e20675cee1cafa28a8f93e6dffeb5b486a6e2cf5303c6d95bdecde1f0f4b  src/test/kotlin/atropos/core/project/ProjectRegistryTest.kt
 f3f591cdca3d111af727a7596a1ec7a6ff32b680ca7569d5a03089530378c86a  apps/web/src/lib/bridge/engine.ts
+883e35f081d42e1c0eade443c9ab8ccaad82341596d17cb75b36d268e7a7917d  src/main/kotlin/atropos/cli/ui/HomeStateProvider.kt
+7f62c992fe8cbf050d233dfbec8245bb4062e2bf3d9784ca79a129391e80c8ca  src/main/kotlin/atropos/cli/ui/DashboardRenderer.kt
