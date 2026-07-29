@@ -98,7 +98,9 @@ class DirectorService(
         val observations = store.unacknowledged().filter { observation ->
             val goalMatches = goalId == null || observation.goalId == null || observation.goalId == goalId
             val territoryMatches = territoryIds.isEmpty() || observation.territoryId == null || observation.territoryId in territoryIds
-            val fileMatches = files.isEmpty() || observation.filePaths.isEmpty() || observation.filePaths.any { it in files }
+            val fileMatches = files.isEmpty() ||
+                observation.filePaths.isEmpty() ||
+                observation.filePaths.any { observed -> files.any { requested -> pathsOverlap(observed, requested) } }
             goalMatches && territoryMatches && fileMatches
         }
         val blocking = observations.filter {
@@ -127,6 +129,13 @@ class DirectorService(
         all[idx] = transform(all[idx])
         rewriteAll(all)
         return true
+    }
+
+    private fun pathsOverlap(left: String, right: String): Boolean {
+        val a = left.trim().trimEnd('/')
+        val b = right.trim().trimEnd('/')
+        if (a.isEmpty() || b.isEmpty()) return true
+        return a == b || a.startsWith("$b/") || b.startsWith("$a/")
     }
 
     private fun rewriteAll(observations: List<DirectorObservation>) {

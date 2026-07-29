@@ -90,7 +90,7 @@ class DagNodeShellExecutor(
                     success = success,
                     message = message,
                     finalState = state,
-                    result = output.take(2000),
+                    result = output.take(2000).ifBlank { message },
                     failureReason = if (success) null else failureReason(exitCode)
                 ),
                 relatedPaths = relatedPaths

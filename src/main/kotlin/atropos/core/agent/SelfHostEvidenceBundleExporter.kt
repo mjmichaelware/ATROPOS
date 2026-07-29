@@ -114,6 +114,9 @@ class SelfHostEvidenceBundleExporter(
         snapshot: atropos.core.recovery.StateSnapshot?
     ): String = buildString {
         appendLine("{")
+        appendLine("  \"schema\": \"self-host-evidence-bundle-v1\",")
+        appendLine("  \"redacted\": true,")
+        appendLine("  \"hashAlgorithm\": \"SHA-256\",")
         appendLine("  \"goalId\": ${json(record.id)},")
         appendLine("  \"task\": ${json(clean(record.task))},")
         appendLine("  \"status\": ${json(record.status.name)},")
@@ -124,6 +127,7 @@ class SelfHostEvidenceBundleExporter(
         appendLine("  \"baselineCommit\": ${json(record.baselineCommit ?: "none")},")
         appendLine("  \"dirtyStateFingerprint\": ${json(record.dirtyStateFingerprint ?: "none")},")
         appendLine("  \"territory\": [${record.territory.joinToString(",") { json(clean(it)) }}],")
+        appendLine("  \"outputHashes\": [${renderOutputHashesJson(dag)}],")
         appendLine("  \"evidence\": [${record.evidence.joinToString(",") { json(clean(it)) }}],")
         appendLine("  \"nodes\": [")
         val nodes = dag?.nodes.orEmpty()
@@ -195,6 +199,14 @@ class SelfHostEvidenceBundleExporter(
             append("}")
         }
     }
+
+    private fun renderOutputHashesJson(dag: atropos.core.dag.DagDefinition?): String =
+        dag?.nodes.orEmpty()
+            .flatMap { node -> node.expectedOutputs }
+            .distinct()
+            .joinToString(",") { output ->
+                "{\"path\": ${json(clean(output))}, \"sha256\": ${json(outputHash(output))}}"
+            }
 
     private fun clean(value: String): String = redactionFilter.redact(value)
 

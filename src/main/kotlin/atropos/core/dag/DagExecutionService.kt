@@ -43,7 +43,7 @@ class DagExecutionService(
 ) {
     private val finisher = DagNodeFinisher(planningGraph)
     private val shellExecutor = DagNodeShellExecutor(repoRoot, store, finisher, ::territoryViolation, ::extractCandidatePaths)
-    private val providerNodeExecutor = DagProviderNodeExecutor(agentService, memoryStore, finisher)
+    private val providerNodeExecutor = DagProviderNodeExecutor(repoRoot, agentService, memoryStore, finisher)
 
     fun createDag(label: String, nodes: List<DagNode>, projectId: String? = null): DagDefinition {
         val dag = store.createDag(label, nodes, projectId)
@@ -146,21 +146,23 @@ class DagExecutionService(
             // territory, narrowed to what it declared and bound to this node.
             // A node that declared nothing gets nothing and cannot run — it
             // would otherwise execute unbounded.
-            when (val grant = territoryGrants.grantToNode(ActionActor.HumanOwner, nodeActor, node.territory)) {
-                is GrantResult.Refused -> {
-                    finisher.complete(
-                        claimed,
-                        NodeResult(
-                            nodeId = claimed.id,
-                            success = false,
-                            message = grant.reason,
-                            finalState = DagNodeState.BLOCKED,
-                            failureReason = grant.reason
+            if (node.action != DagNodeAction.PROVIDER_CALL) {
+                when (val grant = territoryGrants.grantToNode(ActionActor.HumanOwner, nodeActor, node.territory)) {
+                    is GrantResult.Refused -> {
+                        finisher.complete(
+                            claimed,
+                            NodeResult(
+                                nodeId = claimed.id,
+                                success = false,
+                                message = grant.reason,
+                                finalState = DagNodeState.BLOCKED,
+                                failureReason = grant.reason
+                            )
                         )
-                    )
-                    return DagNodeExecutionResult(node.id, DagNodeState.BLOCKED, false, grant.reason)
+                        return DagNodeExecutionResult(node.id, DagNodeState.BLOCKED, false, grant.reason)
+                    }
+                    is GrantResult.Granted -> Unit
                 }
-                is GrantResult.Granted -> Unit
             }
 
             val decision = agencyGate.evaluate(proposal)

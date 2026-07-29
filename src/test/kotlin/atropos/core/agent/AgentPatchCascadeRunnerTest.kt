@@ -44,6 +44,6 @@ class AgentPatchCascadeRunnerTest {
         assertEquals(null, result.success)
         val failure = assertNotNull(result.failure)
         assertEquals("context attestation failed", failure.rejectionReason)
-        assertTrue(memory.search("attestation").any { it.title.contains("agent patch context attestation refused") })
+        assertTrue(memory.search("attestation").any { it.record.title.contains("agent patch context attestation refused") })
     }
 }

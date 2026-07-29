@@ -27,7 +27,7 @@ class BrowserActuator(
         if (policy.disposition != AgencyDisposition.ALLOWED) {
             return BrowserEvidenceResult(
                 status = BrowserEvidenceStatus.POLICY_BLOCKED,
-                message = policy.reason
+                message = "refused: ${policy.reason.ifBlank { "not auto-allowed by policy" }}"
             )
         }
 

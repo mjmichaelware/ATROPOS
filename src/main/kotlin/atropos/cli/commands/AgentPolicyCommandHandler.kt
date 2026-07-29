@@ -9,8 +9,8 @@ class AgentPolicyCommandHandler(
     private val autonomyAdvisor: AutonomyPolicyEngine,
     private val invalid: (String) -> AgentCommandOutcome.Invalid
 ) {
-    fun execute(args: List<String>): AgentCommandOutcome =
-        when (args.getOrNull(0)?.lowercase()) {
+    fun execute(args: List<String>): AgentCommandOutcome {
+        return when (args.getOrNull(0)?.lowercase()) {
             null, "audit" -> {
                 val audit = autonomyAdvisor.latestAudit()
                 val text = audit.joinToString("\n") {
@@ -32,4 +32,5 @@ class AgentPolicyCommandHandler(
             }
             else -> invalid("usage: /agent policy [audit|check]")
         }
+    }
 }

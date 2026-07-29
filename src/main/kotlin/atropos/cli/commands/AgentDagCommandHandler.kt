@@ -17,8 +17,8 @@ class AgentDagCommandHandler(
     private val dagStore: DagStore,
     private val invalid: (String) -> AgentCommandOutcome.Invalid
 ) {
-    fun execute(args: List<String>): AgentCommandOutcome =
-        when (args.getOrNull(0)?.lowercase()) {
+    fun execute(args: List<String>): AgentCommandOutcome {
+        return when (args.getOrNull(0)?.lowercase()) {
             null, "list" -> {
                 val dags = dagService.listDags()
                 val text = dags.joinToString("\n") { "${it.id}: ${it.label} (${it.nodes.size} nodes)" }.ifEmpty { "no DAGs" }
@@ -59,6 +59,7 @@ class AgentDagCommandHandler(
             "bootstrap" -> bootstrap()
             else -> invalid("usage: /agent dag [list|create|run|show|status|recover|node|delete|bootstrap]")
         }
+    }
 
     private fun create(args: List<String>): AgentCommandOutcome {
         val label = args.getOrNull(1) ?: return invalid("usage: /agent dag create <label> [--node <id>,<dep1,dep2>,<action>]...")

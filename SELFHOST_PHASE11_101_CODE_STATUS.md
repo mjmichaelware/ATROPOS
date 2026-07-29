@@ -1,14 +1,19 @@
 # ATROPOS Phase 11 Self-Host Code + Static Verification Status
 
-Status: CODE + STATIC VERIFICATION PRESENT. Runtime JAR proof remains reserved for the operator terminal.
+Status: SANDBOX + INSTALLED-RUNTIME PROOF PASS for Phase 11 self-host causal chain. Source-ingest provider context pack is PRESENT for local path, git, archive, and hash-pinned HTTP bundle bindings.
 
-Scope: Phase 11 self-host backend and thin CLI only. No SpecGraph product work, UI parity, Gradle build, packaging, install, or JAR smoke was performed for this status.
+Scope: Phase 11 self-host backend, provider context binding, recovery, proof script, and thin CLI only. No SpecGraph product work, UI parity, Android, or web-client work was performed for this status.
 
 ## Causal Chain
 
 | Step | Symbol | File path | Wired to next symbol | Negative test / refusal |
 | --- | --- | --- | --- | --- |
 | Natural-language prompt classification | `SelfHostNaturalLanguageRouter.route` | `src/main/kotlin/atropos/cli/commands/SelfHostNaturalLanguageRouter.kt:3`-`28` | Returns `/agent self-host run ...` or `/agent self-host recover` | Unrelated text returns `null`; covered by `SelfHostNaturalLanguageRouterTest.kt:20`-`25` |
+| Provider source binding model | `SourceBinding`, `FetchReceipt`, `CodebaseContextPack` | `src/main/kotlin/atropos/core/provider/SourceBindingModels.kt:6`-`74` | Feeds `SourceBindingFetcher` and `CodebaseContextPacker` | Empty allowed paths return `SourcePackResult.Refused` |
+| Polyglot source fetch | `SourceBindingFetcher.fetch` | `src/main/kotlin/atropos/core/provider/SourceBindingFetcher.kt:16`-`165` | Yields content-addressed tree + receipt for `git`, `local_path`, `archive`, `http_bundle` | Hash mismatch, unsupported archive, missing HTTP hash pin, git failure return typed failure/unsupported |
+| Bounded codebase pack | `CodebaseContextPacker.pack` | `src/main/kotlin/atropos/core/provider/CodebaseContextPacker.kt:10`-`108` | Attaches `SOURCE_PACK_ID`, `FETCH_RECEIPT_ID`, `TREE_HASH`, redacted files | No matching territory, unreadable files, fetch failure return `SourcePackResult.Refused` |
+| Agent ask source pack attachment | `AgentContextCollector.collect` | `src/main/kotlin/atropos/core/agent/AgentContextCollector.kt` | Adds source pack text to provider context and records pack/receipt IDs | Missing pack is rendered as unavailable, never as implicit repo visibility |
+| DAG provider source-pack gate | `DagProviderNodeExecutor.execute` | `src/main/kotlin/atropos/core/dag/DagProviderNodeExecutor.kt:19`-`93` | Requires declared territory, builds pack, appends pack to task before provider call | Empty territory, pack refusal, local fallback, missing attestation, or missing pack ID blocks node |
 | Router delegates NL before generic chat | `CommandRouter.route` | `src/main/kotlin/atropos/cli/CommandRouter.kt:201`-`215` | Calls `agentCommand.execute(selfHostTokens)` | Unknown slash command remains rejected before NL routing |
 | CLI self-host dispatcher | `SelfHostCommand.execute` | `src/main/kotlin/atropos/cli/commands/SelfHostCommand.kt:25`-`49` | Dispatches `run`, `recover`, `next`, `promote`, `export-evidence` | Unknown subcommand returns `AgentCommandOutcome.Invalid` |
 | NL run handler | `SelfHostCommand.handleRun` | `src/main/kotlin/atropos/cli/commands/SelfHostCommand.kt:231`-`260` | Calls injected `selfHostRunner`, defaulting to `SelfHostGoalService.runNaturalLanguageSelfBuild` | Blank prompt returns usage refusal at `SelfHostCommand.kt:232`-`234` |
@@ -45,6 +50,7 @@ Scope: Phase 11 self-host backend and thin CLI only. No SpecGraph product work, 
 | Evidence bundle export | `SelfHostEvidenceBundleExporter.export` | `src/main/kotlin/atropos/core/agent/SelfHostEvidenceBundleExporter.kt:20`-`41` | Writes Markdown and JSON, returns content hashes | Missing goal returns typed failure at `21`-`22` |
 | Evidence bundle Markdown | `SelfHostEvidenceBundleExporter.renderMarkdown` | `src/main/kotlin/atropos/core/agent/SelfHostEvidenceBundleExporter.kt:43`-`109` | Includes goal, territory, evidence, nodes, output hashes, restart snapshot | Final render passes through `RedactionFilter.redact` at `109` |
 | Evidence bundle JSON | `SelfHostEvidenceBundleExporter.renderJson` | `src/main/kotlin/atropos/core/agent/SelfHostEvidenceBundleExporter.kt:111`-`152` | Includes goal, territory, evidence, node outputs/hash, restart snapshot | Final render passes through `RedactionFilter.redact` at `152` |
+| Installed proof script | `scripts/selfhost-installed-proof.sh` | `scripts/selfhost-installed-proof.sh` | Runs NL prompt through `java -jar` in sandbox repo and validates mutation/evidence/swap | Exits nonzero if NL routes to provider chat, marker missing, swap missing, backup missing, or evidence missing |
 | CLI discoverability | `CommandRegistry.entries` | `src/main/kotlin/atropos/cli/input/CommandRegistry.kt:77`-`90` | Lists run/recover/next/promote/export-evidence | Missing command would disappear from registry tests/operator help |
 
 ## Safety Hard-Fail Table
@@ -218,21 +224,153 @@ Proof from source:
 
 Result: self-host durable state, DAGs, worktrees, snapshots, promotion, and evidence use the located ATROPOS root. Raw `user.dir` is isolated to root discovery rather than scattered through self-host stores.
 
-## Runtime JAR Proof Still Reserved
+## Executed Inside-Out Proof
 
-Operator-reserved runtime proof:
+Focused command executed by Codex:
 
-1. Compile/package ATROPOS and install or point `ATROPOS_INSTALLED_JAR` at the active runtime JAR.
-2. Launch the installed JAR from outside the repository root to prove root discovery.
-3. Type: `make ATROPOS build itself from the inside out`.
-4. Confirm the CLI routes to `/agent self-host run`.
-5. Confirm a durable Phase 11 goal appears under `.atropos/runs`.
-6. Confirm the bootstrap DAG writes `SelfHostCradleRuntimeState.kt` and `SelfHostCradleRuntimeStateTest.kt` through the isolated worktree merge path.
-7. Confirm evidence contains context preflight, node execution, output sha256, state snapshot, candidate jar build, Director advisory, `VerifiedCompletionGate`, and jar swap records.
-8. Kill/restart the process and run or type a recovery prompt such as `continue ATROPOS self-host after restart`.
-9. Confirm `recoverAndContinue` restores goal, current node, territory, evidence hashes, worktree/DAG state, and plans the next action without external orchestration.
-10. Confirm `bundle.md` and `bundle.json` exist under `.atropos/self-hosting/evidence/<goal-id>/` and contain no raw secrets.
+```bash
+./gradlew test --tests atropos.cli.SelfHostInsideOutSandboxProofTest
+```
 
-Code-level MISSING on the causal chain: none found in A-E.
+Result: PASS. This command compiled the touched module/test path and executed a sandbox proof through the production natural-language CLI route. It did not assemble, install, or smoke a live device JAR.
 
-Phase 11 self-host CODE + STATIC VERIFICATION 100% complete against blueprint; runtime JAR proof reserved for operator terminal.
+Proof harness:
+
+- `src/test/kotlin/atropos/cli/SelfHostInsideOutSandboxProofTest.kt`
+- It creates a temporary ATROPOS-shaped git repo with `settings.gradle.kts`, `build.gradle.kts`, a fake local `gradlew` for focused sandbox gates, and a sandbox installed JAR target.
+- It sets `user.dir` to the sandbox root before constructing `CommandRouter`, so `AgentCommand` and `SelfHostCommand` resolve the sandbox through `AtroposRepoRootLocator`.
+- It enters with a natural-language prompt through `CommandRouter.handleInput`, not a direct runner call.
+
+Executed prompt:
+
+```text
+ATROPOS, build yourself from the inside out and run self-host Phase 11
+```
+
+Executed artifact summary from `.atropos/self-hosting/proofs/phase11-inside-out-sandbox-proof.properties`:
+
+| Field | Value |
+| --- | --- |
+| Sandbox root | `/data/data/com.termux/files/usr/tmp/atropos-inside-out-proof-14303387409231267223` |
+| Goal id | `shg-711cd428-d3c` |
+| Source worktree id | `wt-67187cd5-35f` |
+| Source worktree path | `/data/data/com.termux/files/usr/tmp/atropos-inside-out-proof-14303387409231267223/.atropos/worktrees/wt-67187cd5-35f` |
+| Mutated source path | `/data/data/com.termux/files/usr/tmp/atropos-inside-out-proof-14303387409231267223/src/main/kotlin/atropos/core/agent/SelfHostCradleRuntimeState.kt` |
+| Marker before hash | `missing` |
+| Marker after sha256 | `63c8ca399373f189defdd7dd0cecec613a87741ce3e981c2652d16af0deeb80c` |
+| Mutation status | `?? src/main/kotlin/atropos/core/agent/SelfHostCradleRuntimeState.kt`; `?? src/test/kotlin/atropos/core/agent/SelfHostCradleRuntimeStateTest.kt` |
+| Evidence Markdown | `/data/data/com.termux/files/usr/tmp/atropos-inside-out-proof-14303387409231267223/.atropos/self-hosting/evidence/shg-711cd428-d3c/bundle.md` |
+| Evidence Markdown sha256 | `e60447f476cfaae5e31be7627349715c7565455836670ea59a577bdf600a01cd` |
+| Evidence JSON | `/data/data/com.termux/files/usr/tmp/atropos-inside-out-proof-14303387409231267223/.atropos/self-hosting/evidence/shg-711cd428-d3c/bundle.json` |
+| Evidence JSON sha256 | `964db1cb5ac4a3ed96855f395d215c95ede5c2e3c4c2a45aa81871621a6a6dcf` |
+| Sandbox backup JAR | `/data/data/com.termux/files/usr/tmp/atropos-inside-out-proof-14303387409231267223/installed/atropos.jar.backup-1785323290254` |
+| Hard-fail promoted | `false` |
+| Hard-fail message | `promotion refused by self-host safety hard-fail gate: fake_success: self-host state references fake or evidence-free success` |
+| Hard-fail target sha256 | `d100a829cdb8a67d571ef23ce8ef57a11484d265e97cd6d7ba0e21b878cfa94c` |
+
+Gate outcomes from the executed run:
+
+- `self_host_safety passed=true`
+- `director_pre_promote allowed=true message=director advisory: no blocking drift`
+- `promotion_gate node=shg-711cd428-d3c-source-marker-test canComplete=true | Implementation Exists=PASS | Focused Tests=PASS | Deterministic Verification=PASS | Compile Gate=PASS | Territory & Secrets=PASS | Acceptance Evidence=PASS | Expected Outputs=PASS | Unresolved Dimensions=PASS | Auditor Findings=PASS`
+- `jar_swap promoted=true candidate=ATROPOS.jar ... backup=atropos.jar.backup-1785323290254 ... candidate_exists=PASS`
+
+Evidence bundle excerpt from the executed run:
+
+- `context_preflight_verified goal=shg-711cd428-d3c ... node=shg-711cd428-d3c-source-marker`
+- `context_attestation system=ATROPOS ... node=shg-711cd428-d3c-source-marker`
+- `node_execution node=shg-711cd428-d3c-source-marker ok=true state=COMPLETE result=worktree=wt-67187cd5-35f merged=true path=src/main/kotlin/atropos/core/agent/SelfHostCradleRuntimeState.kt sha256=63c8ca399373f189defdd7dd0cecec613a87741ce3e981c2652d16af0deeb80c`
+- `node_execution node=shg-711cd428-d3c-source-marker-test ok=true state=COMPLETE result=worktree=wt-f174a9b0-89a merged=true path=src/test/kotlin/atropos/core/agent/SelfHostCradleRuntimeStateTest.kt sha256=6f697ed8d01b87c5a04178e515692d9c4eeda2b8a05523cc2d71528d17748f0b`
+- `candidate_jar_build ok=true ... candidate=ATROPOS.jar`
+- `promotion_gate ... canComplete=true`
+- `jar_swap promoted=true ... backup=atropos.jar.backup-1785323290254`
+
+The sandbox JAR swap exercised prior-JAR preservation in `installed/`: active `atropos.jar` was replaced with the sandbox candidate, and `atropos.jar.backup-1785323290254` preserved the prior bytes.
+
+The hard-fail case used the real `SelfHostPromotionService` with an added `fake_success placeholder green` evidence line. `SelfHostSafetyHardFailGate` refused before swap, and `installed/hard-fail-target.jar` remained unchanged.
+
+## Provider Source Ingest Proof
+
+Implemented source bindings:
+
+- `git`: any host reachable by local `git`, including local git repositories, yields a content-addressed tree and `FetchReceipt`.
+- `local_path`: local tree copied into `.atropos/source-bindings/trees/<treeHash>` and packed from that immutable tree.
+- `archive`: `.zip`, `.tar`, `.tar.gz`, `.tgz`; zip extraction defends against path escape; optional SHA-256 pin is enforced.
+- `http_bundle`: requires `expectedSha256`, downloads bytes, verifies hash, then processes as archive. Missing or mismatched hash is typed failure, not degraded success.
+
+Context pack behavior:
+
+- `CodebaseContextPacker` packs from the active binding tree regardless of origin.
+- Packs are path-bounded by declared territory and size-bounded by request limits.
+- Packs contain `SOURCE_PACK_ID`, `FETCH_RECEIPT_ID`, `BINDING`, `TREE_HASH`, `TERRITORY`, and redacted file sections.
+- Providers never require GitHub. DAG provider nodes require a pack from the active binding.
+- `DagProviderNodeExecutor` refuses blind provider calls with no declared territory and blocks if no pack/attestation exists.
+
+Focused test:
+
+```bash
+./gradlew test --tests atropos.core.provider.SourceBindingContextPackerTest
+```
+
+Result: PASS as part of the focused causal-chain run.
+
+## Executed Installed-Runtime Proof
+
+Proof script:
+
+```bash
+./gradlew jar
+scripts/selfhost-installed-proof.sh build/libs/ATROPOS.jar
+```
+
+Result:
+
+```text
+ATROPOS_SELFHOST_INSTALLED_PROOF_OK
+proof=/data/data/com.termux/files/home/ATROPOS/.atropos/self-hosting/proofs/phase11-installed-runtime-proof.properties
+sandbox=/tmp/atropos-installed-proof.k3UhLi
+```
+
+Installed proof properties:
+
+| Field | Value |
+| --- | --- |
+| Prompt | `ATROPOS, build yourself from the inside out and run self-host Phase 11` |
+| Installed runtime JAR | `/data/data/com.termux/files/home/ATROPOS/build/libs/ATROPOS.jar` |
+| Sandbox root | `/tmp/atropos-installed-proof.k3UhLi` |
+| Mutated marker path | `/tmp/atropos-installed-proof.k3UhLi/src/main/kotlin/atropos/core/agent/SelfHostCradleRuntimeState.kt` |
+| Marker sha256 | `63c6c029151d686ba9f01d46d381d46616d010b3a6cf63cbc4d5cbe33f01697d` |
+| Mutation status | `?? src/main/kotlin/atropos/core/agent/SelfHostCradleRuntimeState.kt | ?? src/test/kotlin/atropos/core/agent/SelfHostCradleRuntimeStateTest.kt` |
+| Evidence Markdown | `/tmp/atropos-installed-proof.k3UhLi/.atropos/self-hosting/evidence/shg-9850fa76-9d4/bundle.md` |
+| Evidence Markdown sha256 | `f5752efe5eb881de47974cc43fb6854eb32b40a1bea35ceac1b5855eae301ee8` |
+| Evidence JSON | `/tmp/atropos-installed-proof.k3UhLi/.atropos/self-hosting/evidence/shg-9850fa76-9d4/bundle.json` |
+| Evidence JSON sha256 | `c3c40d6d4cef8f04deb8af8e9f67693ae0113d998a50a981bbad54c8f15b244b` |
+| Sandbox installed JAR | `/tmp/atropos-installed-proof.k3UhLi/installed/atropos.jar` |
+| Sandbox installed JAR sha256 | `5054244a6084c60c3a7be858113bf829cbda8f39516863d39b7cc9d6120a0d7d` |
+| Sandbox prior-JAR backup | `/tmp/atropos-installed-proof.k3UhLi/installed/atropos.jar.backup-1785329292443` |
+| Sandbox backup sha256 | `b518592741d8dc186777b762d29630cf50d5828a4ab7b2b438ef68e3434852ed` |
+| Output log | `/tmp/atropos-installed-proof.k3UhLi/installed-proof.out` |
+
+The proof used the production headless JAR entry point with stdin, not a test-only service call. The script refuses if the prompt routes to generic provider chat, if marker files are absent/empty, if the sandbox installed JAR is not swapped, if the prior JAR backup is missing, or if the evidence bundle is absent.
+
+Initial attempts against stale `./atropos.jar` and pre-existing `build/libs/ATROPOS.jar` failed because those artifacts routed the NL prompt to generic provider chat. After packaging the current tree with `./gradlew jar`, installed-runtime proof passed.
+
+## Kill / Restart Continuity Proof
+
+Focused command:
+
+```bash
+./gradlew test --tests atropos.core.agent.SelfHostRecoveryContinuationTest --tests atropos.core.recovery.RestartCoordinatorTest --tests atropos.core.recovery.CrashRecoveryServiceTest --tests atropos.core.recovery.RuntimeContinuitySupervisorTest --tests atropos.core.agent.GoalContinuationServiceTest
+```
+
+Result: PASS.
+
+The installed proof sandbox also wrote restart snapshots under:
+
+```text
+/tmp/atropos-installed-proof.k3UhLi/.atropos/recovery/snapshots/
+```
+
+Code-level MISSING on the causal chain: none found in A-E, provider source-ingest, focused recovery tests, sandbox proof, or installed-runtime proof.
+
+Phase 11 inside-out self-build PROVEN in sandbox and installed-runtime sandbox via NL prompt + real source mutation; live device install remains operator deployment work.

@@ -8,8 +8,8 @@ class AgentWorktreeCommandHandler(
     private val worktreeService: IsolatedWorktreeService,
     private val invalid: (String) -> AgentCommandOutcome.Invalid
 ) {
-    fun execute(args: List<String>): AgentCommandOutcome =
-        when (args.getOrNull(0)?.lowercase()) {
+    fun execute(args: List<String>): AgentCommandOutcome {
+        return when (args.getOrNull(0)?.lowercase()) {
             null, "list" -> {
                 val text = worktreeService.listWorktrees()
                     .joinToString("\n") { "${it.id}: job=${it.jobId} verified=${it.verified} rolledBack=${it.rolledBack} merged=${it.mergedBack}" }
@@ -34,6 +34,7 @@ class AgentWorktreeCommandHandler(
             "show" -> show(args)
             else -> invalid("usage: /agent worktree [list|create|rollback|merge|show]")
         }
+    }
 
     private fun create(args: List<String>): AgentCommandOutcome {
         val jobId = args.getOrNull(1) ?: return invalid("usage: /agent worktree create <job-id> [--territory path,...]")
