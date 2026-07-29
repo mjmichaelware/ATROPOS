@@ -1,5 +1,6 @@
 package atropos.core.platform
 
+import atropos.core.AtroposRepoRootLocator
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
@@ -29,7 +30,7 @@ interface PlatformAbstraction {
 data class ProcessOutput(val exitCode: Int, val stdout: String, val stderr: String, val command: String)
 
 class JvmPlatformAbstraction(
-    private val repoRoot: Path = Path.of(System.getProperty("user.dir"))
+    private val repoRoot: Path = AtroposRepoRootLocator.resolve()
 ) : PlatformAbstraction {
     override val descriptor: PlatformDescriptor = PlatformDescriptor.detect()
     override val environment: PlatformEnvironment = PlatformEnvironment(platform = descriptor.platform)

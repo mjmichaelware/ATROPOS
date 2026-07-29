@@ -1,5 +1,6 @@
 package atropos.core.agent
 
+import atropos.core.AtroposRepoRootLocator
 import atropos.core.memory.LocalMemoryStore
 import java.net.URI
 import java.net.http.HttpClient
@@ -10,7 +11,7 @@ import java.time.Duration
 import java.time.Instant
 
 class ProviderSessionSupervisor(
-    private val repoRoot: Path = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize(),
+    private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
     private val store: SupervisedSessionStore = SupervisedSessionStore(repoRoot),
     private val memoryStore: LocalMemoryStore = LocalMemoryStore(repoRoot.resolve(".atropos/memory").toFile()),
     private val clock: () -> Instant = { Instant.now() },

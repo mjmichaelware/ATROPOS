@@ -1,5 +1,6 @@
 package atropos.core.project
 
+import atropos.core.AtroposRepoRootLocator
 import atropos.core.security.RedactionFilter
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
@@ -8,7 +9,7 @@ import java.nio.file.StandardCopyOption
 import java.time.Instant
 
 class ProjectRegistry(
-    private val repoRoot: Path = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize(),
+    private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
     private val clock: () -> Instant = { Instant.now() },
     private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {

@@ -1,5 +1,6 @@
 package atropos.core.agent
 
+import atropos.core.AtroposRepoRootLocator
 import atropos.core.security.RedactionFilter
 import java.net.InetAddress
 import java.nio.channels.FileChannel
@@ -14,7 +15,7 @@ import java.time.format.DateTimeFormatter
 import java.util.UUID
 
 class AgentQueueStore(
-    private val repoRoot: Path = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize(),
+    private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
     private val clock: () -> Instant = { Instant.now() },
     queueRootOverride: Path? = null,
     private val redactionFilter: RedactionFilter = RedactionFilter()

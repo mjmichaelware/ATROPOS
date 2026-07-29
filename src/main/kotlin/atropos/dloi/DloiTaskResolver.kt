@@ -5,7 +5,9 @@ data class DloiTaskMatch(
     val section: DloiSection
 )
 
-class DloiTaskResolver {
+class DloiTaskResolver(
+    private val aliases: DloiAliasResolver = DloiAliasResolver()
+) {
     fun resolve(task: String, documents: List<DloiDocument>): DloiTaskMatch {
         val normalizedTask = task.trim()
         require(normalizedTask.isNotBlank()) { "missing task text for authoritative resolution" }
@@ -16,7 +18,7 @@ class DloiTaskResolver {
             .map { it.value.uppercase() }
             .toSet()
         val documentScoped = documents.filter { document ->
-            documentAliases(document).any { alias -> alias.isNotBlank() && sluggedTask.contains(alias) }
+            aliases.documentAliases(document).any { alias -> alias.isNotBlank() && sluggedTask.contains(alias) }
         }
         val candidates = if (documentScoped.isNotEmpty()) documentScoped else documents
         val matches = candidates.flatMap { document ->
@@ -32,7 +34,7 @@ class DloiTaskResolver {
         // without precedence every phase task is ambiguous — and the alias
         // table already names which document is authoritative.
         val authoritative = matches.filter { match ->
-            documentAliases(match.document).contains("authority")
+            aliases.documentAliases(match.document).contains("authority")
         }
         val resolved = if (authoritative.size == 1) authoritative else matches
 
@@ -51,28 +53,9 @@ class DloiTaskResolver {
         if (explicitSectionIds.isNotEmpty()) {
             return section.id.uppercase() in explicitSectionIds
         }
-        return sectionAliases(section).any { alias ->
+        return aliases.sectionAliases(section).any { alias ->
             alias.length >= 4 && sluggedTask.contains(alias)
         }
-    }
-
-    private fun documentAliases(document: DloiDocument): Set<String> {
-        val stem = document.originalFilename.substringBeforeLast('.')
-        val normalized = dloiSlug(stem)
-        return when {
-            normalized.contains("canonical_phases_1_11_authority") ||
-                normalized.contains("codex_cli_build_blueprint_over_time") ->
-                setOf("authority", document.sourceId, dloiSlug(document.sourceId), normalized)
-            normalized.contains("canonical_phases_1_11_closure") ->
-                setOf("closure", document.sourceId, dloiSlug(document.sourceId), normalized)
-            else -> setOf(dloiSlug(document.sourceId), normalized)
-        }
-    }
-
-    private fun sectionAliases(section: DloiSection): Set<String> {
-        val titleSlug = dloiSlug(section.title)
-        val shortAlias = section.title.split(":").firstOrNull()?.let(::dloiSlug)
-        return setOfNotNull(section.id.lowercase(), dloiSlug(section.id), titleSlug, shortAlias)
     }
 
     private companion object {

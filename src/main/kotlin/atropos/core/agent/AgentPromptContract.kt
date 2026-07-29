@@ -1,5 +1,6 @@
 package atropos.core.agent
 
+import atropos.core.AtroposRepoRootLocator
 import atropos.core.provider.ContextAttestationService
 import atropos.core.provider.ContextEnvelope
 import atropos.core.provider.ContextEnvelopeFactory
@@ -27,7 +28,7 @@ object AgentPromptContract {
         providerId: String = "groq",
         modelId: String = "",
         task: String = "",
-        repoRoot: Path = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize(),
+        repoRoot: Path = AtroposRepoRootLocator.resolve(),
         explicitMythologyRequest: Boolean = false
     ): String {
         val envelope = ContextEnvelopeFactory.createSimple(
@@ -49,7 +50,7 @@ object AgentPromptContract {
         providerId: String = "groq",
         modelId: String = "",
         task: String = "",
-        repoRoot: Path = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize()
+        repoRoot: Path = AtroposRepoRootLocator.resolve()
     ): String {
         val envelope = ContextEnvelopeFactory.createSimple(
             providerId = providerId,
@@ -77,7 +78,7 @@ object AgentPromptContract {
         context: String,
         providerId: String = "groq",
         modelId: String = "",
-        repoRoot: Path = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize()
+        repoRoot: Path = AtroposRepoRootLocator.resolve()
     ): String {
         val verificationBlock = buildString {
             appendLine("Patch id: $patchId")

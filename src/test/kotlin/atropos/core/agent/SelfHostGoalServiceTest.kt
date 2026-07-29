@@ -26,6 +26,26 @@ class SelfHostGoalServiceTest {
         Files.createDirectories(repoRoot.resolve("src/main/kotlin/atropos"))
         Files.createDirectories(repoRoot.resolve("src/test/kotlin/atropos"))
         Files.writeString(repoRoot.resolve("src/main/kotlin/atropos/Main.kt"), "fun main() {}\n")
+        ProcessBuilder("git", "config", "user.email", "atropos@example.invalid")
+            .directory(repoRoot.toFile())
+            .redirectErrorStream(true)
+            .start()
+            .waitFor()
+        ProcessBuilder("git", "config", "user.name", "ATROPOS Test")
+            .directory(repoRoot.toFile())
+            .redirectErrorStream(true)
+            .start()
+            .waitFor()
+        ProcessBuilder("git", "add", ".")
+            .directory(repoRoot.toFile())
+            .redirectErrorStream(true)
+            .start()
+            .waitFor()
+        ProcessBuilder("git", "commit", "-m", "initial")
+            .directory(repoRoot.toFile())
+            .redirectErrorStream(true)
+            .start()
+            .waitFor()
     }
 
     @Test
@@ -82,14 +102,41 @@ class SelfHostGoalServiceTest {
         val dag = goal.dag ?: error("missing bootstrap DAG")
         assertEquals(dag.id, goal.record.dagId)
         assertEquals(dag.id, store.resolve(goal.record.id)?.dagId)
-        assertEquals(listOf("src/main/kotlin/atropos", "src/test/kotlin/atropos"), goal.record.territory)
-        assertEquals(1, dag.nodes.size)
-        assertEquals(DagNodeAction.VERIFY, dag.nodes.single().action)
-        assertTrue(dag.nodes.single().actionPayload.orEmpty().contains("git status --short"))
+        assertTrue(goal.record.territory.contains("src/main/kotlin/atropos"))
+        assertTrue(goal.record.territory.contains("src/test/kotlin/atropos"))
+        assertTrue(goal.record.territory.all { it.startsWith("src/main/kotlin/atropos") || it.startsWith("src/test/kotlin/atropos") })
+        assertEquals(3, dag.nodes.size)
+        val probe = dag.nodes.first()
+        val marker = dag.nodes[1]
+        val test = dag.nodes.last()
+        assertEquals(DagNodeAction.VERIFY, probe.action)
+        assertTrue(probe.actionPayload.orEmpty().contains("git status --short"))
+        assertEquals(DagNodeAction.EDIT_FILE, marker.action)
+        assertEquals(listOf(probe.id), marker.dependencies)
+        assertEquals(listOf("src/main/kotlin/atropos/core/agent"), marker.territory)
+        assertTrue(marker.actionPayload.orEmpty().contains("SelfHostCradleRuntimeState.kt::"))
+        assertEquals(DagNodeAction.CREATE_FILE, test.action)
+        assertEquals(listOf(marker.id), test.dependencies)
+        assertTrue(test.actionPayload.orEmpty().contains("SelfHostCradleRuntimeStateTest.kt::"))
     }
 
     @Test
-    fun advanceGoal_runs_one_attested_verification_node_and_records_completion_evidence() {
+    fun startGoal_escapes_generated_kotlin_literals() {
+        val repoRoot = Files.createTempDirectory("atropos-self-host-start-escape-")
+        initializeGitRepo(repoRoot)
+        val store = GoalRunStore(repoRoot)
+        val service = SelfHostGoalService(repoRoot = repoRoot, store = store)
+
+        val result = service.startGoal("build ATROPOS from natural language", "11\"x\nphase")
+
+        assertTrue(result.ok)
+        val payload = result.goal?.dag?.nodes?.get(1)?.actionPayload.orEmpty()
+        assertTrue(payload.contains("LAST_SELF_HOST_PHASE: String = \"11\\\"x\\nphase\""), payload)
+        assertTrue(!payload.contains("11\"x\nphase"), payload)
+    }
+
+    @Test
+    fun advanceGoal_runs_attested_nodes_and_records_real_source_diff() {
         val repoRoot = Files.createTempDirectory("atropos-self-host-advance-")
         initializeGitRepo(repoRoot)
         val base = Instant.parse("2026-07-27T07:04:00Z")
@@ -99,6 +146,17 @@ class SelfHostGoalServiceTest {
 
         val started = service.startGoal("advance one bounded cradle node", "11")
         val goalId = started.goal?.record?.id ?: error("missing goal id")
+        val first = service.advanceGoal(goalId)
+
+        assertTrue(first.ok, first.message)
+        val afterProbe = store.resolve(goalId) ?: error("missing probed goal")
+        assertEquals(GoalRunStatus.CONTINUING, afterProbe.status)
+        assertTrue(afterProbe.evidence.any { it.startsWith("context_attestation system=ATROPOS") })
+
+        val second = service.advanceGoal(goalId)
+
+        assertTrue(second.ok, second.message)
+
         val result = service.advanceGoal(goalId)
 
         assertTrue(result.ok, result.message)
@@ -106,15 +164,100 @@ class SelfHostGoalServiceTest {
         assertEquals(GoalRunStatus.COMPLETED, reopened.status)
         assertEquals(GoalTerminalCondition.VERIFIED_COMPLETE, reopened.terminalCondition)
         assertTrue(reopened.evidence.any { it.startsWith("context_attestation system=ATROPOS") })
-        assertEquals(started.goal?.record?.currentNodeId, reopened.currentNodeId)
+        assertTrue(reopened.evidence.any { it.startsWith("context_preflight_verified") })
+        assertTrue(
+            reopened.evidence.any {
+                it.startsWith("node_execution") && it.contains("worktree=") && it.contains("sha256=")
+            },
+            reopened.evidence.joinToString("\n")
+        )
 
         val dagId = reopened.dagId ?: error("missing DAG id")
         val dag = DagExecutionService(repoRoot = repoRoot).readDag(dagId) ?: error("missing DAG")
-        assertEquals(DagNodeState.COMPLETE, dag.nodes.single().state)
-        assertTrue(dag.nodes.single().result != null)
+        assertTrue(dag.nodes.all { it.state == DagNodeState.COMPLETE })
+        assertTrue(dag.nodes.all { it.result != null })
+        val marker = repoRoot.resolve("src/main/kotlin/atropos/core/agent/SelfHostCradleRuntimeState.kt")
+        val test = repoRoot.resolve("src/test/kotlin/atropos/core/agent/SelfHostCradleRuntimeStateTest.kt")
+        assertTrue(Files.readString(marker).contains("LAST_SELF_HOST_GOAL: String = \"$goalId\""))
+        assertTrue(Files.readString(test).contains("SelfHostCradleRuntimeState.LAST_SELF_HOST_GOAL"))
 
         val learned = service.learned(10)
         assertTrue(learned.any { it.subjectType == "selfhost_dag_eval" && it.body.contains("attestation:") })
+    }
+
+    @Test
+    fun evaluateReadyDagNode_refuses_missing_context_before_dispatch() {
+        val repoRoot = Files.createTempDirectory("atropos-self-host-missing-context-")
+        initializeGitRepo(repoRoot)
+        val base = Instant.parse("2026-07-27T07:04:30Z")
+        var tick = 0L
+        val store = GoalRunStore(repoRoot, clock = { base.plusSeconds(tick++) })
+        val service = SelfHostGoalService(repoRoot = repoRoot, store = store, clock = { base.plusSeconds(tick++) })
+
+        val started = service.startGoal("advance requires context", "11")
+        val goalId = started.goal?.record?.id ?: error("missing goal id")
+        val nodeId = started.goal?.record?.currentNodeId ?: error("missing node id")
+        val result = service.evaluateReadyDagNode(goalId, suppliedEnvelope = null)
+
+        assertTrue(!result.ok)
+        assertTrue(result.message.contains("context preflight failed: context envelope missing"), result.message)
+        val reopened = store.resolve(goalId) ?: error("missing refused goal")
+        assertTrue(reopened.evidence.any { it == "context_preflight_failed reason=context envelope missing" })
+        val dagId = reopened.dagId ?: error("missing DAG id")
+        val dag = DagExecutionService(repoRoot = repoRoot).readDag(dagId) ?: error("missing DAG")
+        assertEquals(DagNodeState.READY, dag.findNode(nodeId)?.state)
+    }
+
+    @Test
+    fun evaluateReadyDagNode_refuses_mismatched_context_before_dispatch() {
+        val repoRoot = Files.createTempDirectory("atropos-self-host-wrong-context-")
+        initializeGitRepo(repoRoot)
+        val base = Instant.parse("2026-07-27T07:04:45Z")
+        var tick = 0L
+        val store = GoalRunStore(repoRoot, clock = { base.plusSeconds(tick++) })
+        val service = SelfHostGoalService(repoRoot = repoRoot, store = store, clock = { base.plusSeconds(tick++) })
+
+        val started = service.startGoal("advance rejects wrong identity", "11")
+        val goalId = started.goal?.record?.id ?: error("missing goal id")
+        val nodeId = started.goal?.record?.currentNodeId ?: error("missing node id")
+        val envelope = service.contextEnvelopeForCurrentNode(goalId) ?: error("missing envelope")
+        val wrongIdentity = envelope.copy(systemIdentity = "NOT_ATROPOS", canonicalContextHash = "wrong")
+
+        val result = service.evaluateReadyDagNode(goalId, suppliedEnvelope = wrongIdentity)
+
+        assertTrue(!result.ok)
+        assertTrue(result.message.contains("context identity mismatch"), result.message)
+        val reopened = store.resolve(goalId) ?: error("missing refused goal")
+        assertTrue(reopened.evidence.any { it.startsWith("context_preflight_failed reason=context identity mismatch") })
+        val dagId = reopened.dagId ?: error("missing DAG id")
+        val dag = DagExecutionService(repoRoot = repoRoot).readDag(dagId) ?: error("missing DAG")
+        assertEquals(DagNodeState.READY, dag.findNode(nodeId)?.state)
+    }
+
+    @Test
+    fun evaluateReadyDagNode_refuses_forged_context_hash_before_dispatch() {
+        val repoRoot = Files.createTempDirectory("atropos-self-host-forged-context-")
+        initializeGitRepo(repoRoot)
+        val base = Instant.parse("2026-07-27T07:04:55Z")
+        var tick = 0L
+        val store = GoalRunStore(repoRoot, clock = { base.plusSeconds(tick++) })
+        val service = SelfHostGoalService(repoRoot = repoRoot, store = store, clock = { base.plusSeconds(tick++) })
+
+        val started = service.startGoal("advance rejects forged context", "11")
+        val goalId = started.goal?.record?.id ?: error("missing goal id")
+        val nodeId = started.goal?.record?.currentNodeId ?: error("missing node id")
+        val envelope = service.contextEnvelopeForCurrentNode(goalId) ?: error("missing envelope")
+        val forged = envelope.copy(canonicalContextHash = "0".repeat(64))
+
+        val result = service.evaluateReadyDagNode(goalId, suppliedEnvelope = forged)
+
+        assertTrue(!result.ok)
+        assertTrue(result.message.contains("context hash forged"), result.message)
+        val reopened = store.resolve(goalId) ?: error("missing refused goal")
+        assertTrue(reopened.evidence.any { it.startsWith("context_preflight_failed reason=context hash forged") })
+        val dagId = reopened.dagId ?: error("missing DAG id")
+        val dag = DagExecutionService(repoRoot = repoRoot).readDag(dagId) ?: error("missing DAG")
+        assertEquals(DagNodeState.READY, dag.findNode(nodeId)?.state)
     }
 
     @Test
@@ -142,7 +285,7 @@ class SelfHostGoalServiceTest {
         assertTrue(result.ok, result.message)
         assertEquals(recovery.id, result.goal?.record?.id)
         assertEquals(GoalRunStatus.RUNNING, store.resolve(running.id)?.status)
-        assertEquals(GoalRunStatus.COMPLETED, store.resolve(recovery.id)?.status)
+        assertEquals(GoalRunStatus.CONTINUING, store.resolve(recovery.id)?.status)
         assertTrue(store.resolve(recovery.id)?.evidence.orEmpty().any { it.startsWith("context_attestation system=ATROPOS") })
     }
 

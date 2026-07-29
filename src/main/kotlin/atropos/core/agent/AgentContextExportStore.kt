@@ -1,12 +1,13 @@
 package atropos.core.agent
 
+import atropos.core.AtroposRepoRootLocator
 import atropos.core.security.RedactionFilter
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 
 class AgentContextExportStore(
-    private val repoRoot: Path = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize(),
+    private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
     private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     private val exportDir = repoRoot.resolve(".atropos/agent/context").normalize()

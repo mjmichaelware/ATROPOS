@@ -1,5 +1,6 @@
 package atropos.core.recovery
 
+import atropos.core.AtroposRepoRootLocator
 import atropos.core.agent.GoalRunStatus
 import atropos.core.agent.GoalRunStore
 import atropos.core.dag.DagNodeState
@@ -11,11 +12,12 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
+import java.security.MessageDigest
 import java.time.Instant
 import java.util.UUID
 
 class RestartCoordinator(
-    private val repoRoot: Path = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize(),
+    private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
     private val crashRecovery: CrashRecoveryService = CrashRecoveryService(repoRoot = repoRoot),
     private val goalRunStore: GoalRunStore = GoalRunStore(repoRoot),
     private val dagStore: DagStore = DagStore(repoRoot),
@@ -40,7 +42,9 @@ class RestartCoordinator(
                     currentNodeId = it.currentNodeId,
                     continuationCount = it.continuationCount,
                     recoveryRequired = it.status == GoalRunStatus.RECOVERY_REQUIRED,
-                    evidenceCount = it.evidence.size
+                    evidenceCount = it.evidence.size,
+                    territory = it.territory.map(redactionFilter::redact),
+                    evidenceHashes = it.evidence.map { evidence -> sha256(redactionFilter.redact(evidence)) }
                 )
             },
             dags = dagStore.listDags().map { dag ->
@@ -53,6 +57,23 @@ class RestartCoordinator(
                     complete = dag.nodes.count { it.state == DagNodeState.COMPLETE },
                     failed = dag.nodes.count { it.state == DagNodeState.FAILED }
                 )
+            },
+            dagNodes = dagStore.listDags().flatMap { dag ->
+                dag.nodes.map { node ->
+                    DagNodeSnapshot(
+                        dagId = dag.id,
+                        nodeId = node.id,
+                        state = node.state.name,
+                        action = node.action.name,
+                        territory = node.territory.map(redactionFilter::redact),
+                        expectedOutputs = node.expectedOutputs.map(redactionFilter::redact),
+                        resultHash = node.result?.let { sha256(redactionFilter.redact(it)) },
+                        failureHash = node.failureReason?.let { sha256(redactionFilter.redact(it)) },
+                        claimOwner = node.claimOwner?.let(redactionFilter::redact),
+                        attempts = node.attempts,
+                        maxAttempts = node.maxAttempts
+                    )
+                }
             },
             worktrees = worktreeService.listWorktrees().map {
                 WorktreeSnapshot(
@@ -113,10 +134,13 @@ class RestartCoordinator(
         appendLine("memoryRecords=${snapshot.memoryRecords}")
         appendLine("recoveryMessageB64=${encode(snapshot.recoveryReport?.message.orEmpty())}")
         snapshot.goalRuns.forEach {
-            appendLine("goal=${listOf(it.id, it.status, it.dagId.orEmpty(), it.currentNodeId.orEmpty(), it.continuationCount, it.recoveryRequired, it.evidenceCount).joinToString("|")}")
+            appendLine("goal=${listOf(it.id, it.status, it.dagId.orEmpty(), it.currentNodeId.orEmpty(), it.continuationCount, it.recoveryRequired, it.evidenceCount, encode(it.territory.joinToString(",")), it.evidenceHashes.joinToString(",")).joinToString("|")}")
         }
         snapshot.dags.forEach {
             appendLine("dag=${listOf(it.id, encode(it.label), it.ready, it.running, it.blocked, it.complete, it.failed).joinToString("|")}")
+        }
+        snapshot.dagNodes.forEach {
+            appendLine("node=${listOf(it.dagId, it.nodeId, it.state, it.action, encode(it.territory.joinToString(",")), encode(it.expectedOutputs.joinToString(",")), it.resultHash.orEmpty(), it.failureHash.orEmpty(), encode(it.claimOwner.orEmpty()), it.attempts, it.maxAttempts).joinToString("|")}")
         }
         snapshot.worktrees.forEach {
             appendLine("worktree=${listOf(it.id, it.jobId, encode(redactionFilter.redact(it.path)), it.verified, it.rolledBack, it.mergedBack, it.territory.joinToString(",")).joinToString("|")}")
@@ -138,6 +162,7 @@ class RestartCoordinator(
             capturedAt = capturedAt,
             goalRuns = keyed.filter { it.first == "goal" }.mapNotNull { parseGoal(it.second) },
             dags = keyed.filter { it.first == "dag" }.mapNotNull { parseDag(it.second) },
+            dagNodes = keyed.filter { it.first == "node" }.mapNotNull { parseNode(it.second) },
             worktrees = keyed.filter { it.first == "worktree" }.mapNotNull { parseWorktree(it.second) },
             memoryRecords = memoryRecords
         )
@@ -146,13 +171,41 @@ class RestartCoordinator(
     private fun parseGoal(raw: String): GoalRunSnapshot? {
         val p = raw.split("|")
         if (p.size < 7) return null
-        return GoalRunSnapshot(p[0], p[1], p[2].ifBlank { null }, p[3].ifBlank { null }, p[4].toIntOrNull() ?: 0, p[5].toBoolean(), p[6].toIntOrNull() ?: 0)
+        return GoalRunSnapshot(
+            id = p[0],
+            status = p[1],
+            dagId = p[2].ifBlank { null },
+            currentNodeId = p[3].ifBlank { null },
+            continuationCount = p[4].toIntOrNull() ?: 0,
+            recoveryRequired = p[5].toBoolean(),
+            evidenceCount = p[6].toIntOrNull() ?: 0,
+            territory = p.getOrNull(7)?.let(::decode)?.split(",")?.filter { it.isNotBlank() }.orEmpty(),
+            evidenceHashes = p.getOrNull(8)?.split(",")?.filter { it.isNotBlank() }.orEmpty()
+        )
     }
 
     private fun parseDag(raw: String): DagSnapshot? {
         val p = raw.split("|")
         if (p.size < 7) return null
         return DagSnapshot(p[0], decode(p[1]), p[2].toIntOrNull() ?: 0, p[3].toIntOrNull() ?: 0, p[4].toIntOrNull() ?: 0, p[5].toIntOrNull() ?: 0, p[6].toIntOrNull() ?: 0)
+    }
+
+    private fun parseNode(raw: String): DagNodeSnapshot? {
+        val p = raw.split("|")
+        if (p.size < 11) return null
+        return DagNodeSnapshot(
+            dagId = p[0],
+            nodeId = p[1],
+            state = p[2],
+            action = p[3],
+            territory = decode(p[4]).split(",").filter { it.isNotBlank() },
+            expectedOutputs = decode(p[5]).split(",").filter { it.isNotBlank() },
+            resultHash = p[6].ifBlank { null },
+            failureHash = p[7].ifBlank { null },
+            claimOwner = decode(p[8]).ifBlank { null },
+            attempts = p[9].toIntOrNull() ?: 0,
+            maxAttempts = p[10].toIntOrNull() ?: 0
+        )
     }
 
     private fun parseWorktree(raw: String): WorktreeSnapshot? {
@@ -166,4 +219,9 @@ class RestartCoordinator(
 
     private fun decode(value: String): String =
         runCatching { String(java.util.Base64.getDecoder().decode(value), StandardCharsets.UTF_8) }.getOrDefault("")
+
+    private fun sha256(text: String): String {
+        val digest = MessageDigest.getInstance("SHA-256").digest(text.toByteArray(StandardCharsets.UTF_8))
+        return digest.joinToString("") { "%02x".format(it) }
+    }
 }

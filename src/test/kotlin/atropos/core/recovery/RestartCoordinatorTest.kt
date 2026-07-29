@@ -53,9 +53,12 @@ class RestartCoordinatorTest {
         assertEquals(goal.id, snapshot.goalRuns.single().id)
         assertEquals(dag.id, snapshot.dags.single().id)
         assertEquals(1, snapshot.dags.single().ready)
+        assertEquals("node-a", snapshot.dagNodes.single().nodeId)
+        assertEquals("READY", snapshot.dagNodes.single().state)
         assertEquals(1, snapshot.memoryRecords)
         assertNotNull(latest)
         assertEquals(snapshot.id, latest.id)
+        assertEquals("node-a", latest.dagNodes.single().nodeId)
     }
 
     @Test

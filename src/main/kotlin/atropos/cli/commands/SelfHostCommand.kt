@@ -2,7 +2,9 @@ package atropos.cli.commands
 
 import atropos.cli.ui.AnsiTerminalEngine
 import atropos.core.AtroposConfig
+import atropos.core.AtroposRepoRootLocator
 import atropos.core.agent.GoalTerminalCondition
+import atropos.core.agent.SelfHostAutonomousRunResult
 import atropos.core.agent.SelfHostGoalService
 import atropos.core.dag.DagExecutionService
 import atropos.core.journal.EventJournalService
@@ -12,8 +14,9 @@ import java.nio.file.Path
 class SelfHostCommand(
     private val ui: AnsiTerminalEngine,
     private val config: AtroposConfig = AtroposConfig.load(),
-    private val repoRoot: Path = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize(),
+    private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
     private val selfHostService: SelfHostGoalService = SelfHostGoalService(repoRoot),
+    private val selfHostRunner: (String) -> SelfHostAutonomousRunResult = selfHostService::runNaturalLanguageSelfBuild,
     private val dagService: DagExecutionService = DagExecutionService(config, repoRoot),
     private val journal: EventJournalService = EventJournalService(repoRoot),
     private val completionGate: VerifiedCompletionGate = VerifiedCompletionGate(config, repoRoot)
@@ -28,12 +31,17 @@ class SelfHostCommand(
             return AgentCommandOutcome.Invalid(usage())
         }
         return when (normalized[1].lowercase()) {
+            "run" -> handleRun(normalized.drop(2))
             "start" -> handleStart(normalized.drop(2))
             "status" -> handleStatus(normalized.drop(2))
             "watch" -> handleWatch(normalized.drop(2))
             "resume" -> handleResume(normalized.drop(2))
+            "recover" -> handleRecover(normalized.drop(2))
+            "next" -> handleNext(normalized.drop(2))
             "stop" -> handleStop(normalized.drop(2))
             "verify" -> handleVerify(normalized.drop(2))
+            "promote" -> handlePromote(normalized.drop(2))
+            "export-evidence" -> handleExportEvidence(normalized.drop(2))
             "history" -> handleHistory()
             "learned" -> handleLearned()
             "benchmark" -> handleBenchmark()
@@ -44,12 +52,17 @@ class SelfHostCommand(
     private fun usage(): String =
         buildString {
             appendLine("usage: /agent self-host <command>")
+            appendLine("  run <natural-language self-host goal>")
             appendLine("  start <goal-name> [--phase <phase>]")
             appendLine("  status [goal-id]")
             appendLine("  watch [goal-id]")
             appendLine("  resume [goal-id]")
+            appendLine("  recover [goal-id]")
+            appendLine("  next [goal-id]")
             appendLine("  stop [goal-id]")
             appendLine("  verify [goal-id]")
+            appendLine("  promote <goal-id> <candidate-jar> <target-jar> [node-id]")
+            appendLine("  export-evidence <goal-id>")
             appendLine("  history")
             appendLine("  learned")
             append("  benchmark")
@@ -57,7 +70,7 @@ class SelfHostCommand(
 
     private fun handleStart(args: List<String>): AgentCommandOutcome {
         val phaseIndex = args.indexOf("--phase")
-        val phase = if (phaseIndex >= 0) args.getOrNull(phaseIndex + 1) ?: "1" else "1"
+        val phase = if (phaseIndex >= 0) args.getOrNull(phaseIndex + 1) ?: "11" else "11"
         val goalTokens = if (phaseIndex >= 0) {
             args.filterIndexed { index, _ -> index != phaseIndex && index != phaseIndex + 1 }
         } else {
@@ -215,6 +228,42 @@ class SelfHostCommand(
         }
     }
 
+    private fun handleRun(args: List<String>): AgentCommandOutcome {
+        val prompt = args.joinToString(" ").ifBlank {
+            return AgentCommandOutcome.Invalid("usage: /agent self-host run <natural-language self-host goal>")
+        }
+        ui.startSpinner("Running Phase 11 self-host loop")
+        return try {
+            val result = selfHostRunner(prompt)
+            val text = buildString {
+                appendLine(result.message)
+                appendLine("goal: ${result.goal?.record?.id ?: "none"}")
+                appendLine("status: ${result.goal?.record?.status ?: "none"}")
+                appendLine("terminal: ${result.goal?.record?.terminalCondition ?: "none"}")
+                appendLine("promotion: ${result.promotion?.message ?: "not attempted"}")
+                result.evidenceBundle?.let {
+                    appendLine("evidence markdown: ${it.markdownPath ?: "none"}")
+                    appendLine("evidence json: ${it.jsonPath ?: "none"}")
+                }
+                appendLine("steps:")
+                result.steps.forEach { appendLine("  - $it") }
+            }.trimEnd()
+            if (!result.ok) {
+                ui.renderError(text)
+                AgentCommandOutcome.Invalid(text)
+            } else {
+                ui.renderNotice("SELF-HOST RUN\n$text")
+                AgentCommandOutcome.Completed(text)
+            }
+        } catch (failure: Exception) {
+            val message = failure.message ?: "self-host run failed"
+            ui.renderError(message)
+            AgentCommandOutcome.Invalid(message)
+        } finally {
+            ui.stopSpinner()
+        }
+    }
+
     private fun handleStop(args: List<String>): AgentCommandOutcome {
         val selected = selfHostService.resolveStoppableGoal(args.getOrNull(0)?.takeIf { it.isNotBlank() })
         if (!selected.ok) {
@@ -234,6 +283,41 @@ class SelfHostCommand(
         )
         ui.renderNotice("self-host goal $goalId stopped")
         return AgentCommandOutcome.Completed(result.message)
+    }
+
+    private fun handleRecover(args: List<String>): AgentCommandOutcome {
+        val requestedGoalId = args.getOrNull(0)?.takeIf { it.isNotBlank() }
+        val result = selfHostService.recoverAndContinue(requestedGoalId)
+        val record = result.goal?.record
+        val text = buildString {
+            appendLine(result.message)
+            if (record != null) {
+                appendLine("goal: ${record.id}")
+                appendLine("phase: ${record.activePhase ?: "none"}")
+                appendLine("node: ${record.currentNodeId ?: "none"}")
+                appendLine("status: ${record.status}")
+                appendLine("next: ${selfHostService.planNextAction(record.id).kind}")
+            }
+        }.trimEnd()
+        if (!result.ok) {
+            ui.renderError(text)
+            return AgentCommandOutcome.Invalid(text)
+        }
+        ui.renderNotice("SELF-HOST RECOVER\n$text")
+        return AgentCommandOutcome.Completed(text)
+    }
+
+    private fun handleNext(args: List<String>): AgentCommandOutcome {
+        val requestedGoalId = args.getOrNull(0)?.takeIf { it.isNotBlank() }
+        val next = selfHostService.planNextAction(requestedGoalId)
+        val text = buildString {
+            appendLine("next: ${next.kind}")
+            appendLine("goal: ${next.goalId ?: "none"}")
+            appendLine("node: ${next.nodeId ?: "none"}")
+            append("reason: ${next.reason}")
+        }
+        ui.renderNotice("SELF-HOST NEXT\n$text")
+        return AgentCommandOutcome.Completed(text)
     }
 
     private fun handleVerify(args: List<String>): AgentCommandOutcome {
@@ -268,6 +352,54 @@ class SelfHostCommand(
             }
         }
         ui.renderNotice("SELF-HOST VERIFY\n$text")
+        return AgentCommandOutcome.Completed(text)
+    }
+
+    private fun handlePromote(args: List<String>): AgentCommandOutcome {
+        if (args.size < 3) {
+            return AgentCommandOutcome.Invalid("usage: /agent self-host promote <goal-id> <candidate-jar> <target-jar> [node-id]")
+        }
+        val result = selfHostService.promoteVerifiedJar(
+            goalId = args[0],
+            candidateJar = repoRoot.resolve(args[1]).normalize(),
+            targetJar = repoRoot.resolve(args[2]).normalize(),
+            nodeId = args.getOrNull(3)
+        )
+        val text = buildString {
+            appendLine(result.message)
+            appendLine("promoted: ${result.promoted}")
+            appendLine("goal: ${result.goal?.record?.id ?: args[0]}")
+            appendLine("gate: ${result.gateReport?.message ?: "not evaluated"}")
+            result.jarSwap?.let {
+                appendLine("candidate: ${it.candidateJar}")
+                appendLine("target: ${it.targetJar}")
+                appendLine("backup: ${it.backupJar ?: "none"}")
+            }
+        }.trimEnd()
+        if (!result.promoted) {
+            ui.renderError(text)
+            return AgentCommandOutcome.Invalid(text)
+        }
+        ui.renderNotice("SELF-HOST PROMOTE\n$text")
+        return AgentCommandOutcome.Completed(text)
+    }
+
+    private fun handleExportEvidence(args: List<String>): AgentCommandOutcome {
+        val goalId = args.getOrNull(0)?.takeIf { it.isNotBlank() }
+            ?: return AgentCommandOutcome.Invalid("usage: /agent self-host export-evidence <goal-id>")
+        val result = selfHostService.exportEvidenceBundle(goalId)
+        val text = buildString {
+            appendLine(result.message)
+            appendLine("markdown: ${result.markdownPath ?: "none"}")
+            appendLine("markdown sha256: ${result.markdownSha256 ?: "none"}")
+            appendLine("json: ${result.jsonPath ?: "none"}")
+            appendLine("json sha256: ${result.jsonSha256 ?: "none"}")
+        }.trimEnd()
+        if (!result.ok) {
+            ui.renderError(text)
+            return AgentCommandOutcome.Invalid(text)
+        }
+        ui.renderNotice("SELF-HOST EVIDENCE\n$text")
         return AgentCommandOutcome.Completed(text)
     }
 

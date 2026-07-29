@@ -1,5 +1,6 @@
 package atropos.core.evaluation
 
+import atropos.core.AtroposRepoRootLocator
 import atropos.core.security.RedactionFilter
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
@@ -7,7 +8,7 @@ import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 
 class EvaluationHistoryStore(
-    private val repoRoot: Path = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize(),
+    private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
     private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     private val root = repoRoot.resolve(".atropos/evaluation").normalize()

@@ -19,10 +19,12 @@ class ProviderFixtureMatrixServiceTest {
         results.forEach { result ->
             val names = result.details.map { it.substringBefore("=") }.toSet()
             assertTrue(names.containsAll(setOf(
+                "success",
                 "dry_run",
                 "auth_failed",
                 "rate_limited",
                 "billing_required",
+                "unavailable",
                 "timeout",
                 "malformed_response",
                 "empty_response",

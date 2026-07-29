@@ -1,5 +1,6 @@
 package atropos.core.auditor
 
+import atropos.core.AtroposRepoRootLocator
 import atropos.core.security.RedactionFilter
 import atropos.core.territory.TerritoryAssignment
 import atropos.core.verification.DeterministicVerifier
@@ -46,7 +47,7 @@ class AuditorService(
      * this one made that misconfiguration invisible while the verifier still
      * crashed on such paths and the failure was swallowed as a warning.
      */
-    private val repoRoot: Path = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize()
+    private val repoRoot: Path = AtroposRepoRootLocator.resolve()
 ) {
     private val findings = mutableListOf<AuditFinding>()
 

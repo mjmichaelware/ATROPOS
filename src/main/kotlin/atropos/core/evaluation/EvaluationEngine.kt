@@ -1,5 +1,6 @@
 package atropos.core.evaluation
 
+import atropos.core.AtroposRepoRootLocator
 import atropos.core.artifact.ArtifactPipeline
 import atropos.core.artifact.ArtifactState
 import atropos.core.auditor.AuditorService
@@ -14,7 +15,7 @@ import atropos.core.territory.TerritoryStore
 import java.nio.file.Path
 
 class EvaluationEngine(
-    private val repoRoot: Path = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize(),
+    private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
     private val artifactPipeline: ArtifactPipeline = ArtifactPipeline(),
     private val journal: EventJournalService = EventJournalService(repoRoot),
     private val memory: LocalMemoryStore = LocalMemoryStore(repoRoot.resolve(".atropos/memory").toFile()),
