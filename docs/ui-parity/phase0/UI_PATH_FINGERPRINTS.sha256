@@ -1,0 +1,28 @@
+# ATROPOS UI path fingerprints
+# Generated 2026-07-29. Re-run to detect drift without re-reading the tree.
+# Covers presentation paths touched by the CLI Home batch and web batches 1-2 only.
+cff3142165a6391f2a72d3837ecb041003127594df0272cb9cc39ced19a4a1c1  src/main/kotlin/atropos/cli/ui/DashboardRenderer.kt
+c3e33f8c415b1c2aa509915a2552caa944cc33de2babc65b9ab334ca24bdbb1b  src/main/kotlin/atropos/cli/ui/HomeStateProvider.kt
+4f0befd37b43813afcb460d5684ab1361e8f917a1143d02e909ec93920effa2b  src/main/kotlin/atropos/cli/ui/AnsiTerminalEngine.kt
+ba43f36530c49ad29ade67f4944d9ea72cc1aec594048778a0fcbbdf3a230b5f  src/main/kotlin/atropos/cli/CommandRouter.kt
+ffc00156d99202dde3c3988aa9273e14177aa0a3f6b63f93fb5e672a38c5513b  src/test/kotlin/atropos/cli/ui/HomeStateProviderTest.kt
+e90a2004c7c3b2b7178cf6ff57bcafc197a1108b61364ae6f68889513981f79c  src/test/kotlin/atropos/cli/ui/DashboardRendererWidthTest.kt
+b09588b2ebcdf1d10f1df710890578ce3f395c7389b2fe11176a549a58b28095  apps/web/src/lib/bridge/engine.ts
+f02d5a5d69b21fac5a2d56872b725344ba7170e1a62f56cd2779efc03010b0f6  apps/web/src/app/api/atropos/status/route.ts
+f5f8d9064d773ff3d07b24b7a1ec4a693a61305f7e743912329f7e466e77615a  apps/web/src/app/api/atropos/command/route.ts
+a5700bb823e3e200b08c7554c89308fc3563aa20039e24c4e9a62482f02f1e34  apps/web/src/lib/hooks/use-engine-status.ts
+2479f1a64464f353b58f5cfdb7854073effc7b7008548e58662bd0ecadc940e6  apps/web/src/components/atropos/engine-status-banner.tsx
+21192d0524b19687d87635769886cd8d6210ed7e7d929d3733bc21bb64a149d8  apps/web/src/components/navigation/routes.ts
+bad1e9de4ca284c77be064983778a4656341fac61f17b4cae71bd7d7a5d3ee74  apps/web/src/components/navigation/use-nav-items.ts
+bcdf32b4efb9ffe9237d752236c19dd58dc1e80173445a0a90664862a605b221  apps/web/src/components/dev-tools/specgraph-entry.tsx
+2a363f9d86dd1f77e688de1b8c80257118caf43e8617520054d3b5f02d47d8c6  apps/web/src/components/ui/command-palette.tsx
+9063806ee0cca208a229033322682668b9c581f0c99ce1a4e1e93abb44b3cf70  apps/web/src/components/ui/six-answers-panel.tsx
+fbf615d34f9b189402321d8b37d3d9822c5bde0edab5a7ab8953d146a78ddd48  apps/web/src/components/ui/evidence-linking.tsx
+f272411444e02e189557f3ab5f7a3980ad0039013e1b002bd4f5b3ddf9ad98ac  apps/web/src/components/ui/trust-indicators.tsx
+5ad5e50e50d3463066cda138363054f4e030e1c16785e4843b2e94659d26185d  apps/web/src/components/ui/status-badge.tsx
+faad94858f5eb1a1cbfd521b949e65239ffd87d1dd2ae28ad58471e32f4232c5  apps/web/src/lib/contexts/session-state-context.tsx
+976ed48960cec86bb30a454d70ba0c5774cfce3ab7b9dffaa50f5ca9e8f32e54  apps/web/src/app/api/atropos/recovery/route.ts
+89b6075bb2ed130390abd550b519b8d8aec8e5fe62b491c978eb272b96d88cf6  apps/web/src/components/atropos/recovery-ribbon.tsx
+8276dadd82c065d27a516bf0f8be7308746ef8a3ba6e16ff65af6163dc8bbaa1  apps/web/src/lib/hooks/use-keyboard-shortcuts.ts
+20cc834aa4f6a4b04b40d973e742c7bba8158b9448640d8878c6ca4c56fc32ec  apps/web/src/lib/bridge/recovery.test.ts
+af8cfedca289c38b46a9b73dbc6215b60f16b229700d341a8092dcf620a1bfa0  apps/web/src/components/app-shell/app-shell.tsx
