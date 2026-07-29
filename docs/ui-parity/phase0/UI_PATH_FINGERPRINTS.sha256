@@ -29,3 +29,8 @@ af8cfedca289c38b46a9b73dbc6215b60f16b229700d341a8092dcf620a1bfa0  apps/web/src/c
 aa82418dda306fa26adcebbbee62b49cd1caee2a96e34cdcc8e17028c8fb663d  apps/web/src/components/ui/why-how-evidence.tsx
 52b0def5ba3a0e72b45e3ba43e06a94dcd19fae0e294e8b027d50ce15694a4ab  apps/web/src/components/atropos/work-item-card.tsx
 df3dd5db577d37a5e3ff2950f48159410639cdae6bc05e68dfae2b0aba2e435c  apps/web/src/components/ui/why-how-evidence.test.tsx
+46ec994498c440ea52beb704db9c969790234ab69b9eb79bfd13b225130711af  apps/web/src/app/(app)/layout.tsx
+1a07539f523d860a88c13b2ff7bbc22546baaf0f044fb83a60357ff36d792921  apps/web/src/components/navigation/routes.ts
+16e7b2cc56b68ed4291a2734559943aa7667cc86dbc883c344cf95be0c084a6f  apps/web/src/components/navigation/route-utils.ts
+36021730f415483780fbe6be655d674458894281e12e5aa9e7aace31cca57996  apps/web/next.config.ts
+c6dc81ec9e7e1ddd83e2f4abcb5d3aa8e39ec14e151f2b6411dc44aaec8ac7fd  apps/web/src/lib/bridge/continuity.ts

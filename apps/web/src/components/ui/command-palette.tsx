@@ -9,7 +9,7 @@ import {
   navigationSpine,
   projectSections,
 } from '@/components/navigation/routes';
-import { useSessionState } from '@/lib/contexts/session-state-context';
+import { useOptionalSessionState } from '@/lib/contexts/session-state-context';
 import { COMMON_SHORTCUTS, useKeyboardShortcuts } from '@/lib/hooks/use-keyboard-shortcuts';
 
 interface CommandItem {
@@ -25,7 +25,9 @@ interface CommandItem {
 export function CommandPalette() {
   const router = useRouter();
   const { data: projects } = useProjects();
-  const { session } = useSessionState();
+  // Chrome must not take down the shell over an optional preference: with
+  // no provider, Developer Tools stay hidden and no project is active.
+  const session = useOptionalSessionState()?.session;
 
   // §5.4: the palette must be reachable from the keyboard anywhere in the app.
   useKeyboardShortcuts([
@@ -64,7 +66,7 @@ export function CommandPalette() {
 
     // §2.10: only offered once the operator has opted in, so the palette does
     // not reintroduce a surface the navigation deliberately hides.
-    if (session.developerToolsEnabled) {
+    if (session?.developerToolsEnabled) {
       spine.push({
         id: developerToolsItem.id,
         label: developerToolsItem.label,
@@ -80,7 +82,7 @@ export function CommandPalette() {
     }
 
     // Project sections are reachable only when a project is actually open.
-    if (session.activeProjectId) {
+    if (session?.activeProjectId) {
       const projectId = session.activeProjectId;
       projectSections.forEach((section) => {
         spine.push({
@@ -99,7 +101,7 @@ export function CommandPalette() {
     }
 
     return spine;
-  }, [router, session.developerToolsEnabled, session.activeProjectId]);
+  }, [router, session?.developerToolsEnabled, session?.activeProjectId]);
 
   // Project commands
   const projectCommands: CommandItem[] = useMemo(

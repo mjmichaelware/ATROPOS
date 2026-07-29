@@ -71,7 +71,7 @@ describe("projects experience", () => {
     await userEvent.type(screen.getByLabelText("Name"), "New Project");
     await userEvent.click(screen.getByRole("button", { name: "Create project" }));
     await waitFor(() => {
-      expect(push).toHaveBeenCalledWith("/projects/22222222-2222-2222-2222-222222222222");
+      expect(push).toHaveBeenCalledWith("/developer/specgraph/22222222-2222-2222-2222-222222222222");
     });
     expect(createProject).toHaveBeenCalledWith(
       expect.anything(),

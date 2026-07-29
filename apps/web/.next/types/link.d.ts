@@ -34,6 +34,7 @@ declare namespace __next_route_internal_types__ {
   type StaticRoutes = 
     | `/`
     | `/api/atropos/command`
+    | `/api/atropos/recovery`
     | `/api/atropos/status`
     | `/auth/callback`
     | `/auth/error`
@@ -43,6 +44,9 @@ declare namespace __next_route_internal_types__ {
     | `/auth/update-password`
     | `/automation`
     | `/dev-tools`
+    | `/developer`
+    | `/developer/specgraph`
+    | `/developer/specgraph/new`
     | `/history`
     | `/models`
     | `/offline`
@@ -50,19 +54,24 @@ declare namespace __next_route_internal_types__ {
     | `/projects/new`
     | `/settings`
   type DynamicRoutes<T extends string = string> = 
-    | `/projects/${SafeSlug<T>}`
+    | `/developer/specgraph/${SafeSlug<T>}`
+    | `/developer/specgraph/${SafeSlug<T>}/executions/${SafeSlug<T>}`
+    | `/developer/specgraph/${SafeSlug<T>}/graph`
+    | `/developer/specgraph/${SafeSlug<T>}/handoff`
+    | `/developer/specgraph/${SafeSlug<T>}/research`
+    | `/developer/specgraph/${SafeSlug<T>}/research/tasks/${SafeSlug<T>}`
+    | `/developer/specgraph/${SafeSlug<T>}/routing`
+    | `/developer/specgraph/${SafeSlug<T>}/sources`
+    | `/developer/specgraph/${SafeSlug<T>}/sources/${SafeSlug<T>}`
     | `/projects/${SafeSlug<T>}/agents`
     | `/projects/${SafeSlug<T>}/conversations`
-    | `/projects/${SafeSlug<T>}/executions/${SafeSlug<T>}`
+    | `/projects/${SafeSlug<T>}/executions/${OptionalCatchAllSlug<T>}`
     | `/projects/${SafeSlug<T>}/files`
-    | `/projects/${SafeSlug<T>}/graph`
-    | `/projects/${SafeSlug<T>}/handoff`
-    | `/projects/${SafeSlug<T>}/research`
-    | `/projects/${SafeSlug<T>}/research/tasks/${SafeSlug<T>}`
-    | `/projects/${SafeSlug<T>}/routing`
-    | `/projects/${SafeSlug<T>}/sources`
-    | `/projects/${SafeSlug<T>}/sources/${SafeSlug<T>}`
-    | `/projects/${SafeSlug<T>}/specgraph`
+    | `/projects/${SafeSlug<T>}/graph/${OptionalCatchAllSlug<T>}`
+    | `/projects/${SafeSlug<T>}/handoff/${OptionalCatchAllSlug<T>}`
+    | `/projects/${SafeSlug<T>}/research/${OptionalCatchAllSlug<T>}`
+    | `/projects/${SafeSlug<T>}/routing/${OptionalCatchAllSlug<T>}`
+    | `/projects/${SafeSlug<T>}/sources/${OptionalCatchAllSlug<T>}`
     | `/projects/${SafeSlug<T>}/work`
 
   type RouteImpl<T> = 

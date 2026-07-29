@@ -11,7 +11,7 @@ import {
   projectSections,
 } from "./routes";
 import { projectIdFromPathname } from "./route-utils";
-import { useSessionState } from "@/lib/contexts/session-state-context";
+import { useOptionalSessionState } from "@/lib/contexts/session-state-context";
 
 export type NavItem = {
   id: string;
@@ -39,7 +39,8 @@ export function useNavItems(): {
 } {
   const pathname = usePathname() ?? "/";
   const projectId = projectIdFromPathname(pathname);
-  const { session } = useSessionState();
+  // Without a provider the safe default applies: Developer Tools stay hidden.
+  const session = useOptionalSessionState()?.session;
 
   const global: NavItem[] = navigationSpine.map((item) => ({
     id: item.id,
@@ -62,7 +63,7 @@ export function useNavItems(): {
   // preference, and shown regardless while the operator is already inside it
   // so the surface can never strand them without a way back.
   const developerVisible =
-    session.developerToolsEnabled || pathname.startsWith(globalRoutes.devTools);
+    (session?.developerToolsEnabled ?? false) || pathname.startsWith(globalRoutes.devTools);
 
   const developer: NavItem[] = developerVisible
     ? [

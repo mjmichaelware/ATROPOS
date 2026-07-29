@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
-import { projectRoute } from "@/components/navigation/routes";
+import { specGraphProjectRoute } from "@/components/navigation/routes";
 import { createProjectApiClient, createProject } from "@/lib/projects/api";
 import { projectCreateSchema } from "@/lib/projects/schemas";
 import { writeRecentProjectId } from "@/lib/projects/selection";
@@ -30,7 +30,7 @@ export function ProjectCreateForm() {
     try {
       const response = await createProject(createProjectApiClient(), { ...values, slug: slugify(values.name) });
       writeRecentProjectId(window.localStorage, response.body.id);
-      router.push(projectRoute(response.body.id));
+      router.push(specGraphProjectRoute(response.body.id));
     } catch {
       form.setError("root", { message: "Project could not be created. Try a different name." });
     }

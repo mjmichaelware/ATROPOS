@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { resolveJar, runEngineCommand } from '@/lib/bridge/engine';
+import { parseContinuity } from '@/lib/bridge/continuity';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -16,35 +17,6 @@ export interface RecoveryReport {
   detail: string | null;
   remedy: string | null;
   checkedAt: string;
-}
-
-/**
- * The engine's continuity line, as the engine printed it.
- *
- * `RuntimeContinuitySupervisor` repairs stale leases, dead sessions and
- * interrupted runs at startup and prints a `continuity:` notice when it did
- * something, or when recovery could not run at all. Silence means nothing
- * needed repair — which is itself a real answer and is reported as one.
- *
- * Nothing here reconstructs a recovery report. §11.2 requires the operator to
- * know what was restored; a plausible-looking summary the runtime never
- * produced would defeat exactly that.
- */
-const CONTINUITY_PREFIX = 'continuity:';
-
-export function parseContinuity(stdout: string): { notice: string | null; failure: string | null } {
-  const line = stdout
-    .split('\n')
-    .map((value) => value.trim())
-    .find((value) => value.startsWith(CONTINUITY_PREFIX));
-
-  if (!line) return { notice: null, failure: null };
-
-  // The supervisor distinguishes "recovery did not run" from "recovered N".
-  if (line.includes('crash recovery did not run')) {
-    return { notice: line, failure: line };
-  }
-  return { notice: line, failure: null };
 }
 
 export async function GET() {

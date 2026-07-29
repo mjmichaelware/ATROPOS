@@ -28,6 +28,33 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [],
   },
+  /**
+   * SpecGraph moved from /projects/[projectId]/... to /developer/specgraph/...
+   * (§1.3, §12.2). Existing links and bookmarks keep working rather than
+   * 404ing. These are the SpecGraph-only sections; /projects/[id]/{work,
+   * conversations,files,agents} belong to ATROPOS and are untouched.
+   */
+  async redirects() {
+    const specGraphSections = ["sources", "research", "graph", "handoff", "routing", "executions"];
+    return [
+      {
+        source: "/dev-tools",
+        destination: "/developer",
+        permanent: false,
+      },
+      ...specGraphSections.map((section) => ({
+        source: `/projects/:projectId/${section}/:rest*`,
+        destination: `/developer/specgraph/:projectId/${section}/:rest*`,
+        permanent: false,
+      })),
+      {
+        source: "/projects/new",
+        destination: "/developer/specgraph/new",
+        permanent: false,
+      },
+    ];
+  },
+
   async headers() {
     return [
       {

@@ -108,7 +108,7 @@ describe("research workspace", () => {
     expect(screen.getByText("Source authority: immutable uploaded source and provenance.")).toBeInTheDocument();
     // Regression: the Research overview never linked to Routing, so a
     // provider-driven automation path had no discovery path from Research.
-    expect(screen.getByRole("link", { name: "Routing" })).toHaveAttribute("href", "/projects/project-1/routing");
+    expect(screen.getByRole("link", { name: "Routing" })).toHaveAttribute("href", "/developer/specgraph/project-1/routing");
     fireEvent.click(screen.getByRole("tab", { name: "Gap matrix" }));
     expect(screen.getByLabelText("Research gap matrix")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("tab", { name: "Task queue" }));
@@ -133,12 +133,12 @@ describe("research workspace", () => {
     // Each dimension badge's accessible name includes the dimension itself
     // (not just the shared "Open"/"Resolved" status text) so screen-reader
     // and keyboard link-list users can tell multiple gap links apart.
-    expect(screen.getByRole("link", { name: "safety: Open" })).toHaveAttribute("href", "/projects/project-1/research/tasks/task-1");
+    expect(screen.getByRole("link", { name: "safety: Open" })).toHaveAttribute("href", "/developer/specgraph/project-1/research/tasks/task-1");
 
     fireEvent.click(screen.getByRole("tab", { name: "Gap matrix" }));
     expect(screen.getByRole("link", { name: "Go to research task for safety" })).toHaveAttribute(
       "href",
-      "/projects/project-1/research/tasks/task-1",
+      "/developer/specgraph/project-1/research/tasks/task-1",
     );
 
     // The navigation link must not swallow the pre-existing local-preview
