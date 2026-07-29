@@ -92,10 +92,12 @@ class AgentService(
             val verified = ContextAttestationService.verify(envelope, result.response)
             val displayText: String
             val providerDisplayName: String
+            val contextAttested: Boolean
             when (verified) {
                 is ContextAttestationService.VerifiedResult.Accepted -> {
                     displayText = verified.cleanedResponse
                     providerDisplayName = result.providerName
+                    contextAttested = true
                 }
                 is ContextAttestationService.VerifiedResult.Rejected -> {
                     // Persist the context failure and fall back
@@ -115,20 +117,24 @@ class AgentService(
                         displayText = fallbackAnswer(sanitizedTask, snapshot)
                         providerDisplayName = "local_fallback"
                     }
+                    contextAttested = false
                 }
             }
 
             memoryStore.rememberRoute(
                 subjectId = providerDisplayName,
                 title = "agent ask route",
-                body = "task=$sanitizedTask\nprovider=$providerDisplayName",
+                body = "task=$sanitizedTask\nprovider=$providerDisplayName\nsourcePack=${snapshot.sourcePackId ?: "none"}\nfetchReceipt=${snapshot.fetchReceiptId ?: "none"}",
                 tags = listOf("agent", "ask", "route")
             )
 
             AgentRunResult(
                 providerName = providerDisplayName,
                 answerText = redactionFilter.redact(normalizeAgentAnswer(displayText.trim())),
-                contextByteCount = snapshot.byteCount
+                contextByteCount = snapshot.byteCount,
+                contextAttested = contextAttested,
+                sourcePackId = snapshot.sourcePackId,
+                fetchReceiptId = snapshot.fetchReceiptId
             )
         } catch (failure: Exception) {
             memoryStore.rememberFailure(
@@ -142,7 +148,9 @@ class AgentService(
                 providerName = "local_fallback",
                 answerText = fallbackAnswer(sanitizedTask, snapshot),
                 contextByteCount = snapshot.byteCount,
-                failureSummary = compactFailureSummary(failure.message)
+                failureSummary = compactFailureSummary(failure.message),
+                sourcePackId = snapshot.sourcePackId,
+                fetchReceiptId = snapshot.fetchReceiptId
             )
         }
     }

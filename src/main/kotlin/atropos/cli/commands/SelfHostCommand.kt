@@ -16,7 +16,7 @@ class SelfHostCommand(
     private val config: AtroposConfig = AtroposConfig.load(),
     private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
     private val selfHostService: SelfHostGoalService = SelfHostGoalService(repoRoot),
-    private val selfHostRunner: (String) -> SelfHostAutonomousRunResult = selfHostService::runNaturalLanguageSelfBuild,
+    private val selfHostRunner: (String) -> SelfHostAutonomousRunResult = { prompt -> selfHostService.runNaturalLanguageSelfBuild(prompt) },
     private val dagService: DagExecutionService = DagExecutionService(config, repoRoot),
     private val journal: EventJournalService = EventJournalService(repoRoot),
     private val completionGate: VerifiedCompletionGate = VerifiedCompletionGate(config, repoRoot)

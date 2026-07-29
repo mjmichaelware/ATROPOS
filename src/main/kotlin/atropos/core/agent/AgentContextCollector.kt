@@ -1,6 +1,10 @@
 package atropos.core.agent
 
 import atropos.core.AtroposRepoRootLocator
+import atropos.core.provider.CodebaseContextPacker
+import atropos.core.provider.SourceBinding
+import atropos.core.provider.SourcePackRequest
+import atropos.core.provider.SourcePackResult
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.TimeUnit
@@ -9,12 +13,15 @@ data class AgentContextSnapshot(
     val repoRoot: Path,
     val text: String,
     val byteCount: Int,
-    val truncated: Boolean
+    val truncated: Boolean,
+    val sourcePackId: String? = null,
+    val fetchReceiptId: String? = null
 )
 
 class AgentContextCollector(
     val repoRoot: Path = AtroposRepoRootLocator.resolve(),
-    val contextCapBytes: Int = 80 * 1024
+    val contextCapBytes: Int = 80 * 1024,
+    private val contextPacker: CodebaseContextPacker = CodebaseContextPacker(repoRoot)
 ) {
     private val selectedSourceFiles = listOf(
         "src/main/kotlin/atropos/core/Provider.kt",
@@ -40,13 +47,17 @@ class AgentContextCollector(
         truncated = appendSection(builder, "# Git Status\n${gitStatus()}\n", truncated)
         truncated = appendSection(builder, "# Shallow Tree\n${shallowTree()}\n", truncated)
         truncated = appendSection(builder, "# Selected Sources\n${selectedSources(files)}\n", truncated)
+        val pack = sourcePack(defaultPackRoots(taskHint))
+        truncated = appendSection(builder, "# Source Context Pack\n${pack?.text ?: "source context pack unavailable"}\n", truncated)
 
         val rendered = builder.toString()
         return AgentContextSnapshot(
             repoRoot = repoRoot,
             text = rendered,
             byteCount = rendered.toByteArray(Charsets.UTF_8).size,
-            truncated = truncated
+            truncated = truncated,
+            sourcePackId = pack?.id,
+            fetchReceiptId = pack?.fetchReceipt?.id
         )
     }
 
@@ -61,13 +72,20 @@ class AgentContextCollector(
         truncated = appendSection(builder, "# Git Status\n${gitStatus()}\n", truncated)
         truncated = appendSection(builder, "# File Snapshots\n${patchSources(files)}\n", truncated)
         truncated = appendSection(builder, "# Shallow Tree\n${shallowTree()}\n", truncated)
+        val roots = files.mapNotNull { file -> repoRoot.relativizeSafely(file)?.substringBeforeLast('/', missingDelimiterValue = "") }
+            .filter { it.isNotBlank() }
+            .ifEmpty { listOf("README.md") }
+        val pack = sourcePack(roots)
+        truncated = appendSection(builder, "# Source Context Pack\n${pack?.text ?: "source context pack unavailable"}\n", truncated)
 
         val rendered = builder.toString()
         return AgentContextSnapshot(
             repoRoot = repoRoot,
             text = rendered,
             byteCount = rendered.toByteArray(Charsets.UTF_8).size,
-            truncated = truncated
+            truncated = truncated,
+            sourcePackId = pack?.id,
+            fetchReceiptId = pack?.fetchReceipt?.id
         )
     }
 
@@ -83,13 +101,20 @@ class AgentContextCollector(
         truncated = appendSection(builder, "# Git Status\n${gitStatus()}\n", truncated)
         truncated = appendSection(builder, "# File Snapshots\n${patchSources(files)}\n", truncated)
         truncated = appendSection(builder, "# Shallow Tree\n${shallowTree()}\n", truncated)
+        val roots = files.mapNotNull { file -> repoRoot.relativizeSafely(file)?.substringBeforeLast('/', missingDelimiterValue = "") }
+            .filter { it.isNotBlank() }
+            .ifEmpty { listOf("README.md") }
+        val pack = sourcePack(roots)
+        truncated = appendSection(builder, "# Source Context Pack\n${pack?.text ?: "source context pack unavailable"}\n", truncated)
 
         val rendered = builder.toString()
         return AgentContextSnapshot(
             repoRoot = repoRoot,
             text = rendered,
             byteCount = rendered.toByteArray(Charsets.UTF_8).size,
-            truncated = truncated
+            truncated = truncated,
+            sourcePackId = pack?.id,
+            fetchReceiptId = pack?.fetchReceipt?.id
         )
     }
 
@@ -141,6 +166,37 @@ class AgentContextCollector(
         if (!candidate.startsWith(repoRoot)) return null
         return if (Files.isRegularFile(candidate)) candidate else null
     }
+
+    private fun sourcePack(allowedPaths: List<String>): atropos.core.provider.CodebaseContextPack? {
+        val result = contextPacker.pack(
+            SourcePackRequest(
+                binding = SourceBinding.localPath(repoRoot),
+                allowedPaths = allowedPaths.distinct(),
+                maxBytes = (contextCapBytes / 2).coerceAtLeast(16 * 1024)
+            )
+        )
+        return (result as? SourcePackResult.Packed)?.pack
+    }
+
+    private fun defaultPackRoots(taskHint: String?): List<String> {
+        val lower = taskHint.orEmpty().lowercase()
+        if ("self-host" in lower || "self host" in lower || "atropos" in lower) {
+            return listOf(
+                "src/main/kotlin/atropos/core/agent",
+                "src/main/kotlin/atropos/core/provider",
+                "src/main/kotlin/atropos/core/dag",
+                "src/main/kotlin/atropos/core/worktree",
+                "src/main/kotlin/atropos/core/verification"
+            )
+        }
+        return listOf(
+            "src/main/kotlin/atropos/core/agent",
+            "src/main/kotlin/atropos/core/provider"
+        )
+    }
+
+    private fun Path.relativizeSafely(file: Path): String? =
+        runCatching { relativize(file).toString().replace('\\', '/') }.getOrNull()
 
     private fun gitStatus(): String =
         runCommand("git", "status", "--short", "--branch")

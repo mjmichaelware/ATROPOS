@@ -9,8 +9,8 @@ class AgentGoalCommandHandler(
     private val continuationService: GoalContinuationService,
     private val invalid: (String) -> AgentCommandOutcome.Invalid
 ) {
-    fun execute(args: List<String>): AgentCommandOutcome =
-        when (args.getOrNull(0)?.lowercase()) {
+    fun execute(args: List<String>): AgentCommandOutcome {
+        return when (args.getOrNull(0)?.lowercase()) {
             null, "list" -> {
                 val runs = continuationService.listRuns()
                 ui.renderNotice(AgentCommandText.formatBlock("GOAL RUNS", runs.message + "\n" + runs.runs.joinToString("\n") { it.renderSummaryLine() }))
@@ -31,6 +31,7 @@ class AgentGoalCommandHandler(
             }
             else -> invalid("usage: /agent goal [list|start|complete|show]")
         }
+    }
 
     private fun complete(args: List<String>): AgentCommandOutcome {
         val rid = args.getOrNull(1) ?: return invalid("usage: /agent goal complete <run-id> <condition>")

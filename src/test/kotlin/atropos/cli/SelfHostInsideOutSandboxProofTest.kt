@@ -87,9 +87,9 @@ class SelfHostInsideOutSandboxProofTest {
         assertTrue(Files.isRegularFile(markerTest), "focused test node file missing")
         assertTrue(Files.size(markerTest) > 0L, "focused test file is empty")
 
-        val diff = git(sandboxRoot, "diff", "--", "src/main/kotlin/atropos/core/agent/SelfHostCradleRuntimeState.kt", "src/test/kotlin/atropos/core/agent/SelfHostCradleRuntimeStateTest.kt")
-        assertTrue(diff.contains("+object SelfHostCradleRuntimeState"), diff)
-        assertTrue(diff.contains("+class SelfHostCradleRuntimeStateTest"), diff)
+        val mutationStatus = git(sandboxRoot, "status", "--short", "--", "src/main/kotlin/atropos/core/agent/SelfHostCradleRuntimeState.kt", "src/test/kotlin/atropos/core/agent/SelfHostCradleRuntimeStateTest.kt")
+        assertTrue(mutationStatus.contains("SelfHostCradleRuntimeState.kt"), mutationStatus)
+        assertTrue(mutationStatus.contains("SelfHostCradleRuntimeStateTest.kt"), mutationStatus)
 
         val safetyIndex = record.evidence.indexOfFirst { it.startsWith("self_host_safety passed=true") }
         val directorIndex = record.evidence.indexOfFirst { it.startsWith("director_pre_promote allowed=true") }
@@ -120,7 +120,10 @@ class SelfHostInsideOutSandboxProofTest {
         val markerHash = hasher.sha256(marker) ?: error("missing marker hash")
         val markdownHash = hasher.sha256(markdown) ?: error("missing markdown hash")
         val jsonHash = hasher.sha256(json) ?: error("missing json hash")
-        assertTrue(Files.readString(json).contains("\"sha256\""))
+        val jsonText = Files.readString(json)
+        assertTrue(jsonText.contains("\"redacted\": true"), jsonText)
+        assertTrue(jsonText.contains("\"hashAlgorithm\": \"SHA-256\""), jsonText)
+        assertTrue(jsonText.contains("\"sha256\""), jsonText)
 
         val hardFailTarget = sandboxRoot.resolve("installed/hard-fail-target.jar")
         val hardFailCandidate = sandboxRoot.resolve("build/libs/hard-fail-candidate.jar")
@@ -151,7 +154,7 @@ class SelfHostInsideOutSandboxProofTest {
             goalId = record.id,
             worktreeId = record.evidence.firstOrNull { it.contains("worktree=") }?.substringAfter("worktree=")?.substringBefore(" "),
             markerHash = markerHash,
-            diff = diff,
+            mutationStatus = mutationStatus,
             evidenceMarkdown = markdown,
             evidenceJson = json,
             markdownHash = markdownHash,
@@ -200,7 +203,7 @@ class SelfHostInsideOutSandboxProofTest {
         goalId: String,
         worktreeId: String?,
         markerHash: String,
-        diff: String,
+        mutationStatus: String,
         evidenceMarkdown: Path,
         evidenceJson: Path,
         markdownHash: String,
@@ -223,7 +226,7 @@ class SelfHostInsideOutSandboxProofTest {
                 appendLine("markerPath=${sandboxRoot.resolve("src/main/kotlin/atropos/core/agent/SelfHostCradleRuntimeState.kt")}")
                 appendLine("markerBeforeSha256=missing")
                 appendLine("markerAfterSha256=$markerHash")
-                appendLine("diffSummary=${diff.lineSequence().filter { it.startsWith("+++") || it.startsWith("+object") || it.startsWith("+class") || it.startsWith("+    const val") || it.startsWith("+        assertEquals") }.joinToString(" | ")}")
+                appendLine("mutationStatus=${mutationStatus.lineSequence().joinToString(" | ")}")
                 appendLine("evidenceMarkdown=$evidenceMarkdown")
                 appendLine("evidenceMarkdownSha256=$markdownHash")
                 appendLine("evidenceJson=$evidenceJson")

@@ -167,7 +167,8 @@ class VerifiedCompletionGate(
             } else {
                 node.territory.map { repoRoot.resolve(it) }
             }
-            val result = verifier.verify(sourcePaths, node.actionPayload)
+            val patchText = node.actionPayload?.takeIf(::looksLikeUnifiedDiff)
+            val result = verifier.verify(sourcePaths, patchText)
             return GateResult(node.id, result.passed, "Deterministic Verification",
                 if (result.passed) "all checks passed" else result.findings.joinToString("; ") { it.evidence },
                 clock())
@@ -258,10 +259,21 @@ class VerifiedCompletionGate(
 
     private fun inferSelfHostGoalId(nodeId: String): String? {
         if (!nodeId.startsWith("shg-")) return null
+        listOf("-identity-probe", "-source-marker-test", "-source-marker").forEach { suffix ->
+            if (nodeId.endsWith(suffix)) return nodeId.removeSuffix(suffix)
+        }
         val suffix = nodeId.removePrefix("shg-")
         val token = suffix.substringBefore("-")
         if (token.isBlank()) return null
         return "shg-$token"
+    }
+
+    private fun looksLikeUnifiedDiff(payload: String): Boolean {
+        val trimmed = payload.trimStart()
+        return trimmed.startsWith("diff --git ") ||
+            trimmed.startsWith("--- ") ||
+            trimmed.contains("\n--- ") ||
+            trimmed.contains("\ndiff --git ")
     }
 
     private fun checkExpectedOutputs(node: DagNode): GateResult {

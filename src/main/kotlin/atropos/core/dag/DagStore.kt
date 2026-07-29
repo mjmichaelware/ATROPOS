@@ -116,6 +116,10 @@ class DagStore(private val root: Path = AtroposRepoRootLocator.resolve()) {
     }
 
     fun readNode(nodeId: String): DagNode? {
+        val standalone = authorityDagDir.resolve("$nodeId.meta").normalize()
+        if (standalone.startsWith(authorityDagDir) && Files.isRegularFile(standalone)) {
+            return executionCodec.readNodeFile(standalone)
+        }
         if (!Files.isDirectory(executionDefinitionsDir)) return null
         return Files.walk(executionDefinitionsDir, 2).use { stream ->
             stream.filter { Files.isRegularFile(it) && it.fileName.toString() == "$nodeId.meta" }

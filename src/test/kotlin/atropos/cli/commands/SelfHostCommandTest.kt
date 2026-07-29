@@ -77,7 +77,7 @@ class SelfHostCommandTest {
             config = config,
             repoRoot = repoRoot,
             selfHostService = service,
-            selfHostRunner = selfHostRunner ?: service::runNaturalLanguageSelfBuild
+            selfHostRunner = selfHostRunner ?: { prompt -> service.runNaturalLanguageSelfBuild(prompt) }
         )
     }
 

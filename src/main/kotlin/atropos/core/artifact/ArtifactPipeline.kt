@@ -339,10 +339,10 @@ class ArtifactStore(private val root: Path = AtroposRepoRootLocator.resolve()) {
             .joinToString("\t")
 
     private fun lineToProof(line: String): InstallProof? {
-        val parts = line.split("\t"); if (parts.size < 8) return null
+        val parts = line.split("\t"); if (parts.size < 7) return null
         return try { InstallProof(id = parts[0], artifactId = parts[1], targetPath = parts[2],
             installedAt = Instant.parse(parts[3]), verified = parts[4].toBoolean(),
-            runOutput = parts[5], durationMs = parts[6].toLong(), screenshots = parts[7].split("|").filter { it.isNotBlank() }) }
+            runOutput = parts[5], durationMs = parts[6].toLong(), screenshots = parts.getOrNull(7)?.split("|")?.filter { it.isNotBlank() }.orEmpty()) }
         catch (_: Exception) { null }
     }
 

@@ -1,0 +1,30 @@
+161a643 feat(self-host): Phase 11 inside-out chain — runner, promote, safety, evidence, NL route, CLI split, status doc
+871d786 remove: delete quarantined broken provider/reader files
+03bd347 fix(android): applicationId com.atropos.android.app for clean install
+d02ac99 fix(android): temporary applicationId to force fresh install
+bab5d94 fix(android): standalone AGP project so CI can assembleDebug APK
+30889b1 feat(android): native ATROPOS app shell + CI APK workflow
+0133257 chore: pristine monorepo layout — archive root notes, ignore generated, ops scripts under ops/
+02d73e7 chore: pristine tree hygiene — ignore generated artifacts, archive root notes, drop pycache from index
+ccf11fb Merge pull request #5 from mjmichaelware/claude/atropos-cli-ui-polish-yejl0p
+773e699 wip: backend completion batches; quarantine broken SpecGraphProvider/Reader bridge until AdapterStatus+JSON aligned
+9afdb73 docs: Add comprehensive CLI+Web UI 100% completion summary
+7dbf51b Web: Add HOE (Human Operating Environment) completeness layers
+fe58f19 CLI: Complete presentation layer with design system and dashboard
+27a8271 docs: Add comprehensive Phase 2-4 completion summary
+05590df feat: Phase 4 - Multi-view project support (Conversation, Timeline, Execution)
+bf827f4 feat: Phase 3 - Memory layers visualization in developer tools
+1282320 feat: Phase 3 - Advanced features (Cmd+K palette, live notifications)
+02a6c58 feat: Complete Phase 2 data binding for remaining pages
+9b2cf9e feat: Phase 2 data binding - API hooks and real data integration
+0f1658c docs: Add comprehensive IMPLEMENTATION_COMPLETE documentation
+793f23d Implement complete Approval System with audit trail per Source Document 4 Section 4
+3896450 Add Notification System, Error Boundary, and wire all remaining pages with Six Answers
+936984a Update delta register with session 2 completion metrics
+d473414 Add Recovery UX and complete Developer Tools inspectors per Source Document 4
+c1cef41 Implement complete UI system per Source Document 4: Six Answers, Progressive Disclosure, Evidence Browser, Control Verbs
+a6e460e Add core UI systems: Six Answers panel, status badges, trust indicators, control verbs, and enhanced Home page
+edf15e8 Phase 3-7: Complete OpenCode workspace, navigation spine, ATROPOS core pages, SpecGraph integration, and API client decoupling
+f8ad34e Phase 2: Migrate SpecGraph web app to apps/web/ and integrate RED theme
+da7dae3 Phase 1: Create shared design tokens package with RED theme
+090e7df SpecGraph: stop `python -m specgraph_foundry.cli` from silently no-opping

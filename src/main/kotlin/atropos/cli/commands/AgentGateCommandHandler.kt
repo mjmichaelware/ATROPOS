@@ -11,8 +11,8 @@ class AgentGateCommandHandler(
     private val completionGate: VerifiedCompletionGate,
     private val invalid: (String) -> AgentCommandOutcome.Invalid
 ) {
-    fun execute(args: List<String>): AgentCommandOutcome =
-        when (args.getOrNull(0)?.lowercase()) {
+    fun execute(args: List<String>): AgentCommandOutcome {
+        return when (args.getOrNull(0)?.lowercase()) {
             null, "check" -> check(args)
             "verify" -> {
                 val dagId = args.getOrNull(1) ?: return invalid("usage: /agent gate verify <dag-id>")
@@ -24,6 +24,7 @@ class AgentGateCommandHandler(
             "complete" -> complete(args)
             else -> invalid("usage: /agent gate [check|verify|complete]")
         }
+    }
 
     private fun check(args: List<String>): AgentCommandOutcome {
         val nodeId = args.getOrNull(1) ?: return invalid("usage: /agent gate check <node-id>")

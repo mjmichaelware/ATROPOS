@@ -39,7 +39,10 @@ data class AgentRunResult(
     val providerName: String,
     val answerText: String,
     val contextByteCount: Int,
-    val failureSummary: String? = null
+    val failureSummary: String? = null,
+    val contextAttested: Boolean = false,
+    val sourcePackId: String? = null,
+    val fetchReceiptId: String? = null
 ) {
     fun render(): String = buildString {
         appendLine("Provider used: $providerName")
@@ -47,6 +50,8 @@ data class AgentRunResult(
         failureSummary?.takeIf { it.isNotBlank() }?.let {
             appendLine("fallback summary: $it")
         }
+        sourcePackId?.takeIf { it.isNotBlank() }?.let { appendLine("source pack: $it") }
+        fetchReceiptId?.takeIf { it.isNotBlank() }?.let { appendLine("fetch receipt: $it") }
         appendLine("answer:")
         appendLine(answerText.trimEnd())
     }.trimEnd()

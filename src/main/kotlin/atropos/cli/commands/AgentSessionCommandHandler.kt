@@ -9,8 +9,8 @@ class AgentSessionCommandHandler(
     private val sessionSupervisor: ProviderSessionSupervisor,
     private val invalid: (String) -> AgentCommandOutcome.Invalid
 ) {
-    fun execute(args: List<String>): AgentCommandOutcome =
-        when (args.getOrNull(0)?.lowercase()) {
+    fun execute(args: List<String>): AgentCommandOutcome {
+        return when (args.getOrNull(0)?.lowercase()) {
             null, "status" -> {
                 val text = sessionSupervisor.status()
                 ui.renderNotice(AgentCommandText.formatBlock("SESSIONS", text))
@@ -37,6 +37,7 @@ class AgentSessionCommandHandler(
             }
             else -> invalid("usage: /agent session [status|create|connect|mark|heartbeat|show]")
         }
+    }
 
     private fun connect(args: List<String>): AgentCommandOutcome {
         val sid = args.getOrNull(1) ?: return invalid("usage: /agent session connect <session-id> <provider-session-id>")
