@@ -16,7 +16,15 @@ class SecretEnrollmentSourceTest {
         ).enrollInto(KnownSecretRegistry())
 
         assertEquals(setOf("TEST_API_KEY"), result.enrolledLabels)
-        assertEquals(1, result.variantCount)
+        // One credential, but several enrolled representations: variantCount counts
+        // the forms guarded, not the secrets. For "local-secret" the closure yields
+        // 4 distinct forms — raw, base64, and hex in both cases — because the
+        // URL-encoded form is identical to raw (`-` is URL-safe) and the padded and
+        // unpadded base64 coincide (12 bytes divides by 3). Asserting a literal
+        // count here would encode that accident, so it is derived.
+        assertEquals(1, result.enrolledLabels.size)
+        assertEquals(SecretEncodingClosure.variantsOf("local-secret").size, result.variantCount)
+        assertTrue(result.variantCount > 1, "a single form would mean the closure is not enrolling encodings")
         assertTrue(result.evidenceLine().contains("local_vault=1"))
         assertTrue(!result.evidenceLine().contains("local-secret"))
     }

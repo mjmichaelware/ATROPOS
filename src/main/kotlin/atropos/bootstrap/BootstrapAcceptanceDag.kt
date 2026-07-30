@@ -110,7 +110,7 @@ class BootstrapAcceptanceDag(
             DagNode(
                 id = "n10", label = "Final Compile Gate", dependencies = listOf("n9"),
                 action = DagNodeAction.COMPILE_GATE,
-                actionPayload = "./gradlew compileKotlin -Dorg.gradle.java.home=/data/data/com.termux/files/usr --no-daemon",
+                actionPayload = "./gradlew compileKotlin --no-daemon",
                 expectedOutputs = emptyList(), maxAttempts = 2,
                 createdAt = now, updatedAt = now,
                 metaFile = repoRoot.resolve(".atropos/dag/definitions/n10.meta")

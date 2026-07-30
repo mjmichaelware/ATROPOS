@@ -19,7 +19,18 @@ class AgentVerifier(
     private val collector: AgentContextCollector = AgentContextCollector(),
     private val patchStore: AgentPatchStore = AgentPatchStore(collector.repoRoot),
     private val verificationStore: AgentVerificationStore = AgentVerificationStore(collector.repoRoot),
-    private val javaHome: String = System.getenv("JAVA_HOME")?.takeIf { it.isNotBlank() } ?: "/data/data/com.termux/files/usr",
+    /**
+     * The running JVM's own home, not one device's layout.
+     *
+     * This defaulted to a literal Termux path, so on any other host — a laptop, CI,
+     * a container, a different Android ROM — verification pointed at a directory
+     * that does not exist. `java.home` is set by the JVM that is already executing
+     * this code, so it is correct everywhere by construction; JAVA_HOME stays as an
+     * explicit operator override.
+     */
+    private val javaHome: String = System.getenv("JAVA_HOME")?.takeIf { it.isNotBlank() }
+        ?: System.getProperty("java.home")?.takeIf { it.isNotBlank() }
+        ?: System.getProperty("user.dir"),
     private val timeoutMillis: Long = 900_000,
     private val maxOutputBytes: Int = 128 * 1024,
     private val maxOutputLines: Int = 3_000,
