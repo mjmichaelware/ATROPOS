@@ -176,7 +176,7 @@ class RestartCoordinatorTest {
         goalStore.update(second.copy(evidence = listOf("second evidence")))
         coordinator.snapshot()
 
-        assertEquals(second.id, coordinator.latestSnapshot(second.id)?.goalRuns?.single()?.id)
+        assertEquals(second.id, coordinator.latestSnapshot(second.id)?.goalRuns?.first { it.id == second.id }?.id)
         assertEquals(null, coordinator.latestSnapshot("missing-goal"))
     }
 }

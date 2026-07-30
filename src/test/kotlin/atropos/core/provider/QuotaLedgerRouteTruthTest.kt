@@ -69,7 +69,13 @@ class QuotaLedgerRouteTruthTest {
     @Test
     fun route_queues_when_only_descriptor_present_remote_providers_match() {
         val registry = StaticProviderDescriptorRegistry()
-        val seed = FileQuotaLedger.seedFromDescriptors(registry)
+        val seed = FileQuotaLedger.seedFromDescriptors(registry).map {
+            if (it.providerId == "ollama" || it.providerId == "local") {
+                it.copy(state = ProviderAvailabilityState.OFFLINE)
+            } else {
+                it
+            }
+        }
         val decision = RoutePolicy(
             registry = registry,
             ledger = InMemoryQuotaLedger(seed),

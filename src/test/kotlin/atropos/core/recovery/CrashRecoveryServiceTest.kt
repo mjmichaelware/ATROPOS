@@ -182,7 +182,8 @@ class CrashRecoveryServiceTest {
             )
         )
         repeat(60) { index ->
-            goalRunStore.createGoalRun("newer generic run $index", provider = "codex")
+            val generic = goalRunStore.createGoalRun("newer generic run $index", provider = "codex")
+            goalRunStore.update(generic.copy(status = GoalRunStatus.COMPLETED))
         }
 
         val queueStore = AgentQueueStore(repoRoot, clock = { now })
