@@ -17,8 +17,21 @@ package atropos.cli.ui.design
  * vocabulary to survive `NO_COLOR` and `TERM=dumb`, where [Role] resolves to
  * no SGR at all and the glyph plus label carry the entire signal.
  *
- * [waiting] is deliberately distinct from [running]: per Section A, "waiting is
+ * [WAITING] is deliberately distinct from [RUNNING]: per Section A, "waiting is
  * not the same state as working, don't let them look identical."
+ *
+ * Source Doc 4 states the same vocabulary from the operator's side, in terms of
+ * *their* progress rather than the scheduler's: Idle, Planning, Waiting,
+ * Working, Review Required, Blocked, Completed, Failed, Cancelled. Every one of
+ * those terms must resolve to a state here, because this enum stays the single
+ * status vocabulary — a second enum of states would immediately drift and let
+ * two surfaces disagree about what a job is doing. [PLANNING] and
+ * [REVIEW_REQUIRED] exist for exactly that reason: before them, callers had to
+ * flatten "planning" onto [QUEUED] and "review required" onto [WAITING], which
+ * told the operator the machine was busy or stalled when in truth it was
+ * thinking, or waiting on *them*. Doc 4's "Working" is this enum's [RUNNING]
+ * under a friendlier name, not a tenth state; [HoeStatusVocabulary] holds that
+ * term-to-state mapping so the naming difference is written down once.
  */
 enum class RunState(
     val label: String,
@@ -34,11 +47,38 @@ enum class RunState(
     /** Queued behind other work. Neutral, static. */
     QUEUED("queued", "◔", "q", Role.STATUS_IDLE, animated = false),
 
+    /**
+     * Deciding what to do before doing it — Doc 4's "Planning".
+     *
+     * Neutral and static on purpose. It is honest work, but nothing has been
+     * changed yet and nothing is asked of the operator, so it must not borrow
+     * [RUNNING]'s accent or motion and compete for attention with a job that is
+     * actually executing. Distinct from [QUEUED]: queued work is not being
+     * worked on at all, planning work is.
+     */
+    PLANNING("planning", "◌", "p", Role.STATUS_IDLE, animated = false),
+
     /** Actively executing. Accent, animated. */
     RUNNING("running", "◐", ">", Role.STATUS_RUNNING, animated = true),
 
     /** Waiting on input. Warning tone, deliberately NOT animated. */
     WAITING("waiting", "◇", "?", Role.STATUS_WAITING, animated = false),
+
+    /**
+     * Finished its work and now needs a human decision — Doc 4's
+     * "Review Required".
+     *
+     * Warning tone, and deliberately NOT animated for the same reason
+     * [WAITING] is not: motion reads as "the machine is making progress, leave
+     * it alone", which is the opposite of the truth here. Nothing will move
+     * until the operator acts, so this state must look like a request, not like
+     * activity. Kept separate from [WAITING] because the two demand different
+     * things: [WAITING] is blocked on input it will consume to continue, this is
+     * work already done that must be accepted or rejected — collapsing them
+     * hides a queue of unreviewed results behind a state operators learn to
+     * ignore.
+     */
+    REVIEW_REQUIRED("review required", "◈", "r", Role.STATUS_WAITING, animated = false),
 
     /** Blocked or stalled. Warning tone, slow pulse. */
     BLOCKED("blocked", "◼", "!", Role.STATUS_WAITING, animated = true),
