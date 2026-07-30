@@ -10,6 +10,7 @@ import atropos.core.provider.adapter.StaticProviderAdapterRegistry
 import atropos.core.security.DefaultSecretSource
 import atropos.core.security.SecretLookup
 import atropos.core.security.SecretSource
+import atropos.core.security.RedactionFilter
 import java.io.File
 
 class ProviderActivationService(
@@ -38,7 +39,7 @@ class ProviderActivationService(
     fun liveTest(providerId: String): ProviderActivationRecord =
         createRecord(providerId, ProviderVerificationMode.LIVE_TEST, live = true, persist = true)
 
-    fun renderVerifyAll(): String = buildString {
+    fun renderVerifyAll(): String = RedactionFilter().redact(buildString {
         appendLine("providers verify:")
         verifyAll().forEach { record ->
             appendLine(
@@ -46,7 +47,7 @@ class ProviderActivationService(
                     "fixtures=${record.fixtureMatrix?.summary() ?: "0/0"} remediation=${record.remediation}"
             )
         }
-    }.trimEnd()
+    }.trimEnd())
 
     private fun createRecord(
         providerId: String,

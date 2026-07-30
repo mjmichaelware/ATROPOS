@@ -46,7 +46,7 @@ class AstSymbolGraphTest {
         val local = result.resolutions.first { it.importPath == "atropos.core.AtroposConfig" }
         assertEquals(AstImportStatus.LOCAL_EXACT, local.status)
         assertTrue(local.matches.contains("atropos.core.AtroposConfig"))
-        assertTrue(local.expectedPathSuffixes.contains("atropos/core/AtroposConfig.kt"))
+        assertTrue(local.expectedPathSuffixes.contains("atropos/core/Config.kt"))
 
         val external = result.resolutions.first { it.importPath == "java.io.File" }
         assertEquals(AstImportStatus.EXTERNAL, external.status)

@@ -50,8 +50,8 @@ class CommandCompleterTest {
     fun enter_preserves_selected_command_for_bare_prefixes() {
         val completer = CommandCompleter(Path.of("."))
 
-        assertEquals("/status adapters", completer.resolveSubmission("status", 6, 1))
-        assertEquals("/self-host run", completer.resolveSubmission("self-host", 9, 2))
+        assertEquals("/status adapters", completer.resolveSubmission("status", 6, 3))
+        assertEquals("/self-host run", completer.resolveSubmission("self-host", 9, 1))
     }
 
     @Test
