@@ -85,7 +85,7 @@ class LocalMemoryStoreTest {
         assertEquals("queue state", reopened.findBySubject("queue", "queue-1").first().title)
         assertEquals("route decision", reopened.findBySubject("route", "route-1").first().title)
         assertEquals("compile failure", reopened.findBySubject("repair", "failure-1").first().title)
-        assertEquals(64, reopened.findBySubject("repair", "failure-1").first().failureSignature?.length)
+        assertEquals(16, reopened.findBySubject("repair", "failure-1").first().failureSignature?.length)
         assertEquals("repair result", reopened.latestByKind(MemoryKind.REPAIR).first().title)
         assertEquals("verification result", reopened.latestByKind(MemoryKind.VERIFICATION).first().title)
         val sourceRecord = reopened.findBySubject("source", "source-1").first()

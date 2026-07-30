@@ -68,8 +68,14 @@ class BoundedGitWorktreeCommandRunner(
         value?.takeIf { it.isNotBlank() && !it.any(Char::isWhitespace) && it != "--" }
             ?: throw IllegalArgumentException("baseline revision is required")
 
-    private fun safeRevision(value: String?): String =
-        value?.takeIf { it.isNotBlank() && !it.any(Char::isWhitespace) && it != "--" } ?: "HEAD"
+    private fun safeRevision(value: String?): String {
+        val trimmed = value?.trim()
+        if (trimmed.isNullOrBlank()) return "HEAD"
+        require(!trimmed.any(Char::isWhitespace) && trimmed != "--" && !trimmed.contains(";")) {
+            "invalid revision argument"
+        }
+        return trimmed
+    }
 
     private fun safeRelativePath(value: String?): String {
         val path = value?.trim().takeUnless { it.isNullOrBlank() } ?: "."
