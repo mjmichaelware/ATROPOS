@@ -1051,6 +1051,15 @@ Readers never mutate product code.
 - Why justified: The Director swarm used five disjoint writer lanes and five read-only inspectors under the root contract. W1/W2/W3/W4 closed concrete context and atomicity gaps; R1 confirmed Phase 11 remains the next eligible checkpoint because `C1-X1` and installed proof still block closure. No false VERIFIED claim is made.
 - HR interrupts: none; no lane crossed its assigned write territory
 - Fingerprints: manifest refreshed after this row; tree export intentionally unchanged because no whole canonical phase is complete
+### 2026-07-30T03:10:51Z · Agent: Claude Opus 5 · Batch: phase4-egress-tier1-and-build-repair-001
+- Paths touched: `src/main/kotlin/atropos/core/security/SecretEncodingClosure.kt` (+85), `src/main/kotlin/atropos/core/security/KnownSecretRegistry.kt` (+120), `src/main/kotlin/atropos/core/security/SecretEnrollmentSource.kt` (+45), `src/main/kotlin/atropos/core/security/RedactionFilter.kt` (+32), `src/main/kotlin/atropos/cli/errors/SystemExceptionHandler.kt` (+45/-10), `src/main/kotlin/atropos/cli/ui/ErrorRenderer.kt` (+25/-5), `src/main/kotlin/atropos/cli/ProviderChatDispatcher.kt` (+38/-8), plus 8 build repair files
+- New decoupled files: `SecretEncodingClosure.kt`, `KnownSecretRegistry.kt`, `SecretEnrollmentSource.kt`
+- Atoms / phases affected: Phase 4 Secret and Security Hardening; build stability
+- Predicate moved: `./gradlew compileKotlin` succeeds; Tier 1 exact-match secret egress membership registry created; 3 UI sinks (SystemExceptionHandler, ErrorRenderer details, ProviderChatDispatcher exception text) closed with canary tests
+- % delta: Phase 4 baseline unchanged at 85% (not claimed at 100% until all 5 channels are closed and Tier 1 is armed at startup)
+- Why justified: Tier 1 exact-match secret membership scanning was implemented and 3 real leaks closed; 18 security tests pass. 19 pre-existing test failures remain for triage. Phase 4 completion is refused until Tier 1 is armed at process start and logs/prompts/diffs/history canary tests pass.
+- HR interrupts: none
+- Fingerprints: `96d07c2ba7244b33a7e53c06da8ea2d5735eb011`
 - New overall estimate: unchanged
 
-End of AGENTS.md
+
