@@ -42,17 +42,28 @@ data class AgentJobSummary(
     val note: String? = null
 )
 
-/** One timeline entry for the `/agent job <id>` detail view. */
-data class AgentJobEvent(
-    val at: String,
-    val status: AgentJobStatus,
-    val note: String? = null
+import atropos.core.security.RedactionFilter
+
+fun AgentJobSummary.redact(filter: RedactionFilter): AgentJobSummary = copy(
+    task = filter.redact(task),
+    smokeCommand = smokeCommand?.let { filter.redact(it) },
+    smokeSummary = smokeSummary?.let { filter.redact(it) },
+    finalReport = finalReport?.let { filter.redact(it) },
+    commitProposal = commitProposal?.let { filter.redact(it) },
+    nextSuggestedCommand = nextSuggestedCommand?.let { filter.redact(it) },
+    note = note?.let { filter.redact(it) }
+)
+
+fun AgentJobEvent.redact(filter: RedactionFilter): AgentJobEvent = copy(
+    note = note?.let { filter.redact(it) }
 )
 
 class AgentJobRenderer(
-    private val theme: TerminalTheme
+    private val theme: TerminalTheme,
+    private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     fun renderRunSummary(job: AgentJobSummary, width: Int): List<String> {
+        val job = job.redact(redactionFilter)
         val safeWidth = width.coerceAtLeast(28)
         val out = mutableListOf<String>()
         out += divider("AGENT RUN", safeWidth)
@@ -80,6 +91,7 @@ class AgentJobRenderer(
     }
 
     fun renderJobsList(jobs: List<AgentJobSummary>, width: Int): List<String> {
+        val jobs = jobs.map { it.redact(redactionFilter) }
         val safeWidth = width.coerceAtLeast(28)
         val out = mutableListOf<String>()
         out += divider("AGENT JOBS", safeWidth)
@@ -100,6 +112,8 @@ class AgentJobRenderer(
     }
 
     fun renderJobDetail(job: AgentJobSummary, timeline: List<AgentJobEvent> = emptyList(), width: Int): List<String> {
+        val job = job.redact(redactionFilter)
+        val timeline = timeline.map { it.redact(redactionFilter) }
         val safeWidth = width.coerceAtLeast(28)
         val out = mutableListOf<String>()
         out += divider("AGENT JOB ${job.id}", safeWidth)

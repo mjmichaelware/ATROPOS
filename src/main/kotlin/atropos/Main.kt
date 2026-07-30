@@ -18,9 +18,14 @@ import atropos.core.agent.SelfHostStartupContinuationService
 import atropos.core.agent.AgentDaemonService
 import atropos.core.recovery.RuntimeContinuitySupervisor
 import atropos.core.recovery.ContinuityOutcome
+import atropos.core.security.SecretEnrollment
+import atropos.core.security.EnvironmentSecretSource
+import atropos.core.security.RedactionFilter
 import java.io.FileInputStream
 
 fun main(args: Array<String>) {
+    SecretEnrollment(listOf(EnvironmentSecretSource())).enrollInto(RedactionFilter.defaultRegistry)
+
     if (args.firstOrNull() == "--agent-daemon-foreground") {
         val config = AtroposConfig.load()
         val result = AgentDaemonService(config).foreground(config.runtime.defaultProvider)
