@@ -1,27 +1,51 @@
 package atropos.core.agent
 
+import atropos.core.policy.BoundedProcessRunner
 import java.nio.file.Path
 
+data class AgentRepoStatusResult(
+    val ok: Boolean,
+    val files: Set<String> = emptySet(),
+    val failure: AgentExecutionFailure? = null,
+    val message: String? = null
+)
+
 class AgentRunRepoStatus(
-    private val repoRoot: Path
+    private val repoRoot: Path,
+    private val processRunner: BoundedProcessRunner = BoundedProcessRunner()
 ) {
     fun changedFilesSince(baseline: Set<String>): List<String> {
-        val current = capture()
-        return (current - baseline)
+        val current = captureResult()
+        if (!current.ok) return emptyList()
+        return (current.files - baseline)
             .filter { isStageableChange(it) }
             .sorted()
     }
 
-    fun capture(): Set<String> {
-        val process = ProcessBuilder("git", "status", "--porcelain", "--untracked-files=all")
-            .directory(repoRoot.toFile())
-            .redirectErrorStream(true)
-            .start()
-        val output = process.inputStream.bufferedReader().readText().trimEnd()
-        process.waitFor()
-        return output.lineSequence()
+    fun capture(): Set<String> = captureResult().files
+
+    fun captureResult(): AgentRepoStatusResult {
+        val result = processRunner.run(
+            command = listOf("git", "status", "--porcelain", "--untracked-files=all"),
+            directory = repoRoot,
+            timeoutMillis = STATUS_TIMEOUT_MILLIS,
+            maxOutputBytes = MAX_OUTPUT_CHARS,
+            maxOutputLines = MAX_OUTPUT_LINES,
+            removeEnvironmentKeys = sensitiveEnvironmentKeys()
+        )
+        val output = (result.stdout + result.stderr).trimEnd()
+        if (result.launchError != null || result.timedOut || result.exitCode != 0) {
+            return AgentRepoStatusResult(
+                ok = false,
+                failure = if (result.launchError != null) AgentExecutionFailure.LAUNCH_FAILED
+                else if (result.timedOut) AgentExecutionFailure.TIMEOUT
+                else AgentExecutionFailure.REPOSITORY_COMMAND_FAILED,
+                message = "git status failed: ${(result.launchError ?: output).take(MAX_MESSAGE_CHARS)}"
+            )
+        }
+        return AgentRepoStatusResult(ok = true, files = output.lineSequence()
             .mapNotNull { parsePorcelainPath(it) }
-            .toSet()
+            .toSet())
     }
 
     private fun parsePorcelainPath(line: String): String? {
@@ -45,4 +69,17 @@ class AgentRunRepoStatus(
         if (name.contains("credential", ignoreCase = true)) return false
         return true
     }
+
+    private companion object {
+        const val MAX_OUTPUT_CHARS = 64 * 1024
+        const val MAX_OUTPUT_LINES = 2_000
+        const val MAX_MESSAGE_CHARS = 240
+        const val STATUS_TIMEOUT_MILLIS = 60_000L
+    }
+
+    private fun sensitiveEnvironmentKeys(): Set<String> = System.getenv().keys.filter { key ->
+        val name = key.uppercase()
+        name.contains("TOKEN") || name.contains("SECRET") || name.contains("PASSWORD") ||
+            name.endsWith("_KEY") || name.contains("CREDENTIAL")
+    }.toSet()
 }

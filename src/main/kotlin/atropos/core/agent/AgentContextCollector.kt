@@ -1,13 +1,14 @@
 package atropos.core.agent
 
 import atropos.core.AtroposRepoRootLocator
+import atropos.core.provider.ActiveSourceBindingResolver
 import atropos.core.provider.CodebaseContextPacker
-import atropos.core.provider.SourceBinding
 import atropos.core.provider.SourcePackRequest
 import atropos.core.provider.SourcePackResult
+import atropos.core.policy.BoundedProcessRunner
+import atropos.core.security.RedactionFilter
 import java.nio.file.Files
 import java.nio.file.Path
-import java.util.concurrent.TimeUnit
 
 data class AgentContextSnapshot(
     val repoRoot: Path,
@@ -21,7 +22,12 @@ data class AgentContextSnapshot(
 class AgentContextCollector(
     val repoRoot: Path = AtroposRepoRootLocator.resolve(),
     val contextCapBytes: Int = 80 * 1024,
-    private val contextPacker: CodebaseContextPacker = CodebaseContextPacker(repoRoot)
+    private val contextPacker: CodebaseContextPacker = CodebaseContextPacker(repoRoot),
+    private val sourceBindingResolver: ActiveSourceBindingResolver = ActiveSourceBindingResolver(repoRoot),
+    private val redactionFilter: RedactionFilter = RedactionFilter(),
+    private val processRunner: BoundedProcessRunner = BoundedProcessRunner(),
+    private val commandTimeoutMillis: Long = 5_000L,
+    private val commandOutputLines: Int = 256
 ) {
     private val selectedSourceFiles = listOf(
         "src/main/kotlin/atropos/core/Provider.kt",
@@ -120,17 +126,17 @@ class AgentContextCollector(
 
     private fun selectedSources(files: List<Path>): String = buildString {
         for (file in files) {
-            if (!Files.isRegularFile(file)) continue
+            if (!Files.isRegularFile(file) || isExcluded(file)) continue
             appendLine("--- ${repoRoot.relativize(file)} ---")
-            appendLine(Files.readString(file))
+            appendLine(redactionFilter.redact(Files.readString(file)))
         }
     }
 
     private fun patchSources(files: List<Path>): String = buildString {
         for (file in files) {
-            if (!Files.isRegularFile(file)) continue
+            if (!Files.isRegularFile(file) || isExcluded(file)) continue
             appendLine("FILE ${repoRoot.relativize(file)}")
-            appendLine(Files.readString(file))
+            appendLine(redactionFilter.redact(Files.readString(file)))
             appendLine("END FILE")
         }
     }
@@ -151,7 +157,7 @@ class AgentContextCollector(
             .mapNotNull { match ->
                 val relative = match.groupValues[1].trim().trim('"').trim('\'')
                 val candidate = repoRoot.resolve(relative).normalize()
-                if (Files.isRegularFile(candidate)) candidate else null
+                if (Files.isRegularFile(candidate) && !isExcluded(candidate)) candidate else null
             }
             .forEach { candidates.add(it) }
 
@@ -164,13 +170,14 @@ class AgentContextCollector(
             if (path.isAbsolute) path.normalize() else repoRoot.resolve(path).normalize()
         }.getOrNull() ?: return null
         if (!candidate.startsWith(repoRoot)) return null
-        return if (Files.isRegularFile(candidate)) candidate else null
+        return if (Files.isRegularFile(candidate) && !isExcluded(candidate)) candidate else null
     }
 
     private fun sourcePack(allowedPaths: List<String>): atropos.core.provider.CodebaseContextPack? {
+        val binding = sourceBindingResolver.resolve().binding ?: return null
         val result = contextPacker.pack(
             SourcePackRequest(
-                binding = SourceBinding.localPath(repoRoot),
+                binding = binding,
                 allowedPaths = allowedPaths.distinct(),
                 maxBytes = (contextCapBytes / 2).coerceAtLeast(16 * 1024)
             )
@@ -260,22 +267,35 @@ class AgentContextCollector(
     }
 
     private fun runCommand(vararg command: String): String {
-        return try {
-            val process = ProcessBuilder(*command)
-                .directory(repoRoot.toFile())
-                .redirectErrorStream(true)
-                .start()
-
-            if (!process.waitFor(5, TimeUnit.SECONDS)) {
-                process.destroyForcibly()
-                return "${command.first()} timed out"
-            }
-
-            process.inputStream.bufferedReader().readText().trim().ifBlank {
-                "${command.first()} produced no output"
-            }
+        val result = try {
+            processRunner.run(
+                command = command.toList(),
+                directory = repoRoot,
+                timeoutMillis = commandTimeoutMillis,
+                maxOutputBytes = contextCapBytes.coerceIn(1, 256 * 1024),
+                maxOutputLines = commandOutputLines
+            )
         } catch (failure: Exception) {
-            "${command.first()} unavailable: ${failure.message ?: failure.javaClass.simpleName}"
+            return "${command.first()} unavailable: ${redactionFilter.redact(failure.message ?: failure.javaClass.simpleName)}"
+        }
+
+        if (result.timedOut) return "${command.first()} timed out"
+        if (result.launchError != null) {
+            return "${command.first()} unavailable: ${redactionFilter.redact(result.launchError)}"
+        }
+
+        val output = listOf(result.stdout, result.stderr)
+            .filter { it.isNotBlank() }
+            .joinToString("\n")
+            .trim()
+        if (result.exitCode != 0) {
+            return "${command.first()} unavailable: ${redactionFilter.redact(output.ifBlank { "exit=${result.exitCode}" })}"
+        }
+        if (result.outputTruncated) {
+            return redactionFilter.redact(output).ifBlank { "${command.first()} produced no output" } + "\n[command output truncated]"
+        }
+        return redactionFilter.redact(output).ifBlank {
+            "${command.first()} produced no output"
         }
     }
 
@@ -292,9 +312,33 @@ class AgentContextCollector(
             return false
         }
 
-        builder.append(String(sectionBytes, 0, remaining, Charsets.UTF_8))
-        builder.appendLine()
-        builder.appendLine("[context truncated]")
+        val marker = "\n[context truncated]\n"
+        val markerBytes = marker.toByteArray(Charsets.UTF_8).size
+        val bodyLimit = (remaining - markerBytes).coerceAtLeast(0)
+        builder.append(text.utf8Prefix(bodyLimit))
+        if (markerBytes <= remaining - builder.lastAppendByteCount(currentBytes)) {
+            builder.append(marker)
+        }
         return true
+    }
+
+    private fun StringBuilder.lastAppendByteCount(previousBytes: Int): Int =
+        toString().toByteArray(Charsets.UTF_8).size - previousBytes
+
+    private fun String.utf8Prefix(maxBytes: Int): String {
+        if (maxBytes <= 0) return ""
+        val out = StringBuilder()
+        var used = 0
+        var index = 0
+        while (index < length) {
+            val codePoint = codePointAt(index)
+            val segment = String(Character.toChars(codePoint))
+            val size = segment.toByteArray(Charsets.UTF_8).size
+            if (used + size > maxBytes) break
+            out.append(segment)
+            used += size
+            index += Character.charCount(codePoint)
+        }
+        return out.toString()
     }
 }

@@ -18,7 +18,8 @@ class SelfHostAutonomousRunnerTest {
         val runner = SelfHostAutonomousRunner(
             service = service,
             jarLocator = SelfHostRuntimeJarLocator(root, env = emptyMap()),
-            jarBuilder = null
+            jarBuilder = null,
+            gitStatusEvidence = SelfHostGitStatusEvidence(root)
         )
 
         val result = runner.run("make ATROPOS build itself from inside out", maxAdvances = 4)
@@ -29,6 +30,7 @@ class SelfHostAutonomousRunnerTest {
         assertEquals(GoalTerminalCondition.EXTERNAL_INPUT_REQUIRED, record.terminalCondition)
         assertEquals(GoalRunStatus.BLOCKED, record.status)
         assertTrue(record.evidence.any { it.startsWith("jar_promotion_stop reason=candidate jar unavailable") })
+        assertTrue(record.evidence.any { it.startsWith("git_status_short exit=0") && it.contains("SelfHostCradleRuntimeState.kt") })
         assertTrue(record.evidence.any { it.startsWith("next_action kind=WAIT_EXTERNAL_INPUT") })
         assertTrue(record.evidence.any { it.startsWith("node_execution") && it.contains("worktree=") && it.contains("sha256=") })
         assertTrue(result.evidenceBundle?.ok == true)

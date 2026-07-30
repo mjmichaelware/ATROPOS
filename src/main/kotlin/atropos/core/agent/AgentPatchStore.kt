@@ -48,21 +48,23 @@ class AgentPatchStore(
     /** Shares [agencyGate], so exactly one policy engine serves this store. */
     private val agency: TypedToolExecutor = TypedToolExecutor(agencyGate),
     /**
-     * Process spawn seam. Exists so a test can prove a refused proposal never
-     * reaches a real [ProcessBuilder]; production always uses the default.
+     * Optional process seam for refusal tests. Production uses the shared
+     * bounded process owner, so this store never owns process construction.
      */
-    private val spawn: (List<String>, Path) -> Process = { command, directory ->
-        ProcessBuilder(command)
-            .directory(directory.toFile())
-            .redirectErrorStream(true)
-            .start()
-    }
+    private val spawn: ((List<String>, Path) -> Process)? = null
 ) {
     private val patchDir = repoRoot.resolve(".atropos/agent/patches").normalize()
     private val formatter = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss")
         .withZone(ZoneId.systemDefault())
     private val metadataWriter = AgentPatchMetadataWriter(patchDir, clock, formatter, redactionFilter)
-    private val agencyRunner = AgentPatchAgencyRunner(repoRoot, agency, metadataWriter, spawn)
+    private val agencyRunner = AgentPatchAgencyRunner(
+        repoRoot = repoRoot,
+        agency = agency,
+        metadataWriter = metadataWriter,
+        processRunner = spawn?.let { seam ->
+            atropos.core.policy.BoundedProcessRunner { command, directory, _, _ -> seam(command, directory) }
+        } ?: atropos.core.policy.BoundedProcessRunner()
+    )
     private val auditGate = AgentPatchAuditGate(repoRoot, auditorFactory)
 
     fun createRecord(provider: String, task: String, contextBytes: Int, diff: String): AgentPatchRecord {

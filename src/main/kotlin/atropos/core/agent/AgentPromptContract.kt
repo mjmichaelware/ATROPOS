@@ -37,6 +37,14 @@ object AgentPromptContract {
             task = task.ifBlank { "general reasoning" },
             repoRoot = repoRoot
         )
+        return buildWithEnvelope(context, envelope, explicitMythologyRequest)
+    }
+
+    fun buildWithEnvelope(
+        context: String,
+        envelope: ContextEnvelope,
+        explicitMythologyRequest: Boolean = false
+    ): String {
         val corePrompt = if (context.isBlank()) {
             SYSTEM_TEXT
         } else {
@@ -80,6 +88,36 @@ object AgentPromptContract {
         modelId: String = "",
         repoRoot: Path = AtroposRepoRootLocator.resolve()
     ): String {
+        val envelope = ContextEnvelopeFactory.createSimple(
+            providerId = providerId,
+            modelId = modelId,
+            task = "repair patch $patchId",
+            repoRoot = repoRoot
+        )
+        return buildRepairWithEnvelope(
+            patchId = patchId,
+            changedPaths = changedPaths,
+            failedCommand = failedCommand,
+            exitCode = exitCode,
+            durationMillis = durationMillis,
+            stdout = stdout,
+            stderr = stderr,
+            context = context,
+            envelope = envelope
+        )
+    }
+
+    fun buildRepairWithEnvelope(
+        patchId: String,
+        changedPaths: List<String>,
+        failedCommand: String,
+        exitCode: Int?,
+        durationMillis: Long,
+        stdout: String,
+        stderr: String,
+        context: String,
+        envelope: ContextEnvelope
+    ): String {
         val verificationBlock = buildString {
             appendLine("Patch id: $patchId")
             appendLine("Changed paths: ${changedPaths.joinToString(", ").ifBlank { "none" }}")
@@ -99,12 +137,6 @@ object AgentPromptContract {
                 "\n\nRepository context:\n" + context.trim()
         }
 
-        val envelope = ContextEnvelopeFactory.createSimple(
-            providerId = providerId,
-            modelId = modelId,
-            task = "repair patch $patchId",
-            repoRoot = repoRoot
-        )
         return ContextAttestationService.injectContext(envelope, corePrompt)
     }
 }

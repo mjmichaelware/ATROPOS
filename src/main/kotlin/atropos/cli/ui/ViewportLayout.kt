@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.cli.ui
 
+import atropos.cli.input.CommandRegistry
 import atropos.cli.session.QuotaSessionTracker
 
 class ViewportLayout(
@@ -35,7 +36,7 @@ class ViewportLayout(
             provider = provider,
             mode = composer.mode(),
             workspace = workspace,
-            commands = listOf("/help", "/status", "/providers", "/route", "/use", "/verify", "/exit"),
+            commands = CommandRegistry.quickAccessCommands(),
             tokens = tracker.estimatedTokens.takeIf { it > 0 }
                 ?.let { MetricValue.Known(it.toString()) } ?: MetricValue.Unknown,
             cost = tracker.estimatedCostUsd().takeIf { it > 0.0 }

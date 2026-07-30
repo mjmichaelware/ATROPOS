@@ -16,6 +16,7 @@ class AgentPatchCascadeRunnerTest {
     fun refuses_valid_diff_when_provider_response_lacks_context_attestation() {
         val root = Files.createTempDirectory("atropos-agent-patch-attestation-")
         val memory = LocalMemoryStore(root.resolve(".atropos/memory").toFile(), env = emptyMap())
+        var providerCalls = 0
         val response = """
             diff --git a/src/main/kotlin/atropos/Foo.kt b/src/main/kotlin/atropos/Foo.kt
             new file mode 100644
@@ -34,6 +35,7 @@ class AgentPatchCascadeRunnerTest {
             memoryStore = memory,
             authorizeProvider = { _, _, _ -> },
             completeWithCascade = { requestedProvider, _, _, _, beforeAttempt ->
+                providerCalls += 1
                 beforeAttempt(requestedProvider)
                 ProviderCascadeResult(requestedProvider, response, emptyList())
             }
@@ -43,7 +45,11 @@ class AgentPatchCascadeRunnerTest {
 
         assertEquals(null, result.success)
         val failure = assertNotNull(result.failure)
-        assertEquals("context attestation failed", failure.rejectionReason)
-        assertTrue(memory.search("attestation").any { it.record.title.contains("agent patch context attestation refused") })
+        assertEquals(
+            "provider context refused: source context pack is unavailable",
+            failure.rejectionReason
+        )
+        assertEquals(0, providerCalls, "blind provider calls must be refused before cascade")
+        assertTrue(memory.search("attestation").isEmpty())
     }
 }

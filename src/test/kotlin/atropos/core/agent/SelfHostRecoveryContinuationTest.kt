@@ -61,6 +61,8 @@ class SelfHostRecoveryContinuationTest {
         assertTrue(reopened.evidence.any { it.startsWith("restart_snapshot id=") })
         assertTrue(reopened.evidence.any { it.startsWith("restart_next goal=${interrupted.id}") })
         assertTrue(reopened.evidence.any { it.startsWith("next_action kind=ADVANCE_NODE") })
+        assertTrue(reopened.evidence.any { it.startsWith("state_snapshot reason=resume") })
+        assertTrue(reopened.evidence.any { it.startsWith("state_snapshot reason=select:node-recover-edit") })
         assertEquals(DagNodeState.COMPLETE, dagService.readDag(dag.id)?.findNode(node.id)?.state)
         assertTrue(Files.readString(root.resolve(marker)).contains("RESTORED: Boolean = true"))
     }

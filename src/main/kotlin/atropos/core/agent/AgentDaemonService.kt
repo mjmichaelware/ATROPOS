@@ -10,16 +10,16 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
 import java.util.concurrent.TimeUnit
-import kotlin.io.path.absolutePathString
 
 class AgentDaemonService(
     private val config: AtroposConfig = AtroposConfig.load(),
-    private val repoRoot: Path = Path.of(System.getenv("ATROPOS_ROOT") ?: System.getProperty("user.dir")).toAbsolutePath().normalize(),
+    private val repoRoot: Path = AgentDaemonRootResolver.resolve(),
     private val store: AgentDaemonStore = AgentDaemonStore(repoRoot),
     private val queueService: AgentQueueService = AgentQueueService(config),
     private val agencyGate: BoundedAgencyGate = BoundedAgencyGate(ExecutionPolicyEngine(repoRoot)),
     private val memoryStore: LocalMemoryStore = LocalMemoryStore(repoRoot.resolve(".atropos/memory").toFile()),
-    private val sessionSupervisor: ProviderSessionSupervisor = ProviderSessionSupervisor(repoRoot)
+    private val sessionSupervisor: ProviderSessionSupervisor = ProviderSessionSupervisor(repoRoot),
+    private val processLauncher: AgentDaemonProcessLauncher = AgentDaemonProcessLauncher()
 ) {
     fun once(activeProviderName: String): AgentDaemonCommandResult {
         enforceDaemonPolicy("once")
@@ -128,23 +128,18 @@ class AgentDaemonService(
         }
         store.clearStopRequest()
         Files.createDirectories(store.daemonLogFile().parent)
-        val javaBin = Path.of(System.getProperty("java.home"), "bin", "java").absolutePathString()
         val jar = repoRoot.resolve("atropos.jar")
         if (!Files.isRegularFile(jar)) {
             return AgentDaemonCommandResult(false, "atropos.jar not found: $jar", store.readState())
         }
-        store.appendDaemonLog("daemon start launching java from $javaBin")
-        val process = ProcessBuilder(javaBin, "-Xmx256m", "-jar", jar.toString(), "--agent-daemon-foreground")
-            .directory(repoRoot.toFile())
-            .redirectInput(ProcessBuilder.Redirect.from(Path.of("/dev/null").toFile()))
-            .redirectOutput(ProcessBuilder.Redirect.appendTo(store.daemonLogFile().toFile()))
-            .redirectErrorStream(true)
-            .apply {
-                environment()["ATROPOS_ROOT"] = repoRoot.toString()
-                environment()["JAVA_HOME"] = System.getenv("JAVA_HOME") ?: "/data/data/com.termux/files/usr"
-                environment().putIfAbsent("HOME", System.getProperty("user.home"))
-            }
-            .start()
+        store.appendDaemonLog("daemon start launching bounded java process")
+        val process = runCatching {
+            processLauncher.launchForeground(repoRoot, jar, store.daemonLogFile())
+        }.getOrElse { failure ->
+            val message = "daemon launch refused: ${failure.message ?: failure.javaClass.simpleName}"
+            store.appendDaemonLog(message)
+            return AgentDaemonCommandResult(false, message, store.readState())
+        }
         val deadline = System.currentTimeMillis() + 5000L
         while (System.currentTimeMillis() < deadline) {
             val state = store.readState()
@@ -222,13 +217,13 @@ class AgentDaemonService(
 
     private fun acquireWakeLockIfRequested() {
         if (System.getenv("ATROPOS_TERMUX_WAKELOCK") != "1") return
-        runCatching { ProcessBuilder("termux-wake-lock").start().waitFor() }
+        processLauncher.runWakeTool("termux-wake-lock")
             .onFailure { store.appendDaemonLog("termux wake-lock unavailable: ${it.message ?: it.javaClass.simpleName}") }
     }
 
     private fun releaseWakeLockIfRequested() {
         if (System.getenv("ATROPOS_TERMUX_WAKELOCK") != "1") return
-        runCatching { ProcessBuilder("termux-wake-unlock").start().waitFor() }
+        processLauncher.runWakeTool("termux-wake-unlock")
     }
 
     private fun stopWaitSeconds(): Long {

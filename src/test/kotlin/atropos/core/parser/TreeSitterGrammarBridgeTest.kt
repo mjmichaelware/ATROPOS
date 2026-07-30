@@ -68,4 +68,32 @@ class TreeSitterGrammarBridgeTest {
         assertTrue(tree.declarations.any { it.kind == KotlinDeclarationKind.FUNCTION && it.name == "map" })
         assertTrue(tree.declarations.any { it.kind == KotlinDeclarationKind.FUNCTION && it.name == "asBox" })
     }
+
+    @Test
+    fun parse_tree_ignores_declarations_inside_comments_and_strings() {
+        val code = buildString {
+            appendLine("package sample.masked")
+            appendLine("/*")
+            appendLine(" class CommentClass")
+            appendLine(" fun commentFunction() = Unit")
+            appendLine("*/")
+            appendLine("val text = \"object StringObject\"")
+            appendLine("val block = \"\"\"interface StringInterface")
+            appendLine("    fun hidden()")
+            appendLine("\"\"\"")
+            appendLine("// class LineComment")
+            appendLine("class RealClass")
+            appendLine("fun realFunction() = Unit")
+        }
+
+        val tree = bridge.parseTree(code)
+
+        assertTrue(tree.declarations.any { it.kind == KotlinDeclarationKind.CLASS && it.name == "RealClass" })
+        assertTrue(tree.declarations.any { it.kind == KotlinDeclarationKind.FUNCTION && it.name == "realFunction" })
+        assertTrue(tree.declarations.none { it.name == "CommentClass" })
+        assertTrue(tree.declarations.none { it.name == "commentFunction" })
+        assertTrue(tree.declarations.none { it.name == "StringObject" })
+        assertTrue(tree.declarations.none { it.name == "StringInterface" })
+        assertTrue(tree.declarations.none { it.name == "LineComment" })
+    }
 }

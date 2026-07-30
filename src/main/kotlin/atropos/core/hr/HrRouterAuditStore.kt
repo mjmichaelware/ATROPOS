@@ -45,7 +45,10 @@ class HrRouterAuditStore(
             entry.approved.toString(),
             entry.action.name,
             encode(entry.reason),
-            entry.timestamp.toString()
+            entry.timestamp.toString(),
+            entry.sourceTerritoryId,
+            entry.targetTerritoryId,
+            encode(entry.requestedPaths.joinToString("|"))
         ).joinToString("\t")
 
     private fun parse(line: String): HrRouterAuditEntry? {
@@ -61,7 +64,14 @@ class HrRouterAuditStore(
                 approved = parts[5].toBoolean(),
                 action = HrRouteAction.valueOf(parts[6]),
                 reason = decode(parts[7]),
-                timestamp = Instant.parse(parts[8])
+                timestamp = Instant.parse(parts[8]),
+                sourceTerritoryId = parts.getOrNull(9).orEmpty(),
+                targetTerritoryId = parts.getOrNull(10).orEmpty(),
+                requestedPaths = parts.getOrNull(11)
+                    ?.let(::decode)
+                    ?.split("|")
+                    ?.filter { it.isNotBlank() }
+                    ?: emptyList()
             )
         }.getOrNull()
     }

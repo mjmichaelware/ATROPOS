@@ -6,6 +6,7 @@ import atropos.core.security.RedactionFilter
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
+import java.security.MessageDigest
 
 class SelfHostEvidenceBundleExporter(
     private val repoRoot: Path,
@@ -21,7 +22,7 @@ class SelfHostEvidenceBundleExporter(
         val record = store.resolve(goalId)
             ?: return SelfHostEvidenceBundleResult(false, "goal not found: $goalId", null, null, null, null)
         val dag = record.dagId?.let { dagService.readDag(it) }
-        val snapshot = restartCoordinator.latestSnapshot()
+        val snapshot = restartCoordinator.latestSnapshot(record.id)
         val targetDir = bundleRoot.resolve(record.id)
         Files.createDirectories(targetDir)
 
@@ -64,6 +65,7 @@ class SelfHostEvidenceBundleExporter(
         appendLine("## Evidence")
         record.evidence.forEachIndexed { index, evidence ->
             appendLine("${index + 1}. `${escapeMarkdown(clean(evidence))}`")
+            appendLine("   - sha256: `${sha256Text(clean(evidence))}`")
         }
         if (record.evidence.isEmpty()) appendLine("No evidence recorded.")
         appendLine()
@@ -128,6 +130,7 @@ class SelfHostEvidenceBundleExporter(
         appendLine("  \"dirtyStateFingerprint\": ${json(record.dirtyStateFingerprint ?: "none")},")
         appendLine("  \"territory\": [${record.territory.joinToString(",") { json(clean(it)) }}],")
         appendLine("  \"outputHashes\": [${renderOutputHashesJson(dag)}],")
+        appendLine("  \"evidenceHashes\": [${record.evidence.joinToString(",") { json(sha256Text(clean(it))) }}],")
         appendLine("  \"evidence\": [${record.evidence.joinToString(",") { json(clean(it)) }}],")
         appendLine("  \"nodes\": [")
         val nodes = dag?.nodes.orEmpty()
@@ -212,6 +215,11 @@ class SelfHostEvidenceBundleExporter(
 
     private fun outputHash(path: String): String =
         hasher.sha256(repoRoot.resolve(path).normalize()) ?: "missing"
+
+    private fun sha256Text(value: String): String =
+        MessageDigest.getInstance("SHA-256")
+            .digest(value.toByteArray(StandardCharsets.UTF_8))
+            .joinToString("") { "%02x".format(it) }
 
     private fun escapeMarkdown(value: String): String =
         value.replace("`", "'")

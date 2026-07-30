@@ -35,4 +35,26 @@ class SelfHostNaturalLanguageRouterTest {
             routed
         )
     }
+
+    @Test
+    fun routes_operator_self_improvement_phrases_to_phase_11_run() {
+        val router = SelfHostNaturalLanguageRouter()
+
+        assertEquals(
+            listOf("/agent", "self-host", "run", "ATROPOS,", "improve", "yourself"),
+            router.route(listOf("ATROPOS,", "improve", "yourself"))
+        )
+        assertEquals(
+            listOf("/agent", "self-host", "run", "ATROPOS", "run", "self-host", "Phase", "11"),
+            router.route(listOf("ATROPOS", "run", "self-host", "Phase", "11"))
+        )
+        assertEquals(
+            listOf("/agent", "self-host", "run", "build", "yourself"),
+            router.route(listOf("build", "yourself"))
+        )
+        assertEquals(
+            listOf("/agent", "self-host", "run", "run", "self-host", "Phase", "11"),
+            router.route(listOf("run", "self-host", "Phase", "11"))
+        )
+    }
 }

@@ -19,6 +19,19 @@ class TerritoryServiceTest {
     }
 
     @Test
+    fun assignment_prefix_does_not_match_sibling_directory() {
+        val assignment = TerritoryAssignment(
+            ownerId = "owner",
+            ownerRole = "WORKER",
+            allowedPrefix = "src/main/kotlin/atropos/core/agent"
+        )
+
+        assertTrue(assignment.allows("src/main/kotlin/atropos/core/agent/SelfHost.kt"))
+        assertFalse(assignment.allows("src/main/kotlin/atropos/core/agent2/Escape.kt"))
+        assertFalse(assignment.allows("src/main/kotlin/atropos/core/agent/../provider/Escape.kt"))
+    }
+
+    @Test
     fun revokeRemovesAssignment() {
         val dir = Files.createTempDirectory("territory-revoke-")
         val store = TerritoryStore(dir)

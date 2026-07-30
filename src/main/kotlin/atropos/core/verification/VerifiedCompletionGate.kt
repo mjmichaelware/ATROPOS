@@ -10,8 +10,11 @@ import atropos.core.dag.DagNodeState
 import atropos.core.dag.DagStore
 import atropos.core.memory.LocalMemoryStore
 import atropos.core.policy.AutonomyActionClass
+import atropos.core.policy.BoundedProcessRunner
 import atropos.core.security.RedactionFilter
 import atropos.core.worktree.IsolatedWorktreeService
+import atropos.core.worktree.BoundedGitWorktreeCommandRunner
+import atropos.core.worktree.GitWorktreeOperation
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
@@ -46,7 +49,10 @@ class VerifiedCompletionGate(
      */
     private val auditorFactory: () -> atropos.core.auditor.AuditorService =
         { atropos.core.auditor.AuditorService(repoRoot) },
-    private val clock: () -> Instant = { Instant.now() }
+    private val clock: () -> Instant = { Instant.now() },
+    private val gitRunner: BoundedGitWorktreeCommandRunner = BoundedGitWorktreeCommandRunner(),
+    private val processRunner: BoundedProcessRunner = BoundedProcessRunner(),
+    private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     fun evaluateNode(node: DagNode): CompletionGateReport {
         val gates = mutableListOf<GateResult>()
@@ -142,21 +148,10 @@ class VerifiedCompletionGate(
         if (node.actionPayload.isNullOrBlank()) {
             return nothingToInspect(node, FOCUSED_TESTS, "no payload to derive a focused test from")
         }
-        val testCommand = "./gradlew test --tests *${node.label.replace(" ", "")}*"
-        val result = runCatching {
-            val proc = ProcessBuilder("sh", "-c", testCommand)
-                .directory(repoRoot.toFile())
-                .redirectErrorStream(true)
-                .start()
-            val exitCode = proc.waitFor()
-            exitCode == 0
-        }.getOrElse {
-            // The run failed to start. Nothing was established, so nothing is
-            // claimed: this used to pass on exception.
-            return GateResult(node.id, false, FOCUSED_TESTS, "focused test run failed to start: ${it.message}", clock())
-        }
-        return GateResult(node.id, result, FOCUSED_TESTS,
-            if (result) "tests passed" else "focused tests failed", clock())
+        val testSelector = "*${node.label.replace(" ", "")}*"
+        val result = runVerificationCommand(listOf("./gradlew", "test", "--tests", testSelector))
+        val passed = result.exitCode == 0 && !result.timedOut && !result.outputTruncated
+        return GateResult(node.id, passed, FOCUSED_TESTS, commandDetail(result, "focused tests"), clock())
     }
 
     private fun checkDeterministicVerification(node: DagNode): GateResult {
@@ -179,33 +174,65 @@ class VerifiedCompletionGate(
     }
 
     private fun checkCompileGate(node: DagNode): GateResult {
-        val result = runCatching {
-            val proc = ProcessBuilder("./gradlew", "compileKotlin")
-                .directory(repoRoot.toFile())
-                .redirectErrorStream(true)
-                .start()
-            val output = proc.inputStream.bufferedReader().readText()
-            val exitCode = proc.waitFor()
-            Pair(exitCode == 0, output.take(200))
-        }.getOrNull() ?: Pair(false, "compile command failed to start")
-        return GateResult(node.id, result.first, "Compile Gate",
-            if (result.first) "compilation succeeded" else "compile failed: ${result.second}", clock())
+        val result = runVerificationCommand(listOf("./gradlew", "compileKotlin"))
+        val passed = result.exitCode == 0 && !result.timedOut && !result.outputTruncated
+        return GateResult(node.id, passed, "Compile Gate", commandDetail(result, "compilation"), clock())
     }
+
+    private fun runVerificationCommand(command: List<String>): VerificationCommandResult =
+        runCatching {
+            val result = processRunner.run(
+                command = command,
+                directory = repoRoot,
+                timeoutMillis = 900_000,
+                maxOutputBytes = 256 * 1024,
+                maxOutputLines = 4_000
+            )
+            VerificationCommandResult(
+                exitCode = result.exitCode ?: 1,
+                timedOut = result.timedOut,
+                outputTruncated = result.outputTruncated,
+                output = redactionFilter.compact(
+                    listOf(result.stdout, result.stderr).filter { it.isNotBlank() }.joinToString("\n"),
+                    400
+                ),
+                launchError = result.launchError
+            )
+        }.getOrElse { failure ->
+            VerificationCommandResult(
+                exitCode = 1,
+                timedOut = false,
+                outputTruncated = false,
+                output = "",
+                launchError = "${failure.javaClass.simpleName}: ${failure.message ?: "verification command failed"}"
+            )
+        }
+
+    private fun commandDetail(result: VerificationCommandResult, subject: String): String = when {
+        result.launchError != null -> "$subject failed to start: ${redactionFilter.compact(result.launchError)}"
+        result.timedOut -> "$subject timed out"
+        result.exitCode != 0 -> "$subject failed (exit=${result.exitCode}): ${result.output.ifBlank { "no command output" }}"
+        result.outputTruncated -> "$subject output exceeded the evidence limit"
+        else -> "$subject succeeded"
+    }
+
+    private data class VerificationCommandResult(
+        val exitCode: Int,
+        val timedOut: Boolean,
+        val outputTruncated: Boolean,
+        val output: String,
+        val launchError: String?
+    )
 
     private fun checkTerritoryAndSecrets(node: DagNode): GateResult {
         // Check no secret patterns in new/changed files
-        val gitDiff = runCatching {
-            val proc = ProcessBuilder("git", "diff", "--name-only")
-                .directory(repoRoot.toFile())
-                .redirectErrorStream(true)
-                .start()
-            proc.inputStream.bufferedReader().readText()
-        }.getOrElse {
+        val gitDiff = gitRunner.run(GitWorktreeOperation.DIFF_NAME_ONLY, repoRoot).takeIf { it.exitCode == 0 }?.output
+            ?: run {
             // An unreadable diff is not a clean diff. This used to fall back to
             // an empty string, which read as "nothing changed, all clear".
             return GateResult(node.id, false, TERRITORY_AND_SECRETS,
-                "could not read the working diff: ${it.message}", clock())
-        }
+                "could not read the working diff through bounded Git inspection", clock())
+            }
 
         val changed = gitDiff.lineSequence().filter { it.isNotBlank() }.toList()
         if (node.territory.isEmpty()) {
@@ -310,19 +337,16 @@ class VerifiedCompletionGate(
         auditor.auditSecrets(files)
         auditor.auditDeterministic(files)
 
-        val blocking = auditor.report().findings.filter {
-            it.severity == atropos.core.auditor.AuditSeverity.FAILURE ||
-                it.severity == atropos.core.auditor.AuditSeverity.CRITICAL
-        }
+        val decision = auditor.blockPromotion(auditor.report(), claimedBy = node.claimOwner, auditedBy = "auditor")
 
         return GateResult(
             node.id,
-            blocking.isEmpty(),
+            decision.allowed,
             AUDITOR,
-            if (blocking.isEmpty()) {
+            if (decision.allowed) {
                 "auditor raised no blocking finding across ${files.size} file(s)"
             } else {
-                "auditor blocked: " + blocking.joinToString("; ") { "${it.check} ${it.message}" }
+                "auditor blocked: " + decision.blockingFindings.joinToString("; ") { "${it.check} ${it.message}" }
             },
             clock()
         )

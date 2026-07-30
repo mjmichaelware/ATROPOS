@@ -14,6 +14,14 @@ ABS_JAR="$(cd "$(dirname "$JAR")" && pwd)/$(basename "$JAR")"
 SANDBOX="$(mktemp -d "${TMPDIR:-/tmp}/atropos-installed-proof.XXXXXX")"
 PROOF_DIR="$ROOT/.atropos/self-hosting/proofs"
 PROOF_FILE="$PROOF_DIR/phase11-installed-runtime-proof.properties"
+MAX_PROOF_OUTPUT_BYTES=65536
+
+sanitize_text() {
+  printf '%s' "$1" |
+    tr '\r\n\t' '   ' |
+    sed -E 's/(token|secret|password|api[_-]?key)[=:][^ ]*/\1=[REDACTED]/Ig' |
+    cut -c1-400
+}
 
 mkdir -p "$SANDBOX/src/main/kotlin/atropos/core/agent" \
   "$SANDBOX/src/test/kotlin/atropos/core/agent" \
@@ -49,10 +57,27 @@ git -C "$SANDBOX" add .
 git -C "$SANDBOX" commit -m "installed proof baseline" >/dev/null
 
 OUT="$SANDBOX/installed-proof.out"
+set +e
 (
   cd "$SANDBOX"
-  printf '%s\n/exit\n' "$PROMPT" | java -Datropos.installed.jar="$SANDBOX/installed/atropos.jar" -jar "$ABS_JAR"
-) >"$OUT" 2>&1
+  printf '%s\n/exit\n' "$PROMPT" |
+    env -i PATH="$PATH" ATROPOS_ROOT="$SANDBOX" \
+      java -Datropos.installed.jar="$SANDBOX/installed/atropos.jar" -jar "$ABS_JAR"
+) 2>&1 |
+  sed -E 's/(token|secret|password|api[_-]?key)[=:][^ ]*/\1=[REDACTED]/Ig' >"$OUT"
+JAVA_EXIT=${PIPESTATUS[0]}
+set -e
+
+if [ "${JAVA_EXIT:-1}" -ne 0 ]; then
+  echo "installed proof failed: runtime exited with code $JAVA_EXIT" >&2
+  sed -n '1,220p' "$OUT" >&2
+  exit 17
+fi
+
+if [ "$(wc -c < "$OUT")" -gt "$MAX_PROOF_OUTPUT_BYTES" ]; then
+  head -c "$MAX_PROOF_OUTPUT_BYTES" "$OUT" > "$OUT.limited"
+  mv "$OUT.limited" "$OUT"
+fi
 
 MARKER="$SANDBOX/src/main/kotlin/atropos/core/agent/SelfHostCradleRuntimeState.kt"
 MARKER_TEST="$SANDBOX/src/test/kotlin/atropos/core/agent/SelfHostCradleRuntimeStateTest.kt"
@@ -97,8 +122,9 @@ MD_HASH="$(sha256sum "$EVIDENCE_DIR/bundle.md" | awk '{print $1}')"
 JAR_HASH="$(sha256sum "$SANDBOX/installed/atropos.jar" | awk '{print $1}')"
 BACKUP_HASH="$(sha256sum "$BACKUP" | awk '{print $1}')"
 
+SAFE_PROMPT="$(sanitize_text "$PROMPT")"
 cat > "$PROOF_FILE" <<EOF
-prompt=$PROMPT
+prompt=$SAFE_PROMPT
 installedRuntimeJar=$ABS_JAR
 sandboxRoot=$SANDBOX
 markerPath=$MARKER

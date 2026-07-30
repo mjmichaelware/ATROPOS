@@ -34,7 +34,7 @@ class CommandPaletteRenderer(
 
         // One row is spent on the title, matching the reference's dialog header.
         val rowBudget = (maximumRows - 1).coerceAtLeast(1)
-        val matches = CommandRegistry.slashMatches(query.text).take(rowBudget)
+        val matches = CommandRegistry.search(query.text).take(rowBudget)
         if (matches.isEmpty()) return emptyList()
 
         val selected = query.selectedIndex.coerceIn(0, matches.lastIndex)

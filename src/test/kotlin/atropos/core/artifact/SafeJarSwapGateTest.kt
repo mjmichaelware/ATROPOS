@@ -8,6 +8,21 @@ import kotlin.test.assertTrue
 
 class SafeJarSwapGateTest {
     @Test
+    fun refuses_to_promote_without_independent_verification_evidence() {
+        val root = Files.createTempDirectory("atropos-jar-swap-no-evidence-")
+        val candidate = root.resolve("candidate.jar")
+        val target = root.resolve("atropos.jar")
+        Files.writeString(candidate, "new jar")
+        Files.writeString(target, "old jar")
+
+        val result = SafeJarSwapGate().promote(candidate, target, emptyList())
+
+        assertTrue(!result.promoted)
+        assertTrue(result.message.contains("verification_evidence"), result.message)
+        assertEquals("old jar", Files.readString(target))
+    }
+
+    @Test
     fun refuses_to_promote_when_verification_evidence_failed() {
         val root = Files.createTempDirectory("atropos-jar-swap-refuse-")
         val candidate = root.resolve("candidate.jar")
@@ -50,5 +65,27 @@ class SafeJarSwapGateTest {
         val backup = result.backupJar ?: error("missing backup")
         assertEquals("old jar", Files.readString(backup))
         assertTrue(result.evidence.any { it.kind == "candidate_exists" && it.passed })
+    }
+
+    @Test
+    fun backup_creation_failure_returns_refusal_and_preserves_previous_jar() {
+        val root = Files.createTempDirectory("atropos-jar-swap-backup-failure-")
+        val candidate = root.resolve("candidate.jar")
+        val target = root.resolve("atropos.jar")
+        Files.writeString(candidate, "new jar")
+        Files.writeString(target, "old jar")
+        val backupPath = root.resolve("atropos.jar.backup-1000")
+        Files.createDirectory(backupPath)
+
+        val result = SafeJarSwapGate(clock = { Instant.ofEpochMilli(1000) }).promote(
+            candidate,
+            target,
+            listOf(JarSwapEvidence(true, "compile", "compile passed"))
+        )
+
+        assertTrue(!result.promoted)
+        assertTrue(result.message.contains("jar promote failed"), result.message)
+        assertEquals("old jar", Files.readString(target))
+        assertTrue(result.evidence.any { !it.passed && it.kind == "promote_copy" })
     }
 }

@@ -46,11 +46,14 @@ data class CrossBoundaryResponse(
 data class HrRouterAuditEntry(
     val requestId: String,
     val sourceOwnerId: String,
+    val sourceTerritoryId: String = "",
     val targetOwnerId: String,
+    val targetTerritoryId: String = "",
     val kind: InformationKind,
     val risk: CrossBoundaryRisk,
     val approved: Boolean,
     val action: HrRouteAction = if (approved) HrRouteAction.APPROVED else HrRouteAction.DENIED,
     val reason: String,
+    val requestedPaths: List<String> = emptyList(),
     val timestamp: Instant
 )

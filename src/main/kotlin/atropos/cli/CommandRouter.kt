@@ -99,6 +99,17 @@ class CommandRouter(
         if (tokens.isEmpty()) return RouterOutcome.CONTINUE
         if (original.trimStart().startsWith("!")) return shellCommand.bang(original)
 
+        val first = tokens.first().lowercase()
+        if (first in setOf("?", "/?", "help", "/help", "usage", "/usage")) {
+            renderHelpPage(tokens.drop(1).joinToString(" "))
+            return RouterOutcome.CONTINUE
+        }
+
+        if (first in setOf("/self-host", "self-host")) {
+            selfHostAlias(tokens)
+            return RouterOutcome.CONTINUE
+        }
+
         return when (tokens.first().lowercase()) {
             "/exit", "/quit", "exit" -> RouterOutcome.EXIT
 
@@ -111,16 +122,6 @@ class CommandRouter(
             "/git" -> shellCommand.git(tokens)
 
             "/shell" -> shellCommand.shell(tokens.drop(1))
-
-            "/help" -> {
-                uiEngine.renderHelp()
-                uiEngine.renderNotice("  /verify <narrow|wide>")
-                uiEngine.renderNotice("  !<command> | /shell <command>")
-                uiEngine.renderNotice("  /pwd | /cd [dir] | /ls [args] | /git status")
-                uiEngine.renderNotice("  /project [list|new|show|status|objective|history]")
-                uiEngine.renderNotice("  /home | /dashboard | /tabs | /tab [new <name>|<n>|rename|close|next|prev]")
-                RouterOutcome.CONTINUE
-            }
 
             "/dashboard", "/home" -> {
                 tabs.goHome()
@@ -258,6 +259,36 @@ class CommandRouter(
             uiEngine.renderNotice("provider switched to ${resolved.name}")
         } catch (failure: RuntimeException) {
             uiEngine.renderError(failure.message ?: "provider switch failed")
+        }
+    }
+
+    private fun selfHostAlias(tokens: List<String>) {
+        val remainder = tokens.drop(1)
+        val subcommand = remainder.firstOrNull()?.lowercase()
+        val translated = when (subcommand) {
+            "help", "usage", "?", "/?", "/help", "/usage" -> {
+                renderHelpPage("self-host")
+                return
+            }
+            "run", "start", "status", "watch", "resume", "recover", "next", "stop", "verify", "promote", "export-evidence", "history", "learned", "benchmark" ->
+                listOf("/agent", "self-host") + remainder
+
+            null -> listOf("/agent", "self-host", "status")
+
+            else -> listOf("/agent", "self-host", "run") + remainder
+        }
+        agentCommand.execute(translated)
+        uiEngine.updateAgentPatchState(agentCommand.lastKnownPatchId)
+    }
+
+    private fun renderHelpPage(query: String = "") {
+        uiEngine.renderHelp(query)
+        if (query.isBlank()) {
+            uiEngine.renderNotice("  /verify <narrow|wide>")
+            uiEngine.renderNotice("  !<command> | /shell <command>")
+            uiEngine.renderNotice("  /pwd | /cd [dir] | /ls [args] | /git status")
+            uiEngine.renderNotice("  /project [list|new|show|status|objective|history]")
+            uiEngine.renderNotice("  /home | /dashboard | /tabs | /tab [new <name>|<n>|rename|close|next|prev]")
         }
     }
 

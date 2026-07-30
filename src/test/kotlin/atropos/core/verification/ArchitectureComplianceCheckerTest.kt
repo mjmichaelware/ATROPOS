@@ -1,0 +1,98 @@
+/* SPDX-License-Identifier: AGPL-3.0-only */
+package atropos.core.verification
+
+import java.nio.file.Files
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
+
+class ArchitectureComplianceCheckerTest {
+    @Test
+    fun enforcing_checker_blocks_large_mixed_concern_file() {
+        val root = Files.createTempDirectory("atropos-architecture-")
+        val file = root.resolve("src/main/kotlin/atropos/cli/commands/AgentCommand.kt")
+        Files.createDirectories(file.parent)
+        Files.writeString(
+            file,
+            largeKotlinFile(
+                """
+                package atropos.cli.commands
+                import atropos.cli.ui.AnsiTerminalEngine
+                class AgentCommand {
+                    fun execute(tokens: List<String>) {
+                        when (tokens[1]) {
+                            "status" -> ui.renderNotice("status")
+                        }
+                    }
+                }
+                """.trimIndent(),
+                420
+            )
+        )
+
+        val report = ArchitectureComplianceChecker(enforcing = true).checkFiles(listOf(file.toFile()))
+
+        assertTrue(report.blocksBuild)
+        assertEquals("file.atomic.single_responsibility", report.violations.single().invariant)
+        assertTrue(report.violations.single().mixedConcerns.contains("routing+rendering"))
+    }
+
+    @Test
+    fun path_specific_threshold_catches_named_checkpoint_file() {
+        val root = Files.createTempDirectory("atropos-architecture-dloi-")
+        val file = root.resolve("src/main/kotlin/atropos/dloi/DloiService.kt")
+        Files.createDirectories(file.parent)
+        Files.writeString(
+            file,
+            largeKotlinFile(
+                """
+                package atropos.dloi
+                import java.nio.file.Files
+                class DloiService {
+                    fun loadDocuments() = Files.walk(java.nio.file.Path.of("."))
+                    private fun parse(address: String) = ParsedDloiAddress(address)
+                    private data class ParsedDloiAddress(val value: String)
+                }
+                """.trimIndent(),
+                320
+            )
+        )
+
+        val report = ArchitectureComplianceChecker(enforcing = false).checkFiles(listOf(file.toFile()))
+
+        assertFalse(report.blocksBuild, "advisory mode must not block")
+        assertEquals(1, report.violations.size)
+        assertTrue(report.violations.single().mixedConcerns.contains("source-loading+address-parsing"))
+    }
+
+    @Test
+    fun long_single_responsibility_file_passes() {
+        val root = Files.createTempDirectory("atropos-architecture-single-")
+        val file = root.resolve("src/main/kotlin/example/LongPureModel.kt")
+        Files.createDirectories(file.parent)
+        Files.writeString(
+            file,
+            largeKotlinFile(
+                """
+                package example
+                data class LongPureModel(val value: String)
+                """.trimIndent(),
+                450
+            )
+        )
+
+        val report = ArchitectureComplianceChecker(enforcing = true).checkFiles(listOf(file.toFile()))
+
+        assertTrue(report.passed)
+        assertFalse(report.blocksBuild)
+    }
+
+    private fun largeKotlinFile(header: String, targetLines: Int): String {
+        val lines = header.lines().toMutableList()
+        while (lines.size < targetLines) {
+            lines += "val generatedLine${lines.size} = ${lines.size}"
+        }
+        return lines.joinToString("\n")
+    }
+}

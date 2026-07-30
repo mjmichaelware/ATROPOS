@@ -38,6 +38,10 @@ class SelfHostWorktreeNodeExecutorTest {
         assertTrue(result.result.orEmpty().contains("worktree="), result.result.orEmpty())
         assertTrue(result.result.orEmpty().contains("sha256="), result.result.orEmpty())
         assertEquals(DagNodeState.COMPLETE, store.readNode(node.id)?.state)
+        assertTrue(
+            Files.readString(root.resolve(".atropos/policy/audit.log")).contains("action=FILE_MUTATION"),
+            "self-host mutation must leave bounded-agency evidence"
+        )
     }
 
     @Test
@@ -65,25 +69,53 @@ class SelfHostWorktreeNodeExecutorTest {
         assertEquals(DagNodeState.FAILED, store.readNode(node.id)?.state)
     }
 
+    @Test
+    fun refuses_mutation_that_produces_no_source_diff() {
+        val root = Files.createTempDirectory("atropos-self-host-worktree-empty-diff-")
+        initializeGitRepo(root)
+        val store = DagStore(root)
+        val path = "src/main/kotlin/atropos/core/agent/SelfHostNoDiff.kt"
+        val content = "package atropos.core.agent\nobject SelfHostNoDiff { const val VALUE: String = \"same\" }"
+        Files.writeString(root.resolve(path), "$content\n")
+        git(root, "add", ".")
+        git(root, "commit", "-m", "seed no-diff file")
+        val node = DagNode(
+            id = "node-worktree-empty-diff",
+            label = "Worktree empty diff refuse",
+            territory = listOf("src/main/kotlin/atropos/core/agent"),
+            action = DagNodeAction.EDIT_FILE,
+            actionPayload = "$path::$content",
+            expectedOutputs = listOf(path),
+            createdAt = Instant.parse("2026-07-29T00:09:00Z"),
+            updatedAt = Instant.parse("2026-07-29T00:09:00Z"),
+            metaFile = root.resolve(".atropos/dag/node-worktree-empty-diff.meta")
+        )
+        store.writeNode(node)
+
+        val result = SelfHostWorktreeNodeExecutor(root, dagStore = store).execute(node)
+
+        assertTrue(!result.ok)
+        assertTrue(result.message.contains("produced no source diff"), result.message)
+        assertEquals(DagNodeState.FAILED, store.readNode(node.id)?.state)
+    }
+
     private fun initializeGitRepo(repoRoot: java.nio.file.Path) {
-        ProcessBuilder("git", "init")
+        git(repoRoot, "init")
+        Files.createDirectories(repoRoot.resolve("src/main/kotlin/atropos/core/agent"))
+        Files.writeString(repoRoot.resolve("src/main/kotlin/atropos/Main.kt"), "fun main() {}\n")
+        git(repoRoot, "config", "user.email", "atropos@example.invalid")
+        git(repoRoot, "config", "user.name", "ATROPOS Test")
+        git(repoRoot, "add", ".")
+        git(repoRoot, "commit", "-m", "initial")
+    }
+
+    private fun git(repoRoot: java.nio.file.Path, vararg args: String) {
+        val process = ProcessBuilder(listOf("git") + args)
             .directory(repoRoot.toFile())
             .redirectErrorStream(true)
             .start()
-            .waitFor()
-        Files.createDirectories(repoRoot.resolve("src/main/kotlin/atropos/core/agent"))
-        Files.writeString(repoRoot.resolve("src/main/kotlin/atropos/Main.kt"), "fun main() {}\n")
-        listOf(
-            listOf("git", "config", "user.email", "atropos@example.invalid"),
-            listOf("git", "config", "user.name", "ATROPOS Test"),
-            listOf("git", "add", "."),
-            listOf("git", "commit", "-m", "initial")
-        ).forEach { command ->
-            ProcessBuilder(command)
-                .directory(repoRoot.toFile())
-                .redirectErrorStream(true)
-                .start()
-                .waitFor()
-        }
+        val output = process.inputStream.bufferedReader().readText()
+        val exit = process.waitFor()
+        check(exit == 0) { "git ${args.joinToString(" ")} failed: $output" }
     }
 }

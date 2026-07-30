@@ -42,7 +42,8 @@ class IsolatedWorktreeService(
     private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
     private val memoryStore: LocalMemoryStore = LocalMemoryStore(repoRoot.resolve(".atropos/memory").toFile()),
     private val clock: () -> Instant = { Instant.now() },
-    private val redactionFilter: RedactionFilter = RedactionFilter()
+    private val redactionFilter: RedactionFilter = RedactionFilter(),
+    private val gitRunner: BoundedGitWorktreeCommandRunner = BoundedGitWorktreeCommandRunner()
 ) {
     private val worktreeRoot = repoRoot.resolve(".atropos/worktrees").normalize()
 
@@ -51,23 +52,16 @@ class IsolatedWorktreeService(
             Files.createDirectories(worktreeRoot)
 
             // Capture baseline commit
-            val baselineCommit = runCatching {
-                val proc = ProcessBuilder("git", "rev-parse", "HEAD")
-                    .directory(repoRoot.toFile())
-                    .redirectErrorStream(true)
-                    .start()
-                val output = proc.inputStream.bufferedReader().readText().trim()
-                if (proc.waitFor() == 0) output else null
-            }.getOrNull()
+            val baselineCommit = gitRunner.run(GitWorktreeOperation.REV_PARSE_HEAD, repoRoot)
+                .takeIf { it.exitCode == 0 }
+                ?.output
+                ?.trim()
 
             // Capture dirty state
-            val dirtyEvidence = runCatching {
-                val proc = ProcessBuilder("git", "status", "--porcelain")
-                    .directory(repoRoot.toFile())
-                    .redirectErrorStream(true)
-                    .start()
-                proc.inputStream.bufferedReader().readText().trim()
-            }.getOrNull()
+            val dirtyEvidence = gitRunner.run(GitWorktreeOperation.STATUS_PORCELAIN, repoRoot)
+                .takeIf { it.exitCode == 0 }
+                ?.output
+                ?.trim()
 
             val id = "wt-" + UUID.randomUUID().toString().take(12)
             val wtDir = worktreeRoot.resolve(id)
@@ -76,22 +70,16 @@ class IsolatedWorktreeService(
                 return WorktreeCreateResult(false, "failed to create worktree: baseline commit unavailable")
             }
 
-            val worktreeOutput = runCatching {
-                ProcessBuilder("git", "worktree", "add", "--detach", wtDir.toString(), baselineCommit ?: "HEAD")
-                    .directory(repoRoot.toFile())
-                    .redirectErrorStream(true)
-                    .start()
-                    .let { proc ->
-                        val output = proc.inputStream.bufferedReader().readText()
-                        proc.waitFor() to output
-                    }
-            }.getOrElse { failure ->
-                return WorktreeCreateResult(false, "failed to create worktree: ${failure.message}")
-            }
-            if (worktreeOutput.first != 0 || !Files.exists(wtDir.resolve(".git"))) {
+            val worktreeOutput = gitRunner.run(
+                GitWorktreeOperation.WORKTREE_ADD,
+                repoRoot,
+                wtDir.toString(),
+                baselineCommit
+            )
+            if (worktreeOutput.exitCode != 0 || !Files.exists(wtDir.resolve(".git"))) {
                 return WorktreeCreateResult(
                     false,
-                    "failed to create worktree: ${redactionFilter.compact(worktreeOutput.second)}"
+                    "failed to create worktree: ${redactionFilter.compact(worktreeOutput.output)}"
                 )
             }
 
@@ -126,16 +114,24 @@ class IsolatedWorktreeService(
 
     fun applyPatch(worktreeId: String, patchContent: String): Boolean {
         val record = readRecord(worktreeId) ?: return false
-        if (!patchInsideTerritory(record, patchContent)) return false
+        if (patchContent.isBlank()) {
+            recordTerritoryViolation(record, "<empty-patch>", "patch_apply_empty")
+            return false
+        }
+        val patchPaths = extractPatchPaths(patchContent)
+        val unsafePath = patchPaths.firstOrNull(::isUnsafeRelativePath)
+        if (unsafePath != null) {
+            recordTerritoryViolation(record, unsafePath, "patch_apply_path")
+            return false
+        }
+        val outside = firstOutsideTerritory(record, patchPaths)
+        if (outside != null) {
+            recordTerritoryViolation(record, outside, "patch_apply")
+            return false
+        }
         return runCatching {
-            val proc = ProcessBuilder("sh", "-c", "git apply")
-                .directory(record.worktreePath.toFile())
-                .redirectErrorStream(true)
-                .start()
-            proc.outputStream.write(patchContent.toByteArray(StandardCharsets.UTF_8))
-            proc.outputStream.close()
-            val exitCode = proc.waitFor()
-            if (exitCode == 0) {
+            val result = gitRunner.run(GitWorktreeOperation.APPLY_PATCH, record.worktreePath, input = patchContent)
+            if (result.exitCode == 0) {
                 val updated = record.copy(
                     appliedPatches = record.appliedPatches + patchContent.take(40),
                     updatedAt = clock()
@@ -148,24 +144,67 @@ class IsolatedWorktreeService(
         }.getOrDefault(false)
     }
 
+    /** Writes one non-empty, territory-bound file in an existing worktree. */
+    fun writeFile(worktreeId: String, relativePath: String, content: String): Boolean {
+        val record = readRecord(worktreeId) ?: return false
+        val path = relativePath.trim()
+        if (content.isBlank()) {
+            recordTerritoryViolation(record, path.ifBlank { "<empty-path>" }, "file_write_empty")
+            return false
+        }
+        if (isUnsafeRelativePath(path)) {
+            recordTerritoryViolation(record, path, "file_write_path")
+            return false
+        }
+        val outside = firstOutsideTerritory(record, listOf(path))
+        if (outside != null) {
+            recordTerritoryViolation(record, outside, "file_write")
+            return false
+        }
+        val target = record.worktreePath.resolve(path).normalize()
+        if (!target.startsWith(record.worktreePath.toAbsolutePath().normalize())) {
+            recordTerritoryViolation(record, path, "file_write_escape")
+            return false
+        }
+        return runCatching {
+            target.parent?.let { Files.createDirectories(it) }
+            Files.writeString(target, content, StandardCharsets.UTF_8)
+            true
+        }.getOrDefault(false)
+    }
+
+    /** Stages intent for one new self-host file through the typed Git boundary. */
+    fun intentToAdd(worktreeId: String, relativePath: String): WorktreeRollbackResult {
+        val record = readRecord(worktreeId)
+            ?: return WorktreeRollbackResult(false, "worktree not found: $worktreeId")
+        val path = relativePath.trim()
+        if (isUnsafeRelativePath(path)) {
+            recordTerritoryViolation(record, path, "intent_to_add_path")
+            return WorktreeRollbackResult(false, "intent-to-add path refused: $path")
+        }
+        val outside = firstOutsideTerritory(record, listOf(path))
+        if (outside != null) {
+            recordTerritoryViolation(record, outside, "intent_to_add")
+            return WorktreeRollbackResult(false, "intent-to-add territory violation: $outside")
+        }
+        val result = gitRunner.run(GitWorktreeOperation.INTENT_TO_ADD, record.worktreePath, path)
+        return if (result.exitCode == 0) {
+            WorktreeRollbackResult(true, "intent-to-add staged: $path")
+        } else {
+            WorktreeRollbackResult(false, "intent-to-add failed: ${redactionFilter.compact(result.output)}")
+        }
+    }
+
     fun rollback(worktreeId: String): WorktreeRollbackResult {
         val record = readRecord(worktreeId)
             ?: return WorktreeRollbackResult(false, "worktree not found: $worktreeId")
 
         try {
             // Restore baseline using git checkout
-            val proc = ProcessBuilder("git", "checkout", "--", ".")
-                .directory(record.worktreePath.toFile())
-                .redirectErrorStream(true)
-                .start()
-            proc.waitFor()
+            gitRunner.run(GitWorktreeOperation.CHECKOUT_ALL, record.worktreePath)
 
             val revertedFiles = runCatching {
-                val status = ProcessBuilder("git", "diff", "--name-only")
-                    .directory(record.worktreePath.toFile())
-                    .redirectErrorStream(true)
-                    .start()
-                status.inputStream.bufferedReader().readText()
+                gitRunner.run(GitWorktreeOperation.DIFF_NAME_ONLY, record.worktreePath).output
                     .lineSequence()
                     .filter { it.isNotBlank() }
                     .toList()
@@ -193,42 +232,42 @@ class IsolatedWorktreeService(
         val record = readRecord(worktreeId)
             ?: return WorktreeRollbackResult(false, "worktree not found: $worktreeId")
 
+        if (verificationCommand.trim() != "git diff --check") {
+            recordTerritoryViolation(record, "<verification-command>", "verification_command")
+            return WorktreeRollbackResult(false, "verification command refused: only git diff --check is allowed")
+        }
+
         try {
             // Verify
-            val verifyProc = ProcessBuilder("sh", "-c", verificationCommand)
-                .directory(record.worktreePath.toFile())
-                .redirectErrorStream(true)
-                .start()
-            val verifyOutput = verifyProc.inputStream.bufferedReader().readText()
-            val verifyExit = verifyProc.waitFor()
-            if (verifyExit != 0) {
-                return WorktreeRollbackResult(false, "verification failed: ${verifyOutput.take(200)}")
+            val verifyResult = gitRunner.run(GitWorktreeOperation.DIFF_CHECK, record.worktreePath)
+            if (verifyResult.exitCode != 0) {
+                return WorktreeRollbackResult(false, "verification failed: ${verifyResult.output.take(200)}")
             }
 
             // Merge back using git diff and apply to main repo
-            val diffProc = ProcessBuilder("git", "diff", record.baselineCommit ?: "HEAD", "--", ".")
-                .directory(record.worktreePath.toFile())
-                .redirectErrorStream(true)
-                .start()
-            val diff = diffProc.inputStream.bufferedReader().readText()
-            diffProc.waitFor()
+            val diffResult = gitRunner.run(
+                GitWorktreeOperation.DIFF_FROM_BASELINE,
+                record.worktreePath,
+                record.baselineCommit
+            )
+            val diff = diffResult.output
+            if (diffResult.exitCode != 0) {
+                return WorktreeRollbackResult(false, "could not inspect worktree diff")
+            }
 
-            if (diff.isNotBlank()) {
-                val changed = extractPatchPaths(diff)
-                val outside = firstOutsideTerritory(record, changed)
-                if (outside != null) {
-                    return WorktreeRollbackResult(false, "territory violation before merge: $outside")
-                }
-                val applyProc = ProcessBuilder("sh", "-c", "git apply")
-                    .directory(repoRoot.toFile())
-                    .redirectErrorStream(true)
-                    .start()
-                applyProc.outputStream.write(diff.toByteArray(StandardCharsets.UTF_8))
-                applyProc.outputStream.close()
-                val applyExit = applyProc.waitFor()
-                if (applyExit != 0) {
-                    return WorktreeRollbackResult(false, "merge apply failed")
-                }
+            if (diff.isBlank()) {
+                return WorktreeRollbackResult(false, "verification refused: worktree produced no source diff")
+            }
+
+            val changed = extractPatchPaths(diff)
+            val outside = firstOutsideTerritory(record, changed)
+            if (outside != null) {
+                recordTerritoryViolation(record, outside, "merge_apply")
+                return WorktreeRollbackResult(false, "territory violation before merge: $outside")
+            }
+            val applyResult = gitRunner.run(GitWorktreeOperation.APPLY_PATCH, repoRoot, input = diff)
+            if (applyResult.exitCode != 0) {
+                return WorktreeRollbackResult(false, "merge apply failed")
             }
 
             val updated = record.copy(verified = true, mergedBack = true, updatedAt = clock())
@@ -236,10 +275,7 @@ class IsolatedWorktreeService(
 
             // Clean up worktree
             runCatching {
-                ProcessBuilder("git", "worktree", "remove", "--force", record.worktreePath.toString())
-                    .directory(repoRoot.toFile())
-                    .start()
-                    .waitFor()
+                gitRunner.run(GitWorktreeOperation.WORKTREE_REMOVE, repoRoot, record.worktreePath.toString())
             }
 
             return WorktreeRollbackResult(true, "worktree $worktreeId verified and merged")
@@ -250,12 +286,7 @@ class IsolatedWorktreeService(
 
     fun removeWorktree(worktreeId: String): Boolean {
         val record = readRecord(worktreeId) ?: return false
-        runCatching {
-            ProcessBuilder("git", "worktree", "remove", "--force", record.worktreePath.toString())
-                .directory(repoRoot.toFile())
-                .start()
-                .waitFor()
-        }
+        runCatching { gitRunner.run(GitWorktreeOperation.WORKTREE_REMOVE, repoRoot, record.worktreePath.toString()) }
         Files.deleteIfExists(record.metaFile)
         return true
     }
@@ -270,11 +301,6 @@ class IsolatedWorktreeService(
     }
 
     fun readWorktree(worktreeId: String): WorktreeRecord? = readRecord(worktreeId)
-
-    private fun patchInsideTerritory(record: WorktreeRecord, patchContent: String): Boolean {
-        val paths = extractPatchPaths(patchContent)
-        return firstOutsideTerritory(record, paths) == null
-    }
 
     private fun firstOutsideTerritory(record: WorktreeRecord, paths: List<String>): String? {
         if (paths.isEmpty()) return null
@@ -299,6 +325,24 @@ class IsolatedWorktreeService(
             .map { it.trim() }
             .distinct()
             .toList()
+
+    private fun isUnsafeRelativePath(path: String): Boolean {
+        val normalized = path.replace('\\', '/').trim()
+        if (normalized.isBlank() || normalized == "/dev/null" || normalized.startsWith("/")) return true
+        val parsed = runCatching { Path.of(normalized) }.getOrNull() ?: return true
+        val canonical = parsed.normalize().toString().replace('\\', '/')
+        return parsed.isAbsolute || canonical == ".." || canonical.startsWith("../")
+    }
+
+    private fun recordTerritoryViolation(record: WorktreeRecord, path: String, operation: String) {
+        memoryStore.rememberFailure(
+            subjectType = "territory_violation",
+            subjectId = record.id,
+            title = "territory violation: $operation",
+            body = "worktree=${record.id} job=${record.jobId} path=$path territory=${record.territory.joinToString(",")}",
+            tags = listOf("worktree", "territory", "denied", operation)
+        )
+    }
 
     private fun readRecord(worktreeId: String): WorktreeRecord? {
         val id = worktreeId.trim().removeSuffix(".meta")

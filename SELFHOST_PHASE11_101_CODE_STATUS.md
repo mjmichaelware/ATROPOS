@@ -1,6 +1,6 @@
 # ATROPOS Phase 11 Self-Host Code + Static Verification Status
 
-Status: SANDBOX + INSTALLED-RUNTIME PROOF PASS for Phase 11 self-host causal chain. Source-ingest provider context pack is PRESENT for local path, git, archive, and hash-pinned HTTP bundle bindings.
+Status: PRIOR SANDBOX + INSTALLED-RUNTIME PROOF PASS RECORDED for the Phase 11 self-host causal chain; rerun is required after the 2026-07-29 source-binding, context-packer, auditor, daemon-root, and provider-pack evidence changes. Source-ingest provider context pack code is PRESENT for local path, git, archive, and hash-pinned HTTP bundle bindings.
 
 Scope: Phase 11 self-host backend, provider context binding, recovery, proof script, and thin CLI only. No SpecGraph product work, UI parity, Android, or web-client work was performed for this status.
 
@@ -371,6 +371,6 @@ The installed proof sandbox also wrote restart snapshots under:
 /tmp/atropos-installed-proof.k3UhLi/.atropos/recovery/snapshots/
 ```
 
-Code-level MISSING on the causal chain: none found in A-E, provider source-ingest, focused recovery tests, sandbox proof, or installed-runtime proof.
+Code-level MISSING on the causal chain at the time of the recorded proof: none found in A-E, provider source-ingest, focused recovery tests, sandbox proof, or installed-runtime proof. After later code changes, the proof boundary is PENDING OPERATOR RERUN because this session has not rerun Gradle, package, or installed-JAR proof.
 
-Phase 11 inside-out self-build PROVEN in sandbox and installed-runtime sandbox via NL prompt + real source mutation; live device install remains operator deployment work.
+Phase 11 inside-out self-build previously PROVEN in sandbox and installed-runtime sandbox via NL prompt + real source mutation; current tree requires operator rerun of `./gradlew jar` and `scripts/selfhost-installed-proof.sh build/libs/ATROPOS.jar` before this claim is current again.

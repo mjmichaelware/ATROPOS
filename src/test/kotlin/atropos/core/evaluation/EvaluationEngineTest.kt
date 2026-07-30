@@ -176,6 +176,33 @@ class EvaluationEngineTest {
         assertTrue(decision.reason.contains(EvaluationMetricKind.DIRECTOR_PROMOTION_ADVISORY.name), decision.reason)
     }
 
+    @Test
+    fun promotionReleaseRequiresGoalAndChangedFileScope() {
+        val root = Files.createTempDirectory("atropos-evaluation-scope-block-")
+        val fixture = passingReleaseFixture(root)
+        val engine = EvaluationEngine(
+            repoRoot = root,
+            artifactPipeline = ArtifactPipeline(store = fixture.store),
+            journal = fixture.journal,
+            memory = fixture.memory,
+            territoryService = TerritoryService(TerritoryStore(root)),
+            history = EvaluationHistoryStore(root)
+        )
+
+        val decision = engine.evaluatePromotionRelease(
+            subjectId = "self-host-promotion",
+            runId = fixture.runId,
+            artifactIds = listOf(fixture.artifact.id),
+            changedFiles = emptyList(),
+            goalId = "goal-1",
+            claimedBy = "worker",
+            verifiedBy = "auditor"
+        )
+
+        assertFalse(decision.accepted)
+        assertTrue(decision.reason.contains(EvaluationMetricKind.PROMOTION_SCOPE_EVIDENCE.name), decision.reason)
+    }
+
     private data class ReleaseFixture(
         val store: ArtifactStore,
         val artifact: Artifact,

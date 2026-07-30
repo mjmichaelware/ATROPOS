@@ -3,6 +3,7 @@ package atropos.core.agent
 
 import atropos.core.policy.ActionActor
 import atropos.core.policy.BoundedAgencyGate
+import atropos.core.policy.BoundedProcessRunner
 import atropos.core.policy.ExecutionPolicyDecision
 import atropos.core.policy.ExecutionPolicyEngine
 import atropos.core.policy.ExecutionPolicyRequest
@@ -118,6 +119,43 @@ class AgentSmokeBoundedAgencyTest {
         assertTrue(!result.passed, "network smoke commands must stay refused")
         assertEquals("smoke command refuses dangerous operations", result.refusalReason)
         assertNull(result.exitCode)
+    }
+
+    @Test
+    fun smoke_paths_cannot_escape_bounded_repository_root() {
+        val repoRoot = repo()
+        val runner = AgentSmokeRunner(
+            repoRoot = repoRoot,
+            agencyGate = BoundedAgencyGate(
+                FixedDecisionEngine(repoRoot, PolicyDecisionType.ALLOW, "allowed")
+            )
+        )
+
+        val result = runner.run("cat ../outside-secret")
+
+        assertTrue(!result.passed)
+        assertEquals(AgentExecutionFailure.INVALID_COMMAND, result.failure)
+        assertNull(result.exitCode)
+    }
+
+    @Test
+    fun smoke_uses_shared_runner_and_preserves_nonzero_failure() {
+        val repoRoot = repo()
+        val runner = AgentSmokeRunner(
+            repoRoot = repoRoot,
+            agencyGate = BoundedAgencyGate(
+                FixedDecisionEngine(repoRoot, PolicyDecisionType.ALLOW, "allowed")
+            ),
+            processRunner = BoundedProcessRunner { command, _, _, _ ->
+                assertEquals(listOf("false"), command)
+                ProcessBuilder("false").start()
+            }
+        )
+
+        val result = runner.run("false")
+
+        assertTrue(!result.passed)
+        assertEquals(AgentExecutionFailure.NONZERO_EXIT, result.failure)
     }
 
     @Test

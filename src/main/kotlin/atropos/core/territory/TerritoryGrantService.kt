@@ -125,4 +125,5 @@ internal fun TerritoryAssignment.isLive(): Boolean =
  * A child may be equal to or deeper than its parent, never broader.
  */
 internal fun TerritoryAssignment.contains(prefix: String): Boolean =
-    isLive() && prefix.startsWith(allowedPrefix) && deniedPatterns.none { prefix.contains(it) }
+    isLive() && territoryPathWithin(prefix, allowedPrefix) &&
+        deniedPatterns.none { prefix.replace('\\', '/').contains(it.replace('\\', '/')) }

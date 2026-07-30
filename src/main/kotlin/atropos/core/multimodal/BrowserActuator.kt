@@ -38,6 +38,12 @@ class BrowserActuator(
     }
 
     fun captureStaticHtml(label: String, html: String, expectedText: String? = null): BrowserEvidenceResult {
+        if (html.isBlank()) {
+            return BrowserEvidenceResult(
+                status = BrowserEvidenceStatus.FAILED,
+                message = "static preview evidence refused: blank html"
+            )
+        }
         val snapshot = snapshotService.captureViewport(
             ViewportCapture(
                 width = 1280,
@@ -46,19 +52,34 @@ class BrowserActuator(
             ),
             source = "static-preview:$label"
         )
-        val inspection = expectedText?.let {
-            MultimodalInspection(
-                kind = InspectionKind.LAYOUT_CONFORMANCE,
-                severity = if (html.contains(it, ignoreCase = true)) InspectionSeverity.INFO else InspectionSeverity.WARNING,
+        val errorState = html.contains("error", ignoreCase = true) ||
+            html.contains("exception", ignoreCase = true) ||
+            html.contains("stacktrace", ignoreCase = true)
+        val inspection = when {
+            errorState -> MultimodalInspection(
+                kind = InspectionKind.STATE_VERIFICATION,
+                severity = InspectionSeverity.CRITICAL,
                 sourceSnapshotId = snapshot.id,
-                findings = if (html.contains(it, ignoreCase = true)) {
-                    listOf("static preview contains expected text: $it")
-                } else {
-                    listOf("static preview missing expected text: $it")
-                },
-                matchScore = if (html.contains(it, ignoreCase = true)) 1.0 else 0.0,
-                passed = html.contains(it, ignoreCase = true)
+                findings = listOf("static preview contains visible error state"),
+                matchScore = 0.0,
+                passed = false
             )
+            expectedText != null -> {
+                val matched = html.contains(expectedText, ignoreCase = true)
+                MultimodalInspection(
+                    kind = InspectionKind.LAYOUT_CONFORMANCE,
+                    severity = if (matched) InspectionSeverity.INFO else InspectionSeverity.WARNING,
+                    sourceSnapshotId = snapshot.id,
+                    findings = if (matched) {
+                        listOf("static preview contains expected text: $expectedText")
+                    } else {
+                        listOf("static preview missing expected text: $expectedText")
+                    },
+                    matchScore = if (matched) 1.0 else 0.0,
+                    passed = matched
+                )
+            }
+            else -> null
         }
         return BrowserEvidenceResult(
             status = BrowserEvidenceStatus.CAPTURED,

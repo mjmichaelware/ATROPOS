@@ -24,7 +24,7 @@ data class KotlinParseTree(
 
 class TreeSitterGrammarBridge {
     fun parseTree(code: String): KotlinParseTree {
-        val lines = code.lines()
+        val lines = KotlinLexicalMasker.maskNonCode(code).lines()
         val packageName = lines.firstOrNull { it.trimStart().startsWith("package ") }
             ?.trim()
             ?.removePrefix("package ")
@@ -37,7 +37,7 @@ class TreeSitterGrammarBridge {
         var offset = 0
         lines.forEachIndexed { index, line ->
             val lineNumber = index + 1
-            val searchable = line.substringBefore("//")
+            val searchable = line
             collect(KotlinDeclarationKind.CLASS, CLASS_PATTERN, searchable, lineNumber, offset, declarations)
             collect(KotlinDeclarationKind.OBJECT, OBJECT_PATTERN, searchable, lineNumber, offset, declarations)
             collect(KotlinDeclarationKind.INTERFACE, INTERFACE_PATTERN, searchable, lineNumber, offset, declarations)

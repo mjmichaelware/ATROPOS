@@ -1,9 +1,11 @@
 package atropos.core.agent
 
 import java.nio.file.Files
+import atropos.core.policy.BoundedProcessRunner
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlin.test.assertFalse
 
 class SelfHostCandidateJarBuilderTest {
     @Test
@@ -45,5 +47,57 @@ class SelfHostCandidateJarBuilderTest {
         assertTrue(!result.ok)
         assertTrue(!ran, "policy-refused builder must not execute the process runner")
         assertTrue(result.message.contains("refused"), result.message)
+    }
+
+    @Test
+    fun nonzero_build_cannot_claim_candidate_success() {
+        val root = Files.createTempDirectory("atropos-candidate-jar-failed-")
+        val builder = SelfHostCandidateJarBuilder(
+            repoRoot = root,
+            processRunner = { _, _ ->
+                SelfHostCandidateJarBuilder.CommandRun(17, "secret=redacted build failed")
+            }
+        )
+
+        val result = builder.build("shg-builder")
+
+        assertFalse(result.ok)
+        assertEquals(AgentExecutionFailure.NONZERO_EXIT, result.failure)
+        assertTrue(result.candidateJar == null)
+    }
+
+    @Test
+    fun candidate_path_outside_repo_is_refused_before_runner() {
+        val root = Files.createTempDirectory("atropos-candidate-jar-root-")
+        var ran = false
+        val builder = SelfHostCandidateJarBuilder(
+            repoRoot = root,
+            expectedJar = root.parent.resolve("outside.jar"),
+            processRunner = { _, _ ->
+                ran = true
+                SelfHostCandidateJarBuilder.CommandRun(0, "unexpected")
+            }
+        )
+
+        val result = builder.build("shg-builder")
+
+        assertFalse(result.ok)
+        assertEquals(AgentExecutionFailure.INVALID_COMMAND, result.failure)
+        assertFalse(ran)
+    }
+
+    @Test
+    fun bounded_runner_nonzero_result_cannot_claim_candidate_success() {
+        val root = Files.createTempDirectory("atropos-candidate-jar-bounded-runner-")
+        val runner = BoundedProcessRunner { _, _, _, _ -> ProcessBuilder("false").start() }
+        val builder = SelfHostCandidateJarBuilder(
+            repoRoot = root,
+            boundedProcessRunner = runner
+        )
+
+        val result = builder.build("shg-bounded-runner")
+
+        assertFalse(result.ok)
+        assertEquals(AgentExecutionFailure.NONZERO_EXIT, result.failure)
     }
 }

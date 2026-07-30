@@ -5,6 +5,15 @@ import atropos.core.dag.DagNodeAction
 import atropos.core.dag.DagNodeExecutionResult
 import atropos.core.dag.DagNodeState
 import atropos.core.dag.DagStore
+import atropos.core.policy.ActionActor
+import atropos.core.policy.ActionProposal
+import atropos.core.policy.BoundedAgencyGate
+import atropos.core.policy.ExecutionPolicyEngine
+import atropos.core.policy.PolicyActionClass
+import atropos.core.territory.GrantResult
+import atropos.core.territory.TerritoryGrantService
+import atropos.core.territory.TerritoryService
+import atropos.core.territory.TerritoryStore
 import atropos.core.worktree.IsolatedWorktreeService
 import java.nio.file.Files
 import java.nio.file.Path
@@ -13,16 +22,30 @@ class SelfHostWorktreeNodeExecutor(
     private val repoRoot: Path,
     private val dagStore: DagStore = DagStore(repoRoot),
     private val worktreeService: IsolatedWorktreeService = IsolatedWorktreeService(repoRoot),
-    private val hasher: SelfHostFileHasher = SelfHostFileHasher()
+    private val hasher: SelfHostFileHasher = SelfHostFileHasher(),
+    private val mutationParser: SelfHostMutationPayloadParser = SelfHostMutationPayloadParser(),
+    private val diffInspector: SelfHostWorktreeDiffInspector = SelfHostWorktreeDiffInspector(),
+    private val territoryGrants: TerritoryGrantService =
+        TerritoryGrantService(TerritoryService(TerritoryStore(repoRoot))),
+    private val agencyGate: BoundedAgencyGate = BoundedAgencyGate(
+        policyEngine = ExecutionPolicyEngine(repoRoot),
+        territory = territoryGrants
+    )
 ) {
     fun canExecute(node: DagNode): Boolean =
         node.action == DagNodeAction.CREATE_FILE || node.action == DagNodeAction.EDIT_FILE
 
     fun execute(node: DagNode): DagNodeExecutionResult {
-        val mutation = parseMutation(node.actionPayload)
+        val mutation = mutationParser.parse(node.actionPayload)
             ?: return fail(node, "unsupported file mutation payload")
         val territoryFailure = territoryViolation(node, mutation.path)
         if (territoryFailure != null) return fail(node, territoryFailure)
+
+        val actor = ActionActor.HierarchyNode(role = "self-host-worktree", nodeId = node.id)
+        when (val grant = territoryGrants.grantToNode(ActionActor.HumanOwner, actor, node.territory)) {
+            is GrantResult.Refused -> return fail(node, "self-host mutation refused by territory grant: ${grant.reason}")
+            is GrantResult.Granted -> Unit
+        }
 
         val running = dagStore.writeNode(
             node.copy(
@@ -42,15 +65,29 @@ class SelfHostWorktreeNodeExecutor(
             if (!target.startsWith(worktreeRoot)) {
                 return fail(node, "worktree path escaped root: ${mutation.path}")
             }
-            target.parent?.let { Files.createDirectories(it) }
-            Files.writeString(target, mutation.content + "\n")
-            val intentToAdd = ProcessBuilder("git", "add", "-N", mutation.path.toString())
-                .directory(worktree.worktreePath.toFile())
-                .redirectErrorStream(true)
-                .start()
-            val addOutput = intentToAdd.inputStream.bufferedReader().readText()
-            if (intentToAdd.waitFor() != 0) {
-                return fail(node, "worktree intent-to-add failed: ${addOutput.take(200)}")
+            val agency = agencyGate.evaluate(
+                ActionProposal(
+                    id = "self-host-write-${node.id}",
+                    actionClass = PolicyActionClass.FILE_MUTATION,
+                    actor = actor,
+                    cwd = worktree.worktreePath.toString(),
+                    targetPaths = listOf(mutation.path.toString()),
+                    metadata = mapOf("origin" to "self-host-worktree-node")
+                )
+            )
+            if (agency.disposition != atropos.core.policy.AgencyDisposition.ALLOWED) {
+                return fail(running, "self-host mutation refused by bounded agency: ${agency.reason}")
+            }
+            if (!worktreeService.writeFile(worktree.id, mutation.path.toString(), mutation.content + "\n")) {
+                return fail(running, "isolated worktree refused file mutation: ${mutation.path}")
+            }
+            val staged = worktreeService.intentToAdd(worktree.id, mutation.path.toString())
+            if (!staged.ok) {
+                return fail(node, "worktree intent-to-add failed: ${staged.message.take(200)}")
+            }
+            val changedPaths = diffInspector.changedPaths(worktree.baselineCommit, worktree.worktreePath, mutation.path)
+            if (changedPaths.isEmpty()) {
+                return fail(running, "self-host mutation produced no source diff: ${mutation.path}")
             }
             val merged = worktreeService.verifyAndMerge(worktree.id, "git diff --check")
             if (!merged.ok) return fail(node, merged.message)
@@ -103,19 +140,4 @@ class SelfHostWorktreeNodeExecutor(
         return if (inside) null else "territory violation before worktree mutation: $normalized"
     }
 
-    private fun parseMutation(payload: String?): ParsedMutation? {
-        val body = payload?.trim().orEmpty()
-        val explicit = body.split("::", limit = 2)
-        if (explicit.size != 2 || explicit[0].isBlank()) return null
-        val path = Path.of(explicit[0].trim())
-        if (path.isAbsolute) return null
-        val content = explicit[1].trim()
-        if (content.isBlank()) return null
-        return ParsedMutation(path.normalize(), content)
-    }
-
-    private data class ParsedMutation(
-        val path: Path,
-        val content: String
-    )
 }

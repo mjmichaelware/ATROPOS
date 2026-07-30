@@ -69,6 +69,8 @@ data class AgentPatchRunResult(
     val responsePreview: String? = null,
     val failureSummary: String? = null,
     val sourceVerificationId: String? = null,
+    val sourcePackId: String? = null,
+    val fetchReceiptId: String? = null,
     val message: String? = null
 ) {
     fun render(): String = buildString {
@@ -92,6 +94,8 @@ data class AgentPatchRunResult(
             }
         )
         sourceVerificationId?.takeIf { it.isNotBlank() }?.let { appendLine("Source verification: $it") }
+        sourcePackId?.takeIf { it.isNotBlank() }?.let { appendLine("Source pack: $it") }
+        fetchReceiptId?.takeIf { it.isNotBlank() }?.let { appendLine("Fetch receipt: $it") }
         failureSummary?.takeIf { it.isNotBlank() }?.let { appendLine("fallback summary: $it") }
         message?.takeIf { it.isNotBlank() }?.let { appendLine(it.trimEnd()) }
     }.trimEnd()

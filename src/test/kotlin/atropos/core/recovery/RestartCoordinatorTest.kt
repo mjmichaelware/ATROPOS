@@ -100,4 +100,60 @@ class RestartCoordinatorTest {
         assertEquals(DagNodeState.READY, dagStore.readNode("node-running")!!.state)
         assertEquals(DagNodeState.BLOCKED, dagStore.readNode("node-exhausted")!!.state)
     }
+
+    @Test
+    fun latestSnapshot_restores_full_redacted_recovery_report() {
+        val root = Files.createTempDirectory("atropos-restart-report-round-trip-")
+        val capturedAt = Instant.parse("2026-07-29T02:00:00Z")
+        val recoveredAt = Instant.parse("2026-07-29T01:59:59Z")
+        val coordinator = RestartCoordinator(
+            repoRoot = root,
+            clock = { capturedAt }
+        )
+        val report = RecoveryReport(
+            recoveredAt = recoveredAt,
+            staleQueueEntries = 2,
+            staleSessions = 3,
+            staleDagClaims = 4,
+            interruptedRuns = 5,
+            completedMutationsSkipped = 6,
+            errors = listOf("provider token=plain-token"),
+            message = "recovered with token=plain-token"
+        )
+
+        coordinator.snapshot(report)
+
+        val restored = coordinator.latestSnapshot()?.recoveryReport
+            ?: error("missing recovery report")
+        assertEquals(recoveredAt, restored.recoveredAt)
+        assertEquals(2, restored.staleQueueEntries)
+        assertEquals(3, restored.staleSessions)
+        assertEquals(4, restored.staleDagClaims)
+        assertEquals(5, restored.interruptedRuns)
+        assertEquals(6, restored.completedMutationsSkipped)
+        assertEquals(listOf("provider token=<redacted:secret>"), restored.errors)
+        assertEquals("recovered with token=<redacted:secret>", restored.message)
+    }
+
+    @Test
+    fun latestSnapshot_can_select_snapshot_for_requested_goal() {
+        val root = Files.createTempDirectory("atropos-restart-goal-scoped-")
+        val goalStore = GoalRunStore(root)
+        val first = goalStore.createGoalRun("first goal", provider = "self-host")
+        val second = goalStore.createGoalRun("second goal", provider = "self-host")
+        val worktrees = IsolatedWorktreeService(root)
+        val coordinator = RestartCoordinator(
+            repoRoot = root,
+            goalRunStore = goalStore,
+            worktreeService = worktrees,
+            clock = { Instant.parse("2026-07-29T02:10:00Z") }
+        )
+
+        coordinator.snapshot()
+        goalStore.update(second.copy(evidence = listOf("second evidence")))
+        coordinator.snapshot()
+
+        assertEquals(second.id, coordinator.latestSnapshot(second.id)?.goalRuns?.single()?.id)
+        assertEquals(null, coordinator.latestSnapshot("missing-goal"))
+    }
 }

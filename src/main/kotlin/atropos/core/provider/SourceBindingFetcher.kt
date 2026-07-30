@@ -1,11 +1,12 @@
 package atropos.core.provider
 
 import atropos.core.AtroposRepoRootLocator
+import atropos.core.policy.BoundedProcessRunner
+import atropos.core.security.RedactionFilter
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
-import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import java.security.MessageDigest
@@ -16,7 +17,9 @@ import java.util.zip.ZipInputStream
 class SourceBindingFetcher(
     private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
     private val storeRoot: Path = repoRoot.resolve(".atropos/source-bindings/trees"),
-    private val treeWriter: ContentAddressedTreeWriter = ContentAddressedTreeWriter(storeRoot)
+    private val treeWriter: ContentAddressedTreeWriter = ContentAddressedTreeWriter(storeRoot),
+    private val processRunner: BoundedProcessRunner = BoundedProcessRunner(),
+    private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     fun fetch(binding: SourceBinding): SourceFetchResult {
         return when (binding.kind) {
@@ -40,16 +43,21 @@ class SourceBindingFetcher(
         return if (Files.isDirectory(source.resolve(".git"))) {
             val checkout = temporaryDir("git-local-")
             val copy = runCommand(listOf("git", "clone", "--no-hardlinks", source.toString(), checkout.toString()), repoRoot)
-            if (copy.exitCode != 0) return SourceFetchResult.Failed("git clone failed: ${copy.output.take(300)}")
+            if (copy.exitCode != 0) return SourceFetchResult.Failed("git clone failed: ${copy.safeOutput()}")
             val checkoutRef = runCommand(listOf("git", "checkout", ref), checkout)
-            if (checkoutRef.exitCode != 0) return SourceFetchResult.Failed("git checkout $ref failed: ${checkoutRef.output.take(300)}")
+            if (checkoutRef.exitCode != 0) return SourceFetchResult.Failed("git checkout $ref failed: ${checkoutRef.safeOutput()}")
             val commit = runCommand(listOf("git", "rev-parse", "HEAD"), checkout).output.trim().ifBlank { ref }
             val tree = treeWriter.materialize(checkout)
             SourceFetchResult.Fetched(receipt(binding, binding.uri, commit, tree))
         } else {
             val checkout = temporaryDir("git-remote-")
-            val clone = runCommand(listOf("git", "clone", "--depth", "1", "--branch", ref, binding.uri, checkout.toString()), repoRoot)
-            if (clone.exitCode != 0) return SourceFetchResult.Failed("git fetch failed: ${clone.output.take(300)}")
+            val cloneCommand = if (binding.ref.isNullOrBlank() || binding.ref == "HEAD") {
+                listOf("git", "clone", "--depth", "1", binding.uri, checkout.toString())
+            } else {
+                listOf("git", "clone", "--depth", "1", "--branch", ref, binding.uri, checkout.toString())
+            }
+            val clone = runCommand(cloneCommand, repoRoot)
+            if (clone.exitCode != 0) return SourceFetchResult.Failed("git fetch failed: ${clone.safeOutput()}")
             val commit = runCommand(listOf("git", "rev-parse", "HEAD"), checkout).output.trim().ifBlank { ref }
             val tree = treeWriter.materialize(checkout)
             SourceFetchResult.Fetched(receipt(binding, binding.uri, commit, tree))
@@ -67,10 +75,21 @@ class SourceBindingFetcher(
         val unpacked = temporaryDir("archive-")
         val name = archive.fileName.toString().lowercase()
         when {
-            name.endsWith(".zip") -> unzip(archive, unpacked)
+            name.endsWith(".zip") -> {
+                val extracted = runCatching { unzip(archive, unpacked) }
+                if (extracted.isFailure) {
+                    return SourceFetchResult.Failed(
+                        "zip extraction failed: ${extracted.exceptionOrNull()?.message ?: "unknown"}"
+                    )
+                }
+            }
             name.endsWith(".tar") || name.endsWith(".tar.gz") || name.endsWith(".tgz") -> {
+                val unsafeEntry = firstUnsafeTarEntry(archive)
+                if (unsafeEntry != null) {
+                    return SourceFetchResult.Failed("tar extraction refused: archive entry escapes target root: $unsafeEntry")
+                }
                 val tar = runCommand(listOf("tar", "-xf", archive.toString(), "-C", unpacked.toString()), repoRoot)
-                if (tar.exitCode != 0) return SourceFetchResult.Failed("tar extraction failed: ${tar.output.take(300)}")
+                if (tar.exitCode != 0) return SourceFetchResult.Failed("tar extraction failed: ${tar.safeOutput()}")
             }
             else -> return SourceFetchResult.Unsupported("unsupported archive format: ${archive.fileName}")
         }
@@ -96,7 +115,17 @@ class SourceBindingFetcher(
             if (!actual.equals(expected, ignoreCase = true)) {
                 return SourceFetchResult.Failed("http_bundle hash mismatch: expected=$expected observed=$actual")
             }
-            fetchArchive(binding.copy(kind = SourceBindingKind.ARCHIVE, uri = target.toString(), expectedSha256 = expected))
+            when (val archive = fetchArchive(binding.copy(kind = SourceBindingKind.ARCHIVE, uri = target.toString(), expectedSha256 = expected))) {
+                is SourceFetchResult.Fetched -> SourceFetchResult.Fetched(
+                    archive.receipt.copy(
+                        bindingKind = SourceBindingKind.HTTP_BUNDLE,
+                        repository = sanitizeOrigin(binding.uri),
+                        message = "hash-pinned http bundle"
+                    )
+                )
+                is SourceFetchResult.Failed -> archive
+                is SourceFetchResult.Unsupported -> archive
+            }
         } catch (e: Exception) {
             SourceFetchResult.Failed("http_bundle fetch failed: ${e.message ?: e.javaClass.simpleName}")
         }
@@ -119,17 +148,51 @@ class SourceBindingFetcher(
         }
     }
 
+    private fun firstUnsafeTarEntry(archive: Path): String? {
+        val listing = runCommand(listOf("tar", "-tf", archive.toString()), repoRoot)
+        if (listing.exitCode != 0) return "unreadable tar listing: ${listing.safeOutput(120)}"
+        return listing.output
+            .lineSequence()
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
+            .firstOrNull(::isUnsafeArchiveEntry)
+    }
+
+    private fun isUnsafeArchiveEntry(entry: String): Boolean {
+        val normalized = Path.of(entry).normalize().toString().replace('\\', '/')
+        return entry.startsWith("/") ||
+            normalized == ".." ||
+            normalized.startsWith("../") ||
+            "/../" in normalized
+    }
+
     private fun receipt(binding: SourceBinding, repo: String, ref: String, tree: FetchTree): FetchReceipt =
         FetchReceipt(
             id = "fetch-${UUID.randomUUID().toString().take(12)}",
             bindingKind = binding.kind,
-            repository = repo,
+            repository = sanitizeOrigin(repo),
             ref = ref,
             treeHash = tree.treeHash,
             contentRoot = tree.root,
             paths = tree.paths,
             fetchedAt = Instant.now()
         )
+
+    private fun sanitizeOrigin(origin: String): String {
+        val parsed = runCatching { URI.create(origin) }.getOrNull()
+        if (parsed?.rawUserInfo == null) return origin
+        return runCatching {
+            URI(
+                parsed.scheme,
+                null,
+                parsed.host,
+                parsed.port,
+                parsed.path,
+                parsed.query,
+                parsed.fragment
+            ).toString()
+        }.getOrDefault(origin.replace(Regex("//[^/@]+@"), "//"))
+    }
 
     private fun temporaryDir(prefix: String): Path =
         Files.createTempDirectory(repoRoot.resolve(".atropos/source-bindings").also { Files.createDirectories(it) }, prefix)
@@ -148,21 +211,29 @@ class SourceBindingFetcher(
     }
 
     private fun runCommand(command: List<String>, cwd: Path): CommandResult {
-        return try {
-            val process = ProcessBuilder(command)
-                .directory(cwd.toFile())
-                .redirectErrorStream(true)
-                .start()
-            val finished = process.waitFor(30, java.util.concurrent.TimeUnit.SECONDS)
-            if (!finished) {
-                process.destroyForcibly()
-                return CommandResult(124, "${command.first()} timed out")
-            }
-            CommandResult(process.exitValue(), process.inputStream.readAllBytes().toString(StandardCharsets.UTF_8).trim())
-        } catch (e: Exception) {
-            CommandResult(1, e.message ?: e.javaClass.simpleName)
+        val result = runCatching {
+            processRunner.run(
+                command = command,
+                directory = cwd,
+                timeoutMillis = 30_000,
+                maxOutputBytes = 64 * 1024,
+                maxOutputLines = 1_000
+            )
+        }.getOrElse { failure ->
+            return CommandResult(1, failure.message ?: failure.javaClass.simpleName, false)
         }
+        val output = listOf(result.stdout, result.stderr)
+            .filter { it.isNotBlank() }
+            .joinToString("\n")
+        return CommandResult(
+            exitCode = result.exitCode ?: if (result.timedOut) 124 else 1,
+            output = redactionFilter.compact(output, 600),
+            timedOut = result.timedOut
+        )
     }
 
-    private data class CommandResult(val exitCode: Int, val output: String)
+    private data class CommandResult(val exitCode: Int, val output: String, val timedOut: Boolean) {
+        fun safeOutput(maxChars: Int = 300): String =
+            output.ifBlank { if (timedOut) "command timed out" else "no command output" }.take(maxChars)
+    }
 }

@@ -36,6 +36,7 @@ class SelfHostPromotionEvidence(
         redactionFilter.compact(
             buildString {
                 append("jar_swap promoted=${result.promoted}")
+                append(" terminal=${if (result.promoted) "VERIFIED_COMPLETE" else "UNCHANGED"}")
                 append(" candidate=${result.candidateJar.fileName} sha256=${hasher.sha256(result.candidateJar) ?: "missing"}")
                 append(" target=${result.targetJar.fileName} sha256=${hasher.sha256(result.targetJar) ?: "missing"}")
                 append(" backup=${result.backupJar?.fileName ?: "none"}")

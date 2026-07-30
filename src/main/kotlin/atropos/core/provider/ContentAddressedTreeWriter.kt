@@ -2,6 +2,7 @@ package atropos.core.provider
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
+import java.nio.file.LinkOption
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.security.MessageDigest
@@ -27,6 +28,7 @@ class ContentAddressedTreeWriter(
                 val from = normalizedSource.resolve(relative)
                 val to = target.resolve(relative).normalize()
                 if (!to.startsWith(target)) return@forEach
+                if (Files.isSymbolicLink(from)) return@forEach
                 Files.createDirectories(to.parent)
                 Files.copy(from, to, StandardCopyOption.REPLACE_EXISTING)
             }
@@ -38,8 +40,7 @@ class ContentAddressedTreeWriter(
         if (!Files.isDirectory(root)) return emptyList()
         return Files.walk(root).use { stream ->
             stream
-                .filter { Files.isRegularFile(it) }
-                .filter { !Files.isSymbolicLink(it) }
+                .filter { Files.isRegularFile(it, LinkOption.NOFOLLOW_LINKS) }
                 .map { root.relativize(it).toString().replace('\\', '/') }
                 .filter { !excluded(it) }
                 .sorted()

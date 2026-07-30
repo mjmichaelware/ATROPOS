@@ -100,6 +100,43 @@ private fun runInteractive(
                 )
             }
 
+            fun resolvePromptSubmission() {
+                val resolved = completer.resolveSubmission(
+                    prompt.text,
+                    prompt.cursor,
+                    prompt.suggestionSelection()
+                )
+
+                if (resolved != null && resolved != prompt.text) {
+                    prompt.clear()
+                    prompt.insert(resolved)
+                }
+            }
+
+            fun applyPromptCompletion() {
+                val completion = completionForPrompt()
+                prompt.clampSuggestionSelection(
+                    if (completion.options.isEmpty()) 0
+                    else completion.options.lastIndex
+                )
+
+                val selected = completer.complete(
+                    prompt.text,
+                    prompt.cursor,
+                    prompt.suggestionSelection()
+                )
+
+                if (selected.insertion.isNotEmpty()) {
+                    prompt.insert(selected.insertion)
+                } else if (selected.options.isNotEmpty()) {
+                    val resolved = selected.options[
+                        selected.selectedIndex.coerceIn(0, selected.options.lastIndex)
+                    ]
+                    prompt.clear()
+                    prompt.insert(resolved)
+                }
+            }
+
             fun redraw() {
                 val completion = completionForPrompt()
                 prompt.clampSuggestionSelection(
@@ -133,8 +170,13 @@ private fun runInteractive(
 
             inputLoop@ while (true) {
                 val key = keys.readKey() ?: break
-                val submitted = prompt.text
                 val submittedMode = prompt.mode.name
+
+                if (key == KeyEvent.Enter) {
+                    resolvePromptSubmission()
+                }
+
+                val submitted = prompt.text
 
                 when (key) {
                     KeyEvent.CtrlT -> {
@@ -168,16 +210,7 @@ private fun runInteractive(
 
                 when {
                     effect is PromptEffect.Complete -> {
-                        val completion = completionForPrompt()
-                        prompt.clampSuggestionSelection(
-                            if (completion.options.isEmpty()) 0
-                            else completion.options.lastIndex
-                        )
-
-                        val selected = completionForPrompt()
-                        if (selected.insertion.isNotEmpty()) {
-                            prompt.insert(selected.insertion)
-                        }
+                        applyPromptCompletion()
                         redraw()
                     }
 

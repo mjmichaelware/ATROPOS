@@ -60,6 +60,7 @@ data class StateSnapshot(
 )
 
 data class DagNodeRestoreResult(
+    val dagId: String,
     val nodeId: String,
     val restored: Boolean,
     val reason: String

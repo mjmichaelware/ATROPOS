@@ -83,7 +83,11 @@ class SelfHostPromotionServiceTest {
         val backup = result.jarSwap?.backupJar ?: error("missing backup")
         assertEquals("old jar", Files.readString(backup))
         val reopened = fixture.store.resolve(fixture.goal.id) ?: error("missing goal")
-        assertTrue(reopened.evidence.any { it.contains("jar_swap promoted=true") && it.contains("sha256=") })
+        assertTrue(reopened.evidence.any {
+            it.contains("jar_swap promoted=true") &&
+                it.contains("terminal=VERIFIED_COMPLETE") &&
+                it.contains("sha256=")
+        })
         assertEquals("jar:atropos.jar", reopened.lastVerifiedCheckpoint)
     }
 
@@ -174,6 +178,76 @@ class SelfHostPromotionServiceTest {
         assertTrue(reopened.lastVerifiedCheckpoint == null)
     }
 
+    @Test
+    fun nonterminal_goal_cannot_promote_even_when_injected_gate_is_green() {
+        val root = Files.createTempDirectory("atropos-self-host-promote-incomplete-")
+        val candidate = root.resolve("candidate.jar")
+        val target = root.resolve("atropos.jar")
+        Files.writeString(candidate, "new jar")
+        Files.writeString(target, "old jar")
+        val fixture = fixture(root)
+        val incompleteGoal = fixture.store.update(
+            fixture.goal.copy(status = GoalRunStatus.RUNNING, terminalCondition = null)
+        )
+        var gateCalled = false
+        val service = SelfHostPromotionService(
+            repoRoot = root,
+            store = fixture.store,
+            dagService = fixture.dagService,
+            completionGate = VerifiedCompletionGate(repoRoot = root),
+            evaluateGate = {
+                gateCalled = true
+                CompletionGateReport(it.id, true, emptyList(), "green")
+            }
+        )
+
+        val result = service.promote(SelfHostPromotionRequest(incompleteGoal.id, fixture.node.id, candidate, target))
+
+        assertTrue(!result.promoted)
+        assertTrue(result.message.contains("VERIFIED_COMPLETE"), result.message)
+        assertTrue(!gateCalled)
+        assertEquals("old jar", Files.readString(target))
+        assertTrue((fixture.store.resolve(incompleteGoal.id)?.evidence ?: emptyList()).any { it.startsWith("promotion_refused") })
+    }
+
+    @Test
+    fun failed_swap_preserves_active_jar_checkpoint_and_truthful_terminal_evidence() {
+        val root = Files.createTempDirectory("atropos-self-host-promote-swap-failure-")
+        val candidate = root.resolve("candidate.jar")
+        val target = root.resolve("atropos.jar")
+        Files.writeString(candidate, "new jar")
+        Files.writeString(target, "old jar")
+        val swapTime = Instant.parse("2026-07-29T00:05:00Z")
+        Files.createDirectory(root.resolve("atropos.jar.backup-${swapTime.toEpochMilli()}"))
+        val fixture = fixture(root)
+        val service = SelfHostPromotionService(
+            repoRoot = root,
+            store = fixture.store,
+            dagService = fixture.dagService,
+            completionGate = VerifiedCompletionGate(repoRoot = root),
+            jarSwapGate = SafeJarSwapGate(clock = { swapTime }),
+            evaluateGate = { node ->
+                CompletionGateReport(
+                    nodeId = node.id,
+                    canComplete = true,
+                    gateResults = listOf(GateResult(node.id, true, "Compile Gate", "compilation succeeded", swapTime)),
+                    message = "all gates passed"
+                )
+            }
+        )
+
+        val result = service.promote(SelfHostPromotionRequest(fixture.goal.id, fixture.node.id, candidate, target))
+
+        assertTrue(!result.promoted)
+        assertEquals("old jar", Files.readString(target))
+        val reopened = fixture.store.resolve(fixture.goal.id) ?: error("missing goal")
+        assertEquals(GoalTerminalCondition.VERIFIED_COMPLETE, reopened.terminalCondition)
+        assertEquals(null, reopened.lastVerifiedCheckpoint)
+        assertTrue(reopened.evidence.any {
+            it.contains("jar_swap promoted=false") && it.contains("terminal=UNCHANGED")
+        })
+    }
+
     private fun fixture(root: java.nio.file.Path): Fixture {
         val store = GoalRunStore(root, clock = { Instant.parse("2026-07-29T00:02:00Z") })
         val dagService = DagExecutionService(repoRoot = root)
@@ -190,17 +264,20 @@ class SelfHostPromotionServiceTest {
             updatedAt = Instant.parse("2026-07-29T00:02:01Z"),
             metaFile = root.resolve(".atropos/dag/node-promote.meta")
         )
-        val dag = dagService.createDag("promotion dag", listOf(node), "atropos-self-host")
+        val completedNode = node.copy(state = atropos.core.dag.DagNodeState.COMPLETE)
+        val dag = dagService.createDag("promotion dag", listOf(completedNode), "atropos-self-host")
         val updated = store.update(
             goal.copy(
                 goalId = goal.id,
                 dagId = dag.id,
                 currentNodeId = node.id,
                 activePhase = "11",
-                territory = node.territory
+                territory = node.territory,
+                status = GoalRunStatus.COMPLETED,
+                terminalCondition = GoalTerminalCondition.VERIFIED_COMPLETE
             )
         )
-        return Fixture(store, dagService, updated, node.copy(dagId = dag.id))
+        return Fixture(store, dagService, updated, completedNode.copy(dagId = dag.id))
     }
 
     private data class Fixture(

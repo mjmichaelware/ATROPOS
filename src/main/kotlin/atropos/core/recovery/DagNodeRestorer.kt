@@ -13,14 +13,14 @@ class DagNodeRestorer(
         for (dag in dags) {
             for (node in dag.nodes) {
                 if (node.state == DagNodeState.CLAIMED || node.state == DagNodeState.RUNNING || node.state == DagNodeState.VERIFYING) {
-                    results += restoreNode(node)
+                    results += restoreNode(dag.id, node)
                 }
             }
         }
         return results
     }
 
-    private fun restoreNode(node: DagNode): DagNodeRestoreResult {
+    private fun restoreNode(dagId: String, node: DagNode): DagNodeRestoreResult {
         if (node.attempts >= node.maxAttempts) {
             dagStore.writeNode(
                 node.copy(
@@ -31,7 +31,7 @@ class DagNodeRestorer(
                     failureReason = "restore blocked: retry budget exhausted"
                 )
             )
-            return DagNodeRestoreResult(node.id, false, "retry budget exhausted")
+            return DagNodeRestoreResult(dagId, node.id, false, "retry budget exhausted")
         }
 
         dagStore.writeNode(
@@ -43,6 +43,6 @@ class DagNodeRestorer(
                 lastMessage = "restored after restart"
             )
         )
-        return DagNodeRestoreResult(node.id, true, "restored to READY")
+        return DagNodeRestoreResult(dagId, node.id, true, "restored to READY")
     }
 }
