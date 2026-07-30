@@ -69,6 +69,27 @@ class ProviderFixtureMatrixService(
         lines += "redaction" to runRedactionFixture(providerId)
         lines += "attestation" to runAttestationFixture(providerId)
 
+        // A provider that belongs to no family catalog — `local` is the current
+        // case — got every failure fixture but no success fixture, because
+        // `success` is only ever contributed by familyFixtures. The matrix then
+        // reported it as covered while silently omitting the one case that proves
+        // the adapter can actually answer. Every registered provider gets a success
+        // fixture; a provider with no adapter fails it rather than skipping it.
+        if (lines.none { it.first == "success" }) {
+            val live = adapter?.complete(
+                AdapterRequest(
+                    task = probeTask(descriptor),
+                    prompt = "fixture success for $providerId",
+                    dryRun = false
+                )
+            )
+            lines += "success" to (
+                live is ProviderCallResult.Success ||
+                    live is ProviderCallResult.LocalOnly ||
+                    live is ProviderCallResult.Queued
+                )
+        }
+
         val distinct = linkedMapOf<String, Boolean>()
         lines.forEach { (name, passed) -> distinct[name] = distinct[name] ?: passed }
         val detail = distinct.entries.sortedBy { it.key }.map { "${it.key}=${if (it.value) "PASS" else "FAIL"}" }

@@ -19,7 +19,16 @@ data class TokenIsolationReport(
 
 class TokenIsolationVault(
     private val root: Path = AtroposRepoRootLocator.resolve().resolve(".atropos/secrets"),
-    private val keyProvider: SecretVaultKeyProvider = EnvironmentSecretVaultKeyProvider()
+    /**
+     * Device-first by default, operator key still wins.
+     *
+     * This used to default to [EnvironmentSecretVaultKeyProvider] alone, which meant
+     * a fresh install refused every vault operation until a human exported a
+     * base64 AES-256 key by hand. [DeviceSecretVaultKeyProvider] keeps that override
+     * working and provisions a device key when there is none, so the vault is usable
+     * by anyone who simply downloads ATROPOS.
+     */
+    private val keyProvider: SecretVaultKeyProvider = DeviceSecretVaultKeyProvider(root)
 ) {
     private val pathResolver = VaultPathResolver(root)
 

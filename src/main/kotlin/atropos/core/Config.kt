@@ -12,7 +12,13 @@ class AtroposConfig(val keys: ApiKeys, val lakehouse: LakehouseConfig, val runti
             val openAiKey = extract(content, "openai_api_key") ?: ""
             val anthropicKey = extract(content, "anthropic_api_key") ?: ""
             val xaiKey = extract(content, "xai_api_key") ?: ""
-            val mount = extract(content, "lakehouse_mount_path") ?: "/data/data/com.termux/files/home/ATROPOS/lakehouse"
+            // Resolve from this device's working directory rather than one
+            // developer's Termux home. A literal path here meant every other
+            // machine silently pointed its lakehouse at a directory that does
+            // not exist, and only the original device worked.
+            val mount = extract(content, "lakehouse_mount_path")
+                ?: java.nio.file.Path.of(System.getProperty("user.dir", "."))
+                    .toAbsolutePath().normalize().resolve("lakehouse").toString()
             val db = extract(content, "lakehouse_db_path") ?: "$mount/vector_storage.db"
             val provider = extract(content, "default_provider") ?: "groq"
             return AtroposConfig(ApiKeys(groqKey, openAiKey, anthropicKey, xaiKey), LakehouseConfig(mount, db), RuntimeConfig(provider, 0.2))
