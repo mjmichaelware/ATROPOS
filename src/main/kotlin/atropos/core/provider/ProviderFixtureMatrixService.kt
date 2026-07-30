@@ -135,7 +135,7 @@ class ProviderFixtureMatrixService(
         return !failure.cleanSummary.contains("A".repeat(24)) &&
             !failure.cleanSummary.contains("B".repeat(24)) &&
             !failure.cleanSummary.contains("C".repeat(24)) &&
-            failure.cleanSummary.contains("<redacted>")
+            failure.cleanSummary.contains("<redacted")
     }
 
     private fun runAttestationFixture(providerId: String): Boolean {

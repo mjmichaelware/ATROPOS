@@ -57,7 +57,7 @@ class SourceBindingFetcher(
                 listOf("git", "clone", "--depth", "1", "--branch", ref, binding.uri, checkout.toString())
             }
             val clone = runCommand(cloneCommand, repoRoot)
-            if (clone.exitCode != 0) return SourceFetchResult.Failed("git fetch failed: ${clone.safeOutput()}")
+            if (clone.exitCode != 0) return SourceFetchResult.Failed("git clone failed: ${clone.safeOutput()}")
             val commit = runCommand(listOf("git", "rev-parse", "HEAD"), checkout).output.trim().ifBlank { ref }
             val tree = treeWriter.materialize(checkout)
             SourceFetchResult.Fetched(receipt(binding, binding.uri, commit, tree))
