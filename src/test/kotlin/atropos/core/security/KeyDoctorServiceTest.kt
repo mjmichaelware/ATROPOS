@@ -10,7 +10,7 @@ class KeyDoctorServiceTest {
     fun doctor_respects_secret_precedence_and_redacts_values() {
         val root = Files.createTempDirectory("atropos-key-doctor").toFile()
         val localRoot = root.resolve("secrets").apply { mkdirs() }
-        TokenIsolationVault(localRoot.toPath()).writeSecret("GROQ_API_KEY", "local-secret")
+        TokenIsolationVault(localRoot.toPath(), TestSecretVaultKeyProvider()).writeSecret("GROQ_API_KEY", "local-secret")
 
         val service = KeyDoctorService(
             secretSource = DefaultSecretSource.create(
@@ -55,5 +55,13 @@ class KeyDoctorServiceTest {
         assertTrue(result.root.canRead())
         assertTrue(result.root.canWrite())
         assertFalse(result.readme.readText().contains("secret="))
+    }
+
+    @Test
+    fun lookup_rendering_never_includes_secret_value() {
+        val lookup = SecretLookup("TOKEN", "raw-secret-value", "local_file", true)
+
+        assertFalse(lookup.toString().contains("raw-secret-value"))
+        assertTrue(lookup.toString().contains("configured:local_file"))
     }
 }

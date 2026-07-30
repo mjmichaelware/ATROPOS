@@ -1105,3 +1105,124 @@ Readers never mutate product code.
 - HR interrupts: none
 - Fingerprints: pending manifest refresh
 - New overall estimate: unchanged
+
+### 2026-07-30T07:25:00-06:00 · Agent: Codex GPT-5 · Batch: phase4-staged-content-and-enrollment-001
+- Paths touched: `src/main/kotlin/atropos/Main.kt` (+6/-1), `src/main/kotlin/atropos/core/security/SecretEnrollmentSource.kt` (+21/-4), `src/main/kotlin/atropos/core/worktree/IsolatedWorktreeService.kt` (+18), `src/test/kotlin/atropos/core/security/SecretEnrollmentSourceTest.kt` (+23), `src/test/kotlin/atropos/core/worktree/IsolatedWorktreeServiceTest.kt` (+17)
+- New decoupled files: `src/test/kotlin/atropos/core/security/SecretEnrollmentSourceTest.kt`
+- Atoms / phases affected: Phase 4 Secret and Security Hardening; staged-content gate and startup enrollment transparency
+- Predicate moved: Secret discovery exceptions are now typed and sanitized instead of silently becoming indistinguishable from an empty registry; intent-to-add scans staged file bytes through the existing `CredentialDiffGuard` before Git is invoked; startup emits degraded enrollment evidence when discovery fails
+- % delta: Phase 4 remains conservatively 85% for source-authority scoring; the two previously unclosed predicates above are implemented, but the required encrypted vault semantics are not claimed because the current vault remains POSIX-isolated plaintext
+- Why the delta is justified: The source-level acceptance requires both no secret-bearing staged content and truthful discovery failure handling. The implementation composes the existing redaction/credential guard and preserves failure-first behavior. Focused tests were written but not executed, and no compile, package, install, or JAR proof was run.
+- HR interrupts: none
+- Fingerprints: pending manifest refresh
+- New overall estimate: unchanged
+
+### 2026-07-30T07:42:00-06:00 · Agent: Codex GPT-5 · Batch: phase4-local-vault-enrollment-002
+- Paths touched: `src/main/kotlin/atropos/Main.kt` (+1), `src/main/kotlin/atropos/core/security/SecretEnrollmentSource.kt` (+25), `src/test/kotlin/atropos/core/security/SecretEnrollmentSourceTest.kt` (+19)
+- New decoupled files: none; the local-vault adapter composes `TokenIsolationVault` and reuses `KeySetupHelper.defaultNames()`
+- Atoms / phases affected: Phase 4 Secret and Security Hardening; Tier 1 startup enrollment
+- Predicate moved: startup enrollment now covers both environment and configured local-vault credentials through the existing `SecretEnrollment` owner, with no raw values in evidence
+- % delta: Phase 4 remains conservatively 85% for source-authority scoring; encrypted-at-rest vault semantics and focused execution remain unresolved
+- Why the delta is justified: The local vault was already the supported configuration path but was absent from process-start enrollment. The new adapter reads only the existing bounded name set, relies on the vault’s isolation checks, and the focused test proves enrollment plus evidence redaction. No compile, test, package, install, or JAR proof was run.
+- HR interrupts: none
+- Fingerprints: pending manifest refresh
+- New overall estimate: unchanged
+
+### 2026-07-30T08:35:00-06:00 · Agent: Codex GPT-5 Director · Batch: phase4-encrypted-vault-semantics-003
+- Paths touched: `src/main/kotlin/atropos/core/security/SecretVaultKeyProvider.kt` (+73), `VaultCipher.kt` (+61), `VaultPathResolver.kt` (+38), `VaultReadResult.kt` (+40), `TokenIsolationVault.kt` (+83/-34), `SecretSource.kt` (+19/-5), `SecretEnrollmentSource.kt` (+48/-4), `KeyDoctorService.kt` (+4), `Main.kt` (+7/-1), `scripts/secret-vault-proof.sh` (+22), focused security tests (+124)
+- New decoupled files: `SecretVaultKeyProvider.kt`, `VaultCipher.kt`, `VaultPathResolver.kt`, `VaultReadResult.kt`, `SecretVaultKeyProviderTest.kt`, `SecretVaultRuntimeProofTest.kt`, `TokenIsolationVaultEncryptionContractTest.kt`, `TestSecretVaultKeyProvider.kt`, `VaultPathResolverTest.kt`, `VaultReadResultTest.kt`, `scripts/secret-vault-proof.sh`
+- Atoms / phases affected: Phase 4 Secret and Security Hardening; encrypted-at-rest storage, typed refusal, root resolution, and operator proof seam
+- Predicate moved: vault records are now AES-GCM encrypted with fresh nonces, versioned envelopes, authenticated secret-file identity, external Base64 AES-256 key input, ciphertext-only atomic writes with file force, typed missing/key/format/tamper/I/O refusals, root-symlink refusal, and secret-safe lookup rendering
+- % delta: Phase 4 source-level encrypted-at-rest predicates moved from false to implemented; no final percentage claim because hardware/OS-keystore backing and runtime execution remain unproven
+- Why the delta is justified: The swarm’s five writer lanes produced disjoint key, cipher, path, refusal-model, and contract-test slices; the Director merged duplicate local-key output out of the active path and wired the external key contract through the existing vault owner. Static `git diff --check` and shell syntax checks pass. No Gradle, compilation, tests, packaging, installation, or JAR runtime was run.
+- HR interrupts: tool concurrency capped the second five-reader spawn; the available read audits were incorporated locally, and no overlapping writer edits remain
+- Fingerprints: pending manifest refresh
+- New overall estimate: unchanged; Phase 4 remains below 100% pending hardware-backed provider policy and operator proof
+
+### 2026-07-30T09:05:00-06:00 · Agent: Codex GPT-5 · Batch: phase4-ciphertext-test-repair-004
+- Paths touched: `src/test/kotlin/atropos/core/security/TokenIsolationVaultTest.kt` (+3/-2)
+- New decoupled files: none
+- Atoms / phases affected: Phase 4 encrypted-at-rest focused verification
+- Predicate moved: ciphertext tests no longer decode encrypted records as UTF-8 and therefore assert plaintext absence through a binary-safe inspection
+- % delta: unchanged; the operator run compiled successfully but reported two test assertion defects, now repaired; rerun is required before claiming focused verification green
+- Why the delta is justified: The reported `MalformedInputException` occurred only because tests used `Files.readString` on intentionally binary ciphertext. Production compilation completed; this correction aligns tests with the encrypted storage contract. No local build or test was run by this agent.
+- HR interrupts: none
+- Fingerprints: pending manifest refresh
+- New overall estimate: unchanged
+
+### 2026-07-30T09:25:00-06:00 · Agent: Human Owner + Codex GPT-5 · Batch: phase4-vault-proof-executed-005
+- Paths touched: `scripts/secret-vault-proof.sh`, encrypted-vault production and focused test paths from batch `phase4-encrypted-vault-semantics-003`
+- New decoupled files: none
+- Atoms / phases affected: Phase 4 encrypted-at-rest verification
+- Predicate moved: operator execution proved compilation, ciphertext-at-rest, tamper refusal, wrong-key refusal, and authenticated filename binding
+- % delta: encrypted-at-rest predicate is now runtime-proven; Phase 4 remains below final 100% because hardware/OS-keystore backing and broader release-channel proof remain open
+- Why the delta is justified: The operator ran `./scripts/secret-vault-proof.sh` with a generated external AES-256 key. Gradle completed successfully in 45 seconds, the focused test task passed, and the script emitted `vault proof passed` for all five listed cryptographic behaviors. Warnings and deprecated-feature notices did not fail the build.
+- HR interrupts: none
+- Fingerprints: pending manifest refresh
+- New overall estimate: unchanged; runtime vault proof is green, installed-JAR self-host proof remains separate
+
+### 2026-07-30T09:45:00-06:00 · Agent: Codex GPT-5 · Batch: phase11-installed-proof-vault-context-006
+- Paths touched: `scripts/selfhost-installed-proof.sh` (+2/-1), `scripts/selfhost-restart-proof.sh` (+3/-2)
+- New decoupled files: none
+- Atoms / phases affected: Phase 11 installed-runtime proof; Phase 4 encrypted-vault key propagation
+- Predicate moved: sanitized installed and restart proof environments now require and pass the external `ATROPOS_VAULT_KEY` into the real JAR process instead of silently launching with no vault key
+- % delta: unchanged; scripts were not executed by this agent and installed-JAR self-host acceptance remains unproven
+- Why the delta is justified: Both proof scripts previously used `env -i`, which removed the key required by the production vault provider. The key is now explicitly required and forwarded without printing or persisting it; all other environment isolation remains intact.
+- HR interrupts: none
+- Fingerprints: pending manifest refresh
+- New overall estimate: unchanged; next operator proof can exercise the real key-bearing JAR path
+
+### 2026-07-30T10:05:00-06:00 · Agent: Human Owner + Codex GPT-5 · Batch: phase11-proof-invocation-repair-007
+- Paths touched: `scripts/selfhost-restart-proof.sh` (mode `100644 -> 100755`)
+- New decoupled files: none
+- Atoms / phases affected: Phase 11 installed-runtime proof invocation
+- Predicate moved: restart proof is executable from the repository shell; the prior invocation was correctly refused because the supplied JAR path was a literal placeholder
+- % delta: unchanged; no self-host runtime proof was executed
+- Why the delta is justified: The operator output showed `missing installed jar: /path/to/ATROPOS.jar` and `Permission denied`. The repository contains `build/libs/ATROPOS.jar`; the restart script mode is now executable. The installed proof still requires the real JAR path and external vault key.
+- HR interrupts: none
+- Fingerprints: pending manifest refresh
+- New overall estimate: unchanged
+
+### 2026-07-30T10:25:00-06:00 · Agent: Codex GPT-5 · Batch: phase11-termux-process-launch-008
+- Paths touched: `scripts/selfhost-installed-proof.sh` (+4/-2), `scripts/selfhost-restart-proof.sh` (+6/-3, executable mode)
+- New decoupled files: none
+- Atoms / phases affected: Phase 11 installed-runtime proof; Termux/JDK shell-launch compatibility
+- Predicate moved: installed and restart proof JAR processes now use `-Djdk.lang.Process.launchMechanism=VFORK`, matching the JDK diagnostic emitted when the cradle failed to spawn `sh`
+- % delta: unchanged; runtime proof has not been rerun after this fix
+- Why the delta is justified: The operator’s failure occurred after the NL route and goal start, with `ProcessBuilder("sh")` failing in the sandbox and the JVM explicitly recommending VFORK. The proof scripts now apply that launch mode to every real JAR invocation while preserving bounded environment and vault-key propagation.
+- HR interrupts: none
+- Fingerprints: pending manifest refresh
+- New overall estimate: unchanged; next proof attempt should use the actual `./build/libs/ATROPOS.jar` path
+
+### 2026-07-30T02:35:56-06:00 · Agent: Codex GPT-5 · Batch: phase11-termux-native-env-diagnostics-009
+- Paths touched: `scripts/selfhost-installed-proof.sh` (+15/-1), `scripts/selfhost-restart-proof.sh` (+15/-1, executable mode preserved), `src/main/kotlin/atropos/core/dag/DagNodeShellExecutor.kt` (+21/-5)
+- New decoupled files: none; the proof launch helper remains local to each proof script and the DAG shell executor remains the existing bounded execution owner
+- Atoms / phases affected: Phase 11 installed-runtime proof, native process portability, evidence truthfulness
+- Predicate moved: installed and restart proof launches now preserve only generic native loader variables when present while retaining secret-minimal environments; failed shell verification records bounded redacted process output instead of collapsing the cause to a generic failure
+- % delta: unchanged; runtime proof must be rerun by the operator after rebuilding the JAR
+- Why the delta is justified: The reported child failure was `git: Permission denied` after the JVM shell launch was repaired. The proof environment previously discarded platform loader settings through `env -i`; the portable helper now forwards `LD_LIBRARY_PATH`, `LD_PRELOAD`, and `TERMUX_EXEC__PROC_SELF_EXE` only when supplied by the host. No device path or executable path is hardcoded. The DAG failure reason now exposes bounded redacted output for diagnosis without weakening territory, attestation, or verification gates. Static `bash -n` and `git diff --check` pass; no Gradle or test was run by this agent.
+- HR interrupts: none
+- Fingerprints: pending manifest refresh
+- New overall estimate: unchanged; installed self-host proof remains open until the operator rebuilds and reruns both proof scripts
+
+### 2026-07-30T02:45:22-06:00 · Agent: Codex GPT-5 · Batch: phase4-lease-token-persistence-010
+- Paths touched: `src/main/kotlin/atropos/core/agent/LeaseTokenDigest.kt` (+18), `AgentQueueRecordCodec.kt` (+5/-3), `AgentQueueStore.kt` (+4/-1), `SupervisedSessionStore.kt` (+4/-2), `src/test/kotlin/atropos/core/agent/LeaseTokenDigestTest.kt` (+17), `LeaseTokenPersistenceTest.kt` (+25)
+- New decoupled files: `LeaseTokenDigest.kt`, `LeaseTokenDigestTest.kt`, `LeaseTokenPersistenceTest.kt`
+- Atoms / phases affected: Phase 4 secret persistence and release-channel hardening
+- Predicate moved: queue and supervised-session metadata no longer writes bearer lease tokens; persisted SHA-256 identity still validates a presented token after reload, with legacy raw fields migrated to digests on the next write
+- % delta: intentionally unchanged; Phase 4 percentage is deferred until the complete phase batch and its operator gates are closed
+- Why justified: A source audit found `leaseToken=` persisted verbatim in two durable metadata codecs. The new single-purpose digest owner preserves lease ownership checks across restart without retaining the bearer token in metadata. Focused tests assert both non-persistence and successful post-reload heartbeat validation. No Gradle/test/compile was run by this agent.
+- HR interrupts: no swarm lane was available; the requested sub-agent spawn hit the existing thread limit, so no duplicate edits were created
+- Fingerprints: pending manifest refresh
+- New overall estimate: unchanged; Phase 4 remains open pending complete egress/release audit and operator verification
+
+### 2026-07-30T02:46:37-06:00 · Agent: Codex GPT-5 · Batch: phase4-security-proof-seam-011
+- Paths touched: `scripts/secret-security-proof.sh` (+31, executable), `src/test/kotlin/atropos/core/agent/LeaseTokenDigestTest.kt` (+17), `LeaseTokenPersistenceTest.kt` (+25), plus the lease metadata production owners from batch `phase4-lease-token-persistence-010`
+- New decoupled files: `scripts/secret-security-proof.sh`, `LeaseTokenDigest.kt`, `LeaseTokenDigestTest.kt`, `LeaseTokenPersistenceTest.kt`
+- Atoms / phases affected: Phase 4 secret/security hardening and focused runtime verification
+- Predicate moved: one operator command now covers encrypted vault behavior, redaction egress, enrollment refusal/reporting, durable agent surfaces, and non-bearer lease persistence; source-level lease recovery remains typed and restart-compatible
+- % delta: intentionally unchanged; percentage recalculation is deferred until the complete Phase 4 batch and operator proof are accepted
+- Why justified: The proof script requires an external 256-bit key and runs only focused Phase 4/security tests. It never prints or persists the key. Static shell syntax and diff checks pass; the operator still must execute the command before runtime verification can be marked complete.
+- HR interrupts: no swarm lane was available because the existing sub-agent thread limit was reached
+- Fingerprints: pending manifest refresh
+- New overall estimate: unchanged; Phase 4 remains open pending operator execution and final source-surface audit
