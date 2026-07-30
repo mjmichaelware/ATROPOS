@@ -11,7 +11,7 @@ class TokenIsolationVaultTest {
     @Test
     fun isolates_secret_round_trip_inside_vault_root() {
         val root = Files.createTempDirectory("atropos-vault-")
-        val vault = TokenIsolationVault(root)
+        val vault = TokenIsolationVault(root, TestSecretVaultKeyProvider())
 
         val path = vault.writeSecret("OPENAI_API_KEY", "local-secret")
         val report = vault.inspectSecret("OPENAI_API_KEY")
@@ -19,13 +19,15 @@ class TokenIsolationVaultTest {
         assertTrue(path.startsWith(root.toAbsolutePath().normalize()))
         assertTrue(report.isolated, report.findings.joinToString("; "))
         assertEquals("local-secret", vault.readSecret("OPENAI_API_KEY"))
-        assertFalse(Files.readString(path).contains("local-secret\n\n"))
+        val storedBytes = Files.readAllBytes(path)
+            .toString(Charsets.ISO_8859_1)
+        assertFalse(storedBytes.contains("local-secret"))
     }
 
     @Test
     fun sanitizes_secret_names_without_directory_escape() {
         val root = Files.createTempDirectory("atropos-vault-sanitize-")
-        val vault = TokenIsolationVault(root)
+        val vault = TokenIsolationVault(root, TestSecretVaultKeyProvider())
 
         val path = vault.writeSecret("../nested/token", "abc123")
 
@@ -37,7 +39,7 @@ class TokenIsolationVaultTest {
     @Test
     fun rejects_blank_secret_names_and_values() {
         val root = Files.createTempDirectory("atropos-vault-reject-")
-        val vault = TokenIsolationVault(root)
+        val vault = TokenIsolationVault(root, TestSecretVaultKeyProvider())
 
         assertFailsWith<IllegalArgumentException> { vault.writeSecret("   ", "value") }
         assertFailsWith<IllegalArgumentException> { vault.writeSecret("TOKEN", "   ") }
@@ -48,7 +50,7 @@ class TokenIsolationVaultTest {
         val root = Files.createTempDirectory("atropos-vault-symlink-")
         val outside = Files.createTempFile("atropos-outside-secret-", ".txt")
         Files.writeString(outside, "outside-secret\n")
-        val vault = TokenIsolationVault(root)
+        val vault = TokenIsolationVault(root, TestSecretVaultKeyProvider())
         val secretPath = vault.secretFile("GROQ_API_KEY").toPath()
         val symlinkCreated = runCatching {
             Files.createSymbolicLink(secretPath, outside)
@@ -60,5 +62,22 @@ class TokenIsolationVaultTest {
         assertFalse(report.isolated)
         assertTrue(report.findings.any { it.contains("symbolic link") })
         assertEquals(null, vault.readSecret("GROQ_API_KEY"))
+    }
+
+    @Test
+    fun stores_ciphertext_and_rejects_tampered_payload() {
+        val root = Files.createTempDirectory("atropos-vault-encrypted-")
+        val vault = TokenIsolationVault(root, TestSecretVaultKeyProvider())
+        val path = vault.writeSecret("TOKEN", "secret-at-rest")
+
+        assertFalse(Files.readAllBytes(path).toString(Charsets.ISO_8859_1).contains("secret-at-rest"))
+        assertTrue(vault.inspectSecret("TOKEN").isolated)
+
+        val payload = Files.readAllBytes(path)
+        payload[payload.lastIndex] = (payload.last().toInt() xor 0x01).toByte()
+        Files.write(path, payload)
+
+        assertFalse(vault.inspectSecret("TOKEN").isolated)
+        assertEquals(null, vault.readSecret("TOKEN"))
     }
 }

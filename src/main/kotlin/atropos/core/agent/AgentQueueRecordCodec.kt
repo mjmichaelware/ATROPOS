@@ -126,7 +126,7 @@ internal class AgentQueueRecordCodec(
         appendLine("impactedSymbolsB64=${encode(record.impactedSymbols.joinToString("\n"))}")
         appendLine("failureReasonB64=${encode(record.failureReason.orEmpty())}")
         appendLine("nextEligibleAt=${record.nextEligibleAt ?: ""}")
-        appendLine("leaseToken=${record.lease?.token ?: ""}")
+        appendLine("leaseTokenSha256=${record.lease?.token?.let(LeaseTokenDigest::of).orEmpty()}")
         appendLine("leaseOwnerB64=${encode(record.lease?.owner.orEmpty())}")
         appendLine("leaseAcquiredAt=${record.lease?.acquiredAt ?: ""}")
         appendLine("leaseHeartbeatAt=${record.lease?.heartbeatAt ?: ""}")
@@ -144,7 +144,9 @@ internal class AgentQueueRecordCodec(
     }
 
     private fun parseLease(fields: Map<String, String>): AgentQueueLease? {
-        val token = fields["leaseToken"]?.takeIf { it.isNotBlank() } ?: return null
+        val token = fields["leaseTokenSha256"]?.takeIf { it.isNotBlank() }
+            ?: fields["leaseToken"]?.takeIf { it.isNotBlank() }?.let(LeaseTokenDigest::of)
+            ?: return null
         val acquiredAt = parseInstant(fields["leaseAcquiredAt"]) ?: return null
         val heartbeatAt = parseInstant(fields["leaseHeartbeatAt"]) ?: acquiredAt
         val expiresAt = parseInstant(fields["leaseExpiresAt"]) ?: return null

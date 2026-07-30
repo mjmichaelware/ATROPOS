@@ -2,6 +2,7 @@ package atropos.core.worktree
 
 import atropos.core.AtroposRepoRootLocator
 import atropos.core.memory.LocalMemoryStore
+import atropos.core.security.CredentialDiffGuard
 import atropos.core.security.RedactionFilter
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
@@ -43,6 +44,7 @@ class IsolatedWorktreeService(
     private val memoryStore: LocalMemoryStore = LocalMemoryStore(repoRoot.resolve(".atropos/memory").toFile()),
     private val clock: () -> Instant = { Instant.now() },
     private val redactionFilter: RedactionFilter = RedactionFilter(),
+    private val credentialDiffGuard: CredentialDiffGuard = CredentialDiffGuard(),
     private val gitRunner: BoundedGitWorktreeCommandRunner = BoundedGitWorktreeCommandRunner()
 ) {
     private val worktreeRoot = repoRoot.resolve(".atropos/worktrees").normalize()
@@ -186,6 +188,22 @@ class IsolatedWorktreeService(
         if (outside != null) {
             recordTerritoryViolation(record, outside, "intent_to_add")
             return WorktreeRollbackResult(false, "intent-to-add territory violation: $outside")
+        }
+        val target = record.worktreePath.resolve(path).normalize()
+        if (!target.startsWith(record.worktreePath.toAbsolutePath().normalize())) {
+            recordTerritoryViolation(record, path, "intent_to_add_escape")
+            return WorktreeRollbackResult(false, "intent-to-add path escaped worktree: $path")
+        }
+        if (!Files.isRegularFile(target)) {
+            return WorktreeRollbackResult(false, "intent-to-add file is missing: $path")
+        }
+        val content = runCatching { Files.readString(target, StandardCharsets.UTF_8) }.getOrElse {
+            return WorktreeRollbackResult(false, "intent-to-add content could not be inspected: $path")
+        }
+        val secretReport = credentialDiffGuard.inspectText(path, content)
+        if (secretReport.changed) {
+            recordTerritoryViolation(record, path, "intent_to_add_secret_content")
+            return WorktreeRollbackResult(false, "intent-to-add refused secret-bearing staged content: $path")
         }
         val result = gitRunner.run(GitWorktreeOperation.INTENT_TO_ADD, record.worktreePath, path)
         return if (result.exitCode == 0) {
