@@ -100,4 +100,30 @@ class SelfHostCandidateJarBuilderTest {
         assertFalse(result.ok)
         assertEquals(AgentExecutionFailure.NONZERO_EXIT, result.failure)
     }
+
+    @Test
+    fun truncated_build_output_cannot_claim_candidate_success() {
+        val root = Files.createTempDirectory("atropos-candidate-jar-truncated-")
+        val expected = root.resolve("build/libs/ATROPOS.jar")
+        val builder = SelfHostCandidateJarBuilder(
+            repoRoot = root,
+            expectedJar = expected,
+            processRunner = { _, _ ->
+                Files.createDirectories(expected.parent)
+                Files.writeString(expected, "jar bytes")
+                SelfHostCandidateJarBuilder.CommandRun(
+                    exitCode = 0,
+                    output = "BUILD SUCCESSFUL",
+                    outputTruncated = true
+                )
+            }
+        )
+
+        val result = builder.build("shg-truncated")
+
+        assertFalse(result.ok)
+        assertEquals(AgentExecutionFailure.OUTPUT_TRUNCATED, result.failure)
+        assertTrue(result.outputTruncated)
+        assertTrue(result.candidateJar == null)
+    }
 }

@@ -60,6 +60,7 @@ class SelfHostRecoveryContinuationTest {
         val reopened = store.resolve(interrupted.id) ?: error("missing goal")
         assertTrue(reopened.evidence.any { it.startsWith("restart_snapshot id=") })
         assertTrue(reopened.evidence.any { it.startsWith("restart_next goal=${interrupted.id}") })
+        assertTrue(reopened.evidence.any { it.startsWith("restart_next goal=${interrupted.id} node=node-recover-edit") })
         assertTrue(reopened.evidence.any { it.startsWith("next_action kind=ADVANCE_NODE") })
         assertTrue(reopened.evidence.any { it.startsWith("state_snapshot reason=resume") })
         assertTrue(reopened.evidence.any { it.startsWith("state_snapshot reason=select:node-recover-edit") })

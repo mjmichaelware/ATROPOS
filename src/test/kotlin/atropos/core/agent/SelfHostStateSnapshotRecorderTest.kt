@@ -10,15 +10,17 @@ class SelfHostStateSnapshotRecorderTest {
     fun captureEvidencePersistsSnapshotAndReportsCounts() {
         val root = Files.createTempDirectory("atropos-self-host-snapshot-recorder-")
         val store = GoalRunStore(root)
-        store.createGoalRun("snapshot proof", provider = "self-host")
+        val goal = store.createGoalRun("snapshot proof", provider = "self-host")
         val recorder = SelfHostStateSnapshotRecorder(
             RestartCoordinator(root, goalRunStore = store)
         )
 
-        val line = recorder.captureEvidence("unit")
+        val line = recorder.captureEvidence("unit", goal.id)
 
         assertTrue(line.startsWith("state_snapshot reason=unit"), line)
         assertTrue(line.contains("goals=1"), line)
+        assertTrue(line.contains("goal=${goal.id}"), line)
+        assertTrue(line.contains("hash=") && line.contains("node=none"), line)
         assertTrue(RestartCoordinator(root, goalRunStore = store).latestSnapshot() != null)
     }
 }

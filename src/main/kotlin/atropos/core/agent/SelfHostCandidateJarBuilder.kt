@@ -61,7 +61,12 @@ class SelfHostCandidateJarBuilder(
         val result = runCatching {
             agency.execute(proposal) {
                 val run = processRunner?.invoke(command, repoRoot) ?: runBoundedProcess(command)
-                "exit=${run.exitCode} timed_out=${run.timedOut}\n${redactionFilter.compact(run.output, 2_000)}"
+                buildString {
+                    append("exit=").append(run.exitCode)
+                    append(" timed_out=").append(run.timedOut)
+                    if (run.outputTruncated) append(" truncated=true")
+                    append('\n').append(redactionFilter.compact(run.output, 2_000))
+                }
             }
         }.getOrElse { failure ->
             return SelfHostCandidateJarBuildResult(
@@ -74,13 +79,23 @@ class SelfHostCandidateJarBuilder(
         if (!result.authorized || !result.executed) {
             return refused(result, proposal)
         }
+        val outputTruncated = result.output?.contains("truncated=true") == true
+        if (outputTruncated) {
+            return SelfHostCandidateJarBuildResult(
+                ok = false,
+                message = "candidate jar build evidence was truncated",
+                proposalId = proposal.id,
+                failure = AgentExecutionFailure.OUTPUT_TRUNCATED,
+                outputTruncated = true
+            )
+        }
         val exitCode = Regex("""exit=(-?\d+)""").find(result.output.orEmpty())?.groupValues?.getOrNull(1)?.toIntOrNull()
         if (exitCode != 0) {
             return SelfHostCandidateJarBuildResult(
                 ok = false,
                 message = "candidate jar build failed: ${redactionFilter.compact(result.output.orEmpty(), 240)}",
                 proposalId = proposal.id,
-                failure = if (result.output.contains("timed_out=true")) {
+                failure = if (result.output.orEmpty().contains("timed_out=true")) {
                     AgentExecutionFailure.TIMEOUT
                 } else {
                     AgentExecutionFailure.NONZERO_EXIT
@@ -142,9 +157,11 @@ class SelfHostCandidateJarBuilder(
             output = buildString {
                 append(result.stdout)
                 append(result.stderr)
+                if (result.outputTruncated) append("\ntruncated=true")
                 result.launchError?.let { append("launch_error=").append(it) }
             }.take(CANDIDATE_MAX_OUTPUT_CHARS),
-            timedOut = result.timedOut
+            timedOut = result.timedOut,
+            outputTruncated = result.outputTruncated
         )
     }
 
@@ -154,6 +171,11 @@ class SelfHostCandidateJarBuilder(
             name.endsWith("_KEY") || name.contains("CREDENTIAL")
     }.toSet()
 
-    data class CommandRun(val exitCode: Int, val output: String, val timedOut: Boolean = false)
+    data class CommandRun(
+        val exitCode: Int,
+        val output: String,
+        val timedOut: Boolean = false,
+        val outputTruncated: Boolean = false
+    )
 
 }
