@@ -57,8 +57,15 @@ object ContextSightPillLine {
         Breakpoint.ULTRA -> 52
     }
 
-    /** Fits the pill for a terminal of [columns] cells, using that width's budget. */
-    fun fit(pill: ContextSightPill, columns: Int): Fitted =
+    /**
+     * Fits the pill for a terminal of [columns] cells, using that width's budget.
+     *
+     * Named apart from [fit] on purpose: both take two Ints, so as overloads they
+     * collided on the JVM and the call was ambiguous. The distinction is real —
+     * this one derives the budget from the terminal width, [fit] is told the
+     * budget outright — so the names say which one the caller means.
+     */
+    fun fitForColumns(pill: ContextSightPill, columns: Int): Fitted =
         fit(pill, budget(Breakpoint.of(columns)))
 
     /**
