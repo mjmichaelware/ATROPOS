@@ -12,6 +12,8 @@ class CodebaseContextPacker(
     private val fetcher: SourceBindingFetcher = SourceBindingFetcher(repoRoot),
     private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
+    private val contentHashPlaceholder = "0".repeat(64)
+
     private val pendingPackId = "pack-0000000000000000"
 
     fun pack(request: SourcePackRequest): SourcePackResult {
@@ -43,6 +45,7 @@ class CodebaseContextPacker(
         appendBounded(builder, "FETCH_RECEIPT_ID=${fetched.receipt.id}\n", request.maxBytes) { truncated = true }
         appendBounded(builder, "BINDING=${fetched.receipt.bindingKind}\n", request.maxBytes) { truncated = true }
         appendBounded(builder, "TREE_HASH=${fetched.receipt.treeHash}\n", request.maxBytes) { truncated = true }
+        appendBounded(builder, "PACK_CONTENT_HASH=$contentHashPlaceholder\n", request.maxBytes) { truncated = true }
         appendBounded(builder, "TERRITORY=${allowed.joinToString("|")}\n\n", request.maxBytes) { truncated = true }
 
         val packedPaths = mutableListOf<String>()
@@ -73,15 +76,17 @@ class CodebaseContextPacker(
             return SourcePackResult.Refused("source context pack contained no readable files")
         }
         val initial = builder.toString()
-        val contentHash = sha256(initial)
+        val contentHash = sha256(initial.replace("PACK_CONTENT_HASH=$contentHashPlaceholder", ""))
         val packId = "pack-${contentHash.take(16)}"
-        val text = initial.replace("SOURCE_PACK_ID=$pendingPackId", "SOURCE_PACK_ID=$packId")
+        val text = initial
+            .replace("SOURCE_PACK_ID=$pendingPackId", "SOURCE_PACK_ID=$packId")
+            .replace("PACK_CONTENT_HASH=$contentHashPlaceholder", "PACK_CONTENT_HASH=$contentHash")
         val bytes = text.toByteArray(StandardCharsets.UTF_8).size
         return SourcePackResult.Packed(
             CodebaseContextPack(
                 id = packId,
                 fetchReceipt = fetched.receipt,
-                contentHash = sha256(text),
+                contentHash = contentHash,
                 includedPaths = packedPaths,
                 byteCount = bytes,
                 truncated = truncated,

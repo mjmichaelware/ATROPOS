@@ -88,6 +88,44 @@ class ArchitectureComplianceCheckerTest {
         assertFalse(report.blocksBuild)
     }
 
+    @Test
+    fun comments_and_literals_do_not_create_mixed_concerns() {
+        val root = Files.createTempDirectory("atropos-architecture-mask-")
+        val file = root.resolve("src/main/kotlin/example/SourceText.kt")
+        Files.createDirectories(file.parent)
+        Files.writeString(
+            file,
+            largeKotlinFile(
+                listOf(
+                    "package example",
+                    "// fun execute() and Files.walk() are documentation, not execution.",
+                    "class SourceText {",
+                    "    val evidence = \"\"\"",
+                    "        fun execute() { waitFor() }",
+                    "        fun parseSelector() = Files.walk(path)",
+                    "    \"\"\"",
+                    "}"
+                ).joinToString("\n"),
+                420
+            )
+        )
+
+        val report = ArchitectureComplianceChecker(enforcing = true).checkFiles(listOf(file.toFile()))
+
+        assertTrue(report.passed)
+    }
+
+    @Test
+    fun lexical_mask_preserves_newline_shape() {
+        val source = "// fun execute()\nclass Example {\n    val text = \"fun verify()\"\n}"
+
+        val masked = ArchitectureSourceMasker().mask(source)
+
+        assertEquals(source.count { it == '\n' }, masked.count { it == '\n' })
+        assertFalse(masked.contains("execute"))
+        assertFalse(masked.contains("verify"))
+    }
+
     private fun largeKotlinFile(header: String, targetLines: Int): String {
         val lines = header.lines().toMutableList()
         while (lines.size < targetLines) {

@@ -310,6 +310,18 @@ class SelfHostGoalService(
         }
         val record = selected.goal?.record
             ?: return SelfHostResult(false, "${recovered.message}; no resumable self-host goal selected")
+        if (!recovered.ok) {
+            val refusal = "restart recovery refused continuation: ${recovered.message}"
+            val recorded = addEvidence(
+                record.id,
+                "restart_recovery_stop goal=${record.id} reason=${recovered.message}"
+            )
+            return SelfHostResult(
+                false,
+                refusal,
+                recorded.goal ?: selected.goal
+            )
+        }
         val restoredNode = recovered.restoredNodes
             .firstOrNull { it.restored && it.dagId == record.dagId }
         val nextAction = planNextAction(record.id)
@@ -320,11 +332,41 @@ class SelfHostGoalService(
             nextAction.evidenceLine()
         )
         store.update(record.copy(evidence = record.evidence + evidence))
-        return advanceNextResumableGoal(record.id, compactState)
+        return when (nextAction.kind) {
+            SelfHostNextActionKind.ADVANCE_NODE,
+            SelfHostNextActionKind.ADVANCE_GOAL -> advanceNextResumableGoal(record.id, compactState)
+            SelfHostNextActionKind.PROMOTE_JAR -> SelfHostResult(
+                false,
+                "restart continuation stopped at promotion boundary: ${nextAction.reason}",
+                SelfHostGoal(record, record.dagId?.let { dagService.readDag(it) })
+            )
+            SelfHostNextActionKind.WAIT_EXTERNAL_INPUT,
+            SelfHostNextActionKind.HARD_STOP -> SelfHostResult(
+                false,
+                "restart continuation stopped: ${nextAction.reason}",
+                SelfHostGoal(record, record.dagId?.let { dagService.readDag(it) })
+            )
+            SelfHostNextActionKind.COMPLETE -> SelfHostResult(
+                true,
+                "restart continuation complete: ${nextAction.reason}",
+                SelfHostGoal(record, record.dagId?.let { dagService.readDag(it) })
+            )
+        }
     }
 
     fun exportEvidenceBundle(goalId: String): SelfHostEvidenceBundleResult {
-        addEvidence(goalId, stateSnapshotRecorder.captureEvidence("pre-evidence-export", goalId))
+        val evidenceResult = addEvidence(goalId, stateSnapshotRecorder.captureEvidence("pre-evidence-export", goalId))
+        if (!evidenceResult.ok) {
+            return SelfHostEvidenceBundleResult(
+                ok = false,
+                message = "evidence export refused: ${evidenceResult.message}",
+                markdownPath = null,
+                jsonPath = null,
+                markdownSha256 = null,
+                jsonSha256 = null,
+                failureCode = SelfHostFailureCode.EVIDENCE_EXPORT_FAILED
+            )
+        }
         return evidenceBundleExporter.export(goalId)
     }
 

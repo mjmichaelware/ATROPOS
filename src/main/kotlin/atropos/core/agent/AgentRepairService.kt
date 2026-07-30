@@ -75,7 +75,11 @@ class AgentRepairService(
         val sourceRefusal = AgentProviderContextBoundary.validateSourcePack(
             context = contextSnapshot.text,
             sourcePackId = contextSnapshot.sourcePackId,
-            fetchReceiptId = contextSnapshot.fetchReceiptId
+            fetchReceiptId = contextSnapshot.fetchReceiptId,
+            sourcePackContentHash = contextSnapshot.sourcePackContentHash,
+            sourceTreeHash = contextSnapshot.sourceTreeHash,
+            sourceBindingKind = contextSnapshot.sourceBindingKind,
+            truncated = contextSnapshot.truncated
         )
         if (sourceRefusal != null) {
             val reason = sourceRefusal.message

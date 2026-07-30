@@ -44,4 +44,18 @@ class AgentProviderContextBoundaryTest {
             AgentProviderContextBoundary.validateSourcePack(context, "pack-other", "fetch-456")?.code
         )
     }
+
+    @Test
+    fun rejects_truncated_source_context() {
+        val context = "SOURCE_PACK_ID=pack-123\nFETCH_RECEIPT_ID=fetch-456\nFILE src/Main.kt\n"
+
+        val refusal = AgentProviderContextBoundary.validateSourcePack(
+            context = context,
+            sourcePackId = "pack-123",
+            fetchReceiptId = "fetch-456",
+            truncated = true
+        )
+
+        assertEquals(AgentProviderContextBoundary.Refusal.Code.TRUNCATED_SOURCE_PACK, refusal?.code)
+    }
 }

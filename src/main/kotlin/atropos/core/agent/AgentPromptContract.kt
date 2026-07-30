@@ -4,9 +4,11 @@ import atropos.core.AtroposRepoRootLocator
 import atropos.core.provider.ContextAttestationService
 import atropos.core.provider.ContextEnvelope
 import atropos.core.provider.ContextEnvelopeFactory
+import atropos.core.security.RedactionFilter
 import java.nio.file.Path
 
 object AgentPromptContract {
+    private val redactionFilter = RedactionFilter()
     const val SYSTEM_TEXT =
         "You are an ATROPOS reasoning provider. ATROPOS has read the local repo and supplied bounded context. " +
         "You cannot directly access files. Use the provided context. Do not ask for API keys. Return direct answers, plans, or diffs only."
@@ -125,9 +127,9 @@ object AgentPromptContract {
             appendLine("Exit code: ${exitCode?.toString() ?: "none"}")
             appendLine("Duration ms: $durationMillis")
             appendLine("Verification stdout:")
-            appendLine(stdout.ifBlank { "(empty)" })
+            appendLine(redactionFilter.redact(stdout).ifBlank { "(empty)" })
             appendLine("Verification stderr:")
-            appendLine(stderr.ifBlank { "(empty)" })
+            appendLine(redactionFilter.redact(stderr).ifBlank { "(empty)" })
         }
 
         val corePrompt = if (context.isBlank()) {

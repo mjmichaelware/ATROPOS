@@ -6,7 +6,11 @@ class SelfHostAutonomousRunner(
     private val jarBuilder: SelfHostCandidateJarBuilder? = null,
     private val gitStatusEvidence: SelfHostGitStatusEvidence? = null
 ) {
-    fun run(prompt: String, phase: String = "11", maxAdvances: Int = 25): SelfHostAutonomousRunResult {
+    fun run(
+        prompt: String,
+        phase: String = "11",
+        maxAdvances: Int = SelfHostRuntimeRunLimits.maxAdvances()
+    ): SelfHostAutonomousRunResult {
         val steps = mutableListOf<String>()
         val started = service.startGoal(prompt, phase)
         steps += started.message
@@ -17,13 +21,30 @@ class SelfHostAutonomousRunner(
 
         var latest = started
         var advances = 0
+        var automaticRecoveries = 0
+        val recoveryBudget = 2
         while (advances < maxAdvances.coerceAtLeast(1)) {
             advances += 1
             val advanced = service.advanceGoal(goalId, compactState = "self-host natural-language continuation")
             steps += advanced.message
             latest = advanced
             val record = advanced.goal?.record
-            if (!advanced.ok || record?.isTerminal() == true) break
+            if (!advanced.ok) {
+                val persisted = service.resolveStatusGoal(goalId).goal?.record
+                if (persisted?.status == GoalRunStatus.RECOVERY_REQUIRED && automaticRecoveries < recoveryBudget) {
+                    automaticRecoveries += 1
+                    val recovery = service.recoverAndContinue(
+                        goalId,
+                        compactState = "self-host automatic recovery #$automaticRecoveries"
+                    )
+                    steps += "automatic recovery #$automaticRecoveries: ${recovery.message}"
+                    latest = recovery
+                    if (!recovery.ok || recovery.goal?.record?.isTerminal() == true) break
+                    continue
+                }
+                break
+            }
+            if (record?.isTerminal() == true) break
         }
 
         val record = service.resolveStatusGoal(goalId).goal?.record ?: latest.goal?.record
@@ -135,8 +156,18 @@ class SelfHostAutonomousRunner(
         val bundle = service.exportEvidenceBundle(goalId)
         val refreshed = service.resolveStatusGoal(goalId).goal
         if (bundle.message != prePromotionBundle.message) steps += bundle.message
+        if (!bundle.ok) {
+            return SelfHostAutonomousRunResult(
+                ok = false,
+                message = "self-host stopped after promotion outcome=${promotion.promoted}; evidence export failed: ${bundle.message}",
+                goal = refreshed ?: promotion.goal,
+                promotion = promotion,
+                evidenceBundle = bundle,
+                steps = steps
+            )
+        }
         return SelfHostAutonomousRunResult(
-            ok = promotion.promoted && bundle.ok,
+            ok = promotion.promoted,
             message = if (promotion.promoted) "self-host run promoted verified jar" else "self-host promotion refused: ${promotion.message}",
             goal = refreshed ?: stopped?.goal ?: promotion.goal,
             promotion = promotion,

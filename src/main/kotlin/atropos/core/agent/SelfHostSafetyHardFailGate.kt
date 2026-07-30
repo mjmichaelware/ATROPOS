@@ -40,11 +40,21 @@ class SelfHostSafetyHardFailGate(
         )
     }
 
-    private fun contextDrift(record: GoalRunRecord): List<SelfHostSafetyFinding> =
-        record.evidence
-            .filter { it.startsWith("context_preflight_failed") || it.startsWith("cradle_verification_failed") }
-            .map { SelfHostSafetyFinding("context_drift", "prior context failure recorded") }
-            .distinct()
+    private fun contextDrift(record: GoalRunRecord): List<SelfHostSafetyFinding> {
+        val evidence = record.evidence.joinToString("\n").lowercase()
+        val markers = listOf(
+            "context_preflight_failed",
+            "cradle_verification_failed",
+            "context attestation failed",
+            "attestation mismatch",
+            "identity mismatch",
+            "context drift",
+            "mythology",
+            "mythological response"
+        )
+        if (markers.none { it in evidence }) return emptyList()
+        return listOf(SelfHostSafetyFinding("context_drift", "prior context or identity failure recorded"))
+    }
 
     private fun secretLeak(record: GoalRunRecord, node: DagNode): List<SelfHostSafetyFinding> {
         val combined = buildString {
@@ -75,13 +85,12 @@ class SelfHostSafetyHardFailGate(
     }
 
     private fun selfVerification(node: DagNode): List<SelfHostSafetyFinding> {
-        val lower = listOf(node.label, node.actionPayload.orEmpty())
-            .joinToString("\n")
-            .lowercase()
+        val lower = normalizedSafetyText(node.label + "\n" + node.actionPayload.orEmpty())
         val attempted = listOf(
-            "self-approve",
             "self approve",
-            "self-verif",
+            "self approval",
+            "self verif",
+            "self verification",
             "approve own",
             "without verifiedcompletiongate",
             "bypass verifiedcompletiongate"
@@ -91,27 +100,27 @@ class SelfHostSafetyHardFailGate(
     }
 
     private fun fakeSuccess(record: GoalRunRecord, node: DagNode): List<SelfHostSafetyFinding> {
-        val lower = safetyText(record, node)
+        val lower = normalizedSafetyText(safetyText(record, node))
         val attempted = listOf(
-            "fake_success",
             "fake success",
             "constant true",
-            "constant-true",
             "placeholder green",
             "empty success",
             "stub pass",
-            "success without evidence"
+            "success without evidence",
+            "success true without evidence",
+            "placeholder verified"
         ).any { it in lower }
         if (!attempted) return emptyList()
         return listOf(SelfHostSafetyFinding("fake_success", "self-host state references fake or evidence-free success"))
     }
 
     private fun policyBypass(record: GoalRunRecord, node: DagNode): List<SelfHostSafetyFinding> {
-        val lower = safetyText(record, node)
+        val lower = normalizedSafetyText(safetyText(record, node))
         val attempted = listOf(
-            "policy_bypass",
             "policy bypass",
             "bypass policy",
+            "bypass the policy",
             "without boundedagencygate",
             "without typedtoolexecutor",
             "raw provider prose execution",
@@ -130,6 +139,12 @@ class SelfHostSafetyHardFailGate(
             appendLine(node.result.orEmpty())
             appendLine(node.failureReason.orEmpty())
         }.lowercase()
+
+    private fun normalizedSafetyText(value: String): String =
+        value.lowercase()
+            .replace(Regex("[^a-z0-9]+"), " ")
+            .trim()
+            .replace(Regex("\\s+"), " ")
 
     private fun mutationPayloadPath(payload: String?): List<String> {
         val body = payload?.trim().orEmpty()

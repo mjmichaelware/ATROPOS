@@ -2,6 +2,7 @@ package atropos.core.agent
 
 import atropos.core.provider.ContextEnvelope
 import atropos.core.provider.ContextEnvelopeFactory
+import atropos.core.provider.SourceBindingKind
 import java.nio.file.Path
 
 /**
@@ -23,7 +24,8 @@ object AgentProviderContextBoundary {
             INVALID_CONTEXT_HASH,
             MISSING_SOURCE_PACK,
             MISSING_FETCH_RECEIPT,
-            PACK_RECEIPT_MISMATCH
+            PACK_RECEIPT_MISMATCH,
+            TRUNCATED_SOURCE_PACK
         }
 
         val message: String get() = "provider context refused: $detail"
@@ -50,7 +52,11 @@ object AgentProviderContextBoundary {
     fun validateSourcePack(
         context: String,
         sourcePackId: String?,
-        fetchReceiptId: String?
+        fetchReceiptId: String?,
+        sourcePackContentHash: String? = null,
+        sourceTreeHash: String? = null,
+        sourceBindingKind: SourceBindingKind? = null,
+        truncated: Boolean = false
     ): Refusal? {
         if (context.isBlank()) {
             return Refusal(Refusal.Code.BLANK_CONTEXT, "provider context is empty")
@@ -61,6 +67,9 @@ object AgentProviderContextBoundary {
         if (fetchReceiptId.isNullOrBlank()) {
             return Refusal(Refusal.Code.MISSING_FETCH_RECEIPT, "source context fetch receipt is unavailable")
         }
+        if (truncated) {
+            return Refusal(Refusal.Code.TRUNCATED_SOURCE_PACK, "source context pack is truncated")
+        }
         val packMarker = "SOURCE_PACK_ID=$sourcePackId"
         val receiptMarker = "FETCH_RECEIPT_ID=$fetchReceiptId"
         if (!context.contains(packMarker) || !context.contains(receiptMarker)) {
@@ -68,6 +77,21 @@ object AgentProviderContextBoundary {
                 Refusal.Code.PACK_RECEIPT_MISMATCH,
                 "source context does not contain the supplied pack and fetch receipt identifiers"
             )
+        }
+        sourcePackContentHash?.takeIf { it.isNotBlank() }?.let {
+            if (!context.contains("PACK_CONTENT_HASH=$it")) {
+                return Refusal(Refusal.Code.PACK_RECEIPT_MISMATCH, "source context content hash does not match the attached pack")
+            }
+        }
+        sourceTreeHash?.takeIf { it.isNotBlank() }?.let {
+            if (!context.contains("TREE_HASH=$it")) {
+                return Refusal(Refusal.Code.PACK_RECEIPT_MISMATCH, "source context tree hash does not match the attached receipt")
+            }
+        }
+        sourceBindingKind?.let {
+            if (!context.contains("BINDING=$it")) {
+                return Refusal(Refusal.Code.PACK_RECEIPT_MISMATCH, "source context binding kind does not match the attached receipt")
+            }
         }
         return null
     }

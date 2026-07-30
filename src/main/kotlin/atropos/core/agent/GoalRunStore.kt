@@ -86,7 +86,7 @@ class GoalRunStore(
             appendLine("dirtyStateFingerprint=${safe.dirtyStateFingerprint ?: ""}")
             appendLine("activePhase=${safe.activePhase ?: ""}")
             appendLine("currentNodeId=${safe.currentNodeId ?: ""}")
-            appendLine("territory=${safe.territory.joinToString(",")}")
+            appendLine("territoryB64=${encode(safe.territory.joinToString("\u0000"))}")
             appendLine("evidenceB64=${encode(safe.evidence.joinToString("|"))}")
             safe.evidence.forEach { appendLine("evidenceEntryB64=${encode(it)}") }
             appendLine("retryBudget=${safe.retryBudget}")
@@ -139,7 +139,11 @@ class GoalRunStore(
                 dirtyStateFingerprint = fields["dirtyStateFingerprint"]?.takeIf { it.isNotBlank() },
                 activePhase = fields["activePhase"]?.takeIf { it.isNotBlank() },
                 currentNodeId = fields["currentNodeId"]?.takeIf { it.isNotBlank() },
-                territory = fields["territory"]?.split(",")?.filter { it.isNotBlank() } ?: emptyList(),
+                territory = if (fields["territoryB64"].isNullOrBlank()) {
+                    fields["territory"]?.split(",")?.filter { it.isNotBlank() } ?: emptyList()
+                } else {
+                    decode(fields["territoryB64"]).split("\u0000").filter { it.isNotBlank() }
+                },
                 evidence = evidenceEntries.ifEmpty { legacyEvidence },
                 retryBudget = fields["retryBudget"]?.toIntOrNull() ?: 10,
                 lastVerifiedCheckpoint = fields["lastVerifiedCheckpoint"]?.takeIf { it.isNotBlank() },

@@ -129,4 +129,15 @@ class GoalRunStoreTest {
         assertTrue(reopened.evidence.first().contains("| Compile Gate=PASS:ok"), reopened.evidence.joinToString("\n"))
         assertTrue(reopened.evidence.none { it.contains(secret) })
     }
+
+    @Test
+    fun territory_with_commas_round_trips_without_delimiter_corruption() {
+        val repoRoot = Files.createTempDirectory("atropos-goal-territory-comma-")
+        val store = GoalRunStore(repoRoot)
+        val created = store.createGoalRun("territory test", provider = "self-host")
+        val updated = store.update(created.copy(territory = listOf("src/with,comma", "src/ordinary")))
+
+        val reopened = store.resolve(updated.id) ?: error("missing run")
+        assertEquals(listOf("src/with,comma", "src/ordinary"), reopened.territory)
+    }
 }

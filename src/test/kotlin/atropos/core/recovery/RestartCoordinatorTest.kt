@@ -22,6 +22,18 @@ class RestartCoordinatorTest {
         val memory = LocalMemoryStore(root.resolve(".atropos/memory").toFile(), env = emptyMap())
         val worktrees = IsolatedWorktreeService(root, memoryStore = memory)
         val goal = goalStore.createGoalRun("self-host restart proof", provider = "self-host")
+        val enrichedGoal = goalStore.update(
+            goal.copy(
+                baselineCommit = "abc123",
+                dirtyStateFingerprint = "dirty456",
+                parentRunId = "parent-1",
+                runId = "run-1",
+                territory = listOf("src/with,comma", "src/ordinary"),
+                maxContinuations = 12,
+                retryBudget = 7,
+                lastVerifiedCheckpoint = "source:verified"
+            )
+        )
         val dag = dagStore.createDag(
             "restart dag",
             listOf(
@@ -50,7 +62,16 @@ class RestartCoordinatorTest {
         val snapshot = coordinator.snapshot()
         val latest = coordinator.latestSnapshot()
 
-        assertEquals(goal.id, snapshot.goalRuns.single().id)
+        assertEquals(enrichedGoal.id, snapshot.goalRuns.single().id)
+        assertEquals(enrichedGoal.task, snapshot.goalRuns.single().task)
+        assertEquals(enrichedGoal.baselineCommit, snapshot.goalRuns.single().baselineCommit)
+        assertEquals(enrichedGoal.dirtyStateFingerprint, snapshot.goalRuns.single().dirtyStateFingerprint)
+        assertEquals(enrichedGoal.parentRunId, snapshot.goalRuns.single().parentRunId)
+        assertEquals(enrichedGoal.runId, snapshot.goalRuns.single().runId)
+        assertEquals(enrichedGoal.territory, snapshot.goalRuns.single().territory)
+        assertEquals(enrichedGoal.maxContinuations, snapshot.goalRuns.single().maxContinuations)
+        assertEquals(enrichedGoal.retryBudget, snapshot.goalRuns.single().retryBudget)
+        assertEquals(enrichedGoal.lastVerifiedCheckpoint, snapshot.goalRuns.single().lastVerifiedCheckpoint)
         assertEquals(dag.id, snapshot.dags.single().id)
         assertEquals(1, snapshot.dags.single().ready)
         assertEquals("node-a", snapshot.dagNodes.single().nodeId)
@@ -59,6 +80,8 @@ class RestartCoordinatorTest {
         assertNotNull(latest)
         assertEquals(snapshot.id, latest.id)
         assertEquals("node-a", latest.dagNodes.single().nodeId)
+        assertEquals(enrichedGoal.territory, latest.goalRuns.single().territory)
+        assertEquals(enrichedGoal.baselineCommit, latest.goalRuns.single().baselineCommit)
     }
 
     @Test

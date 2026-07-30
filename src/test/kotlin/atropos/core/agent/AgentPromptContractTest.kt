@@ -10,9 +10,37 @@ import java.nio.file.Path
 import java.time.Instant
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class AgentPromptContractTest {
+    @Test
+    fun buildRepair_redacts_verification_streams_before_provider_context() {
+        val repoRoot = Files.createTempDirectory("atropos-repair-prompt-redaction-")
+        val envelope = ContextEnvelopeFactory.createSimple(
+            providerId = "local",
+            modelId = "",
+            task = "repair patch-1",
+            repoRoot = repoRoot
+        )
+
+        val prompt = AgentPromptContract.buildRepairWithEnvelope(
+            patchId = "patch-1",
+            changedPaths = listOf("src/main/kotlin/atropos/core/agent/Sample.kt"),
+            failedCommand = "./gradlew test",
+            exitCode = 1,
+            durationMillis = 10,
+            stdout = "token=super-secret-value",
+            stderr = "password: another-secret-value",
+            context = "bounded context",
+            envelope = envelope
+        )
+
+        assertFalse(prompt.contains("super-secret-value"), prompt)
+        assertFalse(prompt.contains("another-secret-value"), prompt)
+        assertTrue(prompt.contains("[REDACTED]") || prompt.contains("<redacted:"), prompt)
+    }
+
     @Test
     fun buildWithEnvelope_injects_the_supplied_dag_envelope_and_verifies_against_it() {
         val repoRoot = Files.createTempDirectory("atropos-prompt-envelope-")

@@ -67,5 +67,4 @@ out/
 setup_keys.sh
 tmp-*.jar
 token.json
-ATROPOS_ROOT_EXPORT_MANIFEST.sha256
 *SOURCE_EXPORT*

@@ -62,6 +62,26 @@ class SourceBindingContextPackerTest {
     }
 
     @Test
+    fun content_hash_placeholder_keeps_final_pack_within_requested_byte_bound() {
+        val root = Files.createTempDirectory("atropos-source-pack-bound-")
+        Files.createDirectories(root.resolve("src/main/kotlin/atropos/core"))
+        Files.writeString(root.resolve("src/main/kotlin/atropos/core/Bound.kt"), "package bound\nobject Bound\n")
+
+        val result = CodebaseContextPacker(repoRoot = root).pack(
+            SourcePackRequest(
+                binding = SourceBinding.localPath(root),
+                allowedPaths = listOf("src/main/kotlin/atropos/core"),
+                maxBytes = 2_048
+            )
+        )
+
+        val pack = assertIs<SourcePackResult.Packed>(result).pack
+        assertTrue(pack.byteCount <= 2_048, "pack exceeded bound: ${pack.byteCount}")
+        assertTrue(pack.text.contains("PACK_CONTENT_HASH=${pack.contentHash}"), pack.text)
+        assertTrue(!pack.text.contains("PACK_CONTENT_HASH=${"0".repeat(64)}"), pack.text)
+    }
+
+    @Test
     fun localPathBindingDoesNotPackSymlinkTargetsOutsideSourceRoot() {
         val root = Files.createTempDirectory("atropos-source-symlink-")
         val outside = Files.createTempDirectory("atropos-source-outside-")

@@ -77,7 +77,7 @@ class AgentService(
                 task = sanitizedTask,
                 repoRoot = collector.repoRoot
             )
-        val snapshot = contextOverride?.toSnapshot(collector.repoRoot) ?: collector.collect()
+        val snapshot = contextOverride?.toSnapshot(collector.repoRoot) ?: collector.collect(sanitizedTask)
         val envelopeRefusal = AgentProviderContextBoundary.validateEnvelope(envelope, collector.repoRoot)
         if (envelopeRefusal != null) {
             val reason = envelopeRefusal.message
@@ -102,7 +102,11 @@ class AgentService(
             task = sanitizedTask,
             sourcePackId = snapshot.sourcePackId,
             fetchReceiptId = snapshot.fetchReceiptId,
-            context = snapshot.text
+            sourcePackContentHash = snapshot.sourcePackContentHash,
+            sourceTreeHash = snapshot.sourceTreeHash,
+            sourceBindingKind = snapshot.sourceBindingKind,
+            context = snapshot.text,
+            truncated = snapshot.truncated
         )
         if (sourceContextRefusal != null) {
             val reason = sourceContextRefusal.message
@@ -131,7 +135,8 @@ class AgentService(
                     envelope = envelope
                 ),
                 providerOrderOverride = selection.askOrder,
-                beforeAttempt = { provider -> enforceProviderPolicy(provider, sanitizedTask, "ask") }
+                beforeAttempt = { provider -> enforceProviderPolicy(provider, sanitizedTask, "ask") },
+                contextEnvelope = envelope
             )
 
             val verified = ContextAttestationService.verify(envelope, result.response)
@@ -222,7 +227,8 @@ class AgentService(
                     context = compactContext,
                     envelope = envelope
                 ),
-                beforeAttempt = { provider -> enforceProviderPolicy(provider, sanitizedTask, "ask") }
+                beforeAttempt = { provider -> enforceProviderPolicy(provider, sanitizedTask, "ask") },
+                contextEnvelope = envelope
             ).let { result ->
                 val retryVerified = ContextAttestationService.verify(envelope, result.response)
                 when (retryVerified) {
@@ -240,7 +246,10 @@ class AgentService(
         val sourceRefusal = AgentProviderContextBoundary.validateSourcePack(
             context = snapshot.text,
             sourcePackId = snapshot.sourcePackId,
-            fetchReceiptId = snapshot.fetchReceiptId
+            fetchReceiptId = snapshot.fetchReceiptId,
+            sourcePackContentHash = snapshot.sourcePackContentHash,
+            sourceTreeHash = snapshot.sourceTreeHash,
+            sourceBindingKind = snapshot.sourceBindingKind
         )
         if (sourceRefusal != null) {
             val reason = sourceRefusal.message
@@ -261,7 +270,7 @@ class AgentService(
         }
 
         return try {
-            val cascade = patchCascadeRunner.run(selection.patchOrder, prompt, snapshot.text)
+            val cascade = patchCascadeRunner.run(selection.patchOrder, prompt, snapshot.text, snapshot.truncated)
             val acceptance = cascade.success ?: return localPatchFailure(
                 providerName = cascade.failure?.result?.providerName ?: selection.patchOrder.firstOrNull() ?: "local_fallback",
                 contextByteCount = snapshot.byteCount,
@@ -327,7 +336,10 @@ class AgentService(
             byteCount = byteCount,
             truncated = false,
             sourcePackId = sourcePackId,
-            fetchReceiptId = fetchReceiptId
+            fetchReceiptId = fetchReceiptId,
+            sourcePackContentHash = sourcePackContentHash,
+            sourceTreeHash = sourceTreeHash,
+            sourceBindingKind = sourceBindingKind
         )
 
     private fun ContextEnvelope.forProvider(providerId: String): ContextEnvelope {

@@ -14,8 +14,10 @@ import atropos.cli.session.QuotaSessionTracker
 import atropos.cli.session.ScreenId
 import atropos.cli.ui.AnsiTerminalEngine
 import atropos.core.AtroposConfig
+import atropos.core.agent.SelfHostStartupContinuationService
 import atropos.core.agent.AgentDaemonService
 import atropos.core.recovery.RuntimeContinuitySupervisor
+import atropos.core.recovery.ContinuityOutcome
 import java.io.FileInputStream
 
 fun main(args: Array<String>) {
@@ -39,7 +41,15 @@ fun main(args: Array<String>) {
         // leases and interrupted runs survived indefinitely if nobody thought
         // to ask.
         val continuity = RuntimeContinuitySupervisor()
-        continuity.startupNotice(continuity.ensureRecovered())?.let(ui::renderNotice)
+        val continuityOutcome = continuity.ensureRecovered()
+        continuity.startupNotice(continuityOutcome)?.let(ui::renderNotice)
+        SelfHostStartupContinuationService()
+            .continueOnce(continuityOutcome.safeForSelfHostContinuation)
+            .takeIf { it.attempted }
+            ?.let { result ->
+                if (result.ok) ui.renderNotice(result.message ?: "self-host continuation completed")
+                else ui.renderError(result.message ?: "self-host continuation stopped")
+            }
 
         val router = CommandRouter(
             config = config,

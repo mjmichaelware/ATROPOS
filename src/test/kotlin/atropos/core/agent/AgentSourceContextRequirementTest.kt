@@ -74,4 +74,21 @@ class AgentSourceContextRequirementTest {
             refusal?.code
         )
     }
+
+    @Test
+    fun code_aware_truncated_context_is_typed_refusal() {
+        val refusal = AgentSourceContextRequirement.refusalFor(
+            operation = "ask",
+            task = "ATROPOS improve yourself",
+            sourcePackId = "pack-123",
+            fetchReceiptId = "fetch-456",
+            context = "SOURCE_PACK_ID=pack-123\nFETCH_RECEIPT_ID=fetch-456",
+            truncated = true
+        )
+
+        assertEquals(
+            AgentSourceContextRequirement.Refusal.Code.TRUNCATED_SOURCE_PACK,
+            refusal?.code
+        )
+    }
 }

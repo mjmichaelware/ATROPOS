@@ -5,6 +5,7 @@ import atropos.core.ProviderCascadeRouter
 import atropos.core.memory.LocalMemoryStore
 import atropos.core.memory.MemoryKind
 import atropos.core.provider.ContextAttestationService
+import atropos.core.provider.ContextEnvelope
 import atropos.core.provider.ContextEnvelopeFactory
 import atropos.core.security.RedactionFilter
 import java.nio.file.Path
@@ -34,18 +35,36 @@ class AgentPatchCascadeRunner(
         prompt: String,
         context: String,
         providerOrderOverride: List<String>?,
-        beforeAttempt: (String) -> Unit
-    ) -> ProviderCascadeResult = { requestedProvider, prompt, context, providerOrderOverride, beforeAttempt ->
+        beforeAttempt: (String) -> Unit,
+        contextEnvelope: ContextEnvelope?
+    ) -> ProviderCascadeResult = { requestedProvider, prompt, context, providerOrderOverride, beforeAttempt, contextEnvelope ->
         router.completeWithCascade(
             requestedProvider = requestedProvider,
             prompt = prompt,
             context = context,
             providerOrderOverride = providerOrderOverride,
-            beforeAttempt = beforeAttempt
+            beforeAttempt = beforeAttempt,
+            contextEnvelope = contextEnvelope
         )
     }
 ) {
-    internal fun run(patchOrder: List<String>, prompt: String, context: String): AgentPatchCascadeResult {
+    internal fun run(
+        patchOrder: List<String>,
+        prompt: String,
+        context: String,
+        truncated: Boolean = false
+    ): AgentPatchCascadeResult {
+        if (truncated) {
+            return AgentPatchCascadeResult(
+                failure = AgentPatchAttempt(
+                    result = ProviderCascadeResult(providerName = "none", response = "", errors = emptyList()),
+                    extraction = AgentPatchExtraction("", emptyList(), false),
+                    retryAttempted = false,
+                    rejectionReason = "provider context refused: source context pack is truncated",
+                    responsePreview = "source context pack is truncated"
+                )
+            )
+        }
         val contextRefusal = AgentProviderContextBoundary.validateSourcePack(
             context = context,
             sourcePackId = extractMarker(context, "SOURCE_PACK_ID="),
@@ -107,18 +126,21 @@ class AgentPatchCascadeRunner(
     }
 
     private fun runPatchAttempt(provider: String, prompt: String, context: String): ProviderCascadeResult =
-        completeWithCascade(
-            provider,
-            prompt,
-            AgentPromptContract.buildPatch(
-                context = context,
-                providerId = provider,
-                task = prompt,
-                repoRoot = repoRoot
-            ),
-            listOf(provider),
-            { candidate -> authorizeProvider(candidate, prompt, "patch") }
-        )
+        ContextEnvelopeFactory.createSimple(provider, "", prompt, repoRoot).let { envelope ->
+            completeWithCascade(
+                provider,
+                prompt,
+                AgentPromptContract.buildPatch(
+                    context = context,
+                    providerId = provider,
+                    task = prompt,
+                    repoRoot = repoRoot
+                ),
+                listOf(provider),
+                { candidate -> authorizeProvider(candidate, prompt, "patch") },
+                envelope
+            )
+        }
 
     private fun validatePatchAttempt(
         result: ProviderCascadeResult,
@@ -133,12 +155,7 @@ class AgentPatchCascadeRunner(
     }
 
     private fun isAttested(result: ProviderCascadeResult, task: String, recordFailure: Boolean): Boolean {
-        val envelope = ContextEnvelopeFactory.createSimple(
-            providerId = result.providerName,
-            modelId = "",
-            task = task,
-            repoRoot = repoRoot
-        )
+        val envelope = result.contextEnvelope ?: return false
         return when (val verified = ContextAttestationService.verify(envelope, result.response)) {
             is ContextAttestationService.VerifiedResult.Accepted -> true
             is ContextAttestationService.VerifiedResult.Rejected -> {

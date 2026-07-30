@@ -93,7 +93,10 @@ class DagProviderNodeExecutor(
                     envelope = envelope,
                     contextText = pack.text,
                     sourcePackId = pack.id,
-                    fetchReceiptId = pack.fetchReceipt.id
+                    fetchReceiptId = pack.fetchReceipt.id,
+                    sourcePackContentHash = pack.contentHash,
+                    sourceTreeHash = pack.fetchReceipt.treeHash,
+                    sourceBindingKind = pack.fetchReceipt.bindingKind
                 )
             )
             if (answer.providerName == "local_fallback" || answer.failureSummary != null || !answer.contextAttested || answer.sourcePackId.isNullOrBlank()) {

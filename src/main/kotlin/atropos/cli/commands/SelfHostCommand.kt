@@ -27,9 +27,10 @@ class SelfHostCommand(
             tokens.size >= 2 && tokens[0].lowercase() == "/agent" && tokens[1].lowercase() == "self-host" -> tokens.drop(1)
             else -> tokens
         }
-        if (normalized.size < 2 || normalized[0].lowercase() != "self-host") {
+        if (normalized.isEmpty() || normalized[0].lowercase() != "self-host") {
             return AgentCommandOutcome.Invalid(SelfHostCommandText.usage())
         }
+        if (normalized.size == 1) return handleRun(listOf(SelfHostDefaultPrompt.TEXT))
         return when (normalized[1].lowercase()) {
             "run" -> handleRun(normalized.drop(2))
             "start" -> handleStart(normalized.drop(2))
@@ -67,15 +68,14 @@ class SelfHostCommand(
             return AgentCommandOutcome.Invalid(result.message)
         }
         val startedGoal = result.goal?.record
-        if (startedGoal != null) {
-            journal.record(
-                goalId = startedGoal.id,
-                runId = startedGoal.id,
-                category = atropos.core.journal.EventCategory.LIFECYCLE,
-                payload = "started: phase=${startedGoal.activePhase ?: phase} task=${startedGoal.task}"
-            )
-        }
-        ui.renderNotice("self-host goal started: ${startedGoal?.id}")
+            ?: return AgentCommandOutcome.Invalid("self-host start refused: durable goal was not returned")
+        journal.record(
+            goalId = startedGoal.id,
+            runId = startedGoal.id,
+            category = atropos.core.journal.EventCategory.LIFECYCLE,
+            payload = "started: phase=${startedGoal.activePhase ?: phase} task=${startedGoal.task}"
+        )
+        ui.renderNotice("self-host goal started: ${startedGoal.id}")
         return AgentCommandOutcome.Completed(result.message)
     }
 
@@ -182,9 +182,9 @@ class SelfHostCommand(
         return try {
             val result = selfHostRunner(prompt)
             val text = SelfHostCommandText.run(result)
-            if (!result.ok) {
+            if (!result.isVerifiedSuccess()) {
                 ui.renderError(text)
-                AgentCommandOutcome.Invalid(text)
+                AgentCommandOutcome.Invalid("self-host run refused: success contract incomplete\n$text")
             } else {
                 ui.renderNotice("SELF-HOST RUN\n$text")
                 AgentCommandOutcome.Completed(text)

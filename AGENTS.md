@@ -556,4 +556,457 @@ Next agent: read §0–§3, execute highest open atom, append §2, continue.
 - New overall estimate: unchanged
 - Fingerprints: refreshed in `ATROPOS_ROOT_EXPORT_MANIFEST.sha256`; `ATROPOS_TREE_PORT_EXPORT_PATHS.md` unchanged
 
+### 2026-07-29T18:32:00-06:00 · Agent: Codex GPT-5 · Batch: phase11-continuation-evidence-structural-001
+- Paths touched: `SelfHostGoalService.kt`, `StateSnapshot.kt`, `DagNodeRestorer.kt`, `SafeJarSwapGate.kt`, `SelfHostPromotionEvidence.kt`, `SelfHostCandidateJarBuilder.kt`, `SelfHostEvidenceBundleExporter.kt`, `SelfHostStateSnapshotRecorder.kt`, `SelfHostFailureCode.kt`, `SelfHostCommand.kt`, `AgentDaemonProcessLauncher.kt`, `AgentDaemonLogWriter.kt`, `LocalRoot.kt`, `ArchitectureSourceMasker.kt`, `ArchitectureConcernDetector.kt`, and focused tests; `AGENTS.md` (+this row), `ATROPOS_ROOT_EXPORT_MANIFEST.sha256` (hash refresh)
+- Atoms / phases affected: `C1-SB-02`, `C1-SB-03`, Phase 11 continuation/recovery/promotion/evidence, `C1-X1` architecture compliance
+- Predicate moved: Restart continuation selects and attests the locally selected node with DAG-scoped restore evidence; swap and evidence export failures are typed and cannot report verified success; daemon/local probes are bounded and redacted; architecture concern detection ignores literal false positives
+- % delta: unchanged; no Gradle, compile, package, install, or runtime tests were run
+- Why the delta is justified: Three parallel lanes added focused negative tests for stale pointers, backup collisions, truncated output, missing DAG/evidence, daemon log redaction, local probe failures, and masked architecture source. Static `git diff --check` passed throughout; runtime acceptance remains reserved for operator verification.
+- New overall estimate: unchanged
+- Fingerprints: refreshed in `ATROPOS_ROOT_EXPORT_MANIFEST.sha256`; tree export remains unchanged because no canonical phase was proven complete
+
+## DIRECTOR SWARM CONTRACT — stable specialties, ephemeral territories
+
+### Design principle
+- Specialties are permanent in AGENTS.md.
+- Live territories are assigned by Director per batch only.
+- Never store batch-specific file paths as permanent law in AGENTS.md.
+- This keeps AGENTS.md from going stale during active coding.
+
+### Swarm shape
+- Director = main agent session
+- Director is not one of the 10
+- Director does not write product code except AGENTS.md ledger/contract updates
+- Default swarm = 10 agents:
+  - 5 writers
+  - 5 readers
+
+### Writer specialties and requirements
+W1 — Checkpoint-Closer-A
+- Deterministically driven by AGENTS.md + Source Docs + Core Gap Map
+- Works only the next unfinished checkpoint
+- Maximizes single-responsibility files
+- May mutate code only inside Director-assigned ephemeral territory for this batch
+
+W2 — Checkpoint-Closer-B
+- Same checkpoint as W1
+- Different seam assigned by Director each batch
+- Deterministic checkpoint math, not vibes
+- Maximizes single-responsibility files
+- May mutate code only inside its ephemeral territory
+
+W3 — Lead-Line-Cook
+- May work mathematically high-value items outside W1/W2 scope
+- May implement later-phase substrate (including Phase 20 primitives) when leverage is high
+- MUST notify Director and label OUT-OF-CHECKPOINT in the same return
+- Still obeys non-duplication, decoupling, and no-false-VERIFIED
+- May mutate code only inside its ephemeral territory
+
+W4 — Decouple-Scalpel
+- May READ the entire codebase for mixed-concern files
+- Writes pure single-responsibility splits
+- Behavior-preserving extraction preferred
+- No drive-by feature expansion while decoupling
+- If a mixed file is touched, prefer extracting >=1 pure file or justify why not
+
+W5 — Test + HR Autogroup
+- May write tests ONLY for newly created files in the current batch
+- May READ old tests for patterns/contracts
+- May not broadly rewrite old tests unless required for a new pure seam, and must disclose that
+- HR interrupt authority over all other sub-agents
+- HR severity:
+  - INFO = log only
+  - REDIRECT = change a writer’s seam/target
+  - HALT-LANE = stop one writer immediately
+- HR is the only non-Director channel allowed to redirect writers mid-batch
+- Also returns cross-lane consistency notes to Director
+
+### Reader specialties and requirements
+R1 — Forward-Scout
+- Rank next 2 batches toward current checkpoint
+- Return atom IDs + candidate path families, not permanent path locks
+- Read-only
+
+R2 — Missed-Slice Diff
+- Compare gap-map/source atoms vs tree
+- Report missed slices only
+- Read-only
+
+R3 — Final-Pass Inspector
+- Review all files touched this batch
+- Residuals, overlap, false-success risks
+- Read-only
+
+R4 — Evidence / Provenance Scout
+- Completion-claim truth gaps
+- Missing hashes, gate bypasses, evidence bundle gaps, promotion honesty
+- Read-only
+
+R5 — Quota & Blast-Radius Guard
+- Path discipline, overlap risk, batch admissibility, token-waste detection
+- Flag batches that cross too many lanes without Director reason
+- Read-only
+
+Readers never mutate product code.
+
+### Ephemeral territory rules
+- Director assigns live territories at the start of each batch.
+- Territories are not written into AGENTS.md as permanent path lists.
+- Writers may not share write paths in the same batch.
+- Anti-thrash: same file may not be rewritten by two writers in consecutive batches without Director merge note.
+- If a writer fails, reassign only residual territory; do not redo finished pure files.
+
+### Hard laws for every external agent / CLI
+1. Read AGENTS.md before work.
+2. Autonomous + recursive; no permission-seeking loops.
+3. Maximize correct single-responsibility files.
+4. Non-duplication always.
+5. No fake VERIFIED:
+   - nonzero compile/test exit
+   - missing evidence
+   - self-approval
+   - failed swap/promotion
+   - OOM / truncated build
+6. Observation is not law.
+7. Original Source Docs 1–3 immutable.
+8. Phase 11 executes self-mutation; Phase 20 decides/amends and does not silently rewrite original authority.
+9. Quota efficiency:
+   - open only needed paths
+   - no full-corpus re-ingest by default
+   - one coherent batch at a time
+   - free/local first
+10. Human-mandatory stops only:
+   - secrets/keys
+   - paid unlock / real money
+   - full Gradle/JAR/device install requiring human
+   - destructive git on main/protected branches
+   - weakening immutable invariants
+11. W1+W2 stay on next unfinished checkpoint until green.
+12. W3 outside-scope work requires Director notify.
+13. W4 may read all; writes pure splits.
+14. W5 tests new files only; HR REDIRECT/HALT-LANE is binding.
+15. Two-batch lookahead always from R1.
+16. Evidence-first close for every lane.
+17. Overlap review before Progress Ledger append when shared SelfHost*/Gate*/authority files were touched by more than one writer.
+18. Progress Ledger append-only; baselines never overwritten.
+19. Specialty stability / territory ephemerality mandatory.
+20. Any CLI/agent must be able to obey this contract from AGENTS.md alone.
+
+### Director process each batch
+1. Read AGENTS.md and determine next unfinished checkpoint mathematically.
+2. Assign ephemeral territories for this batch only.
+3. Spawn 10 agents with the specialties above.
+4. Keep W1 and W2 on the checkpoint.
+5. Allow W3 outside-scope only with notify discipline.
+6. Run W4 decouple pass.
+7. Run W5 new-file tests + HR monitoring.
+8. Run R1–R5 in parallel.
+9. Honor HR REDIRECT/HALT-LANE without collapsing the swarm.
+10. Collect returns:
+    - paths changed
+    - new files created
+    - tests for new files
+    - predicate moved
+    - residuals
+    - W3 OUT-OF-CHECKPOINT disclosures
+    - HR interrupt summary
+11. Overlap review.
+12. Append one Progress Ledger row:
+    - ISO timestamp
+    - Director/agent id
+    - paths + line deltas
+    - new decoupled file count
+    - checkpoint/predicate moved
+    - % delta only if mathematically justified
+    - fingerprints/SHAs if available
+    - HR summary
+13. Immediately start next batch from R1 ranking + R2 misses + W4 residual decouple list + R4 evidence gaps.
+
+### Progress Ledger row format
+### [ISO-8601 timestamp] · Agent: <name/model> · Batch: <short id>
+- Paths touched:
+- New decoupled files:
+- Atoms / phases affected:
+- Predicate moved:
+- % delta:
+- Why justified:
+- HR interrupts:
+- Fingerprints:
+- New overall estimate:
+
+### Superiority requirements
+- Checkpoint math > vibes
+- Many pure files > few mixed files
+- Coordination by state/evidence, not chatter
+- Packaging/swap failure is never VERIFIED
+- Phase 20 substrate may be prepared by W3; Phase 20 completion and original authority mutation are forbidden
+- Token diet: path-directed reads; tight residuals; no full-repo dumps
+- Blast-radius budget enforced by R5
+- False-success ban is mandatory
+- Works for any coding agent/CLI, not one vendor
+
+### 2026-07-29T19:12:00-06:00 · Agent: Codex GPT-5 · Batch: director-swarm-phase11-001
+- Paths touched: `src/main/kotlin/atropos/core/agent/SelfHostAutonomousRunner.kt`, `SelfHostPromotionService.kt`, `SelfHostEvidenceBundleExporter.kt`, `SelfHostEvidenceTextCodec.kt`, `SelfHostEvidenceProvenance.kt`, `SelfHostPromotionGateContract.kt`, focused new/updated tests, `.gitignore`, `.agents/skills/atropos-director-swarm/SKILL.md`, `ATROPOS_DIRECTOR_SWARM_STATE.md`, `ATROPOS_ROOT_EXPORT_MANIFEST.sha256`
+- New decoupled files: `SelfHostEvidenceTextCodec.kt`, `SelfHostEvidenceProvenance.kt`, `SelfHostPromotionGateContract.kt`, plus their focused tests
+- Atoms / phases affected: `C1-SB-01`, `C1-SB-02`, `C1-SB-03`, `C1-P10`; Phase 11 / Checkpoint 1
+- Predicate moved: recoverable self-host failures now auto-enter bounded local recovery; promotion rejects malformed or empty completion evidence before swap; evidence export has deterministic provenance and a dedicated text codec
+- % delta: unchanged
+- Why justified: Five writer lanes completed disjoint Phase 11 slices and one reader confirmed the checkpoint remains open because runtime proof and focused execution are pending. Every lane reported `git diff --check` clean; no compile, test, package, install, or runtime claim was made.
+- HR interrupts: none; W5 recorded one INFO that the remaining daemon `ProcessBuilder` is a justified long-lived foreground launch; no REDIRECT or HALT-LANE
+- Fingerprints: root manifest refreshed after this ledger row; tree export unchanged
+- New overall estimate: unchanged
+
+### 2026-07-29T19:24:00-06:00 · Agent: Codex GPT-5 · Batch: director-swarm-phase11-overlap-review-001
+- Paths touched: `src/main/kotlin/atropos/core/agent/SelfHostGoalService.kt`, `SelfHostPromotionService.kt`, `SelfHostPromotionGateContract.kt`, `ATROPOS_DIRECTOR_SWARM_STATE.md`
+- New decoupled files: none; the promotion contract was reviewed as one existing seam after a delayed overlapping W2 return
+- Atoms / phases affected: `C1-SB-01`, `C1-SB-02`, `C1-SB-03`; Phase 11 / Checkpoint 1
+- Predicate moved: recover-and-continue now stops and records typed restart recovery errors; promotion evidence remains node-bound, non-empty, and fail-closed before `SafeJarSwapGate`
+- % delta: unchanged
+- Why justified: The delayed W1 and W2 lanes returned valid disjoint/overlap-safe changes, and R1 confirmed the next checkpoint. The overlap review found no duplicate contract or conflicting promotion branch. Runtime and compile evidence remain intentionally unclaimed.
+- HR interrupts: none; no REDIRECT or HALT-LANE
+- Fingerprints: root manifest refresh follows this ledger row; tree export unchanged
+- New overall estimate: unchanged
+
+### 2026-07-29T19:42:00-06:00 · Agent: Codex GPT-5 · Batch: phase11-bare-command-entry-001
+- Paths touched: `src/main/kotlin/atropos/cli/commands/SelfHostDefaultPrompt.kt`, `src/main/kotlin/atropos/cli/commands/SelfHostCommand.kt`, `src/test/kotlin/atropos/cli/commands/SelfHostCommandTest.kt`, plus delayed W4/W5 evidence seams
+- New decoupled files: `SelfHostDefaultPrompt.kt`; delayed W4 also added `SelfHostSnapshotIdentityHasher.kt`
+- Atoms / phases affected: `C1-SB-01`, `C1-SB-03`; Phase 11 / Checkpoint 1 CLI entry and evidence structure
+- Predicate moved: bare `self-host` and bare `/agent self-host` now delegate to the canonical natural-language self-host runner instead of stopping at usage; snapshot hashing and evidence text encoding remain single-responsibility seams
+- % delta: unchanged
+- Why justified: The default command reuses `handleRun`, preserving the existing causal chain and fail-closed success contract. A focused command regression pins the exact canonical prompt. Static `git diff --check` passed; no runtime, compile, or test execution was claimed.
+- HR interrupts: INFO only from W5; no REDIRECT or HALT-LANE
+- Fingerprints: root manifest refresh follows this row; tree export unchanged
+- New overall estimate: unchanged
+
+### 2026-07-29T19:55:00-06:00 · Agent: Codex GPT-5 · Batch: phase11-context-provenance-bound-001
+- Paths touched: `src/main/kotlin/atropos/core/provider/SourceBindingModels.kt`, `CodebaseContextPacker.kt`, `src/main/kotlin/atropos/core/agent/AgentAskContextOverride.kt`, `AgentContextCollector.kt`, `AgentProviderContextBoundary.kt`, `AgentSourceContextRequirement.kt`, `AgentService.kt`, `AgentRepairService.kt`, `src/main/kotlin/atropos/core/dag/DagProviderNodeExecutor.kt`, `src/main/kotlin/atropos/cli/commands/SelfHostDefaultPrompt.kt`, `SelfHostCommand.kt`, focused tests, `SelfHostSnapshotIdentityHasher.kt`, `AGENTS.md`, `ATROPOS_DIRECTOR_SWARM_STATE.md`
+- New decoupled files: `SelfHostDefaultPrompt.kt`, `SelfHostSnapshotIdentityHasher.kt`
+- Atoms / phases affected: `C1-SB-01`, `C1-SB-03`, `C1-P10`; Phase 11 / Checkpoint 1
+- Predicate moved: provider context now carries and validates source-pack content/tree/binding provenance; pack hashing preserves the requested byte bound; bare self-host CLI invokes the production self-build runner; recovery snapshot hashing is isolated
+- % delta: unchanged
+- Why justified: Delayed W3 provenance changes were overlap-reviewed and retained. A fixed-width hash placeholder prevents final replacement from expanding a bounded pack. The bare command reuses `handleRun`, so no gate is bypassed. Static `git diff --check` passed; no compile, test execution, or runtime proof was claimed.
+- HR interrupts: INFO only; no REDIRECT or HALT-LANE
+- Fingerprints: root manifest refresh follows this row; tree export unchanged
+- New overall estimate: unchanged
+
+### 2026-07-29T20:08:00-06:00 · Agent: Codex GPT-5 · Batch: phase11-candidate-test-gate-001
+- Paths touched: `src/main/kotlin/atropos/core/agent/SelfHostCandidateJarBuilder.kt`, `src/test/kotlin/atropos/core/agent/SelfHostCandidateJarBuilderTest.kt`
+- New decoupled files: none
+- Atoms / phases affected: `C1-SB-02`, `C1-SB-03`; Phase 11 / Checkpoint 1 compile/test/promotion boundary
+- Predicate moved: the default candidate-JAR path now requires `./gradlew test jar --no-daemon`; the builder refuses commands that omit either the test gate or jar task
+- % delta: unchanged
+- Why justified: The previous default requested only `jar`, allowing promotion without an explicit test gate. The production validator and focused contract test now enforce test-before-jar while preserving bounded agency, output truncation refusal, and nonzero-exit refusal. Static `git diff --check` passed; tests were not executed.
+- HR interrupts: none
+- Fingerprints: root manifest refresh follows this row; tree export unchanged
+- New overall estimate: unchanged
+
+### 2026-07-29T20:26:00-06:00 · Agent: Codex GPT-5 · Batch: phase11-installed-proof-harness-001
+- Paths touched: `scripts/selfhost-installed-proof.sh`
+- New decoupled files: none
+- Atoms / phases affected: `C1-SB-02`, `C1-SB-03`, `C1-C02`; Phase 11 installed-runtime proof harness
+- Predicate moved: the installed proof sandbox now fails unless the candidate command contains both `test` and `jar`, records `candidateBuildGate=test+jar`, and refuses a proof with no source mutation visible in `git status`
+- % delta: unchanged
+- Why justified: The harness already drives the installed JAR and sandbox swap; these checks close two false-green gaps without claiming the operator proof ran. `bash -n` and `git diff --check` passed. No JAR execution or Gradle task was run.
+- HR interrupts: none
+- Fingerprints: root manifest refresh follows this row; tree export unchanged
+- New overall estimate: unchanged
+
+### 2026-07-29T20:44:00-06:00 · Agent: Codex GPT-5 · Batch: phase11-repair-prompt-redaction-001
+- Paths touched: `src/main/kotlin/atropos/core/agent/AgentPromptContract.kt`, `src/test/kotlin/atropos/core/agent/AgentPromptContractTest.kt`
+- New decoupled files: none
+- Atoms / phases affected: `C1-P4`, `C1-SB-01`, `C1-SB-02`; Phase 11 provider/repair safety
+- Predicate moved: repair verification stdout and stderr are redacted before entering provider context; raw secret-like values cannot cross the repair prompt boundary
+- % delta: unchanged
+- Why justified: The repair path previously inserted persisted verification streams verbatim into provider prompts. The existing RedactionFilter is now composed at the prompt owner, with focused regression coverage. Static `git diff --check` passed; tests and runtime proof remain unexecuted.
+- HR interrupts: none
+- Fingerprints: root manifest refresh follows this row; tree export unchanged
+- New overall estimate: unchanged
+
+### 2026-07-29T21:06:00-06:00 · Agent: Codex GPT-5 · Batch: phase11-startup-continuation-001
+- Paths touched: `src/main/kotlin/atropos/core/agent/SelfHostStartupContinuationService.kt`, `src/main/kotlin/atropos/Main.kt`, `src/test/kotlin/atropos/core/agent/SelfHostStartupContinuationServiceTest.kt`
+- New decoupled files: `SelfHostStartupContinuationService.kt`, `SelfHostStartupContinuationServiceTest.kt`
+- Atoms / phases affected: `C1-SB-02`, `C1-SB-03`; Phase 11 restart continuity and automatic continuation
+- Predicate moved: after the existing process-start crash recovery sweep, an unfinished self-host goal is automatically selected and advanced once through `SelfHostGoalService.recoverAndContinue`; unavailable recovery refuses continuation and repeated calls are idempotent
+- % delta: unchanged
+- Why justified: The prior startup supervisor repaired stale leases but stopped before selecting the durable self-host DAG. The new composition delegates to existing recovery/goal owners and adds no second recovery mechanism. Static `git diff --check` passed; no compile, tests, or runtime proof were executed.
+- HR interrupts: none
+- Fingerprints: root manifest refresh follows this row; tree export unchanged
+- New overall estimate: unchanged
+
+### 2026-07-29T21:44:00-06:00 · Agent: Codex GPT-5 · Batch: phase11-bounded-restart-proof-control-001
+- Paths touched: `src/main/kotlin/atropos/core/agent/SelfHostRuntimeRunLimits.kt`, `SelfHostAutonomousRunner.kt`, `scripts/selfhost-installed-proof.sh`, focused `SelfHostRuntimeRunLimitsTest.kt`
+- New decoupled files: `SelfHostRuntimeRunLimits.kt`, `SelfHostRuntimeRunLimitsTest.kt`
+- Atoms / phases affected: `C1-SB-02`, `C1-SB-03`; Phase 11 restart/installed proof control
+- Predicate moved: operator proof runs can cap self-host advances through `ATROPOS_SELF_HOST_MAX_ADVANCES` or `atropos.selfHost.maxAdvances`, clamped to 1–100; the installed proof forwards and records this control while normal default remains 25
+- % delta: unchanged
+- Why justified: This creates a deterministic bounded-run seam for kill/restart proof without changing the normal autonomous loop or bypassing any gate. Static `git diff --check` and `bash -n` passed; no compile, tests, JAR, or runtime execution occurred.
+- HR interrupts: none
+- Fingerprints: root manifest refresh follows this row; tree export unchanged
+- New overall estimate: unchanged
+
+### 2026-07-29T22:18:00-06:00 · Agent: Codex GPT-5 · Batch: phase11-restart-proof-harness-001
+- Paths touched: `scripts/selfhost-restart-proof.sh`
+- New decoupled files: `scripts/selfhost-restart-proof.sh`
+- Atoms / phases affected: `C1-SB-02`, `C1-SB-03`; Phase 11 kill/restart continuity proof
+- Predicate moved: an operator-facing harness now starts the installed JAR in a sandbox with one advance, requires an actual process kill, restarts through `/agent self-host recover`, and checks durable goal/node/territory/evidence state, restart snapshot, source mutation, and evidence JSON
+- % delta: unchanged
+- Why justified: The script composes the existing installed runtime, goal store, recovery store, and evidence bundle rather than creating alternate implementations. Prompts are sanitized in proof properties and the script fails closed when the kill or any durable artifact is absent. `bash -n` and `git diff --check` passed; the harness was not executed.
+- HR interrupts: none
+- Fingerprints: root manifest refresh follows this row; tree export unchanged
+- New overall estimate: unchanged
+
+### 2026-07-29T22:42:00-06:00 · Agent: Codex GPT-5 · Batch: phase11-proof-evidence-fields-001
+- Paths touched: `scripts/selfhost-installed-proof.sh`, `scripts/selfhost-restart-proof.sh`
+- New decoupled files: none
+- Atoms / phases affected: `C1-SB-03`, `C1-C03`, `C1-C04`; Phase 11 evidence and safety proof
+- Predicate moved: installed and restart proof harnesses now require provenance-chain hashes, explicit redaction, evidence-hash fields, and Markdown hash entries before accepting a bundle
+- % delta: unchanged
+- Why justified: Bundle existence alone could report a structurally incomplete proof. Both operator harnesses now fail closed on missing required evidence fields. `bash -n` and `git diff --check` passed; no proof execution occurred.
+- HR interrupts: none
+- Fingerprints: root manifest refresh follows this row; tree export unchanged
+- New overall estimate: unchanged
+
+### 2026-07-29T23:06:00-06:00 · Agent: Codex GPT-5 · Batch: phase11-expected-output-boundary-001
+- Paths touched: `src/main/kotlin/atropos/core/agent/SelfHostWorktreeNodeExecutor.kt`, `src/test/kotlin/atropos/core/agent/SelfHostWorktreeNodeExecutorTest.kt`
+- New decoupled files: none
+- Atoms / phases affected: `C1-SB-02`, `C1-P13`; Phase 11 territory-bounded mutation
+- Predicate moved: self-host mutation nodes now refuse targets outside their declared `expectedOutputs` before worktree creation, and reject any undeclared changed path before merge
+- % delta: unchanged
+- Why justified: Territory membership alone was too broad for a node-specific source mutation. The executor now binds the mutation and observed diff to the DAG contract while preserving existing agency, worktree, no-empty-diff, and merge gates. Static `git diff --check` passed; tests were not executed.
+- HR interrupts: none
+- Fingerprints: root manifest refresh follows this row; tree export unchanged
+- New overall estimate: unchanged
+
+### 2026-07-29T23:12:00-06:00 · Agent: Codex GPT-5 · Batch: phase11-swap-postconditions-001
+- Paths touched: `src/main/kotlin/atropos/core/artifact/SafeJarSwapGate.kt`, `src/test/kotlin/atropos/core/artifact/SafeJarSwapGateTest.kt`
+- New decoupled files: none
+- Atoms / phases affected: `C1-SB-03`; Phase 11 safe JAR promotion
+- Predicate moved: successful swap now requires a real non-empty preserved backup when a prior target exists and a real non-empty active target after copy
+- % delta: unchanged
+- Why justified: Safe swap previously reported promotion after copy calls without checking postconditions. The gate now fails and restores the previous target if preservation or target write cannot be verified. Static `git diff --check` passed; tests and runtime proof were not executed.
+- HR interrupts: none
+- Fingerprints: root manifest refresh follows this row; tree export unchanged
+- New overall estimate: unchanged
+
+### 2026-07-29T19:38:00-06:00 · Agent: Codex GPT-5 · Batch: phase11-safety-variant-hardening-001
+- Paths touched: `src/main/kotlin/atropos/core/agent/SelfHostSafetyHardFailGate.kt` (+30/-17), `src/test/kotlin/atropos/core/agent/SelfHostSafetyHardFailGateTest.kt` (+34)
+- New decoupled files: none
+- Atoms / phases affected: `C1-SB-02`, `C1-SB-03`, `C1-P4`; Phase 11 safety hard-fail matrix
+- Predicate moved: safety inspection now normalizes separator variants and blocks context-attestation drift, mythology markers, self approval/self verification, fake-success variants, and policy-bypass variants before promotion
+- % delta: unchanged
+- Why justified: The existing `SelfHostSafetyHardFailGate` remains the sole safety owner, but exact-string matching left common failure spellings unblocked. Focused tests now specify the additional refusal forms. Static `git diff --check` passed; tests, compilation, and runtime proof were not executed.
+- HR interrupts: none
+- Fingerprints: `SelfHostSafetyHardFailGate.kt=7c9b93d16dbe16d0c4c9bad35558eb15ba0eb83bed756c207856c27c639841e4`, `SelfHostSafetyHardFailGateTest.kt=2c1d2b3052e9dda4723afb7a5011458e0e090c1b22f8b61a693cc45908a83b04`
+- New overall estimate: unchanged
+
+### 2026-07-29T19:40:00-06:00 · Agent: Codex GPT-5 · Batch: phase11-promotion-evidence-hardening-001
+- Paths touched: `src/main/kotlin/atropos/core/agent/SelfHostPromotionGateContract.kt` (+25), `src/test/kotlin/atropos/core/agent/SelfHostPromotionGateContractTest.kt` (+20)
+- New decoupled files: none
+- Atoms / phases affected: `C1-SB-03`; Phase 11 independent promotion authority
+- Predicate moved: structurally green completion reports containing self-approval, self-verification, fake-success, or policy-bypass language are refused before `SafeJarSwapGate`
+- % delta: unchanged
+- Why justified: The existing promotion contract now validates both report structure and authorization language, preventing fabricated gate evidence from becoming swap authorization while retaining `VerifiedCompletionGate` as the only evaluator. Static `git diff --check` passed; tests, compilation, and runtime proof were not executed.
+- HR interrupts: none
+- Fingerprints: `SelfHostPromotionGateContract.kt=1038f62df9cf8df900efa50502ba4f7d50ff0a805fbb6c46a109c9d921910b4d`, `SelfHostPromotionGateContractTest.kt=910e033f8f8f64638450956045c114af2f24eaf7fce635e10a6b1ff0ca18716b`
+- New overall estimate: unchanged
+
+### 2026-07-29T19:44:00-06:00 · Agent: Codex GPT-5 · Batch: phase11-swap-failure-terminal-truth-001
+- Paths touched: `src/main/kotlin/atropos/core/agent/SelfHostPromotionService.kt` (+12), `src/test/kotlin/atropos/core/agent/SelfHostPromotionServiceTest.kt` (+3/-1)
+- New decoupled files: none
+- Atoms / phases affected: `C1-SB-03`; Phase 11 truthful promotion failure
+- Predicate moved: a failed `SafeJarSwapGate` outcome now records `TERMINAL_FAILURE`/`FAILED` with a failure reason instead of leaving the goal falsely `VERIFIED_COMPLETE`
+- % delta: unchanged
+- Why justified: The previous promotion service preserved the source-verification terminal state even when JAR swap failed, and the runner could not overwrite it because the goal was already terminal. The existing promotion owner now records a typed failed terminal state while preserving the prior JAR and failure evidence. Static `git diff --check` passed; tests, compilation, and runtime proof were not executed.
+- HR interrupts: none
+- Fingerprints: `SelfHostPromotionService.kt=4f0cf186a66a7e93f1419b7248d19c0c0d2ccbb372b3589b0a655471fcbf8e21`, `SelfHostPromotionServiceTest.kt=584b8719f252bd9cb30ca9e27b4dc0630397dd9fdee590a73577f300961df8f4`
+- New overall estimate: unchanged
+
+### 2026-07-29T19:50:00-06:00 · Agent: Codex GPT-5 · Batch: phase11-safe-swap-bypass-and-identity-001
+- Paths touched: `scripts/atropos-safe-jar-swap.sh` (direct-copy success path replaced by typed unsupported refusal), `src/main/kotlin/atropos/core/artifact/SafeJarSwapGate.kt` (+56), `src/test/kotlin/atropos/core/artifact/SafeJarSwapGateTest.kt` (+3)
+- New decoupled files: none
+- Atoms / phases affected: `C1-SB-03`; Phase 11 safe JAR promotion and evidence truth
+- Predicate moved: no shell helper can bypass the Kotlin promotion chain; successful swaps now prove candidate/backup/target byte identity by SHA-256, and rollback failure is explicit rather than reported as preservation
+- % delta: unchanged
+- Why justified: The legacy script directly copied JARs and emitted success without verification. It now returns typed unsupported so only `SelfHostPromotionService` → `SafeJarSwapGate` can promote. The existing gate records and compares hashes for each critical artifact and verifies restoration/unchanged-target postconditions on failure. `git diff --check` and `bash -n scripts/atropos-safe-jar-swap.sh` passed; tests, compilation, and runtime proof were not executed.
+- HR interrupts: Heisenberg identified the shell bypass and hash/rollback gaps; no redirect or halt required
+- Fingerprints: `atropos-safe-jar-swap.sh=137f240457396535ba9fe327ac281bd3ef88643d98769be0a2df113ac6e17e96`, `SafeJarSwapGate.kt=853b7f393ff7d7ceda3671fec931591171cf21c90c5ab3482699bf55a79cbd21`, `SafeJarSwapGateTest.kt=db9761c9390b55831b922dc6c7c95f95244f603bad9141648713005103776b46`
+- New overall estimate: unchanged
+
+### 2026-07-29T19:58:00-06:00 · Agent: Codex GPT-5 · Batch: phase11-provider-envelope-and-pack-integrity-001
+- Paths touched: `src/main/kotlin/atropos/core/agent/AgentProviderContextBoundary.kt` (+5), `AgentSourceContextRequirement.kt` (+11), `AgentService.kt` (+10), `AgentPatchCascadeRunner.kt` (+38), `AgentRepairService.kt` (+2), `src/test/kotlin/atropos/core/agent/AgentProviderContextBoundaryTest.kt` (+17), `AgentSourceContextRequirementTest.kt` (+19), `AgentPatchCascadeRunnerTest.kt` (+1)
+- New decoupled files: none
+- Atoms / phases affected: `C1-SB-01`, `C1-SB-02`, `C1-P10`; provider context attestation and bounded source packs
+- Predicate moved: code-aware asks collect task-specific files; ask, patch, and repair cascades carry the exact envelope sent to providers; truncated packs are refused before provider execution with typed evidence
+- % delta: unchanged
+- Why justified: The provider path previously reconstructed patch envelopes after dispatch, omitted envelope provenance from ask cascades, ignored task hints for source selection, and accepted truncated code context. Existing context boundary, collector, and cascade owners now enforce complete source context and exact attestation without a second provider or policy system. Static `git diff --check` passed; tests, compilation, and runtime proof were not executed.
+- HR interrupts: Ampere identified the envelope/pack gaps; no redirect or halt required
+- Fingerprints: `AgentProviderContextBoundary.kt=a2f28783313abed70ae83fb45ff35cd74fa358ad8c8b8f1e1e614bd44e84f483`, `AgentSourceContextRequirement.kt=fc8c95b7a9d85ef3dc705c3cc422b90a177432092cf68306fa74255900889cbc`, `AgentService.kt=151c463269bc63db47b9011f5600dfc1f44a348ed116f592869f10dba3d7c3c2`, `AgentPatchCascadeRunner.kt=05f11955215b3dbd6109dc1d08b868fe87981f7908989b7ff9b5844a9060fede`, `AgentRepairService.kt=286c7d788b954680d17cecb7cfb79fd2182d69aa29cce989d361a7d2491ffe7d`, `AgentProviderContextBoundaryTest.kt=9d76d789768b60bfbdc3650c6d48c54e2779c63e37e54315cf8ba565f8b23428`, `AgentSourceContextRequirementTest.kt=1dbfa71b659c9622fd20d94a3be21f306226ba283f0b829e8e5b68cf9055f6e7`, `AgentPatchCascadeRunnerTest.kt=fcfc1ca37852d430c738414dd8f7ed17ce874ffcbb5e6ffb11683fbf83454b1f`
+- New overall estimate: unchanged
+
+### 2026-07-29T20:08:00-06:00 · Agent: Codex GPT-5 · Batch: phase11-restart-state-integrity-001
+- Paths touched: `src/main/kotlin/atropos/core/agent/SelfHostStartupContinuationService.kt` (+27), `CrashRecoveryService.kt` (+5), `GoalRunStore.kt` (+7), `SelfHostGoalService.kt` (+21), `src/main/kotlin/atropos/core/recovery/StateSnapshot.kt` (+9), `RestartCoordinator.kt` (+35), focused startup/store/crash/restart tests (+57 total)
+- New decoupled files: none
+- Atoms / phases affected: `C1-SB-02`, `C1-SB-03`; Phase 11 automatic continuation, recovery, and exact state snapshots
+- Predicate moved: startup failures are typed and retryable, runs interrupted before their first continuation are recovered, comma-bearing territories survive restart, and snapshots retain task/baseline/fingerprint/parent-run/continuation-budget/checkpoint identity
+- % delta: unchanged
+- Why justified: Restart state previously hid resolver failures, ignored first-continuation crashes, serialized territory with an unsafe delimiter, and persisted only counts/hashes for goal identity. Existing recovery, goal store, and snapshot owners now preserve exact continuation inputs with backward-compatible decoding. Static `git diff --check` passed; tests, compilation, and runtime proof were not executed.
+- HR interrupts: Hegel identified startup/recovery/snapshot gaps; no redirect or halt required
+- Fingerprints: `SelfHostStartupContinuationService.kt=ac00a79da0fd4ec71c1bf21a6c55cdffd99321c59dd7774e5e03618ebdce6a56`, `CrashRecoveryService.kt=e17c378641aa52e7adc7faa332254be3d203670970b21ab98a91f4930c748131`, `GoalRunStore.kt=f6df90ccc9b3a20c40e43c10ea36e74444cc00cf726605629bd29ac1aacd6c85`, `SelfHostGoalService.kt=60b22eede10eab0011a951a0d1c7c90ce13088c848f34b4a66b93cb8432d585c`, `StateSnapshot.kt=fa7b5548771a35dc3c81c4e22c943ecf4693357e174d31f51c262eb7683f5e18`, `RestartCoordinator.kt=b6e7dc165e2ec2fb5bc207b58d8d060c07ba3fc4ec98c411c50d5aa173c0c4ca`, `SelfHostStartupContinuationServiceTest.kt=94028098f346da428f93fd2a13ca333bdca99f7bfb275c5c680bf157397622c8`, `GoalRunStoreTest.kt=4b4f593c3a5c2bc948818b911206dc8d5a29c7944503ff12bd103523cd24b1c3`, `CrashRecoveryServiceTest.kt=8f86bc89e695314e2d4dd8b4e30f5e9529f438a9ba5d937d6bf2771c3124cb11`, `RestartCoordinatorTest.kt=9ed7735b7fe0a46b004d5ee258b58437c5c8a4d864d4b46ae6e6897c66917952`
+- New overall estimate: unchanged
+
+### 2026-07-29T20:14:00-06:00 · Agent: Codex GPT-5 · Batch: phase11-restart-action-and-snapshot-completeness-001
+- Paths touched: `src/main/kotlin/atropos/core/agent/SelfHostGoalService.kt` (+21), `src/main/kotlin/atropos/core/recovery/StateSnapshot.kt` (+9), `RestartCoordinator.kt` (+35), focused restart/recovery tests
+- New decoupled files: none
+- Atoms / phases affected: `C1-SB-02`, `C1-SB-03`; Phase 11 recovery action integrity
+- Predicate moved: restart recovery now honors the durable planned action kind and refuses promotion/wait/hard-stop boundaries instead of blindly advancing; snapshots persist the complete goal identity and exact territory encoding
+- % delta: unchanged
+- Why justified: Recovery previously recorded `nextAction` but always advanced, and snapshot files retained only evidence counts/hashes. Existing recovery and snapshot owners now make local continuation decisions from persisted action state and preserve the task, source baseline, fingerprint, run lineage, budgets, checkpoint, and comma-safe territory needed to reconstruct intent. Static `git diff --check` passed; tests, compilation, and runtime proof were not executed.
+- HR interrupts: Hegel identified action/snapshot gaps; no redirect or halt required
+- Fingerprints: `SelfHostGoalService.kt=60b22eede10eab0011a951a0d1c7c90ce13088c848f34b4a66b93cb8432d585c`, `StateSnapshot.kt=fa7b5548771a35dc3c81c4e22c943ecf4693357e174d31f51c262eb7683f5e18`, `RestartCoordinator.kt=b6e7dc165e2ec2fb5bc207b58d8d060c07ba3fc4ec98c411c50d5aa173c0c4ca`
+- New overall estimate: unchanged
+
+### 2026-07-29T20:24:00-06:00 · Agent: Codex GPT-5 · Batch: phase11-real-installed-proof-harness-001
+- Paths touched: `scripts/selfhost-installed-proof.sh`, `scripts/selfhost-restart-proof.sh`, `scripts/atropos-safe-jar-swap.sh`
+- New decoupled files: none
+- Atoms / phases affected: `C1-SB-03`, `C1-C01`, `C1-C02`; installed-runtime and restart proof harness
+- Predicate moved: proof scripts no longer manufacture text JARs or accept nondeterministic artifacts; they copy the real ATROPOS tree, invoke its real `gradlew test jar`, bind evidence/backup to the sandbox run, and compare candidate/active/prior JAR bytes
+- % delta: unchanged
+- Why justified: The previous scripts could report a passing installed proof without compiling or packaging the mutated tree. The harness now exercises the actual source tree and build wrapper when the operator runs it, and fails closed when real candidate output, exact backup preservation, or evidence is absent. `bash -n` for all three scripts and `git diff --check` passed; no build, test, JAR, or proof execution was performed.
+- HR interrupts: Heisenberg identified fake artifact and nondeterministic proof selection; no redirect or halt required
+- Fingerprints: `selfhost-installed-proof.sh=9ee2fbed7934c17d2ebe7e74723817493962e5c42870bc72d513484992067045`, `selfhost-restart-proof.sh=13e3f31c43e893ed77ca4dc3b95dc19f90a4654018287327d94e198bb21c116e`, `atropos-safe-jar-swap.sh=137f240457396535ba9fe327ac281bd3ef88643d98769be0a2df113ac6e17e96`
+- New overall estimate: unchanged
+
+### 2026-07-29T20:32:00-06:00 · Agent: Codex GPT-5 · Batch: phase11-proof-gate-order-001
+- Paths touched: `scripts/selfhost-installed-proof.sh`, `scripts/selfhost-restart-proof.sh`
+- New decoupled files: none
+- Atoms / phases affected: `C1-C01`, `C1-C02`, `C1-C03`; Phase 11 ordered gate proof
+- Predicate moved: installed and restart proof harnesses now require evidence lines in causal order: safety hard-fail gate, Director advisory, VerifiedCompletionGate, then JAR swap
+- % delta: unchanged
+- Why justified: Artifact presence alone did not prove promotion ordering. Both operator harnesses now fail closed when any required gate evidence is absent or out of order. `bash -n` and `git diff --check` passed; no runtime proof was executed.
+- HR interrupts: none
+- Fingerprints: `selfhost-installed-proof.sh=fad727dcb407a9e8ca7552979809965a8eeba14214081682734b6ea0a2a02136`, `selfhost-restart-proof.sh=963a029e9a26b3a5a992472877bc916e2b5f511dfa9192b25b74dc66ac825110`
+- New overall estimate: unchanged
+
+### 2026-07-29T20:40:00-06:00 · Agent: Codex GPT-5 · Batch: phase11-status-truth-boundary-001
+- Paths touched: `SELFHOST_PHASE11_101_CODE_STATUS.md` (status and proof sections corrected)
+- New decoupled files: none
+- Atoms / phases affected: `C1-SB-03`, `C1-C01`, `C1-C02`, `C1-C03`; completion evidence truth
+- Predicate moved: current installed-runtime acceptance is no longer falsely represented as passing after later source and harness changes; historical evidence is explicitly labeled and current rerun commands are recorded
+- % delta: unchanged
+- Why justified: The status document retained a prior installed-proof PASS label despite unexecuted changes to provider context, restart, swap, and proof scripts. It now distinguishes historical provenance from current acceptance and requires real `jar`, installed, and restart proof reruns. Static `git diff --check` passed; no runtime command was executed.
+- HR interrupts: none
+- Fingerprints: `SELFHOST_PHASE11_101_CODE_STATUS.md=513c7e7136cc7fa64ab0683f2eb8ce267f30e53886cd539f684be0f4a84b5efd`
+- New overall estimate: unchanged
+
+### 2026-07-29T20:10:57-06:00 · Agent: Codex GPT-5 · Batch: phase11-recovery-clean-continuation-001
+- Paths touched: `src/main/kotlin/atropos/core/recovery/RuntimeContinuitySupervisor.kt` (+5), `src/main/kotlin/atropos/Main.kt` (+1/-1), `src/test/kotlin/atropos/core/recovery/RuntimeContinuitySupervisorTest.kt` (+4)
+- New decoupled files: none
+- Atoms / phases affected: `C1-SB-02`, `C1-SB-03`; automatic restart continuation safety
+- Predicate moved: automatic self-host continuation now requires a clean crash-recovery report; partial recovery is surfaced and cannot advance a goal on possibly stale state
+- % delta: unchanged
+- Why justified: `ContinuityOutcome.safeForSelfHostContinuation` composes the existing recovery report and refuses continuation when any recovery sub-operation recorded an error. `Main` now uses that predicate before invoking the existing startup continuation service, while the focused supervisor test proves the partial-recovery refusal. No Gradle, compilation, tests, packaging, or runtime proof was executed.
+- HR interrupts: none
+- Fingerprints: pending manifest refresh after this ledger append
+- New overall estimate: unchanged
+
 End of AGENTS.md

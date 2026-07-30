@@ -241,7 +241,9 @@ class SelfHostPromotionServiceTest {
         assertTrue(!result.promoted)
         assertEquals("old jar", Files.readString(target))
         val reopened = fixture.store.resolve(fixture.goal.id) ?: error("missing goal")
-        assertEquals(GoalTerminalCondition.VERIFIED_COMPLETE, reopened.terminalCondition)
+        assertEquals(GoalTerminalCondition.TERMINAL_FAILURE, reopened.terminalCondition)
+        assertEquals(GoalRunStatus.FAILED, reopened.status)
+        assertTrue(reopened.failureReason?.contains("jar swap failed") == true)
         assertEquals(null, reopened.lastVerifiedCheckpoint)
         assertTrue(reopened.evidence.any {
             it.contains("jar_swap promoted=false") && it.contains("terminal=UNCHANGED")

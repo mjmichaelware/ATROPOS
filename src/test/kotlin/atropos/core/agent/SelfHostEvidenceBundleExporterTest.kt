@@ -9,8 +9,22 @@ import java.nio.file.Files
 import java.time.Instant
 import kotlin.test.Test
 import kotlin.test.assertTrue
+import kotlin.test.assertEquals
 
 class SelfHostEvidenceBundleExporterTest {
+    @Test
+    fun refuses_export_when_record_references_missing_dag() {
+        val root = Files.createTempDirectory("atropos-self-host-evidence-missing-dag-")
+        val store = GoalRunStore(root)
+        val goal = store.createGoalRun("missing dag", provider = "self-host")
+        store.update(goal.copy(dagId = "missing-dag"))
+
+        val result = SelfHostEvidenceBundleExporter(root, store, DagExecutionService(repoRoot = root)).export(goal.id)
+
+        assertTrue(!result.ok)
+        assertEquals(SelfHostFailureCode.MISSING_DAG, result.failureCode)
+    }
+
     @Test
     fun exports_markdown_and_json_with_hashes_and_redacted_evidence() {
         val root = Files.createTempDirectory("atropos-self-host-evidence-export-")
@@ -77,6 +91,8 @@ class SelfHostEvidenceBundleExporterTest {
         assertTrue(json.contains("\"sha256\""))
         assertTrue(json.contains("\"restartSnapshot\""))
         assertTrue(json.contains("\"evidenceHashes\""))
+        assertTrue(json.contains("\"provenanceChainSha256\""))
+        assertTrue(markdown.contains("provenance chain sha256:"))
         assertTrue(json.contains("\"attestationEvidence\""))
         assertTrue(json.contains("\"gateEvidence\""))
         assertTrue(json.contains("\"swapEvidence\""))

@@ -9,7 +9,8 @@ object AgentSourceContextRequirement {
         enum class Code {
             MISSING_SOURCE_PACK,
             MISSING_FETCH_RECEIPT,
-            PACK_RECEIPT_MISMATCH
+            PACK_RECEIPT_MISMATCH,
+            TRUNCATED_SOURCE_PACK
         }
 
         val message: String
@@ -38,7 +39,11 @@ object AgentSourceContextRequirement {
         task: String,
         sourcePackId: String?,
         fetchReceiptId: String?,
-        context: String? = null
+        sourcePackContentHash: String? = null,
+        sourceTreeHash: String? = null,
+        sourceBindingKind: atropos.core.provider.SourceBindingKind? = null,
+        context: String? = null,
+        truncated: Boolean = false
     ): Refusal? {
         if (!requiredForAsk(task)) return null
         if (sourcePackId.isNullOrBlank()) {
@@ -56,12 +61,24 @@ object AgentSourceContextRequirement {
             )
         }
         val contextRefusal = context?.let {
-            AgentProviderContextBoundary.validateSourcePack(it, sourcePackId, fetchReceiptId)
+            AgentProviderContextBoundary.validateSourcePack(
+                context = it,
+                sourcePackId = sourcePackId,
+                fetchReceiptId = fetchReceiptId,
+                sourcePackContentHash = sourcePackContentHash,
+                sourceTreeHash = sourceTreeHash,
+                sourceBindingKind = sourceBindingKind,
+                truncated = truncated
+            )
         }
         if (contextRefusal != null) {
             return Refusal(
                 operation = operation,
-                code = Code.PACK_RECEIPT_MISMATCH,
+                code = if (contextRefusal.code == AgentProviderContextBoundary.Refusal.Code.TRUNCATED_SOURCE_PACK) {
+                    Code.TRUNCATED_SOURCE_PACK
+                } else {
+                    Code.PACK_RECEIPT_MISMATCH
+                },
                 detail = contextRefusal.detail
             )
         }
