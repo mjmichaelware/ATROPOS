@@ -3,6 +3,7 @@ package atropos.core.agent
 import atropos.core.dag.DagExecutionService
 import atropos.core.dag.DagNode
 import atropos.core.dag.DagNodeAction
+import atropos.core.recovery.RecoveryReport
 import atropos.core.recovery.RestartCoordinator
 import java.nio.file.Files
 import java.time.Instant
@@ -38,10 +39,28 @@ class SelfHostEvidenceBundleExporterTest {
                 currentNodeId = node.id,
                 activePhase = "11",
                 territory = node.territory,
-                evidence = listOf("provider token=plain-token", "jar sha256=abc123")
+                evidence = listOf(
+                    "provider token=plain-token",
+                    "context_attestation hash=attest-123",
+                    "promotion_gate VerifiedCompletionGate=PASS",
+                    "director_pre_promote allowed=true",
+                    "jar_swap promoted=true previous_sha256=old candidate_sha256=new",
+                    "restart_next goal=${goal.id} node=node-evidence"
+                )
             )
         )
-        RestartCoordinator(root, goalRunStore = store).snapshot()
+        RestartCoordinator(root, goalRunStore = store).snapshot(
+            RecoveryReport(
+                recoveredAt = Instant.parse("2026-07-29T00:04:00Z"),
+                staleQueueEntries = 0,
+                staleSessions = 0,
+                staleDagClaims = 0,
+                interruptedRuns = 1,
+                completedMutationsSkipped = 0,
+                errors = listOf("recovery token=plain-token"),
+                message = "recovered token=plain-token"
+            )
+        )
         val exporter = SelfHostEvidenceBundleExporter(root, store, dagService)
 
         val result = exporter.export(updated.id)
@@ -62,6 +81,8 @@ class SelfHostEvidenceBundleExporterTest {
         assertTrue(json.contains("\"gateEvidence\""))
         assertTrue(json.contains("\"swapEvidence\""))
         assertTrue(json.contains("\"recoveryEvidence\""))
+        assertTrue(json.contains("attest-123"))
+        assertTrue(json.contains("messageSha256"))
         assertTrue(json.contains("\"nodes\""))
         assertTrue(json.contains("node-evidence"))
         assertTrue(!markdown.contains("plain-token"), markdown)
