@@ -62,8 +62,8 @@ class BoundedProcessRunner(
         val pumps = Executors.newFixedThreadPool(2) { task ->
             Thread(task, "atropos-bounded-process-stream").apply { isDaemon = true }
         }
-        val stdout = pumps.submit { capture(process.inputStream, maxOutputBytes, maxOutputLines) }
-        val stderr = pumps.submit { capture(process.errorStream, maxOutputBytes, maxOutputLines) }
+        val stdout = pumps.submit<Captured> { capture(process.inputStream, maxOutputBytes, maxOutputLines) }
+        val stderr = pumps.submit<Captured> { capture(process.errorStream, maxOutputBytes, maxOutputLines) }
         val finished = process.waitFor(timeoutMillis, TimeUnit.MILLISECONDS)
         if (!finished) terminate(process)
         val out = result(stdout)

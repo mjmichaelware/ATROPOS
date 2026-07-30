@@ -11,7 +11,7 @@ data class SelfHostStartupContinuationResult(
 /** Advances one unfinished self-host goal after process-start recovery. */
 class SelfHostStartupContinuationService(
     private val selfHostService: SelfHostGoalService = SelfHostGoalService(),
-    private val resolveResumable: () -> SelfHostResult = selfHostService::resolveResumableGoal,
+    private val resolveResumable: () -> SelfHostResult = { selfHostService.resolveResumableGoal() },
     private val recoverAndContinue: (String) -> SelfHostResult = { goalId ->
         selfHostService.recoverAndContinue(goalId, "self-host automatic startup continuation")
     }

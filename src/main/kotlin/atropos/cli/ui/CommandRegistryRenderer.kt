@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.cli.ui
 
+import atropos.cli.input.CommandRegistry
 import atropos.cli.ui.design.Role
 
 /**
