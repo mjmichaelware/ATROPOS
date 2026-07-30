@@ -1,6 +1,7 @@
 package atropos.core.provider
 
 import atropos.core.provider.adapter.AdapterStatus
+import atropos.core.security.RedactionFilter
 import java.time.Instant
 
 enum class ProviderActivationState {
@@ -51,7 +52,7 @@ data class ProviderActivationRecord(
     val remediation: String,
     val lastCheckedAt: Instant = Instant.now()
 ) {
-    fun render(): String = buildString {
+    fun render(): String = RedactionFilter().redact(buildString {
         appendLine("provider: $providerId")
         appendLine("  mode: ${mode.name.lowercase()}")
         appendLine("  state: ${state.name.lowercase()}")
@@ -74,7 +75,7 @@ data class ProviderActivationRecord(
         appendLine("  verification: $verificationSummary")
         appendLine("  remediation: $remediation")
         appendLine("  checked at: $lastCheckedAt")
-    }.trimEnd()
+    }.trimEnd())
 
     companion object {
         private fun yesNo(value: Boolean): String = if (value) "yes" else "no"

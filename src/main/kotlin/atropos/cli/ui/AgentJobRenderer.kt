@@ -1,6 +1,9 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.cli.ui
 
+import atropos.core.security.RedactionFilter
+
+
 /**
  * UI-only status vocabulary for Pass 10 agent jobs. This enum exists so the renderer has a
  * fixed, known set of labels to color and align — it does not model backend job execution.
@@ -42,7 +45,11 @@ data class AgentJobSummary(
     val note: String? = null
 )
 
-import atropos.core.security.RedactionFilter
+data class AgentJobEvent(
+    val at: String,
+    val status: AgentJobStatus,
+    val note: String? = null
+)
 
 fun AgentJobSummary.redact(filter: RedactionFilter): AgentJobSummary = copy(
     task = filter.redact(task),
@@ -57,6 +64,7 @@ fun AgentJobSummary.redact(filter: RedactionFilter): AgentJobSummary = copy(
 fun AgentJobEvent.redact(filter: RedactionFilter): AgentJobEvent = copy(
     note = note?.let { filter.redact(it) }
 )
+
 
 class AgentJobRenderer(
     private val theme: TerminalTheme,

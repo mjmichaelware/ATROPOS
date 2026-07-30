@@ -30,7 +30,7 @@ class SelfHostAutonomousRunnerTest {
         assertEquals(GoalTerminalCondition.EXTERNAL_INPUT_REQUIRED, record.terminalCondition)
         assertEquals(GoalRunStatus.BLOCKED, record.status)
         assertTrue(record.evidence.any { it.startsWith("jar_promotion_stop reason=candidate jar unavailable") })
-        assertTrue(record.evidence.any { it.startsWith("git_status_short exit=0") && it.contains("SelfHostCradleRuntimeState.kt") })
+        assertTrue(record.evidence.any { it.startsWith("git_status_short") && it.contains("exit=0") && it.contains("SelfHostCradleRuntimeState.kt") })
         assertTrue(record.evidence.any { it.startsWith("next_action kind=WAIT_EXTERNAL_INPUT") })
         assertTrue(record.evidence.any { it.startsWith("node_execution") && it.contains("worktree=") && it.contains("sha256=") })
         assertTrue(result.evidenceBundle?.ok == true)

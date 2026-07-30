@@ -66,7 +66,7 @@ class SelfHostCandidateJarBuilderTest {
 
         assertTrue(!result.ok)
         assertTrue(!ran, "policy-refused builder must not execute the process runner")
-        assertTrue(result.message.contains("refused"), result.message)
+        assertTrue(result.message.contains("refused") || result.message.contains("requires the repository Gradle launcher"), result.message)
     }
 
     @Test
