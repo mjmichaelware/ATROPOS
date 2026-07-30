@@ -12,7 +12,13 @@ class SelfHostGitStatusEvidence(
     fun capture(paths: List<String> = DEFAULT_PATHS): String = runCatching {
         require(paths.isNotEmpty()) { "status paths are required" }
         require(paths.all(::isBoundedPath)) { "status path escapes repository root" }
-        val command = listOf("git", "status", "--short", "--") + paths
+        // --untracked-files=all is required, not cosmetic. Plain `git status
+        // --short` collapses an untracked directory to a single `?? dir/` row, so a
+        // newly created file — exactly what a self-host mutation produces — never
+        // appears by name. Evidence that says "something under src/ changed" cannot
+        // support a claim about which file was written, which is the whole point of
+        // this line.
+        val command = listOf("git", "status", "--short", "--untracked-files=all", "--") + paths
         val result = processRunner.run(
             command = command,
             directory = repoRoot,
