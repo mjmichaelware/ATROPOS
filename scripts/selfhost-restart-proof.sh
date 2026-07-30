@@ -4,12 +4,26 @@ set -euo pipefail
 JAR="${1:-./atropos.jar}"
 PROMPT="${2:-ATROPOS, build yourself from the inside out and run self-host Phase 11}"
 KILL_AFTER_SECONDS="${ATROPOS_SELF_HOST_KILL_AFTER_SECONDS:-1}"
+: "${ATROPOS_VAULT_KEY:?set ATROPOS_VAULT_KEY to a base64-encoded AES-256 key}"
 
 sanitize_text() {
   printf '%s' "$1" |
     tr '\r\n\t' '   ' |
     sed -E 's/(token|secret|password|api[_-]?key)[=:][^ ]*/\1=[REDACTED]/Ig' |
     cut -c1-400
+}
+
+# Keep the proof environment secret-minimal while preserving Termux loader
+# variables required by native executables launched from the JVM.
+runtime_env() {
+  local args=(env -i "PATH=$PATH")
+  local name
+  for name in LD_LIBRARY_PATH LD_PRELOAD TERMUX_EXEC__PROC_SELF_EXE; do
+    if [ "${!name+x}" = x ]; then
+      args+=("$name=${!name}")
+    fi
+  done
+  "${args[@]}" "$@"
 }
 
 if [ ! -f "$JAR" ]; then
@@ -42,9 +56,10 @@ run_runtime() {
   local output="$2"
   local max_advances="${3:-}"
   printf '%s\n/exit\n' "$input" |
-    env -i PATH="$PATH" ATROPOS_ROOT="$SANDBOX" \
+    runtime_env ATROPOS_ROOT="$SANDBOX" ATROPOS_VAULT_KEY="$ATROPOS_VAULT_KEY" \
       ATROPOS_SELF_HOST_MAX_ADVANCES="$max_advances" \
-      java -Datropos.installed.jar="$SANDBOX/installed/atropos.jar" -jar "$ABS_JAR" \
+      java -Djdk.lang.Process.launchMechanism=VFORK \
+        -Datropos.installed.jar="$SANDBOX/installed/atropos.jar" -jar "$ABS_JAR" \
       >"$output" 2>&1
 }
 
@@ -54,9 +69,10 @@ set +e
 (
   cd "$SANDBOX"
   printf '%s\n' "$PROMPT" |
-    env -i PATH="$PATH" ATROPOS_ROOT="$SANDBOX" \
+    runtime_env ATROPOS_ROOT="$SANDBOX" ATROPOS_VAULT_KEY="$ATROPOS_VAULT_KEY" \
       ATROPOS_SELF_HOST_MAX_ADVANCES="1" \
-      java -Datropos.installed.jar="$SANDBOX/installed/atropos.jar" -jar "$ABS_JAR"
+      java -Djdk.lang.Process.launchMechanism=VFORK \
+        -Datropos.installed.jar="$SANDBOX/installed/atropos.jar" -jar "$ABS_JAR"
 ) >"$FIRST" 2>&1 &
 PID=$!
 sleep "$KILL_AFTER_SECONDS"

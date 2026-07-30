@@ -1,6 +1,7 @@
 package atropos.core.dag
 
 import atropos.core.planning.NodeResult
+import atropos.core.security.RedactionFilter
 import java.nio.file.Path
 
 class DagNodeShellExecutor(
@@ -8,7 +9,8 @@ class DagNodeShellExecutor(
     private val store: DagStore,
     private val finisher: DagNodeFinisher,
     private val territoryViolation: (DagNode, List<String>) -> String?,
-    private val extractCandidatePaths: (String) -> List<String>
+    private val extractCandidatePaths: (String) -> List<String>,
+    private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     fun runCommand(node: DagNode, original: DagNode): DagNodeExecutionResult {
         val command = original.actionPayload ?: "echo no command specified"
@@ -46,7 +48,7 @@ class DagNodeShellExecutor(
             verifying = true,
             successMessage = "verification passed",
             failureMessage = "verification failed",
-            failureReason = { "verification failed" },
+            failureReason = { _, _ -> "verification failed" },
             crashMessage = "verify failed"
         )
 
@@ -57,7 +59,7 @@ class DagNodeShellExecutor(
             original.actionPayload ?: "./gradlew compileKotlin",
             successMessage = "gate passed",
             failureMessage = "gate failed",
-            failureReason = { exitCode -> "gate failed: exit $exitCode" },
+            failureReason = { exitCode, _ -> "gate failed: exit $exitCode" },
             crashMessage = "gate crashed"
         )
 
@@ -69,7 +71,9 @@ class DagNodeShellExecutor(
         successMessage: String?,
         failureMessage: String?,
         relatedPaths: List<String> = emptyList(),
-        failureReason: (Int) -> String = { exitCode -> "exit code $exitCode" },
+        failureReason: (Int, String) -> String = { exitCode, detail ->
+            "exit code $exitCode${detail.takeIf { it.isNotBlank() }?.let { ": $it" }.orEmpty()}"
+        },
         crashMessage: String
     ): DagNodeExecutionResult {
         val running = store.writeNode(node.copy(state = if (verifying) DagNodeState.VERIFYING else DagNodeState.RUNNING))
@@ -91,7 +95,10 @@ class DagNodeShellExecutor(
                     message = message,
                     finalState = state,
                     result = output.take(2000).ifBlank { message },
-                    failureReason = if (success) null else failureReason(exitCode)
+                    failureReason = if (success) null else failureReason(
+                        exitCode,
+                        redactionFilter.redact(output).take(MAX_FAILURE_DETAIL)
+                    )
                 ),
                 relatedPaths = relatedPaths
             )
@@ -99,5 +106,9 @@ class DagNodeShellExecutor(
         } catch (e: Exception) {
             finisher.fail(running, original, e.message ?: crashMessage)
         }
+    }
+
+    private companion object {
+        const val MAX_FAILURE_DETAIL = 500
     }
 }

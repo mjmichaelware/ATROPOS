@@ -113,6 +113,23 @@ class IsolatedWorktreeServiceTest {
     }
 
     @Test
+    fun intentToAdd_refuses_secret_bearing_staged_bytes_before_git_add() {
+        val root = Files.createTempDirectory("atropos-worktree-staged-secret-")
+        initializeGitRepo(root)
+        val service = IsolatedWorktreeService(root)
+        val created = service.createWorktree("job-secret", listOf("src"))
+        val record = created.record ?: error(created.message)
+        val target = record.worktreePath.resolve("src/Config.kt")
+        Files.createDirectories(target.parent)
+        Files.writeString(target, "package test\nconst val OPENAI_API_KEY = \"sk-ABCDEFGHIJKLMNOPQRSTUVWX\"\n")
+
+        val result = service.intentToAdd(record.id, "src/Config.kt")
+
+        assertTrue(!result.ok, result.message)
+        assertTrue(result.message.contains("secret-bearing"), result.message)
+    }
+
+    @Test
     fun verifyAndMerge_refuses_unbounded_shell_verification_command() {
         val root = Files.createTempDirectory("atropos-worktree-command-injection-")
         initializeGitRepo(root)

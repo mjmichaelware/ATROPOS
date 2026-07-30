@@ -3,6 +3,7 @@ set -euo pipefail
 
 JAR="${1:-./atropos.jar}"
 PROMPT="${2:-ATROPOS, build yourself from the inside out and run self-host Phase 11}"
+: "${ATROPOS_VAULT_KEY:?set ATROPOS_VAULT_KEY to a base64-encoded AES-256 key}"
 
 if [ ! -f "$JAR" ]; then
   echo "missing installed jar: $JAR" >&2
@@ -24,6 +25,19 @@ sanitize_text() {
     cut -c1-400
 }
 
+# Keep the proof environment secret-minimal while preserving Termux loader
+# variables required by native executables launched from the JVM.
+runtime_env() {
+  local args=(env -i "PATH=$PATH")
+  local name
+  for name in LD_LIBRARY_PATH LD_PRELOAD TERMUX_EXEC__PROC_SELF_EXE; do
+    if [ "${!name+x}" = x ]; then
+      args+=("$name=${!name}")
+    fi
+  done
+  "${args[@]}" "$@"
+}
+
 mkdir -p "$PROOF_DIR"
 cp -a "$ROOT"/. "$SANDBOX"/
 rm -rf "$SANDBOX/.git" "$SANDBOX/.atropos" "$SANDBOX/build"
@@ -43,9 +57,10 @@ set +e
 (
   cd "$SANDBOX"
   printf '%s\n/exit\n' "$PROMPT" |
-    env -i PATH="$PATH" ATROPOS_ROOT="$SANDBOX" \
+    runtime_env ATROPOS_ROOT="$SANDBOX" ATROPOS_VAULT_KEY="$ATROPOS_VAULT_KEY" \
       ATROPOS_SELF_HOST_MAX_ADVANCES="$PROOF_MAX_ADVANCES" \
-      java -Datropos.installed.jar="$SANDBOX/installed/atropos.jar" -jar "$ABS_JAR"
+      java -Djdk.lang.Process.launchMechanism=VFORK \
+        -Datropos.installed.jar="$SANDBOX/installed/atropos.jar" -jar "$ABS_JAR"
 ) 2>&1 |
   sed -E 's/(token|secret|password|api[_-]?key)[=:][^ ]*/\1=[REDACTED]/Ig' >"$OUT"
 JAVA_EXIT=${PIPESTATUS[0]}
