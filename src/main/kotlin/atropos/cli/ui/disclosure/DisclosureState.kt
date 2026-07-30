@@ -28,7 +28,6 @@ sealed interface DisclosureState {
     /** Closed. The row shows its summary line and nothing else. */
     data object Collapsed : DisclosureState {
         override val revealed: DisclosureLevel? get() = null
-        override fun toString(): String = "Collapsed"
     }
 
     /**
