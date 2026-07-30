@@ -44,6 +44,7 @@ class DagExecutionService(
     private val finisher = DagNodeFinisher(planningGraph)
     private val shellExecutor = DagNodeShellExecutor(repoRoot, store, finisher, ::territoryViolation, ::extractCandidatePaths)
     private val providerNodeExecutor = DagProviderNodeExecutor(repoRoot, agentService, memoryStore, finisher)
+    private val fileMutationExecutor = DagNodeFileMutationExecutor(store, finisher, ::normalizeCandidatePath, ::territoryViolation)
 
     fun createDag(label: String, nodes: List<DagNode>, projectId: String? = null): DagDefinition {
         val dag = store.createDag(label, nodes, projectId)
@@ -200,37 +201,7 @@ class DagExecutionService(
     }
 
     private fun executeFileMutation(node: DagNode, original: DagNode): DagNodeExecutionResult {
-        val running = store.writeNode(node.copy(state = DagNodeState.RUNNING))
-        try {
-            if (original.actionPayload.isNullOrBlank()) {
-                finisher.complete(running, NodeResult(original.id, false, "no action payload", DagNodeState.FAILED, failureReason = "no action payload"))
-                return DagNodeExecutionResult(original.id, DagNodeState.FAILED, false, "no action payload")
-            }
-
-            val parsed = parseFileMutation(original.actionPayload)
-                ?: return finisher.fail(running, original, "unsupported file mutation payload")
-            val territoryFailure = territoryViolation(original, listOf(parsed.path.toString()))
-            if (territoryFailure != null) {
-                return finisher.fail(running, original, territoryFailure)
-            }
-            parsed.path.parent?.let { java.nio.file.Files.createDirectories(it) }
-            java.nio.file.Files.writeString(parsed.path, parsed.content + "\n")
-            finisher.complete(
-                running,
-                NodeResult(
-                    nodeId = original.id,
-                    success = true,
-                    message = "file mutation applied",
-                    finalState = DagNodeState.COMPLETE,
-                    result = parsed.path.toString()
-                ),
-                relatedPaths = listOf(parsed.path.toString())
-            )
-            return DagNodeExecutionResult(original.id, DagNodeState.COMPLETE, true, "file mutation applied", parsed.path.toString())
-        } catch (e: Exception) {
-            return finisher.fail(running, original, e.message ?: "file mutation failed")
-        }
-    }
+        fileMutationExecutor.execute(node, original)
 
     private fun executeRunCommand(node: DagNode, original: DagNode): DagNodeExecutionResult =
         shellExecutor.runCommand(node, original)
@@ -353,26 +324,4 @@ class DagExecutionService(
             .map { it.value.trimEnd('.', ',', ';', ':') }
             .toList()
 
-    private fun parseFileMutation(payload: String): ParsedFileMutation? {
-        val explicit = payload.split("::", limit = 2)
-        if (explicit.size == 2 && explicit[0].isNotBlank()) {
-            return ParsedFileMutation(normalizeCandidatePath(explicit[0].trim()) ?: return null, explicit[1].trim())
-        }
-
-        val naturalLanguage = Regex(
-            """Write .*? to (?<path>(?:/tmp|src|docs|scripts|ops|\.atropos)[A-Za-z0-9_./-]+) containing exactly one line: (?<content>.+)""",
-            setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL)
-        ).find(payload)
-        if (naturalLanguage != null) {
-            val path = normalizeCandidatePath(naturalLanguage.groups["path"]?.value.orEmpty()) ?: return null
-            val content = naturalLanguage.groups["content"]?.value?.trim().orEmpty()
-            return ParsedFileMutation(path, content)
-        }
-        return null
-    }
-
-    private data class ParsedFileMutation(
-        val path: Path,
-        val content: String
-    )
 }

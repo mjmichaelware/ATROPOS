@@ -3,6 +3,7 @@ package atropos.core.artifact
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
+import java.nio.file.LinkOption
 import java.time.Instant
 
 data class JarSwapEvidence(
@@ -40,12 +41,23 @@ class SafeJarSwapGate(
         val normalizedTarget = targetJar.toAbsolutePath().normalize()
         val localEvidence = evidence.toMutableList()
 
-        if (!Files.isRegularFile(normalizedCandidate)) {
+        if (evidence.isEmpty()) {
+            localEvidence += JarSwapEvidence(false, "verification_evidence", "no independent verification evidence supplied")
+        } else if (evidence.any { !it.passed }) {
+            localEvidence += JarSwapEvidence(false, "verification_evidence", "independent verification evidence contains a failure")
+        }
+
+        if (!Files.isRegularFile(normalizedCandidate, LinkOption.NOFOLLOW_LINKS)) {
             localEvidence += JarSwapEvidence(false, "candidate_exists", "candidate jar missing: $normalizedCandidate")
         } else if (Files.size(normalizedCandidate) <= 0L) {
             localEvidence += JarSwapEvidence(false, "candidate_size", "candidate jar is empty: $normalizedCandidate")
         } else {
             localEvidence += JarSwapEvidence(true, "candidate_exists", "candidate jar exists and is non-empty")
+        }
+
+        if (Files.exists(normalizedTarget, LinkOption.NOFOLLOW_LINKS) &&
+            !Files.isRegularFile(normalizedTarget, LinkOption.NOFOLLOW_LINKS)) {
+            localEvidence += JarSwapEvidence(false, "target_regular_file", "target jar is not a regular file")
         }
 
         if (normalizedCandidate == normalizedTarget) {
@@ -70,9 +82,14 @@ class SafeJarSwapGate(
             null
         }
 
-        Files.createDirectories(normalizedTarget.parent)
-        backup?.let { Files.copy(normalizedTarget, it, StandardCopyOption.REPLACE_EXISTING) }
         return try {
+            Files.createDirectories(normalizedTarget.parent)
+            backup?.let { backupPath ->
+                if (Files.exists(backupPath, LinkOption.NOFOLLOW_LINKS)) {
+                    throw IllegalStateException("backup path already exists: $backupPath")
+                }
+                Files.copy(normalizedTarget, backupPath)
+            }
             Files.copy(normalizedCandidate, normalizedTarget, StandardCopyOption.REPLACE_EXISTING)
             JarSwapResult(
                 promoted = true,
@@ -84,8 +101,8 @@ class SafeJarSwapGate(
                 promotedAt = clock()
             )
         } catch (failure: Exception) {
-            backup?.takeIf { Files.isRegularFile(it) }?.let {
-                Files.copy(it, normalizedTarget, StandardCopyOption.REPLACE_EXISTING)
+            backup?.takeIf { Files.isRegularFile(it, LinkOption.NOFOLLOW_LINKS) }?.let {
+                runCatching { Files.copy(it, normalizedTarget, StandardCopyOption.REPLACE_EXISTING) }
             }
             JarSwapResult(
                 promoted = false,

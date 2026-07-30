@@ -17,6 +17,10 @@ object MemoryRecordCodec {
             append("\"createdAtEpochMs\":").append(record.createdAtEpochMs).append(",")
             append("\"subjectType\":\"").append(escape(record.subjectType.orEmpty())).append("\",")
             append("\"subjectId\":\"").append(escape(record.subjectId.orEmpty())).append("\",")
+            append("\"contentSha256\":\"").append(escape(record.contentSha256)).append("\",")
+            append("\"failureSignature\":\"").append(escape(record.failureSignature.orEmpty())).append("\",")
+            append("\"sourceCoordinate\":\"").append(escape(record.sourceCoordinate.orEmpty())).append("\",")
+            append("\"authority\":\"").append(record.authority.name).append("\",")
             append("\"schemaVersion\":").append(record.schemaVersion).append(",")
             append("\"redacted\":").append(record.redacted)
             append("}")
@@ -33,9 +37,30 @@ object MemoryRecordCodec {
             val createdAt = longField(line, "createdAtEpochMs") ?: 0L
             val subjectType = stringField(line, "subjectType")?.takeIf { it.isNotBlank() }
             val subjectId = stringField(line, "subjectId")?.takeIf { it.isNotBlank() }
+            val contentSha256 = stringField(line, "contentSha256") ?: ""
+            val failureSignature = stringField(line, "failureSignature")?.takeIf { it.isNotBlank() }
+            val sourceCoordinate = stringField(line, "sourceCoordinate")?.takeIf { it.isNotBlank() }
+            val authority = stringField(line, "authority")
+                ?.let { runCatching { MemoryAuthority.valueOf(it) }.getOrNull() }
+                ?: MemoryAuthority.OBSERVATION
             val schemaVersion = intField(line, "schemaVersion") ?: 1
             val redacted = booleanField(line, "redacted") ?: true
-            MemoryRecord(id, kind, title, body, tags, createdAt, subjectType, subjectId, schemaVersion, redacted)
+            MemoryRecord(
+                id = id,
+                kind = kind,
+                title = title,
+                body = body,
+                tags = tags,
+                createdAtEpochMs = createdAt,
+                subjectType = subjectType,
+                subjectId = subjectId,
+                contentSha256 = contentSha256,
+                failureSignature = failureSignature,
+                sourceCoordinate = sourceCoordinate,
+                authority = authority,
+                schemaVersion = schemaVersion,
+                redacted = redacted
+            )
         } catch (_: Exception) {
             null
         }

@@ -468,34 +468,19 @@ class AnsiTerminalEngine(
      * Help in the reference's list shape: a railed block, commands grouped by
      * their leading verb, command in full-contrast ink and description muted.
      *
-     * Previously this dumped every registry line raw — no rail, no colour, no
-     * grouping — which read as a wall of text rather than part of the product.
+     * The same rendered lines are emitted in both reactive and plain-terminal
+     * modes so help is always visible, but no provider or command execution is
+     * triggered here.
      */
-    fun renderHelp() {
-        val railGlyph = if (System.getenv("ATROPOS_ASCII").isNullOrBlank()) "\u2503" else "|"
-        val rail = theme.paint(atropos.cli.ui.design.Role.ACCENT_FOCUS, railGlyph)
-        val pad = "  "
-        val width = canvas.width.coerceAtLeast(40)
+    fun renderHelp(query: String = "") {
+        val lines = helpLines(query)
 
-        // Group by leading verb so related commands read together.
-        val groups = CommandRegistry.entries.groupBy { it.command.substringBefore(' ').trim() }
-        val labelWidth = CommandRegistry.entries
-            .maxOfOrNull { it.command.length }?.coerceAtMost(26) ?: 20
-
-        transcriptBuffer.append(rail + pad + theme.brand("COMMANDS"))
-        groups.forEach { (_, entries) ->
-            entries.forEach { entry ->
-                transcriptBuffer.append(
-                    TerminalText.ellipsize(
-                        rail + pad +
-                            theme.strong(TerminalText.padEnd(entry.command, labelWidth)) +
-                            " " + theme.subdued(entry.description),
-                        width
-                    )
-                )
-            }
+        if (!reactive) {
+            lines.forEach(::emitPlain)
+            return
         }
 
+        lines.forEach(transcriptBuffer::append)
         requestFrameLocked()
     }
 
@@ -571,4 +556,79 @@ class AnsiTerminalEngine(
             out.flush()
         }
     }
+
+    private fun helpLines(query: String): List<String> {
+        val railGlyph = if (System.getenv("ATROPOS_ASCII").isNullOrBlank()) "\u2503" else "|"
+        val rail = theme.paint(atropos.cli.ui.design.Role.ACCENT_FOCUS, railGlyph)
+        val pad = "  "
+        val width = canvas.width.coerceAtLeast(40)
+        val filter = query.trim().removePrefix("/")
+        val entries = if (filter.isBlank()) {
+            CommandRegistry.entries
+        } else {
+            CommandRegistry.search(filter)
+        }
+
+        val lines = mutableListOf<String>()
+        val labelWidth = entries
+            .maxOfOrNull { it.command.length }?.coerceAtMost(32) ?: 20
+
+        lines += rail + pad + theme.brand("COMMANDS")
+        if (filter.isNotBlank()) {
+            lines += TerminalText.ellipsize(
+                rail + pad +
+                    theme.subdued("filter: ") +
+                    theme.code(filter) +
+                    theme.subdued(" · ${entries.size} match${if (entries.size == 1) "" else "es"}"),
+                width
+            )
+        }
+
+        if (entries.isEmpty()) {
+            lines += TerminalText.ellipsize(
+                rail + pad + theme.subdued("no command matches") +
+                    if (filter.isBlank()) "" else " " + theme.code(filter),
+                width
+            )
+        } else {
+            groupCommands(entries).forEach { (group, groupedEntries) ->
+                lines += TerminalText.ellipsize(
+                    rail + pad + theme.subdued("group ") + theme.code(group),
+                    width
+                )
+                groupedEntries.forEach { entry ->
+                    lines += TerminalText.ellipsize(
+                        rail + pad +
+                            theme.strong(TerminalText.padEnd(entry.command, labelWidth)) +
+                            " " + theme.subdued(entry.description),
+                        width
+                    )
+                }
+            }
+        }
+
+        lines += TerminalText.ellipsize(
+            rail + pad + theme.subdued("? | /help | /usage | /self-host"),
+            width
+        )
+        return lines
+    }
+
+    private fun groupCommands(entries: List<atropos.cli.input.CommandEntry>): List<Pair<String, List<atropos.cli.input.CommandEntry>>> {
+        return entries
+            .sortedWith(
+                compareBy<atropos.cli.input.CommandEntry>(
+                    { commandGroup(it.command) },
+                    { it.command.length },
+                    { it.command }
+                )
+            )
+            .groupBy { commandGroup(it.command) }
+            .toSortedMap()
+            .entries
+            .map { it.key to it.value.sortedBy { entry -> entry.command } }
+    }
+
+    private fun commandGroup(command: String): String =
+        command.substringBefore(' ').trim().ifBlank { command }
 }

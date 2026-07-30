@@ -33,7 +33,10 @@ class ProviderEligibilityFilter(private val guard: FreeModeGuard, private val no
     fun evaluate(descriptor: ProviderDescriptor, quota: ProviderQuotaRecord?): ProviderEligibility {
         if (!guard.allows(descriptor)) return ProviderEligibility(descriptor, quota, false, "blocked_by_cost_policy")
         if (!descriptor.isLocal && descriptor.requiredEnv.isEmpty()) return ProviderEligibility(descriptor, quota, false, "missing_secret_contract")
-        if (quota == null) return ProviderEligibility(descriptor, quota, true, "quota_unknown")
+        if (descriptor.isLocal && quota == null) return ProviderEligibility(descriptor, quota, true, "local_ready")
+        if (quota == null) return ProviderEligibility(descriptor, quota, false, "missing_quota_record")
+        if (!descriptor.isLocal && !quota.configured) return ProviderEligibility(descriptor, quota, false, "not_configured")
+        if (!descriptor.isLocal && !quota.verified) return ProviderEligibility(descriptor, quota, false, "not_verified")
         if (quota.paidLocked && descriptor.isPaidLocked()) return ProviderEligibility(descriptor, quota, false, "paid_locked")
         if (!quota.availableAt(nowEpochMs())) return ProviderEligibility(descriptor, quota, false, quota.state.name.lowercase())
         return ProviderEligibility(descriptor, quota, true, "eligible")

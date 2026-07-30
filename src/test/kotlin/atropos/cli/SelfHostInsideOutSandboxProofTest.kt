@@ -71,6 +71,7 @@ class SelfHostInsideOutSandboxProofTest {
             val rendered = out.toString()
             assertTrue(rendered.contains("SELF-HOST RUN"), rendered)
             assertTrue(rendered.contains("self-host run promoted verified jar"), rendered)
+            assertTrue(rendered.contains("git_status_short exit=0"), rendered)
         } finally {
             restoreProperty("user.dir", oldUserDir)
             restoreProperty("atropos.installed.jar", oldInstalledJar)

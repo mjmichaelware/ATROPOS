@@ -72,6 +72,28 @@ class AgentRepairService(
             },
             fileHints = patch.extraction.touchedPaths
         )
+        val sourceRefusal = AgentProviderContextBoundary.validateSourcePack(
+            context = contextSnapshot.text,
+            sourcePackId = contextSnapshot.sourcePackId,
+            fetchReceiptId = contextSnapshot.fetchReceiptId
+        )
+        if (sourceRefusal != null) {
+            val reason = sourceRefusal.message
+            memoryStore.rememberFailure(
+                subjectType = "agent_repair",
+                subjectId = patch.id,
+                title = "agent repair source context unavailable",
+                body = reason,
+                tags = listOf("agent", "repair", "source-pack", "blocked")
+            )
+            return localPatchFailure(
+                providerName = "local_fallback",
+                contextByteCount = contextSnapshot.byteCount,
+                retryAttempted = false,
+                failureSummary = reason,
+                rejectionReason = reason
+            )
+        }
 
         return runRepairCascade(
             patchOrder = selection.patchOrder,
@@ -87,6 +109,8 @@ class AgentRepairService(
                 context = contextSnapshot.text
             ),
             contextByteCount = contextSnapshot.byteCount,
+            sourcePackId = contextSnapshot.sourcePackId,
+            fetchReceiptId = contextSnapshot.fetchReceiptId,
             sourceVerificationId = verification.id,
             noRepairMessage = "no failed verification to repair.",
             patchId = patch.id
@@ -124,6 +148,8 @@ class AgentRepairService(
         prompt: String,
         repairContext: RepairPromptContext,
         contextByteCount: Int,
+        sourcePackId: String?,
+        fetchReceiptId: String?,
         sourceVerificationId: String,
         noRepairMessage: String,
         patchId: String
@@ -152,7 +178,7 @@ class AgentRepairService(
         memoryStore.rememberRepair(
             subjectId = record.id,
             title = "agent repair route",
-            body = "verification=$sourceVerificationId\nprovider=${result.providerName}\npatch=${record.id}\ncheck=${check.statusText}",
+            body = "verification=$sourceVerificationId\nprovider=${result.providerName}\npatch=${record.id}\ncheck=${check.statusText}\nsourcePack=${sourcePackId ?: "none"}\nfetchReceipt=${fetchReceiptId ?: "none"}",
             tags = listOf("agent", "repair", "route")
         )
 
@@ -164,7 +190,9 @@ class AgentRepairService(
             patchPath = record.diffFile,
             checkResult = check,
             retryAttempted = acceptance.retryAttempted,
-            sourceVerificationId = sourceVerificationId
+            sourceVerificationId = sourceVerificationId,
+            sourcePackId = sourcePackId,
+            fetchReceiptId = fetchReceiptId
         )
     }
 
@@ -215,11 +243,17 @@ class AgentRepairService(
         prompt: String,
         repairContext: RepairPromptContext,
         patchId: String
-    ): atropos.core.ProviderCascadeResult =
-        router.completeWithCascade(
+    ): atropos.core.ProviderCascadeResult {
+        val envelope = ContextEnvelopeFactory.createSimple(
+            providerId = provider,
+            modelId = "",
+            task = repairContext.attestationTask,
+            repoRoot = collector.repoRoot
+        )
+        return router.completeWithCascade(
             requestedProvider = provider,
             prompt = prompt,
-            context = AgentPromptContract.buildRepair(
+            context = AgentPromptContract.buildRepairWithEnvelope(
                 patchId = repairContext.patchId,
                 changedPaths = repairContext.changedPaths,
                 failedCommand = repairContext.failedCommand,
@@ -228,12 +262,13 @@ class AgentRepairService(
                 stdout = repairContext.stdout,
                 stderr = repairContext.stderr,
                 context = repairContext.context,
-                providerId = provider,
-                repoRoot = collector.repoRoot
+                envelope = envelope
             ),
             providerOrderOverride = listOf(provider),
-            beforeAttempt = { candidate -> enforceProviderPolicy(candidate, prompt, patchId) }
+            beforeAttempt = { candidate -> enforceProviderPolicy(candidate, prompt, patchId) },
+            contextEnvelope = envelope
         )
+    }
 
     /**
      * Turns a repair response into a patch, but only if the provider proved it
@@ -272,12 +307,7 @@ class AgentRepairService(
      * anywhere else.
      */
     private fun attested(result: atropos.core.ProviderCascadeResult, task: String): Boolean {
-        val envelope = ContextEnvelopeFactory.createSimple(
-            providerId = result.providerName,
-            modelId = "",
-            task = task,
-            repoRoot = collector.repoRoot
-        )
+        val envelope = result.contextEnvelope ?: return false
         return when (val verified = ContextAttestationService.verify(envelope, result.response)) {
             is ContextAttestationService.VerifiedResult.Accepted -> true
             is ContextAttestationService.VerifiedResult.Rejected -> {

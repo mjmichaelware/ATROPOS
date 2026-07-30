@@ -3,12 +3,19 @@ package atropos.cli.input
 
 data class CommandEntry(
     val command: String,
-    val description: String
+    val description: String,
+    val category: String = "General",
+    val aliases: List<String> = emptyList()
+)
+
+data class CommandGroup(
+    val category: String,
+    val entries: List<CommandEntry>
 )
 
 object CommandRegistry {
-    val entries: List<CommandEntry> = listOf(
-        CommandEntry("/help", "commands"),
+    private val catalog: List<CommandEntry> = listOf(
+        CommandEntry("/help", "show command help", "System", aliases = listOf("/usage", "/?")),
         CommandEntry("/dashboard", "return to dashboard"),
         CommandEntry("/home", "return to dashboard"),
         CommandEntry("/tabs", "list open tabs"),
@@ -74,20 +81,96 @@ object CommandRegistry {
         CommandEntry("/factory", "factory status"),
         CommandEntry("/factory plan", "bounded app-factory plan"),
         CommandEntry("/factory run", "queue app-factory run"),
-        CommandEntry("/agent self-host run", "run Phase 11 self-host loop from a natural-language goal"),
-        CommandEntry("/agent self-host start", "start a durable self-hosting goal"),
-        CommandEntry("/agent self-host status", "self-hosting goal status"),
-        CommandEntry("/agent self-host watch", "watch self-hosting goal events"),
-        CommandEntry("/agent self-host resume", "resume the next ready DAG node"),
-        CommandEntry("/agent self-host recover", "recover restart state and continue self-hosting"),
-        CommandEntry("/agent self-host next", "show next autonomous self-host action"),
-        CommandEntry("/agent self-host stop", "stop a self-hosting goal"),
-        CommandEntry("/agent self-host verify", "verify self-hosting goal state"),
-        CommandEntry("/agent self-host promote", "promote a verified candidate JAR safely"),
-        CommandEntry("/agent self-host export-evidence", "export self-host evidence bundle"),
-        CommandEntry("/agent self-host history", "self-hosting goal history"),
-        CommandEntry("/agent self-host learned", "learned experiences from self-hosting"),
-        CommandEntry("/agent self-host benchmark", "self-hosting benchmark summary"),
+        CommandEntry(
+            "/self-host",
+            "shorthand for /agent self-host",
+            "Self-host",
+            aliases = listOf("/agent self-host")
+        ),
+        CommandEntry(
+            "/self-host run",
+            "run Phase 11 self-host loop from a natural-language goal",
+            "Self-host",
+            aliases = listOf("/agent self-host run")
+        ),
+        CommandEntry(
+            "/self-host start",
+            "start a durable self-hosting goal",
+            "Self-host",
+            aliases = listOf("/agent self-host start")
+        ),
+        CommandEntry(
+            "/self-host status",
+            "self-hosting goal status",
+            "Self-host",
+            aliases = listOf("/agent self-host status")
+        ),
+        CommandEntry(
+            "/self-host watch",
+            "watch self-hosting goal events",
+            "Self-host",
+            aliases = listOf("/agent self-host watch")
+        ),
+        CommandEntry(
+            "/self-host resume",
+            "resume the next ready DAG node",
+            "Self-host",
+            aliases = listOf("/agent self-host resume")
+        ),
+        CommandEntry(
+            "/self-host recover",
+            "recover restart state and continue self-hosting",
+            "Self-host",
+            aliases = listOf("/agent self-host recover")
+        ),
+        CommandEntry(
+            "/self-host next",
+            "show next autonomous self-host action",
+            "Self-host",
+            aliases = listOf("/agent self-host next")
+        ),
+        CommandEntry(
+            "/self-host stop",
+            "stop a self-hosting goal",
+            "Self-host",
+            aliases = listOf("/agent self-host stop")
+        ),
+        CommandEntry(
+            "/self-host verify",
+            "verify self-hosting goal state",
+            "Self-host",
+            aliases = listOf("/agent self-host verify")
+        ),
+        CommandEntry(
+            "/self-host promote",
+            "promote a verified candidate JAR safely",
+            "Self-host",
+            aliases = listOf("/agent self-host promote")
+        ),
+        CommandEntry(
+            "/self-host export-evidence",
+            "export self-host evidence bundle",
+            "Self-host",
+            aliases = listOf("/agent self-host export-evidence")
+        ),
+        CommandEntry(
+            "/self-host history",
+            "self-hosting goal history",
+            "Self-host",
+            aliases = listOf("/agent self-host history")
+        ),
+        CommandEntry(
+            "/self-host learned",
+            "learned experiences from self-hosting",
+            "Self-host",
+            aliases = listOf("/agent self-host learned")
+        ),
+        CommandEntry(
+            "/self-host benchmark",
+            "self-hosting benchmark summary",
+            "Self-host",
+            aliases = listOf("/agent self-host benchmark")
+        ),
         CommandEntry("/memory", "memory status"),
         CommandEntry("/paid", "paid emergency gate"),
         CommandEntry("/paid status", "paid emergency status"),
@@ -157,7 +240,11 @@ object CommandRegistry {
         CommandEntry("/autonomous backlog", "show autonomous task backlog"),
         CommandEntry("/autonomous repairs", "show repair history"),
         CommandEntry("/autonomous failovers", "show provider failover history")
-    ).distinctBy { it.command }
+    )
+
+    val entries: List<CommandEntry> = catalog
+        .flatMap { it.expandedEntries() }
+        .distinctBy { it.command }
 
     val providers: List<String> = listOf(
         "anthropic",
@@ -190,26 +277,123 @@ object CommandRegistry {
     fun commands(): List<String> =
         entries.map { it.command }
 
+    fun quickAccessCommands(): List<String> =
+        listOf(
+            "/help",
+            "/usage",
+            "/?",
+            "/status",
+            "/self-host",
+            "/agent self-host",
+            "/providers",
+            "/route",
+            "/use",
+            "/verify",
+            "/exit"
+        )
+
+    fun helpSections(): List<CommandGroup> =
+        catalog
+            .groupBy { it.category }
+            .toSortedMap()
+            .map { (category, commands) ->
+                CommandGroup(
+                    category = category,
+                    entries = commands.sortedWith(
+                        compareBy<CommandEntry>({ it.command.length }, { it.command })
+                    )
+                )
+            }
+
     fun helpLines(): List<String> =
-        entries.map {
-            "  ${it.command.padEnd(26)} ${it.description}"
-        }
+        buildList {
+            helpSections().forEach { group ->
+                add("[${group.category}]")
+                group.entries.forEach { entry ->
+                    add("  ${entry.command.padEnd(26)} ${entry.description}${entry.aliasSummary()}")
+                }
+                add("")
+            }
+        }.dropLastWhile { it.isBlank() }
 
     fun slashMatches(query: String): List<CommandEntry> {
-        val normalized = query.trimStart()
-        if (!normalized.startsWith("/")) return emptyList()
+        return search(query)
+    }
+
+    fun search(query: String): List<CommandEntry> {
+        val normalized = query.trim()
+        if (normalized.isBlank()) return emptyList()
 
         val bare = normalized.removePrefix("/")
-        return entries.filter { entry ->
-            entry.command.startsWith(normalized) ||
-                entry.command.contains(
-                    normalized,
-                    ignoreCase = true
-                ) ||
-                entry.description.contains(
-                    bare,
-                    ignoreCase = true
+        return catalog
+            .mapNotNull { entry ->
+                val score = entry.matchScore(bare) ?: return@mapNotNull null
+                score to entry
+            }
+            .sortedWith(
+                compareBy<Pair<Int, CommandEntry>>(
+                    { it.first },
+                    { it.second.command.length },
+                    { it.second.command }
                 )
+            )
+            .flatMap { it.second.expandedEntries() }
+            .distinctBy { it.command }
+    }
+
+    private fun CommandEntry.expandedEntries(): List<CommandEntry> =
+        buildList {
+            add(this@expandedEntries)
+            aliases.forEach { alias ->
+                add(
+                    CommandEntry(
+                        command = alias,
+                        description = description,
+                        category = category,
+                        aliases = listOf(command) + aliases.filterNot { it == alias }
+                    )
+                )
+            }
+        }
+
+    private fun CommandEntry.matchScore(query: String): Int? {
+        val commandText = command.removePrefix("/")
+        val aliasTextMatches = aliases.any { alias ->
+            aliasText(alias).contains(query, ignoreCase = true)
+        }
+        val aliasPrefixMatches = aliases.any { alias ->
+            aliasText(alias).startsWith(query, ignoreCase = true)
+        }
+        val aliasExactMatches = aliases.any { alias ->
+            aliasText(alias).equals(query, ignoreCase = true)
+        }
+        val descriptionMatches = description.contains(query, ignoreCase = true)
+        val commandStarts = commandText.startsWith(query, ignoreCase = true)
+        val commandContains = commandText.contains(query, ignoreCase = true)
+
+        if (!commandStarts && !commandContains && !aliasTextMatches && !descriptionMatches) {
+            return null
+        }
+
+        return when {
+            commandText.equals(query, ignoreCase = true) -> 0
+            aliasExactMatches -> 1
+            commandStarts -> 2
+            aliasPrefixMatches -> 3
+            commandContains -> 4
+            aliasTextMatches -> 5
+            descriptionMatches -> 6
+            else -> 7
         }
     }
+
+    private fun aliasText(alias: String): String =
+        alias.removePrefix("/")
+
+    private fun CommandEntry.aliasSummary(): String =
+        if (aliases.isEmpty()) {
+            ""
+        } else {
+            " (aliases: ${aliases.joinToString(", ")})"
+        }
 }

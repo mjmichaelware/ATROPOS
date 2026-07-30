@@ -1,13 +1,11 @@
 package atropos.cli.commands
 
 import atropos.cli.ui.AnsiTerminalEngine
-import atropos.cli.ui.AgentJobRenderer
 import atropos.cli.ui.AgentQueueRenderer
 import atropos.cli.ui.TerminalTheme
 import atropos.cli.config.ConfigurationManager
 import atropos.core.AtroposConfig
 import atropos.core.AtroposRepoRootLocator
-import atropos.core.agent.AgentPatchExtractor
 import atropos.core.agent.AgentDaemonService
 import atropos.core.agent.AgentQueueService
 import atropos.core.agent.AgentService
@@ -55,13 +53,7 @@ class AgentCommand(
 ) : AgentCommandHandler {
     private val repoRoot = AtroposRepoRootLocator.resolve()
     private val selfHostHandler: SelfHostCommand = SelfHostCommand(ui, config, repoRoot)
-    private val patchExtractor = AgentPatchExtractor()
-    private val attestationRenderer = atropos.cli.ui.ContextAttestationRenderer(TerminalTheme(ConfigurationManager()))
-    private val jobRenderer = AgentJobRenderer(TerminalTheme(ConfigurationManager()))
     private val queueRenderer = AgentQueueRenderer(TerminalTheme(ConfigurationManager()))
-    private val patchDirectory = repoRoot.resolve(".atropos/agent/patches").normalize()
-    private val jobSummaryMapper = AgentJobSummaryMapper(patchDirectory, patchExtractor)
-    private val patchDisplay = AgentPatchDisplayHelper(patchExtractor)
     private val daemonHandler = AgentDaemonCommandHandler(
         ui = ui,
         daemonService = daemonService,
@@ -92,9 +84,26 @@ class AgentCommand(
         sessionStore = sessionStore,
         activeProviderName = activeProviderName
     )
+    private val jobHandler = AgentJobCommandHandler(
+        ui = ui,
+        repoRoot = repoRoot,
+        service = service,
+        runService = runService,
+        queueService = queueService,
+        activeProviderName = activeProviderName,
+        terminalWidth = ::terminalWidth,
+        currentPatchId = { lastKnownPatchId },
+        invalid = ::invalid
+    )
+    private val patchHandler = AgentPatchCommandHandler(
+        ui = ui,
+        service = service,
+        identityResponder = identityResponder,
+        activeProviderName = activeProviderName,
+        currentPatchId = { lastKnownPatchId },
+        invalid = ::invalid
+    )
     private val selfHostNaturalLanguageRouter = SelfHostNaturalLanguageRouter()
-
-    private companion object { const val ATTESTATION_WIDTH = 80 }
 
     /** Last patch id ATROPOS has knowledge of, surfaced to the status line. Never implies a patch was applied. */
     var lastKnownPatchId: String? = null
@@ -110,40 +119,15 @@ class AgentCommand(
 
         return when (tokens[1].lowercase()) {
             "run" -> {
-                val runRequest = AgentCommandParser.parseRunRequest(tokens.drop(2))
-                if (runRequest.task.isBlank()) {
-                    return invalid("usage: /agent run [--smoke <command>] <task>")
-                }
-
-                ui.startSpinner("Planning durable agent job")
-                return try {
-                    val result = runService.run(activeProviderName(), runRequest.task, runRequest.smokeCommand)
-                    lastKnownPatchId = result.appliedPatchId ?: result.patchId ?: lastKnownPatchId
-                    val rendered = AgentCommandText.renderRendererOutput(
-                        jobRenderer.renderRunSummary(jobSummaryMapper.toJobSummary(result), terminalWidth())
-                    )
-                    ui.renderNotice(rendered)
-                    AgentCommandOutcome.Completed(rendered)
-                } catch (failure: Exception) {
-                    val message = failure.message ?: "agent run failed"
-                    ui.renderError(message)
-                    AgentCommandOutcome.Invalid(message)
-                } finally {
-                    ui.stopSpinner()
-                }
+                val result = jobHandler.run(tokens.drop(2))
+                lastKnownPatchId = result.lastKnownPatchId ?: lastKnownPatchId
+                result.outcome
             }
 
             "enqueue" -> {
-                val request = AgentCommandParser.parseRunRequest(tokens.drop(2))
-                if (request.task.isBlank()) {
-                    return invalid("usage: /agent enqueue [--smoke <command>] <task>")
-                }
-                val record = queueService.enqueue(request.task, request.smokeCommand)
-                val rendered = AgentCommandText.renderRendererOutput(
-                    queueRenderer.renderDetail(record, terminalWidth())
-                )
-                ui.renderNotice(rendered)
-                AgentCommandOutcome.Completed(rendered)
+                val result = jobHandler.enqueue(tokens.drop(2))
+                lastKnownPatchId = result.lastKnownPatchId ?: lastKnownPatchId
+                result.outcome
             }
 
             "queue" -> {
@@ -155,220 +139,51 @@ class AgentCommand(
             "daemon" -> daemonHandler.execute(tokens.drop(2))
 
             "status" -> {
-                val snapshot = service.status(activeProviderName())
-                lastKnownPatchId = snapshot.lastPatchId ?: lastKnownPatchId
-                val rendered = AgentCommandText.formatBlock("AGENT STATUS", snapshot.render())
-                ui.renderNotice(rendered)
-                // Requirement 5: typed context failures must be explicit, not
-                // only journaled. Surfaces the last recorded attestation failure.
-                ui.renderNotice(
-                    attestationRenderer.renderStatusRowsFromMemory(ATTESTATION_WIDTH)
-                        .joinToString("\n")
-                )
-                AgentCommandOutcome.Completed(rendered)
+                val result = jobHandler.status()
+                lastKnownPatchId = result.lastKnownPatchId ?: lastKnownPatchId
+                result.outcome
             }
 
             "jobs" -> {
-                val jobs = runService.listJobs()
-                val rendered = AgentCommandText.renderRendererOutput(
-                    jobRenderer.renderJobsList(jobs.map { jobSummaryMapper.toJobSummary(it) }, terminalWidth())
-                )
-                ui.renderNotice(rendered)
-                AgentCommandOutcome.Completed(rendered)
+                val result = jobHandler.jobs()
+                lastKnownPatchId = result.lastKnownPatchId ?: lastKnownPatchId
+                result.outcome
             }
 
             "job" -> {
-                val jobRequest = AgentCommandParser.parseJobRequest(tokens.drop(2))
-                val jobReference = jobRequest.reference
-                if (jobReference == null) {
-                    return invalid("usage: /agent job [<id|latest>] [--raw]")
-                }
-
-                val job = runService.resolveJob(jobReference)
-                    ?: return invalid("job not found: $jobReference")
-                val rendered = if (jobRequest.raw) {
-                    AgentCommandText.formatBlock("AGENT JOB RAW", job.render())
-                } else {
-                    buildString {
-                        append(
-                            AgentCommandText.renderRendererOutput(
-                                jobRenderer.renderJobDetail(
-                                    jobSummaryMapper.toJobSummary(job),
-                                    jobSummaryMapper.timelineEntries(job),
-                                    terminalWidth()
-                                )
-                            )
-                        )
-                        appendLine()
-                        append("raw: /agent job ${job.id} --raw")
-                    }.trimEnd()
-                }
-                ui.renderNotice(rendered)
-                AgentCommandOutcome.Completed(rendered)
+                val result = jobHandler.job(tokens.drop(2))
+                lastKnownPatchId = result.lastKnownPatchId ?: lastKnownPatchId
+                result.outcome
             }
 
             "verify" -> {
-                val patchReference = AgentCommandParser.parseReference(tokens.drop(2))
-                if (patchReference == null) {
-                    return invalid("usage: /agent verify [<patch-id|latest>]")
-                }
-
-                ui.startSpinner("Running deterministic verification")
-                return try {
-                    val result = service.verify(patchReference)
-                    lastKnownPatchId = result.patchId ?: lastKnownPatchId
-                    val rendered = AgentCommandText.formatBlock("AGENT VERIFY", result.render())
-                    ui.renderNotice(rendered)
-                    AgentCommandOutcome.Completed(rendered)
-                } catch (failure: Exception) {
-                    val message = failure.message ?: "agent verify failed"
-                    ui.renderError(message)
-                    AgentCommandOutcome.Invalid(message)
-                } finally {
-                    ui.stopSpinner()
-                }
+                val result = jobHandler.verify(tokens.drop(2))
+                lastKnownPatchId = result.lastKnownPatchId ?: lastKnownPatchId
+                result.outcome
             }
 
             "ask" -> {
-                val task = tokens.drop(2).joinToString(" ").trim()
-                if (task.isBlank()) {
-                    return invalid("usage: /agent ask <task>")
-                }
-
-                // Short-input handler for ATROPOS identity queries
-                val shortInputResult = identityResponder.respond(task)
-                if (shortInputResult != null) {
-                    val rendered = AgentCommandText.formatBlock("AGENT ASK", shortInputResult)
-                    ui.renderNotice(rendered)
-                    return AgentCommandOutcome.Completed(rendered)
-                }
-
-                ui.startSpinner("Collecting repo context")
-                return try {
-                    val result = service.ask(activeProviderName(), task)
-                    val rendered = AgentCommandText.formatBlock("AGENT ASK", result.render())
-                    ui.renderNotice(rendered)
-                    AgentCommandOutcome.Completed(rendered)
-                } catch (failure: Exception) {
-                    val message = failure.message ?: "agent ask failed"
-                    ui.renderError(message)
-                    AgentCommandOutcome.Invalid(message)
-                } finally {
-                    ui.stopSpinner()
-                }
+                val result = patchHandler.ask(tokens.drop(2))
+                lastKnownPatchId = result.lastKnownPatchId ?: lastKnownPatchId
+                result.outcome
             }
 
             "repair" -> {
-                val patchReference = AgentCommandParser.parseReference(tokens.drop(2))
-                if (patchReference == null) {
-                    return invalid("usage: /agent repair [<patch-id|latest>]")
-                }
-
-                val preview = service.previewRepair(patchReference)
-                if (preview != null) {
-                    val rendered = AgentCommandText.formatBlock("AGENT REPAIR", preview.render())
-                    ui.renderNotice(rendered)
-                    return AgentCommandOutcome.Completed(rendered)
-                }
-
-                ui.startSpinner("Preparing repair patch")
-                return try {
-                    val result = service.repair(activeProviderName(), patchReference)
-                    lastKnownPatchId = result.patchId ?: lastKnownPatchId
-                    val rendered = AgentCommandText.formatBlock("AGENT REPAIR", result.render())
-                    ui.renderNotice(rendered)
-                    AgentCommandOutcome.Completed(rendered)
-                } catch (failure: Exception) {
-                    val message = failure.message ?: "agent repair failed"
-                    ui.renderError(message)
-                    AgentCommandOutcome.Invalid(message)
-                } finally {
-                    ui.stopSpinner()
-                }
+                val result = patchHandler.repair(tokens.drop(2))
+                lastKnownPatchId = result.lastKnownPatchId ?: lastKnownPatchId
+                result.outcome
             }
 
             "patch" -> {
-                val patchRequest = AgentCommandParser.parsePatchRequest(tokens.drop(2))
-                val task = patchRequest.task
-                if (task.isBlank()) {
-                    return invalid("usage: /agent patch [--provider <name>] <task>")
-                }
-                if (patchRequest.providerOverride != null && patchRequest.providerOverride !in patchProviderAllowList) {
-                    return invalid("/agent patch provider override must be one of: ${patchProviderAllowList.joinToString(", ")}")
-                }
-
-                ui.startSpinner("Collecting repo context")
-                return try {
-                    val result = service.patch(activeProviderName(), task, patchRequest.providerOverride)
-                    lastKnownPatchId = result.patchId ?: lastKnownPatchId
-                    val body = buildString {
-                        append(result.render())
-                        patchDisplay.changedPathsPreview(result.patchPath)?.let {
-                            appendLine()
-                            append("Changed paths: $it")
-                        }
-                        appendLine()
-                        append("Next command: ${patchDisplay.nextPatchCommand(result)}")
-                    }
-                    val rendered = AgentCommandText.formatBlock("AGENT PATCH", body)
-                    ui.renderNotice(rendered)
-                    AgentCommandOutcome.Completed(rendered)
-                } catch (failure: Exception) {
-                    val message = failure.message ?: "agent patch failed"
-                    ui.renderError(message)
-                    AgentCommandOutcome.Invalid(message)
-                } finally {
-                    ui.stopSpinner()
-                }
+                val result = patchHandler.patch(tokens.drop(2))
+                lastKnownPatchId = result.lastKnownPatchId ?: lastKnownPatchId
+                result.outcome
             }
 
             "apply" -> {
-                val applyRequest = AgentCommandParser.parseApplyRequest(tokens.drop(2))
-                if (applyRequest.patchReference.isBlank()) {
-                    return invalid("usage: /agent apply [--check|--verify] <patch-id|latest>")
-                }
-                if (applyRequest.checkOnly && applyRequest.verifyAfterApply) {
-                    return invalid("/agent apply supports either --check or --verify, not both")
-                }
-
-                ui.startSpinner(
-                    when {
-                        applyRequest.checkOnly -> "Validating stored patch"
-                        applyRequest.verifyAfterApply -> "Applying and verifying stored patch"
-                        else -> "Applying stored patch"
-                    }
-                )
-                return try {
-                    val result = service.applyPatch(
-                        applyRequest.patchReference,
-                        applyRequest.checkOnly,
-                        applyRequest.verifyAfterApply
-                    )
-                    lastKnownPatchId = result.patchId ?: lastKnownPatchId
-                    val body = buildString {
-                        append(result.render())
-                        if (result.applied) {
-                            appendLine()
-                            append("No commit created: changes are in the working tree only.")
-                        }
-                    }
-                    val rendered = AgentCommandText.formatBlock(
-                        when {
-                            applyRequest.checkOnly -> "AGENT APPLY --CHECK"
-                            applyRequest.verifyAfterApply -> "AGENT APPLY --VERIFY"
-                            else -> "AGENT APPLY"
-                        },
-                        body
-                    )
-                    ui.renderNotice(rendered)
-                    AgentCommandOutcome.Completed(rendered)
-                } catch (failure: Exception) {
-                    val message = failure.message ?: "agent apply failed"
-                    ui.renderError(message)
-                    AgentCommandOutcome.Invalid(message)
-                } finally {
-                    ui.stopSpinner()
-                }
+                val result = patchHandler.apply(tokens.drop(2))
+                lastKnownPatchId = result.lastKnownPatchId ?: lastKnownPatchId
+                result.outcome
             }
 
             "session" -> sessionHandler.execute(tokens.drop(2))
@@ -392,8 +207,6 @@ class AgentCommand(
 
     private fun agentUsage(): String =
         "usage: /agent [status|run|enqueue|queue|daemon|jobs|job|ask|patch|apply|verify|repair|session|runs|watch|tree|transcript|diff|tests|observe|dag|recover|worktree|gate|policy|goal|self-host]"
-
-    private val patchProviderAllowList = setOf("github_models", "sambanova", "cloudflare_ai", "groq")
 
     private fun terminalWidth(): Int =
         System.getenv("COLUMNS")?.toIntOrNull()?.coerceAtLeast(40) ?: 80

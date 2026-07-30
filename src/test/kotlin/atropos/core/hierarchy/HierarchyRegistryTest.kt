@@ -58,7 +58,11 @@ class HierarchyRegistryTest {
     @Test
     fun dispatchCarriesSourceTerritoryBudgetAcceptanceRollbackAndParentAuthority() {
         val reg = HierarchyRegistry()
-        val manager = AgentRecord(name = "manager", role = HierarchyRole.MANAGER)
+        val manager = AgentRecord(
+            name = "manager",
+            role = HierarchyRole.MANAGER,
+            territoryId = "src/main/kotlin/atropos/core"
+        )
         val worker = AgentRecord(
             name = "worker",
             role = HierarchyRole.WORKER,
@@ -82,7 +86,47 @@ class HierarchyRegistryTest {
         assertTrue(result is HierarchyDispatchResult.Accepted)
         assertEquals(AgentStatus.ASSIGNED, reg.get(worker.id)?.status)
         assertEquals(contract.taskId, reg.get(worker.id)?.currentTaskId)
+        assertEquals("src/main/kotlin/atropos/core/agent", reg.get(worker.id)?.territoryId)
         assertEquals(listOf(contract), reg.dispatchHistory())
+    }
+
+    @Test
+    fun humanOwnerIsFinalAuthorityAndDispatchTerritoryMustNarrow() {
+        val reg = HierarchyRegistry()
+        val owner = AgentRecord(name = "human", role = HierarchyRole.HUMAN_OWNER, territoryId = "root")
+        val director = AgentRecord(name = "director", role = HierarchyRole.DIRECTOR, capabilities = listOf("decompose"))
+        val manager = AgentRecord(name = "manager", role = HierarchyRole.MANAGER, territoryId = "src/main/kotlin/atropos/core")
+        val worker = AgentRecord(name = "worker", role = HierarchyRole.WORKER, capabilities = listOf("kotlin"))
+        listOf(owner, director, manager, worker).forEach(reg::register)
+
+        val ownerDispatch = reg.dispatch(
+            HierarchyDispatchContract(
+                parentAuthorityId = owner.id,
+                assigneeId = director.id,
+                sourceCoordinates = listOf("source:S1@L1-L2"),
+                territory = listOf("src/main/kotlin/atropos"),
+                capabilities = listOf("decompose"),
+                budgetTokens = 100,
+                acceptanceCriteria = listOf("bounded plan"),
+                rollbackPlan = "no source mutation"
+            )
+        )
+        val broadWorkerDispatch = reg.dispatch(
+            HierarchyDispatchContract(
+                parentAuthorityId = manager.id,
+                assigneeId = worker.id,
+                sourceCoordinates = listOf("source:S2@L1-L2"),
+                territory = listOf("src/main/kotlin/atropos/cli"),
+                capabilities = listOf("kotlin"),
+                budgetTokens = 100,
+                acceptanceCriteria = listOf("bounded diff"),
+                rollbackPlan = "revert exact files"
+            )
+        )
+
+        assertTrue(ownerDispatch is HierarchyDispatchResult.Accepted)
+        assertTrue(broadWorkerDispatch is HierarchyDispatchResult.Refused)
+        assertTrue((broadWorkerDispatch as HierarchyDispatchResult.Refused).reason.contains("outside parent scope"))
     }
 
     @Test

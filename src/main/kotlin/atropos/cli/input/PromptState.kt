@@ -72,7 +72,7 @@ class PromptState(
     }
 
     fun suggestionSelection(): Int =
-        if (isSlashSuggestionActive()) slashSelection else 0
+        if (isCommandSuggestionActive()) slashSelection else 0
 
     fun clampSuggestionSelection(maximumInclusive: Int) {
         slashSelection = slashSelection.coerceIn(
@@ -137,7 +137,7 @@ class PromptState(
             }
 
             KeyEvent.ArrowUp -> {
-                if (isSlashSuggestionActive()) {
+                if (isCommandSuggestionActive()) {
                     slashSelection =
                         (slashSelection - 1).coerceAtLeast(0)
                 } else {
@@ -148,7 +148,7 @@ class PromptState(
             }
 
             KeyEvent.ArrowDown -> {
-                if (isSlashSuggestionActive()) {
+                if (isCommandSuggestionActive()) {
                     slashSelection++
                 } else {
                     historyDown()
@@ -475,7 +475,7 @@ class PromptState(
         }
     }
 
-    private fun isSlashSuggestionActive(): Boolean {
+    private fun isCommandSuggestionActive(): Boolean {
         if (slashDismissed) return false
 
         val beforeCursor = buffer.substring(
@@ -483,8 +483,8 @@ class PromptState(
             cursor.coerceIn(0, buffer.length)
         ).trimStart()
 
-        return beforeCursor.startsWith("/") &&
-            beforeCursor.none(Char::isWhitespace) &&
-            !beforeCursor.contains('\n')
+        return beforeCursor.none(Char::isWhitespace) &&
+            !beforeCursor.contains('\n') &&
+            CommandRegistry.search(beforeCursor).isNotEmpty()
     }
 }

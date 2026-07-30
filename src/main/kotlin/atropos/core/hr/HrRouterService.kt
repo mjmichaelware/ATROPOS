@@ -34,8 +34,12 @@ class HrRouterService(
 
         val entry = HrRouterAuditEntry(
             requestId = request.id, sourceOwnerId = request.sourceOwnerId,
-            targetOwnerId = request.targetOwnerId, kind = request.kind,
+            sourceTerritoryId = request.sourceTerritoryId,
+            targetOwnerId = request.targetOwnerId,
+            targetTerritoryId = request.targetTerritoryId,
+            kind = request.kind,
             risk = risk, approved = approved, action = action, reason = reason,
+            requestedPaths = request.requestedPaths.take(20).map(redactionFilter::redact),
             timestamp = Instant.now()
         )
         auditLog += entry

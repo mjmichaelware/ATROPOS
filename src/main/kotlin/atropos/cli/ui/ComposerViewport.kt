@@ -3,6 +3,7 @@ package atropos.cli.ui
 
 import atropos.cli.ui.design.Glyphs
 import atropos.cli.ui.design.Role
+import atropos.cli.input.CommandRegistry
 
 data class ComposerSnapshot(
     val line: String,
@@ -110,9 +111,9 @@ class ComposerViewport(
         val value = buffer.trimStart()
         return value
             .takeIf {
-                it.startsWith("/") &&
-                    !it.contains(' ') &&
-                    !it.contains('\n')
+                !it.contains(' ') &&
+                    !it.contains('\n') &&
+                    CommandRegistry.search(it).isNotEmpty()
             }
             ?.let {
                 CommandPaletteQuery(it, paletteSelection)

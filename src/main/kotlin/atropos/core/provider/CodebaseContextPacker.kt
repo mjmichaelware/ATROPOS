@@ -12,6 +12,8 @@ class CodebaseContextPacker(
     private val fetcher: SourceBindingFetcher = SourceBindingFetcher(repoRoot),
     private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
+    private val pendingPackId = "pack-0000000000000000"
+
     fun pack(request: SourcePackRequest): SourcePackResult {
         if (request.allowedPaths.isEmpty()) {
             return SourcePackResult.Refused("source context pack requires at least one allowed path")
@@ -37,7 +39,7 @@ class CodebaseContextPacker(
         val builder = StringBuilder(request.maxBytes)
         var truncated = false
         var redacted = false
-        appendBounded(builder, "SOURCE_PACK_ID=pending\n", request.maxBytes) { truncated = true }
+        appendBounded(builder, "SOURCE_PACK_ID=$pendingPackId\n", request.maxBytes) { truncated = true }
         appendBounded(builder, "FETCH_RECEIPT_ID=${fetched.receipt.id}\n", request.maxBytes) { truncated = true }
         appendBounded(builder, "BINDING=${fetched.receipt.bindingKind}\n", request.maxBytes) { truncated = true }
         appendBounded(builder, "TREE_HASH=${fetched.receipt.treeHash}\n", request.maxBytes) { truncated = true }
@@ -45,7 +47,8 @@ class CodebaseContextPacker(
 
         val packedPaths = mutableListOf<String>()
         for (relative in included) {
-            if (builder.toString().toByteArray(StandardCharsets.UTF_8).size >= request.maxBytes) {
+            val currentBytes = builder.byteCount()
+            if (currentBytes >= request.maxBytes) {
                 truncated = true
                 break
             }
@@ -57,6 +60,11 @@ class CodebaseContextPacker(
             val report = redactionFilter.report(body)
             redacted = redacted || report.changed
             val section = "FILE $relative\n${report.redacted}\nEND FILE\n\n"
+            val minimumSectionBytes = "FILE $relative\n".toByteArray(StandardCharsets.UTF_8).size + 1
+            if (request.maxBytes - currentBytes < minimumSectionBytes) {
+                truncated = true
+                break
+            }
             appendBounded(builder, section, request.maxBytes) { truncated = true }
             packedPaths += relative
         }
@@ -67,7 +75,7 @@ class CodebaseContextPacker(
         val initial = builder.toString()
         val contentHash = sha256(initial)
         val packId = "pack-${contentHash.take(16)}"
-        val text = initial.replace("SOURCE_PACK_ID=pending", "SOURCE_PACK_ID=$packId")
+        val text = initial.replace("SOURCE_PACK_ID=$pendingPackId", "SOURCE_PACK_ID=$packId")
         val bytes = text.toByteArray(StandardCharsets.UTF_8).size
         return SourcePackResult.Packed(
             CodebaseContextPack(
@@ -94,11 +102,38 @@ class CodebaseContextPacker(
         if (bytes.size <= remaining) {
             builder.append(text)
         } else {
-            builder.append(String(bytes, 0, remaining, StandardCharsets.UTF_8))
-            builder.appendLine()
-            builder.appendLine("[source context truncated]")
+            val marker = "\n[source context truncated]\n"
+            val markerBytes = marker.toByteArray(StandardCharsets.UTF_8).size
+            val bodyLimit = (remaining - markerBytes).coerceAtLeast(0)
+            builder.append(text.utf8Prefix(bodyLimit))
+            if (markerBytes <= remaining - builder.lastAppendByteCount(current)) {
+                builder.append(marker)
+            }
             onTruncated()
         }
+    }
+
+    private fun StringBuilder.lastAppendByteCount(previousBytes: Int): Int =
+        byteCount() - previousBytes
+
+    private fun StringBuilder.byteCount(): Int =
+        toString().toByteArray(StandardCharsets.UTF_8).size
+
+    private fun String.utf8Prefix(maxBytes: Int): String {
+        if (maxBytes <= 0) return ""
+        val out = StringBuilder()
+        var used = 0
+        var index = 0
+        while (index < length) {
+            val codePoint = codePointAt(index)
+            val text = String(Character.toChars(codePoint))
+            val size = text.toByteArray(StandardCharsets.UTF_8).size
+            if (used + size > maxBytes) break
+            out.append(text)
+            used += size
+            index += Character.charCount(codePoint)
+        }
+        return out.toString()
     }
 
     private fun sha256(value: String): String =

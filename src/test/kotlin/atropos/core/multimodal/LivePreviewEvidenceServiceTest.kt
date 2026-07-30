@@ -43,4 +43,24 @@ class LivePreviewEvidenceServiceTest {
         assertEquals("static-preview:factory-proof", persisted?.source)
         assertTrue(result.inspection?.passed == true)
     }
+
+    @Test
+    fun staticHtmlPreviewFailsClosedForBlankOrVisibleErrorStates() {
+        val root = Files.createTempDirectory("atropos-static-preview-fail-")
+        val service = LivePreviewEvidenceService(
+            BrowserActuator(
+                repoRoot = root,
+                snapshotService = SnapshotService(SnapshotStore(root), root)
+            )
+        )
+
+        val blank = service.captureStaticHtml("blank", "   ")
+        val error = service.captureStaticHtml("error", "<main>Runtime Error: failed</main>")
+
+        assertEquals(BrowserEvidenceStatus.FAILED, blank.status)
+        assertFalse(blank.ok)
+        assertEquals(BrowserEvidenceStatus.CAPTURED, error.status)
+        assertFalse(error.ok)
+        assertEquals(InspectionSeverity.CRITICAL, error.inspection?.severity)
+    }
 }

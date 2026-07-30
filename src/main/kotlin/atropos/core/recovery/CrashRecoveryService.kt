@@ -12,6 +12,7 @@ import atropos.core.agent.ProviderSessionSupervisor
 import atropos.core.dag.DagExecutionService
 import atropos.core.dag.DagStore
 import atropos.core.memory.LocalMemoryStore
+import atropos.core.security.RedactionFilter
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
@@ -46,7 +47,8 @@ class CrashRecoveryService(
     private val dagStore: DagStore = DagStore(repoRoot),
     private val memoryStore: LocalMemoryStore = LocalMemoryStore(repoRoot.resolve(".atropos/memory").toFile()),
     private val daemonService: AgentDaemonService = AgentDaemonService(config),
-    private val clock: () -> Instant = { Instant.now() }
+    private val clock: () -> Instant = { Instant.now() },
+    private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     fun recover(): RecoveryReport {
         val errors = mutableListOf<String>()
@@ -58,7 +60,7 @@ class CrashRecoveryService(
             val result = queueRecovery.recover()
             staleQueues = result.transitions.size
         }.getOrElse {
-            errors.add("queue recovery: ${it.message}")
+            errors.add(safeError("queue recovery", it))
         }
 
         // 2. Recover stale sessions
@@ -69,13 +71,13 @@ class CrashRecoveryService(
                 sessionSupervisor.recoverStaleSession(session.id)
                 staleSessions++
             }
-        }.onFailure { errors.add("session recovery: ${it.message}") }
+        }.onFailure { errors.add(safeError("session recovery", it)) }
 
         // 3. Recover stale DAG claims
         var staleDagClaims = 0
         runCatching {
             staleDagClaims = dagService.recoverStaleClaims()
-        }.onFailure { errors.add("dag recovery: ${it.message}") }
+        }.onFailure { errors.add(safeError("dag recovery", it)) }
 
         // 4. Handle interrupted goal runs
         var interruptedRuns = 0
@@ -100,7 +102,7 @@ class CrashRecoveryService(
                     }
                 }
             }
-        }.onFailure { errors.add("goal run recovery: ${it.message}") }
+        }.onFailure { errors.add(safeError("goal run recovery", it)) }
 
         // 5. Check for interrupted writes by looking for .tmp files
         var completedMutationsSkipped = 0
@@ -115,7 +117,7 @@ class CrashRecoveryService(
                     completedMutationsSkipped++
                 }
             }
-        }.onFailure { errors.add("tmp file cleanup: ${it.message}") }
+        }.onFailure { errors.add(safeError("tmp file cleanup", it)) }
 
         val recovered = RecoveryReport(
             recoveredAt = clock(),
@@ -160,8 +162,11 @@ class CrashRecoveryService(
         appendLine("completed mutations skipped: ${report.completedMutationsSkipped}")
         if (report.errors.isNotEmpty()) {
             appendLine("errors:")
-            report.errors.forEach { appendLine("  - $it") }
+            report.errors.forEach { appendLine("  - ${redactionFilter.redact(it)}") }
         }
-        appendLine("result: ${report.message}")
+        appendLine("result: ${redactionFilter.redact(report.message)}")
     }.trimEnd()
+
+    private fun safeError(operation: String, failure: Throwable): String =
+        redactionFilter.redact("$operation: ${failure.message ?: failure.javaClass.simpleName}")
 }

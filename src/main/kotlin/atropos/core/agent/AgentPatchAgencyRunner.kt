@@ -4,6 +4,7 @@ import atropos.core.policy.ActionActor
 import atropos.core.policy.ActionProposal
 import atropos.core.policy.AgencyDisposition
 import atropos.core.policy.PatchActionProposals
+import atropos.core.policy.BoundedProcessRunner
 import atropos.core.policy.ToolExecutionResult
 import atropos.core.policy.TypedToolExecutor
 import java.nio.file.Path
@@ -12,7 +13,7 @@ class AgentPatchAgencyRunner(
     private val repoRoot: Path,
     private val agency: TypedToolExecutor,
     private val metadataWriter: AgentPatchMetadataWriter,
-    private val spawn: (List<String>, Path) -> Process
+    private val processRunner: BoundedProcessRunner = BoundedProcessRunner()
 ) {
     fun runGitApplyCheck(diffFile: Path): AgentPatchCheckResult =
         runThroughAgency(PatchActionProposals.applyCheck(diffFile, repoRoot, patchActor(diffFile)))
@@ -42,18 +43,22 @@ class AgentPatchAgencyRunner(
     ): AgentPatchCheckResult {
         var executed: AgentPatchCheckResult? = null
         val outcome = agency.execute(proposal) {
-            val process = spawn(proposal.command, repoRoot)
-            val output = process.inputStream.bufferedReader().readText().trim()
-            val exitCode = process.waitFor()
-            val result = AgentPatchCheckResult(
-                passed = exitCode == 0,
-                exitCode = exitCode,
-                output = if (compact) metadataWriter.compactOutput(output) else output,
+            val bounded = processRunner.run(
+                command = proposal.command,
+                directory = repoRoot,
+                timeoutMillis = 60_000L,
+                maxOutputBytes = 128 * 1024,
+                maxOutputLines = 4_000
+            )
+            val check = AgentPatchCheckResult(
+                passed = bounded.exitCode == 0 && !bounded.timedOut && bounded.launchError == null,
+                exitCode = bounded.exitCode ?: 124,
+                output = if (compact) metadataWriter.compactOutput(bounded.stdout + bounded.stderr) else bounded.stdout + bounded.stderr,
                 disposition = AgencyDisposition.ALLOWED,
                 proposalId = proposal.id
             )
-            executed = result
-            result.output
+            executed = check
+            check.output
         }
         return executed ?: refusedCheck(proposal, outcome)
     }

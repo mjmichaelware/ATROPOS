@@ -30,7 +30,9 @@ class LocalMemoryStore(
         body: String,
         tags: List<String> = emptyList(),
         subjectType: String? = null,
-        subjectId: String? = null
+        subjectId: String? = null,
+        sourceCoordinate: String? = null,
+        authority: MemoryAuthority = MemoryAuthority.OBSERVATION
     ): MemoryRecord {
         root.mkdirs()
         val cleanedTitle = cleanedTitle(kind, title)
@@ -38,6 +40,7 @@ class LocalMemoryStore(
         val cleanedTags = normalizeTags(tags)
         val cleanedSubjectType = subjectType?.trim()?.lowercase(Locale.US)?.takeIf { it.isNotBlank() }
         val cleanedSubjectId = subjectId?.trim()?.takeIf { it.isNotBlank() }?.let(redactionFilter::redact)
+        val cleanedSourceCoordinate = sourceCoordinate?.trim()?.takeIf { it.isNotBlank() }?.let(redactionFilter::redact)
         val createdAt = now()
         val id = stableId(kind, cleanedTitle, cleanedBody, createdAt, cleanedSubjectType, cleanedSubjectId)
         val record = MemoryRecord(
@@ -48,7 +51,13 @@ class LocalMemoryStore(
             tags = cleanedTags,
             createdAtEpochMs = createdAt,
             subjectType = cleanedSubjectType,
-            subjectId = cleanedSubjectId
+            subjectId = cleanedSubjectId,
+            contentSha256 = contentSha256(cleanedTitle, cleanedBody, cleanedTags, cleanedSubjectType, cleanedSubjectId, cleanedSourceCoordinate),
+            failureSignature = if (kind == MemoryKind.FAILURE) stableFingerprint(
+                listOf(cleanedTitle, cleanedBody, cleanedSubjectType.orEmpty()).joinToString("|")
+            ) else null,
+            sourceCoordinate = cleanedSourceCoordinate,
+            authority = authority
         )
         val snapshot = readSnapshot()
         writeRecordsAtomically(snapshot.records + record)
@@ -84,7 +93,16 @@ class LocalMemoryStore(
         rememberDetailed(MemoryKind.REPAIR, title, body, tags, subjectType = "repair", subjectId = subjectId)
 
     fun rememberSourceDecision(subjectId: String, title: String, body: String, tags: List<String> = emptyList()): MemoryRecord =
-        rememberDetailed(MemoryKind.SOURCE, title, body, tags, subjectType = "source", subjectId = subjectId)
+        rememberDetailed(
+            MemoryKind.SOURCE,
+            title,
+            body,
+            tags,
+            subjectType = "source",
+            subjectId = subjectId,
+            sourceCoordinate = subjectId,
+            authority = MemoryAuthority.SOURCE_REFERENCE
+        )
 
     fun rememberToolResult(subjectId: String, title: String, body: String, tags: List<String> = emptyList()): MemoryRecord =
         rememberDetailed(MemoryKind.TOOL, title, body, tags, subjectType = "tool", subjectId = subjectId)
@@ -227,6 +245,27 @@ class LocalMemoryStore(
             .distinct()
 
     private fun stableFingerprint(value: String): String = redactionFilter.stableFingerprint(value)
+
+    private fun contentSha256(
+        title: String,
+        body: String,
+        tags: List<String>,
+        subjectType: String?,
+        subjectId: String?,
+        sourceCoordinate: String?
+    ): String {
+        val material = listOf(
+            title,
+            body,
+            tags.joinToString(","),
+            subjectType.orEmpty(),
+            subjectId.orEmpty(),
+            sourceCoordinate.orEmpty()
+        ).joinToString("|")
+        return MessageDigest.getInstance("SHA-256")
+            .digest(material.toByteArray(Charsets.UTF_8))
+            .joinToString("") { "%02x".format(it) }
+    }
 
     private fun stableId(
         kind: MemoryKind,

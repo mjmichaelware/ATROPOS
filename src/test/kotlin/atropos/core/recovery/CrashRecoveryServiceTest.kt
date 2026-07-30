@@ -20,9 +20,31 @@ import java.nio.file.Files
 import java.time.Instant
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class CrashRecoveryServiceTest {
+    @Test
+    fun renderReport_redacts_error_and_message_secrets() {
+        val root = Files.createTempDirectory("atropos-crash-report-redaction-")
+        val service = CrashRecoveryService(repoRoot = root)
+        val report = RecoveryReport(
+            recoveredAt = Instant.EPOCH,
+            staleQueueEntries = 0,
+            staleSessions = 0,
+            staleDagClaims = 0,
+            interruptedRuns = 0,
+            completedMutationsSkipped = 0,
+            errors = listOf("provider token=plain-token"),
+            message = "recovery token=plain-token"
+        )
+
+        val rendered = service.renderReport(report)
+
+        assertFalse(rendered.contains("plain-token"), rendered)
+        assertTrue(rendered.contains("<redacted:secret>"), rendered)
+    }
+
     @Test
     fun recover_marks_stale_goal_runs_as_recovery_required_with_exact_evidence() {
         val repoRoot = Files.createTempDirectory("atropos-crash-recovery-")

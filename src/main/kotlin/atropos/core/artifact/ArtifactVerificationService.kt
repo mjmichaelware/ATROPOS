@@ -4,6 +4,7 @@ import atropos.core.platform.PlatformAbstraction
 import atropos.core.platform.JvmPlatformAbstraction
 import atropos.core.territory.TerritoryService
 import atropos.core.security.RedactionFilter
+import java.security.MessageDigest
 import java.time.Instant
 
 class ArtifactVerificationService(
@@ -90,8 +91,32 @@ class ArtifactVerificationService(
     private fun checkHashConsistency(artifactId: String): VerificationEvidence {
         val artifact = pipeline.report().artifacts.firstOrNull { it.id == artifactId }
         if (artifact == null) return VerificationEvidence(artifactId = artifactId, kind = VerificationKind.HASH_VERIFY, passed = false, evidence = "not found")
-        if (artifact.sha256.isBlank()) return VerificationEvidence(artifactId = artifactId, kind = VerificationKind.HASH_VERIFY, passed = true, evidence = "no hash to verify")
-        return VerificationEvidence(artifactId = artifactId, kind = VerificationKind.HASH_VERIFY, passed = true, evidence = "hash: ${artifact.sha256.take(16)}")
+        if (artifact.sha256.isBlank()) {
+            return VerificationEvidence(
+                artifactId = artifactId,
+                kind = VerificationKind.HASH_VERIFY,
+                passed = false,
+                evidence = "missing expected sha256"
+            )
+        }
+        val actual = sha256File(artifact.filePath)
+        val passed = actual == artifact.sha256
+        return VerificationEvidence(
+            artifactId = artifactId,
+            kind = VerificationKind.HASH_VERIFY,
+            passed = passed,
+            evidence = if (passed) {
+                "hash verified: ${artifact.sha256.take(16)}"
+            } else {
+                "hash mismatch: expected ${artifact.sha256.take(16)} observed ${actual.take(16)}"
+            }
+        )
+    }
+
+    private fun sha256File(path: String): String {
+        val content = platform.readFile(path).getOrNull() ?: return ""
+        val digest = MessageDigest.getInstance("SHA-256")
+        return digest.digest(content.toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) }
     }
 }
 

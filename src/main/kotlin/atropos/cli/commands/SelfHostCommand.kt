@@ -28,7 +28,7 @@ class SelfHostCommand(
             else -> tokens
         }
         if (normalized.size < 2 || normalized[0].lowercase() != "self-host") {
-            return AgentCommandOutcome.Invalid(usage())
+            return AgentCommandOutcome.Invalid(SelfHostCommandText.usage())
         }
         return when (normalized[1].lowercase()) {
             "run" -> handleRun(normalized.drop(2))
@@ -45,28 +45,9 @@ class SelfHostCommand(
             "history" -> handleHistory()
             "learned" -> handleLearned()
             "benchmark" -> handleBenchmark()
-            else -> AgentCommandOutcome.Invalid(usage())
+            else -> AgentCommandOutcome.Invalid(SelfHostCommandText.usage())
         }
     }
-
-    private fun usage(): String =
-        buildString {
-            appendLine("usage: /agent self-host <command>")
-            appendLine("  run <natural-language self-host goal>")
-            appendLine("  start <goal-name> [--phase <phase>]")
-            appendLine("  status [goal-id]")
-            appendLine("  watch [goal-id]")
-            appendLine("  resume [goal-id]")
-            appendLine("  recover [goal-id]")
-            appendLine("  next [goal-id]")
-            appendLine("  stop [goal-id]")
-            appendLine("  verify [goal-id]")
-            appendLine("  promote <goal-id> <candidate-jar> <target-jar> [node-id]")
-            appendLine("  export-evidence <goal-id>")
-            appendLine("  history")
-            appendLine("  learned")
-            append("  benchmark")
-        }
 
     private fun handleStart(args: List<String>): AgentCommandOutcome {
         val phaseIndex = args.indexOf("--phase")
@@ -106,42 +87,18 @@ class SelfHostCommand(
                 return AgentCommandOutcome.Invalid(selected.message)
             }
             val history = selfHostService.history(5)
-            val text = buildString {
-                appendLine("no active self-host goals")
-                if (history.isNotEmpty()) {
-                    appendLine()
-                    appendLine("recent history:")
-                    history.forEach { appendLine("  ${it.renderSummaryLine()}") }
-                }
-            }.trimEnd()
+            val text = SelfHostCommandText.noActiveGoals(history)
             ui.renderNotice("SELF-HOST STATUS\n$text")
             return AgentCommandOutcome.Completed(text)
         }
 
         val status = selfHostService.status(selected.goal?.record?.id)
         val goals = selfHostService.loadUnfinishedGoals()
-        val text = buildString {
-            if (requestedGoalId != null || goals.isEmpty()) {
-                append(renderStatusDetails(status))
-            } else {
-                appendLine("active self-host goals:")
-                goals.forEach { goal ->
-                    val marker = if (goal.record.id == status.goalId) "*" else " "
-                    appendLine("$marker ${goal.record.renderSummaryLine()}")
-                    val status = selfHostService.status(goal.record.id)
-                    appendLine("  phase: ${status.phase ?: "none"} node: ${status.currentNodeId ?: "none"}")
-                    status.dagStatus?.let { dag ->
-                        appendLine("  DAG: ${dag.completedNodes}/${dag.totalNodes} completed ${dag.failedNodes} failed ${dag.blockedNodes} blocked")
-                        if (dag.readyNodes.isNotEmpty()) {
-                            appendLine("  ready: ${dag.readyNodes.joinToString(", ")}")
-                        }
-                    }
-                }
-                appendLine()
-                appendLine("selected status:")
-                append(renderStatusDetails(status))
-            }
-        }.trimEnd()
+        val text = if (requestedGoalId != null || goals.isEmpty()) {
+            SelfHostCommandText.statusDetails(status)
+        } else {
+            SelfHostCommandText.statusList(status, goals.map { selfHostService.status(it.record.id) })
+        }
         ui.renderNotice("SELF-HOST STATUS\n$text")
         return AgentCommandOutcome.Completed(text)
     }
@@ -156,14 +113,7 @@ class SelfHostCommand(
         val text = if (events.isNotEmpty()) {
             events.joinToString("\n") { it.render() }
         } else {
-            val status = selfHostService.status(goalId)
-            buildString {
-                appendLine("no events for goal $goalId")
-                appendLine("status: ${status.status}")
-                appendLine("phase: ${status.phase ?: "none"}")
-                appendLine("node: ${status.currentNodeId ?: "none"}")
-                append("terminal: ${status.terminalCondition ?: "none"}")
-            }
+            SelfHostCommandText.watchFallback(goalId, selfHostService.status(goalId))
         }
         ui.renderNotice("SELF-HOST WATCH $goalId\n$text")
         return AgentCommandOutcome.Completed(text)
@@ -189,21 +139,17 @@ class SelfHostCommand(
             val blocked = dag?.nodes?.count { it.state == atropos.core.dag.DagNodeState.BLOCKED } ?: 0
             val total = dag?.nodes?.size ?: 0
 
-            val text = buildString {
-                appendLine("resumed goal: ${resumedRecord.id}")
-                appendLine("phase: ${resumedRecord.activePhase}")
-                appendLine("current node: $currentNodeId")
-                appendLine("DAG: $completed/$total completed, $failed failed, $blocked blocked")
-                appendLine("advance: ${advanced.message}")
-
-                // Check for false completions
-                if (dagId != null) {
-                    val falseCompletions = completionGate.detectFalseCompletions(dagId)
-                    if (falseCompletions.isNotEmpty()) {
-                        appendLine("WARNING: false completions detected: ${falseCompletions.joinToString(", ")}")
-                    }
-                }
-            }
+            val falseCompletions = dagId?.let { completionGate.detectFalseCompletions(it) } ?: emptyList()
+            val text = SelfHostCommandText.resume(
+                resumedRecord = resumedRecord,
+                currentNodeId = currentNodeId,
+                completed = completed,
+                total = total,
+                failed = failed,
+                blocked = blocked,
+                advanceMessage = advanced.message,
+                falseCompletions = falseCompletions
+            )
             if (!advanced.ok) {
                 ui.renderError("resume: ${advanced.message}")
                 journal.record(
@@ -235,19 +181,7 @@ class SelfHostCommand(
         ui.startSpinner("Running Phase 11 self-host loop")
         return try {
             val result = selfHostRunner(prompt)
-            val text = buildString {
-                appendLine(result.message)
-                appendLine("goal: ${result.goal?.record?.id ?: "none"}")
-                appendLine("status: ${result.goal?.record?.status ?: "none"}")
-                appendLine("terminal: ${result.goal?.record?.terminalCondition ?: "none"}")
-                appendLine("promotion: ${result.promotion?.message ?: "not attempted"}")
-                result.evidenceBundle?.let {
-                    appendLine("evidence markdown: ${it.markdownPath ?: "none"}")
-                    appendLine("evidence json: ${it.jsonPath ?: "none"}")
-                }
-                appendLine("steps:")
-                result.steps.forEach { appendLine("  - $it") }
-            }.trimEnd()
+            val text = SelfHostCommandText.run(result)
             if (!result.ok) {
                 ui.renderError(text)
                 AgentCommandOutcome.Invalid(text)
@@ -289,16 +223,8 @@ class SelfHostCommand(
         val requestedGoalId = args.getOrNull(0)?.takeIf { it.isNotBlank() }
         val result = selfHostService.recoverAndContinue(requestedGoalId)
         val record = result.goal?.record
-        val text = buildString {
-            appendLine(result.message)
-            if (record != null) {
-                appendLine("goal: ${record.id}")
-                appendLine("phase: ${record.activePhase ?: "none"}")
-                appendLine("node: ${record.currentNodeId ?: "none"}")
-                appendLine("status: ${record.status}")
-                appendLine("next: ${selfHostService.planNextAction(record.id).kind}")
-            }
-        }.trimEnd()
+        val next = record?.let { selfHostService.planNextAction(it.id).kind.toString() }
+        val text = SelfHostCommandText.recover(result.message, record, next)
         if (!result.ok) {
             ui.renderError(text)
             return AgentCommandOutcome.Invalid(text)
@@ -310,12 +236,7 @@ class SelfHostCommand(
     private fun handleNext(args: List<String>): AgentCommandOutcome {
         val requestedGoalId = args.getOrNull(0)?.takeIf { it.isNotBlank() }
         val next = selfHostService.planNextAction(requestedGoalId)
-        val text = buildString {
-            appendLine("next: ${next.kind}")
-            appendLine("goal: ${next.goalId ?: "none"}")
-            appendLine("node: ${next.nodeId ?: "none"}")
-            append("reason: ${next.reason}")
-        }
+        val text = SelfHostCommandText.next(next)
         ui.renderNotice("SELF-HOST NEXT\n$text")
         return AgentCommandOutcome.Completed(text)
     }
@@ -329,28 +250,12 @@ class SelfHostCommand(
         val status = selfHostService.status(selected.goal?.record?.id)
 
         val dagStatus = status.dagStatus
-        val text = buildString {
-            appendLine("goal: ${status.goalId}")
-            appendLine("status: ${status.status}")
-            appendLine("terminal: ${status.terminalCondition ?: "none"}")
-            appendLine("phase: ${status.phase ?: "none"}")
-            if (dagStatus != null) {
-                appendLine("DAG: ${dagStatus.completedNodes}/${dagStatus.totalNodes} completed")
-                appendLine("failed: ${dagStatus.failedNodes}")
-                appendLine("blocked: ${dagStatus.blockedNodes}")
-                appendLine("pending: ${dagStatus.pendingNodes}")
-                appendLine("running: ${dagStatus.runningNodes}")
-                appendLine("ready: ${dagStatus.readyNodes.joinToString(", ").ifEmpty { "none" }}")
-
-                val dag = dagService.readDag(dagStatus.dagId)
-                if (dag != null) {
-                    val falseCompletions = completionGate.detectFalseCompletions(dagStatus.dagId)
-                    if (falseCompletions.isNotEmpty()) {
-                        appendLine("FALSE COMPLETIONS: ${falseCompletions.joinToString(", ")}")
-                    }
-                }
-            }
+        val falseCompletions = if (dagStatus != null && dagService.readDag(dagStatus.dagId) != null) {
+            completionGate.detectFalseCompletions(dagStatus.dagId)
+        } else {
+            emptyList()
         }
+        val text = SelfHostCommandText.verify(status, falseCompletions)
         ui.renderNotice("SELF-HOST VERIFY\n$text")
         return AgentCommandOutcome.Completed(text)
     }
@@ -365,17 +270,7 @@ class SelfHostCommand(
             targetJar = repoRoot.resolve(args[2]).normalize(),
             nodeId = args.getOrNull(3)
         )
-        val text = buildString {
-            appendLine(result.message)
-            appendLine("promoted: ${result.promoted}")
-            appendLine("goal: ${result.goal?.record?.id ?: args[0]}")
-            appendLine("gate: ${result.gateReport?.message ?: "not evaluated"}")
-            result.jarSwap?.let {
-                appendLine("candidate: ${it.candidateJar}")
-                appendLine("target: ${it.targetJar}")
-                appendLine("backup: ${it.backupJar ?: "none"}")
-            }
-        }.trimEnd()
+        val text = SelfHostCommandText.promote(result, args[0])
         if (!result.promoted) {
             ui.renderError(text)
             return AgentCommandOutcome.Invalid(text)
@@ -388,13 +283,7 @@ class SelfHostCommand(
         val goalId = args.getOrNull(0)?.takeIf { it.isNotBlank() }
             ?: return AgentCommandOutcome.Invalid("usage: /agent self-host export-evidence <goal-id>")
         val result = selfHostService.exportEvidenceBundle(goalId)
-        val text = buildString {
-            appendLine(result.message)
-            appendLine("markdown: ${result.markdownPath ?: "none"}")
-            appendLine("markdown sha256: ${result.markdownSha256 ?: "none"}")
-            appendLine("json: ${result.jsonPath ?: "none"}")
-            appendLine("json sha256: ${result.jsonSha256 ?: "none"}")
-        }.trimEnd()
+        val text = SelfHostCommandText.evidence(result)
         if (!result.ok) {
             ui.renderError(text)
             return AgentCommandOutcome.Invalid(text)
@@ -412,11 +301,7 @@ class SelfHostCommand(
 
     private fun handleLearned(): AgentCommandOutcome {
         val experiences = selfHostService.learned(20)
-        val text = if (experiences.isEmpty()) {
-            "no learned experiences yet"
-        } else {
-            experiences.joinToString("\n") { "${it.title}: ${it.body.take(120)}" }
-        }
+        val text = SelfHostCommandText.learned(experiences)
         ui.renderNotice("SELF-HOST LEARNED\n$text")
         return AgentCommandOutcome.Completed(text)
     }
@@ -424,31 +309,8 @@ class SelfHostCommand(
     private fun handleBenchmark(): AgentCommandOutcome {
         val benchmark = selfHostService.benchmark()
 
-        val text = buildString {
-            appendLine("self-host benchmark:")
-            appendLine("  total goals: ${benchmark.totalGoals}")
-            appendLine("  completed: ${benchmark.completed}")
-            appendLine("  failed: ${benchmark.failed}")
-            appendLine("  cancelled: ${benchmark.cancelled}")
-            appendLine("  recovery required: ${benchmark.recoveryRequired}")
-            appendLine("  total continuations: ${benchmark.totalContinuations}")
-            appendLine("  avg continuations/goal: ${"%.1f".format(benchmark.avgContinuations)}")
-            appendLine("  batch evidence status: ${benchmark.status}")
-        }
+        val text = SelfHostCommandText.benchmark(benchmark)
         ui.renderNotice("SELF-HOST BENCHMARK\n$text")
         return AgentCommandOutcome.Completed(text)
     }
-
-    private fun renderStatusDetails(status: atropos.core.agent.SelfHostStatus): String = buildString {
-        appendLine("${status.goalId}: ${status.status} (phase ${status.phase ?: "?"})")
-        appendLine("phase: ${status.phase ?: "none"}")
-        appendLine("node: ${status.currentNodeId ?: "none"}")
-        appendLine("terminal: ${status.terminalCondition ?: "none"}")
-        status.dagStatus?.let { dag ->
-            appendLine("DAG: ${dag.completedNodes}/${dag.totalNodes} completed ${dag.failedNodes} failed ${dag.blockedNodes} blocked")
-            if (dag.readyNodes.isNotEmpty()) {
-                appendLine("ready: ${dag.readyNodes.joinToString(", ")}")
-            }
-        }
-    }.trimEnd()
 }

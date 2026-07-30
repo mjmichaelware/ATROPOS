@@ -83,7 +83,7 @@ class RestartCoordinator(
                     verified = it.verified,
                     rolledBack = it.rolledBack,
                     mergedBack = it.mergedBack,
-                    territory = it.territory
+                    territory = it.territory.map(redactionFilter::redact)
                 )
             },
             memoryRecords = memoryStore.status().totalRecords,
@@ -106,13 +106,16 @@ class RestartCoordinator(
         )
     }
 
-    fun latestSnapshot(): StateSnapshot? {
+    fun latestSnapshot(goalId: String? = null): StateSnapshot? {
         if (!Files.isDirectory(snapshotDir)) return null
         return Files.list(snapshotDir).use { stream ->
             stream.filter { Files.isRegularFile(it) && it.fileName.toString().endsWith(".snapshot") }
                 .toList()
-                .maxByOrNull { it.fileName.toString() }
-                ?.let(::readSnapshot)
+                .sortedByDescending { it.fileName.toString() }
+                .mapNotNull(::readSnapshot)
+                .firstOrNull { snapshot ->
+                    goalId == null || snapshot.goalRuns.any { it.id == goalId }
+                }
         }
     }
 
@@ -132,7 +135,16 @@ class RestartCoordinator(
         appendLine("id=${snapshot.id}")
         appendLine("capturedAt=${snapshot.capturedAt}")
         appendLine("memoryRecords=${snapshot.memoryRecords}")
-        appendLine("recoveryMessageB64=${encode(snapshot.recoveryReport?.message.orEmpty())}")
+        snapshot.recoveryReport?.let { report ->
+            appendLine("recoveryRecoveredAt=${report.recoveredAt}")
+            appendLine("recoveryStaleQueueEntries=${report.staleQueueEntries}")
+            appendLine("recoveryStaleSessions=${report.staleSessions}")
+            appendLine("recoveryStaleDagClaims=${report.staleDagClaims}")
+            appendLine("recoveryInterruptedRuns=${report.interruptedRuns}")
+            appendLine("recoveryCompletedMutationsSkipped=${report.completedMutationsSkipped}")
+            appendLine("recoveryErrorsB64=${encode(report.errors.joinToString("\n") { redactionFilter.redact(it) })}")
+            appendLine("recoveryMessageB64=${encode(redactionFilter.redact(report.message))}")
+        }
         snapshot.goalRuns.forEach {
             appendLine("goal=${listOf(it.id, it.status, it.dagId.orEmpty(), it.currentNodeId.orEmpty(), it.continuationCount, it.recoveryRequired, it.evidenceCount, encode(it.territory.joinToString(",")), it.evidenceHashes.joinToString(",")).joinToString("|")}")
         }
@@ -157,6 +169,7 @@ class RestartCoordinator(
         val capturedAt = keyed.firstOrNull { it.first == "capturedAt" }?.second
             ?.let { runCatching { Instant.parse(it) }.getOrNull() } ?: return null
         val memoryRecords = keyed.firstOrNull { it.first == "memoryRecords" }?.second?.toIntOrNull() ?: 0
+        val recoveryReport = parseRecoveryReport(keyed, capturedAt)
         return StateSnapshot(
             id = id,
             capturedAt = capturedAt,
@@ -164,9 +177,42 @@ class RestartCoordinator(
             dags = keyed.filter { it.first == "dag" }.mapNotNull { parseDag(it.second) },
             dagNodes = keyed.filter { it.first == "node" }.mapNotNull { parseNode(it.second) },
             worktrees = keyed.filter { it.first == "worktree" }.mapNotNull { parseWorktree(it.second) },
-            memoryRecords = memoryRecords
+            memoryRecords = memoryRecords,
+            recoveryReport = recoveryReport
         )
     }
+
+    private fun parseRecoveryReport(keyed: List<Pair<String, String>>, capturedAt: Instant): RecoveryReport? {
+        val message = keyed.firstOrNull { it.first == "recoveryMessageB64" }
+            ?.second
+            ?.let(::decode)
+            ?.takeIf { it.isNotBlank() }
+        val recoveredAt = keyed.firstOrNull { it.first == "recoveryRecoveredAt" }
+            ?.second
+            ?.let { runCatching { Instant.parse(it) }.getOrNull() }
+            ?: return message?.let {
+                RecoveryReport(capturedAt, 0, 0, 0, 0, 0, emptyList(), it)
+            }
+        val errors = keyed.firstOrNull { it.first == "recoveryErrorsB64" }
+            ?.second
+            ?.let(::decode)
+            ?.split('\n')
+            ?.filter { it.isNotBlank() }
+            .orEmpty()
+        return RecoveryReport(
+            recoveredAt = recoveredAt,
+            staleQueueEntries = keyed.value("recoveryStaleQueueEntries"),
+            staleSessions = keyed.value("recoveryStaleSessions"),
+            staleDagClaims = keyed.value("recoveryStaleDagClaims"),
+            interruptedRuns = keyed.value("recoveryInterruptedRuns"),
+            completedMutationsSkipped = keyed.value("recoveryCompletedMutationsSkipped"),
+            errors = errors,
+            message = message.orEmpty()
+        )
+    }
+
+    private fun List<Pair<String, String>>.value(key: String): Int =
+        firstOrNull { it.first == key }?.second?.toIntOrNull() ?: 0
 
     private fun parseGoal(raw: String): GoalRunSnapshot? {
         val p = raw.split("|")

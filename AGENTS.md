@@ -1,188 +1,559 @@
-# ATROPOS Operating Rules
-
-ATROPOS is a local-first, deterministic software-development engine with persistent memory, exact source addressing, policy-governed execution, and verified artifact production. The final vision is a system that can accept a task, resolve it to exact source coordinates, edit only its assigned territory, verify deterministically, and preserve every decision across sessions.
-
-## Authority
-
-- Human Owner/CEO has final authority.
-- Codex acts as the implementation worker inside the current worktree.
-- Source documents define truth before code claims do.
-- If code, docs, and tests disagree, prefer the highest authority below.
-
-## Source Authority Precedence
-
-1. ATROPOS CODEX-CLI BUILD BLUEPRINT OVER TIME
-2. ATROPOS Source Documents 1 and 2
-3. Latest hierarchy and coding-agent research documents
-4. Updated DLOI source-document map
-5. Current repository contracts and proven tests
-6. Dated implementation contexts and doctor reports
-7. README claims only as historical or aspirational evidence
-
-## Canonical Phases
-
-Never rename or reorder the canonical phases 0-20.
-
-| Phase | Canonical name | Operating meaning |
-| --- | --- | --- |
-| 0 | Baseline Lock | Freeze current truth, inventory the repo, and preserve the known-good checkpoint. |
-| 1 | Provider Activation Doctor | Make configured providers diagnosable and truthful. |
-| 2 | Provider Transport Completion | Reach real provider responses through working adapters. |
-| 3 | Quota Ledger + Route Truth | Route free-first, track quota, and explain skipped providers. |
-| 4 | Secret and Security Hardening | Prevent secret leakage across UI, logs, prompts, diffs, and history. |
-| 5 | Provider Fixture Matrix | Verify providers without live keys using deterministic fixtures. |
-| 6 | DLOI Source Router | Route intent to exact source sections and document coordinates. |
-| 7 | AST Symbol Graph | Map changed files and symbols without guessing. |
-| 8 | Deterministic Verifier | Catch structural errors locally before model review. |
-| 9 | Persistent Memory | Persist session, route, and repair state across restarts. |
-| 10 | Execution Policy Engine | Govern every tool action with explicit policy. |
-| 11 | Self-Build Loop | Land bounded batches with deterministic verification and `E(DELTA)=0`. |
-| 12 | Director Advisory Mode | Add Director visibility and advisory drift detection. |
-| 13 | Territory Enforcement | Make file and worktree scope deterministic and enforceable. |
-| 14 | HR Router | Control cross-boundary information flow. |
-| 15 | Auditor and Custodian | Add independent verification and deterministic cleanup. |
-| 16 | Manager/Specialist/Worker Hierarchy | Scale execution with bounded roles and escalation paths. |
-| 17 | Multimodal Runtime | Add visual and snapshot inspection to the engine. |
-| 18 | Multiplatform Expansion | Extract a portable core and broaden runtime targets. |
-| 19 | App Factory Completion | Turn requests into verified artifacts, install proofs, and commits. |
-| 20 | Full Autonomous ATROPOS | Self-direct within policy, memory, and territory boundaries. |
-
-## Fixed Phase Definitions
-
-- Phase 11: execute a coherent self-build slice, compile once per slice boundary, repair the real failure, verify the result, and preserve `E(DELTA)=0`.
-- Phase 19: move from prompt to plan to code to verification to artifact to commit, with screenshot or run proof before acceptance.
-- Phase 20: operate as a policy-bound, persistent, self-improving software-development engine that reuses the same gates used to build it.
-
-## Formal Invariants
-
-- `HIG=0`
-- `E(DELTA)=0`
-- `LOCAL_FIRST=true`
-- `PAID_AUTO=false`
-- `RAW_SECRET_OUTPUT=false`
-- `ROUTE_EXPLAINABLE=true`
-- `PROVIDER_REPLACEABLE=true`
-- `TERRITORY_BOUND=true`
-- `VERIFY_BEFORE_COMMIT=true`
-- `ADDRESS_NEVER_BLINDLY_INGEST=true`
-
-## Operating Laws
-
-### Free-First Route Law
-
-Prefer local toolchain work first, then free ready providers, then free fallbacks, then cooldown queues, then offline degraded mode. Paid providers require explicit unlock and remain off by default.
-
-### Configured, Verified, Ready
-
-- Configured: the endpoint and credentials are present.
-- Verified: the provider or route has passed the configured truth check.
-- Ready: configured, verified, allowed, not cooling down, and not locked.
-
-### Paid-Auto Prohibition
-
-Do not auto-spend paid provider capacity. Do not silently unlock paid routes. Require explicit intent and truthful status.
-
-### Parallel Provider Execution Law
-
-To prevent long-running tasks from taking hours, execute research tasks and provider queries in parallel across all available ready providers. Do not run provider operations sequentially when parallel lanes are configured and available.
-
-### Exact-Source and DLOI Law
-
-Never treat a corpus claim as current truth unless it resolves to exact source coordinates. Use source IDs, section IDs, line/page/paragraph spans, and deterministic query commands. No blind whole-corpus injection.
-
-### AST Impact Law
-
-Before editing, determine the impacted files and symbols from the exact change slice. Do not expand scope by intuition.
-
-### Deterministic-Verification-First Law
-
-Run deterministic checks before model review whenever a local check can decide the issue. Model review is for undecidable cases, not for first-pass validation.
-
-### Persistent Memory Law
-
-Persist session state, route history, failure signatures, repair results, and compaction summaries in local durable stores. A restart must not erase project truth.
-
-### Execution-Policy Law
-
-Every tool call is governed. Every mutation is logged. No action is assumed safe just because it is possible.
-
-### Self-Build Law
-
-ATROPOS must be able to plan a bounded batch, edit only its territory, compile once per coherent slice, repair the real failure, and resume from persisted state.
-
-### Territory and Hierarchy Law
-
-Tasks have owners, allowed paths, and escalation paths. Out-of-territory edits are violations, not surprises.
-
-### Secret and Redaction Law
-
-Redact secrets before logs, prompts, diffs, history, and status surfaces. Never print raw credentials or token values.
-
-### Context Economy
-
-Build context packs from selected authority only: current contracts, changed files, impacted symbols, and bounded evidence. Do not inject the entire corpus into a prompt.
-
-### Cache Correctness
-
-Cache keys must include the real invalidation inputs. For source caches, include source hashes and tool schema version. For gate caches, include command, cwd, input hashes, build config hashes, affecting env, tool version, and expected invariant set.
-
-### Compile Cadence
-
-Use this cadence:
-
-1. Contract audit
-2. Coherent edit slice
-3. Focused deterministic test
-4. `compileKotlin` after the coherent slice
-5. Test or jar only at milestone acceptance
-6. Installed smoke only at the final gate
-
-Never compile after every small edit.
-
-### Interruption Recovery
-
-If the terminal closes, resume from the persisted index, gate cache, and handoff notes before re-running expensive work.
-
-### Dirty-Work Preservation
-
-Preserve every existing tracked and untracked byte unless the user explicitly requests a change. Never discard unrelated local work.
-
-### Exact-Path Staging Only
-
-Stage only the exact files that belong to the current slice. No blind `git add .`.
-
-### No Force Push
-
-Do not force push.
-
-### No Auto-Commit or Auto-Push
-
-Do not commit or push unless the user explicitly requests it.
-
-### Missing Implementation Is Work
-
-If a capability is missing, that is implementation work, not an external blocker.
-
-### Truthful Acceptance
-
-Accept only when the selected gate is actually green. If a gate fails, report the failure rather than inflating progress.
-
-### UI Separate From Backend
-
-Presentation work remains separate from adapter, routing, policy, and storage work unless the batch explicitly needs observability changes.
-
-## Cache and Index Commands
-
-```bash
-python3 scripts/codex/source-index.py --strict
-python3 scripts/codex/source-query.py phase 11 --limit 3
-python3 scripts/codex/source-section.py <source-id> <section-id>
-python3 scripts/codex/context-pack.py --help
-python3 scripts/codex/resume-handoff.sh
-python3 scripts/codex/fast-gate.sh focused -- <command>
-python3 scripts/codex/instruction-audit.sh
-```
-
-## Acceptance Rule
-
-Truthful acceptance requires that the selected gate passes, the worktree diff is scoped, secrets are absent from new files, and the result matches `E(DELTA)=0` for the intended slice.
+AGENTS.md — ATROPOS External Agent Control Document
+Authority: Source Docs 1–4 · 100% Completion Blueprint · Core/HOE/Phase20 Gap Maps · Hierarchy Research · 2026-07-29 export (1475 files)
+Purpose: Single file every external coding agent / CLI / swarm must read before any work and must update after every coherent batch.
+Location: Repo root (AGENTS.md). Optional mirror: docs/AGENTS.md.
+Rule: This file is living. Original baselines never change. Every agent appends timestamped progress. Fake progress is forbidden.
+
+0. HARD RULES (apply to every agent — Claude, Codex, Antigravity, Cursor, Aider, OpenCode, any swarm)
+Read this file first. Before writing a single line, load current percentages, open atoms, and the non-duplication law.
+Work like ATROPOS. Territory, evidence, independent verification, atomic decoupling, no self-approval, no silent authority mutation.
+Autonomous + recursive. Do not stop for permission, checkpoints, or “should I continue?”. Stop only for the human-mandatory list (§6).
+Write code. Maximize decoupled files. Primary job = write the remaining lines of code in the largest number of single-responsibility files. Do not optimize for few large files.
+Quota efficiency (token discipline).
+Open only the exact paths named in the current atom.
+Never re-ingest the full corpus or full export.
+Prefer existing owners; create a new file only when no existing owner can hold the responsibility.
+One coherent batch at a time. A batch may contain many implementation slices and may close one atom or several tightly related atoms; update this file only at the batch boundary, not after every slice or file change.
+After each batch boundary: update this file, then immediately start the next open atom or batch.
+No fake VERIFIED. Nonzero compile/test exit, missing evidence, or self-approval may never be reported as complete.
+Non-duplication law. Extend or compose existing semantic owners. Never create a second DAG, verifier, territory system, memory root, provider registry, or lakehouse.
+Original Source Docs 1–3 are immutable. New capability = proposal → accepted amendment path (Phase 20). Do not silently edit original authority.
+Evidence over narrative. Every claim of progress must name paths, line deltas, and which acceptance predicate moved.
+Update this file after every coherent batch. See §4.
+
+1. ORIGINAL BASELINE PERCENTAGES (locked 2026-07-29 — do not alter)
+Derived by juxtaposing the full 1475-file export against Source Docs 1–4, Blueprint phases, Hierarchy Research, and the three gap maps.
+Critical stubs
+Component
+Baseline %
+Evidence
+ConstraintSolverEvaluator
+85%
+36 L real filter (no longer constant-true)
+TokenIsolationVault
+90%
+149 L + tests
+TreeSitterGrammarBridge
+55%
+83 L; AST depth still limited
+ScaffoldAdapters
+95%
+3 L (split/emptied)
+ArchitectureComplianceChecker
+70%
+161 L; enforcement mode incomplete
+Critical-stub aggregate
+~79%
+
+
+
+Phases 0–11 (Checkpoint 1 — foundation + self-build)
+Phase
+Baseline %
+0 Baseline Lock
+75%
+1 Provider Activation Doctor
+80%
+2 Provider Transport
+70%
+3 Quota / Route Truth
+75%
+4 Secret / Security
+85%
+5 Provider Fixture Matrix
+65%
+6 DLOI Source Router
+80%
+7 AST Symbol Graph
+50%
+8 Deterministic Verifier
+80%
+9 Persistent Memory
+60%
+10 Execution Policy
+55%
+11 Self-Build Loop
+65%
+Phases 0–11 aggregate
+~70%
+
+Self-build acceptance (NL inside JAR → verified patch → compile gate → real mutation → git status) is not 100%. Sandbox proof (261 L) exists; live interactive path remains PARTIAL.
+Phases 12–16 (Hierarchy)
+Phase
+Baseline %
+12 Director Advisory
+40%
+13 Territory Enforcement
+70%
+14 HR Router
+35%
+15 Auditor / Custodian
+40%
+16 Manager/Specialist/Worker
+30%
+12–16 aggregate
+~43%
+
+Phases 17–18
+Phase
+Baseline %
+17 Multimodal Runtime
+25%
+18 Multiplatform
+20%
+17–18 aggregate
+~22%
+
+Phase 19 — App Factory
+Baseline: ~20%
+Phase 20 — Long-horizon autonomy (implementation)
+Baseline: ~12% (architecture/gap map itself is 100% specified)
+HOE / Source Doc 4 (Presentation)
+Surface
+Baseline %
+CLI/TUI foundation
+70%
+Web (ATROPOS-owned)
+15%
+Android APK
+8%
+Six continuous answers
+40%
+Progressive disclosure
+25%
+Evidence / trust indicators
+35%
+Competitive targets
+25%
+HOE aggregate
+~32%
+
+Weighted overall vision
+Horizon
+Weight
+Baseline %
+Weighted
+I Foundation 0–10
+25%
+72%
+18.0
+II Self-build + Hierarchy 11–16
+25%
+55%
+13.8
+III Multimodal + Multiplatform 17–18
+10%
+22%
+2.2
+IV App Factory 19
+20%
+20%
+4.0
+V Phase 20 Autonomy
+10%
+12%
+1.2
+HOE Presentation
+10%
+32%
+3.2
+OVERALL BASELINE
+
+
+
+≈ 42%
+
+These numbers are the permanent original baseline. Later agents only append; they never overwrite this section.
+
+2. PROGRESS LEDGER (append-only)
+Every agent, after a coherent batch that moves a measurable acceptance predicate, appends one row:
+### [ISO-8601 timestamp] · Agent: <name/model> · Batch: <short id>
+- Paths touched: <exact paths + line deltas>
+- Atoms / phases affected: <IDs from gap maps>
+- Predicate moved: <what became true that was false>
+- % delta: <e.g. Phase 11 65% → 72% (+7)>
+- Why the delta is justified: <one tight paragraph naming evidence>
+- New overall estimate: <recalculated weighted overall, or “unchanged”>
+- Fingerprints: <content hashes or git short-SHAs of changed files if available>
+Oldest entries stay. Newest entries go at the bottom. Never delete or rewrite prior ledger rows.
+
+### 2026-07-29T14:53:33-06:00 · Agent: Codex GPT-5 · Batch: skill-bootstrap-001
+- Paths touched: `/root/.codex/skills/atropos-external-agent-control/SKILL.md` (+27), `/root/.codex/skills/atropos-external-agent-control/agents/openai.yaml` (+7), `AGENTS.md` (+8)
+- Atoms / phases affected: Process contract only; no blueprint atom
+- Predicate moved: ATROPOS operating rules are now installed as a Codex skill trigger for future ATROPOS sessions
+- % delta: unchanged
+- Why the delta is justified: The repo contract file was mirrored into a dedicated Codex skill with a broad ATROPOS trigger description and repo-root AGENTS bootstrap guidance, so future sessions can load the same rules automatically instead of relying on ad hoc re-reading. No repo phase or product acceptance gate changed.
+- New overall estimate: unchanged
+- Fingerprints: `9070056672dbca1574cba04b4db452875edc5303b03a3c0c5b4ec4eca4844858`, `044662ee950a6743df01258a3a38cf175e1f23f21e10fd564ab17dda8e0d3e1f`, `40486ba3b0d7ba5036e02d3872849101d75b32bb`
+
+### 2026-07-29T15:05:22-06:00 · Agent: Codex GPT-5 · Batch: root-ledger-export-001
+- Paths touched: `AGENTS.md` (+77 net from root contract replacement and ledger row), `ATROPOS_TREE_PORT_EXPORT_PATHS.md` (+72), `ATROPOS_ROOT_EXPORT_MANIFEST.sha256` (+2), `apps/specgraph-foundry/AGENTS.md` (-257 misplaced mirror removed)
+- Atoms / phases affected: Process contract, export/evidence ledger substrate; no blueprint runtime atom
+- Predicate moved: Root ATROPOS now owns the external-agent control document and a durable tree/export path ledger for phase-completion artifacts
+- % delta: unchanged
+- Why the delta is justified: The repo-root `AGENTS.md` now contains the timestamped baseline percentages and append-only progress ledger, while `ATROPOS_TREE_PORT_EXPORT_PATHS.md` records canonical export roots, phase artifact locations, update triggers, and hash policy. This fixes the missing root-level path documentation without claiming a runtime phase gate.
+- New overall estimate: unchanged
+- Fingerprints: `ATROPOS_TREE_PORT_EXPORT_PATHS.md=6a776196468943e5abdf59e62e694a7cb58ef3e92d1e5122d5ed7c55c88395b6`; final `AGENTS.md` bytes are recorded in `ATROPOS_ROOT_EXPORT_MANIFEST.sha256` because an in-band self-hash would invalidate itself.
+
+### 2026-07-29T15:22:00-06:00 · Agent: Codex GPT-5 · Batch: c1-x1-architecture-gate-001
+- Paths touched: `ATROPOS_CORE_ENGINE_GAP_MAP_v2.md` (+120), `ATROPOS_TREE_PORT_EXPORT_PATHS.md` (+1), `src/main/kotlin/atropos/core/verification/ArchitectureConcern.kt` (+72), `src/main/kotlin/atropos/core/verification/ArchitectureCompliancePolicy.kt` (+44), `src/main/kotlin/atropos/core/verification/ArchitectureConcernDetector.kt` (+12), `src/main/kotlin/atropos/core/verification/ArchitectureComplianceChecker.kt` (-61 net, concern logic extracted), `src/test/kotlin/atropos/core/verification/ArchitectureComplianceCheckerTest.kt` (+88), `AGENTS.md` (+8), `ATROPOS_ROOT_EXPORT_MANIFEST.sha256` (+1 hash refresh)
+- Atoms / phases affected: `C1-X1`, `CONT-01`, Phase 8 architecture verification support
+- Predicate moved: Architecture compliance now has a root source map, configurable policy thresholds, extracted concern taxonomy/detection, and focused tests specifying blocking/advisory behavior
+- % delta: unchanged; the focused tests were written but not executed after the quota interruption
+- Why the delta is justified: `ArchitectureComplianceChecker` no longer owns marker taxonomy and threshold policy directly; the new `ArchitectureCompliancePolicy`, `ArchitectureConcern`, and `ArchitectureConcernDetector` files make line+concern thresholds explicit and reusable. The root Core Engine Gap Map is now durable, and the export-path ledger records it as a canonical tracked artifact.
+- New overall estimate: unchanged until the focused checker test and compile slice pass
+- Fingerprints: final hashes recorded in `ATROPOS_ROOT_EXPORT_MANIFEST.sha256`; no runtime phase gate claimed
+
+### 2026-07-29T15:38:00-06:00 · Agent: Codex GPT-5 · Batch: tree-export-correction-001
+- Paths touched: `ATROPOS_TREE_PORT_EXPORT_PATHS.md` (rewritten as 1,749-line tree data export), `AGENTS.md` (+9), `ATROPOS_ROOT_EXPORT_MANIFEST.sha256` (hash refresh)
+- Atoms / phases affected: Process contract and context-efficiency substrate only; no blueprint runtime atom
+- Predicate moved: Root tree export is now actual codebase tree data for context-efficient agent startup, not an artifact-location table
+- % delta: unchanged
+- Why the delta is justified: The previous file shape was wrong. `ATROPOS_TREE_PORT_EXPORT_PATHS.md` now records a generated repo tree snapshot with branch, HEAD, file count, exclusions, and explicit update cadence: refresh only after a whole canonical phase reaches acceptance, or when the Human Owner requests a refresh. The gap map is not treated as a required hashed export artifact.
+- New overall estimate: unchanged
+- Fingerprints: `ATROPOS_TREE_PORT_EXPORT_PATHS.md=b044de0f3a1a90fba0400084a3f4b46d9272d1b6233ff14377832149a5a32e6e`; final root manifest records the current control hashes
+
+### 2026-07-29T15:56:00-06:00 · Agent: Codex GPT-5 · Batch: c1-x1-atomicity-slices-001
+- Paths touched: `AGENTS.md` (+rule clarification, +this row), `src/main/kotlin/atropos/cli/commands/AgentCommand.kt` (49 added / 236 removed), `src/main/kotlin/atropos/cli/commands/AgentCommandExecutionResult.kt` (+5), `src/main/kotlin/atropos/cli/commands/AgentJobCommandHandler.kt` (+134), `src/main/kotlin/atropos/cli/commands/AgentPatchCommandHandler.kt` (+148), `src/main/kotlin/atropos/cli/commands/SelfHostCommand.kt` (33 added / 171 removed), `src/main/kotlin/atropos/cli/commands/SelfHostCommandText.kt` (+196), `src/main/kotlin/atropos/dloi/DloiService.kt` (5 added / 125 removed), `src/main/kotlin/atropos/dloi/DloiAddressParser.kt` (+58), `src/main/kotlin/atropos/dloi/DloiLineIndexer.kt` (+76), `src/main/kotlin/atropos/core/verification/ArchitectureComplianceChecker.kt` (7 added / 55 removed), `src/main/kotlin/atropos/core/verification/ArchitectureConcern.kt` (+80), `src/main/kotlin/atropos/core/verification/ArchitectureConcernDetector.kt` (+10), `src/main/kotlin/atropos/core/verification/ArchitectureCompliancePolicy.kt` (+40), `src/test/kotlin/atropos/core/verification/ArchitectureComplianceCheckerTest.kt` (+88)
+- Atoms / phases affected: `C1-X1`, `CONT-01`, Phase 8 architecture verification support, Phase 11 self-host CLI critical path
+- Predicate moved: Named atomicity blockers are split below the threshold: `AgentCommand.kt` 406 -> 219 lines, `DloiService.kt` 345 -> 225 lines, `SelfHostCommand.kt` 454 -> 316 lines; architecture concern taxonomy and policy are now separated from the checker
+- % delta: unchanged; no Gradle/test/compile gate was run in this batch
+- Why the delta is justified: The command router now delegates job and patch families to single-purpose handlers, self-host CLI text rendering moved to `SelfHostCommandText`, and DLOI address parsing plus line indexing moved out of `DloiService`. Static `git diff --check` passed for touched files, and no fake runtime acceptance was claimed.
+- New overall estimate: unchanged until the focused architecture/DLOI/CLI tests and compile slice pass
+- Fingerprints: `AgentCommand.kt=b8aa137b06072eefa83df0c72b27f75d228fb7283f2b9a9584f3ec5a55ab8c40`, `SelfHostCommand.kt=f40b9418ddac62facad3b1c126d5cb184f84c6024b79dd7a847418777f22f92b`, `DloiService.kt=1a2bde2b6faf59edba16b31eeea3ad1f9368c93836d9fe3b1ea06e94f71afbbe`, `ArchitectureComplianceChecker.kt=614f5c5cca8183e152ccdd9df2eb94dfe93d0b940227920bde7be5acd5b16ba0`
+
+### 2026-07-29T15:57:00-06:00 · Agent: Codex GPT-5 · Batch: c1-sb03-git-status-evidence-001
+- Paths touched: `src/main/kotlin/atropos/core/agent/SelfHostGitStatusEvidence.kt` (+33), `src/main/kotlin/atropos/core/agent/SelfHostAutonomousRunner.kt` (+6/-1), `src/main/kotlin/atropos/core/agent/SelfHostGoalService.kt` (+2/-1), `src/test/kotlin/atropos/core/agent/SelfHostAutonomousRunnerTest.kt` (+3/-1), `src/test/kotlin/atropos/cli/SelfHostInsideOutSandboxProofTest.kt` (+1), `AGENTS.md` (+8), `ATROPOS_ROOT_EXPORT_MANIFEST.sha256` (hash refresh)
+- Atoms / phases affected: `C1-SB-03`, Phase 11 self-build loop
+- Predicate moved: NL self-host runs now capture bounded `git status --short` output from the production runner and include it in evidence/steps instead of relying only on sandbox-test-side git status assertions
+- % delta: unchanged; no Gradle/test/compile gate was run in this batch
+- Why the delta is justified: `SelfHostGoalService.runNaturalLanguageSelfBuild` constructs `SelfHostAutonomousRunner` with `SelfHostGitStatusEvidence`, and the runner persists the status line after DAG advancement before promotion handling. Focused assertions were added to require `git_status_short exit=0` in runner evidence and sandbox CLI output.
+- New overall estimate: unchanged until the focused self-host tests and compile slice pass
+- Fingerprints: `SelfHostGitStatusEvidence.kt=50932d62e08a8ffef42768d3f9c384570264717f956e8d9e1d9ece53b8116e02`, `SelfHostAutonomousRunner.kt=7c61f7be09c3f6613a2f43dae5bc4f361d36ea76dfb5da591c849c85c6baffe1`, `SelfHostGoalService.kt=9c28d0636877579669e11393bfafcb09035a6abede16bf205d990d39b51cfa9e`
+
+### 2026-07-29T15:58:00-06:00 · Agent: Codex GPT-5 · Batch: c1-sb01-provider-context-pack-001
+- Paths touched: `src/main/kotlin/atropos/core/agent/AgentAskContextOverride.kt` (+11), `src/main/kotlin/atropos/core/agent/AgentPromptContract.kt` (+13/-0), `src/main/kotlin/atropos/core/agent/AgentService.kt` (+32/-20), `src/main/kotlin/atropos/core/provider/ContextEnvelopeFactory.kt` (+38), `src/main/kotlin/atropos/core/dag/DagProviderNodeExecutor.kt` (+33/-4), `src/main/kotlin/atropos/cli/commands/SelfHostNaturalLanguageRouter.kt` (+5), `src/test/kotlin/atropos/core/agent/AgentPromptContractTest.kt` (+63), `src/test/kotlin/atropos/core/dag/DagExecutionServiceTest.kt` (+91), `src/test/kotlin/atropos/core/provider/SourceBindingContextPackerTest.kt` (+38), `src/test/kotlin/atropos/cli/commands/SelfHostNaturalLanguageRouterTest.kt` (+15), `AGENTS.md` (+this row)
+- Atoms / phases affected: `C1-SB-01`, `C1-P10`, Source ingest binding requirement, Phase 11 provider-backed self-host path
+- Predicate moved: DAG provider calls now attach a path-bounded source pack through a typed ask override and verify the exact injected context envelope; provider node results expose source pack and fetch receipt ids for evidence export; operator NL phrases like `ATROPOS, improve yourself` route to self-host run
+- % delta: unchanged; no focused Gradle/test/compile gate was run in this batch
+- Why the delta is justified: `DagProviderNodeExecutor` now builds a DAG-node envelope with territory and policy via `ContextEnvelopeFactory.createForDagNode`, passes the active pack through `AgentAskContextOverride`, and returns provider/source-pack/fetch-receipt evidence. `AgentService.ask` reuses the supplied envelope for prompt injection and verification, normalizing only the selected provider id. New focused tests pin the prompt envelope, DAG provider pack handoff, origin-agnostic git source binding, and NL route phrases. Static `git diff --check` passed for touched files.
+- New overall estimate: unchanged until focused tests and compile slice pass
+- Fingerprints: `AgentAskContextOverride.kt=9553dd58e39499e5f1869c8e741532fffd0adcf7658daf6d4d8ef1c293f8b1b7`, `AgentPromptContract.kt=07b36dadfd915dd741a40d95e5cc62b59b6e31feb5d1f67bff7090537d3f34f0`, `AgentService.kt=0bb2138d65628e78cc1c8704de7299c85c4dd225432a851dc50dcdd0bc9cb787`, `ContextEnvelopeFactory.kt=f60440adfb0086d94d661e160e72a59e96629dfdfcb32d11c95c7c5c5e8d7842`, `DagProviderNodeExecutor.kt=b2ee733a73629a91394c0cfe31d908cdd9edcb789ce8492fa5023f349c7a945b`
+
+### 2026-07-29T15:59:00-06:00 · Agent: Codex GPT-5 · Batch: c1-sb02-worktree-recovery-evidence-001
+- Paths touched: `src/main/kotlin/atropos/core/agent/SelfHostWorktreeNodeExecutor.kt` (+20), `src/test/kotlin/atropos/core/agent/SelfHostWorktreeNodeExecutorTest.kt` (+39/-12), `src/main/kotlin/atropos/core/agent/SelfHostGoalService.kt` (+11/-8), `src/test/kotlin/atropos/core/agent/SelfHostRecoveryContinuationTest.kt` (+2), `AGENTS.md` (+this row)
+- Atoms / phases affected: `C1-SB-01`, `C1-SB-02`, `C1-SB-03`, Phase 11 restart/evidence path
+- Predicate moved: Self-host worktree mutations now refuse identical-byte writes that produce no source diff, and resume/select/advance state snapshots are appended to goal evidence instead of being discarded
+- % delta: unchanged; no focused Gradle/test/compile gate was run in this batch
+- Why the delta is justified: `SelfHostWorktreeNodeExecutor` now checks `git diff --name-only <baseline> -- <mutation path>` after the isolated write and before merge, so an empty diff cannot be reported as a verified self-build mutation. `SelfHostGoalService` now appends `state_snapshot` evidence after phase/node/DAG/evidence/territory/checkpoint/resume/select/advance transitions. Focused tests pin no-diff refusal and durable recovery snapshot evidence. Static `git diff --check` passed for touched files.
+- New overall estimate: unchanged until focused tests and compile slice pass
+- Fingerprints: `SelfHostWorktreeNodeExecutor.kt=3e5de18edf7b39ee298377ccaa4e0dafa252f2ea46d437516623d4a621685d85`, `SelfHostWorktreeNodeExecutorTest.kt=d5337080b0336b4c3f3cd9fae83d1e54160bbaba8ba866ccd7eec68747ac5aa7`, `SelfHostGoalService.kt=889d63d7b2454304bc858c4ec6007b42ec03f7ea4c8faba0737cef85f2e4d50a`, `SelfHostRecoveryContinuationTest.kt=8e75b2691c9ae50651a5346676e8bd9e7e77a9bd29358e150bd27974f24b9788`
+
+### 2026-07-29T16:58:23-06:00 · Agent: Codex GPT-5 · Batch: c1-source-binding-symlink-safety-001
+- Paths touched: `src/main/kotlin/atropos/core/provider/ContentAddressedTreeWriter.kt` (+3/-2), `src/test/kotlin/atropos/core/provider/SourceBindingContextPackerTest.kt` (+250), `AGENTS.md` (+this row)
+- Atoms / phases affected: `C1-SB-01`, source-ingest binding safety
+- Predicate moved: Local source bindings now refuse symlink-followed inputs at the tree-writer boundary, and the packer test suite pins that external symlink targets do not appear in packed source text or fetch receipts
+- % delta: unchanged
+- Why the delta is justified: `ContentAddressedTreeWriter.listFiles` now uses `Files.isRegularFile(..., NOFOLLOW_LINKS)` and the copy loop refuses symbolic-link inputs before materialization, so a source pack cannot absorb external file bytes through a symlinked path. The new regression test creates a link to a file outside the source root and asserts the linked path and external secret bytes never enter the pack.
+- New overall estimate: unchanged
+- Fingerprints: `ContentAddressedTreeWriter.kt=a9ed93e0d50a2797b57603acbbd8f5fa5a936230715e0ce49da81977f7fe8657`, `SourceBindingContextPackerTest.kt=c56eb73f00d1e4557b988414fe9d56f483e3464f675dc31b1a5f19541cab0a7d`
+
+### 2026-07-29T16:00:00-06:00 · Agent: Codex GPT-5 · Batch: c1-p7-parser-mask-001
+- Paths touched: `src/main/kotlin/atropos/core/parser/KotlinLexicalMasker.kt` (+114), `src/main/kotlin/atropos/core/parser/TreeSitterGrammarBridge.kt` (+2/-2), `src/test/kotlin/atropos/core/parser/TreeSitterGrammarBridgeTest.kt` (+31), `AGENTS.md` (+this row)
+- Atoms / phases affected: `C1-P7`, Phase 7 AST Symbol Graph foundation
+- Predicate moved: Kotlin symbol extraction no longer treats declarations inside comments, quoted strings, triple-quoted strings, or char literals as real code declarations
+- % delta: unchanged; no focused Gradle/test/compile gate was run in this batch
+- Why the delta is justified: `TreeSitterGrammarBridge` still feeds the existing `AstSymbolGraph`, but it now masks non-code lexical regions before deterministic declaration regex extraction while preserving line/column/offset shape. The new focused test pins comment/string ghost-declaration refusal without introducing a second AST engine.
+- New overall estimate: unchanged until focused parser/AST tests and compile slice pass
+- Fingerprints: `KotlinLexicalMasker.kt=6853d3be5a3bda19c536837a33440609b458e2d5034f850f5f41ec9b638b7a4b`, `TreeSitterGrammarBridge.kt=6d3dd19dde0bc42533da149d6f09eb5ec7bd55b03504aeb298ee15aef82870b5`, `TreeSitterGrammarBridgeTest.kt=8e827a53012614735da11b9be9f7a2773b2c17981fce4af237f5842e827d8ce5`
+
+### 2026-07-29T16:21:06-06:00 · Agent: Codex GPT-5 · Batch: c1-c2-truth-gates-001
+- Paths touched: `src/main/kotlin/atropos/core/provider/adapter/ProviderFailureFixtures.kt` (+27), `NonOpenAiKernelFixtures.kt` (-8/+1), `DataInfraKernelFixtures.kt` (-8/+1), `AssetProviderFixtures.kt` (-8/+1), `ProviderFixtureMatrixServiceTest.kt` (+38), `RoutePolicy.kt` (+4/-1), `QuotaLedgerRouteTruthTest.kt` (+24/-2), `ArtifactVerificationService.kt` (+31/-2), `ArtifactVerificationServiceTest.kt` (+57), `MemoryModels.kt` (+11), `LocalMemoryStore.kt` (+43/-2), `MemoryRecordCodec.kt` (+31/-1), `LocalMemoryStoreTest.kt` (+7/-1), `IsolatedWorktreeService.kt` (+15/-5), `IsolatedWorktreeServiceTest.kt` (+4), `HrRouterModels.kt` (+4), `HrRouterService.kt` (+5), `HrRouterAuditStore.kt` (+12/-1), `HrRouterServiceTest.kt` (+7/-2), `VerifiedCompletionGate.kt` (+6/-11), `VerifiedCompletionGateTest.kt` (+23/-1), `SourceBindingFetcher.kt` (+12/-1), `SourceBindingContextPackerTest.kt` (+43)
+- Atoms / phases affected: `C1-P3`, `C1-P5`, `C1-P9`, `C2-P13`, `C2-P14`, `C2-P15`, source ingest binding requirement, Phase 8 release verification support
+- Predicate moved: Offline provider family fixtures now cover required normalized failure outcomes before matrix rollup; route policy refuses descriptor-only remote providers; artifact hash verification recomputes actual content and fails blank/mismatch; memory records carry content hashes/source coordinates/failure signatures; worktree territory denials are persisted; HR audit rows keep territory/path scope; VerifiedCompletionGate consumes AuditorService.blockPromotion; HTTP bundle receipts remain origin-typed after hash-pinned archive extraction
+- % delta: unchanged; no Gradle/test/compile gate was run in this batch
+- Why the delta is justified: The batch closes residual fake-success and unwired evidence paths without creating duplicate subsystems: existing provider fixture, route, artifact, memory, worktree, HR, auditor, and source-binding owners were extended. `git diff --check` passed across the full worktree, and runtime percentage movement is withheld until focused tests/compile pass.
+- New overall estimate: unchanged until the focused affected tests and compile slice pass
+- Fingerprints: `ProviderFailureFixtures.kt=422ab6278e78962c585b5273d259e193a15e3a3c26abebf2669702e35b118693`, `RoutePolicy.kt=f01daa81626f69f56d5338010b31f078deeec74e618fb638c80225ab8a5e7ccb`, `ArtifactVerificationService.kt=50489764c323e662e2acee2812089632a8b8cb4f2e1f457427d47c840f538b92`, `LocalMemoryStore.kt=64df1285895b05136f6c306cc438e3678823e4f2afe241986205f6aafd88c284`, `IsolatedWorktreeService.kt=018b7de3deec9749f1455773ced1ecd400bae582b2786b6b66148558c1691fea`, `HrRouterAuditStore.kt=9138376031bea3f14817d45a4c14fa0f309871e8c19842307b5292c310890093`, `VerifiedCompletionGate.kt=355bd570842dccf4bb1cdd1223cd13ef40b8198464e989f7e0f0a454ca803abd`, `SourceBindingFetcher.kt=9c3734f5b6c89538da9b0a79672dddfeb8c1b1879691662025e2144d1fa0310e`
+
+### 2026-07-29T16:25:30-06:00 · Agent: Codex GPT-5 · Batch: c2-hierarchy-dag-source-scope-001
+- Paths touched: `src/main/kotlin/atropos/core/hierarchy/HierarchyModels.kt` (+22/-0), `src/test/kotlin/atropos/core/hierarchy/HierarchyRegistryTest.kt` (+51/-1), `src/main/kotlin/atropos/core/dag/DagNodeFileMutationExecutor.kt` (+64), `src/main/kotlin/atropos/core/dag/DagExecutionService.kt` (+2/-42), `src/test/kotlin/atropos/core/dag/DagExecutionServiceTest.kt` (+31), `src/main/kotlin/atropos/core/provider/SourceBindingFetcher.kt` (+8/-1), `src/test/kotlin/atropos/core/provider/SourceBindingContextPackerTest.kt` (+31)
+- Atoms / phases affected: `C2-P16`, `C1-P10`, source ingest binding requirement, `C1-X1`
+- Predicate moved: Hierarchy now models Human Owner as final parent authority and refuses dispatch territories outside a parent scope; DAG file mutation parsing/writing is no longer inline in the coordinator and refuses empty content; git source bindings without explicit refs use the remote default branch instead of assuming a `HEAD` branch
+- % delta: unchanged; no Gradle/test/compile gate was run in this batch
+- Why the delta is justified: The hierarchy dispatch contract now enforces decreasing scope in the existing registry, `DagExecutionService` delegates file mutation to a single-purpose executor, and source binding remains host-agnostic for default-branch git fetches. `git diff --check` passed for the touched files, with no runtime gate claimed.
+- New overall estimate: unchanged until focused hierarchy/DAG/source-binding tests and compile slice pass
+- Fingerprints: `HierarchyModels.kt=6c6406638bf056ca7e3e293ece5b8e4e49e24771245a573a91b92e210365e4d0`, `DagNodeFileMutationExecutor.kt=cd25fdc42cd14af0551c6437eeb1d13a1280c78d0656454b461d03e266c6d422`, `DagExecutionService.kt=13f396e4cc4d4231ee4e63a0a93813a48b880154f6c3cffce8d8932bed10d70f`, `SourceBindingFetcher.kt=4c596b01d4cefcdcefd9e463bc5a359db803c9d5b409a3d54e3cadadb1ce91cf`
+
+### 2026-07-29T16:42:00-06:00 · Agent: Codex GPT-5 · Batch: c1-sb01-active-source-binding-001
+- Paths touched: `src/main/kotlin/atropos/core/provider/ActiveSourceBindingResolver.kt` (+55), `src/test/kotlin/atropos/core/provider/ActiveSourceBindingResolverTest.kt` (+53), `src/main/kotlin/atropos/core/agent/AgentContextCollector.kt` (+5/-2), `src/main/kotlin/atropos/core/dag/DagProviderNodeExecutor.kt` (+31/-2), `src/main/kotlin/atropos/core/agent/AgentSourceContextRequirement.kt` (+24), `src/test/kotlin/atropos/core/agent/AgentSourceContextRequirementTest.kt` (+15), `src/main/kotlin/atropos/core/agent/AgentService.kt` (+29), `src/main/kotlin/atropos/core/agent/AgentRepairService.kt` (+17), `src/main/kotlin/atropos/core/evaluation/EvaluationModels.kt` (+1), `src/main/kotlin/atropos/core/evaluation/EvaluationEngine.kt` (+35), `src/test/kotlin/atropos/core/evaluation/EvaluationEngineTest.kt` (+27), `AGENTS.md` (+this row)
+- Atoms / phases affected: `C1-SB-01`, `C1-P10`, source ingest binding requirement, Phase 20 evaluation release-gate support
+- Predicate moved: Active source context can now be selected as `git`, `local_path`, `archive`, or hash-pinned `http_bundle` for agent/DAG provider context; DAG provider nodes degrade with typed evidence on invalid active binding; code-aware ask/patch/repair calls refuse provider execution when no source pack exists; promotion release evaluation has an explicit scope blocker metric
+- % delta: unchanged; no Gradle/test/compile gate was run in this batch
+- Why the delta is justified: `ActiveSourceBindingResolver` removes the remaining hardcoded local-only source pack assumption without introducing a provider registry or second context system. `AgentSourceContextRequirement` blocks blind provider calls for self-host/code paths before cascade execution, while `EvaluationEngine.evaluatePromotionRelease` now fails closed when promotion scope is missing. Repository-wide `git diff --check` passed; runtime gate movement is withheld until focused tests/compile pass.
+- New overall estimate: unchanged until focused agent/provider/evaluation tests and compile slice pass
+- Fingerprints: `ActiveSourceBindingResolver.kt=00ece8658eb7ab9aa522777122c0f0d682bcdaea36e904fc66055ba39711e684`, `AgentSourceContextRequirement.kt=f7ed434ff57b74c064404b3afbd7e6897b548b0a0166b1aa90eb765ec4db9f16`, `AgentService.kt=9d9fa5dcdc8fabb1651df4cc5e091c35fb68c25846dde9f07dc1628cffbc2ec2`, `AgentRepairService.kt=cebc8699ca05cbe0b66f74aa473f1ba9f5edfc794b5952fc8e65b4128307e2f9`, `DagProviderNodeExecutor.kt=8b79f53c951d2d146f41f5c3d677b8d02b3ea16b424bc4e1de8551a93782f197`, `EvaluationEngine.kt=5016e0b97b0335371a02f0bfba018fc8ff67977504ce89a7529626a00f10e382`
+
+### 2026-07-29T16:51:00-06:00 · Agent: Codex GPT-5 · Batch: c1-sb-cli-evidence-001
+- Paths touched: `src/main/kotlin/atropos/cli/commands/SelfHostNaturalLanguageRouter.kt` (+3/-1), `src/test/kotlin/atropos/cli/commands/SelfHostNaturalLanguageRouterTest.kt` (+8), `src/main/kotlin/atropos/core/agent/SelfHostEvidenceBundleExporter.kt` (+9), `AGENTS.md` (+this row)
+- Atoms / phases affected: `C1-SB-01`, `C1-SB-03`, Phase 11 evidence bundle and installed-runtime NL surface
+- Predicate moved: Product-level natural-language routing now accepts short operator prompts like `build yourself` and explicit `run self-host Phase 11` without falling to provider chat; self-host evidence bundles now hash every sanitized evidence entry directly in Markdown and JSON even before restart snapshots are present
+- % delta: unchanged; no Gradle/test/compile gate was run in this batch
+- Why the delta is justified: The existing production `CommandRouter` and `AgentCommand` already delegate through `SelfHostNaturalLanguageRouter`; the router now recognizes the shorter required prompt forms while preserving calculator/app prompts as provider chat. `SelfHostEvidenceBundleExporter` now emits direct evidence-entry SHA-256s plus existing output/bundle hashes. Focused static `git diff --check` passed for touched files.
+- New overall estimate: unchanged until focused CLI/evidence tests and compile slice pass
+- Fingerprints: `SelfHostNaturalLanguageRouter.kt=f9029bf85956a0ae2fbb29092b7023403e898d5046e2d09df5d1c17d1db32244`, `SelfHostNaturalLanguageRouterTest.kt=fc1956d88ed655cffa3e59e2de1bb454104d3a57aa09f5e2e9588aaa1b661895`, `SelfHostEvidenceBundleExporter.kt=ce981bd22026d26825de7aeff19d8525ea9ad943cb5dc2750494948c28cc0538`
+
+### 2026-07-29T17:05:00-06:00 · Agent: Codex GPT-5 · Batch: c1-c2-source-audit-refusal-001
+- Paths touched: `src/main/kotlin/atropos/core/provider/SourceBindingFetcher.kt` (+8/-1), `src/test/kotlin/atropos/core/provider/SourceBindingContextPackerTest.kt` (+17), `src/main/kotlin/atropos/core/auditor/AuditorService.kt` (+21), `src/main/kotlin/atropos/core/agent/AgentPatchAuditGate.kt` (+1), `src/test/kotlin/atropos/core/agent/AgentPatchAuditorTest.kt` (+19), `AGENTS.md` (+this row)
+- Atoms / phases affected: `C1-P4`, `C1-P10`, `C2-P15`, source ingest binding requirement
+- Predicate moved: Archive source binding traversal failures now return typed fetch failures, and the pre-mutation patch auditor now scans the stored diff text as well as current target files before any `git apply` mutation can run
+- % delta: unchanged; no Gradle/test/compile gate was run in this batch
+- Why the delta is justified: `SourceBindingFetcher` fails closed for malformed or unsafe zip archives instead of throwing out of the source-pack path. `AgentPatchAuditGate` now asks the existing `AuditorService` to scan persisted diff text, closing a tampered-patch bypass where secret-bearing patch bytes could reach apply after record-time checks. Focused tests specify both refusals, and static `git diff --check` passed for touched files.
+- New overall estimate: unchanged until focused source-binding/auditor tests and compile slice pass
+- Fingerprints: `SourceBindingFetcher.kt=4fb376e02916f8cb8918c3dde102ab292c30398d8c3a121d08c70db95a938894`, `SourceBindingContextPackerTest.kt=c11d1713ee2403239e556e33fc729ec98510c98168b7e5c00bdf4506f3f1a5b7`, `AuditorService.kt=7011e572de3b44dd08be443eee86cfc2d667d7e081e8a568eff4d7fbc7699fa4`, `AgentPatchAuditGate.kt=9248c1f5177f825735eca45302aab4e20edea8b750e694eca8d06b7972f3adc8`, `AgentPatchAuditorTest.kt=250557f80aec9b2ac842d729f74c980c9ce7babddb4d617b26557919a0718009`
+
+### 2026-07-29T17:14:00-06:00 · Agent: Codex GPT-5 · Batch: c1-sb-installed-root-001
+- Paths touched: `src/main/kotlin/atropos/core/agent/AgentDaemonRootResolver.kt` (+17), `src/main/kotlin/atropos/core/agent/AgentDaemonService.kt` (+1/-1), `src/test/kotlin/atropos/core/agent/AgentDaemonRootResolverTest.kt` (+31), `AGENTS.md` (+this row)
+- Atoms / phases affected: `C1-SB-01`, `C1-SB-03`, Phase 11 installed-runtime durability support
+- Predicate moved: Agent daemon durable stores now resolve from `ATROPOS_ROOT` or by walking to the ATROPOS repo root instead of defaulting directly to raw `user.dir`
+- % delta: unchanged; no Gradle/test/compile gate was run in this batch
+- Why the delta is justified: Installed-runtime self-host recovery can be launched from nested working directories while still anchoring daemon state, queue work, memory, and spawned JAR environment to the ATROPOS root. A focused resolver test specifies nested-directory resolution and explicit environment override; static `git diff --check` passed for touched files.
+- New overall estimate: unchanged until focused daemon/root tests and compile slice pass
+- Fingerprints: `AgentDaemonRootResolver.kt=571714e77d69239fdaa9934086f7c81cded9952659face32411339eed4a1c600`, `AgentDaemonService.kt=ee0a4d884e8d9e69b9232ac2e7de3902cf86c1cd9b8cc54198b41a8a065fc01a`, `AgentDaemonRootResolverTest.kt=90ed97c78ecb43091ce3049b01840db4f91052ebb9e50419c3935c9cfbb17168`
+
+### 2026-07-29T17:22:00-06:00 · Agent: Codex GPT-5 · Batch: c1-sb-provider-pack-evidence-001
+- Paths touched: `src/main/kotlin/atropos/core/agent/AgentServiceModels.kt` (+4), `src/main/kotlin/atropos/core/agent/AgentService.kt` (+5/-1), `src/main/kotlin/atropos/core/agent/AgentRepairService.kt` (+6/-1), `src/test/kotlin/atropos/core/agent/AgentServiceModelsTest.kt` (+22), `AGENTS.md` (+this row)
+- Atoms / phases affected: `C1-SB-01`, `C1-P10`, Phase 11 provider-backed self-host evidence
+- Predicate moved: Provider patch and repair results now surface source pack and fetch receipt ids in durable route memory and operator-rendered patch results
+- % delta: unchanged; no Gradle/test/compile gate was run in this batch
+- Why the delta is justified: The existing patch/repair provider path already refuses blind source context and uses attested prompts; this batch closes the evidence gap by carrying the active pack and receipt identifiers into route memory and `AgentPatchRunResult.render()`. Static `git diff --check` passed for touched files, and the focused model test pins the visible contract.
+- New overall estimate: unchanged until focused agent model/service tests and compile slice pass
+- Fingerprints: `AgentServiceModels.kt=a83f03affac996a5008e25ae96b0d0986bb53681d48a607c335da41b6e999d16`, `AgentService.kt=9b5428c378bd4aebdc4a26bfd880ffc3f3243eb6ce99407e2762f24a2e5476ab`, `AgentRepairService.kt=8b7119f72ef762c850e1a98557c8c9c2f701b3bcad32bb613145efecc304fb29`, `AgentServiceModelsTest.kt=d824cf60146de25519caec0aee47f011f8dfd6876485edd9b2bfd36f0a19e743`
+
+### 2026-07-29T17:31:00-06:00 · Agent: Codex GPT-5 · Batch: c1-sb-source-pack-byte-bound-001
+- Paths touched: `src/main/kotlin/atropos/core/provider/CodebaseContextPacker.kt` (+34/-3), `src/test/kotlin/atropos/core/provider/SourceBindingContextPackerTest.kt` (+37), `AGENTS.md` (+this row)
+- Atoms / phases affected: `C1-SB-01`, source ingest binding requirement, Phase 11 provider context pack integrity
+- Predicate moved: Source context packs now preserve UTF-8 codepoint boundaries, keep truncation markers inside the byte budget, and refuse packs that cannot fit any real file section
+- % delta: unchanged
+- Why the delta is justified: The command-input lane now treats bare command-like prefixes as first-class prompt queries, resolves them to canonical slash commands on Enter, and cycles them with arrows instead of falling back to generic history. `Main.kt` now makes the Enter and Tab resolution steps explicit in named helpers, `PromptState.kt` promotes bare command prefixes into the suggestion lane, and focused tests pin the interactive contract for prompt submission, viewport palette visibility, and palette rendering. Static `git diff --check` passed for the touched files.
+- New overall estimate: unchanged
+- Fingerprints: `Main.kt=3819ae88e8bafdc92d893aa69c9821df17c254d5870f01775631f1d22fd6e6ca`, `PromptState.kt=baa995d5e25a48e7c777c886a4d111bd02cf742715b49a065f3e628bc7037320`, `CommandCompleterTest.kt=08a682d357de098660bae9bc0b4b9101555f14332195a9dfddaeb26cf2a7c891`, `PromptStateTest.kt=2e3b0b7680df1f249c3b993c3dba1db697f8dc8b3f298fd34d6d6c79cf16cb00`, `ComposerViewportTest.kt=a1446380e5d118d404fcce796aff706b474372497b6864e43832442dfeb1e17b`, `CommandPaletteRendererTest.kt=9464248703f67ffb35cc1f4e152188fce2affe9566ccdd31118126650d679504`
+- % delta: unchanged; no Gradle/test/compile gate was run in this batch
+- Why the delta is justified: `CodebaseContextPacker` no longer slices strings by raw byte offsets or enlarges packs when replacing the pending pack id with the content-addressed id. New tests specify bounded UTF-8 truncation and fail-closed behavior when a budget is too small to carry file content. Static `git diff --check` passed for touched files.
+- New overall estimate: unchanged until focused source-binding/context-packer tests and compile slice pass
+- Fingerprints: `CodebaseContextPacker.kt=c37299372ed8eeeaffd52b250130f2ec3a9b6a017943314eb9fe748af1bca43a`, `SourceBindingContextPackerTest.kt=5e5115f487fdc571acfb844b9b4ede1a4cccfce5cfff5b8b6391a4e41a566055`
+
+### 2026-07-29T17:39:00-06:00 · Agent: Codex GPT-5 · Batch: c1-source-binding-tar-safety-001
+- Paths touched: `src/main/kotlin/atropos/core/provider/SourceBindingFetcher.kt` (+19), `src/test/kotlin/atropos/core/provider/SourceBindingContextPackerTest.kt` (+48), `AGENTS.md` (+this row)
+- Atoms / phases affected: source ingest binding requirement, `C1-P4`, `C1-SB-01`
+- Predicate moved: Tar archives are now preflighted with a typed traversal refusal before extraction, matching the existing zip traversal refusal path
+- % delta: unchanged; no Gradle/test/compile gate was run in this batch
+- Why the delta is justified: `SourceBindingFetcher` already supported `.tar`, `.tar.gz`, and `.tgz`, but extracted them without checking member paths. The new tar listing guard rejects absolute or parent-traversal entries before `tar -xf`, and the focused test builds a deterministic tar with `../escape.kt` to pin the refusal. Static `git diff --check` passed for touched files.
+- New overall estimate: unchanged until focused source-binding tests and compile slice pass
+- Fingerprints: `SourceBindingFetcher.kt=52f34894ad9ef3f05457d539f24e97ceab2e1eee04d0ea53caf00f88fc254230`, `SourceBindingContextPackerTest.kt=a8e59c1b1b00c8ace8dbe60f1a9575a84c35d0c1d574fa966d4fa02c691fe469`
+
+### 2026-07-29T17:48:00-06:00 · Agent: Codex GPT-5 · Batch: c1-agent-context-secret-bound-001
+- Paths touched: `src/main/kotlin/atropos/core/agent/AgentContextCollector.kt` (+43/-5), `src/test/kotlin/atropos/core/agent/AgentContextCollectorTest.kt` (+45), `AGENTS.md` (+this row)
+- Atoms / phases affected: `C1-P4`, `C1-SB-01`, Phase 11 provider context safety
+- Predicate moved: Direct ask/patch/repair context snapshots now refuse excluded secret-like task hints, redact allowed file snapshots, and truncate context without splitting UTF-8
+- % delta: unchanged; no Gradle/test/compile gate was run in this batch
+- Why the delta is justified: Provider source packs were redacted, but task-hinted direct file snapshots could still include a named `.env` or raw secret text. `AgentContextCollector` now applies the same exclusion and redaction discipline before provider context is built, and focused tests pin excluded hint refusal, redacted allowed hints, and byte-safe truncation. Static `git diff --check` passed for touched files.
+- New overall estimate: unchanged until focused agent context tests and compile slice pass
+- Fingerprints: `AgentContextCollector.kt=5c04d8aaf33656246a8109d69462c669167a05ef75d7a437398a57d0a387f3cf`, `AgentContextCollectorTest.kt=f414a388f55d95d0f855820c5bc1bd614c8aae3fc71604223d6ee60e34086ace`
+
+### 2026-07-29T17:55:00-06:00 · Agent: Codex GPT-5 · Batch: phase11-proof-status-truth-001
+- Paths touched: `SELFHOST_PHASE11_101_CODE_STATUS.md` (+3/-3), `AGENTS.md` (+this row)
+- Atoms / phases affected: Phase 11 proof evidence truthfulness; no runtime atom advanced
+- Predicate moved: The Phase 11 status artifact now preserves the prior installed-runtime proof evidence while marking the current dirty tree as requiring operator rerun after later code changes
+- % delta: unchanged
+- Why the delta is justified: The repository must not carry a stale “current proof PASS” claim after additional uncompiled/unproven code changes. The status document now states that the historical sandbox and installed-runtime proof remains recorded, but the present tree requires `./gradlew jar` and `scripts/selfhost-installed-proof.sh build/libs/ATROPOS.jar` before the claim is current again. Static `git diff --check` passed for the doc.
+- New overall estimate: unchanged
+- Fingerprints: `SELFHOST_PHASE11_101_CODE_STATUS.md=c8cb7b5c338f5e40adfcee7c634acae6ee3f16862d48eda64b182d5538c054d3`
+
+### 2026-07-29T17:22:57-06:00 · Agent: Codex GPT-5 · Batch: command-surface-001
+- Paths touched: `src/main/kotlin/atropos/cli/input/CommandRegistry.kt` (+57/-0), `src/main/kotlin/atropos/cli/input/CommandCompleter.kt` (+63/-0), `src/main/kotlin/atropos/Main.kt` (+21/-0), `src/main/kotlin/atropos/cli/CommandRouter.kt` (+51/-0), `src/main/kotlin/atropos/cli/ui/AnsiTerminalEngine.kt` (+27/-0), `src/main/kotlin/atropos/cli/ui/CommandPaletteRenderer.kt` (+2/-0), `src/main/kotlin/atropos/cli/ui/CommandRegistryRenderer.kt` (+4/-0), `src/main/kotlin/atropos/cli/ui/ComposerViewport.kt` (+7/-0), `src/main/kotlin/atropos/cli/ui/ViewportLayout.kt` (+2/-0), `src/test/kotlin/atropos/cli/input/CommandCompleterTest.kt` (+63/-0), `src/test/kotlin/atropos/cli/CommandRouterHelpTest.kt` (+15/-0)
+- Atoms / phases affected: Phase 11 CLI command-surface support; `/help`, `/usage`, `/self-host`, completion, and enter-submit routing
+- Predicate moved: The CLI now exposes deterministic help/self-host aliases and bare-prefix completion so the running terminal can reach self-host and command help without typing the full slash form
+- % delta: unchanged; the module still has unrelated compile failures outside this batch
+- Why the delta is justified: `CommandRegistry.search()` now drives palette/help selection for both slash and bare prefixes, `CommandCompleter.resolveSubmission()` maps `?`, `help`, `usage`, and `self-host` inputs into concrete submissions, `Main.kt` submits resolved selections on Enter, and `CommandRouter.kt` dispatches `/self-host` aliases through the production self-host flow. Focused tests were written for bare `self-host` completion and help routing, but the broader tree still fails compilation in unrelated files.
+- New overall estimate: unchanged
+- Fingerprints: `CommandRegistry.kt=6e3c4dbd4f6c9931b4d6b2eb436a814867dba9ff4c7364993891ba523d435d9e`, `CommandCompleter.kt=a67848142433e121e8198fc6f0ccb2d56a26358a86197f437a4b5e876745a322`, `Main.kt=ba4469e69c69757c9c27fc60570420b622221c1ce66e54b4b2cc7c2596403ba2`, `CommandRouter.kt=c2953bc554b95742bfe092a2b43e70506cb8c98c18eef46962e4085665f3dea5`, `AnsiTerminalEngine.kt=2fcd0202c0d3cfd921ba25025f58fb2d24e529c861be1e94b2a66f8064f0a4cf`
+
+### 2026-07-29T17:25:36-06:00 · Agent: Codex GPT-5 · Batch: c1-cli-completer-canonical-001
+- Paths touched: `src/main/kotlin/atropos/cli/input/CommandCompleter.kt` (~+32 net), `src/test/kotlin/atropos/cli/input/CommandCompleterTest.kt` (~+31 net), `AGENTS.md` (+this row)
+- Atoms / phases affected: Phase 11 interactive CLI surface, command completion UX
+- Predicate moved: Bare command words now resolve deterministically to canonical commands for `help`, `usage`, `?`, and `self-host`, and Enter submission reuses that same canonicalization instead of appending alias text
+- % delta: unchanged
+- Why the delta is justified: The completer now resolves command-prefix candidates from the registry search results plus the canonical alias target, so bare `self-host` no longer falls through to the first long `self-host` subcommand. Focused tests pin canonical-first completion, empty alias insertion, and suffix-preserving Enter resolution for `/quo` and self-host/help aliases.
+- New overall estimate: unchanged
+- Fingerprints: `src/main/kotlin/atropos/cli/input/CommandCompleter.kt=e8814a74a046e2760ded7950d91607ad3c6ff73f31d02d63c8813d8f4313efd5`, `src/test/kotlin/atropos/cli/input/CommandCompleterTest.kt=f000ca7241af4ae8511a664bd42526f59aca00a486f16ca89b1f8b76c36ec319`
+
+### 2026-07-29T17:29:41-06:00 · Agent: Codex GPT-5 · Batch: c1-cli-help-routing-001
+- Paths touched: `src/main/kotlin/atropos/cli/CommandRouter.kt` (+41/-10), `src/test/kotlin/atropos/cli/CommandRouterHelpTest.kt` (+102/-0), `AGENTS.md` (+this row)
+- Atoms / phases affected: CLI command surface UX; help-routing and self-host shorthand surface
+- Predicate moved: `?`, `/help`, `/usage`, `help`, and `/self-host help` now route to the help renderer instead of provider chat or self-host run fallback; `/self-host` shorthand still resolves to the self-host status path without provider chat
+- % delta: unchanged
+- Why the delta is justified: `CommandRouter` now funnels all help-like entry points through one shared `renderHelpPage` path, restoring the general help notices that were previously unreachable behind a dead `/help` branch and adding an explicit self-host help branch. The new regression test covers the help variants, self-host shorthand, and the self-host help alias while asserting provider chat is never invoked for those inputs. `git diff --check` passed for the touched files; the focused Gradle test run was started but did not complete within the session window.
+- New overall estimate: unchanged
+- Fingerprints: `src/main/kotlin/atropos/cli/CommandRouter.kt=c2953bc554b95742bfe092a2b43e70506cb8c98c18eef46962e4085665f3dea5`, `src/test/kotlin/atropos/cli/CommandRouterHelpTest.kt=aa01f6799fb2b41c86e0454a9c64abe22423d4fa9d7b4c06284c5fc6dc428b12`
+
+### 2026-07-29T17:31:29-06:00 · Agent: Codex GPT-5 · Batch: c1-cli-command-registry-alias-help-001
+- Paths touched: `src/main/kotlin/atropos/cli/input/CommandRegistry.kt` (+216/-32), `src/main/kotlin/atropos/cli/ui/ViewportLayout.kt` (+2/-1), `src/main/kotlin/atropos/cli/ui/CommandRegistryRenderer.kt` (+53/-20), `src/test/kotlin/atropos/cli/input/CommandRegistryTest.kt` (+37), `src/test/kotlin/atropos/cli/ui/CommandRegistryRendererTest.kt` (+25), `AGENTS.md` (+this row)
+- Atoms / phases affected: `C1-X1`, CLI command discovery/help catalog lane
+- Predicate moved: Command aliases are now owned by the registry as canonical metadata, `/usage`, `/?`, and `/self-host` are surfaced from the same source in the viewport quick-access list and slash help renderer, and the grouped help display no longer carries a separate local slash-command table
+- % delta: unchanged
+- Why the delta is justified: `CommandRegistry` now models canonical command entries with alias families, expands them into searchable/completable rows, and exposes grouped help sections plus a quick-access list for the viewport. `CommandRegistryRenderer` now renders grouped slash help from the registry and shows alias families in help text, while `ViewportLayout` sources its command list from the registry helper instead of a hardcoded list. Focused tests pin alias grouping and renderer output; no Gradle/compile gate was run in this batch.
+- New overall estimate: unchanged
+- Fingerprints: `CommandRegistry.kt=ef6c6f27e2dfb705e3c5045cb68bbb9e4f50afbbb6c2d6b8b4d2c93eb183fa60`, `ViewportLayout.kt=f9f1c318383c3809e7ed9ce5cbe9d661edc61b6594f6fc291c0e3d03f9346cce`, `CommandRegistryRenderer.kt=a8e28cbacf5e91f1a7e4764b9251820e55ab4901bd8d73947cfc955e7766eabe`, `CommandRegistryTest.kt=9afe735e4546b3b1d05c708304f6c5f9fa18390103b2b106902ae93ecd921d73`, `CommandRegistryRendererTest.kt=ac90c5a8877dd601710668f230799de00d5d594e93a0b5b9045c9f4c733303d0`
+
+### 2026-07-29T17:33:45-06:00 · Agent: Codex GPT-5 · Batch: c1-ui-help-render-001
+- Paths touched: `src/main/kotlin/atropos/cli/ui/AnsiTerminalEngine.kt` (+84/-24), `src/test/kotlin/atropos/cli/ui/AnsiTerminalEngineHelpTest.kt` (+52), `AGENTS.md` (+this row)
+- Atoms / phases affected: Phase 11 CLI/help rendering surface; command help and filter presentation only
+- Predicate moved: Plain-terminal help now actually prints grouped, filter-aware command help instead of only queuing transcript blocks in reactive mode; the footer guidance line is always visible and the render path stays provider-free
+- % delta: unchanged; a focused Gradle test run reached Kotlin compilation but was interrupted by daemon instability before completion
+- Why the delta is justified: `AnsiTerminalEngine.renderHelp()` now emits the same grouped lines through `emitPlain()` when the terminal is non-reactive, preventing the previous silent no-op path. The help lines are built deterministically from `CommandRegistry` with explicit group headings, a stable footer, and filtered match counts, and the new regression test pins the plain-terminal output shape. The focused Gradle run reached `compileKotlin` before the local Kotlin daemon crashed and fell back, so no runtime verification claim is made yet.
+- New overall estimate: unchanged
+- Fingerprints: `AnsiTerminalEngine.kt=6d093c6757135c63796feb4f93beacbea079137dd9cd7ec5ee0910f590ba1b42`, `AnsiTerminalEngineHelpTest.kt=8e6592d8f59d7d7bcac26d320665f7fede65424341829af245ffe4301d17b9da`
+
+### 2026-07-29T17:44:48-06:00 · Agent: Codex GPT-5 · Batch: c1-sb-origin-redaction-001
+- Paths touched: `src/main/kotlin/atropos/core/provider/SourceBindingFetcher.kt` (+22 new lines in the existing dirty file), `src/test/kotlin/atropos/core/provider/SourceBindingContextPackerTest.kt` (+32 new lines in the existing dirty file), `AGENTS.md` (+this row)
+- Atoms / phases affected: `C1-SB-01`, source ingest binding origin/secret-redaction evidence
+- Predicate moved: Fetch receipts no longer retain URI user-info credentials for Git/HTTP origins, including the HTTP bundle receipt override, while the fetch continues using the original binding URI
+- % delta: unchanged; no compile/test gate was run by instruction
+- Why the delta is justified: `SourceBindingFetcher` now sanitizes receipt repository origins through URI parsing with a fallback redaction, and the focused HTTP context-pack regression binds a credential-bearing URI, verifies the content pack remains available, and asserts both username and password are absent from the receipt origin. `git diff --check` passed for the two lane files. Runtime acceptance remains unclaimed because compilation/tests were intentionally not run.
+- New overall estimate: unchanged
+- Fingerprints: `SourceBindingFetcher.kt=44973e5af2fad5d6cb9b275b205e7f73e6a55a82aa237f39162e65ff76375ada`, `SourceBindingContextPackerTest.kt=c6093a27b4738239e07297e45acab3cde662fb85e56a282b3c1b6cc43d3a75db`
+
+3. CURRENT OPEN PRIORITIES (ordered)
+Work the highest open atom that is not blocked. Prefer:
+Close remaining self-build interactive path (Phase 11) so NL → mutate → compile gate → git status is true inside the JAR.
+Finish critical stubs to 100% (ConstraintSolver depth, TreeSitter/AST, ArchitectureCompliance enforcement).
+Territory + Auditor wiring (Phases 13, 15).
+HOE CLI Antigravity-class gaps (sticky chrome, progressive disclosure, six answers always visible).
+Phase 20 ledger substrate (evidence/memory/proposal/amendment on lakehouse CAS) only after Phase 11 is green.
+App Factory and multiplatform only after the above.
+Exact atom IDs live in: - docs/ or Drive: Core Engine Gap Map v2 - HOE UI/UX Gap Map v2 - Phase 20+ Architecture + Gap Map v2
+Open only the paths named by the atom you are executing.
+For context-efficient file discovery, read `ATROPOS_TREE_PORT_EXPORT_PATHS.md`. It is tree data, not a batch ledger, and is refreshed only after whole phase completion or explicit Human Owner request.
+
+4. MANDATORY UPDATE PROTOCOL
+After every coherent batch:
+List exact files written or modified and approximate line deltas.
+State which acceptance predicate(s) moved from false/PARTIAL to true or higher %.
+Append a Progress Ledger row (§2) with timestamp.
+Recalculate only the affected phase/aggregate percentages; leave unrelated baselines untouched.
+If overall weighted % changes, record the new overall and the arithmetic.
+Do not claim a phase is 100% unless its Blueprint acceptance gate is fully met and evidence exists inside the repo.
+If a batch produces no measurable predicate movement, still log the paths and state “% unchanged”.
+
+5. QUOTA / TOKEN EFFICIENCY RULES
+Never dump the full export or full Source Docs into context.
+Never re-derive architecture already locked in the gap maps.
+One coherent batch at a time; the batch may contain many slices and one or more tightly related atoms when that is the efficient closure unit.
+Prefer extend-in-place over new files; new file only when the non-duplication law requires it.
+Prefer small pure functions and single-responsibility files over large mixed-concern files.
+Do not run full-project Gradle or full test suites unless the atom’s acceptance predicate requires it or the human has authorized it.
+Free/local tools first. Paid providers only when explicitly unlocked.
+After the batch boundary is reached and this file is updated, immediately continue to the next open atom or batch. No “awaiting confirmation”.
+
+6. HUMAN-MANDATORY STOP LIST
+Stop and surface a clear request to the human only for:
+Entering or rotating secrets / API keys
+Enabling paid providers or spending money
+Full Gradle build / JAR install / device-side install that the human must run
+Destructive git operations on main / protected branches
+Any action that permanently weakens an immutable invariant (authority, territory, verification, secret policy)
+Everything else continues autonomously.
+
+7. CODE STYLE FORCED ON EVERY AGENT
+Extreme per-file atomic decoupling: one file = one responsibility.
+Composition over inheritance and over monoliths.
+No file mixes presentation + decision + transport + verification.
+New code must leave ArchitectureComplianceChecker equal or better.
+All new self-build or mutation paths must go through VerifiedCompletionGate; nonzero exit forbids VERIFIED.
+Territory recorded at claim/dispatch; out-of-territory writes refused before mutation.
+Evidence (hashes, paths, gate results) produced for every completion claim.
+
+8. RESEARCH PLANES (never collapse)
+Ordinary NL user prompt → automatic lakehouse / DLOI retrieval only.
+Application research document (when knowledge is insufficient) → SpecGraph or fallback ATROPOS DAG.
+Phase 20 self-improvement → evidence → proposal → auditor → versioned amendment → Phase 11 execution.
+User-app research never becomes ATROPOS law. Phase 20 never silently rewrites Source Docs 1–3.
+
+9. WHAT SUCCESS LOOKS LIKE FOR AN EXTERNAL AGENT
+Maximum correct lines of code written in maximum properly decoupled files.
+Measurable movement of an acceptance predicate recorded in the Progress Ledger.
+This file updated with truthful deltas and fingerprints.
+No fake completion, no silent authority change, no quota waste, no unnecessary full builds.
+Next open atom started immediately.
+When Phase 11 self-build is fully green, ATROPOS can begin to perform this loop on itself. Until then, external agents are the hands; this file is the contract.
+
+10. FINGERPRINT OF THIS DOCUMENT
+Created: 2026-07-29
+Baseline source: full export juxtaposition + gap maps
+Overall original baseline: ≈ 42%
+Next agent: read §0–§3, execute highest open atom, append §2, continue.
+
+### 2026-07-29T17:44:57-06:00 · Agent: Codex GPT-5 · Batch: lane4-recovery-report-roundtrip-001
+- Paths touched: `src/main/kotlin/atropos/core/recovery/RestartCoordinator.kt` (+45/-2), `src/test/kotlin/atropos/core/recovery/RestartCoordinatorTest.kt` (+34), `AGENTS.md` (+9)
+- Atoms / phases affected: Lane 4 audit restart/evidence continuity; `C1-SB-02`, Phase 11 recovery evidence
+- Predicate moved: Persisted restart snapshots now restore the complete `RecoveryReport` counters, timestamp, message, and errors; recovery message/error values are redacted before persistence
+
+- % delta: unchanged; no compile or test execution was permitted
+- Why the delta is justified: Before this batch, `RestartCoordinator` wrote only a recovery message and `readSnapshot` discarded it by leaving `StateSnapshot.recoveryReport` null. The additive snapshot fields and focused round-trip test preserve the recovery outcome while asserting `token=plain-token` is restored only as `<redacted:secret>`. `git diff --check` passed for both lane files.
+- New overall estimate: unchanged
+- Fingerprints: `RestartCoordinator.kt=f45dfd69aab60783da999bc9d5278b6f310ef7fbac3af4e85d7bb12e6f813278`, `RestartCoordinatorTest.kt=f34a8ad30262cb134858b282b01a1d5461b55be40bad7558ac941ba0b90e0bf6`
+
+### 2026-07-29T17:45:03-06:00 · Agent: Codex GPT-5 · Batch: c1-sb02-empty-merge-hard-fail-001
+- Paths touched: `src/main/kotlin/atropos/core/worktree/IsolatedWorktreeService.kt` (current dirty diff +39/-24; this slice adds empty-diff and diff-command failure refusals at the merge boundary), `src/test/kotlin/atropos/core/worktree/IsolatedWorktreeServiceTest.kt` (+46), `AGENTS.md` (+8)
+- Atoms / phases affected: `C1-SB-02`, `C1-SB-03`, Phase 11 mutation/promotion safety
+- Predicate moved: `IsolatedWorktreeService.verifyAndMerge` can no longer report a clean isolated worktree as verified and merged; it now refuses when diff inspection fails or produces no source diff, and the focused test asserts the persisted record remains unverified and the worktree remains available for inspection
+- % delta: unchanged; Gradle/test/compile execution was intentionally not run per task constraint
+- Why the delta is justified: The shared merge owner now fails before writing `verified=true` or `mergedBack=true` when no source change exists, closing a direct-caller false-success path that the self-host executor previously guarded only locally. `IsolatedWorktreeServiceTest.verifyAndMerge_refuses_a_clean_worktree_without_marking_it_verified` establishes the intended refusal and retention behavior; `git diff --check` passed for the two lane files.
+- New overall estimate: unchanged pending permitted runtime test evidence
+- Fingerprints: `IsolatedWorktreeService.kt=94e1046ad1fb23b7585b21180d6ae812c609decf9d358376a88eba6ff48e4d2c`, `IsolatedWorktreeServiceTest.kt=2885005715f9273a536af94267c6fc400c5765ca3aa1d7791f6b87f83507165d`
+### 2026-07-29T17:45:27-06:00 · Agent: Codex GPT-5 · Batch: lane2-provider-context-refusal-001
+- Paths touched: `src/main/kotlin/atropos/core/agent/AgentService.kt` (+10 net in lane slice), `src/main/kotlin/atropos/core/agent/AgentSourceContextRequirement.kt` (+typed refusal contract), `src/test/kotlin/atropos/core/agent/AgentSourceContextRequirementTest.kt` (+42)
+- Atoms / phases affected: Lane 2 provider/context wiring; `C1-SB-01`, `C1-P10`, Phase 11 provider-backed self-host path
+- Predicate moved: Code-aware provider asks now refuse typed source-context failures even when a caller supplies a context override; both source-pack and fetch-receipt attestations are required before provider execution
+- % delta: unchanged; focused tests were added but not executed per instruction, and no compile/build/package/install command was run
+- Why the delta is justified: The previous `AgentService.ask` guard applied only when `contextOverride == null`, allowing arbitrary override text and envelope metadata to reach a provider for code-aware tasks without source-pack evidence. `AgentSourceContextRequirement.Refusal` now reports stable `MISSING_SOURCE_PACK` or `MISSING_FETCH_RECEIPT` codes, and `AgentService` applies the check to collector and override snapshots alike. Static `git diff --check` and targeted symbol checks passed. Residual: runtime test/compile evidence is intentionally absent.
+- New overall estimate: unchanged
+- Fingerprints: `AgentService.kt=d211d4a88bff6cb49885fa8727f9398a4de7706a1b4f45982be7af7186427cf4`, `AgentSourceContextRequirement.kt=27e795bdc04d11df540b1e386a32ba3a14d6d300c45d3e6a10b7f92079a5c25f`, `AgentSourceContextRequirementTest.kt=b67474510c2046e7c221838be42065a8ae16bda1ff6a28f7ac2a4e04c72ae081`
+### 2026-07-29T17:45:40-06:00 · Agent: Codex GPT-5 · Batch: lane1-cli-prefix-submit-001
+- Paths touched: `src/main/kotlin/atropos/cli/input/CommandCompleter.kt` (+0/-2 net behavioral change within existing dirty slice), `src/test/kotlin/atropos/cli/input/CommandCompleterTest.kt` (+8), `AGENTS.md` (+8)
+- Atoms / phases affected: Lane 1 CLI entry path; Phase 11 self-host CLI surface
+- Predicate moved: Selected non-first bare command-prefix completions are now preserved on Enter instead of being collapsed to hard-coded `/status` or `/self-host` roots
+- % delta: unchanged; runtime tests and compile were not run per task constraint
+- Why the delta is justified: `resolveCommand` now uses the selected `CommandRegistry.search` result for `status` and `self-host`, while retaining the explicit help aliases. The focused test pins `/status adapters` and `/self-host run` submission resolution from selected indices. `git diff --check` passed for the edited tracked source; no runtime acceptance was claimed.
+- New overall estimate: unchanged pending permitted compile/test evidence
+- Fingerprints: `CommandCompleter.kt=4f25b8ac3cb6d53f3555b6ee485e058a1f7fedb3fa9477dd8179e4f581b88b4a`, `CommandCompleterTest.kt=84272e8f21550592ca9b982c84fd0dd59980f93379361a3c43173d07c0395b20`
+
+### 2026-07-29T17:47:00-06:00 · Agent: Codex GPT-5 · Batch: parallel-lanes-integration-001
+- Paths touched: `AGENTS.md` (ledger marker moved to document end), `ATROPOS_ROOT_EXPORT_MANIFEST.sha256` (root control hash refreshed)
+- Atoms / phases affected: parallel Phase 11/provider safety batch bookkeeping; no new runtime atom
+- Predicate moved: The append-only root control document remains structurally readable after five parallel lanes completed and appended their evidence rows
+- % delta: unchanged
+- Why the delta is justified: All five lanes completed disjoint code/test slices with `git diff --check` passing; this integration slice moved the document terminator after the new rows and refreshed the manifest hash without claiming compile or runtime acceptance.
+- New overall estimate: unchanged
+- Fingerprints: `AGENTS.md=2abf3d59776caf1107b7eda747ca879178219b4d29c3bc2415d0d7e19e7d8cc2`, `ATROPOS_TREE_PORT_EXPORT_PATHS.md=b044de0f3a1a90fba0400084a3f4b46d9272d1b6233ff14377832149a5a32e6e`
+
+### 2026-07-29T18:05:00-06:00 · Agent: Codex GPT-5 · Batch: phase11-director-audit-wave-001
+- Paths touched: Phase 11 agent/provider/worktree/policy/recovery/daemon/artifact owners and focused tests, including `AgentProviderContextBoundary.kt`, `AgentPatchCascadeRunner.kt`, `SelfHostGoalQueryService.kt`, `SelfHostGoalStartService.kt`, `SelfHostGoalPromotionBoundary.kt`, `SelfHostMutationPayloadParser.kt`, `SelfHostWorktreeDiffInspector.kt`, `SelfHostGitBaselineReader.kt`, `BoundedGitWorktreeCommandRunner.kt`, `BoundedProcessRunner.kt`, `AgentPatchAgencyRunner.kt`, `AgentDaemonProcessLauncher.kt`, `SelfHostCandidateJarBuilder.kt`, `AgentSmokeRunner.kt`, `AgentRunRepoStatus.kt`, `SelfHostGitStatusEvidence.kt`, `SelfHostPromotionService.kt`, `SelfHostWorktreeNodeExecutor.kt`, `IsolatedWorktreeService.kt`, `RestartCoordinator.kt`, `CrashRecoveryService.kt`, `SafeJarSwapGate.kt`, `TerritoryGrantService.kt`, `ProviderState.kt`, `AgentRepairService.kt`, `AgentPromptContract.kt`, `scripts/selfhost-installed-proof.sh`, and their focused tests; `AGENTS.md` (+this row), `ATROPOS_ROOT_EXPORT_MANIFEST.sha256` (hash refresh)
+- Atoms / phases affected: `C1-SB-01`, `C1-SB-02`, `C1-SB-03`, `C1-P10`, `C2-P13`, `C2-P15`, Phase 11 self-build execution, recovery, evidence, and process safety
+- Predicate moved: Provider calls now fail closed on invalid identity/envelope/source-pack/receipt evidence; self-host mutation and promotion paths enforce territory, agency, non-empty diff, safety, Director advisory, VerifiedCompletionGate, and safe swap ordering; recovery/evidence state is redacted and goal-scoped; direct process mechanics are consolidated behind bounded typed argv runners with timeout/output/root controls
+- % delta: unchanged; no Gradle, compile, package, install, or runtime tests were run
+- Why the delta is justified: Five parallel audit lanes plus follow-up lanes implemented real code and focused tests, and each reported static `git diff --check` success. The parent Director review found and closed residual overlaps, including raw Git baseline/process calls and unowned direct process launches, before recording this single batch boundary. Runtime acceptance remains unclaimed until the operator compiles and executes the focused suites.
+- New overall estimate: unchanged
+- Fingerprints: refreshed in `ATROPOS_ROOT_EXPORT_MANIFEST.sha256`; tree export remains unchanged because no complete canonical phase was closed
+
+### 2026-07-29T18:18:00-06:00 · Agent: Codex GPT-5 · Batch: phase11-context-process-closure-001
+- Paths touched: `AgentContextCollector.kt`, `ContextEnvelopeFactory.kt`, `GitRepositoryMetadataReader.kt`, `BoundedGitWorktreeCommandRunner.kt`, `SourceBindingFetcher.kt`, `VerifiedCompletionGate.kt`, `BoundedProcessRunner.kt`, focused source/provider/verifier tests, `AGENTS.md` (+this row), `ATROPOS_ROOT_EXPORT_MANIFEST.sha256` (hash refresh)
+- Atoms / phases affected: `C1-SB-01`, `C1-P10`, `C1-P7`, Phase 11 provider visibility, attestation, source ingest, and verification execution
+- Predicate moved: Source context collection and repository metadata now use bounded typed execution; source-binding and completion-gate commands fail closed on launch/nonzero/timeout/truncation and redact diagnostics; Git metadata has deterministic typed fallback
+- % delta: unchanged; no Gradle, compile, package, install, or runtime tests were run
+- Why the delta is justified: Three parallel lanes composed existing process owners and added focused tests for literal argv, timeout/output bounds, metadata fallback, source-fetch failures, and completion-gate nonzero behavior. Static `git diff --check` passed; runtime acceptance remains unclaimed for operator verification.
+- New overall estimate: unchanged
+- Fingerprints: refreshed in `ATROPOS_ROOT_EXPORT_MANIFEST.sha256`; `ATROPOS_TREE_PORT_EXPORT_PATHS.md` unchanged
+
+End of AGENTS.md

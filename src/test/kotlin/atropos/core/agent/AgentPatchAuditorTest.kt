@@ -149,6 +149,25 @@ class AgentPatchAuditorTest {
     }
 
     @Test
+    fun a_tampered_stored_patch_with_secret_text_never_reaches_git_apply() {
+        val root = repo()
+        val record = ordinaryPatch(root)
+        Files.writeString(
+            record.diffFile,
+            "--- a/notes.txt\n+++ b/notes.txt\n@@ -1 +1 @@\n-old\n+api_key = \"sk-live-abcdefghijklmnopqrstuvwxyz0123456789\"\n",
+            StandardCharsets.UTF_8
+        )
+        val spawns = SpawnCounter()
+
+        val result = storeOver(root, spawns).applyPatch(record.id, checkOnly = false)
+
+        assertEquals(0, spawns.mutations.get(), "secret-bearing stored diff must not be applied")
+        assertTrue(!result.applied)
+        assertTrue(result.refusalReason.orEmpty().contains("auditor blocked apply"))
+        assertEquals(AgencyDisposition.POLICY_BLOCKED, result.disposition)
+    }
+
+    @Test
     fun a_check_only_run_is_not_refused_by_the_audit() {
         val root = repo()
         val record = patchTouchingAFileThatHoldsSecrets(root)

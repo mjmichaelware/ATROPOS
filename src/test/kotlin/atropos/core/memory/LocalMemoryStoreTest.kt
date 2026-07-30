@@ -31,6 +31,7 @@ class LocalMemoryStoreTest {
         assertNotNull(restored)
         assertEquals(record.id, restored.id)
         assertFalse(restored.body.contains("sk-test-secret-value"))
+        assertEquals(64, restored.contentSha256.length)
         assertEquals(1, reopened.status().totalRecords)
     }
 
@@ -84,9 +85,13 @@ class LocalMemoryStoreTest {
         assertEquals("queue state", reopened.findBySubject("queue", "queue-1").first().title)
         assertEquals("route decision", reopened.findBySubject("route", "route-1").first().title)
         assertEquals("compile failure", reopened.findBySubject("repair", "failure-1").first().title)
+        assertEquals(64, reopened.findBySubject("repair", "failure-1").first().failureSignature?.length)
         assertEquals("repair result", reopened.latestByKind(MemoryKind.REPAIR).first().title)
         assertEquals("verification result", reopened.latestByKind(MemoryKind.VERIFICATION).first().title)
-        assertEquals("source decision", reopened.findBySubject("source", "source-1").first().title)
+        val sourceRecord = reopened.findBySubject("source", "source-1").first()
+        assertEquals("source decision", sourceRecord.title)
+        assertEquals("source-1", sourceRecord.sourceCoordinate)
+        assertEquals(MemoryAuthority.SOURCE_REFERENCE, sourceRecord.authority)
         assertEquals("summary state", reopened.findBySubject("summary", "summary-1").first().title)
         assertEquals("recovery state", reopened.findBySubject("recovery", "recovery-1").first().title)
         assertEquals("verification reward +1.0", reopened.findBySubject("reward", "narrow").first().title)

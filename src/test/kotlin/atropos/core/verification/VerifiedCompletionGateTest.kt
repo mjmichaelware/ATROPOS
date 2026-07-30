@@ -4,6 +4,7 @@ package atropos.core.verification
 import atropos.core.dag.DagNode
 import atropos.core.dag.DagNodeAction
 import atropos.core.dag.DagStore
+import atropos.core.policy.BoundedProcessRunner
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
@@ -30,7 +31,8 @@ class VerifiedCompletionGateTest {
         territory: List<String> = listOf("src"),
         expectedOutputs: List<String> = listOf("src/A.kt"),
         optionalChecks: Set<String> = emptySet(),
-        result: String? = "done"
+        result: String? = "done",
+        claimOwner: String? = null
     ) = DagNode(
         id = "node-1",
         label = "completion",
@@ -40,6 +42,7 @@ class VerifiedCompletionGateTest {
         expectedOutputs = expectedOutputs,
         optionalChecks = optionalChecks,
         result = result,
+        claimOwner = claimOwner,
         createdAt = Instant.now(),
         updatedAt = Instant.now(),
         metaFile = Path.of("unused")
@@ -75,6 +78,22 @@ class VerifiedCompletionGateTest {
 
         assertFalse(result.passed, "used to pass as 'no tests required (skipped)'")
         assertTrue(result.detail.contains("nothing was verified"), result.detail)
+    }
+
+    @Test
+    fun failed_or_bounded_gradle_commands_never_pass_verification_gates() {
+        val root = repo()
+        val runner = BoundedProcessRunner { _, _, _, _ -> ProcessBuilder("false").start() }
+        val result = VerifiedCompletionGate(
+            repoRoot = root,
+            dagStore = DagStore(root),
+            processRunner = runner
+        ).evaluateNode(node())
+
+        assertFalse(result.gateResults.single { it.gateName == "Focused Tests" }.passed)
+        assertFalse(result.gateResults.single { it.gateName == "Compile Gate" }.passed)
+        assertTrue(result.gateResults.single { it.gateName == "Focused Tests" }.detail.contains("exit=1"))
+        assertTrue(result.gateResults.single { it.gateName == "Compile Gate" }.detail.contains("exit=1"))
     }
 
     @Test
@@ -203,6 +222,27 @@ class VerifiedCompletionGateTest {
         )
         // ...yet the node is still not completable, because another gate failed.
         assertFalse(report.canComplete, "a clean audit must not rescue a failing node")
+    }
+
+    @Test
+    fun auditor_gate_blocks_self_audited_claims() {
+        val root = repo()
+        Files.createDirectories(root.resolve("src"))
+        Files.writeString(root.resolve("src/A.kt"), "val a = 1\n", StandardCharsets.UTF_8)
+
+        val result = gateNamed(
+            root,
+            node(
+                payload = null,
+                territory = listOf("src"),
+                expectedOutputs = listOf("src/A.kt"),
+                claimOwner = "auditor"
+            ),
+            "Auditor Findings"
+        )
+
+        assertFalse(result.passed)
+        assertTrue(result.detail.contains("auditor-independence"), result.detail)
     }
 
     @Test

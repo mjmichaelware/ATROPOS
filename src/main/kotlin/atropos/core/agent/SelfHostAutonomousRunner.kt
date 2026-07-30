@@ -3,7 +3,8 @@ package atropos.core.agent
 class SelfHostAutonomousRunner(
     private val service: SelfHostGoalService,
     private val jarLocator: SelfHostRuntimeJarLocator,
-    private val jarBuilder: SelfHostCandidateJarBuilder? = null
+    private val jarBuilder: SelfHostCandidateJarBuilder? = null,
+    private val gitStatusEvidence: SelfHostGitStatusEvidence? = null
 ) {
     fun run(prompt: String, phase: String = "11", maxAdvances: Int = 25): SelfHostAutonomousRunResult {
         val steps = mutableListOf<String>()
@@ -28,6 +29,10 @@ class SelfHostAutonomousRunner(
         val record = service.resolveStatusGoal(goalId).goal?.record ?: latest.goal?.record
         if (record == null) {
             return stopped(SelfHostResult(false, "self-host goal disappeared: $goalId"), null, null, steps)
+        }
+        gitStatusEvidence?.capture()?.let { statusLine ->
+            service.addEvidence(goalId, statusLine)
+            steps += statusLine
         }
         if (record.terminalCondition != GoalTerminalCondition.VERIFIED_COMPLETE) {
             service.addEvidence(goalId, service.planNextAction(goalId).evidenceLine())

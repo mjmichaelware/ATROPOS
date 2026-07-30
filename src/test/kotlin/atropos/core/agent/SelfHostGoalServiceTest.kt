@@ -136,6 +136,38 @@ class SelfHostGoalServiceTest {
     }
 
     @Test
+    fun setDag_refreshes_territory_and_current_ready_node() {
+        val repoRoot = Files.createTempDirectory("atropos-self-host-set-dag-")
+        initializeGitRepo(repoRoot)
+        val store = GoalRunStore(repoRoot)
+        val service = SelfHostGoalService(repoRoot = repoRoot, store = store)
+        val started = service.startGoal("replace self-host DAG", "11")
+        val goalId = started.goal?.record?.id ?: error("missing goal id")
+        val dag = DagExecutionService(repoRoot = repoRoot).createDag(
+            label = "replacement DAG",
+            nodes = listOf(
+                DagNode(
+                    id = "replacement-ready",
+                    label = "replacement node",
+                    territory = listOf("src/main/kotlin/atropos/core/provider"),
+                    action = DagNodeAction.VERIFY,
+                    createdAt = Instant.parse("2026-07-29T00:10:00Z"),
+                    updatedAt = Instant.parse("2026-07-29T00:10:00Z"),
+                    metaFile = repoRoot.resolve(".atropos/dag/replacement-ready.meta")
+                )
+            )
+        )
+
+        val result = service.setDag(goalId, dag.id)
+
+        assertTrue(result.ok, result.message)
+        val record = store.resolve(goalId) ?: error("missing updated goal")
+        assertEquals(dag.id, record.dagId)
+        assertEquals("replacement-ready", record.currentNodeId)
+        assertEquals(listOf("src/main/kotlin/atropos/core/provider"), record.territory)
+    }
+
+    @Test
     fun advanceGoal_runs_attested_nodes_and_records_real_source_diff() {
         val repoRoot = Files.createTempDirectory("atropos-self-host-advance-")
         initializeGitRepo(repoRoot)
@@ -287,6 +319,55 @@ class SelfHostGoalServiceTest {
         assertEquals(GoalRunStatus.RUNNING, store.resolve(running.id)?.status)
         assertEquals(GoalRunStatus.CONTINUING, store.resolve(recovery.id)?.status)
         assertTrue(store.resolve(recovery.id)?.evidence.orEmpty().any { it.startsWith("context_attestation system=ATROPOS") })
+    }
+
+    @Test
+    fun advanceNextResumableGoal_attests_the_locally_selected_node_after_stale_restart_pointer() {
+        val repoRoot = Files.createTempDirectory("atropos-self-host-stale-pointer-")
+        initializeGitRepo(repoRoot)
+        val base = Instant.parse("2026-07-27T07:07:00Z")
+        var tick = 0L
+        val store = GoalRunStore(repoRoot, clock = { base.plusSeconds(tick++) })
+        val dagService = DagExecutionService(repoRoot = repoRoot)
+        val first = DagNode(
+            id = "ready-first",
+            label = "first local node",
+            territory = listOf("src/main/kotlin/atropos/core/agent"),
+            action = DagNodeAction.VERIFY,
+            state = DagNodeState.READY,
+            createdAt = base,
+            updatedAt = base,
+            metaFile = repoRoot.resolve(".atropos/dag/ready-first.meta")
+        )
+        val second = first.copy(
+            id = "ready-second",
+            label = "second local node",
+            metaFile = repoRoot.resolve(".atropos/dag/ready-second.meta")
+        )
+        val dag = dagService.createDag("stale pointer recovery", listOf(first, second), "atropos-self-host")
+        val created = store.createGoalRun("stale pointer recovery", provider = "self-host")
+        val recovery = store.update(
+            created.copy(
+                status = GoalRunStatus.RECOVERY_REQUIRED,
+                dagId = dag.id,
+                activePhase = "11",
+                currentNodeId = second.id,
+                territory = second.territory
+            )
+        )
+        val service = SelfHostGoalService(
+            repoRoot = repoRoot,
+            store = store,
+            dagService = dagService,
+            clock = { base.plusSeconds(tick++) }
+        )
+
+        val result = service.advanceNextResumableGoal(recovery.id)
+
+        assertTrue(result.ok, result.message)
+        assertEquals(DagNodeState.COMPLETE, dagService.readDag(dag.id)?.findNode(first.id)?.state)
+        assertEquals(DagNodeState.READY, dagService.readDag(dag.id)?.findNode(second.id)?.state)
+        assertTrue(store.resolve(recovery.id)?.evidence.orEmpty().any { it.contains("select:${first.id}") })
     }
 
     @Test

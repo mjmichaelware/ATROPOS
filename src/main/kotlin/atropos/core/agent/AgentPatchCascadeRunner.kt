@@ -46,6 +46,23 @@ class AgentPatchCascadeRunner(
     }
 ) {
     internal fun run(patchOrder: List<String>, prompt: String, context: String): AgentPatchCascadeResult {
+        val contextRefusal = AgentProviderContextBoundary.validateSourcePack(
+            context = context,
+            sourcePackId = extractMarker(context, "SOURCE_PACK_ID="),
+            fetchReceiptId = extractMarker(context, "FETCH_RECEIPT_ID=")
+        )
+        if (contextRefusal != null) {
+            val reason = contextRefusal.message
+            return AgentPatchCascadeResult(
+                failure = AgentPatchAttempt(
+                    result = ProviderCascadeResult(providerName = "none", response = "", errors = emptyList()),
+                    extraction = AgentPatchExtraction("", emptyList(), false),
+                    retryAttempted = false,
+                    rejectionReason = reason,
+                    responsePreview = reason
+                )
+            )
+        }
         var lastFailure: AgentPatchAttempt? = null
 
         for (provider in patchOrder) {
@@ -180,4 +197,11 @@ class AgentPatchCascadeRunner(
 
     private fun containsDiffHeader(text: String): Boolean =
         text.contains("diff --git ") || text.contains("\n--- ") || text.trimStart().startsWith("--- ")
+
+    private fun extractMarker(context: String, prefix: String): String? =
+        context.lineSequence()
+            .firstOrNull { it.startsWith(prefix) }
+            ?.removePrefix(prefix)
+            ?.trim()
+            ?.takeIf { it.isNotBlank() }
 }

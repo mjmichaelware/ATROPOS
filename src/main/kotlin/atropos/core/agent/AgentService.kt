@@ -11,6 +11,7 @@ import atropos.core.policy.BoundedAgencyGate
 import atropos.core.policy.ExecutionPolicyEngine
 import atropos.core.policy.ProviderActionProposals
 import atropos.core.provider.ContextAttestationService
+import atropos.core.provider.ContextEnvelope
 import atropos.core.provider.ContextEnvelopeFactory
 import atropos.core.provider.ProviderTruthService
 import atropos.core.security.RedactionFilter
@@ -61,34 +62,78 @@ class AgentService(
         )
     }
 
-    fun ask(activeProviderName: String, task: String): AgentRunResult {
-        val snapshot = collector.collect()
+    fun ask(
+        activeProviderName: String,
+        task: String,
+        contextOverride: AgentAskContextOverride? = null
+    ): AgentRunResult {
         val selection = selector.select(activeProviderName)
         val sanitizedTask = redactionFilter.redact(task.trim())
         val providerId = selection.askOrder.firstOrNull() ?: "groq"
+        val envelope = contextOverride?.envelope?.forProvider(providerId)
+            ?: ContextEnvelopeFactory.createSimple(
+                providerId = providerId,
+                modelId = "",
+                task = sanitizedTask,
+                repoRoot = collector.repoRoot
+            )
+        val snapshot = contextOverride?.toSnapshot(collector.repoRoot) ?: collector.collect()
+        val envelopeRefusal = AgentProviderContextBoundary.validateEnvelope(envelope, collector.repoRoot)
+        if (envelopeRefusal != null) {
+            val reason = envelopeRefusal.message
+            memoryStore.rememberFailure(
+                subjectType = "agent_ask",
+                subjectId = null,
+                title = "agent ask context envelope refused",
+                body = reason,
+                tags = listOf("agent", "ask", "context", "blocked")
+            )
+            return AgentRunResult(
+                providerName = "none",
+                answerText = reason,
+                contextByteCount = snapshot.byteCount,
+                failureSummary = reason,
+                sourcePackId = snapshot.sourcePackId,
+                fetchReceiptId = snapshot.fetchReceiptId
+            )
+        }
+        val sourceContextRefusal = AgentSourceContextRequirement.refusalFor(
+            operation = "ask",
+            task = sanitizedTask,
+            sourcePackId = snapshot.sourcePackId,
+            fetchReceiptId = snapshot.fetchReceiptId,
+            context = snapshot.text
+        )
+        if (sourceContextRefusal != null) {
+            val reason = sourceContextRefusal.message
+            memoryStore.rememberFailure(
+                subjectType = "agent_ask",
+                subjectId = null,
+                title = "agent ask source context refused: ${sourceContextRefusal.code}",
+                body = reason,
+                tags = listOf("agent", "ask", "source-pack", "blocked")
+            )
+            return AgentRunResult(
+                providerName = "local_fallback",
+                answerText = "$reason\n${fallbackAnswer(sanitizedTask, snapshot)}",
+                contextByteCount = snapshot.byteCount,
+                failureSummary = reason,
+                sourcePackId = snapshot.sourcePackId,
+                fetchReceiptId = snapshot.fetchReceiptId
+            )
+        }
         return try {
             val result = router.completeWithCascade(
                 requestedProvider = providerId,
                 prompt = sanitizedTask,
-                context = AgentPromptContract.build(
+                context = AgentPromptContract.buildWithEnvelope(
                     context = snapshot.text,
-                    providerId = providerId,
-                    task = sanitizedTask,
-                    repoRoot = collector.repoRoot
+                    envelope = envelope
                 ),
                 providerOrderOverride = selection.askOrder,
                 beforeAttempt = { provider -> enforceProviderPolicy(provider, sanitizedTask, "ask") }
             )
 
-            // Build the envelope that was sent for attestation verification
-            val envelope = ContextEnvelopeFactory.createSimple(
-                providerId = result.providerName,
-                modelId = "",
-                task = sanitizedTask,
-                repoRoot = collector.repoRoot
-            )
-
-            // Verify provider response attestation
             val verified = ContextAttestationService.verify(envelope, result.response)
             val displayText: String
             val providerDisplayName: String
@@ -109,7 +154,7 @@ class AgentService(
                         tags = listOf("context", "attestation", "failure")
                     )
                     // Try once more with corrective compact context, then fall back to local
-                    val retryResult = retryWithCompactContext(providerId, sanitizedTask, snapshot.text)
+                    val retryResult = retryWithCompactContext(providerId, sanitizedTask, snapshot.text, envelope)
                     if (retryResult != null) {
                         displayText = redactionFilter.redact(normalizeAgentAnswer(retryResult.response.trim()))
                         providerDisplayName = retryResult.providerName
@@ -162,7 +207,8 @@ class AgentService(
     private fun retryWithCompactContext(
         providerId: String,
         sanitizedTask: String,
-        context: String
+        context: String,
+        envelope: ContextEnvelope
     ): ProviderCascadeResult? {
         return try {
             val compactContext = "ATROPOS: retrying after context attestation failure. " +
@@ -172,21 +218,13 @@ class AgentService(
             router.completeWithCascade(
                 requestedProvider = providerId,
                 prompt = sanitizedTask,
-                context = AgentPromptContract.build(
+                context = AgentPromptContract.buildWithEnvelope(
                     context = compactContext,
-                    providerId = providerId,
-                    task = sanitizedTask,
-                    repoRoot = collector.repoRoot
+                    envelope = envelope
                 ),
                 beforeAttempt = { provider -> enforceProviderPolicy(provider, sanitizedTask, "ask") }
             ).let { result ->
-                val retryEnvelope = ContextEnvelopeFactory.createSimple(
-                    providerId = result.providerName,
-                    modelId = "",
-                    task = sanitizedTask,
-                    repoRoot = collector.repoRoot
-                )
-                val retryVerified = ContextAttestationService.verify(retryEnvelope, result.response)
+                val retryVerified = ContextAttestationService.verify(envelope, result.response)
                 when (retryVerified) {
                     is ContextAttestationService.VerifiedResult.Accepted -> result
                     is ContextAttestationService.VerifiedResult.Rejected -> null
@@ -199,6 +237,28 @@ class AgentService(
         val snapshot = collector.collectPatch(task)
         val selection = selector.select(activeProviderName, patchProviderOverride)
         val prompt = redactionFilter.redact(task.trim())
+        val sourceRefusal = AgentProviderContextBoundary.validateSourcePack(
+            context = snapshot.text,
+            sourcePackId = snapshot.sourcePackId,
+            fetchReceiptId = snapshot.fetchReceiptId
+        )
+        if (sourceRefusal != null) {
+            val reason = sourceRefusal.message
+            memoryStore.rememberFailure(
+                subjectType = "agent_patch",
+                subjectId = null,
+                title = "agent patch source context unavailable",
+                body = reason,
+                tags = listOf("agent", "patch", "source-pack", "blocked")
+            )
+            return localPatchFailure(
+                providerName = "local_fallback",
+                contextByteCount = snapshot.byteCount,
+                retryAttempted = false,
+                failureSummary = reason,
+                rejectionReason = reason
+            )
+        }
 
         return try {
             val cascade = patchCascadeRunner.run(selection.patchOrder, prompt, snapshot.text)
@@ -226,7 +286,7 @@ class AgentService(
             memoryStore.rememberRoute(
                 subjectId = result.providerName,
                 title = "agent patch route",
-                body = "task=${prompt.trim()}\nprovider=${result.providerName}\npatch=${record.id}\ncheck=${check.statusText}",
+                body = "task=${prompt.trim()}\nprovider=${result.providerName}\npatch=${record.id}\ncheck=${check.statusText}\nsourcePack=${snapshot.sourcePackId ?: "none"}\nfetchReceipt=${snapshot.fetchReceiptId ?: "none"}",
                 tags = listOf("agent", "patch", "route")
             )
 
@@ -236,7 +296,9 @@ class AgentService(
                 diffByteCount = record.diffBytes,
                 patchId = record.id,
                 patchPath = record.diffFile,
-                checkResult = check
+                checkResult = check,
+                sourcePackId = snapshot.sourcePackId,
+                fetchReceiptId = snapshot.fetchReceiptId
             )
         } catch (failure: Exception) {
             memoryStore.rememberFailure(
@@ -257,6 +319,22 @@ class AgentService(
 
     fun verify(patchReference: String): AgentVerificationRunResult =
         verifier.verify(patchReference)
+
+    private fun AgentAskContextOverride.toSnapshot(repoRoot: java.nio.file.Path): AgentContextSnapshot =
+        AgentContextSnapshot(
+            repoRoot = repoRoot,
+            text = contextText,
+            byteCount = byteCount,
+            truncated = false,
+            sourcePackId = sourcePackId,
+            fetchReceiptId = fetchReceiptId
+        )
+
+    private fun ContextEnvelope.forProvider(providerId: String): ContextEnvelope {
+        if (this.providerId == providerId) return this
+        val adjusted = copy(providerId = providerId, canonicalContextHash = "")
+        return adjusted.copy(canonicalContextHash = ContextEnvelopeFactory.computeHash(adjusted))
+    }
 
     fun repair(activeProviderName: String, patchReference: String): AgentPatchRunResult =
         repairService.repair(activeProviderName, patchReference)
@@ -305,6 +383,8 @@ class AgentService(
             rejectionReason = rejectionReason,
             responsePreview = responsePreview,
             failureSummary = failureSummary,
+            sourcePackId = null,
+            fetchReceiptId = null,
             message = "ATROPOS did not apply anything. Local fallback cannot generate a provider patch."
         )
 
