@@ -24,8 +24,11 @@ class ProviderChatDispatcher(
     private val cwd: () -> String,
     private val markdownRenderer: MarkdownRenderer = MarkdownRenderer(),
     private val attestationRenderer: ContextAttestationRenderer =
-        ContextAttestationRenderer(TerminalTheme(atropos.cli.config.ConfigurationManager()))
+        ContextAttestationRenderer(TerminalTheme(atropos.cli.config.ConfigurationManager())),
+    private val redactionFilter: atropos.core.security.RedactionFilter =
+        atropos.core.security.RedactionFilter()
 ) {
+
     fun dispatch(prompt: String, currentProviderName: String) {
         sessionTracker.recordPrompt(prompt, rateResolver(currentProviderName))
         uiEngine.startSpinner("Thinking")
@@ -58,10 +61,34 @@ class ProviderChatDispatcher(
                 mythologyRequested = mythologyRequested
             )
         } catch (failure: Exception) {
-            uiEngine.renderError(failure.message ?: "provider dispatch failed")
+            // A provider exception is the most secret-dense string the CLI ever
+            // renders: HTTP clients put the request URL and the Authorization
+            // header into the message, and providers echo the offending key back
+            // in error bodies. This used to paint `failure.message` verbatim.
+            // ProviderCascadeFormatter.cleanError already existed to normalise
+            // these — it just had no caller — and RedactionFilter strips whatever
+            // survives normalisation.
+            uiEngine.renderError(safeProviderFailure(failure, currentProviderName))
         } finally {
             uiEngine.stopSpinner()
         }
+    }
+
+    /**
+     * Normalises then redacts a provider failure, in that order.
+     *
+     * Order matters: [ProviderCascadeFormatter.cleanError] collapses a known
+     * failure shape into a short operator-facing line, and redaction then covers
+     * the unknown shapes it passes through unchanged. Redacting first would leave
+     * `<redacted:…>` markers inside text the formatter tries to pattern-match.
+     */
+    internal fun safeProviderFailure(failure: Throwable, providerName: String): String {
+        val raw = failure.message?.takeIf { it.isNotBlank() }
+            ?: return "provider dispatch failed (${failure.javaClass.simpleName})"
+        val normalized = runCatching {
+            atropos.cli.ui.ProviderCascadeFormatter.cleanError(raw, providerName)
+        }.getOrDefault(raw)
+        return redactionFilter.compact(normalized, MAX_FAILURE_CHARS)
     }
 
     private fun routeProvider(prompt: String, currentProviderName: String): String =
@@ -134,5 +161,10 @@ class ProviderChatDispatcher(
             lower.contains("atropos")
     }
 
-    private companion object { const val ATTESTATION_WIDTH = 80 }
+    private companion object {
+        const val ATTESTATION_WIDTH = 80
+
+        /** Bounds a provider failure line so a huge error body cannot fill the screen. */
+        const val MAX_FAILURE_CHARS = 400
+    }
 }

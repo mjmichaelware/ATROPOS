@@ -14,7 +14,7 @@ class GitRepositoryMetadataReaderTest {
         val root = Files.createTempDirectory("atropos-context-root-")
         val directories = mutableListOf<java.nio.file.Path>()
         val runner = BoundedGitWorktreeCommandRunner { command, directory, _ ->
-            directories += directory
+            directories.add(directory)
             when (command.drop(1)) {
                 listOf("rev-parse", "--abbrev-ref", "HEAD") ->
                     GitWorktreeCommandResult(0, "feature/self-host\n")

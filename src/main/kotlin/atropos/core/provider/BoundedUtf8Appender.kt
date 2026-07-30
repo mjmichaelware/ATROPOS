@@ -34,6 +34,16 @@ internal object BoundedUtf8Appender {
         onTruncated()
     }
 
+    /**
+     * UTF-8 size of what has been appended so far.
+     *
+     * Exposed because callers that bound a pack by byte budget need the same
+     * accounting this object uses internally. Recomputing it at the call site
+     * would put a second definition of "how big is this so far" in the tree, and
+     * the two would drift the moment one of them started counting chars.
+     */
+    fun utf8Size(builder: StringBuilder): Int = builder.byteCount()
+
     private fun StringBuilder.byteCount(): Int =
         toString().toByteArray(StandardCharsets.UTF_8).size
 

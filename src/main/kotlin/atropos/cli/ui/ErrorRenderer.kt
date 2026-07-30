@@ -3,13 +3,22 @@ package atropos.cli.ui
 
 import atropos.cli.ui.design.Role
 import atropos.cli.ui.design.Spacing
+import atropos.core.security.RedactionFilter
 
 /**
  * Error display renderer showing failure reason, recovery suggestions, and copyable details.
  * Implements Section E of ATROPOS: redundant channels (color + icon + text) for accessibility.
+ *
+ * Every operator-visible string here is redacted before paint. That matters more
+ * in this renderer than anywhere else in the UI: the details block is labelled
+ * "copy for support", so its whole purpose is to be pasted somewhere else. An
+ * unredacted secret leaving through a block that invites forwarding is the exact
+ * leak Phase 4 exists to prevent, so redaction happens at the boundary rather
+ * than being left to each caller to remember.
  */
 class ErrorRenderer(
-    private val theme: TerminalTheme
+    private val theme: TerminalTheme,
+    private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     data class ErrorInfo(
         val title: String,
@@ -23,7 +32,8 @@ class ErrorRenderer(
      * Render a user-facing error with recovery suggestions.
      * Ensures NO_COLOR/dumb terminal compatibility by including text labels.
      */
-    fun render(error: ErrorInfo, width: Int): List<String> {
+    fun render(rawError: ErrorInfo, width: Int): List<String> {
+        val error = redacted(rawError)
         val safeWidth = width.coerceIn(40, 200)
         val output = mutableListOf<String>()
 
@@ -86,5 +96,21 @@ class ErrorRenderer(
      * Inline error badge for status lines (e.g., "provider error").
      */
     fun badge(message: String): String =
-        theme.paint(Role.STATUS_ERROR, "●") + " " + theme.paint(Role.STATUS_ERROR, message)
+        theme.paint(Role.STATUS_ERROR, "●") + " " +
+            theme.paint(Role.STATUS_ERROR, redactionFilter.redact(message))
+
+    /**
+     * Redacts every operator-visible field once, at the boundary.
+     *
+     * Done as a whole-record copy rather than per-field at each use site so a
+     * field added to [ErrorInfo] later cannot quietly bypass redaction: the
+     * compiler forces this function to name it.
+     */
+    private fun redacted(error: ErrorInfo): ErrorInfo = ErrorInfo(
+        title = redactionFilter.redact(error.title),
+        message = redactionFilter.redact(error.message),
+        suggestion = error.suggestion?.let(redactionFilter::redact),
+        details = error.details?.let(redactionFilter::redact),
+        recovery = error.recovery?.let(redactionFilter::redact)
+    )
 }

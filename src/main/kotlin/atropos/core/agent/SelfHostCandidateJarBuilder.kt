@@ -100,7 +100,7 @@ class SelfHostCandidateJarBuilder(
                 } else {
                     AgentExecutionFailure.NONZERO_EXIT
                 },
-                outputTruncated = result.output.length >= CANDIDATE_MAX_OUTPUT_CHARS
+                outputTruncated = result.output.orEmpty().length >= CANDIDATE_MAX_OUTPUT_CHARS
             )
         }
         if (!Files.isRegularFile(expectedJar) || Files.size(expectedJar) <= 0L) {
@@ -116,7 +116,7 @@ class SelfHostCandidateJarBuilder(
             message = "candidate jar built: ${expectedJar.fileName}",
             candidateJar = expectedJar,
             proposalId = proposal.id,
-            outputTruncated = result.output.length >= CANDIDATE_MAX_OUTPUT_CHARS
+            outputTruncated = result.output.orEmpty().length >= CANDIDATE_MAX_OUTPUT_CHARS
         )
     }
 
