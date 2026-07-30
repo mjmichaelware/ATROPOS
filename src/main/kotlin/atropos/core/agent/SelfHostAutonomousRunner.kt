@@ -25,7 +25,10 @@ class SelfHostAutonomousRunner(
         val recoveryBudget = 2
         while (advances < maxAdvances.coerceAtLeast(1)) {
             advances += 1
-            val advanced = service.advanceGoal(goalId, compactState = "self-host natural-language continuation")
+            val advanced = service.advanceNextResumableGoal(
+                goalId = goalId,
+                compactState = "self-host natural-language continuation"
+            )
             steps += advanced.message
             latest = advanced
             val record = advanced.goal?.record

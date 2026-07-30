@@ -24,6 +24,7 @@ object AgentProviderContextBoundary {
             INVALID_CONTEXT_HASH,
             MISSING_SOURCE_PACK,
             MISSING_FETCH_RECEIPT,
+            MISSING_CONTEXT,
             PACK_RECEIPT_MISMATCH,
             TRUNCATED_SOURCE_PACK
         }
@@ -50,7 +51,7 @@ object AgentProviderContextBoundary {
     }
 
     fun validateSourcePack(
-        context: String,
+        context: String?,
         sourcePackId: String?,
         fetchReceiptId: String?,
         sourcePackContentHash: String? = null,
@@ -58,6 +59,9 @@ object AgentProviderContextBoundary {
         sourceBindingKind: SourceBindingKind? = null,
         truncated: Boolean = false
     ): Refusal? {
+        if (context == null) {
+            return Refusal(Refusal.Code.MISSING_CONTEXT, "attested source context is unavailable")
+        }
         if (context.isBlank()) {
             return Refusal(Refusal.Code.BLANK_CONTEXT, "provider context is empty")
         }
@@ -72,27 +76,30 @@ object AgentProviderContextBoundary {
         }
         val packMarker = "SOURCE_PACK_ID=$sourcePackId"
         val receiptMarker = "FETCH_RECEIPT_ID=$fetchReceiptId"
-        if (!context.contains(packMarker) || !context.contains(receiptMarker)) {
+        if (!hasExactMarker(context, packMarker) || !hasExactMarker(context, receiptMarker)) {
             return Refusal(
                 Refusal.Code.PACK_RECEIPT_MISMATCH,
                 "source context does not contain the supplied pack and fetch receipt identifiers"
             )
         }
         sourcePackContentHash?.takeIf { it.isNotBlank() }?.let {
-            if (!context.contains("PACK_CONTENT_HASH=$it")) {
+            if (!hasExactMarker(context, "PACK_CONTENT_HASH=$it")) {
                 return Refusal(Refusal.Code.PACK_RECEIPT_MISMATCH, "source context content hash does not match the attached pack")
             }
         }
         sourceTreeHash?.takeIf { it.isNotBlank() }?.let {
-            if (!context.contains("TREE_HASH=$it")) {
+            if (!hasExactMarker(context, "TREE_HASH=$it")) {
                 return Refusal(Refusal.Code.PACK_RECEIPT_MISMATCH, "source context tree hash does not match the attached receipt")
             }
         }
         sourceBindingKind?.let {
-            if (!context.contains("BINDING=$it")) {
+            if (!hasExactMarker(context, "BINDING=$it")) {
                 return Refusal(Refusal.Code.PACK_RECEIPT_MISMATCH, "source context binding kind does not match the attached receipt")
             }
         }
         return null
     }
+
+    private fun hasExactMarker(context: String, marker: String): Boolean =
+        context.lineSequence().any { it == marker }
 }

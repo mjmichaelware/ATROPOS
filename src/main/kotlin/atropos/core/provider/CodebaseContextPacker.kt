@@ -17,6 +17,12 @@ class CodebaseContextPacker(
     private val pendingPackId = "pack-0000000000000000"
 
     fun pack(request: SourcePackRequest): SourcePackResult {
+        if (request.maxBytes <= 0) {
+            return SourcePackResult.Refused("source context pack maxBytes must be positive")
+        }
+        if (request.maxFileBytes <= 0) {
+            return SourcePackResult.Refused("source context pack maxFileBytes must be positive")
+        }
         if (request.allowedPaths.isEmpty()) {
             return SourcePackResult.Refused("source context pack requires at least one allowed path")
         }
@@ -30,7 +36,11 @@ class CodebaseContextPacker(
             return SourcePackResult.Refused(reason)
         }
 
-        val allowed = request.allowedPaths.map { it.trim().trim('/').replace('\\', '/') }.filter { it.isNotBlank() }
+        val rawAllowed = request.allowedPaths.map { it.trim().replace('\\', '/') }
+        if (rawAllowed.any { it.startsWith("/") || it.split('/').contains("..") }) {
+            return SourcePackResult.Refused("source context pack territory must stay within the bound source tree")
+        }
+        val allowed = rawAllowed.map { it.trim('/').trim() }.filter { it.isNotBlank() }
         val included = fetched.receipt.paths.filter { path ->
             allowed.any { root -> path == root || path.startsWith("$root/") }
         }.sorted()
@@ -41,12 +51,12 @@ class CodebaseContextPacker(
         val builder = StringBuilder(request.maxBytes)
         var truncated = false
         var redacted = false
-        appendBounded(builder, "SOURCE_PACK_ID=$pendingPackId\n", request.maxBytes) { truncated = true }
-        appendBounded(builder, "FETCH_RECEIPT_ID=${fetched.receipt.id}\n", request.maxBytes) { truncated = true }
-        appendBounded(builder, "BINDING=${fetched.receipt.bindingKind}\n", request.maxBytes) { truncated = true }
-        appendBounded(builder, "TREE_HASH=${fetched.receipt.treeHash}\n", request.maxBytes) { truncated = true }
-        appendBounded(builder, "PACK_CONTENT_HASH=$contentHashPlaceholder\n", request.maxBytes) { truncated = true }
-        appendBounded(builder, "TERRITORY=${allowed.joinToString("|")}\n\n", request.maxBytes) { truncated = true }
+        BoundedUtf8Appender.append(builder, "SOURCE_PACK_ID=$pendingPackId\n", request.maxBytes) { truncated = true }
+        BoundedUtf8Appender.append(builder, "FETCH_RECEIPT_ID=${fetched.receipt.id}\n", request.maxBytes) { truncated = true }
+        BoundedUtf8Appender.append(builder, "BINDING=${fetched.receipt.bindingKind}\n", request.maxBytes) { truncated = true }
+        BoundedUtf8Appender.append(builder, "TREE_HASH=${fetched.receipt.treeHash}\n", request.maxBytes) { truncated = true }
+        BoundedUtf8Appender.append(builder, "PACK_CONTENT_HASH=$contentHashPlaceholder\n", request.maxBytes) { truncated = true }
+        BoundedUtf8Appender.append(builder, "TERRITORY=${allowed.joinToString("|")}\n\n", request.maxBytes) { truncated = true }
 
         val packedPaths = mutableListOf<String>()
         for (relative in included) {
@@ -68,7 +78,7 @@ class CodebaseContextPacker(
                 truncated = true
                 break
             }
-            appendBounded(builder, section, request.maxBytes) { truncated = true }
+            BoundedUtf8Appender.append(builder, section, request.maxBytes) { truncated = true }
             packedPaths += relative
         }
 
@@ -76,11 +86,14 @@ class CodebaseContextPacker(
             return SourcePackResult.Refused("source context pack contained no readable files")
         }
         val initial = builder.toString()
-        val contentHash = sha256(initial.replace("PACK_CONTENT_HASH=$contentHashPlaceholder", ""))
+        // Hash the exact canonical representation used for verification. The two
+        // self-referential fields remain placeholders while all source bytes and
+        // receipt provenance are included in the digest.
+        val contentHash = sha256(initial)
         val packId = "pack-${contentHash.take(16)}"
         val text = initial
-            .replace("SOURCE_PACK_ID=$pendingPackId", "SOURCE_PACK_ID=$packId")
-            .replace("PACK_CONTENT_HASH=$contentHashPlaceholder", "PACK_CONTENT_HASH=$contentHash")
+            .replaceFirst("SOURCE_PACK_ID=$pendingPackId", "SOURCE_PACK_ID=$packId")
+            .replaceFirst("PACK_CONTENT_HASH=$contentHashPlaceholder", "PACK_CONTENT_HASH=$contentHash")
         val bytes = text.toByteArray(StandardCharsets.UTF_8).size
         return SourcePackResult.Packed(
             CodebaseContextPack(
@@ -94,51 +107,6 @@ class CodebaseContextPacker(
                 text = text
             )
         )
-    }
-
-    private fun appendBounded(builder: StringBuilder, text: String, maxBytes: Int, onTruncated: () -> Unit) {
-        val current = builder.toString().toByteArray(StandardCharsets.UTF_8).size
-        val remaining = maxBytes - current
-        if (remaining <= 0) {
-            onTruncated()
-            return
-        }
-        val bytes = text.toByteArray(StandardCharsets.UTF_8)
-        if (bytes.size <= remaining) {
-            builder.append(text)
-        } else {
-            val marker = "\n[source context truncated]\n"
-            val markerBytes = marker.toByteArray(StandardCharsets.UTF_8).size
-            val bodyLimit = (remaining - markerBytes).coerceAtLeast(0)
-            builder.append(text.utf8Prefix(bodyLimit))
-            if (markerBytes <= remaining - builder.lastAppendByteCount(current)) {
-                builder.append(marker)
-            }
-            onTruncated()
-        }
-    }
-
-    private fun StringBuilder.lastAppendByteCount(previousBytes: Int): Int =
-        byteCount() - previousBytes
-
-    private fun StringBuilder.byteCount(): Int =
-        toString().toByteArray(StandardCharsets.UTF_8).size
-
-    private fun String.utf8Prefix(maxBytes: Int): String {
-        if (maxBytes <= 0) return ""
-        val out = StringBuilder()
-        var used = 0
-        var index = 0
-        while (index < length) {
-            val codePoint = codePointAt(index)
-            val text = String(Character.toChars(codePoint))
-            val size = text.toByteArray(StandardCharsets.UTF_8).size
-            if (used + size > maxBytes) break
-            out.append(text)
-            used += size
-            index += Character.charCount(codePoint)
-        }
-        return out.toString()
     }
 
     private fun sha256(value: String): String =

@@ -9,6 +9,7 @@ object AgentSourceContextRequirement {
         enum class Code {
             MISSING_SOURCE_PACK,
             MISSING_FETCH_RECEIPT,
+            MISSING_CONTEXT,
             PACK_RECEIPT_MISMATCH,
             TRUNCATED_SOURCE_PACK
         }
@@ -60,24 +61,22 @@ object AgentSourceContextRequirement {
                 detail = "source context fetch receipt unavailable for code-aware operation"
             )
         }
-        val contextRefusal = context?.let {
-            AgentProviderContextBoundary.validateSourcePack(
-                context = it,
-                sourcePackId = sourcePackId,
-                fetchReceiptId = fetchReceiptId,
-                sourcePackContentHash = sourcePackContentHash,
-                sourceTreeHash = sourceTreeHash,
-                sourceBindingKind = sourceBindingKind,
-                truncated = truncated
-            )
-        }
+        val contextRefusal = AgentProviderContextBoundary.validateSourcePack(
+            context = context,
+            sourcePackId = sourcePackId,
+            fetchReceiptId = fetchReceiptId,
+            sourcePackContentHash = sourcePackContentHash,
+            sourceTreeHash = sourceTreeHash,
+            sourceBindingKind = sourceBindingKind,
+            truncated = truncated
+        )
         if (contextRefusal != null) {
             return Refusal(
                 operation = operation,
-                code = if (contextRefusal.code == AgentProviderContextBoundary.Refusal.Code.TRUNCATED_SOURCE_PACK) {
-                    Code.TRUNCATED_SOURCE_PACK
-                } else {
-                    Code.PACK_RECEIPT_MISMATCH
+                code = when (contextRefusal.code) {
+                    AgentProviderContextBoundary.Refusal.Code.TRUNCATED_SOURCE_PACK -> Code.TRUNCATED_SOURCE_PACK
+                    AgentProviderContextBoundary.Refusal.Code.MISSING_CONTEXT -> Code.MISSING_CONTEXT
+                    else -> Code.PACK_RECEIPT_MISMATCH
                 },
                 detail = contextRefusal.detail
             )

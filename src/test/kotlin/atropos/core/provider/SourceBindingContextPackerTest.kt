@@ -59,6 +59,7 @@ class SourceBindingContextPackerTest {
         assertTrue(pack.text.contains("FILE src/main/kotlin/atropos/core/agent/Sample.kt"))
         assertTrue(pack.text.contains("<redacted:secret>"), pack.text)
         assertTrue(!pack.text.contains("secret-value"), pack.text)
+        assertTrue(pack.hasValidContentHash(), pack.text)
     }
 
     @Test
@@ -79,6 +80,48 @@ class SourceBindingContextPackerTest {
         assertTrue(pack.byteCount <= 2_048, "pack exceeded bound: ${pack.byteCount}")
         assertTrue(pack.text.contains("PACK_CONTENT_HASH=${pack.contentHash}"), pack.text)
         assertTrue(!pack.text.contains("PACK_CONTENT_HASH=${"0".repeat(64)}"), pack.text)
+        assertTrue(pack.hasValidContentHash(), pack.text)
+    }
+
+    @Test
+    fun contextPackIntegrityRejectsTamperedBytes() {
+        val root = Files.createTempDirectory("atropos-source-pack-integrity-")
+        Files.createDirectories(root.resolve("src"))
+        Files.writeString(root.resolve("src/Valid.kt"), "package valid\nobject Valid\n")
+        val packed = assertIs<SourcePackResult.Packed>(
+            CodebaseContextPacker(repoRoot = root).pack(
+                SourcePackRequest(SourceBinding.localPath(root), listOf("src"))
+            )
+        ).pack
+
+        assertTrue(packed.hasValidContentHash())
+        val tampered = packed.copy(text = packed.text.replace("object Valid", "object Tampered"))
+        assertTrue(!tampered.hasValidContentHash())
+    }
+
+    @Test
+    fun contextPackRefusesInvalidBudgetsAndTraversalTerritory() {
+        val root = Files.createTempDirectory("atropos-source-pack-invalid-request-")
+        Files.createDirectories(root.resolve("src"))
+        Files.writeString(root.resolve("src/Valid.kt"), "package valid\nobject Valid\n")
+        val packer = CodebaseContextPacker(repoRoot = root)
+        val binding = SourceBinding.localPath(root)
+
+        val zeroBytes = packer.pack(SourcePackRequest(binding, listOf("src"), maxBytes = 0))
+        assertTrue(zeroBytes is SourcePackResult.Refused)
+        assertTrue((zeroBytes as SourcePackResult.Refused).reason.contains("maxBytes"))
+
+        val zeroFileBytes = packer.pack(SourcePackRequest(binding, listOf("src"), maxFileBytes = 0))
+        assertTrue(zeroFileBytes is SourcePackResult.Refused)
+        assertTrue((zeroFileBytes as SourcePackResult.Refused).reason.contains("maxFileBytes"))
+
+        val traversal = packer.pack(SourcePackRequest(binding, listOf("../src")))
+        assertTrue(traversal is SourcePackResult.Refused)
+        assertTrue((traversal as SourcePackResult.Refused).reason.contains("bound source tree"))
+
+        val absolute = packer.pack(SourcePackRequest(binding, listOf("/src")))
+        assertTrue(absolute is SourcePackResult.Refused)
+        assertTrue((absolute as SourcePackResult.Refused).reason.contains("bound source tree"))
     }
 
     @Test

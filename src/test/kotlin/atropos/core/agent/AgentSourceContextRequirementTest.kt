@@ -91,4 +91,19 @@ class AgentSourceContextRequirementTest {
             refusal?.code
         )
     }
+
+    @Test
+    fun code_aware_ids_without_context_are_typed_refusal() {
+        val refusal = AgentSourceContextRequirement.refusalFor(
+            operation = "ask",
+            task = "ATROPOS improve yourself",
+            sourcePackId = "pack-123",
+            fetchReceiptId = "fetch-456"
+        )
+
+        assertEquals(
+            AgentSourceContextRequirement.Refusal.Code.MISSING_CONTEXT,
+            refusal?.code
+        )
+    }
 }

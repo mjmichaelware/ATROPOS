@@ -178,18 +178,19 @@ class SelfHostGoalServiceTest {
 
         val started = service.startGoal("advance one bounded cradle node", "11")
         val goalId = started.goal?.record?.id ?: error("missing goal id")
-        val first = service.advanceGoal(goalId)
+        val first = service.advanceNextResumableGoal(goalId)
 
         assertTrue(first.ok, first.message)
         val afterProbe = store.resolve(goalId) ?: error("missing probed goal")
         assertEquals(GoalRunStatus.CONTINUING, afterProbe.status)
         assertTrue(afterProbe.evidence.any { it.startsWith("context_attestation system=ATROPOS") })
 
-        val second = service.advanceGoal(goalId)
+        val second = service.advanceNextResumableGoal(goalId)
 
         assertTrue(second.ok, second.message)
 
-        val result = service.advanceGoal(goalId)
+        val result = service.advanceNextResumableGoal(goalId)
+
 
         assertTrue(result.ok, result.message)
         val reopened = store.resolve(goalId) ?: error("missing advanced goal")
@@ -212,9 +213,26 @@ class SelfHostGoalServiceTest {
         val test = repoRoot.resolve("src/test/kotlin/atropos/core/agent/SelfHostCradleRuntimeStateTest.kt")
         assertTrue(Files.readString(marker).contains("LAST_SELF_HOST_GOAL: String = \"$goalId\""))
         assertTrue(Files.readString(test).contains("SelfHostCradleRuntimeState.LAST_SELF_HOST_GOAL"))
-
         val learned = service.learned(10)
         assertTrue(learned.any { it.subjectType == "selfhost_dag_eval" && it.body.contains("attestation:") })
+
+    }
+
+    @Test
+    fun direct_advance_without_context_envelope_refuses_before_node_execution() {
+        val repoRoot = Files.createTempDirectory("atropos-self-host-missing-envelope-")
+        initializeGitRepo(repoRoot)
+        val service = SelfHostGoalService(repoRoot = repoRoot)
+        val started = service.startGoal("missing envelope must stop", "11")
+        val goalId = started.goal?.record?.id ?: error("missing goal id")
+
+        val result = service.advanceGoal(goalId)
+
+        assertTrue(!result.ok, result.message)
+        assertTrue(result.message.contains("context preflight failed"), result.message)
+        val dagId = service.loadGoal(goalId).goal?.record?.dagId ?: error("missing dag id")
+        val dag = DagExecutionService(repoRoot = repoRoot).readDag(dagId) ?: error("missing dag")
+        assertTrue(dag.nodes.all { it.state == DagNodeState.READY || it.state == DagNodeState.PENDING })
     }
 
     @Test
