@@ -227,7 +227,7 @@ class SelfHostGoalService(
         return contextPreflight.canonicalEnvelope(record, node)
     }
 
-    fun evaluateReadyDagNode(goalId: String, suppliedEnvelope: ContextEnvelope? = contextEnvelopeForCurrentNode(goalId)): SelfHostResult {
+    fun evaluateReadyDagNode(goalId: String, suppliedEnvelope: ContextEnvelope? = null): SelfHostResult {
         return dagNodeEvaluator.evaluate(goalId, suppliedEnvelope)
     }
 
@@ -257,7 +257,7 @@ class SelfHostGoalService(
             return selected
         }
 
-        val evaluated = evaluateReadyDagNode(goalId, suppliedEnvelope ?: contextEnvelopeForCurrentNode(goalId))
+        val evaluated = evaluateReadyDagNode(goalId, suppliedEnvelope)
         val latest = store.resolve(goalId)
         val latestDag = latest?.dagId?.let { dagService.readDag(it) }
         if (latestDag != null && latestDag.nodes.all { it.state.terminal }) {
@@ -284,10 +284,23 @@ class SelfHostGoalService(
         if (!selected.ok) return selected
         val record = selected.goal?.record
             ?: return SelfHostResult(false, "no resumable self-host goal selected")
-        // Selection is part of advanceGoal. Building an envelope before that
-        // selection can attest a stale currentNodeId after restart recovery.
-        // Let the advance path bind context to the node it selected locally.
-        return advanceGoal(record.id, compactState, suppliedEnvelope)
+        // Select first, then bind the envelope to the exact node selected after
+        // restart recovery. Direct advanceGoal calls remain fail-closed when
+        // they omit an envelope; automatic continuation owns this binding.
+        val selectedNode = selectNextDagNode(record.id)
+        if (!selectedNode.ok) {
+            val terminal = selectedNode.goal?.record?.terminalCondition
+            return when (terminal) {
+                GoalTerminalCondition.VERIFIED_COMPLETE ->
+                    SelfHostResult(true, "completed: all DAG nodes done", selectedNode.goal)
+                GoalTerminalCondition.TERMINAL_FAILURE ->
+                    SelfHostResult(false, "failed: ${selectedNode.goal?.record?.failureReason ?: selectedNode.message}", selectedNode.goal)
+                else -> selectedNode
+            }
+        }
+        val envelope = suppliedEnvelope ?: contextEnvelopeForCurrentNode(record.id)
+            ?: return SelfHostResult(false, "context envelope unavailable for selected self-host node")
+        return advanceGoal(record.id, compactState, envelope)
     }
 
     fun planNextAction(goalId: String? = null): SelfHostNextAction = goalQueries.nextAction(goalId)

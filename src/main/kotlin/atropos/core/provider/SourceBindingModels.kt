@@ -1,6 +1,8 @@
 package atropos.core.provider
 
 import java.nio.file.Path
+import java.nio.charset.StandardCharsets
+import java.security.MessageDigest
 import java.time.Instant
 
 enum class SourceBindingKind {
@@ -67,6 +69,17 @@ data class CodebaseContextPack(
     val redacted: Boolean,
     val text: String
 ) {
+    fun hasValidContentHash(): Boolean {
+        val canonical = text
+            .replaceFirst("SOURCE_PACK_ID=$id", "SOURCE_PACK_ID=${"pack-0000000000000000"}")
+            .replaceFirst("PACK_CONTENT_HASH=$contentHash", "PACK_CONTENT_HASH=${"0".repeat(64)}")
+        val observed = MessageDigest.getInstance("SHA-256")
+            .digest(canonical.toByteArray(StandardCharsets.UTF_8))
+            .joinToString("") { "%02x".format(it) }
+        return observed == contentHash && id == "pack-${contentHash.take(16)}" &&
+            byteCount == text.toByteArray(StandardCharsets.UTF_8).size
+    }
+
     fun provenance(): SourcePackProvenance = SourcePackProvenance(
         packId = id,
         contentHash = contentHash,

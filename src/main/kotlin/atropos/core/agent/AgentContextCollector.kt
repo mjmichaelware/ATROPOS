@@ -20,7 +20,13 @@ data class AgentContextSnapshot(
     val fetchReceiptId: String? = null,
     val sourcePackContentHash: String? = null,
     val sourceTreeHash: String? = null,
-    val sourceBindingKind: SourceBindingKind? = null
+    val sourceBindingKind: SourceBindingKind? = null,
+    val sourcePackFailure: String? = null
+)
+
+private data class SourcePackSelection(
+    val pack: atropos.core.provider.CodebaseContextPack?,
+    val failure: String?
 )
 
 class AgentContextCollector(
@@ -57,8 +63,14 @@ class AgentContextCollector(
         truncated = appendSection(builder, "# Git Status\n${gitStatus()}\n", truncated)
         truncated = appendSection(builder, "# Shallow Tree\n${shallowTree()}\n", truncated)
         truncated = appendSection(builder, "# Selected Sources\n${selectedSources(files)}\n", truncated)
-        val pack = sourcePack(defaultPackRoots(taskHint))
-        truncated = appendSection(builder, "# Source Context Pack\n${pack?.text ?: "source context pack unavailable"}\n", truncated)
+        val sourcePack = sourcePack(defaultPackRoots(taskHint))
+        truncated = appendSection(
+            builder,
+            "# Source Context Pack\n${sourcePack.pack?.text ?: "[source context pack refused: ${sourcePack.failure}]"}\n",
+            truncated
+        )
+        if (sourcePack.failure != null) truncated = true
+        val pack = sourcePack.pack
 
         val rendered = builder.toString()
         return AgentContextSnapshot(
@@ -70,7 +82,8 @@ class AgentContextCollector(
             fetchReceiptId = pack?.fetchReceipt?.id,
             sourcePackContentHash = pack?.contentHash,
             sourceTreeHash = pack?.fetchReceipt?.treeHash,
-            sourceBindingKind = pack?.fetchReceipt?.bindingKind
+            sourceBindingKind = pack?.fetchReceipt?.bindingKind,
+            sourcePackFailure = sourcePack.failure
         )
     }
 
@@ -88,8 +101,14 @@ class AgentContextCollector(
         val roots = files.mapNotNull { file -> repoRoot.relativizeSafely(file)?.substringBeforeLast('/', missingDelimiterValue = "") }
             .filter { it.isNotBlank() }
             .ifEmpty { listOf("README.md") }
-        val pack = sourcePack(roots)
-        truncated = appendSection(builder, "# Source Context Pack\n${pack?.text ?: "source context pack unavailable"}\n", truncated)
+        val sourcePack = sourcePack(roots)
+        truncated = appendSection(
+            builder,
+            "# Source Context Pack\n${sourcePack.pack?.text ?: "[source context pack refused: ${sourcePack.failure}]"}\n",
+            truncated
+        )
+        if (sourcePack.failure != null) truncated = true
+        val pack = sourcePack.pack
 
         val rendered = builder.toString()
         return AgentContextSnapshot(
@@ -101,7 +120,8 @@ class AgentContextCollector(
             fetchReceiptId = pack?.fetchReceipt?.id,
             sourcePackContentHash = pack?.contentHash,
             sourceTreeHash = pack?.fetchReceipt?.treeHash,
-            sourceBindingKind = pack?.fetchReceipt?.bindingKind
+            sourceBindingKind = pack?.fetchReceipt?.bindingKind,
+            sourcePackFailure = sourcePack.failure
         )
     }
 
@@ -120,8 +140,14 @@ class AgentContextCollector(
         val roots = files.mapNotNull { file -> repoRoot.relativizeSafely(file)?.substringBeforeLast('/', missingDelimiterValue = "") }
             .filter { it.isNotBlank() }
             .ifEmpty { listOf("README.md") }
-        val pack = sourcePack(roots)
-        truncated = appendSection(builder, "# Source Context Pack\n${pack?.text ?: "source context pack unavailable"}\n", truncated)
+        val sourcePack = sourcePack(roots)
+        truncated = appendSection(
+            builder,
+            "# Source Context Pack\n${sourcePack.pack?.text ?: "[source context pack refused: ${sourcePack.failure}]"}\n",
+            truncated
+        )
+        if (sourcePack.failure != null) truncated = true
+        val pack = sourcePack.pack
 
         val rendered = builder.toString()
         return AgentContextSnapshot(
@@ -133,7 +159,8 @@ class AgentContextCollector(
             fetchReceiptId = pack?.fetchReceipt?.id,
             sourcePackContentHash = pack?.contentHash,
             sourceTreeHash = pack?.fetchReceipt?.treeHash,
-            sourceBindingKind = pack?.fetchReceipt?.bindingKind
+            sourceBindingKind = pack?.fetchReceipt?.bindingKind,
+            sourcePackFailure = sourcePack.failure
         )
     }
 
@@ -186,8 +213,9 @@ class AgentContextCollector(
         return if (Files.isRegularFile(candidate) && !isExcluded(candidate)) candidate else null
     }
 
-    private fun sourcePack(allowedPaths: List<String>): atropos.core.provider.CodebaseContextPack? {
-        val binding = sourceBindingResolver.resolve().binding ?: return null
+    private fun sourcePack(allowedPaths: List<String>): SourcePackSelection {
+        val binding = sourceBindingResolver.resolve().binding
+            ?: return SourcePackSelection(null, "SOURCE_BINDING_UNAVAILABLE")
         val result = contextPacker.pack(
             SourcePackRequest(
                 binding = binding,
@@ -195,7 +223,15 @@ class AgentContextCollector(
                 maxBytes = (contextCapBytes / 2).coerceAtLeast(16 * 1024)
             )
         )
-        return (result as? SourcePackResult.Packed)?.pack
+        val pack = (result as? SourcePackResult.Packed)?.pack
+            ?: return SourcePackSelection(null, "SOURCE_PACK_REFUSED")
+        if (pack.truncated) {
+            return SourcePackSelection(null, "SOURCE_PACK_TRUNCATED")
+        }
+        if (pack.text.isBlank()) {
+            return SourcePackSelection(null, "SOURCE_PACK_EMPTY")
+        }
+        return SourcePackSelection(pack, null)
     }
 
     private fun defaultPackRoots(taskHint: String?): List<String> {

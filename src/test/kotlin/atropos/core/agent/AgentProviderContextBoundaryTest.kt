@@ -58,4 +58,26 @@ class AgentProviderContextBoundaryTest {
 
         assertEquals(AgentProviderContextBoundary.Refusal.Code.TRUNCATED_SOURCE_PACK, refusal?.code)
     }
+
+    @Test
+    fun rejects_prefix_matching_pack_marker() {
+        val refusal = AgentProviderContextBoundary.validateSourcePack(
+            context = "SOURCE_PACK_ID=pack-1234\nFETCH_RECEIPT_ID=fetch-456\n",
+            sourcePackId = "pack-123",
+            fetchReceiptId = "fetch-456"
+        )
+
+        assertEquals(AgentProviderContextBoundary.Refusal.Code.PACK_RECEIPT_MISMATCH, refusal?.code)
+    }
+
+    @Test
+    fun rejects_missing_context_at_boundary() {
+        val refusal = AgentProviderContextBoundary.validateSourcePack(
+            context = null,
+            sourcePackId = "pack-123",
+            fetchReceiptId = "fetch-456"
+        )
+
+        assertEquals(AgentProviderContextBoundary.Refusal.Code.MISSING_CONTEXT, refusal?.code)
+    }
 }

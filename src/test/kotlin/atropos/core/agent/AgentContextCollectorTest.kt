@@ -49,6 +49,21 @@ class AgentContextCollectorTest {
     }
 
     @Test
+    fun code_context_refuses_a_truncated_source_pack() {
+        val root = Files.createTempDirectory("atropos-context-pack-truncated-")
+        val file = root.resolve("src/main/kotlin/atropos/core/agent/Large.kt")
+        Files.createDirectories(file.parent)
+        Files.writeString(file, "package atropos.core.agent\n" + "val payload = \"x\"\n".repeat(2_000))
+
+        val snapshot = AgentContextCollector(repoRoot = root, contextCapBytes = 40 * 1024)
+            .collectPatch("edit src/main/kotlin/atropos/core/agent/Large.kt")
+
+        assertTrue(snapshot.truncated)
+        assertEquals("SOURCE_PACK_TRUNCATED", snapshot.sourcePackFailure)
+        assertTrue(snapshot.sourcePackId == null)
+    }
+
+    @Test
     fun gitStatusUsesBoundedRunnerAndPreservesLiteralArguments() {
         val root = Files.createTempDirectory("atropos-context-runner-argv-")
         var observedCommand: List<String> = emptyList()

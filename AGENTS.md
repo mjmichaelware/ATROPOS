@@ -1009,4 +1009,48 @@ Readers never mutate product code.
 - Fingerprints: pending manifest refresh after this ledger append
 - New overall estimate: unchanged
 
+### 2026-07-29T20:13:47-06:00 · Agent: Codex GPT-5 · Batch: phase11-mandatory-envelope-boundary-001
+- Paths touched: `src/main/kotlin/atropos/core/agent/SelfHostGoalService.kt` (+12/-6), `src/main/kotlin/atropos/core/agent/SelfHostAutonomousRunner.kt` (+4/-1), `src/test/kotlin/atropos/core/agent/SelfHostGoalServiceTest.kt` (+25/-3)
+- New decoupled files: none
+- Atoms / phases affected: `C1-SB-01`, `C1-SB-02`; mandatory self-host context attestation
+- Predicate moved: direct `advanceGoal` and `evaluateReadyDagNode` calls can no longer synthesize a missing envelope; automatic continuation selects the node first, binds a fresh envelope to that node, and sends it through preflight before mutation
+- % delta: unchanged
+- Why justified: The previous `advanceGoal` fallback called `contextEnvelopeForCurrentNode` when callers supplied no envelope, making the missing-envelope refusal test bypassable through the higher-level runner. The autonomous runner and restart continuation now use the existing selection owner before envelope binding, while a focused test proves direct advancement refuses with all DAG nodes untouched. No Gradle, compilation, tests, packaging, or runtime proof was executed.
+- HR interrupts: none
+- Fingerprints: pending manifest refresh after this ledger append
+- New overall estimate: unchanged
+
+### 2026-07-29T20:17:49-06:00 · Agent: Codex GPT-5 W1 · Batch: c1-context-pack-nonempty-001
+- Paths touched: `src/main/kotlin/atropos/core/agent/AgentContextCollector.kt` (+46/-13), `AGENTS.md` (+12)
+- New decoupled files: none
+- Atoms / phases affected: `C1-SB-01`, `C1-P10`; Phase 11 provider context integrity
+- Predicate moved: code-aware context collection now rejects empty or unavailable source packs and exposes a typed `sourcePackFailure` while preserving path, byte, and redaction bounds
+- % delta: unchanged; no Gradle, compilation, tests, packaging, installation, or JAR proof was run
+- Why justified: The existing collector returned a normal snapshot with only prose saying the source pack was unavailable. It now distinguishes unavailable binding, refused packing, and empty packed text, marks the snapshot incomplete, and retains the failure for downstream refusal/evidence without creating a second context owner.
+- HR interrupts: none
+- Fingerprints: `AgentContextCollector.kt=575c41b56e6736a8d979a4280ebfe356dbabf927cbd1914c808c45b2a8a36b01`
+- New overall estimate: unchanged
+
+### 2026-07-29T20:18:24-06:00 · Agent: Codex GPT-5 W4 · Batch: c1-context-pack-bounded-appender-001
+- Paths touched: `src/main/kotlin/atropos/core/provider/BoundedUtf8Appender.kt` (+56), `src/main/kotlin/atropos/core/provider/CodebaseContextPacker.kt` (-45/+8)
+- New decoupled files: `BoundedUtf8Appender.kt`
+- Atoms / phases affected: `C1-SB-01`, `C1-P10`; Phase 11 provider context-pack atomicity
+- Predicate moved: UTF-8 byte-budget and truncation behavior is isolated from source-binding, territory selection, redaction, and pack identity orchestration
+- % delta: unchanged; no Gradle, compilation, tests, packaging, installation, or JAR proof was run
+- Why justified: `CodebaseContextPacker` had a distinct bounded-text assembly concern embedded in its pack orchestration. `BoundedUtf8Appender` now owns only byte-safe append/truncation mechanics, while the existing packer remains the sole source-pack owner. No active `AgentContextCollector` writer lane was touched.
+- HR interrupts: none
+- Fingerprints: pending manifest refresh after this ledger append
+- New overall estimate: unchanged
+
+### 2026-07-29T20:21:15-06:00 · Agent: Codex GPT-5 Director · Batch: phase11-whole-checkpoint-context-swarm-001
+- Paths touched: `src/main/kotlin/atropos/core/agent/AgentContextCollector.kt` (+49/-13 including truncated-pack refusal), `AgentProviderContextBoundary.kt` (+12/-5), `AgentSourceContextRequirement.kt` (+14/-15), `SelfHostGoalService.kt` (+19/-6), `SelfHostAutonomousRunner.kt` (+4/-1), `src/main/kotlin/atropos/core/provider/CodebaseContextPacker.kt` (+24/-56), `SourceBindingModels.kt` (+13), `BoundedUtf8Appender.kt` (+56), focused collector/provider/self-host tests, plus prior W1/W4 ledger entries
+- New decoupled files: `src/main/kotlin/atropos/core/provider/BoundedUtf8Appender.kt`
+- Atoms / phases affected: Phase 11 / Checkpoint 1; `C1-SB-01`, `C1-SB-02`, `C1-P10`, `C1-X1` dependency audit
+- Predicate moved: provider-backed self-host context now fails closed on missing, empty, refused, truncated, tampered, prefix-spoofed, traversal, invalid-budget, and provenance-mismatched packs; direct self-host advancement requires a supplied envelope, while automatic continuation binds one after node selection; final continuation maps terminal completion truthfully
+- % delta: unchanged; focused tests, compilation, and installed-runtime proof remain unexecuted
+- Why justified: The Director swarm used five disjoint writer lanes and five read-only inspectors under the root contract. W1/W2/W3/W4 closed concrete context and atomicity gaps; R1 confirmed Phase 11 remains the next eligible checkpoint because `C1-X1` and installed proof still block closure. No false VERIFIED claim is made.
+- HR interrupts: none; no lane crossed its assigned write territory
+- Fingerprints: manifest refreshed after this row; tree export intentionally unchanged because no whole canonical phase is complete
+- New overall estimate: unchanged
+
 End of AGENTS.md
