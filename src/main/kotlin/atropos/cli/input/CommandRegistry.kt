@@ -11,6 +11,14 @@ object CommandRegistry {
         CommandEntry("/help", "commands"),
         CommandEntry("/dashboard", "return to dashboard"),
         CommandEntry("/home", "return to dashboard"),
+        CommandEntry("/project", "durable project registry"),
+        CommandEntry("/projects", "durable project registry"),
+        CommandEntry("/project list", "list registered projects"),
+        CommandEntry("/project new", "register a project (use <name> [objective])"),
+        CommandEntry("/project show", "project detail by id"),
+        CommandEntry("/project status", "set project status (use <id> <status>)"),
+        CommandEntry("/project objective", "set a project objective (use <id> <text>)"),
+        CommandEntry("/project history", "permanent project event history"),
         CommandEntry("/tabs", "list open tabs"),
         CommandEntry("/tab new", "open a new tab"),
         CommandEntry("/tab rename", "rename a tab"),
@@ -67,13 +75,30 @@ object CommandRegistry {
         CommandEntry("/verify", "verification scope"),
         CommandEntry("/verify narrow", "quick verification"),
         CommandEntry("/verify wide", "wide verification"),
+        CommandEntry("/tests", "run the built-in test matrix"),
+        CommandEntry("/tests matrix", "run the built-in test matrix"),
         CommandEntry("/keys", "key status"),
         CommandEntry("/keys setup", "local secret template setup"),
         CommandEntry("/keys status", "key source status"),
         CommandEntry("/keys doctor", "key precedence and provider impact doctor"),
+        CommandEntry("/security", "secret precedence and redaction status"),
+        CommandEntry("/security redact", "redaction report for supplied text"),
         CommandEntry("/factory", "factory status"),
         CommandEntry("/factory plan", "bounded app-factory plan"),
         CommandEntry("/factory run", "queue app-factory run"),
+        CommandEntry("/ci", "ci and edge execution status"),
+        CommandEntry("/ci local compile", "queue a local compile job"),
+        CommandEntry("/ci run next", "run the next queued ci job"),
+        CommandEntry("/ops", "deployment descriptor operations"),
+        CommandEntry("/ops export", "export deployment descriptor files"),
+        CommandEntry("/ops verify", "verify exported deployment descriptors"),
+        CommandEntry("/ops quota-backup", "back up the quota ledger"),
+        CommandEntry("/ops quota-restore", "restore the quota ledger (use <backup-file>)"),
+        CommandEntry("/assets", "asset generator status"),
+        CommandEntry("/assets status", "asset generator status"),
+        CommandEntry("/assets text", "write a text asset (use <name> <prompt>)"),
+        CommandEntry("/assets ansi", "write an ansi asset (use <name> <prompt>)"),
+        CommandEntry("/assets svg", "write an svg asset (use <name> <prompt>)"),
         CommandEntry("/agent self-host run", "run Phase 11 self-host loop from a natural-language goal"),
         CommandEntry("/agent self-host start", "start a durable self-hosting goal"),
         CommandEntry("/agent self-host status", "self-hosting goal status"),
@@ -187,8 +212,25 @@ object CommandRegistry {
         "local"
     )
 
+    /**
+     * Slash families [atropos.cli.CommandRouter] accepts but that this registry
+     * deliberately does not advertise, because invoking them cannot do the
+     * thing their name implies.
+     *
+     * `/swarm` is routed only to `renderError("swarm endpoint is not bound")`.
+     * Listing it in the palette, in tab-completion or in `/help` would offer
+     * the operator an action that does nothing, so it is named here rather
+     * than silently omitted: the parity guard reads this set, which forces the
+     * exemption to be deleted on the day the endpoint is actually bound.
+     */
+    val unboundFamilies: Set<String> = setOf("/swarm")
+
     fun commands(): List<String> =
         entries.map { it.command }
+
+    /** The leading `/word` of every registered command, e.g. `/project`. */
+    fun families(): Set<String> =
+        entries.map { it.command.substringBefore(' ') }.toSet()
 
     fun helpLines(): List<String> =
         entries.map {
