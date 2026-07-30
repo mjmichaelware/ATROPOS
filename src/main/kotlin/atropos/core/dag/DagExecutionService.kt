@@ -200,7 +200,7 @@ class DagExecutionService(
         }
     }
 
-    private fun executeFileMutation(node: DagNode, original: DagNode): DagNodeExecutionResult {
+    private fun executeFileMutation(node: DagNode, original: DagNode): DagNodeExecutionResult =
         fileMutationExecutor.execute(node, original)
 
     private fun executeRunCommand(node: DagNode, original: DagNode): DagNodeExecutionResult =

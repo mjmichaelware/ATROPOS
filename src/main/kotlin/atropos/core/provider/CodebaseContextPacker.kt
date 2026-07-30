@@ -60,7 +60,7 @@ class CodebaseContextPacker(
 
         val packedPaths = mutableListOf<String>()
         for (relative in included) {
-            val currentBytes = builder.byteCount()
+            val currentBytes = BoundedUtf8Appender.utf8Size(builder)
             if (currentBytes >= request.maxBytes) {
                 truncated = true
                 break

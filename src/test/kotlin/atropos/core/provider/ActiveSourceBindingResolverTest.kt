@@ -32,8 +32,9 @@ class ActiveSourceBindingResolverTest {
                 "ATROPOS_SOURCE_BINDING_REF" to "main"
             )
         ).resolve()
-        assertEquals(SourceBindingKind.GIT, assertNotNull(git.binding).kind)
-        assertEquals("main", git.binding.ref)
+        val gitBinding = assertNotNull(git.binding)
+        assertEquals(SourceBindingKind.GIT, gitBinding.kind)
+        assertEquals("main", gitBinding.ref)
 
         val http = ActiveSourceBindingResolver(
             root,

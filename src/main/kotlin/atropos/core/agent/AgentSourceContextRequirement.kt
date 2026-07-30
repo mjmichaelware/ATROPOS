@@ -74,9 +74,9 @@ object AgentSourceContextRequirement {
             return Refusal(
                 operation = operation,
                 code = when (contextRefusal.code) {
-                    AgentProviderContextBoundary.Refusal.Code.TRUNCATED_SOURCE_PACK -> Code.TRUNCATED_SOURCE_PACK
-                    AgentProviderContextBoundary.Refusal.Code.MISSING_CONTEXT -> Code.MISSING_CONTEXT
-                    else -> Code.PACK_RECEIPT_MISMATCH
+                    AgentProviderContextBoundary.Refusal.Code.TRUNCATED_SOURCE_PACK -> Refusal.Code.TRUNCATED_SOURCE_PACK
+                    AgentProviderContextBoundary.Refusal.Code.MISSING_CONTEXT -> Refusal.Code.MISSING_CONTEXT
+                    else -> Refusal.Code.PACK_RECEIPT_MISMATCH
                 },
                 detail = contextRefusal.detail
             )
