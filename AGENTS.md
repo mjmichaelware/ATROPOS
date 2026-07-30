@@ -1117,5 +1117,16 @@ Readers never mutate product code.
 - Fingerprints: `ATROPOS_ROOT_EXPORT_MANIFEST.sha256` NOT refreshed — that file is gitignored and absent from this clone, so its hash must be refreshed by the operator holding it. Branch `claude/phase4-security-hardening`, pull request #6.
 - New overall estimate: unchanged. Verification: `./gradlew compileKotlin` SUCCESSFUL; `atropos.core.security` 18 tests 0 failures; full suite 511 tests 19 failures, none of them regressions from this batch because `test` depends on `compileKotlin` and therefore could not run at all on `origin/main`. Those 19 require separate triage.
 
+### 2026-07-30T03:30:00Z · Agent: Claude (claude-opus-5, Claude Code) · Batch: build-green-two-real-defects-001
+- Paths touched: `src/main/kotlin/atropos/core/agent/SelfHostGitStatusEvidence.kt` (+7/-1), `src/main/kotlin/atropos/core/provider/ProviderFixtureMatrixService.kt` (+21)
+- New decoupled files: none; both changes extend existing owners
+- Atoms / phases affected: Phase 0 build integrity; Phase 11 evidence quality; Phase 5 provider fixture matrix coverage
+- Predicate moved: `./gradlew build` moved from FAILING to SUCCEEDING — compile + 516 tests + jar. Two production defects fixed, neither a test that needed relaxing. (a) `SelfHostGitStatusEvidence` used plain `git status --short`, which collapses an untracked directory to one `?? dir/` row, so evidence for a newly created self-host marker could never name the file; `--untracked-files=all` added. (b) `ProviderFixtureMatrixService` contributed the `success` fixture only via family catalogs, so a provider outside every catalog (`local`) was reported as covered while never being proved able to answer at all; every registered provider now gets a success fixture and a provider with no adapter fails it rather than skipping it.
+- % delta: unchanged. A green build is a precondition for claiming any phase, not a phase advance in itself. Phase 4 remains 85% — Tier 1 egress is still not armed at startup.
+- Why justified: `test` depends on `compileKotlin`, so before the build repair no test in the tree could run and 19 failures were invisible. Main fixed 17; these two were the remainder and both were real. Evidence quality is a Phase 11 acceptance concern and fixture coverage a Phase 5 one, so the fixes are in-territory rather than test-shaped workarounds.
+- HR interrupts: none
+- Fingerprints: manifest refreshed in the same batch; branch `claude/phase4-security-hardening`, pull request #6
+- New overall estimate: unchanged
+
 End of AGENTS.md
 
