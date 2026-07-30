@@ -1,6 +1,7 @@
 
 !.env.example
 !atropos.jar
+!ATROPOS_ROOT_EXPORT_MANIFEST.sha256
 # --- pristine hygiene (generated / local) ---
 # ATROPOS local/private runtime state
 # Generated build and runtime files

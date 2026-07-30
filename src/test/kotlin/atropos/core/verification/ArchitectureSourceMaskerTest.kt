@@ -11,7 +11,7 @@ class ArchitectureSourceMaskerTest {
             fun real() = 1 // fun fake() = 2
             val text = "class Fake"
             /* fun blockFake() = 3 */
-            val triple = \"\"\"fun tripleFake() = 4\"\"\"
+            val triple = ""${'"'}fun tripleFake() = 4""${'"'}
             val character = 'x'
             fun after() = 5
         """.trimIndent()

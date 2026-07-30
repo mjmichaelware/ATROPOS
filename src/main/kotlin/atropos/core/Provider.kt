@@ -1,5 +1,6 @@
 package atropos.core
 
+import atropos.core.security.RedactionFilter
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
@@ -29,6 +30,8 @@ class ProviderFactory(private val config: AtroposConfig = AtroposConfig.load()) 
 }
 
 abstract class BaseHttpProvider : AIProvider {
+    protected val redactionFilter: RedactionFilter = RedactionFilter()
+
     protected val client: HttpClient = HttpClient.newBuilder()
         .connectTimeout(Duration.ofSeconds(45))
         .build()
@@ -236,8 +239,8 @@ class GroqProvider(private val apiKey: String?) : BaseHttpProvider() {
         return postOpenAiCompatibleChat(
             uri = "https://api.groq.com/openai/v1/chat/completions",
             model = "llama-3.3-70b-versatile",
-            prompt = prompt,
-            context = context,
+            prompt = redactionFilter.redact(prompt),
+            context = redactionFilter.redact(context),
             bearerToken = token
         )
     }
@@ -250,8 +253,8 @@ class OpenAiProvider(private val apiKey: String?) : BaseHttpProvider() {
         return postOpenAiCompatibleChat(
             uri = "https://api.openai.com/v1/chat/completions",
             model = "gpt-4o-mini",
-            prompt = prompt,
-            context = context,
+            prompt = redactionFilter.redact(prompt),
+            context = redactionFilter.redact(context),
             bearerToken = token
         )
     }
@@ -261,15 +264,17 @@ class AnthropicProvider(private val apiKey: String?) : BaseHttpProvider() {
     override val name = "anthropic"
     override fun complete(prompt: String, context: String): String {
         val token = requireKey(apiKey, name)
+        val redactedPrompt = redactionFilter.redact(prompt)
+        val redactedContext = redactionFilter.redact(context)
         val payload = buildString {
             append("{")
             append("\"model\":\"claude-3-5-sonnet-latest\",")
             append("\"max_tokens\":4096,")
-            if (context.isNotBlank()) {
-                append("\"system\":\"").append(jsonEscape(context.trim())).append("\",")
+            if (redactedContext.isNotBlank()) {
+                append("\"system\":\"").append(jsonEscape(redactedContext.trim())).append("\",")
             }
             append("\"messages\":[{\"role\":\"user\",\"content\":\"")
-            append(jsonEscape(prompt.trim()))
+            append(jsonEscape(redactedPrompt.trim()))
             append("\"}]}")
         }
 
@@ -292,8 +297,8 @@ class XAiProvider(private val apiKey: String?) : BaseHttpProvider() {
         return postOpenAiCompatibleChat(
             uri = "https://api.x.ai/v1/chat/completions",
             model = "grok-2-latest",
-            prompt = prompt,
-            context = context,
+            prompt = redactionFilter.redact(prompt),
+            context = redactionFilter.redact(context),
             bearerToken = token
         )
     }
@@ -308,8 +313,8 @@ class GitHubModelsProvider(
         return postOpenAiCompatibleChat(
             uri = "https://models.inference.ai.azure.com/chat/completions",
             model = "gpt-4o-mini",
-            prompt = prompt,
-            context = context,
+            prompt = redactionFilter.redact(prompt),
+            context = redactionFilter.redact(context),
             bearerToken = apiKey
         )
     }
@@ -326,8 +331,8 @@ class CloudflareAiProvider(
         return postOpenAiCompatibleChat(
             uri = "https://api.cloudflare.com/client/v4/accounts/$account/ai/v1/chat/completions",
             model = "@cf/meta/llama-3.1-8b-instruct",
-            prompt = prompt,
-            context = context,
+            prompt = redactionFilter.redact(prompt),
+            context = redactionFilter.redact(context),
             bearerToken = apiToken
         )
     }
@@ -342,8 +347,8 @@ class SambaNovaProvider(
         return postOpenAiCompatibleChat(
             uri = "https://api.sambanova.ai/v1/chat/completions",
             model = "Meta-Llama-3.3-70B-Instruct",
-            prompt = prompt,
-            context = context,
+            prompt = redactionFilter.redact(prompt),
+            context = redactionFilter.redact(context),
             bearerToken = token
         )
     }
@@ -358,8 +363,8 @@ class DeepSeekDirectProvider(
         return postOpenAiCompatibleChat(
             uri = "https://api.deepseek.com/chat/completions",
             model = "deepseek-v4-flash",
-            prompt = prompt,
-            context = context,
+            prompt = redactionFilter.redact(prompt),
+            context = redactionFilter.redact(context),
             bearerToken = token
         )
     }
@@ -373,7 +378,9 @@ class OllamaProvider : BaseHttpProvider() {
         val model = (System.getenv("OLLAMA_MODEL") ?: "llama3.2:1b").trim()
         val predict = (System.getenv("OLLAMA_NUM_PREDICT") ?: "48").toIntOrNull() ?: 48
         val ctx = (System.getenv("OLLAMA_NUM_CTX") ?: "512").toIntOrNull() ?: 512
-        val content = jsonEscape(buildPrompt(prompt, context))
+        val redactedPrompt = redactionFilter.redact(prompt)
+        val redactedContext = redactionFilter.redact(context)
+        val content = jsonEscape(buildPrompt(redactedPrompt, redactedContext))
 
         val payload =
             """{"model":"$model","prompt":"$content","stream":false,"options":{"num_predict":$predict,"num_ctx":$ctx}}"""

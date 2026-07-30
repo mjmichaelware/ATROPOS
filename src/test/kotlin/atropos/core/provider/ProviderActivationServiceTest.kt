@@ -94,7 +94,7 @@ class ProviderActivationServiceTest {
                 state = state,
                 descriptorPresent = true,
                 adapterStatus = adapterStatus,
-                keySources = listOf("FIXTURE_API_KEY:explicit"),
+                keySources = listOf("FIXTURE_ACCESS_IDENTIFIER:explicit"),
                 impact = listOf("chat", "code"),
                 executableSupport = true,
                 fixtureMatrix = ProviderFixtureMatrixRecord(
@@ -110,7 +110,7 @@ class ProviderActivationServiceTest {
 
             val rendered = record.render()
             assertTrue(rendered.contains("state: ${state.name.lowercase()}"), state.name)
-            assertTrue(rendered.contains("key sources: FIXTURE_API_KEY:explicit"), state.name)
+            assertTrue(rendered.contains("key sources: FIXTURE_ACCESS_IDENTIFIER:explicit"), state.name)
             assertTrue(rendered.contains("impact: chat,code"), state.name)
             assertTrue(rendered.contains("adapter implemented: yes"), state.name)
             assertTrue(rendered.contains("adapter configured: yes"), state.name)

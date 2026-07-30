@@ -153,7 +153,7 @@ class SupervisedSessionStore(
         appendLine("host=${record.host ?: ""}")
         appendLine("port=${record.port ?: ""}")
         appendLine("heartbeatAt=${record.heartbeatAt ?: ""}")
-        appendLine("lastMessageB64=${encode(record.lastMessage.orEmpty())}")
+        appendLine("lastMessageB64=${encode(redactionFilter.redact(record.lastMessage.orEmpty()))}")
         appendLine("backoffAttempt=${record.backoffAttempt}")
         appendLine("nextBackoffAt=${record.nextBackoffAt ?: ""}")
         appendLine("leaseToken=${record.leaseToken ?: ""}")

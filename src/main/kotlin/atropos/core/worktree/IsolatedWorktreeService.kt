@@ -329,6 +329,9 @@ class IsolatedWorktreeService(
     private fun isUnsafeRelativePath(path: String): Boolean {
         val normalized = path.replace('\\', '/').trim()
         if (normalized.isBlank() || normalized == "/dev/null" || normalized.startsWith("/")) return true
+        // Any traversal segment (even if resolved to a safe path) is disallowed.
+        val segments = normalized.split("/")
+        if (segments.any { it == ".." }) return true
         val parsed = runCatching { Path.of(normalized) }.getOrNull() ?: return true
         val canonical = parsed.normalize().toString().replace('\\', '/')
         return parsed.isAbsolute || canonical == ".." || canonical.startsWith("../")

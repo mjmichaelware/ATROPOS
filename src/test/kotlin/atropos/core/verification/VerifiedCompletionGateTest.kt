@@ -22,7 +22,37 @@ import kotlin.test.assertTrue
  */
 class VerifiedCompletionGateTest {
 
-    private fun repo(): Path = Files.createTempDirectory("atropos-completion-")
+    private fun repo(): Path {
+        val root = Files.createTempDirectory("atropos-completion-")
+        ProcessBuilder("git", "init")
+            .directory(root.toFile())
+            .redirectErrorStream(true)
+            .start()
+            .waitFor()
+        ProcessBuilder("git", "config", "user.email", "atropos@example.invalid")
+            .directory(root.toFile())
+            .redirectErrorStream(true)
+            .start()
+            .waitFor()
+        ProcessBuilder("git", "config", "user.name", "ATROPOS Test")
+            .directory(root.toFile())
+            .redirectErrorStream(true)
+            .start()
+            .waitFor()
+        Files.createDirectories(root.resolve("src"))
+        Files.writeString(root.resolve("src/A.kt"), "class A\n")
+        ProcessBuilder("git", "add", ".")
+            .directory(root.toFile())
+            .redirectErrorStream(true)
+            .start()
+            .waitFor()
+        ProcessBuilder("git", "commit", "-m", "initial")
+            .directory(root.toFile())
+            .redirectErrorStream(true)
+            .start()
+            .waitFor()
+        return root
+    }
 
     private fun gate(root: Path) = VerifiedCompletionGate(repoRoot = root, dagStore = DagStore(root))
 
