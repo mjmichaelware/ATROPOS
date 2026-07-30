@@ -34,4 +34,20 @@ class CommandRegistryTest {
 
         assertTrue(root.aliases.contains("/agent self-host"), root.aliases.joinToString(", "))
     }
+
+    @Test
+    fun self_host_control_surface_is_discoverable_from_registry() {
+        val commands = CommandRegistry.commands().toSet()
+        assertTrue(
+            commands.containsAll(
+                listOf(
+                    "/self-host recover",
+                    "/self-host next",
+                    "/self-host promote",
+                    "/self-host export-evidence"
+                )
+            ),
+            commands.filter { it.startsWith("/self-host") }.joinToString(", ")
+        )
+    }
 }

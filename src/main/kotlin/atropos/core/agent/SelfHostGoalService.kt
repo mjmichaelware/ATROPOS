@@ -312,11 +312,12 @@ class SelfHostGoalService(
             ?: return SelfHostResult(false, "${recovered.message}; no resumable self-host goal selected")
         val restoredNode = recovered.restoredNodes
             .firstOrNull { it.restored && it.dagId == record.dagId }
+        val nextAction = planNextAction(record.id)
         val evidence = listOf(
             "restart_snapshot id=${recovered.snapshot.id} goals=${recovered.snapshot.goalRuns.size} dags=${recovered.snapshot.dags.size}",
             "restart_recovery ok=${recovered.ok} restored=${recovered.restoredNodes.count { it.restored }} blocked=${recovered.restoredNodes.count { !it.restored }}",
-            "restart_next goal=${record.id} node=${record.currentNodeId ?: restoredNode?.nodeId ?: "none"}",
-            planNextAction(record.id).evidenceLine()
+            "restart_next goal=${record.id} node=${nextAction.nodeId ?: restoredNode?.nodeId ?: "none"}",
+            nextAction.evidenceLine()
         )
         store.update(record.copy(evidence = record.evidence + evidence))
         return advanceNextResumableGoal(record.id, compactState)

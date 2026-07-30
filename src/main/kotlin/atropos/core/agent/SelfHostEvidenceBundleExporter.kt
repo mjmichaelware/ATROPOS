@@ -68,6 +68,10 @@ class SelfHostEvidenceBundleExporter(
             appendLine("   - sha256: `${sha256Text(clean(evidence))}`")
         }
         if (record.evidence.isEmpty()) appendLine("No evidence recorded.")
+        appendEvidenceClassMarkdown("Attestation", evidenceClass(record.evidence, "attestation", "preflight", "cradle_verified", "source_pack"))
+        appendEvidenceClassMarkdown("Verification and gates", evidenceClass(record.evidence, "promotion_gate", "verified", "gate", "completion"))
+        appendEvidenceClassMarkdown("Promotion and swap", evidenceClass(record.evidence, "director_pre_promote", "jar_swap", "promotion"))
+        appendEvidenceClassMarkdown("Recovery", evidenceClass(record.evidence, "restart_", "state_snapshot", "recovery", "next_action"))
         appendLine()
         appendLine("## DAG Nodes")
         dag?.nodes?.forEach { node ->
@@ -107,6 +111,13 @@ class SelfHostEvidenceBundleExporter(
                 node.failureHash?.let { appendLine("  - failure sha256: `$it`") }
                 node.claimOwner?.let { appendLine("  - claim owner: `${escapeMarkdown(clean(it))}`") }
             }
+            snapshot.recoveryReport?.let { report ->
+                appendLine("- recovery report recoveredAt `${report.recoveredAt}`")
+                appendLine("  - message sha256: `${sha256Text(clean(report.message))}`")
+                report.errors.forEach { error ->
+                    appendLine("  - error sha256: `${sha256Text(clean(error))}`")
+                }
+            }
         }
     }.let(redactionFilter::redact)
 
@@ -131,6 +142,10 @@ class SelfHostEvidenceBundleExporter(
         appendLine("  \"territory\": [${record.territory.joinToString(",") { json(clean(it)) }}],")
         appendLine("  \"outputHashes\": [${renderOutputHashesJson(dag)}],")
         appendLine("  \"evidenceHashes\": [${record.evidence.joinToString(",") { json(sha256Text(clean(it))) }}],")
+        appendLine("  \"attestationEvidence\": [${renderEvidenceClassJson(evidenceClass(record.evidence, \"attestation\", \"preflight\", \"cradle_verified\", \"source_pack\"))}],")
+        appendLine("  \"gateEvidence\": [${renderEvidenceClassJson(evidenceClass(record.evidence, \"promotion_gate\", \"verified\", \"gate\", \"completion\"))}],")
+        appendLine("  \"swapEvidence\": [${renderEvidenceClassJson(evidenceClass(record.evidence, \"director_pre_promote\", \"jar_swap\", \"promotion\"))}],")
+        appendLine("  \"recoveryEvidence\": [${renderEvidenceClassJson(evidenceClass(record.evidence, \"restart_\", \"state_snapshot\", \"recovery\", \"next_action\"))}],")
         appendLine("  \"evidence\": [${record.evidence.joinToString(",") { json(clean(it)) }}],")
         appendLine("  \"nodes\": [")
         val nodes = dag?.nodes.orEmpty()
@@ -199,6 +214,13 @@ class SelfHostEvidenceBundleExporter(
                 if (index < snapshot.dagNodes.lastIndex) append(", ")
             }
             append("]")
+            snapshot.recoveryReport?.let { report ->
+                append(", \"recoveryReport\": {")
+                append("\"recoveredAt\": ${json(report.recoveredAt.toString())}, ")
+                append("\"messageSha256\": ${json(sha256Text(clean(report.message)))}, ")
+                append("\"errorHashes\": [${report.errors.joinToString(",") { json(sha256Text(clean(it))) }}]")
+                append("}")
+            }
             append("}")
         }
     }
@@ -210,6 +232,28 @@ class SelfHostEvidenceBundleExporter(
             .joinToString(",") { output ->
                 "{\"path\": ${json(clean(output))}, \"sha256\": ${json(outputHash(output))}}"
             }
+
+    private fun evidenceClass(evidence: List<String>, vararg markers: String): List<String> =
+        evidence.filter { entry -> markers.any { marker -> entry.contains(marker, ignoreCase = true) } }
+
+    private fun StringBuilder.appendEvidenceClassMarkdown(title: String, entries: List<String>) {
+        appendLine()
+        appendLine("### $title")
+        if (entries.isEmpty()) {
+            appendLine("- none")
+        } else {
+            entries.forEach { entry ->
+                val safe = clean(entry)
+                appendLine("- `${escapeMarkdown(safe)}` sha256 `${sha256Text(safe)}`")
+            }
+        }
+    }
+
+    private fun renderEvidenceClassJson(entries: List<String>): String =
+        entries.joinToString(",") { entry ->
+            val safe = clean(entry)
+            "{\"text\": ${json(safe)}, \"sha256\": ${json(sha256Text(safe))}}"
+        }
 
     private fun clean(value: String): String = redactionFilter.redact(value)
 
