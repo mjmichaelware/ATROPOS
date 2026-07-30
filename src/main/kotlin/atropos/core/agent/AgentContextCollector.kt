@@ -5,6 +5,7 @@ import atropos.core.provider.ActiveSourceBindingResolver
 import atropos.core.provider.CodebaseContextPacker
 import atropos.core.provider.SourcePackRequest
 import atropos.core.provider.SourcePackResult
+import atropos.core.provider.SourceBindingKind
 import atropos.core.policy.BoundedProcessRunner
 import atropos.core.security.RedactionFilter
 import java.nio.file.Files
@@ -16,7 +17,10 @@ data class AgentContextSnapshot(
     val byteCount: Int,
     val truncated: Boolean,
     val sourcePackId: String? = null,
-    val fetchReceiptId: String? = null
+    val fetchReceiptId: String? = null,
+    val sourcePackContentHash: String? = null,
+    val sourceTreeHash: String? = null,
+    val sourceBindingKind: SourceBindingKind? = null
 )
 
 class AgentContextCollector(
@@ -63,7 +67,10 @@ class AgentContextCollector(
             byteCount = rendered.toByteArray(Charsets.UTF_8).size,
             truncated = truncated,
             sourcePackId = pack?.id,
-            fetchReceiptId = pack?.fetchReceipt?.id
+            fetchReceiptId = pack?.fetchReceipt?.id,
+            sourcePackContentHash = pack?.contentHash,
+            sourceTreeHash = pack?.fetchReceipt?.treeHash,
+            sourceBindingKind = pack?.fetchReceipt?.bindingKind
         )
     }
 
@@ -91,7 +98,10 @@ class AgentContextCollector(
             byteCount = rendered.toByteArray(Charsets.UTF_8).size,
             truncated = truncated,
             sourcePackId = pack?.id,
-            fetchReceiptId = pack?.fetchReceipt?.id
+            fetchReceiptId = pack?.fetchReceipt?.id,
+            sourcePackContentHash = pack?.contentHash,
+            sourceTreeHash = pack?.fetchReceipt?.treeHash,
+            sourceBindingKind = pack?.fetchReceipt?.bindingKind
         )
     }
 
@@ -120,7 +130,10 @@ class AgentContextCollector(
             byteCount = rendered.toByteArray(Charsets.UTF_8).size,
             truncated = truncated,
             sourcePackId = pack?.id,
-            fetchReceiptId = pack?.fetchReceipt?.id
+            fetchReceiptId = pack?.fetchReceipt?.id,
+            sourcePackContentHash = pack?.contentHash,
+            sourceTreeHash = pack?.fetchReceipt?.treeHash,
+            sourceBindingKind = pack?.fetchReceipt?.bindingKind
         )
     }
 

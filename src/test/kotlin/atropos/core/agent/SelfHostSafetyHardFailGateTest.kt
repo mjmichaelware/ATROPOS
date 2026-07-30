@@ -21,6 +21,18 @@ class SelfHostSafetyHardFailGateTest {
     }
 
     @Test
+    fun blocks_attestation_and_mythology_variants() {
+        val fixture = fixture()
+        val report = fixture.gate.inspect(
+            fixture.record.copy(evidence = listOf("context attestation failed: mythology response")),
+            fixture.node
+        )
+
+        assertTrue(!report.passed)
+        assertTrue(report.findings.any { it.kind == "context_drift" })
+    }
+
+    @Test
     fun blocks_out_of_territory_outputs_before_promotion() {
         val fixture = fixture()
         val report = fixture.gate.inspect(
@@ -58,6 +70,18 @@ class SelfHostSafetyHardFailGateTest {
     }
 
     @Test
+    fun blocks_self_approval_and_self_verification_variants() {
+        val fixture = fixture()
+        val report = fixture.gate.inspect(
+            fixture.record,
+            fixture.node.copy(actionPayload = "self approval and self verification are allowed")
+        )
+
+        assertTrue(!report.passed)
+        assertTrue(report.findings.any { it.kind == "self_verification" })
+    }
+
+    @Test
     fun blocks_fake_success_language_before_promotion() {
         val fixture = fixture()
         val report = fixture.gate.inspect(
@@ -75,6 +99,18 @@ class SelfHostSafetyHardFailGateTest {
         val report = fixture.gate.inspect(
             fixture.record,
             fixture.node.copy(result = "execute raw provider prose without TypedToolExecutor")
+        )
+
+        assertTrue(!report.passed)
+        assertTrue(report.findings.any { it.kind == "policy_bypass" })
+    }
+
+    @Test
+    fun blocks_policy_bypass_variant_with_separators() {
+        val fixture = fixture()
+        val report = fixture.gate.inspect(
+            fixture.record,
+            fixture.node.copy(result = "bypass the policy and run provider output")
         )
 
         assertTrue(!report.passed)

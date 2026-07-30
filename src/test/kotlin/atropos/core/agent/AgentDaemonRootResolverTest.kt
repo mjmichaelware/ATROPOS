@@ -49,4 +49,19 @@ class AgentDaemonRootResolverTest {
             AgentDaemonProcessLauncher().runWakeTool("sh -c echo unsafe")
         }
     }
+
+    @Test
+    fun daemon_process_launcher_rejects_symlink_backed_log() {
+        val root = Files.createTempDirectory("atropos-daemon-log-root-")
+        val jar = Files.createFile(root.resolve("atropos.jar"))
+        val target = Files.createFile(root.resolve("real.log"))
+        val link = root.resolve("daemon.log")
+        runCatching { Files.createSymbolicLink(link, target.fileName) }.getOrElse {
+            return
+        }
+
+        assertFailsWith<IllegalArgumentException> {
+            AgentDaemonProcessLauncher().launchForeground(root, jar, link)
+        }
+    }
 }

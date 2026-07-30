@@ -4,6 +4,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.nio.file.LinkOption
+import java.security.MessageDigest
 import java.time.Instant
 
 data class JarSwapEvidence(
@@ -82,15 +83,41 @@ class SafeJarSwapGate(
             null
         }
 
+        var previousHash: String? = null
         return try {
             Files.createDirectories(normalizedTarget.parent)
+            val candidateHash = sha256(normalizedCandidate)
+                ?: throw IllegalStateException("candidate jar hash could not be computed")
+            localEvidence += JarSwapEvidence(true, "candidate_sha256", candidateHash)
+            previousHash = if (Files.exists(normalizedTarget, LinkOption.NOFOLLOW_LINKS)) {
+                sha256(normalizedTarget)
+                    ?: throw IllegalStateException("previous jar hash could not be computed")
+            } else {
+                null
+            }
             backup?.let { backupPath ->
                 if (Files.exists(backupPath, LinkOption.NOFOLLOW_LINKS)) {
                     throw IllegalStateException("backup path already exists: $backupPath")
                 }
                 Files.copy(normalizedTarget, backupPath)
+                if (!Files.isRegularFile(backupPath, LinkOption.NOFOLLOW_LINKS) || Files.size(backupPath) <= 0L) {
+                    throw IllegalStateException("previous jar backup was not preserved: $backupPath")
+                }
+                val backupHash = sha256(backupPath)
+                if (backupHash != previousHash) {
+                    throw IllegalStateException("previous jar backup bytes do not match the active jar")
+                }
+                localEvidence += JarSwapEvidence(true, "backup_sha256", backupHash ?: "missing")
             }
             Files.copy(normalizedCandidate, normalizedTarget, StandardCopyOption.REPLACE_EXISTING)
+            if (!Files.isRegularFile(normalizedTarget, LinkOption.NOFOLLOW_LINKS) || Files.size(normalizedTarget) <= 0L) {
+                throw IllegalStateException("promoted target jar was not written: $normalizedTarget")
+            }
+            val targetHash = sha256(normalizedTarget)
+            if (targetHash != candidateHash) {
+                throw IllegalStateException("promoted target bytes do not match the candidate jar")
+            }
+            localEvidence += JarSwapEvidence(true, "target_sha256", targetHash ?: "missing")
             JarSwapResult(
                 promoted = true,
                 candidateJar = normalizedCandidate,
@@ -101,17 +128,57 @@ class SafeJarSwapGate(
                 promotedAt = clock()
             )
         } catch (failure: Exception) {
-            backup?.takeIf { Files.isRegularFile(it, LinkOption.NOFOLLOW_LINKS) }?.let {
-                runCatching { Files.copy(it, normalizedTarget, StandardCopyOption.REPLACE_EXISTING) }
+            val rollback = backup?.let { backupPath ->
+                if (Files.isRegularFile(backupPath, LinkOption.NOFOLLOW_LINKS)) {
+                    runCatching {
+                        Files.copy(backupPath, normalizedTarget, StandardCopyOption.REPLACE_EXISTING)
+                        val restoredHash = sha256(normalizedTarget)
+                        val backupHash = sha256(backupPath)
+                        check(restoredHash != null && restoredHash == backupHash) {
+                            "rollback bytes do not match the preserved backup"
+                        }
+                    }
+                } else {
+                    runCatching {
+                        check(previousHash != null && sha256(normalizedTarget) == previousHash) {
+                            "active jar changed and no usable backup exists"
+                        }
+                    }
+                }
+            }
+            val rollbackEvidence = if (rollback == null) {
+                JarSwapEvidence(true, "rollback", "no previous jar required restoration")
+            } else if (rollback.isSuccess) {
+                JarSwapEvidence(true, "rollback", "previous jar restored or remained unchanged with hash verified")
+            } else {
+                JarSwapEvidence(false, "rollback", "previous jar restoration failed: ${rollback.exceptionOrNull()?.message ?: "unknown failure"}")
             }
             JarSwapResult(
                 promoted = false,
                 candidateJar = normalizedCandidate,
                 targetJar = normalizedTarget,
                 backupJar = backup,
-                evidence = localEvidence + JarSwapEvidence(false, "promote_copy", failure.message ?: "copy failed"),
-                message = "jar promote failed and previous jar was preserved"
+                evidence = localEvidence + JarSwapEvidence(false, "promote_copy", failure.message ?: "copy failed") + rollbackEvidence,
+                message = if (rollbackEvidence.passed) {
+                    "jar promote failed and previous jar was restored"
+                } else {
+                    "jar promote failed and previous jar restoration failed"
+                }
             )
         }
+    }
+
+    private fun sha256(path: Path): String? {
+        if (!Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS)) return null
+        val digest = MessageDigest.getInstance("SHA-256")
+        Files.newInputStream(path).use { input ->
+            val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+            while (true) {
+                val read = input.read(buffer)
+                if (read < 0) break
+                if (read > 0) digest.update(buffer, 0, read)
+            }
+        }
+        return digest.digest().joinToString("") { "%02x".format(it) }
     }
 }

@@ -40,6 +40,8 @@ class SelfHostWorktreeNodeExecutor(
             ?: return fail(node, "unsupported file mutation payload")
         val territoryFailure = territoryViolation(node, mutation.path)
         if (territoryFailure != null) return fail(node, territoryFailure)
+        val expectedOutputFailure = expectedOutputViolation(node, mutation.path)
+        if (expectedOutputFailure != null) return fail(node, expectedOutputFailure)
 
         val actor = ActionActor.HierarchyNode(role = "self-host-worktree", nodeId = node.id)
         when (val grant = territoryGrants.grantToNode(ActionActor.HumanOwner, actor, node.territory)) {
@@ -88,6 +90,12 @@ class SelfHostWorktreeNodeExecutor(
             val changedPaths = diffInspector.changedPaths(worktree.baselineCommit, worktree.worktreePath, mutation.path)
             if (changedPaths.isEmpty()) {
                 return fail(running, "self-host mutation produced no source diff: ${mutation.path}")
+            }
+            val changedOutputFailure = changedPaths
+                .map(::normalizeRelative)
+                .firstOrNull { changed -> node.expectedOutputs.isNotEmpty() && changed !in node.expectedOutputs.map(::normalizeRelative) }
+            if (changedOutputFailure != null) {
+                return fail(running, "self-host mutation changed undeclared output: $changedOutputFailure")
             }
             val merged = worktreeService.verifyAndMerge(worktree.id, "git diff --check")
             if (!merged.ok) return fail(node, merged.message)
@@ -139,5 +147,16 @@ class SelfHostWorktreeNodeExecutor(
         }
         return if (inside) null else "territory violation before worktree mutation: $normalized"
     }
+
+    private fun expectedOutputViolation(node: DagNode, path: Path): String? {
+        if (node.expectedOutputs.isEmpty()) return null
+        val normalizedPath = normalizeRelative(path.toString())
+        val expected = node.expectedOutputs.map(::normalizeRelative)
+        return if (normalizedPath in expected) null
+        else "mutation target is not a declared expected output: $normalizedPath"
+    }
+
+    private fun normalizeRelative(path: String): String =
+        path.replace('\\', '/').trimStart('/').trimEnd('/')
 
 }

@@ -273,10 +273,33 @@ class SelfHostCommandTest {
             is AgentCommandOutcome.Invalid -> result.message
         }
 
-        assertTrue(result is AgentCommandOutcome.Completed)
+        assertTrue(result is AgentCommandOutcome.Invalid)
         assertEquals("make ATROPOS build itself", capturedPrompt)
-        assertTrue(text.contains("self-host run promoted verified jar"), text)
+        assertTrue(text.contains("success contract incomplete"), text)
         assertTrue(text.contains("started"), text)
+    }
+
+    @Test
+    fun `bare self-host invokes the canonical self-build runner`() {
+        val repoRoot = Files.createTempDirectory("atropos-self-host-command-default-")
+        val service = SelfHostGoalService(repoRoot = repoRoot, store = GoalRunStore(repoRoot))
+        var capturedPrompt: String? = null
+        val command = buildCommand(repoRoot, service) { prompt ->
+            capturedPrompt = prompt
+            SelfHostAutonomousRunResult(
+                ok = false,
+                message = "typed stop",
+                goal = null,
+                promotion = null,
+                evidenceBundle = null,
+                steps = listOf("started")
+            )
+        }
+
+        val result = command.execute(listOf("/agent", "self-host"))
+
+        assertTrue(result is AgentCommandOutcome.Invalid)
+        assertEquals(SelfHostDefaultPrompt.TEXT, capturedPrompt)
     }
 
     @Test

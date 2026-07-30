@@ -30,7 +30,7 @@ data class SelfHostCandidateJarBuildResult(
 
 class SelfHostCandidateJarBuilder(
     private val repoRoot: Path,
-    private val command: List<String> = listOf("./gradlew", "jar"),
+    private val command: List<String> = listOf("./gradlew", "test", "jar", "--no-daemon"),
     private val expectedJar: Path = repoRoot.resolve("build/libs/ATROPOS.jar").normalize(),
     private val agency: TypedToolExecutor = TypedToolExecutor(BoundedAgencyGate(ExecutionPolicyEngine(repoRoot))),
     private val redactionFilter: RedactionFilter = RedactionFilter(),
@@ -136,6 +136,7 @@ class SelfHostCandidateJarBuilder(
         if (command.drop(1).any { it.isBlank() || it.contains('\n') || it.contains('\r') || it == "--" }) {
             return "candidate jar build command contains an invalid argument"
         }
+        if (command.drop(1).none { it == "test" }) return "candidate jar build command must run the test gate"
         if (command.drop(1).none { it == "jar" }) return "candidate jar build command must request jar"
         return null
     }

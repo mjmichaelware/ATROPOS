@@ -66,6 +66,28 @@ data class CodebaseContextPack(
     val truncated: Boolean,
     val redacted: Boolean,
     val text: String
+) {
+    fun provenance(): SourcePackProvenance = SourcePackProvenance(
+        packId = id,
+        contentHash = contentHash,
+        fetchReceiptId = fetchReceipt.id,
+        treeHash = fetchReceipt.treeHash,
+        bindingKind = fetchReceipt.bindingKind,
+        includedPaths = includedPaths,
+        redacted = redacted,
+        truncated = truncated
+    )
+}
+
+data class SourcePackProvenance(
+    val packId: String,
+    val contentHash: String,
+    val fetchReceiptId: String,
+    val treeHash: String,
+    val bindingKind: SourceBindingKind,
+    val includedPaths: List<String>,
+    val redacted: Boolean,
+    val truncated: Boolean
 )
 
 sealed class SourcePackResult {

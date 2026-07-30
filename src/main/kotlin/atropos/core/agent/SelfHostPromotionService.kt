@@ -10,6 +10,7 @@ import atropos.core.director.DirectorStore
 import atropos.core.verification.CompletionGateReport
 import atropos.core.verification.VerifiedCompletionGate
 import java.nio.file.Path
+import java.time.Instant
 
 class SelfHostPromotionService(
     private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
@@ -20,6 +21,7 @@ class SelfHostPromotionService(
     private val evidenceRenderer: SelfHostPromotionEvidence = SelfHostPromotionEvidence(),
     private val safetyGate: SelfHostSafetyHardFailGate = SelfHostSafetyHardFailGate(repoRoot),
     private val directorService: DirectorService = DirectorService(DirectorStore(repoRoot), repoRoot),
+    private val promotionGateContract: SelfHostPromotionGateContract = SelfHostPromotionGateContract(),
     private val evaluateGate: (DagNode) -> CompletionGateReport = completionGate::evaluateNode
 ) {
     fun promote(request: SelfHostPromotionRequest): SelfHostPromotionResult {
@@ -90,11 +92,12 @@ class SelfHostPromotionService(
 
         val gateReport = evaluateGate(node)
         val gateEvidence = evidenceRenderer.gateReport(gateReport)
-        if (!gateReport.canComplete) {
+        val gateRefusal = promotionGateContract.refusal(gateReport, node.id)
+        if (gateRefusal != null) {
             val refused = store.update(record.copy(evidence = record.evidence + safetyEvidence + directorEvidence + gateEvidence))
             return SelfHostPromotionResult(
                 promoted = false,
-                message = "promotion refused by VerifiedCompletionGate: ${gateReport.message}",
+                message = "promotion refused by VerifiedCompletionGate: $gateRefusal",
                 goal = SelfHostGoal(refused, dag),
                 gateReport = gateReport,
                 jarSwap = null
@@ -108,6 +111,14 @@ class SelfHostPromotionService(
         )
         val updated = store.update(
             record.copy(
+                status = if (swap.promoted) record.status else GoalRunStatus.FAILED,
+                terminalCondition = if (swap.promoted) {
+                    record.terminalCondition
+                } else {
+                    GoalTerminalCondition.TERMINAL_FAILURE
+                },
+                finishedAt = if (swap.promoted) record.finishedAt else Instant.now(),
+                failureReason = if (swap.promoted) record.failureReason else "jar swap failed: ${swap.message}",
                 evidence = record.evidence + safetyEvidence + directorEvidence + gateEvidence + evidenceRenderer.jarSwap(swap),
                 lastVerifiedCheckpoint = if (swap.promoted) "jar:${swap.targetJar.fileName}" else record.lastVerifiedCheckpoint
             )

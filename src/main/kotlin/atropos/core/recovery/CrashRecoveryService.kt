@@ -85,7 +85,10 @@ class CrashRecoveryService(
             val runs = goalRunStore.listRuns(Int.MAX_VALUE)
             for (run in runs) {
                 if (run.status == atropos.core.agent.GoalRunStatus.RUNNING || run.status == atropos.core.agent.GoalRunStatus.CONTINUING) {
-                    if (run.lastContinuationAt != null && run.lastContinuationAt.plusSeconds(300).isBefore(now)) {
+                    val staleByContinuation = run.lastContinuationAt?.plusSeconds(300)?.isBefore(now) == true
+                    val staleBeforeFirstContinuation = run.lastContinuationAt == null &&
+                        run.updatedAt.plusSeconds(300).isBefore(now)
+                    if (staleByContinuation || staleBeforeFirstContinuation) {
                         continuationService.markRecoveryRequired(
                             run.id,
                             "interrupted: recovered during crash recovery",

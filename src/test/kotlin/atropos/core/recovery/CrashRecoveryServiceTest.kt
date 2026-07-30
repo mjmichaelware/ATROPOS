@@ -111,6 +111,44 @@ class CrashRecoveryServiceTest {
     }
 
     @Test
+    fun recover_marks_stale_run_before_first_continuation_as_recovery_required() {
+        val repoRoot = Files.createTempDirectory("atropos-crash-recovery-before-first-")
+        val now = Instant.parse("2026-07-27T07:05:00Z")
+        val goalRunStore = GoalRunStore(repoRoot, clock = { now.minusSeconds(301) })
+        val created = goalRunStore.createGoalRun("phase 11 before first continuation", provider = "self-host")
+        val stale = goalRunStore.update(created)
+        val config = AtroposConfig(
+            keys = ApiKeys(groq = "", openai = "", anthropic = "", xai = ""),
+            lakehouse = LakehouseConfig(repoRoot.resolve("lakehouse").toString(), repoRoot.resolve("lakehouse/vector.db").toString()),
+            runtime = RuntimeConfig(defaultProvider = "groq", temperature = 0.2)
+        )
+        val continuation = GoalContinuationService(repoRoot = repoRoot, store = goalRunStore, clock = { now })
+        val queueStore = AgentQueueStore(repoRoot, clock = { now })
+        val service = CrashRecoveryService(
+            config = config,
+            repoRoot = repoRoot,
+            queueService = AgentQueueService(config, AgentContextCollector(repoRoot = repoRoot)),
+            queueStore = queueStore,
+            queueRecovery = AgentQueueRecovery(queueStore, clock = { now }),
+            sessionSupervisor = ProviderSessionSupervisor(repoRoot, clock = { now }),
+            continuationService = continuation,
+            goalRunStore = goalRunStore,
+            dagService = DagExecutionService(config, repoRoot),
+            dagStore = DagStore(repoRoot),
+            memoryStore = LocalMemoryStore(repoRoot.resolve(".atropos/memory").toFile(), env = emptyMap()),
+            daemonService = AgentDaemonService(config, repoRoot),
+            clock = { now }
+        )
+
+        val report = service.recover()
+        val reopened = goalRunStore.resolve(stale.id) ?: error("missing recovered run")
+
+        assertEquals(1, report.interruptedRuns)
+        assertEquals(GoalRunStatus.RECOVERY_REQUIRED, reopened.status)
+        assertTrue(reopened.evidence.any { it == "recovery=crash" })
+    }
+
+    @Test
     fun recover_scans_full_run_history_instead_of_only_latest_window() {
         val repoRoot = Files.createTempDirectory("atropos-crash-recovery-window-")
         Files.createDirectories(repoRoot.resolve(".atropos"))

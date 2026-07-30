@@ -1,18 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-NEW_JAR="${1:?usage: scripts/atropos-safe-jar-swap.sh NEW_JAR}"
-
-if [ ! -f "$NEW_JAR" ]; then
-  echo "missing jar: $NEW_JAR" >&2
-  exit 2
-fi
-
-mkdir -p .atropos/backups
-
-if [ -f atropos.jar ]; then
-  cp atropos.jar ".atropos/backups/atropos.$(date +%s).jar"
-fi
-
-cp "$NEW_JAR" atropos.jar
-echo "ATROPOS_SAFE_JAR_SWAP_OK"
+cat >&2 <<'MESSAGE'
+UNSUPPORTED: direct shell JAR swaps are disabled.
+Use the installed ATROPOS self-host promotion path so VerifiedCompletionGate,
+SelfHostSafetyHardFailGate, Director advisory, and SafeJarSwapGate remain the
+single promotion chain.
+MESSAGE
+exit 78

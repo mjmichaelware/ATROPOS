@@ -44,7 +44,15 @@ class RestartCoordinator(
                     recoveryRequired = it.status == GoalRunStatus.RECOVERY_REQUIRED,
                     evidenceCount = it.evidence.size,
                     territory = it.territory.map(redactionFilter::redact),
-                    evidenceHashes = it.evidence.map { evidence -> sha256(redactionFilter.redact(evidence)) }
+                    evidenceHashes = it.evidence.map { evidence -> sha256(redactionFilter.redact(evidence)) },
+                    task = redactionFilter.redact(it.task),
+                    baselineCommit = it.baselineCommit?.let(redactionFilter::redact),
+                    dirtyStateFingerprint = it.dirtyStateFingerprint?.let(redactionFilter::redact),
+                    parentRunId = it.parentRunId?.let(redactionFilter::redact),
+                    runId = it.runId?.let(redactionFilter::redact),
+                    maxContinuations = it.maxContinuations,
+                    retryBudget = it.retryBudget,
+                    lastVerifiedCheckpoint = it.lastVerifiedCheckpoint?.let(redactionFilter::redact)
                 )
             },
             dags = dagStore.listDags().map { dag ->
@@ -146,7 +154,25 @@ class RestartCoordinator(
             appendLine("recoveryMessageB64=${encode(redactionFilter.redact(report.message))}")
         }
         snapshot.goalRuns.forEach {
-            appendLine("goal=${listOf(it.id, it.status, it.dagId.orEmpty(), it.currentNodeId.orEmpty(), it.continuationCount, it.recoveryRequired, it.evidenceCount, encode(it.territory.joinToString(",")), it.evidenceHashes.joinToString(",")).joinToString("|")}")
+            appendLine("goal=${listOf(
+                it.id,
+                it.status,
+                it.dagId.orEmpty(),
+                it.currentNodeId.orEmpty(),
+                it.continuationCount,
+                it.recoveryRequired,
+                it.evidenceCount,
+                encode(it.territory.joinToString("\u0000")),
+                it.evidenceHashes.joinToString(","),
+                encode(it.task),
+                encode(it.baselineCommit.orEmpty()),
+                encode(it.dirtyStateFingerprint.orEmpty()),
+                encode(it.parentRunId.orEmpty()),
+                encode(it.runId.orEmpty()),
+                it.maxContinuations,
+                it.retryBudget,
+                encode(it.lastVerifiedCheckpoint.orEmpty())
+            ).joinToString("|")}")
         }
         snapshot.dags.forEach {
             appendLine("dag=${listOf(it.id, encode(it.label), it.ready, it.running, it.blocked, it.complete, it.failed).joinToString("|")}")
@@ -225,8 +251,16 @@ class RestartCoordinator(
             continuationCount = p[4].toIntOrNull() ?: 0,
             recoveryRequired = p[5].toBoolean(),
             evidenceCount = p[6].toIntOrNull() ?: 0,
-            territory = p.getOrNull(7)?.let(::decode)?.split(",")?.filter { it.isNotBlank() }.orEmpty(),
-            evidenceHashes = p.getOrNull(8)?.split(",")?.filter { it.isNotBlank() }.orEmpty()
+            territory = p.getOrNull(7)?.let(::decode)?.split("\u0000")?.filter { it.isNotBlank() }.orEmpty(),
+            evidenceHashes = p.getOrNull(8)?.split(",")?.filter { it.isNotBlank() }.orEmpty(),
+            task = p.getOrNull(9)?.let(::decode).orEmpty(),
+            baselineCommit = p.getOrNull(10)?.let(::decode)?.takeIf { it.isNotBlank() },
+            dirtyStateFingerprint = p.getOrNull(11)?.let(::decode)?.takeIf { it.isNotBlank() },
+            parentRunId = p.getOrNull(12)?.let(::decode)?.takeIf { it.isNotBlank() },
+            runId = p.getOrNull(13)?.let(::decode)?.takeIf { it.isNotBlank() },
+            maxContinuations = p.getOrNull(14)?.toIntOrNull() ?: 0,
+            retryBudget = p.getOrNull(15)?.toIntOrNull() ?: 0,
+            lastVerifiedCheckpoint = p.getOrNull(16)?.let(::decode)?.takeIf { it.isNotBlank() }
         )
     }
 

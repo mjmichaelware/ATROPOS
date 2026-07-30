@@ -11,7 +11,15 @@ data class GoalRunSnapshot(
     val recoveryRequired: Boolean,
     val evidenceCount: Int,
     val territory: List<String> = emptyList(),
-    val evidenceHashes: List<String> = emptyList()
+    val evidenceHashes: List<String> = emptyList(),
+    val task: String = "",
+    val baselineCommit: String? = null,
+    val dirtyStateFingerprint: String? = null,
+    val parentRunId: String? = null,
+    val runId: String? = null,
+    val maxContinuations: Int = 0,
+    val retryBudget: Int = 0,
+    val lastVerifiedCheckpoint: String? = null
 )
 
 data class DagSnapshot(

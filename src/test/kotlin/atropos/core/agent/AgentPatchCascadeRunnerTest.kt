@@ -34,7 +34,7 @@ class AgentPatchCascadeRunnerTest {
             repoRoot = root,
             memoryStore = memory,
             authorizeProvider = { _, _, _ -> },
-            completeWithCascade = { requestedProvider, _, _, _, beforeAttempt ->
+            completeWithCascade = { requestedProvider, _, _, _, beforeAttempt, _ ->
                 providerCalls += 1
                 beforeAttempt(requestedProvider)
                 ProviderCascadeResult(requestedProvider, response, emptyList())

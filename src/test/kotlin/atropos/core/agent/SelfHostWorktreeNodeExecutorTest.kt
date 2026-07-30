@@ -99,6 +99,33 @@ class SelfHostWorktreeNodeExecutorTest {
         assertEquals(DagNodeState.FAILED, store.readNode(node.id)?.state)
     }
 
+    @Test
+    fun refuses_in_territory_mutation_when_output_is_not_declared() {
+        val root = Files.createTempDirectory("atropos-self-host-worktree-output-refuse-")
+        initializeGitRepo(root)
+        val store = DagStore(root)
+        val unexpected = "src/main/kotlin/atropos/core/agent/Unexpected.kt"
+        val node = DagNode(
+            id = "node-worktree-output-refuse",
+            label = "Worktree undeclared output refuse",
+            territory = listOf("src/main/kotlin/atropos/core/agent"),
+            action = DagNodeAction.EDIT_FILE,
+            actionPayload = "$unexpected::package atropos.core.agent\nobject Unexpected",
+            expectedOutputs = listOf("src/main/kotlin/atropos/core/agent/Declared.kt"),
+            createdAt = Instant.parse("2026-07-29T00:10:00Z"),
+            updatedAt = Instant.parse("2026-07-29T00:10:00Z"),
+            metaFile = root.resolve(".atropos/dag/node-worktree-output-refuse.meta")
+        )
+        store.writeNode(node)
+
+        val result = SelfHostWorktreeNodeExecutor(root, dagStore = store).execute(node)
+
+        assertTrue(!result.ok)
+        assertTrue(result.message.contains("not a declared expected output"), result.message)
+        assertTrue(!Files.exists(root.resolve(unexpected)))
+        assertEquals(DagNodeState.FAILED, store.readNode(node.id)?.state)
+    }
+
     private fun initializeGitRepo(repoRoot: java.nio.file.Path) {
         git(repoRoot, "init")
         Files.createDirectories(repoRoot.resolve("src/main/kotlin/atropos/core/agent"))

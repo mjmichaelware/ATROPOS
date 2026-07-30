@@ -6,7 +6,6 @@ import atropos.core.security.RedactionFilter
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
-import java.security.MessageDigest
 
 class SelfHostEvidenceBundleExporter(
     private val repoRoot: Path,
@@ -14,37 +13,67 @@ class SelfHostEvidenceBundleExporter(
     private val dagService: DagExecutionService,
     private val restartCoordinator: RestartCoordinator = RestartCoordinator(repoRoot),
     private val redactionFilter: RedactionFilter = RedactionFilter(),
-    private val hasher: SelfHostFileHasher = SelfHostFileHasher()
+    private val hasher: SelfHostFileHasher = SelfHostFileHasher(),
+    private val provenance: SelfHostEvidenceProvenance = SelfHostEvidenceProvenance()
 ) {
     private val bundleRoot = repoRoot.resolve(".atropos/self-hosting/evidence").normalize()
+    private val textCodec = SelfHostEvidenceTextCodec(redactionFilter)
 
     fun export(goalId: String): SelfHostEvidenceBundleResult {
         val record = store.resolve(goalId)
-            ?: return SelfHostEvidenceBundleResult(false, "goal not found: $goalId", null, null, null, null)
+            ?: return failure("goal not found: $goalId", SelfHostFailureCode.GOAL_NOT_FOUND)
         val dag = record.dagId?.let { dagService.readDag(it) }
-        val snapshot = restartCoordinator.latestSnapshot(record.id)
-        val targetDir = bundleRoot.resolve(record.id)
-        Files.createDirectories(targetDir)
+        if (record.dagId != null && dag == null) {
+            return failure("evidence export refused: DAG not found ${record.dagId}", SelfHostFailureCode.MISSING_DAG)
+        }
+        return try {
+            val snapshot = restartCoordinator.latestSnapshot(record.id)
+            val targetDir = bundleRoot.resolve(record.id).normalize()
+            if (!targetDir.startsWith(bundleRoot)) {
+                return failure("evidence export refused: goal path escaped evidence root", SelfHostFailureCode.EVIDENCE_EXPORT_FAILED)
+            }
+            Files.createDirectories(targetDir)
 
-        val markdownPath = targetDir.resolve("bundle.md")
-        val jsonPath = targetDir.resolve("bundle.json")
-        Files.writeString(markdownPath, renderMarkdown(record, dag, snapshot), StandardCharsets.UTF_8)
-        Files.writeString(jsonPath, renderJson(record, dag, snapshot), StandardCharsets.UTF_8)
-
-        return SelfHostEvidenceBundleResult(
-            ok = true,
-            message = "self-host evidence bundle exported",
-            markdownPath = markdownPath,
-            jsonPath = jsonPath,
-            markdownSha256 = hasher.sha256(markdownPath),
-            jsonSha256 = hasher.sha256(jsonPath)
-        )
+            val markdownPath = targetDir.resolve("bundle.md")
+            val jsonPath = targetDir.resolve("bundle.json")
+            val provenanceSha256 = provenanceSha256(record, dag, snapshot)
+            Files.writeString(markdownPath, renderMarkdown(record, dag, snapshot, provenanceSha256), StandardCharsets.UTF_8)
+            Files.writeString(jsonPath, renderJson(record, dag, snapshot, provenanceSha256), StandardCharsets.UTF_8)
+            val markdownSha256 = hasher.sha256(markdownPath)
+            val jsonSha256 = hasher.sha256(jsonPath)
+            if (markdownSha256.isNullOrBlank() || jsonSha256.isNullOrBlank()) {
+                return failure("evidence export refused: bundle hash missing", SelfHostFailureCode.EVIDENCE_HASH_MISSING)
+            }
+            SelfHostEvidenceBundleResult(
+                ok = true,
+                message = "self-host evidence bundle exported",
+                markdownPath = markdownPath,
+                jsonPath = jsonPath,
+                markdownSha256 = markdownSha256,
+                jsonSha256 = jsonSha256
+            )
+        } catch (failure: Exception) {
+            val safeMessage = redactionFilter.redact(failure.message ?: failure.javaClass.simpleName)
+            SelfHostEvidenceBundleResult(
+                ok = false,
+                message = "evidence export failed: $safeMessage",
+                markdownPath = null,
+                jsonPath = null,
+                markdownSha256 = null,
+                jsonSha256 = null,
+                failureCode = SelfHostFailureCode.EVIDENCE_EXPORT_FAILED
+            )
+        }
     }
+
+    private fun failure(message: String, code: SelfHostFailureCode): SelfHostEvidenceBundleResult =
+        SelfHostEvidenceBundleResult(false, message, null, null, null, null, code)
 
     private fun renderMarkdown(
         record: GoalRunRecord,
         dag: atropos.core.dag.DagDefinition?,
-        snapshot: atropos.core.recovery.StateSnapshot?
+        snapshot: atropos.core.recovery.StateSnapshot?,
+        provenanceSha256: String
     ): String = buildString {
         appendLine("# ATROPOS Self-Host Evidence")
         appendLine()
@@ -57,6 +86,7 @@ class SelfHostEvidenceBundleExporter(
         appendLine("- current node: `${escapeMarkdown(record.currentNodeId ?: "none")}`")
         appendLine("- baseline: `${escapeMarkdown(record.baselineCommit ?: "none")}`")
         appendLine("- dirty fingerprint: `${escapeMarkdown(record.dirtyStateFingerprint ?: "none")}`")
+        appendLine("- provenance chain sha256: `$provenanceSha256`")
         appendLine()
         appendLine("## Territory")
         record.territory.forEach { appendLine("- `${escapeMarkdown(clean(it))}`") }
@@ -124,7 +154,8 @@ class SelfHostEvidenceBundleExporter(
     private fun renderJson(
         record: GoalRunRecord,
         dag: atropos.core.dag.DagDefinition?,
-        snapshot: atropos.core.recovery.StateSnapshot?
+        snapshot: atropos.core.recovery.StateSnapshot?,
+        provenanceSha256: String
     ): String = buildString {
         appendLine("{")
         appendLine("  \"schema\": \"self-host-evidence-bundle-v1\",")
@@ -139,6 +170,7 @@ class SelfHostEvidenceBundleExporter(
         appendLine("  \"currentNodeId\": ${json(record.currentNodeId ?: "none")},")
         appendLine("  \"baselineCommit\": ${json(record.baselineCommit ?: "none")},")
         appendLine("  \"dirtyStateFingerprint\": ${json(record.dirtyStateFingerprint ?: "none")},")
+        appendLine("  \"provenanceChainSha256\": ${json(provenanceSha256)},")
         appendLine("  \"territory\": [${record.territory.joinToString(",") { json(clean(it)) }}],")
         appendLine("  \"outputHashes\": [${renderOutputHashesJson(dag)}],")
         appendLine("  \"evidenceHashes\": [${record.evidence.joinToString(",") { json(sha256Text(clean(it))) }}],")
@@ -234,40 +266,38 @@ class SelfHostEvidenceBundleExporter(
             }
 
     private fun evidenceClass(evidence: List<String>, vararg markers: String): List<String> =
-        evidence.filter { entry -> markers.any { marker -> entry.contains(marker, ignoreCase = true) } }
+        textCodec.evidenceClass(evidence, *markers)
 
     private fun StringBuilder.appendEvidenceClassMarkdown(title: String, entries: List<String>) {
-        appendLine()
-        appendLine("### $title")
-        if (entries.isEmpty()) {
-            appendLine("- none")
-        } else {
-            entries.forEach { entry ->
-                val safe = clean(entry)
-                appendLine("- `${escapeMarkdown(safe)}` sha256 `${sha256Text(safe)}`")
-            }
-        }
+        textCodec.appendEvidenceClassMarkdown(this, title, entries)
     }
 
     private fun renderEvidenceClassJson(entries: List<String>): String =
-        entries.joinToString(",") { entry ->
-            val safe = clean(entry)
-            "{\"text\": ${json(safe)}, \"sha256\": ${json(sha256Text(safe))}}"
-        }
+        textCodec.renderEvidenceClassJson(entries)
 
-    private fun clean(value: String): String = redactionFilter.redact(value)
+    private fun clean(value: String): String = textCodec.clean(value)
 
     private fun outputHash(path: String): String =
         hasher.sha256(repoRoot.resolve(path).normalize()) ?: "missing"
 
-    private fun sha256Text(value: String): String =
-        MessageDigest.getInstance("SHA-256")
-            .digest(value.toByteArray(StandardCharsets.UTF_8))
-            .joinToString("") { "%02x".format(it) }
+    private fun provenanceSha256(
+        record: GoalRunRecord,
+        dag: atropos.core.dag.DagDefinition?,
+        snapshot: atropos.core.recovery.StateSnapshot?
+    ): String {
+        val safeEvidence = record.evidence.map(::clean)
+        val artifacts = dag?.nodes.orEmpty()
+            .flatMap { node -> node.expectedOutputs }
+            .distinct()
+            .map { path -> SelfHostProvenanceArtifact(clean(path), outputHash(path)) }
+        return provenance.chainSha256(safeEvidence, artifacts, snapshot?.id)
+    }
+
+    private fun sha256Text(value: String): String = textCodec.sha256Text(value)
 
     private fun escapeMarkdown(value: String): String =
-        value.replace("`", "'")
+        textCodec.escapeMarkdown(value)
 
     private fun json(value: String): String =
-        "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") + "\""
+        textCodec.json(value)
 }

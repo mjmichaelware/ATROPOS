@@ -9,6 +9,26 @@ import kotlin.test.assertFalse
 
 class SelfHostCandidateJarBuilderTest {
     @Test
+    fun default_build_command_requires_test_gate_before_jar() {
+        val root = Files.createTempDirectory("atropos-candidate-jar-default-command-")
+        val expected = root.resolve("build/libs/ATROPOS.jar")
+        var observed: List<String>? = null
+        val builder = SelfHostCandidateJarBuilder(
+            repoRoot = root,
+            expectedJar = expected,
+            processRunner = { command, _ ->
+                observed = command
+                Files.createDirectories(expected.parent)
+                Files.writeString(expected, "jar bytes")
+                SelfHostCandidateJarBuilder.CommandRun(0, "BUILD SUCCESSFUL")
+            }
+        )
+
+        assertTrue(builder.build("shg-default-command").ok)
+        assertEquals(listOf("./gradlew", "test", "jar", "--no-daemon"), observed)
+    }
+
+    @Test
     fun bounded_build_command_creates_candidate_jar_evidence() {
         val root = Files.createTempDirectory("atropos-candidate-jar-builder-")
         val expected = root.resolve("build/libs/ATROPOS.jar")
