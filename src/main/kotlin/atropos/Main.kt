@@ -20,11 +20,16 @@ import atropos.core.recovery.RuntimeContinuitySupervisor
 import atropos.core.recovery.ContinuityOutcome
 import atropos.core.security.SecretEnrollment
 import atropos.core.security.EnvironmentSecretSource
+import atropos.core.security.LocalVaultSecretSource
 import atropos.core.security.RedactionFilter
 import java.io.FileInputStream
 
 fun main(args: Array<String>) {
-    SecretEnrollment(listOf(EnvironmentSecretSource())).enrollInto(RedactionFilter.defaultRegistry)
+    val enrollment = SecretEnrollment(listOf(EnvironmentSecretSource(), LocalVaultSecretSource()))
+        .enrollInto(RedactionFilter.defaultRegistry)
+    if (enrollment.failures.isNotEmpty()) {
+        println("${enrollment.evidenceLine()} status=DEGRADED")
+    }
 
     if (args.firstOrNull() == "--agent-daemon-foreground") {
         val config = AtroposConfig.load()

@@ -296,7 +296,9 @@ class AgentQueueStore(
 
     private fun ensureLeaseOwner(record: AgentQueueRecord, token: String?) {
         val expected = record.lease?.token
-        require(expected == null || expected == token) { "queue entry lease is owned by another worker" }
+        require(expected == null || LeaseTokenDigest.matches(expected, token)) {
+            "queue entry lease is owned by another worker"
+        }
     }
 
     private fun resolveQueueId(reference: String): String? {

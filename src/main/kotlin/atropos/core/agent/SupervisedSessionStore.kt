@@ -135,7 +135,8 @@ class SupervisedSessionStore(
                 lastMessage = decode(fields["lastMessageB64"]).takeIf { it.isNotBlank() },
                 backoffAttempt = fields["backoffAttempt"]?.toIntOrNull() ?: 0,
                 nextBackoffAt = parseInstant(fields["nextBackoffAt"]),
-                leaseToken = fields["leaseToken"]?.takeIf { it.isNotBlank() },
+                leaseToken = fields["leaseTokenSha256"]?.takeIf { it.isNotBlank() }
+                    ?: fields["leaseToken"]?.takeIf { it.isNotBlank() }?.let(LeaseTokenDigest::of),
                 leaseExpiresAt = parseInstant(fields["leaseExpiresAt"]),
                 createdAt = parseInstant(fields["createdAt"]) ?: Instant.EPOCH,
                 updatedAt = parseInstant(fields["updatedAt"]) ?: Instant.EPOCH,
@@ -156,7 +157,7 @@ class SupervisedSessionStore(
         appendLine("lastMessageB64=${encode(redactionFilter.redact(record.lastMessage.orEmpty()))}")
         appendLine("backoffAttempt=${record.backoffAttempt}")
         appendLine("nextBackoffAt=${record.nextBackoffAt ?: ""}")
-        appendLine("leaseToken=${record.leaseToken ?: ""}")
+        appendLine("leaseTokenSha256=${record.leaseToken?.takeIf { it.isNotBlank() }?.let(LeaseTokenDigest::of).orEmpty()}")
         appendLine("leaseExpiresAt=${record.leaseExpiresAt ?: ""}")
         appendLine("createdAt=${record.createdAt}")
         appendLine("updatedAt=${record.updatedAt}")

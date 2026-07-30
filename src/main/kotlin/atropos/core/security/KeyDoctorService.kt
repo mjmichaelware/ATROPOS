@@ -1,5 +1,6 @@
 package atropos.core.security
 
+import atropos.core.AtroposRepoRootLocator
 import atropos.core.provider.ProviderDescriptorRegistry
 import atropos.core.provider.StaticProviderDescriptorRegistry
 import java.io.File
@@ -79,7 +80,9 @@ class KeyDoctorService(
     }
 
     companion object {
-        fun create(localRoot: File = File(".atropos/secrets")): KeyDoctorService =
+        fun create(
+            localRoot: File = AtroposRepoRootLocator.resolve().resolve(".atropos/secrets").toFile()
+        ): KeyDoctorService =
             KeyDoctorService(
                 secretSource = DefaultSecretSource.create(localRoot = localRoot),
                 setupHelper = KeySetupHelper(localRoot)

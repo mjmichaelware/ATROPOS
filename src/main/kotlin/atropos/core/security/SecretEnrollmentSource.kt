@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.security
 
+import atropos.core.AtroposRepoRootLocator
+
 /**
  * Where a device's own credentials come from, as a port rather than a hard-coded
  * lookup.
@@ -89,6 +91,32 @@ class EnvironmentSecretSource(
     }
 }
 
+/** Discovers configured local-vault values without exposing their bytes to evidence. */
+class LocalVaultSecretSource(
+    private val names: List<String> = KeySetupHelper.defaultNames(),
+    private val vault: TokenIsolationVault = TokenIsolationVault(
+        AtroposRepoRootLocator.resolve().resolve(".atropos/secrets")
+    )
+) : SecretEnrollmentSource {
+    override val sourceName: String = "local_vault"
+
+    override fun discover(): Map<String, String> = buildMap {
+        names.map(String::trim)
+            .filter(String::isNotBlank)
+            .distinct()
+            .forEach { name ->
+                when (val result = vault.readSecretResult(name)) {
+                    is VaultReadResult.Available -> put(name, result.value)
+                    is VaultReadResult.Refused -> {
+                        if (result.reason != VaultReadRefusalReason.MISSING) {
+                            throw VaultEnrollmentRefused(result.reason)
+                        }
+                    }
+                }
+            }
+    }
+}
+
 /**
  * Composes several sources and enrolls everything they find.
  *
@@ -99,22 +127,38 @@ class EnvironmentSecretSource(
 class SecretEnrollment(
     private val sources: List<SecretEnrollmentSource>
 ) {
+    data class Failure(
+        val source: String,
+        val errorType: String
+    )
+
     data class Result(
         val enrolledLabels: Set<String>,
         val variantCount: Int,
-        val bySource: Map<String, Int>
+        val bySource: Map<String, Int>,
+        val failures: List<Failure> = emptyList()
     ) {
         /** Safe to log: labels and counts only, never a value. */
         fun evidenceLine(): String =
             "secret_enrollment sources=${bySource.entries.joinToString("|") { "${it.key}=${it.value}" }} " +
-                "labels=${enrolledLabels.size} variants=$variantCount"
+                "labels=${enrolledLabels.size} variants=$variantCount " +
+                "failures=${failures.joinToString("|") { "${it.source}:${it.errorType}" }.ifBlank { "none" }}"
     }
 
     fun enrollInto(registry: KnownSecretRegistry): Result {
         val bySource = mutableMapOf<String, Int>()
+        val failures = mutableListOf<Failure>()
         var variants = 0
         sources.forEach { source ->
-            val found = runCatching { source.discover() }.getOrDefault(emptyMap())
+            val found = try {
+                source.discover()
+            } catch (failure: VaultEnrollmentRefused) {
+                failures += Failure(source.sourceName, "Vault_${failure.reason.name}")
+                emptyMap()
+            } catch (failure: Exception) {
+                failures += Failure(source.sourceName, failure.javaClass.simpleName.ifBlank { "DiscoveryFailure" })
+                emptyMap()
+            }
             var perSource = 0
             found.forEach { (label, value) ->
                 val added = registry.enroll(label, value)
@@ -123,6 +167,6 @@ class SecretEnrollment(
             }
             bySource[source.sourceName] = perSource
         }
-        return Result(registry.enrolledLabels.toSet(), variants, bySource)
+        return Result(registry.enrolledLabels.toSet(), variants, bySource, failures)
     }
 }
