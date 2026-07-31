@@ -3,6 +3,7 @@ package atropos.cli.ui
 
 import atropos.cli.ui.design.Glyphs
 import atropos.cli.ui.design.Role
+import atropos.core.security.RedactionFilter
 
 /** Toast severity. Maps to the shared status roles, never to ad-hoc colour. */
 enum class ToastVariant(val role: Role) {
@@ -34,7 +35,8 @@ data class Toast(
  * offsets. Composition stays with the layout; this file only produces the box.
  */
 class ToastRenderer(
-    private val theme: TerminalTheme
+    private val theme: TerminalTheme,
+    private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     /** Whether a toast is still within its display window. */
     fun isVisible(toast: Toast, nowEpochMs: Long = System.currentTimeMillis()): Boolean =
@@ -65,10 +67,10 @@ class ToastRenderer(
         return buildList {
             add(row(""))
             toast.title?.takeIf { it.isNotBlank() }?.let {
-                add(row(theme.strong(it)))
+                add(row(theme.strong(redactionFilter.redact(it))))
                 add(row(""))
             }
-            wrap(TerminalText.sanitize(toast.message), inner).forEach { add(row(theme.metadata(it))) }
+            wrap(TerminalText.sanitize(redactionFilter.redact(toast.message)), inner).forEach { add(row(theme.metadata(it))) }
             add(row(""))
         }
     }

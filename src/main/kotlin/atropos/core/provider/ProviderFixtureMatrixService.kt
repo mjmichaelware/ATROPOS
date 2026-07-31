@@ -31,7 +31,8 @@ class ProviderFixtureMatrixService(
             AdapterRequest(
                 task = probeTask(descriptor),
                 prompt = "fixture dry run for $providerId",
-                dryRun = true
+                dryRun = true,
+                liveNetworkAllowed = false
             )
         )
         lines += "dry_run" to (
@@ -76,18 +77,19 @@ class ProviderFixtureMatrixService(
         // the adapter can actually answer. Every registered provider gets a success
         // fixture; a provider with no adapter fails it rather than skipping it.
         if (lines.none { it.first == "success" }) {
-            val live = adapter?.complete(
+            val offlineSuccess = adapter?.complete(
                 AdapterRequest(
                     task = probeTask(descriptor),
                     prompt = "fixture success for $providerId",
-                    dryRun = false
+                    dryRun = true,
+                    liveNetworkAllowed = false
                 )
             )
             lines += "success" to (
-                live is ProviderCallResult.Success ||
-                    live is ProviderCallResult.LocalOnly ||
-                    live is ProviderCallResult.Queued
-                )
+                offlineSuccess is ProviderCallResult.Success ||
+                    offlineSuccess is ProviderCallResult.LocalOnly ||
+                    offlineSuccess is ProviderCallResult.Queued
+            )
         }
 
         val distinct = linkedMapOf<String, Boolean>()
@@ -173,5 +175,15 @@ class ProviderFixtureMatrixService(
             parsed.repository == "ATROPOS" &&
             parsed.taskOrNodeId == "fixture-node" &&
             parsed.contextHash == "fixture-hash-$providerId"
+    }
+
+    fun listAdaptersMissingNormalizedFixtures(): List<String> {
+        val knownIds = registry.getAll().map { it.id }.toSet()
+        val specIds = OpenAiCompatibleProviderCatalog.all().map { it.providerId }.toSet() +
+            NonOpenAiFreeProviderCatalog.all().map { it.providerId }.toSet() +
+            DataInfraResearchProviderCatalog.all().map { it.providerId }.toSet() +
+            AssetProviderCatalog.all().map { it.providerId }.toSet() +
+            setOf("local", "ollama")
+        return (knownIds - specIds).toList().sorted()
     }
 }

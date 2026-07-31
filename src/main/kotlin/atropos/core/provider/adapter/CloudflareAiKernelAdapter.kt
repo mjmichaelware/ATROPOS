@@ -25,7 +25,7 @@ internal class CloudflareAiKernelAdapter(
             val endpoint = spec.endpoint
                 .replace("{account}", account)
                 .replace("{model}", spec.defaultModel)
-            val connection = (URI(endpoint).toURL().openConnection() as HttpURLConnection)
+            val connection = CredentialSafeHttpTransport.open(URI(endpoint))
             connection.requestMethod = "POST"
             connection.connectTimeout = remainingMs(request)
             connection.readTimeout = remainingMs(request)
@@ -40,7 +40,7 @@ internal class CloudflareAiKernelAdapter(
         } catch (failure: java.net.SocketTimeoutException) {
             ProviderCallResult.Failure(ProviderFailure(descriptor.id, NormalizedProviderFailureType.TIMEOUT, "${descriptor.id} timed out", retryAfterMs = 60_000))
         } catch (failure: Exception) {
-            ProviderCallResult.Failure(ProviderErrorNormalizer().normalize(descriptor.id, failure.message ?: failure.javaClass.simpleName))
+            ProviderCallResult.Failure(ProviderErrorNormalizer().normalize(descriptor.id, failure))
         }
     }
 }

@@ -61,7 +61,7 @@ class SupervisedSessionStore(
     fun writeSession(record: SupervisedSessionRecord): SupervisedSessionRecord {
         Files.createDirectories(sessionsDir)
         val file = sessionsDir.resolve("${record.id}.meta")
-        val updated = record.copy(updatedAt = clock(), metaFile = file)
+        val updated = sanitize(record.copy(updatedAt = clock(), metaFile = file))
         val tmp = Files.createTempFile(sessionsDir, record.id, ".tmp")
         val bytes = render(updated).toByteArray(StandardCharsets.UTF_8)
         FileChannel.open(tmp, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING).use { channel ->
@@ -123,7 +123,7 @@ class SupervisedSessionStore(
             }.toMap()
         }.getOrNull() ?: return null
         return runCatching {
-            SupervisedSessionRecord(
+            val record = SupervisedSessionRecord(
                 id = fields["id"].orEmpty(),
                 runtimeKind = AgentRuntimeKind.valueOf(fields["runtimeKind"].orEmpty()),
                 state = SupervisedSessionState.valueOf(fields["state"].orEmpty()),
@@ -136,12 +136,22 @@ class SupervisedSessionStore(
                 backoffAttempt = fields["backoffAttempt"]?.toIntOrNull() ?: 0,
                 nextBackoffAt = parseInstant(fields["nextBackoffAt"]),
                 leaseToken = fields["leaseTokenSha256"]?.takeIf { it.isNotBlank() }
-                    ?: fields["leaseToken"]?.takeIf { it.isNotBlank() }?.let(LeaseTokenDigest::of),
+                    ?.let(LeaseTokenDigest::persistedIdentity)
+                    ?: fields["leaseToken"]?.takeIf { it.isNotBlank() }
+                        ?.let(LeaseTokenDigest::persistedIdentity),
                 leaseExpiresAt = parseInstant(fields["leaseExpiresAt"]),
                 createdAt = parseInstant(fields["createdAt"]) ?: Instant.EPOCH,
                 updatedAt = parseInstant(fields["updatedAt"]) ?: Instant.EPOCH,
                 metaFile = file
             )
+            val storedIdentity = fields["leaseTokenSha256"]
+            if (record != sanitize(record) || fields["leaseToken"]?.isNotBlank() == true ||
+                (storedIdentity != null && storedIdentity.isNotBlank() && !LeaseTokenDigest.isPersistedIdentity(storedIdentity))
+            ) {
+                writeSession(record)
+            } else {
+                record
+            }
         }.getOrNull()
     }
 
@@ -157,7 +167,7 @@ class SupervisedSessionStore(
         appendLine("lastMessageB64=${encode(redactionFilter.redact(record.lastMessage.orEmpty()))}")
         appendLine("backoffAttempt=${record.backoffAttempt}")
         appendLine("nextBackoffAt=${record.nextBackoffAt ?: ""}")
-        appendLine("leaseTokenSha256=${record.leaseToken?.takeIf { it.isNotBlank() }?.let(LeaseTokenDigest::of).orEmpty()}")
+        appendLine("leaseTokenSha256=${record.leaseToken?.takeIf { it.isNotBlank() }?.let(LeaseTokenDigest::persistedIdentity).orEmpty()}")
         appendLine("leaseExpiresAt=${record.leaseExpiresAt ?: ""}")
         appendLine("createdAt=${record.createdAt}")
         appendLine("updatedAt=${record.updatedAt}")
@@ -175,6 +185,16 @@ class SupervisedSessionStore(
             String(java.util.Base64.getDecoder().decode(value), StandardCharsets.UTF_8)
         }.getOrDefault("")
     }
+
+    private fun sanitize(record: SupervisedSessionRecord): SupervisedSessionRecord = record.copy(
+        providerSessionId = sanitizeText(record.providerSessionId, 1_024),
+        host = sanitizeText(record.host, 512),
+        lastMessage = sanitizeText(record.lastMessage, 4_000),
+        leaseToken = record.leaseToken?.takeIf { it.isNotBlank() }?.let(LeaseTokenDigest::persistedIdentity)
+    )
+
+    private fun sanitizeText(value: String?, maxChars: Int): String? =
+        value?.takeIf { it.isNotBlank() }?.let { redactionFilter.redact(it.trim()).take(maxChars) }
 }
 
 class SupervisedSessionLock(

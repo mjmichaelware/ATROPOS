@@ -90,7 +90,13 @@ class TokenIsolationVault(
         require(value.isNotBlank()) { "secret value must not be blank" }
         rootPath()
         val target = pathResolver.secretPath(name)
+        if (Files.exists(target, LinkOption.NOFOLLOW_LINKS) && !Files.isRegularFile(target, LinkOption.NOFOLLOW_LINKS)) {
+            throw IllegalArgumentException("target path exists and is not a regular file")
+        }
         val parent = target.parent ?: rootPath()
+        if (Files.exists(parent, LinkOption.NOFOLLOW_LINKS) && !Files.isDirectory(parent, LinkOption.NOFOLLOW_LINKS)) {
+            throw IllegalArgumentException("parent path exists and is not a directory")
+        }
         Files.createDirectories(parent)
         restrictDirectory(parent)
 
@@ -99,18 +105,36 @@ class TokenIsolationVault(
             is SecretVaultKeyResult.Refused -> error("vault key unavailable: ${result.reason}")
         }
 
-        val tmp = parent.resolve("${target.fileName}.tmp-${System.nanoTime()}")
+        val permissions = setOf(
+            PosixFilePermission.OWNER_READ,
+            PosixFilePermission.OWNER_WRITE
+        )
+        val tmp = if (parent.fileSystem.supportedFileAttributeViews().contains("posix")) {
+            Files.createTempFile(
+                parent,
+                "${target.fileName}-",
+                ".tmp",
+                java.nio.file.attribute.PosixFilePermissions.asFileAttribute(permissions)
+            )
+        } else {
+            parent.resolve("${target.fileName}.tmp-${System.nanoTime()}")
+        }
+
         val encrypted = VaultCipher(key).encrypt(
             value.toByteArray(StandardCharsets.UTF_8),
             VaultCipher.associatedData(target.fileName.toString())
         )
-        Files.write(tmp, encrypted)
-        restrictFile(tmp)
-        FileChannel.open(tmp, java.nio.file.StandardOpenOption.WRITE).use { channel -> channel.force(true) }
         try {
-            Files.move(tmp, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
-        } catch (_: Exception) {
-            Files.move(tmp, target, StandardCopyOption.REPLACE_EXISTING)
+            Files.write(tmp, encrypted)
+            restrictFile(tmp)
+            FileChannel.open(tmp, java.nio.file.StandardOpenOption.WRITE).use { channel -> channel.force(true) }
+            try {
+                Files.move(tmp, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
+            } catch (_: Exception) {
+                Files.move(tmp, target, StandardCopyOption.REPLACE_EXISTING)
+            }
+        } finally {
+            runCatching { Files.deleteIfExists(tmp) }
         }
         restrictFile(target)
         val report = inspectSecret(name)

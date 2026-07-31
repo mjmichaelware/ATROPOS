@@ -14,6 +14,7 @@ internal class VaultCipher(
 ) {
     init {
         require(key.algorithm.equals("AES", ignoreCase = true)) { "vault key algorithm unsupported" }
+        require(key.encoded?.size == AES_256_KEY_BYTES) { "vault key must be AES-256" }
     }
 
     fun encrypt(plainText: ByteArray, associatedData: ByteArray): ByteArray {
@@ -51,6 +52,7 @@ internal class VaultCipher(
         private const val NONCE_BYTES = 12
         private const val TAG_BYTES = 16
         private const val TAG_BITS = TAG_BYTES * 8
+        private const val AES_256_KEY_BYTES = 32
     }
 
     private fun cipher(mode: Int, nonce: ByteArray, associatedData: ByteArray): Cipher =

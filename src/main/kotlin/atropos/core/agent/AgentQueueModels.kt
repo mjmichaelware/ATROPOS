@@ -43,8 +43,6 @@ data class AgentQueueLease(
     val expiresAt: Instant
 ) {
     fun isLive(now: Instant): Boolean = expiresAt.isAfter(now)
-
-    fun fingerprint(): String = token.take(10).ifBlank { "none" }
 }
 
 data class AgentQueueRecord(
@@ -113,7 +111,6 @@ data class AgentQueueRecord(
         appendLine("failure reason: ${failureReason?.let(filter::redact) ?: "none"}")
         appendLine("next eligible at: ${nextEligibleAt ?: "none"}")
         appendLine("lease owner: ${lease?.owner ?: "none"}")
-        appendLine("lease token fingerprint: ${lease?.fingerprint() ?: "none"}")
         appendLine("lease acquired at: ${lease?.acquiredAt ?: "none"}")
         appendLine("lease heartbeat at: ${lease?.heartbeatAt ?: "none"}")
         appendLine("lease expires at: ${lease?.expiresAt ?: "none"}")

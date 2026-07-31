@@ -64,7 +64,7 @@ internal class OpenAiCompatibleKernelAdapter(
             )
 
         return try {
-            val connection = (URI(spec.baseUrl).toURL().openConnection() as HttpURLConnection)
+            val connection = CredentialSafeHttpTransport.open(URI(spec.baseUrl))
             connection.requestMethod = "POST"
             connection.connectTimeout = remainingMs(request).coerceIn(1_000, 30_000).toInt()
             connection.readTimeout = remainingMs(request).coerceIn(1_000, 60_000).toInt()
@@ -92,7 +92,7 @@ internal class OpenAiCompatibleKernelAdapter(
                 ProviderFailure(descriptor.id, NormalizedProviderFailureType.TIMEOUT, "${descriptor.id} timed out", retryAfterMs = 60_000)
             )
         } catch (failure: Exception) {
-            ProviderCallResult.Failure(normalizer.normalize(descriptor.id, failure.message ?: failure.javaClass.simpleName))
+            ProviderCallResult.Failure(normalizer.normalize(descriptor.id, failure))
         }
     }
 

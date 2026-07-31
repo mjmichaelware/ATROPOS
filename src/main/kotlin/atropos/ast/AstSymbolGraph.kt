@@ -1,7 +1,9 @@
 package atropos.ast
 
 import atropos.core.parser.KotlinDeclarationKind
+import atropos.core.parser.KotlinLexicalMasker
 import atropos.core.parser.TreeSitterGrammarBridge
+import atropos.core.AtroposRepoRootLocator
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
@@ -85,7 +87,7 @@ data class AstLookupResult(
 }
 
 class AstSymbolGraph(
-    private val repoRoot: Path = Path.of(".").toAbsolutePath().normalize(),
+    private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
     private val parser: TreeSitterGrammarBridge = TreeSitterGrammarBridge()
 ) {
     fun build(): List<AstSymbol> {
@@ -112,6 +114,51 @@ class AstSymbolGraph(
     fun impactedByPaths(paths: List<String>): List<AstSymbol> {
         val normalized = paths.map { repoRoot.resolve(it).normalize() }.toSet()
         return build().filter { it.file.normalize() in normalized }
+    }
+
+    /** Returns changed-file symbols plus files with an exact local import dependency. */
+    fun impactOfPaths(paths: List<String>): List<AstSymbol> {
+        val symbols = build()
+        val changedFiles = paths.map { repoRoot.resolve(it).normalize() }.toSet()
+        val changedNames = symbols
+            .filter { it.file.normalize() in changedFiles && it.kind != AstSymbolKind.FILE }
+            .map { it.qualifiedName }
+            .toSet()
+        if (changedNames.isEmpty()) return symbols.filter { it.file.normalize() in changedFiles }
+
+        val changedSimpleNames = changedNames.map { it.substringAfterLast('.') }.toSet()
+        return symbols.filter { symbol ->
+            symbol.file.normalize() in changedFiles ||
+                symbol.kind == AstSymbolKind.FILE && symbol.imports.any { imported ->
+                    imported in changedNames ||
+                        imported.substringAfterLast('.') in changedSimpleNames &&
+                        imported.substringBeforeLast('.', "") == changedNames.firstOrNull()?.substringBeforeLast('.', "")
+                }
+        }
+    }
+
+    fun findCallers(symbolName: String): List<AstSymbol> {
+        val normalized = symbolName.trim()
+        if (normalized.isBlank()) return emptyList()
+        val allSymbols = build()
+        val fileSymbols = allSymbols.filter { it.kind == AstSymbolKind.FILE }
+        val matches = mutableListOf<AstSymbol>()
+
+        fileSymbols.forEach { fileSymbol ->
+            val content = runCatching { Files.readString(fileSymbol.file) }.getOrNull() ?: ""
+            val executableCode = KotlinLexicalMasker.maskNonCode(content)
+            val wordPattern = Regex("\\b${Regex.escape(normalized)}\\b")
+            if (wordPattern.containsMatchIn(executableCode)) {
+                // Exclude the file where the symbol itself is defined
+                val definesSymbol = allSymbols.any {
+                    it.file == fileSymbol.file && it.kind != AstSymbolKind.FILE && it.name == normalized
+                }
+                if (!definesSymbol) {
+                    matches.add(fileSymbol)
+                }
+            }
+        }
+        return matches
     }
 
     fun reconcileImports(path: String): AstImportReconciliationResult {
