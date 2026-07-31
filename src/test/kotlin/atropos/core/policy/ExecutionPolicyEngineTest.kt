@@ -114,4 +114,16 @@ class ExecutionPolicyEngineTest {
         assertTrue(audit.contains("<redacted"))
         assertTrue(!audit.contains(secret))
     }
+
+    @Test
+    fun side_effect_inventory_is_non_empty_and_valid() {
+        val paths = SideEffectInventory.getEnforcedCallers()
+        assertTrue(paths.isNotEmpty())
+        paths.forEach { path ->
+            assertTrue(path.className.isNotBlank())
+            assertTrue(path.methodName.isNotBlank())
+            assertTrue(path.description.isNotBlank())
+            assertTrue(path.enforcedBy.isNotBlank())
+        }
+    }
 }

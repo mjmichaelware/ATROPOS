@@ -51,4 +51,12 @@ class AstSymbolGraphTest {
         val external = result.resolutions.first { it.importPath == "java.io.File" }
         assertEquals(AstImportStatus.EXTERNAL, external.status)
     }
+
+    @Test
+    fun find_callers_finds_referenced_source_files() {
+        val graph = AstSymbolGraph(Path.of(".").toAbsolutePath().normalize())
+        val callers = graph.findCallers("AstSymbolGraph")
+        assertTrue(callers.isNotEmpty())
+        assertTrue(callers.any { it.name.contains("AstCommandHandler") })
+    }
 }

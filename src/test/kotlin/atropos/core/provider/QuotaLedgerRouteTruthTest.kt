@@ -1,6 +1,7 @@
 package atropos.core.provider
 
 import atropos.cli.ui.StatusQuotaRenderer
+import atropos.core.paid.EmergencyPaidGate
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -86,6 +87,52 @@ class QuotaLedgerRouteTruthTest {
         assertTrue(decision.queued)
         assertTrue(decision.degraded)
         assertTrue(decision.skipped.any { it.reason == "not_configured" || it.reason == "not_verified" })
+    }
+
+    @Test
+    fun route_prioritizes_free_eligible_providers_first() {
+        val temp = Files.createTempDirectory("atropos-quota-free-first")
+        val registry = StaticProviderDescriptorRegistry()
+        val seed = FileQuotaLedger.seedFromDescriptors(registry)
+        val ledger = InMemoryQuotaLedger(seed)
+
+        // Mark both groq (free) and openai (paid) as ready
+        ledger.put(readyRemote(seed, "groq"))
+        ledger.put(readyRemote(seed, "openai").copy(paidLocked = false)) // pretend unlocked for cost guard
+
+        val paidGate = EmergencyPaidGate(temp.resolve("paid").toFile())
+        val decision = RoutePolicy(
+            registry = registry,
+            ledger = ledger,
+            costPolicy = AtroposCostPolicy.PAID_EMERGENCY_UNLOCKED, // allows both
+            paidGate = paidGate
+        ).decide(ProviderTask(ProviderTaskKind.CHAT_PROMPT, ApiCapability.CHAT, "hello"))
+
+        // Even though openai is higher priority in taskPriority, groq should be selected because it is FREE (not PAID_LOCKED)
+        assertEquals("groq", decision.selectedProviderId)
+    }
+
+    @Test
+    fun emergency_paid_gate_bypass_allows_unlocked_paid_provider() {
+        val temp = Files.createTempDirectory("atropos-paid-bypass")
+        val registry = StaticProviderDescriptorRegistry()
+        val seed = FileQuotaLedger.seedFromDescriptors(registry)
+        val ledger = InMemoryQuotaLedger(seed)
+        ledger.put(readyRemote(seed, "openai").copy(paidLocked = true)) // locked
+
+        val paidGate = EmergencyPaidGate(temp.resolve("paid").toFile())
+        // Unlock openai via paid gate
+        paidGate.unlock("openai", "10m", "emergency unlock")
+
+        val decision = RoutePolicy(
+            registry = registry,
+            ledger = ledger,
+            costPolicy = AtroposCostPolicy.PAID_EMERGENCY_UNLOCKED,
+            paidGate = paidGate
+        ).decide(ProviderTask(ProviderTaskKind.CHAT_PROMPT, ApiCapability.CHAT, "hello"))
+
+        // openai is selected because it is unlocked by paidGate
+        assertEquals("openai", decision.selectedProviderId)
     }
 
     private fun readyRemote(seed: List<ProviderQuotaRecord>, id: String): ProviderQuotaRecord =

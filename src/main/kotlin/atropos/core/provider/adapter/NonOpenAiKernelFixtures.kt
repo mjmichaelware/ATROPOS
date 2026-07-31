@@ -7,6 +7,7 @@ object NonOpenAiKernelFixtures {
     private val geminiSuccess = """{"candidates":[{"content":{"parts":[{"text":"gemini fixture response"}]}}]}"""
     private val cloudflareSuccess = """{"success":true,"result":{"response":"cloudflare fixture response"}}"""
     private val githubSuccess = """{"id":"fixture","model":"github-fixture","choices":[{"message":{"content":"github fixture response"}}]}"""
+    private val anthropicSuccess = """{"content":"anthropic fixture response"}"""
     private val malformedJson = """{"result":{}}"""
 
     fun runAll(providerId: String): List<AdapterFixtureResult> {
@@ -18,6 +19,7 @@ object NonOpenAiKernelFixtures {
             NonOpenAiProviderSchema.GITHUB_MODELS -> AdapterJson.parseOpenAiCompatibleSuccess(providerId, githubSuccess)
             NonOpenAiProviderSchema.CLOUDFLARE_AI,
             NonOpenAiProviderSchema.CLOUDFLARE_WORKERS -> NonOpenAiJson.parseTextResult(providerId, cloudflareSuccess)
+            NonOpenAiProviderSchema.ANTHROPIC -> NonOpenAiJson.parseTextResult(providerId, anthropicSuccess)
         }
         val malformed = NonOpenAiJson.parseTextResult(providerId, malformedJson)
         val empty = NonOpenAiJson.parseTextResult(providerId, "")

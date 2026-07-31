@@ -49,7 +49,7 @@ internal class AgentQueueRecordCodec(
             val createdAt = parseInstant(fields["createdAt"]) ?: throw IllegalArgumentException("missing createdAt")
             val state = enumValueOf<AgentQueueState>(fields["state"] ?: throw IllegalArgumentException("missing state"))
             val checkpoint = enumValueOf<AgentQueueCheckpoint>(fields["checkpoint"] ?: AgentQueueCheckpoint.QUEUED.name)
-            AgentQueueRecord(
+            val record = AgentQueueRecord(
                 id = id,
                 task = decode(fields["taskB64"]),
                 smokeCommand = decode(fields["smokeCommandB64"]).takeIf { it.isNotBlank() },
@@ -85,6 +85,9 @@ internal class AgentQueueRecordCodec(
                 corruptReason = decode(fields["corruptReasonB64"]).takeIf { it.isNotBlank() },
                 metaFile = metaFile
             )
+            val sanitized = sanitize(record)
+            if (requiresLeaseMigration(fields, record, sanitized)) write(sanitized)
+            sanitized
         } catch (failure: Exception) {
             corrupt(metaFile, "malformed queue record: ${failure.message ?: failure.javaClass.simpleName}")
         }
@@ -103,7 +106,19 @@ internal class AgentQueueRecordCodec(
                 .take(20),
             failureReason = sanitizeText(record.failureReason, 4_000),
             cancellationReason = sanitizeText(record.cancellationReason, 4_000),
-            corruptReason = sanitizeText(record.corruptReason, 2_000)
+            corruptReason = sanitizeText(record.corruptReason, 2_000),
+            jobId = sanitizeText(record.jobId, 512),
+            provider = sanitizeText(record.provider, 512),
+            patchId = sanitizeText(record.patchId, 512),
+            appliedPatchId = sanitizeText(record.appliedPatchId, 512),
+            verificationId = sanitizeText(record.verificationId, 512),
+            repairId = sanitizeText(record.repairId, 512),
+            lease = record.lease?.let { lease ->
+                lease.copy(
+                    token = LeaseTokenDigest.persistedIdentity(lease.token),
+                    owner = sanitizeText(lease.owner, 512).orEmpty().ifBlank { "unknown" }
+                )
+            }
         )
 
     private fun render(record: AgentQueueRecord): String = buildString {
@@ -126,7 +141,7 @@ internal class AgentQueueRecordCodec(
         appendLine("impactedSymbolsB64=${encode(record.impactedSymbols.joinToString("\n"))}")
         appendLine("failureReasonB64=${encode(record.failureReason.orEmpty())}")
         appendLine("nextEligibleAt=${record.nextEligibleAt ?: ""}")
-        appendLine("leaseTokenSha256=${record.lease?.token?.let(LeaseTokenDigest::of).orEmpty()}")
+        appendLine("leaseTokenSha256=${record.lease?.token?.let(LeaseTokenDigest::persistedIdentity).orEmpty()}")
         appendLine("leaseOwnerB64=${encode(record.lease?.owner.orEmpty())}")
         appendLine("leaseAcquiredAt=${record.lease?.acquiredAt ?: ""}")
         appendLine("leaseHeartbeatAt=${record.lease?.heartbeatAt ?: ""}")
@@ -145,13 +160,13 @@ internal class AgentQueueRecordCodec(
 
     private fun parseLease(fields: Map<String, String>): AgentQueueLease? {
         val token = fields["leaseTokenSha256"]?.takeIf { it.isNotBlank() }
-            ?: fields["leaseToken"]?.takeIf { it.isNotBlank() }?.let(LeaseTokenDigest::of)
+            ?: fields["leaseToken"]?.takeIf { it.isNotBlank() }
             ?: return null
         val acquiredAt = parseInstant(fields["leaseAcquiredAt"]) ?: return null
         val heartbeatAt = parseInstant(fields["leaseHeartbeatAt"]) ?: acquiredAt
         val expiresAt = parseInstant(fields["leaseExpiresAt"]) ?: return null
         return AgentQueueLease(
-            token = token,
+            token = LeaseTokenDigest.persistedIdentity(token),
             owner = decode(fields["leaseOwnerB64"]).ifBlank { "unknown" },
             acquiredAt = acquiredAt,
             heartbeatAt = heartbeatAt,
@@ -192,4 +207,16 @@ internal class AgentQueueRecordCodec(
 
     private fun sanitizeText(value: String?, maxChars: Int): String? =
         value?.takeIf { it.isNotBlank() }?.let { redactionFilter.redact(it.trim()).take(maxChars) }
+
+    private fun requiresLeaseMigration(
+        fields: Map<String, String>,
+        record: AgentQueueRecord,
+        sanitized: AgentQueueRecord
+    ): Boolean {
+        val storedIdentity = fields["leaseTokenSha256"]
+        return record != sanitized ||
+            fields["leaseToken"]?.isNotBlank() == true ||
+            (storedIdentity != null && storedIdentity.isNotBlank() && !LeaseTokenDigest.isPersistedIdentity(storedIdentity)) ||
+            record.lease?.owner != sanitized.lease?.owner
+    }
 }

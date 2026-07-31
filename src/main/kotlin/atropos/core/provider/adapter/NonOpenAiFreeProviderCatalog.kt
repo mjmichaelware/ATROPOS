@@ -37,6 +37,15 @@ object NonOpenAiFreeProviderCatalog {
             defaultModel = "worker-module",
             fallbackModels = listOf("pages-function"),
             requiredEnv = listOf("CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ACCOUNT_ID")
+        ),
+        NonOpenAiProviderSpec(
+            providerId = "anthropic",
+            displayName = "Anthropic",
+            schema = NonOpenAiProviderSchema.ANTHROPIC,
+            endpoint = "https://api.anthropic.com/v1/messages",
+            defaultModel = "claude-3-5-sonnet-latest",
+            fallbackModels = listOf("claude-3-5-haiku-latest"),
+            requiredEnv = listOf("ANTHROPIC_API_KEY")
         )
     )
 

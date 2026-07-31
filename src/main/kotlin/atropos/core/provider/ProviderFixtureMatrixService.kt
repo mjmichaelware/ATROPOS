@@ -174,4 +174,14 @@ class ProviderFixtureMatrixService(
             parsed.taskOrNodeId == "fixture-node" &&
             parsed.contextHash == "fixture-hash-$providerId"
     }
+
+    fun listAdaptersMissingNormalizedFixtures(): List<String> {
+        val knownIds = registry.getAll().map { it.id }.toSet()
+        val specIds = OpenAiCompatibleProviderCatalog.all().map { it.providerId }.toSet() +
+            NonOpenAiFreeProviderCatalog.all().map { it.providerId }.toSet() +
+            DataInfraResearchProviderCatalog.all().map { it.providerId }.toSet() +
+            AssetProviderCatalog.all().map { it.providerId }.toSet() +
+            setOf("local", "ollama")
+        return (knownIds - specIds).toList().sorted()
+    }
 }

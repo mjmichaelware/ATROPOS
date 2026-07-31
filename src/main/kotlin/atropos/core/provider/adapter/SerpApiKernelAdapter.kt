@@ -22,7 +22,7 @@ internal class SerpApiKernelAdapter(
         return try {
             val query = java.net.URLEncoder.encode(request.prompt, "UTF-8")
             val endpoint = "${spec.endpoint}?engine=google&q=$query&api_key=$key"
-            val connection = (URI(endpoint).toURL().openConnection() as HttpURLConnection)
+            val connection = CredentialSafeHttpTransport.open(URI(endpoint))
             connection.requestMethod = "GET"
             connection.connectTimeout = remainingMs(request)
             connection.readTimeout = remainingMs(request)
@@ -32,7 +32,7 @@ internal class SerpApiKernelAdapter(
         } catch (failure: java.net.SocketTimeoutException) {
             ProviderCallResult.Failure(ProviderFailure(descriptor.id, NormalizedProviderFailureType.TIMEOUT, "${descriptor.id} timed out", retryAfterMs = 60_000))
         } catch (failure: Exception) {
-            ProviderCallResult.Failure(ProviderErrorNormalizer().normalize(descriptor.id, failure.message ?: failure.javaClass.simpleName))
+            ProviderCallResult.Failure(ProviderErrorNormalizer().normalize(descriptor.id, failure))
         }
     }
 }

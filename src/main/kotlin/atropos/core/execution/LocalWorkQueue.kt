@@ -47,15 +47,18 @@ class LocalWorkQueue(
     private val env: Map<String, String> = System.getenv()
 ) {
     private val queueFile = File(root, "queue.jsonl")
+    private val activeCommands = mutableMapOf<String, List<String>>()
 
     fun enqueue(label: String, command: List<String>): WorkItem {
         require(command.isNotEmpty()) { "command must not be empty" }
         root.mkdirs()
         val createdAt = now()
+        val id = "job-${createdAt}-${safeSuffix(label)}"
+        activeCommands[id] = command.toList()
         val item = WorkItem(
-            id = "job-${createdAt}-${safeSuffix(label)}",
+            id = id,
             label = label.trim().ifEmpty { "local-work" },
-            command = command,
+            command = redactCommand(command),
             status = WorkStatus.QUEUED,
             createdAtEpochMs = createdAt,
             updatedAtEpochMs = createdAt,
@@ -111,15 +114,20 @@ class LocalWorkQueue(
         val running = next.copy(status = WorkStatus.RUNNING, updatedAtEpochMs = now(), attempts = next.attempts + 1)
         rewrite(items.replace(next.id, running))
 
-        val result = runCommand(running.command, timeoutMs)
+        val command = activeCommands.remove(running.id)
+        val result = if (command == null) {
+            125 to "command unavailable after queue reload"
+        } else {
+            runCommand(command, timeoutMs)
+        }
         val finished = running.copy(
             status = if (result.first == 0) WorkStatus.SUCCEEDED else WorkStatus.FAILED,
             updatedAtEpochMs = now(),
             lastExitCode = result.first,
-            lastOutputTail = result.second
+            lastOutputTail = redactOutput(result.second)
         )
         rewrite(all(1000).replace(running.id, finished))
-        return WorkRunResult(finished, result.first, result.second)
+        return WorkRunResult(finished, result.first, finished.lastOutputTail)
     }
 
     private fun runCommand(command: List<String>, timeoutMs: Long): Pair<Int, String> {
@@ -181,6 +189,14 @@ class LocalWorkQueue(
     private fun tail(value: String, max: Int = 2000): String {
         return if (value.length <= max) value else value.takeLast(max)
     }
+
+    private fun redactCommand(command: List<String>): List<String> {
+        return command.map { "[REDACTED]" }
+    }
+
+    private fun redactOutput(output: String): String {
+        return if (output.isEmpty()) "" else "[REDACTED]"
+    }
 }
 
 object WorkItemCodec {
@@ -190,9 +206,9 @@ object WorkItemCodec {
             append("\"id\":\"").append(escape(item.id)).append("\",")
             append("\"label\":\"").append(escape(item.label)).append("\",")
             append("\"command\":[")
-            item.command.forEachIndexed { index, arg ->
+            item.command.forEachIndexed { index, _ ->
                 if (index > 0) append(",")
-                append("\"").append(escape(arg)).append("\"")
+                append("\"").append("[REDACTED]").append("\"")
             }
             append("],")
             append("\"status\":\"").append(item.status.name).append("\",")
@@ -200,9 +216,13 @@ object WorkItemCodec {
             append("\"updatedAtEpochMs\":").append(item.updatedAtEpochMs).append(",")
             append("\"attempts\":").append(item.attempts).append(",")
             append("\"lastExitCode\":").append(item.lastExitCode ?: -999999).append(",")
-            append("\"lastOutputTail\":\"").append(escape(item.lastOutputTail)).append("\"")
+            append("\"lastOutputTail\":\"").append(escape(redactOutput(item.lastOutputTail))).append("\"")
             append("}")
         }
+    }
+
+    private fun redactOutput(output: String): String {
+        return if (output.isEmpty()) "" else "[REDACTED]"
     }
 
     fun decode(line: String): WorkItem? {

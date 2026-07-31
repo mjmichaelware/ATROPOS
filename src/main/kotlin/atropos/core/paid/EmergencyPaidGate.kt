@@ -24,6 +24,10 @@ class EmergencyPaidGate(
     private val root: File = File(".atropos/paid"),
     private val now: () -> Long = { System.currentTimeMillis() }
 ) {
+    private companion object {
+        const val REDACTED_REASON = "[redacted]"
+    }
+
     private val stateFile = File(root, "paid-unlock.state")
     private val auditFile = File(root, "paid-audit.jsonl")
     /**
@@ -101,7 +105,7 @@ class EmergencyPaidGate(
         root.mkdirs()
         val provider = unlock?.providerId ?: "none"
         val expires = unlock?.expiresAtEpochMs ?: 0L
-        val reason = escape(unlock?.reason ?: "")
+        val reason = escape(persistedReason(unlock?.reason))
         auditFile.appendText("""{"at":${now()},"action":"$action","provider":"$provider","expiresAt":$expires,"reason":"$reason"}""" + "\n")
     }
 
@@ -110,8 +114,12 @@ class EmergencyPaidGate(
             unlock.providerId,
             unlock.unlockedAtEpochMs.toString(),
             unlock.expiresAtEpochMs.toString(),
-            escape(unlock.reason)
+            escape(persistedReason(unlock.reason))
         ).joinToString("\t")
+    }
+
+    private fun persistedReason(reason: String?): String {
+        return if (reason.isNullOrBlank()) "" else REDACTED_REASON
     }
 
     private fun decode(value: String): PaidUnlock? {
@@ -121,7 +129,7 @@ class EmergencyPaidGate(
             providerId = parts[0],
             unlockedAtEpochMs = parts[1].toLongOrNull() ?: return null,
             expiresAtEpochMs = parts[2].toLongOrNull() ?: return null,
-            reason = unescape(parts[3])
+            reason = persistedReason(unescape(parts[3]))
         )
     }
 

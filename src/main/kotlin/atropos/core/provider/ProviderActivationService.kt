@@ -82,9 +82,11 @@ class ProviderActivationService(
             liveRecord(descriptor, adapter, adapterStatus, keyLookups, fixture, impact, executableSupport, mode)
         } else {
             val configuredForExecution = descriptor.isLocal || keyLookups.all { it.configured }
+            val storedRecord = store.read(providerId)
             val state = when {
                 mode == ProviderVerificationMode.VERIFY && descriptor.isPaidLocked() && !paidGate.isProviderUnlocked(providerId) -> ProviderActivationState.LOCKED
                 mode == ProviderVerificationMode.VERIFY && executableSupport && fixture.passed && configuredForExecution -> ProviderActivationState.VERIFIED
+                storedRecord != null && (storedRecord.state == ProviderActivationState.VERIFIED || storedRecord.state == ProviderActivationState.READY) -> storedRecord.state
                 else -> snapshotState(descriptor, adapterStatus, keyLookups, fixture)
             }
             ProviderActivationRecord(
@@ -200,7 +202,6 @@ class ProviderActivationService(
         if (descriptor.id == "ollama" && !ollamaProbe()) return ProviderActivationState.OFFLINE
         if (descriptor.isLocal) return ProviderActivationState.READY
         if (adapterStatus == null) return ProviderActivationState.MISSING
-        if (adapterStatus.implemented && adapterStatus.configured && !adapterStatus.dryRunOnly) return ProviderActivationState.READY
         if (adapterStatus.implemented && fixture.passed) return ProviderActivationState.FIXTURE_BACKED
         if (keyLookups.any { it.configured }) return ProviderActivationState.CONFIGURED
         return ProviderActivationState.DRY_RUN_CAPABLE

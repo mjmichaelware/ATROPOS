@@ -2,6 +2,7 @@ package atropos.core.director
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class DirectorServiceTest {
@@ -84,5 +85,42 @@ class DirectorServiceTest {
         assertEquals(false, advisory.allowed)
         assertEquals(1, advisory.blockingObservations.size)
         assertEquals("goal-1", store.readAll().first { it.kind == ObservationKind.TERRITORY_VIOLATION }.goalId)
+    }
+
+    @Test
+    fun redactsObservationDetailsPathsAndSymbolsBeforePersistenceWithoutChangingActiveAdvisory() {
+        val dir = java.nio.file.Files.createTempDirectory("director-redaction-")
+        val store = DirectorStore(dir)
+        val svc = DirectorService(store, dir)
+        val path = "src/main/kotlin/atropos/core/director/DirectorStore.kt"
+        val symbol = "DirectorStore.appendObservation"
+        val details = "api_key=super-secret-value at $path#$symbol"
+
+        svc.observe(
+            kind = ObservationKind.TERRITORY_VIOLATION,
+            severity = DriftSeverity.WARNING,
+            source = "test",
+            details = details,
+            files = listOf(path),
+            symbols = listOf(symbol),
+            goalId = "goal-1",
+            territoryId = "territory-1"
+        )
+
+        val persisted = java.nio.file.Files.readString(dir.resolve(".atropos/director/observations.jsonl"))
+        assertFalse(persisted.contains(details))
+        assertFalse(persisted.contains(path))
+        assertFalse(persisted.contains(symbol))
+        assertTrue(persisted.contains("<redacted:details:"))
+        assertTrue(persisted.contains("<redacted:path:"))
+        assertTrue(persisted.contains("<redacted:symbol:"))
+
+        val advisory = svc.advisoryBeforePromotion(
+            goalId = "goal-1",
+            territoryIds = listOf("territory-1"),
+            files = listOf(path)
+        )
+        assertFalse(advisory.allowed)
+        assertEquals(1, advisory.blockingObservations.size)
     }
 }
