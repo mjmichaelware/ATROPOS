@@ -4,6 +4,7 @@ package atropos.core.verification
 import atropos.core.AtroposConfig
 import atropos.core.AtroposRepoRootLocator
 import atropos.core.dag.DagNode
+import atropos.core.policy.BoundedProcessRunner
 import java.nio.file.Path
 
 /**
@@ -14,7 +15,8 @@ import java.nio.file.Path
  */
 class IndependentVerificationGate(
     private val config: AtroposConfig = AtroposConfig.load(),
-    private val repoRoot: Path = AtroposRepoRootLocator.resolve()
+    private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
+    private val processRunner: BoundedProcessRunner = BoundedProcessRunner()
 ) {
     /**
      * Run all verification gates independently for the given DAG node.
@@ -22,7 +24,7 @@ class IndependentVerificationGate(
      * every single deterministic validation gate.
      */
     fun verify(node: DagNode): CompletionGateReport {
-        val gate = VerifiedCompletionGate(config, repoRoot)
+        val gate = VerifiedCompletionGate(config = config, repoRoot = repoRoot, processRunner = processRunner)
         val report = gate.evaluateNodeInternal(node)
 
         val auditorGate = report.gateResults.firstOrNull { it.gateName == "Auditor Findings" }

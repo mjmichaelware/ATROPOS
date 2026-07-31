@@ -1,5 +1,6 @@
 package atropos.core.provider
 
+import atropos.core.AtroposRepoRootLocator
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
@@ -9,8 +10,12 @@ import kotlin.io.path.createDirectories
 import atropos.core.provider.adapter.AdapterStatus
 
 class ProviderActivationStore(
-    private val root: Path = Path.of(".atropos/provider/activation")
+    private val root: Path = defaultRoot()
 ) {
+    companion object {
+        fun defaultRoot(): Path = AtroposRepoRootLocator.resolve().resolve(".atropos/provider/activation")
+    }
+
     init {
         root.createDirectories()
     }

@@ -55,7 +55,7 @@ class VerifiedCompletionGate(
     private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     fun evaluateNode(node: DagNode): CompletionGateReport {
-        return IndependentVerificationGate(config, repoRoot).verify(node)
+        return IndependentVerificationGate(config, repoRoot, processRunner).verify(node)
     }
 
     fun evaluateNodeInternal(node: DagNode): CompletionGateReport {
@@ -147,8 +147,8 @@ class VerifiedCompletionGate(
 
     private fun checkBuildMatrix(node: DagNode): GateResult {
         val javaVersion = System.getProperty("java.specification.version") ?: ""
-        if (javaVersion != "17") {
-            return GateResult(node.id, false, "Build Matrix Lock", "incorrect JDK version: expected 17, observed $javaVersion", clock())
+        if (javaVersion !in SUPPORTED_JAVA_VERSIONS) {
+            return GateResult(node.id, false, "Build Matrix Lock", "unsupported JDK version: expected one of ${SUPPORTED_JAVA_VERSIONS.joinToString()}, observed $javaVersion", clock())
         }
 
         val wrapperPath = repoRoot.resolve("gradle/wrapper/gradle-wrapper.properties")
@@ -169,7 +169,7 @@ class VerifiedCompletionGate(
             return GateResult(node.id, false, "Build Matrix Lock", "incorrect Kotlin version in build.gradle.kts", clock())
         }
 
-        return GateResult(node.id, true, "Build Matrix Lock", "JDK 17, Gradle 9.6.0, Kotlin 1.9.24 matrix pinned and verified", clock())
+        return GateResult(node.id, true, "Build Matrix Lock", "JDK $javaVersion, Gradle 9.6.0, Kotlin 1.9.24 matrix pinned and verified", clock())
     }
 
     private fun checkImplementationExists(node: DagNode): GateResult {
@@ -401,6 +401,7 @@ class VerifiedCompletionGate(
         }
 
     private companion object {
+        val SUPPORTED_JAVA_VERSIONS = setOf("17", "21")
         const val FOCUSED_TESTS = "Focused Tests"
         const val TERRITORY_AND_SECRETS = "Territory & Secrets"
         const val EXPECTED_OUTPUTS = "Expected Outputs"

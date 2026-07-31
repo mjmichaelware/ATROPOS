@@ -265,18 +265,12 @@ class CommandRouter(
     private fun selfHostAlias(tokens: List<String>) {
         val remainder = tokens.drop(1)
         val subcommand = remainder.firstOrNull()?.lowercase()
-        val translated = when (subcommand) {
-            "help", "usage", "?", "/?", "/help", "/usage" -> {
-                renderHelpPage("self-host")
-                return
-            }
-            "run", "start", "status", "watch", "resume", "recover", "next", "stop", "verify", "promote", "export-evidence", "history", "learned", "benchmark" ->
-                listOf("/agent", "self-host") + remainder
-
-            null -> listOf("/agent", "self-host", "status")
-
-            else -> listOf("/agent", "self-host", "run") + remainder
+        if (subcommand in setOf("help", "usage", "?", "/?", "/help", "/usage")) {
+            renderHelpPage("self-host")
+            return
         }
+        val translated = SelfHostAliasTranslator.translate(tokens) ?: return
+        /* Bare shorthand is the operator's self-build command, not a read-only status query. */
         agentCommand.execute(translated)
         uiEngine.updateAgentPatchState(agentCommand.lastKnownPatchId)
     }

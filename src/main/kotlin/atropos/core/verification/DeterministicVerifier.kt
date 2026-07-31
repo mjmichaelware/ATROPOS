@@ -5,6 +5,7 @@ import atropos.ast.AstImportStatus
 import atropos.cli.input.CommandRegistry
 import atropos.core.agent.AgentPatchExtractor
 import atropos.core.agent.AgentSmokeRunner
+import atropos.core.AtroposRepoRootLocator
 import atropos.core.security.RedactionFilter
 import atropos.core.verifier.ConstraintSolverEvaluator
 import atropos.core.verifier.DeterministicConstraint
@@ -53,7 +54,7 @@ data class DeterministicVerificationResult(
 }
 
 class DeterministicVerifier(
-    private val repoRoot: Path = Path.of(".").toAbsolutePath().normalize(),
+    private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
     private val dloiService: DloiService = DloiService(repoRoot),
     /** The only way this verifier reaches DLOI: failures arrive typed, not thrown. */
     private val higZeroGuard: atropos.dloi.HigZeroGuard = atropos.dloi.HigZeroGuard(dloiService),

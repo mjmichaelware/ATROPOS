@@ -1297,4 +1297,301 @@ When an agent disagrees with another ledger response, it must not delete, rewrit
 
 Markup is append-only evidence, not a percentage rewrite. Percentages move only when resolving evidence satisfies the blueprint gate. Runtime disagreements must include a repository-local artifact, not terminal output alone.
 
+### 2026-07-31T10:09:27-06:00 · Agent: Codex GPT-5 · Batch: foundation-ast-memory-integrity-009
+- Paths touched: `src/main/kotlin/atropos/ast/AstSymbolGraph.kt` (+2/-1), `src/test/kotlin/atropos/ast/AstSymbolGraphTest.kt` (+17), `src/main/kotlin/atropos/core/memory/MemoryModels.kt` (+1/-1), `MemoryRecordCodec.kt` (+36/-10), `LocalMemoryStore.kt` (+3/-10), `src/test/kotlin/atropos/core/memory/LocalMemoryStoreTest.kt` (+16)
+- New decoupled files: none; existing AST and memory owners were extended.
+- Atoms / phases affected: `C1-P7` deterministic caller lookup; `C1-P9` CAS memory integrity and source-authority persistence.
+- Predicate moved: caller lookup ignores comments and string literals; current-schema memory records cryptographically bind kind, identity, content, source coordinate, failure signature, authority, schema, and redaction state.
+- % delta: unchanged. These focused seams are verified, but neither Phase 7 nor Phase 9 has its complete blueprint acceptance evidence.
+- Why justified: `AstSymbolGraph.findCallers` now searches the existing lexical mask rather than raw source, preventing non-code mentions from becoming caller evidence. Memory schema 3 binds all authority-relevant metadata through `MemoryRecordCodec.recordSha256`, while schema 1/2 records retain their prior verification algorithm for restart compatibility. Focused Gradle contracts passed: `AstSymbolGraphTest` 4/4 and `LocalMemoryStoreTest` 5/5, both with zero failures.
+- HR interrupts: none; one coherent foundation lane, no overlapping writer territory.
+- Fingerprints: `AstSymbolGraph.kt=463fbc5499606eb61640a0a8bc67ad60fcf5f9ea002ea5e550f413044299c69a`; `LocalMemoryStore.kt=d5900191b759b33518edf1d5ba57e9babe7556c3de641fab0bf3e0a256547ef7`; `MemoryRecordCodec.kt=5df09c02f895e863f907621ba31125a5a2120bd768155ebbe0518e8aac7ec544`.
+- New overall estimate: unchanged.
+
+### 2026-07-31T10:28:56-06:00 · Agent: Codex GPT-5 · Batch: foundation-provider-fixture-010
+- Paths touched: `src/test/kotlin/atropos/core/provider/ProviderFixtureMatrixServiceTest.kt` (+3)
+- New decoupled files: none; the existing provider fixture contract was extended.
+- Atoms / phases affected: `C1-P5` offline provider fixture matrix.
+- Predicate moved: the offline family fixture contract now covers every registered OpenAI-compatible provider in addition to the non-OpenAI, data-infrastructure, and asset families.
+- % delta: unchanged. The focused matrix contract is green, but the complete Phase 5 acceptance evidence is not yet closed.
+- Why justified: The production matrix already selected `AdapterKernelFixtures` for OpenAI-compatible descriptors, but the focused family test omitted that catalog and could not detect a regression in its required outcomes. The test now checks success, auth, rate, billing, unavailable, timeout, malformed, empty, and cancellation fixtures for every provider in that family. `ProviderFixtureMatrixServiceTest` reports 3/3 tests with zero failures.
+- HR interrupts: none; the test-only change stayed within the provider fixture lane.
+- Fingerprints: `ProviderFixtureMatrixServiceTest.kt=f9f5da694490ac045014915ee7a4fb7532bacca71e2ad6c2f22c48cddd70ba5f`.
+- New overall estimate: unchanged.
+
+### 2026-07-31T10:30:37-06:00 · Agent: Codex GPT-5 · Batch: foundation-ast-coordinate-011
+- Paths touched: `src/main/kotlin/atropos/core/parser/TreeSitterGrammarBridge.kt` (+5/-5), `src/test/kotlin/atropos/core/parser/TreeSitterGrammarBridgeTest.kt` (+10)
+- New decoupled files: none; the existing deterministic parser owner was corrected.
+- Atoms / phases affected: `C1-P7` deterministic AST coordinates.
+- Predicate moved: Kotlin declaration offsets remain byte/character-position stable after CRLF line endings while comments and strings continue to be masked before extraction.
+- % delta: unchanged. Parser tests pass, but Phase 7’s complete symbol-impact acceptance gate remains open.
+- Why justified: `String.lines()` discarded carriage returns before the offset accumulator ran, producing offsets that drifted after each CRLF line. The parser now splits on LF, removes CR only for matching, and retains original line length for offsets. `TreeSitterGrammarBridgeTest` reports 3/3 tests with zero failures.
+- HR interrupts: none; one parser lane, no overlapping writer territory.
+- Fingerprints: `TreeSitterGrammarBridge.kt=b10edffb6ed657955039cb167a3ecf3821d24610b46762f988c93d9a99ab7af7`; `TreeSitterGrammarBridgeTest.kt=c4a7c6dad0474f481c612948e36102b53dc46a9cb9844df5a88a85d002b3f862`.
+- New overall estimate: unchanged.
+
+### 2026-07-31T10:42:57-06:00 · Agent: Codex GPT-5 · Batch: foundation-provider-agency-012
+- Paths touched: `src/main/kotlin/atropos/core/provider/adapter/AdapterRouteFacade.kt` (+34), `src/test/kotlin/atropos/core/provider/adapter/AdapterRouteFacadePolicyTest.kt` (+79)
+- New decoupled files: `AdapterRouteFacadePolicyTest.kt`.
+- Atoms / phases affected: `C1-P10` provider side-effect policy; provider routing support for `C1-P5`.
+- Predicate moved: provider calls selected by `AdapterRouteFacade` now pass through the existing `ProviderActionProposals` and `BoundedAgencyGate`; denied calls return typed `ProviderCallResult.Failure` before `ProviderAdapter.complete`.
+- % delta: unchanged; verification is `UNVERIFIED` for this batch.
+- Why justified: The previous route facade invoked adapters directly while `SideEffectInventory` claimed policy enforcement. The production route and research override now share one policy-bound helper, with operation and prompt length recorded as metadata rather than raw prompt content. The new regression test asserts a paid adapter is not called when policy denies it. `git diff --check` passed, but the focused Gradle task did not reach test execution because `compileKotlin` failed with `java.lang.OutOfMemoryError: Java heap space` after 7m35s; no 100% or VERIFIED claim is made.
+- HR interrupts: no lane conflict; environment OOM is a verification blocker, not a source acceptance result.
+- Fingerprints: `AdapterRouteFacade.kt=8e04fc3f6e1a38cacb8413fe12db882472ac1123aedba87644d998174c177832`; `AdapterRouteFacadePolicyTest.kt=2b08de7f7e0148c7ebf8b3c84a29ee9c342ce5fcc00100e48c8517867f2276df`.
+- New overall estimate: unchanged.
+
+### 2026-07-31T10:44:09-06:00 · Agent: Codex GPT-5 · Batch: foundation-activation-agency-013
+- Paths touched: `src/main/kotlin/atropos/core/provider/ProviderActivationService.kt` (+38)
+- New decoupled files: none; live activation composes the existing policy owners.
+- Atoms / phases affected: `C1-P1` provider activation and `C1-P10` side-effect policy.
+- Predicate moved: live provider activation probes now require a typed `ProviderActionProposals` decision through `BoundedAgencyGate` before `ProviderAdapter.complete`; an unlocked paid provider is represented by the existing emergency gate, while a locked one is refused before network execution.
+- % delta: unchanged; verification remains `UNVERIFIED` because the shared Kotlin daemon exhausted heap in the preceding focused compile.
+- Why justified: `ProviderActivationService.liveRecord` was a second direct adapter-call site outside the route facade. The new helper preserves the existing `EmergencyPaidGate` decision, records only operation and prompt length in policy metadata, and returns a redacted typed failure on denial. Static `git diff --check` passed; no phase completion claim is made.
+- HR interrupts: none; no overlapping writer territory.
+- Fingerprints: `ProviderActivationService.kt=f1e76f45e64c2a092c8a5c2b94b0d0425d21bf23b1c645a2654902dcaf4d9ba9`.
+- New overall estimate: unchanged.
+
+### 2026-07-31T10:46:50-06:00 · Agent: Codex GPT-5 · Batch: foundation-memory-root-014
+- Paths touched: `src/main/kotlin/atropos/core/memory/LocalMemoryStore.kt` (+6), `src/test/kotlin/atropos/core/memory/LocalMemoryStoreTest.kt` (+10)
+- New decoupled files: none; the existing memory store owns its root resolution.
+- Atoms / phases affected: `C1-P9` portable persistent memory.
+- Predicate moved: the default memory root now resolves through `AtroposRepoRootLocator`; it no longer depends on the process working directory.
+- % delta: unchanged. The portability contract is source-complete but awaits the next successful focused compile/test run.
+- Why justified: callers constructing `LocalMemoryStore()` previously wrote to a relative path, so installed-JAR launches from another directory could split memory state across working directories. `defaultRoot()` is now deterministic from the repository locator, and the focused contract compares the resolved path without creating or writing memory state. `git diff --check` passed.
+- HR interrupts: none; no overlapping writer territory.
+- Fingerprints: `LocalMemoryStore.kt=b9cb0c5fae0066639175a725b47f695a585d929ed20ed0f23d2cac129c460530`; `LocalMemoryStoreTest.kt=c6aaec7be7b0aefd3d915f28cab4fe8c93666597672e5b900c101529488fcb2a`.
+- New overall estimate: unchanged.
+
+### 2026-07-31T10:48:18-06:00 · Agent: Codex GPT-5 · Batch: foundation-paid-policy-composition-015
+- Paths touched: `src/main/kotlin/atropos/core/provider/adapter/AdapterRouteFacade.kt` (+7), `src/test/kotlin/atropos/core/provider/adapter/AdapterRouteFacadePolicyTest.kt` (+16/-5)
+- New decoupled files: none; the route facade composes the existing emergency paid gate and agency gate.
+- Atoms / phases affected: `C1-P3` paid-route truth and `C1-P10` provider side-effect policy.
+- Predicate moved: unlocked paid-provider eligibility and provider-call authorization now use the same `EmergencyPaidGate` instance; locked paid calls remain represented as paid to `ExecutionPolicyEngine`.
+- % delta: unchanged; verification is blocked by the previously recorded Kotlin daemon heap exhaustion.
+- Why justified: Without this composition, a provider could be route-eligible after an explicit emergency unlock but still be denied by the downstream agency proposal, or route state could diverge from execution state. The facade now passes its gate into `RoutePolicy` and adjusts only the existing typed proposal’s paid flag from that gate’s durable decision. Static `git diff --check` passed.
+- HR interrupts: none; no overlapping writer territory.
+- Fingerprints: `AdapterRouteFacade.kt=92758ebf323eb14611092b6019f11a6f57066f63ded87d353a305935d5e36d28`; `AdapterRouteFacadePolicyTest.kt=bf738637bac2d36f8fbd03dee8304abfd6458f541e8bfd605bf31fd97c669b24`.
+- New overall estimate: unchanged.
+
+### 2026-07-31T10:49:38-06:00 · Agent: Codex GPT-5 · Batch: foundation-provider-root-portability-016
+- Paths touched: `src/main/kotlin/atropos/core/paid/EmergencyPaidGate.kt` (+6/-1), `src/main/kotlin/atropos/core/provider/ProviderActivationStore.kt` (+6/-1), `ProviderActivationService.kt` (+2), `src/test/kotlin/atropos/core/paid/EmergencyPaidGateTest.kt` (+10), `src/test/kotlin/atropos/core/provider/ProviderActivationServiceTest.kt` (+10)
+- New decoupled files: none; existing durable stores now share the canonical root locator.
+- Atoms / phases affected: `C1-P1` provider activation portability, `C1-P3` paid-route state portability.
+- Predicate moved: activation records, quota state, and paid unlock state no longer default to process-relative paths; default roots resolve beneath the ATROPOS repository root.
+- % delta: unchanged. Focused portability contracts were added but await a successful compile/test run after the Kotlin daemon OOM.
+- Why justified: Installed-JAR launches can start from arbitrary directories, so relative `.atropos/provider` and `.atropos/paid` paths split durable control state. The existing `AtroposRepoRootLocator` is now the sole default root source for these stores, with pure path contracts that do not create state.
+- HR interrupts: none; provider-control lane remained disjoint from AST/memory edits.
+- Fingerprints: `EmergencyPaidGate.kt=52cae861977777f7b8f76ca57ae4bee96d125bf917fe43e421a8e28a4a648b3a`; `ProviderActivationStore.kt=e31636a20065551298a923f778b18bbb9db9bd77c431caf64c000b2391d64336`; `ProviderActivationService.kt=a87768b3e66fc5f990dcac880784e5fa84a29e2695da62c59567845037de4191`.
+- New overall estimate: unchanged.
+
+### 2026-07-31T10:51:45-06:00 · Agent: Codex GPT-5 · Batch: foundation-fixture-offline-017
+- Paths touched: `src/main/kotlin/atropos/core/provider/ProviderFixtureMatrixService.kt` (+5/-5)
+- New decoupled files: none; the existing fixture matrix owner was hardened.
+- Atoms / phases affected: `C1-P5` offline provider fixture matrix.
+- Predicate moved: every adapter invocation made by the fixture matrix now explicitly sets `dryRun=true` and `liveNetworkAllowed=false`, including the generic success fallback.
+- % delta: unchanged; the focused matrix contract remains pending a post-change compile/test run.
+- Why justified: The prior generic success branch used `dryRun=false`, so a registered provider without a family parser fixture could make a live network call during an offline matrix run. The branch now probes the adapter’s local dry-run behavior only; fixture verification cannot spend credentials or redefine live readiness.
+- HR interrupts: none; no overlapping provider writer lane.
+- Fingerprints: `ProviderFixtureMatrixService.kt=bc108149c157da380509d1372c408d05f9a27d840123bbde4537afea2082d038`.
+- New overall estimate: unchanged.
+
+### 2026-07-31T10:52:39-06:00 · Agent: Codex GPT-5 · Batch: foundation-fixture-contract-018
+- Paths touched: `src/test/kotlin/atropos/core/provider/ProviderFixtureMatrixServiceTest.kt` (+53)
+- New decoupled files: none; the existing provider fixture contract gained a request-level assertion.
+- Atoms / phases affected: `C1-P5` offline provider fixture matrix.
+- Predicate moved: the generic adapter fixture path is now executable-tested to require `dryRun` and prohibit live network access on every captured request.
+- % delta: unchanged; test execution remains pending after the recorded Kotlin heap failure.
+- Why justified: A result-only assertion could pass while an adapter was still called with live permissions. The test uses a fixture-only adapter and captures every `AdapterRequest`, requiring all requests to be offline and still requiring the complete normalized matrix to pass.
+- HR interrupts: none; provider fixture lane remained isolated.
+- Fingerprints: `ProviderFixtureMatrixServiceTest.kt=dd5379382ac92ffbfef90256807da9a161b6c0914f8f04353f7bd7dc2f279978`.
+- New overall estimate: unchanged.
+
+### 2026-07-31T11:12:00-06:00 · Agent: Codex GPT-5 · Batch: foundation-byte-integrity-019
+- Paths touched: `src/main/kotlin/atropos/core/parser/Utf8OffsetIndex.kt` (+23), `src/main/kotlin/atropos/core/parser/TreeSitterGrammarBridge.kt` (+13/-11), `src/test/kotlin/atropos/core/parser/TreeSitterGrammarBridgeTest.kt` (+11), `src/main/kotlin/atropos/core/memory/MemoryRecordCodec.kt` (+1), `src/test/kotlin/atropos/core/memory/LocalMemoryStoreTest.kt` (+20)
+- New decoupled files: `Utf8OffsetIndex.kt` owns UTF-8 character-to-byte coordinate conversion.
+- Atoms / phases affected: `C1-P7` AST symbol coordinates, `C1-P9` persistent memory integrity.
+- Predicate moved: parser declarations now expose UTF-8 byte offsets across multibyte and CRLF source, and schema-3 records without an integrity hash are refused instead of accepted as valid.
+- % delta: unchanged. Focused tests were added; runtime phase movement remains withheld until the human's compile/test gate succeeds after the prior Kotlin heap failure.
+- Why justified: Source authority and impact tooling require stable byte coordinates, not JVM character indices. Current-schema memory records must carry the hash that authenticates authority and redaction metadata; missing hashes are indistinguishable from unverifiable state and therefore fail closed. `git diff --check` passed.
+- HR interrupts: none; parser and memory lanes had disjoint write paths.
+- Fingerprints: `Utf8OffsetIndex.kt=56334790ee3ba2207014ea1cb806a07fe8fd134de62109f3bc01ee51f975b7eb`; `TreeSitterGrammarBridge.kt=f87894bb6b5a5caf294bae8b8ed9b94a6f88429550487748230cb09ab38e9919`; `MemoryRecordCodec.kt=1608bb926719439633329cf4061d851d7be26f65d0094c2c7d78f96a05183749`; `TreeSitterGrammarBridgeTest.kt=d058982b69f1d85e3f8e71b2377e82d494acc7bd469d61ffb7da0373beac0d68`; `LocalMemoryStoreTest.kt=0e71612d5dd048ee2d5888927eefe7f0c7d79a6bb92d676660d4e16179b80df4`.
+- New overall estimate: unchanged.
+
+### 2026-07-31T11:18:00-06:00 · Agent: Codex GPT-5 · Batch: foundation-portable-symbol-root-020
+- Paths touched: `src/main/kotlin/atropos/ast/AstSymbolGraph.kt` (+2/-1), `src/test/kotlin/atropos/ast/AstSymbolGraphTest.kt` (+8)
+- New decoupled files: none; the existing AST graph now consumes the canonical root locator.
+- Atoms / phases affected: `C1-P7` portable AST/source graph execution.
+- Predicate moved: default AST graph construction now resolves the ATROPOS repository root through `AtroposRepoRootLocator` instead of process cwd, so installed-JAR launches from arbitrary directories do not silently produce an empty graph.
+- % delta: unchanged. The focused test is written but not executed after the current Kotlin heap failure; no phase or tree-export claim is made.
+- Why justified: Source lookup and impact verification are self-build prerequisites, and a cwd-derived default is not portable runtime behavior. The test exercises the default constructor against the repository source tree; `git diff --check` passed.
+- HR interrupts: none; AST root portability remained disjoint from provider and memory lanes.
+- Fingerprints: `AstSymbolGraph.kt=86dfa7f5bb1d875dd0e2387bb7035293829fba67f0084c11483ae86f6c43554a`; `AstSymbolGraphTest.kt=57df90d75f2e96f2d33d5ea4af41b66c1728dc2f1d5325b0f066f52c1ddab262`.
+- New overall estimate: unchanged.
+
+### 2026-07-31T11:24:00-06:00 · Agent: Codex GPT-5 · Batch: foundation-live-probe-optin-021
+- Paths touched: `src/main/kotlin/atropos/core/provider/ProviderActivationService.kt` (+4/-1), `src/test/kotlin/atropos/core/provider/ProviderActivationServiceTest.kt` (+26)
+- New decoupled files: none; the existing activation owner now receives an explicit environment boundary.
+- Atoms / phases affected: `C1-P1` provider activation truth, `C1-P3` route/network safety.
+- Predicate moved: provider live-test activation no longer forces network permission; a live probe is queued/degraded unless `ATROPOS_LIVE_PROVIDER_TESTS=1` is explicitly present in the injected runtime environment.
+- % delta: unchanged. Focused execution remains pending after the Kotlin heap failure; no readiness or phase completion is claimed.
+- Why justified: The prior activation path set `liveNetworkAllowed=true` unconditionally, bypassing the existing BaseKernelAdapter opt-in contract. The service now composes the same explicit environment law used by adapter requests, with a pure empty-environment regression test and no secret or network requirement.
+- HR interrupts: none; activation lane remained disjoint from AST/memory lanes.
+- Fingerprints: `ProviderActivationService.kt=6ead0bbdb8cdfe5d3b7b233e4cc14bdbbfc1c7f910f8c137eab052e3e0f7b398`; `ProviderActivationServiceTest.kt=d768f056430d85ee317d8818f4a65539b68406903a7e81cb856f9596f6bb6bbc`.
+- New overall estimate: unchanged.
+
+### 2026-07-31T11:31:00-06:00 · Agent: Codex GPT-5 · Batch: foundation-native-root-boundaries-022
+- Paths touched: `src/main/kotlin/atropos/core/provider/LocalRoot.kt` (+1/-1), `src/main/kotlin/atropos/core/agent/AgentDaemonProcessLauncher.kt` (+2/-1), `src/main/kotlin/atropos/core/Config.kt` (+1/-3), `src/test/kotlin/atropos/core/provider/LocalRootTest.kt` (+9)
+- New decoupled files: none; existing local, daemon, and config owners now share native root resolution.
+- Atoms / phases affected: `C1-P0` portable runtime baseline, `C1-P10` bounded local execution, Phase 11 daemon portability.
+- Predicate moved: default local toolchain probes, daemon wake execution, and default lakehouse config no longer derive durable/runtime roots from process cwd or a caller’s launch directory.
+- % delta: unchanged. Focused tests are written but not executed after the Kotlin heap failure; the tree export remains phase-boundary data and is not refreshed.
+- Why justified: Installed JARs and daemon restarts may be launched from arbitrary directories. The existing `AtroposRepoRootLocator` is now the single root owner for these defaults, preserving explicit injected roots for tests and operators. `git diff --check` passed.
+- HR interrupts: none; local portability lane was disjoint from provider-policy and AST-memory edits.
+- Fingerprints: `LocalRoot.kt=68798b19c70fa337e29d91dd8b16b768189b24611078caaf1b61f43c51a192f3`; `AgentDaemonProcessLauncher.kt=162c155931a0c0eb423ddf6c3adcc374728546d2912e117a6c65e447481a9cd8`; `Config.kt=ee6627e1f19025e75619a6c2d0eaea5d0906366764cac1b0219be18eed50ee99`; `LocalRootTest.kt=866085636f6cc2344050ea85639a61d2bd0043409ef62ff05d7b7d0d3e40b881`.
+- New overall estimate: unchanged.
+
+### 2026-07-31T11:37:00-06:00 · Agent: Codex GPT-5 · Batch: foundation-policy-absolute-protection-023
+- Paths touched: `src/main/kotlin/atropos/core/policy/ExecutionPolicyEngine.kt` (+13/-8), `src/test/kotlin/atropos/core/policy/ExecutionPolicyEngineTest.kt` (+16)
+- New decoupled files: none; the existing policy authority now canonicalizes protected-path checks against its repository root.
+- Atoms / phases affected: `C1-P10` execution policy and deny-before-mutate protection.
+- Predicate moved: absolute and normalized repository paths into `.git`, `.atropos/secrets`, `build`, `.gradle`, JAR, and class outputs are now denied by the shared policy engine, not only relative spellings.
+- % delta: unchanged. The focused policy test is written but not executed after the Kotlin heap failure; no phase completion is claimed.
+- Why justified: A caller could previously submit `/repo/.atropos/secrets/token.json` and bypass a string check that only recognized `.atropos/secrets/...`. The policy now compares both the submitted spelling and a root-relative canonical form while retaining typed denial and audit behavior. `git diff --check` passed.
+- HR interrupts: none; policy lane remained disjoint from provider and parser lanes.
+- Fingerprints: `ExecutionPolicyEngine.kt=b7a139457025973c3a685e871a495a295dde44b39fd19b532a9599ac40e1bdcc`; `ExecutionPolicyEngineTest.kt=51a89d689ad9fbc1b106506d2d51cd1c9e795263a05ec2990053f9409861f425`.
+- New overall estimate: unchanged.
+
+### 2026-07-31T11:43:00-06:00 · Agent: Codex GPT-5 · Batch: foundation-verifier-runtime-env-024
+- Paths touched: `src/main/kotlin/atropos/core/agent/AgentVerifier.kt` (+7/-4)
+- New decoupled files: none; the existing verifier now uses only actual JVM/environment runtime values.
+- Atoms / phases affected: `C1-P0` portable verification baseline, `C1-P10` bounded build/test execution.
+- Predicate moved: verifier environment construction no longer falls back to `user.dir` as a fake `JAVA_HOME`; absent runtime metadata is represented as inherited runtime state and no fabricated path is persisted in the command record.
+- % delta: unchanged. No phase completion is claimed; this is a static portability correction awaiting the human compile/test gate.
+- Why justified: A launch directory is not a Java installation and made verification records claim an invalid runtime path on hosts without `java.home`. The verifier now preserves a valid explicit override when present and otherwise leaves the runtime environment untouched while rendering a typed `<runtime>` marker.
+- HR interrupts: none; verifier lane was disjoint from policy, provider, and AST lanes.
+- Fingerprints: `AgentVerifier.kt=5b0cb18e9f0241d95531dbd5615a2dd2412567d1f39d386d8dbe97aa0d5a03e3`.
+- New overall estimate: unchanged.
+
+### 2026-07-31T11:51:00-06:00 · Agent: Codex GPT-5 · Batch: foundation-evidence-root-escaping-025
+- Paths touched: `src/main/kotlin/atropos/core/verification/DeterministicVerifier.kt` (+2/-1), `src/main/kotlin/atropos/core/provider/LocalRoot.kt` (+18/-1), `src/test/kotlin/atropos/core/provider/LocalRootTest.kt` (+16)
+- New decoupled files: none; existing verifier and local-state owners were hardened in place.
+- Atoms / phases affected: `C1-P8` deterministic verification portability, `C1-P4` secret-safe evidence persistence, `C1-P9` restart-readable local state.
+- Predicate moved: deterministic verification defaults to the canonical ATROPOS root, and local JSONL evidence now escapes quotes, backslashes, and control characters after redaction instead of writing malformed records.
+- % delta: unchanged. Focused tests are written but not executed after the Kotlin heap failure; no phase or tree export completion is claimed.
+- Why justified: A cwd-derived verifier can inspect the wrong tree after an installed-JAR launch, while unescaped state events can truncate or corrupt the durable evidence stream. The changes compose existing root and redaction owners and add a focused secret/escaping regression. `git diff --check` passed.
+- HR interrupts: none; verifier/state lane had no overlapping writer paths.
+- Fingerprints: `DeterministicVerifier.kt=e5c95cfc03c99a7fe96c832c5e286fd3b4ab025a485862b8e364e9fe49694ee0`; `LocalRoot.kt=f05a9adfa1b18b6f0fc77ba9f5297f9d4b7d4edbcf7192a34f8bf947aea8b3b3`; `LocalRootTest.kt=679e796f5d03824c9c8cac72cf8045048df14a1b292771899f42893a797d2066`.
+- New overall estimate: unchanged.
+
+### 2026-07-31T11:56:00-06:00 · Agent: Codex GPT-5 · Batch: phase4-proof-seam-check-026
+- Paths touched: none; `scripts/phase4-proof-artifact-test.sh` executed against the current root tree.
+- New decoupled files: none.
+- Atoms / phases affected: Phase 4 repository-local proof artifact seam.
+- Predicate moved: the dry-run proof artifact contract passes, including required fingerprints, proof hash field, non-persistence of key material, and explicit `not_run` states.
+- % delta: unchanged. This does not claim Phase 4 100%; it does not execute the encrypted runtime, redaction Gradle tests, or persisted-surface proof.
+- Why justified: `bash scripts/phase4-proof-artifact-test.sh` exited zero and created only a temporary artifact. The distinction between proof-schema validity and full runtime acceptance remains explicit, with no false completion or tree export refresh.
+- HR interrupts: none.
+- Fingerprints: execution result is transient by design; no secret or proof output was persisted by this check.
+- New overall estimate: unchanged.
+
+### 2026-07-31T12:04:00-06:00 · Agent: Codex GPT-5 · Batch: phase11-dag-agency-boundary-027
+- Paths touched: `src/main/kotlin/atropos/core/dag/DagNodeShellExecutor.kt` (+49/-13), `src/test/kotlin/atropos/core/dag/DagExecutionServiceTest.kt` (+38)
+- New decoupled files: none; DAG shell execution now composes existing agency and bounded-process owners.
+- Atoms / phases affected: `C1-P10` typed execution policy, `C1-SB-02` self-host bounded mutation/verification path.
+- Predicate moved: DAG shell/build/verify/gate actions now require `BoundedAgencyGate` authorization before spawn, execute through `BoundedProcessRunner`, and refuse success on launch failure, timeout, or truncated output; a git push refusal is tested before process start.
+- % delta: unchanged. Focused DAG tests are written but not executed after the Kotlin heap failure; no Phase 11 or canonical phase completion is claimed.
+- Why justified: `DagNodeShellExecutor` previously called `ProcessBuilder("sh", "-c", ...)` directly and treated exit code zero as success, leaving a policy bypass and false-success path. The existing `ShellActionProposals`, policy engine, process bounds, redaction, territory callback, and DAG finisher remain the sole owners.
+- HR interrupts: none; DAG executor and test lane had no overlapping writer paths.
+- Fingerprints: `DagNodeShellExecutor.kt=8642eae0522b5a2ceb002617114c05eefb18a6732b9f242080ff2c2476e85c71`; `DagExecutionServiceTest.kt=4348af2266f7c6822dd5ecfe35632e8174833b6e2962306c001740ad77ea6fd7`.
+- New overall estimate: unchanged.
+
+### 2026-07-31T12:18:00-06:00 · Agent: Codex GPT-5 · Batch: phase11-bootstrap-literal-safety-028
+- Paths touched: `src/main/kotlin/atropos/core/agent/SelfHostBootstrapDagFactory.kt` (+1), `src/test/kotlin/atropos/core/agent/SelfHostGoalServiceTest.kt` (+3/-3)
+- New decoupled files: none; the existing bootstrap DAG factory remains the single generated-source owner.
+- Atoms / phases affected: `C1-SB-01`, `C1-SB-02` durable cradle source mutation and compile-gate safety.
+- Predicate moved: generated Kotlin marker/test literals now escape `$` as well as slash, quote, and newline content, preventing natural-language goal or phase text from becoming unintended Kotlin interpolation.
+- % delta: unchanged. The focused self-host test is written but not executed after the Kotlin heap failure; Phase 11 remains unproven on the installed runtime.
+- Why justified: The bootstrap DAG writes source bytes from durable goal/phase data. Unescaped interpolation syntax could make a legal prompt generate invalid or semantically altered Kotlin before verification. The generated bytes now remain literal and fail closed through the existing compile gate if any other syntax issue remains. `git diff --check` passed.
+- HR interrupts: none; self-host bootstrap lane was disjoint from the DAG shell boundary.
+- Fingerprints: `SelfHostBootstrapDagFactory.kt=f194478ab4b29a1c15d14321dcd65243068b1852a2554fcf0500a91b3f2649d8`; `SelfHostGoalServiceTest.kt=43bd5cc8b1ee9c88f424b0d65823defff2999357ec095a3fb08a95462fffc82f`.
+- New overall estimate: unchanged.
+
+### 2026-07-31T12:31:00-06:00 · Agent: Codex GPT-5 · Batch: phase11-bare-entrypoint-029
+- Paths touched: `src/main/kotlin/atropos/cli/SelfHostAliasTranslator.kt` (+25), `src/main/kotlin/atropos/cli/CommandRouter.kt` (+5/-11), `src/main/kotlin/atropos/cli/input/CommandRegistry.kt` (+1/-1), `src/test/kotlin/atropos/cli/SelfHostAliasTranslatorTest.kt` (+31), `src/test/kotlin/atropos/cli/CommandRouterHelpTest.kt` (+12/-15)
+- New decoupled files: `SelfHostAliasTranslator.kt`, `SelfHostAliasTranslatorTest.kt`.
+- Atoms / phases affected: `C1-SB-01`, `C1-SB-02`, Phase 11 natural-language/CLI self-build entry.
+- Predicate moved: bare `self-host` and `/self-host` now delegate to the canonical self-host command with no subcommand, which `SelfHostCommand` interprets as the real default Phase 11 run; explicit `status`, `help`, and other subcommands remain deterministic and read-only where applicable.
+- % delta: unchanged. The alias contract is statically covered but not compiled or executed in this batch; no phase completion is claimed.
+- Why justified: The prior router translated a bare self-host alias to `/agent self-host status`, making the operator-facing shorthand incapable of starting the self-build loop. The translator isolates this routing decision, preserves the existing production `SelfHostCommand` runner and policy gates, and adds focused tests without invoking a live repository mutation.
+- HR interrupts: none; router and self-host command paths were handled in one lane, with no product/UI scope expansion.
+- Fingerprints: `SelfHostAliasTranslator.kt=8fc89ff9228c76ec282180f333865f1ece8a9778173d75369d38e9f7b75db48a`; `CommandRouter.kt=2a6581dbcfd9f1b69b6dfc70c1e5345a36c7ec2b7324925a849471df6d3ec183`; `SelfHostAliasTranslatorTest.kt=9108bcdf3029685b1e9945a618a9a14e3ce4e45ea423345e94a1415baf1de252`.
+- New overall estimate: unchanged.
+
+### 2026-07-31T12:44:00-06:00 · Agent: Codex GPT-5 · Batch: phase7-impact-query-030
+- Paths touched: `src/main/kotlin/atropos/ast/AstSymbolGraph.kt` (+22), `src/test/kotlin/atropos/ast/AstSymbolGraphTest.kt` (+15)
+- New decoupled files: none; impact resolution remains owned by `AstSymbolGraph`.
+- Atoms / phases affected: `C1-P7` deterministic AST/symbol graph.
+- Predicate moved: the existing graph now exposes a deterministic `impactOfPaths` query that returns changed-file symbols plus exact local import dependents, including the dependent file symbols required for caller/impact review.
+- % delta: unchanged. The focused AST test is written but not executed in this batch; no Phase 7 completion is claimed.
+- Why justified: `impactedByPaths` previously reported only symbols in the changed files, which could not answer the blueprint’s impact predicate. The new method composes the existing parsed symbol/import data, uses exact qualified-name and same-package matching, and does not create a second graph or parser.
+- HR interrupts: none; AST implementation and its new test were disjoint from the self-host CLI lane.
+- Fingerprints: recorded after this batch in the root manifest refresh.
+- New overall estimate: unchanged.
+
+### 2026-07-31T12:56:00-06:00 · Agent: Codex GPT-5 · Batch: phase4-memory-redaction-boundary-031
+- Paths touched: `src/main/kotlin/atropos/core/memory/MemoryRecordCodec.kt` (+1), `src/test/kotlin/atropos/core/memory/LocalMemoryStoreTest.kt` (+18)
+- New decoupled files: none; persisted-memory validation remains owned by the existing codec.
+- Atoms / phases affected: `C1-P4` secret/security hardening and `C1-P9` persistent memory integrity.
+- Predicate moved: schema-three memory records marked unredacted are now rejected during decode, before they can re-enter the durable memory store or downstream evidence/search paths.
+- % delta: unchanged. The focused memory test is written but not executed in this batch; no Phase 4 or Phase 9 completion is claimed.
+- Why justified: hash integrity detects tampering but did not itself enforce the persisted redaction invariant. Since all current writes pass through the existing redaction path and set `redacted=true`, rejecting schema-three unredacted records closes a distinct secret-egress failure without adding a second vault or memory root.
+- HR interrupts: none; codec and memory test paths were disjoint from the AST and CLI lanes.
+- Fingerprints: recorded after this batch in the root manifest refresh.
+- New overall estimate: unchanged.
+
+### 2026-07-31T13:08:00-06:00 · Agent: Codex GPT-5 · Batch: phase10-nested-shell-refusal-032
+- Paths touched: `src/main/kotlin/atropos/core/policy/ExecutionPolicyEngine.kt` (+11), `src/test/kotlin/atropos/core/policy/ExecutionPolicyEngineTest.kt` (+17)
+- New decoupled files: none; nested-shell policy remains part of the single execution policy authority.
+- Atoms / phases affected: `C1-P10` execution policy and Phase 11 bounded shell execution.
+- Predicate moved: shell/smoke policy now refuses nested interpreter forms such as `sh -c`, `bash -c`, and `cmd /c` before any process can start.
+- % delta: unchanged. The focused policy test is written but not executed in this batch; no Phase 10 or Phase 11 completion is claimed.
+- Why justified: control-operator filtering alone does not prevent an invocation from delegating arbitrary parsing to a nested interpreter. The refusal composes the existing policy evaluator and audit path, preserving typed deny behavior for DAG and self-host shell callers.
+- HR interrupts: none; policy implementation and its new test were disjoint from the memory, AST, and CLI lanes.
+- Fingerprints: recorded after this batch in the root manifest refresh.
+- New overall estimate: unchanged.
+
+### 2026-07-31T13:27:00-06:00 · Agent: Codex GPT-5 · Batch: phase4-memory-test-correction-033
+- Paths touched: `src/test/kotlin/atropos/core/memory/LocalMemoryStoreTest.kt` (1-line correction)
+- New decoupled files: none.
+- Atoms / phases affected: `C1-P4`, `C1-P9` test compilation correction.
+- Predicate moved: the schema-three redaction regression test now uses the existing `MemoryKind.NOTE` enum and no longer blocks `compileTestKotlin` on an unresolved enum reference.
+- % delta: unchanged. The operator’s compile reached test compilation and exposed this test-only error; the corrected test has not yet been rerun.
+- Why justified: This is a direct correction from the reported compiler output, not a product behavior change. The production redaction refusal remains unchanged.
+- HR interrupts: none.
+- Fingerprints: refreshed in the root manifest after this ledger append.
+- New overall estimate: unchanged.
+
+### 2026-07-31T13:39:00-06:00 · Agent: Codex GPT-5 · Batch: foundation-portability-warning-034
+- Paths touched: `src/main/kotlin/atropos/core/agent/AgentVerifier.kt` (1-line cleanup)
+- New decoupled files: none.
+- Atoms / phases affected: foundation portability and verification environment resolution.
+- Predicate moved: the portable Java-home resolution no longer contains a redundant null fallback; it remains environment-derived and host-independent.
+- % delta: unchanged. This warning cleanup does not constitute a runtime verification gate.
+- Why justified: the operator compile reported the redundant Elvis warning directly in a file already touched by the portability work. Removing only the useless fallback preserves the existing `JAVA_HOME` then JVM `java.home` precedence without hardcoded device paths.
+- HR interrupts: none.
+- Fingerprints: refreshed in the root manifest after this ledger append.
+- New overall estimate: unchanged.
+
+### 2026-07-31T14:02:00-06:00 · Agent: Codex GPT-5 · Batch: foundation-six-failure-closure-035
+- Paths touched: `src/main/kotlin/atropos/core/security/RedactionFilter.kt` (+1), `src/main/kotlin/atropos/core/provider/RoutePolicy.kt` (+10), `src/main/kotlin/atropos/core/verification/IndependentVerificationGate.kt` (+4/-1), `src/main/kotlin/atropos/core/verification/VerifiedCompletionGate.kt` (+6/-4), `src/main/kotlin/atropos/core/provider/adapter/AdapterKernelFixtures.kt` (+2), `src/test/kotlin/atropos/cli/SelfHostInsideOutSandboxProofTest.kt` (+9/-1)
+- New decoupled files: none; existing redaction, route, verification, fixture, and proof owners were extended.
+- Atoms / phases affected: `C1-P4`, `C1-P5`, `C1-P8`, `C1-P10`, `C1-SB-01`, `C1-SB-02`.
+- Predicate moved: all six failures from the operator’s 606-test run are addressed; the focused lane now passes 33 tests, including the sandbox NL self-build proof and provider fixture matrix.
+- % delta: unchanged. Full-suite evidence after this batch is still outstanding, so no canonical phase is marked 100%.
+- Why justified: short OpenAI-style keys now redact; explicitly unlocked paid emergency routing takes precedence only under its explicit policy; injected bounded process runners reach independent verification; supported JDK 21 is accepted alongside pinned JDK 17; OpenAI-compatible fixtures include unavailable; and the sandbox proof declares the same pinned Kotlin/Gradle metadata required by the completion gate. Command: `./gradlew --no-daemon test --tests atropos.cli.SelfHostInsideOutSandboxProofTest --tests atropos.core.provider.ProviderErrorNormalizerTest --tests atropos.core.provider.QuotaLedgerRouteTruthTest --tests atropos.core.verification.VerifiedCompletionGateTest --tests atropos.core.provider.ProviderFixtureMatrixServiceTest`; result: `BUILD SUCCESSFUL`, 33 tests.
+- HR interrupts: none; all changes stayed within foundation/self-host backend ownership.
+- Fingerprints: refreshed in the root manifest after this ledger append.
+- New overall estimate: unchanged.
+
 End of AGENTS.md

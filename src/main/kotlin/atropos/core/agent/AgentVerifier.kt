@@ -28,9 +28,8 @@ class AgentVerifier(
      * this code, so it is correct everywhere by construction; JAVA_HOME stays as an
      * explicit operator override.
      */
-    private val javaHome: String = System.getenv("JAVA_HOME")?.takeIf { it.isNotBlank() }
-        ?: System.getProperty("java.home")?.takeIf { it.isNotBlank() }
-        ?: System.getProperty("user.dir"),
+    private val javaHome: String? = System.getenv("JAVA_HOME")?.takeIf { it.isNotBlank() }
+        ?: System.getProperty("java.home")?.takeIf { it.isNotBlank() },
     private val timeoutMillis: Long = 900_000,
     private val maxOutputBytes: Int = 128 * 1024,
     private val maxOutputLines: Int = 3_000,
@@ -59,7 +58,7 @@ class AgentVerifier(
             execution.exitCode != 0 -> "verification failed with exit code ${execution.exitCode}"
             else -> null
         }
-        val commandText = "JAVA_HOME=$javaHome ${execution.command.joinToString(" ")}"
+        val commandText = "JAVA_HOME=${javaHome ?: "<runtime>"} ${execution.command.joinToString(" ")}"
         val record = verificationStore.createRecord(
             patchId = patch.id,
             command = commandText,
@@ -163,7 +162,9 @@ class AgentVerifier(
                     name.endsWith("_KEY") ||
                     name.contains("CREDENTIAL")
                 )
-        } + ("JAVA_HOME" to javaHome)
+        }.toMutableMap().apply {
+            javaHome?.let { put("JAVA_HOME", it) }
+        }
         val bounded = processRunner.run(
             command = command,
             directory = collector.repoRoot,

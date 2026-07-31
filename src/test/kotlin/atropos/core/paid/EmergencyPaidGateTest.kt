@@ -1,5 +1,6 @@
 package atropos.core.paid
 
+import atropos.core.AtroposRepoRootLocator
 import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -7,6 +8,14 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class EmergencyPaidGateTest {
+    @Test
+    fun default_root_is_under_atropos_root() {
+        assertEquals(
+            AtroposRepoRootLocator.resolve().resolve(".atropos/paid").toFile().absoluteFile,
+            EmergencyPaidGate.defaultRoot().absoluteFile
+        )
+    }
+
     @Test
     fun `persists only a redacted reason while keeping the paid unlock active`() {
         val root = Files.createTempDirectory("atropos-paid-gate-").toFile()

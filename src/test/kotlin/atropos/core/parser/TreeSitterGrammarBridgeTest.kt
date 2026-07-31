@@ -96,4 +96,23 @@ class TreeSitterGrammarBridgeTest {
         assertTrue(tree.declarations.none { it.name == "StringInterface" })
         assertTrue(tree.declarations.none { it.name == "LineComment" })
     }
+
+    @Test
+    fun parse_tree_preserves_offsets_after_crlf_line_endings() {
+        val code = "package sample\r\n\r\nclass Target\r\n"
+
+        val declaration = bridge.parseTree(code).declarations.first { it.name == "Target" }
+
+        assertEquals(3, declaration.line)
+        assertEquals(code.indexOf("Target"), declaration.offset)
+    }
+
+    @Test
+    fun parse_tree_reports_utf8_byte_offsets() {
+        val code = "package sample\nval prefix = \"é\"\nfun target() = Unit\n"
+
+        val declaration = bridge.parseTree(code).declarations.first { it.name == "target" }
+
+        assertEquals(code.substring(0, code.indexOf("target")).toByteArray(Charsets.UTF_8).size, declaration.offset)
+    }
 }

@@ -174,7 +174,15 @@ class SelfHostInsideOutSandboxProofTest {
 
     private fun initializeSandboxAtroposRepo(repoRoot: Path) {
         Files.writeString(repoRoot.resolve("settings.gradle.kts"), "pluginManagement {}\nrootProject.name = \"ATROPOS\"\n")
-        Files.writeString(repoRoot.resolve("build.gradle.kts"), "plugins {}\n")
+        Files.writeString(
+            repoRoot.resolve("build.gradle.kts"),
+            "plugins { id(\"org.jetbrains.kotlin.jvm\") version \"1.9.24\" }\n"
+        )
+        Files.createDirectories(repoRoot.resolve("gradle/wrapper"))
+        Files.writeString(
+            repoRoot.resolve("gradle/wrapper/gradle-wrapper.properties"),
+            "distributionUrl=gradle-9.6.0-bin.zip\n"
+        )
         Files.writeString(
             repoRoot.resolve("gradlew"),
             """

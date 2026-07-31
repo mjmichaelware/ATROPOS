@@ -80,7 +80,15 @@ class RoutePolicy(
         val evaluated = candidates.map { filter.evaluate(it, ledger.get(it.id)) }
         val eligible = evaluated.filter { it.eligible }.sortedWith(
             compareBy<ProviderEligibility>(
-                { it.provider.isPaidLocked() },
+                {
+                    when {
+                        costPolicy == AtroposCostPolicy.PAID_EMERGENCY_UNLOCKED &&
+                            it.provider.isPaidLocked() &&
+                            paidGate.isProviderUnlocked(it.provider.id) -> 0
+                        it.provider.isPaidLocked() -> 2
+                        else -> 1
+                    }
+                },
                 { taskPriority(task, it.provider) },
                 { it.provider.quotaTier },
                 { it.quota?.successScore?.let { score -> -score } ?: 0.0 },
