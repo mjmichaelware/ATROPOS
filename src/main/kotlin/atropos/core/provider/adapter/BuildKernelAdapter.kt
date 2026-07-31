@@ -23,6 +23,8 @@ fun buildKernelAdapter(
             CloudflareAiKernelAdapter(descriptor, NonOpenAiFreeProviderCatalog.get(descriptor.id)!!, env)
         NonOpenAiFreeProviderCatalog.get(descriptor.id)?.schema == NonOpenAiProviderSchema.CLOUDFLARE_WORKERS ->
             CloudflareWorkersKernelAdapter(descriptor, NonOpenAiFreeProviderCatalog.get(descriptor.id)!!, env)
+        NonOpenAiFreeProviderCatalog.get(descriptor.id)?.schema == NonOpenAiProviderSchema.ANTHROPIC ->
+            AnthropicKernelAdapter(descriptor, NonOpenAiFreeProviderCatalog.get(descriptor.id)!!, env)
         DataInfraResearchProviderCatalog.get(descriptor.id)?.schema == DataInfraProviderSchema.JINA_READER ->
             JinaReaderKernelAdapter(descriptor, DataInfraResearchProviderCatalog.get(descriptor.id)!!, env)
         DataInfraResearchProviderCatalog.get(descriptor.id)?.schema == DataInfraProviderSchema.SERPAPI_WEB ->

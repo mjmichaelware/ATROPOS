@@ -321,4 +321,30 @@ class VerifiedCompletionGateTest {
             "a node that opted out of nothing must load with an empty set"
         )
     }
+
+    @Test
+    fun independent_verification_gate_vetos_if_core_lanes_fail() {
+        val root = repo()
+        val node = node(payload = null)
+        val gate = IndependentVerificationGate(repoRoot = root)
+        val report = gate.verify(node)
+        assertFalse(report.canComplete)
+        assertTrue(report.message.contains("VETO: Independent verification failed"))
+    }
+
+    @Test
+    fun build_matrix_lock_checks_java_gradle_and_kotlin_versions() {
+        val root = repo()
+        val wrapperDir = root.resolve("gradle/wrapper")
+        Files.createDirectories(wrapperDir)
+        Files.writeString(wrapperDir.resolve("gradle-wrapper.properties"), "distributionUrl=gradle-9.6.0-bin.zip\n")
+        Files.writeString(root.resolve("build.gradle.kts"), "version \"1.9.24\"\n")
+
+        val gate = VerifiedCompletionGate(repoRoot = root, dagStore = DagStore(root))
+        val node = node(payload = null)
+        val report = gate.evaluateNodeInternal(node)
+        val matrixResult = report.gateResults.first { it.gateName == "Build Matrix Lock" }
+        assertTrue(matrixResult.passed)
+        assertTrue(matrixResult.detail.contains("matrix pinned and verified"))
+    }
 }

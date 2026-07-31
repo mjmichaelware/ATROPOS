@@ -2,7 +2,7 @@ package atropos.core.memory
 
 import java.io.File
 
-const val MEMORY_SCHEMA_VERSION = 2
+const val MEMORY_SCHEMA_VERSION = 3
 
 enum class MemoryKind {
     NOTE,

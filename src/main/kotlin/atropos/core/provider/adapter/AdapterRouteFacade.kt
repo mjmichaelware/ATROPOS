@@ -17,6 +17,13 @@ import atropos.core.provider.QuotaLedger
 import atropos.core.provider.RoutePolicy
 import atropos.core.provider.RoutePolicyDecision
 import atropos.core.provider.StaticProviderDescriptorRegistry
+import atropos.core.paid.EmergencyPaidGate
+import atropos.core.policy.ActionActor
+import atropos.core.policy.AgencyDisposition
+import atropos.core.policy.BoundedAgencyGate
+import atropos.core.policy.ProviderActionProposals
+import atropos.core.provider.NormalizedProviderFailureType
+import atropos.core.provider.ProviderFailure
 import java.util.Locale
 
 data class AdapterRouteResult(
@@ -35,9 +42,11 @@ class AdapterRouteFacade(
     private val ledger: QuotaLedger = InMemoryQuotaLedger(
         FileQuotaLedger.seedFromDescriptors(descriptorRegistry)
     ),
-    private val costPolicy: AtroposCostPolicy = AtroposCostPolicy.FREE_ONLY
+    private val costPolicy: AtroposCostPolicy = AtroposCostPolicy.FREE_ONLY,
+    private val paidGate: EmergencyPaidGate = EmergencyPaidGate()
 ) {
     private val classifier = ProviderTaskClassifier()
+    private val agencyGate = BoundedAgencyGate()
 
     fun decide(prompt: String, dryRun: Boolean = true): AdapterRouteResult {
         val task = classifier.classify(prompt)
@@ -56,7 +65,8 @@ class AdapterRouteFacade(
         val policyDecision = RoutePolicy(
             registry = descriptorRegistry,
             ledger = ledger,
-            costPolicy = costPolicy
+            costPolicy = costPolicy,
+            paidGate = paidGate
         ).decide(task)
 
         val adapter = policyDecision.selectedProviderId?.let {
@@ -64,13 +74,9 @@ class AdapterRouteFacade(
         }
 
         val status = adapter?.status()
-        val result = adapter?.complete(
-            AdapterRequest(
-                task = task,
-                prompt = prompt,
-                dryRun = dryRun
-            )
-        )
+        val result = adapter?.let {
+            completeThroughAgency(it, task, prompt, dryRun, "route")
+        }
 
         val note = when {
             adapter == null -> "no adapter selected; local degraded mode"
@@ -107,13 +113,9 @@ class AdapterRouteFacade(
         val selected = candidates.firstOrNull { it.eligible } ?: candidates.lastOrNull()
         val selectedAdapter = selected?.provider?.id?.let { adapterRegistry.getByProviderId(it) }
         val selectedStatus = selectedAdapter?.status()
-        val selectedResult = selectedAdapter?.complete(
-            AdapterRequest(
-                task = task,
-                prompt = prompt,
-                dryRun = true
-            )
-        )
+        val selectedResult = selectedAdapter?.let {
+            completeThroughAgency(it, task, prompt, dryRun = true, operation = "research")
+        }
 
         val decision = RoutePolicyDecision(
             task = task,
@@ -133,6 +135,33 @@ class AdapterRouteFacade(
             dryRunResult = selectedResult,
             note = "research route priority: jina -> serpapi -> local"
         )
+    }
+
+    private fun completeThroughAgency(
+        adapter: ProviderAdapter,
+        task: ProviderTask,
+        prompt: String,
+        dryRun: Boolean,
+        operation: String
+    ): ProviderCallResult {
+        val proposal = ProviderActionProposals.forCall(
+            provider = adapter.providerId,
+            operation = operation,
+            promptLength = prompt.length,
+            actor = ActionActor.SystemService("provider-route")
+        ).copy(paidProvider = ProviderActionProposals.isPaid(adapter.providerId) && !paidGate.isProviderUnlocked(adapter.providerId))
+        val decision = agencyGate.evaluate(proposal)
+        if (decision.disposition != AgencyDisposition.ALLOWED) {
+            return ProviderCallResult.Failure(
+                ProviderFailure(
+                    providerId = adapter.providerId,
+                    type = NormalizedProviderFailureType.INTERNAL,
+                    cleanSummary = "provider call refused by policy: ${decision.reason}",
+                    terminal = true
+                )
+            )
+        }
+        return adapter.complete(AdapterRequest(task = task, prompt = prompt, dryRun = dryRun))
     }
 
     fun adapterStatus(): List<AdapterStatus> =

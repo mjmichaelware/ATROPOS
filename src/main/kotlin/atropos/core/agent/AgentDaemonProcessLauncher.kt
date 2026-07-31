@@ -1,5 +1,6 @@
 package atropos.core.agent
 
+import atropos.core.AtroposRepoRootLocator
 import atropos.core.policy.BoundedProcessRunner
 import atropos.core.security.RedactionFilter
 import java.nio.file.Files
@@ -9,7 +10,7 @@ import java.nio.file.Path
 class AgentDaemonProcessLauncher(
     private val redactionFilter: RedactionFilter = RedactionFilter(),
     private val processRunner: BoundedProcessRunner = BoundedProcessRunner(),
-    private val wakeDirectory: Path = Path.of(System.getProperty("user.dir")),
+    private val wakeDirectory: Path = AtroposRepoRootLocator.resolve(),
     private val logWriter: AgentDaemonLogWriter = AgentDaemonLogWriter()
 ) {
     fun launchForeground(repoRoot: Path, jar: Path, logFile: Path): Process {

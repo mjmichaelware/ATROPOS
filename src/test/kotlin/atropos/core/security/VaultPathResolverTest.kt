@@ -33,4 +33,16 @@ class VaultPathResolverTest {
         assertEquals(root.toAbsolutePath().normalize(), resolver.ensureRoot())
         assertTrue(Files.isDirectory(root))
     }
+
+    @Test
+    fun refuses_a_root_with_a_symbolic_linked_parent_before_creating_the_vault() {
+        val outside = Files.createTempDirectory("atropos-vault-outside-")
+        val base = Files.createTempDirectory("atropos-vault-parent-link-")
+        val linkedParent = base.resolve("linked-parent")
+        if (runCatching { Files.createSymbolicLink(linkedParent, outside) }.isFailure) return
+        val resolver = VaultPathResolver(linkedParent.resolve("secrets"))
+
+        assertFailsWith<IllegalArgumentException> { resolver.ensureRoot() }
+        assertTrue(Files.notExists(outside.resolve("secrets")))
+    }
 }

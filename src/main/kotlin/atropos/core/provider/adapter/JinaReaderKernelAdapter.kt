@@ -23,7 +23,7 @@ internal class JinaReaderKernelAdapter(
         return try {
             val target = request.metadata["url"] ?: request.prompt.trim().ifBlank { "https://example.com" }
             val endpoint = "https://r.jina.ai/http://" + target.removePrefix("http://").removePrefix("https://")
-            val connection = (URI(endpoint).toURL().openConnection() as HttpURLConnection)
+            val connection = CredentialSafeHttpTransport.open(URI(endpoint))
             connection.requestMethod = "GET"
             connection.connectTimeout = remainingMs(request)
             connection.readTimeout = remainingMs(request)
@@ -37,7 +37,7 @@ internal class JinaReaderKernelAdapter(
         } catch (failure: java.net.SocketTimeoutException) {
             ProviderCallResult.Failure(ProviderFailure(descriptor.id, NormalizedProviderFailureType.TIMEOUT, "${descriptor.id} timed out", retryAfterMs = 60_000))
         } catch (failure: Exception) {
-            ProviderCallResult.Failure(ProviderErrorNormalizer().normalize(descriptor.id, failure.message ?: failure.javaClass.simpleName))
+            ProviderCallResult.Failure(ProviderErrorNormalizer().normalize(descriptor.id, failure))
         }
     }
 }

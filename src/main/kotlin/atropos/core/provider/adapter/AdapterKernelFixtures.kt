@@ -40,6 +40,7 @@ object AdapterKernelFixtures {
         val malformed = AdapterJson.parseOpenAiCompatibleSuccess(providerId, malformedJson)
         val empty = AdapterJson.parseOpenAiCompatibleSuccess(providerId, "")
         val timeout = ProviderErrorNormalizer().normalize(providerId, "timeout while calling provider")
+        val unavailable = ProviderErrorNormalizer().normalize(providerId, "connection refused")
         val cancelled = ProviderFailure(providerId, NormalizedProviderFailureType.CANCELLED, "$providerId cancelled")
 
         return listOf(
@@ -51,6 +52,7 @@ object AdapterKernelFixtures {
             AdapterFixtureResult(providerId, "malformed", malformed is ProviderCallResult.Failure && malformed.failure.type == NormalizedProviderFailureType.MALFORMED_RESPONSE, malformed.toString()),
             AdapterFixtureResult(providerId, "empty", empty is ProviderCallResult.Failure && empty.failure.type == NormalizedProviderFailureType.EMPTY_RESPONSE, empty.toString()),
             AdapterFixtureResult(providerId, "timeout", timeout.type == NormalizedProviderFailureType.TIMEOUT, timeout.toString()),
+            AdapterFixtureResult(providerId, "unavailable", unavailable.type == NormalizedProviderFailureType.UNAVAILABLE, unavailable.toString()),
             AdapterFixtureResult(providerId, "cancelled", cancelled.type == NormalizedProviderFailureType.CANCELLED, cancelled.toString())
         )
     }

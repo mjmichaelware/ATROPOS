@@ -104,6 +104,7 @@ class SelfHostBootstrapDagFactory(
         value
             .replace("\\", "\\\\")
             .replace("\"", "\\\"")
+            .replace("$", "\\\$")
             .replace("\n", "\\n")
             .replace("\r", "\\r")
 }

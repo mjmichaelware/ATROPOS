@@ -3,6 +3,7 @@ package atropos.cli.ui
 
 import atropos.cli.ui.design.Glyphs
 import atropos.cli.ui.design.Role
+import atropos.core.security.RedactionFilter
 
 /**
  * Transcript entries in the pinned reference's layout language.
@@ -14,7 +15,8 @@ import atropos.cli.ui.design.Role
  * carries that signal.
  */
 class TranscriptRenderer(
-    private val theme: TerminalTheme
+    private val theme: TerminalTheme,
+    private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     private val railGlyph: String
         get() = if (asciiOnly()) Glyphs.Ascii.RAIL else Glyphs.RAIL
@@ -63,7 +65,7 @@ class TranscriptRenderer(
 
     fun error(message: String): String =
         theme.paint(Role.STATUS_FAILED, railGlyph) + pad +
-            theme.paint(Role.STATUS_FAILED, TerminalText.sanitize(message))
+            theme.paint(Role.STATUS_FAILED, TerminalText.sanitize(redactionFilter.redact(message)))
 
     fun activity(frame: String): String =
         theme.paint(Role.STATUS_RUNNING, railGlyph) + pad + theme.warning(frame)

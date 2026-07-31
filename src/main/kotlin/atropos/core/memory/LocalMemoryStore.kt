@@ -1,5 +1,6 @@
 package atropos.core.memory
 
+import atropos.core.AtroposRepoRootLocator
 import atropos.core.security.RedactionFilter
 import java.io.File
 import java.nio.charset.StandardCharsets
@@ -9,13 +10,17 @@ import java.security.MessageDigest
 import java.util.Locale
 
 class LocalMemoryStore(
-    private val root: File = File(".atropos/memory"),
+    private val root: File = defaultRoot(),
     private val now: () -> Long = { System.currentTimeMillis() },
     private val env: Map<String, String> = System.getenv(),
     private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     private val jsonlFile = File(root, "memory.jsonl")
     private val stateFile = File(root, "memory.state")
+
+    companion object {
+        fun defaultRoot(): File = AtroposRepoRootLocator.resolve().resolve(".atropos/memory").toFile()
+    }
 
     fun remember(
         kind: MemoryKind,
@@ -43,7 +48,7 @@ class LocalMemoryStore(
         val cleanedSourceCoordinate = sourceCoordinate?.trim()?.takeIf { it.isNotBlank() }?.let(redactionFilter::redact)
         val createdAt = now()
         val id = stableId(kind, cleanedTitle, cleanedBody, createdAt, cleanedSubjectType, cleanedSubjectId)
-        val record = MemoryRecord(
+        val unsignedRecord = MemoryRecord(
             id = id,
             kind = kind,
             title = cleanedTitle,
@@ -52,13 +57,14 @@ class LocalMemoryStore(
             createdAtEpochMs = createdAt,
             subjectType = cleanedSubjectType,
             subjectId = cleanedSubjectId,
-            contentSha256 = contentSha256(cleanedTitle, cleanedBody, cleanedTags, cleanedSubjectType, cleanedSubjectId, cleanedSourceCoordinate),
+            contentSha256 = "",
             failureSignature = if (kind == MemoryKind.FAILURE) stableFingerprint(
                 listOf(cleanedTitle, cleanedBody, cleanedSubjectType.orEmpty()).joinToString("|")
             ) else null,
             sourceCoordinate = cleanedSourceCoordinate,
             authority = authority
         )
+        val record = unsignedRecord.copy(contentSha256 = MemoryRecordCodec.recordSha256(unsignedRecord))
         val snapshot = readSnapshot()
         writeRecordsAtomically(snapshot.records + record)
         writeState(snapshot.copy(records = snapshot.records + record))
@@ -245,27 +251,6 @@ class LocalMemoryStore(
             .distinct()
 
     private fun stableFingerprint(value: String): String = redactionFilter.stableFingerprint(value)
-
-    private fun contentSha256(
-        title: String,
-        body: String,
-        tags: List<String>,
-        subjectType: String?,
-        subjectId: String?,
-        sourceCoordinate: String?
-    ): String {
-        val material = listOf(
-            title,
-            body,
-            tags.joinToString(","),
-            subjectType.orEmpty(),
-            subjectId.orEmpty(),
-            sourceCoordinate.orEmpty()
-        ).joinToString("|")
-        return MessageDigest.getInstance("SHA-256")
-            .digest(material.toByteArray(Charsets.UTF_8))
-            .joinToString("") { "%02x".format(it) }
-    }
 
     private fun stableId(
         kind: MemoryKind,

@@ -55,7 +55,14 @@ class VerifiedCompletionGate(
     private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     fun evaluateNode(node: DagNode): CompletionGateReport {
+        return IndependentVerificationGate(config, repoRoot, processRunner).verify(node)
+    }
+
+    fun evaluateNodeInternal(node: DagNode): CompletionGateReport {
         val gates = mutableListOf<GateResult>()
+
+        // Gate 0: Build Matrix Lock
+        gates.add(checkBuildMatrix(node))
 
         // Gate 1: Implementation exists and is not a stub
         gates.add(checkImplementationExists(node))
@@ -136,6 +143,33 @@ class VerifiedCompletionGate(
             }
         }
         return falseCompletions
+    }
+
+    private fun checkBuildMatrix(node: DagNode): GateResult {
+        val javaVersion = System.getProperty("java.specification.version") ?: ""
+        if (javaVersion !in SUPPORTED_JAVA_VERSIONS) {
+            return GateResult(node.id, false, "Build Matrix Lock", "unsupported JDK version: expected one of ${SUPPORTED_JAVA_VERSIONS.joinToString()}, observed $javaVersion", clock())
+        }
+
+        val wrapperPath = repoRoot.resolve("gradle/wrapper/gradle-wrapper.properties")
+        if (!Files.exists(wrapperPath)) {
+            return GateResult(node.id, false, "Build Matrix Lock", "gradle-wrapper.properties missing", clock())
+        }
+        val wrapperContent = Files.readString(wrapperPath)
+        if (!wrapperContent.contains("gradle-9.6.0-bin.zip")) {
+            return GateResult(node.id, false, "Build Matrix Lock", "incorrect Gradle version in wrapper", clock())
+        }
+
+        val buildGradlePath = repoRoot.resolve("build.gradle.kts")
+        if (!Files.exists(buildGradlePath)) {
+            return GateResult(node.id, false, "Build Matrix Lock", "build.gradle.kts missing", clock())
+        }
+        val buildGradleContent = Files.readString(buildGradlePath)
+        if (!buildGradleContent.contains("1.9.24")) {
+            return GateResult(node.id, false, "Build Matrix Lock", "incorrect Kotlin version in build.gradle.kts", clock())
+        }
+
+        return GateResult(node.id, true, "Build Matrix Lock", "JDK $javaVersion, Gradle 9.6.0, Kotlin 1.9.24 matrix pinned and verified", clock())
     }
 
     private fun checkImplementationExists(node: DagNode): GateResult {
@@ -367,6 +401,7 @@ class VerifiedCompletionGate(
         }
 
     private companion object {
+        val SUPPORTED_JAVA_VERSIONS = setOf("17", "21")
         const val FOCUSED_TESTS = "Focused Tests"
         const val TERRITORY_AND_SECRETS = "Territory & Secrets"
         const val EXPECTED_OUTPUTS = "Expected Outputs"

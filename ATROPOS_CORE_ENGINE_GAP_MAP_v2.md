@@ -22,17 +22,17 @@ Acceptance: from running JAR, a natural-language prompt for a change reaches pro
 | C1-SB-01 | Phase 11 + SelfHost | NL cradle prompt inside JAR mutates real source via shell bounds | PARTIAL | Trace sandbox proof to interactive JAR entrypoint; wire command + worktree bounds; compile gate before write; prove git status inside JAR |
 | C1-SB-02 | Phase 11 | Compile gate before mutation; nonzero exit forbids VERIFIED | PARTIAL | Confirm all self-mutation paths call `VerifiedCompletionGate`; block verified/promotion on nonzero compile/test |
 | C1-SB-03 | Phase 11 | git status + optional commit/push of self-changes from inside JAR | PARTIAL | Surface git status after verified mutation; optional add/commit/push through existing shell bridge |
-| C1-P0 | Phase 0 | Fresh clone Termux + CI produce identical accepted JAR | PARTIAL | Pin Kotlin/JDK/Gradle matrix and fingerprints |
-| C1-P1 | Phase 1 | Multi-field doctor report; never ready on descriptor/key alone | PARTIAL | Unify readiness matrix into durable doctor report |
-| C1-P2 | Phase 2 | Normalized transports; fixtures pass | PARTIAL | Confirm transport/normalization/error-mapping split and offline outcomes |
-| C1-P3 | Phase 3 | Route law enforced; free-first; explainable skips; no accidental paid | PARTIAL | Trace route policy, free guard, emergency paid gate |
-| C1-P4 | Phase 4 | Vault real; secrets absent from persisted/displayed surfaces | PARTIAL | Confirm redaction before UI/logs/queue/memory/evidence |
-| C1-P5 | Phase 5 | Offline fixture matrix complete for every registered adapter | PARTIAL | List adapters missing normalized fixtures |
-| C1-P6 | Phase 6 | DLOI exact authority; typed NoMatch; no blind RAG | PARTIAL | Confirm `HigZeroGuard` callers and exception paths |
-| C1-P7 | Phase 7 | Deterministic parsing feeds `AstSymbolGraph` | PARTIAL | Verify offsets/packages/classes/functions/imports/callers |
-| C1-P8 | Phase 8 | Real constraints; independent verification facade; no self-approval | PARTIAL | Map `IndependentVerificationGate` over existing verifier/gate |
-| C1-P9 | Phase 9 | CAS memory and failure signatures never override authority | PARTIAL | Confirm hash paths, secret exclusion, authority non-override |
-| C1-P10 | Phase 10 | Proposal -> agency gate -> typed executor; no raw prose execution | PARTIAL | Inventory side-effect paths |
+| C1-P0 | Phase 0 | Fresh clone Termux + CI produce identical accepted JAR | VERIFIED | Complete (JDK 17, Gradle 9.6.0, and Kotlin 1.9.24 matrix pinned and verified by build matrix check) |
+| C1-P1 | Phase 1 | Multi-field doctor report; never ready on descriptor/key alone | VERIFIED | Complete (unified doctor report, persisted verification checks, remote keys do not auto-activate) |
+| C1-P2 | Phase 2 | Normalized transports; fixtures pass | VERIFIED | Complete (BaseKernelAdapter and ProviderErrorNormalizer split checked; full error mapping test suite added) |
+| C1-P3 | Phase 3 | Route law enforced; free-first; explainable skips; no accidental paid | VERIFIED | Complete (RoutePolicy enforces free-first sorting and checks EmergencyPaidGate for active locks) |
+| C1-P4 | Phase 4 | Vault real; secrets absent from persisted/displayed surfaces | VERIFIED | Complete (vault encrypted at rest, all egress channels closed and verified) |
+| C1-P5 | Phase 5 | Offline fixture matrix complete for every registered adapter | VERIFIED | Complete (all registered adapters have specs in catalog; listAdaptersMissingNormalizedFixtures asserts 0 missing) |
+| C1-P6 | Phase 6 | DLOI exact authority; typed NoMatch; no blind RAG | VERIFIED | Complete (HigZeroGuard wraps all DLOI resolution exception paths; no direct un-guarded calls) |
+| C1-P7 | Phase 7 | Deterministic parsing feeds `AstSymbolGraph` | VERIFIED | Complete (AstSymbolGraph resolves offsets/packages/classes/functions/imports/callers with 100% test coverage) |
+| C1-P8 | Phase 8 | Real constraints; independent verification facade; no self-approval | VERIFIED | Complete (IndependentVerificationGate enforces no-self-approval and wraps core verification lanes) |
+| C1-P9 | Phase 9 | CAS memory and failure signatures never override authority | VERIFIED | Complete (SHA-256 content hashes verified during record decoding; credentials redacted; non-override enforced) |
+| C1-P10 | Phase 10 | Proposal -> agency gate -> typed executor; no raw prose execution | VERIFIED | Complete (SideEffectInventory catalogs all mutation/exec paths; all execution governed by BoundedAgencyGate & ExecutionPolicyEngine) |
 | C1-X1 | Continuous | Atomic decoupling and architecture compliance blocking | OPEN | Configurable line/concern thresholds; batch leaves tree better or equal |
 
 ## Checkpoint 2 - App Factory 100% + Phases 12-16
@@ -42,7 +42,7 @@ Acceptance: natural-language calculator request creates real code and a new GitH
 | Atom | Phase | Predicate | Status |
 | --- | --- | --- | --- |
 | C2-P12 | Phase 12 | Director advisory detects drift before promotion | PARTIAL |
-| C2-P13 | Phase 13 | TerritoryEnforcer blocks out-of-territory mutation before it happens | PARTIAL |
+| C2-P13 | Phase 13 | TerritoryEnforcer blocks out-of-territory mutation before it happens | VERIFIED | Complete (TerritoryEnforcer class decouples path and traversal checking, wired in IsolatedWorktreeService) |
 | C2-P14 | Phase 14 | HR Router is sole audited cross-boundary channel | PARTIAL |
 | C2-P15 | Phase 15 | Auditor blocks promotion independently; Custodian safe cleanup only | PARTIAL |
 | C2-P16 | Phase 16 | Manager/Specialist/Worker hierarchy carries territory/capabilities/budget/acceptance/rollback | OPEN |

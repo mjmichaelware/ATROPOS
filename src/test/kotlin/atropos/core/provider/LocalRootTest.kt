@@ -3,10 +3,19 @@ package atropos.core.provider
 import atropos.core.policy.BoundedProcessRunner
 import java.nio.file.Files
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import atropos.core.AtroposRepoRootLocator
 
 class LocalRootTest {
+    @Test
+    fun default_toolchain_workspace_uses_atropos_root() {
+        val result = LocalToolchainProbe().probeWorkspace()
+
+        assertEquals(AtroposRepoRootLocator.resolve().resolve("src/main/kotlin").toFile().exists(), result.available)
+    }
+
     @Test
     fun local_probe_uses_bounded_redacted_process_output() {
         val workspace = Files.createTempDirectory("atropos-local-probe-")
@@ -29,5 +38,18 @@ class LocalRootTest {
 
         assertFalse(result.available)
         assertTrue(result.details.contains("workspace directory missing"))
+    }
+
+    @Test
+    fun local_state_events_remain_escaped_and_redacted() {
+        val root = Files.createTempDirectory("atropos-local-state-").toFile()
+        val store = LocalStateStore(root)
+
+        store.appendEvent("events", "quoted=\"value\"\napi_key=sk-local-secret")
+
+        val persisted = root.resolve("events.jsonl").readText()
+        assertTrue(persisted.contains("\\\"value\\\""))
+        assertTrue(persisted.contains("\\n"))
+        assertFalse(persisted.contains("sk-local-secret"))
     }
 }

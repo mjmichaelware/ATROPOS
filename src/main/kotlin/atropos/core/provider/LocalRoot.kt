@@ -9,7 +9,7 @@ import java.time.Instant
 data class LocalProbeResult(val id: String, val available: Boolean, val summary: String, val details: String = "")
 
 class LocalToolchainProbe(
-    private val workspace: File = File("."),
+    private val workspace: File = AtroposRepoRootLocator.resolve().toFile(),
     private val processRunner: BoundedProcessRunner = BoundedProcessRunner()
 ) {
     fun probeKotlinc(): LocalProbeResult = runCommand("kotlinc", "-version").toProbe("local.kotlinc", "Kotlin compiler")
@@ -55,7 +55,9 @@ class LocalStateStore(
     init { root.mkdirs() }
     fun appendEvent(stream: String, line: String) {
         val safe = stream.replace(Regex("""[^A-Za-z0-9_.-]"""), "_")
-        File(root, "$safe.jsonl").appendText("""{"ts":"${Instant.now()}","event":"${ProviderRedactor.redact(line)}"}""" + "\n")
+        File(root, "$safe.jsonl").appendText(
+            """{"ts":"${Instant.now()}","event":"${jsonEscape(ProviderRedactor.redact(line))}"}""" + "\n"
+        )
     }
     fun readTail(stream: String, maxLines: Int = 40): List<String> {
         val safe = stream.replace(Regex("""[^A-Za-z0-9_.-]"""), "_")
@@ -64,4 +66,17 @@ class LocalStateStore(
         return file.readLines().takeLast(maxLines)
     }
     fun health() = LocalProbeResult("local.state", root.exists() && root.isDirectory, "local state root", root.absolutePath)
+
+    private fun jsonEscape(value: String): String = buildString {
+        value.forEach { character ->
+            when (character) {
+                '\\' -> append("\\\\")
+                '"' -> append("\\\"")
+                '\n' -> append("\\n")
+                '\r' -> append("\\r")
+                '\t' -> append("\\t")
+                else -> append(character)
+            }
+        }
+    }
 }

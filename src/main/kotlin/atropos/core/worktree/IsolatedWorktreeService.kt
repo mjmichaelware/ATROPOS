@@ -321,13 +321,7 @@ class IsolatedWorktreeService(
     fun readWorktree(worktreeId: String): WorktreeRecord? = readRecord(worktreeId)
 
     private fun firstOutsideTerritory(record: WorktreeRecord, paths: List<String>): String? {
-        if (paths.isEmpty()) return null
-        if (record.territory.isEmpty()) return paths.first()
-        return paths.firstOrNull { path ->
-            record.territory.none { territory ->
-                path == territory || path.startsWith(territory.trimEnd('/') + "/")
-            }
-        }
+        return atropos.core.territory.TerritoryEnforcer(record.territory).firstOutside(paths)
     }
 
     private fun extractPatchPaths(patchContent: String): List<String> =

@@ -130,12 +130,12 @@ class SelfHostGoalServiceTest {
         val store = GoalRunStore(repoRoot)
         val service = SelfHostGoalService(repoRoot = repoRoot, store = store)
 
-        val result = service.startGoal("build ATROPOS from natural language", "11\"x\nphase")
+        val result = service.startGoal("build ATROPOS from natural language", "11\"x\n\$phase")
 
         assertTrue(result.ok)
         val payload = result.goal?.dag?.nodes?.get(1)?.actionPayload.orEmpty()
-        assertTrue(payload.contains("LAST_SELF_HOST_PHASE: String = \"11\\\"x\\nphase\""), payload)
-        assertTrue(!payload.contains("11\"x\nphase"), payload)
+        assertTrue(payload.contains("LAST_SELF_HOST_PHASE: String = \"11\\\"x\\n\\\$phase\""), payload)
+        assertTrue(!payload.contains("11\"x\n\$phase"), payload)
     }
 
     @Test

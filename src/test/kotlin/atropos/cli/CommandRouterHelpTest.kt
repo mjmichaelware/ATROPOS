@@ -38,23 +38,20 @@ class CommandRouterHelpTest {
     }
 
     @Test
-    fun self_host_shorthand_routes_to_self_host_status_without_provider_chat() {
-        listOf("/self-host", "self-host").forEach { input ->
-            val root = Files.createTempDirectory("atropos-router-self-host-")
-            val out = ByteArrayOutputStream()
-            var providerCalls = 0
-            val router = newRouter(root, out) {
-                providerCalls += 1
-                "provider chat should not receive self-host shorthand"
-            }
-
-            val result = router.handleInput(input)
-
-            assertEquals(RouterOutcome.CONTINUE, result, input)
-            assertEquals(0, providerCalls, input)
-            val rendered = out.toString()
-            assertTrue(rendered.contains("SELF-HOST STATUS"), rendered)
+    fun explicit_self_host_status_remains_read_only_and_skips_provider_chat() {
+        val root = Files.createTempDirectory("atropos-router-self-host-")
+        val out = ByteArrayOutputStream()
+        var providerCalls = 0
+        val router = newRouter(root, out) {
+            providerCalls += 1
+            "provider chat should not receive self-host status"
         }
+
+        val result = router.handleInput("/self-host status")
+
+        assertEquals(RouterOutcome.CONTINUE, result)
+        assertEquals(0, providerCalls)
+        assertTrue(out.toString().contains("SELF-HOST STATUS"), out.toString())
     }
 
     @Test
