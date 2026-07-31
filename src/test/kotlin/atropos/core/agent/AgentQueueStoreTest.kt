@@ -4,6 +4,8 @@ import java.nio.file.Files
 import java.time.Instant
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class AgentQueueStoreTest {
@@ -62,5 +64,23 @@ class AgentQueueStoreTest {
         assertEquals(listOf(warmedOlder.id, newer.id), listed.map { it.id })
         assertEquals(warmedOlder.id, store.latest()?.id)
         assertEquals(warmedOlder.id, store.resolve("latest")?.id)
+    }
+
+    @Test
+    fun raw_queue_rendering_keeps_lease_state_without_token_identifiers() {
+        val repoRoot = Files.createTempDirectory("atropos-agent-queue-lease-render-")
+        val store = AgentQueueStore(repoRoot)
+        val queued = store.createEntry(task = "render lease state", smokeCommand = null)
+        val leased = assertNotNull(store.acquireLease(queued.id, "queue-worker", 60).record)
+        val token = assertNotNull(leased.lease).token
+
+        val rendered = leased.renderRaw()
+
+        assertTrue(rendered.contains("lease owner: queue-worker"), rendered)
+        assertTrue(rendered.contains("lease acquired at:"), rendered)
+        assertTrue(rendered.contains("lease heartbeat at:"), rendered)
+        assertTrue(rendered.contains("lease expires at:"), rendered)
+        assertFalse(rendered.contains(token), rendered)
+        assertFalse(rendered.contains("lease token fingerprint:"), rendered)
     }
 }

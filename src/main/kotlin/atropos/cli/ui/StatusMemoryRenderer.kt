@@ -2,9 +2,11 @@ package atropos.cli.ui
 
 import atropos.core.memory.LocalMemoryStore
 import atropos.core.memory.MemorySearchHit
+import atropos.core.security.RedactionFilter
 
 class StatusMemoryRenderer(
-    private val store: LocalMemoryStore = LocalMemoryStore()
+    private val store: LocalMemoryStore = LocalMemoryStore(),
+    private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     fun render(): String {
         val status = store.status()
@@ -29,7 +31,7 @@ class StatusMemoryRenderer(
                 appendLine("  no hits")
             } else {
                 hits.forEach { hit ->
-                    appendLine("  ${hit.score.toString().padStart(3)} ${hit.record.kind.name.lowercase()} ${hit.record.id} ${hit.record.title}")
+                    appendLine("  ${hit.score.toString().padStart(3)} ${hit.record.kind.name.lowercase()} ${hit.record.id} ${redactionFilter.redact(hit.record.title)}")
                 }
             }
         }

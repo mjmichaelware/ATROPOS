@@ -21,7 +21,7 @@ internal class GeminiKernelAdapter(
         val key = env["GEMINI_API_KEY"]?.takeIf { it.isNotBlank() } ?: return missingSecret()
         return try {
             val url = spec.endpoint.replace("{model}", spec.defaultModel) + "?key=$key"
-            val connection = (URI(url).toURL().openConnection() as HttpURLConnection)
+            val connection = CredentialSafeHttpTransport.open(URI(url))
             connection.requestMethod = "POST"
             connection.connectTimeout = remainingMs(request)
             connection.readTimeout = remainingMs(request)
@@ -35,7 +35,7 @@ internal class GeminiKernelAdapter(
         } catch (failure: java.net.SocketTimeoutException) {
             ProviderCallResult.Failure(ProviderFailure(descriptor.id, NormalizedProviderFailureType.TIMEOUT, "${descriptor.id} timed out", retryAfterMs = 60_000))
         } catch (failure: Exception) {
-            ProviderCallResult.Failure(ProviderErrorNormalizer().normalize(descriptor.id, failure.message ?: failure.javaClass.simpleName))
+            ProviderCallResult.Failure(ProviderErrorNormalizer().normalize(descriptor.id, failure))
         }
     }
 }

@@ -118,4 +118,25 @@ class ProviderActivationServiceTest {
             assertTrue(rendered.contains("remediation: remediation for ${state.name.lowercase()}"), state.name)
         }
     }
+
+    @Test
+    fun remote_provider_never_ready_on_descriptor_or_key_alone_without_verification() {
+        val temp = Files.createTempDirectory("atropos-provider-never-ready")
+        val registry = StaticProviderDescriptorRegistry()
+        val env = mapOf("GROQ_API_KEY" to "test-groq-key")
+        val adapterRegistry = StaticProviderAdapterRegistry(registry, env)
+        val service = ProviderActivationService(
+            registry = registry,
+            adapterRegistry = adapterRegistry,
+            secretSource = MapSecretSource(env),
+            quotaLedger = FileQuotaLedger(temp.resolve("quota.tsv").toFile(), FileQuotaLedger.seedFromDescriptors(registry)),
+            fixtureMatrix = ProviderFixtureMatrixService(registry, adapterRegistry),
+            store = ProviderActivationStore(temp.resolve("activation")),
+            paidGate = EmergencyPaidGate(temp.resolve("paid").toFile()),
+            ollamaProbe = { false }
+        )
+
+        val record = service.snapshot("groq")
+        assertTrue(record.state == ProviderActivationState.CONFIGURED || record.state == ProviderActivationState.FIXTURE_BACKED)
+    }
 }

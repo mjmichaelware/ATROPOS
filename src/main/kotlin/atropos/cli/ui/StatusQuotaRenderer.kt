@@ -16,6 +16,7 @@ import atropos.core.provider.QuotaLedger
 import atropos.core.provider.RoutePolicy
 import atropos.core.provider.RoutePolicyDecision
 import atropos.core.provider.StaticProviderDescriptorRegistry
+import atropos.core.security.RedactionFilter
 import java.io.File
 import java.time.Instant
 import java.time.ZoneId
@@ -28,7 +29,8 @@ class StatusQuotaRenderer(
     ),
     private val workspace: File = File("."),
     private val nowEpochMs: () -> Long = { System.currentTimeMillis() },
-    private val costPolicy: AtroposCostPolicy = AtroposCostPolicy.FREE_ONLY
+    private val costPolicy: AtroposCostPolicy = AtroposCostPolicy.FREE_ONLY,
+    private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     private val classifier = ProviderTaskClassifier()
 
@@ -110,7 +112,10 @@ class StatusQuotaRenderer(
             out += "  none recorded"
         } else {
             failed.forEach { record ->
-                out += "  ${record.providerId.padEnd(18)} state=${record.state.name.lowercase()} error=${record.lastErrorClass ?: "state_only"} summary=${record.lastErrorSummary ?: "no summary"}"
+                val summary = record.lastErrorSummary
+                    ?.let(redactionFilter::redact)
+                    ?: "no summary"
+                out += "  ${record.providerId.padEnd(18)} state=${record.state.name.lowercase()} error=${record.lastErrorClass ?: "state_only"} summary=$summary"
             }
         }
 

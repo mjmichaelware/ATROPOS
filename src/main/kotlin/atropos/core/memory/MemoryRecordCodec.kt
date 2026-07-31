@@ -45,6 +45,17 @@ object MemoryRecordCodec {
                 ?: MemoryAuthority.OBSERVATION
             val schemaVersion = intField(line, "schemaVersion") ?: 1
             val redacted = booleanField(line, "redacted") ?: true
+
+            val expectedHash = contentSha256(
+                title = title,
+                body = body,
+                tags = tags,
+                subjectType = subjectType,
+                subjectId = subjectId,
+                sourceCoordinate = sourceCoordinate
+            )
+            if (contentSha256.isNotBlank() && contentSha256 != expectedHash) return null
+
             MemoryRecord(
                 id = id,
                 kind = kind,
@@ -64,6 +75,27 @@ object MemoryRecordCodec {
         } catch (_: Exception) {
             null
         }
+    }
+
+    fun contentSha256(
+        title: String,
+        body: String,
+        tags: List<String>,
+        subjectType: String?,
+        subjectId: String?,
+        sourceCoordinate: String?
+    ): String {
+        val material = listOf(
+            title,
+            body,
+            tags.joinToString(","),
+            subjectType.orEmpty(),
+            subjectId.orEmpty(),
+            sourceCoordinate.orEmpty()
+        ).joinToString("|")
+        return java.security.MessageDigest.getInstance("SHA-256")
+            .digest(material.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
+            .joinToString("") { "%02x".format(it) }
     }
 
     private fun stringField(json: String, name: String): String? {

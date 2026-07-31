@@ -2,9 +2,11 @@
 package atropos.cli.ui
 
 import atropos.core.verification.*
+import atropos.core.security.RedactionFilter
 
 class VerificationRenderer(
-    private val theme: TerminalTheme
+    private val theme: TerminalTheme,
+    private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     fun render(result: VerificationResult, width: Int): List<String> {
         val execution = result.execution
@@ -42,7 +44,7 @@ class VerificationRenderer(
             .forEach { recommendation ->
                 output += theme.metadata("  recommendation: ") +
                     TerminalText.ellipsize(
-                        recommendation,
+                        redactionFilter.redact(recommendation),
                         (width - 18).coerceAtLeast(18)
                     )
             }
@@ -60,7 +62,7 @@ class VerificationRenderer(
             output += theme.error(
                 "  reward persistence: " +
                     TerminalText.ellipsize(
-                        failure,
+                        redactionFilter.redact(failure),
                         (width - 22).coerceAtLeast(18)
                     )
             )
@@ -97,7 +99,7 @@ class VerificationRenderer(
         }
 
         return prefix + TerminalText.ellipsize(
-            diagnostic.message,
+            redactionFilter.redact(diagnostic.message),
             (width - TerminalText.cellWidth(prefix))
                 .coerceAtLeast(16)
         )

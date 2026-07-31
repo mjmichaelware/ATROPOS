@@ -28,11 +28,12 @@ object ProviderResponseContextParser {
      * attestation was found and whether mythology content was detected.
      */
     fun parse(response: String, envelope: ContextEnvelope): ParsedProviderResponse {
-        val attestation = ContextEnvelopeSerializer.parseAttestation(response)
-        val cleanedResponse = stripAttestationBlock(response)
+        val redactedResponse = ProviderRedactor.redactWithoutTruncation(response)
+        val attestation = ContextEnvelopeSerializer.parseAttestation(redactedResponse)
+        val cleanedResponse = stripAttestationBlock(redactedResponse)
 
         return ParsedProviderResponse(
-            rawResponse = response,
+            rawResponse = redactedResponse,
             cleanedResponse = cleanedResponse,
             attestation = attestation
         )

@@ -19,22 +19,36 @@ enum class NormalizedProviderFailureType {
 data class ProviderFailure(
     val providerId: String,
     val type: NormalizedProviderFailureType,
-    val cleanSummary: String,
+    var cleanSummary: String,
     val retryAfterMs: Long? = null,
     val resetAtEpochMs: Long? = null,
     val terminal: Boolean = false
-)
+) {
+    init {
+        cleanSummary = ProviderRedactor.redact(cleanSummary)
+    }
+}
 
 object ProviderRedactor {
     private val redactionFilter = RedactionFilter()
+    private val absoluteUrl = Regex("""(?i)\bhttps?://[^\s\"'<>]+""")
+    private val localServiceUrl = Regex("""http://127\.0\.0\.1:\d+[^\s\"'<>]*""")
 
-    fun redact(value: String): String =
+    fun redact(value: String): String = redact(value, 320)
+
+    fun redact(value: String, maxChars: Int): String =
+        redactWithoutTruncation(value).let { if (maxChars < it.length) it.take(maxChars) else it }
+
+    fun redactWithoutTruncation(value: String): String =
         redactionFilter.redact(value)
-            .replace(Regex("""http://127\.0\.0\.1:\d+"""), "local service")
-            .take(320)
+            .replace(localServiceUrl, "local service")
+            .replace(absoluteUrl, "<redacted:url>")
 }
 
 class ProviderErrorNormalizer {
+    fun normalize(providerId: String, failure: Throwable): ProviderFailure =
+        normalize(providerId, failure.message ?: failure.javaClass.simpleName)
+
     fun normalize(providerId: String, raw: String): ProviderFailure {
         val clean = ProviderRedactor.redact(raw)
         val lower = clean.lowercase()

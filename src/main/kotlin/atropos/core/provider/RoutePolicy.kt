@@ -1,5 +1,7 @@
 package atropos.core.provider
 
+import atropos.core.paid.EmergencyPaidGate
+
 enum class AtroposCostPolicy { FREE_ONLY, FREE_AND_CREDIT, LOCAL_ONLY, PAID_EMERGENCY_UNLOCKED }
 
 data class ProviderEligibility(val provider: ProviderDescriptor, val quota: ProviderQuotaRecord?, val eligible: Boolean, val reason: String)
@@ -29,7 +31,11 @@ class FreeModeGuard(private val policy: AtroposCostPolicy = AtroposCostPolicy.FR
         }
 }
 
-class ProviderEligibilityFilter(private val guard: FreeModeGuard, private val nowEpochMs: () -> Long = { System.currentTimeMillis() }) {
+class ProviderEligibilityFilter(
+    private val guard: FreeModeGuard,
+    private val paidGate: EmergencyPaidGate = EmergencyPaidGate(),
+    private val nowEpochMs: () -> Long = { System.currentTimeMillis() }
+) {
     fun evaluate(descriptor: ProviderDescriptor, quota: ProviderQuotaRecord?): ProviderEligibility {
         if (!guard.allows(descriptor)) return ProviderEligibility(descriptor, quota, false, "blocked_by_cost_policy")
         if (!descriptor.isLocal && descriptor.requiredEnv.isEmpty()) return ProviderEligibility(descriptor, quota, false, "missing_secret_contract")
@@ -37,7 +43,8 @@ class ProviderEligibilityFilter(private val guard: FreeModeGuard, private val no
         if (quota == null) return ProviderEligibility(descriptor, quota, false, "missing_quota_record")
         if (!descriptor.isLocal && !quota.configured) return ProviderEligibility(descriptor, quota, false, "not_configured")
         if (!descriptor.isLocal && !quota.verified) return ProviderEligibility(descriptor, quota, false, "not_verified")
-        if (quota.paidLocked && descriptor.isPaidLocked()) return ProviderEligibility(descriptor, quota, false, "paid_locked")
+        val isUnlocked = paidGate.isProviderUnlocked(descriptor.id)
+        if (quota.paidLocked && descriptor.isPaidLocked() && !isUnlocked) return ProviderEligibility(descriptor, quota, false, "paid_locked")
         if (!quota.availableAt(nowEpochMs())) return ProviderEligibility(descriptor, quota, false, quota.state.name.lowercase())
         return ProviderEligibility(descriptor, quota, true, "eligible")
     }
@@ -63,15 +70,17 @@ class RoutePolicy(
     private val registry: ProviderDescriptorRegistry,
     private val ledger: QuotaLedger,
     private val costPolicy: AtroposCostPolicy = AtroposCostPolicy.FREE_ONLY,
+    private val paidGate: EmergencyPaidGate = EmergencyPaidGate(),
     private val nowEpochMs: () -> Long = { System.currentTimeMillis() }
 ) {
-    private val filter = ProviderEligibilityFilter(FreeModeGuard(costPolicy), nowEpochMs)
+    private val filter = ProviderEligibilityFilter(FreeModeGuard(costPolicy), paidGate, nowEpochMs)
 
     fun decide(task: ProviderTask): RoutePolicyDecision {
         val candidates = registry.getByCapability(task.capability).ifEmpty { registry.getByCapability(ApiCapability.CHAT) }
         val evaluated = candidates.map { filter.evaluate(it, ledger.get(it.id)) }
         val eligible = evaluated.filter { it.eligible }.sortedWith(
             compareBy<ProviderEligibility>(
+                { it.provider.isPaidLocked() },
                 { taskPriority(task, it.provider) },
                 { it.provider.quotaTier },
                 { it.quota?.successScore?.let { score -> -score } ?: 0.0 },

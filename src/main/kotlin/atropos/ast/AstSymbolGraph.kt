@@ -114,6 +114,29 @@ class AstSymbolGraph(
         return build().filter { it.file.normalize() in normalized }
     }
 
+    fun findCallers(symbolName: String): List<AstSymbol> {
+        val normalized = symbolName.trim()
+        if (normalized.isBlank()) return emptyList()
+        val allSymbols = build()
+        val fileSymbols = allSymbols.filter { it.kind == AstSymbolKind.FILE }
+        val matches = mutableListOf<AstSymbol>()
+
+        fileSymbols.forEach { fileSymbol ->
+            val content = runCatching { Files.readString(fileSymbol.file) }.getOrNull() ?: ""
+            val wordPattern = Regex("\\b${Regex.escape(normalized)}\\b")
+            if (wordPattern.containsMatchIn(content)) {
+                // Exclude the file where the symbol itself is defined
+                val definesSymbol = allSymbols.any {
+                    it.file == fileSymbol.file && it.kind != AstSymbolKind.FILE && it.name == normalized
+                }
+                if (!definesSymbol) {
+                    matches.add(fileSymbol)
+                }
+            }
+        }
+        return matches
+    }
+
     fun reconcileImports(path: String): AstImportReconciliationResult {
         val target = repoRoot.resolve(path).normalize()
         val symbols = build()

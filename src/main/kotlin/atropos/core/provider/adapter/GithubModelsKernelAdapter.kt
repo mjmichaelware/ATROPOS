@@ -20,7 +20,7 @@ internal class GithubModelsKernelAdapter(
     override fun liveComplete(request: AdapterRequest): ProviderCallResult {
         val key = env["GITHUB_MODELS_TOKEN"]?.takeIf { it.isNotBlank() } ?: return missingSecret()
         return try {
-            val connection = (URI(spec.endpoint).toURL().openConnection() as HttpURLConnection)
+            val connection = CredentialSafeHttpTransport.open(URI(spec.endpoint))
             connection.requestMethod = "POST"
             connection.connectTimeout = remainingMs(request)
             connection.readTimeout = remainingMs(request)
@@ -35,7 +35,7 @@ internal class GithubModelsKernelAdapter(
         } catch (failure: java.net.SocketTimeoutException) {
             ProviderCallResult.Failure(ProviderFailure(descriptor.id, NormalizedProviderFailureType.TIMEOUT, "${descriptor.id} timed out", retryAfterMs = 60_000))
         } catch (failure: Exception) {
-            ProviderCallResult.Failure(ProviderErrorNormalizer().normalize(descriptor.id, failure.message ?: failure.javaClass.simpleName))
+            ProviderCallResult.Failure(ProviderErrorNormalizer().normalize(descriptor.id, failure))
         }
     }
 }

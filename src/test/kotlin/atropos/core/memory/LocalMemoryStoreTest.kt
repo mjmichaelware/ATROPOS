@@ -130,4 +130,20 @@ class LocalMemoryStoreTest {
         assertEquals("selfhost_dag_eval", found.first().subjectType)
         assertEquals("shg-1", found.first().subjectId)
     }
+
+    @Test
+    fun tampered_records_are_ignored() {
+        val root = Files.createTempDirectory("atropos-memory-tampered-").toFile()
+        val store = LocalMemoryStore(root = root, env = emptyMap())
+        val record = store.remember(MemoryKind.NOTE, "one", "body one")
+
+        val jsonl = root.toPath().resolve("memory.jsonl")
+        val lines = Files.readAllLines(jsonl, StandardCharsets.UTF_8)
+        val tamperedLine = lines[0].replace("\"body\":\"body one\"", "\"body\":\"body tampered\"")
+        Files.writeString(jsonl, tamperedLine + "\n", StandardCharsets.UTF_8)
+
+        val reopened = LocalMemoryStore(root = root, env = emptyMap())
+        assertEquals(0, reopened.status().totalRecords)
+        assertEquals(1, reopened.status().corruptRecords)
+    }
 }

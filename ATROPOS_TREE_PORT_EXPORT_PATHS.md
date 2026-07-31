@@ -7,24 +7,73 @@ Authority pointer: `AGENTS.md` points here so agents can inspect the current fil
 
 ## Snapshot
 
-- Generated: 2026-07-29T15:35:00-06:00
+- Generated: 2026-07-31T07:42:19Z
 - Repo root: /data/data/com.termux/files/home/ATROPOS
-- Git branch: main
-- Git HEAD: aea5a96c4587
-- Refresh trigger: Human correction after root AGENTS bootstrap; next refresh waits for whole phase completion.
+- Git branch: claude/phase4-security-hardening
+- Git HEAD: 7e612fcdba57
+- Refresh trigger: Completion of Phase 0, 2, 3, and 13
 - Exclusions: `.git/`, `.gradle/`, `build/`, `**/*.jar`, and generated storage/download exports.
-- File count: 1728
+- File count: 1900
 
 ## Tree
 
 ```text
+.agents/skills/atropos-acceptance-release/SKILL.md
+.agents/skills/atropos-acceptance-release/agents/openai.yaml
+.agents/skills/atropos-acceptance-release/references/acceptance-release.md
+.agents/skills/atropos-app-factory-19/SKILL.md
+.agents/skills/atropos-app-factory-19/agents/openai.yaml
+.agents/skills/atropos-app-factory-19/references/app-factory-19.md
+.agents/skills/atropos-autonomy-20/SKILL.md
+.agents/skills/atropos-autonomy-20/agents/openai.yaml
+.agents/skills/atropos-autonomy-20/references/autonomy-20.md
+.agents/skills/atropos-director-swarm/SKILL.md
+.agents/skills/atropos-dloi-ast-verifier/SKILL.md
+.agents/skills/atropos-dloi-ast-verifier/agents/openai.yaml
+.agents/skills/atropos-dloi-ast-verifier/references/dloi-ast.md
+.agents/skills/atropos-fast-batch/SKILL.md
+.agents/skills/atropos-fast-batch/agents/openai.yaml
+.agents/skills/atropos-fast-batch/references/fast-batch.md
+.agents/skills/atropos-foundation-1-11/SKILL.md
+.agents/skills/atropos-foundation-1-11/agents/openai.yaml
+.agents/skills/atropos-foundation-1-11/references/foundation-1-11.md
+.agents/skills/atropos-hierarchy-12-16/SKILL.md
+.agents/skills/atropos-hierarchy-12-16/agents/openai.yaml
+.agents/skills/atropos-hierarchy-12-16/references/hierarchy-12-16.md
+.agents/skills/atropos-memory-policy-selfbuild/SKILL.md
+.agents/skills/atropos-memory-policy-selfbuild/agents/openai.yaml
+.agents/skills/atropos-memory-policy-selfbuild/references/memory-selfbuild.md
+.agents/skills/atropos-multimodal-platform-17-18/SKILL.md
+.agents/skills/atropos-multimodal-platform-17-18/agents/openai.yaml
+.agents/skills/atropos-multimodal-platform-17-18/references/multimodal-platform-17-18.md
+.agents/skills/atropos-provider-grid/SKILL.md
+.agents/skills/atropos-provider-grid/agents/openai.yaml
+.agents/skills/atropos-provider-grid/references/provider-grid.md
+.agents/skills/atropos-resume/SKILL.md
+.agents/skills/atropos-resume/agents/openai.yaml
+.agents/skills/atropos-resume/references/resume.md
+.agents/skills/atropos-source-authority/SKILL.md
+.agents/skills/atropos-source-authority/agents/openai.yaml
+.agents/skills/atropos-source-authority/references/source-authority.md
+.antigravity/README.md
+.github/CODEOWNERS
+.github/PULL_REQUEST_TEMPLATE.md
+.github/workflows/android-apk.yml
+.github/workflows/factory-test.yml
+.gitignore
 AGENTS.md
 ATROPOS_CORE_ENGINE_GAP_MAP_v2.md
+ATROPOS_DIRECTOR_SWARM_STATE.md
 ATROPOS_ROOT_EXPORT_MANIFEST.sha256
 ATROPOS_TREE_PORT_EXPORT_PATHS.md
+GEMINI.md
 LICENSE
 README.md
 SELFHOST_PHASE11_101_CODE_STATUS.md
+"\\( HOME/storage/downloads/atropos-codex-audit- \\)(date +%Y%m%d_%H%M%S)/cli-diff.patch"
+"\\( HOME/storage/downloads/atropos-codex-audit- \\)(date +%Y%m%d_%H%M%S)/diff-stat.txt"
+"\\( HOME/storage/downloads/atropos-codex-audit- \\)(date +%Y%m%d_%H%M%S)/proof-test.txt"
+"\\( HOME/storage/downloads/atropos-codex-audit- \\)(date +%Y%m%d_%H%M%S)/recent-commits.txt"
 apps/atropos-android/README.md
 apps/atropos-android/build.gradle.kts
 apps/atropos-android/settings.gradle.kts
@@ -32,6 +81,15 @@ apps/atropos-android/src/main/AndroidManifest.xml
 apps/atropos-android/src/main/java/com/atropos/android/MainActivity.kt
 apps/atropos-android/src/main/res/values/strings.xml
 apps/atropos-web/README.md
+apps/specgraph-foundry/.dockerignore
+apps/specgraph-foundry/.env.example
+apps/specgraph-foundry/.github/workflows/ci.yml
+apps/specgraph-foundry/.github/workflows/deploy-cloud-run-api.yml
+apps/specgraph-foundry/.github/workflows/deploy-cloud-run-worker.yml
+apps/specgraph-foundry/.github/workflows/deploy-vercel.yml
+apps/specgraph-foundry/.github/workflows/rollback.yml
+apps/specgraph-foundry/.github/workflows/supabase-hosted-audit.yml
+apps/specgraph-foundry/.gitignore
 apps/specgraph-foundry/BACKEND_V1_RELEASE.md
 apps/specgraph-foundry/CODE_OF_CONDUCT.md
 apps/specgraph-foundry/CONTRIBUTING.md
@@ -44,6 +102,9 @@ apps/specgraph-foundry/NOTICE
 apps/specgraph-foundry/README.md
 apps/specgraph-foundry/SECURITY.md
 apps/specgraph-foundry/THIRD_PARTY_NOTICES.md
+apps/specgraph-foundry/apps/web/.env.example
+apps/specgraph-foundry/apps/web/.gitignore
+apps/specgraph-foundry/apps/web/.npmrc
 apps/specgraph-foundry/apps/web/README.md
 apps/specgraph-foundry/apps/web/e2e/accessibility-pwa.spec.ts
 apps/specgraph-foundry/apps/web/e2e/auth-projects.spec.ts
@@ -56,6 +117,7 @@ apps/specgraph-foundry/apps/web/e2e/routing.spec.ts
 apps/specgraph-foundry/apps/web/e2e/sources-provenance.spec.ts
 apps/specgraph-foundry/apps/web/e2e/visual-responsive.spec.ts
 apps/specgraph-foundry/apps/web/eslint.config.mjs
+apps/specgraph-foundry/apps/web/next-env.d.ts
 apps/specgraph-foundry/apps/web/next.config.ts
 apps/specgraph-foundry/apps/web/package-lock.json
 apps/specgraph-foundry/apps/web/package.json
@@ -611,6 +673,7 @@ apps/specgraph-foundry/src/specgraph_foundry/rendering.py
 apps/specgraph-foundry/src/specgraph_foundry/research.py
 apps/specgraph-foundry/src/specgraph_foundry/routing.py
 apps/specgraph-foundry/src/specgraph_foundry/services.py
+apps/specgraph-foundry/supabase/.gitignore
 apps/specgraph-foundry/supabase/config.toml
 apps/specgraph-foundry/supabase/migrations/20260712000100_core.sql
 apps/specgraph-foundry/supabase/migrations/20260712000200_ingestion.sql
@@ -677,6 +740,17 @@ apps/specgraph-foundry/tests/test_storage_security.py
 apps/specgraph-foundry/tests/test_structural_validation.py
 apps/specgraph-foundry/tests/test_supabase_rls.py
 apps/specgraph-foundry/vercel.json
+apps/web/.gitignore
+apps/web/.next/cache/.previewinfo
+apps/web/.next/cache/.rscinfo
+apps/web/.next/diagnostics/build-diagnostics.json
+apps/web/.next/diagnostics/framework.json
+apps/web/.next/package.json
+apps/web/.next/types/cache-life.d.ts
+apps/web/.next/types/link.d.ts
+apps/web/.next/types/routes.d.ts
+apps/web/.next/types/validator.ts
+apps/web/.npmrc
 apps/web/README.md
 apps/web/e2e/accessibility-pwa.spec.ts
 apps/web/e2e/auth-projects.spec.ts
@@ -689,6 +763,7 @@ apps/web/e2e/routing.spec.ts
 apps/web/e2e/sources-provenance.spec.ts
 apps/web/e2e/visual-responsive.spec.ts
 apps/web/eslint.config.mjs
+apps/web/next-env.d.ts
 apps/web/next.config.ts
 apps/web/package-lock.json
 apps/web/package.json
@@ -1125,6 +1200,7 @@ apps/web/src/test/server.ts
 apps/web/src/workers/file-hash.worker.ts
 apps/web/src/workers/graph-layout.worker.ts
 apps/web/tsconfig.json
+apps/web/tsconfig.tsbuildinfo
 apps/web/vitest.config.ts
 apps/web/vitest.setup.ts
 atropos
@@ -1270,7 +1346,10 @@ scripts/codex/source-index.py
 scripts/codex/source-query.py
 scripts/codex/source-section.py
 scripts/run_sd1_sd2_autonomous_web.sh
+scripts/secret-security-proof.sh
+scripts/secret-vault-proof.sh
 scripts/selfhost-installed-proof.sh
+scripts/selfhost-restart-proof.sh
 scripts/ui-phase0-inventory.sh
 settings.gradle.kts
 src/main/kotlin/atropos/Main.kt
@@ -1296,6 +1375,7 @@ src/main/kotlin/atropos/cli/StatusCommandHandler.kt
 src/main/kotlin/atropos/cli/TabCommandHandler.kt
 src/main/kotlin/atropos/cli/TestsCommandHandler.kt
 src/main/kotlin/atropos/cli/commands/AgentCommand.kt
+src/main/kotlin/atropos/cli/commands/AgentCommandExecutionResult.kt
 src/main/kotlin/atropos/cli/commands/AgentCommandParser.kt
 src/main/kotlin/atropos/cli/commands/AgentCommandText.kt
 src/main/kotlin/atropos/cli/commands/AgentDaemonCommandHandler.kt
@@ -1303,8 +1383,10 @@ src/main/kotlin/atropos/cli/commands/AgentDagCommandHandler.kt
 src/main/kotlin/atropos/cli/commands/AgentGateCommandHandler.kt
 src/main/kotlin/atropos/cli/commands/AgentGoalCommandHandler.kt
 src/main/kotlin/atropos/cli/commands/AgentIdentityResponder.kt
+src/main/kotlin/atropos/cli/commands/AgentJobCommandHandler.kt
 src/main/kotlin/atropos/cli/commands/AgentJobSummaryMapper.kt
 src/main/kotlin/atropos/cli/commands/AgentObservationCommandHandler.kt
+src/main/kotlin/atropos/cli/commands/AgentPatchCommandHandler.kt
 src/main/kotlin/atropos/cli/commands/AgentPatchDisplayHelper.kt
 src/main/kotlin/atropos/cli/commands/AgentPolicyCommandHandler.kt
 src/main/kotlin/atropos/cli/commands/AgentQueueCommandHandler.kt
@@ -1314,6 +1396,8 @@ src/main/kotlin/atropos/cli/commands/AgentWorktreeCommandHandler.kt
 src/main/kotlin/atropos/cli/commands/HierarchyCommand.kt
 src/main/kotlin/atropos/cli/commands/ProjectCommandHandler.kt
 src/main/kotlin/atropos/cli/commands/SelfHostCommand.kt
+src/main/kotlin/atropos/cli/commands/SelfHostCommandText.kt
+src/main/kotlin/atropos/cli/commands/SelfHostDefaultPrompt.kt
 src/main/kotlin/atropos/cli/commands/SelfHostNaturalLanguageRouter.kt
 src/main/kotlin/atropos/cli/commands/VerifyCommand.kt
 src/main/kotlin/atropos/cli/config/ConfigurationManager.kt
@@ -1390,12 +1474,17 @@ src/main/kotlin/atropos/core/Provider.kt
 src/main/kotlin/atropos/core/ProviderState.kt
 src/main/kotlin/atropos/core/Routing.kt
 src/main/kotlin/atropos/core/adapter/HardwareProfileAdapter.kt
+src/main/kotlin/atropos/core/agent/AgentAskContextOverride.kt
 src/main/kotlin/atropos/core/agent/AgentContextCollector.kt
 src/main/kotlin/atropos/core/agent/AgentContextExportStore.kt
 src/main/kotlin/atropos/core/agent/AgentDaemonDoctor.kt
+src/main/kotlin/atropos/core/agent/AgentDaemonLogWriter.kt
 src/main/kotlin/atropos/core/agent/AgentDaemonModels.kt
+src/main/kotlin/atropos/core/agent/AgentDaemonProcessLauncher.kt
+src/main/kotlin/atropos/core/agent/AgentDaemonRootResolver.kt
 src/main/kotlin/atropos/core/agent/AgentDaemonService.kt
 src/main/kotlin/atropos/core/agent/AgentDaemonStore.kt
+src/main/kotlin/atropos/core/agent/AgentExecutionFailure.kt
 src/main/kotlin/atropos/core/agent/AgentJobModels.kt
 src/main/kotlin/atropos/core/agent/AgentJobStore.kt
 src/main/kotlin/atropos/core/agent/AgentLocalPatchSynthesizer.kt
@@ -1408,6 +1497,7 @@ src/main/kotlin/atropos/core/agent/AgentPatchMetadataWriter.kt
 src/main/kotlin/atropos/core/agent/AgentPatchModels.kt
 src/main/kotlin/atropos/core/agent/AgentPatchStore.kt
 src/main/kotlin/atropos/core/agent/AgentPromptContract.kt
+src/main/kotlin/atropos/core/agent/AgentProviderContextBoundary.kt
 src/main/kotlin/atropos/core/agent/AgentProviderSelector.kt
 src/main/kotlin/atropos/core/agent/AgentQueueDoctor.kt
 src/main/kotlin/atropos/core/agent/AgentQueueModels.kt
@@ -1426,11 +1516,13 @@ src/main/kotlin/atropos/core/agent/AgentRunSourceResolver.kt
 src/main/kotlin/atropos/core/agent/AgentService.kt
 src/main/kotlin/atropos/core/agent/AgentServiceModels.kt
 src/main/kotlin/atropos/core/agent/AgentSmokeRunner.kt
+src/main/kotlin/atropos/core/agent/AgentSourceContextRequirement.kt
 src/main/kotlin/atropos/core/agent/AgentVerificationStore.kt
 src/main/kotlin/atropos/core/agent/AgentVerifier.kt
 src/main/kotlin/atropos/core/agent/GoalContinuationService.kt
 src/main/kotlin/atropos/core/agent/GoalRunModels.kt
 src/main/kotlin/atropos/core/agent/GoalRunStore.kt
+src/main/kotlin/atropos/core/agent/LeaseTokenDigest.kt
 src/main/kotlin/atropos/core/agent/ProviderSessionSupervisor.kt
 src/main/kotlin/atropos/core/agent/SelfHostAutonomousRunModels.kt
 src/main/kotlin/atropos/core/agent/SelfHostAutonomousRunner.kt
@@ -1442,18 +1534,32 @@ src/main/kotlin/atropos/core/agent/SelfHostCradleVerificationGate.kt
 src/main/kotlin/atropos/core/agent/SelfHostDagNodeEvaluator.kt
 src/main/kotlin/atropos/core/agent/SelfHostEvidenceBundleExporter.kt
 src/main/kotlin/atropos/core/agent/SelfHostEvidenceBundleModels.kt
+src/main/kotlin/atropos/core/agent/SelfHostEvidenceProvenance.kt
+src/main/kotlin/atropos/core/agent/SelfHostEvidenceTextCodec.kt
 src/main/kotlin/atropos/core/agent/SelfHostExperienceRecorder.kt
+src/main/kotlin/atropos/core/agent/SelfHostFailureCode.kt
 src/main/kotlin/atropos/core/agent/SelfHostFileHasher.kt
+src/main/kotlin/atropos/core/agent/SelfHostGitBaselineReader.kt
+src/main/kotlin/atropos/core/agent/SelfHostGitStatusEvidence.kt
+src/main/kotlin/atropos/core/agent/SelfHostGoalPromotionBoundary.kt
+src/main/kotlin/atropos/core/agent/SelfHostGoalQueryService.kt
 src/main/kotlin/atropos/core/agent/SelfHostGoalSelector.kt
 src/main/kotlin/atropos/core/agent/SelfHostGoalService.kt
+src/main/kotlin/atropos/core/agent/SelfHostGoalStartService.kt
 src/main/kotlin/atropos/core/agent/SelfHostModels.kt
+src/main/kotlin/atropos/core/agent/SelfHostMutationPayloadParser.kt
 src/main/kotlin/atropos/core/agent/SelfHostNextAction.kt
 src/main/kotlin/atropos/core/agent/SelfHostPromotionEvidence.kt
+src/main/kotlin/atropos/core/agent/SelfHostPromotionGateContract.kt
 src/main/kotlin/atropos/core/agent/SelfHostPromotionModels.kt
 src/main/kotlin/atropos/core/agent/SelfHostPromotionService.kt
 src/main/kotlin/atropos/core/agent/SelfHostRuntimeJarLocator.kt
+src/main/kotlin/atropos/core/agent/SelfHostRuntimeRunLimits.kt
 src/main/kotlin/atropos/core/agent/SelfHostSafetyHardFailGate.kt
+src/main/kotlin/atropos/core/agent/SelfHostSnapshotIdentityHasher.kt
+src/main/kotlin/atropos/core/agent/SelfHostStartupContinuationService.kt
 src/main/kotlin/atropos/core/agent/SelfHostStateSnapshotRecorder.kt
+src/main/kotlin/atropos/core/agent/SelfHostWorktreeDiffInspector.kt
 src/main/kotlin/atropos/core/agent/SelfHostWorktreeNodeExecutor.kt
 src/main/kotlin/atropos/core/agent/SourceEvidence.kt
 src/main/kotlin/atropos/core/agent/SupervisedProviderSession.kt
@@ -1475,6 +1581,7 @@ src/main/kotlin/atropos/core/dag/DagExecutionCodec.kt
 src/main/kotlin/atropos/core/dag/DagExecutionService.kt
 src/main/kotlin/atropos/core/dag/DagModels.kt
 src/main/kotlin/atropos/core/dag/DagNodeCheckEvaluator.kt
+src/main/kotlin/atropos/core/dag/DagNodeFileMutationExecutor.kt
 src/main/kotlin/atropos/core/dag/DagNodeFinisher.kt
 src/main/kotlin/atropos/core/dag/DagNodeProposals.kt
 src/main/kotlin/atropos/core/dag/DagNodeShellExecutor.kt
@@ -1513,6 +1620,7 @@ src/main/kotlin/atropos/core/multimodal/SnapshotService.kt
 src/main/kotlin/atropos/core/observability/RunObserver.kt
 src/main/kotlin/atropos/core/ops/DeploymentOps.kt
 src/main/kotlin/atropos/core/paid/EmergencyPaidGate.kt
+src/main/kotlin/atropos/core/parser/KotlinLexicalMasker.kt
 src/main/kotlin/atropos/core/parser/TreeSitterGrammarBridge.kt
 src/main/kotlin/atropos/core/planning/InternalAtomExtractor.kt
 src/main/kotlin/atropos/core/planning/InternalAuthorityGraphBuilder.kt
@@ -1532,6 +1640,7 @@ src/main/kotlin/atropos/core/policy/ActionActor.kt
 src/main/kotlin/atropos/core/policy/ActionProposal.kt
 src/main/kotlin/atropos/core/policy/AutonomyPolicyExtensions.kt
 src/main/kotlin/atropos/core/policy/BoundedAgencyGate.kt
+src/main/kotlin/atropos/core/policy/BoundedProcessRunner.kt
 src/main/kotlin/atropos/core/policy/CapabilityEnforcer.kt
 src/main/kotlin/atropos/core/policy/ExecutionPolicyEngine.kt
 src/main/kotlin/atropos/core/policy/LifecycleActionProposals.kt
@@ -1543,6 +1652,8 @@ src/main/kotlin/atropos/core/policy/TypedToolExecutor.kt
 src/main/kotlin/atropos/core/policy/VerificationActionProposals.kt
 src/main/kotlin/atropos/core/project/ProjectModels.kt
 src/main/kotlin/atropos/core/project/ProjectRegistry.kt
+src/main/kotlin/atropos/core/provider/ActiveSourceBindingResolver.kt
+src/main/kotlin/atropos/core/provider/BoundedUtf8Appender.kt
 src/main/kotlin/atropos/core/provider/CodebaseContextPacker.kt
 src/main/kotlin/atropos/core/provider/ContentAddressedTreeWriter.kt
 src/main/kotlin/atropos/core/provider/ContextAttestation.kt
@@ -1551,6 +1662,7 @@ src/main/kotlin/atropos/core/provider/ContextDriftDetector.kt
 src/main/kotlin/atropos/core/provider/ContextEnvelope.kt
 src/main/kotlin/atropos/core/provider/ContextEnvelopeFactory.kt
 src/main/kotlin/atropos/core/provider/ContextEnvelopeSerializer.kt
+src/main/kotlin/atropos/core/provider/GitRepositoryMetadataReader.kt
 src/main/kotlin/atropos/core/provider/LocalRoot.kt
 src/main/kotlin/atropos/core/provider/ProviderActivationModels.kt
 src/main/kotlin/atropos/core/provider/ProviderActivationService.kt
@@ -1615,6 +1727,7 @@ src/main/kotlin/atropos/core/provider/adapter/OpenAiCompatibleKernelAdapter.kt
 src/main/kotlin/atropos/core/provider/adapter/OpenAiCompatibleProviderCatalog.kt
 src/main/kotlin/atropos/core/provider/adapter/OpenAiCompatibleProviderSpec.kt
 src/main/kotlin/atropos/core/provider/adapter/ProviderAdapter.kt
+src/main/kotlin/atropos/core/provider/adapter/ProviderFailureFixtures.kt
 src/main/kotlin/atropos/core/provider/adapter/ScaffoldAdapters.kt
 src/main/kotlin/atropos/core/provider/adapter/SerpApiKernelAdapter.kt
 src/main/kotlin/atropos/core/recovery/CrashRecoveryService.kt
@@ -1622,10 +1735,19 @@ src/main/kotlin/atropos/core/recovery/DagNodeRestorer.kt
 src/main/kotlin/atropos/core/recovery/RestartCoordinator.kt
 src/main/kotlin/atropos/core/recovery/RuntimeContinuitySupervisor.kt
 src/main/kotlin/atropos/core/recovery/StateSnapshot.kt
+src/main/kotlin/atropos/core/security/DeviceSecretVaultKeyProvider.kt
 src/main/kotlin/atropos/core/security/KeyDoctorService.kt
+src/main/kotlin/atropos/core/security/KnownSecretRegistry.kt
 src/main/kotlin/atropos/core/security/RedactionFilter.kt
+src/main/kotlin/atropos/core/security/SecretEncodingClosure.kt
+src/main/kotlin/atropos/core/security/SecretEnrollmentSource.kt
 src/main/kotlin/atropos/core/security/SecretSource.kt
+src/main/kotlin/atropos/core/security/SecretVaultKeyProvider.kt
 src/main/kotlin/atropos/core/security/TokenIsolationVault.kt
+src/main/kotlin/atropos/core/security/VaultCipher.kt
+src/main/kotlin/atropos/core/security/VaultPathResolver.kt
+src/main/kotlin/atropos/core/security/VaultReadResult.kt
+src/main/kotlin/atropos/core/territory/TerritoryEnforcer.kt
 src/main/kotlin/atropos/core/territory/TerritoryGrantService.kt
 src/main/kotlin/atropos/core/territory/TerritoryModels.kt
 src/main/kotlin/atropos/core/territory/TerritoryService.kt
@@ -1635,19 +1757,24 @@ src/main/kotlin/atropos/core/verification/ArchitectureComplianceChecker.kt
 src/main/kotlin/atropos/core/verification/ArchitectureCompliancePolicy.kt
 src/main/kotlin/atropos/core/verification/ArchitectureConcern.kt
 src/main/kotlin/atropos/core/verification/ArchitectureConcernDetector.kt
+src/main/kotlin/atropos/core/verification/ArchitectureSourceMasker.kt
 src/main/kotlin/atropos/core/verification/DeterministicVerifier.kt
+src/main/kotlin/atropos/core/verification/IndependentVerificationGate.kt
 src/main/kotlin/atropos/core/verification/VerificationModels.kt
 src/main/kotlin/atropos/core/verification/VerifiedCompletionGate.kt
 src/main/kotlin/atropos/core/verifier/ConstraintSolverEvaluator.kt
 src/main/kotlin/atropos/core/verifier/ProbabilisticImmunityEngine.kt
+src/main/kotlin/atropos/core/worktree/BoundedGitWorktreeCommandRunner.kt
 src/main/kotlin/atropos/core/worktree/IsolatedWorktreeService.kt
 src/main/kotlin/atropos/data/cache/CodebaseDeltaTreeTracker.kt
 src/main/kotlin/atropos/data/indexer/LatentOntologicalIndexer.kt
 src/main/kotlin/atropos/data/lakehouse/OntologicalAddressRouter.kt
 src/main/kotlin/atropos/data/storage/CloudLakehouseSyncEngine.kt
+src/main/kotlin/atropos/dloi/DloiAddressParser.kt
 src/main/kotlin/atropos/dloi/DloiAliasResolver.kt
 src/main/kotlin/atropos/dloi/DloiIndexedDocumentLoader.kt
 src/main/kotlin/atropos/dloi/DloiJsonReader.kt
+src/main/kotlin/atropos/dloi/DloiLineIndexer.kt
 src/main/kotlin/atropos/dloi/DloiSectionExtractor.kt
 src/main/kotlin/atropos/dloi/DloiService.kt
 src/main/kotlin/atropos/dloi/DloiSourceIndexer.kt
@@ -1657,6 +1784,7 @@ src/main/kotlin/atropos/tests/cli/CommandRouterTest.kt
 src/main/kotlin/atropos/tests/core/ImmunityEngineTest.kt
 src/main/kotlin/atropos/tests/data/OntologicalIndexTest.kt
 src/test/kotlin/atropos/ast/AstSymbolGraphTest.kt
+src/test/kotlin/atropos/cli/CommandRouterHelpTest.kt
 src/test/kotlin/atropos/cli/CommandRouterIdentityTest.kt
 src/test/kotlin/atropos/cli/SelfHostInsideOutSandboxProofTest.kt
 src/test/kotlin/atropos/cli/commands/AgentCommandDagBootstrapTest.kt
@@ -1664,32 +1792,59 @@ src/test/kotlin/atropos/cli/commands/AgentCommandObservabilityTest.kt
 src/test/kotlin/atropos/cli/commands/ArtifactPromoteCommandTest.kt
 src/test/kotlin/atropos/cli/commands/SelfHostCommandTest.kt
 src/test/kotlin/atropos/cli/commands/SelfHostNaturalLanguageRouterTest.kt
+src/test/kotlin/atropos/cli/input/CommandCompleterTest.kt
+src/test/kotlin/atropos/cli/input/CommandRegistryTest.kt
 src/test/kotlin/atropos/cli/input/PromptStateTest.kt
 src/test/kotlin/atropos/cli/shell/ShellBoundedAgencyTest.kt
+src/test/kotlin/atropos/cli/ui/AnsiTerminalEngineHelpTest.kt
+src/test/kotlin/atropos/cli/ui/CommandPaletteRendererTest.kt
+src/test/kotlin/atropos/cli/ui/CommandRegistryRendererTest.kt
+src/test/kotlin/atropos/cli/ui/ComposerViewportTest.kt
 src/test/kotlin/atropos/cli/ui/DashboardRendererWidthTest.kt
 src/test/kotlin/atropos/cli/ui/HomeStateProviderTest.kt
 src/test/kotlin/atropos/core/AtroposRepoRootLocatorTest.kt
+src/test/kotlin/atropos/core/agent/AgentContextCollectorTest.kt
+src/test/kotlin/atropos/core/agent/AgentDaemonLogWriterTest.kt
+src/test/kotlin/atropos/core/agent/AgentDaemonRootResolverTest.kt
+src/test/kotlin/atropos/core/agent/AgentDaemonStoreTest.kt
 src/test/kotlin/atropos/core/agent/AgentJobStoreTest.kt
 src/test/kotlin/atropos/core/agent/AgentPatchAuditorTest.kt
 src/test/kotlin/atropos/core/agent/AgentPatchBoundedAgencyTest.kt
 src/test/kotlin/atropos/core/agent/AgentPatchCascadeRunnerTest.kt
+src/test/kotlin/atropos/core/agent/AgentPromptContractTest.kt
+src/test/kotlin/atropos/core/agent/AgentProviderContextBoundaryTest.kt
 src/test/kotlin/atropos/core/agent/AgentQueueStoreTest.kt
 src/test/kotlin/atropos/core/agent/AgentRepairAttestationTest.kt
+src/test/kotlin/atropos/core/agent/AgentRunRepoStatusTest.kt
 src/test/kotlin/atropos/core/agent/AgentSecurityRedactionSurfaceTest.kt
 src/test/kotlin/atropos/core/agent/AgentSelfBuildLoopTest.kt
+src/test/kotlin/atropos/core/agent/AgentServiceModelsTest.kt
 src/test/kotlin/atropos/core/agent/AgentSmokeBoundedAgencyTest.kt
+src/test/kotlin/atropos/core/agent/AgentSourceContextRequirementTest.kt
 src/test/kotlin/atropos/core/agent/GoalContinuationServiceTest.kt
 src/test/kotlin/atropos/core/agent/GoalEvidenceGateTest.kt
 src/test/kotlin/atropos/core/agent/GoalRunStoreTest.kt
+src/test/kotlin/atropos/core/agent/LeaseTokenDigestTest.kt
+src/test/kotlin/atropos/core/agent/LeaseTokenPersistenceTest.kt
 src/test/kotlin/atropos/core/agent/SelfHostAutonomousRunnerTest.kt
 src/test/kotlin/atropos/core/agent/SelfHostCandidateJarBuilderTest.kt
 src/test/kotlin/atropos/core/agent/SelfHostCradleVerificationGateTest.kt
 src/test/kotlin/atropos/core/agent/SelfHostEvidenceBundleExporterTest.kt
+src/test/kotlin/atropos/core/agent/SelfHostEvidenceProvenanceTest.kt
+src/test/kotlin/atropos/core/agent/SelfHostEvidenceTextCodecTest.kt
+src/test/kotlin/atropos/core/agent/SelfHostFailureCodeTest.kt
+src/test/kotlin/atropos/core/agent/SelfHostGitBaselineReaderTest.kt
+src/test/kotlin/atropos/core/agent/SelfHostGitStatusEvidenceTest.kt
+src/test/kotlin/atropos/core/agent/SelfHostGoalQueryServiceTest.kt
 src/test/kotlin/atropos/core/agent/SelfHostGoalServiceTest.kt
+src/test/kotlin/atropos/core/agent/SelfHostMutationPayloadParserTest.kt
+src/test/kotlin/atropos/core/agent/SelfHostPromotionGateContractTest.kt
 src/test/kotlin/atropos/core/agent/SelfHostPromotionServiceTest.kt
 src/test/kotlin/atropos/core/agent/SelfHostRecoveryContinuationTest.kt
 src/test/kotlin/atropos/core/agent/SelfHostRuntimeJarLocatorTest.kt
+src/test/kotlin/atropos/core/agent/SelfHostRuntimeRunLimitsTest.kt
 src/test/kotlin/atropos/core/agent/SelfHostSafetyHardFailGateTest.kt
+src/test/kotlin/atropos/core/agent/SelfHostStartupContinuationServiceTest.kt
 src/test/kotlin/atropos/core/agent/SelfHostStateSnapshotRecorderTest.kt
 src/test/kotlin/atropos/core/agent/SelfHostWorktreeNodeExecutorTest.kt
 src/test/kotlin/atropos/core/artifact/AppFactoryRunProofTest.kt
@@ -1717,29 +1872,46 @@ src/test/kotlin/atropos/core/observability/RunObserverTest.kt
 src/test/kotlin/atropos/core/parser/TreeSitterGrammarBridgeTest.kt
 src/test/kotlin/atropos/core/planning/PlanningGraphPluginRegistryTest.kt
 src/test/kotlin/atropos/core/policy/ActionActorTest.kt
+src/test/kotlin/atropos/core/policy/BoundedProcessRunnerTest.kt
 src/test/kotlin/atropos/core/policy/CapabilityEnforcerTest.kt
 src/test/kotlin/atropos/core/policy/ExecutionPolicyEngineTest.kt
 src/test/kotlin/atropos/core/policy/LifecycleActionProposalsTest.kt
 src/test/kotlin/atropos/core/policy/ProviderActionProposalsTest.kt
 src/test/kotlin/atropos/core/policy/TypedToolExecutorTest.kt
 src/test/kotlin/atropos/core/project/ProjectRegistryTest.kt
+src/test/kotlin/atropos/core/provider/ActiveSourceBindingResolverTest.kt
+src/test/kotlin/atropos/core/provider/GitRepositoryMetadataReaderTest.kt
+src/test/kotlin/atropos/core/provider/LocalRootTest.kt
 src/test/kotlin/atropos/core/provider/ProviderActivationServiceTest.kt
 src/test/kotlin/atropos/core/provider/ProviderCascadeOrderTest.kt
+src/test/kotlin/atropos/core/provider/ProviderErrorNormalizerTest.kt
 src/test/kotlin/atropos/core/provider/ProviderFixtureMatrixServiceTest.kt
 src/test/kotlin/atropos/core/provider/QuotaLedgerRouteTruthTest.kt
 src/test/kotlin/atropos/core/provider/SourceBindingContextPackerTest.kt
 src/test/kotlin/atropos/core/recovery/CrashRecoveryServiceTest.kt
 src/test/kotlin/atropos/core/recovery/RestartCoordinatorTest.kt
 src/test/kotlin/atropos/core/recovery/RuntimeContinuitySupervisorTest.kt
+src/test/kotlin/atropos/core/security/DeviceSecretVaultKeyProviderTest.kt
 src/test/kotlin/atropos/core/security/KeyDoctorServiceTest.kt
+src/test/kotlin/atropos/core/security/KnownSecretEgressTest.kt
 src/test/kotlin/atropos/core/security/RedactionFilterTest.kt
+src/test/kotlin/atropos/core/security/SecretEnrollmentSourceTest.kt
+src/test/kotlin/atropos/core/security/SecretVaultKeyProviderTest.kt
+src/test/kotlin/atropos/core/security/SecretVaultRuntimeProofTest.kt
+src/test/kotlin/atropos/core/security/TestSecretVaultKeyProvider.kt
+src/test/kotlin/atropos/core/security/TokenIsolationVaultEncryptionContractTest.kt
 src/test/kotlin/atropos/core/security/TokenIsolationVaultTest.kt
+src/test/kotlin/atropos/core/security/VaultPathResolverTest.kt
+src/test/kotlin/atropos/core/security/VaultReadResultTest.kt
+src/test/kotlin/atropos/core/territory/TerritoryEnforcerTest.kt
 src/test/kotlin/atropos/core/territory/TerritoryGrantServiceTest.kt
 src/test/kotlin/atropos/core/territory/TerritoryServiceTest.kt
 src/test/kotlin/atropos/core/verification/ArchitectureComplianceCheckerTest.kt
+src/test/kotlin/atropos/core/verification/ArchitectureSourceMaskerTest.kt
 src/test/kotlin/atropos/core/verification/DeterministicVerifierTest.kt
 src/test/kotlin/atropos/core/verification/VerifiedCompletionGateTest.kt
 src/test/kotlin/atropos/core/verifier/ConstraintSolverEvaluatorTest.kt
+src/test/kotlin/atropos/core/worktree/BoundedGitWorktreeCommandRunnerTest.kt
 src/test/kotlin/atropos/core/worktree/IsolatedWorktreeServiceTest.kt
 src/test/kotlin/atropos/dloi/DloiIndexedDocumentLoaderTest.kt
 src/test/kotlin/atropos/dloi/DloiServiceTest.kt

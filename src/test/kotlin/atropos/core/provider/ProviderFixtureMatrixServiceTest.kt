@@ -75,4 +75,15 @@ class ProviderFixtureMatrixServiceTest {
         assertTrue(names.containsAll(required), "$providerId missing ${required - names}: $fixtures")
         assertTrue(fixtures.all { it.passed }, "$providerId failed ${fixtures.filterNot { it.passed }}")
     }
+
+    @Test
+    fun no_adapters_are_missing_normalized_fixtures() {
+        val registry = StaticProviderDescriptorRegistry()
+        val service = ProviderFixtureMatrixService(
+            registry = registry,
+            adapterRegistry = StaticProviderAdapterRegistry(registry, env = emptyMap())
+        )
+        val missing = service.listAdaptersMissingNormalizedFixtures()
+        assertTrue(missing.isEmpty(), "Adapters missing normalized fixtures: $missing")
+    }
 }

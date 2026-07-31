@@ -18,9 +18,23 @@ class VaultPathResolver(
     }
 
     fun ensureRoot(): Path = rootPath().also {
-        require(!Files.isSymbolicLink(it)) { "vault root is a symbolic link" }
-        Files.createDirectories(it)
-        require(!Files.isSymbolicLink(it)) { "vault root became a symbolic link" }
+        ensureDirectoryTreeWithoutSymlinks(it)
+    }
+
+    private fun ensureDirectoryTreeWithoutSymlinks(root: Path) {
+        var current = root.root ?: error("vault root has no filesystem root")
+        for (index in 0 until root.nameCount) {
+            current = current.resolve(root.getName(index))
+            if (Files.exists(current, java.nio.file.LinkOption.NOFOLLOW_LINKS)) {
+                require(!Files.isSymbolicLink(current)) { "vault root contains a symbolic link" }
+                require(Files.isDirectory(current, java.nio.file.LinkOption.NOFOLLOW_LINKS)) {
+                    "vault root component is not a directory"
+                }
+            } else {
+                Files.createDirectory(current)
+                require(!Files.isSymbolicLink(current)) { "vault root component became a symbolic link" }
+            }
+        }
     }
 
     private fun sanitizeName(name: String): String {

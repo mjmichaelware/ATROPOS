@@ -253,19 +253,7 @@ class LocalMemoryStore(
         subjectType: String?,
         subjectId: String?,
         sourceCoordinate: String?
-    ): String {
-        val material = listOf(
-            title,
-            body,
-            tags.joinToString(","),
-            subjectType.orEmpty(),
-            subjectId.orEmpty(),
-            sourceCoordinate.orEmpty()
-        ).joinToString("|")
-        return MessageDigest.getInstance("SHA-256")
-            .digest(material.toByteArray(Charsets.UTF_8))
-            .joinToString("") { "%02x".format(it) }
-    }
+    ): String = MemoryRecordCodec.contentSha256(title, body, tags, subjectType, subjectId, sourceCoordinate)
 
     private fun stableId(
         kind: MemoryKind,
