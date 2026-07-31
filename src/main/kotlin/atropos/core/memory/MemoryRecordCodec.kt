@@ -46,17 +46,7 @@ object MemoryRecordCodec {
             val schemaVersion = intField(line, "schemaVersion") ?: 1
             val redacted = booleanField(line, "redacted") ?: true
 
-            val expectedHash = contentSha256(
-                title = title,
-                body = body,
-                tags = tags,
-                subjectType = subjectType,
-                subjectId = subjectId,
-                sourceCoordinate = sourceCoordinate
-            )
-            if (contentSha256.isNotBlank() && contentSha256 != expectedHash) return null
-
-            MemoryRecord(
+            val record = MemoryRecord(
                 id = id,
                 kind = kind,
                 title = title,
@@ -72,6 +62,18 @@ object MemoryRecordCodec {
                 schemaVersion = schemaVersion,
                 redacted = redacted
             )
+            val expectedHash = if (schemaVersion >= 3) recordSha256(record) else contentSha256(
+                title = title,
+                body = body,
+                tags = tags,
+                subjectType = subjectType,
+                subjectId = subjectId,
+                sourceCoordinate = sourceCoordinate
+            )
+            if (schemaVersion >= 3 && contentSha256.isBlank()) return null
+            if (schemaVersion >= 3 && !redacted) return null
+            if (contentSha256.isNotBlank() && contentSha256 != expectedHash) return null
+            record
         } catch (_: Exception) {
             null
         }
@@ -93,6 +95,27 @@ object MemoryRecordCodec {
             subjectId.orEmpty(),
             sourceCoordinate.orEmpty()
         ).joinToString("|")
+        return java.security.MessageDigest.getInstance("SHA-256")
+            .digest(material.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
+            .joinToString("") { "%02x".format(it) }
+    }
+
+    fun recordSha256(record: MemoryRecord): String {
+        val material = listOf(
+            record.id,
+            record.kind.name,
+            record.title,
+            record.body,
+            record.tags.joinToString("\u001f"),
+            record.createdAtEpochMs.toString(),
+            record.subjectType.orEmpty(),
+            record.subjectId.orEmpty(),
+            record.failureSignature.orEmpty(),
+            record.sourceCoordinate.orEmpty(),
+            record.authority.name,
+            record.schemaVersion.toString(),
+            record.redacted.toString()
+        ).joinToString("\u001e") { value -> "${value.length}:$value" }
         return java.security.MessageDigest.getInstance("SHA-256")
             .digest(material.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
             .joinToString("") { "%02x".format(it) }

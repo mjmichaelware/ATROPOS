@@ -56,6 +56,36 @@ class ExecutionPolicyEngineTest {
     }
 
     @Test
+    fun denies_absolute_paths_into_protected_repository_roots() {
+        val repoRoot = Files.createTempDirectory("atropos-policy-absolute-path-")
+        val engine = ExecutionPolicyEngine(repoRoot)
+
+        val decision = engine.evaluate(
+            ExecutionPolicyRequest(
+                actionClass = PolicyActionClass.FILE_MUTATION,
+                targetPaths = listOf(repoRoot.resolve(".atropos/secrets/token.json").toString())
+            )
+        )
+
+        assertEquals(PolicyDecisionType.DENY, decision.decision)
+    }
+
+    @Test
+    fun denies_nested_shell_interpreters_before_execution() {
+        val repoRoot = Files.createTempDirectory("atropos-policy-nested-shell-")
+        val engine = ExecutionPolicyEngine(repoRoot)
+
+        val decision = engine.evaluate(
+            ExecutionPolicyRequest(
+                actionClass = PolicyActionClass.SHELL,
+                command = listOf("sh", "-c", "printf unsafe")
+            )
+        )
+
+        assertEquals(PolicyDecisionType.DENY, decision.decision)
+    }
+
+    @Test
     fun everyActionClassProducesAuditedBoundedDecisionWithRedaction() {
         val repoRoot = Files.createTempDirectory("atropos-policy-matrix-")
         val auditStore = ExecutionPolicyAuditStore(repoRoot)

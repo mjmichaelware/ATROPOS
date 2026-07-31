@@ -212,6 +212,42 @@ class DagExecutionServiceTest {
         assertTrue(!Files.exists(repoRoot.resolve("src/main/kotlin/atropos/Empty.kt")))
     }
 
+    @Test
+    fun shell_node_refuses_git_push_before_process_start() {
+        val repoRoot = Files.createTempDirectory("atropos-dag-shell-policy-")
+        val now = Instant.parse("2026-07-27T09:30:00Z")
+        val store = DagStore(repoRoot)
+        val dag = store.createDag(
+            label = "shell policy",
+            nodes = listOf(
+                DagNode(
+                    id = "push-node",
+                    label = "forbidden push",
+                    territory = listOf("src/main/kotlin/atropos"),
+                    action = DagNodeAction.RUN_COMMAND,
+                    actionPayload = "git push origin main",
+                    createdAt = now,
+                    updatedAt = now,
+                    metaFile = java.nio.file.Path.of("unused")
+                )
+            )
+        )
+        val original = dag.findNode("push-node") ?: error("missing push node")
+        val executor = DagNodeShellExecutor(
+            repoRoot = repoRoot,
+            store = store,
+            finisher = DagNodeFinisher(FakePlanningGraphPlugin()),
+            territoryViolation = { _, _ -> null },
+            extractCandidatePaths = { emptyList() }
+        )
+
+        val result = executor.runCommand(original, original)
+
+        assertTrue(!result.ok)
+        assertEquals(DagNodeState.FAILED, result.state)
+        assertTrue(result.message.contains("refused by policy"), result.message)
+    }
+
     private fun node(
         id: String,
         now: Instant,

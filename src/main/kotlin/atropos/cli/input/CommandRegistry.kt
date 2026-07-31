@@ -83,7 +83,7 @@ object CommandRegistry {
         CommandEntry("/factory run", "queue app-factory run"),
         CommandEntry(
             "/self-host",
-            "shorthand for /agent self-host",
+            "run the Phase 11 self-build loop (use /self-host status for read-only status)",
             "Self-host",
             aliases = listOf("/agent self-host")
         ),

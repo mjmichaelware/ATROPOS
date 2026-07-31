@@ -24,25 +24,26 @@ data class KotlinParseTree(
 
 class TreeSitterGrammarBridge {
     fun parseTree(code: String): KotlinParseTree {
-        val lines = KotlinLexicalMasker.maskNonCode(code).lines()
-        val packageName = lines.firstOrNull { it.trimStart().startsWith("package ") }
+        val lines = KotlinLexicalMasker.maskNonCode(code).split('\n')
+        val utf8Offsets = Utf8OffsetIndex(code)
+        val packageName = lines.firstOrNull { it.removeSuffix("\r").trimStart().startsWith("package ") }
             ?.trim()
             ?.removePrefix("package ")
             ?.trim()
             .orEmpty()
-        val imports = lines.filter { it.trimStart().startsWith("import ") }
-            .map { it.trim().removePrefix("import ").trim() }
+        val imports = lines.filter { it.removeSuffix("\r").trimStart().startsWith("import ") }
+            .map { it.removeSuffix("\r").trim().removePrefix("import ").trim() }
 
         val declarations = mutableListOf<KotlinDeclaration>()
         var offset = 0
         lines.forEachIndexed { index, line ->
             val lineNumber = index + 1
-            val searchable = line
-            collect(KotlinDeclarationKind.CLASS, CLASS_PATTERN, searchable, lineNumber, offset, declarations)
-            collect(KotlinDeclarationKind.OBJECT, OBJECT_PATTERN, searchable, lineNumber, offset, declarations)
-            collect(KotlinDeclarationKind.INTERFACE, INTERFACE_PATTERN, searchable, lineNumber, offset, declarations)
-            collect(KotlinDeclarationKind.FUNCTION, FUNCTION_PATTERN, searchable, lineNumber, offset, declarations)
-            collect(KotlinDeclarationKind.PROPERTY, PROPERTY_PATTERN, searchable, lineNumber, offset, declarations)
+            val searchable = line.removeSuffix("\r")
+            collect(KotlinDeclarationKind.CLASS, CLASS_PATTERN, searchable, lineNumber, offset, utf8Offsets, declarations)
+            collect(KotlinDeclarationKind.OBJECT, OBJECT_PATTERN, searchable, lineNumber, offset, utf8Offsets, declarations)
+            collect(KotlinDeclarationKind.INTERFACE, INTERFACE_PATTERN, searchable, lineNumber, offset, utf8Offsets, declarations)
+            collect(KotlinDeclarationKind.FUNCTION, FUNCTION_PATTERN, searchable, lineNumber, offset, utf8Offsets, declarations)
+            collect(KotlinDeclarationKind.PROPERTY, PROPERTY_PATTERN, searchable, lineNumber, offset, utf8Offsets, declarations)
             offset += line.length + 1
         }
 
@@ -59,6 +60,7 @@ class TreeSitterGrammarBridge {
         line: String,
         lineNumber: Int,
         lineOffset: Int,
+        utf8Offsets: Utf8OffsetIndex,
         sink: MutableList<KotlinDeclaration>
     ) {
         pattern.findAll(line).forEach { match ->
@@ -68,7 +70,7 @@ class TreeSitterGrammarBridge {
                 name = nameGroup.value,
                 line = lineNumber,
                 column = nameGroup.range.first + 1,
-                offset = lineOffset + nameGroup.range.first
+                offset = utf8Offsets.atCharacterOffset(lineOffset + nameGroup.range.first)
             )
         }
     }

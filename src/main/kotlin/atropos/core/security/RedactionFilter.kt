@@ -5,7 +5,7 @@ import java.security.MessageDigest
 
 private val API_KEY_PATTERN = Regex("(?i)(api[_-]?key|token|secret|password)[\"']?\\s*[:=]\\s*[\"']?[^\"'\\s,}<>]+")
 private val BEARER_PATTERN = Regex("(?i)bearer\\s+[A-Za-z0-9._\\-]{12,}")
-private val OPENAI_STYLE_PATTERN = Regex("\\b" + "s" + "k-" + "[A-Za-z0-9_\\-]{12,}")
+private val OPENAI_STYLE_PATTERN = Regex("\\b" + "s" + "k-" + "[A-Za-z0-9_\\-]{8,}")
 private val PRIVATE_KEY_BLOCK_PATTERN = Regex("-----BEGIN [A-Z ]*PRIVATE KEY-----[\\s\\S]*?-----END [A-Z ]*PRIVATE KEY-----")
 private val SIGNED_URL_PATTERN = Regex("(?i)(https?://[^\\s]+)(X-Amz-Signature|Signature|sig|token|access_token)=([^\\s&]+)")
 private val LOCAL_CREDENTIAL_PATH_PATTERN = Regex("(?i)(/[^\\s:]*?(client_secret|credentials|token)[^\\s:]*)")

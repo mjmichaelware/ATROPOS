@@ -1,5 +1,6 @@
 package atropos.core.paid
 
+import atropos.core.AtroposRepoRootLocator
 import atropos.core.policy.ProviderActionProposals
 import java.io.File
 import java.util.Locale
@@ -21,12 +22,13 @@ data class PaidGateStatus(
 )
 
 class EmergencyPaidGate(
-    private val root: File = File(".atropos/paid"),
+    private val root: File = defaultRoot(),
     private val now: () -> Long = { System.currentTimeMillis() }
 ) {
-    private companion object {
-        const val REDACTED_REASON = "[redacted]"
+    companion object {
+        fun defaultRoot(): File = AtroposRepoRootLocator.resolve().resolve(".atropos/paid").toFile()
     }
+    private val REDACTED_REASON = "[redacted]"
 
     private val stateFile = File(root, "paid-unlock.state")
     private val auditFile = File(root, "paid-audit.jsonl")
