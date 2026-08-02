@@ -10,6 +10,9 @@ export default defineConfig({
     restoreMocks: true,
     unstubGlobals: true,
     css: true,
+    // React + axe tests are materially slower on constrained Termux/Android
+    // workers. This is a bounded test timeout, not a disabled timeout.
+    testTimeout: 15_000,
     include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
   },
   resolve: {

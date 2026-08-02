@@ -678,12 +678,6 @@ def write(path: str, content: str) -> None:
 migration = build_migration()
 
 write(
-    "infra/supabase/migrations/"
-    "202607120008_auth_rls.sql",
-    migration,
-)
-
-write(
     "supabase/migrations/"
     "20260712000900_auth_rls.sql",
     migration,
@@ -712,14 +706,6 @@ DEPLOYMENT = (
     / "20260712000900_auth_rls.sql"
 )
 
-SOURCE = (
-    ROOT
-    / "infra"
-    / "supabase"
-    / "migrations"
-    / "202607120008_auth_rls.sql"
-)
-
 EXPECTED_TABLES = {expected_tables!r}
 
 
@@ -731,13 +717,11 @@ class SupabaseRlsMigrationTest(
             encoding="utf-8"
         )
 
-    def test_source_and_deployment_match(
+    def test_canonical_migration_is_present(
         self,
     ) -> None:
-        self.assertEqual(
-            SOURCE.read_bytes(),
-            DEPLOYMENT.read_bytes(),
-        )
+        self.assertTrue(DEPLOYMENT.is_file())
+        self.assertGreater(DEPLOYMENT.stat().st_size, 0)
 
     def test_every_public_table_has_policy(
         self,

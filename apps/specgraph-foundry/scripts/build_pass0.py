@@ -2020,7 +2020,7 @@ write(
 )
 
 write(
-    "infra/supabase/migrations/202607120001_core.sql",
+    "supabase/migrations/20260712000100_core.sql",
     """
     create extension if not exists pgcrypto;
 

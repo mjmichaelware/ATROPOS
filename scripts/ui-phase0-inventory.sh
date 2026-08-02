@@ -10,7 +10,6 @@ mkdir -p "$OUT_DIR"
 ALL="$PREFIX/tmp/atropos-ui-all.$$"
 ATROPOS_TUI="$OUT_DIR/ATROPOS_TUI_PATHS.txt"
 ATROPOS_WEB="$OUT_DIR/ATROPOS_WEB_PATHS.txt"
-SPECGRAPH_WEB="$OUT_DIR/SPECGRAPH_WEB_PATHS.txt"
 PARITY="$OUT_DIR/UI_PARITY_PATHS.txt"
 HASHES="$OUT_DIR/UI_PATH_FINGERPRINTS.sha256"
 SUMMARY="$OUT_DIR/UI_INVENTORY_SUMMARY.txt"
@@ -20,14 +19,12 @@ trap 'rm -f "$ALL"' EXIT
 git ls-files | sort -u > "$ALL"
 
 grep '^src/main/kotlin/atropos/cli/' "$ALL" > "$ATROPOS_TUI" || true
-grep '^apps/atropos-web/' "$ALL" > "$ATROPOS_WEB" || true
-grep '^apps/specgraph-foundry/apps/web/' "$ALL" > "$SPECGRAPH_WEB" || true
+grep '^apps/web/' "$ALL" > "$ATROPOS_WEB" || true
 grep '^docs/ui-parity/' "$ALL" > "$PARITY" || true
 
 {
   cat "$ATROPOS_TUI"
   cat "$ATROPOS_WEB"
-  cat "$SPECGRAPH_WEB"
   cat "$PARITY"
 } |
 sort -u |
@@ -46,8 +43,8 @@ done > "$HASHES"
   wc -l < "$ATROPOS_TUI"
   printf "ATROPOS Web tracked paths:     "
   wc -l < "$ATROPOS_WEB"
-  printf "SpecGraph Web tracked paths:   "
-  wc -l < "$SPECGRAPH_WEB"
+  printf "Canonical Web tracked paths:    "
+  wc -l < "$ATROPOS_WEB"
   printf "UI parity tracked paths:       "
   wc -l < "$PARITY"
   printf "Fingerprinted files:           "

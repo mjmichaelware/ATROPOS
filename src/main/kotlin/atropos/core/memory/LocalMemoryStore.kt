@@ -5,6 +5,7 @@ import atropos.core.security.RedactionFilter
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
+import java.nio.file.StandardOpenOption
 import java.nio.file.StandardCopyOption
 import java.security.MessageDigest
 import java.util.Locale
@@ -65,9 +66,19 @@ class LocalMemoryStore(
             authority = authority
         )
         val record = unsignedRecord.copy(contentSha256 = MemoryRecordCodec.recordSha256(unsignedRecord))
-        val snapshot = readSnapshot()
-        writeRecordsAtomically(snapshot.records + record)
-        writeState(snapshot.copy(records = snapshot.records + record))
+        val priorState = readStateFile()
+        val priorSnapshot = if (priorState == null && jsonlFile.exists()) readSnapshot() else null
+        val priorCount = priorState?.totalRecords ?: priorSnapshot?.records?.size ?: 0
+        val priorCorrupt = priorState?.corruptRecords ?: priorSnapshot?.corruptRecords ?: 0
+        appendRecord(record)
+        writeState(
+            MemorySnapshot(
+                records = emptyList(),
+                corruptRecords = priorCorrupt,
+                compactedAtEpochMs = priorState?.compactedAtEpochMs ?: priorSnapshot?.compactedAtEpochMs
+            ),
+            totalRecords = priorCount + 1
+        )
         return record
     }
 
@@ -300,15 +311,27 @@ class LocalMemoryStore(
         )
     }
 
-    private fun writeState(snapshot: MemorySnapshot) {
+    private fun writeState(snapshot: MemorySnapshot, totalRecords: Int = snapshot.records.size) {
         root.mkdirs()
         val content = buildString {
             appendLine("schemaVersion=$MEMORY_SCHEMA_VERSION")
-            appendLine("totalRecords=${snapshot.records.size}")
+            appendLine("totalRecords=$totalRecords")
             appendLine("corruptRecords=${snapshot.corruptRecords}")
             appendLine("compactedAtEpochMs=${snapshot.compactedAtEpochMs ?: ""}")
         }
         atomicWrite(stateFile, content)
+    }
+
+    private fun appendRecord(record: MemoryRecord) {
+        root.mkdirs()
+        Files.writeString(
+            jsonlFile.toPath(),
+            MemoryRecordCodec.encode(record) + "\n",
+            StandardCharsets.UTF_8,
+            StandardOpenOption.CREATE,
+            StandardOpenOption.WRITE,
+            StandardOpenOption.APPEND
+        )
     }
 
     private fun writeRecordsAtomically(records: List<MemoryRecord>) {

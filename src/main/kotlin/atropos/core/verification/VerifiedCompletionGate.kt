@@ -12,6 +12,8 @@ import atropos.core.memory.LocalMemoryStore
 import atropos.core.policy.AutonomyActionClass
 import atropos.core.policy.BoundedProcessRunner
 import atropos.core.security.RedactionFilter
+import atropos.core.security.SourceSecretClassification
+import atropos.core.security.SourceSecretScanner
 import atropos.core.worktree.IsolatedWorktreeService
 import atropos.core.worktree.BoundedGitWorktreeCommandRunner
 import atropos.core.worktree.GitWorktreeOperation
@@ -54,6 +56,7 @@ class VerifiedCompletionGate(
     private val processRunner: BoundedProcessRunner = BoundedProcessRunner(),
     private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
+    private val sourceSecretScanner = SourceSecretScanner(redactionFilter)
     fun evaluateNode(node: DagNode): CompletionGateReport {
         return IndependentVerificationGate(config, repoRoot, processRunner).verify(node)
     }
@@ -259,7 +262,8 @@ class VerifiedCompletionGate(
     )
 
     private fun checkTerritoryAndSecrets(node: DagNode): GateResult {
-        // Check no secret patterns in new/changed files
+        // Territory includes deleted paths; content scanning includes only current
+        // regular files, so historical/deleted names cannot become secret findings.
         val gitDiff = gitRunner.run(GitWorktreeOperation.DIFF_NAME_ONLY, repoRoot).takeIf { it.exitCode == 0 }?.output
             ?: run {
             // An unreadable diff is not a clean diff. This used to fall back to
@@ -273,21 +277,26 @@ class VerifiedCompletionGate(
             return nothingToInspect(node, TERRITORY_AND_SECRETS, "node declared no territory to check changes against")
         }
 
-        val secretPatterns = listOf("secret", "token", "credential", "password", "api.key", "auth")
-        val violations = mutableListOf<String>()
-        for (path in changed) {
-            val fileName = path.substringAfterLast('/').lowercase()
-            if (secretPatterns.any { fileName.contains(it) }) {
-                violations.add(path)
-            }
+        val untracked = gitRunner.run(GitWorktreeOperation.UNTRACKED_PATHS, repoRoot)
+        if (untracked.exitCode != 0) {
+            return GateResult(node.id, false, TERRITORY_AND_SECRETS,
+                "could not enumerate current candidate files through bounded Git inspection", clock())
+        }
+        val currentPaths = (changed + untracked.output.lineSequence().toList()).distinct()
+        val findings = sourceSecretScanner.scan(repoRoot, currentPaths)
+        val blockingFindings = findings.filter {
+            it.classification == SourceSecretClassification.REAL_SECRET ||
+                it.classification == SourceSecretClassification.UNKNOWN
         }
 
         val territoryOk = changed.all { path -> node.territory.any { path.startsWith(it) } }
 
-        val passed = violations.isEmpty() && territoryOk
+        val passed = blockingFindings.isEmpty() && territoryOk
         return GateResult(node.id, passed, TERRITORY_AND_SECRETS,
             when {
-                violations.isNotEmpty() -> "secret patterns in ${violations.joinToString(", ")}"
+                blockingFindings.isNotEmpty() -> "secret findings: ${blockingFindings.joinToString(", ") { finding ->
+                    "${finding.path}:${finding.line} rule=${finding.ruleId} class=${finding.classification} span=${finding.redactedSpan}"
+                }}"
                 !territoryOk -> "files outside territory"
                 else -> "checks passed"
             }, clock())

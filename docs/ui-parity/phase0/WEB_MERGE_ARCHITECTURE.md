@@ -1,6 +1,6 @@
 # ATROPOS Unified Web Architecture
 ## Status
-Phase 0 architectural boundary contract.
+Canonical web consolidation contract. The copied nested web tree has been removed; `apps/web` is the single runtime source tree.
 ## Primary Decision
 ATROPOS and SpecGraph shall eventually operate through one local-first web host while remaining separately owned product surfaces.
 ## Product Identity
@@ -29,9 +29,7 @@ The unified host shall never make SpecGraph the primary ATROPOS information arch
 | `/developer/specgraph/projects/:projectId/handoff` | SpecGraph | Export and handoff workspace |
 | `/developer/specgraph/projects/:projectId/routing` | SpecGraph | SpecGraph routing workspace |
 ## Deployment Shape
-The initial implementation may use two development processes behind one local gateway.
-The final implementation may use one host process with separately compiled route modules.
-The deployment choice shall not erase product ownership.
+`apps/web` is the canonical host. SpecGraph remains a bounded product surface under `/developer/specgraph`; it does not have a second copied frontend tree.
 ## Shared Infrastructure
 The two surfaces may share:
 - authentication session

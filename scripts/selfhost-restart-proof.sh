@@ -23,6 +23,7 @@ runtime_env() {
       args+=("$name=${!name}")
     fi
   done
+  args+=("GRADLE_USER_HOME=${GRADLE_USER_HOME:-$HOME/.gradle}")
   "${args[@]}" "$@"
 }
 
@@ -38,8 +39,17 @@ PROOF_DIR="$ROOT/.atropos/self-hosting/proofs"
 PROOF_FILE="$PROOF_DIR/phase11-restart-proof.properties"
 
 mkdir -p "$PROOF_DIR"
-cp -a "$ROOT"/. "$SANDBOX"/
-rm -rf "$SANDBOX/.git" "$SANDBOX/.atropos" "$SANDBOX/build"
+# Keep restart proof independent of ignored dependency/build caches and fast
+# enough for constrained Termux devices.
+tar -C "$ROOT" \
+  --exclude=.git \
+  --exclude=.atropos \
+  --exclude=.gradle \
+  --exclude=build \
+  --exclude=node_modules \
+  --exclude='apps/web/.next' \
+  --exclude='apps/web/tsconfig.tsbuildinfo' \
+  -cf - . | tar -C "$SANDBOX" -xf -
 mkdir -p "$SANDBOX/installed"
 PRIOR_JAR="$SANDBOX/prior-installed.jar"
 printf 'restart proof prior jar\n' > "$PRIOR_JAR"
@@ -99,8 +109,16 @@ if [ "$SECOND_EXIT" -ne 0 ]; then
   exit 21
 fi
 
-RUN_META="$(find "$SANDBOX/.atropos/runs" -maxdepth 1 -type f -name '*.meta' | sort | tail -n 1 || true)"
-SNAPSHOT="$(find "$SANDBOX/.atropos/recovery/snapshots" -maxdepth 1 -type f -name '*.snapshot' | sort | tail -n 1 || true)"
+if ! grep -Eq '^ATROPOS_SELF_HOST_RUN_STARTED goal=[^[:space:]]+$' "$FIRST" &&
+   ! grep -Eq '^ATROPOS_SELF_HOST_RUN_STARTED goal=[^[:space:]]+$' "$SECOND"; then
+  echo "restart proof failed: canonical self-host start marker missing" >&2
+  sed -n '1,220p' "$FIRST" >&2
+  sed -n '1,220p' "$SECOND" >&2
+  exit 21
+fi
+
+RUN_META="$(find "$SANDBOX/.atropos/runs" -maxdepth 1 -type f -name '*.meta' -print -quit || true)"
+SNAPSHOT="$(find "$SANDBOX/.atropos/recovery/snapshots" -maxdepth 1 -type f -name '*.snapshot' -print -quit || true)"
 MARKER="$SANDBOX/src/main/kotlin/atropos/core/agent/SelfHostCradleRuntimeState.kt"
 MARKER_TEST="$SANDBOX/src/test/kotlin/atropos/core/agent/SelfHostCradleRuntimeStateTest.kt"
 EVIDENCE_DIR="$(find "$SANDBOX/.atropos/self-hosting/evidence" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort | tail -n 1 || true)"
@@ -137,7 +155,7 @@ if [ -z "$SAFETY_LINE" ] || [ -z "$DIRECTOR_LINE" ] || [ -z "$GATE_LINE" ] || [ 
   echo "restart proof failed: promotion evidence gate order is incomplete" >&2
   exit 26
 fi
-BACKUP="$(find "$SANDBOX/installed" -maxdepth 1 -type f -name 'atropos.jar.backup-*' 2>/dev/null | sort | tail -n 1 || true)"
+BACKUP="$(find "$SANDBOX/installed" -maxdepth 1 -type f -name 'atropos.jar.backup-*' -print -quit 2>/dev/null || true)"
 if [ -z "$BACKUP" ] || ! cmp -s "$PRIOR_JAR" "$BACKUP" || ! cmp -s "$SANDBOX/build/libs/ATROPOS.jar" "$SANDBOX/installed/atropos.jar"; then
   echo "restart proof failed: real candidate swap or prior-JAR preservation missing" >&2
   exit 27

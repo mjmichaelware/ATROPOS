@@ -21,8 +21,8 @@
     "test:watch": "vitest",
     "e2e": "playwright test",
     "e2e:list": "playwright test --list",
-    "api:types": "openapi-typescript ../../openapi/specgraph-v1.yaml --output src/lib/api/generated.ts",
-    "api:types:check": "tmp=$(mktemp) && openapi-typescript ../../openapi/specgraph-v1.yaml --output \"$tmp\" && diff -u src/lib/api/generated.ts \"$tmp\"; status=$?; rm -f \"$tmp\"; exit $status",
+    "api:types": "openapi-typescript ../specgraph-foundry/openapi/specgraph-v1.yaml --output src/lib/api/generated.ts",
+    "api:types:check": "tmp=$(mktemp) && openapi-typescript ../specgraph-foundry/openapi/specgraph-v1.yaml --output \"$tmp\" && diff -u src/lib/api/generated.ts \"$tmp\"; status=$?; rm -f \"$tmp\"; exit $status",
     "check": "npm run api:types:check && npm run typecheck && npm run lint && npm test && npm run build:termux"
   },
   "dependencies": {

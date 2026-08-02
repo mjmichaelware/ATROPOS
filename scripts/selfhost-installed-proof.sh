@@ -35,12 +35,22 @@ runtime_env() {
       args+=("$name=${!name}")
     fi
   done
+  args+=("GRADLE_USER_HOME=${GRADLE_USER_HOME:-$HOME/.gradle}")
   "${args[@]}" "$@"
 }
 
 mkdir -p "$PROOF_DIR"
-cp -a "$ROOT"/. "$SANDBOX"/
-rm -rf "$SANDBOX/.git" "$SANDBOX/.atropos" "$SANDBOX/build"
+# Reproduce the source tree without copying ignored dependency/build state. A
+# proof clone must be bounded on Termux and must not depend on local caches.
+tar -C "$ROOT" \
+  --exclude=.git \
+  --exclude=.atropos \
+  --exclude=.gradle \
+  --exclude=build \
+  --exclude=node_modules \
+  --exclude='apps/web/.next' \
+  --exclude='apps/web/tsconfig.tsbuildinfo' \
+  -cf - . | tar -C "$SANDBOX" -xf -
 mkdir -p "$SANDBOX/installed"
 PRIOR_JAR="$SANDBOX/prior-installed.jar"
 printf 'prior installed proof jar\n' > "$PRIOR_JAR"
@@ -80,11 +90,11 @@ fi
 MARKER="$SANDBOX/src/main/kotlin/atropos/core/agent/SelfHostCradleRuntimeState.kt"
 MARKER_TEST="$SANDBOX/src/test/kotlin/atropos/core/agent/SelfHostCradleRuntimeStateTest.kt"
 STATUS="$(git -C "$SANDBOX" status --short -- "$MARKER" "$MARKER_TEST" || true)"
-EVIDENCE_DIR="$(find "$SANDBOX/.atropos/self-hosting/evidence" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort | tail -n 1 || true)"
-BACKUP="$(find "$SANDBOX/installed" -maxdepth 1 -type f -name 'atropos.jar.backup-*' 2>/dev/null | sort | tail -n 1 || true)"
+EVIDENCE_DIR="$(find "$SANDBOX/.atropos/self-hosting/evidence" -mindepth 1 -maxdepth 1 -type d -print -quit 2>/dev/null || true)"
+BACKUP="$(find "$SANDBOX/installed" -maxdepth 1 -type f -name 'atropos.jar.backup-*' -print -quit 2>/dev/null || true)"
 
-if ! grep -q "SELF-HOST RUN" "$OUT"; then
-  echo "installed proof failed: NL prompt did not reach self-host runner" >&2
+if ! grep -Eq '^ATROPOS_SELF_HOST_RUN_STARTED goal=[^[:space:]]+$' "$OUT"; then
+  echo "installed proof failed: canonical self-host start marker missing" >&2
   sed -n '1,220p' "$OUT" >&2
   exit 10
 fi

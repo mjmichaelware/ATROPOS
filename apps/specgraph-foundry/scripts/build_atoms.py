@@ -1190,7 +1190,7 @@ write(
 )
 
 write(
-    "infra/supabase/migrations/202607120002_atoms.sql",
+    "supabase/migrations/20260712000300_atoms.sql",
     r'''
     create table if not exists public.extraction_runs (
         id uuid primary key default gen_random_uuid(),

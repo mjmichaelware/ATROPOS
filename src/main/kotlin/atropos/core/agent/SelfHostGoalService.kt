@@ -385,14 +385,15 @@ class SelfHostGoalService(
 
     fun runNaturalLanguageSelfBuild(
         prompt: String,
-        phase: String = "11"
+        phase: String = "11",
+        lifecycleEmitter: (String) -> Unit = ::println
     ): SelfHostAutonomousRunResult =
         SelfHostAutonomousRunner(
             service = this,
             jarLocator = SelfHostRuntimeJarLocator(repoRoot),
             jarBuilder = SelfHostCandidateJarBuilder(repoRoot),
             gitStatusEvidence = SelfHostGitStatusEvidence(repoRoot)
-        ).run(prompt, phase)
+        ).run(prompt, phase, lifecycleEmitter = lifecycleEmitter)
 
     fun history(limit: Int = 20): List<GoalRunRecord> = goalQueries.history(limit)
     fun benchmarkHistory(): List<GoalRunRecord> = goalQueries.benchmarkHistory()

@@ -8,6 +8,27 @@ import kotlin.test.assertTrue
 
 class SelfHostAutonomousRunnerTest {
     @Test
+    fun accepted_natural_language_run_emits_canonical_start_marker_only_after_goal_start() {
+        val root = Files.createTempDirectory("atropos-self-host-marker-")
+        initializeGitRepo(root)
+        val service = SelfHostGoalService(repoRoot = root)
+        val markers = mutableListOf<String>()
+        val runner = SelfHostAutonomousRunner(
+            service = service,
+            jarLocator = SelfHostRuntimeJarLocator(root, env = emptyMap()),
+            jarBuilder = null,
+            gitStatusEvidence = null
+        )
+
+        val result = runner.run("ATROPOS build yourself", maxAdvances = 1, lifecycleEmitter = markers::add)
+
+        val goalId = result.goal?.record?.id ?: error("goal was not started")
+        assertEquals(listOf("ATROPOS_SELF_HOST_RUN_STARTED goal=$goalId"), markers)
+        assertTrue(result.steps.any { it == markers.single() })
+        assertTrue(!markers.any { it.contains("no unfinished self-host goals") })
+    }
+
+    @Test
     fun natural_language_runner_advances_source_diff_then_typed_stops_when_jar_is_unavailable() {
         val root = Files.createTempDirectory("atropos-self-host-runner-")
         initializeGitRepo(root)

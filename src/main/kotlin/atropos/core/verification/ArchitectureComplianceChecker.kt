@@ -55,7 +55,7 @@ class ArchitectureComplianceChecker(
         }
 
         val files = sourceRoot.walkTopDown()
-            .filter { it.isFile && it.extension == "kt" }
+            .filter { it.isFile && isSupportedSource(it) }
             .toList()
 
         val violations = files.mapNotNull(::inspect)
@@ -69,7 +69,7 @@ class ArchitectureComplianceChecker(
 
     fun checkFiles(files: List<File>): ArchitectureComplianceReport {
         val kotlinFiles = files
-            .filter { it.isFile && it.extension == "kt" }
+            .filter { it.isFile && isSupportedSource(it) }
             .distinctBy { it.toPath().toAbsolutePath().normalize().toString() }
 
         val violations = kotlinFiles.mapNotNull(::inspect)
@@ -103,11 +103,15 @@ class ArchitectureComplianceChecker(
         )
     }
 
+    private fun isSupportedSource(file: File): Boolean =
+        file.extension.lowercase() in SUPPORTED_SOURCE_EXTENSIONS
+
     private companion object {
         /**
          * Source Doc 3 §1 cites "400–600 lines while mixing concerns" as the
          * observed violation band; 400 is the lower bound of that range.
          */
         const val DEFAULT_LINE_THRESHOLD = 400
+        val SUPPORTED_SOURCE_EXTENSIONS = setOf("kt", "kts", "py", "ts", "tsx", "js", "jsx")
     }
 }

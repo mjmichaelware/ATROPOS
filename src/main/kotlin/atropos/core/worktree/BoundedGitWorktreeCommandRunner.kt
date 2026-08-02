@@ -15,6 +15,7 @@ enum class GitWorktreeOperation {
     APPLY_PATCH,
     CHECKOUT_ALL,
     DIFF_NAME_ONLY,
+    UNTRACKED_PATHS,
     DIFF_CHECK,
     DIFF_FROM_BASELINE,
     WORKTREE_REMOVE,
@@ -46,6 +47,9 @@ class BoundedGitWorktreeCommandRunner(
             GitWorktreeOperation.CHECKOUT_ALL -> listOf("git", "checkout", "--", ".")
             GitWorktreeOperation.DIFF_NAME_ONLY -> listOf(
                 "git", "diff", "--name-only", safeRevision(argument), "--", safeRelativePath(input)
+            )
+            GitWorktreeOperation.UNTRACKED_PATHS -> listOf(
+                "git", "ls-files", "--modified", "--others", "--exclude-standard"
             )
             GitWorktreeOperation.DIFF_CHECK -> listOf("git", "diff", "--check")
             GitWorktreeOperation.DIFF_FROM_BASELINE -> listOf(
@@ -101,10 +105,10 @@ class BoundedGitWorktreeCommandRunner(
                 .directory(directory.toFile())
                 .redirectErrorStream(true)
                 .start()
-            input?.let {
-                process.outputStream.write(it.toByteArray(StandardCharsets.UTF_8))
-                process.outputStream.close()
-            }
+            input?.let { process.outputStream.write(it.toByteArray(StandardCharsets.UTF_8)) }
+            // Git commands that do not consume input still need EOF. Leaving
+            // this pipe open can suspend commands such as worktree removal.
+            process.outputStream.close()
             val output = process.inputStream.bufferedReader().readText()
             GitWorktreeCommandResult(process.waitFor(), output)
         }.getOrElse { failure ->

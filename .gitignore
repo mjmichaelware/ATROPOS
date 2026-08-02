@@ -60,6 +60,10 @@ apps/specgraph-foundry/artifacts/
 apps/specgraph-foundry/supabase/.branches/
 apps/specgraph-foundry/supabase/.temp/
 build/
+!build/
+!build/reports/
+!build/reports/architecture/
+!build/reports/architecture/*.json
 client_secret.json
 data/cache/
 lakehouse_build/
@@ -69,3 +73,8 @@ setup_keys.sh
 tmp-*.jar
 token.json
 *SOURCE_EXPORT*
+/build/reports/tests/
+/build/reports/problems/
+/build/test-results/
+
+/build/

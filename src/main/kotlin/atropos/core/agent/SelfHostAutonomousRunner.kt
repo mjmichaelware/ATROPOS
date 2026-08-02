@@ -9,7 +9,8 @@ class SelfHostAutonomousRunner(
     fun run(
         prompt: String,
         phase: String = "11",
-        maxAdvances: Int = SelfHostRuntimeRunLimits.maxAdvances()
+        maxAdvances: Int = SelfHostRuntimeRunLimits.maxAdvances(),
+        lifecycleEmitter: (String) -> Unit = ::println
     ): SelfHostAutonomousRunResult {
         val steps = mutableListOf<String>()
         val started = service.startGoal(prompt, phase)
@@ -18,6 +19,8 @@ class SelfHostAutonomousRunner(
 
         val goalId = started.goal?.record?.id
             ?: return stopped(started.copy(message = "self-host goal start returned no goal"), null, null, steps)
+        lifecycleEmitter("ATROPOS_SELF_HOST_RUN_STARTED goal=$goalId")
+        steps += "ATROPOS_SELF_HOST_RUN_STARTED goal=$goalId"
 
         var latest = started
         var advances = 0

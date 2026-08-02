@@ -2530,7 +2530,7 @@ write(
 )
 
 write(
-    "infra/supabase/migrations/202607120005_exports.sql",
+    "supabase/migrations/20260712000600_exports.sql",
     r'''
     create table if not exists public.integration_bindings (
         id uuid primary key default gen_random_uuid(),

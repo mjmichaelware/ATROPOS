@@ -1594,4 +1594,157 @@ Markup is append-only evidence, not a percentage rewrite. Percentages move only 
 - Fingerprints: refreshed in the root manifest after this ledger append.
 - New overall estimate: unchanged.
 
+### 2026-08-01T14:00:00-06:00 · Agent: Codex GPT-5 · Batch: consolidation-census-generated-residue-001
+- Paths touched: `docs/architecture/PARALLEL_IMPLEMENTATION_CENSUS.md` (+58), `docs/architecture/CANONICAL_OWNER_REGISTRY.md` (+35), `docs/architecture/ATOMICITY_VIOLATION_CENSUS.md` (+31), `docs/architecture/CONSOLIDATION_DAG.md` (+25), `docs/architecture/DELETION_MANIFEST.md` (+15), `docs/architecture/PARALLELISM_ALLOWLIST.md` (+15), `build/reports/architecture/census.json` (+13), `.gitignore` (+3), `apps/web/.gitignore` (+2), tracked `apps/web/.next/**` and `apps/web/tsconfig.tsbuildinfo` (-846 generated lines)
+- New decoupled files: 7 architecture reports and 1 machine-readable census.
+- Atoms / phases affected: repository consolidation `CENSUS-01`, generated ownership `WEB-03`; no canonical product phase completion claimed.
+- Predicate moved: the required initial duplicate/owner/atomicity/dependency/deletion/allowlist census now exists, and tracked web build residue is removed with ignore coverage. `apps/web` is recorded as the canonical ATROPOS web owner; nested web deletion remains gated on unique-function migration.
+- % delta: unchanged. This is structural campaign progress, not a Phase 0–20 acceptance gate.
+- Why justified: the census records the supplied baseline separately from the measured Kotlin/Python/TypeScript/JavaScript/SQL/config slice, identifies exact generated duplicates and copied web files, and preserves a safe-deletion manifest. The generated files are reproducible build products with no runtime source callers; `.gitignore` prevents their return.
+- HR interrupts: none. No source-authority files, applied migration history, or nested runtime tree was deleted.
+- Fingerprints: manifest refresh required after this append; `git diff --check` clean before append.
+- New overall estimate: unchanged.
+
+### 2026-08-01T14:30:00-06:00 · Agent: Codex GPT-5 · Batch: web-canonicalization-002
+- Paths touched: `apps/specgraph-foundry/apps/web/**` (399 copied runtime files removed), `apps/web` retained as canonical; `scripts/ui-phase0-inventory.sh` (+5/-7), `apps/specgraph-foundry/scripts/check_licenses.py` (+3/-2), `apps/specgraph-foundry/scripts/check_deployment_readiness.py` (+7/-2), `apps/specgraph-foundry/tests/test_deployment_static.py` (+4/-1), `apps/atropos-web/README.md` (-15), `docs/ui-parity/phase0/UI_PHASE0_BASELINE.md` (+2/-3), `docs/ui-parity/phase0/UI_SURFACE_OWNERSHIP.tsv` (+2/-2), `docs/ui-parity/phase0/UI_INVENTORY_SUMMARY.txt` (+1/-2), `docs/ui-parity/phase0/ATROPOS_WEB_PATHS.txt` regenerated, `docs/ui-parity/phase0/UI_PATH_FINGERPRINTS.sha256` regenerated, `docs/ui-parity/phase0/SPECGRAPH_WEB_PATHS.txt` removed, `docs/ui-parity/phase0/WEB_MERGE_ARCHITECTURE.md` (+3/-6), architecture reports updated.
+- New decoupled files: none; this was a repository move and reference migration.
+- Atoms / phases affected: `WEB-01`, `WEB-04`, canonical-owner registry and UI inventory consistency.
+- Predicate moved: one canonical tracked web runtime remains at `apps/web`; static deployment/license checks resolve that root, inventory generation no longer emits a nested web tree, and stale future-root documentation is corrected.
+- % delta: unchanged. Web runtime verification has not been run; no final consolidation gate is claimed.
+- Why justified: recent root web commits and the root package identify `apps/web` as the authoritative ATROPOS/HOE surface. The nested tree was a copied older implementation with no remaining runtime callers after the static check migration. The deletion manifest records the move, and the canonical path inventory was regenerated.
+- HR interrupts: none. Applied migration history and Kotlin product code were not modified.
+- Fingerprints: `git diff --check` clean; AGENTS and root manifest hashes refreshed after this row.
+- New overall estimate: unchanged.
+
+### 2026-08-01T15:00:00-06:00 · Agent: Codex GPT-5 · Batch: migration-writers-canonical-003
+- Paths touched: `apps/specgraph-foundry/scripts/build_pass0.py`, `build_atoms.py`, `build_planning.py`, `build_exports.py`, `build_execution_receipts.py`, `build_routing.py`, `build_auth_rls.py` (migration writer paths changed to canonical `supabase/migrations` names).
+- New decoupled files: none; migration path ownership remains in the existing generator scripts.
+- Atoms / phases affected: `DB-01` migration ownership.
+- Predicate moved: all discovered generator writes now target the canonical deployment migration directory; no generator still writes `infra/supabase/migrations`.
+- % delta: unchanged. Historical mirror deletion and Python test conversion remain open; no database acceptance is claimed.
+- Why justified: the canonical directory is the one consumed by Supabase deployment configuration, and the mapping preserves the existing migration content/identity sequence, including the deployment-only compiler migration. The old mirror remains untouched until its test callers are migrated.
+- HR interrupts: none. No applied remote migration history was rewritten.
+- Fingerprints: `git diff --check` pending final batch review; root manifest refresh follows this append.
+- New overall estimate: unchanged.
+
+### 2026-08-01T15:30:00-06:00 · Agent: Codex GPT-5 · Batch: migration-canonicalization-003
+- Paths touched: seven SpecGraph migration generator scripts, `apps/specgraph-foundry/tests/test_artifact_security.py`, `test_operation_security.py`, `test_storage_security.py`, `test_supabase_rls.py`, generated auth test template, `apps/specgraph-foundry/infra/supabase/migrations/**` (17 historical mirror files removed), architecture census/deletion reports, and phase-0 inventory summary cleanup.
+- New decoupled files: none; canonical migration ownership remains `apps/specgraph-foundry/supabase/migrations`.
+- Atoms / phases affected: `DB-01`, generated ownership, database safety.
+- Predicate moved: one canonical future migration directory remains; all discovered generator writers and focused tests target it; the shadow mirror is removed and recorded in the deletion manifest.
+- % delta: unchanged. Remote applied-history verification and full SpecGraph/web gates remain outstanding; no database phase completion is claimed.
+- Why justified: the deployment tree contained the canonical padded migration sequence and the removed mirror was not referenced after writer/test migration. Security assertions were preserved as canonical-file presence/content checks rather than tautological source-vs-deployment comparisons. `PYTHONPATH=apps/specgraph-foundry/src python3 -m unittest apps.specgraph-foundry.tests.test_artifact_security apps.specgraph-foundry.tests.test_operation_security apps.specgraph-foundry.tests.test_storage_security apps.specgraph-foundry.tests.test_supabase_rls` passed 25 tests; 33 Python files compiled in memory.
+- HR interrupts: none. No remote database was contacted and no applied migration was rewritten.
+- Fingerprints: `git diff --check` clean; root manifest refresh follows this row.
+- New overall estimate: unchanged.
+
+### 2026-08-01T16:00:00-06:00 · Agent: Codex GPT-5 · Batch: core-territory-owner-004
+- Paths touched: `src/main/kotlin/atropos/core/territory/TerritoryEnforcer.kt` (+8/-13), `docs/architecture/CANONICAL_OWNER_REGISTRY.md` (+1/-1), `docs/architecture/ATOMICITY_VIOLATION_CENSUS.md` (+5), `build/reports/architecture/census.json` (+1), architecture deletion/campaign evidence.
+- New decoupled files: none; `TerritoryEnforcer` remains a narrow adapter.
+- Atoms / phases affected: `CORE-01`, territory enforcement / non-duplication.
+- Predicate moved: territory path normalization and prefix semantics now have one canonical implementation in `TerritoryAssignment`; bulk worktree checks delegate to it instead of maintaining parallel logic.
+- % delta: unchanged. The Kotlin focused Gradle invocation produced no usable result in this environment, so no runtime gate is claimed.
+- Why justified: direct callers show `TerritoryService` owns durable grants while `IsolatedWorktreeService` uses the enforcer only for a list-of-paths check. Delegation preserves the existing adapter boundary and removes independent normalization behavior. Static diff review is clean.
+- HR interrupts: none.
+- Fingerprints: root manifest refresh follows this row.
+- New overall estimate: unchanged.
+
+### 2026-08-01T16:30:00-06:00 · Agent: Codex GPT-5 · Batch: architecture-cross-language-gate-005
+- Paths touched: `src/main/kotlin/atropos/core/verification/ArchitectureComplianceChecker.kt` (+5/-2), `ArchitectureConcern.kt` (+15), `src/test/kotlin/atropos/core/verification/ArchitectureComplianceCheckerTest.kt` (+26), architecture census and machine report.
+- New decoupled files: none; the existing ArchitectureComplianceChecker remains the sole architecture gate.
+- Atoms / phases affected: `CONT-01`, `CORE-01`, atomicity enforcement.
+- Predicate moved: the canonical architecture gate now scans Kotlin, Python, TypeScript, TSX, JavaScript, and JSX, with language-neutral markers for routing, rendering, transport, normalization, verification, execution, source loading, and parsing.
+- % delta: unchanged. The new cross-language test is written but the Gradle test invocation did not yield a usable result in this environment.
+- Why justified: the previous checker filtered to `.kt`, allowing the 3,989-line Python generators and 3,953-line generated/client surfaces to bypass the same atomicity policy. The extension reuses the existing concern detector, policy, masking, report, and enforcement mode; no parallel checker was introduced.
+- HR interrupts: none.
+- Fingerprints: `git diff --check` clean; root manifest refresh follows this row.
+- New overall estimate: unchanged.
+
+### 2026-08-01T17:00:00-06:00 · Agent: Codex GPT-5 · Batch: migration-owner-gate-006
+- Paths touched: `apps/specgraph-foundry/scripts/check_deployment_readiness.py` (+20), `apps/specgraph-foundry/tests/test_deployment_static.py` (+7), `build/reports/architecture/census.json` (+2).
+- New decoupled files: none; the existing deployment-readiness checker is the canonical gate.
+- Atoms / phases affected: `DB-01`, architecture enforcement.
+- Predicate moved: future writes to `infra/supabase/migrations` are now rejected, canonical `supabase/migrations` presence is required, and the static deployment suite covers the single-owner rule.
+- % delta: unchanged. Full repository acceptance remains open.
+- Why justified: the gate scans the existing generator directory and checks the filesystem before deployment readiness can pass; the focused SpecGraph deployment test suite passed 26 tests, bringing the migration/security focused total to 51.
+- HR interrupts: none.
+- Fingerprints: `git diff --check` clean; root manifest refresh follows this row.
+- New overall estimate: unchanged.
+
+### 2026-08-01T18:30:00-06:00 · Agent: Codex GPT-5 · Batch: consolidation-runtime-memory-web-007
+- Paths touched: src/main/kotlin/atropos/core/memory/MemoryRecordCodec.kt (+53/-20), src/main/kotlin/atropos/core/memory/LocalMemoryStore.kt (+33/-3), apps/web/package.json (+2/-2), apps/web/README.md (+2/-2), active UI parity manifests, docs/architecture/CANONICAL_OWNER_REGISTRY.md, CONSOLIDATION_DAG.md, CONSOLIDATION_STATUS_MATRIX.md, build/reports/architecture/census.json.
+- New decoupled files: 1 status matrix; no new semantic owner.
+- Atoms / phases affected: C1-P4, C1-P9, C1-X1, CORE-01, WEB-01..04.
+- Predicate moved: Kotlin compile and the affected Kotlin suite pass; LocalMemoryStoreTest passes 9/9 including the 5,005-record query; all 51 SpecGraph security/deployment tests pass; the web OpenAPI generator points to the canonical schema and active deleted-root inventory references are removed.
+- % delta: unchanged. Full Kotlin, web Node, installed-runtime, remote migration-history, and full architecture gates remain open.
+- Why justified: the memory codec now caches regexes and uses deterministic hex encoding, while LocalMemoryStore appends new records instead of rewriting the complete snapshot on every append; both preserve existing wire/hash semantics and pass the isolated and consolidated focused suites. Static web/package/report checks pass, but apps/web has no node_modules, so no web runtime claim is made.
+- HR interrupts: none.
+- Fingerprints: root manifest refreshed after this append; tree export intentionally not refreshed because no whole phase passed.
+- New overall estimate: unchanged.
+
+### 2026-08-01T19:45:00-06:00 · Agent: Codex GPT-5 · Batch: web-runtime-gates-008
+- Paths touched: apps/web/package.json, apps/web/README.md, docs/ui-parity/phase0 active manifests, docs/architecture/CONSOLIDATION_STATUS_MATRIX.md, build/reports/architecture/census.json.
+- New decoupled files: none.
+- Atoms / phases affected: WEB-01..04 and cross-language consolidation verification.
+- Predicate moved: canonical web API generation, typecheck, lint, 47-file/304-test unit suite, and webpack production build now pass against apps/web and the canonical SpecGraph OpenAPI schema.
+- % delta: unchanged. Browser E2E execution, full Kotlin suite, installed-runtime proof, remote migration-history verification, and final architecture census remain open.
+- Why justified: npm ci installed 593 packages with zero vulnerabilities; api:types:check, typecheck, lint, npm test, and build:termux all exited zero. The browser E2E suite remains unexecuted because no browser installation is permitted/available in this environment.
+- HR interrupts: none.
+- Fingerprints: root manifest refresh follows this append; tree export remains unchanged because no whole canonical phase passed.
+- New overall estimate: unchanged.
+
+### 2026-08-01T21:30:00-06:00 · Agent: Codex GPT-5 · Batch: installed-proof-process-hardening-009
+- Paths touched: `src/main/kotlin/atropos/core/worktree/BoundedGitWorktreeCommandRunner.kt` (+4/-5), `src/test/kotlin/atropos/core/worktree/BoundedGitWorktreeCommandRunnerTest.kt` (+16), `src/main/kotlin/atropos/core/security/KnownSecretRegistry.kt` (+7/-1), `scripts/selfhost-installed-proof.sh` (+11/-2), `scripts/selfhost-restart-proof.sh` (+10/-1), `docs/architecture/CONSOLIDATION_STATUS_MATRIX.md` (+5/-5), `build/reports/architecture/census.json` (+1), `AGENTS.md` (+this row).
+- New decoupled files: none; existing Git process, secret registry, and proof-script owners were extended.
+- Atoms / phases affected: `C1-P4`, `C1-SB-01..03`, `CORE-01`, `FINAL-01`.
+- Predicate moved: installed-proof code now closes stdin for every bounded Git operation, avoiding the Termux `git worktree remove` wait; secret digest encoding avoids per-byte formatter allocation during large evidence redaction; proof clones exclude ignored dependency/build state and preserve the host Gradle cache through the portable `GRADLE_USER_HOME` variable.
+- % delta: unchanged. No current-batch Gradle, compile, package, or runtime proof is claimed; earlier 607-test/0-failure evidence predates these edits and is explicitly marked stale for this batch.
+- Why justified: the installed proof thread dump identified the exact Git stdin wait and evidence-redaction formatter hot path. A focused regression was written for no-input Git completion; the earlier focused/full tests passed before these final hardening edits. The operator must rerun the focused/full gates and installed/restart proofs before any phase can be called 100%.
+- HR interrupts: browser E2E remains environment-blocked on Termux Android (`Unsupported platform: android`); no remote database was contacted; no immutable source authority was edited.
+- Fingerprints: `git diff --check` and shell syntax checks are required after this row; root manifest refresh follows this append. Tree export remains unchanged because no whole canonical phase passed.
+- New overall estimate: unchanged.
+
+### 2026-08-01T22:30:00-06:00 · Agent: Codex GPT-5 · Batch: canonical-web-test-hygiene-010
+- Paths touched: `apps/web/src/test/server.ts` (+28), `apps/web/src/components/app-shell/app-shell.test.tsx` (+10/-8), `apps/web/vitest.config.ts` (+3), `docs/architecture/CONSOLIDATION_STATUS_MATRIX.md` (+2/-2), `build/reports/architecture/census.json` (+1), `AGENTS.md` (+this row).
+- New decoupled files: none; the existing web test server, shell test, and Vitest configuration remain the canonical owners.
+- Atoms / phases affected: `WEB-01..04`, `C1-X1`, `FINAL-01`.
+- Predicate moved: canonical web verification now has explicit status/recovery MSW handlers while preserving strict rejection for other unhandled requests; the AppShell test waits for provider effects and no longer emits its CommandPalette `act(...)` warning; 47/47 files and 304/304 tests pass.
+- % delta: unchanged. This is web verification evidence only; the repository consolidation campaign remains PARTIAL because browser E2E is blocked on Termux Android and other backend/runtime gates retain their documented status.
+- Why justified: the affected shell test passed cleanly (1/1), the auth/projects slow tests passed in isolation, and the complete web suite passed 47/47 and 304/304 with the bounded 15-second Termux test timeout. Strict MSW behavior remains enabled through `onUnhandledRequest: "error"`.
+- HR interrupts: residual unrelated React `act(...)` warnings remain in auth/research axe tests; no new unhandled-request warning was introduced by this batch. No Gradle, Kotlin, JAR, remote database, or browser gate was rerun.
+- Fingerprints: `git diff --check` passed; root manifest refresh follows this row. Tree export remains unchanged because no whole canonical phase passed.
+- New overall estimate: unchanged.
+
+### 2026-08-01T22:45:00-06:00 · Agent: Codex GPT-5 · Batch: proof-fingerprint-truth-011
+- Paths touched: `build/reports/architecture/census.json` (+1), `docs/architecture/CONSOLIDATION_STATUS_MATRIX.md` (+1/-1), `AGENTS.md` (+this row).
+- New decoupled files: none.
+- Atoms / phases affected: `C1-SB-01..03`, `FINAL-01`.
+- Predicate moved: installed self-host evidence is now classified by artifact presence and fingerprint linkage instead of being treated as current-tree proof.
+- % delta: unchanged. Existing properties show a prior PASS artifact, but do not contain a current repository fingerprint; installed/restart runtime acceptance remains open.
+- Why justified: evidence review found hashes for the marker, bundle, candidate JAR, and backup JAR, but no source-tree fingerprint tying the proof to this dirty worktree. The report now fails closed on that distinction.
+- HR interrupts: none; no expensive gate was rerun.
+- Fingerprints: `git diff --check` and JSON parse remain required after this documentation-only correction; root manifest refresh follows this row.
+- New overall estimate: unchanged.
+
+### 2026-08-02T10:12:37-06:00 · Agent: Codex GPT-5 · Batch: phase11-proof-evidence-repair-012
+- Paths touched: `gradle.properties`, `scripts/selfhost-installed-proof.sh`, `scripts/selfhost-restart-proof.sh`, `src/main/kotlin/atropos/core/agent/SelfHostAutonomousRunner.kt`, `src/main/kotlin/atropos/core/agent/SelfHostGoalService.kt`, `src/main/kotlin/atropos/core/agent/SelfHostCandidateJarBuilder.kt`, `src/main/kotlin/atropos/core/agent/SelfHostBuildEvidence.kt`, `src/main/kotlin/atropos/core/policy/BoundedProcessRunner.kt`, and focused tests.
+- New decoupled files: `src/main/kotlin/atropos/core/agent/SelfHostBuildEvidence.kt`.
+- Atoms / phases affected: `C1-SB-01..03`, Phase 11 installed-proof evidence and lifecycle marker.
+- Predicate moved: installed/restart proofs now use a stable `ATROPOS_SELF_HOST_RUN_STARTED goal=<id>` marker; candidate build evidence streams complete output to hashed files with bounded redacted display windows; successful verbose output no longer fails solely because the display copy is truncated; artifact size/hash and command evidence are recorded; proof artifact discovery is bounded and no longer depends on a hanging sort/tail pipeline.
+- % delta: unchanged. Focused Phase 11 tests passed (27/27), production Kotlin compile passed, and JAR packaging passed before the final timeout-only constant edit. Installed proof reached the canonical marker, real source mutation, and evidence export, but current-runtime promotion remains BLOCKED: one run hit `Metaspace`, and the later run reached `:test` but exceeded the previous 15-minute bound before the bound was extended. No 30-minute build was run after that change.
+- Why justified: stale NL assertion was replaced by a machine-readable lifecycle contract, and the builder verdict now uses authorization, launch, timeout, exit code, artifact existence/size/hash, and evidence integrity rather than display truncation. No Phase 11 VERIFIED claim is made.
+- HR interrupts: operator requested no 30-minute build; that gate was not run. Tree export remains unchanged because no whole canonical phase passed.
+- Fingerprints: `gradle.properties=2d8af45fbc733c82050e4bd11530105b468f48f5fb175d12bf9e7c5427e75da3`, `SelfHostCandidateJarBuilder.kt=8c62dfae78389b8054031429fd8c747b011ab7f31fac388e0fa8388dd819a421`, `SelfHostBuildEvidence.kt=fbebbdd84b2b863b8615ecd7fa174f75117027ef6c56eab0f0f66e560c4e2043`, `BoundedProcessRunner.kt=14bb21c610fb17c6cfae62532a01e4295a323ef578cfa3bbe51a80bd9d502f2b`; `git diff --check` passed.
+- New overall estimate: unchanged.
+
+### 2026-08-02T17:30:00-06:00 · Agent: Codex GPT-5 · Batch: phase11-territory-secret-scanner-013
+- Paths touched: `src/main/kotlin/atropos/core/security/SourceSecretScanner.kt` (+151), `src/main/kotlin/atropos/core/verification/VerifiedCompletionGate.kt` (+23/-14), `src/main/kotlin/atropos/core/worktree/BoundedGitWorktreeCommandRunner.kt` (+4), `src/test/kotlin/atropos/core/security/SourceSecretScannerTest.kt` (+78).
+- Atoms / phases affected: `C1-SB-02`, `C1-SB-03`, Phase 11 Territory & Secrets promotion gate.
+- Predicate moved: current candidate content is now scanned by redacted, classified secret findings; filename words no longer create false positives; deleted historical paths are ignored for content scanning; modified and untracked current files are included.
+- % delta: unchanged. Focused scanner and completion-gate tests passed; no candidate rebuild, full test suite, or JAR promotion was run.
+- Why justified: the prior gate rejected every changed filename containing `auth`, `password`, `token`, or `secret` and omitted untracked files. The new scanner detects private keys, bearer tokens, JWTs, API keys, and literal credential assignments, while strict test placeholders, detector definitions, documentation examples, UI labels, and migration column names are non-blocking classifications. Evidence spans are redacted before gate details.
+- HR interrupts: none. Operator prohibition on a 30-minute build honored; runtime promotion remains pending a rebuilt candidate whose source fingerprint includes this repair.
+- Fingerprints: focused command `./gradlew test --tests atropos.core.security.SourceSecretScannerTest --tests atropos.core.verification.VerifiedCompletionGateTest --no-daemon --max-workers=1` passed; `git diff --check` passed.
+- New overall estimate: unchanged.
+
 End of AGENTS.md
