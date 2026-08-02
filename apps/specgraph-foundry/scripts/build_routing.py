@@ -2293,7 +2293,7 @@ write(
 )
 
 write(
-    "infra/supabase/migrations/202607120007_routing.sql",
+    "supabase/migrations/20260712000800_routing.sql",
     r'''
     create table if not exists public.project_policies (
         id uuid primary key default gen_random_uuid(),

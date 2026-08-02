@@ -134,10 +134,15 @@ class KnownSecretRegistry(
         val md = MessageDigest.getInstance("SHA-256")
         md.update(salt)
         md.update(value.toByteArray(StandardCharsets.UTF_8))
-        return md.digest().joinToString("") { "%02x".format(it) }
+        return md.digest().joinToString("") { byte ->
+            val unsigned = byte.toInt() and 0xff
+            HEX[unsigned ushr 4].toString() + HEX[unsigned and 0x0f]
+        }
     }
 
     private companion object {
+        private val HEX = "0123456789abcdef".toCharArray()
+
         fun randomSalt(): ByteArray = ByteArray(32).also { SecureRandom().nextBytes(it) }
     }
 }

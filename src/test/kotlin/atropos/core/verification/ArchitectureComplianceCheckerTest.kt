@@ -89,6 +89,29 @@ class ArchitectureComplianceCheckerTest {
     }
 
     @Test
+    fun cross_language_sources_use_the_same_atomicity_gate() {
+        val root = Files.createTempDirectory("atropos-architecture-python-")
+        val file = root.resolve("src/specgraph_foundry/router.py")
+        Files.createDirectories(file.parent)
+        Files.writeString(
+            file,
+            largeKotlinFile(
+                """
+                def route(request):
+                    subprocess.run(request)
+                    print("result")
+                """.trimIndent(),
+                420
+            )
+        )
+
+        val report = ArchitectureComplianceChecker(enforcing = true).checkFiles(listOf(file.toFile()))
+
+        assertTrue(report.blocksBuild)
+        assertTrue(report.violations.single().mixedConcerns.contains("routing+rendering"))
+    }
+
+    @Test
     fun comments_and_literals_do_not_create_mixed_concerns() {
         val root = Files.createTempDirectory("atropos-architecture-mask-")
         val file = root.resolve("src/main/kotlin/example/SourceText.kt")

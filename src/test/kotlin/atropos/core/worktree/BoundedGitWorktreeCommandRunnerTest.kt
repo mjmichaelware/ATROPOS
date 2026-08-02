@@ -3,6 +3,7 @@ package atropos.core.worktree
 import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import kotlin.test.assertFailsWith
 
 class BoundedGitWorktreeCommandRunnerTest {
@@ -40,5 +41,19 @@ class BoundedGitWorktreeCommandRunnerTest {
         assertFailsWith<IllegalArgumentException> {
             runner.run(GitWorktreeOperation.DIFF_NAME_ONLY, root, "HEAD; touch marker", "src/main.kt")
         }
+    }
+
+    @Test
+    fun no_input_git_operation_receives_eof_and_completes() {
+        val root = Files.createTempDirectory("atropos-bounded-git-eof-")
+        ProcessBuilder("git", "init", "--quiet", root.toString()).start().also {
+            assertTrue(it.waitFor() == 0)
+        }
+        val result = BoundedGitWorktreeCommandRunner().run(
+            GitWorktreeOperation.STATUS_PORCELAIN,
+            root
+        )
+
+        assertEquals(0, result.exitCode)
     }
 }

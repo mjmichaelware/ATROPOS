@@ -8,7 +8,8 @@ enum class ArchitectureConcern(val label: String, val markers: List<Regex>) {
         listOf(
             Regex("""\bwhen\s*\(\s*tokens"""),
             Regex("""RouterOutcome"""),
-            Regex("""fun\s+route\b""")
+            Regex("""fun\s+route\b"""),
+            Regex("""\bdef\s+route\b""")
         )
     ),
     RENDERING(
@@ -17,7 +18,8 @@ enum class ArchitectureConcern(val label: String, val markers: List<Regex>) {
             Regex("""\bui\.render"""),
             Regex("""atropos\.cli\.ui\."""),
             Regex("""\bappendLine\("""),
-            Regex("\u001B\\[")
+            Regex("\u001B\\["),
+            Regex("""\bprint\(""")
         )
     ),
     SESSION_STATE(
@@ -33,7 +35,8 @@ enum class ArchitectureConcern(val label: String, val markers: List<Regex>) {
         listOf(
             Regex("""HttpURLConnection"""),
             Regex("""\.openConnection\("""),
-            Regex("""ProcessBuilder\(""")
+            Regex("""ProcessBuilder\("""),
+            Regex("""\bsubprocess\.""")
         )
     ),
     NORMALIZATION(
@@ -41,7 +44,8 @@ enum class ArchitectureConcern(val label: String, val markers: List<Regex>) {
         listOf(
             Regex("""fun\s+\w*[Nn]ormaliz"""),
             Regex("""fun\s+\w*[Pp]arse\w*Response"""),
-            Regex("""JSONObject""")
+            Regex("""JSONObject"""),
+            Regex("""\bjson\.(loads|dumps)\(""")
         )
     ),
     VERIFICATION(
@@ -49,7 +53,8 @@ enum class ArchitectureConcern(val label: String, val markers: List<Regex>) {
         listOf(
             Regex("""VerificationResult"""),
             Regex("""fun\s+verify\b"""),
-            Regex("""DeterministicVerifier""")
+            Regex("""DeterministicVerifier"""),
+            Regex("""\bdef\s+verify\b""")
         )
     ),
     EXECUTION(
@@ -57,7 +62,8 @@ enum class ArchitectureConcern(val label: String, val markers: List<Regex>) {
         listOf(
             Regex("""\.start\(\)"""),
             Regex("""waitFor\("""),
-            Regex("""fun\s+execute\b""")
+            Regex("""fun\s+execute\b"""),
+            Regex("""\bdef\s+execute\b""")
         )
     ),
     SOURCE_LOADING(
@@ -66,7 +72,8 @@ enum class ArchitectureConcern(val label: String, val markers: List<Regex>) {
             Regex("""Files\.walk"""),
             Regex("""readLines"""),
             Regex("""readText"""),
-            Regex("""loadDocuments""")
+            Regex("""loadDocuments"""),
+            Regex("""\bPath\([^)]*\)\.read_text\(""")
         )
     ),
     ADDRESS_PARSING(
@@ -74,7 +81,8 @@ enum class ArchitectureConcern(val label: String, val markers: List<Regex>) {
         listOf(
             Regex("""fun\s+parse\b"""),
             Regex("""parseSelector"""),
-            Regex("""ParsedDloiAddress""")
+            Regex("""ParsedDloiAddress"""),
+            Regex("""\bdef\s+parse\b""")
         )
     );
 }

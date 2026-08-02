@@ -2,10 +2,10 @@
 package atropos.core.territory
 
 /**
- * TerritoryEnforcer - Enforces territory bounds on file mutations and path checks.
+ * TerritoryEnforcer - Adapts territory assignments to bulk patch-path checks.
  *
- * Implements the Phase 13 territory enforcement capability. Blocks any out-of-territory
- * modification before it reaches the file system or worktree git operations.
+ * Path normalization and prefix semantics remain owned by [TerritoryAssignment].
+ * This adapter does not maintain a second territory policy.
  */
 class TerritoryEnforcer(
     private val allowedTerritories: List<String> = emptyList()
@@ -15,12 +15,12 @@ class TerritoryEnforcer(
      */
     fun isAllowed(relativePath: String): Boolean {
         if (allowedTerritories.isEmpty()) return false
-        val normalized = relativePath.replace('\\', '/').trim().trimStart('/')
-        if (normalized.isEmpty() || normalized.split("/").any { it == ".." }) return false
-
         return allowedTerritories.any { territory ->
-            val normT = territory.replace('\\', '/').trim().trim('/')
-            normalized == normT || normalized.startsWith("$normT/")
+            TerritoryAssignment(
+                ownerId = "worktree",
+                ownerRole = "WORKTREE",
+                allowedPrefix = territory
+            ).allows(relativePath)
         }
     }
 

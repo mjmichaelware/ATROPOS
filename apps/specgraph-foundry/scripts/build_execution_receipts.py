@@ -3359,7 +3359,7 @@ write(
 )
 
 write(
-    "infra/supabase/migrations/202607120006_execution.sql",
+    "supabase/migrations/20260712000700_execution.sql",
     r'''
     create table if not exists public.execution_runs (
         id uuid primary key default gen_random_uuid(),

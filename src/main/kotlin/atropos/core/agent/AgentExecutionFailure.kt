@@ -9,5 +9,6 @@ enum class AgentExecutionFailure {
     NONZERO_EXIT,
     MISSING_ARTIFACT,
     OUTPUT_TRUNCATED,
+    EVIDENCE_MISSING,
     REPOSITORY_COMMAND_FAILED
 }

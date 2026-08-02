@@ -1,5 +1,8 @@
 docs/ui-parity/ATROPOS_DESIGN_SYSTEM_SPEC.md
 docs/ui-parity/ATROPOS_ONLY_SURFACES.md
+docs/ui-parity/DELTA_REGISTER.md
+docs/ui-parity/DELTA_REGISTER_UPDATED.md
+docs/ui-parity/HOE_CLI_WEB_101_STATUS.md
 docs/ui-parity/OPENCODE_COMPLETE_SURFACE_MATRIX.json
 docs/ui-parity/OPENCODE_COMPLETE_SURFACE_MATRIX.md
 docs/ui-parity/OPENCODE_REFERENCE_LOCK.md
@@ -26,4 +29,13 @@ docs/ui-parity/baseline/tabs-120col.txt
 docs/ui-parity/baseline/tabs-160col.txt
 docs/ui-parity/baseline/tabs-40col.txt
 docs/ui-parity/baseline/tabs-80col.txt
+docs/ui-parity/phase0/ATROPOS_TUI_PATHS.txt
+docs/ui-parity/phase0/ATROPOS_WEB_PATHS.txt
+docs/ui-parity/phase0/HOE_DELTA_REGISTER.tsv
+docs/ui-parity/phase0/UI_INVENTORY_SUMMARY.txt
+docs/ui-parity/phase0/UI_PARITY_PATHS.txt
+docs/ui-parity/phase0/UI_PATH_FINGERPRINTS.sha256
+docs/ui-parity/phase0/UI_PHASE0_BASELINE.md
+docs/ui-parity/phase0/UI_SURFACE_OWNERSHIP.tsv
+docs/ui-parity/phase0/WEB_MERGE_ARCHITECTURE.md
 docs/ui-parity/ui-parity-checkpoint.json

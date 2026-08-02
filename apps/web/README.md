@@ -6,7 +6,7 @@ Manual Next.js App Router foundation for the SpecGraph Foundry production applic
 
 - Node.js `>=20.9.0`
 - npm `>=10`
-- Python backend contract at `../../openapi/specgraph-v1.yaml`
+- Python backend contract at `../specgraph-foundry/openapi/specgraph-v1.yaml`
 
 On Termux or proot environments, use the webpack scripts because native Turbopack/SWC optional binaries may not be available.
 
@@ -46,7 +46,7 @@ No Supabase service-role key, database URL, bearer token, refresh token, or sign
 
 ## Security Boundaries
 
-- API types are generated from `../../openapi/specgraph-v1.yaml`.
+- API types are generated from `../specgraph-foundry/openapi/specgraph-v1.yaml`.
 - The browser Supabase client uses only public anon credentials.
 - Server helpers call Supabase `getUser()` rather than trusting unverified local claims.
 - Auth tokens are not stored in `localStorage`.

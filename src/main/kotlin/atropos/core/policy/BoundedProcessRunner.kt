@@ -3,6 +3,7 @@ package atropos.core.policy
 import java.io.ByteArrayOutputStream
 import java.nio.file.Files
 import java.nio.file.Path
+import java.security.MessageDigest
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
@@ -14,7 +15,16 @@ data class BoundedProcessResult(
     val stdout: String,
     val stderr: String,
     val outputTruncated: Boolean,
-    val launchError: String? = null
+    val launchError: String? = null,
+    val totalOutputBytes: Long = 0L,
+    val totalOutputLines: Long = 0L,
+    val outputSha256: String? = null,
+    val stdoutHead: String = "",
+    val stdoutTail: String = "",
+    val stderrHead: String = "",
+    val stderrTail: String = "",
+    val stdoutLogPath: Path? = null,
+    val stderrLogPath: Path? = null
 )
 
 /**
@@ -40,7 +50,8 @@ class BoundedProcessRunner(
         maxOutputBytes: Int,
         maxOutputLines: Int,
         environment: Map<String, String> = emptyMap(),
-        removeEnvironmentKeys: Set<String> = emptySet()
+        removeEnvironmentKeys: Set<String> = emptySet(),
+        evidenceDirectory: Path? = null
     ): BoundedProcessResult {
         validate(command, directory, timeoutMillis, maxOutputBytes, maxOutputLines)
         val started = System.nanoTime()
@@ -62,8 +73,11 @@ class BoundedProcessRunner(
         val pumps = Executors.newFixedThreadPool(2) { task ->
             Thread(task, "atropos-bounded-process-stream").apply { isDaemon = true }
         }
-        val stdout = pumps.submit<Captured> { capture(process.inputStream, maxOutputBytes, maxOutputLines) }
-        val stderr = pumps.submit<Captured> { capture(process.errorStream, maxOutputBytes, maxOutputLines) }
+        val logDirectory = evidenceDirectory?.also { Files.createDirectories(it) }
+        val stdoutPath = logDirectory?.resolve("stdout.log")
+        val stderrPath = logDirectory?.resolve("stderr.log")
+        val stdout = pumps.submit<Captured> { capture(process.inputStream, maxOutputBytes, maxOutputLines, stdoutPath) }
+        val stderr = pumps.submit<Captured> { capture(process.errorStream, maxOutputBytes, maxOutputLines, stderrPath) }
         val finished = process.waitFor(timeoutMillis, TimeUnit.MILLISECONDS)
         if (!finished) terminate(process)
         val out = result(stdout)
@@ -75,7 +89,16 @@ class BoundedProcessRunner(
             durationMillis = elapsed(started),
             stdout = out.text,
             stderr = err.text,
-            outputTruncated = out.truncated || err.truncated
+            outputTruncated = out.truncated || err.truncated,
+            totalOutputBytes = out.totalBytes + err.totalBytes,
+            totalOutputLines = out.totalLines + err.totalLines,
+            outputSha256 = combinedDigest(out, err, stdoutPath, stderrPath),
+            stdoutHead = out.head,
+            stdoutTail = out.tail,
+            stderrHead = err.head,
+            stderrTail = err.tail,
+            stdoutLogPath = stdoutPath,
+            stderrLogPath = stderrPath
         )
     }
 
@@ -97,28 +120,71 @@ class BoundedProcessRunner(
         require(Files.isDirectory(normalized)) { "bounded process cwd must be an existing directory" }
     }
 
-    private data class Captured(val text: String, val truncated: Boolean)
+    private data class Captured(
+        val text: String,
+        val truncated: Boolean,
+        val totalBytes: Long = 0L,
+        val totalLines: Long = 0L,
+        val digestHex: String = "",
+        val head: String = "",
+        val tail: String = ""
+    )
 
-    private fun capture(input: java.io.InputStream, maximumBytes: Int, maximumLines: Int): Captured {
+    private fun capture(input: java.io.InputStream, maximumBytes: Int, maximumLines: Int, logPath: Path?): Captured {
         val bytes = ByteArrayOutputStream(minOf(maximumBytes, 8192))
+        val head = ByteArrayOutputStream(4_096)
+        val tail = ByteArrayOutputStream(4_096)
+        val digest = MessageDigest.getInstance("SHA-256")
+        val log = logPath?.let { Files.newOutputStream(it) }
         val buffer = ByteArray(8192)
-        var lines = 0
+        var lines = 0L
+        var totalBytes = 0L
         var truncated = false
-        input.use { stream ->
+        input.use { stream -> log?.use { output ->
             while (true) {
                 val read = stream.read(buffer)
                 if (read == -1) break
                 for (index in 0 until read) {
-                    if (bytes.size() < maximumBytes && lines < maximumLines) {
+                    val value = buffer[index].toInt()
+                    digest.update(buffer[index])
+                    output.write(value)
+                    totalBytes++
+                    if (value == '\n'.code) lines++
+                    if (head.size() < 4_096) head.write(value)
+                    if (tail.size() == 4_096) {
+                        val previous = tail.toByteArray()
+                        tail.reset()
+                        tail.write(previous, 1, previous.size - 1)
+                    }
+                    tail.write(value)
+                    if (bytes.size() < maximumBytes && lines <= maximumLines) {
                         bytes.write(buffer[index].toInt())
-                        if (buffer[index].toInt() == '\n'.code) lines++
                     } else {
                         truncated = true
                     }
                 }
             }
-        }
-        return Captured(bytes.toByteArray().toString(Charsets.UTF_8), truncated)
+        } ?: run {
+            while (true) {
+                val read = stream.read(buffer)
+                if (read == -1) break
+                for (index in 0 until read) {
+                    val value = buffer[index].toInt()
+                    digest.update(buffer[index])
+                    totalBytes++
+                    if (value == '\n'.code) lines++
+                    if (head.size() < 4_096) head.write(value)
+                    if (tail.size() == 4_096) {
+                        val previous = tail.toByteArray()
+                        tail.reset(); tail.write(previous, 1, previous.size - 1)
+                    }
+                    tail.write(value)
+                    if (bytes.size() < maximumBytes && lines <= maximumLines) bytes.write(value) else truncated = true
+                }
+            }
+        }}
+        return Captured(bytes.toByteArray().toString(Charsets.UTF_8), truncated, totalBytes, lines,
+            digest.digest().toHex(), head.toByteArray().toString(Charsets.UTF_8), tail.toByteArray().toString(Charsets.UTF_8))
     }
 
     private fun result(future: Future<Captured>): Captured =
@@ -128,6 +194,27 @@ class BoundedProcessRunner(
             future.cancel(true)
             Captured("", true)
         }
+
+    private fun combinedDigest(stdout: Captured, stderr: Captured, stdoutPath: Path?, stderrPath: Path?): String {
+        val digest = MessageDigest.getInstance("SHA-256")
+        listOf(stdoutPath, stderrPath).forEach { path ->
+            if (path != null && Files.exists(path)) Files.newInputStream(path).use { input ->
+                val buffer = ByteArray(8192)
+                while (true) {
+                    val read = input.read(buffer)
+                    if (read < 0) break
+                    digest.update(buffer, 0, read)
+                }
+            }
+        }
+        if (stdoutPath == null && stderrPath == null) {
+            digest.update(stdout.text.toByteArray())
+            digest.update(stderr.text.toByteArray())
+        }
+        return digest.digest().toHex()
+    }
+
+    private fun ByteArray.toHex(): String = joinToString("") { "%02x".format(it) }
 
     private fun terminate(process: Process) {
         process.toHandle().descendants().forEach { it.destroy() }
@@ -144,7 +231,7 @@ class BoundedProcessRunner(
     private companion object {
         const val MAX_ARGUMENTS = 64
         const val MAX_ARGUMENT_LENGTH = 8_192
-        const val MAX_TIMEOUT_MILLIS = 900_000L
+        const val MAX_TIMEOUT_MILLIS = 1_800_000L
         const val MAX_OUTPUT_BYTES = 256 * 1024
         const val MAX_OUTPUT_LINES = 4_000
     }

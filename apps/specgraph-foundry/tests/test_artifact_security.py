@@ -17,21 +17,10 @@ DEPLOYMENT = (
     / "migrations"
     / "20260712001300_durable_artifacts.sql"
 )
-SOURCE = (
-    ROOT
-    / "infra"
-    / "supabase"
-    / "migrations"
-    / "202607120012_durable_artifacts.sql"
-)
-
-
 class ArtifactSecurityTest(unittest.TestCase):
-    def test_source_and_deployment_migrations_match(self) -> None:
-        self.assertEqual(
-            SOURCE.read_bytes(),
-            DEPLOYMENT.read_bytes(),
-        )
+    def test_canonical_migration_is_present_and_nonempty(self) -> None:
+        self.assertTrue(DEPLOYMENT.is_file())
+        self.assertGreater(DEPLOYMENT.stat().st_size, 0)
 
     def test_private_bucket_and_owner_scoped_policies(self) -> None:
         sql = DEPLOYMENT.read_text(encoding="utf-8")

@@ -7,6 +7,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+REPOSITORY_ROOT = ROOT.parent.parent
 
 
 def check_dockerfiles() -> list[str]:
@@ -77,10 +78,13 @@ def check_workflow_pins() -> list[str]:
 
 def check_vercel_config() -> list[str]:
     problems: list[str] = []
-    for path in [ROOT / "vercel.json", ROOT / "apps" / "web" / "vercel.json"]:
+    for path in [
+        ROOT / "vercel.json",
+        REPOSITORY_ROOT / "apps" / "web" / "vercel.json",
+    ]:
         if path.is_file():
             return []
-    return ["vercel.json: missing (neither root nor apps/web/vercel.json exists)"]
+    return ["vercel.json: missing (neither SpecGraph root nor canonical ATROPOS apps/web exists)"]
 
 
 def check_environments() -> list[str]:
@@ -110,6 +114,20 @@ def check_secret_exposure() -> list[str]:
     return problems
 
 
+def check_canonical_migration_owner() -> list[str]:
+    canonical = ROOT / "supabase" / "migrations"
+    shadow = ROOT / "infra" / "supabase" / "migrations"
+    problems: list[str] = []
+    if not canonical.is_dir() or not any(canonical.glob("*.sql")):
+        problems.append("supabase/migrations: canonical migration directory is missing or empty")
+    if shadow.exists():
+        problems.append("infra/supabase/migrations: shadow migration directory must not exist")
+    for script in sorted((ROOT / "scripts").glob("*.py")):
+        if "infra/supabase/migrations" in script.read_text(encoding="utf-8"):
+            problems.append(f"{script.name}: writes to shadow migration directory")
+    return problems
+
+
 def main() -> int:
     problems = (
         check_dockerfiles()
@@ -117,6 +135,7 @@ def main() -> int:
         + check_workflow_pins()
         + check_vercel_config()
         + check_secret_exposure()
+        + check_canonical_migration_owner()
     )
 
     if problems:
@@ -131,6 +150,7 @@ def main() -> int:
     print("  - Workflow pins: valid")
     print("  - Vercel config: present")
     print("  - No secret exposure detected")
+    print("  - One canonical Supabase migration directory")
     return 0
 
 

@@ -47,54 +47,6 @@ DEPLOYMENT_OPERATIONS = (
     / "20260712001400_operations.sql"
 )
 
-SOURCE = (
-    ROOT
-    / "infra"
-    / "supabase"
-    / "migrations"
-    / "202607120008_auth_rls.sql"
-)
-
-SOURCE_IDEMPOTENCY = (
-    ROOT
-    / "infra"
-    / "supabase"
-    / "migrations"
-    / "202607120009_idempotency.sql"
-)
-
-SOURCE_SOURCE_UPLOADS = (
-    ROOT
-    / "infra"
-    / "supabase"
-    / "migrations"
-    / "202607120010_source_uploads.sql"
-)
-
-SOURCE_DOCUMENT_DERIVATIONS = (
-    ROOT
-    / "infra"
-    / "supabase"
-    / "migrations"
-    / "202607120011_document_derivations.sql"
-)
-
-SOURCE_DURABLE_ARTIFACTS = (
-    ROOT
-    / "infra"
-    / "supabase"
-    / "migrations"
-    / "202607120012_durable_artifacts.sql"
-)
-
-SOURCE_OPERATIONS = (
-    ROOT
-    / "infra"
-    / "supabase"
-    / "migrations"
-    / "202607120013_operations.sql"
-)
-
 EXPECTED_TABLES = ['artifact_manifests', 'atom_dimensions', 'atoms', 'authority_relations', 'document_derivations', 'execution_attempts', 'execution_events', 'execution_receipts', 'execution_run_nodes', 'execution_runs', 'execution_validation_findings', 'export_verification_findings', 'exports', 'extraction_runs', 'graph_edges', 'graph_nodes', 'graphs', 'idempotency_records', 'ingestion_runs', 'integration_bindings', 'paid_route_unlocks', 'plan_node_bindings', 'plan_verification_findings', 'plan_versions', 'project_policies', 'projects', 'provider_configs', 'provider_health_events', 'renderer_configs', 'research_claim_evidence', 'research_claims', 'research_evidence', 'research_task_events', 'research_tasks', 'route_decisions', 'source_chunks', 'source_documents', 'source_sections', 'source_uploads', 'storage_objects']
 
 
@@ -128,33 +80,19 @@ class SupabaseRlsMigrationTest(
             )
         )
 
-    def test_source_and_deployment_match(
+    def test_canonical_migrations_are_present(
         self,
     ) -> None:
-        self.assertEqual(
-            SOURCE.read_bytes(),
-            DEPLOYMENT.read_bytes(),
-        )
-        self.assertEqual(
-            SOURCE_IDEMPOTENCY.read_bytes(),
-            DEPLOYMENT_IDEMPOTENCY.read_bytes(),
-        )
-        self.assertEqual(
-            SOURCE_SOURCE_UPLOADS.read_bytes(),
-            DEPLOYMENT_SOURCE_UPLOADS.read_bytes(),
-        )
-        self.assertEqual(
-            SOURCE_DOCUMENT_DERIVATIONS.read_bytes(),
-            DEPLOYMENT_DOCUMENT_DERIVATIONS.read_bytes(),
-        )
-        self.assertEqual(
-            SOURCE_DURABLE_ARTIFACTS.read_bytes(),
-            DEPLOYMENT_DURABLE_ARTIFACTS.read_bytes(),
-        )
-        self.assertEqual(
-            SOURCE_OPERATIONS.read_bytes(),
-            DEPLOYMENT_OPERATIONS.read_bytes(),
-        )
+        for path in (
+            DEPLOYMENT,
+            DEPLOYMENT_IDEMPOTENCY,
+            DEPLOYMENT_SOURCE_UPLOADS,
+            DEPLOYMENT_DOCUMENT_DERIVATIONS,
+            DEPLOYMENT_DURABLE_ARTIFACTS,
+            DEPLOYMENT_OPERATIONS,
+        ):
+            self.assertTrue(path.is_file())
+            self.assertGreater(path.stat().st_size, 0)
 
     def test_every_public_table_has_policy(
         self,

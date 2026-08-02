@@ -4,6 +4,7 @@ import tomllib
 
 
 ROOT = Path(__file__).resolve().parents[1]
+REPOSITORY_ROOT = ROOT.parent.parent
 
 REQUIRED = (
     "LICENSE",
@@ -80,8 +81,8 @@ def main() -> int:
             )
             return 1
 
-    web_package = ROOT / "apps" / "web" / "package.json"
-    web_lock = ROOT / "apps" / "web" / "package-lock.json"
+    web_package = REPOSITORY_ROOT / "apps" / "web" / "package.json"
+    web_lock = REPOSITORY_ROOT / "apps" / "web" / "package-lock.json"
 
     if not web_package.is_file() or not web_lock.is_file():
         print("LICENSE CHECK FAILED")

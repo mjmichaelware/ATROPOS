@@ -1,6 +1,21 @@
 package atropos.core.memory
 
 object MemoryRecordCodec {
+    private val STRING_FIELD_PATTERNS = listOf(
+        "id", "kind", "title", "body", "subjectType", "subjectId",
+        "contentSha256", "failureSignature", "sourceCoordinate", "authority"
+    ).associateWith { name ->
+        Regex(""""$name"\s*:\s*"((?:\\.|[^"\\])*)"""")
+    }
+    private val NUMBER_FIELD_PATTERNS = listOf("createdAtEpochMs", "schemaVersion")
+        .associateWith { name -> Regex(""""$name"\s*:\s*([0-9]+)""") }
+    private val BOOLEAN_FIELD_PATTERNS = mapOf(
+        "redacted" to Regex(""""redacted"\s*:\s*(true|false)""")
+    )
+    private val TAGS_FIELD_PATTERN = Regex(""""tags"\s*:\s*\[(.*?)\]""")
+    private val TAG_VALUE_PATTERN = Regex(""""((?:\\.|[^"\\])*)"""")
+    private const val HEX = "0123456789abcdef"
+
     fun encode(record: MemoryRecord): String {
         return buildString {
             append("{")
@@ -95,9 +110,7 @@ object MemoryRecordCodec {
             subjectId.orEmpty(),
             sourceCoordinate.orEmpty()
         ).joinToString("|")
-        return java.security.MessageDigest.getInstance("SHA-256")
-            .digest(material.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
-            .joinToString("") { "%02x".format(it) }
+        return sha256Hex(material)
     }
 
     fun recordSha256(record: MemoryRecord): String {
@@ -116,39 +129,43 @@ object MemoryRecordCodec {
             record.schemaVersion.toString(),
             record.redacted.toString()
         ).joinToString("\u001e") { value -> "${value.length}:$value" }
-        return java.security.MessageDigest.getInstance("SHA-256")
-            .digest(material.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
-            .joinToString("") { "%02x".format(it) }
+        return sha256Hex(material)
     }
 
     private fun stringField(json: String, name: String): String? {
-        val regex = Regex(""""$name"\s*:\s*"((?:\\.|[^"\\])*)"""")
-        return regex.find(json)?.groupValues?.get(1)?.let { unescape(it) }
+        return STRING_FIELD_PATTERNS[name]?.find(json)?.groupValues?.get(1)?.let { unescape(it) }
     }
 
     private fun longField(json: String, name: String): Long? {
-        val regex = Regex(""""$name"\s*:\s*([0-9]+)""")
-        return regex.find(json)?.groupValues?.get(1)?.toLongOrNull()
+        return NUMBER_FIELD_PATTERNS[name]?.find(json)?.groupValues?.get(1)?.toLongOrNull()
     }
 
     private fun intField(json: String, name: String): Int? {
-        val regex = Regex(""""$name"\s*:\s*([0-9]+)""")
-        return regex.find(json)?.groupValues?.get(1)?.toIntOrNull()
+        return NUMBER_FIELD_PATTERNS[name]?.find(json)?.groupValues?.get(1)?.toIntOrNull()
     }
 
     private fun booleanField(json: String, name: String): Boolean? {
-        val regex = Regex(""""$name"\s*:\s*(true|false)""")
-        return regex.find(json)?.groupValues?.get(1)?.toBooleanStrictOrNull()
+        return BOOLEAN_FIELD_PATTERNS[name]?.find(json)?.groupValues?.get(1)?.toBooleanStrictOrNull()
     }
 
     private fun tagsField(json: String): List<String> {
-        val regex = Regex(""""tags"\s*:\s*\[(.*?)\]""")
-        val raw = regex.find(json)?.groupValues?.get(1) ?: return emptyList()
+        val raw = TAGS_FIELD_PATTERN.find(json)?.groupValues?.get(1) ?: return emptyList()
         if (raw.isBlank()) return emptyList()
-        return Regex(""""((?:\\.|[^"\\])*)"""")
-            .findAll(raw)
+        return TAG_VALUE_PATTERN.findAll(raw)
             .map { unescape(it.groupValues[1]) }
             .toList()
+    }
+
+    private fun sha256Hex(material: String): String {
+        val digest = java.security.MessageDigest.getInstance("SHA-256")
+            .digest(material.toByteArray(java.nio.charset.StandardCharsets.UTF_8))
+        return buildString(digest.size * 2) {
+            digest.forEach { byte ->
+                val value = byte.toInt() and 0xff
+                append(HEX[value ushr 4])
+                append(HEX[value and 0x0f])
+            }
+        }
     }
 
     private fun escape(value: String): String {

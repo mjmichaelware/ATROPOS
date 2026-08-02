@@ -122,7 +122,7 @@ class SelfHostCandidateJarBuilderTest {
     }
 
     @Test
-    fun truncated_build_output_cannot_claim_candidate_success() {
+    fun truncated_successful_build_output_still_claims_candidate_success_with_evidence() {
         val root = Files.createTempDirectory("atropos-candidate-jar-truncated-")
         val expected = root.resolve("build/libs/ATROPOS.jar")
         val builder = SelfHostCandidateJarBuilder(
@@ -141,9 +141,61 @@ class SelfHostCandidateJarBuilderTest {
 
         val result = builder.build("shg-truncated")
 
-        assertFalse(result.ok)
-        assertEquals(AgentExecutionFailure.OUTPUT_TRUNCATED, result.failure)
+        assertTrue(result.ok, result.message)
+        assertEquals(null, result.failure)
         assertTrue(result.outputTruncated)
-        assertTrue(result.candidateJar == null)
+        assertEquals(expected, result.candidateJar)
+        assertTrue(result.buildEvidence?.outputTruncated == true)
+        assertTrue(result.buildEvidence?.outputSha256?.isNotBlank() == true)
+    }
+
+    @Test
+    fun large_successful_output_has_bounded_windows_and_jar_hash() {
+        val root = Files.createTempDirectory("atropos-candidate-jar-large-")
+        val expected = root.resolve("build/libs/ATROPOS.jar")
+        val output = (1..20_000).joinToString("\n") { "build-line-$it" }
+        val builder = SelfHostCandidateJarBuilder(repoRoot = root, expectedJar = expected, processRunner = { _, _ ->
+            Files.createDirectories(expected.parent)
+            Files.writeString(expected, "jar bytes")
+            SelfHostCandidateJarBuilder.CommandRun(0, output, outputTruncated = true)
+        })
+
+        val result = builder.build("shg-large")
+
+        assertTrue(result.ok, result.message)
+        val evidence = result.buildEvidence ?: error("missing build evidence")
+        assertTrue(evidence.outputTruncated)
+        assertTrue(evidence.totalOutputBytes > 16_000)
+        assertTrue(evidence.outputSha256?.isNotBlank() == true)
+        assertTrue(evidence.displayHead.length <= 4_096)
+        assertTrue(evidence.displayTail.length <= 4_096)
+        assertEquals(Files.size(expected), evidence.candidateJarSize)
+        assertTrue(evidence.candidateJarSha256?.isNotBlank() == true)
+    }
+
+    @Test
+    fun truncated_nonzero_build_still_fails_by_exit_code() {
+        val root = Files.createTempDirectory("atropos-candidate-jar-large-failed-")
+        val builder = SelfHostCandidateJarBuilder(repoRoot = root, processRunner = { _, _ ->
+            SelfHostCandidateJarBuilder.CommandRun(17, "x".repeat(20_000), outputTruncated = true)
+        })
+        val result = builder.build("shg-large-failed")
+        assertFalse(result.ok)
+        assertEquals(AgentExecutionFailure.NONZERO_EXIT, result.failure)
+        assertTrue(result.outputTruncated)
+    }
+
+    @Test
+    fun successful_build_evidence_redacts_secret_like_output() {
+        val root = Files.createTempDirectory("atropos-candidate-jar-redacted-")
+        val expected = root.resolve("build/libs/ATROPOS.jar")
+        val builder = SelfHostCandidateJarBuilder(repoRoot = root, expectedJar = expected, processRunner = { _, _ ->
+            Files.createDirectories(expected.parent)
+            Files.writeString(expected, "jar bytes")
+            SelfHostCandidateJarBuilder.CommandRun(0, "token=super-secret-value")
+        })
+        val result = builder.build("shg-redacted")
+        assertTrue(result.ok)
+        assertFalse(result.buildEvidence?.displayHead?.contains("super-secret-value") == true)
     }
 }

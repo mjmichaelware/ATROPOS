@@ -1,49 +1,40 @@
 ATROPOS UI PHASE 0 INVENTORY
-Generated: 2026-07-27T23:48:09-06:00
+Generated: 2026-08-01T06:57:49-06:00
 Branch: main
-HEAD: 428e5e359b70b04731c6e6c94bf695500f8e5802
+HEAD: 0ca416f9f1114b0ae6cb4b5a3b18a1af0f26d65a
 
 COUNTS
-ATROPOS CLI/TUI tracked paths: 65
-ATROPOS Web tracked paths:     0
-SpecGraph Web tracked paths:   399
-UI parity tracked paths:       29
-Fingerprinted files:           493
+ATROPOS CLI/TUI tracked paths: 114
+Canonical Web tracked paths:    463
+UI parity tracked paths:       42
+Fingerprinted files:           608
 
 DIRTY PATHS
  M .gitignore
- M apps/specgraph-foundry/src/specgraph_foundry/compiler/__init__.py
- M apps/specgraph-foundry/src/specgraph_foundry/compiler/compiler_replay.py
- M apps/specgraph-foundry/src/specgraph_foundry/compiler/dependency_compiler.py
- M apps/specgraph-foundry/src/specgraph_foundry/compiler/execution_dag.py
- M apps/specgraph-foundry/src/specgraph_foundry/compiler/graph_validation.py
- M apps/specgraph-foundry/src/specgraph_foundry/compiler/requirement_ir.py
- M apps/specgraph-foundry/src/specgraph_foundry/compiler/semantic_relations.py
- M apps/specgraph-foundry/src/specgraph_foundry/compiler/shacl_validation.py
- M apps/specgraph-foundry/src/specgraph_foundry/compiler/source_authority.py
- M apps/specgraph-foundry/src/specgraph_foundry/exports.py
- M apps/specgraph-foundry/src/specgraph_foundry/http_api/artifact_storage.py
- M apps/specgraph-foundry/src/specgraph_foundry/http_api/document_adapters.py
- M apps/specgraph-foundry/src/specgraph_foundry/rendering.py
- M apps/specgraph-foundry/tests/test_artifact_security.py
- M apps/specgraph-foundry/tests/test_compiler_redesign_suite.py
- M apps/specgraph-foundry/tests/test_durable_artifacts.py
- M apps/specgraph-foundry/tests/test_exports.py
- M scripts/codex/instruction-audit.sh
- M scripts/codex/source-query.py
- M src/main/kotlin/atropos/cli/commands/SelfHostCommand.kt
- M src/main/kotlin/atropos/core/agent/SelfHostGoalService.kt
- M src/main/kotlin/atropos/core/dag/DagExecutionService.kt
-AM src/main/kotlin/atropos/core/platform/PlatformEnvironment.kt
-AM src/main/kotlin/atropos/core/platform/PlatformHealth.kt
-AM src/main/kotlin/atropos/core/provider/SpecGraphProvider.kt
-AM src/main/kotlin/atropos/core/specgraph/SpecGraphReader.kt
-?? apps/atropos-web/
-?? apps/specgraph-foundry/docs/SPECGRAPH_CONTINUATION_CHECKPOINT.md
-?? apps/specgraph-foundry/scripts/compile_proof_bundle.py
-?? apps/specgraph-foundry/scripts/source_authority_manifest.py
-?? apps/specgraph-foundry/src/pypdf/
-?? apps/specgraph-foundry/src/specgraph_foundry/compiler/proof_bundle.py
-?? docs/ui-parity/phase0/
-?? packages/
-?? scripts/ui-phase0-inventory.sh
+ M AGENTS.md
+ M ATROPOS_ROOT_EXPORT_MANIFEST.sha256
+ M apps/specgraph-foundry/scripts/check_deployment_readiness.py
+ M apps/specgraph-foundry/scripts/check_licenses.py
+ M apps/specgraph-foundry/tests/test_deployment_static.py
+ M apps/web/.gitignore
+ D apps/web/.next/cache/.previewinfo
+ D apps/web/.next/cache/.rscinfo
+ D apps/web/.next/diagnostics/build-diagnostics.json
+ D apps/web/.next/diagnostics/framework.json
+ D apps/web/.next/package.json
+ D apps/web/.next/types/cache-life.d.ts
+ D apps/web/.next/types/link.d.ts
+ D apps/web/.next/types/routes.d.ts
+ D apps/web/.next/types/validator.ts
+ D apps/web/tsconfig.tsbuildinfo
+ M docs/ui-parity/phase0/ATROPOS_TUI_PATHS.txt
+ M docs/ui-parity/phase0/ATROPOS_WEB_PATHS.txt
+ M docs/ui-parity/phase0/UI_INVENTORY_SUMMARY.txt
+ M docs/ui-parity/phase0/UI_PARITY_PATHS.txt
+ M docs/ui-parity/phase0/UI_PATH_FINGERPRINTS.sha256
+ M docs/ui-parity/phase0/UI_PHASE0_BASELINE.md
+ M docs/ui-parity/phase0/UI_SURFACE_OWNERSHIP.tsv
+ M docs/ui-parity/phase0/WEB_MERGE_ARCHITECTURE.md
+ M scripts/ui-phase0-inventory.sh
+?? build/
+?? docs/architecture/

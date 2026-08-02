@@ -1784,7 +1784,7 @@ write(
 )
 
 write(
-    "infra/supabase/migrations/202607120004_planning.sql",
+    "supabase/migrations/20260712000500_planning.sql",
     r'''
     create table if not exists public.authority_relations (
         id uuid primary key default gen_random_uuid(),

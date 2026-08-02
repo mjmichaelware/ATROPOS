@@ -8,6 +8,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
+REPOSITORY_ROOT = ROOT.parent.parent
 
 
 class TestDockerfiles(unittest.TestCase):
@@ -63,7 +64,9 @@ class TestDockerignore(unittest.TestCase):
 
 class TestVercelConfig(unittest.TestCase):
     def test_vercel_json_exists(self):
-        found = (ROOT / "vercel.json").is_file() or (ROOT / "apps" / "web" / "vercel.json").is_file()
+        found = (ROOT / "vercel.json").is_file() or (
+            REPOSITORY_ROOT / "apps" / "web" / "vercel.json"
+        ).is_file()
         self.assertTrue(found, "vercel.json not found in root or apps/web")
 
 
@@ -111,6 +114,12 @@ class TestDeploymentScripts(unittest.TestCase):
 
     def test_check_secrets(self):
         self.assertTrue((ROOT / "scripts" / "check_secrets.py").is_file())
+
+    def test_canonical_migration_directory(self):
+        canonical = ROOT / "supabase" / "migrations"
+        shadow = ROOT / "infra" / "supabase" / "migrations"
+        self.assertTrue(any(canonical.glob("*.sql")))
+        self.assertFalse(shadow.exists())
 
 
 class TestRunbooks(unittest.TestCase):
