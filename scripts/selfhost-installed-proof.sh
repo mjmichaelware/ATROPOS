@@ -134,6 +134,11 @@ if ! grep -q 'provenanceChainSha256' "$EVIDENCE_DIR/bundle.json" ||
   echo "installed proof failed: evidence provenance/redaction/hash fields incomplete" >&2
   exit 16
 fi
+if ! grep -q '"installedProofComplete": true' "$EVIDENCE_DIR/bundle.json"; then
+  echo "installed proof failed: bundle does not self-report a complete installed proof" >&2
+  grep -m1 'installedProofMissing' "$EVIDENCE_DIR/bundle.json" >&2 || true
+  exit 16
+fi
 SAFETY_LINE="$(grep -n -m1 'self_host_safety' "$EVIDENCE_DIR/bundle.md" | cut -d: -f1 || true)"
 DIRECTOR_LINE="$(grep -n -m1 'director_pre_promote' "$EVIDENCE_DIR/bundle.md" | cut -d: -f1 || true)"
 GATE_LINE="$(grep -n -m1 'promotion_gate' "$EVIDENCE_DIR/bundle.md" | cut -d: -f1 || true)"

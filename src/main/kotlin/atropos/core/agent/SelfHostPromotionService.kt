@@ -22,6 +22,7 @@ class SelfHostPromotionService(
     private val safetyGate: SelfHostSafetyHardFailGate = SelfHostSafetyHardFailGate(repoRoot),
     private val directorService: DirectorService = DirectorService(DirectorStore(repoRoot), repoRoot),
     private val promotionGateContract: SelfHostPromotionGateContract = SelfHostPromotionGateContract(),
+    private val gitStatusEvidence: SelfHostGitStatusEvidence = SelfHostGitStatusEvidence(repoRoot),
     private val evaluateGate: (DagNode) -> CompletionGateReport = completionGate::evaluateNode
 ) {
     fun promote(request: SelfHostPromotionRequest): SelfHostPromotionResult {
@@ -104,6 +105,7 @@ class SelfHostPromotionService(
             )
         }
 
+        val postMutationGitStatus = gitStatusEvidence.capture(node.territory)
         val swap = jarSwapGate.promote(
             request.candidateJar,
             request.targetJar,
@@ -119,7 +121,7 @@ class SelfHostPromotionService(
                 },
                 finishedAt = if (swap.promoted) record.finishedAt else Instant.now(),
                 failureReason = if (swap.promoted) record.failureReason else "jar swap failed: ${swap.message}",
-                evidence = record.evidence + safetyEvidence + directorEvidence + gateEvidence + evidenceRenderer.jarSwap(swap),
+                evidence = record.evidence + safetyEvidence + directorEvidence + gateEvidence + listOf(postMutationGitStatus) + evidenceRenderer.jarSwap(swap),
                 lastVerifiedCheckpoint = if (swap.promoted) "jar:${swap.targetJar.fileName}" else record.lastVerifiedCheckpoint
             )
         )
