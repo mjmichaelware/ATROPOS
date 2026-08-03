@@ -1,0 +1,9 @@
+path | sha256 | bytes | role | derived_from | note
+docs/source/ATROPOS_Source_Doc_1.txt | 36ee88a1187a329875372ce53d4934c5c6e9d13ec96909e0f17d13ae341eba52 | 69691 | primary-source | — | Source Doc 1; immutable primary authority
+docs/source/ATROPOS_Source_Doc_2.txt | b88acd252ce5100c56e9b2902dcacce6e5f47600c30da2129317d10ca5991b07 | 130292 | primary-source | — | Source Doc 2; immutable primary authority
+docs/source/ATROPOS_Source_Doc_3.txt | b1a115a5253c5bff44b766ef18c3af99d8c210bce6c97dfe637b3e933ff36158 | 71068 | primary-source | — | Source Doc 3; immutable primary authority
+docs/source/ATROPOS_Source_Doc_4.txt | b2dc4fd9141307184b7a77ed83ebcb226071ebedeba680014281c84727cddace | 47912 | presentation-source | — | Source Doc 4; presentation/HOE authority only
+docs/source/ATROPOS_100pct_Completion_Blueprint.txt | aeb983938fbe39323513683c4b7f5b2911f7b0a9ab4064e160f3dc2d568e85c6 | 29470 | blueprint-additional | SD1+SD2+SD3 | Additional synthesis; does not replace primary sources
+docs/gap-maps/ATROPOS_Core_Engine_Gap_Map_v2.pdf | 6d4e0dd5eca2902891aedc435001e5c4d09c378bcda95396dd23566251e0ff3b | 95617 | gap-map-additional | Blueprint+SD1-3 | Operational gap map; no second feature authority
+docs/gap-maps/ATROPOS_HOE_UI_UX_Gap_Map_v2.pdf | 294c2fa0d426a81d4af6a5ce98b8f86e36b0a309d6aa0d02868505fc26f85be4 | 104321 | gap-map-additional | SD4 | Operational HOE gap map; presentation scope
+docs/gap-maps/ATROPOS_Phase20_Architecture_Gap_Map_v2.pdf | 2f84f27379d449caa6b3063622ebece3592aa745aef10b3890c81395591d4764 | 271671 | gap-map-additional | Phase20 laws+SD1-3 | Operational Phase 20 gap map; no silent authority rewrite

@@ -1,0 +1,622 @@
+﻿ATROPOS Source Document 4 — Human Operating Environment UI/UX Architecture Specification
+ATROPOS
+SOURCE DOCUMENT 4
+Human Operating Environment
+Definitive UI/UX Architecture Specification
+Version 1.0  ·  2026-07-27
+Persistent autonomous software operating environment for directing deterministic, evidence-backed systems while remaining informed and in control.
+Classification: Presentation-layer authority. This document defines how ATROPOS appears and is operated by humans. It does not redefine runtime law, SpecGraph compiler internals, DLOI addressing, or provider transport. Those subsystems power ATROPOS; they are not the primary interface.
+0. Identity and Purpose
+0.0 Primary Purpose
+ATROPOS exists to augment human intelligence, not replace it. Every interface decision shall maximize human understanding, human agency, human accountability, and human control while minimizing unnecessary cognitive load.
+ATROPOS is not a chatbot. ATROPOS is not an IDE. ATROPOS is not merely an AI coding assistant. ATROPOS is a persistent autonomous software operating environment: a continuous workspace in which humans direct deterministic, evidence-backed autonomous work across projects, agents, models, files, verification, and history.
+0.1 Primary Principle — Six Continuous Answers
+The interface shall always answer six questions without requiring the user to search:
+1. What am I trying to accomplish?
+2. What is ATROPOS doing?
+3. Why is it doing that?
+4. How far along is it?
+5. What should I do next?
+6. Can I inspect the evidence?
+Any screen that cannot answer these six questions is incomplete. Any screen that forces the user to dig through unrelated surfaces to answer them is incorrectly designed.
+0.2 Human First
+Humans own objectives. Humans approve irreversible actions. Humans may inspect every decision. ATROPOS never becomes the ultimate authority. The interface must continuously reinforce this relationship: ATROPOS optimizes execution; humans define success.
+0.3 Invisible Complexity
+Advanced systems remain available but are hidden until requested. The interface grows with the user's expertise instead of overwhelming new users. Progressive disclosure is mandatory: Beginner → Intermediate → Engineering → Internal (Developer Tools).
+0.4 One Workspace
+Conversations, projects, code, documents, planning, execution, verification, and evidence exist inside one continuous workspace instead of separate applications. Context switching between tools is a design failure when the same project owns all of those artifacts.
+0.5 Conversation Is Not The Application
+Chat is one method of interacting with ATROPOS. Every capability shall also be accessible through visual tools, structured workflows, keyboard commands, command palette, and automation. A capability that exists only as a natural-language request is incomplete.
+0.6–0.9 Design Invariants
+* Every screen must reduce uncertainty. A screen that increases confusion is incorrectly designed.
+* Every meaningful action must be explainable upon request.
+* Default mode emphasizes productivity rather than debugging.
+* Progressive disclosure: beginners see only what is necessary; advanced users may inspect architecture; developers may inspect internal systems.
+1. Competitive Positioning and Surface Strategy
+1.1 What Competitors Optimize For
+OpenCode optimizes for terminal-native multi-session agent work with model flexibility. Claude Code optimizes for deep autonomous terminal loops with strong reasoning. Cursor optimizes for IDE-embedded agent editing. Aider optimizes for git-native pair edits. Codex optimizes for terminal and cloud task handoff. None of them present a full operating environment centered on human objectives, projects, evidence, and long-horizon continuity.
+ATROPOS UI must not merely imitate these tools. It must absorb their best interaction patterns while organizing the experience around human goals and project continuity.
+1.2 Surface Priority Order
+7. CLI / TUI — primary sovereign surface; always available on Termux and local hosts
+8. Web — OpenCode-class session/tab model, local-first server, browser operation
+9. Android APK — Claude web + Claude Code interaction density under Android HIG
+10. Desktop — OpenCode-desktop tab patterns first; deeper IDE chrome only if it preserves OS identity
+1.3 Non-Conflation Rules
+* SpecGraph is an engine inside ATROPOS, not the application identity.
+* Runtime law (territory, bounded agency, DLOI, attestation) is core behavior; the UI presents status and controls, it does not redefine law.
+* Developer Tools expose compilers, graphs, source authority, and recovery inspectors; everyday work centers on objectives, projects, agents, and evidence.
+* UI requirements in this document are presentation requirements. They may later be atomized for tooling, but SpecGraph product UX remains separate.
+1.4 Current-State Delta Mandate
+UI/UX exports that select zero files are a tooling failure, not proof that presentation code is absent. Implementation work must maintain an authoritative inventory of real presentation paths (for example cli/ui renderers, status surfaces, landing, viewport, docs/ui-parity baselines) and a delta register from current → target. Drift is tracked by stable requirement IDs and path fingerprints so implementers do not waste context rediscovering the tree.
+2. Primary Navigation Architecture
+2.0 Navigation Spine
+Primary navigation: Home · Projects · Work · Conversations · Files · Agents · Models · Automation · History · Settings · Developer Tools.
+Developer Tools are hidden by default. All other items remain first-class.
+2.1 Home
+Purpose: orient the human in under three seconds. Displays current work, recent activity, running jobs, unfinished projects, recommendations, and health indicators. Home never becomes a marketing page; it is an operational cockpit summary.
+User goals: resume unfinished work, notice blockers, see what needs approval, open the active project.
+Hidden complexity: provider cascade internals, DAG compilers, raw logs. Advanced mode expands health into subsystem status without changing Home’s primary layout.
+2.2 Projects
+Every meaningful activity belongs to a project. Projects organize conversations, files, workflows, generated artifacts, evidence, memory, and execution history. Projects never fragment into disconnected chats.
+Project identity is durable across restarts. Closing ATROPOS never destroys active project state.
+2.3 Work
+Displays active goals, queued work, background tasks, long-running operations, scheduled automation, approvals, and pending user decisions. Work is the human’s queue of attention, not the internal scheduler’s raw event log.
+2.4 Conversations
+Conversation history is one view into project execution rather than isolated chats. Every conversation belongs to a project. Conversation view and other project views remain synchronized on the same underlying state.
+2.5 Files
+Every imported, generated, modified, or exported artifact remains discoverable through one consistent explorer. Files are project-scoped by default with cross-project search available.
+2.6 Agents
+Displays every active agent, assigned responsibility, current workload, execution status, completion percentage, and resource usage. Agents represent specialized responsibilities rather than personalities. One primary responsibility per agent.
+2.7 Models
+Displays every available provider, current routing decision, quota usage, estimated cost, latency, context size, and availability. Models surface is presentation of routing reality, not a second policy engine.
+2.8 Automation
+Displays recurring tasks, background workflows, checkpoints, schedules, notifications, and autonomous execution history.
+2.9 History
+Displays every important event within the project: timestamp, actor, action, evidence, affected artifacts, result. History is permanent and searchable.
+2.10 Developer Tools
+Hidden by default. Provides architectural inspection, diagnostics, runtime analysis, verification tools, compiler outputs, source authority inspection, SpecGraph integration, checkpoint and recovery inspection. Everyday users never need this surface to complete work.
+3. Universal Workspace and Project Model
+3.0 Project Constituents
+Every project consists of Objective, Plan, Resources, Execution, Verification, Artifacts, and History. These remain synchronized automatically. Changing views never changes project state.
+3.1 Multi-View Project
+Every project supports Conversation View, Kanban View, Timeline View, Document View, File Explorer, Execution Monitor, Verification View, and Developer View. Views are projections, not separate data stores.
+3.2 Information Hierarchy
+Objectives → Projects → Tasks → Artifacts → Evidence → History. The interface always begins with objectives rather than implementation details.
+3.3 Status System
+Canonical status vocabulary: Idle, Planning, Waiting, Working, Review Required, Blocked, Completed, Failed, Cancelled. Status names describe user progress instead of internal implementation whenever possible. Color is never the sole status channel.
+3.4 Primary Workflow
+Intent → Goal → Project → Plan → Execution → Verification → Artifact → Review → Completion. Execution may loop indefinitely without losing context. Completion requires evidence, not elapsed time.
+3.5 Task Architecture
+Every task possesses Task ID, Owner, Priority, Dependencies, Estimated effort, Current state, Evidence, Outputs, History. Tasks may spawn subtasks. Parent tasks summarize child progress. Completed subtasks remain inspectable forever.
+4. Human Control, Approvals, and Trust
+4.0 Control Verbs
+Humans may: Pause, Resume, Cancel, Approve, Reject, Retry, Redirect, Prioritize, Split, Merge, Archive, Export, Inspect. No approval action permanently hides previous history.
+4.1 Failure Philosophy
+Failures remain visible. ATROPOS never hides compilation failures, verification failures, provider failures, routing failures, execution failures, timeouts, or cancelled work. Every failure includes reason, evidence, suggested repair, retry option, and related history.
+4.2 Trust Indicators
+Every project continuously displays: Authority verified, Evidence verified, Verification complete, Policy compliant, Checkpoint current, Recovery available, No silent failures detected. If any trust indicator fails, the interface immediately exposes why.
+4.3 Human Confidence Contract
+The interface should leave the user with five answers at all times: I know what ATROPOS is doing. I know why it is doing it. I know how to inspect it. I know how to interrupt it. I know I remain in control.
+4.4 Autonomous Continuation
+When safe, workflows continue automatically after intermediate work. Continuation pauses only when human approval is required, policy restricts action, external dependency is unavailable, safety boundary is reached, or objective ambiguity is detected. Routine execution shall not require repeated human confirmation.
+5. Progressive Disclosure and Interface Intelligence
+5.0 Information Levels
+* Level 1 — Simple: only information necessary to complete work.
+* Level 2 — Professional: adds execution status, project metrics, workflow details.
+* Level 3 — Engineering: adds architecture, agents, routing, verification, dependency visualization.
+* Level 4 — Internal: complete runtime state via Developer Tools.
+No information is removed between levels. Each level only reveals additional information.
+5.1 Optional Verbose Mode
+Every long-running task may expose an expandable execution transcript: reasoning stage, workflow stage, task, file, agent, provider, elapsed time, ETA, retry count, validation stage, artifacts, evidence. Hidden by default.
+5.2 Live Execution Feed
+Optional continuously updating stream of informational events. Never replaces structured project history.
+5.3 Explainability Controls
+* Why? — reasoning, authority, evidence, dependencies, alternatives, confidence, risks.
+* How? — pipeline, participating agents, artifacts, verification steps, safety checks, completion requirements.
+* Evidence — verification, outputs, artifacts, tests, approval history, acceptance criteria.
+Nothing may claim completion without evidence.
+5.4 Search and Command Palette
+Search operates across projects, conversations, files, tasks, agents, artifacts, history, evidence, documentation, memory, commands, and settings. Search always shows why a result matched.
+Universal command palette executes every action: Create Project, Open File, Run Workflow, Pause Agents, Explain Current Task, Inspect Evidence, Export Project, Show History, Developer Mode, and more. Every action remains available through keyboard.
+6. Agents, Hierarchy Presentation, and Dashboards
+6.0 Agent Philosophy in UI
+Agents represent specialized responsibilities rather than personalities. Collaboration remains visible when requested. Ownership is never duplicated silently.
+6.1 Director, HR Router, Managers, Specialists, Workers
+Presentation surfaces summarize hierarchy roles without forcing hierarchy internals into primary navigation. Director awareness appears as coordination status. Managers appear as category supervisors. Specialists and Workers expose bounded workload, progress, failures, and outputs.
+6.2 Dashboards
+* Live Project Dashboard — completion, running tasks, approvals, blockers, background jobs, artifacts, notifications, health.
+* Execution Dashboard — workflow, stage, elapsed, ETA, responsible agent, provider, artifact; expanded mode for implementation detail.
+* Agent Dashboard — identity, responsibility, assigned/completed/blocked tasks, resource usage, history, workload.
+* Provider Dashboard — routing, latency, quota, cost, tokens, retries, failures, health, selection reasoning.
+* Automation Dashboard — schedules, triggers, history, checkpoints, failures, retries, notifications, pending approvals.
+6.3 Notifications
+Categories: Information, Suggestion, Approval Required, Warning, Failure, Completion. Notifications remain actionable until dismissed and link to affected project and evidence.
+7. Memory, Learning, and Authority Presentation
+7.0 Memory Layers
+Temporary, Conversation, Project, Workspace, Knowledge, Authority, Learning, Evidence. Each layer has independent retention policy. Memory never becomes authority automatically. Memory remains editable. Authority remains protected.
+7.1 Suggestions
+ATROPOS may propose missing documentation, potential bugs, optimizations, better workflows, incomplete tasks, missing verification, duplicate work, dead code, unused artifacts. Suggestions never execute automatically without policy approval.
+7.2 Self-Improvement Presentation
+Runtime learning separates Observation, Memory, Proposal, Accepted Improvement, and Authority. Accepted improvements require verification. Every optimization records before/after evidence and remains reversible. UI must never imply that silent self-modification of authority occurred.
+8. Layout System, Windowing, and Multi-Surface Design
+8.0 Component Laws
+Every UI component shall be reusable, composable, independently testable, themeable, and deterministic. Rendering never modifies application state without explicit user action. Every screen preserves state until intentionally reset.
+8.1 Layouts
+Dashboard, Workspace, Split View, Focus Mode, Multi-Pane, Presentation Mode, Developer Mode. Panels may be docked, floated, hidden, pinned, resized, grouped, stacked, or detached without affecting project data. Window layout is part of project state and restores after restart.
+8.2 Terminal Integration
+Multiple terminals are first-class UI citizens. Each terminal may display owning project, workflow, agent, active directory, running process, elapsed time, and associated artifacts. Terminal output may link to history and evidence. Long-running commands expose Pause, Resume, Cancel, Inspect, Copy Output, Export Log, Attach To Evidence.
+8.3 Surface-Specific Adaptation
+CLI / TUI
+Keyboard-first, responsive to narrow Termux widths, ANSI-safe status, non-color semantics, virtualized long logs, bounded redraw. Matches professional TUI density while preserving ATROPOS navigation concepts via commands and panels.
+Web (OpenCode parity target)
+Session list, tabs, plan/build-style mode switching where applicable, model switcher, theme support, command palette, local-first server binding to project root. Avoid empty global state when launched from a repo directory.
+Android APK (Claude web + Claude Code parity target)
+Chat-capable primary column, tool/timeline secondary patterns, mobile HIG touch targets, offline-capable project resume, notification actions for approvals, reduced chrome density for one-hand use.
+Desktop
+Multi-window and multi-monitor ready, tabbed sessions, dockable developer tools, keyboard and mouse parity, layout persistence per project.
+9. Visual Language, Motion, and Accessibility
+9.0 Design Philosophy
+The interface should feel less like a chatbot and more like a professional operating environment for thinking, creating, researching, engineering, and coordinating autonomous work — closer in spirit to a disciplined creative suite, CAD cockpit, or mission console than to a messaging app.
+9.1 Theme Engine
+Themes affect appearance only and never alter functionality. Required: light, dark, high-contrast, reduced-motion, color-blind-safe palettes, custom palettes. Typography, spacing, density, animation, and icon scale remain independently configurable.
+9.2 Accessibility
+* Keyboard-first operation; complete operation without a mouse.
+* Screen-reader compatibility and explicit labels for regions.
+* Resizable typography.
+* Color-independent status indicators.
+* Reduced-motion support.
+* High-contrast themes.
+* Touch targets meeting platform HIG minimums on Android.
+* Machine-readable outputs available for CLI/web automation.
+9.3 Motion Language
+Motion explains state change; it never delays work. Prefer incremental updates over full reloads. Loading, empty, error, and recovery states are first-class designs, not afterthoughts.
+9.4 Performance
+UI responsiveness prioritized over visual effects. Large projects progressively load visible content. Startup and first-run experiences establish project model quickly without tutorial walls.
+10. Artifacts, Diffs, Graphs, and Evidence Visualization
+10.0 Artifacts
+Every artifact exposes Preview, Compare, History, Dependencies, Consumers, Producers, Export, and Verification. Generated code may expose implementation summary, changed files, affected symbols, compilation status, verification status, and rollback information.
+10.1 Diffs
+Code diffs group changes by semantic responsibility instead of only by file when possible. Review UI supports approve/reject with history preserved.
+10.2 Graphs
+Graph visualizations remain optional. Graphs may display projects, workflows, dependencies, conversations, agents, files, providers, runtime events, evidence, or execution history. Graph navigation never replaces traditional navigation. Graphs support zoom, filtering, grouping, search, export, and accessibility.
+10.3 Evidence and Verification Views
+Evidence is a first-class browser: linked to tasks, artifacts, approvals, and completion records. Verification view shows gates, outcomes, and reproducible history.
+11. Persistence, Recovery, and Continuity UX
+11.0 Workspace Persistence
+Closing ATROPOS never destroys active work. Restart restores open tabs, running workflows, agent assignments, execution history, pending approvals, background jobs, window layout, and developer panels.
+11.1 Checkpoints
+Every running workflow continuously records restart-safe checkpoints preserving project state, workflow state, agent assignments, execution progress, pending approvals, evidence references, memory state, runtime configuration, and UI layout.
+11.2 Recovery UX
+Restart recovery restores unfinished work before accepting new work. The user always knows what was restored and what requires attention. Recovery Inspector (Developer Tools) exposes last/current checkpoint, recoverable state, recovered agents/workflows/queues/history/evidence.
+11.3 Cross-Device Session Model
+One logical session model with surface-specific adapters (Termux/Android storage, desktop XDG, web local server/IndexedDB). Import/export between surfaces. No forced single remote database for sovereignty.
+12. Developer Tools and Optional Backend Visibility
+12.0 Developer Workspace Contents
+Execution graph, dependency graph, runtime graph, provider routing, agent communication, evidence graph, verification graph, policy engine, performance metrics, logs, SpecGraph integration entry, source authority inspection, checkpoint inspection, recovery inspection.
+12.1 Inspectors
+* Runtime Inspector — workflows, queues, events, resources, providers, stacks, checkpoints, recovery, health.
+* Agent Inspector — objective, assigned work, dependencies, waiting state, communication, resources, history, artifacts, verification.
+* Provider Inspector — availability, current provider, fallback chain, latency, quota, cost, tokens, retries, failures, health, selection reasoning.
+* Policy Inspector — policies, safety rules, restrictions, approval requirements, territory ownership presentation, authority sources, verification gates.
+* Source Authority Inspector — loaded documents, hashes, versions, amendments, superseded authority, evidence references, traceability coverage. Explains understanding of authority; does not become SpecGraph IDE.
+* Recovery Inspector — as above.
+12.2 Why Developer Tools Stay Secondary
+Advanced implementation details—including compiler outputs, dependency graphs, runtime graphs, source authority, DLOI, proof artifacts, hashes, execution graphs, and SpecGraph internals—remain available through Developer Tools without becoming the primary operating experience. ATROPOS coordinates specialized subsystems rather than exposing them as the application itself.
+13. Security, Privacy, and Privileged Actions
+Human privacy is the default operating assumption. Secrets never appear in ordinary interface views. Every privileged action is explicitly attributable. Every irreversible action requires confirmation or previously defined automation policy. Offline execution preferred when requirements permit; cloud is augmentation, not dependency.
+14. Delta Register Method (Anti-Drift, Anti-Token-Waste)
+14.0 Purpose
+Implementers must not rediscover the UI tree on every session. Maintain a baseline inventory of presentation paths and a delta register from current to target. Re-audits emit only changed rows.
+14.1 Delta Row Schema
+UI-DELTA-<surface>-<nnn> | Surface: CLI|WEB|ANDROID|DESKTOP | Capability | Current path(s) or ABSENT | Target behavior | Gap: MISSING|PARTIAL|DRIFT|DONE | Evidence | Acceptance check
+14.2 Export Tooling Requirement
+UI/UX export scripts that return zero selected files while presentation code exists are defective. Fix filters to include cli/ui, frontend, status renderers, landing, viewport, parity baselines, and related assets. Check inventory fingerprints into docs/ui-parity/.
+15. Acceptance Gates for 100% Presentation Completeness
+11. Six continuous answers available on primary surfaces without search.
+12. Project model owns conversations, files, tasks, artifacts, evidence, history.
+13. Web achieves OpenCode-class session/tab operational parity while remaining local-first.
+14. Android APK achieves Claude-web + Claude-Code interaction density under Android HIG.
+15. CLI/TUI remains fully operable keyboard-first on narrow terminals.
+16. Failures visible with reason, evidence, repair, retry.
+17. Approvals never erase history.
+18. Restart restores workspace and reports what was recovered.
+19. Developer Tools contain inspectors listed above without polluting default navigation.
+20. Accessibility: keyboard complete, non-color status, reduced motion, high contrast, screen-reader labels.
+21. Delta register exists and is re-auditable without full-repo archaeology.
+22. No SpecGraph-primary navigation; subsystems remain subsystems.
+16. Atom Catalog Seed (UI Requirements for Later Tooling)
+The following are presentation requirement seeds derived from this specification. They are documentation atoms for planning and verification, not a merge of SpecGraph product UX into ATROPOS chrome.
+* HOE-0001: Interface answers the six continuous questions on Home and Project views.
+* HOE-0002: Primary navigation spine implemented across CLI, Web, Android.
+* HOE-0003: Project is the durable organizational boundary for conversations and artifacts.
+* HOE-0004: Status vocabulary is user-progress oriented and color-independent.
+* HOE-0005: Completion claims require evidence affordance.
+* HOE-0006: Why/How/Evidence actions available on significant recommendations and workflows.
+* HOE-0007: Command palette reaches every primary action.
+* HOE-0008: Progressive disclosure levels 1–4 without information removal.
+* HOE-0009: Workspace layout persists and restores across restart.
+* HOE-0010: Recovery UX reports restored work and attention items.
+* HOE-0011: Terminals are first-class and linkable to evidence.
+* HOE-0012: Notifications are actionable and categorized.
+* HOE-0013: Trust indicators visible per project.
+* HOE-0014: Developer Tools hidden by default and complete per inspector list.
+* HOE-0015: Web session model matches OpenCode operational patterns.
+* HOE-0016: Android interaction density matches Claude web + Claude Code patterns under HIG.
+* HOE-0017: Secrets never rendered in ordinary views.
+* HOE-0018: Delta register maintained for UI drift tracking.
+* HOE-0019: Accessibility gates enforced for keyboard, contrast, reduced motion.
+* HOE-0020: SpecGraph and compiler internals remain Developer Tools, not primary IA.
+17. Final Measure
+The final measure of ATROPOS is not the number of models, providers, agents, workflows, DAG nodes, atoms, hashes, or compiler passes it contains. The final measure is whether a human can transform an idea into a trustworthy, reproducible, verifiable result while remaining informed, empowered, and in control throughout the entire process.
+This document is the presentation-layer constitution for that measure. Implementation shall track deltas against it, surface by surface, until acceptance gates pass without theater.
+End of Source Document 4 — Human Operating Environment UI/UX Architecture Specification v1.0
+Authority note: Incorporates Source Document 4 batches 1–5 (Human Operating Environment), competitive research on OpenCode/Claude Code/Cursor/Aider/Codex-class tools, CLI Guidelines and accessibility practice, and ATROPOS mission constraints that UI is presentation of the operating environment—not SpecGraph and not a replacement for runtime law.
+
+
+Addendum:
+
+
+# ATROPOS HOE UI/UX — 100% Completeness Handoff (v2)
+**Authority:** Source Document 4 (Human Operating Environment) + Phase 0 UI baseline + competitor research (Claude Code web/desktop/mobile, OpenCode, Cursor, Codex CLI, Aider, mobile companions) as of 2026-07-29  
+**Surfaces:** CLI/TUI · Web (ATROPOS-owned) · Android APK (sideload)  
+**Engine rule:** UI is presentation only. Full power = local bridge to existing ATROPOS CLI/JAR. Never reimplement runtime law, DLOI, territory, verification, or provider cascade in the UI layer.  
+**Receiving agents:** Claude, Codex, Antigravity, or any successor. Persist until 100% of acceptance gates are green. Do not stop to ask permission. Do not declare done early.
+
+
+---
+
+
+## 0. Operating Rules for the Receiving Agent (Token Efficiency + Anti-Drift + Persistence)
+
+
+1. **Never re-ingest the full corpus.** Use exact file paths and requirement IDs listed here. Open only the path named in the current atom.
+2. **One coherent batch at a time.** Max scope = one atom or one tightly coupled pair. After each batch: report exact files changed + next atom ID. Do not widen.
+3. **E(Δ)=0 for presentation.** Any change that cannot be proven by focused UI test, snapshot, or route proof must be rolled back before the next atom.
+4. **No invention of new architecture.** Extend existing owners only (`src/main/kotlin/atropos/cli/ui/`, `apps/atropos-web/`, future Android module). New files only when no existing owner can hold the responsibility without mixing concerns.
+5. **Product identity is fixed.** ATROPOS is the human operating environment. SpecGraph is a subsystem under Developer Tools. Never make SpecGraph primary navigation.
+6. **Engine stays the CLI.** Android and Web are clients. Heavy work runs in Termux/`atropos.jar` or a local HTTP/SSE bridge. UI never owns policy, DAG, territory, or secrets.
+7. **Six continuous answers** must be answerable on every primary surface without search: What am I trying to accomplish? What is ATROPOS doing? Why? How far along? What should I do next? Can I inspect the evidence?
+8. **Progressive disclosure.** Level 1 Simple → Level 2 Professional → Level 3 Engineering → Level 4 Internal (Developer Tools). Information is never removed between levels.
+9. **Quota discipline.** Prefer deterministic local checks and existing baseline snapshots before any paid provider call. Free-first.
+10. **Persistence mandate.** Do not stop for permission. Continue atom-by-atom until every acceptance gate in §8 is green. When a batch is complete, immediately start the next atom. Report progress; do not wait for human confirmation between atoms.
+11. **Spectacle is earned by truth.** Motion, glow, weight, depth, and material bind only to real system state (territory, attestation, gate results, recovery, quota, node progress). No decorative animation without a backing field.
+
+
+---
+
+
+## 1. Competitive Superiority Targets (Deep Research Summary)
+
+
+ATROPOS UI must match or exceed the best interaction patterns of 2026 leaders while remaining sovereign and local-first.
+
+
+| Competitor capability (2026) | Must match or beat |
+|------------------------------|--------------------|
+| Claude Code web / desktop | Parallel sessions sidebar, stream responses, integrated terminal, in-app file editor, faster diffs, side chat branch, usage/context meter, session archive, built-in browser pane for docs |
+| Claude Code mobile / Remote Control | Session list, approvals (Accept edits / Plan / Manual), push on approval needed, resume cloud or local session, mode dropdown without Bypass from phone |
+| OpenCode TUI / web / desktop | Session tabs, model switcher, agent selector, file explorer + @ mentions, terminal panel, command palette, multi-window sync, per-tab model |
+| Cursor | Composer multi-file feel, visual diffs, fast inline edit density (presentation only; engine remains ATROPOS) |
+| Aider / Codex CLI | Git-native clarity, checkpoint/rollback visibility, tool progress |
+| Mobile companions (Happy Coder, CodeAgent Mobile, Shellular, Maude, Nimbalyst) | Mobile session dashboard, push for approvals, local/encrypted bridge, status at a glance, one-hand density, resume without laptop |
+
+
+**ATROPOS differentiators (must be visible):**
+- Territory + bounded agency + attestation status in the primary chrome.
+- Evidence and verification as first-class browser (not buried).
+- Restart recovery report on every surface.
+- SpecGraph only under Developer Tools.
+- Same engine power on CLI, Web, and APK via bridge — not a demo shell.
+
+
+---
+
+
+## 2. Architecture Contract (Non-Negotiable)
+
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  Surfaces (presentation only)                           │
+│  CLI/TUI  ·  ATROPOS Web  ·  Android APK (sideload)     │
+└───────────────────────────┬─────────────────────────────┘
+                            │ localhost / binder / intents / SSE
+┌───────────────────────────▼─────────────────────────────┐
+│  ATROPOS engine (existing CLI / JAR)                    │
+│  same commands · same policy · same DAG · same DLOI     │
+└─────────────────────────────────────────────────────────┘
+```
+
+
+**Android default path:** Thin native (Compose) or WebView client → local bridge to Termux/`atropos.jar` or foreground service.  
+**Web default path:** `apps/atropos-web` owns HOE routes; SpecGraph mounts under `/developer/specgraph` only.  
+**CLI/TUI:** Already substantial under `src/main/kotlin/atropos/cli/ui/`. Close HOE gaps; do not rewrite.
+
+
+**Minimal bridge API (implement once, all surfaces consume):**
+- `POST /session` · `GET /session` · `GET /session/:id`
+- `POST /message` (NL or slash-command)
+- `GET /events` (SSE stream)
+- `GET /status`
+- `POST /approve` · `POST /reject`
+- `GET /evidence/:id` · `GET /files` · `POST /cli` (argv passthrough when needed)
+
+
+---
+
+
+## 3. Outside-the-Box Imagination Layer (Methodology Transfer)
+
+
+This section transfers **creative method only** (100-word spark lists, amorphic binding of feeling to real state, pressure to maximize every surface past the obvious). It does **not** import any other product’s tabs, domains, or APIs.
+
+
+### 3.1 One hundred ATROPOS-native concept words (sparks, not free decoration)
+
+
+**Visual / structure:** Liquid · Kinetic · Bento · Holographic · Elastic · Morphic · Shatter · Chameleon · Origami · Glow · Orbital · Fluidic · Vapor · Prism · Nebula · Tectonic · Organic · Matrix · Isometric · Quantum  
+
+
+**Dynamics:** Liquefy · Condense · Vortex · Dissolve · Bounce* · Rippling · Implode · Magnetize · Accelerate · Glitch* · Cascade · Flicker · Pulse · Morphing · Warp · Orbit · Tether · Glide · Levitate · Siphon  
+
+
+**HOE / agent functions:** Director · Territory · Attest · Verify · Promote · Recover · Ledger · Cascade · Redact · Route · Claim · Gate · Envelope · Worktree · JAR · Restart · Evidence · Approve · Inspect · Resume  
+
+
+**Spaces / controls:** Canvas · Pod · Pill · Dock · Sphere · Node · Trigger · Anchor · Slider · Toggle · Dashboard · Ribbon · Dial · Hub · Console · Portal · Deck · Vault · Nest · Module  
+
+
+**2026 sensation:** Synesthesia · Haptic · Aura · Depth · Sonic · Telemetry · Ambient · Whisper · Spectral · Flux · Velocity · Chronos · Nexus · Catalyst · Feedback · Evolve · Frost · Squircle · Optical · Provenance  
+
+
+\*Bounce / Glitch only for real error or refusal states. Always respect `prefers-reduced-motion`.
+
+
+### 3.2 Amorphic bindings (feeling ← real ATROPOS state)
+
+
+- **Territory as material** — Out-of-territory surfaces desaturate and recede; in-territory surfaces hold full weight and accent. Refusal is felt in the chrome before the error string.
+- **Attestation as optical focus** — Valid `ContextEnvelope` → type sharpens (variable-font weight / optical size). Drift or mismatch → type softens and a spectral edge appears. Certainty is readable without a number.
+- **DAG / work as living reactor** — Nodes ignite on claim, swell with real progress, shed failures with typed reasons. Not a static graph screenshot.
+- **Quota / cascade as fuel cell** — Spend as a depleting core; dry-run or projected cost as translucent ghost burn; over-limit locks the core into safe/cached mode. Opening the app must never feel expensive.
+- **Evidence as morph, not modal** — Run / agent / goal cards use same-document View Transition into an evidence drawer (hashes, territory, attestation, gate results, promotion record). Trust is the gesture.
+- **Recovery as tectonic shift** — On restart, restored goals / nodes / territories seat into place; a recovery ribbon reports what came back and what needs attention. No silent resume.
+- **Mode retheme (not random)** — Planning frost, Working kinetic, Review Required amber edge, Blocked desaturated lock, Completed stable weight. Driven by real status vocabulary only.
+- **JAR promote as physical handoff** — Previous JAR remains a recoverable shadow; new JAR seats only after green `VerifiedCompletionGate`.
+- **Android Claude-density** — Primary stream column + secondary tools / timeline; approval cards for bounded agency; one-hand reach; push on approval-needed; engine online/offline honest; full CLI power only via local bridge.
+- **Web OpenCode-class** — Session / project tabs, cascade switcher as presentation of routing reality, command palette reaches every primary action, SpecGraph only under Developer Tools.
+- **CLI Termux** — Narrow-first, keyboard-complete, non-color status, virtualized logs, six answers always visible without search.
+
+
+### 3.3 Maximize-every-surface pressure
+
+
+Every primary surface answers the six questions without search.  
+Every completion claim affords evidence.  
+Every irreversible action is approvable and historically inspectable.  
+Every empty / loading / error / partial / stale / needs-action state is designed, not left blank.  
+Motion only when bound to real state (claim, verify, promote, recover, refuse, attest).  
+Progressive enhancement: HTML/CSS truth first → View Transitions → scroll-driven (feature-detected) → WebGL/WebGPU ambient telemetry (feature-detected).  
+Delta register remains the anti-drift weapon; path fingerprints; no full-repo archaeology per session.
+
+
+---
+
+
+## 4. Current Proven State (Do Not Rebuild)
+
+
+| Surface | What exists | Primary paths |
+|---------|-------------|---------------|
+| CLI/TUI | Substantial terminal foundation: landing, palette, composer, transcript, session overview, agents, providers, quota, security, memory, verification, status, themes, design tokens, dialogs, toasts, spinners, ANSI-safe, viewport | `src/main/kotlin/atropos/cli/ui/**`, `CommandRouter.kt`, `SelfHostCommand.kt` |
+| SpecGraph Web | Full Next.js product (projects, graph, research, sources, handoff, routing, auth) | `apps/specgraph-foundry/apps/web/` — **SpecGraph-owned only** |
+| ATROPOS Web | Phase 0 boundary only | `apps/atropos-web/` |
+| Android | Install pipeline historically; no Claude-density HOE chrome yet | Future Android module + bridge |
+| Contracts / parity | Phase 0 ownership TSV, HOE delta register, path fingerprints, web merge architecture | `docs/ui-parity/phase0/**`, `packages/atropos-web-contracts/` |
+
+
+**Blast-radius files (extract only when an HOE atom requires it):**  
+`AgentCommand.kt`, `CommandRouter.kt`, `AnsiTerminalEngine.kt`, `PromptState.kt`, `HierarchyCommand.kt`
+
+
+---
+
+
+## 5. Atom Catalog — Remaining Work to 100%
+
+
+### A. Foundation (shared)
+
+
+**HOE-A01 — Six continuous answers composition**  
+**HOE-A02 — Primary navigation spine** (Home · Projects · Work · Conversations · Files · Agents · Models · Automation · History · Settings · Developer Tools hidden by default)  
+**HOE-A03 — Project durable boundary** (restart-safe)  
+**HOE-A04 — Status vocabulary** (user-progress, non-color): Idle, Planning, Waiting, Working, Review Required, Blocked, Completed, Failed, Cancelled  
+**HOE-A05 — Evidence affordance on every completion claim**  
+**HOE-A06 — Why / How / Evidence actions**  
+**HOE-A07 — Command palette reaches every primary action**  
+**HOE-A08 — Progressive disclosure levels 1–4**  
+**HOE-A09 — Workspace layout persistence + recovery report**  
+**HOE-A10 — Secret-safe rendering**  
+
+
+### B. CLI/TUI completion
+
+
+**HOE-B01 — Close HOE gaps on CLI** using `docs/ui-parity/phase0/HOE_DELTA_REGISTER.tsv`  
+**HOE-B02 — Session / work tabs density** (OpenCode + Claude parallel-session clarity, Termux-narrow safe)  
+**HOE-B03 — Terminal first-class + evidence linkage**  
+**HOE-B04 — Trust indicators per project**  
+**HOE-B05 — Baseline snapshot refresh** under `docs/ui-parity/baseline/` (40/80/120/160)  
+
+
+### C. Web (ATROPOS-owned)
+
+
+**HOE-C01 — Scaffold ATROPOS Web shell** per `WEB_MERGE_ARCHITECTURE.md`  
+**HOE-C02 — Home + Projects + Work** answering six questions  
+**HOE-C03 — Conversations + Files + Agents + Models + Automation + History** project-scoped  
+**HOE-C04 — Session/tab model** (OpenCode-class, local-first)  
+**HOE-C05 — Streaming + approval cards + command palette**  
+**HOE-C06 — Developer Tools container** (SpecGraph only under `/developer/specgraph`)  
+**HOE-C07 — Shared contracts** in `packages/atropos-web-contracts`  
+
+
+### D. Android APK (sideload, Claude Code density)
+
+
+**HOE-D01 — App shell** (chat list, conversation, composer, engine offline)  
+**HOE-D02 — Local engine bridge** (minimal API in §2)  
+**HOE-D03 — Primary column** stream + streaming output  
+**HOE-D04 — Secondary** files, tools, timeline, running jobs  
+**HOE-D05 — Model/provider switcher** (presentation of cascade)  
+**HOE-D06 — Session/project tabs + resume**  
+**HOE-D07 — Approval cards** for `APPROVAL_REQUIRED`  
+**HOE-D08 — Push notifications** (approval needed, completion)  
+**HOE-D09 — One-hand density, HIG targets, offline project resume**  
+**HOE-D10 — Full CLI power via bridge**  
+**HOE-D11 — Sideload-ready artifact**  
+
+
+### E. Imagination-backed polish (bound to real state only)
+
+
+**HOE-E01 — Territory-as-material** (in/out of territory visual weight)  
+**HOE-E02 — Attestation-as-optical-focus** (type weight / spectral edge on envelope validity)  
+**HOE-E03 — DAG reactor presentation** (ignite / swell / typed shed)  
+**HOE-E04 — Quota fuel cell + ghost burn + lock**  
+**HOE-E05 — Evidence morph** (View Transition card → drawer)  
+**HOE-E06 — Recovery tectonic ribbon**  
+**HOE-E07 — Mode retheme from real status**  
+**HOE-E08 — JAR promote physical handoff affordance**  
+
+
+### F. Cross-surface proof
+
+
+**HOE-F01 — Same project identity and status vocabulary on CLI, Web, Android**  
+**HOE-F02 — Delta register updated** (changed rows only; fingerprints refreshed)  
+**HOE-F03 — Competitive checklist green**  
+**HOE-F04 — Accessibility** (keyboard-complete CLI; non-color status; reduced motion; high contrast; screen-reader labels; Android HIG)  
+
+
+---
+
+
+## 6. Execution DAG (Strict Order)
+
+
+```
+HOE-A01 … HOE-A10     Shared foundation
+         │
+         ├──────────────────┬──────────────────┐
+         ▼                  ▼                  ▼
+    HOE-B01…B05        HOE-C01…C07        HOE-D01…D11
+    CLI/TUI            ATROPOS Web        Android APK
+         │                  │                  │
+         └──────────────────┴──────────────────┘
+                            │
+                            ▼
+                     HOE-E01 … HOE-E08
+                     Imagination polish (state-bound only)
+                            │
+                            ▼
+                     HOE-F01 … HOE-F04
+                     Cross-surface proof
+                            │
+                            ▼
+                     100% HOE UI/UX GATE GREEN
+```
+
+
+Do not start surface-specific polish until A-series predicates for that surface’s dependencies are met.  
+Do not claim 100% until F-series is green.
+
+
+---
+
+
+## 7. Recommended First Batches
+
+
+**Batch 1:** HOE-A01 + HOE-A02 + HOE-A04 on CLI; update only changed delta-register rows.  
+**Batch 2:** HOE-D02 minimal bridge contract + HOE-D01 shell (engine online/offline).  
+**Batch 3:** HOE-C01 + HOE-C02 Home/Projects only.  
+**Batch 4:** Streaming + approval cards on the furthest-along surface.  
+**Batch 5:** HOE-E05 evidence morph + HOE-E01 territory material on that surface.  
+Then continue atom-by-atom without stopping.
+
+
+---
+
+
+## 8. Acceptance Gates for 100% Presentation Completeness
+
+
+1. Six continuous answers on Home and Project views (CLI, Web, Android) without search.  
+2. Primary navigation spine on all three surfaces; Developer Tools hidden by default.  
+3. Project owns conversations, files, tasks, artifacts, evidence, history; restart-safe.  
+4. Web achieves OpenCode-class session/tab operational parity while remaining local-first.  
+5. Android APK achieves Claude-web + Claude-Code interaction density under Android HIG; sideloadable.  
+6. CLI/TUI fully operable keyboard-first on narrow Termux widths.  
+7. Failures visible with reason, evidence, repair, retry.  
+8. Approvals never erase history.  
+9. Restart restores workspace and reports what was recovered.  
+10. Developer Tools contain inspectors; SpecGraph only under Developer Tools.  
+11. Accessibility: keyboard complete, non-color status, reduced motion, high contrast, screen-reader labels, HIG targets.  
+12. Delta register exists, path-fingerprinted, re-auditable without full-repo archaeology.  
+13. Full CLI power available through Android and Web via bridge — not a demo shell.  
+14. Competitive checklist (§1) green.  
+15. Imagination layer (§3) applied only where bound to real state; no orphan motion or fake glow.
+
+
+---
+
+
+## 9. Key Path Reference (Quick Open)
+
+
+**CLI/TUI**  
+`src/main/kotlin/atropos/cli/ui/` · `CommandRouter.kt` · `SelfHostCommand.kt` · `design/RunState.kt` · `CommandPaletteRenderer.kt` · `LandingRenderer.kt` · `VerificationRenderer.kt`
+
+
+**Web**  
+`apps/atropos-web/` · `packages/atropos-web-contracts/` · `docs/ui-parity/phase0/WEB_MERGE_ARCHITECTURE.md`  
+`apps/specgraph-foundry/apps/web/` (SpecGraph only — do not own)
+
+
+**Parity / authority**  
+`docs/ui-parity/phase0/UI_PHASE0_BASELINE.md` · `UI_SURFACE_OWNERSHIP.tsv` · `HOE_DELTA_REGISTER.tsv` · `UI_PATH_FINGERPRINTS.sha256` · `docs/ui-parity/baseline/*`
+
+
+**Recovery / engine (read-only for UI)**  
+`src/main/kotlin/atropos/core/recovery/` · `worktree/IsolatedWorktreeService.kt` · `verification/VerifiedCompletionGate.kt`
+
+
+**Source Document 4** — HOE constitution (presentation layer). This handoff is the executable atomization of that constitution plus competitive targets plus imagination methodology.
+
+
+---
+
+
+## 10. Final Instruction to the Receiving Agent
+
+
+Your sole objective is to drive the DAG until every acceptance gate in §8 is green on CLI, Web, and Android APK.
+
+
+- Work only from the atoms and paths in this document.  
+- Prefer the smallest change that makes the next atom’s acceptance predicate true.  
+- After every batch: focused proof → update only changed delta-register rows → start the next atom immediately.  
+- Apply §3 imagination only when bound to real territory, attestation, gate, recovery, quota, or status state.  
+- Do not stop for permission. Do not expand into Phase 11 self-build or SpecGraph compiler work.  
+- When all gates are green, stop and report: evidence paths, sideload APK location, web launch command, CLI snapshot hashes, and the exact bridge endpoints used.
+
+
+**This document is the complete remaining map for 100% HOE UI/UX across CLI, Web, and Android.**  
+Close the surfaces. Exceed the competitors on evidence, territory transparency, recovery, and sovereign local power — with imagination that never lies about the machine.
+
+
+
+
+ATROPOS HOE v1.0  ·  Page

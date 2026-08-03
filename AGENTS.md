@@ -1747,4 +1747,68 @@ Markup is append-only evidence, not a percentage rewrite. Percentages move only 
 - Fingerprints: focused command `./gradlew test --tests atropos.core.security.SourceSecretScannerTest --tests atropos.core.verification.VerifiedCompletionGateTest --no-daemon --max-workers=1` passed; `git diff --check` passed.
 - New overall estimate: unchanged.
 
+### 2026-08-03T03:40:00Z · Agent: Codex GPT-5 · Batch: phase11-installed-promotion-014
+- Paths touched: `ATROPOS_TREE_PORT_EXPORT_PATHS.md` (phase-completion refresh), `docs/architecture/CONSOLIDATION_STATUS_MATRIX.md` (+3/-2), `AGENTS.md` (+this row), `ATROPOS_ROOT_EXPORT_MANIFEST.sha256` (hash refresh).
+- New decoupled files: none.
+- Atoms / phases affected: Phase 11 installed-runtime proof; restart/recovery residual; all-phase percentage review.
+- Predicate moved: installed Phase 11 self-host path now has operator evidence for natural-language entry, canonical lifecycle marker, real source mutation, DAG verification, candidate build, evidence export, JAR promotion, and fast smoke.
+- % delta: no percentage raised. The locked baselines remain unchanged because Phase 11 is conjunctive and restart continuity is not proven; the current status is `PARTIAL, installed promotion PASS`, not 100%. Phases 0-10 and 12-20 retain their prior evidence-based statuses; no predicate cardinality was invented to manufacture percentages.
+- Why justified: operator evidence for goal `shg-7abcea5c-417` reports `VERIFIED_COMPLETE`, `jar promoted`, and JAR SHA-256 `91dd9af2a43f03c7b486f2a7feed485c25ed376be86691e118fad572c6b8315f`. A separate startup smoke found stale unfinished goal `shg-60f146c8-4c5` with no ready node; it was explicitly stopped, so clean startup passed but restart continuity remains open.
+- HR interrupts: none. No Gradle, rebuild, or full suite was run by this batch.
+- Fingerprints: tree snapshot regenerated after Phase 11 promotion; manifest refresh follows the final metadata bytes.
+- New overall estimate: unchanged.
+
+### 2026-08-03T09:00:00Z · Agent: Codex GPT-5 · Batch: code-only-accounting-reform-015
+- Paths touched: `scripts/audit-code-completion.py` (+285), `docs/completion/ATROPOS_CODE_COMPLETION_ACCOUNTING_SPEC.md` (generated), `docs/completion/ATROPOS_CODE_OBLIGATION_REGISTRY.json` (generated), `docs/completion/ATROPOS_CODE_COMPLETION_REPORT.md` (generated), `docs/completion/ATROPOS_VERIFICATION_STATUS.md` (generated), `docs/completion/ATROPOS_CODE_COMPLETION_BASELINE.json` (generated), `docs/completion/ATROPOS_CODE_COMPLETION_AMENDMENTS.md` (generated), and `AGENTS.md` (+this row).
+- Atoms / phases affected: accounting/control plane only; no product feature implementation.
+- Predicate moved: future completion reporting now has a source-hashed cold-base denominator and separate CODE, TEST/BUILD, OPERATIONAL, and RELEASE axes.
+- % delta: new code-only metric is `597/705 = 84.68%`; nearest recoverable historical reconstruction is `576/705 = 81.70%`, delta `+2.98 pp`. The locked approximate `42%` and `43.6%` values are preserved and explicitly superseded for future code-only reporting because they mixed implementation and proof axes.
+- Why justified: registry covers the 94 Source Docs 1-2 DAG atoms, 74 numbered Source Doc 3 requirements, and accepted Phase 0-20 blueprint additions with stable IDs, source coordinates, hashes, one phase, one canonical owner, binary status, and missing IDs. The historical commit is warned as nearest recoverable, not the exact 2026-07-29 export. No Gradle, full build, JAR build, install, deployment, or runtime proof was run in this batch.
+- HR interrupts: none.
+- Fingerprints: registry `9ebbec9463a89376cced81f8117849a0782e77dfa4b1e93d62ecf0d7484a9872`; report `4660e549d3cc8aa5373461626b80143c1b95d32f4933f16c18000d64e43381af`; audit script `9c2f17dab3d902f3cd2eb86d51aad88731bc928bd03546a3c3a446eccdb16e3e`.
+- New overall estimate: code-only `84.68%`; verification/release status remains separate and not inferred from this percentage.
+
+DIRECTOR MARKUP — the historical approximate percentages above mixed written code with tests, compilation, packaging, installation, restart, deployment, Git cleanliness, and operator proof. They remain immutable history and are not deleted or rewritten. The cold-base obligation registry supersedes them for future CODE COMPLETION reporting; proof and release readiness remain independent axes.
+
+### 2026-08-03T09:05:00Z · Agent: Codex GPT-5 · Batch: code-only-accounting-authority-inventory-016
+- Paths touched: `scripts/audit-code-completion.py` (+2), generated completion registry/report/baseline/spec/status artifacts (source inventory correction), and `AGENTS.md` (+this row).
+- Atoms / phases affected: accounting source inventory only; no product phase.
+- Predicate moved: canonical operating index, Phase 1-11 closure, CLI/UI completion, Tier-H addendum, and completion DAG are now included in the hashed authority inventory. No absent Phase 20/source-map file was invented.
+- % delta: unchanged at `597/705 = 84.68%`; denominator and obligation statuses are unchanged.
+- Why justified: source inventory now contains 16 available requirement-bearing authority files; the registry still contains exactly 94 SD1-2 requirements, 74 SD3 requirements, and 21 blueprint additions expanded to 705 binary obligations.
+- HR interrupts: none. No Gradle/build/JAR/runtime/deployment proof run.
+- Fingerprints: generated artifacts were regenerated by `scripts/audit-code-completion.py`; final hashes are captured in the next root-manifest refresh.
+- New overall estimate: code-only `84.68%`; separate operational axes unchanged.
+
+### 2026-08-03T09:10:00Z · Agent: Codex GPT-5 · Batch: code-only-accounting-report-surfaces-017
+- Paths touched: `scripts/audit-code-completion.py` (+18), generated completion report/registry/baseline/status artifacts, and `AGENTS.md` (+this row).
+- New decoupled files: none beyond the canonical accounting artifacts created in batch 015.
+- Atoms / phases affected: accounting report completeness only; no product phase.
+- Predicate moved: report now explicitly includes critical stubs, HOE, App Factory, Phase 20, frontend/backend/database/platform breakdown, checkpoints, horizons, historical numerators, and per-phase deltas.
+- % delta: unchanged at `597/705 = 84.68%`; historical reconstruction remains `576/705 = 81.70%`, `+2.98 pp`.
+- Why justified: report generation remains deterministic from the source-hashed registry and current HEAD; no tests/build/proof result is used to award code credit.
+- HR interrupts: none. No Gradle/build/JAR/runtime/deployment proof run.
+- Fingerprints: registry `0560a3ca4b7c1e92461e8c61efec146985cd7aef2d911da5a049e541a7677efc`; report `d2a140fe68056aa2cef902b7d5b4ad49e7506eb0d91f8dfe5bc4a2b14946f995`; script `6b6abd5d3e74ee82eacb889123eb936cf131377c5e1daecd571f0bdd124942e9`.
+- New overall estimate: code-only `84.68%`; verification/release remain separate.
+
 End of AGENTS.md
+
+### 2026-08-03T11:36:00Z · Agent: Codex GPT-5 · Batch: codebase-accounting-all-authority-019
+- Paths touched: `scripts/audit-code-completion.py` (+authority inventory, PDF atom crosswalk, Source Doc 4 unique obligations, code-base terminology), `docs/completion/ATROPOS_CODE_OBLIGATION_REGISTRY.json`, `docs/completion/ATROPOS_CODE_COMPLETION_REPORT.md`, `docs/completion/ATROPOS_CODE_COMPLETION_ACCOUNTING_SPEC.md`, `docs/completion/ATROPOS_CODE_COMPLETION_BASELINE.json`, `docs/completion/ATROPOS_VERIFICATION_STATUS.md`, `docs/completion/ATROPOS_CODE_COMPLETION_AMENDMENTS.md` (regenerated), and `AGENTS.md` (+this row).
+- Atoms / phases affected: code-base accounting only; no product implementation atom.
+- Predicate moved: The binary audit now directly inventories all eight registered authority documents plus existing supporting authority maps, hashes 19 requirement-bearing documents, crosswalks 41 Core, 50 HOE, and 56 Phase 20 PDF atoms, and avoids duplicate feature credit.
+- % delta: code-base completion is `606/714 = 84.87%`; historical reconstruction is `585/714 = 81.93%`; delta `+2.94 percentage points`.
+- Why the delta is justified: Source Doc 4 contributed only three unique acceptance requirements, expanded into nine binary obligations. Gap-map atoms are mapped to existing SD1–3/Blueprint obligations rather than counted as parallel features. `AGENTS.md` is excluded from the source hash inventory so the generated registry remains stable when this ledger changes.
+- HR interrupts: none. No Gradle, compilation, test, JAR, install, runtime, deployment, or push was run.
+- Fingerprints: script `a51a7eab427cd03f9703229a76923a39daecf5cba5cbfe33963a9e472ca472ae`; registry `fb2b0a90fffa4516ebe1a389b674505a7b8841fe6ae41b636fa4c3796221bae8`; report `d0c7f37ffbff00dbb4dfa2d25cfcf65b3c94a31fafefb9e07a67e821b581d66a`.
+- New overall estimate: code-base `84.87%`; verification and release axes remain separate.
+
+### 2026-08-03T10:58:10Z · Agent: Codex GPT-5 · Batch: docs-authority-ingest-018
+- Paths touched: `docs/authority/AUTHORITY_MANIFEST.tsv` (+10), `AGENTS.md` (+8).
+- Atoms / phases affected: additional authority document registration only; no product phase.
+- Predicate moved: All eight operator-provided authority documents now have one canonical docs path, full-byte SHA-256 registration, byte counts, and explicit primary/additional roles.
+- % delta: unchanged; no phase percentage claim.
+- Why the delta is justified: SD1–3 remain marked `primary-source`; SD4 is `presentation-source`; the Blueprint and three gap maps are registered as additional documents. No source contents, completion registry, lakehouse index, or other hash system was modified.
+- HR interrupts: none. No tests or builds run.
+- Fingerprints: manifest rows contain the full SHA-256 for all eight registered files.
+- New overall estimate: unchanged.
