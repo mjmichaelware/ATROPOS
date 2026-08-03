@@ -2,6 +2,7 @@ package atropos.cli.commands
 
 import atropos.cli.config.ConfigurationManager
 import atropos.cli.ui.AnsiTerminalEngine
+import atropos.cli.ui.PlainTerminalOutput
 import atropos.core.ApiKeys
 import atropos.core.AtroposConfig
 import atropos.core.LakehouseConfig

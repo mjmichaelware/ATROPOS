@@ -130,8 +130,10 @@ class CommandRouterHelpTest {
         ),
         uiEngine = AnsiTerminalEngine(
             capabilities = ConfigurationManager(),
-            out = PrintStream(out),
-            errors = PrintStream(ByteArrayOutputStream())
+            plainOutput = PlainTerminalOutput(
+                out = PrintStream(out),
+                errors = PrintStream(ByteArrayOutputStream())
+            )
         ),
         sessionTracker = QuotaSessionTracker(),
         providerResolver = {
