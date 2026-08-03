@@ -9,6 +9,7 @@ import java.nio.file.Path
  */
 enum class GitWorktreeOperation {
     INIT,
+    CHECKOUT_BRANCH,
     ADD_ALL,
     COMMIT,
     ARCHIVE,
@@ -42,6 +43,7 @@ class BoundedGitWorktreeCommandRunner(
     ): GitWorktreeCommandResult {
         val command = when (operation) {
             GitWorktreeOperation.INIT -> listOf("git", "init")
+            GitWorktreeOperation.CHECKOUT_BRANCH -> listOf("git", "checkout", "-b", safeBranch(argument))
             GitWorktreeOperation.ADD_ALL -> listOf("git", "add", ".")
             GitWorktreeOperation.COMMIT -> listOf(
                 "git", "-c", "user.name=ATROPOS", "-c", "user.email=atropos@localhost",
@@ -85,6 +87,19 @@ class BoundedGitWorktreeCommandRunner(
         val message = value?.takeIf { it.isNotBlank() } ?: throw IllegalArgumentException("commit message is required")
         require(!message.contains('\n') && !message.contains('\r')) { "commit message must be single-line" }
         return message
+    }
+
+    private fun safeBranch(value: String?): String {
+        val branch = value?.trim().takeUnless { it.isNullOrBlank() }
+            ?: throw IllegalArgumentException("branch name is required")
+        require(!branch.any(Char::isWhitespace) && !branch.contains("..") && !branch.contains("@{")) {
+            "invalid branch name"
+        }
+        require(!branch.startsWith("/") && !branch.endsWith("/") && !branch.startsWith(".") && !branch.endsWith(".")) {
+            "invalid branch name"
+        }
+        require(!branch.any { it in "~^:?*[\\\\" }) { "invalid branch name" }
+        return branch
     }
 
     private fun requiredRevision(value: String?): String =

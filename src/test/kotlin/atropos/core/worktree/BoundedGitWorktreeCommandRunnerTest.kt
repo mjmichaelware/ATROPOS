@@ -79,4 +79,19 @@ class BoundedGitWorktreeCommandRunnerTest {
             runner.run(GitWorktreeOperation.COMMIT, root, "bad\nmessage")
         }
     }
+
+    @Test
+    fun branch_creation_is_typed_and_rejects_shell_injection_shapes() {
+        val captured = mutableListOf<List<String>>()
+        val runner = BoundedGitWorktreeCommandRunner { command, _, _ ->
+            captured += command
+            GitWorktreeCommandResult(0, "")
+        }
+        val root = Files.createTempDirectory("atropos-bounded-git-branch-")
+        runner.run(GitWorktreeOperation.CHECKOUT_BRANCH, root, "calculator-factory-1")
+        assertEquals(listOf("git", "checkout", "-b", "calculator-factory-1"), captured.single())
+        assertFailsWith<IllegalArgumentException> {
+            runner.run(GitWorktreeOperation.CHECKOUT_BRANCH, root, "MusicMakerLM;touch-pwned")
+        }
+    }
 }
