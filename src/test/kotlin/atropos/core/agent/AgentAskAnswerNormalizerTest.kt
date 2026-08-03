@@ -69,6 +69,6 @@ class AgentAskAnswerNormalizerTest {
 
     @Test
     fun `the fallback states plainly that there is no filesystem access`() {
-        assertTrue(normalizer.fallbackAnswer("anything", snapshot()).contains("no direct filesystem access"))
+        assertTrue(normalizer.fallbackAnswer("anything", snapshot()).contains("do not have direct filesystem access"))
     }
 }

@@ -66,7 +66,7 @@ class AgentPatchRunResultFactoryTest {
             rejectionReason = "no unified diff found",
             responsePreview = "I would change…"
         )
-        assertTrue(result.message.contains("did not apply anything"))
+        assertTrue(result.message?.contains("did not apply anything") == true)
         assertEquals("provider returned prose", result.failureSummary)
         assertEquals(128, result.contextByteCount)
         assertTrue(result.retryAttempted)

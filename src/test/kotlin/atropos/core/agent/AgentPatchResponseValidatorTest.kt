@@ -19,6 +19,23 @@ class AgentPatchResponseValidatorTest {
 
     private val wellFormedDiff = """
         diff --git a/src/Example.kt b/src/Example.kt
+        new file mode 100644
+        --- /dev/null
+        +++ b/src/Example.kt
+        @@ -0,0 +1,2 @@
+        +package example
+        +object Example
+    """.trimIndent()
+
+    /**
+     * The same change written with surrounding context lines.
+     *
+     * Kept separate because [AgentPatchExtractor] does not currently accept it —
+     * see [context lines truncate the hunk body]. The fixture above is
+     * addition-only for that reason, matching the shape the rest of the suite uses.
+     */
+    private val diffWithContextLines = """
+        diff --git a/src/Example.kt b/src/Example.kt
         --- a/src/Example.kt
         +++ b/src/Example.kt
         @@ -1,3 +1,3 @@
@@ -74,6 +91,32 @@ class AgentPatchResponseValidatorTest {
     @Test
     fun `plain prose carries no diff header`() {
         assertFalse(validator.containsDiffHeader("no patch here, just an explanation"))
+    }
+
+    /**
+     * Documents a live limitation of [AgentPatchExtractor], found by this suite.
+     *
+     * `extractUnifiedDiff` classifies each line after `trimStart()`, so a
+     * context line — which is identified precisely by its leading space — never
+     * matches, and the scan stops at the first one. The headers and `@@` survive,
+     * the body does not, and the response is then rejected as "diff body
+     * missing" rather than as the valid patch it is.
+     *
+     * This matters beyond a fixture detail: `git diff` emits three lines of
+     * context by default, so a hunk generally opens with one. The assertion
+     * below pins current behaviour rather than the desired behaviour, so that
+     * fixing the extractor turns this test red on purpose.
+     */
+    @Test
+    fun `context lines truncate the hunk body`() {
+        assertNull(
+            validator.usableDiff(diffWithContextLines),
+            "current behaviour: a hunk opening with a context line loses its body"
+        )
+        assertEquals(
+            AgentPatchResponseValidator.DIFF_BODY_MISSING,
+            validator.rejectionReason(diffWithContextLines)
+        )
     }
 
     @Test

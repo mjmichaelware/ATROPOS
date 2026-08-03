@@ -23,9 +23,15 @@ class MemoryBackendProbe(
     private val runShell: (String) -> Int = ::runShellCommand
 ) {
 
-    fun commandExists(name: String): Boolean =
-        runCatching { runShell("command -v ${shellSafe(name)} >/dev/null 2>&1") == 0 }
+    fun commandExists(name: String): Boolean {
+        // Validated outside the fail-closed wrapper on purpose. An unusable
+        // environment should report unavailable; a caller passing a name that
+        // could break out of the command is a defect, and swallowing it into a
+        // quiet `false` would hide the very thing this check exists to catch.
+        val safeName = shellSafe(name)
+        return runCatching { runShell("command -v $safeName >/dev/null 2>&1") == 0 }
             .getOrDefault(false)
+    }
 
     fun sqliteVecAvailable(): Boolean =
         runCatching {
