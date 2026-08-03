@@ -30,7 +30,32 @@ enum class GitWorktreeOperation {
      * nothing left to revert — the only way back is to reverse the same diff in
      * the repository it landed in.
      */
-    REVERSE_APPLY_PATCH
+    REVERSE_APPLY_PATCH,
+
+    /**
+     * Stage exactly one declared path.
+     *
+     * One path per invocation on purpose. `git add -A` / `git add .` would sweep
+     * whatever else the operator happens to have in the tree into ATROPOS's own
+     * commit, which turns a durability claim about a verified mutation into a
+     * claim about unrelated work nobody verified.
+     */
+    STAGE_PATH,
+
+    /** Read back what is actually in the index, so "staged=N" is observed rather than assumed. */
+    STAGED_PATHS,
+
+    /**
+     * Commit with the message in `argument` and a newline-separated pathspec in `input`.
+     *
+     * The trailing pathspec puts the commit in Git's `--only` mode: content
+     * outside the named paths stays staged and uncommitted rather than riding
+     * along.
+     */
+    COMMIT_SCOPED_PATHS,
+
+    /** Push one branch to one named remote. `argument` is the remote, `input` the branch. */
+    PUSH_BRANCH
 }
 
 data class GitWorktreeCommandResult(
@@ -73,6 +98,16 @@ class BoundedGitWorktreeCommandRunner(
                 "git", "add", "-N", requiredRelativePath(argument)
             )
             GitWorktreeOperation.REVERSE_APPLY_PATCH -> listOf("git", "apply", "--reverse")
+            GitWorktreeOperation.STAGE_PATH -> listOf(
+                "git", "add", "--", requiredRelativePath(argument)
+            )
+            GitWorktreeOperation.STAGED_PATHS -> listOf("git", "diff", "--cached", "--name-only")
+            GitWorktreeOperation.COMMIT_SCOPED_PATHS -> listOf(
+                "git", "commit", "-m", requiredCommitMessage(argument), "--"
+            ) + requiredRelativePaths(input)
+            GitWorktreeOperation.PUSH_BRANCH -> listOf(
+                "git", "push", requiredGitToken(argument, "push remote"), requiredGitToken(input, "push branch")
+            )
         }
         val patchOperations = setOf(GitWorktreeOperation.APPLY_PATCH, GitWorktreeOperation.REVERSE_APPLY_PATCH)
         return processRunner(command, directory, if (operation in patchOperations) input else null)
@@ -105,10 +140,37 @@ class BoundedGitWorktreeCommandRunner(
     private fun requiredRelativePath(value: String?): String {
         val path = value?.trim().orEmpty()
         require(path.isNotBlank()) { "safe relative worktree path is required" }
+        require(!path.startsWith("-")) { "safe relative worktree path must not look like an option" }
         return safeRelativePath(path)
     }
 
+    private fun requiredRelativePaths(value: String?): List<String> {
+        val paths = value?.lineSequence()?.map { it.trim() }?.filter { it.isNotBlank() }?.toList().orEmpty()
+        require(paths.isNotEmpty()) { "at least one scoped path is required" }
+        require(paths.size <= MAX_SCOPED_PATHS) { "scoped path list exceeds the bounded argument budget" }
+        return paths.map(::requiredRelativePath)
+    }
+
+    private fun requiredCommitMessage(value: String?): String {
+        val message = value?.takeIf { it.isNotBlank() }
+            ?: throw IllegalArgumentException("commit message is required")
+        require(!message.startsWith("-")) { "commit message must not look like an option" }
+        require(message.length <= MAX_COMMIT_MESSAGE_CHARS) { "commit message exceeds the bounded argument budget" }
+        return message
+    }
+
+    private fun requiredGitToken(value: String?, label: String): String {
+        val token = value?.trim().orEmpty()
+        require(token.isNotBlank() && !token.any(Char::isWhitespace)) { "$label is required" }
+        require(!token.startsWith("-") && token != "--" && !token.contains(";")) { "$label is not a safe git token" }
+        return token
+    }
+
     private companion object {
+        /** Keeps `git commit -- <paths>` inside the bounded runner's argument budget. */
+        const val MAX_SCOPED_PATHS = 40
+        const val MAX_COMMIT_MESSAGE_CHARS = 4_096
+
         fun runProcess(
             command: List<String>,
             directory: Path,
