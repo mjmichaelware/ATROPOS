@@ -30,7 +30,13 @@ class SelfHostWorktreeNodeExecutor(
     private val agencyGate: BoundedAgencyGate = BoundedAgencyGate(
         policyEngine = ExecutionPolicyEngine(repoRoot),
         territory = territoryGrants
-    )
+    ),
+    /**
+     * The compile/test boundary for a mutation that has already landed. Without
+     * it this executor marked nodes COMPLETE after only `git diff --check`.
+     */
+    private val mutationVerification: SelfHostMutationVerificationGate =
+        SelfHostMutationVerificationGate(repoRoot)
 ) {
     fun canExecute(node: DagNode): Boolean =
         node.action == DagNodeAction.CREATE_FILE || node.action == DagNodeAction.EDIT_FILE
@@ -97,8 +103,29 @@ class SelfHostWorktreeNodeExecutor(
             if (changedOutputFailure != null) {
                 return fail(running, "self-host mutation changed undeclared output: $changedOutputFailure")
             }
+            // Captured before the merge: merging removes the worktree, and with it
+            // the only source for the patch a failed verification has to reverse.
+            val mergedDiff = diffInspector.unifiedDiff(worktree.baselineCommit, worktree.worktreePath)
             val merged = worktreeService.verifyAndMerge(worktree.id, "git diff --check")
             if (!merged.ok) return fail(node, merged.message)
+
+            // The mutation is now in the live tree, checked only for whitespace.
+            // C1-SB-02: it does not get to be COMPLETE until the real completion
+            // gate compiles it, and a refusal takes it back out again.
+            when (val verdict = mutationVerification.verifyMerged(running, mergedDiff)) {
+                is SelfHostMutationVerdict.Accepted -> Unit
+                is SelfHostMutationVerdict.Rejected -> return fail(
+                    running,
+                    buildString {
+                        append("self-host mutation refused by VerifiedCompletionGate: ")
+                        append(verdict.reason.take(240))
+                        append(" | ").append(verdict.evidenceLine())
+                        if (verdict.treeIsDirty) {
+                            append(" | WARNING: the rejected change could not be reversed and remains in the working tree")
+                        }
+                    }
+                )
+            }
 
             val completed = dagStore.writeNode(
                 running.copy(

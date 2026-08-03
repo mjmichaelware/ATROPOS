@@ -18,4 +18,18 @@ class SelfHostWorktreeDiffInspector(
         if (result.exitCode != 0) return emptyList()
         return result.output.lineSequence().map(String::trim).filter(String::isNotBlank).toList()
     }
+
+    /**
+     * The full patch text for the mutation, captured before it is merged.
+     *
+     * Needed because the merge removes the worktree that produced it. Without the
+     * patch in hand there is no way to undo a change that later fails
+     * verification — the source of truth for the reversal is gone.
+     */
+    fun unifiedDiff(baselineCommit: String?, worktreeRoot: Path): String {
+        val result = runCatching {
+            gitRunner.run(GitWorktreeOperation.DIFF_FROM_BASELINE, worktreeRoot, baselineCommit)
+        }.getOrNull() ?: return ""
+        return if (result.exitCode == 0) result.output else ""
+    }
 }
