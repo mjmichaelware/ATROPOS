@@ -3,10 +3,6 @@ package atropos.core.memory
 import atropos.core.AtroposRepoRootLocator
 import atropos.core.security.RedactionFilter
 import java.io.File
-import java.nio.charset.StandardCharsets
-import java.nio.file.Files
-import java.nio.file.StandardOpenOption
-import java.nio.file.StandardCopyOption
 import java.security.MessageDigest
 import java.util.Locale
 
@@ -18,6 +14,8 @@ class LocalMemoryStore(
 ) {
     private val jsonlFile = File(root, "memory.jsonl")
     private val stateFile = File(root, "memory.state")
+    private val files = MemoryFileStore(root, jsonlFile, stateFile, now)
+    private val backends = MemoryBackendProbe()
 
     companion object {
         fun defaultRoot(): File = AtroposRepoRootLocator.resolve().resolve(".atropos/memory").toFile()
@@ -70,7 +68,7 @@ class LocalMemoryStore(
         val priorSnapshot = if (priorState == null && jsonlFile.exists()) readSnapshot() else null
         val priorCount = priorState?.totalRecords ?: priorSnapshot?.records?.size ?: 0
         val priorCorrupt = priorState?.corruptRecords ?: priorSnapshot?.corruptRecords ?: 0
-        appendRecord(record)
+        files.appendRecord(record)
         writeState(
             MemorySnapshot(
                 records = emptyList(),
@@ -224,7 +222,7 @@ class LocalMemoryStore(
             .distinctBy { listOf(it.kind.name, it.subjectType.orEmpty(), it.subjectId.orEmpty(), it.title, stableFingerprint(it.body)).joinToString("|") }
             .take(safeLimit)
             .sortedBy { it.createdAtEpochMs }
-        writeRecordsAtomically(compacted)
+        files.replaceRecords(compacted)
         val next = snapshot.copy(records = compacted, compactedAtEpochMs = now())
         writeState(next)
         return next.toState()
@@ -241,8 +239,8 @@ class LocalMemoryStore(
             totalRecords = state.totalRecords,
             corruptRecords = state.corruptRecords,
             schemaVersion = state.schemaVersion,
-            sqliteAvailable = commandExists("sqlite3"),
-            sqliteVecAvailable = sqliteVecAvailable(),
+            sqliteAvailable = backends.commandExists("sqlite3"),
+            sqliteVecAvailable = backends.sqliteVecAvailable(),
             pineconeConfigured = env["PINECONE_API_KEY"].isNullOrBlank().not(),
             supabaseConfigured = env["SUPABASE_URL"].isNullOrBlank().not() &&
                 env["SUPABASE_ANON_KEY"].isNullOrBlank().not(),
@@ -278,108 +276,29 @@ class LocalMemoryStore(
         return digest.take(16)
     }
 
+    /**
+     * Records plus the corruption count, taking the worst of what is on disk
+     * now and what a previous read recorded.
+     *
+     * The max is deliberate: compaction rewrites the log, so a corrupt line
+     * that was dropped stops being visible in the file while still having
+     * happened. Letting the count fall back to zero would erase the evidence.
+     */
     private fun readSnapshot(): MemorySnapshot {
-        if (!jsonlFile.exists()) {
-            val state = readStateFile()
-            return MemorySnapshot(emptyList(), state?.corruptRecords ?: 0, state?.compactedAtEpochMs)
+        val prior = files.readState()
+        if (!files.recordsExist()) {
+            return MemorySnapshot(emptyList(), prior?.corruptRecords ?: 0, prior?.compactedAtEpochMs)
         }
-
-        val records = mutableListOf<MemoryRecord>()
-        var corrupt = 0
-        jsonlFile.readLines(StandardCharsets.UTF_8).forEach { line ->
-            if (line.isBlank()) return@forEach
-            val decoded = MemoryRecordCodec.decode(line)
-            if (decoded != null) records += decoded else corrupt++
-        }
-        val prior = readStateFile()
-        return MemorySnapshot(records, maxOf(corrupt, prior?.corruptRecords ?: 0), prior?.compactedAtEpochMs)
-    }
-
-    private fun readStateFile(): MemoryState? {
-        if (!stateFile.exists()) return null
-        val lines = runCatching { stateFile.readLines(StandardCharsets.UTF_8) }.getOrNull() ?: return null
-        val fields = lines.mapNotNull { line ->
-            val index = line.indexOf('=')
-            if (index <= 0) return@mapNotNull null
-            line.substring(0, index) to line.substring(index + 1)
-        }.toMap()
-        return MemoryState(
-            schemaVersion = fields["schemaVersion"]?.toIntOrNull() ?: MEMORY_SCHEMA_VERSION,
-            totalRecords = fields["totalRecords"]?.toIntOrNull() ?: 0,
-            corruptRecords = fields["corruptRecords"]?.toIntOrNull() ?: 0,
-            compactedAtEpochMs = fields["compactedAtEpochMs"]?.toLongOrNull()
+        val read = files.readRecords()
+        return MemorySnapshot(
+            read.records,
+            maxOf(read.corruptRecords, prior?.corruptRecords ?: 0),
+            prior?.compactedAtEpochMs
         )
     }
 
-    private fun writeState(snapshot: MemorySnapshot, totalRecords: Int = snapshot.records.size) {
-        root.mkdirs()
-        val content = buildString {
-            appendLine("schemaVersion=$MEMORY_SCHEMA_VERSION")
-            appendLine("totalRecords=$totalRecords")
-            appendLine("corruptRecords=${snapshot.corruptRecords}")
-            appendLine("compactedAtEpochMs=${snapshot.compactedAtEpochMs ?: ""}")
-        }
-        atomicWrite(stateFile, content)
-    }
-
-    private fun appendRecord(record: MemoryRecord) {
-        root.mkdirs()
-        Files.writeString(
-            jsonlFile.toPath(),
-            MemoryRecordCodec.encode(record) + "\n",
-            StandardCharsets.UTF_8,
-            StandardOpenOption.CREATE,
-            StandardOpenOption.WRITE,
-            StandardOpenOption.APPEND
-        )
-    }
-
-    private fun writeRecordsAtomically(records: List<MemoryRecord>) {
-        root.mkdirs()
-        val content = records.joinToString(separator = "\n") { MemoryRecordCodec.encode(it) }
-            .let { if (it.isBlank()) "" else "$it\n" }
-        atomicWrite(jsonlFile, content)
-    }
-
-    private fun atomicWrite(target: File, content: String) {
-        target.parentFile?.mkdirs()
-        val tmp = File(target.parentFile, "${target.name}.${now()}.tmp")
-        tmp.writeText(content, Charsets.UTF_8)
-        try {
-            Files.move(
-                tmp.toPath(),
-                target.toPath(),
-                StandardCopyOption.REPLACE_EXISTING,
-                StandardCopyOption.ATOMIC_MOVE
-            )
-        } catch (_: Exception) {
-            Files.move(tmp.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING)
-        }
-    }
-
-    private fun commandExists(name: String): Boolean {
-        return try {
-            val process = ProcessBuilder("sh", "-c", "command -v $name >/dev/null 2>&1")
-                .redirectErrorStream(true)
-                .start()
-            process.waitFor() == 0
-        } catch (_: Exception) {
-            false
-        }
-    }
-
-    private fun sqliteVecAvailable(): Boolean {
-        return try {
-            val process = ProcessBuilder(
-                "sh",
-                "-c",
-                "command -v sqlite3 >/dev/null 2>&1 && sqlite3 ':memory:' \"select load_extension('sqlite_vec');\" >/dev/null 2>&1"
-            ).redirectErrorStream(true).start()
-            process.waitFor() == 0
-        } catch (_: Exception) {
-            false
-        }
-    }
+    private fun writeState(snapshot: MemorySnapshot, totalRecords: Int = snapshot.records.size) =
+        files.writeState(totalRecords, snapshot.corruptRecords, snapshot.compactedAtEpochMs)
 
     private data class MemorySnapshot(
         val records: List<MemoryRecord>,
