@@ -1308,6 +1308,16 @@ Markup is append-only evidence, not a percentage rewrite. Percentages move only 
 - Fingerprints: `AstSymbolGraph.kt=463fbc5499606eb61640a0a8bc67ad60fcf5f9ea002ea5e550f413044299c69a`; `LocalMemoryStore.kt=d5900191b759b33518edf1d5ba57e9babe7556c3de641fab0bf3e0a256547ef7`; `MemoryRecordCodec.kt=5df09c02f895e863f907621ba31125a5a2120bd768155ebbe0518e8aac7ec544`.
 - New overall estimate: unchanged.
 
+### 2026-08-03T11:45:00Z · Agent: Codex GPT-5 · Batch: calculator-phase0-surfaces-020
+- Paths touched: `scripts/kotlin-compat-scan.sh` (+27), `scripts/calculator-prerequisite-gate.sh` (+52), `docs/architecture/DOCKER_NATIVE_DESKTOP_ANDROID_WEB_PLAN.md` (+31), and `AGENTS.md` (+this row).
+- Atoms / phases affected: `M003`, `M006`, `N001`, `N002`, `N003`, `N004`, `N005` surface owners.
+- Predicate moved: deterministic Kotlin compatibility scanning, portable platform migration ownership, and calculator prerequisite test/authority surface inventory now exist under canonical owners.
+- % delta: calculator closure remains incomplete; estimated unresolved C1 binary obligations remain 60. No phase percentage claim.
+- Why the delta is justified: `KOTLIN_COMPAT_SCAN_OK` and `CALCULATOR_PREREQUISITE_SURFACE_OK` passed without Gradle or test execution. Existing canonical test files were required and found; the scripts do not treat file presence as runtime proof.
+- HR interrupts: none. No full Gradle test, JAR, install, runtime, deployment, or push run.
+- Fingerprints: `kotlin-compat-scan.sh=86db5abeadfd2f31a45fbf21849dba66e8c52095d1f8b4de8f7de950069cb2d4`; `calculator-prerequisite-gate.sh=7d651bbe0c1b17c531f35db2eacefcdca28246aece9efd98d7eabcf9a2a33187`; plan=`b10ebd69aa4dc16496897efa2959a2aca3340c70462cd7a4be512692530288c3`.
+- New overall estimate: calculator one-shot `NO`; next atom `G006` after focused Phase 0 execution evidence.
+
 ### 2026-07-31T10:28:56-06:00 · Agent: Codex GPT-5 · Batch: foundation-provider-fixture-010
 - Paths touched: `src/test/kotlin/atropos/core/provider/ProviderFixtureMatrixServiceTest.kt` (+3)
 - New decoupled files: none; the existing provider fixture contract was extended.
@@ -1812,3 +1822,23 @@ End of AGENTS.md
 - HR interrupts: none. No tests or builds run.
 - Fingerprints: manifest rows contain the full SHA-256 for all eight registered files.
 - New overall estimate: unchanged.
+
+### 2026-08-03T11:46:00Z · Agent: Codex GPT-5 · Batch: calculator-phase0-surfaces-020-append
+- Paths touched: `scripts/kotlin-compat-scan.sh`, `scripts/calculator-prerequisite-gate.sh`, `docs/architecture/DOCKER_NATIVE_DESKTOP_ANDROID_WEB_PLAN.md`, and `AGENTS.md`.
+- Atoms / phases affected: `M003`, `M006`, `N001`, `N002`, `N003`, `N004`, `N005` surface owners.
+- Predicate moved: deterministic compatibility scanning, portable platform ownership, and calculator prerequisite surface inventory are present; runtime test execution remains open.
+- % delta: unchanged; unresolved calculator C1 obligations remain 60. No phase percentage claim.
+- Why justified: both lightweight scripts passed; no Gradle, test, JAR, install, runtime, deployment, or push was run.
+- HR interrupts: none.
+- Fingerprints: scanner `86db5abeadfd2f31a45fbf21849dba66e8c52095d1f8b4de8f7de950069cb2d4`; prerequisite gate `7d651bbe0c1b17c531f35db2eacefcdca28246aece9efd98d7eabcf9a2a33187`; plan `b10ebd69aa4dc16496897efa2959a2aca3340c70462cd7a4be512692530288c3`.
+- New overall estimate: calculator one-shot `NO`; next dependency is focused evidence for the Phase 0 test surfaces.
+
+### 2026-08-03T11:58:00Z · Agent: Codex GPT-5 · Batch: calculator-g006-provider-fixtures-021
+- Paths touched: `AGENTS.md` (+this row); no product owner changes.
+- Atoms / phases affected: `G006` provider fixture matrix.
+- Predicate moved: `G006` implementation and integration are supported by the canonical fixture matrix and family fixture owners; focused `ProviderFixtureMatrixServiceTest` passed.
+- % delta: calculator closure unchanged; remaining scoped C1 binary obligations remain 60 because the source DAG still labels the atom PARTIAL/MISSING pending the broader acceptance chain.
+- Why justified: `./gradlew test --tests atropos.core.provider.ProviderFixtureMatrixServiceTest --no-daemon --max-workers=1` completed successfully in 1m09s. No full test suite, JAR, install, runtime, deployment, or push run.
+- HR interrupts: none.
+- Fingerprints: existing owner fingerprint `074abcf7fd8f2f6390422b487cc88131e541a238af61b076f1398502ff7c9df3`; source DAG hash `0d3d20b7537d9cb64dbb0a6c0515831f4625b55a309e2c27f1656457f9b08f16`.
+- New overall estimate: calculator one-shot `NO`; next atom `H007`.
