@@ -11,6 +11,9 @@ data class SelfHostStartupContinuationResult(
 /** Advances one unfinished self-host goal after process-start recovery. */
 class SelfHostStartupContinuationService(
     private val selfHostService: SelfHostGoalService = SelfHostGoalService(),
+    private val hasUnfinishedGoals: () -> Boolean = {
+        selfHostService.loadUnfinishedGoals().isNotEmpty()
+    },
     private val resolveResumable: () -> SelfHostResult = { selfHostService.resolveResumableGoal() },
     private val recoverAndContinue: (String) -> SelfHostResult = { goalId ->
         selfHostService.recoverAndContinue(goalId, "self-host automatic startup continuation")
@@ -28,6 +31,25 @@ class SelfHostStartupContinuationService(
         }
         if (!attemptedInProcess.compareAndSet(false, true)) {
             return SelfHostStartupContinuationResult(false, true)
+        }
+
+        val unfinishedAvailable = try {
+            hasUnfinishedGoals()
+        } catch (failure: Exception) {
+            attemptedInProcess.set(false)
+            return SelfHostStartupContinuationResult(
+                attempted = true,
+                ok = false,
+                message = "startup self-host continuation selection failed: ${failure.message ?: failure.javaClass.simpleName}"
+            )
+        }
+
+        if (!unfinishedAvailable) {
+            return SelfHostStartupContinuationResult(
+                attempted = false,
+                ok = true,
+                message = "startup self-host continuation: no resumable goal"
+            )
         }
 
         val selected = try {

@@ -12,6 +12,7 @@ class SelfHostStartupContinuationServiceTest {
         val goal = GoalRunStore(Files.createTempDirectory("atropos-startup-continuation-")).createGoalRun("startup goal")
         var calls = 0
         val service = SelfHostStartupContinuationService(
+            hasUnfinishedGoals = { true },
             resolveResumable = { SelfHostResult(true, "selected", SelfHostGoal(goal, null)) },
             recoverAndContinue = { id ->
                 calls += 1
@@ -34,6 +35,7 @@ class SelfHostStartupContinuationServiceTest {
     fun unavailable_recovery_never_advances_goal() {
         var calls = 0
         val service = SelfHostStartupContinuationService(
+            hasUnfinishedGoals = { true },
             resolveResumable = { error("must not resolve") },
             recoverAndContinue = { calls += 1; error("must not recover") }
         )
@@ -49,6 +51,7 @@ class SelfHostStartupContinuationServiceTest {
     fun resolver_failure_is_reported_and_can_be_retried() {
         var calls = 0
         val service = SelfHostStartupContinuationService(
+            hasUnfinishedGoals = { true },
             resolveResumable = {
                 calls += 1
                 SelfHostResult(false, "store unavailable")
@@ -64,4 +67,33 @@ class SelfHostStartupContinuationServiceTest {
         assertFalse(second.ok)
         assertEquals(2, calls)
     }
+    @Test
+    fun no_unfinished_goal_is_normal_startup_noop() {
+        var resolveCalls = 0
+        var recoverCalls = 0
+
+        val service = SelfHostStartupContinuationService(
+            hasUnfinishedGoals = { false },
+            resolveResumable = {
+                resolveCalls += 1
+                error("must not resolve")
+            },
+            recoverAndContinue = { _ ->
+                recoverCalls += 1
+                error("must not recover")
+            }
+        )
+
+        val result = service.continueOnce(true)
+
+        assertFalse(result.attempted)
+        assertTrue(result.ok)
+        assertEquals(
+            "startup self-host continuation: no resumable goal",
+            result.message
+        )
+        assertEquals(0, resolveCalls)
+        assertEquals(0, recoverCalls)
+    }
+
 }
