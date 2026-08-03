@@ -4,25 +4,31 @@ import atropos.core.ProviderCascadeResult
 import atropos.core.ProviderCascadeRouter
 import atropos.core.memory.LocalMemoryStore
 import atropos.core.memory.MemoryKind
-import atropos.core.provider.ContextAttestationService
 import atropos.core.provider.ContextEnvelope
 import atropos.core.provider.ContextEnvelopeFactory
 import atropos.core.security.RedactionFilter
 import java.nio.file.Path
 
-internal data class AgentPatchAttempt(
-    val result: ProviderCascadeResult,
-    val extraction: AgentPatchExtraction,
-    val retryAttempted: Boolean,
-    val rejectionReason: String? = null,
-    val responsePreview: String? = null
-)
-
-internal data class AgentPatchCascadeResult(
-    val success: AgentPatchAttempt? = null,
-    val failure: AgentPatchAttempt? = null
-)
-
+/**
+ * Walks the patch provider order until one returns a usable diff.
+ *
+ * The loop is all that is left here. Judging a response, naming why it failed,
+ * building the failure record, and checking attestation now belong to
+ * [AgentPatchResponseValidator], [AgentPatchAttemptFactory], and
+ * [AgentPatchAttestationGate] — the same three owners the repair path uses, so
+ * the two cannot drift apart on what counts as a patch.
+ *
+ * ## One retry, then the next provider
+ *
+ * A provider that answers in prose gets exactly one corrective prompt naming
+ * what was missing. Beyond that the cascade moves on: repeated reformulation
+ * against a model that has already ignored the format spends quota without
+ * changing the odds, and the next provider is the cheaper experiment.
+ *
+ * Attestation failure does not get a retry at all. It is not a formatting
+ * problem — the response could not be tied to the context it was asked against,
+ * and asking the same provider again produces another unverifiable answer.
+ */
 class AgentPatchCascadeRunner(
     private val router: ProviderCascadeRouter,
     private val patchExtractor: AgentPatchExtractor,
@@ -48,172 +54,122 @@ class AgentPatchCascadeRunner(
         )
     }
 ) {
+    private val validator = AgentPatchResponseValidator(patchExtractor)
+    private val attempts = AgentPatchAttemptFactory(patchExtractor, validator, redactionFilter)
+    private val attestation = AgentPatchAttestationGate()
+
     internal fun run(
         patchOrder: List<String>,
         prompt: String,
         context: String,
         truncated: Boolean = false
     ): AgentPatchCascadeResult {
-        if (truncated) {
-            return AgentPatchCascadeResult(
-                failure = AgentPatchAttempt(
-                    result = ProviderCascadeResult(providerName = "none", response = "", errors = emptyList()),
-                    extraction = AgentPatchExtraction("", emptyList(), false),
-                    retryAttempted = false,
-                    rejectionReason = "provider context refused: source context pack is truncated",
-                    responsePreview = "source context pack is truncated"
-                )
-            )
+        contextRefusal(context, truncated)?.let { reason ->
+            return AgentPatchCascadeResult(failure = attempts.refusal(reason))
         }
-        val contextRefusal = AgentProviderContextBoundary.validateSourcePack(
-            context = context,
-            sourcePackId = extractMarker(context, "SOURCE_PACK_ID="),
-            fetchReceiptId = extractMarker(context, "FETCH_RECEIPT_ID=")
-        )
-        if (contextRefusal != null) {
-            val reason = contextRefusal.message
-            return AgentPatchCascadeResult(
-                failure = AgentPatchAttempt(
-                    result = ProviderCascadeResult(providerName = "none", response = "", errors = emptyList()),
-                    extraction = AgentPatchExtraction("", emptyList(), false),
-                    retryAttempted = false,
-                    rejectionReason = reason,
-                    responsePreview = reason
-                )
-            )
-        }
+
         var lastFailure: AgentPatchAttempt? = null
 
         for (provider in patchOrder) {
+            // try/catch rather than runCatching: `continue` cannot cross an
+            // inline lambda boundary, and runCatching would also swallow Error,
+            // which must keep propagating.
             val initial = try {
                 runPatchAttempt(provider, prompt, context)
             } catch (failure: Exception) {
-                lastFailure = buildExceptionFailure(provider, failure, retryAttempted = false)
+                lastFailure = attempts.exceptionFailure(provider, failure, retryAttempted = false)
                 continue
             }
-            val accepted = validatePatchAttempt(initial, task = prompt)
-            if (accepted != null) return AgentPatchCascadeResult(success = accepted)
-            if (!isAttested(initial, prompt, recordFailure = true)) {
-                lastFailure = buildAttestationFailure(initial, retryAttempted = false)
+            accept(initial, retryAttempted = false)?.let { return AgentPatchCascadeResult(success = it) }
+            if (!attested(initial)) {
+                lastFailure = attempts.attestationFailure(initial, retryAttempted = false)
                 continue
             }
 
-            val retryPrompt = buildString {
-                appendLine(prompt)
-                appendLine()
-                appendLine("Your previous response was rejected because no unified diff was found. Return ONLY a valid unified diff for the same task.")
-                appendLine("Include file headers, at least one @@ hunk header, and the added or removed line(s).")
-            }
             val retry = try {
-                runPatchAttempt(provider, retryPrompt.trimEnd(), context)
+                runPatchAttempt(provider, retryPrompt(prompt), context)
             } catch (failure: Exception) {
-                lastFailure = buildExceptionFailure(provider, failure, retryAttempted = true)
+                lastFailure = attempts.exceptionFailure(provider, failure, retryAttempted = true)
                 continue
             }
-            val retryAccepted = validatePatchAttempt(retry, task = retryPrompt.trimEnd())
-            if (retryAccepted != null) {
-                return AgentPatchCascadeResult(success = retryAccepted.copy(retryAttempted = true))
-            }
-            if (!isAttested(retry, retryPrompt.trimEnd(), recordFailure = true)) {
-                lastFailure = buildAttestationFailure(retry, retryAttempted = true)
+            accept(retry, retryAttempted = true)?.let { return AgentPatchCascadeResult(success = it) }
+            if (!attested(retry)) {
+                lastFailure = attempts.attestationFailure(retry, retryAttempted = true)
                 continue
             }
 
-            lastFailure = buildPatchFailure(retry, retryAttempted = true)
+            lastFailure = attempts.patchFailure(retry, retryAttempted = true)
         }
 
         return AgentPatchCascadeResult(failure = lastFailure)
     }
 
-    private fun runPatchAttempt(provider: String, prompt: String, context: String): ProviderCascadeResult =
-        ContextEnvelopeFactory.createSimple(provider, "", prompt, repoRoot).let { envelope ->
-            completeWithCascade(
-                provider,
-                prompt,
-                AgentPromptContract.buildPatch(
-                    context = context,
-                    providerId = provider,
-                    task = prompt,
-                    repoRoot = repoRoot
-                ),
-                listOf(provider),
-                { candidate -> authorizeProvider(candidate, prompt, "patch") },
-                envelope
-            )
-        }
+    /**
+     * Why the request must not be sent at all, or null when it may proceed.
+     *
+     * Checked before the provider loop because a truncated or unbound source
+     * pack is a property of the request, not of any one provider — trying the
+     * cascade would send the same defective context to every provider in turn.
+     */
+    private fun contextRefusal(context: String, truncated: Boolean): String? {
+        if (truncated) return "provider context refused: source context pack is truncated"
+        return AgentProviderContextBoundary.validateSourcePack(
+            context = context,
+            sourcePackId = extractMarker(context, SOURCE_PACK_MARKER),
+            fetchReceiptId = extractMarker(context, FETCH_RECEIPT_MARKER)
+        )?.message
+    }
 
-    private fun validatePatchAttempt(
-        result: ProviderCascadeResult,
-        retryAttempted: Boolean = false,
-        task: String
-    ): AgentPatchAttempt? {
-        if (!isAttested(result, task, recordFailure = false)) return null
-        val extraction = patchExtractor.extract(result.response) ?: return null
-        if (!extraction.hasHunkBody) return null
-        if (patchExtractor.validate(extraction.diff) != null) return null
+    private fun accept(result: ProviderCascadeResult, retryAttempted: Boolean): AgentPatchAttempt? {
+        if (!attestation.isAttested(result)) return null
+        val extraction = validator.usableDiff(result.response) ?: return null
         return AgentPatchAttempt(result, extraction, retryAttempted)
     }
 
-    private fun isAttested(result: ProviderCascadeResult, task: String, recordFailure: Boolean): Boolean {
-        val envelope = result.contextEnvelope ?: return false
-        return when (val verified = ContextAttestationService.verify(envelope, result.response)) {
-            is ContextAttestationService.VerifiedResult.Accepted -> true
-            is ContextAttestationService.VerifiedResult.Rejected -> {
-                if (recordFailure) {
-                    memoryStore.rememberDetailed(
-                        kind = MemoryKind.SESSION,
-                        title = "agent patch context attestation refused",
-                        body = "${verified.failure.providerId}: ${verified.failure.reason}",
-                        tags = listOf("agent", "patch", "context", "blocked"),
-                        subjectType = "context_failure",
-                        subjectId = null
-                    )
-                }
+    /** Attestation for the failure path, which also records the refusal. */
+    private fun attested(result: ProviderCascadeResult): Boolean =
+        when (val verdict = attestation.evaluate(result)) {
+            is AgentAttestationVerdict.Accepted -> true
+            is AgentAttestationVerdict.Unattestable -> false
+            is AgentAttestationVerdict.Refused -> {
+                memoryStore.rememberDetailed(
+                    kind = MemoryKind.SESSION,
+                    title = "agent patch context attestation refused",
+                    body = "${verdict.providerId}: ${verdict.reason}",
+                    tags = listOf("agent", "patch", "context", "blocked"),
+                    subjectType = "context_failure",
+                    subjectId = null
+                )
                 false
             }
         }
-    }
 
-    private fun buildPatchFailure(result: ProviderCascadeResult, retryAttempted: Boolean): AgentPatchAttempt {
-        val extraction = patchExtractor.extract(result.response)
-        val rejectionReason = when {
-            extraction == null -> if (containsDiffHeader(result.response)) "diff body missing" else "no unified diff found"
-            !extraction.hasHunkBody -> "diff body missing"
-            else -> patchExtractor.validate(extraction.diff) ?: "unknown patch rejection"
-        }
+    private fun retryPrompt(prompt: String): String = buildString {
+        appendLine(prompt)
+        appendLine()
+        appendLine(
+            "Your previous response was rejected because no unified diff was found. " +
+                "Return ONLY a valid unified diff for the same task."
+        )
+        appendLine("Include file headers, at least one @@ hunk header, and the added or removed line(s).")
+    }.trimEnd()
 
-        return AgentPatchAttempt(
-            result = result,
-            extraction = extraction ?: AgentPatchExtraction("", emptyList(), false),
-            retryAttempted = retryAttempted,
-            rejectionReason = rejectionReason,
-            responsePreview = redactionFilter.redact(patchExtractor.preview(result.response))
+    private fun runPatchAttempt(provider: String, prompt: String, context: String): ProviderCascadeResult {
+        val envelope = ContextEnvelopeFactory.createSimple(provider, "", prompt, repoRoot)
+        return completeWithCascade(
+            provider,
+            prompt,
+            AgentPromptContract.buildPatch(
+                context = context,
+                providerId = provider,
+                task = prompt,
+                repoRoot = repoRoot
+            ),
+            listOf(provider),
+            { candidate -> authorizeProvider(candidate, prompt, "patch") },
+            envelope
         )
     }
-
-    private fun buildAttestationFailure(result: ProviderCascadeResult, retryAttempted: Boolean): AgentPatchAttempt =
-        AgentPatchAttempt(
-            result = result,
-            extraction = AgentPatchExtraction("", emptyList(), false),
-            retryAttempted = retryAttempted,
-            rejectionReason = "context attestation failed",
-            responsePreview = redactionFilter.redact(patchExtractor.preview(result.response))
-        )
-
-    private fun buildExceptionFailure(provider: String, failure: Exception, retryAttempted: Boolean): AgentPatchAttempt {
-        val message = failure.message?.trim()?.takeUnless { it.isBlank() }?.let { redactionFilter.compact(it, 240) }
-            ?: "provider cascade failed"
-        return AgentPatchAttempt(
-            result = ProviderCascadeResult(providerName = provider, response = "", errors = emptyList()),
-            extraction = AgentPatchExtraction("", emptyList(), false),
-            retryAttempted = retryAttempted,
-            rejectionReason = message,
-            responsePreview = message
-        )
-    }
-
-    private fun containsDiffHeader(text: String): Boolean =
-        text.contains("diff --git ") || text.contains("\n--- ") || text.trimStart().startsWith("--- ")
 
     private fun extractMarker(context: String, prefix: String): String? =
         context.lineSequence()
@@ -221,4 +177,9 @@ class AgentPatchCascadeRunner(
             ?.removePrefix(prefix)
             ?.trim()
             ?.takeIf { it.isNotBlank() }
+
+    private companion object {
+        const val SOURCE_PACK_MARKER = "SOURCE_PACK_ID="
+        const val FETCH_RECEIPT_MARKER = "FETCH_RECEIPT_ID="
+    }
 }
