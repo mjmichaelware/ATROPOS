@@ -18,7 +18,8 @@ import atropos.core.security.RedactionFilter
 internal class AgentPatchAttemptFactory(
     private val patchExtractor: AgentPatchExtractor,
     private val validator: AgentPatchResponseValidator,
-    private val redactionFilter: RedactionFilter = RedactionFilter()
+    private val redactionFilter: RedactionFilter = RedactionFilter(),
+    private val failureSummary: AgentFailureSummary = AgentFailureSummary(redactionFilter)
 ) {
 
     /** The provider answered, but the answer was not a usable diff. */
@@ -79,18 +80,12 @@ internal class AgentPatchAttemptFactory(
             responsePreview = reason
         )
 
-    fun compact(message: String?): String =
-        message?.trim()
-            .takeUnless { it.isNullOrBlank() }
-            ?.let { redactionFilter.compact(it, FAILURE_SUMMARY_LIMIT) }
-            ?: CASCADE_FAILED
+    fun compact(message: String?): String = failureSummary.compact(message)
 
     private fun preview(response: String): String =
         redactionFilter.redact(patchExtractor.preview(response))
 
     private companion object {
         const val ATTESTATION_FAILED = "context attestation failed"
-        const val CASCADE_FAILED = "provider cascade failed"
-        const val FAILURE_SUMMARY_LIMIT = 240
     }
 }
