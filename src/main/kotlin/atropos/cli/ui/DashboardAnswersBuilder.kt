@@ -2,6 +2,7 @@
 package atropos.cli.ui
 
 import atropos.cli.ui.design.Health
+import atropos.core.agent.AgentQueueCheckpoint
 import atropos.core.agent.AgentQueueRecord
 import atropos.core.agent.AgentQueueState
 import atropos.core.project.ProjectRecord
@@ -84,7 +85,7 @@ class DashboardAnswersBuilder(
         if (queue.isEmpty()) return DashboardRenderer.Answer("nothing tracked", Health.UNKNOWN)
 
         val complete = queue.count { it.state == AgentQueueState.COMPLETED }
-        val checkpoint = active?.let { " · ${it.checkpoint.readable()}" }.orEmpty()
+        val checkpoint = active?.let { " · ${checkpointReadable(it.checkpoint)}" }.orEmpty()
         val health = when {
             failed > 0 -> Health.ERROR
             complete == queue.size -> Health.VERIFIED
@@ -141,8 +142,11 @@ class DashboardAnswersBuilder(
     private fun unreadable(): DashboardRenderer.Answer =
         DashboardRenderer.Answer("unreadable · .atropos/agent/queue", Health.ERROR)
 
-    private fun task(record: AgentQueueRecord): String =
+    fun task(record: AgentQueueRecord): String =
         redactionFilter.compact(redactionFilter.redact(record.task), taskWidth)
+
+    fun checkpointReadable(checkpoint: AgentQueueCheckpoint): String =
+        checkpoint.name.lowercase().replace('_', ' ')
 
     private fun ProjectStatus.asRunState(): atropos.cli.ui.design.RunState = when (this) {
         ProjectStatus.IDLE -> atropos.cli.ui.design.RunState.IDLE

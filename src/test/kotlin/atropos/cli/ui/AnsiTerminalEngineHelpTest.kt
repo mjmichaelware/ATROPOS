@@ -10,8 +10,10 @@ class AnsiTerminalEngineHelpTest {
     private fun engine(out: ByteArrayOutputStream = ByteArrayOutputStream()): AnsiTerminalEngine =
         AnsiTerminalEngine(
             capabilities = ConfigurationManager(),
-            out = PrintStream(out),
-            errors = PrintStream(ByteArrayOutputStream())
+            plainOutput = PlainTerminalOutput(
+                out = PrintStream(out),
+                errors = PrintStream(ByteArrayOutputStream())
+            )
         )
 
     @Test

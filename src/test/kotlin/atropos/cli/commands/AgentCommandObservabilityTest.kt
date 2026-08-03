@@ -28,8 +28,10 @@ class AgentCommandObservabilityTest {
         var tick = 0L
         val ui = AnsiTerminalEngine(
             capabilities = ConfigurationManager(),
-            out = PrintStream(OutputStream.nullOutputStream()),
-            errors = PrintStream(OutputStream.nullOutputStream())
+            plainOutput = PlainTerminalOutput(
+                out = PrintStream(OutputStream.nullOutputStream()),
+                errors = PrintStream(OutputStream.nullOutputStream())
+            )
         )
         val config = AtroposConfig(
             ApiKeys("", "", "", ""),
@@ -76,8 +78,10 @@ class AgentCommandObservabilityTest {
         var tick = 0L
         val ui = AnsiTerminalEngine(
             capabilities = ConfigurationManager(),
-            out = PrintStream(OutputStream.nullOutputStream()),
-            errors = PrintStream(OutputStream.nullOutputStream())
+            plainOutput = PlainTerminalOutput(
+                out = PrintStream(OutputStream.nullOutputStream()),
+                errors = PrintStream(OutputStream.nullOutputStream())
+            )
         )
         val config = AtroposConfig(
             ApiKeys("", "", "", ""),
@@ -116,8 +120,10 @@ class AgentCommandObservabilityTest {
         val repoRoot = Files.createTempDirectory("atropos-agent-observe-status-")
         val ui = AnsiTerminalEngine(
             capabilities = ConfigurationManager(),
-            out = PrintStream(OutputStream.nullOutputStream()),
-            errors = PrintStream(OutputStream.nullOutputStream())
+            plainOutput = PlainTerminalOutput(
+                out = PrintStream(OutputStream.nullOutputStream()),
+                errors = PrintStream(OutputStream.nullOutputStream())
+            )
         )
         val config = AtroposConfig(
             ApiKeys("", "", "", ""),
@@ -159,8 +165,10 @@ class AgentCommandObservabilityTest {
         val repoRoot = Files.createTempDirectory("atropos-agent-observe-open-")
         val ui = AnsiTerminalEngine(
             capabilities = ConfigurationManager(),
-            out = PrintStream(OutputStream.nullOutputStream()),
-            errors = PrintStream(OutputStream.nullOutputStream())
+            plainOutput = PlainTerminalOutput(
+                out = PrintStream(OutputStream.nullOutputStream()),
+                errors = PrintStream(OutputStream.nullOutputStream())
+            )
         )
         val config = AtroposConfig(
             ApiKeys("", "", "", ""),

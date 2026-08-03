@@ -115,7 +115,8 @@ class AgentPatchStore(
     fun patchDirectory(): Path = patchDir
 
     fun resolvePatchSnapshot(reference: String): AgentPatchSnapshot? {
-        val patchId = resolvePatchId(reference) ?: return null
+        val patchId = if (reference == "latest") latestPatchId() else reference
+        if (patchId == null) return null
         val diffFile = patchDir.resolve("$patchId.diff").normalize()
         if (!diffFile.startsWith(patchDir) || !Files.isRegularFile(diffFile)) return null
 

@@ -93,9 +93,9 @@ class HomeStateProvider(
             runningWork = pending.map { record ->
                 DashboardRenderer.WorkItem(
                     id = record.id,
-                    title = task(record),
+                    title = answersBuilder.task(record),
                     state = record.state.asRunState(),
-                    detail = record.checkpoint.readable(),
+                    detail = answersBuilder.checkpointReadable(record.checkpoint),
                     attempt = record.attempts,
                     maxAttempts = record.maxAttempts
                 )
@@ -171,8 +171,5 @@ class HomeStateProvider(
         AgentQueueState.REFUSED -> RunState.BLOCKED
         AgentQueueState.CANCELLED -> RunState.CANCELLED
     }
-
-    private fun AgentQueueCheckpoint.readable(): String =
-        name.lowercase().replace('_', ' ')
 
 }

@@ -64,8 +64,10 @@ class SelfHostCommandTest {
     ): SelfHostCommand {
         val ui = AnsiTerminalEngine(
             capabilities = ConfigurationManager(),
-            out = PrintStream(OutputStream.nullOutputStream()),
-            errors = PrintStream(OutputStream.nullOutputStream())
+            plainOutput = PlainTerminalOutput(
+                out = PrintStream(OutputStream.nullOutputStream()),
+                errors = PrintStream(OutputStream.nullOutputStream())
+            )
         )
         val config = AtroposConfig(
             ApiKeys("", "", "", ""),
