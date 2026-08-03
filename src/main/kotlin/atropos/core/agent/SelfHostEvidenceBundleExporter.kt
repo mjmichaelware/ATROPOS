@@ -67,6 +67,36 @@ class SelfHostEvidenceBundleExporter(
         }
     }
 
+    /**
+     * Export, then refuse unless the bundle can actually support an
+     * installed-runtime proof claim.
+     *
+     * Separate from [export] on purpose. A goal that is still running has
+     * legitimately incomplete evidence, and refusing to write its bundle would
+     * destroy the record exactly when it is most useful for diagnosis. What must
+     * fail closed is the *claim*, not the writing: this path is for callers about
+     * to assert "the installed runtime proved itself", and it will not let that
+     * assertion rest on a bundle missing a load-bearing part.
+     *
+     * The bundle is still written on refusal — an operator debugging a failed
+     * proof needs to read it — but the result is `ok=false` with the missing
+     * parts named, so no caller can mistake it for a proof.
+     */
+    fun exportAsInstalledProof(goalId: String): SelfHostEvidenceBundleResult {
+        val exported = export(goalId)
+        if (!exported.ok) return exported
+
+        val record = store.resolve(goalId) ?: return failure("goal not found: $goalId", SelfHostFailureCode.GOAL_NOT_FOUND)
+        val assessment = installedProof.assess(record.evidence)
+        if (assessment.complete) return exported
+
+        return exported.copy(
+            ok = false,
+            message = "installed proof refused: " + installedProof.evidenceLine(assessment),
+            failureCode = SelfHostFailureCode.EVIDENCE_INCOMPLETE
+        )
+    }
+
     private fun failure(message: String, code: SelfHostFailureCode): SelfHostEvidenceBundleResult =
         SelfHostEvidenceBundleResult(false, message, null, null, null, null, code)
 

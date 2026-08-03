@@ -105,4 +105,58 @@ class SelfHostEvidenceBundleExporterTest {
         assertTrue(!json.contains("plain-token"), json)
         assertTrue(markdown.contains("<redacted:secret>") || json.contains("<redacted:secret>"))
     }
+
+    @Test
+    fun an_installed_proof_claim_is_refused_when_a_load_bearing_part_is_missing() {
+        // The bundle is still written — an operator debugging a failed proof has
+        // to be able to read it — but it must not be mistakable for a proof.
+        val root = Files.createTempDirectory("atropos-self-host-evidence-incomplete-")
+        val store = GoalRunStore(root)
+        val dagService = DagExecutionService(repoRoot = root)
+        val goal = store.createGoalRun("incomplete proof", provider = "self-host")
+        store.update(
+            goal.copy(
+                // A gate report and a swap, but no candidate build and no git status.
+                evidence = listOf(
+                    "promotion_gate canComplete=true",
+                    "jar_swap promoted=true sha256=abc"
+                )
+            )
+        )
+
+        val result = SelfHostEvidenceBundleExporter(root, store, dagService).exportAsInstalledProof(goal.id)
+
+        assertTrue(!result.ok, "an incomplete proof claim must be refused")
+        assertEquals(SelfHostFailureCode.EVIDENCE_INCOMPLETE, result.failureCode)
+        assertTrue(result.message.contains("CANDIDATE_BUILD"), result.message)
+        assertTrue(result.message.contains("GIT_STATUS"), result.message)
+        assertTrue(
+            Files.isRegularFile(result.markdownPath ?: error("bundle must still be written")),
+            "the bundle must remain readable after a refused claim"
+        )
+    }
+
+    @Test
+    fun an_installed_proof_claim_is_allowed_when_every_load_bearing_part_is_present() {
+        val root = Files.createTempDirectory("atropos-self-host-evidence-complete-")
+        val store = GoalRunStore(root)
+        val dagService = DagExecutionService(repoRoot = root)
+        val goal = store.createGoalRun("complete proof", provider = "self-host")
+        store.update(
+            goal.copy(
+                evidence = listOf(
+                    "candidate_jar_build ok=true proposal=p-1 candidate=ATROPOS.jar",
+                    "promotion_gate canComplete=true",
+                    "git_status_short ok=true exit=0 output=?? src/main/kotlin/atropos/Marker.kt",
+                    "jar_swap promoted=true sha256=abc"
+                )
+            )
+        )
+
+        val result = SelfHostEvidenceBundleExporter(root, store, dagService).exportAsInstalledProof(goal.id)
+
+        assertTrue(result.ok, result.message)
+        val json = Files.readString(result.jsonPath ?: error("missing json path"))
+        assertTrue(json.contains("\"installedProofComplete\": true"), json)
+    }
 }

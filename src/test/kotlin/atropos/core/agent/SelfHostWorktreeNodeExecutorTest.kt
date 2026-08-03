@@ -4,13 +4,37 @@ import atropos.core.dag.DagNode
 import atropos.core.dag.DagNodeAction
 import atropos.core.dag.DagNodeState
 import atropos.core.dag.DagStore
+import atropos.core.verification.CompletionGateReport
+import atropos.core.verification.GateResult
+import atropos.core.verification.VerifiedCompletionGate
 import java.nio.file.Files
+import java.nio.file.Path
 import java.time.Instant
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class SelfHostWorktreeNodeExecutorTest {
+
+    /**
+     * A merged mutation now has to clear [VerifiedCompletionGate] before it may be
+     * COMPLETE, so the gate has to be supplied explicitly here. A temp repository
+     * has no Gradle wrapper, and running the real gate against one would test the
+     * fixture rather than the executor. The refusal path below uses the real gate.
+     */
+    private fun acceptingVerification(root: Path) = SelfHostMutationVerificationGate(
+        repoRoot = root,
+        completionGate = VerifiedCompletionGate(repoRoot = root),
+        evaluate = { node ->
+            CompletionGateReport(
+                nodeId = node.id,
+                canComplete = true,
+                gateResults = listOf(GateResult(node.id, true, "Compile Gate", "compilation succeeded", Instant.now())),
+                message = "all gates passed"
+            )
+        }
+    )
     @Test
     fun executes_file_mutation_in_isolated_worktree_then_merges_hash_linked_result() {
         val root = Files.createTempDirectory("atropos-self-host-worktree-node-")
@@ -30,7 +54,11 @@ class SelfHostWorktreeNodeExecutorTest {
         )
         store.writeNode(node)
 
-        val result = SelfHostWorktreeNodeExecutor(root, dagStore = store).execute(node)
+        val result = SelfHostWorktreeNodeExecutor(
+            root,
+            dagStore = store,
+            mutationVerification = acceptingVerification(root)
+        ).execute(node)
 
         assertTrue(result.ok, result.message)
         assertEquals(DagNodeState.COMPLETE, result.state)
@@ -41,6 +69,59 @@ class SelfHostWorktreeNodeExecutorTest {
         assertTrue(
             Files.readString(root.resolve(".atropos/policy/audit.log")).contains("action=FILE_MUTATION"),
             "self-host mutation must leave bounded-agency evidence"
+        )
+    }
+
+    @Test
+    fun a_merged_mutation_that_fails_the_completion_gate_is_not_complete_and_is_reverted() {
+        // C1-SB-02 at the boundary that actually writes. Before the mutation
+        // verification gate existed, this node reached COMPLETE with the file
+        // still on disk after nothing but `git diff --check`.
+        val root = Files.createTempDirectory("atropos-self-host-worktree-gate-refuse-")
+        initializeGitRepo(root)
+        val store = DagStore(root)
+        val path = "src/main/kotlin/atropos/core/agent/SelfHostRefusedProof.kt"
+        val node = DagNode(
+            id = "node-worktree-gate-refuse",
+            label = "Worktree gate refusal",
+            territory = listOf("src/main/kotlin/atropos/core/agent"),
+            action = DagNodeAction.EDIT_FILE,
+            actionPayload = "$path::package atropos.core.agent\nobject SelfHostRefusedProof { const val PROVEN: Boolean = true }",
+            expectedOutputs = listOf(path),
+            createdAt = Instant.parse("2026-07-29T00:09:00Z"),
+            updatedAt = Instant.parse("2026-07-29T00:09:00Z"),
+            metaFile = root.resolve(".atropos/dag/node-worktree-gate-refuse.meta")
+        )
+        store.writeNode(node)
+
+        val refusingVerification = SelfHostMutationVerificationGate(
+            repoRoot = root,
+            completionGate = VerifiedCompletionGate(repoRoot = root),
+            evaluate = { evaluated ->
+                CompletionGateReport(
+                    nodeId = evaluated.id,
+                    canComplete = false,
+                    gateResults = listOf(
+                        GateResult(evaluated.id, false, "Compile Gate", "compilation failed (exit=1)", Instant.now())
+                    ),
+                    message = "gates failed: Compile Gate: compilation failed (exit=1)"
+                )
+            }
+        )
+
+        val result = SelfHostWorktreeNodeExecutor(
+            root,
+            dagStore = store,
+            mutationVerification = refusingVerification
+        ).execute(node)
+
+        assertFalse(result.ok, "a mutation refused by the completion gate must not report success")
+        assertEquals(DagNodeState.FAILED, result.state)
+        assertEquals(DagNodeState.FAILED, store.readNode(node.id)?.state)
+        assertTrue(result.message.contains("VerifiedCompletionGate"), result.message)
+        assertFalse(
+            Files.exists(root.resolve(path)),
+            "the refused mutation must be reversed out of the working tree, not left behind"
         )
     }
 
