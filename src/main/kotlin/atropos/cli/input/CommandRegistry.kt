@@ -5,7 +5,8 @@ data class CommandEntry(
     val command: String,
     val description: String,
     val category: String = "General",
-    val aliases: List<String> = emptyList()
+    val aliases: List<String> = emptyList(),
+    val risk: CommandRisk = CommandRiskCatalog.forCommand(command)
 )
 
 data class CommandGroup(
@@ -30,6 +31,7 @@ object CommandRegistry {
         CommandEntry("/status endpoints", "operation registry"),
         CommandEntry("/status failures", "provider failure summary"),
         CommandEntry("/status quota", "quota ledger"),
+        CommandEntry("/status route", "provider route decision (add --full for expanded cascade details)"),
         CommandEntry("/providers", "provider inventory"),
         CommandEntry("/providers descriptors", "provider contract grid"),
         CommandEntry("/providers validate", "provider descriptor validation"),
@@ -71,6 +73,8 @@ object CommandRegistry {
         CommandEntry("/ast lookup", "exact Kotlin symbol lookup"),
         CommandEntry("/use", "switch provider"),
         CommandEntry("/use auto", "automatic routing"),
+        CommandEntry("/verbose", "toggle expandable execution and provider-stage output"),
+        CommandEntry("/debug", "alias for verbose execution output"),
         CommandEntry("/verify", "verification scope"),
         CommandEntry("/verify narrow", "quick verification"),
         CommandEntry("/verify wide", "wide verification"),
@@ -227,7 +231,7 @@ object CommandRegistry {
         CommandEntry("/platform env", "platform environment details"),
         CommandEntry("/artifact", "artifact pipeline status"),
         CommandEntry("/artifact plan", "plan an artifact build from prompt"),
-        CommandEntry("/artifact build", "build artifacts from plan"),
+        CommandEntry("/artifact build", "metadata-only artifact build; use natural language or /factory run for a project"),
         CommandEntry("/artifact verify", "verify artifact integrity"),
         CommandEntry("/artifact install", "install artifact to target directory"),
         CommandEntry("/artifact commit", "prepare commit candidate from artifacts"),

@@ -6,7 +6,8 @@ import atropos.cli.ui.AppFactoryPlanRenderer
 
 class FactoryCommandHandler(
     private val uiEngine: AnsiTerminalEngine,
-    private val renderer: AppFactoryPlanRenderer = AppFactoryPlanRenderer()
+    private val renderer: AppFactoryPlanRenderer = AppFactoryPlanRenderer(),
+    private val runFactory: (String) -> String = renderer::renderRun
 ) {
     fun execute(tokens: List<String>): RouterOutcome {
         when (tokens.getOrNull(1)?.lowercase()) {
@@ -29,8 +30,14 @@ class FactoryCommandHandler(
         if (prompt.isBlank()) {
             uiEngine.renderError("/factory run requires a prompt")
         } else {
-            uiEngine.renderNotice("factory run queued:")
-            uiEngine.renderNotice(renderer.renderRun(prompt))
+            val result = try {
+                runFactory(prompt)
+            } catch (failure: RuntimeException) {
+                uiEngine.renderError("factory run failed: ${failure.message ?: "unknown failure"}")
+                return
+            }
+            uiEngine.renderNotice("factory run completed:")
+            uiEngine.renderNotice(result)
         }
     }
 }

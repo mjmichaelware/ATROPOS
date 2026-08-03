@@ -1,19 +1,19 @@
 # ATROPOS Code-Base Completion Report
 
-Generated: 2026-08-03T11:33:53Z
-Current Git HEAD: a3b9ed259e49c1117d80c2be1c95d86cfd6cb2ee
+Generated: 2026-08-03T12:10:43Z
+Current Git HEAD: 84718cb6bd7d5adc536defd4a67acc512dcb92bf
 Historical reconstruction HEAD: 7e612fcdba571b276a4ae65704835eb762030682 (nearest recoverable commit; exact locked export unavailable)
 
 ## Code-Base Obligation Set
 
-Total binary obligations: 714
-Current WRITTEN: 606
-Current NOT_WRITTEN: 108
-Current CODE-BASE COMPLETION: 84.87% (606/714)
-Historical WRITTEN: 585
-Historical NOT_WRITTEN: 129
-Historical CODE-BASE COMPLETION: 81.93% (585/714)
-Code-base delta: +2.94 percentage points
+Total binary obligations: 576
+Current WRITTEN: 474
+Current NOT_WRITTEN: 102
+Current CODE-BASE COMPLETION: 82.29% (474/576)
+Historical WRITTEN: 471
+Historical NOT_WRITTEN: 105
+Historical CODE-BASE COMPLETION: 81.77% (471/576)
+Code-base delta: +0.52 percentage points
 
 The denominator is binary implementation obligations directly juxtaposed with the current codebase. SHA-256 values prove authority identity; document bytes are provenance telemetry, not completion weights. Gap-map atoms are crosswalked to existing requirements and receive no duplicate credit.
 
@@ -33,18 +33,18 @@ Core, HOE, and Phase 20 PDF atoms are registered in `authorityCrosswalk` and map
 | 3 | 24 | 21 | 87.50% | 21 | +0.00 | 3 | H007-impl, H007-wire, H007-edge |
 | 4 | 18 | 18 | 100.00% | 18 | +0.00 | 0 |  |
 | 5 | 3 | 3 | 100.00% | 3 | +0.00 | 0 |  |
-| 6 | 18 | 12 | 66.67% | 12 | +0.00 | 6 | A004-impl, A004-wire, A004-edge, A005-impl, A005-wire, A005-edge |
+| 6 | 18 | 18 | 100.00% | 15 | +16.67 | 0 |  |
 | 7 | 15 | 9 | 60.00% | 9 | +0.00 | 6 | B002-impl, B002-wire, B002-edge, B003-impl, B003-wire, B003-edge |
 | 8 | 18 | 15 | 83.33% | 15 | +0.00 | 3 | D002-impl, D002-wire, D002-edge |
 | 9 | 21 | 12 | 57.14% | 12 | +0.00 | 9 | F002-impl, F002-wire, F002-edge, F004-impl, F004-wire, F004-edge, F005-impl, F005-wire, F005-edge |
-| 10 | 234 | 234 | 100.00% | 207 | +11.54 | 0 |  |
+| 10 | 120 | 120 | 100.00% | 114 | +5.00 | 0 |  |
 | 11 | 36 | 27 | 75.00% | 27 | +0.00 | 9 | J009-impl, J009-wire, J009-edge, J010-impl, J010-wire, J010-edge, J011-impl, J011-wire, J011-edge |
 | 12 | 3 | 3 | 100.00% | 3 | +0.00 | 0 |  |
 | 13 | 3 | 3 | 100.00% | 0 | +100.00 | 0 |  |
 | 14 | 3 | 0 | 0.00% | 0 | +0.00 | 3 | BP-P14-hr-audit-impl, BP-P14-hr-audit-wire, BP-P14-hr-audit-edge |
 | 15 | 3 | 3 | 100.00% | 3 | +0.00 | 0 |  |
 | 16 | 3 | 0 | 0.00% | 0 | +0.00 | 3 | BP-P16-hierarchy-dispatch-impl, BP-P16-hierarchy-dispatch-wire, BP-P16-hierarchy-dispatch-edge |
-| 17 | 78 | 54 | 69.23% | 54 | +0.00 | 24 | SD3-017-impl, SD3-017-wire, SD3-017-edge, SD3-018-impl, SD3-018-wire, SD3-018-edge, SD3-019-impl, SD3-019-wire, SD3-019-edge, SD3-020-impl ... |
+| 17 | 54 | 30 | 55.56% | 30 | +0.00 | 24 | SD3-017-impl, SD3-017-wire, SD3-017-edge, SD3-018-impl, SD3-018-wire, SD3-018-edge, SD3-019-impl, SD3-019-wire, SD3-019-edge, SD3-020-impl ... |
 | 18 | 42 | 39 | 92.86% | 39 | +0.00 | 3 | BP-P18-shared-platform-impl, BP-P18-shared-platform-wire, BP-P18-shared-platform-edge |
 | 19 | 3 | 0 | 0.00% | 0 | +0.00 | 3 | BP-P19-app-factory-impl, BP-P19-app-factory-wire, BP-P19-app-factory-edge |
 | 20 | 66 | 54 | 81.82% | 57 | -4.55 | 12 | E001-impl, E001-wire, E001-edge, E002-impl, E002-wire, E002-edge, P001-impl, P001-wire, P001-edge, SD3-071-impl ... |
@@ -53,13 +53,13 @@ Core, HOE, and Phase 20 PDF atoms are registered in `authorityCrosswalk` and map
 
 | Group | Phases | Total | Current written | Code % | Historical written | Delta pp |
 |---|---|---:|---:|---:|---:|---:|
-| Checkpoint 1 | 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 | 510 | 450 | 88.24% | 429 | +4.12 |
+| Checkpoint 1 | 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 | 396 | 342 | 86.36% | 339 | +0.76 |
 | Checkpoint 2 | 12, 13, 14, 15, 16 | 15 | 9 | 60.00% | 6 | +20.00 |
-| Checkpoint 3 | 17, 18, 19 | 123 | 93 | 75.61% | 93 | +0.00 |
+| Checkpoint 3 | 17, 18, 19 | 99 | 69 | 69.70% | 69 | +0.00 |
 | Checkpoint 4 | 20 | 66 | 54 | 81.82% | 57 | -4.55 |
-| Horizon I | 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 | 474 | 423 | 89.24% | 402 | +4.43 |
+| Horizon I | 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 | 360 | 315 | 87.50% | 312 | +0.83 |
 | Horizon II | 11, 12, 13, 14, 15, 16 | 51 | 36 | 70.59% | 33 | +5.88 |
-| Horizon III | 17, 18 | 120 | 93 | 77.50% | 93 | +0.00 |
+| Horizon III | 17, 18 | 96 | 69 | 71.88% | 69 | +0.00 |
 | Horizon IV | 19 | 3 | 0 | 0.00% | 0 | +0.00 |
 | Horizon V | 20 | 66 | 54 | 81.82% | 57 | -4.55 |
 

@@ -20,7 +20,22 @@ class SelfHostNaturalLanguageRouterTest {
     @Test
     fun ignores_unrelated_agent_text() {
         assertNull(SelfHostNaturalLanguageRouter().route(listOf("/agent", "ask", "what", "is", "ATROPOS")))
-        assertNull(SelfHostNaturalLanguageRouter().route(listOf("build", "a", "calculator")))
+        assertEquals(
+            listOf("/factory", "run", "build", "a", "calculator"),
+            SelfHostNaturalLanguageRouter().route(listOf("build", "a", "calculator"))
+        )
+        assertEquals(
+            listOf("/factory", "run", "create", "a", "todo", "app"),
+            SelfHostNaturalLanguageRouter().route(listOf("create", "a", "todo", "app"))
+        )
+        assertEquals(
+            listOf("/factory", "run", "make", "a", "notes", "CLI"),
+            SelfHostNaturalLanguageRouter().route(listOf("make", "a", "notes", "CLI"))
+        )
+        assertEquals(
+            listOf("/factory", "run", "build", "weather", "tracker", "for", "commuters"),
+            SelfHostNaturalLanguageRouter().route(listOf("build", "weather", "tracker", "for", "commuters"))
+        )
         assertNull(SelfHostNaturalLanguageRouter().route(listOf("/agent", "self-host", "start", "build", "ATROPOS")))
     }
 

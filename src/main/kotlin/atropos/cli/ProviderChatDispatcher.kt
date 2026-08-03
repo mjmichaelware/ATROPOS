@@ -31,9 +31,11 @@ class ProviderChatDispatcher(
 
     fun dispatch(prompt: String, currentProviderName: String) {
         sessionTracker.recordPrompt(prompt, rateResolver(currentProviderName))
+        uiEngine.renderExecutionEvent("accepted", "natural-language request received")
         uiEngine.startSpinner("Thinking")
         try {
             val routedProvider = routeProvider(prompt, currentProviderName)
+            uiEngine.renderExecutionEvent("provider", "selected=$routedProvider")
             val provider = providerResolver(routedProvider)
             val repoRoot = Path.of(cwd()).toAbsolutePath().normalize()
             val mythologyRequested = isExplicitMythologyRequest(prompt)
@@ -52,6 +54,7 @@ class ProviderChatDispatcher(
             )
 
             val response = provider.complete(prompt, context)
+            uiEngine.renderExecutionEvent("response", "provider returned output")
             renderVerifiedResponse(
                 prompt = prompt,
                 context = context,
@@ -70,6 +73,7 @@ class ProviderChatDispatcher(
             // survives normalisation.
             uiEngine.renderError(safeProviderFailure(failure, currentProviderName))
         } finally {
+            uiEngine.renderExecutionEvent("complete", "provider execution finished")
             uiEngine.stopSpinner()
         }
     }

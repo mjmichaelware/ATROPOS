@@ -89,6 +89,15 @@ class CommandCompleter(
         val trimmed = prefix.trim()
         if (trimmed.isBlank()) return null
 
+        // Enter must never reinterpret ordinary natural language as a slash
+        // command. Multi-word aliases are limited to the explicit self-host
+        // vocabulary; app prompts such as "build a notes CLI" remain NL.
+        val commandLikeNaturalLanguage = trimmed.startsWith("self-host", ignoreCase = true)
+        if (!trimmed.startsWith("/") &&
+            !commandLikeNaturalLanguage &&
+            trimmed.contains(Regex("\\s"))
+        ) return null
+
         val parts = trimmed.split(" ", limit = 2)
         val head = parts.first()
         val tail = parts.getOrNull(1).orEmpty()

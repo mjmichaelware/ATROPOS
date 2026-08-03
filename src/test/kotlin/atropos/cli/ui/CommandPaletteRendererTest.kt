@@ -24,4 +24,14 @@ class CommandPaletteRendererTest {
         assertTrue(lines.isNotEmpty())
         assertTrue(lines.any { it.contains("/help") }, lines.joinToString("\n"))
     }
+
+    @Test
+    fun selected_row_uses_readable_light_foreground_on_red_background() {
+        val renderer = CommandPaletteRenderer(
+            TerminalTheme(ConfigurationManager(), tierOverride = ColorTier.TRUECOLOR)
+        )
+        val selected = renderer.render(CommandPaletteQuery("help", 0), 80, 5).first { it.contains("/help") }
+        assertTrue(selected.contains("38;2;255;255;255"), selected)
+        assertTrue(selected.contains("48;2;196;0;29"), selected)
+    }
 }

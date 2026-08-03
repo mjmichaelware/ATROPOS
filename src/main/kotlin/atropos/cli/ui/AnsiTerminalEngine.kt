@@ -82,6 +82,7 @@ class AnsiTerminalEngine(
 
     private var reactive = false
     private var provider = "unknown"
+    private var verboseExecution = false
     private var mode = "ASK"
     private var workspace =
         capabilities.homePath()
@@ -421,6 +422,31 @@ class AnsiTerminalEngine(
     val viewportWidth: Int
         get() = canvas.width
 
+    @Synchronized
+    fun setProvider(activeProvider: String) {
+        provider = activeProvider
+        requestFrameLocked()
+    }
+
+    @Synchronized
+    fun toggleVerboseExecution(): Boolean {
+        verboseExecution = !verboseExecution
+        renderNotice("verbose execution: ${if (verboseExecution) "on" else "off"} (transcript is expandable)")
+        return verboseExecution
+    }
+
+    fun isVerboseExecution(): Boolean = verboseExecution
+
+    @Synchronized
+    fun renderExecutionEvent(stage: String, detail: String? = null) {
+        val summary = "execution: $stage"
+        if (verboseExecution && !detail.isNullOrBlank()) {
+            renderNotice("$summary\n  ${detail.trim()}")
+        } else {
+            renderNotice(summary)
+        }
+    }
+
     /**
      * Emits pre-composed lines verbatim.
      *
@@ -550,9 +576,10 @@ class AnsiTerminalEngine(
 
     private fun emitPlain(message: String) {
         synchronized(outputLock) {
-            out.println(
-                TerminalText.stripAnsi(message)
-            )
+            val width = canvas.width.coerceAtLeast(1)
+            val plain = TerminalText.stripAnsi(message)
+            val lines = plain.split('\n').flatMap { AnsiLineWrapper.wrap(it, width) }
+            lines.forEach(out::println)
             out.flush()
         }
     }
@@ -561,7 +588,7 @@ class AnsiTerminalEngine(
         val railGlyph = if (System.getenv("ATROPOS_ASCII").isNullOrBlank()) "\u2503" else "|"
         val rail = theme.paint(atropos.cli.ui.design.Role.ACCENT_FOCUS, railGlyph)
         val pad = "  "
-        val width = canvas.width.coerceAtLeast(40)
+        val width = canvas.width.coerceAtLeast(1)
         val filter = query.trim().removePrefix("/")
         val entries = if (filter.isBlank()) {
             CommandRegistry.entries

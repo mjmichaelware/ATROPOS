@@ -34,7 +34,7 @@ class ErrorRenderer(
      */
     fun render(rawError: ErrorInfo, width: Int): List<String> {
         val error = redacted(rawError)
-        val safeWidth = width.coerceIn(40, 200)
+        val safeWidth = width.coerceIn(1, 200)
         val output = mutableListOf<String>()
 
         // Error header with icon equivalent in text
@@ -78,7 +78,7 @@ class ErrorRenderer(
      * Render a critical error that requires user attention.
      */
     fun renderCritical(error: ErrorInfo, width: Int): List<String> {
-        val safeWidth = width.coerceIn(40, 200)
+        val safeWidth = width.coerceIn(1, 200)
         val output = mutableListOf<String>()
 
         output += ""

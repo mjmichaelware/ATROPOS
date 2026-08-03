@@ -20,12 +20,14 @@ class ProviderCommandHandler(
                 ProviderTruthService(config).snapshot(currentProviderName).renderInventory()
             )
             "descriptors" -> uiEngine.renderNotice(
-                StatusProviderDescriptorRenderer(StaticProviderDescriptorRegistry()).render()
+                StatusProviderDescriptorRenderer(StaticProviderDescriptorRegistry()).render(currentProviderName)
             )
             "validate" -> renderValidation()
             "verify" -> renderVerify(tokens)
             "live-test" -> renderLiveTest(tokens)
-            else -> uiEngine.renderNotice(ProviderDecisionEngine().providersReport(config))
+            else -> uiEngine.renderNotice(
+                "active provider: $currentProviderName\n" + ProviderDecisionEngine().providersReport(config)
+            )
         }
     }
 

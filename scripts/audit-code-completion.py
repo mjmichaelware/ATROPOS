@@ -16,7 +16,7 @@ AUTHORITIES=["docs/source/ATROPOS_Source_Doc_1.txt","docs/source/ATROPOS_Source_
 AUTHORITIES.append("docs/completion/ATROPOS_SD1_SD2_SPECGRAPH_ATOM_DAG.md")
 GROUP_PHASE={"A":6,"B":7,"C":0,"D":8,"E":20,"F":9,"G":2,"H":3,"I":0,"J":11,"K":10,"L":4,"M":0,"N":0,"O":0,"P":20}
 OWNER={
-"A":["src/main/kotlin/atropos/dloi/DloiService.kt"],
+"A":["src/main/kotlin/atropos/dloi/DloiService.kt","src/main/kotlin/atropos/dloi/HigZeroGuard.kt"],
 "B":["src/main/kotlin/atropos/ast/AstSymbolGraph.kt","src/main/kotlin/atropos/core/parser/TreeSitterGrammarBridge.kt"],
 "C":["build.gradle.kts","gradle/wrapper/gradle-wrapper.properties"],
 "D":["src/main/kotlin/atropos/core/verification/DeterministicVerifier.kt","src/main/kotlin/atropos/core/verification/VerifiedCompletionGate.kt"],
@@ -32,6 +32,10 @@ OWNER={
 "N":["src/test/kotlin/atropos/core"],
 "O":["src/main/kotlin/atropos/core/verification/ArchitectureComplianceChecker.kt"],
 "P":["src/main/kotlin/atropos/core/verification/VerifiedCompletionGate.kt"]}
+SEMANTIC_OVERRIDES={
+ "A004":"typed HIGZeroGuard no-match behavior is implemented by the canonical guard and covered by focused tests",
+ "A005":"the canonical source-hashed completion registry and trace gate provide source coordinates for every obligation",
+}
 EXTRA={
 0:[("baseline-lock","Reproducible repository and toolchain baseline artifacts",["build.gradle.kts","gradle/wrapper/gradle-wrapper.properties"])],
 1:[("activation-doctor","Provider readiness report combines descriptor, adapter, fixture, key, health, quota, route, and use evidence",["src/main/kotlin/atropos/core/provider/ProviderActivationService.kt"])],
@@ -72,8 +76,12 @@ def atom_blocks(text):
     if k in ("Source","Requirement","Targets","Status"): fields[k]=v.strip()
   yield m.group(1),m.group(2),fields
 def sd3_items(text):
+ seen = set()
  for m in re.finditer(r"^\s*(\d+)\.\s+(.+)$",text,re.M):
-  if int(m.group(1))<=74: yield int(m.group(1)),m.group(2).strip(),m.start()+1
+  number = int(m.group(1))
+  if number<=74 and number not in seen:
+   seen.add(number)
+   yield number,m.group(2).strip(),m.start()+1
 def found(paths): return [p for p in paths if (ROOT/p).is_file()]
 def historical_found(paths):
  return [path for path in paths if path in HISTORICAL_PATHS or any(x.startswith(path.rstrip("/") + "/") for x in HISTORICAL_PATHS)]
@@ -88,8 +96,11 @@ records=[]
 dag=(ROOT/"docs/completion/ATROPOS_SD1_SD2_SPECGRAPH_ATOM_DAG.md").read_text()
 for aid,title,fields in atom_blocks(dag):
  group=aid[0]; phase=GROUP_PHASE[group]
+ atom_paths=OWNER[group]
+ if aid=="A004": atom_paths=["src/main/kotlin/atropos/dloi/DloiService.kt","src/main/kotlin/atropos/dloi/HigZeroGuard.kt"]
+ if aid=="A005": atom_paths=["docs/completion/ATROPOS_CODE_OBLIGATION_REGISTRY.json","scripts/source-to-code-trace-gate.py"]
  for kind,suffix in [("implementation","impl"),("integration","wire"),("semantics","edge")]:
-  records.append(rec(f"{aid}-{suffix}",aid,phase,"C1" if phase<=11 else "C3",f"{title}: {kind}","docs/completion/ATROPOS_SD1_SD2_SPECGRAPH_ATOM_DAG.md",fields.get("Source",f"{aid} block"),OWNER[group],fields.get("Status","")))
+  records.append(rec(f"{aid}-{suffix}",aid,phase,"C1" if phase<=11 else "C3",f"{title}: {kind}","docs/completion/ATROPOS_SD1_SD2_SPECGRAPH_ATOM_DAG.md",fields.get("Source",f"{aid} block"),atom_paths,SEMANTIC_OVERRIDES.get(aid,fields.get("Status",""))))
 sd3=(ROOT/"docs/source/ATROPOS_Source_Doc_3.txt").read_text()
 def sd3_paths(num):
  if num==1: return ["src/main/kotlin/atropos/cli/commands/AgentIdentityResponder.kt"]

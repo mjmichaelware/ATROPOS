@@ -1842,3 +1842,799 @@ End of AGENTS.md
 - HR interrupts: none.
 - Fingerprints: existing owner fingerprint `074abcf7fd8f2f6390422b487cc88131e541a238af61b076f1398502ff7c9df3`; source DAG hash `0d3d20b7537d9cb64dbb0a6c0515831f4625b55a309e2c27f1656457f9b08f16`.
 - New overall estimate: calculator one-shot `NO`; next atom `H007`.
+
+### 2026-08-03T12:08:00Z · Agent: Codex GPT-5 · Batch: calculator-h007-route-022
+- Paths touched: `AGENTS.md` (+this row); no product owner changes.
+- Atoms / phases affected: `H007` queue/degrade when free providers are unavailable.
+- Predicate moved: canonical route/quota owners and focused coverage prove queue/degrade behavior instead of hard failure when only unusable remote descriptors remain.
+- % delta: calculator closure unchanged; scoped C1 binary estimate remains 60 until the closure ledger is reconciled at the end of the dependency chain.
+- Why justified: `./gradlew test --tests atropos.core.provider.QuotaLedgerRouteTruthTest --no-daemon --max-workers=1` completed successfully in 1m02s. No full suite, JAR, install, runtime, deployment, or push run.
+- HR interrupts: none.
+- Fingerprints: owner `73058d3b6010253dd5fc80afa99fe9997686f56b4f474900c658ff8ca3ed6eb7`; source DAG `0d3d20b7537d9cb64dbb0a6c0515831f4625b55a309e2c27f1656457f9b08f16`.
+- New overall estimate: calculator one-shot `NO`; next atoms `A004`, `A005`.
+
+### 2026-08-03T12:16:00Z · Agent: Codex GPT-5 · Batch: calculator-a004-a005-trace-023
+- Paths touched: `scripts/audit-code-completion.py` (+deduplicated SD3 ingestion, A004/A005 owner overrides), `scripts/source-to-code-trace-gate.py` (new), `scripts/source-to-code-trace-gate-test.sh` (new), generated `docs/completion/ATROPOS_CODE_OBLIGATION_REGISTRY.json`, `docs/completion/ATROPOS_CODE_COMPLETION_REPORT.md`, `docs/completion/ATROPOS_CODE_COMPLETION_BASELINE.json`, `docs/completion/ATROPOS_VERIFICATION_STATUS.md`, `AGENTS.md` (+this row).
+- Atoms / phases affected: `A004` HIGZeroGuard and `A005` SourceDocToCodeTrace.
+- Predicate moved: typed exact-source no-match behavior is verified; the canonical source-hashed completion registry now has unique obligation IDs and a passing source-to-code trace gate for source coordinates, hashes, owners, and implementation evidence.
+- % delta: no phase percentage claim. The accounting generator’s duplicate-record defect was corrected; its diagnostic output is now `576` obligations, `474` written, `102` missing (`82.2917%` code-base metric), but this calculator batch does not use that percentage.
+- Why justified: A004 focused DLOI tests passed: `./gradlew test --tests atropos.dloi.HigZeroGuardContractTest --tests atropos.dloi.HigZeroGuardTest --tests atropos.dloi.DloiServiceTest --no-daemon --max-workers=1`. The trace validator and negative regression passed: `TRACEABILITY_GATE_OK obligations=576` and `SOURCE_TO_CODE_TRACE_GATE_TEST_OK`. `git diff --check` passed. No full suite, JAR, install, runtime, deployment, or push run.
+- HR interrupts: none.
+- Fingerprints: trace validator and registry are current at HEAD; source DAG `0d3d20b7537d9cb64dbb0a6c0515831f4625b55a309e2c27f1656457f9b08f16`; Core gap PDF `6d4e0dd5eca2902891aedc435001e5c4d09c378bcda95396dd23566251e0ff3b`; Blueprint `aeb983938fbe39323513683c4b7f5b2911f7b0a9ab4064e160f3dc2d568e85c6`.
+- New overall estimate: calculator one-shot `NO`; next atoms `B002`, `B003`.
+
+### 2026-08-03T12:30:00Z · Agent: Codex GPT-5 · Batch: calculator-b002-b003-ast-impact-024
+- Paths touched: `AGENTS.md` (+this row); no product owner changes.
+- Atoms / phases affected: `B002` deterministic grammar bridge and `B003` AST/symbol impact behavior.
+- Predicate moved: canonical parser extracts package/import/class/object/interface/function/property symbols with offsets while masking comments and strings; the symbol graph resolves exact symbols, callers, local import dependents, and package-path invariants.
+- % delta: calculator closure unchanged; scoped C1 binary estimate remains 60 until the closure ledger is reconciled.
+- Why justified: `./gradlew test --tests atropos.core.parser.TreeSitterGrammarBridgeTest --tests atropos.ast.AstSymbolGraphTest --no-daemon --max-workers=1` completed successfully in 1m26s. No full suite, JAR, install, runtime, deployment, or push run.
+- HR interrupts: none.
+- Fingerprints: parser and graph owners are current at HEAD; source DAG `0d3d20b7537d9cb64dbb0a6c0515831f4625b55a309e2c27f1656457f9b08f16`.
+- New overall estimate: calculator one-shot `NO`; next atom `D002`.
+
+### 2026-08-03T12:48:00Z · Agent: Codex GPT-5 · Batch: calculator-d002-verification-025
+- Paths touched: `AGENTS.md` (+this row); no product owner changes.
+- Atoms / phases affected: `D002` deterministic verifier and completion-gate semantics.
+- Predicate moved: deterministic findings now cover package/import/shell/path/source-scope/atomicity invariants with evidence and remediation, while VerifiedCompletionGate refuses failed, empty, bounded, unaudited, or non-independent completion.
+- % delta: calculator closure unchanged; scoped C1 binary estimate remains 60 until the closure ledger is reconciled.
+- Why justified: `./gradlew test --tests atropos.core.verification.DeterministicVerifierTest --tests atropos.core.verification.VerifiedCompletionGateTest --no-daemon --max-workers=1` completed successfully in 1m47s. No full suite, JAR, install, runtime, deployment, or push run.
+- HR interrupts: none.
+- Fingerprints: verifier owner `98a387fd04817f33bdaa9971ab4575d50dbfee4fdc2c195fda22f56589be26f0`; source DAG `0d3d20b7537d9cb64dbb0a6c0515831f4625b55a309e2c27f1656457f9b08f16`.
+- New overall estimate: calculator one-shot `NO`; next atoms `F002`, `F004`, `F005`.
+
+### 2026-08-03T13:12:00Z · Agent: Codex GPT-5 · Batch: calculator-f002-f004-f005-memory-026
+- Paths touched: `AGENTS.md` (+this row); no product owner changes.
+- Atoms / phases affected: `F002` durable memory, `F004` integrity/authority, `F005` restart/query semantics.
+- Predicate moved: the canonical memory store persists route/failure/repair/verification/tool/recovery state across restart, stores content hashes and source coordinates, redacts secrets, rejects tampered or unredacted records, and reports/compacts corrupt lines.
+- % delta: calculator closure unchanged; scoped C1 binary estimate remains 60 until the closure ledger is reconciled.
+- Why justified: `./gradlew test --tests atropos.core.memory.LocalMemoryStoreTest --no-daemon --max-workers=1` completed successfully in 2m20s, including restart, secret exclusion, tamper, authority, hash, corruption, and query coverage. No full suite, JAR, install, runtime, deployment, or push run.
+- HR interrupts: none.
+- Fingerprints: memory owner `12fccc9496309af862647ccee3d0d7f91721a37e1c24b17d4ac1a1a3f50697fc`; source DAG `0d3d20b7537d9cb64dbb0a6c0515831f4625b55a309e2c27f1656457f9b08f16`.
+- New overall estimate: calculator one-shot `NO`; next atoms `J009`, `J010`, `J011`.
+
+### 2026-08-03T13:45:00Z · Agent: Codex GPT-5 · Batch: calculator-j009-j011-orchestration-027
+- Paths touched: `src/main/kotlin/atropos/core/endpoint/OperationEndpoint.kt` (+`EndpointManifest`), `src/main/kotlin/atropos/core/endpoint/StaticOperationRegistry.kt` (manifest wiring), `src/test/kotlin/atropos/core/endpoint/OperationEndpointManifestTest.kt` (new), and `AGENTS.md` (+this row).
+- Atoms / phases affected: `J009` endpoint manifest; `J010` Director/DAG supervision surface; `J011` bounded worker/patch cascade surface.
+- Predicate moved: every registered endpoint now has typed owner/input/output/error/auth/side-effect/timeout/retry/test metadata; existing `DirectorService`, `DagExecutionService`, and `AgentPatchCascadeRunner` remain the single supervisory/worker owners.
+- % delta: calculator closure unchanged; scoped C1 binary estimate remains 60. The new endpoint test is written but not verified because the constrained Kotlin compile stalled and was terminated; no false pass is claimed.
+- Why justified: endpoint manifests are concrete and wired through the existing registry. The combined focused command for endpoint, director, cascade, self-host, repair, and recovery tests stalled during Kotlin compilation with no test result and was terminated to avoid a lingering process. No full suite, JAR, install, runtime, deployment, or push run.
+- HR interrupts: none; environmental compile stall recorded as unverified, not as success.
+- Fingerprints: source DAG `0d3d20b7537d9cb64dbb0a6c0515831f4625b55a309e2c27f1656457f9b08f16`; endpoint model and registry are current at HEAD.
+- New overall estimate: calculator one-shot `NO`; next dependency `C2-P14` HR Router.
+
+### 2026-08-03T14:10:00Z · Agent: Codex GPT-5 · Batch: calculator-c2-p14-af-closure-surface-028
+- Paths touched: `src/main/kotlin/atropos/core/factory/CalculatorProjectGenerator.kt` (new), `src/main/kotlin/atropos/core/factory/AppFactoryRouter.kt`, `src/main/kotlin/atropos/cli/commands/SelfHostNaturalLanguageRouter.kt`, `src/main/kotlin/atropos/cli/CommandRouter.kt`, `src/main/kotlin/atropos/cli/ui/AppFactoryPlanRenderer.kt`, `src/main/kotlin/atropos/core/endpoint/OperationEndpoint.kt`, `src/main/kotlin/atropos/core/endpoint/StaticOperationRegistry.kt`, `src/test/kotlin/atropos/core/factory/CalculatorProjectGeneratorTest.kt` (new), `src/test/kotlin/atropos/core/endpoint/OperationEndpointManifestTest.kt` (new), `src/test/kotlin/atropos/cli/commands/SelfHostNaturalLanguageRouterTest.kt`, `scripts/calculator-prerequisite-gate.sh`, and `AGENTS.md` (+this row).
+- Atoms / phases affected: `C2-P14` existing HR Router surface; `C2-P12`, `C2-P15`, `C2-P16` existing hierarchy test surfaces; `C3-AF-01`, `C3-AF-03`, `C3-AF-04`, `C3-AF-05`, `C3-P19` calculator closure path; `J009` endpoint manifest.
+- Predicate moved: a plain natural-language calculator request now reaches the canonical factory handler; the generator creates portable calculator source and tests plus README/LICENSE/.gitignore/AGENTS.md, runs bounded local Git initialization and commits, and emits hash-linked evidence. The prerequisite gate inventories HR, hierarchy, endpoint, router, and factory surfaces without launching Gradle.
+- % delta: no phase percentage claim. Calculator one-shot remains `NO` because the new Kotlin generator/router tests and the existing HR/hierarchy focused tests are not verified in this constrained session; the remaining blocker is runtime verification, not an identified missing path.
+- Why justified: `bash scripts/calculator-prerequisite-gate.sh` and `git diff --check` passed. A combined Kotlin focused run stalled during compilation and was terminated; a narrower endpoint run also stalled after entering `compileKotlin`. No false test/build/JAR/runtime claim is made. No full suite, JAR, install, runtime, deployment, or push run.
+- HR interrupts: none; compile stall recorded as an environment verification blocker.
+- Fingerprints: source DAG `0d3d20b7537d9cb64dbb0a6c0515831f4625b55a309e2c27f1656457f9b08f16`; Core gap PDF `6d4e0dd5eca2902891aedc435001e5c4d09c378bcda95396dd23566251e0ff3b`; Blueprint `aeb983938fbe39323513683c4b7f5b2911f7b0a9ab4064e160f3dc2d568e85c6`.
+- New overall estimate: calculator one-shot `NO`; exact remaining gate is a successful focused Kotlin compile/test execution for the new generator/router/manifest seams and the existing C2 hierarchy tests, followed by no broader gate until required by acceptance.
+
+### 2026-08-03T14:22:00Z · Agent: Codex GPT-5 · Batch: calculator-export-evidence-029
+- Paths touched: `src/main/kotlin/atropos/core/factory/CalculatorProjectGenerator.kt` (+Git archive export), `src/main/kotlin/atropos/core/factory/AppFactoryRouter.kt` (+export rendering), `src/test/kotlin/atropos/core/factory/CalculatorProjectGeneratorTest.kt` (+export assertion), `AGENTS.md` (+this row).
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-AF-04`, `C3-AF-05`, `C3-P19` calculator commit/export edge.
+- Predicate moved: generated calculator output now ends with a committed evidence manifest and a deterministic `git archive` export path in addition to source, tests, repository metadata, and Git history.
+- % delta: no phase percentage claim. Calculator one-shot remains `NO` until the focused Kotlin test/compile gate succeeds.
+- Why justified: static path/authority checks and `git diff --check` passed; the new export assertion is written but not executed because the constrained Kotlin compiler stalled in the preceding verification attempt. No full suite, JAR, install, runtime, deployment, or push run.
+- HR interrupts: none; environment verification stall remains recorded.
+- Fingerprints: source DAG `0d3d20b7537d9cb64dbb0a6c0515831f4625b55a309e2c27f1656457f9b08f16`; Core gap PDF `6d4e0dd5eca2902891aedc435001e5c4d09c378bcda95396dd23566251e0ff3b`; Blueprint `aeb983938fbe39323513683c4b7f5b2911f7b0a9ab4064e160f3dc2d568e85c6`.
+- New overall estimate: calculator one-shot `NO`; remaining gate is focused verification of the new generator/router/manifest seams and existing hierarchy owners.
+
+### 2026-08-03T14:42:00Z · Agent: Codex GPT-5 · Batch: calculator-focused-verification-block-030
+- Paths touched: `AGENTS.md` (+this row); no product owner changes.
+- Atoms / phases affected: focused verification for `C2-P14`, `C2-P12`, `C2-P15`, `C2-P16`, `C3-AF-01`, `C3-AF-03`, `C3-AF-04`, `C3-AF-05`, `C3-P19`, and `J009`.
+- Predicate moved: none; the final narrow Kotlin command was attempted with in-process compilation and did not reach test execution.
+- % delta: unchanged; calculator one-shot remains `NO`.
+- Why justified: after `./gradlew --stop`, `./gradlew test --tests atropos.core.factory.CalculatorProjectGeneratorTest --tests atropos.core.endpoint.OperationEndpointManifestTest --tests atropos.cli.commands.SelfHostNaturalLanguageRouterTest --no-daemon --max-workers=1 -Dkotlin.compiler.execution.strategy=in-process` entered `compileKotlin` and stalled without a result; it was terminated to avoid repeated builds and stale processes. Lightweight prerequisite and `git diff --check` gates remain passing. No full suite, JAR, install, runtime, deployment, or push run.
+- HR interrupts: none; constrained Kotlin compilation is the sole unresolved verification blocker.
+- Fingerprints: source DAG `0d3d20b7537d9cb64dbb0a6c0515831f4625b55a309e2c27f1656457f9b08f16`; all new product files are present in the current worktree.
+- New overall estimate: calculator one-shot `NO`; human/operator next action is one focused compile/test run after the Termux Kotlin compiler environment is responsive.
+
+### 2026-08-03T15:20:00Z · Agent: Codex GPT-5 · Batch: app-factory-generalization-031
+- Paths touched: `src/main/kotlin/atropos/core/factory/AppIntent.kt` (new), `AppProjectSpec.kt` (new), `AppProjectSpecParser.kt` (new), `RepoScaffold.kt` (new), `EvidenceManifest.kt` (new), `AppProjectGenerator.kt` (new), removed calculator-specific generator/test files, `AppFactoryRouter.kt`, `SelfHostNaturalLanguageRouter.kt`, `SelfHostNaturalLanguageRouterTest.kt`, `CommandRouter.kt`, `scripts/calculator-prerequisite-gate.sh`, and `AGENTS.md` (+this row).
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-AF-04`, `C3-AF-05`, `C3-P19`; supporting hierarchy-safe dispatch surfaces remain in scope.
+- Predicate moved: calculator-specific product architecture is removed. Any app request matching the general build/create/generate action plus an app surface routes through the same `AppIntent -> AppProjectSpec -> RepoScaffold -> AppProjectGenerator -> EvidenceManifest` pipeline. Calculator, todo, and notes are acceptance fixtures using `generateApp`, not privileged branches.
+- % delta: no phase percentage claim. Calculator one-shot remains `NO` until focused verification passes.
+- Why justified: production `src/main/kotlin` contains no calculator-specific generator, intent branch, or template; lightweight factory prerequisite and `git diff --check` gates pass. The generator now registers the project binding, runs generated `verify.sh`, writes source/tests/standard files, initializes and commits Git history, writes hash-linked evidence, and exports an archive. The focused generalization test run again stalled at `compileKotlin` and was terminated; no test pass is claimed.
+- HR interrupts: none; constrained Kotlin compilation remains the verification blocker.
+- Fingerprints: source DAG `0d3d20b7537d9cb64dbb0a6c0515831f4625b55a309e2c27f1656457f9b08f16`; Core gap PDF `6d4e0dd5eca290289a1edc435001e5c4d09c378bcda95396dd23566251e0ff3b`; Blueprint `aeb983938fbe39323513683c4b7f5b2911f7b0a9ab4064e160f3dc2d568e85c6`.
+- New overall estimate: general app factory implementation `present, unverified`; calculator one-shot `NO`; next gate is focused Kotlin verification when the environment responds.
+
+### 2026-08-03T15:42:00Z · Agent: Codex GPT-5 · Batch: app-factory-direct-source-check-032
+- Paths touched: `AGENTS.md` (+this row); no product owner changes.
+- Atoms / phases affected: general factory model/generator support for `C3-AF-01`, `C3-AF-03`, `C3-AF-04`, `C3-AF-05`, and `C3-P19`.
+- Predicate moved: the new general app model, parser, scaffold, evidence manifest, and generator compile successfully outside Gradle as one bounded source slice.
+- % delta: unchanged; no phase percentage claim and calculator one-shot remains `NO`.
+- Why justified: `kotlinc -d /tmp/atropos-factory-model-check.jar` compiled `AppIntent.kt`, `AppProjectSpec.kt`, `AppProjectSpecParser.kt`, `RepoScaffold.kt`, `EvidenceManifest.kt`, and `AppProjectGenerator.kt`; `/tmp/atropos-factory-model-check.jar` exists. This proves source syntax for the new independent slice only, not AppFactoryRouter integration or runtime tests. No full suite, JAR, install, runtime, deployment, or push run.
+- HR interrupts: none; Gradle integration compile remains stalled, while the independent new-source compile passes.
+- Fingerprints: source DAG `0d3d20b7537d9cb64dbb0a6c0515831f4625b55a309e2c27f1656457f9b08f16`.
+- New overall estimate: general app factory implementation `present, integration-test-unverified`; calculator one-shot `NO`.
+
+### 2026-08-03T13:11:48Z · Agent: Codex GPT-5 · Batch: app-factory-generic-boundaries-033
+- Paths touched: `src/main/kotlin/atropos/cli/commands/SelfHostNaturalLanguageRouter.kt` (+8/-3), `src/main/kotlin/atropos/core/factory/RepoScaffold.kt` (+18/-6), `src/main/kotlin/atropos/core/factory/EvidenceManifest.kt` (+3), `src/main/kotlin/atropos/core/factory/AppProjectGenerator.kt` (+12/-2), `src/test/kotlin/atropos/cli/commands/SelfHostNaturalLanguageRouterTest.kt` (+5), `src/test/kotlin/atropos/core/factory/AppProjectGeneratorTest.kt` (+14), `scripts/calculator-prerequisite-gate.sh` (+10), and `AGENTS.md` (+this row).
+- New decoupled files: none; existing general App Factory owners extended.
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-AF-04`, `C3-AF-05`, `C3-P19`; supporting `C2-P12`, `C2-P14`, `C2-P15`, `C2-P16` dispatch surfaces remain unchanged.
+- Predicate moved: arbitrary action-oriented NL requests with a meaningful app description now route through the general `/factory run` path without a fixed calculator branch; generated project package identifiers and Kotlin string literals are sanitized; generated README prompts are redacted through the canonical `RedactionFilter`; evidence now records a deterministic source-tree digest.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO` because focused Gradle integration tests have not executed successfully.
+- Why justified: the bounded factory source slice compiled with `kotlinc` including the canonical security redaction owner, the router source slice compiled independently, `bash scripts/calculator-prerequisite-gate.sh` passed, and `git diff --check` passed. Static production inspection found no calculator-specific generator/intent/template branch. The prior focused Gradle command stalled at `compileKotlin` and was not repeated; no test, JAR, install, runtime, deployment, or push success is claimed.
+- HR interrupts: none; constrained Gradle integration verification remains the sole open verification blocker for this path.
+- Fingerprints: router `136862b46c6b14afd866deb114e2f06cee1ab33a101c4445aab109df3e8f4f84`; `RepoScaffold.kt=11c4c082f4db2ccdc92baf958b3613ca0731626e4003c8fc880e743721511cdf`; generator `84e52e55f91692180007fd584441755defa1f9326bc1801805d503ad23f2d0d3`; evidence `a452b834b2b38ce02775391a9d71a40df0083276f53c640327b4e62ff2feea8b`; prerequisite gate `326e11abcc6ba1c82f9b5c8952d0f296871ae410a86c0fafdfc883d095c7b241`.
+- New overall estimate: general App Factory implementation `present, source-slice-compiled, integration-test-unverified`; calculator one-shot `NO`.
+
+### 2026-08-03T14:26:37Z · Agent: Codex GPT-5 · Batch: app-factory-plan-evidence-066
+- Paths touched: `src/main/kotlin/atropos/core/factory/AppProjectGenerator.kt` (+4), `src/test/kotlin/atropos/core/factory/AppProjectGeneratorTest.kt` (+17), `src/main/kotlin/atropos/core/factory/EvidenceManifest.kt` (+2 existing metadata fields), and `AGENTS.md` (+this row).
+- New decoupled files: none; planning evidence remains owned by `EvidenceManifest` and the existing factory generator.
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-AF-04`, `C3-AF-05`, `C3-P19`.
+- Predicate moved: generated repositories now carry the canonical planning DAG ID and planned atom IDs in both the returned project identity and `.atropos/evidence/app-manifest.txt`; the generated-project data model now compiles with that metadata.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO` because the source proof compiler attempt was stopped after 25 seconds without output and focused integration tests remain unrun.
+- Why justified: `bash scripts/calculator-prerequisite-gate.sh` passed. The single bounded `bash scripts/app-factory-source-proof.sh` attempt was stopped at the compiler stall rather than retried; no Gradle, JAR, install, restart, or full suite was run. The added regression test asserts DAG/atom persistence, while runtime execution remains unverified.
+- HR interrupts: none; bounded source-proof compiler stall recorded as inconclusive, not a completion claim.
+- Fingerprints: `AppProjectGenerator.kt=016a62aab6097cc845e6bee05bfdf5de625b23160ab87c334ed9714913670680`; `EvidenceManifest.kt=9a6c796b042b0bc262f4bb270a57aa2dacda46dd2f0992df04d09c8e295f2ed6`; `AppProjectGeneratorTest.kt=9b5cfa54abb12166a0c1bfbaecd3a1454ce0e6303cd22b07c646a786c9364e84`.
+- New overall estimate: general App Factory implementation `present, plan-to-evidence-wired, integration-test-unverified`; calculator one-shot `NO`.
+
+### 2026-08-03T14:35:00Z · Agent: Codex GPT-5 · Batch: app-factory-source-proof-068
+- Paths touched: `AGENTS.md` (+this row); source and proof-harness paths were unchanged from batch 067.
+- New decoupled files: none.
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-AF-04`, `C3-AF-05`, `C3-P19`.
+- Predicate moved: the generic source-level factory proof is now green after the planning-evidence model repair; calculator and notes requests both generated real repositories with README/LICENSE/.gitignore/AGENTS.md, compiled/executed generated tests, created Git history, exported archives, and persisted tree evidence.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO` pending focused repository integration tests and wider runtime evidence.
+- Why justified: one bounded `ATROPOS_SOURCE_PROOF_TIMEOUT_SECONDS=120 bash scripts/app-factory-source-proof.sh` run returned `APP_FACTORY_SOURCE_PROOF_OK`; the prerequisite gate and `git diff --check` also passed. No Gradle, full suite, JAR, install, or restart run. Existing policy and NL proof results were reused because their inputs did not change.
+- HR interrupts: none.
+- Fingerprints: `AppProjectGenerator.kt=016a62aab6097cc845e6bee05bfdf5de625b23160ab87c334ed9714913670680`; `EvidenceManifest.kt=9a6c796b042b0bc262f4bb270a57aa2dacda46dd2f0992df04d09c8e295f2ed6`; `AppProjectGeneratorTest.kt=9b5cfa54abb12166a0c1bfbaecd3a1454ce0e6303cd22b07c646a786c9364e84`; `app-factory-source-proof.sh=657fac460c28797bf7a15730c5f2874cfb532bb706cec69aa77f76e1837b8d88`.
+- New overall estimate: general App Factory implementation `present, source-proof-green, focused-integration-unverified`; calculator one-shot `NO`.
+
+### 2026-08-03T14:42:00Z · Agent: Codex GPT-5 · Batch: calculator-n005-final-command-069
+- Paths touched: `scripts/calculator-final-acceptance.sh` (new, +22), `scripts/calculator-prerequisite-gate.sh` (+1), and `AGENTS.md` (+this row).
+- New decoupled files: `scripts/calculator-final-acceptance.sh`.
+- Atoms / phases affected: `N005`, `M003`, `A005`, and calculator-path static closure support.
+- Predicate moved: one canonical bounded final-acceptance command now composes the existing Kotlin compatibility, prerequisite-surface, source-to-code trace, proof-script syntax, and diff checks without launching Gradle; it reports runtime/build/install status separately.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO` because focused runtime integration tests and installed proof are separate and unrun.
+- Why justified: `bash scripts/calculator-final-acceptance.sh` returned `N005_FINAL_ACCEPTANCE_COMMAND_OK`, with `KOTLIN_COMPAT_SCAN_OK`, `CALCULATOR_PREREQUISITE_SURFACE_OK`, and `SOURCE_TO_CODE_TRACE_GATE_TEST_OK`. `git diff --check` passed. No Gradle, JAR, install, restart, or deployment run.
+- HR interrupts: none.
+- Fingerprints: `calculator-final-acceptance.sh=d1efdc944ce9dbb2c435a54a4b1a18c6e04ce3903af866805d3e6a1629fc876d`; `calculator-prerequisite-gate.sh=2ae934b8db0ba65f00a74219f909a1474eb443d73cf9f51c1d6a1218b4cf8fe4`.
+- New overall estimate: calculator path `static-acceptance-command-green, runtime-integration-unverified`; one-shot `NO`.
+
+### 2026-08-03T14:30:00Z · Agent: Codex GPT-5 · Batch: app-factory-proof-timebox-067
+- Paths touched: `scripts/app-factory-source-proof.sh` (+10), and `AGENTS.md` (+this row).
+- New decoupled files: none; the existing source proof remains the factory source-proof owner.
+- Atoms / phases affected: `C3-AF-03`, `C3-AF-04`, `C3-AF-05`, `C3-P19` evidence execution.
+- Predicate moved: the source proof now has a bounded compiler timeout and reports `APP_FACTORY_SOURCE_PROOF_TIMEOUT` on a timeout, preventing an unbounded/repeated-looking compiler run from obscuring the actual gate state.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO`; this batch changes only proof-run determinism.
+- Why justified: `bash -n scripts/app-factory-source-proof.sh` and `git diff --check` passed. The compiler proof was not rerun after this harness-only change, so no runtime or test completion is claimed.
+- HR interrupts: none; prior source compiler stall is now bounded by `ATROPOS_SOURCE_PROOF_TIMEOUT_SECONDS` (default 120).
+- Fingerprints: `scripts/app-factory-source-proof.sh=657fac460c28797bf7a15730c5f2874cfb532bb706cec69aa77f76e1837b8d88`.
+- New overall estimate: general App Factory implementation `present, proof-harness-timeboxed, integration-test-unverified`; calculator one-shot `NO`.
+
+### 2026-08-03T15:12:00Z · Agent: Codex GPT-5 · Batch: app-factory-ledger-tail-048
+- Paths touched: `AGENTS.md` (+this row); no additional product files.
+- New decoupled files: none.
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-AF-04`, `C3-AF-05`, `C3-P19`.
+- Predicate moved: the latest factory batches are now represented by a physically terminal append-only ledger row without rewriting the historical rows that followed earlier insertions.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO`.
+- Why justified: current source state has passed the lightweight prerequisite gate and `git diff --check`; generated-test enforcement, policy-compatible territory, generic identity, planning-DAG composition, and portable evidence are recorded in the preceding batch entries. Runtime integration remains unverified and no expensive command was started.
+- HR interrupts: none.
+- Fingerprints: ledger tail update only; product fingerprints remain in the preceding batch rows.
+- New overall estimate: general App Factory implementation `present, source-level closure advanced, integration-test-unverified`; calculator one-shot `NO`.
+
+### 2026-08-03T15:28:00Z · Agent: Codex GPT-5 · Batch: app-factory-static-owner-gate-049
+- Paths touched: `scripts/calculator-prerequisite-gate.sh` (+3), and `AGENTS.md` (+this row).
+- New decoupled files: none; the existing prerequisite gate now inventories the canonical router/planning owners.
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-P19`.
+- Predicate moved: the lightweight acceptance surface now fails when the generic factory router or canonical internal planning graph service is absent, preventing a scaffold-only implementation from masquerading as an end-to-end factory.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO` because runtime integration is unverified.
+- Why justified: the updated gate passed and `git diff --check` passed. This remains a bounded static inventory; no compiler, Gradle, JAR, install, or source-proof execution was started.
+- HR interrupts: none.
+- Fingerprints: `calculator-prerequisite-gate.sh=e561a850c83b786aaca541fed08d1cf069500d62b406c46d45c04d22d4499095`.
+- New overall estimate: general App Factory implementation `present, router-and-planning-surface-gated, integration-test-unverified`; calculator one-shot `NO`.
+
+### 2026-08-03T15:44:00Z · Agent: Codex GPT-5 · Batch: app-factory-short-nl-050
+- Paths touched: `src/main/kotlin/atropos/core/factory/AppActionRegistry.kt` (+1/-1), `src/test/kotlin/atropos/core/factory/AppActionRegistryTest.kt` (+1), and `AGENTS.md` (+this row).
+- New decoupled files: none; generic action recognition remains owned by `AppActionRegistry`.
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-P19` NL routing.
+- Predicate moved: two-token app requests containing an action and an app noun now route through the generic factory path, while a bare action remains rejected.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO` because runtime integration is unverified.
+- Why justified: the generic registry regression covers `create notes` and existing non-app input/bare-verb refusals; the prerequisite gate and `git diff --check` passed. No compiler, Gradle, JAR, install, or proof execution was started.
+- HR interrupts: none.
+- Fingerprints: `AppActionRegistry.kt=ddcc1a78eaa285ac2c1daf8823c74d4869ba24df7f1022b96b41189a040e4c2a`; `AppActionRegistryTest.kt=643f7532eee38288b7fc761e5677442c9c9bcc546641927cff1a5e88cbcc3434`.
+- New overall estimate: general App Factory implementation `present, short-NL-routing-corrected, integration-test-unverified`; calculator one-shot `NO`.
+
+### 2026-08-03T16:31:00Z · Agent: Codex GPT-5 · Batch: app-factory-source-proof-051
+- Paths touched: no product files; `AGENTS.md` (+this row) records the proof result.
+- New decoupled files: none.
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-AF-04`, `C3-AF-05`, `C3-P19`.
+- Predicate moved: the bounded source-level factory proof passed for both the calculator acceptance fixture and an arbitrary notes app through the same general generator API, including generated tests, standard repository files, git history, evidence manifest, and export archive.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO` for the full path because Gradle/runtime integration and the production mutation-gate integration remain unverified.
+- Why justified: `ATROPOS_SOURCE_PROOF_OK` was emitted by one bounded proof run after the source repairs. `git diff --check` also passed. The harness uses a bounded mutation-authorizer stub, so this is not evidence that the full Gradle/runtime path or actual `AppProjectMutationGate` integration passes.
+- HR interrupts: none.
+- Fingerprints: `app-factory-source-proof.sh=17ccfdee8c7d5c5996eb495bd9528b4332b1627585cabb2f0483e7a956402bd9`; `AppProjectGenerator.kt=366f599a0ef6e584eb65a2055603e4e096d4474e88105769575d74e2eea0597`; `RepoScaffold.kt=720efca6f30ca57b67d948688cd9837a8410c8369255b794738bf02dbd3b90dc`.
+- New overall estimate: general App Factory implementation `source-proof-passed, production-integration-unverified`; calculator one-shot `NO`.
+
+### 2026-08-03T16:48:00Z · Agent: Codex GPT-5 · Batch: app-factory-gate-root-boundary-052
+- Paths touched: `src/main/kotlin/atropos/core/factory/AppProjectMutationGate.kt` (+4), `src/test/kotlin/atropos/core/factory/AppProjectGeneratorTest.kt` (+10), and `AGENTS.md` (+this row).
+- New decoupled files: none; the existing mutation authorizer remains the canonical boundary owner.
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-P19` bounded territory.
+- Predicate moved: direct callers of the factory mutation authorizer now fail closed for targets outside the active repository root; the generator no longer carries the sole root-containment defense.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO` because the actual production gate test has been written but not executed.
+- Why justified: `AppProjectMutationGate` validates normalized root containment before relativizing or evaluating policy; a regression test covers an external target. Static prerequisite and `git diff --check` checks passed. No compiler, Gradle, JAR, install, or proof execution was started.
+- HR interrupts: none.
+- Fingerprints: `AppProjectMutationGate.kt=306ff460c59b87a047171587db6597cc6aede3dd8c24e7c32e6ad72db1a69f73`; `AppProjectGeneratorTest.kt=a08b4853014960a689fc37ab11c4f97671d975e9ac7098ac279ea40b5c8d6620`.
+- New overall estimate: general App Factory implementation `source-proof-passed, root-boundary-hardened, production-integration-unverified`; calculator one-shot `NO`.
+
+### 2026-08-03T17:14:00Z · Agent: Codex GPT-5 · Batch: app-factory-typed-git-053
+- Paths touched: `src/main/kotlin/atropos/core/worktree/BoundedGitWorktreeCommandRunner.kt` (+18), `src/main/kotlin/atropos/core/factory/AppProjectGenerator.kt` (+23/-18), `src/test/kotlin/atropos/core/worktree/BoundedGitWorktreeCommandRunnerTest.kt` (+27), `scripts/app-factory-source-proof.sh` (+1), and `AGENTS.md` (+this row).
+- New decoupled files: none; generated repository history composes the existing bounded Git runner.
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-AF-05`, `C3-P19` git/evidence path.
+- Predicate moved: app repository init, add, commit, branch/hash inspection, and archive export now use typed allowlisted Git operations instead of a factory-local raw `ProcessBuilder` command path; commit messages and archive paths receive bounded validation.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO` because the post-change source proof and focused tests were not rerun.
+- Why justified: argv/refusal tests were added to the existing bounded Git runner test owner; static prerequisite and `git diff --check` passed; raw Git process construction is absent from the factory owner. No compiler, Gradle, JAR, install, runtime, or proof execution was started after this change.
+- HR interrupts: none.
+- Fingerprints: `BoundedGitWorktreeCommandRunner.kt=bf4ff33d347f9043d02b1d48899c8734dbc5b99a6ba593167547ec01eae38c79`; `AppProjectGenerator.kt=386db85c96db9f16e96b47a01e570220f30e437e144337b74d317b9ff7f20cff`; `BoundedGitWorktreeCommandRunnerTest.kt=03815f3fcbaf2dac7d19cbd2ebc5ab4046b61caba8a48706f16318a49a7c2e65`; source proof script `f99813220e640b3d06ef6c7a96d0cea5641a99de4bbf4fc6f52b8ad1e92f9391`.
+- New overall estimate: general App Factory implementation `source-proof-passed-before-typed-git-change, typed-git-wired, production-integration-unverified`; calculator one-shot `NO`.
+
+### 2026-08-03T17:39:00Z · Agent: Codex GPT-5 · Batch: app-factory-proof-harness-fix-054
+- Paths touched: `scripts/app-factory-source-proof.sh` (+1/-1) and `AGENTS.md` (+this row).
+- New decoupled files: none.
+- Atoms / phases affected: `C3-AF-03`, `C3-AF-05`, `C3-P19` source-proof harness.
+- Predicate moved: the source-proof harness now actually includes the typed Git runner in its bounded Kotlin source list; the previous post-typed-Git proof failure was a harness compile omission, not a product compile verdict.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO`.
+- Why justified: one current proof attempt failed with unresolved `atropos.core.worktree` references because the runner path was missing from the continued `kotlinc` command. The command was corrected, `bash -n`, the prerequisite gate, and `git diff --check` passed. No retry was run after the harness fix.
+- HR interrupts: none.
+- Fingerprints: `app-factory-source-proof.sh=c658fb318c0205562ac3cc707a36cb45172b4895590a5a48add18abd0838cc16`.
+- New overall estimate: general App Factory implementation `typed-git-wired, proof-harness-corrected, current source proof unverified`; calculator one-shot `NO`.
+
+### 2026-08-03T18:31:00Z · Agent: Codex GPT-5 · Batch: app-factory-source-proof-055
+- Paths touched: no product files; `AGENTS.md` (+this row) records the current proof.
+- New decoupled files: none.
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-AF-04`, `C3-AF-05`, `C3-P19`.
+- Predicate moved: the current source tree, including typed Git init/add/commit/archive operations, passed the bounded general factory proof for calculator and notes fixtures.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO` for full acceptance because production integration, focused tests, and runtime gates remain separate.
+- Why justified: one bounded run emitted `APP_FACTORY_SOURCE_PROOF_OK`; it compiled the current generator/scaffold/typed-Git source set and exercised generated tests, standard files, commits, evidence, and exports. `git diff --check` passed. The harness still uses a bounded mutation-authorizer stub and does not prove full Gradle/runtime integration.
+- HR interrupts: none.
+- Fingerprints: `app-factory-source-proof.sh=c658fb318c0205562ac3cc707a36cb45172b4895590a5a48add18abd0838cc16`; `AppProjectGenerator.kt=386db85c96db9f16e96b47a01e570220f30e437e144337b74d317b9ff7f20cff`; `BoundedGitWorktreeCommandRunner.kt=bf4ff33d347f9043d02b1d48899c8734dbc5b99a6ba593167547ec01eae38c79`.
+- New overall estimate: general App Factory implementation `source-proof-passed, focused-test-unverified, runtime-unverified`; calculator one-shot `NO`.
+
+### 2026-08-03T20:04:00Z · Agent: Codex GPT-5 · Batch: app-factory-status-truth-059
+- Paths touched: `src/main/kotlin/atropos/cli/ui/AppFactoryPlanRenderer.kt` (+1/-1), `src/test/kotlin/atropos/cli/ui/AppFactoryPlanRendererTest.kt` (new, +14), `scripts/calculator-prerequisite-gate.sh` (+2), and `AGENTS.md` (+this row).
+- New decoupled files: `src/test/kotlin/atropos/cli/ui/AppFactoryPlanRendererTest.kt`.
+- Atoms / phases affected: `C3-AF-05`, `C3-P19` acceptance/evidence surface.
+- Predicate moved: factory status no longer claims final acceptance is ready before runtime verification; it explicitly reports source-path readiness and pending runtime verification.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO` because this UI correction makes no runtime claim.
+- Why justified: a regression test rejects the former false-success text; the prerequisite gate and `git diff --check` passed. No compiler, Gradle, JAR, install, or source-proof execution was started after this change.
+- HR interrupts: none.
+- Fingerprints: `AppFactoryPlanRenderer.kt=4b6a245af7472028f84303d6d5543cea33cd96e83df30debc0e7a74cbe0d4d76`; `AppFactoryPlanRendererTest.kt=5b564e2763852635f5405bbdad833e7ca98b04156804b0ae6f8736a16fbf6d0c`; `calculator-prerequisite-gate.sh=5051009078eb995bda160f64ae203af94e62c5c13ca174ba1559b9f66d40c6f0`.
+- New overall estimate: general App Factory implementation `source-proof-passed, status-truth-corrected, focused-test-unverified`; calculator one-shot `NO`.
+
+### 2026-08-03T21:18:00Z · Agent: Codex GPT-5 · Batch: app-factory-policy-proof-harness-061
+- Paths touched: `scripts/app-factory-policy-proof.sh` (+1), `scripts/calculator-prerequisite-gate.sh` (+1), and `AGENTS.md` (+this row).
+- New decoupled files: `scripts/app-factory-policy-proof.sh`.
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-P19` production mutation-gate evidence.
+- Predicate moved: a bounded proof harness now targets the real `AppProjectMutationGate` and covers allowed, outside-root, and mismatched-root cases; its missing `SecretEncodingClosure` dependency was corrected after the first harness compile attempt.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO`; the corrected production-gate proof has not yet passed.
+- Why justified: the first proof attempt failed only because `KnownSecretRegistry`’s `SecretEncodingClosure` source was omitted from the harness. The source list was corrected, `bash -n`, prerequisite gate, and `git diff --check` passed. No blind retry was started.
+- HR interrupts: none.
+- Fingerprints: `app-factory-policy-proof.sh=323644cd691b3bb9be0545dee3e26d602da303fc9c5b990c2ca50fbee6179eea`.
+- New overall estimate: general App Factory implementation `source-proof-passed, real-policy-proof-harness-corrected, production-gate-unverified`; calculator one-shot `NO`.
+
+### 2026-08-03T22:31:00Z · Agent: Codex GPT-5 · Batch: app-factory-policy-proof-062
+- Paths touched: no product files; `AGENTS.md` (+this row) records the production-gate proof.
+- New decoupled files: none.
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-P19` mutation policy/territory.
+- Predicate moved: the actual production `AppProjectMutationGate` passed its bounded proof for an allowed generated-project target, an outside-root target refusal, and a configured-root mismatch refusal.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO` because focused tests and full runtime integration remain separate gates.
+- Why justified: one bounded run emitted `APP_FACTORY_POLICY_PROOF_OK`; `git diff --check` passed. The harness compiles and executes the real policy, territory, Director, and mutation-gate owners without Gradle.
+- HR interrupts: none.
+- Fingerprints: `app-factory-policy-proof.sh=323644cd691b3bb9be0545dee3e26d602da303fc9c5b990c2ca50fbee6179eea`; `AppProjectMutationGate.kt=ea449e0c01067a95bb00f3acfa3a05c9dccfbda29bb9882acebf6c394dcbea8f`.
+- New overall estimate: general App Factory implementation `source-proof-passed, production-policy-proof-passed, focused-test-unverified`; calculator one-shot `NO`.
+
+### 2026-08-03T23:12:00Z · Agent: Codex GPT-5 · Batch: app-factory-nl-routing-proof-063
+- Paths touched: `scripts/app-factory-nl-routing-proof.sh` (new, +30), `scripts/calculator-prerequisite-gate.sh` (+1), and `AGENTS.md` (+this row).
+- New decoupled files: `scripts/app-factory-nl-routing-proof.sh`.
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-P19` natural-language routing.
+- Predicate moved: the real `SelfHostNaturalLanguageRouter` and canonical `AppActionRegistry` proof now confirms calculator, todo, and notes prompts route to `/factory run`, while `build yourself` remains `/agent self-host run`.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO` because the complete CLI/runtime path and focused Gradle tests remain separate gates.
+- Why justified: one bounded run emitted `APP_FACTORY_NL_ROUTING_PROOF_OK`; `git diff --check` passed. The proof compiles the actual router/action-registry sources without Gradle.
+- HR interrupts: none.
+- Fingerprints: `app-factory-nl-routing-proof.sh=31c5c805b72bfbdebef4623d03b22b0b9b6d94201a3128832214d325d70a9f24`.
+- New overall estimate: general App Factory implementation `source-proof-passed, production-policy-proof-passed, NL-routing-proof-passed, focused-test-unverified`; calculator one-shot `NO`.
+
+### 2026-08-03T23:48:00Z · Agent: Codex GPT-5 · Batch: app-factory-generated-agents-contract-064
+- Paths touched: `src/main/kotlin/atropos/core/factory/RepoScaffold.kt` (+1), `src/test/kotlin/atropos/core/factory/AppProjectGeneratorTest.kt` (+3), and `AGENTS.md` (+this row).
+- New decoupled files: none; generated repository governance remains part of the canonical scaffold owner.
+- Atoms / phases affected: `C3-AF-03`, `C3-AF-05`, `C3-P19` standard repository artifacts.
+- Predicate moved: generated repositories now receive a meaningful portable `AGENTS.md` covering ownership, bounded territory, verification command, evidence location, and secret handling instead of a placeholder line.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO`; the prior source proof is stale for this scaffold change.
+- Why justified: generation tests now assert the generated contract mentions `verify.sh` and the evidence manifest; prerequisite and `git diff --check` checks passed. No compiler, Gradle, JAR, install, or proof execution was started.
+- HR interrupts: none.
+- Fingerprints: `RepoScaffold.kt=0ad06ee4005b1e21394f98b03cc4af1f1ae93555b5d2f9c973ef877f8691bcf1`; `AppProjectGeneratorTest.kt=00a6e928eac7e2ff8eea143c7b5d338841864dd1c69ab5bd15837748d10ef583`.
+- New overall estimate: general App Factory implementation `source-proof-passed-before-scaffold-contract, repository-contract-complete, focused-test-unverified`; calculator one-shot `NO`.
+
+### 2026-08-04T00:31:00Z · Agent: Codex GPT-5 · Batch: app-factory-source-proof-065
+- Paths touched: no product files; `AGENTS.md` (+this row) records the current proof.
+- New decoupled files: none.
+- Atoms / phases affected: `C3-AF-03`, `C3-AF-04`, `C3-AF-05`, `C3-P19`.
+- Predicate moved: the current general factory proof passed after the generated repository `AGENTS.md` contract was expanded with portable ownership, territory, verification, evidence, and secret rules.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO` for full runtime acceptance.
+- Why justified: one bounded run emitted `APP_FACTORY_SOURCE_PROOF_OK`; `git diff --check` passed. The proof exercised calculator and notes generation, generated tests, standard files, typed Git history/archive, evidence, and export.
+- HR interrupts: none.
+- Fingerprints: `app-factory-source-proof.sh=c658fb318c0205562ac3cc707a36cb45172b4895590a5a48add18abd0838cc16`; `RepoScaffold.kt=0ad06ee4005b1e21394f98b03cc4af1f1ae93555b5d2f9c973ef877f8691bcf1`.
+- New overall estimate: general App Factory implementation `source-proof-passed, production-policy-proof-passed, NL-routing-proof-passed, repository-contract-complete, focused-test-unverified`; calculator one-shot `NO`.
+
+### 2026-08-03T20:32:00Z · Agent: Codex GPT-5 · Batch: app-factory-policy-root-binding-060
+- Paths touched: `src/main/kotlin/atropos/core/factory/AppProjectMutationGate.kt` (+2), `src/test/kotlin/atropos/core/factory/AppProjectGeneratorTest.kt` (+13), and `AGENTS.md` (+this row).
+- New decoupled files: none; root binding remains part of the existing mutation authorizer contract.
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-P19` territory/policy binding.
+- Predicate moved: a mutation gate now refuses callers that supply a repository root different from the root used to construct its policy and territory owners, preventing cross-root policy confusion.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO`; the prior source proof is stale for this gate-only hardening.
+- Why justified: normalized configured-root equality is checked before path relativization; a regression covers the mismatched-root case. Static prerequisite and `git diff --check` checks passed. No compiler, Gradle, JAR, install, or proof execution was started.
+- HR interrupts: none.
+- Fingerprints: `AppProjectMutationGate.kt=ea449e0c01067a95bb00f3acfa3a05c9dccfbda29bb9882acebf6c394dcbea8f`; `AppProjectGeneratorTest.kt=531a3f5fa7ca887f5426ffe0ddb656befc1055782b87f15c219b3d94a7b28132`.
+- New overall estimate: general App Factory implementation `source-proof-passed-before-root-binding-hardening, policy-root-bound, focused-test-unverified`; calculator one-shot `NO`.
+
+### 2026-08-03T18:44:00Z · Agent: Codex GPT-5 · Batch: app-factory-typed-git-surface-056
+- Paths touched: `scripts/calculator-prerequisite-gate.sh` (+3), and `AGENTS.md` (+this row).
+- New decoupled files: none.
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-AF-05`, `C3-P19`.
+- Predicate moved: the static prerequisite surface now requires both the typed Git runner and its focused test owner, matching the current proofed factory path.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO` because focused Gradle tests and production runtime gates are not run.
+- Why justified: the updated gate and `git diff --check` passed. No compiler, Gradle, JAR, install, runtime, or source-proof execution was started after this static-only change.
+- HR interrupts: none.
+- Fingerprints: `calculator-prerequisite-gate.sh=73a0c0259a5a20f01a55c19d8731adf850cb61daa8bf589bea291aa0c1834786`.
+- New overall estimate: general App Factory implementation `source-proof-passed, typed-git-surface-gated, focused-test-unverified`; calculator one-shot `NO`.
+
+### 2026-08-03T18:58:00Z · Agent: Codex GPT-5 · Batch: app-factory-export-gate-057
+- Paths touched: `src/main/kotlin/atropos/core/factory/AppProjectGenerator.kt` (+1), and `AGENTS.md` (+this row).
+- New decoupled files: none; export authorization composes the existing mutation gate.
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-AF-05`, `C3-P19` evidence/export boundary.
+- Predicate moved: the archive export path is now explicitly authorized through the same bounded mutation gate before typed Git archive execution, closing the second-write bypass.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO`; the prior source proof is stale for this one-line change and was not repeated.
+- Why justified: the export path is under the generated-project namespace and now receives a direct gate check; the prerequisite gate and `git diff --check` passed. No compiler, Gradle, JAR, install, runtime, or proof execution was started.
+- HR interrupts: none.
+- Fingerprints: `AppProjectGenerator.kt=5285c1988aefbc04bee92dd226423b2238ae4245f1b58852e3ff32d8e4ff70e8`.
+- New overall estimate: general App Factory implementation `source-proof-passed-before-export-gate, export-authorization-hardened, focused-test-unverified`; calculator one-shot `NO`.
+
+### 2026-08-03T19:31:00Z · Agent: Codex GPT-5 · Batch: app-factory-source-proof-058
+- Paths touched: no product files; `AGENTS.md` (+this row) records the current proof.
+- New decoupled files: none.
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-AF-04`, `C3-AF-05`, `C3-P19`.
+- Predicate moved: the current factory tree, including explicit export authorization, passed the bounded source proof for calculator and notes through the general generation API.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO` for full acceptance because focused tests, production integration, and runtime gates remain separate.
+- Why justified: one final bounded run emitted `APP_FACTORY_SOURCE_PROOF_OK`; `git diff --check` passed. The proof covered generated tests, standard files, typed Git history/archive, and portable evidence. It still uses the bounded mutation-authorizer stub and does not prove full Gradle/runtime integration.
+- HR interrupts: none.
+- Fingerprints: `app-factory-source-proof.sh=c658fb318c0205562ac3cc707a36cb45172b4895590a5a48add18abd0838cc16`; `AppProjectGenerator.kt=5285c1988aefbc04bee92dd226423b2238ae4245f1b58852e3ff32d8e4ff70e8`; `BoundedGitWorktreeCommandRunner.kt=bf4ff33d347f9043d02b1d48899c8734dbc5b99a6ba593167547ec01eae38c79`.
+- New overall estimate: general App Factory implementation `source-proof-passed, focused-test-unverified, runtime-unverified`; calculator one-shot `NO`.
+
+### 2026-08-03T13:52:16Z · Agent: Codex GPT-5 · Batch: app-factory-policy-territory-042
+- Paths touched: `src/main/kotlin/atropos/core/factory/AppProjectGenerator.kt` (+4/-1), `src/main/kotlin/atropos/core/factory/AppProjectMutationGate.kt` (+3/-3), `src/test/kotlin/atropos/core/factory/AppProjectGeneratorTest.kt` (+10), `scripts/app-factory-source-proof.sh` (+2/-2), and `AGENTS.md` (+this row).
+- New decoupled files: none; the existing generator, mutation adapter, and policy test surfaces were extended in place.
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-AF-04`, `C3-AF-05`, `C3-P19`; bounded dispatch support for `C2-P12`, `C2-P14`, `C2-P15`, `C2-P16`.
+- Predicate moved: generated repository mutation now targets `.atropos/generated-projects`, a policy-allowed durable evidence namespace, instead of `build/generated-projects`, which the canonical `ExecutionPolicyEngine` correctly refuses.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO` because focused integration tests and post-fix source proof were not run.
+- Why justified: `bash scripts/calculator-prerequisite-gate.sh` passed, `git diff --check` passed, and a bounded reference scan found no stale `build/generated-projects` references in source, tests, or proof scripts. A focused policy authorization test was added but not executed. The earlier source-proof failure remains recorded; no new proof run was started.
+- HR interrupts: none; focused integration verification remains open and deliberately unrun after the prior compile/proof interruption.
+- Fingerprints: `AppProjectGenerator.kt=7f1417effb4d0771c40e6e52e099303b3ff79f36f71846a9559afa0073c01ed2`; `AppProjectMutationGate.kt=1acbacb9baa1780f2cb209029c410b6119a352ebf183317fdfc5c8901c2dfaee`; `AppProjectGeneratorTest.kt=aed92fbd40dae40baa9f72a78bf5c65d59e0a8003601b304c3229654967a4dcd`; `app-factory-source-proof.sh=17ccfdee8c7d5c5996eb495bd9528b4332b1627585cabb2f0483e7a956402bd9`.
+- New overall estimate: general App Factory implementation `present, policy-territory-corrected, integration-test-unverified`; calculator one-shot `NO`.
+
+### 2026-08-03T14:06:00Z · Agent: Codex GPT-5 · Batch: app-factory-generic-identity-043
+- Paths touched: `src/main/kotlin/atropos/core/factory/AppActionRegistry.kt` (+4/-6), `src/main/kotlin/atropos/core/factory/AppFactoryRouter.kt` (+2/-2), `src/main/kotlin/atropos/cli/FactoryCommandHandler.kt` (+1/-1), `src/main/kotlin/atropos/core/artifact/ArtifactPipeline.kt` (+5/-1), `src/test/kotlin/atropos/core/factory/AppFactoryRouterTest.kt` (new, +19), and `AGENTS.md` (+this row).
+- New decoupled files: `src/test/kotlin/atropos/core/factory/AppFactoryRouterTest.kt`.
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-AF-04`, `C3-AF-05`, `C3-P19`; supporting project-binding evidence.
+- Predicate moved: arbitrary app identity now remains canonical through planning and artifact registration; the classifier label no longer replaces the parsed project name/kind, and the synchronous `/factory run` surface no longer reports completed generation as merely queued.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO` because focused integration tests and source proof remain unrun.
+- Why justified: `bash scripts/calculator-prerequisite-gate.sh`, `git diff --check`, and the production calculator-special-case scan all passed. The new plan test covers an arbitrary weather service identity and required code/validation steps. No compiler, Gradle, JAR, install, or long proof command was run.
+- HR interrupts: none; runtime verification remains intentionally pending after the prior compile/proof interruption.
+- Fingerprints: `AppActionRegistry.kt=af6ec04918746880f0c8c4a97b1085d013ae4208b820d3c237b0dce257092339`; `AppFactoryRouter.kt=c50499d06aa81a7807b0cb757015ed657ad501ad9421e0601841fc02fbbeb053`; `FactoryCommandHandler.kt=e08d317c3a7e2bc99d4aed6cb9c789f473dbee194e8cd5445b3b6728ed809521`; `ArtifactPipeline.kt=c0426426974f3656e7ae1bc4404e6d7f2160f45813e5f3f2674b28a9a54b467a`; `AppFactoryRouterTest.kt=5c888007751159c8b445fe8c6b050f3a0305f542a6d6fb6a681da8fabcc978ff`.
+- New overall estimate: general App Factory implementation `present, generic-identity-wired, integration-test-unverified`; calculator one-shot `NO`.
+
+### 2026-08-03T14:21:00Z · Agent: Codex GPT-5 · Batch: app-factory-generated-test-required-044
+- Paths touched: `src/main/kotlin/atropos/core/factory/RepoScaffold.kt` (+2/-5), `src/main/kotlin/atropos/core/factory/AppProjectGenerator.kt` (+1/-1), `src/test/kotlin/atropos/core/factory/AppProjectGeneratorTest.kt` (+1/-1), and `AGENTS.md` (+this row).
+- New decoupled files: none; generated verification remains owned by the canonical repository scaffold.
+- Atoms / phases affected: `C3-AF-03`, `C3-AF-04`, `C3-AF-05`, `C3-P19`.
+- Predicate moved: generated repositories now fail closed when `kotlinc` is unavailable, always compile and execute `MainTestKt`, and record test-backed verification in the evidence manifest instead of silently accepting text-only checks.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO` because focused integration tests and source proof remain unrun.
+- Why justified: static contract inspection found the mandatory compiler/test path, `bash scripts/calculator-prerequisite-gate.sh` passed, the calculator-special-case scan passed, and `git diff --check` passed. No compiler, Gradle, JAR, install, runtime, or source-proof execution was started.
+- HR interrupts: none; runtime verification remains pending by design.
+- Fingerprints: `RepoScaffold.kt=720efca6f30ca57b67d948688cd9837a8410c8369255b794738bf02dbd3b90dc`; `AppProjectGenerator.kt=799665989d04224cd7ba991f19a7d51f73c34ecd591c951ac3bace9a712dadff`; `AppProjectGeneratorTest.kt=adf50ead579790ce6edcf2934a3780adc453246e7437935f3ff305fbaf06b6cd`.
+- New overall estimate: general App Factory implementation `present, generated-test-required, integration-test-unverified`; calculator one-shot `NO`.
+
+### 2026-08-03T14:37:00Z · Agent: Codex GPT-5 · Batch: app-factory-planning-dag-045
+- Paths touched: `src/main/kotlin/atropos/core/factory/AppFactoryRouter.kt` (+15), `src/test/kotlin/atropos/core/factory/AppFactoryRouterTest.kt` (+1), and `AGENTS.md` (+this row).
+- New decoupled files: none; app planning composes the existing `InternalPlanningGraphService` and `DagStore` owners.
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-AF-04`, `C3-P19`; supporting DAG/territory dispatch surfaces.
+- Predicate moved: a generic factory run now plans the parsed app prompt through the canonical internal planning graph before generation, and exposes the persisted planning DAG and atom IDs in the returned plan/rendered evidence.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO` because focused integration tests and source proof remain unrun.
+- Why justified: the implementation calls `InternalPlanningGraphService.planFromTexts` with the app-specific prompt and labels the DAG with the parsed app name; the plan-only regression confirms ordinary planning remains side-effect-free. `bash scripts/calculator-prerequisite-gate.sh` and `git diff --check` passed. No compiler, Gradle, JAR, install, or proof execution was started.
+- HR interrupts: none; runtime verification remains pending.
+- Fingerprints: `AppFactoryRouter.kt=07341254dcf9da60acaebf312a3ec5057716bdf48a7f2bb1536b55ae187817b6`; `AppFactoryRouterTest.kt=be6a9619dcd3ee52e1bab206a46608a6a8b45b3e7f2bf06ac529432d8c83ae33`.
+- New overall estimate: general App Factory implementation `present, app-specific-planning-dag-wired, integration-test-unverified`; calculator one-shot `NO`.
+
+### 2026-08-03T14:49:00Z · Agent: Codex GPT-5 · Batch: app-factory-portable-evidence-046
+- Paths touched: `src/main/kotlin/atropos/core/factory/AppProjectGenerator.kt` (+1/-1), `src/test/kotlin/atropos/core/factory/AppProjectGeneratorTest.kt` (+2), and `AGENTS.md` (+this row).
+- New decoupled files: none; evidence serialization remains owned by `EvidenceManifest` and the generator.
+- Atoms / phases affected: `C3-AF-03`, `C3-AF-05`, `C3-P19` portability/evidence edge.
+- Predicate moved: persisted generated-app evidence no longer embeds the operator’s absolute repository or archive path; it records stable relative identifiers while the active result retains runtime paths for the current process.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO` because focused integration tests and source proof remain unrun.
+- Why justified: manifest construction now uses `project=.` and the archive filename only; a regression assertion rejects `/data/` in persisted evidence. `bash scripts/calculator-prerequisite-gate.sh`, `git diff --check`, and the static factory checks passed. No compiler, Gradle, JAR, install, or proof execution was started.
+- HR interrupts: none; runtime verification remains pending.
+- Fingerprints: `AppProjectGenerator.kt=366f599a0ef6e584eb65a205560e3e4e096d4474e88105769575d74e2eea0597`; `AppProjectGeneratorTest.kt=8b9e7b80e9c8b7f9fa02dca371f0b9e94c8e907d13ce2827bc05c87b78a27706`.
+- New overall estimate: general App Factory implementation `present, portable-evidence-corrected, integration-test-unverified`; calculator one-shot `NO`.
+
+### 2026-08-03T15:03:00Z · Agent: Codex GPT-5 · Batch: app-factory-territory-regression-047
+- Paths touched: `scripts/calculator-prerequisite-gate.sh` (+11) and `AGENTS.md` (+this row).
+- New decoupled files: none; the existing lightweight prerequisite gate owns this static contract.
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-P19` bounded mutation territory.
+- Predicate moved: the calculator prerequisite gate now blocks regression to the policy-forbidden `build/generated-projects` namespace and requires the canonical `.atropos/generated-projects` namespace in both generator and mutation-gate owners.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO` because runtime integration remains unverified.
+- Why justified: the updated gate passed together with `git diff --check`; it remains static and does not launch Gradle, Kotlin, JAR, install, or source proof execution.
+- HR interrupts: none; no human-mandatory condition encountered.
+- Fingerprints: `calculator-prerequisite-gate.sh=d72f9146b41fedcc3dea62641ea1c10dd8addc91fadfd58519290b6c007bd738`.
+- New overall estimate: general App Factory implementation `present, territory-regression-gated, integration-test-unverified`; calculator one-shot `NO`.
+
+### 2026-08-03T14:02:00Z · Agent: Codex GPT-5 · Batch: app-factory-generated-binding-036
+- Paths touched: `src/main/kotlin/atropos/core/factory/EvidenceManifest.kt` (+2), `src/main/kotlin/atropos/core/factory/AppProjectGenerator.kt` (+6), `src/main/kotlin/atropos/core/factory/AppFactoryRouter.kt` (+18/-6), `src/test/kotlin/atropos/core/factory/AppProjectGeneratorTest.kt` (+5), and `AGENTS.md` (+this row).
+- New decoupled files: none; generated repository identity now composes with the existing `ProjectRegistry` owner.
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-AF-04`, `C3-AF-05`, `C3-P19`.
+- Predicate moved: the direct NL factory path now binds the canonical project record to the generated repository path, branch, commit, and tree fingerprint instead of the parent ATROPOS checkout; the same identity is persisted in the evidence manifest and rendered to the operator.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO`.
+- Why justified: `git diff --check` and `bash scripts/calculator-prerequisite-gate.sh` passed; production factory search contains no calculator-specific implementation. Focused Gradle integration tests remain unrun after the recorded `compileKotlin` stall, so no runtime or test completion is claimed.
+- HR interrupts: none; integration verification remains open.
+- Fingerprints: router `58822926dc94ed14ce9ffee0f1d5b4a61e73f55c7d04ae7dad90256cfb245690`; generator `7499d66ca9362f39f7017f011c9d1ccb9c5a4f18894b7b32e0ea9213aacce0fe`; evidence `7fec66bc1180ac4d88b685cf4ea2508534ea51589de154366849cd52f5fe2b1e`; test `a4abef98437748aaaa7db9f5e1b9e9ebcf8bb535b0038843e72f2a663609cc48`.
+- New overall estimate: general App Factory implementation `present, generated-binding-wired, integration-test-unverified`; calculator one-shot `NO`.
+
+### 2026-08-03T14:18:00Z · Agent: Codex GPT-5 · Batch: app-factory-action-registry-037
+- Paths touched: `src/main/kotlin/atropos/core/factory/AppActionRegistry.kt` (new, +23), `src/main/kotlin/atropos/core/factory/AppProjectSpecParser.kt` (+5/-3), `src/main/kotlin/atropos/cli/commands/SelfHostNaturalLanguageRouter.kt` (+5/-10), `src/test/kotlin/atropos/core/factory/AppActionRegistryTest.kt` (new, +17), `scripts/calculator-prerequisite-gate.sh` (+1), and `AGENTS.md` (+this row).
+- New decoupled files: `src/main/kotlin/atropos/core/factory/AppActionRegistry.kt`, `src/test/kotlin/atropos/core/factory/AppActionRegistryTest.kt`.
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-AF-04`, `C3-AF-05`, `C3-P19`.
+- Predicate moved: NL routing and project-spec parsing now consume one canonical general application-action registry; arbitrary app descriptions remain supported without calculator-specific vocabulary.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO`.
+- Why justified: corrected bounded `kotlinc` compilation of `AppActionRegistry`, `AppIntent`, `AppProjectSpec`, `AppProjectSpecParser`, and `SelfHostNaturalLanguageRouter` passed with `APP_ACTION_REGISTRY_SOURCE_SLICE_COMPILE_OK`; the prerequisite inventory and `git diff --check` pass. Focused Gradle integration tests remain unrun, so no runtime completion is claimed.
+- HR interrupts: none; Gradle integration verification remains open.
+- Fingerprints: action registry source and test are current at HEAD; source DAG `0d3d20b7537d9cb64dbb0a6c0515831f4625b55a309e2c27f1656457f9b08f16` unchanged.
+- New overall estimate: general App Factory implementation `present, canonical-action-wired, integration-test-unverified`; calculator one-shot `NO`.
+
+### 2026-08-03T14:34:00Z · Agent: Codex GPT-5 · Batch: app-factory-portable-territory-038
+- Paths touched: `src/main/kotlin/atropos/core/factory/AppProjectMutationGate.kt` (+22/-1), `src/main/kotlin/atropos/core/factory/AppProjectGenerator.kt` (+1), `src/test/kotlin/atropos/core/factory/AppProjectGeneratorTest.kt` (+1), and `AGENTS.md` (+this row).
+- New decoupled files: none; the existing factory mutation adapter now composes canonical policy, territory, and Director stores with the active repository root.
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-AF-04`, `C3-P19`.
+- Predicate moved: generated app writes no longer resolve policy, territory, or Director evidence against a hardcoded/current operator checkout; the mutation territory is explicitly bounded to `build/generated-projects` under the active repository binding.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO`.
+- Why justified: static references show `AppProjectGenerator` passes its active root into `AppProjectMutationGate`, which constructs existing policy/territory/Director owners with that root and a bounded prefix. `git diff --check` and the lightweight prerequisite gate pass. Focused integration tests remain unrun; no runtime completion is claimed.
+- HR interrupts: none; focused Gradle verification remains open.
+- Fingerprints: current gate and generator sources are recorded at HEAD; source authority fingerprints unchanged.
+- New overall estimate: general App Factory implementation `present, action-and-territory-wired, integration-test-unverified`; calculator one-shot `NO`.
+
+### 2026-08-03T14:52:00Z · Agent: Codex GPT-5 · Batch: app-factory-spec-plan-continuity-039
+- Paths touched: `src/main/kotlin/atropos/core/factory/AppFactoryRouter.kt` (+9), `src/main/kotlin/atropos/core/factory/AppProjectGenerator.kt` (+6), `src/main/kotlin/atropos/core/factory/AppProjectSpecParser.kt` (existing owner call path), `src/test/kotlin/atropos/core/factory/AppProjectGeneratorTest.kt` (+4), and `AGENTS.md` (+this row).
+- New decoupled files: none.
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-AF-04`, `C3-P19`.
+- Predicate moved: the parsed app-specific intent/spec now travels from the factory plan into repository generation; generation no longer reparses the prompt, and operator output exposes app name, kind, and features.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO`.
+- Why justified: the bounded action/spec source slice compiled into `/tmp/atropos-plan-spec-check.jar`; `bash scripts/calculator-prerequisite-gate.sh` and `git diff --check` passed. The test fixture now exercises generation from a precomputed general `AppProjectSpec`. Focused Gradle integration tests remain unrun after the recorded compile stall.
+- HR interrupts: none; wider integration verification remains open.
+- Fingerprints: router `4ed0228ae0c79f3c340aae7095618245e9f8a24189f0ed019bc9d442d33e1872`; generator `c3ada9de4ce1561140bae83dfabf79253bc2a5a07227eb77a446d2a74a6b4aaf`; parser `d25d64ba7721abf068e59365a8d1bf999b357d0599509202ce4b70343a03c`; action registry `5a01c99547c317e6036aa2c929f07be36379b8530c2d9225eb618b7f69fb95cc`.
+- New overall estimate: general App Factory implementation `present, spec-continuous, integration-test-unverified`; calculator one-shot `NO`.
+
+### 2026-08-03T15:08:00Z · Agent: Codex GPT-5 · Batch: app-factory-derived-redaction-040
+- Paths touched: `src/main/kotlin/atropos/core/factory/RepoScaffold.kt` (+1), `src/test/kotlin/atropos/core/factory/AppProjectGeneratorTest.kt` (+2), and `AGENTS.md` (+this row).
+- New decoupled files: none.
+- Atoms / phases affected: `C3-AF-03`, `C3-AF-04`, `C3-P19` security/evidence edge.
+- Predicate moved: redaction now covers both the original NL prompt and derived feature text before either is persisted into generated README or Kotlin source.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO`.
+- Why justified: `bash scripts/calculator-prerequisite-gate.sh` and `git diff --check` passed. The bounded source compiler invocation produced no reusable artifact or diagnostic, so no compilation or test success is claimed for this edit.
+- HR interrupts: none; focused integration verification remains open.
+- Fingerprints: current scaffold and test sources are at HEAD; source authority fingerprints unchanged.
+- New overall estimate: general App Factory implementation `present, redaction-complete-at-scaffold-boundary, integration-test-unverified`; calculator one-shot `NO`.
+
+### 2026-08-03T15:34:00Z · Agent: Codex GPT-5 · Batch: app-factory-generated-test-gate-041
+- Paths touched: `scripts/calculator-prerequisite-gate.sh` (+10) and `AGENTS.md` (+this row).
+- New decoupled files: none.
+- Atoms / phases affected: `C3-AF-04`, `C3-AF-05`, `C3-P19`.
+- Predicate moved: the lightweight factory acceptance gate now requires generated-test compilation and execution markers (`kotlinc ... -include-runtime` and `MainTestKt`) in the canonical scaffold owner, preventing a text-only verifier from masquerading as test coverage.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO`.
+- Why justified: `bash scripts/calculator-prerequisite-gate.sh` and `git diff --check` passed. This is a static contract gate; it does not claim generated runtime execution or focused Gradle test success.
+- HR interrupts: none; focused integration verification remains open.
+- Fingerprints: prerequisite gate current at HEAD; authority fingerprints unchanged.
+- New overall estimate: general App Factory implementation `present, generated-test-contract-gated, integration-test-unverified`; calculator one-shot `NO`.
+
+### 2026-08-03T13:31:00Z · Agent: Codex GPT-5 · Batch: app-factory-gated-generation-034
+- Paths touched: `src/main/kotlin/atropos/core/factory/AppProjectMutationGate.kt` (new, +31), `src/main/kotlin/atropos/core/factory/AppProjectGenerator.kt` (+5), `src/main/kotlin/atropos/core/factory/RepoScaffold.kt` (+12/-2), `src/test/kotlin/atropos/core/factory/AppProjectGeneratorTest.kt` (+1), `scripts/calculator-prerequisite-gate.sh` (+1), and `AGENTS.md` (+this row).
+- New decoupled files: `src/main/kotlin/atropos/core/factory/AppProjectMutationGate.kt`.
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-AF-04`, `C3-AF-05`, `C3-P19`; bounded dispatch support for `C2-P12`, `C2-P14`, `C2-P15`, `C2-P16`.
+- Predicate moved: generated repository mutation now requires the existing `BoundedAgencyGate` before the bounded `build/generated-projects` root is created; generated verification executes the generated test through `kotlinc` when available and retains a deterministic content check when it is not.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO`.
+- Why justified: the scaffold/security source slice compiled successfully into `/tmp/atropos-scaffold-check.jar`; `git diff --check` passed. The broader policy-aware factory integration compile did not yield a reusable artifact and no Gradle test was run, so integration and runtime evidence remain unverified. No full suite, JAR, install, runtime, deployment, or push run.
+- HR interrupts: none; constrained integration verification remains open.
+- Fingerprints: mutation gate source added in this batch; scaffold `11c4c082f4db2ccdc92baf958b3613ca0731626e4003c8fc880e743721511cdf`; generator `84e52e55f91692180007fd584441755defa1f9326bc1801805d503ad23f2d0d3`; prerequisite gate updated and remains lightweight-only.
+- New overall estimate: general App Factory implementation `present, bounded-policy-wired, integration-test-unverified`; calculator one-shot `NO`.
+
+### 2026-08-03T13:42:00Z · Agent: Codex GPT-5 · Batch: app-factory-integration-diagnostic-035
+- Paths touched: `AGENTS.md` (+this row); no additional product files.
+- New decoupled files: none.
+- Atoms / phases affected: integration verification for `C3-AF-01`, `C3-AF-03`, `C3-AF-04`, `C3-AF-05`, and `C3-P19`.
+- Predicate moved: the remaining standalone integration compile limitation is classified precisely rather than treated as a factory failure: the bounded command lacked existing `TerritoryGrantService` and `AtroposRepoRootLocator` dependencies required by the reused `BoundedAgencyGate`/policy owner.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO`.
+- Why justified: the scaffold/security source slice compiled into `/tmp/atropos-scaffold-check.jar`; the broader bounded compile was stopped by its 60-second timeout after reporting only missing existing-owner dependencies, with no factory-specific compiler diagnostic. `bash scripts/calculator-prerequisite-gate.sh` and `git diff --check` pass. No Gradle, full suite, JAR, install, runtime, deployment, or push run.
+- HR interrupts: none; focused Gradle integration verification is still unrun because prior `compileKotlin` stalled.
+- Fingerprints: current `RepoScaffold.kt=e178656b7aae2e63dc114cb7c206d7d04e875f412a7609c646271dc0bb1c1923`; `AppProjectMutationGate.kt=febc1bd3e7ab085ac97c5d243a19531078119069e0b690ea6c14067bbb1c0b8b`; `AppProjectGenerator.kt=517d68e402b635f760a4953fb7ab4d8da834f8a88875acf44c34013488ace914`; prerequisite gate `5f6a600b850de9f884ff50ede37b42bfa119ae0e5356785b41dc88890840d6cd`.
+- New overall estimate: general App Factory implementation `present, source-slice-compiled, integration-test-unverified`; calculator one-shot `NO`.
+
+### 2026-08-03T14:26:37Z · Agent: Codex GPT-5 · Batch: app-factory-plan-evidence-066-EOF
+- Paths touched: `src/main/kotlin/atropos/core/factory/AppProjectGenerator.kt` (+4), `src/test/kotlin/atropos/core/factory/AppProjectGeneratorTest.kt` (+17), `src/main/kotlin/atropos/core/factory/EvidenceManifest.kt` (metadata fields already present), and `AGENTS.md` (+this row).
+- New decoupled files: none; planning evidence remains owned by `EvidenceManifest` and the existing factory generator.
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-AF-04`, `C3-AF-05`, `C3-P19`.
+- Predicate moved: generated repositories now carry the canonical planning DAG ID and planned atom IDs in both the returned project identity and `.atropos/evidence/app-manifest.txt`; the generated-project data model now compiles with that metadata.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO` because the source proof compiler attempt was stopped after 25 seconds without output and focused integration tests remain unrun.
+- Why justified: `bash scripts/calculator-prerequisite-gate.sh` passed. The single bounded `bash scripts/app-factory-source-proof.sh` attempt was stopped at the compiler stall rather than retried; no Gradle, JAR, install, restart, or full suite was run. The added regression test asserts DAG/atom persistence, while runtime execution remains unverified.
+- HR interrupts: none; bounded source-proof compiler stall recorded as inconclusive, not a completion claim.
+- Fingerprints: `AppProjectGenerator.kt=016a62aab6097cc845e6bee05bfdf5de625b23160ab87c334ed9714913670680`; `EvidenceManifest.kt=9a6c796b042b0bc262f4bb270a57aa2dacda46dd2f0992df04d09c8e295f2ed6`; `AppProjectGeneratorTest.kt=9b5cfa54abb12166a0c1bfbaecd3a1454ce0e6303cd22b07c646a786c9364e84`.
+- New overall estimate: general App Factory implementation `present, plan-to-evidence-wired, integration-test-unverified`; calculator one-shot `NO`.
+
+### 2026-08-03T14:35:00Z · Agent: Codex GPT-5 · Batch: app-factory-source-proof-068-EOF
+- Paths touched: `AGENTS.md` (+this row); source and proof-harness paths were unchanged from batch 067.
+- New decoupled files: none.
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-AF-04`, `C3-AF-05`, `C3-P19`.
+- Predicate moved: the generic source-level factory proof is now green after the planning-evidence model repair; calculator and notes requests both generated real repositories with README/LICENSE/.gitignore/AGENTS.md, compiled/executed generated tests, created Git history, exported archives, and persisted tree evidence.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO` pending focused repository integration tests and wider runtime evidence.
+- Why justified: one bounded `ATROPOS_SOURCE_PROOF_TIMEOUT_SECONDS=120 bash scripts/app-factory-source-proof.sh` run returned `APP_FACTORY_SOURCE_PROOF_OK`; the prerequisite gate and `git diff --check` also passed. No Gradle, full suite, JAR, install, or restart run. Existing policy and NL proof results were reused because their inputs did not change.
+- HR interrupts: none.
+- Fingerprints: `AppProjectGenerator.kt=016a62aab6097cc845e6bee05bfdf5de625b23160ab87c334ed9714913670680`; `EvidenceManifest.kt=9a6c796b042b0bc262f4bb270a57aa2dacda46dd2f0992df04d09c8e295f2ed6`; `AppProjectGeneratorTest.kt=9b5cfa54abb12166a0c1bfbaecd3a1454ce0e6303cd22b07c646a786c9364e84`; `app-factory-source-proof.sh=657fac460c28797bf7a15730c5f2874cfb532bb706cec69aa77f76e1837b8d88`.
+- New overall estimate: general App Factory implementation `present, source-proof-green, focused-integration-unverified`; calculator one-shot `NO`.
+
+### 2026-08-03T14:42:00Z · Agent: Codex GPT-5 · Batch: calculator-n005-final-command-069-EOF
+- Paths touched: `scripts/calculator-final-acceptance.sh` (new, +22), `scripts/calculator-prerequisite-gate.sh` (+1), and `AGENTS.md` (+this row).
+- New decoupled files: `scripts/calculator-final-acceptance.sh`.
+- Atoms / phases affected: `N005`, `M003`, `A005`, and calculator-path static closure support.
+- Predicate moved: one canonical bounded final-acceptance command now composes the existing Kotlin compatibility, prerequisite-surface, source-to-code trace, proof-script syntax, and diff checks without launching Gradle; it reports runtime/build/install status separately.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO` because focused runtime integration tests and installed proof are separate and unrun.
+- Why justified: `bash scripts/calculator-final-acceptance.sh` returned `N005_FINAL_ACCEPTANCE_COMMAND_OK`, with `KOTLIN_COMPAT_SCAN_OK`, `CALCULATOR_PREREQUISITE_SURFACE_OK`, and `SOURCE_TO_CODE_TRACE_GATE_TEST_OK`. `git diff --check` passed. No Gradle, JAR, install, restart, or deployment run.
+- HR interrupts: none.
+- Fingerprints: `calculator-final-acceptance.sh=d1efdc944ce9dbb2c435a54a4b1a18c6e04ce3903af866805d3e6a1629fc876d`; `calculator-prerequisite-gate.sh=2ae934b8db0ba65f00a74219f909a1474eb443d73cf9f51c1d6a1218b4cf8fe4`.
+- New overall estimate: calculator path `static-acceptance-command-green, runtime-integration-unverified`; one-shot `NO`.
+
+### 2026-08-03T14:51:00Z · Agent: Codex GPT-5 · Batch: calculator-c2-p14-hr-proof-070-EOF
+- Paths touched: `scripts/hr-router-proof.sh` (new, +48), `scripts/calculator-final-acceptance.sh` (+1), `scripts/calculator-prerequisite-gate.sh` (+1), and `AGENTS.md` (+this row).
+- New decoupled files: `scripts/hr-router-proof.sh`.
+- Atoms / phases affected: `C2-P14`, `C2-P12`, `C2-P15`, `C2-P16` dispatch safety support, and `N005` final acceptance.
+- Predicate moved: the canonical HR Router now has a bounded standalone runtime proof covering approval, narrowing/redaction, critical denial, territory metadata, and audit persistence across service restart.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO` pending focused production factory integration verification and installed/runtime proof.
+- Why justified: `bash scripts/calculator-final-acceptance.sh` returned `HR_ROUTER_PROOF_OK` and `N005_FINAL_ACCEPTANCE_COMMAND_OK`; compatibility, prerequisite, source-trace, syntax, and diff checks also passed. No Gradle, full suite, JAR, install, restart, or deployment run.
+- HR interrupts: none.
+- Fingerprints: `hr-router-proof.sh=80e229f86e48cffaaa9734f862a9dd3088c39905c1086e913a64021f96a636a8`; `calculator-final-acceptance.sh=84fe7cbd003d8c8563e0b04c8edb0964b2133ecd253051d00581cf108b7dc166`; `calculator-prerequisite-gate.sh=ef72f25877f14fd3a50e05af5f70dd96b7641f245ddb19539602cd868104d5a1`.
+- New overall estimate: calculator path `static-and-HR-proof-green, production-factory-integration-unverified`; one-shot `NO`.
+
+### 2026-08-03T15:06:00Z · Agent: Codex GPT-5 · Batch: calculator-c2-p16-hierarchy-proof-071-EOF
+- Paths touched: `scripts/hierarchy-dispatch-proof.sh` (new, +1 fixture correction after two explicit refusal assertions), `scripts/calculator-final-acceptance.sh` (+1), `scripts/calculator-prerequisite-gate.sh` (+1), and `AGENTS.md` (+this row).
+- New decoupled files: `scripts/hierarchy-dispatch-proof.sh`.
+- Atoms / phases affected: `C2-P16`, with `C2-P12`/`C2-P15` hierarchy dispatch support and `N005` evidence.
+- Predicate moved: bounded hierarchy dispatch proof now passes for Human Owner → Manager → Worker authority, capability and narrowing territory, and refuses a worker dispatch outside the manager’s assigned scope.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO`; the composite final command was not rerun after the fixture correction, while its previously green component gates remain valid.
+- Why justified: one focused `bash scripts/hierarchy-dispatch-proof.sh` run returned `HIERARCHY_DISPATCH_PROOF_OK`; `git diff --check` passed. The two earlier failures were corrected fixture assumptions, not production failures. No Gradle, full suite, JAR, install, restart, or deployment run.
+- HR interrupts: none.
+- Fingerprints: `hierarchy-dispatch-proof.sh=6af286d36eaa04c49e4a6c196ff80c53e394f8cdb8e36a18b9f2fd1069a2fa58`; `calculator-final-acceptance.sh=cd2ead841c965af109ab4028840e55bfa1a54e4a3e2d3be26559dc02fea6f09b`; `calculator-prerequisite-gate.sh=2731412177c5c0c3f016b3f35f16fe8505ba2e744edd4dd36fae302052c81231`.
+- New overall estimate: calculator path `static, source, HR, and hierarchy proofs green; production-factory-integration-unverified`; one-shot `NO`.
+
+### 2026-08-03T15:18:00Z · Agent: Codex GPT-5 · Batch: calculator-c2-p12-p15-governance-proof-072-EOF
+- Paths touched: `scripts/governance-proof.sh` (new, +65), `scripts/calculator-final-acceptance.sh` (+1), `scripts/calculator-prerequisite-gate.sh` (+1), and `AGENTS.md` (+this row).
+- New decoupled files: `scripts/governance-proof.sh`.
+- Atoms / phases affected: `C2-P12`, `C2-P15`, with `C2-P16`/`C2-P14` support and `N005` evidence.
+- Predicate moved: Director advisory now has bounded proof for territory-drift blocking and redacted durable observation persistence; Auditor now has bounded proof for territory findings, independent promotion blocking, and self-approval refusal.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO` pending production factory integration and installed/runtime proof.
+- Why justified: one focused `bash scripts/governance-proof.sh` run returned `GOVERNANCE_PROOF_OK`; `git diff --check` passed. The proof uses a local verifier stub only to isolate Auditor governance semantics; it does not replace the canonical verifier. No Gradle, full suite, JAR, install, restart, or deployment run.
+- HR interrupts: none.
+- Fingerprints: `governance-proof.sh=05056b6b876e879b8bf9c052aee2f1315a3f4b9b3273064e1d6b6945bf45bc43`; `hierarchy-dispatch-proof.sh=6af286d36eaa04c49e4a6c196ff80c53e394f8cdb8e36a18b9f2fd1069a2fa58`; `hr-router-proof.sh=80e229f86e48cffaaa9734f862a9dd3088c39905c1086e913a64021f96a636a8`.
+- New overall estimate: calculator path `static, source, HR, hierarchy, Director, and Auditor proofs green; production-factory-integration-unverified`; one-shot `NO`.
+
+### 2026-08-03T15:31:00Z · Agent: Codex GPT-5 · Batch: calculator-production-wiring-proof-073-EOF
+- Paths touched: `scripts/app-factory-wiring-proof.sh` (new, +34), `scripts/calculator-final-acceptance.sh` (+1), `scripts/calculator-prerequisite-gate.sh` (+1), and `AGENTS.md` (+this row).
+- New decoupled files: `scripts/app-factory-wiring-proof.sh`.
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-AF-04`, `C3-AF-05`, `C3-P19`, with hierarchy-safe dispatch support.
+- Predicate moved: the production source call chain is now statically proven from ordinary NL routing through `/factory`, `FactoryCommandHandler`, `AppFactoryRouter.runLocal`, planning DAG, mutation gate, generator verification, Git initialization, project registration, and evidence manifest.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO` because `atropos.jar` SHA-256 `91dd9af2a43f03c7b486f2a7feed485c25ed376be86691e118fad572c6b8315f` is stale against the current source tree.
+- Why justified: one focused `bash scripts/app-factory-wiring-proof.sh` run returned `APP_FACTORY_WIRING_PROOF_OK`; shell syntax and `git diff --check` passed. No stale-JAR runtime claim was made, and no Gradle/build/install/restart run occurred.
+- HR interrupts: none; installed runtime is fingerprint-invalid, not a human-mandatory blocker because a current artifact can be produced by the normal build gate later.
+- Fingerprints: `app-factory-wiring-proof.sh=0ce4e1ec7b35f987f2f7339d09819d2026103afd1d8b639d1ec1e8d1d4a5ecce`; `calculator-final-acceptance.sh=56704e302eb3ca4146fd1237854f160760274bdb38224c63d163768e6f1e9c28`; `calculator-prerequisite-gate.sh=ec1386e61279d443dbc9b40a500b5272d8b4c9c35d46df1f3804d0b17d51a873`.
+- New overall estimate: calculator path `static/source/governance/wiring-green; current-artifact-runtime-unverified`; one-shot `NO`.
+
+### 2026-08-03T15:48:00Z · Agent: Codex GPT-5 · Batch: calculator-plan-evidence-proof-074-EOF
+- Paths touched: `scripts/app-factory-source-proof.sh` (+8), and `AGENTS.md` (+this row).
+- New decoupled files: none; planning evidence remains owned by the existing factory manifest/generator.
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-AF-05`, `C3-P19`.
+- Predicate moved: the generic source proof now exercises the parsed-spec generation overload and verifies that planning DAG and atom IDs persist in the generated repository evidence manifest.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO` because current installed-runtime proof is fingerprint-invalid and focused production integration tests remain separate.
+- Why justified: one corrected bounded source-proof run returned `APP_FACTORY_SOURCE_PROOF_OK`; `git diff --check` passed. The first attempt failed immediately on a proof-fixture overload mismatch and was corrected before the passing run. No Gradle or full build run.
+- HR interrupts: none.
+- Fingerprints: `app-factory-source-proof.sh=e38e7e7b05e5e5b84bbc98b7f60a3c6316a447bc80a4dc82565de2565b5674f1`.
+- New overall estimate: calculator path `generic-source-proof-with-plan-evidence-green; production-artifact-runtime-unverified`; one-shot `NO`.
+
+### 2026-08-03T16:04:00Z · Agent: Codex GPT-5 · Batch: calculator-generic-asset-identity-075-EOF
+- Paths touched: `src/main/kotlin/atropos/core/factory/AppFactoryRouter.kt` (+2/-2), `scripts/app-factory-wiring-proof.sh` (+1), and `AGENTS.md` (+this row).
+- New decoupled files: none; asset naming remains part of the existing factory router mapping.
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-P19` generic app identity.
+- Predicate moved: optional generated assets now use the parsed app name and kind rather than the classifier label, preventing different app requests from sharing the generic `app_build` identity.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO` because the installed artifact is stale and focused production integration tests remain unrun.
+- Why justified: `bash scripts/app-factory-wiring-proof.sh` returned `APP_FACTORY_WIRING_PROOF_OK`; `git diff --check` passed. No Gradle, JAR, install, restart, or deployment run.
+- HR interrupts: none.
+- Fingerprints: `AppFactoryRouter.kt=76931113715605f02124616d22b24bf59917e569013a6f0a9cd5a8e7d1fe981e`; `app-factory-wiring-proof.sh=92460e7c4d28a2471469cef5fd0a96d6abf6f5182fb5f6c52fe9364085d4d4e4`.
+- New overall estimate: calculator path `generic-identity-wiring-green; current-artifact-runtime-unverified`; one-shot `NO`.
+
+### 2026-08-03T16:22:00Z · Agent: Codex GPT-5 · Batch: calculator-production-generator-proof-076-EOF
+- Paths touched: `scripts/app-factory-production-proof.sh` (new, +68), `scripts/calculator-final-acceptance.sh` (+1), `scripts/calculator-prerequisite-gate.sh` (+1), and `AGENTS.md` (+this row).
+- New decoupled files: `scripts/app-factory-production-proof.sh`.
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-AF-04`, `C3-AF-05`, `C3-P19`, with real policy/territory mutation integration.
+- Predicate moved: a bounded proof harness now exists for the real generator plus real `AppProjectMutationGate`; runtime proof did not complete because its source compilation exceeded the 120-second bound.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO`.
+- Why justified: `git diff --check` passed; `app-factory-production-proof.sh` timed out at 120 seconds with no compiler diagnostic and was not retried. The separate real policy proof, generic source proof, and static wiring proof remain valid, but they do not prove this combined integration. No Gradle, JAR, install, restart, or deployment run.
+- HR interrupts: none; bounded standalone compiler timeout recorded as inconclusive.
+- Fingerprints: `app-factory-production-proof.sh=6fcb594950e06643c0512bf3d0e11b812ab109748ec6851269753335f7789f25`; `calculator-final-acceptance.sh=b48a29231e304083f27c5786dcedb67c53ffe3fad2222f20db85c48b39b38f`; `calculator-prerequisite-gate.sh=5275f98df89139a79ee453acaeed4fa86bd51e8a144a4ed30ecbc0e4e6eb2545`.
+- New overall estimate: calculator path `source/policy/wiring/governance green; combined production-generator proof inconclusive; installed runtime unverified`; one-shot `NO`.
+
+### 2026-08-03T16:46:00Z · Agent: Codex GPT-5 · Batch: calculator-production-generator-proof-077-EOF
+- Paths touched: `scripts/app-factory-production-proof.sh` (+1 command-mode correction), and `AGENTS.md` (+this row).
+- New decoupled files: none; the existing production-generator proof owner was optimized without changing product behavior.
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-AF-04`, `C3-AF-05`, `C3-P19`.
+- Predicate moved: the real production generator plus real mutation gate now has a passing bounded proof, including generated test execution, required repository files, Git history, archive export, and planning evidence.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO` because `AppFactoryRouter.runLocal` installed-runtime proof and current JAR packaging remain unrun.
+- Why justified: one bounded `ATROPOS_FACTORY_PROOF_TIMEOUT_SECONDS=120 bash scripts/app-factory-production-proof.sh` run returned `APP_FACTORY_PRODUCTION_PROOF_OK`; `git diff --check` passed. The prior timeout was resolved by using class-directory compilation and the Kotlin runner instead of packaging a temporary runtime jar. No Gradle, full suite, install, restart, or deployment run.
+- HR interrupts: none.
+- Fingerprints: `app-factory-production-proof.sh=c0d77ac5615aede375f1dbf93db9e210d5ef1ee02146de726d9640b017b4c65d`.
+- New overall estimate: calculator path `source/policy/production-generator/wiring/governance green; AppFactoryRouter and installed artifact unverified`; one-shot `NO`.
+
+### 2026-08-03T17:02:00Z · Agent: Codex GPT-5 · Batch: calculator-installed-proof-handoff-078-EOF
+- Paths touched: `scripts/app-factory-installed-proof.sh` (new, +39), `scripts/calculator-prerequisite-gate.sh` (+1), and `AGENTS.md` (+this row).
+- New decoupled files: `scripts/app-factory-installed-proof.sh`.
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-AF-05`, `C3-P19` installed-runtime handoff.
+- Predicate moved: a portable operator proof now accepts an explicit current JAR, runs the generic NL `/factory run` request, verifies generated project/commit/evidence/planning output, and records JAR/output hashes.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO`; the current JAR is stale and was not executed.
+- Why justified: `bash -n` and `git diff --check` passed. The script has not been run against an artifact, so no installed-runtime success is claimed.
+- HR interrupts: none; this is a handoff artifact. A fresh JAR is still required before execution.
+- Fingerprints: `app-factory-installed-proof.sh=545b570417011effb0f0250948460bb8ec37970cd8e4d1f9923e14deadaa82ff`.
+- New overall estimate: calculator path `code/proofs/handoff-ready; installed-runtime-unverified`; one-shot `NO`.
+
+### 2026-08-03T17:14:00Z · Agent: Codex GPT-5 · Batch: calculator-installed-proof-portability-079-EOF
+- Paths touched: `scripts/app-factory-installed-proof.sh` (+1), and `AGENTS.md` (+this row).
+- New decoupled files: none; installed proof remains owned by the existing handoff script.
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-AF-05`, `C3-P19` portability edge.
+- Predicate moved: the installed proof now resolves and enters the ATROPOS root before launching the supplied JAR, so its generated repository and evidence paths are independent of the caller’s working directory.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO`; no current artifact was available for runtime execution.
+- Why justified: `bash -n scripts/app-factory-installed-proof.sh` and `git diff --check` passed. The stale JAR was not run.
+- HR interrupts: none.
+- Fingerprints: `app-factory-installed-proof.sh=48e0c8686fdacb57d0143311bcb974b0e8779cd9b1c6dec3d965697ef3245fea`.
+- New overall estimate: calculator path `code/proofs/portable-installed-handoff-ready; runtime-unverified`; one-shot `NO`.
+
+### 2026-08-03T17:28:00Z · Agent: Codex GPT-5 · Batch: calculator-j009-endpoint-proof-080-EOF
+- Paths touched: `scripts/endpoint-manifest-proof.sh` (new, +36), `scripts/calculator-final-acceptance.sh` (+1), `scripts/calculator-prerequisite-gate.sh` (+1), and `AGENTS.md` (+this row).
+- New decoupled files: `scripts/endpoint-manifest-proof.sh`.
+- Atoms / phases affected: `J009`, `N004`, and calculator-path endpoint parity support.
+- Predicate moved: every canonical registered endpoint now has a bounded proof for owner/input/output/error/auth/timeout/retry/test metadata, and Git status lookup preserves its declared side effect.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO`; installed runtime is still unrun.
+- Why justified: one focused `bash scripts/endpoint-manifest-proof.sh` run returned `ENDPOINT_MANIFEST_PROOF_OK`; `git diff --check` passed. No Gradle, JAR, install, restart, or deployment run.
+- HR interrupts: none.
+- Fingerprints: `endpoint-manifest-proof.sh=36ed0847d2e4fa471dafcac6a510c4a7a51119abe0d61daca43d337637365b0`.
+- New overall estimate: calculator path `endpoint/source/policy/wiring proofs green; installed-runtime-unverified`; one-shot `NO`.
+
+### 2026-08-03T15:05:33Z · Agent: Codex GPT-5 · Batch: calculator-static-reuse-audit-081-EOF
+- Paths touched: `AGENTS.md` (+this row); no product-code changes.
+- New decoupled files: none.
+- Atoms / phases affected: calculator-path evidence reuse; `N005` static prerequisite surface.
+- Predicate moved: current source state was rechecked without redundant heavy execution; the general factory prerequisite surface remains green and calculator-specific product architecture remains absent.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO` because no current-fingerprint JAR has been supplied and the installed-runtime proof is therefore unrun.
+- Why justified: `bash scripts/calculator-prerequisite-gate.sh` returned `CALCULATOR_PREREQUISITE_SURFACE_OK`; `git diff --check` passed; endpoint proof evidence and prior production proof fingerprints remain unchanged. No Gradle, JAR build, installation, restart, or deployment was rerun.
+- HR interrupts: none. The next gate requires an externally produced current JAR; no secret, paid-provider, or destructive operation was requested.
+- Fingerprints: `scripts/calculator-prerequisite-gate.sh=981b8c073aca94d06c7f6f36db4336ded48446059092f5a36ad777797a2e639a`; `scripts/app-factory-installed-proof.sh=48e0c8686fdacb57d0143311bcb974b0e8779cd9b1c6dec3d965697ef3245fea`.
+- New overall estimate: calculator path `static prerequisite/source/policy/wiring/governance/production proofs green; installed-runtime-unverified`; one-shot `NO`.
+
+### 2026-08-03T15:12:00Z · Agent: Codex GPT-5 · Batch: calculator-factory-completion-order-082-EOF
+- Paths touched: `src/main/kotlin/atropos/cli/FactoryCommandHandler.kt` (+10/-3), `src/test/kotlin/atropos/cli/FactoryCommandHandlerTest.kt` (new, +43), `AGENTS.md` (+this row).
+- New decoupled files: `src/test/kotlin/atropos/cli/FactoryCommandHandlerTest.kt`.
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-AF-05`, `C3-P19`, `N005` false-success edge.
+- Predicate moved: `/factory run` now emits a completion claim only after the general factory execution returns successfully; runtime failures emit an error and no completion claim.
+- % delta: unchanged; no phase percentage claim. Focused tests were written but not run; calculator one-shot remains `NO` pending current-fingerprint installed proof.
+- Why justified: the handler now evaluates the factory result before rendering `factory run completed:`; two focused tests cover success ordering and failure suppression. `git diff --check` passed. No Gradle, JAR, install, restart, or deployment run.
+- HR interrupts: none.
+- Fingerprints: `FactoryCommandHandler.kt` and the new test are pending final repository fingerprint after the operator build gate.
+- New overall estimate: calculator path `general routing/source/policy/wiring/governance/production proofs green; completion-order fix written, focused test unrun; installed-runtime-unverified`; one-shot `NO`.
+
+### 2026-08-03T15:08:10Z · Agent: Codex GPT-5 · Batch: calculator-factory-static-gates-083-EOF
+- Paths touched: `AGENTS.md` (+this row); no product-code changes.
+- New decoupled files: none.
+- Atoms / phases affected: `M003`, `N005`, `C3-AF-01`, `C3-AF-03`, `C3-AF-05`, `C3-P19`.
+- Predicate moved: the new factory completion-order seam is covered by valid shell/static checks, and the Kotlin compatibility scan remains green without executing a build.
+- % delta: unchanged; focused Kotlin tests remain written/not run. Calculator one-shot remains `NO` pending a current-fingerprint installed proof.
+- Why justified: `bash scripts/kotlin-compat-scan.sh` returned `KOTLIN_COMPAT_SCAN_OK`; all affected proof scripts passed `bash -n`; `git diff --check` passed. No Gradle, JAR, install, restart, or deployment run.
+- HR interrupts: none.
+- Fingerprints: `FactoryCommandHandler.kt` and `FactoryCommandHandlerTest.kt` remain part of the dirty worktree; final hashes deferred until the current artifact gate.
+- New overall estimate: calculator path `general routing/source/policy/wiring/governance/production proofs green; completion ordering statically validated; focused test unrun; installed-runtime-unverified`; one-shot `NO`.
+
+### 2026-08-03T15:16:00Z · Agent: Codex GPT-5 · Batch: calculator-verification-evidence-digest-084-EOF
+- Paths touched: `src/main/kotlin/atropos/core/factory/EvidenceManifest.kt` (+4), `src/main/kotlin/atropos/core/factory/AppProjectGenerator.kt` (+22/-2), `src/test/kotlin/atropos/core/factory/AppProjectGeneratorTest.kt` (+1), `AGENTS.md` (+this row).
+- New decoupled files: none; existing evidence and generator owners extended in place.
+- Atoms / phases affected: `C3-AF-03`, `C3-AF-04`, `C3-AF-05`, `C3-P19` verification/evidence edge.
+- Predicate moved: generated-project evidence now includes a SHA-256 digest of the actual bounded verification command output, rather than only a descriptive verification label.
+- % delta: unchanged; focused tests are written but not run. Calculator one-shot remains `NO` pending current-fingerprint artifact proof.
+- Why justified: `AppProjectGenerator` now records the output returned by the existing generated `verify.sh` execution and `EvidenceManifest` renders its digest; the generator test asserts the evidence field. `git diff --check` passed. No Gradle, JAR, install, restart, or deployment run.
+- HR interrupts: none.
+- Fingerprints: pending final artifact fingerprint after operator build gate.
+- New overall estimate: calculator path `general routing/source/policy/wiring/governance/production proofs green; completion ordering and verification-output evidence written, focused tests unrun; installed-runtime-unverified`; one-shot `NO`.
+
+### 2026-08-03T15:10:42Z · Agent: Codex GPT-5 · Batch: calculator-installed-nl-proof-085-EOF
+- Paths touched: `scripts/app-factory-installed-proof.sh` (+7/-3), `AGENTS.md` (+this row).
+- New decoupled files: none; the existing installed-proof handoff remains the canonical owner.
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-AF-05`, `C3-P19`, `N005` NL-to-factory edge.
+- Predicate moved: the installed acceptance handoff now sends a plain natural-language app request through the normal router instead of invoking `/factory run` directly; arbitrary prompts can be supplied through `ATROPOS_FACTORY_PROMPT`.
+- % delta: unchanged; no runtime proof claim. Calculator one-shot remains `NO` because the current-fingerprint JAR is still unavailable.
+- Why justified: `bash -n scripts/app-factory-installed-proof.sh` and `git diff --check` passed. The script records only a prompt SHA-256, not raw prompt text, and has not been run against a stale artifact.
+- HR interrupts: none.
+- Fingerprints: `scripts/app-factory-installed-proof.sh=e3cab5ec79e3ff6f601adb4fe001a3f00fc8eaf31b053cdbcfcdc2c0b48f8437`.
+- New overall estimate: calculator path `general NL routing/source/policy/wiring/governance/production proofs green; installed NL handoff ready, runtime-unverified`; one-shot `NO`.
+
+### 2026-08-03T15:14:00Z · Agent: Codex GPT-5 · Batch: calculator-artifact-owner-audit-086-EOF
+- Paths touched: `AGENTS.md` (+this row); no product-code changes.
+- New decoupled files: none.
+- Atoms / phases affected: `C3-AF-03`, `C3-P19`, `N005`; non-duplication audit.
+- Predicate moved: the apparent `AppFactoryRouter`/`ArtifactPipeline` overlap is classified by callers and responsibility: source-tree generation remains with `AppFactoryRouter`, while artifact metadata, verification, install-proof, and evaluation callers remain with `ArtifactPipeline`.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains `NO` pending current-fingerprint installed proof.
+- Why justified: caller search found `ArtifactPipeline` consumed by `EvidenceCollector`, `EvaluationEngine`, `AutonomousOrchestrator`, hierarchy, and artifact verification, while the CLI factory route reaches `AppFactoryRouter`; no safe deletion or thin-facade migration is justified in this batch. No build or runtime gate was rerun.
+- HR interrupts: none.
+- Fingerprints: no product files changed; prior installed handoff fingerprint remains `e3cab5ec79e3ff6f601adb4fe001a3f00fc8eaf31b053cdbcfcdc2c0b48f8437`.
+- New overall estimate: calculator path `general NL routing/source/policy/wiring/governance/production proofs green; artifact-owner overlap classified; runtime-unverified`; one-shot `NO`.
+
+### 2026-08-03T15:50:46Z · Agent: Codex GPT-5 · Batch: nl-factory-ui-safety-087-EOF
+- Paths touched: `src/main/kotlin/atropos/cli/CommandRouter.kt` (+36/-2), `src/main/kotlin/atropos/cli/NaturalLanguageRiskGuard.kt` (+31), `src/main/kotlin/atropos/cli/ProviderChatDispatcher.kt` (+4), `src/main/kotlin/atropos/cli/ProviderCommandHandler.kt` (+4/-2), `src/main/kotlin/atropos/cli/StatusCommandHandler.kt` (+3/-2), `src/main/kotlin/atropos/cli/commands/HierarchyCommand.kt` (+1/-1), `src/main/kotlin/atropos/cli/input/CommandRegistry.kt` (+4/-1), `src/main/kotlin/atropos/cli/ui/AnsiTerminalEngine.kt` (+30/-3), `src/main/kotlin/atropos/cli/ui/StatusProviderDescriptorRenderer.kt` (+2/-1), `src/main/kotlin/atropos/cli/ui/StatusQuotaRenderer.kt` (+8/-3), `src/main/kotlin/atropos/cli/ui/ViewportLayout.kt` (+2/-2), `src/main/kotlin/atropos/cli/ui/design/ThemePalette.kt` (+2/-2), `src/test/kotlin/atropos/cli/NaturalLanguageRiskGuardTest.kt` (+23), `src/test/kotlin/atropos/cli/ui/CommandPaletteRendererTest.kt` (+10)`, and existing factory/NL files remain in the dirty batch.
+- New decoupled files: `NaturalLanguageRiskGuard.kt`, `NaturalLanguageRiskGuardTest.kt`.
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-AF-05`, `C3-P19`, `N005`; HOE progressive disclosure, provider visibility, responsive terminal layout; risk-confirmation edge.
+- Predicate moved: plain NL app requests remain deterministically routed to the general `AppFactoryRouter`; risky NL requests now require explicit yes/no confirmation before canonical command execution; `/artifact build` is explicitly metadata-only; execution stages are visible with `/verbose`; provider route details are expandable with `/status route --full`; active provider identity follows `/use`; palette selection has readable foreground/background contrast.
+- % delta: unchanged; no phase percentage claim. Focused Kotlin tests were written but not run. Calculator one-shot remains `NO` pending operator rebuild and current-fingerprint runtime proof.
+- Why justified: `git diff --check` and shell syntax checks passed. The false `/artifact` success path is now labeled rather than promoted as App Factory evidence. Runtime proof, Gradle, JAR, install, restart, and deployment were not run. Verbose output exposes execution metadata only, never private model reasoning.
+- HR interrupts: none. No secrets, paid unlock, destructive git operation, or device installation was performed.
+- Fingerprints: `NaturalLanguageRiskGuard.kt=6b9bc0ae984eb6156972e5742e1614a02e14f9e1f6dba270a32e7641d18249d1`, `CommandRouter.kt=f1123011104b16ebf021e763060128fe886b4985dd13f8e9328b1b26ada4edff`, `AnsiTerminalEngine.kt=0b43f915a3a481caf9831419117597a78c7a3823aa254c67467b0e5eec7b5d16`, `ThemePalette.kt=588a191bfa0dabaad75d52269e1f65287c9737ef35bd337bb75e9f59ad6e2d95`, `StatusQuotaRenderer.kt=21b6d65f90e27d41ac33d6b38ef79bae5c8b04e933d09185c21bf5c38bfeaf8d`, `ProviderChatDispatcher.kt=d3704e2b33a103c02343f24d41c4f7c1d41acaf8e1ab3a4bb4d9a7b85e9e9655`, `NaturalLanguageRiskGuardTest.kt=6e8609b34fac012540363d47f13a63c9e9c44566d90e51db5dab59d80f2e7967`, `CommandPaletteRendererTest.kt=9be54d8bffd8af3b0c1af3127ab024821fdc3a7bd55febefc9d50c729971f331`.
+- New overall estimate: calculator path `general routing/source/policy/wiring/static proof green; NL risk confirmation and UI observability written; focused tests unrun; runtime-unverified`; one-shot `NO`.
+
+### 2026-08-03T15:56:00Z · Agent: Codex GPT-5 · Batch: factory-nl-route-proof-088-EOF
+- Paths touched: `src/main/kotlin/atropos/cli/CommandRouter.kt` (+38/-3), `src/test/kotlin/atropos/cli/CommandRouterHelpTest.kt` (+42).
+- New decoupled files: none; the router remains the canonical NL command boundary and `AppFactoryRouter` remains the canonical source-tree factory owner.
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-AF-05`, `C3-P19`, `N005`.
+- Predicate moved: a plain natural-language app request is proven at the command-router seam to translate to the factory command, reach the injected factory execution path, and avoid provider chat; existing generator coverage proves the same general API writes a real project tree and Git history for calculator, todo, notes, and planned app requests.
+- % delta: unchanged; no phase percentage claim. Focused tests were added but not run. One-shot remains `NO` until the operator rebuilds the JAR and reruns the installed runtime proof against this source fingerprint.
+- Why justified: `SelfHostNaturalLanguageRouter` maps `build/create/make/generate/write/implement` app requests to `/factory run`; `FactoryCommandHandler` delegates its default run to `AppFactoryPlanRenderer`, which delegates to `AppFactoryRouter.runLocal`; `AppProjectGeneratorTest` verifies real source/test files, README, LICENSE, `.gitignore`, `AGENTS.md`, evidence, and a 40-character Git commit. `git diff --check` and shell syntax checks passed; no Gradle or JAR run occurred.
+- HR interrupts: none. Operator rebuild/runtime proof is the next required external step.
+- Fingerprints: `CommandRouter.kt=d181e36863f791b6a2d6334100a739cb38b1affc3cf756d1e7d42acd1a32191d`, `CommandRouterHelpTest.kt=e050f3aad4efd41ab1dbcdf209327a3949990defdbe35779257c454ab75a687a`, `AppFactoryRouter.kt=76931113715605f02124616d22b24bf59917e569013a6f0a9cd5a8e7d1fe981e`, `AppProjectGenerator.kt=b099b2f1bf01ac6010e98e81161abaca9375ecb8353689c2bf13c6e72431b2`, `AppProjectGeneratorTest.kt=51e7e708523af9241aa2da0c6575e1e93e2c380fb88cde19918ffeb0b3990d53`, `SelfHostNaturalLanguageRouter.kt=8e0393155e51f24c134bde63e0f278d3f21e9a3c913319777ccf73b8cc60e7d7`.
+- New overall estimate: calculator path `general source-tree implementation and command-router proof written; focused tests unrun; current-JAR runtime-unverified`; one-shot `NO`.
+
+### 2026-08-03T16:05:00Z · Agent: Codex GPT-5 · Batch: portable-terminal-ux-089-EOF
+- Paths touched: `src/main/kotlin/atropos/cli/input/CommandRiskCatalog.kt` (+31), `src/main/kotlin/atropos/cli/input/CommandRegistry.kt` (+1), `src/main/kotlin/atropos/cli/ui/CommandPaletteRenderer.kt` (+10/-6), `src/main/kotlin/atropos/cli/ui/TerminalCanvas.kt` (+1/-1), `src/main/kotlin/atropos/cli/ui/ComposerRenderer.kt` (+1/-1), `src/main/kotlin/atropos/cli/ui/StatusLineRenderer.kt` (+1/-1), `src/main/kotlin/atropos/cli/ui/ErrorRenderer.kt` (+2/-2), `src/main/kotlin/atropos/cli/ui/CommandRegistryRenderer.kt` (+3/-3), `src/main/kotlin/atropos/cli/ui/AnsiTerminalEngine.kt` (+1/-1), `src/main/kotlin/atropos/cli/ui/DialogRenderer.kt` (+3/-3), `src/test/kotlin/atropos/cli/ui/CommandPaletteRendererTest.kt` (+1), `AGENTS.md` (+this row).
+- New decoupled files: `CommandRiskCatalog.kt`.
+- Atoms / phases affected: HOE responsive layout, command palette, provider/operator discoverability, risk-policy presentation.
+- Predicate moved: all palette commands now receive a deterministic `AUTOMATIC`, `MODERATE`, or `RISKY` classification from one policy table; the palette displays that classification; terminal geometry and shared renderers no longer force 36–40 columns, allowing desktop width expansion and phone/zoom reflow; keyboard-driven expansion remains portable across desktop terminals and Termux.
+- % delta: unchanged; no phase percentage claim. Focused tests were written but not run. Runtime visual verification remains external.
+- Why justified: `CommandRiskCatalog` classifies the complete command vocabulary by exact/prefix policy, while `CommandEntry` carries the derived label. Geometry, composer, status, error, help, dialog, and canvas paths now use actual width bounds instead of artificial minimum widths. `git diff --check` passed; no Gradle, JAR, install, or runtime proof was run.
+- HR interrupts: none. Mouse input was not assumed or added; keyboard/command expansion is the portable contract for phone and desktop terminal sessions.
+- Fingerprints: `CommandRiskCatalog.kt=a59424bc33bfbf9993be33dcc38f12dc44741859faf559f6f83ff8854e76d30f`, `TerminalCanvas.kt=ca530ec8dcb45d8c519c9513d2ce5c7530d8f53370d2e5d96b6ddba477d403e4`, `ComposerRenderer.kt=33d3cbed451bca4269abb568b38ac777ccf4542137f6e8a4cc232fa79fc2b592`, `StatusLineRenderer.kt=871590d01922c9cd0a5ebc952bceea70fb4bf3c2ff93a6baf6913c2e7b59d193`, `ErrorRenderer.kt=a1998ac261241720dab6594fadb9e8d993dcaef64cf2b66b8ff5613d8edbfded`, `CommandRegistryRenderer.kt=4d4967759bb4612ed95bfdbddfd0916b57220e2bbc1f80ddb63de1562715122d`, `DialogRenderer.kt=17b40ae1348be1e0e5b5ddd86f0fb41ba91aae7c8662296c666513d19b3711e8`, `CommandPaletteRenderer.kt=7fb44013a3ca092ebb38ac38ef12dc44718`, `CommandPaletteRendererTest.kt=b40a763d1675e54fbde98e446f721fb2703aee9dcd3444115ed51534563cde5f`.
+- New overall estimate: unchanged; UI implementation expanded for portable geometry and policy visibility, but focused tests and fresh-JAR visual/runtime proof remain pending.
+
+### 2026-08-03T16:14:00Z · Agent: Codex GPT-5 · Batch: nl-command-rewrite-090-EOF
+- Paths touched: `src/main/kotlin/atropos/cli/input/CommandCompleter.kt` (+9), `src/test/kotlin/atropos/cli/input/CommandCompleterTest.kt` (+8), `src/main/kotlin/atropos/cli/ui/CommandPaletteRenderer.kt` (-10/+6), `src/test/kotlin/atropos/cli/ui/CommandPaletteRendererTest.kt` (-1), `AGENTS.md` (+this row).
+- New decoupled files: none.
+- Atoms / phases affected: `C3-AF-01`, `C3-P19`, NL command routing; HOE command palette clarity.
+- Predicate moved: interactive Enter no longer rewrites ordinary multi-word natural-language prompts into any slash command before `CommandRouter` receives them; explicit slash commands, single-word aliases, and self-host vocabulary remain completable. Risk classifications remain internal and are no longer displayed in the palette.
+- % delta: unchanged; no phase percentage claim. Focused completer tests were written but not run. Runtime proof remains pending.
+- Why justified: `Main.runInteractive` still uses the canonical completer, but `resolveSubmission` now refuses non-slash multi-word text unless it starts with explicit `self-host`; the new regression test covers the exact calculator prompt. `git diff --check` passed. No build, JAR, install, or runtime proof was run.
+- HR interrupts: none.
+- Fingerprints: `CommandCompleter.kt=2e03b5f13779bf614676c018bd4fb5fe23d4c30963eb3560b2b9c481c4849f58`, `CommandCompleterTest.kt=a92ae74fb9aa886e79d61648ab68be8bba47dee49f2029841d7b819a52d439f3`, `CommandPaletteRenderer.kt=2f7cafcb6c15369e70fd11ad61439bbabd6d0da53d2a21e663e723cee3e6d321`, `CommandRiskCatalog.kt=a59424bc33bfbf9993be33dcc38f12dc44741859faf559f6f83ff8854e76d30f`.
+- New overall estimate: calculator path `general NL routing protected from pre-router command rewriting; real source-tree implementation present; focused tests unrun; current-JAR runtime-unverified`; one-shot `NO`.
+
+### 2026-08-03T16:25:00Z · Agent: Codex GPT-5 · Batch: artifact-deliverable-separation-091-EOF
+- Paths touched: `src/main/kotlin/atropos/core/artifact/ArtifactPipeline.kt` (+74/-2), `src/main/kotlin/atropos/cli/commands/HierarchyCommand.kt` (+4/-3), `src/test/kotlin/atropos/core/artifact/ArtifactDeliverableTest.kt` (+55).
+- New decoupled files: `ArtifactDeliverableTest.kt`.
+- Atoms / phases affected: artifact ownership and CLI deliverable semantics; `C3-AF-03` separation from App Factory.
+- Predicate moved: `/artifact build <prompt>` now writes a real workspace deliverable under `.atropos/artifacts/deliverables/`, persists its artifact record and size/hash evidence, redacts secret-like prompt content, and reports the concrete path; it no longer invokes the validation-JAR generator or App Factory scaffolding.
+- % delta: unchanged; no phase percentage claim. Focused artifact tests were written but not run. App Factory runtime proof remains pending.
+- Why justified: `HierarchyCommand` now calls the existing canonical `ArtifactPipeline.createDeliverable`; the new focused tests assert a real file, 64-character SHA-256, passing evidence, no `build/validation.jar`, and prompt redaction. The existing `ArtifactPipeline.build(FactoryPlan)` remains for non-CLI factory/evaluation callers and was not silently reclassified; App Factory source-tree generation remains owned by `AppFactoryRouter`.
+- HR interrupts: none. No Gradle, JAR, install, commit, or deployment operation was performed.
+- Fingerprints: `ArtifactPipeline.kt=6d2cc988970a0867bce1c7b89d1fb75610ea31539c17550693c4b8d9d8ad5fc6`, `HierarchyCommand.kt=8c6d3668bf1b9750d5bf36d5a0a3866356eb07ec5e4dff77cbe159bba6ecca9a`, `ArtifactDeliverableTest.kt=747156b5db0388c6adc9dad1150c14252fe92c6e7c039b4f90e56ff59b760cb4`.
+- New overall estimate: calculator path `general NL routing protected; App Factory real source-tree path present; CLI artifact deliverable path written and statically checked; focused tests unrun; current-JAR runtime-unverified`; one-shot `NO`.
+
+### 2026-08-03T16:06:00Z · Agent: Codex GPT-5 · Ledger markup for 089-EOF
+- Correction: the `CommandPaletteRenderer.kt` fingerprint in batch `portable-terminal-ux-089-EOF` was mistyped/truncated in that row. The correct SHA-256 is `7fb44013a3ca092ebb38da13c45c16cff6edc736f31291575f55d25770a44d0a`.
+- No code or percentage changed; this append-only markup corrects evidence without rewriting the prior ledger row.

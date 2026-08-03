@@ -55,6 +55,48 @@ class CommandRouterHelpTest {
     }
 
     @Test
+    fun plain_nl_app_request_uses_factory_command_and_not_provider_chat() {
+        val root = Files.createTempDirectory("atropos-router-factory-")
+        val out = ByteArrayOutputStream()
+        var providerCalls = 0
+        var factoryPrompt = ""
+        val engine = AnsiTerminalEngine(
+            capabilities = ConfigurationManager(),
+            out = PrintStream(out),
+            errors = PrintStream(ByteArrayOutputStream())
+        )
+        val factory = FactoryCommandHandler(engine, runFactory = { prompt ->
+            factoryPrompt = prompt
+            "generated_project=.atropos/generated-projects/notes"
+        })
+        val router = CommandRouter(
+            config = AtroposConfig(
+                ApiKeys("", "", "", ""),
+                LakehouseConfig(root.resolve("lakehouse").toString(), root.resolve("lakehouse/vector.db").toString()),
+                RuntimeConfig("fake", 0.2)
+            ),
+            uiEngine = engine,
+            sessionTracker = QuotaSessionTracker(),
+            factoryCommandOverride = factory,
+            providerResolver = {
+                object : AIProvider {
+                    override val name: String = "fake"
+                    override fun complete(prompt: String, context: String): String {
+                        providerCalls += 1
+                        return "unexpected provider path"
+                    }
+                }
+            }
+        )
+
+        router.handleInput("build a simple notes CLI with tests and README")
+
+        assertEquals("build a simple notes CLI with tests and README", factoryPrompt)
+        assertEquals(0, providerCalls)
+        assertTrue(out.toString().contains("generated_project"), out.toString())
+    }
+
+    @Test
     fun self_host_help_renders_help_without_provider_chat() {
         val root = Files.createTempDirectory("atropos-router-self-host-help-")
         val out = ByteArrayOutputStream()

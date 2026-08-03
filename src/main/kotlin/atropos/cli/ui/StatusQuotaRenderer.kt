@@ -57,7 +57,7 @@ class StatusQuotaRenderer(
         return out.joinToString("\n")
     }
 
-    fun renderRoute(prompt: String): String {
+    fun renderRoute(prompt: String, expanded: Boolean = false): String {
         val task = classifier.classify(prompt)
         val decision = RoutePolicy(
             registry = registry,
@@ -82,8 +82,9 @@ class StatusQuotaRenderer(
         if (decision.eligible.isEmpty()) {
             out += "  none"
         } else {
-            decision.eligible.take(12).forEach { out += "  ${eligibilityLine(it)}" }
-            if (decision.eligible.size > 12) out += "  ... ${decision.eligible.size - 12} more"
+            val visible = if (expanded) decision.eligible else decision.eligible.take(12)
+            visible.forEach { out += "  ${eligibilityLine(it)}" }
+            if (!expanded && decision.eligible.size > visible.size) out += "  ... ${decision.eligible.size - visible.size} more (use /status route --full)"
         }
 
         out += ""
@@ -97,6 +98,10 @@ class StatusQuotaRenderer(
         out += ""
         out += "fallback chain:"
         out += renderFallbackChain(decision)
+
+        if (!expanded && (decision.skipped.isNotEmpty() || decision.eligible.size > 12)) {
+            out += "details: collapsed; use /status route --full <task>"
+        }
 
         return out.joinToString("\n")
     }

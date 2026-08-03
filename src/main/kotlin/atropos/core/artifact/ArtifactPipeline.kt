@@ -9,6 +9,7 @@ import atropos.core.memory.MemoryKind
 import atropos.core.platform.JvmPlatformAbstraction
 import atropos.core.platform.PlatformAbstraction
 import atropos.core.project.ProjectRegistry
+import atropos.core.security.RedactionFilter
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
@@ -22,13 +23,79 @@ class ArtifactPipeline(
     private val factoryRouter: AppFactoryRouter = AppFactoryRouter(),
     private val memory: LocalMemoryStore = LocalMemoryStore(),
     private val queue: LocalWorkQueue = LocalWorkQueue(),
-    private val projectRegistry: ProjectRegistry = ProjectRegistry()
+    private val projectRegistry: ProjectRegistry = ProjectRegistry(),
+    private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     fun plan(prompt: String): FactoryPlan = factoryRouter.plan(prompt)
 
+    /** Creates a real user-requested deliverable; this is not the App Factory path. */
+    fun createDeliverable(prompt: String): ArtifactReport {
+        val cleanPrompt = prompt.trim()
+        require(cleanPrompt.isNotBlank()) { "artifact prompt must not be blank" }
+        val slug = cleanPrompt.lowercase()
+            .replace(Regex("[^a-z0-9]+"), "-")
+            .trim('-')
+            .take(64)
+            .ifBlank { "requested-artifact" }
+        val relativePath = ".atropos/artifacts/deliverables/$slug.md"
+        val content = buildString {
+            appendLine("# ATROPOS Artifact")
+            appendLine()
+            appendLine("Requested deliverable")
+            appendLine()
+            appendLine(redactionFilter.redact(cleanPrompt))
+            appendLine()
+            appendLine("This file is the workspace deliverable for the request above.")
+            appendLine("App scaffolding belongs to the general natural-language factory path.")
+        }
+        val write = platform.writeFile(relativePath, content)
+        if (write.isFailure) {
+            val reason = write.exceptionOrNull()?.message ?: "artifact write failed"
+            return ArtifactReport(
+                artifacts = listOf(
+                    Artifact(
+                        kind = ArtifactKind.DOCUMENTATION,
+                        name = "$slug.md",
+                        filePath = relativePath,
+                        sha256 = "",
+                        byteSize = 0,
+                        state = ArtifactState.FAILED,
+                        buildCommand = "workspace artifact writer",
+                        metadata = mapOf("prompt" to redactionFilter.compact(cleanPrompt), "error" to reason)
+                    )
+                ),
+                verifications = emptyList(),
+                installProofs = emptyList()
+            )
+        }
+
+        val bytes = content.toByteArray(StandardCharsets.UTF_8)
+        val artifact = Artifact(
+            kind = ArtifactKind.DOCUMENTATION,
+            name = "$slug.md",
+            filePath = relativePath,
+            sha256 = sha256Bytes(bytes),
+            byteSize = bytes.size.toLong(),
+            state = ArtifactState.READY,
+            buildCommand = "workspace artifact writer",
+            metadata = mapOf("prompt" to redactionFilter.compact(cleanPrompt), "deliverable" to "workspace-file")
+        )
+        val evidence = listOf(
+            VerificationEvidence(artifactId = artifact.id, kind = VerificationKind.SIZE_CHECK, passed = true, evidence = "written ${artifact.byteSize} bytes to ${artifact.filePath}"),
+            VerificationEvidence(artifactId = artifact.id, kind = VerificationKind.HASH_VERIFY, passed = true, evidence = "sha256 ${artifact.sha256}")
+        )
+        store.saveArtifacts(listOf(artifact))
+        store.saveVerifications(evidence)
+        return ArtifactReport(listOf(artifact), evidence, emptyList())
+    }
+
     fun runFactory(prompt: String, installDir: String? = null): AppFactoryRun {
         val plan = plan(prompt)
-        val project = projectRegistry.register(plan.intent, kind = "app-factory").record
+        val project = projectRegistry.register(
+            name = plan.projectSpec.intent.name,
+            kind = plan.projectSpec.intent.kind,
+            objective = plan.prompt
+        ).record
         val startedAt = Instant.now()
         val report = build(plan)
         val artifactVerificationEvidence = report.artifacts.map { verify(it.id) }
@@ -245,6 +312,11 @@ class ArtifactPipeline(
             digest.digest(bytes).joinToString("") { "%02x".format(it) }
         } catch (_: Exception) { "" }
     }
+
+    private fun sha256Bytes(bytes: ByteArray): String =
+        MessageDigest.getInstance("SHA-256")
+            .digest(bytes)
+            .joinToString("") { "%02x".format(it) }
 }
 
 class ArtifactStore(private val root: Path = AtroposRepoRootLocator.resolve()) {

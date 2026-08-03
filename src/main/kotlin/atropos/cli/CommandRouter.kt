@@ -25,6 +25,7 @@ class CommandRouter(
     private val rateResolver: (String) -> Double = { 0.0 },
     private val verifyCommand: VerifyCommandHandler = VerifyCommand(uiEngine),
     private val shellRunner: ShellCommandRunner = ShellCommandRunner(),
+    private val factoryCommandOverride: FactoryCommandHandler? = null,
     /** The only way this router reaches DLOI: failures arrive typed, not thrown. */
     private val higZeroGuard: atropos.dloi.HigZeroGuard = atropos.dloi.HigZeroGuard(atropos.dloi.DloiService())
 ) {
@@ -59,7 +60,9 @@ class CommandRouter(
     private val memoryCommand = MemoryCommandHandler(uiEngine)
     private val ciCommand = CiCommandHandler(uiEngine)
     private val assetCommand = AssetCommandHandler(uiEngine)
-    private val factoryCommand = FactoryCommandHandler(uiEngine)
+    private val factoryCommand = factoryCommandOverride ?: FactoryCommandHandler(uiEngine)
+    private val naturalLanguageRiskGuard = NaturalLanguageRiskGuard()
+    private var pendingRiskyNaturalLanguage: String? = null
     private val securityCommand = SecurityCommandHandler(uiEngine)
     private val keysCommand = KeysCommandHandler(uiEngine)
     private val testsCommand = TestsCommandHandler(uiEngine)
@@ -86,6 +89,23 @@ class CommandRouter(
 
     fun handleInput(input: String): RouterOutcome {
         if (input.isBlank()) return RouterOutcome.CONTINUE
+        pendingRiskyNaturalLanguage?.let { pending ->
+            when (input.trim().lowercase()) {
+                "y", "yes", "confirm", "confirmed" -> {
+                    pendingRiskyNaturalLanguage = null
+                    return handleInput(pending)
+                }
+                "n", "no", "cancel" -> {
+                    pendingRiskyNaturalLanguage = null
+                    uiEngine.renderNotice("request cancelled before risky execution")
+                    return RouterOutcome.CONTINUE
+                }
+                else -> {
+                    uiEngine.renderNotice("verification required: reply yes to continue or no to cancel")
+                    return RouterOutcome.CONTINUE
+                }
+            }
+        }
         return when (val result = lex(input)) {
             is LexResult.Error -> {
                 uiEngine.renderError("lex: ${result.message}")
@@ -179,6 +199,11 @@ class CommandRouter(
 
             "/factory" -> factoryCommand.execute(tokens)
 
+            "/verbose", "/debug" -> {
+                uiEngine.toggleVerboseExecution()
+                RouterOutcome.CONTINUE
+            }
+
             "/security" -> securityCommand.execute(tokens)
 
             "/keys" -> keysCommand.execute(tokens)
@@ -199,6 +224,7 @@ class CommandRouter(
             "/use" -> {
                 if (tokens.size == 2 && tokens[1].lowercase() == "auto") {
                     currentProviderName = "auto"
+                    uiEngine.setProvider(currentProviderName)
                     uiEngine.renderNotice("provider routing switched to auto")
                 } else {
                     switchProvider(tokens)
@@ -229,11 +255,23 @@ class CommandRouter(
             else -> {
                 if (tokens.first().startsWith("/")) uiEngine.renderError("unknown command: ${tokens.first()}")
                 else {
+                    naturalLanguageRiskGuard.classify(original)?.let { risk ->
+                        pendingRiskyNaturalLanguage = original
+                        uiEngine.renderNotice(
+                            "verification required before risky NL action (${risk.name.lowercase()}); " +
+                                "reply yes to continue or no to cancel"
+                        )
+                        return RouterOutcome.CONTINUE
+                    }
                     val selfHostTokens = selfHostNaturalLanguageRouter.route(tokens)
                     when {
                         selfHostTokens != null -> {
-                            agentCommand.execute(selfHostTokens)
-                            uiEngine.updateAgentPatchState(agentCommand.lastKnownPatchId)
+                            if (selfHostTokens.firstOrNull() == "/factory") {
+                                factoryCommand.execute(selfHostTokens)
+                            } else {
+                                agentCommand.execute(selfHostTokens)
+                                uiEngine.updateAgentPatchState(agentCommand.lastKnownPatchId)
+                            }
                         }
                         tokens.size == 1 && tokens.first().equals("ATROPOS", ignoreCase = true) -> {
                             agentCommand.execute(listOf("/agent", "ask", "ATROPOS"))
@@ -256,6 +294,7 @@ class CommandRouter(
             val resolved = providerResolver(tokens[1])
             activeProvider = resolved
             currentProviderName = resolved.name
+            uiEngine.setProvider(resolved.name)
             uiEngine.renderNotice("provider switched to ${resolved.name}")
         } catch (failure: RuntimeException) {
             uiEngine.renderError(failure.message ?: "provider switch failed")

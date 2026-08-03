@@ -60,8 +60,9 @@ class CommandPaletteRenderer(
         selected: Boolean
     ): String {
         val pad = " ".repeat(Glyphs.RAIL_PADDING)
+        val safeWidth = width.coerceAtLeast(1)
         val available = (
-            width - TerminalText.cellWidth(pad) -
+            safeWidth - TerminalText.cellWidth(pad) -
                 TerminalText.cellWidth(item.command) - 3
             ).coerceAtLeast(0)
         val description = TerminalText.ellipsize(item.description, available)
@@ -73,14 +74,14 @@ class CommandPaletteRenderer(
                 TerminalText.padEnd(
                     pad + item.command +
                         if (description.isEmpty()) "" else "  $description",
-                    width
+                    safeWidth
                 )
             )
         } else {
             TerminalText.padEnd(
                 pad + theme.strong(item.command) +
                     if (description.isEmpty()) "" else theme.subdued("  $description"),
-                width
+                safeWidth
             )
         }
     }

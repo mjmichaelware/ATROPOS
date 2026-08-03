@@ -1,6 +1,10 @@
 package atropos.cli.commands
 
-class SelfHostNaturalLanguageRouter {
+import atropos.core.factory.AppActionRegistry
+
+class SelfHostNaturalLanguageRouter(
+    private val appActions: AppActionRegistry = AppActionRegistry()
+) {
     fun route(tokens: List<String>): List<String>? {
         if (tokens.size >= 2 && tokens[0].equals("/agent", ignoreCase = true) && tokens[1].equals("self-host", ignoreCase = true)) {
             return null
@@ -25,7 +29,9 @@ class SelfHostNaturalLanguageRouter {
             "inside out",
             "inside-out"
         ).any { it in lower }
-        if ((!addressesRuntime && !explicitSelfHost) || !asksSelfBuild) return null
+        if ((!addressesRuntime && !explicitSelfHost) || !asksSelfBuild) {
+            return if (appActions.isAppRequest(tokens)) listOf("/factory", "run") + tokens else null
+        }
         val asksRecovery = listOf("continue", "resume", "recover", "restart").any { it in lower }
         return if (asksRecovery) {
             listOf("/agent", "self-host", "recover")
@@ -33,4 +39,5 @@ class SelfHostNaturalLanguageRouter {
             listOf("/agent", "self-host", "run") + tokens
         }
     }
+
 }

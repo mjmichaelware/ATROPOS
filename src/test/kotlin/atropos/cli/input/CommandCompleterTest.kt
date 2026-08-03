@@ -59,6 +59,13 @@ class CommandCompleterTest {
     }
 
     @Test
+    fun enter_does_not_rewrite_plain_natural_language_into_a_command() {
+        val completer = CommandCompleter(Path.of("."))
+        val prompt = "build a simple calculator CLI with tests and README"
+        assertEquals(null, completer.resolveSubmission(prompt, prompt.length))
+    }
+
+    @Test
     fun complete_replaces_bare_command_prefixes_with_canonical_commands() {
         val completer = CommandCompleter(Path.of("."))
 

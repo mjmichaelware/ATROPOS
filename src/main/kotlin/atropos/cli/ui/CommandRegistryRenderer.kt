@@ -23,7 +23,7 @@ class CommandRegistryRenderer(
      * Render a command palette showing available commands with help.
      */
     fun renderPalette(commands: List<Command>, width: Int, filterText: String = ""): List<String> {
-        val safeWidth = width.coerceIn(40, 200)
+        val safeWidth = width.coerceIn(1, 200)
         val output = mutableListOf<String>()
 
         output += theme.surface.sectionHeading("Commands", safeWidth, Role.BRAND)
@@ -50,7 +50,7 @@ class CommandRegistryRenderer(
      * Render detailed help for a single command.
      */
     fun renderHelp(command: Command, width: Int): List<String> {
-        val safeWidth = width.coerceIn(40, 200)
+        val safeWidth = width.coerceIn(1, 200)
         val output = mutableListOf<String>()
 
         output += theme.surface.sectionHeading(command.name, safeWidth, Role.BRAND)
@@ -77,7 +77,7 @@ class CommandRegistryRenderer(
      * Render available slash commands (for "/" prefix).
      */
     fun renderSlashCommands(width: Int): List<String> {
-        val safeWidth = width.coerceIn(40, 200)
+        val safeWidth = width.coerceIn(1, 200)
         val slashCommands = buildList {
             add(Command("shell", "!cmd", "Execute a shell command in the project workspace", "Shell"))
             add(Command("pwd", "!/pwd", "Print working directory path", "Shell"))

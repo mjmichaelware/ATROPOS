@@ -56,4 +56,27 @@ class BoundedGitWorktreeCommandRunnerTest {
 
         assertEquals(0, result.exitCode)
     }
+
+    @Test
+    fun app_history_operations_are_typed_and_commit_messages_are_bounded() {
+        val captured = mutableListOf<List<String>>()
+        val runner = BoundedGitWorktreeCommandRunner { command, _, _ ->
+            captured += command
+            GitWorktreeCommandResult(0, "")
+        }
+        val root = Files.createTempDirectory("atropos-bounded-git-app-")
+
+        runner.run(GitWorktreeOperation.INIT, root)
+        runner.run(GitWorktreeOperation.ADD_ALL, root)
+        runner.run(GitWorktreeOperation.COMMIT, root, "initial app scaffold")
+        runner.run(GitWorktreeOperation.ARCHIVE, root, root.resolve("app.tar").toString())
+
+        assertEquals(listOf("git", "init"), captured[0])
+        assertEquals(listOf("git", "add", "."), captured[1])
+        assertTrue(captured[2].containsAll(listOf("commit", "-m", "initial app scaffold")))
+        assertTrue(captured[3].contains("--format=tar"))
+        assertFailsWith<IllegalArgumentException> {
+            runner.run(GitWorktreeOperation.COMMIT, root, "bad\nmessage")
+        }
+    }
 }

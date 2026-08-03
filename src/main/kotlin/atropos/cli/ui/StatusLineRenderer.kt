@@ -36,7 +36,7 @@ class StatusLineRenderer(
         return theme.metadata(
             TerminalText.ellipsize(
                 plain,
-                width.coerceAtLeast(36)
+                width.coerceAtLeast(1)
             )
         )
     }

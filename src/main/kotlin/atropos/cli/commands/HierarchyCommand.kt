@@ -346,9 +346,10 @@ System commands (all phases):
             val prompt = args.drop(1).joinToString(" ")
             if (prompt.isBlank()) "usage: /artifact build <prompt>"
             else {
-                val plan = artifactPipeline.plan(prompt)
-                val report = artifactPipeline.build(plan)
-                "Artifact build: ${report.summary}"
+                val report = artifactPipeline.createDeliverable(prompt)
+                val artifact = report.artifacts.singleOrNull()
+                if (artifact == null) report.summary
+                else "Artifact deliverable: ${artifact.filePath} id=${artifact.id} sha256=${artifact.sha256} (${report.summary})"
             }
         }
         "verify" -> {

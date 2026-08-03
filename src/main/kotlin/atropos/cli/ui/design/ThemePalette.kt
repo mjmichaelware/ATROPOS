@@ -117,7 +117,7 @@ object ThemeCatalog {
             Role.BORDER_SUBTLE to RoleStyle("90", "38;5;239", "38;2;63;63;70"),
             Role.BORDER_STRONG to RoleStyle("37", "38;5;245", "38;2;113;113;122"),
 
-            Role.ACCENT_SELECTION to RoleStyle("30;41", "38;5;16;48;5;197", "38;2;9;9;11;48;2;255;23;68"),
+            Role.ACCENT_SELECTION to RoleStyle("1;97;41", "1;38;5;255;48;5;160", "1;38;2;255;255;255;48;2;196;0;29"),
             Role.ACCENT_FOCUS to RoleStyle("1;31", "1;38;5;197", "1;38;2;255;23;68"),
 
             Role.CODE to RoleStyle("37", "38;5;252", "38;2;212;212;216"),
@@ -163,7 +163,7 @@ object ThemeCatalog {
             Role.BORDER_SUBTLE to RoleStyle("37", "38;5;250", "38;2;212;212;216"),
             Role.BORDER_STRONG to RoleStyle("90", "38;5;244", "38;2;161;161;170"),
 
-            Role.ACCENT_SELECTION to RoleStyle("30;41", "38;5;231;48;5;160", "38;2;250;250;250;48;2;196;0;29"),
+            Role.ACCENT_SELECTION to RoleStyle("1;30;41", "1;38;5;16;48;5;160", "1;38;2;9;9;11;48;2;196;0;29"),
             Role.ACCENT_FOCUS to RoleStyle("1;31", "1;38;5;160", "1;38;2;196;0;29"),
 
             Role.CODE to RoleStyle("30", "38;5;238", "38;2;39;39;42"),

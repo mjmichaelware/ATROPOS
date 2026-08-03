@@ -8,6 +8,10 @@ import java.nio.file.Path
  * Callers select a typed Git operation; they cannot provide a shell command.
  */
 enum class GitWorktreeOperation {
+    INIT,
+    ADD_ALL,
+    COMMIT,
+    ARCHIVE,
     REV_PARSE_BRANCH,
     REV_PARSE_HEAD,
     STATUS_PORCELAIN,
@@ -37,6 +41,15 @@ class BoundedGitWorktreeCommandRunner(
         input: String? = null
     ): GitWorktreeCommandResult {
         val command = when (operation) {
+            GitWorktreeOperation.INIT -> listOf("git", "init")
+            GitWorktreeOperation.ADD_ALL -> listOf("git", "add", ".")
+            GitWorktreeOperation.COMMIT -> listOf(
+                "git", "-c", "user.name=ATROPOS", "-c", "user.email=atropos@localhost",
+                "commit", "-m", safeCommitMessage(argument)
+            )
+            GitWorktreeOperation.ARCHIVE -> listOf(
+                "git", "archive", "--format=tar", "--output=${requiredPath(argument)}", "HEAD"
+            )
             GitWorktreeOperation.REV_PARSE_BRANCH -> listOf("git", "rev-parse", "--abbrev-ref", "HEAD")
             GitWorktreeOperation.REV_PARSE_HEAD -> listOf("git", "rev-parse", "HEAD")
             GitWorktreeOperation.STATUS_PORCELAIN -> listOf("git", "status", "--porcelain")
@@ -67,6 +80,12 @@ class BoundedGitWorktreeCommandRunner(
 
     private fun requiredPath(value: String?): String =
         value?.takeIf { it.isNotBlank() } ?: throw IllegalArgumentException("worktree path is required")
+
+    private fun safeCommitMessage(value: String?): String {
+        val message = value?.takeIf { it.isNotBlank() } ?: throw IllegalArgumentException("commit message is required")
+        require(!message.contains('\n') && !message.contains('\r')) { "commit message must be single-line" }
+        return message
+    }
 
     private fun requiredRevision(value: String?): String =
         value?.takeIf { it.isNotBlank() && !it.any(Char::isWhitespace) && it != "--" }
