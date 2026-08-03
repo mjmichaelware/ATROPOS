@@ -39,7 +39,12 @@ enum class PromptHistoryLane {
         /** Prefix that escapes straight to the shell. */
         private const val SHELL_ESCAPE = "!"
 
-        private const val SLASH = "/"
+        /**
+         * Named with a suffix because a companion constant called `SLASH` would
+         * shadow the enum entry of the same name inside this scope, and
+         * `-> SLASH` would silently mean the string rather than the lane.
+         */
+        private const val SLASH_PREFIX = "/"
 
         /**
          * Buckets a line by its leading token.
@@ -52,7 +57,7 @@ enum class PromptHistoryLane {
             return when {
                 trimmed.startsWith(SHELL_ESCAPE) -> SHELL
                 SHELL_COMMANDS.any { trimmed.startsWith(it) } -> SHELL
-                trimmed.startsWith(SLASH) -> SLASH
+                trimmed.startsWith(SLASH_PREFIX) -> SLASH
                 else -> PROMPT
             }
         }

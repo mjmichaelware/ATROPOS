@@ -64,7 +64,7 @@ class LocalMemoryStore(
             authority = authority
         )
         val record = unsignedRecord.copy(contentSha256 = MemoryRecordCodec.recordSha256(unsignedRecord))
-        val priorState = readStateFile()
+        val priorState = files.readState()
         val priorSnapshot = if (priorState == null && jsonlFile.exists()) readSnapshot() else null
         val priorCount = priorState?.totalRecords ?: priorSnapshot?.records?.size ?: 0
         val priorCorrupt = priorState?.corruptRecords ?: priorSnapshot?.corruptRecords ?: 0
