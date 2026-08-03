@@ -9,6 +9,7 @@ import atropos.core.provider.SourceBindingKind
 import atropos.core.policy.BoundedProcessRunner
 import atropos.core.security.RedactionFilter
 import java.nio.file.Files
+import atropos.core.security.ContextPathExclusions
 import java.nio.file.Path
 
 data class AgentContextSnapshot(
@@ -39,6 +40,8 @@ class AgentContextCollector(
     private val commandTimeoutMillis: Long = 5_000L,
     private val commandOutputLines: Int = 256
 ) {
+    private val boundedBuilder = Utf8BoundedBuilder(contextCapBytes)
+
     private val selectedSourceFiles = listOf(
         "src/main/kotlin/atropos/core/Provider.kt",
         "src/main/kotlin/atropos/core/ProviderState.kt",
@@ -293,26 +296,16 @@ class AgentContextCollector(
         }
     }
 
+    /**
+     * Territory-independent exclusion, delegated to the single owner.
+     *
+     * A path that cannot be relativised falls back to its filename so an
+     * unresolvable path is still judged rather than silently admitted.
+     */
     private fun isExcluded(path: Path): Boolean {
-        val relative = runCatching { repoRoot.relativize(path).toString() }.getOrDefault(path.fileName.toString())
-        val normalized = relative.replace('\\', '/')
-        val name = path.fileName.toString()
-
-        if (normalized.startsWith(".git/") || normalized == ".git") return true
-        if (normalized.startsWith(".gradle/") || normalized == ".gradle") return true
-        if (normalized.startsWith("build/") || normalized == "build") return true
-        if (normalized.startsWith(".atropos/secrets/") || normalized == ".atropos/secrets") return true
-        if (normalized.startsWith(".atropos/agent/patches/") || normalized == ".atropos/agent/patches") return true
-        if (normalized == ".env" || normalized.startsWith(".env.")) return true
-        if (name.endsWith(".jar") || name.endsWith(".class")) return true
-        if (name.endsWith(".zip") || name.endsWith(".png") || name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".gif")) return true
-        if (name.endsWith(".key") || name.endsWith(".pem") || name.endsWith(".crt") || name.endsWith(".p12")) return true
-        if (name.endsWith(".token") || name.endsWith(".secret") || name.endsWith(".credentials")) return true
-        if (name.contains("keys", ignoreCase = true) && !name.endsWith(".kt") && !name.endsWith(".kts")) return true
-        if (name.contains("token", ignoreCase = true)) return true
-        if (name.contains("credential", ignoreCase = true)) return true
-        if (name.contains("secret", ignoreCase = true)) return true
-        return false
+        val relative = runCatching { repoRoot.relativize(path).toString() }
+            .getOrDefault(path.fileName.toString())
+        return ContextPathExclusions.isExcluded(relative)
     }
 
     private fun runCommand(vararg command: String): String {
@@ -348,46 +341,6 @@ class AgentContextCollector(
         }
     }
 
-    private fun appendSection(builder: StringBuilder, text: String, truncated: Boolean): Boolean {
-        if (truncated) return true
-
-        val currentBytes = builder.toString().toByteArray(Charsets.UTF_8).size
-        val remaining = contextCapBytes - currentBytes
-        if (remaining <= 0) return true
-
-        val sectionBytes = text.toByteArray(Charsets.UTF_8)
-        if (sectionBytes.size <= remaining) {
-            builder.append(text)
-            return false
-        }
-
-        val marker = "\n[context truncated]\n"
-        val markerBytes = marker.toByteArray(Charsets.UTF_8).size
-        val bodyLimit = (remaining - markerBytes).coerceAtLeast(0)
-        builder.append(text.utf8Prefix(bodyLimit))
-        if (markerBytes <= remaining - builder.lastAppendByteCount(currentBytes)) {
-            builder.append(marker)
-        }
-        return true
-    }
-
-    private fun StringBuilder.lastAppendByteCount(previousBytes: Int): Int =
-        toString().toByteArray(Charsets.UTF_8).size - previousBytes
-
-    private fun String.utf8Prefix(maxBytes: Int): String {
-        if (maxBytes <= 0) return ""
-        val out = StringBuilder()
-        var used = 0
-        var index = 0
-        while (index < length) {
-            val codePoint = codePointAt(index)
-            val segment = String(Character.toChars(codePoint))
-            val size = segment.toByteArray(Charsets.UTF_8).size
-            if (used + size > maxBytes) break
-            out.append(segment)
-            used += size
-            index += Character.charCount(codePoint)
-        }
-        return out.toString()
-    }
+    private fun appendSection(builder: StringBuilder, text: String, truncated: Boolean): Boolean =
+        boundedBuilder.append(builder, text, truncated)
 }
