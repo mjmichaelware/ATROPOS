@@ -250,6 +250,83 @@ class SelfHostPromotionServiceTest {
         })
     }
 
+    @Test
+    fun a_nonzero_compile_exit_refuses_promotion_through_the_real_gate() {
+        // C1-SB-02. Every other promotion test injects a completion report, which
+        // proves the plumbing but not the gate. Here the real VerifiedCompletionGate
+        // runs against a process runner whose every command exits nonzero, so the
+        // refusal has to come from the compile/test gates themselves.
+        val root = Files.createTempDirectory("atropos-self-host-promote-nonzero-")
+        val candidate = root.resolve("candidate.jar")
+        val target = root.resolve("atropos.jar")
+        Files.writeString(candidate, "new jar")
+        Files.writeString(target, "old jar")
+        val fixture = fixture(root)
+        val alwaysFails = atropos.core.policy.BoundedProcessRunner { _, _, _, _ ->
+            ProcessBuilder("false").start()
+        }
+        val service = SelfHostPromotionService(
+            repoRoot = root,
+            store = fixture.store,
+            dagService = fixture.dagService,
+            completionGate = VerifiedCompletionGate(
+                repoRoot = root,
+                dagStore = atropos.core.dag.DagStore(root),
+                processRunner = alwaysFails
+            ),
+            jarSwapGate = SafeJarSwapGate(clock = { Instant.parse("2026-07-29T00:07:00Z") })
+        )
+
+        val result = service.promote(
+            SelfHostPromotionRequest(
+                fixture.goal.id,
+                fixture.node.copy(optionalChecks = emptySet()).id,
+                candidate,
+                target
+            )
+        )
+
+        assertTrue(!result.promoted, "a nonzero build exit must never promote")
+        assertTrue(result.message.contains("VerifiedCompletionGate"), result.message)
+        assertEquals("old jar", Files.readString(target), "the installed jar must survive a refused promotion")
+        val reopened = fixture.store.resolve(fixture.goal.id) ?: error("missing goal")
+        assertTrue(reopened.lastVerifiedCheckpoint == null, "a refused promotion must not record a verified checkpoint")
+    }
+
+    @Test
+    fun post_mutation_git_status_evidence_is_captured_in_promotion() {
+        val root = Files.createTempDirectory("atropos-self-host-promote-git-status-")
+        val candidate = root.resolve("candidate.jar")
+        val target = root.resolve("atropos.jar")
+        Files.writeString(candidate, "new jar")
+        Files.writeString(target, "old jar")
+        Files.createDirectories(root.resolve("src/main/kotlin/atropos/core/agent"))
+        Files.writeString(root.resolve("src/main/kotlin/atropos/core/agent/Test.kt"), "class Test\n")
+        val fixture = fixture(root)
+        val service = SelfHostPromotionService(
+            repoRoot = root,
+            store = fixture.store,
+            dagService = fixture.dagService,
+            completionGate = VerifiedCompletionGate(repoRoot = root),
+            jarSwapGate = SafeJarSwapGate(clock = { Instant.parse("2026-07-29T00:06:00Z") }),
+            evaluateGate = { node ->
+                CompletionGateReport(
+                    nodeId = node.id,
+                    canComplete = true,
+                    gateResults = listOf(GateResult(node.id, true, "Compile Gate", "compilation succeeded", Instant.parse("2026-07-29T00:06:01Z"))),
+                    message = "all gates passed"
+                )
+            }
+        )
+
+        val result = service.promote(SelfHostPromotionRequest(fixture.goal.id, fixture.node.id, candidate, target))
+
+        assertTrue(result.promoted, result.message)
+        val reopened = fixture.store.resolve(fixture.goal.id) ?: error("missing goal")
+        assertTrue(reopened.evidence.any { it.contains("git_status_short") },
+            "git status evidence should be captured: ${reopened.evidence.joinToString("; ")}")
+    }
+
     private fun fixture(root: java.nio.file.Path): Fixture {
         val store = GoalRunStore(root, clock = { Instant.parse("2026-07-29T00:02:00Z") })
         val dagService = DagExecutionService(repoRoot = root)

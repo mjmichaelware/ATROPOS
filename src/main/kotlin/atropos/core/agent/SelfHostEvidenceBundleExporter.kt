@@ -14,7 +14,8 @@ class SelfHostEvidenceBundleExporter(
     private val restartCoordinator: RestartCoordinator = RestartCoordinator(repoRoot),
     private val redactionFilter: RedactionFilter = RedactionFilter(),
     private val hasher: SelfHostFileHasher = SelfHostFileHasher(),
-    private val provenance: SelfHostEvidenceProvenance = SelfHostEvidenceProvenance()
+    private val provenance: SelfHostEvidenceProvenance = SelfHostEvidenceProvenance(),
+    private val installedProof: SelfHostInstalledProofEvidence = SelfHostInstalledProofEvidence()
 ) {
     private val bundleRoot = repoRoot.resolve(".atropos/self-hosting/evidence").normalize()
     private val textCodec = SelfHostEvidenceTextCodec(redactionFilter)
@@ -87,6 +88,9 @@ class SelfHostEvidenceBundleExporter(
         appendLine("- baseline: `${escapeMarkdown(record.baselineCommit ?: "none")}`")
         appendLine("- dirty fingerprint: `${escapeMarkdown(record.dirtyStateFingerprint ?: "none")}`")
         appendLine("- provenance chain sha256: `$provenanceSha256`")
+        val proof = installedProof.assess(record.evidence)
+        appendLine("- installed proof complete: `${proof.complete}`")
+        appendLine("- installed proof missing: `${proof.missing.joinToString(",") { it.name }.ifBlank { "none" }}`")
         appendLine()
         appendLine("## Territory")
         record.territory.forEach { appendLine("- `${escapeMarkdown(clean(it))}`") }
@@ -171,6 +175,9 @@ class SelfHostEvidenceBundleExporter(
         appendLine("  \"baselineCommit\": ${json(record.baselineCommit ?: "none")},")
         appendLine("  \"dirtyStateFingerprint\": ${json(record.dirtyStateFingerprint ?: "none")},")
         appendLine("  \"provenanceChainSha256\": ${json(provenanceSha256)},")
+        val proof = installedProof.assess(record.evidence)
+        appendLine("  \"installedProofComplete\": ${proof.complete},")
+        appendLine("  \"installedProofMissing\": [${proof.missing.joinToString(",") { json(it.name) }}],")
         appendLine("  \"territory\": [${record.territory.joinToString(",") { json(clean(it)) }}],")
         appendLine("  \"outputHashes\": [${renderOutputHashesJson(dag)}],")
         appendLine("  \"evidenceHashes\": [${record.evidence.joinToString(",") { json(sha256Text(clean(it))) }}],")
