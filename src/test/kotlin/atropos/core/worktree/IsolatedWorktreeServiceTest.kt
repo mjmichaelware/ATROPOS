@@ -69,9 +69,10 @@ class IsolatedWorktreeServiceTest {
             updatedAt = Instant.EPOCH,
             metaFile = root.resolve(".atropos/worktrees/wt-test.meta")
         )
-        val write = IsolatedWorktreeService::class.java.getDeclaredMethod("writeRecord", WorktreeRecord::class.java)
-        write.isAccessible = true
-        write.invoke(service, record)
+        // Seeded through the extracted store rather than by reflecting on a
+        // private method, which is both what the service now does and a seam
+        // that cannot silently break the next time persistence moves.
+        WorktreeRecordStore(root.resolve(".atropos/worktrees").normalize()).write(record)
 
         val patch = """
             diff --git a/src/main/kotlin/atropos/core/provider/Leak.kt b/src/main/kotlin/atropos/core/provider/Leak.kt
