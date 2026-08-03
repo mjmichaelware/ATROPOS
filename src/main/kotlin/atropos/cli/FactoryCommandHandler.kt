@@ -36,7 +36,7 @@ class FactoryCommandHandler(
                 uiEngine.renderError("factory run failed: ${failure.message ?: "unknown failure"}")
                 return
             }
-            uiEngine.renderNotice("factory run completed:")
+            uiEngine.renderNotice("factory run verified repository output:")
             uiEngine.renderNotice(result)
         }
     }

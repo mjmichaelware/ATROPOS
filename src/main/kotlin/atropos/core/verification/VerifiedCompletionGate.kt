@@ -61,6 +61,21 @@ class VerifiedCompletionGate(
         return IndependentVerificationGate(config, repoRoot, processRunner).verify(node)
     }
 
+    fun evaluateFactory(input: FactoryCompletionInput): CompletionGateReport {
+        val required = setOf("README.md", "LICENSE", ".gitignore", "AGENTS.md")
+        val checks = listOf(
+            GateResult(input.nodeId, input.branch == input.expectedBranch, "Factory branch isolation", "branch=${input.branch}", clock()),
+            GateResult(input.nodeId, input.files.any { it.startsWith("src/main/") }, "Factory source", "source files present", clock()),
+            GateResult(input.nodeId, input.files.any { it.startsWith("src/test/") }, "Factory tests", "test files present", clock()),
+            GateResult(input.nodeId, required.all(input.files::contains), "Factory repository kit", "standard files present", clock()),
+            GateResult(input.nodeId, input.verificationOutput.contains("APP_FACTORY_VERIFY_OK"), "Factory verification", "generated tests passed", clock()),
+            GateResult(input.nodeId, input.auditorAllowed, "Factory auditor", "independent audit decision", clock()),
+            GateResult(input.nodeId, input.promptSha256.matches(Regex("[0-9a-f]{64}")) && input.researchSha256.matches(Regex("[0-9a-f]{64}")), "Factory lineage", "prompt and research hashes present", clock())
+        )
+        val passed = checks.all { it.passed }
+        return CompletionGateReport(input.nodeId, passed, checks, if (passed) "factory completion gate passed" else "factory gates failed: ${checks.filterNot { it.passed }.joinToString("; ") { it.gateName }}")
+    }
+
     fun evaluateNodeInternal(node: DagNode): CompletionGateReport {
         val gates = mutableListOf<GateResult>()
 

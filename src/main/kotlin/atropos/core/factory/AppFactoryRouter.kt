@@ -11,6 +11,7 @@ import atropos.core.paid.EmergencyPaidGate
 import atropos.core.project.ProjectRegistry
 import atropos.core.project.RepositoryBinding
 import atropos.core.planning.InternalPlanningGraphService
+import atropos.core.provider.ContextEnvelopeFactory
 import java.util.Locale
 import java.nio.file.Path
 
@@ -77,24 +78,35 @@ class AppFactoryRouter(
 
     fun runLocal(prompt: String): FactoryPlan {
         val base = plan(prompt)
+        val lineage = FactoryLineage.prepare(repoRoot, base.id, base.prompt, base.projectSpec)
         val memoryRecord = memory.remember(
             kind = MemoryKind.DECISION,
             title = "factory ${base.intent}",
-            body = base.prompt,
-            tags = listOf("factory", base.intent)
+            body = "prompt_fingerprint=${lineage.promptFingerprint}\nprompt_sha256=${lineage.promptSha256}\n${base.prompt}",
+            tags = listOf("factory", base.intent, lineage.promptFingerprint)
         )
         val queued = mutableListOf<String>()
         val assetFiles = mutableListOf<String>()
         val planningDag = planningGraph.planFromTexts(
             projectId = base.id,
             label = base.projectSpec.intent.name,
-            sources = mapOf("nl-prompt" to base.prompt)
+            sources = mapOf("nl-prompt" to base.prompt, "requirements" to lineage.researchDocument)
+        )
+        val plannedLineage = lineage.withPlan(planningDag.id, planningDag.nodes.map { it.id })
+        val context = ContextEnvelopeFactory.createForFactory(
+            projectId = base.id,
+            promptFingerprint = plannedLineage.promptFingerprint,
+            researchSha256 = plannedLineage.researchSha256,
+            atomIds = planningDag.nodes.map { it.id },
+            territory = listOf(".atropos/generated-projects/${base.projectSpec.intent.name.replace(Regex("[^A-Za-z0-9._-]"), "_")}-${base.id}"),
+            repoRoot = repoRoot
         )
         val generatedProject = AppProjectGenerator(repoRoot).generateApp(
             base.projectSpec,
             base.id,
             planningDagId = planningDag.id,
-            plannedAtomIds = planningDag.nodes.map { it.id }
+            plannedAtomIds = planningDag.nodes.map { it.id },
+            lineage = plannedLineage.withContext(context.canonicalContextHash)
         )
         val project = projectRegistry.register(
             name = base.projectSpec.intent.name,

@@ -14,6 +14,33 @@ import java.security.MessageDigest
  * rather than nulls.
  */
 object ContextEnvelopeFactory {
+    fun createForFactory(
+        projectId: String,
+        promptFingerprint: String,
+        researchSha256: String,
+        atomIds: List<String>,
+        territory: List<String>,
+        repoRoot: Path,
+        branch: String = currentBranch(repoRoot),
+        baselineCommit: String = currentCommit(repoRoot)
+    ): ContextEnvelope {
+        val envelope = ContextEnvelope(
+            repository = repoRoot.fileName.toString(),
+            repositoryRoot = repoRoot.toString(),
+            branch = branch,
+            baselineCommit = baselineCommit,
+            goalId = projectId,
+            task = "factory prompt=$promptFingerprint research=$researchSha256 atoms=${atomIds.joinToString(",")}",
+            phaseOrPass = "phase-19-app-factory",
+            hierarchyRole = "factory-worker",
+            authority = "proposal-only",
+            permissions = listOf("read_source", "propose_source", "read_research"),
+            assignedTerritory = territory,
+            prohibitedActions = listOf("write_without_mutation_gate", "secrets", "paid_unlock", "force_push"),
+            activePolicy = "app_factory_v1"
+        )
+        return envelope.copy(canonicalContextHash = computeHash(envelope))
+    }
 
     /**
      * Create a minimal envelope when only the repository is known.

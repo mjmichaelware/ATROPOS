@@ -54,10 +54,17 @@ class AppProjectGeneratorTest {
         assertTrue(generated.files.containsAll(listOf("README.md", "LICENSE", ".gitignore", "AGENTS.md")))
         assertTrue(Files.exists(target.resolve("src/main/kotlin/calculator/Main.kt")))
         assertTrue(Files.exists(target.resolve("src/test/kotlin/calculator/MainTest.kt")))
+        val source = Files.readString(target.resolve("src/main/kotlin/calculator/Main.kt"))
+        val tests = Files.readString(target.resolve("src/test/kotlin/calculator/MainTest.kt"))
+        assertTrue("fun evaluate" in source)
+        assertTrue("\"+\" -> left + right" in source)
+        assertTrue("division by zero" in source)
+        assertTrue("2 + 2" in tests)
+        assertTrue(generated.branch.startsWith("calculator-"))
         val generatedAgents = Files.readString(target.resolve("AGENTS.md"))
         assertTrue("./verify.sh" in generatedAgents)
         assertTrue(".atropos/evidence/app-manifest.txt" in generatedAgents)
-        assertTrue(Files.readString(target.resolve(".atropos/evidence/app-manifest.txt")).contains("verification=generated-test-and-content-shape"))
+        assertTrue(Files.readString(target.resolve(".atropos/evidence/app-manifest.txt")).contains("verification=generated-source-and-tests"))
         assertTrue(Files.readString(target.resolve(".atropos/evidence/app-manifest.txt")).contains("verification_output_sha256="))
         assertTrue(Files.readString(target.resolve("verify.sh")).contains("MainTestKt"))
         val evidence = Files.readString(target.resolve(".atropos/evidence/app-manifest.txt"))
@@ -66,6 +73,9 @@ class AppProjectGeneratorTest {
         assertTrue(evidence.contains("project=.\n"))
         assertTrue("/data/" !in evidence)
         assertTrue(Files.exists(root.resolve(".atropos/territory/assignments.jsonl")))
+        assertTrue(Files.exists(target.resolve(".atropos/research/user-prompt.md")))
+        assertTrue(Files.exists(target.resolve(".atropos/research/requirements.md")))
+        assertTrue(Files.exists(target.resolve(".atropos/research/atoms.md")))
         assertTrue(Files.size(root.resolve(".atropos/generated-projects/calculator-factory-proof-1.tar")) > 0)
     }
 
@@ -109,7 +119,7 @@ class AppProjectGeneratorTest {
         val generated = AppProjectGenerator(root).generateApp("Build 2048's weather tool", "safe-1")
 
         assertTrue(generated.files.any { it.startsWith("src/main/kotlin/app_2048") })
-        assertTrue(Files.readString(root.resolve(".atropos/generated-projects/app_2048-safe-1/src/main/kotlin/app_2048/Main.kt")).contains("println"))
+        assertTrue(Files.readString(root.resolve(".atropos/generated-projects/app_2048-safe-1/src/main/kotlin/app_2048/Main.kt")).contains("fun runApp"))
     }
 
     @Test

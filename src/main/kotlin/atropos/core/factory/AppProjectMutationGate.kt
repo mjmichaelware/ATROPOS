@@ -26,11 +26,21 @@ class AppProjectMutationGate(
         val normalizedTarget = target.toAbsolutePath().normalize()
         require(normalizedTarget.startsWith(root)) { "app project mutation escaped repository root" }
         val relative = root.relativize(normalizedTarget).toString()
+        val dispatcher = ActionActor.HumanOwner
+        val worker = ActionActor.HierarchyNode("factory-worker", "factory-${target.fileName}")
+        val territory = TerritoryGrantService(
+            service = TerritoryService(TerritoryStore(root), DirectorService(DirectorStore(root), root)),
+            rootPrefix = ".atropos/generated-projects"
+        )
+        val grant = territory.grantToNode(dispatcher, worker, listOf(relative))
+        require(grant is atropos.core.territory.GrantResult.Granted) {
+            "factory territory refused before mutation: ${(grant as? atropos.core.territory.GrantResult.Refused)?.reason}"
+        }
         val decision = agency.evaluate(
             ActionProposal(
                 id = "factory-mutation-${target.fileName}",
                 actionClass = PolicyActionClass.FILE_MUTATION,
-                actor = ActionActor.HumanOwner,
+                actor = worker,
                 targetPaths = listOf(relative),
                 metadata = mapOf("owner" to "app-factory", "territory" to ".atropos/generated-projects")
             )

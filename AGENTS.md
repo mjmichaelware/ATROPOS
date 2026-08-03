@@ -2638,3 +2638,43 @@ End of AGENTS.md
 ### 2026-08-03T16:06:00Z · Agent: Codex GPT-5 · Ledger markup for 089-EOF
 - Correction: the `CommandPaletteRenderer.kt` fingerprint in batch `portable-terminal-ux-089-EOF` was mistyped/truncated in that row. The correct SHA-256 is `7fb44013a3ca092ebb38da13c45c16cff6edc736f31291575f55d25770a44d0a`.
 - No code or percentage changed; this append-only markup corrects evidence without rewriting the prior ledger row.
+
+### 2026-08-03T18:07:50Z · Agent: Codex GPT-5 · Batch: gate-a-factory-logic-lineage-092
+- Paths touched: `src/main/kotlin/atropos/core/factory/AppSourceTemplate.kt` (+105), `FactoryLineage.kt` (+94), `RepoScaffold.kt` (+5/-15), `AppProjectGenerator.kt` (+57/-8), `AppProjectMutationGate.kt` (+12), `AppFactoryRouter.kt` (+10/-2), `EvidenceManifest.kt` (+10), `src/main/kotlin/atropos/core/verification/FactoryCompletionInput.kt` (+13), `VerifiedCompletionGate.kt` (+15), `BoundedGitWorktreeCommandRunner.kt` (+15), `CommandLexer.kt` (+2), `FactoryCommandHandler.kt` (+2); focused tests added/updated in `CommandLexerTest.kt`, `AppProjectGeneratorTest.kt`, `FactoryCommandHandlerTest.kt`, and `BoundedGitWorktreeCommandRunnerTest.kt`.
+- Atoms / phases affected: Gate A App Factory logic, branch isolation, prompt/research/atom lineage, territory-before-mutation, independent audit/completion evidence, apostrophe-safe command lexing.
+- Predicate moved: generated projects now receive executable generic CLI behavior, with the calculator fixture implementing `+`, `-`, `*`, `/`, invalid-input and divide-by-zero exit paths plus real assertions; generated Git history selects an app-derived branch; prompt, requirements, and atom artifacts are hashed and persisted; factory mutation records a hierarchy worker territory before writes; AuditorService and the existing VerifiedCompletionGate participate before evidence/commit/export; apostrophes inside ordinary words no longer open unterminated quotes.
+- % delta: unchanged; no phase percentage claim. Focused test lane was operator-interrupted during test compilation, so no test pass or VERIFIED claim is made.
+- Why justified: the former feature-string scaffold and `APP_SCAFFOLD_VERIFY_OK` shape check were replaced by executable source/tests and `APP_FACTORY_VERIFY_OK`; lineage records local-memory-compatible soft-fail markers for unavailable lakehouse/SpecGraph channels and uses the existing internal planning DAG; branch creation is a typed Git operation and cannot inherit `MusicMakerLM`; existing territory, auditor, director, and completion-gate owners were extended rather than duplicated.
+- HR interrupts: none. Gate B JAR/runtime proof was intentionally not requested or run.
+- Fingerprints: `AppSourceTemplate.kt=1e214bb9a4d84d074d9a30300f08c163ea425410da2c1d57e252ba23ede3d30d`, `FactoryLineage.kt=ce58f46a86926006020af9b117840f5699975a978c559e1624b9e79c3d2292d3`, `FactoryCompletionInput.kt=90c1ff8acd8097ac1d1b8c66727b054665176a50decac09d0a484d5a93be3b94`, `AppProjectGenerator.kt=a21cfa46db2669d99e7fc6a7f9e25865f58bf559f0f2bd5a6d6d7036242912aa`, `AppProjectMutationGate.kt=b05e3659a74e2c2593fc898314bda94382f071d993e5f80828a829d27e816083`, `VerifiedCompletionGate.kt=af609f7a0e9e0c6b7d7515fcfc2a26b37edda9c5f96368ccbfbdad7bef719113`, `CommandLexer.kt=e07008386cd7ca894d5f24ba16a34cbd4ebf37b954d15c38c8c44aad4673dac9`.
+- New overall estimate: unchanged; Gate A implementation advanced, focused tests remain unverified, and Gate B remains closed.
+
+### 2026-08-03T18:15:00Z · Agent: Codex GPT-5 · Batch: factory-lineage-research-context-093
+- Paths touched: `src/main/kotlin/atropos/core/factory/FactoryLineage.kt` (+30/-5), `FactoryResearchService.kt` (+101), `AppFactoryRouter.kt` (+12/-1), `EvidenceManifest.kt` (+5), `src/main/kotlin/atropos/core/provider/ContextEnvelopeFactory.kt` (+31), and `src/test/kotlin/atropos/core/factory/FactoryLineageTest.kt` (+55).
+- Atoms / phases affected: Gate A prompt artifact, confidence/clarification, soft-fail research, requirements-before-code, SpecGraph fallback trace, open-atom lineage, provider context envelope.
+- Predicate moved: prompt artifacts are written before confidence/research and include SHA-256, UTC timestamp, fingerprint, and exact word spans; low confidence emits explicit YES/NO clarification questions and never proceeds to scaffold; ST/LT memory, lakehouse, bounded fetch, and provider suggestion channels are attempted in order with bounded soft-fail records; requirements include channel evidence and internal-DAG fallback reason; atom records retain prompt lineage; the existing ContextEnvelopeFactory now carries project, prompt hash, research hash, atom ids, territory, and proposal-only policy metadata into factory context; evidence records prompt fingerprint and context hash.
+- % delta: unchanged; no phase percentage claim. Only static source assertions and `git diff --check` were run; no Gradle, JAR, or runtime proof.
+- Why justified: the additions extend the existing LocalMemoryStore, InternalPlanningGraphService, ContextEnvelopeFactory, AppFactoryRouter, and EvidenceManifest owners. No second memory, DAG, provider, or context system was introduced. Network research is disabled unless explicitly configured and is bounded by timeout, response bytes, redirect policy, and one request per configured endpoint.
+- HR interrupts: none. Gate B remains closed.
+- Fingerprints: `FactoryLineage.kt=3e1221ae35bfc767ff727dd9951eddbb985184601c3b3202af8d81e4165c3bfd`, `FactoryResearchService.kt=52773b7235b06730cb4a17efa104d7433b7055c6ec4535ddba21ece5fbb00a6e`, `ContextEnvelopeFactory.kt=3c0c3c8146a4fd4a7af86d16e0f900c5cf35c6a0c1d5a45a189da0769cec94e3`, `AppFactoryRouter.kt=3db28eb84b6963efe9bdb92dbe42eb380fec8bb34171df304203e708d1795507`, `EvidenceManifest.kt=3ac8fab03b324b18874150410898a8f53434d85f8bc9cb33d5c189cf7efd1e7d`, `FactoryLineageTest.kt=390e53c8b3233956c5c520e53f3888c3c035c19cb02425c4a2f75ac18ae96526`.
+- New overall estimate: unchanged; Gate A lineage implementation is present, focused tests remain unrun, and Gate B remains closed.
+
+### 2026-08-03T18:22:00Z · Agent: Codex GPT-5 · Batch: factory-clarification-lineage-094
+- Paths touched: `src/main/kotlin/atropos/core/factory/FactoryLineage.kt` (+48), `src/test/kotlin/atropos/core/factory/FactoryLineageTest.kt` (+14).
+- Atoms / phases affected: Gate A confidence clarification lineage.
+- Predicate moved: low-confidence factory requests now persist `clarification-questions.md` linked to the prompt fingerprint and question SHA-256 before refusing scaffold emission; a typed API persists later YES/NO answers in `clarification-answers.md` with question and answer hashes linked to the same prompt fingerprint.
+- % delta: unchanged; no phase percentage claim. Static source checks and `git diff --check` passed; focused tests were written but not run.
+- Why justified: this extends the existing FactoryLineage owner only. SpecGraph soft-detection/fallback behavior and thin atom research markers were left unchanged as directed. No JAR, build, or runtime proof was run.
+- HR interrupts: none. Gate B remains closed.
+- Fingerprints: `FactoryLineage.kt=4fa132ea26f26621d36271ccadc409f13f3352b1047e0464718c6cace21456c1`, `FactoryLineageTest.kt=ed9a1937a4a8d361607f82b1479e51ca8993d1ae8b8076fee6dac5575a220ad8`.
+- New overall estimate: unchanged; requested clarification persistence is implemented, and the next action is the focused lineage test only.
+
+### 2026-08-03T18:51:00Z · Agent: Codex GPT-5 · Batch: app-generator-test-fix-095
+- Paths touched: `src/main/kotlin/atropos/core/factory/AppProjectGenerator.kt` (+10/-4), `src/test/kotlin/atropos/core/factory/AppProjectGeneratorTest.kt` (+1/-1).
+- Atoms / phases affected: Gate A generated-project name/path isolation and calculator source characterization.
+- Predicate moved: numeric app names now use the same `app_`-prefixed package/project sanitizer as `RepoScaffold`, while project IDs preserve safe hyphens; the calculator test now asserts the actual `when`-based addition implementation rather than a nonexistent comparison expression.
+- % delta: unchanged; no phase percentage claim. `git diff --check` passed. Tests were not run.
+- Why justified: this is limited to the two reported `AppProjectGeneratorTest` failures and does not alter calculator behavior, lineage, territory, auditing, or runtime proof paths.
+- HR interrupts: none. No JAR or operator proof requested.
+- Fingerprints: `AppProjectGenerator.kt=0ce9c8243729c4be9ee223ad940b2911dce12eb97823ade74f5de470d32926b2`, `AppProjectGeneratorTest.kt=1c3b4933dedcd2dfb7b135538da4599beda6da62d61ada4b84f0db34bdbb11b7`.
+- New overall estimate: unchanged; operator may run the requested focused tests.

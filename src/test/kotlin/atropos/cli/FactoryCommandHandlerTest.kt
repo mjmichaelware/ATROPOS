@@ -20,7 +20,7 @@ class FactoryCommandHandlerTest {
         handler.execute(listOf("/factory", "run", "build", "notes"))
 
         val rendered = output.toString()
-        assertTrue("factory run completed:" in rendered)
+        assertTrue("factory run verified repository output:" in rendered)
         assertTrue("generated_project: build notes" in rendered)
     }
 
@@ -35,7 +35,7 @@ class FactoryCommandHandlerTest {
 
         handler.execute(listOf("/factory", "run", "build", "notes"))
 
-        assertFalse("factory run completed:" in output.toString())
+        assertFalse("factory run verified repository output:" in output.toString())
         assertTrue("factory run failed: generation failed" in errors.toString())
     }
 
