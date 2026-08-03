@@ -2,6 +2,7 @@ package atropos.cli
 
 import atropos.cli.config.ConfigurationManager
 import atropos.cli.ui.AnsiTerminalEngine
+import atropos.cli.ui.PlainTerminalOutput
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 import kotlin.test.Test
@@ -42,7 +43,9 @@ class FactoryCommandHandlerTest {
     private fun engine(output: ByteArrayOutputStream, errors: ByteArrayOutputStream): AnsiTerminalEngine =
         AnsiTerminalEngine(
             capabilities = ConfigurationManager(),
-            out = PrintStream(output),
-            errors = PrintStream(errors)
+            plainOutput = PlainTerminalOutput(
+                out = PrintStream(output),
+                errors = PrintStream(errors)
+            )
         )
 }

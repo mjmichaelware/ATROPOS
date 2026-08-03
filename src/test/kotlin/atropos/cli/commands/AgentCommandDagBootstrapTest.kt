@@ -2,6 +2,7 @@ package atropos.cli.commands
 
 import atropos.cli.config.ConfigurationManager
 import atropos.cli.ui.AnsiTerminalEngine
+import atropos.cli.ui.PlainTerminalOutput
 import java.io.OutputStream
 import java.io.PrintStream
 import kotlin.test.Test
@@ -14,8 +15,10 @@ class AgentCommandDagBootstrapTest {
     private fun buildCommand(): AgentCommand {
         val ui = AnsiTerminalEngine(
             capabilities = ConfigurationManager(),
-            out = PrintStream(OutputStream.nullOutputStream()),
-            errors = PrintStream(OutputStream.nullOutputStream())
+            plainOutput = PlainTerminalOutput(
+                out = PrintStream(OutputStream.nullOutputStream()),
+                errors = PrintStream(OutputStream.nullOutputStream())
+            )
         )
         return AgentCommand(ui = ui, activeProviderName = { "test_provider" })
     }

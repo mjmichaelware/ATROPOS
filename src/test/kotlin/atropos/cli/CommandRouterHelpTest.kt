@@ -3,6 +3,7 @@ package atropos.cli
 import atropos.cli.config.ConfigurationManager
 import atropos.cli.session.QuotaSessionTracker
 import atropos.cli.ui.AnsiTerminalEngine
+import atropos.cli.ui.PlainTerminalOutput
 import atropos.core.AIProvider
 import atropos.core.ApiKeys
 import atropos.core.AtroposConfig
@@ -62,8 +63,10 @@ class CommandRouterHelpTest {
         var factoryPrompt = ""
         val engine = AnsiTerminalEngine(
             capabilities = ConfigurationManager(),
-            out = PrintStream(out),
-            errors = PrintStream(ByteArrayOutputStream())
+            plainOutput = PlainTerminalOutput(
+                out = PrintStream(out),
+                errors = PrintStream(ByteArrayOutputStream())
+            )
         )
         val factory = FactoryCommandHandler(engine, runFactory = { prompt ->
             factoryPrompt = prompt
