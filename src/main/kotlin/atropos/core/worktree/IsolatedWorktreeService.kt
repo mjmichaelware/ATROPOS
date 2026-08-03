@@ -7,37 +7,8 @@ import atropos.core.security.RedactionFilter
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.StandardCopyOption
 import java.time.Instant
 import java.util.UUID
-
-data class WorktreeRecord(
-    val id: String,
-    val jobId: String,
-    val worktreePath: Path,
-    val baselineCommit: String? = null,
-    val territory: List<String> = emptyList(),
-    val dirtyEvidence: String? = null,
-    val appliedPatches: List<String> = emptyList(),
-    val verified: Boolean = false,
-    val rolledBack: Boolean = false,
-    val mergedBack: Boolean = false,
-    val createdAt: Instant,
-    val updatedAt: Instant,
-    val metaFile: Path
-)
-
-data class WorktreeCreateResult(
-    val ok: Boolean,
-    val message: String,
-    val record: WorktreeRecord? = null
-)
-
-data class WorktreeRollbackResult(
-    val ok: Boolean,
-    val message: String,
-    val revertedFiles: List<String> = emptyList()
-)
 
 class IsolatedWorktreeService(
     private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
@@ -47,11 +18,12 @@ class IsolatedWorktreeService(
     private val credentialDiffGuard: CredentialDiffGuard = CredentialDiffGuard(),
     private val gitRunner: BoundedGitWorktreeCommandRunner = BoundedGitWorktreeCommandRunner()
 ) {
-    private val worktreeRoot = repoRoot.resolve(".atropos/worktrees").normalize()
+    private val recordStore = WorktreeRecordStore(repoRoot.resolve(".atropos/worktrees").normalize())
+    private val worktreeRoot = recordStore.root()
 
     fun createWorktree(jobId: String, territory: List<String> = emptyList()): WorktreeCreateResult {
         try {
-            Files.createDirectories(worktreeRoot)
+            recordStore.ensureRoot()
 
             // Capture baseline commit
             val baselineCommit = gitRunner.run(GitWorktreeOperation.REV_PARSE_HEAD, repoRoot)
@@ -97,7 +69,7 @@ class IsolatedWorktreeService(
                 updatedAt = now,
                 metaFile = worktreeRoot.resolve("$id.meta")
             )
-            writeRecord(record)
+            recordStore.write(record)
 
             memoryStore.rememberDetailed(
                 kind = atropos.core.memory.MemoryKind.NOTE,
@@ -115,13 +87,13 @@ class IsolatedWorktreeService(
     }
 
     fun applyPatch(worktreeId: String, patchContent: String): Boolean {
-        val record = readRecord(worktreeId) ?: return false
+        val record = recordStore.read(worktreeId) ?: return false
         if (patchContent.isBlank()) {
             recordTerritoryViolation(record, "<empty-patch>", "patch_apply_empty")
             return false
         }
-        val patchPaths = extractPatchPaths(patchContent)
-        val unsafePath = patchPaths.firstOrNull(::isUnsafeRelativePath)
+        val patchPaths = WorktreePatchPaths.extract(patchContent)
+        val unsafePath = WorktreePatchPaths.firstUnsafe(patchPaths)
         if (unsafePath != null) {
             recordTerritoryViolation(record, unsafePath, "patch_apply_path")
             return false
@@ -138,7 +110,7 @@ class IsolatedWorktreeService(
                     appliedPatches = record.appliedPatches + patchContent.take(40),
                     updatedAt = clock()
                 )
-                writeRecord(updated)
+                recordStore.write(updated)
                 true
             } else {
                 false
@@ -148,13 +120,13 @@ class IsolatedWorktreeService(
 
     /** Writes one non-empty, territory-bound file in an existing worktree. */
     fun writeFile(worktreeId: String, relativePath: String, content: String): Boolean {
-        val record = readRecord(worktreeId) ?: return false
+        val record = recordStore.read(worktreeId) ?: return false
         val path = relativePath.trim()
         if (content.isBlank()) {
             recordTerritoryViolation(record, path.ifBlank { "<empty-path>" }, "file_write_empty")
             return false
         }
-        if (isUnsafeRelativePath(path)) {
+        if (WorktreePatchPaths.isUnsafeRelativePath(path)) {
             recordTerritoryViolation(record, path, "file_write_path")
             return false
         }
@@ -177,10 +149,10 @@ class IsolatedWorktreeService(
 
     /** Stages intent for one new self-host file through the typed Git boundary. */
     fun intentToAdd(worktreeId: String, relativePath: String): WorktreeRollbackResult {
-        val record = readRecord(worktreeId)
+        val record = recordStore.read(worktreeId)
             ?: return WorktreeRollbackResult(false, "worktree not found: $worktreeId")
         val path = relativePath.trim()
-        if (isUnsafeRelativePath(path)) {
+        if (WorktreePatchPaths.isUnsafeRelativePath(path)) {
             recordTerritoryViolation(record, path, "intent_to_add_path")
             return WorktreeRollbackResult(false, "intent-to-add path refused: $path")
         }
@@ -214,7 +186,7 @@ class IsolatedWorktreeService(
     }
 
     fun rollback(worktreeId: String): WorktreeRollbackResult {
-        val record = readRecord(worktreeId)
+        val record = recordStore.read(worktreeId)
             ?: return WorktreeRollbackResult(false, "worktree not found: $worktreeId")
 
         try {
@@ -229,7 +201,7 @@ class IsolatedWorktreeService(
             }.getOrDefault(emptyList())
 
             val updated = record.copy(rolledBack = true, appliedPatches = emptyList(), updatedAt = clock())
-            writeRecord(updated)
+            recordStore.write(updated)
 
             memoryStore.rememberDetailed(
                 kind = atropos.core.memory.MemoryKind.NOTE,
@@ -247,7 +219,7 @@ class IsolatedWorktreeService(
     }
 
     fun verifyAndMerge(worktreeId: String, verificationCommand: String = "git diff --check"): WorktreeRollbackResult {
-        val record = readRecord(worktreeId)
+        val record = recordStore.read(worktreeId)
             ?: return WorktreeRollbackResult(false, "worktree not found: $worktreeId")
 
         if (verificationCommand.trim() != "git diff --check") {
@@ -277,7 +249,7 @@ class IsolatedWorktreeService(
                 return WorktreeRollbackResult(false, "verification refused: worktree produced no source diff")
             }
 
-            val changed = extractPatchPaths(diff)
+            val changed = WorktreePatchPaths.extract(diff)
             val outside = firstOutsideTerritory(record, changed)
             if (outside != null) {
                 recordTerritoryViolation(record, outside, "merge_apply")
@@ -289,7 +261,7 @@ class IsolatedWorktreeService(
             }
 
             val updated = record.copy(verified = true, mergedBack = true, updatedAt = clock())
-            writeRecord(updated)
+            recordStore.write(updated)
 
             // Clean up worktree
             runCatching {
@@ -303,50 +275,18 @@ class IsolatedWorktreeService(
     }
 
     fun removeWorktree(worktreeId: String): Boolean {
-        val record = readRecord(worktreeId) ?: return false
+        val record = recordStore.read(worktreeId) ?: return false
         runCatching { gitRunner.run(GitWorktreeOperation.WORKTREE_REMOVE, repoRoot, record.worktreePath.toString()) }
-        Files.deleteIfExists(record.metaFile)
+        recordStore.delete(record)
         return true
     }
 
-    fun listWorktrees(): List<WorktreeRecord> {
-        if (!Files.isDirectory(worktreeRoot)) return emptyList()
-        val files = Files.list(worktreeRoot).use { stream -> stream.toList() }
-        return files
-            .filter { it.fileName.toString().endsWith(".meta") && it.fileName.toString().startsWith("wt-") }
-            .mapNotNull { readRecordFromFile(it) }
-            .sortedByDescending { it.createdAt }
-    }
+    fun listWorktrees(): List<WorktreeRecord> = recordStore.list()
 
-    fun readWorktree(worktreeId: String): WorktreeRecord? = readRecord(worktreeId)
+    fun readWorktree(worktreeId: String): WorktreeRecord? = recordStore.read(worktreeId)
 
     private fun firstOutsideTerritory(record: WorktreeRecord, paths: List<String>): String? {
         return atropos.core.territory.TerritoryEnforcer(record.territory).firstOutside(paths)
-    }
-
-    private fun extractPatchPaths(patchContent: String): List<String> =
-        patchContent.lineSequence()
-            .mapNotNull { line ->
-                when {
-                    line.startsWith("+++ b/") -> line.removePrefix("+++ b/")
-                    line.startsWith("--- a/") -> line.removePrefix("--- a/")
-                    line.startsWith("diff --git ") -> line.substringAfter(" b/", missingDelimiterValue = "")
-                    else -> ""
-                }.takeIf { it.isNotBlank() && it != "/dev/null" }
-            }
-            .map { it.trim() }
-            .distinct()
-            .toList()
-
-    private fun isUnsafeRelativePath(path: String): Boolean {
-        val normalized = path.replace('\\', '/').trim()
-        if (normalized.isBlank() || normalized == "/dev/null" || normalized.startsWith("/")) return true
-        // Any traversal segment (even if resolved to a safe path) is disallowed.
-        val segments = normalized.split("/")
-        if (segments.any { it == ".." }) return true
-        val parsed = runCatching { Path.of(normalized) }.getOrNull() ?: return true
-        val canonical = parsed.normalize().toString().replace('\\', '/')
-        return parsed.isAbsolute || canonical == ".." || canonical.startsWith("../")
     }
 
     private fun recordTerritoryViolation(record: WorktreeRecord, path: String, operation: String) {
@@ -357,77 +297,5 @@ class IsolatedWorktreeService(
             body = "worktree=${record.id} job=${record.jobId} path=$path territory=${record.territory.joinToString(",")}",
             tags = listOf("worktree", "territory", "denied", operation)
         )
-    }
-
-    private fun readRecord(worktreeId: String): WorktreeRecord? {
-        val id = worktreeId.trim().removeSuffix(".meta")
-        if (id.isBlank() || id.contains("/") || id.contains("\\")) return null
-        val file = worktreeRoot.resolve("$id.meta").normalize()
-        if (!file.startsWith(worktreeRoot) || !Files.isRegularFile(file)) return null
-        return readRecordFromFile(file)
-    }
-
-    private fun readRecordFromFile(file: Path): WorktreeRecord? {
-        val fields = runCatching {
-            Files.readAllLines(file, StandardCharsets.UTF_8).mapNotNull { line ->
-                val index = line.indexOf('=')
-                if (index <= 0) null else line.substring(0, index) to line.substring(index + 1)
-            }.toMap()
-        }.getOrNull() ?: return null
-        return runCatching {
-            WorktreeRecord(
-                id = fields["id"].orEmpty(),
-                jobId = fields["jobId"].orEmpty(),
-                worktreePath = Path.of(fields["worktreePath"].orEmpty()),
-                baselineCommit = fields["baselineCommit"]?.takeIf { it.isNotBlank() },
-                territory = fields["territory"]?.split(",")?.filter { it.isNotBlank() } ?: emptyList(),
-                dirtyEvidence = decode(fields["dirtyEvidenceB64"]).takeIf { it.isNotBlank() },
-                appliedPatches = fields["appliedPatches"]?.split("|")?.filter { it.isNotBlank() } ?: emptyList(),
-                verified = fields["verified"]?.toBooleanStrictOrNull() ?: false,
-                rolledBack = fields["rolledBack"]?.toBooleanStrictOrNull() ?: false,
-                mergedBack = fields["mergedBack"]?.toBooleanStrictOrNull() ?: false,
-                createdAt = parseInstant(fields["createdAt"]) ?: Instant.EPOCH,
-                updatedAt = parseInstant(fields["updatedAt"]) ?: Instant.EPOCH,
-                metaFile = file
-            )
-        }.getOrNull()
-    }
-
-    private fun writeRecord(record: WorktreeRecord) {
-        Files.createDirectories(worktreeRoot)
-        val tmp = Files.createTempFile(worktreeRoot, record.id, ".tmp")
-        val content = buildString {
-            appendLine("id=${record.id}")
-            appendLine("jobId=${record.jobId}")
-            appendLine("worktreePath=${record.worktreePath}")
-            appendLine("baselineCommit=${record.baselineCommit ?: ""}")
-            appendLine("territory=${record.territory.joinToString(",")}")
-            appendLine("dirtyEvidenceB64=${encode(record.dirtyEvidence.orEmpty())}")
-            appendLine("appliedPatches=${record.appliedPatches.joinToString("|")}")
-            appendLine("verified=${record.verified}")
-            appendLine("rolledBack=${record.rolledBack}")
-            appendLine("mergedBack=${record.mergedBack}")
-            appendLine("createdAt=${record.createdAt}")
-            appendLine("updatedAt=${record.updatedAt}")
-        }
-        Files.writeString(tmp, content, StandardCharsets.UTF_8)
-        try {
-            Files.move(tmp, record.metaFile, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
-        } catch (_: Exception) {
-            Files.move(tmp, record.metaFile, StandardCopyOption.REPLACE_EXISTING)
-        }
-    }
-
-    private fun parseInstant(value: String?): Instant? =
-        value?.takeIf { it.isNotBlank() }?.let { runCatching { Instant.parse(it) }.getOrNull() }
-
-    private fun encode(text: String): String =
-        java.util.Base64.getEncoder().encodeToString(text.toByteArray(StandardCharsets.UTF_8))
-
-    private fun decode(value: String?): String {
-        if (value.isNullOrBlank()) return ""
-        return runCatching {
-            String(java.util.Base64.getDecoder().decode(value), StandardCharsets.UTF_8)
-        }.getOrDefault("")
     }
 }
