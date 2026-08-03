@@ -28,6 +28,10 @@ class AgentRunService(
     private val outcomeMemory: AgentRunOutcomeMemory = AgentRunOutcomeMemory(memoryStore),
     private val localPatchSynthesizer: AgentLocalPatchSynthesizer = AgentLocalPatchSynthesizer(patchStore)
 ) {
+    private val prompts = AgentRunPromptComposer()
+    private val lifecycle = AgentJobLifecycle(jobStore)
+    private val failureSummary = AgentFailureSummary(redactionFilter)
+
     fun run(
         activeProviderName: String,
         task: String,
@@ -47,15 +51,15 @@ class AgentRunService(
         val baselineStatus = repoStatus.capture()
         val sourceEvidence = sourceResolver.resolveSourceEvidence(task)
         var job = jobStore.createJob(task = task, provider = activeProviderName)
-        job = persist(job.copy(status = AgentJobStatus.PLANNING, updatedAt = startedAt))
+        job = lifecycle.persist(job.copy(status = AgentJobStatus.PLANNING, updatedAt = startedAt))
         hooks.checkpoint(AgentQueueCheckpoint.CLAIMED, job, "job record created")
 
         try {
             hooks.beforeStage(AgentQueueCheckpoint.PLANNED, job)
-            val planPrompt = buildPlanPrompt(task)
+            val planPrompt = prompts.planPrompt(task)
             val planResult = agentService.ask(activeProviderName, planPrompt)
             val planAt = Instant.now()
-            job = persist(
+            job = lifecycle.persist(
                 job.copy(
                     provider = planResult.providerName,
                     status = AgentJobStatus.PATCHING,
@@ -68,13 +72,13 @@ class AgentRunService(
             hooks.checkpoint(AgentQueueCheckpoint.PLANNED, job, "planning completed")
 
             hooks.beforeStage(AgentQueueCheckpoint.PATCH_GENERATED, job)
-            val patchTask = buildPatchTask(task, planResult.answerText)
+            val patchTask = prompts.patchTask(task, planResult.answerText)
             val providerPatchResult = agentService.patch(activeProviderName, patchTask)
             val patchResult = providerPatchResult.takeIf { it.patchId != null && it.checkResult?.passed != false }
                 ?: localPatchSynthesizer.synthesize(task)
                 ?: providerPatchResult
             val patchAt = Instant.now()
-            job = persist(
+            job = lifecycle.persist(
                 job.copy(
                     provider = patchResult.providerName,
                     status = AgentJobStatus.APPLYING,
@@ -92,7 +96,7 @@ class AgentRunService(
                     ?: patchResult.rejectionReason
                     ?: patchResult.message
                     ?: "patch generation failed"
-                job = fail(job, failureReason, "patch generation failed before apply")
+                job = lifecycle.fail(job, failureReason, "patch generation failed before apply")
                 return finalizeRun(job, task, smokeCommand, null, baselineStatus, sourceEvidence)
             }
 
@@ -100,7 +104,7 @@ class AgentRunService(
             val applyResult = agentService.applyPatch(patchId, checkOnly = false, verifyAfterApply = true)
             val applyAt = Instant.now()
             val initialVerificationId = applyResult.verificationResult?.verificationId
-            job = persist(
+            job = lifecycle.persist(
                 job.copy(
                     provider = patchResult.providerName,
                     patchId = patchId,
@@ -116,7 +120,7 @@ class AgentRunService(
                     updatedAt = applyAt,
                     applyResult = applyResult.render(),
                     result = if (applyResult.applied && applyResult.verificationResult?.passed == true) {
-                        buildSuccessResult(patchId, initialVerificationId, null)
+                        prompts.successResult(patchId, initialVerificationId, null)
                     } else {
                         "initial apply or verification failed"
                     }
@@ -130,7 +134,7 @@ class AgentRunService(
             }
 
             if (applyResult.applied && applyResult.verificationResult?.passed == true) {
-                job = complete(job)
+                job = lifecycle.complete(job)
             }
 
             if (job.status != AgentJobStatus.COMPLETED) {
@@ -143,7 +147,7 @@ class AgentRunService(
                 hooks.beforeStage(AgentQueueCheckpoint.REPAIR_GENERATED, job)
                 val repairResult = agentService.repair(activeProviderName, patchId)
                 val repairAt = Instant.now()
-                job = persist(
+                job = lifecycle.persist(
                     job.copy(
                         provider = repairResult.providerName,
                         status = AgentJobStatus.REPAIRING,
@@ -161,7 +165,7 @@ class AgentRunService(
                         ?: repairResult.rejectionReason
                         ?: repairResult.message
                         ?: applyFailure
-                    job = fail(job, failureReason, "repair generation failed after verification failure")
+                    job = lifecycle.fail(job, failureReason, "repair generation failed after verification failure")
                     return finalizeRun(job, task, smokeCommand, null, baselineStatus, sourceEvidence)
                 }
 
@@ -169,7 +173,7 @@ class AgentRunService(
                 val repairedApply = agentService.applyPatch(repairPatchId, checkOnly = false, verifyAfterApply = true)
                 val repairedAt = Instant.now()
                 val repairedVerificationId = repairedApply.verificationResult?.verificationId
-                job = persist(
+                job = lifecycle.persist(
                     job.copy(
                         provider = repairResult.providerName,
                         appliedPatchId = repairPatchId,
@@ -185,7 +189,7 @@ class AgentRunService(
                         updatedAt = repairedAt,
                         applyResult = repairedApply.render(),
                         result = if (repairedApply.applied && repairedApply.verificationResult?.passed == true) {
-                            buildSuccessResult(patchId, repairedVerificationId, repairPatchId)
+                            prompts.successResult(patchId, repairedVerificationId, repairPatchId)
                         } else {
                             "repair apply or verification failed"
                         }
@@ -204,7 +208,7 @@ class AgentRunService(
                         ?: repairedApply.checkResult?.output
                         ?: repairedApply.applyOutput
                         ?: "verification failed after repair"
-                    job = fail(job, failureReason, "repair patch did not verify")
+                    job = lifecycle.fail(job, failureReason, "repair patch did not verify")
                 }
             }
 
@@ -220,7 +224,7 @@ class AgentRunService(
             if (smokeExecution != null) {
                 val smokeAt = Instant.now()
                 val smokePassed = smokeExecution.passed
-                job = persist(
+                job = lifecycle.persist(
                     job.copy(
                         smokeCommand = smokeExecution.command,
                         smokeExitCode = smokeExecution.exitCode,
@@ -249,7 +253,7 @@ class AgentRunService(
         } catch (cancelled: AgentRunCancelledException) {
             throw cancelled
         } catch (failure: Exception) {
-            job = fail(job, compactFailureSummary(failure.message), "agent run failed")
+            job = lifecycle.fail(job, failureSummary.compact(failure.message, AgentFailureSummary.RUN_FAILED), "agent run failed")
             val final = finalizeRun(job, task, smokeCommand, null, baselineStatus, sourceEvidence)
             hooks.checkpoint(AgentQueueCheckpoint.FINALIZED, final, "failed final report persisted")
             return final
@@ -277,7 +281,7 @@ class AgentRunService(
             provider = "none"
         )
         val sourceEvidence = sourceResolver.resolveSourceEvidence(task)
-        val refused = persist(
+        val refused = lifecycle.persist(
             created.copy(
                 status = AgentJobStatus.REFUSED,
                 provider = "none",
@@ -298,7 +302,7 @@ class AgentRunService(
         outcomeMemory.rememberFinalOutcome(refused, emptyList(), sourceEvidence, emptyList())
 
         val contextPath = contextExporter.write(refused, emptyList())
-        return persist(refused.copy(contextExportPath = contextPath.toString()))
+        return lifecycle.persist(refused.copy(contextExportPath = contextPath.toString()))
     }
 
     private fun finalizeRun(
@@ -318,7 +322,7 @@ class AgentRunService(
             else -> null
         }
         val smokePassed = smokeExecution?.passed ?: if (smokeRequested != null) false else job.smokePassed
-        val finalRecord = persist(
+        val finalRecord = lifecycle.persist(
             job.copy(
                 smokeCommand = smokeRequested ?: job.smokeCommand,
                 smokeExitCode = smokeExecution?.exitCode ?: job.smokeExitCode,
@@ -337,62 +341,6 @@ class AgentRunService(
         outcomeMemory.rememberFinalOutcome(finalRecord, changedFiles, sourceEvidence, impactedSymbols)
 
         val contextPath = contextExporter.write(finalRecord, changedFiles)
-        return persist(finalRecord.copy(contextExportPath = contextPath.toString()))
+        return lifecycle.persist(finalRecord.copy(contextExportPath = contextPath.toString()))
     }
-
-    private fun complete(job: AgentJobRecord): AgentJobRecord {
-        val finishedAt = job.finishedAt ?: Instant.now()
-        return persist(
-            job.copy(
-                status = AgentJobStatus.COMPLETED,
-                finishedAt = finishedAt,
-                updatedAt = finishedAt,
-                failureReason = null,
-                result = job.result ?: "job completed"
-            )
-        )
-    }
-
-    private fun fail(job: AgentJobRecord, failureReason: String, result: String): AgentJobRecord {
-        val finishedAt = Instant.now()
-        return persist(
-            job.copy(
-                status = AgentJobStatus.FAILED,
-                finishedAt = finishedAt,
-                updatedAt = finishedAt,
-                failureReason = failureReason.trim().ifBlank { "agent run failed" },
-                result = result.trim().ifBlank { "agent run failed" }
-            )
-        )
-    }
-
-    private fun persist(record: AgentJobRecord): AgentJobRecord =
-        jobStore.update(record)
-
-    private fun buildPlanPrompt(task: String): String = buildString {
-        appendLine("Create a short implementation plan for this ATROPOS job.")
-        appendLine("Return reasoning only, no diff.")
-        appendLine("Task:")
-        appendLine(task.trim())
-    }.trimEnd()
-
-    private fun buildPatchTask(task: String, plan: String): String = buildString {
-        appendLine(task.trim())
-        val compactPlan = plan.trim().take(2000)
-        if (compactPlan.isNotBlank()) {
-            appendLine()
-            appendLine("Plan context:")
-            appendLine(compactPlan)
-        }
-    }.trimEnd()
-
-    private fun buildSuccessResult(initialPatchId: String, verificationId: String?, repairPatchId: String?): String = buildString {
-        append("completed")
-        append(" patch=$initialPatchId")
-        if (repairPatchId != null) append(" repair=$repairPatchId")
-        verificationId?.let { append(" verification=$it") }
-    }
-
-    private fun compactFailureSummary(message: String?): String =
-        message?.trim()?.takeUnless { it.isBlank() }?.let { redactionFilter.compact(it, 240) } ?: "agent run failed"
 }

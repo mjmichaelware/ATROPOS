@@ -21,14 +21,20 @@ import atropos.core.security.RedactionFilter
 internal class AgentFailureSummary(
     private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
-    fun compact(message: String?): String =
+    /**
+     * @param fallback what to say when there is no message. Callers name their
+     *   own because "provider cascade failed" is wrong for a run that never
+     *   reached a provider.
+     */
+    fun compact(message: String?, fallback: String = CASCADE_FAILED): String =
         message?.trim()
             .takeUnless { it.isNullOrBlank() }
             ?.let { redactionFilter.compact(it, MAXIMUM_CHARACTERS) }
-            ?: CASCADE_FAILED
+            ?: fallback
 
     internal companion object {
         const val MAXIMUM_CHARACTERS = 240
         const val CASCADE_FAILED = "provider cascade failed"
+        const val RUN_FAILED = "agent run failed"
     }
 }
