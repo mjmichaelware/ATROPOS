@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 
-import { engineBaseUrl, type EngineFailure } from '@/lib/engine/client';
+import { readEngine, type EngineFailure } from '@/lib/engine/client';
 
 /**
  * Reads the Phase 20 governance surfaces.
@@ -84,39 +84,11 @@ export interface StorageReport {
 
 export type Result<T> = { ok: true; data: T } | ({ ok: false } & Omit<EngineFailure, 'ok'>);
 
-async function read<T>(path: string): Promise<Result<T>> {
-  let response: Response;
-  try {
-    response = await fetch(`${engineBaseUrl()}${path}`, {
-      cache: 'no-store',
-      headers: { accept: 'application/json' },
-    });
-  } catch {
-    return {
-      ok: false,
-      reason: 'bridge-unreachable',
-      detail: 'The ATROPOS engine bridge did not answer.',
-      remedy: 'Start the engine with ATROPOS_BRIDGE_PORT set (for example 4317).',
-    };
-  }
-  const body = await response.json().catch(() => null);
-  if (!response.ok) {
-    const refusal = body as { detail?: string; remedy?: string } | null;
-    return {
-      ok: false,
-      reason: 'bridge-refused',
-      detail: refusal?.detail ?? `The bridge refused with status ${response.status}.`,
-      remedy: refusal?.remedy ?? 'Call GET /v1/routes for the routes this build exposes.',
-    };
-  }
-  return { ok: true, data: body as T };
-}
-
 export const governance = {
-  proposals: () => read<{ proposals: Proposal[]; cooldowns: Cooldown[] }>('/v1/proposals'),
-  amendments: () => read<{ amendments: Amendment[] }>('/v1/amendments'),
-  metrics: () => read<GovernanceMetrics>('/v1/metrics'),
-  storage: () => read<StorageReport>('/v1/storage'),
+  proposals: () => readEngine<{ proposals: Proposal[]; cooldowns: Cooldown[] }>('/v1/proposals'),
+  amendments: () => readEngine<{ amendments: Amendment[] }>('/v1/amendments'),
+  metrics: () => readEngine<GovernanceMetrics>('/v1/metrics'),
+  storage: () => readEngine<StorageReport>('/v1/storage'),
 };
 
 /**

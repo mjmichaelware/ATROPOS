@@ -1,3 +1,4 @@
+import path from "node:path";
 import type { NextConfig } from "next";
 
 const securityHeaders = [
@@ -21,6 +22,20 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  /**
+   * The workspace root, stated rather than inferred.
+   *
+   * `@atropos/design-tokens` and `@atropos/web-contracts` are linked into
+   * `apps/web/node_modules` from `packages/`, which is outside this directory.
+   * There is no lockfile above `apps/web`, so Turbopack infers the app
+   * directory as the root and refuses to follow those links — the build fails
+   * on `globals.css` before it reaches a single page, while `tsc` and Vitest
+   * both resolve them fine. Naming the root is the difference between a
+   * production build that works and one that only ever worked in dev.
+   */
+  turbopack: {
+    root: path.join(__dirname, "..", ".."),
+  },
   poweredByHeader: false,
   reactStrictMode: true,
   typedRoutes: true,

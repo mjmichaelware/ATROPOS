@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 'use client';
 
+import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { useOptionalSessionState } from '@/lib/contexts/session-state-context';
 import { globalRoutes, projectRoute } from '@/components/navigation/routes';
@@ -27,11 +28,21 @@ export function GlobalSection({
   title,
   description,
   segment,
+  children,
 }: {
   title: string;
   description: string;
   /** The `/projects/[id]/<segment>` page this section opens. */
   segment: 'work' | 'conversations' | 'files' | 'agents';
+  /**
+   * Section-wide content that does not depend on a project being active.
+   *
+   * Rendered below the project link rather than instead of it: the resume
+   * checkpoint and the export landing zones are workspace-level facts, and
+   * hiding them until a project is selected would mean the operator with no
+   * active project cannot see that they have resumable work.
+   */
+  children?: ReactNode;
 }) {
   const activeProjectId = useOptionalSessionState()?.session.activeProjectId ?? null;
 
@@ -71,6 +82,8 @@ export function GlobalSection({
           </Link>
         </div>
       )}
+
+      {children}
     </div>
   );
 }

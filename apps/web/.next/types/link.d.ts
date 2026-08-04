@@ -33,6 +33,7 @@ declare namespace __next_route_internal_types__ {
 
   type StaticRoutes = 
     | `/`
+    | `/activity`
     | `/agents`
     | `/api/atropos/command`
     | `/api/atropos/recovery`

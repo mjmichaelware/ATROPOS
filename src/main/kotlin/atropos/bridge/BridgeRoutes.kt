@@ -7,8 +7,11 @@ import atropos.bridge.http.HttpRoute
 import atropos.bridge.http.HttpRouteTable
 import atropos.bridge.http.HttpStreamRoute
 import atropos.bridge.http.JsonWriter
+import atropos.bridge.projection.ActivityProjection
 import atropos.bridge.projection.ApprovalProjection
+import atropos.bridge.projection.CheckpointProjection
 import atropos.bridge.projection.CommandProjection
+import atropos.bridge.projection.ExportProjection
 import atropos.bridge.projection.GovernanceProjection
 import atropos.bridge.projection.StorageProjection
 import atropos.bridge.projection.ProjectProjection
@@ -18,6 +21,9 @@ import atropos.cli.ui.HomeStateProvider
 import atropos.core.approval.ApprovalOutcome
 import atropos.core.approval.ApprovalSurface
 import atropos.core.approval.PendingApprovalStore
+import atropos.core.artifact.export.ArtifactLandingResolver
+import atropos.core.checkpoint.CheckpointSummary
+import atropos.core.monitor.ActivityStream
 import atropos.core.phase20.AuthorityAmendment
 import atropos.core.phase20.GovernanceCounts
 import atropos.core.phase20.GovernanceMetrics
@@ -51,6 +57,9 @@ class BridgeRoutes(
     private val approvalView: ApprovalProjection = ApprovalProjection(),
     private val governanceView: GovernanceProjection = GovernanceProjection(),
     private val storageView: StorageProjection = StorageProjection(),
+    private val checkpointView: CheckpointProjection = CheckpointProjection(),
+    private val activityView: ActivityProjection = ActivityProjection(),
+    private val exportView: ExportProjection = ExportProjection(),
     /**
      * Governance state sources.
      *
@@ -65,6 +74,19 @@ class BridgeRoutes(
     private val observationPeriods: () -> List<ObservationPeriod> = { emptyList() },
     private val governanceCounts: () -> GovernanceCounts = { GovernanceCounts() },
     private val storage: () -> StorageConstitution? = { null },
+    /**
+     * The resume checkpoint, the activity stream and the export landing zones.
+     *
+     * Suppliers for the same reason as the governance state above: null and
+     * empty are the truthful answers for a workspace that has not run anything
+     * yet, and each projection renders that absence as absence. The export
+     * resolver is nullable because a runtime with no repository root has no
+     * landing zone to offer — refusing is correct, inventing one is not.
+     */
+    private val checkpoint: () -> CheckpointSummary? = { null },
+    private val activity: () -> ActivityStream = { ActivityStream(emptyList()) },
+    private val exportResolver: () -> ArtifactLandingResolver? = { null },
+    private val exportTerritory: () -> List<java.nio.file.Path> = { emptyList() },
     private val clock: () -> Instant = { Instant.now() }
 ) {
     fun table(): HttpRouteTable {
@@ -119,6 +141,21 @@ class BridgeRoutes(
                             "storage-unmeasured",
                             "No storage ceiling is declared for this runtime.",
                             "Declare a ceiling before relying on storage reporting; an undeclared ceiling is not an unlimited one."
+                        )
+                },
+                HttpRoute("GET", "/v1/checkpoint", "the resume checkpoint and its primary action") {
+                    HttpResponse.json(checkpointView.render(checkpoint(), clock()))
+                },
+                HttpRoute("GET", "/v1/activity", "one ordered stream of pipeline state changes") {
+                    HttpResponse.json(activityView.render(activity()))
+                },
+                HttpRoute("GET", "/v1/exports", "landing zones an export may actually use") {
+                    exportResolver()?.let { HttpResponse.json(exportView.render(it, exportTerritory())) }
+                        ?: HttpResponse.refusal(
+                            503,
+                            "export-unrooted",
+                            "This runtime has no repository root, so no landing zone can be resolved.",
+                            "Open a workspace before exporting; an unresolved zone is not the current directory."
                         )
                 },
                 HttpRoute("GET", "/v1/answers/stream", "six continuous answers, pushed") {

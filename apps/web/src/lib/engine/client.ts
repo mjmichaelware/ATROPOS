@@ -106,7 +106,15 @@ export function engineBaseUrl(): string {
 const UNREACHABLE_REMEDY =
   'Start the engine with ATROPOS_BRIDGE_PORT set (for example ATROPOS_BRIDGE_PORT=4317).';
 
-async function fetchEngine<T>(path: string): Promise<EngineResult<T>> {
+/**
+ * The one place this surface talks to the bridge.
+ *
+ * Exported so every feature client (governance, checkpoint, activity, exports)
+ * reads through it. A second copy of this function would be a second answer to
+ * "is the engine running?", and the two would diverge on the first day one of
+ * them learned about a new refusal shape.
+ */
+export async function readEngine<T>(path: string): Promise<EngineResult<T>> {
   let response: Response;
   try {
     response = await fetch(`${engineBaseUrl()}${path}`, {
@@ -149,9 +157,9 @@ async function fetchEngine<T>(path: string): Promise<EngineResult<T>> {
 }
 
 export const engine = {
-  answers: () => fetchEngine<EngineAnswersPayload>('/v1/answers'),
-  projects: () => fetchEngine<EngineProjectsPayload>('/v1/projects'),
-  commands: () => fetchEngine<unknown>('/v1/commands'),
-  vocabulary: () => fetchEngine<unknown>('/v1/vocabulary'),
-  health: () => fetchEngine<{ ok: true; engine: string }>('/v1/health'),
+  answers: () => readEngine<EngineAnswersPayload>('/v1/answers'),
+  projects: () => readEngine<EngineProjectsPayload>('/v1/projects'),
+  commands: () => readEngine<unknown>('/v1/commands'),
+  vocabulary: () => readEngine<unknown>('/v1/vocabulary'),
+  health: () => readEngine<{ ok: true; engine: string }>('/v1/health'),
 };

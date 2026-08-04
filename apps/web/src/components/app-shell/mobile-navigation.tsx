@@ -6,7 +6,7 @@ import { NavLinks } from "@/components/navigation/nav-links";
 import { useNavItems } from "@/components/navigation/use-nav-items";
 
 export function MobileNavigation() {
-  const { global, project, developer } = useNavItems();
+  const { global, project, engineState, developer } = useNavItems();
   return (
     <Dialog.Root>
       <Dialog.Trigger asChild>
@@ -30,6 +30,7 @@ export function MobileNavigation() {
           <Dialog.Title>Navigation</Dialog.Title>
           <NavLinks items={global} className="sg-pressable sg-mobile-panel-link" />
           {project.length > 0 ? <NavLinks items={project} className="sg-pressable sg-mobile-panel-link" /> : null}
+          <NavLinks items={engineState} className="sg-pressable sg-mobile-panel-link" />
           {developer.length > 0 ? <NavLinks items={developer} className="sg-pressable sg-mobile-panel-link" /> : null}
           <Dialog.Close asChild>
             <Button variant="secondary" type="button">

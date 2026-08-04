@@ -20,6 +20,8 @@ export const globalRoutes = {
   automation: "/automation" as Route,
   history: "/history" as Route,
   settings: "/settings" as Route,
+  governance: "/governance" as Route,
+  activity: "/activity" as Route,
   devTools: "/developer" as Route,
   specGraph: "/developer/specgraph" as Route,
   signIn: "/auth/sign-in" as Route,
@@ -69,6 +71,21 @@ export const HOE_A02_SPINE_ORDER: readonly string[] = [
   "automation",
   "history",
   "settings",
+];
+
+/**
+ * Engine-state surfaces.
+ *
+ * Governance and Activity are not spine entries: HOE-A02 fixes the spine at
+ * ten, and quietly growing it to twelve would make that atom unassertable. But
+ * a page nothing links to is not a shipped surface, so they are carried as
+ * their own group — always visible, unlike Developer Tools, because what the
+ * system has proposed about itself and what its pipeline is doing are not
+ * developer concerns.
+ */
+export const engineStateGroup: SpineItem[] = [
+  { id: "governance", label: "Governance", href: globalRoutes.governance },
+  { id: "activity", label: "Activity", href: globalRoutes.activity },
 ];
 
 /** §2.10: hidden until the operator asks for it. */

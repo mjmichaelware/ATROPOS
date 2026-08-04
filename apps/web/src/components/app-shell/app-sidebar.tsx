@@ -4,7 +4,7 @@ import { NavLinks } from "@/components/navigation/nav-links";
 import { useNavItems } from "@/components/navigation/use-nav-items";
 
 export function AppSidebar() {
-  const { global, project, developer } = useNavItems();
+  const { global, project, engineState, developer } = useNavItems();
   return (
     <aside className="sg-sidebar" aria-label="Application sections">
       <p className="sg-sidebar-kicker">ATROPOS</p>
@@ -15,6 +15,8 @@ export function AppSidebar() {
           <NavLinks items={project} className="sg-pressable" />
         </>
       ) : null}
+      <p className="sg-sidebar-kicker">System</p>
+      <NavLinks items={engineState} className="sg-pressable" />
       {/* §2.10: absent entirely unless the operator has opted in. */}
       {developer.length > 0 ? (
         <>

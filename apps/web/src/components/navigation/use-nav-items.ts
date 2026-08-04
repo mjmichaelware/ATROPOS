@@ -5,6 +5,7 @@ import type { Route } from "next";
 import {
   activeProjectSection,
   developerToolsItem,
+  engineStateGroup,
   globalRoutes,
   isActiveGlobalRoute,
   navigationSpine,
@@ -34,6 +35,7 @@ export type NavItem = {
 export function useNavItems(): {
   global: NavItem[];
   project: NavItem[];
+  engineState: NavItem[];
   developer: NavItem[];
   projectId: string | undefined;
 } {
@@ -59,6 +61,15 @@ export function useNavItems(): {
       }))
     : [];
 
+  // Engine-state surfaces are always offered. They are kept out of `global`
+  // so HOE-A02's ten-entry spine stays exactly ten and remains assertable.
+  const engineState: NavItem[] = engineStateGroup.map((item) => ({
+    id: item.id,
+    label: item.label,
+    href: item.href,
+    active: isActiveGlobalRoute(pathname, item.href),
+  }));
+
   // §2.10: hidden by default. Revealed only by an explicit operator
   // preference, and shown regardless while the operator is already inside it
   // so the surface can never strand them without a way back.
@@ -76,5 +87,5 @@ export function useNavItems(): {
       ]
     : [];
 
-  return { global, project, developer, projectId };
+  return { global, project, engineState, developer, projectId };
 }
