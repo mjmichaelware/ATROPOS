@@ -10,6 +10,7 @@ import {
   projectSections,
 } from '@/components/navigation/routes';
 import { useOptionalSessionState } from '@/lib/contexts/session-state-context';
+import { useEngineCommands } from '@/lib/engine/use-engine-commands';
 import { COMMON_SHORTCUTS, useKeyboardShortcuts } from '@/lib/hooks/use-keyboard-shortcuts';
 
 interface CommandItem {
@@ -121,10 +122,39 @@ export function CommandPalette() {
     [projects, router]
   );
 
+  // Engine commands.
+  //
+  // HOE-A07 requires the palette to reach *every* primary action, and
+  // SUP.UX.COMMAND-REGISTRY names the single registry it must come from. The
+  // spine above covers navigation; the engine's own command vocabulary was
+  // absent entirely, so the palette could not reach a single slash command.
+  // These are read from /v1/commands rather than restated here — a copy would
+  // be the second registry the atom exists to prevent.
+  const { commands: engineRegistry } = useEngineCommands();
+  const engineCommands: CommandItem[] = useMemo(
+    () =>
+      engineRegistry.map((entry) => ({
+        id: `engine-${entry.command}`,
+        label: entry.command,
+        description: entry.description,
+        icon: <Zap className="w-4 h-4" />,
+        action: () => {
+          // The bridge is read-only for actions; running a command belongs to
+          // the CLI. Copying it is the honest affordance — offering to "run"
+          // it here would imply an execution path that does not exist.
+          void navigator.clipboard?.writeText(entry.command);
+          setOpen(false);
+        },
+        category: 'action' as const,
+        keywords: [entry.command.toLowerCase(), entry.description.toLowerCase()],
+      })),
+    [engineRegistry]
+  );
+
   // All commands
   const allCommands = useMemo(
-    () => [...navigationCommands, ...projectCommands],
-    [navigationCommands, projectCommands]
+    () => [...navigationCommands, ...projectCommands, ...engineCommands],
+    [navigationCommands, projectCommands, engineCommands]
   );
 
   // Filter commands based on search
