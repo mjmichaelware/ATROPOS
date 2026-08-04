@@ -230,6 +230,36 @@ object CommandCatalog {
         CommandEntry("/autonomous run-max", "run up to N autonomous tasks"),
         CommandEntry("/autonomous backlog", "show autonomous task backlog"),
         CommandEntry("/autonomous repairs", "show repair history"),
-        CommandEntry("/autonomous failovers", "show provider failover history")
+        CommandEntry("/autonomous failovers", "show provider failover history"),
+
+        CommandEntry("/project", "durable project registry", "Project", aliases = listOf("/projects")),
+        CommandEntry("/project list", "list registered projects", "Project"),
+        CommandEntry("/project new", "register a project (use <name> [objective])", "Project"),
+        CommandEntry("/project show", "project detail by id", "Project"),
+        CommandEntry("/project status", "set project status (use <id> <status>)", "Project"),
+        CommandEntry("/project objective", "set a project objective (use <id> <text>)", "Project"),
+        CommandEntry("/project history", "permanent project event history", "Project"),
+
+        CommandEntry("/tests", "run the built-in test matrix", "Verification"),
+        CommandEntry("/tests matrix", "run the built-in test matrix", "Verification"),
+
+        CommandEntry("/security", "secret precedence and redaction status", "Security"),
+        CommandEntry("/security redact", "redaction report for supplied text", "Security"),
+
+        CommandEntry("/ci", "ci and edge execution status", "Execution"),
+        CommandEntry("/ci local compile", "queue a local compile job", "Execution"),
+        CommandEntry("/ci run next", "run the next queued ci job", "Execution"),
+
+        CommandEntry("/ops", "deployment descriptor operations", "Operations"),
+        CommandEntry("/ops export", "export deployment descriptor files", "Operations"),
+        CommandEntry("/ops verify", "verify exported deployment descriptors", "Operations"),
+        CommandEntry("/ops quota-backup", "back up the quota ledger", "Operations"),
+        CommandEntry("/ops quota-restore", "restore the quota ledger (use <backup-file>)", "Operations"),
+
+        CommandEntry("/assets", "asset generator status", "Assets"),
+        CommandEntry("/assets status", "asset generator status", "Assets"),
+        CommandEntry("/assets text", "write a text asset (use <name> <prompt>)", "Assets"),
+        CommandEntry("/assets ansi", "write an ansi asset (use <name> <prompt>)", "Assets"),
+        CommandEntry("/assets svg", "write an svg asset (use <name> <prompt>)", "Assets")
     )
 }

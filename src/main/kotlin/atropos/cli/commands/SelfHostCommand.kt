@@ -19,7 +19,8 @@ class SelfHostCommand(
     private val selfHostRunner: (String) -> SelfHostAutonomousRunResult = { prompt -> selfHostService.runNaturalLanguageSelfBuild(prompt) },
     private val dagService: DagExecutionService = DagExecutionService(config, repoRoot),
     private val journal: EventJournalService = EventJournalService(repoRoot),
-    private val completionGate: VerifiedCompletionGate = VerifiedCompletionGate(config, repoRoot)
+    private val completionGate: VerifiedCompletionGate = VerifiedCompletionGate(config, repoRoot),
+    private val proofRenderer: SelfHostRunProofRenderer = SelfHostRunProofRenderer()
 ) : AgentCommandHandler {
 
     override fun execute(tokens: List<String>): AgentCommandOutcome {
@@ -181,7 +182,7 @@ class SelfHostCommand(
         ui.startSpinner("Running Phase 11 self-host loop")
         return try {
             val result = selfHostRunner(prompt)
-            val text = SelfHostCommandText.run(result)
+            val text = SelfHostCommandText.run(result, proofRenderer)
             if (!result.isVerifiedSuccess()) {
                 ui.renderError(text)
                 AgentCommandOutcome.Invalid("self-host run refused: success contract incomplete\n$text")

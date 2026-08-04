@@ -45,7 +45,8 @@
     "react-dom": "19.2.7",
     "react-hook-form": "7.81.0",
     "tailwind-merge": "3.6.0",
-    "zod": "4.4.3"
+    "zod": "4.4.3",
+    "@atropos/web-contracts": "file:../../packages/atropos-web-contracts"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.12.1",

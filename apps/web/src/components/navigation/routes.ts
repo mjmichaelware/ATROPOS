@@ -12,6 +12,10 @@ export const globalRoutes = {
   projects: "/projects" as Route,
   /** SpecGraph's project create form, which moved with its directory. */
   newProject: "/developer/specgraph/new" as Route,
+  work: "/work" as Route,
+  conversations: "/conversations" as Route,
+  files: "/files" as Route,
+  agents: "/agents" as Route,
   models: "/models" as Route,
   automation: "/automation" as Route,
   history: "/history" as Route,
@@ -36,10 +40,35 @@ export type SpineItem = { id: string; label: string; href: Route };
 export const navigationSpine: SpineItem[] = [
   { id: "home", label: "Home", href: globalRoutes.home },
   { id: "projects", label: "Projects", href: globalRoutes.projects },
+  { id: "work", label: "Work", href: globalRoutes.work },
+  { id: "conversations", label: "Conversations", href: globalRoutes.conversations },
+  { id: "files", label: "Files", href: globalRoutes.files },
+  { id: "agents", label: "Agents", href: globalRoutes.agents },
   { id: "models", label: "Models", href: globalRoutes.models },
   { id: "automation", label: "Automation", href: globalRoutes.automation },
   { id: "history", label: "History", href: globalRoutes.history },
   { id: "settings", label: "Settings", href: globalRoutes.settings },
+];
+
+/**
+ * HOE-A02's spine in the order the atom names it.
+ *
+ * Held as data so the ordering is assertable. Work, Conversations, Files and
+ * Agents existed only as `/projects/[id]/…` pages before this: reachable while
+ * a project was open, absent from navigation otherwise, which made four of the
+ * ten spine entries unreachable from the shell.
+ */
+export const HOE_A02_SPINE_ORDER: readonly string[] = [
+  "home",
+  "projects",
+  "work",
+  "conversations",
+  "files",
+  "agents",
+  "models",
+  "automation",
+  "history",
+  "settings",
 ];
 
 /** §2.10: hidden until the operator asks for it. */

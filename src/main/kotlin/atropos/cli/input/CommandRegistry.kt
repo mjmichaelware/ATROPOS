@@ -49,8 +49,25 @@ object CommandRegistry {
         "local"
     )
 
+    /**
+     * Slash families [atropos.cli.CommandRouter] accepts but that this registry
+     * deliberately does not advertise, because invoking them cannot do the
+     * thing their name implies.
+     *
+     * `/swarm` is routed only to `renderError("swarm endpoint is not bound")`.
+     * Listing it in the palette, in tab-completion or in `/help` would offer
+     * the operator an action that does nothing, so it is named here rather
+     * than silently omitted: the parity guard reads this set, which forces the
+     * exemption to be deleted on the day the endpoint is actually bound.
+     */
+    val unboundFamilies: Set<String> = setOf("/swarm")
+
     fun commands(): List<String> =
         entries.map { it.command }
+
+    /** The leading `/word` of every registered command, e.g. `/project`. */
+    fun families(): Set<String> =
+        entries.map { it.command.substringBefore(' ') }.toSet()
 
     fun quickAccessCommands(): List<String> =
         listOf(

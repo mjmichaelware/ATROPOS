@@ -33,6 +33,7 @@ declare namespace __next_route_internal_types__ {
 
   type StaticRoutes = 
     | `/`
+    | `/agents`
     | `/api/atropos/command`
     | `/api/atropos/recovery`
     | `/api/atropos/status`
@@ -43,16 +44,19 @@ declare namespace __next_route_internal_types__ {
     | `/auth/sign-up`
     | `/auth/update-password`
     | `/automation`
+    | `/conversations`
     | `/dev-tools`
     | `/developer`
     | `/developer/specgraph`
     | `/developer/specgraph/new`
+    | `/files`
     | `/history`
     | `/models`
     | `/offline`
     | `/projects`
     | `/projects/new`
     | `/settings`
+    | `/work`
   type DynamicRoutes<T extends string = string> = 
     | `/developer/specgraph/${SafeSlug<T>}`
     | `/developer/specgraph/${SafeSlug<T>}/executions/${SafeSlug<T>}`

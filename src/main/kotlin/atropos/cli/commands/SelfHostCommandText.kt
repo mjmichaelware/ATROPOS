@@ -99,7 +99,10 @@ object SelfHostCommandText {
             }
         }
 
-    fun run(result: SelfHostAutonomousRunResult): String =
+    fun run(
+        result: SelfHostAutonomousRunResult,
+        proofRenderer: SelfHostRunProofRenderer = SelfHostRunProofRenderer()
+    ): String =
         buildString {
             appendLine(result.message)
             appendLine("goal: ${result.goal?.record?.id ?: "none"}")
@@ -110,6 +113,9 @@ object SelfHostCommandText {
                 appendLine("evidence markdown: ${it.markdownPath ?: "none"}")
                 appendLine("evidence json: ${it.jsonPath ?: "none"}")
             }
+            // The Phase 11 acceptance chain, printed where the operator typed
+            // the prompt: mutated paths, git status, compile gate exit.
+            result.proof?.let { appendLine(proofRenderer.render(it)) }
             appendLine("steps:")
             result.steps.forEach { appendLine("  - $it") }
         }.trimEnd()

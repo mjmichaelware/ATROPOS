@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { AlertTriangle, RotateCcw, X } from 'lucide-react';
 import type { RecoveryReport } from '@/app/api/atropos/recovery/route';
+import { useOptionalSessionState } from '@/lib/contexts/session-state-context';
 
 /**
  * §11.2: "The user always knows what was restored and what requires attention."
@@ -19,6 +20,9 @@ import type { RecoveryReport } from '@/app/api/atropos/recovery/route';
 export function RecoveryRibbon() {
   const [report, setReport] = useState<RecoveryReport | null>(null);
   const [dismissed, setDismissed] = useState(false);
+  const sessionState = useOptionalSessionState();
+  const sessionRecovery = sessionState?.recovery ?? null;
+  const acknowledgeRecovery = sessionState?.acknowledgeRecovery;
 
   useEffect(() => {
     let cancelled = false;
@@ -42,7 +46,38 @@ export function RecoveryRibbon() {
     };
   }, []);
 
-  if (!report || dismissed) return null;
+  if (dismissed) return null;
+
+  // The browser's own restore is reported here rather than in a second ribbon.
+  // HOE-A09 pairs layout persistence with a recovery report, and two competing
+  // recovery surfaces would leave the operator deciding which one to believe.
+  // It is shown first because it describes the window they are looking at.
+  if (sessionRecovery && !sessionRecovery.clean) {
+    return (
+      <div
+        className="mx-4 mt-4 flex items-start gap-3 rounded-lg border border-sg-amber-200 bg-sg-amber-50 p-3 dark:border-sg-amber-800 dark:bg-sg-amber-900/10"
+        role="status"
+      >
+        <RotateCcw className="mt-0.5 h-4 w-4 flex-shrink-0 text-sg-amber-600" aria-hidden="true" />
+        <div className="flex-1 text-sm">
+          <p className="font-medium text-sg-neutral-900 dark:text-sg-neutral-50">
+            {sessionRecovery.restored ? 'Session partly restored' : 'Session could not be restored'}
+          </p>
+          <p className="text-sg-neutral-700 dark:text-sg-neutral-300">{sessionRecovery.message}</p>
+        </div>
+        <button
+          type="button"
+          onClick={acknowledgeRecovery}
+          aria-label="Dismiss session recovery report"
+          className="text-sg-neutral-400 hover:text-sg-neutral-600"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+    );
+  }
+
+  if (!report) return null;
 
   // A clean start is not worth the operator's attention.
   if (report.available && !report.repaired && !report.failure) return null;

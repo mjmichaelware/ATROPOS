@@ -144,6 +144,36 @@ if [ -z "$SAFETY_LINE" ] || [ -z "$DIRECTOR_LINE" ] || [ -z "$GATE_LINE" ] || [ 
   exit 16
 fi
 
+# The Phase 11 acceptance chain must be visible to the operator who typed the
+# prompt, not only reconstructable from the outside: compile gate exit, the
+# mutated paths, and the git status rows all belong in the JAR's own output.
+if ! grep -q "compile gate: passed=true exit=0" "$OUT"; then
+  echo "installed proof failed: compile gate did not report a zero exit inside the JAR" >&2
+  sed -n '1,260p' "$OUT" >&2
+  exit 17
+fi
+if ! grep -q "verdict: VERIFIED" "$OUT"; then
+  echo "installed proof failed: run proof did not reach VERIFIED" >&2
+  sed -n '1,260p' "$OUT" >&2
+  exit 18
+fi
+if grep -q "\[UNMET\]" "$OUT"; then
+  echo "installed proof failed: a Phase 11 predicate is still unmet" >&2
+  grep -n "\[UNMET\]" "$OUT" >&2
+  exit 19
+fi
+if ! grep -q "git status:" "$OUT"; then
+  echo "installed proof failed: run proof did not surface git status" >&2
+  exit 20
+fi
+if ! grep -q "SelfHostCradleRuntimeState.kt present=true" "$OUT"; then
+  echo "installed proof failed: mutated marker was not proven present with a hash" >&2
+  exit 21
+fi
+
+COMPILE_GATE_LINE="$(grep -m 1 "compile gate: passed=" "$OUT" || true)"
+PROOF_VERDICT="$(grep -m 1 "verdict: " "$OUT" | sed 's/^ *//' || true)"
+
 MARKER_HASH="$(sha256sum "$MARKER" | awk '{print $1}')"
 JSON_HASH="$(sha256sum "$EVIDENCE_DIR/bundle.json" | awk '{print $1}')"
 MD_HASH="$(sha256sum "$EVIDENCE_DIR/bundle.md" | awk '{print $1}')"
@@ -158,6 +188,8 @@ sandboxRoot=$SANDBOX
 markerPath=$MARKER
 markerSha256=$MARKER_HASH
 mutationStatus=${STATUS//$'\n'/ | }
+compileGate=$COMPILE_GATE_LINE
+runProofVerdict=$PROOF_VERDICT
 evidenceMarkdown=$EVIDENCE_DIR/bundle.md
 evidenceMarkdownSha256=$MD_HASH
 evidenceJson=$EVIDENCE_DIR/bundle.json

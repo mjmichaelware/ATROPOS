@@ -213,8 +213,10 @@ class SelfHostGoalService(
         val record = selected.goal?.record
             ?: return SelfHostResult(false, "no resumable self-host goal selected")
         // Select first, then bind the envelope to the exact node selected after
-        // restart recovery. Direct advanceGoal calls remain fail-closed when
-        // they omit an envelope; automatic continuation owns this binding.
+        // restart recovery. [advanceGoal] is fail-closed on a missing envelope —
+        // it will not synthesize one — so automatic continuation has to own this
+        // binding or every restart advance refuses. Selection is idempotent, so
+        // advanceGoal re-selecting the same node is not a second advance.
         val selectedNode = selectNextDagNode(record.id)
         if (!selectedNode.ok) {
             val terminal = selectedNode.goal?.record?.terminalCondition
@@ -320,6 +322,8 @@ class SelfHostGoalService(
             service = this,
             jarLocator = SelfHostRuntimeJarLocator(repoRoot),
             jarBuilder = SelfHostCandidateJarBuilder(repoRoot),
+            compileGate = atropos.core.verification.GovernedCompileGate(repoRoot),
+            proofBuilder = SelfHostRunProofBuilder(repoRoot),
             gitStatusEvidence = SelfHostGitStatusEvidence(repoRoot)
         ).run(prompt, phase, lifecycleEmitter = lifecycleEmitter)
 

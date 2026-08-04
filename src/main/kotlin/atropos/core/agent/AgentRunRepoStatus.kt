@@ -14,6 +14,11 @@ class AgentRunRepoStatus(
     private val repoRoot: Path,
     private val processRunner: BoundedProcessRunner = BoundedProcessRunner()
 ) {
+    /** One porcelain row: the two-character status code and the path it names. */
+    data class RepoStatusLine(val code: String, val path: String) {
+        fun render(): String = "$code $path"
+    }
+
     fun changedFilesSince(baseline: Set<String>): List<String> {
         val current = captureResult()
         if (!current.ok) return emptyList()
@@ -24,15 +29,29 @@ class AgentRunRepoStatus(
 
     fun capture(): Set<String> = captureResult().files
 
+    /**
+     * The porcelain rows with their status codes preserved.
+     *
+     * [capture] discards the codes because it only answers "which paths moved".
+     * A mutation proof has to show the operator the same `git status` evidence a
+     * human would read, so the code has to survive. This shares [captureResult]'s
+     * bounded runner rather than spawning its own process: an unbounded
+     * `ProcessBuilder` here would reopen the timeout and output-truncation hole
+     * the bounded runner exists to close.
+     */
+    fun statusLines(): List<RepoStatusLine> {
+        val result = runStatus()
+        if (result.launchError != null || result.timedOut || result.exitCode != 0) return emptyList()
+        return (result.stdout + result.stderr).trimEnd().lineSequence()
+            .mapNotNull { line ->
+                val path = parsePorcelainPath(line) ?: return@mapNotNull null
+                RepoStatusLine(code = line.take(2).trim(), path = path)
+            }
+            .toList()
+    }
+
     fun captureResult(): AgentRepoStatusResult {
-        val result = processRunner.run(
-            command = listOf("git", "status", "--porcelain", "--untracked-files=all"),
-            directory = repoRoot,
-            timeoutMillis = STATUS_TIMEOUT_MILLIS,
-            maxOutputBytes = MAX_OUTPUT_CHARS,
-            maxOutputLines = MAX_OUTPUT_LINES,
-            removeEnvironmentKeys = sensitiveEnvironmentKeys()
-        )
+        val result = runStatus()
         val output = (result.stdout + result.stderr).trimEnd()
         if (result.launchError != null || result.timedOut || result.exitCode != 0) {
             return AgentRepoStatusResult(
@@ -47,6 +66,15 @@ class AgentRunRepoStatus(
             .mapNotNull { parsePorcelainPath(it) }
             .toSet())
     }
+
+    private fun runStatus() = processRunner.run(
+        command = listOf("git", "status", "--porcelain", "--untracked-files=all"),
+        directory = repoRoot,
+        timeoutMillis = STATUS_TIMEOUT_MILLIS,
+        maxOutputBytes = MAX_OUTPUT_CHARS,
+        maxOutputLines = MAX_OUTPUT_LINES,
+        removeEnvironmentKeys = sensitiveEnvironmentKeys()
+    )
 
     private fun parsePorcelainPath(line: String): String? {
         if (line.length < 4) return null

@@ -17,7 +17,32 @@ class CompletionGateChecks(
     private val processRunner: BoundedProcessRunner,
     private val gitRunner: BoundedGitWorktreeCommandRunner,
     private val redactionFilter: RedactionFilter,
-    private val sourceSecretScanner: SourceSecretScanner
+    private val sourceSecretScanner: SourceSecretScanner,
+    /**
+     * The governed compile owner.
+     *
+     * Defaulted from this checker's own [processRunner] rather than letting
+     * [GovernedCompileGate] build its own. Two runners in one gate means the
+     * bounds a caller injected — timeout, output ceiling, and the process seam a
+     * test substitutes — silently do not apply to the compile, which is the one
+     * command in this gate most likely to hang or flood.
+     */
+    private val compileGate: GovernedCompileGate = GovernedCompileGate(
+        repoRoot = repoRoot,
+        processRunner = { command, directory ->
+            val result = processRunner.run(
+                command = command,
+                directory = directory,
+                timeoutMillis = COMPILE_TIMEOUT_MILLIS,
+                maxOutputBytes = 256 * 1024,
+                maxOutputLines = 4_000
+            )
+            GovernedCompileGate.CompileRun(
+                exitCode = result.exitCode ?: 1,
+                output = listOf(result.stdout, result.stderr).filter { it.isNotBlank() }.joinToString("\n")
+            )
+        }
+    )
 ) {
     fun checkBuildMatrix(node: DagNode): GateResult {
         val javaVersion = System.getProperty("java.specification.version") ?: ""
@@ -74,10 +99,16 @@ class CompletionGateChecks(
         }
     }
 
+    /**
+     * Delegates to the single governed compile owner.
+     *
+     * This used to run its own `./gradlew compileKotlin` directly: a tool call
+     * no policy could refuse and no evidence recorded. The gate keeps its
+     * verdict; the process no longer belongs to it.
+     */
     fun checkCompileGate(node: DagNode): GateResult {
-        val result = runVerificationCommand(listOf("./gradlew", "compileKotlin"))
-        val passed = result.exitCode == 0 && !result.timedOut && !result.outputTruncated
-        return GateResult(node.id, passed, "Compile Gate", commandDetail(result, "compilation"), clock())
+        val result = compileGate.verify(node.id)
+        return GateResult(node.id, result.passed, "Compile Gate", result.message.take(240), clock())
     }
 
     fun checkTerritoryAndSecrets(node: DagNode): GateResult {
@@ -152,6 +183,7 @@ class CompletionGateChecks(
 
     private data class VerificationCommandResult(val exitCode: Int, val timedOut: Boolean, val outputTruncated: Boolean, val output: String, val launchError: String?)
     private companion object {
+        const val COMPILE_TIMEOUT_MILLIS = 900_000L
         val SUPPORTED_JAVA_VERSIONS = setOf("17", "21")
         const val FOCUSED_TESTS = "Focused Tests"
         const val TERRITORY_AND_SECRETS = "Territory & Secrets"
