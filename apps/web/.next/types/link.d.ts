@@ -50,6 +50,7 @@ declare namespace __next_route_internal_types__ {
     | `/developer/specgraph`
     | `/developer/specgraph/new`
     | `/files`
+    | `/governance`
     | `/history`
     | `/models`
     | `/offline`
