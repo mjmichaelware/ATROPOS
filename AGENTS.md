@@ -3048,3 +3048,14 @@ End of AGENTS.md
 - HR interrupts: none.
 - Fingerprints: branch `claude/new-session-ocfxmg`, commit `0e18e52`.
 - New overall estimate: unchanged. Verification actually run: Kotlin `atropos.core.{storage,auth,phase20,approval,interrupt,territory}.*` and `atropos.bridge.*` all green (+41 tests this batch). Web untouched by this batch; its last run was 387/387. Full Gradle sweep not run per §5.
+
+### 2026-08-04T04:50:00Z · Agent: Claude (claude-opus-5) · Batch: web-atoms-045-050-routes
+- Paths touched: new `src/main/kotlin/atropos/bridge/projection/{GovernanceProjection,StorageProjection}.kt`, `src/main/kotlin/atropos/bridge/BridgeRoutes.kt` (+`/v1/proposals`, `/v1/amendments`, `/v1/metrics`, `/v1/storage`), new `src/test/kotlin/atropos/bridge/GovernanceRoutesTest.kt`.
+- New decoupled files: 2 main + 1 test.
+- Atoms / phases affected: `C4-IF-02` (46), `C4-IF-03` (47), `C4-IF-04` (48), `C4-IF-05` (49), `P20-S04` (50), and the surface for `SUP.STOR.*` (35–37).
+- Predicate moved: the Phase 20 machinery built in the previous batch now reaches a surface. `/v1/proposals` exposes the predeclared metric so a reviewer can see it was declared *before* the change rather than chosen after (§20.13), names the missing declarations on an incomplete proposal rather than only counting them, and surfaces open observation periods as cooldowns with remaining time so `C4-IF-05` is visible in advance rather than as a silent refusal later. `/v1/amendments` carries the amendment's own hash beside the superseded one, both intact (§20.8). `/v1/metrics` emits **null, never zero**, for an unmeasured rate, with an `unmeasured` list naming which. `/v1/storage` refuses with 503 when no ceiling is declared rather than reporting unlimited — an undeclared ceiling is not an infinite one — and marks each class reclaimable so no surface can offer to delete the active run's evidence.
+- % delta: unchanged; no phase percentage claimed. Governance sources are injected suppliers defaulting to empty, because the durable Phase 20 ledgers are not yet wired. **An empty proposal list is the truthful answer for a system that has not proposed anything**; what must never happen is a placeholder proposal appearing because the surface wanted something to render. The web panels that consume these four routes are still OPEN, as are atoms 31–34, 40–44.
+- Why justified: every route composes the owners from the previous batch and adds no decision of its own; the projections hold no policy.
+- HR interrupts: none.
+- Fingerprints: branch `claude/new-session-ocfxmg`; this batch's commit.
+- New overall estimate: unchanged. Verification actually run: `atropos.bridge.*` green (+11 tests this batch). Full Gradle sweep not run per §5.
