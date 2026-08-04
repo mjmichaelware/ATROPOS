@@ -2,7 +2,11 @@
 package atropos.bridge
 
 import atropos.bridge.http.EngineHttpServer
+import atropos.core.AtroposRepoRootLocator
+import atropos.core.agent.GoalRunStore
+import atropos.core.checkpoint.CheckpointSummary
 import atropos.core.phase20.GovernanceLedger
+import java.time.Instant
 
 /**
  * Decides whether the bridge runs at all, and on which port.
@@ -47,13 +51,32 @@ object AtroposBridge {
         port: Int,
         governance: GovernanceLedger = GovernanceLedger(),
         activeProvider: () -> String
-    ): EngineHttpServer =
-        BridgeRoutes(
+    ): EngineHttpServer {
+        val repoRoot = AtroposRepoRootLocator.resolve()
+        val goalRunStore = GoalRunStore(repoRoot)
+        val exportResolver = atropos.core.artifact.export.ArtifactLandingResolver(repoRoot, null)
+
+        return BridgeRoutes(
             activeProvider = activeProvider,
             proposals = governance::proposals,
             amendments = governance::amendments,
             observationPeriods = governance::observationPeriods,
-            governanceCounts = { governance.counts() }
+            governanceCounts = { governance.counts() },
+            checkpoint = {
+                goalRunStore.latest()?.let { run ->
+                    CheckpointSummary(
+                        goalId = run.goalId ?: run.id,
+                        nodeId = run.currentNodeId,
+                        phase = run.activePhase,
+                        recordedAt = run.updatedAt,
+                        resumable = run.canContinue(),
+                        evidenceCount = run.evidence.size,
+                        nextAction = null
+                    )
+                }
+            },
+            exportResolver = { exportResolver },
+            exportTerritory = { listOf(repoRoot) }
         ).let { routes ->
             EngineHttpServer(
                 routeTable = routes.table(),
@@ -61,4 +84,5 @@ object AtroposBridge {
                 streamRoutes = routes.streamRoutes()
             )
         }
+    }
 }
