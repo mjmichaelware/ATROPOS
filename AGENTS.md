@@ -3059,3 +3059,14 @@ End of AGENTS.md
 - HR interrupts: none.
 - Fingerprints: branch `claude/new-session-ocfxmg`; this batch's commit.
 - New overall estimate: unchanged. Verification actually run: `atropos.bridge.*` green (+11 tests this batch). Full Gradle sweep not run per §5.
+
+### 2026-08-04T05:15:00Z · Agent: Claude (claude-opus-5) · Batch: web-atoms-046-050-panel
+- Paths touched: new `apps/web/src/lib/governance/client.ts` + test, new `apps/web/src/components/governance/governance-panel.tsx`, new `apps/web/src/app/(app)/governance/page.tsx`.
+- New decoupled files: 3 main + 1 test.
+- Atoms / phases affected: `C4-IF-01` (45), `C4-IF-02` (46), `C4-IF-03` (47), `C4-IF-04` (48), `C4-IF-05` (49), `P20-S04` (50) — now rendered, not only served.
+- Predicate moved: the Phase 20 governance surface exists and is reachable at `/governance`, compiled into the production route manifest. Every metric is typed `number | null` rather than `number`, because a type promising `number` forces a default at the boundary and turns "never measured" into "measured zero" — for a false-VERIFIED rate, the most flattering possible lie. `formatRate` returns the words "not measured" rather than a dash, since a dash and `0%` are equally silent to a screen reader and only one is honest. Each proposal shows the predeclared metric *and whether it was declared before the change*, its territory and its rollback, because §20.20 requires the system to explain why/where/how it changed and why the result is better, which a summary and a button cannot do. A structurally incomplete proposal renders as **not approvable** with the missing declarations named (§20.6). Amendments show the superseded hash beside the new one (§20.1).
+- % delta: unchanged; no phase percentage claimed. The panel reads real routes but the engine's durable Phase 20 ledgers are still unwired, so it currently renders the truthful empty state — "No proposals. The system has not proposed a change to itself." Atoms 31–34 and 40–44 remain OPEN.
+- Why justified: the panel holds no governance logic; every judgement (complete, declared, healthy, reclaimable) is computed engine-side and rendered here.
+- HR interrupts: none.
+- Fingerprints: branch `claude/new-session-ocfxmg`; this batch's commit.
+- New overall estimate: unchanged. Verification actually run: web **392/392 pass** (+5), `tsc --noEmit` clean, ESLint **20 errors — baseline**, and `next build` compiles `/governance` into the route manifest.
