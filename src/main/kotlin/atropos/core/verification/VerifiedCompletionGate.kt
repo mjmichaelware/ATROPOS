@@ -36,7 +36,6 @@ class VerifiedCompletionGate(
     private val dagStore: DagStore = DagStore(repoRoot),
     private val runService: AgentRunService = AgentRunService(config),
     private val memoryStore: LocalMemoryStore = LocalMemoryStore(repoRoot.resolve(".atropos/memory").toFile()),
-    private val compileGate: GovernedCompileGate = GovernedCompileGate(repoRoot),
     private val auditorFactory: () -> atropos.core.auditor.AuditorService = { atropos.core.auditor.AuditorService(repoRoot) },
     private val clock: () -> Instant = { Instant.now() },
     private val gitRunner: BoundedGitWorktreeCommandRunner = BoundedGitWorktreeCommandRunner(),
@@ -44,7 +43,7 @@ class VerifiedCompletionGate(
     private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     private val sourceSecretScanner = SourceSecretScanner(redactionFilter)
-    private val checks = CompletionGateChecks(repoRoot, clock, processRunner, gitRunner, redactionFilter, sourceSecretScanner, compileGate)
+    private val checks = CompletionGateChecks(repoRoot, clock, processRunner, gitRunner, redactionFilter, sourceSecretScanner)
     private val evidence = CompletionGateEvidence(repoRoot, clock)
 
     fun evaluateNode(node: DagNode): CompletionGateReport {

@@ -102,15 +102,17 @@ class CommandRegistryParityTest {
                 "$family is not matched by the command palette (slashMatches)"
             )
 
-            // helpLines maps entries 1:1, so the aligned index is the exact
-            // help row for this command — no assumption about its formatting.
-            val index = CommandRegistry.entries.indexOfFirst { it.command == family }
-            assertTrue(index >= 0, "$family has no CommandEntry")
+            // /help is grouped by category with headings and separators, so a
+            // command's row is not at its index in `entries`. What matters is
+            // that the command and its description reach the operator on the
+            // same line; locating that line by search keeps this assertion
+            // independent of how help chooses to group or order itself.
+            val entry = CommandRegistry.entries.firstOrNull { it.command == family }
+            assertTrue(entry != null, "$family has no CommandEntry")
             assertTrue(
-                help[index].contains(family) &&
-                    help[index].contains(CommandRegistry.entries[index].description),
+                help.any { line -> line.contains(family) && line.contains(entry!!.description) },
                 "$family does not appear with its description in /help " +
-                    "(CommandRegistry.helpLines): '${help[index]}'"
+                    "(CommandRegistry.helpLines)"
             )
         }
     }
@@ -156,6 +158,21 @@ class CommandRegistryParityTest {
         )
 
         val LITERAL = Regex(""""([^"]*)"""")
+
+        /**
+         * The router's pre-dispatch guards.
+         *
+         * Help is answered before the dispatch `when` is reached — `if (first in
+         * setOf("?", "/?", "help", "/help", …))` — so a scan of the dispatch
+         * alone reports `/help` as unrouted and this parity guard fails on a
+         * command that demonstrably works.
+         *
+         * This is parsed rather than excepted for the same reason the dispatch
+         * is: an `unboundFamilies` entry would claim help is *not* routed, which
+         * is false, and a hard-coded `+ "/help"` would be the second list this
+         * test exists to prevent. Both routing sites are read from the source.
+         */
+        val GUARD_SET = Regex("""\bfirst\s+in\s+setOf\(([^)]*)\)""")
     }
 
     /**
@@ -182,9 +199,18 @@ class CommandRegistryParityTest {
 
         val dispatch = source.substring(start, end)
 
-        return BRANCH_LABEL.findAll(dispatch)
+        val dispatched = BRANCH_LABEL.findAll(dispatch)
             .flatMap { match -> LITERAL.findAll(match.groupValues[1]) }
             .map { it.groupValues[1].trim().lowercase() }
+
+        // Guards that answer before the dispatch is reached are routing sites
+        // too, and are scanned over the whole router rather than the dispatch
+        // slice precisely because they sit outside it.
+        val guarded = GUARD_SET.findAll(source)
+            .flatMap { match -> LITERAL.findAll(match.groupValues[1]) }
+            .map { it.groupValues[1].trim().lowercase() }
+
+        return (dispatched + guarded)
             // `exit` is routed as a bare word, not a slash command; it is not a
             // palette entry and is not expected to be one.
             .filter { it.startsWith("/") }

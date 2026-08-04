@@ -3,8 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { Plus, Zap, AlertTriangle, CheckCircle2, Clock, Eye } from 'lucide-react';
 import { useProjects, useApprovals } from '@/lib/api-atropos/hooks';
-import { SixAnswersPanel, SixAnswer } from '@/components/ui/six-answers-panel';
-import { TrustIndicators } from '@/components/ui/trust-indicators';
+import { EngineSixAnswers } from '@/components/answers/engine-six-answers';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { useAppContext } from '@/lib/contexts/app-context';
 import { useEffect } from 'react';
@@ -35,31 +34,6 @@ export default function Home() {
     }
   }, [approvalsError, addError]);
 
-  const systemStatus: SixAnswer = {
-    objective: 'Provide a unified operating environment for autonomous work directed by humans.',
-    currentOperation: projects && projects.length > 0
-      ? `${projects.length} active project${projects.length !== 1 ? 's' : ''}`
-      : 'Ready for projects. No active workflows.',
-    reasoning: 'System initialized and waiting for project creation or task assignment.',
-    progress: {
-      percent: projects?.filter((p) => p.status === 'completed').length ?? 0,
-      stage: projects && projects.length > 0 ? 'Managing projects' : 'Idle',
-    },
-    nextAction: projects && projects.length > 0
-      ? 'Select a project to view work items or create a new one'
-      : 'Create your first project to begin work',
-  };
-
-  const trustIndicators = {
-    authorityVerified: true,
-    evidenceVerified: !projectsError && !approvalsError,
-    verificationComplete: true,
-    policyCompliant: true,
-    checkpointCurrent: true,
-    recoveryAvailable: false,
-    noSilentFailures: !projectsError && !approvalsError,
-  };
-
   const pendingApprovals = approvals?.filter((a) => a.status === 'pending') ?? [];
   const activeProjects = projects?.filter((p) => p.status === 'working' || p.status === 'planning') ?? [];
   const completedProjects = projects?.filter((p) => p.status === 'completed') ?? [];
@@ -79,15 +53,7 @@ export default function Home() {
         <h2 className="text-xl font-semibold text-sg-neutral-900 dark:text-sg-neutral-50">
           System Status
         </h2>
-        <SixAnswersPanel answers={systemStatus} expandable={false} />
-      </section>
-
-      {/* Trust Indicators */}
-      <section className="space-y-3">
-        <h2 className="text-xl font-semibold text-sg-neutral-900 dark:text-sg-neutral-50">
-          System Health
-        </h2>
-        <TrustIndicators indicators={trustIndicators} layout="row" compact={false} />
+        <EngineSixAnswers />
       </section>
 
       {/* Quick Actions */}

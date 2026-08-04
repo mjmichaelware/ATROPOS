@@ -105,6 +105,23 @@ object HoeStatusVocabulary {
     }
 
     /**
+     * The Doc 4 term for a state, or `null` when Doc 4 does not name it.
+     *
+     * The inverse of [resolve], and the direction a surface actually needs:
+     * runtime state is what the engine holds, a Doc 4 term is what the operator
+     * reads. Without this, every surface re-derives the mapping from the enum
+     * name and the two spellings that differ — `RUNNING`/"working" and
+     * `COMPLETE`/"completed" — silently drift apart again.
+     *
+     * States Doc 4 does not name (queued, retrying, unknown) return `null`
+     * rather than an invented term: a caller that must render something should
+     * fall back to the runtime spelling knowingly, not be handed a Doc 4 word
+     * the vocabulary never promised.
+     */
+    fun termFor(state: RunState): String? =
+        BY_TERM.entries.firstOrNull { it.value == state }?.key
+
+    /**
      * Like [resolve], but answers [RunState.UNKNOWN] for an unrecognised term.
      *
      * For surfaces that must render something. [RunState.UNKNOWN] is the honest

@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos
 
+import atropos.bridge.AtroposBridge
 import atropos.cli.CommandRouter
 import atropos.cli.RouterOutcome
 import atropos.cli.config.ConfigurationManager
@@ -67,6 +68,19 @@ fun main(args: Array<String>) {
             sessionTracker = tracker,
             rateResolver = capabilities::inputUsdPerToken
         )
+
+        // The engine's client-facing listener. Off unless the operator asks for
+        // it: Source Doc 4 makes Web and Android clients of this engine, but a
+        // port that opens on every start is a surface nobody chose to expose.
+        // Loopback-bound and read-only regardless — see BridgeRoutes.
+        val bridge = AtroposBridge.fromEnvironment { config.runtime.defaultProvider }
+        bridge?.let { server ->
+            if (server.start()) {
+                ui.renderNotice("bridge listening on 127.0.0.1:${server.boundPort()} (read-only)")
+            } else {
+                ui.renderError("bridge failed to start: ${server.lastError() ?: "unknown"}")
+            }
+        }
 
         if (capabilities.isInteractiveTerminal) {
             runInteractive(capabilities, config, ui, tracker, router)

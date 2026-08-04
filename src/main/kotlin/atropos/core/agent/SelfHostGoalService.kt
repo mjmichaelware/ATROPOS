@@ -212,11 +212,25 @@ class SelfHostGoalService(
         if (!selected.ok) return selected
         val record = selected.goal?.record
             ?: return SelfHostResult(false, "no resumable self-host goal selected")
-        // Do not build the envelope here. [advanceGoal] selects the next ready
-        // node first and then attests it; an envelope captured now describes the
-        // node that just finished, and preflight correctly refuses it as a
-        // mismatch. Only an explicitly supplied envelope is passed through.
-        return advanceGoal(record.id, compactState, suppliedEnvelope)
+        // Select first, then bind the envelope to the exact node selected after
+        // restart recovery. [advanceGoal] is fail-closed on a missing envelope —
+        // it will not synthesize one — so automatic continuation has to own this
+        // binding or every restart advance refuses. Selection is idempotent, so
+        // advanceGoal re-selecting the same node is not a second advance.
+        val selectedNode = selectNextDagNode(record.id)
+        if (!selectedNode.ok) {
+            val terminal = selectedNode.goal?.record?.terminalCondition
+            return when (terminal) {
+                GoalTerminalCondition.VERIFIED_COMPLETE ->
+                    SelfHostResult(true, "completed: all DAG nodes done", selectedNode.goal)
+                GoalTerminalCondition.TERMINAL_FAILURE ->
+                    SelfHostResult(false, "failed: ${selectedNode.goal?.record?.failureReason ?: selectedNode.message}", selectedNode.goal)
+                else -> selectedNode
+            }
+        }
+        val envelope = suppliedEnvelope ?: contextEnvelopeForCurrentNode(record.id)
+            ?: return SelfHostResult(false, "context envelope unavailable for selected self-host node")
+        return advanceGoal(record.id, compactState, envelope)
     }
 
     fun planNextAction(goalId: String? = null): SelfHostNextAction = goalQueries.nextAction(goalId)
