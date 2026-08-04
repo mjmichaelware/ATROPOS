@@ -9,6 +9,8 @@ import atropos.bridge.http.HttpStreamRoute
 import atropos.bridge.http.JsonWriter
 import atropos.bridge.projection.ApprovalProjection
 import atropos.bridge.projection.CommandProjection
+import atropos.bridge.projection.GovernanceProjection
+import atropos.bridge.projection.StorageProjection
 import atropos.bridge.projection.ProjectProjection
 import atropos.bridge.projection.SixAnswersProjection
 import atropos.bridge.projection.VocabularyProjection
@@ -16,6 +18,13 @@ import atropos.cli.ui.HomeStateProvider
 import atropos.core.approval.ApprovalOutcome
 import atropos.core.approval.ApprovalSurface
 import atropos.core.approval.PendingApprovalStore
+import atropos.core.phase20.AuthorityAmendment
+import atropos.core.phase20.GovernanceCounts
+import atropos.core.phase20.GovernanceMetrics
+import atropos.core.phase20.ImprovementProposal
+import atropos.core.phase20.ObservationPeriod
+import atropos.core.storage.StorageConstitution
+import java.time.Instant
 
 /**
  * The read-only route set the engine exposes to its clients.
@@ -39,7 +48,24 @@ class BridgeRoutes(
     private val commands: CommandProjection = CommandProjection(),
     private val vocabulary: VocabularyProjection = VocabularyProjection(),
     private val approvals: PendingApprovalStore = PendingApprovalStore(),
-    private val approvalView: ApprovalProjection = ApprovalProjection()
+    private val approvalView: ApprovalProjection = ApprovalProjection(),
+    private val governanceView: GovernanceProjection = GovernanceProjection(),
+    private val storageView: StorageProjection = StorageProjection(),
+    /**
+     * Governance state sources.
+     *
+     * Injected as suppliers rather than read from a store here because the
+     * durable Phase 20 ledgers are not yet wired: these default to empty, and
+     * an empty proposal list is the truthful answer for a system that has not
+     * yet proposed anything. What must never happen is a placeholder proposal
+     * appearing because the surface wanted something to render.
+     */
+    private val proposals: () -> List<ImprovementProposal> = { emptyList() },
+    private val amendments: () -> List<AuthorityAmendment> = { emptyList() },
+    private val observationPeriods: () -> List<ObservationPeriod> = { emptyList() },
+    private val governanceCounts: () -> GovernanceCounts = { GovernanceCounts() },
+    private val storage: () -> StorageConstitution? = { null },
+    private val clock: () -> Instant = { Instant.now() }
 ) {
     fun table(): HttpRouteTable {
         lateinit var table: HttpRouteTable
@@ -74,6 +100,26 @@ class BridgeRoutes(
                 },
                 HttpRoute("POST", "/v1/approvals/decide", "record a human approval decision") { request ->
                     decideApproval(request)
+                },
+                HttpRoute("GET", "/v1/proposals", "self-improvement proposals and cooldowns") {
+                    HttpResponse.json(
+                        governanceView.renderProposals(proposals(), observationPeriods(), clock())
+                    )
+                },
+                HttpRoute("GET", "/v1/amendments", "accepted authority amendments") {
+                    HttpResponse.json(governanceView.renderAmendments(amendments()))
+                },
+                HttpRoute("GET", "/v1/metrics", "governance metric dashboard") {
+                    HttpResponse.json(governanceView.renderMetrics(GovernanceMetrics(governanceCounts())))
+                },
+                HttpRoute("GET", "/v1/storage", "storage constitution and reclaimable bytes") {
+                    storage()?.let { HttpResponse.json(storageView.render(it)) }
+                        ?: HttpResponse.refusal(
+                            503,
+                            "storage-unmeasured",
+                            "No storage ceiling is declared for this runtime.",
+                            "Declare a ceiling before relying on storage reporting; an undeclared ceiling is not an unlimited one."
+                        )
                 },
                 HttpRoute("GET", "/v1/answers/stream", "six continuous answers, pushed") {
                     // Advertised in /v1/routes and reachable as a stream; this
