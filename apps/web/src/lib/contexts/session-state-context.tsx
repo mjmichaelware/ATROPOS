@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { restoreSession, type RecoveryReport } from '@/lib/session/restore';
 
 export interface SessionState {
   activeProjectId: string | null;
@@ -22,6 +23,10 @@ export interface SessionState {
 
 interface SessionStateContextType {
   session: SessionState;
+  /** What the last restore actually recovered. Null until the load runs. */
+  recovery: RecoveryReport | null;
+  /** Dismisses the recovery ribbon once the operator has seen it. */
+  acknowledgeRecovery: () => void;
   setActiveProject: (projectId: string | null) => void;
   addTab: (projectId: string) => void;
   removeTab: (projectId: string) => void;
@@ -49,31 +54,57 @@ const STORAGE_KEY = 'atropos-session-state';
 export function SessionStateProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<SessionState>(DEFAULT_SESSION);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [recovery, setRecovery] = useState<RecoveryReport | null>(null);
 
   // Load from localStorage on mount
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored) as Partial<SessionState>;
-        // Stored state written by an earlier build lacks fields added since;
-        // spreading it over the defaults keeps those defined.
-        setSession({ ...DEFAULT_SESSION, ...parsed });
+    const stored = (() => {
+      try {
+        return localStorage.getItem(STORAGE_KEY);
+      } catch {
+        return undefined;
       }
-    } catch (error) {
-      console.error('Failed to load session state:', error);
+    })();
+
+    const result = restoreSession(stored, DEFAULT_SESSION);
+    // localStorage is exactly the "external system" an effect exists to
+    // synchronize with, and the read cannot move into a lazy initializer: the
+    // server renders DEFAULT_SESSION, so restoring during first client render
+    // would change the markup React is hydrating.
+    // HOE-A09 requires a recovery report and HOE-E06 forbids a silent resume.
+    // This previously logged the failure to the console and restored defaults,
+    // so an operator whose tabs and disclosure level had just been discarded
+    // saw a clean-looking empty workspace and no reason for it.
+    // Only apply a restore that actually recovered something. Writing the
+    // defaults back unconditionally would overwrite state a child set during
+    // mount — child effects run before this one — so a fresh workspace would
+    // silently discard the first thing the operator's UI did.
+    if (result.report.restored) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot hydration-safe restore from localStorage
+      setSession(result.session);
     }
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reports what that restore actually recovered
+    setRecovery(result.report);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- gates the persist effect until the restore has run
     setIsLoaded(true);
   }, []);
 
   // Persist to localStorage whenever session changes
   useEffect(() => {
-    if (isLoaded) {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
-      } catch (error) {
-        console.error('Failed to save session state:', error);
-      }
+    if (!isLoaded) return;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+    } catch (error) {
+      // A failed write means the next reload silently loses this session, so
+      // it is reported on the same channel as a failed read.
+      setRecovery({
+        restored: false,
+        dropped: 0,
+        clean: false,
+        message: `Session could not be saved: ${
+          error instanceof Error ? error.message : 'storage unavailable'
+        }. Changes will not survive a reload.`,
+      });
     }
   }, [session, isLoaded]);
 
@@ -142,6 +173,8 @@ export function SessionStateProvider({ children }: { children: React.ReactNode }
     }));
   }, []);
 
+  const acknowledgeRecovery = useCallback(() => setRecovery(null), []);
+
   const clearSession = useCallback(() => {
     setSession(DEFAULT_SESSION);
     try {
@@ -155,6 +188,8 @@ export function SessionStateProvider({ children }: { children: React.ReactNode }
     <SessionStateContext.Provider
       value={{
         session,
+        recovery,
+        acknowledgeRecovery,
         setActiveProject,
         setDeveloperTools,
         setInformationLevel,
