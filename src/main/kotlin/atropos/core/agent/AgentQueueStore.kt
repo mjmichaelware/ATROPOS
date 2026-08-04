@@ -130,7 +130,7 @@ class AgentQueueStore(
                 append('\t').append("previous=").append(previousState ?: "none")
                 append('\t').append("new=").append(newState)
                 append('\t').append("checkpoint=").append(record.checkpoint)
-                append('\t').append("lease=").append(record.lease?.fingerprint() ?: "none")
+                append('\t').append("lease=").append(LeaseTokenDigest.fingerprint(record.lease?.token))
                 append('\t').append("attempts=").append(record.attempts)
                 append('\t').append("message=").append(sanitizeEventMessage(message))
                 append('\n')
@@ -199,7 +199,7 @@ class AgentQueueStore(
             heartbeatAt = now,
             expiresAt = now.plusSeconds(leaseSeconds)
         )
-        val leased = update(
+        val persisted = update(
             record.copy(
                 state = AgentQueueState.LEASED,
                 checkpoint = AgentQueueCheckpoint.CLAIMED,
@@ -212,13 +212,15 @@ class AgentQueueStore(
             previousState = record.state,
             message = "lease acquired by ${lease.owner}"
         )
-        return AgentQueueLeaseResult(record = leased)
+        // The metadata only retains a digest. The bearer is returned once to the
+        // worker that acquired it so its in-process heartbeats can be authorized.
+        return AgentQueueLeaseResult(record = persisted.copy(lease = lease))
     }
 
     fun markRunning(record: AgentQueueRecord): AgentQueueRecord {
         val current = resolve(record.id) ?: record
         ensureLeaseOwner(current, record.lease?.token)
-        return update(
+        val persisted = update(
             current.copy(
                 state = AgentQueueState.RUNNING,
                 lease = record.lease ?: current.lease
@@ -227,6 +229,7 @@ class AgentQueueStore(
             previousState = current.state,
             message = "execution started"
         )
+        return record.lease?.let { persisted.copy(lease = it) } ?: persisted
     }
 
     fun heartbeat(
@@ -296,7 +299,9 @@ class AgentQueueStore(
 
     private fun ensureLeaseOwner(record: AgentQueueRecord, token: String?) {
         val expected = record.lease?.token
-        require(expected == null || expected == token) { "queue entry lease is owned by another worker" }
+        require(expected == null || LeaseTokenDigest.matches(expected, token)) {
+            "queue entry lease is owned by another worker"
+        }
     }
 
     private fun resolveQueueId(reference: String): String? {

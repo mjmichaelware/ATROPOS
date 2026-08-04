@@ -31,7 +31,8 @@ class ProviderFixtureMatrixService(
             AdapterRequest(
                 task = probeTask(descriptor),
                 prompt = "fixture dry run for $providerId",
-                dryRun = true
+                dryRun = true,
+                liveNetworkAllowed = false
             )
         )
         lines += "dry_run" to (
@@ -68,6 +69,28 @@ class ProviderFixtureMatrixService(
             )
         lines += "redaction" to runRedactionFixture(providerId)
         lines += "attestation" to runAttestationFixture(providerId)
+
+        // A provider that belongs to no family catalog — `local` is the current
+        // case — got every failure fixture but no success fixture, because
+        // `success` is only ever contributed by familyFixtures. The matrix then
+        // reported it as covered while silently omitting the one case that proves
+        // the adapter can actually answer. Every registered provider gets a success
+        // fixture; a provider with no adapter fails it rather than skipping it.
+        if (lines.none { it.first == "success" }) {
+            val offlineSuccess = adapter?.complete(
+                AdapterRequest(
+                    task = probeTask(descriptor),
+                    prompt = "fixture success for $providerId",
+                    dryRun = true,
+                    liveNetworkAllowed = false
+                )
+            )
+            lines += "success" to (
+                offlineSuccess is ProviderCallResult.Success ||
+                    offlineSuccess is ProviderCallResult.LocalOnly ||
+                    offlineSuccess is ProviderCallResult.Queued
+            )
+        }
 
         val distinct = linkedMapOf<String, Boolean>()
         lines.forEach { (name, passed) -> distinct[name] = distinct[name] ?: passed }
@@ -135,7 +158,7 @@ class ProviderFixtureMatrixService(
         return !failure.cleanSummary.contains("A".repeat(24)) &&
             !failure.cleanSummary.contains("B".repeat(24)) &&
             !failure.cleanSummary.contains("C".repeat(24)) &&
-            failure.cleanSummary.contains("<redacted>")
+            failure.cleanSummary.contains("<redacted")
     }
 
     private fun runAttestationFixture(providerId: String): Boolean {
@@ -152,5 +175,15 @@ class ProviderFixtureMatrixService(
             parsed.repository == "ATROPOS" &&
             parsed.taskOrNodeId == "fixture-node" &&
             parsed.contextHash == "fixture-hash-$providerId"
+    }
+
+    fun listAdaptersMissingNormalizedFixtures(): List<String> {
+        val knownIds = registry.getAll().map { it.id }.toSet()
+        val specIds = OpenAiCompatibleProviderCatalog.all().map { it.providerId }.toSet() +
+            NonOpenAiFreeProviderCatalog.all().map { it.providerId }.toSet() +
+            DataInfraResearchProviderCatalog.all().map { it.providerId }.toSet() +
+            AssetProviderCatalog.all().map { it.providerId }.toSet() +
+            setOf("local", "ollama")
+        return (knownIds - specIds).toList().sorted()
     }
 }

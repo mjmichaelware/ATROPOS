@@ -16,6 +16,7 @@ import atropos.core.provider.QuotaLedger
 import atropos.core.provider.RoutePolicy
 import atropos.core.provider.RoutePolicyDecision
 import atropos.core.provider.StaticProviderDescriptorRegistry
+import atropos.core.security.RedactionFilter
 import java.io.File
 import java.time.Instant
 import java.time.ZoneId
@@ -28,7 +29,8 @@ class StatusQuotaRenderer(
     ),
     private val workspace: File = File("."),
     private val nowEpochMs: () -> Long = { System.currentTimeMillis() },
-    private val costPolicy: AtroposCostPolicy = AtroposCostPolicy.FREE_ONLY
+    private val costPolicy: AtroposCostPolicy = AtroposCostPolicy.FREE_ONLY,
+    private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     private val classifier = ProviderTaskClassifier()
 
@@ -55,7 +57,7 @@ class StatusQuotaRenderer(
         return out.joinToString("\n")
     }
 
-    fun renderRoute(prompt: String): String {
+    fun renderRoute(prompt: String, expanded: Boolean = false): String {
         val task = classifier.classify(prompt)
         val decision = RoutePolicy(
             registry = registry,
@@ -80,8 +82,9 @@ class StatusQuotaRenderer(
         if (decision.eligible.isEmpty()) {
             out += "  none"
         } else {
-            decision.eligible.take(12).forEach { out += "  ${eligibilityLine(it)}" }
-            if (decision.eligible.size > 12) out += "  ... ${decision.eligible.size - 12} more"
+            val visible = if (expanded) decision.eligible else decision.eligible.take(12)
+            visible.forEach { out += "  ${eligibilityLine(it)}" }
+            if (!expanded && decision.eligible.size > visible.size) out += "  ... ${decision.eligible.size - visible.size} more (use /status route --full)"
         }
 
         out += ""
@@ -95,6 +98,10 @@ class StatusQuotaRenderer(
         out += ""
         out += "fallback chain:"
         out += renderFallbackChain(decision)
+
+        if (!expanded && (decision.skipped.isNotEmpty() || decision.eligible.size > 12)) {
+            out += "details: collapsed; use /status route --full <task>"
+        }
 
         return out.joinToString("\n")
     }
@@ -110,7 +117,10 @@ class StatusQuotaRenderer(
             out += "  none recorded"
         } else {
             failed.forEach { record ->
-                out += "  ${record.providerId.padEnd(18)} state=${record.state.name.lowercase()} error=${record.lastErrorClass ?: "state_only"} summary=${record.lastErrorSummary ?: "no summary"}"
+                val summary = record.lastErrorSummary
+                    ?.let(redactionFilter::redact)
+                    ?: "no summary"
+                out += "  ${record.providerId.padEnd(18)} state=${record.state.name.lowercase()} error=${record.lastErrorClass ?: "state_only"} summary=$summary"
             }
         }
 

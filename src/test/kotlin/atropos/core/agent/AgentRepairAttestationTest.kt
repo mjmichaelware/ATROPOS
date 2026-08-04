@@ -3,8 +3,10 @@ package atropos.core.agent
 
 import atropos.core.provider.ContextAttestationService
 import atropos.core.provider.ContextEnvelopeFactory
+import atropos.core.ProviderCascadeResult
 import java.nio.file.Files
 import kotlin.test.Test
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
@@ -69,6 +71,23 @@ class AgentRepairAttestationTest {
         assertTrue(
             !cleaned.contains("ATROPOS CONTEXT ATTESTATION"),
             "the attestation block must not leak into the stored diff"
+        )
+    }
+
+    @Test
+    fun a_result_without_the_dispatched_envelope_cannot_be_attested_as_repair() {
+        val env = envelope("repair the failure")
+        val response = diff + "\n" + attestationBlockFor(env)
+        val result = ProviderCascadeResult("groq", response, emptyList())
+
+        assertNull(result.contextEnvelope, "a provider result without dispatch context must fail closed")
+        val attestedResult = result.copy(contextEnvelope = env)
+        assertTrue(
+            ContextAttestationService.verify(
+                attestedResult.contextEnvelope!!,
+                attestedResult.response
+            ) is ContextAttestationService.VerifiedResult.Accepted,
+            "only the envelope captured at dispatch may authorize repair output"
         )
     }
 

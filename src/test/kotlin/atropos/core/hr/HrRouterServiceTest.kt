@@ -71,12 +71,16 @@ class HrRouterServiceTest {
     fun auditLogSurvivesServiceRestart() {
         val root = Files.createTempDirectory("atropos-hr-router-durable-")
         val first = service(root)
-        first.request("a1", "t1", "a2", "t2", InformationKind.SOURCE_CODE, "hello")
+        first.request("a1", "t1", "a2", "t2", InformationKind.SOURCE_CODE, "hello", paths = listOf("src/main/kotlin/atropos/core/agent/Foo.kt"))
 
         val second = service(root)
 
         assertEquals(1, second.auditLog().size)
-        assertEquals(HrRouteAction.APPROVED, second.auditLog().single().action)
+        val entry = second.auditLog().single()
+        assertEquals(HrRouteAction.APPROVED, entry.action)
+        assertEquals("t1", entry.sourceTerritoryId)
+        assertEquals("t2", entry.targetTerritoryId)
+        assertEquals(listOf("src/main/kotlin/atropos/core/agent/Foo.kt"), entry.requestedPaths)
     }
 
     private fun service(root: java.nio.file.Path = Files.createTempDirectory("atropos-hr-router-")): HrRouterService =

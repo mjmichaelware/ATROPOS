@@ -18,6 +18,7 @@ class AgentPatchAuditGate(
         if (files.isEmpty()) return null
 
         val auditor = auditorFactory()
+        auditor.auditSecretText(snapshot.patchFile.toString(), snapshot.diffText)
         auditor.auditSecrets(files)
         val blocking = auditor.report().findings.filter {
             it.severity == AuditSeverity.FAILURE || it.severity == AuditSeverity.CRITICAL

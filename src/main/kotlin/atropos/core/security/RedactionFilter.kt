@@ -3,9 +3,9 @@ package atropos.core.security
 import java.io.File
 import java.security.MessageDigest
 
-private val API_KEY_PATTERN = Regex("(?i)(api[_-]?key|token|secret|password)[\"']?\\s*[:=]\\s*[\"']?[^\"'\\s,}]+")
+private val API_KEY_PATTERN = Regex("(?i)(api[_-]?key|token|secret|password)[\"']?\\s*[:=]\\s*[\"']?[^\"'\\s,}<>]+")
 private val BEARER_PATTERN = Regex("(?i)bearer\\s+[A-Za-z0-9._\\-]{12,}")
-private val OPENAI_STYLE_PATTERN = Regex("\\b" + "s" + "k-" + "[A-Za-z0-9_\\-]{12,}")
+private val OPENAI_STYLE_PATTERN = Regex("\\b" + "s" + "k-" + "[A-Za-z0-9_\\-]{8,}")
 private val PRIVATE_KEY_BLOCK_PATTERN = Regex("-----BEGIN [A-Z ]*PRIVATE KEY-----[\\s\\S]*?-----END [A-Z ]*PRIVATE KEY-----")
 private val SIGNED_URL_PATTERN = Regex("(?i)(https?://[^\\s]+)(X-Amz-Signature|Signature|sig|token|access_token)=([^\\s&]+)")
 private val LOCAL_CREDENTIAL_PATH_PATTERN = Regex("(?i)(/[^\\s:]*?(client_secret|credentials|token)[^\\s:]*)")
@@ -22,7 +22,26 @@ data class RedactionReport(
     fun summary(): String = findings.joinToString(", ") { "${it.kind}=${it.count}" }.ifBlank { "none" }
 }
 
-class RedactionFilter {
+/**
+ * The single redaction entry point, in three tiers of decreasing certainty.
+ *
+ * Tier 1 ([knownSecrets]) is exact membership over credentials this process holds:
+ * recall 1.0 and false-positive rate 0 for any representation in
+ * [SecretEncodingClosure]. Tiers 2 and 3 are the patterns below, which are the only
+ * option for credentials the process does not know — a key pasted into a prompt, or
+ * one echoed back by a provider — and which carry the false-negative tail every
+ * pattern scanner has (published best-in-class recall is roughly 88%).
+ *
+ * The order is deliberate: exact first, so a known credential is never left to a
+ * pattern that might not match it. An empty registry costs nothing, which keeps
+ * every existing caller working unchanged.
+ */
+class RedactionFilter(
+    private val knownSecrets: KnownSecretRegistry = defaultRegistry
+) {
+    companion object {
+        val defaultRegistry = KnownSecretRegistry()
+    }
     fun redact(value: String): String = report(value).redacted
 
     fun compact(value: String, maxChars: Int = 240): String {
@@ -34,6 +53,14 @@ class RedactionFilter {
     fun report(value: String): RedactionReport {
         var text = value
         val findings = mutableListOf<RedactionFinding>()
+
+        // Tier 1 before any pattern: an enrolled credential is a certainty, and a
+        // pattern that fires afterwards would only be rewriting a marker.
+        val leakedLabels = knownSecrets.findLeaks(text)
+        if (leakedLabels.isNotEmpty()) {
+            findings += RedactionFinding("known_secret", leakedLabels.size)
+            text = knownSecrets.redact(text)
+        }
 
         fun apply(kind: String, regex: Regex, replacement: (MatchResult) -> String) {
             val matches = regex.findAll(text).toList()

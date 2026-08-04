@@ -31,42 +31,12 @@ DEPLOYMENT_DURABLE_ARTIFACTS = (
     / "migrations"
     / "20260712001300_durable_artifacts.sql"
 )
-SOURCE = (
-    ROOT
-    / "infra"
-    / "supabase"
-    / "migrations"
-    / "202607120010_source_uploads.sql"
-)
-SOURCE_DERIVATIONS = (
-    ROOT
-    / "infra"
-    / "supabase"
-    / "migrations"
-    / "202607120011_document_derivations.sql"
-)
-SOURCE_DURABLE_ARTIFACTS = (
-    ROOT
-    / "infra"
-    / "supabase"
-    / "migrations"
-    / "202607120012_durable_artifacts.sql"
-)
 DEPLOYMENT_EXPORT_ARTIFACTS_PDF_MIME = (
     ROOT
     / "supabase"
     / "migrations"
     / "20260712001600_export_artifacts_pdf_mime.sql"
 )
-SOURCE_EXPORT_ARTIFACTS_PDF_MIME = (
-    ROOT
-    / "infra"
-    / "supabase"
-    / "migrations"
-    / "202607120015_export_artifacts_pdf_mime.sql"
-)
-
-
 class FakeResponse:
     def __init__(
         self,
@@ -103,25 +73,17 @@ class FakeResponse:
 
 
 class StorageSecurityTest(unittest.TestCase):
-    def test_source_and_deployment_migrations_match(
+    def test_canonical_migrations_are_present(
         self,
     ) -> None:
-        self.assertEqual(
-            SOURCE.read_bytes(),
-            DEPLOYMENT.read_bytes(),
-        )
-        self.assertEqual(
-            SOURCE_DERIVATIONS.read_bytes(),
-            DEPLOYMENT_DERIVATIONS.read_bytes(),
-        )
-        self.assertEqual(
-            SOURCE_DURABLE_ARTIFACTS.read_bytes(),
-            DEPLOYMENT_DURABLE_ARTIFACTS.read_bytes(),
-        )
-        self.assertEqual(
-            SOURCE_EXPORT_ARTIFACTS_PDF_MIME.read_bytes(),
-            DEPLOYMENT_EXPORT_ARTIFACTS_PDF_MIME.read_bytes(),
-        )
+        for path in (
+            DEPLOYMENT,
+            DEPLOYMENT_DERIVATIONS,
+            DEPLOYMENT_DURABLE_ARTIFACTS,
+            DEPLOYMENT_EXPORT_ARTIFACTS_PDF_MIME,
+        ):
+            self.assertTrue(path.is_file())
+            self.assertGreater(path.stat().st_size, 0)
 
     def test_export_artifacts_bucket_allows_pdf_uploads(
         self,

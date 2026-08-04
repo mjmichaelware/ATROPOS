@@ -28,7 +28,7 @@ class ComposerRenderer {
             "[${safeMode.lowercase()}] › "
         )
         val available = (
-            terminalWidth.coerceAtLeast(36) -
+            terminalWidth.coerceAtLeast(1) -
                 prefixWidth -
                 TerminalText.cellWidth(safeBuffer)
             ).coerceAtLeast(0)

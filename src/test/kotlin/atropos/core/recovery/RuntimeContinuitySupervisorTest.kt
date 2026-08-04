@@ -90,9 +90,11 @@ class RuntimeContinuitySupervisorTest {
             report(queue = 1, errors = listOf("session recovery: permission denied"))
         }
 
-        val notice = supervisor.startupNotice(supervisor.ensureRecovered())!!
+        val outcome = supervisor.ensureRecovered()
+        val notice = supervisor.startupNotice(outcome)!!
 
         assertTrue(notice.contains("permission denied"), notice)
+        assertTrue(!outcome.safeForSelfHostContinuation, "self-host must not continue after partial recovery")
     }
 
     @Test

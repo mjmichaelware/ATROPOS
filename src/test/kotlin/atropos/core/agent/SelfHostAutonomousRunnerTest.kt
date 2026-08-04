@@ -8,6 +8,27 @@ import kotlin.test.assertTrue
 
 class SelfHostAutonomousRunnerTest {
     @Test
+    fun accepted_natural_language_run_emits_canonical_start_marker_only_after_goal_start() {
+        val root = Files.createTempDirectory("atropos-self-host-marker-")
+        initializeGitRepo(root)
+        val service = SelfHostGoalService(repoRoot = root)
+        val markers = mutableListOf<String>()
+        val runner = SelfHostAutonomousRunner(
+            service = service,
+            jarLocator = SelfHostRuntimeJarLocator(root, env = emptyMap()),
+            jarBuilder = null,
+            gitStatusEvidence = null
+        )
+
+        val result = runner.run("ATROPOS build yourself", maxAdvances = 1, lifecycleEmitter = markers::add)
+
+        val goalId = result.goal?.record?.id ?: error("goal was not started")
+        assertEquals(listOf("ATROPOS_SELF_HOST_RUN_STARTED goal=$goalId"), markers)
+        assertTrue(result.steps.any { it == markers.single() })
+        assertTrue(!markers.any { it.contains("no unfinished self-host goals") })
+    }
+
+    @Test
     fun natural_language_runner_advances_source_diff_then_typed_stops_when_jar_is_unavailable() {
         val root = Files.createTempDirectory("atropos-self-host-runner-")
         initializeGitRepo(root)
@@ -18,7 +39,8 @@ class SelfHostAutonomousRunnerTest {
         val runner = SelfHostAutonomousRunner(
             service = service,
             jarLocator = SelfHostRuntimeJarLocator(root, env = emptyMap()),
-            jarBuilder = null
+            jarBuilder = null,
+            gitStatusEvidence = SelfHostGitStatusEvidence(root)
         )
 
         val result = runner.run("make ATROPOS build itself from inside out", maxAdvances = 4)
@@ -29,6 +51,7 @@ class SelfHostAutonomousRunnerTest {
         assertEquals(GoalTerminalCondition.EXTERNAL_INPUT_REQUIRED, record.terminalCondition)
         assertEquals(GoalRunStatus.BLOCKED, record.status)
         assertTrue(record.evidence.any { it.startsWith("jar_promotion_stop reason=candidate jar unavailable") })
+        assertTrue(record.evidence.any { it.startsWith("git_status_short") && it.contains("exit=0") && it.contains("SelfHostCradleRuntimeState.kt") })
         assertTrue(record.evidence.any { it.startsWith("next_action kind=WAIT_EXTERNAL_INPUT") })
         assertTrue(record.evidence.any { it.startsWith("node_execution") && it.contains("worktree=") && it.contains("sha256=") })
         assertTrue(result.evidenceBundle?.ok == true)
@@ -45,6 +68,9 @@ class SelfHostAutonomousRunnerTest {
         Files.createDirectories(repoRoot.resolve("src/main/kotlin/atropos"))
         Files.createDirectories(repoRoot.resolve("src/test/kotlin/atropos"))
         Files.writeString(repoRoot.resolve("src/main/kotlin/atropos/Main.kt"), "fun main() {}\n")
+        val gradlew = repoRoot.resolve("gradlew")
+        Files.writeString(gradlew, "#!/bin/sh\nexit 0\n")
+        gradlew.toFile().setExecutable(true)
         ProcessBuilder("git", "config", "user.email", "atropos@example.invalid")
             .directory(repoRoot.toFile())
             .redirectErrorStream(true)

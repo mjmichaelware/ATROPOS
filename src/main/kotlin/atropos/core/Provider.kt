@@ -1,5 +1,6 @@
 package atropos.core
 
+import atropos.core.security.RedactionFilter
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
@@ -29,6 +30,8 @@ class ProviderFactory(private val config: AtroposConfig = AtroposConfig.load()) 
 }
 
 abstract class BaseHttpProvider : AIProvider {
+    protected val redactionFilter: RedactionFilter = RedactionFilter()
+
     protected val client: HttpClient = HttpClient.newBuilder()
         .connectTimeout(Duration.ofSeconds(45))
         .build()
@@ -229,168 +232,3 @@ abstract class BaseHttpProvider : AIProvider {
     }
 }
 
-class GroqProvider(private val apiKey: String?) : BaseHttpProvider() {
-    override val name = "groq"
-    override fun complete(prompt: String, context: String): String {
-        val token = requireKey(apiKey, name)
-        return postOpenAiCompatibleChat(
-            uri = "https://api.groq.com/openai/v1/chat/completions",
-            model = "llama-3.3-70b-versatile",
-            prompt = prompt,
-            context = context,
-            bearerToken = token
-        )
-    }
-}
-
-class OpenAiProvider(private val apiKey: String?) : BaseHttpProvider() {
-    override val name = "openai"
-    override fun complete(prompt: String, context: String): String {
-        val token = requireKey(apiKey, name)
-        return postOpenAiCompatibleChat(
-            uri = "https://api.openai.com/v1/chat/completions",
-            model = "gpt-4o-mini",
-            prompt = prompt,
-            context = context,
-            bearerToken = token
-        )
-    }
-}
-
-class AnthropicProvider(private val apiKey: String?) : BaseHttpProvider() {
-    override val name = "anthropic"
-    override fun complete(prompt: String, context: String): String {
-        val token = requireKey(apiKey, name)
-        val payload = buildString {
-            append("{")
-            append("\"model\":\"claude-3-5-sonnet-latest\",")
-            append("\"max_tokens\":4096,")
-            if (context.isNotBlank()) {
-                append("\"system\":\"").append(jsonEscape(context.trim())).append("\",")
-            }
-            append("\"messages\":[{\"role\":\"user\",\"content\":\"")
-            append(jsonEscape(prompt.trim()))
-            append("\"}]}")
-        }
-
-        val raw = postJson(
-            "https://api.anthropic.com/v1/messages",
-            payload,
-            extraHeaders = mapOf(
-                "x-api-key" to token,
-                "anthropic-version" to "2023-06-01"
-            )
-        )
-        return extractAnthropicText(raw) ?: raw.trim()
-    }
-}
-
-class XAiProvider(private val apiKey: String?) : BaseHttpProvider() {
-    override val name = "xai"
-    override fun complete(prompt: String, context: String): String {
-        val token = requireKey(apiKey, name)
-        return postOpenAiCompatibleChat(
-            uri = "https://api.x.ai/v1/chat/completions",
-            model = "grok-2-latest",
-            prompt = prompt,
-            context = context,
-            bearerToken = token
-        )
-    }
-}
-
-class GitHubModelsProvider(
-    private val token: String? = System.getenv("GITHUB_MODELS_TOKEN")
-) : BaseHttpProvider() {
-    override val name = "github_models"
-    override fun complete(prompt: String, context: String): String {
-        val apiKey = requireKey(token, name)
-        return postOpenAiCompatibleChat(
-            uri = "https://models.inference.ai.azure.com/chat/completions",
-            model = "gpt-4o-mini",
-            prompt = prompt,
-            context = context,
-            bearerToken = apiKey
-        )
-    }
-}
-
-class CloudflareAiProvider(
-    private val token: String? = System.getenv("CLOUDFLARE_API_TOKEN"),
-    private val accountId: String? = System.getenv("CLOUDFLARE_ACCOUNT_ID")
-) : BaseHttpProvider() {
-    override val name = "cloudflare_ai"
-    override fun complete(prompt: String, context: String): String {
-        val apiToken = requireKey(token, name)
-        val account = requireKey(accountId, name)
-        return postOpenAiCompatibleChat(
-            uri = "https://api.cloudflare.com/client/v4/accounts/$account/ai/v1/chat/completions",
-            model = "@cf/meta/llama-3.1-8b-instruct",
-            prompt = prompt,
-            context = context,
-            bearerToken = apiToken
-        )
-    }
-}
-
-class SambaNovaProvider(
-    private val apiKey: String? = System.getenv("SAMBANOVA_API_KEY")
-) : BaseHttpProvider() {
-    override val name = "sambanova"
-    override fun complete(prompt: String, context: String): String {
-        val token = requireKey(apiKey, name)
-        return postOpenAiCompatibleChat(
-            uri = "https://api.sambanova.ai/v1/chat/completions",
-            model = "Meta-Llama-3.3-70B-Instruct",
-            prompt = prompt,
-            context = context,
-            bearerToken = token
-        )
-    }
-}
-
-class DeepSeekDirectProvider(
-    private val apiKey: String? = System.getenv("DEEPSEEK_API_KEY")
-) : BaseHttpProvider() {
-    override val name = "deepseek_direct"
-    override fun complete(prompt: String, context: String): String {
-        val token = requireKey(apiKey, name)
-        return postOpenAiCompatibleChat(
-            uri = "https://api.deepseek.com/chat/completions",
-            model = "deepseek-v4-flash",
-            prompt = prompt,
-            context = context,
-            bearerToken = token
-        )
-    }
-}
-
-class OllamaProvider : BaseHttpProvider() {
-    override val name = "ollama"
-
-    override fun complete(prompt: String, context: String): String {
-        val host = (System.getenv("OLLAMA_HOST") ?: "http://127.0.0.1:11434").trimEnd('/')
-        val model = (System.getenv("OLLAMA_MODEL") ?: "llama3.2:1b").trim()
-        val predict = (System.getenv("OLLAMA_NUM_PREDICT") ?: "48").toIntOrNull() ?: 48
-        val ctx = (System.getenv("OLLAMA_NUM_CTX") ?: "512").toIntOrNull() ?: 512
-        val content = jsonEscape(buildPrompt(prompt, context))
-
-        val payload =
-            """{"model":"$model","prompt":"$content","stream":false,"options":{"num_predict":$predict,"num_ctx":$ctx}}"""
-
-        val raw = postJson("$host/api/generate", payload)
-        return extractOllamaResponse(raw)
-    }
-
-    private fun extractOllamaResponse(raw: String): String {
-        val match = Regex(""""response"\s*:\s*"((?:\\.|[^"\\])*)"""")
-            .find(raw)
-            ?: return raw
-
-        return unescapeJsonString(match.groupValues[1]).trim()
-    }
-}
-
-private fun buildPrompt(prompt: String, context: String): String {
-    return if (context.isBlank()) prompt.trim() else context.trim() + "\n\nTask:\n" + prompt.trim()
-}

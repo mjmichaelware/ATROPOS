@@ -22,6 +22,18 @@ class RestartCoordinatorTest {
         val memory = LocalMemoryStore(root.resolve(".atropos/memory").toFile(), env = emptyMap())
         val worktrees = IsolatedWorktreeService(root, memoryStore = memory)
         val goal = goalStore.createGoalRun("self-host restart proof", provider = "self-host")
+        val enrichedGoal = goalStore.update(
+            goal.copy(
+                baselineCommit = "abc123",
+                dirtyStateFingerprint = "dirty456",
+                parentRunId = "parent-1",
+                runId = "run-1",
+                territory = listOf("src/with,comma", "src/ordinary"),
+                maxContinuations = 12,
+                retryBudget = 7,
+                lastVerifiedCheckpoint = "source:verified"
+            )
+        )
         val dag = dagStore.createDag(
             "restart dag",
             listOf(
@@ -50,7 +62,16 @@ class RestartCoordinatorTest {
         val snapshot = coordinator.snapshot()
         val latest = coordinator.latestSnapshot()
 
-        assertEquals(goal.id, snapshot.goalRuns.single().id)
+        assertEquals(enrichedGoal.id, snapshot.goalRuns.single().id)
+        assertEquals(enrichedGoal.task, snapshot.goalRuns.single().task)
+        assertEquals(enrichedGoal.baselineCommit, snapshot.goalRuns.single().baselineCommit)
+        assertEquals(enrichedGoal.dirtyStateFingerprint, snapshot.goalRuns.single().dirtyStateFingerprint)
+        assertEquals(enrichedGoal.parentRunId, snapshot.goalRuns.single().parentRunId)
+        assertEquals(enrichedGoal.runId, snapshot.goalRuns.single().runId)
+        assertEquals(enrichedGoal.territory, snapshot.goalRuns.single().territory)
+        assertEquals(enrichedGoal.maxContinuations, snapshot.goalRuns.single().maxContinuations)
+        assertEquals(enrichedGoal.retryBudget, snapshot.goalRuns.single().retryBudget)
+        assertEquals(enrichedGoal.lastVerifiedCheckpoint, snapshot.goalRuns.single().lastVerifiedCheckpoint)
         assertEquals(dag.id, snapshot.dags.single().id)
         assertEquals(1, snapshot.dags.single().ready)
         assertEquals("node-a", snapshot.dagNodes.single().nodeId)
@@ -59,6 +80,8 @@ class RestartCoordinatorTest {
         assertNotNull(latest)
         assertEquals(snapshot.id, latest.id)
         assertEquals("node-a", latest.dagNodes.single().nodeId)
+        assertEquals(enrichedGoal.territory, latest.goalRuns.single().territory)
+        assertEquals(enrichedGoal.baselineCommit, latest.goalRuns.single().baselineCommit)
     }
 
     @Test
@@ -99,5 +122,61 @@ class RestartCoordinatorTest {
         assertTrue(results.any { it.nodeId == "node-exhausted" && !it.restored })
         assertEquals(DagNodeState.READY, dagStore.readNode("node-running")!!.state)
         assertEquals(DagNodeState.BLOCKED, dagStore.readNode("node-exhausted")!!.state)
+    }
+
+    @Test
+    fun latestSnapshot_restores_full_redacted_recovery_report() {
+        val root = Files.createTempDirectory("atropos-restart-report-round-trip-")
+        val capturedAt = Instant.parse("2026-07-29T02:00:00Z")
+        val recoveredAt = Instant.parse("2026-07-29T01:59:59Z")
+        val coordinator = RestartCoordinator(
+            repoRoot = root,
+            clock = { capturedAt }
+        )
+        val report = RecoveryReport(
+            recoveredAt = recoveredAt,
+            staleQueueEntries = 2,
+            staleSessions = 3,
+            staleDagClaims = 4,
+            interruptedRuns = 5,
+            completedMutationsSkipped = 6,
+            errors = listOf("provider token=plain-token"),
+            message = "recovered with token=plain-token"
+        )
+
+        coordinator.snapshot(report)
+
+        val restored = coordinator.latestSnapshot()?.recoveryReport
+            ?: error("missing recovery report")
+        assertEquals(recoveredAt, restored.recoveredAt)
+        assertEquals(2, restored.staleQueueEntries)
+        assertEquals(3, restored.staleSessions)
+        assertEquals(4, restored.staleDagClaims)
+        assertEquals(5, restored.interruptedRuns)
+        assertEquals(6, restored.completedMutationsSkipped)
+        assertEquals(listOf("provider token=<redacted:secret>"), restored.errors)
+        assertEquals("recovered with token=<redacted:secret>", restored.message)
+    }
+
+    @Test
+    fun latestSnapshot_can_select_snapshot_for_requested_goal() {
+        val root = Files.createTempDirectory("atropos-restart-goal-scoped-")
+        val goalStore = GoalRunStore(root)
+        val first = goalStore.createGoalRun("first goal", provider = "self-host")
+        val second = goalStore.createGoalRun("second goal", provider = "self-host")
+        val worktrees = IsolatedWorktreeService(root)
+        val coordinator = RestartCoordinator(
+            repoRoot = root,
+            goalRunStore = goalStore,
+            worktreeService = worktrees,
+            clock = { Instant.parse("2026-07-29T02:10:00Z") }
+        )
+
+        coordinator.snapshot()
+        goalStore.update(second.copy(evidence = listOf("second evidence")))
+        coordinator.snapshot()
+
+        assertEquals(second.id, coordinator.latestSnapshot(second.id)?.goalRuns?.first { it.id == second.id }?.id)
+        assertEquals(null, coordinator.latestSnapshot("missing-goal"))
     }
 }

@@ -2,6 +2,7 @@ package atropos.cli.commands
 
 import atropos.cli.config.ConfigurationManager
 import atropos.cli.ui.AnsiTerminalEngine
+import atropos.cli.ui.PlainTerminalOutput
 import atropos.core.ApiKeys
 import atropos.core.AtroposConfig
 import atropos.core.LakehouseConfig
@@ -64,8 +65,10 @@ class SelfHostCommandTest {
     ): SelfHostCommand {
         val ui = AnsiTerminalEngine(
             capabilities = ConfigurationManager(),
-            out = PrintStream(OutputStream.nullOutputStream()),
-            errors = PrintStream(OutputStream.nullOutputStream())
+            plainOutput = PlainTerminalOutput(
+                out = PrintStream(OutputStream.nullOutputStream()),
+                errors = PrintStream(OutputStream.nullOutputStream())
+            )
         )
         val config = AtroposConfig(
             ApiKeys("", "", "", ""),
@@ -273,10 +276,33 @@ class SelfHostCommandTest {
             is AgentCommandOutcome.Invalid -> result.message
         }
 
-        assertTrue(result is AgentCommandOutcome.Completed)
+        assertTrue(result is AgentCommandOutcome.Invalid)
         assertEquals("make ATROPOS build itself", capturedPrompt)
-        assertTrue(text.contains("self-host run promoted verified jar"), text)
+        assertTrue(text.contains("success contract incomplete"), text)
         assertTrue(text.contains("started"), text)
+    }
+
+    @Test
+    fun `bare self-host invokes the canonical self-build runner`() {
+        val repoRoot = Files.createTempDirectory("atropos-self-host-command-default-")
+        val service = SelfHostGoalService(repoRoot = repoRoot, store = GoalRunStore(repoRoot))
+        var capturedPrompt: String? = null
+        val command = buildCommand(repoRoot, service) { prompt ->
+            capturedPrompt = prompt
+            SelfHostAutonomousRunResult(
+                ok = false,
+                message = "typed stop",
+                goal = null,
+                promotion = null,
+                evidenceBundle = null,
+                steps = listOf("started")
+            )
+        }
+
+        val result = command.execute(listOf("/agent", "self-host"))
+
+        assertTrue(result is AgentCommandOutcome.Invalid)
+        assertEquals(SelfHostDefaultPrompt.TEXT, capturedPrompt)
     }
 
     @Test

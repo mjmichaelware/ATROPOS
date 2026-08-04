@@ -39,7 +39,7 @@ object CommandLexer {
                             started = false
                         }
                     }
-                    ch == '\'' || ch == '"' -> {
+                    (ch == '\'' || ch == '"') && (!started || token.isEmpty()) -> {
                         quote = ch
                         started = true
                     }

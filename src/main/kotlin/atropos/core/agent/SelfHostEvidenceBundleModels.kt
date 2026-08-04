@@ -8,5 +8,6 @@ data class SelfHostEvidenceBundleResult(
     val markdownPath: Path?,
     val jsonPath: Path?,
     val markdownSha256: String?,
-    val jsonSha256: String?
+    val jsonSha256: String?,
+    val failureCode: SelfHostFailureCode? = null
 )

@@ -35,6 +35,32 @@ class EvaluationEngine(
         verifiedBy: String? = null
     ): ReleaseGateDecision {
         val report = buildReport(subjectId, runId, artifactIds, changedFiles, goalId, claimedBy, verifiedBy)
+        return decide(report)
+    }
+
+    fun evaluatePromotionRelease(
+        subjectId: String,
+        runId: String,
+        artifactIds: List<String>,
+        changedFiles: List<String>,
+        goalId: String,
+        claimedBy: String,
+        verifiedBy: String
+    ): ReleaseGateDecision {
+        val report = buildReport(
+            subjectId = subjectId,
+            runId = runId,
+            artifactIds = artifactIds,
+            changedFiles = changedFiles,
+            goalId = goalId,
+            claimedBy = claimedBy,
+            verifiedBy = verifiedBy,
+            requirePromotionScope = true
+        )
+        return decide(report)
+    }
+
+    private fun decide(report: EvaluationReport): ReleaseGateDecision {
         history.append(report)
         val blockers = report.metrics.filter { !it.passed && it.severity == EvaluationSeverity.BLOCKER }
         return ReleaseGateDecision(
@@ -51,7 +77,8 @@ class EvaluationEngine(
         changedFiles: List<String>,
         goalId: String?,
         claimedBy: String?,
-        verifiedBy: String?
+        verifiedBy: String?,
+        requirePromotionScope: Boolean = false
     ): EvaluationReport {
         val artifacts = artifactPipeline.report().artifacts.filter { artifactIds.isEmpty() || it.id in artifactIds }
         val verifications = artifactPipeline.report().verifications.filter { artifactIds.isEmpty() || it.artifactId in artifactIds }
@@ -93,6 +120,12 @@ class EvaluationEngine(
             EvaluationMetricKind.POLICY_EVIDENCE,
             runId == null || policyEvents.isNotEmpty(),
             "policyEvents=${policyEvents.size}"
+        )
+
+        metrics += metric(
+            EvaluationMetricKind.PROMOTION_SCOPE_EVIDENCE,
+            !requirePromotionScope || (goalId != null && changedFiles.isNotEmpty()),
+            "required=$requirePromotionScope goal=${goalId ?: "none"} changedFiles=${changedFiles.size}"
         )
 
         val territoryViolations = territoryService.getViolations().filter { violation ->

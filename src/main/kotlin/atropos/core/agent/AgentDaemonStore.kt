@@ -85,7 +85,11 @@ class AgentDaemonStore(
 
     fun writeState(record: AgentDaemonRecord): AgentDaemonRecord {
         Files.createDirectories(daemonRoot)
-        val updated = record.copy(updatedAt = clock(), metaFile = stateFile)
+        val updated = record.copy(
+            updatedAt = clock(),
+            metaFile = stateFile,
+            lastMessage = record.lastMessage?.let { sanitize(it) }
+        )
         val tmp = Files.createTempFile(daemonRoot, "state", ".tmp")
         val bytes = render(updated).toByteArray(StandardCharsets.UTF_8)
         FileChannel.open(tmp, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING).use { channel ->
@@ -112,8 +116,9 @@ class AgentDaemonStore(
 
     fun requestStop(reason: String = "operator stop requested") {
         Files.createDirectories(daemonRoot)
-        Files.writeString(stopFile, "${clock()}\t$reason\n", StandardCharsets.UTF_8)
-        appendEvent("stop requested: $reason")
+        val safeReason = sanitize(reason)
+        Files.writeString(stopFile, "${clock()}\t$safeReason\n", StandardCharsets.UTF_8)
+        appendEvent("stop requested: $safeReason")
     }
 
     fun clearStopRequest() {

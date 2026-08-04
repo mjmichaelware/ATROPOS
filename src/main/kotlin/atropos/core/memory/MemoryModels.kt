@@ -2,7 +2,7 @@ package atropos.core.memory
 
 import java.io.File
 
-const val MEMORY_SCHEMA_VERSION = 2
+const val MEMORY_SCHEMA_VERSION = 3
 
 enum class MemoryKind {
     NOTE,
@@ -24,6 +24,12 @@ enum class MemoryKind {
     REWARD
 }
 
+enum class MemoryAuthority {
+    OBSERVATION,
+    SOURCE_REFERENCE,
+    PROPOSAL_REFERENCE
+}
+
 data class MemoryRecord(
     val id: String,
     val kind: MemoryKind,
@@ -33,6 +39,10 @@ data class MemoryRecord(
     val createdAtEpochMs: Long,
     val subjectType: String? = null,
     val subjectId: String? = null,
+    val contentSha256: String = "",
+    val failureSignature: String? = null,
+    val sourceCoordinate: String? = null,
+    val authority: MemoryAuthority = MemoryAuthority.OBSERVATION,
     val schemaVersion: Int = MEMORY_SCHEMA_VERSION,
     val redacted: Boolean = true
 )

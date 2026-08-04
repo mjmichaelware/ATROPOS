@@ -6,11 +6,9 @@ Source Document 4: Human Operating Environment UI/UX Architecture Specification.
 The repository contains a substantial Kotlin terminal presentation foundation under `src/main/kotlin/atropos/cli/ui/`.
 Known capabilities include terminal rendering, responsive viewport layout, landing presentation, command palette, composer, transcript, session overview, agents, providers, quota, security, memory, verification, status, themes, design tokens, dialogs, toasts, spinners, and ANSI-safe rendering.
 ### ATROPOS Web
-No separately owned ATROPOS web application was proven by the initial UI export.
-`apps/atropos-web/` is established as the future ATROPOS-owned web surface.
+The canonical ATROPOS web application is `apps/web/`. It owns the human operating environment shell and the bounded SpecGraph Developer Tools routes.
 ### SpecGraph Web
-The existing Next.js application under `apps/specgraph-foundry/apps/web/` is a substantial SpecGraph product surface.
-It shall remain SpecGraph-owned and later appear beneath ATROPOS Developer Tools or a shared local gateway.
+SpecGraph remains a bounded product surface within `apps/web/`; its compiler semantics remain owned by `apps/specgraph-foundry/` and are consumed through typed contracts.
 ## Phase 0 Objective
 Freeze the actual presentation tree, assign ownership, map Source Document 4 requirements, identify missing surfaces, and prevent ATROPOS/SpecGraph conflation before implementation.
 ## Phase 0 Deliverables
@@ -20,7 +18,7 @@ Freeze the actual presentation tree, assign ownership, map Source Document 4 req
 - deterministic tracked-path inventory
 - path SHA-256 fingerprints
 - current Git and authority identity
-- future ATROPOS web root
+- canonical ATROPOS web root
 - shared web-contract package boundary
 ## Non-Goals
 Phase 0 does not:

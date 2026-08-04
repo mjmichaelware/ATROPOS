@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.cli.ui
 
+import atropos.cli.input.CommandRegistry
 import atropos.cli.session.QuotaSessionTracker
 
 class ViewportLayout(
@@ -27,15 +28,15 @@ class ViewportLayout(
         openTabCount: Int = 1,
         activePatchId: String? = null
     ): ScreenFrame {
-        val safeWidth = width.coerceAtLeast(36)
-        val safeHeight = height.coerceAtLeast(12)
+        val safeWidth = width.coerceAtLeast(1)
+        val safeHeight = height.coerceAtLeast(6)
         val frame = ScreenFrame(safeWidth, safeHeight)
         val operation = activity?.let(TerminalText::stripAnsi) ?: verificationState
         val state = SessionPresentationState(
             provider = provider,
             mode = composer.mode(),
             workspace = workspace,
-            commands = listOf("/help", "/status", "/providers", "/route", "/use", "/verify", "/exit"),
+            commands = CommandRegistry.quickAccessCommands(),
             tokens = tracker.estimatedTokens.takeIf { it > 0 }
                 ?.let { MetricValue.Known(it.toString()) } ?: MetricValue.Unknown,
             cost = tracker.estimatedCostUsd().takeIf { it > 0.0 }

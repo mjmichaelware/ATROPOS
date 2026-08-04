@@ -151,6 +151,9 @@ open class ExecutionPolicyEngine(
         when (request.actionClass) {
             PolicyActionClass.SHELL,
             PolicyActionClass.SMOKE -> {
+                if (containsNestedShellInvocation(request.command)) {
+                    return deny("nested shell invocation refused")
+                }
                 if (loweredCommand.contains("rm -rf /") || loweredCommand.contains("mkfs") || loweredCommand.contains("shutdown")) {
                     return deny("destructive shell command refused")
                 }
@@ -213,12 +216,27 @@ open class ExecutionPolicyEngine(
     private fun forbiddenPath(raw: String): Boolean {
         val normalized = raw.replace('\\', '/').trim()
         if (normalized.isBlank()) return false
-        if (normalized.startsWith(".git/") || normalized == ".git") return true
-        if (normalized.startsWith(".atropos/secrets/") || normalized == ".atropos/secrets") return true
-        if (normalized.startsWith("build/") || normalized == "build") return true
-        if (normalized.startsWith(".gradle/") || normalized == ".gradle") return true
-        if (normalized.endsWith(".jar") || normalized.endsWith(".class")) return true
+        val repositoryRelative = runCatching {
+            val path = Path.of(raw)
+            val absolute = if (path.isAbsolute) path.normalize() else repoRoot.resolve(path).normalize()
+            repoRoot.relativize(absolute).toString().replace('\\', '/')
+        }.getOrNull()
+        val candidates = sequenceOf(normalized, repositoryRelative).filterNotNull()
+        if (candidates.any { it == ".git" || it.startsWith(".git/") }) return true
+        if (candidates.any { it == ".atropos/secrets" || it.startsWith(".atropos/secrets/") }) return true
+        if (candidates.any { it == "build" || it.startsWith("build/") }) return true
+        if (candidates.any { it == ".gradle" || it.startsWith(".gradle/") }) return true
+        if (candidates.any { it.endsWith(".jar") || it.endsWith(".class") }) return true
         return false
+    }
+
+    private fun containsNestedShellInvocation(command: List<String>): Boolean {
+        val normalized = command.map { it.trim().lowercase() }
+        return normalized.zipWithNext().any { (executable, argument) ->
+            executable in setOf("sh", "bash", "zsh", "dash", "fish") && argument == "-c"
+        } || normalized.zipWithNext().any { (executable, argument) ->
+            executable == "cmd" && argument == "/c"
+        }
     }
 
     private fun nextId(): String = "policy-" + UUID.randomUUID().toString().take(12)

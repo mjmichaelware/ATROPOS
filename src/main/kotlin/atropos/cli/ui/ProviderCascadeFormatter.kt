@@ -1,7 +1,11 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.cli.ui
 
+import atropos.core.security.RedactionFilter
+
 object ProviderCascadeFormatter {
+    private val redactionFilter = RedactionFilter()
+
     fun cleanResponse(response: String, resolvedProvider: String): String {
         val failures = mutableListOf<String>()
         val body = mutableListOf<String>()
@@ -15,15 +19,15 @@ object ProviderCascadeFormatter {
             }
         }
 
-        if (failures.isEmpty()) return response
+        if (failures.isEmpty()) return redactionFilter.redact(response)
 
         val summary = summarize(failures, resolvedProvider)
         val cleanBody = body.joinToString("\n").trim()
-        return if (cleanBody.isBlank()) summary else "$summary\n\n$cleanBody"
+        return if (cleanBody.isBlank()) summary else "$summary\n\n${redactionFilter.redact(cleanBody)}"
     }
 
     fun cleanError(message: String, provider: String): String {
-        val raw = TerminalText.sanitize(message).trim()
+        val raw = redactionFilter.redact(TerminalText.sanitize(message)).trim()
         val failures = raw
             .split('|')
             .map { it.trim().removePrefix("-").trim() }

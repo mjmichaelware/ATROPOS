@@ -83,6 +83,28 @@ class AuditorService(
         return results
     }
 
+    fun auditSecretText(label: String, content: String): List<AuditFinding> {
+        val report = RedactionFilter().report(content)
+        val result = if (report.changed) {
+            AuditFinding(
+                check = "secret-scan",
+                severity = AuditSeverity.FAILURE,
+                file = label,
+                message = "secrets found: ${report.summary()}",
+                evidence = report.summary()
+            )
+        } else {
+            AuditFinding(
+                check = "secret-scan",
+                severity = AuditSeverity.PASS,
+                file = label,
+                message = "no secrets found in scanned text"
+            )
+        }
+        findings += result
+        return listOf(result)
+    }
+
     fun auditDeterministic(files: List<String>): List<AuditFinding> {
         val verifier = DeterministicVerifier(repoRoot)
         val results = mutableListOf<AuditFinding>()

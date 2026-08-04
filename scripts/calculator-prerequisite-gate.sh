@@ -1,0 +1,123 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT"
+
+require_file() {
+  test -f "$1" || { echo "CALCULATOR_PREREQUISITE_MISSING $1" >&2; exit 1; }
+}
+
+require_file docs/source/ATROPOS_Source_Doc_1.txt
+require_file docs/source/ATROPOS_Source_Doc_2.txt
+require_file docs/source/ATROPOS_Source_Doc_3.txt
+require_file docs/completion/ATROPOS_SD1_SD2_SPECGRAPH_ATOM_DAG.md
+require_file docs/authority/AUTHORITY_MANIFEST.tsv
+
+# These are characterization surfaces for the existing canonical owners. This
+# gate inventories them; it intentionally does not launch Gradle.
+provider_tests=(
+  src/test/kotlin/atropos/core/provider/ProviderActivationServiceTest.kt
+  src/test/kotlin/atropos/core/provider/ProviderCascadeOrderTest.kt
+  src/test/kotlin/atropos/core/provider/ProviderFixtureMatrixServiceTest.kt
+  src/test/kotlin/atropos/core/provider/QuotaLedgerRouteTruthTest.kt
+)
+terminal_tests=(
+  src/test/kotlin/atropos/cli/ui/AnsiTerminalEngineHelpTest.kt
+  src/test/kotlin/atropos/cli/CommandRouterHelpTest.kt
+)
+source_tests=(
+  src/test/kotlin/atropos/dloi/DloiServiceTest.kt
+  src/test/kotlin/atropos/dloi/HigZeroGuardContractTest.kt
+  src/test/kotlin/atropos/core/provider/SourceBindingContextPackerTest.kt
+)
+endpoint_tests=(
+  src/test/kotlin/atropos/cli/CommandRouterIdentityTest.kt
+  src/test/kotlin/atropos/cli/CommandRouterHelpTest.kt
+)
+hierarchy_tests=(
+  src/test/kotlin/atropos/core/hr/HrRouterServiceTest.kt
+  src/test/kotlin/atropos/core/director/DirectorServiceTest.kt
+  src/test/kotlin/atropos/core/hierarchy/HierarchyRegistryTest.kt
+  src/test/kotlin/atropos/core/auditor/AuditorServiceTest.kt
+)
+factory_surfaces=(
+  src/main/kotlin/atropos/core/factory/AppActionRegistry.kt
+  src/main/kotlin/atropos/core/factory/AppIntent.kt
+  src/main/kotlin/atropos/core/factory/AppProjectSpec.kt
+  src/main/kotlin/atropos/core/factory/AppProjectSpecParser.kt
+  src/main/kotlin/atropos/core/factory/RepoScaffold.kt
+  src/main/kotlin/atropos/core/factory/EvidenceManifest.kt
+  src/main/kotlin/atropos/core/factory/AppProjectMutationGate.kt
+  src/main/kotlin/atropos/core/factory/AppProjectGenerator.kt
+  src/main/kotlin/atropos/core/factory/AppFactoryRouter.kt
+  src/main/kotlin/atropos/core/planning/InternalPlanningGraphService.kt
+  src/main/kotlin/atropos/core/worktree/BoundedGitWorktreeCommandRunner.kt
+  src/main/kotlin/atropos/cli/ui/AppFactoryPlanRenderer.kt
+  src/test/kotlin/atropos/core/factory/AppProjectGeneratorTest.kt
+  src/test/kotlin/atropos/core/factory/AppFactoryRouterTest.kt
+  src/test/kotlin/atropos/core/worktree/BoundedGitWorktreeCommandRunnerTest.kt
+  src/test/kotlin/atropos/cli/ui/AppFactoryPlanRendererTest.kt
+  src/main/kotlin/atropos/core/artifact/ArtifactPipeline.kt
+  src/main/kotlin/atropos/cli/commands/SelfHostNaturalLanguageRouter.kt
+  src/test/kotlin/atropos/cli/commands/SelfHostNaturalLanguageRouterTest.kt
+)
+
+for file in "${provider_tests[@]}" "${terminal_tests[@]}" "${source_tests[@]}" "${endpoint_tests[@]}" "${hierarchy_tests[@]}" "${factory_surfaces[@]}"; do
+  require_file "$file"
+done
+
+if rg -n -i 'CalculatorProjectGenerator|calculator-specific|calculator intent' src/main/kotlin/atropos/core/factory src/main/kotlin/atropos/cli >/dev/null; then
+  echo 'CALCULATOR_PRODUCT_SPECIAL_CASE_PRESENT' >&2
+  exit 1
+fi
+
+rg -q 'generateApp\(prompt: String, projectId: String\)' src/main/kotlin/atropos/core/factory/AppProjectGenerator.kt || {
+  echo 'GENERAL_APP_GENERATION_API_MISSING' >&2
+  exit 1
+}
+
+rg -q 'kotlinc .*include-runtime' src/main/kotlin/atropos/core/factory/RepoScaffold.kt || {
+  echo 'GENERATED_TEST_EXECUTION_MISSING' >&2
+  exit 1
+}
+
+rg -q 'MainTestKt' src/main/kotlin/atropos/core/factory/RepoScaffold.kt || {
+  echo 'GENERATED_TEST_ENTRYPOINT_MISSING' >&2
+  exit 1
+}
+
+rg -q '\.atropos/generated-projects' src/main/kotlin/atropos/core/factory/AppProjectGenerator.kt src/main/kotlin/atropos/core/factory/AppProjectMutationGate.kt || {
+  echo 'POLICY_COMPATIBLE_GENERATED_TERRITORY_MISSING' >&2
+  exit 1
+}
+
+if rg -n 'build/generated-projects' src/main/kotlin/atropos/core/factory src/test/kotlin/atropos/core/factory scripts/app-factory-source-proof.sh >/dev/null; then
+  echo 'FORBIDDEN_BUILD_GENERATED_TERRITORY_PRESENT' >&2
+  exit 1
+fi
+
+require_file src/main/kotlin/atropos/core/endpoint/OperationRegistry.kt
+require_file src/main/kotlin/atropos/core/endpoint/EndpointKind.kt
+require_file src/main/kotlin/atropos/core/verification/VerifiedCompletionGate.kt
+require_file scripts/app-factory-policy-proof.sh
+require_file scripts/app-factory-nl-routing-proof.sh
+require_file scripts/calculator-final-acceptance.sh
+require_file scripts/hr-router-proof.sh
+require_file scripts/hierarchy-dispatch-proof.sh
+require_file scripts/governance-proof.sh
+require_file scripts/app-factory-wiring-proof.sh
+require_file scripts/app-factory-production-proof.sh
+require_file scripts/app-factory-installed-proof.sh
+require_file scripts/endpoint-manifest-proof.sh
+
+printf '%s\n' \
+  'CALCULATOR_PREREQUISITE_SURFACE_OK' \
+  "root=$ROOT" \
+  'provider_tests=present' \
+  'terminal_tests=present' \
+  'source_authority_tests=present' \
+  'endpoint_parity_tests=present' \
+  'hierarchy_gate_tests=present' \
+  'general_app_factory_surfaces=present' \
+  'test_execution=not_run'

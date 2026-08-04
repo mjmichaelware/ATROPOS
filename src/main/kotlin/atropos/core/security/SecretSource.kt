@@ -1,5 +1,6 @@
 package atropos.core.security
 
+import atropos.core.AtroposRepoRootLocator
 import java.io.File
 
 data class SecretLookup(
@@ -9,6 +10,8 @@ data class SecretLookup(
     val configured: Boolean
 ) {
     fun redacted(): String = if (configured) "$name=<configured:$source>" else "$name=<missing>"
+
+    override fun toString(): String = redacted()
 }
 
 interface SecretSource {
@@ -29,12 +32,23 @@ class EnvSecretSource(private val env: Map<String, String> = System.getenv()) : 
     }
 }
 
-class LocalFileSecretSource(private val root: File = File(".atropos/secrets")) : SecretSource {
+class LocalFileSecretSource(
+    private val root: File = AtroposRepoRootLocator.resolve().resolve(".atropos/secrets").toFile()
+) : SecretSource {
     private val vault = TokenIsolationVault(root.toPath())
 
     override fun lookup(name: String): SecretLookup {
-        val value = runCatching { vault.readSecret(name) }.getOrNull()
-        return SecretLookup(name, value, "local_file", value != null)
+        val result = runCatching { vault.readSecretResult(name) }
+            .getOrElse { return SecretLookup(name, null, "local_file_refused_io", false) }
+        return when (result) {
+            is VaultReadResult.Available -> SecretLookup(name, result.value, "local_file", true)
+            is VaultReadResult.Refused -> SecretLookup(
+                name,
+                null,
+                "local_file_refused_${result.reason.name.lowercase()}",
+                false
+            )
+        }
     }
 }
 
@@ -69,7 +83,7 @@ object DefaultSecretSource {
     fun create(
         explicit: Map<String, String> = emptyMap(),
         env: Map<String, String> = System.getenv(),
-        localRoot: File = File(".atropos/secrets")
+        localRoot: File = AtroposRepoRootLocator.resolve().resolve(".atropos/secrets").toFile()
     ): CompositeSecretSource = CompositeSecretSource(
         listOf(
             MapSecretSource(explicit, "explicit"),
@@ -88,7 +102,7 @@ data class KeySetupResult(
 )
 
 class KeySetupHelper(
-    private val root: File = File(".atropos/secrets")
+    private val root: File = AtroposRepoRootLocator.resolve().resolve(".atropos/secrets").toFile()
 ) {
     private val vault = TokenIsolationVault(root.toPath())
 

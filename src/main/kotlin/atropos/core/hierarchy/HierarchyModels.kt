@@ -4,6 +4,7 @@ import java.time.Instant
 import java.util.UUID
 
 enum class HierarchyRole {
+    HUMAN_OWNER,
     DIRECTOR,
     MANAGER,
     SPECIALIST,
@@ -118,7 +119,12 @@ class HierarchyRegistry {
         if (uncoveredCapabilities.isNotEmpty()) {
             return HierarchyDispatchResult.Refused("assignee lacks capabilities: ${uncoveredCapabilities.joinToString(", ")}")
         }
+        val territoryRefusal = parent.territoryRefusal(contract.territory)
+        if (territoryRefusal != null) {
+            return HierarchyDispatchResult.Refused(territoryRefusal)
+        }
         dispatches += contract
+        assignTerritory(assignee.id, contract.territory.joinToString(","))
         updateStatus(assignee.id, AgentStatus.ASSIGNED, taskId = contract.taskId)
         return HierarchyDispatchResult.Accepted(contract, get(assignee.id) ?: assignee)
     }
@@ -136,11 +142,30 @@ class HierarchyRegistry {
     }
 
     private fun AgentRecord.canDispatchTo(target: AgentRecord): Boolean = when (role) {
+        HierarchyRole.HUMAN_OWNER -> target.role == HierarchyRole.DIRECTOR ||
+            target.role == HierarchyRole.MANAGER ||
+            target.role == HierarchyRole.AUDITOR ||
+            target.role == HierarchyRole.CUSTODIAN
         HierarchyRole.DIRECTOR -> target.role == HierarchyRole.MANAGER || target.role == HierarchyRole.AUDITOR || target.role == HierarchyRole.CUSTODIAN
         HierarchyRole.MANAGER -> target.role == HierarchyRole.SPECIALIST || target.role == HierarchyRole.WORKER
         HierarchyRole.SPECIALIST -> target.role == HierarchyRole.WORKER
         HierarchyRole.WORKER,
         HierarchyRole.AUDITOR,
         HierarchyRole.CUSTODIAN -> false
+    }
+
+    private fun AgentRecord.territoryRefusal(childTerritory: List<String>): String? {
+        val parentTerritory = territoryId
+            ?.split(",")
+            ?.map { it.trim().trimEnd('/') }
+            ?.filter { it.isNotBlank() }
+            ?: return null
+        if (parentTerritory.isEmpty() || parentTerritory.any { it == "*" || it == "root" }) return null
+        val outside = childTerritory
+            .map { it.trim().trimEnd('/') }
+            .firstOrNull { child ->
+                parentTerritory.none { parent -> child == parent || child.startsWith("$parent/") }
+            }
+        return outside?.let { "dispatch territory outside parent scope: $it not within ${parentTerritory.joinToString(", ")}" }
     }
 }

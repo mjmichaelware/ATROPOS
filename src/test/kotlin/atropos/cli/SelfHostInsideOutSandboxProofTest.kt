@@ -3,6 +3,7 @@ package atropos.cli
 import atropos.cli.config.ConfigurationManager
 import atropos.cli.session.QuotaSessionTracker
 import atropos.cli.ui.AnsiTerminalEngine
+import atropos.cli.ui.PlainTerminalOutput
 import atropos.core.AIProvider
 import atropos.core.ApiKeys
 import atropos.core.AtroposConfig
@@ -49,8 +50,10 @@ class SelfHostInsideOutSandboxProofTest {
                 ),
                 uiEngine = AnsiTerminalEngine(
                     capabilities = ConfigurationManager(),
-                    out = PrintStream(out),
-                    errors = PrintStream(ByteArrayOutputStream())
+                    plainOutput = PlainTerminalOutput(
+                        out = PrintStream(out),
+                        errors = PrintStream(ByteArrayOutputStream())
+                    )
                 ),
                 sessionTracker = QuotaSessionTracker(),
                 providerResolver = {
@@ -71,6 +74,7 @@ class SelfHostInsideOutSandboxProofTest {
             val rendered = out.toString()
             assertTrue(rendered.contains("SELF-HOST RUN"), rendered)
             assertTrue(rendered.contains("self-host run promoted verified jar"), rendered)
+            assertTrue(rendered.contains("git_status_short") && rendered.contains("exit=0"), rendered)
         } finally {
             restoreProperty("user.dir", oldUserDir)
             restoreProperty("atropos.installed.jar", oldInstalledJar)
@@ -173,7 +177,15 @@ class SelfHostInsideOutSandboxProofTest {
 
     private fun initializeSandboxAtroposRepo(repoRoot: Path) {
         Files.writeString(repoRoot.resolve("settings.gradle.kts"), "pluginManagement {}\nrootProject.name = \"ATROPOS\"\n")
-        Files.writeString(repoRoot.resolve("build.gradle.kts"), "plugins {}\n")
+        Files.writeString(
+            repoRoot.resolve("build.gradle.kts"),
+            "plugins { id(\"org.jetbrains.kotlin.jvm\") version \"1.9.24\" }\n"
+        )
+        Files.createDirectories(repoRoot.resolve("gradle/wrapper"))
+        Files.writeString(
+            repoRoot.resolve("gradle/wrapper/gradle-wrapper.properties"),
+            "distributionUrl=gradle-9.6.0-bin.zip\n"
+        )
         Files.writeString(
             repoRoot.resolve("gradlew"),
             """

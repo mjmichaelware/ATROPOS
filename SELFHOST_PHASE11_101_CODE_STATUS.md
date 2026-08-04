@@ -1,6 +1,6 @@
 # ATROPOS Phase 11 Self-Host Code + Static Verification Status
 
-Status: SANDBOX + INSTALLED-RUNTIME PROOF PASS for Phase 11 self-host causal chain. Source-ingest provider context pack is PRESENT for local path, git, archive, and hash-pinned HTTP bundle bindings.
+Status: SANDBOX PROOF RECORDED; CURRENT INSTALLED-RUNTIME PROOF PENDING. Historical installed-runtime evidence below is retained for provenance only and is not acceptance for the current tree. Rerun is required after the 2026-07-29 source-binding, context-packer, auditor, daemon-root, provider-pack, restart, swap, and proof-harness changes. Source-ingest provider context pack code is PRESENT for local path, git, archive, and hash-pinned HTTP bundle bindings.
 
 Scope: Phase 11 self-host backend, provider context binding, recovery, proof script, and thin CLI only. No SpecGraph product work, UI parity, Android, or web-client work was performed for this status.
 
@@ -319,7 +319,7 @@ Focused test:
 
 Result: PASS as part of the focused causal-chain run.
 
-## Executed Installed-Runtime Proof
+## Historical Installed-Runtime Proof (Not Current Acceptance)
 
 Proof script:
 
@@ -328,7 +328,7 @@ Proof script:
 scripts/selfhost-installed-proof.sh build/libs/ATROPOS.jar
 ```
 
-Result:
+Historical result:
 
 ```text
 ATROPOS_SELFHOST_INSTALLED_PROOF_OK
@@ -356,11 +356,11 @@ Installed proof properties:
 | Sandbox backup sha256 | `b518592741d8dc186777b762d29630cf50d5828a4ab7b2b438ef68e3434852ed` |
 | Output log | `/tmp/atropos-installed-proof.k3UhLi/installed-proof.out` |
 
-The proof used the production headless JAR entry point with stdin, not a test-only service call. The script refuses if the prompt routes to generic provider chat, if marker files are absent/empty, if the sandbox installed JAR is not swapped, if the prior JAR backup is missing, or if the evidence bundle is absent.
+The historical proof used the production headless JAR entry point with stdin, not a test-only service call. The current proof scripts have since changed and this result is not current acceptance. The current scripts also require a real candidate JAR, exact prior-JAR preservation, ordered gate evidence, and complete evidence bundles.
 
-Initial attempts against stale `./atropos.jar` and pre-existing `build/libs/ATROPOS.jar` failed because those artifacts routed the NL prompt to generic provider chat. After packaging the current tree with `./gradlew jar`, installed-runtime proof passed.
+Initial attempts against stale `./atropos.jar` and pre-existing `build/libs/ATROPOS.jar` failed because those artifacts routed the NL prompt to generic provider chat. After packaging the then-current tree with `./gradlew jar`, the historical installed-runtime proof passed. The current tree has not been rerun.
 
-## Kill / Restart Continuity Proof
+## Historical Kill / Restart Continuity Proof (Current Rerun Pending)
 
 Focused command:
 
@@ -368,7 +368,7 @@ Focused command:
 ./gradlew test --tests atropos.core.agent.SelfHostRecoveryContinuationTest --tests atropos.core.recovery.RestartCoordinatorTest --tests atropos.core.recovery.CrashRecoveryServiceTest --tests atropos.core.recovery.RuntimeContinuitySupervisorTest --tests atropos.core.agent.GoalContinuationServiceTest
 ```
 
-Result: PASS.
+Historical result: PASS for the recorded focused run; current source changes require rerun.
 
 The installed proof sandbox also wrote restart snapshots under:
 
@@ -376,7 +376,7 @@ The installed proof sandbox also wrote restart snapshots under:
 /tmp/atropos-installed-proof.k3UhLi/.atropos/recovery/snapshots/
 ```
 
-Code-level MISSING on the causal chain: none found in A-E, provider source-ingest, focused recovery tests, sandbox proof, or installed-runtime proof.
+Code-level MISSING on the causal chain at the time of the recorded proof: none found in A-E, provider source-ingest, focused recovery tests, sandbox proof, or installed-runtime proof. After later code changes, the proof boundary is PENDING OPERATOR RERUN because this session has not rerun Gradle, package, or installed-JAR proof.
 
 Phase 11 inside-out self-build PROVEN in sandbox and installed-runtime sandbox via NL prompt + real source mutation; live device install remains operator deployment work.
 
@@ -389,6 +389,7 @@ The Phase 11 predicate is `NL → mutate → compile gate → git status`, and i
 3. **`/agent self-host resume` failed on its second advance.** `advanceNextResumableGoal` and `recoverAndContinue` built the context envelope *before* `advanceGoal` selected the next ready node, so `SelfHostContextPreflight` correctly refused an envelope naming the node that had just completed. Both now let `advanceGoal` build the envelope after selection. This failure reproduced on `aea5a96` before any change in this batch.
 
 Proof command:
+Phase 11 inside-out self-build remains historically proven in the recorded sandbox/runtime run, but is not proven for the current tree. Operator rerun is required:
 
 ```bash
 ./gradlew jar
@@ -409,3 +410,5 @@ Result: `ATROPOS_SELFHOST_INSTALLED_PROOF_OK` (exit 0), with five assertions add
 Focused verification: 117 tests across `atropos.core.agent.SelfHost*`, `atropos.cli.commands.SelfHost*`, `atropos.core.verification.*`, `atropos.core.policy.*`, and `SelfHostInsideOutSandboxProofTest`, 0 failures; 16 of them new for the compile gate, proof builder, and renderer. `./gradlew compileKotlin` exits 0.
 
 Scope limit stated honestly: the sandbox proof runs against the sandbox's stub `gradlew`, so the compile-gate *wiring* is what the sandbox proves; the real `./gradlew compileKotlin` zero exit was verified in this repository. Phase 11 is not 100% — batch planning breadth and repair-loop coverage were not touched by this batch, and live device install remains operator deployment work.
+scripts/selfhost-restart-proof.sh build/libs/ATROPOS.jar
+```

@@ -25,11 +25,28 @@ data class TerritoryAssignment(
     val boundActorIdentity: String? = null
 ) {
     fun allows(path: String): Boolean {
-        if (!path.startsWith(allowedPrefix)) return false
-        if (deniedPatterns.any { path.contains(it) }) return false
+        val normalizedPath = normalizeTerritoryPath(path) ?: return false
+        if (!territoryPathWithin(normalizedPath, allowedPrefix)) return false
+        if (deniedPatterns.any { normalizedPath.contains(it.replace('\\', '/')) }) return false
         if (expiresAt != null && Instant.now().isAfter(expiresAt)) return false
         return true
     }
+}
+
+internal fun normalizeTerritoryPath(path: String): String? {
+    val normalized = path.replace('\\', '/').trim().trimStart('/')
+    if (normalized.isBlank()) return null
+    val segments = normalized.split('/')
+    if (segments.any { it.isBlank() || it == "." || it == ".." }) return null
+    return segments.joinToString("/")
+}
+
+internal fun territoryPathWithin(path: String, prefix: String): Boolean {
+    val normalizedPath = normalizeTerritoryPath(path) ?: return false
+    val normalizedPrefix = prefix.replace('\\', '/').trim().trim('/').trimEnd('/')
+    return normalizedPrefix.isBlank() ||
+        normalizedPath == normalizedPrefix ||
+        normalizedPath.startsWith("$normalizedPrefix/")
 }
 
 data class TerritoryViolation(

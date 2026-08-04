@@ -26,6 +26,9 @@ class SelfHostGoalServiceTest {
         Files.createDirectories(repoRoot.resolve("src/main/kotlin/atropos"))
         Files.createDirectories(repoRoot.resolve("src/test/kotlin/atropos"))
         Files.writeString(repoRoot.resolve("src/main/kotlin/atropos/Main.kt"), "fun main() {}\n")
+        val gradlew = repoRoot.resolve("gradlew")
+        Files.writeString(gradlew, "#!/bin/sh\nexit 0\n")
+        gradlew.toFile().setExecutable(true)
         ProcessBuilder("git", "config", "user.email", "atropos@example.invalid")
             .directory(repoRoot.toFile())
             .redirectErrorStream(true)
@@ -127,12 +130,44 @@ class SelfHostGoalServiceTest {
         val store = GoalRunStore(repoRoot)
         val service = SelfHostGoalService(repoRoot = repoRoot, store = store)
 
-        val result = service.startGoal("build ATROPOS from natural language", "11\"x\nphase")
+        val result = service.startGoal("build ATROPOS from natural language", "11\"x\n\$phase")
 
         assertTrue(result.ok)
         val payload = result.goal?.dag?.nodes?.get(1)?.actionPayload.orEmpty()
-        assertTrue(payload.contains("LAST_SELF_HOST_PHASE: String = \"11\\\"x\\nphase\""), payload)
-        assertTrue(!payload.contains("11\"x\nphase"), payload)
+        assertTrue(payload.contains("LAST_SELF_HOST_PHASE: String = \"11\\\"x\\n\\\$phase\""), payload)
+        assertTrue(!payload.contains("11\"x\n\$phase"), payload)
+    }
+
+    @Test
+    fun setDag_refreshes_territory_and_current_ready_node() {
+        val repoRoot = Files.createTempDirectory("atropos-self-host-set-dag-")
+        initializeGitRepo(repoRoot)
+        val store = GoalRunStore(repoRoot)
+        val service = SelfHostGoalService(repoRoot = repoRoot, store = store)
+        val started = service.startGoal("replace self-host DAG", "11")
+        val goalId = started.goal?.record?.id ?: error("missing goal id")
+        val dag = DagExecutionService(repoRoot = repoRoot).createDag(
+            label = "replacement DAG",
+            nodes = listOf(
+                DagNode(
+                    id = "replacement-ready",
+                    label = "replacement node",
+                    territory = listOf("src/main/kotlin/atropos/core/provider"),
+                    action = DagNodeAction.VERIFY,
+                    createdAt = Instant.parse("2026-07-29T00:10:00Z"),
+                    updatedAt = Instant.parse("2026-07-29T00:10:00Z"),
+                    metaFile = repoRoot.resolve(".atropos/dag/replacement-ready.meta")
+                )
+            )
+        )
+
+        val result = service.setDag(goalId, dag.id)
+
+        assertTrue(result.ok, result.message)
+        val record = store.resolve(goalId) ?: error("missing updated goal")
+        assertEquals(dag.id, record.dagId)
+        assertEquals("replacement-ready", record.currentNodeId)
+        assertEquals(listOf("src/main/kotlin/atropos/core/provider"), record.territory)
     }
 
     @Test
@@ -146,18 +181,19 @@ class SelfHostGoalServiceTest {
 
         val started = service.startGoal("advance one bounded cradle node", "11")
         val goalId = started.goal?.record?.id ?: error("missing goal id")
-        val first = service.advanceGoal(goalId)
+        val first = service.advanceNextResumableGoal(goalId)
 
         assertTrue(first.ok, first.message)
         val afterProbe = store.resolve(goalId) ?: error("missing probed goal")
         assertEquals(GoalRunStatus.CONTINUING, afterProbe.status)
         assertTrue(afterProbe.evidence.any { it.startsWith("context_attestation system=ATROPOS") })
 
-        val second = service.advanceGoal(goalId)
+        val second = service.advanceNextResumableGoal(goalId)
 
         assertTrue(second.ok, second.message)
 
-        val result = service.advanceGoal(goalId)
+        val result = service.advanceNextResumableGoal(goalId)
+
 
         assertTrue(result.ok, result.message)
         val reopened = store.resolve(goalId) ?: error("missing advanced goal")
@@ -180,9 +216,26 @@ class SelfHostGoalServiceTest {
         val test = repoRoot.resolve("src/test/kotlin/atropos/core/agent/SelfHostCradleRuntimeStateTest.kt")
         assertTrue(Files.readString(marker).contains("LAST_SELF_HOST_GOAL: String = \"$goalId\""))
         assertTrue(Files.readString(test).contains("SelfHostCradleRuntimeState.LAST_SELF_HOST_GOAL"))
-
         val learned = service.learned(10)
         assertTrue(learned.any { it.subjectType == "selfhost_dag_eval" && it.body.contains("attestation:") })
+
+    }
+
+    @Test
+    fun direct_advance_without_context_envelope_refuses_before_node_execution() {
+        val repoRoot = Files.createTempDirectory("atropos-self-host-missing-envelope-")
+        initializeGitRepo(repoRoot)
+        val service = SelfHostGoalService(repoRoot = repoRoot)
+        val started = service.startGoal("missing envelope must stop", "11")
+        val goalId = started.goal?.record?.id ?: error("missing goal id")
+
+        val result = service.advanceGoal(goalId)
+
+        assertTrue(!result.ok, result.message)
+        assertTrue(result.message.contains("context preflight failed"), result.message)
+        val dagId = service.loadGoal(goalId).goal?.record?.dagId ?: error("missing dag id")
+        val dag = DagExecutionService(repoRoot = repoRoot).readDag(dagId) ?: error("missing dag")
+        assertTrue(dag.nodes.all { it.state == DagNodeState.READY || it.state == DagNodeState.PENDING })
     }
 
     @Test
@@ -287,6 +340,55 @@ class SelfHostGoalServiceTest {
         assertEquals(GoalRunStatus.RUNNING, store.resolve(running.id)?.status)
         assertEquals(GoalRunStatus.CONTINUING, store.resolve(recovery.id)?.status)
         assertTrue(store.resolve(recovery.id)?.evidence.orEmpty().any { it.startsWith("context_attestation system=ATROPOS") })
+    }
+
+    @Test
+    fun advanceNextResumableGoal_attests_the_locally_selected_node_after_stale_restart_pointer() {
+        val repoRoot = Files.createTempDirectory("atropos-self-host-stale-pointer-")
+        initializeGitRepo(repoRoot)
+        val base = Instant.parse("2026-07-27T07:07:00Z")
+        var tick = 0L
+        val store = GoalRunStore(repoRoot, clock = { base.plusSeconds(tick++) })
+        val dagService = DagExecutionService(repoRoot = repoRoot)
+        val first = DagNode(
+            id = "ready-first",
+            label = "first local node",
+            territory = listOf("src/main/kotlin/atropos/core/agent"),
+            action = DagNodeAction.VERIFY,
+            state = DagNodeState.READY,
+            createdAt = base,
+            updatedAt = base,
+            metaFile = repoRoot.resolve(".atropos/dag/ready-first.meta")
+        )
+        val second = first.copy(
+            id = "ready-second",
+            label = "second local node",
+            metaFile = repoRoot.resolve(".atropos/dag/ready-second.meta")
+        )
+        val dag = dagService.createDag("stale pointer recovery", listOf(first, second), "atropos-self-host")
+        val created = store.createGoalRun("stale pointer recovery", provider = "self-host")
+        val recovery = store.update(
+            created.copy(
+                status = GoalRunStatus.RECOVERY_REQUIRED,
+                dagId = dag.id,
+                activePhase = "11",
+                currentNodeId = second.id,
+                territory = second.territory
+            )
+        )
+        val service = SelfHostGoalService(
+            repoRoot = repoRoot,
+            store = store,
+            dagService = dagService,
+            clock = { base.plusSeconds(tick++) }
+        )
+
+        val result = service.advanceNextResumableGoal(recovery.id)
+
+        assertTrue(result.ok, result.message)
+        assertEquals(DagNodeState.COMPLETE, dagService.readDag(dag.id)?.findNode(first.id)?.state)
+        assertEquals(DagNodeState.READY, dagService.readDag(dag.id)?.findNode(second.id)?.state)
+        assertTrue(store.resolve(recovery.id)?.evidence.orEmpty().any { it.contains("select:${first.id}") })
     }
 
     @Test

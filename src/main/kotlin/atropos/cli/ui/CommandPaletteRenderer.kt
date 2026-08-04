@@ -34,7 +34,7 @@ class CommandPaletteRenderer(
 
         // One row is spent on the title, matching the reference's dialog header.
         val rowBudget = (maximumRows - 1).coerceAtLeast(1)
-        val matches = CommandRegistry.slashMatches(query.text).take(rowBudget)
+        val matches = CommandRegistry.search(query.text).take(rowBudget)
         if (matches.isEmpty()) return emptyList()
 
         val selected = query.selectedIndex.coerceIn(0, matches.lastIndex)
@@ -60,8 +60,9 @@ class CommandPaletteRenderer(
         selected: Boolean
     ): String {
         val pad = " ".repeat(Glyphs.RAIL_PADDING)
+        val safeWidth = width.coerceAtLeast(1)
         val available = (
-            width - TerminalText.cellWidth(pad) -
+            safeWidth - TerminalText.cellWidth(pad) -
                 TerminalText.cellWidth(item.command) - 3
             ).coerceAtLeast(0)
         val description = TerminalText.ellipsize(item.description, available)
@@ -73,14 +74,14 @@ class CommandPaletteRenderer(
                 TerminalText.padEnd(
                     pad + item.command +
                         if (description.isEmpty()) "" else "  $description",
-                    width
+                    safeWidth
                 )
             )
         } else {
             TerminalText.padEnd(
                 pad + theme.strong(item.command) +
                     if (description.isEmpty()) "" else theme.subdued("  $description"),
-                width
+                safeWidth
             )
         }
     }

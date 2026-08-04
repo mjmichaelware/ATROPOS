@@ -24,6 +24,10 @@ sealed interface ContinuityOutcome {
         get() = this is Recovered && with(report) {
             staleQueueEntries + staleSessions + staleDagClaims + interruptedRuns > 0
         }
+
+    /** Self-host may continue only when every recovery operation reported cleanly. */
+    val safeForSelfHostContinuation: Boolean
+        get() = this is Recovered && report.errors.isEmpty()
 }
 
 /**

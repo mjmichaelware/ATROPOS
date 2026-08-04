@@ -59,9 +59,10 @@ class StatusCommandHandler(
     }
 
     private fun renderRoute(tokens: List<String>, statusRenderer: StatusQuotaRenderer) {
-        val task = tokens.drop(2).joinToString(" ").trim()
+        val expanded = tokens.any { it.equals("--full", ignoreCase = true) || it.equals("--expanded", ignoreCase = true) }
+        val task = tokens.drop(2).filterNot { it.equals("--full", ignoreCase = true) || it.equals("--expanded", ignoreCase = true) }.joinToString(" ").trim()
         if (task.isBlank()) uiEngine.renderError("/status route requires a task")
-        else uiEngine.renderNotice(statusRenderer.renderRoute(task))
+        else uiEngine.renderNotice(statusRenderer.renderRoute(task, expanded))
     }
 
 }

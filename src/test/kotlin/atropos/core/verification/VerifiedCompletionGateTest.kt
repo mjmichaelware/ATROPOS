@@ -4,6 +4,7 @@ package atropos.core.verification
 import atropos.core.dag.DagNode
 import atropos.core.dag.DagNodeAction
 import atropos.core.dag.DagStore
+import atropos.core.policy.BoundedProcessRunner
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
@@ -21,7 +22,37 @@ import kotlin.test.assertTrue
  */
 class VerifiedCompletionGateTest {
 
-    private fun repo(): Path = Files.createTempDirectory("atropos-completion-")
+    private fun repo(): Path {
+        val root = Files.createTempDirectory("atropos-completion-")
+        ProcessBuilder("git", "init")
+            .directory(root.toFile())
+            .redirectErrorStream(true)
+            .start()
+            .waitFor()
+        ProcessBuilder("git", "config", "user.email", "atropos@example.invalid")
+            .directory(root.toFile())
+            .redirectErrorStream(true)
+            .start()
+            .waitFor()
+        ProcessBuilder("git", "config", "user.name", "ATROPOS Test")
+            .directory(root.toFile())
+            .redirectErrorStream(true)
+            .start()
+            .waitFor()
+        Files.createDirectories(root.resolve("src"))
+        Files.writeString(root.resolve("src/A.kt"), "class A\n")
+        ProcessBuilder("git", "add", ".")
+            .directory(root.toFile())
+            .redirectErrorStream(true)
+            .start()
+            .waitFor()
+        ProcessBuilder("git", "commit", "-m", "initial")
+            .directory(root.toFile())
+            .redirectErrorStream(true)
+            .start()
+            .waitFor()
+        return root
+    }
 
     private fun gate(root: Path) = VerifiedCompletionGate(repoRoot = root, dagStore = DagStore(root))
 
@@ -30,7 +61,8 @@ class VerifiedCompletionGateTest {
         territory: List<String> = listOf("src"),
         expectedOutputs: List<String> = listOf("src/A.kt"),
         optionalChecks: Set<String> = emptySet(),
-        result: String? = "done"
+        result: String? = "done",
+        claimOwner: String? = null
     ) = DagNode(
         id = "node-1",
         label = "completion",
@@ -40,6 +72,7 @@ class VerifiedCompletionGateTest {
         expectedOutputs = expectedOutputs,
         optionalChecks = optionalChecks,
         result = result,
+        claimOwner = claimOwner,
         createdAt = Instant.now(),
         updatedAt = Instant.now(),
         metaFile = Path.of("unused")
@@ -75,6 +108,22 @@ class VerifiedCompletionGateTest {
 
         assertFalse(result.passed, "used to pass as 'no tests required (skipped)'")
         assertTrue(result.detail.contains("nothing was verified"), result.detail)
+    }
+
+    @Test
+    fun failed_or_bounded_gradle_commands_never_pass_verification_gates() {
+        val root = repo()
+        val runner = BoundedProcessRunner { _, _, _, _ -> ProcessBuilder("false").start() }
+        val result = VerifiedCompletionGate(
+            repoRoot = root,
+            dagStore = DagStore(root),
+            processRunner = runner
+        ).evaluateNode(node())
+
+        assertFalse(result.gateResults.single { it.gateName == "Focused Tests" }.passed)
+        assertFalse(result.gateResults.single { it.gateName == "Compile Gate" }.passed)
+        assertTrue(result.gateResults.single { it.gateName == "Focused Tests" }.detail.contains("exit=1"))
+        assertTrue(result.gateResults.single { it.gateName == "Compile Gate" }.detail.contains("exit=1"))
     }
 
     @Test
@@ -206,6 +255,27 @@ class VerifiedCompletionGateTest {
     }
 
     @Test
+    fun auditor_gate_blocks_self_audited_claims() {
+        val root = repo()
+        Files.createDirectories(root.resolve("src"))
+        Files.writeString(root.resolve("src/A.kt"), "val a = 1\n", StandardCharsets.UTF_8)
+
+        val result = gateNamed(
+            root,
+            node(
+                payload = null,
+                territory = listOf("src"),
+                expectedOutputs = listOf("src/A.kt"),
+                claimOwner = "auditor"
+            ),
+            "Auditor Findings"
+        )
+
+        assertFalse(result.passed)
+        assertTrue(result.detail.contains("auditor-independence"), result.detail)
+    }
+
+    @Test
     fun each_evaluation_gets_a_fresh_auditor() {
         val root = repo()
         Files.createDirectories(root.resolve("src"))
@@ -250,5 +320,31 @@ class VerifiedCompletionGateTest {
             reloaded.nodes.any { it.optionalChecks.isEmpty() },
             "a node that opted out of nothing must load with an empty set"
         )
+    }
+
+    @Test
+    fun independent_verification_gate_vetos_if_core_lanes_fail() {
+        val root = repo()
+        val node = node(payload = null)
+        val gate = IndependentVerificationGate(repoRoot = root)
+        val report = gate.verify(node)
+        assertFalse(report.canComplete)
+        assertTrue(report.message.contains("VETO: Independent verification failed"))
+    }
+
+    @Test
+    fun build_matrix_lock_checks_java_gradle_and_kotlin_versions() {
+        val root = repo()
+        val wrapperDir = root.resolve("gradle/wrapper")
+        Files.createDirectories(wrapperDir)
+        Files.writeString(wrapperDir.resolve("gradle-wrapper.properties"), "distributionUrl=gradle-9.6.0-bin.zip\n")
+        Files.writeString(root.resolve("build.gradle.kts"), "version \"1.9.24\"\n")
+
+        val gate = VerifiedCompletionGate(repoRoot = root, dagStore = DagStore(root))
+        val node = node(payload = null)
+        val report = gate.evaluateNodeInternal(node)
+        val matrixResult = report.gateResults.first { it.gateName == "Build Matrix Lock" }
+        assertTrue(matrixResult.passed)
+        assertTrue(matrixResult.detail.contains("matrix pinned and verified"))
     }
 }

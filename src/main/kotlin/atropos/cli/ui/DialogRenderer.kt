@@ -38,9 +38,9 @@ class DialogRenderer(
 
     fun panelWidth(terminalWidth: Int): Int = when (Breakpoint.of(terminalWidth)) {
         // Phone: full bleed minus a one-column gutter, so nothing is clipped.
-        Breakpoint.COMPACT -> (terminalWidth - 2).coerceAtLeast(20)
-        Breakpoint.MEDIUM -> (terminalWidth * 3 / 4).coerceAtLeast(36)
-        else -> minOf(MAX_WIDTH, terminalWidth * 2 / 3).coerceAtLeast(48)
+            Breakpoint.COMPACT -> (terminalWidth - 2).coerceAtLeast(1)
+            Breakpoint.MEDIUM -> (terminalWidth * 3 / 4).coerceAtLeast(1)
+            else -> minOf(MAX_WIDTH, terminalWidth * 2 / 3).coerceAtLeast(1)
     }
 
     /**

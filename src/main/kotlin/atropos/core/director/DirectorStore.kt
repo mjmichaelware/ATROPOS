@@ -1,19 +1,26 @@
 package atropos.core.director
 
 import atropos.core.AtroposRepoRootLocator
+import atropos.core.security.RedactionFilter
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
+import java.security.MessageDigest
 
-class DirectorStore(private val root: Path = AtroposRepoRootLocator.resolve()) {
+class DirectorStore(
+    private val root: Path = AtroposRepoRootLocator.resolve(),
+    private val redactionFilter: RedactionFilter = RedactionFilter()
+) {
     private val storePath = root.resolve(".atropos/director/observations.jsonl")
+    private val activeObservations = mutableMapOf<String, DirectorObservation>()
 
     fun appendObservation(obs: DirectorObservation) {
         Files.createDirectories(storePath.parent)
         val tmp = storePath.resolveSibling("observations.${System.nanoTime()}.tmp")
         val existing = if (Files.isRegularFile(storePath)) Files.readString(storePath, StandardCharsets.UTF_8) else ""
-        Files.writeString(tmp, existing + obs.toJsonLine() + "\n", StandardCharsets.UTF_8)
+        Files.writeString(tmp, existing + obs.redactedForPersistence().toJsonLine() + "\n", StandardCharsets.UTF_8)
+        activeObservations[obs.id] = obs
         try {
             Files.move(tmp, storePath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
         } catch (_: Exception) {
@@ -28,7 +35,28 @@ class DirectorStore(private val root: Path = AtroposRepoRootLocator.resolve()) {
         }
     }
 
-    fun unacknowledged(): List<DirectorObservation> = readAll().filter { !it.acknowledged && !it.dismissed }
+    fun unacknowledged(): List<DirectorObservation> = readAll()
+        .filter { !it.acknowledged && !it.dismissed }
+        .map { persisted -> activeObservations[persisted.id] ?: persisted }
+
+    private fun DirectorObservation.redactedForPersistence(): DirectorObservation = copy(
+        details = redactedDetail(details),
+        filePaths = filePaths.map { redactedReference("path", it) },
+        symbols = symbols.map { redactedReference("symbol", it) }
+    )
+
+    private fun redactedDetail(value: String): String {
+        val sanitized = redactionFilter.redact(value)
+        return "<redacted:details:${fingerprint(sanitized)}>"
+    }
+
+    private fun redactedReference(kind: String, value: String): String =
+        "<redacted:$kind:${fingerprint(redactionFilter.redact(value))}>"
+
+    private fun fingerprint(value: String): String {
+        val bytes = MessageDigest.getInstance("SHA-256").digest(value.toByteArray(StandardCharsets.UTF_8))
+        return bytes.joinToString("") { "%02x".format(it) }.take(16)
+    }
 
     private fun DirectorObservation.toJsonLine(): String {
         val fp = filePaths.joinToString("|") { it.replace("|", "%7C") }

@@ -4,14 +4,11 @@ import atropos.core.AtroposRepoRootLocator
 import atropos.core.policy.AgencyDisposition
 import atropos.core.policy.ActionActor
 import atropos.core.policy.BoundedAgencyGate
+import atropos.core.policy.BoundedProcessRunner
 import atropos.core.policy.ExecutionPolicyEngine
 import atropos.core.policy.VerificationActionProposals
 import atropos.core.security.RedactionFilter
-import java.io.ByteArrayOutputStream
-import java.io.InputStream
 import java.nio.file.Path
-import java.util.concurrent.Executors
-import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
 
 data class AgentSmokeExecutionResult(
@@ -21,7 +18,9 @@ data class AgentSmokeExecutionResult(
     val durationMillis: Long = 0L,
     val stdout: String = "",
     val stderr: String = "",
-    val refusalReason: String? = null
+    val refusalReason: String? = null,
+    val failure: AgentExecutionFailure? = null,
+    val outputTruncated: Boolean = false
 ) {
     fun summary(): String = when {
         passed -> "passed (exit ${exitCode ?: "?"}, ${durationMillis} ms)"
@@ -38,7 +37,8 @@ class AgentSmokeRunner(
     private val maxOutputBytes: Int = 48 * 1024,
     private val maxOutputLines: Int = 1_000,
     private val agencyGate: BoundedAgencyGate = BoundedAgencyGate(ExecutionPolicyEngine(repoRoot)),
-    private val redactionFilter: RedactionFilter = RedactionFilter()
+    private val redactionFilter: RedactionFilter = RedactionFilter(),
+    private val processRunner: BoundedProcessRunner = BoundedProcessRunner()
 ) {
     fun validate(command: String): String? {
         val trimmed = command.trim()
@@ -77,6 +77,9 @@ class AgentSmokeRunner(
 
         val tokens = trimmed.split(Regex("\\s+")).filter { it.isNotBlank() }
         val first = tokens.firstOrNull() ?: return "smoke command is blank"
+        if (tokens.drop(1).any(::isUnboundedPathToken)) {
+            return "smoke command refuses absolute or parent-traversal paths"
+        }
         val allowed = setOf(
             "test",
             "git",
@@ -130,7 +133,8 @@ class AgentSmokeRunner(
             return AgentSmokeExecutionResult(
                 command = trimmed,
                 passed = false,
-                refusalReason = refusal
+                refusalReason = refusal,
+                failure = AgentExecutionFailure.INVALID_COMMAND
             )
         }
 
@@ -146,114 +150,52 @@ class AgentSmokeRunner(
             return AgentSmokeExecutionResult(
                 command = trimmed,
                 passed = false,
-                refusalReason = decision.reason
+                refusalReason = decision.reason,
+                failure = AgentExecutionFailure.POLICY_REFUSED
             )
         }
-        val startedAt = System.nanoTime()
-        val process = try {
-            ProcessBuilder(tokens)
-                .directory(repoRoot.toFile())
-                .apply {
-                    environment().keys.removeIf { key ->
-                        val name = key.uppercase()
-                        name.contains("TOKEN") ||
-                            name.contains("SECRET") ||
-                            name.contains("PASSWORD") ||
-                            name.endsWith("_KEY") ||
-                            name.contains("CREDENTIAL")
-                    }
-                }
-                .start()
-        } catch (failure: Exception) {
-            return AgentSmokeExecutionResult(
-                command = trimmed,
-                passed = false,
-                exitCode = -1,
-                durationMillis = 0L,
-                stdout = "",
-                stderr = "",
-                refusalReason = "${failure.javaClass.simpleName}: ${failure.message ?: "smoke launch failed"}"
-            )
-        }
-
-        val pumps = Executors.newFixedThreadPool(2) { task ->
-            Thread(task, "atropos-agent-smoke-stream").apply { isDaemon = true }
-        }
-
-        val stdout = pumps.submit<CapturedText> { collect(process.inputStream) }
-        val stderr = pumps.submit<CapturedText> { collect(process.errorStream) }
-
-        val finished = process.waitFor(timeoutMillis, TimeUnit.MILLISECONDS)
-        if (!finished) terminate(process)
-
-        val out = futureResult(stdout)
-        val err = futureResult(stderr)
-        pumps.shutdownNow()
-
-        val exitCode = if (finished) process.exitValue() else null
-        val passed = finished && exitCode == 0
+        val result = processRunner.run(
+            command = tokens,
+            directory = repoRoot,
+            timeoutMillis = timeoutMillis,
+            maxOutputBytes = maxOutputBytes,
+            maxOutputLines = maxOutputLines,
+            removeEnvironmentKeys = sensitiveEnvironmentKeys()
+        )
+        val stdout = redactionFilter.redact(result.stdout)
+        val stderr = redactionFilter.redact(result.stderr)
+        val exitCode = result.exitCode
+        val passed = exitCode == 0 && !result.timedOut && result.launchError == null
 
         return AgentSmokeExecutionResult(
             command = trimmed,
             passed = passed,
             exitCode = exitCode ?: -1,
-            durationMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startedAt),
-            stdout = out.text,
-            stderr = err.text,
-            refusalReason = if (passed) null else if (!finished) "smoke timed out after $timeoutMillis ms" else null
+            durationMillis = result.durationMillis,
+            stdout = stdout,
+            stderr = stderr,
+            refusalReason = when {
+                passed -> null
+                result.launchError != null -> result.launchError
+                result.timedOut -> "smoke timed out after $timeoutMillis ms"
+                else -> null
+            },
+            failure = when {
+                result.launchError != null -> AgentExecutionFailure.LAUNCH_FAILED
+                result.timedOut -> AgentExecutionFailure.TIMEOUT
+                exitCode != 0 -> AgentExecutionFailure.NONZERO_EXIT
+                else -> null
+            },
+            outputTruncated = result.outputTruncated
         )
     }
 
-    private data class CapturedText(
-        val text: String,
-        val truncated: Boolean
-    )
+    private fun sensitiveEnvironmentKeys(): Set<String> = System.getenv().keys.filter { key ->
+        val name = key.uppercase()
+        name.contains("TOKEN") || name.contains("SECRET") || name.contains("PASSWORD") ||
+            name.endsWith("_KEY") || name.contains("CREDENTIAL")
+    }.toSet()
 
-    private fun collect(input: InputStream): CapturedText {
-        val captured = ByteArrayOutputStream(minOf(maxOutputBytes, 8192))
-        val buffer = ByteArray(8192)
-        var lines = 0
-        var truncated = false
-        var read: Int
-
-        input.use { stream ->
-            while (stream.read(buffer).also { read = it } != -1) {
-                for (index in 0 until read) {
-                    val value = buffer[index]
-                    if (captured.size() < maxOutputBytes && lines < maxOutputLines) {
-                        captured.write(value.toInt())
-                        if (value.toInt() == '\n'.code) lines++
-                    } else {
-                        truncated = true
-                    }
-                }
-            }
-        }
-
-        return CapturedText(
-            redactSensitiveOutput(captured.toByteArray().toString(Charsets.UTF_8)),
-            truncated
-        )
-    }
-
-    private fun futureResult(future: Future<CapturedText>): CapturedText =
-        try {
-            future.get(5, TimeUnit.SECONDS)
-        } catch (_: Exception) {
-            future.cancel(true)
-            CapturedText("", true)
-        }
-
-    private fun terminate(process: Process) {
-        process.toHandle().descendants().forEach { it.destroy() }
-        process.destroy()
-
-        if (!process.waitFor(250, TimeUnit.MILLISECONDS)) {
-            process.toHandle().descendants().forEach { it.destroyForcibly() }
-            process.destroyForcibly()
-            process.waitFor(1, TimeUnit.SECONDS)
-        }
-    }
-
-    private fun redactSensitiveOutput(text: String): String = redactionFilter.redact(text)
+    private fun isUnboundedPathToken(token: String): Boolean =
+        token.startsWith("/") || token == ".." || token.startsWith("../") || token.contains("/../")
 }

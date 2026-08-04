@@ -20,7 +20,22 @@ class SelfHostNaturalLanguageRouterTest {
     @Test
     fun ignores_unrelated_agent_text() {
         assertNull(SelfHostNaturalLanguageRouter().route(listOf("/agent", "ask", "what", "is", "ATROPOS")))
-        assertNull(SelfHostNaturalLanguageRouter().route(listOf("build", "a", "calculator")))
+        assertEquals(
+            listOf("/factory", "run", "build", "a", "calculator"),
+            SelfHostNaturalLanguageRouter().route(listOf("build", "a", "calculator"))
+        )
+        assertEquals(
+            listOf("/factory", "run", "create", "a", "todo", "app"),
+            SelfHostNaturalLanguageRouter().route(listOf("create", "a", "todo", "app"))
+        )
+        assertEquals(
+            listOf("/factory", "run", "make", "a", "notes", "CLI"),
+            SelfHostNaturalLanguageRouter().route(listOf("make", "a", "notes", "CLI"))
+        )
+        assertEquals(
+            listOf("/factory", "run", "build", "weather", "tracker", "for", "commuters"),
+            SelfHostNaturalLanguageRouter().route(listOf("build", "weather", "tracker", "for", "commuters"))
+        )
         assertNull(SelfHostNaturalLanguageRouter().route(listOf("/agent", "self-host", "start", "build", "ATROPOS")))
     }
 
@@ -33,6 +48,28 @@ class SelfHostNaturalLanguageRouterTest {
         assertEquals(
             listOf("/agent", "self-host", "recover"),
             routed
+        )
+    }
+
+    @Test
+    fun routes_operator_self_improvement_phrases_to_phase_11_run() {
+        val router = SelfHostNaturalLanguageRouter()
+
+        assertEquals(
+            listOf("/agent", "self-host", "run", "ATROPOS,", "improve", "yourself"),
+            router.route(listOf("ATROPOS,", "improve", "yourself"))
+        )
+        assertEquals(
+            listOf("/agent", "self-host", "run", "ATROPOS", "run", "self-host", "Phase", "11"),
+            router.route(listOf("ATROPOS", "run", "self-host", "Phase", "11"))
+        )
+        assertEquals(
+            listOf("/agent", "self-host", "run", "build", "yourself"),
+            router.route(listOf("build", "yourself"))
+        )
+        assertEquals(
+            listOf("/agent", "self-host", "run", "run", "self-host", "Phase", "11"),
+            router.route(listOf("run", "self-host", "Phase", "11"))
         )
     }
 }

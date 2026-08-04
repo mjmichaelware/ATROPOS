@@ -68,4 +68,51 @@ class TreeSitterGrammarBridgeTest {
         assertTrue(tree.declarations.any { it.kind == KotlinDeclarationKind.FUNCTION && it.name == "map" })
         assertTrue(tree.declarations.any { it.kind == KotlinDeclarationKind.FUNCTION && it.name == "asBox" })
     }
+
+    @Test
+    fun parse_tree_ignores_declarations_inside_comments_and_strings() {
+        val code = buildString {
+            appendLine("package sample.masked")
+            appendLine("/*")
+            appendLine(" class CommentClass")
+            appendLine(" fun commentFunction() = Unit")
+            appendLine("*/")
+            appendLine("val text = \"object StringObject\"")
+            appendLine("val block = \"\"\"interface StringInterface")
+            appendLine("    fun hidden()")
+            appendLine("\"\"\"")
+            appendLine("// class LineComment")
+            appendLine("class RealClass")
+            appendLine("fun realFunction() = Unit")
+        }
+
+        val tree = bridge.parseTree(code)
+
+        assertTrue(tree.declarations.any { it.kind == KotlinDeclarationKind.CLASS && it.name == "RealClass" })
+        assertTrue(tree.declarations.any { it.kind == KotlinDeclarationKind.FUNCTION && it.name == "realFunction" })
+        assertTrue(tree.declarations.none { it.name == "CommentClass" })
+        assertTrue(tree.declarations.none { it.name == "commentFunction" })
+        assertTrue(tree.declarations.none { it.name == "StringObject" })
+        assertTrue(tree.declarations.none { it.name == "StringInterface" })
+        assertTrue(tree.declarations.none { it.name == "LineComment" })
+    }
+
+    @Test
+    fun parse_tree_preserves_offsets_after_crlf_line_endings() {
+        val code = "package sample\r\n\r\nclass Target\r\n"
+
+        val declaration = bridge.parseTree(code).declarations.first { it.name == "Target" }
+
+        assertEquals(3, declaration.line)
+        assertEquals(code.indexOf("Target"), declaration.offset)
+    }
+
+    @Test
+    fun parse_tree_reports_utf8_byte_offsets() {
+        val code = "package sample\nval prefix = \"é\"\nfun target() = Unit\n"
+
+        val declaration = bridge.parseTree(code).declarations.first { it.name == "target" }
+
+        assertEquals(code.substring(0, code.indexOf("target")).toByteArray(Charsets.UTF_8).size, declaration.offset)
+    }
 }

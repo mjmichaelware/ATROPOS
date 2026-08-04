@@ -5,16 +5,13 @@ import atropos.core.memory.LocalMemoryStore
 import atropos.core.policy.AgencyDisposition
 import atropos.core.policy.ActionActor
 import atropos.core.policy.BoundedAgencyGate
+import atropos.core.policy.BoundedProcessRunner
 import atropos.core.policy.ExecutionPolicyEngine
 import atropos.core.policy.VerificationActionProposals
 import atropos.core.security.RedactionFilter
-import java.io.ByteArrayOutputStream
-import java.io.InputStream
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
-import java.util.concurrent.Executors
-import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
 
 class AgentVerifier(
@@ -22,13 +19,24 @@ class AgentVerifier(
     private val collector: AgentContextCollector = AgentContextCollector(),
     private val patchStore: AgentPatchStore = AgentPatchStore(collector.repoRoot),
     private val verificationStore: AgentVerificationStore = AgentVerificationStore(collector.repoRoot),
-    private val javaHome: String = System.getenv("JAVA_HOME")?.takeIf { it.isNotBlank() } ?: "/data/data/com.termux/files/usr",
+    /**
+     * The running JVM's own home, not one device's layout.
+     *
+     * This defaulted to a literal Termux path, so on any other host — a laptop, CI,
+     * a container, a different Android ROM — verification pointed at a directory
+     * that does not exist. `java.home` is set by the JVM that is already executing
+     * this code, so it is correct everywhere by construction; JAVA_HOME stays as an
+     * explicit operator override.
+     */
+    private val javaHome: String? = System.getenv("JAVA_HOME")?.takeIf { it.isNotBlank() }
+        ?: System.getProperty("java.home")?.takeIf { it.isNotBlank() },
     private val timeoutMillis: Long = 900_000,
     private val maxOutputBytes: Int = 128 * 1024,
     private val maxOutputLines: Int = 3_000,
     private val agencyGate: BoundedAgencyGate = BoundedAgencyGate(ExecutionPolicyEngine(collector.repoRoot)),
     private val memoryStore: LocalMemoryStore = LocalMemoryStore(collector.repoRoot.resolve(".atropos/memory").toFile()),
-    private val redactionFilter: RedactionFilter = RedactionFilter()
+    private val redactionFilter: RedactionFilter = RedactionFilter(),
+    private val processRunner: BoundedProcessRunner = BoundedProcessRunner()
 ) {
     fun verify(reference: String): AgentVerificationRunResult {
         val patch = resolvePatch(reference)
@@ -50,7 +58,7 @@ class AgentVerifier(
             execution.exitCode != 0 -> "verification failed with exit code ${execution.exitCode}"
             else -> null
         }
-        val commandText = "JAVA_HOME=$javaHome ${execution.command.joinToString(" ")}"
+        val commandText = "JAVA_HOME=${javaHome ?: "<runtime>"} ${execution.command.joinToString(" ")}"
         val record = verificationStore.createRecord(
             patchId = patch.id,
             command = commandText,
@@ -145,109 +153,36 @@ class AgentVerifier(
                 launchError = decision.reason
             )
         }
-        val process = try {
-            ProcessBuilder(command)
-                .directory(collector.repoRoot.toFile())
-                .apply {
-                    environment()["JAVA_HOME"] = javaHome
-                    environment().keys.removeIf { key ->
-                        val name = key.uppercase()
-                        name.contains("TOKEN") ||
-                            name.contains("SECRET") ||
-                            name.contains("PASSWORD") ||
-                            name.endsWith("_KEY") ||
-                            name.contains("CREDENTIAL")
-                    }
-                }
-                .start()
-        } catch (failure: Exception) {
-            return VerificationExecution(
-                command = command,
-                exitCode = null,
-                timedOut = false,
-                durationMillis = elapsed(started),
-                stdout = CapturedText("", false),
-                stderr = CapturedText("", false),
-                launchError = "${failure.javaClass.simpleName}: ${failure.message ?: "verification launch failed"}"
-            )
+        val environment = System.getenv().filterKeys { key ->
+            val name = key.uppercase()
+            !(
+                name.contains("TOKEN") ||
+                    name.contains("SECRET") ||
+                    name.contains("PASSWORD") ||
+                    name.endsWith("_KEY") ||
+                    name.contains("CREDENTIAL")
+                )
+        }.toMutableMap().apply {
+            javaHome?.let { put("JAVA_HOME", it) }
         }
-
-        val pumps = Executors.newFixedThreadPool(2) { task ->
-            Thread(task, "atropos-agent-verify-stream").apply { isDaemon = true }
-        }
-
-        val stdout = pumps.submit<CapturedText> {
-            collect(process.inputStream, maxOutputBytes, maxOutputLines)
-        }
-        val stderr = pumps.submit<CapturedText> {
-            collect(process.errorStream, maxOutputBytes, maxOutputLines)
-        }
-
-        val finished = process.waitFor(timeoutMillis, TimeUnit.MILLISECONDS)
-        if (!finished) terminate(process)
-
-        val out = futureResult(stdout)
-        val err = futureResult(stderr)
-        pumps.shutdownNow()
+        val bounded = processRunner.run(
+            command = command,
+            directory = collector.repoRoot,
+            timeoutMillis = timeoutMillis.coerceAtMost(900_000L),
+            maxOutputBytes = maxOutputBytes.coerceAtMost(256 * 1024),
+            maxOutputLines = maxOutputLines.coerceAtMost(4_000),
+            environment = environment
+        )
 
         return VerificationExecution(
             command = command,
-            exitCode = if (finished) process.exitValue() else null,
-            timedOut = !finished,
-            durationMillis = elapsed(started),
-            stdout = out,
-            stderr = err
+            exitCode = bounded.exitCode,
+            timedOut = bounded.timedOut,
+            durationMillis = bounded.durationMillis,
+            stdout = CapturedText(redactSensitiveOutput(bounded.stdout), bounded.outputTruncated),
+            stderr = CapturedText(redactSensitiveOutput(bounded.stderr), bounded.outputTruncated),
+            launchError = bounded.launchError
         )
-    }
-
-    private fun collect(
-        input: InputStream,
-        maximumBytes: Int,
-        maximumLines: Int
-    ): CapturedText {
-        val captured = ByteArrayOutputStream(minOf(maximumBytes, 8192))
-        val buffer = ByteArray(8192)
-        var lines = 0
-        var truncated = false
-        var read: Int
-
-        input.use { stream ->
-            while (stream.read(buffer).also { read = it } != -1) {
-                for (index in 0 until read) {
-                    val value = buffer[index]
-                    if (captured.size() < maximumBytes && lines < maximumLines) {
-                        captured.write(value.toInt())
-                        if (value.toInt() == '\n'.code) lines++
-                    } else {
-                        truncated = true
-                    }
-                }
-            }
-        }
-
-        return CapturedText(
-            redactSensitiveOutput(captured.toByteArray().toString(Charsets.UTF_8)),
-            truncated
-        )
-    }
-
-    private fun futureResult(future: Future<CapturedText>): CapturedText =
-        try {
-            future.get(5, TimeUnit.SECONDS)
-        } catch (_: Exception) {
-            future.cancel(true)
-            CapturedText("", true)
-        }
-
-    private fun terminate(process: Process) {
-        process.toHandle().descendants().forEach { it.destroy() }
-        process.destroy()
-
-        if (!process.waitFor(250, TimeUnit.MILLISECONDS)) {
-            process.toHandle().descendants().forEach { it.destroyForcibly() }
-            process.destroyForcibly()
-            process.waitFor(1, TimeUnit.SECONDS)
-        }
     }
 
     private fun elapsed(started: Long): Long =

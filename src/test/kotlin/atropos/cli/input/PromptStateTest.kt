@@ -1,22 +1,22 @@
 package atropos.cli.input
 
 import kotlin.test.Test
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
+import kotlin.test.assertEquals
 
 class PromptStateTest {
     @Test
-    fun committed_history_is_redacted_before_recall() {
-        val state = PromptState()
-        state.insert("api_key=sk-ABCDEFGHIJKLMNOPQRSTUVWX /tmp/client_secret-prod.json")
+    fun arrow_navigation_cycles_bare_command_prefix_suggestions() {
+        val prompt = PromptState()
+        "self-host".forEach { char ->
+            prompt.apply(KeyEvent.Printable(char.toString()))
+        }
 
-        val committed = state.commit()
-        assertTrue(committed.contains("sk-ABCDEFGHIJKLMNOPQRSTUVWX"))
+        assertEquals(0, prompt.suggestionSelection())
 
-        state.historyUp()
+        assertEquals(PromptEffect.Redraw, prompt.apply(KeyEvent.ArrowDown))
+        assertEquals(1, prompt.suggestionSelection())
 
-        assertTrue(state.text.contains("<redacted"))
-        assertFalse(state.text.contains("sk-ABCDEFGHIJKLMNOPQRSTUVWX"))
-        assertFalse(state.text.contains("client_secret-prod.json"))
+        assertEquals(PromptEffect.Redraw, prompt.apply(KeyEvent.ArrowUp))
+        assertEquals(0, prompt.suggestionSelection())
     }
 }

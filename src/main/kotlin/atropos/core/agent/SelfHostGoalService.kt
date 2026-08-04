@@ -3,15 +3,13 @@ package atropos.core.agent
 import atropos.core.AtroposRepoRootLocator
 import atropos.core.dag.DagExecutionService
 import atropos.core.dag.DagNodeState
-import atropos.core.memory.MemoryRecord
 import atropos.core.memory.LocalMemoryStore
+import atropos.core.memory.MemoryKind
 import atropos.core.provider.ContextEnvelope
 import atropos.core.recovery.RestartCoordinator
 import atropos.core.verification.VerifiedCompletionGate
-import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
-import java.util.UUID
 
 class SelfHostGoalService(
     private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
@@ -26,228 +24,46 @@ class SelfHostGoalService(
     private val clock: () -> Instant = { Instant.now() }
 ) {
     private val bootstrapDagFactory = SelfHostBootstrapDagFactory(repoRoot, dagService, clock)
-    private val selector = SelfHostGoalSelector(store)
-    private val benchmarkService = SelfHostBenchmarkService(selector)
-    private val experienceRecorder = SelfHostExperienceRecorder(memoryStore)
+    private val goalStartService = SelfHostGoalStartService(repoRoot = repoRoot, store = store, bootstrapDagFactory = bootstrapDagFactory, memoryStore = memoryStore, stateSnapshotRecorder = stateSnapshotRecorder, clock = clock)
+    private val goalQueries = SelfHostGoalQueryService(store, dagService, memoryStore)
     private val contextPreflight = SelfHostContextPreflight(repoRoot)
-    private val dagNodeEvaluator = SelfHostDagNodeEvaluator(
-        store = store,
-        dagService = dagService,
-        contextPreflight = contextPreflight,
-        cradleVerificationGate = cradleVerificationGate,
-        experienceRecorder = experienceRecorder,
-        worktreeNodeExecutor = SelfHostWorktreeNodeExecutor(repoRoot)
-    )
-    private val promotionService = SelfHostPromotionService(
-        repoRoot = repoRoot,
-        store = store,
-        dagService = dagService,
-        completionGate = completionGate
-    )
-    private val evidenceBundleExporter = SelfHostEvidenceBundleExporter(
-        repoRoot = repoRoot,
-        store = store,
-        dagService = dagService,
-        restartCoordinator = restartCoordinator
-    )
+    private val dagNodeEvaluator = SelfHostDagNodeEvaluator(store = store, dagService = dagService, contextPreflight = contextPreflight, cradleVerificationGate = cradleVerificationGate, experienceRecorder = SelfHostExperienceRecorder(memoryStore), worktreeNodeExecutor = SelfHostWorktreeNodeExecutor(repoRoot))
+    private val promotionService = SelfHostPromotionService(repoRoot = repoRoot, store = store, dagService = dagService, completionGate = completionGate)
+    private val promotionBoundary = SelfHostGoalPromotionBoundary(store, stateSnapshotRecorder, promotionService)
+    private val evidenceBundleExporter = SelfHostEvidenceBundleExporter(repoRoot = repoRoot, store = store, dagService = dagService, restartCoordinator = restartCoordinator)
+    private val stateUpdater = SelfHostGoalStateUpdater(store, dagService, stateSnapshotRecorder)
 
-    fun startGoal(goalName: String, phase: String): SelfHostResult {
-        try {
-            Files.createDirectories(store.runsRoot())
-
-            val baselineCommit = runCatching {
-                val proc = ProcessBuilder("git", "rev-parse", "HEAD")
-                    .directory(repoRoot.toFile())
-                    .redirectErrorStream(true)
-                    .start()
-                proc.inputStream.bufferedReader().readText().trim()
-            }.getOrNull()
-
-            val dirtyFingerprint = runCatching {
-                val proc = ProcessBuilder("git", "status", "--porcelain")
-                    .directory(repoRoot.toFile())
-                    .redirectErrorStream(true)
-                    .start()
-                val status = proc.inputStream.bufferedReader().readText()
-                bootstrapDagFactory.fingerprint(status)
-            }.getOrNull()
-
-            val goalId = "shg-" + UUID.randomUUID().toString().take(12)
-            val now = clock()
-            val metaFile = store.runsRoot().resolve("$goalId.meta")
-            val record = GoalRunRecord(
-                id = goalId,
-                goalId = goalId,
-                task = goalName.trim(),
-                provider = "self-host",
-                status = GoalRunStatus.RUNNING,
-                baselineCommit = baselineCommit,
-                dirtyStateFingerprint = dirtyFingerprint,
-                activePhase = phase,
-                createdAt = now,
-                updatedAt = now,
-                metaFile = metaFile
-            )
-
-            val stored = store.update(record)
-            val bootstrapDag = bootstrapDagFactory.create(stored, phase)
-            val recordWithDag = store.update(
-                stored.copy(
-                    dagId = bootstrapDag.id,
-                    territory = bootstrapDag.nodes.flatMap { it.territory }.distinct(),
-                    currentNodeId = bootstrapDag.findReadyNodes().firstOrNull()?.id
-                )
-            )
-
-            memoryStore.rememberDetailed(
-                kind = atropos.core.memory.MemoryKind.SESSION,
-                title = "self-host goal started: $goalName",
-                body = "phase=$phase baseline=${baselineCommit?.take(12)} dag=${bootstrapDag.id}",
-                tags = listOf("selfhost", "goal", "started"),
-                subjectType = "selfhost_goal",
-                subjectId = goalId
-            )
-
-            val snapshotted = store.update(
-                recordWithDag.copy(evidence = recordWithDag.evidence + stateSnapshotRecorder.captureEvidence("start"))
-            )
-            return SelfHostResult(true, "self-host goal started: $goalId", SelfHostGoal(snapshotted, bootstrapDag))
-        } catch (e: Exception) {
-            return SelfHostResult(false, "failed to start self-host goal: ${e.message}")
-        }
-    }
+    fun startGoal(goalName: String, phase: String): SelfHostResult = goalStartService.start(goalName, phase)
 
     fun loadGoal(goalId: String): SelfHostResult {
-        val record = store.resolve(goalId)
-            ?: return SelfHostResult(false, "goal not found: $goalId")
-        if (record.isTerminal()) {
-            return SelfHostResult(false, "goal already terminal: ${record.terminalCondition}", SelfHostGoal(record, null))
-        }
-        val dag = record.dagId?.let { dagService.readDag(it) }
-        return SelfHostResult(true, "goal loaded: $goalId", SelfHostGoal(record, dag))
+        return goalQueries.load(goalId)
     }
 
-    fun loadUnfinishedGoals(): List<SelfHostGoal> {
-        return selector.unfinishedSelfHostRuns()
-            .mapNotNull { record ->
-                val dag = record.dagId?.let { dagService.readDag(it) }
-                SelfHostGoal(record, dag)
-            }
-    }
+    fun loadUnfinishedGoals(): List<SelfHostGoal> = goalQueries.unfinished()
 
     fun resolveResumableGoal(goalId: String? = null): SelfHostResult {
-        val record = selector.resolveSelfHostGoalRecord(
-            goalId = goalId,
-            requireUnfinished = true
-        ) ?: return SelfHostResult(false, selector.missingSelfHostGoalMessage(goalId, requireUnfinished = true, operation = "resume"))
-        val dag = record.dagId?.let { dagService.readDag(it) }
-        return SelfHostResult(true, "resumable goal selected: ${record.id}", SelfHostGoal(record, dag))
+        return goalQueries.resolve(goalId, requireUnfinished = true, operation = "resume")
     }
 
     fun resolveWatchGoal(goalId: String? = null): SelfHostResult {
-        val record = selector.resolveSelfHostGoalRecord(
-            goalId = goalId,
-            requireUnfinished = false
-        ) ?: return SelfHostResult(false, selector.missingSelfHostGoalMessage(goalId, requireUnfinished = false, operation = "watch"))
-        val dag = record.dagId?.let { dagService.readDag(it) }
-        return SelfHostResult(true, "watch goal selected: ${record.id}", SelfHostGoal(record, dag))
+        return goalQueries.resolve(goalId, requireUnfinished = false, operation = "watch")
     }
 
     fun resolveStatusGoal(goalId: String? = null): SelfHostResult {
-        val record = selector.resolveSelfHostGoalRecord(
-            goalId = goalId,
-            requireUnfinished = false
-        ) ?: return SelfHostResult(false, selector.missingSelfHostGoalMessage(goalId, requireUnfinished = false, operation = "inspect"))
-        val dag = record.dagId?.let { dagService.readDag(it) }
-        return SelfHostResult(true, "status goal selected: ${record.id}", SelfHostGoal(record, dag))
+        return goalQueries.resolve(goalId, requireUnfinished = false, operation = "status")
     }
 
     fun resolveStoppableGoal(goalId: String? = null): SelfHostResult {
-        val record = selector.resolveSelfHostGoalRecord(
-            goalId = goalId,
-            requireUnfinished = true
-        ) ?: return SelfHostResult(false, selector.missingSelfHostGoalMessage(goalId, requireUnfinished = true, operation = "stop"))
-        val dag = record.dagId?.let { dagService.readDag(it) }
-        return SelfHostResult(true, "stoppable goal selected: ${record.id}", SelfHostGoal(record, dag))
+        return goalQueries.resolve(goalId, requireUnfinished = true, operation = "stop")
     }
 
-    fun status(goalId: String? = null): SelfHostStatus {
-        val record = selector.resolveSelfHostGoalRecord(
-            goalId = goalId,
-            requireUnfinished = false
-        ) ?: return SelfHostStatus(
-            goalId = goalId ?: "none",
-            status = GoalRunStatus.FAILED,
-            terminalCondition = GoalTerminalCondition.TERMINAL_FAILURE,
-            phase = null,
-            currentNodeId = null,
-            dagStatus = null,
-            message = selector.missingSelfHostGoalMessage(goalId, requireUnfinished = false, operation = "inspect")
-        )
-
-        val dagStatus = record.dagId?.let { dagService.status(it) }
-        return SelfHostStatus(
-            goalId = record.id,
-            status = record.status,
-            terminalCondition = record.terminalCondition,
-            phase = record.activePhase,
-            currentNodeId = record.currentNodeId,
-            dagStatus = dagStatus,
-            message = "goal ${record.id}: ${record.status}"
-        )
-    }
-
-    fun updatePhase(goalId: String, phase: String): SelfHostResult {
-        val record = store.resolve(goalId)
-            ?: return SelfHostResult(false, "goal not found: $goalId")
-        val updated = store.update(record.copy(activePhase = phase))
-        stateSnapshotRecorder.captureEvidence("phase")
-        return SelfHostResult(true, "phase updated to $phase", SelfHostGoal(updated, null))
-    }
-
-    fun updateCurrentNode(goalId: String, nodeId: String): SelfHostResult {
-        val record = store.resolve(goalId)
-            ?: return SelfHostResult(false, "goal not found: $goalId")
-        val updated = store.update(record.copy(currentNodeId = nodeId))
-        stateSnapshotRecorder.captureEvidence("current-node")
-        return SelfHostResult(true, "current node set to $nodeId", SelfHostGoal(updated, null))
-    }
-
-    fun setDag(goalId: String, dagId: String): SelfHostResult {
-        val record = store.resolve(goalId)
-            ?: return SelfHostResult(false, "goal not found: $goalId")
-        val dag = dagService.readDag(dagId)
-            ?: return SelfHostResult(false, "DAG not found: $dagId")
-        val updated = store.update(record.copy(dagId = dagId))
-        stateSnapshotRecorder.captureEvidence("dag")
-        return SelfHostResult(true, "DAG set to $dagId", SelfHostGoal(updated, dag))
-    }
-
-    fun addEvidence(goalId: String, evidenceEntry: String): SelfHostResult {
-        val record = store.resolve(goalId)
-            ?: return SelfHostResult(false, "goal not found: $goalId")
-        val updated = store.update(record.copy(
-            evidence = record.evidence + evidenceEntry
-        ))
-        stateSnapshotRecorder.captureEvidence("evidence")
-        return SelfHostResult(true, "evidence added", SelfHostGoal(updated, null))
-    }
-
-    fun setTerritory(goalId: String, territory: List<String>): SelfHostResult {
-        val record = store.resolve(goalId)
-            ?: return SelfHostResult(false, "goal not found: $goalId")
-        val updated = store.update(record.copy(territory = territory))
-        stateSnapshotRecorder.captureEvidence("territory")
-        return SelfHostResult(true, "territory set", SelfHostGoal(updated, null))
-    }
-
-    fun updateVerifiedCheckpoint(goalId: String, checkpoint: String): SelfHostResult {
-        val record = store.resolve(goalId)
-            ?: return SelfHostResult(false, "goal not found: $goalId")
-        val updated = store.update(record.copy(lastVerifiedCheckpoint = checkpoint))
-        stateSnapshotRecorder.captureEvidence("checkpoint")
-        return SelfHostResult(true, "checkpoint updated to $checkpoint", SelfHostGoal(updated, null))
-    }
+    fun status(goalId: String? = null): SelfHostStatus = goalQueries.status(goalId)
+    fun updatePhase(goalId: String, phase: String): SelfHostResult = stateUpdater.updatePhase(goalId, phase)
+    fun updateCurrentNode(goalId: String, nodeId: String): SelfHostResult = stateUpdater.updateCurrentNode(goalId, nodeId)
+    fun setDag(goalId: String, dagId: String): SelfHostResult = stateUpdater.setDag(goalId, dagId)
+    fun addEvidence(goalId: String, evidenceEntry: String): SelfHostResult = stateUpdater.addEvidence(goalId, evidenceEntry)
+    fun setTerritory(goalId: String, territory: List<String>): SelfHostResult = stateUpdater.setTerritory(goalId, territory)
+    fun updateVerifiedCheckpoint(goalId: String, checkpoint: String): SelfHostResult = stateUpdater.updateVerifiedCheckpoint(goalId, checkpoint)
 
     fun completeGoal(goalId: String, condition: GoalTerminalCondition, reason: String? = null): SelfHostResult {
         val result = continuationService.completeRun(goalId, condition, reason)
@@ -261,7 +77,7 @@ class SelfHostGoalService(
             subjectType = "selfhost_goal",
             subjectId = goalId
         )
-        val snapshotted = store.update(record.copy(evidence = record.evidence + stateSnapshotRecorder.captureEvidence("complete:${condition.name}")))
+        val snapshotted = store.update(record.copy(evidence = record.evidence + stateSnapshotRecorder.captureEvidence("complete:${condition.name}", record.id)))
         return SelfHostResult(true, "goal completed: $condition", SelfHostGoal(snapshotted, null))
     }
 
@@ -288,9 +104,9 @@ class SelfHostGoalService(
             return SelfHostResult(false, resumed.message, resumed.record?.let { SelfHostGoal(it, null) })
         }
         val updated = resumed.record ?: return SelfHostResult(false, "goal not found after resume")
-        stateSnapshotRecorder.captureEvidence("resume")
-        val dag = updated.dagId?.let { dagService.readDag(it) }
-        return SelfHostResult(true, resumed.message, SelfHostGoal(updated, dag))
+        val snapshotted = appendSnapshotEvidence(updated, "resume")
+        val dag = snapshotted.dagId?.let { dagService.readDag(it) }
+        return SelfHostResult(true, resumed.message, SelfHostGoal(snapshotted, dag))
     }
 
     fun selectNextDagNode(goalId: String): SelfHostResult {
@@ -326,8 +142,7 @@ class SelfHostGoalService(
         }
 
         val nextNodeId = readyNodes.first()
-        val updated = store.update(record.copy(currentNodeId = nextNodeId))
-        stateSnapshotRecorder.captureEvidence("select:$nextNodeId")
+        val updated = appendSnapshotEvidence(store.update(record.copy(currentNodeId = nextNodeId)), "select:$nextNodeId")
         return SelfHostResult(true, "selected next node: $nextNodeId", SelfHostGoal(updated, dag))
     }
 
@@ -340,7 +155,7 @@ class SelfHostGoalService(
         return contextPreflight.canonicalEnvelope(record, node)
     }
 
-    fun evaluateReadyDagNode(goalId: String, suppliedEnvelope: ContextEnvelope? = contextEnvelopeForCurrentNode(goalId)): SelfHostResult {
+    fun evaluateReadyDagNode(goalId: String, suppliedEnvelope: ContextEnvelope? = null): SelfHostResult {
         return dagNodeEvaluator.evaluate(goalId, suppliedEnvelope)
     }
 
@@ -370,7 +185,7 @@ class SelfHostGoalService(
             return selected
         }
 
-        val evaluated = evaluateReadyDagNode(goalId, suppliedEnvelope ?: contextEnvelopeForCurrentNode(goalId))
+        val evaluated = evaluateReadyDagNode(goalId, suppliedEnvelope)
         val latest = store.resolve(goalId)
         val latestDag = latest?.dagId?.let { dagService.readDag(it) }
         if (latestDag != null && latestDag.nodes.all { it.state.terminal }) {
@@ -384,7 +199,7 @@ class SelfHostGoalService(
             if (!completion.ok) return completion
             return SelfHostResult(true, "advanced and completed: all nodes complete", SelfHostGoal(completion.goal?.record ?: latest ?: before, latestDag))
         }
-        stateSnapshotRecorder.captureEvidence("advance")
+        store.resolve(goalId)?.let { appendSnapshotEvidence(it, "advance") }
         return evaluated
     }
 
@@ -404,47 +219,14 @@ class SelfHostGoalService(
         return advanceGoal(record.id, compactState, suppliedEnvelope)
     }
 
-    fun planNextAction(goalId: String? = null): SelfHostNextAction {
-        val selected = selector.resolveSelfHostGoalRecord(goalId, requireUnfinished = false)
-            ?: return SelfHostNextAction(SelfHostNextActionKind.COMPLETE, null, null, "no self-host goals exist")
-        val dag = selected.dagId?.let { dagService.readDag(it) }
-        val readyNode = dag?.findReadyNodes()?.firstOrNull()
-        if (readyNode != null && !selected.isTerminal()) {
-            return SelfHostNextAction(SelfHostNextActionKind.ADVANCE_NODE, selected.id, readyNode.id, "ready DAG node")
-        }
-        if (selected.terminalCondition == GoalTerminalCondition.VERIFIED_COMPLETE) {
-            if (selected.lastVerifiedCheckpoint?.startsWith("jar:") == true) {
-                return SelfHostNextAction(SelfHostNextActionKind.COMPLETE, selected.id, selected.currentNodeId, "verified jar already promoted")
-            }
-            return SelfHostNextAction(SelfHostNextActionKind.PROMOTE_JAR, selected.id, selected.currentNodeId, "source DAG verified; jar promotion boundary")
-        }
-        if (selected.terminalCondition == GoalTerminalCondition.EXTERNAL_INPUT_REQUIRED) {
-            return SelfHostNextAction(SelfHostNextActionKind.WAIT_EXTERNAL_INPUT, selected.id, selected.currentNodeId, selected.failureReason ?: "external input required")
-        }
-        if (selected.isTerminal()) {
-            return SelfHostNextAction(SelfHostNextActionKind.COMPLETE, selected.id, selected.currentNodeId, selected.terminalCondition?.name ?: selected.status.name)
-        }
-        return SelfHostNextAction(SelfHostNextActionKind.HARD_STOP, selected.id, selected.currentNodeId, "no ready node on unfinished self-host goal")
-    }
+    fun planNextAction(goalId: String? = null): SelfHostNextAction = goalQueries.nextAction(goalId)
 
     fun promoteVerifiedJar(
         goalId: String,
         candidateJar: Path,
         targetJar: Path,
         nodeId: String? = null
-    ): SelfHostPromotionResult {
-        addEvidence(goalId, stateSnapshotRecorder.captureEvidence("pre-promote"))
-        val result = promotionService.promote(
-            SelfHostPromotionRequest(
-                goalId = goalId,
-                nodeId = nodeId,
-                candidateJar = candidateJar,
-                targetJar = targetJar
-            )
-        )
-        addEvidence(goalId, stateSnapshotRecorder.captureEvidence("post-promote"))
-        return result
-    }
+    ): SelfHostPromotionResult = promotionBoundary.promote(goalId, candidateJar, targetJar, nodeId)
 
     fun recoverAndContinue(
         goalId: String? = null,
@@ -457,46 +239,85 @@ class SelfHostGoalService(
         }
         val record = selected.goal?.record
             ?: return SelfHostResult(false, "${recovered.message}; no resumable self-host goal selected")
-        val restoredNode = recovered.restoredNodes.firstOrNull { it.restored }
+        if (!recovered.ok) {
+            val refusal = "restart recovery refused continuation: ${recovered.message}"
+            val recorded = addEvidence(
+                record.id,
+                "restart_recovery_stop goal=${record.id} reason=${recovered.message}"
+            )
+            return SelfHostResult(
+                false,
+                refusal,
+                recorded.goal ?: selected.goal
+            )
+        }
+        val restoredNode = recovered.restoredNodes
+            .firstOrNull { it.restored && it.dagId == record.dagId }
+        val nextAction = planNextAction(record.id)
         val evidence = listOf(
             "restart_snapshot id=${recovered.snapshot.id} goals=${recovered.snapshot.goalRuns.size} dags=${recovered.snapshot.dags.size}",
             "restart_recovery ok=${recovered.ok} restored=${recovered.restoredNodes.count { it.restored }} blocked=${recovered.restoredNodes.count { !it.restored }}",
-            "restart_next goal=${record.id} node=${record.currentNodeId ?: restoredNode?.nodeId ?: "none"}",
-            planNextAction(record.id).evidenceLine()
+            "restart_next goal=${record.id} node=${nextAction.nodeId ?: restoredNode?.nodeId ?: "none"}",
+            nextAction.evidenceLine()
         )
         store.update(record.copy(evidence = record.evidence + evidence))
-        // Same reason as above: the envelope must be built after node selection,
-        // not from the pre-recovery current node.
-        return advanceNextResumableGoal(record.id, compactState)
+        return when (nextAction.kind) {
+            SelfHostNextActionKind.ADVANCE_NODE,
+            SelfHostNextActionKind.ADVANCE_GOAL -> advanceNextResumableGoal(record.id, compactState)
+            SelfHostNextActionKind.PROMOTE_JAR -> SelfHostResult(
+                false,
+                "restart continuation stopped at promotion boundary: ${nextAction.reason}",
+                SelfHostGoal(record, record.dagId?.let { dagService.readDag(it) })
+            )
+            SelfHostNextActionKind.WAIT_EXTERNAL_INPUT,
+            SelfHostNextActionKind.HARD_STOP -> SelfHostResult(
+                false,
+                "restart continuation stopped: ${nextAction.reason}",
+                SelfHostGoal(record, record.dagId?.let { dagService.readDag(it) })
+            )
+            SelfHostNextActionKind.COMPLETE -> SelfHostResult(
+                true,
+                "restart continuation complete: ${nextAction.reason}",
+                SelfHostGoal(record, record.dagId?.let { dagService.readDag(it) })
+            )
+        }
     }
 
     fun exportEvidenceBundle(goalId: String): SelfHostEvidenceBundleResult {
-        addEvidence(goalId, stateSnapshotRecorder.captureEvidence("pre-evidence-export"))
+        val evidenceResult = addEvidence(goalId, stateSnapshotRecorder.captureEvidence("pre-evidence-export", goalId))
+        if (!evidenceResult.ok) {
+            return SelfHostEvidenceBundleResult(
+                ok = false,
+                message = "evidence export refused: ${evidenceResult.message}",
+                markdownPath = null,
+                jsonPath = null,
+                markdownSha256 = null,
+                jsonSha256 = null,
+                failureCode = SelfHostFailureCode.EVIDENCE_EXPORT_FAILED
+            )
+        }
         return evidenceBundleExporter.export(goalId)
     }
 
     fun runNaturalLanguageSelfBuild(
         prompt: String,
-        phase: String = "11"
+        phase: String = "11",
+        lifecycleEmitter: (String) -> Unit = ::println
     ): SelfHostAutonomousRunResult =
         SelfHostAutonomousRunner(
             service = this,
             jarLocator = SelfHostRuntimeJarLocator(repoRoot),
             jarBuilder = SelfHostCandidateJarBuilder(repoRoot),
             compileGate = atropos.core.verification.GovernedCompileGate(repoRoot),
-            proofBuilder = SelfHostRunProofBuilder(repoRoot)
-        ).run(prompt, phase)
+            proofBuilder = SelfHostRunProofBuilder(repoRoot),
+            gitStatusEvidence = SelfHostGitStatusEvidence(repoRoot)
+        ).run(prompt, phase, lifecycleEmitter = lifecycleEmitter)
 
-    fun history(limit: Int = 20): List<GoalRunRecord> =
-        selector.allSelfHostRuns().take(limit.coerceAtLeast(1))
-    fun benchmarkHistory(): List<GoalRunRecord> = benchmarkService.history()
+    fun history(limit: Int = 20): List<GoalRunRecord> = goalQueries.history(limit)
+    fun benchmarkHistory(): List<GoalRunRecord> = goalQueries.benchmarkHistory()
+    fun benchmark(): SelfHostBenchmark = goalQueries.benchmark()
+    fun learned(limit: Int = 20): List<atropos.core.memory.MemoryRecord> = goalQueries.learned(limit)
 
-    fun benchmark(): SelfHostBenchmark = benchmarkService.benchmark()
-
-    fun learned(limit: Int = 20): List<MemoryRecord> =
-        memoryStore.findBySubjectTypes(
-            subjectTypes = setOf("selfhost_goal", "selfhost_dag_eval"),
-            limit = limit
-        )
-
+    private fun appendSnapshotEvidence(record: GoalRunRecord, reason: String): GoalRunRecord =
+        store.update(record.copy(evidence = record.evidence + stateSnapshotRecorder.captureEvidence(reason, record.id)))
 }

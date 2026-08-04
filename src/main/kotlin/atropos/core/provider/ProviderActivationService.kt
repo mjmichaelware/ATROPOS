@@ -1,15 +1,21 @@
 package atropos.core.provider
 
 import atropos.core.AtroposConfig
+import atropos.core.AtroposRepoRootLocator
 import atropos.core.OllamaHealthProbe
 import atropos.core.paid.EmergencyPaidGate
 import atropos.core.provider.adapter.AdapterRequest
 import atropos.core.provider.adapter.ProviderAdapter
 import atropos.core.provider.adapter.ProviderAdapterRegistry
 import atropos.core.provider.adapter.StaticProviderAdapterRegistry
+import atropos.core.policy.ActionActor
+import atropos.core.policy.AgencyDisposition
+import atropos.core.policy.BoundedAgencyGate
+import atropos.core.policy.ProviderActionProposals
 import atropos.core.security.DefaultSecretSource
 import atropos.core.security.SecretLookup
 import atropos.core.security.SecretSource
+import atropos.core.security.RedactionFilter
 import java.io.File
 
 class ProviderActivationService(
@@ -18,14 +24,17 @@ class ProviderActivationService(
     private val adapterRegistry: ProviderAdapterRegistry = StaticProviderAdapterRegistry(registry),
     private val secretSource: SecretSource = DefaultSecretSource.create(),
     private val quotaLedger: QuotaLedger = FileQuotaLedger(
-        File(".atropos/provider/quota-ledger.tsv"),
+        AtroposRepoRootLocator.resolve().resolve(".atropos/provider/quota-ledger.tsv").toFile(),
         FileQuotaLedger.seedFromDescriptors(registry)
     ),
     private val fixtureMatrix: ProviderFixtureMatrixService = ProviderFixtureMatrixService(registry, adapterRegistry),
     private val store: ProviderActivationStore = ProviderActivationStore(),
     private val paidGate: EmergencyPaidGate = EmergencyPaidGate(),
-    private val ollamaProbe: () -> Boolean = { OllamaHealthProbe().probe().online }
+    private val ollamaProbe: () -> Boolean = { OllamaHealthProbe().probe().online },
+    private val environment: Map<String, String> = System.getenv()
 ) {
+    private val agencyGate = BoundedAgencyGate()
+
     fun snapshot(providerId: String): ProviderActivationRecord =
         createRecord(providerId, ProviderVerificationMode.SNAPSHOT, live = false, persist = false)
 
@@ -38,7 +47,7 @@ class ProviderActivationService(
     fun liveTest(providerId: String): ProviderActivationRecord =
         createRecord(providerId, ProviderVerificationMode.LIVE_TEST, live = true, persist = true)
 
-    fun renderVerifyAll(): String = buildString {
+    fun renderVerifyAll(): String = RedactionFilter().redact(buildString {
         appendLine("providers verify:")
         verifyAll().forEach { record ->
             appendLine(
@@ -46,7 +55,7 @@ class ProviderActivationService(
                     "fixtures=${record.fixtureMatrix?.summary() ?: "0/0"} remediation=${record.remediation}"
             )
         }
-    }.trimEnd()
+    }.trimEnd())
 
     private fun createRecord(
         providerId: String,
@@ -81,9 +90,11 @@ class ProviderActivationService(
             liveRecord(descriptor, adapter, adapterStatus, keyLookups, fixture, impact, executableSupport, mode)
         } else {
             val configuredForExecution = descriptor.isLocal || keyLookups.all { it.configured }
+            val storedRecord = store.read(providerId)
             val state = when {
                 mode == ProviderVerificationMode.VERIFY && descriptor.isPaidLocked() && !paidGate.isProviderUnlocked(providerId) -> ProviderActivationState.LOCKED
                 mode == ProviderVerificationMode.VERIFY && executableSupport && fixture.passed && configuredForExecution -> ProviderActivationState.VERIFIED
+                storedRecord != null && (storedRecord.state == ProviderActivationState.VERIFIED || storedRecord.state == ProviderActivationState.READY) -> storedRecord.state
                 else -> snapshotState(descriptor, adapterStatus, keyLookups, fixture)
             }
             ProviderActivationRecord(
@@ -146,14 +157,11 @@ class ProviderActivationService(
             )
         }
 
-        val result = adapter.complete(
-            AdapterRequest(
-                task = probeTask(descriptor),
-                prompt = livePrompt(descriptor),
-                context = "Return one short line only.",
-                dryRun = false,
-                liveNetworkAllowed = true
-            )
+        val result = completeThroughAgency(
+            descriptor = descriptor,
+            adapter = adapter,
+            task = probeTask(descriptor),
+            prompt = livePrompt(descriptor)
         )
 
         val state = when (result) {
@@ -189,6 +197,41 @@ class ProviderActivationService(
         )
     }
 
+    private fun completeThroughAgency(
+        descriptor: ProviderDescriptor,
+        adapter: ProviderAdapter,
+        task: ProviderTask,
+        prompt: String
+    ): ProviderCallResult {
+        val unlockedPaid = descriptor.isPaidLocked() && paidGate.isProviderUnlocked(descriptor.id)
+        val proposal = ProviderActionProposals.forCall(
+            provider = descriptor.id,
+            operation = "activation-live-test",
+            promptLength = prompt.length,
+            actor = ActionActor.SystemService("provider-activation")
+        ).copy(paidProvider = descriptor.isPaidLocked() && !unlockedPaid)
+        val decision = agencyGate.evaluate(proposal)
+        if (decision.disposition != AgencyDisposition.ALLOWED) {
+            return ProviderCallResult.Failure(
+                ProviderFailure(
+                    providerId = descriptor.id,
+                    type = NormalizedProviderFailureType.INTERNAL,
+                    cleanSummary = "provider activation refused by policy: ${decision.reason}",
+                    terminal = true
+                )
+            )
+        }
+        return adapter.complete(
+            AdapterRequest(
+                task = task,
+                prompt = prompt,
+                context = "Return one short line only.",
+                dryRun = false,
+                liveNetworkAllowed = environment["ATROPOS_LIVE_PROVIDER_TESTS"] == "1"
+            )
+        )
+    }
+
     private fun snapshotState(
         descriptor: ProviderDescriptor,
         adapterStatus: atropos.core.provider.adapter.AdapterStatus?,
@@ -199,7 +242,6 @@ class ProviderActivationService(
         if (descriptor.id == "ollama" && !ollamaProbe()) return ProviderActivationState.OFFLINE
         if (descriptor.isLocal) return ProviderActivationState.READY
         if (adapterStatus == null) return ProviderActivationState.MISSING
-        if (adapterStatus.implemented && adapterStatus.configured && !adapterStatus.dryRunOnly) return ProviderActivationState.READY
         if (adapterStatus.implemented && fixture.passed) return ProviderActivationState.FIXTURE_BACKED
         if (keyLookups.any { it.configured }) return ProviderActivationState.CONFIGURED
         return ProviderActivationState.DRY_RUN_CAPABLE

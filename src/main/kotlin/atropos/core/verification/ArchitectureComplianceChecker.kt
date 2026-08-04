@@ -44,64 +44,18 @@ data class ArchitectureComplianceReport(
  * lint.
  */
 class ArchitectureComplianceChecker(
-    private val lineThreshold: Int = DEFAULT_LINE_THRESHOLD,
-    private val enforcing: Boolean = false
+    lineThreshold: Int = DEFAULT_LINE_THRESHOLD,
+    private val enforcing: Boolean = false,
+    private val policy: ArchitectureCompliancePolicy = ArchitectureCompliancePolicy(defaultLineThreshold = lineThreshold),
+    private val concernDetector: ArchitectureConcernDetector = ArchitectureConcernDetector()
 ) {
-    /** Concern categories, detected by import and declaration evidence. */
-    private enum class Concern(val label: String, val markers: List<Regex>) {
-        ROUTING("routing", listOf(
-            Regex("""\bwhen\s*\(\s*tokens"""),
-            Regex("""RouterOutcome"""),
-            Regex("""fun\s+route\b""")
-        )),
-        RENDERING("rendering", listOf(
-            Regex("""\bui\.render"""),
-            Regex("""atropos\.cli\.ui\."""),
-            Regex("""\bappendLine\("""),
-            Regex("\u001B\\[")
-        )),
-        SESSION_STATE("session-state", listOf(
-            Regex("""SessionTabs"""),
-            Regex("""\bvar\s+active[A-Z]"""),
-            Regex("""QuotaSessionTracker""")
-        )),
-        TRANSPORT("transport", listOf(
-            Regex("""HttpURLConnection"""),
-            Regex("""\.openConnection\("""),
-            Regex("""ProcessBuilder\(""")
-        )),
-        NORMALIZATION("normalization", listOf(
-            Regex("""fun\s+\w*[Nn]ormaliz"""),
-            Regex("""fun\s+\w*[Pp]arse\w*Response"""),
-            Regex("""JSONObject""")
-        )),
-        VERIFICATION("verification", listOf(
-            Regex("""VerificationResult"""),
-            Regex("""fun\s+verify\b"""),
-            Regex("""DeterministicVerifier""")
-        )),
-        EXECUTION("execution", listOf(
-            Regex("""\.start\(\)"""),
-            Regex("""waitFor\("""),
-            Regex("""fun\s+execute\b""")
-        ))
-    }
-
-    /** Concern pairs Source Doc 3 §1.2 names as violations when co-located. */
-    private val forbiddenPairs = listOf(
-        Concern.ROUTING to Concern.RENDERING,
-        Concern.ROUTING to Concern.SESSION_STATE,
-        Concern.TRANSPORT to Concern.NORMALIZATION,
-        Concern.VERIFICATION to Concern.EXECUTION
-    )
-
     fun check(sourceRoot: File): ArchitectureComplianceReport {
         if (!sourceRoot.isDirectory) {
             return ArchitectureComplianceReport(0, emptyList(), enforcing)
         }
 
         val files = sourceRoot.walkTopDown()
-            .filter { it.isFile && it.extension == "kt" }
+            .filter { it.isFile && isSupportedSource(it) }
             .toList()
 
         val violations = files.mapNotNull(::inspect)
@@ -115,7 +69,7 @@ class ArchitectureComplianceChecker(
 
     fun checkFiles(files: List<File>): ArchitectureComplianceReport {
         val kotlinFiles = files
-            .filter { it.isFile && it.extension == "kt" }
+            .filter { it.isFile && isSupportedSource(it) }
             .distinctBy { it.toPath().toAbsolutePath().normalize().toString() }
 
         val violations = kotlinFiles.mapNotNull(::inspect)
@@ -130,13 +84,11 @@ class ArchitectureComplianceChecker(
     private fun inspect(file: File): ArchitectureViolation? {
         val text = runCatching { file.readText() }.getOrNull() ?: return null
         val lines = text.lineSequence().count()
-        if (lines <= lineThreshold) return null
+        if (lines <= policy.thresholdFor(file)) return null
 
-        val present = Concern.entries.filter { concern ->
-            concern.markers.any { it.containsMatchIn(text) }
-        }.toSet()
+        val present = concernDetector.detect(text)
 
-        val mixed = forbiddenPairs
+        val mixed = policy.forbiddenPairs
             .filter { (a, b) -> a in present && b in present }
             .map { (a, b) -> "${a.label}+${b.label}" }
 
@@ -151,11 +103,15 @@ class ArchitectureComplianceChecker(
         )
     }
 
+    private fun isSupportedSource(file: File): Boolean =
+        file.extension.lowercase() in SUPPORTED_SOURCE_EXTENSIONS
+
     private companion object {
         /**
          * Source Doc 3 §1 cites "400–600 lines while mixing concerns" as the
          * observed violation band; 400 is the lower bound of that range.
          */
         const val DEFAULT_LINE_THRESHOLD = 400
+        val SUPPORTED_SOURCE_EXTENSIONS = setOf("kt", "kts", "py", "ts", "tsx", "js", "jsx")
     }
 }

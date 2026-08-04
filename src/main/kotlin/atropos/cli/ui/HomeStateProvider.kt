@@ -38,6 +38,8 @@ class HomeStateProvider(
     private val redactionFilter: RedactionFilter = RedactionFilter(),
     private val runtime: Runtime = Runtime.getRuntime()
 ) {
+    private val answersBuilder = DashboardAnswersBuilder(redactionFilter, TASK_WIDTH)
+
     private companion object {
         const val QUEUE_WINDOW = 20
         const val TASK_WIDTH = 72
@@ -70,12 +72,12 @@ class HomeStateProvider(
 
         return DashboardRenderer.DashboardState(
             answers = DashboardRenderer.SixAnswers(
-                objective = objective(queue, active, pending, projects),
-                doing = doing(queue, active, pending),
-                why = why(queue, active),
-                progress = progress(queue, active, failed.size),
-                next = next(queue, active, pending, failed),
-                evidence = evidence(queue)
+                objective = answersBuilder.objective(queue, active, pending, projects),
+                doing = answersBuilder.doing(queue, active, pending),
+                why = answersBuilder.why(queue, active),
+                progress = answersBuilder.progress(queue, active, failed.size),
+                next = answersBuilder.next(queue, active, pending, failed),
+                evidence = answersBuilder.evidence(queue)
             ),
             projects = projects.orEmpty().map { project ->
                 DashboardRenderer.ProjectSummary(
@@ -91,9 +93,9 @@ class HomeStateProvider(
             runningWork = pending.map { record ->
                 DashboardRenderer.WorkItem(
                     id = record.id,
-                    title = task(record),
+                    title = answersBuilder.task(record),
                     state = record.state.asRunState(),
-                    detail = record.checkpoint.readable(),
+                    detail = answersBuilder.checkpointReadable(record.checkpoint),
                     attempt = record.attempts,
                     maxAttempts = record.maxAttempts
                 )
@@ -142,172 +144,12 @@ class HomeStateProvider(
         }
     }
 
-    // ---- the six answers ----------------------------------------------------
-
-    /** 1. What am I trying to accomplish? */
-    private fun objective(
-        queue: List<AgentQueueRecord>?,
-        active: AgentQueueRecord?,
-        pending: List<AgentQueueRecord>,
-        projects: List<ProjectRecord>?
-    ): DashboardRenderer.Answer {
-        // §3.2: "The interface always begins with objectives rather than
-        // implementation details." A project objective is the operator's own
-        // answer to Q1, so it outranks whatever the queue happens to be doing.
-        val stated = projects?.firstOrNull { it.objective.isNotBlank() && !it.status.terminal }
-        if (stated != null) {
-            return DashboardRenderer.Answer(
-                redactionFilter.compact(stated.objective, TASK_WIDTH),
-                Health.VERIFIED
-            )
-        }
-
-        return when {
-            queue == null -> unreadable()
-            active != null -> DashboardRenderer.Answer(task(active), Health.VERIFIED)
-            pending.isNotEmpty() -> DashboardRenderer.Answer(task(pending.first()), Health.PENDING)
-            // Distinguish "a project exists but nobody stated its objective"
-            // from "every project is finished". Both are projectless states for
-            // Q1, but they need different next actions.
-            projects?.any { !it.status.terminal } == true -> DashboardRenderer.Answer(
-                "no objective stated · /project objective <id> <text>",
-                Health.PENDING
-            )
-            projects?.isNotEmpty() == true -> DashboardRenderer.Answer(
-                "no active project · /project new <name> <objective>",
-                Health.UNKNOWN
-            )
-            else -> DashboardRenderer.Answer("no objective queued", Health.UNKNOWN)
-        }
-    }
-
-    /** 2. What is ATROPOS doing? */
-    private fun doing(
-        queue: List<AgentQueueRecord>?,
-        active: AgentQueueRecord?,
-        pending: List<AgentQueueRecord>
-    ): DashboardRenderer.Answer = when {
-        queue == null -> unreadable()
-        active != null -> DashboardRenderer.Answer(
-            "${active.state.asRunState().label} ${active.id}",
-            Health.VERIFIED
-        )
-        pending.isNotEmpty() -> DashboardRenderer.Answer(
-            "idle · ${pending.size} waiting",
-            Health.PENDING
-        )
-        else -> DashboardRenderer.Answer("idle · no running work", Health.UNKNOWN)
-    }
-
-    /**
-     * 3. Why is it doing that?
-     *
-     * Recorded rationale only. When an entry carries no source evidence the
-     * honest answer is that none was recorded — not a plausible-sounding
-     * reconstruction of intent.
-     */
-    private fun why(
-        queue: List<AgentQueueRecord>?,
-        active: AgentQueueRecord?
-    ): DashboardRenderer.Answer = when {
-        queue == null -> unreadable()
-        active == null -> DashboardRenderer.Answer("nothing running", Health.UNKNOWN)
-        !active.sourceEvidence.isNullOrBlank() -> DashboardRenderer.Answer(
-            redactionFilter.compact(active.sourceEvidence!!, TASK_WIDTH),
-            Health.VERIFIED
-        )
-        else -> DashboardRenderer.Answer(
-            "no rationale recorded · provider ${active.provider ?: "unassigned"}",
-            Health.PENDING
-        )
-    }
-
-    /** 4. How far along is it? */
-    private fun progress(
-        queue: List<AgentQueueRecord>?,
-        active: AgentQueueRecord?,
-        failed: Int
-    ): DashboardRenderer.Answer {
-        if (queue == null) return unreadable()
-        if (queue.isEmpty()) return DashboardRenderer.Answer("nothing tracked", Health.UNKNOWN)
-
-        val complete = queue.count { it.state == AgentQueueState.COMPLETED }
-        val checkpoint = active?.let { " · ${it.checkpoint.readable()}" }.orEmpty()
-        val health = when {
-            failed > 0 -> Health.ERROR
-            complete == queue.size -> Health.VERIFIED
-            else -> Health.PENDING
-        }
-        return DashboardRenderer.Answer("$complete/${queue.size} complete$checkpoint", health)
-    }
-
-    /**
-     * 5. What should I do next?
-     *
-     * Always a command the operator can actually type. "What should I do next?"
-     * is not answered by a description of the situation.
-     */
-    private fun next(
-        queue: List<AgentQueueRecord>?,
-        active: AgentQueueRecord?,
-        pending: List<AgentQueueRecord>,
-        failed: List<AgentQueueRecord>
-    ): DashboardRenderer.Answer = when {
-        queue == null -> DashboardRenderer.Answer(
-            "/agent queue list — queue unreadable",
-            Health.ERROR
-        )
-        failed.isNotEmpty() -> DashboardRenderer.Answer(
-            "/agent queue show ${failed.first().id} — repair failure",
-            Health.ERROR
-        )
-        active != null -> DashboardRenderer.Answer(
-            "/agent status — watch ${active.id}",
-            Health.VERIFIED
-        )
-        pending.any { it.state == AgentQueueState.RETRY_WAIT } -> DashboardRenderer.Answer(
-            "/agent queue list — retry backoff pending",
-            Health.PENDING
-        )
-        pending.isNotEmpty() -> DashboardRenderer.Answer(
-            "/agent run — start next queued task",
-            Health.PENDING
-        )
-        else -> DashboardRenderer.Answer(
-            "/agent queue add <task> — nothing queued",
-            Health.UNKNOWN
-        )
-    }
-
-    /** 6. Can I inspect the evidence? */
-    private fun evidence(queue: List<AgentQueueRecord>?): DashboardRenderer.Answer {
-        if (queue == null) return unreadable()
-
-        val linked = queue.count {
-            !it.verificationId.isNullOrBlank() || !it.sourceEvidence.isNullOrBlank()
-        }
-        return if (linked > 0) {
-            DashboardRenderer.Answer("$linked linked · $EVIDENCE_PATH", Health.VERIFIED)
-        } else {
-            DashboardRenderer.Answer("none recorded · $EVIDENCE_PATH", Health.UNKNOWN)
-        }
-    }
-
-    // ---- helpers ------------------------------------------------------------
-
-    /**
-     * Returns the project list, or `null` when the registry could not be read.
-     *
-     * Same discipline as the queue: an unreadable registry is a fault, not an
-     * empty workspace, and the two must not collapse into one another (§4.1).
-     */
     private fun readProjects(): List<ProjectRecord>? = try {
         projectRegistry.list()
     } catch (_: Exception) {
         null
     }
 
-    /** §3.3 project vocabulary rendered through the Section A channels. */
     private fun ProjectStatus.asRunState(): RunState = when (this) {
         ProjectStatus.IDLE -> RunState.IDLE
         ProjectStatus.PLANNING -> RunState.QUEUED
@@ -320,12 +162,6 @@ class HomeStateProvider(
         ProjectStatus.CANCELLED -> RunState.CANCELLED
     }
 
-    /**
-     * Translates the runtime's queue enum into the Section A status vocabulary
-     * (§3.3: "status names describe user progress instead of internal
-     * implementation whenever possible"). `LEASED` and `RETRY_WAIT` are runtime
-     * mechanics; the operator sees working and retrying.
-     */
     private fun AgentQueueState.asRunState(): RunState = when (this) {
         AgentQueueState.QUEUED -> RunState.QUEUED
         AgentQueueState.LEASED, AgentQueueState.RUNNING -> RunState.RUNNING
@@ -335,16 +171,5 @@ class HomeStateProvider(
         AgentQueueState.REFUSED -> RunState.BLOCKED
         AgentQueueState.CANCELLED -> RunState.CANCELLED
     }
-
-    /** `PATCH_APPLIED` is an implementation token; the operator reads prose. */
-    private fun AgentQueueCheckpoint.readable(): String =
-        name.lowercase().replace('_', ' ')
-
-    private fun unreadable(): DashboardRenderer.Answer =
-        DashboardRenderer.Answer("unreadable · $EVIDENCE_PATH", Health.ERROR)
-
-    /** Queue tasks are operator text and may carry secrets; §13 forbids leaking them. */
-    private fun task(record: AgentQueueRecord): String =
-        redactionFilter.compact(redactionFilter.redact(record.task), TASK_WIDTH)
 
 }

@@ -4,9 +4,10 @@ import atropos.core.provider.CostMode
 import atropos.core.provider.ProviderDescriptorRegistry
 
 class StatusProviderDescriptorRenderer(private val registry: ProviderDescriptorRegistry) {
-    fun render(): String {
+    fun render(currentProviderName: String? = null): String {
         val out = mutableListOf<String>()
         out += "PROVIDER DESCRIPTORS"
+        currentProviderName?.let { out += "active provider: $it" }
         out += "total: ${registry.getAll().size}"
         out += "free eligible: ${registry.getFreeEligible().size}"
         out += "paid locked: ${registry.getPaidLocked().size}"

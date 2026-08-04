@@ -17,7 +17,7 @@ class AppFactoryPlanRenderer(
             appendLine("  assets: local text/ansi/svg primary; remote asset providers optional")
             appendLine("  memory: local memory root")
             appendLine("  ci: local queue, remote optional")
-            appendLine("  final acceptance: ready")
+            appendLine("  final acceptance: source path ready; runtime verification pending")
         }
     }
 }

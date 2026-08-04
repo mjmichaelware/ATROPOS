@@ -1,7 +1,6 @@
 package atropos.core.agent
 
 import atropos.core.AtroposConfig
-import atropos.core.ProviderCascadeResult
 import atropos.core.ProviderCascadeRouter
 import atropos.core.ProviderFactory
 import atropos.core.memory.LocalMemoryStore
@@ -39,6 +38,9 @@ class AgentService(
         memoryStore = memoryStore,
         authorizeProvider = ::enforceProviderPolicy
     )
+    private val answers = AgentAskAnswerNormalizer(redactionFilter)
+    private val failureSummary = AgentFailureSummary(redactionFilter)
+    private val attestationRetry = AgentAskAttestationRetry(router, ::enforceProviderPolicy)
 
     fun status(activeProviderName: String): AgentStatusSnapshot {
         val selection = selector.select(activeProviderName)
@@ -61,34 +63,83 @@ class AgentService(
         )
     }
 
-    fun ask(activeProviderName: String, task: String): AgentRunResult {
-        val snapshot = collector.collect()
+    fun ask(
+        activeProviderName: String,
+        task: String,
+        contextOverride: AgentAskContextOverride? = null
+    ): AgentRunResult {
         val selection = selector.select(activeProviderName)
         val sanitizedTask = redactionFilter.redact(task.trim())
         val providerId = selection.askOrder.firstOrNull() ?: "groq"
-        return try {
-            val result = router.completeWithCascade(
-                requestedProvider = providerId,
-                prompt = sanitizedTask,
-                context = AgentPromptContract.build(
-                    context = snapshot.text,
-                    providerId = providerId,
-                    task = sanitizedTask,
-                    repoRoot = collector.repoRoot
-                ),
-                providerOrderOverride = selection.askOrder,
-                beforeAttempt = { provider -> enforceProviderPolicy(provider, sanitizedTask, "ask") }
-            )
-
-            // Build the envelope that was sent for attestation verification
-            val envelope = ContextEnvelopeFactory.createSimple(
-                providerId = result.providerName,
+        val envelope = contextOverride?.envelope?.let { AgentContextSnapshotAdapter.forProvider(it, providerId) }
+            ?: ContextEnvelopeFactory.createSimple(
+                providerId = providerId,
                 modelId = "",
                 task = sanitizedTask,
                 repoRoot = collector.repoRoot
             )
+        val snapshot = contextOverride?.let { AgentContextSnapshotAdapter.toSnapshot(it, collector.repoRoot) } ?: collector.collect(sanitizedTask)
+        val envelopeRefusal = AgentProviderContextBoundary.validateEnvelope(envelope, collector.repoRoot)
+        if (envelopeRefusal != null) {
+            val reason = envelopeRefusal.message
+            memoryStore.rememberFailure(
+                subjectType = "agent_ask",
+                subjectId = null,
+                title = "agent ask context envelope refused",
+                body = reason,
+                tags = listOf("agent", "ask", "context", "blocked")
+            )
+            return AgentRunResult(
+                providerName = "none",
+                answerText = reason,
+                contextByteCount = snapshot.byteCount,
+                failureSummary = reason,
+                sourcePackId = snapshot.sourcePackId,
+                fetchReceiptId = snapshot.fetchReceiptId
+            )
+        }
+        val sourceContextRefusal = AgentSourceContextRequirement.refusalFor(
+            operation = "ask",
+            task = sanitizedTask,
+            sourcePackId = snapshot.sourcePackId,
+            fetchReceiptId = snapshot.fetchReceiptId,
+            sourcePackContentHash = snapshot.sourcePackContentHash,
+            sourceTreeHash = snapshot.sourceTreeHash,
+            sourceBindingKind = snapshot.sourceBindingKind,
+            context = snapshot.text,
+            truncated = snapshot.truncated
+        )
+        if (sourceContextRefusal != null) {
+            val reason = sourceContextRefusal.message
+            memoryStore.rememberFailure(
+                subjectType = "agent_ask",
+                subjectId = null,
+                title = "agent ask source context refused: ${sourceContextRefusal.code}",
+                body = reason,
+                tags = listOf("agent", "ask", "source-pack", "blocked")
+            )
+            return AgentRunResult(
+                providerName = "local_fallback",
+                answerText = "$reason\n${answers.fallbackAnswer(sanitizedTask, snapshot)}",
+                contextByteCount = snapshot.byteCount,
+                failureSummary = reason,
+                sourcePackId = snapshot.sourcePackId,
+                fetchReceiptId = snapshot.fetchReceiptId
+            )
+        }
+        return try {
+            val result = router.completeWithCascade(
+                requestedProvider = providerId,
+                prompt = sanitizedTask,
+                context = AgentPromptContract.buildWithEnvelope(
+                    context = snapshot.text,
+                    envelope = envelope
+                ),
+                providerOrderOverride = selection.askOrder,
+                beforeAttempt = { provider -> enforceProviderPolicy(provider, sanitizedTask, "ask") },
+                contextEnvelope = envelope
+            )
 
-            // Verify provider response attestation
             val verified = ContextAttestationService.verify(envelope, result.response)
             val displayText: String
             val providerDisplayName: String
@@ -109,12 +160,12 @@ class AgentService(
                         tags = listOf("context", "attestation", "failure")
                     )
                     // Try once more with corrective compact context, then fall back to local
-                    val retryResult = retryWithCompactContext(providerId, sanitizedTask, snapshot.text)
+                    val retryResult = attestationRetry.retry(providerId, sanitizedTask, snapshot.text, envelope)
                     if (retryResult != null) {
-                        displayText = redactionFilter.redact(normalizeAgentAnswer(retryResult.response.trim()))
+                        displayText = answers.present(retryResult.response)
                         providerDisplayName = retryResult.providerName
                     } else {
-                        displayText = fallbackAnswer(sanitizedTask, snapshot)
+                        displayText = answers.fallbackAnswer(sanitizedTask, snapshot)
                         providerDisplayName = "local_fallback"
                     }
                     contextAttested = false
@@ -130,7 +181,7 @@ class AgentService(
 
             AgentRunResult(
                 providerName = providerDisplayName,
-                answerText = redactionFilter.redact(normalizeAgentAnswer(displayText.trim())),
+                answerText = answers.present(displayText),
                 contextByteCount = snapshot.byteCount,
                 contextAttested = contextAttested,
                 sourcePackId = snapshot.sourcePackId,
@@ -141,68 +192,53 @@ class AgentService(
                 subjectType = "agent_ask",
                 subjectId = null,
                 title = "agent ask failed",
-                body = compactFailureSummary(failure.message),
+                body = failureSummary.compact(failure.message),
                 tags = listOf("agent", "ask", "failure")
             )
             AgentRunResult(
                 providerName = "local_fallback",
-                answerText = fallbackAnswer(sanitizedTask, snapshot),
+                answerText = answers.fallbackAnswer(sanitizedTask, snapshot),
                 contextByteCount = snapshot.byteCount,
-                failureSummary = compactFailureSummary(failure.message),
+                failureSummary = failureSummary.compact(failure.message),
                 sourcePackId = snapshot.sourcePackId,
                 fetchReceiptId = snapshot.fetchReceiptId
             )
         }
     }
 
-    /**
-     * Retry a provider call with compact corrective context after an
-     * attestation failure.
-     */
-    private fun retryWithCompactContext(
-        providerId: String,
-        sanitizedTask: String,
-        context: String
-    ): ProviderCascadeResult? {
-        return try {
-            val compactContext = "ATROPOS: retrying after context attestation failure. " +
-                "The previous response was rejected. You are operating inside the ATROPOS software " +
-                "engine. ATROPOS refers to this repository and runtime, not Greek mythology. " +
-                "Include the required attestation block in your response.\n\n" + context
-            router.completeWithCascade(
-                requestedProvider = providerId,
-                prompt = sanitizedTask,
-                context = AgentPromptContract.build(
-                    context = compactContext,
-                    providerId = providerId,
-                    task = sanitizedTask,
-                    repoRoot = collector.repoRoot
-                ),
-                beforeAttempt = { provider -> enforceProviderPolicy(provider, sanitizedTask, "ask") }
-            ).let { result ->
-                val retryEnvelope = ContextEnvelopeFactory.createSimple(
-                    providerId = result.providerName,
-                    modelId = "",
-                    task = sanitizedTask,
-                    repoRoot = collector.repoRoot
-                )
-                val retryVerified = ContextAttestationService.verify(retryEnvelope, result.response)
-                when (retryVerified) {
-                    is ContextAttestationService.VerifiedResult.Accepted -> result
-                    is ContextAttestationService.VerifiedResult.Rejected -> null
-                }
-            }
-        } catch (_: Exception) { null }
-    }
-
     fun patch(activeProviderName: String, task: String, patchProviderOverride: String? = null): AgentPatchRunResult {
         val snapshot = collector.collectPatch(task)
         val selection = selector.select(activeProviderName, patchProviderOverride)
         val prompt = redactionFilter.redact(task.trim())
+        val sourceRefusal = AgentProviderContextBoundary.validateSourcePack(
+            context = snapshot.text,
+            sourcePackId = snapshot.sourcePackId,
+            fetchReceiptId = snapshot.fetchReceiptId,
+            sourcePackContentHash = snapshot.sourcePackContentHash,
+            sourceTreeHash = snapshot.sourceTreeHash,
+            sourceBindingKind = snapshot.sourceBindingKind
+        )
+        if (sourceRefusal != null) {
+            val reason = sourceRefusal.message
+            memoryStore.rememberFailure(
+                subjectType = "agent_patch",
+                subjectId = null,
+                title = "agent patch source context unavailable",
+                body = reason,
+                tags = listOf("agent", "patch", "source-pack", "blocked")
+            )
+            return AgentPatchRunResultFactory.localFailure(
+                providerName = "local_fallback",
+                contextByteCount = snapshot.byteCount,
+                retryAttempted = false,
+                failureSummary = reason,
+                rejectionReason = reason
+            )
+        }
 
         return try {
-            val cascade = patchCascadeRunner.run(selection.patchOrder, prompt, snapshot.text)
-            val acceptance = cascade.success ?: return localPatchFailure(
+            val cascade = patchCascadeRunner.run(selection.patchOrder, prompt, snapshot.text, snapshot.truncated)
+            val acceptance = cascade.success ?: return AgentPatchRunResultFactory.localFailure(
                 providerName = cascade.failure?.result?.providerName ?: selection.patchOrder.firstOrNull() ?: "local_fallback",
                 contextByteCount = snapshot.byteCount,
                 retryAttempted = cascade.failure?.retryAttempted ?: false,
@@ -226,7 +262,7 @@ class AgentService(
             memoryStore.rememberRoute(
                 subjectId = result.providerName,
                 title = "agent patch route",
-                body = "task=${prompt.trim()}\nprovider=${result.providerName}\npatch=${record.id}\ncheck=${check.statusText}",
+                body = "task=${prompt.trim()}\nprovider=${result.providerName}\npatch=${record.id}\ncheck=${check.statusText}\nsourcePack=${snapshot.sourcePackId ?: "none"}\nfetchReceipt=${snapshot.fetchReceiptId ?: "none"}",
                 tags = listOf("agent", "patch", "route")
             )
 
@@ -236,21 +272,23 @@ class AgentService(
                 diffByteCount = record.diffBytes,
                 patchId = record.id,
                 patchPath = record.diffFile,
-                checkResult = check
+                checkResult = check,
+                sourcePackId = snapshot.sourcePackId,
+                fetchReceiptId = snapshot.fetchReceiptId
             )
         } catch (failure: Exception) {
             memoryStore.rememberFailure(
                 subjectType = "agent_patch",
                 subjectId = null,
                 title = "agent patch failed",
-                body = compactFailureSummary(failure.message),
+                body = failureSummary.compact(failure.message),
                 tags = listOf("agent", "patch", "failure")
             )
-            localPatchFailure(
+            AgentPatchRunResultFactory.localFailure(
                 providerName = "local_fallback",
                 contextByteCount = snapshot.byteCount,
                 retryAttempted = false,
-                failureSummary = compactFailureSummary(failure.message)
+                failureSummary = failureSummary.compact(failure.message)
             )
         }
     }
@@ -276,55 +314,6 @@ class AgentService(
 
         val verification = verifier.verify(applied.patchId ?: patchReference)
         return applied.copy(verificationResult = verification)
-    }
-
-    private fun fallbackAnswer(task: String, snapshot: AgentContextSnapshot): String = buildString {
-        appendLine("Yes. ATROPOS supplied repo context, so I can see the workspace through that bounded snapshot.")
-        appendLine("I do not have direct filesystem access, but the collected context includes git status, a shallow tree, and selected provider/routing/agent source files.")
-        appendLine("I can use this context to reason about the code, draft a patch, or inspect a specific file next.")
-        appendLine("Task: ${redactionFilter.redact(task.trim().ifBlank { "(blank task)" })}")
-        appendLine("Context bytes: ${snapshot.byteCount}")
-    }.trimEnd()
-
-    private fun localPatchFailure(
-        providerName: String,
-        contextByteCount: Int,
-        retryAttempted: Boolean,
-        failureSummary: String,
-        rejectionReason: String? = null,
-        responsePreview: String? = null
-    ): AgentPatchRunResult =
-        AgentPatchRunResult(
-            providerName = providerName,
-            contextByteCount = contextByteCount,
-            diffByteCount = 0,
-            patchId = null,
-            patchPath = null,
-            checkResult = null,
-            retryAttempted = retryAttempted,
-            rejectionReason = rejectionReason,
-            responsePreview = responsePreview,
-            failureSummary = failureSummary,
-            message = "ATROPOS did not apply anything. Local fallback cannot generate a provider patch."
-        )
-
-    private fun compactFailureSummary(message: String?): String =
-        message?.trim()
-            .takeUnless { it.isNullOrBlank() }
-            ?.let { redactionFilter.compact(it, 240) }
-            ?: "provider cascade failed"
-
-    private fun normalizeAgentAnswer(answer: String): String {
-        val trimmed = answer.trim()
-        val hasContextEcho =
-            trimmed.contains("\n# Repo Root") ||
-                trimmed.contains("\n# Git Status") ||
-                trimmed.contains("\n# Selected Sources") ||
-                trimmed.contains("Repository context:")
-
-        if (!hasContextEcho) return trimmed
-
-        return "Yes. ATROPOS supplied bounded repo context, so I can reason over the workspace snapshot without direct filesystem access."
     }
 
     /**

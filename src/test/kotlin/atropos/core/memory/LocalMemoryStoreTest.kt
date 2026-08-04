@@ -1,5 +1,6 @@
 package atropos.core.memory
 
+import atropos.core.AtroposRepoRootLocator
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import kotlin.io.path.readText
@@ -10,6 +11,14 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class LocalMemoryStoreTest {
+    @Test
+    fun default_root_is_resolved_from_atropos_root_not_process_cwd() {
+        assertEquals(
+            AtroposRepoRootLocator.resolve().resolve(".atropos/memory").toFile().absoluteFile,
+            LocalMemoryStore.defaultRoot().absoluteFile
+        )
+    }
+
     @Test
     fun persistsAcrossRestartAndRedactsSecrets() {
         val root = Files.createTempDirectory("atropos-memory-test-").toFile()
@@ -31,6 +40,7 @@ class LocalMemoryStoreTest {
         assertNotNull(restored)
         assertEquals(record.id, restored.id)
         assertFalse(restored.body.contains("sk-test-secret-value"))
+        assertEquals(64, restored.contentSha256.length)
         assertEquals(1, reopened.status().totalRecords)
     }
 
@@ -84,9 +94,13 @@ class LocalMemoryStoreTest {
         assertEquals("queue state", reopened.findBySubject("queue", "queue-1").first().title)
         assertEquals("route decision", reopened.findBySubject("route", "route-1").first().title)
         assertEquals("compile failure", reopened.findBySubject("repair", "failure-1").first().title)
+        assertEquals(16, reopened.findBySubject("repair", "failure-1").first().failureSignature?.length)
         assertEquals("repair result", reopened.latestByKind(MemoryKind.REPAIR).first().title)
         assertEquals("verification result", reopened.latestByKind(MemoryKind.VERIFICATION).first().title)
-        assertEquals("source decision", reopened.findBySubject("source", "source-1").first().title)
+        val sourceRecord = reopened.findBySubject("source", "source-1").first()
+        assertEquals("source decision", sourceRecord.title)
+        assertEquals("source-1", sourceRecord.sourceCoordinate)
+        assertEquals(MemoryAuthority.SOURCE_REFERENCE, sourceRecord.authority)
         assertEquals("summary state", reopened.findBySubject("summary", "summary-1").first().title)
         assertEquals("recovery state", reopened.findBySubject("recovery", "recovery-1").first().title)
         assertEquals("verification reward +1.0", reopened.findBySubject("reward", "narrow").first().title)
@@ -124,5 +138,70 @@ class LocalMemoryStoreTest {
         assertEquals(1, found.size)
         assertEquals("selfhost_dag_eval", found.first().subjectType)
         assertEquals("shg-1", found.first().subjectId)
+    }
+
+    @Test
+    fun tampered_records_are_ignored() {
+        val root = Files.createTempDirectory("atropos-memory-tampered-").toFile()
+        val store = LocalMemoryStore(root = root, env = emptyMap())
+        val record = store.remember(MemoryKind.NOTE, "one", "body one")
+
+        val jsonl = root.toPath().resolve("memory.jsonl")
+        val lines = Files.readAllLines(jsonl, StandardCharsets.UTF_8)
+        val tamperedLine = lines[0].replace("\"body\":\"body one\"", "\"body\":\"body tampered\"")
+        Files.writeString(jsonl, tamperedLine + "\n", StandardCharsets.UTF_8)
+
+        val reopened = LocalMemoryStore(root = root, env = emptyMap())
+        assertEquals(0, reopened.status().totalRecords)
+        assertEquals(1, reopened.status().corruptRecords)
+    }
+
+    @Test
+    fun authority_tampering_invalidates_current_schema_records() {
+        val root = Files.createTempDirectory("atropos-memory-authority-tampered-").toFile()
+        val store = LocalMemoryStore(root = root, env = emptyMap())
+        store.rememberSourceDecision("S0011", "source decision", "exact source coordinate")
+
+        val jsonl = root.toPath().resolve("memory.jsonl")
+        val tampered = Files.readString(jsonl, StandardCharsets.UTF_8)
+            .replace("\"authority\":\"SOURCE_REFERENCE\"", "\"authority\":\"OBSERVATION\"")
+        Files.writeString(jsonl, tampered, StandardCharsets.UTF_8)
+
+        val reopened = LocalMemoryStore(root = root, env = emptyMap())
+        assertEquals(0, reopened.status().totalRecords)
+        assertEquals(1, reopened.status().corruptRecords)
+    }
+
+    @Test
+    fun schema_three_record_without_integrity_hash_is_rejected() {
+        val record = MemoryRecord(
+            id = "missing-hash",
+            kind = MemoryKind.NOTE,
+            title = "title",
+            body = "body",
+            tags = emptyList(),
+            createdAtEpochMs = 1L,
+            authority = MemoryAuthority.OBSERVATION,
+            schemaVersion = 3,
+            redacted = true
+        )
+
+        assertEquals(null, MemoryRecordCodec.decode(MemoryRecordCodec.encode(record)))
+    }
+
+    @Test
+    fun schema_three_unredacted_record_is_rejected_before_persistence() {
+        val record = MemoryRecord(
+            id = "unredacted",
+            kind = MemoryKind.NOTE,
+            title = "title",
+            body = "body",
+            tags = emptyList(),
+            createdAtEpochMs = 1L,
+            schemaVersion = MEMORY_SCHEMA_VERSION,
+            redacted = false
+        )
+
+        assertEquals(null, MemoryRecordCodec.decode(MemoryRecordCodec.encode(record)))
     }
 }

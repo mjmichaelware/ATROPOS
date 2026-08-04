@@ -2,6 +2,8 @@ package atropos.core.provider
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
+import java.nio.file.LinkOption
+import atropos.core.security.ContextPathExclusions
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.security.MessageDigest
@@ -27,6 +29,7 @@ class ContentAddressedTreeWriter(
                 val from = normalizedSource.resolve(relative)
                 val to = target.resolve(relative).normalize()
                 if (!to.startsWith(target)) return@forEach
+                if (Files.isSymbolicLink(from)) return@forEach
                 Files.createDirectories(to.parent)
                 Files.copy(from, to, StandardCopyOption.REPLACE_EXISTING)
             }
@@ -38,8 +41,7 @@ class ContentAddressedTreeWriter(
         if (!Files.isDirectory(root)) return emptyList()
         return Files.walk(root).use { stream ->
             stream
-                .filter { Files.isRegularFile(it) }
-                .filter { !Files.isSymbolicLink(it) }
+                .filter { Files.isRegularFile(it, LinkOption.NOFOLLOW_LINKS) }
                 .map { root.relativize(it).toString().replace('\\', '/') }
                 .filter { !excluded(it) }
                 .sorted()
@@ -47,36 +49,15 @@ class ContentAddressedTreeWriter(
         }
     }
 
-    private fun excluded(relative: String): Boolean {
-        val name = relative.substringAfterLast('/')
-        return relative == ".git" ||
-            relative.startsWith(".git/") ||
-            relative == ".gradle" ||
-            relative.startsWith(".gradle/") ||
-            relative == "build" ||
-            relative.startsWith("build/") ||
-            relative == ".atropos/secrets" ||
-            relative.startsWith(".atropos/secrets/") ||
-            relative == ".atropos/source-bindings" ||
-            relative.startsWith(".atropos/source-bindings/") ||
-            relative == ".atropos/agent/patches" ||
-            relative.startsWith(".atropos/agent/patches/") ||
-            name.endsWith(".jar") ||
-            name.endsWith(".class") ||
-            name.endsWith(".zip") ||
-            name.endsWith(".tar") ||
-            name.endsWith(".gz") ||
-            name.endsWith(".png") ||
-            name.endsWith(".jpg") ||
-            name.endsWith(".jpeg") ||
-            name.endsWith(".gif") ||
-            name.endsWith(".key") ||
-            name.endsWith(".pem") ||
-            name.endsWith(".p12") ||
-            name.contains("token", ignoreCase = true) ||
-            name.contains("secret", ignoreCase = true) ||
-            name.contains("credential", ignoreCase = true)
-    }
+    /**
+     * Delegated to the single owner shared with directly collected context.
+     *
+     * These rules used to live here in a second copy that had drifted: this
+     * side did not exclude `.env`, the collector's side did not exclude
+     * `.atropos/source-bindings`. Both sets now apply on both paths.
+     */
+    private fun excluded(relative: String): Boolean =
+        ContextPathExclusions.isExcluded(relative)
 }
 
 data class FetchTree(

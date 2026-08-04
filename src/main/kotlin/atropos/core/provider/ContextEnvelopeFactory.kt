@@ -14,6 +14,33 @@ import java.security.MessageDigest
  * rather than nulls.
  */
 object ContextEnvelopeFactory {
+    fun createForFactory(
+        projectId: String,
+        promptFingerprint: String,
+        researchSha256: String,
+        atomIds: List<String>,
+        territory: List<String>,
+        repoRoot: Path,
+        branch: String = currentBranch(repoRoot),
+        baselineCommit: String = currentCommit(repoRoot)
+    ): ContextEnvelope {
+        val envelope = ContextEnvelope(
+            repository = repoRoot.fileName.toString(),
+            repositoryRoot = repoRoot.toString(),
+            branch = branch,
+            baselineCommit = baselineCommit,
+            goalId = projectId,
+            task = "factory prompt=$promptFingerprint research=$researchSha256 atoms=${atomIds.joinToString(",")}",
+            phaseOrPass = "phase-19-app-factory",
+            hierarchyRole = "factory-worker",
+            authority = "proposal-only",
+            permissions = listOf("read_source", "propose_source", "read_research"),
+            assignedTerritory = territory,
+            prohibitedActions = listOf("write_without_mutation_gate", "secrets", "paid_unlock", "force_push"),
+            activePolicy = "app_factory_v1"
+        )
+        return envelope.copy(canonicalContextHash = computeHash(envelope))
+    }
 
     /**
      * Create a minimal envelope when only the repository is known.
@@ -77,6 +104,44 @@ object ContextEnvelopeFactory {
         return envelope.copy(canonicalContextHash = computeHash(envelope))
     }
 
+    fun createForDagNode(
+        providerId: String,
+        modelId: String,
+        task: String,
+        repoRoot: Path,
+        dagNode: DagNode,
+        branch: String = currentBranch(repoRoot),
+        baselineCommit: String = currentCommit(repoRoot)
+    ): ContextEnvelope {
+        val envelope = ContextEnvelope(
+            repository = repoRoot.fileName.toString(),
+            repositoryRoot = repoRoot.toString(),
+            branch = branch,
+            baselineCommit = baselineCommit,
+            dagId = dagNode.dagId ?: "",
+            nodeId = dagNode.id,
+            task = task,
+            phaseOrPass = "phase-11-self-host",
+            hierarchyRole = "worker",
+            authority = "bounded",
+            permissions = listOf("read_source", "provider_advisory"),
+            assignedTerritory = dagNode.territory,
+            prohibitedActions = listOf(
+                "modify_source",
+                "modify_build_outputs",
+                "modify_secrets",
+                "modify_credentials",
+                "modify_dot_git",
+                "commit",
+                "push"
+            ),
+            activePolicy = "self_host_provider_advisory_v1",
+            providerId = providerId,
+            modelId = modelId
+        )
+        return envelope.copy(canonicalContextHash = computeHash(envelope))
+    }
+
     /**
      * Compute a deterministic SHA-256 hash of the envelope content
      * (excluding the hash field itself).
@@ -110,23 +175,9 @@ object ContextEnvelopeFactory {
         return digest.digest().joinToString("") { "%02x".format(it) }
     }
 
-    private fun currentBranch(repoRoot: Path): String {
-        return try {
-            val process = ProcessBuilder("git", "rev-parse", "--abbrev-ref", "HEAD")
-                .directory(repoRoot.toFile())
-                .redirectErrorStream(true)
-                .start()
-            process.inputStream.bufferedReader().readText().trim()
-        } catch (_: Exception) { "unknown" }
-    }
+    private fun currentBranch(repoRoot: Path): String =
+        GitRepositoryMetadataReader().readBranch(repoRoot).value
 
-    private fun currentCommit(repoRoot: Path): String {
-        return try {
-            val process = ProcessBuilder("git", "rev-parse", "HEAD")
-                .directory(repoRoot.toFile())
-                .redirectErrorStream(true)
-                .start()
-            process.inputStream.bufferedReader().readText().trim()
-        } catch (_: Exception) { "unknown" }
-    }
+    private fun currentCommit(repoRoot: Path): String =
+        GitRepositoryMetadataReader().readBaselineCommit(repoRoot).value
 }

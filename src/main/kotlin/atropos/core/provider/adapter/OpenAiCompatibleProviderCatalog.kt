@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.provider.adapter
 
 object OpenAiCompatibleProviderCatalog {
@@ -40,6 +41,78 @@ object OpenAiCompatibleProviderCatalog {
             defaultModel = "Qwen/Qwen2.5-7B-Instruct",
             fallbackModels = listOf("THUDM/glm-4-9b-chat"),
             apiKeyEnv = "SILICONFLOW_API_KEY",
+            freeTier = false
+        ),
+        OpenAiCompatibleProviderSpec(
+            providerId = "openai",
+            displayName = "OpenAI",
+            baseUrl = "https://api.openai.com/v1/chat/completions",
+            defaultModel = "gpt-4o-mini",
+            fallbackModels = listOf("gpt-4o"),
+            apiKeyEnv = "OPENAI_API_KEY",
+            freeTier = false
+        ),
+        OpenAiCompatibleProviderSpec(
+            providerId = "mistral",
+            displayName = "Mistral",
+            baseUrl = "https://api.mistral.ai/v1/chat/completions",
+            defaultModel = "mistral-large-latest",
+            fallbackModels = listOf("open-mistral-7b"),
+            apiKeyEnv = "MISTRAL_API_KEY",
+            freeTier = false
+        ),
+        OpenAiCompatibleProviderSpec(
+            providerId = "cohere",
+            displayName = "Cohere",
+            baseUrl = "https://api.cohere.com/v1/chat/completions",
+            defaultModel = "command-r-plus",
+            fallbackModels = listOf("command-r"),
+            apiKeyEnv = "COHERE_API_KEY",
+            freeTier = false
+        ),
+        OpenAiCompatibleProviderSpec(
+            providerId = "xai",
+            displayName = "xAI",
+            baseUrl = "https://api.x.ai/v1/chat/completions",
+            defaultModel = "grok-2-1212",
+            fallbackModels = listOf("grok-beta"),
+            apiKeyEnv = "XAI_API_KEY",
+            freeTier = false
+        ),
+        OpenAiCompatibleProviderSpec(
+            providerId = "deepseek_direct",
+            displayName = "DeepSeek Direct",
+            baseUrl = "https://api.deepseek.com/chat/completions",
+            defaultModel = "deepseek-chat",
+            fallbackModels = listOf("deepseek-coder"),
+            apiKeyEnv = "DEEPSEEK_API_KEY",
+            freeTier = false
+        ),
+        OpenAiCompatibleProviderSpec(
+            providerId = "cerebras",
+            displayName = "Cerebras",
+            baseUrl = "https://api.cerebras.ai/v1/chat/completions",
+            defaultModel = "llama3.1-8b",
+            fallbackModels = listOf("llama3.1-70b"),
+            apiKeyEnv = "CEREBRAS_API_KEY",
+            freeTier = false
+        ),
+        OpenAiCompatibleProviderSpec(
+            providerId = "nvidia",
+            displayName = "NVIDIA NIM",
+            baseUrl = "https://integrate.api.nvidia.com/v1/chat/completions",
+            defaultModel = "meta/llama-3.1-8b-instruct",
+            fallbackModels = listOf("meta/llama-3.1-70b-instruct"),
+            apiKeyEnv = "NVIDIA_API_KEY",
+            freeTier = false
+        ),
+        OpenAiCompatibleProviderSpec(
+            providerId = "sambanova",
+            displayName = "SambaNova",
+            baseUrl = "https://api.sambanova.ai/v1/chat/completions",
+            defaultModel = "Meta-Llama-3.1-8B-Instruct",
+            fallbackModels = listOf("Meta-Llama-3.1-70B-Instruct"),
+            apiKeyEnv = "SAMBANOVA_API_KEY",
             freeTier = false
         )
     )

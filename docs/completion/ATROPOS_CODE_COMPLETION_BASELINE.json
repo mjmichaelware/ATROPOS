@@ -1,0 +1,218 @@
+{
+  "schemaVersion": "atropos-codebase-accounting-v2",
+  "baselineHead": "7e612fcdba571b276a4ae65704835eb762030682",
+  "baselineWarning": "nearest recoverable commit, not exact locked export",
+  "currentHead": "84718cb6bd7d5adc536defd4a67acc512dcb92bf",
+  "sourceInventory": [
+    {
+      "path": "docs/source/ATROPOS_Source_Doc_1.txt",
+      "sha256": "36ee88a1187a329875372ce53d4934c5c6e9d13ec96909e0f17d13ae341eba52",
+      "bytes": 69691
+    },
+    {
+      "path": "docs/source/ATROPOS_Source_Doc_2.txt",
+      "sha256": "b88acd252ce5100c56e9b2902dcacce6e5f47600c30da2129317d10ca5991b07",
+      "bytes": 130292
+    },
+    {
+      "path": "docs/source/ATROPOS_Source_Doc_3.txt",
+      "sha256": "b1a115a5253c5bff44b766ef18c3af99d8c210bce6c97dfe637b3e933ff36158",
+      "bytes": 71068
+    },
+    {
+      "path": "docs/source/ATROPOS_Source_Doc_4.txt",
+      "sha256": "b2dc4fd9141307184b7a77ed83ebcb226071ebedeba680014281c84727cddace",
+      "bytes": 47912
+    },
+    {
+      "path": "docs/source/ATROPOS_100pct_Completion_Blueprint.txt",
+      "sha256": "aeb983938fbe39323513683c4b7f5b2911f7b0a9ab4064e160f3dc2d568e85c6",
+      "bytes": 29470
+    },
+    {
+      "path": "docs/gap-maps/ATROPOS_Core_Engine_Gap_Map_v2.pdf",
+      "sha256": "6d4e0dd5eca2902891aedc435001e5c4d09c378bcda95396dd23566251e0ff3b",
+      "bytes": 95617
+    },
+    {
+      "path": "docs/gap-maps/ATROPOS_HOE_UI_UX_Gap_Map_v2.pdf",
+      "sha256": "294c2fa0d426a81d4af6a5ce98b8f86e36b0a309d6aa0d02868505fc26f85be4",
+      "bytes": 104321
+    },
+    {
+      "path": "docs/gap-maps/ATROPOS_Phase20_Architecture_Gap_Map_v2.pdf",
+      "sha256": "2f84f27379d449caa6b3063622ebece3592aa745aef10b3890c81395591d4764",
+      "bytes": 271671
+    },
+    {
+      "path": "docs/source/ATROPOS_Completion_Blueprint_DAG.md",
+      "sha256": "2f0ce7959d7c23fdce97e66422ff0a9b0ea24a0b06eb4cbddbb718dead5aa8be",
+      "bytes": 24135
+    },
+    {
+      "path": "ATROPOS_CORE_ENGINE_GAP_MAP_v2.md",
+      "sha256": "b5ce98aea221eaa526b63830e0a1951d03fd5b8feaa9c1410c3db0cb6cbf8e40",
+      "bytes": 8507
+    },
+    {
+      "path": "docs/ATROPOS_CANONICAL_PHASES_1_11_AUTHORITY.md",
+      "sha256": "454657a2d73323f231c3b3ae12739ac7d298c5640946874f2565f976ff942aee",
+      "bytes": 10405
+    },
+    {
+      "path": "docs/ATROPOS_CANONICAL_PHASES_1_11_CLOSURE.md",
+      "sha256": "c424a7608a45518e55ce318f552364f41436a4d6bc6c442b36639500d3b5b8ca",
+      "bytes": 58645
+    },
+    {
+      "path": "docs/ATROPOS_PASS11_SELF_BUILD_LOOP.md",
+      "sha256": "724fb84e9e07bbcfe68ee37209691d33a3d7ce2f6c597625a8532f47b9baa091",
+      "bytes": 625
+    },
+    {
+      "path": "docs/ATROPOS_CLI_WEB_UI_100_COMPLETION.md",
+      "sha256": "470c464be380b0a2cf5fec3acf82055a7500cfa814d6feb5953a649a7d0c67c6",
+      "bytes": 13923
+    },
+    {
+      "path": "docs/ATROPOS_TIER_H_ADDENDUM.md",
+      "sha256": "171c68b9e52716ca10176f9e286077dcc791ff3dfa95f2d93acf7ecffc0d5e06",
+      "bytes": 921
+    },
+    {
+      "path": "docs/ATROPOS_CODEX_OPERATING_INDEX.md",
+      "sha256": "cd2c6c5b94c3dbe473a835c4f4e1620140b6c69ad581cd9bd4d77c96c5ff978e",
+      "bytes": 7301
+    },
+    {
+      "path": "docs/ui-parity/HOE_CLI_WEB_101_STATUS.md",
+      "sha256": "7ccfa7aa4192c04172c71430cfa15872a55c55bb2d273b8cf37cb617fc95486b",
+      "bytes": 10177
+    },
+    {
+      "path": "docs/ui-parity/UI_PARITY_BLOCKERS.md",
+      "sha256": "8183e031944d5b0baca73644cdc4978106ffad92a30a352577defd2c68b3826b",
+      "bytes": 3254
+    },
+    {
+      "path": "docs/completion/ATROPOS_SD1_SD2_SPECGRAPH_ATOM_DAG.md",
+      "sha256": "0d3d20b7537d9cb64dbb0a6c0515831f4625b55a309e2c27f1656457f9b08f16",
+      "bytes": 15698
+    }
+  ],
+  "registrySha256": "28778bd30ddf803ebacd9d17539db2821fd05bf348c3cd5e47d82e39a7aedbd6",
+  "totalObligations": 576,
+  "currentWritten": 474,
+  "currentCodeCompletion": 82.2917,
+  "historicalWritten": 471,
+  "historicalCodeCompletion": 81.7708,
+  "deltaPercentagePoints": 0.5208,
+  "generatedAt": "2026-08-03T12:10:43Z",
+  "perPhase": {
+    "0": {
+      "total": 96,
+      "currentWritten": 75,
+      "historicalWritten": 81
+    },
+    "1": {
+      "total": 3,
+      "currentWritten": 3,
+      "historicalWritten": 3
+    },
+    "2": {
+      "total": 24,
+      "currentWritten": 21,
+      "historicalWritten": 21
+    },
+    "3": {
+      "total": 24,
+      "currentWritten": 21,
+      "historicalWritten": 21
+    },
+    "4": {
+      "total": 18,
+      "currentWritten": 18,
+      "historicalWritten": 18
+    },
+    "5": {
+      "total": 3,
+      "currentWritten": 3,
+      "historicalWritten": 3
+    },
+    "6": {
+      "total": 18,
+      "currentWritten": 18,
+      "historicalWritten": 15
+    },
+    "7": {
+      "total": 15,
+      "currentWritten": 9,
+      "historicalWritten": 9
+    },
+    "8": {
+      "total": 18,
+      "currentWritten": 15,
+      "historicalWritten": 15
+    },
+    "9": {
+      "total": 21,
+      "currentWritten": 12,
+      "historicalWritten": 12
+    },
+    "10": {
+      "total": 120,
+      "currentWritten": 120,
+      "historicalWritten": 114
+    },
+    "11": {
+      "total": 36,
+      "currentWritten": 27,
+      "historicalWritten": 27
+    },
+    "12": {
+      "total": 3,
+      "currentWritten": 3,
+      "historicalWritten": 3
+    },
+    "13": {
+      "total": 3,
+      "currentWritten": 3,
+      "historicalWritten": 0
+    },
+    "14": {
+      "total": 3,
+      "currentWritten": 0,
+      "historicalWritten": 0
+    },
+    "15": {
+      "total": 3,
+      "currentWritten": 3,
+      "historicalWritten": 3
+    },
+    "16": {
+      "total": 3,
+      "currentWritten": 0,
+      "historicalWritten": 0
+    },
+    "17": {
+      "total": 54,
+      "currentWritten": 30,
+      "historicalWritten": 30
+    },
+    "18": {
+      "total": 42,
+      "currentWritten": 39,
+      "historicalWritten": 39
+    },
+    "19": {
+      "total": 3,
+      "currentWritten": 0,
+      "historicalWritten": 0
+    },
+    "20": {
+      "total": 66,
+      "currentWritten": 54,
+      "historicalWritten": 57
+    }
+  }
+}

@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core
 
+import atropos.core.provider.ContextEnvelope
 import java.net.ConnectException
 import java.net.URI
 import java.net.http.HttpClient
@@ -214,7 +215,8 @@ class OllamaHealthProbe(
 data class ProviderCascadeResult(
     val providerName: String,
     val response: String,
-    val errors: List<ProviderError>
+    val errors: List<ProviderError>,
+    val contextEnvelope: ContextEnvelope? = null
 )
 
 class ProviderCascadeRouter(
@@ -228,7 +230,8 @@ class ProviderCascadeRouter(
         context: String,
         providerOrderOverride: List<String>? = null,
         beforeAttempt: (String) -> Unit = {},
-        onFailure: (ProviderError) -> Unit = {}
+        onFailure: (ProviderError) -> Unit = {},
+        contextEnvelope: ContextEnvelope? = null
     ): ProviderCascadeResult {
         val ollamaStatus = OllamaHealthProbe().probe()
         val order = providerOrder(requestedProvider, providerOrderOverride)
@@ -258,7 +261,8 @@ class ProviderCascadeRouter(
                 return ProviderCascadeResult(
                     providerName = provider,
                     response = response,
-                    errors = errors
+                    errors = errors,
+                    contextEnvelope = contextEnvelope
                 )
             } catch (failure: Exception) {
                 val error = classifier.classify(provider, failure)

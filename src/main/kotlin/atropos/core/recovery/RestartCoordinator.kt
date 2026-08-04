@@ -44,7 +44,15 @@ class RestartCoordinator(
                     recoveryRequired = it.status == GoalRunStatus.RECOVERY_REQUIRED,
                     evidenceCount = it.evidence.size,
                     territory = it.territory.map(redactionFilter::redact),
-                    evidenceHashes = it.evidence.map { evidence -> sha256(redactionFilter.redact(evidence)) }
+                    evidenceHashes = it.evidence.map { evidence -> sha256(redactionFilter.redact(evidence)) },
+                    task = redactionFilter.redact(it.task),
+                    baselineCommit = it.baselineCommit?.let(redactionFilter::redact),
+                    dirtyStateFingerprint = it.dirtyStateFingerprint?.let(redactionFilter::redact),
+                    parentRunId = it.parentRunId?.let(redactionFilter::redact),
+                    runId = it.runId?.let(redactionFilter::redact),
+                    maxContinuations = it.maxContinuations,
+                    retryBudget = it.retryBudget,
+                    lastVerifiedCheckpoint = it.lastVerifiedCheckpoint?.let(redactionFilter::redact)
                 )
             },
             dags = dagStore.listDags().map { dag ->
@@ -83,7 +91,7 @@ class RestartCoordinator(
                     verified = it.verified,
                     rolledBack = it.rolledBack,
                     mergedBack = it.mergedBack,
-                    territory = it.territory
+                    territory = it.territory.map(redactionFilter::redact)
                 )
             },
             memoryRecords = memoryStore.status().totalRecords,
@@ -106,13 +114,16 @@ class RestartCoordinator(
         )
     }
 
-    fun latestSnapshot(): StateSnapshot? {
+    fun latestSnapshot(goalId: String? = null): StateSnapshot? {
         if (!Files.isDirectory(snapshotDir)) return null
         return Files.list(snapshotDir).use { stream ->
             stream.filter { Files.isRegularFile(it) && it.fileName.toString().endsWith(".snapshot") }
                 .toList()
-                .maxByOrNull { it.fileName.toString() }
-                ?.let(::readSnapshot)
+                .sortedByDescending { it.fileName.toString() }
+                .mapNotNull(::readSnapshot)
+                .firstOrNull { snapshot ->
+                    goalId == null || snapshot.goalRuns.any { it.id == goalId }
+                }
         }
     }
 
@@ -132,9 +143,36 @@ class RestartCoordinator(
         appendLine("id=${snapshot.id}")
         appendLine("capturedAt=${snapshot.capturedAt}")
         appendLine("memoryRecords=${snapshot.memoryRecords}")
-        appendLine("recoveryMessageB64=${encode(snapshot.recoveryReport?.message.orEmpty())}")
+        snapshot.recoveryReport?.let { report ->
+            appendLine("recoveryRecoveredAt=${report.recoveredAt}")
+            appendLine("recoveryStaleQueueEntries=${report.staleQueueEntries}")
+            appendLine("recoveryStaleSessions=${report.staleSessions}")
+            appendLine("recoveryStaleDagClaims=${report.staleDagClaims}")
+            appendLine("recoveryInterruptedRuns=${report.interruptedRuns}")
+            appendLine("recoveryCompletedMutationsSkipped=${report.completedMutationsSkipped}")
+            appendLine("recoveryErrorsB64=${encode(report.errors.joinToString("\n") { redactionFilter.redact(it) })}")
+            appendLine("recoveryMessageB64=${encode(redactionFilter.redact(report.message))}")
+        }
         snapshot.goalRuns.forEach {
-            appendLine("goal=${listOf(it.id, it.status, it.dagId.orEmpty(), it.currentNodeId.orEmpty(), it.continuationCount, it.recoveryRequired, it.evidenceCount, encode(it.territory.joinToString(",")), it.evidenceHashes.joinToString(",")).joinToString("|")}")
+            appendLine("goal=${listOf(
+                it.id,
+                it.status,
+                it.dagId.orEmpty(),
+                it.currentNodeId.orEmpty(),
+                it.continuationCount,
+                it.recoveryRequired,
+                it.evidenceCount,
+                encode(it.territory.joinToString("\u0000")),
+                it.evidenceHashes.joinToString(","),
+                encode(it.task),
+                encode(it.baselineCommit.orEmpty()),
+                encode(it.dirtyStateFingerprint.orEmpty()),
+                encode(it.parentRunId.orEmpty()),
+                encode(it.runId.orEmpty()),
+                it.maxContinuations,
+                it.retryBudget,
+                encode(it.lastVerifiedCheckpoint.orEmpty())
+            ).joinToString("|")}")
         }
         snapshot.dags.forEach {
             appendLine("dag=${listOf(it.id, encode(it.label), it.ready, it.running, it.blocked, it.complete, it.failed).joinToString("|")}")
@@ -157,6 +195,7 @@ class RestartCoordinator(
         val capturedAt = keyed.firstOrNull { it.first == "capturedAt" }?.second
             ?.let { runCatching { Instant.parse(it) }.getOrNull() } ?: return null
         val memoryRecords = keyed.firstOrNull { it.first == "memoryRecords" }?.second?.toIntOrNull() ?: 0
+        val recoveryReport = parseRecoveryReport(keyed, capturedAt)
         return StateSnapshot(
             id = id,
             capturedAt = capturedAt,
@@ -164,9 +203,42 @@ class RestartCoordinator(
             dags = keyed.filter { it.first == "dag" }.mapNotNull { parseDag(it.second) },
             dagNodes = keyed.filter { it.first == "node" }.mapNotNull { parseNode(it.second) },
             worktrees = keyed.filter { it.first == "worktree" }.mapNotNull { parseWorktree(it.second) },
-            memoryRecords = memoryRecords
+            memoryRecords = memoryRecords,
+            recoveryReport = recoveryReport
         )
     }
+
+    private fun parseRecoveryReport(keyed: List<Pair<String, String>>, capturedAt: Instant): RecoveryReport? {
+        val message = keyed.firstOrNull { it.first == "recoveryMessageB64" }
+            ?.second
+            ?.let(::decode)
+            ?.takeIf { it.isNotBlank() }
+        val recoveredAt = keyed.firstOrNull { it.first == "recoveryRecoveredAt" }
+            ?.second
+            ?.let { runCatching { Instant.parse(it) }.getOrNull() }
+            ?: return message?.let {
+                RecoveryReport(capturedAt, 0, 0, 0, 0, 0, emptyList(), it)
+            }
+        val errors = keyed.firstOrNull { it.first == "recoveryErrorsB64" }
+            ?.second
+            ?.let(::decode)
+            ?.split('\n')
+            ?.filter { it.isNotBlank() }
+            .orEmpty()
+        return RecoveryReport(
+            recoveredAt = recoveredAt,
+            staleQueueEntries = keyed.value("recoveryStaleQueueEntries"),
+            staleSessions = keyed.value("recoveryStaleSessions"),
+            staleDagClaims = keyed.value("recoveryStaleDagClaims"),
+            interruptedRuns = keyed.value("recoveryInterruptedRuns"),
+            completedMutationsSkipped = keyed.value("recoveryCompletedMutationsSkipped"),
+            errors = errors,
+            message = message.orEmpty()
+        )
+    }
+
+    private fun List<Pair<String, String>>.value(key: String): Int =
+        firstOrNull { it.first == key }?.second?.toIntOrNull() ?: 0
 
     private fun parseGoal(raw: String): GoalRunSnapshot? {
         val p = raw.split("|")
@@ -179,8 +251,16 @@ class RestartCoordinator(
             continuationCount = p[4].toIntOrNull() ?: 0,
             recoveryRequired = p[5].toBoolean(),
             evidenceCount = p[6].toIntOrNull() ?: 0,
-            territory = p.getOrNull(7)?.let(::decode)?.split(",")?.filter { it.isNotBlank() }.orEmpty(),
-            evidenceHashes = p.getOrNull(8)?.split(",")?.filter { it.isNotBlank() }.orEmpty()
+            territory = p.getOrNull(7)?.let(::decode)?.split("\u0000")?.filter { it.isNotBlank() }.orEmpty(),
+            evidenceHashes = p.getOrNull(8)?.split(",")?.filter { it.isNotBlank() }.orEmpty(),
+            task = p.getOrNull(9)?.let(::decode).orEmpty(),
+            baselineCommit = p.getOrNull(10)?.let(::decode)?.takeIf { it.isNotBlank() },
+            dirtyStateFingerprint = p.getOrNull(11)?.let(::decode)?.takeIf { it.isNotBlank() },
+            parentRunId = p.getOrNull(12)?.let(::decode)?.takeIf { it.isNotBlank() },
+            runId = p.getOrNull(13)?.let(::decode)?.takeIf { it.isNotBlank() },
+            maxContinuations = p.getOrNull(14)?.toIntOrNull() ?: 0,
+            retryBudget = p.getOrNull(15)?.toIntOrNull() ?: 0,
+            lastVerifiedCheckpoint = p.getOrNull(16)?.let(::decode)?.takeIf { it.isNotBlank() }
         )
     }
 

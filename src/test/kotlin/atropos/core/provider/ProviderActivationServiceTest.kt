@@ -1,5 +1,6 @@
 package atropos.core.provider
 
+import atropos.core.AtroposRepoRootLocator
 import atropos.core.paid.EmergencyPaidGate
 import atropos.core.provider.adapter.AdapterStatus
 import atropos.core.provider.adapter.StaticProviderAdapterRegistry
@@ -10,6 +11,14 @@ import kotlin.test.assertTrue
 import java.nio.file.Files
 
 class ProviderActivationServiceTest {
+    @Test
+    fun activation_store_default_root_is_under_atropos_root() {
+        assertEquals(
+            AtroposRepoRootLocator.resolve().resolve(".atropos/provider/activation"),
+            ProviderActivationStore.defaultRoot()
+        )
+    }
+
     @Test
     fun verify_marks_configured_free_transport_as_verified_offline() {
         val temp = Files.createTempDirectory("atropos-provider-verify")
@@ -94,7 +103,7 @@ class ProviderActivationServiceTest {
                 state = state,
                 descriptorPresent = true,
                 adapterStatus = adapterStatus,
-                keySources = listOf("FIXTURE_API_KEY:explicit"),
+                keySources = listOf("FIXTURE_ACCESS_IDENTIFIER:explicit"),
                 impact = listOf("chat", "code"),
                 executableSupport = true,
                 fixtureMatrix = ProviderFixtureMatrixRecord(
@@ -110,12 +119,57 @@ class ProviderActivationServiceTest {
 
             val rendered = record.render()
             assertTrue(rendered.contains("state: ${state.name.lowercase()}"), state.name)
-            assertTrue(rendered.contains("key sources: FIXTURE_API_KEY:explicit"), state.name)
+            assertTrue(rendered.contains("key sources: FIXTURE_ACCESS_IDENTIFIER:explicit"), state.name)
             assertTrue(rendered.contains("impact: chat,code"), state.name)
             assertTrue(rendered.contains("adapter implemented: yes"), state.name)
             assertTrue(rendered.contains("adapter configured: yes"), state.name)
             assertTrue(rendered.contains("verification: verification for ${state.name.lowercase()}"), state.name)
             assertTrue(rendered.contains("remediation: remediation for ${state.name.lowercase()}"), state.name)
         }
+    }
+
+    @Test
+    fun remote_provider_never_ready_on_descriptor_or_key_alone_without_verification() {
+        val temp = Files.createTempDirectory("atropos-provider-never-ready")
+        val registry = StaticProviderDescriptorRegistry()
+        val env = mapOf("GROQ_API_KEY" to "test-groq-key")
+        val adapterRegistry = StaticProviderAdapterRegistry(registry, env)
+        val service = ProviderActivationService(
+            registry = registry,
+            adapterRegistry = adapterRegistry,
+            secretSource = MapSecretSource(env),
+            quotaLedger = FileQuotaLedger(temp.resolve("quota.tsv").toFile(), FileQuotaLedger.seedFromDescriptors(registry)),
+            fixtureMatrix = ProviderFixtureMatrixService(registry, adapterRegistry),
+            store = ProviderActivationStore(temp.resolve("activation")),
+            paidGate = EmergencyPaidGate(temp.resolve("paid").toFile()),
+            ollamaProbe = { false }
+        )
+
+        val record = service.snapshot("groq")
+        assertTrue(record.state == ProviderActivationState.CONFIGURED || record.state == ProviderActivationState.FIXTURE_BACKED)
+    }
+
+    @Test
+    fun live_provider_probe_requires_explicit_network_opt_in() {
+        val temp = Files.createTempDirectory("atropos-provider-live-opt-in")
+        val registry = StaticProviderDescriptorRegistry()
+        val env = mapOf("GROQ_API_KEY" to "test-groq-key")
+        val adapterRegistry = StaticProviderAdapterRegistry(registry, env)
+        val service = ProviderActivationService(
+            registry = registry,
+            adapterRegistry = adapterRegistry,
+            secretSource = MapSecretSource(env),
+            quotaLedger = FileQuotaLedger(temp.resolve("quota.tsv").toFile(), FileQuotaLedger.seedFromDescriptors(registry)),
+            fixtureMatrix = ProviderFixtureMatrixService(registry, adapterRegistry),
+            store = ProviderActivationStore(temp.resolve("activation")),
+            paidGate = EmergencyPaidGate(temp.resolve("paid").toFile()),
+            ollamaProbe = { false },
+            environment = emptyMap()
+        )
+
+        val record = service.liveTest("groq")
+
+        assertEquals(ProviderActivationState.DEGRADED, record.state)
+        assertTrue(record.verificationSummary.contains("requires ATROPOS_LIVE_PROVIDER_TESTS"))
     }
 }

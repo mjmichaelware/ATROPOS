@@ -1,6 +1,5 @@
 package atropos.core.artifact
 
-import atropos.core.AtroposRepoRootLocator
 import atropos.core.execution.LocalWorkQueue
 import atropos.core.factory.AppFactoryRouter
 import atropos.core.factory.FactoryPlan
@@ -9,11 +8,8 @@ import atropos.core.memory.MemoryKind
 import atropos.core.platform.JvmPlatformAbstraction
 import atropos.core.platform.PlatformAbstraction
 import atropos.core.project.ProjectRegistry
+import atropos.core.security.RedactionFilter
 import java.nio.charset.StandardCharsets
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.StandardCopyOption
-import java.security.MessageDigest
 import java.time.Instant
 
 class ArtifactPipeline(
@@ -22,13 +18,79 @@ class ArtifactPipeline(
     private val factoryRouter: AppFactoryRouter = AppFactoryRouter(),
     private val memory: LocalMemoryStore = LocalMemoryStore(),
     private val queue: LocalWorkQueue = LocalWorkQueue(),
-    private val projectRegistry: ProjectRegistry = ProjectRegistry()
+    private val projectRegistry: ProjectRegistry = ProjectRegistry(),
+    private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     fun plan(prompt: String): FactoryPlan = factoryRouter.plan(prompt)
 
+    /** Creates a real user-requested deliverable; this is not the App Factory path. */
+    fun createDeliverable(prompt: String): ArtifactReport {
+        val cleanPrompt = prompt.trim()
+        require(cleanPrompt.isNotBlank()) { "artifact prompt must not be blank" }
+        val slug = cleanPrompt.lowercase()
+            .replace(Regex("[^a-z0-9]+"), "-")
+            .trim('-')
+            .take(64)
+            .ifBlank { "requested-artifact" }
+        val relativePath = ".atropos/artifacts/deliverables/$slug.md"
+        val content = buildString {
+            appendLine("# ATROPOS Artifact")
+            appendLine()
+            appendLine("Requested deliverable")
+            appendLine()
+            appendLine(redactionFilter.redact(cleanPrompt))
+            appendLine()
+            appendLine("This file is the workspace deliverable for the request above.")
+            appendLine("App scaffolding belongs to the general natural-language factory path.")
+        }
+        val write = platform.writeFile(relativePath, content)
+        if (write.isFailure) {
+            val reason = write.exceptionOrNull()?.message ?: "artifact write failed"
+            return ArtifactReport(
+                artifacts = listOf(
+                    Artifact(
+                        kind = ArtifactKind.DOCUMENTATION,
+                        name = "$slug.md",
+                        filePath = relativePath,
+                        sha256 = "",
+                        byteSize = 0,
+                        state = ArtifactState.FAILED,
+                        buildCommand = "workspace artifact writer",
+                        metadata = mapOf("prompt" to redactionFilter.compact(cleanPrompt), "error" to reason)
+                    )
+                ),
+                verifications = emptyList(),
+                installProofs = emptyList()
+            )
+        }
+
+        val bytes = content.toByteArray(StandardCharsets.UTF_8)
+        val artifact = Artifact(
+            kind = ArtifactKind.DOCUMENTATION,
+            name = "$slug.md",
+            filePath = relativePath,
+            sha256 = ArtifactHasher.sha256Bytes(bytes),
+            byteSize = bytes.size.toLong(),
+            state = ArtifactState.READY,
+            buildCommand = "workspace artifact writer",
+            metadata = mapOf("prompt" to redactionFilter.compact(cleanPrompt), "deliverable" to "workspace-file")
+        )
+        val evidence = listOf(
+            VerificationEvidence(artifactId = artifact.id, kind = VerificationKind.SIZE_CHECK, passed = true, evidence = "written ${artifact.byteSize} bytes to ${artifact.filePath}"),
+            VerificationEvidence(artifactId = artifact.id, kind = VerificationKind.HASH_VERIFY, passed = true, evidence = "sha256 ${artifact.sha256}")
+        )
+        store.saveArtifacts(listOf(artifact))
+        store.saveVerifications(evidence)
+        return ArtifactReport(listOf(artifact), evidence, emptyList())
+    }
+
     fun runFactory(prompt: String, installDir: String? = null): AppFactoryRun {
         val plan = plan(prompt)
-        val project = projectRegistry.register(plan.intent, kind = "app-factory").record
+        val project = projectRegistry.register(
+            name = plan.projectSpec.intent.name,
+            kind = plan.projectSpec.intent.kind,
+            objective = plan.prompt
+        ).record
         val startedAt = Instant.now()
         val report = build(plan)
         val artifactVerificationEvidence = report.artifacts.map { verify(it.id) }
@@ -95,7 +157,10 @@ class ArtifactPipeline(
                 atropos.core.factory.FactoryStepKind.VALIDATE -> {
                     val existing = artifacts.lastOrNull()
                     if (existing != null) {
-                        val hashOk = verifyHash(existing)
+                        val hashOk = if (platform.fileExists(existing.filePath)) {
+                            val currentSha = ArtifactHasher.sha256File(platform, existing.filePath)
+                            currentSha == existing.sha256
+                        } else false
                         verifications += VerificationEvidence(
                             artifactId = existing.id,
                             kind = VerificationKind.HASH_VERIFY,
@@ -216,7 +281,7 @@ class ArtifactPipeline(
         val filePath = "build/${intent}.jar"
         val state = if (buildResult.isSuccess && buildResult.getOrNull()?.exitCode == 0) ArtifactState.READY else ArtifactState.FAILED
         val bytes = if (platform.fileExists(filePath)) platform.fileSize(filePath) else 0L
-        val sha = if (bytes > 0) sha256File(filePath) else ""
+        val sha = if (bytes > 0) ArtifactHasher.sha256File(platform, filePath) else ""
 
         return Artifact(
             kind = if (intent.contains("ui")) ArtifactKind.COMPOSE_PACKAGE else ArtifactKind.BINARY_JAR,
@@ -231,152 +296,4 @@ class ArtifactPipeline(
         )
     }
 
-    private fun verifyHash(artifact: Artifact): Boolean {
-        return if (platform.fileExists(artifact.filePath)) {
-            val currentSha = sha256File(artifact.filePath)
-            currentSha == artifact.sha256
-        } else false
-    }
-
-    private fun sha256File(filePath: String): String {
-        return try {
-            val bytes = platform.readFile(filePath).getOrNull()?.toByteArray(StandardCharsets.UTF_8) ?: return ""
-            val digest = MessageDigest.getInstance("SHA-256")
-            digest.digest(bytes).joinToString("") { "%02x".format(it) }
-        } catch (_: Exception) { "" }
-    }
-}
-
-class ArtifactStore(private val root: Path = AtroposRepoRootLocator.resolve()) {
-    private val artDir = root.resolve(".atropos/artifacts")
-    private val artFile = artDir.resolve("artifacts.jsonl")
-    private val verFile = artDir.resolve("verifications.jsonl")
-    private val proofFile = artDir.resolve("install_proofs.jsonl")
-    private val commitFile = artDir.resolve("commit_candidates.jsonl")
-
-    fun saveArtifacts(artifacts: List<Artifact>) {
-        Files.createDirectories(artDir)
-        val existing = loadArtifacts().toMutableList()
-        artifacts.forEach { a ->
-            val idx = existing.indexOfFirst { it.id == a.id }
-            if (idx >= 0) existing[idx] = a else existing += a
-        }
-        writeLines(artFile, existing.map { artifactToLine(it) })
-    }
-
-    fun loadArtifacts(): List<Artifact> = readLines(artFile).mapNotNull { lineToArtifact(it) }
-    fun loadArtifact(id: String): Artifact? = loadArtifacts().firstOrNull { it.id == id }
-
-    fun saveVerifications(verifications: List<VerificationEvidence>) {
-        Files.createDirectories(artDir)
-        val existing = loadVerifications().toMutableList()
-        verifications.forEach { v ->
-            val idx = existing.indexOfFirst { it.id == v.id }
-            if (idx >= 0) existing[idx] = v else existing += v
-        }
-        writeLines(verFile, existing.map { verificationToLine(it) })
-    }
-
-    fun loadVerifications(): List<VerificationEvidence> = readLines(verFile).mapNotNull { lineToVerification(it) }
-
-    fun saveInstallProofs(proofs: List<InstallProof>) {
-        Files.createDirectories(artDir)
-        val existing = loadInstallProofs().toMutableList()
-        proofs.forEach { p ->
-            val idx = existing.indexOfFirst { it.id == p.id }
-            if (idx >= 0) existing[idx] = p else existing += p
-        }
-        writeLines(proofFile, existing.map { proofToLine(it) })
-    }
-
-    fun loadInstallProofs(): List<InstallProof> = readLines(proofFile).mapNotNull { lineToProof(it) }
-
-    fun saveCommitCandidates(candidates: List<CommitCandidate>) {
-        Files.createDirectories(artDir)
-        val existing = loadCommitCandidates().toMutableList()
-        candidates.forEach { c ->
-            val idx = existing.indexOfFirst { it.id == c.id }
-            if (idx >= 0) existing[idx] = c else existing += c
-        }
-        writeLines(commitFile, existing.map { candidateToLine(it) })
-    }
-
-    fun loadCommitCandidates(): List<CommitCandidate> = readLines(commitFile).mapNotNull { lineToCandidate(it) }
-
-    private fun artifactToLine(a: Artifact): String {
-        val meta = a.metadata.entries.joinToString("&") { "${it.key}=${it.value}" }
-        return listOf(a.id, a.kind.name, a.name, a.filePath, a.sha256, a.byteSize.toString(),
-            a.state.name, a.buildCommand, a.buildDurationMs.toString(), a.createdAt.toString(), meta)
-            .joinToString("\t") { it.replace('\t', ' ').replace('\n', ' ') }
-    }
-
-    private fun lineToArtifact(line: String): Artifact? {
-        val parts = line.split("\t")
-        if (parts.size < 10) return null
-        return try {
-            val meta = if (parts.size > 10) parseMeta(parts[10]) else emptyMap()
-            Artifact(id = parts[0], kind = ArtifactKind.valueOf(parts[1]), name = parts[2],
-                filePath = parts[3], sha256 = parts[4], byteSize = parts[5].toLong(),
-                state = ArtifactState.valueOf(parts[6]), buildCommand = parts[7],
-                buildDurationMs = parts[8].toLong(), createdAt = Instant.parse(parts[9]), metadata = meta)
-        } catch (_: Exception) { null }
-    }
-
-    private fun verificationToLine(v: VerificationEvidence): String =
-        listOf(v.id, v.artifactId, v.kind.name, v.passed.toString(), v.evidence.replace('\n', ' '), v.timestamp.toString())
-            .joinToString("\t")
-
-    private fun lineToVerification(line: String): VerificationEvidence? {
-        val parts = line.split("\t"); if (parts.size < 6) return null
-        return try { VerificationEvidence(id = parts[0], artifactId = parts[1], kind = VerificationKind.valueOf(parts[2]),
-            passed = parts[3].toBoolean(), evidence = parts[4], timestamp = Instant.parse(parts[5])) }
-        catch (_: Exception) { null }
-    }
-
-    private fun proofToLine(p: InstallProof): String =
-        listOf(p.id, p.artifactId, p.targetPath, p.installedAt.toString(), p.verified.toString(),
-            p.runOutput.replace('\n', ' '), p.durationMs.toString(), p.screenshots.joinToString("|"))
-            .joinToString("\t")
-
-    private fun lineToProof(line: String): InstallProof? {
-        val parts = line.split("\t"); if (parts.size < 7) return null
-        return try { InstallProof(id = parts[0], artifactId = parts[1], targetPath = parts[2],
-            installedAt = Instant.parse(parts[3]), verified = parts[4].toBoolean(),
-            runOutput = parts[5], durationMs = parts[6].toLong(), screenshots = parts.getOrNull(7)?.split("|")?.filter { it.isNotBlank() }.orEmpty()) }
-        catch (_: Exception) { null }
-    }
-
-    private fun candidateToLine(c: CommitCandidate): String =
-        listOf(c.id, c.message.replace('\n', ' '), c.files.joinToString("|"), c.artifactIds.joinToString("|"),
-            c.proofIds.joinToString("|"), c.preparedAt.toString(), c.territoryChecked.toString(),
-            c.secretScanned.toString(), c.readyForCommit.toString()).joinToString("\t")
-
-    private fun lineToCandidate(line: String): CommitCandidate? {
-        val parts = line.split("\t"); if (parts.size < 9) return null
-        return try { CommitCandidate(id = parts[0], message = parts[1],
-            files = parts[2].split("|").filter { it.isNotBlank() },
-            artifactIds = parts[3].split("|").filter { it.isNotBlank() },
-            proofIds = parts[4].split("|").filter { it.isNotBlank() },
-            preparedAt = Instant.parse(parts[5]), territoryChecked = parts[6].toBoolean(),
-            secretScanned = parts[7].toBoolean(), readyForCommit = parts[8].toBoolean()) }
-        catch (_: Exception) { null }
-    }
-
-    private fun parseMeta(raw: String): Map<String, String> =
-        raw.split("&").mapNotNull { kv ->
-            val eq = kv.indexOf('='); if (eq < 0) null else kv.substring(0, eq) to kv.substring(eq + 1)
-        }.toMap()
-
-    private fun readLines(path: Path): List<String> {
-        if (!Files.isRegularFile(path)) return emptyList()
-        return Files.readAllLines(path, StandardCharsets.UTF_8).map { it.trim() }.filter { it.isNotBlank() && !it.startsWith("#") }
-    }
-
-    private fun writeLines(path: Path, lines: List<String>) {
-        Files.createDirectories(path.parent)
-        val tmp = path.resolveSibling("${path.fileName}.${System.nanoTime()}.tmp")
-        Files.writeString(tmp, lines.joinToString("\n") + "\n", StandardCharsets.UTF_8)
-        try { Files.move(tmp, path, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE) }
-        catch (_: Exception) { Files.move(tmp, path, StandardCopyOption.REPLACE_EXISTING) }
-    }
 }

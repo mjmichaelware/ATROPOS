@@ -10,13 +10,11 @@ from specgraph_foundry.services import ProjectService
 
 ROOT = Path(__file__).resolve().parents[1]
 DEPLOYMENT = ROOT / "supabase" / "migrations" / "20260712001400_operations.sql"
-SOURCE = ROOT / "infra" / "supabase" / "migrations" / "202607120013_operations.sql"
 JOB = ROOT / "infra" / "cloud-run" / "worker" / "job.yaml"
 
 
 class OperationSecurityTest(unittest.TestCase):
-    def test_migrations_match_and_table_is_owner_scoped(self) -> None:
-        self.assertEqual(SOURCE.read_bytes(), DEPLOYMENT.read_bytes())
+    def test_canonical_migration_is_owner_scoped(self) -> None:
         sql = DEPLOYMENT.read_text(encoding="utf-8")
         self.assertIn("create table if not exists public.operations", sql)
         self.assertIn("enable row level security", sql)

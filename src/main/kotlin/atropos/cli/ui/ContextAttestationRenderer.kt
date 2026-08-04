@@ -9,6 +9,7 @@ import atropos.core.provider.ContextEnvelope
 import atropos.core.provider.TypedContextFailure
 import atropos.core.memory.LocalMemoryStore
 import atropos.core.memory.MemoryRecord
+import atropos.core.security.RedactionFilter
 
 /**
  * Renders provider context attestation — Source Doc 3 requirements 1–5.
@@ -28,7 +29,8 @@ import atropos.core.memory.MemoryRecord
  * core decision logic").
  */
 class ContextAttestationRenderer(
-    private val theme: TerminalTheme
+    private val theme: TerminalTheme,
+    private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     private val surface get() = theme.surface
 
@@ -55,7 +57,7 @@ class ContextAttestationRenderer(
             add(line(theme.paint(Role.STATUS_FAILED, "CONTEXT ATTESTATION FAILED")))
             add(line(surface.runState(RunState.FAILED) + " " + theme.strong(kindLabel(failure))))
             add(line(row("provider", failure.providerId, inner)))
-            add(line(row("reason", TerminalText.ellipsize(failure.reason, inner - 12), inner)))
+            add(line(row("reason", TerminalText.ellipsize(redactionFilter.redact(failure.reason), inner - 12), inner)))
             add(
                 line(
                     row(
@@ -145,7 +147,7 @@ class ContextAttestationRenderer(
             } else {
                 add(surface.row("last failure", surface.runState(RunState.FAILED), width))
                 add(surface.row("kind", humanKind(last.title), width))
-                add(surface.row("detail", last.body, width))
+                add(surface.row("detail", redactionFilter.redact(last.body), width))
             }
         }
     }
@@ -170,7 +172,7 @@ class ContextAttestationRenderer(
                 add(surface.row("state", surface.runState(RunState.FAILED), width))
                 add(surface.row("kind", kindLabel(lastFailure), width))
                 add(surface.row("provider", lastFailure.providerId, width))
-                add(surface.row("reason", lastFailure.reason, width))
+                add(surface.row("reason", redactionFilter.redact(lastFailure.reason), width))
             }
             lastAttestation != null -> {
                 add(surface.row("state", surface.runState(RunState.COMPLETE), width))
