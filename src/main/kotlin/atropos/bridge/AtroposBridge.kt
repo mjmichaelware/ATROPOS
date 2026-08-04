@@ -2,6 +2,7 @@
 package atropos.bridge
 
 import atropos.bridge.http.EngineHttpServer
+import atropos.core.phase20.GovernanceLedger
 
 /**
  * Decides whether the bridge runs at all, and on which port.
@@ -27,15 +28,33 @@ object AtroposBridge {
         if (raw.isEmpty()) return null
         val port = raw.toIntOrNull() ?: return null
         if (port !in 0..65_535) return null
-        return server(port, activeProvider)
+        return server(port, activeProvider = activeProvider)
     }
 
     /** Convenience for the common call shape: default environment lookup. */
     fun fromEnvironment(activeProvider: () -> String): EngineHttpServer? =
         fromEnvironment(System::getenv, activeProvider)
 
-    fun server(port: Int, activeProvider: () -> String): EngineHttpServer =
-        BridgeRoutes(activeProvider = activeProvider).let { routes ->
+    /**
+     * Builds the server against the durable governance ledger.
+     *
+     * Wired here rather than defaulted inside [BridgeRoutes] so the routes stay
+     * constructible without touching a filesystem — a test that wanted to check
+     * one projection should not have to own a repository root. This is the one
+     * place that decides the running bridge reads real state.
+     */
+    fun server(
+        port: Int,
+        governance: GovernanceLedger = GovernanceLedger(),
+        activeProvider: () -> String
+    ): EngineHttpServer =
+        BridgeRoutes(
+            activeProvider = activeProvider,
+            proposals = governance::proposals,
+            amendments = governance::amendments,
+            observationPeriods = governance::observationPeriods,
+            governanceCounts = { governance.counts() }
+        ).let { routes ->
             EngineHttpServer(
                 routeTable = routes.table(),
                 port = port,

@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { AlertTriangle, RotateCcw, X } from 'lucide-react';
 import type { RecoveryReport } from '@/app/api/atropos/recovery/route';
 import { useOptionalSessionState } from '@/lib/contexts/session-state-context';
+import { governance } from '@/lib/governance/client';
+import { ribbonLine, type RibbonLine } from '@/lib/recovery/ribbon-line';
 
 /**
  * §11.2: "The user always knows what was restored and what requires attention."
@@ -19,6 +21,7 @@ import { useOptionalSessionState } from '@/lib/contexts/session-state-context';
  */
 export function RecoveryRibbon() {
   const [report, setReport] = useState<RecoveryReport | null>(null);
+  const [line, setLine] = useState<RibbonLine | null>(null);
   const [dismissed, setDismissed] = useState(false);
   const sessionState = useOptionalSessionState();
   const sessionRecovery = sessionState?.recovery ?? null;
@@ -45,6 +48,37 @@ export function RecoveryRibbon() {
       cancelled = true;
     };
   }, []);
+
+  // SUP.UX.RECOVERY-RIBBON: continuity, free space and authority in one line.
+  // Read separately from the continuity probe above because the three answers
+  // come from three owners, and a single combined endpoint would make one
+  // unreachable source hide the other two.
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const [storage, authority] = await Promise.all([
+        governance.storage(),
+        governance.authority(),
+      ]);
+      if (cancelled) return;
+      setLine(
+        ribbonLine({
+          continuity: report
+            ? { repaired: report.repaired, failed: Boolean(report.failure), notice: report.notice }
+            : null,
+          // Unreadable is null, not zero: a storage route that did not answer
+          // has not told us there is room.
+          storageFractionUsed: storage.ok ? storage.data.fractionUsed : null,
+          authority: authority.ok
+            ? { resolved: authority.data.resolved, source: authority.data.source }
+            : null,
+        }),
+      );
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [report]);
 
   if (dismissed) return null;
 
@@ -77,10 +111,18 @@ export function RecoveryRibbon() {
     );
   }
 
+  // The one-line status stands on its own when continuity itself is clean: an
+  // unmeasured free-space reading or an unresolved authority document is worth
+  // saying even on a start that needed no repair.
+  const cleanStart = report?.available && !report.repaired && !report.failure;
+  if ((!report || cleanStart) && line && !line.silent) {
+    return <StatusLine line={line} onDismiss={() => setDismissed(true)} />;
+  }
+
   if (!report) return null;
 
-  // A clean start is not worth the operator's attention.
-  if (report.available && !report.repaired && !report.failure) return null;
+  // A clean start with nothing else to report is not worth the attention.
+  if (cleanStart) return null;
 
   // The engine could not be asked. The engine banner explains why it is
   // unreachable; this only records that recovery state is therefore unknown.
@@ -135,12 +177,56 @@ export function RecoveryRibbon() {
         {report.remedy && (
           <p className="mt-1 text-sg-neutral-600 dark:text-sg-neutral-400">{report.remedy}</p>
         )}
+        {/* The same one line, alongside the continuity detail rather than
+            instead of it: the operator deciding what to do about a restored
+            run also needs to know whether it can write and under what
+            authority. */}
+        {line && (
+          <p className="mt-1 text-xs text-sg-neutral-600 dark:text-sg-neutral-400">{line.text}</p>
+        )}
       </div>
 
       <button
         type="button"
         onClick={() => setDismissed(true)}
         aria-label="Dismiss recovery report"
+        className="text-sg-neutral-400 hover:text-sg-neutral-600"
+      >
+        <X className="h-4 w-4" />
+      </button>
+    </div>
+  );
+}
+
+/**
+ * The one-line ribbon on its own.
+ *
+ * Rendered when continuity is clean but free space or authority is not — the
+ * case `SUP.UX.RECOVERY-RIBBON` exists for and the one a crash-only dialog
+ * never covers. `role` follows the state so an `attention` line interrupts a
+ * screen reader and an `unknown` one does not.
+ */
+function StatusLine({ line, onDismiss }: { line: RibbonLine; onDismiss: () => void }) {
+  const attention = line.state === 'attention';
+  return (
+    <div
+      className={
+        attention
+          ? 'mx-4 mt-4 flex items-start gap-3 rounded-lg border border-sg-amber-200 bg-sg-amber-50 p-3 dark:border-sg-amber-800 dark:bg-sg-amber-900/10'
+          : 'mx-4 mt-4 flex items-start gap-3 rounded-lg border border-sg-neutral-200 bg-sg-neutral-50 p-3 dark:border-sg-neutral-800 dark:bg-sg-neutral-900'
+      }
+      role={attention ? 'alert' : 'status'}
+    >
+      {attention ? (
+        <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-sg-amber-600" aria-hidden="true" />
+      ) : (
+        <RotateCcw className="mt-0.5 h-4 w-4 flex-shrink-0 text-sg-neutral-500" aria-hidden="true" />
+      )}
+      <p className="flex-1 text-sm text-sg-neutral-800 dark:text-sg-neutral-200">{line.text}</p>
+      <button
+        type="button"
+        onClick={onDismiss}
+        aria-label="Dismiss status line"
         className="text-sg-neutral-400 hover:text-sg-neutral-600"
       >
         <X className="h-4 w-4" />

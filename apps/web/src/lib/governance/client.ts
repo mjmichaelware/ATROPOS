@@ -84,11 +84,29 @@ export interface StorageReport {
 
 export type Result<T> = { ok: true; data: T } | ({ ok: false } & Omit<EngineFailure, 'ok'>);
 
+export interface AuthorityDocumentState {
+  path: string;
+  state: 'attested' | 'mismatch' | 'missing';
+  sha256?: string;
+  rank?: number;
+  nonOverridable?: boolean;
+  detail?: string;
+}
+
+export interface AuthorityReport {
+  /** Attested and unviolated — never merely "a document was found". */
+  resolved: boolean;
+  source: string | null;
+  documents: AuthorityDocumentState[];
+  violations: { key: string; heldBy: string; attemptedBy: string[]; detail: string }[];
+}
+
 export const governance = {
   proposals: () => readEngine<{ proposals: Proposal[]; cooldowns: Cooldown[] }>('/v1/proposals'),
   amendments: () => readEngine<{ amendments: Amendment[] }>('/v1/amendments'),
   metrics: () => readEngine<GovernanceMetrics>('/v1/metrics'),
   storage: () => readEngine<StorageReport>('/v1/storage'),
+  authority: () => readEngine<AuthorityReport>('/v1/authority'),
 };
 
 /**

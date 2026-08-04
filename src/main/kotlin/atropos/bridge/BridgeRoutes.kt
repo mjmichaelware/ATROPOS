@@ -9,19 +9,24 @@ import atropos.bridge.http.HttpStreamRoute
 import atropos.bridge.http.JsonWriter
 import atropos.bridge.projection.ActivityProjection
 import atropos.bridge.projection.ApprovalProjection
+import atropos.bridge.projection.AuthorityProjection
 import atropos.bridge.projection.CheckpointProjection
 import atropos.bridge.projection.CommandProjection
 import atropos.bridge.projection.ExportProjection
 import atropos.bridge.projection.GovernanceProjection
 import atropos.bridge.projection.StorageProjection
+import atropos.bridge.projection.ThinkingProjection
 import atropos.bridge.projection.ProjectProjection
 import atropos.bridge.projection.SixAnswersProjection
 import atropos.bridge.projection.VocabularyProjection
+import atropos.bridge.projection.WelcomeProjection
 import atropos.cli.ui.HomeStateProvider
 import atropos.core.approval.ApprovalOutcome
 import atropos.core.approval.ApprovalSurface
 import atropos.core.approval.PendingApprovalStore
 import atropos.core.artifact.export.ArtifactLandingResolver
+import atropos.core.auth.AttestationResult
+import atropos.core.auth.CascadeResolution
 import atropos.core.checkpoint.CheckpointSummary
 import atropos.core.monitor.ActivityStream
 import atropos.core.phase20.AuthorityAmendment
@@ -30,6 +35,9 @@ import atropos.core.phase20.GovernanceMetrics
 import atropos.core.phase20.ImprovementProposal
 import atropos.core.phase20.ObservationPeriod
 import atropos.core.storage.StorageConstitution
+import atropos.core.thinking.ThinkingDepth
+import atropos.core.thinking.ThinkingRecord
+import atropos.core.welcome.WelcomeArtifact
 import java.time.Instant
 
 /**
@@ -60,14 +68,21 @@ class BridgeRoutes(
     private val checkpointView: CheckpointProjection = CheckpointProjection(),
     private val activityView: ActivityProjection = ActivityProjection(),
     private val exportView: ExportProjection = ExportProjection(),
+    private val welcomeView: WelcomeProjection = WelcomeProjection(),
+    private val thinkingView: ThinkingProjection = ThinkingProjection(),
+    private val authorityView: AuthorityProjection = AuthorityProjection(),
     /**
      * Governance state sources.
      *
-     * Injected as suppliers rather than read from a store here because the
-     * durable Phase 20 ledgers are not yet wired: these default to empty, and
-     * an empty proposal list is the truthful answer for a system that has not
-     * yet proposed anything. What must never happen is a placeholder proposal
-     * appearing because the surface wanted something to render.
+     * Injected as suppliers rather than read from a store here so the routes
+     * stay constructible without a repository root — a test checking one
+     * projection should not have to own a filesystem. `AtroposBridge` binds
+     * them to the durable [atropos.core.phase20.GovernanceLedger] for the
+     * running engine.
+     *
+     * The defaults are empty, which is the truthful answer for a system that
+     * has not proposed anything. What must never happen is a placeholder
+     * proposal appearing because the surface wanted something to render.
      */
     private val proposals: () -> List<ImprovementProposal> = { emptyList() },
     private val amendments: () -> List<AuthorityAmendment> = { emptyList() },
@@ -87,6 +102,33 @@ class BridgeRoutes(
     private val activity: () -> ActivityStream = { ActivityStream(emptyList()) },
     private val exportResolver: () -> ArtifactLandingResolver? = { null },
     private val exportTerritory: () -> List<java.nio.file.Path> = { emptyList() },
+    /**
+     * The first-boot welcome.
+     *
+     * Free providers are supplied rather than discovered because discovery is a
+     * provider concern and a welcome that probed the network would be neither
+     * deterministic nor zero-cost. An empty list is rendered honestly by the
+     * artifact — claiming a free path exists when none is configured would
+     * strand the operator at the first prompt.
+     */
+    private val freeProviders: () -> List<String> = { emptyList() },
+    /**
+     * Stored reasoning, looked up by node.
+     *
+     * Always the full record: the depth filter belongs to the read, not to the
+     * lookup. A supplier that returned a shallower record for a collapsed
+     * surface would make `HOE-B03`'s rule unenforceable at this boundary.
+     */
+    private val thinking: (String) -> ThinkingRecord? = { null },
+    /**
+     * Authority attestation and the resolved cascade.
+     *
+     * Empty by default, and an empty attestation list resolves to *not*
+     * resolved — absence of a grant is never permission, so a runtime that has
+     * attested nothing must not read as one operating under intact authority.
+     */
+    private val attestations: () -> List<AttestationResult> = { emptyList() },
+    private val cascade: () -> List<CascadeResolution> = { emptyList() },
     private val clock: () -> Instant = { Instant.now() }
 ) {
     fun table(): HttpRouteTable {
@@ -158,6 +200,19 @@ class BridgeRoutes(
                             "Open a workspace before exporting; an unresolved zone is not the current directory."
                         )
                 },
+                HttpRoute("GET", "/v1/welcome", "deterministic first-boot welcome") {
+                    HttpResponse.json(
+                        welcomeView.render(
+                            WelcomeArtifact(freeProviders(), storage()?.ceilingBytes)
+                        )
+                    )
+                },
+                HttpRoute("GET", "/v1/authority", "which authority is in force and whether it is intact") {
+                    HttpResponse.json(authorityView.render(attestations(), cascade()))
+                },
+                HttpRoute("GET", "/v1/thinking", "stored reasoning at the requested depth") { request ->
+                    thinkingRoute(request)
+                },
                 HttpRoute("GET", "/v1/answers/stream", "six continuous answers, pushed") {
                     // Advertised in /v1/routes and reachable as a stream; this
                     // request-path entry exists so a client that asks without
@@ -226,6 +281,37 @@ class BridgeRoutes(
                 "Call GET /v1/approvals for what is actually pending."
             )
         }
+    }
+
+    /**
+     * Serves reasoning for one node at one depth.
+     *
+     * An unparseable depth is refused rather than clamped. Silently serving L1
+     * for `depth=9` would show the operator less than they asked for while
+     * reporting success, and they would read the shorter list as "that is all
+     * the system considered".
+     */
+    private fun thinkingRoute(request: HttpRequest): HttpResponse {
+        val nodeId = request.query["nodeId"].orEmpty()
+        if (nodeId.isBlank()) {
+            return HttpResponse.badRequest(
+                "Reasoning is stored per node, so a nodeId is required.",
+                "GET /v1/thinking?nodeId=<id>&depth=1"
+            )
+        }
+
+        val rawDepth = request.query["depth"].orEmpty()
+        val depth = if (rawDepth.isBlank()) {
+            ThinkingDepth.DEFAULT
+        } else {
+            rawDepth.toIntOrNull()?.let(ThinkingDepth::fromLevel)
+                ?: return HttpResponse.badRequest(
+                    "'$rawDepth' is not one of the thinking depths this build serves.",
+                    "Use depth=1, 2 or 3; omitting it collapses to the outline."
+                )
+        }
+
+        return HttpResponse.json(thinkingView.render(thinking(nodeId), depth))
     }
 
     /** Reads one `key=value` field from a form-encoded body. */

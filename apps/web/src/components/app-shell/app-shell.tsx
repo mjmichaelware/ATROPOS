@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { RouteAccent } from "@/components/navigation/route-accent";
 import { EngineStatusBanner } from "@/components/atropos/engine-status-banner";
 import { RecoveryRibbon } from "@/components/atropos/recovery-ribbon";
+import { WelcomePanel } from "@/components/welcome/welcome-panel";
 import { AppHeader } from "./app-header";
 import { AppSidebar } from "./app-sidebar";
 import { MobileNavigation } from "./mobile-navigation";
@@ -26,6 +27,9 @@ export function AppShell({ children, userEmail }: { children: ReactNode; userEma
           <main id="main-content" tabIndex={-1} className="sg-main">
             <EngineStatusBanner />
             <RecoveryRibbon />
+            {/* SUP.UX.FREE-PROVIDER-WELCOME: shown once per welcome content,
+                keyed on its hash rather than a seen flag. */}
+            <WelcomePanel />
             {children}
           </main>
         </div>

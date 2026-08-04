@@ -9,6 +9,7 @@ import {
   secondaryOf,
   type CheckpointPayload,
 } from '@/lib/checkpoint/client';
+import { ThinkingDrawer } from '@/components/thinking/thinking-drawer';
 
 /**
  * The resume rail.
@@ -119,6 +120,10 @@ export function CheckpointRail({
           inspect it to see what is missing.
         </p>
       )}
+
+      {/* HOE-C06: the reasoning behind the node this checkpoint sits on,
+          collapsed by default and expanded on this surface's own channel. */}
+      {payload.nodeId && <ThinkingDrawer nodeId={payload.nodeId} />}
 
       <div className="flex flex-wrap items-center gap-2">
         {/* Every action is live. The engine has already decided which one is
