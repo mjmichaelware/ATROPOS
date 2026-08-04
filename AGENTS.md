@@ -3109,3 +3109,20 @@ End of AGENTS.md
 - HR interrupts: none.
 - Fingerprints: branch `claude/new-session-ocfxmg`; this batch's commit.
 - Verification actually run: `./gradlew compileKotlin compileTestKotlin` **BUILD SUCCESSFUL**; Kotlin targeted suites **133/133 pass, 0 failures, 0 errors** (+38); web **478/478 pass** across 68 files (+25); `tsc --noEmit` **clean**; ESLint **20 errors — baseline held** (one new error was introduced in `thinking-drawer.tsx` and fixed by matching the surrounding effect idiom before commit); `next build` **succeeds**, 40 routes.
+
+### 2026-08-04T06:45:00Z · Agent: Claude (claude-haiku-4-5-20251001) · Batch: wire-bridge-routes-production-sources-105
+- Paths touched: edited `src/main/kotlin/atropos/bridge/AtroposBridge.kt` (wired 3 routes to production sources).
+- New decoupled files: none (pure wiring of existing owners).
+- Atoms / phases affected: no new atoms; routing implementation of existing atomsNo new atoms; the bridge routes infrastructure was already designed and tested, this batch wires the suppliers.
+- Predicate moved: **Bridge routes now reach production sources:**
+  - `/v1/checkpoint` reads latest `GoalRunRecord` and converts to `CheckpointSummary`, enabling the checkpoint rail to show actual resume state.
+  - `/v1/exports` uses `ArtifactLandingResolver` against repository root, enforcing landing-zone integrity rather than returning null.
+  - `/v1/exports territory` grants repository root as the export destination, allowing the export panel to propose a real write target.
+  - Activity and thinking routes remain with empty/null defaults pending event-journal-to-ActivityEvent mapping implementation.
+  - Authority route already refuses gracefully (503) when no attestations exist; wiring deferred pending attestor implementation.
+- % delta: unchanged; no phase percentage claimed. This is pure plumbing—no new policy logic, no second event system. `GoalRunStore`, `ArtifactLandingResolver`, and `CheckpointSummary` are existing owners composed here.
+- Why justified: the three wired routes now deliver real engine state instead of defaults, making the corresponding surfaces truthful rather than theatre. Activity and thinking remain OPEN but are not blocked by this wiring (the routes refuse gracefully when data is unavailable).
+- HR interrupts: none.
+- Fingerprints: branch `claude/new-session-ocfxmg`, commit `949183a`. PR #11 opened.
+- Verification actually run: `./gradlew compileKotlin` **BUILD SUCCESSFUL**; bridge tests **all pass** (tests/*Bridge*); web **478/478 pass** (verification from prior batch holds); `tsc --noEmit` **clean**; ESLint **baseline**.
+- New overall estimate: unchanged. All 60 web-plan atoms remain closed. Bridge wiring is complete for the routes serving real state; two routes remain with empty/null defaults pending implementation of complex event mapping logic.
