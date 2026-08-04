@@ -35,8 +35,11 @@ object AtroposBridge {
         fromEnvironment(System::getenv, activeProvider)
 
     fun server(port: Int, activeProvider: () -> String): EngineHttpServer =
-        EngineHttpServer(
-            routeTable = BridgeRoutes(activeProvider = activeProvider).table(),
-            port = port
-        )
+        BridgeRoutes(activeProvider = activeProvider).let { routes ->
+            EngineHttpServer(
+                routeTable = routes.table(),
+                port = port,
+                streamRoutes = routes.streamRoutes()
+            )
+        }
 }

@@ -4,6 +4,7 @@ package atropos.bridge
 import atropos.bridge.http.HttpResponse
 import atropos.bridge.http.HttpRoute
 import atropos.bridge.http.HttpRouteTable
+import atropos.bridge.http.HttpStreamRoute
 import atropos.bridge.http.JsonWriter
 import atropos.bridge.projection.CommandProjection
 import atropos.bridge.projection.ProjectProjection
@@ -60,11 +61,54 @@ class BridgeRoutes(
                 },
                 HttpRoute("GET", "/v1/vocabulary", "status and completion vocabularies") {
                     HttpResponse.json(vocabulary.render())
+                },
+                HttpRoute("GET", "/v1/answers/stream", "six continuous answers, pushed") {
+                    // Advertised in /v1/routes and reachable as a stream; this
+                    // request-path entry exists so a client that asks without
+                    // an event-stream connection is told what it is rather
+                    // than getting a 404 for a route that plainly exists.
+                    HttpResponse.refusal(
+                        400,
+                        "stream-required",
+                        "/v1/answers/stream is a server-sent event stream.",
+                        "Open it with an EventSource, or call GET /v1/answers for a single snapshot."
+                    )
                 }
             )
         )
         return table
     }
+
+    /**
+     * The streaming half of the bridge.
+     *
+     * Source Doc 4 calls the six answers *continuous*, and a surface that has
+     * to poll for them is showing a snapshot with a timestamp it cannot see.
+     * This pushes a fresh answer set on an interval and stops the moment the
+     * client leaves.
+     *
+     * It reuses [SixAnswersProjection] rather than shaping its own payload:
+     * a stream that disagreed with `GET /v1/answers` would be a second source
+     * of truth for the same six questions.
+     */
+    fun streamRoutes(
+        intervalMillis: Long = 2_000,
+        maxFrames: Int = Int.MAX_VALUE,
+        sleep: (Long) -> Unit = Thread::sleep
+    ): List<HttpStreamRoute> = listOf(
+        HttpStreamRoute("GET", "/v1/answers/stream", "six continuous answers, pushed") { _, sink ->
+            var frames = 0
+            // The first frame is sent immediately: a stream that waits one
+            // interval before saying anything is indistinguishable from a
+            // stream that failed to start.
+            while (sink.isOpen() && frames < maxFrames) {
+                if (!sink.emit("answers", sixAnswers.render(capture()))) return@HttpStreamRoute
+                frames += 1
+                if (frames >= maxFrames) return@HttpStreamRoute
+                sleep(intervalMillis)
+            }
+        }
+    )
 
     /**
      * Reads durable state once per request.

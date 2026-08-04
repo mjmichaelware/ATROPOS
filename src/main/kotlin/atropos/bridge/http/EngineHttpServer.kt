@@ -34,7 +34,15 @@ class EngineHttpServer(
     private val routeTable: HttpRouteTable,
     private val port: Int = DEFAULT_PORT,
     private val parser: HttpRequestParser = HttpRequestParser(),
-    private val writer: HttpResponseWriter = HttpResponseWriter()
+    private val writer: HttpResponseWriter = HttpResponseWriter(),
+    /**
+     * Long-lived routes, matched before the request routes.
+     *
+     * Separate because a stream owns its socket for as long as the client
+     * stays: giving it to the request path would leave the response writer
+     * trying to close a connection somebody else is still writing to.
+     */
+    private val streamRoutes: List<HttpStreamRoute> = emptyList()
 ) {
     private val running = AtomicBoolean(false)
     private val socketRef = AtomicReference<ServerSocket?>(null)
@@ -106,6 +114,12 @@ class EngineHttpServer(
                             "Send a well-formed HTTP/1.1 request under the size limits."
                         )
                     )
+
+                val stream = streamRoutes.firstOrNull {
+                    it.method.equals(request.method, ignoreCase = true) && it.path == request.path
+                }
+                if (stream != null) return@use serveStream(socket, request, stream)
+
                 routeTable.resolve(request)
             } catch (e: Exception) {
                 // The reason is recorded for the operator but never returned:
@@ -120,6 +134,40 @@ class EngineHttpServer(
                 )
             }
             runCatching { writer.write(socket.getOutputStream(), response) }
+        }
+    }
+
+    /**
+     * Runs a stream until the client leaves or the server stops.
+     *
+     * The socket read timeout is cleared for the duration: a stream is expected
+     * to be idle between frames, and the request-path timeout would otherwise
+     * kill a healthy connection that simply had nothing to say yet. Departure
+     * is detected by the write failing, which is the only reliable signal a
+     * server gets when a browser closes an EventSource.
+     */
+    private fun serveStream(socket: Socket, request: HttpRequest, route: HttpStreamRoute) {
+        socket.soTimeout = 0
+        val out = socket.getOutputStream()
+        writer.writeEventStreamHeader(out)
+        val sink = object : StreamSink {
+            private var open = true
+            override fun isOpen(): Boolean = open && running.get() && !socket.isClosed
+            override fun emit(event: String, data: String): Boolean {
+                if (!isOpen()) return false
+                return try {
+                    writer.writeEvent(out, event, data)
+                    true
+                } catch (_: Exception) {
+                    open = false
+                    false
+                }
+            }
+        }
+        try {
+            route.handler(request, sink)
+        } catch (e: Exception) {
+            lastErrorRef.set(e.message ?: "stream failed")
         }
     }
 

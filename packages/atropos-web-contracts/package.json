@@ -7,5 +7,19 @@
   "scripts": {
     "validate": "node scripts/validate-contracts.mjs",
     "test": "node --test tests/contracts.test.mjs"
-  }
+  },
+  "main": "./src/index.mjs",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.mjs"
+    },
+    "./session": {
+      "types": "./src/session.d.ts",
+      "default": "./src/session.mjs"
+    }
+  },
+  "files": [
+    "src"
+  ]
 }
