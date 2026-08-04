@@ -1,13 +1,8 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 'use client';
 
-import { useEffect, useState } from 'react';
-import {
-  engine,
-  type EngineAnswer,
-  type EngineAnswersPayload,
-  type EngineFailure,
-} from '@/lib/engine/client';
+import { type EngineAnswer } from '@/lib/engine/client';
+import { useAnswersStream } from '@/lib/engine/use-answers-stream';
 
 /**
  * The six continuous answers, read from the engine.
@@ -24,33 +19,7 @@ import {
  * because a placeholder that looks like an answer is indistinguishable from one.
  */
 export function EngineSixAnswers() {
-  const [payload, setPayload] = useState<EngineAnswersPayload | null>(null);
-  const [failure, setFailure] = useState<EngineFailure | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    const read = async () => {
-      const result = await engine.answers();
-      if (cancelled) return;
-      if (result.ok) {
-        setPayload(result.data);
-        setFailure(null);
-      } else {
-        setPayload(null);
-        setFailure(result);
-      }
-      setLoading(false);
-    };
-    void read();
-    // The answers are "continuous" in Doc 4's sense, so they are re-read rather
-    // than captured once at mount.
-    const timer = setInterval(read, 5_000);
-    return () => {
-      cancelled = true;
-      clearInterval(timer);
-    };
-  }, []);
+  const { payload, failure, loading, streaming } = useAnswersStream();
 
   if (loading) {
     return <p className="text-sm text-sg-neutral-600 dark:text-sg-neutral-400">Reading engine state…</p>;
@@ -106,6 +75,13 @@ export function EngineSixAnswers() {
           </div>
         ))}
       </dl>
+
+      {/* Streaming is stated rather than implied: a surface that shows a
+          one-shot read as though it were live is claiming freshness it does
+          not have. */}
+      <p className="text-xs text-sg-neutral-500 dark:text-sg-neutral-500">
+        {streaming ? 'Live — pushed by the engine.' : 'Snapshot — not receiving live updates.'}
+      </p>
 
       {/* An unreadable queue is a fault, not an idle state, and says so. */}
       {!payload.queue.readable && (
