@@ -23,8 +23,8 @@ class CommandRegistryTest {
 
     @Test
     fun help_sections_expose_alias_metadata_once_per_canonical_command() {
-        val systemSection = CommandRegistry.helpSections().first { it.category == "System" }
-        val helpEntry = systemSection.entries.first { it.command == "/help" }
+        val orientSection = CommandRegistry.helpSections().first { it.category == "Orient" }
+        val helpEntry = orientSection.entries.first { it.command == "/help" }
 
         assertTrue(helpEntry.aliases.contains("/usage"), helpEntry.aliases.joinToString(", "))
         assertTrue(helpEntry.aliases.contains("/?"), helpEntry.aliases.joinToString(", "))
@@ -49,5 +49,28 @@ class CommandRegistryTest {
             ),
             commands.filter { it.startsWith("/self-host") }.joinToString(", ")
         )
+    }
+
+    @Test
+    fun categories_are_normalized_and_keywords_resolve_to_canonical_commands() {
+        val categories = CommandRegistry.helpSections().map { it.category }
+        assertTrue(categories.all {
+            it in setOf("Orient", "Models", "Build", "Agent", "Self-host", "Authority", "Governance", "Shell", "Keys/Paid", "Observe", "Autonomous", "Session")
+        }, categories.joinToString())
+        assertTrue(CommandRegistry.search("app").any { it.command == "/factory" })
+        assertTrue(CommandRegistry.search("phase11").any { it.command == "/self-host" })
+        assertTrue(CommandRegistry.search("provider").any { it.command == "/providers" })
+    }
+
+    @Test
+    fun palette_navigator_expands_without_execution_and_enters_only_at_command_levels() {
+        val navigator = CommandPaletteNavigator()
+        assertTrue(navigator.enter() is CommandPaletteAction.Stay)
+        navigator.right()
+        assertTrue(navigator.selection.level == CommandPaletteLevel.COMMANDS)
+        val action = navigator.enter()
+        assertTrue(action is CommandPaletteAction.Execute, action.toString())
+        navigator.right()
+        assertTrue(navigator.enter() is CommandPaletteAction.Execute)
     }
 }

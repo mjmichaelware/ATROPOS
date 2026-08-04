@@ -1,0 +1,164 @@
+# Oversized Files Outside Claude Web Territory
+
+Generated from tracked files at the current repository state. This report uses physical line count, not semantic code-line count, and includes tests, scripts, generated assets, and backend files. It excludes `apps/web/**`, `apps/specgraph-foundry/apps/web/**`, build outputs, and untracked files because those are within the stated 60-atom web plan or are not tracked source. The HTTP/SSE transport candidates remain ownership-review items for W0.
+
+## Files Above 200 Lines
+
+`lines\tpath`
+
+   3989 apps/specgraph-foundry/scripts/build_execution_receipts.py
+   3214 apps/specgraph-foundry/scripts/build_routing.py
+   3025 apps/specgraph-foundry/scripts/build_hosted_release_audit.py
+   2953 apps/specgraph-foundry/scripts/build_exports.py
+   2560 apps/specgraph-foundry/src/specgraph_foundry/execution.py
+   2519 apps/specgraph-foundry/src/specgraph_foundry/exports.py
+   2257 apps/specgraph-foundry/scripts/build_planning.py
+   2247 apps/specgraph-foundry/src/specgraph_foundry/http_api/gateway.py
+   2118 apps/specgraph-foundry/scripts/build_pass0.py
+   1987 apps/specgraph-foundry/scripts/build_ingestion.py
+   1839 apps/specgraph-foundry/scripts/build_atoms.py
+   1813 apps/specgraph-foundry/src/specgraph_foundry/routing.py
+   1759 apps/specgraph-foundry/src/specgraph_foundry/atoms.py
+   1577 apps/specgraph-foundry/src/specgraph_foundry/planning.py
+   1550 apps/specgraph-foundry/scripts/hosted_release_audit.py
+   1488 apps/specgraph-foundry/src/specgraph_foundry/database.py
+   1343 apps/specgraph-foundry/src/specgraph_foundry/api.py
+   1266 apps/specgraph-foundry/src/specgraph_foundry/http_api/source_uploads.py
+   1253 apps/specgraph-foundry/src/specgraph_foundry/cli.py
+   1154 apps/specgraph-foundry/scripts/research_autopilot.py
+   1110 apps/specgraph-foundry/scripts/fix_research_integration.py
+   1033 apps/specgraph-foundry/src/specgraph_foundry/ingestion.py
+   1021 apps/specgraph-foundry/src/specgraph_foundry/http_api/server.py
+    974 apps/specgraph-foundry/src/specgraph_foundry/research.py
+    926 apps/specgraph-foundry/scripts/build_postgres_adapter.py
+    865 apps/specgraph-foundry/src/specgraph_foundry/http_api/operations.py
+    853 scripts/codex/_lib.py
+    853 apps/specgraph-foundry/scripts/build_auth_rls.py
+    805 apps/specgraph-foundry/src/specgraph_foundry/http_api/source_workspace.py
+    747 apps/specgraph-foundry/src/specgraph_foundry/http_api/durable_exports.py
+    726 apps/specgraph-foundry/src/specgraph_foundry/http_api/document_adapters.py
+    721 apps/specgraph-foundry/src/specgraph_foundry/services.py
+    710 apps/specgraph-foundry/src/specgraph_foundry/http_api/workspace.py
+    688 src/test/kotlin/atropos/core/agent/SelfHostGoalServiceTest.kt
+    599 apps/specgraph-foundry/scripts/check_hosted_audit_contracts.py
+    574 apps/specgraph-foundry/src/specgraph_foundry/compiler/__init__.py
+    532 src/test/kotlin/atropos/cli/commands/SelfHostCommandTest.kt
+    488 apps/specgraph-foundry/scripts/hosted_release_runner.py
+    485 apps/specgraph-foundry/src/specgraph_foundry/http_api/storage.py
+    469 apps/specgraph-foundry/src/specgraph_foundry/http_api/idempotency.py
+    468 src/test/kotlin/atropos/core/provider/SourceBindingContextPackerTest.kt
+    428 apps/specgraph-foundry/scripts/specgraph_env_autofix.py
+    419 apps/specgraph-foundry/src/specgraph_foundry/http_api/operation_handlers.py
+    378 apps/specgraph-foundry/scripts/repair_planning_integration.py
+    368 apps/specgraph-foundry/src/specgraph_foundry/http_api/document_security.py
+    350 src/test/kotlin/atropos/core/verification/VerifiedCompletionGateTest.kt
+    346 src/main/kotlin/atropos/core/agent/AgentRunService.kt
+    346 src/main/kotlin/atropos/core/agent/AgentContextCollector.kt
+    345 apps/specgraph-foundry/scripts/fix_sqlite_connections.py
+    339 apps/specgraph-foundry/scripts/ingestion_enrichment.py
+    338 src/main/kotlin/atropos/core/provider/ProviderActivationService.kt
+    333 src/main/kotlin/atropos/core/agent/SelfHostGoalService.kt
+    331 src/main/kotlin/atropos/core/agent/AgentService.kt
+    331 src/main/kotlin/atropos/core/agent/AgentQueueStore.kt
+    329 src/main/kotlin/atropos/core/agent/AgentRepairService.kt
+    329 src/main/kotlin/atropos/core/agent/AgentQueueService.kt
+    328 src/main/kotlin/atropos/cli/CommandRouter.kt
+    327 src/main/kotlin/atropos/core/dag/DagExecutionService.kt
+    323 src/main/kotlin/atropos/core/ProviderState.kt
+    323 src/main/kotlin/atropos/cli/ui/AgentJobRenderer.kt
+    319 src/test/kotlin/atropos/core/security/KnownSecretEgressTest.kt
+    316 src/main/kotlin/atropos/core/memory/LocalMemoryStore.kt
+    316 src/main/kotlin/atropos/cli/commands/SelfHostCommand.kt
+    313 apps/specgraph-foundry/src/specgraph_foundry/http_api/pagination.py
+    312 src/main/kotlin/atropos/core/dag/DagModels.kt
+    307 src/main/kotlin/atropos/core/recovery/RestartCoordinator.kt
+    307 src/main/kotlin/atropos/core/execution/LocalWorkQueue.kt
+    307 src/main/kotlin/atropos/core/autonomous/AutonomousOrchestrator.kt
+    303 src/main/kotlin/atropos/core/agent/SelfHostEvidenceBundleExporter.kt
+    303 apps/specgraph-foundry/src/specgraph_foundry/compiler/shacl_validation.py
+    301 src/main/kotlin/atropos/core/worktree/IsolatedWorktreeService.kt
+    299 src/main/kotlin/atropos/core/artifact/ArtifactPipeline.kt
+    292 src/main/kotlin/atropos/cli/input/CommandCompleter.kt
+    291 src/test/kotlin/atropos/core/agent/SelfHostPromotionServiceTest.kt
+    290 src/main/kotlin/atropos/ast/AstSymbolGraph.kt
+    290 scripts/codex/source-query.py
+    289 apps/specgraph-foundry/src/specgraph_foundry/http_api/handoff_workspace.py
+    284 apps/specgraph-foundry/src/specgraph_foundry/http_api/error_contract.py
+    283 scripts/codex/source-index.py
+    281 src/main/kotlin/atropos/core/agent/AgentJobStore.kt
+    281 src/main/kotlin/atropos/cli/shell/ShellCommandRunner.kt
+    280 src/main/kotlin/atropos/core/dag/DocumentIngestionService.kt
+    280 src/main/kotlin/atropos/Main.kt
+    280 apps/specgraph-foundry/src/specgraph_foundry/compiler/graph_validation.py
+    279 src/main/kotlin/atropos/cli/ui/DashboardRenderer.kt
+    278 src/test/kotlin/atropos/core/dag/DagExecutionServiceTest.kt
+    275 src/main/kotlin/atropos/cli/input/PromptState.kt
+    274 src/main/kotlin/atropos/data/cache/CodebaseDeltaTreeTracker.kt
+    274 scripts/codex/instruction-audit.sh
+    273 src/test/kotlin/atropos/cli/SelfHostInsideOutSandboxProofTest.kt
+    273 src/main/kotlin/atropos/core/verification/DeterministicChecks.kt
+    273 src/main/kotlin/atropos/cli/ui/AnsiTerminalEngine.kt
+    273 packages/design-tokens/src/tokens.json
+    263 scripts/codex/context-pack.py
+    261 src/main/kotlin/atropos/bootstrap/BootstrapAcceptanceDag.kt
+    260 src/main/kotlin/atropos/cli/ui/StatusQuotaRenderer.kt
+    257 src/main/kotlin/atropos/core/agent/AgentDaemonService.kt
+    257 apps/specgraph-foundry/src/specgraph_foundry/http_api/artifact_storage.py
+    254 src/main/kotlin/atropos/cli/ui/design/Surface.kt
+    249 src/main/kotlin/atropos/core/policy/ExecutionPolicyEngine.kt
+    242 src/test/kotlin/atropos/core/agent/GoalContinuationServiceTest.kt
+    240 src/main/kotlin/atropos/core/agent/AgentPatchApplyService.kt
+    239 src/main/kotlin/atropos/core/provider/SourceBindingFetcher.kt
+    238 src/main/kotlin/atropos/core/policy/BoundedProcessRunner.kt
+    238 src/main/kotlin/atropos/core/agent/SelfHostCandidateJarBuilder.kt
+    237 src/main/kotlin/atropos/core/agent/GoalContinuationService.kt
+    236 src/main/kotlin/atropos/core/dag/DagStore.kt
+    236 packages/design-tokens/src/customization/runtimeThemeMixin.ts
+    235 src/test/kotlin/atropos/core/evaluation/EvaluationEngineTest.kt
+    235 src/main/kotlin/atropos/cli/input/CommandCatalog.kt
+    234 src/main/kotlin/atropos/core/knowledge/SelfImprovingCompilationLoop.kt
+    234 src/main/kotlin/atropos/core/Provider.kt
+    232 src/test/kotlin/atropos/core/territory/TerritoryGrantServiceTest.kt
+    231 src/main/kotlin/atropos/core/security/TokenIsolationVault.kt
+    231 apps/specgraph-foundry/src/specgraph_foundry/compiler/statement_segmentation.py
+    229 packages/design-tokens/src/web/tokens.css
+    227 src/test/kotlin/atropos/core/agent/AgentPatchAuditorTest.kt
+    225 src/main/kotlin/atropos/dloi/DloiService.kt
+    224 src/main/kotlin/atropos/core/project/ProjectRegistry.kt
+    222 src/main/kotlin/atropos/core/agent/AgentQueueRecordCodec.kt
+    222 src/main/kotlin/atropos/cli/ui/ContextAttestationRenderer.kt
+    221 apps/specgraph-foundry/src/specgraph_foundry/compiler/structural_validation.py
+    219 src/main/kotlin/atropos/cli/commands/AgentCommand.kt
+    217 src/main/kotlin/atropos/core/agent/AgentDaemonStore.kt
+    216 src/test/kotlin/atropos/core/recovery/CrashRecoveryServiceTest.kt
+    216 src/test/kotlin/atropos/core/agent/AgentPatchBoundedAgencyTest.kt
+    216 src/main/kotlin/atropos/core/director/DirectorService.kt
+    216 src/main/kotlin/atropos/core/agent/AgentVerificationStore.kt
+    216 apps/specgraph-foundry/src/specgraph_foundry/compiler/execution_dag.py
+    214 src/main/kotlin/atropos/core/observability/RunObserver.kt
+    214 src/main/kotlin/atropos/core/autonomous/AutonomousBacklog.kt
+    213 src/test/kotlin/atropos/core/agent/AgentSmokeBoundedAgencyTest.kt
+    213 src/main/kotlin/atropos/core/provider/adapter/AdapterRouteFacade.kt
+    211 apps/specgraph-foundry/src/specgraph_foundry/http_api/observability.py
+    208 src/test/kotlin/atropos/cli/commands/AgentCommandObservabilityTest.kt
+    208 src/main/kotlin/atropos/core/memory/MemoryRecordCodec.kt
+    208 src/main/kotlin/atropos/core/agent/SupervisedSessionStore.kt
+    208 apps/specgraph-foundry/src/specgraph_foundry/http_api/worker.py
+    208 apps/specgraph-foundry/scripts/audit_env_supabase_postgres.py
+    207 src/test/kotlin/atropos/core/memory/LocalMemoryStoreTest.kt
+    207 src/main/kotlin/atropos/cli/input/RawKeyReader.kt
+    207 scripts/audit-code-completion.py
+    206 src/main/kotlin/atropos/core/factory/AppFactoryRouter.kt
+    206 apps/specgraph-foundry/src/specgraph_foundry/http_api/auth.py
+    205 src/main/kotlin/atropos/core/agent/GoalRunStore.kt
+    205 scripts/codex/fast-gate.sh
+    203 src/main/kotlin/atropos/core/evaluation/EvaluationEngine.kt
+    201 src/test/kotlin/atropos/core/agent/SelfHostCandidateJarBuilderTest.kt
+    201 src/main/kotlin/atropos/core/agent/AgentSmokeRunner.kt
+
+
+
+
+## Interpretation
+
+These paths are outside the listed web view-layer atoms. They are not automatically free territories: W0 transport, existing ATROPOS owners, and any active Claude assignment must be checked before mutation. No product code was changed by this census.

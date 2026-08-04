@@ -3004,3 +3004,90 @@ End of AGENTS.md
 - HR interrupts: the operator declined a full Gradle sweep, so per §5 only the focused `atropos.bridge.*`, `atropos.cli.ui.design.*` and `atropos.cli.input.*` suites were run. **The full Kotlin suite was therefore not re-run in this batch**; the last full run (previous batch) was 946 tests / 7 pre-existing failures, and this batch's Kotlin changes are additive plus one server file.
 - Fingerprints: branch `claude/new-session-ocfxmg`, commit `02c5085`.
 - New overall estimate: unchanged. Verification actually run: **web 340/340 pass** (baseline 304, +36 new across this and the prior batch), `tsc --noEmit` clean, ESLint **20 errors — exactly the pre-existing baseline** (warnings 42 → 55, all in new files), contracts **23/23** plus `CONTRACTS_VALIDATE_OK status=9 completion=5`, focused Kotlin suites green. Atoms 0–15 are now complete on this branch under the standard "enforced in the running surface", with the single stated exception that the full Kotlin suite was not re-run.
+### 2026-08-03T23:31:34Z · Agent: Codex GPT-5 · Batch: factory-focused-runtime-evidence-097
+- Paths/evidence: `build/test-results/test/TEST-atropos.core.factory.AppProjectGeneratorTest.xml` (8 tests, 0 failures), `TEST-atropos.core.factory.FactoryLineageTest.xml` (4 tests, 0 failures), `TEST-atropos.cli.CommandLexerTest.xml` (2 tests, 0 failures), and generated runtime project `.atropos/generated-projects/todo-factory-494695a9` with evidence `.atropos/evidence/app-manifest.txt`, Git commits `8c6b343` and `637ced2`, and export `todo-factory-494695a9.tar`.
+- Atoms / phases affected: Gate A App Factory focused verification and operator runtime path.
+- Predicate moved: the focused factory generator, lineage, and lexer tests passed; generated-project verification passed with `auditor=auditor promotion gate passed` and `completion_gate=factory completion gate passed`; the runtime-created project contains source, tests, repository kit, prompt/research/atom lineage, Git history, and exported evidence.
+- % delta: unchanged; no phase percentage claim. Compilation remains supported by the recorded `compileKotlin` and `compileTestKotlin` success at `bf85a2c`, with only documentation and shell changes after that Kotlin state.
+- Why justified: XML test reports provide exact zero-failure counts, and the generated project evidence records source/tree/verification hashes, prompt lineage, auditor decision, completion gate, branch, and commits. The earlier batch-096 full-suite result remains truthful: 783 tests ran with 7 failures; this row does not reinterpret those failures as a full-suite pass.
+- HR interrupts: none. No JAR build, install, restart proof, or force-push was performed.
+- Fingerprints: `app-manifest.txt=a4e6d64330e7e625d738d8bed54fa5f85754812f7eb9a85d919d71ab1f3ba86d`, `todo-factory-494695a9.tar=5af7685b76b054c90da1aaceccf6a7207f1a98be83a8dc403bee381e60122ec9`, `test-report-index.html=5c46c1131460a688c06ac7d2343b453910b6d3388f57ce4a8480a2aebfd68478`.
+- New overall estimate: unchanged; focused factory path verified, full-suite status remains failing/OPEN, and the working tree still has the pre-existing modified `scripts/loc-honest.sh`.
+
+### 2026-08-03T23:48:49Z · Agent: Codex GPT-5 · Batch: focused-seven-test-repair-098
+- Paths touched: `src/main/kotlin/atropos/cli/NaturalLanguageRiskGuard.kt` (+1), `src/main/kotlin/atropos/core/worktree/BoundedGitWorktreeCommandRunner.kt` (+1), `AGENTS.md` (+this row). Pre-existing `scripts/loc-honest.sh` was preserved.
+- Atoms / phases affected: Gate A factory test failures; command risk classification and typed branch safety.
+- Predicate moved: secret-access NL now recognizes `show api key`; branch arguments now accept only Git-safe ref characters, refusing shell metacharacters such as `;` before process execution. The five previously reported `AppProjectGeneratorTest` failures were already corrected in batch 095.
+- % delta: unchanged; no phase percentage claim.
+- Why the delta is justified: These are the two production defects corresponding to the remaining one-test failures in `NaturalLanguageRiskGuardTest` and `BoundedGitWorktreeCommandRunnerTest`; no factory architecture or runtime proof path was widened.
+- Verification: `git diff --check` passed. Per the operator's direction, no further test process was run in this batch; the focused command below is the required verification. Full 783-test suite remains unclaimed and was not rerun.
+- Focused command: `./gradlew test --no-daemon --max-workers=1 --tests atropos.core.factory.AppProjectGeneratorTest --tests atropos.cli.NaturalLanguageRiskGuardTest --tests atropos.core.worktree.BoundedGitWorktreeCommandRunnerTest`
+- HR interrupts: none. No JAR build or runtime proof.
+- Fingerprints: `NaturalLanguageRiskGuard.kt=ba47d32987c79a3387fcbb4d9a77dcfe7b7bb38b001097cf1aff497168b7177d`, `BoundedGitWorktreeCommandRunner.kt=a73d49f41c1a8ca5c7c7183d60f05dfbf7fe68ccb1d7cfe79fe8f861e9bd47ea`.
+- New overall estimate: unchanged; focused verification is pending operator execution.
+
+### 2026-08-04T00:06:19Z · Agent: Codex GPT-5 · Batch: focused-seven-risk-wording-099
+- Paths touched: `src/main/kotlin/atropos/cli/NaturalLanguageRiskGuard.kt` (+1), `AGENTS.md` (+this row). Existing `scripts/loc-honest.sh` remains untouched.
+- Atoms / phases affected: Gate A focused risk-guard verification.
+- Predicate moved: the secret-access classifier now recognizes the tested natural-language form `show the API key` in addition to the shorter `show api key` form.
+- % delta: unchanged; no phase percentage claim.
+- Why the delta is justified: the operator's focused run reduced the affected set to one assertion failure at `NaturalLanguageRiskGuardTest.kt:19`; this exact phrase mismatch is corrected without changing unrelated risk categories or execution policy.
+- Verification: operator-provided run recorded 15 passing and 1 failing test before this fix. `git diff --check` passed after the fix. The focused test command remains the required next verification; no full suite or JAR proof was run.
+- HR interrupts: none.
+- Fingerprints: `NaturalLanguageRiskGuard.kt=07dfa22108f276127fbca09f1ec0971fa913ba7f8b03b646830542d9935f32dc`.
+- New overall estimate: unchanged; focused verification pending rerun.
+
+### 2026-08-04T00:15:00Z · Agent: Codex GPT-5 · Batch: focused-seven-test-green-100
+- Paths/evidence: operator run of the focused affected test command; Gradle output reports `:test` `BUILD SUCCESSFUL` in 10m 5s with 4 actionable tasks (3 executed, 1 up-to-date). `AGENTS.md` (+this row).
+- Atoms / phases affected: Gate A factory test lane; `AppProjectGeneratorTest`, `NaturalLanguageRiskGuardTest`, and `BoundedGitWorktreeCommandRunnerTest`.
+- Predicate moved: the seven failures recorded in batch 096 are no longer failing in the operator's subsequent test run; the test task completed successfully after the generator, risk-phrase, and branch-validation fixes.
+- % delta: unchanged; no phase percentage claim.
+- Why justified: this row is based on the operator-provided Gradle result, not inferred from source inspection. Kotlin warnings remain non-fatal. No JAR, install, restart, or deployment proof was run.
+- HR interrupts: none.
+- Fingerprints: current risk guard `07dfa22108f276127fbca09f1ec0971fa913ba7f8b03b646830542d9935f32dc`; current branch guard `a73d49f41c1a8ca5c7c7183d60f05dfbf7fe68ccb1d7cfe79fe8f861e9bd47ea`.
+- New overall estimate: unchanged; the seven-test regression set is green, while the full acceptance campaign remains open.
+
+### 2026-08-04T00:27:05Z · Agent: Codex GPT-5 · Batch: oversized-outside-claude-web-101
+- Paths/evidence: `docs/architecture/OVERSIZED_FILES_OUTSIDE_CLAUDE_WEB_TERRITORY.md` (149 tracked files above 200 physical lines; report generated from the current tree), `AGENTS.md` (+this row).
+- Atoms / phases affected: census only; no phase percentage claim.
+- Predicate moved: the repository now has a bounded, path-directed list of oversized tracked files outside the two web trees in Claude's 60-atom plan. The report includes ATROPOS Kotlin/core, SpecGraph backend/scripts, tests, packages, and generated assets; W0 HTTP/SSE candidates are explicitly marked for ownership review.
+- % delta: unchanged.
+- Why justified: the report is a deterministic physical-line census, excludes build/untracked output, and does not infer mutation ownership. No product code was changed.
+- HR interrupts: none.
+- Fingerprints: `OVERSIZED_FILES_OUTSIDE_CLAUDE_WEB_TERRITORY.md=93efd8d7ffcc873c2d312bd227b13cdf6025da4477802fbccf9c9ab36006eddc`.
+- New overall estimate: unchanged; this is an inventory for future territory assignment.
+
+## CODE-BASE PHASE AUDIT CONTRACT — append-only longitudinal accounting
+
+- The locked 2026-07-29 percentages remain historical and immutable.
+- Current code completion is calculated only by the canonical binary obligation auditor: `python3 scripts/audit-phase-progress.py`.
+- That command runs `scripts/audit-code-completion.py`, updates the source-hashed obligation report, and appends timestamped phase, checkpoint, and overall rows to `docs/completion/ATROPOS_PHASE_PROGRESS_HISTORY.tsv`.
+- `docs/completion/ATROPOS_PHASE_PROGRESS_SNAPSHOT.md` is the wide human-readable view: each audit timestamp is a new percentage column and the latest same-metric change is rendered as `prior% -> current%`.
+- `--force` is reserved for an audit-method or authority correction on the same Git HEAD; it records a new audit column rather than overwriting a prior result.
+- `NOT_WRITTEN` means `NOT_EVIDENCED_BY_AUDIT`, not proven filesystem absence. Reports must use that wording unless a path/symbol/reachability audit proves absence.
+- Tests are necessary evidence but are not sufficient for code completion: audits also inspect source coordinates, canonical ownership, integration/reachability, edge/refusal semantics, duplicate ownership, and required artifacts. Build/JAR/install/restart evidence remains on separate verification axes.
+- The canonical tree export is refreshed by `bash scripts/generate-tree-export.sh` only after a whole phase gate or explicit Human Owner request. Runtime `.atropos/` state, nested worktrees, caches, build output, dependency trees, and JARs are excluded.
+
+### 2026-08-04T01:01:51Z · Agent: Codex GPT-5 · Batch: phase-audit-history-and-tree-102
+- Paths/evidence: `scripts/audit-code-completion.py`, `scripts/audit-phase-progress.py`, `scripts/generate-tree-export.sh`, `docs/completion/ATROPOS_CODE_OBLIGATION_REGISTRY.json`, `docs/completion/ATROPOS_CODE_COMPLETION_REPORT.md`, `docs/completion/ATROPOS_CODE_COMPLETION_BASELINE.json`, `docs/completion/ATROPOS_PHASE_PROGRESS_HISTORY.tsv`, `docs/completion/ATROPOS_PHASE_PROGRESS_SNAPSHOT.md`, `ATROPOS_TREE_PORT_EXPORT_PATHS.md`, and `AGENTS.md`.
+- Atoms / phases affected: accounting/control process; Phase 11 endpoint-manifest audit correction.
+- Predicate moved: original percentages are now preserved as a timestamped legacy column; current binary code-base percentages are appended as new timestamped columns; phase/checkpoint/overall audits are reproducible; tree export regeneration is scripted and refreshed at the Human Owner's request.
+- Current audit result: 477/576 code-base obligations written = 82.8125% overall; Phase 11 = 30/36 = 83.3333%; Checkpoint 1 = 345/396 = 87.1212%. Phase 11 installed proof remains operational `PASS` for goal `shg-7abcea5c-417`, not code credit.
+- Accuracy correction: J009 is accepted from `OperationEndpoint.kt`, `StaticOperationRegistry.kt`, and `OperationEndpointManifestTest.kt`. J010/J011 remain `NOT_EVIDENCED_BY_AUDIT`; no claim is made that related code is absent. The report now exposes `auditFinding=NOT_EVIDENCED_BY_AUDIT`.
+- % delta: code-base audit changed from 474/576 (82.2917%) to 477/576 (82.8125%) solely because J009 evidence was mapped correctly; the legacy mixed baseline remains unchanged.
+- Verification: `git diff --check` passed. No Gradle, JAR, install, restart, or deployment run was performed in this batch.
+- HR interrupts: none.
+- Fingerprints: `audit-code-completion.py=1144c206bdca2d81936006b9535e1e98862e49607ff419e7b24bc2285f44b574`, `audit-phase-progress.py=0b1c5cd6dd56f85e770fcc501100f3608d7c0aff44e05dd64efef1fb7ce505b2`, `ATROPOS_PHASE_PROGRESS_HISTORY.tsv=658238830785bfc192a9d62100574199572e503a1196571f988aabb66f539386`, `ATROPOS_PHASE_PROGRESS_SNAPSHOT.md=1f4c190b67c2cffd2010be10c43e118a9e2a965172f89604b212c75995369ba2`, `ATROPOS_TREE_PORT_EXPORT_PATHS.md=ad8fb2311e60ab021c8f761edb7c27305d3bcf6cb22de83fe7365319628d64dd`.
+- New overall estimate: current code-base metric 82.8125%; historical mixed baseline remains 42%; verification/release status remains separate.
+
+### 2026-08-04T01:23:30Z · Agent: Codex GPT-5 · Batch: binary-atom-accounting-correction-103
+- Paths/evidence: `scripts/audit-code-completion.py`, `docs/completion/ATROPOS_CODE_COMPLETION_ACCOUNTING_SPEC.md`, `docs/completion/ATROPOS_CODE_OBLIGATION_REGISTRY.json`, `docs/completion/ATROPOS_CODE_COMPLETION_REPORT.md`, `docs/completion/ATROPOS_CODE_COMPLETION_BASELINE.json`, `docs/completion/ATROPOS_PHASE_PROGRESS_HISTORY.tsv`, `docs/completion/ATROPOS_PHASE_PROGRESS_SNAPSHOT.md`, `ATROPOS_TREE_PORT_EXPORT_PATHS.md`, and this ledger.
+- Atoms / phases affected: accounting correction; Phase 19 App Factory decomposition; all phase/checkpoint snapshots recalculated under the corrected predicate scorer.
+- Predicate moved: every scored source atom now has separate binary `implementation`, `integration`, and `semantics` records; directory existence no longer counts as implementation; accepted evidence paths carry SHA-256 hashes; Phase 19 is no longer falsely reported as 0% or over-credited by one broad path set.
+- Current audit result: 496/609 code-base obligations written = 81.4450% overall; Phase 19 = 25/36 = 69.4444%; Checkpoint 1 = 341/396 = 86.1111%; Checkpoint 2 = 9/15 = 60.0000%; Checkpoint 3 = 93/132 = 70.4545%; Checkpoint 4 = 53/66 = 80.3030%.
+- Historical handling: locked legacy mixed percentages remain unchanged; the new timestamped history column is a code-base obligation metric and is not directly compared with the legacy 42% value. Byte hashes prove evidence identity, not semantic behavior; integration and edge predicates remain separate for that reason.
+- % delta: current code-base metric 84.7291% -> 81.4450% (-3.2841 pp), caused by removing broad directory/path over-credit and requiring independent predicate evidence; no implementation was deleted and no phase percentage was manually edited.
+- Verification: `python3 scripts/audit-phase-progress.py --force`, `bash scripts/generate-tree-export.sh`, and `git diff --check` passed. No Gradle, JAR, install, restart, deployment, or full test run was performed in this accounting batch.
+- HR interrupts: none.
+- Fingerprints: `audit-code-completion.py=7b4078d4529a0a9c974a37d1add067e86333dfa3fa03f9319b00a2f158ddc2ed`; `ATROPOS_CODE_COMPLETION_REPORT.md=633495be4053740288776370d0c8664d060b421f6edf78c1c23f7d513af383b3`; `ATROPOS_CODE_OBLIGATION_REGISTRY.json=3cea2a1b8d268a19740aaed6c7cea55f1a0d2d001d3793d920a423ac42d0f2f0`; `ATROPOS_PHASE_PROGRESS_HISTORY.tsv=c02ab01ca11ccb13cecee955bc198b882550feffeda44720c67fa1b887857330`; `ATROPOS_PHASE_PROGRESS_SNAPSHOT.md=8fdb12ab11646a6f76a2b250de0c4f092fe7bcc6c96d800e90613da2ec95b494`; `ATROPOS_TREE_PORT_EXPORT_PATHS.md=856e983d16edfa728c6f43aed53bfc1b22625c1ee9f8e64eb0683320ce600f78`.
+- New overall estimate: current code-base metric 81.4450%; release/operational proof status remains separate and unchanged.

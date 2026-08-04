@@ -92,6 +92,7 @@ class BoundedGitWorktreeCommandRunner(
     private fun safeBranch(value: String?): String {
         val branch = value?.trim().takeUnless { it.isNullOrBlank() }
             ?: throw IllegalArgumentException("branch name is required")
+        require(branch.matches(Regex("[A-Za-z0-9][A-Za-z0-9._/-]*"))) { "invalid branch name" }
         require(!branch.any(Char::isWhitespace) && !branch.contains("..") && !branch.contains("@{")) {
             "invalid branch name"
         }

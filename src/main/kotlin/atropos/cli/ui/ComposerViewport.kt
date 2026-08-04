@@ -4,6 +4,7 @@ package atropos.cli.ui
 import atropos.cli.ui.design.Glyphs
 import atropos.cli.ui.design.Role
 import atropos.cli.input.CommandRegistry
+import atropos.cli.input.CommandPaletteLevel
 
 data class ComposerSnapshot(
     val line: String,
@@ -116,7 +117,15 @@ class ComposerViewport(
                     CommandRegistry.search(it).isNotEmpty()
             }
             ?.let {
-                CommandPaletteQuery(it, paletteSelection)
+                CommandPaletteQuery(
+                    text = it,
+                    selectedIndex = paletteSelection,
+                    level = if (it.trim().lowercase() in setOf("?", "/?", "/help", "/usage", "help", "usage")) {
+                        CommandPaletteLevel.GROUPS
+                    } else {
+                        CommandPaletteLevel.COMMANDS
+                    }
+                )
             }
     }
 
