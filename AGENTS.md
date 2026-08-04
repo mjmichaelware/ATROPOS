@@ -1578,6 +1578,16 @@ Markup is append-only evidence, not a percentage rewrite. Percentages move only 
 - Fingerprints: `AstSymbolGraph.kt=463fbc5499606eb61640a0a8bc67ad60fcf5f9ea002ea5e550f413044299c69a`; `LocalMemoryStore.kt=d5900191b759b33518edf1d5ba57e9babe7556c3de641fab0bf3e0a256547ef7`; `MemoryRecordCodec.kt=5df09c02f895e863f907621ba31125a5a2120bd768155ebbe0518e8aac7ec544`.
 - New overall estimate: unchanged.
 
+### 2026-08-04T02:56:03Z · Agent: Codex GPT-5 · Batch: grouped-command-palette-105
+- Paths touched: `src/main/kotlin/atropos/cli/input/CommandRegistry.kt`, `src/main/kotlin/atropos/cli/input/PromptSuggestionState.kt` (compatibility defaults, palette-mode tracking), plus the existing grouped-palette integration files listed in batch `grouped-command-palette-104`.
+- Atoms / phases affected: CLI palette/help UX; no factory behavior changed.
+- Predicate moved: focused grouped-palette verification is now green; compact `phase11` keyword resolution works, legacy selection-clamping behavior remains intact outside help mode, and grouped navigation still expands without executing at L1.
+- Verification: `./gradlew test --no-daemon --max-workers=1 --tests atropos.cli.input.CommandRegistryTest --tests atropos.cli.input.PromptStateTest --tests atropos.cli.input.PromptSuggestionStateTest --tests atropos.cli.ui.CommandPaletteRendererTest --tests atropos.cli.ui.CommandRegistryRendererTest` passed. Five targeted classes passed; no full suite, JAR, install, restart, or deployment run.
+- % delta: unchanged; no phase percentage claim.
+- HR interrupts: none.
+- Fingerprints: `CommandRegistry.kt=dfa53e187f49d47ed6c678344947d3f6c334b47218c7b7b9aed1f01cea9588f6`; `PromptSuggestionState.kt=77c49169fcef98f4be4b067314856e090958d21704b852f85315ddf531b9c3f1`; `PromptState.kt=f4ec7dbbd9d92c90e7a69f07ac60a0661358c5de9c6c89dac1efb0144e8bf333`; `CommandPaletteRenderer.kt=392924c5ee78a30b801638b32ff5d7605ab2d60020e50942f68c64405d183062`; `ComposerViewport.kt=249731fbd2d86717d14f46033016898f9edd744c9e6e26baaab08ae227f66d9`; `AnsiTerminalEngine.kt=97deec9ae9f4e783a5bd0a10b9637ff8fa0e2fdd795087dc324c42754ab5b66a`; `Main.kt=927b380a7b953008bcc4ca718741691793fa11f15ec0ccd59e255bf6f455d904`; `CommandRegistryRenderer.kt=1690d92b8732e7a7c24e64d04d2886ace39b3378afd96294daa8e515a652c77b`.
+- New overall estimate: unchanged.
+
 ### 2026-08-03T11:45:00Z · Agent: Codex GPT-5 · Batch: calculator-phase0-surfaces-020
 - Paths touched: `scripts/kotlin-compat-scan.sh` (+27), `scripts/calculator-prerequisite-gate.sh` (+52), `docs/architecture/DOCKER_NATIVE_DESKTOP_ANDROID_WEB_PLAN.md` (+31), and `AGENTS.md` (+this row).
 - Atoms / phases affected: `M003`, `M006`, `N001`, `N002`, `N003`, `N004`, `N005` surface owners.
@@ -3091,3 +3101,13 @@ End of AGENTS.md
 - HR interrupts: none.
 - Fingerprints: `audit-code-completion.py=7b4078d4529a0a9c974a37d1add067e86333dfa3fa03f9319b00a2f158ddc2ed`; `ATROPOS_CODE_COMPLETION_REPORT.md=633495be4053740288776370d0c8664d060b421f6edf78c1c23f7d513af383b3`; `ATROPOS_CODE_OBLIGATION_REGISTRY.json=3cea2a1b8d268a19740aaed6c7cea55f1a0d2d001d3793d920a423ac42d0f2f0`; `ATROPOS_PHASE_PROGRESS_HISTORY.tsv=c02ab01ca11ccb13cecee955bc198b882550feffeda44720c67fa1b887857330`; `ATROPOS_PHASE_PROGRESS_SNAPSHOT.md=8fdb12ab11646a6f76a2b250de0c4f092fe7bcc6c96d800e90613da2ec95b494`; `ATROPOS_TREE_PORT_EXPORT_PATHS.md=856e983d16edfa728c6f43aed53bfc1b22625c1ee9f8e64eb0683320ce600f78`.
 - New overall estimate: current code-base metric 81.4450%; release/operational proof status remains separate and unchanged.
+
+### 2026-08-04T03:00:00Z · Agent: Codex GPT-5 · Batch: grouped-command-palette-104
+- Paths touched: `src/main/kotlin/atropos/cli/input/CommandRegistry.kt`, `src/main/kotlin/atropos/cli/ui/CommandPaletteRenderer.kt`, `src/main/kotlin/atropos/cli/ui/ComposerViewport.kt`, `src/main/kotlin/atropos/cli/ui/CommandRegistryRenderer.kt`, `src/test/kotlin/atropos/cli/input/CommandRegistryTest.kt`, `src/test/kotlin/atropos/cli/ui/CommandPaletteRendererTest.kt`, `src/test/kotlin/atropos/cli/ui/CommandRegistryRendererTest.kt`.
+- Atoms / phases affected: CLI palette/help UX; no factory behavior changed.
+- Predicate moved: command entries normalize into the twelve canonical groups; keyword search resolves factory/provider/self-host concepts; `?`, `/help`, and `/usage` render grouped L1 with pinned quick access; command rows carry risk labels; detail metadata is supported; selected-row rendering scrolls through the complete result set instead of truncating at the first visible rows.
+- Verification: first focused Gradle run found and fixed one Kotlin initialization-order error (`CATEGORY_ORDER`). The corrected focused run reached production compilation and `compileTestKotlin`, but the process ended before emitting a test report; focused tests are therefore **not claimed green**. `git diff --check` passed.
+- % delta: unchanged; no phase percentage claim.
+- HR interrupts: none. No JAR, install, restart, or full-suite run.
+- Fingerprints: `CommandRegistry.kt=17cbf45185a62ecafdaeaf2edce29a2fe5572b1b2408d6642f9c064c3a9ed551`; `CommandPaletteRenderer.kt=392924c5ee78a30b801638b32ff5d7605ab2d60020e50942f68c64405d183062`; `ComposerViewport.kt=be797c7b5c9db4e02e1495cc5a4326d56f02a440583dd97d82abefd5bbb8ba15`; `CommandRegistryTest.kt=68326dcf927384f20a2b56e704fc56212ccbea462f10c2d947a4a440eaf6c532`; `CommandPaletteRendererTest.kt=b00857fd0774cb68daa6dd81d8ca8c2f8be1a39a4e08e2c2b1fa079ca09e1428`.
+- New overall estimate: unchanged.

@@ -21,13 +21,19 @@ class ComposerViewport(
     private var cursor = 0
     private var mode = "ASK"
     private var paletteSelection = 0
+    private var paletteLevel = CommandPaletteLevel.COMMANDS
+    private var paletteGroup: String? = null
+    private var paletteCommand: String? = null
 
     fun update(
         buffer: String,
         suggestion: String,
         cursor: Int,
         mode: String,
-        paletteSelection: Int = 0
+        paletteSelection: Int = 0,
+        paletteLevel: CommandPaletteLevel = CommandPaletteLevel.COMMANDS,
+        paletteGroup: String? = null,
+        paletteCommand: String? = null
     ) {
         this.buffer = TerminalText.sanitize(buffer)
         this.suggestion = TerminalText.sanitize(suggestion).replace('\n', ' ')
@@ -37,6 +43,9 @@ class ComposerViewport(
         )
         this.mode = mode.uppercase()
         this.paletteSelection = paletteSelection.coerceAtLeast(0)
+        this.paletteLevel = paletteLevel
+        this.paletteGroup = paletteGroup
+        this.paletteCommand = paletteCommand
     }
 
     fun render(width: Int): ComposerSnapshot =
@@ -120,11 +129,9 @@ class ComposerViewport(
                 CommandPaletteQuery(
                     text = it,
                     selectedIndex = paletteSelection,
-                    level = if (it.trim().lowercase() in setOf("?", "/?", "/help", "/usage", "help", "usage")) {
-                        CommandPaletteLevel.GROUPS
-                    } else {
-                        CommandPaletteLevel.COMMANDS
-                    }
+                    level = paletteLevel,
+                    selectedGroup = paletteGroup,
+                    selectedCommand = paletteCommand
                 )
             }
     }

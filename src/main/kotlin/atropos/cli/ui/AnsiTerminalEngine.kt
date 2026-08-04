@@ -62,7 +62,9 @@ class AnsiTerminalEngine(
     fun redrawPrompt(
         buffer: String, cursor: Int, suggestion: String, inputMode: String, provider: String,
         tracker: QuotaSessionTracker, paletteSelection: Int = 0, activeScreen: String = "Dashboard",
-        activeTab: String = "tab 1", openTabCount: Int = 1
+        activeTab: String = "tab 1", openTabCount: Int = 1,
+        paletteLevel: atropos.cli.input.CommandPaletteLevel = atropos.cli.input.CommandPaletteLevel.COMMANDS,
+        paletteGroup: String? = null, paletteCommand: String? = null
     ) {
         state.mode = inputMode
         state.provider = provider
@@ -70,7 +72,7 @@ class AnsiTerminalEngine(
         state.activeScreen = activeScreen
         state.activeTab = activeTab
         state.openTabCount = openTabCount
-        composer.update(buffer = buffer, suggestion = suggestion, cursor = cursor, mode = inputMode, paletteSelection = paletteSelection)
+        composer.update(buffer = buffer, suggestion = suggestion, cursor = cursor, mode = inputMode, paletteSelection = paletteSelection, paletteLevel = paletteLevel, paletteGroup = paletteGroup, paletteCommand = paletteCommand)
         requestFrameLocked()
     }
 

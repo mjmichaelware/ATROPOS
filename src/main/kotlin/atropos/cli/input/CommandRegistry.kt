@@ -39,6 +39,10 @@ class CommandPaletteNavigator(
     var selection: CommandPaletteSelection = initial
         private set
 
+    fun reset() {
+        selection = CommandPaletteSelection()
+    }
+
     fun move(delta: Int): CommandPaletteSelection {
         val values = currentValues()
         val next = if (values.isEmpty()) 0 else {
@@ -98,6 +102,11 @@ class CommandPaletteNavigator(
 }
 
 object CommandRegistry {
+    private val CATEGORY_ORDER = listOf(
+        "Orient", "Models", "Build", "Agent", "Self-host", "Authority",
+        "Governance", "Shell", "Keys/Paid", "Observe", "Autonomous", "Session"
+    )
+
     private val catalog: List<CommandEntry> = CommandCatalog.catalog
 
     val entries: List<CommandEntry> = catalog
@@ -310,14 +319,10 @@ object CommandRegistry {
         (entry.keywords + when {
             entry.command.startsWith("/factory") -> listOf("factory", "app", "application", "project", "scaffold")
             entry.command.startsWith("/providers") || entry.command.startsWith("/use") || entry.command == "/route" -> listOf("provider", "providers", "model", "route", "routing")
-            entry.command.startsWith("/self-host") || entry.command.startsWith("/agent self-host") -> listOf("self-host", "self build", "phase 11", "inside out")
+            entry.command.startsWith("/self-host") || entry.command.startsWith("/agent self-host") -> listOf("self-host", "self build", "phase 11", "phase11", "inside out")
             entry.command.startsWith("/build") || entry.command.startsWith("/artifact") -> listOf("build", "compile", "artifact", "package")
             entry.command.startsWith("/status") || entry.command.startsWith("/verify") -> listOf("observe", "inspection", "evidence", "check")
             else -> emptyList()
         }).distinct()
 
-    private val CATEGORY_ORDER = listOf(
-        "Orient", "Models", "Build", "Agent", "Self-host", "Authority",
-        "Governance", "Shell", "Keys/Paid", "Observe", "Autonomous", "Session"
-    )
 }
