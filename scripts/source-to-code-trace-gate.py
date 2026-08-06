@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Validate the canonical source-to-code completion registry."""
 import json
+import hashlib
 import sys
 from pathlib import Path
 
@@ -15,8 +16,12 @@ REQUIRED = {
     "sourceHash",
     "canonicalOwner",
     "status",
+    "statusReason",
+    "expectedPathsOrSymbols",
     "implementationEvidencePaths",
+    "implementationEvidenceSymbols",
 }
+VALID_STATUSES = {"WRITTEN", "NOT_WRITTEN"}
 
 
 def fail(message: str) -> None:
@@ -44,24 +49,54 @@ def main() -> int:
         if obligation_id in seen:
             fail(f"duplicate obligationId {obligation_id}")
         seen.add(obligation_id)
+        status = record["status"]
+        if status not in VALID_STATUSES:
+            fail(f"{obligation_id} has invalid status {status!r}")
         source_document = ROOT / record["sourceDocument"]
         if not source_document.is_file():
             fail(f"{obligation_id} references missing source {record['sourceDocument']}")
         if not str(record["sourceCoordinate"]).strip():
             fail(f"{obligation_id} has empty source coordinate")
-        if not str(record["sourceHash"]).strip():
+        source_hash = str(record["sourceHash"]).strip().lower()
+        if not source_hash:
             fail(f"{obligation_id} has empty source hash")
+        if len(source_hash) != 64 or any(char not in "0123456789abcdef" for char in source_hash):
+            fail(f"{obligation_id} has invalid source hash")
+        actual_hash = hashlib.sha256(source_document.read_bytes()).hexdigest()
+        if actual_hash != source_hash:
+            fail(
+                f"{obligation_id} source hash mismatch for {record['sourceDocument']}: "
+                f"expected {source_hash}, observed {actual_hash}"
+            )
         if not str(record["canonicalOwner"]).strip():
             fail(f"{obligation_id} has no canonical owner")
+        expected = record["expectedPathsOrSymbols"]
+        if not isinstance(expected, list) or not expected or any(
+            not isinstance(value, str) or not value.strip() for value in expected
+        ):
+            fail(f"{obligation_id} has no expected implementation path or symbol")
+        symbols = record["implementationEvidenceSymbols"]
+        if not isinstance(symbols, list) or any(
+            not isinstance(value, str) or not value.strip() for value in symbols
+        ):
+            fail(f"{obligation_id} has invalid implementation evidence symbols")
         evidence = record["implementationEvidencePaths"]
         if not isinstance(evidence, list):
             fail(f"{obligation_id} evidence paths are not a list")
-        if record["status"] == "WRITTEN":
+        for path in evidence:
+            if not isinstance(path, str) or not path.strip():
+                fail(f"{obligation_id} has an invalid evidence path")
+            resolved = (ROOT / path).resolve()
+            if ROOT not in resolved.parents and resolved != ROOT:
+                fail(f"{obligation_id} evidence escapes repository root: {path}")
+        if status == "WRITTEN":
             if not evidence:
                 fail(f"written {obligation_id} has no implementation evidence")
             for path in evidence:
                 if not (ROOT / path).exists():
                     fail(f"written {obligation_id} references missing evidence {path}")
+        elif not str(record.get("statusReason", "")).strip():
+            fail(f"not-written {obligation_id} has no status reason")
 
     print(f"TRACEABILITY_GATE_OK obligations={len(records)}")
     return 0

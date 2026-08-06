@@ -27,6 +27,9 @@ data class CrossBoundaryRequest(
     val targetTerritoryId: String,
     val kind: InformationKind,
     val query: String,
+    val taskId: String = "",
+    val sourceCoordinates: List<String> = emptyList(),
+    val needToKnow: String = "",
     val contextSize: Int = 0,
     val requestedPaths: List<String> = emptyList(),
     val timestamp: Instant = Instant.now()
@@ -54,6 +57,9 @@ data class HrRouterAuditEntry(
     val approved: Boolean,
     val action: HrRouteAction = if (approved) HrRouteAction.APPROVED else HrRouteAction.DENIED,
     val reason: String,
+    val taskId: String = "",
+    val sourceCoordinates: List<String> = emptyList(),
+    val needToKnowSha256: String? = null,
     val requestedPaths: List<String> = emptyList(),
     val timestamp: Instant
 )

@@ -19,6 +19,40 @@ application {
     mainClass.set("atropos.MainKt")
 }
 
+val kotlinCompatScan = tasks.register<Exec>("kotlinCompatScan") {
+    group = "verification"
+    description = "Scan Kotlin sources and dependencies for non-portable or unclassified APIs."
+    commandLine(
+        "bash",
+        layout.projectDirectory.file("scripts/kotlin-compat-scan.sh").asFile.absolutePath
+    )
+}
+
+val portableSurfacePlan = tasks.register("portableSurfacePlan") {
+    group = "verification"
+    description = "Verify the canonical Docker/desktop/Android/Web migration plan is present."
+    val planFile = layout.projectDirectory.file("docs/architecture/DOCKER_NATIVE_DESKTOP_ANDROID_WEB_PLAN.md")
+    inputs.file(planFile)
+    doLast {
+        check(planFile.asFile.isFile) { "portable surface plan is missing: ${planFile.asFile}" }
+        val plan = planFile.asFile.readText()
+        listOf(
+            "src/main/kotlin/atropos/core",
+            "AtroposRepoRootLocator",
+            "Packaging and installation proof",
+            "must not create a second DAG"
+        ).forEach { marker ->
+            check(plan.contains(marker)) {
+                "portable surface plan is missing required ownership marker: $marker"
+            }
+        }
+    }
+}
+
+tasks.named("check") {
+    dependsOn(kotlinCompatScan, portableSurfacePlan)
+}
+
 tasks.jar {
     manifest {
         attributes["Main-Class"] = "atropos.MainKt"

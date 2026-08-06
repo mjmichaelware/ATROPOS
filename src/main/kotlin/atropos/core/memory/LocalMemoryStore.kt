@@ -16,6 +16,8 @@ class LocalMemoryStore(
     private val stateFile = File(root, "memory.state")
     private val files = MemoryFileStore(root, jsonlFile, stateFile, now)
     private val backends = MemoryBackendProbe()
+    private val sourceChunker = MemorySourceChunker()
+    private val vectorIndex = SqliteVecMemoryIndex(File(root, "source-vectors.db"))
 
     companion object {
         fun defaultRoot(): File = AtroposRepoRootLocator.resolve().resolve(".atropos/memory").toFile()
@@ -212,6 +214,31 @@ class LocalMemoryStore(
             compareByDescending<MemorySearchHit> { it.score }
                 .thenByDescending { it.record.createdAtEpochMs }
         ).take(limit.coerceIn(1, 100))
+    }
+
+    /** Returns redacted, content-addressed source windows for optional indexing. */
+    fun chunkSource(source: String): List<MemorySourceChunk> =
+        sourceChunker.chunk(redactionFilter.redact(source))
+
+    /**
+     * Indexes redacted source chunks only when sqlite-vec is actually usable.
+     * The caller supplies embeddings; this store never invents or treats them
+     * as an authority source. Empty or unavailable optional backends degrade
+     * to the existing local lexical/DLOI path.
+     */
+    fun indexSourceVectors(
+        chunks: List<MemorySourceChunk>,
+        embeddings: Map<String, List<Float>>
+    ): SqliteVecMemoryIndex.IndexResult {
+        if (!backends.sqliteVecAvailable()) {
+            return SqliteVecMemoryIndex.IndexResult(0, null, "sqlite-vec unavailable")
+        }
+        return vectorIndex.index(chunks, embeddings)
+    }
+
+    fun searchSourceVectors(embedding: List<Float>, limit: Int = 10): List<SqliteVecMemoryIndex.VectorHit> {
+        if (!backends.sqliteVecAvailable()) return emptyList()
+        return vectorIndex.search(embedding, limit)
     }
 
     fun compact(maxRecords: Int = 1000): MemoryState {

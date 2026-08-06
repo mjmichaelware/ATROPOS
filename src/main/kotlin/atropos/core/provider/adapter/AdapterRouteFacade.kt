@@ -74,8 +74,10 @@ class AdapterRouteFacade(
         }
 
         val status = adapter?.status()
-        val result = adapter?.let {
-            completeThroughAgency(it, task, prompt, dryRun, "route")
+        val result = when {
+            adapter != null -> completeThroughAgency(adapter, task, prompt, dryRun, "route")
+            policyDecision.queued -> queuedResult(task, policyDecision)
+            else -> null
         }
 
         val note = when {
@@ -111,12 +113,6 @@ class AdapterRouteFacade(
         }
 
         val selected = candidates.firstOrNull { it.eligible } ?: candidates.lastOrNull()
-        val selectedAdapter = selected?.provider?.id?.let { adapterRegistry.getByProviderId(it) }
-        val selectedStatus = selectedAdapter?.status()
-        val selectedResult = selectedAdapter?.let {
-            completeThroughAgency(it, task, prompt, dryRun = true, operation = "research")
-        }
-
         val decision = RoutePolicyDecision(
             task = task,
             selectedProviderId = selected?.provider?.id,
@@ -127,6 +123,13 @@ class AdapterRouteFacade(
             queued = selected == null,
             queueReason = if (selected == null) "no research adapter available" else null
         )
+        val selectedAdapter = selected?.provider?.id?.let { adapterRegistry.getByProviderId(it) }
+        val selectedStatus = selectedAdapter?.status()
+        val selectedResult = when {
+            selectedAdapter != null -> completeThroughAgency(selectedAdapter, task, prompt, dryRun = true, operation = "research")
+            decision.queued -> queuedResult(task, decision)
+            else -> null
+        }
 
         return AdapterRouteResult(
             prompt = prompt,
@@ -162,6 +165,18 @@ class AdapterRouteFacade(
             )
         }
         return adapter.complete(AdapterRequest(task = task, prompt = prompt, dryRun = dryRun))
+    }
+
+    private fun queuedResult(task: ProviderTask, decision: RoutePolicyDecision): ProviderCallResult.Queued {
+        val now = System.currentTimeMillis()
+        val retryAt = decision.skipped.mapNotNull { eligibility ->
+            eligibility.quota?.cooldownUntilEpochMs ?: eligibility.quota?.resetAtEpochMs
+        }.filter { it > now }.minOrNull() ?: now + 60_000L
+        return ProviderCallResult.Queued(
+            task = task,
+            earliestRetryEpochMs = retryAt,
+            reason = decision.queueReason ?: "no eligible provider; local queue/degraded route"
+        )
     }
 
     fun adapterStatus(): List<AdapterStatus> =

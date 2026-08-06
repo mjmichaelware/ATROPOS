@@ -26,6 +26,7 @@ class AgentService(
     private val verificationStore: AgentVerificationStore = AgentVerificationStore(collector.repoRoot),
     private val verifier: AgentVerifier = AgentVerifier(config, collector, patchStore, verificationStore),
     private val repairService: AgentRepairService = AgentRepairService(config, collector, router, selector, patchStore, verificationStore, patchExtractor),
+    private val queueService: AgentQueueService = AgentQueueService(config, collector),
     private val agencyGate: BoundedAgencyGate = BoundedAgencyGate(ExecutionPolicyEngine(collector.repoRoot)),
     private val memoryStore: LocalMemoryStore = LocalMemoryStore(collector.repoRoot.resolve(".atropos/memory").toFile()),
     private val redactionFilter: RedactionFilter = RedactionFilter()
@@ -140,6 +141,32 @@ class AgentService(
                 contextEnvelope = envelope
             )
 
+            if (result.queued) {
+                val queueRecord = queueService.enqueueUnavailable(sanitizedTask)
+                val retryAt = result.earliestRetryEpochMs?.toString() ?: "unknown"
+                val queueMessage = if (queueRecord != null) {
+                    "all eligible providers unavailable; request queued as ${queueRecord.id} " +
+                        "for retry after $retryAt"
+                } else {
+                    "all eligible providers unavailable; local fallback remains available " +
+                        "for retry after $retryAt"
+                }
+                memoryStore.rememberRoute(
+                    subjectId = queueRecord?.id ?: "local_queue",
+                    title = "agent ask queued after provider exhaustion",
+                    body = "task=$sanitizedTask\nreason=${result.queueReason ?: "provider unavailable"}\nretryAt=$retryAt",
+                    tags = listOf("agent", "ask", "queue", "degraded")
+                )
+                return AgentRunResult(
+                    providerName = "local_queue",
+                    answerText = queueMessage,
+                    contextByteCount = snapshot.byteCount,
+                    failureSummary = result.queueReason ?: "provider unavailable",
+                    sourcePackId = snapshot.sourcePackId,
+                    fetchReceiptId = snapshot.fetchReceiptId
+                )
+            }
+
             val verified = ContextAttestationService.verify(envelope, result.response)
             val displayText: String
             val providerDisplayName: String
@@ -238,6 +265,26 @@ class AgentService(
 
         return try {
             val cascade = patchCascadeRunner.run(selection.patchOrder, prompt, snapshot.text, snapshot.truncated)
+            val queued = cascade.failure?.result?.takeIf { it.queued }
+            if (queued != null) {
+                val queueRecord = queueService.enqueueUnavailable(prompt)
+                val reason = queued.queueReason ?: "all patch providers unavailable"
+                val queueMessage = queueRecord?.let { "patch queued as ${it.id}" }
+                    ?: "patch deferred; local queue persistence unavailable"
+                memoryStore.rememberRoute(
+                    subjectId = queueRecord?.id ?: "local_queue",
+                    title = "agent patch queued after provider exhaustion",
+                    body = "task=$prompt\nreason=$reason\n$queueMessage",
+                    tags = listOf("agent", "patch", "queue", "degraded")
+                )
+                return AgentPatchRunResultFactory.localFailure(
+                    providerName = "local_queue",
+                    contextByteCount = snapshot.byteCount,
+                    retryAttempted = false,
+                    failureSummary = reason,
+                    rejectionReason = queueMessage
+                )
+            }
             val acceptance = cascade.success ?: return AgentPatchRunResultFactory.localFailure(
                 providerName = cascade.failure?.result?.providerName ?: selection.patchOrder.firstOrNull() ?: "local_fallback",
                 contextByteCount = snapshot.byteCount,

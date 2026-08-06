@@ -43,5 +43,6 @@ KOTLIN
 OUT="$TMP/hierarchy-proof.jar"
 timeout "${ATROPOS_HIERARCHY_PROOF_TIMEOUT_SECONDS:-120}" kotlinc -include-runtime -d "$OUT" \
   "$TMP/HierarchyProof.kt" \
-  "$ROOT/src/main/kotlin/atropos/core/hierarchy/HierarchyModels.kt"
+  "$ROOT/src/main/kotlin/atropos/core/hierarchy/HierarchyModels.kt" \
+  "$ROOT/src/main/kotlin/atropos/core/hierarchy/HierarchyRegistry.kt"
 timeout "${ATROPOS_HIERARCHY_PROOF_TIMEOUT_SECONDS:-120}" java -jar "$OUT"

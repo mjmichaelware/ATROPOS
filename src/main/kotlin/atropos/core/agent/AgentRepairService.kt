@@ -44,7 +44,8 @@ class AgentRepairService(
     private val patchExtractor: AgentPatchExtractor = AgentPatchExtractor(),
     private val agencyGate: BoundedAgencyGate = BoundedAgencyGate(ExecutionPolicyEngine(collector.repoRoot)),
     private val memoryStore: LocalMemoryStore = LocalMemoryStore(collector.repoRoot.resolve(".atropos/memory").toFile()),
-    private val redactionFilter: RedactionFilter = RedactionFilter()
+    private val redactionFilter: RedactionFilter = RedactionFilter(),
+    private val queueService: AgentQueueService = AgentQueueService(config, collector)
 ) {
     private val validator = AgentPatchResponseValidator(patchExtractor)
     private val attempts = AgentPatchAttemptFactory(patchExtractor, validator, redactionFilter)
@@ -152,6 +153,27 @@ class AgentRepairService(
         sourceVerificationId: String
     ): AgentPatchRunResult {
         val cascade = runPatchCascade(patchOrder, repairContext)
+        val queued = cascade.failure?.result?.takeIf { it.queued }
+        if (queued != null) {
+            val task = "repair patch ${repairContext.patchId}"
+            val queueRecord = runCatching { queueService.enqueue(task) }.getOrNull()
+            val reason = queued.queueReason ?: "all repair providers unavailable"
+            val queueMessage = queueRecord?.let { "repair queued as ${it.id}" }
+                ?: "repair deferred; local queue persistence unavailable"
+            memoryStore.rememberRepair(
+                subjectId = queueRecord?.id ?: repairContext.patchId,
+                title = "agent repair queued after provider exhaustion",
+                body = "verification=$sourceVerificationId\nreason=$reason\n$queueMessage",
+                tags = listOf("agent", "repair", "queue", "degraded")
+            )
+            return AgentPatchRunResultFactory.localFailure(
+                providerName = "local_queue",
+                contextByteCount = contextByteCount,
+                retryAttempted = false,
+                failureSummary = reason,
+                rejectionReason = queueMessage
+            )
+        }
         val acceptance = cascade.success ?: return AgentPatchRunResultFactory.localFailure(
             providerName = cascade.failure?.result?.providerName
                 ?: patchOrder.firstOrNull()

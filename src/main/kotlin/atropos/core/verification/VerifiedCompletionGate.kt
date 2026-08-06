@@ -52,13 +52,26 @@ class VerifiedCompletionGate(
 
     fun evaluateFactory(input: FactoryCompletionInput): CompletionGateReport {
         val required = setOf("README.md", "LICENSE", ".gitignore", "AGENTS.md")
+        val sourceFiles = input.files.filter { it.startsWith("src/main/") && it.endsWith(".kt") }
+        val testFiles = input.files.filter { it.startsWith("src/test/") && it.endsWith(".kt") }
         val checkResults = listOf(
             GateResult(input.nodeId, input.branch == input.expectedBranch, "Factory branch isolation", "branch=${input.branch}", clock()),
-            GateResult(input.nodeId, input.files.any { it.startsWith("src/main/") }, "Factory source", "source files present", clock()),
-            GateResult(input.nodeId, input.files.any { it.startsWith("src/test/") }, "Factory tests", "test files present", clock()),
+            GateResult(input.nodeId, sourceFiles.isNotEmpty(), "Factory source", "Kotlin source files present", clock()),
+            GateResult(input.nodeId, testFiles.isNotEmpty(), "Factory tests", "Kotlin test files present", clock()),
             GateResult(input.nodeId, required.all(input.files::contains), "Factory repository kit", "standard files present", clock()),
-            GateResult(input.nodeId, input.verificationOutput.contains("APP_FACTORY_VERIFY_OK"), "Factory verification", "generated tests passed", clock()),
+            GateResult(input.nodeId, input.files.contains("verify.sh"), "Factory verifier", "bounded verifier present", clock()),
+            GateResult(
+                input.nodeId,
+                input.verificationOutput.contains("APP_FACTORY_VERIFY_OK") &&
+                    input.verificationOutput.contains("deterministic verifier:") &&
+                    input.verificationOutput.contains("passed: true"),
+                "Factory verification",
+                "generated tests and deterministic checks passed",
+                clock()
+            ),
             GateResult(input.nodeId, input.auditorAllowed, "Factory auditor", "independent audit decision", clock()),
+            GateResult(input.nodeId, input.sourceCommitId.matches(Regex("[0-9a-f]{40}")), "Factory source commit", "source commit recorded", clock()),
+            GateResult(input.nodeId, input.sourceTreeSha256.matches(Regex("[0-9a-f]{64}")), "Factory source digest", "source tree digest recorded", clock()),
             GateResult(input.nodeId, input.promptSha256.matches(Regex("[0-9a-f]{64}")) && input.researchSha256.matches(Regex("[0-9a-f]{64}")), "Factory lineage", "prompt and research hashes present", clock())
         )
         val passed = checkResults.all { it.passed }

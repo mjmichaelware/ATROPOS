@@ -48,7 +48,10 @@ class HrRouterAuditStore(
             entry.timestamp.toString(),
             entry.sourceTerritoryId,
             entry.targetTerritoryId,
-            encode(entry.requestedPaths.joinToString("|"))
+            encode(entry.requestedPaths.joinToString("|")),
+            encode(entry.taskId),
+            encode(entry.sourceCoordinates.joinToString("|")),
+            entry.needToKnowSha256.orEmpty()
         ).joinToString("\t")
 
     private fun parse(line: String): HrRouterAuditEntry? {
@@ -71,7 +74,14 @@ class HrRouterAuditStore(
                     ?.let(::decode)
                     ?.split("|")
                     ?.filter { it.isNotBlank() }
-                    ?: emptyList()
+                    ?: emptyList(),
+                taskId = parts.getOrNull(12)?.let(::decode).orEmpty(),
+                sourceCoordinates = parts.getOrNull(13)
+                    ?.let(::decode)
+                    ?.split("|")
+                    ?.filter { it.isNotBlank() }
+                    ?: emptyList(),
+                needToKnowSha256 = parts.getOrNull(14)?.takeIf { it.isNotBlank() }
             )
         }.getOrNull()
     }

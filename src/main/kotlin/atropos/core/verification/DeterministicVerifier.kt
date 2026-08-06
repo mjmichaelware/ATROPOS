@@ -92,9 +92,10 @@ class DeterministicVerifier(
                 findings += checks.checkPackagePathInvariant(path)
                 findings += checks.checkDuplicateImports(path)
                 findings += checks.checkImportReconciliation(path)
-                findings += checks.checkAstImpact(path)
             }
         }
+        val kotlinPaths = sourcePaths.filter { it.extension == "kt" && Files.isRegularFile(it) }
+        if (kotlinPaths.isNotEmpty()) findings += checks.checkAstImpact(kotlinPaths)
         findings += checks.checkCommandRegistryIntegrity()
         findings += checks.checkRedactionInvariant()
         findings += checks.checkForbiddenPaths(sourcePaths)

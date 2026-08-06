@@ -125,14 +125,15 @@ class AstSymbolGraph(
             .map { it.qualifiedName }
             .toSet()
         if (changedNames.isEmpty()) return symbols.filter { it.file.normalize() in changedFiles }
-
-        val changedSimpleNames = changedNames.map { it.substringAfterLast('.') }.toSet()
+        val changedPackages = changedNames.groupBy { it.substringBeforeLast('.', "") }
         return symbols.filter { symbol ->
             symbol.file.normalize() in changedFiles ||
                 symbol.kind == AstSymbolKind.FILE && symbol.imports.any { imported ->
-                    imported in changedNames ||
-                        imported.substringAfterLast('.') in changedSimpleNames &&
-                        imported.substringBeforeLast('.', "") == changedNames.firstOrNull()?.substringBeforeLast('.', "")
+                    val importPath = normalizeImportPath(imported)
+                    importPath in changedNames ||
+                        importPath.endsWith(".*") && changedPackages.keys.any { packageName ->
+                            importPath.removeSuffix(".*") == packageName
+                        }
                 }
         }
     }
@@ -173,24 +174,36 @@ class AstSymbolGraph(
         val simpleNameIndex = symbols
             .filter { it.kind == AstSymbolKind.CLASS || it.kind == AstSymbolKind.OBJECT || it.kind == AstSymbolKind.INTERFACE }
             .groupBy { it.name }
-        val resolutions = fileSymbol.imports.distinct().sorted().map { importPath ->
+        val resolutions = fileSymbol.imports.distinct().sorted().map { rawImport ->
+            val importPath = normalizeImportPath(rawImport)
             when {
-                importPath.endsWith(".*") -> AstImportResolution(
-                    importPath = importPath,
-                    status = AstImportStatus.WILDCARD,
-                    matches = emptyList(),
-                    expectedPathSuffixes = emptyList()
-                )
                 isExternalImport(importPath) -> AstImportResolution(
-                    importPath = importPath,
+                    importPath = rawImport,
                     status = AstImportStatus.EXTERNAL,
                     matches = emptyList(),
                     expectedPathSuffixes = emptyList()
                 )
+                importPath.endsWith(".*") -> {
+                    val packagePrefix = importPath.removeSuffix(".*") + "."
+                    val matches = symbols
+                        .filter { symbol ->
+                            symbol.kind == AstSymbolKind.CLASS ||
+                                symbol.kind == AstSymbolKind.OBJECT ||
+                                symbol.kind == AstSymbolKind.INTERFACE
+                        }
+                        .filter { it.qualifiedName.startsWith(packagePrefix) }
+                        .sortedBy { it.qualifiedName }
+                    AstImportResolution(
+                        importPath = rawImport,
+                        status = AstImportStatus.WILDCARD,
+                        matches = matches.map { it.qualifiedName },
+                        expectedPathSuffixes = matches.map { it.expectedPathSuffix }.distinct().sorted()
+                    )
+                }
                 symbolIndex.containsKey(importPath) -> {
                     val matches = symbolIndex.getValue(importPath)
                     AstImportResolution(
-                        importPath = importPath,
+                        importPath = rawImport,
                         status = if (matches.size == 1) AstImportStatus.LOCAL_EXACT else AstImportStatus.AMBIGUOUS,
                         matches = matches.map { it.qualifiedName }.sorted(),
                         expectedPathSuffixes = matches.map { it.expectedPathSuffix }.distinct().sorted()
@@ -200,7 +213,7 @@ class AstSymbolGraph(
                     val simpleName = importPath.substringAfterLast('.')
                     val matches = simpleNameIndex[simpleName].orEmpty()
                     AstImportResolution(
-                        importPath = importPath,
+                        importPath = rawImport,
                         status = when {
                             matches.isEmpty() -> AstImportStatus.UNRESOLVED
                             matches.size == 1 -> AstImportStatus.LOCAL_EXACT
@@ -287,4 +300,7 @@ class AstSymbolGraph(
             importPath.startsWith("kotlin.") ||
             importPath.startsWith("android.") ||
             importPath.startsWith("androidx.")
+
+    private fun normalizeImportPath(importPath: String): String =
+        importPath.substringBefore(" as ").trim()
 }

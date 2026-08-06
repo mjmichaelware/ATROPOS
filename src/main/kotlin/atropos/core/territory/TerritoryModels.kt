@@ -28,7 +28,7 @@ data class TerritoryAssignment(
         val normalizedPath = normalizeTerritoryPath(path) ?: return false
         if (!territoryPathWithin(normalizedPath, allowedPrefix)) return false
         if (deniedPatterns.any { normalizedPath.contains(it.replace('\\', '/')) }) return false
-        if (expiresAt != null && Instant.now().isAfter(expiresAt)) return false
+        if (expiresAt != null && !Instant.now().isBefore(expiresAt)) return false
         return true
     }
 }

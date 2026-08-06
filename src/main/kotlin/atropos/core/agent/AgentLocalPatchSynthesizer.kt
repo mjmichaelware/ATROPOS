@@ -1,5 +1,7 @@
 package atropos.core.agent
 
+import java.nio.charset.StandardCharsets
+
 class AgentLocalPatchSynthesizer(
     private val patchStore: AgentPatchStore
 ) {
@@ -34,17 +36,39 @@ class AgentLocalPatchSynthesizer(
     )
 
     private fun parseLocalCreateTask(task: String): LocalPatchRequest? {
-        val line = task.lineSequence().firstOrNull()?.trim().orEmpty()
+        val normalizedTask = task.replace("\r\n", "\n").replace('\r', '\n')
+        val lines = normalizedTask.lineSequence().toList()
+        val line = lines.firstOrNull()?.trim().orEmpty()
         if (line.isBlank()) return null
 
-        val match = Regex(
+        val oneLineMatch = Regex(
             """(?i)^create\s+(.+?)\s+containing\s+exactly\s+one\s+line:\s*(.+)$"""
-        ).find(line) ?: return null
-        val path = match.groupValues.getOrNull(1)?.trim().orEmpty()
-        val content = match.groupValues.getOrNull(2)?.trim().orEmpty()
-        if (path.isBlank() || content.isBlank()) return null
-        if (path.contains("..") || path.startsWith("/") || path.startsWith("\\")) return null
+        ).find(line)
+        val path: String
+        val content: String
+        if (oneLineMatch != null) {
+            path = oneLineMatch.groupValues.getOrNull(1)?.trim().orEmpty()
+            content = oneLineMatch.groupValues.getOrNull(2)?.trim().orEmpty()
+        } else {
+            val multiLineMatch = Regex(
+                """(?i)^create\s+(.+?)\s+containing\s*:\s*$"""
+            ).find(line) ?: return null
+            path = multiLineMatch.groupValues.getOrNull(1)?.trim().orEmpty()
+            content = lines.drop(1).joinToString("\n").trimEnd()
+        }
+
+        if (!safeRequest(path, content)) return null
         return LocalPatchRequest(path = path, content = content)
+    }
+
+    private fun safeRequest(path: String, content: String): Boolean {
+        if (path.isBlank() || content.isBlank()) return false
+        if (path.contains("..") || path.contains('\u0000') || path.startsWith("/") || path.startsWith("\\")) {
+            return false
+        }
+        if (content.contains('\u0000')) return false
+        if (content.lineSequence().count() > MAX_LOCAL_LINES) return false
+        return content.toByteArray(StandardCharsets.UTF_8).size <= MAX_LOCAL_CONTENT_BYTES
     }
 
     private fun buildCreateFileDiff(path: String, content: String): String {
@@ -56,5 +80,10 @@ class AgentLocalPatchSynthesizer(
             appendLine("@@ -0,0 +1,${safeLines.size} @@")
             safeLines.forEach { line -> appendLine("+$line") }
         }.trimEnd() + "\n"
+    }
+
+    private companion object {
+        const val MAX_LOCAL_LINES = 2_048
+        const val MAX_LOCAL_CONTENT_BYTES = 64 * 1024
     }
 }

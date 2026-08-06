@@ -8,5 +8,7 @@ data class FactoryCompletionInput(
     val verificationOutput: String,
     val auditorAllowed: Boolean,
     val promptSha256: String,
-    val researchSha256: String
+    val researchSha256: String,
+    val sourceCommitId: String = "",
+    val sourceTreeSha256: String = ""
 )

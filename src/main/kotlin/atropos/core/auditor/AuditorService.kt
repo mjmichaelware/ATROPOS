@@ -55,7 +55,7 @@ class AuditorService(
         val results = mutableListOf<AuditFinding>()
         for (t in territories) {
             if (t.expiresAt != null && Instant.now().isAfter(t.expiresAt)) {
-                results += AuditFinding(check = "territory-expiry", severity = AuditSeverity.WARNING, file = t.allowedPrefix, message = "territory ${t.id} expired at ${t.expiresAt}")
+                results += AuditFinding(check = "territory-expiry", severity = AuditSeverity.FAILURE, file = t.allowedPrefix, message = "territory ${t.id} expired at ${t.expiresAt}")
             }
             if (t.allowedPrefix.isBlank()) {
                 results += AuditFinding(check = "territory-prefix", severity = AuditSeverity.FAILURE, message = "territory ${t.id} has blank allowed prefix")
@@ -70,7 +70,19 @@ class AuditorService(
         val results = mutableListOf<AuditFinding>()
         val redactFilter = RedactionFilter()
         for (f in files) {
-            val content = try { java.io.File(f).readText() } catch (_: Exception) { continue }
+            val content: String
+            try {
+                content = java.io.File(f).readText()
+            } catch (failure: Exception) {
+                results += AuditFinding(
+                    check = "secret-scan",
+                    severity = AuditSeverity.FAILURE,
+                    file = f,
+                    message = "secret scan could not read file",
+                    evidence = failure.javaClass.simpleName
+                )
+                continue
+            }
             val report = redactFilter.report(content)
             if (report.changed) {
                 results += AuditFinding(check = "secret-scan", severity = AuditSeverity.FAILURE, file = f, message = "secrets found: ${report.summary()}", evidence = report.summary())
@@ -121,8 +133,13 @@ class AuditorService(
             } else {
                 results += AuditFinding(check = "deterministic-verify", severity = AuditSeverity.PASS, message = "no issues across ${files.size} files")
             }
-        } catch (_: Exception) {
-            results += AuditFinding(check = "deterministic-verify", severity = AuditSeverity.WARNING, message = "unable to verify ${files.size} files")
+        } catch (failure: Exception) {
+            results += AuditFinding(
+                check = "deterministic-verify",
+                severity = AuditSeverity.FAILURE,
+                message = "unable to verify ${files.size} files",
+                evidence = failure.javaClass.simpleName
+            )
         }
         findings += results
         return results

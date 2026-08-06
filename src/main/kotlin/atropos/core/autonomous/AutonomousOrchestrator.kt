@@ -6,8 +6,10 @@ import atropos.core.auditor.AuditorService
 import atropos.core.custodian.CustodianService
 import atropos.core.dag.DAGNodeState
 import atropos.core.dag.DagService
+import atropos.core.dag.DagExecutionService
 import atropos.core.dag.DocumentIngestionService
 import atropos.core.director.DirectorService
+import atropos.core.director.DirectorDagSupervisor
 import atropos.core.director.DriftSeverity
 import atropos.core.director.ObservationKind
 import atropos.core.hierarchy.HierarchyRegistry
@@ -21,8 +23,13 @@ import java.time.Instant
 class AutonomousOrchestrator(
     private val backlog: AutonomousBacklogService = AutonomousBacklogService(),
     private val dagService: DagService = DagService(),
+    private val dagExecutionService: DagExecutionService = DagExecutionService(),
     private val ingestion: DocumentIngestionService = DocumentIngestionService(),
     private val directorService: DirectorService = DirectorService(),
+    private val directorDagSupervisor: DirectorDagSupervisor = DirectorDagSupervisor(
+        dagExecution = dagExecutionService,
+        director = directorService
+    ),
     private val territoryService: TerritoryService = TerritoryService(),
     private val hrRouter: HrRouterService = HrRouterService(),
     private val auditor: AuditorService = AuditorService(),
@@ -34,7 +41,7 @@ class AutonomousOrchestrator(
     private val memory: LocalMemoryStore = LocalMemoryStore(),
     private val learningAdvisor: AutonomousLearningAdvisor = AutonomousLearningAdvisor()
 ) {
-    private val session = AutonomousSession()
+    private var session = AutonomousSession()
     private val stopConditions = mutableListOf<StopCondition>()
 
     fun init(): AutonomousSession {
@@ -123,12 +130,20 @@ class AutonomousOrchestrator(
 
     fun sessionSummary(): String = session.summary
 
-    fun addStopCondition(condition: StopCondition) { stopConditions += condition }
+    fun addStopCondition(condition: StopCondition) {
+        stopConditions += condition
+        session = session.copy(stopConditions = stopConditions.toList())
+    }
 
     fun updateStopCondition(kind: String, currentValue: Double) {
         val idx = stopConditions.indexOfFirst { it.kind == kind }
         if (idx >= 0) {
-            stopConditions[idx] = stopConditions[idx].copy(currentValue = currentValue, triggered = currentValue >= stopConditions[idx].threshold)
+            val updated = stopConditions[idx].copy(
+                currentValue = currentValue,
+                triggered = currentValue >= stopConditions[idx].threshold
+            )
+            stopConditions[idx] = updated
+            session = session.copy(stopConditions = stopConditions.toList())
         }
     }
 
@@ -204,17 +219,17 @@ class AutonomousOrchestrator(
     }
 
     private fun executeDagContinuation(task: AutonomousTask): String {
-        val allNodes = dagService.getAllNodes()
-        val runnable = dagService.runnableNodes()
-        val completed = allNodes.count { it.state == DAGNodeState.COMPLETED }
-        val failed = allNodes.count { it.state == DAGNodeState.FAILED }
-        var advanced = 0
-        for (node in runnable.take(3)) {
-            dagService.updateState(node.id, DAGNodeState.IN_PROGRESS)
-            dagService.updateState(node.id, DAGNodeState.COMPLETED)
-            advanced++
+        val dagId = task.context["dagId"]?.trim().orEmpty()
+        if (dagId.isBlank()) {
+            return "DAG continuation deferred: canonical dagId is required"
         }
-        return "DAG continuation: $advanced nodes advanced ($completed completed, $failed failed, ${runnable.size} runnable)"
+        val result = directorDagSupervisor.supervise(dagId)
+        if (!result.allowed) {
+            throw IllegalStateException("DAG continuation refused by Director: ${result.message}")
+        }
+        val execution = result.execution ?: throw IllegalStateException("DAG continuation returned no execution result")
+        return "DAG continuation supervised: ${execution.completedNodes} completed, " +
+            "${execution.failedNodes} failed, ${execution.blockedNodes} blocked"
     }
 
     private fun executeProviderFailover(task: AutonomousTask): String {
@@ -276,20 +291,32 @@ class AutonomousOrchestrator(
     }
 
     private fun executeVerificationGate(task: AutonomousTask): String {
-        val allNodes = dagService.getAllNodes()
-        val verifiable = allNodes.filter { it.state == DAGNodeState.COMPLETED }
-        return "Verification gate: $verifiable completed nodes (${allNodes.size} total)"
+        val dagId = task.context["dagId"]?.trim().orEmpty()
+        if (dagId.isBlank()) {
+            return "Verification gate deferred: canonical dagId is required"
+        }
+        val result = directorDagSupervisor.supervise(dagId)
+        if (!result.allowed) {
+            throw IllegalStateException("verification gate refused by Director: ${result.message}")
+        }
+        val execution = result.execution ?: throw IllegalStateException("verification gate returned no execution result")
+        return "Verification gate supervised: ${execution.completedNodes} completed nodes"
     }
 
     private fun executeArtifactBuild(task: AutonomousTask): String {
-        val plan = artifactPipeline.plan(task.description)
-        val report = artifactPipeline.build(plan)
-        return "Artifact build: ${report.summary}"
+        val report = artifactPipeline.createDeliverable(task.description)
+        check(report.buildFailCount == 0 && report.artifacts.isNotEmpty()) {
+            "artifact deliverable failed: ${report.summary}"
+        }
+        return "Artifact deliverable: ${report.summary}"
     }
 
     private fun updateSessionCounts(success: Boolean) {
-        val field = session::class.members.firstOrNull { it.name == "tasksAttempted" }
-        // Session fields updated via copy; simplified tracking
+        session = session.copy(
+            tasksAttempted = session.tasksAttempted + 1,
+            tasksCompleted = session.tasksCompleted + if (success) 1 else 0,
+            tasksFailed = session.tasksFailed + if (success) 0 else 1
+        )
     }
 
     private fun updateHigStopCondition() {

@@ -42,15 +42,18 @@ class HigZeroGuard(private val service: DloiService) {
      * to semantic cosine search, nearest-neighbour embedding retrieval, or any
      * other guessed-content mechanism.
      */
-    fun resolve(address: String): DloiLookupResult =
-        runCatching { service.lookup(address) }
+    fun resolve(address: String): DloiLookupResult {
+        val query = address.trim()
+        if (query.isBlank()) return DloiLookupResult.NoMatch(address, "DLOI address is blank")
+        return runCatching { service.lookup(query).validated() }
             .map { resolution -> DloiLookupResult.Resolved(resolution) }
             .getOrElse { failure ->
                 DloiLookupResult.NoMatch(
-                    query = address,
+                    query = query,
                     reason = failure.message ?: failure.javaClass.simpleName
                 )
             }
+    }
 
     /**
      * Resolve a human-readable task description to its authoritative source
@@ -61,13 +64,25 @@ class HigZeroGuard(private val service: DloiService) {
      * [DloiLookupResult.NoMatch].  No guessed section, no nearest-title
      * fuzzy fallback is ever returned.
      */
-    fun resolveTask(task: String): DloiLookupResult =
-        runCatching { service.resolveTask(task) }
+    fun resolveTask(task: String): DloiLookupResult {
+        val query = task.trim()
+        if (query.isBlank()) return DloiLookupResult.NoMatch(task, "DLOI task is blank")
+        return runCatching { service.resolveTask(query).validated() }
             .map { resolution -> DloiLookupResult.Resolved(resolution) }
             .getOrElse { failure ->
                 DloiLookupResult.NoMatch(
-                    query = task,
+                    query = query,
                     reason = failure.message ?: failure.javaClass.simpleName
                 )
             }
+    }
+
+    private fun DloiResolution.validated(): DloiResolution {
+        require(coordinate.lineStart > 0 && coordinate.lineEnd >= coordinate.lineStart) {
+            "DLOI resolution has invalid line coordinates"
+        }
+        require(excerpt.isNotBlank()) { "DLOI resolution returned an empty excerpt" }
+        require(provenance.isNotBlank()) { "DLOI resolution has no provenance" }
+        return this
+    }
 }

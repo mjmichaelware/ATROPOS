@@ -443,6 +443,381 @@ When Phase 11 self-build is fully green, ATROPOS can begin to perform this loop 
 - Next agent: read §0–§3, execute highest open atom, append §2, continue.
 
 End of AGENTS.md
+
+### 2026-08-04T05:07:45Z · Agent: Codex GPT-5 · Batch: c3-af-generic-cli-125
+- Paths touched: `src/main/kotlin/atropos/core/factory/AppSourceTemplate.kt` (+5), `src/main/kotlin/atropos/core/factory/AppProjectSpecParser.kt` (+6/-1), `AGENTS.md` (+this row).
+- Atoms / phases affected: C3-AF-01, C3-AF-03, C3-AF-05, C3-P19; general App Factory CLI behavior and branch/path identity.
+- Predicate moved: generic generated CLI applications now propagate nonzero `CliResult.exitCode` through `main`, and surface/action vocabulary such as `CLI`, `app`, and `service` is excluded from generated application identity so a prompt such as `build a CLI book` derives the project name and branch from `book` rather than the interface word.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run by instruction.
+- % delta: unchanged; no phase percentage claim.
+- Why justified: this extends the canonical `AppSourceTemplate` and `AppProjectSpecParser` owners, removes a generic false-success exit path, and prevents host/surface vocabulary from contaminating app identity without introducing a calculator-only route or another factory.
+- HR interrupts: none.
+- Fingerprints: `AppSourceTemplate.kt=cf6e2466e26d1ef603328548b6448d8b9d9164a5c51dc3c45e7a0313f2146555`; `AppProjectSpecParser.kt=aa1b7f5cec144815de9ce0216b545dc3cb220c500ed891360a447fe17188ecb1`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T20:34:00Z · Agent: Codex GPT-5 · Batch: c3-af-artifact-separation-217
+- Paths touched: `scripts/app-factory-wiring-proof.sh` (+6), `AGENTS.md` (+this row).
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-P19`; App Factory versus deliverable artifact separation.
+- Predicate moved: the canonical App Factory wiring gate now fails if `ArtifactPipeline` is referenced by the factory router or factory command handler, preserving `/artifact` as a separate deliverable path.
+- Verification: `bash -n scripts/app-factory-wiring-proof.sh` and `git diff --check` passed. No Gradle, compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim. Factory focused verification remains pending.
+- Why justified: this is a static guard on the existing routing boundary; it creates no new factory, artifact, or verification owner and prevents the previously observed false app-build path from returning.
+- HR interrupts: none.
+- Fingerprints: `app-factory-wiring-proof.sh=1fb680a1ef13a913980f5e5ef2d785ab10b2839257711f506232d6aacf0d7c93`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T20:06:00Z · Agent: Codex GPT-5 · Batch: j009-j010-j011-endpoint-parity-215
+- Paths touched: `src/main/kotlin/atropos/core/endpoint/StaticOperationRegistry.kt` (+2 endpoint entries), `scripts/endpoint-manifest-proof.sh` (+2 assertions), `AGENTS.md` (+this row).
+- Atoms / phases affected: `J009` endpoint manifest/registry parity; `J010` Director DAG supervision; `J011` bounded worker proposal surface.
+- Predicate moved: the existing endpoint registry now exposes stable, manifest-validated IDs for the wired `/agent dag supervise` and `/agent worker propose` operations, and the existing endpoint proof checks both as available canonical operations.
+- Verification: `bash -n scripts/endpoint-manifest-proof.sh` and `git diff --check` passed. No Gradle, compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim. J009/J010/J011 focused verification remains pending.
+- Why justified: this extends the sole `StaticOperationRegistry` and its existing proof; it does not add a second endpoint registry, DAG supervisor, worker synthesizer, or verifier. The command handlers already delegate to `DirectorDagSupervisor` and `WorkerCodeProposalService` respectively.
+- HR interrupts: none.
+- Fingerprints: `StaticOperationRegistry.kt=9ca3a17533c9d64bd93effaba2c443e3a97a1b05f47d4fead0d1beb31011b5e7`; `endpoint-manifest-proof.sh=85d48ccf3829519e13c2a91d32ff0e8020ee8ade23e483da2a5d6573beb160f8`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T19:40:00Z · Agent: Codex GPT-5 · Batch: c1-m003-build-scan-input-dedup-214
+- Paths touched: `scripts/kotlin-compat-scan.sh` (+3/-2), `AGENTS.md` (+this row).
+- Atoms / phases affected: `M003` KotlinCompatScan; deterministic Gradle input inventory.
+- Predicate moved: the compatibility scanner now derives its Gradle build-file input set once from the repository, eliminating duplicate root scanning and duplicate findings while retaining nested build-file coverage.
+- Verification: `bash -n scripts/kotlin-compat-scan.sh` and `git diff --check` passed. No Gradle, compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim. M003 focused verification remains pending.
+- Why justified: the change removes scanner self-duplication without changing the dependency policy or adding a second build authority.
+- HR interrupts: none.
+- Fingerprints: `kotlin-compat-scan.sh=36d718fda5baff105fe71423820ec14835d0c76281aba535a28687ad982443c4`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T19:24:00Z · Agent: Codex GPT-5 · Batch: c3-af-hierarchy-lineage-binding-213
+- Paths touched: `src/main/kotlin/atropos/core/factory/AppProjectGenerator.kt` (+1), `AGENTS.md` (+this row).
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-P19`; hierarchy dispatch lineage.
+- Predicate moved: the pre-mutation factory hierarchy dispatch now carries the canonical prompt fingerprint together with its planning DAG identity instead of an unlinked DAG-only coordinate.
+- Verification: `git diff --check` passed. No Gradle, compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim. Factory focused lineage verification remains pending.
+- Why justified: hierarchy claims now remain traceable to the user prompt artifact while continuing to use the existing `FactoryLineage`, `HierarchyRegistry`, and planning DAG owners.
+- HR interrupts: none.
+- Fingerprints: `AppProjectGenerator.kt=cb7c496a3cbc208719fbf329ccd227ed23f7192bfb1797ead195221cc5cc35e8`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T19:08:00Z · Agent: Codex GPT-5 · Batch: c1-h007-queue-boundary-decoupling-212
+- Paths touched: `src/main/kotlin/atropos/core/agent/AgentQueueService.kt` (+5), `src/main/kotlin/atropos/core/agent/AgentService.kt` (+2/-2), `AGENTS.md` (+this row).
+- Atoms / phases affected: `H007`; queue/degrade canonical ownership for ask and patch provider exhaustion.
+- Predicate moved: both ask and patch exhaustion paths now delegate nonfatal retry persistence to `AgentQueueService.enqueueUnavailable`; queue policy/refusal handling is no longer duplicated in `AgentService`.
+- Verification: `git diff --check` passed. No Gradle, compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim. H007 focused verification remains pending.
+- Why justified: the queue store/lease owner remains unchanged, while the new boundary preserves soft degradation when queue persistence is unavailable and removes parallel queue handling from the application service.
+- HR interrupts: none.
+- Fingerprints: `AgentQueueService.kt=85e48df478c3881e4a421fa3b7cca9aa350f530d8c971bd4bc6621cb9223a89f`; `AgentService.kt=b7b20bfa91b2ae7e3ae26a111bcb5da40d3ea99ee1eb658bbf5586e83995e69d`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T18:52:00Z · Agent: Codex GPT-5 · Batch: c3-af-asset-root-portability-211
+- Paths touched: `src/main/kotlin/atropos/core/assets/LocalAssetGenerator.kt` (+2), `src/main/kotlin/atropos/core/factory/AppFactoryRouter.kt` (+1), `AGENTS.md` (+this row).
+- Atoms / phases affected: `C3-AF-03`, `C3-AF-04`, `C3-P19`; portable optional asset stage.
+- Predicate moved: local factory assets now resolve under the injected ATROPOS repository root, including when the factory is constructed for a non-current working directory; the optional asset stage no longer relies on process-relative `File(".atropos/assets")`.
+- Verification: `git diff --check` passed. No Gradle, compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim. Factory focused verification remains pending.
+- Why justified: the existing asset generator remains the sole local asset owner and the router binds it to the current repository root; no second asset pipeline or workspace path was introduced.
+- HR interrupts: none.
+- Fingerprints: `LocalAssetGenerator.kt=d299cace700350861ca010d2efff8f6572a9b0c6aa6faeab38edc890afb273d5`; `AppFactoryRouter.kt=f34f6e4fbd43dc87a9e9140d98d445f2c0d4e226cb4ceb4da679a71e355f9b47`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T18:34:00Z · Agent: Codex GPT-5 · Batch: c1-f004-vector-rowid-edge-210
+- Paths touched: `src/main/kotlin/atropos/core/memory/SqliteVecMemoryIndex.kt` (+6), `AGENTS.md` (+this row).
+- Atoms / phases affected: `F004` SqliteVecIntegration; collision-safe vector indexing.
+- Predicate moved: vector indexing now detects collisions among deterministic content-derived SQLite row IDs and refuses the batch before any `INSERT OR REPLACE` can overwrite another chunk; precomputed IDs are reused for the SQL batch.
+- Verification: `git diff --check` passed. No Gradle, compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim. F004 focused edge verification remains pending.
+- Why justified: the optional sqlite-vec adapter remains subordinate to canonical local memory and now fails closed on a data-integrity hazard rather than silently replacing unrelated vector content.
+- HR interrupts: none.
+- Fingerprints: `SqliteVecMemoryIndex.kt=9baaa8cb24d51a2e04ebc9899453d79c152568c61f3c3ee25bdf2d86c649f6cf`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T18:18:00Z · Agent: Codex GPT-5 · Batch: c2-p14-proof-contract-input-209
+- Paths touched: `scripts/hr-router-proof.sh` (+13/-3), `AGENTS.md` (+this row).
+- Atoms / phases affected: `C2-P14` HR Router; audited channel proof contract.
+- Predicate moved: the canonical HR proof now supplies nonblank task IDs, source coordinates, and need-to-know scopes for approved/narrowed requests, while the credential/configuration request remains a critical denial case.
+- Verification: `bash -n scripts/hr-router-proof.sh` and `git diff --check` passed. No proof execution, Gradle, compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim. P14 focused verification remains pending.
+- Why justified: the proof now matches the existing fail-closed `HrRouterService` contract instead of weakening missing-boundary refusal to preserve an obsolete default-argument case.
+- HR interrupts: none.
+- Fingerprints: `hr-router-proof.sh=b72a926168f7dfeeed60672773bb36ba850999381531241cbc8913c636e59550`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T18:02:00Z · Agent: Codex GPT-5 · Batch: c2-p14-audit-memory-risk-edge-208
+- Paths touched: `src/main/kotlin/atropos/core/hr/HrRouterService.kt` (+12/-3), `AGENTS.md` (+this row).
+- Atoms / phases affected: `C2-P14` HR Router; bounded audit replay and deterministic risk classification.
+- Predicate moved: HR startup replay is bounded to 10,000 audit entries, and query secret detection now uses token boundaries so ordinary words such as `keyboard` do not become secret-risk matches while explicit credential terms remain protected.
+- Verification: `git diff --check` passed. No Gradle, compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim. P14 focused verification remains pending.
+- Why justified: the existing HR Router and audit store remain canonical; this prevents unbounded startup memory and substring false positives without weakening path-level secret redaction or cross-boundary refusal.
+- HR interrupts: none.
+- Fingerprints: `HrRouterService.kt=3408bd9872b1828f5cf175d94360a29caa0196b8ff77ae68dfa7d3706c5121be`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T17:46:00Z · Agent: Codex GPT-5 · Batch: c1-g006-matrix-order-edge-207
+- Paths touched: `src/main/kotlin/atropos/core/provider/ProviderFixtureMatrixService.kt` (+1), `AGENTS.md` (+this row).
+- Atoms / phases affected: `G006` ProviderFixtureMatrix; deterministic all-provider evidence ordering.
+- Predicate moved: `runAll()` now evaluates registered providers in stable provider-ID order, while each provider retains the complete normalized success/error/malformed/empty/timeout/redaction fixture set.
+- Verification: `git diff --check` passed. No Gradle, compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim. G006 focused verification remains pending.
+- Why justified: ordering is evidence determinism only; the existing provider registry, adapter registry, and fixture family owners remain unchanged.
+- HR interrupts: none.
+- Fingerprints: `ProviderFixtureMatrixService.kt=3a22136ab7bdd7e0d62722f7f8caf42632de1979b849561c14f9462cb6a02318`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T17:30:00Z · Agent: Codex GPT-5 · Batch: c1-f005-source-slice-fidelity-206
+- Paths touched: `src/main/kotlin/atropos/core/memory/MemorySourceChunker.kt` (+3/-2), `AGENTS.md` (+this row).
+- Atoms / phases affected: `F005` Chunking1024Overlap; authoritative source-slice fidelity.
+- Predicate moved: each bounded overlapping chunk now preserves the exact source substring spanning its token window instead of reconstructing text with normalized spaces; the existing SHA-256 remains over the persisted chunk bytes.
+- Verification: `git diff --check` passed. No Gradle, compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim. F005 focused edge verification remains pending.
+- Why justified: this extends the existing chunker without changing its 1,024-token/default-overlap contract and prevents whitespace normalization from weakening source-addressed memory evidence.
+- HR interrupts: none.
+- Fingerprints: `MemorySourceChunker.kt=cb9e838e235dd88f6f71218dc85822524a540822916995e93b2c5b590a68a410`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T17:14:00Z · Agent: Codex GPT-5 · Batch: c1-f002-delta-write-edge-205
+- Paths touched: `src/main/kotlin/atropos/data/storage/CloudLakehouseSyncEngine.kt` (+7/-2), `AGENTS.md` (+this row).
+- Atoms / phases affected: `F002` CloudLakehouseSyncEngine; lazy CAS delta error isolation.
+- Predicate moved: a local CAS write failure during one validated delta import is now recorded against that hash and the sync continues for remaining requested hashes; remote null and hash mismatch classifications remain distinct.
+- Verification: `git diff --check` passed. No Gradle, compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim. F002 focused verification remains pending.
+- Why justified: the existing CAS store and delta report remain the sole owners; the change preserves bounded per-object evidence and prevents one local I/O failure from falsely discarding unrelated valid imports.
+- HR interrupts: none.
+- Fingerprints: `CloudLakehouseSyncEngine.kt=9ff1cf959c7b48d43bb15440e5b9c93b5b504022d0f2614c80ef32f0a0a5e8bd`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T16:58:00Z · Agent: Codex GPT-5 · Batch: c1-d002-boundary-schema-edge-204
+- Paths touched: `src/main/kotlin/atropos/core/verifier/ConstraintSolverEvaluator.kt` (+17), `AGENTS.md` (+this row).
+- Atoms / phases affected: `D002` ConstraintSolverEvaluator; deterministic boundary fail-closed semantics.
+- Predicate moved: malformed boundary constraints now produce deterministic errors before path normalization or token evaluation; blank expected roots and empty forbidden-token policies can no longer become accidental passing constraints.
+- Verification: `git diff --check` passed. No Gradle, compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim. D002 focused verification remains pending.
+- Why justified: the existing constraint evaluator remains the sole static boundary owner and now rejects invalid policy input without adding another verifier or changing valid constraint behavior.
+- HR interrupts: none.
+- Fingerprints: `ConstraintSolverEvaluator.kt=d9d8ced9f057a9c355746c61fe8d25049d970a2c5587b85be8c61a9bc66b91ea`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T16:42:00Z · Agent: Codex GPT-5 · Batch: c3-af-lineage-wiring-edge-203
+- Paths touched: `scripts/app-factory-wiring-proof.sh` (+3), `scripts/calculator-prerequisite-gate.sh` (+3), `AGENTS.md` (+this row).
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-AF-05`, `C3-P19`; prompt-lineage and research-chain wiring.
+- Predicate moved: the canonical factory wiring gate now requires prompt artifact preparation, ordered open-atom research, and factory context-envelope creation between planning and generation; the prerequisite surface inventories those owners explicitly.
+- Verification: `bash -n scripts/app-factory-wiring-proof.sh scripts/calculator-prerequisite-gate.sh` and `git diff --check` passed. No proof execution, Gradle, compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim. Factory focused verification remains pending.
+- Why justified: this extends the existing static wiring/prerequisite owners and makes the required middle path auditable without adding a second lineage, research, DAG, or context system.
+- HR interrupts: none.
+- Fingerprints: `app-factory-wiring-proof.sh=26df568d9021ce7beb52c7723a90b72db82bbd922cb7e8244fec326f946c0b6c`; `calculator-prerequisite-gate.sh=7ccc81b611f7230fa5efa0441eda0825688adb920a799cfc18cdd44822205e61`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T16:28:00Z · Agent: Codex GPT-5 · Batch: c3-af-hierarchy-proof-callers-202
+- Paths touched: `scripts/app-factory-production-proof.sh` (+4), `scripts/app-factory-source-proof.sh` (+4), `scripts/app-factory-wiring-proof.sh` (+2), `scripts/calculator-prerequisite-gate.sh` (+2), `AGENTS.md` (+this row).
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-AF-05`, `C3-P19`; hierarchy integration proof surface.
+- Predicate moved: the existing production/source proof callers and calculator prerequisite inventory now include `FactoryHierarchyGate`, `HierarchyRegistry`, `HierarchyModels`, and `HierarchyTaskLifecycle`, and the wiring gate asserts hierarchy dispatch before the existing mutation gate.
+- Verification: `bash -n scripts/app-factory-production-proof.sh scripts/app-factory-source-proof.sh scripts/app-factory-wiring-proof.sh scripts/calculator-prerequisite-gate.sh` and `git diff --check` passed. No proof execution, Gradle, compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim. Factory focused verification remains pending.
+- Why justified: these are caller/inventory updates for the existing factory proof path, preventing a new hierarchy dependency from being omitted from source-scoped verification; no parallel proof system was introduced.
+- HR interrupts: none.
+- Fingerprints: `app-factory-production-proof.sh=dc0a0f311ec6253793320b26cb85a345737fa4ff87617754a0ad0835b7adb646`; `app-factory-source-proof.sh=686206fe9ed744485c430ed42a755eaea644c8de74d9e7f69212bb3bdd860af1`; `app-factory-wiring-proof.sh=64e4d3a9ec7d70f4c5f161d424cd62f421471381381bb85dc156621b261c2d70`; `calculator-prerequisite-gate.sh=a298769652cb5058a0e95b57d8431e08e8ad3098cc762beaa16287dde983426f`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T16:12:00Z · Agent: Codex GPT-5 · Batch: c3-af-hierarchy-lifecycle-201
+- Paths touched: `src/main/kotlin/atropos/core/factory/FactoryHierarchyGate.kt` (+127 new), `src/main/kotlin/atropos/core/factory/AppProjectGenerator.kt` (+11/-1), `AGENTS.md` (+this row).
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-AF-05`, `C3-P19`; hierarchy gates `C2-P12`, `C2-P15`, `C2-P16`.
+- Predicate moved: factory generation now enters the canonical `HierarchyRegistry` lifecycle before mutation through Human Owner → Director → Manager → Worker dispatch, starts the bounded worker task before writes, and records complete/failed task evidence around the existing independent audit and completion gate.
+- Verification: `git diff --check` passed. No Gradle, compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim. Factory and hierarchy focused verification remains pending.
+- Why justified: `FactoryHierarchyGate` is a thin adapter over the existing hierarchy owner; territory traversal, capabilities, timeout, rollback, and task-state edges are delegated to `HierarchyRegistry`, while `AppProjectMutationGate`, `AuditorService`, and `VerifiedCompletionGate` remain their existing owners.
+- HR interrupts: none.
+- Fingerprints: `FactoryHierarchyGate.kt=6f9987a2116c3e82cc4990e288c7091c15a6c5532af2722f4737d1d681723f17`; `AppProjectGenerator.kt=c577780de6de863c4036d9859b831515a29f8c6f1055a59bc1404c65eb500365`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T15:52:00Z · Agent: Codex GPT-5 · Batch: c1-f004-vector-content-integrity-200
+- Paths touched: `src/main/kotlin/atropos/core/memory/SqliteVecMemoryIndex.kt` (+13/-1), `AGENTS.md` (+this row).
+- Atoms / phases affected: `F004` SqliteVecIntegration; optional vector-index integrity edge.
+- Predicate moved: sqlite-vec indexing now refuses a chunk whose declared SHA-256 does not match its text, and search results are accepted only when the returned text re-hashes to a valid advertised chunk digest.
+- Verification: `git diff --check` passed. No Gradle, compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim. F004 focused edge verification remains pending.
+- Why justified: the existing `LocalMemoryStore` remains authoritative and the optional vector index remains an accelerator; this prevents corrupted or mismatched vector rows from becoming semantic memory evidence without introducing another memory root.
+- HR interrupts: none.
+- Fingerprints: `SqliteVecMemoryIndex.kt=5bc46da8d1408be9a92801cfca2cfdef4e443544041bf86b265e8b9ccaec45c3`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T15:38:00Z · Agent: Codex GPT-5 · Batch: c1-a005-trace-surface-edge-199
+- Paths touched: `scripts/source-to-code-trace-gate.py` (+12), `AGENTS.md` (+this row).
+- Atoms / phases affected: `A005` SourceDocToCodeTrace; C1 source-to-code trace edge.
+- Predicate moved: every obligation accepted by the canonical trace gate must now declare a non-empty expected implementation path/symbol surface and a structurally valid evidence-symbol list, in addition to its source coordinate, source hash, owner, and evidence paths.
+- Verification: `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim. A005 focused verification remains pending.
+- Why justified: this extends the existing source-to-code gate and registry contract; it does not create a second traceability registry or infer completion from documentation alone.
+- HR interrupts: none.
+- Fingerprints: `scripts/source-to-code-trace-gate.py=094517d8388b419c553c94362f4a82e6f69f6409b27f0813cb2ccee9a896b63b`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T11:54:00Z · Agent: Codex GPT-5 · Batch: c1-d002-boundary-rules-181
+- Paths touched: `src/main/kotlin/atropos/core/verifier/ConstraintSolverEvaluator.kt` (+48), `src/main/kotlin/atropos/core/verification/DeterministicChecks.kt` (+8/-4).
+- Atoms / phases affected: `D002` ConstraintSolverEvaluator; deterministic source-boundary verification.
+- Predicate moved: the canonical constraint owner now evaluates typed executable boundary rules for path containment, exact values, non-empty values, and forbidden tokens; the existing source-scope check uses the path rule instead of supplying only a precomputed boolean.
+- Verification: source inspection and `git diff --check` only. No compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; D002 focused behavior remains pending.
+- Why justified: this extends the existing deterministic evaluator and check pipeline without adding a second verifier or policy engine; findings retain the existing deterministic classification and remediation contract.
+- HR interrupts: none.
+- Fingerprints: pending final static hash after this append.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T11:36:00Z · Agent: Codex GPT-5 · Batch: c2-p14-need-to-know-audit-180
+- Paths touched: `src/main/kotlin/atropos/core/hr/HrRouterModels.kt` (+8), `src/main/kotlin/atropos/core/hr/HrRouterService.kt` (+33), `src/main/kotlin/atropos/core/hr/HrRouterAuditStore.kt` (+12), `src/main/kotlin/atropos/cli/commands/HrCommandHandler.kt` (+5).
+- Atoms / phases affected: `C2-P14` / `BP-P14-hr-audit` identity, source-coordinate, need-to-know, and durable audit semantics.
+- Predicate moved: direct HR requests now fail closed without task identity, bounded source coordinates, or a need-to-know attestation; accepted audit entries retain redacted coordinates and only an attestation SHA-256, with backward-compatible parsing for historical rows.
+- Verification: source inspection and `git diff --check` only. No compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; P14 focused behavior and wider gate evidence remains pending.
+- Why justified: the existing `HrRouterService` and `HrRouterAuditStore` remain the sole cross-boundary owner; no mailbox, second audit log, or raw-secret persistence path was introduced.
+- HR interrupts: none.
+- Fingerprints: pending final static hash after this append.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T11:18:00Z · Agent: Codex GPT-5 · Batch: c2-p16-task-lifecycle-179
+- Paths touched: `src/main/kotlin/atropos/core/hierarchy/HierarchyModels.kt` (+1 contract timeout field), `src/main/kotlin/atropos/core/hierarchy/HierarchyRegistry.kt` (+76 lifecycle/aggregation methods), `src/main/kotlin/atropos/core/hierarchy/HierarchyTaskLifecycle.kt` (+31 models).
+- Atoms / phases affected: `C2-P16` / `BP-P16-hierarchy-dispatch` task lifecycle, timeout, and result aggregation.
+- Predicate moved: dispatched hierarchy work now has a canonical state lifecycle (`DISPATCHED` → `RUNNING` → terminal), explicit timeout expiry, assignee status transitions, and bounded parent result aggregation.
+- Verification: source inspection and `git diff --check` only. No compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; P16 behavioral and wider gate evidence remains pending.
+- Why justified: lifecycle state remains in the extracted `HierarchyRegistry` owner and uses the existing `HierarchyDispatchContract`; no second queue, DAG, territory, verifier, or result store was introduced.
+- HR interrupts: none.
+- Fingerprints: pending final static hash after this append.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T11:02:00Z · Agent: Codex GPT-5 · Batch: c2-p16-registry-atomization-178
+- Paths touched: `src/main/kotlin/atropos/core/hierarchy/HierarchyRegistry.kt` (+117 new), `src/main/kotlin/atropos/core/hierarchy/HierarchyModels.kt` (-111; contract/result models retained), `scripts/hierarchy-dispatch-proof.sh` (+1 source input).
+- Atoms / phases affected: `C2-P16` / `BP-P16-hierarchy-dispatch` implementation and owner-path integration.
+- Predicate moved: hierarchy membership, role transition, territory-narrowing dispatch, and escalation state now have a canonical `HierarchyRegistry.kt` owner instead of being mixed into the model file; the existing proof script now composes both canonical files.
+- Verification: source inspection, `git diff --check`, and shell syntax inspection only. No compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; P16 behavioral and wider gate evidence remains pending.
+- Why justified: this is a relocation/decoupling of the existing registry implementation, not a second hierarchy system; public package symbols and behavior are preserved, and the proof input was updated so the existing canonical proof does not silently omit the moved owner.
+- HR interrupts: none.
+- Fingerprints: `HierarchyRegistry.kt=08ff63ce7686404171b2c794eb41321cb80500a887630611a271a80e298918ba`; `HierarchyModels.kt=7614c920af256c40bc32611f804d82e2d687f65dd9d34fe319b014d0967fd5aa`; `hierarchy-dispatch-proof.sh` fingerprint pending final static check.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T05:08:25Z · Agent: Codex GPT-5 · Batch: c1-f002-cas-integrity-edge-126
+- Paths touched: `src/main/kotlin/atropos/data/storage/CloudLakehouseSyncEngine.kt` (+8/-3), `AGENTS.md` (+this row).
+- Atoms / phases affected: F002 lazy CAS delta replication, Phase 9 persistent memory/lakehouse integrity.
+- Predicate moved: existing CAS objects are now accepted as present only after their bytes hash to the requested content address; retrieval rejects corrupted objects, and a corrupted local object is eligible for delta repair instead of being silently skipped.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run by instruction.
+- % delta: unchanged; no phase percentage claim.
+- Why justified: the existing `CloudLakehouseSyncEngine` remains the sole CAS owner; this closes integrity behavior in place without adding another store or transport.
+- HR interrupts: none.
+- Fingerprints: `CloudLakehouseSyncEngine.kt=65ff3e89a8b96aa31b45d69e2a23fdf724778dd576cd8b91ba0c9e9d093e50c2`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T05:10:01Z · Agent: Codex GPT-5 · Batch: c3-af-scoped-research-threshold-127
+- Paths touched: `src/main/kotlin/atropos/core/factory/FactoryResearchService.kt` (+6/-2), `AGENTS.md` (+this row).
+- Atoms / phases affected: C3-AF-03, C3-AF-05, C3-P19 prompt-lineage research scope.
+- Predicate moved: short-term and long-term factory memory channels now require both existing user/project/repository scope and a positive configurable relevance threshold before returning a hit; invalid thresholds are rejected deterministically.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run by instruction.
+- % delta: unchanged; no phase percentage claim.
+- Why justified: this tightens the existing `LocalMemoryStore` search boundary without creating another memory root, global knowledge dump, or provider retrieval path.
+- HR interrupts: none.
+- Fingerprints: `FactoryResearchService.kt=621775d65c15d9176104b0209dd6b7bc1689f06be4947a425d7ecc0b7496515b`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T05:10:45Z · Agent: Codex GPT-5 · Batch: c3-af-factory-rollback-128
+- Paths touched: `src/main/kotlin/atropos/core/factory/AppProjectGenerator.kt` (+10/-1), `AGENTS.md` (+this row).
+- Atoms / phases affected: C3-AF-03, C3-AF-04, C3-AF-05, C3-P19 bounded mutation and rollback.
+- Predicate moved: failed generated verification, audit, gate, Git, or evidence work now removes only the current generated-project target before rethrowing, so a failed run cannot leave a partial repository that blocks deterministic retry.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run by instruction.
+- % delta: unchanged; no phase percentage claim.
+- Why justified: rollback is attached to the existing `AppProjectGenerator` transaction and is constrained to its already-authorized `.atropos/generated-projects/<app>-<id>` target; no repository-wide destructive cleanup or second rollback owner was introduced.
+- HR interrupts: none.
+- Fingerprints: `AppProjectGenerator.kt=70199a9659a614eaac0be8163800ac6aab3e240bbbba27bc294235a35c94d732`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T05:11:13Z · Agent: Codex GPT-5 · Batch: c3-af-factory-rollback-hardening-129
+- Paths touched: `src/main/kotlin/atropos/core/factory/AppProjectGenerator.kt` (+2), `AGENTS.md` (+this row).
+- Atoms / phases affected: C3-AF-03, C3-AF-04, C3-AF-05, C3-P19 rollback evidence.
+- Predicate moved: rollback cleanup failures are now suppressed onto the original generation failure instead of replacing the authoritative gate, audit, verification, or Git error.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run by instruction.
+- % delta: unchanged; no phase percentage claim.
+- Why justified: this keeps failure truth stable while retaining cleanup diagnostics inside the existing factory transaction; no new error or rollback owner was added.
+- HR interrupts: none.
+- Fingerprints: `AppProjectGenerator.kt=f4989faf05598e9ef88aa40805be332b545ddf804a1978837c904d6c4ac89c24`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T05:11:58Z · Agent: Codex GPT-5 · Batch: c3-af-atomic-generated-writes-130
+- Paths touched: `src/main/kotlin/atropos/core/factory/AppProjectGenerator.kt` (+23/-1), `AGENTS.md` (+this row).
+- Atoms / phases affected: C3-AF-03, C3-AF-04, C3-AF-05, C3-P19 bounded source mutation.
+- Predicate moved: generated project files are now written to bounded temporary files and atomically replaced, with temporary cleanup on both successful replacement and failure; direct partial file writes are no longer the normal mutation path.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run by instruction.
+- % delta: unchanged; no phase percentage claim.
+- Why justified: atomic writes compose with the existing mutation gate and rollback boundary, preserving one factory owner and avoiding a second file-mutation subsystem.
+- HR interrupts: none.
+- Fingerprints: `AppProjectGenerator.kt=3867911af87420ffaa31b8079ff04c433b8ce669007dab1cb54fa5debda09b2e`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T05:14:45Z · Agent: Codex GPT-5 · Batch: c1-a005-source-hash-gate-131
+- Paths touched: `scripts/source-to-code-trace-gate.py` (+11/-1), `AGENTS.md` (+this row).
+- Atoms / phases affected: A005 source-to-code trace, Phase 0 authority/evidence control.
+- Predicate moved: the canonical trace gate now validates every source hash as a 64-character lowercase SHA-256 digest and compares it to the current referenced authority bytes before accepting the obligation record.
+- Verification: production-only review and `git diff --check` passed. Current registry/source hashes were compared read-only and showed no mismatches. No compile, test, JAR, install, restart, deployment, or runtime proof was run by instruction.
+- % delta: unchanged; no phase percentage claim.
+- Why justified: this strengthens the existing source-to-code gate and does not rewrite the registry, authority documents, or create a parallel trace system. A005 edge evidence remains unclaimed until its required focused proof is run.
+- HR interrupts: none.
+- Fingerprints: `source-to-code-trace-gate.py=f46f616a30e7d4dbcaeb27a08835b8d595160ec439b96be75740f0b2b1295259`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T05:15:59Z · Agent: Codex GPT-5 · Batch: c3-af-generic-prompt-spans-132
+- Paths touched: `src/main/kotlin/atropos/core/factory/FactoryLineage.kt` (+11/-8), `AGENTS.md` (+this row).
+- Atoms / phases affected: C3-AF-01, C3-AF-03, C3-AF-05, C3-P19 general prompt lineage.
+- Predicate moved: feature prompt spans are now classified from the parsed app name and feature list for every app request; the production lineage classifier no longer hardcodes calculator, notes, book, or todo as the only feature vocabulary.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run by instruction.
+- % delta: unchanged; no phase percentage claim.
+- Why justified: this keeps the existing prompt-artifact and span-lineage owner while making the same pipeline applicable to arbitrary app domains; calculator remains only a fixture.
+- HR interrupts: none.
+- Fingerprints: `FactoryLineage.kt=fdd695a57f39f5c8db8ad494720eb27e0f1860f59c2b6117b17196997728f7bd`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T05:16:45Z · Agent: Codex GPT-5 · Batch: c3-af-app-intent-priority-133
+- Paths touched: `src/main/kotlin/atropos/core/factory/AppFactoryRouter.kt` (+10), `AGENTS.md` (+this row).
+- Atoms / phases affected: C3-AF-01, C3-AF-03, C3-P19 general NL factory routing.
+- Predicate moved: app-action recognition now takes precedence over incidental words such as `test` or `verify`; a request like `build a notes app with tests` remains an `app_build` factory run while UI/API cues retain their specialized plan labels.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run by instruction.
+- % delta: unchanged; no phase percentage claim.
+- Why justified: this composes the canonical `AppActionRegistry` with the existing factory classifier and prevents acceptance requirements from misrouting a general app request to validation-only behavior.
+- HR interrupts: none.
+- Fingerprints: `AppFactoryRouter.kt=56dc3ac4db78f80395d53035795787efb476fb25b8d762c7a9119622bc7a1d5e`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T05:17:49Z · Agent: Codex GPT-5 · Batch: c1-b002-b003-impact-wiring-134
+- Paths touched: `src/main/kotlin/atropos/core/verification/DeterministicChecks.kt` (+16/-14), `src/main/kotlin/atropos/core/verification/DeterministicVerifier.kt` (+3), `AGENTS.md` (+this row).
+- Atoms / phases affected: B002 AST impact extraction, B003 deterministic namespace/import impact wiring, D002 deterministic verification integration.
+- Predicate moved: deterministic verification now sends the complete changed Kotlin path set through `AstSymbolGraph.impactOfPaths`, including local import dependents, and normalizes paths before matching graph symbols; it no longer uses the older changed-file-only impact call.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run by instruction.
+- % delta: unchanged; no phase percentage claim.
+- Why justified: this composes the existing AST graph and deterministic verifier owners and does not introduce a second graph or verifier. B002/B003 edge evidence remains unclaimed until focused verification is run.
+- HR interrupts: none.
+- Fingerprints: `DeterministicChecks.kt=39de43fb217fbb6bda69820e21a03d77812dc2dc8eeed322c9c9b9315f30d809`; `DeterministicVerifier.kt=666fd8014e8fe490823723cc1774b6663328b0140030e0e402d2230473cf3f1e`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T05:18:42Z · Agent: Codex GPT-5 · Batch: c3-af-deterministic-gate-wiring-135
+- Paths touched: `src/main/kotlin/atropos/core/factory/AppProjectGenerator.kt` (+13), `AGENTS.md` (+this row).
+- Atoms / phases affected: C3-AF-04, C3-AF-05, C3-P19; B002/B003/D002 canonical verifier handoff.
+- Predicate moved: after generated source tests pass, the factory now runs the existing `DeterministicVerifier` against the generated project Kotlin tree and refuses promotion on deterministic errors; its rendered result is included in the existing bounded verification evidence hash and factory completion input.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run by instruction.
+- % delta: unchanged; no phase percentage claim.
+- Why justified: this removes the generator-only verification bypass by composing the existing AST, deterministic-check, audit, and completion-gate owners; no second verifier was created. Runtime compatibility of the generated verifier invocation remains unproven until the focused gate is run.
+- HR interrupts: none.
+- Fingerprints: `AppProjectGenerator.kt=b1687c1b701260496c3e4e6a2f78096f3d35a96367431644e8241cf606065a4f`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T05:20:07Z · Agent: Codex GPT-5 · Batch: c3-af-post-research-confidence-136
+- Paths touched: `src/main/kotlin/atropos/core/factory/FactoryResearchService.kt` (+11), `src/main/kotlin/atropos/core/factory/FactoryLineage.kt` (+5/-2), `AGENTS.md` (+this row).
+- Atoms / phases affected: C3-AF-03, C3-AF-04, C3-P19 ordered soft-fail research and confidence gating.
+- Predicate moved: provider-suggestion decisions now occur after the existing short-term, long-term, DLOI/lakehouse, and bounded-fetch channels have produced a preliminary report; `FactoryLineage` supplies a deterministic confidence predicate, avoiding suggestions when research has already raised confidence above threshold.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run by instruction.
+- % delta: unchanged; no phase percentage claim.
+- Why justified: this extends the current research report flow without adding another retrieval or provider owner, and preserves soft-fail markers when suggestions are unavailable.
+- HR interrupts: none.
+- Fingerprints: `FactoryResearchService.kt=c79ba8a93dd57a70d71f800625dd5c25079ea9082f2c35f6bad73b049115b8a4`; `FactoryLineage.kt=8c7b3cf984ad11d7d897072b73fb3105667b600b2e530c51b9985f9109d79ab7`.
+- New overall estimate: unchanged; focused verification remains pending.
+
 - New overall estimate: <recalculated weighted overall, or “unchanged”>
 - Fingerprints: <content hashes or git short-SHAs of changed files if available>
 Oldest entries stay. Newest entries go at the bottom. Never delete or rewrite prior ledger rows.
@@ -1576,16 +1951,6 @@ Markup is append-only evidence, not a percentage rewrite. Percentages move only 
 - Why justified: `AstSymbolGraph.findCallers` now searches the existing lexical mask rather than raw source, preventing non-code mentions from becoming caller evidence. Memory schema 3 binds all authority-relevant metadata through `MemoryRecordCodec.recordSha256`, while schema 1/2 records retain their prior verification algorithm for restart compatibility. Focused Gradle contracts passed: `AstSymbolGraphTest` 4/4 and `LocalMemoryStoreTest` 5/5, both with zero failures.
 - HR interrupts: none; one coherent foundation lane, no overlapping writer territory.
 - Fingerprints: `AstSymbolGraph.kt=463fbc5499606eb61640a0a8bc67ad60fcf5f9ea002ea5e550f413044299c69a`; `LocalMemoryStore.kt=d5900191b759b33518edf1d5ba57e9babe7556c3de641fab0bf3e0a256547ef7`; `MemoryRecordCodec.kt=5df09c02f895e863f907621ba31125a5a2120bd768155ebbe0518e8aac7ec544`.
-- New overall estimate: unchanged.
-
-### 2026-08-04T02:56:03Z · Agent: Codex GPT-5 · Batch: grouped-command-palette-105
-- Paths touched: `src/main/kotlin/atropos/cli/input/CommandRegistry.kt`, `src/main/kotlin/atropos/cli/input/PromptSuggestionState.kt` (compatibility defaults, palette-mode tracking), plus the existing grouped-palette integration files listed in batch `grouped-command-palette-104`.
-- Atoms / phases affected: CLI palette/help UX; no factory behavior changed.
-- Predicate moved: focused grouped-palette verification is now green; compact `phase11` keyword resolution works, legacy selection-clamping behavior remains intact outside help mode, and grouped navigation still expands without executing at L1.
-- Verification: `./gradlew test --no-daemon --max-workers=1 --tests atropos.cli.input.CommandRegistryTest --tests atropos.cli.input.PromptStateTest --tests atropos.cli.input.PromptSuggestionStateTest --tests atropos.cli.ui.CommandPaletteRendererTest --tests atropos.cli.ui.CommandRegistryRendererTest` passed. Five targeted classes passed; no full suite, JAR, install, restart, or deployment run.
-- % delta: unchanged; no phase percentage claim.
-- HR interrupts: none.
-- Fingerprints: `CommandRegistry.kt=dfa53e187f49d47ed6c678344947d3f6c334b47218c7b7b9aed1f01cea9588f6`; `PromptSuggestionState.kt=77c49169fcef98f4be4b067314856e090958d21704b852f85315ddf531b9c3f1`; `PromptState.kt=f4ec7dbbd9d92c90e7a69f07ac60a0661358c5de9c6c89dac1efb0144e8bf333`; `CommandPaletteRenderer.kt=392924c5ee78a30b801638b32ff5d7605ab2d60020e50942f68c64405d183062`; `ComposerViewport.kt=249731fbd2d86717d14f46033016898f9edd744c9e6e26baaab08ae227f66d9`; `AnsiTerminalEngine.kt=97deec9ae9f4e783a5bd0a10b9637ff8fa0e2fdd795087dc324c42754ab5b66a`; `Main.kt=927b380a7b953008bcc4ca718741691793fa11f15ec0ccd59e255bf6f455d904`; `CommandRegistryRenderer.kt=1690d92b8732e7a7c24e64d04d2886ace39b3378afd96294daa8e515a652c77b`.
 - New overall estimate: unchanged.
 
 ### 2026-08-03T11:45:00Z · Agent: Codex GPT-5 · Batch: calculator-phase0-surfaces-020
@@ -3111,3 +3476,971 @@ End of AGENTS.md
 - HR interrupts: none. No JAR, install, restart, or full-suite run.
 - Fingerprints: `CommandRegistry.kt=17cbf45185a62ecafdaeaf2edce29a2fe5572b1b2408d6642f9c064c3a9ed551`; `CommandPaletteRenderer.kt=392924c5ee78a30b801638b32ff5d7605ab2d60020e50942f68c64405d183062`; `ComposerViewport.kt=be797c7b5c9db4e02e1495cc5a4326d56f02a440583dd97d82abefd5bbb8ba15`; `CommandRegistryTest.kt=68326dcf927384f20a2b56e704fc56212ccbea462f10c2d947a4a440eaf6c532`; `CommandPaletteRendererTest.kt=b00857fd0774cb68daa6dd81d8ca8c2f8be1a39a4e08e2c2b1fa079ca09e1428`.
 - New overall estimate: unchanged.
+
+### 2026-08-04T04:03:05Z · Agent: Codex GPT-5 · Batch: factory-lineage-soft-fail-106
+- Paths touched: `src/main/kotlin/atropos/core/factory/FactoryLineage.kt`, `src/main/kotlin/atropos/core/factory/FactoryResearchService.kt`, `src/main/kotlin/atropos/core/factory/AppFactoryRouter.kt`, `src/main/kotlin/atropos/core/provider/ContextEnvelopeFactory.kt`, `src/test/kotlin/atropos/core/factory/FactoryLineageTest.kt`.
+- Atoms / phases affected: Phase 19 App Factory prompt lineage, scoped research, soft-fail channel traversal, and context-envelope handoff.
+- Predicate moved: every factory run now writes the prompt artifact and records it in run memory before research; low-confidence runs still enter ordered research and write requirements before YES/NO refusal; Q&A is timestamped and hashed; memory hits are project-scoped; lakehouse/DLOI outcomes explicitly record address-only/no-cosine-RAG behavior; SpecGraph availability records a soft adapter skip with internal DAG fallback; research-channel markers reach the factory context envelope.
+- Verification: `./gradlew test --no-daemon --max-workers=1 --tests atropos.core.factory.FactoryLineageTest` passed, 6 tests / 0 failures. `git diff --check` passed. No full suite, JAR, install, restart, or deployment proof.
+- % delta: unchanged; no phase percentage claim.
+- HR interrupts: none.
+- Fingerprints: `FactoryLineage.kt=13d1519bc7c73d83f042b09604321e829508eb0e0ff9558df15a9d9729586b0b`; `FactoryResearchService.kt=40d44d2c40b951914edc7e4a10cb8242bded356df0ab3a51472687c0bcdc735a`; `AppFactoryRouter.kt=2b7f716ab1d41893c142e92427dfc51e2f9b50e8dbae247f5612295db9c57f53`; `ContextEnvelopeFactory.kt=cac085dbb2fdde01c553d09a1b99f147a26ba7f0e8945a1444180ca9f57097c6`; `FactoryLineageTest.kt=8210a47cd238078415aae7936e3d582cbfecf7df5af5142b3b883ee74ac0cae8`.
+- New overall estimate: unchanged; operational proof remains separate.
+
+### 2026-08-04T04:27:09Z · Agent: Codex GPT-5 · Batch: factory-general-capability-107
+- Paths touched: `src/main/kotlin/atropos/core/factory/AppIntent.kt`, `src/main/kotlin/atropos/core/factory/AppSourceTemplate.kt`, plus the lineage/research/context paths from batch `factory-lineage-soft-fail-106`.
+- Atoms / phases affected: C3-AF-01, C3-AF-03, C3-AF-04, C3-AF-05, C3-P19 general factory behavior.
+- Predicate moved: calculator-specific generator routing was removed. Arithmetic is now a generic `AppCapability` selected from `AppProjectSpec`; generated source uses the neutral `runExpression` contract, while calculator remains only the existing general-API fixture. Arbitrary app names are escaped before insertion into generated Kotlin literals.
+- Verification: production-only review completed; `git diff --check` passed. The focused Gradle command was intentionally interrupted per operator direction, so no compile/test result is claimed for this batch.
+- % delta: unchanged; no phase percentage claim.
+- HR interrupts: none. No full suite, JAR, install, restart, or deployment proof.
+- Fingerprints: `AppIntent.kt=7c6e830472fd105921066bd5eee79c6f675332ce424d76ef4e0ec90a59ce6dc6`; `AppSourceTemplate.kt=a9b47bf0361a678c5a6fe81d87818311428feb5a1be14371602ccce5827b1e7e`; `FactoryResearchService.kt=18e1e968c037ea2b43a8ae0a380109efafb01cf0010b8a4c5873c68094a56a2d`; `FactoryLineage.kt=13d1519bc7c73d83f042b09604321e829508eb0e0ff9558df15a9d9729586b0b`; `AppFactoryRouter.kt=2b7f716ab1d41893c142e92427dfc51e2f9b50e8dbae247f5612295db9c57f53`; `ContextEnvelopeFactory.kt=cac085dbb2fdde01c553d09a1b99f147a26ba7f0e8945a1444180ca9f57097c6`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T05:05:00Z · Agent: Codex GPT-5 · Batch: c1-f002-portable-cas-root-124
+- Paths touched: `src/main/kotlin/atropos/data/storage/CloudLakehouseSyncEngine.kt` (+2/-1), `AGENTS.md` (+this row).
+- Atoms / phases affected: F002 CloudLakehouseSyncEngine, M006 portable runtime boundary.
+- Predicate moved: the CAS owner no longer derives its default storage root from raw `user.dir`; it resolves through `AtroposRepoRootLocator`, preserving portable nested-launch behavior while retaining the existing `.atropos/cas` root.
+- Verification: production-only review and `git diff --check` passed. Native capability probe found no `sqlite3` executable, so no sqlite-vec adapter was invented. No compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim.
+- Why justified: this removes a local-device path assumption without creating another CAS root. F004 remains optional and unimplemented in this environment; N001–N005 remain test-acceptance atoms and were not edited under the production-only constraint.
+- HR interrupts: none.
+- Fingerprints: `CloudLakehouseSyncEngine.kt=b19ac02bab5f7135355f9f7fba11071eb3b63080f7f0943ed87705a26c674e7d`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T04:58:00Z · Agent: Codex GPT-5 · Batch: c1-f002-cas-delta-123
+- Paths touched: `src/main/kotlin/atropos/data/storage/CloudLakehouseSyncEngine.kt` (+43), `AGENTS.md` (+this row).
+- Atoms / phases affected: F002 CloudLakehouseSyncEngine, Phase 9 persistent memory/lakehouse CAS.
+- Predicate moved: the existing CAS owner now exposes a bounded lazy delta sync: requested hashes are normalized and deduplicated, local objects are skipped, remote bytes are fetched only for missing hashes, and imported bytes are accepted only when their SHA-256 matches the requested content address; unavailable and mismatched objects remain explicitly reported.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim.
+- Why justified: this extends the existing `CloudLakehouseSyncEngine` rather than creating another lakehouse/CAS root or embedding a transport-specific client. F004 sqlite-vec remains open and optional.
+- HR interrupts: none.
+- Fingerprints: `CloudLakehouseSyncEngine.kt=e2c5c046f58b9d89689b751b0fecc954e42a226befa0b3f68fec846c41881f89`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T04:52:00Z · Agent: Codex GPT-5 · Batch: c1-f005-source-chunking-122
+- Paths touched: `src/main/kotlin/atropos/core/memory/MemorySourceChunker.kt` (+55 new), `src/main/kotlin/atropos/core/memory/LocalMemoryStore.kt` (+5), `AGENTS.md` (+this row).
+- Atoms / phases affected: F005 Chunking1024Overlap, Phase 9 persistent memory.
+- Predicate moved: source text now has a deterministic, redacted, content-addressed chunking path using 1,024-token windows and the Source Doc 1-required 10% overlap; `LocalMemoryStore.chunkSource` exposes that path to downstream optional indexes.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim.
+- Why justified: chunking is a pure transformation with one owner and is composed by the existing local memory owner; no second memory root or authoritative vector search path was introduced. F002 cloud replication and F004 sqlite-vec remain open and are not represented as complete.
+- HR interrupts: none.
+- Fingerprints: `MemorySourceChunker.kt=d538de279128880d4401e6d1086a7019c5968c2d6709abf778eec17259bece72`; `LocalMemoryStore.kt=a2dc04d9c87ad3446bf3274d11496eaba0430d8bac112e0455feee51848f04b5`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T04:51:18Z · Agent: Codex GPT-5 · Batch: c1-h007-queued-route-120
+- Paths touched: `src/main/kotlin/atropos/core/provider/adapter/AdapterRouteFacade.kt` (+24/-8), `AGENTS.md` (+this row).
+- Atoms / phases affected: `H007`, Phase 3 free-provider-unavailable route semantics.
+- Predicate moved: when the canonical route decision has no eligible provider, the adapter facade now returns a typed `ProviderCallResult.Queued` with the earliest known cooldown/reset time or a deterministic bounded retry time; the route remains degraded and does not return an empty result.
+- Verification: production-only review and `git diff --check` passed. No compile, test, provider live test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim.
+- Why justified: routing still has one `RoutePolicy`, quota timing still comes from `QuotaLedger`, and the facade only translates the existing decision into the existing provider result type.
+- HR interrupts: none.
+- Fingerprints: `AdapterRouteFacade.kt=80954c033cb80b7656f0b13f3717409fe21580ab5a3c9194bb93ac9092b95a4c`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T04:50:10Z · Agent: Codex GPT-5 · Batch: c1-g006-fixture-completeness-119
+- Paths touched: `src/main/kotlin/atropos/core/provider/ProviderFixtureMatrixService.kt` (+5), `AGENTS.md` (+this row).
+- Atoms / phases affected: `G006`, Phase 2 provider fixture matrix.
+- Predicate moved: every provider fixture result now requires explicit `success`, generic `error`, `malformed_response`, `empty_response`, `timeout`, and `redaction` entries in addition to the existing provider-specific and attestation outcomes; omitted required fixtures fail the matrix.
+- Verification: production-only review and `git diff --check` passed. No compile, test, provider live test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim.
+- Why justified: the existing `ProviderFixtureMatrixService` remains the single matrix owner; this closes an omission in its binary verdict rather than adding another registry or fixture system.
+- HR interrupts: none.
+- Fingerprints: `ProviderFixtureMatrixService.kt=4330820a67a3a72465d85359435d9c31d84dbadc355cfcba8f7f567186a95360`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T04:49:20Z · Agent: Codex GPT-5 · Batch: c1-m003-m006-build-wiring-118
+- Paths touched: `build.gradle.kts` (+23), `AGENTS.md` (+this row).
+- Atoms / phases affected: `M003`, `M006`, Phase 0 compatibility/portability prerequisite path.
+- Predicate moved: the existing Kotlin compatibility scanner and canonical Docker/native/desktop/Android/Web migration plan are now deterministic Gradle verification tasks, and both are wired into the existing `check` lifecycle; no second build authority was introduced.
+- Verification: production/configuration review and `git diff --check` passed. The new tasks were not executed; no compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim.
+- Why justified: `kotlinCompatScan` delegates to the existing `scripts/kotlin-compat-scan.sh`, while `portableSurfacePlan` validates the existing plan artifact through the canonical build owner. This moves implementation and integration forward without claiming edge verification.
+- HR interrupts: none.
+- Fingerprints: `build.gradle.kts=f8829f2e6772a0d24af908c719074de537994bfe7b94148c8ab07b211f3a32bf`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T04:43:39Z · Agent: Codex GPT-5 · Batch: factory-persistence-redaction-117
+- Paths touched: `src/main/kotlin/atropos/core/factory/AppFactoryRouter.kt` (+2/-2), `AGENTS.md` (+this row).
+- Atoms / phases affected: C3-AF-03, C3-P19 secret-safe decision and project persistence.
+- Predicate moved: factory decision-memory and project-registration objectives now receive the redacted prompt explicitly; no factory-owned persistence path relies solely on downstream redaction.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim.
+- Why justified: this preserves the one canonical `RedactionFilter` boundary and keeps prompt hashes/lineage unchanged.
+- HR interrupts: none.
+- Fingerprints: `AppFactoryRouter.kt=8a9deb821ddc39380454da35100d1154e266b02dd70407ef776ad59598dd1010`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T04:43:10Z · Agent: Codex GPT-5 · Batch: factory-render-redaction-116
+- Paths touched: `src/main/kotlin/atropos/core/factory/AppFactoryRouter.kt` (+1/-1), `AGENTS.md` (+this row).
+- Atoms / phases affected: C3-AF-03, C3-P19 operator-surface redaction.
+- Predicate moved: factory plan rendering now redacts prompt text before CLI output while lineage and project persistence retain their existing canonical hashed/redacted artifact paths.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim.
+- Why justified: presentation redaction is applied at the existing output boundary and does not create a second prompt representation or authority.
+- HR interrupts: none.
+- Fingerprints: `AppFactoryRouter.kt=6d3cd1fbb6b66230b7dc4f51308c1ac1401e29e606e1acb9ae91d405f9337e11`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T04:42:48Z · Agent: Codex GPT-5 · Batch: factory-asset-redaction-115
+- Paths touched: `src/main/kotlin/atropos/core/factory/AppFactoryRouter.kt` (+1/-1), `AGENTS.md` (+this row).
+- Atoms / phases affected: C3-AF-03, C3-P19 secret-safe factory side channels.
+- Predicate moved: optional local asset generation now receives the prepared redacted prompt, preventing prompt content from being embedded into generated SVG output.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim.
+- Why justified: the existing `RedactionFilter` remains the canonical redaction owner; no new asset or secret pipeline was added.
+- HR interrupts: none.
+- Fingerprints: `AppFactoryRouter.kt=a852c1c129ad0240d3c7892fe2d4e3fa4e58327a2f651403672a016657d02aee`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T04:42:04Z · Agent: Codex GPT-5 · Batch: factory-fetch-integrity-114
+- Paths touched: `src/main/kotlin/atropos/core/factory/FactoryResearchService.kt` (+11/-3), `AGENTS.md` (+this row).
+- Atoms / phases affected: C3-AF-03, C3-P19 bounded research and evidence identity.
+- Predicate moved: bounded research rejects non-HTTP(S) schemes and records separate URL and response-body SHA-256 identities for successful lakehouse and bounded-fetch channels; content remains bounded and is not persisted.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim.
+- Why justified: the existing fetch owner remains the only transport, and unavailable or invalid sources still produce soft-fail markers rather than crashing the factory.
+- HR interrupts: none.
+- Fingerprints: `FactoryResearchService.kt=7351d4ba9b0f97d705c3c9bde8d813b598df9bfcdb8659822fd39b2efb8ca48f`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T04:41:30Z · Agent: Codex GPT-5 · Batch: factory-span-envelope-113
+- Paths touched: `src/main/kotlin/atropos/core/factory/FactoryResearchService.kt` (+7/-2), `src/main/kotlin/atropos/core/provider/ContextEnvelopeFactory.kt` (+2/-1), `src/main/kotlin/atropos/core/factory/AppFactoryRouter.kt` (+2/-1), `AGENTS.md` (+this row).
+- Atoms / phases affected: C3-AF-03, C3-AF-04, C3-P19 prompt-span lineage and context handoff.
+- Predicate moved: open-atom research markers and the factory context envelope now carry both the prompt fingerprint and classified prompt spans; factory routing supplies the same spans from the prepared lineage.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim.
+- Why justified: this extends the existing context-envelope and research owners; it does not create a second lineage, DAG, or provider context system.
+- HR interrupts: none.
+- Fingerprints: `FactoryResearchService.kt=b9679bfa2e1e9661407454854550cc09eec2694210dc69890245db50c3d81a06`; `ContextEnvelopeFactory.kt=f6d04af9e5722c331b4e70843863c1f3853c07486d823faa13167a3a4e5fb673`; `AppFactoryRouter.kt=cf88ffd7608dfde7fa5b60be99fffea422ae8a833632ead39519caaffa2e59e3`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T04:40:46Z · Agent: Codex GPT-5 · Batch: factory-generic-behavior-112
+- Paths touched: `src/main/kotlin/atropos/core/factory/AppSourceTemplate.kt` (+17/-8), `AGENTS.md` (+this row).
+- Atoms / phases affected: C3-AF-01, C3-AF-03, C3-P19 general application generation.
+- Predicate moved: non-arithmetic generated applications now have explicit usage/error semantics and exact executable assertions for help, missing input, and multi-token input; the template no longer accepts a non-blank echo as its only behavioral proof.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim.
+- Why justified: the behavior remains capability-neutral and is selected through the existing general template path. Arithmetic remains the only generic capability-specific template, with no calculator-only route.
+- HR interrupts: none.
+- Fingerprints: `AppSourceTemplate.kt=c22039369dcc6d7793ad822d21982b642c334e9833779007934ab2f8756677b7`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T04:39:50Z · Agent: Codex GPT-5 · Batch: factory-evidence-boundary-111
+- Paths touched: `src/main/kotlin/atropos/core/factory/AppProjectGenerator.kt` (+0/-1), `AGENTS.md` (+this row).
+- Atoms / phases affected: C3-AF-05, C3-P19 evidence integrity.
+- Predicate moved: bounded verification output remains in the existing redacted app-manifest hash/evidence path without creating post-manifest runner log files inside the generated Git repository.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim.
+- Why justified: this preserves one canonical evidence owner and keeps the manifest's file list and Git archive aligned.
+- HR interrupts: none.
+- Fingerprints: `AppProjectGenerator.kt=6956135e95b65b264ff8336711c9815f77b0363f909b644a9665e1c3ed16443e`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T04:39:00Z · Agent: Codex GPT-5 · Batch: factory-bounded-verification-110
+- Paths touched: `src/main/kotlin/atropos/core/factory/AppProjectGenerator.kt` (+66/-11), `AGENTS.md` (+this row).
+- Atoms / phases affected: C3-AF-04, C3-AF-05, C3-P19 bounded verification and control-plane enforcement.
+- Predicate moved: generated-project verification now proposes the fixed `sh verify.sh` command through `ShellActionProposals`, checks the existing `BoundedAgencyGate` with the factory worker territory, executes through `BoundedProcessRunner`, removes the launcher-only `KOTLIN_RUNNER` variable, persists bounded process evidence, redacts output, and rejects launch failure, timeout, nonzero exit, truncation, or missing success marker.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim.
+- Why justified: this removes the raw `ProcessBuilder` bypass without adding a verifier or policy owner. File mutation remains under `AppProjectMutationGate`; command authorization remains under `BoundedAgencyGate`; execution remains under `BoundedProcessRunner`.
+- HR interrupts: none.
+- Fingerprints: `AppProjectGenerator.kt=156bcae345d1dac2eda2e12fc5cf9076a5ff9010b9716a2fba9fe4fc57163e94`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T04:32:37Z · Agent: Codex GPT-5 · Batch: factory-lineage-production-108
+- Paths touched: `src/main/kotlin/atropos/core/factory/FactoryLineage.kt` (+31/-13), `src/main/kotlin/atropos/core/factory/FactoryResearchService.kt` (+3), `src/main/kotlin/atropos/core/factory/AppFactoryRouter.kt` (+7/-2), `src/main/kotlin/atropos/core/factory/AppProjectGenerator.kt` (+1), `src/main/kotlin/atropos/core/factory/EvidenceManifest.kt` (+2), `src/main/kotlin/atropos/core/factory/AppSourceTemplate.kt` (+1), `src/main/kotlin/atropos/core/factory/AppIntent.kt` (carried from batch 107), `src/main/kotlin/atropos/core/provider/ContextEnvelopeFactory.kt` (carried from batch 106), `AGENTS.md` (+this row).
+- Atoms / phases affected: C3-AF-01, C3-AF-03, C3-AF-04, C3-AF-05, C3-P19 prompt lineage, ordered soft-fail research, and general factory evidence.
+- Predicate moved: factory research now receives the same injected memory owner that records the prompt; prompt-memory persistence is soft-fail and records its bounded reason; planning inputs, atoms, context, and evidence carry prompt spans and research-channel lineage; generated Kotlin dollar escaping is literal-safe.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run, per operator direction; focused verification remains pending.
+- % delta: unchanged; no phase percentage claim.
+- Why justified: the changes compose existing memory, planning, context-envelope, evidence, and factory owners without creating parallel systems. The prompt artifact remains written to the factory run directory even when the optional memory write fails, and the factory can continue through soft research skips. The existing general capability API remains unchanged; calculator is not a special generator route.
+- HR interrupts: none.
+- Fingerprints: `AppFactoryRouter.kt=194366a9f0f172d7d23b6136447aed60182d20931965c766d66543f99b6caf54`; `AppIntent.kt=7c6e830472fd105921066bd5eee79c6f675332ce424d76ef4e0ec90a59ce6dc6`; `AppProjectGenerator.kt=8caed8bb6fe6526641754eaf7ff283361fd9e6f00d63be8a26af8d3e1a3e4438`; `AppSourceTemplate.kt=f7b9b38e4ecf9271b3eaf9c34aa4e7c571a84fbcbe01761b98c92faab97ad4be`; `EvidenceManifest.kt=1ef3ee2af981e37fb7e01c0ff3bd53db6de951de1889563f2f2982a37e5da71e`; `FactoryLineage.kt=df0365680b2ef22d2b16062f3fab2ff5a654a5483eab43c641a8de60a94cd3ea`; `FactoryResearchService.kt=88b3798cc762329b468f95fa3aea65e144b0a1067e201b70f8cc5430974aa7ca`; `ContextEnvelopeFactory.kt=cac085dbb2fdde01c553d09a1b99f147a26ba7f0e8945a1444180ca9f57097c6`.
+- New overall estimate: unchanged; no phase percentage claim.
+
+### 2026-08-04T04:33:39Z · Agent: Codex GPT-5 · Batch: factory-planning-redaction-109
+- Paths touched: `src/main/kotlin/atropos/core/factory/AppFactoryRouter.kt` (+2), `AGENTS.md` (+this row).
+- Atoms / phases affected: C3-AF-01, C3-P19 prompt lineage and safe planning persistence.
+- Predicate moved: the internal planning DAG now receives the already-redacted prompt while retaining the prompt fingerprint, SHA-256, and classified span metadata; raw prompt text is no longer sent into planning persistence through this factory path.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim.
+- Why justified: this extends the existing redaction owner at the boundary before DAG ingestion and does not create a second prompt or planning authority.
+- HR interrupts: none.
+- Fingerprints: `AppFactoryRouter.kt=aa78e8f7077bcc8e3fca95874fcc8c33415c21fbab993454bff7d909d0022237`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T04:46:00Z · Agent: Codex GPT-5 · Batch: c1-b002-b003-ast-namespace-121
+- Paths touched: `src/main/kotlin/atropos/core/parser/TreeSitterGrammarBridge.kt` (+39/-56), `src/main/kotlin/atropos/ast/AstSymbolGraph.kt` (+15/-10), `AGENTS.md` (+this row).
+- Atoms / phases affected: B002 TreeSitterGrammarBridge, B003 AstNamespaceReconciler, Phase 7 AST/symbol impact behavior.
+- Predicate moved: the existing parser owner now extracts masked Kotlin declarations in source order across multiline modifier spans with stable line/column/UTF-8 byte offsets; imports are parsed with aliases normalized for resolution; the existing symbol graph now resolves changed-file imports deterministically across all changed packages and wildcard package dependencies instead of comparing only against the first changed package.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim.
+- Why justified: this extends the existing parser and `AstSymbolGraph` owners without creating a second AST, namespace, or verifier system. A005 remains open because its missing predicate is audit/test evidence, not production code.
+- HR interrupts: none.
+- Fingerprints: `TreeSitterGrammarBridge.kt=a49c57d2dec0febbb2b1a3dcc4267defd8cdaa72f0889be47597f6fbe3a66bdd`; `AstSymbolGraph.kt=c308aa0e4f357775642b1c64c654eecdec914c90b842923d52bea83f2b2a4bd9`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T05:24:53Z · Agent: Codex GPT-5 · Batch: h007-provider-exhaustion-137
+- Paths touched: `src/main/kotlin/atropos/core/ProviderState.kt` (+14/-2), `src/main/kotlin/atropos/core/agent/AgentService.kt` (+27), `src/main/kotlin/atropos/core/agent/AgentQueueService.kt` (+2/-2), `AGENTS.md` (+this row).
+- Atoms / phases affected: H007 `QueueWhenFreeUnavailable`; provider cascade and agent ask runtime path.
+- Predicate moved: provider exhaustion now returns a typed queued outcome with bounded retry timing; `AgentService.ask` persists the redacted request through the existing durable queue, and queue construction no longer recurses through `AgentRunService`.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run, per operator direction.
+- % delta: unchanged; no phase percentage claim.
+- Why justified: the change extends the existing provider cascade, queue store, and queue service without creating a second router or queue, avoids sending a queued marker through context attestation, and preserves a local degraded response when queue persistence is unavailable.
+- HR interrupts: none.
+- Fingerprints: `ProviderState.kt=a66bc47b1a669c848690ce6eb2bf5a19f8b6db59cd008e25d7c07eb11499ea01`; `AgentService.kt=b5a2994f9ad81bc510b2c57b47dd66d7c4fb47125c85c91661156362f2bc3223`; `AgentQueueService.kt=83f48bba652272703ac1008e691e23ecbd7cfb49aaa199a2158067a2396b8baa`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T05:28:00Z · Agent: Codex GPT-5 · Batch: c3-af-generated-behavior-138
+- Paths touched: `src/main/kotlin/atropos/core/factory/AppGeneratedBehaviorGuard.kt` (+47 new), `src/main/kotlin/atropos/core/factory/AppProjectGenerator.kt` (+2), `AGENTS.md` (+this row).
+- Atoms / phases affected: C3-AF-01, C3-AF-03, C3-AF-04, C3-P19 general app quality and completion safety.
+- Predicate moved: generated repositories are rejected before mutation when source lacks a real entrypoint/nonzero exit path, tests lack executable assertions, or output matches the prior scaffold-only calculator/blank-string pattern; arithmetic capability additionally requires all four operators, division-by-zero handling, and an error assertion, while non-arithmetic apps retain the generic `runApp` contract.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim.
+- Why justified: this is a narrow generation-boundary guard composed with the existing `AppSourceTemplate` and `AppProjectGenerator`; it does not add a calculator-only route, verifier, or artifact pipeline.
+- HR interrupts: none.
+- Fingerprints: `AppGeneratedBehaviorGuard.kt=54ded0eff3c314276135b1c4bea910c1c4d1addd92c6084d43337f4318c09e57`; `AppProjectGenerator.kt=ead06884d40ccd2373ea47f3f0c5cd0574935f7a3741d4e8dd4df34dfba494f9`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T05:29:31Z · Agent: Codex GPT-5 · Batch: h007-repair-queue-139
+- Paths touched: `src/main/kotlin/atropos/core/agent/AgentService.kt` (+21), `src/main/kotlin/atropos/core/agent/AgentRepairService.kt` (+24), `AGENTS.md` (+this row).
+- Atoms / phases affected: H007 `QueueWhenFreeUnavailable`; ask, patch, and repair provider exhaustion paths.
+- Predicate moved: queued provider outcomes are now persisted for direct patch generation and verification-repair requests as well as ask requests; all three paths return an explicit local-queue/degraded result without treating an empty queued response as provider content.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim.
+- Why justified: the existing `AgentQueueService` remains the only durable queue owner, and the repair service composes the same queue contract rather than adding another retry or provider router.
+- HR interrupts: none.
+- Fingerprints: `AgentService.kt=fac84d4e2a8f3896d6d5d7e225824d5066b9769b79dcb544b04264529f3d127f`; `AgentRepairService.kt=0861206e7e6ebfdc35c3f278e63772513306a3d2d017a2717f48f318c077c371`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T05:33:22Z · Agent: Codex GPT-5 · Batch: c3-af-rollback-preservation-142
+- Paths touched: `src/main/kotlin/atropos/core/factory/AppProjectGenerator.kt` (+8/-3), `AGENTS.md` (+this row).
+- Atoms / phases affected: C3-AF-04, C3-AF-05, C3-P19 bounded mutation rollback.
+- Predicate moved: failed generation now removes the entire target only when this run created it; when an empty target pre-existed, rollback deletes only files written by this run and preserves the operator-owned directory.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim.
+- Why justified: this preserves the existing territory and mutation-gate boundary while eliminating destructive rollback of a pre-existing path; no second workspace or rollback owner was added.
+- HR interrupts: none.
+- Fingerprints: `AppProjectGenerator.kt=80aceb3da43b6f47b56033ffe0e39ae66a8090ce7e280d1ca580c13da5a1814c`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T05:31:14Z · Agent: Codex GPT-5 · Batch: j010-autonomous-dag-false-success-140
+- Paths touched: `src/main/kotlin/atropos/core/autonomous/AutonomousOrchestrator.kt` (+8/-12), `AGENTS.md` (+this row).
+- Atoms / phases affected: J010 `DirectorOrchestrator`; canonical DAG execution and false-success prevention.
+- Predicate moved: autonomous DAG continuation no longer mutates legacy node state directly to `COMPLETED`; it requires an explicit canonical `dagId`, delegates to the existing `DagExecutionService`, and fails/defer-reports when execution does not verify.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim.
+- Why justified: this removes an unconditional completion path and composes the existing DAG executor rather than creating another supervisor, verifier, or DAG system. Tasks without a canonical DAG identity remain honestly deferred.
+- HR interrupts: none.
+- Fingerprints: `AutonomousOrchestrator.kt=49a148dedbc7edf99fb72be0f7452ebf7f4d6f84f4c1ef302a15a4ff7de2bf81`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T05:31:50Z · Agent: Codex GPT-5 · Batch: j010-verification-gate-truth-141
+- Paths touched: `src/main/kotlin/atropos/core/autonomous/AutonomousOrchestrator.kt` (+8/-3), `AGENTS.md` (+this row).
+- Atoms / phases affected: J010 `DirectorOrchestrator`; canonical verification-gate execution.
+- Predicate moved: autonomous verification tasks now require and evaluate a canonical DAG identity through `DagExecutionService`; they no longer infer a passing gate from a count of pre-completed legacy nodes.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim.
+- Why justified: this closes a second false-success branch in the same orchestrator and preserves one DAG execution owner.
+- HR interrupts: none.
+- Fingerprints: `AutonomousOrchestrator.kt=289649e72ff3e3d24e82ddfda1acd7627de87da6d8b00d85d9a985f800597d4f`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T05:34:47Z · Agent: Codex GPT-5 · Batch: c3-af-remove-root-compile-queue-143
+- Paths touched: `src/main/kotlin/atropos/core/factory/AppFactoryRouter.kt` (+6/-8), `AGENTS.md` (+this row).
+- Atoms / phases affected: C3-AF-04, C3-AF-05, C3-P19 factory validation/evidence truth.
+- Predicate moved: factory runs no longer enqueue an unrelated root-repository `local compile` job after generated-project verification; the plan now reports local generated evidence and optional external CI without claiming a queued job for the wrong working tree.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim.
+- Why justified: this removes a misleading factory queue side path while retaining the existing generator verification and evidence owners; `/artifact` and general factory responsibilities remain separate.
+- HR interrupts: none.
+- Fingerprints: `AppFactoryRouter.kt=cb83f5796084f86aac81fe46299723890abcda3ec0b4837c08a74196af4ce6d4`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T05:38:20Z · Agent: Codex GPT-5 · Batch: c3-af-gate-evidence-144
+- Paths touched: `src/main/kotlin/atropos/core/verification/FactoryCompletionInput.kt` (+4), `src/main/kotlin/atropos/core/verification/VerifiedCompletionGate.kt` (+19/-4), `src/main/kotlin/atropos/core/factory/AppProjectGenerator.kt` (+3), `AGENTS.md` (+this row).
+- Atoms / phases affected: C3-AF-04, C3-AF-05, C3-P19 factory verification and evidence integrity.
+- Predicate moved: the existing factory completion gate now requires Kotlin source and test paths, `verify.sh`, the generated-test marker plus a passing deterministic-verifier report, a 40-hex source commit, and a 64-hex source-tree digest before it can report completion.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim.
+- Why justified: the gate now evaluates the concrete evidence produced by the canonical generator instead of accepting arbitrary source/test path names and one success marker. Existing auditor, deterministic verifier, and lineage owners remain the only authorities.
+- HR interrupts: none.
+- Fingerprints: `FactoryCompletionInput.kt=30d91663a4e968586a8d1bbe4482e8e2952d66ffe45b48de33bb4afd60723d56`; `VerifiedCompletionGate.kt=cd92662e0acc4ac6d9aa8a1a513bcb8dc666d870d144c0146cdb8e431f64f54e`; `AppProjectGenerator.kt=9924ad0f724e379ad3802955a5787d8faf842ce594396abb081e813332e4ed83`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T05:40:02Z · Agent: Codex GPT-5 · Batch: c3-af-lineage-id-145
+- Paths touched: `src/main/kotlin/atropos/core/factory/AppFactoryRouter.kt` (+1/-1), `AGENTS.md` (+this row).
+- Atoms / phases affected: C3-AF-04, C3-AF-05, C3-P19 deterministic project identity and evidence lineage.
+- Predicate moved: factory plan IDs are now derived from the existing SHA-256 lineage function rather than a signed 32-bit Java hash, eliminating collision-prone and `Int.MIN_VALUE`-negative identifiers while preserving deterministic prompt identity.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim.
+- Why justified: plan IDs participate in prompt artifacts, research paths, planning DAG references, generated project paths, and branch names; using the existing cryptographic digest keeps those references stable and bounded without adding another identity system.
+- HR interrupts: none.
+- Fingerprints: `AppFactoryRouter.kt=114d9813c54dedeb26e441cdf723ad8eddab9943e33da0666109ea2d2c9ac315`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T05:43:18Z · Agent: Codex GPT-5 · Batch: c3-af-artifact-separation-146
+- Paths touched: `src/main/kotlin/atropos/core/artifact/ArtifactPipeline.kt` (-151/+32), `src/main/kotlin/atropos/core/autonomous/AutonomousOrchestrator.kt` (+5/-3), `AGENTS.md` (+this row).
+- Atoms / phases affected: C3-AF-04, C3-AF-05, C3-P19 artifact deliverable separation and false-success prevention.
+- Predicate moved: autonomous artifact work and legacy pipeline compatibility methods no longer write `build/generated/*/Main.kt`, invoke `kotlinc`, or enqueue an unrelated root compile; they now delegate to the existing workspace deliverable writer. App creation remains owned by `AppFactoryRouter`.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim.
+- Why justified: this removes the last reachable production path from an artifact command to the rejected validation-JAR scaffold while preserving thin deprecated API compatibility for existing callers; no second artifact or factory owner was added.
+- HR interrupts: none.
+- Fingerprints: `ArtifactPipeline.kt=eab2eb42541ea0a32ba86861dcf46932f3c51979aa88f6d7318fc85d4bd79c89`; `AutonomousOrchestrator.kt=66aa12299fb70516cb25a41b15604a97d78e9fd5cb5a6b910a1d2078270f9a2e`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T05:47:06Z · Agent: Codex GPT-5 · Batch: c3-af-prebind-project-147
+- Paths touched: `src/main/kotlin/atropos/core/factory/AppProjectGenerator.kt` (+24/-12), `src/main/kotlin/atropos/core/factory/AppFactoryRouter.kt` (+31/-20), `AGENTS.md` (+this row).
+- Atoms / phases affected: C3-AF-04, C3-AF-05, C3-P19 project binding, branch isolation, bounded mutation.
+- Predicate moved: the factory now registers the canonical generated repository path and app-derived branch before source mutation, marks the project failed on generation error, and updates the same record with the verified binding afterward; path and branch derivation remain one shared generator owner.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim.
+- Why justified: project binding is now an authorization/control-plane input rather than a post-hoc record, while failure remains explicit and no unverified COMPLETED status is fabricated.
+- HR interrupts: none.
+- Fingerprints: `AppProjectGenerator.kt=ed69c75595de93d4f9bba167ce06f4c47e07ab1050dcc08ca22b572bf240cd1f`; `AppFactoryRouter.kt=98d279d9fc88d58eb91f293f285b9c48b28548d804120e095ada4fdf8794bd04`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T06:02:00Z · Agent: Codex GPT-5 · Batch: j011-bounded-local-worker-148
+- Paths touched: `src/main/kotlin/atropos/core/agent/AgentLocalPatchSynthesizer.kt` (+36/-7), `AGENTS.md` (+this row).
+- Atoms / phases affected: `J011` bounded worker code synthesis and local fallback safety.
+- Predicate moved: the existing local worker fallback now accepts a deterministic bounded multi-line create request in addition to its one-line form; it rejects absolute/traversal/NUL paths and content, oversized content, and excessive line counts before producing a unified diff.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run, per operator direction.
+- % delta: unchanged; no phase percentage claim. J011 remains pending independent focused verification and broader worker acceptance evidence.
+- Why justified: this extends the existing `AgentLocalPatchSynthesizer` used by `AgentRunService` without creating a second worker, patch store, or execution path. Provider fan-out remains owned by `AgentPatchCascadeRunner`; local synthesis is bounded and cannot write directly.
+- HR interrupts: none.
+- Fingerprints: `AgentLocalPatchSynthesizer.kt=645a66ffec0d77a5f53f58bacff1e307b7d200f8ca5a9f10311b95e7d7a5551b`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T06:08:00Z · Agent: Codex GPT-5 · Batch: j010-session-state-149
+- Paths touched: `src/main/kotlin/atropos/core/autonomous/AutonomousOrchestrator.kt` (session accounting and stop-condition synchronization), `AGENTS.md` (+this row).
+- Atoms / phases affected: `J010` Director/autonomous orchestration state truth.
+- Predicate moved: autonomous session counters now update through immutable `AutonomousSession.copy` state, and stop conditions are mirrored into the returned session summary; the prior reflection-based no-op update path is removed.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run, per operator direction.
+- % delta: unchanged; no phase percentage claim. J010 remains pending independent focused verification and full supervisor acceptance evidence.
+- Why justified: the existing `AutonomousOrchestrator` remains the only session supervisor and still delegates execution to the canonical DAG execution service; this fixes observable state truth without adding an orchestrator, DAG, or verifier.
+- HR interrupts: none.
+- Fingerprints: `AutonomousOrchestrator.kt=9b204a1fd418b4d3d2f12f3979e9ac85ff49ae4f68e650a4615d27c4d3f944f0`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T06:14:00Z · Agent: Codex GPT-5 · Batch: j009-manifest-integrity-150
+- Paths touched: `src/main/kotlin/atropos/core/endpoint/StaticOperationRegistry.kt` (+31), `AGENTS.md` (+this row).
+- Atoms / phases affected: `J009` endpoint manifest integrity.
+- Predicate moved: the canonical endpoint registry now fails closed on duplicate IDs or incomplete endpoint description, owner, input, output, error, auth, side-effect, timeout, retry, or test metadata before exposing the registry.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run, per operator direction.
+- % delta: unchanged; no phase percentage claim. J009 remains pending independent focused verification evidence.
+- Why justified: validation is attached to the existing `StaticOperationRegistry`; no second registry or manifest owner was introduced, and the existing endpoint test identity remains the declared verification linkage.
+- HR interrupts: none.
+- Fingerprints: `StaticOperationRegistry.kt=93ea2ff3b30896c80b60762e147ce4b9d38de345b8ce78b46e99610b53748c67`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T06:20:00Z · Agent: Codex GPT-5 · Batch: c3-af-specgraph-first-order-151
+- Paths touched: `src/main/kotlin/atropos/core/factory/FactoryResearchService.kt` (SpecGraph status is resolved before provider-suggestion evaluation), `AGENTS.md` (+this row).
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-P19` prompt-lineage research and SpecGraph soft-fallback ordering.
+- Predicate moved: the factory research report now enters the SpecGraph availability/soft-fallback decision before deciding whether provider suggestions are eligible; suggestion policy receives the actual SpecGraph status instead of `not_attempted`.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run, per operator direction.
+- % delta: unchanged; no phase percentage claim. Factory closure remains pending focused verification and operator runtime proof is intentionally not requested in this production lane.
+- Why justified: this preserves the existing `FactoryResearchService` and internal DAG fallback, does not build a second SpecGraph, and keeps provider suggestions after local memory, DLOI/lakehouse, bounded fetch, and SpecGraph detection.
+- HR interrupts: none.
+- Fingerprints: `FactoryResearchService.kt=c92ebdba56dc049b97aad5504d71fd41e424382279271be633578b70cf9910cd`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T06:27:00Z · Agent: Codex GPT-5 · Batch: c3-af-atom-research-lineage-152
+- Paths touched: `src/main/kotlin/atropos/core/factory/AppFactoryRouter.kt` (planned-atom research wiring), `src/main/kotlin/atropos/core/factory/FactoryLineage.kt` (+atom-research lineage field handling), `AGENTS.md` (+this row).
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-P19` atomization and prompt-lineage evidence.
+- Predicate moved: every factory plan now invokes the existing bounded `researchOpenAtoms` marker path for its planned atoms and folds those prompt-fingerprint/span-linked markers into the hashed research document before source generation.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run, per operator direction.
+- % delta: unchanged; no phase percentage claim. Factory closure remains pending focused verification and runtime evidence.
+- Why justified: this composes the existing research and lineage owners, keeps SpecGraph soft-fallback behavior unchanged, and prevents atom IDs from appearing in a plan without a corresponding lineage marker.
+- HR interrupts: none.
+- Fingerprints: `AppFactoryRouter.kt=416143634dca39586ef3e03a59b9e94751443ac4aa07e2a5edc6937cf8fccb78`; `FactoryLineage.kt=584b03b4b4ce6c38056c1e356a6c74d56afb60fbb7e2e9ad5c14850134d9fd4f`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T06:34:00Z · Agent: Codex GPT-5 · Batch: c3-af-completion-evidence-link-153
+- Paths touched: `src/main/kotlin/atropos/core/factory/AppFactoryRouter.kt` (completion transition/evidence linkage), `AGENTS.md` (+this row).
+- Atoms / phases affected: `C3-AF-04`, `C3-AF-05`, `C3-P19` project completion truth and evidence binding.
+- Predicate moved: a generated project remains `WORKING` during optional asset work and becomes `COMPLETED` only after the existing generated evidence path is linked into `ProjectRecord.evidenceIds`; the registry history now records the completion transition explicitly.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run, per operator direction.
+- % delta: unchanged; no phase percentage claim. Factory closure remains pending focused verification and runtime evidence.
+- Why justified: completion now satisfies the existing `ProjectRecord.completionIsVerifiable` contract without adding an evidence registry or weakening the existing generator gate.
+- HR interrupts: none.
+- Fingerprints: `AppFactoryRouter.kt=bce2c6fccdea18f6bf9ded92c05600a6e9ccb2acfbdb530515f624f72bc18066`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T06:40:00Z · Agent: Codex GPT-5 · Batch: c3-af-clarification-lineage-digest-154
+- Paths touched: `src/main/kotlin/atropos/core/factory/FactoryLineage.kt` (YES/NO answer lineage digest and directory safety), `AGENTS.md` (+this row).
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-P19` confidence failsafe and prompt-lineage persistence.
+- Predicate moved: persisted clarification answers now include a deterministic digest over prompt fingerprint, question digest, and answer digest; the answer artifact also creates its destination directory before writing.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run, per operator direction.
+- % delta: unchanged; no phase percentage claim. Factory closure remains pending focused verification and runtime evidence.
+- Why justified: the existing clarification owner now records a verifiable YES/NO lineage chain without introducing a second Q&A store or changing the confidence threshold behavior.
+- HR interrupts: none.
+- Fingerprints: `FactoryLineage.kt=1d2f0dd4d49279a66fb32f7f6745ff539b4cf0f5ac732577196f1421cec9b06f`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T06:48:00Z · Agent: Codex GPT-5 · Batch: c2-hierarchy-contract-155
+- Paths touched: `src/main/kotlin/atropos/core/hierarchy/HierarchyModels.kt` (+4/-4), `AGENTS.md` (+this row).
+- Atoms / phases affected: `C2-P12`, `C2-P14`, `C2-P15`, `C2-P16` hierarchy dispatch safety.
+- Predicate moved: hierarchy dispatch now refuses contracts containing blank source coordinates, territory entries, capabilities, or acceptance criteria instead of treating nonempty lists as valid bounded authority.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run, per operator direction.
+- % delta: unchanged; no phase percentage claim. Hierarchy gates remain pending focused verification evidence.
+- Why justified: validation remains in the canonical `HierarchyDispatchContract` owner before parent/assignee lookup, territory assignment, or status mutation; no second hierarchy or territory system was introduced.
+- HR interrupts: none.
+- Fingerprints: `HierarchyModels.kt=951bb4d039b1544d2812755ab971143baa18575ed8c783f3197555af977a81d5`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T06:55:00Z · Agent: Codex GPT-5 · Batch: c2-p14-boundary-identity-156
+- Paths touched: `src/main/kotlin/atropos/core/hr/HrRouterService.kt` (+19/-6), `AGENTS.md` (+this row).
+- Atoms / phases affected: `C2-P14` HR Router audited cross-boundary safety.
+- Predicate moved: HR risk assessment now denies requests missing any source/target owner or territory identity and evaluates secret paths and high-risk territories case-insensitively with a stable locale.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run, per operator direction.
+- % delta: unchanged; no phase percentage claim. C2-P14 remains pending focused verification evidence.
+- Why justified: the existing `HrRouterService` still owns risk, narrowing, denial, and audit persistence; the change prevents unbound data crossing the audited channel without adding another HR router.
+- HR interrupts: none.
+- Fingerprints: `HrRouterService.kt=548345bd9725770a40b8d72575555d65a84276345d1feb48865af81891d7dfba`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T07:04:00Z · Agent: Codex GPT-5 · Batch: c2-p15-auditor-fail-closed-157
+- Paths touched: `src/main/kotlin/atropos/core/auditor/AuditorService.kt` (+21/-5), `AGENTS.md` (+this row).
+- Atoms / phases affected: `C2-P15` Auditor/Custodian promotion safety.
+- Predicate moved: auditor promotion now fails closed for expired territories, unreadable secret-scan files, and deterministic-verifier exceptions instead of downgrading them to warnings or silently skipping them.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run, per operator direction.
+- % delta: unchanged; no phase percentage claim. C2-P15 remains pending focused verification evidence.
+- Why justified: the existing `AuditorService` remains the independent promotion authority; errors now become blocking findings without adding another auditor or changing the immutable source authority.
+- HR interrupts: none.
+- Fingerprints: `AuditorService.kt=01110144e342921b1fa128f8d84a91b86ac3733b67e019d91bd1d4f3021244ea`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T07:11:00Z · Agent: Codex GPT-5 · Batch: c2-p16-dispatch-state-158
+- Paths touched: `src/main/kotlin/atropos/core/hierarchy/HierarchyModels.kt` (+11), `AGENTS.md` (+this row).
+- Atoms / phases affected: `C2-P16` Manager/Specialist/Worker dispatch integrity.
+- Predicate moved: hierarchy dispatch now refuses duplicate task IDs, blocked/failed parent authorities, and non-idle assignees before capability or territory assignment can mutate registry state.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run, per operator direction.
+- % delta: unchanged; no phase percentage claim. C2-P16 remains pending focused verification evidence.
+- Why justified: the canonical `HierarchyRegistry` remains the sole dispatch owner, and the checks prevent state overwrite without introducing a second scheduler or hierarchy store.
+- HR interrupts: none.
+- Fingerprints: `HierarchyModels.kt=a028b78ba372657a411b60777d52f22555aa395cd8d1f03c2a45f01cfe132225`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T07:18:00Z · Agent: Codex GPT-5 · Batch: c3-af-memory-root-binding-159
+- Paths touched: `src/main/kotlin/atropos/core/factory/AppFactoryRouter.kt` (+1), `AGENTS.md` (+this row).
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-P19` portable project/repository binding and prompt memory.
+- Predicate moved: when a factory is constructed with an explicit repository root, its default local memory store now resolves under that same root instead of the process-wide default checkout.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run, per operator direction.
+- % delta: unchanged; no phase percentage claim. Factory closure remains pending focused verification evidence.
+- Why justified: this preserves one `LocalMemoryStore` owner while preventing prompt/research records from crossing repository boundaries on portable or nested invocations.
+- HR interrupts: none.
+- Fingerprints: `AppFactoryRouter.kt=a2c531fb7883084a30b2ce4a4c6664f5b716d480445333061af18a14977d178f`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T07:24:00Z · Agent: Codex GPT-5 · Batch: c3-af-calculator-special-case-audit-160
+- Paths touched: `AGENTS.md` (+this row); production search scope `src/main/kotlin/atropos/core/factory`, `src/main/kotlin/atropos/cli`, and `src/main/kotlin/atropos/core/artifact`.
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-AF-04`, `C3-AF-05`, `C3-P19` general factory architecture.
+- Predicate moved: production audit found no calculator-only router, generator, artifact branch, or privileged command; remaining calculator references are the generic `ARITHMETIC` capability and the behavior guard’s rejection check.
+- Verification: bounded production `rg` audit and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run, per operator direction.
+- % delta: unchanged; no phase percentage claim. Calculator one-shot remains unverified.
+- Why justified: the general `AppIntent`/`AppProjectGenerator` path remains the only generation owner; calculator behavior is a capability fixture rather than a separate architecture.
+- HR interrupts: none.
+- Fingerprints: no product files changed in this audit.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T09:03:00Z · Agent: Codex GPT-5 · Batch: c0-m003-m006-portability-gates-170
+- Paths touched: `build.gradle.kts` (+34), `scripts/kotlin-compat-scan.sh` (+3/-2), `docs/architecture/DOCKER_NATIVE_DESKTOP_ANDROID_WEB_PLAN.md` (audited), `AGENTS.md` (+this row).
+- Atoms / phases affected: `M003` Kotlin compatibility scan and `M006` Docker/native desktop/Android/Web migration plan.
+- Predicate moved: the compatibility scan now classifies all Gradle dependency configuration forms it can encounter, and the portable-surface task now rejects a missing ownership/portable-root/gate-separation plan even when the document file exists.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run, per operator direction.
+- % delta: unchanged; no phase percentage claim. M003/M006 focused verification remains pending.
+- Why justified: both checks extend existing build-control owners; they do not add a second build system, packaging gate, or platform orchestration path.
+- HR interrupts: none.
+- Fingerprints: `build.gradle.kts=61649e685318fa633dd00c8d772b9b428f76b45b9b8fd7db4b420e5d337ba21c`, `scripts/kotlin-compat-scan.sh=9c6f1817d3c6827990ca68b84348da3374625a909659d78cd27654b01e1a5548`, `DOCKER_NATIVE_DESKTOP_ANDROID_WEB_PLAN.md=b10ebd69aa4dc16496897efa2959a2aca3340c70462cd7a4be512692530288c3`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T09:17:00Z · Agent: Codex GPT-5 · Batch: c3-af-prompt-memory-direct-path-171
+- Paths touched: `src/main/kotlin/atropos/core/factory/FactoryLineage.kt` (+1/-1 effective memory binding), `AGENTS.md` (+this row).
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-AF-04`, `C3-AF-05`, `C3-P19` prompt artifact and research lineage.
+- Predicate moved: direct general-generator invocations now persist the prompt artifact through the same repository-local `LocalMemoryStore` used by the routed factory path; only a real storage failure records a soft skip.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run, per operator direction.
+- % delta: unchanged; no phase percentage claim. Factory focused lineage verification remains pending.
+- Why justified: this removes a route-dependent prompt-memory bypass without creating another memory root or changing the existing soft-fail behavior.
+- HR interrupts: none.
+- Fingerprints: `FactoryLineage.kt=89d4abde7f488870baf70f9944f80e4eeb5f092714cf9235aec80a7e1e0a3fcc`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T09:29:00Z · Agent: Codex GPT-5 · Batch: c0-n005-acceptance-command-audit-172
+- Paths touched: `scripts/calculator-final-acceptance.sh` (bounded production audit), `AGENTS.md` (+this row).
+- Atoms / phases affected: `N005` final acceptance command for the scoped calculator closure path.
+- Predicate moved: one canonical acceptance command composes the existing compatibility, prerequisite, traceability, HR, hierarchy, governance, factory-wiring, production, and endpoint-manifest owners while reporting build/JAR/install/restart as separate unrun gates.
+- Verification: bounded production script audit and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run, per operator direction.
+- % delta: unchanged; no phase percentage claim. N001–N005 test execution and final runtime evidence remain pending.
+- Why justified: the command is an orchestration shell only; it does not create a second verifier or acceptance system.
+- HR interrupts: none.
+- Fingerprints: no product files changed in this audit.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T09:41:00Z · Agent: Codex GPT-5 · Batch: c1-f004-vector-input-boundary-173
+- Paths touched: `src/main/kotlin/atropos/core/memory/SqliteVecMemoryIndex.kt` (+5), `AGENTS.md` (+this row).
+- Atoms / phases affected: `F004` optional sqlite-vec edge semantics.
+- Predicate moved: optional vector indexing returns a bounded failure for mismatched or non-finite embeddings, and lookup returns no hits for invalid query vectors instead of throwing through primary memory.
+- Verification: production-only review, `git diff --check`, and `bash -n` on modified shell gates passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run, per operator direction.
+- % delta: unchanged; no phase percentage claim. F004 focused edge verification remains pending.
+- Why justified: invalid optional accelerator input cannot take down canonical JSONL/lexical/DLOI memory.
+- HR interrupts: none.
+- Fingerprints: `SqliteVecMemoryIndex.kt=be294e26cfc28ad1b3bacb32113fe4c303e0f3dde6df1504c83b2ce7511a5935`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T09:52:00Z · Agent: Codex GPT-5 · Batch: c1-f004-index-root-boundary-174
+- Paths touched: `src/main/kotlin/atropos/core/memory/SqliteVecMemoryIndex.kt` (+1), `AGENTS.md` (+this row).
+- Atoms / phases affected: `F004` optional sqlite-vec portable-root boundary.
+- Predicate moved: direct indexing on a fresh repository-local memory store creates only the existing authorized memory-root directory before optional sqlite execution; no process-wide or device-specific path is introduced.
+- Verification: production-only residual scan, `git diff --check`, and `bash -n` on modified shell gates passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run, per operator direction.
+- % delta: unchanged; no phase percentage claim. F004 focused edge verification remains pending.
+- Why justified: the adapter remains subordinate to `LocalMemoryStore` and fails closed when sqlite-vec is absent or invalid.
+- HR interrupts: none.
+- Fingerprints: `SqliteVecMemoryIndex.kt=7784d04e558160532871d3b719b33db572316f4174ec925010c803eb2a6baa6f`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T09:41:00Z · Agent: Codex GPT-5 · Batch: c1-f004-vector-input-boundary-173
+- Paths touched: `src/main/kotlin/atropos/core/memory/SqliteVecMemoryIndex.kt` (+5), `AGENTS.md` (+this row).
+- Atoms / phases affected: `F004` optional sqlite-vec edge semantics.
+- Predicate moved: optional vector indexing now returns a bounded failure for mismatched or non-finite embeddings, and lookup returns no hits for invalid query vectors instead of throwing through the primary memory path.
+- Verification: production-only review, `git diff --check`, and `bash -n` on modified shell gates passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run, per operator direction.
+- % delta: unchanged; no phase percentage claim. F004 focused edge verification remains pending.
+- Why justified: invalid optional accelerator input cannot take down canonical JSONL/lexical/DLOI memory; no new fallback authority was introduced.
+- HR interrupts: none.
+- Fingerprints: `SqliteVecMemoryIndex.kt=be294e26cfc28ad1b3bacb32113fe4c303e0f3dde6df1504c83b2ce7511a5935`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T09:52:00Z · Agent: Codex GPT-5 · Batch: c1-f004-index-root-boundary-174
+- Paths touched: `src/main/kotlin/atropos/core/memory/SqliteVecMemoryIndex.kt` (+1), `AGENTS.md` (+this row).
+- Atoms / phases affected: `F004` optional sqlite-vec portable-root boundary.
+- Predicate moved: direct indexing on a fresh repository-local memory store now creates only the existing authorized memory-root directory before optional sqlite execution; no process-wide or device-specific path is introduced.
+- Verification: production-only residual scan, `git diff --check`, and `bash -n` on modified shell gates passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run, per operator direction.
+- % delta: unchanged; no phase percentage claim. F004 focused edge verification remains pending.
+- Why justified: the adapter remains subordinate to `LocalMemoryStore` and fails closed when sqlite-vec is absent or invalid; directory creation cannot escape the injected memory root.
+- HR interrupts: none.
+- Fingerprints: `SqliteVecMemoryIndex.kt=7784d04e558160532871d3b719b33db572316f4174ec925010c803eb2a6baa6f`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T09:03:00Z · Agent: Codex GPT-5 · Batch: c0-m003-m006-portability-gates-170
+- Paths touched: `build.gradle.kts` (+34), `scripts/kotlin-compat-scan.sh` (+3/-2), `docs/architecture/DOCKER_NATIVE_DESKTOP_ANDROID_WEB_PLAN.md` (audited), `AGENTS.md` (+this row).
+- Atoms / phases affected: `M003` Kotlin compatibility scan and `M006` Docker/native desktop/Android/Web migration plan.
+- Predicate moved: the compatibility scan now classifies all Gradle dependency configuration forms it can encounter, and the portable-surface task now rejects a missing ownership/portable-root/gate-separation plan even when the document file exists.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run, per operator direction.
+- % delta: unchanged; no phase percentage claim. M003/M006 focused verification remains pending.
+- Why justified: both checks extend existing build-control owners; they do not add a second build system, packaging gate, or platform orchestration path. The plan continues to identify `src/main/kotlin/atropos/core` as canonical and the CLI/platform surfaces as adapters.
+- HR interrupts: none.
+- Fingerprints: `build.gradle.kts=61649e685318fa633dd00c8d772b9b428f76b45b9b8fd7db4b420e5d337ba21c`, `scripts/kotlin-compat-scan.sh=9c6f1817d3c6827990ca68b84348da3374625a909659d78cd27654b01e1a5548`, `DOCKER_NATIVE_DESKTOP_ANDROID_WEB_PLAN.md=b10ebd69aa4dc16496897efa2959a2aca3340c70462cd7a4be512692530288c3`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T09:17:00Z · Agent: Codex GPT-5 · Batch: c3-af-prompt-memory-direct-path-171
+- Paths touched: `src/main/kotlin/atropos/core/factory/FactoryLineage.kt` (+1/-1 effective memory binding), `AGENTS.md` (+this row).
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-AF-04`, `C3-AF-05`, `C3-P19` prompt artifact and research lineage.
+- Predicate moved: direct general-generator invocations now persist the prompt artifact through the same repository-local `LocalMemoryStore` used by the routed factory path; only a real storage failure records a soft skip, while file, requirements, atom, and evidence lineage remain hash-linked.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run, per operator direction.
+- % delta: unchanged; no phase percentage claim. Factory focused lineage verification remains pending.
+- Why justified: this removes a route-dependent prompt-memory bypass without creating another memory root or changing the existing soft-fail behavior for unavailable storage.
+- HR interrupts: none.
+- Fingerprints: `FactoryLineage.kt=89d4abde7f488870baf70f9944f80e4eeb5f092714cf9235aec80a7e1e0a3fcc`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T09:29:00Z · Agent: Codex GPT-5 · Batch: c0-n005-acceptance-command-audit-172
+- Paths touched: `scripts/calculator-final-acceptance.sh` (bounded production audit), `AGENTS.md` (+this row).
+- Atoms / phases affected: `N005` final acceptance command for the scoped calculator closure path.
+- Predicate moved: one canonical acceptance command is present and composes the existing compatibility, prerequisite, traceability, HR, hierarchy, governance, factory-wiring, production, and endpoint-manifest owners; it reports full-build/JAR/install/restart as separate unrun gates.
+- Verification: bounded production script audit and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run, per operator direction.
+- % delta: unchanged; no phase percentage claim. N001–N005 test execution and final runtime evidence remain pending.
+- Why justified: the command is an orchestration shell only; it does not create a second verifier or acceptance system, and its output keeps operational proof separate from code status.
+- HR interrupts: none.
+- Fingerprints: no product files changed in this audit.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T07:32:00Z · Agent: Codex GPT-5 · Batch: c1-a004-hig-zero-edge-161
+- Paths touched: `src/main/kotlin/atropos/dloi/HigZeroGuard.kt` (+31/-25), `AGENTS.md` (+this row).
+- Atoms / phases affected: `A004` HIGZeroGuard exact-address refusal semantics.
+- Predicate moved: blank address/task requests, invalid line coordinates, empty excerpts, and missing provenance now return typed `NoMatch` instead of being admitted as authoritative DLOI resolutions.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run, per operator direction.
+- % delta: unchanged; no phase percentage claim. A004 remains pending focused verification evidence.
+- Why justified: the existing `HigZeroGuard` remains the sole HIG=0 boundary and still performs no cosine, nearest-neighbor, or fabricated fallback.
+- HR interrupts: none.
+- Fingerprints: `HigZeroGuard.kt=9725ad1f7cd3d0afd889575150da9d1e23f1ce07c6a6a5229358363578c511d2`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T07:39:00Z · Agent: Codex GPT-5 · Batch: c1-a005-trace-gate-boundary-162
+- Paths touched: `scripts/source-to-code-trace-gate.py` (+17), `AGENTS.md` (+this row).
+- Atoms / phases affected: `A005` source-to-code traceability gate.
+- Predicate moved: the trace gate now rejects unknown obligation statuses, invalid or repository-escaping evidence paths, and `NOT_WRITTEN` obligations without a reason; written evidence still requires existing paths and exact source hashes.
+- Verification: production-only script review and `git diff --check` passed. No Python test, compile, Gradle, JAR, install, restart, deployment, or runtime proof was run, per operator direction.
+- % delta: unchanged; no phase percentage claim. A005 remains pending focused gate evidence.
+- Why justified: validation remains in the canonical source trace gate and does not alter the obligation registry, source documents, or completion percentages.
+- HR interrupts: none.
+- Fingerprints: `source-to-code-trace-gate.py=5cb156be55892ce4a00b15f616a0383dc491be71426fd576ae924296321dc2b9`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T07:47:00Z · Agent: Codex GPT-5 · Batch: c1-d002-constraint-schema-163
+- Paths touched: `src/main/kotlin/atropos/core/verifier/ConstraintSolverEvaluator.kt` (+27/-1), `AGENTS.md` (+this row).
+- Atoms / phases affected: `D002` deterministic constraint solver/evaluator.
+- Predicate moved: malformed constraints with blank invariant ID, expected value, observed value, or remediation now produce deterministic error findings even when their `satisfied` flag is true; valid unsatisfied constraints retain their existing findings.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run, per operator direction.
+- % delta: unchanged; no phase percentage claim. D002 remains pending focused verification evidence.
+- Why justified: schema validation is inside the existing `ConstraintSolverEvaluator`; no second verifier or constraint owner was introduced.
+- HR interrupts: none.
+- Fingerprints: `ConstraintSolverEvaluator.kt=faf94c712e0f73ace13b259a1764dc2cf32f72ec6645d3c607487d969c6c9086`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T07:55:00Z · Agent: Codex GPT-5 · Batch: c1-f002-cas-write-integrity-164
+- Paths touched: `src/main/kotlin/atropos/data/storage/CloudLakehouseSyncEngine.kt` (+4), `AGENTS.md` (+this row).
+- Atoms / phases affected: `F002` CloudLakehouse/CAS integrity and delta synchronization.
+- Predicate moved: content-addressed writes now re-read and verify the moved object’s SHA-256 before returning success; a corrupted or missing target fails closed.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run, per operator direction.
+- % delta: unchanged; no phase percentage claim. F002 remains pending focused verification evidence.
+- Why justified: the existing CAS owner and hash-addressed storage root remain unchanged; only the success predicate was strengthened.
+- HR interrupts: none.
+- Fingerprints: `CloudLakehouseSyncEngine.kt=5f74254f26c537a123efdb45fbda9a5fe6d8e965681a0a2af2374078e463e774`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T08:12:00Z · Agent: Codex GPT-5 · Batch: c1-f004-sqlite-vec-optional-adapter-165
+- Paths touched: `src/main/kotlin/atropos/core/memory/SqliteVecMemoryIndex.kt` (+151), `src/main/kotlin/atropos/core/memory/LocalMemoryStore.kt` (+27), `AGENTS.md` (+this row).
+- Atoms / phases affected: `F004` optional sqlite-vec/vector memory integration.
+- Predicate moved: the canonical `LocalMemoryStore` now exposes bounded source-chunk indexing and lookup through an optional sqlite-vec adapter; capability absence returns a recorded skip result and preserves the existing redacted JSONL plus lexical/DLOI path.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run, per operator direction.
+- % delta: unchanged; no phase percentage claim. F004 focused edge verification remains pending.
+- Why justified: `SqliteVecMemoryIndex` uses the existing memory root, argument-safe `ProcessBuilder` invocation, bounded output retention, deterministic chunk row identities, dimension checks, and explicit capability gating. It does not create a second memory root or promote vector similarity above HIG=0/DLOI addressing.
+- HR interrupts: none.
+- Fingerprints: `SqliteVecMemoryIndex.kt=a57c6455c9a0e88c47ebe0802bba88db5026110fbf133e3f163021973469fe7f`, `LocalMemoryStore.kt=c6c11cdc43a1c1a777337ac3644c09b55832c1022831fa7a6d61313ed9624698`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T08:24:00Z · Agent: Codex GPT-5 · Batch: c1-f005-source-chunking-166
+- Paths touched: `src/main/kotlin/atropos/core/memory/MemorySourceChunker.kt` (+59), `src/main/kotlin/atropos/core/memory/LocalMemoryStore.kt` (+27), `AGENTS.md` (+this row).
+- Atoms / phases affected: `F005` bounded source chunking and overlap.
+- Predicate moved: the canonical local memory owner now redacts source text before deterministically producing 1,024-token windows with 10% overlap and content SHA-256 identifiers, while empty input and invalid configuration fail safely.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run, per operator direction.
+- % delta: unchanged; no phase percentage claim. F005 focused edge verification remains pending.
+- Why justified: chunking is a pure transformation composed by `LocalMemoryStore`; it does not create an ingestion authority, load source documents into a second root, or introduce cosine/RAG fallback.
+- HR interrupts: none.
+- Fingerprints: `MemorySourceChunker.kt=d538de279128880d4401e6d1086a7019c5968c2d6709abf778eec17259bece72`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T08:31:00Z · Agent: Codex GPT-5 · Batch: c1-b002-b003-parser-namespace-167
+- Paths touched: `src/main/kotlin/atropos/core/parser/TreeSitterGrammarBridge.kt` (+1/-1 effective modifier pattern), `src/main/kotlin/atropos/ast/AstSymbolGraph.kt` (+30/-14 effective wildcard reconciliation), `AGENTS.md` (+this row).
+- Atoms / phases affected: `B002` deterministic Kotlin declaration extraction and `B003` AST namespace reconciliation.
+- Predicate moved: parser extraction now recognizes `const` and `lateinit` property declarations; local wildcard imports resolve to sorted symbol and expected-path candidates, while external wildcard imports remain external rather than being misclassified as local unresolved paths.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run, per operator direction.
+- % delta: unchanged; no phase percentage claim. B002/B003 focused verification remains pending.
+- Why justified: `TreeSitterGrammarBridge` and `AstSymbolGraph` remain the single deterministic parser/graph owners; the change strengthens existing symbol and import evidence without adding another AST or namespace service.
+- HR interrupts: none.
+- Fingerprints: `TreeSitterGrammarBridge.kt=ba176a547f9e95cdf71c8bc617e38f388dbcae968b764f1477a6bff26d9ccce1`, `AstSymbolGraph.kt=e7b72648658b638eacad1eaedb77ab85f3930cf1e5298e8bb8f01b9be6294745`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T08:42:00Z · Agent: Codex GPT-5 · Batch: c1-g006-provider-matrix-local-fixture-168
+- Paths touched: `src/main/kotlin/atropos/core/provider/ProviderFixtureMatrixService.kt` (+18/-5), `AGENTS.md` (+this row).
+- Atoms / phases affected: `G006` provider fixture matrix.
+- Predicate moved: local providers without a remote adapter now receive explicit offline success and dry-run fixtures from their descriptor’s `isLocal` contract; non-local providers without an adapter still fail the required success fixture rather than being silently covered.
+- Verification: production-only review and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run, per operator direction.
+- % delta: unchanged; no phase percentage claim. G006 remains pending focused matrix verification.
+- Why justified: the existing `ProviderFixtureMatrixService` remains the sole fixture rollup owner, and the change distinguishes a valid local execution path from an absent remote adapter without adding provider-specific architecture or live network calls.
+- HR interrupts: none.
+- Fingerprints: `ProviderFixtureMatrixService.kt=67ffa274f11ff347795e9378c3a002eae191d32f98cd52ca1b4bd2beb2b8d394`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T08:49:00Z · Agent: Codex GPT-5 · Batch: c2-h007-queue-degrade-audit-169
+- Paths touched: `src/main/kotlin/atropos/core/provider/RoutePolicy.kt`, `src/main/kotlin/atropos/core/provider/adapter/AdapterRouteFacade.kt`, `src/main/kotlin/atropos/core/agent/AgentService.kt` (bounded production audit), `AGENTS.md` (+this row).
+- Atoms / phases affected: `H007` queue/degrade when free providers are unavailable.
+- Predicate moved: production audit confirms the canonical route chain returns `queued=true` with a deterministic reason when no eligible provider exists; `AdapterRouteFacade` produces a typed `Queued` result, and `AgentService` persists a queue entry or explicit local-queue degradation instead of hard-failing the request.
+- Verification: bounded production audit and `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run, per operator direction.
+- % delta: unchanged; no phase percentage claim. H007 focused route/queue verification remains pending.
+- Why justified: the existing `RoutePolicy` → `AdapterRouteFacade` → `AgentService` chain is one routing/queue authority; no second queue, fallback router, or paid bypass was introduced.
+- HR interrupts: none.
+- Fingerprints: no product files changed in this audit.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T10:04:00Z · Agent: Codex GPT-5 · Batch: ledger-tail-repair-175
+- Paths touched: `AGENTS.md` (+this row only).
+- Atoms / phases affected: ledger evidence integrity for batches `170`–`174`.
+- Predicate moved: the physical EOF of the append-only ledger now explicitly indexes the portability gates, direct prompt-memory binding, N005 acceptance audit, and two F004 boundary batches that were recorded earlier in this file but were not previously visible at EOF.
+- Verification: `git diff --check` and timestamp/fingerprint inspection passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim.
+- Why justified: no prior ledger row or original baseline was deleted or rewritten; the index preserves the evidence-only contract and makes the latest batch chain discoverable from the file tail.
+- HR interrupts: none.
+- Fingerprints: batch `170`=`build.gradle.kts:61649e685318fa633dd00c8d772b9b428f76b45b9b8fd7db4b420e5d337ba21c`; `171`=`FactoryLineage.kt:89d4abde7f488870baf70f9944f80e4eeb5f092714cf9235aec80a7e1e0a3fcc`; `172`=production audit only; `173`=`SqliteVecMemoryIndex.kt:be294e26cfc28ad1b3bacb32113fe4c303e0f3dde6df1504c83b2ce7511a5935`; `174`=`SqliteVecMemoryIndex.kt:7784d04e558160532871d3b719b33db572316f4174ec925010c803eb2a6baa6f`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T10:22:00Z · Agent: Codex GPT-5 · Batch: c0-n001-n004-test-contract-gate-176
+- Paths touched: `scripts/calculator-prerequisite-gate.sh` (+25), `AGENTS.md` (+this row).
+- Atoms / phases affected: `N001`, `N002`, `N003`, `N004` acceptance-surface contract checks.
+- Predicate moved: the existing calculator prerequisite gate now verifies that each inventoried provider, terminal, source-authority, endpoint, hierarchy, and factory acceptance Kotlin surface contains an executable `@Test` contract before any test command is invoked.
+- Verification: production-only script review, `git diff --check`, and `bash -n` passed. No test, compile, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim. N001–N004 execution and behavioral results remain pending.
+- Why justified: this strengthens the existing acceptance inventory without creating a second test runner or falsely treating file presence as passing behavior.
+- HR interrupts: none.
+- Fingerprints: `calculator-prerequisite-gate.sh=890ae8839c09083d6aa5c79bd93d914c6652b140bdf564f3de71178c2b3b6dda`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T10:46:00Z · Agent: Codex GPT-5 · Batch: c1-j010-j011-dag-worker-boundaries-177
+- Paths touched: `src/main/kotlin/atropos/core/director/DirectorDagSupervisor.kt` (+83), `src/main/kotlin/atropos/core/director/DirectorDagSupervision.kt` (+25), `src/main/kotlin/atropos/core/agent/WorkerCodeProposalService.kt` (+112), `src/main/kotlin/atropos/core/autonomous/AutonomousOrchestrator.kt` (wiring and fail-closed continuation changes; existing prior edits preserved).
+- Atoms / phases affected: `J010` DirectorOrchestrator, `J011` WorkerCodeSynthesizer; Phase 11/C1 calculator prerequisite control path.
+- Predicate moved: autonomous DAG continuation and verification tasks now require the existing Director advisory path before delegating execution to the canonical `DagExecutionService`; worker fan-out now has a typed proposal boundary that delegates source binding, redaction, provider policy, patch persistence, and apply-checking to `AgentService` without applying or approving its own output.
+- Verification: source inspection, `git diff --check`, and SHA-256 fingerprinting only. No compile, test, JAR, install, restart, deployment, or runtime proof was run by this batch.
+- % delta: unchanged; J010/J011 focused behavioral verification remains pending and no phase percentage claim is made.
+- Why justified: the new files compose existing Director, DAG, AgentService, patch-store, and policy owners; they do not create a second executor, verifier, territory system, provider registry, or mutation path. Missing DAG IDs, missing worker identity/provider/task/territory, unavailable proposals, failed apply checks, and blocking Director observations remain fail-closed.
+- HR interrupts: none.
+- Fingerprints: `DirectorDagSupervisor.kt=abd7cc080b53727669e472d36995a9584f89f7dbf2f94c8eda464d29dc42408a`; `DirectorDagSupervision.kt=b0afa5b226ca7bdc3a0c621ebd1fcc7cb8b4766156802380ca90b9403d4eda3f`; `WorkerCodeProposalService.kt=8cd8c43ddfbd1feb069abb9123975513c5b4d2548d81f9fc6611634dfaccb75f`; `AutonomousOrchestrator.kt=bd4b9be420ad9a281be3eb0b5ce488329464ceb5ab7436dc773408bf58789399`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T11:02:00Z · Agent: Codex GPT-5 · Batch: c2-p16-registry-atomization-178-EOF
+- Paths touched: `src/main/kotlin/atropos/core/hierarchy/HierarchyRegistry.kt`, `src/main/kotlin/atropos/core/hierarchy/HierarchyModels.kt`, `scripts/hierarchy-dispatch-proof.sh`, and `AGENTS.md`.
+- Atoms / phases affected: `C2-P16` / `BP-P16-hierarchy-dispatch`.
+- Predicate moved: the P16 registry extraction and proof-input update from batch 178 are now indexed at the physical EOF of the append-only ledger.
+- Verification: `git diff --check` and `bash -n scripts/hierarchy-dispatch-proof.sh scripts/calculator-prerequisite-gate.sh` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim.
+- HR interrupts: none.
+- Fingerprints: `HierarchyRegistry.kt=08ff63ce7686404171b2c794eb41321cb80500a887630611a271a80e298918ba`; `HierarchyModels.kt=7614c920af256c40bc32611f804d82e2d687f65dd9d34fe319b014d0967fd5aa`; `hierarchy-dispatch-proof.sh=e442c09ae02be3fa773fe740f22a5ff17286a1cc614617113cd519f4c0376582`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T11:18:00Z · Agent: Codex GPT-5 · Batch: c2-p16-task-lifecycle-179-EOF
+- Paths touched: `src/main/kotlin/atropos/core/hierarchy/HierarchyModels.kt`, `src/main/kotlin/atropos/core/hierarchy/HierarchyRegistry.kt`, `src/main/kotlin/atropos/core/hierarchy/HierarchyTaskLifecycle.kt`, and `AGENTS.md`.
+- Atoms / phases affected: `C2-P16` / `BP-P16-hierarchy-dispatch`.
+- Predicate moved: the P16 task-lifecycle implementation from batch 179 is indexed at the physical EOF of the append-only ledger.
+- Verification: `git diff --check` and `bash -n scripts/hierarchy-dispatch-proof.sh` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim.
+- HR interrupts: none.
+- Fingerprints: `HierarchyModels.kt=a9cc695602a513ad325390fe032dc77d7fbe62e5bbb2e3d9ff4535d597bebce0`; `HierarchyRegistry.kt=eaa35cfbad6079acc6c28fdb305f131bf6fc93210ab2fe2617a7cd40dbfa864c`; `HierarchyTaskLifecycle.kt=f0800c776c196fe9020aa9f1a5ffba1fb492df14c5d3df758a818876f5030e9c`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T11:36:00Z · Agent: Codex GPT-5 · Batch: c2-p14-need-to-know-audit-180-EOF
+- Paths touched: `src/main/kotlin/atropos/core/hr/HrRouterModels.kt`, `src/main/kotlin/atropos/core/hr/HrRouterService.kt`, `src/main/kotlin/atropos/core/hr/HrRouterAuditStore.kt`, `src/main/kotlin/atropos/cli/commands/HrCommandHandler.kt`, and `AGENTS.md`.
+- Atoms / phases affected: `C2-P14` / `BP-P14-hr-audit`.
+- Predicate moved: the P14 need-to-know audit implementation from batch 180 is indexed at the physical EOF of the append-only ledger.
+- Verification: `git diff --check` and `bash -n scripts/hierarchy-dispatch-proof.sh scripts/calculator-prerequisite-gate.sh` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim.
+- HR interrupts: none.
+- Fingerprints: `HrRouterModels.kt=2b9325b5943bf6eb1c4b3d43194861ea639ec24c96d02dbf8a4e9e10e48f4513`; `HrRouterService.kt=15589f6c8a6d6c47b0883a1bd45465417b9f701c90438ba91e891ade9ff3f18a`; `HrRouterAuditStore.kt=b254b68eba129379c30a4657a878a56e6093cd9c1eb1a0cc57c3266d19bf9bca`; `HrCommandHandler.kt=50d3555cbc29b18da216295a94674a1f1fd0a0d7df3a188c2bef9dded114e756`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T11:54:00Z · Agent: Codex GPT-5 · Batch: c1-d002-boundary-rules-181-EOF
+- Paths touched: `src/main/kotlin/atropos/core/verifier/ConstraintSolverEvaluator.kt`, `src/main/kotlin/atropos/core/verification/DeterministicChecks.kt`, and `AGENTS.md`.
+- Atoms / phases affected: `D002` / deterministic source-boundary evaluation.
+- Predicate moved: the D002 boundary-rule implementation from batch 181 is indexed at the physical EOF of the append-only ledger.
+- Verification: `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim.
+- HR interrupts: none.
+- Fingerprints: `ConstraintSolverEvaluator.kt=1339c27efb01b224ca16c9fb259ed22880eda3dea8af8955bc6a2e603f6be6bc`; `DeterministicChecks.kt=ee83ef75d01e899ef9a793d1a7d94ed9fb34885bdb127848d3deb851d140d369`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T12:06:00Z · Agent: Codex GPT-5 · Batch: c2-p14-audit-task-redaction-182
+- Paths touched: `src/main/kotlin/atropos/core/hr/HrRouterAuditStore.kt` (+2/-2).
+- Atoms / phases affected: `C2-P14` / `BP-P14-hr-audit` persistence redaction.
+- Predicate moved: task identifiers in the new HR audit columns are now encoded through the existing redaction boundary before persistence and decoded only when read.
+- Verification: `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim.
+- HR interrupts: none.
+- Fingerprints: `HrRouterAuditStore.kt=c6a8fcdfdf6043d203ee368113d39cbf747261153cab990288c454f261f3b57b`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T12:22:00Z · Agent: Codex GPT-5 · Batch: c1-j010-cli-dag-supervision-183
+- Paths touched: `src/main/kotlin/atropos/cli/commands/AgentDagCommandHandler.kt` (+9/-4).
+- Atoms / phases affected: `J010` DirectorOrchestrator; canonical DAG operator command path.
+- Predicate moved: `/agent dag run` now uses the existing `DirectorDagSupervisor` before delegating to `DagExecutionService`; operator DAG runs no longer bypass Director advisory control.
+- Verification: `git diff --check` only. No compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim.
+- HR interrupts: none.
+- Fingerprints: `AgentDagCommandHandler.kt=253fb78b2552e2135ad32c5c57b0686e6d3c8699747fcd31695a34ab149e23ec`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T12:34:00Z · Agent: Codex GPT-5 · Batch: c1-j010-bootstrap-dag-supervision-184
+- Paths touched: `src/main/kotlin/atropos/bootstrap/BootstrapAcceptanceDag.kt` (+9/-4).
+- Atoms / phases affected: `J010` DirectorOrchestrator; bootstrap acceptance DAG control path.
+- Predicate moved: bootstrap DAG evaluation now enters the existing `DirectorDagSupervisor` before each canonical `DagExecutionService` evaluation; no bootstrap execution pass bypasses Director advisory control.
+- Verification: `git diff --check` only. No compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim.
+- HR interrupts: none.
+- Fingerprints: `BootstrapAcceptanceDag.kt=850b21c2f599a335f837561258deb1efde546a816289ac585ffc80291de25c40`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T12:46:00Z · Agent: Codex GPT-5 · Batch: c1-j011-worker-territory-boundary-185
+- Paths touched: `src/main/kotlin/atropos/core/agent/WorkerCodeProposalService.kt` (+28/-0).
+- Atoms / phases affected: `J011` WorkerCodeSynthesizer; bounded worker proposal path.
+- Predicate moved: accepted worker proposals now require a parseable non-empty diff and are refused when any touched path falls outside the declared worker territory; the existing `TerritoryEnforcer` owns prefix semantics and no mutation occurs in this service.
+- Verification: `git diff --check` only. No compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim.
+- HR interrupts: none.
+- Fingerprints: `WorkerCodeProposalService.kt=eded39abde1bcf2c4854c24d4d3538316289c9ad05992a525034a141fc5439d4`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T12:58:00Z · Agent: Codex GPT-5 · Batch: c2-p16-task-lifecycle-edge-186
+- Paths touched: `src/main/kotlin/atropos/core/hierarchy/HierarchyRegistry.kt` (+3/-1).
+- Atoms / phases affected: `C2-P16` / `BP-P16-hierarchy-dispatch` task lifecycle edge semantics.
+- Predicate moved: task lifecycle now refuses blank completion/failure evidence and expires a task at its exact timeout instant as well as after it, preserving fail-closed result aggregation.
+- Verification: `git diff --check` only. No compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim.
+- HR interrupts: none.
+- Fingerprints: `HierarchyRegistry.kt=b6d49ca2a0f8ee2dc15bba32ef567056dd8402a4ec81442f59fa2fa34ed801aa`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T13:10:00Z · Agent: Codex GPT-5 · Batch: c3-af-prompt-content-identity-187
+- Paths touched: `src/main/kotlin/atropos/core/factory/FactoryLineage.kt` (+6/-3).
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-P19` prompt artifact and downstream lineage identity.
+- Predicate moved: `promptSha256` and the prompt fingerprint now identify the canonical trimmed user prompt, while persisted prompt and memory text remain redacted and carry a separate redacted-text digest; downstream research, atoms, context, and evidence continue using the canonical prompt hash without secret persistence.
+- Verification: `git diff --check` only. No compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim.
+- HR interrupts: none.
+- Fingerprints: `FactoryLineage.kt=b15badf54d252b65611ab59527eebc86e3deb8b16e5ce1845d27f0bf8b68858e`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T13:22:00Z · Agent: Codex GPT-5 · Batch: c3-af-research-suggestion-gate-188
+- Paths touched: `src/main/kotlin/atropos/core/factory/FactoryResearchService.kt` (+4/-1).
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-P19` ordered research and provider-suggestion policy.
+- Predicate moved: provider suggestions can no longer be forced by the legacy boolean parameter; the existing confidence predicate is now the sole authority after short-term/long-term memory, DLOI/lakehouse, and bounded fetch stages, with prompt-span lineage retained.
+- Verification: `git diff --check` only. No compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim.
+- HR interrupts: none.
+- Fingerprints: `FactoryResearchService.kt=86704b32bc736eee35d53d760cd839bf2cd395c92d7073a785228d637263800c`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T13:34:00Z · Agent: Codex GPT-5 · Batch: c1-j011-worker-nullability-correction-189
+- Paths touched: `src/main/kotlin/atropos/core/agent/WorkerCodeProposalService.kt` (+5/-1).
+- Atoms / phases affected: `J011` WorkerCodeSynthesizer; accepted proposal path integrity.
+- Predicate moved: the worker proposal path now binds a non-null accepted patch path before parsing, hashing, or returning a territory-audited proposal; a Boolean acceptance conjunction no longer relies on an invalid nullable smart-cast.
+- Verification: `git diff --check` only. No compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim.
+- HR interrupts: none.
+- Fingerprints: `WorkerCodeProposalService.kt=8a5b6c6406bcd61de409bf3efdba1709cedc2559bafa78394cb7ccca7070c0ca`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T13:46:00Z · Agent: Codex GPT-5 · Batch: c1-b002-b003-impact-integration-190
+- Paths touched: `src/main/kotlin/atropos/core/verification/DeterministicChecks.kt` (+7/-5 in this slice).
+- Atoms / phases affected: `B002`, `B003` / AST impact verification integration.
+- Predicate moved: deterministic AST impact checks now evaluate each changed path through the canonical `impactOfPaths` query, so a declaration-less changed file is accepted when its exact local import dependents expose parsed symbols; unrelated paths still receive an explicit warning.
+- Verification: `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim.
+- HR interrupts: none.
+- Fingerprints: `DeterministicChecks.kt=445a45b9c4192c7ff812319854df806b39d358774b8aa7bdd16ef0f15323b966`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T13:58:00Z · Agent: Codex GPT-5 · Batch: c1-j011-worker-proposal-route-191
+- Paths touched: `src/main/kotlin/atropos/cli/commands/AgentCommand.kt` (+16/-1), `src/main/kotlin/atropos/cli/commands/AgentCommandParser.kt` (+47), `src/main/kotlin/atropos/cli/commands/AgentWorkerCommandHandler.kt` (+38 new).
+- Atoms / phases affected: `J011` WorkerCodeSynthesizer; bounded operator proposal entry path.
+- Predicate moved: `/agent worker propose` now reaches the existing `WorkerCodeProposalService` and therefore the canonical `AgentService.patch` proposal owner; worker identity, explicit territory, optional provider, patch hash, and non-mutation status are rendered without introducing an apply or approval path.
+- Verification: `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim.
+- HR interrupts: none.
+- Fingerprints: `AgentCommand.kt=632b52ce58e46247dba2a26d7b7543e96ff0cf7aee0768e2fd15c61d238f3a9e`; `AgentCommandParser.kt=ca326c95f410fc979b2ac0299cd6167f9f82cd155691137428eb2ae71717b274`; `AgentWorkerCommandHandler.kt=b39cbd522f3e65fd43bf15c13570a055eaa1030c953e2c6422421dea08aa30ec`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T14:10:00Z · Agent: Codex GPT-5 · Batch: c3-af-memory-soft-fail-192
+- Paths touched: `src/main/kotlin/atropos/core/factory/AppFactoryRouter.kt` (+2/-2 in this slice).
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-P19` soft-fail research/memory continuity.
+- Predicate moved: the optional factory decision-memory write can no longer abort NL app generation when local memory is unavailable or fails; prompt lineage and ordered research remain the authoritative recorded channels, and the returned plan reports no decision-memory id when the soft stage is skipped.
+- Verification: `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim.
+- HR interrupts: none.
+- Fingerprints: `AppFactoryRouter.kt=6bdad542c0886df547648504e66cd9dbf7d18a96e8aa07c77d67e67d916c0a71`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T14:22:00Z · Agent: Codex GPT-5 · Batch: c3-af-optional-asset-soft-fail-193
+- Paths touched: `src/main/kotlin/atropos/core/factory/AppFactoryRouter.kt` (+17/-11 in this slice).
+- Atoms / phases affected: `C3-AF-03`, `C3-AF-04`, `C3-P19` optional asset stage and completion reporting.
+- Predicate moved: optional asset generation can no longer abort a verified source project; successful assets remain listed, while failures are recorded as redacted `SKIPPED_SOFT_FAIL` entries in the returned factory plan and operator rendering.
+- Verification: `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim.
+- HR interrupts: none.
+- Fingerprints: `AppFactoryRouter.kt=dffb39a9c5c80a179ec80619df6b1035b63589b7692d32fb8654af9e8219c22b`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T14:34:00Z · Agent: Codex GPT-5 · Batch: c1-j011-worker-command-registry-194
+- Paths touched: `src/main/kotlin/atropos/cli/input/CommandCatalog.kt` (+6), `src/main/kotlin/atropos/cli/input/CommandRiskCatalog.kt` (+1).
+- Atoms / phases affected: `J011` WorkerCodeSynthesizer; canonical command discovery and risk vocabulary.
+- Predicate moved: the bounded worker proposal route is now advertised by the existing command registry with worker/territory keywords and classified as moderate risk; it remains proposal-only and does not inherit mutation or approval risk.
+- Verification: `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim.
+- HR interrupts: none.
+- Fingerprints: `CommandCatalog.kt=1704cd465d5bcc064fb271f8e52474e3af5c824d7576982ad14640077819f5fe`; `CommandRiskCatalog.kt=b410afc9072597eb306dbaa1bc925908e365d510485ede73f023e471e7a730bf`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T14:46:00Z · Agent: Codex GPT-5 · Batch: c2-p16-territory-inheritance-195
+- Paths touched: `src/main/kotlin/atropos/core/hierarchy/HierarchyRegistry.kt` (+6/-2 in this slice).
+- Atoms / phases affected: `C2-P16`, with `C2-P12`/`C2-P15` dispatch safety support.
+- Predicate moved: delegated roles can no longer dispatch from an implicit unbounded scope; only the Human Owner may use the root territory, while Director/Manager/Specialist parents without explicit bounded territory are refused before task state or assignment mutation.
+- Verification: `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim.
+- HR interrupts: none.
+- Fingerprints: `HierarchyRegistry.kt=bfe6ce9b7b4fd04e0501eecf719ff9e7e341422657f07c02d3e770578a7ecd82`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T14:58:00Z · Agent: Codex GPT-5 · Batch: c2-p12-territory-expiry-edge-196
+- Paths touched: `src/main/kotlin/atropos/core/territory/TerritoryModels.kt` (+1/-1).
+- Atoms / phases affected: `C2-P12`, `C2-P15`, `C2-P16` territory grant expiry semantics.
+- Predicate moved: a territory assignment is refused at its exact expiry instant as well as after expiry; the canonical assignment owner now matches hierarchy timeout boundary semantics.
+- Verification: `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim.
+- HR interrupts: none.
+- Fingerprints: `TerritoryModels.kt=275ed0f4002823de30eea3bb7fb7291acd2133db4a440918a473b59db15075e9`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T15:10:00Z · Agent: Codex GPT-5 · Batch: c3-af-director-pre-mutation-observation-197
+- Paths touched: `src/main/kotlin/atropos/core/factory/AppProjectGenerator.kt` (+11/-1 in this slice).
+- Atoms / phases affected: `C3-AF-01`, `C3-AF-03`, `C3-P19` factory control-plane visibility.
+- Predicate moved: every generated project now records a Director observation for its planning node and proposed target territory before the mutation authorizer is invoked; the existing auditor and VerifiedCompletionGate remain the independent post-mutation gates.
+- Verification: `git diff --check` passed. No compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim.
+- HR interrupts: none.
+- Fingerprints: `AppProjectGenerator.kt=323759d0a8b2fe9c9aa791aa8c3e7a36ea2dc0a36e3e8f75b9e5b7a66d4ef801`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T15:24:00Z · Agent: Codex GPT-5 · Batch: c1-m003-portable-source-policy-198
+- Paths touched: `scripts/kotlin-compat-scan.sh` (+58/-9), `AGENTS.md` (+this row).
+- Atoms / phases affected: `M003` KotlinCompatScan; C1 portability prerequisite.
+- Predicate moved: the existing compatibility gate now deterministically inventories the checkout's Kotlin sources, rejects internal/host-only imports and device-specific absolute paths, classifies every Gradle dependency declaration, and emits bounded finding/count records without invoking a compiler.
+- Verification: `bash -n scripts/kotlin-compat-scan.sh` and `git diff --check` passed. No Gradle, compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim. M003 focused verification remains pending.
+- Why justified: the scan remains the sole Kotlin portability owner and uses repository-relative/injected roots; it does not add a second build or platform system. Explicit dependency classification prevents silent unsupported-dependency drift while preserving the current Kotlin/JUnit standard modules.
+- HR interrupts: none.
+- Fingerprints: `scripts/kotlin-compat-scan.sh=7b50b66dfba9d4ee668adc36c9a2b00f4d790839013b8a780f356b3476513bc8`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T20:22:00Z · Agent: Codex GPT-5 · Batch: j009-j010-j011-proof-surface-216
+- Paths touched: `scripts/calculator-prerequisite-gate.sh` (+4 production surface entries), `scripts/app-factory-wiring-proof.sh` (+4 wiring assertions), `AGENTS.md` (+this row).
+- Atoms / phases affected: `J009`, `J010`, `J011`; calculator prerequisite and factory control-plane proof surfaces.
+- Predicate moved: the existing prerequisite and factory wiring gates now inventory and assert the canonical Director DAG supervisor, bounded worker proposal service, command handlers, and their stable endpoint IDs together with the factory path.
+- Verification: `bash -n scripts/calculator-prerequisite-gate.sh scripts/app-factory-wiring-proof.sh scripts/endpoint-manifest-proof.sh` and `git diff --check` passed. No Gradle, compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim. Focused verification remains pending.
+- Why justified: these are proof-surface additions for existing owners, not a new test or orchestration system; `/artifact` remains outside the App Factory path and no worker/director implementation was duplicated.
+- HR interrupts: none.
+- Fingerprints: `calculator-prerequisite-gate.sh=00798279ad4d4c5afbec86d0613c9acce716a94e9cf9445b48017567e477c896`; `app-factory-wiring-proof.sh=3ef9dc5dc61cb0306fbb4d0a18b73e52240942d53f25cb1950430cd108c646f0`; `endpoint-manifest-proof.sh=85d48ccf3829519e13c2a91d32ff0e8020ee8ade23a483da2a5d6573beb160f8`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T20:48:00Z · Agent: Codex GPT-5 · Batch: j011-worker-territory-overlap-218
+- Paths touched: `src/main/kotlin/atropos/core/agent/WorkerCodeProposalService.kt` (+30), `AGENTS.md` (+this row).
+- Atoms / phases affected: `J011` bounded worker proposal fan-out; territory non-overlap edge.
+- Predicate moved: `proposeBatch` now deterministically reserves accepted worker territory paths and refuses later proposals whose paths equal or contain an already reserved path, before any overlapping proposal can be accepted.
+- Verification: `git diff --check` passed. No Gradle, compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim. J011 focused verification remains pending.
+- Why justified: the existing `WorkerCodeProposalService` remains the sole proposal boundary and still delegates provider patch proposal, patch parsing, and mutation refusal to existing owners; this closes a parallel-territory hazard without adding a worker scheduler or mutation path.
+- HR interrupts: none.
+- Fingerprints: `WorkerCodeProposalService.kt=cc0bc2f7df86cd9674258ee489a744c76f5dc3c1ac043690c685d13f6098d30c`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T21:04:00Z · Agent: Codex GPT-5 · Batch: j010-director-drift-lineage-219
+- Paths touched: `src/main/kotlin/atropos/core/director/DirectorService.kt` (+10), `src/main/kotlin/atropos/core/director/DirectorDagSupervisor.kt` (+4), `AGENTS.md` (+this row).
+- Atoms / phases affected: `J010` Director DAG supervision; goal/territory-bound drift evidence.
+- Predicate moved: diff-scan observations created during DAG supervision now retain the active goal ID and territory ID, allowing the existing promotion advisory to filter and report drift against the correct run.
+- Verification: `git diff --check` passed. No Gradle, compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim. J010 focused verification remains pending.
+- Why justified: the existing Director store, diff scanner, advisory, and DAG supervisor remain canonical; only the missing identity binding was added, with no second observation or supervision system.
+- HR interrupts: none.
+- Fingerprints: `DirectorService.kt=7dfb747632e82cda7a813eee165517b0120e61358fe1f2cb5cb5c01bdde4ff02`; `DirectorDagSupervisor.kt=b369821f0057879d3f0c12b0e7860eec1bf219b535170988486aedf9be3d1147`.
+- New overall estimate: unchanged; focused verification remains pending.
+
+### 2026-08-04T21:26:00Z · Agent: Codex GPT-5 · Batch: j009-manifest-side-effects-220
+- Paths touched: `src/main/kotlin/atropos/core/endpoint/StaticOperationRegistry.kt` (+22), `scripts/endpoint-manifest-proof.sh` (+2), `AGENTS.md` (+this row).
+- Atoms / phases affected: `J009` endpoint manifest side-effect truth; `J010` and `J011` endpoint evidence.
+- Predicate moved: Director DAG supervision now declares DAG/director observation writes, and worker proposal now declares proposal/patch-evidence writes in the canonical endpoint manifest; the existing proof asserts both declarations.
+- Verification: `git diff --check` and `bash -n scripts/endpoint-manifest-proof.sh` passed. No Gradle, compile, test, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; no phase percentage claim. J009/J010/J011 focused verification remains pending.
+- Why justified: side effects are now explicit metadata on the existing registry entries, not hidden policy in handlers; no second endpoint or evidence owner was introduced.
+- HR interrupts: none.
+- Fingerprints: `StaticOperationRegistry.kt=55088adf80836203f2dcbdb2f9873a362df6b70fc855429b7693bd458f7b647f`; `endpoint-manifest-proof.sh=a997b42b7cd46bbdc451b7b5ad954765c1b82f4ca7db6a94fd88d8b64cea40ae`.
+- New overall estimate: unchanged; focused verification remains pending.
