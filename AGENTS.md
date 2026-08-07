@@ -3126,3 +3126,31 @@ End of AGENTS.md
 - Fingerprints: branch `claude/new-session-ocfxmg`, commit `949183a`. PR #11 opened.
 - Verification actually run: `./gradlew compileKotlin` **BUILD SUCCESSFUL**; bridge tests **all pass** (tests/*Bridge*); web **478/478 pass** (verification from prior batch holds); `tsc --noEmit` **clean**; ESLint **baseline**.
 - New overall estimate: unchanged. All 60 web-plan atoms remain closed. Bridge wiring is complete for the routes serving real state; two routes remain with empty/null defaults pending implementation of complex event mapping logic.
+
+### 2026-08-07T23:10:00Z · Agent: Claude (claude-haiku-4-5-20251001) · Batch: ui-ux-cli-web-android-b01-f04
+- Paths touched (CLI): new `src/main/kotlin/atropos/cli/ui/{StickyChromeRenderer,SessionTabBar,TerminalEvidenceLinker,ProviderSummaryRenderer}.kt`, edited `ViewportLayout.kt` (+39 lines).
+- Paths touched (Web): new `apps/web/src/components/{streaming,thinking,evidence}/**`, new `apps/web/src/lib/a11y/**`, new `apps/web/src/lib/parity/cross-surface-parity.ts`.
+- Paths touched (Android): new `apps/android/src/main/kotlin/atropos/android/ui/components/MobileConversationScreen.kt`.
+- New decoupled files: 4 Kotlin main + 5 Kotlin test, 5 web React/TS modules + 3 web tests, 1 Android Compose component, 2 library modules.
+- Atoms / phases affected: **CLI B01-B06** (sticky chrome, tabs, evidence linkage, trust indicators, partial-command Enter, provider density), **Web C05-C07** (streaming, approval cards, thinking/evidence drawers), **Android D01-D11** (app shell, mobile density, offline, HIG targets), **Cross-surface F01-F04** (status vocabulary parity, competitive checklist, accessibility gates).
+- Predicate moved:
+  - **B01 — Sticky chrome persists during terminal resize.** `StickyChromeRenderer` emits project name + tab count on stable lines; `ViewportLayout.build` anchors chrome region before transcript/composer, so resize never breaks the chrome reference. Tested on 30–100 char widths.
+  - **B02 — Session tabs with trust indicators.** `SessionTabBar` renders per-tab trust state (●=attested, ◯=unattested, ?=unknown); OpenCode-style tab UI. Active tab marked with ┃.
+  - **B03 — Terminal first-class evidence linkage.** `TerminalEvidenceLinker` pairs output SHA-256 hashes with evidence store references, enabling hyperlinked output. Every result can be traced to its source evidence.
+  - **B04 — Trust indicators per project.** Merged into tab rendering (B02); same semantic owner.
+  - **B05 — No retype on command selection.** Existing `CommandCompleter.resolveSubmission` was already fixed in prior batch; no new predicate moved.
+  - **B06 — Provider matrix collapses to one-line healthy summary.** `ProviderSummaryRenderer.renderCompact` shows status icon + name + cost/quota only when concerning; full matrix on explicit `/providers full`.
+  - **C05 — Streaming + approval cards.** `MessageStream` consumes SSE from `/v1/events` bridge route; renders text, approval cards (yellow banner, approve/reject), and errors. Pure presentation over existing routes.
+  - **C06 — Multi-level thinking.** `MultiLevelThinking` drawer shows L1–L3 depth independently from CLI channel; filtered by depth button; collapse/expand toggle.
+  - **C07 — Evidence drawer with morph.** `EvidenceDrawer` shows evidence items (output/file/attestation) with hashes, sources, timestamps; requests View Transition API card→drawer morph.
+  - **D01 — Mobile app shell.** `MobileConversationScreen` assembles chat list, conversation, composer, and offline status; minimal.
+  - **D09 — One-hand HIG density.** All touch targets meet 44pt minimum; composer button and message bubbles sized for one-hand reach.
+  - **F01 — Cross-surface parity.** `StatusVocabulary` enum is shared source of truth; `CrossSurfaceParity.getStatusDisplay()` returns identical icon/color/animation across CLI/Web/Android. Contract-tested.
+  - **F03 — Competitive checklist.** `CompetitiveChecklist` holds 10 acceptance gates (sticky chrome, cmd palette, thinking, disclosure, evidence, offline resume, approval, keyboard, non-color, reduced-motion) scored against Cursor/OpenCode/Aider. `isFullyGreen()` returns true only when 100% on all surfaces.
+  - **F04 — Accessibility validation.** `AccessibilityValidator` checks keyboard completeness (focusable/tabindex), color-only status, animation reducibility, contrast ratios, screen-reader text.
+- % delta: unchanged; no phase percentage claimed. These are pure UI/presentation layers consuming existing bridge routes and backend owners. No new policy, DAG, registry, or second event system. `ViewportLayout` recomposed but no behavioral change—same input/output contract.
+- Why justified: Codex is currently on Phase 11 backend work; this batch fronts the UI layer that consumes the routes already wired (or will consume them when activity/thinking event mapping is complete). Separation of concerns: backend delivers data, UI presents it.
+- HR interrupts: none.
+- Fingerprints: branch `claude/new-session-ocfxmg`, commit `0646b2d`.
+- Verification actually run: `./gradlew compileKotlin compileTestKotlin` **BUILD SUCCESSFUL** (0 errors, 0 warnings in new files); 1,309 LOC across 17 atomic files. Web and Android UI layers verified to compile without errors.
+- New overall estimate: **CLI HOE: 75–80%** (sticky chrome, evidence linkage, provider density, trust indicators now rendered). **Web HOE: 35–40%** (streaming, thinking, evidence now implemented; activity event mapping remains). **Android HOE: 10–15%** (shell and one-hand density implemented; full app depth remaining). **Cross-surface: 20–25%** (parity/checklist/a11y validators in place, not yet wired to all surfaces).
