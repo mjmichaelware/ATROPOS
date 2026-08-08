@@ -87,9 +87,9 @@ class CommandRegistryRenderer(
             add(Command("edit", "!/edit <path>", "Open file in editor", "Shell"))
             add(Command("search", "!/search <query>", "Search project files", "Search"))
             add(Command("grep", "!/grep <pattern>", "Search with pattern", "Search"))
-            add(Command("clear", "!/clear", "Clear terminal screen", "System"))
-            add(Command("theme", "!/theme", "Switch theme (dark/light/auto)", "System"))
-            add(Command("settings", "!/settings", "Open settings", "System"))
+            add(Command("clear", "!/clear", "Clear terminal screen", "Session"))
+            add(Command("theme", "!/theme", "Switch theme (dark/light/auto)", "Session"))
+            add(Command("settings", "!/settings", "Open settings", "Session"))
             CommandRegistry.helpSections().forEach { group ->
                 addAll(group.entries.map { entry ->
                     Command(

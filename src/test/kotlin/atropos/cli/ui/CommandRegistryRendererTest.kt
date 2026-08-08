@@ -14,7 +14,7 @@ class CommandRegistryRendererTest {
 
         val plain = renderer.renderSlashCommands(120).joinToString("\n")
 
-        assertTrue(plain.contains("System"), plain)
+        assertTrue(plain.contains("Orient"), plain)
         assertTrue(plain.contains("Self-host"), plain)
         assertTrue(plain.contains("/help"), plain)
         assertTrue(plain.contains("/usage"), plain)

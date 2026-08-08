@@ -2,11 +2,15 @@ package atropos.core.hr
 
 import atropos.core.security.RedactionFilter
 import java.time.Instant
+import java.nio.charset.StandardCharsets
+import java.security.MessageDigest
+import java.util.Locale
 
 class HrRouterService(
     private val redactionFilter: RedactionFilter = RedactionFilter(),
     private val auditStore: HrRouterAuditStore = HrRouterAuditStore(),
-    private val auditLog: MutableList<HrRouterAuditEntry> = auditStore.list(Int.MAX_VALUE).toMutableList()
+    private val auditLog: MutableList<HrRouterAuditEntry> =
+        auditStore.list(MAX_IN_MEMORY_AUDIT_ENTRIES).toMutableList()
 ) {
     private val secretKeywords = listOf("token", "secret", "password", "key", "credential", "auth", "bearer")
 
@@ -39,6 +43,9 @@ class HrRouterService(
             targetTerritoryId = request.targetTerritoryId,
             kind = request.kind,
             risk = risk, approved = approved, action = action, reason = reason,
+            taskId = request.taskId,
+            sourceCoordinates = request.sourceCoordinates.take(20).map(redactionFilter::redact),
+            needToKnowSha256 = request.needToKnow.takeIf { it.isNotBlank() }?.let(::sha256),
             requestedPaths = request.requestedPaths.take(20).map(redactionFilter::redact),
             timestamp = Instant.now()
         )
@@ -57,23 +64,56 @@ class HrRouterService(
         )
     }
 
-    fun request(sourceOwner: String, sourceTerr: String, targetOwner: String, targetTerr: String, kind: InformationKind, query: String, paths: List<String> = emptyList()): CrossBoundaryResponse {
+    fun request(
+        sourceOwner: String,
+        sourceTerr: String,
+        targetOwner: String,
+        targetTerr: String,
+        kind: InformationKind,
+        query: String,
+        paths: List<String> = emptyList(),
+        taskId: String = "",
+        sourceCoordinates: List<String> = emptyList(),
+        needToKnow: String = ""
+    ): CrossBoundaryResponse {
         val request = CrossBoundaryRequest(
             sourceOwnerId = sourceOwner, sourceTerritoryId = sourceTerr,
             targetOwnerId = targetOwner, targetTerritoryId = targetTerr,
-            kind = kind, query = query, requestedPaths = paths
+            kind = kind, query = query, taskId = taskId,
+            sourceCoordinates = sourceCoordinates, needToKnow = needToKnow,
+            requestedPaths = paths
         )
         return route(request)
     }
 
     fun assessRisk(request: CrossBoundaryRequest): CrossBoundaryRisk {
-        val loweredQuery = request.query.lowercase()
-        val hasSecretKeywords = secretKeywords.any { loweredQuery.contains(it) }
-        val hasSecretPaths = request.requestedPaths.any { p -> secretKeywords.any { p.lowercase().contains(it) } }
-        val hasCredentials = request.requestedPaths.any { it.contains(".env") || it.contains("credentials") || it.contains("token.json") }
-        val isHighRiskTerritory = request.targetTerritoryId.contains("secret") || request.targetTerritoryId.contains("security")
+        val loweredQuery = request.query.lowercase(Locale.US)
+        val hasSecretKeywords = secretKeywords.any { keyword ->
+            secretWordPattern(keyword).containsMatchIn(loweredQuery)
+        }
+        val hasSecretPaths = request.requestedPaths.any { path ->
+            val loweredPath = path.lowercase(Locale.US)
+            secretKeywords.any { loweredPath.contains(it) }
+        }
+        val hasCredentials = request.requestedPaths.any { path ->
+            val loweredPath = path.lowercase(Locale.US)
+            loweredPath.contains(".env") || loweredPath.contains("credentials") || loweredPath.contains("token.json")
+        }
+        val isHighRiskTerritory = request.targetTerritoryId.lowercase(Locale.US).let { territory ->
+            territory.contains("secret") || territory.contains("security")
+        }
+        val missingBoundaryIdentity = listOf(
+            request.sourceOwnerId,
+            request.sourceTerritoryId,
+            request.targetOwnerId,
+            request.targetTerritoryId,
+            request.taskId,
+            request.needToKnow
+        ).any(String::isBlank)
+        val missingSourceCoordinates = request.sourceCoordinates.isEmpty() || request.sourceCoordinates.any(String::isBlank)
 
         return when {
+            missingBoundaryIdentity || missingSourceCoordinates -> CrossBoundaryRisk.CRITICAL
             isHighRiskTerritory || hasCredentials -> CrossBoundaryRisk.CRITICAL
             hasSecretKeywords || hasSecretPaths -> CrossBoundaryRisk.HIGH
             request.kind == InformationKind.CREDENTIAL_REFERENCE || request.kind == InformationKind.CONFIGURATION -> CrossBoundaryRisk.MEDIUM
@@ -105,5 +145,16 @@ class HrRouterService(
             append(query)
             if (allowedPaths.isNotEmpty()) append("\npaths=").append(allowedPaths.joinToString(","))
         }.take(2000)
+    }
+
+    private fun sha256(value: String): String = MessageDigest.getInstance("SHA-256")
+        .digest(value.toByteArray(StandardCharsets.UTF_8))
+        .joinToString("") { "%02x".format(it) }
+
+    private fun secretWordPattern(keyword: String): Regex =
+        Regex("(?:^|[^a-z0-9])${Regex.escape(keyword)}(?:$|[^a-z0-9])")
+
+    private companion object {
+        const val MAX_IN_MEMORY_AUDIT_ENTRIES = 10_000
     }
 }

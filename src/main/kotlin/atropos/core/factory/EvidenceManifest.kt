@@ -17,6 +17,7 @@ data class EvidenceManifest(
     val auditorDecision: String? = null,
     val completionGate: String? = null,
     val promptSpans: String? = null,
+    val researchChannels: String? = null,
     val contextHash: String? = null
 ) {
     fun render(hashes: Map<String, String>): String = buildString {
@@ -33,6 +34,7 @@ data class EvidenceManifest(
         auditorDecision?.let { appendLine("auditor=$it") }
         completionGate?.let { appendLine("completion_gate=$it") }
         promptSpans?.let { appendLine("prompt_spans=$it") }
+        researchChannels?.let { appendLine("research_channels=$it") }
         contextHash?.let { appendLine("context_hash=$it") }
         planningDagId?.let { appendLine("planning_dag=$it") }
         if (plannedAtomIds.isNotEmpty()) appendLine("planning_atoms=${plannedAtomIds.joinToString(",")}")

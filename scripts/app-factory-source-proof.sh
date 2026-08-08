@@ -66,6 +66,10 @@ if timeout "${ATROPOS_SOURCE_PROOF_TIMEOUT_SECONDS:-120}" kotlinc -d "$OUT" \
   "$ROOT/src/main/kotlin/atropos/core/factory/AppIntent.kt" \
   "$ROOT/src/main/kotlin/atropos/core/factory/AppProjectSpec.kt" \
   "$ROOT/src/main/kotlin/atropos/core/factory/AppProjectSpecParser.kt" \
+  "$ROOT/src/main/kotlin/atropos/core/hierarchy/HierarchyModels.kt" \
+  "$ROOT/src/main/kotlin/atropos/core/hierarchy/HierarchyTaskLifecycle.kt" \
+  "$ROOT/src/main/kotlin/atropos/core/hierarchy/HierarchyRegistry.kt" \
+  "$ROOT/src/main/kotlin/atropos/core/factory/FactoryHierarchyGate.kt" \
   "$ROOT/src/main/kotlin/atropos/core/factory/AppProjectMutationAuthorizer.kt" \
   "$ROOT/src/main/kotlin/atropos/core/factory/RepoScaffold.kt" \
   "$ROOT/src/main/kotlin/atropos/core/factory/EvidenceManifest.kt" \

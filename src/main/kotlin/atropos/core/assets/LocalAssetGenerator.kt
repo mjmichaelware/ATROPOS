@@ -1,5 +1,6 @@
 package atropos.core.assets
 
+import atropos.core.AtroposRepoRootLocator
 import java.io.File
 import java.security.MessageDigest
 import java.util.Locale
@@ -38,7 +39,7 @@ data class AssetStatus(
 )
 
 class LocalAssetGenerator(
-    private val root: File = File(".atropos/assets"),
+    private val root: File = AtroposRepoRootLocator.resolve().resolve(".atropos/assets").toFile(),
     private val env: Map<String, String> = System.getenv()
 ) {
     fun generate(request: AssetRequest): AssetArtifact {

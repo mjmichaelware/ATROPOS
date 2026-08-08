@@ -7,6 +7,8 @@ import atropos.core.agent.AgentPatchExtractor
 import atropos.core.agent.AgentSmokeRunner
 import atropos.core.security.RedactionFilter
 import atropos.core.verifier.ConstraintSolverEvaluator
+import atropos.core.verifier.BoundaryConstraint
+import atropos.core.verifier.BoundaryRule
 import atropos.core.verifier.DeterministicConstraint
 import atropos.dloi.DloiService
 import java.nio.charset.StandardCharsets
@@ -29,11 +31,11 @@ class DeterministicChecks(
 ) {
     fun checkSourceScope(path: Path): List<DeterministicFinding> {
         val normalized = path.toAbsolutePath().normalize()
-        return constraintEvaluator.evaluate(
-            DeterministicConstraint(
+        return constraintEvaluator.evaluateBoundaries(
+            BoundaryConstraint(
                 invariantId = "source_scope",
-                satisfied = normalized.startsWith(repoRoot),
-                expected = "path under ${repoRoot.invariantSeparatorsPathString}",
+                rule = BoundaryRule.PATH_WITHIN_ROOT,
+                expected = repoRoot.invariantSeparatorsPathString,
                 observed = normalized.invariantSeparatorsPathString,
                 remediation = "limit verification to repository files",
                 file = normalized.invariantSeparatorsPathString
@@ -111,21 +113,19 @@ class DeterministicChecks(
         }
     }
 
-    fun checkAstImpact(path: Path): List<DeterministicFinding> {
-        val impacted = astGraph.impactedByPaths(listOf(repoRoot.relativize(path).invariantSeparatorsPathString))
-            .filter { it.kind != atropos.ast.AstSymbolKind.FILE }
-        return if (impacted.isEmpty()) {
-            listOf(
-                finding(
-                    invariantId = "ast_impact",
-                    severity = DiagnosticSeverity.WARNING,
-                    file = repoRoot.relativize(path).invariantSeparatorsPathString,
-                    evidence = "no symbols resolved from Kotlin source",
-                    remediation = "verify parser coverage or symbol declarations"
-                )
+    fun checkAstImpact(paths: List<Path>): List<DeterministicFinding> {
+        val normalizedPaths = paths.map { it.toAbsolutePath().normalize() }
+        return normalizedPaths.mapNotNull { path ->
+            val relativePath = repoRoot.relativize(path).invariantSeparatorsPathString
+            val impacted = astGraph.impactOfPaths(listOf(relativePath))
+            if (impacted.any { it.kind != atropos.ast.AstSymbolKind.FILE }) return@mapNotNull null
+            finding(
+                invariantId = "ast_impact",
+                severity = DiagnosticSeverity.WARNING,
+                file = repoRoot.relativize(path).invariantSeparatorsPathString,
+                evidence = "no symbols resolved from changed file or its local import dependents",
+                remediation = "verify parser coverage, symbol declarations, and import reconciliation"
             )
-        } else {
-            emptyList()
         }
     }
 

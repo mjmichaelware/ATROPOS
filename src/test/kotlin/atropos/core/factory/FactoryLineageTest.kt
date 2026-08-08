@@ -1,6 +1,8 @@
 package atropos.core.factory
 
 import atropos.core.provider.ContextEnvelopeFactory
+import atropos.core.memory.LocalMemoryStore
+import atropos.core.memory.MemoryKind
 import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertContains
@@ -23,6 +25,18 @@ class FactoryLineageTest {
     }
 
     @Test
+    fun prompt_artifact_is_recorded_in_run_memory_before_research() {
+        val root = Files.createTempDirectory("atropos-lineage-memory-")
+        val memory = LocalMemoryStore(root.resolve("memory").toFile())
+        val spec = AppProjectSpecParser().parse("Build a calculator CLI with tests")
+        val lineage = FactoryLineage.prepare(root, "factory-memory", spec.prompt, spec, runMemory = memory)
+
+        val promptRecord = memory.findBySubject("factory-prompt", "factory-memory").single()
+        assertContains(promptRecord.body, "prompt_fingerprint=${lineage.promptFingerprint}")
+        assertContains(promptRecord.body, "prompt_sha256=${lineage.promptSha256}")
+    }
+
+    @Test
     fun low_confidence_refuses_scaffold_with_yes_no_questions() {
         val root = Files.createTempDirectory("atropos-confidence-")
         val spec = AppProjectSpec("unclear", AppIntent("generated-app", "", emptyList()), true)
@@ -31,6 +45,11 @@ class FactoryLineageTest {
         }
         assertTrue(failure.message!!.contains("YES/NO:"))
         assertTrue(Files.exists(root.resolve(".atropos/research/factory/factory-low/user-prompt.md")))
+        assertTrue(Files.exists(root.resolve(".atropos/research/factory/factory-low/requirements.md")))
+        assertContains(
+            Files.readString(root.resolve(".atropos/research/factory/factory-low/requirements.md")),
+            "provider_suggestions=SKIPPED_SOFT_FAIL"
+        )
         assertContains(failure.request.promptFingerprint, "prompt-")
         assertTrue(Files.exists(root.resolve(".atropos/research/factory/factory-low/clarification-questions.md")))
         val answersHash = FactoryClarificationRequest.persistAnswers(
@@ -43,6 +62,10 @@ class FactoryLineageTest {
             Files.readString(root.resolve(".atropos/research/factory/factory-low/clarification-answers.md")),
             "prompt_fingerprint=${failure.request.promptFingerprint}"
         )
+        assertContains(
+            Files.readString(root.resolve(".atropos/research/factory/factory-low/clarification-answers.md")),
+            "timestamp_utc="
+        )
     }
 
     @Test
@@ -51,6 +74,7 @@ class FactoryLineageTest {
         val spec = AppProjectSpecParser().parse("Build a notes CLI")
         val lineage = FactoryLineage.prepare(root, "factory-research", spec.prompt, spec)
         assertContains(lineage.researchDocument, "lakehouse=")
+        assertContains(lineage.researchDocument, "dloi=")
         assertContains(lineage.researchDocument, "bounded_fetch=")
         assertContains(lineage.researchDocument, "provider_suggestions=")
         assertContains(lineage.researchDocument, "specgraph=")
@@ -72,5 +96,29 @@ class FactoryLineageTest {
         assertContains(envelope.task, "atom-1")
         assertContains(envelope.assignedTerritory, ".atropos/generated-projects/notes")
         assertTrue(envelope.canonicalContextHash.matches(Regex("[0-9a-f]{64}")))
+    }
+
+    @Test
+    fun long_term_research_rejects_unscoped_factory_memory() {
+        val root = Files.createTempDirectory("atropos-memory-scope-")
+        val memory = LocalMemoryStore(root.resolve("memory").toFile())
+        memory.remember(
+            MemoryKind.DECISION,
+            "calculator decision",
+            "project_id=project-a repository=${root.fileName}",
+            tags = listOf("factory", "project-a")
+        )
+        memory.remember(
+            MemoryKind.DECISION,
+            "calculator decision",
+            "project_id=project-b repository=${root.fileName}",
+            tags = listOf("factory", "project-b")
+        )
+
+        val report = FactoryResearchService(memory).collect(root, "calculator", projectId = "project-a")
+
+        assertContains(report.channelLog.first { it.startsWith("st_memory=") }, "scoped_hits=1", message = report.channelLog.joinToString())
+        assertContains(report.channelLog.first { it.startsWith("st_memory=") }, "rejected=1")
+        assertContains(report.channelLog.first { it.startsWith("lt_memory=") }, "scoped_records=1")
     }
 }

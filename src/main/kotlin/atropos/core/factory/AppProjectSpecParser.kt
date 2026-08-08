@@ -22,6 +22,10 @@ class AppProjectSpecParser {
     }
 
     private companion object {
-        val STOP_WORDS = setOf("a", "an", "the", "simple", "small", "local", "with", "and", "for", "tests", "test", "readme")
+        val STOP_WORDS = setOf(
+            "a", "an", "the", "simple", "small", "local", "with", "and", "for", "tests", "test", "readme",
+            "cli", "web", "website", "frontend", "api", "service", "backend", "desktop", "android", "mobile",
+            "app", "application", "project", "repository", "repo"
+        )
     }
 }

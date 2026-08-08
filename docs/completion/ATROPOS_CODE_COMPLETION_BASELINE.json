@@ -2,7 +2,7 @@
   "schemaVersion": "atropos-codebase-accounting-v2",
   "baselineHead": "7e612fcdba571b276a4ae65704835eb762030682",
   "baselineWarning": "nearest recoverable commit, not exact locked export",
-  "currentHead": "84718cb6bd7d5adc536defd4a67acc512dcb92bf",
+  "currentHead": "997e6b5732b977b30e1d97076bf5156b4b64a991",
   "sourceInventory": [
     {
       "path": "docs/source/ATROPOS_Source_Doc_1.txt",
@@ -100,14 +100,14 @@
       "bytes": 15698
     }
   ],
-  "registrySha256": "28778bd30ddf803ebacd9d17539db2821fd05bf348c3cd5e47d82e39a7aedbd6",
-  "totalObligations": 576,
-  "currentWritten": 474,
-  "currentCodeCompletion": 82.2917,
-  "historicalWritten": 471,
-  "historicalCodeCompletion": 81.7708,
-  "deltaPercentagePoints": 0.5208,
-  "generatedAt": "2026-08-03T12:10:43Z",
+  "registrySha256": "3cea2a1b8d268a19740aaed6c7cea55f1a0d2d001d3793d920a423ac42d0f2f0",
+  "totalObligations": 609,
+  "currentWritten": 496,
+  "currentCodeCompletion": 81.445,
+  "historicalWritten": 492,
+  "historicalCodeCompletion": 80.7882,
+  "deltaPercentagePoints": 0.6568,
+  "generatedAt": "2026-08-04T01:22:27Z",
   "perPhase": {
     "0": {
       "total": 96,
@@ -121,7 +121,7 @@
     },
     "2": {
       "total": 24,
-      "currentWritten": 21,
+      "currentWritten": 20,
       "historicalWritten": 21
     },
     "3": {
@@ -141,7 +141,7 @@
     },
     "6": {
       "total": 18,
-      "currentWritten": 18,
+      "currentWritten": 17,
       "historicalWritten": 15
     },
     "7": {
@@ -161,13 +161,13 @@
     },
     "10": {
       "total": 120,
-      "currentWritten": 120,
+      "currentWritten": 118,
       "historicalWritten": 114
     },
     "11": {
       "total": 36,
-      "currentWritten": 27,
-      "historicalWritten": 27
+      "currentWritten": 30,
+      "historicalWritten": 30
     },
     "12": {
       "total": 3,
@@ -196,7 +196,7 @@
     },
     "17": {
       "total": 54,
-      "currentWritten": 30,
+      "currentWritten": 29,
       "historicalWritten": 30
     },
     "18": {
@@ -205,13 +205,13 @@
       "historicalWritten": 39
     },
     "19": {
-      "total": 3,
-      "currentWritten": 0,
-      "historicalWritten": 0
+      "total": 36,
+      "currentWritten": 25,
+      "historicalWritten": 18
     },
     "20": {
       "total": 66,
-      "currentWritten": 54,
+      "currentWritten": 53,
       "historicalWritten": 57
     }
   }

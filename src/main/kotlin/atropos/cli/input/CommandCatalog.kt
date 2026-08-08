@@ -49,6 +49,12 @@ object CommandCatalog {
         CommandEntry("/agent job --raw", "full raw agent job record"),
         CommandEntry("/agent ask", "agent bridge ask"),
         CommandEntry("/agent patch", "agent bridge patch placeholder"),
+        CommandEntry(
+            "/agent worker propose",
+            "propose a territory-bounded worker patch without applying it",
+            "Agent",
+            keywords = listOf("worker", "proposal", "territory", "bounded")
+        ),
         CommandEntry("/agent apply", "agent bridge safe patch apply"),
         CommandEntry("/agent apply --check", "agent bridge patch validation"),
         CommandEntry("/agent apply --verify", "agent bridge patch apply and verify"),

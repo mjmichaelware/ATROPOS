@@ -21,6 +21,10 @@ fun main() {
         check(manifest.testIds.isNotEmpty())
     }
     check(registry.getById("tool.git.status")?.manifest?.sideEffects?.contains("read-git-state") == true)
+    check(registry.getById("cli.agent_dag_supervise")?.available == true)
+    check(registry.getById("cli.agent_worker_propose")?.available == true)
+    check("write-dag-state" in registry.getById("cli.agent_dag_supervise")!!.manifest.sideEffects)
+    check("write-worker-proposal" in registry.getById("cli.agent_worker_propose")!!.manifest.sideEffects)
     println("ENDPOINT_MANIFEST_PROOF_OK")
 }
 KOTLIN

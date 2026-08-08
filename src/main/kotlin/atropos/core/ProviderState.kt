@@ -216,7 +216,10 @@ data class ProviderCascadeResult(
     val providerName: String,
     val response: String,
     val errors: List<ProviderError>,
-    val contextEnvelope: ContextEnvelope? = null
+    val contextEnvelope: ContextEnvelope? = null,
+    val queued: Boolean = false,
+    val earliestRetryEpochMs: Long? = null,
+    val queueReason: String? = null
 )
 
 class ProviderCascadeRouter(
@@ -285,7 +288,16 @@ class ProviderCascadeRouter(
                 errors.joinToString(" | ") { it.cleanMessage }
             }
 
-        throw RuntimeException(cleanAggregate)
+        val retryAt = System.currentTimeMillis() + 60_000L
+        return ProviderCascadeResult(
+            providerName = "local_queue",
+            response = "",
+            errors = errors,
+            contextEnvelope = contextEnvelope,
+            queued = true,
+            earliestRetryEpochMs = retryAt,
+            queueReason = cleanAggregate
+        )
     }
 
     fun providerOrderPreview(requestedProvider: String, providerOrderOverride: List<String>? = null): List<String> =

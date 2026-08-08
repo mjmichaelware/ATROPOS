@@ -4,14 +4,15 @@ import atropos.core.assets.AssetKind
 import atropos.core.assets.AssetRequest
 import atropos.core.assets.LocalAssetGenerator
 import atropos.core.AtroposRepoRootLocator
-import atropos.core.execution.LocalWorkQueue
 import atropos.core.memory.LocalMemoryStore
 import atropos.core.memory.MemoryKind
 import atropos.core.paid.EmergencyPaidGate
 import atropos.core.project.ProjectRegistry
+import atropos.core.project.ProjectStatus
 import atropos.core.project.RepositoryBinding
 import atropos.core.planning.InternalPlanningGraphService
 import atropos.core.provider.ContextEnvelopeFactory
+import atropos.core.security.RedactionFilter
 import java.util.Locale
 import java.nio.file.Path
 
@@ -45,17 +46,18 @@ data class FactoryPlan(
     val projectRecordId: String? = null,
     val generatedProject: GeneratedAppProject? = null,
     val planningDagId: String? = null,
-    val plannedAtomIds: List<String> = emptyList()
+    val plannedAtomIds: List<String> = emptyList(),
+    val softFailures: List<String> = emptyList()
 )
 
 class AppFactoryRouter(
     private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
-    private val memory: LocalMemoryStore = LocalMemoryStore(),
-    private val queue: LocalWorkQueue = LocalWorkQueue(),
-    private val assets: LocalAssetGenerator = LocalAssetGenerator(),
+    private val memory: LocalMemoryStore = LocalMemoryStore(repoRoot.resolve(".atropos/memory").toFile()),
+    private val assets: LocalAssetGenerator = LocalAssetGenerator(repoRoot.resolve(".atropos/assets").toFile()),
     private val paidGate: EmergencyPaidGate = EmergencyPaidGate(),
     private val projectRegistry: ProjectRegistry = ProjectRegistry(repoRoot),
     private val projectSpecParser: AppProjectSpecParser = AppProjectSpecParser(),
+    private val appActions: AppActionRegistry = AppActionRegistry(),
     private val planningGraph: InternalPlanningGraphService = InternalPlanningGraphService(repoRoot)
 ) {
     fun plan(prompt: String): FactoryPlan {
@@ -64,7 +66,7 @@ class AppFactoryRouter(
         val intent = classify(clean)
         val steps = stepsFor(intent)
         return FactoryPlan(
-            id = "factory-${Math.abs(clean.hashCode()).toString(16)}",
+            id = "factory-${FactoryLineage.sha256(clean).take(16)}",
             prompt = clean,
             intent = intent,
             projectSpec = projectSpec,
@@ -78,71 +80,130 @@ class AppFactoryRouter(
 
     fun runLocal(prompt: String): FactoryPlan {
         val base = plan(prompt)
-        val lineage = FactoryLineage.prepare(repoRoot, base.id, base.prompt, base.projectSpec)
-        val memoryRecord = memory.remember(
-            kind = MemoryKind.DECISION,
-            title = "factory ${base.intent}",
-            body = "prompt_fingerprint=${lineage.promptFingerprint}\nprompt_sha256=${lineage.promptSha256}\n${base.prompt}",
-            tags = listOf("factory", base.intent, lineage.promptFingerprint)
-        )
-        val queued = mutableListOf<String>()
+        val lineage = FactoryLineage.prepare(repoRoot, base.id, base.prompt, base.projectSpec, runMemory = memory)
+        val redactedPrompt = RedactionFilter().redact(base.prompt)
+        val memoryRecord = runCatching {
+            memory.remember(
+                kind = MemoryKind.DECISION,
+                title = "factory ${base.intent}",
+                body = buildString {
+                    appendLine("project_id=${base.id}")
+                    appendLine("repository=${repoRoot.fileName}")
+                    System.getenv("ATROPOS_OPERATOR_ID")?.takeIf { it.isNotBlank() }?.let { appendLine("operator_id=$it") }
+                    appendLine("prompt_fingerprint=${lineage.promptFingerprint}")
+                    appendLine("prompt_sha256=${lineage.promptSha256}")
+                    append(redactedPrompt)
+                },
+                tags = buildList {
+                    add("factory")
+                    add(base.intent)
+                    add(base.id)
+                    add(lineage.promptFingerprint)
+                    System.getenv("ATROPOS_OPERATOR_ID")?.takeIf { it.isNotBlank() }?.let { add("operator-$it") }
+                }
+            )
+        }.getOrNull()
         val assetFiles = mutableListOf<String>()
+        val softFailures = mutableListOf<String>()
         val planningDag = planningGraph.planFromTexts(
             projectId = base.id,
             label = base.projectSpec.intent.name,
-            sources = mapOf("nl-prompt" to base.prompt, "requirements" to lineage.researchDocument)
+            sources = mapOf(
+                "nl-prompt" to "prompt_fingerprint=${lineage.promptFingerprint}\nprompt_sha256=${lineage.promptSha256}\nprompt_spans=${lineage.promptSpans}\n$redactedPrompt",
+                "requirements" to lineage.researchDocument
+            )
         )
-        val plannedLineage = lineage.withPlan(planningDag.id, planningDag.nodes.map { it.id })
+        val plannedAtomIds = planningDag.nodes.map { it.id }
+        val atomResearch = FactoryResearchService(memory = memory).researchOpenAtoms(
+            atomIds = plannedAtomIds,
+            promptFingerprint = lineage.promptFingerprint,
+            promptSpans = lineage.promptSpans
+        )
+        val plannedLineage = lineage.withPlan(planningDag.id, plannedAtomIds, atomResearch)
         val context = ContextEnvelopeFactory.createForFactory(
             projectId = base.id,
             promptFingerprint = plannedLineage.promptFingerprint,
             researchSha256 = plannedLineage.researchSha256,
-            atomIds = planningDag.nodes.map { it.id },
+            atomIds = plannedAtomIds,
             territory = listOf(".atropos/generated-projects/${base.projectSpec.intent.name.replace(Regex("[^A-Za-z0-9._-]"), "_")}-${base.id}"),
-            repoRoot = repoRoot
+            repoRoot = repoRoot,
+            researchChannels = plannedLineage.researchChannels,
+            promptSpans = plannedLineage.promptSpans
         )
-        val generatedProject = AppProjectGenerator(repoRoot).generateApp(
-            base.projectSpec,
-            base.id,
-            planningDagId = planningDag.id,
-            plannedAtomIds = planningDag.nodes.map { it.id },
-            lineage = plannedLineage.withContext(context.canonicalContextHash)
-        )
-        val project = projectRegistry.register(
+        val plannedPath = AppProjectGenerator.targetPath(repoRoot, base.projectSpec, base.id)
+        val plannedBranch = AppProjectGenerator.branchName(base.projectSpec, base.id)
+        val registration = projectRegistry.register(
             name = base.projectSpec.intent.name,
             kind = base.projectSpec.intent.kind,
             binding = RepositoryBinding(
-                repoRoot = generatedProject.path,
-                branch = generatedProject.branch,
-                baselineCommit = generatedProject.commitId,
-                dirtyFingerprint = generatedProject.treeSha256.take(16)
+                repoRoot = plannedPath.toString(),
+                branch = plannedBranch
             ),
-            objective = base.prompt
-        ).record
+            objective = redactedPrompt
+        )
+        val generatedProject = try {
+            AppProjectGenerator(repoRoot).generateApp(
+                base.projectSpec,
+                base.id,
+                planningDagId = planningDag.id,
+                plannedAtomIds = plannedAtomIds,
+                lineage = plannedLineage.withContext(context.canonicalContextHash)
+            )
+        } catch (failure: Throwable) {
+            projectRegistry.setStatus(registration.record, ProjectStatus.FAILED, actor = "factory")
+            throw failure
+        }
+        val generatedRecord = projectRegistry.update(
+            registration.record.copy(
+                binding = RepositoryBinding(
+                    repoRoot = generatedProject.path,
+                    branch = generatedProject.branch,
+                    baselineCommit = generatedProject.commitId,
+                    dirtyFingerprint = generatedProject.treeSha256.take(16)
+                ),
+                status = ProjectStatus.WORKING
+            ),
+            event = "generated",
+            actor = "factory",
+            message = "generated project verified; evidence=${generatedProject.evidencePath}"
+        )
 
         if (base.steps.any { it.kind == FactoryStepKind.ASSET }) {
-            val artifact = assets.generate(
-                AssetRequest(
-                    kind = AssetKind.SVG,
-                    name = base.projectSpec.intent.name,
-                    prompt = base.prompt,
-                    tags = listOf("factory", "local", base.projectSpec.intent.kind)
+            runCatching {
+                assets.generate(
+                    AssetRequest(
+                        kind = AssetKind.SVG,
+                        name = base.projectSpec.intent.name,
+                        prompt = redactedPrompt,
+                        tags = listOf("factory", "local", base.projectSpec.intent.kind)
+                    )
                 )
-            )
-            assetFiles += artifact.file.path
+            }.onSuccess { artifact ->
+                assetFiles += artifact.file.path
+            }.onFailure { failure ->
+                softFailures += "asset=SKIPPED_SOFT_FAIL:${failure.javaClass.simpleName.lowercase().replace(Regex("[^a-z0-9]+"), "_").take(80)}"
+            }
         }
 
-        val compileJob = queue.enqueueLocalCompile()
-        queued += compileJob.id
+        val project = projectRegistry.update(
+            generatedRecord.copy(
+                status = ProjectStatus.COMPLETED,
+                evidenceIds = (generatedRecord.evidenceIds + generatedProject.evidencePath).distinct()
+            ),
+            event = "completed",
+            actor = "factory",
+            message = "factory completion evidence linked: ${generatedProject.evidencePath}"
+        )
 
         return base.copy(
-            queuedWork = queued,
+            queuedWork = emptyList(),
             assetFiles = assetFiles,
-            memoryRecordId = memoryRecord.id,
+            memoryRecordId = memoryRecord?.id,
             projectRecordId = project.id,
             generatedProject = generatedProject,
             planningDagId = planningDag.id,
-            plannedAtomIds = planningDag.nodes.map { it.id }
+            plannedAtomIds = plannedAtomIds,
+            softFailures = softFailures
         )
     }
 
@@ -152,7 +213,7 @@ class AppFactoryRouter(
             appendLine("  id: ${plan.id}")
             appendLine("  intent: ${plan.intent}")
             appendLine("  paid allowed: ${plan.paidAllowed}")
-            appendLine("  prompt: ${plan.prompt}")
+            appendLine("  prompt: ${RedactionFilter().redact(plan.prompt)}")
             appendLine("  app_name: ${plan.projectSpec.intent.name}")
             appendLine("  app_kind: ${plan.projectSpec.intent.kind}")
             appendLine("  app_features: ${plan.projectSpec.intent.features.joinToString(", ")}")
@@ -165,6 +226,7 @@ class AppFactoryRouter(
             if (plan.memoryRecordId != null) appendLine("  memory: ${plan.memoryRecordId}")
             if (plan.queuedWork.isNotEmpty()) appendLine("  queued: ${plan.queuedWork.joinToString(",")}")
             if (plan.assetFiles.isNotEmpty()) appendLine("  assets: ${plan.assetFiles.joinToString(",")}")
+            if (plan.softFailures.isNotEmpty()) appendLine("  soft_failures: ${plan.softFailures.joinToString("; ")}")
             plan.generatedProject?.let {
                 appendLine("  generated_project: ${it.path}")
                 appendLine("  generated_commit: ${it.commitId}")
@@ -177,6 +239,15 @@ class AppFactoryRouter(
 
     private fun classify(prompt: String): String {
         val text = prompt.lowercase(Locale.US)
+        val tokens = text.split(Regex("\\s+")).filter { it.isNotBlank() }
+        val appRequest = appActions.isAppRequest(tokens)
+        if (appRequest) {
+            return when {
+                text.contains("ui") || text.contains("screen") || text.contains("asset") || text.contains("image") -> "app_ui"
+                text.contains("api") || text.contains("route") || text.contains("endpoint") -> "app_api"
+                else -> "app_build"
+            }
+        }
         return when {
             text.contains("fix") || text.contains("error") || text.contains("compile") -> "repair"
             text.contains("ui") || text.contains("screen") || text.contains("asset") || text.contains("image") -> "app_ui"
@@ -199,7 +270,12 @@ class AppFactoryRouter(
 
         common += FactoryStep(FactoryStepKind.VALIDATE, "local_kotlinc", true, "local compile before remote CI")
         common += FactoryStep(FactoryStepKind.REPAIR, "local_stderr -> groq -> openrouter -> queue", true, "stderr slicing before LLM repair")
-        common += FactoryStep(FactoryStepKind.CI, "local_queue -> github_actions optional", true, "queued reproducibility lane")
+        common += FactoryStep(
+            FactoryStepKind.CI,
+            "generated-evidence -> github_actions optional",
+            true,
+            "local generated verification is recorded; external CI remains optional"
+        )
 
         return common
     }

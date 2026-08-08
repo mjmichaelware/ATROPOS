@@ -27,6 +27,8 @@ class PromptSuggestionState(
 ) {
     private var selection = 0
     private var dismissed = false
+    private var paletteMode = false
+    private val palette = CommandPaletteNavigator()
 
     /**
      * True when a palette should be visible for [textBeforeCursor].
@@ -44,14 +46,24 @@ class PromptSuggestionState(
 
     /** The highlighted row, or 0 when no palette is showing. */
     fun selectionFor(textBeforeCursor: String): Int =
-        if (isActive(textBeforeCursor)) selection else 0
+        if (isActive(textBeforeCursor)) {
+            if (isHelpPalette(textBeforeCursor)) palette.selection.index else selection
+        } else 0
 
-    fun moveSelectionUp() {
-        selection = (selection - 1).coerceAtLeast(0)
+    fun moveSelectionUp(textBeforeCursor: String = "") {
+        if (isHelpPalette(textBeforeCursor)) {
+            paletteMode = true
+            palette.move(-1)
+        }
+        else selection = (selection - 1).coerceAtLeast(0)
     }
 
-    fun moveSelectionDown() {
-        selection++
+    fun moveSelectionDown(textBeforeCursor: String = "") {
+        if (isHelpPalette(textBeforeCursor)) {
+            paletteMode = true
+            palette.move(1)
+        }
+        else selection++
     }
 
     /**
@@ -61,13 +73,44 @@ class PromptSuggestionState(
      * so the bound arrives from outside rather than being assumed here.
      */
     fun clampSelection(maximumInclusive: Int) {
-        selection = selection.coerceIn(0, maximumInclusive.coerceAtLeast(0))
+        if (paletteMode && palette.selection.level == CommandPaletteLevel.GROUPS) {
+            palette.move(0)
+        } else {
+            selection = selection.coerceIn(0, maximumInclusive.coerceAtLeast(0))
+        }
     }
+
+    fun expand(textBeforeCursor: String): Boolean {
+        if (!isActive(textBeforeCursor) || !isHelpPalette(textBeforeCursor)) return false
+        paletteMode = true
+        palette.right()
+        return true
+    }
+
+    fun collapse(textBeforeCursor: String): Boolean {
+        if (!isActive(textBeforeCursor) || !isHelpPalette(textBeforeCursor)) return false
+        paletteMode = true
+        palette.left()
+        return true
+    }
+
+    fun level(textBeforeCursor: String): CommandPaletteLevel =
+        if (isHelpPalette(textBeforeCursor)) palette.selection.level else CommandPaletteLevel.COMMANDS
+
+    fun selectedGroup(textBeforeCursor: String): String? =
+        if (isHelpPalette(textBeforeCursor)) palette.selection.group else null
+
+    fun selectedCommand(textBeforeCursor: String): String? =
+        if (isHelpPalette(textBeforeCursor)) palette.selection.command else null
+
+    fun isGroupLevel(textBeforeCursor: String): Boolean =
+        isActive(textBeforeCursor) && level(textBeforeCursor) == CommandPaletteLevel.GROUPS
 
     /** Escape: hide the palette until the line changes again. */
     fun dismiss() {
         dismissed = true
         selection = 0
+        paletteMode = false
     }
 
     /**
@@ -80,10 +123,17 @@ class PromptSuggestionState(
     fun onTextChanged() {
         selection = 0
         dismissed = false
+        paletteMode = false
+        palette.reset()
     }
 
     fun reset() {
         selection = 0
         dismissed = false
+        paletteMode = false
+        palette.reset()
     }
+
+    private fun isHelpPalette(textBeforeCursor: String): Boolean =
+        textBeforeCursor.trim().lowercase() in setOf("?", "/?", "/help", "/usage", "help", "usage")
 }

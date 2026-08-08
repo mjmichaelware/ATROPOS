@@ -36,7 +36,11 @@ class DirectorService(
         return obs
     }
 
-    fun scanDiffForDrift(territories: List<TerritoryAssignment> = emptyList()): List<DirectorObservation> {
+    fun scanDiffForDrift(
+        territories: List<TerritoryAssignment> = emptyList(),
+        goalId: String? = null,
+        territoryId: String? = null
+    ): List<DirectorObservation> {
         val observations = mutableListOf<DirectorObservation>()
         val diff = runGitDiff()
 
@@ -48,6 +52,8 @@ class DirectorService(
                     severity = if (changedFiles.size > 5) DriftSeverity.WARNING else DriftSeverity.ADVISORY,
                     source = "director/diff-scan",
                     details = "${changedFiles.size} files changed in working tree",
+                    goalId = goalId,
+                    territoryId = territoryId,
                     filePaths = changedFiles
                 )
             }
@@ -59,7 +65,9 @@ class DirectorService(
                     kind = ObservationKind.DIFF_DRIFT,
                     severity = DriftSeverity.ADVISORY,
                     source = "director/diff-drift",
-                    details = "diff hash changed from ${priorHash.take(12)} to ${currentDiffHash.take(12)}"
+                    details = "diff hash changed from ${priorHash.take(12)} to ${currentDiffHash.take(12)}",
+                    goalId = goalId,
+                    territoryId = territoryId
                 )
             }
 

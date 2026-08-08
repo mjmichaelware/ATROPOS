@@ -3,6 +3,7 @@ package atropos.bootstrap
 import atropos.core.AtroposConfig
 import atropos.core.agent.*
 import atropos.core.dag.*
+import atropos.core.director.DirectorDagSupervisor
 import atropos.core.journal.*
 import atropos.core.memory.*
 import atropos.core.policy.*
@@ -135,6 +136,10 @@ class BootstrapAcceptanceDag(
 
         val dagStore = DagStore(repoRoot)
         val dagService = DagExecutionService(config, repoRoot)
+        val directorDagSupervisor = DirectorDagSupervisor(
+            dagExecution = dagService,
+            repoRoot = repoRoot
+        )
         val journal = EventJournalService(repoRoot)
         val memoryStore = LocalMemoryStore(repoRoot.resolve(".atropos/memory").toFile())
         val completionGate = VerifiedCompletionGate(config, repoRoot)
@@ -143,8 +148,8 @@ class BootstrapAcceptanceDag(
         val dag = dagService.createDag("Bootstrap Acceptance", nodes)
         details.add("DAG created: ${dag.id}")
 
-        // Evaluate DAG
-        val result = dagService.evaluateDag(dag.id)
+        // Every evaluation pass is Director-supervised; DagExecutionService remains the executor.
+        val result = directorDagSupervisor.supervise(dag.id)
         details.add("DAG evaluation: ${result.message}")
 
         // Recovery test
@@ -153,11 +158,11 @@ class BootstrapAcceptanceDag(
         details.add("Stale claims recovered: $recovered")
 
         // Run second evaluation pass for nodes that may have dependencies met now
-        val result2 = dagService.evaluateDag(dag.id)
+        val result2 = directorDagSupervisor.supervise(dag.id)
         details.add("Second evaluation: ${result2.message}")
 
         // Final evaluation
-        val result3 = dagService.evaluateDag(dag.id)
+        val result3 = directorDagSupervisor.supervise(dag.id)
         details.add("Third evaluation: ${result3.message}")
 
         // Check for false completions

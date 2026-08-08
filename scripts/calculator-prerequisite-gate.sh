@@ -8,6 +8,14 @@ require_file() {
   test -f "$1" || { echo "CALCULATOR_PREREQUISITE_MISSING $1" >&2; exit 1; }
 }
 
+require_test_contract() {
+  local file="$1"
+  rg -q -- '@Test' "$file" || {
+    echo "CALCULATOR_PREREQUISITE_TEST_CONTRACT_MISSING $file" >&2
+    exit 1
+  }
+}
+
 require_file docs/source/ATROPOS_Source_Doc_1.txt
 require_file docs/source/ATROPOS_Source_Doc_2.txt
 require_file docs/source/ATROPOS_Source_Doc_3.txt
@@ -49,9 +57,18 @@ factory_surfaces=(
   src/main/kotlin/atropos/core/factory/RepoScaffold.kt
   src/main/kotlin/atropos/core/factory/EvidenceManifest.kt
   src/main/kotlin/atropos/core/factory/AppProjectMutationGate.kt
+  src/main/kotlin/atropos/core/factory/FactoryHierarchyGate.kt
+  src/main/kotlin/atropos/core/hierarchy/HierarchyRegistry.kt
   src/main/kotlin/atropos/core/factory/AppProjectGenerator.kt
   src/main/kotlin/atropos/core/factory/AppFactoryRouter.kt
+  src/main/kotlin/atropos/core/factory/FactoryLineage.kt
+  src/main/kotlin/atropos/core/factory/FactoryResearchService.kt
+  src/main/kotlin/atropos/core/provider/ContextEnvelopeFactory.kt
   src/main/kotlin/atropos/core/planning/InternalPlanningGraphService.kt
+  src/main/kotlin/atropos/core/director/DirectorDagSupervisor.kt
+  src/main/kotlin/atropos/core/director/DirectorDagSupervision.kt
+  src/main/kotlin/atropos/core/agent/WorkerCodeProposalService.kt
+  src/main/kotlin/atropos/cli/commands/AgentWorkerCommandHandler.kt
   src/main/kotlin/atropos/core/worktree/BoundedGitWorktreeCommandRunner.kt
   src/main/kotlin/atropos/cli/ui/AppFactoryPlanRenderer.kt
   src/test/kotlin/atropos/core/factory/AppProjectGeneratorTest.kt
@@ -65,6 +82,22 @@ factory_surfaces=(
 
 for file in "${provider_tests[@]}" "${terminal_tests[@]}" "${source_tests[@]}" "${endpoint_tests[@]}" "${hierarchy_tests[@]}" "${factory_surfaces[@]}"; do
   require_file "$file"
+done
+
+acceptance_test_files=(
+  "${provider_tests[@]}"
+  "${terminal_tests[@]}"
+  "${source_tests[@]}"
+  "${endpoint_tests[@]}"
+  "${hierarchy_tests[@]}"
+  src/test/kotlin/atropos/core/factory/AppProjectGeneratorTest.kt
+  src/test/kotlin/atropos/core/factory/AppFactoryRouterTest.kt
+  src/test/kotlin/atropos/core/worktree/BoundedGitWorktreeCommandRunnerTest.kt
+  src/test/kotlin/atropos/cli/ui/AppFactoryPlanRendererTest.kt
+  src/test/kotlin/atropos/cli/commands/SelfHostNaturalLanguageRouterTest.kt
+)
+for file in "${acceptance_test_files[@]}"; do
+  require_test_contract "$file"
 done
 
 if rg -n -i 'CalculatorProjectGenerator|calculator-specific|calculator intent' src/main/kotlin/atropos/core/factory src/main/kotlin/atropos/cli >/dev/null; then
@@ -119,5 +152,6 @@ printf '%s\n' \
   'source_authority_tests=present' \
   'endpoint_parity_tests=present' \
   'hierarchy_gate_tests=present' \
+  'acceptance_test_contracts=present' \
   'general_app_factory_surfaces=present' \
   'test_execution=not_run'

@@ -34,7 +34,7 @@ data class AgentQueueBatchResult(
 class AgentQueueService(
     private val config: AtroposConfig = AtroposConfig.load(),
     private val collector: AgentContextCollector = AgentContextCollector(),
-    private val runService: AgentRunService = AgentRunService(config, collector),
+    private val runService: AgentRunService? = null,
     private val smokeRunner: AgentSmokeRunner = AgentSmokeRunner(collector.repoRoot),
     private val store: AgentQueueStore = AgentQueueStore(collector.repoRoot),
     private val recovery: AgentQueueRecovery = AgentQueueRecovery(store),
@@ -59,6 +59,10 @@ class AgentQueueService(
         return store.createEntry(task = task, smokeCommand = smoke)
             .also { rememberQueue(it, "enqueued") }
     }
+
+    /** Persist a provider-exhaustion retry without making degradation fatal. */
+    fun enqueueUnavailable(task: String): AgentQueueRecord? =
+        runCatching { enqueue(task) }.getOrNull()
 
     fun list(limit: Int = 20): List<AgentQueueRecord> = store.listEntries(limit)
 
@@ -213,7 +217,8 @@ class AgentQueueService(
         )
 
         return try {
-            val job = runService.run(activeProviderName, queueRecord.task, queueRecord.smokeCommand, hooks)
+            val job = (runService ?: AgentRunService(config, collector))
+                .run(activeProviderName, queueRecord.task, queueRecord.smokeCommand, hooks)
             val terminal = finalizeFromJob(queueRecord, job)
             rememberQueue(terminal, "finalized")
             AgentQueueRunResult(terminal, job, "queue entry finalized as ${terminal.state}", ran = true)

@@ -13,6 +13,7 @@ import atropos.core.agent.AgentRunService
 import atropos.core.agent.GoalContinuationService
 import atropos.core.agent.ProviderSessionSupervisor
 import atropos.core.agent.SupervisedSessionStore
+import atropos.core.agent.WorkerCodeProposalService
 import atropos.core.dag.DagExecutionService
 import atropos.core.dag.DagStore
 import atropos.core.journal.EventJournalService
@@ -103,6 +104,11 @@ class AgentCommand(
         currentPatchId = { lastKnownPatchId },
         invalid = ::invalid
     )
+    private val workerHandler = AgentWorkerCommandHandler(
+        proposalService = WorkerCodeProposalService(service),
+        activeProviderName = activeProviderName,
+        invalid = ::invalid
+    )
     private val selfHostNaturalLanguageRouter = SelfHostNaturalLanguageRouter()
 
     /** Last patch id ATROPOS has knowledge of, surfaced to the status line. Never implies a patch was applied. */
@@ -186,6 +192,14 @@ class AgentCommand(
                 result.outcome
             }
 
+            "worker" -> {
+                if (tokens.getOrNull(2)?.lowercase() != "propose") {
+                    invalid("usage: /agent worker propose --worker <id> --territory <path[,path...]> [--provider <name>] <task>")
+                } else {
+                    workerHandler.propose(tokens.drop(3))
+                }
+            }
+
             "session" -> sessionHandler.execute(tokens.drop(2))
             "runs" -> observationHandler.runs()
             "watch" -> observationHandler.watch(tokens.drop(2))
@@ -206,7 +220,7 @@ class AgentCommand(
     }
 
     private fun agentUsage(): String =
-        "usage: /agent [status|run|enqueue|queue|daemon|jobs|job|ask|patch|apply|verify|repair|session|runs|watch|tree|transcript|diff|tests|observe|dag|recover|worktree|gate|policy|goal|self-host]"
+        "usage: /agent [status|run|enqueue|queue|daemon|jobs|job|ask|patch|apply|worker|verify|repair|session|runs|watch|tree|transcript|diff|tests|observe|dag|recover|worktree|gate|policy|goal|self-host]"
 
     private fun terminalWidth(): Int =
         System.getenv("COLUMNS")?.toIntOrNull()?.coerceAtLeast(40) ?: 80

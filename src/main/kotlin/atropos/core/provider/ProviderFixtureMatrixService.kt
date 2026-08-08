@@ -27,14 +27,15 @@ class ProviderFixtureMatrixService(
             lines += normalizeName(result.fixture) to result.passed
         }
 
+        val dryRunTask = probeTask(descriptor)
         val dryRun = adapter?.complete(
             AdapterRequest(
-                task = probeTask(descriptor),
+                task = dryRunTask,
                 prompt = "fixture dry run for $providerId",
                 dryRun = true,
                 liveNetworkAllowed = false
             )
-        )
+        ) ?: localFixtureResult(descriptor, dryRunTask, "local dry run")
         lines += "dry_run" to (
             dryRun is ProviderCallResult.Success ||
                 dryRun is ProviderCallResult.LocalOnly ||
@@ -42,6 +43,9 @@ class ProviderFixtureMatrixService(
             )
         lines += "quota_exhausted" to (
             normalizer.normalize(providerId, "quota exhausted").type == NormalizedProviderFailureType.QUOTA_EXHAUSTED
+            )
+        lines += "error" to (
+            normalizer.normalize(providerId, "provider internal error").type == NormalizedProviderFailureType.INTERNAL
             )
         lines += "auth_failed" to (
             normalizer.normalize(providerId, "401 unauthorized invalid api key").type == NormalizedProviderFailureType.AUTH_FAILED
@@ -77,14 +81,15 @@ class ProviderFixtureMatrixService(
         // the adapter can actually answer. Every registered provider gets a success
         // fixture; a provider with no adapter fails it rather than skipping it.
         if (lines.none { it.first == "success" }) {
+            val successTask = probeTask(descriptor)
             val offlineSuccess = adapter?.complete(
                 AdapterRequest(
-                    task = probeTask(descriptor),
+                    task = successTask,
                     prompt = "fixture success for $providerId",
                     dryRun = true,
                     liveNetworkAllowed = false
                 )
-            )
+            ) ?: localFixtureResult(descriptor, successTask, "local fixture success")
             lines += "success" to (
                 offlineSuccess is ProviderCallResult.Success ||
                     offlineSuccess is ProviderCallResult.LocalOnly ||
@@ -95,9 +100,10 @@ class ProviderFixtureMatrixService(
         val distinct = linkedMapOf<String, Boolean>()
         lines.forEach { (name, passed) -> distinct[name] = distinct[name] ?: passed }
         val detail = distinct.entries.sortedBy { it.key }.map { "${it.key}=${if (it.value) "PASS" else "FAIL"}" }
+        val required = setOf("success", "error", "malformed_response", "empty_response", "timeout", "redaction")
         return ProviderFixtureMatrixRecord(
             providerId = providerId,
-            passed = distinct.values.all { it },
+            passed = required.all { distinct[it] == true } && distinct.values.all { it },
             passedCount = distinct.values.count { it },
             totalCount = distinct.size,
             details = detail
@@ -105,7 +111,7 @@ class ProviderFixtureMatrixService(
     }
 
     fun runAll(): List<ProviderFixtureMatrixRecord> =
-        registry.getAll().map { runProvider(it.id) }
+        registry.getAll().sortedBy { it.id }.map { runProvider(it.id) }
 
     private fun familyFixtures(providerId: String) =
         when {
@@ -151,6 +157,13 @@ class ProviderFixtureMatrixService(
             descriptor.hasCapability(ApiCapability.SECRET) -> ProviderTask(ProviderTaskKind.SECRET_STORAGE, ApiCapability.SECRET, "secret fixture")
             else -> ProviderTask(ProviderTaskKind.LOCAL_ONLY, ApiCapability.LOCAL_TOOL, "local fixture")
         }
+
+    private fun localFixtureResult(
+        descriptor: ProviderDescriptor,
+        task: ProviderTask,
+        content: String
+    ): ProviderCallResult? =
+        if (descriptor.isLocal) ProviderCallResult.LocalOnly(task, content) else null
 
     private fun runRedactionFixture(providerId: String): Boolean {
         val raw = "Authorization: Bearer " + "A".repeat(24) + " sk-" + "B".repeat(24) + " api_key=sk-" + "C".repeat(24)

@@ -54,6 +54,14 @@ class PromptState(
 
     fun suggestionSelection(): Int = suggestions.selectionFor(line.textBeforeCursor())
 
+    fun paletteLevel(): CommandPaletteLevel = suggestions.level(line.textBeforeCursor())
+
+    fun paletteGroup(): String? = suggestions.selectedGroup(line.textBeforeCursor())
+
+    fun paletteCommand(): String? = suggestions.selectedCommand(line.textBeforeCursor())
+
+    fun isPaletteGroupLevel(): Boolean = suggestions.isGroupLevel(line.textBeforeCursor())
+
     fun clampSuggestionSelection(maximumInclusive: Int) {
         suggestions.clampSelection(maximumInclusive)
     }
@@ -65,11 +73,13 @@ class PromptState(
         is KeyEvent.UnknownEscape -> PromptEffect.None
 
         KeyEvent.Enter -> {
-            val committed = commit()
-            if (committed.isBlank()) {
+            if (suggestions.isGroupLevel(line.textBeforeCursor())) {
                 PromptEffect.Redraw
             } else {
-                PromptEffect.Submit(committed, mode)
+                val selected = suggestions.selectedCommand(line.textBeforeCursor())
+                if (selected != null) line.replace(selected)
+                val committed = commit()
+                if (committed.isBlank()) PromptEffect.Redraw else PromptEffect.Submit(committed, mode)
             }
         }
 
@@ -91,22 +101,22 @@ class PromptState(
         }
 
         KeyEvent.ArrowLeft -> {
-            moveLeft()
+            if (!suggestions.collapse(line.textBeforeCursor())) moveLeft()
             PromptEffect.Redraw
         }
 
         KeyEvent.ArrowRight -> {
-            moveRight()
+            if (!suggestions.expand(line.textBeforeCursor())) moveRight()
             PromptEffect.Redraw
         }
 
         KeyEvent.ArrowUp -> {
-            if (isCommandSuggestionActive()) suggestions.moveSelectionUp() else historyUp()
+            if (isCommandSuggestionActive()) suggestions.moveSelectionUp(line.textBeforeCursor()) else historyUp()
             PromptEffect.Redraw
         }
 
         KeyEvent.ArrowDown -> {
-            if (isCommandSuggestionActive()) suggestions.moveSelectionDown() else historyDown()
+            if (isCommandSuggestionActive()) suggestions.moveSelectionDown(line.textBeforeCursor()) else historyDown()
             PromptEffect.Redraw
         }
 

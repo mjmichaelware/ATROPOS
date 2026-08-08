@@ -5,6 +5,7 @@ import atropos.core.OllamaHealthProbe
 import atropos.core.agent.AgentProviderSelector
 import atropos.core.endpoint.EndpointKind
 import atropos.core.endpoint.OperationEndpoint
+import atropos.core.endpoint.EndpointManifest
 import atropos.core.endpoint.OperationRegistry
 import atropos.core.endpoint.StaticOperationRegistry
 
@@ -100,8 +101,19 @@ class ProviderTruthOperationRegistry(
             kind = EndpointKind.PROVIDER_CHAT,
             description = "${record.id} descriptor=${record.descriptorPresent} adapter=${record.adapterPresent} executable=${record.executableSupport} health=${record.health.name.lowercase()}",
             configured = record.keyPresent,
-            available = record.executableSupport
-        )
+            available = record.executableSupport,
+            manifest = EndpointManifest(
+                owner = "ProviderTruthOperationRegistry",
+                input = "typed provider chat request",
+                output = "typed provider chat result",
+                errors = listOf("authorization", "timeout", "malformed", "unavailable"),
+                auth = "policy-bound",
+                sideEffects = emptyList(),
+                timeoutMs = 30_000,
+                retryPolicy = "bounded-none",
+                testIds = listOf("OperationEndpointManifestTest.every_registered_operation_exposes_a_complete_manifest")
+            )
+        ).requireCompleteManifest()
     }
 
     override fun getAll(): List<OperationEndpoint> =
