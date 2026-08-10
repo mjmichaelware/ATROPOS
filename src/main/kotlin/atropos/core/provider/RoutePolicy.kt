@@ -16,9 +16,18 @@ data class RoutePolicyDecision(
     val queued: Boolean = false,
     val queueReason: String? = null
 ) {
-    fun explain(): String =
-        "task=${task.kind.name.lowercase()} selected=${selectedProviderId ?: "none"} skipped=" +
-            skipped.joinToString("; ") { "${it.provider.id}:${it.reason}" }
+    fun explain(): String {
+        val state = when {
+            queued -> "queued"
+            degraded -> "degraded"
+            selectedProviderId != null -> "selected"
+            else -> "unresolved"
+        }
+        return "task=${task.kind.name.lowercase()} state=$state " +
+            "selected=${selectedProviderId ?: "none"} skipped=" +
+            skipped.joinToString("; ") { "${it.provider.id}:${it.reason}" } +
+            (queueReason?.let { " queue_reason=$it" } ?: "")
+    }
 }
 
 class FreeModeGuard(private val policy: AtroposCostPolicy = AtroposCostPolicy.FREE_ONLY) {
@@ -100,27 +109,22 @@ class RoutePolicy(
         return if (selected != null) {
             RoutePolicyDecision(task, selected.id, selected, eligible, evaluated.filterNot { it.eligible })
         } else {
-            RoutePolicyDecision(task, null, null, emptyList(), evaluated, degraded = task.localFirst, queued = true, queueReason = "no eligible provider")
+            RoutePolicyDecision(
+                task = task,
+                selectedProviderId = null,
+                selected = null,
+                eligible = emptyList(),
+                skipped = evaluated,
+                degraded = true,
+                queued = true,
+                queueReason = "no eligible provider"
+            )
         }
     }
 
-    private fun taskPriority(task: ProviderTask, descriptor: ProviderDescriptor): Int =
-        when (task.kind) {
-            ProviderTaskKind.CHAT_PROMPT -> when (descriptor.id) {
-                "groq" -> 1; "gemini" -> 2; "openrouter" -> 3; "github_models" -> 4; "cloudflare_ai" -> 5; "ollama" -> 8; "local" -> 9; else -> 20
-            }
-            ProviderTaskKind.FAST_CODE_DRAFT, ProviderTaskKind.COMPILE_REPAIR -> when (descriptor.id) {
-                "groq" -> 1; "openrouter" -> 2; "github_models" -> 3; "gemini" -> 4; "ollama" -> 8; "local" -> 9; else -> 20
-            }
-            ProviderTaskKind.ARCHITECTURE_PLAN, ProviderTaskKind.LARGE_SOURCE_DOCS -> when (descriptor.id) {
-                "gemini" -> 1; "groq" -> 2; "github_models" -> 3; "openrouter" -> 4; "ollama" -> 8; "local" -> 9; else -> 20
-            }
-            ProviderTaskKind.WEB_DOCS_LOOKUP -> when (descriptor.id) {
-                "jina" -> 1; "gemini" -> 2; "serpapi" -> 6; "local" -> 9; else -> 20
-            }
-            ProviderTaskKind.ASSET_GENERATION, ProviderTaskKind.SCREENSHOT_REVIEW -> when (descriptor.id) {
-                "huggingface" -> 1; "fal" -> 3; "replicate" -> 4; "local" -> 9; else -> 20
-            }
-            else -> if (descriptor.id == "local") 1 else 10
-        }
+    private fun taskPriority(task: ProviderTask, descriptor: ProviderDescriptor): Int {
+        val capabilityPenalty = if (descriptor.hasCapability(task.capability)) 0 else 20
+        val localityPenalty = if (task.localFirst && descriptor.isLocal) 0 else 1
+        return capabilityPenalty + localityPenalty + descriptor.quotaTier
+    }
 }

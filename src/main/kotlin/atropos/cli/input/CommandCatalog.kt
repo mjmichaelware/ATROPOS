@@ -78,6 +78,7 @@ object CommandCatalog {
         CommandEntry("/factory", "factory status"),
         CommandEntry("/factory plan", "bounded app-factory plan"),
         CommandEntry("/factory run", "queue app-factory run"),
+        CommandEntry("/factory answer", "persist YES/NO factory clarification answers", "Build", keywords = listOf("factory", "confidence", "clarification", "yes", "no")),
         CommandEntry(
             "/self-host",
             "run the Phase 11 self-build loop (use /self-host status for read-only status)",

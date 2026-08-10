@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/bash
+#!/usr/bin/env bash
 cd "$(git rev-parse --show-toplevel)" || exit 1
 
 TMP=$(mktemp)

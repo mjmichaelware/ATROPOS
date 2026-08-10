@@ -21,11 +21,26 @@ class InternalPlanningGraphService(
         return persistPlan(projectId, label, atoms)
     }
 
-    fun planFromTexts(projectId: String, label: String, sources: Map<String, String>): DagDefinition {
-        val atoms = sources.entries.flatMap { (sourcePath, content) ->
+    fun planFromTexts(
+        projectId: String,
+        label: String,
+        sources: Map<String, String>,
+        promptFingerprint: String = "",
+        promptSpans: String = ""
+    ): DagDefinition {
+        require(projectId.isNotBlank() && label.isNotBlank()) {
+            "text planning requires a project and label"
+        }
+        require(promptFingerprint.matches(Regex("prompt-[0-9a-f]{16}"))) {
+            "text planning requires a hashed prompt fingerprint"
+        }
+        require(promptSpans.isNotBlank() && promptSpans != "none") {
+            "text planning requires classified prompt spans"
+        }
+        val atoms = sources.toSortedMap().entries.flatMap { (sourcePath, content) ->
             val document = ingestionService.ingestText(projectId, sourcePath, content)
             atomExtractor.extract(document)
-        }
+        }.map { atom -> atom.copy(promptFingerprint = promptFingerprint, promptSpans = promptSpans) }
         return persistPlan(projectId, label, atoms)
     }
 

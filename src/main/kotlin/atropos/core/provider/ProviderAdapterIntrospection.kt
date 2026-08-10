@@ -1,12 +1,13 @@
 package atropos.core.provider
 
 import atropos.core.AtroposConfig
-import atropos.core.ProviderFactory
+import atropos.core.provider.adapter.ProviderAdapterRegistry
+import atropos.core.provider.adapter.StaticProviderAdapterRegistry
 
 class ProviderAdapterIntrospection(
     private val config: AtroposConfig = AtroposConfig.load(),
-    private val factory: ProviderFactory = ProviderFactory(config)
+    private val adapterRegistry: ProviderAdapterRegistry = StaticProviderAdapterRegistry()
 ) {
     fun adapterPresent(providerId: String): Boolean =
-        runCatching { factory.getProvider(providerId) }.isSuccess
+        adapterRegistry.getByProviderId(providerId)?.status()?.implemented == true
 }

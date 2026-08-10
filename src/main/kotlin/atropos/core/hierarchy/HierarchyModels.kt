@@ -6,6 +6,7 @@ import java.util.UUID
 enum class HierarchyRole {
     HUMAN_OWNER,
     DIRECTOR,
+    DIVISION_VP,
     MANAGER,
     SPECIALIST,
     WORKER,
@@ -31,6 +32,8 @@ data class AgentRecord(
 
 data class HierarchySnapshot(
     val agents: List<AgentRecord>,
+    val dispatches: List<HierarchyDispatchContract> = emptyList(),
+    val tasks: List<HierarchyTaskRecord> = emptyList(),
     val timestamp: Instant = Instant.now()
 ) {
     fun byRole(role: HierarchyRole): List<AgentRecord> = agents.filter { it.role == role }
@@ -52,6 +55,7 @@ data class HierarchyDispatchContract(
     val createdAt: Instant = Instant.now()
 ) {
     fun missingRequiredFields(): List<String> = buildList {
+        if (taskId.isBlank()) add("taskId")
         if (parentAuthorityId.isBlank()) add("parentAuthorityId")
         if (assigneeId.isBlank()) add("assigneeId")
         if (sourceCoordinates.isEmpty() || sourceCoordinates.any(String::isBlank)) add("sourceCoordinates")

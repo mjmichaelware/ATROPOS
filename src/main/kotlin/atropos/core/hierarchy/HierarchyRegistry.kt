@@ -28,22 +28,47 @@ class HierarchyRegistry {
         }
     }
 
-    fun assignTerritory(id: String, territoryId: String) {
+    fun assignTerritory(id: String, territoryId: String): Boolean {
+        if (id.isBlank() || isUnsafeTerritory(territoryId)) return false
         val idx = agents.indexOfFirst { it.id == id }
-        if (idx >= 0) agents[idx] = agents[idx].copy(territoryId = territoryId)
+        if (idx < 0) return false
+        agents[idx] = agents[idx].copy(territoryId = territoryId)
+        return true
     }
 
-    fun assignManager(id: String, managerId: String) {
+    fun assignManager(id: String, managerId: String): Boolean {
         val idx = agents.indexOfFirst { it.id == id }
-        if (idx >= 0) agents[idx] = agents[idx].copy(parentManagerId = managerId)
+        val child = agents.getOrNull(idx)
+        val manager = agents.firstOrNull { it.id == managerId }
+        if (child == null || id == managerId || manager == null) return false
+        if (!child.role.acceptsParentRole(manager.role)) return false
+        if (wouldCreateManagerCycle(id, managerId)) return false
+        agents[idx] = agents[idx].copy(parentManagerId = managerId)
+        return true
     }
 
-    fun snapshot(): HierarchySnapshot = HierarchySnapshot(agents = agents.toList())
+    fun snapshot(): HierarchySnapshot = HierarchySnapshot(
+        agents = agents.toList(),
+        dispatches = dispatches.toList(),
+        tasks = tasks.toList()
+    )
 
     fun dispatch(contract: HierarchyDispatchContract): HierarchyDispatchResult {
         val missing = contract.missingRequiredFields()
         if (missing.isNotEmpty()) {
             return HierarchyDispatchResult.Refused("dispatch contract missing: ${missing.joinToString(", ")}")
+        }
+        if (tasks.any { it.contract.taskId == contract.taskId }) {
+            return HierarchyDispatchResult.Refused("dispatch task id already exists: ${contract.taskId}")
+        }
+        val unsafeTerritories = contract.territory.filter(::isUnsafeTerritory)
+        if (unsafeTerritories.isNotEmpty()) {
+            return HierarchyDispatchResult.Refused(
+                "dispatch territory contains unsafe path entries: ${unsafeTerritories.joinToString(", ")}"
+            )
+        }
+        if (contract.timeoutAt?.isAfter(Instant.now()) == false) {
+            return HierarchyDispatchResult.Refused("dispatch contract timeout has already elapsed")
         }
         val parent = get(contract.parentAuthorityId)
             ?: return HierarchyDispatchResult.Refused("parent authority not found: ${contract.parentAuthorityId}")
@@ -55,7 +80,10 @@ class HierarchyRegistry {
         if (parent.status == AgentStatus.BLOCKED || parent.status == AgentStatus.FAILED) {
             return HierarchyDispatchResult.Refused("parent authority is not dispatchable: ${parent.status}")
         }
-        if (assignee.status != AgentStatus.IDLE) {
+        // COMPLETED means the agent's previous task finished successfully; it
+        // remains eligible for another bounded assignment. Failed and blocked
+        // agents require explicit recovery before they can receive work.
+        if (assignee.status !in setOf(AgentStatus.IDLE, AgentStatus.COMPLETED)) {
             return HierarchyDispatchResult.Refused("assignee is not idle: ${assignee.status}")
         }
         if (!parent.canDispatchTo(assignee)) {
@@ -68,9 +96,12 @@ class HierarchyRegistry {
         val territoryRefusal = parent.territoryRefusal(contract.territory)
         if (territoryRefusal != null) return HierarchyDispatchResult.Refused(territoryRefusal)
 
+        val assignedTerritory = contract.territory.joinToString(",")
+        if (!assignTerritory(assignee.id, assignedTerritory)) {
+            return HierarchyDispatchResult.Refused("assignee territory assignment was refused")
+        }
         dispatches += contract
         tasks += HierarchyTaskRecord(contract = contract)
-        assignTerritory(assignee.id, contract.territory.joinToString(","))
         updateStatus(assignee.id, AgentStatus.ASSIGNED, taskId = contract.taskId)
         return HierarchyDispatchResult.Accepted(contract, get(assignee.id) ?: assignee)
     }
@@ -90,15 +121,24 @@ class HierarchyRegistry {
     fun completeTask(taskId: String, result: String): Boolean = updateTask(taskId) { task ->
         if (task.state !in setOf(HierarchyTaskState.DISPATCHED, HierarchyTaskState.RUNNING)) return@updateTask null
         if (result.isBlank()) return@updateTask null
-        updateStatus(task.contract.assigneeId, AgentStatus.COMPLETED, taskId)
+        updateStatus(task.contract.assigneeId, AgentStatus.COMPLETED)
         task.copy(state = HierarchyTaskState.COMPLETED, result = result.trim().take(4_000), updatedAt = Instant.now())
     }
 
     fun failTask(taskId: String, reason: String): Boolean = updateTask(taskId) { task ->
-        if (task.state in setOf(HierarchyTaskState.COMPLETED, HierarchyTaskState.FAILED, HierarchyTaskState.EXPIRED)) return@updateTask null
+        if (task.state in setOf(HierarchyTaskState.COMPLETED, HierarchyTaskState.FAILED, HierarchyTaskState.BLOCKED, HierarchyTaskState.EXPIRED)) return@updateTask null
         if (reason.isBlank()) return@updateTask null
-        updateStatus(task.contract.assigneeId, AgentStatus.FAILED, taskId)
+        updateStatus(task.contract.assigneeId, AgentStatus.FAILED)
         task.copy(state = HierarchyTaskState.FAILED, result = reason.trim().take(4_000), updatedAt = Instant.now())
+    }
+
+    fun blockTask(taskId: String, reason: String): Boolean = updateTask(taskId) { task ->
+        if (task.state in setOf(HierarchyTaskState.COMPLETED, HierarchyTaskState.FAILED, HierarchyTaskState.BLOCKED, HierarchyTaskState.EXPIRED)) {
+            return@updateTask null
+        }
+        if (reason.isBlank()) return@updateTask null
+        updateStatus(task.contract.assigneeId, AgentStatus.BLOCKED)
+        task.copy(state = HierarchyTaskState.BLOCKED, result = reason.trim().take(4_000), updatedAt = Instant.now())
     }
 
     fun expireTasks(now: Instant = Instant.now()): List<String> {
@@ -108,7 +148,7 @@ class HierarchyRegistry {
         }.map { it.contract.taskId }
         expired.forEach { taskId ->
             updateTask(taskId) { task ->
-                updateStatus(task.contract.assigneeId, AgentStatus.BLOCKED, taskId)
+                updateStatus(task.contract.assigneeId, AgentStatus.BLOCKED)
                 task.copy(state = HierarchyTaskState.EXPIRED, result = "task timeout expired", updatedAt = now)
             }
         }
@@ -131,12 +171,23 @@ class HierarchyRegistry {
 
     fun escalationPath(agentId: String): List<String> {
         val path = mutableListOf<String>()
+        val visited = mutableSetOf<String>()
         var current = get(agentId)
-        while (current != null) {
+        while (current != null && visited.add(current.id)) {
             path += current.id
             current = current.parentManagerId?.let { get(it) }
         }
         return path
+    }
+
+    private fun wouldCreateManagerCycle(id: String, managerId: String): Boolean {
+        val visited = mutableSetOf<String>()
+        var current = get(managerId)
+        while (current != null && visited.add(current.id)) {
+            if (current.id == id) return true
+            current = current.parentManagerId?.let { get(it) }
+        }
+        return current != null
     }
 
     private fun updateTask(taskId: String, transform: (HierarchyTaskRecord) -> HierarchyTaskRecord?): Boolean {
@@ -149,13 +200,26 @@ class HierarchyRegistry {
 
     private fun AgentRecord.canDispatchTo(target: AgentRecord): Boolean = when (role) {
         HierarchyRole.HUMAN_OWNER -> target.role == HierarchyRole.DIRECTOR ||
+            target.role == HierarchyRole.DIVISION_VP ||
             target.role == HierarchyRole.MANAGER ||
             target.role == HierarchyRole.AUDITOR ||
             target.role == HierarchyRole.CUSTODIAN
         HierarchyRole.DIRECTOR -> target.role == HierarchyRole.MANAGER || target.role == HierarchyRole.AUDITOR || target.role == HierarchyRole.CUSTODIAN
+        HierarchyRole.DIVISION_VP -> target.role == HierarchyRole.MANAGER || target.role == HierarchyRole.AUDITOR || target.role == HierarchyRole.CUSTODIAN
         HierarchyRole.MANAGER -> target.role == HierarchyRole.SPECIALIST || target.role == HierarchyRole.WORKER
         HierarchyRole.SPECIALIST -> target.role == HierarchyRole.WORKER
         HierarchyRole.WORKER,
+        HierarchyRole.AUDITOR,
+        HierarchyRole.CUSTODIAN -> false
+    }
+
+    private fun HierarchyRole.acceptsParentRole(parent: HierarchyRole): Boolean = when (this) {
+        HierarchyRole.DIRECTOR,
+        HierarchyRole.DIVISION_VP -> parent == HierarchyRole.HUMAN_OWNER
+        HierarchyRole.MANAGER -> parent == HierarchyRole.DIRECTOR || parent == HierarchyRole.DIVISION_VP
+        HierarchyRole.SPECIALIST -> parent == HierarchyRole.MANAGER
+        HierarchyRole.WORKER -> parent == HierarchyRole.MANAGER || parent == HierarchyRole.SPECIALIST
+        HierarchyRole.HUMAN_OWNER,
         HierarchyRole.AUDITOR,
         HierarchyRole.CUSTODIAN -> false
     }
@@ -177,5 +241,14 @@ class HierarchyRegistry {
                 parentTerritory.none { parent -> child == parent || child.startsWith("$parent/") }
             }
         return outside?.let { "dispatch territory outside parent scope: $it not within ${parentTerritory.joinToString(", ")}" }
+    }
+
+    private fun isUnsafeTerritory(raw: String): Boolean {
+        val normalized = raw.replace('\\', '/')
+        return normalized.isBlank() ||
+            raw.contains('\\') ||
+            raw.indexOf('\u0000') >= 0 ||
+            normalized.startsWith('/') ||
+            normalized.split('/').any { it.isBlank() || it == "." || it == ".." }
     }
 }

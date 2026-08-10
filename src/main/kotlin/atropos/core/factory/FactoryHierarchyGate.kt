@@ -5,6 +5,10 @@ import atropos.core.hierarchy.HierarchyDispatchContract
 import atropos.core.hierarchy.HierarchyDispatchResult
 import atropos.core.hierarchy.HierarchyRegistry
 import atropos.core.hierarchy.HierarchyRole
+import atropos.core.hr.HrRouterAuditStore
+import atropos.core.hr.HrRouterService
+import atropos.core.hr.InformationKind
+import atropos.core.verification.CompletionGateReport
 import java.time.Instant
 
 /**
@@ -12,7 +16,8 @@ import java.time.Instant
  * mutation. The registry remains the sole owner of role and task transitions.
  */
 class FactoryHierarchyGate(
-    private val registry: HierarchyRegistry = HierarchyRegistry()
+    private val registry: HierarchyRegistry = HierarchyRegistry(),
+    private val hrRouter: HrRouterService = HrRouterService()
 ) {
     fun dispatch(
         projectId: String,
@@ -35,7 +40,9 @@ class FactoryHierarchyGate(
         val ownerId = "factory-owner-$projectId"
         val directorId = "factory-director-$projectId"
         val managerId = "factory-manager-$projectId"
+        val specialistId = "factory-specialist-$projectId"
         val workerId = "factory-worker-$projectId"
+        val taskId = "factory-task-$projectId"
         registry.register(AgentRecord(ownerId, "factory owner", HierarchyRole.HUMAN_OWNER, territoryId = "root"))
         registry.register(
             AgentRecord(
@@ -59,16 +66,42 @@ class FactoryHierarchyGate(
         )
         registry.register(
             AgentRecord(
-                workerId,
-                "factory worker",
-                HierarchyRole.WORKER,
+                specialistId,
+                "factory specialist",
+                HierarchyRole.SPECIALIST,
                 parentManagerId = managerId,
                 capabilities = capabilities
             )
         )
+        registry.register(
+            AgentRecord(
+                workerId,
+                "factory worker",
+                HierarchyRole.WORKER,
+                parentManagerId = specialistId,
+                capabilities = capabilities
+            )
+        )
 
-        val taskId = "factory-task-$projectId"
+        val hrResponse = hrRouter.request(
+            sourceOwner = directorId,
+            sourceTerr = ".atropos/generated-projects",
+            targetOwner = managerId,
+            targetTerr = normalizedTerritory,
+            kind = InformationKind.TASK_ASSIGNMENT,
+            query = "bounded factory task assignment project=$projectId capabilities=${capabilities.joinToString(",")}",
+            paths = listOf(normalizedTerritory),
+            taskId = taskId,
+            sourceCoordinates = listOf(sourceCoordinate),
+            needToKnow = "authorize bounded factory hierarchy dispatch",
+            sourceRole = HierarchyRole.DIRECTOR,
+            targetRole = HierarchyRole.MANAGER
+        )
+        check(hrResponse.approved) {
+            "factory HR Router refused hierarchy dispatch: ${hrResponse.reason}"
+        }
         val timeoutAt = Instant.now().plusSeconds(15 * 60)
+        val dispatchedTaskIds = mutableListOf<String>()
         dispatchOrRefuse(
             HierarchyDispatchContract(
                 taskId = "$taskId-owner",
@@ -81,7 +114,8 @@ class FactoryHierarchyGate(
                 acceptanceCriteria = listOf("bounded factory mutation"),
                 rollbackPlan = "remove only the generated project target",
                 timeoutAt = timeoutAt
-            )
+            ),
+            dispatchedTaskIds
         )
         dispatchOrRefuse(
             HierarchyDispatchContract(
@@ -95,11 +129,27 @@ class FactoryHierarchyGate(
                 acceptanceCriteria = listOf("bounded factory mutation"),
                 rollbackPlan = "remove only the generated project target",
                 timeoutAt = timeoutAt
-            )
+            ),
+            dispatchedTaskIds
+        )
+        dispatchOrRefuse(
+            HierarchyDispatchContract(
+                taskId = "$taskId-manager",
+                parentAuthorityId = managerId,
+                assigneeId = specialistId,
+                sourceCoordinates = listOf(sourceCoordinate),
+                territory = listOf(normalizedTerritory),
+                capabilities = capabilities,
+                budgetTokens = 1,
+                acceptanceCriteria = listOf("specialist routes bounded factory work"),
+                rollbackPlan = "remove only the generated project target",
+                timeoutAt = timeoutAt
+            ),
+            dispatchedTaskIds
         )
         val workerContract = HierarchyDispatchContract(
             taskId = taskId,
-            parentAuthorityId = managerId,
+            parentAuthorityId = specialistId,
             assigneeId = workerId,
             sourceCoordinates = listOf(sourceCoordinate),
             territory = listOf(normalizedTerritory),
@@ -109,28 +159,74 @@ class FactoryHierarchyGate(
             rollbackPlan = "remove only the generated project target",
             timeoutAt = timeoutAt
         )
-        dispatchOrRefuse(workerContract)
-        check(registry.startTask(taskId)) { "factory hierarchy task could not start: $taskId" }
-        return FactoryHierarchyLease(taskId, registry)
+        dispatchOrRefuse(workerContract, dispatchedTaskIds)
+        if (!registry.startTask(taskId)) {
+            dispatchedTaskIds.asReversed().forEach { dispatchedId ->
+                registry.failTask(dispatchedId, "factory hierarchy worker could not start")
+            }
+            error("factory hierarchy task could not start: $taskId")
+        }
+        return FactoryHierarchyLease(dispatchedTaskIds, registry, hrResponse.requestId, hrResponse.action.name)
     }
 
-    private fun dispatchOrRefuse(contract: HierarchyDispatchContract) {
+    internal fun completeAfterVerification(
+        lease: FactoryHierarchyLease,
+        evidence: String,
+        gate: CompletionGateReport
+    ) {
+        require(gate.canComplete && gate.message == "factory completion gate passed") {
+            "factory hierarchy completion requires a passing completion gate"
+        }
+        lease.completeAfterVerifiedGate(evidence)
+    }
+
+    private fun dispatchOrRefuse(contract: HierarchyDispatchContract, dispatchedTaskIds: MutableList<String>) {
         when (val result = registry.dispatch(contract)) {
-            is HierarchyDispatchResult.Accepted -> Unit
-            is HierarchyDispatchResult.Refused -> error("factory hierarchy dispatch refused: ${result.reason}")
+            is HierarchyDispatchResult.Accepted -> dispatchedTaskIds += contract.taskId
+            is HierarchyDispatchResult.Refused -> {
+                dispatchedTaskIds.asReversed().forEach { dispatchedId ->
+                    registry.failTask(dispatchedId, "dependent dispatch refused: ${result.reason}")
+                }
+                error("factory hierarchy dispatch refused: ${result.reason}")
+            }
         }
     }
 }
 
 class FactoryHierarchyLease(
-    private val taskId: String,
-    private val registry: HierarchyRegistry
+    private val taskIds: List<String>,
+    private val registry: HierarchyRegistry,
+    val hrRequestId: String,
+    val hrAction: String
 ) {
-    fun complete(evidence: String) {
-        check(registry.completeTask(taskId, evidence)) { "factory hierarchy task could not complete: $taskId" }
+    @Deprecated("Use FactoryHierarchyGate.completeAfterVerification")
+    fun complete(evidence: String): Nothing =
+        error("factory hierarchy completion requires FactoryHierarchyGate.completeAfterVerification")
+
+    internal fun completeAfterVerifiedGate(evidence: String) {
+        require(evidence.isNotBlank()) { "factory hierarchy completion evidence is required" }
+        val auditedEvidence = "$evidence hr_request=$hrRequestId hr_action=$hrAction"
+        val remaining = taskIds.asReversed().toMutableList()
+        try {
+            while (remaining.isNotEmpty()) {
+                val taskId = remaining.first()
+                check(registry.completeTask(taskId, auditedEvidence)) {
+                    "factory hierarchy task could not complete: $taskId"
+                }
+                remaining.removeAt(0)
+            }
+        } catch (failure: Throwable) {
+            remaining.forEach { taskId ->
+                runCatching { registry.failTask(taskId, "dependent hierarchy completion failed") }
+            }
+            throw failure
+        }
     }
 
     fun fail(reason: String) {
-        registry.failTask(taskId, reason.ifBlank { "factory mutation failed" })
+        val failure = reason.ifBlank { "factory mutation failed" }
+        taskIds.asReversed().forEach { taskId ->
+            registry.failTask(taskId, failure)
+        }
     }
 }

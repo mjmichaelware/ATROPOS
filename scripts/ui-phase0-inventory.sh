@@ -1,13 +1,13 @@
-#!/data/data/com.termux/files/usr/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="${1:-$HOME/ATROPOS}"
+ROOT="${1:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 cd "$ROOT"
 
 OUT_DIR="docs/ui-parity/phase0"
 mkdir -p "$OUT_DIR"
 
-ALL="$PREFIX/tmp/atropos-ui-all.$$"
+ALL="${TMPDIR:-/tmp}/atropos-ui-all.$$"
 ATROPOS_TUI="$OUT_DIR/ATROPOS_TUI_PATHS.txt"
 ATROPOS_WEB="$OUT_DIR/ATROPOS_WEB_PATHS.txt"
 PARITY="$OUT_DIR/UI_PARITY_PATHS.txt"

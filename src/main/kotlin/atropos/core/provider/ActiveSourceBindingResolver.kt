@@ -1,6 +1,9 @@
 package atropos.core.provider
 
 import atropos.core.AtroposRepoRootLocator
+import java.nio.file.InvalidPathException
+import java.nio.file.Files
+import java.nio.file.LinkOption
 import java.nio.file.Path
 
 data class ActiveSourceBindingSelection(
@@ -24,8 +27,9 @@ class ActiveSourceBindingResolver(
 
         return when (kind) {
             "local", "local_path" -> {
-                val path = uri.takeIf { it.isNotBlank() }?.let { Path.of(it) } ?: repoRoot
-                ActiveSourceBindingSelection(SourceBinding.localPath(path))
+                val path = resolveFilePath(uri) ?: return invalidPath("local_path")
+                refuseSymbolicPath(path, "local_path")
+                    ?: ActiveSourceBindingSelection(SourceBinding.localPath(path))
             }
             "git" -> {
                 if (uri.isBlank()) {
@@ -38,7 +42,9 @@ class ActiveSourceBindingResolver(
                 if (uri.isBlank()) {
                     ActiveSourceBindingSelection(null, "archive source binding requires ATROPOS_SOURCE_BINDING_URI")
                 } else {
-                    ActiveSourceBindingSelection(SourceBinding.archive(Path.of(uri), sha))
+                    val path = resolveFilePath(uri) ?: return invalidPath("archive")
+                    refuseSymbolicPath(path, "archive")
+                        ?: ActiveSourceBindingSelection(SourceBinding.archive(path, sha))
                 }
             }
             "http", "http_bundle" -> {
@@ -52,5 +58,29 @@ class ActiveSourceBindingResolver(
             }
             else -> ActiveSourceBindingSelection(null, "unsupported source binding kind: $rawKind")
         }
+    }
+
+    private fun resolveFilePath(raw: String): Path? = runCatching {
+        if (raw.isBlank()) repoRoot
+        else Path.of(raw).let { path ->
+            if (path.isAbsolute) path.normalize() else repoRoot.resolve(path).normalize()
+        }
+    }.getOrNull()
+
+    private fun refuseSymbolicPath(path: Path, label: String): ActiveSourceBindingSelection? {
+        if (!hasSymbolicComponent(path)) return null
+        return ActiveSourceBindingSelection(null, "$label source binding crosses a symbolic path component")
+    }
+
+    private fun invalidPath(label: String): ActiveSourceBindingSelection =
+        ActiveSourceBindingSelection(null, "$label source binding contains an invalid path")
+
+    private fun hasSymbolicComponent(path: Path): Boolean {
+        var current: Path? = path.toAbsolutePath().normalize()
+        while (current != null) {
+            if (Files.isSymbolicLink(current)) return true
+            current = current.parent
+        }
+        return false
     }
 }

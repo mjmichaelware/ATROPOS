@@ -2,6 +2,8 @@
 package atropos.core
 
 import atropos.core.provider.ProviderTruthService
+import atropos.core.provider.ApiCapability
+import atropos.core.provider.StaticProviderDescriptorRegistry
 
 enum class TaskClass {
     SMALL_CHAT,
@@ -26,6 +28,8 @@ data class ProviderInventory(
 )
 
 class ProviderDecisionEngine {
+    private val registry = StaticProviderDescriptorRegistry()
+
     fun inventory(config: AtroposConfig): ProviderInventory {
         val truth = ProviderTruthService(config).snapshot()
         return ProviderInventory(
@@ -49,52 +53,33 @@ class ProviderDecisionEngine {
     }
 
     fun decide(prompt: String, config: AtroposConfig, unavailable: Set<String> = emptySet()): RouteDecision {
-        val inv = inventory(config).configured
-        fun ok(name: String): Boolean = inv[name] == true && name !in unavailable
         val task = classify(prompt)
-        return when (task) {
-            TaskClass.PRIVACY_LOCAL -> RouteDecision("ollama", task, "privacy/local request")
-            TaskClass.VERIFY_OR_BUILD -> RouteDecision("ollama", task, "local verifier/build should run before paid LLM")
-            TaskClass.VISION_OR_MULTIMODAL -> when {
-                ok("github_models") -> RouteDecision("github_models", task, "free cloud route")
-                ok("cloudflare_ai") -> RouteDecision("cloudflare_ai", task, "free cloud route")
-                else -> RouteDecision("ollama", task, "no implemented vision provider selected; local fallback")
-            }
-            TaskClass.CHEAP_FAST -> when {
-                ok("groq") -> RouteDecision("groq", task, "fast/cheap cloud key configured")
-                ok("github_models") -> RouteDecision("github_models", task, "free cloud fallback configured")
-                ok("cloudflare_ai") -> RouteDecision("cloudflare_ai", task, "free cloud fallback configured")
-                else -> RouteDecision("ollama", task, "no fast cloud key available")
-            }
-            TaskClass.SMALL_CHAT -> when {
-                ok("groq") -> RouteDecision("groq", task, "low-latency chat")
-                ok("github_models") -> RouteDecision("github_models", task, "free cloud chat fallback")
-                ok("cloudflare_ai") -> RouteDecision("cloudflare_ai", task, "free cloud chat fallback")
-                else -> RouteDecision("ollama", task, "local chat fallback")
-            }
-            TaskClass.CODING -> when {
-                ok("groq") -> RouteDecision("groq", task, "fast coding fallback")
-                ok("github_models") -> RouteDecision("github_models", task, "free coding fallback")
-                ok("cloudflare_ai") -> RouteDecision("cloudflare_ai", task, "free coding fallback")
-                else -> RouteDecision("ollama", task, "local coding fallback")
-            }
-            TaskClass.LONG_REASONING -> when {
-                ok("github_models") -> RouteDecision("github_models", task, "free reasoning fallback")
-                ok("cloudflare_ai") -> RouteDecision("cloudflare_ai", task, "free reasoning fallback")
-                ok("groq") -> RouteDecision("groq", task, "fast reasoning fallback")
-                else -> RouteDecision("ollama", task, "local long-reasoning fallback")
-            }
-            TaskClass.UNKNOWN -> when {
-                ok("groq") -> RouteDecision("groq", task, "default fast configured route")
-                ok("github_models") -> RouteDecision("github_models", task, "default free cloud route")
-                ok("cloudflare_ai") -> RouteDecision("cloudflare_ai", task, "default free cloud route")
-                else -> RouteDecision("ollama", task, "default local route")
-            }
-        }
+        val truth = ProviderTruthService(config).snapshot()
+        val capability = capabilityFor(task)
+        val capabilityIds = registry.getByCapability(capability).map { it.id }.toSet()
+        val preferred = when (task) {
+            TaskClass.CODING,
+            TaskClass.VERIFY_OR_BUILD -> truth.patchOrder
+            else -> truth.askOrder
+        }.filterNot(unavailable::contains)
+        val selected = preferred.firstOrNull { it in capabilityIds }
+            ?: preferred.firstOrNull()
+            ?: registry.getByCapability(capability).firstOrNull()?.id
+            ?: truth.selectedProvider
+        return RouteDecision(selected, task, "canonical provider descriptor/truth route")
     }
 
     fun providersReport(config: AtroposConfig): String {
         return ProviderTruthService(config).snapshot().renderInventory()
+    }
+
+    private fun capabilityFor(task: TaskClass): ApiCapability = when (task) {
+        TaskClass.PRIVACY_LOCAL -> ApiCapability.LOCAL_TOOL
+        TaskClass.VERIFY_OR_BUILD -> ApiCapability.REPAIR
+        TaskClass.VISION_OR_MULTIMODAL -> ApiCapability.VISION
+        TaskClass.CODING -> ApiCapability.CODE
+        TaskClass.LONG_REASONING -> ApiCapability.PLAN
+        else -> ApiCapability.CHAT
     }
 
 }

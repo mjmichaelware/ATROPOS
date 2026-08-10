@@ -44,6 +44,14 @@ class AgentQueueService(
 ) {
     fun enqueue(task: String, smokeCommand: String? = null): AgentQueueRecord {
         enforceQueuePolicy("enqueue", task)
+        return persistEnqueue(task, smokeCommand)
+    }
+
+    private fun persistEnqueue(
+        task: String,
+        smokeCommand: String? = null,
+        nextEligibleAt: Instant? = null
+    ): AgentQueueRecord {
         val smoke = smokeCommand?.trim()?.takeIf { it.isNotBlank() }
         val refusal = smoke?.let { smokeRunner.validate(it) }
         if (refusal != null) {
@@ -54,15 +62,20 @@ class AgentQueueService(
                 checkpoint = AgentQueueCheckpoint.FINALIZED,
                 provider = "none",
                 failureReason = refusal
-            ).also { rememberQueue(it, "enqueue refused") }
+            ).also { rememberQueueSafely(it, "enqueue refused") }
         }
-        return store.createEntry(task = task, smokeCommand = smoke)
-            .also { rememberQueue(it, "enqueued") }
+        return store.createEntry(task = task, smokeCommand = smoke, nextEligibleAt = nextEligibleAt)
+            .also { rememberQueueSafely(it, "enqueued") }
     }
 
     /** Persist a provider-exhaustion retry without making degradation fatal. */
-    fun enqueueUnavailable(task: String): AgentQueueRecord? =
-        runCatching { enqueue(task) }.getOrNull()
+    fun enqueueUnavailable(task: String, retryAtEpochMs: Long? = null): AgentQueueRecord? {
+        // Authorization is a hard boundary. Only persistence failures may
+        // degrade to the local fallback used by provider-exhaustion callers.
+        enforceQueuePolicy("enqueue", task)
+        val nextEligibleAt = retryAtEpochMs?.let { runCatching { Instant.ofEpochMilli(it) }.getOrNull() }
+        return runCatching { persistEnqueue(task, nextEligibleAt = nextEligibleAt) }.getOrNull()
+    }
 
     fun list(limit: Int = 20): List<AgentQueueRecord> = store.listEntries(limit)
 
@@ -330,5 +343,9 @@ class AgentQueueService(
             }.trimEnd(),
             tags = listOf("agent", "queue", record.state.name.lowercase())
         )
+    }
+
+    private fun rememberQueueSafely(record: AgentQueueRecord, title: String) {
+        runCatching { rememberQueue(record, title) }
     }
 }

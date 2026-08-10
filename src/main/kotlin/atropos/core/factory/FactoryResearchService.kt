@@ -5,8 +5,6 @@ import atropos.core.memory.MemorySearchHit
 import atropos.dloi.DloiLookupResult
 import atropos.dloi.DloiService
 import atropos.dloi.HigZeroGuard
-import java.net.HttpURLConnection
-import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
 import java.security.MessageDigest
@@ -15,9 +13,29 @@ data class FactoryResearchReport(
     val channelLog: List<String>,
     val memoryPointers: List<String>,
     val fetchHashes: List<String>,
-    val specGraphStatus: String
+    val specGraphStatus: String,
+    val promptFingerprint: String = ""
 ) {
+    /**
+     * Research is allowed to continue when optional channels are unavailable,
+     * but the lifecycle must expose that degraded outcome instead of claiming
+     * an unconditional success.
+     */
+    fun lifecycleState(): String = if (
+        channelLog.any {
+        it.contains("SKIPPED_SOFT_FAIL") &&
+                !it.startsWith("provider_suggestions=SKIPPED_SOFT_FAIL:confidence_threshold_met")
+        } || specGraphStatus.contains("SKIPPED_SOFT_FAIL", ignoreCase = true) ||
+        specGraphStatus.contains("SOFT_SKIP", ignoreCase = true)
+    ) {
+        "COMPLETED_WITH_SOFT_FAILS"
+    } else {
+        "COMPLETED"
+    }
+
     fun render(): String = buildString {
+        appendLine("prompt_fingerprint=${promptFingerprint.ifBlank { "UNRECORDED" }}")
+        appendLine("research_state=${lifecycleState()}")
         channelLog.forEach { appendLine(it) }
         if (memoryPointers.isNotEmpty()) appendLine("memory_pointers=${memoryPointers.joinToString(",")}")
         if (fetchHashes.isNotEmpty()) appendLine("fetch_hashes=${fetchHashes.joinToString(",")}")
@@ -30,11 +48,18 @@ class FactoryResearchService(
     private val memory: LocalMemoryStore? = null,
     private val maxFetchBytes: Int = 32 * 1024,
     private val timeoutMillis: Int = 750,
+    private val maxFetchRequests: Int = 2,
+    private val maxQueryParameters: Int = 8,
     private val dLoI: HigZeroGuard? = null,
     private val minimumScopedRelevance: Int = 2,
-    private val operatorId: String? = System.getenv("ATROPOS_OPERATOR_ID")?.trim()?.takeIf { it.isNotBlank() }
+    private val operatorId: String? = System.getenv("ATROPOS_OPERATOR_ID")?.trim()?.takeIf { it.isNotBlank() },
+    private val specGraphAtomizer: SpecGraphAtomizer = SpecGraphAtomizer()
 ) {
     init {
+        require(maxFetchBytes > 0) { "bounded research byte limit must be positive" }
+        require(timeoutMillis > 0) { "bounded research timeout must be positive" }
+        require(maxFetchRequests > 0) { "bounded research request limit must be positive" }
+        require(maxQueryParameters >= 0) { "bounded research query limit cannot be negative" }
         require(minimumScopedRelevance > 0) { "scoped memory relevance threshold must be positive" }
     }
 
@@ -45,22 +70,41 @@ class FactoryResearchService(
         providerSuggestionsRequired: Boolean = false,
         promptSpans: String = "none",
         promptArtifactMemoryStatus: String = "UNRECORDED",
-        providerSuggestionsPredicate: ((FactoryResearchReport) -> Boolean)? = null
+        providerSuggestionsPredicate: ((FactoryResearchReport) -> Boolean)? = null,
+        promptFingerprint: String = ""
     ): FactoryResearchReport {
         val log = mutableListOf<String>()
         val pointers = mutableListOf<String>()
         val hashes = mutableListOf<String>()
+        val fetcher = BoundedResearchFetcher(
+            maxBytes = maxFetchBytes,
+            timeoutMillis = timeoutMillis,
+            maxRequests = maxFetchRequests,
+            maxQueryParameters = maxQueryParameters
+        )
         val query = prompt.trim().take(160)
-        val localMemory = memory ?: LocalMemoryStore(root.resolve(".atropos/memory").toFile())
+        val atomizationSource = prompt.trim()
+        log += "prompt_fingerprint=${promptFingerprint.ifBlank { "UNRECORDED" }}"
         log += "prompt_artifact_memory=$promptArtifactMemoryStatus"
+        val localMemory = memory ?: runCatching {
+            LocalMemoryStore(root.resolve(".atropos/memory").toFile())
+        }.getOrElse { failure ->
+            val reason = safeReason(failure)
+            log += "st_memory=SKIPPED_SOFT_FAIL:initialization_$reason"
+            log += "lt_memory=SKIPPED_SOFT_FAIL:initialization_$reason"
+            null
+        }
 
-        if (operatorId == null) {
-            log += "st_memory=SKIPPED_SOFT_FAIL:user_scope_unset"
-            log += "lt_memory=SKIPPED_SOFT_FAIL:user_scope_unset"
-        } else {
+        // Short-term run memory is scoped to this factory project and
+        // repository; it must remain available even when no operator identity
+        // is configured so the prompt artifact can feed the same run.
+        if (localMemory != null) {
             runCatching { localMemory.search(query, limit = 16) }
                 .onSuccess { hits ->
-                    val scoped = hits.filter { it.score >= minimumScopedRelevance && it.isInFactoryScope(projectId, root, operatorId) }
+                    val scoped = hits.filter {
+                        it.score >= minimumScopedRelevance &&
+                            it.isInFactoryScope(projectId, root, operatorId, requireOperatorScope = false)
+                    }
                     log += "st_memory=PASS scoped_hits=${scoped.size} rejected=${hits.size - scoped.size}"
                     pointers += scoped.map { it.record.id }
                 }
@@ -68,8 +112,13 @@ class FactoryResearchService(
 
             runCatching { localMemory.search(query, limit = 24) }
                 .onSuccess { hits ->
-                    val scoped = hits.filter { it.score >= minimumScopedRelevance && it.isInFactoryScope(projectId, root, operatorId) }
-                    log += "lt_memory=PASS scoped_records=${scoped.size} rejected=${hits.size - scoped.size}"
+                    val scoped = hits.filter {
+                        it.score >= minimumScopedRelevance &&
+                            it.isInFactoryScope(projectId, root, operatorId, requireOperatorScope = true)
+                    }
+                    val userScope = if (operatorId == null) "user_scope_unset" else "user_scope_bound"
+                    log += "lt_memory=PASS scoped_records=${scoped.size} rejected=${hits.size - scoped.size} $userScope"
+                    pointers += scoped.map { "lt:${it.record.id}" }
                 }
                 .onFailure { log += "lt_memory=SKIPPED_SOFT_FAIL:${safeReason(it)}" }
         }
@@ -97,7 +146,7 @@ class FactoryResearchService(
             log += "lakehouse=SKIPPED_SOFT_FAIL:ATROPOS_LAKEHOUSE_URL unset"
             log += "lakehouse_route=SKIPPED_SOFT_FAIL:lakehouse_unavailable; dLoI_attempted=true"
         } else {
-            fetchBounded(lakehouse).fold(
+            fetcher.fetch(lakehouse).fold(
                 onSuccess = { body ->
                     hashes += "url_sha256=${sha256(lakehouse)}"
                     hashes += "body_sha256=${sha256(body)}"
@@ -115,63 +164,55 @@ class FactoryResearchService(
         if (boundedUrl.isNullOrBlank()) {
             log += "bounded_fetch=SKIPPED_SOFT_FAIL:ATROPOS_FACTORY_RESEARCH_URL unset"
         } else {
-            fetchBounded(boundedUrl).fold(
+            fetcher.fetch(boundedUrl).fold(
                 onSuccess = {
                     hashes += "url_sha256=${sha256(boundedUrl)}"
                     hashes += "body_sha256=${sha256(it)}"
-                    log += "bounded_fetch=PASS bytes=${it.length}"
+                    log += "bounded_fetch=PASS bytes=${it.toByteArray(StandardCharsets.UTF_8).size}"
                 },
                 onFailure = { log += "bounded_fetch=SKIPPED_SOFT_FAIL:${safeReason(it)}" }
             )
         }
-        val specGraphRoot = System.getenv("SPECGRAPH_ROOT")
-        val specGraphStatus = if (!specGraphRoot.isNullOrBlank() && java.nio.file.Files.exists(Path.of(specGraphRoot))) {
-            "AVAILABLE_SOFT_SKIP:adapter_not_bound; internal DAG fallback required"
-        } else {
-            "SKIPPED_SOFT_FAIL:SpecGraph unavailable; internal DAG fallback required"
-        }
+        val specGraphStatus = specGraphAtomizer.atomize(
+            repoRoot = root,
+            projectId = projectId,
+            source = atomizationSource,
+            promptFingerprint = promptFingerprint,
+            promptSpans = promptSpans
+        )
         val beforeSuggestions = FactoryResearchReport(
             channelLog = log.toList(),
             memoryPointers = pointers.toList(),
             fetchHashes = hashes.toList(),
-            specGraphStatus = specGraphStatus
+            specGraphStatus = specGraphStatus,
+            promptFingerprint = promptFingerprint
         )
         // The legacy flag is retained for source compatibility, but confidence
         // remains the sole authority for provider suggestions. Callers cannot
         // bypass the ordered local/DLOI/lakehouse/fetch research stack.
-        val shouldSuggest = providerSuggestionsPredicate?.invoke(beforeSuggestions) == true
-        if (shouldSuggest) {
+        val suggestionDecision = runCatching {
+            providerSuggestionsPredicate?.invoke(beforeSuggestions) == true
+        }
+        if (suggestionDecision.isFailure) {
+            log += "provider_suggestions=SKIPPED_SOFT_FAIL:predicate_${safeReason(suggestionDecision.exceptionOrNull()!!)}; attempted_after_channels=true; prompt_spans=$promptSpans"
+        } else if (providerSuggestionsRequired && providerSuggestionsPredicate == null) {
+            log += "provider_suggestions=SKIPPED_SOFT_FAIL:provider_not_configured; attempted_after_channels=true; prompt_spans=$promptSpans"
+        } else if (suggestionDecision.getOrDefault(false)) {
             log += "provider_suggestions=SKIPPED_SOFT_FAIL:provider_not_configured; attempted_after_channels=true; prompt_spans=$promptSpans"
         } else {
             log += "provider_suggestions=SKIPPED_SOFT_FAIL:confidence_threshold_met"
         }
 
-        return FactoryResearchReport(log, pointers, hashes, specGraphStatus)
+        return FactoryResearchReport(log, pointers, hashes, specGraphStatus, promptFingerprint)
     }
 
     fun researchOpenAtoms(
         atomIds: List<String>,
         promptFingerprint: String,
-        promptSpans: String = "none"
+        promptSpans: String = "none",
+        researchDocumentSha256: String = ""
     ): List<String> = atomIds.map {
-        "atom=$it prompt_fingerprint=$promptFingerprint prompt_spans=$promptSpans research=bounded_channels_attempted"
-    }
-
-    private fun fetchBounded(rawUrl: String): Result<String> = runCatching {
-        val uri = URI(rawUrl)
-        require(uri.scheme.equals("http", ignoreCase = true) || uri.scheme.equals("https", ignoreCase = true)) {
-            "bounded research permits HTTP(S) only"
-        }
-        val connection = uri.toURL().openConnection() as HttpURLConnection
-        connection.requestMethod = "GET"
-        connection.connectTimeout = timeoutMillis
-        connection.readTimeout = timeoutMillis
-        connection.instanceFollowRedirects = false
-        connection.inputStream.use { input ->
-            val bytes = input.readNBytes(maxFetchBytes + 1)
-            require(bytes.size <= maxFetchBytes) { "bounded research response exceeded ${maxFetchBytes} bytes" }
-            String(bytes, StandardCharsets.UTF_8)
-        }
+        "atom=$it prompt_fingerprint=$promptFingerprint prompt_spans=$promptSpans research_sha256=$researchDocumentSha256 research=bounded_channels_attempted"
     }
 
     private fun safeReason(failure: Throwable): String =
@@ -180,13 +221,30 @@ class FactoryResearchService(
     private fun safeReasonText(reason: String): String =
         reason.lowercase().replace(Regex("[^a-z0-9]+"), "_").take(80)
 
-    private fun MemorySearchHit.isInFactoryScope(projectId: String, root: Path, operatorId: String): Boolean {
+    private fun MemorySearchHit.isInFactoryScope(
+        projectId: String,
+        root: Path,
+        operatorId: String?,
+        requireOperatorScope: Boolean
+    ): Boolean {
         val tags = record.tags.map { it.lowercase() }.toSet()
         val repository = root.fileName?.toString().orEmpty()
-        val userMatch = record.body.contains("operator_id=$operatorId") || tags.contains("operator-${operatorId.lowercase()}")
+        val userMatch = if (requireOperatorScope) {
+            operatorId != null && (
+                record.body.contains("operator_id=$operatorId") ||
+                    tags.contains("operator-${operatorId.lowercase()}")
+                )
+        } else {
+            operatorId == null ||
+                record.body.contains("operator_id=$operatorId") ||
+                tags.contains("operator-${operatorId.lowercase()}")
+        }
         val projectMatch = tags.contains(projectId.lowercase()) || record.body.contains("project_id=$projectId")
         val repositoryMatch = record.body.contains("repository=$repository")
-        return tags.contains("factory") && userMatch && (projectMatch || repositoryMatch)
+        // Long-term memory requires the operator plus a project or repository
+        // binding. Short-term run memory may use the current project alone.
+        val resourceMatch = projectMatch || (operatorId != null && repositoryMatch)
+        return tags.contains("factory") && userMatch && resourceMatch
     }
 
     private fun sha256(value: String): String = MessageDigest.getInstance("SHA-256")

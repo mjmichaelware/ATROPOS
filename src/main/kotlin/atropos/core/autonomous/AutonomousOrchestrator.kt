@@ -14,9 +14,12 @@ import atropos.core.director.DriftSeverity
 import atropos.core.director.ObservationKind
 import atropos.core.hierarchy.HierarchyRegistry
 import atropos.core.hr.HrRouterService
+import atropos.core.hr.CrossBoundaryResponse
+import atropos.core.hr.InformationKind
 import atropos.core.memory.LocalMemoryStore
 import atropos.core.multimodal.InspectionService
 import atropos.core.platform.Platform
+import atropos.core.provider.ProviderTruthService
 import atropos.core.territory.TerritoryService
 import java.time.Instant
 
@@ -39,7 +42,8 @@ class AutonomousOrchestrator(
     private val artifactVerification: ArtifactVerificationService = ArtifactVerificationService(),
     private val inspectionService: InspectionService = InspectionService(),
     private val memory: LocalMemoryStore = LocalMemoryStore(),
-    private val learningAdvisor: AutonomousLearningAdvisor = AutonomousLearningAdvisor()
+    private val learningAdvisor: AutonomousLearningAdvisor = AutonomousLearningAdvisor(),
+    private val providerTruth: ProviderTruthService = ProviderTruthService()
 ) {
     private var session = AutonomousSession()
     private val stopConditions = mutableListOf<StopCondition>()
@@ -163,6 +167,11 @@ class AutonomousOrchestrator(
         }
 
         return try {
+            val boundary = routeDeclaredBoundary(task)
+            if (boundary != null && !boundary.approved) {
+                backlog.skip(task.id, boundary.reason)
+                return "[STOP] ${task.kind.name}: HR Router refused cross-boundary context: ${boundary.reason}"
+            }
             val result = when (task.kind) {
                 AutonomousTaskKind.DAG_INGESTION -> executeDagIngestion(task)
                 AutonomousTaskKind.DAG_CONTINUATION -> executeDagContinuation(task)
@@ -233,11 +242,14 @@ class AutonomousOrchestrator(
     }
 
     private fun executeProviderFailover(task: AutonomousTask): String {
-        val primary = task.context["primary"] ?: "groq"
-        val fallback = task.context["fallback"] ?: "openrouter"
+        val primary = task.context["primary"]?.trim()?.takeIf { it.isNotBlank() }
+            ?: providerTruth.snapshot().selectedProvider
         val service = ProviderFailoverService(backlog = backlog)
         val plan = service.assess(primary) ?: throw RuntimeException("no failover route available for $primary")
-        val selectedFallback = if (fallback == plan.primaryId) plan.fallbackId else fallback
+        val requestedFallback = task.context["fallback"]?.trim()?.takeIf { it.isNotBlank() }
+        val selectedFallback = requestedFallback
+            ?.takeIf { it != plan.primaryId && it in plan.availableAlternatives }
+            ?: plan.fallbackId
         val failoverEvent = service.failover(primary, selectedFallback, plan.reason)
         return "Failover: $primary -> $selectedFallback (${failoverEvent.id})"
     }
@@ -281,7 +293,20 @@ class AutonomousOrchestrator(
     private fun executeAuditRun(task: AutonomousTask): String {
         auditor.auditTerritories(territoryService.getAll())
         val report = auditor.report()
-        return "Audit: ${report.summary}"
+        val decision = auditor.blockPromotion(
+            report = report,
+            claimedBy = "autonomous-orchestrator",
+            auditedBy = "auditor"
+        )
+        memory.rememberVerification(
+            subjectId = task.id,
+            title = "autonomous-audit-report",
+            body = "report_sha256=${decision.reportEvidenceSha256} summary=${report.summary} " +
+                "promotion_allowed=${decision.allowed} decision=${decision.message}",
+            tags = listOf("autonomous", "audit", "custodian-boundary")
+        )
+        check(decision.allowed) { decision.message }
+        return "Audit: ${report.summary} evidence_sha256=${decision.reportEvidenceSha256}"
     }
 
     private fun executeCustodianClean(task: AutonomousTask): String {
@@ -309,6 +334,50 @@ class AutonomousOrchestrator(
             "artifact deliverable failed: ${report.summary}"
         }
         return "Artifact deliverable: ${report.summary}"
+    }
+
+    /**
+     * Autonomous work is normally local to its assigned owner. When a task
+     * explicitly carries cross-boundary context, make that boundary visible
+     * to the sole HR owner before any task executor can consume it.
+     */
+    private fun routeDeclaredBoundary(task: AutonomousTask): CrossBoundaryResponse? {
+        val context = task.context
+        val declared = context.keys.any { key ->
+            key in setOf(
+                "sourceOwner", "sourceTerritory", "targetOwner", "targetTerritory",
+                "informationKind", "sourceCoordinates", "needToKnow", "requestedPaths"
+            )
+        }
+        if (!declared) return null
+
+        val kind = runCatching {
+            InformationKind.valueOf(context["informationKind"].orEmpty().uppercase())
+        }.getOrNull()
+        if (kind == null) {
+            return hrRouter.request(
+                sourceOwner = "",
+                sourceTerr = "",
+                targetOwner = "",
+                targetTerr = "",
+                kind = InformationKind.SOURCE_CODE,
+                query = "invalid autonomous cross-boundary information kind",
+                taskId = task.id,
+                needToKnow = "invalid boundary metadata must be refused"
+            )
+        }
+        return hrRouter.request(
+            sourceOwner = context["sourceOwner"].orEmpty(),
+            sourceTerr = context["sourceTerritory"].orEmpty(),
+            targetOwner = context["targetOwner"].orEmpty(),
+            targetTerr = context["targetTerritory"].orEmpty(),
+            kind = kind,
+            query = context["query"] ?: task.description,
+            paths = context["requestedPaths"]?.split('|').orEmpty().filter(String::isNotBlank),
+            taskId = task.id,
+            sourceCoordinates = context["sourceCoordinates"]?.split('|').orEmpty().filter(String::isNotBlank),
+            needToKnow = context["needToKnow"].orEmpty()
+        )
     }
 
     private fun updateSessionCounts(success: Boolean) {

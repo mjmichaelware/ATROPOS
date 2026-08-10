@@ -24,6 +24,15 @@ fun main() {
         AppProjectMutationGate(root).requireAllowed(otherRoot, otherRoot.resolve(".atropos/generated-projects/app"))
     }.onSuccess { error("mismatched root was allowed") }
 
+    val redirected = Files.createTempDirectory("atropos-policy-redirected-")
+    val generatedRoot = root.resolve(".atropos/generated-projects")
+    Files.createDirectories(generatedRoot)
+    val link = generatedRoot.resolve("linked")
+    java.nio.file.Files.createSymbolicLink(link, redirected)
+    runCatching {
+        AppProjectMutationGate(root).requireAllowed(root, link.resolve("app"))
+    }.onSuccess { error("symlinked generated-project target was allowed") }
+
     println("APP_FACTORY_POLICY_PROOF_OK")
 }
 KOTLIN

@@ -3,6 +3,8 @@ package atropos.core.verifier
 import atropos.core.verification.DeterministicClassification
 import atropos.core.verification.DeterministicFinding
 import atropos.core.verification.DiagnosticSeverity
+import java.nio.file.Files
+import java.nio.file.LinkOption
 import java.nio.file.Path
 
 enum class BoundaryRule {
@@ -83,7 +85,7 @@ class ConstraintSolverEvaluator {
                     .split(',')
                     .map(String::trim)
                     .filter(String::isNotBlank)
-                    .none { token -> constraint.observed.contains(token) }
+                    .none { token -> containsForbiddenToken(constraint.observed, token) }
             }
             if (valid) null else DeterministicFinding(
                 invariantId = constraint.invariantId.ifBlank { "boundary_schema" },
@@ -99,6 +101,10 @@ class ConstraintSolverEvaluator {
     private fun invalidBoundaryFields(constraint: BoundaryConstraint): List<String> = buildList {
         if (constraint.invariantId.isBlank()) add("invariantId")
         if (constraint.expected.isBlank()) add("expected")
+        // An empty observation is the failing input for NON_EMPTY, not a
+        // malformed constraint. Preserve the rule-specific finding so the
+        // caller receives the correct invariant evidence.
+        if (constraint.observed.isBlank() && constraint.rule != BoundaryRule.NON_EMPTY) add("observed")
         if (constraint.remediation.isBlank()) add("remediation")
         if (constraint.rule == BoundaryRule.NO_FORBIDDEN_TOKEN &&
             constraint.expected.split(',').map(String::trim).none(String::isNotBlank)
@@ -110,6 +116,16 @@ class ConstraintSolverEvaluator {
         if (constraint.expected.isBlank()) add("expected")
         if (constraint.observed.isBlank()) add("observed")
         if (constraint.remediation.isBlank()) add("remediation")
+    }
+
+    private fun containsForbiddenToken(observed: String, token: String): Boolean {
+        val wordLike = token.all { it.isLetterOrDigit() || it == '_' }
+        val pattern = if (wordLike) {
+            Regex("(?i)(?<![A-Za-z0-9_])${Regex.escape(token)}(?![A-Za-z0-9_])")
+        } else {
+            Regex(Regex.escape(token), RegexOption.IGNORE_CASE)
+        }
+        return pattern.containsMatchIn(observed)
     }
 
     private fun toFinding(constraint: DeterministicConstraint): DeterministicFinding =
@@ -124,8 +140,30 @@ class ConstraintSolverEvaluator {
         )
 
     private fun pathWithinRoot(observed: String, expectedRoot: String): Boolean = runCatching {
-        val path = Path.of(observed).toAbsolutePath().normalize()
         val root = Path.of(expectedRoot).toAbsolutePath().normalize()
-        path.startsWith(root)
+        val observedPath = Path.of(observed)
+        val path = (if (observedPath.isAbsolute) observedPath else root.resolve(observedPath))
+            .toAbsolutePath()
+            .normalize()
+        if (!Files.isDirectory(root, LinkOption.NOFOLLOW_LINKS) || hasSymbolicComponent(root)) {
+            return@runCatching false
+        }
+        if (!path.startsWith(root)) return@runCatching false
+        var cursor: Path? = path
+        while (cursor != null) {
+            if (Files.isSymbolicLink(cursor)) return@runCatching false
+            if (cursor == root) break
+            cursor = cursor.parent
+        }
+        cursor == root
     }.getOrDefault(false)
+
+    private fun hasSymbolicComponent(path: Path): Boolean {
+        var cursor: Path? = path
+        while (cursor != null) {
+            if (Files.isSymbolicLink(cursor)) return true
+            cursor = cursor.parent
+        }
+        return false
+    }
 }

@@ -17,12 +17,14 @@ object ContextEnvelopeFactory {
     fun createForFactory(
         projectId: String,
         promptFingerprint: String,
+        promptSha256: String = "",
         researchSha256: String,
         atomIds: List<String>,
         territory: List<String>,
         repoRoot: Path,
         researchChannels: String = "",
         promptSpans: String = "none",
+        memoryPointers: List<String> = emptyList(),
         branch: String = currentBranch(repoRoot),
         baselineCommit: String = currentCommit(repoRoot)
     ): ContextEnvelope {
@@ -32,7 +34,7 @@ object ContextEnvelopeFactory {
             branch = branch,
             baselineCommit = baselineCommit,
             goalId = projectId,
-            task = "factory prompt=$promptFingerprint research=$researchSha256 atoms=${atomIds.joinToString(",")} spans=$promptSpans channels=$researchChannels",
+            task = "factory project=$projectId prompt=$promptFingerprint prompt_sha256=${promptSha256.ifBlank { "UNRECORDED" }} research=$researchSha256 atoms=${atomIds.joinToString(",")} spans=$promptSpans channels=$researchChannels memory=${memoryPointers.joinToString(",")}",
             phaseOrPass = "phase-19-app-factory",
             hierarchyRole = "factory-worker",
             authority = "proposal-only",

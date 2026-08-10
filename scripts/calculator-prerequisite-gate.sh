@@ -16,6 +16,16 @@ require_test_contract() {
   }
 }
 
+require_pattern() {
+  local pattern="$1"
+  local file="$2"
+  local label="$3"
+  rg -q -- "$pattern" "$file" || {
+    echo "CALCULATOR_PREREQUISITE_CONTRACT_MISSING $label $file" >&2
+    exit 1
+  }
+}
+
 require_file docs/source/ATROPOS_Source_Doc_1.txt
 require_file docs/source/ATROPOS_Source_Doc_2.txt
 require_file docs/source/ATROPOS_Source_Doc_3.txt
@@ -100,6 +110,21 @@ for file in "${acceptance_test_files[@]}"; do
   require_test_contract "$file"
 done
 
+# N001-N005 are acceptance surfaces, not a second test runner. These bounded
+# source checks ensure the canonical owners still expose the required matrix
+# and proof contracts before an operator elects to run them.
+require_pattern 'fun runAll\(' src/main/kotlin/atropos/core/provider/ProviderFixtureMatrixService.kt N001_provider_matrix
+require_pattern 'REQUIRED_NORMALIZED_FIXTURES' src/main/kotlin/atropos/core/provider/ProviderFixtureMatrixService.kt N001_failure_matrix
+require_pattern 'dryRun = true' src/main/kotlin/atropos/core/provider/ProviderFixtureMatrixService.kt N001_dry_run
+require_pattern 'runRedactionFixture' src/main/kotlin/atropos/core/provider/ProviderFixtureMatrixService.kt N001_redaction
+require_pattern 'TERM=dumb' src/main/kotlin/atropos/cli/config/ConfigurationManager.kt N002_dumb_terminal
+require_pattern 'NO_COLOR' src/main/kotlin/atropos/cli/config/ConfigurationManager.kt N002_no_color
+require_pattern 'ATROPOS_Source_Doc_1.txt' docs/authority/AUTHORITY_MANIFEST.tsv N003_authority_manifest
+require_pattern 'source-to-code-trace-gate' scripts/calculator-final-acceptance.sh N003_trace_gate
+require_pattern 'ENDPOINT_MANIFEST_PROOF_OK' scripts/endpoint-manifest-proof.sh N004_endpoint_proof
+require_pattern 'manifest' src/main/kotlin/atropos/core/endpoint/OperationEndpoint.kt N004_endpoint_manifest
+require_pattern 'N005_FINAL_ACCEPTANCE_COMMAND_OK' scripts/calculator-final-acceptance.sh N005_final_marker
+
 if rg -n -i 'CalculatorProjectGenerator|calculator-specific|calculator intent' src/main/kotlin/atropos/core/factory src/main/kotlin/atropos/cli >/dev/null; then
   echo 'CALCULATOR_PRODUCT_SPECIAL_CASE_PRESENT' >&2
   exit 1
@@ -151,6 +176,7 @@ printf '%s\n' \
   'terminal_tests=present' \
   'source_authority_tests=present' \
   'endpoint_parity_tests=present' \
+  'acceptance_contracts=present' \
   'hierarchy_gate_tests=present' \
   'acceptance_test_contracts=present' \
   'general_app_factory_surfaces=present' \

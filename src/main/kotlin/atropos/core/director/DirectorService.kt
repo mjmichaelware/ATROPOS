@@ -2,11 +2,13 @@ package atropos.core.director
 
 import atropos.core.AtroposRepoRootLocator
 import atropos.core.territory.TerritoryAssignment
+import java.io.BufferedReader
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.StandardCopyOption
 import java.security.MessageDigest
+
+private const val MAX_GIT_STATUS_BYTES = 1_048_576
 
 class DirectorService(
     private val store: DirectorStore = DirectorStore(),
@@ -20,8 +22,14 @@ class DirectorService(
         files: List<String> = emptyList(),
         symbols: List<String> = emptyList(),
         goalId: String? = null,
-        territoryId: String? = null
+        territoryId: String? = null,
+        claimId: String? = null,
+        worktreePath: String? = null,
+        sourceCoordinates: List<String> = emptyList(),
+        evidencePaths: List<String> = emptyList()
     ): DirectorObservation {
+        require(source.isNotBlank()) { "director observation source is required" }
+        require(details.isNotBlank()) { "director observation details are required" }
         val obs = DirectorObservation(
             kind = kind,
             severity = severity,
@@ -29,6 +37,10 @@ class DirectorService(
             details = details,
             goalId = goalId,
             territoryId = territoryId,
+            claimId = claimId,
+            worktreePath = worktreePath,
+            sourceCoordinates = sourceCoordinates,
+            evidencePaths = evidencePaths,
             filePaths = files,
             symbols = symbols
         )
@@ -42,7 +54,19 @@ class DirectorService(
         territoryId: String? = null
     ): List<DirectorObservation> {
         val observations = mutableListOf<DirectorObservation>()
-        val diff = runGitDiff()
+        val status = runGitStatus()
+        val diff = status.output
+
+        status.failure?.let { failure ->
+            observations += DirectorObservation(
+                kind = ObservationKind.MISSING_GATE,
+                severity = DriftSeverity.CRITICAL,
+                source = "director/diff-scan",
+                details = failure,
+                goalId = goalId,
+                territoryId = territoryId
+            )
+        }
 
         if (diff != null) {
             val changedFiles = extractChangedFiles(diff)
@@ -73,13 +97,15 @@ class DirectorService(
 
             for (t in territories) {
                 for (f in changedFiles) {
-                    if (!f.startsWith(t.allowedPrefix)) {
+                    if (!isWithinTerritory(f, t.allowedPrefix)) {
                         observations += DirectorObservation(
                             kind = ObservationKind.TERRITORY_VIOLATION,
                             severity = DriftSeverity.WARNING,
                             source = "director/territory-enforcement",
                             details = "file $f outside territory ${t.allowedPrefix}",
-                            filePaths = listOf(f)
+                            filePaths = listOf(f),
+                            goalId = goalId,
+                            territoryId = territoryId ?: t.id
                         )
                     }
                 }
@@ -88,7 +114,8 @@ class DirectorService(
 
         observations.forEach { store.appendObservation(it) }
         val chFiles = if (diff != null) extractChangedFiles(diff) else emptyList()
-        saveSnapshot(diffHash(diff ?: ""), chFiles)
+        val snapshotInput = diff ?: "status-unavailable:${status.failure ?: "unknown"}"
+        saveSnapshot(diffHash(snapshotInput), chFiles)
         return observations
     }
 
@@ -146,36 +173,77 @@ class DirectorService(
         return a == b || a.startsWith("$b/") || b.startsWith("$a/")
     }
 
-    private fun rewriteAll(observations: List<DirectorObservation>) {
-        val path = repoRoot.resolve(".atropos/director/observations.jsonl")
-        Files.createDirectories(path.parent)
-        val tmp = path.resolveSibling("observations.${System.nanoTime()}.tmp")
-        val lines = observations.joinToString("\n") { it.toStoreLine() }
-        Files.writeString(tmp, lines + "\n", StandardCharsets.UTF_8)
-        try {
-            Files.move(tmp, path, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
-        } catch (_: Exception) {
-            Files.move(tmp, path, StandardCopyOption.REPLACE_EXISTING)
-        }
+    private fun isWithinTerritory(file: String, prefix: String): Boolean {
+        val normalizedFile = file.replace('\\', '/').trim().trim('/')
+        val normalizedPrefix = prefix.replace('\\', '/').trim().trim('/')
+        if (normalizedPrefix.isBlank() || normalizedPrefix == "*" || normalizedPrefix == "root") return true
+        return TerritoryAssignment(
+            ownerId = "director",
+            ownerRole = "DIRECTOR",
+            allowedPrefix = normalizedPrefix
+        ).allows(normalizedFile)
     }
 
-    private fun runGitDiff(): String? {
+    private fun rewriteAll(observations: List<DirectorObservation>) {
+        store.replaceAll(observations)
+    }
+
+    private data class GitStatusSnapshot(
+        val output: String?,
+        val failure: String?
+    )
+
+    private fun runGitStatus(): GitStatusSnapshot {
         return try {
-            val process = ProcessBuilder("git", "diff", "--stat")
+            // Status is the canonical bounded repository snapshot here: unlike
+            // `git diff --stat`, it includes untracked files that are already
+            // part of a live mutation but have not been staged yet.
+            val process = ProcessBuilder("git", "status", "--short", "--untracked-files=all")
                 .directory(repoRoot.toFile())
                 .redirectErrorStream(true)
                 .start()
-            val output = process.inputStream.readAllBytes().toString(StandardCharsets.UTF_8).trim()
-            process.waitFor()
-            if (process.exitValue() == 0) output else null
-        } catch (_: Exception) { null }
+            val output = StringBuilder()
+            var byteCount = 0
+            process.inputStream.bufferedReader(StandardCharsets.UTF_8).use { reader: BufferedReader ->
+                while (true) {
+                    val line = reader.readLine() ?: break
+                    val lineBytes = line.toByteArray(StandardCharsets.UTF_8).size + 1
+                    if (byteCount + lineBytes > MAX_GIT_STATUS_BYTES) {
+                        process.destroyForcibly()
+                        process.waitFor()
+                        return GitStatusSnapshot(
+                            output = null,
+                            failure = "git status output exceeded ${MAX_GIT_STATUS_BYTES} bytes"
+                        )
+                    }
+                    output.appendLine(line)
+                    byteCount += lineBytes
+                }
+            }
+            val exit = process.waitFor()
+            if (exit == 0) {
+                GitStatusSnapshot(output.toString().trim(), null)
+            } else {
+                GitStatusSnapshot(null, "git status exited with code $exit")
+            }
+        } catch (failure: Exception) {
+            GitStatusSnapshot(null, "git status unavailable: ${failure.javaClass.simpleName}")
+        }
     }
 
     private fun extractChangedFiles(diff: String): List<String> {
         return diff.lineSequence().mapNotNull { line ->
             val trimmed = line.trim()
             if (trimmed.isBlank()) return@mapNotNull null
-            trimmed.substringBefore("|").trim().substringBefore(" ")
+            if (trimmed.length >= 3 &&
+                trimmed[0] in " MADRCUT?!" &&
+                trimmed[1] in " MADRCUT?!"
+            ) {
+                val statusPath = trimmed.substring(2).trim()
+                statusPath.substringAfterLast(" -> ", statusPath).takeIf { it.isNotBlank() }
+            } else {
+                trimmed.substringBefore("|").trim().substringBefore(" ")
+            }
         }.filter { it.isNotBlank() }.toList()
     }
 
@@ -202,23 +270,4 @@ class DirectorService(
         }
         Files.writeString(path, content, StandardCharsets.UTF_8)
     }
-}
-
-internal fun DirectorObservation.toStoreLine(): String {
-    val fp = filePaths.joinToString("|") { it.replace("|", "%7C") }
-    val sym = symbols.joinToString("|") { it.replace("|", "%7C") }
-    return listOf(
-        id,
-        kind.name,
-        severity.name,
-        source,
-        details.replace('\n', ' '),
-        fp,
-        sym,
-        timestamp.toString(),
-        acknowledged.toString(),
-        dismissed.toString(),
-        goalId.orEmpty(),
-        territoryId.orEmpty()
-    ).joinToString("\t")
 }

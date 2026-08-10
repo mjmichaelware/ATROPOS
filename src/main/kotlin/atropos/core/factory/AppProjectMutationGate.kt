@@ -13,6 +13,8 @@ import atropos.core.territory.TerritoryGrantService
 import atropos.core.territory.TerritoryService
 import atropos.core.territory.TerritoryStore
 import java.nio.file.Path
+import java.nio.file.LinkOption
+import java.nio.file.Files
 
 /** Adapts the existing agency policy to the one bounded new-repository root. */
 class AppProjectMutationGate(
@@ -25,6 +27,11 @@ class AppProjectMutationGate(
         require(root == configuredRoot) { "app project mutation root does not match configured policy root" }
         val normalizedTarget = target.toAbsolutePath().normalize()
         require(normalizedTarget.startsWith(root)) { "app project mutation escaped repository root" }
+        val realRoot = root.toRealPath()
+        val existingAncestor = nearestExistingAncestor(normalizedTarget)
+        require(existingAncestor.toRealPath().startsWith(realRoot)) {
+            "app project mutation escaped repository root through a symbolic link"
+        }
         val relative = root.relativize(normalizedTarget).toString()
         val dispatcher = ActionActor.HumanOwner
         val worker = ActionActor.HierarchyNode("factory-worker", "factory-${target.fileName}")
@@ -48,6 +55,14 @@ class AppProjectMutationGate(
         require(decision.disposition == AgencyDisposition.ALLOWED) {
             "app project mutation refused: ${decision.reason}"
         }
+    }
+
+    private fun nearestExistingAncestor(path: Path): Path {
+        var current: Path? = path
+        while (current != null && !Files.exists(current, LinkOption.NOFOLLOW_LINKS)) {
+            current = current.parent
+        }
+        return current ?: error("app project mutation has no existing repository ancestor")
     }
 
     private companion object {

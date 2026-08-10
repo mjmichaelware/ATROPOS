@@ -1,9 +1,9 @@
 package atropos.cli.commands
 
-import atropos.core.factory.AppActionRegistry
+import atropos.core.factory.AppProjectSpecParser
 
 class SelfHostNaturalLanguageRouter(
-    private val appActions: AppActionRegistry = AppActionRegistry()
+    private val projectSpecParser: AppProjectSpecParser = AppProjectSpecParser()
 ) {
     fun route(tokens: List<String>): List<String>? {
         if (tokens.size >= 2 && tokens[0].equals("/agent", ignoreCase = true) && tokens[1].equals("self-host", ignoreCase = true)) {
@@ -30,7 +30,11 @@ class SelfHostNaturalLanguageRouter(
             "inside-out"
         ).any { it in lower }
         if ((!addressesRuntime && !explicitSelfHost) || !asksSelfBuild) {
-            return if (appActions.isAppRequest(tokens)) listOf("/factory", "run") + tokens else null
+            return if (projectSpecParser.isAppRequest(tokens.joinToString(" "))) {
+                listOf("/factory", "run") + tokens
+            } else {
+                null
+            }
         }
         val asksRecovery = listOf("continue", "resume", "recover", "restart").any { it in lower }
         return if (asksRecovery) {

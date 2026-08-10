@@ -27,15 +27,16 @@ class HttpRequestParser(
         if (requestLine.length > maxRequestLineChars) return null
 
         val parts = requestLine.split(' ')
-        if (parts.size < 3) return null
+        if (parts.size != 3 || parts.any(String::isEmpty)) return null
         val method = parts[0].uppercase()
         val target = parts[1]
 
         val headers = readHeaders(reader) ?: return null
 
-        val length = headers["content-length"]?.toIntOrNull() ?: 0
+        val declaredLength = headers["content-length"]
+        val length = declaredLength?.toIntOrNull() ?: if (declaredLength == null) 0 else return null
         if (length < 0 || length > maxBodyBytes) return null
-        val body = if (length == 0) "" else readBody(reader, length)
+        val body = if (length == 0) "" else readBody(reader, length) ?: return null
 
         return HttpRequest(
             method = method,
@@ -55,16 +56,17 @@ class HttpRequestParser(
             if (headers.size >= maxHeaderCount) return null
             val name = line.substringBefore(':', "").trim().lowercase()
             if (name.isEmpty()) return null
+            if (headers.containsKey(name)) return null
             headers[name] = line.substringAfter(':', "").trim()
         }
     }
 
-    private fun readBody(reader: BufferedReader, length: Int): String {
+    private fun readBody(reader: BufferedReader, length: Int): String? {
         val buffer = CharArray(length)
         var read = 0
         while (read < length) {
             val count = reader.read(buffer, read, length - read)
-            if (count < 0) break
+            if (count < 0) return null
             read += count
         }
         return String(buffer, 0, read)

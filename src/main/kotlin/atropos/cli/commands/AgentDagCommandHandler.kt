@@ -17,7 +17,10 @@ class AgentDagCommandHandler(
     private val dagService: DagExecutionService,
     private val dagStore: DagStore,
     private val invalid: (String) -> AgentCommandOutcome.Invalid,
-    private val directorDagSupervisor: DirectorDagSupervisor = DirectorDagSupervisor(dagExecution = dagService)
+    private val directorDagSupervisor: DirectorDagSupervisor = DirectorDagSupervisor(
+        repoRoot = repoRoot,
+        dagExecution = dagService
+    )
 ) {
     fun execute(args: List<String>): AgentCommandOutcome {
         return when (args.getOrNull(0)?.lowercase()) {

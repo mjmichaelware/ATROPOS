@@ -79,17 +79,6 @@ class CommandRegistryRenderer(
     fun renderSlashCommands(width: Int): List<String> {
         val safeWidth = width.coerceIn(1, 200)
         val slashCommands = buildList {
-            add(Command("shell", "!cmd", "Execute a shell command in the project workspace", "Shell"))
-            add(Command("pwd", "!/pwd", "Print working directory path", "Shell"))
-            add(Command("cd", "!/cd <path>", "Change working directory", "Shell"))
-            add(Command("ls", "!/ls", "List directory contents", "Shell"))
-            add(Command("cat", "!/cat <path>", "Display file contents", "Shell"))
-            add(Command("edit", "!/edit <path>", "Open file in editor", "Shell"))
-            add(Command("search", "!/search <query>", "Search project files", "Search"))
-            add(Command("grep", "!/grep <pattern>", "Search with pattern", "Search"))
-            add(Command("clear", "!/clear", "Clear terminal screen", "Session"))
-            add(Command("theme", "!/theme", "Switch theme (dark/light/auto)", "Session"))
-            add(Command("settings", "!/settings", "Open settings", "Session"))
             CommandRegistry.helpSections().forEach { group ->
                 addAll(group.entries.map { entry ->
                     Command(

@@ -3,6 +3,8 @@ package atropos.cli.commands
 import atropos.cli.ui.AnsiTerminalEngine
 import atropos.core.agent.AgentPatchExtractor
 import atropos.core.agent.AgentService
+import atropos.core.provider.ApiCapability
+import atropos.core.provider.StaticProviderDescriptorRegistry
 
 class AgentPatchCommandHandler(
     private val ui: AnsiTerminalEngine,
@@ -144,6 +146,14 @@ class AgentPatchCommandHandler(
         AgentCommandExecutionResult(invalid(message))
 
     private companion object {
-        val patchProviderAllowList = setOf("github_models", "sambanova", "cloudflare_ai", "groq")
+        val patchProviderAllowList = StaticProviderDescriptorRegistry()
+            .getAll()
+            .filter { descriptor ->
+                (descriptor.hasCapability(ApiCapability.CODE) ||
+                    descriptor.hasCapability(ApiCapability.REPAIR)) &&
+                    !descriptor.isPaidLocked()
+            }
+            .map { it.id }
+            .toSet()
     }
 }

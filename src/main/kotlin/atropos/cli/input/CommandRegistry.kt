@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.cli.input
 
+import atropos.core.provider.StaticProviderDescriptorRegistry
+
 data class CommandEntry(
     val command: String,
     val description: String,
@@ -120,33 +122,10 @@ object CommandRegistry {
     val categories: List<String> = CATEGORY_ORDER
         .filter { category -> canonicalEntries.any { it.category == category } }
 
-    val providers: List<String> = listOf(
-        "anthropic",
-        "groq",
-        "openrouter",
-        "deepinfra",
-        "siliconflow",
-        "gemini",
-        "github_models",
-        "cloudflare_ai",
-        "sambanova",
-        "deepseek_direct",
-        "cloudflare_workers",
-        "jina",
-        "serpapi",
-        "supabase",
-        "pinecone",
-        "google_drive",
-        "github_actions",
-        "google_cloud_free",
-        "huggingface",
-        "fal",
-        "replicate",
-        "ollama",
-        "openai",
-        "xai",
-        "local"
-    )
+    /** Provider completion comes from the canonical descriptor registry. */
+    val providers: List<String> = StaticProviderDescriptorRegistry()
+        .getAll()
+        .map { it.id }
 
     /**
      * Slash families [atropos.cli.CommandRouter] accepts but that this registry

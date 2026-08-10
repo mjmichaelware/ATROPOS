@@ -51,6 +51,8 @@ timeout "${ATROPOS_HR_PROOF_TIMEOUT_SECONDS:-120}" kotlinc -include-runtime -d "
   "$ROOT/src/main/kotlin/atropos/core/security/SecretEncodingClosure.kt" \
   "$ROOT/src/main/kotlin/atropos/core/security/KnownSecretRegistry.kt" \
   "$ROOT/src/main/kotlin/atropos/core/security/RedactionFilter.kt" \
+  "$ROOT/src/main/kotlin/atropos/core/hierarchy/HierarchyModels.kt" \
+  "$ROOT/src/main/kotlin/atropos/core/hierarchy/HierarchyTaskLifecycle.kt" \
   "$ROOT/src/main/kotlin/atropos/core/hr/HrRouterModels.kt" \
   "$ROOT/src/main/kotlin/atropos/core/hr/HrRouterAuditStore.kt" \
   "$ROOT/src/main/kotlin/atropos/core/hr/HrRouterService.kt"

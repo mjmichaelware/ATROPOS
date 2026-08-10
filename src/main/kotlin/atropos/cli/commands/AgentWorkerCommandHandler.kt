@@ -31,6 +31,11 @@ class AgentWorkerCommandHandler(
         appendLine("  territory: ${proposal.territory.joinToString(",")}")
         proposal.patchId?.let { appendLine("  patch: $it") }
         proposal.proposalSha256?.let { appendLine("  proposal_sha256: $it") }
+        proposal.verification?.let {
+            appendLine("  verification: ${if (it.passed) "PASSED" else "FAILED"}")
+            it.verificationId?.let { id -> appendLine("  verification_id: $id") }
+            it.exitCode?.let { exit -> appendLine("  verification_exit: $exit") }
+        }
         appendLine("  mutation: not performed")
         appendLine("  reason: ${proposal.reason}")
     }.trimEnd()

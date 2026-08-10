@@ -3,9 +3,8 @@ package atropos.dloi
 import atropos.core.AtroposRepoRootLocator
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
+import java.nio.file.LinkOption
 import java.nio.file.Path
-import kotlin.io.path.exists
-import kotlin.io.path.readLines
 
 data class DloiCoordinate(
     val documentId: String,
@@ -148,14 +147,24 @@ class DloiService(
         // fresh clone it is absent and every lookup used to miss — the reader
         // existed with no writer. Indexing is content-addressed and skips
         // documents already present, so this is a no-op once warm.
-        runCatching { indexer.ensureIndexed() }
+        val indexReady = runCatching { indexer.ensureIndexed() }.isSuccess
+        if (!indexReady) return emptyList()
 
         val extractedRoot = repoRoot.resolve(".atropos/context-cache/source-index/v1/extracted")
-        if (!extractedRoot.exists()) return emptyList()
+        if (!Files.exists(extractedRoot, LinkOption.NOFOLLOW_LINKS)) return emptyList()
+        val normalizedRoot = extractedRoot.parent.resolve("normalized").toAbsolutePath().normalize()
+        if (Files.isSymbolicLink(extractedRoot) || Files.isSymbolicLink(normalizedRoot)) return emptyList()
         val docs = Files.walk(extractedRoot).use { stream ->
-            stream.filter { Files.isRegularFile(it) && it.fileName.toString().endsWith(".json") }
+            stream.filter {
+                Files.isRegularFile(it, LinkOption.NOFOLLOW_LINKS) &&
+                    it.fileName.toString().endsWith(".json") &&
+                    isSafeDescendant(it, extractedRoot)
+            }
                 .sorted()
                 .map(indexedDocumentLoader::load)
+                .filter { document ->
+                    isSafeDescendant(document.path, normalizedRoot)
+                }
                 .toList()
         }
         // Deduplicate by primary alias: prefer text kind over docx/doc.
@@ -166,8 +175,20 @@ class DloiService(
     }
 
     private fun indexedLines(document: DloiDocument): List<DloiLineRecord> {
-        val lines = document.path.readLines(StandardCharsets.UTF_8)
+        val lines = Files.readAllLines(document.path, StandardCharsets.UTF_8)
         return lineIndexer.index(document, lines)
+    }
+
+    private fun isSafeDescendant(candidate: Path, root: Path): Boolean {
+        val normalizedCandidate = candidate.toAbsolutePath().normalize()
+        val normalizedRoot = root.toAbsolutePath().normalize()
+        if (!normalizedCandidate.startsWith(normalizedRoot)) return false
+        var cursor: Path? = normalizedCandidate
+        while (cursor != null && cursor != normalizedRoot) {
+            if (Files.isSymbolicLink(cursor)) return false
+            cursor = cursor.parent
+        }
+        return cursor == normalizedRoot
     }
 
     private fun selectLines(

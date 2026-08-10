@@ -5,11 +5,11 @@ import java.util.Locale
 class AppProjectSpecParser {
     private val actionRegistry = AppActionRegistry()
 
+    fun isAppRequest(prompt: String): Boolean = actionRegistry.isAppRequest(tokenize(prompt))
+
     fun parse(prompt: String): AppProjectSpec {
         val clean = prompt.trim().ifBlank { "build a local app" }
-        val words = clean.lowercase(Locale.US)
-            .split(Regex("[^a-z0-9]+"))
-            .filter { it.isNotBlank() }
+        val words = tokenize(clean)
         val kind = when {
             words.any { it in setOf("web", "website", "frontend") } -> "web"
             words.any { it in setOf("api", "service", "backend") } -> "service"
@@ -20,6 +20,10 @@ class AppProjectSpecParser {
         val features = words.filter { it !in STOP_WORDS && !actionRegistry.isAction(it) }.distinct().take(12)
         return AppProjectSpec(clean, AppIntent(name, kind, features), testRequired = true)
     }
+
+    private fun tokenize(prompt: String): List<String> = prompt.lowercase(Locale.US)
+        .split(Regex("[^a-z0-9]+"))
+        .filter { it.isNotBlank() }
 
     private companion object {
         val STOP_WORDS = setOf(

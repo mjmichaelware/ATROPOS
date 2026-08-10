@@ -72,6 +72,7 @@ timeout "${ATROPOS_GOVERNANCE_PROOF_TIMEOUT_SECONDS:-120}" kotlinc -include-runt
   "$ROOT/src/main/kotlin/atropos/core/security/KnownSecretRegistry.kt" \
   "$ROOT/src/main/kotlin/atropos/core/security/RedactionFilter.kt" \
   "$ROOT/src/main/kotlin/atropos/core/territory/TerritoryModels.kt" \
+  "$ROOT/src/main/kotlin/atropos/core/director/DirectorDriftScorer.kt" \
   "$ROOT/src/main/kotlin/atropos/core/director/DirectorModels.kt" \
   "$ROOT/src/main/kotlin/atropos/core/director/DirectorStore.kt" \
   "$ROOT/src/main/kotlin/atropos/core/director/DirectorService.kt" \

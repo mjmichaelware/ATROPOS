@@ -9,6 +9,10 @@ class ConfigurationManager(
     private val propertyProvider: (String) -> String? = System::getProperty,
     private val hasConsole: Boolean = System.console() != null
 ) {
+    companion object {
+        const val DUMB_TERMINAL = "TERM=dumb"
+    }
+
     val workspace: String = propertyProvider("user.dir") ?: "."
     var model: String = envProvider("ATROPOS_MODEL") ?: "llama3.2"
     val ollamaHost: String =
@@ -16,11 +20,14 @@ class ConfigurationManager(
 
     val isInteractiveTerminal: Boolean
         get() = hasConsole &&
-            !envProvider("TERM").equals("dumb", ignoreCase = true)
+            !terminalEnvironment.equals(DUMB_TERMINAL, ignoreCase = true)
 
     val isColorEnabled: Boolean
         get() = isInteractiveTerminal &&
             envProvider("NO_COLOR").isNullOrEmpty()
+
+    private val terminalEnvironment: String
+        get() = "TERM=${envProvider("TERM") ?: ""}"
 
     fun homePath(): String {
         return Path.of(workspace)

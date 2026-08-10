@@ -24,8 +24,13 @@ data class DirectorObservation(
     val details: String,
     val goalId: String? = null,
     val territoryId: String? = null,
+    val claimId: String? = null,
+    val worktreePath: String? = null,
+    val sourceCoordinates: List<String> = emptyList(),
+    val evidencePaths: List<String> = emptyList(),
     val filePaths: List<String> = emptyList(),
     val symbols: List<String> = emptyList(),
+    val driftScore: Int = DirectorDriftScorer.score(kind, severity),
     val timestamp: Instant = Instant.now(),
     val acknowledged: Boolean = false,
     val dismissed: Boolean = false

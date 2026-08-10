@@ -233,7 +233,17 @@ class LocalMemoryStore(
         if (!backends.sqliteVecAvailable()) {
             return SqliteVecMemoryIndex.IndexResult(0, null, "sqlite-vec unavailable")
         }
-        return vectorIndex.index(chunks, embeddings)
+        val sanitizedEmbeddings = linkedMapOf<String, List<Float>>()
+        val sanitizedChunks = chunks.map { chunk ->
+            if (sha256(chunk.text) != chunk.sha256) {
+                return SqliteVecMemoryIndex.IndexResult(0, null, "chunk hash does not match chunk text at index ${chunk.index}")
+            }
+            val sanitizedText = redactionFilter.redact(chunk.text)
+            val sanitizedHash = sha256(sanitizedText)
+            embeddings[chunk.sha256]?.let { vector -> sanitizedEmbeddings[sanitizedHash] = vector }
+            chunk.copy(text = sanitizedText, sha256 = sanitizedHash)
+        }
+        return vectorIndex.index(sanitizedChunks, sanitizedEmbeddings)
     }
 
     fun searchSourceVectors(embedding: List<Float>, limit: Int = 10): List<SqliteVecMemoryIndex.VectorHit> {
@@ -287,6 +297,10 @@ class LocalMemoryStore(
             .distinct()
 
     private fun stableFingerprint(value: String): String = redactionFilter.stableFingerprint(value)
+
+    private fun sha256(value: String): String = MessageDigest.getInstance("SHA-256")
+        .digest(value.toByteArray(Charsets.UTF_8))
+        .joinToString("") { "%02x".format(it) }
 
     private fun stableId(
         kind: MemoryKind,

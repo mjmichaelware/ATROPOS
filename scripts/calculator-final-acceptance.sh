@@ -7,6 +7,7 @@ cd "$ROOT"
 # N005 is the bounded acceptance command for the calculator closure path. It
 # composes existing static owners and reports runtime gates separately.
 bash scripts/kotlin-compat-scan.sh
+bash scripts/kotlin-compat-scan-test.sh
 bash scripts/calculator-prerequisite-gate.sh
 bash scripts/source-to-code-trace-gate-test.sh
 bash scripts/hr-router-proof.sh

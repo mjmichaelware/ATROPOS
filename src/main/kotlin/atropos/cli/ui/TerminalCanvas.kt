@@ -22,50 +22,31 @@ class SttyTerminalGeometryProvider :
         val tty = File("/dev/tty")
         if (!tty.canRead()) return null
 
-        val process = ProcessBuilder(
-            "stty",
-            "size"
-        )
-            .redirectInput(tty)
-            .redirectError(
-                ProcessBuilder.Redirect.DISCARD
-            )
-            .start()
+        return runCatching {
+            val process = ProcessBuilder("stty", "size")
+                .redirectInput(tty)
+                .redirectError(ProcessBuilder.Redirect.DISCARD)
+                .start()
 
-        if (
-            !process.waitFor(
-                250,
-                TimeUnit.MILLISECONDS
-            )
-        ) {
-            process.destroyForcibly()
-            return null
-        }
+            try {
+                if (!process.waitFor(250, TimeUnit.MILLISECONDS)) {
+                    process.destroyForcibly()
+                    return@runCatching null
+                }
+                if (process.exitValue() != 0) return@runCatching null
 
-        if (process.exitValue() != 0) {
-            return null
-        }
-
-        val parts =
-            process.inputStream
-                .bufferedReader()
-                .readText()
-                .trim()
-                .split(Regex("\\s+"))
-
-        val rows = parts
-            .getOrNull(0)
-            ?.toIntOrNull()
-            ?: return null
-        val columns = parts
-            .getOrNull(1)
-            ?.toIntOrNull()
-            ?: return null
-
-        return TerminalGeometry(
-            rows.coerceAtLeast(12),
-            columns.coerceAtLeast(1)
-        )
+                val parts = process.inputStream
+                    .bufferedReader()
+                    .readText()
+                    .trim()
+                    .split(Regex("\\s+"))
+                val rows = parts.getOrNull(0)?.toIntOrNull() ?: return@runCatching null
+                val columns = parts.getOrNull(1)?.toIntOrNull() ?: return@runCatching null
+                TerminalGeometry(rows.coerceAtLeast(12), columns.coerceAtLeast(1))
+            } finally {
+                if (process.isAlive) process.destroyForcibly()
+            }
+        }.getOrNull()
     }
 }
 

@@ -43,10 +43,11 @@ class AgentContextCollector(
     private val boundedBuilder = Utf8BoundedBuilder(contextCapBytes)
 
     private val selectedSourceFiles = listOf(
-        "src/main/kotlin/atropos/core/Provider.kt",
-        "src/main/kotlin/atropos/core/ProviderState.kt",
-        "src/main/kotlin/atropos/core/Routing.kt",
         "src/main/kotlin/atropos/core/agent/AgentProviderSelector.kt",
+        "src/main/kotlin/atropos/core/provider/ProviderDescriptor.kt",
+        "src/main/kotlin/atropos/core/provider/ProviderTruthService.kt",
+        "src/main/kotlin/atropos/core/provider/RoutePolicy.kt",
+        "src/main/kotlin/atropos/core/provider/ProviderTask.kt",
         "src/main/kotlin/atropos/cli/CommandRouter.kt",
         "src/main/kotlin/atropos/cli/input/CommandRegistry.kt",
         "src/main/kotlin/atropos/core/agent/AgentContextCollector.kt",

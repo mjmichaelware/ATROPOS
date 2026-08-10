@@ -12,11 +12,11 @@ data class AppIntent(
 }
 
 enum class AppCapability {
-    ARITHMETIC;
+    EXPRESSION;
 
     companion object {
         fun fromFeature(feature: String): AppCapability? = when (feature) {
-            "calculator", "math", "arithmetic", "expression" -> ARITHMETIC
+            "calculator", "math", "arithmetic", "expression" -> EXPRESSION
             else -> null
         }
     }

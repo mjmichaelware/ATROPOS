@@ -77,7 +77,11 @@ class ViewportLayout(
         val footerRow = safeHeight - 1
         val composerSnapshot = composer.renderMultiline(safeWidth, (safeHeight / 3).coerceIn(1, 4))
         val metaLines = composer.metaRow(provider, safeWidth)
-        val paletteLines = palette.render(composer.commandQuery(), safeWidth, 5)
+        // Reserve a bounded, height-aware palette surface. A fixed five-row
+        // cap made the command list appear truncated on desktop terminals;
+        // the renderer still windows the list for compact screens.
+        val paletteRows = (safeHeight / 2).coerceIn(5, 18)
+        val paletteLines = palette.render(composer.commandQuery(), safeWidth, paletteRows)
         val composerHeight = composerSnapshot.lines.size + metaLines.size
         val paletteHeight = paletteLines.size
         val composerStart = footerRow - composerHeight

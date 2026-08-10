@@ -13,13 +13,21 @@ class InternalExecutionDagSynthesizer(
     fun synthesize(projectId: String, label: String, authorityGraph: AuthorityGraph, repoRoot: Path): DagDefinition {
         val now = Instant.now()
         val nodes = authorityGraph.atoms.map { atom ->
+            val lineage = listOf(
+                "source_document_id=${atom.documentId}",
+                "source_section_id=${atom.sectionId}",
+                "source_coordinates=${atom.sourceCoordinates}",
+                atom.promptFingerprint.takeIf { it.isNotBlank() }?.let { "prompt_fingerprint=$it" },
+                atom.promptSpans.takeIf { it.isNotBlank() }?.let { "prompt_spans=$it" },
+                atom.sourceDocumentSha256.takeIf { it.isNotBlank() }?.let { "source_document_sha256=$it" }
+            ).filterNotNull().joinToString("\n")
             DagNode(
                 id = atom.id,
                 label = atom.dimension.name.lowercase() + ": " + atom.sectionId,
                 dependencies = atom.dependencies.filter { dependency -> authorityGraph.atoms.any { it.id == dependency } },
                 territory = atom.territory,
                 action = actionFor(atom.dimension),
-                actionPayload = atom.statement,
+                actionPayload = listOf(atom.statement, lineage).filter { it.isNotBlank() }.joinToString("\n"),
                 state = DagNodeState.PENDING,
                 createdAt = now,
                 updatedAt = now,

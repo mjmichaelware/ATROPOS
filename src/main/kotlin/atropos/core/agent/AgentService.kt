@@ -71,7 +71,9 @@ class AgentService(
     ): AgentRunResult {
         val selection = selector.select(activeProviderName)
         val sanitizedTask = redactionFilter.redact(task.trim())
-        val providerId = selection.askOrder.firstOrNull() ?: "groq"
+        val providerId = selection.askOrder.firstOrNull()
+            ?: activeProviderName.trim().lowercase().takeIf { it.isNotBlank() }
+            ?: providerTruthService.snapshot().selectedProvider.trim().takeIf { it.isNotBlank() }
         val envelope = contextOverride?.envelope?.let { AgentContextSnapshotAdapter.forProvider(it, providerId) }
             ?: ContextEnvelopeFactory.createSimple(
                 providerId = providerId,
@@ -142,7 +144,10 @@ class AgentService(
             )
 
             if (result.queued) {
-                val queueRecord = queueService.enqueueUnavailable(sanitizedTask)
+                val queueRecord = queueService.enqueueUnavailable(
+                    sanitizedTask,
+                    retryAtEpochMs = result.earliestRetryEpochMs
+                )
                 val retryAt = result.earliestRetryEpochMs?.toString() ?: "unknown"
                 val queueMessage = if (queueRecord != null) {
                     "all eligible providers unavailable; request queued as ${queueRecord.id} " +
@@ -267,7 +272,10 @@ class AgentService(
             val cascade = patchCascadeRunner.run(selection.patchOrder, prompt, snapshot.text, snapshot.truncated)
             val queued = cascade.failure?.result?.takeIf { it.queued }
             if (queued != null) {
-                val queueRecord = queueService.enqueueUnavailable(prompt)
+                val queueRecord = queueService.enqueueUnavailable(
+                    prompt,
+                    retryAtEpochMs = queued.earliestRetryEpochMs
+                )
                 val reason = queued.queueReason ?: "all patch providers unavailable"
                 val queueMessage = queueRecord?.let { "patch queued as ${it.id}" }
                     ?: "patch deferred; local queue persistence unavailable"

@@ -52,7 +52,10 @@ data class InternalAtom(
     val statement: String,
     val sourceCoordinates: String,
     val dependencies: List<String> = emptyList(),
-    val territory: List<String> = emptyList()
+    val territory: List<String> = emptyList(),
+    val promptFingerprint: String = "",
+    val promptSpans: String = "",
+    val sourceDocumentSha256: String = ""
 )
 
 data class AuthorityGraph(

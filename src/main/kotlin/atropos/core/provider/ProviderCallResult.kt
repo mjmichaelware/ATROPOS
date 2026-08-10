@@ -26,7 +26,8 @@ sealed class ProviderCallResult {
     data class Queued(
         val task: ProviderTask,
         val earliestRetryEpochMs: Long,
-        val reason: String
+        val reason: String,
+        val queueRecordId: String? = null
     ) : ProviderCallResult()
 
     data class LocalOnly(

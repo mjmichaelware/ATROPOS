@@ -111,6 +111,8 @@ def referenced_outside(paths):
  tokens=path_tokens(paths); owners={Path(path) for path in paths if (ROOT/path).is_file()}
  return any(token in text and path not in owners for path,text in SOURCE_TEXT.items() for token in tokens)
 def referenced_by_test(paths):
+ if any(Path(path).name.endswith("-test.sh") and (ROOT/path).is_file() for path in paths):
+  return True
  tokens=path_tokens(paths)
  return any(token in text and ("/test/" in str(path) or str(path).startswith("src/test/") or "/tests/" in str(path)) for path,text in SOURCE_TEXT.items() for token in tokens)
 def paths_for_kind(paths, kind):
@@ -132,11 +134,30 @@ def rec(oid,rid,phase,checkpoint,title,doc,coord,paths,source_status="",require_
  reason="all required implementation, integration, and edge evidence predicates passed" if ok else ("audit did not accept evidence; source atom is marked missing/stub" if not sem else ("audit did not find an external integration reference" if kind == "integration" and owner_ok is False else ("audit did not find a test/evidence reference" if kind == "semantics" and owner_ok is False else "one or more required canonical owner paths absent")))
  return {"obligationId":oid,"requirementId":rid,"phase":phase,"checkpoint":checkpoint,"title":title,"predicateKind":kind,"sourceDocument":doc,"sourceCoordinate":coord,"sourceHash":SOURCE_HASHES.get(doc,"UNHASHED_SOURCE"),"canonicalOwner":paths[0] if paths else "UNASSIGNED","expectedPathsOrSymbols":paths,"status":"WRITTEN" if ok else "NOT_WRITTEN","auditFinding":"WRITTEN_EVIDENCED" if ok else "NOT_EVIDENCED_BY_AUDIT","evidenceMethod":"explicit-path-and-source-status" if kind == "implementation" else ("static-caller-reference" if kind == "integration" else "static-test-reference"),"historicalStatus":"WRITTEN" if historical_owner_ok and sem else "NOT_WRITTEN","statusReason":reason,"implementationEvidencePaths":f,"implementationEvidenceHashes":path_hashes(f),"implementationEvidenceSymbols":path_tokens(paths) if ok else [],"duplicateOf":None,"excludedReason":None,"lastAuditedHead":CURRENT_HEAD,"lastAuditedAt":NOW}
 SOURCE_HASHES={p:digest(ROOT/p) for p in AUTHORITIES if (ROOT/p).is_file()}
+SPECIAL_ATOM_PATHS={
+ "B002":{"implementation":["src/main/kotlin/atropos/core/parser/TreeSitterGrammarBridge.kt"],"integration":["src/main/kotlin/atropos/ast/AstSymbolGraph.kt"],"semantics":["src/test/kotlin/atropos/core/parser/TreeSitterGrammarBridgeTest.kt"]},
+ "B003":{"implementation":["src/main/kotlin/atropos/ast/AstSymbolGraph.kt"],"integration":["src/main/kotlin/atropos/ast/AstSymbolGraph.kt"],"semantics":["src/test/kotlin/atropos/ast/AstSymbolGraphTest.kt"]},
+ "D002":{"implementation":["src/main/kotlin/atropos/core/verifier/ConstraintSolverEvaluator.kt"],"integration":["src/main/kotlin/atropos/core/verification/DeterministicVerifier.kt"],"semantics":["src/test/kotlin/atropos/core/verifier/ConstraintSolverEvaluatorTest.kt"]},
+ "F002":{"implementation":["src/main/kotlin/atropos/data/storage/CloudLakehouseSyncEngine.kt"],"integration":["src/main/kotlin/atropos/core/memory/LocalMemoryStore.kt"],"semantics":[]},
+ "F004":{"implementation":["src/main/kotlin/atropos/core/memory/SqliteVecMemoryIndex.kt"],"integration":["src/main/kotlin/atropos/core/memory/LocalMemoryStore.kt"],"semantics":[]},
+ "F005":{"implementation":["src/main/kotlin/atropos/core/memory/MemorySourceChunker.kt"],"integration":["src/main/kotlin/atropos/core/memory/LocalMemoryStore.kt"],"semantics":[]},
+ "G006":{"implementation":["src/main/kotlin/atropos/core/provider/ProviderFixtureMatrixService.kt"],"integration":["src/main/kotlin/atropos/core/provider/ProviderActivationService.kt"],"semantics":["src/test/kotlin/atropos/core/provider/ProviderFixtureMatrixServiceTest.kt"]},
+ "H007":{"implementation":["src/main/kotlin/atropos/core/agent/AgentQueueService.kt"],"integration":["src/main/kotlin/atropos/core/agent/AgentService.kt"],"semantics":["src/test/kotlin/atropos/core/agent/AgentQueueStoreTest.kt"]},
+ "J010":{"implementation":["src/main/kotlin/atropos/core/director/DirectorDagSupervisor.kt"],"integration":["src/main/kotlin/atropos/cli/commands/AgentDagCommandHandler.kt"],"semantics":[]},
+ "J011":{"implementation":["src/main/kotlin/atropos/core/agent/WorkerCodeProposalService.kt"],"integration":["src/main/kotlin/atropos/cli/commands/AgentWorkerCommandHandler.kt"],"semantics":[]},
+ "M003":{"implementation":["scripts/kotlin-compat-scan.sh"],"integration":["build.gradle.kts"],"semantics":["scripts/kotlin-compat-scan-test.sh"]},
+ "M006":{"implementation":["docs/architecture/DOCKER_NATIVE_DESKTOP_ANDROID_WEB_PLAN.md"],"integration":["build.gradle.kts"],"semantics":[]},
+ "N001":{"implementation":["src/test/kotlin/atropos/core/provider/ProviderFixtureMatrixServiceTest.kt"],"integration":["src/test/kotlin/atropos/core/provider/ProviderActivationServiceTest.kt"],"semantics":["src/test/kotlin/atropos/core/provider/QuotaLedgerRouteTruthTest.kt"]},
+ "N002":{"implementation":["src/test/kotlin/atropos/cli/CommandRouterHelpTest.kt"],"integration":["src/main/kotlin/atropos/cli/CommandRouter.kt"],"semantics":["src/test/kotlin/atropos/cli/ui/AnsiTerminalEngineHelpTest.kt"]},
+ "N003":{"implementation":["src/test/kotlin/atropos/dloi/DloiServiceTest.kt"],"integration":["docs/authority/AUTHORITY_MANIFEST.tsv"],"semantics":["src/test/kotlin/atropos/dloi/HigZeroGuardContractTest.kt"]},
+ "N004":{"implementation":["src/test/kotlin/atropos/core/endpoint/OperationEndpointManifestTest.kt"],"integration":["src/main/kotlin/atropos/core/endpoint/StaticOperationRegistry.kt"],"semantics":["src/test/kotlin/atropos/core/endpoint/OperationEndpointManifestTest.kt"]},
+ "N005":{"implementation":["scripts/calculator-final-acceptance.sh"],"integration":["scripts/calculator-prerequisite-gate.sh"],"semantics":[]},
+}
 records=[]
 dag=(ROOT/"docs/completion/ATROPOS_SD1_SD2_SPECGRAPH_ATOM_DAG.md").read_text()
 for aid,title,fields in atom_blocks(dag):
  group=aid[0]; phase=GROUP_PHASE[group]
- atom_paths=OWNER[group]
+ atom_paths=SPECIAL_ATOM_PATHS.get(aid, OWNER[group])
  if aid=="A004": atom_paths=["src/main/kotlin/atropos/dloi/DloiService.kt","src/main/kotlin/atropos/dloi/HigZeroGuard.kt"]
  if aid=="A005": atom_paths=["docs/completion/ATROPOS_CODE_OBLIGATION_REGISTRY.json","scripts/source-to-code-trace-gate.py"]
  if aid=="J009": atom_paths=["src/main/kotlin/atropos/core/endpoint/OperationEndpoint.kt","src/main/kotlin/atropos/core/endpoint/StaticOperationRegistry.kt","src/test/kotlin/atropos/core/endpoint/OperationEndpointManifestTest.kt"]

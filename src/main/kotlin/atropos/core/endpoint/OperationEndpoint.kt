@@ -24,7 +24,7 @@ data class OperationEndpoint(
         output = "typed operation result",
         errors = listOf("typed failure"),
         auth = "policy-bound",
-        sideEffects = emptyList(),
+        sideEffects = listOf("none"),
         timeoutMs = 30_000,
         retryPolicy = "bounded-none",
         testIds = emptyList()
@@ -41,8 +41,8 @@ data class OperationEndpoint(
             "$id has incomplete manifest errors"
         }
         require(manifest.auth.isNotBlank()) { "$id has no manifest auth policy" }
-        require(manifest.sideEffects.all(String::isNotBlank)) {
-            "$id has an empty manifest side effect"
+        require(manifest.sideEffects.isNotEmpty() && manifest.sideEffects.all(String::isNotBlank)) {
+            "$id has no manifest side-effect declaration"
         }
         require(manifest.timeoutMs > 0L) { "$id has no positive manifest timeout" }
         require(manifest.retryPolicy.isNotBlank()) { "$id has no manifest retry policy" }

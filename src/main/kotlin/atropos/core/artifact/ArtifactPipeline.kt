@@ -1,7 +1,7 @@
 package atropos.core.artifact
 
-import atropos.core.factory.AppFactoryRouter
-import atropos.core.factory.FactoryPlan
+import atropos.core.execution.LocalWorkQueue
+import atropos.core.memory.LocalMemoryStore
 import atropos.core.platform.JvmPlatformAbstraction
 import atropos.core.platform.PlatformAbstraction
 import atropos.core.security.RedactionFilter
@@ -11,10 +11,33 @@ import java.time.Instant
 class ArtifactPipeline(
     private val store: ArtifactStore = ArtifactStore(),
     private val platform: PlatformAbstraction = JvmPlatformAbstraction(),
-    private val factoryRouter: AppFactoryRouter = AppFactoryRouter(),
     private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
-    fun plan(prompt: String): FactoryPlan = factoryRouter.plan(prompt)
+    /**
+     * Source-compatible boundary for callers from the pre-separation API.
+     * These services are intentionally ignored: artifact deliverables no
+     * longer own application memory or compile-queue execution. Remove this
+     * constructor after downstream callers migrate to the three-owner API.
+     */
+    @Deprecated("ArtifactPipeline no longer owns memory or queue execution")
+    @Suppress("UNUSED_PARAMETER")
+    constructor(
+        store: ArtifactStore,
+        platform: PlatformAbstraction,
+        memory: LocalMemoryStore,
+        queue: LocalWorkQueue,
+        redactionFilter: RedactionFilter = RedactionFilter()
+    ) : this(store, platform, redactionFilter)
+
+    fun plan(prompt: String): ArtifactPlan {
+        val cleanPrompt = prompt.trim()
+        require(cleanPrompt.isNotBlank()) { "artifact prompt must not be blank" }
+        val digest = ArtifactHasher.sha256Bytes(cleanPrompt.toByteArray(StandardCharsets.UTF_8))
+        return ArtifactPlan(
+            id = "artifact-${digest.take(16)}",
+            prompt = cleanPrompt
+        )
+    }
 
     /** Creates a real user-requested deliverable; this is not the App Factory path. */
     fun createDeliverable(prompt: String): ArtifactReport {
@@ -79,9 +102,10 @@ class ArtifactPipeline(
 
     /**
      * Compatibility wrapper for older callers. App creation belongs to
-     * [AppFactoryRouter]; this method remains artifact-only.
+     * The general app factory owns application creation; this method remains
+     * artifact-only.
      */
-    @Deprecated("Use createDeliverable for /artifact work and AppFactoryRouter for app creation")
+    @Deprecated("Use createDeliverable for /artifact work; application creation uses the separate factory command")
     fun runFactory(prompt: String, installDir: String? = null): AppFactoryRun {
         val plan = plan(prompt)
         val startedAt = Instant.now()
@@ -117,7 +141,7 @@ class ArtifactPipeline(
 
     /** Compatibility wrapper; it cannot scaffold or compile an application. */
     @Deprecated("Use createDeliverable for artifact work")
-    fun build(plan: FactoryPlan): ArtifactReport = createDeliverable(plan.prompt)
+    fun build(plan: ArtifactPlan): ArtifactReport = createDeliverable(plan.prompt)
 
     fun verify(artifactId: String): VerificationEvidence {
         val artifact = store.loadArtifact(artifactId) ?: return VerificationEvidence(

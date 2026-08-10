@@ -28,6 +28,15 @@ val kotlinCompatScan = tasks.register<Exec>("kotlinCompatScan") {
     )
 }
 
+val kotlinCompatScanEdge = tasks.register<Exec>("kotlinCompatScanEdge") {
+    group = "verification"
+    description = "Exercise Kotlin compatibility scanner pass and refusal edges."
+    commandLine(
+        "bash",
+        layout.projectDirectory.file("scripts/kotlin-compat-scan-test.sh").asFile.absolutePath
+    )
+}
+
 val portableSurfacePlan = tasks.register("portableSurfacePlan") {
     group = "verification"
     description = "Verify the canonical Docker/desktop/Android/Web migration plan is present."
@@ -50,7 +59,7 @@ val portableSurfacePlan = tasks.register("portableSurfacePlan") {
 }
 
 tasks.named("check") {
-    dependsOn(kotlinCompatScan, portableSurfacePlan)
+    dependsOn(kotlinCompatScan, kotlinCompatScanEdge, portableSurfacePlan)
 }
 
 tasks.jar {

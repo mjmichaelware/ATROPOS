@@ -5,6 +5,7 @@ import atropos.core.AtroposRepoRootLocator
 import java.io.File
 import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.security.MessageDigest
 
@@ -18,21 +19,39 @@ data class CasDeltaSyncReport(
         get() = skipped.isEmpty()
 }
 
+private const val DEFAULT_MAX_DELTA_OBJECTS = 1_024
+
 class CloudLakehouseSyncEngine(
     private val storageDir: File =
-        AtroposRepoRootLocator.resolve().resolve(".atropos/cas").toFile()
+        AtroposRepoRootLocator.resolve().resolve(".atropos/cas").toFile(),
+    private val maxDeltaObjects: Int = DEFAULT_MAX_DELTA_OBJECTS
 ) {
+    private val storagePath = storageDir.toPath().toAbsolutePath().normalize()
+
     init {
-        Files.createDirectories(storageDir.toPath())
+        require(maxDeltaObjects > 0) { "CAS delta object limit must be positive" }
+        require(!hasSymbolicComponent(storagePath)) {
+            "CAS storage root is a symbolic link: $storagePath"
+        }
+        Files.createDirectories(storagePath)
+        require(!hasSymbolicComponent(storagePath) && storagePath.toRealPath() == storagePath) {
+            "CAS storage root does not resolve to its configured path: $storagePath"
+        }
     }
 
     fun storeContentAddressed(content: ByteArray): String {
+        require(!hasSymbolicComponent(storagePath)) {
+            "CAS storage root has a symbolic path component: $storagePath"
+        }
         val hash = hashContent(content)
-        val target = File(storageDir, "$hash.bin")
+        val target = storagePath.resolve("$hash.bin").toFile()
+        require(!Files.isSymbolicLink(target.toPath())) {
+            "CAS object path is a symbolic link: $hash"
+        }
 
-        if (target.isFile && hashContent(target.readBytes()) == hash) return hash
+        if (target.isFile && hashFile(target.toPath()) == hash) return hash
 
-        val temp = File.createTempFile("cas_", ".tmp", storageDir)
+        val temp = File.createTempFile("cas_", ".tmp", storagePath.toFile())
 
         try {
             temp.writeBytes(content)
@@ -55,7 +74,7 @@ class CloudLakehouseSyncEngine(
             if (temp.exists()) temp.delete()
         }
 
-        check(target.isFile && runCatching { hashContent(target.readBytes()) == hash }.getOrDefault(false)) {
+        check(target.isFile && runCatching { hashFile(target.toPath()) == hash }.getOrDefault(false)) {
             "CAS write integrity verification failed for $hash"
         }
         return hash
@@ -63,9 +82,10 @@ class CloudLakehouseSyncEngine(
 
     fun retrieveContent(hash: String): ByteArray? {
         val normalizedHash = requireValidHash(hash)
+        if (hasSymbolicComponent(storagePath)) return null
 
-        val target = File(storageDir, "$normalizedHash.bin")
-        return if (target.isFile) {
+        val target = storagePath.resolve("$normalizedHash.bin").toFile()
+        return if (target.isFile && !Files.isSymbolicLink(target.toPath())) {
             target.readBytes().takeIf { hashContent(it) == normalizedHash }
         } else {
             null
@@ -73,9 +93,7 @@ class CloudLakehouseSyncEngine(
     }
 
     /** Returns the requested CAS delta without reading unrelated objects. */
-    fun missingHashes(hashes: Iterable<String>): List<String> = hashes
-        .map { requireValidHash(it) }
-        .distinct()
+    fun missingHashes(hashes: Iterable<String>): List<String> = normalizeHashes(hashes)
         .filterNot(::hasVerifiedObject)
 
     /**
@@ -87,7 +105,7 @@ class CloudLakehouseSyncEngine(
         hashes: Iterable<String>,
         fetch: (String) -> ByteArray?
     ): CasDeltaSyncReport {
-        val requested = hashes.map { requireValidHash(it) }.distinct().sorted()
+        val requested = normalizeHashes(hashes)
         val missing = missingHashes(requested).toSet()
         val alreadyPresent = requested.filterNot { it in missing }
         val imported = mutableListOf<String>()
@@ -120,9 +138,44 @@ class CloudLakehouseSyncEngine(
         }
     }
 
+    private fun hashFile(path: Path): String {
+        val digest = MessageDigest.getInstance("SHA-256")
+        Files.newInputStream(path).use { input ->
+            val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+            while (true) {
+                val read = input.read(buffer)
+                if (read < 0) break
+                digest.update(buffer, 0, read)
+            }
+        }
+        return digest.digest().joinToString("") { "%02x".format(it) }
+    }
+
     private fun hasVerifiedObject(hash: String): Boolean {
-        val target = File(storageDir, "$hash.bin")
-        return target.isFile && runCatching { hashContent(target.readBytes()) == hash }.getOrDefault(false)
+        if (hasSymbolicComponent(storagePath)) return false
+        val target = storagePath.resolve("$hash.bin").toFile()
+        return target.isFile && !Files.isSymbolicLink(target.toPath()) &&
+            runCatching { hashFile(target.toPath()) == hash }.getOrDefault(false)
+    }
+
+    private fun normalizeHashes(hashes: Iterable<String>): List<String> {
+        val unique = linkedSetOf<String>()
+        hashes.forEach { hash ->
+            unique += requireValidHash(hash)
+            require(unique.size <= maxDeltaObjects) {
+                "CAS delta exceeds max object limit of $maxDeltaObjects"
+            }
+        }
+        return unique.sorted()
+    }
+
+    private fun hasSymbolicComponent(path: Path): Boolean {
+        var current: Path? = path
+        while (current != null) {
+            if (Files.isSymbolicLink(current)) return true
+            current = current.parent
+        }
+        return false
     }
 
     private fun requireValidHash(hash: String): String {

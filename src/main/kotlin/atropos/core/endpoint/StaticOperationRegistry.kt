@@ -2,12 +2,6 @@ package atropos.core.endpoint
 
 class StaticOperationRegistry : OperationRegistry {
     private val endpoints = listOf(
-        endpoint("provider.groq.chat", EndpointKind.PROVIDER_CHAT, "Groq chat completions", configured = true),
-        endpoint("provider.openai.chat", EndpointKind.PROVIDER_CHAT, "OpenAI chat completions", configured = true),
-        endpoint("provider.anthropic.messages", EndpointKind.PROVIDER_MESSAGES, "Anthropic messages", configured = true),
-        endpoint("provider.xai.chat", EndpointKind.PROVIDER_CHAT, "xAI chat completions", configured = true),
-        endpoint("provider.ollama.generate", EndpointKind.PROVIDER_GENERATE, "Ollama generate"),
-        endpoint("provider.ollama.tags", EndpointKind.PROVIDER_TAGS, "Ollama model list"),
         endpoint("cli.help", EndpointKind.CLI_COMMAND, "Show help", configured = true, available = true),
         endpoint("cli.status", EndpointKind.CLI_COMMAND, "Show status matrix", configured = true, available = true),
         endpoint("cli.providers", EndpointKind.CLI_COMMAND, "List providers", configured = true, available = true),
@@ -56,7 +50,7 @@ class StaticOperationRegistry : OperationRegistry {
         configured = configured,
         available = available,
         manifest = EndpointManifest(
-            owner = "StaticOperationRegistry",
+            owner = ownerFor(id, kind),
             input = "typed ${kind.name.lowercase()} request",
             output = "typed ${kind.name.lowercase()} result",
             errors = listOf("authorization", "timeout", "malformed", "unavailable"),
@@ -64,13 +58,25 @@ class StaticOperationRegistry : OperationRegistry {
             sideEffects = sideEffects ?: when (kind) {
                 EndpointKind.TOOL_GIT -> listOf("read-git-state")
                 EndpointKind.STORAGE_LOCAL -> listOf("read-local-state", "write-local-state")
-                else -> emptyList()
+                else -> listOf("none")
             },
             timeoutMs = 30_000,
             retryPolicy = "bounded-none",
             testIds = listOf("OperationEndpointManifestTest.every_registered_operation_exposes_a_complete_manifest")
         )
     )
+
+    private fun ownerFor(id: String, kind: EndpointKind): String = when {
+        id.startsWith("provider.") -> "ProviderAdapterRegistry"
+        id == "cli.agent_dag_supervise" -> "AgentDagCommandHandler"
+        id == "cli.agent_worker_propose" -> "AgentWorkerCommandHandler"
+        id.startsWith("cli.") -> "CommandRouter"
+        id == "tool.kotlinc.verify" -> "GovernedCompileGate"
+        id == "tool.git.status" -> "ShellCommandRunner"
+        id == "storage.local.cas" -> "CloudLakehouseSyncEngine"
+        id == "storage.local.config" -> "ConfigurationManager"
+        else -> kind.name
+    }
 
     override fun getAll(): List<OperationEndpoint> = endpoints
 

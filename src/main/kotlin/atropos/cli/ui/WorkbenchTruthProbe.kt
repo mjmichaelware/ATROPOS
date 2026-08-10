@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.cli.ui
 
+import atropos.core.provider.ProviderTruthRecord
+import atropos.core.provider.ProviderTruthService
 import java.io.File
 
 data class ProviderUiTruth(
@@ -35,15 +37,15 @@ class WorkbenchTruthProbe {
     fun probe(workspace: String): WorkbenchTruth {
         val root = File(workspace)
 
-        fun exists(path: String): Boolean = File(root, path).exists()
+        // Provider identity, configuration, adapter presence, and cost are
+        // owned by ProviderTruthService. Keep this probe disk-only by making
+        // the local health check non-blocking; health is still reported as
+        // unavailable rather than guessed online.
+        val providerTruth = runCatching {
+            ProviderTruthService(ollamaProbe = { false }).snapshot().records
+        }.getOrDefault(emptyList())
 
-        fun keyPresent(name: String): Boolean {
-            val cfg = File(System.getProperty("user.home"), ".atropos/config.json")
-            if (!cfg.exists()) return false
-            val text = runCatching { cfg.readText() }.getOrDefault("")
-            val match = Regex("\"$name\"\\s*:\\s*\"([^\"]*)\"").find(text)
-            return !match?.groupValues?.getOrNull(1).isNullOrBlank()
-        }
+        fun exists(path: String): Boolean = File(root, path).exists()
 
         fun countSourceFiles(): Int {
             val src = File(root, "src/main/kotlin")
@@ -85,14 +87,7 @@ class WorkbenchTruthProbe {
                 exists("success_weights.db") ||
                 exists("success_weights.sqlite")
 
-        val providers = listOf(
-            ProviderUiTruth("groq", true, keyPresent("groq"), "fast chat / cheap route", "fast", "low", "cloud"),
-            ProviderUiTruth("openai", true, keyPresent("openai"), "general reasoning / vision route", "med", "med", "cloud"),
-            ProviderUiTruth("anthropic", true, keyPresent("anthropic"), "coding / deep reasoning", "med", "med", "cloud"),
-            ProviderUiTruth("xai", true, keyPresent("xai"), "alternate cloud route", "med", "med", "cloud"),
-            ProviderUiTruth("ollama", true, true, "local privacy fallback", "slow", "free", "local"),
-            ProviderUiTruth("gemini", false, false, "not installed", "--", "--", "--")
-        )
+        val providers = providerTruth.map(::toUiTruth)
 
         return WorkbenchTruth(
             providers = providers,
@@ -111,6 +106,25 @@ class WorkbenchTruthProbe {
             sourceFiles = countSourceFiles(),
             testsPresent = exists("src/main/kotlin/atropos/tests/cli/CommandRouterTest.kt") ||
                 exists("src/main/kotlin/atropos/tests/data/OntologicalIndexTest.kt")
+        )
+    }
+
+    private fun toUiTruth(record: ProviderTruthRecord): ProviderUiTruth {
+        val local = record.category == "local"
+        val cost = when (record.costMode) {
+            atropos.core.provider.CostMode.LOCAL -> "free"
+            atropos.core.provider.CostMode.FREE -> "low"
+            atropos.core.provider.CostMode.PAID_LOCKED -> "paid-locked"
+            else -> record.costMode.name.lowercase().replace('_', '-')
+        }
+        return ProviderUiTruth(
+            name = record.id,
+            implemented = record.adapterPresent,
+            configured = record.keyPresent,
+            role = "${record.category} route",
+            latency = if (local) "local" else "provider-managed",
+            cost = cost,
+            privacy = if (local) "local" else "cloud"
         )
     }
 }

@@ -1,5 +1,7 @@
 package atropos.core.hr
 
+import atropos.core.hierarchy.HierarchyRole
+
 import java.time.Instant
 import java.util.UUID
 
@@ -19,6 +21,23 @@ enum class InformationKind {
     PROVIDER_ROUTE
 }
 
+enum class InformationClassification {
+    PUBLIC,
+    INTERNAL,
+    CONFIDENTIAL,
+    RESTRICTED;
+
+    companion object {
+        fun forKind(kind: InformationKind): InformationClassification = when (kind) {
+            InformationKind.CREDENTIAL_REFERENCE -> RESTRICTED
+            InformationKind.CONFIGURATION,
+            InformationKind.PROVIDER_ROUTE,
+            InformationKind.VERIFICATION_RESULT -> CONFIDENTIAL
+            else -> INTERNAL
+        }
+    }
+}
+
 data class CrossBoundaryRequest(
     val id: String = "hr-${UUID.randomUUID().toString().take(12)}",
     val sourceOwnerId: String,
@@ -26,6 +45,9 @@ data class CrossBoundaryRequest(
     val targetOwnerId: String,
     val targetTerritoryId: String,
     val kind: InformationKind,
+    val classification: InformationClassification = InformationClassification.forKind(kind),
+    val sourceRole: HierarchyRole? = null,
+    val targetRole: HierarchyRole? = null,
     val query: String,
     val taskId: String = "",
     val sourceCoordinates: List<String> = emptyList(),
@@ -41,6 +63,7 @@ data class CrossBoundaryResponse(
     val approved: Boolean,
     val redactedContent: String? = null,
     val risk: CrossBoundaryRisk = CrossBoundaryRisk.LOW,
+    val classification: InformationClassification = InformationClassification.INTERNAL,
     val reason: String,
     val action: HrRouteAction = if (approved) HrRouteAction.APPROVED else HrRouteAction.DENIED,
     val timestamp: Instant = Instant.now()
@@ -53,6 +76,9 @@ data class HrRouterAuditEntry(
     val targetOwnerId: String,
     val targetTerritoryId: String = "",
     val kind: InformationKind,
+    val classification: InformationClassification = InformationClassification.INTERNAL,
+    val sourceRole: HierarchyRole? = null,
+    val targetRole: HierarchyRole? = null,
     val risk: CrossBoundaryRisk,
     val approved: Boolean,
     val action: HrRouteAction = if (approved) HrRouteAction.APPROVED else HrRouteAction.DENIED,

@@ -7,7 +7,7 @@ fun buildKernelAdapter(
     env: Map<String, String> = System.getenv()
 ): ProviderAdapter =
     when {
-        descriptor.isLocal || descriptor.id == "local" || descriptor.id == "ollama" ->
+        descriptor.isLocal ->
             LocalKernelAdapter(descriptor)
         OpenAiCompatibleProviderCatalog.get(descriptor.id) != null ->
             OpenAiCompatibleKernelAdapter(

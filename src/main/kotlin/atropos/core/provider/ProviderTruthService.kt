@@ -16,16 +16,19 @@ class ProviderTruthService(
     private val selector: AgentProviderSelector = AgentProviderSelector(config),
     private val ollamaProbe: () -> Boolean = { OllamaHealthProbe().probe().online }
 ) {
+    private val configuration = ProviderConfigurationResolver(config)
+
     fun snapshot(
         selectedProvider: String = config.runtime.defaultProvider,
         lastActualProvider: String? = null
     ): ProviderTruthSnapshot {
         val selection = selector.select(selectedProvider)
         val records = registry.getAll().map { descriptor ->
-            val missing = missingRequirements(descriptor)
-            val keyPresent = descriptor.isLocal || missing.isEmpty()
+            val missing = configuration.missingRequirements(descriptor)
+            val keyPresent = configuration.isConfigured(descriptor)
             val adapterPresent = adapterIntrospection.adapterPresent(descriptor.id)
-            val executable = adapterPresent && keyPresent && !descriptor.isPaidLocked() && health(descriptor, keyPresent) != ProviderAvailabilityState.OFFLINE
+            val availability = health(descriptor, keyPresent)
+            val executable = adapterPresent && keyPresent && !descriptor.isPaidLocked() && availability != ProviderAvailabilityState.OFFLINE
             ProviderTruthRecord(
                 id = descriptor.id,
                 category = category(descriptor),
@@ -34,7 +37,7 @@ class ProviderTruthService(
                 descriptorPresent = true,
                 adapterPresent = adapterPresent,
                 executableSupport = executable,
-                health = health(descriptor, keyPresent),
+                health = availability,
                 askEligible = descriptor.id in selection.askOrder,
                 patchEligible = descriptor.id in selection.patchOrder,
                 paidLocked = descriptor.isPaidLocked(),
@@ -52,27 +55,12 @@ class ProviderTruthService(
     }
 
     fun endpointRegistry(): OperationRegistry =
-        ProviderTruthOperationRegistry(snapshot())
-
-    private fun missingRequirements(descriptor: ProviderDescriptor): List<String> =
-        descriptor.requiredEnv.filterNot(::requirementPresent)
-
-    private fun requirementPresent(name: String): Boolean =
-        when (name) {
-            "GROQ_API_KEY" -> config.keys.groq.isNotBlank() || envPresent(name)
-            "OPENAI_API_KEY" -> config.keys.openai.isNotBlank() || envPresent(name)
-            "ANTHROPIC_API_KEY" -> config.keys.anthropic.isNotBlank() || envPresent(name)
-            "XAI_API_KEY" -> config.keys.xai.isNotBlank() || envPresent(name)
-            "OLLAMA_HOST", "OLLAMA_MODEL" -> true
-            else -> envPresent(name)
-        }
-
-    private fun envPresent(name: String): Boolean =
-        !System.getenv(name).isNullOrBlank()
+        ProviderTruthOperationRegistry(snapshot(), descriptorRegistry = registry)
 
     private fun health(descriptor: ProviderDescriptor, configured: Boolean): ProviderAvailabilityState =
         when {
-            descriptor.id == "ollama" -> if (ollamaProbe()) ProviderAvailabilityState.READY else ProviderAvailabilityState.OFFLINE
+            descriptor.isLocal && descriptor.hasCapability(ApiCapability.CHAT) ->
+                if (ollamaProbe()) ProviderAvailabilityState.READY else ProviderAvailabilityState.OFFLINE
             descriptor.isPaidLocked() -> ProviderAvailabilityState.DISABLED
             !configured -> ProviderAvailabilityState.AUTH_FAILED
             adapterIntrospection.adapterPresent(descriptor.id) -> ProviderAvailabilityState.READY
@@ -93,13 +81,16 @@ class ProviderTruthService(
 
 class ProviderTruthOperationRegistry(
     private val snapshot: ProviderTruthSnapshot,
-    private val base: OperationRegistry = StaticOperationRegistry()
+    private val base: OperationRegistry = StaticOperationRegistry(),
+    private val descriptorRegistry: ProviderDescriptorRegistry = StaticProviderDescriptorRegistry()
 ) : OperationRegistry {
     private val providerEndpoints: List<OperationEndpoint> = snapshot.records.map { record ->
+        val descriptor = descriptorRegistry.getById(record.id)
+        val endpointId = descriptor?.endpointId?.takeIf { it.isNotBlank() } ?: "provider.${record.id}"
         OperationEndpoint(
-            id = "provider.${record.id}",
-            kind = EndpointKind.PROVIDER_CHAT,
-            description = "${record.id} descriptor=${record.descriptorPresent} adapter=${record.adapterPresent} executable=${record.executableSupport} health=${record.health.name.lowercase()}",
+            id = endpointId,
+            kind = endpointKind(endpointId),
+            description = "${descriptor?.displayName ?: record.id} descriptor=${record.descriptorPresent} adapter=${record.adapterPresent} executable=${record.executableSupport} health=${record.health.name.lowercase()}",
             configured = record.keyPresent,
             available = record.executableSupport,
             manifest = EndpointManifest(
@@ -108,12 +99,18 @@ class ProviderTruthOperationRegistry(
                 output = "typed provider chat result",
                 errors = listOf("authorization", "timeout", "malformed", "unavailable"),
                 auth = "policy-bound",
-                sideEffects = emptyList(),
+                sideEffects = listOf("none"),
                 timeoutMs = 30_000,
                 retryPolicy = "bounded-none",
                 testIds = listOf("OperationEndpointManifestTest.every_registered_operation_exposes_a_complete_manifest")
             )
         ).requireCompleteManifest()
+    }
+
+    init {
+        require(providerEndpoints.map { it.id }.distinct().size == providerEndpoints.size) {
+            "provider truth endpoint registry contains duplicate endpoint ids"
+        }
     }
 
     override fun getAll(): List<OperationEndpoint> =
@@ -124,4 +121,11 @@ class ProviderTruthOperationRegistry(
 
     override fun getByKind(kind: EndpointKind): List<OperationEndpoint> =
         base.getByKind(kind) + providerEndpoints.filter { it.kind == kind }
+
+    private fun endpointKind(endpointId: String): EndpointKind = when {
+        endpointId.endsWith(".messages") -> EndpointKind.PROVIDER_MESSAGES
+        endpointId.endsWith(".generate") -> EndpointKind.PROVIDER_GENERATE
+        endpointId.endsWith(".tags") -> EndpointKind.PROVIDER_TAGS
+        else -> EndpointKind.PROVIDER_CHAT
+    }
 }

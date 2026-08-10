@@ -2,6 +2,7 @@
 package atropos.cli.ui
 
 import java.io.File
+import atropos.core.provider.ProviderTruthService
 
 data class AgentPatchWorkbenchTruth(
     val latestPatchId: String?,
@@ -27,20 +28,10 @@ data class AgentWorkbenchTruth(
  * landing dashboard never stalls while idle or typing.
  */
 class AgentWorkbenchProbe {
-    private val patchDocOrder = listOf("github_models", "sambanova", "cloudflare_ai", "groq")
-
+    @Suppress("UNUSED_PARAMETER")
     fun probe(workspace: String, groqConfigured: Boolean): AgentWorkbenchTruth {
-        val configured = linkedSetOf<String>()
-        if (!System.getenv("GITHUB_MODELS_TOKEN").isNullOrBlank()) configured += "github_models"
-        if (!System.getenv("SAMBANOVA_API_KEY").isNullOrBlank()) configured += "sambanova"
-        if (!System.getenv("CLOUDFLARE_API_TOKEN").isNullOrBlank() &&
-            !System.getenv("CLOUDFLARE_ACCOUNT_ID").isNullOrBlank()
-        ) {
-            configured += "cloudflare_ai"
-        }
-        if (groqConfigured) configured += "groq"
-
-        val order = patchDocOrder.filter { it in configured }
+        val providerTruth = ProviderTruthService(ollamaProbe = { false }).snapshot()
+        val order = providerTruth.patchOrder
         val paidLocked = runCatching {
             atropos.core.paid.EmergencyPaidGate().status().locked
         }.getOrDefault(true)

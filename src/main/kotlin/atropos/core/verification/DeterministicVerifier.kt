@@ -13,9 +13,6 @@ import atropos.dloi.DloiService
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
-import kotlin.io.path.extension
-import kotlin.io.path.invariantSeparatorsPathString
-import kotlin.io.path.readLines
 
 enum class DeterministicClassification {
     DETERMINISTIC,
@@ -88,13 +85,15 @@ class DeterministicVerifier(
 
             if (scopeFindings.isNotEmpty()) return@forEach
 
-            if (path.extension == "kt" && Files.isRegularFile(path)) {
+            if (path.fileName.toString().substringAfterLast('.', "") == "kt" && Files.isRegularFile(path)) {
                 findings += checks.checkPackagePathInvariant(path)
                 findings += checks.checkDuplicateImports(path)
                 findings += checks.checkImportReconciliation(path)
             }
         }
-        val kotlinPaths = sourcePaths.filter { it.extension == "kt" && Files.isRegularFile(it) }
+        val kotlinPaths = sourcePaths.filter {
+            it.fileName.toString().substringAfterLast('.', "") == "kt" && Files.isRegularFile(it)
+        }
         if (kotlinPaths.isNotEmpty()) findings += checks.checkAstImpact(kotlinPaths)
         findings += checks.checkCommandRegistryIntegrity()
         findings += checks.checkRedactionInvariant()

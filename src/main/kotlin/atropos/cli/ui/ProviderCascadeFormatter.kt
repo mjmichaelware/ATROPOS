@@ -95,13 +95,8 @@ object ProviderCascadeFormatter {
 
     private fun isCascadeFailure(value: String): Boolean {
         val lower = value.lowercase().removePrefix("-").trim()
-        val startsWithProvider = listOf(
-            "groq ",
-            "openai ",
-            "anthropic ",
-            "xai ",
-            "ollama "
-        ).any { lower.startsWith(it) }
+        val startsWithProvider = Regex("^[a-z0-9][a-z0-9_.-]*\\s+")
+            .containsMatchIn(lower)
 
         val hasFailure =
             "auth failed" in lower ||

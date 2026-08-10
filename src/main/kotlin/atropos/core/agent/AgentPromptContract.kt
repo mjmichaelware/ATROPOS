@@ -1,5 +1,7 @@
 package atropos.core.agent
 
+import atropos.core.AtroposConfig
+import atropos.core.provider.ProviderTruthService
 import atropos.core.AtroposRepoRootLocator
 import atropos.core.provider.ContextAttestationService
 import atropos.core.provider.ContextEnvelope
@@ -27,7 +29,7 @@ object AgentPromptContract {
 
     fun build(
         context: String,
-        providerId: String = "groq",
+        providerId: String = configuredProvider(),
         modelId: String = "",
         task: String = "",
         repoRoot: Path = AtroposRepoRootLocator.resolve(),
@@ -57,7 +59,7 @@ object AgentPromptContract {
 
     fun buildPatch(
         context: String,
-        providerId: String = "groq",
+        providerId: String = configuredProvider(),
         modelId: String = "",
         task: String = "",
         repoRoot: Path = AtroposRepoRootLocator.resolve()
@@ -86,7 +88,7 @@ object AgentPromptContract {
         stdout: String,
         stderr: String,
         context: String,
-        providerId: String = "groq",
+        providerId: String = configuredProvider(),
         modelId: String = "",
         repoRoot: Path = AtroposRepoRootLocator.resolve()
     ): String {
@@ -141,4 +143,9 @@ object AgentPromptContract {
 
         return ContextAttestationService.injectContext(envelope, corePrompt)
     }
+
+    private fun configuredProvider(): String =
+        AtroposConfig.load().runtime.defaultProvider.trim()
+            .takeIf { it.isNotBlank() }
+            ?: ProviderTruthService().snapshot().selectedProvider
 }

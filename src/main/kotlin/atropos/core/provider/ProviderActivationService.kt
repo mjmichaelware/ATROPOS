@@ -239,7 +239,9 @@ class ProviderActivationService(
         fixture: ProviderFixtureMatrixRecord
     ): ProviderActivationState {
         if (descriptor.isPaidLocked() && !paidGate.isProviderUnlocked(descriptor.id)) return ProviderActivationState.LOCKED
-        if (descriptor.id == "ollama" && !ollamaProbe()) return ProviderActivationState.OFFLINE
+        if (descriptor.isLocal && descriptor.hasCapability(ApiCapability.CHAT) && !ollamaProbe()) {
+            return ProviderActivationState.OFFLINE
+        }
         if (descriptor.isLocal) return ProviderActivationState.READY
         if (adapterStatus == null) return ProviderActivationState.MISSING
         if (adapterStatus.implemented && fixture.passed) return ProviderActivationState.FIXTURE_BACKED

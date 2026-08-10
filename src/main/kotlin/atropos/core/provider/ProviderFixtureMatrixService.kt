@@ -21,21 +21,44 @@ class ProviderFixtureMatrixService(
         val descriptor = registry.getById(providerId)
             ?: return ProviderFixtureMatrixRecord(providerId, false, 0, 1, listOf("missing descriptor"))
         val adapter = adapterRegistry.getByProviderId(providerId)
+        require(adapter == null || adapter.providerId == providerId) {
+            "fixture adapter mismatch: expected=$providerId actual=${adapter.providerId}"
+        }
         val lines = mutableListOf<Pair<String, Boolean>>()
 
-        familyFixtures(providerId).forEach { result ->
-            lines += normalizeName(result.fixture) to result.passed
+        val familyResults = runCatching { familyFixtures(providerId) }
+            .getOrElse { failure ->
+                listOf(
+                    atropos.core.provider.adapter.AdapterFixtureResult(
+                        providerId = providerId,
+                        fixture = "fixture_exception",
+                        passed = false,
+                        detail = "family fixture failed: ${failure.javaClass.simpleName}"
+                    )
+                )
+        }
+        familyResults.forEach { result ->
+            require(result.providerId == providerId) {
+                "fixture provider mismatch: expected=$providerId actual=${result.providerId}"
+            }
+            val normalizedName = normalizeName(result.fixture)
+            require(normalizedName.isNotBlank()) {
+                "fixture name must not be blank for provider=$providerId"
+            }
+            lines += normalizedName to result.passed
         }
 
         val dryRunTask = probeTask(descriptor)
-        val dryRun = adapter?.complete(
-            AdapterRequest(
-                task = dryRunTask,
-                prompt = "fixture dry run for $providerId",
-                dryRun = true,
-                liveNetworkAllowed = false
-            )
-        ) ?: localFixtureResult(descriptor, dryRunTask, "local dry run")
+        val dryRun = runCatching {
+            adapter?.complete(
+                AdapterRequest(
+                    task = dryRunTask,
+                    prompt = "fixture dry run for $providerId",
+                    dryRun = true,
+                    liveNetworkAllowed = false
+                )
+            ) ?: localFixtureResult(descriptor, dryRunTask, "local dry run")
+        }.getOrNull()
         lines += "dry_run" to (
             dryRun is ProviderCallResult.Success ||
                 dryRun is ProviderCallResult.LocalOnly ||
@@ -82,36 +105,48 @@ class ProviderFixtureMatrixService(
         // fixture; a provider with no adapter fails it rather than skipping it.
         if (lines.none { it.first == "success" }) {
             val successTask = probeTask(descriptor)
-            val offlineSuccess = adapter?.complete(
-                AdapterRequest(
-                    task = successTask,
-                    prompt = "fixture success for $providerId",
-                    dryRun = true,
-                    liveNetworkAllowed = false
-                )
-            ) ?: localFixtureResult(descriptor, successTask, "local fixture success")
+            val offlineSuccess = runCatching {
+                adapter?.complete(
+                    AdapterRequest(
+                        task = successTask,
+                        prompt = "fixture success for $providerId",
+                        dryRun = true,
+                        liveNetworkAllowed = false
+                    )
+                ) ?: localFixtureResult(descriptor, successTask, "local fixture success")
+            }.getOrNull()
             lines += "success" to (
                 offlineSuccess is ProviderCallResult.Success ||
-                    offlineSuccess is ProviderCallResult.LocalOnly ||
-                    offlineSuccess is ProviderCallResult.Queued
+                    offlineSuccess is ProviderCallResult.LocalOnly
             )
         }
 
         val distinct = linkedMapOf<String, Boolean>()
-        lines.forEach { (name, passed) -> distinct[name] = distinct[name] ?: passed }
+        // Normalization can intentionally collapse family and generic fixtures
+        // onto one contract name. Every contributing assertion must pass; a
+        // later failure must never be hidden by an earlier success.
+        lines.forEach { (name, passed) -> distinct[name] = (distinct[name] ?: true) && passed }
         val detail = distinct.entries.sortedBy { it.key }.map { "${it.key}=${if (it.value) "PASS" else "FAIL"}" }
-        val required = setOf("success", "error", "malformed_response", "empty_response", "timeout", "redaction")
         return ProviderFixtureMatrixRecord(
             providerId = providerId,
-            passed = required.all { distinct[it] == true } && distinct.values.all { it },
+            passed = REQUIRED_NORMALIZED_FIXTURES.all { distinct[it] == true } && distinct.values.all { it },
             passedCount = distinct.values.count { it },
             totalCount = distinct.size,
             details = detail
         )
     }
 
-    fun runAll(): List<ProviderFixtureMatrixRecord> =
-        registry.getAll().sortedBy { it.id }.map { runProvider(it.id) }
+    fun runAll(): List<ProviderFixtureMatrixRecord> {
+        val descriptors = registry.getAll()
+        val duplicateIds = descriptors.groupingBy { it.id }.eachCount()
+            .filterValues { it > 1 }
+            .keys
+            .sorted()
+        require(duplicateIds.isEmpty()) {
+            "provider descriptor registry contains duplicate ids: ${duplicateIds.joinToString(",")}"
+        }
+        return descriptors.sortedBy { it.id }.map { runProvider(it.id) }
+    }
 
     private fun familyFixtures(providerId: String) =
         when {
@@ -191,12 +226,28 @@ class ProviderFixtureMatrixService(
     }
 
     fun listAdaptersMissingNormalizedFixtures(): List<String> {
-        val knownIds = registry.getAll().map { it.id }.toSet()
-        val specIds = OpenAiCompatibleProviderCatalog.all().map { it.providerId }.toSet() +
-            NonOpenAiFreeProviderCatalog.all().map { it.providerId }.toSet() +
-            DataInfraResearchProviderCatalog.all().map { it.providerId }.toSet() +
-            AssetProviderCatalog.all().map { it.providerId }.toSet() +
-            setOf("local", "ollama")
-        return (knownIds - specIds).toList().sorted()
+        // Catalog membership is not evidence that an adapter is covered: a
+        // descriptor can be added before its family fixture, and a provider
+        // can be deliberately local-only. Inspect the same deterministic
+        // matrix result used by activation instead of maintaining a second
+        // catalog-derived coverage rule.
+        return runAll()
+            .filter { result ->
+                !result.passed || REQUIRED_NORMALIZED_FIXTURES.any { fixture ->
+                    result.details.none { it == "$fixture=PASS" }
+                }
+            }
+            .map { it.providerId }
+    }
+
+    private companion object {
+        val REQUIRED_NORMALIZED_FIXTURES = setOf(
+            "success",
+            "error",
+            "malformed_response",
+            "empty_response",
+            "timeout",
+            "redaction"
+        )
     }
 }

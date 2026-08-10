@@ -1,8 +1,8 @@
-#!/data/data/com.termux/files/usr/bin/bash
+#!/usr/bin/env bash
 
 set -u
 
-ROOT="/data/data/com.termux/files/home/ATROPOS"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PROMPT="$ROOT/docs/automation/SD1_SD2_ABSOLUTE_COMPLETION_PROMPT.md"
 STATUS="$ROOT/docs/automation/SD1_SD2_AUTONOMOUS_STATUS.md"
 REPORT="$ROOT/docs/automation/SD1_SD2_ABSOLUTE_COMPLETION_REPORT.md"
@@ -33,8 +33,6 @@ echo "$$" > "$RUNNER_PID"
 trap 'rm -f "$RUNNER_PID"' EXIT INT TERM
 
 termux-wake-lock >/dev/null 2>&1 || true
-
-export JAVA_HOME="/data/data/com.termux/files/usr/lib/jvm/java-21-openjdk"
 
 MODEL="$(
     opencode models opencode --refresh 2>/dev/null |
