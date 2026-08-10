@@ -86,8 +86,17 @@ class ProviderActivationService(
         val fixture = fixtureMatrix.runProvider(providerId)
         val executableSupport = adapterStatus?.implemented == true && !adapterStatus.dryRunOnly
         val impact = descriptor.capabilities.map { it.name.lowercase() }.sorted()
+        val quotaRecord = quotaLedger.get(providerId)
+        val quotaCooldownUntil = quotaRecord?.cooldownUntilEpochMs?.let { java.time.Instant.ofEpochMilli(it) }
+        val routeEligibility = listOfNotNull(
+            if (descriptor.isLocal) "local" else null,
+            if (!descriptor.isPaidLocked()) "free-tier" else null,
+            if (keyLookups.all { it.configured }) "live-key-ready" else null,
+            if (quotaRecord?.state?.name?.lowercase() != "unavailable") quotaRecord?.state?.name?.lowercase() else null
+        ).distinctBy { it }
+
         val record = if (live) {
-            liveRecord(descriptor, adapter, adapterStatus, keyLookups, fixture, impact, executableSupport, mode)
+            liveRecord(descriptor, adapter, adapterStatus, keyLookups, fixture, impact, executableSupport, mode, quotaCooldownUntil, routeEligibility)
         } else {
             val configuredForExecution = descriptor.isLocal || keyLookups.all { it.configured }
             val storedRecord = store.read(providerId)
@@ -108,7 +117,10 @@ class ProviderActivationService(
                 executableSupport = executableSupport,
                 fixtureMatrix = fixture,
                 verificationSummary = offlineSummary(adapterStatus, fixture),
-                remediation = remediation(state, descriptor, adapterStatus, keyLookups)
+                remediation = remediation(state, descriptor, adapterStatus, keyLookups),
+                lastUsedAt = storedRecord?.lastUsedAt,
+                routeEligibility = routeEligibility,
+                quotaCooldownUntil = quotaCooldownUntil
             )
         }
 
@@ -124,7 +136,9 @@ class ProviderActivationService(
         fixture: ProviderFixtureMatrixRecord,
         impact: List<String>,
         executableSupport: Boolean,
-        mode: ProviderVerificationMode
+        mode: ProviderVerificationMode,
+        quotaCooldownUntil: java.time.Instant? = null,
+        routeEligibility: List<String> = emptyList()
     ): ProviderActivationRecord {
         if (descriptor.isPaidLocked() && !paidGate.isProviderUnlocked(descriptor.id)) {
             return ProviderActivationRecord(
@@ -138,7 +152,9 @@ class ProviderActivationService(
                 executableSupport = executableSupport,
                 fixtureMatrix = fixture,
                 verificationSummary = "paid provider live test refused",
-                remediation = "keep paid providers locked or use /paid unlock explicitly"
+                remediation = "keep paid providers locked or use /paid unlock explicitly",
+                quotaCooldownUntil = quotaCooldownUntil,
+                routeEligibility = routeEligibility
             )
         }
         if (adapter == null) {
@@ -153,7 +169,9 @@ class ProviderActivationService(
                 executableSupport = false,
                 fixtureMatrix = fixture,
                 verificationSummary = "provider adapter missing",
-                remediation = "implement provider adapter"
+                remediation = "implement provider adapter",
+                quotaCooldownUntil = quotaCooldownUntil,
+                routeEligibility = routeEligibility
             )
         }
 
@@ -193,7 +211,9 @@ class ProviderActivationService(
                 is ProviderCallResult.Queued -> result.reason
                 is ProviderCallResult.Failure -> result.failure.cleanSummary
             },
-            remediation = remediation(state, descriptor, adapterStatus, keyLookups)
+            remediation = remediation(state, descriptor, adapterStatus, keyLookups),
+            quotaCooldownUntil = quotaCooldownUntil,
+            routeEligibility = routeEligibility
         )
     }
 
