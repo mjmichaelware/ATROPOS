@@ -8671,3 +8671,5 @@ End of AGENTS.md
 - HR interrupts: none.
 - Fingerprints: `FactoryLineage.kt` (modified); `AppFactoryRouter.kt` (110 LOC main after batch 2 rewrite); `AppProjectGenerator.kt` (338 LOC after batch 3); `AstSymbolGraph.kt` (350 LOC after batch 4); `VerifiedCompletionGate.kt` (110 LOC after batch 5); plus 25 new extraction files totaling ~570 LOC.
 - New overall estimate: unchanged; atomic decoupling task now complete; all 5 target files reduced below 350 LOC; all 25 siblings ≤250 LOC; zero compilation errors; all imports resolve; existing tests remain unmodified and pass.
+
+**UPDATE 2026-08-10T00:01:00Z:** Further optimization of AstSymbolGraph.kt extraction: created AstImportReconciler.kt (183 LOC, F27) to extract import reconciliation logic from AstSymbolGraph. Final AstSymbolGraph.kt LOC: 234 (originally 486, -52% reduction). All target files now significantly below 350 LOC threshold: FactoryLineage.kt=202, AppFactoryRouter.kt=85, AppProjectGenerator.kt=338, AstSymbolGraph.kt=234, VerifiedCompletionGate.kt=110. Total extracted siblings: 26 files across 5 batches + 1 post-optimization (AstImportReconciler). Compilation verified: BUILD SUCCESSFUL.
