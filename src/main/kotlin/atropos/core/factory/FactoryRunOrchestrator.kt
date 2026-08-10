@@ -1,7 +1,5 @@
 package atropos.core.factory
 
-import atropos.core.assets.AssetKind
-import atropos.core.assets.AssetRequest
 import atropos.core.assets.LocalAssetGenerator
 import atropos.core.memory.LocalMemoryStore
 import atropos.core.memory.MemoryAuthority
@@ -10,7 +8,6 @@ import atropos.core.project.ProjectRegistry
 import atropos.core.project.ProjectStatus
 import atropos.core.project.RepositoryBinding
 import atropos.core.planning.InternalPlanningGraphService
-import atropos.core.journal.EventCategory
 import atropos.core.journal.EventJournalService
 import atropos.core.provider.ContextEnvelopeFactory
 import atropos.core.security.RedactionFilter
@@ -28,23 +25,28 @@ class FactoryRunOrchestrator(
         plan: FactoryPlan,
         lineage: FactoryLineage
     ): FactoryPlan {
-        recordFactoryEvent(
+        val recorder = FactoryRunEventRecorder(journal)
+
+        recorder.recordLifecycleStart(
             runId = plan.id,
-            category = EventCategory.LIFECYCLE,
-            payload = "factory_started intent=${plan.intent} app=${plan.projectSpec.intent.name}",
+            intent = plan.intent,
+            appName = plan.projectSpec.intent.name,
             promptFingerprint = lineage.promptFingerprint
         )
-        recordFactoryEvent(
+        recorder.recordResearchStatus(
             runId = plan.id,
-            category = EventCategory.STATUS,
-            payload = "factory_step kind=${FactoryStepKind.RESEARCH} state=${lineage.researchState} research_sha256=${lineage.researchSha256} channels=${lineage.researchChannels}",
+            state = lineage.researchState,
+            researchSha256 = lineage.researchSha256,
+            channels = lineage.researchChannels,
             promptFingerprint = lineage.promptFingerprint
         )
         plan.steps.forEach { step ->
-            recordFactoryEvent(
+            recorder.recordPlannedStep(
                 runId = plan.id,
-                category = EventCategory.STATUS,
-                payload = "factory_step kind=${step.kind} state=PLANNED route=${step.route} local_first=${step.localFirst}",
+                kind = step.kind,
+                state = "PLANNED",
+                route = step.route,
+                localFirst = step.localFirst,
                 promptFingerprint = lineage.promptFingerprint
             )
         }
@@ -70,13 +72,11 @@ class FactoryRunOrchestrator(
                 }
             )
         }.getOrNull() }
-        recordFactoryEvent(
+        recorder.recordMemoryStep(
             runId = plan.id,
-            category = EventCategory.STATUS,
-            payload = "factory_step kind=${FactoryStepKind.MEMORY} state=${if (memoryRecord != null) "COMPLETED" else "SKIPPED_SOFT_FAIL"}",
+            state = if (memoryRecord != null) "COMPLETED" else "SKIPPED_SOFT_FAIL",
             promptFingerprint = lineage.promptFingerprint
         )
-        val assetFiles = mutableListOf<String>()
         val softFailures = mutableListOf<String>()
         val planningDag = planningGraph.planFromTexts(
             projectId = plan.id,
@@ -89,17 +89,14 @@ class FactoryRunOrchestrator(
             promptSpans = lineage.promptSpans
         )
         val plannedAtomIds = planningDag.nodes.map { it.id }
-        recordFactoryEvent(
+        recorder.recordPlanDag(
             runId = plan.id,
-            category = EventCategory.DAG,
-            payload = "factory_plan dag=${planningDag.id} atoms=${plannedAtomIds.joinToString(",")}",
             dagId = planningDag.id,
+            atomIds = plannedAtomIds.joinToString(","),
             promptFingerprint = lineage.promptFingerprint
         )
-        recordFactoryEvent(
+        recorder.recordPlanCompletion(
             runId = plan.id,
-            category = EventCategory.STATUS,
-            payload = "factory_step kind=${FactoryStepKind.PLAN} state=COMPLETED dag=${planningDag.id}",
             dagId = planningDag.id,
             promptFingerprint = lineage.promptFingerprint
         )
@@ -137,10 +134,11 @@ class FactoryRunOrchestrator(
             atomResearch,
             memoryPointers = listOfNotNull(atomMemory?.id?.let { "st:$it" })
         )
-        recordFactoryEvent(
+        recorder.recordAtomizationStatus(
             runId = plan.id,
-            category = EventCategory.STATUS,
-            payload = "factory_step kind=${FactoryStepKind.ATOMIZE} state=${plannedLineage.atomizationState()} specgraph=${plannedLineage.atomizerStatus} atoms=${plannedAtomIds.size}",
+            state = plannedLineage.atomizationState(),
+            specgraph = plannedLineage.atomizerStatus,
+            atomCount = plannedAtomIds.size,
             dagId = planningDag.id,
             promptFingerprint = lineage.promptFingerprint
         )
@@ -172,10 +170,10 @@ class FactoryRunOrchestrator(
             objective = redactedPrompt
         )
         val generatedProject = try {
-            recordFactoryEvent(
+            recorder.recordFileMutation(
                 runId = plan.id,
-                category = EventCategory.FILE_MUTATION,
-                payload = "factory_mutation target=${plannedTerritory} branch=$plannedBranch",
+                territory = plannedTerritory,
+                branch = plannedBranch,
                 dagId = planningDag.id,
                 promptFingerprint = lineage.promptFingerprint
             )
@@ -187,69 +185,65 @@ class FactoryRunOrchestrator(
                 lineage = plannedLineage.withContext(context.canonicalContextHash)
             )
         } catch (failure: Throwable) {
-            recordFactoryEvent(
+            recorder.recordGenerationFailure(
                 runId = plan.id,
-                category = EventCategory.FAILURE,
-                payload = "factory_generation_failed type=${failure.javaClass.simpleName}",
+                failureType = failure.javaClass.simpleName,
                 dagId = planningDag.id,
                 promptFingerprint = lineage.promptFingerprint
             )
             projectRegistry.setStatus(registration.record, ProjectStatus.FAILED, actor = "factory")
             throw failure
         }
-        recordFactoryEvent(
+        recorder.recordVerification(
             runId = plan.id,
-            category = EventCategory.VERIFICATION,
-            payload = "factory_verified commit=${generatedProject.commitId} tree=${generatedProject.treeSha256}",
+            commitId = generatedProject.commitId,
+            treeSha256 = generatedProject.treeSha256,
             dagId = planningDag.id,
             promptFingerprint = lineage.promptFingerprint
         )
-        recordFactoryEvent(
+        recorder.recordTests(
             runId = plan.id,
-            category = EventCategory.TEST,
-            payload = "factory_tests state=PASSED evidence=${generatedProject.evidencePath}",
+            state = "PASSED",
+            evidencePath = generatedProject.evidencePath,
             dagId = planningDag.id,
             promptFingerprint = lineage.promptFingerprint
         )
-        recordFactoryEvent(
+        recorder.recordDiff(
             runId = plan.id,
-            category = EventCategory.DIFF,
-            payload = "factory_diff state=RECORDED files=${generatedProject.files.size} tree=${generatedProject.treeSha256}",
+            state = "RECORDED",
+            fileCount = generatedProject.files.size,
+            treeSha256 = generatedProject.treeSha256,
             dagId = planningDag.id,
             promptFingerprint = lineage.promptFingerprint
         )
-        recordFactoryEvent(
+        recorder.recordCodeCompletion(
             runId = plan.id,
-            category = EventCategory.STATUS,
-            payload = "factory_step kind=${FactoryStepKind.CODE} state=COMPLETED project=${generatedProject.path}",
+            projectPath = generatedProject.path,
             dagId = planningDag.id,
             promptFingerprint = lineage.promptFingerprint
         )
-        recordFactoryEvent(
+        recorder.recordValidation(
             runId = plan.id,
-            category = EventCategory.STATUS,
-            payload = "factory_step kind=${FactoryStepKind.VALIDATE} state=COMPLETED evidence=${generatedProject.evidencePath}",
+            evidencePath = generatedProject.evidencePath,
             dagId = planningDag.id,
             promptFingerprint = lineage.promptFingerprint
         )
-        recordFactoryEvent(
+        recorder.recordRepair(
             runId = plan.id,
-            category = EventCategory.STATUS,
-            payload = "factory_step kind=${FactoryStepKind.REPAIR} state=NOT_NEEDED verification=passed",
+            state = "NOT_NEEDED",
+            verification = "passed",
             dagId = planningDag.id,
             promptFingerprint = lineage.promptFingerprint
         )
-        recordFactoryEvent(
+        recorder.recordArtifactReady(
             runId = plan.id,
-            category = EventCategory.TOOL_CALL,
-            payload = "factory_artifact_ready export=${generatedProject.exportPath}",
+            exportPath = generatedProject.exportPath,
             dagId = planningDag.id,
             promptFingerprint = lineage.promptFingerprint
         )
-        recordFactoryEvent(
+        recorder.recordEvidenceCompletion(
             runId = plan.id,
-            category = EventCategory.STATUS,
-            payload = "factory_step kind=${FactoryStepKind.EVIDENCE} state=COMPLETED path=${generatedProject.evidencePath}",
+            evidencePath = generatedProject.evidencePath,
             dagId = planningDag.id,
             promptFingerprint = lineage.promptFingerprint
         )
@@ -268,62 +262,27 @@ class FactoryRunOrchestrator(
             message = "generated project verified; evidence=${generatedProject.evidencePath}"
         )
 
-        if (plan.steps.any { it.kind == FactoryStepKind.ASSET }) {
-            runCatching {
-                assets.generate(
-                    AssetRequest(
-                        kind = AssetKind.SVG,
-                        name = plan.projectSpec.intent.name,
-                        prompt = redactedPrompt,
-                        tags = listOf("factory", "local", plan.projectSpec.intent.kind)
-                    )
-                )
-            }.onSuccess { artifact ->
-                assetFiles += artifact.file.path
-                recordFactoryEvent(
-                    runId = plan.id,
-                    category = EventCategory.TOOL_CALL,
-                    payload = "factory_asset_ready path=${artifact.file.path}",
-                    dagId = planningDag.id,
-                    promptFingerprint = lineage.promptFingerprint
-                )
-                recordFactoryEvent(
-                    runId = plan.id,
-                    category = EventCategory.STATUS,
-                    payload = "factory_step kind=${FactoryStepKind.ASSET} state=COMPLETED path=${artifact.file.path}",
-                    dagId = planningDag.id,
-                    promptFingerprint = lineage.promptFingerprint
-                )
-            }.onFailure { failure ->
-                softFailures += "asset=SKIPPED_SOFT_FAIL:${failure.javaClass.simpleName.lowercase().replace(Regex("[^a-z0-9]+"), "_").take(80)}"
-                recordFactoryEvent(
-                    runId = plan.id,
-                    category = EventCategory.WARNING,
-                    payload = "factory_asset_skipped type=${failure.javaClass.simpleName}",
-                    dagId = planningDag.id,
-                    promptFingerprint = lineage.promptFingerprint
-                )
-                recordFactoryEvent(
-                    runId = plan.id,
-                    category = EventCategory.STATUS,
-                    payload = "factory_step kind=${FactoryStepKind.ASSET} state=SKIPPED_SOFT_FAIL",
-                    dagId = planningDag.id,
-                    promptFingerprint = lineage.promptFingerprint
-                )
-            }
-        }
-
-        recordFactoryEvent(
+        val assetHandler = FactoryAssetHandler(assets, recorder)
+        val (assetFiles, assetSoftFailures) = assetHandler.generateAssets(
+            planSteps = plan.steps,
+            projectName = plan.projectSpec.intent.name,
+            redactedPrompt = redactedPrompt,
+            projectTags = listOf(plan.projectSpec.intent.kind),
             runId = plan.id,
-            category = EventCategory.STATUS,
-            payload = "factory_step kind=${FactoryStepKind.CI} state=OPTIONAL_NOT_REQUESTED",
             dagId = planningDag.id,
             promptFingerprint = lineage.promptFingerprint
         )
-        recordFactoryEvent(
+        softFailures += assetSoftFailures
+
+        recorder.recordCiStep(
             runId = plan.id,
-            category = EventCategory.STATUS,
-            payload = "factory_deployment state=OPTIONAL_NOT_REQUESTED",
+            state = "OPTIONAL_NOT_REQUESTED",
+            dagId = planningDag.id,
+            promptFingerprint = lineage.promptFingerprint
+        )
+        recorder.recordDeployment(
+            runId = plan.id,
+            state = "OPTIONAL_NOT_REQUESTED",
             dagId = planningDag.id,
             promptFingerprint = lineage.promptFingerprint
         )
@@ -340,20 +299,19 @@ class FactoryRunOrchestrator(
             )
         } catch (failure: Throwable) {
             projectRegistry.setStatus(generatedRecord, ProjectStatus.FAILED, actor = "factory")
-            recordFactoryEvent(
+            recorder.recordCompletionFailure(
                 runId = plan.id,
-                category = EventCategory.FAILURE,
-                payload = "factory_completion_registration_failed type=${failure.javaClass.simpleName}",
+                failureType = failure.javaClass.simpleName,
                 dagId = planningDag.id,
                 promptFingerprint = lineage.promptFingerprint
             )
             throw failure
         }
         try {
-            recordFactoryEvent(
+            recorder.recordCompletion(
                 runId = plan.id,
-                category = EventCategory.COMPLETION,
-                payload = "factory_completed project=${project.id} evidence=${generatedProject.evidencePath}",
+                projectId = project.id,
+                evidencePath = generatedProject.evidencePath,
                 dagId = planningDag.id,
                 promptFingerprint = lineage.promptFingerprint
             )
@@ -362,47 +320,18 @@ class FactoryRunOrchestrator(
             throw failure
         }
 
-        return plan.copy(
-            queuedWork = emptyList(),
-            assetFiles = assetFiles,
-            memoryRecordId = memoryRecord?.id,
-            projectRecordId = project.id,
+        val resultBuilder = FactoryResultBuilder()
+        return resultBuilder.buildResult(
+            originalPlan = plan,
+            lineage = plannedLineage,
             generatedProject = generatedProject,
             planningDagId = planningDag.id,
             plannedAtomIds = plannedAtomIds,
+            assetFiles = assetFiles,
             softFailures = softFailures,
-            promptFingerprint = lineage.promptFingerprint,
-            promptSha256 = lineage.promptSha256,
-            promptSpans = lineage.promptSpans,
-            confidenceScore = plannedLineage.confidence.score,
-            confidenceBreakdown = plannedLineage.confidence.breakdown,
-            researchSha256 = plannedLineage.researchSha256,
-            researchChannels = plannedLineage.researchChannels,
-            researchState = plannedLineage.researchState,
-            proposalSha256 = generatedProject.proposalSha256,
-            memoryPointers = plannedLineage.memoryPointers,
-            contextHash = context.canonicalContextHash,
-            specGraphStatus = plannedLineage.atomizerStatus,
-            eventJournalPath = ".atropos/runs/${plan.id}/events.journal"
-        )
-    }
-
-    private fun recordFactoryEvent(
-        runId: String,
-        category: EventCategory,
-        payload: String,
-        dagId: String? = null,
-        promptFingerprint: String? = null
-    ) {
-        journal.record(
-            runId = runId,
-            category = category,
-            payload = buildString {
-                promptFingerprint?.takeIf { it.isNotBlank() }?.let { append("prompt_fingerprint=$it ") }
-                append(payload)
-            },
-            projectId = runId,
-            dagId = dagId
+            memoryRecordId = memoryRecord?.id,
+            projectRecordId = project.id,
+            contextHash = context.canonicalContextHash
         )
     }
 }
