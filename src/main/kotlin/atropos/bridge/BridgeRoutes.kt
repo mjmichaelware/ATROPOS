@@ -2,7 +2,6 @@
 package atropos.bridge
 
 import atropos.bridge.http.HttpResponse
-import atropos.bridge.http.HttpRequest
 import atropos.bridge.http.HttpRoute
 import atropos.bridge.http.HttpRouteTable
 import atropos.bridge.http.HttpStreamRoute
@@ -21,8 +20,6 @@ import atropos.bridge.projection.SixAnswersProjection
 import atropos.bridge.projection.VocabularyProjection
 import atropos.bridge.projection.WelcomeProjection
 import atropos.cli.ui.HomeStateProvider
-import atropos.core.approval.ApprovalOutcome
-import atropos.core.approval.ApprovalSurface
 import atropos.core.approval.PendingApprovalStore
 import atropos.core.artifact.export.ArtifactLandingResolver
 import atropos.core.auth.AttestationResult
@@ -35,7 +32,6 @@ import atropos.core.phase20.GovernanceMetrics
 import atropos.core.phase20.ImprovementProposal
 import atropos.core.phase20.ObservationPeriod
 import atropos.core.storage.StorageConstitution
-import atropos.core.thinking.ThinkingDepth
 import atropos.core.thinking.ThinkingRecord
 import atropos.core.welcome.WelcomeArtifact
 import java.time.Instant
@@ -131,6 +127,9 @@ class BridgeRoutes(
     private val cascade: () -> List<CascadeResolution> = { emptyList() },
     private val clock: () -> Instant = { Instant.now() }
 ) {
+    private val approvalHandler = BridgeApprovalHandler(approvals)
+    private val thinkingHandler = BridgeThinkingHandler(thinkingView, thinking)
+
     fun table(): HttpRouteTable {
         lateinit var table: HttpRouteTable
         table = HttpRouteTable(
@@ -163,7 +162,7 @@ class BridgeRoutes(
                     HttpResponse.json(approvalView.render(approvals.pending()))
                 },
                 HttpRoute("POST", "/v1/approvals/decide", "record a human approval decision") { request ->
-                    decideApproval(request)
+                    approvalHandler.decideApproval(request)
                 },
                 HttpRoute("GET", "/v1/proposals", "self-improvement proposals and cooldowns") {
                     HttpResponse.json(
@@ -211,7 +210,7 @@ class BridgeRoutes(
                     HttpResponse.json(authorityView.render(attestations(), cascade()))
                 },
                 HttpRoute("GET", "/v1/thinking", "stored reasoning at the requested depth") { request ->
-                    thinkingRoute(request)
+                    thinkingHandler.handle(request)
                 },
                 HttpRoute("GET", "/v1/answers/stream", "six continuous answers, pushed") {
                     // Advertised in /v1/routes and reachable as a stream; this
@@ -229,97 +228,6 @@ class BridgeRoutes(
         )
         return table
     }
-
-    /**
-     * The bridge's only write.
-     *
-     * It cannot originate an action. It records a human answer to a question
-     * policy already asked, and the executor that owns the action is what
-     * decides whether to proceed — so the widest thing this route can do is
-     * release something the engine had already stopped, or refuse it.
-     *
-     * Attribution is mandatory. §20.7 forbids a component approving its own
-     * proposal, and a decision with no named decider cannot be checked against
-     * that rule. The surface is recorded as BRIDGE rather than CLI because a
-     * loopback decision is made by whoever holds the machine, which is a weaker
-     * claim than an authenticated session and an auditor must be able to tell
-     * them apart.
-     */
-    private fun decideApproval(request: HttpRequest): HttpResponse {
-        val id = request.query["id"].orEmpty().ifBlank { field(request.body, "id") }
-        val decidedBy = request.query["decidedBy"].orEmpty().ifBlank { field(request.body, "decidedBy") }
-        val approved = (request.query["approved"].orEmpty().ifBlank { field(request.body, "approved") })
-            .toBooleanStrictOrNull()
-
-        if (id.isBlank() || approved == null) {
-            return HttpResponse.badRequest(
-                "An approval decision needs an 'id' and an 'approved' boolean.",
-                "POST /v1/approvals/decide?id=<id>&approved=true&decidedBy=<who>"
-            )
-        }
-        if (decidedBy.isBlank()) {
-            return HttpResponse.refusal(
-                403,
-                "attribution-required",
-                "An approval decision must name who made it.",
-                "Send decidedBy=<operator>; an unattributed decision cannot be audited."
-            )
-        }
-
-        return when (val outcome = approvals.decide(id, approved, decidedBy, ApprovalSurface.BRIDGE)) {
-            is ApprovalOutcome.Recorded -> HttpResponse.json(
-                JsonWriter.obj(
-                    "ok" to JsonWriter.bool(true),
-                    "id" to JsonWriter.str(outcome.approval.id),
-                    "approved" to JsonWriter.bool(approved)
-                )
-            )
-            is ApprovalOutcome.Refused -> HttpResponse.refusal(
-                409,
-                "approval-refused",
-                outcome.reason,
-                "Call GET /v1/approvals for what is actually pending."
-            )
-        }
-    }
-
-    /**
-     * Serves reasoning for one node at one depth.
-     *
-     * An unparseable depth is refused rather than clamped. Silently serving L1
-     * for `depth=9` would show the operator less than they asked for while
-     * reporting success, and they would read the shorter list as "that is all
-     * the system considered".
-     */
-    private fun thinkingRoute(request: HttpRequest): HttpResponse {
-        val nodeId = request.query["nodeId"].orEmpty()
-        if (nodeId.isBlank()) {
-            return HttpResponse.badRequest(
-                "Reasoning is stored per node, so a nodeId is required.",
-                "GET /v1/thinking?nodeId=<id>&depth=1"
-            )
-        }
-
-        val rawDepth = request.query["depth"].orEmpty()
-        val depth = if (rawDepth.isBlank()) {
-            ThinkingDepth.DEFAULT
-        } else {
-            rawDepth.toIntOrNull()?.let(ThinkingDepth::fromLevel)
-                ?: return HttpResponse.badRequest(
-                    "'$rawDepth' is not one of the thinking depths this build serves.",
-                    "Use depth=1, 2 or 3; omitting it collapses to the outline."
-                )
-        }
-
-        return HttpResponse.json(thinkingView.render(thinking(nodeId), depth))
-    }
-
-    /** Reads one `key=value` field from a form-encoded body. */
-    private fun field(body: String, key: String): String =
-        body.split('&')
-            .firstOrNull { it.substringBefore('=') == key }
-            ?.substringAfter('=', "")
-            .orEmpty()
 
     /**
      * The streaming half of the bridge.
