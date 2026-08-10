@@ -122,7 +122,7 @@ class AppFactoryRouter(
     ): FactoryPlan {
         val planned = plan(prompt)
         val base = projectIdOverride?.let { planned.copy(id = it) } ?: planned
-        val lineage = FactoryLineage.prepare(
+        val lineage = FactoryLineageFactory.prepare(
             repoRoot,
             base.id,
             base.prompt,

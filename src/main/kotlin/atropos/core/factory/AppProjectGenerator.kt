@@ -75,7 +75,7 @@ class AppProjectGenerator(
         require(projectId.matches(PROJECT_ID_PATTERN)) {
             "factory project id must contain only portable identifier characters"
         }
-        val effectiveLineage = (lineage ?: FactoryLineage.prepare(repoRoot, projectId, spec.prompt, spec)).also {
+        val effectiveLineage = (lineage ?: FactoryLineageFactory.prepare(repoRoot, projectId, spec.prompt, spec)).also {
             it.requireBoundTo(projectId, spec)
         }.let { prepared ->
             if (plannedAtomIds.isNotEmpty() && prepared.atomResearch.isEmpty()) {
