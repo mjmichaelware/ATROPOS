@@ -79,26 +79,26 @@ class DeterministicVerifier(
         dloiAddress: String? = null
     ): DeterministicVerificationResult {
         val findings = mutableListOf<DeterministicFinding>()
-        sourcePaths.forEach { path ->
+        val inScopePaths = sourcePaths.mapNotNull { path ->
             val scopeFindings = checks.checkSourceScope(path)
             findings += scopeFindings
-
-            if (scopeFindings.isNotEmpty()) return@forEach
-
+            if (scopeFindings.isEmpty()) path else null
+        }
+        inScopePaths.forEach { path ->
             if (path.fileName.toString().substringAfterLast('.', "") == "kt" && Files.isRegularFile(path)) {
                 findings += checks.checkPackagePathInvariant(path)
                 findings += checks.checkDuplicateImports(path)
                 findings += checks.checkImportReconciliation(path)
             }
         }
-        val kotlinPaths = sourcePaths.filter {
+        val kotlinPaths = inScopePaths.filter {
             it.fileName.toString().substringAfterLast('.', "") == "kt" && Files.isRegularFile(it)
         }
         if (kotlinPaths.isNotEmpty()) findings += checks.checkAstImpact(kotlinPaths)
         findings += checks.checkCommandRegistryIntegrity()
         findings += checks.checkRedactionInvariant()
-        findings += checks.checkForbiddenPaths(sourcePaths)
-        findings += checks.checkArchitectureCompliance(sourcePaths)
+        findings += checks.checkForbiddenPaths(inScopePaths)
+        findings += checks.checkArchitectureCompliance(inScopePaths)
         patchText?.let { findings += checks.checkPatchStructure(it) }
         shellCommand?.let { findings += checks.checkShellSafety(it) }
         dloiAddress?.let { findings += checks.checkDloiAddress(it) }
