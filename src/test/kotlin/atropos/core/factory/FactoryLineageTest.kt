@@ -14,7 +14,7 @@ class FactoryLineageTest {
     fun prompt_is_hashed_dated_fingerprinted_and_spanned_before_requirements() {
         val root = Files.createTempDirectory("atropos-lineage-")
         val spec = AppProjectSpecParser().parse("Build a calculator CLI with tests")
-        val lineage = FactoryLineage.prepare(root, "factory-1", spec.prompt, spec)
+        val lineage = FactoryLineageFactory.prepare(root, "factory-1", spec.prompt, spec)
         val prompt = Files.readString(root.resolve(".atropos/research/factory/factory-1/user-prompt.md"))
         val requirements = Files.readString(root.resolve(".atropos/research/factory/factory-1/requirements.md"))
         assertContains(prompt, "prompt_fingerprint=${lineage.promptFingerprint}")
@@ -29,7 +29,7 @@ class FactoryLineageTest {
         val root = Files.createTempDirectory("atropos-lineage-memory-")
         val memory = LocalMemoryStore(root.resolve("memory").toFile())
         val spec = AppProjectSpecParser().parse("Build a calculator CLI with tests")
-        val lineage = FactoryLineage.prepare(root, "factory-memory", spec.prompt, spec, runMemory = memory)
+        val lineage = FactoryLineageFactory.prepare(root, "factory-memory", spec.prompt, spec, runMemory = memory)
 
         val promptRecord = memory.findBySubject("factory-prompt", "factory-memory").single()
         assertContains(promptRecord.body, "prompt_fingerprint=${lineage.promptFingerprint}")
@@ -41,7 +41,7 @@ class FactoryLineageTest {
         val root = Files.createTempDirectory("atropos-confidence-")
         val spec = AppProjectSpec("unclear", AppIntent("generated-app", "", emptyList()), true)
         val failure = assertFailsWith<FactoryClarificationRequired> {
-            FactoryLineage.prepare(root, "factory-low", spec.prompt, spec)
+            FactoryLineageFactory.prepare(root, "factory-low", spec.prompt, spec)
         }
         assertTrue(failure.message!!.contains("YES/NO:"))
         assertTrue(Files.exists(root.resolve(".atropos/research/factory/factory-low/user-prompt.md")))
@@ -72,7 +72,7 @@ class FactoryLineageTest {
     fun unavailable_research_channels_are_recorded_as_soft_failures() {
         val root = Files.createTempDirectory("atropos-research-")
         val spec = AppProjectSpecParser().parse("Build a notes CLI")
-        val lineage = FactoryLineage.prepare(root, "factory-research", spec.prompt, spec)
+        val lineage = FactoryLineageFactory.prepare(root, "factory-research", spec.prompt, spec)
         assertContains(lineage.researchDocument, "lakehouse=")
         assertContains(lineage.researchDocument, "dloi=")
         assertContains(lineage.researchDocument, "bounded_fetch=")
