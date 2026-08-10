@@ -22,7 +22,7 @@ class ProviderFixtureMatrixService(
             ?: return ProviderFixtureMatrixRecord(providerId, false, 0, 1, listOf("missing descriptor"))
         val adapter = adapterRegistry.getByProviderId(providerId)
         require(adapter == null || adapter.providerId == providerId) {
-            "fixture adapter mismatch: expected=$providerId actual=${adapter.providerId}"
+            "fixture adapter mismatch: expected=$providerId actual=${adapter?.providerId}"
         }
         val lines = mutableListOf<Pair<String, Boolean>>()
 

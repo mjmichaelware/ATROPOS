@@ -74,6 +74,7 @@ class AgentService(
         val providerId = selection.askOrder.firstOrNull()
             ?: activeProviderName.trim().lowercase().takeIf { it.isNotBlank() }
             ?: providerTruthService.snapshot().selectedProvider.trim().takeIf { it.isNotBlank() }
+            ?: ""
         val envelope = contextOverride?.envelope?.let { AgentContextSnapshotAdapter.forProvider(it, providerId) }
             ?: ContextEnvelopeFactory.createSimple(
                 providerId = providerId,

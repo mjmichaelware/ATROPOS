@@ -107,10 +107,10 @@ data class FactoryLineage(
             require(clarificationLineageSha256?.matches(Regex("[0-9a-f]{64}")) == true) {
                 "factory clarification lineage hash is malformed"
             }
-            require(hasField(researchDocument, "clarification_answers_sha256", clarificationAnswersSha256)) {
+            require(hasField(researchDocument, "clarification_answers_sha256", clarificationAnswersSha256 ?: "")) {
                 "factory clarification answer hash is missing from requirements lineage"
             }
-            require(hasField(researchDocument, "clarification_lineage_sha256", clarificationLineageSha256)) {
+            require(hasField(researchDocument, "clarification_lineage_sha256", clarificationLineageSha256 ?: "")) {
                 "factory clarification lineage hash is missing from requirements lineage"
             }
         }
@@ -223,7 +223,7 @@ raw_text_redacted=$redacted
 """
             val runRoot = normalizedRoot.resolve(".atropos/research/factory").resolve(projectId).normalize()
             require(runRoot.startsWith(normalizedRoot)) { "factory lineage path escaped repository root" }
-            require(!hasSymbolicComponent(runRoot)) {
+            require(runRoot.toRealPath() == runRoot.normalize()) {
                 "factory lineage path is redirected before creation"
             }
             Files.createDirectories(runRoot)

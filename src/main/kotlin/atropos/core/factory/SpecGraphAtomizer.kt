@@ -11,7 +11,7 @@ import java.security.MessageDigest
  * Thin boundary to the canonical SpecGraph atomizer. It produces research
  * evidence only; execution planning remains owned by ATROPOS's internal DAG.
  */
-internal class SpecGraphAtomizer(
+class SpecGraphAtomizer(
     private val processRunner: BoundedProcessRunner = BoundedProcessRunner(),
     private val pythonExecutable: String = System.getenv("ATROPOS_SPECGRAPH_PYTHON")
         ?.trim()
