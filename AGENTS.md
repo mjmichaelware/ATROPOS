@@ -8807,3 +8807,4 @@ End of AGENTS.md
 - HR interrupts: none.
 - Fingerprints: `TokenIsolationVault.kt=a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6` (180 lines total; +31 from previous 149L).
 - New overall estimate: ≈ 42.2% (Horizon I now ~90% critical stubs; weighted I = 25% × 90% = 22.5; overall ≈ 42 + 0.2 = 42.2).
+- Residuals: DeterministicVerifierTest.catches_broken_package_path_and_shell_safety pre-existing failure (line 33 import_reconciliation assertion) — not caused by TokenIsolationVault changes; independent from this batch. Verification test suite 7/8 passing (87.5%).
