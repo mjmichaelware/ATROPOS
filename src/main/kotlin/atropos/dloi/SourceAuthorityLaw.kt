@@ -132,7 +132,9 @@ class SourceAuthorityLaw(
                         path = file
                     )
                 } else {
-                    unindexed += file
+                    // Path implements Iterable<Path>, so `+=` would resolve to
+                    // List.plus(Iterable) and fail to assign back to a val.
+                    unindexed.add(file)
                 }
             }
         }

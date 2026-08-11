@@ -28,10 +28,6 @@ class LocalMemoryStore(
         fun defaultRoot(): File = AtroposRepoRootLocator.resolve().resolve(".atropos/memory").toFile()
     }
 
-    companion object {
-        fun defaultRoot(): File = AtroposRepoRootLocator.resolve().resolve(".atropos/memory").toFile()
-    }
-
     fun remember(
         kind: MemoryKind,
         title: String,

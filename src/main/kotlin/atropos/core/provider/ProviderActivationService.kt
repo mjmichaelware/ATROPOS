@@ -252,41 +252,6 @@ class ProviderActivationService(
         )
     }
 
-    private fun completeThroughAgency(
-        descriptor: ProviderDescriptor,
-        adapter: ProviderAdapter,
-        task: ProviderTask,
-        prompt: String
-    ): ProviderCallResult {
-        val unlockedPaid = descriptor.isPaidLocked() && paidGate.isProviderUnlocked(descriptor.id)
-        val proposal = ProviderActionProposals.forCall(
-            provider = descriptor.id,
-            operation = "activation-live-test",
-            promptLength = prompt.length,
-            actor = ActionActor.SystemService("provider-activation")
-        ).copy(paidProvider = descriptor.isPaidLocked() && !unlockedPaid)
-        val decision = agencyGate.evaluate(proposal)
-        if (decision.disposition != AgencyDisposition.ALLOWED) {
-            return ProviderCallResult.Failure(
-                ProviderFailure(
-                    providerId = descriptor.id,
-                    type = NormalizedProviderFailureType.INTERNAL,
-                    cleanSummary = "provider activation refused by policy: ${decision.reason}",
-                    terminal = true
-                )
-            )
-        }
-        return adapter.complete(
-            AdapterRequest(
-                task = task,
-                prompt = prompt,
-                context = "Return one short line only.",
-                dryRun = false,
-                liveNetworkAllowed = environment["ATROPOS_LIVE_PROVIDER_TESTS"] == "1"
-            )
-        )
-    }
-
     private fun snapshotState(
         descriptor: ProviderDescriptor,
         adapterStatus: atropos.core.provider.adapter.AdapterStatus?,

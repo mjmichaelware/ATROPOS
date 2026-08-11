@@ -109,12 +109,6 @@ class AgentService(
             sourceBindingKind = sourceBindingKind
         )
 
-    private fun ContextEnvelope.forProvider(providerId: String): ContextEnvelope {
-        if (this.providerId == providerId) return this
-        val adjusted = copy(providerId = providerId, canonicalContextHash = "")
-        return adjusted.copy(canonicalContextHash = ContextEnvelopeFactory.computeHash(adjusted))
-    }
-
     fun repair(activeProviderName: String, patchReference: String): AgentPatchRunResult =
         repairService.repair(activeProviderName, patchReference)
 
@@ -141,21 +135,6 @@ class AgentService(
      */
     private fun enforceProviderPolicy(provider: String, prompt: String, operation: String) {
         policyEnforcer.enforce(provider, prompt, operation)
-    }
-
-    private fun enforceProviderPolicy(provider: String, prompt: String, operation: String) {
-        val decision = policyEngine.evaluate(
-            ExecutionPolicyRequest(
-                actionClass = PolicyActionClass.PROVIDER_CALL,
-                providerId = provider,
-                paidProvider = provider in paidProviders,
-                metadata = mapOf(
-                    "operation" to operation,
-                    "prompt_length" to prompt.length.toString()
-                )
-            )
-        )
-        require(decision.allowed) { decision.reason }
     }
 
     private companion object {

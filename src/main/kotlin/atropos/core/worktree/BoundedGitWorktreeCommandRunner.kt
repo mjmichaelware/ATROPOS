@@ -19,6 +19,7 @@ enum class GitWorktreeOperation {
     STATUS_PORCELAIN,
     WORKTREE_ADD,
     APPLY_PATCH,
+    REVERSE_APPLY_PATCH,
     CHECKOUT_ALL,
     DIFF_NAME_ONLY,
     UNTRACKED_PATHS,
@@ -61,6 +62,10 @@ class BoundedGitWorktreeCommandRunner(
                 "git", "worktree", "add", "--detach", requiredPath(argument), requiredRevision(input)
             )
             GitWorktreeOperation.APPLY_PATCH -> listOf("git", "apply")
+            // Reverses a previously applied diff. The self-host mutation gate
+            // uses this to undo a merged worktree change that failed
+            // verification, so rejection restores the prior tree.
+            GitWorktreeOperation.REVERSE_APPLY_PATCH -> listOf("git", "apply", "-R")
             GitWorktreeOperation.CHECKOUT_ALL -> listOf("git", "checkout", "--", ".")
             GitWorktreeOperation.DIFF_NAME_ONLY -> listOf(
                 "git", "diff", "--name-only", safeRevision(argument), "--", safeRelativePath(input)
@@ -79,7 +84,9 @@ class BoundedGitWorktreeCommandRunner(
                 "git", "add", "-N", requiredRelativePath(argument)
             )
         }
-        return processRunner(command, directory, if (operation == GitWorktreeOperation.APPLY_PATCH) input else null)
+        val feedsPatchOnStdin = operation == GitWorktreeOperation.APPLY_PATCH ||
+            operation == GitWorktreeOperation.REVERSE_APPLY_PATCH
+        return processRunner(command, directory, if (feedsPatchOnStdin) input else null)
     }
 
     private fun requiredPath(value: String?): String =

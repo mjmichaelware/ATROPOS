@@ -89,66 +89,6 @@ class ProviderActivationStore(
         }.getOrNull()
     }
 
-    fun read(providerId: String): ProviderActivationRecord? {
-        val target = root.resolve("$providerId.meta")
-        if (!Files.isRegularFile(target)) return null
-        val lines = runCatching { Files.readAllLines(target, StandardCharsets.UTF_8) }.getOrNull() ?: return null
-        val fields = lines.mapNotNull { line ->
-            val idx = line.indexOf('=')
-            if (idx <= 0) null else line.substring(0, idx) to line.substring(idx + 1)
-        }.toMap()
-
-        return runCatching {
-            val recordProviderId = fields["providerId"] ?: return null
-            val mode = ProviderVerificationMode.valueOf(fields["mode"] ?: "SNAPSHOT")
-            val state = ProviderActivationState.valueOf(fields["state"] ?: "MISSING")
-            val descriptorPresent = fields["descriptorPresent"]?.toBooleanStrictOrNull() ?: false
-
-            val adapterId = fields["adapterId"]
-            val adapterStatus = if (!adapterId.isNullOrBlank()) {
-                AdapterStatus(
-                    providerId = adapterId,
-                    implemented = fields["adapterImplemented"]?.toBooleanStrictOrNull() ?: false,
-                    configured = fields["adapterConfigured"]?.toBooleanStrictOrNull() ?: false,
-                    dryRunOnly = fields["adapterDryRunOnly"]?.toBooleanStrictOrNull() ?: false,
-                    modelCount = 0,
-                    health = fields["adapterHealth"].orEmpty(),
-                    detail = decode(fields["adapterDetailB64"].orEmpty())
-                )
-            } else null
-
-            val keySources = decode(fields["keySourcesB64"].orEmpty()).split(",").filter { it.isNotBlank() }
-            val impact = decode(fields["impactB64"].orEmpty()).split(",").filter { it.isNotBlank() }
-            val executableSupport = fields["executableSupport"]?.toBooleanStrictOrNull() ?: false
-
-            val fixturePassed = fields["fixturePassed"]?.toBooleanStrictOrNull() ?: false
-            val fixtureMatrix = if (fixturePassed || fields["fixtureTotalCount"] != null) {
-                ProviderFixtureMatrixRecord(
-                    providerId = recordProviderId,
-                    passed = fixturePassed,
-                    passedCount = fields["fixturePassedCount"]?.toIntOrNull() ?: 0,
-                    totalCount = fields["fixtureTotalCount"]?.toIntOrNull() ?: 0,
-                    details = emptyList()
-                )
-            } else null
-
-            ProviderActivationRecord(
-                providerId = recordProviderId,
-                mode = mode,
-                state = state,
-                descriptorPresent = descriptorPresent,
-                adapterStatus = adapterStatus,
-                keySources = keySources,
-                impact = impact,
-                executableSupport = executableSupport,
-                fixtureMatrix = fixtureMatrix,
-                verificationSummary = decode(fields["verificationSummaryB64"].orEmpty()),
-                remediation = decode(fields["remediationB64"].orEmpty()),
-                lastCheckedAt = Instant.parse(fields["lastCheckedAt"] ?: Instant.now().toString())
-            )
-        }.getOrNull()
-    }
-
     fun write(record: ProviderActivationRecord) {
         val target = targetPath(record.providerId)
             ?: throw IllegalArgumentException("provider activation id is not portable: ${record.providerId}")
