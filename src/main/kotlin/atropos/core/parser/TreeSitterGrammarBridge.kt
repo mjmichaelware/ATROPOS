@@ -2,10 +2,13 @@ package atropos.core.parser
 
 enum class KotlinDeclarationKind {
     CLASS,
+    ENUM,
+    ANNOTATION,
     OBJECT,
     INTERFACE,
     FUNCTION,
-    PROPERTY
+    PROPERTY,
+    TYPEALIAS
 }
 
 data class KotlinDeclaration(
@@ -40,10 +43,13 @@ class TreeSitterGrammarBridge {
             val lineNumber = index + 1
             val searchable = line.removeSuffix("\r")
             collect(KotlinDeclarationKind.CLASS, CLASS_PATTERN, searchable, lineNumber, offset, utf8Offsets, declarations)
+            collect(KotlinDeclarationKind.ENUM, ENUM_PATTERN, searchable, lineNumber, offset, utf8Offsets, declarations)
+            collect(KotlinDeclarationKind.ANNOTATION, ANNOTATION_PATTERN, searchable, lineNumber, offset, utf8Offsets, declarations)
             collect(KotlinDeclarationKind.OBJECT, OBJECT_PATTERN, searchable, lineNumber, offset, utf8Offsets, declarations)
             collect(KotlinDeclarationKind.INTERFACE, INTERFACE_PATTERN, searchable, lineNumber, offset, utf8Offsets, declarations)
             collect(KotlinDeclarationKind.FUNCTION, FUNCTION_PATTERN, searchable, lineNumber, offset, utf8Offsets, declarations)
             collect(KotlinDeclarationKind.PROPERTY, PROPERTY_PATTERN, searchable, lineNumber, offset, utf8Offsets, declarations)
+            collect(KotlinDeclarationKind.TYPEALIAS, TYPEALIAS_PATTERN, searchable, lineNumber, offset, utf8Offsets, declarations)
             offset += line.length + 1
         }
 
@@ -76,10 +82,13 @@ class TreeSitterGrammarBridge {
     }
 
     private companion object {
-        val CLASS_PATTERN = Regex("""\b(?:data|sealed|open|abstract|value|inner|enum|annotation|private|internal|public|protected|\s)*class\s+([A-Za-z_][A-Za-z0-9_]*)""")
+        val CLASS_PATTERN = Regex("""\b(?:data|sealed|open|abstract|value|inner|private|internal|public|protected|\s)*class\s+([A-Za-z_][A-Za-z0-9_]*)""")
+        val ENUM_PATTERN = Regex("""\b(?:private|internal|public|protected|\s)*enum\s+class\s+([A-Za-z_][A-Za-z0-9_]*)""")
+        val ANNOTATION_PATTERN = Regex("""\b(?:private|internal|public|protected|\s)*annotation\s+class\s+([A-Za-z_][A-Za-z0-9_]*)""")
         val OBJECT_PATTERN = Regex("""\b(?:data|private|internal|public|protected|\s)*object\s+([A-Za-z_][A-Za-z0-9_]*)""")
-        val INTERFACE_PATTERN = Regex("""\b(?:fun|sealed|private|internal|public|protected|\s)*interface\s+([A-Za-z_][A-Za-z0-9_]*)""")
+        val INTERFACE_PATTERN = Regex("""\b(?:sealed|private|internal|public|protected|\s)*interface\s+([A-Za-z_][A-Za-z0-9_]*)""")
         val FUNCTION_PATTERN = Regex("""\bfun\s+(?:<[^>]+>\s*)?(?:[A-Za-z_][A-Za-z0-9_]*\.)?([A-Za-z_][A-Za-z0-9_]*)\s*\(""")
         val PROPERTY_PATTERN = Regex("""\b(?:private|internal|public|protected|override|lateinit|const|abstract|open|\s)*(?:val|var)\s+([A-Za-z_][A-Za-z0-9_]*)""")
+        val TYPEALIAS_PATTERN = Regex("""\b(?:private|internal|public|protected|\s)*typealias\s+([A-Za-z_][A-Za-z0-9_]*)""")
     }
 }

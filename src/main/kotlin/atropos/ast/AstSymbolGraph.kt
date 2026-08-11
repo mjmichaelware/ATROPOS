@@ -13,10 +13,13 @@ import kotlin.io.path.invariantSeparatorsPathString
 enum class AstSymbolKind {
     FILE,
     CLASS,
+    ENUM,
+    ANNOTATION,
     OBJECT,
     INTERFACE,
     FUNCTION,
-    PROPERTY
+    PROPERTY,
+    TYPEALIAS
 }
 
 data class AstSymbol(
@@ -246,10 +249,13 @@ class AstSymbolGraph(
         tree.declarations.forEach { declaration ->
             val kind = when (declaration.kind) {
                 KotlinDeclarationKind.CLASS -> AstSymbolKind.CLASS
+                KotlinDeclarationKind.ENUM -> AstSymbolKind.ENUM
+                KotlinDeclarationKind.ANNOTATION -> AstSymbolKind.ANNOTATION
                 KotlinDeclarationKind.OBJECT -> AstSymbolKind.OBJECT
                 KotlinDeclarationKind.INTERFACE -> AstSymbolKind.INTERFACE
                 KotlinDeclarationKind.FUNCTION -> AstSymbolKind.FUNCTION
                 KotlinDeclarationKind.PROPERTY -> AstSymbolKind.PROPERTY
+                KotlinDeclarationKind.TYPEALIAS -> AstSymbolKind.TYPEALIAS
             }
             val qualified = if (tree.packageName.isBlank()) {
                 declaration.name
