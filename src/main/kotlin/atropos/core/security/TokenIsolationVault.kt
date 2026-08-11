@@ -156,6 +156,37 @@ class TokenIsolationVault(
 
     fun secretFile(name: String): File = pathResolver.secretPath(name).toFile()
 
+    fun listSecrets(): List<String> = runCatching {
+        val root = rootPath()
+        if (!Files.isDirectory(root)) return emptyList()
+        Files.walk(root).use { stream ->
+            stream.filter { Files.isRegularFile(it, LinkOption.NOFOLLOW_LINKS) }
+                .map { it.fileName.toString().removeSuffix(".secret") }
+                .toList()
+        }
+    }.getOrElse { emptyList() }
+
+    fun deleteSecret(name: String): Boolean = runCatching {
+        val path = pathResolver.secretPath(name)
+        if (!Files.exists(path)) return false
+        Files.deleteIfExists(path)
+    }.getOrDefault(false)
+
+    fun vaultHealth(): Map<String, Any> = runCatching {
+        val root = rootPath()
+        val exists = Files.exists(root)
+        val isDir = Files.isDirectory(root)
+        val secretCount = if (isDir) listSecrets().size else 0
+        val readable = runCatching { readSecret("_health_") != null }.getOrDefault(false)
+        mapOf<String, Any>(
+            "vaultExists" to exists,
+            "isDirectory" to isDir,
+            "secretCount" to secretCount,
+            "readable" to readable,
+            "healthy" to (exists && isDir && readable)
+        )
+    }.getOrElse { mapOf<String, Any>("healthy" to false, "error" to "vault inspection failed") }
+
     private fun isolationFindings(path: Path): List<String> {
         val base = rootPath()
         val normalized = path.toAbsolutePath().normalize()
