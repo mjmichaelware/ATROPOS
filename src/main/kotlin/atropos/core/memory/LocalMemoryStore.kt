@@ -3,6 +3,9 @@ package atropos.core.memory
 import atropos.core.AtroposRepoRootLocator
 import atropos.core.security.RedactionFilter
 import java.io.File
+import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 import java.security.MessageDigest
 
 class LocalMemoryStore(

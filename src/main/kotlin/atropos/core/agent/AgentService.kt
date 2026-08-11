@@ -142,4 +142,23 @@ class AgentService(
     private fun enforceProviderPolicy(provider: String, prompt: String, operation: String) {
         policyEnforcer.enforce(provider, prompt, operation)
     }
+
+    private fun enforceProviderPolicy(provider: String, prompt: String, operation: String) {
+        val decision = policyEngine.evaluate(
+            ExecutionPolicyRequest(
+                actionClass = PolicyActionClass.PROVIDER_CALL,
+                providerId = provider,
+                paidProvider = provider in paidProviders,
+                metadata = mapOf(
+                    "operation" to operation,
+                    "prompt_length" to prompt.length.toString()
+                )
+            )
+        )
+        require(decision.allowed) { decision.reason }
+    }
+
+    private companion object {
+        val paidProviders = setOf("openai", "anthropic", "xai", "mistral", "cohere", "deepseek_direct")
+    }
 }
