@@ -96,6 +96,25 @@ class AgentService(
     fun verify(patchReference: String): AgentVerificationRunResult =
         verifier.verify(patchReference)
 
+    private fun AgentAskContextOverride.toSnapshot(repoRoot: java.nio.file.Path): AgentContextSnapshot =
+        AgentContextSnapshot(
+            repoRoot = repoRoot,
+            text = contextText,
+            byteCount = byteCount,
+            truncated = false,
+            sourcePackId = sourcePackId,
+            fetchReceiptId = fetchReceiptId,
+            sourcePackContentHash = sourcePackContentHash,
+            sourceTreeHash = sourceTreeHash,
+            sourceBindingKind = sourceBindingKind
+        )
+
+    private fun ContextEnvelope.forProvider(providerId: String): ContextEnvelope {
+        if (this.providerId == providerId) return this
+        val adjusted = copy(providerId = providerId, canonicalContextHash = "")
+        return adjusted.copy(canonicalContextHash = ContextEnvelopeFactory.computeHash(adjusted))
+    }
+
     fun repair(activeProviderName: String, patchReference: String): AgentPatchRunResult =
         repairService.repair(activeProviderName, patchReference)
 

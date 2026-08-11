@@ -1,5 +1,6 @@
 package atropos.core.artifact
 
+import atropos.core.AtroposRepoRootLocator
 import atropos.core.execution.LocalWorkQueue
 import atropos.core.memory.LocalMemoryStore
 import atropos.core.platform.JvmPlatformAbstraction

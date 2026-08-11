@@ -211,6 +211,12 @@ private fun runInteractive(
                     resolvePromptSubmission()
                 }
 
+                if (key == KeyEvent.Enter) {
+                    resolvePromptSubmission()
+                }
+
+                val submitted = prompt.text
+
                 when (key) {
                     KeyEvent.CtrlT -> {
                         preserveTabState()

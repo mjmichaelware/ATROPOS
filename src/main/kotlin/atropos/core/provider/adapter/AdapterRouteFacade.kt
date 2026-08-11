@@ -148,6 +148,33 @@ class AdapterRouteFacade(
         )
     }
 
+    private fun completeThroughAgency(
+        adapter: ProviderAdapter,
+        task: ProviderTask,
+        prompt: String,
+        dryRun: Boolean,
+        operation: String
+    ): ProviderCallResult {
+        val proposal = ProviderActionProposals.forCall(
+            provider = adapter.providerId,
+            operation = operation,
+            promptLength = prompt.length,
+            actor = ActionActor.SystemService("provider-route")
+        ).copy(paidProvider = ProviderActionProposals.isPaid(adapter.providerId) && !paidGate.isProviderUnlocked(adapter.providerId))
+        val decision = agencyGate.evaluate(proposal)
+        if (decision.disposition != AgencyDisposition.ALLOWED) {
+            return ProviderCallResult.Failure(
+                ProviderFailure(
+                    providerId = adapter.providerId,
+                    type = NormalizedProviderFailureType.INTERNAL,
+                    cleanSummary = "provider call refused by policy: ${decision.reason}",
+                    terminal = true
+                )
+            )
+        }
+        return adapter.complete(AdapterRequest(task = task, prompt = prompt, dryRun = dryRun))
+    }
+
     fun adapterStatus(): List<AdapterStatus> =
         adapterRegistry.status().sortedWith(compareBy({ it.providerId }))
 
