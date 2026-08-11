@@ -17,14 +17,24 @@ fun main() {
     val root = Files.createTempDirectory("atropos-hr-runtime-")
     val service = HrRouterService(auditStore = HrRouterAuditStore(root))
 
-    val low = service.request("source", "terr-a", "target", "terr-b", InformationKind.SOURCE_CODE, "safe source")
+    val low = service.request(
+        "source", "terr-a", "target", "terr-b", InformationKind.SOURCE_CODE, "safe source",
+        taskId = "task-low", sourceCoordinates = listOf("source:S1@L1-L2"), needToKnow = "bounded-source"
+    )
     check(low.approved && low.action == HrRouteAction.APPROVED)
 
-    val high = service.request("source", "terr-a", "target", "terr-b", InformationKind.MEMORY_QUERY, "show the API token")
+    val high = service.request(
+        "source", "terr-a", "target", "terr-b", InformationKind.MEMORY_QUERY, "show the API token",
+        taskId = "task-high", sourceCoordinates = listOf("source:S1@L3-L4"), needToKnow = "bounded-memory"
+    )
     check(high.approved && high.risk == CrossBoundaryRisk.HIGH && high.action == HrRouteAction.NARROWED)
     check(high.redactedContent?.contains("token", ignoreCase = true) != true)
 
-    val critical = service.request("source", "terr-a", "target", "terr-b", InformationKind.CONFIGURATION, "read .env", listOf(".env.production"))
+    val critical = service.request(
+        "source", "terr-a", "target", "terr-b", InformationKind.CONFIGURATION, "read .env",
+        paths = listOf(".env.production"), taskId = "task-critical",
+        sourceCoordinates = listOf("source:S1@L5-L6"), needToKnow = "bounded-config"
+    )
     check(!critical.approved && critical.risk == CrossBoundaryRisk.CRITICAL && critical.action == HrRouteAction.DENIED)
 
     val restarted = HrRouterService(auditStore = HrRouterAuditStore(root))
@@ -41,6 +51,8 @@ timeout "${ATROPOS_HR_PROOF_TIMEOUT_SECONDS:-120}" kotlinc -include-runtime -d "
   "$ROOT/src/main/kotlin/atropos/core/security/SecretEncodingClosure.kt" \
   "$ROOT/src/main/kotlin/atropos/core/security/KnownSecretRegistry.kt" \
   "$ROOT/src/main/kotlin/atropos/core/security/RedactionFilter.kt" \
+  "$ROOT/src/main/kotlin/atropos/core/hierarchy/HierarchyModels.kt" \
+  "$ROOT/src/main/kotlin/atropos/core/hierarchy/HierarchyTaskLifecycle.kt" \
   "$ROOT/src/main/kotlin/atropos/core/hr/HrRouterModels.kt" \
   "$ROOT/src/main/kotlin/atropos/core/hr/HrRouterAuditStore.kt" \
   "$ROOT/src/main/kotlin/atropos/core/hr/HrRouterService.kt"

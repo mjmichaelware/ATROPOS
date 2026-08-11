@@ -7,6 +7,8 @@ class AppFactoryPlanRenderer(
 ) {
     fun renderPlan(prompt: String): String = router.render(router.plan(prompt))
     fun renderRun(prompt: String): String = router.render(router.runLocal(prompt))
+    fun renderClarifiedRun(projectId: String, answers: List<Boolean>): String =
+        router.render(router.runClarified(projectId, answers))
     fun renderStatus(): String {
         return buildString {
             appendLine("factory:")

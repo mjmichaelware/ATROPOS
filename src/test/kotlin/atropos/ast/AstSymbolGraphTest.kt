@@ -96,4 +96,20 @@ class AstSymbolGraphTest {
         assertTrue(impacted.any { it.file.endsWith("ProviderCommandHandler.kt") })
         assertTrue(impacted.any { it.file.endsWith("ProviderFailoverService.kt") })
     }
+
+    @Test
+    fun reconcile_imports_reports_unresolved_local_symbols() {
+        val root = Files.createTempDirectory("atropos-ast-unresolved-import-")
+        val source = root.resolve("src/main/kotlin/example")
+        Files.createDirectories(source)
+        Files.writeString(
+            source.resolve("Caller.kt"),
+            "package example\nimport example.missing.Missing\nclass Caller\n"
+        )
+
+        val result = AstSymbolGraph(root).reconcileImports("src/main/kotlin/example/Caller.kt")
+
+        assertEquals(AstImportStatus.UNRESOLVED, result.resolutions.single().status)
+        assertTrue(result.violations.any { it.rule == "unresolved_import" })
+    }
 }

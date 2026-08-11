@@ -193,7 +193,10 @@ private fun runInteractive(
                     inputMode = prompt.mode.name,
                     provider = tabs.active.provider,
                     tracker = tracker,
-                    paletteSelection = selected.selectedIndex,
+                    paletteSelection = prompt.suggestionSelection(),
+                    paletteLevel = prompt.paletteLevel(),
+                    paletteGroup = prompt.paletteGroup(),
+                    paletteCommand = prompt.paletteCommand(),
                     activeScreen = tabs.active.title,
                     activeTab = "tab ${tabs.active.id}",
                     openTabCount = tabs.snapshot().tabs.size
@@ -204,13 +207,9 @@ private fun runInteractive(
 
             inputLoop@ while (true) {
                 val key = keys.readKey() ?: break
-                val submittedMode = prompt.mode.name
-
-                if (key == KeyEvent.Enter) {
+                if (key == KeyEvent.Enter && !prompt.isPaletteGroupLevel()) {
                     resolvePromptSubmission()
                 }
-
-                val submitted = prompt.text
 
                 when (key) {
                     KeyEvent.CtrlT -> {
@@ -249,9 +248,9 @@ private fun runInteractive(
                     }
 
                     effect is PromptEffect.Submit -> {
-                        ui.commitPrompt(submitted, submittedMode)
-                        if (submitted.isNotBlank()) {
-                            if (router.handleInput(submitted) == RouterOutcome.EXIT) {
+                        ui.commitPrompt(effect.text, effect.mode.name)
+                        if (effect.text.isNotBlank()) {
+                            if (router.handleInput(effect.text) == RouterOutcome.EXIT) {
                                 break@inputLoop
                             }
                         }

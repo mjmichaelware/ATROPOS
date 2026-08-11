@@ -2,6 +2,10 @@
 package atropos.core
 
 import atropos.core.provider.ContextEnvelope
+import atropos.core.provider.ProviderCascadeOrder
+import atropos.core.provider.ProviderDescriptorRegistry
+import atropos.core.provider.StaticProviderDescriptorRegistry
+import atropos.core.provider.ApiCapability
 import java.net.ConnectException
 import java.net.URI
 import java.net.http.HttpClient
@@ -92,11 +96,7 @@ class ProviderFailureClassifier {
                 ProviderError(
                     provider,
                     FailureType.CONNECTION_REFUSED,
-                    if (provider == "ollama") {
-                        "ollama unavailable at ${OllamaHealthProbe.defaultHost()}"
-                    } else {
-                        "$provider unavailable"
-                    },
+                    "$provider unavailable",
                     raw
                 )
 
@@ -216,13 +216,18 @@ data class ProviderCascadeResult(
     val providerName: String,
     val response: String,
     val errors: List<ProviderError>,
-    val contextEnvelope: ContextEnvelope? = null
+    val contextEnvelope: ContextEnvelope? = null,
+    val queued: Boolean = false,
+    val earliestRetryEpochMs: Long? = null,
+    val queueReason: String? = null
 )
 
 class ProviderCascadeRouter(
     private val factory: ProviderFactory,
     private val classifier: ProviderFailureClassifier =
-        ProviderFailureClassifier()
+        ProviderFailureClassifier(),
+    private val registry: ProviderDescriptorRegistry = StaticProviderDescriptorRegistry(),
+    private val localHealth: () -> Boolean = { OllamaHealthProbe().probe().online }
 ) {
     fun completeWithCascade(
         requestedProvider: String,
@@ -233,7 +238,6 @@ class ProviderCascadeRouter(
         onFailure: (ProviderError) -> Unit = {},
         contextEnvelope: ContextEnvelope? = null
     ): ProviderCascadeResult {
-        val ollamaStatus = OllamaHealthProbe().probe()
         val order = providerOrder(requestedProvider, providerOrderOverride)
         val errors = mutableListOf<ProviderError>()
         val blocked = mutableSetOf<String>()
@@ -242,11 +246,12 @@ class ProviderCascadeRouter(
             val provider = providerName.lowercase()
             if (provider in blocked) continue
 
-            if (provider == "ollama" && !ollamaStatus.online) {
+            val descriptor = registry.getById(provider)
+            if (descriptor?.isLocal == true && descriptor.hasCapability(ApiCapability.CHAT) && !localHealth()) {
                 val error = ProviderError(
-                    provider = "ollama",
+                    provider = provider,
                     type = FailureType.CONNECTION_REFUSED,
-                    cleanMessage = "ollama unavailable at ${ollamaStatus.host}"
+                    cleanMessage = "$provider unavailable"
                 )
                 errors += error
                 onFailure(error)
@@ -285,7 +290,16 @@ class ProviderCascadeRouter(
                 errors.joinToString(" | ") { it.cleanMessage }
             }
 
-        throw RuntimeException(cleanAggregate)
+        val retryAt = System.currentTimeMillis() + 60_000L
+        return ProviderCascadeResult(
+            providerName = "local_queue",
+            response = "",
+            errors = errors,
+            contextEnvelope = contextEnvelope,
+            queued = true,
+            earliestRetryEpochMs = retryAt,
+            queueReason = cleanAggregate
+        )
     }
 
     fun providerOrderPreview(requestedProvider: String, providerOrderOverride: List<String>? = null): List<String> =
@@ -302,22 +316,13 @@ class ProviderCascadeRouter(
             ?.split(",")
             ?.map { it.trim().lowercase() }
             ?.filter { it.isNotBlank() }
-            ?: listOf("groq", "github_models", "cloudflare_ai", "ollama")
+            ?: registry.getAll().map { it.id }
 
-        return (listOf(requestedProvider.lowercase()) + configured)
-            .filter {
-                it in setOf(
-                    "groq",
-                    "openai",
-                    "anthropic",
-                    "xai",
-                    "github_models",
-                    "cloudflare_ai",
-                    "sambanova",
-                    "deepseek_direct",
-                    "ollama"
-                )
-            }
-            .distinct()
+        return ProviderCascadeOrder.order(
+            (listOf(requestedProvider.lowercase()) + configured)
+                .filter { registry.getById(it) != null }
+                .distinct(),
+            registry
+        )
     }
 }

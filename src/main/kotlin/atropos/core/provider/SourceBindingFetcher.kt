@@ -3,11 +3,14 @@ package atropos.core.provider
 import atropos.core.AtroposRepoRootLocator
 import atropos.core.policy.BoundedProcessRunner
 import atropos.core.security.RedactionFilter
+import java.io.BufferedInputStream
+import java.io.BufferedOutputStream
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.nio.file.Files
+import java.nio.file.LinkOption
 import java.nio.file.Path
 import java.security.MessageDigest
 import java.time.Instant
@@ -31,7 +34,11 @@ class SourceBindingFetcher(
     }
 
     private fun fetchLocal(binding: SourceBinding): SourceFetchResult {
-        val root = Path.of(binding.uri).toAbsolutePath().normalize()
+        val root = resolveFilePath(binding.uri)
+            ?: return SourceFetchResult.Failed("local_path contains an invalid path")
+        if (hasSymbolicComponent(root)) {
+            return SourceFetchResult.Failed("local_path crosses a symbolic path component")
+        }
         if (!Files.isDirectory(root)) return SourceFetchResult.Failed("local_path is not a directory: ${binding.uri}")
         val tree = treeWriter.materialize(root)
         return SourceFetchResult.Fetched(receipt(binding, root.toString(), "local", tree))
@@ -39,8 +46,11 @@ class SourceBindingFetcher(
 
     private fun fetchGit(binding: SourceBinding): SourceFetchResult {
         val ref = binding.ref ?: "HEAD"
-        val source = Path.of(binding.uri).toAbsolutePath().normalize()
-        return if (Files.isDirectory(source.resolve(".git"))) {
+        val source = runCatching { resolveFilePath(binding.uri) }.getOrNull()
+        if (source != null && hasSymbolicComponent(source)) {
+            return SourceFetchResult.Failed("git source binding crosses a symbolic path component")
+        }
+        return if (source != null && Files.isDirectory(source.resolve(".git"), LinkOption.NOFOLLOW_LINKS)) {
             val checkout = temporaryDir("git-local-")
             val copy = runCommand(listOf("git", "clone", "--no-hardlinks", source.toString(), checkout.toString()), repoRoot)
             if (copy.exitCode != 0) return SourceFetchResult.Failed("git clone failed: ${copy.safeOutput()}")
@@ -65,7 +75,11 @@ class SourceBindingFetcher(
     }
 
     private fun fetchArchive(binding: SourceBinding): SourceFetchResult {
-        val archive = Path.of(binding.uri).toAbsolutePath().normalize()
+        val archive = resolveFilePath(binding.uri)
+            ?: return SourceFetchResult.Failed("archive contains an invalid path")
+        if (hasSymbolicComponent(archive)) {
+            return SourceFetchResult.Failed("archive source binding crosses a symbolic path component")
+        }
         if (!Files.isRegularFile(archive)) return SourceFetchResult.Failed("archive is not a file: ${binding.uri}")
         val actual = sha256(archive)
         val expected = binding.expectedSha256
@@ -93,6 +107,12 @@ class SourceBindingFetcher(
             }
             else -> return SourceFetchResult.Unsupported("unsupported archive format: ${archive.fileName}")
         }
+        val unsafeExtractedEntry = firstUnsafeExtractedEntry(unpacked)
+        if (unsafeExtractedEntry != null) {
+            return SourceFetchResult.Failed(
+                "archive extraction refused: unsafe extracted entry: $unsafeExtractedEntry"
+            )
+        }
         val tree = treeWriter.materialize(unpacked)
         return SourceFetchResult.Fetched(receipt(binding, archive.toString(), actual, tree))
     }
@@ -106,11 +126,12 @@ class SourceBindingFetcher(
         val target = temporaryDir("http-bundle-").resolve(targetName)
         return try {
             val request = HttpRequest.newBuilder(URI.create(binding.uri)).GET().build()
-            val response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofByteArray())
+            val response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofInputStream())
             if (response.statusCode() !in 200..299) {
                 return SourceFetchResult.Failed("http_bundle fetch failed: status=${response.statusCode()}")
             }
-            Files.write(target, response.body())
+            val downloadFailure = writeBoundedBody(response, target)
+            if (downloadFailure != null) return SourceFetchResult.Failed(downloadFailure)
             val actual = sha256(target)
             if (!actual.equals(expected, ignoreCase = true)) {
                 return SourceFetchResult.Failed("http_bundle hash mismatch: expected=$expected observed=$actual")
@@ -166,6 +187,27 @@ class SourceBindingFetcher(
             "/../" in normalized
     }
 
+    private fun firstUnsafeExtractedEntry(root: Path): String? = runCatching {
+        Files.walk(root).use { entries ->
+            val unsafe = entries
+                .filter { entry ->
+                    entry != root && (
+                        Files.isSymbolicLink(entry) ||
+                            (!Files.isDirectory(entry, LinkOption.NOFOLLOW_LINKS) &&
+                                !Files.isRegularFile(entry, LinkOption.NOFOLLOW_LINKS))
+                        )
+                }
+                .findFirst()
+            if (!unsafe.isPresent) {
+                null
+            } else {
+                val entry = unsafe.get()
+                val reason = if (Files.isSymbolicLink(entry)) "symbolic-link" else "special-file"
+                "$reason:${root.relativize(entry).toString().replace('\\', '/')}"
+            }
+        }
+    }.getOrElse { "scan-failed" }
+
     private fun receipt(binding: SourceBinding, repo: String, ref: String, tree: FetchTree): FetchReceipt =
         FetchReceipt(
             id = "fetch-${UUID.randomUUID().toString().take(12)}",
@@ -196,6 +238,60 @@ class SourceBindingFetcher(
 
     private fun temporaryDir(prefix: String): Path =
         Files.createTempDirectory(repoRoot.resolve(".atropos/source-bindings").also { Files.createDirectories(it) }, prefix)
+
+    private fun resolveFilePath(raw: String): Path? = runCatching {
+        Path.of(raw).let { path ->
+            if (path.isAbsolute) path.normalize() else repoRoot.resolve(path).normalize()
+        }
+    }.getOrNull()
+
+    private fun hasSymbolicComponent(path: Path): Boolean {
+        var current: Path? = path.toAbsolutePath().normalize()
+        while (current != null) {
+            if (Files.isSymbolicLink(current)) return true
+            current = current.parent
+        }
+        return false
+    }
+
+    private fun writeBoundedBody(
+        response: HttpResponse<java.io.InputStream>,
+        target: Path
+    ): String? {
+        val advertised = response.headers().firstValueAsLong("Content-Length").orElse(-1L)
+        if (advertised > MAX_HTTP_BUNDLE_BYTES) {
+            response.body().close()
+            return "http_bundle exceeds bounded download size: $advertised bytes"
+        }
+        var total = 0L
+        var exceeded = false
+        return try {
+            BufferedInputStream(response.body()).use { input ->
+                BufferedOutputStream(Files.newOutputStream(target)).use { output ->
+                    val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                    while (true) {
+                        val read = input.read(buffer)
+                        if (read < 0) break
+                        total += read
+                        if (total > MAX_HTTP_BUNDLE_BYTES) {
+                            exceeded = true
+                            break
+                        }
+                        output.write(buffer, 0, read)
+                    }
+                }
+            }
+            if (exceeded) {
+                Files.deleteIfExists(target)
+                "http_bundle exceeds bounded download size: $total bytes"
+            } else {
+                null
+            }
+        } catch (error: Exception) {
+            Files.deleteIfExists(target)
+            "http_bundle download failed: ${error.message ?: error.javaClass.simpleName}"
+        }
+    }
 
     private fun sha256(path: Path): String {
         val digest = MessageDigest.getInstance("SHA-256")
@@ -235,5 +331,9 @@ class SourceBindingFetcher(
     private data class CommandResult(val exitCode: Int, val output: String, val timedOut: Boolean) {
         fun safeOutput(maxChars: Int = 300): String =
             output.ifBlank { if (timedOut) "command timed out" else "no command output" }.take(maxChars)
+    }
+
+    private companion object {
+        const val MAX_HTTP_BUNDLE_BYTES = 16L * 1024L * 1024L
     }
 }

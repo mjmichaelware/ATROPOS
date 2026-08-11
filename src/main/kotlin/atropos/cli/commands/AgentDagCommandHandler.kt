@@ -7,6 +7,7 @@ import atropos.core.dag.DagExecutionService
 import atropos.core.dag.DagNode
 import atropos.core.dag.DagNodeAction
 import atropos.core.dag.DagStore
+import atropos.core.director.DirectorDagSupervisor
 import java.nio.file.Path
 
 class AgentDagCommandHandler(
@@ -15,7 +16,11 @@ class AgentDagCommandHandler(
     private val repoRoot: Path,
     private val dagService: DagExecutionService,
     private val dagStore: DagStore,
-    private val invalid: (String) -> AgentCommandOutcome.Invalid
+    private val invalid: (String) -> AgentCommandOutcome.Invalid,
+    private val directorDagSupervisor: DirectorDagSupervisor = DirectorDagSupervisor(
+        repoRoot = repoRoot,
+        dagExecution = dagService
+    )
 ) {
     fun execute(args: List<String>): AgentCommandOutcome {
         return when (args.getOrNull(0)?.lowercase()) {
@@ -28,9 +33,11 @@ class AgentDagCommandHandler(
             "create" -> create(args)
             "run" -> {
                 val dagId = args.getOrNull(1) ?: return invalid("usage: /agent dag run <dag-id>")
-                val result = dagService.evaluateDag(dagId)
-                ui.renderNotice(AgentCommandText.formatBlock("DAG RUN", result.message))
-                if (result.ok) AgentCommandOutcome.Completed(result.message) else AgentCommandOutcome.Invalid(result.message)
+                val supervision = directorDagSupervisor.supervise(dagId)
+                val result = supervision.execution
+                val message = result?.message ?: supervision.message
+                ui.renderNotice(AgentCommandText.formatBlock("DAG RUN", message))
+                if (supervision.allowed && result != null) AgentCommandOutcome.Completed(message) else AgentCommandOutcome.Invalid(message)
             }
             "show" -> {
                 val dagId = args.getOrNull(1) ?: return invalid("usage: /agent dag show <dag-id>")

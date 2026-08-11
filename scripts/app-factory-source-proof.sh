@@ -56,21 +56,18 @@ class AppProjectMutationGate(private val root: Path) : AppProjectMutationAuthori
 KOTLIN
 
 OUT="$TMP/factory-proof.jar"
+mapfile -d '' FACTORY_SOURCES < <(
+  find \
+    "$ROOT/src/main/kotlin/atropos/core" \
+    "$ROOT/src/main/kotlin/atropos/ast" \
+    "$ROOT/src/main/kotlin/atropos/dloi" \
+    "$ROOT/src/main/kotlin/atropos/cli/input" \
+    -type f -name '*.kt' ! -name 'AppProjectMutationGate.kt' -print0 | sort -z
+)
 if timeout "${ATROPOS_SOURCE_PROOF_TIMEOUT_SECONDS:-120}" kotlinc -d "$OUT" \
   "$TMP/FactoryProof.kt" \
   "$TMP/AppProjectMutationGate.kt" \
-  "$ROOT/src/main/kotlin/atropos/core/security/SecretEncodingClosure.kt" \
-  "$ROOT/src/main/kotlin/atropos/core/security/KnownSecretRegistry.kt" \
-  "$ROOT/src/main/kotlin/atropos/core/security/RedactionFilter.kt" \
-  "$ROOT/src/main/kotlin/atropos/core/factory/AppActionRegistry.kt" \
-  "$ROOT/src/main/kotlin/atropos/core/factory/AppIntent.kt" \
-  "$ROOT/src/main/kotlin/atropos/core/factory/AppProjectSpec.kt" \
-  "$ROOT/src/main/kotlin/atropos/core/factory/AppProjectSpecParser.kt" \
-  "$ROOT/src/main/kotlin/atropos/core/factory/AppProjectMutationAuthorizer.kt" \
-  "$ROOT/src/main/kotlin/atropos/core/factory/RepoScaffold.kt" \
-  "$ROOT/src/main/kotlin/atropos/core/factory/EvidenceManifest.kt" \
-  "$ROOT/src/main/kotlin/atropos/core/factory/AppProjectGenerator.kt" \
-  "$ROOT/src/main/kotlin/atropos/core/worktree/BoundedGitWorktreeCommandRunner.kt"; then
+  "${FACTORY_SOURCES[@]}"; then
   :
 else
   status=$?

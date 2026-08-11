@@ -3,7 +3,6 @@ package atropos.core.memory
 import atropos.core.AtroposRepoRootLocator
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
-import kotlin.io.path.readText
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -52,7 +51,7 @@ class LocalMemoryStoreTest {
         store.remember(MemoryKind.NOTE, "two", "body two")
 
         val jsonl = root.toPath().resolve("memory.jsonl")
-        Files.writeString(jsonl, jsonl.readText(StandardCharsets.UTF_8) + "{broken\n", StandardCharsets.UTF_8)
+        Files.writeString(jsonl, Files.readString(jsonl, StandardCharsets.UTF_8) + "{broken\n", StandardCharsets.UTF_8)
 
         val reopened = LocalMemoryStore(root = root, env = emptyMap())
         val statusBefore = reopened.status()

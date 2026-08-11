@@ -1,6 +1,8 @@
 package atropos.core
 
 import atropos.core.security.RedactionFilter
+import atropos.core.provider.adapter.ProviderAdapterAiBridge
+import atropos.core.provider.adapter.StaticProviderAdapterRegistry
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
@@ -13,8 +15,13 @@ interface AIProvider {
 }
 
 class ProviderFactory(private val config: AtroposConfig = AtroposConfig.load()) {
+    private val canonicalAdapters by lazy {
+        StaticProviderAdapterRegistry(env = providerEnvironment(config))
+    }
+
     fun getProvider(name: String = config.runtime.defaultProvider): AIProvider {
-        return when (name.trim().lowercase()) {
+        val providerId = name.trim().lowercase()
+        return when (providerId) {
             "groq" -> GroqProvider(config.keys.groq)
             "openai" -> OpenAiProvider(config.keys.openai)
             "anthropic" -> AnthropicProvider(config.keys.anthropic)
@@ -24,8 +31,19 @@ class ProviderFactory(private val config: AtroposConfig = AtroposConfig.load()) 
             "sambanova" -> SambaNovaProvider()
             "deepseek_direct" -> DeepSeekDirectProvider()
             "ollama" -> OllamaProvider()
-            else -> throw IllegalArgumentException("Unsupported provider: $name")
+            else -> canonicalAdapters.getByProviderId(providerId)
+                ?.takeIf { it.status().implemented }
+                ?.let(::ProviderAdapterAiBridge)
+                ?: throw IllegalArgumentException("Unsupported provider: $name")
         }
+    }
+
+    private fun providerEnvironment(config: AtroposConfig): Map<String, String> = buildMap {
+        putAll(System.getenv())
+        config.keys.groq.takeIf { it.isNotBlank() }?.let { put("GROQ_API_KEY", it) }
+        config.keys.openai.takeIf { it.isNotBlank() }?.let { put("OPENAI_API_KEY", it) }
+        config.keys.anthropic.takeIf { it.isNotBlank() }?.let { put("ANTHROPIC_API_KEY", it) }
+        config.keys.xai.takeIf { it.isNotBlank() }?.let { put("XAI_API_KEY", it) }
     }
 }
 
@@ -231,4 +249,3 @@ abstract class BaseHttpProvider : AIProvider {
         return out.toString()
     }
 }
-

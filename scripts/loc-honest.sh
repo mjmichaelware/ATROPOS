@@ -1,65 +1,73 @@
-#!/data/data/com.termux/files/usr/bin/bash
-set -euo pipefail
-cd "$(git rev-parse --show-toplevel)"
+#!/usr/bin/env bash
+cd "$(git rev-parse --show-toplevel)" || exit 1
 
-EXCLUDE='(\.git/|/build/|/node_modules/|/__pycache__/|\.gradle/|\.atropos/|^docs/|^lakehouse|\.jar\( |\.tar \)|\.lock\( |\.sha256 \)|\.pyc$|\.next/|/dist/|/coverage/|backup-|\( HOME)'
-INCLUDE='\.(kt|kts|java|ts|tsx|js|jsx|py|sh)$'
+TMP=$(mktemp)
+trap 'rm -f "$TMP"' EXIT
 
-list_prod() {
-  git ls-files -z | while IFS= read -r -d '' f; do
-    echo "$f" | grep -Eq "$EXCLUDE" && continue
-    echo "$f" | grep -Eq "$INCLUDE" || continue
-    echo "$f" | grep -Eq '(^|/)src/test/|(/|^)tests?/|e2e/|fixtures/' && continue
-    [ -f "$f" ] || continue
-    printf '%s\n' "$f"
-  done
-}
+git ls-files | while IFS= read -r f; do
+  [ -f "$f" ] || continue
 
-echo "=== ATROPOS honest production LOC ==="
+  case "$f" in
+    src/main/*) ;;
+    apps/specgraph-foundry/src/*) ;;
+    apps/web/*) ;;
+    apps/atropos-web/*) ;;
+    *) continue ;;
+  esac
+
+  case "$f" in
+    *.kt|*.kts|*.java|*.py|*.ts|*.tsx|*.js|*.jsx) ;;
+    *) continue ;;
+  esac
+
+  case "$f" in
+    */node_modules/*|*/build/*|*/dist/*|*/.next/*|*generated.ts) continue ;;
+  esac
+
+  lines=$(wc -l < "$f" | tr -d ' \t')
+  case "$lines" in
+    ''|*[!0-9]*) continue ;;
+  esac
+
+  area=other
+  case "$f" in
+    src/main/*) area=atropos-engine ;;
+    apps/specgraph-foundry/src/specgraph_foundry/http_api/*) area=specgraph-http-api ;;
+    apps/specgraph-foundry/src/*) area=specgraph-core ;;
+    apps/web/*) area=web-frontend ;;
+    apps/atropos-web/*) area=atropos-web ;;
+  esac
+
+  lang=other
+  case "$f" in
+    *.kt|*.kts) lang=kotlin ;;
+    *.java) lang=java ;;
+    *.py) lang=python ;;
+    *.ts|*.tsx) lang=typescript ;;
+    *.js|*.jsx) lang=javascript ;;
+  esac
+
+  printf '%s\t%s\t%s\t%s\n' "$lines" "$f" "$area" "$lang"
+done > "$TMP"
+
+echo "=== PRODUCTION ONLY (engine + SpecGraph src + web) ==="
 echo "repo: $(pwd)"
 echo "commit: $(git rev-parse --short HEAD)"
 echo "date: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+echo "excluded: docs tests scripts build_*.py jars node_modules"
 echo
 
-echo "=== By language / type (production, tests excluded) ==="
-list_prod | while read -r f; do
-  lines=$(wc -l < "$f" | tr -d ' ')
-  case "$f" in
-    *.kt)  lang=kotlin ;;
-    *.kts) lang=kotlin-script ;;
-    *.java) lang=java ;;
-    *.ts|*.tsx) lang=typescript ;;
-    *.js|*.jsx) lang=javascript ;;
-    *.py) lang=python ;;
-    *.sh) lang=shell ;;
-    *) lang=other ;;
-  esac
-  printf '%s %s\n' "$lines" "$lang"
-done | awk '{a[$2]+=$1; t+=$1} END{for (k in a) printf "%8d  %s\n", a[k], k; printf "%8d  TOTAL\n", t}' | sort -nr
+echo "=== By area ==="
+awk -F'	' '{ a[$3]+=$1; t+=$1 } END { for (k in a) printf "%8d  %s\n", a[k], k; printf "%8d  TOTAL\n", t+0 }' "$TMP" | sort -nr
 
 echo
-echo "=== Top 50 production files by LOC ==="
-list_prod | while read -r f; do
-  lines=$(wc -l < "$f" | tr -d ' ')
-  printf '%6d  %s\n' "$lines" "$f"
-done | sort -nr | head -50
+echo "=== By language ==="
+awk -F'	' '{ a[$4]+=$1; t+=$1 } END { for (k in a) printf "%8d  %s\n", a[k], k; printf "%8d  TOTAL\n", t+0 }' "$TMP" | sort -nr
 
 echo
-echo "=== Kotlin only (src/main) top 50 ==="
-git ls-files 'src/main/**/*.kt' 'src/main/**/*.kts' | while read -r f; do
-  [ -f "$f" ] || continue
-  lines=$(wc -l < "$f" | tr -d ' ')
-  printf '%6d  %s\n' "$lines" "$f"
-done | sort -nr | head -50
+echo "=== Top 40 files ==="
+awk -F'	' '{ printf "%6d  %s\n", $1, $2 }' "$TMP" | sort -nr | head -40
 
 echo
-echo "=== Kotlin totals ==="
-git ls-files 'src/main/**/*.kt' 'src/main/**/*.kts' | while read -r f; do
-  [ -f "$f" ] || continue
-  wc -l < "$f"
-done | awk '{s+=$1} END{printf "src/main kotlin: %d lines\n", s+0}'
-
-git ls-files 'src/test/**/*.kt' | while read -r f; do
-  [ -f "$f" ] || continue
-  wc -l < "$f"
-done | awk '{s+=$1} END{printf "src/test  kotlin: %d lines\n", s+0}'
+echo "=== ATROPOS engine top 25 ==="
+awk -F'	' '$3=="atropos-engine" { printf "%6d  %s\n", $1, $2 }' "$TMP" | sort -nr | head -25

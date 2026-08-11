@@ -15,16 +15,42 @@ require() {
 
 # Verify the production call chain without launching a stale or mismatched JAR.
 require '"/factory" -> factoryCommand.execute' src/main/kotlin/atropos/cli/CommandRouter.kt
-require 'renderRun(prompt)' src/main/kotlin/atropos/cli/FactoryCommandHandler.kt src/main/kotlin/atropos/cli/ui/AppFactoryPlanRenderer.kt
+require 'renderer::renderRun' src/main/kotlin/atropos/cli/FactoryCommandHandler.kt
+require 'runFactory(prompt)' src/main/kotlin/atropos/cli/FactoryCommandHandler.kt
 require 'router.runLocal(prompt)' src/main/kotlin/atropos/cli/ui/AppFactoryPlanRenderer.kt
 require 'planningGraph.planFromTexts' src/main/kotlin/atropos/core/factory/AppFactoryRouter.kt
+require 'FactoryLineage.prepare' src/main/kotlin/atropos/core/factory/AppFactoryRouter.kt
+require 'FactoryResearchService(memory = memory).researchOpenAtoms' src/main/kotlin/atropos/core/factory/AppFactoryRouter.kt
+require 'ContextEnvelopeFactory.createForFactory' src/main/kotlin/atropos/core/factory/AppFactoryRouter.kt
 require 'AppProjectGenerator(repoRoot).generateApp' src/main/kotlin/atropos/core/factory/AppFactoryRouter.kt
 require 'projectRegistry.register' src/main/kotlin/atropos/core/factory/AppFactoryRouter.kt
 require 'name = base.projectSpec.intent.name' src/main/kotlin/atropos/core/factory/AppFactoryRouter.kt
 require 'mutationGate.requireAllowed' src/main/kotlin/atropos/core/factory/AppProjectGenerator.kt
+require 'hierarchyGate.dispatch' src/main/kotlin/atropos/core/factory/AppProjectGenerator.kt
+require 'HierarchyRegistry' src/main/kotlin/atropos/core/factory/FactoryHierarchyGate.kt
+require 'hrRouter.request' src/main/kotlin/atropos/core/factory/FactoryHierarchyGate.kt
+require 'HrRouterAuditStore(repoRoot)' src/main/kotlin/atropos/core/factory/AppProjectGenerator.kt
+require 'hrRouterRequestId = hierarchyLease.hrRequestId' src/main/kotlin/atropos/core/factory/AppProjectGenerator.kt
+require 'hr_router_request=' src/main/kotlin/atropos/core/factory/EvidenceManifest.kt
+require 'DirectorDagSupervisor' src/main/kotlin/atropos/cli/commands/AgentDagCommandHandler.kt
+require 'WorkerCodeProposalService' src/main/kotlin/atropos/cli/commands/AgentWorkerCommandHandler.kt
+require 'cli.agent_dag_supervise' src/main/kotlin/atropos/core/endpoint/StaticOperationRegistry.kt
+require 'cli.agent_worker_propose' src/main/kotlin/atropos/core/endpoint/StaticOperationRegistry.kt
 require 'GitWorktreeOperation.INIT' src/main/kotlin/atropos/core/factory/AppProjectGenerator.kt
 require 'EvidenceManifest' src/main/kotlin/atropos/core/factory/AppProjectGenerator.kt
 require 'listOf("/factory", "run")' src/main/kotlin/atropos/cli/commands/SelfHostNaturalLanguageRouter.kt
+require 'FactoryClarificationRequired' src/main/kotlin/atropos/cli/FactoryCommandHandler.kt
+require 'artifact=${failure.request.path}' src/main/kotlin/atropos/cli/FactoryCommandHandler.kt
+
+if rg -n 'ArtifactPipeline' src/main/kotlin/atropos/core/factory src/main/kotlin/atropos/cli/FactoryCommandHandler.kt >/dev/null; then
+  echo 'APP_FACTORY_WIRING_ARTIFACT_PIPELINE_BYPASS' >&2
+  exit 1
+fi
+
+if rg -n 'AppFactoryRouter|FactoryPlan' src/main/kotlin/atropos/core/artifact/ArtifactPipeline.kt >/dev/null; then
+  echo 'ARTIFACT_WIRING_FACTORY_DEPENDENCY' >&2
+  exit 1
+fi
 
 if rg -n -i 'CalculatorProjectGenerator|calculator-specific|calculator intent' src/main/kotlin/atropos/core/factory src/main/kotlin/atropos/cli >/dev/null; then
   echo 'APP_FACTORY_WIRING_CALCULATOR_SPECIAL_CASE' >&2

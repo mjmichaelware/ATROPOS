@@ -30,12 +30,85 @@ require_output() {
 require_output "factory run completed:"
 require_output "generated_project:"
 require_output "generated_commit:"
+require_output "generated_branch:"
 require_output "generated_evidence:"
 require_output "planning_dag:"
+
+generated_project() {
+  sed -n 's/^  generated_project: //p' "$TMP/output.txt" | tail -1
+}
+
+generated_evidence() {
+  sed -n 's/^  generated_evidence: //p' "$TMP/output.txt" | tail -1
+}
+
+generated_commit() {
+  sed -n 's/^  generated_commit: //p' "$TMP/output.txt" | tail -1
+}
+
+generated_branch() {
+  sed -n 's/^  generated_branch: //p' "$TMP/output.txt" | tail -1
+}
+
+PROJECT="$(generated_project)"
+EVIDENCE="$(generated_evidence)"
+COMMIT="$(generated_commit)"
+BRANCH="$(generated_branch)"
+[[ -n "$PROJECT" && -d "$PROJECT" ]] || {
+  echo "APP_FACTORY_INSTALLED_PROOF_INVALID_PROJECT" >&2
+  exit 1
+}
+[[ -n "$EVIDENCE" && -f "$EVIDENCE" ]] || {
+  echo "APP_FACTORY_INSTALLED_PROOF_INVALID_EVIDENCE" >&2
+  exit 1
+}
+
+for required in README.md LICENSE .gitignore AGENTS.md; do
+  [[ -f "$PROJECT/$required" ]] || {
+    echo "APP_FACTORY_INSTALLED_PROOF_MISSING_FILE $required" >&2
+    exit 1
+  }
+done
+
+find "$PROJECT/src/main" -type f -name '*.kt' -print -quit | grep -q . || {
+  echo "APP_FACTORY_INSTALLED_PROOF_MISSING_SOURCE" >&2
+  exit 1
+}
+find "$PROJECT/src/test" -type f -name '*.kt' -print -quit | grep -q . || {
+  echo "APP_FACTORY_INSTALLED_PROOF_MISSING_TESTS" >&2
+  exit 1
+}
+git -C "$PROJECT" rev-parse --verify HEAD >/dev/null 2>&1 || {
+  echo "APP_FACTORY_INSTALLED_PROOF_MISSING_GIT_HISTORY" >&2
+  exit 1
+}
+[[ "$COMMIT" == "$(git -C "$PROJECT" rev-parse HEAD)" ]] || {
+  echo "APP_FACTORY_INSTALLED_PROOF_COMMIT_MISMATCH" >&2
+  exit 1
+}
+[[ "$BRANCH" == "$(git -C "$PROJECT" branch --show-current)" ]] || {
+  echo "APP_FACTORY_INSTALLED_PROOF_BRANCH_MISMATCH" >&2
+  exit 1
+}
+rg -q -- 'prompt_fingerprint=|tree_sha256=' "$EVIDENCE" || {
+  echo "APP_FACTORY_INSTALLED_PROOF_INCOMPLETE_EVIDENCE" >&2
+  exit 1
+}
+if rg -n -- 'Calculator: calculator|feature-string-only' "$PROJECT/src" >/dev/null 2>&1 || {
+  rg -q -- 'isNotBlank\(\)' "$PROJECT/src" &&
+  ! rg -q -- 'fun (runApp|evaluate)\(' "$PROJECT/src"
+}; then
+  echo "APP_FACTORY_INSTALLED_PROOF_SCAFFOLD_OUTPUT" >&2
+  exit 1
+fi
 
 JAR_SHA256="$(sha256sum "$JAR" | awk '{print $1}')"
 printf '%s\n' \
   'APP_FACTORY_INSTALLED_PROOF_OK' \
+  "generated_project=$PROJECT" \
+  "generated_branch=$BRANCH" \
+  "generated_commit=$COMMIT" \
+  "generated_evidence=$EVIDENCE" \
   "prompt_sha256=$PROMPT_SHA256" \
   "jar=$JAR" \
   "jar_sha256=$JAR_SHA256" \

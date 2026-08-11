@@ -2,6 +2,7 @@
 package atropos.core.policy
 
 import java.util.UUID
+import atropos.core.provider.StaticProviderDescriptorRegistry
 
 /**
  * Builds [ActionProposal]s for provider calls.
@@ -10,11 +11,11 @@ import java.util.UUID
  * provider may be called; this file only states which provider, for what, and
  * whether it is a paid one.
  *
- * [PAID_PROVIDERS] lives here because this is the single place that answers
- * "is this call paid?" for the engine. It previously existed as two private
- * copies inside `AgentService` and `AgentRepairService`; two copies of a
- * security-critical lock can drift out of step, and only one of them would then
- * be enforcing.
+ * [PAID_PROVIDERS] is retained as a compatibility projection for policy callers;
+ * the provider descriptor registry is the canonical source for which providers
+ * are paid-locked. It previously existed as two private copies inside
+ * `AgentService` and `AgentRepairService`; two copies of a security-critical lock
+ * can drift out of step, and only one of them would then be enforcing.
  */
 object ProviderActionProposals {
     /**
@@ -22,7 +23,7 @@ object ProviderActionProposals {
      * where this is true, so adding a name here disables it everywhere at once.
      */
     val PAID_PROVIDERS: Set<String> =
-        setOf("openai", "anthropic", "xai", "mistral", "cohere", "deepseek_direct")
+        StaticProviderDescriptorRegistry().getPaidLocked().map { it.id }.toSet()
 
     fun isPaid(provider: String): Boolean = provider in PAID_PROVIDERS
 

@@ -1,9 +1,10 @@
 package atropos.core.platform
 
 import atropos.core.AtroposRepoRootLocator
-import java.io.File
+import atropos.core.policy.BoundedProcessRunner
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
+import java.nio.file.LinkOption
 import java.nio.file.Path
 import java.nio.file.Paths
 
@@ -32,6 +33,9 @@ data class ProcessOutput(val exitCode: Int, val stdout: String, val stderr: Stri
 class JvmPlatformAbstraction(
     private val repoRoot: Path = AtroposRepoRootLocator.resolve()
 ) : PlatformAbstraction {
+    private val normalizedRepoRoot = repoRoot.toAbsolutePath().normalize()
+    private val boundedProcessRunner = BoundedProcessRunner()
+
     override val descriptor: PlatformDescriptor = PlatformDescriptor.detect()
     override val environment: PlatformEnvironment = PlatformEnvironment(platform = descriptor.platform)
     override val health: PlatformHealth by lazy {
@@ -43,50 +47,84 @@ class JvmPlatformAbstraction(
     }
 
     override fun readFile(path: String): Result<String> = runCatching {
-        Files.readString(repoRoot.resolve(path), StandardCharsets.UTF_8)
+        Files.readString(resolveRepoPath(path), StandardCharsets.UTF_8)
     }
 
     override fun writeFile(path: String, content: String): Result<Unit> = runCatching {
-        Files.createDirectories(repoRoot.resolve(path).parent)
-        Files.writeString(repoRoot.resolve(path), content, StandardCharsets.UTF_8)
+        val target = resolveRepoPath(path)
+        Files.createDirectories(target.parent)
+        Files.writeString(target, content, StandardCharsets.UTF_8)
     }
 
     override fun deleteFile(path: String): Result<Unit> = runCatching {
-        Files.deleteIfExists(repoRoot.resolve(path))
+        Files.deleteIfExists(resolveRepoPath(path))
     }
 
     override fun listDirectory(path: String): Result<List<String>> = runCatching {
-        val dir = repoRoot.resolve(path).toFile()
+        val dir = resolveRepoPath(path).toFile()
         dir.list()?.toList() ?: throw IllegalArgumentException("not a directory: $path")
     }
 
-    override fun fileExists(path: String): Boolean = repoRoot.resolve(path).toFile().exists()
-    override fun fileSize(path: String): Long = repoRoot.resolve(path).toFile().length()
+    override fun fileExists(path: String): Boolean = runCatching {
+        Files.exists(resolveRepoPath(path), LinkOption.NOFOLLOW_LINKS)
+    }.getOrDefault(false)
+
+    override fun fileSize(path: String): Long = runCatching {
+        Files.size(resolveRepoPath(path))
+    }.getOrDefault(0L)
 
     override fun createDirectories(path: String): Result<Unit> = runCatching {
-        Files.createDirectories(repoRoot.resolve(path))
+        Files.createDirectories(resolveRepoPath(path))
     }
 
     override fun spawnProcess(command: List<String>, workingDir: String?): Result<ProcessOutput> = runCatching {
-        val pb = ProcessBuilder(command)
-            .redirectErrorStream(false)
-            .directory(workingDir?.let { File(it) } ?: repoRoot.toFile())
-        val proc = pb.start()
-        val stdout = proc.inputStream.readAllBytes().toString(StandardCharsets.UTF_8)
-        val stderr = proc.errorStream.readAllBytes().toString(StandardCharsets.UTF_8)
-        val exit = proc.waitFor()
-        ProcessOutput(exitCode = exit, stdout = stdout, stderr = stderr, command = command.joinToString(" "))
+        val bounded = boundedProcessRunner.run(
+            command = command,
+            directory = workingDir?.let(::resolveRepoPath) ?: normalizedRepoRoot,
+            timeoutMillis = 1_800_000,
+            maxOutputBytes = 256 * 1024,
+            maxOutputLines = 4_000
+        )
+        val stderr = buildString {
+            bounded.launchError?.let(::appendLine)
+            if (bounded.timedOut) appendLine("JVM process timed out")
+            append(bounded.stderr)
+        }
+        ProcessOutput(
+            exitCode = bounded.exitCode ?: 124,
+            stdout = bounded.stdout,
+            stderr = stderr,
+            command = command.joinToString(" ")
+        )
     }
 
     override fun getEnv(key: String): String? = System.getenv(key)
 
     override fun resolvePath(first: String, vararg rest: String): String {
-        return repoRoot.resolve(Paths.get(first, *rest)).toString()
+        return resolveRepoPath(Paths.get(first, *rest).toString()).toString()
     }
 
     override fun tempFile(prefix: String, suffix: String): Result<String> = runCatching {
         val tmp = Files.createTempFile(prefix, suffix)
         tmp.toAbsolutePath().toString()
+    }
+
+    private fun resolveRepoPath(rawPath: String): Path {
+        require(rawPath.isNotBlank()) { "platform path is blank" }
+        val candidate = Paths.get(rawPath).let { path ->
+            if (path.isAbsolute) path else normalizedRepoRoot.resolve(path)
+        }.normalize()
+        require(candidate.startsWith(normalizedRepoRoot)) {
+            "platform path escapes repository root"
+        }
+        var cursor: Path? = normalizedRepoRoot
+        for (part in normalizedRepoRoot.relativize(candidate)) {
+            cursor = cursor!!.resolve(part)
+            require(!Files.isSymbolicLink(cursor)) {
+                "platform path crosses a symbolic link"
+            }
+        }
+        return candidate
     }
 }
 

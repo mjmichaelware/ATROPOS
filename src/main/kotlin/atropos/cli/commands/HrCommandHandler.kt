@@ -29,7 +29,10 @@ class HrCommandHandler(
             args[2],
             "terr-${args[2]}",
             InformationKind.SOURCE_CODE,
-            args.drop(3).joinToString(" ")
+            args.drop(3).joinToString(" "),
+            taskId = "cli-hr-route",
+            sourceCoordinates = listOf("cli:/hr/route"),
+            needToKnow = "operator requested bounded redacted source context"
         )
         return if (response.approved) {
             "HR route approved: ${response.redactedContent?.take(ROUTED_CONTENT_PREVIEW)}"

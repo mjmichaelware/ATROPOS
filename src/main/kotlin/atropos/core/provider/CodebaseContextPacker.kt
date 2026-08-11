@@ -4,6 +4,7 @@ import atropos.core.AtroposRepoRootLocator
 import atropos.core.security.RedactionFilter
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
+import java.nio.file.LinkOption
 import java.nio.file.Path
 import java.security.MessageDigest
 
@@ -42,7 +43,7 @@ class CodebaseContextPacker(
         }
         val allowed = rawAllowed.map { it.trim('/').trim() }.filter { it.isNotBlank() }
         val included = fetched.receipt.paths.filter { path ->
-            allowed.any { root -> path == root || path.startsWith("$root/") }
+            allowed.any { root -> pathWithinAllowed(path, root) }
         }.sorted()
         if (included.isEmpty()) {
             return SourcePackResult.Refused("source context pack matched no files inside declared territory")
@@ -66,7 +67,9 @@ class CodebaseContextPacker(
                 break
             }
             val file = fetched.receipt.contentRoot.resolve(relative).normalize()
-            if (!file.startsWith(fetched.receipt.contentRoot) || !Files.isRegularFile(file)) continue
+            if (!file.startsWith(fetched.receipt.contentRoot) ||
+                !Files.isRegularFile(file, LinkOption.NOFOLLOW_LINKS)
+            ) continue
             val bytes = Files.readAllBytes(file)
             val body = String(bytes.take(request.maxFileBytes).toByteArray(), StandardCharsets.UTF_8)
             if (bytes.size > request.maxFileBytes) truncated = true
@@ -113,4 +116,10 @@ class CodebaseContextPacker(
         MessageDigest.getInstance("SHA-256")
             .digest(value.toByteArray(StandardCharsets.UTF_8))
             .joinToString("") { "%02x".format(it) }
+
+    private fun pathWithinAllowed(path: String, root: String): Boolean {
+        val normalizedPath = path.replace('\\', '/').trim('/')
+        val normalizedRoot = root.replace('\\', '/').trim('/')
+        return normalizedPath == normalizedRoot || normalizedPath.startsWith("$normalizedRoot/")
+    }
 }

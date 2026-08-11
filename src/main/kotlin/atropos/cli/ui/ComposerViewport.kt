@@ -4,6 +4,7 @@ package atropos.cli.ui
 import atropos.cli.ui.design.Glyphs
 import atropos.cli.ui.design.Role
 import atropos.cli.input.CommandRegistry
+import atropos.cli.input.CommandPaletteLevel
 
 data class ComposerSnapshot(
     val line: String,
@@ -20,13 +21,19 @@ class ComposerViewport(
     private var cursor = 0
     private var mode = "ASK"
     private var paletteSelection = 0
+    private var paletteLevel = CommandPaletteLevel.COMMANDS
+    private var paletteGroup: String? = null
+    private var paletteCommand: String? = null
 
     fun update(
         buffer: String,
         suggestion: String,
         cursor: Int,
         mode: String,
-        paletteSelection: Int = 0
+        paletteSelection: Int = 0,
+        paletteLevel: CommandPaletteLevel = CommandPaletteLevel.COMMANDS,
+        paletteGroup: String? = null,
+        paletteCommand: String? = null
     ) {
         this.buffer = TerminalText.sanitize(buffer)
         this.suggestion = TerminalText.sanitize(suggestion).replace('\n', ' ')
@@ -36,6 +43,9 @@ class ComposerViewport(
         )
         this.mode = mode.uppercase()
         this.paletteSelection = paletteSelection.coerceAtLeast(0)
+        this.paletteLevel = paletteLevel
+        this.paletteGroup = paletteGroup
+        this.paletteCommand = paletteCommand
     }
 
     fun render(width: Int): ComposerSnapshot =
@@ -116,7 +126,13 @@ class ComposerViewport(
                     CommandRegistry.search(it).isNotEmpty()
             }
             ?.let {
-                CommandPaletteQuery(it, paletteSelection)
+                CommandPaletteQuery(
+                    text = it,
+                    selectedIndex = paletteSelection,
+                    level = paletteLevel,
+                    selectedGroup = paletteGroup,
+                    selectedCommand = paletteCommand
+                )
             }
     }
 

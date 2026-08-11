@@ -29,11 +29,12 @@ fun main() {
     val owner = AgentRecord("owner", "human", HierarchyRole.HUMAN_OWNER, territoryId = "root")
     val manager = AgentRecord("manager", "manager", HierarchyRole.MANAGER, territoryId = "src/main/kotlin/atropos/core", capabilities = listOf("kotlin"))
     val worker = AgentRecord("worker", "worker", HierarchyRole.WORKER, capabilities = listOf("kotlin"))
-    listOf(owner, manager, worker).forEach(registry::register)
+    val outsideWorker = AgentRecord("outside-worker", "worker", HierarchyRole.WORKER, capabilities = listOf("kotlin"))
+    listOf(owner, manager, worker, outsideWorker).forEach(registry::register)
 
     check(registry.dispatch(contract(owner.id, manager.id, "src/main/kotlin/atropos/core")) is HierarchyDispatchResult.Accepted)
     check(registry.dispatch(contract(manager.id, worker.id, "src/main/kotlin/atropos/core/agent")) is HierarchyDispatchResult.Accepted)
-    val refused = registry.dispatch(contract(manager.id, worker.id, "src/main/kotlin/atropos/cli"))
+    val refused = registry.dispatch(contract(manager.id, outsideWorker.id, "src/main/kotlin/atropos/cli"))
     check(refused is HierarchyDispatchResult.Refused && refused.reason.contains("outside parent scope"))
     check(registry.get(worker.id)?.status == AgentStatus.ASSIGNED)
     println("HIERARCHY_DISPATCH_PROOF_OK")
@@ -43,5 +44,7 @@ KOTLIN
 OUT="$TMP/hierarchy-proof.jar"
 timeout "${ATROPOS_HIERARCHY_PROOF_TIMEOUT_SECONDS:-120}" kotlinc -include-runtime -d "$OUT" \
   "$TMP/HierarchyProof.kt" \
-  "$ROOT/src/main/kotlin/atropos/core/hierarchy/HierarchyModels.kt"
+  "$ROOT/src/main/kotlin/atropos/core/hierarchy/HierarchyModels.kt" \
+  "$ROOT/src/main/kotlin/atropos/core/hierarchy/HierarchyTaskLifecycle.kt" \
+  "$ROOT/src/main/kotlin/atropos/core/hierarchy/HierarchyRegistry.kt"
 timeout "${ATROPOS_HIERARCHY_PROOF_TIMEOUT_SECONDS:-120}" java -jar "$OUT"

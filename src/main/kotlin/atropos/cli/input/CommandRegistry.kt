@@ -1,12 +1,18 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.cli.input
 
+import atropos.core.provider.StaticProviderDescriptorRegistry
+
 data class CommandEntry(
     val command: String,
     val description: String,
     val category: String = "General",
     val aliases: List<String> = emptyList(),
-    val risk: CommandRisk = CommandRiskCatalog.forCommand(command)
+    val risk: CommandRisk = CommandRiskCatalog.forCommand(command),
+    val keywords: List<String> = emptyList(),
+    val related: List<String> = emptyList(),
+    val example: String? = null,
+    val nlHint: String? = null
 )
 
 data class CommandGroup(
@@ -14,40 +20,112 @@ data class CommandGroup(
     val entries: List<CommandEntry>
 )
 
+enum class CommandPaletteLevel { GROUPS, COMMANDS, DETAIL }
+
+data class CommandPaletteSelection(
+    val level: CommandPaletteLevel = CommandPaletteLevel.GROUPS,
+    val group: String? = null,
+    val command: String? = null,
+    val index: Int = 0
+)
+
+sealed class CommandPaletteAction {
+    data object Stay : CommandPaletteAction()
+    data class Execute(val command: String) : CommandPaletteAction()
+}
+
+/** Pure keyboard navigation for the grouped palette. It never executes a command. */
+class CommandPaletteNavigator(
+    initial: CommandPaletteSelection = CommandPaletteSelection()
+) {
+    var selection: CommandPaletteSelection = initial
+        private set
+
+    fun reset() {
+        selection = CommandPaletteSelection()
+    }
+
+    fun move(delta: Int): CommandPaletteSelection {
+        val values = currentValues()
+        val next = if (values.isEmpty()) 0 else {
+            (selection.index + delta).coerceIn(0, values.lastIndex)
+        }
+        selection = selection.copy(
+            index = next,
+            group = if (selection.level == CommandPaletteLevel.GROUPS) values.getOrNull(next) else selection.group,
+            command = if (selection.level != CommandPaletteLevel.GROUPS) values.getOrNull(next) else selection.command
+        )
+        return selection
+    }
+
+    fun right(): CommandPaletteSelection {
+        val values = currentValues()
+        if (values.isEmpty()) return selection
+        selection = when (selection.level) {
+            CommandPaletteLevel.GROUPS -> selection.copy(
+                level = CommandPaletteLevel.COMMANDS,
+                group = values[selection.index.coerceIn(0, values.lastIndex)],
+                index = 0,
+                command = CommandRegistry.helpSections()
+                    .firstOrNull { it.category == values[selection.index.coerceIn(0, values.lastIndex)] }
+                    ?.entries?.firstOrNull()?.command
+            )
+            CommandPaletteLevel.COMMANDS -> selection.copy(
+                level = CommandPaletteLevel.DETAIL,
+                command = values[selection.index.coerceIn(0, values.lastIndex)]
+            )
+            CommandPaletteLevel.DETAIL -> selection
+        }
+        return selection
+    }
+
+    fun left(): CommandPaletteSelection {
+        selection = when (selection.level) {
+            CommandPaletteLevel.GROUPS -> selection
+            CommandPaletteLevel.COMMANDS -> selection.copy(level = CommandPaletteLevel.GROUPS, group = null, command = null, index = 0)
+            CommandPaletteLevel.DETAIL -> selection.copy(level = CommandPaletteLevel.COMMANDS, command = null)
+        }
+        return selection
+    }
+
+    fun enter(): CommandPaletteAction = when (selection.level) {
+        CommandPaletteLevel.GROUPS -> CommandPaletteAction.Stay
+        CommandPaletteLevel.COMMANDS, CommandPaletteLevel.DETAIL ->
+            selection.command?.let(CommandPaletteAction::Execute) ?: CommandPaletteAction.Stay
+    }
+
+    private fun currentValues(): List<String> = when (selection.level) {
+        CommandPaletteLevel.GROUPS -> CommandRegistry.helpSections().map { it.category }
+        CommandPaletteLevel.COMMANDS -> CommandRegistry.helpSections()
+            .firstOrNull { it.category == selection.group }
+            ?.entries.orEmpty().map { it.command }
+        CommandPaletteLevel.DETAIL -> listOfNotNull(selection.command)
+    }
+}
+
 object CommandRegistry {
+    private val CATEGORY_ORDER = listOf(
+        "Orient", "Models", "Build", "Agent", "Self-host", "Authority",
+        "Governance", "Shell", "Keys/Paid", "Observe", "Autonomous", "Session"
+    )
+
     private val catalog: List<CommandEntry> = CommandCatalog.catalog
 
     val entries: List<CommandEntry> = catalog
         .flatMap { it.expandedEntries() }
+        .map { it.copy(category = normalizeCategory(it.category, it.command), keywords = keywordIndex(it)) }
         .distinctBy { it.command }
 
-    val providers: List<String> = listOf(
-        "anthropic",
-        "groq",
-        "openrouter",
-        "deepinfra",
-        "siliconflow",
-        "gemini",
-        "github_models",
-        "cloudflare_ai",
-        "sambanova",
-        "deepseek_direct",
-        "cloudflare_workers",
-        "jina",
-        "serpapi",
-        "supabase",
-        "pinecone",
-        "google_drive",
-        "github_actions",
-        "google_cloud_free",
-        "huggingface",
-        "fal",
-        "replicate",
-        "ollama",
-        "openai",
-        "xai",
-        "local"
-    )
+    private val canonicalEntries: List<CommandEntry> = catalog
+        .map { it.copy(category = normalizeCategory(it.category, it.command), keywords = keywordIndex(it)) }
+
+    val categories: List<String> = CATEGORY_ORDER
+        .filter { category -> canonicalEntries.any { it.category == category } }
+
+    /** Provider completion comes from the canonical descriptor registry. */
+    val providers: List<String> = StaticProviderDescriptorRegistry()
+        .getAll()
+        .map { it.id }
 
     /**
      * Slash families [atropos.cli.CommandRouter] accepts but that this registry
@@ -85,9 +163,9 @@ object CommandRegistry {
         )
 
     fun helpSections(): List<CommandGroup> =
-        catalog
+        canonicalEntries
             .groupBy { it.category }
-            .toSortedMap()
+            .toSortedMap(compareBy { CATEGORY_ORDER.indexOf(it).takeIf { index -> index >= 0 } ?: Int.MAX_VALUE })
             .map { (category, commands) ->
                 CommandGroup(
                     category = category,
@@ -117,7 +195,7 @@ object CommandRegistry {
         if (normalized.isBlank()) return emptyList()
 
         val bare = normalized.removePrefix("/")
-        return catalog
+        return canonicalEntries
             .mapNotNull { entry ->
                 val score = entry.matchScore(bare) ?: return@mapNotNull null
                 score to entry
@@ -142,7 +220,12 @@ object CommandRegistry {
                         command = alias,
                         description = description,
                         category = category,
-                        aliases = listOf(command) + aliases.filterNot { it == alias }
+                        aliases = listOf(command) + aliases.filterNot { it == alias },
+                        risk = risk,
+                        keywords = keywords,
+                        related = related,
+                        example = example,
+                        nlHint = nlHint
                     )
                 )
             }
@@ -160,10 +243,12 @@ object CommandRegistry {
             aliasText(alias).equals(query, ignoreCase = true)
         }
         val descriptionMatches = description.contains(query, ignoreCase = true)
+        val keywordMatches = keywords.any { it.contains(query, ignoreCase = true) }
+        val keywordPrefixMatches = keywords.any { it.startsWith(query, ignoreCase = true) }
         val commandStarts = commandText.startsWith(query, ignoreCase = true)
         val commandContains = commandText.contains(query, ignoreCase = true)
 
-        if (!commandStarts && !commandContains && !aliasTextMatches && !descriptionMatches) {
+        if (!commandStarts && !commandContains && !aliasTextMatches && !descriptionMatches && !keywordMatches) {
             return null
         }
 
@@ -174,8 +259,10 @@ object CommandRegistry {
             aliasPrefixMatches -> 3
             commandContains -> 4
             aliasTextMatches -> 5
-            descriptionMatches -> 6
-            else -> 7
+            keywordPrefixMatches -> 6
+            keywordMatches -> 7
+            descriptionMatches -> 8
+            else -> 9
         }
     }
 
@@ -188,4 +275,33 @@ object CommandRegistry {
         } else {
             " (aliases: ${aliases.joinToString(", ")})"
         }
+
+    private fun normalizeCategory(category: String, command: String): String {
+        val value = "$category $command".lowercase()
+        return when {
+            value.contains("model") || value.contains("provider") || value.contains("route") || value.contains("quota") -> "Models"
+            value.contains("factory") || value.contains("artifact") || value.contains("build") || value.contains("test") -> "Build"
+            value.contains("self-host") -> "Self-host"
+            value.contains("agent") || value.contains("repair") -> "Agent"
+            value.contains("dloi") || value.contains("ast") || value.contains("source") || value.contains("authority") -> "Authority"
+            value.contains("verify") || value.contains("govern") || value.contains("audit") -> "Governance"
+            value.contains("shell") || value.startsWith("shell ") || value.contains(" /cd") || value.contains(" /ls") -> "Shell"
+            value.contains("key") || value.contains("paid") -> "Keys/Paid"
+            value.contains("status") || value.contains("observe") || value.contains("debug") || value.contains("verbose") -> "Observe"
+            value.contains("autonomous") || value.contains("daemon") -> "Autonomous"
+            value.contains("tab") || value.contains("session") || value.contains("home") || value.contains("dashboard") -> "Session"
+            else -> "Orient"
+        }
+    }
+
+    private fun keywordIndex(entry: CommandEntry): List<String> =
+        (entry.keywords + when {
+            entry.command.startsWith("/factory") -> listOf("factory", "app", "application", "project", "scaffold")
+            entry.command.startsWith("/providers") || entry.command.startsWith("/use") || entry.command == "/route" -> listOf("provider", "providers", "model", "route", "routing")
+            entry.command.startsWith("/self-host") || entry.command.startsWith("/agent self-host") -> listOf("self-host", "self build", "phase 11", "phase11", "inside out")
+            entry.command.startsWith("/build") || entry.command.startsWith("/artifact") -> listOf("build", "compile", "artifact", "package")
+            entry.command.startsWith("/status") || entry.command.startsWith("/verify") -> listOf("observe", "inspection", "evidence", "check")
+            else -> emptyList()
+        }).distinct()
+
 }

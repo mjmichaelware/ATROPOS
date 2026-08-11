@@ -5,6 +5,7 @@ import atropos.core.policy.ActionActor
 import atropos.core.policy.ActionProposal
 import atropos.core.policy.PolicyActionClass
 import atropos.core.policy.ProviderActionProposals
+import atropos.core.provider.ProviderTruthService
 import java.nio.file.Path
 import java.util.UUID
 
@@ -37,7 +38,8 @@ object DagNodeProposals {
         actionPayload: String?,
         territory: List<String>,
         repoRoot: Path,
-        actor: ActionActor
+        actor: ActionActor,
+        providerId: String? = null
     ): ActionProposal? = when (action) {
         DagNodeAction.CREATE_FILE,
         DagNodeAction.EDIT_FILE -> ActionProposal(
@@ -65,14 +67,17 @@ object DagNodeProposals {
             targetPaths = territory
         )
 
-        DagNodeAction.PROVIDER_CALL -> ActionProposal(
-            id = nextId("dag-provider"),
-            actionClass = PolicyActionClass.PROVIDER_CALL,
-            actor = actor,
-            cwd = repoRoot.toString(),
-            providerId = DAG_PROVIDER,
-            paidProvider = ProviderActionProposals.isPaid(DAG_PROVIDER)
-        )
+        DagNodeAction.PROVIDER_CALL -> {
+            val selectedProvider = providerId ?: ProviderTruthService().snapshot().selectedProvider
+            ActionProposal(
+                id = nextId("dag-provider"),
+                actionClass = PolicyActionClass.PROVIDER_CALL,
+                actor = actor,
+                cwd = repoRoot.toString(),
+                providerId = selectedProvider,
+                paidProvider = ProviderActionProposals.isPaid(selectedProvider)
+            )
+        }
 
         // These execute nothing — `executeCheck` reads state and returns. There
         // is no side effect to authorise.
@@ -89,9 +94,6 @@ object DagNodeProposals {
 
     private fun tokenise(payload: String?): List<String> =
         payload.orEmpty().trim().split(Regex("\\s+")).filter { it.isNotBlank() }
-
-    /** `DagExecutionService.executeProviderCall` dispatches to this provider. */
-    private const val DAG_PROVIDER = "groq"
 
     private fun nextId(prefix: String): String = "$prefix-" + UUID.randomUUID().toString().take(12)
 }

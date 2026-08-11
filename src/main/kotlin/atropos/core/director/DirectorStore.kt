@@ -12,15 +12,33 @@ class DirectorStore(
     private val root: Path = AtroposRepoRootLocator.resolve(),
     private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
-    private val storePath = root.resolve(".atropos/director/observations.jsonl")
+    private val normalizedRoot = root.toAbsolutePath().normalize()
+    private val storePath = normalizedRoot.resolve(".atropos/director/observations.jsonl")
     private val activeObservations = mutableMapOf<String, DirectorObservation>()
 
     fun appendObservation(obs: DirectorObservation) {
+        require(!hasSymlinkBoundary(storePath)) { "director observation store crosses a symbolic link" }
+        Files.createDirectories(storePath.parent)
+        val existing = if (Files.isRegularFile(storePath)) Files.readString(storePath, StandardCharsets.UTF_8) else ""
+        writeStore(existing + obs.redactedForPersistence().toJsonLine() + "\n")
+        activeObservations[obs.id] = obs
+    }
+
+    /** Rewrites acknowledgement state through the same redaction boundary as append. */
+    fun replaceAll(observations: List<DirectorObservation>) {
+        val content = observations.joinToString(separator = "") {
+            it.redactedForPersistence().toJsonLine() + "\n"
+        }
+        writeStore(content)
+        activeObservations.clear()
+        observations.forEach { activeObservations[it.id] = it }
+    }
+
+    private fun writeStore(content: String) {
+        require(!hasSymlinkBoundary(storePath)) { "director observation store crosses a symbolic link" }
         Files.createDirectories(storePath.parent)
         val tmp = storePath.resolveSibling("observations.${System.nanoTime()}.tmp")
-        val existing = if (Files.isRegularFile(storePath)) Files.readString(storePath, StandardCharsets.UTF_8) else ""
-        Files.writeString(tmp, existing + obs.redactedForPersistence().toJsonLine() + "\n", StandardCharsets.UTF_8)
-        activeObservations[obs.id] = obs
+        Files.writeString(tmp, content, StandardCharsets.UTF_8)
         try {
             Files.move(tmp, storePath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
         } catch (_: Exception) {
@@ -29,6 +47,7 @@ class DirectorStore(
     }
 
     fun readAll(): List<DirectorObservation> {
+        if (hasSymlinkBoundary(storePath)) return emptyList()
         if (!Files.isRegularFile(storePath)) return emptyList()
         return Files.readAllLines(storePath, StandardCharsets.UTF_8).mapNotNull { line ->
             parseJsonLine(line.trim())
@@ -41,6 +60,9 @@ class DirectorStore(
 
     private fun DirectorObservation.redactedForPersistence(): DirectorObservation = copy(
         details = redactedDetail(details),
+        worktreePath = worktreePath?.let { redactedReference("worktree", it) },
+        sourceCoordinates = sourceCoordinates.map { redactedReference("source", it) },
+        evidencePaths = evidencePaths.map { redactedReference("evidence", it) },
         filePaths = filePaths.map { redactedReference("path", it) },
         symbols = symbols.map { redactedReference("symbol", it) }
     )
@@ -58,6 +80,15 @@ class DirectorStore(
         return bytes.joinToString("") { "%02x".format(it) }.take(16)
     }
 
+    private fun hasSymlinkBoundary(path: Path): Boolean {
+        var cursor: Path? = path
+        while (cursor != null && cursor != normalizedRoot) {
+            if (Files.isSymbolicLink(cursor)) return true
+            cursor = cursor.parent
+        }
+        return false
+    }
+
     private fun DirectorObservation.toJsonLine(): String {
         val fp = filePaths.joinToString("|") { it.replace("|", "%7C") }
         val sym = symbols.joinToString("|") { it.replace("|", "%7C") }
@@ -73,7 +104,12 @@ class DirectorStore(
             acknowledged.toString(),
             dismissed.toString(),
             goalId.orEmpty(),
-            territoryId.orEmpty()
+            territoryId.orEmpty(),
+            driftScore.toString(),
+            claimId.orEmpty(),
+            worktreePath.orEmpty(),
+            sourceCoordinates.joinToString("|") { it.replace("|", "%7C") },
+            evidencePaths.joinToString("|") { it.replace("|", "%7C") }
         ).joinToString("\t")
     }
 
@@ -94,8 +130,20 @@ class DirectorStore(
                 symbols = if (parts[6].isBlank()) emptyList() else parts[6].split("|").map { it.replace("%7C", "|") },
                 timestamp = java.time.Instant.parse(parts[7]),
                 acknowledged = parts[8].toBoolean(),
-                dismissed = parts[9].toBoolean()
+                dismissed = parts[9].toBoolean(),
+                driftScore = parts.getOrNull(12)?.toIntOrNull()
+                    ?: DirectorDriftScorer.score(ObservationKind.valueOf(parts[1]), DriftSeverity.valueOf(parts[2])),
+                claimId = parts.getOrNull(13)?.takeIf { it.isNotBlank() },
+                worktreePath = parts.getOrNull(14)?.takeIf { it.isNotBlank() },
+                sourceCoordinates = decodeList(parts.getOrNull(15)),
+                evidencePaths = decodeList(parts.getOrNull(16))
             )
         } catch (_: Exception) { null }
     }
+
+    private fun decodeList(value: String?): List<String> = value.orEmpty()
+        .takeIf { it.isNotBlank() }
+        ?.split("|")
+        ?.map { it.replace("%7C", "|") }
+        .orEmpty()
 }

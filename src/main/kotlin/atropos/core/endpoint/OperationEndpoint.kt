@@ -24,9 +24,31 @@ data class OperationEndpoint(
         output = "typed operation result",
         errors = listOf("typed failure"),
         auth = "policy-bound",
-        sideEffects = emptyList(),
+        sideEffects = listOf("none"),
         timeoutMs = 30_000,
         retryPolicy = "bounded-none",
         testIds = emptyList()
     )
-)
+) {
+    fun requireCompleteManifest(): OperationEndpoint {
+        require(id.isNotBlank() && description.isNotBlank()) {
+            "operation registry contains an unnamed endpoint"
+        }
+        require(manifest.owner.isNotBlank()) { "$id has no manifest owner" }
+        require(manifest.input.isNotBlank()) { "$id has no manifest input" }
+        require(manifest.output.isNotBlank()) { "$id has no manifest output" }
+        require(manifest.errors.isNotEmpty() && manifest.errors.all(String::isNotBlank)) {
+            "$id has incomplete manifest errors"
+        }
+        require(manifest.auth.isNotBlank()) { "$id has no manifest auth policy" }
+        require(manifest.sideEffects.isNotEmpty() && manifest.sideEffects.all(String::isNotBlank)) {
+            "$id has no manifest side-effect declaration"
+        }
+        require(manifest.timeoutMs > 0L) { "$id has no positive manifest timeout" }
+        require(manifest.retryPolicy.isNotBlank()) { "$id has no manifest retry policy" }
+        require(manifest.testIds.isNotEmpty() && manifest.testIds.all(String::isNotBlank)) {
+            "$id has no manifest test identity"
+        }
+        return this
+    }
+}

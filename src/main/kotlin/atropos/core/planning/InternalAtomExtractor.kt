@@ -33,6 +33,7 @@ class InternalAtomExtractor {
             val territory = extractTerritory(section.content)
             matchedDimensions.forEach { dimension ->
                 atoms += InternalAtom(
+                    id = stableAtomId(document, section, dimension),
                     projectId = document.projectId,
                     documentId = document.documentId,
                     sectionId = section.id,
@@ -40,12 +41,21 @@ class InternalAtomExtractor {
                     statement = section.content.trim().ifBlank { section.heading },
                     sourceCoordinates = section.coordinates,
                     dependencies = dependencies,
-                    territory = territory
+                    territory = territory,
+                    sourceDocumentSha256 = document.sha256
                 )
             }
         }
         return atoms
     }
+
+    private fun stableAtomId(
+        document: IngestedDocument,
+        section: IngestedSection,
+        dimension: AtomDimension
+    ): String = "atom-" + sha256(
+        listOf(document.documentId, section.id, dimension.name).joinToString("|")
+    ).take(12)
 
     private fun extractDependencies(content: String): List<String> =
         Regex("""(?:depends on|after|requires)\s+([A-Za-z0-9._:-]+)""", RegexOption.IGNORE_CASE)
@@ -60,4 +70,9 @@ class InternalAtomExtractor {
             .map { it.value.removeSuffix(".") }
             .distinct()
             .toList()
+
+    private fun sha256(value: String): String =
+        java.security.MessageDigest.getInstance("SHA-256")
+            .digest(value.toByteArray(Charsets.UTF_8))
+            .joinToString("") { "%02x".format(it) }
 }

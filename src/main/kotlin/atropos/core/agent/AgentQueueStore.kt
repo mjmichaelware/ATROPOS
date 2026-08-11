@@ -41,20 +41,24 @@ class AgentQueueStore(
         state: AgentQueueState = AgentQueueState.QUEUED,
         checkpoint: AgentQueueCheckpoint = AgentQueueCheckpoint.QUEUED,
         provider: String? = null,
-        failureReason: String? = null
+        failureReason: String? = null,
+        nextEligibleAt: Instant? = null
     ): AgentQueueRecord {
+        val normalizedTask = task.trim()
+        require(normalizedTask.isNotEmpty()) { "queue task must not be blank" }
         Files.createDirectories(entriesDir)
         val now = clock()
         val id = nextQueueId(now)
         val record = codec.sanitize(
             AgentQueueRecord(
                 id = id,
-                task = task.trim(),
+                task = normalizedTask,
                 smokeCommand = smokeCommand?.trim()?.takeIf { it.isNotBlank() },
                 state = state,
                 checkpoint = checkpoint,
                 provider = provider,
                 failureReason = failureReason,
+                nextEligibleAt = nextEligibleAt,
                 createdAt = now,
                 updatedAt = now,
                 finishedAt = if (state.terminal) now else null,

@@ -4,7 +4,9 @@ import atropos.core.AtroposRepoRootLocator
 import atropos.core.security.RedactionFilter
 import atropos.core.territory.TerritoryAssignment
 import atropos.core.verification.DeterministicVerifier
+import java.nio.charset.StandardCharsets
 import java.nio.file.Path
+import java.security.MessageDigest
 import java.time.Instant
 import java.util.UUID
 
@@ -29,12 +31,31 @@ data class AuditReport(
     val timestamp: Instant = Instant.now()
 ) {
     val summary: String get() = "$passed passed, $warnings warnings, $failures failures"
+
+    /** Digest of the immutable finding set used by downstream promotion evidence. */
+    val evidenceSha256: String
+        get() = sha256(findings.joinToString("\n") { finding ->
+            listOf(
+                finding.check,
+                finding.severity.name,
+                finding.file.orEmpty(),
+                finding.message,
+                finding.evidence
+            ).joinToString("\u001f")
+        })
+
+    private companion object {
+        fun sha256(value: String): String = MessageDigest.getInstance("SHA-256")
+            .digest(value.toByteArray(StandardCharsets.UTF_8))
+            .joinToString("") { "%02x".format(it) }
+    }
 }
 
 data class AuditorPromotionDecision(
     val allowed: Boolean,
     val blockingFindings: List<AuditFinding>,
-    val message: String
+    val message: String,
+    val reportEvidenceSha256: String
 )
 
 class AuditorService(
@@ -50,17 +71,28 @@ class AuditorService(
     private val repoRoot: Path = AtroposRepoRootLocator.resolve()
 ) {
     private val findings = mutableListOf<AuditFinding>()
+    private val normalizedRepoRoot = repoRoot.toAbsolutePath().normalize()
 
     fun auditTerritories(territories: List<TerritoryAssignment>): List<AuditFinding> {
         val results = mutableListOf<AuditFinding>()
         for (t in territories) {
             if (t.expiresAt != null && Instant.now().isAfter(t.expiresAt)) {
-                results += AuditFinding(check = "territory-expiry", severity = AuditSeverity.WARNING, file = t.allowedPrefix, message = "territory ${t.id} expired at ${t.expiresAt}")
+                results += AuditFinding(check = "territory-expiry", severity = AuditSeverity.FAILURE, file = t.allowedPrefix, message = "territory ${t.id} expired at ${t.expiresAt}")
             }
+            val safePrefix = t.allowedPrefix.isNotBlank() && isSafeTerritoryPrefix(t.allowedPrefix)
             if (t.allowedPrefix.isBlank()) {
                 results += AuditFinding(check = "territory-prefix", severity = AuditSeverity.FAILURE, message = "territory ${t.id} has blank allowed prefix")
+            } else if (!safePrefix) {
+                results += AuditFinding(
+                    check = "territory-prefix-safety",
+                    severity = AuditSeverity.FAILURE,
+                    file = t.allowedPrefix,
+                    message = "territory ${t.id} has an unsafe repository prefix"
+                )
             }
-            results += AuditFinding(check = "territory-exists", severity = AuditSeverity.PASS, file = t.allowedPrefix, message = "territory ${t.id} for ${t.ownerId} valid")
+            if (safePrefix) {
+                results += AuditFinding(check = "territory-exists", severity = AuditSeverity.PASS, file = t.allowedPrefix, message = "territory ${t.id} for ${t.ownerId} valid")
+            }
         }
         findings += results
         return results
@@ -70,7 +102,29 @@ class AuditorService(
         val results = mutableListOf<AuditFinding>()
         val redactFilter = RedactionFilter()
         for (f in files) {
-            val content = try { java.io.File(f).readText() } catch (_: Exception) { continue }
+            val resolved = resolveAuditPath(f)
+            if (resolved == null) {
+                results += AuditFinding(
+                    check = "secret-scan",
+                    severity = AuditSeverity.FAILURE,
+                    file = f,
+                    message = "secret scan refused path outside repository root"
+                )
+                continue
+            }
+            val content: String
+            try {
+                content = resolved.toFile().readText()
+            } catch (failure: Exception) {
+                results += AuditFinding(
+                    check = "secret-scan",
+                    severity = AuditSeverity.FAILURE,
+                    file = f,
+                    message = "secret scan could not read file",
+                    evidence = failure.javaClass.simpleName
+                )
+                continue
+            }
             val report = redactFilter.report(content)
             if (report.changed) {
                 results += AuditFinding(check = "secret-scan", severity = AuditSeverity.FAILURE, file = f, message = "secrets found: ${report.summary()}", evidence = report.summary())
@@ -109,7 +163,16 @@ class AuditorService(
         val verifier = DeterministicVerifier(repoRoot)
         val results = mutableListOf<AuditFinding>()
         val paths = files.mapNotNull { f ->
-            try { Path.of(f) } catch (_: Exception) { null }
+            resolveAuditPath(f)
+        }
+        if (paths.size != files.size) {
+            results += AuditFinding(
+                check = "deterministic-verify",
+                severity = AuditSeverity.FAILURE,
+                message = "deterministic audit refused one or more paths outside repository root"
+            )
+            findings += results
+            return results
         }
         if (paths.isEmpty()) return results
         try {
@@ -121,11 +184,48 @@ class AuditorService(
             } else {
                 results += AuditFinding(check = "deterministic-verify", severity = AuditSeverity.PASS, message = "no issues across ${files.size} files")
             }
-        } catch (_: Exception) {
-            results += AuditFinding(check = "deterministic-verify", severity = AuditSeverity.WARNING, message = "unable to verify ${files.size} files")
+        } catch (failure: Exception) {
+            results += AuditFinding(
+                check = "deterministic-verify",
+                severity = AuditSeverity.FAILURE,
+                message = "unable to verify ${files.size} files",
+                evidence = failure.javaClass.simpleName
+            )
         }
         findings += results
         return results
+    }
+
+    private fun resolveAuditPath(raw: String): Path? {
+        val requested = runCatching { Path.of(raw) }.getOrNull() ?: return null
+        val resolved = (if (requested.isAbsolute) requested else normalizedRepoRoot.resolve(requested))
+            .toAbsolutePath()
+            .normalize()
+        if (!resolved.startsWith(normalizedRepoRoot)) return null
+
+        val relative = normalizedRepoRoot.relativize(resolved)
+        var cursor = normalizedRepoRoot
+        for (part in relative) {
+            cursor = cursor.resolve(part)
+            if (java.nio.file.Files.isSymbolicLink(cursor)) return null
+        }
+
+        val realRoot = runCatching { normalizedRepoRoot.toRealPath() }.getOrNull() ?: return null
+        val realPath = runCatching { resolved.toRealPath() }.getOrNull()
+        return when {
+            realPath == null -> resolved
+            realPath.startsWith(realRoot) -> resolved
+            else -> null
+        }
+    }
+
+    private fun isSafeTerritoryPrefix(raw: String): Boolean {
+        val portable = raw.replace('\\', '/').trim().trim('/')
+        if (portable.isBlank()) return false
+        if (portable.split('/').any { it.isBlank() || it == "." || it == ".." }) return false
+        val requested = runCatching { Path.of(portable) }.getOrNull() ?: return false
+        if (requested.isAbsolute) return false
+        return resolveAuditPath(portable) != null
     }
 
     fun report(): AuditReport {
@@ -139,6 +239,22 @@ class AuditorService(
         val blocking = report.findings.filter {
             it.severity == AuditSeverity.FAILURE || it.severity == AuditSeverity.CRITICAL
         }.toMutableList()
+        if (report.findings.isEmpty()) {
+            blocking += AuditFinding(
+                check = "audit-completeness",
+                severity = AuditSeverity.CRITICAL,
+                message = "promotion cannot proceed without recorded audit findings",
+                evidence = "audit report was empty"
+            )
+        }
+        if (auditedBy.isNullOrBlank()) {
+            blocking += AuditFinding(
+                check = "auditor-independence",
+                severity = AuditSeverity.CRITICAL,
+                message = "promotion cannot proceed without an auditor identity",
+                evidence = "auditedBy was blank"
+            )
+        }
         if (claimedBy != null && auditedBy != null && claimedBy == auditedBy) {
             blocking += AuditFinding(
                 check = "auditor-independence",
@@ -150,7 +266,8 @@ class AuditorService(
         return AuditorPromotionDecision(
             allowed = blocking.isEmpty(),
             blockingFindings = blocking,
-            message = if (blocking.isEmpty()) "auditor promotion gate passed" else "auditor promotion gate blocked: ${blocking.size} findings"
+            message = if (blocking.isEmpty()) "auditor promotion gate passed" else "auditor promotion gate blocked: ${blocking.size} findings",
+            reportEvidenceSha256 = report.evidenceSha256
         )
     }
 }

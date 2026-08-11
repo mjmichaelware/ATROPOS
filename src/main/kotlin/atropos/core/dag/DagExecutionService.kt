@@ -19,6 +19,7 @@ import atropos.core.territory.TerritoryService
 import atropos.core.policy.AgencyDisposition
 import atropos.core.policy.BoundedAgencyGate
 import atropos.core.policy.ExecutionPolicyEngine
+import atropos.core.provider.ProviderTruthService
 import java.nio.file.Path
 import java.time.Instant
 
@@ -41,9 +42,16 @@ class DagExecutionService(
     ).resolve().plugin,
     private val clock: () -> Instant = { Instant.now() }
 ) {
+    private val providerTruth = ProviderTruthService(config)
     private val finisher = DagNodeFinisher(planningGraph)
     private val shellExecutor = DagNodeShellExecutor(repoRoot, store, finisher, ::territoryViolation, ::extractCandidatePaths)
-    private val providerNodeExecutor = DagProviderNodeExecutor(repoRoot, agentService, memoryStore, finisher)
+    private val providerNodeExecutor = DagProviderNodeExecutor(
+        repoRoot = repoRoot,
+        agentService = agentService,
+        memoryStore = memoryStore,
+        finisher = finisher,
+        providerTruth = providerTruth
+    )
     private val fileMutationExecutor = DagNodeFileMutationExecutor(store, finisher, ::normalizeCandidatePath, ::territoryViolation)
 
     fun createDag(label: String, nodes: List<DagNode>, projectId: String? = null): DagDefinition {
@@ -140,7 +148,8 @@ class DagExecutionService(
             actionPayload = node.actionPayload,
             territory = node.territory,
             repoRoot = repoRoot,
-            actor = nodeActor
+            actor = nodeActor,
+            providerId = providerTruth.snapshot().selectedProvider
         )
         if (proposal != null) {
             // Grant-on-dispatch: the node is handed a slice of the operator's

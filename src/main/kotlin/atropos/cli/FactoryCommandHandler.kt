@@ -3,18 +3,27 @@ package atropos.cli
 
 import atropos.cli.ui.AnsiTerminalEngine
 import atropos.cli.ui.AppFactoryPlanRenderer
+import atropos.core.factory.FactoryClarificationRequired
+import atropos.core.factory.FactoryClarificationRequest
+import atropos.core.AtroposRepoRootLocator
+import atropos.core.security.RedactionFilter
+import java.nio.file.Path
 
 class FactoryCommandHandler(
     private val uiEngine: AnsiTerminalEngine,
     private val renderer: AppFactoryPlanRenderer = AppFactoryPlanRenderer(),
-    private val runFactory: (String) -> String = renderer::renderRun
+    private val runFactory: (String) -> String = renderer::renderRun,
+    private val redactionFilter: RedactionFilter = RedactionFilter(),
+    private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
+    private val resumeFactory: (String, List<Boolean>) -> String = renderer::renderClarifiedRun
 ) {
     fun execute(tokens: List<String>): RouterOutcome {
         when (tokens.getOrNull(1)?.lowercase()) {
             null, "status" -> uiEngine.renderNotice(renderer.renderStatus())
             "plan" -> renderPlan(tokens.drop(2))
             "run" -> renderRun(tokens.drop(2))
-            else -> uiEngine.renderError("usage: /factory [status|plan|run] <prompt>")
+            "answer" -> renderClarificationAnswer(tokens.drop(2))
+            else -> uiEngine.renderError("usage: /factory [status|plan|run|answer] <prompt>")
         }
         return RouterOutcome.CONTINUE
     }
@@ -32,12 +41,63 @@ class FactoryCommandHandler(
         } else {
             val result = try {
                 runFactory(prompt)
+            } catch (failure: FactoryClarificationRequired) {
+                val questions = failure.questions.joinToString(" | ") { "YES/NO: $it" }
+                uiEngine.renderError(
+                    "factory clarification required: $questions; artifact=${failure.request.path}"
+                )
+                return
             } catch (failure: RuntimeException) {
-                uiEngine.renderError("factory run failed: ${failure.message ?: "unknown failure"}")
+                val detail = redactionFilter.compact(failure.message ?: "unknown failure")
+                uiEngine.renderError("factory run failed: ${detail.ifBlank { "unknown failure" }}")
                 return
             }
             uiEngine.renderNotice("factory run verified repository output:")
             uiEngine.renderNotice(result)
         }
+    }
+
+    private fun renderClarificationAnswer(parts: List<String>) {
+        val projectId = parts.firstOrNull()?.trim().orEmpty()
+        val rawAnswers = parts.drop(1)
+        if (!projectId.matches(PROJECT_ID) || rawAnswers.isEmpty()) {
+            uiEngine.renderError("usage: /factory answer <project-id> <YES|NO> [YES|NO ...]")
+            return
+        }
+        val answers = rawAnswers.map { token ->
+            when (token.lowercase()) {
+                "yes", "y" -> true
+                "no", "n" -> false
+                else -> null
+            }
+        }
+        if (answers.any { it == null }) {
+            uiEngine.renderError("factory clarification answers must be YES or NO")
+            return
+        }
+        val runRoot = repoRoot.resolve(".atropos/research/factory").resolve(projectId).normalize()
+        try {
+            require(runRoot.startsWith(repoRoot.toAbsolutePath().normalize())) {
+                "factory clarification path escaped repository root"
+            }
+            val request = FactoryClarificationRequest.load(runRoot)
+            val answerHash = FactoryClarificationRequest.persistAnswers(
+                runRoot = runRoot,
+                request = request,
+                answers = answers.filterNotNull()
+            )
+            uiEngine.renderNotice(
+                "factory clarification answers persisted: project=$projectId " +
+                    "prompt=${request.promptFingerprint} answers_sha256=$answerHash"
+            )
+            uiEngine.renderNotice(resumeFactory(projectId, answers.filterNotNull()))
+        } catch (failure: RuntimeException) {
+            val detail = redactionFilter.compact(failure.message ?: "unknown clarification failure")
+            uiEngine.renderError("factory clarification failed: ${detail.ifBlank { "unknown failure" }}")
+        }
+    }
+
+    private companion object {
+        val PROJECT_ID = Regex("[A-Za-z0-9][A-Za-z0-9._-]{0,127}")
     }
 }

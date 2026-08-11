@@ -1,13 +1,9 @@
 package atropos.core.artifact
 
 import atropos.core.execution.LocalWorkQueue
-import atropos.core.factory.AppFactoryRouter
-import atropos.core.factory.FactoryPlan
 import atropos.core.memory.LocalMemoryStore
-import atropos.core.memory.MemoryKind
 import atropos.core.platform.JvmPlatformAbstraction
 import atropos.core.platform.PlatformAbstraction
-import atropos.core.project.ProjectRegistry
 import atropos.core.security.RedactionFilter
 import java.nio.charset.StandardCharsets
 import java.time.Instant
@@ -15,13 +11,33 @@ import java.time.Instant
 class ArtifactPipeline(
     private val store: ArtifactStore = ArtifactStore(),
     private val platform: PlatformAbstraction = JvmPlatformAbstraction(),
-    private val factoryRouter: AppFactoryRouter = AppFactoryRouter(),
-    private val memory: LocalMemoryStore = LocalMemoryStore(),
-    private val queue: LocalWorkQueue = LocalWorkQueue(),
-    private val projectRegistry: ProjectRegistry = ProjectRegistry(),
     private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
-    fun plan(prompt: String): FactoryPlan = factoryRouter.plan(prompt)
+    /**
+     * Source-compatible boundary for callers from the pre-separation API.
+     * These services are intentionally ignored: artifact deliverables no
+     * longer own application memory or compile-queue execution. Remove this
+     * constructor after downstream callers migrate to the three-owner API.
+     */
+    @Deprecated("ArtifactPipeline no longer owns memory or queue execution")
+    @Suppress("UNUSED_PARAMETER")
+    constructor(
+        store: ArtifactStore,
+        platform: PlatformAbstraction,
+        memory: LocalMemoryStore,
+        queue: LocalWorkQueue,
+        redactionFilter: RedactionFilter = RedactionFilter()
+    ) : this(store, platform, redactionFilter)
+
+    fun plan(prompt: String): ArtifactPlan {
+        val cleanPrompt = prompt.trim()
+        require(cleanPrompt.isNotBlank()) { "artifact prompt must not be blank" }
+        val digest = ArtifactHasher.sha256Bytes(cleanPrompt.toByteArray(StandardCharsets.UTF_8))
+        return ArtifactPlan(
+            id = "artifact-${digest.take(16)}",
+            prompt = cleanPrompt
+        )
+    }
 
     /** Creates a real user-requested deliverable; this is not the App Factory path. */
     fun createDeliverable(prompt: String): ArtifactReport {
@@ -84,15 +100,16 @@ class ArtifactPipeline(
         return ArtifactReport(listOf(artifact), evidence, emptyList())
     }
 
+    /**
+     * Compatibility wrapper for older callers. App creation belongs to
+     * The general app factory owns application creation; this method remains
+     * artifact-only.
+     */
+    @Deprecated("Use createDeliverable for /artifact work; application creation uses the separate factory command")
     fun runFactory(prompt: String, installDir: String? = null): AppFactoryRun {
         val plan = plan(prompt)
-        val project = projectRegistry.register(
-            name = plan.projectSpec.intent.name,
-            kind = plan.projectSpec.intent.kind,
-            objective = plan.prompt
-        ).record
         val startedAt = Instant.now()
-        val report = build(plan)
+        val report = createDeliverable(prompt)
         val artifactVerificationEvidence = report.artifacts.map { verify(it.id) }
         val verificationEvidence = report.verifications + artifactVerificationEvidence
         val readyArtifacts = report.artifacts.filter { it.state == ArtifactState.READY }
@@ -100,7 +117,7 @@ class ArtifactPipeline(
             ?.takeIf { readyArtifacts.isNotEmpty() }
             ?.let { install(readyArtifacts.first().id, it) }
         val commitCandidate = prepareCommit(
-            message = "ATROPOS factory: ${plan.intent}",
+            message = "ATROPOS artifact: ${plan.intent}",
             artifactIds = report.artifacts.map { it.id },
             proofIds = listOfNotNull(installProof?.id)
         )
@@ -110,7 +127,7 @@ class ArtifactPipeline(
         val run = AppFactoryRun(
             prompt = plan.prompt,
             planId = plan.id,
-            projectId = project.id,
+            projectId = null,
             artifacts = report.artifacts,
             verifications = verificationEvidence,
             installProof = installProof,
@@ -119,86 +136,12 @@ class ArtifactPipeline(
             completedAt = Instant.now(),
             success = success
         )
-        memory.rememberToolResult(
-            subjectId = run.id,
-            title = "app-factory-run ${plan.intent}",
-            body = "project=${project.id}\nplan=${plan.id}\nartifacts=${run.artifacts.size}\nverifications=${run.verifications.size}\ninstall=${installProof?.id ?: "none"}\nsuccess=${run.success}",
-            tags = listOf("artifact", "factory", "proof")
-        )
         return run
     }
 
-    fun build(plan: FactoryPlan): ArtifactReport {
-        val artifacts = mutableListOf<Artifact>()
-        val verifications = mutableListOf<VerificationEvidence>()
-        val installProofs = mutableListOf<InstallProof>()
-
-        val memoryRecord = memory.remember(
-            kind = MemoryKind.DECISION,
-            title = "artifact-build ${plan.intent}",
-            body = plan.prompt,
-            tags = listOf("artifact", "factory")
-        )
-
-        for (step in plan.steps) {
-            when (step.kind) {
-                atropos.core.factory.FactoryStepKind.CODE -> {
-                    val result = compileStep(plan.prompt, plan.intent)
-                    if (result != null) {
-                        artifacts += result
-                        verifications += VerificationEvidence(
-                            artifactId = result.id,
-                            kind = VerificationKind.COMPILE_CHECK,
-                            passed = result.state == ArtifactState.READY,
-                            evidence = if (result.state == ArtifactState.READY) "compile succeeded" else "compile failed"
-                        )
-                    }
-                }
-                atropos.core.factory.FactoryStepKind.VALIDATE -> {
-                    val existing = artifacts.lastOrNull()
-                    if (existing != null) {
-                        val hashOk = if (platform.fileExists(existing.filePath)) {
-                            val currentSha = ArtifactHasher.sha256File(platform, existing.filePath)
-                            currentSha == existing.sha256
-                        } else false
-                        verifications += VerificationEvidence(
-                            artifactId = existing.id,
-                            kind = VerificationKind.HASH_VERIFY,
-                            passed = hashOk,
-                            evidence = if (hashOk) "hash verified: ${existing.sha256.take(16)}" else "hash mismatch"
-                        )
-                    }
-                }
-                atropos.core.factory.FactoryStepKind.CI -> {
-                    val job = queue.enqueueLocalCompile()
-                    verifications += VerificationEvidence(
-                        artifactId = "ci-${job.id}",
-                        kind = VerificationKind.TEST_PASS,
-                        passed = false,
-                        evidence = "CI job queued; verification pending: ${job.id}"
-                    )
-                }
-                else -> {}
-            }
-        }
-
-        val report = ArtifactReport(
-            artifacts = artifacts,
-            verifications = verifications,
-            installProofs = installProofs
-        )
-
-        store.saveArtifacts(artifacts)
-        store.saveVerifications(verifications)
-        memory.rememberToolResult(
-            subjectId = plan.id,
-            title = "artifact-build-complete ${plan.id}",
-            body = report.summary,
-            tags = listOf("artifact", "build-result")
-        )
-
-        return report
-    }
+    /** Compatibility wrapper; it cannot scaffold or compile an application. */
+    @Deprecated("Use createDeliverable for artifact work")
+    fun build(plan: ArtifactPlan): ArtifactReport = createDeliverable(plan.prompt)
 
     fun verify(artifactId: String): VerificationEvidence {
         val artifact = store.loadArtifact(artifactId) ?: return VerificationEvidence(
@@ -266,33 +209,6 @@ class ArtifactPipeline(
             artifacts = store.loadArtifacts(),
             verifications = store.loadVerifications(),
             installProofs = store.loadInstallProofs()
-        )
-    }
-
-    private fun compileStep(prompt: String, intent: String): Artifact? {
-        val srcFile = "build/generated/${intent}/Main.kt"
-        val writeResult = platform.writeFile(srcFile, "// generated from: $prompt\n// intent: $intent\n")
-        if (writeResult.isFailure) return null
-
-        val startTime = System.currentTimeMillis()
-        val buildResult = platform.spawnProcess(listOf("kotlinc", srcFile, "-include-runtime", "-d", "build/${intent}.jar"))
-        val duration = System.currentTimeMillis() - startTime
-
-        val filePath = "build/${intent}.jar"
-        val state = if (buildResult.isSuccess && buildResult.getOrNull()?.exitCode == 0) ArtifactState.READY else ArtifactState.FAILED
-        val bytes = if (platform.fileExists(filePath)) platform.fileSize(filePath) else 0L
-        val sha = if (bytes > 0) ArtifactHasher.sha256File(platform, filePath) else ""
-
-        return Artifact(
-            kind = if (intent.contains("ui")) ArtifactKind.COMPOSE_PACKAGE else ArtifactKind.BINARY_JAR,
-            name = "$intent.jar",
-            filePath = filePath,
-            sha256 = sha,
-            byteSize = bytes,
-            state = state,
-            buildCommand = "kotlinc $srcFile -include-runtime -d $filePath",
-            buildDurationMs = duration,
-            metadata = mapOf("intent" to intent, "prompt" to prompt.take(100))
         )
     }
 

@@ -2,6 +2,7 @@ package atropos.core.verifier
 
 import atropos.core.verification.DeterministicClassification
 import atropos.core.verification.DiagnosticSeverity
+import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -36,5 +37,21 @@ class ConstraintSolverEvaluatorTest {
         assertTrue(findings.single().evidence.contains("expected=atropos/core/Foo.kt"))
         assertTrue(findings.single().evidence.contains("observed=src/main/kotlin/example/Foo.kt"))
         assertEquals(DeterministicClassification.DETERMINISTIC, findings.single().classification)
+    }
+
+    @Test
+    fun relative_paths_are_resolved_against_the_declared_root() {
+        val root = Files.createTempDirectory("atropos-constraint-root-")
+        val findings = evaluator.evaluateBoundaries(
+            BoundaryConstraint(
+                invariantId = "generated_path",
+                rule = BoundaryRule.PATH_WITHIN_ROOT,
+                expected = root.toString(),
+                observed = "src/main/kotlin/App.kt",
+                remediation = "keep generated paths inside the project root"
+            )
+        )
+
+        assertTrue(findings.isEmpty(), findings.toString())
     }
 }

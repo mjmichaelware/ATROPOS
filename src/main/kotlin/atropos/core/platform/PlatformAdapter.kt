@@ -1,9 +1,9 @@
 package atropos.core.platform
 
-import java.io.File
+import atropos.core.policy.BoundedProcessRunner
 import java.nio.charset.StandardCharsets
-import java.nio.file.Files
 import java.nio.file.Path
+import java.util.concurrent.TimeUnit
 
 interface PlatformAdapter {
     val targetPlatform: RuntimePlatform
@@ -17,12 +17,10 @@ class ComposeDesktopAdapter : PlatformAdapter {
     override val displayName: String = "Compose Desktop Adapter"
 
     override fun isAvailable(): Boolean {
-        return try {
-            Class.forName("androidx.compose.runtime.Composable")
-            true
-        } catch (_: Exception) {
-            false
-        }
+        val marker = "androidx/compose/runtime/Composable.class"
+        val contextLoader = Thread.currentThread().contextClassLoader
+        return contextLoader?.getResource(marker) != null ||
+            ComposeDesktopAdapter::class.java.classLoader?.getResource(marker) != null
     }
 
     override fun adapt(abstraction: PlatformAbstraction): PlatformAbstraction {
@@ -62,9 +60,13 @@ class AndroidShellAdapter : PlatformAdapter {
             val proc = ProcessBuilder("adb", "shell", "echo", "available")
                 .redirectErrorStream(true)
                 .start()
-            val out = proc.inputStream.readAllBytes().toString(StandardCharsets.UTF_8).trim()
-            proc.waitFor()
-            proc.exitValue() == 0 && out.contains("available")
+            val completed = proc.waitFor(2, TimeUnit.SECONDS)
+            if (!completed) {
+                proc.destroyForcibly()
+                return false
+            }
+            val out = proc.inputStream.readNBytes(1024).toString(StandardCharsets.UTF_8).trim()
+            proc.exitValue() == 0 && out == "available"
         } catch (_: Exception) {
             false
         }
@@ -78,6 +80,8 @@ class AndroidShellAdapter : PlatformAdapter {
 class AndroidShellAbstraction(
     private val wrapped: PlatformAbstraction
 ) : PlatformAbstraction by wrapped {
+    private val boundedProcessRunner = BoundedProcessRunner()
+
     override val descriptor: PlatformDescriptor
         get() = wrapped.descriptor.copy(
             platform = RuntimePlatform.ANDROID,
@@ -93,16 +97,35 @@ class AndroidShellAbstraction(
         )
 
     override fun spawnProcess(command: List<String>, workingDir: String?): Result<ProcessOutput> = runCatching {
-        val adbCmd = listOf("adb", "shell") + command
-        val pb = ProcessBuilder(adbCmd)
-            .redirectErrorStream(false)
-            .directory(workingDir?.let { File(it) } ?: File("/"))
-        val proc = pb.start()
-        val stdout = proc.inputStream.readAllBytes().toString(StandardCharsets.UTF_8)
-        val stderr = proc.errorStream.readAllBytes().toString(StandardCharsets.UTF_8)
-        val exit = proc.waitFor()
-        ProcessOutput(exitCode = exit, stdout = stdout, stderr = stderr, command = adbCmd.joinToString(" "))
+        require(command.isNotEmpty()) { "android shell command must not be empty" }
+        val adbCmd = if (workingDir.isNullOrBlank()) {
+            listOf("adb", "shell") + command
+        } else {
+            val remote = "cd -- ${shellQuote(workingDir)} && exec " + command.joinToString(" ", transform = ::shellQuote)
+            listOf("adb", "shell", "sh", "-c", remote)
+        }
+        val bounded = boundedProcessRunner.run(
+            command = adbCmd,
+            directory = Path.of("/"),
+            timeoutMillis = 1_800_000,
+            maxOutputBytes = 256 * 1024,
+            maxOutputLines = 4_000
+        )
+        val stderr = buildString {
+            bounded.launchError?.let(::appendLine)
+            if (bounded.timedOut) appendLine("android shell command timed out")
+            append(bounded.stderr)
+        }
+        ProcessOutput(
+            exitCode = bounded.exitCode ?: 124,
+            stdout = bounded.stdout,
+            stderr = stderr,
+            command = adbCmd.joinToString(" ")
+        )
     }
+
+    private fun shellQuote(value: String): String =
+        "'${value.replace("'", "'\"'\"'")}'"
 }
 
 object PlatformAdapterRegistry {
@@ -112,12 +135,21 @@ object PlatformAdapterRegistry {
         AndroidShellAdapter()
     )
 
-    fun register(adapter: PlatformAdapter) { adapters += adapter }
+    /** Keep one deterministic adapter owner per target platform. */
+    @Synchronized
+    fun register(adapter: PlatformAdapter) {
+        val existing = adapters.indexOfFirst { it.targetPlatform == adapter.targetPlatform }
+        if (existing >= 0) adapters[existing] = adapter else adapters += adapter
+    }
 
-    fun available(): List<PlatformAdapter> = adapters.filter { it.isAvailable() }
+    @Synchronized
+    fun available(): List<PlatformAdapter> = adapters.toList().filter(::isAvailableSafely)
 
-    fun forPlatform(platform: RuntimePlatform): PlatformAdapter? = adapters.firstOrNull { it.targetPlatform == platform && it.isAvailable() }
+    @Synchronized
+    fun forPlatform(platform: RuntimePlatform): PlatformAdapter? =
+        adapters.firstOrNull { it.targetPlatform == platform && isAvailableSafely(it) }
 
+    @Synchronized
     fun all(): List<PlatformAdapter> = adapters.toList()
 
     fun renderAvailable(): String {
@@ -125,4 +157,7 @@ object PlatformAdapterRegistry {
         if (avail.isEmpty()) return "PlatformAdapters: none available"
         return avail.joinToString("\n") { "  ${it.displayName} (${it.targetPlatform.name})" }
     }
+
+    private fun isAvailableSafely(adapter: PlatformAdapter): Boolean =
+        runCatching { adapter.isAvailable() }.getOrDefault(false)
 }

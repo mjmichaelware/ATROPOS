@@ -6,23 +6,33 @@ import atropos.core.auditor.AuditorService
 import atropos.core.custodian.CustodianService
 import atropos.core.dag.DAGNodeState
 import atropos.core.dag.DagService
+import atropos.core.dag.DagExecutionService
 import atropos.core.dag.DocumentIngestionService
 import atropos.core.director.DirectorService
+import atropos.core.director.DirectorDagSupervisor
 import atropos.core.director.DriftSeverity
 import atropos.core.director.ObservationKind
 import atropos.core.hierarchy.HierarchyRegistry
 import atropos.core.hr.HrRouterService
+import atropos.core.hr.CrossBoundaryResponse
+import atropos.core.hr.InformationKind
 import atropos.core.memory.LocalMemoryStore
 import atropos.core.multimodal.InspectionService
 import atropos.core.platform.Platform
+import atropos.core.provider.ProviderTruthService
 import atropos.core.territory.TerritoryService
 import java.time.Instant
 
 class AutonomousOrchestrator(
     private val backlog: AutonomousBacklogService = AutonomousBacklogService(),
     private val dagService: DagService = DagService(),
+    private val dagExecutionService: DagExecutionService = DagExecutionService(),
     private val ingestion: DocumentIngestionService = DocumentIngestionService(),
     private val directorService: DirectorService = DirectorService(),
+    private val directorDagSupervisor: DirectorDagSupervisor = DirectorDagSupervisor(
+        dagExecution = dagExecutionService,
+        director = directorService
+    ),
     private val territoryService: TerritoryService = TerritoryService(),
     private val hrRouter: HrRouterService = HrRouterService(),
     private val auditor: AuditorService = AuditorService(),
@@ -32,9 +42,10 @@ class AutonomousOrchestrator(
     private val artifactVerification: ArtifactVerificationService = ArtifactVerificationService(),
     private val inspectionService: InspectionService = InspectionService(),
     private val memory: LocalMemoryStore = LocalMemoryStore(),
-    private val learningAdvisor: AutonomousLearningAdvisor = AutonomousLearningAdvisor()
+    private val learningAdvisor: AutonomousLearningAdvisor = AutonomousLearningAdvisor(),
+    private val providerTruth: ProviderTruthService = ProviderTruthService()
 ) {
-    private val session = AutonomousSession()
+    private var session = AutonomousSession()
     private val stopConditions = mutableListOf<StopCondition>()
 
     fun init(): AutonomousSession {
@@ -123,12 +134,20 @@ class AutonomousOrchestrator(
 
     fun sessionSummary(): String = session.summary
 
-    fun addStopCondition(condition: StopCondition) { stopConditions += condition }
+    fun addStopCondition(condition: StopCondition) {
+        stopConditions += condition
+        session = session.copy(stopConditions = stopConditions.toList())
+    }
 
     fun updateStopCondition(kind: String, currentValue: Double) {
         val idx = stopConditions.indexOfFirst { it.kind == kind }
         if (idx >= 0) {
-            stopConditions[idx] = stopConditions[idx].copy(currentValue = currentValue, triggered = currentValue >= stopConditions[idx].threshold)
+            val updated = stopConditions[idx].copy(
+                currentValue = currentValue,
+                triggered = currentValue >= stopConditions[idx].threshold
+            )
+            stopConditions[idx] = updated
+            session = session.copy(stopConditions = stopConditions.toList())
         }
     }
 
@@ -148,6 +167,11 @@ class AutonomousOrchestrator(
         }
 
         return try {
+            val boundary = routeDeclaredBoundary(task)
+            if (boundary != null && !boundary.approved) {
+                backlog.skip(task.id, boundary.reason)
+                return "[STOP] ${task.kind.name}: HR Router refused cross-boundary context: ${boundary.reason}"
+            }
             val result = when (task.kind) {
                 AutonomousTaskKind.DAG_INGESTION -> executeDagIngestion(task)
                 AutonomousTaskKind.DAG_CONTINUATION -> executeDagContinuation(task)
@@ -204,25 +228,28 @@ class AutonomousOrchestrator(
     }
 
     private fun executeDagContinuation(task: AutonomousTask): String {
-        val allNodes = dagService.getAllNodes()
-        val runnable = dagService.runnableNodes()
-        val completed = allNodes.count { it.state == DAGNodeState.COMPLETED }
-        val failed = allNodes.count { it.state == DAGNodeState.FAILED }
-        var advanced = 0
-        for (node in runnable.take(3)) {
-            dagService.updateState(node.id, DAGNodeState.IN_PROGRESS)
-            dagService.updateState(node.id, DAGNodeState.COMPLETED)
-            advanced++
+        val dagId = task.context["dagId"]?.trim().orEmpty()
+        if (dagId.isBlank()) {
+            return "DAG continuation deferred: canonical dagId is required"
         }
-        return "DAG continuation: $advanced nodes advanced ($completed completed, $failed failed, ${runnable.size} runnable)"
+        val result = directorDagSupervisor.supervise(dagId)
+        if (!result.allowed) {
+            throw IllegalStateException("DAG continuation refused by Director: ${result.message}")
+        }
+        val execution = result.execution ?: throw IllegalStateException("DAG continuation returned no execution result")
+        return "DAG continuation supervised: ${execution.completedNodes} completed, " +
+            "${execution.failedNodes} failed, ${execution.blockedNodes} blocked"
     }
 
     private fun executeProviderFailover(task: AutonomousTask): String {
-        val primary = task.context["primary"] ?: "groq"
-        val fallback = task.context["fallback"] ?: "openrouter"
+        val primary = task.context["primary"]?.trim()?.takeIf { it.isNotBlank() }
+            ?: providerTruth.snapshot().selectedProvider
         val service = ProviderFailoverService(backlog = backlog)
         val plan = service.assess(primary) ?: throw RuntimeException("no failover route available for $primary")
-        val selectedFallback = if (fallback == plan.primaryId) plan.fallbackId else fallback
+        val requestedFallback = task.context["fallback"]?.trim()?.takeIf { it.isNotBlank() }
+        val selectedFallback = requestedFallback
+            ?.takeIf { it != plan.primaryId && it in plan.availableAlternatives }
+            ?: plan.fallbackId
         val failoverEvent = service.failover(primary, selectedFallback, plan.reason)
         return "Failover: $primary -> $selectedFallback (${failoverEvent.id})"
     }
@@ -266,7 +293,20 @@ class AutonomousOrchestrator(
     private fun executeAuditRun(task: AutonomousTask): String {
         auditor.auditTerritories(territoryService.getAll())
         val report = auditor.report()
-        return "Audit: ${report.summary}"
+        val decision = auditor.blockPromotion(
+            report = report,
+            claimedBy = "autonomous-orchestrator",
+            auditedBy = "auditor"
+        )
+        memory.rememberVerification(
+            subjectId = task.id,
+            title = "autonomous-audit-report",
+            body = "report_sha256=${decision.reportEvidenceSha256} summary=${report.summary} " +
+                "promotion_allowed=${decision.allowed} decision=${decision.message}",
+            tags = listOf("autonomous", "audit", "custodian-boundary")
+        )
+        check(decision.allowed) { decision.message }
+        return "Audit: ${report.summary} evidence_sha256=${decision.reportEvidenceSha256}"
     }
 
     private fun executeCustodianClean(task: AutonomousTask): String {
@@ -276,20 +316,76 @@ class AutonomousOrchestrator(
     }
 
     private fun executeVerificationGate(task: AutonomousTask): String {
-        val allNodes = dagService.getAllNodes()
-        val verifiable = allNodes.filter { it.state == DAGNodeState.COMPLETED }
-        return "Verification gate: $verifiable completed nodes (${allNodes.size} total)"
+        val dagId = task.context["dagId"]?.trim().orEmpty()
+        if (dagId.isBlank()) {
+            return "Verification gate deferred: canonical dagId is required"
+        }
+        val result = directorDagSupervisor.supervise(dagId)
+        if (!result.allowed) {
+            throw IllegalStateException("verification gate refused by Director: ${result.message}")
+        }
+        val execution = result.execution ?: throw IllegalStateException("verification gate returned no execution result")
+        return "Verification gate supervised: ${execution.completedNodes} completed nodes"
     }
 
     private fun executeArtifactBuild(task: AutonomousTask): String {
-        val plan = artifactPipeline.plan(task.description)
-        val report = artifactPipeline.build(plan)
-        return "Artifact build: ${report.summary}"
+        val report = artifactPipeline.createDeliverable(task.description)
+        check(report.buildFailCount == 0 && report.artifacts.isNotEmpty()) {
+            "artifact deliverable failed: ${report.summary}"
+        }
+        return "Artifact deliverable: ${report.summary}"
+    }
+
+    /**
+     * Autonomous work is normally local to its assigned owner. When a task
+     * explicitly carries cross-boundary context, make that boundary visible
+     * to the sole HR owner before any task executor can consume it.
+     */
+    private fun routeDeclaredBoundary(task: AutonomousTask): CrossBoundaryResponse? {
+        val context = task.context
+        val declared = context.keys.any { key ->
+            key in setOf(
+                "sourceOwner", "sourceTerritory", "targetOwner", "targetTerritory",
+                "informationKind", "sourceCoordinates", "needToKnow", "requestedPaths"
+            )
+        }
+        if (!declared) return null
+
+        val kind = runCatching {
+            InformationKind.valueOf(context["informationKind"].orEmpty().uppercase())
+        }.getOrNull()
+        if (kind == null) {
+            return hrRouter.request(
+                sourceOwner = "",
+                sourceTerr = "",
+                targetOwner = "",
+                targetTerr = "",
+                kind = InformationKind.SOURCE_CODE,
+                query = "invalid autonomous cross-boundary information kind",
+                taskId = task.id,
+                needToKnow = "invalid boundary metadata must be refused"
+            )
+        }
+        return hrRouter.request(
+            sourceOwner = context["sourceOwner"].orEmpty(),
+            sourceTerr = context["sourceTerritory"].orEmpty(),
+            targetOwner = context["targetOwner"].orEmpty(),
+            targetTerr = context["targetTerritory"].orEmpty(),
+            kind = kind,
+            query = context["query"] ?: task.description,
+            paths = context["requestedPaths"]?.split('|').orEmpty().filter(String::isNotBlank),
+            taskId = task.id,
+            sourceCoordinates = context["sourceCoordinates"]?.split('|').orEmpty().filter(String::isNotBlank),
+            needToKnow = context["needToKnow"].orEmpty()
+        )
     }
 
     private fun updateSessionCounts(success: Boolean) {
-        val field = session::class.members.firstOrNull { it.name == "tasksAttempted" }
-        // Session fields updated via copy; simplified tracking
+        session = session.copy(
+            tasksAttempted = session.tasksAttempted + 1,
+            tasksCompleted = session.tasksCompleted + if (success) 1 else 0,
+            tasksFailed = session.tasksFailed + if (success) 0 else 1
+        )
     }
 
     private fun updateHigStopCondition() {

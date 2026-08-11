@@ -6,23 +6,32 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.time.Instant
-import kotlin.io.path.createDirectories
 import atropos.core.provider.adapter.AdapterStatus
+
+private val PROVIDER_ID = Regex("[A-Za-z0-9][A-Za-z0-9._-]{0,127}")
 
 class ProviderActivationStore(
     private val root: Path = defaultRoot()
 ) {
+    private val normalizedRoot = root.toAbsolutePath().normalize()
+
     companion object {
         fun defaultRoot(): Path = AtroposRepoRootLocator.resolve().resolve(".atropos/provider/activation")
     }
 
     init {
-        root.createDirectories()
+        require(!hasSymbolicComponent(normalizedRoot)) {
+            "provider activation root has a symbolic path component"
+        }
+        Files.createDirectories(normalizedRoot)
+        require(!hasSymbolicComponent(normalizedRoot) && normalizedRoot.toRealPath() == normalizedRoot) {
+            "provider activation root cannot resolve outside its configured path"
+        }
     }
 
     fun read(providerId: String): ProviderActivationRecord? {
-        val target = root.resolve("$providerId.meta")
-        if (!Files.isRegularFile(target)) return null
+        val target = targetPath(providerId) ?: return null
+        if (hasSymbolicComponent(target) || !Files.isRegularFile(target)) return null
         val lines = runCatching { Files.readAllLines(target, StandardCharsets.UTF_8) }.getOrNull() ?: return null
         val fields = lines.mapNotNull { line ->
             val idx = line.indexOf('=')
@@ -81,8 +90,12 @@ class ProviderActivationStore(
     }
 
     fun write(record: ProviderActivationRecord) {
-        val target = root.resolve("${record.providerId}.meta")
-        val temp = Files.createTempFile(root, "${record.providerId}.", ".tmp")
+        val target = targetPath(record.providerId)
+            ?: throw IllegalArgumentException("provider activation id is not portable: ${record.providerId}")
+        require(!hasSymbolicComponent(target)) {
+            "provider activation target cannot be a symbolic link"
+        }
+        val temp = Files.createTempFile(normalizedRoot, "${record.providerId}.", ".tmp")
         val content = buildString {
             appendLine("providerId=${record.providerId}")
             appendLine("mode=${record.mode.name}")
@@ -117,4 +130,20 @@ class ProviderActivationStore(
 
     private fun decode(value: String): String =
         if (value.isBlank()) "" else String(java.util.Base64.getDecoder().decode(value), StandardCharsets.UTF_8)
+
+    private fun targetPath(providerId: String): Path? {
+        if (!PROVIDER_ID.matches(providerId)) return null
+        val target = normalizedRoot.resolve("$providerId.meta").normalize()
+        return target.takeIf { it.parent == normalizedRoot }
+    }
+
+    private fun hasSymbolicComponent(path: Path): Boolean {
+        var current: Path? = path.toAbsolutePath().normalize()
+        while (current != null) {
+            if (Files.isSymbolicLink(current)) return true
+            current = current.parent
+        }
+        return false
+    }
+
 }

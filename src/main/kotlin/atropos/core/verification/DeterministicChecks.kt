@@ -7,14 +7,13 @@ import atropos.core.agent.AgentPatchExtractor
 import atropos.core.agent.AgentSmokeRunner
 import atropos.core.security.RedactionFilter
 import atropos.core.verifier.ConstraintSolverEvaluator
+import atropos.core.verifier.BoundaryConstraint
+import atropos.core.verifier.BoundaryRule
 import atropos.core.verifier.DeterministicConstraint
 import atropos.dloi.DloiService
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
-import kotlin.io.path.extension
-import kotlin.io.path.invariantSeparatorsPathString
-import kotlin.io.path.readLines
 
 class DeterministicChecks(
     private val repoRoot: Path,
@@ -29,23 +28,23 @@ class DeterministicChecks(
 ) {
     fun checkSourceScope(path: Path): List<DeterministicFinding> {
         val normalized = path.toAbsolutePath().normalize()
-        return constraintEvaluator.evaluate(
-            DeterministicConstraint(
+        return constraintEvaluator.evaluateBoundaries(
+            BoundaryConstraint(
                 invariantId = "source_scope",
-                satisfied = normalized.startsWith(repoRoot),
-                expected = "path under ${repoRoot.invariantSeparatorsPathString}",
-                observed = normalized.invariantSeparatorsPathString,
+                rule = BoundaryRule.PATH_WITHIN_ROOT,
+                expected = portablePath(repoRoot),
+                observed = portablePath(normalized),
                 remediation = "limit verification to repository files",
-                file = normalized.invariantSeparatorsPathString
+                file = portablePath(normalized)
             )
         )
     }
 
     fun checkPackagePathInvariant(path: Path): List<DeterministicFinding> {
-        val lines = path.readLines(StandardCharsets.UTF_8)
+        val lines = Files.readAllLines(path, StandardCharsets.UTF_8)
         val packageLine = lines.firstOrNull { it.trimStart().startsWith("package ") } ?: return emptyList()
-        val packageName = packageLine.removePrefix("package ").trim()
-        val relative = repoRoot.relativize(path).invariantSeparatorsPathString
+        val packageName = packageLine.trim().removePrefix("package ").trim()
+        val relative = portablePath(repoRoot.relativize(path))
         val expectedSuffix = packageName.replace('.', '/') + "/" + path.fileName
         return constraintEvaluator.evaluate(
             DeterministicConstraint(
@@ -61,7 +60,7 @@ class DeterministicChecks(
     }
 
     fun checkDuplicateImports(path: Path): List<DeterministicFinding> {
-        val imports = path.readLines(StandardCharsets.UTF_8)
+        val imports = Files.readAllLines(path, StandardCharsets.UTF_8)
             .filter { it.trimStart().startsWith("import ") }
             .map { it.removePrefix("import ").trim() }
         val duplicates = imports.groupingBy { it }.eachCount().filterValues { it > 1 }
@@ -69,7 +68,7 @@ class DeterministicChecks(
             finding(
                 invariantId = "duplicate_imports",
                 severity = DiagnosticSeverity.ERROR,
-                file = repoRoot.relativize(path).invariantSeparatorsPathString,
+                file = portablePath(repoRoot.relativize(path)),
                 symbolOrLocation = duplicate,
                 evidence = "duplicate import",
                 remediation = "remove repeated import"
@@ -78,9 +77,9 @@ class DeterministicChecks(
     }
 
     fun checkImportReconciliation(path: Path): List<DeterministicFinding> {
-        val relative = repoRoot.relativize(path).invariantSeparatorsPathString
+        val relative = portablePath(repoRoot.relativize(path))
         val reconciliation = astGraph.reconcileImports(relative)
-        return reconciliation.resolutions.mapNotNull { resolution ->
+        val statusFindings = reconciliation.resolutions.mapNotNull { resolution ->
             when (resolution.status) {
                 AstImportStatus.LOCAL_EXACT, AstImportStatus.EXTERNAL -> null
                 AstImportStatus.WILDCARD -> finding(
@@ -109,23 +108,36 @@ class DeterministicChecks(
                 )
             }
         }
+        val ruleFindings = reconciliation.violations.map { violation ->
+            finding(
+                invariantId = "import_determinism",
+                severity = DiagnosticSeverity.ERROR,
+                file = relative,
+                symbolOrLocation = violation.imports.joinToString(","),
+                evidence = "${violation.rule}: ${violation.evidence}",
+                remediation = violation.remediation
+            )
+        }
+        return statusFindings + ruleFindings
     }
 
-    fun checkAstImpact(path: Path): List<DeterministicFinding> {
-        val impacted = astGraph.impactedByPaths(listOf(repoRoot.relativize(path).invariantSeparatorsPathString))
-            .filter { it.kind != atropos.ast.AstSymbolKind.FILE }
-        return if (impacted.isEmpty()) {
-            listOf(
-                finding(
-                    invariantId = "ast_impact",
-                    severity = DiagnosticSeverity.WARNING,
-                    file = repoRoot.relativize(path).invariantSeparatorsPathString,
-                    evidence = "no symbols resolved from Kotlin source",
-                    remediation = "verify parser coverage or symbol declarations"
-                )
+    fun checkAstImpact(paths: List<Path>): List<DeterministicFinding> {
+        val normalizedPaths = paths.map { it.toAbsolutePath().normalize() }
+        return normalizedPaths.mapNotNull { path ->
+            val relativePath = portablePath(repoRoot.relativize(path))
+            val impacted = astGraph.impactOfPaths(listOf(relativePath))
+            if (impacted.any { it.kind != atropos.ast.AstSymbolKind.FILE }) return@mapNotNull null
+            finding(
+                invariantId = "ast_impact",
+                // A Kotlin source file that produces no declarations means
+                // parser coverage or source integrity failed. Treating this
+                // as a warning lets the deterministic result pass because
+                // only error findings block completion.
+                severity = DiagnosticSeverity.ERROR,
+                file = portablePath(repoRoot.relativize(path)),
+                evidence = "no symbols resolved from changed file or its local import dependents",
+                remediation = "verify parser coverage, symbol declarations, and import reconciliation"
             )
-        } else {
-            emptyList()
         }
     }
 
@@ -163,7 +175,7 @@ class DeterministicChecks(
         return paths.mapNotNull { path ->
             val normalized = path.toAbsolutePath().normalize()
             if (!normalized.startsWith(repoRoot)) return@mapNotNull null
-            val relative = repoRoot.relativize(normalized).invariantSeparatorsPathString
+            val relative = portablePath(repoRoot.relativize(normalized))
             banned.firstOrNull { token -> relative.contains(token) || relative.endsWith(token) }?.let { token ->
                 constraintEvaluator.evaluate(
                     DeterministicConstraint(
@@ -182,7 +194,10 @@ class DeterministicChecks(
 
     fun checkArchitectureCompliance(paths: List<Path>): List<DeterministicFinding> {
         val inScope = paths.map { it.toAbsolutePath().normalize() }
-            .filter { it.startsWith(repoRoot) && Files.isRegularFile(it) && it.extension == "kt" }
+            .filter {
+                it.startsWith(repoRoot) && Files.isRegularFile(it) &&
+                    it.fileName.toString().substringAfterLast('.', "") == "kt"
+            }
         if (inScope.isEmpty()) return emptyList()
 
         val report = architectureComplianceChecker.checkFiles(inScope.map { it.toFile() })
@@ -190,7 +205,7 @@ class DeterministicChecks(
         return report.violations.map { violation ->
             val file = runCatching {
                 val normalized = Path.of(violation.path).toAbsolutePath().normalize()
-                if (normalized.startsWith(repoRoot)) repoRoot.relativize(normalized).invariantSeparatorsPathString else violation.path
+                if (normalized.startsWith(repoRoot)) portablePath(repoRoot.relativize(normalized)) else violation.path
             }.getOrElse { violation.path }
             finding(
                 invariantId = violation.invariant,
@@ -270,4 +285,6 @@ class DeterministicChecks(
         remediation = remediation,
         classification = DeterministicClassification.DETERMINISTIC
     )
+
+    private fun portablePath(path: Path): String = path.toString().replace('\\', '/')
 }

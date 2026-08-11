@@ -3,7 +3,7 @@ package atropos.core.security
 import java.io.File
 import java.security.MessageDigest
 
-private val API_KEY_PATTERN = Regex("(?i)(api[_-]?key|token|secret|password)[\"']?\\s*[:=]\\s*[\"']?[^\"'\\s,}<>]+")
+private val API_KEY_PATTERN = Regex("(?i)(api[_-]?key|token|secret|password)[\"']?\\s*[:=]\\s*[\"']?(?!(?:\\$|<redacted:|sample\\b|test\\b|example\\b|placeholder\\b))[^\"'\\s,}<>$]+")
 private val BEARER_PATTERN = Regex("(?i)bearer\\s+[A-Za-z0-9._\\-]{12,}")
 private val OPENAI_STYLE_PATTERN = Regex("\\b" + "s" + "k-" + "[A-Za-z0-9_\\-]{8,}")
 private val PRIVATE_KEY_BLOCK_PATTERN = Regex("-----BEGIN [A-Z ]*PRIVATE KEY-----[\\s\\S]*?-----END [A-Z ]*PRIVATE KEY-----")

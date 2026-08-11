@@ -3,8 +3,6 @@ package atropos.core.platform
 
 import java.nio.file.Files
 import java.nio.file.Path
-import kotlin.io.path.extension
-import kotlin.io.path.readText
 
 /**
  * What the shared core is allowed to depend on.
@@ -78,9 +76,9 @@ object SharedCore {
         val violations = mutableListOf<Violation>()
 
         Files.walk(root).use { paths ->
-            paths.filter { Files.isRegularFile(it) && it.extension == "kt" }.forEach { file ->
+            paths.filter { Files.isRegularFile(it) && it.fileName.toString().endsWith(".kt") }.forEach { file ->
                 scanned += 1
-                file.readText().lineSequence().forEachIndexed { index, raw ->
+                Files.readString(file).lineSequence().forEachIndexed { index, raw ->
                     val line = raw.trim()
                     if (!line.startsWith("import ")) return@forEachIndexed
                     val imported = line.removePrefix("import ").substringBefore(" as ").trim()

@@ -49,6 +49,12 @@ object CommandCatalog {
         CommandEntry("/agent job --raw", "full raw agent job record"),
         CommandEntry("/agent ask", "agent bridge ask"),
         CommandEntry("/agent patch", "agent bridge patch placeholder"),
+        CommandEntry(
+            "/agent worker propose",
+            "propose a territory-bounded worker patch without applying it",
+            "Agent",
+            keywords = listOf("worker", "proposal", "territory", "bounded")
+        ),
         CommandEntry("/agent apply", "agent bridge safe patch apply"),
         CommandEntry("/agent apply --check", "agent bridge patch validation"),
         CommandEntry("/agent apply --verify", "agent bridge patch apply and verify"),
@@ -72,6 +78,7 @@ object CommandCatalog {
         CommandEntry("/factory", "factory status"),
         CommandEntry("/factory plan", "bounded app-factory plan"),
         CommandEntry("/factory run", "queue app-factory run"),
+        CommandEntry("/factory answer", "persist YES/NO factory clarification answers", "Build", keywords = listOf("factory", "confidence", "clarification", "yes", "no")),
         CommandEntry(
             "/self-host",
             "run the Phase 11 self-build loop (use /self-host status for read-only status)",

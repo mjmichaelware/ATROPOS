@@ -10,6 +10,14 @@ enum class ArtifactKind {
     INSTALL_PROOF, SCREENSHOT_PROOF, RUN_PROOF
 }
 
+data class ArtifactPlan(
+    val id: String,
+    val prompt: String,
+    val intent: String = "deliverable",
+    val description: String = "workspace deliverable",
+    val steps: List<String> = listOf("write", "hash", "verify")
+)
+
 enum class ArtifactState { BUILDING, VALIDATING, READY, FAILED, ARCHIVED }
 
 enum class VerificationKind { COMPILE_CHECK, TEST_PASS, INSTALL_CONFIRM, RUN_CONFIRM, SCREENSHOT_MATCH, SIZE_CHECK, HASH_VERIFY }

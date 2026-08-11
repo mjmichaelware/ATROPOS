@@ -8,6 +8,7 @@ import atropos.core.planning.NodeResult
 import atropos.core.provider.ActiveSourceBindingResolver
 import atropos.core.provider.CodebaseContextPacker
 import atropos.core.provider.ContextEnvelopeFactory
+import atropos.core.provider.ProviderTruthService
 import atropos.core.provider.SourcePackRequest
 import atropos.core.provider.SourcePackResult
 import java.nio.file.Path
@@ -19,6 +20,7 @@ class DagProviderNodeExecutor(
     private val finisher: DagNodeFinisher,
     private val contextPacker: CodebaseContextPacker = CodebaseContextPacker(repoRoot),
     private val sourceBindingResolver: ActiveSourceBindingResolver = ActiveSourceBindingResolver(repoRoot),
+    private val providerTruth: ProviderTruthService = ProviderTruthService(),
     private val askProvider: (String, String, AgentAskContextOverride) -> AgentRunResult =
         { activeProvider, task, override -> agentService.ask(activeProvider, task, override) }
 ) {
@@ -79,15 +81,16 @@ class DagProviderNodeExecutor(
             }
         }
         return try {
+            val providerId = providerTruth.snapshot().selectedProvider
             val envelope = ContextEnvelopeFactory.createForDagNode(
-                providerId = "groq",
+                providerId = providerId,
                 modelId = "",
                 task = task,
                 repoRoot = repoRoot,
                 dagNode = original
             )
             val answer = askProvider(
-                "groq",
+                providerId,
                 task,
                 AgentAskContextOverride(
                     envelope = envelope,

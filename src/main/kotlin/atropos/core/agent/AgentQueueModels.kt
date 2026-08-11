@@ -134,6 +134,7 @@ object AgentQueueDefaults {
     const val DEFAULT_LEASE_SECONDS: Long = 15L * 60L
     const val MAX_LEASE_SECONDS: Long = 60L * 60L
     const val MAX_RUN_COUNT: Int = 10
+    const val MAX_CONCURRENT_LEASES: Int = 5
 }
 
 object AgentQueueTransitions {

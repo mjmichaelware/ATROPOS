@@ -34,32 +34,14 @@ fun main() {
 KOTLIN
 
 OUT="$TMP/production-proof.jar"
+mapfile -d '' FACTORY_SOURCES < <(
+  find \
+    "$ROOT/src/main/kotlin/atropos/core" \
+    "$ROOT/src/main/kotlin/atropos/ast" \
+    "$ROOT/src/main/kotlin/atropos/dloi" \
+    "$ROOT/src/main/kotlin/atropos/cli/input" \
+    -type f -name '*.kt' -print0 | sort -z
+)
 timeout "${ATROPOS_FACTORY_PROOF_TIMEOUT_SECONDS:-120}" kotlinc -d "$OUT" \
-  "$TMP/ProductionProof.kt" \
-  "$ROOT/src/main/kotlin/atropos/core/AtroposRepoRootLocator.kt" \
-  "$ROOT/src/main/kotlin/atropos/core/security/SecretEncodingClosure.kt" \
-  "$ROOT/src/main/kotlin/atropos/core/security/KnownSecretRegistry.kt" \
-  "$ROOT/src/main/kotlin/atropos/core/security/RedactionFilter.kt" \
-  "$ROOT/src/main/kotlin/atropos/core/policy/ActionActor.kt" \
-  "$ROOT/src/main/kotlin/atropos/core/policy/ActionProposal.kt" \
-  "$ROOT/src/main/kotlin/atropos/core/policy/CapabilityEnforcer.kt" \
-  "$ROOT/src/main/kotlin/atropos/core/policy/ExecutionPolicyEngine.kt" \
-  "$ROOT/src/main/kotlin/atropos/core/policy/BoundedAgencyGate.kt" \
-  "$ROOT/src/main/kotlin/atropos/core/director/DirectorModels.kt" \
-  "$ROOT/src/main/kotlin/atropos/core/director/DirectorStore.kt" \
-  "$ROOT/src/main/kotlin/atropos/core/director/DirectorService.kt" \
-  "$ROOT/src/main/kotlin/atropos/core/territory/TerritoryModels.kt" \
-  "$ROOT/src/main/kotlin/atropos/core/territory/TerritoryStore.kt" \
-  "$ROOT/src/main/kotlin/atropos/core/territory/TerritoryService.kt" \
-  "$ROOT/src/main/kotlin/atropos/core/territory/TerritoryGrantService.kt" \
-  "$ROOT/src/main/kotlin/atropos/core/factory/AppActionRegistry.kt" \
-  "$ROOT/src/main/kotlin/atropos/core/factory/AppIntent.kt" \
-  "$ROOT/src/main/kotlin/atropos/core/factory/AppProjectSpec.kt" \
-  "$ROOT/src/main/kotlin/atropos/core/factory/AppProjectSpecParser.kt" \
-  "$ROOT/src/main/kotlin/atropos/core/factory/AppProjectMutationAuthorizer.kt" \
-  "$ROOT/src/main/kotlin/atropos/core/factory/AppProjectMutationGate.kt" \
-  "$ROOT/src/main/kotlin/atropos/core/factory/RepoScaffold.kt" \
-  "$ROOT/src/main/kotlin/atropos/core/factory/EvidenceManifest.kt" \
-  "$ROOT/src/main/kotlin/atropos/core/factory/AppProjectGenerator.kt" \
-  "$ROOT/src/main/kotlin/atropos/core/worktree/BoundedGitWorktreeCommandRunner.kt"
+  "$TMP/ProductionProof.kt" "${FACTORY_SOURCES[@]}"
 timeout "${ATROPOS_FACTORY_PROOF_TIMEOUT_SECONDS:-120}" kotlin -classpath "$OUT" ProductionProofKt

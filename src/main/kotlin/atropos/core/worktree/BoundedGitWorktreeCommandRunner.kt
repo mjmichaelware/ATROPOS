@@ -15,6 +15,7 @@ enum class GitWorktreeOperation {
     ARCHIVE,
     REV_PARSE_BRANCH,
     REV_PARSE_HEAD,
+    VERIFY_COMMIT,
     STATUS_PORCELAIN,
     WORKTREE_ADD,
     APPLY_PATCH,
@@ -54,6 +55,7 @@ class BoundedGitWorktreeCommandRunner(
             )
             GitWorktreeOperation.REV_PARSE_BRANCH -> listOf("git", "rev-parse", "--abbrev-ref", "HEAD")
             GitWorktreeOperation.REV_PARSE_HEAD -> listOf("git", "rev-parse", "HEAD")
+            GitWorktreeOperation.VERIFY_COMMIT -> listOf("git", "cat-file", "-e", "${safeRevision(argument)}^{commit}")
             GitWorktreeOperation.STATUS_PORCELAIN -> listOf("git", "status", "--porcelain")
             GitWorktreeOperation.WORKTREE_ADD -> listOf(
                 "git", "worktree", "add", "--detach", requiredPath(argument), requiredRevision(input)
@@ -92,6 +94,7 @@ class BoundedGitWorktreeCommandRunner(
     private fun safeBranch(value: String?): String {
         val branch = value?.trim().takeUnless { it.isNullOrBlank() }
             ?: throw IllegalArgumentException("branch name is required")
+        require(branch.matches(Regex("[A-Za-z0-9][A-Za-z0-9._/-]*"))) { "invalid branch name" }
         require(!branch.any(Char::isWhitespace) && !branch.contains("..") && !branch.contains("@{")) {
             "invalid branch name"
         }

@@ -3,8 +3,7 @@ package atropos.core.platform
 
 import java.nio.file.Files
 import java.nio.file.Path
-import kotlin.io.path.createDirectories
-import kotlin.io.path.writeText
+import java.nio.charset.StandardCharsets
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -16,8 +15,8 @@ class SharedCoreTest {
         val root = Files.createTempDirectory("shared-core")
         files.forEach { (name, body) ->
             val path = root.resolve(name)
-            path.parent.createDirectories()
-            path.writeText(body)
+            Files.createDirectories(path.parent)
+            Files.writeString(path, body, StandardCharsets.UTF_8)
         }
         return root
     }

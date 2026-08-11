@@ -50,7 +50,10 @@ data class ProviderActivationRecord(
     val fixtureMatrix: ProviderFixtureMatrixRecord?,
     val verificationSummary: String,
     val remediation: String,
-    val lastCheckedAt: Instant = Instant.now()
+    val lastCheckedAt: Instant = Instant.now(),
+    val lastUsedAt: Instant? = null,
+    val routeEligibility: List<String> = emptyList(),
+    val quotaCooldownUntil: Instant? = null
 ) {
     fun render(): String = RedactionFilter().redact(buildString {
         appendLine("provider: $providerId")
@@ -75,6 +78,11 @@ data class ProviderActivationRecord(
         appendLine("  verification: $verificationSummary")
         appendLine("  remediation: $remediation")
         appendLine("  checked at: $lastCheckedAt")
+        lastUsedAt?.let { appendLine("  last used at: $it") }
+        if (routeEligibility.isNotEmpty()) {
+            appendLine("  route eligibility: ${routeEligibility.joinToString(",")}")
+        }
+        quotaCooldownUntil?.let { appendLine("  quota cooldown until: $it") }
     }.trimEnd())
 
     companion object {

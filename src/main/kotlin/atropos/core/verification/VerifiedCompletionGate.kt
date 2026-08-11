@@ -3,6 +3,10 @@ package atropos.core.verification
 import atropos.core.AtroposConfig
 import atropos.core.AtroposRepoRootLocator
 import atropos.core.agent.AgentRunService
+import atropos.core.auditor.AuditorService
+import atropos.core.director.DirectorService
+import atropos.core.director.DirectorStore
+import atropos.core.factory.FactoryLineage
 import atropos.core.dag.DagNode
 import atropos.core.dag.DagNodeState
 import atropos.core.dag.DagStore
@@ -15,27 +19,14 @@ import atropos.core.worktree.BoundedGitWorktreeCommandRunner
 import java.nio.file.Path
 import java.time.Instant
 
-data class GateResult(
-    val nodeId: String,
-    val passed: Boolean,
-    val gateName: String,
-    val detail: String,
-    val timestamp: Instant
-)
-
-data class CompletionGateReport(
-    val nodeId: String,
-    val canComplete: Boolean,
-    val gateResults: List<GateResult>,
-    val message: String
-)
-
 class VerifiedCompletionGate(
     private val config: AtroposConfig = AtroposConfig.load(),
     private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
     private val dagStore: DagStore = DagStore(repoRoot),
     private val runService: AgentRunService = AgentRunService(config),
-    private val memoryStore: LocalMemoryStore = LocalMemoryStore(repoRoot.resolve(".atropos/memory").toFile()),
+    private val memoryStore: LocalMemoryStore? = runCatching {
+        LocalMemoryStore(repoRoot.resolve(".atropos/memory").toFile())
+    }.getOrNull(),
     private val auditorFactory: () -> atropos.core.auditor.AuditorService = { atropos.core.auditor.AuditorService(repoRoot) },
     private val clock: () -> Instant = { Instant.now() },
     private val gitRunner: BoundedGitWorktreeCommandRunner = BoundedGitWorktreeCommandRunner(),
@@ -45,25 +36,15 @@ class VerifiedCompletionGate(
     private val sourceSecretScanner = SourceSecretScanner(redactionFilter)
     private val checks = CompletionGateChecks(repoRoot, clock, processRunner, gitRunner, redactionFilter, sourceSecretScanner)
     private val evidence = CompletionGateEvidence(repoRoot, clock)
+    private val factoryVerifier = FactoryCompletionVerifier(repoRoot, clock, gitRunner)
 
     fun evaluateNode(node: DagNode): CompletionGateReport {
         return IndependentVerificationGate(config, repoRoot, processRunner).verify(node)
     }
 
-    fun evaluateFactory(input: FactoryCompletionInput): CompletionGateReport {
-        val required = setOf("README.md", "LICENSE", ".gitignore", "AGENTS.md")
-        val checkResults = listOf(
-            GateResult(input.nodeId, input.branch == input.expectedBranch, "Factory branch isolation", "branch=${input.branch}", clock()),
-            GateResult(input.nodeId, input.files.any { it.startsWith("src/main/") }, "Factory source", "source files present", clock()),
-            GateResult(input.nodeId, input.files.any { it.startsWith("src/test/") }, "Factory tests", "test files present", clock()),
-            GateResult(input.nodeId, required.all(input.files::contains), "Factory repository kit", "standard files present", clock()),
-            GateResult(input.nodeId, input.verificationOutput.contains("APP_FACTORY_VERIFY_OK"), "Factory verification", "generated tests passed", clock()),
-            GateResult(input.nodeId, input.auditorAllowed, "Factory auditor", "independent audit decision", clock()),
-            GateResult(input.nodeId, input.promptSha256.matches(Regex("[0-9a-f]{64}")) && input.researchSha256.matches(Regex("[0-9a-f]{64}")), "Factory lineage", "prompt and research hashes present", clock())
-        )
-        val passed = checkResults.all { it.passed }
-        return CompletionGateReport(input.nodeId, passed, checkResults, if (passed) "factory completion gate passed" else "factory gates failed: ${checkResults.filterNot { it.passed }.joinToString("; ") { it.gateName }}")
-    }
+    fun evaluateFactory(input: FactoryCompletionInput): CompletionGateReport =
+        factoryVerifier.evaluateFactory(input)
+
 
     fun evaluateNodeInternal(node: DagNode): CompletionGateReport {
         val gates = mutableListOf<GateResult>()
@@ -96,7 +77,7 @@ class VerifiedCompletionGate(
     fun markCompleteAfterVerification(node: DagNode): DagNodeState {
         val report = evaluateNode(node)
         if (!report.canComplete) return DagNodeState.FAILED
-        memoryStore.rememberDetailed(
+        memoryStore?.rememberDetailed(
             kind = MemoryKind.VERIFICATION,
             title = "completion gate passed: ${node.id}",
             body = report.gateResults.joinToString("\n") { "${it.gateName}: ${if (it.passed) "PASS" else "FAIL"} - ${it.detail}" },

@@ -2,6 +2,7 @@
 package atropos.bridge.projection
 
 import atropos.core.artifact.export.ArtifactLandingResolver
+import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.test.Test
 import kotlin.test.assertTrue
@@ -9,11 +10,12 @@ import kotlin.test.assertTrue
 class ExportProjectionTest {
 
     private val repo: Path = Path.of("/workspace/project")
+    private val tempDownloads: Path = Files.createTempDirectory("test-downloads")
 
     @Test
     fun `both zones resolve when the platform has a downloads directory`() {
         val json = ExportProjection().render(
-            ArtifactLandingResolver(repo, Path.of("/home/op/Downloads")),
+            ArtifactLandingResolver(repo, tempDownloads),
             listOf(repo)
         )
 
