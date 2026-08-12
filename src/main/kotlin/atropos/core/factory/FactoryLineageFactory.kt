@@ -13,6 +13,8 @@ import java.time.Instant
 private val FACTORY_PROJECT_ID_PATTERN = Regex("[A-Za-z0-9][A-Za-z0-9._-]{0,127}")
 
 object FactoryLineageFactory {
+    private val runRootGuard = FactoryRunRootGuard()
+
     fun prepare(
         root: Path,
         projectId: String,
@@ -51,7 +53,11 @@ raw_text_redacted=$redacted
 """
         val runRoot = normalizedRoot.resolve(".atropos/research/factory").resolve(projectId).normalize()
         require(runRoot.startsWith(normalizedRoot)) { "factory lineage path escaped repository root" }
-        require(runRoot.toRealPath() == runRoot.normalize()) {
+        // toRealPath() throws NoSuchFileException on a path that does not exist
+        // yet, which is every first run for a new project, so it cannot be the
+        // pre-creation guard. FactoryRunRootGuard proves the same property
+        // against the deepest ancestor that does exist.
+        require(runRootGuard.isSafeToCreate(runRoot, normalizedRoot)) {
             "factory lineage path is redirected before creation"
         }
         Files.createDirectories(runRoot)

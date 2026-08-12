@@ -29,6 +29,9 @@ class CommandRouter(
     /** The only way this router reaches DLOI: failures arrive typed, not thrown. */
     private val higZeroGuard: atropos.dloi.HigZeroGuard = atropos.dloi.HigZeroGuard(atropos.dloi.DloiService())
 ) {
+    /** A failing command renders an error; it must not end the session. */
+    private val failureBoundary = CommandFailureBoundary(uiEngine)
+
     private var activeProvider = providerResolver(config.runtime.defaultProvider)
 
     var currentProviderName: String = activeProvider.name
@@ -111,7 +114,9 @@ class CommandRouter(
                 uiEngine.renderError("lex: ${result.message}")
                 RouterOutcome.CONTINUE
             }
-            is LexResult.Success -> route(input, result.tokens)
+            is LexResult.Success -> failureBoundary.guard(result.tokens.firstOrNull() ?: "command") {
+                route(input, result.tokens)
+            }
         }
     }
 
