@@ -9126,3 +9126,12 @@ End of AGENTS.md
 - `% delta`: unchanged; no phase percentage claim.
 - Commits: `cf21765d` (16), `fda86311` (17), `88fc3aa1` (18), `06e9186e` (19), `fed6184b` (20), `a74b4dd7` (21), `f5d34581` (22), `29e79464` (23), `9474880d` (24), `ca2dccaa` (25), `3fe94318` (26), `eada7fa7` (27).
 - HR interrupts: none. Next atom: `STRICT-34-ChatListScreen`.
+
+### 2026-08-12T10:40:00Z · Agent: Codex GPT-5 · Batch: strict-34-44-mobile-web-checkpoint-021
+- Paths touched across the grouped checkpoint: Android bridge/client files for `ChatListScreen`, `CheckpointChip`, `ThinkingSheet`, `OneHandDensity`, and `SessionTabModel`, plus canonical `apps/web` owners for `StreamingApprovalCards`, `DeveloperToolsContainer`, `ViewTransitionEvidence`, and `WebMergeArchitecture`, with focused test sources for each atom.
+- Atoms / phases affected: `STRICT-34`, `STRICT-37`, `STRICT-38`, `STRICT-39`, `STRICT-40`, and `STRICT-41` through `STRICT-44`; Phase 18 Android and cross-surface contracts.
+- Predicate moved: production implementations, production call paths, and test sources were written for the Android session/checkpoint/thinking/reachability surfaces and the canonical web streaming, developer-tool, view-transition, and single-root architecture surfaces. Android reads the existing `/v1/sessions`, `/v1/checkpoint`, and `/v1/thinking` projections; the web changes extend existing SSE, developer-tools, evidence, and transition owners.
+- Verification: `git diff --check` passed. No Gradle, Android build, TypeScript build, test execution, JAR, smoke, CI, or runtime verification was run by instruction. The required `docs/architecture/WEB_MERGE_ARCHITECTURE.md` is absent in this checkout; STRICT-44 is therefore code-written but authority-document verification remains open.
+- `% delta`: unchanged; no phase percentage claim.
+- Commits: `8272c5b` (34), `df8b536` (37), `1df9e02` (38), `3dd922c` (39), `2e7daf4` (40), `77dc09e3` (41), `b881bcf` (42), `8490fa9` (43), `29b2923` (44).
+- HR interrupts: none. All requested strict atom source writes are present locally; final registry re-audit and platform verification remain pending.
