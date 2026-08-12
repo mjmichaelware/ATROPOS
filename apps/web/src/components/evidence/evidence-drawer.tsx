@@ -2,6 +2,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import { ViewTransitionEvidence } from '@/components/ui/view-transition-evidence'
 
 /**
  * HOE-C07: Evidence drawer with morph transitions.
@@ -31,15 +32,10 @@ export function EvidenceDrawer({
 
   const handleToggle = () => {
     const newState = !expanded
-    setExpanded(newState)
-    onToggle?.(newState)
-
-    // Request View Transition API for morph effect
-    if ('startViewTransition' in document) {
-      (document as any).startViewTransition?.(() => {
-        // Transition will be handled by CSS
-      })
-    }
+    ViewTransitionEvidence.morph(() => {
+      setExpanded(newState)
+      onToggle?.(newState)
+    })
   }
 
   return (
