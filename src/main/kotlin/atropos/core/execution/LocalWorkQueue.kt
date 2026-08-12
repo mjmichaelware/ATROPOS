@@ -148,7 +148,7 @@ class LocalWorkQueue(
         val output = result.stdout + result.stderr
         if (result.timedOut) return 124 to tail(output + "\ntimeout")
         if (result.launchError != null) return 125 to tail(result.launchError)
-        (result.exitCode ?: 125) to tail(output)
+        return (result.exitCode ?: 125) to tail(output)
     }
 
     private fun append(item: WorkItem) {

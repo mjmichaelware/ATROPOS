@@ -9180,3 +9180,8 @@ End of AGENTS.md
 - Verification: `python3 scripts/source-to-code-trace-gate.py` passed `TRACEABILITY_GATE_OK obligations=741`; `bash scripts/source-to-code-trace-gate-test.sh` passed `SOURCE_TO_CODE_TRACE_GATE_TEST_OK`; `bash scripts/apk-owner.test.sh` passed `SideloadApk_TEST_OK`; `bash scripts/signing-owner.test.sh` passed `ApkSigner_TEST_OK`; `git diff --check` passed. No Gradle, Android build, Kotlin compile, test execution, JAR, smoke, CI, or runtime proof was run.
 - Fingerprints: `scripts/audit-code-completion.py=f62c10ccfed39ae2db5589366907ee03c30cf15d64286d78038cd5111d180e97`; registry `71e77554a2749fc8318218cfcf7cf69e2e1aa71bb814bd0efa576add6bf8be10`; report `bd3ca24c06b967a3a7a0377d781e3cf57194a25c0a60504e10c3945cd07dd18b`.
 - Status boundary: this is `CODE-BASE COMPLETION = 100%` plus static traceability evidence. It is not a claim that the full Gradle/Android/web test suites, packaging, installation, or runtime proofs pass; those remain separate verification axes.
+
+### 2026-08-12T14:30:00Z · Agent: Codex GPT-5 · Batch: compile-regression-repair-028
+- Paths touched: `src/main/kotlin/atropos/core/execution/LocalWorkQueue.kt` (+1); `src/main/kotlin/atropos/core/integration/InboundToolRequest.kt` (+3/-3).
+- Predicate moved: `LocalWorkQueue.runCommand` now returns its final bounded-process result from the block-bodied function; inbound proposal admission now explicitly unwraps `InboundAdmission.Refused` before constructing the accepted proposal.
+- Verification: `git diff --check` passed; `./gradlew compileKotlin --max-workers=1 --no-daemon` passed in 4m17s with configuration cache reused. Only existing compiler warnings were emitted. No test suite, JAR, install, smoke, or deployment proof was run.

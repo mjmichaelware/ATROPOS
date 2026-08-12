@@ -98,17 +98,18 @@ class InboundActionProposalBridge(
 ) {
     fun judge(request: InboundToolRequest): InboundGateResult {
         val admitted = admission.admit(request)
-        if (admitted !is InboundAdmission.Admitted) {
+        if (admitted is InboundAdmission.Refused) {
             return InboundGateResult.Refused(admitted.reason)
         }
+        val accepted = admitted as InboundAdmission.Admitted
         val proposal = ActionProposal(
             id = "inbound-${request.source.name.lowercase()}-${redactionFilter.stableFingerprint(request.callerId)}",
             actionClass = if (request.requiresNetwork) PolicyActionClass.NETWORK else PolicyActionClass.FILE_MUTATION,
             actor = ActionActor.HierarchyNode(request.source.name.lowercase(), request.callerId),
-            targetPaths = admitted.territory,
+            targetPaths = accepted.territory,
             networkTarget = if (request.requiresNetwork) "external:${request.operation}" else null,
             metadata = mapOf(
-                "operation" to admitted.operation,
+                "operation" to accepted.operation,
                 "source" to request.source.name.lowercase(),
                 "territoryGrantId" to redactionFilter.redact(request.territoryGrantId.orEmpty()),
                 "targetSurface" to redactionFilter.redact(request.targetSurface.orEmpty())
