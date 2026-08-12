@@ -16,6 +16,7 @@ data class TerminalEvidenceLink(
 
 class TerminalEvidenceLinker {
     private val links = mutableMapOf<String, TerminalEvidenceLink>()
+    private val evidenceMorph = EvidenceMorph()
 
     fun linkOutput(output: String, evidenceId: String, lineStart: Int = 0): TerminalEvidenceLink {
         val hash = hashOutput(output)
@@ -31,8 +32,13 @@ class TerminalEvidenceLinker {
     fun getLink(outputHash: String): TerminalEvidenceLink? = links[outputHash]
 
     fun renderWithEvidence(output: String, link: TerminalEvidenceLink): String {
-        // Append evidence hash as footer comment (no visual clutter)
-        return output + "\n# evidence: ${link.evidenceId}  ${link.outputHash.take(8)}"
+        val view = evidenceMorph.morph(
+            summary = output,
+            evidence = "evidence: ${link.evidenceId}  ${link.outputHash.take(8)}",
+            expanded = true,
+            width = Int.MAX_VALUE
+        )
+        return view.text
     }
 
     private fun hashOutput(output: String): String {
