@@ -69,6 +69,7 @@ class CommandRouter(
     private val securityCommand = SecurityCommandHandler(uiEngine)
     private val keysCommand = KeysCommandHandler(uiEngine)
     private val authCommand = AuthCommandHandler(uiEngine)
+    private val storageCommand = StorageCommandHandler(uiEngine)
     private val testsCommand = TestsCommandHandler(uiEngine)
     private val opsCommand = OpsCommandHandler(uiEngine)
     private val routeCommand = RouteCommandHandler(uiEngine)
@@ -215,6 +216,8 @@ class CommandRouter(
             "/keys" -> keysCommand.execute(tokens)
 
             "/auth" -> authCommand.execute(tokens)
+
+            "/storage", "/gc" -> storageCommand.execute(tokens)
 
             "/tests" -> testsCommand.execute(tokens)
 
