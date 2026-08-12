@@ -9082,3 +9082,12 @@ End of AGENTS.md
 - `% delta`: unchanged; strict accounting remains `609/741` until the registry audit is rerun after the atom set is implemented.
 - Fingerprints: `GraphTransitionService.kt=453138e9a02f0922e0a0a232ae1fb39668dcb1cebbb7623c79d5c102260479b5`; `InternalPlanningGraphPlugin.kt=17ff7dabb968ba82efadd7c6fc60336f0d0f5e1802df960a8b07bfe18d728a2e`; `GraphTransitionServiceTest.kt=c769a90dc03f6fcb5231387a402f4bcb7a3f687aa466bc10bccdb53adde55237`.
 - HR interrupts: none. Next atom: `STRICT-03-GitHubBinding`.
+
+### 2026-08-12T09:18:32Z · Agent: Codex GPT-5 · Batch: strict-03-github-binding-016
+- Paths touched: `src/main/kotlin/atropos/core/github/GitHubBinding.kt` (+128); `src/main/kotlin/atropos/core/agent/SelfHostPromotionModels.kt` (+5/-1); `src/main/kotlin/atropos/core/agent/SelfHostPromotionService.kt` (+25/-8); `src/test/kotlin/atropos/core/github/GitHubBindingTest.kt` (+102); `AGENTS.md` (+this row).
+- Atoms / phases affected: `STRICT-03-GitHubBinding`, territory-bound GitHub repository creation and push authorization.
+- Predicate moved: repository creation and push now have one typed `GitHubBinding` owner. It validates repository/branch/path safety, delegates local push only through `BoundedGitWorktreeCommandRunner`, delegates repository creation to a credential-aware provisioner, and refuses push without an explicit non-secret operator confirmation capability. `SelfHostPromotionService` records the binding decision instead of automatically pushing after JAR promotion.
+- Verification: `git diff --check` and production/test reference inspection passed. Per instruction, no Gradle, compile, test, JAR, smoke, CI, or build verification was run.
+- `% delta`: unchanged; strict accounting remains `609/741` until the registry audit is rerun after the atom set is implemented.
+- Fingerprints: `GitHubBinding.kt=f7722847b7cffeb9cd73a9e569953e47dd510e6188e421574086f3640f62ad9f`; `SelfHostPromotionModels.kt=39dffe495cc49fac293d6a2b9940274210897bf1b3ceefe4ab4ef32c229f1017`; `SelfHostPromotionService.kt=2c836713cfbf00bd5e792ea04f3fe9335b740b4afc4c8b930178c4762885be89`; `GitHubBindingTest.kt=6470029b5c06efbc08e9bd2236b89426abf12b2d65d54ea2911c75fcf9a013a0`.
+- HR interrupts: none. Next atom: `STRICT-06-IntentParser`.

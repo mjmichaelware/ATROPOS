@@ -7,6 +7,8 @@ import atropos.core.dag.DagExecutionService
 import atropos.core.dag.DagNode
 import atropos.core.director.DirectorService
 import atropos.core.director.DirectorStore
+import atropos.core.github.GitHubBinding
+import atropos.core.github.GitHubPushRequest
 import atropos.core.verification.CompletionGateReport
 import atropos.core.verification.VerifiedCompletionGate
 import atropos.core.worktree.BoundedGitWorktreeCommandRunner
@@ -25,7 +27,8 @@ class SelfHostPromotionService(
     private val directorService: DirectorService = DirectorService(DirectorStore(repoRoot), repoRoot),
     private val promotionGateContract: SelfHostPromotionGateContract = SelfHostPromotionGateContract(),
     private val evaluateGate: (DagNode) -> CompletionGateReport = completionGate::evaluateNode,
-    private val commandRunner: BoundedGitWorktreeCommandRunner = BoundedGitWorktreeCommandRunner()
+    private val commandRunner: BoundedGitWorktreeCommandRunner = BoundedGitWorktreeCommandRunner(),
+    private val githubBinding: GitHubBinding = GitHubBinding(commandRunner)
 ) {
     fun promote(request: SelfHostPromotionRequest): SelfHostPromotionResult {
         val record = store.resolve(request.goalId)
@@ -118,15 +121,23 @@ class SelfHostPromotionService(
 
         if (swap.promoted) {
             val statusResult = commandRunner.run(GitWorktreeOperation.STATUS_PORCELAIN, repoRoot)
-            val pushResult = commandRunner.run(GitWorktreeOperation.PUSH, repoRoot)
-            
+            val pushResult = githubBinding.push(
+                GitHubPushRequest(
+                    repositoryRoot = repoRoot,
+                    branch = request.pushBranch,
+                    changedPaths = node.expectedOutputs + record.territory,
+                    declaredTerritory = record.territory,
+                    authorization = request.pushAuthorization
+                )
+            )
+
             finalEvidence += listOf(
                 "git_status exitCode=${statusResult.exitCode}",
-                "git_push exitCode=${pushResult.exitCode}"
+                "github_binding operation=${pushResult.operation} allowed=${pushResult.allowed} message=${pushResult.message}"
             )
-            
-            if (pushResult.exitCode != 0) {
-                pushMessage += "; push failed"
+
+            if (!pushResult.allowed) {
+                pushMessage += "; GitHub push not performed: ${pushResult.message}"
             }
         }
 

@@ -1,6 +1,7 @@
 package atropos.core.agent
 
 import atropos.core.artifact.JarSwapResult
+import atropos.core.github.GitHubPushAuthorization
 import atropos.core.verification.CompletionGateReport
 import java.nio.file.Path
 import java.time.Instant
@@ -9,7 +10,9 @@ data class SelfHostPromotionRequest(
     val goalId: String,
     val nodeId: String? = null,
     val candidateJar: Path,
-    val targetJar: Path
+    val targetJar: Path,
+    val pushAuthorization: GitHubPushAuthorization? = null,
+    val pushBranch: String = "main"
 )
 
 data class SelfHostPromotionResult(
