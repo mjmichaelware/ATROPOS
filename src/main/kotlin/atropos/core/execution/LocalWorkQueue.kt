@@ -1,6 +1,8 @@
 package atropos.core.execution
 
+import atropos.core.policy.BoundedProcessRunner
 import java.io.File
+import java.nio.file.Path
 import java.util.Locale
 
 enum class WorkStatus {
@@ -46,6 +48,7 @@ class LocalWorkQueue(
     private val now: () -> Long = { System.currentTimeMillis() },
     private val env: Map<String, String> = System.getenv()
 ) {
+    private val processRunner = BoundedProcessRunner()
     private val queueFile = File(root, "queue.jsonl")
     private val activeCommands = mutableMapOf<String, List<String>>()
 
@@ -131,37 +134,21 @@ class LocalWorkQueue(
     }
 
     private fun runCommand(command: List<String>, timeoutMs: Long): Pair<Int, String> {
-        return try {
-            val process = ProcessBuilder(command)
-                .redirectErrorStream(true)
-                .start()
-
-            val output = StringBuilder()
-            val reader = process.inputStream.bufferedReader()
-            val readerThread = Thread {
-                reader.useLines { lines ->
-                    lines.forEach { line ->
-                        output.append(line).append('\n')
-                        if (output.length > 8000) {
-                            output.delete(0, output.length - 8000)
-                        }
-                    }
-                }
-            }
-            readerThread.isDaemon = true
-            readerThread.start()
-
-            val done = process.waitFor(timeoutMs, java.util.concurrent.TimeUnit.MILLISECONDS)
-            if (!done) {
-                process.destroy()
-                124 to tail(output.toString() + "\ntimeout")
-            } else {
-                readerThread.join(500)
-                process.exitValue() to tail(output.toString())
-            }
-        } catch (e: Exception) {
-            125 to tail(e.javaClass.simpleName + ": " + (e.message ?: "command failed"))
+        val result = runCatching {
+            processRunner.run(
+                command = command,
+                directory = Path.of("."),
+                timeoutMillis = timeoutMs,
+                maxOutputBytes = 8_000,
+                maxOutputLines = 1_000
+            )
+        }.getOrElse { failure ->
+            return 125 to tail(failure.javaClass.simpleName + ": " + (failure.message ?: "command failed"))
         }
+        val output = result.stdout + result.stderr
+        if (result.timedOut) return 124 to tail(output + "\ntimeout")
+        if (result.launchError != null) return 125 to tail(result.launchError)
+        (result.exitCode ?: 125) to tail(output)
     }
 
     private fun append(item: WorkItem) {
