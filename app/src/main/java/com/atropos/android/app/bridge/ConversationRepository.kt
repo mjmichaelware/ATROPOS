@@ -2,6 +2,7 @@
 package com.atropos.android.app.bridge
 
 import com.atropos.android.app.ui.MobileMessage
+import com.atropos.android.app.ui.ChatListEntry
 
 /** What a send attempt did, so the UI can say something true about it. */
 sealed class SendOutcome {
@@ -29,6 +30,14 @@ class ConversationRepository(
         val port = discovery.resolve() ?: return emptyList()
         return when (val result = http.get(BridgeEndpoint.url(port, "/v1/messages"))) {
             is BridgeResult.Ok -> BridgeTurnParser.parse(result.body)
+            else -> emptyList()
+        }
+    }
+
+    fun sessions(): List<ChatListEntry> {
+        val port = discovery.resolve() ?: return emptyList()
+        return when (val result = http.get(BridgeEndpoint.url(port, "/v1/sessions"))) {
+            is BridgeResult.Ok -> BridgeSessionParser.parse(result.body)
             else -> emptyList()
         }
     }

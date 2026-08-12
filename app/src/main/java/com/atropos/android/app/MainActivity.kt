@@ -18,6 +18,7 @@ import androidx.compose.runtime.toMutableStateList
 import com.atropos.android.app.bridge.ConversationRepository
 import com.atropos.android.app.bridge.SendOutcome
 import com.atropos.android.app.ui.ConversationScreen
+import com.atropos.android.app.ui.ChatListEntry
 import com.atropos.android.app.ui.MobileMessage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -49,6 +50,7 @@ class MainActivity : ComponentActivity() {
 private fun AtroposConversation(repository: ConversationRepository) {
     val messages: SnapshotStateList<MobileMessage> = remember { mutableListOf<MobileMessage>().toMutableStateList() }
     var isOnline by remember { mutableStateOf(false) }
+    var sessions by remember { mutableStateOf<List<ChatListEntry>>(emptyList()) }
     val scope = rememberCoroutineScope()
 
     // Reachability is polled rather than assumed. The engine is a separate
@@ -65,6 +67,7 @@ private fun AtroposConversation(repository: ConversationRepository) {
                     val transcript = withContext(Dispatchers.IO) { repository.transcript() }
                     messages.clear()
                     messages.addAll(transcript)
+                    sessions = withContext(Dispatchers.IO) { repository.sessions() }
                 }
             }
             delay(POLL_INTERVAL_MS)
@@ -88,7 +91,8 @@ private fun AtroposConversation(repository: ConversationRepository) {
                     }
                 }
             }
-        }
+        },
+        sessions = sessions
     )
 }
 

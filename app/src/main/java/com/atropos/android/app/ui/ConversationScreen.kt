@@ -37,7 +37,9 @@ import androidx.compose.ui.unit.dp
 fun ConversationScreen(
     messages: List<MobileMessage>,
     isOnline: Boolean,
-    onSendMessage: (String) -> Unit
+    onSendMessage: (String) -> Unit,
+    sessions: List<ChatListEntry> = emptyList(),
+    onSessionSelected: (String) -> Unit = {}
 ) {
     var input by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
@@ -49,6 +51,8 @@ fun ConversationScreen(
 
     Column(modifier = Modifier.fillMaxSize()) {
         MobileHeader(isOnline = isOnline)
+
+        ChatListScreen(sessions = sessions, onSelected = onSessionSelected)
 
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
             if (messages.isEmpty()) {
