@@ -30,7 +30,9 @@ class SpecGraphAtomizer(
     private val pythonExecutable: String = System.getenv("ATROPOS_SPECGRAPH_PYTHON")
         ?.trim()
         ?.takeIf(String::isNotBlank)
-        ?: "python3"
+        ?: "python3",
+    /** Test seam for a deliberately wrong root. Production reads the env var. */
+    private val specGraphRootOverride: String? = null
 ) {
     /** The evidence line only. Unchanged contract for research reporting. */
     fun atomize(
@@ -63,9 +65,17 @@ class SpecGraphAtomizer(
         // rather than the defect it was.
         //
         // The environment variable still wins, for a checkout kept elsewhere.
-        val specGraphRoot = System.getenv("SPECGRAPH_ROOT")?.trim()
+        // Located from the ATROPOS installation, not from [repoRoot]. Callers
+        // pass the *project being planned* as repoRoot -- for a factory run
+        // that is a generated project under .atropos/generated-projects, and
+        // resolving the atomizer against it looked for SpecGraph inside the
+        // thing SpecGraph was supposed to plan. That reported root_missing on
+        // every factory run, which reads like an absent install rather than a
+        // path bug. repoRoot still bounds where the run's files are written.
+        val specGraphRoot = specGraphRootOverride
+            ?: System.getenv("SPECGRAPH_ROOT")?.trim()
             ?.takeIf(String::isNotBlank)
-            ?: repoRoot.resolve(IN_REPO_SPECGRAPH).toString()
+            ?: atropos.core.AtroposRepoRootLocator.resolve().resolve(IN_REPO_SPECGRAPH).toString()
         val canonicalRoot = runCatching {
             val candidate = Path.of(specGraphRoot).toAbsolutePath().normalize()
             require(Files.isDirectory(candidate)) { "root_missing" }

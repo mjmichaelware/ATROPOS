@@ -18,7 +18,23 @@ class AppFactoryRouter(
     private val paidGate: EmergencyPaidGate = EmergencyPaidGate(),
     private val projectRegistry: ProjectRegistry = ProjectRegistry(repoRoot),
     private val projectSpecParser: AppProjectSpecParser = AppProjectSpecParser(),
-    private val planningGraph: InternalPlanningGraphService = InternalPlanningGraphService(repoRoot),
+    /**
+     * The planner, wired to the canonical atomizer and the lakehouse.
+     *
+     * Both seams default to NONE at their own declaration sites, which is
+     * correct for a planner used standalone and was wrong here: nothing passed
+     * them, so a factory run planned from the internal extractor with no atom
+     * context and both integrations were unreachable from any real command.
+     * This is the composition point where the engine's actual configuration is
+     * stated.
+     */
+    private val planningGraph: InternalPlanningGraphService = InternalPlanningGraphService(
+        repoRoot = repoRoot,
+        executionDagSynthesizer = atropos.core.planning.InternalExecutionDagSynthesizer(
+            atomContext = atropos.data.lakehouse.LakehouseAtomContextProvider()
+        ),
+        canonicalAtoms = SpecGraphCanonicalAtomProvider(repoRoot = repoRoot)
+    ),
     private val journal: EventJournalService = EventJournalService(repoRoot)
 ) {
     fun plan(prompt: String): FactoryPlan {

@@ -119,10 +119,34 @@ class CanonicalAtomizationTest {
     }
 
     @Test
-    fun `a root that does not exist falls back rather than failing`() {
-        val previous = System.getProperty("user.dir")
+    fun `the atomizer is located from the installation, not the planned project`() {
+        // A factory run passes the generated project as repoRoot. Resolving
+        // the atomizer against that looked for SpecGraph inside the thing
+        // SpecGraph was meant to plan, and reported root_missing on every run.
+        val generatedProject = java.nio.file.Files.createTempDirectory("atropos-generated")
+
         val atomization = SpecGraphAtomizer().atomizeToRecords(
-            repoRoot = java.nio.file.Files.createTempDirectory("atropos-no-specgraph"),
+            repoRoot = generatedProject,
+            projectId = "atropos-test-elsewhere",
+            source = "The provider client must pin certificates.",
+            promptFingerprint = "prompt-0123456789abcdef",
+            promptSpans = "requirement"
+        )
+
+        assertFalse(
+            atomization.evidenceLine.contains("root_missing"),
+            "the atomizer lives with the installation, not with the project being planned"
+        )
+    }
+
+    @Test
+    fun `an explicitly wrong SPECGRAPH_ROOT falls back rather than failing`() {
+        // The environment variable still overrides, so a bad one must degrade
+        // to the internal extractor rather than taking the run down.
+        val atomization = SpecGraphAtomizer(
+            specGraphRootOverride = "/definitely/not/a/specgraph/checkout"
+        ).atomizeToRecords(
+            repoRoot = java.nio.file.Files.createTempDirectory("atropos-any"),
             projectId = "atropos-test-missing",
             source = "a requirement",
             promptFingerprint = "prompt-0123456789abcdef",
@@ -132,7 +156,6 @@ class CanonicalAtomizationTest {
         assertFalse(atomization.usable)
         assertTrue(atomization.evidenceLine.startsWith("SKIPPED_SOFT_FAIL:"))
         assertTrue(atomization.evidenceLine.contains("internal DAG fallback required"))
-        assertEquals(previous, System.getProperty("user.dir"))
     }
 
     @Test
