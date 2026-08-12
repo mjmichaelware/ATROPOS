@@ -7,6 +7,7 @@ package atropos.cli.ui
  * Status: healthy/degraded/unhealthy; cost/quota shown only when concerning.
  */
 class ProviderSummaryRenderer(private val theme: TerminalTheme) {
+    private val oneLine = ProviderOneLineSummary()
     data class ProviderHealth(
         val name: String,
         val status: String,  // healthy/degraded/unhealthy
@@ -16,18 +17,7 @@ class ProviderSummaryRenderer(private val theme: TerminalTheme) {
     )
 
     fun renderCompact(active: String, fallbacks: List<String>, health: ProviderHealth, width: Int): String {
-        val safeWidth = width.coerceAtLeast(40)
-        val statusIcon = when (health.status) {
-            "healthy" -> "●"
-            "degraded" -> "◑"
-            else -> "○"
-        }
-
-        val costStr = if (health.costUsd > 0.01) " \$${String.format("%.3f", health.costUsd)}" else ""
-        val quotaStr = if (health.quotaPercent > 80) " ${health.quotaPercent}%" else ""
-
-        val summary = "$statusIcon ${health.name}$costStr$quotaStr"
-        return summary.take(safeWidth).padEnd(safeWidth)
+        return oneLine.render(active, health, width)
     }
 
     fun renderFull(providers: List<ProviderHealth>, width: Int): List<String> {
