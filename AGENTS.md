@@ -9073,3 +9073,12 @@ End of AGENTS.md
 - `% delta`: unchanged; strict accounting remains `609/741` until the registry audit is rerun after the atom set is implemented.
 - Fingerprints: `GraphClaimService.kt=cdc5644e4ae20a54335a46e99dbac0c1e21cbb9ecc3281e36213b6256f76ef11`; `DagExecutionService.kt=50f21d66528d19a0485b6dd595d6ba215e8a1a2d00b07bf0b3913255c274923c`; `GraphClaimServiceTest.kt=69bf5f3daa7eccb3d938e260d50001d5f3ccb7b99e03cc0718e23dcf1e14c6e4`.
 - HR interrupts: none. Next atom: `STRICT-05-GraphTransitionService`.
+
+### 2026-08-12T09:14:08Z · Agent: Codex GPT-5 · Batch: strict-05-graph-transition-service-015
+- Paths touched: `src/main/kotlin/atropos/core/planning/GraphTransitionService.kt` (+65); `src/main/kotlin/atropos/core/planning/InternalPlanningGraphPlugin.kt` (+4/-16); `src/test/kotlin/atropos/core/planning/GraphTransitionServiceTest.kt` (+64); `AGENTS.md` (+this row).
+- Atoms / phases affected: `STRICT-05-GraphTransitionService`, typed planning-DAG state transitions.
+- Predicate moved: terminal transitions are now validated centrally; illegal transitions and non-terminal completion targets are refused, and the existing internal graph plugin delegates persistence to `DagStore` through `GraphTransitionService` instead of silently overwriting node state.
+- Verification: `git diff --check` and production/test reference inspection passed. Per instruction, no Gradle, compile, test, JAR, smoke, CI, or build verification was run.
+- `% delta`: unchanged; strict accounting remains `609/741` until the registry audit is rerun after the atom set is implemented.
+- Fingerprints: `GraphTransitionService.kt=453138e9a02f0922e0a0a232ae1fb39668dcb1cebbb7623c79d5c102260479b5`; `InternalPlanningGraphPlugin.kt=17ff7dabb968ba82efadd7c6fc60336f0d0f5e1802df960a8b07bfe18d728a2e`; `GraphTransitionServiceTest.kt=c769a90dc03f6fcb5231387a402f4bcb7a3f687aa466bc10bccdb53adde55237`.
+- HR interrupts: none. Next atom: `STRICT-03-GitHubBinding`.

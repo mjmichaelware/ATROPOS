@@ -13,6 +13,7 @@ class InternalPlanningGraphPlugin(
     private val readinessCalculator: InternalReadinessCalculator = InternalReadinessCalculator()
 ) : PlanningGraphPlugin {
     private val evidenceDir = repoRoot.resolve(".atropos/planning/evidence")
+    private val transitionService = GraphTransitionService(store)
 
     override fun getReadyNodes(projectId: String, graphVersion: String): List<ReadyNode> {
         val dag = store.readDag(graphVersion) ?: return emptyList()
@@ -64,18 +65,7 @@ class InternalPlanningGraphPlugin(
     }
 
     override fun completeNode(nodeId: String, result: NodeResult) {
-        val node = store.readNode(nodeId) ?: return
-        store.writeNode(
-            node.copy(
-                state = result.finalState,
-                result = result.result,
-                failureReason = result.failureReason,
-                lastMessage = result.message,
-                claimToken = null,
-                claimOwner = null,
-                claimExpiresAt = null,
-                finishedAt = result.finishedAt
-            )
-        )
+        val decision = transitionService.transition(nodeId, result)
+        require(decision.accepted) { decision.reason }
     }
 }
