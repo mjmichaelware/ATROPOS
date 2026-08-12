@@ -11,7 +11,17 @@ class InternalPlanningGraphService(
     private val atomExtractor: InternalAtomExtractor = InternalAtomExtractor(),
     private val authorityGraphBuilder: InternalAuthorityGraphBuilder = InternalAuthorityGraphBuilder(),
     private val executionDagSynthesizer: InternalExecutionDagSynthesizer = InternalExecutionDagSynthesizer(),
-    private val store: DagStore = DagStore(repoRoot)
+    private val store: DagStore = DagStore(repoRoot),
+    /**
+     * The authoritative atomizer, when one is configured.
+     *
+     * Consulted before [atomExtractor]. ATROPOS ran the canonical SpecGraph
+     * atomizer for years and used it as a checksum -- reading back a count and
+     * then planning from its own extractor instead. Every plan that reached
+     * execution was second-hand. This is the seam that makes the canonical
+     * atoms the ones that actually get executed.
+     */
+    private val canonicalAtoms: CanonicalAtomProvider = CanonicalAtomProvider.NONE
 ) {
     fun planFromDocuments(projectId: String, label: String, sources: List<Path>): DagDefinition {
         val atoms = sources.flatMap { source ->
@@ -38,8 +48,20 @@ class InternalPlanningGraphService(
             "text planning requires classified prompt spans"
         }
         val atoms = sources.toSortedMap().entries.flatMap { (sourcePath, content) ->
-            val document = ingestionService.ingestText(projectId, sourcePath, content)
-            atomExtractor.extract(document)
+            // Canonical first, internal only on fallback. Per source rather
+            // than per plan: one unreadable document must not discard the
+            // canonical atoms of the others.
+            val canonical = canonicalAtoms.atomsFor(
+                projectId = projectId,
+                sourcePath = sourcePath,
+                content = content,
+                promptFingerprint = promptFingerprint,
+                promptSpans = promptSpans
+            )
+            canonical?.atoms ?: run {
+                val document = ingestionService.ingestText(projectId, sourcePath, content)
+                atomExtractor.extract(document)
+            }
         }.map { atom -> atom.copy(promptFingerprint = promptFingerprint, promptSpans = promptSpans) }
         return persistPlan(projectId, label, atoms)
     }

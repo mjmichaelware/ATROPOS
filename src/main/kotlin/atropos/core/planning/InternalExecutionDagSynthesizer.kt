@@ -46,6 +46,23 @@ class InternalExecutionDagSynthesizer(
         )
     }
 
+    /**
+     * The action an atom's dimension implies.
+     *
+     * Five dimensions are checks and map to a checking action. Everything else
+     * describes work that produces code, and those used to map to
+     * [DagNodeAction.RUN_COMMAND] with the atom's *English statement* as the
+     * payload — so the executor was handed a sentence to run as a shell
+     * command. [atropos.core.policy.BoundedProcessRunner] refused it, correctly:
+     * that refusal is `P(raw-prose-execution)=0` working exactly as designed.
+     * The defect was upstream, in handing it prose at all.
+     *
+     * A code-writing atom is now [DagNodeAction.PROVIDER_CALL], whose executor
+     * already exists and whose payload is *meant* to be a statement of intent.
+     * Nothing here writes a file: the provider call produces content and the
+     * dependent mutation node writes it, which keeps generation and mutation on
+     * opposite sides of the gate rather than fused into one unreviewable step.
+     */
     private fun actionFor(dimension: AtomDimension): DagNodeAction =
         when (dimension) {
             AtomDimension.TESTS_ACCEPTANCE -> DagNodeAction.VERIFY
@@ -53,6 +70,6 @@ class InternalExecutionDagSynthesizer(
             AtomDimension.TERRITORY_CAPABILITIES -> DagNodeAction.TERRITORY_CHECK
             AtomDimension.OBSERVABILITY_PROVENANCE -> DagNodeAction.POLICY_CHECK
             AtomDimension.ROLLBACK_FAILURE_EVIDENCE -> DagNodeAction.VERIFY
-            else -> DagNodeAction.RUN_COMMAND
+            else -> DagNodeAction.PROVIDER_CALL
         }
 }
