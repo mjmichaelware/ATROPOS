@@ -33,6 +33,7 @@ class ContextAttestationRenderer(
     private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     private val surface get() = theme.surface
+    private val opticalFocus = AttestationOpticalFocus()
 
     /**
      * A rejected attestation, rendered as a failure block.
@@ -100,7 +101,7 @@ class ContextAttestationRenderer(
     /** A single accepted-attestation line, for status surfaces. */
     fun renderAccepted(attestation: ContextAttestation, width: Int): String =
         TerminalText.ellipsize(
-            surface.runState(RunState.COMPLETE) + " " +
+            opticalFocus.prefix(attested = true) + surface.runState(RunState.COMPLETE) + " " +
                 theme.metadata("attested ") +
                 theme.strong(attestation.systemIdentity) +
                 theme.subdued("  ${shortHash(attestation.contextHash)}"),
