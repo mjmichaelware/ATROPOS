@@ -6,6 +6,7 @@ import atropos.cli.CommandRouter
 import atropos.cli.RouterOutcome
 import atropos.cli.config.ConfigurationManager
 import atropos.cli.input.CommandCompleter
+import atropos.cli.input.CommandHistoryStore
 import atropos.cli.input.KeyEvent
 import atropos.cli.input.PromptEffect
 import atropos.cli.input.PromptState
@@ -116,7 +117,7 @@ private fun runInteractive(
     tracker: QuotaSessionTracker,
     router: CommandRouter
 ) {
-    val prompt = PromptState()
+    val prompt = PromptState(historyStore = CommandHistoryStore(java.nio.file.Path.of(".atropos/command-history.tsv")))
     val completer = CommandCompleter(
         java.nio.file.Path.of(capabilities.workspace)
     )

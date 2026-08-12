@@ -23,7 +23,7 @@ import atropos.core.security.RedactionFilter
  * Consecutive duplicates are collapsed so holding Enter on one line does not
  * push the rest of the history out of the ring.
  */
-class PromptHistoryRing(
+open class PromptHistoryRing(
     private val limit: Int = DEFAULT_LIMIT,
     private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
@@ -41,7 +41,7 @@ class PromptHistoryRing(
      * otherwise consume a slot every time an operator pressed Enter on an empty
      * prompt.
      */
-    fun record(lane: PromptHistoryLane, value: String) {
+    open fun record(lane: PromptHistoryLane, value: String) {
         if (value.isBlank()) return
         val entries = lanes.getValue(lane)
         val redacted = redactionFilter.redact(value)

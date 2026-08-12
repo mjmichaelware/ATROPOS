@@ -30,10 +30,11 @@ import atropos.core.security.RedactionFilter
 class PromptState(
     private val historyLimit: Int = DEFAULT_HISTORY_LIMIT,
     private val maximumBufferLength: Int = DEFAULT_MAXIMUM_BUFFER_LENGTH,
-    private val redactionFilter: RedactionFilter = RedactionFilter()
+    private val redactionFilter: RedactionFilter = RedactionFilter(),
+    historyStore: PromptHistoryRing? = null
 ) {
     private val line = PromptTextBuffer(maximumBufferLength)
-    private val history = PromptHistoryRing(historyLimit, redactionFilter)
+    private val history = historyStore ?: PromptHistoryRing(historyLimit, redactionFilter)
     private val browser = PromptHistoryBrowser(history)
     private val suggestions = PromptSuggestionState()
 
