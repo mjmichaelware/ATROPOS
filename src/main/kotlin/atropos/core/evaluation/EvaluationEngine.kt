@@ -12,6 +12,8 @@ import atropos.core.memory.LocalMemoryStore
 import atropos.core.security.RedactionFilter
 import atropos.core.territory.TerritoryService
 import atropos.core.territory.TerritoryStore
+import atropos.core.phase20.ReproducibilityGate
+import atropos.core.phase20.ReproducibilityInput
 import java.nio.file.Path
 
 class EvaluationEngine(
@@ -23,7 +25,8 @@ class EvaluationEngine(
     private val auditor: AuditorService = AuditorService(repoRoot),
     private val directorService: DirectorService = DirectorService(DirectorStore(repoRoot), repoRoot),
     private val history: EvaluationHistoryStore = EvaluationHistoryStore(repoRoot),
-    private val redactionFilter: RedactionFilter = RedactionFilter()
+    private val redactionFilter: RedactionFilter = RedactionFilter(),
+    private val reproducibilityGate: ReproducibilityGate = ReproducibilityGate()
 ) {
     fun evaluateRelease(
         subjectId: String,
@@ -32,9 +35,10 @@ class EvaluationEngine(
         changedFiles: List<String> = emptyList(),
         goalId: String? = null,
         claimedBy: String? = null,
-        verifiedBy: String? = null
+        verifiedBy: String? = null,
+        reproducibilityExpectedFiles: Map<String, String>? = null
     ): ReleaseGateDecision {
-        val report = buildReport(subjectId, runId, artifactIds, changedFiles, goalId, claimedBy, verifiedBy)
+        val report = buildReport(subjectId, runId, artifactIds, changedFiles, goalId, claimedBy, verifiedBy, reproducibilityExpectedFiles = reproducibilityExpectedFiles)
         return decide(report)
     }
 
@@ -45,7 +49,8 @@ class EvaluationEngine(
         changedFiles: List<String>,
         goalId: String,
         claimedBy: String,
-        verifiedBy: String
+        verifiedBy: String,
+        reproducibilityExpectedFiles: Map<String, String>? = null
     ): ReleaseGateDecision {
         val report = buildReport(
             subjectId = subjectId,
@@ -55,6 +60,7 @@ class EvaluationEngine(
             goalId = goalId,
             claimedBy = claimedBy,
             verifiedBy = verifiedBy,
+            reproducibilityExpectedFiles = reproducibilityExpectedFiles,
             requirePromotionScope = true
         )
         return decide(report)
@@ -78,6 +84,7 @@ class EvaluationEngine(
         goalId: String?,
         claimedBy: String?,
         verifiedBy: String?,
+        reproducibilityExpectedFiles: Map<String, String>? = null,
         requirePromotionScope: Boolean = false
     ): EvaluationReport {
         val artifacts = artifactPipeline.report().artifacts.filter { artifactIds.isEmpty() || it.id in artifactIds }
@@ -179,6 +186,19 @@ class EvaluationEngine(
             noMythology(visibleEvidence),
             "mythologyPattern=${!noMythology(visibleEvidence)}"
         )
+
+        reproducibilityExpectedFiles?.let { expectedFiles ->
+            val result = reproducibilityGate.evaluate(
+                ReproducibilityInput(repoRoot, expectedFiles)
+            )
+            metrics += EvaluationMetric(
+                kind = EvaluationMetricKind.REPRODUCIBILITY,
+                passed = result.passed,
+                severity = EvaluationSeverity.BLOCKER,
+                evidence = "${result.reason} files=${result.comparedFileCount}/${result.expectedFileCount} " +
+                    "snapshot=${result.snapshotSha256}"
+            )
+        }
 
         return EvaluationReport(
             subjectId = subjectId,

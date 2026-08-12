@@ -9001,3 +9001,12 @@ End of AGENTS.md
 - `% delta`: unchanged from the strict audit result; the prior crosswalk-only `609/609 = 100.00%` claim remains superseded. The locked original baseline was not altered.
 - Evidence fingerprints after audit regeneration: `scripts/audit-code-completion.py=08bb3f19951783b06b8555fd41fd7c0b72f898280f3ca936b07059f62f873ff8`; registry=`dfd087feab89d40095140425fccde571537f118c86cbcf330d3a1f87267e5e35`; report=`e4ab7e76740ffd3e64b43a79be14c1dabd10e9279e00ea3c9d8b7d52ccb6849c`; baseline=`d9e30dd387569c57d178a821cebe732443c78855e63f958beec31bf345338faa`.
 - Integration: local `main` fast-forwarded to the accounting commit; remote push was not completed because GitHub credentials were unavailable (`could not read Username`). No force push was attempted. Unrelated `.gitignore`, helper, and local keystore files remain preserved in named stashes and were excluded.
+
+### 2026-08-12T09:03:23Z · Agent: Codex GPT-5 · Batch: strict-13-reproducibility-gate-007
+- Paths touched: `src/main/kotlin/atropos/core/phase20/ReproducibilityGate.kt` (+112); `src/main/kotlin/atropos/core/evaluation/EvaluationEngine.kt` (+28/-5); `src/main/kotlin/atropos/core/evaluation/EvaluationModels.kt` (+3/-1); `src/test/kotlin/atropos/core/phase20/ReproducibilityGateTest.kt` (+59); `AGENTS.md` (+this row).
+- Atoms / phases affected: `STRICT-13-ReproducibilityGate`, Phase 20 reproducibility predicate.
+- Predicate moved: a declared file-to-SHA-256 baseline is now compared against the current repository root with unsafe paths, missing files, empty baselines, and byte mismatches refused. `EvaluationEngine` invokes the canonical gate and records a blocking `REPRODUCIBILITY` metric when a release caller supplies a baseline; no build or command result is treated as reproducibility evidence.
+- Verification: `git diff --check` and source/test reference inspection passed. Per instruction, no Gradle, compile, test, JAR, smoke, CI, or build verification was run.
+- `% delta`: unchanged; strict accounting remains `609/741` until the registry audit is rerun after the atom set is implemented.
+- Fingerprints: `ReproducibilityGate.kt=294facf6bfbe7fbf99739df487ecbe1fa8c6a9c84b6c610bacb636b941b6c069`; `EvaluationEngine.kt=dd0440b1c0e7c55cad30daff94c647825bf1b7585b6573b9c8066c2adfe0e8e2`; `EvaluationModels.kt=84354d8e0a2c21ea45c73d35060da09c8b5d5e00fa7d95cb480aeb9a2482c3eb`; `ReproducibilityGateTest.kt=963c4217eb8a4bcb8f423b2276a965f7536690964a90fc557a560220aa08c8c1`.
+- HR interrupts: none. Next atom: `STRICT-15-OutputValidator`.

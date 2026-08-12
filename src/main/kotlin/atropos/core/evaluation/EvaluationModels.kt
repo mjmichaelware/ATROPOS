@@ -17,7 +17,8 @@ enum class EvaluationMetricKind {
     SECRET_SAFETY,
     SELF_APPROVAL_GUARD,
     FAKE_SUCCESS_GUARD,
-    MYTHOLOGY_GUARD
+    MYTHOLOGY_GUARD,
+    REPRODUCIBILITY
 }
 
 enum class EvaluationSeverity {
