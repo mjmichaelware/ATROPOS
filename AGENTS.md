@@ -9010,3 +9010,12 @@ End of AGENTS.md
 - `% delta`: unchanged; strict accounting remains `609/741` until the registry audit is rerun after the atom set is implemented.
 - Fingerprints: `ReproducibilityGate.kt=294facf6bfbe7fbf99739df487ecbe1fa8c6a9c84b6c610bacb636b941b6c069`; `EvaluationEngine.kt=dd0440b1c0e7c55cad30daff94c647825bf1b7585b6573b9c8066c2adfe0e8e2`; `EvaluationModels.kt=84354d8e0a2c21ea45c73d35060da09c8b5d5e00fa7d95cb480aeb9a2482c3eb`; `ReproducibilityGateTest.kt=963c4217eb8a4bcb8f423b2276a965f7536690964a90fc557a560220aa08c8c1`.
 - HR interrupts: none. Next atom: `STRICT-15-OutputValidator`.
+
+### 2026-08-12T09:05:14Z · Agent: Codex GPT-5 · Batch: strict-15-output-validator-008
+- Paths touched: `src/main/kotlin/atropos/core/verification/OutputValidator.kt` (+34); `src/main/kotlin/atropos/core/provider/ProviderResponseContextParser.kt` (+11/-1); `src/test/kotlin/atropos/core/verification/OutputValidatorTest.kt` (+40); `AGENTS.md` (+this row).
+- Atoms / phases affected: `STRICT-15-OutputValidator`, provider-output trust boundary.
+- Predicate moved: provider responses now pass through a bounded validator before attestation parsing and rendering. Blank, oversized, or secret-like output is rejected with redacted content retained for safe diagnostics; accepted output carries an explicit validation result. The existing parser remains the single response boundary.
+- Verification: `git diff --check` and production/test reference inspection passed. Per instruction, no Gradle, compile, test, JAR, smoke, CI, or build verification was run.
+- `% delta`: unchanged; strict accounting remains `609/741` until the registry audit is rerun after the atom set is implemented.
+- Fingerprints: `OutputValidator.kt=0bd5192272f208e248ee1532171bc7c85f0550fd5c6405ad0629d0d53db71104`; `ProviderResponseContextParser.kt=423c7a5df9e2a792a2c0e69e25aa11eb7fc55b7e960ca598f784dd27695b6469`; `OutputValidatorTest.kt=1b0d1b60647edaf81363c1c1e0818211ac4966d7edc0ca545681387436575742`.
+- HR interrupts: none. Next atom: `STRICT-11-AntiGamingAuditor`.

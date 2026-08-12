@@ -1,6 +1,9 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.provider
 
+import atropos.core.verification.OutputValidationResult
+import atropos.core.verification.OutputValidator
+
 /**
  * Parses a provider's raw response text and extracts the [ContextAttestation]
  * and any Greek mythology content for checking.
@@ -28,14 +31,16 @@ object ProviderResponseContextParser {
      * attestation was found and whether mythology content was detected.
      */
     fun parse(response: String, envelope: ContextEnvelope): ParsedProviderResponse {
-        val redactedResponse = ProviderRedactor.redactWithoutTruncation(response)
+        val validation = OutputValidator().validate(response)
+        val redactedResponse = ProviderRedactor.redactWithoutTruncation(validation.redactedOutput)
         val attestation = ContextEnvelopeSerializer.parseAttestation(redactedResponse)
         val cleanedResponse = stripAttestationBlock(redactedResponse)
 
         return ParsedProviderResponse(
             rawResponse = redactedResponse,
             cleanedResponse = cleanedResponse,
-            attestation = attestation
+            attestation = attestation,
+            validation = validation
         )
     }
 
@@ -71,5 +76,10 @@ object ProviderResponseContextParser {
 data class ParsedProviderResponse(
     val rawResponse: String,
     val cleanedResponse: String,
-    val attestation: ContextAttestation?
+    val attestation: ContextAttestation?,
+    val validation: OutputValidationResult = OutputValidationResult(
+        accepted = true,
+        redactedOutput = "",
+        reason = "validation not supplied"
+    )
 )
