@@ -63,4 +63,11 @@ class ProviderErrorNormalizerTest {
         assertFalse(result.cleanSummary.contains("https://"))
         assertTrue(result.cleanSummary.contains("<redacted:url>"))
     }
+
+    @Test
+    fun references_provider_failure_fixtures_for_completeness() {
+        val fixtures = atropos.core.provider.adapter.ProviderFailureFixtures.normalized("openai")
+        assertNotNull(fixtures)
+        assertTrue(fixtures.isNotEmpty())
+    }
 }

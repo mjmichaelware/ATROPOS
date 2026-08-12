@@ -197,7 +197,7 @@ class LocalMemoryStoreTest {
             body = "body",
             tags = emptyList(),
             createdAtEpochMs = 1L,
-            schemaVersion = MEMORY_SCHEMA_VERSION,
+            schemaVersion = 3,
             redacted = false
         )
 

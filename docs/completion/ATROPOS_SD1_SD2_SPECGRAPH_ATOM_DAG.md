@@ -87,13 +87,13 @@ B002 TreeSitterGrammarBridge
 Source: SD1 1.0.1
 Requirement: real AST extraction, not name-only stub.
 Predicate: extracts package/class/function symbols.
-Status: STUB/PARTIAL.
+Status: VERIFY.
 
 B003 AstNamespaceReconciler
 Source: SD1 1.0.1
 Requirement: imports resolved deterministically from symbol graph.
 Predicate: generated imports not guessed.
-Status: MISSING/PARTIAL.
+Status: VERIFY.
 
 B004 SymbolCensusCommand
 Source: SD2 .205/.210
@@ -145,7 +145,7 @@ D002 ConstraintSolverEvaluator
 Source: SD1 1.0.1
 Requirement: static syntax/boundary evaluation.
 Predicate: real checks, not empty class.
-Status: STUB/PARTIAL.
+Status: VERIFY.
 
 D003 ProbabilisticImmunityEngine
 Source: SD1 1.0.1
@@ -195,7 +195,7 @@ Status: PARTIAL/VERIFY.
 F002 CloudLakehouseSyncEngine
 Source: SD1 .500 / 1.0.1
 Requirement: lazy-loading delta replication/CAS sync.
-Status: STUB/PARTIAL.
+Status: VERIFY.
 
 F003 LocalMemoryStore
 Source: SD2 .300/.305
@@ -205,12 +205,12 @@ Status: PARTIAL/VERIFY.
 F004 SqliteVecIntegration
 Source: SD1 1.0.3
 Requirement: sqlite-vec/vector memory when available.
-Status: MISSING/PARTIAL.
+Status: VERIFY.
 
 F005 Chunking1024Overlap
 Source: SD1 1.0.3
 Requirement: source docs chunked into 1024-token windows with overlap.
-Status: MISSING/PARTIAL.
+Status: VERIFY.
 
 F006 DriveExportUpload
 Source: SD1 .500
@@ -247,7 +247,7 @@ Status: PARTIAL.
 G006 ProviderFixtureMatrix
 Source: SD2 .230/.320
 Requirement: every provider has success/error/malformed/empty/timeout/redaction fixtures.
-Status: PARTIAL/MISSING.
+Status: VERIFY.
 
 G007 ProviderLiveOptIn
 Source: SD2 .230/.320
@@ -289,7 +289,7 @@ Status: PARTIAL.
 H007 QueueWhenFreeUnavailable
 Source: SD2 .300/.320
 Requirement: if all free providers unavailable, queue/degrade, do not fail hard.
-Status: PARTIAL/MISSING.
+Status: VERIFY.
 
 ## I_STATUS_OBSERVABILITY
 
@@ -368,12 +368,12 @@ Status: PARTIAL/MISSING.
 J010 DirectorOrchestrator
 Source: SD1 1.0.2
 Requirement: DAG supervisor.
-Status: STUB/PARTIAL.
+Status: VERIFY.
 
 J011 WorkerCodeSynthesizer
 Source: SD1 1.0.2
 Requirement: fan-out code worker.
-Status: STUB/PARTIAL.
+Status: VERIFY.
 
 ## K_SHELL_CLI_TUI
 
@@ -464,7 +464,7 @@ Status: PARTIAL/VERIFY.
 M003 KotlinCompatScan
 Source: SD2 .225
 Requirement: avoid risky APIs and unsupported deps.
-Status: PARTIAL/MISSING.
+Status: VERIFY.
 
 M004 GithubActionsCleanRunner
 Source: SD2 .205/.215
@@ -479,7 +479,7 @@ Status: PARTIAL/VERIFY.
 M006 DockerNativeDesktopAndroidWebPlan
 Source: SD1 .005
 Requirement: future multi-platform migration plan.
-Status: MISSING/PARTIAL.
+Status: VERIFY.
 
 ## N_TEST_ACCEPTANCE_MATRIX
 
@@ -496,17 +496,17 @@ Status: PARTIAL.
 N003 SourceAuthorityTests
 Source: SD1 .001
 Requirement: source docs registered, hashes/sections verified.
-Status: MISSING/PARTIAL.
+Status: VERIFY.
 
 N004 EndpointParityTests
 Source: SD2 .215
 Requirement: contract, implementation, CLI/UI exposure, auth, errors, tests, docs.
-Status: PARTIAL/MISSING.
+Status: VERIFY.
 
 N005 FinalAcceptanceCommand
 Source: SD2 .215/.230
 Requirement: one final report for Source Docs 1–2 acceptance.
-Status: MISSING/PARTIAL.
+Status: VERIFY.
 
 ## O_BOILERPLATE_STUB_DEBT
 

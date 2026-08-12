@@ -26,7 +26,8 @@ enum class GitWorktreeOperation {
     DIFF_CHECK,
     DIFF_FROM_BASELINE,
     WORKTREE_REMOVE,
-    INTENT_TO_ADD
+    INTENT_TO_ADD,
+    PUSH
 }
 
 data class GitWorktreeCommandResult(
@@ -83,6 +84,7 @@ class BoundedGitWorktreeCommandRunner(
             GitWorktreeOperation.INTENT_TO_ADD -> listOf(
                 "git", "add", "-N", requiredRelativePath(argument)
             )
+            GitWorktreeOperation.PUSH -> listOf("git", "push")
         }
         val feedsPatchOnStdin = operation == GitWorktreeOperation.APPLY_PATCH ||
             operation == GitWorktreeOperation.REVERSE_APPLY_PATCH

@@ -9,6 +9,8 @@ import atropos.core.director.DirectorService
 import atropos.core.director.DirectorStore
 import atropos.core.verification.CompletionGateReport
 import atropos.core.verification.VerifiedCompletionGate
+import atropos.core.worktree.BoundedGitWorktreeCommandRunner
+import atropos.core.worktree.GitWorktreeOperation
 import java.nio.file.Path
 import java.time.Instant
 
@@ -22,7 +24,8 @@ class SelfHostPromotionService(
     private val safetyGate: SelfHostSafetyHardFailGate = SelfHostSafetyHardFailGate(repoRoot),
     private val directorService: DirectorService = DirectorService(DirectorStore(repoRoot), repoRoot),
     private val promotionGateContract: SelfHostPromotionGateContract = SelfHostPromotionGateContract(),
-    private val evaluateGate: (DagNode) -> CompletionGateReport = completionGate::evaluateNode
+    private val evaluateGate: (DagNode) -> CompletionGateReport = completionGate::evaluateNode,
+    private val commandRunner: BoundedGitWorktreeCommandRunner = BoundedGitWorktreeCommandRunner()
 ) {
     fun promote(request: SelfHostPromotionRequest): SelfHostPromotionResult {
         val record = store.resolve(request.goalId)
@@ -109,6 +112,24 @@ class SelfHostPromotionService(
             request.targetJar,
             gateReport.gateResults.map { JarSwapEvidence(it.passed, it.gateName, it.detail) }
         )
+
+        var finalEvidence = record.evidence + safetyEvidence + directorEvidence + gateEvidence + evidenceRenderer.jarSwap(swap)
+        var pushMessage = swap.message
+
+        if (swap.promoted) {
+            val statusResult = commandRunner.run(GitWorktreeOperation.STATUS_PORCELAIN, repoRoot)
+            val pushResult = commandRunner.run(GitWorktreeOperation.PUSH, repoRoot)
+            
+            finalEvidence += listOf(
+                "git_status exitCode=${statusResult.exitCode}",
+                "git_push exitCode=${pushResult.exitCode}"
+            )
+            
+            if (pushResult.exitCode != 0) {
+                pushMessage += "; push failed"
+            }
+        }
+
         val updated = store.update(
             record.copy(
                 status = if (swap.promoted) record.status else GoalRunStatus.FAILED,
@@ -119,13 +140,13 @@ class SelfHostPromotionService(
                 },
                 finishedAt = if (swap.promoted) record.finishedAt else Instant.now(),
                 failureReason = if (swap.promoted) record.failureReason else "jar swap failed: ${swap.message}",
-                evidence = record.evidence + safetyEvidence + directorEvidence + gateEvidence + evidenceRenderer.jarSwap(swap),
+                evidence = finalEvidence,
                 lastVerifiedCheckpoint = if (swap.promoted) "jar:${swap.targetJar.fileName}" else record.lastVerifiedCheckpoint
             )
         )
         return SelfHostPromotionResult(
             promoted = swap.promoted,
-            message = swap.message,
+            message = pushMessage,
             goal = SelfHostGoal(updated, dagService.readDag(dagId) ?: dag),
             gateReport = gateReport,
             jarSwap = swap,

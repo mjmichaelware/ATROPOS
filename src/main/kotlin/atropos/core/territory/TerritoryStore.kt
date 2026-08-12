@@ -80,7 +80,7 @@ internal fun TerritoryAssignment.toStoreLine(): String {
     return listOf(id, ownerId, ownerRole, allowedPrefix, pats, den, grantedAt.toString(), expiresAt?.toString().orEmpty(), parentTerritoryId.orEmpty(), maxFileSizeBytes.toString(), readOnly.toString(), boundActorIdentity.orEmpty()).joinToString("\t")
 }
 
-internal fun parseAssignmentLine(line: String): TerritoryAssignment? {
+fun parseAssignmentLine(line: String): TerritoryAssignment? {
     val parts = line.split("\t")
     if (parts.size < 11) return null
     return try {

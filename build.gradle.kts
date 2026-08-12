@@ -1,3 +1,5 @@
+import java.io.ByteArrayOutputStream
+
 plugins {
     id("org.jetbrains.kotlin.jvm") version "1.9.24"
     application
@@ -5,6 +7,10 @@ plugins {
 
 group = "atropos"
 version = "2.0.0-rc.1"
+
+kotlin {
+    jvmToolchain(17)
+}
 
 repositories {
     mavenCentral()
@@ -58,8 +64,17 @@ val portableSurfacePlan = tasks.register("portableSurfacePlan") {
     }
 }
 
+val secretScan = tasks.register<Exec>("secretScan") {
+    group = "verification"
+    description = "Run secret security and vault proofs."
+    commandLine(
+        "bash", "-c",
+        "${layout.projectDirectory.file("scripts/secret-security-proof.sh").asFile.absolutePath} && ${layout.projectDirectory.file("scripts/secret-vault-proof.sh").asFile.absolutePath}"
+    )
+}
+
 tasks.named("check") {
-    dependsOn(kotlinCompatScan, kotlinCompatScanEdge, portableSurfacePlan)
+    dependsOn(kotlinCompatScan, kotlinCompatScanEdge, portableSurfacePlan, secretScan, "smokeTest")
 }
 
 tasks.jar {
@@ -70,5 +85,25 @@ tasks.jar {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) }) {
         exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA", "META-INF/MANIFEST.MF")
+    }
+}
+
+val smokeTest = tasks.register<Exec>("smokeTest") {
+    group = "verification"
+    description = "Run the built jar headless and assert successful startup."
+    dependsOn(tasks.jar)
+
+    val jarFile = layout.buildDirectory.file("libs/ATROPOS.jar").get().asFile.absolutePath
+    commandLine("java", "-jar", jarFile)
+
+    val outputStream = ByteArrayOutputStream()
+    standardOutput = outputStream
+    errorOutput = outputStream
+
+    doLast {
+        val output = outputStream.toString()
+        if (!output.contains("ATROPOS") && !output.contains("status=DEGRADED")) {
+            throw GradleException("Smoke test failed. Output:\\n$output")
+        }
     }
 }
