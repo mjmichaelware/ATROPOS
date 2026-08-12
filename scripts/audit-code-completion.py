@@ -13,7 +13,7 @@ HISTORICAL_HEAD="7e612fcdba571b276a4ae65704835eb762030682"
 NOW=datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00","Z")
 CURRENT_HEAD=subprocess.check_output(["git","rev-parse","HEAD"],cwd=ROOT,text=True).strip()
 HISTORICAL_PATHS=set(subprocess.check_output(["git","ls-tree","-r","--name-only",HISTORICAL_HEAD],cwd=ROOT,text=True).splitlines())
-SOURCE_FILES=[Path(p) for p in subprocess.check_output(["git","ls-files","src","apps","packages","scripts"],cwd=ROOT,text=True).splitlines() if Path(p).suffix in {".kt",".java",".py",".ts",".tsx",".js",".jsx",".sh"}]
+SOURCE_FILES=[Path(p) for p in subprocess.check_output(["git","ls-files","src","app","apps","packages","scripts"],cwd=ROOT,text=True).splitlines() if Path(p).suffix in {".kt",".java",".py",".ts",".tsx",".js",".jsx",".sh"}]
 SOURCE_TEXT={p: (ROOT/p).read_text(errors="ignore") for p in SOURCE_FILES if (ROOT/p).is_file()}
 AUTHORITIES=["docs/source/ATROPOS_Source_Doc_1.txt","docs/source/ATROPOS_Source_Doc_2.txt","docs/source/ATROPOS_Source_Doc_3.txt","docs/source/ATROPOS_Source_Doc_4.txt","docs/source/ATROPOS_100pct_Completion_Blueprint.txt","docs/gap-maps/ATROPOS_Core_Engine_Gap_Map_v2.pdf","docs/gap-maps/ATROPOS_HOE_UI_UX_Gap_Map_v2.pdf","docs/gap-maps/ATROPOS_Phase20_Architecture_Gap_Map_v2.pdf","docs/source/ATROPOS_Completion_Blueprint_DAG.md","ATROPOS_CORE_ENGINE_GAP_MAP_v2.md","docs/ATROPOS_CANONICAL_PHASES_1_11_AUTHORITY.md","docs/ATROPOS_CANONICAL_PHASES_1_11_CLOSURE.md","docs/ATROPOS_PASS11_SELF_BUILD_LOOP.md","docs/ATROPOS_CLI_WEB_UI_100_COMPLETION.md","docs/ATROPOS_TIER_H_ADDENDUM.md","docs/ATROPOS_CODEX_OPERATING_INDEX.md","docs/ui-parity/HOE_CLI_WEB_101_STATUS.md","docs/ui-parity/UI_PARITY_BLOCKERS.md"]
 AUTHORITIES.append("docs/completion/ATROPOS_SD1_SD2_SPECGRAPH_ATOM_DAG.md")
@@ -114,11 +114,17 @@ def path_tokens(paths):
 def referenced_outside(paths):
  tokens=path_tokens(paths); owners={Path(path) for path in paths if (ROOT/path).is_file()}
  return any(token in text and path not in owners for path,text in SOURCE_TEXT.items() for token in tokens)
+def is_test_path(path):
+ s=str(path).replace("\\", "/")
+ name=Path(path).name
+ return ("/test/" in s or "/tests/" in s or "/__tests__/" in s or
+         name.endswith(("Test.kt", "Test.java", ".test.ts", ".test.tsx", ".test.js", ".test.jsx",
+                        ".spec.ts", ".spec.tsx", ".spec.js", ".spec.jsx")))
 def referenced_by_test(paths):
  if any(Path(path).name.endswith("-test.sh") and (ROOT/path).is_file() for path in paths):
   return True
  tokens=path_tokens(paths)
- return any(token in text and ("/test/" in str(path) or str(path).startswith("src/test/") or "/tests/" in str(path)) for path,text in SOURCE_TEXT.items() for token in tokens)
+ return any(token in text and is_test_path(path) for path,text in SOURCE_TEXT.items() for token in tokens)
 def paths_for_kind(paths, kind):
  if isinstance(paths, dict): return paths.get(kind, [])
  return paths
@@ -142,7 +148,7 @@ STRICT_AUDIT_DOC="docs/completion/ATROPOS_STRICT_ABSENT_ATOM_AUDIT.md"
 STRICT_AUDIT_HASH=digest(ROOT/STRICT_AUDIT_DOC)
 AUDIT_SELF=Path("scripts/audit-code-completion.py")
 PRODUCTION_TEXT={p:t for p,t in SOURCE_TEXT.items() if p != AUDIT_SELF and "/test/" not in str(p) and "/tests/" not in str(p)}
-TEST_TEXT={p:t for p,t in SOURCE_TEXT.items() if p != AUDIT_SELF and ("/test/" in str(p) or "/tests/" in str(p))}
+TEST_TEXT={p:t for p,t in SOURCE_TEXT.items() if p != AUDIT_SELF and is_test_path(p)}
 
 # These are atomic owner obligations, not aliases for broad subsystem rows.
 # The operator audit is the evidence record; each item still needs a concrete

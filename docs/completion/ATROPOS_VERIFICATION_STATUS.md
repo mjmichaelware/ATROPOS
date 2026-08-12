@@ -4,8 +4,8 @@ Separate from code completion.
 
 JSON:
 {
-  "generatedAt": "2026-08-12T11:04:11Z",
-  "currentHead": "9876521c3630c05a45aa0f068e384e112f8740b3",
+  "generatedAt": "2026-08-12T11:15:56Z",
+  "currentHead": "6e2281b3005e9f205f906b81f859b65e6ef9b3d1",
   "testsWritten": {
     "status": "ASSESSED",
     "note": "Test obligations are present in the registry where the source requirement explicitly requires a test or acceptance harness"
