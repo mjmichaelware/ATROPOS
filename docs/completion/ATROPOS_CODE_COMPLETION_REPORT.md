@@ -1,7 +1,7 @@
 # ATROPOS Code-Base Completion Report
 
-Generated: 2026-08-12T08:42:44Z
-Current Git HEAD: 35d39c5ec51619ef10c49239c81c7f216dbe1e28
+Generated: 2026-08-12T08:56:31Z
+Current Git HEAD: c97687b9f37305f0686a3e52899b5bca084b0f59
 Historical reconstruction HEAD: 7e612fcdba571b276a4ae65704835eb762030682 (nearest recoverable commit; exact locked export unavailable)
 
 ## Code-Base Obligation Set
