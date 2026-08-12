@@ -1,5 +1,10 @@
 name: Build and Sign Android APK
 
+# The APK is built from the standalone Gradle build under app/, not from the
+# engine build at the repository root. `-p app` selects it. Keeping them
+# separate means the engine never has to resolve the Android Gradle Plugin,
+# and this job never has to configure the engine.
+
 on:
   push:
     branches: [ main ]
@@ -13,6 +18,9 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      # AGP 8.2 targets JDK 17. The runner default has moved past that, and a
+      # mismatch here surfaces as an opaque Kotlin/AGP failure rather than a
+      # version error, so it is pinned.
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -23,21 +31,72 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build Debug APK
-        run: ./gradlew assembleDebug
+      # Fail loudly and early if the wrapper is ever unpinned again. Gradle 9
+      # removed org.gradle.api.internal.HasConvention, which the Kotlin Android
+      # plugin still uses, so a runner defaulting to Gradle 9 crashes this build
+      # during initialization with no obvious cause.
+      - name: Verify Gradle version is pinned below 9
+        run: |
+          set -eu
+          url="$(grep distributionUrl gradle/wrapper/gradle-wrapper.properties)"
+          echo "wrapper: $url"
+          case "$url" in
+            *gradle-9*) echo "::error::Gradle 9 is incompatible with the Kotlin Android plugin"; exit 1 ;;
+          esac
+
+      # Release, not debug. Modern Android refuses debug-signed APKs through the
+      # GUI installer, which is why installation kept failing even after the
+      # package identity was made unique.
+      - name: Build Release APK (unsigned)
+        run: ./gradlew -p app assembleRelease --no-daemon --stacktrace
+
+      - name: Show build outputs
+        run: |
+          set -eu
+          echo "APK outputs:"
+          find app/build/outputs/apk -name '*.apk' -print -exec ls -la {} \;
 
       - name: Sign APK with Permanent Key
-        uses: upup-company/apksigner-android@v1
+        uses: r0adkll/sign-android-release@v1
         id: sign_app
         with:
-          releaseDirectory: app/build/outputs/apk/debug
+          releaseDirectory: app/build/outputs/apk/release
           signingKeyBase64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
           alias: ${{ secrets.ANDROID_KEY_ALIAS }}
           keyStorePassword: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           keyPassword: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        env:
+          BUILD_TOOLS_VERSION: "34.0.0"
 
+      # Proves the artifact is a real application before it ever reaches a
+      # device: a valid package name, a version, and a launchable activity.
+      # The previous "empty shell" APK would have failed every one of these.
+      - name: Verify the signed APK is installable
+        run: |
+          set -eu
+          apk="${{ steps.sign_app.outputs.signedReleaseFile }}"
+          echo "verifying: $apk"
+          test -f "$apk" || { echo "::error::no signed APK produced"; exit 1; }
+
+          aapt="$(find "$ANDROID_HOME/build-tools" -name aapt2 | sort | tail -1)"
+          echo "--- badging ---"
+          "$aapt" dump badging "$apk" > badging.txt || true
+          head -20 badging.txt
+
+          grep -q "package: name=" badging.txt || { echo "::error::APK has no package identity"; exit 1; }
+          grep -q "launchable-activity" badging.txt || { echo "::error::APK declares no launcher activity — the installer will reject it"; exit 1; }
+
+          echo "--- contents ---"
+          unzip -l "$apk" > contents.txt
+          grep -q "classes.dex" contents.txt || { echo "::error::APK contains no compiled code (classes.dex missing)"; exit 1; }
+          grep -q "resources.arsc" contents.txt || { echo "::error::APK has no resource table"; exit 1; }
+          echo "APK_VERIFIED_OK"
+
+      # Stable artifact name. A dynamic name is what broke the download script:
+      # it searched for a fixed pattern that never matched.
       - name: Upload Signed APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: atropos-android-signed
           path: ${{ steps.sign_app.outputs.signedReleaseFile }}
+          if-no-files-found: error

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Launcher foreground. The manifest referenced @mipmap/ic_launcher while no
+  such resource existed, so resource linking failed and the packaged APK had
+  no valid resource table. A vector keeps this text-only: no binary assets to
+  carry per density, and it renders correctly at every launcher size.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,30 L70,74 L62,74 L54,50 L46,74 L38,74 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M42,62 h24 v6 h-24 Z" />
+</vector>
