@@ -9143,3 +9143,12 @@ End of AGENTS.md
 - Verification: `git diff --check` and static source-marker/reference inspection passed. No Gradle, compile, test, JAR, smoke, CI, or runtime verification was run, per the active code-generation instruction. No percentage claim was made.
 - Commits: `bccbf3c`, `d559b330`, `332b3b30`, `1f036fd1`, `410438bb`, `23952c48`, `45c2f351`, `78968ae1`, `dfdb64f7`, `aa7e0315`, `198a0636`, `6ff88ce1`, `ed160e96`, `24f90350`, `884063d1`, `a0037f40`, `a694a19a`, `f28be21e`, `e20a3cd7`.
 - Remaining verification: operator compile/test and strict registry re-audit are intentionally pending; the branch is `main` and is 19 commits ahead of `origin/main`.
+
+### 2026-08-12T12:15:00Z · Agent: Codex GPT-5 · Batch: completion-registry-audit-023
+- Paths touched: `docs/completion/ATROPOS_CODE_COMPLETION_AMENDMENTS.md`, `docs/completion/ATROPOS_CODE_COMPLETION_BASELINE.json`, `docs/completion/ATROPOS_CODE_COMPLETION_REPORT.md`, `docs/completion/ATROPOS_CODE_OBLIGATION_REGISTRY.json`, `docs/completion/ATROPOS_VERIFICATION_STATUS.md`, and `scripts/source-to-code-trace-gate.py`.
+- Audit target: current `main` at `00107afd54006bbff9ccf57b3f21ed856c97c11a`.
+- Result: canonical code-base audit completed with `698/741` obligations `WRITTEN`, `43/741` `NOT_WRITTEN`, exact code-base completion `94.197%` (`94.20%` rounded). All 43 remaining obligations are in Phase 18: Android strict atoms `STRICT-28` through `STRICT-40` plus semantic predicates for `STRICT-41` through `STRICT-44`.
+- Traceability: `python3 scripts/source-to-code-trace-gate.py` passed with `TRACEABILITY_GATE_OK obligations=741`; `bash scripts/source-to-code-trace-gate-test.sh` passed with `SOURCE_TO_CODE_TRACE_GATE_TEST_OK`.
+- Audit correction: the trace gate now distinguishes declared implementation paths from declared implementation symbols and recognizes configuration/source suffixes such as `.properties`; the registry remains evidence-backed rather than being marked complete by the validator fix.
+- Verification limits: no Gradle, Kotlin compile, test suite, JAR, smoke, installation, restart, or deployment proof was run. This is a static code-base audit, not a VERIFIED or release-ready claim.
+- Fingerprints: `scripts/source-to-code-trace-gate.py=5be0fe942d4cac721c5218039a3658bbd351d53912424edb9145ded45c269d15`; `docs/completion/ATROPOS_CODE_OBLIGATION_REGISTRY.json=192ba845bf059d251d417715f605ccde62be613b164c84844e2c99e72c3bb5d1`; `docs/completion/ATROPOS_CODE_COMPLETION_REPORT.md=ab562ccccd60711369dc0c823c6ce0c1b534c5b670a466c3dc74ef14c50bc0ac`.
