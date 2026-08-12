@@ -47,6 +47,9 @@ jobs:
       # Release, not debug. Modern Android refuses debug-signed APKs through the
       # GUI installer, which is why installation kept failing even after the
       # package identity was made unique.
+      #
+      # `-p app` is required: app/ is a standalone Gradle build, so the root
+      # project has no assembleRelease task to run.
       - name: Build Release APK (unsigned)
         run: ./gradlew -p app assembleRelease --no-daemon --stacktrace
 
