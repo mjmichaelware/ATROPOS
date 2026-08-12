@@ -45,13 +45,26 @@ class LiveThinkingRenderer(
         uiEngine.startSpinner(headline)
         var first = true
         unsubscribe = stream.subscribe { thought ->
-            if (visible(thought)) {
-                if (first) {
-                    uiEngine.stopSpinner()
-                    first = false
+            if (depth() == ThinkingDepth.L1) {
+                // An outline, not a transcript. The spinner stays and its
+                // message becomes whatever is happening right now, so a long
+                // step reads as "advance 3 of 25" against a moving frame --
+                // the difference between a run that looks alive and one that
+                // looks hung. Deeper thoughts are simply not shown here.
+                if (thought.depth == ThinkingDepth.L1) {
+                    uiEngine.updateSpinner(redactionFilter.redact(thought.text))
                 }
-                uiEngine.renderNotice(format(thought))
+                return@subscribe
             }
+
+            // At L2 and L3 the thoughts are the output, so the spinner stops
+            // once they start: an animation under scrolling text is noise.
+            if (!visible(thought)) return@subscribe
+            if (first) {
+                uiEngine.stopSpinner()
+                first = false
+            }
+            uiEngine.renderNotice(format(thought))
         }
     }
 

@@ -144,6 +144,18 @@ object CommandCatalog {
         CommandEntry("/thinking 3", "full trace — everything, including evidence detail", "Observe"),
         CommandEntry("/thinking replay", "re-show what has happened so far at the current depth", "Observe"),
 
+        // SUP.UX.ANSI-SCHEME-TOKENS: the accents Source Doc 5 asks for.
+        CommandEntry(
+            "/theme",
+            "the colour scheme, and how to change it",
+            "Orient",
+            keywords = listOf("color", "colour", "ansi", "palette", "scheme", "dark", "accent"),
+            example = "/theme atropos-purple"
+        ),
+        CommandEntry("/theme list", "every available theme", "Orient"),
+        CommandEntry("/theme preview", "each theme rendered in its own palette", "Orient"),
+        CommandEntry("/theme reset", "return to the default red", "Orient"),
+
         // SUP.ART.HANDOFF-EXPORT: artifacts leaving through a checked channel.
         CommandEntry(
             "/export",

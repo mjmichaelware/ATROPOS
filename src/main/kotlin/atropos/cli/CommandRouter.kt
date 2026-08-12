@@ -73,6 +73,7 @@ class CommandRouter(
     private val interruptCommand = InterruptCommandHandler(uiEngine)
     private val exportCommand = ExportCommandHandler(uiEngine)
     private val thinkingCommand = ThinkingCommandHandler(uiEngine)
+    private val themeCommand = ThemeCommandHandler(uiEngine)
     private val testsCommand = TestsCommandHandler(uiEngine)
     private val opsCommand = OpsCommandHandler(uiEngine)
     private val routeCommand = RouteCommandHandler(uiEngine)
@@ -246,6 +247,8 @@ class CommandRouter(
             "/export" -> exportCommand.execute(tokens)
 
             "/thinking" -> thinkingCommand.execute(tokens)
+
+            "/theme" -> themeCommand.execute(tokens)
 
             "/tests" -> testsCommand.execute(tokens)
 

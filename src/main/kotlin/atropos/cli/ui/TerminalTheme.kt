@@ -7,6 +7,7 @@ import atropos.cli.ui.design.Role
 import atropos.cli.ui.design.Surface
 import atropos.cli.ui.design.ThemeCatalog
 import atropos.cli.ui.design.ThemePalette
+import atropos.cli.ui.design.ThemePreference
 
 /**
  * Resolves semantic [Role]s to SGR sequences for the active theme and terminal
@@ -19,7 +20,12 @@ import atropos.cli.ui.design.ThemePalette
  */
 class TerminalTheme(
     private val capabilities: ConfigurationManager,
-    private val palette: ThemePalette = ThemeCatalog.byId(System.getenv("ATROPOS_THEME")),
+    /**
+     * Re-resolved per instance from [ThemePreference], so a theme chosen with
+     * `/theme` applies to renderers built after it without a restart, and
+     * survives one.
+     */
+    private val palette: ThemePalette = ThemeCatalog.byId(ThemePreference.resolve()),
     private val tierOverride: ColorTier? = null
 ) {
     val colorEnabled: Boolean
