@@ -3,6 +3,7 @@ package atropos.bridge
 
 import atropos.bridge.http.EngineHttpServer
 import atropos.bridge.conversation.QueuedWorkConversationResponder
+import atropos.bridge.queue.AgentQueueWorkRunner
 import atropos.core.AtroposRepoRootLocator
 import atropos.core.agent.AgentQueueService
 import atropos.core.agent.GoalRunStore
@@ -57,6 +58,9 @@ object AtroposBridge {
         val repoRoot = AtroposRepoRootLocator.resolve()
         val goalRunStore = GoalRunStore(repoRoot)
         val exportResolver = atropos.core.artifact.export.ArtifactLandingResolver(repoRoot, null)
+        // One queue instance serves both enqueueing and running, so a client
+        // runs the very entries it created.
+        val queueService = AgentQueueService()
 
         return BridgeRoutes(
             activeProvider = activeProvider,
@@ -89,8 +93,9 @@ object AtroposBridge {
             // trail that every CLI-originated task goes through; a direct
             // provider call from an HTTP handler would have none of them.
             responder = QueuedWorkConversationResponder(
-                queue = { task -> AgentQueueService().enqueue(task).id }
-            )
+                queue = { task -> queueService.enqueue(task).id }
+            ),
+            work = AgentQueueWorkRunner(queueService, activeProvider)
         ).let { routes ->
             EngineHttpServer(
                 routeTable = routes.table(),

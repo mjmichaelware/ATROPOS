@@ -4,6 +4,7 @@ package atropos.bridge
 import atropos.bridge.conversation.BridgeConversationResponder
 import atropos.bridge.conversation.BridgeConversationStore
 import atropos.bridge.conversation.UnwiredConversationResponder
+import atropos.bridge.queue.ConversationWorkRunner
 import atropos.bridge.http.HttpResponse
 import atropos.bridge.http.HttpRoute
 import atropos.bridge.http.HttpRouteTable
@@ -40,14 +41,22 @@ import atropos.core.welcome.WelcomeArtifact
 import java.time.Instant
 
 /**
- * The read-only route set the engine exposes to its clients.
+ * The route set the engine exposes to its clients.
  *
- * Every route here answers a question. None of them mutate, and that is a
- * boundary rather than a milestone: the existing Next.js bridge already refuses
- * argv passthrough because the CLI can reach `/shell`, `!command` and `/cd`, so
- * an open write surface on a loopback port is remote code execution against the
- * operator's own machine. Widening this set is a deliberate act that belongs
- * with an attribution and approval flow, not a convenience edit.
+ * Reads answer a question and mutate nothing. The four writes — approval
+ * decisions, a conversation turn, and running or cancelling queued work — are
+ * each deliberate, and each is narrow in the same specific way: none of them
+ * accepts a command, a path or an argv.
+ *
+ * That restriction is the whole boundary. The CLI can reach `/shell`,
+ * `!command` and `/cd`, so a route that passed text through to it would be
+ * remote code execution against the operator's own machine over a loopback
+ * port. A conversation turn becomes *queued work*, which inherits the attempt
+ * limits, policy gate and evidence trail every CLI-originated task passes
+ * through; running an entry advances work that already exists and was already
+ * admitted. Widening this further — a command surface, a file write — is a
+ * decision that belongs with an attribution and approval flow, not a
+ * convenience edit.
  *
  * The handlers hold no logic. Each one calls an existing owner and hands the
  * result to a projection — which is what `HOE-C02`'s "no business logic in Web"
@@ -136,11 +145,29 @@ class BridgeRoutes(
      */
     private val conversation: BridgeConversationStore = BridgeConversationStore(),
     private val responder: BridgeConversationResponder = UnwiredConversationResponder(),
+    /**
+     * Work a client can watch and advance. Null when this build was not given
+     * a queue, in which case the queue routes answer 501 rather than pretending
+     * an empty queue — "no work" and "no queue wired" are different facts.
+     */
+    private val work: ConversationWorkRunner? = null,
     private val clock: () -> Instant = { Instant.now() }
 ) {
     private val approvalHandler = BridgeApprovalHandler(approvals)
     private val thinkingHandler = BridgeThinkingHandler(thinkingView, thinking)
     private val conversationHandler = BridgeConversationHandler(conversation, responder)
+    private val queueHandler = work?.let { BridgeQueueHandler(it) }
+
+    /** Queue routes exist in the table either way, so the surface a client
+     *  discovers does not change with configuration; without a runner they
+     *  state plainly that this build has no queue wired. */
+    private fun withQueue(action: (BridgeQueueHandler) -> HttpResponse): HttpResponse =
+        queueHandler?.let(action) ?: HttpResponse.refusal(
+            501,
+            "queue-not-wired",
+            "This engine build did not attach a work queue to the bridge.",
+            "Start the engine normally; the queue is wired by AtroposBridge.server()."
+        )
 
     fun table(): HttpRouteTable {
         lateinit var table: HttpRouteTable
@@ -181,6 +208,15 @@ class BridgeRoutes(
                 },
                 HttpRoute("POST", "/v1/message", "append an operator turn and return the engine's reply") { request ->
                     conversationHandler.postMessage(request)
+                },
+                HttpRoute("GET", "/v1/queue", "queued work, or one entry with ?id=") { request ->
+                    withQueue { it.list(request) }
+                },
+                HttpRoute("POST", "/v1/queue/run", "run the next entry, or ?id= to run a named one") { request ->
+                    withQueue { it.run(request) }
+                },
+                HttpRoute("POST", "/v1/queue/cancel", "cancel a queue entry by ?id=") { request ->
+                    withQueue { it.cancel(request) }
                 },
                 HttpRoute("GET", "/v1/proposals", "self-improvement proposals and cooldowns") {
                     HttpResponse.json(
