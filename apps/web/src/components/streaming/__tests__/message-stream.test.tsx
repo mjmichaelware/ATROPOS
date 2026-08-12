@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react'
-import { MessageStream } from '../message-stream'
+import { MessageStream, StreamingApprovalCards } from '../message-stream'
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 
 /**
@@ -18,6 +18,11 @@ describe('MessageStream', () => {
   it('renders empty state when no messages', () => {
     render(<MessageStream eventSourceUrl="http://localhost/events" />)
     // Should not error
+  })
+
+  it('exposes the approval-card stream as the canonical named owner', () => {
+    render(<StreamingApprovalCards eventSourceUrl="http://localhost/events" />)
+    expect(screen.getByText(/Streaming/i)).toBeTruthy()
   })
 
   it('displays streaming indicator while active', () => {

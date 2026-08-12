@@ -19,7 +19,7 @@ interface MessageStreamProps {
   onApproval?: (id: string, approved: boolean) => void
 }
 
-export function MessageStream({ eventSourceUrl, onApproval }: MessageStreamProps) {
+export function StreamingApprovalCards({ eventSourceUrl, onApproval }: MessageStreamProps) {
   const [messages, setMessages] = useState<StreamEvent[]>([])
   const [isStreaming, setIsStreaming] = useState(true)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -86,6 +86,11 @@ export function MessageStream({ eventSourceUrl, onApproval }: MessageStreamProps
       <div ref={containerRef} />
     </div>
   )
+}
+
+/** Compatibility name for existing callers; the stream remains one owner. */
+export function MessageStream(props: MessageStreamProps) {
+  return <StreamingApprovalCards {...props} />
 }
 
 interface ApprovalCardProps {
