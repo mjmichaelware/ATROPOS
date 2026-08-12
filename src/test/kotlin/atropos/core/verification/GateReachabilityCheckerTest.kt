@@ -61,7 +61,9 @@ class GateReachabilityCheckerTest {
             "core/memory/MemoryBackendProbe.kt" to "ProcessBuilder(\"sqlite3\")"
         )
 
-        val report = GateReachabilityChecker().check(root)
+        val report = GateReachabilityChecker(
+            knownDebt = setOf("core/memory/MemoryBackendProbe.kt")
+        ).check(root)
 
         assertTrue(report.passed, "a recorded site is not a new violation")
         assertFalse(report.predicateHolds, "but the predicate does not hold while it exists")
@@ -98,5 +100,6 @@ class GateReachabilityCheckerTest {
             "new unbounded execution site(s) — route them through BoundedProcessRunner, " +
                 "or record them deliberately:\n" + report.render()
         )
+        assertTrue(report.predicateHolds, report.render())
     }
 }
