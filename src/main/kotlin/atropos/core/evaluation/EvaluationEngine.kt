@@ -26,7 +26,8 @@ class EvaluationEngine(
     private val directorService: DirectorService = DirectorService(DirectorStore(repoRoot), repoRoot),
     private val history: EvaluationHistoryStore = EvaluationHistoryStore(repoRoot),
     private val redactionFilter: RedactionFilter = RedactionFilter(),
-    private val reproducibilityGate: ReproducibilityGate = ReproducibilityGate()
+    private val reproducibilityGate: ReproducibilityGate = ReproducibilityGate(),
+    private val releaseGateEvaluator: ReleaseGateEvaluator = ReleaseGateEvaluator()
 ) {
     fun evaluateRelease(
         subjectId: String,
@@ -39,7 +40,7 @@ class EvaluationEngine(
         reproducibilityExpectedFiles: Map<String, String>? = null
     ): ReleaseGateDecision {
         val report = buildReport(subjectId, runId, artifactIds, changedFiles, goalId, claimedBy, verifiedBy, reproducibilityExpectedFiles = reproducibilityExpectedFiles)
-        return decide(report)
+        return releaseGateEvaluator.evaluate(report).also { history.append(it.report) }
     }
 
     fun evaluatePromotionRelease(
@@ -63,17 +64,7 @@ class EvaluationEngine(
             reproducibilityExpectedFiles = reproducibilityExpectedFiles,
             requirePromotionScope = true
         )
-        return decide(report)
-    }
-
-    private fun decide(report: EvaluationReport): ReleaseGateDecision {
-        history.append(report)
-        val blockers = report.metrics.filter { !it.passed && it.severity == EvaluationSeverity.BLOCKER }
-        return ReleaseGateDecision(
-            accepted = blockers.isEmpty(),
-            report = report,
-            reason = if (blockers.isEmpty()) "release gate passed" else blockers.joinToString("; ") { "${it.kind}: ${it.evidence}" }
-        )
+        return releaseGateEvaluator.evaluate(report).also { history.append(it.report) }
     }
 
     private fun buildReport(

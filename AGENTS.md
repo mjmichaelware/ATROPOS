@@ -9028,3 +9028,12 @@ End of AGENTS.md
 - `% delta`: unchanged; strict accounting remains `609/741` until the registry audit is rerun after the atom set is implemented.
 - Fingerprints: `AntiGamingAuditor.kt=135ef61b1a0929e38afb39fe81fd95eeedc19018b674f77df4ab56f27a33c800`; `GovernanceLedger.kt=15896c7ac950c5361f3e41bad2b6dc048137010a7bbaf433071e7a443d02e5fc`; `AntiGamingAuditorTest.kt=3e9b4a5a6cc302aa0d5addfe85a62e9f5e463072ab69feb77e31d5a980183f46`.
 - HR interrupts: none. Next atom: `STRICT-12-ReleaseGateEvaluator`.
+
+### 2026-08-12T09:07:37Z · Agent: Codex GPT-5 · Batch: strict-12-release-gate-evaluator-010
+- Paths touched: `src/main/kotlin/atropos/core/evaluation/ReleaseGateEvaluator.kt` (+49); `src/main/kotlin/atropos/core/evaluation/EvaluationEngine.kt` (+3/-11); `src/main/kotlin/atropos/core/evaluation/EvaluationModels.kt` (+3); `src/test/kotlin/atropos/core/evaluation/ReleaseGateEvaluatorTest.kt` (+47); `AGENTS.md` (+this row).
+- Atoms / phases affected: `STRICT-12-ReleaseGateEvaluator`, Phase 19/20 release decision aggregation.
+- Predicate moved: release decisions now have one canonical fail-closed evaluator. It aggregates existing deterministic-verifier and completion-gate results when supplied, blocks on any failed blocker, and preserves `EvaluationEngine` history writes. No verifier or completion-gate logic was duplicated.
+- Verification: `git diff --check` and production/test reference inspection passed. Per instruction, no Gradle, compile, test, JAR, smoke, CI, or build verification was run.
+- `% delta`: unchanged; strict accounting remains `609/741` until the registry audit is rerun after the atom set is implemented.
+- Fingerprints: `ReleaseGateEvaluator.kt=ebf5b19f36886faea94f3a48e8e613fd8113d15c6449e5b507059689b0987aa2`; `EvaluationEngine.kt=ff69c945b562184914f17440c04eb73c9e40a753c97e18627e714dd819a511b8`; `EvaluationModels.kt=8f1a34e1adb6c8044653c5e3f4e80365c8d029687c9aab5c639d20875becbbce`; `ReleaseGateEvaluatorTest.kt=d9f54ed8895a780f847c52ea48622551b5c8655072f5fa7b7de61dd804b6a88c`.
+- HR interrupts: none. Next atom: `STRICT-14-ProposalGenerator`.

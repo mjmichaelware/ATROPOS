@@ -18,7 +18,9 @@ enum class EvaluationMetricKind {
     SELF_APPROVAL_GUARD,
     FAKE_SUCCESS_GUARD,
     MYTHOLOGY_GUARD,
-    REPRODUCIBILITY
+    REPRODUCIBILITY,
+    DETERMINISTIC_VERIFICATION,
+    COMPLETION_GATE
 }
 
 enum class EvaluationSeverity {
