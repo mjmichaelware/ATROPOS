@@ -44,6 +44,48 @@ jobs:
             *gradle-9*) echo "::error::Gradle 9 is incompatible with the Kotlin Android plugin"; exit 1 ;;
           esac
 
+      # Signing secrets are checked before the build, not after it. apksigner
+      # reports a missing alias and password as
+      # "Failed to load signer / Tag number over 30 is not supported", which
+      # reads like a corrupt APK rather than absent configuration and cost a
+      # full build to discover. Values are never echoed; only presence and the
+      # decoded keystore's magic bytes are reported.
+      - name: Verify signing secrets are present and well-formed
+        env:
+          KS_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+          KS_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          set -eu
+          missing=0
+          for name in KS_B64 KS_ALIAS KS_PASS; do
+            eval "value=\${$name:-}"
+            if [ -z "$value" ]; then
+              echo "::error::secret $name is empty or not set"
+              missing=1
+            else
+              echo "$name: present (${#value} chars)"
+            fi
+          done
+          [ "$missing" -eq 0 ] || {
+            echo "::error::Set ANDROID_KEYSTORE_B64, ANDROID_KEY_ALIAS and ANDROID_KEYSTORE_PASSWORD in repository secrets."
+            exit 1
+          }
+
+          printf '%s' "$KS_B64" | base64 -d > /tmp/ks.jks 2>/dev/null || {
+            echo "::error::ANDROID_KEYSTORE_B64 is not valid base64"; exit 1; }
+          size=$(stat -c%s /tmp/ks.jks)
+          echo "decoded keystore: $size bytes"
+          [ "$size" -gt 100 ] || { echo "::error::decoded keystore is too small to be real"; exit 1; }
+
+          # Prove the keystore actually opens with the supplied alias and
+          # password before spending a build on it.
+          keytool -list -keystore /tmp/ks.jks -storepass "$KS_PASS" -alias "$KS_ALIAS" >/dev/null 2>&1 || {
+            echo "::error::keystore will not open with the supplied alias/password. Check ANDROID_KEY_ALIAS matches the alias inside the keystore."
+            exit 1; }
+          echo "keystore opens with the supplied alias and password"
+          rm -f /tmp/ks.jks
+
       # Release, not debug. Modern Android refuses debug-signed APKs through the
       # GUI installer, which is why installation kept failing even after the
       # package identity was made unique.
@@ -58,6 +100,17 @@ jobs:
           set -eu
           echo "APK outputs:"
           find app/build/outputs/apk -name '*.apk' -print -exec ls -la {} \;
+
+      # Published even when signing later fails, so a green build always yields
+      # something inspectable. This cannot be installed as-is — an unsigned APK
+      # is rejected by every installer — but it can be signed locally with
+      # apksigner, and it proves what the build actually produced.
+      - name: Upload unsigned APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: atropos-android-unsigned
+          path: app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
 
       - name: Sign APK with Permanent Key
         uses: r0adkll/sign-android-release@v1
