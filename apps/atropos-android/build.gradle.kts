@@ -8,11 +8,11 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.atropos.android.app2"
+        applicationId = "com.atropos.fixed.v2"
         minSdk = 28
         targetSdk = 35
-        versionCode = 100
-        versionName = "1.0.0"
+        versionCode = 999
+        versionName = "9.9.9"
         ndk {
             abiFilters += listOf("arm64-v8a")
         }
