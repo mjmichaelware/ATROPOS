@@ -1,6 +1,9 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.bridge
 
+import atropos.bridge.conversation.BridgeConversationResponder
+import atropos.bridge.conversation.BridgeConversationStore
+import atropos.bridge.conversation.UnwiredConversationResponder
 import atropos.bridge.http.HttpResponse
 import atropos.bridge.http.HttpRoute
 import atropos.bridge.http.HttpRouteTable
@@ -125,10 +128,19 @@ class BridgeRoutes(
      */
     private val attestations: () -> List<AttestationResult> = { emptyList() },
     private val cascade: () -> List<CascadeResolution> = { emptyList() },
+    /**
+     * HOE-D02 conversation surface. Defaulted so every existing construction
+     * site keeps working and so routes stay buildable without a repository:
+     * the store is in memory and the responder does not execute anything until
+     * an execution path is deliberately supplied.
+     */
+    private val conversation: BridgeConversationStore = BridgeConversationStore(),
+    private val responder: BridgeConversationResponder = UnwiredConversationResponder(),
     private val clock: () -> Instant = { Instant.now() }
 ) {
     private val approvalHandler = BridgeApprovalHandler(approvals)
     private val thinkingHandler = BridgeThinkingHandler(thinkingView, thinking)
+    private val conversationHandler = BridgeConversationHandler(conversation, responder)
 
     fun table(): HttpRouteTable {
         lateinit var table: HttpRouteTable
@@ -163,6 +175,12 @@ class BridgeRoutes(
                 },
                 HttpRoute("POST", "/v1/approvals/decide", "record a human approval decision") { request ->
                     approvalHandler.decideApproval(request)
+                },
+                HttpRoute("GET", "/v1/messages", "conversation transcript for a client surface") { request ->
+                    conversationHandler.getMessages(request)
+                },
+                HttpRoute("POST", "/v1/message", "append an operator turn and return the engine's reply") { request ->
+                    conversationHandler.postMessage(request)
                 },
                 HttpRoute("GET", "/v1/proposals", "self-improvement proposals and cooldowns") {
                     HttpResponse.json(

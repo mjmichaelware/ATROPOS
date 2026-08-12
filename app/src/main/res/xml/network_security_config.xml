@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Cleartext is permitted to loopback and nowhere else.
+
+  Android 9+ blocks cleartext HTTP by default, which would silently fail every
+  call to the engine bridge on 127.0.0.1. The blunt fix is
+  android:usesCleartextTraffic="true", but that permits plaintext to any host
+  on any network. The engine binds loopback only, so the exception is scoped to
+  loopback only: the app cannot be pointed at a remote host over plaintext even
+  if a future change tried to.
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">127.0.0.1</domain>
+        <domain includeSubdomains="false">localhost</domain>
+    </domain-config>
+    <base-config cleartextTrafficPermitted="false" />
+</network-security-config>
