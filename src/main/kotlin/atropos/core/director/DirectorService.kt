@@ -1,6 +1,7 @@
 package atropos.core.director
 
 import atropos.core.AtroposRepoRootLocator
+import atropos.core.policy.BoundedProcessRunner
 import atropos.core.territory.TerritoryAssignment
 import java.io.BufferedReader
 import java.nio.charset.StandardCharsets
@@ -8,12 +9,13 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.security.MessageDigest
 
-private const val MAX_GIT_STATUS_BYTES = 1_048_576
+private const val MAX_GIT_STATUS_BYTES = 256 * 1024
 
 class DirectorService(
     private val store: DirectorStore = DirectorStore(),
     private val repoRoot: Path = AtroposRepoRootLocator.resolve()
 ) {
+    private val processRunner = BoundedProcessRunner()
     fun observe(
         kind: ObservationKind,
         severity: DriftSeverity,
@@ -194,40 +196,25 @@ class DirectorService(
     )
 
     private fun runGitStatus(): GitStatusSnapshot {
-        return try {
-            // Status is the canonical bounded repository snapshot here: unlike
-            // `git diff --stat`, it includes untracked files that are already
-            // part of a live mutation but have not been staged yet.
-            val process = ProcessBuilder("git", "status", "--short", "--untracked-files=all")
-                .directory(repoRoot.toFile())
-                .redirectErrorStream(true)
-                .start()
-            val output = StringBuilder()
-            var byteCount = 0
-            process.inputStream.bufferedReader(StandardCharsets.UTF_8).use { reader: BufferedReader ->
-                while (true) {
-                    val line = reader.readLine() ?: break
-                    val lineBytes = line.toByteArray(StandardCharsets.UTF_8).size + 1
-                    if (byteCount + lineBytes > MAX_GIT_STATUS_BYTES) {
-                        process.destroyForcibly()
-                        process.waitFor()
-                        return GitStatusSnapshot(
-                            output = null,
-                            failure = "git status output exceeded ${MAX_GIT_STATUS_BYTES} bytes"
-                        )
-                    }
-                    output.appendLine(line)
-                    byteCount += lineBytes
-                }
-            }
-            val exit = process.waitFor()
-            if (exit == 0) {
-                GitStatusSnapshot(output.toString().trim(), null)
-            } else {
-                GitStatusSnapshot(null, "git status exited with code $exit")
-            }
-        } catch (failure: Exception) {
-            GitStatusSnapshot(null, "git status unavailable: ${failure.javaClass.simpleName}")
+        val result = runCatching {
+            processRunner.run(
+                command = listOf("git", "status", "--short", "--untracked-files=all"),
+                directory = repoRoot,
+                timeoutMillis = 15_000L,
+                maxOutputBytes = MAX_GIT_STATUS_BYTES,
+                maxOutputLines = 4_000
+            )
+        }.getOrNull() ?: return GitStatusSnapshot(null, "git status unavailable")
+        if (result.timedOut) return GitStatusSnapshot(null, "git status timed out")
+        if (result.launchError != null) return GitStatusSnapshot(null, "git status unavailable")
+        if (result.outputTruncated) {
+            return GitStatusSnapshot(null, "git status output exceeded $MAX_GIT_STATUS_BYTES bytes")
+        }
+        val output = result.stdout + result.stderr
+        return if (result.exitCode == 0) {
+            GitStatusSnapshot(output.trim(), null)
+        } else {
+            GitStatusSnapshot(null, "git status exited with code ${result.exitCode}")
         }
     }
 
