@@ -2,7 +2,7 @@
 package atropos.cli.ui
 
 import atropos.cli.input.CommandEntry
-import atropos.cli.input.CommandRegistry
+import atropos.bridge.menu.HelpRegistry
 
 /**
  * Builds the lines of the command help block.
@@ -35,7 +35,7 @@ class CommandHelpRenderer(
         val rail = theme.paint(atropos.cli.ui.design.Role.ACCENT_FOCUS, railGlyph())
         val safeWidth = width.coerceAtLeast(MINIMUM_WIDTH)
         val filter = query.trim().removePrefix("/")
-        val entries = if (filter.isBlank()) CommandRegistry.entries else CommandRegistry.search(filter)
+        val entries = if (filter.isBlank()) HelpRegistry.commandEntries() else atropos.cli.input.CommandRegistry.search(filter)
 
         val lines = mutableListOf<String>()
         lines += rail + PAD + theme.brand("COMMANDS")
