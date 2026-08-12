@@ -34,6 +34,7 @@ class GovernanceLedger(
     private val codec: GovernanceLedgerCodec = GovernanceLedgerCodec(),
     private val gate: ProposalGate = ProposalGate(),
     private val antiGamingAuditor: AntiGamingAuditor = AntiGamingAuditor(),
+    private val proposalGenerator: ProposalGenerator = ProposalGenerator(),
     private val clock: () -> Instant = { Instant.now() }
 ) {
     private val file: Path = repoRoot.resolve(".atropos/governance/ledger.log").normalize()
@@ -55,6 +56,10 @@ class GovernanceLedger(
         append(codec.encodeProposal(proposal))
         return proposal
     }
+
+    /** Generates and records a proposal without bypassing ledger durability. */
+    fun propose(deficiency: ProposalDeficiency): ImprovementProposal =
+        propose(proposalGenerator.generate(deficiency))
 
     /** Convenience for callers that have the declarations but not an id. */
     fun propose(

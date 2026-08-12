@@ -9037,3 +9037,12 @@ End of AGENTS.md
 - `% delta`: unchanged; strict accounting remains `609/741` until the registry audit is rerun after the atom set is implemented.
 - Fingerprints: `ReleaseGateEvaluator.kt=ebf5b19f36886faea94f3a48e8e613fd8113d15c6449e5b507059689b0987aa2`; `EvaluationEngine.kt=ff69c945b562184914f17440c04eb73c9e40a753c97e18627e714dd819a511b8`; `EvaluationModels.kt=8f1a34e1adb6c8044653c5e3f4e80365c8d029687c9aab5c639d20875becbbce`; `ReleaseGateEvaluatorTest.kt=d9f54ed8895a780f847c52ea48622551b5c8655072f5fa7b7de61dd804b6a88c`.
 - HR interrupts: none. Next atom: `STRICT-14-ProposalGenerator`.
+
+### 2026-08-12T09:08:39Z · Agent: Codex GPT-5 · Batch: strict-14-proposal-generator-011
+- Paths touched: `src/main/kotlin/atropos/core/phase20/ProposalGenerator.kt` (+60); `src/main/kotlin/atropos/core/phase20/GovernanceLedger.kt` (+8); `src/test/kotlin/atropos/core/phase20/ProposalGeneratorTest.kt` (+44); `AGENTS.md` (+this row).
+- Atoms / phases affected: `STRICT-14-ProposalGenerator`, Phase 20 proposal creation.
+- Predicate moved: an evidenced deficiency now becomes a complete `ImprovementProposal` with deterministic content identity, deduplicated declarations, metric validation, and all gate-required fields. `GovernanceLedger` records generated proposals through its existing durable proposal owner; `ProposalGate` remains the acceptance authority.
+- Verification: `git diff --check` and production/test reference inspection passed. Per instruction, no Gradle, compile, test, JAR, smoke, CI, or build verification was run.
+- `% delta`: unchanged; strict accounting remains `609/741` until the registry audit is rerun after the atom set is implemented.
+- Fingerprints: `ProposalGenerator.kt=2e0e67af54952ef547c8a0bac0704b8992ea08d240f404bed937d59f05770092`; `GovernanceLedger.kt=6a1f1f3fd4dee785a4ac52af2757bc53eb4b1f68e225961ca36dfcae7eea4fc5`; `ProposalGeneratorTest.kt=eb22bcc2c805bd0b5fccfb64e274ed656c36f0fc8d587211f9dcd2359170aa49`.
+- HR interrupts: none. Next atom: `STRICT-01-BoundedWorkExecutor`.
