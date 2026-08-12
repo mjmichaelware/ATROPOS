@@ -18,7 +18,8 @@ import atropos.core.security.RedactionFilter
  */
 class ErrorRenderer(
     private val theme: TerminalTheme,
-    private val redactionFilter: RedactionFilter = RedactionFilter()
+    private val redactionFilter: RedactionFilter = RedactionFilter(),
+    private val responseExport: CopyDownloadResponse = CopyDownloadResponse(redactionFilter)
 ) {
     data class ErrorInfo(
         val title: String,
@@ -61,9 +62,10 @@ class ErrorRenderer(
 
         // Copyable details section (for debugging)
         if (!error.details.isNullOrBlank()) {
+            val copyable = responseExport.copy(error.details)
             output += ""
             output += theme.surface.rule(safeWidth, Role.BORDER_SUBTLE)
-            output += theme.paint(Role.TEXT_MUTED, "Details (copy for support):")
+            output += theme.paint(Role.TEXT_MUTED, "Details (copy/download ${copyable.bytes} bytes):")
             output += ""
             for (line in error.details.lines()) {
                 output.addAll(AnsiLineWrapper.wrap(theme.code(line), safeWidth))
