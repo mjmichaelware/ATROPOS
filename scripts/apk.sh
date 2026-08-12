@@ -61,11 +61,15 @@ if command -v termux-open >/dev/null 2>&1; then
     echo
     echo "The Android installer should now be on screen. Tap Install."
     echo
-    echo "If nothing appeared, allow Termux to install apps once:"
-    echo "  Settings -> Apps -> Termux -> Install unknown apps -> Allow"
-    echo "then run this script again."
+    echo "NOTHING APPEARED? Termux has not been allowed to install apps yet."
+    echo "That is a one-time system permission. Grant it from here:"
+    echo
+    echo "  am start -a android.settings.MANAGE_UNKNOWN_APP_SOURCES -d package:com.termux"
+    echo
+    echo "Turn the switch on, press back, then run this script again."
 else
     echo
-    echo "termux-open is unavailable. Open this file from your Files app:"
+    echo "termux-open is unavailable: pkg install termux-tools"
+    echo "Or open this file from your Files app:"
     echo "  $APK"
 fi
