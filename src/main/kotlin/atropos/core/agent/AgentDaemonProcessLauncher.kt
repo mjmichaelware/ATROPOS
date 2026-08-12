@@ -35,16 +35,12 @@ class AgentDaemonProcessLauncher(
             this["ATROPOS_ROOT"] = root.toString()
             this["JAVA_HOME"] = Path.of(System.getProperty("java.home")).toString()
         }
-        val process = ProcessBuilder(javaBin.toString(), "-Xmx256m", "-jar", candidate.toString(), "--agent-daemon-foreground")
-            .directory(root.toFile())
-            .redirectInput(ProcessBuilder.Redirect.from(Path.of("/dev/null").toFile()))
-            .redirectOutput(ProcessBuilder.Redirect.PIPE)
-            .redirectErrorStream(true)
-            .apply {
-                environment().clear()
-                environment().putAll(environment)
-            }
-            .start()
+        val process = processRunner.start(
+            command = listOf(javaBin.toString(), "-Xmx256m", "-jar", candidate.toString(), "--agent-daemon-foreground"),
+            directory = root,
+            environment = environment,
+            inputRedirect = Path.of("/dev/null")
+        )
         logWriter.attach(process, log)
         return process
     }
