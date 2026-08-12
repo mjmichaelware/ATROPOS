@@ -2,7 +2,9 @@
 package atropos.bridge
 
 import atropos.bridge.http.EngineHttpServer
+import atropos.bridge.conversation.QueuedWorkConversationResponder
 import atropos.core.AtroposRepoRootLocator
+import atropos.core.agent.AgentQueueService
 import atropos.core.agent.GoalRunStore
 import atropos.core.checkpoint.CheckpointSummary
 import atropos.core.phase20.GovernanceLedger
@@ -76,7 +78,19 @@ object AtroposBridge {
                 }
             },
             exportResolver = { exportResolver },
-            exportTerritory = { listOf(repoRoot) }
+            exportTerritory = { listOf(repoRoot) },
+            // This is where a phone message becomes real work. Constructed here
+            // rather than defaulted inside BridgeRoutes so the routes stay
+            // buildable without a repository: a test checking one projection
+            // must not have to own a queue on disk.
+            //
+            // Enqueueing rather than calling a provider directly is deliberate.
+            // Queued work inherits the attempt limits, policy gate and evidence
+            // trail that every CLI-originated task goes through; a direct
+            // provider call from an HTTP handler would have none of them.
+            responder = QueuedWorkConversationResponder(
+                queue = { task -> AgentQueueService().enqueue(task).id }
+            )
         ).let { routes ->
             EngineHttpServer(
                 routeTable = routes.table(),
