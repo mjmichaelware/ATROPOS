@@ -7,6 +7,7 @@ class StatusBarRenderer(
     private val theme: TerminalTheme
 ) {
     private val headerRenderer = HeaderRenderer(theme)
+    private val recoveryRibbon = RecoveryTectonicRibbon()
 
     fun header(width: Int): String = headerRenderer.render(
         SessionPresentationState(
@@ -78,7 +79,15 @@ class StatusBarRenderer(
             state.activeOperation
                 ?.let(TerminalText::sanitize)
                 ?.takeIf(String::isNotBlank)
-                ?.let { add(theme.warning("△ ") + theme.strong(it)) }
+                ?.let {
+                    if (it.contains("recovery", ignoreCase = true)) {
+                        add(theme.warning("△ ") + theme.strong(recoveryRibbon.render(
+                            RecoveryTectonicRibbon.State("active", "unknown", "required"), safeWidth
+                        )))
+                    } else {
+                        add(theme.warning("△ ") + theme.strong(it))
+                    }
+                }
             add(theme.subdued("/help"))
         }
 
