@@ -1,13 +1,12 @@
 package atropos.core.memory
 
+import atropos.core.policy.BoundedProcessRunner
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.LinkOption
+import java.nio.file.Path
 import java.security.MessageDigest
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicReference
-import kotlin.concurrent.thread
 
 /**
  * Optional on-disk vector index for source chunks.
@@ -235,49 +234,26 @@ class SqliteVecMemoryIndex(
     companion object {
         private const val MAX_ERROR_CHARS = 4096
         private const val SQLITE_TIMEOUT_MILLIS = 5_000L
-        private const val READER_JOIN_MILLIS = 1_000L
         private const val SQLITE_TIMEOUT_EXIT = 124
         private const val ROW_ID_CONFLICT_PREFIX = "ATROPOS_ROW_ID_CONFLICT:"
         private val SHA256_PATTERN = Regex("[a-fA-F0-9]{64}")
 
-        private fun readBoundedOutput(input: java.io.InputStream): String {
-            val buffer = ByteArray(1024)
-            val retained = java.io.ByteArrayOutputStream(MAX_ERROR_CHARS)
-            var total = 0
-            while (true) {
-                val count = input.read(buffer)
-                if (count < 0) break
-                if (total < MAX_ERROR_CHARS) {
-                    val keep = (MAX_ERROR_CHARS - total).coerceAtMost(count)
-                    retained.write(buffer, 0, keep)
-                    total += keep
-                }
-            }
-            return retained.toString(StandardCharsets.UTF_8.name())
-        }
-
         private fun runSqlite(command: List<String>, input: String): ProcessResult = runCatching {
-            val process = ProcessBuilder(command)
-                .redirectErrorStream(true)
-                .start()
-            try {
-                val output = AtomicReference("")
-                val reader = thread(isDaemon = true, name = "atropos-sqlite-output") {
-                    output.set(readBoundedOutput(process.inputStream))
-                }
-                process.outputStream.use { it.write(input.toByteArray(StandardCharsets.UTF_8)) }
-                val completed = process.waitFor(SQLITE_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)
-                if (!completed) {
-                    process.destroyForcibly()
-                    process.waitFor(READER_JOIN_MILLIS, TimeUnit.MILLISECONDS)
-                    reader.join(READER_JOIN_MILLIS)
-                    ProcessResult(SQLITE_TIMEOUT_EXIT, output.get())
-                } else {
-                    reader.join(READER_JOIN_MILLIS)
-                    ProcessResult(process.exitValue(), output.get())
-                }
-            } finally {
-                if (process.isAlive) process.destroyForcibly()
+            val directory = Path.of(command.firstOrNull()?.let { File(it).parent } ?: ".")
+                .toAbsolutePath().normalize().let { if (Files.isDirectory(it)) it else Path.of("/") }
+            val result = BoundedProcessRunner().run(
+                command = command,
+                directory = directory,
+                timeoutMillis = SQLITE_TIMEOUT_MILLIS,
+                maxOutputBytes = MAX_ERROR_CHARS,
+                maxOutputLines = 1_000,
+                standardInput = input.toByteArray(StandardCharsets.UTF_8)
+            )
+            val output = result.stdout + result.stderr
+            when {
+                result.timedOut -> ProcessResult(SQLITE_TIMEOUT_EXIT, output)
+                result.launchError != null -> ProcessResult(127, result.launchError)
+                else -> ProcessResult(result.exitCode ?: 127, output)
             }
         }.getOrElse { ProcessResult(127, it.message.orEmpty()) }
     }
