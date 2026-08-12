@@ -80,6 +80,9 @@ for build_file in "${BUILD_FILES[@]}"; do
        || "$normalized_dependency" =~ ^implementation\(\"org\.jetbrains\.kotlin:kotlin-stdlib:[0-9]+(\.[0-9]+){1,3}\"\)$ \
        || "$normalized_dependency" =~ ^testImplementation\(\"org\.jetbrains\.kotlin:kotlin-test-junit:[0-9]+(\.[0-9]+){1,3}\"\)$ ]]; then
       allowed_dependency=true
+    elif [[ "$build_file" == "$ROOT/app/build.gradle.kts" \
+         && "$normalized_dependency" =~ ^(implementation|api)\((platform\()?\"androidx\..* ]]; then
+      allowed_dependency=true
     fi
     if [[ "$allowed_dependency" != true ]]; then
       report_failure "unclassified-dependency $match"
