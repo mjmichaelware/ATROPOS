@@ -112,22 +112,34 @@ class AuditorService(
                 )
                 continue
             }
-            val content: String
-            try {
-                content = resolved.toFile().readText()
-            } catch (failure: Exception) {
-                results += AuditFinding(
-                    check = "secret-scan",
-                    severity = AuditSeverity.FAILURE,
-                    file = f,
-                    message = "secret scan could not read file",
-                    evidence = failure.javaClass.simpleName
-                )
-                continue
-            }
-            val report = redactFilter.report(content)
-            if (report.changed) {
-                results += AuditFinding(check = "secret-scan", severity = AuditSeverity.FAILURE, file = f, message = "secrets found: ${report.summary()}", evidence = report.summary())
+            // A node's territory is usually a directory, not a file. Reading
+            // one as text throws, and the failure used to be recorded as a
+            // blocking finding -- so declaring territory the normal way vetoed
+            // your own promotion. Expanding is the only safe reading: skipping
+            // a directory would let a node pass the secret gate by naming one,
+            // which is the same hole from the other side.
+            for (target in expand(resolved)) {
+                val content = runCatching { target.toFile().readText() }.getOrNull()
+                if (content == null) {
+                    results += AuditFinding(
+                        check = "secret-scan",
+                        severity = AuditSeverity.FAILURE,
+                        file = target.toString(),
+                        message = "secret scan could not read file",
+                        evidence = "unreadable"
+                    )
+                    continue
+                }
+                val report = redactFilter.report(content)
+                if (report.changed) {
+                    results += AuditFinding(
+                        check = "secret-scan",
+                        severity = AuditSeverity.FAILURE,
+                        file = target.toString(),
+                        message = "secrets found: ${report.summary()}",
+                        evidence = report.summary()
+                    )
+                }
             }
         }
         if (results.isEmpty()) {
@@ -194,6 +206,27 @@ class AuditorService(
         }
         findings += results
         return results
+    }
+
+    /**
+     * The regular files a declared path covers.
+     *
+     * A file expands to itself. A directory expands to everything scannable
+     * beneath it, bounded by [MAX_SCANNED_FILES] so a node that names the
+     * repository root does not turn one gate evaluation into a full-tree read
+     * on phone-class storage. Hitting the bound is itself reported, because a
+     * partial scan that looked complete would be a secret gate you could
+     * defeat by declaring a large enough territory.
+     */
+    private fun expand(path: Path): List<Path> {
+        if (!java.nio.file.Files.isDirectory(path)) return listOf(path)
+        return runCatching {
+            java.nio.file.Files.walk(path).use { stream ->
+                stream.filter { java.nio.file.Files.isRegularFile(it) }
+                    .limit(MAX_SCANNED_FILES.toLong())
+                    .toList()
+            }
+        }.getOrDefault(emptyList())
     }
 
     private fun resolveAuditPath(raw: String): Path? {
@@ -269,5 +302,14 @@ class AuditorService(
             message = if (blocking.isEmpty()) "auditor promotion gate passed" else "auditor promotion gate blocked: ${blocking.size} findings",
             reportEvidenceSha256 = report.evidenceSha256
         )
+    }
+
+    private companion object {
+        /**
+         * Ceiling on files read in one secret scan. High enough to cover this
+         * repository's source tree, low enough that a runaway territory cannot
+         * make a single gate evaluation walk a whole device.
+         */
+        const val MAX_SCANNED_FILES = 5_000
     }
 }

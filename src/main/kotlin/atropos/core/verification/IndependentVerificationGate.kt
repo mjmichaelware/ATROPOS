@@ -38,17 +38,31 @@ class IndependentVerificationGate(
         val compilePassed = compileGate?.passed ?: false
 
         if (!auditorPassed || !deterministicPassed || !compilePassed) {
+            // Each lane reports why, not just that. A veto naming only the lane
+            // leaves the operator to re-run the whole gate by hand to find out
+            // what it objected to -- and a lane that is missing entirely is a
+            // different problem from one that ran and refused, so the two are
+            // distinguished rather than both reading as "failed".
             val failedLanes = listOfNotNull(
-                if (!auditorPassed) "Auditor" else null,
-                if (!deterministicPassed) "Deterministic" else null,
-                if (!compilePassed) "Compile" else null
-            ).joinToString(", ")
+                lane("Auditor", auditorPassed, auditorGate),
+                lane("Deterministic", deterministicPassed, deterministicGate),
+                lane("Compile", compilePassed, compileGate)
+            ).joinToString("; ")
             return report.copy(
                 canComplete = false,
-                message = "VETO: Independent verification failed on core lanes ($failedLanes). Proposing agent cannot self-approve."
+                message = "VETO: Independent verification failed on core lanes ($failedLanes). " +
+                    "Proposing agent cannot self-approve."
             )
         }
 
         return report
+    }
+
+    /** `null` when the lane passed; otherwise the lane and its stated reason. */
+    private fun lane(name: String, passed: Boolean, result: GateResult?): String? = when {
+        passed -> null
+        result == null -> "$name (lane did not run)"
+        result.detail.isBlank() -> name
+        else -> "$name: ${result.detail}"
     }
 }

@@ -75,6 +75,70 @@ object CommandCatalog {
         CommandEntry("/keys setup", "local secret template setup"),
         CommandEntry("/keys status", "key source status"),
         CommandEntry("/keys doctor", "key precedence and provider impact doctor"),
+
+        // SUP.AUTH.*: the governing documents and their attestation state.
+        CommandEntry(
+            "/auth",
+            "attestation state of every governing document",
+            "Authority",
+            keywords = listOf("agents.md", "swarm.md", "attest", "fingerprint", "drift")
+        ),
+        CommandEntry("/auth verify", "report each authority document as attested, changed or absent", "Authority"),
+        CommandEntry("/auth cascade", "which layer wins each key, and which keys no layer may override", "Authority"),
+        CommandEntry(
+            "/auth accept",
+            "record a document's current contents as authoritative after reviewing the change",
+            "Authority",
+            example = "/auth accept AGENTS.md"
+        ),
+
+        // SUP.STOR.*: storage as a visible, bounded, collectable resource.
+        CommandEntry(
+            "/storage",
+            "usage against the declared ceiling, per class",
+            "Observe",
+            aliases = listOf("/gc"),
+            keywords = listOf("disk", "space", "ceiling", "free", "quota")
+        ),
+        CommandEntry("/storage policy", "the retention tier and window governing each stored class", "Observe"),
+        CommandEntry(
+            "/storage gc",
+            "report what could be reclaimed; add --apply to actually delete",
+            "Observe",
+            example = "/storage gc worktrees --apply"
+        ),
+
+        // SUP.UX.INTERRUPT-PRIMITIVE: stopping without losing the work.
+        CommandEntry(
+            "/interrupt",
+            "stop the running loop at its next safe boundary",
+            "Agent",
+            keywords = listOf("stop", "cancel", "ctrl-c", "abort", "halt")
+        ),
+        CommandEntry("/interrupt soft", "finish the current tool, then stop", "Agent"),
+        CommandEntry("/interrupt hard", "stop the current tool now; work in flight is abandoned", "Agent"),
+        CommandEntry("/interrupt status", "whether an interrupt is pending or has been taken", "Agent"),
+        CommandEntry(
+            "/pause",
+            "freeze the run, preserving its exact position for /resume",
+            "Agent",
+            keywords = listOf("freeze", "suspend", "later")
+        ),
+        CommandEntry(
+            "/resume",
+            "continue a frozen run from the position it stopped at",
+            "Agent",
+            keywords = listOf("continue", "unfreeze", "restore")
+        ),
+
+        // SUP.ART.HANDOFF-EXPORT: artifacts leaving through a checked channel.
+        CommandEntry(
+            "/export",
+            "write a handoff, report, evidence summary, swarm status or audit out of the system",
+            "Observe",
+            keywords = listOf("handoff", "report", "download", "artifact", "share"),
+            example = "/export handoff --downloads"
+        ),
         CommandEntry("/factory", "factory status"),
         CommandEntry("/factory plan", "bounded app-factory plan"),
         CommandEntry("/factory run", "queue app-factory run"),
