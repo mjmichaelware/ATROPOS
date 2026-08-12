@@ -16,6 +16,7 @@ data class ComposerSnapshot(
 class ComposerViewport(
     private val theme: TerminalTheme
 ) {
+    private val modeRetheme = ModeRetheme()
     private var buffer = ""
     private var suggestion = ""
     private var cursor = 0
@@ -105,7 +106,8 @@ class ComposerViewport(
         val railGlyph = if (asciiOnly()) Glyphs.Ascii.RAIL else Glyphs.RAIL
         val terminator = if (asciiOnly()) "'" else "╹"
         val pad = " ".repeat(Glyphs.RAIL_PADDING)
-        val meta = theme.paint(Role.ACCENT_FOCUS, mode.lowercase()) +
+        val modeStyle = modeRetheme.style(mode)
+        val meta = theme.paint(modeStyle.role, modeStyle.label) +
             theme.subdued(" · ") + theme.metadata(provider.lowercase())
         return listOf(
             TerminalText.ellipsize(theme.paint(Role.ACCENT_FOCUS, railGlyph) + pad + meta, width),
