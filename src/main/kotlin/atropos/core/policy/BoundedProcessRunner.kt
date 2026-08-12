@@ -51,12 +51,14 @@ class BoundedProcessRunner(
         maxOutputLines: Int,
         environment: Map<String, String> = emptyMap(),
         removeEnvironmentKeys: Set<String> = emptySet(),
-        evidenceDirectory: Path? = null
+        evidenceDirectory: Path? = null,
+        standardInput: ByteArray? = null,
+        inputRedirect: Path? = null
     ): BoundedProcessResult {
         validate(command, directory, timeoutMillis, maxOutputBytes, maxOutputLines)
         val started = System.nanoTime()
         val process = try {
-            launcher(command, directory, environment, removeEnvironmentKeys)
+            launch(command, directory, environment, removeEnvironmentKeys, inputRedirect)
         } catch (failure: Exception) {
             return BoundedProcessResult(
                 exitCode = null,
@@ -68,7 +70,11 @@ class BoundedProcessRunner(
                 launchError = "${failure.javaClass.simpleName}: ${failure.message ?: "process launch failed"}"
             )
         }
-        process.outputStream.close()
+        if (standardInput == null) {
+            process.outputStream.close()
+        } else {
+            process.outputStream.use { it.write(standardInput) }
+        }
 
         val pumps = Executors.newFixedThreadPool(2) { task ->
             Thread(task, "atropos-bounded-process-stream").apply { isDaemon = true }
@@ -100,6 +106,39 @@ class BoundedProcessRunner(
             stdoutLogPath = stdoutPath,
             stderrLogPath = stderrPath
         )
+    }
+
+    /** Starts a bounded, repository-scoped process for a caller that owns its lifecycle. */
+    fun start(
+        command: List<String>,
+        directory: Path,
+        environment: Map<String, String> = emptyMap(),
+        removeEnvironmentKeys: Set<String> = emptySet(),
+        inputRedirect: Path? = null
+    ): Process {
+        validate(command, directory, 1L, 1, 1)
+        return launch(command, directory, environment, removeEnvironmentKeys, inputRedirect)
+    }
+
+    private fun launch(
+        command: List<String>,
+        directory: Path,
+        environment: Map<String, String>,
+        removeEnvironmentKeys: Set<String>,
+        inputRedirect: Path?
+    ): Process {
+        if (inputRedirect == null) {
+            return launcher(command, directory, environment, removeEnvironmentKeys)
+        }
+        return ProcessBuilder(command)
+            .directory(directory.toFile())
+            .redirectInput(inputRedirect.toFile())
+            .redirectErrorStream(false)
+            .apply {
+                removeEnvironmentKeys.forEach { environment().remove(it) }
+                environment.forEach { (key, value) -> environment()[key] = value }
+            }
+            .start()
     }
 
     private fun validate(
