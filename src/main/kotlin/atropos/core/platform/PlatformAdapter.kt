@@ -3,7 +3,6 @@ package atropos.core.platform
 import atropos.core.policy.BoundedProcessRunner
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
-import java.util.concurrent.TimeUnit
 
 interface PlatformAdapter {
     val targetPlatform: RuntimePlatform
@@ -56,20 +55,17 @@ class AndroidShellAdapter : PlatformAdapter {
     override val displayName: String = "Android Shell Adapter"
 
     override fun isAvailable(): Boolean {
-        return try {
-            val proc = ProcessBuilder("adb", "shell", "echo", "available")
-                .redirectErrorStream(true)
-                .start()
-            val completed = proc.waitFor(2, TimeUnit.SECONDS)
-            if (!completed) {
-                proc.destroyForcibly()
-                return false
-            }
-            val out = proc.inputStream.readNBytes(1024).toString(StandardCharsets.UTF_8).trim()
-            proc.exitValue() == 0 && out == "available"
-        } catch (_: Exception) {
-            false
-        }
+        val result = runCatching {
+            BoundedProcessRunner().run(
+                command = listOf("adb", "shell", "echo", "available"),
+                directory = Path.of("/"),
+                timeoutMillis = 2_000L,
+                maxOutputBytes = 1_024,
+                maxOutputLines = 8
+            )
+        }.getOrNull() ?: return false
+        val out = result.stdout.trim()
+        return !result.timedOut && result.launchError == null && result.exitCode == 0 && out == "available"
     }
 
     override fun adapt(abstraction: PlatformAbstraction): PlatformAbstraction {
