@@ -9055,3 +9055,12 @@ End of AGENTS.md
 - `% delta`: unchanged; strict accounting remains `609/741` until the registry audit is rerun after the atom set is implemented.
 - Fingerprints: `BoundedWorkExecutor.kt=7e951c27d93003f705614ad2e9fa605f6bc2356abff4fc0623afda7b225bb905`; `AgentQueueService.kt=13eedfcf85646922bf34a95600fc1f13b7389ed3967042c627823a2c2f890da7`; `BoundedWorkExecutorTest.kt=54ab03252fd6c80ffe323e59ed2818d468b5bd2ff9f3516a053885533687b605`.
 - HR interrupts: none. Next atom: `STRICT-02-BatchGate`.
+
+### 2026-08-12T09:11:15Z · Agent: Codex GPT-5 · Batch: strict-02-batch-gate-013
+- Paths touched: `src/main/kotlin/atropos/core/agent/BatchGate.kt` (+43); `src/main/kotlin/atropos/core/agent/BoundedWorkExecutor.kt` (+9); `src/test/kotlin/atropos/core/agent/BatchGateTest.kt` (+38); `AGENTS.md` (+this row).
+- Atoms / phases affected: `STRICT-02-BatchGate`, batch-boundary `E(DELTA)=0` enforcement.
+- Predicate moved: changed paths are compared against the declared batch territory and any out-of-territory delta fails closed. The gate is reachable through `BoundedWorkExecutor.evaluateBatch`; it does not write files, execute commands, or create a second territory owner.
+- Verification: `git diff --check` and production/test reference inspection passed. Per instruction, no Gradle, compile, test, JAR, smoke, CI, or build verification was run.
+- `% delta`: unchanged; strict accounting remains `609/741` until the registry audit is rerun after the atom set is implemented.
+- Fingerprints: `BatchGate.kt=d34c45d989687fa562860c10ced19c513733311dac76b2cf285af418055db205`; `BoundedWorkExecutor.kt=2a18691d9aa7f0a4dac4edc6e579b829f678ddcece052e10795bdaa67a3b0942`; `BatchGateTest.kt=5715be6119f8016faf45abc12f8a5ad91c8362d6ad25308a5dc059776ad61cd2`.
+- HR interrupts: none. Next atom: `STRICT-04-GraphClaimService`.

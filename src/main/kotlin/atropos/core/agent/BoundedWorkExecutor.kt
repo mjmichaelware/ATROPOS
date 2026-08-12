@@ -19,7 +19,8 @@ data class BoundedWorkEnqueueResult(
 /** The authorization boundary for bounded queue work; execution stays in AgentQueueService. */
 class BoundedWorkExecutor(
     private val queueService: AgentQueueService,
-    private val agencyGate: BoundedAgencyGate
+    private val agencyGate: BoundedAgencyGate,
+    private val batchGate: BatchGate = BatchGate()
 ) {
     fun enqueue(request: BoundedWorkRequest): BoundedWorkEnqueueResult {
         if (request.task.isBlank()) {
@@ -42,6 +43,12 @@ class BoundedWorkExecutor(
         }
         return queueService.runNext(activeProviderName)
     }
+
+    fun evaluateBatch(
+        before: Map<String, String>,
+        after: Map<String, String>,
+        declaredTerritory: Set<String>
+    ): BatchGateDecision = batchGate.evaluate(before, after, declaredTerritory)
 
     companion object {
         fun forService(queueService: AgentQueueService, repoRoot: java.nio.file.Path): BoundedWorkExecutor =
