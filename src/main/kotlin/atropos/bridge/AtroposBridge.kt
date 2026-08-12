@@ -23,7 +23,7 @@ import java.time.Instant
  * `0` is honoured as "let the OS choose", which is what makes the bridge usable
  * from a test without racing a fixed port.
  */
-object AtroposBridge {
+object LocalEngineBridge {
 
     const val PORT_VARIABLE = "ATROPOS_BRIDGE_PORT"
 
@@ -104,4 +104,25 @@ object AtroposBridge {
             )
         }
     }
+}
+
+/**
+ * Source-compatible name for callers that still use the historical bridge
+ * identifier. All behavior remains owned by [LocalEngineBridge].
+ */
+@Deprecated("Use LocalEngineBridge")
+object AtroposBridge {
+    fun fromEnvironment(
+        environment: (String) -> String? = System::getenv,
+        activeProvider: () -> String
+    ): EngineHttpServer? = LocalEngineBridge.fromEnvironment(environment, activeProvider)
+
+    fun fromEnvironment(activeProvider: () -> String): EngineHttpServer? =
+        LocalEngineBridge.fromEnvironment(activeProvider)
+
+    fun server(
+        port: Int,
+        governance: GovernanceLedger = GovernanceLedger(),
+        activeProvider: () -> String
+    ): EngineHttpServer = LocalEngineBridge.server(port, governance, activeProvider)
 }

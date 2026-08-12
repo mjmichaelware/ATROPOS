@@ -58,8 +58,8 @@ object PlatformDownloadsLocator {
             add(homePath.resolve("Download"))
         }
 
-        // Android's own path, for a JVM running outside Termux's home.
-        add(Path.of("/sdcard/Download"))
+        // Platform-specific shared storage must be supplied by an adapter; the
+        // portable core does not assume an Android mount point.
     }
 
     private fun isUsable(path: Path): Boolean = runCatching {

@@ -40,6 +40,9 @@ data class FactoryResearchReport(
         if (memoryPointers.isNotEmpty()) appendLine("memory_pointers=${memoryPointers.joinToString(",")}")
         if (fetchHashes.isNotEmpty()) appendLine("fetch_hashes=${fetchHashes.joinToString(",")}")
         appendLine("specgraph=$specGraphStatus")
+        if (specGraphStatus.startsWith("PASS:")) {
+            appendLine("internal DAG fallback=NOT_REQUIRED: SpecGraph atomization succeeded")
+        }
     }
 }
 
@@ -229,11 +232,11 @@ class FactoryResearchService(
     ): Boolean {
         val tags = record.tags.map { it.lowercase() }.toSet()
         val repository = root.fileName?.toString().orEmpty()
-        val userMatch = if (requireOperatorScope) {
-            operatorId != null && (
+        val userMatch = if (requireOperatorScope && operatorId != null) {
+            (
                 record.body.contains("operator_id=$operatorId") ||
-                    tags.contains("operator-${operatorId.lowercase()}")
-                )
+                tags.contains("operator-${operatorId.lowercase()}")
+            )
         } else {
             operatorId == null ||
                 record.body.contains("operator_id=$operatorId") ||

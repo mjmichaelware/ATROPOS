@@ -86,7 +86,15 @@ internal class BridgeEvidenceHandler(
             String(bytes, Charsets.UTF_8)
         }
 
-        val redacted = redactionFilter.redact(rawContent)
+        val truncationMarker = "[TRUNCATED: evidence file is larger than $limit bytes]"
+        val redacted = if (isTruncated) {
+            val bounded = redactionFilter.redact(String(bytes, 0, limit, Charsets.UTF_8))
+                .replace(Regex("<redacted:[^>]+>"), "[REDACTED]")
+            "$bounded\n\n$truncationMarker"
+        } else {
+            redactionFilter.redact(rawContent)
+                .replace(Regex("<redacted:[^>]+>"), "[REDACTED]")
+        }
 
         return HttpResponse.json(
             JsonWriter.obj(

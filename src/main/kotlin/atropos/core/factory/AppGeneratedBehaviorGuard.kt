@@ -37,6 +37,17 @@ class AppGeneratedBehaviorGuard {
             }
             require("division by zero" in main) { "expression division-by-zero handling is missing" }
             require("4 / 0" in tests) { "expression error-path assertion is missing" }
+        } else if (spec.intent.kind.lowercase() in setOf("web", "service", "desktop")) {
+            val mode = when (spec.intent.kind.lowercase()) {
+                "web" -> "--serve"
+                "service" -> "--start"
+                else -> "--gui"
+            }
+            require("fun runApp(" in main) { "${spec.intent.kind} application runner is missing" }
+            require(mode in main) { "${spec.intent.kind} application mode is missing" }
+            require("runApp(listOf(\"$mode\")" in tests) {
+                "${spec.intent.kind} application tests do not exercise its launch mode"
+            }
         } else {
             require("fun runApp(" in main && "data class AppState" in main) {
                 "generic application stateful behavior function is missing"

@@ -1,6 +1,7 @@
 package atropos.core.project
 
 import atropos.core.AtroposRepoRootLocator
+import atropos.core.policy.BoundedProcessRunner
 import atropos.core.security.RedactionFilter
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
@@ -13,6 +14,7 @@ class ProjectRegistry(
     private val clock: () -> Instant = { Instant.now() },
     private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
+    private val processRunner = BoundedProcessRunner()
     private val root = repoRoot.resolve(".atropos/projects").normalize()
     private val index = root.resolve("projects.jsonl")
     private val eventsDir = root.resolve("events").normalize()
@@ -148,13 +150,17 @@ class ProjectRegistry(
 
     private fun git(command: List<String>): String =
         runCatching {
-            val process = ProcessBuilder(command)
-                .directory(repoRoot.toFile())
-                .redirectErrorStream(true)
-                .start()
-            val out = process.inputStream.bufferedReader().readText().trim()
-            process.waitFor()
-            if (process.exitValue() == 0) redactionFilter.redact(out) else ""
+            val result = processRunner.run(
+                command = command,
+                directory = repoRoot,
+                timeoutMillis = 5_000L,
+                maxOutputBytes = 64 * 1024,
+                maxOutputLines = 1_000
+            )
+            val out = (result.stdout + result.stderr).trim()
+            if (!result.timedOut && result.launchError == null && result.exitCode == 0 && !result.outputTruncated) {
+                redactionFilter.redact(out)
+            } else ""
         }.getOrDefault("")
 
     private fun writeAll(records: List<ProjectRecord>) {

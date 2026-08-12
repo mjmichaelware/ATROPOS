@@ -109,23 +109,7 @@ class GateReachabilityChecker(
          * gets turned on at all. Entries come out as they are fixed; nothing
          * goes in without a deliberate edit.
          */
-        val KNOWN_UNBOUNDED_SITES: Set<String> = setOf(
-            "cli/ui/TerminalCanvas.kt",
-            "cli/ui/WorkspaceIntelligence.kt",
-            "cli/shell/ShellCommandRunner.kt",
-            "cli/input/TerminalModeManager.kt",
-            "data/cache/CodebaseDeltaTreeTracker.kt",
-            "data/storage/R2CasFetcher.kt",
-            "core/verification/GovernedCompileGate.kt",
-            "core/platform/PlatformAdapter.kt",
-            "core/agent/AgentDaemonProcessLauncher.kt",
-            "core/project/ProjectRegistry.kt",
-            "core/knowledge/SelfImprovingCompilationLoop.kt",
-            "core/director/DirectorService.kt",
-            "core/memory/SqliteVecMemoryIndex.kt",
-            "core/memory/MemoryBackendProbe.kt",
-            "core/execution/LocalWorkQueue.kt"
-        )
+        val KNOWN_UNBOUNDED_SITES: Set<String> = emptySet()
     }
 }
 

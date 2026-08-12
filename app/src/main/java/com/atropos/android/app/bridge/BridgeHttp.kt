@@ -23,7 +23,7 @@ sealed class BridgeResult {
  * that has not answered in two seconds is not slow, it is absent, and the UI
  * needs to say "offline" rather than hang.
  */
-object BridgeHttp {
+object AndroidBridge {
     private const val CONNECT_TIMEOUT_MS = 1_500
     private const val READ_TIMEOUT_MS = 20_000
 

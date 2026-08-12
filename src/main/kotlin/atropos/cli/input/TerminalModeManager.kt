@@ -3,7 +3,8 @@ package atropos.cli.input
 
 import java.io.File
 import java.io.FileOutputStream
-import java.util.concurrent.TimeUnit
+import atropos.core.policy.BoundedProcessRunner
+import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicBoolean
 
 data class SttyResult(
@@ -19,32 +20,27 @@ fun interface SttyExecutor {
 }
 
 class ProcessSttyExecutor(
-    private val tty: File = File("/dev/tty")
+    private val tty: File = File("/dev/tty"),
+    private val processRunner: BoundedProcessRunner = BoundedProcessRunner()
 ) : SttyExecutor {
     override fun execute(arguments: List<String>): SttyResult {
         return try {
             val command = mutableListOf("stty")
             command.addAll(arguments)
-
-            val process = ProcessBuilder(command)
-                .redirectInput(tty)
-                .redirectErrorStream(true)
-                .start()
-
-            val completed = process.waitFor(2, TimeUnit.SECONDS)
-
-            if (!completed) {
-                process.destroyForcibly()
-                process.waitFor()
-                return SttyResult(124, "stty timed out")
-            }
-
-            SttyResult(
-                process.exitValue(),
-                process.inputStream.bufferedReader()
-                    .readText()
-                    .trim()
+            val result = processRunner.run(
+                command = command,
+                directory = Path.of("/"),
+                timeoutMillis = 2_000L,
+                maxOutputBytes = 4_096,
+                maxOutputLines = 128,
+                inputRedirect = tty.toPath()
             )
+            val exitCode = when {
+                result.timedOut -> 124
+                result.launchError != null -> 127
+                else -> result.exitCode ?: 127
+            }
+            SttyResult(exitCode, (result.stdout + result.stderr).trim())
         } catch (failure: Exception) {
             SttyResult(
                 1,

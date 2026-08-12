@@ -1,9 +1,9 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.cli.ui
 
+import atropos.core.policy.BoundedProcessRunner
 import java.io.File
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
+import java.nio.file.Path
 
 data class RepositoryState(
     val isRepository: Boolean,
@@ -29,6 +29,7 @@ class CachingGitWorkspaceInspector(
     private val timeoutMillis: Long = 750,
     private val outputLimit: Int = 256 * 1024
 ) : WorkspaceInspector {
+    private val processRunner = BoundedProcessRunner()
     private var cachedPath: String? = null
     private var cachedAt = 0L
     private var cachedState = RepositoryState.unknown()
@@ -49,54 +50,18 @@ class CachingGitWorkspaceInspector(
         val directory = File(workspace)
         if (!directory.isDirectory) return RepositoryState.unknown()
 
-        val process = try {
-            ProcessBuilder(
-                listOf(
-                    "git", "-C", directory.absolutePath,
-                    "status", "--porcelain=v1", "--branch"
-                )
-            ).redirectErrorStream(true).start()
-        } catch (_: Exception) {
-            return RepositoryState.unknown()
-        }
-
-        val pump = Executors.newSingleThreadExecutor { task ->
-            Thread(task, "atropos-git-output").apply { isDaemon = true }
-        }
-        val output = pump.submit<String> {
-            process.inputStream.bufferedReader().use { reader ->
-                val buffer = CharArray(4096)
-                val result = StringBuilder()
-                while (result.length < outputLimit) {
-                    val count = reader.read(
-                        buffer,
-                        0,
-                        minOf(buffer.size, outputLimit - result.length)
-                    )
-                    if (count < 0) break
-                    result.append(buffer, 0, count)
-                }
-                result.toString()
-            }
-        }
-
-        return try {
-            if (!process.waitFor(timeoutMillis, TimeUnit.MILLISECONDS)) {
-                process.descendants().forEach { it.destroyForcibly() }
-                process.destroyForcibly()
-                output.cancel(true)
-                RepositoryState.unknown()
-            } else if (process.exitValue() != 0) {
-                RepositoryState(false, null, null, true)
-            } else {
-                parse(output.get(250, TimeUnit.MILLISECONDS))
-            }
-        } catch (_: Exception) {
-            process.destroyForcibly()
-            RepositoryState.unknown()
-        } finally {
-            pump.shutdownNow()
-        }
+        val result = runCatching {
+            processRunner.run(
+                command = listOf("git", "-C", directory.absolutePath, "status", "--porcelain=v1", "--branch"),
+                directory = Path.of("/"),
+                timeoutMillis = timeoutMillis,
+                maxOutputBytes = outputLimit.coerceAtMost(256 * 1024),
+                maxOutputLines = 4_000
+            )
+        }.getOrNull() ?: return RepositoryState.unknown()
+        if (result.timedOut || result.launchError != null) return RepositoryState.unknown()
+        if (result.exitCode != 0) return RepositoryState(false, null, null, true)
+        return parse(result.stdout + result.stderr)
     }
 
     private fun parse(output: String): RepositoryState {

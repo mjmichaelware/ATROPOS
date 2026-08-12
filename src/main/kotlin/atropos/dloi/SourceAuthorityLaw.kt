@@ -3,8 +3,6 @@ package atropos.dloi
 
 import java.nio.file.Files
 import java.nio.file.Path
-import kotlin.io.path.exists
-import kotlin.io.path.readBytes
 
 /**
  * Source Authority Law — Priority #6 runtime enforcement.
@@ -75,7 +73,7 @@ class SourceAuthorityLaw(
      * whether the DLOI index contains a matching entry with the correct source_id.
      */
     fun verify(): SourceAuthorityVerdict {
-        if (!sourceDir.exists()) {
+        if (!Files.exists(sourceDir)) {
             return SourceAuthorityVerdict.NoSources(
                 "docs/source/ does not exist — no authority documents to verify"
             )
@@ -98,7 +96,10 @@ class SourceAuthorityLaw(
 
         val indexer = SourceAuthorityIndexer(repoRoot)
         val service = DloiService(repoRoot)
-        val loadedDocs = service.loadDocuments()
+        // Verification observes the existing derived index. The normal DLOI
+        // read path repairs a missing index, which would make an unindexed or
+        // modified source appear verified before this law can inspect it.
+        val loadedDocs = service.loadDocuments(ensureIndex = false)
         val loadedSourceIds = loadedDocs.map { it.sourceId }.toSet()
 
         val verified = mutableListOf<VerifiedDocument>()
@@ -106,7 +107,7 @@ class SourceAuthorityLaw(
         val unindexed = mutableListOf<Path>()
 
         for (file in sourceFiles) {
-            val bytes = try { file.readBytes() } catch (_: Exception) { continue }
+            val bytes = try { Files.readAllBytes(file) } catch (_: Exception) { continue }
             if (bytes.isEmpty()) continue
 
             val sha256 = SourceAuthorityIndexer.sha256Hex(bytes)
@@ -160,7 +161,7 @@ class SourceAuthorityLaw(
      * Returns the [SourceAuthorityVerdict] after ensuring freshness.
      */
     fun ensureIndex(): SourceAuthorityVerdict {
-        if (!sourceDir.exists()) {
+        if (!Files.exists(sourceDir)) {
             return SourceAuthorityVerdict.NoSources(
                 "docs/source/ does not exist — no authority documents to index"
             )

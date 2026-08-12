@@ -134,12 +134,6 @@ class EvaluationEngine(
             territoryViolations.isEmpty(),
             "violations=${territoryViolations.size}"
         )
-        val auditorDecision = auditor.blockPromotion(claimedBy = claimedBy, auditedBy = verifiedBy ?: "auditor")
-        metrics += metric(
-            EvaluationMetricKind.AUDITOR_PROMOTION_GATE,
-            auditorDecision.allowed,
-            auditorDecision.message
-        )
         val directorAdvisory = if (goalId != null || changedFiles.isNotEmpty()) {
             directorService.advisoryBeforePromotion(goalId = goalId, files = changedFiles)
         } else {
@@ -157,6 +151,16 @@ class EvaluationEngine(
             proofs.forEach { appendLine(it.runOutput) }
             runEvents.forEach { appendLine(it.payload) }
         }
+        // A release with no scoped files still needs an explicit audit record;
+        // otherwise the fail-closed auditor quite correctly treats an empty
+        // report as an unaudited promotion.
+        auditor.auditSecretText("evaluation-visible-evidence", visibleEvidence)
+        val auditorDecision = auditor.blockPromotion(claimedBy = claimedBy, auditedBy = verifiedBy ?: "auditor")
+        metrics += metric(
+            EvaluationMetricKind.AUDITOR_PROMOTION_GATE,
+            auditorDecision.allowed,
+            auditorDecision.message
+        )
         metrics += metric(
             EvaluationMetricKind.SECRET_SAFETY,
             redactionFilter.redact(visibleEvidence) == visibleEvidence,

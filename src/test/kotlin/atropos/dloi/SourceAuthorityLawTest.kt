@@ -101,19 +101,14 @@ class SourceAuthorityLawTest {
         // Now modify the source file
         Files.writeString(sourcePath, "MODIFIED CONTENT\nDifferent text.\n", StandardCharsets.UTF_8)
 
-        // Verify should now see the old index entry but the file hash changed
+        // A changed byte is a hash mismatch, not a new authority document.
         val v2 = law.verify()
-        // The old source_id is gone from the index perspective since the file hash changed.
-        // The law should report the new hash as unindexed (not a mismatch, since filename
-        // doesn't match the indexed original_filename pattern exactly).
         assertTrue(
-            v2 is SourceAuthorityLaw.SourceAuthorityVerdict.Verified,
-            "modified file produces Verified with unindexed entries: $v2"
+            v2 is SourceAuthorityLaw.SourceAuthorityVerdict.Rejected,
+            "modified file must be rejected under hash-pinned authority: $v2"
         )
-        val verified = v2 as SourceAuthorityLaw.SourceAuthorityVerdict.Verified
-        // The old hash no longer matches; the file appears as unindexed
-        assertTrue(verified.unindexedFiles.isNotEmpty() || verified.verifiedDocuments.isEmpty(),
-            "modified file should not appear as verified under old hash")
+        val rejected = v2 as SourceAuthorityLaw.SourceAuthorityVerdict.Rejected
+        assertTrue(rejected.mismatches.any { it.filename == "test_doc.txt" })
     }
 
     @Test

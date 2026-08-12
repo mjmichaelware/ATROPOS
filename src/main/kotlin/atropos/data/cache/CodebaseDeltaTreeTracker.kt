@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.data.cache
 
+import atropos.core.policy.BoundedProcessRunner
+
 import java.io.File
 import java.nio.charset.CodingErrorAction
 import java.util.concurrent.TimeUnit
@@ -20,6 +22,7 @@ class CodebaseDeltaTreeTracker(
     private val workspacePath: String =
         System.getProperty("user.dir")
 ) {
+    private val processRunner = BoundedProcessRunner()
     fun getActiveWorkspaceDeltas(): List<FileDelta> {
         val root = File(workspacePath)
         if (!File(root, ".git").exists()) return emptyList()
@@ -256,19 +259,16 @@ class CodebaseDeltaTreeTracker(
         command: List<String>,
         timeoutSeconds: Long
     ): ByteArray {
-        val process = ProcessBuilder(command)
-            .directory(dir)
-            .redirectError(ProcessBuilder.Redirect.DISCARD)
-            .start()
-
-        val bytes = process.inputStream.readBytes()
-
-        if (!process.waitFor(timeoutSeconds, TimeUnit.SECONDS)) {
-            process.destroyForcibly()
+        val result = processRunner.run(
+            command = command,
+            directory = dir.toPath(),
+            timeoutMillis = timeoutSeconds * 1_000L,
+            maxOutputBytes = 256 * 1024,
+            maxOutputLines = 4_000
+        )
+        if (result.timedOut || result.launchError != null || result.exitCode != 0 || result.outputTruncated) {
             return ByteArray(0)
         }
-
-        if (process.exitValue() != 0) return ByteArray(0)
-        return bytes
+        return result.stdout.toByteArray(Charsets.UTF_8)
     }
 }

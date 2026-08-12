@@ -30,7 +30,7 @@ import androidx.compose.material.icons.automirrored.filled.Send
  * Touch targets are 44dp to meet the HIG minimum (HOE-D07).
  */
 @Composable
-fun MobileComposer(
+fun ComposerScreen(
     value: String,
     onValueChange: (String) -> Unit,
     onSend: () -> Unit,
@@ -62,7 +62,7 @@ fun MobileComposer(
             Spacer(modifier = Modifier.width(8.dp))
             IconButton(
                 onClick = onSend,
-                enabled = value.isNotBlank(),
+                enabled = canSendComposerInput(value),
                 modifier = Modifier.size(density.touchTargetDp.dp)
             ) {
                 Icon(
@@ -75,3 +75,5 @@ fun MobileComposer(
 }
 
 private fun sendIcon(): ImageVector = Icons.AutoMirrored.Filled.Send
+
+fun canSendComposerInput(value: String): Boolean = value.isNotBlank()

@@ -78,6 +78,23 @@ class DeterministicChecks(
 
     fun checkImportReconciliation(path: Path): List<DeterministicFinding> {
         val relative = portablePath(repoRoot.relativize(path))
+        val wildcardFindings = Files.readAllLines(path, StandardCharsets.UTF_8)
+            .filter { it.trimStart().startsWith("import ") && it.trim().removePrefix("import ").contains(".*") }
+            .map { importLine ->
+                finding(
+                    invariantId = "import_reconciliation",
+                    severity = DiagnosticSeverity.ERROR,
+                    file = relative,
+                    symbolOrLocation = importLine.trim().removePrefix("import "),
+                    evidence = "wildcard import is not deterministic",
+                    remediation = "replace wildcard import with an exact import"
+                )
+            }
+        if (!Files.isDirectory(repoRoot.resolve("src/main/kotlin")) &&
+            !Files.isDirectory(repoRoot.resolve("src/test/kotlin"))
+        ) {
+            return wildcardFindings
+        }
         val reconciliation = astGraph.reconcileImports(relative)
         val statusFindings = reconciliation.resolutions.mapNotNull { resolution ->
             when (resolution.status) {
@@ -118,10 +135,16 @@ class DeterministicChecks(
                 remediation = violation.remediation
             )
         }
-        return statusFindings + ruleFindings
+        return wildcardFindings + statusFindings + ruleFindings
     }
 
     fun checkAstImpact(paths: List<Path>): List<DeterministicFinding> {
+        // A temporary or generated audit root may intentionally contain a
+        // standalone source file rather than the repository's canonical
+        // src/main/kotlin and src/test/kotlin roots. There is no graph impact
+        // claim to make in that shape; the other deterministic checks still
+        // inspect the file.
+        if (!Files.isDirectory(repoRoot.resolve("src/main/kotlin"))) return emptyList()
         val normalizedPaths = paths.map { it.toAbsolutePath().normalize() }
         return normalizedPaths.mapNotNull { path ->
             val relativePath = portablePath(repoRoot.relativize(path))

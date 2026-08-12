@@ -134,12 +134,24 @@ def main() -> int:
         expected_paths = {
             value.split(":", 1)[0]
             for value in expected
-            if "/" in value or value.endswith((".kt", ".kts", ".py", ".sh", ".md", ".json"))
+            if "/" in value or value.endswith((
+                ".kt", ".kts", ".py", ".sh", ".md", ".json", ".properties",
+                ".toml", ".yaml", ".yml", ".xml", ".sql", ".ts", ".tsx", ".java"
+            ))
         }
-        if status == "WRITTEN" and expected_paths.isdisjoint(evidence):
+        expected_symbols = {
+            value for value in expected
+            if value not in expected_paths
+        }
+        if status == "WRITTEN" and expected_paths and expected_paths.isdisjoint(evidence):
             fail(
                 f"{obligation_id} evidence does not include a declared implementation path: "
                 f"expected={sorted(expected_paths)} evidence={evidence}"
+            )
+        if status == "WRITTEN" and expected_symbols and expected_symbols.isdisjoint(symbols):
+            fail(
+                f"{obligation_id} evidence does not include a declared implementation symbol: "
+                f"expected={sorted(expected_symbols)} symbols={symbols}"
             )
         evidence_hashes = record.get("implementationEvidenceHashes", {})
         if not isinstance(evidence_hashes, dict):

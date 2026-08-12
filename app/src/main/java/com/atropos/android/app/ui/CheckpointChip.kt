@@ -19,6 +19,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.atropos.android.app.bridge.MobileCheckpoint
 
+fun checkpointActionLabel(action: String): String =
+    action.replace('-', ' ').replace('_', ' ').replaceFirstChar(Char::uppercase)
+
 /** Checkpoint projection; resume remains an explicit operator action. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,7 +49,7 @@ fun CheckpointChip(
                 Text("Checkpoint ${checkpoint.goalId}", style = MaterialTheme.typography.titleMedium)
                 checkpoint.actions.forEach { action ->
                     TextButton(onClick = { open = false; onAction(action) }) {
-                        Text(action.replace('-', ' ').replace('_', ' ').replaceFirstChar(Char::uppercase))
+                        Text(checkpointActionLabel(action))
                     }
                 }
             }

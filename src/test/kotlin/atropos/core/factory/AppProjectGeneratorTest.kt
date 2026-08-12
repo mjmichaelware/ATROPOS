@@ -149,7 +149,7 @@ class AppProjectGeneratorTest {
         assertTrue(generated.files.contains("src/main/resources/static/style.css"))
         assertTrue(generated.files.contains("src/main/resources/static/app.js"))
 
-        val target = root.resolve(".atropos/generated-projects/web-web-1")
+        val target = root.resolve(generated.path)
         val html = Files.readString(target.resolve("src/main/resources/static/index.html"))
         val css = Files.readString(target.resolve("src/main/resources/static/style.css"))
         val js = Files.readString(target.resolve("src/main/resources/static/app.js"))
@@ -161,8 +161,8 @@ class AppProjectGeneratorTest {
         assertTrue("style.css" in html)
         assertTrue("app.js" in html)
         
-        assertTrue("var(--primary-color)" in css)
-        assertTrue("var(--background-color)" in css)
+        assertTrue("var(--primary-color)" in css, "generated CSS missing primary token at $target: $css")
+        assertTrue("var(--background-color)" in css, "generated CSS missing background token at $target: $css")
         
         assertTrue("addEventListener" in js)
         assertTrue("preventDefault" in js)

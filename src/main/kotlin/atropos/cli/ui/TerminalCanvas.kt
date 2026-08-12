@@ -2,9 +2,10 @@
 package atropos.cli.ui
 
 import atropos.cli.config.ConfigurationManager
+import atropos.core.policy.BoundedProcessRunner
 import java.io.File
 import java.io.PrintStream
-import java.util.concurrent.TimeUnit
+import java.nio.file.Path
 
 data class TerminalGeometry(
     val rows: Int,
@@ -18,34 +19,26 @@ fun interface TerminalGeometryProvider {
 class SttyTerminalGeometryProvider :
     TerminalGeometryProvider {
 
+    private val processRunner = BoundedProcessRunner()
+
     override fun read(): TerminalGeometry? {
         val tty = File("/dev/tty")
         if (!tty.canRead()) return null
 
         return runCatching {
-            val process = ProcessBuilder("stty", "size")
-                .redirectInput(tty)
-                .redirectError(ProcessBuilder.Redirect.DISCARD)
-                .start()
-
-            try {
-                if (!process.waitFor(250, TimeUnit.MILLISECONDS)) {
-                    process.destroyForcibly()
-                    return@runCatching null
-                }
-                if (process.exitValue() != 0) return@runCatching null
-
-                val parts = process.inputStream
-                    .bufferedReader()
-                    .readText()
-                    .trim()
-                    .split(Regex("\\s+"))
-                val rows = parts.getOrNull(0)?.toIntOrNull() ?: return@runCatching null
-                val columns = parts.getOrNull(1)?.toIntOrNull() ?: return@runCatching null
-                TerminalGeometry(rows.coerceAtLeast(12), columns.coerceAtLeast(1))
-            } finally {
-                if (process.isAlive) process.destroyForcibly()
-            }
+            val result = processRunner.run(
+                command = listOf("stty", "size"),
+                directory = Path.of("/"),
+                timeoutMillis = 250L,
+                maxOutputBytes = 128,
+                maxOutputLines = 4,
+                inputRedirect = tty.toPath()
+            )
+            if (result.timedOut || result.launchError != null || result.exitCode != 0) return@runCatching null
+            val parts = result.stdout.trim().split(Regex("\\s+"))
+            val rows = parts.getOrNull(0)?.toIntOrNull() ?: return@runCatching null
+            val columns = parts.getOrNull(1)?.toIntOrNull() ?: return@runCatching null
+            TerminalGeometry(rows.coerceAtLeast(12), columns.coerceAtLeast(1))
         }.getOrNull()
     }
 }

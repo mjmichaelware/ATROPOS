@@ -5,10 +5,6 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import java.security.MessageDigest
-import kotlin.io.path.exists
-import kotlin.io.path.extension
-import kotlin.io.path.name
-import kotlin.io.path.readBytes
 
 /**
  * Source-authority index builder — the missing writer for
@@ -63,13 +59,13 @@ class SourceAuthorityIndexer(
      * Files that cannot be read or are binary (PDF) are skipped.
      */
     fun index(): List<IndexedFile> {
-        if (!sourceDir.exists()) return emptyList()
+        if (!Files.exists(sourceDir)) return emptyList()
 
         val results = mutableListOf<IndexedFile>()
         Files.list(sourceDir).use { stream ->
             stream.sorted()
                 .filter { Files.isRegularFile(it) }
-                .filter { it.extension.lowercase() in setOf("txt", "md") }
+                .filter { it.fileName.toString().substringAfterLast('.', "").lowercase() in setOf("txt", "md") }
                 .forEach { path ->
                     val result = indexFile(path)
                     if (result != null) results += result
@@ -84,7 +80,7 @@ class SourceAuthorityIndexer(
      */
     fun indexFile(path: Path): IndexedFile? {
         val bytes = try {
-            path.readBytes()
+            Files.readAllBytes(path)
         } catch (_: Exception) {
             return null
         }
@@ -92,7 +88,7 @@ class SourceAuthorityIndexer(
 
         val sha256 = sha256Hex(bytes)
         val sourceId = sha256.take(16)
-        val originalFilename = "${sourceId}__${path.name}"
+        val originalFilename = "${sourceId}__${path.fileName}"
 
         // Normalize text: strip CR for consistent line counting
         val text = String(bytes, StandardCharsets.UTF_8)
@@ -125,7 +121,7 @@ class SourceAuthorityIndexer(
         val json = buildIndexJson(
             sourceId = sourceId,
             originalFilename = originalFilename,
-            kind = if (path.extension.lowercase() == "md") "markdown" else "text",
+            kind = if (path.fileName.toString().substringAfterLast('.', "").lowercase() == "md") "markdown" else "text",
             normalizedPath = normalizedPath,
             lineCount = lineCount,
             paragraphCount = paragraphCount,

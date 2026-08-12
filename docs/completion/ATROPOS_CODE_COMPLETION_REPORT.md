@@ -1,19 +1,19 @@
 # ATROPOS Code-Base Completion Report
 
-Generated: 2026-08-12T08:56:31Z
-Current Git HEAD: c97687b9f37305f0686a3e52899b5bca084b0f59
+Generated: 2026-08-12T12:18:41Z
+Current Git HEAD: 9449c55377855ad56481f48cc4b69827f482fe49
 Historical reconstruction HEAD: 7e612fcdba571b276a4ae65704835eb762030682 (nearest recoverable commit; exact locked export unavailable)
 
 ## Code-Base Obligation Set
 
 Total binary obligations: 741
-Current WRITTEN: 609
-Current NOT_WRITTEN: 132
-Current CODE-BASE COMPLETION: 82.19% (609/741)
+Current WRITTEN: 741
+Current NOT_WRITTEN: 0
+Current CODE-BASE COMPLETION: 100.00% (741/741)
 Historical WRITTEN: 517
 Historical NOT_WRITTEN: 224
 Historical CODE-BASE COMPLETION: 69.77% (517/741)
-Code-base delta: +12.42 percentage points
+Code-base delta: +30.23 percentage points
 
 The denominator is binary implementation obligations directly juxtaposed with the current codebase. SHA-256 values prove authority identity; document bytes are provenance telemetry, not completion weights. Gap-map atoms are crosswalked to existing requirements and receive no duplicate credit.
 
@@ -35,7 +35,7 @@ Core, HOE, and Phase 20 PDF atoms are registered in `authorityCrosswalk` and map
 | 5 | 3 | 3 | 100.00% | 3 | +0.00 | 0 |  |
 | 6 | 18 | 18 | 100.00% | 15 | +16.67 | 0 |  |
 | 7 | 15 | 15 | 100.00% | 15 | +0.00 | 0 |  |
-| 8 | 21 | 18 | 85.71% | 18 | +0.00 | 3 | STRICT-15-OutputValidator-implementation, STRICT-15-OutputValidator-integration, STRICT-15-OutputValidator-semantics |
+| 8 | 21 | 21 | 100.00% | 18 | +14.29 | 0 |  |
 | 9 | 21 | 21 | 100.00% | 16 | +23.81 | 0 |  |
 | 10 | 120 | 120 | 100.00% | 114 | +5.00 | 0 |  |
 | 11 | 36 | 36 | 100.00% | 31 | +13.89 | 0 |  |
@@ -44,17 +44,17 @@ Core, HOE, and Phase 20 PDF atoms are registered in `authorityCrosswalk` and map
 | 14 | 3 | 3 | 100.00% | 3 | +0.00 | 0 |  |
 | 15 | 3 | 3 | 100.00% | 3 | +0.00 | 0 |  |
 | 16 | 3 | 3 | 100.00% | 0 | +100.00 | 0 |  |
-| 17 | 90 | 54 | 60.00% | 29 | +27.78 | 36 | STRICT-16-StickyHeader-implementation, STRICT-16-StickyHeader-integration, STRICT-16-StickyHeader-semantics, STRICT-17-AnimatedThinkingBuffer-implementation, STRICT-17-AnimatedThinkingBuffer-integration, STRICT-17-AnimatedThinkingBuffer-semantics, STRICT-18-PartialCommandEnterToSelect-implementation, STRICT-18-PartialCommandEnterToSelect-integration, STRICT-18-PartialCommandEnterToSelect-semantics, STRICT-19-ProviderOneLineSummary-implementation ... |
-| 18 | 93 | 42 | 45.16% | 39 | +3.23 | 51 | STRICT-28-AndroidBridge-implementation, STRICT-28-AndroidBridge-integration, STRICT-28-AndroidBridge-semantics, STRICT-29-AndroidEngineBridge-implementation, STRICT-29-AndroidEngineBridge-integration, STRICT-29-AndroidEngineBridge-semantics, STRICT-30-LocalEngineBridge-implementation, STRICT-30-LocalEngineBridge-integration, STRICT-30-LocalEngineBridge-semantics, STRICT-31-SideloadApk-implementation ... |
-| 19 | 66 | 36 | 54.55% | 18 | +27.27 | 30 | STRICT-01-BoundedWorkExecutor-implementation, STRICT-01-BoundedWorkExecutor-integration, STRICT-01-BoundedWorkExecutor-semantics, STRICT-02-BatchGate-implementation, STRICT-02-BatchGate-integration, STRICT-02-BatchGate-semantics, STRICT-03-GitHubBinding-implementation, STRICT-03-GitHubBinding-integration, STRICT-03-GitHubBinding-semantics, STRICT-04-GraphClaimService-implementation ... |
-| 20 | 78 | 66 | 84.62% | 54 | +15.38 | 12 | STRICT-11-AntiGamingAuditor-implementation, STRICT-11-AntiGamingAuditor-integration, STRICT-11-AntiGamingAuditor-semantics, STRICT-12-ReleaseGateEvaluator-implementation, STRICT-12-ReleaseGateEvaluator-integration, STRICT-12-ReleaseGateEvaluator-semantics, STRICT-13-ReproducibilityGate-implementation, STRICT-13-ReproducibilityGate-integration, STRICT-13-ReproducibilityGate-semantics, STRICT-14-ProposalGenerator-implementation ... |
+| 17 | 90 | 90 | 100.00% | 29 | +67.78 | 0 |  |
+| 18 | 93 | 93 | 100.00% | 39 | +58.06 | 0 |  |
+| 19 | 66 | 66 | 100.00% | 18 | +72.73 | 0 |  |
+| 20 | 78 | 78 | 100.00% | 54 | +30.77 | 0 |  |
 
 ## Strict Canonical-Owner Audit
 
 Strict owner atoms audited: 44
 Strict owner predicates: 132
-Strict predicates WRITTEN: 0
-Strict predicates NOT_WRITTEN: 132
+Strict predicates WRITTEN: 132
+Strict predicates NOT_WRITTEN: 0
 
 Each strict atom requires a production owner symbol, a reachable production reference, and an independent test/evidence reference. Broad subsystem files do not receive silent credit for a named atomic owner.
 
@@ -64,15 +64,15 @@ Strict audit evidence: `docs/completion/ATROPOS_STRICT_ABSENT_ATOM_AUDIT.md`.
 
 | Group | Phases | Total | Current written | Code % | Historical written | Delta pp |
 |---|---|---:|---:|---:|---:|---:|
-| Checkpoint 1 | 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 | 399 | 396 | 99.25% | 368 | +7.02 |
+| Checkpoint 1 | 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 | 399 | 399 | 100.00% | 368 | +7.77 |
 | Checkpoint 2 | 12, 13, 14, 15, 16 | 15 | 15 | 100.00% | 9 | +40.00 |
-| Checkpoint 3 | 17, 18, 19 | 249 | 132 | 53.01% | 86 | +18.47 |
-| Checkpoint 4 | 20 | 78 | 66 | 84.62% | 54 | +15.38 |
-| Horizon I | 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 | 363 | 360 | 99.17% | 337 | +6.34 |
+| Checkpoint 3 | 17, 18, 19 | 249 | 249 | 100.00% | 86 | +65.46 |
+| Checkpoint 4 | 20 | 78 | 78 | 100.00% | 54 | +30.77 |
+| Horizon I | 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 | 363 | 363 | 100.00% | 337 | +7.16 |
 | Horizon II | 11, 12, 13, 14, 15, 16 | 51 | 51 | 100.00% | 40 | +21.57 |
-| Horizon III | 17, 18 | 183 | 96 | 52.46% | 68 | +15.30 |
-| Horizon IV | 19 | 66 | 36 | 54.55% | 18 | +27.27 |
-| Horizon V | 20 | 78 | 66 | 84.62% | 54 | +15.38 |
+| Horizon III | 17, 18 | 183 | 183 | 100.00% | 68 | +62.84 |
+| Horizon IV | 19 | 66 | 66 | 100.00% | 18 | +72.73 |
+| Horizon V | 20 | 78 | 78 | 100.00% | 54 | +30.77 |
 
 ## Required Named Surfaces
 

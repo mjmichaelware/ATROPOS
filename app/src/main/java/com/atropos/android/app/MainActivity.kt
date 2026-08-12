@@ -15,7 +15,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.toMutableStateList
-import com.atropos.android.app.bridge.ConversationRepository
+import com.atropos.android.app.bridge.AndroidEngineBridge
 import com.atropos.android.app.bridge.SendOutcome
 import com.atropos.android.app.ui.ConversationScreen
 import com.atropos.android.app.ui.ChatListEntry
@@ -37,20 +37,20 @@ import kotlinx.coroutines.withContext
  */
 class MainActivity : ComponentActivity() {
 
-    private val repository = ConversationRepository()
+    private val repository = AndroidEngineBridge()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             MaterialTheme {
-                Surface { AtroposConversation(repository) }
+                Surface { ComposeAppShell(repository) }
             }
         }
     }
 }
 
 @Composable
-private fun AtroposConversation(repository: ConversationRepository) {
+private fun ComposeAppShell(repository: AndroidEngineBridge) {
     val messages: SnapshotStateList<MobileMessage> = remember { mutableListOf<MobileMessage>().toMutableStateList() }
     var isOnline by remember { mutableStateOf(false) }
     var sessions by remember { mutableStateOf<List<ChatListEntry>>(emptyList()) }
