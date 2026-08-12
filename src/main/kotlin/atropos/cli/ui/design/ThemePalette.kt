@@ -176,7 +176,14 @@ object ThemeCatalog {
         )
     )
 
-    val all: List<ThemePalette> = listOf(atroposDark, atroposLight)
+    /**
+     * Red stays first and stays the default. The four electric accents from
+     * Source Doc 5 follow, built by [ElectricThemes] rather than written out
+     * again — a hand-copied palette per accent would drift the moment a role
+     * was added, and the drift would only show in whichever theme nobody used.
+     */
+    val all: List<ThemePalette> =
+        listOf(atroposDark, atroposLight) + ElectricThemes.palettes()
 
     fun byId(id: String?): ThemePalette =
         all.firstOrNull { it.id.equals(id?.trim(), ignoreCase = true) }
