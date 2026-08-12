@@ -9064,3 +9064,12 @@ End of AGENTS.md
 - `% delta`: unchanged; strict accounting remains `609/741` until the registry audit is rerun after the atom set is implemented.
 - Fingerprints: `BatchGate.kt=d34c45d989687fa562860c10ced19c513733311dac76b2cf285af418055db205`; `BoundedWorkExecutor.kt=2a18691d9aa7f0a4dac4edc6e579b829f678ddcece052e10795bdaa67a3b0942`; `BatchGateTest.kt=5715be6119f8016faf45abc12f8a5ad91c8362d6ad25308a5dc059776ad61cd2`.
 - HR interrupts: none. Next atom: `STRICT-04-GraphClaimService`.
+
+### 2026-08-12T09:12:40Z · Agent: Codex GPT-5 · Batch: strict-04-graph-claim-service-014
+- Paths touched: `src/main/kotlin/atropos/core/planning/GraphClaimService.kt` (+9); `src/main/kotlin/atropos/core/dag/DagExecutionService.kt` (+3/-1); `src/test/kotlin/atropos/core/planning/GraphClaimServiceTest.kt` (+32); `AGENTS.md` (+this row).
+- Atoms / phases affected: `STRICT-04-GraphClaimService`, exclusive planning-DAG node claims.
+- Predicate moved: DAG execution now reaches node claims through one typed `GraphClaimService` boundary, which delegates lease/claim state to the existing `PlanningGraphPlugin` and underlying `DagStore`. The executor no longer calls the graph claim method directly at the mutation site.
+- Verification: `git diff --check` and production/test reference inspection passed. Per instruction, no Gradle, compile, test, JAR, smoke, CI, or build verification was run.
+- `% delta`: unchanged; strict accounting remains `609/741` until the registry audit is rerun after the atom set is implemented.
+- Fingerprints: `GraphClaimService.kt=cdc5644e4ae20a54335a46e99dbac0c1e21cbb9ecc3281e36213b6256f76ef11`; `DagExecutionService.kt=50f21d66528d19a0485b6dd595d6ba215e8a1a2d00b07bf0b3913255c274923c`; `GraphClaimServiceTest.kt=69bf5f3daa7eccb3d938e260d50001d5f3ccb7b99e03cc0718e23dcf1e14c6e4`.
+- HR interrupts: none. Next atom: `STRICT-05-GraphTransitionService`.

@@ -11,6 +11,7 @@ import atropos.core.planning.InternalBatchDefiner
 import atropos.core.planning.NodeResult
 import atropos.core.planning.PlanningGraphPlugin
 import atropos.core.planning.PlanningGraphPluginRegistry
+import atropos.core.planning.GraphClaimService
 import atropos.core.planning.Territory
 import atropos.core.policy.ActionActor
 import atropos.core.territory.GrantResult
@@ -43,6 +44,7 @@ class DagExecutionService(
     private val clock: () -> Instant = { Instant.now() }
 ) {
     private val providerTruth = ProviderTruthService(config)
+    private val graphClaimService = GraphClaimService(planningGraph)
     private val finisher = DagNodeFinisher(planningGraph)
     private val shellExecutor = DagNodeShellExecutor(repoRoot, store, finisher, ::territoryViolation, ::extractCandidatePaths)
     private val providerNodeExecutor = DagProviderNodeExecutor(
@@ -133,7 +135,7 @@ class DagExecutionService(
             writePaths = node.territory,
             prohibitedPaths = listOf(".git", ".gradle", "build", ".atropos/secrets")
         )
-        val claim = planningGraph.claimNode(node.id, "dag-executor", territory)
+        val claim = graphClaimService.claim(node.id, "dag-executor", territory)
         if (!claim.accepted) {
             return DagNodeExecutionResult(node.id, node.state, false, claim.reason ?: "cannot claim node (concurrent execution)")
         }
