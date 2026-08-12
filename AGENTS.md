@@ -9100,3 +9100,12 @@ End of AGENTS.md
 - `% delta`: unchanged; strict accounting remains `609/741` until the registry audit is rerun after the atom set is implemented.
 - Fingerprints: `GitHubBinding.kt=f7722847b7cffeb9cd73a9e569953e47dd510e6188e421574086f3640f62ad9f`; `SelfHostPromotionModels.kt=39dffe495cc49fac293d6a2b9940274210897bf1b3ceefe4ab4ef32c229f1017`; `SelfHostPromotionService.kt=2c836713cfbf00bd5e792ea04f3fe9335b740b4afc4c8b930178c4762885be89`; `GitHubBindingTest.kt=6470029b5c06efbc08e9bd2236b89426abf12b2d65d54ea2911c75fcf9a013a0`.
 - HR interrupts: none. Next atom: `STRICT-06-IntentParser`.
+
+### 2026-08-12T09:22:35Z · Agent: Codex GPT-5 · Batch: strict-07-fuzzy-matcher-018
+- Paths touched: `src/main/kotlin/atropos/cli/input/FuzzyMatcher.kt` (+47); `src/main/kotlin/atropos/cli/input/CommandRegistry.kt` (+6); `src/test/kotlin/atropos/cli/input/FuzzyMatcherTest.kt` (+29); `AGENTS.md` (+this row).
+- Atoms / phases affected: `STRICT-07-FuzzyMatcher`, deterministic command discovery and misspelling handling.
+- Predicate moved: command search now has a final fuzzy fallback backed by a bounded UTF-8 byte edit distance. Normal exact/prefix/alias/keyword ranking remains authoritative; only otherwise-unmatched input uses the locale-independent matcher, enabling deterministic misspelling and swipe-keyboard correction.
+- Verification: `git diff --check` and production/test reference inspection passed. Per instruction, no Gradle, compile, test, JAR, smoke, CI, or build verification was run.
+- `% delta`: unchanged; strict accounting remains `609/741` until the registry audit is rerun after the atom set is implemented.
+- Fingerprints: `FuzzyMatcher.kt=b9334cd2bce98d78f298c2f4192641a806399065f4224f3bd98038f1dcdd9fe5`; `CommandRegistry.kt=d918e06775ca7f6253fd347c1afbe8897c867e6c2e97bc22fb50cf73ba2b07e8`; `FuzzyMatcherTest.kt=044b087f024352ca6e0e0f415a81c01250335cca892cd76427a305bbd6a45d86`.
+- HR interrupts: none. Next atom: `STRICT-08-SuggestionEngine`.

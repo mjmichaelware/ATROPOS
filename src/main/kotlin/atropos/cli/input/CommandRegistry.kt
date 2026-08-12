@@ -110,6 +110,7 @@ object CommandRegistry {
     )
 
     private val catalog: List<CommandEntry> = CommandCatalog.catalog
+    private val fuzzyMatcher = FuzzyMatcher()
 
     val entries: List<CommandEntry> = catalog
         .flatMap { it.expandedEntries() }
@@ -247,8 +248,12 @@ object CommandRegistry {
         val keywordPrefixMatches = keywords.any { it.startsWith(query, ignoreCase = true) }
         val commandStarts = commandText.startsWith(query, ignoreCase = true)
         val commandContains = commandText.contains(query, ignoreCase = true)
+        val fuzzyCommand = fuzzyMatcher.matches(query, commandText)
+        val fuzzyAlias = aliases.any { fuzzyMatcher.matches(query, aliasText(it)) }
 
-        if (!commandStarts && !commandContains && !aliasTextMatches && !descriptionMatches && !keywordMatches) {
+        if (!commandStarts && !commandContains && !aliasTextMatches && !descriptionMatches && !keywordMatches &&
+            !fuzzyCommand && !fuzzyAlias
+        ) {
             return null
         }
 
@@ -262,6 +267,7 @@ object CommandRegistry {
             keywordPrefixMatches -> 6
             keywordMatches -> 7
             descriptionMatches -> 8
+            fuzzyCommand || fuzzyAlias -> 10 + fuzzyMatcher.distance(query, if (fuzzyCommand) commandText else aliases.first { fuzzyMatcher.matches(query, aliasText(it)) })
             else -> 9
         }
     }
