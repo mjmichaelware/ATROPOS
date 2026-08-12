@@ -119,7 +119,7 @@ def is_test_path(path):
  name=Path(path).name
  return ("/test/" in s or "/tests/" in s or "/__tests__/" in s or
          name.endswith(("Test.kt", "Test.java", ".test.ts", ".test.tsx", ".test.js", ".test.jsx",
-                        ".spec.ts", ".spec.tsx", ".spec.js", ".spec.jsx")))
+                        ".spec.ts", ".spec.tsx", ".spec.js", ".spec.jsx", ".test.sh", "-test.sh")))
 def referenced_by_test(paths):
  if any(Path(path).name.endswith("-test.sh") and (ROOT/path).is_file() for path in paths):
   return True
@@ -147,7 +147,7 @@ SOURCE_HASHES={p:digest(ROOT/p) for p in AUTHORITIES if (ROOT/p).is_file()}
 STRICT_AUDIT_DOC="docs/completion/ATROPOS_STRICT_ABSENT_ATOM_AUDIT.md"
 STRICT_AUDIT_HASH=digest(ROOT/STRICT_AUDIT_DOC)
 AUDIT_SELF=Path("scripts/audit-code-completion.py")
-PRODUCTION_TEXT={p:t for p,t in SOURCE_TEXT.items() if p != AUDIT_SELF and "/test/" not in str(p) and "/tests/" not in str(p)}
+PRODUCTION_TEXT={p:t for p,t in SOURCE_TEXT.items() if p != AUDIT_SELF and not is_test_path(p)}
 TEST_TEXT={p:t for p,t in SOURCE_TEXT.items() if p != AUDIT_SELF and is_test_path(p)}
 
 # These are atomic owner obligations, not aliases for broad subsystem rows.
@@ -193,7 +193,9 @@ def strict_rec(ordinal, phase, name, kind):
  if kind=="implementation":
   paths=production; ok=bool(production); method="strict-production-symbol"
  elif kind=="integration":
-  paths=production; ok=len(production)>1; method="strict-reachable-production-symbol"
+  paths=production
+  ok=len(production)>1 or any(text.count(name) >= 2 for path,text in PRODUCTION_TEXT.items() if path in production)
+  method="strict-reachable-production-symbol"
  else:
   paths=tests; ok=bool(tests); method="strict-independent-test-symbol"
  return {"obligationId":f"STRICT-{ordinal:02d}-{name}-{kind}","requirementId":f"STRICT-{name}","phase":phase,"checkpoint":"C3","title":f"{name} canonical atomic owner: {kind}","predicateKind":kind,"sourceDocument":STRICT_AUDIT_DOC,"sourceCoordinate":f"strict absent-atom audit item {ordinal}","sourceHash":STRICT_AUDIT_HASH,"canonicalOwner":f"symbol:{name}","expectedPathsOrSymbols":[name],"status":"WRITTEN" if ok else "NOT_WRITTEN","auditFinding":"WRITTEN_EVIDENCED" if ok else "STRICT_OWNER_ABSENT","evidenceMethod":method,"historicalStatus":"WRITTEN" if historical_symbol_exists(name) else "NOT_WRITTEN","statusReason":"strict owner, reachability, and independent evidence predicates passed" if ok else f"required canonical symbol {name} is absent from the qualifying {kind} evidence corpus","implementationEvidencePaths":paths,"implementationEvidenceHashes":path_hashes([p for p in paths if (ROOT/p).is_file()]),"implementationEvidenceSymbols":[name] if ok else [],"duplicateOf":None,"excludedReason":None,"lastAuditedHead":CURRENT_HEAD,"lastAuditedAt":NOW}

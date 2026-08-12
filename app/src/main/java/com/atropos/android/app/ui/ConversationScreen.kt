@@ -23,6 +23,9 @@ import androidx.compose.ui.unit.dp
 import com.atropos.android.app.bridge.MobileCheckpoint
 import com.atropos.android.app.bridge.MobileThinking
 
+fun conversationStatus(isOnline: Boolean): String =
+    if (isOnline) "Ask ATROPOS anything." else "Engine not reachable"
+
 /**
  * HOE-D01: the app shell — conversation stream plus composer.
  *
@@ -80,7 +83,7 @@ fun ConversationScreen(
             }
         }
 
-        MobileComposer(
+        ComposerScreen(
             value = input,
             onValueChange = { input = it },
             onSend = {
@@ -104,7 +107,7 @@ fun ConversationScreen(
 private fun EmptyConversationHint(isOnline: Boolean, modifier: Modifier = Modifier) {
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
-            text = if (isOnline) "Ask ATROPOS anything." else "Engine not reachable",
+            text = conversationStatus(isOnline),
             style = MaterialTheme.typography.titleMedium
         )
         if (!isOnline) {

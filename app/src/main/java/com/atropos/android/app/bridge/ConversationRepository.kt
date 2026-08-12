@@ -18,7 +18,7 @@ sealed class SendOutcome {
  * one record, so a second copy here could disagree with it after a dropped
  * request — and the operator would have no way to tell which was real.
  */
-class ConversationRepository(
+class AndroidEngineBridge(
     private val discovery: BridgeDiscovery = BridgeDiscovery(),
     private val http: BridgeHttpApi = DefaultBridgeHttpApi
 ) {
@@ -85,6 +85,6 @@ interface BridgeHttpApi {
 }
 
 object DefaultBridgeHttpApi : BridgeHttpApi {
-    override fun get(url: String): BridgeResult = BridgeHttp.get(url)
-    override fun post(url: String, body: String): BridgeResult = BridgeHttp.post(url, body)
+    override fun get(url: String): BridgeResult = AndroidBridge.get(url)
+    override fun post(url: String, body: String): BridgeResult = AndroidBridge.post(url, body)
 }

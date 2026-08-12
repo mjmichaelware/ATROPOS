@@ -14,7 +14,7 @@ package com.atropos.android.app.bridge
  */
 class BridgeDiscovery(
     private val candidates: List<Int> = BridgeEndpoint.CANDIDATE_PORTS,
-    private val probe: (String) -> BridgeResult = BridgeHttp::get
+    private val probe: (String) -> BridgeResult = AndroidBridge::get
 ) {
     @Volatile
     private var known: Int? = null

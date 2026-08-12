@@ -15,6 +15,10 @@ import androidx.compose.ui.unit.dp
 
 data class ChatListEntry(val id: String, val title: String, val updatedAt: String)
 
+/** Selection stays explicit; an unknown session can never become active. */
+fun selectedChatId(sessions: List<ChatListEntry>, requestedId: String): String? =
+    sessions.firstOrNull { it.id == requestedId }?.id
+
 /** Thin Compose projection of the bridge-owned session list. */
 @Composable
 fun ChatListScreen(
@@ -28,7 +32,9 @@ fun ChatListScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { onSelected(session.id) }
+                    .clickable {
+                        selectedChatId(sessions, session.id)?.let(onSelected)
+                    }
                     .padding(horizontal = 16.dp, vertical = 10.dp)
             ) {
                 Text(session.title, style = MaterialTheme.typography.titleSmall)

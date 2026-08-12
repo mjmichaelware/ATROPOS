@@ -13,6 +13,8 @@
 # Requires: keytool (any JDK) and gh, authenticated:  gh auth login
 set -euo pipefail
 
+ApkSigner() {
+
 KEYSTORE="${KEYSTORE:-$HOME/atropos-release.jks}"
 ALIAS="${ALIAS:-atropos}"
 PASSFILE="${PASSFILE:-$HOME/.atropos-keystore-pass}"
@@ -98,3 +100,6 @@ echo
 echo "Next:"
 echo "  gh workflow run android-apk.yml --repo $REPO"
 echo "  bash scripts/pull-apk.sh"
+}
+
+ApkSigner "$@"

@@ -19,6 +19,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.atropos.android.app.bridge.MobileThinking
 
+fun nextThinkingDepth(thinking: MobileThinking): Int? =
+    thinking.depth.takeIf { thinking.hasMore && it < 3 }?.plus(1)
+
 /** Collapsed-by-default thinking surface with explicit L1-L3 disclosure. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,9 +43,9 @@ fun ThinkingSheet(
             Column(Modifier.fillMaxWidth().padding(24.dp)) {
                 Text("Thinking L${thinking.depth}", style = MaterialTheme.typography.titleMedium)
                 thinking.lines.forEach { line -> Text(line, modifier = Modifier.padding(top = 8.dp)) }
-                if (thinking.hasMore && thinking.depth < 3) {
+                nextThinkingDepth(thinking)?.let { nextDepth ->
                     TextButton(onClick = { onDepthRequested(thinking.depth + 1) }) {
-                        Text("Expand to L${thinking.depth + 1}")
+                        Text("Expand to L$nextDepth")
                     }
                 }
             }

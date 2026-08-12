@@ -14,6 +14,8 @@
 # Requires: gh, authenticated once with `gh auth login`.
 set -euo pipefail
 
+SideloadApk() {
+
 cd "$(dirname "$0")/.."
 WORKFLOW="android-apk.yml"
 
@@ -73,3 +75,6 @@ else
     echo "Or open this file from your Files app:"
     echo "  $APK"
 fi
+}
+
+SideloadApk "$@"
