@@ -17,6 +17,7 @@ class ViewportLayout(
     private val stickyHeader: StickyHeader = StickyHeader(theme),
     private val tabBar: SessionTabBar = SessionTabBar(theme)
 ) {
+    private val responsiveGrammar = ResponsiveNativeGrammar()
     private val palette = CommandPaletteRenderer(theme)
 
     data class TabState(val id: String, val name: String, val isActive: Boolean, val trustLevel: TrustIndicator)
@@ -41,6 +42,7 @@ class ViewportLayout(
     ): ScreenFrame {
         val safeWidth = width.coerceAtLeast(1)
         val safeHeight = height.coerceAtLeast(6)
+        responsiveGrammar.layout(safeWidth)
         val frame = ScreenFrame(safeWidth, safeHeight)
         val operation = activity?.let(TerminalText::stripAnsi) ?: verificationState
 
