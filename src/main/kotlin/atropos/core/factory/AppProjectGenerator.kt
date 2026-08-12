@@ -80,7 +80,7 @@ class AppProjectGenerator(
             }
         }
         val root = repoRoot.toAbsolutePath().normalize()
-        val target = targetPath(root, spec, projectId).toAbsolutePath().normalize()
+        val target = freeTargetPath(root, spec, projectId).toAbsolutePath().normalize()
         require(target.startsWith(root)) { "app target escaped repository root" }
         require(!Files.isSymbolicLink(target)) { "app target cannot be a symbolic link" }
         val targetExisted = Files.exists(target, LinkOption.NOFOLLOW_LINKS)
@@ -287,7 +287,47 @@ class AppProjectGenerator(
         }
     }
 
+    /**
+     * The first unused generation directory for this prompt.
+     *
+     * [targetPath] is derived from the prompt fingerprint, so the same prompt
+     * always names the same directory — which is correct, because the
+     * fingerprint identifies the prompt. It is not correct as a *run*
+     * identity: a second run of one prompt found the first run's output and
+     * refused, so a prompt could be generated exactly once and re-running
+     * after a fix was impossible. Iterating on a failure is the ordinary case,
+     * not an exceptional one.
+     *
+     * Later runs take a numeric suffix rather than overwriting. Overwriting
+     * would destroy the evidence bundle, the commit and the export of the run
+     * before it, which are the things you go back to when comparing what
+     * changed between attempts.
+     */
+    private fun freeTargetPath(repoRoot: Path, spec: AppProjectSpec, projectId: String): Path {
+        val first = targetPath(repoRoot, spec, projectId)
+        if (isFree(first)) return first
+        for (attempt in 2..MAX_GENERATION_ATTEMPTS) {
+            val candidate = first.resolveSibling("${first.fileName}-$attempt")
+            if (isFree(candidate)) return candidate
+        }
+        // Falling back to the first path lets the existing require() produce
+        // the original refusal, which names the directory. A new message here
+        // would say the same thing less clearly.
+        return first
+    }
+
+    private fun isFree(path: Path): Boolean =
+        !Files.exists(path, LinkOption.NOFOLLOW_LINKS) ||
+            (Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS) && AppFileHelper.isEmptyDirectory(path))
+
     companion object {
+        /**
+         * How many times one prompt may be generated before the directory is
+         * treated as contested. High enough for real iteration, low enough
+         * that a runaway loop does not fill the device.
+         */
+        const val MAX_GENERATION_ATTEMPTS = 50
+
         fun targetPath(repoRoot: Path, spec: AppProjectSpec, projectId: String): Path =
             repoRoot.resolve(".atropos/generated-projects")
                 .resolve("${safeName(spec.intent.name)}-${safeProjectId(projectId)}")
