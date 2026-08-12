@@ -1,19 +1,19 @@
 # ATROPOS Code-Base Completion Report
 
-Generated: 2026-08-12T01:13:40Z
-Current Git HEAD: 6effed9b32fed3ab90cea6b3792eab9293190b95
+Generated: 2026-08-12T06:06:20Z
+Current Git HEAD: f78433ffc3b374f215b2c76715e5d9b37b26edba
 Historical reconstruction HEAD: 7e612fcdba571b276a4ae65704835eb762030682 (nearest recoverable commit; exact locked export unavailable)
 
 ## Code-Base Obligation Set
 
 Total binary obligations: 609
-Current WRITTEN: 554
-Current NOT_WRITTEN: 55
-Current CODE-BASE COMPLETION: 90.97% (554/609)
+Current WRITTEN: 582
+Current NOT_WRITTEN: 27
+Current CODE-BASE COMPLETION: 95.57% (582/609)
 Historical WRITTEN: 518
 Historical NOT_WRITTEN: 91
 Historical CODE-BASE COMPLETION: 85.06% (518/609)
-Code-base delta: +5.91 percentage points
+Code-base delta: +10.51 percentage points
 
 The denominator is binary implementation obligations directly juxtaposed with the current codebase. SHA-256 values prove authority identity; document bytes are provenance telemetry, not completion weights. Gap-map atoms are crosswalked to existing requirements and receive no duplicate credit.
 
@@ -41,27 +41,27 @@ Core, HOE, and Phase 20 PDF atoms are registered in `authorityCrosswalk` and map
 | 11 | 36 | 36 | 100.00% | 31 | +13.89 | 0 |  |
 | 12 | 3 | 3 | 100.00% | 3 | +0.00 | 0 |  |
 | 13 | 3 | 3 | 100.00% | 0 | +100.00 | 0 |  |
-| 14 | 3 | 0 | 0.00% | 0 | +0.00 | 3 | BP-P14-hr-audit-impl, BP-P14-hr-audit-wire, BP-P14-hr-audit-edge |
+| 14 | 3 | 3 | 100.00% | 3 | +0.00 | 0 |  |
 | 15 | 3 | 3 | 100.00% | 3 | +0.00 | 0 |  |
 | 16 | 3 | 3 | 100.00% | 0 | +100.00 | 0 |  |
 | 17 | 54 | 29 | 53.70% | 30 | -1.85 | 25 | SD3-017-impl, SD3-017-wire, SD3-017-edge, SD3-018-impl, SD3-018-wire, SD3-018-edge, SD3-019-impl, SD3-019-wire, SD3-019-edge, SD3-020-impl ... |
-| 18 | 42 | 39 | 92.86% | 39 | +0.00 | 3 | BP-P18-shared-platform-impl, BP-P18-shared-platform-wire, BP-P18-shared-platform-edge |
-| 19 | 36 | 25 | 69.44% | 18 | +19.44 | 11 | BP-P19-frontend-generation-wire, BP-P19-frontend-generation-edge, BP-P19-database-security-impl, BP-P19-database-security-wire, BP-P19-database-security-edge, BP-P19-auth-impl, BP-P19-auth-wire, BP-P19-auth-edge, BP-P19-backend-integrations-impl, BP-P19-backend-integrations-wire ... |
-| 20 | 66 | 53 | 80.30% | 57 | -6.06 | 13 | E001-impl, E001-wire, E001-edge, E002-impl, E002-wire, E002-edge, P001-impl, P001-wire, P001-edge, SD3-071-impl ... |
+| 18 | 42 | 42 | 100.00% | 39 | +7.14 | 0 |  |
+| 19 | 36 | 34 | 94.44% | 18 | +44.44 | 2 | BP-P19-frontend-generation-wire, BP-P19-frontend-generation-edge |
+| 20 | 66 | 66 | 100.00% | 54 | +18.18 | 0 |  |
 
 ## Checkpoints and Horizons
 
 | Group | Phases | Total | Current written | Code % | Historical written | Delta pp |
 |---|---|---:|---:|---:|---:|---:|
 | Checkpoint 1 | 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 | 396 | 396 | 100.00% | 368 | +7.07 |
-| Checkpoint 2 | 12, 13, 14, 15, 16 | 15 | 12 | 80.00% | 6 | +40.00 |
-| Checkpoint 3 | 17, 18, 19 | 132 | 93 | 70.45% | 87 | +4.55 |
-| Checkpoint 4 | 20 | 66 | 53 | 80.30% | 57 | -6.06 |
+| Checkpoint 2 | 12, 13, 14, 15, 16 | 15 | 15 | 100.00% | 9 | +40.00 |
+| Checkpoint 3 | 17, 18, 19 | 132 | 105 | 79.55% | 87 | +13.64 |
+| Checkpoint 4 | 20 | 66 | 66 | 100.00% | 54 | +18.18 |
 | Horizon I | 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 | 360 | 360 | 100.00% | 337 | +6.39 |
-| Horizon II | 11, 12, 13, 14, 15, 16 | 51 | 48 | 94.12% | 37 | +21.57 |
-| Horizon III | 17, 18 | 96 | 68 | 70.83% | 69 | -1.04 |
-| Horizon IV | 19 | 36 | 25 | 69.44% | 18 | +19.44 |
-| Horizon V | 20 | 66 | 53 | 80.30% | 57 | -6.06 |
+| Horizon II | 11, 12, 13, 14, 15, 16 | 51 | 51 | 100.00% | 40 | +21.57 |
+| Horizon III | 17, 18 | 96 | 71 | 73.96% | 69 | +2.08 |
+| Horizon IV | 19 | 36 | 34 | 94.44% | 18 | +44.44 |
+| Horizon V | 20 | 66 | 66 | 100.00% | 54 | +18.18 |
 
 ## Required Named Surfaces
 

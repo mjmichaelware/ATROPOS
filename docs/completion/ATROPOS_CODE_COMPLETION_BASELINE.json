@@ -2,7 +2,7 @@
   "schemaVersion": "atropos-codebase-accounting-v2",
   "baselineHead": "7e612fcdba571b276a4ae65704835eb762030682",
   "baselineWarning": "nearest recoverable commit, not exact locked export",
-  "currentHead": "6effed9b32fed3ab90cea6b3792eab9293190b95",
+  "currentHead": "f78433ffc3b374f215b2c76715e5d9b37b26edba",
   "sourceInventory": [
     {
       "path": "docs/source/ATROPOS_Source_Doc_1.txt",
@@ -100,14 +100,14 @@
       "bytes": 15578
     }
   ],
-  "registrySha256": "3d9bef56fe1f2d7c8f8d70e6727f5aaf5ef1a4145ae43661b2e0f004f1db3bfe",
+  "registrySha256": "1505d9648240155328684455f48afb5f220a0dffaae5df97844a542ba5cb5683",
   "totalObligations": 609,
-  "currentWritten": 554,
-  "currentCodeCompletion": 90.9688,
+  "currentWritten": 582,
+  "currentCodeCompletion": 95.5665,
   "historicalWritten": 518,
   "historicalCodeCompletion": 85.0575,
-  "deltaPercentagePoints": 5.9113,
-  "generatedAt": "2026-08-12T01:13:40Z",
+  "deltaPercentagePoints": 10.509,
+  "generatedAt": "2026-08-12T06:06:20Z",
   "perPhase": {
     "0": {
       "total": 96,
@@ -181,8 +181,8 @@
     },
     "14": {
       "total": 3,
-      "currentWritten": 0,
-      "historicalWritten": 0
+      "currentWritten": 3,
+      "historicalWritten": 3
     },
     "15": {
       "total": 3,
@@ -201,18 +201,18 @@
     },
     "18": {
       "total": 42,
-      "currentWritten": 39,
+      "currentWritten": 42,
       "historicalWritten": 39
     },
     "19": {
       "total": 36,
-      "currentWritten": 25,
+      "currentWritten": 34,
       "historicalWritten": 18
     },
     "20": {
       "total": 66,
-      "currentWritten": 53,
-      "historicalWritten": 57
+      "currentWritten": 66,
+      "historicalWritten": 54
     }
   }
 }
