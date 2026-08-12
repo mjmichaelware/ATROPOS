@@ -4,6 +4,7 @@ package atropos.cli.shell
 import atropos.core.policy.ActionProposal
 import atropos.core.policy.AgencyDisposition
 import atropos.core.policy.BoundedAgencyGate
+import atropos.core.policy.BoundedProcessRunner
 import atropos.core.policy.ExecutionPolicyEngine
 import atropos.core.policy.ShellActionProposals
 import atropos.core.policy.ToolExecutionResult
@@ -59,10 +60,7 @@ class ShellCommandRunner(
      * reaches a real [ProcessBuilder]; production always uses the default.
      */
     private val spawn: (List<String>, File) -> Process = { command, directory ->
-        ProcessBuilder(command)
-            .directory(directory)
-            .redirectErrorStream(true)
-            .start()
+        BoundedProcessRunner().start(command, directory.toPath())
     }
 ) {
     private var cwd: File = initialDirectory.toFile().canonicalFile
