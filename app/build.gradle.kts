@@ -18,11 +18,25 @@ android {
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.atropos.android.app"
+        // A package name no previously installed build occupies.
+        //
+        // Earlier builds were installed as com.atropos.android.app,
+        // com.atropos.fixed.v2 and com.atropos.v3.unique, all signed with a
+        // debug key. This build is signed with the operator's release
+        // keystore, and Android refuses to replace an installed app whose
+        // signing key differs — reported through the GUI installer as the same
+        // "app wasn't installed" as every other failure. Clearing that
+        // normally means uninstalling the old copies, which needs either adb
+        // or the Settings app; adb needs Wireless debugging, which needs Wi-Fi.
+        //
+        // A fresh id has nothing to compare against, so it installs cleanly
+        // with no uninstall step. This is now the permanent identity: keep it
+        // and the release keystore stable so future builds upgrade in place.
+        applicationId = "com.atropos.engine"
         minSdk = 28
         targetSdk = 34
-        versionCode = 1000
-        versionName = "10.0.0"
+        versionCode = 1001
+        versionName = "10.0.1"
     }
 
     buildTypes {
