@@ -14,7 +14,7 @@ class SpinnerEngine(
     }
     private val message = AtomicReference<String?>(null)
     private var task: ScheduledFuture<*>? = null
-    private val frames = arrayOf("⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏")
+    private val thinkingBuffer = AnimatedThinkingBuffer()
 
     @Synchronized
     fun start(value: String) {
@@ -25,8 +25,8 @@ class SpinnerEngine(
         var frame = 0
         task = executor.scheduleAtFixedRate({
             val current = message.get() ?: return@scheduleAtFixedRate
-            renderer("${frames[frame]} $current")
-            frame = (frame + 1) % frames.size
+            renderer(thinkingBuffer.render(frame, current))
+            frame++
         }, 0, 80, TimeUnit.MILLISECONDS)
     }
 
