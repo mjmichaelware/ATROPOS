@@ -179,7 +179,13 @@ class SelfHostCommand(
         val prompt = args.joinToString(" ").ifBlank {
             return AgentCommandOutcome.Invalid("usage: /agent self-host run <natural-language self-host goal>")
         }
-        ui.startSpinner("Running Phase 11 self-host loop")
+        // A spinner communicates one bit — something is happening — and stops
+        // being informative in about ten seconds. After that the operator
+        // cannot tell progress from a hang, and the only available action
+        // destroys the run. The live renderer shows the narration the chain
+        // was already producing.
+        val live = atropos.cli.ui.LiveThinkingRenderer(ui)
+        live.start("Running Phase 11 self-host loop — /thinking 3 for full detail")
         return try {
             val result = selfHostRunner(prompt)
             val text = SelfHostCommandText.run(result, proofRenderer)
@@ -195,7 +201,7 @@ class SelfHostCommand(
             ui.renderError(message)
             AgentCommandOutcome.Invalid(message)
         } finally {
-            ui.stopSpinner()
+            live.stop()
         }
     }
 

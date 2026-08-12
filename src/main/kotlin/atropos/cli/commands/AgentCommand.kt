@@ -25,7 +25,24 @@ import atropos.core.verification.VerifiedCompletionGate
 
 sealed class AgentCommandOutcome {
     data class Completed(val text: String) : AgentCommandOutcome()
-    data class Invalid(val message: String) : AgentCommandOutcome()
+
+    /**
+     * @param rendered whether the message has already reached the operator.
+     *
+     * Twenty-four sites in [SelfHostCommand] alone build an `Invalid` and
+     * return it directly rather than through a helper that renders. Every one
+     * of those was a command that produced a careful explanation and then
+     * discarded it — `/self-host resume` printed nothing at all when there was
+     * nothing to resume, which reads as a broken command rather than an
+     * accurate answer.
+     *
+     * The flag exists rather than a rule ("always render at the boundary")
+     * because some handlers legitimately render richer output themselves, and
+     * a boundary that rendered unconditionally would print everything twice.
+     * Default false means a new site is loud by default: forgetting to set it
+     * shows the message, forgetting the old way hid it.
+     */
+    data class Invalid(val message: String, val rendered: Boolean = false) : AgentCommandOutcome()
 }
 
 fun interface AgentCommandHandler {
@@ -227,7 +244,7 @@ class AgentCommand(
 
     private fun invalid(message: String): AgentCommandOutcome.Invalid {
         ui.renderError(message)
-        return AgentCommandOutcome.Invalid(message)
+        return AgentCommandOutcome.Invalid(message, rendered = true)
     }
 
 }

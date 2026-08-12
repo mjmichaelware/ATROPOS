@@ -72,6 +72,7 @@ class CommandRouter(
     private val storageCommand = StorageCommandHandler(uiEngine)
     private val interruptCommand = InterruptCommandHandler(uiEngine)
     private val exportCommand = ExportCommandHandler(uiEngine)
+    private val thinkingCommand = ThinkingCommandHandler(uiEngine)
     private val testsCommand = TestsCommandHandler(uiEngine)
     private val opsCommand = OpsCommandHandler(uiEngine)
     private val routeCommand = RouteCommandHandler(uiEngine)
@@ -193,7 +194,7 @@ class CommandRouter(
             }
 
             "/agent" -> {
-                agentCommand.execute(tokens)
+                announce(agentCommand.execute(tokens))
                 uiEngine.updateAgentPatchState(agentCommand.lastKnownPatchId)
                 RouterOutcome.CONTINUE
             }
@@ -224,6 +225,8 @@ class CommandRouter(
             "/interrupt", "/pause", "/resume" -> interruptCommand.execute(tokens)
 
             "/export" -> exportCommand.execute(tokens)
+
+            "/thinking" -> thinkingCommand.execute(tokens)
 
             "/tests" -> testsCommand.execute(tokens)
 
@@ -286,12 +289,12 @@ class CommandRouter(
                             if (selfHostTokens.firstOrNull() == "/factory") {
                                 factoryCommand.execute(selfHostTokens)
                             } else {
-                                agentCommand.execute(selfHostTokens)
+                                announce(agentCommand.execute(selfHostTokens))
                                 uiEngine.updateAgentPatchState(agentCommand.lastKnownPatchId)
                             }
                         }
                         tokens.size == 1 && tokens.first().equals("ATROPOS", ignoreCase = true) -> {
-                            agentCommand.execute(listOf("/agent", "ask", "ATROPOS"))
+                            announce(agentCommand.execute(listOf("/agent", "ask", "ATROPOS")))
                             uiEngine.updateAgentPatchState(agentCommand.lastKnownPatchId)
                         }
                         else -> providerChatDispatcher.dispatch(original, currentProviderName)
@@ -318,6 +321,19 @@ class CommandRouter(
         }
     }
 
+    /**
+     * Shows a refusal the handler built but never printed.
+     *
+     * The single boundary where an unrendered [AgentCommandOutcome.Invalid]
+     * becomes visible. Handlers that render their own richer output mark
+     * themselves rendered and pass through here untouched.
+     */
+    private fun announce(outcome: atropos.cli.commands.AgentCommandOutcome) {
+        if (outcome is atropos.cli.commands.AgentCommandOutcome.Invalid && !outcome.rendered) {
+            uiEngine.renderError(outcome.message)
+        }
+    }
+
     private fun selfHostAlias(tokens: List<String>) {
         val remainder = tokens.drop(1)
         val subcommand = remainder.firstOrNull()?.lowercase()
@@ -325,9 +341,20 @@ class CommandRouter(
             renderHelpPage("self-host")
             return
         }
-        val translated = SelfHostAliasTranslator.translate(tokens) ?: return
+        val translated = SelfHostAliasTranslator.translate(tokens)
+        if (translated == null) {
+            // Used to `return` silently. A command the operator typed that
+            // produces no output at all is indistinguishable from a broken
+            // terminal, and they retype it rather than reading the answer that
+            // was never printed.
+            uiEngine.renderError(
+                "'${tokens.joinToString(" ")}' is not a self-host command. " +
+                    "Try '/self-host status' or '/help self-host'."
+            )
+            return
+        }
         /* Bare shorthand is the operator's self-build command, not a read-only status query. */
-        agentCommand.execute(translated)
+        announce(agentCommand.execute(translated))
         uiEngine.updateAgentPatchState(agentCommand.lastKnownPatchId)
     }
 

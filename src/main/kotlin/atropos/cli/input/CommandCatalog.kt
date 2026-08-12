@@ -131,6 +131,19 @@ object CommandCatalog {
             keywords = listOf("continue", "unfreeze", "restore")
         ),
 
+        // HOE-B03/HOE-E04: reasoning at the depth this surface asked for.
+        CommandEntry(
+            "/thinking",
+            "how much of the engine's reasoning to show while it works",
+            "Observe",
+            keywords = listOf("reasoning", "verbose", "detail", "trace", "progress", "watch"),
+            example = "/thinking 3"
+        ),
+        CommandEntry("/thinking 1", "outline only — milestones as they pass", "Observe"),
+        CommandEntry("/thinking 2", "reasoning — what the engine did and why", "Observe"),
+        CommandEntry("/thinking 3", "full trace — everything, including evidence detail", "Observe"),
+        CommandEntry("/thinking replay", "re-show what has happened so far at the current depth", "Observe"),
+
         // SUP.ART.HANDOFF-EXPORT: artifacts leaving through a checked channel.
         CommandEntry(
             "/export",

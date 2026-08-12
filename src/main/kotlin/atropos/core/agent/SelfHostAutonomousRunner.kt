@@ -51,7 +51,11 @@ class SelfHostAutonomousRunner(
         maxAdvances: Int,
         lifecycleEmitter: (String) -> Unit
     ): SelfHostAutonomousRunResult {
-        val steps = mutableListOf<String>()
+        // Narrated rather than merely collected. Every `steps +=` below now
+        // reaches a watching operator as it happens instead of arriving as a
+        // block after the run has already decided everything.
+        val steps = atropos.core.thinking.NarratedSteps()
+        steps.outline("starting self-host phase $phase")
         val started = service.startGoal(prompt, phase)
         steps += started.message
         if (!started.ok) return stopped(started, null, null, steps)
@@ -59,7 +63,7 @@ class SelfHostAutonomousRunner(
         val goalId = started.goal?.record?.id
             ?: return stopped(started.copy(message = "self-host goal start returned no goal"), null, null, steps)
         lifecycleEmitter("ATROPOS_SELF_HOST_RUN_STARTED goal=$goalId")
-        steps += "ATROPOS_SELF_HOST_RUN_STARTED goal=$goalId"
+        steps.outline("ATROPOS_SELF_HOST_RUN_STARTED goal=$goalId")
 
         var latest = started
         var advances = 0
@@ -67,6 +71,10 @@ class SelfHostAutonomousRunner(
         val recoveryBudget = 2
         while (advances < maxAdvances.coerceAtLeast(1)) {
             advances += 1
+            // The one line that tells a watching operator the run is alive and
+            // where it is. Without it, a long advance is indistinguishable from
+            // a hang, and the operator's only move is to kill it.
+            steps.outline("advance $advances of $maxAdvances")
             val advanced = service.advanceNextResumableGoal(
                 goalId = goalId,
                 compactState = "self-host natural-language continuation"
