@@ -18,6 +18,7 @@ import atropos.cli.ui.AnsiTerminalEngine
 import atropos.core.AtroposConfig
 import atropos.core.agent.SelfHostStartupContinuationService
 import atropos.core.agent.AgentDaemonService
+import atropos.core.auth.AuthorityBootGate
 import atropos.core.recovery.RuntimeContinuitySupervisor
 import atropos.core.recovery.StartupContinuationDecider
 import atropos.core.recovery.ContinuityOutcome
@@ -58,6 +59,14 @@ fun main(args: Array<String>) {
         // what is resumable and stops; `/agent self-host recover` resumes it.
         // ATROPOS_AUTO_CONTINUE=1 restores the old behaviour for unattended
         // runners, where no one is present to type the command.
+        // Authority documents are attested before anything can be dispatched.
+        // A tampered AGENTS.md is an instruction set nobody authorised, and it
+        // has to be caught here rather than noticed later in output that looks
+        // subtly wrong.
+        val authority = AuthorityBootGate().evaluate()
+        authority.notice?.let(ui::renderNotice)
+        authority.error?.let(ui::renderError)
+
         val continuity = RuntimeContinuitySupervisor()
         val continuityOutcome = continuity.ensureRecovered()
         continuity.startupNotice(continuityOutcome)?.let(ui::renderNotice)

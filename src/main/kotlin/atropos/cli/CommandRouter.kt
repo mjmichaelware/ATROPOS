@@ -68,6 +68,10 @@ class CommandRouter(
     private var pendingRiskyNaturalLanguage: String? = null
     private val securityCommand = SecurityCommandHandler(uiEngine)
     private val keysCommand = KeysCommandHandler(uiEngine)
+    private val authCommand = AuthCommandHandler(uiEngine)
+    private val storageCommand = StorageCommandHandler(uiEngine)
+    private val interruptCommand = InterruptCommandHandler(uiEngine)
+    private val exportCommand = ExportCommandHandler(uiEngine)
     private val testsCommand = TestsCommandHandler(uiEngine)
     private val opsCommand = OpsCommandHandler(uiEngine)
     private val routeCommand = RouteCommandHandler(uiEngine)
@@ -212,6 +216,14 @@ class CommandRouter(
             "/security" -> securityCommand.execute(tokens)
 
             "/keys" -> keysCommand.execute(tokens)
+
+            "/auth" -> authCommand.execute(tokens)
+
+            "/storage", "/gc" -> storageCommand.execute(tokens)
+
+            "/interrupt", "/pause", "/resume" -> interruptCommand.execute(tokens)
+
+            "/export" -> exportCommand.execute(tokens)
 
             "/tests" -> testsCommand.execute(tokens)
 
