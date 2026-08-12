@@ -1,0 +1,129 @@
+/* SPDX-License-Identifier: AGPL-3.0-only */
+package atropos.bridge
+
+import atropos.bridge.http.HttpRequest
+import atropos.bridge.http.HttpResponse
+import atropos.bridge.http.JsonWriter
+import java.nio.file.Files
+import java.nio.file.Path
+import java.security.MessageDigest
+import java.util.Base64
+import kotlin.streams.toList
+
+internal class BridgeFilesHandler(
+    private val repoRoot: Path = Path.of("").toAbsolutePath().normalize()
+) {
+    private val uploadsRoot = repoRoot.resolve(".atropos/uploads").normalize()
+
+    fun upload(request: HttpRequest): HttpResponse {
+        val session = request.query["session"].orEmpty().trim()
+        if (session.isBlank() || !session.matches(Regex("^[a-zA-Z0-9_-]+$"))) {
+            return HttpResponse.badRequest("Invalid or missing session id.", "POST /v1/files?session=<id>&filename=<name>")
+        }
+        val filename = request.query["filename"].orEmpty().trim()
+        if (filename.isBlank() || !filename.matches(Regex("^[a-zA-Z0-9_.-]+\\.[a-zA-Z0-9]+$"))) {
+            return HttpResponse.badRequest("Invalid or missing filename (must be a portable identifier with extension).", "POST /v1/files?session=<id>&filename=<name>")
+        }
+        
+        // Base64 decode body
+        val bytes = try {
+            val cleanBody = request.body.replace(Regex("\\s+"), "")
+            Base64.getDecoder().decode(cleanBody)
+        } catch (e: Exception) {
+            return HttpResponse.badRequest("Request body must be valid Base64 encoded file contents.", "Encode files before POSTing.")
+        }
+
+        // Territory check and normalization
+        val sessionDir = uploadsRoot.resolve(session).normalize()
+        val targetPath = sessionDir.resolve(filename).normalize()
+
+        // Verify bounds: targetPath must stay under uploadsRoot
+        if (!targetPath.startsWith(uploadsRoot)) {
+            return HttpResponse.refusal(403, "access-denied", "File write path escapes uploads boundary.", "")
+        }
+
+        // Prohibit symlinks in uploads root to target
+        var current: Path? = targetPath
+        while (current != null && current.startsWith(uploadsRoot)) {
+            if (Files.isSymbolicLink(current)) {
+                return HttpResponse.refusal(403, "access-denied", "Symbolic links are prohibited in upload path.", "")
+            }
+            current = current.parent
+        }
+
+        // Create directory
+        try {
+            Files.createDirectories(targetPath.parent)
+            Files.write(targetPath, bytes)
+        } catch (e: Exception) {
+            return HttpResponse.refusal(500, "write-error", "Failed to write file: ${e.message}", "")
+        }
+
+        // Calculate SHA-256
+        val digest = MessageDigest.getInstance("SHA-256")
+        val hashBytes = digest.digest(bytes)
+        val sha256 = hashBytes.joinToString("") { "%02x".format(it) }
+
+        return HttpResponse.json(
+            JsonWriter.obj(
+                "ok" to JsonWriter.bool(true),
+                "filename" to JsonWriter.str(filename),
+                "sha256" to JsonWriter.str(sha256),
+                "size" to JsonWriter.num(bytes.size.toLong())
+            )
+        )
+    }
+
+    fun list(request: HttpRequest): HttpResponse {
+        val session = request.query["session"].orEmpty().trim()
+        if (session.isBlank() || !session.matches(Regex("^[a-zA-Z0-9_-]+$"))) {
+            return HttpResponse.badRequest("Invalid or missing session id.", "GET /v1/files?session=<id>")
+        }
+
+        val sessionDir = uploadsRoot.resolve(session).normalize()
+        if (!sessionDir.startsWith(uploadsRoot)) {
+            return HttpResponse.refusal(403, "access-denied", "Session path escapes uploads boundary.", "")
+        }
+
+        // Check symlinks
+        var current: Path? = sessionDir
+        while (current != null && current.startsWith(uploadsRoot)) {
+            if (Files.isSymbolicLink(current)) {
+                return HttpResponse.refusal(403, "access-denied", "Symbolic links are prohibited in path.", "")
+            }
+            current = current.parent
+        }
+
+        if (!Files.isDirectory(sessionDir)) {
+            return HttpResponse.json(
+                JsonWriter.obj(
+                    "count" to JsonWriter.num(0),
+                    "files" to JsonWriter.arr(emptyList())
+                )
+            )
+        }
+
+        val files = Files.list(sessionDir).use { stream ->
+            stream.filter { Files.isRegularFile(it) }
+                .map { path ->
+                    val bytes = Files.readAllBytes(path)
+                    val digest = MessageDigest.getInstance("SHA-256")
+                    val hashBytes = digest.digest(bytes)
+                    val sha256 = hashBytes.joinToString("") { "%02x".format(it) }
+                    JsonWriter.obj(
+                        "filename" to JsonWriter.str(path.fileName.toString()),
+                        "size" to JsonWriter.num(bytes.size.toLong()),
+                        "sha256" to JsonWriter.str(sha256)
+                    )
+                }
+                .toList()
+        }
+
+        return HttpResponse.json(
+            JsonWriter.obj(
+                "count" to JsonWriter.num(files.size.toLong()),
+                "files" to JsonWriter.arr(files)
+            )
+        )
+    }
+}

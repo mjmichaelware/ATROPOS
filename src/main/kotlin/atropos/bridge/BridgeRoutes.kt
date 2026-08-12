@@ -167,6 +167,10 @@ class BridgeRoutes(
     private val conversationHandler = BridgeConversationHandler(conversation, responder, sessions = sessions)
     private val queueHandler = work?.let { BridgeQueueHandler(it) }
     private val sessionHandler = BridgeSessionHandler(sessions)
+    private val statusHandler = BridgeStatusHandler(homeState, activeProvider, sixAnswers, checkpoint, checkpointView, work, clock = clock)
+    private val evidenceHandler = BridgeEvidenceHandler(work)
+    private val eventsHandler = BridgeEventsHandler(work, approvals, sessions, conversation)
+    private val filesHandler = BridgeFilesHandler()
 
     /** Queue routes exist in the table either way, so the surface a client
      *  discovers does not change with configuration; without a runner they
@@ -290,6 +294,21 @@ class BridgeRoutes(
                 },
                 HttpRoute("GET", "/v1/thinking", "stored reasoning at the requested depth") { request ->
                     thinkingHandler.handle(request)
+                },
+                HttpRoute("GET", "/v1/status", "composite engine liveness and cockpit status") {
+                    statusHandler.getStatus()
+                },
+                HttpRoute("GET", "/v1/evidence", "durable evidence contents") { request ->
+                    evidenceHandler.getEvidence(request)
+                },
+                HttpRoute("GET", "/v1/events", "cursor-based poll for event hub notifications") { request ->
+                    eventsHandler.getEvents(request)
+                },
+                HttpRoute("POST", "/v1/files", "base64 file upload under session folder") { request ->
+                    filesHandler.upload(request)
+                },
+                HttpRoute("GET", "/v1/files", "list uploads under session folder") { request ->
+                    filesHandler.list(request)
                 },
                 HttpRoute("GET", "/v1/answers/stream", "six continuous answers, pushed") {
                     // Advertised in /v1/routes and reachable as a stream; this

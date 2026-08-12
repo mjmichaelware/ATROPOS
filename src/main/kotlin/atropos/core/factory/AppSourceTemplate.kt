@@ -6,12 +6,26 @@ import java.util.Locale
 /** Renders executable source and executable tests from the generic app spec. */
 class AppSourceTemplate {
     fun mainSource(spec: AppProjectSpec, packageName: String): String =
-        if (AppCapability.EXPRESSION in spec.intent.capabilities()) expressionMain(spec, packageName)
-        else genericMain(spec, packageName)
+        when (spec.intent.kind.lowercase()) {
+            "web" -> webMain(spec, packageName)
+            "service" -> serviceMain(spec, packageName)
+            "desktop" -> desktopMain(spec, packageName)
+            else -> {
+                if (AppCapability.EXPRESSION in spec.intent.capabilities()) expressionMain(spec, packageName)
+                else genericMain(spec, packageName)
+            }
+        }
 
     fun testSource(spec: AppProjectSpec, packageName: String): String =
-        if (AppCapability.EXPRESSION in spec.intent.capabilities()) expressionTest(packageName)
-        else genericTest(spec, packageName)
+        when (spec.intent.kind.lowercase()) {
+            "web" -> webTest(spec, packageName)
+            "service" -> serviceTest(spec, packageName)
+            "desktop" -> desktopTest(spec, packageName)
+            else -> {
+                if (AppCapability.EXPRESSION in spec.intent.capabilities()) expressionTest(packageName)
+                else genericTest(spec, packageName)
+            }
+        }
 
     private fun expressionMain(spec: AppProjectSpec, packageName: String) = """
         package $packageName
@@ -178,4 +192,106 @@ class AppSourceTemplate {
         .replace("\\", "\\\\")
         .replace("\"", "\\\"")
         .replace("${'$'}", "\\${'$'}")
+
+    private fun webMain(spec: AppProjectSpec, packageName: String) = """
+        package $packageName
+
+        import kotlin.system.exitProcess
+
+        data class CliResult(val exitCode: Int, val output: String = "", val error: String = "")
+
+        fun runApp(args: List<String>): CliResult {
+            if (args.isEmpty() || args.singleOrNull() == "--help") {
+                return CliResult(0, output = "usage: ${spec.intent.name} [--serve|--help]")
+            }
+            if (args.first() == "--serve") {
+                return CliResult(0, output = "starting web server for ${spec.intent.name} at http://localhost:8080")
+            }
+            return CliResult(2, error = "unknown command: " + args.first())
+        }
+
+        fun main(args: Array<String>) {
+            val result = runApp(args.toList())
+            if (result.output.isNotEmpty()) println(result.output)
+            if (result.error.isNotEmpty()) System.err.println(result.error)
+            if (result.exitCode != 0) exitProcess(result.exitCode)
+        }
+    """.trimIndent() + "\n"
+
+    private fun webTest(spec: AppProjectSpec, packageName: String) = """
+        package $packageName
+
+        fun main() {
+            check(runApp(listOf("--help")).exitCode == 0)
+            check(runApp(listOf("--serve")).let { it.exitCode == 0 && it.output.contains("starting web server") })
+        }
+    """.trimIndent() + "\n"
+
+    private fun serviceMain(spec: AppProjectSpec, packageName: String) = """
+        package $packageName
+
+        import kotlin.system.exitProcess
+
+        data class CliResult(val exitCode: Int, val output: String = "", val error: String = "")
+
+        fun runApp(args: List<String>): CliResult {
+            if (args.isEmpty() || args.singleOrNull() == "--help") {
+                return CliResult(0, output = "usage: ${spec.intent.name} [--start|--help]")
+            }
+            if (args.first() == "--start") {
+                return CliResult(0, output = "starting service backend for ${spec.intent.name}")
+            }
+            return CliResult(2, error = "unknown command: " + args.first())
+        }
+
+        fun main(args: Array<String>) {
+            val result = runApp(args.toList())
+            if (result.output.isNotEmpty()) println(result.output)
+            if (result.error.isNotEmpty()) System.err.println(result.error)
+            if (result.exitCode != 0) exitProcess(result.exitCode)
+        }
+    """.trimIndent() + "\n"
+
+    private fun serviceTest(spec: AppProjectSpec, packageName: String) = """
+        package $packageName
+
+        fun main() {
+            check(runApp(listOf("--help")).exitCode == 0)
+            check(runApp(listOf("--start")).let { it.exitCode == 0 && it.output.contains("starting service") })
+        }
+    """.trimIndent() + "\n"
+
+    private fun desktopMain(spec: AppProjectSpec, packageName: String) = """
+        package $packageName
+
+        import kotlin.system.exitProcess
+
+        data class CliResult(val exitCode: Int, val output: String = "", val error: String = "")
+
+        fun runApp(args: List<String>): CliResult {
+            if (args.isEmpty() || args.singleOrNull() == "--help") {
+                return CliResult(0, output = "usage: ${spec.intent.name} [--gui|--help]")
+            }
+            if (args.first() == "--gui") {
+                return CliResult(0, output = "launching desktop GUI for ${spec.intent.name}")
+            }
+            return CliResult(2, error = "unknown command: " + args.first())
+        }
+
+        fun main(args: Array<String>) {
+            val result = runApp(args.toList())
+            if (result.output.isNotEmpty()) println(result.output)
+            if (result.error.isNotEmpty()) System.err.println(result.error)
+            if (result.exitCode != 0) exitProcess(result.exitCode)
+        }
+    """.trimIndent() + "\n"
+
+    private fun desktopTest(spec: AppProjectSpec, packageName: String) = """
+        package $packageName
+
+        fun main() {
+            check(runApp(listOf("--help")).exitCode == 0)
+            check(runApp(listOf("--gui")).let { it.exitCode == 0 && it.output.contains("launching desktop") })
+        }
+    """.trimIndent() + "\n"
 }

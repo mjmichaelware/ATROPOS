@@ -136,4 +136,35 @@ class AppProjectGeneratorTest {
         assertTrue("sk-test-secret-value" !in source)
         assertTrue("redacted" in readme)
     }
+
+    @Test
+    fun web_app_generation_produces_frontend_assets_and_design_system() {
+        val root = Files.createTempDirectory("atropos-app-web-")
+        val generator = AppProjectGenerator(root)
+        val planned = AppProjectSpecParser().parse("Build a web website dashboard")
+        val generated = generator.generateApp(planned, "web-1")
+
+        assertEquals("web", generated.spec.intent.kind)
+        assertTrue(generated.files.contains("src/main/resources/static/index.html"))
+        assertTrue(generated.files.contains("src/main/resources/static/style.css"))
+        assertTrue(generated.files.contains("src/main/resources/static/app.js"))
+
+        val target = root.resolve(".atropos/generated-projects/web-web-1")
+        val html = Files.readString(target.resolve("src/main/resources/static/index.html"))
+        val css = Files.readString(target.resolve("src/main/resources/static/style.css"))
+        val js = Files.readString(target.resolve("src/main/resources/static/app.js"))
+
+        // Assert page structure, components, navigation, forms, and design system
+        assertTrue("<!DOCTYPE html>" in html)
+        assertTrue("<nav" in html)
+        assertTrue("<form" in html)
+        assertTrue("style.css" in html)
+        assertTrue("app.js" in html)
+        
+        assertTrue("var(--primary-color)" in css)
+        assertTrue("var(--background-color)" in css)
+        
+        assertTrue("addEventListener" in js)
+        assertTrue("preventDefault" in js)
+    }
 }

@@ -3,6 +3,7 @@ package atropos.bridge
 
 import atropos.bridge.conversation.BridgeConversationResponder
 import atropos.bridge.conversation.BridgeConversationStore
+import atropos.bridge.conversation.BridgeSessionStore
 import atropos.bridge.conversation.TurnAuthor
 import atropos.bridge.http.HttpRequest
 import kotlin.test.Test
@@ -21,8 +22,9 @@ class BridgeConversationHandlerTest {
 
     private fun handler(
         store: BridgeConversationStore = BridgeConversationStore(),
-        responder: BridgeConversationResponder = BridgeConversationResponder { "reply to: $it" }
-    ) = BridgeConversationHandler(store, responder)
+        responder: BridgeConversationResponder = BridgeConversationResponder { "reply to: $it" },
+        sessions: BridgeSessionStore? = null
+    ) = BridgeConversationHandler(store, responder, sessions = sessions)
 
     @Test
     fun posting_a_message_records_the_operator_turn_and_the_reply() {
@@ -125,5 +127,60 @@ class BridgeConversationHandlerTest {
 
         val recorded = store.transcript().first().text
         assertFalse(recorded.contains(secret), "a credential must not survive into the transcript verbatim")
+    }
+
+    @Test
+    fun session_query_isolates_transcripts() {
+        val store = BridgeConversationStore()
+        val sessions = BridgeSessionStore()
+        val s1 = sessions.create("Session 1")
+        val s2 = sessions.create("Session 2")
+
+        val h = handler(store, sessions = sessions)
+
+        // Post to s1
+        val r1 = h.postMessage(request(query = mapOf("session" to s1.id), body = """{"text":"message for s1"}"""))
+        assertEquals(200, r1.status)
+
+        // Post to s2
+        val r2 = h.postMessage(request(query = mapOf("session" to s2.id), body = """{"text":"message for s2"}"""))
+        assertEquals(200, r2.status)
+
+        // Retrieve messages from s1
+        val m1 = h.getMessages(request(method = "GET", path = "/v1/messages", query = mapOf("session" to s1.id)))
+        assertTrue(m1.body.contains("message for s1"))
+        assertFalse(m1.body.contains("message for s2"))
+
+        // Retrieve messages from s2
+        val m2 = h.getMessages(request(method = "GET", path = "/v1/messages", query = mapOf("session" to s2.id)))
+        assertTrue(m2.body.contains("message for s2"))
+        assertFalse(m2.body.contains("message for s1"))
+    }
+
+    @Test
+    fun unknown_session_returns_404() {
+        val store = BridgeConversationStore()
+        val sessions = BridgeSessionStore()
+        val h = handler(store, sessions = sessions)
+
+        val r = h.postMessage(request(query = mapOf("session" to "unknown-session"), body = """{"text":"hello"}"""))
+        assertEquals(404, r.status)
+
+        val rGet = h.getMessages(request(method = "GET", path = "/v1/messages", query = mapOf("session" to "unknown-session")))
+        assertEquals(404, rGet.status)
+    }
+
+    @Test
+    fun omitting_session_uses_default_store() {
+        val store = BridgeConversationStore()
+        val sessions = BridgeSessionStore()
+        val h = handler(store, sessions = sessions)
+
+        val r = h.postMessage(request(body = """{"text":"hello default"}"""))
+        assertEquals(200, r.status)
+
+        val m = h.getMessages(request(method = "GET", path = "/v1/messages"))
+        assertTrue(m.body.contains("hello default"))
+        assertEquals(2, store.transcript().size)
     }
 }
