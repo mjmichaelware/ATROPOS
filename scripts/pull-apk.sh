@@ -102,12 +102,19 @@ APK="$(find "$TMP" -name '*.apk' | head -1)"
 # table installs nowhere, and the installer's only feedback is the unhelpful
 # "app wasn't installed".
 #
-# The listing is produced twice, by different readers. `unzip` is not reliable
-# on a v2/v3-signed APK: the APK Signing Block sits between the entries and the
-# central directory, and some builds of unzip — Termux's included — can emit an
-# empty or partial listing for it. Believing a single reader once caused this
-# script to reject a genuinely good APK that CI had already verified. Python's
-# zipfile reads the central directory directly and is the tiebreaker.
+# The listing is written to a file and then searched. It is never piped into
+# grep, and that is the whole point.
+#
+# This script previously ran `unzip -l "$APK" | grep -q classes.dex` under
+# `set -o pipefail`. grep -q exits the moment it matches; classes.dex is the
+# fourth entry of 426, so grep closed the pipe while unzip was still writing.
+# unzip died of SIGPIPE, the pipeline returned 141, pipefail surfaced that as
+# failure, and a perfectly good APK — 5.5 MB of classes.dex — was reported as
+# an "empty shell". CI never saw it because CI redirected to a file first.
+#
+# A second reader is kept as a tiebreaker: python's zipfile parses the central
+# directory directly, so it stays correct even on a v2/v3-signed APK where the
+# signing block sits between the entry data and the directory.
 echo "verifying..."
 LISTING="$TMP/listing.txt"
 : > "$LISTING"
