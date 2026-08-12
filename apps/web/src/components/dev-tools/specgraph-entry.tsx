@@ -9,6 +9,7 @@ import {
   projectRoutingRoute,
   projectSourcesRoute,
 } from '@/components/navigation/routes';
+import { WebMergeArchitecture } from '@/lib/architecture/web-merge';
 
 /**
  * The SpecGraph subsystem entry point.
@@ -69,7 +70,10 @@ export function SpecGraphEntry() {
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div
+      className="grid grid-cols-1 md:grid-cols-2 gap-4"
+      data-route-prefix={WebMergeArchitecture.developerToolsPrefix}
+    >
       {workspaces.map((workspace) => (
         <Link
           key={workspace.label}
