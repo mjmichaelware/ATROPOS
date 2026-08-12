@@ -9083,6 +9083,15 @@ End of AGENTS.md
 - Fingerprints: `GraphTransitionService.kt=453138e9a02f0922e0a0a232ae1fb39668dcb1cebbb7623c79d5c102260479b5`; `InternalPlanningGraphPlugin.kt=17ff7dabb968ba82efadd7c6fc60336f0d0f5e1802df960a8b07bfe18d728a2e`; `GraphTransitionServiceTest.kt=c769a90dc03f6fcb5231387a402f4bcb7a3f687aa466bc10bccdb53adde55237`.
 - HR interrupts: none. Next atom: `STRICT-03-GitHubBinding`.
 
+### 2026-08-12T09:20:44Z · Agent: Codex GPT-5 · Batch: strict-06-intent-parser-017
+- Paths touched: `src/main/kotlin/atropos/core/factory/IntentParser.kt` (+39); `src/main/kotlin/atropos/core/factory/AppProjectSpecParser.kt` (+2/-26); `src/test/kotlin/atropos/core/factory/IntentParserTest.kt` (+32); `AGENTS.md` (+this row).
+- Atoms / phases affected: `STRICT-06-IntentParser`, general App Factory intent parsing.
+- Predicate moved: intent classification now has one deterministic `IntentParser` owner for application name, surface kind, feature extraction, tokenization, and app-request recognition. `AppProjectSpecParser` delegates to it for compatibility, so existing factory and NL routing callers reach the canonical parser without a product-specific branch.
+- Verification: `git diff --check` and production/test reference inspection passed. Per instruction, no Gradle, compile, test, JAR, smoke, CI, or build verification was run.
+- `% delta`: unchanged; strict accounting remains `609/741` until the registry audit is rerun after the atom set is implemented.
+- Fingerprints: `IntentParser.kt=231ffdf85e34723e1268347f41ad84e84080e9143a2dea969f91b87ac53d80d0`; `AppProjectSpecParser.kt=4c52f8f75424f0c0eedc0b46d30304aeb3e704e90436bd9da661de35e9bf5e6c`; `IntentParserTest.kt=1330556f7c2af229ff3fd4a5f99734e3d092938b2e7770ebc7fafe14988db5a3`.
+- HR interrupts: none. Next atom: `STRICT-07-FuzzyMatcher`.
+
 ### 2026-08-12T09:18:32Z · Agent: Codex GPT-5 · Batch: strict-03-github-binding-016
 - Paths touched: `src/main/kotlin/atropos/core/github/GitHubBinding.kt` (+128); `src/main/kotlin/atropos/core/agent/SelfHostPromotionModels.kt` (+5/-1); `src/main/kotlin/atropos/core/agent/SelfHostPromotionService.kt` (+25/-8); `src/test/kotlin/atropos/core/github/GitHubBindingTest.kt` (+102); `AGENTS.md` (+this row).
 - Atoms / phases affected: `STRICT-03-GitHubBinding`, territory-bound GitHub repository creation and push authorization.
