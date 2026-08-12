@@ -3,6 +3,7 @@
 import hashlib, json, re, subprocess
 from collections import defaultdict
 from datetime import datetime, timezone
+from functools import lru_cache
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -137,6 +138,59 @@ def rec(oid,rid,phase,checkpoint,title,doc,coord,paths,source_status="",require_
  reason="all required implementation, integration, and edge evidence predicates passed" if ok else ("audit did not accept evidence; source atom is marked missing/stub" if not sem else ("audit did not find an external integration reference" if kind == "integration" and owner_ok is False else ("audit did not find a test/evidence reference" if kind == "semantics" and owner_ok is False else "one or more required canonical owner paths absent")))
  return {"obligationId":oid,"requirementId":rid,"phase":phase,"checkpoint":checkpoint,"title":title,"predicateKind":kind,"sourceDocument":doc,"sourceCoordinate":coord,"sourceHash":SOURCE_HASHES.get(doc,"UNHASHED_SOURCE"),"canonicalOwner":paths[0] if paths else "UNASSIGNED","expectedPathsOrSymbols":paths,"status":"WRITTEN" if ok else "NOT_WRITTEN","auditFinding":"WRITTEN_EVIDENCED" if ok else "NOT_EVIDENCED_BY_AUDIT","evidenceMethod":"explicit-path-and-source-status" if kind == "implementation" else ("static-caller-reference" if kind == "integration" else "static-test-reference"),"historicalStatus":"WRITTEN" if historical_owner_ok and sem else "NOT_WRITTEN","statusReason":reason,"implementationEvidencePaths":f,"implementationEvidenceHashes":path_hashes(f),"implementationEvidenceSymbols":path_tokens(paths) if ok else [],"duplicateOf":None,"excludedReason":None,"lastAuditedHead":CURRENT_HEAD,"lastAuditedAt":NOW}
 SOURCE_HASHES={p:digest(ROOT/p) for p in AUTHORITIES if (ROOT/p).is_file()}
+STRICT_AUDIT_DOC="docs/completion/ATROPOS_STRICT_ABSENT_ATOM_AUDIT.md"
+STRICT_AUDIT_HASH=digest(ROOT/STRICT_AUDIT_DOC)
+AUDIT_SELF=Path("scripts/audit-code-completion.py")
+PRODUCTION_TEXT={p:t for p,t in SOURCE_TEXT.items() if p != AUDIT_SELF and "/test/" not in str(p) and "/tests/" not in str(p)}
+TEST_TEXT={p:t for p,t in SOURCE_TEXT.items() if p != AUDIT_SELF and ("/test/" in str(p) or "/tests/" in str(p))}
+
+# These are atomic owner obligations, not aliases for broad subsystem rows.
+# The operator audit is the evidence record; each item still needs a concrete
+# production symbol, a reachable caller, and an independent test/evidence path.
+STRICT_ATOMS=[
+ (19,"BoundedWorkExecutor"),(19,"BatchGate"),(19,"GitHubBinding"),
+ (19,"GraphClaimService"),(19,"GraphTransitionService"),(19,"IntentParser"),
+ (19,"FuzzyMatcher"),(19,"SuggestionEngine"),(19,"HelpRegistry"),
+ (19,"CommandHistoryStore"),(20,"AntiGamingAuditor"),
+ (20,"ReleaseGateEvaluator"),(20,"ReproducibilityGate"),(20,"ProposalGenerator"),
+ (8,"OutputValidator"),
+ (17,"StickyHeader"),(17,"AnimatedThinkingBuffer"),
+ (17,"PartialCommandEnterToSelect"),(17,"ProviderOneLineSummary"),
+ (17,"CopyDownloadResponse"),(17,"ResponsiveNativeGrammar"),
+ (17,"BaselineSnapshots"),(17,"TerritoryAsMaterial"),
+ (17,"AttestationOpticalFocus"),(17,"RecoveryTectonicRibbon"),
+ (17,"ModeRetheme"),(17,"EvidenceMorph"),
+ (18,"AndroidBridge"),(18,"AndroidEngineBridge"),(18,"LocalEngineBridge"),
+ (18,"SideloadApk"),(18,"ApkSigner"),(18,"ComposeAppShell"),
+ (18,"ChatListScreen"),(18,"ConversationScreen"),(18,"ComposerScreen"),
+ (18,"CheckpointChip"),(18,"ThinkingSheet"),(18,"OneHandDensity"),
+ (18,"SessionTabModel"),(18,"StreamingApprovalCards"),
+ (18,"DeveloperToolsContainer"),(18,"ViewTransitionEvidence"),
+ (18,"WebMergeArchitecture"),
+]
+def symbol_paths(name, corpus):
+ pattern=re.compile(rf"\b{re.escape(name)}\b")
+ return [str(path) for path,text in corpus.items() if pattern.search(text)]
+@lru_cache(maxsize=None)
+def historical_symbol_exists(name):
+ result=subprocess.run(["git","grep","-q","-w",name,HISTORICAL_HEAD,"--","*.kt","*.java","*.py","*.ts","*.tsx","*.js","*.jsx","*.sh",":(exclude)scripts/audit-code-completion.py"],cwd=ROOT,capture_output=True)
+ return result.returncode==0
+@lru_cache(maxsize=None)
+def strict_production_paths(name):
+ return tuple(symbol_paths(name,PRODUCTION_TEXT))
+@lru_cache(maxsize=None)
+def strict_test_paths(name):
+ return tuple(symbol_paths(name,TEST_TEXT))
+def strict_rec(ordinal, phase, name, kind):
+ production=list(strict_production_paths(name))
+ tests=list(strict_test_paths(name))
+ if kind=="implementation":
+  paths=production; ok=bool(production); method="strict-production-symbol"
+ elif kind=="integration":
+  paths=production; ok=len(production)>1; method="strict-reachable-production-symbol"
+ else:
+  paths=tests; ok=bool(tests); method="strict-independent-test-symbol"
+ return {"obligationId":f"STRICT-{ordinal:02d}-{name}-{kind}","requirementId":f"STRICT-{name}","phase":phase,"checkpoint":"C3","title":f"{name} canonical atomic owner: {kind}","predicateKind":kind,"sourceDocument":STRICT_AUDIT_DOC,"sourceCoordinate":f"strict absent-atom audit item {ordinal}","sourceHash":STRICT_AUDIT_HASH,"canonicalOwner":f"symbol:{name}","expectedPathsOrSymbols":[name],"status":"WRITTEN" if ok else "NOT_WRITTEN","auditFinding":"WRITTEN_EVIDENCED" if ok else "STRICT_OWNER_ABSENT","evidenceMethod":method,"historicalStatus":"WRITTEN" if historical_symbol_exists(name) else "NOT_WRITTEN","statusReason":"strict owner, reachability, and independent evidence predicates passed" if ok else f"required canonical symbol {name} is absent from the qualifying {kind} evidence corpus","implementationEvidencePaths":paths,"implementationEvidenceHashes":path_hashes([p for p in paths if (ROOT/p).is_file()]),"implementationEvidenceSymbols":[name] if ok else [],"duplicateOf":None,"excludedReason":None,"lastAuditedHead":CURRENT_HEAD,"lastAuditedAt":NOW}
 SPECIAL_ATOM_PATHS={
   "B002":{"implementation":["src/main/kotlin/atropos/core/parser/TreeSitterGrammarBridge.kt"],"integration":["src/main/kotlin/atropos/ast/AstSymbolGraph.kt"],"semantics":["src/test/kotlin/atropos/core/parser/TreeSitterGrammarBridgeTest.kt"]},
   "B003":{"implementation":["src/main/kotlin/atropos/ast/AstSymbolGraph.kt"],"integration":["src/main/kotlin/atropos/ast/AstSymbolGraph.kt"],"semantics":["src/test/kotlin/atropos/ast/AstSymbolGraphTest.kt"]},
@@ -227,6 +281,10 @@ SD4_UNIQUE=[
 for rid,title,phase,paths in SD4_UNIQUE:
  for kind,suffix in [("implementation","impl"),("integration","wire"),("semantics","edge")]:
   records.append(rec(f"{rid}-{suffix}",rid,phase,"C3",f"{title}: {kind}","docs/source/ATROPOS_Source_Doc_4.txt",f"acceptance item {rid[-3:]}",paths_for_kind(paths,kind),kind=kind))
+for ordinal,(phase,name) in enumerate(STRICT_ATOMS,1):
+ for kind in ("implementation","integration","semantics"):
+  records.append(strict_rec(ordinal,phase,name,kind))
+strict_records=[r for r in records if r["obligationId"].startswith("STRICT-")]
 def extracted_pdf_ids(path, pattern):
  text=subprocess.run(["pdftotext","-layout",str(ROOT/path),"-"],cwd=ROOT,text=True,capture_output=True,check=True).stdout
  out=[]
@@ -240,7 +298,7 @@ crosswalk={
  "docs/gap-maps/ATROPOS_Phase20_Architecture_Gap_Map_v2.pdf":{"atoms":extracted_pdf_ids("docs/gap-maps/ATROPOS_Phase20_Architecture_Gap_Map_v2.pdf",r"\b(?:20\.\d+|P20-[A-Z0-9-]+)\b"),"mappedTo":"Phase 20 Blueprint and SD1-3 obligations; no duplicate credit"},
 }
 OUT.mkdir(parents=True,exist_ok=True)
-registry={"schemaVersion":SCHEMA,"generatedAt":NOW,"currentHead":CURRENT_HEAD,"sourceInventory":[{"path":p,"sha256":h,"bytes":(ROOT/p).stat().st_size} for p,h in SOURCE_HASHES.items()],"authorityCrosswalk":crosswalk,"obligations":records}
+registry={"schemaVersion":SCHEMA,"generatedAt":NOW,"currentHead":CURRENT_HEAD,"sourceInventory":[{"path":p,"sha256":h,"bytes":(ROOT/p).stat().st_size} for p,h in SOURCE_HASHES.items()],"strictEvidenceInventory":[{"path":STRICT_AUDIT_DOC,"sha256":STRICT_AUDIT_HASH,"bytes":(ROOT/STRICT_AUDIT_DOC).stat().st_size}],"strictAbsentAtomCount":len(STRICT_ATOMS),"authorityCrosswalk":crosswalk,"obligations":records}
 regpath=OUT/"ATROPOS_CODE_OBLIGATION_REGISTRY.json"; regpath.write_text(json.dumps(registry,indent=2)+"\n")
 by=defaultdict(list)
 for r in records: by[r["phase"]].append(r)
@@ -253,16 +311,17 @@ for p in range(21):
  t,w,m=cnt(by[p]); ids=[r["obligationId"] for r in by[p] if r["status"]=="NOT_WRITTEN"]
  hw=sum(r["historicalStatus"]=="WRITTEN" for r in by[p])
  report.append(f"| {p} | {t} | {w} | {(w/t*100 if t else 0):.2f}% | {hw} | {(w-hw)/t*100 if t else 0:+.2f} | {m} | {', '.join(ids[:10])}{' ...' if len(ids)>10 else ''} |")
-report += ["","## Checkpoints and Horizons","","| Group | Phases | Total | Current written | Code % | Historical written | Delta pp |","|---|---|---:|---:|---:|---:|---:|"]
+strict_written=sum(r["status"]=="WRITTEN" for r in strict_records)
+report += ["","## Strict Canonical-Owner Audit","",f"Strict owner atoms audited: {len(STRICT_ATOMS)}",f"Strict owner predicates: {len(strict_records)}",f"Strict predicates WRITTEN: {strict_written}",f"Strict predicates NOT_WRITTEN: {len(strict_records)-strict_written}","", "Each strict atom requires a production owner symbol, a reachable production reference, and an independent test/evidence reference. Broad subsystem files do not receive silent credit for a named atomic owner.","", "Strict audit evidence: `docs/completion/ATROPOS_STRICT_ABSENT_ATOM_AUDIT.md`.","", "## Checkpoints and Horizons","","| Group | Phases | Total | Current written | Code % | Historical written | Delta pp |","|---|---|---:|---:|---:|---:|---:|"]
 for name,phases in [("Checkpoint 1",range(0,12)),("Checkpoint 2",range(12,17)),("Checkpoint 3",range(17,20)),("Checkpoint 4",range(20,21)),("Horizon I",range(0,11)),("Horizon II",range(11,17)),("Horizon III",range(17,19)),("Horizon IV",range(19,20)),("Horizon V",range(20,21))]:
  xs=[r for p in phases for r in by[p]]; t,w,_=cnt(xs); hw=sum(r["historicalStatus"]=="WRITTEN" for r in xs)
  report.append(f"| {name} | {', '.join(map(str,phases))} | {t} | {w} | {(w/t*100 if t else 0):.2f}% | {hw} | {(w-hw)/t*100 if t else 0:+.2f} |")
 report += ["","## Required Named Surfaces","","### Critical stubs and audit findings","","- ConstraintSolverEvaluator: the audit did not accept evidence for source atom D002 semantic obligations.","- TreeSitterGrammarBridge: the audit did not accept evidence for source atom B002 semantic obligations.","- DirectorOrchestrator and WorkerCodeSynthesizer: the audit did not accept evidence for source atoms J010/J011 semantic obligations; this is not a proof that no related implementation exists.","- Missing obligation IDs in the phase table are the authoritative follow-up list for this audit, not a filesystem deletion claim.","","### HOE","","HOE/UI obligations are represented by Source Doc 3 requirements 12-54 and 68-70, mapped to Phases 10, 17, and 18. Their binary counts are included in those phase rows; test and browser proof state is separate.","","### App Factory","","App Factory obligations are represented by Phase 19 blueprint additions and the relevant Source Doc 3 requirements. The report gives credit only where the exact required production owner paths exist; `NOT_WRITTEN` records audit non-acceptance, not proven absence.","","### Phase 20","","Phase 20 includes evaluation, restart, bounded learning, observability, safety, fallback, and crossover obligations. Installed self-host proof is operational evidence only and does not alter these code counts.","","### Implementation surface breakdown","","| Surface | Phase groups | Accounting treatment |","|---|---|---|","| Frontend/UI | 17-19 and SD3 UI requirements | Separate code obligations; browser/test proof excluded from code percentage |","| Backend/core | 0-16 | Canonical owner paths and audit evidence determine code status |","| Database/source authority | 6, 9, 19-20 | Migration and source-coordinate obligations are counted only when mapped to a canonical owner |","| Platform/runtime | 0, 11, 18, 20 | Toolchain, self-host, platform, and recovery code obligations; packaging/install proof is separate |"]
 report += ["","## Historical and Scope Note","","The former approximately 42% and 43.6% values mixed implementation, tests, compilation, packaging, installation, restart, deployment, Git cleanliness, and operator proofs. They remain immutable historical records in AGENTS.md and are superseded for future CODE-BASE COMPLETION reporting by this binary obligation method.","","This is a conservative static code-base audit. `NOT_WRITTEN` means the auditor did not accept qualifying evidence; it does not prove that the implementation is absent. The registry field `auditFinding=NOT_EVIDENCED_BY_AUDIT` identifies this distinction. Tests and operational evidence are separate. The nearest recoverable historical commit is not presented as the exact locked export."]
 (OUT/"ATROPOS_CODE_COMPLETION_REPORT.md").write_text("\n".join(report)+"\n")
-verification={"generatedAt":NOW,"currentHead":CURRENT_HEAD,"testsWritten":{"status":"ASSESSED","note":"Test obligations are present in the registry where the source requirement explicitly requires a test or acceptance harness"},"focusedTests":{"status":"FOCUSED_PASS","evidence":"Prior ledger evidence: SourceSecretScannerTest and VerifiedCompletionGateTest focused run passed; no focused tests were rerun in accounting pass"},"fullTests":{"status":"NOT_ASSESSED"},"compile":{"status":"LAST_KNOWN_PASS","evidence":"Prior ledger evidence; not rerun in accounting pass"},"jar":{"status":"LAST_KNOWN_PASS","hash":"91dd9af2a43f03c7b486f2a7feed485c25ed376be86691e118fad572c6b8315f","note":"not rebuilt in accounting pass"},"installedProof":{"status":"PASS","goal":"shg-7abcea5c-417","jarHash":"91dd9af2a43f03c7b486f2a7feed485c25ed376be86691e118fad572c6b8315f"},"restartProof":{"status":"PARTIAL","reason":"stale unfinished goal had no ready node; clean startup passed after explicit stop"},"deployment":{"status":"NOT_RUN"},"releaseStatus":"CODE_COMPLETE_UNVERIFIED"}
+verification={"generatedAt":NOW,"currentHead":CURRENT_HEAD,"testsWritten":{"status":"ASSESSED","note":"Test obligations are present in the registry where the source requirement explicitly requires a test or acceptance harness"},"focusedTests":{"status":"FOCUSED_PASS","evidence":"Prior ledger evidence: SourceSecretScannerTest and VerifiedCompletionGateTest focused run passed; no focused tests were rerun in accounting pass"},"fullTests":{"status":"NOT_ASSESSED"},"compile":{"status":"LAST_KNOWN_PASS","evidence":"Prior ledger evidence; not rerun in accounting pass"},"jar":{"status":"LAST_KNOWN_PASS","hash":"91dd9af2a43f03c7b486f2a7feed485c25ed376be86691e118fad572c6b8315f","note":"not rebuilt in accounting pass"},"installedProof":{"status":"PASS","goal":"shg-7abcea5c-417","jarHash":"91dd9af2a43f03c7b486f2a7feed485c25ed376be86691e118fad572c6b8315f"},"restartProof":{"status":"PARTIAL","reason":"stale unfinished goal had no ready node; clean startup passed after explicit stop"},"deployment":{"status":"NOT_RUN"},"releaseStatus":"CODE_INCOMPLETE" if missing else "CODE_COMPLETE_UNVERIFIED"}
 (OUT/"ATROPOS_VERIFICATION_STATUS.md").write_text("# ATROPOS Verification Status\n\nSeparate from code completion.\n\nJSON:\n"+json.dumps(verification,indent=2)+"\n")
-baseline={"schemaVersion":SCHEMA,"baselineHead":HISTORICAL_HEAD,"baselineWarning":"nearest recoverable commit, not exact locked export","currentHead":CURRENT_HEAD,"sourceInventory":registry["sourceInventory"],"registrySha256":digest(regpath),"totalObligations":total,"currentWritten":written,"currentCodeCompletion":round(written/total*100,4),"historicalWritten":historical_written,"historicalCodeCompletion":round(historical_written/total*100,4),"deltaPercentagePoints":round((written-historical_written)/total*100,4),"generatedAt":NOW}
+baseline={"schemaVersion":SCHEMA,"baselineHead":HISTORICAL_HEAD,"baselineWarning":"nearest recoverable commit, not exact locked export","currentHead":CURRENT_HEAD,"sourceInventory":registry["sourceInventory"],"strictEvidenceInventory":registry["strictEvidenceInventory"],"registrySha256":digest(regpath),"totalObligations":total,"currentWritten":written,"currentCodeCompletion":round(written/total*100,4),"historicalWritten":historical_written,"historicalCodeCompletion":round(historical_written/total*100,4),"deltaPercentagePoints":round((written-historical_written)/total*100,4),"generatedAt":NOW}
 baseline["perPhase"]={str(p):{"total":len(by[p]),"currentWritten":sum(r["status"]=="WRITTEN" for r in by[p]),"historicalWritten":sum(r["historicalStatus"]=="WRITTEN" for r in by[p])} for p in range(21)}
 (OUT/"ATROPOS_CODE_COMPLETION_BASELINE.json").write_text(json.dumps(baseline,indent=2)+"\n")
 spec="""# ATROPOS Code-Base Completion Accounting Specification
@@ -274,7 +333,7 @@ CODE COMPLETION answers only how much of the source-authoritative vision is impl
 The denominator is the frozen union of the Source Docs 1-3 atoms, Source Doc 4 acceptance obligations, and accepted Blueprint obligations. The Core, HOE, and Phase 20 gap maps are all hashed and crosswalked; because they restate or operationalize existing requirements, they do not create duplicate feature credit. Each counted obligation has a stable ID, exact source coordinate, source hash, one phase, one canonical owner, and binary status.
 
 ## Binary rule
-Each source atom is decomposed into independently scored `implementation`, `integration`, and `semantics` predicates. An implementation predicate requires explicit canonical source files and no missing/stub source status. An integration predicate requires a static caller/reference outside the owner set. A semantics predicate requires a static test/evidence reference. A predicate is WRITTEN only when its own evidence rule passes; one file cannot silently satisfy all three predicates. Empty or directory-only evidence is not implementation proof. Every accepted evidence path is SHA-256 recorded in the registry. Duplicate implementations do not add credit.
+Each source atom is decomposed into independently scored `implementation`, `integration`, and `semantics` predicates. An implementation predicate requires explicit canonical source files and no missing/stub source status. An integration predicate requires a static caller/reference outside the owner set. A semantics predicate requires a static test/evidence reference. Strict atomic-owner predicates additionally require the named production symbol, a reachable production reference, and an independent test/evidence reference. A predicate is WRITTEN only when its own evidence rule passes; one broad file cannot silently satisfy a separate named atomic owner. Empty or directory-only evidence is not implementation proof. Every accepted evidence path is SHA-256 recorded in the registry. Duplicate implementations do not add credit.
 
 ## Formula
 phase_code_completion = written_obligations / total_implementation_obligations * 100. The same obligation-count formula applies to checkpoints and the whole vision. Phase percentages are never averaged and have no subjective size weights.
@@ -286,5 +345,5 @@ ATROPOS_VERIFICATION_STATUS.md records tests, compile/build, JAR, installed, res
 Human Owner instruction, Source Documents 1-4, accepted amendments and blueprints, gap maps, phase maps, AGENTS control law, then code/tests as evidence. Source Documents 1-4 are immutable. Denominator amendments require accepted authority, duplicate correction, phase remapping, or equivalent finer-grained decomposition and are append-only.
 """
 (OUT/"ATROPOS_CODE_COMPLETION_ACCOUNTING_SPEC.md").write_text(spec)
-(OUT/"ATROPOS_CODE_COMPLETION_AMENDMENTS.md").write_text("# Code-Base Completion Accounting Amendments\n\n## "+NOW+"\n- Code-base accounting schema advanced to "+SCHEMA+".\n- Added Source Doc 4 and all three PDF gap-map hashes and byte counts to the source inventory.\n- Added only three unique Source Doc 4 acceptance obligations; Core, HOE, and Phase 20 map atoms are crosswalked to existing obligations without duplicate credit.\n- Exact locked 2026-07-29 export fingerprint unavailable; retain reconstruction warning.\n")
-print(json.dumps({"total":total,"written":written,"notWritten":missing,"codeCompletion":round(written/total*100,4),"registry":str(regpath)}))
+(OUT/"ATROPOS_CODE_COMPLETION_AMENDMENTS.md").write_text("# Code-Base Completion Accounting Amendments\n\n## "+NOW+"\n- Code-base accounting schema advanced to "+SCHEMA+".\n- Added Source Doc 4 and all three PDF gap-map hashes and byte counts to the source inventory.\n- Added only three unique Source Doc 4 acceptance obligations; Core, HOE, and Phase 20 map atoms are crosswalked to existing obligations without duplicate credit.\n- Added the strict absent-atom audit as a separate hashed evidence inventory and counted its 44 non-retired, non-test atomic-owner obligations without granting broad-owner credit.\n- Exact locked 2026-07-29 export fingerprint unavailable; retain reconstruction warning.\n")
+print(json.dumps({"total":total,"written":written,"notWritten":missing,"codeCompletion":round(written/total*100,4),"strictAtoms":len(STRICT_ATOMS),"strictPredicates":len(strict_records),"registry":str(regpath)}))
