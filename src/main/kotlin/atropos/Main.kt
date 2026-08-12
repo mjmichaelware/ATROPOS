@@ -171,7 +171,7 @@ private fun runInteractive(
                 }
             }
 
-            fun redraw() {
+            fun paintPrompt() {
                 val completion = completionForPrompt()
                 prompt.clampSuggestionSelection(
                     if (completion.options.isEmpty()) 0
@@ -203,19 +203,39 @@ private fun runInteractive(
                 )
             }
 
+            // The prompt is repainted on every keystroke, so a render failure
+            // used to end the session: the exception unwound past the input
+            // loop into main's catch, whose finally runs cleanup and lets the
+            // process exit. Pasting a long line is what exposed it, because
+            // buffer-width and completion arithmetic only get interesting once
+            // the line is larger than the canvas. A repaint that cannot draw is
+            // a cosmetic failure, never a reason to drop the operator back to
+            // the shell. Error is rethrown: OutOfMemory and StackOverflow mean
+            // the runtime is no longer trustworthy and must not be swallowed.
+            fun redraw() {
+                try {
+                    paintPrompt()
+                } catch (failure: Exception) {
+                    ui.renderError("prompt redraw failed (${failure.javaClass.simpleName})")
+                }
+            }
+
             redraw()
 
             inputLoop@ while (true) {
                 val key = keys.readKey() ?: break
+
+                // Only two things may end this session: end of input, and an
+                // explicit exit. Everything else that can go wrong while
+                // handling a keystroke — completion, prompt state, rendering,
+                // command dispatch — is reported and the loop continues. Before
+                // this, any one of them unwound into main's catch and the
+                // process exited, which reads to an operator as the tool
+                // quitting on its own.
+                try {
                 if (key == KeyEvent.Enter && !prompt.isPaletteGroupLevel()) {
                     resolvePromptSubmission()
                 }
-
-                if (key == KeyEvent.Enter) {
-                    resolvePromptSubmission()
-                }
-
-                val submitted = prompt.text
 
                 when (key) {
                     KeyEvent.CtrlT -> {
@@ -276,6 +296,13 @@ private fun runInteractive(
                     }
 
                     else -> redraw()
+                }
+                } catch (failure: Exception) {
+                    ui.renderError(
+                        "input handling failed (${failure.javaClass.simpleName}): " +
+                            (failure.message ?: "unknown failure")
+                    )
+                    redraw()
                 }
             }
         }
