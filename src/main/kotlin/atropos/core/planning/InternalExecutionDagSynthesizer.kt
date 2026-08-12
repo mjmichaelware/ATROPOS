@@ -8,7 +8,13 @@ import java.nio.file.Path
 import java.time.Instant
 
 class InternalExecutionDagSynthesizer(
-    private val readinessCalculator: InternalReadinessCalculator = InternalReadinessCalculator()
+    private val readinessCalculator: InternalReadinessCalculator = InternalReadinessCalculator(),
+    /**
+     * Context retrieved for each atom, attached to the node that will execute
+     * it. Defaults to [AtomContextProvider.NONE] so a repository with no
+     * lakehouse mounted plans exactly as before.
+     */
+    private val atomContext: AtomContextProvider = AtomContextProvider.NONE
 ) {
     fun synthesize(projectId: String, label: String, authorityGraph: AuthorityGraph, repoRoot: Path): DagDefinition {
         val now = Instant.now()
@@ -27,7 +33,9 @@ class InternalExecutionDagSynthesizer(
                 dependencies = atom.dependencies.filter { dependency -> authorityGraph.atoms.any { it.id == dependency } },
                 territory = atom.territory,
                 action = actionFor(atom.dimension),
-                actionPayload = listOf(atom.statement, lineage).filter { it.isNotBlank() }.joinToString("\n"),
+                actionPayload = listOf(atom.statement, lineage, contextBlock(atom))
+                    .filter { it.isNotBlank() }
+                    .joinToString("\n"),
                 state = DagNodeState.PENDING,
                 createdAt = now,
                 updatedAt = now,
@@ -44,6 +52,33 @@ class InternalExecutionDagSynthesizer(
             updatedAt = now,
             metaFile = repoRoot.resolve(".atropos/dag/execution/definitions/pending.meta")
         )
+    }
+
+    /**
+     * The atom's retrieved context, as payload text.
+     *
+     * Attached to the node rather than resolved at execution time, so the plan
+     * is a complete statement of what each step was given. Resolving during
+     * execution would let two runs of the same plan see different context and
+     * still call themselves the same plan.
+     *
+     * Misses are included. An atom that asked the lakehouse and got nothing
+     * should say so on the node, because a generated result that looks
+     * uninformed otherwise leaves nobody able to tell whether the shelf was
+     * empty or never consulted.
+     */
+    private fun contextBlock(atom: InternalAtom): String {
+        val contexts = runCatching { atomContext.contextFor(atom) }.getOrDefault(emptyList())
+        if (contexts.isEmpty()) return ""
+        return buildString {
+            appendLine("lakehouse_context_count=${contexts.count { it.hit }}")
+            contexts.forEach { context ->
+                appendLine(context.provenance())
+                if (context.hit && context.content.isNotBlank()) {
+                    appendLine(context.content)
+                }
+            }
+        }.trimEnd()
     }
 
     /**
