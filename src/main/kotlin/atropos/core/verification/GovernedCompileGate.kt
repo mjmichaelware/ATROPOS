@@ -3,6 +3,7 @@ package atropos.core.verification
 
 import atropos.core.policy.ActionActor
 import atropos.core.policy.BoundedAgencyGate
+import atropos.core.policy.BoundedProcessRunner
 import atropos.core.policy.ExecutionPolicyEngine
 import atropos.core.policy.TypedToolExecutor
 import atropos.core.policy.VerificationActionProposals
@@ -13,7 +14,7 @@ import java.nio.file.Path
  * The compile gate for mutated Kotlin sources, run under execution policy.
  *
  * This is the single owner of "did the tree we just mutated still compile?".
- * It exists because a raw `ProcessBuilder("./gradlew", "compileKotlin")` inside
+ * It exists because a raw JVM process launcher for `./gradlew compileKotlin` inside
  * a verification check is an ungoverned tool call: nothing proposes it, nothing
  * can refuse it, and nothing records that it ran. Every caller — the completion
  * gate and the self-host run chain alike — goes through here so the compile is
@@ -104,11 +105,17 @@ private fun runGovernedCompileProcess(
     command: List<String>,
     repoRoot: Path
 ): GovernedCompileGate.CompileRun {
-    val process = ProcessBuilder(command)
-        .directory(repoRoot.toFile())
-        .redirectErrorStream(true)
-        .start()
-    val output = process.inputStream.bufferedReader().readText()
-    val exit = process.waitFor()
-    return GovernedCompileGate.CompileRun(exit, output)
+    val result = BoundedProcessRunner().run(
+        command = command,
+        directory = repoRoot,
+        timeoutMillis = 1_800_000L,
+        maxOutputBytes = 256 * 1024,
+        maxOutputLines = 4_000
+    )
+    val output = buildString {
+        result.launchError?.let(::appendLine)
+        append(result.stdout)
+        append(result.stderr)
+    }
+    return GovernedCompileGate.CompileRun(result.exitCode ?: 127, output)
 }
