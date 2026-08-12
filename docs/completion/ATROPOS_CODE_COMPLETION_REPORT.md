@@ -1,19 +1,19 @@
 # ATROPOS Code-Base Completion Report
 
-Generated: 2026-08-12T11:15:56Z
-Current Git HEAD: 6e2281b3005e9f205f906b81f859b65e6ef9b3d1
+Generated: 2026-08-12T12:18:41Z
+Current Git HEAD: 9449c55377855ad56481f48cc4b69827f482fe49
 Historical reconstruction HEAD: 7e612fcdba571b276a4ae65704835eb762030682 (nearest recoverable commit; exact locked export unavailable)
 
 ## Code-Base Obligation Set
 
 Total binary obligations: 741
-Current WRITTEN: 716
-Current NOT_WRITTEN: 25
-Current CODE-BASE COMPLETION: 96.63% (716/741)
+Current WRITTEN: 741
+Current NOT_WRITTEN: 0
+Current CODE-BASE COMPLETION: 100.00% (741/741)
 Historical WRITTEN: 517
 Historical NOT_WRITTEN: 224
 Historical CODE-BASE COMPLETION: 69.77% (517/741)
-Code-base delta: +26.86 percentage points
+Code-base delta: +30.23 percentage points
 
 The denominator is binary implementation obligations directly juxtaposed with the current codebase. SHA-256 values prove authority identity; document bytes are provenance telemetry, not completion weights. Gap-map atoms are crosswalked to existing requirements and receive no duplicate credit.
 
@@ -45,7 +45,7 @@ Core, HOE, and Phase 20 PDF atoms are registered in `authorityCrosswalk` and map
 | 15 | 3 | 3 | 100.00% | 3 | +0.00 | 0 |  |
 | 16 | 3 | 3 | 100.00% | 0 | +100.00 | 0 |  |
 | 17 | 90 | 90 | 100.00% | 29 | +67.78 | 0 |  |
-| 18 | 93 | 68 | 73.12% | 39 | +31.18 | 25 | STRICT-28-AndroidBridge-implementation, STRICT-28-AndroidBridge-integration, STRICT-28-AndroidBridge-semantics, STRICT-29-AndroidEngineBridge-implementation, STRICT-29-AndroidEngineBridge-integration, STRICT-29-AndroidEngineBridge-semantics, STRICT-30-LocalEngineBridge-implementation, STRICT-30-LocalEngineBridge-integration, STRICT-30-LocalEngineBridge-semantics, STRICT-31-SideloadApk-implementation ... |
+| 18 | 93 | 93 | 100.00% | 39 | +58.06 | 0 |  |
 | 19 | 66 | 66 | 100.00% | 18 | +72.73 | 0 |  |
 | 20 | 78 | 78 | 100.00% | 54 | +30.77 | 0 |  |
 
@@ -53,8 +53,8 @@ Core, HOE, and Phase 20 PDF atoms are registered in `authorityCrosswalk` and map
 
 Strict owner atoms audited: 44
 Strict owner predicates: 132
-Strict predicates WRITTEN: 107
-Strict predicates NOT_WRITTEN: 25
+Strict predicates WRITTEN: 132
+Strict predicates NOT_WRITTEN: 0
 
 Each strict atom requires a production owner symbol, a reachable production reference, and an independent test/evidence reference. Broad subsystem files do not receive silent credit for a named atomic owner.
 
@@ -66,11 +66,11 @@ Strict audit evidence: `docs/completion/ATROPOS_STRICT_ABSENT_ATOM_AUDIT.md`.
 |---|---|---:|---:|---:|---:|---:|
 | Checkpoint 1 | 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 | 399 | 399 | 100.00% | 368 | +7.77 |
 | Checkpoint 2 | 12, 13, 14, 15, 16 | 15 | 15 | 100.00% | 9 | +40.00 |
-| Checkpoint 3 | 17, 18, 19 | 249 | 224 | 89.96% | 86 | +55.42 |
+| Checkpoint 3 | 17, 18, 19 | 249 | 249 | 100.00% | 86 | +65.46 |
 | Checkpoint 4 | 20 | 78 | 78 | 100.00% | 54 | +30.77 |
 | Horizon I | 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 | 363 | 363 | 100.00% | 337 | +7.16 |
 | Horizon II | 11, 12, 13, 14, 15, 16 | 51 | 51 | 100.00% | 40 | +21.57 |
-| Horizon III | 17, 18 | 183 | 158 | 86.34% | 68 | +49.18 |
+| Horizon III | 17, 18 | 183 | 183 | 100.00% | 68 | +62.84 |
 | Horizon IV | 19 | 66 | 66 | 100.00% | 18 | +72.73 |
 | Horizon V | 20 | 78 | 78 | 100.00% | 54 | +30.77 |
 

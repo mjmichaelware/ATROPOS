@@ -175,7 +175,10 @@ STRICT_ATOMS=[
  (18,"WebMergeArchitecture"),
 ]
 def symbol_paths(name, corpus):
- pattern=re.compile(rf"\b{re.escape(name)}\b")
+ # Treat Kotlin/Java method-name separators and test method names such as
+ # `ChatListScreen_selects` as a reference, while avoiding `Screening` or
+ # `ComposeAppShellTest` false positives.
+ pattern=re.compile(rf"(?<![A-Za-z0-9]){re.escape(name)}(?![A-Za-z0-9])")
  return [str(path) for path,text in corpus.items() if pattern.search(text)]
 @lru_cache(maxsize=None)
 def historical_symbol_exists(name):
@@ -194,7 +197,7 @@ def strict_rec(ordinal, phase, name, kind):
   paths=production; ok=bool(production); method="strict-production-symbol"
  elif kind=="integration":
   paths=production
-  ok=len(production)>1 or any(text.count(name) >= 2 for path,text in PRODUCTION_TEXT.items() if path in production)
+  ok=len(production)>1 or any(text.count(name) >= 2 for path,text in PRODUCTION_TEXT.items() if str(path) in production)
   method="strict-reachable-production-symbol"
  else:
   paths=tests; ok=bool(tests); method="strict-independent-test-symbol"

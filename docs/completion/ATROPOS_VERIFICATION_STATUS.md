@@ -4,8 +4,8 @@ Separate from code completion.
 
 JSON:
 {
-  "generatedAt": "2026-08-12T11:15:56Z",
-  "currentHead": "6e2281b3005e9f205f906b81f859b65e6ef9b3d1",
+  "generatedAt": "2026-08-12T12:18:41Z",
+  "currentHead": "9449c55377855ad56481f48cc4b69827f482fe49",
   "testsWritten": {
     "status": "ASSESSED",
     "note": "Test obligations are present in the registry where the source requirement explicitly requires a test or acceptance harness"
@@ -38,5 +38,5 @@ JSON:
   "deployment": {
     "status": "NOT_RUN"
   },
-  "releaseStatus": "CODE_INCOMPLETE"
+  "releaseStatus": "CODE_COMPLETE_UNVERIFIED"
 }
