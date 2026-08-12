@@ -27,7 +27,7 @@ object AtomKeywordExtractor {
         val tokens = statement.lowercase()
             .split(NON_WORD)
             .map { it.trim() }
-            .filter { it.length >= MIN_TOKEN_LENGTH && it !in STOP_WORDS }
+            .filter { (it.length >= MIN_TOKEN_LENGTH || it in SHORT_TERMS) && it !in STOP_WORDS }
 
         val expanded = tokens.flatMap { token -> listOf(token) + ALIASES.getOrDefault(token, emptyList()) }
 
@@ -40,6 +40,19 @@ object AtomKeywordExtractor {
     private val NON_WORD = Regex("[^a-z0-9_]+")
 
     private const val MIN_TOKEN_LENGTH = 3
+
+    /**
+     * Short tokens that are real subjects rather than noise.
+     *
+     * The length floor exists to drop articles and fragments, but the registry
+     * shelves `C/languages/c/syntax` and `C/languages/go/...`, so a blanket
+     * floor made the shortest-named languages unreachable by the very atoms
+     * that concern them. Named explicitly rather than lowering the floor,
+     * because lowering it readmits every two-letter fragment in the prose.
+     */
+    val SHORT_TERMS: Set<String> = setOf(
+        "c", "go", "js", "ts", "db", "io", "os", "ui", "ux", "ml", "ai", "cli", "api"
+    )
     private const val MAX_KEYWORDS = 24
 
     /**

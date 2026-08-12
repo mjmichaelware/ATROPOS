@@ -14,9 +14,11 @@ import java.io.File
  *
  * Matching is against path *segments*: `E/networking/http` contributes
  * `networking` and `http`, and an atom mentioning either scores. The leading
- * single-letter domain (`E`, `I`, `C`, `M`) is dropped — it is a shelf marker,
- * not a word an atom would ever contain, and keeping it would let a stray `e`
- * token match a quarter of the registry.
+ * domain letter is dropped by position — it is a shelf marker, and keeping it
+ * would let a stray `e` token match a quarter of the registry. By position and
+ * not by length: `C/languages/c/syntax` names the C language in a
+ * single-character segment, and a length filter would remove exactly the token
+ * that identifies it.
  *
  * The registry is read once and cached. It is a few hundred lines and every
  * atom in a plan queries it; re-reading per atom would turn one plan into
@@ -77,12 +79,21 @@ class LakehousePathIndex(
         return total
     }
 
+    /**
+     * The matchable segments of a path.
+     *
+     * Only the *first* segment is dropped, and only because that position is
+     * the domain shelf marker — `A`, `B`, `C`, `E`. Filtering by length
+     * instead looks equivalent and is not: `C/languages/c/syntax` names the C
+     * language in its third segment, and a length filter silently removed the
+     * one token that identified it. Dropping by position removes the shelf
+     * marker and nothing else.
+     */
     private fun segmentsOf(path: String): List<String> =
         path.split('/')
             .map { it.trim().lowercase() }
             .filter { it.isNotEmpty() }
-            // Drop the single-letter domain shelf marker.
-            .filter { it.length > 1 }
+            .drop(1)
 
     private fun readRegistry(): List<String> = runCatching {
         val file = File(File(config.lakehouse.mountPath), REGISTRY_RELATIVE)

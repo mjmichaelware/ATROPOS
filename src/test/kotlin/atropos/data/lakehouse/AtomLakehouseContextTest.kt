@@ -97,12 +97,37 @@ class AtomLakehouseContextTest {
     }
 
     @Test
+    fun `a single-character language segment is still reachable`() {
+        // C/languages/c/syntax is real in the registry. Dropping short
+        // segments to suppress the shelf marker also removed the one token
+        // naming the C language, so no atom about C could reach its own shelf.
+        val index = indexOver("C/languages/c/syntax", "C/languages/cpp/syntax", "E/networking/http")
+
+        // No aliased word here: "header" would resolve to http and tie.
+        val matches = index.match(AtomKeywordExtractor.keywords("The C compiler rejects an invalid struct."))
+
+        assertEquals("C/languages/c/syntax", matches.first().path)
+    }
+
+    @Test
+    fun `short technology names survive the keyword length floor`() {
+        assertTrue(AtomKeywordExtractor.keywords("The C compiler rejects it").contains("c"))
+        assertTrue(AtomKeywordExtractor.keywords("Written in Go for speed").contains("go"))
+        assertFalse(
+            AtomKeywordExtractor.keywords("It is an ad hoc fix").contains("ad"),
+            "the floor still drops ordinary two-letter fragments"
+        )
+    }
+
+    @Test
     fun `the domain shelf letter never matches on its own`() {
-        val matches = indexOver(*registry).match(listOf("e", "i", "c", "m"))
+        // No registry path here has a matchable `e` or `m` segment, so a hit
+        // could only come from the shelf marker itself.
+        val matches = indexOver("E/networking/http", "M/devtools/git").match(listOf("e", "m"))
 
         assertTrue(
             matches.isEmpty(),
-            "a single-letter shelf marker matching would pull in a quarter of the registry"
+            "a shelf marker matching would pull in a quarter of the registry"
         )
     }
 
