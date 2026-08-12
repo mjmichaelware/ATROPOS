@@ -4,9 +4,10 @@ import atropos.core.verification.*
 import atropos.core.verifier.ProbabilisticImmunityEngine
 import java.nio.file.Files
 import java.nio.file.Path
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotNull
-import org.junit.jupiter.api.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import atropos.core.verification.VerificationScope
+import kotlin.test.Test
 
 class SelfImprovingCompilationLoopTest {
 
@@ -32,10 +33,13 @@ class SelfImprovingCompilationLoopTest {
                 rewardRecorder = recorder
             )
 
+            // VerificationScope.NARROW, not a GoalScope: the latter does not
+            // exist. timeoutMillis is required and has no default.
             val request = VerificationRequest(
-                scope = GoalScope.COMPILATION,
+                scope = VerificationScope.NARROW,
                 command = listOf("echo", "success"),
-                workspace = tempDir
+                workspace = tempDir,
+                timeoutMillis = 30_000
             )
 
             val result = loop.executeVerification(request)

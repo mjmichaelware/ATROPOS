@@ -18,6 +18,7 @@ import atropos.core.AtroposConfig
 import atropos.core.agent.SelfHostStartupContinuationService
 import atropos.core.agent.AgentDaemonService
 import atropos.core.recovery.RuntimeContinuitySupervisor
+import atropos.core.recovery.StartupContinuationDecider
 import atropos.core.recovery.ContinuityOutcome
 import atropos.core.security.SecretEnrollment
 import atropos.core.security.EnvironmentSecretSource
@@ -46,21 +47,32 @@ fun main(args: Array<String>) {
     try {
         val config = AtroposConfig.load()
 
-        // Long-horizon continuity: durable state left behind by a previous
-        // process is repaired before the runtime serves anything. This used to
-        // require an operator to type `/agent recover`, which meant stale
-        // leases and interrupted runs survived indefinitely if nobody thought
-        // to ask.
+        // Repair is automatic; resuming is not.
+        //
+        // Durable state left by a previous process is still repaired before the
+        // runtime serves anything — a stale lease or an unmarked crashed run is
+        // worse left alone. But continuing that work used to happen here too,
+        // which meant opening ATROPOS could find it already acting on something
+        // from a previous session that nobody asked for now. Startup reports
+        // what is resumable and stops; `/agent self-host recover` resumes it.
+        // ATROPOS_AUTO_CONTINUE=1 restores the old behaviour for unattended
+        // runners, where no one is present to type the command.
         val continuity = RuntimeContinuitySupervisor()
         val continuityOutcome = continuity.ensureRecovered()
         continuity.startupNotice(continuityOutcome)?.let(ui::renderNotice)
-        SelfHostStartupContinuationService()
-            .continueOnce(continuityOutcome.safeForSelfHostContinuation)
-            .takeIf { it.attempted }
-            ?.let { result ->
-                if (result.ok) ui.renderNotice(result.message ?: "self-host continuation completed")
-                else ui.renderError(result.message ?: "self-host continuation stopped")
-            }
+
+        val continuation = StartupContinuationDecider()
+            .decide(continuityOutcome.safeForSelfHostContinuation)
+        continuation.message?.let(ui::renderNotice)
+        if (continuation.continued) {
+            SelfHostStartupContinuationService()
+                .continueOnce(true)
+                .takeIf { it.attempted }
+                ?.let { result ->
+                    if (result.ok) ui.renderNotice(result.message ?: "self-host continuation completed")
+                    else ui.renderError(result.message ?: "self-host continuation stopped")
+                }
+        }
 
         val router = CommandRouter(
             config = config,

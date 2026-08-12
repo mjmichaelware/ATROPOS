@@ -1,9 +1,9 @@
 package atropos.core.autonomy
 
 import java.nio.file.Files
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
+import kotlin.test.Test
 
 class RewardPenaltyStoreTest {
 

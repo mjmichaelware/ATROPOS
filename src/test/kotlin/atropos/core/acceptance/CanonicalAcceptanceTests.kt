@@ -5,10 +5,10 @@ import atropos.core.memory.LocalMemoryStore
 import atropos.core.territory.TerritoryService
 import atropos.core.territory.TerritoryStore
 import java.nio.file.Files
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.Assertions.assertNotNull
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Assertions.assertFalse
+import kotlin.test.Test
+import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
+import kotlin.test.assertFalse
 
 /**
  * Implements SD3-071: Canonical acceptance tests.
