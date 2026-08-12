@@ -33,7 +33,38 @@ enum class GitWorktreeOperation {
 data class GitWorktreeCommandResult(
     val exitCode: Int,
     val output: String
-)
+) {
+    val ok: Boolean get() = exitCode == 0
+
+    /**
+     * Why this git command failed, in git's own words.
+     *
+     * Every operator-facing failure in the worktree path used to be a fixed
+     * string — "merge apply failed", "could not inspect worktree diff" — with
+     * git's actual output discarded. That is the difference between a stall an
+     * operator can clear in one command and one that looks like the engine is
+     * broken: git already says which file, which hunk, and whether the tree was
+     * dirty, and none of it reached the screen.
+     *
+     * The first non-empty line is the useful one; git puts the cause there and
+     * follows it with context. The exit code is carried too, because a command
+     * that fails with no output at all is itself a distinct symptom.
+     *
+     * @param subject what was being attempted, in the operator's terms.
+     * @param redact applied to the output. Git error text quotes file contents,
+     *   and file contents are eventually a credential.
+     */
+    fun failureReason(subject: String, redact: (String) -> String = { it }): String {
+        val firstLine = output.lineSequence()
+            .map { it.trim() }
+            .firstOrNull { it.isNotEmpty() }
+        return if (firstLine == null) {
+            "$subject failed (exit=$exitCode) with no output"
+        } else {
+            "$subject failed (exit=$exitCode): ${redact(firstLine).take(300)}"
+        }
+    }
+}
 
 class BoundedGitWorktreeCommandRunner(
     private val processRunner: (List<String>, Path, String?) -> GitWorktreeCommandResult = ::runProcess

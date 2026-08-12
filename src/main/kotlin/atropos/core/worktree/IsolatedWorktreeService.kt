@@ -53,7 +53,7 @@ class IsolatedWorktreeService(
             if (worktreeOutput.exitCode != 0 || !Files.exists(wtDir.resolve(".git"))) {
                 return WorktreeCreateResult(
                     false,
-                    "failed to create worktree: ${redactionFilter.compact(worktreeOutput.output)}"
+                    worktreeOutput.failureReason("creating the worktree", redactionFilter::compact)
                 )
             }
 
@@ -181,7 +181,7 @@ class IsolatedWorktreeService(
         return if (result.exitCode == 0) {
             WorktreeRollbackResult(true, "intent-to-add staged: $path")
         } else {
-            WorktreeRollbackResult(false, "intent-to-add failed: ${redactionFilter.compact(result.output)}")
+            WorktreeRollbackResult(false, result.failureReason("intent-to-add", redactionFilter::compact))
         }
     }
 
@@ -231,7 +231,10 @@ class IsolatedWorktreeService(
             // Verify
             val verifyResult = gitRunner.run(GitWorktreeOperation.DIFF_CHECK, record.worktreePath)
             if (verifyResult.exitCode != 0) {
-                return WorktreeRollbackResult(false, "verification failed: ${verifyResult.output.take(200)}")
+                return WorktreeRollbackResult(
+                    false,
+                    verifyResult.failureReason("git diff --check", redactionFilter::compact)
+                )
             }
 
             // Merge back using git diff and apply to main repo
@@ -242,7 +245,10 @@ class IsolatedWorktreeService(
             )
             val diff = diffResult.output
             if (diffResult.exitCode != 0) {
-                return WorktreeRollbackResult(false, "could not inspect worktree diff")
+                return WorktreeRollbackResult(
+                    false,
+                    diffResult.failureReason("reading the worktree diff", redactionFilter::compact)
+                )
             }
 
             if (diff.isBlank()) {
@@ -257,7 +263,24 @@ class IsolatedWorktreeService(
             }
             val applyResult = gitRunner.run(GitWorktreeOperation.APPLY_PATCH, repoRoot, input = diff)
             if (applyResult.exitCode != 0) {
-                return WorktreeRollbackResult(false, "merge apply failed")
+                // git says exactly why an apply failed -- the file, the hunk,
+                // whether the tree was already dirty. Discarding that left the
+                // operator with "merge apply failed" and no way forward, which
+                // is where a self-host run silently stalls: the node fails, the
+                // compile gate never runs, and the verdict reports an unmet
+                // predicate without the cause.
+                val reason = applyResult.output.lineSequence()
+                    .map { it.trim() }
+                    .firstOrNull { it.isNotEmpty() }
+                    ?: "git apply exited ${applyResult.exitCode} with no output"
+
+                val remedy = if (changed.any { path -> workingTreeAlreadyModified(path) }) {
+                    " — ${changed.size} target path(s) are already modified in the working tree; " +
+                        "revert or commit them, then re-run"
+                } else {
+                    ""
+                }
+                return WorktreeRollbackResult(false, "merge apply failed: $reason$remedy")
             }
 
             val updated = record.copy(verified = true, mergedBack = true, updatedAt = clock())
@@ -284,6 +307,24 @@ class IsolatedWorktreeService(
     fun listWorktrees(): List<WorktreeRecord> = recordStore.list()
 
     fun readWorktree(worktreeId: String): WorktreeRecord? = recordStore.read(worktreeId)
+
+    /**
+     * Whether the real tree already carries changes to this path.
+     *
+     * The commonest cause of a failed apply, and the one an operator cannot
+     * guess: a previous run left the target files modified, so the next run's
+     * diff no longer applies cleanly and every run after that fails the same
+     * way. Naming it turns a permanent stall into one `git checkout`.
+     */
+    private fun workingTreeAlreadyModified(path: String): Boolean {
+        val status = runCatching {
+            gitRunner.run(GitWorktreeOperation.STATUS_PORCELAIN, repoRoot)
+        }.getOrNull() ?: return false
+        if (status.exitCode != 0) return false
+        return status.output.lineSequence().any { line ->
+            line.length > 3 && line.substring(3).trim().endsWith(path.substringAfterLast('/'))
+        }
+    }
 
     private fun firstOutsideTerritory(record: WorktreeRecord, paths: List<String>): String? {
         return atropos.core.territory.TerritoryEnforcer(record.territory).firstOutside(paths)
