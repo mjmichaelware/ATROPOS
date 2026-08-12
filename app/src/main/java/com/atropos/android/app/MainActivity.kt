@@ -19,6 +19,7 @@ import com.atropos.android.app.bridge.ConversationRepository
 import com.atropos.android.app.bridge.SendOutcome
 import com.atropos.android.app.ui.ConversationScreen
 import com.atropos.android.app.ui.ChatListEntry
+import com.atropos.android.app.ui.SessionTabModel
 import com.atropos.android.app.bridge.MobileCheckpoint
 import com.atropos.android.app.bridge.MobileThinking
 import com.atropos.android.app.ui.MobileMessage
@@ -53,6 +54,7 @@ private fun AtroposConversation(repository: ConversationRepository) {
     val messages: SnapshotStateList<MobileMessage> = remember { mutableListOf<MobileMessage>().toMutableStateList() }
     var isOnline by remember { mutableStateOf(false) }
     var sessions by remember { mutableStateOf<List<ChatListEntry>>(emptyList()) }
+    var sessionTabs by remember { mutableStateOf(SessionTabModel()) }
     var checkpoint by remember { mutableStateOf<MobileCheckpoint?>(null) }
     var thinking by remember { mutableStateOf<MobileThinking?>(null) }
     val oneHandDensity = remember { com.atropos.android.app.ui.OneHandDensity() }
@@ -73,6 +75,7 @@ private fun AtroposConversation(repository: ConversationRepository) {
                     messages.clear()
                     messages.addAll(transcript)
                     sessions = withContext(Dispatchers.IO) { repository.sessions() }
+                    sessionTabs = sessionTabs.replace(sessions)
                     checkpoint = withContext(Dispatchers.IO) { repository.checkpoint() }
                     thinking = checkpoint?.nodeId?.let { nodeId ->
                         withContext(Dispatchers.IO) { repository.thinking(nodeId) }
@@ -102,7 +105,8 @@ private fun AtroposConversation(repository: ConversationRepository) {
                 }
             }
         },
-        sessions = sessions,
+        sessions = sessionTabs.tabs,
+        onSessionSelected = { id -> sessionTabs = sessionTabs.select(id) },
         checkpoint = checkpoint,
         thinking = thinking,
         onThinkingDepthRequested = { depth ->
