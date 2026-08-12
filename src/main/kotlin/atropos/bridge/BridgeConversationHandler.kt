@@ -25,7 +25,13 @@ import atropos.core.security.RedactionFilter
 internal class BridgeConversationHandler(
     private val store: BridgeConversationStore,
     private val responder: BridgeConversationResponder,
-    private val redactionFilter: RedactionFilter = RedactionFilter()
+    private val redactionFilter: RedactionFilter = RedactionFilter(),
+    /**
+     * Conversations, when this build has them. A request naming `?session=`
+     * is routed to that conversation; one that does not keeps using the single
+     * store, so a client written before sessions existed still works.
+     */
+    private val sessions: atropos.bridge.conversation.BridgeSessionStore? = null
 ) {
     fun postMessage(request: HttpRequest): HttpResponse {
         val text = request.query["text"].orEmpty().ifBlank { field(request.body, "text") }.trim()
@@ -42,13 +48,23 @@ internal class BridgeConversationHandler(
             )
         }
 
-        val operatorTurn = store.append(TurnAuthor.OPERATOR, redactionFilter.redact(text))
+        val session = request.query["session"].orEmpty()
+        if (session.isNotBlank() && sessions?.exists(session) == false) {
+            return HttpResponse.refusal(
+                404,
+                "session-unknown",
+                "No conversation matches '$session'.",
+                "List conversations with GET /v1/sessions, or start one with POST /v1/sessions."
+            )
+        }
+
+        val operatorTurn = append(session, TurnAuthor.OPERATOR, redactionFilter.redact(text))
 
         // A responder that throws would lose the operator's turn with no reply
         // and no error, so failure is recorded as a turn like any other.
         val replyText = runCatching { responder.reply(text) }
             .getOrElse { failure -> "The engine could not answer (${failure.javaClass.simpleName})." }
-        val engineTurn = store.append(TurnAuthor.ENGINE, redactionFilter.redact(replyText))
+        val engineTurn = append(session, TurnAuthor.ENGINE, redactionFilter.redact(replyText))
 
         return HttpResponse.json(
             JsonWriter.obj(
@@ -60,7 +76,18 @@ internal class BridgeConversationHandler(
     }
 
     fun getMessages(request: HttpRequest): HttpResponse {
-        val turns = store.since(request.query["after"])
+        val session = request.query["session"].orEmpty()
+        val turns = if (session.isNotBlank() && sessions != null) {
+            sessions.since(session, request.query["after"])
+                ?: return HttpResponse.refusal(
+                    404,
+                    "session-unknown",
+                    "No conversation matches '$session'.",
+                    "List conversations with GET /v1/sessions."
+                )
+        } else {
+            store.since(request.query["after"])
+        }
         return HttpResponse.json(
             JsonWriter.obj(
                 "count" to JsonWriter.num(turns.size.toLong()),
@@ -68,6 +95,14 @@ internal class BridgeConversationHandler(
             )
         )
     }
+
+    /** Appends to the named conversation, or the default store when unnamed. */
+    private fun append(session: String, author: TurnAuthor, text: String): BridgeConversationTurn =
+        if (session.isNotBlank() && sessions != null) {
+            sessions.append(session, author, text) ?: store.append(author, text)
+        } else {
+            store.append(author, text)
+        }
 
     private fun turnJson(turn: BridgeConversationTurn): String = JsonWriter.obj(
         "id" to JsonWriter.str(turn.id),

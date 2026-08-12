@@ -3,7 +3,10 @@ package atropos.bridge
 
 import atropos.bridge.conversation.BridgeConversationResponder
 import atropos.bridge.conversation.BridgeConversationStore
+import atropos.bridge.conversation.BridgeSessionStore
 import atropos.bridge.conversation.UnwiredConversationResponder
+import atropos.bridge.menu.BridgeMenuCatalog
+import atropos.bridge.projection.CommandMenuProjection
 import atropos.bridge.queue.ConversationWorkRunner
 import atropos.bridge.http.HttpResponse
 import atropos.bridge.http.HttpRoute
@@ -151,12 +154,19 @@ class BridgeRoutes(
      * an empty queue — "no work" and "no queue wired" are different facts.
      */
     private val work: ConversationWorkRunner? = null,
+    /**
+     * Conversations. A chat list and an explicit resume both need many, and a
+     * single global transcript could express neither.
+     */
+    private val sessions: BridgeSessionStore = BridgeSessionStore(),
+    private val menuView: CommandMenuProjection = CommandMenuProjection(),
     private val clock: () -> Instant = { Instant.now() }
 ) {
     private val approvalHandler = BridgeApprovalHandler(approvals)
     private val thinkingHandler = BridgeThinkingHandler(thinkingView, thinking)
-    private val conversationHandler = BridgeConversationHandler(conversation, responder)
+    private val conversationHandler = BridgeConversationHandler(conversation, responder, sessions = sessions)
     private val queueHandler = work?.let { BridgeQueueHandler(it) }
+    private val sessionHandler = BridgeSessionHandler(sessions)
 
     /** Queue routes exist in the table either way, so the surface a client
      *  discovers does not change with configuration; without a runner they
@@ -208,6 +218,21 @@ class BridgeRoutes(
                 },
                 HttpRoute("POST", "/v1/message", "append an operator turn and return the engine's reply") { request ->
                     conversationHandler.postMessage(request)
+                },
+                HttpRoute("GET", "/v1/sessions", "conversations, or one with ?id=") { request ->
+                    sessionHandler.list(request)
+                },
+                HttpRoute("POST", "/v1/sessions", "start a new conversation") { request ->
+                    sessionHandler.create(request)
+                },
+                HttpRoute("GET", "/v1/sessions/recent", "the last conversation, offered not opened") {
+                    sessionHandler.recent()
+                },
+                HttpRoute("POST", "/v1/sessions/delete", "delete a conversation by ?id=") { request ->
+                    sessionHandler.delete(request)
+                },
+                HttpRoute("GET", "/v1/menu", "commands as selectable actions for a graphical client") {
+                    HttpResponse.json(menuView.render(BridgeMenuCatalog.actions()))
                 },
                 HttpRoute("GET", "/v1/queue", "queued work, or one entry with ?id=") { request ->
                     withQueue { it.list(request) }
