@@ -14,7 +14,7 @@ class ViewportLayout(
     private val welcomePanel: WelcomePanel,
     private val statusBar: StatusBarRenderer,
     private val workspaceInspector: WorkspaceInspector = CachingGitWorkspaceInspector(),
-    private val chromeRenderer: StickyChromeRenderer = StickyChromeRenderer(theme),
+    private val stickyHeader: StickyHeader = StickyHeader(theme),
     private val tabBar: SessionTabBar = SessionTabBar(theme)
 ) {
     private val palette = CommandPaletteRenderer(theme)
@@ -45,9 +45,9 @@ class ViewportLayout(
         val operation = activity?.let(TerminalText::stripAnsi) ?: verificationState
 
         // HOE-B02: Sticky chrome bar at top (project/status)
-        val chromeHeight = if (isDensity) 1 else 2
-        val chromeLine = chromeRenderer.render(activeTab, openTabCount, safeWidth, isDensity)
-        chromeLine.forEachIndexed { idx, line -> frame.setLine(idx, line) }
+        val chrome = stickyHeader.render(activeTab, openTabCount, safeWidth, isDensity)
+        val chromeHeight = chrome.height
+        chrome.lines.forEachIndexed { idx, line -> frame.setLine(idx, line) }
 
         // HOE-B02: Session tab bar below chrome
         val tabBarHeight = if (tabs.isEmpty()) 0 else 1
