@@ -331,15 +331,34 @@ class CommandRouter(
         uiEngine.updateAgentPatchState(agentCommand.lastKnownPatchId)
     }
 
+    /**
+     * `/help [summary|full|expert] [query]`.
+     *
+     * `SUP.UX.HELP-GENERATOR`: "Generate help text and tab-completion from
+     * registry only. No hard-coded help strings remain."
+     *
+     * The list of commands that used to be typed out here is gone. It had
+     * already drifted -- it named five families and the registry holds many
+     * more -- which is precisely the failure the atom describes: a hand-written
+     * help page is correct on the day it is written and wrong from the next
+     * commit onward, and nothing ever tells you which lines went stale.
+     */
     private fun renderHelpPage(query: String = "") {
-        uiEngine.renderHelp(query)
-        if (query.isBlank()) {
-            uiEngine.renderNotice("  /verify <narrow|wide>")
-            uiEngine.renderNotice("  !<command> | /shell <command>")
-            uiEngine.renderNotice("  /pwd | /cd [dir] | /ls [args] | /git status")
-            uiEngine.renderNotice("  /project [list|new|show|status|objective|history]")
-            uiEngine.renderNotice("  /home | /dashboard | /tabs | /tab [new <name>|<n>|rename|close|next|prev]")
+        val words = query.trim().split(' ').filter { it.isNotBlank() }
+        val level = atropos.cli.help.HelpLevel.fromCanonical(words.firstOrNull())
+        val remainder = if (level.canonical.equals(words.firstOrNull(), ignoreCase = true)) {
+            words.drop(1).joinToString(" ")
+        } else {
+            words.joinToString(" ")
         }
+
+        // A search keeps the search renderer, which highlights matches; only
+        // the browse path is generated.
+        if (remainder.isNotBlank()) {
+            uiEngine.renderHelp(remainder)
+            return
+        }
+        atropos.cli.help.HelpGenerator().render(level).forEach(uiEngine::renderNotice)
     }
 
 }
