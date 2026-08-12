@@ -14,7 +14,14 @@ class FuzzyMatcher(
         val left = normalize(query)
         val right = normalize(candidate)
         if (left.isBlank() || right.isBlank()) return false
-        val limit = minOf(maximumDistance, maxOf(1, maxOf(left.size, right.size) / 3))
+        // Measured in UTF-8 bytes, because [distance] is. Scaling the limit by
+        // character count while the distance counts bytes would let a
+        // multi-byte query spend a budget it was never given.
+        val longest = maxOf(
+            left.toByteArray(StandardCharsets.UTF_8).size,
+            right.toByteArray(StandardCharsets.UTF_8).size
+        )
+        val limit = minOf(maximumDistance, maxOf(1, longest / 3))
         return distance(left, right) <= limit
     }
 
