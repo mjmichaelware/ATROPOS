@@ -97,6 +97,25 @@ class CommandRouter(
 
     fun handleInput(input: String): RouterOutcome {
         if (input.isBlank()) return RouterOutcome.CONTINUE
+
+        // A pasted block can hold more than one command. Handled here rather
+        // than in the lexer because the lexer's job is one command's tokens,
+        // and teaching it about command boundaries would make it depend on the
+        // registry. See PastedInputSplitter for why a line only starts a new
+        // command when its head is a registered family.
+        val pasted = atropos.cli.input.PastedInputSplitter.split(input)
+        if (pasted.size > 1) {
+            uiEngine.renderNotice("Running ${pasted.size} pasted commands in order.")
+            for (command in pasted) {
+                if (handleSingleInput(command) == RouterOutcome.EXIT) return RouterOutcome.EXIT
+            }
+            return RouterOutcome.CONTINUE
+        }
+        return handleSingleInput(pasted.single())
+    }
+
+    private fun handleSingleInput(input: String): RouterOutcome {
+        if (input.isBlank()) return RouterOutcome.CONTINUE
         pendingRiskyNaturalLanguage?.let { pending ->
             when (input.trim().lowercase()) {
                 "y", "yes", "confirm", "confirmed" -> {
