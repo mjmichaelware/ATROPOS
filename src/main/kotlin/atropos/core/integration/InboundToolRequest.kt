@@ -1,6 +1,13 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.integration
 
+import atropos.core.policy.ActionActor
+import atropos.core.policy.ActionProposal
+import atropos.core.policy.AgencyDecision
+import atropos.core.policy.BoundedAgencyGate
+import atropos.core.policy.PolicyActionClass
+import atropos.core.security.RedactionFilter
+
 /**
  * An inbound request from an external caller — MCP, or a computer-use actuator.
  *
@@ -20,7 +27,9 @@ data class InboundToolRequest(
     val callerId: String,
     val operation: String,
     val paths: List<String>,
-    val requiresNetwork: Boolean = false
+    val requiresNetwork: Boolean = false,
+    val targetSurface: String? = null,
+    val territoryGrantId: String? = null
 )
 
 enum class InboundSource { MCP, COMPUTER_USE }
@@ -79,4 +88,70 @@ sealed class InboundAdmission {
     data class Refused(val reason: String) : InboundAdmission()
 
     val admitted: Boolean get() = this is Admitted
+}
+
+/** The common proposal-to-gate boundary for all external integration sources. */
+class InboundActionProposalBridge(
+    private val admission: InboundToolBridge,
+    private val gate: (ActionProposal) -> AgencyDecision = BoundedAgencyGate()::evaluate,
+    private val redactionFilter: RedactionFilter = RedactionFilter()
+) {
+    fun judge(request: InboundToolRequest): InboundGateResult {
+        val admitted = admission.admit(request)
+        if (admitted !is InboundAdmission.Admitted) {
+            return InboundGateResult.Refused(admitted.reason)
+        }
+        val proposal = ActionProposal(
+            id = "inbound-${request.source.name.lowercase()}-${redactionFilter.stableFingerprint(request.callerId)}",
+            actionClass = if (request.requiresNetwork) PolicyActionClass.NETWORK else PolicyActionClass.FILE_MUTATION,
+            actor = ActionActor.HierarchyNode(request.source.name.lowercase(), request.callerId),
+            targetPaths = admitted.territory,
+            networkTarget = if (request.requiresNetwork) "external:${request.operation}" else null,
+            metadata = mapOf(
+                "operation" to admitted.operation,
+                "source" to request.source.name.lowercase(),
+                "territoryGrantId" to redactionFilter.redact(request.territoryGrantId.orEmpty()),
+                "targetSurface" to redactionFilter.redact(request.targetSurface.orEmpty())
+            )
+        )
+        return InboundGateResult.Judged(proposal, gate(proposal))
+    }
+}
+
+/** MCP has no execution authority of its own; it only reaches the common gate boundary. */
+class McpTerritoryBridge(
+    allowedOperations: Set<String>,
+    networkPermitted: Boolean = false,
+    gate: (ActionProposal) -> AgencyDecision = BoundedAgencyGate()::evaluate
+) {
+    private val bridge = InboundActionProposalBridge(InboundToolBridge(allowedOperations, networkPermitted), gate)
+
+    fun judge(request: InboundToolRequest): InboundGateResult =
+        if (request.source != InboundSource.MCP) {
+            InboundGateResult.Refused("MCP bridge accepts MCP requests only")
+        } else bridge.judge(request)
+}
+
+/** Computer-use is a proposal adapter; the target surface and grant are mandatory. */
+class ComputerUseTerritoryBridge(
+    allowedOperations: Set<String>,
+    networkPermitted: Boolean = false,
+    gate: (ActionProposal) -> AgencyDecision = BoundedAgencyGate()::evaluate
+) {
+    private val bridge = InboundActionProposalBridge(InboundToolBridge(allowedOperations, networkPermitted), gate)
+
+    fun judge(request: InboundToolRequest): InboundGateResult {
+        if (request.source != InboundSource.COMPUTER_USE) {
+            return InboundGateResult.Refused("computer-use bridge accepts computer-use requests only")
+        }
+        if (request.targetSurface.isNullOrBlank() || request.territoryGrantId.isNullOrBlank()) {
+            return InboundGateResult.Refused("computer-use requires a named target surface and territory grant")
+        }
+        return bridge.judge(request)
+    }
+}
+
+sealed interface InboundGateResult {
+    data class Judged(val proposal: ActionProposal, val decision: AgencyDecision) : InboundGateResult
+    data class Refused(val reason: String) : InboundGateResult
 }
