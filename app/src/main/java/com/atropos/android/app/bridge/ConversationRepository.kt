@@ -50,6 +50,16 @@ class ConversationRepository(
         }
     }
 
+    fun thinking(nodeId: String, depth: Int = 1): MobileThinking? {
+        if (nodeId.isBlank()) return null
+        val port = discovery.resolve() ?: return null
+        val encoded = java.net.URLEncoder.encode(nodeId, Charsets.UTF_8.name())
+        return when (val result = http.get(BridgeEndpoint.url(port, "/v1/thinking?nodeId=$encoded&depth=$depth"))) {
+            is BridgeResult.Ok -> ThinkingParser.parse(result.body)
+            else -> null
+        }
+    }
+
     fun send(text: String): SendOutcome {
         val port = discovery.resolve() ?: return SendOutcome.EngineUnreachable
         val body = "{\"text\":${JsonString.quote(text)}}"

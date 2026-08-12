@@ -20,6 +20,7 @@ import com.atropos.android.app.bridge.SendOutcome
 import com.atropos.android.app.ui.ConversationScreen
 import com.atropos.android.app.ui.ChatListEntry
 import com.atropos.android.app.bridge.MobileCheckpoint
+import com.atropos.android.app.bridge.MobileThinking
 import com.atropos.android.app.ui.MobileMessage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -53,6 +54,7 @@ private fun AtroposConversation(repository: ConversationRepository) {
     var isOnline by remember { mutableStateOf(false) }
     var sessions by remember { mutableStateOf<List<ChatListEntry>>(emptyList()) }
     var checkpoint by remember { mutableStateOf<MobileCheckpoint?>(null) }
+    var thinking by remember { mutableStateOf<MobileThinking?>(null) }
     val scope = rememberCoroutineScope()
 
     // Reachability is polled rather than assumed. The engine is a separate
@@ -71,6 +73,9 @@ private fun AtroposConversation(repository: ConversationRepository) {
                     messages.addAll(transcript)
                     sessions = withContext(Dispatchers.IO) { repository.sessions() }
                     checkpoint = withContext(Dispatchers.IO) { repository.checkpoint() }
+                    thinking = checkpoint?.nodeId?.let { nodeId ->
+                        withContext(Dispatchers.IO) { repository.thinking(nodeId) }
+                    }
                 }
             }
             delay(POLL_INTERVAL_MS)
@@ -96,7 +101,14 @@ private fun AtroposConversation(repository: ConversationRepository) {
             }
         },
         sessions = sessions,
-        checkpoint = checkpoint
+        checkpoint = checkpoint,
+        thinking = thinking,
+        onThinkingDepthRequested = { depth ->
+            scope.launch {
+                val nodeId = checkpoint?.nodeId.orEmpty()
+                thinking = withContext(Dispatchers.IO) { repository.thinking(nodeId, depth) }
+            }
+        }
     )
 }
 

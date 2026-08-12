@@ -5,6 +5,7 @@ import org.json.JSONObject
 
 data class MobileCheckpoint(
     val goalId: String,
+    val nodeId: String,
     val phase: String,
     val primaryAction: String,
     val actions: List<String>
@@ -21,6 +22,7 @@ object CheckpointParser {
         }
         MobileCheckpoint(
             goalId = root.optString("goalId"),
+            nodeId = root.optString("nodeId"),
             phase = root.optString("phase"),
             primaryAction = primary,
             actions = actions
