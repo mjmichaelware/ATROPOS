@@ -9019,3 +9019,12 @@ End of AGENTS.md
 - `% delta`: unchanged; strict accounting remains `609/741` until the registry audit is rerun after the atom set is implemented.
 - Fingerprints: `OutputValidator.kt=0bd5192272f208e248ee1532171bc7c85f0550fd5c6405ad0629d0d53db71104`; `ProviderResponseContextParser.kt=423c7a5df9e2a792a2c0e69e25aa11eb7fc55b7e960ca598f784dd27695b6469`; `OutputValidatorTest.kt=1b0d1b60647edaf81363c1c1e0818211ac4966d7edc0ca545681387436575742`.
 - HR interrupts: none. Next atom: `STRICT-11-AntiGamingAuditor`.
+
+### 2026-08-12T09:06:21Z · Agent: Codex GPT-5 · Batch: strict-11-anti-gaming-auditor-009
+- Paths touched: `src/main/kotlin/atropos/core/phase20/AntiGamingAuditor.kt` (+38); `src/main/kotlin/atropos/core/phase20/GovernanceLedger.kt` (+20); `src/test/kotlin/atropos/core/phase20/AntiGamingAuditorTest.kt` (+49); `AGENTS.md` (+this row).
+- Atoms / phases affected: `STRICT-11-AntiGamingAuditor`, Phase 20 proposal measurement governance.
+- Predicate moved: proposals can now be audited against an independently declared outcome metric. The auditor refuses incomplete proposals, missing evidence, unchanged/away-from-target metrics, or metric improvement without outcome improvement; `GovernanceLedger` delegates through this canonical audit boundary.
+- Verification: `git diff --check` and production/test reference inspection passed. Per instruction, no Gradle, compile, test, JAR, smoke, CI, or build verification was run.
+- `% delta`: unchanged; strict accounting remains `609/741` until the registry audit is rerun after the atom set is implemented.
+- Fingerprints: `AntiGamingAuditor.kt=135ef61b1a0929e38afb39fe81fd95eeedc19018b674f77df4ab56f27a33c800`; `GovernanceLedger.kt=15896c7ac950c5361f3e41bad2b6dc048137010a7bbaf433071e7a443d02e5fc`; `AntiGamingAuditorTest.kt=3e9b4a5a6cc302aa0d5addfe85a62e9f5e463072ab69feb77e31d5a980183f46`.
+- HR interrupts: none. Next atom: `STRICT-12-ReleaseGateEvaluator`.

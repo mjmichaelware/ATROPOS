@@ -33,6 +33,7 @@ class GovernanceLedger(
     repoRoot: Path = AtroposRepoRootLocator.resolve(),
     private val codec: GovernanceLedgerCodec = GovernanceLedgerCodec(),
     private val gate: ProposalGate = ProposalGate(),
+    private val antiGamingAuditor: AntiGamingAuditor = AntiGamingAuditor(),
     private val clock: () -> Instant = { Instant.now() }
 ) {
     private val file: Path = repoRoot.resolve(".atropos/governance/ledger.log").normalize()
@@ -83,6 +84,27 @@ class GovernanceLedger(
                 rollback = rollback,
                 metric = metric,
                 createdAt = createdAt
+            )
+        )
+    }
+
+    /** Audits a proposed metric against the independently measured outcome. */
+    fun auditProposal(
+        proposalId: String,
+        observedDeclaredMetric: Double,
+        outcomeMetric: MetricDeclaration,
+        observedOutcome: Double,
+        evidenceHashes: List<String>
+    ): AntiGamingDecision {
+        val proposal = existing(proposalId)
+            ?: return AntiGamingDecision(false, "no proposal with id $proposalId")
+        return antiGamingAuditor.audit(
+            proposal,
+            AntiGamingEvidence(
+                observedDeclaredMetric = observedDeclaredMetric,
+                outcomeMetric = outcomeMetric,
+                observedOutcome = observedOutcome,
+                evidenceHashes = evidenceHashes
             )
         )
     }
