@@ -1,0 +1,271 @@
+/* SPDX-License-Identifier: AGPL-3.0-only */
+package atropos.bridge
+
+import atropos.bridge.http.HttpResponse
+import atropos.bridge.http.HttpRoute
+import atropos.bridge.http.HttpRouteTable
+import atropos.bridge.http.HttpStreamRoute
+import atropos.bridge.http.JsonWriter
+import atropos.bridge.projection.ActivityProjection
+import atropos.bridge.projection.ApprovalProjection
+import atropos.bridge.projection.AuthorityProjection
+import atropos.bridge.projection.CheckpointProjection
+import atropos.bridge.projection.CommandProjection
+import atropos.bridge.projection.ExportProjection
+import atropos.bridge.projection.GovernanceProjection
+import atropos.bridge.projection.StorageProjection
+import atropos.bridge.projection.ThinkingProjection
+import atropos.bridge.projection.ProjectProjection
+import atropos.bridge.projection.SixAnswersProjection
+import atropos.bridge.projection.VocabularyProjection
+import atropos.bridge.projection.WelcomeProjection
+import atropos.cli.ui.HomeStateProvider
+import atropos.core.approval.PendingApprovalStore
+import atropos.core.artifact.export.ArtifactLandingResolver
+import atropos.core.auth.AttestationResult
+import atropos.core.auth.CascadeResolution
+import atropos.core.checkpoint.CheckpointSummary
+import atropos.core.monitor.ActivityStream
+import atropos.core.phase20.AuthorityAmendment
+import atropos.core.phase20.GovernanceCounts
+import atropos.core.phase20.GovernanceMetrics
+import atropos.core.phase20.ImprovementProposal
+import atropos.core.phase20.ObservationPeriod
+import atropos.core.storage.StorageConstitution
+import atropos.core.thinking.ThinkingRecord
+import atropos.core.welcome.WelcomeArtifact
+import java.time.Instant
+
+/**
+ * The read-only route set the engine exposes to its clients.
+ *
+ * Every route here answers a question. None of them mutate, and that is a
+ * boundary rather than a milestone: the existing Next.js bridge already refuses
+ * argv passthrough because the CLI can reach `/shell`, `!command` and `/cd`, so
+ * an open write surface on a loopback port is remote code execution against the
+ * operator's own machine. Widening this set is a deliberate act that belongs
+ * with an attribution and approval flow, not a convenience edit.
+ *
+ * The handlers hold no logic. Each one calls an existing owner and hands the
+ * result to a projection — which is what `HOE-C02`'s "no business logic in Web"
+ * actually requires: the logic has to be somewhere the Web cannot reimplement.
+ */
+class BridgeRoutes(
+    private val homeState: HomeStateProvider = HomeStateProvider(),
+    private val activeProvider: () -> String = { "unknown" },
+    private val sixAnswers: SixAnswersProjection = SixAnswersProjection(),
+    private val projects: ProjectProjection = ProjectProjection(),
+    private val commands: CommandProjection = CommandProjection(),
+    private val vocabulary: VocabularyProjection = VocabularyProjection(),
+    private val approvals: PendingApprovalStore = PendingApprovalStore(),
+    private val approvalView: ApprovalProjection = ApprovalProjection(),
+    private val governanceView: GovernanceProjection = GovernanceProjection(),
+    private val storageView: StorageProjection = StorageProjection(),
+    private val checkpointView: CheckpointProjection = CheckpointProjection(),
+    private val activityView: ActivityProjection = ActivityProjection(),
+    private val exportView: ExportProjection = ExportProjection(),
+    private val welcomeView: WelcomeProjection = WelcomeProjection(),
+    private val thinkingView: ThinkingProjection = ThinkingProjection(),
+    private val authorityView: AuthorityProjection = AuthorityProjection(),
+    /**
+     * Governance state sources.
+     *
+     * Injected as suppliers rather than read from a store here so the routes
+     * stay constructible without a repository root — a test checking one
+     * projection should not have to own a filesystem. `AtroposBridge` binds
+     * them to the durable [atropos.core.phase20.GovernanceLedger] for the
+     * running engine.
+     *
+     * The defaults are empty, which is the truthful answer for a system that
+     * has not proposed anything. What must never happen is a placeholder
+     * proposal appearing because the surface wanted something to render.
+     */
+    private val proposals: () -> List<ImprovementProposal> = { emptyList() },
+    private val amendments: () -> List<AuthorityAmendment> = { emptyList() },
+    private val observationPeriods: () -> List<ObservationPeriod> = { emptyList() },
+    private val governanceCounts: () -> GovernanceCounts = { GovernanceCounts() },
+    private val storage: () -> StorageConstitution? = { null },
+    /**
+     * The resume checkpoint, the activity stream and the export landing zones.
+     *
+     * Suppliers for the same reason as the governance state above: null and
+     * empty are the truthful answers for a workspace that has not run anything
+     * yet, and each projection renders that absence as absence. The export
+     * resolver is nullable because a runtime with no repository root has no
+     * landing zone to offer — refusing is correct, inventing one is not.
+     */
+    private val checkpoint: () -> CheckpointSummary? = { null },
+    private val activity: () -> ActivityStream = { ActivityStream(emptyList()) },
+    private val exportResolver: () -> ArtifactLandingResolver? = { null },
+    private val exportTerritory: () -> List<java.nio.file.Path> = { emptyList() },
+    /**
+     * The first-boot welcome.
+     *
+     * Free providers are supplied rather than discovered because discovery is a
+     * provider concern and a welcome that probed the network would be neither
+     * deterministic nor zero-cost. An empty list is rendered honestly by the
+     * artifact — claiming a free path exists when none is configured would
+     * strand the operator at the first prompt.
+     */
+    private val freeProviders: () -> List<String> = { emptyList() },
+    /**
+     * Stored reasoning, looked up by node.
+     *
+     * Always the full record: the depth filter belongs to the read, not to the
+     * lookup. A supplier that returned a shallower record for a collapsed
+     * surface would make `HOE-B03`'s rule unenforceable at this boundary.
+     */
+    private val thinking: (String) -> ThinkingRecord? = { null },
+    /**
+     * Authority attestation and the resolved cascade.
+     *
+     * Empty by default, and an empty attestation list resolves to *not*
+     * resolved — absence of a grant is never permission, so a runtime that has
+     * attested nothing must not read as one operating under intact authority.
+     */
+    private val attestations: () -> List<AttestationResult> = { emptyList() },
+    private val cascade: () -> List<CascadeResolution> = { emptyList() },
+    private val clock: () -> Instant = { Instant.now() }
+) {
+    private val approvalHandler = BridgeApprovalHandler(approvals)
+    private val thinkingHandler = BridgeThinkingHandler(thinkingView, thinking)
+
+    fun table(): HttpRouteTable {
+        lateinit var table: HttpRouteTable
+        table = HttpRouteTable(
+            listOf(
+                HttpRoute("GET", "/v1/health", "liveness and engine identity") {
+                    HttpResponse.json(
+                        JsonWriter.obj(
+                            "ok" to JsonWriter.bool(true),
+                            "engine" to JsonWriter.str("atropos"),
+                            "surface" to JsonWriter.str("bridge")
+                        )
+                    )
+                },
+                HttpRoute("GET", "/v1/routes", "the routes this build exposes") {
+                    HttpResponse.json(table.describe())
+                },
+                HttpRoute("GET", "/v1/answers", "the six continuous answers") {
+                    HttpResponse.json(sixAnswers.render(capture()))
+                },
+                HttpRoute("GET", "/v1/projects", "durable project registry") {
+                    HttpResponse.json(projects.render(capture()))
+                },
+                HttpRoute("GET", "/v1/commands", "command registry, palette and help sections") {
+                    HttpResponse.json(commands.render())
+                },
+                HttpRoute("GET", "/v1/vocabulary", "status and completion vocabularies") {
+                    HttpResponse.json(vocabulary.render())
+                },
+                HttpRoute("GET", "/v1/approvals", "actions waiting on a human decision") {
+                    HttpResponse.json(approvalView.render(approvals.pending()))
+                },
+                HttpRoute("POST", "/v1/approvals/decide", "record a human approval decision") { request ->
+                    approvalHandler.decideApproval(request)
+                },
+                HttpRoute("GET", "/v1/proposals", "self-improvement proposals and cooldowns") {
+                    HttpResponse.json(
+                        governanceView.renderProposals(proposals(), observationPeriods(), clock())
+                    )
+                },
+                HttpRoute("GET", "/v1/amendments", "accepted authority amendments") {
+                    HttpResponse.json(governanceView.renderAmendments(amendments()))
+                },
+                HttpRoute("GET", "/v1/metrics", "governance metric dashboard") {
+                    HttpResponse.json(governanceView.renderMetrics(GovernanceMetrics(governanceCounts())))
+                },
+                HttpRoute("GET", "/v1/storage", "storage constitution and reclaimable bytes") {
+                    storage()?.let { HttpResponse.json(storageView.render(it)) }
+                        ?: HttpResponse.refusal(
+                            503,
+                            "storage-unmeasured",
+                            "No storage ceiling is declared for this runtime.",
+                            "Declare a ceiling before relying on storage reporting; an undeclared ceiling is not an unlimited one."
+                        )
+                },
+                HttpRoute("GET", "/v1/checkpoint", "the resume checkpoint and its primary action") {
+                    HttpResponse.json(checkpointView.render(checkpoint(), clock()))
+                },
+                HttpRoute("GET", "/v1/activity", "one ordered stream of pipeline state changes") {
+                    HttpResponse.json(activityView.render(activity()))
+                },
+                HttpRoute("GET", "/v1/exports", "landing zones an export may actually use") {
+                    exportResolver()?.let { HttpResponse.json(exportView.render(it, exportTerritory())) }
+                        ?: HttpResponse.refusal(
+                            503,
+                            "export-unrooted",
+                            "This runtime has no repository root, so no landing zone can be resolved.",
+                            "Open a workspace before exporting; an unresolved zone is not the current directory."
+                        )
+                },
+                HttpRoute("GET", "/v1/welcome", "deterministic first-boot welcome") {
+                    HttpResponse.json(
+                        welcomeView.render(
+                            WelcomeArtifact(freeProviders(), storage()?.ceilingBytes)
+                        )
+                    )
+                },
+                HttpRoute("GET", "/v1/authority", "which authority is in force and whether it is intact") {
+                    HttpResponse.json(authorityView.render(attestations(), cascade()))
+                },
+                HttpRoute("GET", "/v1/thinking", "stored reasoning at the requested depth") { request ->
+                    thinkingHandler.handle(request)
+                },
+                HttpRoute("GET", "/v1/answers/stream", "six continuous answers, pushed") {
+                    // Advertised in /v1/routes and reachable as a stream; this
+                    // request-path entry exists so a client that asks without
+                    // an event-stream connection is told what it is rather
+                    // than getting a 404 for a route that plainly exists.
+                    HttpResponse.refusal(
+                        400,
+                        "stream-required",
+                        "/v1/answers/stream is a server-sent event stream.",
+                        "Open it with an EventSource, or call GET /v1/answers for a single snapshot."
+                    )
+                }
+            )
+        )
+        return table
+    }
+
+    /**
+     * The streaming half of the bridge.
+     *
+     * Source Doc 4 calls the six answers *continuous*, and a surface that has
+     * to poll for them is showing a snapshot with a timestamp it cannot see.
+     * This pushes a fresh answer set on an interval and stops the moment the
+     * client leaves.
+     *
+     * It reuses [SixAnswersProjection] rather than shaping its own payload:
+     * a stream that disagreed with `GET /v1/answers` would be a second source
+     * of truth for the same six questions.
+     */
+    fun streamRoutes(
+        intervalMillis: Long = 2_000,
+        maxFrames: Int = Int.MAX_VALUE,
+        sleep: (Long) -> Unit = Thread::sleep
+    ): List<HttpStreamRoute> = listOf(
+        HttpStreamRoute("GET", "/v1/answers/stream", "six continuous answers, pushed") { _, sink ->
+            var frames = 0
+            // The first frame is sent immediately: a stream that waits one
+            // interval before saying anything is indistinguishable from a
+            // stream that failed to start.
+            while (sink.isOpen() && frames < maxFrames) {
+                if (!sink.emit("answers", sixAnswers.render(capture()))) return@HttpStreamRoute
+                frames += 1
+                if (frames >= maxFrames) return@HttpStreamRoute
+                sleep(intervalMillis)
+            }
+        }
+    )
+
+    /**
+     * Reads durable state once per request.
+     *
+     * Deliberately uncached. A cockpit that shows a cached answer is a cockpit
+     * that can report a finished run as still working, and §4.1 treats a stale
+     * answer presented as current as a fault rather than an optimisation.
+     */
+    private fun capture() = homeState.capture(activeProvider())
+}
