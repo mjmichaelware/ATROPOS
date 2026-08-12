@@ -4,6 +4,7 @@ import atropos.cli.ui.design.Breakpoint
 
 /** Shared width grammar for native terminal layouts. */
 class ResponsiveNativeGrammar {
+    private val baselineSnapshots = BaselineSnapshots()
     data class Layout(val breakpoint: Breakpoint, val columns: Int, val maxLabelWidth: Int)
 
     fun layout(width: Int): Layout {
@@ -24,4 +25,6 @@ class ResponsiveNativeGrammar {
             }
         )
     }
+
+    fun baselineWidths(): List<Int> = baselineSnapshots.widths()
 }
