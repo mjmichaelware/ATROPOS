@@ -28,7 +28,16 @@ class TerritoryGrantService(
      * [TerritoryAssignment.allows] tests `path.startsWith(prefix)`, and every
      * relative path starts with `""`.
      */
-    private val rootPrefix: String = ""
+    private val rootPrefix: String = "",
+    /**
+     * Instrumentation for `SUP.VERIF.TERRITORY-MONITOR-COST`.
+     *
+     * Counted here rather than at the call sites because this is the one place
+     * every containment check passes through. A counter maintained by callers
+     * would undercount the moment a new caller forgot it, and an undercount
+     * makes the linear claim look better than it is.
+     */
+    val monitorCost: TerritoryMonitorCost = TerritoryMonitorCost()
 ) {
     /**
      * The durable grant the human owner holds over the repository.
@@ -104,6 +113,7 @@ class TerritoryGrantService(
      */
     fun firstPathOutsideTerritory(actor: ActionActor, paths: List<String>): String? {
         val held = grantsFor(actor)
+        monitorCost.recordCheck(held.size)
         if (held.isEmpty()) return paths.firstOrNull()
         return paths.firstOrNull { path -> held.none { it.allows(path) } }
     }
