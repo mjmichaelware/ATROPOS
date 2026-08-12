@@ -100,12 +100,30 @@ class CanonicalAtomizationTest {
     }
 
     @Test
-    fun `an absent SpecGraph yields no atoms and says why`() {
-        // SPECGRAPH_ROOT is unset in this environment, which is the ordinary
-        // configuration and must not be an error.
+    fun `the in-repo atomizer is found without an environment variable`() {
+        // SpecGraph lives at apps/specgraph-foundry. It used to be reachable
+        // only through SPECGRAPH_ROOT, so an unset variable skipped the
+        // canonical atomizer on every run while it sat in the tree.
         val atomization = SpecGraphAtomizer().atomizeToRecords(
             repoRoot = atropos.core.AtroposRepoRootLocator.resolve(),
-            projectId = "atropos-test",
+            projectId = "atropos-test-inrepo",
+            source = "The queue run must narrate each job.",
+            promptFingerprint = "prompt-0123456789abcdef",
+            promptSpans = "requirement"
+        )
+
+        assertFalse(
+            atomization.evidenceLine.contains("SPECGRAPH_ROOT_unset"),
+            "the atomizer is in this repository and must not report itself missing"
+        )
+    }
+
+    @Test
+    fun `a root that does not exist falls back rather than failing`() {
+        val previous = System.getProperty("user.dir")
+        val atomization = SpecGraphAtomizer().atomizeToRecords(
+            repoRoot = java.nio.file.Files.createTempDirectory("atropos-no-specgraph"),
+            projectId = "atropos-test-missing",
             source = "a requirement",
             promptFingerprint = "prompt-0123456789abcdef",
             promptSpans = "requirement"
@@ -114,12 +132,16 @@ class CanonicalAtomizationTest {
         assertFalse(atomization.usable)
         assertTrue(atomization.evidenceLine.startsWith("SKIPPED_SOFT_FAIL:"))
         assertTrue(atomization.evidenceLine.contains("internal DAG fallback required"))
+        assertEquals(previous, System.getProperty("user.dir"))
     }
 
     @Test
     fun `the provider returns null when SpecGraph cannot plan, and records why`() {
         val evidence = mutableListOf<String>()
-        val provider = SpecGraphCanonicalAtomProvider(evidenceSink = evidence::add)
+        val provider = SpecGraphCanonicalAtomProvider(
+            repoRoot = java.nio.file.Files.createTempDirectory("atropos-no-specgraph"),
+            evidenceSink = evidence::add
+        )
 
         val atoms = provider.atomsFor(
             projectId = "atropos-test",

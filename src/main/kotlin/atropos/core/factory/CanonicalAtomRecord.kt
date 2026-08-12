@@ -27,7 +27,16 @@ data class CanonicalAtomRecord(
     val sourceCoordinates: String,
     val dependencies: List<String>,
     val territory: List<String>,
-    val statement: String
+    val statement: String,
+    /**
+     * The atomizer's own confidence in this atom, when it reported one.
+     *
+     * Carried rather than dropped because a low-confidence atom that reaches
+     * execution should be visible as such in the node's lineage. Nothing here
+     * acts on it -- thresholding is a policy decision and belongs to a gate,
+     * not to a transport.
+     */
+    val confidence: String = ""
 ) {
     /**
      * Converts to the shape the existing planner consumes.
@@ -94,7 +103,8 @@ data class CanonicalAtomRecord(
                 sourceCoordinates = parts[4].trim(),
                 dependencies = splitList(parts[5]),
                 territory = splitList(parts[6]),
-                statement = unescape(parts[7]).trim()
+                statement = unescape(parts[7]).trim(),
+                confidence = parts.getOrNull(8)?.trim().orEmpty()
             )
         }
 

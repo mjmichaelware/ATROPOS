@@ -55,9 +55,17 @@ class SpecGraphAtomizer(
         promptFingerprint: String,
         promptSpans: String
     ): CanonicalAtomization {
+        // SpecGraph lives in this repository at apps/specgraph-foundry. It used
+        // to be reachable only through SPECGRAPH_ROOT, so an unset variable
+        // skipped the canonical atomizer on every run while the atomizer sat
+        // in the tree -- the plan fell back to the internal extractor and the
+        // evidence said SPECGRAPH_ROOT_unset, which reads like configuration
+        // rather than the defect it was.
+        //
+        // The environment variable still wins, for a checkout kept elsewhere.
         val specGraphRoot = System.getenv("SPECGRAPH_ROOT")?.trim()
             ?.takeIf(String::isNotBlank)
-            ?: return unavailable("SPECGRAPH_ROOT_unset")
+            ?: repoRoot.resolve(IN_REPO_SPECGRAPH).toString()
         val canonicalRoot = runCatching {
             val candidate = Path.of(specGraphRoot).toAbsolutePath().normalize()
             require(Files.isDirectory(candidate)) { "root_missing" }
@@ -211,6 +219,9 @@ class SpecGraphAtomizer(
         .joinToString("") { "%02x".format(it) }
 
     private companion object {
+        /** Where SpecGraph lives inside ATROPOS. */
+        const val IN_REPO_SPECGRAPH = "apps/specgraph-foundry"
+
         /**
          * Emits the atoms themselves, not a count of them.
          *
@@ -233,6 +244,7 @@ sys.path.insert(0, str(root / "src"))
 from specgraph_foundry.atoms import AtomService
 from specgraph_foundry.database import Database
 from specgraph_foundry.ingestion import IngestionService
+from specgraph_foundry.planning import PlanningService
 from specgraph_foundry.services import ProjectService
 
 def esc(value):
@@ -244,6 +256,22 @@ def pick(atom, names, default=""):
             return atom[name]
     return default
 
+def coordinates(atom):
+    # The atoms table carries byte and line spans, not a formatted coordinate.
+    # Built here so the exact span survives into the DAG node's lineage, which
+    # is what makes an atom traceable back to the sentence that produced it.
+    line_start = pick(atom, ["line_start"], "")
+    line_end = pick(atom, ["line_end"], "")
+    byte_start = pick(atom, ["byte_start"], "")
+    byte_end = pick(atom, ["byte_end"], "")
+    document = pick(atom, ["document_id"], "document")
+    span = ""
+    if line_start != "" and line_end != "":
+        span = "L%s-%s" % (line_start, line_end)
+    if byte_start != "" and byte_end != "":
+        span = (span + " " if span else "") + "B%s-%s" % (byte_start, byte_end)
+    return "%s:%s" % (document, span or "unspanned")
+
 def listed(value):
     if value in (None, ""):
         return ""
@@ -251,9 +279,20 @@ def listed(value):
         return ",".join(str(item).replace(",", " ").strip() for item in value if str(item).strip())
     return str(value).replace("\n", " ").strip()
 
-source = Path(sys.argv[2]).read_text(encoding="utf-8")
+# Bytes, not read_text: Path.read_text applies universal-newline translation,
+# so a CRLF source arrived here as LF and hashed differently from the bytes
+# ATROPOS wrote. That read as source_hash_mismatch and discarded a valid
+# atomization on any document with Windows line endings -- which the source
+# documents have.
+source_bytes = Path(sys.argv[2]).read_bytes()
+source = source_bytes.decode("utf-8")
 database = Database(Path(sys.argv[3]))
 database.initialize()
+# Database.initialize() applies the core schema only. extract_document reads
+# authority_relations, which PlanningService creates on construction -- without
+# this the atomizer exits 1 on "no such table: authority_relations" and the
+# whole canonical path silently falls back to the internal extractor.
+PlanningService(database)
 slug = "atropos-factory-" + hashlib.sha256((source + sys.argv[3]).encode("utf-8")).hexdigest()[:16]
 project = ProjectService(database).create(slug, "ATROPOS factory atomization")
 document = IngestionService(database).ingest_text(str(project["id"]), "factory-requirements.md", source)
@@ -263,7 +302,7 @@ atoms = extraction.get("atoms", []) or []
 reported_schema = False
 for atom in atoms:
     identifier = pick(atom, ["id", "atom_id", "uuid", "key"])
-    statement = pick(atom, ["statement", "text", "body", "content", "description"])
+    statement = pick(atom, ["canonical_statement", "statement", "exact_quote", "text", "body"])
     if not identifier or not statement:
         if not reported_schema and isinstance(atom, dict):
             print("SCHEMA\t" + ",".join(sorted(str(k) for k in atom.keys())))
@@ -272,19 +311,26 @@ for atom in atoms:
     print("\t".join([
         "ATOM",
         esc(identifier),
-        esc(pick(atom, ["dimension", "atom_dimension", "category", "kind"])),
+        esc(pick(atom, ["kind", "dimension", "modality", "category"])),
         esc(pick(atom, ["section_id", "sectionId", "section"])),
-        esc(pick(atom, ["source_coordinates", "sourceCoordinates", "coordinates", "location"])),
+        esc(coordinates(atom)),
         listed(pick(atom, ["dependencies", "depends_on", "requires"])),
         listed(pick(atom, ["territory", "paths", "files"])),
         esc(statement),
+        esc(pick(atom, ["confidence"], "")),
     ]))
 
+# input_sha256 is over the exact bytes this bridge handed across, not over
+# SpecGraph's normalized copy of them. The old check compared ATROPOS's hash of
+# what it sent against the document hash SpecGraph stored, so any normalization
+# on the far side -- a stripped BOM, rewritten line endings -- read as a hash
+# mismatch and discarded a perfectly good atomization.
 print("\t".join([
     "META",
     str(len(atoms)),
-    str(document["sha256"]),
+    hashlib.sha256(source_bytes).hexdigest(),
     str(document["id"]),
+    str(document["sha256"]),
 ]))
 """.trimIndent()
     }
