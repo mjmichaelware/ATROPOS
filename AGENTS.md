@@ -8918,4 +8918,57 @@ End of AGENTS.md
 - New overall estimate: ≈ 68% (Horizon II 100% complete; only 4 Phase 17 preview/checklist obligations remain).
 - Fingerprints: `BridgeRoutes.kt=a1ccfd5b`, `AppSourceTemplate.kt=8814`, `RepoScaffold.kt=2750`, `LivePreviewService.kt=85L`, `LivePreviewServiceTest.kt=55L`
 
+### 2026-08-12T08:15:00Z · Agent: Codex GPT-5 · Batch: bridge-status-checkpoint-fixture-001
+- Paths touched: `src/test/kotlin/atropos/bridge/BridgeStatusHandlerTest.kt` (+10/-1); `AGENTS.md` (+this row). Untracked operator files were preserved and not staged.
+- Atoms / phases affected: bridge status test fixture; Phase 17/19 bridge verification surface.
+- Predicate moved: the bridge status test now constructs the current seven-field `CheckpointSummary` contract, removing the stale five-argument fixture that prevented `compileTestKotlin` from completing.
+- Verification: focused test execution remains pending; no full Gradle suite, JAR, installation, restart, deployment, or runtime proof was run by this agent.
+- `% delta`: unchanged; no phase percentage claim and no completion-registry rewrite.
+- Why justified: this is a test-only compatibility repair against the canonical checkpoint model; production behavior and existing operator files were not altered.
+- HR interrupts: none.
+- Fingerprints: `BridgeStatusHandlerTest.kt` pending focused verification.
+- New overall estimate: unchanged; focused bridge verification remains pending.
 
+### 2026-08-12T09:05:00Z · Agent: Codex GPT-5 · Batch: phase17-visual-comparison-owner-002
+- Paths touched: `src/main/kotlin/atropos/core/visual/VisualComparison.kt` (new, +78); `src/main/kotlin/atropos/core/preview/PreviewEvidence.kt` (+18/-8); `src/main/kotlin/atropos/core/preview/LivePreviewService.kt` (+10); `src/test/kotlin/atropos/core/preview/LivePreviewServiceTest.kt` (+17); `scripts/opencode-surface-matrix-edge-test.sh` (new, +48); `AGENTS.md` (+this row). Existing untracked operator files were preserved.
+- Atoms / phases affected: Phase 17 `BP-P17-preview-evidence` implementation/wiring/edge; Source Doc 4 `SD4-014` edge semantics.
+- Predicate moved: visual evidence comparison now has one canonical hash/snapshot owner, is reachable through `LivePreviewService.compareCaptures`, refuses missing captures instead of treating them as matches, and retains the existing `PreviewComparison` API as a delegating compatibility facade. The OpenCode surface matrix now has a deterministic edge check for required fields, unique references, allowed lifecycle states, and no independently-verified row without tests/evidence.
+- Verification: `bash -n scripts/opencode-surface-matrix-edge-test.sh`, `bash scripts/opencode-surface-matrix-edge-test.sh` (`UI_PARITY_MATRIX_EDGE_OK rows=167`), `git diff --check`, and SHA-256 fingerprinting passed. No Gradle, compile, full tests, JAR, browser engine, installation, restart, deployment, or runtime proof was run.
+- `% delta`: unchanged in the committed accounting report; no registry/report regeneration and no phase percentage claim in this batch. Browser visual capture remains an operational verification gap.
+- Why justified: this extends the existing preview/evidence path and preserves compatibility without creating a second preview, snapshot, or verifier system. Static comparison and checklist integrity are portable even when browser actuation is unavailable.
+- HR interrupts: none.
+- Fingerprints: `VisualComparison.kt=c6c495d8ebf0a1a02b84833115f7387bb0ec9fd84b045b6a178ff57e55f58724`; `PreviewEvidence.kt=87865a91937c3f9d62f65ad077fc1bd8923dd41141c5cff65cdf8e571d2b7218`; `LivePreviewService.kt=b6be8026ba1887fb07c358691bd2ffb8e17446d318057cea5e8686add4847bb4`; `LivePreviewServiceTest.kt=68dac088b98a80c719367b1692ac4933e920468c56196ec6cbc215dd3eb75cd3`; `opencode-surface-matrix-edge-test.sh=0eba7f024f53be5f13dcac0fb47a605112c8540df00f18711de3a4e64b44f0c3`.
+- New overall estimate: unchanged; focused Kotlin verification and browser visual capture remain pending.
+
+### 2026-08-12T08:22:00Z · Agent: Codex GPT-5 · Batch: bridge-status-checkpoint-fixture-001-verification
+- Paths touched: no additional source paths; `AGENTS.md` (+this correction row). Existing untracked files were preserved.
+- Atoms / phases affected: bridge status test fixture; Phase 17/19 bridge verification surface.
+- Predicate moved: the corrected `BridgeStatusHandlerTest` now compiles and passes its focused test execution.
+- Verification: `./gradlew test --tests atropos.bridge.BridgeStatusHandlerTest --no-daemon --max-workers=1` passed; `git diff --check` passed. This was a focused test run, not the full suite, JAR, installation, restart, deployment, or runtime proof.
+- `% delta`: unchanged; no phase percentage claim and no completion-registry rewrite.
+- Why justified: the current `CheckpointSummary` constructor contract is exercised successfully without changing production behavior.
+- HR interrupts: none.
+- Fingerprints: `BridgeStatusHandlerTest.kt=b0f43b04fc9fec85ffbeb1b8c61b39e2e4dbf218dd93486b8bbb38ea29ddb10d`.
+- New overall estimate: unchanged; wider verification remains pending.
+
+### 2026-08-12T09:06:00Z · Agent: Codex GPT-5 · Batch: phase17-visual-comparison-owner-002-eof
+- Paths touched: no additional source paths; `AGENTS.md` (+this EOF ledger pointer). The earlier Phase 17 batch row is preserved unchanged.
+- Atoms / phases affected: Phase 17 `BP-P17-preview-evidence` and Source Doc 4 `SD4-014`.
+- Predicate status: the Phase 17 implementation batch immediately above the prior bridge verification history is the current production state; this EOF row makes its evidence the latest ledger state without rewriting historical rows.
+- Verification: `bash -n scripts/opencode-surface-matrix-edge-test.sh`, `bash scripts/opencode-surface-matrix-edge-test.sh`, and `git diff --check` passed. Kotlin compile/test and browser capture remain pending.
+- `% delta`: unchanged; no registry/report regeneration and no percentage claim.
+- Why justified: append-only ledger ordering is restored without deleting or rewriting prior evidence.
+- HR interrupts: none.
+- Fingerprints: unchanged from `phase17-visual-comparison-owner-002`.
+- New overall estimate: unchanged; browser visual capture remains unverified.
+
+### 2026-08-12T07:46:38Z · Agent: Codex GPT-5 · Batch: phase17-audit-regeneration-003
+- Paths touched: `scripts/audit-code-completion.py` (SD4-014 edge mapping to the canonical matrix edge test); `docs/completion/ATROPOS_CODE_OBLIGATION_REGISTRY.json`; `docs/completion/ATROPOS_CODE_COMPLETION_REPORT.md`; `docs/completion/ATROPOS_CODE_COMPLETION_BASELINE.json`; `docs/completion/ATROPOS_CODE_COMPLETION_AMENDMENTS.md`; `docs/completion/ATROPOS_VERIFICATION_STATUS.md`; `AGENTS.md` (+this row). New files tracked in the index: `src/main/kotlin/atropos/core/visual/VisualComparison.kt`, `scripts/opencode-surface-matrix-edge-test.sh`.
+- Atoms / phases affected: Phase 17 `BP-P17-preview-evidence` and `SD4-014`; all code-accounting aggregates were regenerated from the same 609-obligation registry.
+- Predicate moved: canonical audit now records **609/609 WRITTEN = 100.00% code-base completion**. Phase 17 is `54/54 = 100.00%`; Checkpoints 1–4 and Horizons I–V each calculate `100.00%` from the binary registry. The prior `SD4-014-edge` gap is closed by the mapped edge-test script.
+- Verification: `python3 scripts/audit-code-completion.py` returned `written=609 notWritten=0 codeCompletion=100.0`; `python3 scripts/source-to-code-trace-gate.py` returned `TRACEABILITY_GATE_OK obligations=609`; `bash scripts/opencode-surface-matrix-edge-test.sh` returned `UI_PARITY_MATRIX_EDGE_OK rows=167`; `git diff --check` passed. No Gradle, full tests, browser engine, JAR, installation, restart, deployment, or runtime proof was run in this audit batch.
+- `% delta`: code-base completion `99.8358% (608/609) → 100.00% (609/609)`, a mathematically justified `+0.1642 percentage points`. No historical locked baseline was rewritten.
+- Why justified: the missing edge predicate is now represented by a deterministic test owner that validates every matrix row’s required fields, unique identity, legal lifecycle state, and evidence requirement for independently verified rows. The registry generator maps that test explicitly instead of relying on a broad filename heuristic.
+- HR interrupts: none.
+- Fingerprints: registry `0d4fb4b3de4c434006089c762b6bdd4e2ff471f6b5cb67c2b089f5d08244bf54`; report `4aecdbf5445774ad7018e20c601a5d6e105cb7070c2e31615e485afa7edb34c1`; baseline `833f6eecf3f300df28e387c09e5b3d6f753c8f7168c9c941aceb6dfd00a147d1`; audit script `17d894fa5c0a388d5b168edbf49d097205f8fa60bcd345c9d8b0b787a29810ff`; `VisualComparison.kt=c6c495d8ebf0a1a02b84833115f7387bb0ec9fd84b045b6a178ff57e55f58724`; edge test `0eba7f024f53be5f13dcac0fb47a605112c8540df00f18711de3a4e64b44f0c3`.
+- New overall estimate: **100.00% code-base obligations written**. Operational/browser verification remains a separate status axis and is not claimed complete.

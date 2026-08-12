@@ -221,7 +221,7 @@ for phase,items in EXTRA.items():
    records.append(rec(f"BP-P{phase:02d}-{atom}-{suffix}",f"BP-P{phase:02d}-{atom}",phase,"C3",f"{title}: {kind}","docs/source/ATROPOS_100pct_Completion_Blueprint.txt",f"Phase {phase} gap closure",paths_for_kind(paths,kind),"",True,kind=kind))
 SD4_UNIQUE=[
  ("SD4-013","Full CLI power is available through Web and Android via a shared bridge",18,["src/main/kotlin/atropos/core/platform/PlatformAbstraction.kt","apps/web/package.json"]),
- ("SD4-014","Competitive surface checklist is represented as an acceptance artifact",17,["docs/ui-parity/OPENCODE_COMPLETE_SURFACE_MATRIX.json"]),
+ ("SD4-014","Competitive surface checklist is represented as an acceptance artifact",17,{"implementation":["docs/ui-parity/OPENCODE_COMPLETE_SURFACE_MATRIX.json"],"integration":["docs/ui-parity/OPENCODE_COMPLETE_SURFACE_MATRIX.json"],"semantics":["scripts/opencode-surface-matrix-edge-test.sh"]}),
  ("SD4-015","Imagination-layer presentation is bound to real engine state",17,["src/main/kotlin/atropos/cli/ui/AnsiTerminalEngine.kt"]),
 ]
 for rid,title,phase,paths in SD4_UNIQUE:

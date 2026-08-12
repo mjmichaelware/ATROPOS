@@ -2,6 +2,7 @@
 package atropos.core.preview
 
 import java.time.Instant
+import atropos.core.visual.VisualComparison
 
 /**
  * Evidence captured from an isolated preview.
@@ -67,12 +68,24 @@ enum class PreviewOutcome {
  * regression through on the run that introduced the baseline.
  */
 object PreviewComparison {
-    fun compare(baseline: PreviewEvidence?, current: PreviewEvidence): ComparisonResult = when {
-        baseline == null -> ComparisonResult.NoBaseline
-        baseline.screenshotSha256.isNullOrBlank() || current.screenshotSha256.isNullOrBlank() ->
-            ComparisonResult.Incomparable("one side has no captured image")
-        baseline.screenshotSha256 == current.screenshotSha256 -> ComparisonResult.Unchanged
-        else -> ComparisonResult.Changed(baseline.screenshotSha256, current.screenshotSha256)
+    fun compare(baseline: PreviewEvidence?, current: PreviewEvidence): ComparisonResult {
+        if (baseline == null) return ComparisonResult.NoBaseline
+        val result = VisualComparison.compareHashes(
+            baselineHash = baseline.screenshotSha256,
+            currentHash = current.screenshotSha256,
+            missingBaselineReason = "one side has no captured image",
+            missingCurrentReason = "one side has no captured image"
+        )
+        return when (result.status) {
+            atropos.core.visual.VisualComparisonStatus.UNCHANGED -> ComparisonResult.Unchanged
+            atropos.core.visual.VisualComparisonStatus.CHANGED -> ComparisonResult.Changed(
+                from = result.baselineHash!!,
+                to = result.currentHash!!
+            )
+            atropos.core.visual.VisualComparisonStatus.NO_BASELINE,
+            atropos.core.visual.VisualComparisonStatus.INCOMPARABLE ->
+                ComparisonResult.Incomparable(result.reason ?: "one side has no captured image")
+        }
     }
 }
 

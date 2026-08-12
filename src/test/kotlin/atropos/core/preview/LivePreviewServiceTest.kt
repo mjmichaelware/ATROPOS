@@ -2,6 +2,7 @@
 package atropos.core.preview
 
 import atropos.core.multimodal.BrowserEvidenceStatus
+import atropos.core.visual.VisualComparisonStatus
 import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -59,6 +60,21 @@ class LivePreviewServiceTest {
             val diagnostics = service.getDiagnostics("<html><body>An unexpected exception occurred!</body></html>")
             assertEquals(1, diagnostics.size)
             assertTrue(diagnostics.first().contains("Runtime failure"))
+        } finally {
+            tempDir.toFile().deleteRecursively()
+        }
+    }
+
+    @Test
+    fun test_visual_comparison_refuses_missing_baseline_and_detects_change() {
+        val tempDir = Files.createTempDirectory("preview-test-")
+        try {
+            val service = LivePreviewService(repoRoot = tempDir)
+            val first = service.captureStaticHtml("Home", "<main>one</main>")
+            val second = service.captureStaticHtml("Home", "<main>two</main>")
+
+            assertEquals(VisualComparisonStatus.NO_BASELINE, service.compareCaptures(null, first).status)
+            assertEquals(VisualComparisonStatus.CHANGED, service.compareCaptures(first, second).status)
         } finally {
             tempDir.toFile().deleteRecursively()
         }

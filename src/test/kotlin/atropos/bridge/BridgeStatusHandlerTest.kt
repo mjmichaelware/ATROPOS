@@ -34,7 +34,17 @@ class BridgeStatusHandlerTest {
             homeState = homeState,
             activeProvider = { "fake-provider" },
             sixAnswers = SixAnswersProjection(),
-            checkpoint = { CheckpointSummary("P11", true, "build-success", Instant.now(), "node-1") },
+            checkpoint = {
+                CheckpointSummary(
+                    goalId = "P11",
+                    nodeId = "node-1",
+                    phase = "build-success",
+                    recordedAt = Instant.now(),
+                    resumable = true,
+                    evidenceCount = 0,
+                    nextAction = null
+                )
+            },
             checkpointView = CheckpointProjection(),
             work = work,
             statusView = StatusProjection(),

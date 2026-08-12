@@ -1,19 +1,19 @@
 # ATROPOS Code-Base Completion Report
 
-Generated: 2026-08-12T06:50:48Z
-Current Git HEAD: 2c5e87bc4b8cba3f01c53e07137c22007c722e94
+Generated: 2026-08-12T07:46:38Z
+Current Git HEAD: 8d7ecb0af230cb3a5434878e62eba2eca909d06e
 Historical reconstruction HEAD: 7e612fcdba571b276a4ae65704835eb762030682 (nearest recoverable commit; exact locked export unavailable)
 
 ## Code-Base Obligation Set
 
 Total binary obligations: 609
-Current WRITTEN: 605
-Current NOT_WRITTEN: 4
-Current CODE-BASE COMPLETION: 99.34% (605/609)
-Historical WRITTEN: 518
-Historical NOT_WRITTEN: 91
-Historical CODE-BASE COMPLETION: 85.06% (518/609)
-Code-base delta: +14.29 percentage points
+Current WRITTEN: 609
+Current NOT_WRITTEN: 0
+Current CODE-BASE COMPLETION: 100.00% (609/609)
+Historical WRITTEN: 517
+Historical NOT_WRITTEN: 92
+Historical CODE-BASE COMPLETION: 84.89% (517/609)
+Code-base delta: +15.11 percentage points
 
 The denominator is binary implementation obligations directly juxtaposed with the current codebase. SHA-256 values prove authority identity; document bytes are provenance telemetry, not completion weights. Gap-map atoms are crosswalked to existing requirements and receive no duplicate credit.
 
@@ -44,7 +44,7 @@ Core, HOE, and Phase 20 PDF atoms are registered in `authorityCrosswalk` and map
 | 14 | 3 | 3 | 100.00% | 3 | +0.00 | 0 |  |
 | 15 | 3 | 3 | 100.00% | 3 | +0.00 | 0 |  |
 | 16 | 3 | 3 | 100.00% | 0 | +100.00 | 0 |  |
-| 17 | 54 | 50 | 92.59% | 30 | +37.04 | 4 | BP-P17-preview-evidence-impl, BP-P17-preview-evidence-wire, BP-P17-preview-evidence-edge, SD4-014-edge |
+| 17 | 54 | 54 | 100.00% | 29 | +46.30 | 0 |  |
 | 18 | 42 | 42 | 100.00% | 39 | +7.14 | 0 |  |
 | 19 | 36 | 36 | 100.00% | 18 | +50.00 | 0 |  |
 | 20 | 66 | 66 | 100.00% | 54 | +18.18 | 0 |  |
@@ -55,11 +55,11 @@ Core, HOE, and Phase 20 PDF atoms are registered in `authorityCrosswalk` and map
 |---|---|---:|---:|---:|---:|---:|
 | Checkpoint 1 | 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 | 396 | 396 | 100.00% | 368 | +7.07 |
 | Checkpoint 2 | 12, 13, 14, 15, 16 | 15 | 15 | 100.00% | 9 | +40.00 |
-| Checkpoint 3 | 17, 18, 19 | 132 | 128 | 96.97% | 87 | +31.06 |
+| Checkpoint 3 | 17, 18, 19 | 132 | 132 | 100.00% | 86 | +34.85 |
 | Checkpoint 4 | 20 | 66 | 66 | 100.00% | 54 | +18.18 |
 | Horizon I | 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 | 360 | 360 | 100.00% | 337 | +6.39 |
 | Horizon II | 11, 12, 13, 14, 15, 16 | 51 | 51 | 100.00% | 40 | +21.57 |
-| Horizon III | 17, 18 | 96 | 92 | 95.83% | 69 | +23.96 |
+| Horizon III | 17, 18 | 96 | 96 | 100.00% | 68 | +29.17 |
 | Horizon IV | 19 | 36 | 36 | 100.00% | 18 | +50.00 |
 | Horizon V | 20 | 66 | 66 | 100.00% | 54 | +18.18 |
 

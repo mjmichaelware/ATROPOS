@@ -7,6 +7,8 @@ import atropos.core.multimodal.BrowserActuator
 import atropos.core.multimodal.BrowserEvidenceRequest
 import atropos.core.multimodal.BrowserEvidenceResult
 import atropos.core.multimodal.BrowserEvidenceStatus
+import atropos.core.visual.VisualComparison
+import atropos.core.visual.VisualComparisonResult
 import java.nio.file.Path
 
 data class UiComponentImpact(
@@ -63,6 +65,14 @@ class LivePreviewService(
     fun captureStaticHtml(label: String, html: String, expectedText: String? = null): BrowserEvidenceResult {
         return browserActuator.captureStaticHtml(label, html, expectedText)
     }
+
+    fun compareCaptures(
+        baseline: BrowserEvidenceResult?,
+        current: BrowserEvidenceResult
+    ): VisualComparisonResult = VisualComparison.compareSnapshots(
+        baseline = baseline?.snapshot,
+        current = current.snapshot
+    )
 
     fun hotReload(patch: String): ReloadResult {
         if (patch.isBlank()) {
