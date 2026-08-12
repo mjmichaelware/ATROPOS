@@ -20,6 +20,7 @@ class CommandCompleter(
     private val providers: List<String> =
         CommandRegistry.providers
     private val suggestionEngine = SuggestionEngine()
+    private val enterSelector = PartialCommandEnterToSelect(suggestionEngine)
 
     fun complete(
         buffer: String,
@@ -260,18 +261,7 @@ class CommandCompleter(
         val normalized = input.trim()
         if (normalized.isBlank()) return null
 
-        return when (normalized.lowercase()) {
-            "?" -> "/help"
-            "help", "usage", "/?", "/help", "/usage" -> "/help"
-            else -> {
-                val matches = suggestionEngine.suggest(normalized)
-                if (matches.isEmpty()) {
-                    null
-                } else {
-                    matches[selectedIndex.coerceIn(0, matches.lastIndex)].command
-                }
-            }
-        }
+        return enterSelector.resolve(normalized, selectedIndex)
     }
 
     private fun commonPrefix(
