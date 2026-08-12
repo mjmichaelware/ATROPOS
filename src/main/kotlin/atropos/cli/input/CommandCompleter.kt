@@ -19,6 +19,7 @@ class CommandCompleter(
 
     private val providers: List<String> =
         CommandRegistry.providers
+    private val suggestionEngine = SuggestionEngine()
 
     fun complete(
         buffer: String,
@@ -36,7 +37,7 @@ class CommandCompleter(
 
         val commandPrefix = prefix.takeIf {
             it.none(Char::isWhitespace) &&
-                (it.startsWith("/") || CommandRegistry.search(it).isNotEmpty())
+                (it.startsWith("/") || suggestionEngine.hasSuggestions(it))
         }
         if (commandPrefix != null) {
             return completeCommandPrefix(
@@ -241,7 +242,7 @@ class CommandCompleter(
     }
 
     private fun commandCompletionOptions(prefix: String): List<String> {
-        val searchMatches = CommandRegistry.search(prefix).map { it.command }
+        val searchMatches = suggestionEngine.suggest(prefix).map { it.command }
         if (searchMatches.isEmpty()) return emptyList()
 
         val resolved = resolveCommand(prefix, 0)
@@ -263,7 +264,7 @@ class CommandCompleter(
             "?" -> "/help"
             "help", "usage", "/?", "/help", "/usage" -> "/help"
             else -> {
-                val matches = CommandRegistry.search(normalized)
+                val matches = suggestionEngine.suggest(normalized)
                 if (matches.isEmpty()) {
                     null
                 } else {
