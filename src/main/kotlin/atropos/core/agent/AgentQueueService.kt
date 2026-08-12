@@ -78,9 +78,10 @@ class AgentQueueService(
 
     fun computeBackpressure(): Long = backpressure.computeBackpressure()
 
+    fun boundedExecutor(): BoundedWorkExecutor = BoundedWorkExecutor(this, agencyGate)
+
     private fun enforceQueuePolicy(operation: String, detail: String = "") {
         val decision = agencyGate.evaluate(LifecycleActionProposals.queue(operation, detail))
         require(decision.disposition == AgencyDisposition.ALLOWED) { decision.reason }
     }
 }
-

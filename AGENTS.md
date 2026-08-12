@@ -9046,3 +9046,12 @@ End of AGENTS.md
 - `% delta`: unchanged; strict accounting remains `609/741` until the registry audit is rerun after the atom set is implemented.
 - Fingerprints: `ProposalGenerator.kt=2e0e67af54952ef547c8a0bac0704b8992ea08d240f404bed937d59f05770092`; `GovernanceLedger.kt=6a1f1f3fd4dee785a4ac52af2757bc53eb4b1f68e225961ca36dfcae7eea4fc5`; `ProposalGeneratorTest.kt=eb22bcc2c805bd0b5fccfb64e274ed656c36f0fc8d587211f9dcd2359170aa49`.
 - HR interrupts: none. Next atom: `STRICT-01-BoundedWorkExecutor`.
+
+### 2026-08-12T09:10:11Z · Agent: Codex GPT-5 · Batch: strict-01-bounded-work-executor-012
+- Paths touched: `src/main/kotlin/atropos/core/agent/BoundedWorkExecutor.kt` (+48); `src/main/kotlin/atropos/core/agent/AgentQueueService.kt` (+2); `src/test/kotlin/atropos/core/agent/BoundedWorkExecutorTest.kt` (+38); `AGENTS.md` (+this row).
+- Atoms / phases affected: `STRICT-01-BoundedWorkExecutor`, bounded queue execution.
+- Predicate moved: bounded work now has an explicit authorization boundary that composes `BoundedAgencyGate` with the existing `AgentQueueService`; blank work is refused before queue mutation, and accepted work delegates to the durable queue owner. No second executor, queue, or process runner was created.
+- Verification: `git diff --check` and production/test reference inspection passed. Per instruction, no Gradle, compile, test, JAR, smoke, CI, or build verification was run.
+- `% delta`: unchanged; strict accounting remains `609/741` until the registry audit is rerun after the atom set is implemented.
+- Fingerprints: `BoundedWorkExecutor.kt=7e951c27d93003f705614ad2e9fa605f6bc2356abff4fc0623afda7b225bb905`; `AgentQueueService.kt=13eedfcf85646922bf34a95600fc1f13b7389ed3967042c627823a2c2f890da7`; `BoundedWorkExecutorTest.kt=54ab03252fd6c80ffe323e59ed2818d468b5bd2ff9f3516a053885533687b605`.
+- HR interrupts: none. Next atom: `STRICT-02-BatchGate`.
