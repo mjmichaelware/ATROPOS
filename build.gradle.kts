@@ -9,7 +9,7 @@ group = "atropos"
 version = "2.0.0-rc.1"
 
 kotlin {
-    jvmToolchain(17)
+    jvmToolchain(21)
 }
 
 repositories {

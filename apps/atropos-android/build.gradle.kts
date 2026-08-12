@@ -8,7 +8,7 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.atropos.android.app"
+        applicationId = "com.atropos.android.app2"
         minSdk = 28
         targetSdk = 35
         versionCode = 2

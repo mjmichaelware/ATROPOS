@@ -100,14 +100,14 @@
       "bytes": 15578
     }
   ],
-  "registrySha256": "f088925c487287cf86a7451ba5ba319fb95b9083db32853cf54c63a3fb93419b",
+  "registrySha256": "3d9bef56fe1f2d7c8f8d70e6727f5aaf5ef1a4145ae43661b2e0f004f1db3bfe",
   "totalObligations": 609,
   "currentWritten": 554,
   "currentCodeCompletion": 90.9688,
   "historicalWritten": 518,
   "historicalCodeCompletion": 85.0575,
   "deltaPercentagePoints": 5.9113,
-  "generatedAt": "2026-08-12T00:53:15Z",
+  "generatedAt": "2026-08-12T01:13:40Z",
   "perPhase": {
     "0": {
       "total": 96,
