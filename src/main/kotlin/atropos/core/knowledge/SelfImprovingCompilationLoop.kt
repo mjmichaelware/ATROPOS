@@ -2,13 +2,11 @@
 package atropos.core.knowledge
 
 import atropos.core.memory.LocalMemoryStore
+import atropos.core.policy.BoundedProcessRunner
 import atropos.core.verification.*
 import atropos.core.verifier.ProbabilisticImmunityEngine
-import java.io.ByteArrayOutputStream
-import java.io.InputStream
 import java.nio.file.*
 import java.time.Instant
-import java.util.concurrent.*
 
 fun interface VerificationProcessExecutor {
     fun execute(request: VerificationRequest): ProcessExecution
@@ -16,115 +14,30 @@ fun interface VerificationProcessExecutor {
 
 class JdkVerificationProcessExecutor : VerificationProcessExecutor {
     override fun execute(request: VerificationRequest): ProcessExecution {
-        val started = System.nanoTime()
         val root = request.workspace.toAbsolutePath().normalize()
-
-        val process = try {
-            ProcessBuilder(request.command)
-                .directory(root.toFile())
-                .apply {
-                    environment().keys.removeIf { key ->
-                        val name = key.uppercase()
-                        name.contains("TOKEN") ||
-                            name.contains("SECRET") ||
-                            name.contains("PASSWORD") ||
-                            name.endsWith("_KEY") ||
-                            name.contains("CREDENTIAL")
-                    }
-                }
-                .start()
-        } catch (failure: Exception) {
-            return ProcessExecution(
-                request.command,
-                null,
-                false,
-                elapsed(started),
-                CapturedText("", false),
-                CapturedText("", false),
-                "${failure.javaClass.simpleName}: ${failure.message ?: "launch failed"}"
-            )
-        }
-
-        val pumps = Executors.newFixedThreadPool(2) { task ->
-            Thread(task, "atropos-verification-stream").apply { isDaemon = true }
-        }
-
-        val stdout = pumps.submit<CapturedText> {
-            collect(process.inputStream, request.maxOutputBytes, request.maxOutputLines)
-        }
-        val stderr = pumps.submit<CapturedText> {
-            collect(process.errorStream, request.maxOutputBytes, request.maxOutputLines)
-        }
-
-        val finished = process.waitFor(request.timeoutMillis, TimeUnit.MILLISECONDS)
-        if (!finished) terminate(process)
-
-        val out = futureResult(stdout)
-        val err = futureResult(stderr)
-        pumps.shutdownNow()
-
+        val result = BoundedProcessRunner().run(
+            command = request.command,
+            directory = root,
+            timeoutMillis = request.timeoutMillis.coerceAtMost(1_800_000L),
+            maxOutputBytes = request.maxOutputBytes.coerceAtMost(256 * 1024),
+            maxOutputLines = request.maxOutputLines.coerceAtMost(4_000),
+            removeEnvironmentKeys = System.getenv().keys.filter { key ->
+                val name = key.uppercase()
+                name.contains("TOKEN") || name.contains("SECRET") ||
+                    name.contains("PASSWORD") || name.endsWith("_KEY") ||
+                    name.contains("CREDENTIAL")
+            }.toSet()
+        )
         return ProcessExecution(
             command = request.command,
-            exitCode = if (finished) process.exitValue() else null,
-            timedOut = !finished,
-            durationMillis = elapsed(started),
-            stdout = out,
-            stderr = err
+            exitCode = result.exitCode,
+            timedOut = result.timedOut,
+            durationMillis = result.durationMillis,
+            stdout = CapturedText(result.stdout, result.outputTruncated),
+            stderr = CapturedText(result.stderr, result.outputTruncated),
+            launchError = result.launchError
         )
     }
-
-    private fun collect(
-        input: InputStream,
-        maximumBytes: Int,
-        maximumLines: Int
-    ): CapturedText {
-        val captured = ByteArrayOutputStream(minOf(maximumBytes, 8192))
-        val buffer = ByteArray(8192)
-        var lines = 0
-        var truncated = false
-        var read: Int
-
-        input.use { stream ->
-            while (stream.read(buffer).also { read = it } != -1) {
-                for (index in 0 until read) {
-                    val value = buffer[index]
-                    if (captured.size() < maximumBytes && lines < maximumLines) {
-                        captured.write(value.toInt())
-                        if (value.toInt() == '\n'.code) lines++
-                    } else {
-                        truncated = true
-                    }
-                }
-            }
-        }
-
-        return CapturedText(
-            captured.toByteArray().toString(Charsets.UTF_8),
-            truncated
-        )
-    }
-
-    private fun futureResult(future: Future<CapturedText>): CapturedText =
-        try {
-            future.get(5, TimeUnit.SECONDS)
-        } catch (_: Exception) {
-            future.cancel(true)
-            CapturedText("", true)
-        }
-
-    private fun terminate(process: Process) {
-        process.toHandle().descendants().forEach { it.destroy() }
-        process.destroy()
-
-        if (!process.waitFor(250, TimeUnit.MILLISECONDS)) {
-            process.toHandle().descendants().forEach { it.destroyForcibly() }
-            process.destroyForcibly()
-            process.waitFor(1, TimeUnit.SECONDS)
-        }
-    }
-
-    private fun elapsed(started: Long): Long =
-        TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started)
 }
 
 class AtomicRewardRecorder(
