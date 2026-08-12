@@ -3,6 +3,7 @@
 import { SixAnswersPanel, SixAnswer } from '@/components/ui/six-answers-panel';
 import { AllInspectors } from '@/components/dev-tools/inspectors';
 import { SpecGraphEntry } from '@/components/dev-tools/specgraph-entry';
+import { DeveloperToolsContainer } from '@/components/dev-tools/developer-tools-container';
 import { AlertCircle } from 'lucide-react';
 
 export default function DevToolsPage() {
@@ -16,7 +17,8 @@ export default function DevToolsPage() {
   };
 
   return (
-    <div className="space-y-8 p-8 max-w-6xl mx-auto">
+    <DeveloperToolsContainer>
+      <div className="space-y-8 p-8 max-w-6xl mx-auto">
       {/* Warning */}
       <div className="bg-sg-amber-50 dark:bg-sg-amber-900/20 border border-sg-amber-200 dark:border-sg-amber-800 rounded-lg p-4 flex gap-3">
         <AlertCircle className="w-5 h-5 text-sg-amber-600 flex-shrink-0 mt-0.5" />
@@ -60,6 +62,7 @@ export default function DevToolsPage() {
         </p>
         <SpecGraphEntry />
       </section>
-    </div>
+      </div>
+    </DeveloperToolsContainer>
   );
 }
