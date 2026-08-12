@@ -9152,3 +9152,9 @@ End of AGENTS.md
 - Audit correction: the trace gate now distinguishes declared implementation paths from declared implementation symbols and recognizes configuration/source suffixes such as `.properties`; the registry remains evidence-backed rather than being marked complete by the validator fix.
 - Verification limits: no Gradle, Kotlin compile, test suite, JAR, smoke, installation, restart, or deployment proof was run. This is a static code-base audit, not a VERIFIED or release-ready claim.
 - Fingerprints: `scripts/source-to-code-trace-gate.py=5be0fe942d4cac721c5218039a3658bbd351d53912424edb9145ded45c269d15`; `docs/completion/ATROPOS_CODE_OBLIGATION_REGISTRY.json=192ba845bf059d251d417715f605ccde62be613b164c84844e2c99e72c3bb5d1`; `docs/completion/ATROPOS_CODE_COMPLETION_REPORT.md=ab562ccccd60711369dc0c823c6ce0c1b534c5b670a466c3dc74ef14c50bc0ac`.
+
+### 2026-08-12T12:35:00Z · Agent: Codex GPT-5 · Batch: completion-audit-head-refresh-024
+- The same canonical audit was rerun at `main` commit `9876521c`; result unchanged and now recorded against that exact audited head: `698/741` written, `43/741` not written, `94.197%` code-base completion.
+- `python3 scripts/source-to-code-trace-gate.py` passed again: `TRACEABILITY_GATE_OK obligations=741`.
+- Final audit fingerprints: `docs/completion/ATROPOS_CODE_OBLIGATION_REGISTRY.json=1944641f40b84922703aa006121cf73e6d40e36c9c0dadcf55682df0a19ff5c8`; `docs/completion/ATROPOS_CODE_COMPLETION_REPORT.md=9f68661e710248afb4bc83daa95785a544c1d3fc2bdaaae7aeb3f08461c34c61`.
+- No build, compile, test suite, JAR, or runtime proof was run; this remains a static audit result, not VERIFIED/release-ready status.

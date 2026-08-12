@@ -2,7 +2,7 @@
   "schemaVersion": "atropos-codebase-accounting-v2",
   "baselineHead": "7e612fcdba571b276a4ae65704835eb762030682",
   "baselineWarning": "nearest recoverable commit, not exact locked export",
-  "currentHead": "00107afd54006bbff9ccf57b3f21ed856c97c11a",
+  "currentHead": "9876521c3630c05a45aa0f068e384e112f8740b3",
   "sourceInventory": [
     {
       "path": "docs/source/ATROPOS_Source_Doc_1.txt",
@@ -107,14 +107,14 @@
       "bytes": 2415
     }
   ],
-  "registrySha256": "192ba845bf059d251d417715f605ccde62be613b164c84844e2c99e72c3bb5d1",
+  "registrySha256": "1944641f40b84922703aa006121cf73e6d40e36c9c0dadcf55682df0a19ff5c8",
   "totalObligations": 741,
   "currentWritten": 698,
   "currentCodeCompletion": 94.197,
   "historicalWritten": 517,
   "historicalCodeCompletion": 69.7706,
   "deltaPercentagePoints": 24.4265,
-  "generatedAt": "2026-08-12T11:01:08Z",
+  "generatedAt": "2026-08-12T11:04:11Z",
   "perPhase": {
     "0": {
       "total": 96,
