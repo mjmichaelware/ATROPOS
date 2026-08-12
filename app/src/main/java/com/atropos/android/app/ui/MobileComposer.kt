@@ -36,6 +36,7 @@ fun MobileComposer(
     onSend: () -> Unit,
     isOnline: Boolean
 ) {
+    val density = OneHandDensity()
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surface,
@@ -52,7 +53,7 @@ fun MobileComposer(
                 onValueChange = onValueChange,
                 modifier = Modifier
                     .weight(1f)
-                    .heightIn(min = 44.dp),
+                    .heightIn(min = density.touchTargetDp.dp),
                 placeholder = {
                     Text(if (isOnline) "Message ATROPOS..." else "Engine offline — message will queue")
                 },
@@ -62,7 +63,7 @@ fun MobileComposer(
             IconButton(
                 onClick = onSend,
                 enabled = value.isNotBlank(),
-                modifier = Modifier.size(44.dp)
+                modifier = Modifier.size(density.touchTargetDp.dp)
             ) {
                 Icon(
                     imageVector = sendIcon(),

@@ -55,6 +55,7 @@ private fun AtroposConversation(repository: ConversationRepository) {
     var sessions by remember { mutableStateOf<List<ChatListEntry>>(emptyList()) }
     var checkpoint by remember { mutableStateOf<MobileCheckpoint?>(null) }
     var thinking by remember { mutableStateOf<MobileThinking?>(null) }
+    val oneHandDensity = remember { com.atropos.android.app.ui.OneHandDensity() }
     val scope = rememberCoroutineScope()
 
     // Reachability is polled rather than assumed. The engine is a separate
@@ -78,6 +79,7 @@ private fun AtroposConversation(repository: ConversationRepository) {
                     }
                 }
             }
+            oneHandDensity.offlineResume("default", sessions.firstOrNull()?.id, online)
             delay(POLL_INTERVAL_MS)
         }
     }
