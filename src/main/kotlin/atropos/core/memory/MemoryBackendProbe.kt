@@ -1,5 +1,8 @@
 package atropos.core.memory
 
+import atropos.core.policy.BoundedProcessRunner
+import java.nio.file.Path
+
 /**
  * Detects which optional local memory backends this machine actually has.
  *
@@ -59,14 +62,15 @@ class MemoryBackendProbe(
     private companion object {
         val ALLOWED_PUNCTUATION = setOf('-', '_', '.', '+')
 
-        fun runShellCommand(script: String): Int = try {
-            ProcessBuilder("sh", "-c", script)
-                .redirectErrorStream(true)
-                .start()
-                .waitFor()
-        } catch (_: Exception) {
-            // Any failure to even launch counts as "not available".
-            1
-        }
+        fun runShellCommand(script: String): Int = runCatching {
+            val result = BoundedProcessRunner().run(
+                command = listOf("sh", "-c", script),
+                directory = Path.of("/"),
+                timeoutMillis = 5_000L,
+                maxOutputBytes = 4_096,
+                maxOutputLines = 128
+            )
+            if (result.timedOut || result.launchError != null) 1 else result.exitCode ?: 1
+        }.getOrDefault(1)
     }
 }
