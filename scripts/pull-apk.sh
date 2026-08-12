@@ -101,16 +101,62 @@ APK="$(find "$TMP" -name '*.apk' | head -1)"
 # Verify before handing it over. An APK missing compiled code or a resource
 # table installs nowhere, and the installer's only feedback is the unhelpful
 # "app wasn't installed".
+#
+# The listing is produced twice, by different readers. `unzip` is not reliable
+# on a v2/v3-signed APK: the APK Signing Block sits between the entries and the
+# central directory, and some builds of unzip — Termux's included — can emit an
+# empty or partial listing for it. Believing a single reader once caused this
+# script to reject a genuinely good APK that CI had already verified. Python's
+# zipfile reads the central directory directly and is the tiebreaker.
 echo "verifying..."
-if ! unzip -l "$APK" | grep -q "classes.dex"; then
-    echo "REJECTED: no classes.dex — this APK contains no compiled code." >&2
-    echo "This is the 'empty shell' build; it will never install." >&2
+LISTING="$TMP/listing.txt"
+: > "$LISTING"
+
+unzip -l "$APK" >> "$LISTING" 2>/dev/null || true
+UNZIP_ENTRIES=$(grep -c "" "$LISTING" 2>/dev/null || echo 0)
+
+PY_LISTING="$TMP/listing-py.txt"
+: > "$PY_LISTING"
+if command -v python3 >/dev/null 2>&1; then
+    python3 - "$APK" > "$PY_LISTING" 2>/dev/null <<'PY' || true
+import sys, zipfile
+try:
+    with zipfile.ZipFile(sys.argv[1]) as z:
+        for n in z.namelist():
+            print(n)
+except Exception as exc:
+    print(f"ZIPFILE_ERROR {exc}", file=sys.stderr)
+PY
+fi
+PY_ENTRIES=$(grep -c "" "$PY_LISTING" 2>/dev/null || echo 0)
+
+echo "  unzip listed $UNZIP_ENTRIES lines; python zipfile listed $PY_ENTRIES entries"
+
+have() { grep -q "$1" "$LISTING" 2>/dev/null || grep -q "$1" "$PY_LISTING" 2>/dev/null; }
+
+missing=""
+have "classes.dex"    || missing="$missing classes.dex"
+have "resources.arsc" || missing="$missing resources.arsc"
+
+if [ -n "$missing" ]; then
+    echo >&2
+    echo "REJECTED: the APK is missing:$missing" >&2
+    echo >&2
+    echo "Neither reader found them, so this is very unlikely to be a tooling" >&2
+    echo "artefact. What the APK does contain:" >&2
+    if [ "$PY_ENTRIES" -gt 0 ]; then
+        head -40 "$PY_LISTING" >&2
+        echo "  ... $PY_ENTRIES entries total" >&2
+    else
+        head -40 "$LISTING" >&2
+        echo "  (python zipfile could not read the archive either)" >&2
+    fi
+    echo >&2
+    echo "The unsigned artifact from the same run is worth comparing:" >&2
+    echo "  gh run download $RUN_ID --name atropos-android-unsigned --dir /tmp/unsigned" >&2
     exit 1
 fi
-if ! unzip -l "$APK" | grep -q "resources.arsc"; then
-    echo "REJECTED: no resources.arsc — the resource table is missing." >&2
-    exit 1
-fi
+echo "  contains classes.dex and resources.arsc"
 
 # Timestamped filename so a stale copy in the downloads folder can never be
 # mistaken for the new build. That masked two earlier fixes.
