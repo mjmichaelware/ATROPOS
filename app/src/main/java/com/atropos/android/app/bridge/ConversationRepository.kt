@@ -42,6 +42,14 @@ class ConversationRepository(
         }
     }
 
+    fun checkpoint(): MobileCheckpoint? {
+        val port = discovery.resolve() ?: return null
+        return when (val result = http.get(BridgeEndpoint.url(port, "/v1/checkpoint"))) {
+            is BridgeResult.Ok -> CheckpointParser.parse(result.body)
+            else -> null
+        }
+    }
+
     fun send(text: String): SendOutcome {
         val port = discovery.resolve() ?: return SendOutcome.EngineUnreachable
         val body = "{\"text\":${JsonString.quote(text)}}"

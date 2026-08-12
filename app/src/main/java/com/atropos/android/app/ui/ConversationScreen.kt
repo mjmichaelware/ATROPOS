@@ -20,6 +20,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.atropos.android.app.bridge.MobileCheckpoint
 
 /**
  * HOE-D01: the app shell — conversation stream plus composer.
@@ -39,7 +40,9 @@ fun ConversationScreen(
     isOnline: Boolean,
     onSendMessage: (String) -> Unit,
     sessions: List<ChatListEntry> = emptyList(),
-    onSessionSelected: (String) -> Unit = {}
+    onSessionSelected: (String) -> Unit = {},
+    checkpoint: MobileCheckpoint? = null,
+    onCheckpointAction: (String) -> Unit = {}
 ) {
     var input by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
@@ -53,6 +56,7 @@ fun ConversationScreen(
         MobileHeader(isOnline = isOnline)
 
         ChatListScreen(sessions = sessions, onSelected = onSessionSelected)
+        CheckpointChip(checkpoint = checkpoint, onAction = onCheckpointAction)
 
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
             if (messages.isEmpty()) {
