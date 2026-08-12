@@ -96,7 +96,10 @@ class SourceAuthorityLaw(
 
         val indexer = SourceAuthorityIndexer(repoRoot)
         val service = DloiService(repoRoot)
-        val loadedDocs = service.loadDocuments()
+        // Verification observes the existing derived index. The normal DLOI
+        // read path repairs a missing index, which would make an unindexed or
+        // modified source appear verified before this law can inspect it.
+        val loadedDocs = service.loadDocuments(ensureIndex = false)
         val loadedSourceIds = loadedDocs.map { it.sourceId }.toSet()
 
         val verified = mutableListOf<VerifiedDocument>()

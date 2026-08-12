@@ -52,7 +52,10 @@ object BridgeEventHub {
         val currentApprovals = approvals.pending()
         for (app in currentApprovals) {
             if (!lastApprovalIds.contains(app.id)) {
-                emit("approval_raised", "id=${app.id} actor=${app.actor} op=${app.operation}")
+                emit(
+                    "approval_raised",
+                    "id=${app.id} proposal=${app.proposalId} actor=${app.actor} op=${app.operation}"
+                )
                 lastApprovalIds.add(app.id)
             }
         }
@@ -62,7 +65,9 @@ object BridgeEventHub {
         val activeSessions = sessions.list()
         for (session in activeSessions) {
             val previousCount = lastTurnCounts[session.id]
-            if (previousCount != null && session.turnCount > previousCount) {
+            if ((previousCount == null && session.turnCount > 0) ||
+                (previousCount != null && session.turnCount > previousCount)
+            ) {
                 emit("turn_appended", "session=${session.id} count=${session.turnCount}")
             }
             lastTurnCounts[session.id] = session.turnCount

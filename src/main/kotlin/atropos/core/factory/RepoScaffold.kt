@@ -79,6 +79,9 @@ class RepoScaffold(
                     display: flex;
                     justify-content: space-between;
                 }
+                .logo {
+                    color: var(--primary-color);
+                }
             """.trimIndent()
 
             map["src/main/resources/static/app.js"] = """

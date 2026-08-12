@@ -90,11 +90,17 @@ class RoutePolicy(
         val eligible = evaluated.filter { it.eligible }.sortedWith(
             compareBy<ProviderEligibility>(
                 {
+                    if (!task.localFirst && it.provider.isLocal) 1 else 0
+                },
+                {
                     when {
                         costPolicy == AtroposCostPolicy.PAID_EMERGENCY_UNLOCKED &&
                             it.provider.isPaidLocked() &&
                             paidGate.isProviderUnlocked(it.provider.id) -> 0
                         it.provider.isPaidLocked() -> 2
+                        costPolicy == AtroposCostPolicy.PAID_EMERGENCY_UNLOCKED &&
+                            it.provider.costMode != CostMode.LOCAL -> 0
+                        costPolicy == AtroposCostPolicy.PAID_EMERGENCY_UNLOCKED -> 1
                         else -> 1
                     }
                 },

@@ -141,13 +141,13 @@ class DloiService(
         return lookup("${match.document.sourceId}#${match.section.id}@L${match.section.lineStart}-${match.section.lineEnd}")
     }
 
-    fun loadDocuments(): List<DloiDocument> {
+    fun loadDocuments(ensureIndex: Boolean = true): List<DloiDocument> {
         // Source authority builds itself from the committed documents. The
         // index is a derived cache under the ignored .atropos tree, so on any
         // fresh clone it is absent and every lookup used to miss — the reader
         // existed with no writer. Indexing is content-addressed and skips
         // documents already present, so this is a no-op once warm.
-        val indexReady = runCatching { indexer.ensureIndexed() }.isSuccess
+        val indexReady = !ensureIndex || runCatching { indexer.ensureIndexed() }.isSuccess
         if (!indexReady) return emptyList()
 
         val extractedRoot = repoRoot.resolve(".atropos/context-cache/source-index/v1/extracted")

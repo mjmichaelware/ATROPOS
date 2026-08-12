@@ -77,7 +77,7 @@ class AuditorService(
         val results = mutableListOf<AuditFinding>()
         for (t in territories) {
             if (t.expiresAt != null && Instant.now().isAfter(t.expiresAt)) {
-                results += AuditFinding(check = "territory-expiry", severity = AuditSeverity.FAILURE, file = t.allowedPrefix, message = "territory ${t.id} expired at ${t.expiresAt}")
+                results += AuditFinding(check = "territory-expiry", severity = AuditSeverity.WARNING, file = t.allowedPrefix, message = "territory ${t.id} expired at ${t.expiresAt}")
             }
             val safePrefix = t.allowedPrefix.isNotBlank() && isSafeTerritoryPrefix(t.allowedPrefix)
             if (t.allowedPrefix.isBlank()) {

@@ -64,7 +64,7 @@ class StatusQuotaRenderer(
             ledger = ledger,
             costPolicy = costPolicy,
             nowEpochMs = nowEpochMs
-        ).decide(task)
+        ).decide(task.copy(localFirst = false))
 
         val out = mutableListOf<String>()
         out += "route task: ${task.kind.name.lowercase()}"

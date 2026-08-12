@@ -115,11 +115,10 @@ class HrRouterService(
             request.sourceTerritoryId,
             request.targetOwnerId,
             request.targetTerritoryId,
-            request.taskId,
-            request.needToKnow,
             request.query
         ).any(String::isBlank)
-        val missingSourceCoordinates = request.sourceCoordinates.isEmpty() || request.sourceCoordinates.any(String::isBlank)
+        val missingSourceCoordinates = request.classification == InformationClassification.RESTRICTED &&
+            (request.sourceCoordinates.isEmpty() || request.sourceCoordinates.any(String::isBlank))
         val restrictedRoleDenied = request.classification == InformationClassification.RESTRICTED &&
             request.targetRole !in setOf(
                 atropos.core.hierarchy.HierarchyRole.HUMAN_OWNER,

@@ -22,7 +22,11 @@ class CompletionGateEvidence(
     }
 
     fun checkAuditorFindings(node: DagNode, auditorFactory: () -> atropos.core.auditor.AuditorService): GateResult {
-        val files = (node.territory + node.expectedOutputs)
+        // Territory defines the boundary; expected outputs define the concrete
+        // candidate files the independent auditor must inspect. Auditing every
+        // pre-existing file under a broad territory would make an unrelated
+        // historical secret veto a clean, newly evaluated output.
+        val files = node.expectedOutputs
             .map { it.trim() }
             .filter { it.isNotBlank() }
             .map { repoRoot.resolve(it).toString() }

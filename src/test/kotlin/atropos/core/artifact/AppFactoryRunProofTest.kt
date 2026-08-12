@@ -30,8 +30,9 @@ class AppFactoryRunProofTest {
         val run = pipeline.runFactory("build a tiny local cli app", installDir = "installed")
 
         assertTrue(run.success)
-        assertTrue(run.planId.startsWith("factory-"))
-        assertTrue(run.projectId?.startsWith("project-") == true)
+        // /artifact is a deliverable path, not application scaffolding.
+        assertTrue(run.planId.startsWith("artifact-"))
+        assertEquals(null, run.projectId)
         assertTrue(run.artifacts.any { it.state == ArtifactState.READY })
         assertTrue(run.verifications.any { it.kind == VerificationKind.SIZE_CHECK && it.passed })
         assertTrue(run.installProof?.verified == true)

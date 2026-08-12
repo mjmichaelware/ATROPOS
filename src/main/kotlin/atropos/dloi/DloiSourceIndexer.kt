@@ -95,7 +95,9 @@ class DloiSourceIndexer(
         Files.list(sourceDirectory).use { stream ->
             stream.filter {
                 Files.isRegularFile(it, LinkOption.NOFOLLOW_LINKS) &&
-                    (manifestedSources == null || it.toAbsolutePath().normalize() in manifestedSources) &&
+                    (manifestedSources == null ||
+                        it.toAbsolutePath().normalize() in manifestedSources ||
+                        it.fileName.toString() in LEGACY_AUTHORITY_FILENAMES) &&
                     it.fileName.toString().substringAfterLast('.', "").lowercase() in TEXT_EXTENSIONS
             }
                 .sorted()
@@ -335,5 +337,9 @@ class DloiSourceIndexer(
     private companion object {
         val TEXT_EXTENSIONS = setOf("txt", "md")
         const val SOURCE_ID_LENGTH = 16
+        /** Preserve the pre-manifest authority alias and its stable coordinates. */
+        val LEGACY_AUTHORITY_FILENAMES = setOf(
+            "ATROPOS_CODEX_CLI_BUILD_BLUEPRINT_OVER_TIME.txt"
+        )
     }
 }
