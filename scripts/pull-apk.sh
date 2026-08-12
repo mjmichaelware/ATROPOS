@@ -172,6 +172,14 @@ mkdir -p "$OUT_DIR"
 DEST="$OUT_DIR/ATROPOS-$STAMP.apk"
 cp "$APK" "$DEST"
 
+# Android's media index does not notice files written by Termux, so the APK is
+# on disk but invisible to the Files and Downloads apps. That matters when
+# Termux itself cannot be granted "install unknown apps" — opening the APK from
+# a file manager is then the only route, and it cannot open what it cannot see.
+if command -v termux-media-scan >/dev/null 2>&1; then
+    termux-media-scan "$DEST" >/dev/null 2>&1 || true
+fi
+
 echo
 echo "OK: $DEST"
 echo "size: $(du -h "$DEST" | cut -f1)"
