@@ -9208,3 +9208,14 @@ End of AGENTS.md
 - Fingerprints: see git commit on branch claude/new-session-ocfxmg.
 
 One defect found and fixed inside this batch. The codec first used the unit and record separators as sentinels; EventJournalService compacts every payload and compaction ends in trim(), and Java's Character.isWhitespace is true for U+001C through U+001F. The leading separator was stripped before the line reached disk, so every event decoded as legacy and lost its provenance while every write still appeared to succeed. Sentinels are now U+0001 and U+0002, which are not whitespace under that rule.
+
+### 2026-08-13T07:43Z · Agent: Claude (claude-opus-5, Claude Code) · Batch: obs-cards-export-94-97
+- Paths touched: src/main/kotlin/atropos/core/observability/OutputCard.kt (+141), CardRenderer.kt (+125), RunExport.kt (+101), MarkdownExporter.kt (+153), JsonExporter.kt (+167); src/test/kotlin/atropos/core/observability/RunExportTest.kt (+218). Net +905 lines across 6 single-responsibility files.
+- Atoms / phases affected: unimplemented-list items 94 (OutputCard), 95 (CardRenderer), 96 (MarkdownExporter), 97 (JsonExporter); Source Doc 3 §5.2; item 76 (trace completeness) now has a computable definition.
+- Predicate moved: "individual plans, commands, outputs, diffs, logs, provider responses, tests and reports must be copyable as discrete cards" and "a full run must be exportable as Markdown, JSON, or another durable trace format" moved from false to true. Both exporters read one assembled RunExport, so two exports of the same run cannot disagree about what the run did.
+- % delta: Source Doc 3 §5 observability 36% -> 82% (9 of 11 named atomic files exist); Source Doc 3 §4 evaluation unchanged, but traceCompleteness is now a real ratio the metric layer can consume rather than a description.
+- Why the delta is justified: copy fidelity is enforced structurally -- OutputCard.body is the clipboard payload and CardRenderer never writes into it, proven by a test asserting rendered chrome is absent from copyText(). Exports are pure functions of RunExport with no clock read, so the same run exports byte-identically twice, which is what makes the event-determinism metric checkable. JSON emits null explicitly rather than omitting keys, preserving the absent-versus-unrecorded distinction the completeness metric depends on. 19 focused tests pass, including a fence inside a card body not ending its own code block and a pipe inside a payload not adding a table column.
+- New overall estimate: unchanged (~42% baseline).
+- Fingerprints: see git commit on branch claude/new-session-ocfxmg.
+
+Remaining in §5: ExecutionHistoryStore, HistoryQuery, HistoryIndex (items 98-100), which are the next batch.
