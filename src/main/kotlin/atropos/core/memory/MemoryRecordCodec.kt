@@ -1,19 +1,13 @@
 package atropos.core.memory
 
+import atropos.core.json.JsonStringField
+
 object MemoryRecordCodec {
-    private val STRING_FIELD_PATTERNS = listOf(
-        "id", "kind", "title", "body", "subjectType", "subjectId",
-        "contentSha256", "failureSignature", "sourceCoordinate", "authority"
-    ).associateWith { name ->
-        Regex(""""$name"\s*:\s*"((?:\\.|[^"\\])*)"""")
-    }
     private val NUMBER_FIELD_PATTERNS = listOf("createdAtEpochMs", "schemaVersion")
         .associateWith { name -> Regex(""""$name"\s*:\s*([0-9]+)""") }
     private val BOOLEAN_FIELD_PATTERNS = mapOf(
         "redacted" to Regex(""""redacted"\s*:\s*(true|false)""")
     )
-    private val TAGS_FIELD_PATTERN = Regex(""""tags"\s*:\s*\[(.*?)\]""")
-    private val TAG_VALUE_PATTERN = Regex(""""((?:\\.|[^"\\])*)"""")
     private const val HEX = "0123456789abcdef"
 
     fun encode(record: MemoryRecord): String {
@@ -132,9 +126,16 @@ object MemoryRecordCodec {
         return sha256Hex(material)
     }
 
-    private fun stringField(json: String, name: String): String? {
-        return STRING_FIELD_PATTERNS[name]?.find(json)?.groupValues?.get(1)?.let { unescape(it) }
-    }
+    /**
+     * Reads a string field by scanning rather than matching.
+     *
+     * The pattern this replaces recursed once per character of the field, so a
+     * record with a body of a few thousand characters threw StackOverflowError
+     * instead of decoding. Both memory channels reported it as a soft failure
+     * and the run continued with no recall at all -- see [JsonStringField].
+     */
+    private fun stringField(json: String, name: String): String? =
+        JsonStringField.value(json, name)?.let { unescape(it) }
 
     private fun longField(json: String, name: String): Long? {
         return NUMBER_FIELD_PATTERNS[name]?.find(json)?.groupValues?.get(1)?.toLongOrNull()
@@ -149,11 +150,9 @@ object MemoryRecordCodec {
     }
 
     private fun tagsField(json: String): List<String> {
-        val raw = TAGS_FIELD_PATTERN.find(json)?.groupValues?.get(1) ?: return emptyList()
+        val raw = JsonStringField.arrayBody(json, "tags") ?: return emptyList()
         if (raw.isBlank()) return emptyList()
-        return TAG_VALUE_PATTERN.findAll(raw)
-            .map { unescape(it.groupValues[1]) }
-            .toList()
+        return JsonStringField.values(raw).map { unescape(it) }
     }
 
     private fun sha256Hex(material: String): String {

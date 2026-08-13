@@ -1,5 +1,7 @@
 package atropos.core.provider.adapter
 
+import atropos.core.json.JsonStringField
+
 import atropos.core.provider.NormalizedProviderFailureType
 import atropos.core.provider.ProviderCallResult
 import atropos.core.provider.ProviderErrorNormalizer
@@ -40,8 +42,9 @@ object AssetProviderJson {
     }
 
     private fun stringField(json: String, name: String): String? {
-        val regex = Regex(""""$name"\s*:\s*"((?:\\.|[^"\\])*)"""")
-        return regex.find(json)?.groupValues?.get(1)?.let(::unescape)
+        // Scanned, not matched: the regex this replaces recursed once per
+        // character and overflowed the stack on long provider responses.
+        return JsonStringField.value(json, name)?.let(::unescape)
     }
 
     private fun escape(value: String): String =

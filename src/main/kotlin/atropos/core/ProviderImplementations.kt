@@ -158,11 +158,11 @@ class OllamaProvider : BaseHttpProvider() {
     }
 
     private fun extractOllamaResponse(raw: String): String {
-        val match = Regex(""""response"\s*:\s*"((?:\\.|[^"\\])*)"""")
-            .find(raw)
-            ?: return raw
+        // A model response is long by construction, which is exactly the input
+        // the regex here used to overflow the stack on.
+        val field = atropos.core.json.JsonStringField.value(raw, "response") ?: return raw
 
-        return unescapeJsonString(match.groupValues[1]).trim()
+        return unescapeJsonString(field).trim()
     }
 }
 

@@ -1,5 +1,7 @@
 package atropos.core.execution
 
+import atropos.core.json.JsonStringField
+
 import atropos.core.policy.BoundedProcessRunner
 import java.io.File
 import java.nio.file.Path
@@ -231,8 +233,7 @@ object WorkItemCodec {
     }
 
     private fun stringField(json: String, name: String): String? {
-        val regex = Regex(""""$name"\s*:\s*"((?:\\.|[^"\\])*)"""")
-        return regex.find(json)?.groupValues?.get(1)?.let { unescape(it) }
+        return JsonStringField.value(json, name)?.let { unescape(it) }
     }
 
     private fun longField(json: String, name: String): Long? {
@@ -246,12 +247,10 @@ object WorkItemCodec {
     }
 
     private fun commandField(json: String): List<String> {
-        val regex = Regex(""""command"\s*:\s*\[(.*?)\]""")
-        val raw = regex.find(json)?.groupValues?.get(1) ?: return emptyList()
-        return Regex(""""((?:\\.|[^"\\])*)"""")
-            .findAll(raw)
-            .map { unescape(it.groupValues[1]) }
-            .toList()
+        // Bracket depth is tracked outside strings, so an argument containing
+        // "]" no longer truncates the command.
+        val raw = JsonStringField.arrayBody(json, "command") ?: return emptyList()
+        return JsonStringField.values(raw).map(::unescape)
     }
 
     private fun escape(value: String): String {
