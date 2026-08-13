@@ -340,13 +340,36 @@ class AppProjectGenerator(
             val normalized = value.replace(Regex("[^A-Za-z0-9_]"), "_").lowercase()
             if (normalized.isBlank() || normalized.all { it == '_' }) return "app"
             val startsAsIdentifier = normalized.firstOrNull()?.isLetter() == true || normalized.firstOrNull() == '_'
-            return if (startsAsIdentifier && normalized !in KOTLIN_KEYWORDS) normalized else "app_$normalized"
+            val usable = startsAsIdentifier &&
+                normalized !in KOTLIN_KEYWORDS &&
+                normalized !in RESERVED_PACKAGE_ROOTS
+            return if (usable) normalized else "app_$normalized"
         }
 
         private fun safeProjectId(value: String): String {
             val normalized = value.replace(Regex("[^A-Za-z0-9._-]"), "_")
             return if (normalized.isBlank()) "project" else normalized
         }
+
+        /**
+         * Package roots the toolchain owns, which are not keywords.
+         *
+         * A prompt beginning "Build a Kotlin HTTP client" derives the app name
+         * from its first meaningful word, so the generated file declared
+         * `package kotlin` and kotlinc refused it: "only the Kotlin standard
+         * library is allowed to use the kotlin package". The keyword list did
+         * not catch it because `kotlin` is a perfectly ordinary identifier --
+         * it is reserved by the *toolchain*, not by the grammar, and those are
+         * two different lists.
+         *
+         * `java` and `javax` fail the same way on the JVM, and `kotlinx` is
+         * owned by the Kotlin libraries even though nothing rejects it today;
+         * generating into someone else's namespace is wrong before it is an
+         * error.
+         */
+        private val RESERVED_PACKAGE_ROOTS = setOf(
+            "kotlin", "kotlinx", "java", "javax", "jdk", "sun", "android", "androidx"
+        )
 
         private val KOTLIN_KEYWORDS = setOf(
             "as", "break", "class", "continue", "do", "else", "false", "for", "fun", "if",
