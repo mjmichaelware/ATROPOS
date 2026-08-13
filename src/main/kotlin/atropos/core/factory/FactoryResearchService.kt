@@ -76,7 +76,12 @@ class FactoryResearchService(
         providerSuggestionsPredicate: ((FactoryResearchReport) -> Boolean)? = null,
         promptFingerprint: String = ""
     ): FactoryResearchReport {
-        val log = mutableListOf<String>()
+        // Narrated, so every research channel reaches a watching operator as
+        // it resolves rather than arriving as a block after the run decided.
+        // Only the self-host runner streamed before this, which is why
+        // /thinking 3 showed nothing at all during a factory run -- the engine
+        // was working and saying so only to itself.
+        val log = atropos.core.thinking.NarratedSteps()
         val pointers = mutableListOf<String>()
         val hashes = mutableListOf<String>()
         val fetcher = BoundedResearchFetcher(

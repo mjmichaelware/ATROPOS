@@ -39,19 +39,27 @@ class FactoryCommandHandler(
         if (prompt.isBlank()) {
             uiEngine.renderError("/factory run requires a prompt")
         } else {
+            // Subscribed for the duration, so /thinking shows the run working.
+            // Narration without a subscriber is the engine talking to itself,
+            // which is exactly what a factory run did before this.
+            val live = atropos.cli.ui.LiveThinkingRenderer(uiEngine)
+            live.start("Factory run — /thinking 3 for the full trace")
             val result = try {
                 runFactory(prompt)
             } catch (failure: FactoryClarificationRequired) {
+                live.stop()
                 val questions = failure.questions.joinToString(" | ") { "YES/NO: $it" }
                 uiEngine.renderError(
                     "factory clarification required: $questions; artifact=${failure.request.path}"
                 )
                 return
             } catch (failure: RuntimeException) {
+                live.stop()
                 val detail = redactionFilter.compact(failure.message ?: "unknown failure")
                 uiEngine.renderError("factory run failed: ${detail.ifBlank { "unknown failure" }}")
                 return
             }
+            live.stop()
             uiEngine.renderNotice("factory run verified repository output:")
             uiEngine.renderNotice(result)
         }

@@ -13,7 +13,13 @@ class TerminalRenderingFacade(
     private val statusBar: StatusBarRenderer,
     private val verification: VerificationRenderer,
     private val help: CommandHelpRenderer,
-    private val transcriptBuffer: TranscriptBuffer
+    private val transcriptBuffer: TranscriptBuffer,
+    /**
+     * Semantic colouring for renderers that still emit flat text. One
+     * transform over their output, rather than an edit to each of them:
+     * dozens of renderers would drift apart, a single seam cannot.
+     */
+    private val colorizer: SemanticLineColorizer = SemanticLineColorizer(theme)
 ) {
     fun renderWelcomePlain(provider: String, workspace: String) {
         plainOutput.emitPlain("ATROPOS", canvas.width)
@@ -55,11 +61,13 @@ class TerminalRenderingFacade(
     }
 
     fun renderNoticePlain(message: String) {
-        plainOutput.emitPlain(message, canvas.width)
+        plainOutput.emitPlain(colorizer.colorize(message), canvas.width)
     }
 
     fun renderNoticeReactive(message: String) {
-        val shaped = RailBlockFormatter.format(message, theme, canvas.width)
+        // Coloured before shaping: the formatter aligns on the raw text, and
+        // painting first would make it measure escape sequences as width.
+        val shaped = RailBlockFormatter.format(colorizer.colorize(message), theme, canvas.width)
         transcriptBuffer.append(
             if (message.startsWith("provider switched", ignoreCase = true)) {
                 transcript.success(shaped)
