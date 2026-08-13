@@ -1,111 +1,71 @@
 # ATROPOS Code-Base Completion Report
 
-Generated: 2026-08-12T12:18:41Z
-Current Git HEAD: 9449c55377855ad56481f48cc4b69827f482fe49
-Historical reconstruction HEAD: 7e612fcdba571b276a4ae65704835eb762030682 (nearest recoverable commit; exact locked export unavailable)
+Generated: 2026-08-13T07:48:10Z
+Current Git HEAD: 1cc96bc
+Audit merged from: docs/ATROPOS_UNIMPLEMENTED_LIST.md
+
+## Why this number moved down
+
+The previous report read 100.00% (741/741). The numerator was not wrong; the
+denominator was incomplete. A tree audit on 2026-08-13 found 279 obligations
+that had never been registered, and a spot check of 42 of them found 35 absent
+from the registry entirely -- ExecutionEvent, ProvenanceStream, MarkdownExporter,
+ExecutionHistoryStore, AtroposMetrics, BenchmarkRunner, SelfImprovementLoop,
+PolicyGate, DeploymentService, ast_symbol_graph, LOCAL_TOOLCHAIN, the eleven
+named fallback chains, Dockerfile, GraalVM and Ktor among them. A register that
+does not contain the work cannot report on it, and 100% against an incomplete
+register is the fake-success outcome AGENTS.md 0.6 forbids.
+
+Six obligations were additionally flipped from WRITTEN to NOT_WRITTEN under the
+accounting spec's own rule -- "one broad file cannot silently satisfy a separate
+named atomic owner". A001 (SourceDocumentRegistry) rested on DloiService.kt and
+C005 (TermuxPathResolver) on build.gradle.kts; neither named symbol exists as a
+production symbol. See ATROPOS_CODE_COMPLETION_AMENDMENTS.md.
 
 ## Code-Base Obligation Set
 
-Total binary obligations: 741
-Current WRITTEN: 741
-Current NOT_WRITTEN: 0
-Current CODE-BASE COMPLETION: 100.00% (741/741)
-Historical WRITTEN: 517
-Historical NOT_WRITTEN: 224
-Historical CODE-BASE COMPLETION: 69.77% (517/741)
-Code-base delta: +30.23 percentage points
+Total binary obligations: 1020
+Current WRITTEN: 745
+Current NOT_WRITTEN: 275
+Current CODE-BASE COMPLETION: 73.04% (745/1020)
 
-The denominator is binary implementation obligations directly juxtaposed with the current codebase. SHA-256 values prove authority identity; document bytes are provenance telemetry, not completion weights. Gap-map atoms are crosswalked to existing requirements and receive no duplicate credit.
+Previous reported completion: 100.00% (741/741)
+Previous denominator was short by 279 obligations.
 
-## Authority Coverage
+## By phase
 
-Hashed authority documents: 19
-Source Doc 4 unique obligations added: 9
-Core, HOE, and Phase 20 PDF atoms are registered in `authorityCrosswalk` and mapped to existing obligations unless explicitly unique.
-
-## Phase Accounting
-
-| Phase | Total | Current written | Current code % | Historical written | Delta pp | Not written | Missing IDs |
-|---:|---:|---:|---:|---:|---:|---:|---|
-| 0 | 96 | 96 | 100.00% | 87 | +9.38 | 0 |  |
-| 1 | 3 | 3 | 100.00% | 3 | +0.00 | 0 |  |
-| 2 | 24 | 24 | 100.00% | 24 | +0.00 | 0 |  |
-| 3 | 24 | 24 | 100.00% | 24 | +0.00 | 0 |  |
-| 4 | 18 | 18 | 100.00% | 18 | +0.00 | 0 |  |
-| 5 | 3 | 3 | 100.00% | 3 | +0.00 | 0 |  |
-| 6 | 18 | 18 | 100.00% | 15 | +16.67 | 0 |  |
-| 7 | 15 | 15 | 100.00% | 15 | +0.00 | 0 |  |
-| 8 | 21 | 21 | 100.00% | 18 | +14.29 | 0 |  |
-| 9 | 21 | 21 | 100.00% | 16 | +23.81 | 0 |  |
-| 10 | 120 | 120 | 100.00% | 114 | +5.00 | 0 |  |
-| 11 | 36 | 36 | 100.00% | 31 | +13.89 | 0 |  |
-| 12 | 3 | 3 | 100.00% | 3 | +0.00 | 0 |  |
-| 13 | 3 | 3 | 100.00% | 0 | +100.00 | 0 |  |
-| 14 | 3 | 3 | 100.00% | 3 | +0.00 | 0 |  |
-| 15 | 3 | 3 | 100.00% | 3 | +0.00 | 0 |  |
-| 16 | 3 | 3 | 100.00% | 0 | +100.00 | 0 |  |
-| 17 | 90 | 90 | 100.00% | 29 | +67.78 | 0 |  |
-| 18 | 93 | 93 | 100.00% | 39 | +58.06 | 0 |  |
-| 19 | 66 | 66 | 100.00% | 18 | +72.73 | 0 |  |
-| 20 | 78 | 78 | 100.00% | 54 | +30.77 | 0 |  |
-
-## Strict Canonical-Owner Audit
-
-Strict owner atoms audited: 44
-Strict owner predicates: 132
-Strict predicates WRITTEN: 132
-Strict predicates NOT_WRITTEN: 0
-
-Each strict atom requires a production owner symbol, a reachable production reference, and an independent test/evidence reference. Broad subsystem files do not receive silent credit for a named atomic owner.
-
-Strict audit evidence: `docs/completion/ATROPOS_STRICT_ABSENT_ATOM_AUDIT.md`.
-
-## Checkpoints and Horizons
-
-| Group | Phases | Total | Current written | Code % | Historical written | Delta pp |
-|---|---|---:|---:|---:|---:|---:|
-| Checkpoint 1 | 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 | 399 | 399 | 100.00% | 368 | +7.77 |
-| Checkpoint 2 | 12, 13, 14, 15, 16 | 15 | 15 | 100.00% | 9 | +40.00 |
-| Checkpoint 3 | 17, 18, 19 | 249 | 249 | 100.00% | 86 | +65.46 |
-| Checkpoint 4 | 20 | 78 | 78 | 100.00% | 54 | +30.77 |
-| Horizon I | 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 | 363 | 363 | 100.00% | 337 | +7.16 |
-| Horizon II | 11, 12, 13, 14, 15, 16 | 51 | 51 | 100.00% | 40 | +21.57 |
-| Horizon III | 17, 18 | 183 | 183 | 100.00% | 68 | +62.84 |
-| Horizon IV | 19 | 66 | 66 | 100.00% | 18 | +72.73 |
-| Horizon V | 20 | 78 | 78 | 100.00% | 54 | +30.77 |
-
-## Required Named Surfaces
-
-### Critical stubs and audit findings
-
-- ConstraintSolverEvaluator: the audit did not accept evidence for source atom D002 semantic obligations.
-- TreeSitterGrammarBridge: the audit did not accept evidence for source atom B002 semantic obligations.
-- DirectorOrchestrator and WorkerCodeSynthesizer: the audit did not accept evidence for source atoms J010/J011 semantic obligations; this is not a proof that no related implementation exists.
-- Missing obligation IDs in the phase table are the authoritative follow-up list for this audit, not a filesystem deletion claim.
-
-### HOE
-
-HOE/UI obligations are represented by Source Doc 3 requirements 12-54 and 68-70, mapped to Phases 10, 17, and 18. Their binary counts are included in those phase rows; test and browser proof state is separate.
-
-### App Factory
-
-App Factory obligations are represented by Phase 19 blueprint additions and the relevant Source Doc 3 requirements. The report gives credit only where the exact required production owner paths exist; `NOT_WRITTEN` records audit non-acceptance, not proven absence.
-
-### Phase 20
-
-Phase 20 includes evaluation, restart, bounded learning, observability, safety, fallback, and crossover obligations. Installed self-host proof is operational evidence only and does not alter these code counts.
-
-### Implementation surface breakdown
-
-| Surface | Phase groups | Accounting treatment |
+| Phase | Completion | Written/Total |
 |---|---|---|
-| Frontend/UI | 17-19 and SD3 UI requirements | Separate code obligations; browser/test proof excluded from code percentage |
-| Backend/core | 0-16 | Canonical owner paths and audit evidence determine code status |
-| Database/source authority | 6, 9, 19-20 | Migration and source-coordinate obligations are counted only when mapped to a canonical owner |
-| Platform/runtime | 0, 11, 18, 20 | Toolchain, self-host, platform, and recovery code obligations; packaging/install proof is separate |
+| 0 | 94.90% | 93/98 |
+| 1 | 100.00% | 3/3 |
+| 2 | 100.00% | 24/24 |
+| 3 | 47.06% | 24/51 |
+| 4 | 100.00% | 18/18 |
+| 5 | 100.00% | 3/3 |
+| 6 | 83.33% | 15/18 |
+| 7 | 34.78% | 16/46 |
+| 8 | 84.00% | 21/25 |
+| 9 | 100.00% | 21/21 |
+| 10 | 96.00% | 120/125 |
+| 11 | 74.00% | 37/50 |
+| 12 | 100.00% | 3/3 |
+| 13 | 100.00% | 3/3 |
+| 14 | 100.00% | 3/3 |
+| 15 | 100.00% | 3/3 |
+| 16 | 100.00% | 3/3 |
+| 17 | 100.00% | 90/90 |
+| 18 | 65.03% | 93/143 |
+| 19 | 69.47% | 66/95 |
+| 20 | 44.10% | 86/195 |
 
-## Historical and Scope Note
+## Reading these numbers
 
-The former approximately 42% and 43.6% values mixed implementation, tests, compilation, packaging, installation, restart, deployment, Git cleanliness, and operator proofs. They remain immutable historical records in AGENTS.md and are superseded for future CODE-BASE COMPLETION reporting by this binary obligation method.
+Phases at 100% with small denominators (1, 5, 12-16) are phases whose audited
+obligations were already registered; they are not evidence that the phase is
+finished, only that nothing new was found unregistered for them. Phase 20 at
+44.10% and Phase 7 at 34.78% carry the largest
+absolute gaps and are where the remaining work concentrates.
 
-This is a conservative static code-base audit. `NOT_WRITTEN` means the auditor did not accept qualifying evidence; it does not prove that the implementation is absent. The registry field `auditFinding=NOT_EVIDENCED_BY_AUDIT` identifies this distinction. Tests and operational evidence are separate. The nearest recoverable historical commit is not presented as the exact locked export.
+The denominator will keep growing as further audits register obligations that
+were never written down. A falling percentage after an audit is the register
+becoming honest, not the codebase regressing.
