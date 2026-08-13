@@ -50,24 +50,36 @@ class SemanticLineColorizer(private val theme: TerminalTheme) {
     }
 
     /**
-     * Colours a value by what it is.
+     * Colours a value one token at a time.
      *
-     * Order matters: outcome first, because a line saying `PASS` on a path is
-     * primarily an outcome and only incidentally a path. Getting that backwards
-     * makes the one word an operator scans for the same colour as the noise
-     * around it.
+     * Per token rather than per value, because engine lines are compound:
+     * `st_memory=PASS scoped_hits=1 rejected=15` is a healthy line carrying a
+     * rejection *count*, and painting the whole value as one unit made it red —
+     * the reader then scans a wall of identically-coloured rows looking for the
+     * word that actually changed. Each field now says what it is on its own, so
+     * the outcome, the counts and the labels separate at a glance.
+     *
+     * A token that reads as `key=value` is painted in two parts, since the
+     * label is never the news; see [SemanticTokenClassifier].
      */
     private fun paintValue(value: String): String {
-        val upper = value.uppercase()
-        return when {
-            FAILURE_MARKERS.any { upper.contains(it) } -> theme.paint(Role.STATUS_ERROR, value)
-            DEGRADED_MARKERS.any { upper.contains(it) } -> theme.paint(Role.STATUS_PENDING, value)
-            SUCCESS_MARKERS.any { upper.contains(it) } -> theme.paint(Role.STATUS_VERIFIED, value)
-            UNSET_MARKERS.any { upper.contains(it) } -> theme.paint(Role.TEXT_MUTED, value)
-            looksLikePath(value) -> theme.paint(Role.PATH, value)
-            looksLikeDigest(value) -> theme.paint(Role.TEXT_MUTED, value)
-            else -> theme.paint(Role.TEXT_PRIMARY, value)
+        // Tokenised only when the value is a field list. Prose stays one unit:
+        // a sentence painted word by word would let an incidental "failed" in
+        // an explanation flare red, and the escape codes would outnumber the
+        // words. The `=` is what distinguishes machine fields from English.
+        if (!value.contains('=')) return paintToken(value)
+        return WORD.replace(value) { match -> paintToken(match.value) }
+    }
+
+    private fun paintToken(token: String): String {
+        if (token.isEmpty()) return token
+        if (!SemanticTokenClassifier.isAssignment(token)) {
+            return theme.paint(SemanticTokenClassifier.roleFor(token), token)
         }
+        val key = SemanticTokenClassifier.assignmentKey(token)
+        val assigned = SemanticTokenClassifier.assignmentValue(token)
+        return theme.paint(Role.TEXT_SECONDARY, key) +
+            theme.paint(SemanticTokenClassifier.roleFor(assigned), assigned)
     }
 
     /**
@@ -103,15 +115,6 @@ class SemanticLineColorizer(private val theme: TerminalTheme) {
             !line.contains('=') &&
             !line.contains('/')
 
-    private fun looksLikePath(value: String): Boolean =
-        value.contains('/') && !value.contains(' ') && value.length > 3
-
-    /** A hash or an opaque id: present for provenance, not for reading. */
-    private fun looksLikeDigest(value: String): Boolean =
-        value.length >= 12 && value.none { it.isWhitespace() } &&
-            value.count { it.isDigit() } >= 4 &&
-            value.all { it.isLetterOrDigit() || it == '-' || it == '_' }
-
     private companion object {
         const val ESCAPE = '\u001B'
         const val COLON = ':'
@@ -119,10 +122,7 @@ class SemanticLineColorizer(private val theme: TerminalTheme) {
 
         val GAP = Regex(" {2,}")
 
-        /** Checked before anything else; an outcome outranks its subject. */
-        val FAILURE_MARKERS = listOf("FAIL", "ERROR", "REFUS", "BLOCKED", "VIOLATION", "REJECT")
-        val DEGRADED_MARKERS = listOf("DEGRADED", "SOFT_FAIL", "SKIPPED", "WARN", "PARTIAL", "PENDING", "MISS")
-        val SUCCESS_MARKERS = listOf("PASS", "VERIFIED", "COMPLETE", "GRANTED", "HIT", "OK", "SUCCEEDED")
-        val UNSET_MARKERS = listOf("UNCONFIGURED", "UNSET", "NOT_REQUIRED", "UNRECORDED", "NONE", "ABSENT")
+        /** Non-space runs, so every original space survives painting exactly. */
+        val WORD = Regex("\\S+")
     }
 }
