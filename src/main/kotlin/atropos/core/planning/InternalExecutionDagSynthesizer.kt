@@ -69,7 +69,25 @@ class InternalExecutionDagSynthesizer(
      */
     private fun contextBlock(atom: InternalAtom): String {
         val contexts = runCatching { atomContext.contextFor(atom) }.getOrDefault(emptyList())
-        if (contexts.isEmpty()) return ""
+
+        // Narrated, not only embedded. The context was being attached to the
+        // node payload and reported nowhere, so an operator had no way to tell
+        // whether the lakehouse had been consulted, had missed, or had never
+        // been reachable -- three different situations that all looked
+        // identical from outside.
+        if (contexts.isEmpty()) {
+            atropos.core.thinking.Thinking.stream.emit(
+                atropos.core.thinking.ThinkingDepth.L3,
+                "lakehouse atom=${atom.id.take(8)} no shelf matched"
+            )
+            return ""
+        }
+        contexts.forEach { context ->
+            atropos.core.thinking.Thinking.stream.emit(
+                atropos.core.thinking.ThinkingDepth.L2,
+                "lakehouse atom=${atom.id.take(8)} ${context.provenance()}"
+            )
+        }
         return buildString {
             appendLine("lakehouse_context_count=${contexts.count { it.hit }}")
             contexts.forEach { context ->
