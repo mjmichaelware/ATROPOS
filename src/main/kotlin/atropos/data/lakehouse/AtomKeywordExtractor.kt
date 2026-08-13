@@ -24,9 +24,12 @@ package atropos.data.lakehouse
 object AtomKeywordExtractor {
 
     fun keywords(statement: String): List<String> {
-        val tokens = statement.lowercase()
+        val words = statement.lowercase()
             .split(NON_WORD)
             .map { it.trim() }
+            .filter { it.isNotEmpty() }
+
+        val tokens = dropLeadingDirective(words)
             .filter { (it.length >= MIN_TOKEN_LENGTH || it in SHORT_TERMS) && it !in STOP_WORDS }
 
         val expanded = tokens.flatMap { token -> listOf(token) + ALIASES.getOrDefault(token, emptyList()) }
@@ -37,7 +40,35 @@ object AtomKeywordExtractor {
         return expanded.distinct().take(MAX_KEYWORDS)
     }
 
+    /**
+     * Drops an opening imperative, which names the *act* and not the subject.
+     *
+     * "Build a command-line note keeper" retrieved the build-tooling shelves —
+     * `N/build/build_systems`, `N/build/ci`, `N/build/release` — because
+     * ordering by first appearance made the verb the strongest keyword in the
+     * statement. The atom is about notes; nothing it could have been given
+     * about CI would have helped write it.
+     *
+     * Only in leading position, and only for verbs of authoring. "the build
+     * system must publish a release" keeps `build`, because there the word is
+     * the subject rather than the instruction — which is the whole distinction,
+     * and a blanket stop word would have erased it along with the noise.
+     */
+    private fun dropLeadingDirective(words: List<String>): List<String> =
+        if (words.firstOrNull() in LEADING_DIRECTIVES) words.drop(1) else words
+
     private val NON_WORD = Regex("[^a-z0-9_]+")
+
+    /**
+     * Verbs of authoring, which describe producing the thing rather than the
+     * thing. Recognised only as a statement's first word; see
+     * [dropLeadingDirective].
+     */
+    private val LEADING_DIRECTIVES: Set<String> = setOf(
+        "build", "create", "make", "implement", "write", "add", "develop",
+        "design", "produce", "generate", "construct", "provide", "support",
+        "ensure", "allow", "enable", "define", "introduce"
+    )
 
     private const val MIN_TOKEN_LENGTH = 3
 
