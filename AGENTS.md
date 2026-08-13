@@ -9219,3 +9219,14 @@ One defect found and fixed inside this batch. The codec first used the unit and 
 - Fingerprints: see git commit on branch claude/new-session-ocfxmg.
 
 Remaining in §5: ExecutionHistoryStore, HistoryQuery, HistoryIndex (items 98-100), which are the next batch.
+
+### 2026-08-13T07:55Z · Agent: Claude (claude-opus-5, Claude Code) · Batch: obs-history-98-100
+- Paths touched: src/main/kotlin/atropos/core/observability/HistoryQuery.kt (+118), HistoryIndex.kt (+193), ExecutionHistoryStore.kt (+143); src/test/kotlin/atropos/core/observability/ExecutionHistoryStoreTest.kt (+247). Net +701 lines across 4 single-responsibility files.
+- Atoms / phases affected: unimplemented-list items 98 (ExecutionHistoryStore), 99 (HistoryQuery), 100 (HistoryIndex); Source Doc 3 §5.3; Source Doc 4 §5.4 (search shows why a result matched).
+- Predicate moved: "Filter by agent, provider, task, file, test, error, or event type. History must survive restarts and be queryable without loading the entire trace into memory" moved from false to true. All seven axes have a passing test; restart is proven by querying through a freshly constructed store; the memory clause is asserted on read counts rather than on results, since a test that only checked results would pass against an implementation that read everything and filtered.
+- % delta: Source Doc 3 §5 observability 82% -> 100% (11 of 11 named atomic files exist and are wired). Section 5 closed.
+- Why the delta is justified: HistoryIndex stores byte offsets so a query filters on a few dozen bytes per event and then seeks to only the matching journal lines. A 400-event run queried for failures scans 400 index entries and reads 100 journal lines, asserted directly. No second storage root was created: the journal remains the only record and the index is derived, rebuilt whenever it is missing, older than the journal, or contains any unparseable line.
+- New overall estimate: obligation registry 73.04% -> 73.33% (748/1020).
+- Fingerprints: see git commit on branch claude/new-session-ocfxmg.
+
+One defect found and fixed inside this batch: load() decoded index lines with mapNotNull, so a fully corrupt index yielded an empty history rather than a rebuild, hiding every event from every query while appearing to succeed. Any unparseable line now forces a rebuild.
