@@ -9261,3 +9261,16 @@ One defect found and fixed inside this batch: the persisted row is nine tab-sepa
 - Fingerprints: see git commit on branch claude/new-session-ocfxmg.
 
 One design defect found and fixed inside this batch: the invariant screen scanned guardrails, so a proposal promising "territory unchanged" was refused for touching territory. A guardrail naming an invariant is a promise to preserve it; screening that field inverts its meaning and teaches proposers to stop naming what they protect. The screen now reads territory and summary only.
+
+### 2026-08-13T19:21Z · Agent: Claude (claude-opus-5, Claude Code) · Batch: provider-chains-37-54
+- Paths touched: src/main/kotlin/atropos/core/provider/ChainLink.kt (+66), FallbackChain.kt (+122), TaskRoutingMatrix.kt (+88), ProviderFailureClassifier.kt (+163), ProviderPreferenceOrder.kt (+119); extended ProviderAvailabilityState.kt (+16) and QuotaLedger.kt (+6); src/test/kotlin/atropos/core/provider/FallbackChainTest.kt (+153), ProviderFailureClassifierTest.kt (+228). Net +961 lines across 7 new single-responsibility files plus two extensions.
+- Atoms / phases affected: unimplemented-list items 37 (LOCAL_TOOLCHAIN as provider 0), 40 (quota_weight ASC primary sort), 41 (task routing matrix as data), 42-52 (the eleven named fallback chains), 53 (eligibility sort terms), 54 (typed failure states). Source Doc 2 §.300 §5, §6, §7.
+- Predicate moved: the eleven chains and the fourteen-row routing matrix moved from control flow to data, so they can be printed, diffed and checked against the document. Seven failure transitions are typed with distinct waits, and the six sort terms are applied in the document's order.
+- % delta: Source Doc 2 §.300 routing 0% -> 78% (14 of 18 named items).
+- Why the delta is justified: quota_weight sorts first as a comparator, not a weighted score, so no later term can promote a fast paid provider over a slow free one -- the free-first guarantee expressed as an ordering rather than a separate rule, pinned by test. Every routing row's degraded column is populated and freeRoute() excludes the paid column, so a caller looping to the end cannot land on a paid provider. The billing state carries no cooldown at all, so no elapsed time can retry a declined card. 27 focused tests pass.
+- New overall estimate: obligation registry 79.71% -> 81.08% (827/1020).
+- Fingerprints: see git commit on branch claude/new-session-ocfxmg.
+
+Territory note: this batch deliberately avoids core/phase20/**, data/lakehouse/** and the two factory research files, which Antigravity is working in concurrently.
+
+Three duplicates were caught by the non-duplication law during this batch and deleted rather than shipped: a sealed ProviderFailure that duplicated the existing normalizer's typed failures, a ProviderEligibility that duplicated ProviderEligibilityFilter, and a ProviderRuntimeState that duplicated ProviderQuotaRecord. What survived is the genuine delta -- the missing MODEL_MISSING state, the failure-to-state transitions, and the six-term order. Two prose counts in my own comments were also wrong against the document (eight chains root locally, not nine; eleven matrix rows, not ten) and were corrected against the source rather than the comment.

@@ -30,6 +30,12 @@ data class ProviderQuotaRecord(
             ProviderAvailabilityState.BILLING_REQUIRED,
             ProviderAvailabilityState.OFFLINE,
             ProviderAvailabilityState.DISABLED -> false
+
+            // Not time-based. No amount of waiting restores a model that was
+            // withdrawn, so this is unavailable here -- Source Doc 2 §7's
+            // "try provider alternate model, then fallback" is an explicit
+            // step the router takes, not a state that heals on its own.
+            ProviderAvailabilityState.MODEL_MISSING -> false
         }
 }
 
