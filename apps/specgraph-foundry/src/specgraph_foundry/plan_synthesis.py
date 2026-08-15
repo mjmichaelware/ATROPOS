@@ -20,6 +20,7 @@ from collections import defaultdict
 from .database import Database
 from .errors import ConflictError, NotFoundError, ValidationError
 from .export_titles import sanitize_export_title
+from .plan_node_creation import create_atom_nodes
 from .plan_graph_rules import insert_edge, validate_dependency_acyclic
 from .plan_guards import (
     existing_plan,
@@ -169,190 +170,19 @@ def synthesize(
     created_at = utc_now()
 
     with database.connect() as connection:
-        for sequence, atom in enumerate(atoms):
-            atom_id = str(atom["id"])
-            short_id = atom_id.split("-")[-1][:8]
-
-            authority_node_id = new_id(
-                "node"
-            )
-
-            connection.execute(
-                """
-                INSERT INTO graph_nodes(
-                    id,
-                    graph_id,
-                    node_key,
-                    node_type,
-                    title,
-                    status,
-                    payload_json,
-                    created_at
-                )
-                VALUES(?,?,?,?,?,?,?,?)
-                """,
-                (
-                    authority_node_id,
-                    authority_graph["id"],
-                    f"atom-{short_id}",
-                    "ATOM",
-                    atom[
-                        "canonical_statement"
-                    ],
-                    "READY",
-                    json.dumps(
-                        {
-                            "atom_id": atom_id,
-                            "kind": atom["kind"],
-                            "modality": (
-                                atom["modality"]
-                            ),
-                        },
-                        sort_keys=True,
-                    ),
-                    created_at,
-                ),
-            )
-
-            authority_nodes[
-                atom_id
-            ] = authority_node_id
-
-            blocked = (
-                open_by_atom.get(
-                    atom_id,
-                    0,
-                )
-                > 0
-                and not allow_open_research
-            )
-
-            for stage_index, stage in enumerate(
-                STAGES
-            ):
-                node_id = new_id("node")
-                node_key = (
-                    f"{sequence:06d}-"
-                    f"{stage.lower()}-"
-                    f"{short_id}"
-                )
-
-                if stage == "CONTRACT":
-                    title = (
-                        "Specify: "
-                        + sanitize_export_title(
-                            atom[
-                                "canonical_statement"
-                            ]
-                        )
-                    )
-                elif stage == "IMPLEMENTATION":
-                    title = (
-                        "Implement: "
-                        + sanitize_export_title(
-                            atom[
-                                "canonical_statement"
-                            ]
-                        )
-                    )
-                else:
-                    title = (
-                        "Verify: "
-                        + sanitize_export_title(
-                            atom[
-                                "canonical_statement"
-                            ]
-                        )
-                    )
-
-                status = (
-                    "BLOCKED"
-                    if blocked
-                    else "PENDING"
-                )
-
-                connection.execute(
-                    """
-                    INSERT INTO graph_nodes(
-                        id,
-                        graph_id,
-                        node_key,
-                        node_type,
-                        title,
-                        status,
-                        payload_json,
-                        created_at
-                    )
-                    VALUES(?,?,?,?,?,?,?,?)
-                    """,
-                    (
-                        node_id,
-                        execution_graph["id"],
-                        node_key,
-                        stage,
-                        title,
-                        status,
-                        json.dumps(
-                            {
-                                "atom_id": atom_id,
-                                "stage": stage,
-                                "open_dimensions": (
-                                    open_by_atom.get(
-                                        atom_id,
-                                        0,
-                                    )
-                                ),
-                            },
-                            sort_keys=True,
-                        ),
-                        created_at,
-                    ),
-                )
-
-                execution_nodes[
-                    (atom_id, stage)
-                ] = node_id
-
-            insert_edge(
-                connection,
-                str(execution_graph["id"]),
-                execution_nodes[
-                    (atom_id, "CONTRACT")
-                ],
-                execution_nodes[
-                    (
-                        atom_id,
-                        "IMPLEMENTATION",
-                    )
-                ],
-                "MUST_PRECEDE",
-                (
-                    "Contract must exist before "
-                    "implementation."
-                ),
-            )
-
-            insert_edge(
-                connection,
-                str(execution_graph["id"]),
-                execution_nodes[
-                    (
-                        atom_id,
-                        "IMPLEMENTATION",
-                    )
-                ],
-                execution_nodes[
-                    (
-                        atom_id,
-                        "VERIFICATION",
-                    )
-                ],
-                "MUST_PRECEDE",
-                (
-                    "Implementation must complete "
-                    "before independent verification."
-                ),
-            )
+        # Node creation lives in plan_node_creation; what remains here is
+        # choosing what goes into the plan.
+        create_atom_nodes(
+            connection,
+            atoms,
+            authority_graph,
+            execution_graph,
+            authority_nodes,
+            execution_nodes,
+            open_by_atom,
+            allow_open_research,
+            created_at,
+        )
 
         for relation in relations:
             from_atom_id = str(
