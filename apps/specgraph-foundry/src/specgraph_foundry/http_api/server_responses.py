@@ -100,8 +100,8 @@ def send_binary(
 def serve_artifact_download(
     handler,
     token: str,
-    handler.db_: Database,
-    handler.signing_key_: str,
+    db: Database,
+    signing_key: str,
 ) -> None:
     object_path = verify_artifact_token(token, handler.signing_key_)
     if object_path is None:

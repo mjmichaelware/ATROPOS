@@ -22,6 +22,7 @@ from .routing import RoutingService
 from .services import ProjectService
 
 
+from .api_server import serve
 from . import (
     api_routes_documents,
     api_routes_execution,
@@ -372,105 +373,10 @@ class Api:
         )
 
     def serve(self, host: str, port: int) -> None:
-        api = self
-
-        class Handler(BaseHTTPRequestHandler):
-            def do_GET(self) -> None:
-                self._handle()
-
-            def do_POST(self) -> None:
-                self._handle()
-
-            def _handle(self) -> None:
-                length = int(
-                    self.headers.get(
-                        "content-length",
-                        "0",
-                    )
-                )
-
-                payload: dict[str, object] = {}
-
-                if length:
-                    try:
-                        parsed = json.loads(
-                            self.rfile.read(
-                                length
-                            ).decode("utf-8")
-                        )
-                    except (
-                        UnicodeDecodeError,
-                        json.JSONDecodeError,
-                    ):
-                        self._send(
-                            400,
-                            {
-                                "error": "INVALID_JSON",
-                                "message": (
-                                    "body must be valid JSON"
-                                ),
-                            },
-                        )
-                        return
-
-                    if not isinstance(parsed, dict):
-                        self._send(
-                            400,
-                            {
-                                "error": "INVALID_JSON",
-                                "message": (
-                                    "body must be a JSON object"
-                                ),
-                            },
-                        )
-                        return
-
-                    payload = parsed
-
-                status, response = api.dispatch(
-                    self.command,
-                    self.path,
-                    payload,
-                )
-
-                self._send(status, response)
-
-            def _send(
-                self,
-                status: int,
-                payload: dict[str, object],
-            ) -> None:
-                encoded = json.dumps(
-                    payload,
-                    indent=2,
-                    sort_keys=True,
-                ).encode("utf-8")
-
-                self.send_response(status)
-                self.send_header(
-                    "content-type",
-                    "application/json; charset=utf-8",
-                )
-                self.send_header(
-                    "content-length",
-                    str(len(encoded)),
-                )
-                self.end_headers()
-                self.wfile.write(encoded)
-
-        server = ThreadingHTTPServer(
-            (host, port),
-            Handler,
+        """Delegates to :func:`api_server.serve`."""
+        return serve(
+            self,
+            host,
+            port,
         )
 
-        print(
-            "SpecGraph Foundry listening on "
-            f"http://{host}:{port}"
-        )
-
-        try:
-            server.serve_forever()
-        except KeyboardInterrupt:
-            print("\nStopping SpecGraph Foundry.")
-        finally:
-            server.server_close()
