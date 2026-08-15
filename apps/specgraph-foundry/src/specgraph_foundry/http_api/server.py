@@ -1,4 +1,7 @@
-from .server_handler import _ARTIFACT_DOWNLOAD_RE, build_handler, is_origin_allowed
+from .server_origins import (  # re-exported: server is the module
+    _ARTIFACT_DOWNLOAD_RE,     # callers import these from.
+    is_origin_allowed,
+)
 import json
 import os
 import re
