@@ -14,6 +14,7 @@ from pathlib import Path
 from .database import Database
 from .errors import NotFoundError
 from .export_proof import sha256_file
+from .export_schema import EXPORT_TYPE
 
 
 def get_export(
@@ -140,3 +141,25 @@ def list_export_artifacts(
         )
 
     return artifacts
+
+
+def find_export(
+    database: Database,
+    plan_id: str,
+    fingerprint: str,
+) -> sqlite3.Row | None:
+    with database.connect() as connection:
+        return connection.execute(
+            """
+            SELECT *
+            FROM exports
+            WHERE plan_version_id = ?
+              AND export_type = ?
+              AND bundle_fingerprint = ?
+            """,
+            (
+                plan_id,
+                EXPORT_TYPE,
+                fingerprint,
+            ),
+        ).fetchone()
