@@ -1,10 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.intent
 
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotNull
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Test
+import kotlin.test.*
 
 class Sd5HumanIntentInvariantsTest {
 

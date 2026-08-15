@@ -189,7 +189,12 @@ class AstSymbolGraph(
                 KotlinDeclarationKind.CLASS -> AstSymbolKind.CLASS
                 KotlinDeclarationKind.ENUM -> AstSymbolKind.ENUM
                 KotlinDeclarationKind.ANNOTATION -> AstSymbolKind.ANNOTATION
-                KotlinDeclarationKind.OBJECT -> AstSymbolKind.OBJECT
+                // A companion is an object; the grammar distinguishes the two
+                // because the source syntax differs, the symbol graph does not
+                // because a caller resolving `Foo.Companion` is resolving an
+                // object like any other.
+                KotlinDeclarationKind.OBJECT, KotlinDeclarationKind.COMPANION_OBJECT ->
+                    AstSymbolKind.OBJECT
                 KotlinDeclarationKind.INTERFACE -> AstSymbolKind.INTERFACE
                 KotlinDeclarationKind.FUNCTION -> AstSymbolKind.FUNCTION
                 KotlinDeclarationKind.PROPERTY -> AstSymbolKind.PROPERTY

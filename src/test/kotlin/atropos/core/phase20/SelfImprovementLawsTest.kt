@@ -197,8 +197,12 @@ class SelfImprovementLawsTest {
 
     @Test
     fun `Law 20_20 requires hash-pinned dependencies`() {
-        assertTrue(SelfImprovementLaws.checkLaw20_20(listOf("pkg:github/repo@sha256:1234")))
+        val digest = "a".repeat(64)
+        assertTrue(SelfImprovementLaws.checkLaw20_20(listOf("pkg:github/repo@sha256:$digest")))
         assertFalse(SelfImprovementLaws.checkLaw20_20(listOf("pkg:github/repo@latest")))
         assertFalse(SelfImprovementLaws.checkLaw20_20(emptyList()))
+        // A truncated digest is not a pin: a 4-character prefix is shared by
+        // many artifacts, so approving one of them approves all of them.
+        assertFalse(SelfImprovementLaws.checkLaw20_20(listOf("pkg:github/repo@sha256:1234")))
     }
 }

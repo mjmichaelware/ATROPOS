@@ -1,9 +1,9 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.phase20
 
+import kotlin.test.*
+
 import atropos.core.evaluation.EvidenceStore
-import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.Test
 import java.io.File
 import java.nio.file.Path
 

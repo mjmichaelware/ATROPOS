@@ -1,7 +1,8 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.integration
 
-import org.junit.jupiter.api.assertThrows
+import kotlin.test.*
+
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -18,7 +19,7 @@ class BridgeEndpointsTest {
     @Test
     fun `executeCli blocks command injection characters`() {
         val bridge = BridgeEndpoints()
-        assertThrows<IllegalArgumentException> {
+        assertFailsWith<IllegalArgumentException> {
             bridge.executeCli(listOf("rm", "-rf", ";", "ls"))
         }
         assertEquals("EXECUTED: ls -la", bridge.executeCli(listOf("ls", "-la")))

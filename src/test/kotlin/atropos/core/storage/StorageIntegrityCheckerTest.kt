@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.storage
 
-import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.Test
+import kotlin.test.*
+
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.time.Instant

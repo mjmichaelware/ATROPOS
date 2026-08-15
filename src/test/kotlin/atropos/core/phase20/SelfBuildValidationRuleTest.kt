@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.phase20
 
-import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.Test
+import kotlin.test.*
+import atropos.testing.assertDoesNotThrow
 
 class SelfBuildValidationRuleTest {
     private val validator = SelfBuildValidationRule(Phase20Laws())
@@ -26,7 +26,7 @@ class SelfBuildValidationRuleTest {
     @Test
     fun testValidationFailsOnAnyLawViolation() {
         // Fails due to caller
-        assertThrows(SecurityException::class.java) {
+        assertFailsWith<SecurityException> {
             validator.validateAmendmentPromotion(
                 callerComponent = "AppFactory",
                 proposerId = "worker-1",
@@ -40,7 +40,7 @@ class SelfBuildValidationRuleTest {
         }
         
         // Fails due to L6 exit code
-        assertThrows(IllegalStateException::class.java) {
+        assertFailsWith<IllegalStateException> {
             validator.validateAmendmentPromotion(
                 callerComponent = "Phase11",
                 proposerId = "worker-1",

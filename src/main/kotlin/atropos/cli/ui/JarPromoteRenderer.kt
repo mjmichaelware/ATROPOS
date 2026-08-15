@@ -10,19 +10,19 @@ import atropos.cli.ui.design.Role
 class JarPromoteRenderer(private val theme: TerminalTheme) {
     fun render(previousJarHash: String?, newJarHash: String, isVerified: Boolean): List<String> {
         val lines = mutableListOf<String>()
-        lines.add(theme.format("┌── JAR PROMOTION HANDOFF ──┐", Role.MUTED))
+        lines.add(theme.paint(Role.TEXT_MUTED, "┌── JAR PROMOTION HANDOFF ──┐"))
         
         if (previousJarHash != null) {
             lines.add("│ Previous: ${previousJarHash.take(8)} (Shadow)  │")
         }
         
         if (isVerified) {
-            lines.add("│ New:      ${newJarHash.take(8)}          │ " + theme.format("SEATED", Role.STATUS_VERIFIED))
+            lines.add("│ New:      ${newJarHash.take(8)}          │ " + theme.paint(Role.STATUS_VERIFIED, "SEATED"))
         } else {
-            lines.add("│ New:      ${newJarHash.take(8)}          │ " + theme.format("BLOCKED (Unverified)", Role.STATUS_ERROR))
+            lines.add("│ New:      ${newJarHash.take(8)}          │ " + theme.paint(Role.STATUS_ERROR, "BLOCKED (Unverified)"))
         }
         
-        lines.add(theme.format("└───────────────────────────┘", Role.MUTED))
+        lines.add(theme.paint(Role.TEXT_MUTED, "└───────────────────────────┘"))
         return lines
     }
 }

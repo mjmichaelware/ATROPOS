@@ -1,6 +1,8 @@
 package atropos.cli.commands
 
 import atropos.cli.ui.AnsiTerminalEngine
+import atropos.cli.ui.JarPromoteRenderer
+import atropos.cli.ui.TerminalTheme
 import atropos.core.AtroposConfig
 import atropos.core.AtroposRepoRootLocator
 import atropos.core.agent.GoalTerminalCondition
@@ -8,6 +10,8 @@ import atropos.core.agent.SelfHostAutonomousRunResult
 import atropos.core.agent.SelfHostGoalService
 import atropos.core.dag.DagExecutionService
 import atropos.core.journal.EventJournalService
+import atropos.core.phase20.GovernanceDetectorContext
+import atropos.core.phase20.Phase20GovernanceService
 import atropos.core.verification.VerifiedCompletionGate
 import java.nio.file.Path
 
@@ -20,7 +24,10 @@ class SelfHostCommand(
     private val dagService: DagExecutionService = DagExecutionService(config, repoRoot),
     private val journal: EventJournalService = EventJournalService(repoRoot),
     private val completionGate: VerifiedCompletionGate = VerifiedCompletionGate(config, repoRoot),
-    private val proofRenderer: SelfHostRunProofRenderer = SelfHostRunProofRenderer()
+    private val proofRenderer: SelfHostRunProofRenderer = SelfHostRunProofRenderer(),
+    private val governanceService: Phase20GovernanceService = Phase20GovernanceService(),
+    private val jarPromoteRenderer: JarPromoteRenderer =
+        JarPromoteRenderer(TerminalTheme(atropos.cli.config.ConfigurationManager()))
 ) : AgentCommandHandler {
 
     override fun execute(tokens: List<String>): AgentCommandOutcome {
@@ -279,6 +286,29 @@ class SelfHostCommand(
             nodeId = args.getOrNull(3)
         )
         val text = SelfHostCommandText.promote(result, args[0])
+
+        // HOE-E08: the handoff itself, drawn. A promotion swaps the jar the
+        // operator is running out from under them, and the one question they
+        // need answered afterwards — which hash is seated and which is the
+        // recoverable shadow — was buried in prose. Rendered on refusal too:
+        // a blocked promotion is precisely when knowing the previous jar is
+        // still there matters.
+        result.jarSwap?.let { swap ->
+            ui.renderBlock(
+                jarPromoteRenderer.render(
+                    // `backup_sha256` is the previous jar's digest: the gate
+                    // records it when it preserves the file, so its presence is
+                    // exactly the condition under which a shadow exists to
+                    // recover. Absent means there was no previous jar, not that
+                    // one was lost.
+                    previousJarHash = swap.evidence.firstOrNull { it.kind == "backup_sha256" }?.detail,
+                    newJarHash = swap.evidence.firstOrNull { it.kind == "candidate_sha256" }?.detail
+                        ?: "unknown",
+                    isVerified = result.promoted
+                )
+            )
+        }
+
         if (!result.promoted) {
             ui.renderError(text)
             return AgentCommandOutcome.Invalid(text)
@@ -322,10 +352,34 @@ class SelfHostCommand(
         return AgentCommandOutcome.Completed(text)
     }
 
+    /**
+     * Runs a Phase 20 governance pass and reports what it found.
+     *
+     * This used to print `All safety-critical invariants checked: passed=true`
+     * as a literal, having checked nothing — a claim of verification with no
+     * verification behind it, which §0.6 forbids outright. The detectors, the
+     * policy gate and the law predicates all existed; none of them had a
+     * caller. [atropos.core.phase20.Phase20GovernanceService] is that caller,
+     * and the pass now reports refusals and violations as readily as clean
+     * results, because both are real outcomes and only one of them was ever
+     * being shown.
+     */
     private fun handleGovernance(): AgentCommandOutcome {
         val proposals = selfHostService.history(20)
-        val text = "SELF-HOST GOVERNANCE\nProposals audited: ${proposals.size}\nAll safety-critical invariants checked: passed=true"
-        ui.renderNotice(text)
+        val report = governanceService.observe(
+            GovernanceDetectorContext(
+                projectId = repoRoot.fileName?.toString() ?: "atropos",
+                territory = listOf(repoRoot.toString())
+            )
+        )
+
+        val text = buildString {
+            appendLine("SELF-HOST GOVERNANCE")
+            appendLine("Proposals on the ledger: ${proposals.size}")
+            appendLine()
+            append(report.render())
+        }
+        if (report.clean) ui.renderNotice(text) else ui.renderError(text)
         return AgentCommandOutcome.Completed(text)
     }
 }

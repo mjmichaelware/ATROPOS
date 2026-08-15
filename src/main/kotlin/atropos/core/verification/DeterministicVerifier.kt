@@ -99,9 +99,26 @@ class DeterministicVerifier(
         findings += checks.checkRedactionInvariant()
         findings += checks.checkForbiddenPaths(inScopePaths)
         findings += checks.checkArchitectureCompliance(inScopePaths)
+        // Tree-wide rather than per-path, so it runs once regardless of scope.
+        findings += checks.checkStructuralInvariants()
+        findings += checks.reportSideEffectPaths()
         patchText?.let { findings += checks.checkPatchStructure(it) }
         shellCommand?.let { findings += checks.checkShellSafety(it) }
         dloiAddress?.let { findings += checks.checkDloiAddress(it) }
         return DeterministicVerificationResult(findings.filterNotNull())
     }
+
+    /**
+     * The tree-wide structural rules on their own, with no source paths.
+     *
+     * `/verify structural` asks a question that does not depend on which files
+     * changed, so it must not be forced to name any. Separate entry point
+     * rather than a scope flag on [verify]: the per-path checks would all be
+     * skipped anyway, and a call that silently does nothing for most of its
+     * arguments is worse than one that never took them.
+     */
+    fun verifyStructure(): DeterministicVerificationResult =
+        DeterministicVerificationResult(
+            checks.checkStructuralInvariants() + checks.reportSideEffectPaths()
+        )
 }

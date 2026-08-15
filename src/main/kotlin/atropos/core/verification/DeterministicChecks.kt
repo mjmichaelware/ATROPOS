@@ -24,8 +24,19 @@ class DeterministicChecks(
     private val patchExtractor: AgentPatchExtractor,
     private val redactionFilter: RedactionFilter,
     private val constraintEvaluator: ConstraintSolverEvaluator,
-    private val architectureComplianceChecker: ArchitectureComplianceChecker
+    private val architectureComplianceChecker: ArchitectureComplianceChecker,
+    private val gateReachabilityChecker: GateReachabilityChecker = GateReachabilityChecker(),
+    private val surfaceParityProbe: atropos.core.parity.SurfaceParityProbe =
+        atropos.core.parity.SurfaceParityProbe()
 ) {
+
+    /** Repo-relative form for a finding's file field, or the raw path if outside. */
+    private fun relativeTo(file: Path): String = runCatching {
+        val normalized = file.toAbsolutePath().normalize()
+        if (normalized.startsWith(repoRoot)) portablePath(repoRoot.relativize(normalized))
+        else normalized.toString()
+    }.getOrElse { file.toString() }
+
     fun checkSourceScope(path: Path): List<DeterministicFinding> {
         val normalized = path.toAbsolutePath().normalize()
         return constraintEvaluator.evaluateBoundaries(
@@ -239,6 +250,116 @@ class DeterministicChecks(
             )
         }
     }
+
+    /**
+     * The tree-wide structural rules: shared-core purity, gate reachability,
+     * and surface parity.
+     *
+     * Added here rather than in a checker of their own. Each of
+     * [atropos.core.platform.SharedCore], [GateReachabilityChecker] and
+     * [atropos.core.parity.SurfaceParityProbe] existed with no production
+     * caller, and the tempting fix — one new class that runs all three — would
+     * have been a second verifier alongside this one, which §0.7 forbids. This
+     * is already the owner of "check the source without running it"; the three
+     * belong in it.
+     *
+     * Unlike the per-file checks above, these read the whole tree and so run
+     * once per verification rather than once per path.
+     */
+    fun checkStructuralInvariants(): List<DeterministicFinding> {
+        val mainSource = repoRoot.resolve("src/main/kotlin")
+        if (!Files.isDirectory(mainSource)) return emptyList()
+
+        val findings = mutableListOf<DeterministicFinding>()
+
+        // A scan of zero files that reports nothing has found nothing, which is
+        // not the same as finding nothing wrong — so an inconclusive scan is
+        // itself reported rather than passing silently.
+        val shared = atropos.core.platform.SharedCore.scan(
+            mainSource.resolve(atropos.core.platform.SharedCore.SHARED_ROOTS.first())
+        )
+        if (shared.scanned == 0) {
+            findings += finding(
+                invariantId = "SHARED-CORE-INCONCLUSIVE",
+                severity = DiagnosticSeverity.WARNING,
+                evidence = "shared core scan examined 0 files",
+                remediation = "run from a repository root where src/main/kotlin/atropos/core exists"
+            )
+        }
+        shared.violations.forEach { violation ->
+            findings += finding(
+                invariantId = "SHARED-CORE-PLATFORM-IMPORT",
+                severity = DiagnosticSeverity.ERROR,
+                file = relativeTo(violation.file),
+                symbolOrLocation = "line ${violation.line}",
+                evidence = "core imports ${violation.import}, which exists on one target only",
+                remediation = "move the platform-facing code to the CLI or bridge layer, or abstract it behind PlatformAbstraction"
+            )
+        }
+
+        val gates = gateReachabilityChecker.check(mainSource.toFile())
+        gates.violations.forEach { violation ->
+            findings += finding(
+                invariantId = "GATE-REACHABILITY",
+                severity = DiagnosticSeverity.ERROR,
+                file = violation.path,
+                evidence = violation.render(),
+                remediation = "route the execution site through BoundedAgencyGate so P(raw-prose-execution)=0 holds by construction"
+            )
+        }
+
+        // Parity reads two registries that can each fail to load; a probe that
+        // throws must not take the whole verification with it, because the
+        // findings already gathered are still true.
+        runCatching { surfaceParityProbe.forbiddenOnPort() }.getOrDefault(emptyList()).forEach { exposed ->
+            findings += finding(
+                invariantId = "SURFACE-PORT-EXPOSURE",
+                severity = DiagnosticSeverity.ERROR,
+                symbolOrLocation = exposed,
+                evidence = "a capability reaching the operating system is advertised on a surface bound to a port",
+                remediation = "remove the action from the bridge menu; shell access belongs to the CLI only"
+            )
+        }
+        runCatching { surfaceParityProbe.danglingActions() }.getOrDefault(emptyList()).forEach { action ->
+            findings += finding(
+                invariantId = "SURFACE-DANGLING-ACTION",
+                severity = DiagnosticSeverity.WARNING,
+                symbolOrLocation = action,
+                evidence = "menu action resolves to no route",
+                remediation = "restore the route or remove the menu entry; on a phone this renders as a button that does nothing"
+            )
+        }
+        runCatching { surfaceParityProbe.check().divergences }.getOrDefault(emptyList()).forEach { divergence ->
+            findings += finding(
+                invariantId = "SURFACE-PARITY",
+                severity = DiagnosticSeverity.WARNING,
+                symbolOrLocation = divergence.field,
+                evidence = "${divergence.left} vs ${divergence.right}",
+                remediation = "surfaces may offer less than one another; they may not offer something different under the same name"
+            )
+        }
+
+        return findings
+    }
+
+    /**
+     * The declared side-effect paths and what bounds each one.
+     *
+     * Reported rather than checked: [atropos.core.policy.SideEffectInventory]
+     * is a declaration, and its value is that a reviewer can see the four
+     * places the engine can affect the world outside itself next to the gate
+     * that bounds each. Emitted as INFO so it never fails a verification.
+     */
+    fun reportSideEffectPaths(): List<DeterministicFinding> =
+        atropos.core.policy.SideEffectInventory.getEnforcedCallers().map { path ->
+            finding(
+                invariantId = "SIDE-EFFECT-PATH",
+                severity = DiagnosticSeverity.INFO,
+                symbolOrLocation = "${path.className}.${path.methodName}",
+                evidence = path.description,
+                remediation = "bounded by ${path.enforcedBy}"
+            )
+        }
 
     fun checkPatchStructure(patchText: String): List<DeterministicFinding> {
         val extraction = patchExtractor.extract(patchText)

@@ -1,8 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.phase20
 
-import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.Test
+import kotlin.test.*
 
 class Phase20ClaimTest {
     @Test
@@ -16,13 +15,13 @@ class Phase20ClaimTest {
 
     @Test
     fun testInvalidClaims() {
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith<IllegalArgumentException> {
             Phase20Claim("", "prop", ClaimLevel.L0_DRAFT, "hash")
         }
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith<IllegalArgumentException> {
             Phase20Claim("claim", "", ClaimLevel.L0_DRAFT, "hash")
         }
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith<IllegalArgumentException> {
             Phase20Claim("claim", "prop", ClaimLevel.L0_DRAFT, "")
         }
     }

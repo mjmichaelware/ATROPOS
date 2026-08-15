@@ -25,6 +25,8 @@ class AnsiTerminalEngine(
     private val layout = ViewportLayout(theme, welcome, statusBar)
     private val verification = VerificationRenderer(theme)
     private val help = CommandHelpRenderer(theme)
+    private val errors = ErrorRenderer(theme)
+    private val toasts = ToastRenderer(theme)
     private val rendering = TerminalRenderingFacade(
         plainOutput, canvas, theme, transcript, markdown, welcome, statusBar, verification, help, transcriptBuffer
     )
@@ -132,7 +134,10 @@ class AnsiTerminalEngine(
             welcome.render(presentationState, canvas.width, (canvas.height * 2 / 3).coerceAtLeast(14)).forEach(transcriptBuffer::append)
             requestFrameLocked()
         } else {
-            rendering.renderDashboardPlain(activeTab, activeScreen, state.provider, state.workspace)
+            rendering.renderDashboardPlain(
+                activeTab, activeScreen, state.provider, state.workspace, state.mode,
+                listOf("/agent status", "/tabs", "/status", "/verify")
+            )
         }
     }
 
@@ -143,7 +148,7 @@ class AnsiTerminalEngine(
             transcriptBuffer.append(statusBar.footer(state.provider, state.mode, state.workspace, state.tracker, state.verificationState, canvas.width))
             requestFrameLocked()
         } else {
-            rendering.renderStatusPlain(state.provider, state.workspace)
+            rendering.renderStatusPlain(state.provider, state.workspace, state.mode, state.tracker)
         }
     }
 
@@ -230,6 +235,38 @@ class AnsiTerminalEngine(
         val lines = help.lines(query, canvas.width)
         if (!state.reactive) rendering.renderHelpPlain(lines) else rendering.renderHelpReactive(lines)
         if (state.reactive) requestFrameLocked()
+    }
+
+    /**
+     * A failure with its recovery path, rather than one line of text.
+     *
+     * [renderError] takes a string and can only ever show what went wrong.
+     * Section E asks for the suggestion and the copyable detail alongside it,
+     * and [ErrorRenderer] produces all three — including the redaction pass
+     * over the copy block, which matters because that block exists to be
+     * pasted into a bug report.
+     */
+    @Synchronized
+    fun renderErrorDetail(error: ErrorRenderer.ErrorInfo, critical: Boolean = false) {
+        stopSpinner()
+        val lines =
+            if (critical) errors.renderCritical(error, canvas.width)
+            else errors.render(error, canvas.width)
+        renderBlock(lines)
+    }
+
+    /**
+     * A transient notice, in the pinned reference's toast chrome.
+     *
+     * Rendered into the transcript rather than overlaid: ATROPOS has no
+     * absolute-positioning compositor, and a toast that scrolls away with the
+     * rest of the output is honest about that, where one drawn at a fixed
+     * offset over a scrolling canvas would smear.
+     */
+    @Synchronized
+    fun renderToast(toast: Toast) {
+        val lines = toasts.render(toast, canvas.width)
+        if (lines.isNotEmpty()) renderBlock(lines)
     }
 
     @Synchronized

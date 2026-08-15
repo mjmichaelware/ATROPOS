@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.storage
 
-import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.Test
+import kotlin.test.*
+
 import java.time.Instant
 
 class GcSweeperTest {
@@ -17,8 +17,12 @@ class GcSweeperTest {
             if (id == "obj1") 500L else 0L
         }
         
-        val candidates = listOf(Triple("obj1", "rule-1", Instant.now()))
-        val watermark = GcWatermark("wm", Instant.now(), Instant.now(), 0L)
+        // One instant for both watermark fields: two separate now() calls put
+        // the boundary microseconds after the timestamp, which GcWatermark
+        // rejects as a future boundary.
+        val now = Instant.now()
+        val candidates = listOf(Triple("obj1", "rule-1", now))
+        val watermark = GcWatermark("wm", now, now, 0L)
         
         val freed = sweeper.sweep(candidates, watermark)
         assertEquals(500L, freed)

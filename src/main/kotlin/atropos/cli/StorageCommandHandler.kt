@@ -3,6 +3,7 @@ package atropos.cli
 
 import atropos.cli.ui.AnsiTerminalEngine
 import atropos.core.AtroposRepoRootLocator
+import atropos.core.storage.BlobStoreGc
 import atropos.core.storage.EvidenceBundleGc
 import atropos.core.storage.GcOutcome
 import atropos.core.storage.RetentionPolicy
@@ -29,16 +30,42 @@ class StorageCommandHandler(
     private val uiEngine: AnsiTerminalEngine,
     private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
     private val supervisor: StorageSupervisor = StorageSupervisor(),
-    private val policy: RetentionPolicy = RetentionPolicy()
+    private val policy: RetentionPolicy = RetentionPolicy(),
+    /**
+     * The blob store's collector.
+     *
+     * Constructed lazily rather than eagerly: [BlobStoreGc.defaultDriver]
+     * creates its directory on the way in, and `/storage status` should not
+     * bring a blob tree into existence on a repository that has never stored
+     * one.
+     */
+    private val blobGc: () -> BlobStoreGc = {
+        BlobStoreGc(BlobStoreGc.defaultDriver(repoRoot), policy)
+    }
 ) {
     fun execute(tokens: List<String>): RouterOutcome {
         when (tokens.getOrNull(1)?.lowercase()) {
             null, "status" -> renderStatus()
             "policy" -> renderPolicy()
             "gc" -> renderGc(tokens)
-            else -> uiEngine.renderError("usage: /storage [status|policy|gc [worktrees|evidence] [--apply]]")
+            "verify" -> renderVerify()
+            else -> uiEngine.renderError(USAGE)
         }
         return RouterOutcome.CONTINUE
+    }
+
+    /**
+     * `SUP.STOR.INTEGRITY`: a store that cannot say whether what it holds is
+     * still what was written is a store that has already lost data without
+     * anyone noticing.
+     */
+    private fun renderVerify() {
+        val report = blobGc().verifyIntegrity()
+        val body = buildString {
+            appendLine(report.render())
+            report.auditLines().forEach { appendLine("  $it") }
+        }.trimEnd()
+        if (report.sound) uiEngine.renderNotice(body) else uiEngine.renderError(body)
     }
 
     private fun renderStatus() {
@@ -104,10 +131,13 @@ class StorageCommandHandler(
                     ).collect(pressure = pressure, dryRun = !apply)
                 )
             }
+            if (target == null || target == "blobs") {
+                add(blobGc().collect(pressure = pressure, dryRun = !apply))
+            }
         }
 
         if (outcomes.isEmpty()) {
-            uiEngine.renderError("usage: /storage gc [worktrees|evidence] [--apply]")
+            uiEngine.renderError(USAGE)
             return
         }
         uiEngine.renderNotice(render(outcomes, apply))
@@ -131,5 +161,7 @@ class StorageCommandHandler(
     private companion object {
         const val WORKTREE_DIR = ".atropos/worktrees"
         const val EVIDENCE_DIR = ".atropos/evidence"
+        const val USAGE =
+            "usage: /storage [status|policy|verify|gc [worktrees|evidence|blobs] [--apply]]"
     }
 }

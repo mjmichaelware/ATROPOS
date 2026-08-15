@@ -119,9 +119,30 @@ object SelfImprovementLaws {
         return agentSignature.isNotBlank() && agentSignature.length >= 32
     }
 
-    /** Law 20.20: Hash-pinned contracts (dependencies must be hash pinned). */
-    fun checkLaw20_20(dependencies: List<String>): Boolean {
-        // Very basic check: assuming pinned dependencies have an @sha256: or similar
-        return dependencies.isNotEmpty() && dependencies.all { it.contains("sha256") || it.contains(":") }
-    }
+    /**
+     * Law 20.20: dependencies must be hash-pinned.
+     *
+     * The `|| it.contains(":")` this replaces made the law unfalsifiable. Every
+     * package URI contains a colon — `pkg:github/repo@latest` does — so a
+     * floating tag passed as readily as a digest, and the one thing the law
+     * exists to catch was the one thing it could not see.
+     *
+     * A pin is a digest: an algorithm name followed by hex. Anything else is a
+     * name that can be repointed after the proposal was audited, which is
+     * precisely the substitution the law forbids.
+     */
+    fun checkLaw20_20(dependencies: List<String>): Boolean =
+        dependencies.isNotEmpty() && dependencies.all(DIGEST_PIN::containsMatchIn)
+
+    /**
+     * `sha256:<64 hex>`, and the same shape for sha384 and sha512.
+     *
+     * The length is checked per algorithm rather than loosely, because a
+     * truncated digest is not a pin: `sha256:1234` names a prefix that many
+     * different artifacts share, so an auditor who approved one of them has
+     * approved all of them.
+     */
+    private val DIGEST_PIN = Regex(
+        "sha256[:=-][0-9a-fA-F]{64}|sha384[:=-][0-9a-fA-F]{96}|sha512[:=-][0-9a-fA-F]{128}"
+    )
 }

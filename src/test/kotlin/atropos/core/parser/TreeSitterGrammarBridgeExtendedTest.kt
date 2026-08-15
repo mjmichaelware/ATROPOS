@@ -1,9 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.parser
 
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Test
+import kotlin.test.*
 
 class TreeSitterGrammarBridgeExtendedTest {
 

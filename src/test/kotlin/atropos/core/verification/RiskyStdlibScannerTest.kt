@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 package atropos.core.verification
 
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Test
+import kotlin.test.*
+
 import java.io.File
 import kotlin.io.path.createTempFile
 import kotlin.io.path.writeText

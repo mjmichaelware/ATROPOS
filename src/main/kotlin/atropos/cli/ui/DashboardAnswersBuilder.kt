@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.cli.ui
 
+import atropos.cli.ui.chrome.CheckpointAge
 import atropos.cli.ui.design.Health
 import atropos.core.agent.AgentQueueCheckpoint
 import atropos.core.agent.AgentQueueRecord
@@ -11,7 +12,9 @@ import atropos.core.security.RedactionFilter
 
 class DashboardAnswersBuilder(
     private val redactionFilter: RedactionFilter,
-    private val taskWidth: Int = 72
+    private val taskWidth: Int = 72,
+    /** Injected so a checkpoint age is reproducible in a test. */
+    private val clock: java.time.Clock = java.time.Clock.systemUTC()
 ) {
     fun objective(
         queue: List<AgentQueueRecord>?,
@@ -85,7 +88,15 @@ class DashboardAnswersBuilder(
         if (queue.isEmpty()) return DashboardRenderer.Answer("nothing tracked", Health.UNKNOWN)
 
         val complete = queue.count { it.state == AgentQueueState.COMPLETED }
-        val checkpoint = active?.let { " · ${checkpointReadable(it.checkpoint)}" }.orEmpty()
+        // Which checkpoint, and how long ago. The name alone says where the
+        // work stopped but not whether it stopped a moment or a day ago, and
+        // "PATCH_APPLIED" reads identically in both cases — which is the one
+        // reading an operator must not be left with when deciding whether a run
+        // is progressing or wedged. CheckpointAge is what refuses to render an
+        // unreadable or future timestamp as freshness.
+        val checkpoint = active?.let {
+            " · ${checkpointReadable(it.checkpoint)} ${CheckpointAge.of(it.updatedAt, clock).label()} ago"
+        }.orEmpty()
         val health = when {
             failed > 0 -> Health.ERROR
             complete == queue.size -> Health.VERIFIED

@@ -1,8 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.verifier
 
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Test
+import kotlin.test.*
 
 class ConstraintSolverEvaluatorExtendedTest {
     @Test

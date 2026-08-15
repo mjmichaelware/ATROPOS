@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.storage
 
-import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.Test
+import kotlin.test.*
+
 import java.time.Duration
 import java.time.Instant
 
@@ -10,8 +10,12 @@ class StorageRetentionRuleTest {
     @Test
     fun testPermanentRuleNeverEligible() {
         val rule = StorageRetentionRule("rule-perm", Duration.ofDays(1), true)
-        val createdAt = Instant.now().minus(Duration.ofDays(10))
-        val watermark = GcWatermark("wm-1", Instant.now(), Instant.now(), 0L)
+        // One instant for both watermark fields: two separate now() calls put
+        // the boundary microseconds after the timestamp, which GcWatermark
+        // rejects as a future boundary.
+        val now = Instant.now()
+        val createdAt = now.minus(Duration.ofDays(10))
+        val watermark = GcWatermark("wm-1", now, now, 0L)
         
         assertFalse(rule.isEligibleForGc(createdAt, watermark))
     }

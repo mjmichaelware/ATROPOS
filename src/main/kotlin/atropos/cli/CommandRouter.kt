@@ -11,6 +11,9 @@ import atropos.cli.session.QuotaSessionTracker
 import atropos.cli.session.SessionTabs
 import atropos.cli.shell.ShellCommandRunner
 import atropos.cli.ui.AnsiTerminalEngine
+import atropos.cli.ui.CommandRegistryRenderer
+import atropos.cli.ui.DialogOption
+import atropos.cli.ui.DialogRenderer
 import atropos.core.AIProvider
 import atropos.core.AtroposConfig
 import atropos.core.ProviderFactory
@@ -49,6 +52,20 @@ class CommandRouter(
         atropos.cli.ui.TerminalTheme(atropos.cli.config.ConfigurationManager())
 
     private val dashboardRenderer = atropos.cli.ui.DashboardRenderer(theme)
+
+    private val dialogRenderer = DialogRenderer(theme)
+
+    private val commandRegistryRenderer = CommandRegistryRenderer(theme)
+
+    /**
+     * The single front door for natural language.
+     *
+     * Territory is the working directory, so an `@mention` can only reach a
+     * file the operator is already standing in.
+     */
+    private val nlEntryPipeline = atropos.core.nl.NlEntryPipeline(
+        territoryRoots = listOf(java.nio.file.Path.of(shellRunner.currentDirectory()))
+    )
 
     private val homeStateProvider = atropos.cli.ui.HomeStateProvider()
 
@@ -297,12 +314,20 @@ class CommandRouter(
             else -> {
                 if (tokens.first().startsWith("/")) uiEngine.renderError("unknown command: ${tokens.first()}")
                 else {
-                    naturalLanguageRiskGuard.classify(original)?.let { risk ->
-                        pendingRiskyNaturalLanguage = original
-                        uiEngine.renderNotice(
-                            "verification required before risky NL action (${risk.name.lowercase()}); " +
-                                "reply yes to continue or no to cancel"
-                        )
+                    // SUP.NL.BYTE-CANONICAL-FORM asks for canonicalization "as
+                    // first stage of any NL entry point", and this is the CLI's.
+                    // It runs before the risk guard on purpose: the guard
+                    // matches on text, and text that has not been canonicalized
+                    // can be split by a zero-width character so that it matches
+                    // nothing — which is precisely how a risky request gets past
+                    // a classifier that reads the raw bytes.
+                    val entry = nlEntryPipeline.accept(original, atropos.core.nl.NlSource.CLI_PROMPT)
+                    entry.notice()?.let(uiEngine::renderNotice)
+                    val canonical = entry.envelope.canonical
+
+                    naturalLanguageRiskGuard.classify(canonical)?.let { risk ->
+                        pendingRiskyNaturalLanguage = canonical
+                        renderRiskConfirmation(risk.name.lowercase(), canonical)
                         return RouterOutcome.CONTINUE
                     }
                     val selfHostTokens = selfHostNaturalLanguageRouter.route(tokens)
@@ -319,7 +344,11 @@ class CommandRouter(
                             announce(agentCommand.execute(listOf("/agent", "ask", "ATROPOS")))
                             uiEngine.updateAgentPatchState(agentCommand.lastKnownPatchId)
                         }
-                        else -> providerChatDispatcher.dispatch(original, currentProviderName)
+                        // The canonical form travels onward, not the raw
+                        // input: SUP.NL.ENVELOPE-WRAP requires it, and sending
+                        // the raw bytes here would mean the text the guard
+                        // cleared and the text the provider sees are different.
+                        else -> providerChatDispatcher.dispatch(canonical, currentProviderName)
                     }
                 }
                 RouterOutcome.CONTINUE
@@ -407,7 +436,43 @@ class CommandRouter(
             uiEngine.renderHelp(remainder)
             return
         }
+
+        // `/help commands` is the whole registry, categorised, with aliases —
+        // the one question the levelled help pages cannot answer, because they
+        // are curated and the registry is exhaustive. An operator looking for
+        // "the command that does X" needs the exhaustive list, not the guided
+        // one.
+        if (words.firstOrNull()?.lowercase() in setOf("commands", "palette", "all")) {
+            uiEngine.renderBlock(commandRegistryRenderer.renderSlashCommands(uiEngine.viewportWidth))
+            return
+        }
+
         atropos.cli.help.HelpGenerator().render(level).forEach(uiEngine::renderNotice)
     }
 
+    /**
+     * The confirmation dialog for a risky natural-language request.
+     *
+     * Rendered as a modal panel rather than a notice line. Source Doc 3
+     * Section A requires confirm-destructive surfaces to be opaque and
+     * high-contrast for exactly this case, and a one-line notice is neither —
+     * it scrolls with the transcript and reads like every other message, which
+     * is how a destructive confirmation gets answered without being read.
+     */
+    private fun renderRiskConfirmation(risk: String, request: String) {
+        uiEngine.renderBlock(
+            dialogRenderer.render(
+                title = "Verification required — $risk",
+                options = listOf(
+                    DialogOption("yes", "run: ${request.take(60)}"),
+                    DialogOption("no", "cancel without running")
+                ),
+                // Nothing is preselected on a destructive confirmation: a
+                // highlighted "yes" is an answer the operator did not give.
+                selectedIndex = 1,
+                terminalWidth = uiEngine.viewportWidth,
+                footerHint = "type yes to continue · no to cancel"
+            )
+        )
+    }
 }

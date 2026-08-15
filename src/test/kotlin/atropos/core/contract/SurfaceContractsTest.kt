@@ -38,8 +38,19 @@ class SurfaceContractsTest {
     @Test
     fun `verifyMaxVerbLimit enforces ceiling`() {
         val verbs = CanonicalVerb.values().toList()
-        assertTrue(UiParityVerifier.verifyMaxVerbLimit(AtroposView.GOVERNANCE, verbs.take(13)))
-        assertFalse(UiParityVerifier.verifyMaxVerbLimit(AtroposView.GOVERNANCE, verbs))
+
+        // The canonical set is exactly at the ceiling, so no view built from it
+        // can exceed the limit — the enum is the enforcement, and this asserts
+        // that rather than asserting a refusal the type system makes
+        // unreachable. The previous form passed the full 13-verb list expecting
+        // a rejection; with 13 entries `take(13)` and the whole list are the
+        // same value, so it asserted true and false about one input.
+        assertEquals(13, verbs.size)
+        assertTrue(UiParityVerifier.verifyMaxVerbLimit(AtroposView.GOVERNANCE, verbs))
+
+        // Duplicates do not consume budget: a view showing the same verb twice
+        // is showing one verb.
+        assertTrue(UiParityVerifier.verifyMaxVerbLimit(AtroposView.GOVERNANCE, verbs + verbs))
     }
 
     @Test

@@ -11,6 +11,14 @@ import java.nio.file.Path
 sealed class VerifyCommandOutcome {
     data class Completed(val result: VerificationResult) : VerifyCommandOutcome()
     data class Invalid(val message: String) : VerifyCommandOutcome()
+
+    /**
+     * A structural pass ran. Carries the findings rather than a boolean so a
+     * caller can act on which rule broke, not only on that one did.
+     */
+    data class Structural(
+        val findings: List<atropos.core.verification.DeterministicFinding>
+    ) : VerifyCommandOutcome()
 }
 
 fun interface VerifyCommandHandler {
@@ -30,7 +38,15 @@ class VerifyCommand(
 
     override fun execute(tokens: List<String>): VerifyCommandOutcome {
         if (tokens.size != 2) {
-            return invalid("usage: /verify <narrow|wide>")
+            return invalid("usage: /verify <narrow|wide|structural>")
+        }
+
+        // `structural` answers a different question from the other two and so
+        // takes a different path: narrow and wide compile and run, this reads
+        // the tree. Folding it into a scope would have made it share the
+        // compile step it does not need and cannot use.
+        if (tokens[1].equals("structural", ignoreCase = true)) {
+            return renderStructural()
         }
 
         val scope = when (tokens[1].lowercase()) {
@@ -67,6 +83,30 @@ class VerifyCommand(
 
         ui.renderVerificationResult(result)
         return VerifyCommandOutcome.Completed(result)
+    }
+
+    /**
+     * `/verify structural` — the design rules, checked against the source.
+     *
+     * Reported as a completed verification either way. A structural violation
+     * is a finding, not a command failure: the command did exactly what it was
+     * asked to and the answer was "no". Returning [VerifyCommandOutcome.Invalid]
+     * for it would make a working audit indistinguishable from a mistyped one.
+     */
+    private fun renderStructural(): VerifyCommandOutcome {
+        val findings = deterministicVerifier.verifyStructure().findings
+        val errors = findings.filter { it.severity == atropos.core.verification.DiagnosticSeverity.ERROR }
+        val body = buildString {
+            appendLine("STRUCTURAL — ${findings.size} finding(s), ${errors.size} blocking")
+            findings.forEach { finding ->
+                appendLine(
+                    "  ${finding.severity.name.lowercase()} ${finding.invariantId} " +
+                        "${finding.file ?: finding.symbolOrLocation ?: ""}: ${finding.evidence}"
+                )
+            }
+        }.trimEnd()
+        if (errors.isEmpty()) ui.renderNotice(body) else ui.renderError(body)
+        return VerifyCommandOutcome.Structural(findings)
     }
 
     private fun invalid(message: String): VerifyCommandOutcome.Invalid {

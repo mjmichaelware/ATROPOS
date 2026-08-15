@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.storage
 
-import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.Test
+import kotlin.test.*
+
 import java.time.Instant
 
 class GcWatermarkTest {
@@ -23,15 +23,15 @@ class GcWatermarkTest {
         val now = Instant.now()
         val futureBoundary = now.plusSeconds(3600)
         
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith<IllegalArgumentException> {
             GcWatermark("", now, now, 100L)
         }
         
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith<IllegalArgumentException> {
             GcWatermark("wm-002", now, futureBoundary, 100L)
         }
         
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith<IllegalArgumentException> {
             GcWatermark("wm-003", now, now, -1L)
         }
     }

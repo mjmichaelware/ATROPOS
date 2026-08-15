@@ -16,7 +16,7 @@ class QuotaFuelCellRenderer(private val theme: TerminalTheme) {
         
         val overLimit = state.used >= state.limit
         if (overLimit) {
-            return theme.format("[ LOCKED : QUOTA EXCEEDED ]", Role.STATUS_ERROR).padEnd(safeWidth)
+            return theme.paint(Role.STATUS_ERROR, "[ LOCKED : QUOTA EXCEEDED ]").padEnd(safeWidth)
         }
         
         val fillWidth = ((state.used / state.limit) * safeWidth).toInt().coerceIn(0, safeWidth)
@@ -28,6 +28,6 @@ class QuotaFuelCellRenderer(private val theme: TerminalTheme) {
         val empty = "░".repeat(emptyWidth)
         
         val warning = if (state.used + state.projected >= state.limit * 0.9) Role.STATUS_ERROR else Role.STATUS_PENDING
-        return theme.format(fill, warning) + theme.format(ghost, Role.MUTED) + theme.format(empty, Role.MUTED)
+        return theme.paint(warning, fill) + theme.paint(Role.TEXT_MUTED, ghost) + theme.paint(Role.TEXT_MUTED, empty)
     }
 }

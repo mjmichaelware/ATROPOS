@@ -1,9 +1,9 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.cli.ui
 
+import kotlin.test.*
+
 import atropos.cli.config.ConfigurationManager
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Test
 
 class QuotaFuelCellRendererTest {
     private val theme = TerminalTheme(ConfigurationManager(envProvider = { "true" }, hasConsole = false))

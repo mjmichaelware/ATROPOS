@@ -535,13 +535,15 @@ class SelfHostCommandTest {
         val tempDir = Files.createTempDirectory("self-host-test-gov-").toFile().toPath()
         initializeGitRepo(tempDir)
         val config = AtroposConfig(
-            apiKeys = ApiKeys(googleGemini = "dummy"),
-            lakehouse = LakehouseConfig(),
-            runtime = RuntimeConfig()
+            ApiKeys("", "", "", ""),
+            LakehouseConfig(
+                tempDir.resolve("lakehouse").toString(),
+                tempDir.resolve("lakehouse/vector.db").toString()
+            ),
+            RuntimeConfig("fake", 0.2)
         )
         val out = java.io.ByteArrayOutputStream()
-        val plain = PlainTerminalOutput(PrintStream(out))
-        val ui = AnsiTerminalEngine(plain)
+        val ui = AnsiTerminalEngine(plainOutput = PlainTerminalOutput(PrintStream(out)))
         val command = SelfHostCommand(ui = ui, config = config, repoRoot = tempDir)
 
         val result = command.execute(listOf("self-host", "governance"))

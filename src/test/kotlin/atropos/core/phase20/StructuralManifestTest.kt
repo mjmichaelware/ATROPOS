@@ -1,8 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.phase20
 
-import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.Test
+import kotlin.test.*
 
 class StructuralManifestTest {
 
@@ -30,10 +29,10 @@ class StructuralManifestTest {
 
     @Test
     fun testInvalidOffsetsRejected() {
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith<IllegalArgumentException> {
             ManifestRegion(RegionType.HEADER, -1L, 10L, null)
         }
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith<IllegalArgumentException> {
             ManifestRegion(RegionType.HEADER, 50L, 40L, null)
         }
     }

@@ -225,11 +225,17 @@ class FactoryResearchService(
         }
         if (suggestionDecision.isFailure) {
             log += "provider_suggestions=SKIPPED_SOFT_FAIL:predicate_${safeReason(suggestionDecision.exceptionOrNull()!!)}; attempted_after_channels=true; prompt_spans=$promptSpans"
-        } else if (providerSuggestionsRequired && providerSuggestionsPredicate == null) {
-            log += "provider_suggestions=SKIPPED_SOFT_FAIL:provider_not_configured; attempted_after_channels=true; prompt_spans=$promptSpans"
         } else if (suggestionDecision.getOrDefault(false)) {
-            // Fix: Trigger PASS when decision is true (AUD004)
-            log += "provider_suggestions=PASS suggestion_triggered=true; prompt_spans=$promptSpans"
+            // The predicate answers "are provider suggestions *wanted*", which
+            // it decides from confidence alone. This function never calls a
+            // provider, so "wanted" cannot become "obtained" here — and the
+            // line it used to write, `PASS suggestion_triggered=true`, said it
+            // had. A low-confidence run with no provider configured reported a
+            // provider suggestion that never happened, which is exactly the
+            // claim §0.6 forbids. Wanted-but-not-obtained is a soft fail, and
+            // it names which of the two it was.
+            log += "provider_suggestions=SKIPPED_SOFT_FAIL:provider_not_configured; " +
+                "wanted=true; attempted_after_channels=true; prompt_spans=$promptSpans"
         } else {
             log += "provider_suggestions=SKIPPED_SOFT_FAIL:confidence_threshold_met"
         }

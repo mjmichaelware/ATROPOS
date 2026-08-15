@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.cli.ui
 
+import atropos.cli.session.QuotaSessionTracker
 import atropos.core.verification.VerificationResult
 
 class TerminalRenderingFacade(
@@ -19,7 +20,9 @@ class TerminalRenderingFacade(
      * transform over their output, rather than an edit to each of them:
      * dozens of renderers would drift apart, a single seam cannot.
      */
-    private val colorizer: SemanticLineColorizer = SemanticLineColorizer(theme)
+    private val colorizer: SemanticLineColorizer = SemanticLineColorizer(theme),
+    private val statusLine: StatusLineRenderer = StatusLineRenderer(theme),
+    private val sessionOverview: SessionOverviewRenderer = SessionOverviewRenderer(theme)
 ) {
     fun renderWelcomePlain(provider: String, workspace: String) {
         plainOutput.emitPlain("ATROPOS", canvas.width)
@@ -29,15 +32,53 @@ class TerminalRenderingFacade(
         )
     }
 
-    fun renderDashboardPlain(activeTab: String, activeScreen: String, provider: String, workspace: String) {
-        plainOutput.emitPlain(
-            "dashboard: $activeTab:$activeScreen · ${provider.lowercase()} · ${TerminalText.compactPath(workspace)}",
+    /**
+     * The dashboard for a non-reactive terminal.
+     *
+     * [WelcomePanel] draws the reactive one and needs a canvas to lay out
+     * against, so the plain path used a single hand-built line that omitted the
+     * mode and the commands. [SessionOverviewRenderer] is the block form of the
+     * same state: it wraps to the width it is given and needs no compositor,
+     * which is exactly the constraint a piped or `dumb` terminal imposes.
+     */
+    fun renderDashboardPlain(
+        activeTab: String,
+        activeScreen: String,
+        provider: String,
+        workspace: String,
+        mode: String,
+        commands: List<String>
+    ) {
+        plainOutput.emitPlain("dashboard: $activeTab:$activeScreen", canvas.width)
+        sessionOverview.render(
+            SessionPresentationState(
+                provider = provider,
+                mode = mode,
+                workspace = workspace,
+                commands = commands,
+                tokens = MetricValue.Unknown,
+                cost = MetricValue.Unknown,
+                activeOperation = null,
+                activeScreen = activeScreen,
+                activeTab = activeTab
+            ),
             canvas.width
-        )
+        ).forEach { plainOutput.emitPlain(it, canvas.width) }
     }
 
-    fun renderStatusPlain(provider: String, workspace: String) {
-        plainOutput.emitPlain("$provider · ${TerminalText.compactPath(workspace)}", canvas.width)
+    /**
+     * The status line for a non-reactive terminal.
+     *
+     * Carries the tracker, so tokens and cost survive into piped output. The
+     * previous line dropped both, which meant the one surface an operator can
+     * actually capture into a log was the one that could not answer "what has
+     * this session spent".
+     */
+    fun renderStatusPlain(provider: String, workspace: String, mode: String, tracker: QuotaSessionTracker?) {
+        plainOutput.emitPlain(
+            statusLine.render(provider, mode, workspace, tracker, canvas.width),
+            canvas.width
+        )
     }
 
     fun renderAssistantPlain(provider: String, rendered: String) {

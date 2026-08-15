@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 package atropos.core.verification
 
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.assertThrows
-import org.junit.jupiter.api.Test
+import kotlin.test.*
 
 class AssertionNamingTest {
     @Test
@@ -14,7 +12,7 @@ class AssertionNamingTest {
 
     @Test
     fun `require throws structured message when condition is false`() {
-        val exception = assertThrows<IllegalArgumentException> {
+        val exception = assertFailsWith<IllegalArgumentException> {
             NamedAssertion.require(false, "MustBePositive", -5)
         }
         assertEquals("Invariant failed: [MustBePositive]. Observed: -5", exception.message)

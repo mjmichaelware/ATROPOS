@@ -1,8 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.phase20
 
-import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.Test
+import kotlin.test.*
 
 class SelfImprovementRollbackTest {
     @Test
@@ -16,7 +15,7 @@ class SelfImprovementRollbackTest {
         assertTrue(rolledBack)
         assertFalse(rollbackSystem.getActiveAmendments().contains("amd-001"))
         
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith<IllegalArgumentException> {
             rollbackSystem.triggerRollback("amd-002", "")
         }
     }
