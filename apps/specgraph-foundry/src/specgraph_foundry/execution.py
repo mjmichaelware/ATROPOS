@@ -14,6 +14,9 @@ from .errors import (
 )
 from .exports import ExportService
 from .planning import PlanningService
+from .node_claims import claim_node, heartbeat
+from .receipt_submission import submit_receipt
+from .run_lifecycle import STAGES, start_run
 from .execution_events import normalize_event, normalize_receipt, record_event
 from .execution_schema import EXECUTION_SCHEMA
 from .execution_leases import (
@@ -46,11 +49,6 @@ from .primitives import (
 
 
 
-STAGES = {
-    "CONTRACT",
-    "IMPLEMENTATION",
-    "VERIFICATION",
-}
 
 
 
@@ -96,156 +94,17 @@ class ExecutionService:
         runtime_run_id: str,
         export_id: str | None = None,
     ) -> dict[str, object]:
-        runtime_system = runtime_system.strip()
-        runtime_run_id = runtime_run_id.strip()
-
-        if not runtime_system:
-            raise ValidationError(
-                "runtime_system is required"
-            )
-
-        if not runtime_run_id:
-            raise ValidationError(
-                "runtime_run_id is required"
-            )
-
-        plan = self.planning.get_plan(
-            plan_id
+        """Delegates to :func:`run_lifecycle.start_run`."""
+        return start_run(
+            self.database,
+            self.planning,
+            self.exports,
+            plan_id,
+            runtime_system,
+            runtime_run_id,
+            export_id,
         )
 
-        if plan["status"] != "VERIFIED":
-            raise ValidationError(
-                "execution requires a VERIFIED plan"
-            )
-
-        if export_id is not None:
-            export = self.exports.get_export(
-                export_id
-            )
-
-            if export["status"] != "VERIFIED":
-                raise ValidationError(
-                    "execution export must be VERIFIED"
-                )
-
-            if (
-                export["plan_version_id"]
-                != plan_id
-            ):
-                raise ValidationError(
-                    "export does not belong to plan"
-                )
-
-        run_id = new_id("execution-run")
-        timestamp = utc_now()
-
-        try:
-            with self.database.connect() as connection:
-                connection.execute(
-                    """
-                    INSERT INTO execution_runs(
-                        id,
-                        project_id,
-                        plan_version_id,
-                        export_id,
-                        runtime_system,
-                        runtime_run_id,
-                        status,
-                        input_fingerprint,
-                        created_at,
-                        started_at
-                    )
-                    VALUES(?,?,?,?,?,?,?,?,?,?)
-                    """,
-                    (
-                        run_id,
-                        plan["project_id"],
-                        plan_id,
-                        export_id,
-                        runtime_system,
-                        runtime_run_id,
-                        "RUNNING",
-                        plan[
-                            "input_fingerprint"
-                        ],
-                        timestamp,
-                        timestamp,
-                    ),
-                )
-
-                for binding in plan[
-                    "bindings"
-                ]:
-                    stage = str(
-                        binding["stage"]
-                    )
-
-                    if stage not in STAGES:
-                        raise ValidationError(
-                            f"invalid plan stage: "
-                            f"{stage}"
-                        )
-
-                    connection.execute(
-                        """
-                        INSERT INTO
-                            execution_run_nodes(
-                                id,
-                                run_id,
-                                graph_node_id,
-                                atom_id,
-                                stage,
-                                sequence_number,
-                                title,
-                                status,
-                                created_at,
-                                updated_at
-                            )
-                        VALUES(?,?,?,?,?,?,?,?,?,?)
-                        """,
-                        (
-                            new_id(
-                                "execution-node"
-                            ),
-                            run_id,
-                            binding[
-                                "graph_node_id"
-                            ],
-                            binding["atom_id"],
-                            stage,
-                            binding[
-                                "sequence_number"
-                            ],
-                            binding[
-                                "canonical_statement"
-                            ],
-                            "PENDING",
-                            timestamp,
-                            timestamp,
-                        ),
-                    )
-
-                self._event(
-                    connection,
-                    run_id,
-                    None,
-                    "RUN_STARTED",
-                    runtime_system,
-                    {
-                        "plan_id": plan_id,
-                        "export_id": export_id,
-                        "runtime_run_id": (
-                            runtime_run_id
-                        ),
-                    },
-                )
-
-        except sqlite3.IntegrityError as error:
-            raise ConflictError(
-                "runtime run identifier already exists"
-            ) from error
-
-        return self.get_run(run_id)
 
     def claim_node(
         self,
@@ -254,192 +113,15 @@ class ExecutionService:
         run_node_id: str | None = None,
         lease_seconds: int = 900,
     ) -> dict[str, object] | None:
-        worker_id = worker_id.strip()
+        """Delegates to :func:`node_claims.claim_node`."""
+        return claim_node(
+            self.database,
+            run_id,
+            worker_id,
+            run_node_id,
+            lease_seconds,
+        )
 
-        if not worker_id:
-            raise ValidationError(
-                "worker_id is required"
-            )
-
-        if lease_seconds < 30:
-            raise ValidationError(
-                "lease_seconds must be at least 30"
-            )
-
-        now = utc_now_datetime()
-        expiration = (
-            now
-            + timedelta(
-                seconds=lease_seconds
-            )
-        ).isoformat()
-
-        with self.database.connect() as connection:
-            connection.execute(
-                "BEGIN IMMEDIATE"
-            )
-
-            run = self._require_active_run(
-                connection,
-                run_id,
-            )
-
-            self._expire_leases(
-                connection,
-                run_id,
-                now,
-            )
-
-            parameters: list[object] = [
-                run_id,
-                run[
-                    "execution_graph_id"
-                ],
-            ]
-
-            node_filter = ""
-
-            if run_node_id is not None:
-                node_filter = (
-                    "AND node.id = ?"
-                )
-                parameters.append(
-                    run_node_id
-                )
-
-            candidate = connection.execute(
-                f"""
-                SELECT node.*
-                FROM execution_run_nodes
-                AS node
-                WHERE node.run_id = ?
-                  AND node.status = 'PENDING'
-                  AND NOT EXISTS (
-                      SELECT 1
-                      FROM graph_edges AS edge
-                      JOIN execution_run_nodes
-                      AS predecessor
-                        ON predecessor.run_id =
-                           node.run_id
-                       AND predecessor.graph_node_id =
-                           edge.from_node_id
-                      WHERE edge.graph_id = ?
-                        AND edge.to_node_id =
-                            node.graph_node_id
-                        AND predecessor.status
-                            <> 'COMPLETE'
-                  )
-                  {node_filter}
-                ORDER BY
-                    node.sequence_number,
-                    CASE node.stage
-                        WHEN 'CONTRACT' THEN 1
-                        WHEN 'IMPLEMENTATION' THEN 2
-                        WHEN 'VERIFICATION' THEN 3
-                        ELSE 4
-                    END,
-                    node.id
-                LIMIT 1
-                """,
-                tuple(parameters),
-            ).fetchone()
-
-            if candidate is None:
-                if run_node_id is None:
-                    return None
-
-                existing = connection.execute(
-                    """
-                    SELECT id
-                    FROM execution_run_nodes
-                    WHERE id = ?
-                      AND run_id = ?
-                    """,
-                    (
-                        run_node_id,
-                        run_id,
-                    ),
-                ).fetchone()
-
-                if existing is None:
-                    raise NotFoundError(
-                        "execution node not found"
-                    )
-
-                raise ConflictError(
-                    "execution node is not ready"
-                )
-
-            node_id = str(
-                candidate["id"]
-            )
-            attempt_id = new_id(
-                "execution-attempt"
-            )
-
-            connection.execute(
-                """
-                UPDATE execution_run_nodes
-                SET status = 'CLAIMED',
-                    lease_owner = ?,
-                    lease_expires_at = ?,
-                    attempt_count =
-                        attempt_count + 1,
-                    updated_at = ?
-                WHERE id = ?
-                """,
-                (
-                    worker_id,
-                    expiration,
-                    now.isoformat(),
-                    node_id,
-                ),
-            )
-
-            connection.execute(
-                """
-                INSERT INTO execution_attempts(
-                    id,
-                    run_node_id,
-                    worker_id,
-                    status,
-                    lease_expires_at,
-                    started_at
-                )
-                VALUES(?,?,?,?,?,?)
-                """,
-                (
-                    attempt_id,
-                    node_id,
-                    worker_id,
-                    "ACTIVE",
-                    expiration,
-                    now.isoformat(),
-                ),
-            )
-
-            self._event(
-                connection,
-                run_id,
-                node_id,
-                "NODE_CLAIMED",
-                worker_id,
-                {
-                    "attempt_id": attempt_id,
-                    "lease_expires_at": (
-                        expiration
-                    ),
-                },
-            )
-
-        return {
-            "node": self.get_run_node(
-                node_id
-            ),
-            "attempt": self.get_attempt(
-                attempt_id
-            ),
-        }
 
     def heartbeat(
         self,
@@ -447,69 +129,14 @@ class ExecutionService:
         worker_id: str,
         lease_seconds: int = 900,
     ) -> dict[str, object]:
-        if lease_seconds < 30:
-            raise ValidationError(
-                "lease_seconds must be at least 30"
-            )
-
-        expiration = (
-            utc_now_datetime()
-            + timedelta(
-                seconds=lease_seconds
-            )
-        ).isoformat()
-
-        with self.database.connect() as connection:
-            node, attempt = (
-                self._require_active_claim(
-                    connection,
-                    run_node_id,
-                    worker_id,
-                )
-            )
-
-            connection.execute(
-                """
-                UPDATE execution_run_nodes
-                SET lease_expires_at = ?,
-                    updated_at = ?
-                WHERE id = ?
-                """,
-                (
-                    expiration,
-                    utc_now(),
-                    run_node_id,
-                ),
-            )
-
-            connection.execute(
-                """
-                UPDATE execution_attempts
-                SET lease_expires_at = ?
-                WHERE id = ?
-                """,
-                (
-                    expiration,
-                    attempt["id"],
-                ),
-            )
-
-            self._event(
-                connection,
-                str(node["run_id"]),
-                run_node_id,
-                "NODE_HEARTBEAT",
-                worker_id,
-                {
-                    "lease_expires_at": (
-                        expiration
-                    )
-                },
-            )
-
-        return self.get_run_node(
-            run_node_id
+        """Delegates to :func:`node_claims.heartbeat`."""
+        return heartbeat(
+            self.database,
+            run_node_id,
+            worker_id,
+            lease_seconds,
         )
+
 
     def submit_receipt(
         self,
@@ -520,244 +147,17 @@ class ExecutionService:
         summary: str,
         evidence: dict[str, object],
     ) -> dict[str, object]:
-        worker_id = worker_id.strip()
-        actor_system = actor_system.strip()
-        outcome = outcome.strip().upper()
-        summary = summary.strip()
-
-        if not worker_id:
-            raise ValidationError(
-                "worker_id is required"
-            )
-
-        if not actor_system:
-            raise ValidationError(
-                "actor_system is required"
-            )
-
-        if not isinstance(evidence, dict):
-            raise ValidationError(
-                "evidence must be an object"
-            )
-
-        receipt_payload = {
-            "actor_system": actor_system,
-            "actor_id": worker_id,
-            "outcome": outcome,
-            "summary": summary,
-            "evidence": evidence,
-        }
-
-        evidence_json = canonical_json(
-            evidence
+        """Delegates to :func:`receipt_submission.submit_receipt`."""
+        return submit_receipt(
+            self.database,
+            run_node_id,
+            worker_id,
+            actor_system,
+            outcome,
+            summary,
+            evidence,
         )
 
-        evidence_sha256 = hashlib.sha256(
-            canonical_json(
-                receipt_payload
-            ).encode("utf-8")
-        ).hexdigest()
-
-        receipt_id = new_id(
-            "execution-receipt"
-        )
-        timestamp = utc_now()
-
-        try:
-            with self.database.connect() as connection:
-                node, attempt = (
-                    self._require_active_claim(
-                        connection,
-                        run_node_id,
-                        worker_id,
-                    )
-                )
-
-                findings = (
-                    self._validate_receipt(
-                        connection,
-                        node,
-                        worker_id,
-                        outcome,
-                        summary,
-                        evidence,
-                    )
-                )
-
-                accepted = not findings
-
-                validation_status = (
-                    "ACCEPTED"
-                    if accepted
-                    else "REJECTED"
-                )
-
-                connection.execute(
-                    """
-                    INSERT INTO execution_receipts(
-                        id,
-                        run_id,
-                        run_node_id,
-                        attempt_id,
-                        actor_system,
-                        actor_id,
-                        outcome,
-                        summary,
-                        evidence_json,
-                        evidence_sha256,
-                        validation_status,
-                        created_at
-                    )
-                    VALUES(?,?,?,?,?,?,?,?,?,?,?,?)
-                    """,
-                    (
-                        receipt_id,
-                        node["run_id"],
-                        run_node_id,
-                        attempt["id"],
-                        actor_system,
-                        worker_id,
-                        outcome,
-                        summary,
-                        evidence_json,
-                        evidence_sha256,
-                        validation_status,
-                        timestamp,
-                    ),
-                )
-
-                for finding in findings:
-                    connection.execute(
-                        """
-                        INSERT INTO
-                            execution_validation_findings(
-                                id,
-                                run_id,
-                                run_node_id,
-                                receipt_id,
-                                gate_code,
-                                severity,
-                                message,
-                                created_at
-                            )
-                        VALUES(?,?,?,?,?,?,?,?)
-                        """,
-                        (
-                            new_id(
-                                "execution-finding"
-                            ),
-                            node["run_id"],
-                            run_node_id,
-                            receipt_id,
-                            finding["gate_code"],
-                            finding["severity"],
-                            finding["message"],
-                            timestamp,
-                        ),
-                    )
-
-                if accepted:
-                    connection.execute(
-                        """
-                        UPDATE execution_run_nodes
-                        SET status = 'COMPLETE',
-                            accepted_receipt_id = ?,
-                            lease_owner = NULL,
-                            lease_expires_at = NULL,
-                            updated_at = ?
-                        WHERE id = ?
-                        """,
-                        (
-                            receipt_id,
-                            timestamp,
-                            run_node_id,
-                        ),
-                    )
-
-                    connection.execute(
-                        """
-                        UPDATE execution_attempts
-                        SET status = 'COMPLETE',
-                            completed_at = ?
-                        WHERE id = ?
-                        """,
-                        (
-                            timestamp,
-                            attempt["id"],
-                        ),
-                    )
-
-                    event_type = (
-                        "RECEIPT_ACCEPTED"
-                    )
-                else:
-                    connection.execute(
-                        """
-                        UPDATE execution_run_nodes
-                        SET status = 'PENDING',
-                            lease_owner = NULL,
-                            lease_expires_at = NULL,
-                            updated_at = ?
-                        WHERE id = ?
-                        """,
-                        (
-                            timestamp,
-                            run_node_id,
-                        ),
-                    )
-
-                    connection.execute(
-                        """
-                        UPDATE execution_attempts
-                        SET status = 'FAILED',
-                            completed_at = ?,
-                            error_message = ?
-                        WHERE id = ?
-                        """,
-                        (
-                            timestamp,
-                            (
-                                "receipt failed "
-                                "anti-fake gates"
-                            ),
-                            attempt["id"],
-                        ),
-                    )
-
-                    event_type = (
-                        "RECEIPT_REJECTED"
-                    )
-
-                self._event(
-                    connection,
-                    str(node["run_id"]),
-                    run_node_id,
-                    event_type,
-                    worker_id,
-                    {
-                        "receipt_id": receipt_id,
-                        "validation_status": (
-                            validation_status
-                        ),
-                        "finding_count": len(
-                            findings
-                        ),
-                    },
-                )
-
-        except sqlite3.IntegrityError as error:
-            raise ConflictError(
-                "identical receipt already exists "
-                "for this execution node"
-            ) from error
-
-        self._refresh_run_status(
-            str(node["run_id"])
-        )
-
-        return self.get_receipt(
-            receipt_id
-        )
 
     def verify_run(
         self,
