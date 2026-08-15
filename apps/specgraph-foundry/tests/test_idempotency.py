@@ -619,7 +619,7 @@ class IdempotencyTest(unittest.TestCase):
             )
 
         with patch(
-            "specgraph_foundry.http_api.gateway.canonical_request_hash",
+            "specgraph_foundry.http_api.gateway_concurrency.canonical_request_hash",
             return_value=request_hash,
         ):
             conflict = self.request(
@@ -654,7 +654,7 @@ class IdempotencyTest(unittest.TestCase):
             )
 
         with patch(
-            "specgraph_foundry.http_api.gateway.canonical_request_hash",
+            "specgraph_foundry.http_api.gateway_concurrency.canonical_request_hash",
             return_value=request_hash,
         ):
             reclaimed = self.request(

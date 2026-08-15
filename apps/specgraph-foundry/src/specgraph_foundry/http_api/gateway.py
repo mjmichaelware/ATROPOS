@@ -1,5 +1,20 @@
 from __future__ import annotations
 
+from .gateway_models import RouteMetadata
+from .gateway_concurrency import claim_idempotency, enforce_concurrency
+from .gateway_etags import (
+    decorate_collection_etags,
+    decorate_resource_etag,
+    editable_resource,
+    etag_for_resource,
+    resource_reference,
+)
+from .gateway_exports import durable_export_response
+from .gateway_operations import async_operation_submission, operation_api_response
+from .gateway_responses import success_response, workspace_body
+from .gateway_routes import route_metadata
+from .gateway_uploads import source_upload_response
+
 import uuid
 from dataclasses import dataclass
 from importlib.metadata import (
@@ -111,14 +126,6 @@ class Api:
         return getattr(self._delegate, name)
 
 
-@dataclass(frozen=True)
-class RouteMetadata:
-    operation: str
-    path_params: dict[str, str]
-    idempotency_required: bool = False
-    response_etag_kind: str | None = None
-    collection_etag_kind: str | None = None
-    concurrency_kind: str | None = None
 
 
 def application_version() -> str:
@@ -574,253 +581,17 @@ class AuthenticatedApi:
         claim: ClaimResult | None,
         common_headers: dict[str, str],
     ) -> ApiResponse | None:
-        if self.source_uploads is None:
-            return None
+        """Delegates to :func:`gateway_uploads.source_upload_response`."""
+        return source_upload_response(
+            self,
+            principal_user_id=principal_user_id,
+            request=request,
+            parts=parts,
+            route=route,
+            claim=claim,
+            common_headers=common_headers,
+        )
 
-        try:
-            if (
-                len(parts) == 4
-                and parts[:2] == ["v1", "projects"]
-                and parts[3] == "source-uploads"
-                and request.method == "POST"
-            ):
-                upload_id = (
-                    claim.record.id
-                    if claim is not None
-                    else str(uuid.uuid4())
-                )
-                body = self.source_uploads.create_intent(
-                    owner_id=principal_user_id,
-                    authorization=(
-                        request.authorization or ""
-                    ),
-                    project_id=parts[2],
-                    upload_id=upload_id,
-                    filename=str(
-                        request.payload.get(
-                            "filename",
-                            "",
-                        )
-                    ),
-                    media_type=str(
-                        request.payload.get(
-                            "media_type",
-                            "",
-                        )
-                    ),
-                    byte_size=int(
-                        request.payload.get(
-                            "byte_size",
-                            0,
-                        )
-                    ),
-                    sha256=str(
-                        request.payload.get(
-                            "sha256",
-                            "",
-                        )
-                    ),
-                )
-                response = self._success_response(
-                    status=201,
-                    body=body,
-                    headers=common_headers,
-                    route=route,
-                    replayed=(
-                        False
-                        if claim is not None
-                        else None
-                    ),
-                )
-
-                if claim is not None and route is not None:
-                    self.idempotency.mark_succeeded(
-                        record_id=claim.record.id,
-                        http_status=response.status,
-                        response_body={
-                            "upload_id": str(
-                                body["id"]
-                            )
-                        },
-                        resource_type=route.operation,
-                        resource_id=str(body["id"]),
-                    )
-
-                return response
-
-            if (
-                len(parts) == 3
-                and parts[:2] == ["v1", "source-uploads"]
-                and request.method == "GET"
-            ):
-                body = self.source_uploads.get_status(
-                    owner_id=principal_user_id,
-                    upload_id=parts[2],
-                )
-                return ApiResponse(
-                    status=200,
-                    body=body,
-                    headers=common_headers,
-                )
-
-            if (
-                len(parts) == 4
-                and parts[:2] == ["v1", "source-uploads"]
-                and parts[3] == "finalize"
-                and request.method == "POST"
-            ):
-                raw_base64 = request.payload.get(
-                    "raw_base64"
-                )
-                body = self.source_uploads.finalize(
-                    owner_id=principal_user_id,
-                    authorization=(
-                        request.authorization or ""
-                    ),
-                    upload_id=parts[2],
-                    raw_base64=(
-                        raw_base64
-                        if isinstance(raw_base64, str)
-                        else None
-                    ),
-                )
-                response = self._success_response(
-                    status=201,
-                    body=body,
-                    headers=common_headers,
-                    route=route,
-                    replayed=(
-                        False
-                        if claim is not None
-                        else None
-                    ),
-                )
-
-                if claim is not None and route is not None:
-                    self.idempotency.mark_succeeded(
-                        record_id=claim.record.id,
-                        http_status=response.status,
-                        response_body=response.body,
-                        resource_type=route.operation,
-                        resource_id=str(
-                            body["document_id"]
-                        ),
-                    )
-
-                return response
-        except NotFoundError:
-            failure = not_found_response(
-                request_id=request.request_id
-            )
-        except ValidationError as error:
-            code = "VALIDATION_ERROR"
-            status = 400
-            message = str(error)
-
-            if "filename" in message:
-                code = "INVALID_FILENAME"
-            elif (
-                "media_type" in message
-                or "media type" in message
-            ):
-                code = "UNSUPPORTED_MEDIA_TYPE"
-                status = 415
-                message = "source media type is not supported"
-            elif "maximum" in message:
-                code = "SOURCE_TOO_LARGE"
-                status = 413
-                message = "source exceeds the configured maximum"
-
-            failure = error_response(
-                status=status,
-                code=code,
-                message=message,
-                request_id=request.request_id,
-                headers=common_headers,
-            )
-        except UploadExpiredError:
-            failure = error_response(
-                status=409,
-                code="UPLOAD_EXPIRED",
-                message="upload intent has expired",
-                request_id=request.request_id,
-                headers=common_headers,
-            )
-        except UploadStateConflictError:
-            failure = error_response(
-                status=409,
-                code="UPLOAD_STATE_CONFLICT",
-                message="upload state does not permit this operation",
-                request_id=request.request_id,
-                headers=common_headers,
-            )
-        except UploadIntegrityMismatchError:
-            failure = error_response(
-                status=409,
-                code="UPLOAD_INTEGRITY_MISMATCH",
-                message="uploaded source failed integrity verification",
-                request_id=request.request_id,
-                headers=common_headers,
-            )
-        except InvalidSourceEncodingError:
-            failure = error_response(
-                status=400,
-                code="INVALID_SOURCE_ENCODING",
-                message="uploaded source must be valid UTF-8 text",
-                request_id=request.request_id,
-                headers=common_headers,
-            )
-        except InvalidDocumentUploadError:
-            failure = error_response(
-                status=400,
-                code="INVALID_DOCUMENT",
-                message="uploaded document is invalid",
-                request_id=request.request_id,
-                headers=common_headers,
-            )
-        except DocumentEncryptedUploadError:
-            failure = error_response(
-                status=415,
-                code="DOCUMENT_ENCRYPTED",
-                message="uploaded document is encrypted",
-                request_id=request.request_id,
-                headers=common_headers,
-            )
-        except DocumentLimitExceededUploadError:
-            failure = error_response(
-                status=413,
-                code="DOCUMENT_LIMIT_EXCEEDED",
-                message="uploaded document exceeds configured limits",
-                request_id=request.request_id,
-                headers=common_headers,
-            )
-        except NoExtractableTextUploadError:
-            failure = error_response(
-                status=415,
-                code="NO_EXTRACTABLE_TEXT",
-                message="uploaded document contains no extractable text",
-                request_id=request.request_id,
-                headers=common_headers,
-            )
-        except UploadDependencyUnavailableError:
-            failure = error_response(
-                status=503,
-                code="DEPENDENCY_UNAVAILABLE",
-                message="document processing dependency is unavailable",
-                request_id=request.request_id,
-                headers=common_headers,
-            )
-        else:
-            return None
-
-        if claim is not None:
-            self.idempotency.mark_failed(
-                record_id=claim.record.id,
-                http_status=failure.status,
-                response_body=failure.body,
-            )
-
-        return failure
 
     def _durable_export_response(
         self,
@@ -832,248 +603,17 @@ class AuthenticatedApi:
         claim: ClaimResult | None,
         common_headers: dict[str, str],
     ) -> ApiResponse | None:
-        if self.durable_exports is None:
-            return None
+        """Delegates to :func:`gateway_exports.durable_export_response`."""
+        return durable_export_response(
+            self,
+            principal_user_id=principal_user_id,
+            request=request,
+            parts=parts,
+            route=route,
+            claim=claim,
+            common_headers=common_headers,
+        )
 
-        try:
-            if (
-                len(parts) == 4
-                and parts[:2] == ["v1", "plans"]
-                and parts[3] == "exports"
-                and request.method == "POST"
-            ):
-                body = self.durable_exports.export_plan(
-                    owner_id=principal_user_id,
-                    authorization=(
-                        request.authorization or ""
-                    ),
-                    plan_id=parts[2],
-                )
-                response = self._success_response(
-                    status=201,
-                    body=body,
-                    headers=common_headers,
-                    route=route,
-                    replayed=(
-                        False
-                        if claim is not None
-                        else None
-                    ),
-                )
-
-                if claim is not None and route is not None:
-                    self.idempotency.mark_succeeded(
-                        record_id=claim.record.id,
-                        http_status=response.status,
-                        response_body=response.body,
-                        resource_type=route.operation,
-                        resource_id=str(body["id"]),
-                    )
-
-                return response
-
-            if (
-                len(parts) == 3
-                and parts[:2] == ["v1", "exports"]
-                and request.method == "GET"
-            ):
-                body = self.durable_exports.get_export(
-                    parts[2],
-                    owner_id=principal_user_id,
-                )
-                return ApiResponse(
-                    status=200,
-                    body=body,
-                    headers=common_headers,
-                )
-
-            if (
-                len(parts) == 4
-                and parts[:2] == ["v1", "exports"]
-                and parts[3] == "verify"
-                and request.method == "POST"
-            ):
-                body = self.durable_exports.verify_export(
-                    owner_id=principal_user_id,
-                    authorization=(
-                        request.authorization or ""
-                    ),
-                    export_id=parts[2],
-                )
-                response = self._success_response(
-                    status=200,
-                    body=body,
-                    headers=common_headers,
-                    route=route,
-                    replayed=(
-                        False
-                        if claim is not None
-                        else None
-                    ),
-                )
-
-                if claim is not None and route is not None:
-                    self.idempotency.mark_succeeded(
-                        record_id=claim.record.id,
-                        http_status=response.status,
-                        response_body=response.body,
-                        resource_type=route.operation,
-                        resource_id=parts[2],
-                    )
-
-                return response
-
-            if (
-                len(parts) == 4
-                and parts[:2] == ["v1", "exports"]
-                and parts[3] == "download"
-                and request.method == "GET"
-            ):
-                body = self.durable_exports.download(
-                    owner_id=principal_user_id,
-                    authorization=(
-                        request.authorization or ""
-                    ),
-                    export_id=parts[2],
-                )
-                return ApiResponse(
-                    status=200,
-                    body=body,
-                    headers=common_headers,
-                )
-
-            if (
-                len(parts) == 4
-                and parts[:2] == ["v1", "projects"]
-                and parts[3] == "exports"
-                and request.method == "GET"
-            ):
-                body = {
-                    "items": self.durable_exports.list_exports(
-                        parts[2]
-                    )
-                }
-                return ApiResponse(
-                    status=200,
-                    body=body,
-                    headers=common_headers,
-                )
-
-            if (
-                len(parts) == 4
-                and parts[:2] == ["v1", "plans"]
-                and parts[3] == "execution-runs"
-                and request.method == "POST"
-            ):
-                body = self.durable_exports.start_execution_run(
-                    owner_id=principal_user_id,
-                    plan_id=parts[2],
-                    runtime_system=str(
-                        request.payload.get(
-                            "runtime_system",
-                            "",
-                        )
-                    ),
-                    runtime_run_id=str(
-                        request.payload.get(
-                            "runtime_run_id",
-                            "",
-                        )
-                    ),
-                    export_id=(
-                        str(request.payload["export_id"])
-                        if request.payload.get(
-                            "export_id"
-                        )
-                        is not None
-                        else None
-                    ),
-                )
-                response = self._success_response(
-                    status=201,
-                    body=body,
-                    headers=common_headers,
-                    route=route,
-                    replayed=(
-                        False
-                        if claim is not None
-                        else None
-                    ),
-                )
-
-                if claim is not None and route is not None:
-                    self.idempotency.mark_succeeded(
-                        record_id=claim.record.id,
-                        http_status=response.status,
-                        response_body=response.body,
-                        resource_type=route.operation,
-                        resource_id=str(body["id"]),
-                    )
-
-                return response
-        except NotFoundError:
-            failure = not_found_response(
-                request_id=request.request_id
-            )
-        except ValidationError as error:
-            failure = error_response(
-                status=400,
-                code="VALIDATION_ERROR",
-                message=str(error),
-                request_id=request.request_id,
-                headers=common_headers,
-            )
-        except ArtifactLimitExceededError:
-            failure = error_response(
-                status=413,
-                code="ARTIFACT_LIMIT_EXCEEDED",
-                message="export artifacts exceed configured limits",
-                request_id=request.request_id,
-                headers=common_headers,
-            )
-        except ArtifactAlreadyExistsError:
-            failure = error_response(
-                status=409,
-                code="ARTIFACT_ALREADY_EXISTS",
-                message="artifact object already exists",
-                request_id=request.request_id,
-                headers=common_headers,
-            )
-        except ArtifactNotVerifiedError:
-            failure = error_response(
-                status=409,
-                code="ARTIFACT_NOT_VERIFIED",
-                message="export artifacts are not verified",
-                request_id=request.request_id,
-                headers=common_headers,
-            )
-        except ArtifactIntegrityError:
-            failure = error_response(
-                status=409,
-                code="ARTIFACT_INTEGRITY_FAILED",
-                message="stored artifact bytes failed verification",
-                request_id=request.request_id,
-                headers=common_headers,
-            )
-        except ArtifactStorageUnavailableError:
-            failure = error_response(
-                status=503,
-                code="STORAGE_UNAVAILABLE",
-                message="artifact storage is unavailable",
-                request_id=request.request_id,
-                headers=common_headers,
-            )
-        else:
-            return None
-
-        if claim is not None:
-            self.idempotency.mark_failed(
-                record_id=claim.record.id,
-                http_status=failure.status,
-                response_body=failure.body,
-            )
-
-        return failure
 
     def _operation_api_response(
         self,
@@ -1085,114 +625,17 @@ class AuthenticatedApi:
         claim: ClaimResult | None,
         common_headers: dict[str, str],
     ) -> ApiResponse | None:
-        if self.operations is None:
-            return None
+        """Delegates to :func:`gateway_operations.operation_api_response`."""
+        return operation_api_response(
+            self,
+            principal_user_id=principal_user_id,
+            request=request,
+            parts=parts,
+            route=route,
+            claim=claim,
+            common_headers=common_headers,
+        )
 
-        try:
-            if (
-                len(parts) == 3
-                and parts[:2] == ["v1", "operations"]
-                and request.method == "GET"
-            ):
-                # Every frontend caller of pollOperation() - extraction,
-                # research completion, plan synthesis/verification, handoff,
-                # execution, source upload finalization - independently and
-                # consistently expects this nested under "operation", matching
-                # the shape the 202 submission response already uses. Returning
-                # the operation flat here (as this endpoint used to) makes
-                # pollOperation's very first status check crash with
-                # "Cannot read properties of undefined (reading 'state')".
-                return ApiResponse(
-                    status=200,
-                    body={
-                        "operation": self.operations.get(
-                            owner_id=principal_user_id,
-                            operation_id=parts[2],
-                        )
-                    },
-                    headers=common_headers,
-                )
-
-            if (
-                len(parts) == 4
-                and parts[:2] == ["v1", "operations"]
-                and parts[3] == "cancel"
-                and request.method == "POST"
-            ):
-                body = self.operations.cancel(
-                    owner_id=principal_user_id,
-                    operation_id=parts[2],
-                )
-                response = self._success_response(
-                    status=200,
-                    body=body,
-                    headers=common_headers,
-                    route=route,
-                    replayed=(
-                        False
-                        if claim is not None
-                        else None
-                    ),
-                )
-                if claim is not None and route is not None:
-                    self.idempotency.mark_succeeded(
-                        record_id=claim.record.id,
-                        http_status=response.status,
-                        response_body=response.body,
-                        resource_type=route.operation,
-                        resource_id=parts[2],
-                    )
-                return response
-
-            if (
-                len(parts) == 4
-                and parts[:2] == ["v1", "projects"]
-                and parts[3] == "operations"
-                and request.method == "GET"
-            ):
-                items, page_headers = self.operations.list_project(
-                    owner_id=principal_user_id,
-                    project_id=parts[2],
-                    raw_path=request.raw_path,
-                )
-                return ApiResponse(
-                    status=200,
-                    body={"items": items},
-                    headers={
-                        **common_headers,
-                        **page_headers,
-                    },
-                )
-        except NotFoundError:
-            failure = not_found_response(
-                request_id=request.request_id
-            )
-        except ConflictError:
-            failure = error_response(
-                status=409,
-                code="OPERATION_CONFLICT",
-                message="operation state conflicts with the request",
-                request_id=request.request_id,
-                headers=common_headers,
-            )
-        except ValidationError as error:
-            failure = error_response(
-                status=400,
-                code="VALIDATION_ERROR",
-                message=str(error),
-                request_id=request.request_id,
-                headers=common_headers,
-            )
-        else:
-            return None
-
-        if claim is not None:
-            self.idempotency.mark_failed(
-                record_id=claim.record.id,
-                http_status=failure.status,
-                response_body=failure.body,
-            )
-        return failure
 
     def _async_operation_submission(
         self,
@@ -1204,82 +647,17 @@ class AuthenticatedApi:
         claim: ClaimResult | None,
         common_headers: dict[str, str],
     ) -> ApiResponse | None:
-        if (
-            self.operations is None
-            or self.operation_handlers is None
-            or route is None
-            or route.operation not in ASYNC_OPERATION_TYPES
-            or is_operation_path(request.raw_path)
-        ):
-            return None
+        """Delegates to :func:`gateway_operations.async_operation_submission`."""
+        return async_operation_submission(
+            self,
+            principal_user_id=principal_user_id,
+            request=request,
+            parts=parts,
+            route=route,
+            claim=claim,
+            common_headers=common_headers,
+        )
 
-        try:
-            safe_request = self.operation_handlers.safe_request(
-                operation_type=route.operation,
-                path_params=route.path_params,
-                payload=request.payload,
-            )
-            project_id = self.operation_handlers.project_id_for_request(
-                operation_type=route.operation,
-                path_params=route.path_params,
-                payload=request.payload,
-            )
-            operation = self.operations.submit(
-                owner_id=principal_user_id,
-                project_id=project_id,
-                operation_type=route.operation,
-                request=safe_request,
-            )
-            if self.worker_trigger is not None:
-                self.worker_trigger.kick()
-        except NotFoundError:
-            failure = not_found_response(
-                request_id=request.request_id
-            )
-        except ValidationError as error:
-            failure = error_response(
-                status=400,
-                code="VALIDATION_ERROR",
-                message=str(error),
-                request_id=request.request_id,
-                headers=common_headers,
-            )
-        else:
-            headers = {
-                **common_headers,
-                "location": operation_location(operation),
-                "retry-after": str(
-                    self.operations.settings.poll_seconds
-                ),
-            }
-            response = self._success_response(
-                status=202,
-                body={"operation": operation},
-                headers=headers,
-                route=route,
-                replayed=(
-                    False
-                    if claim is not None
-                    else None
-                ),
-            )
-            if claim is not None:
-                self.idempotency.mark_succeeded(
-                    record_id=claim.record.id,
-                    http_status=response.status,
-                    response_body=response.body,
-                    resource_type=route.operation,
-                    resource_id=str(operation["id"]),
-                )
-            return response
-
-        if claim is not None:
-            self.idempotency.mark_failed(
-                record_id=claim.record.id,
-                http_status=failure.status,
-                response_body=failure.body,
-            )
-        return failure
 
     def _claim_idempotency(
         self,
@@ -1288,61 +666,15 @@ class AuthenticatedApi:
         request: ApiRequest,
         headers: dict[str, str],
     ) -> ClaimResult | ApiResponse:
-        key = request.idempotency_key
+        """Delegates to :func:`gateway_concurrency.claim_idempotency`."""
+        return claim_idempotency(
+            self,
+            route,
+            database,
+            request,
+            headers,
+        )
 
-        if key is None:
-            return error_response(
-                status=400,
-                code="IDEMPOTENCY_KEY_REQUIRED",
-                message="Idempotency-Key is required",
-                request_id=request.request_id,
-                headers=headers,
-            )
-
-        try:
-            claim = self.idempotency.claim(
-                owner_id=database.owner_id or "",
-                operation=route.operation,
-                idempotency_key=key,
-                request_hash=canonical_request_hash(
-                    operation=route.operation,
-                    owner_id=database.owner_id
-                    or "",
-                    route_params=route.path_params,
-                    payload=request.payload,
-                ),
-            )
-        except ValidationError:
-            return error_response(
-                status=400,
-                code="INVALID_IDEMPOTENCY_KEY",
-                message="Idempotency-Key is invalid",
-                request_id=request.request_id,
-                headers=headers,
-            )
-        except ConflictError as error:
-            if "different request" in str(error):
-                return error_response(
-                    status=409,
-                    code="IDEMPOTENCY_KEY_REUSED",
-                    message=(
-                        "Idempotency-Key has already been used for a different request"
-                    ),
-                    request_id=request.request_id,
-                    headers=headers,
-                )
-
-            return error_response(
-                status=409,
-                code="IDEMPOTENCY_IN_PROGRESS",
-                message=(
-                    "an equivalent request is already in progress"
-                ),
-                request_id=request.request_id,
-                headers=headers,
-            )
-
-        return claim
 
     def _enforce_concurrency(
         self,
@@ -1351,50 +683,15 @@ class AuthenticatedApi:
         route: RouteMetadata,
         request: ApiRequest,
     ) -> ApiResponse | None:
-        current = self._editable_resource(
+        """Delegates to :func:`gateway_concurrency.enforce_concurrency`."""
+        return enforce_concurrency(
+            self,
             database,
             legacy_api,
             route,
-            request.payload,
+            request,
         )
 
-        if current is None:
-            return None
-
-        if request.if_match is None:
-            return error_response(
-                status=428,
-                code="PRECONDITION_REQUIRED",
-                message="If-Match is required",
-                request_id=request.request_id,
-            )
-
-        try:
-            provided = validate_if_match(
-                request.if_match
-            )
-        except ValidationError:
-            return error_response(
-                status=400,
-                code="INVALID_PRECONDITION",
-                message="If-Match is invalid",
-                request_id=request.request_id,
-            )
-
-        expected = self._etag_for_resource(
-            route.concurrency_kind,
-            current,
-        )
-
-        if provided != expected:
-            return error_response(
-                status=412,
-                code="PRECONDITION_FAILED",
-                message="resource has changed",
-                request_id=request.request_id,
-            )
-
-        return None
 
     def _success_response(
         self,
@@ -1405,100 +702,42 @@ class AuthenticatedApi:
         route: RouteMetadata | None,
         replayed: bool | None,
     ) -> ApiResponse:
-        response = ApiResponse(
+        """Delegates to :func:`gateway_responses.success_response`."""
+        return success_response(
+            self,
             status=status,
             body=body,
-            headers=dict(headers),
+            headers=headers,
+            route=route,
+            replayed=replayed,
         )
 
-        if replayed is not None:
-            response.headers[
-                "idempotency-replayed"
-            ] = (
-                "true"
-                if replayed
-                else "false"
-            )
-
-        if route is None:
-            return response
-
-        if (
-            route.collection_etag_kind
-            is not None
-        ):
-            response = self._decorate_collection_etags(
-                response,
-                route.collection_etag_kind,
-            )
-
-        if (
-            route.response_etag_kind
-            is not None
-        ):
-            response = self._decorate_resource_etag(
-                response,
-                route.response_etag_kind,
-            )
-
-        return response
 
     def _decorate_collection_etags(
         self,
         response: ApiResponse,
         kind: str,
     ) -> ApiResponse:
-        items = response.body.get("items")
-
-        if not isinstance(items, list):
-            return response
-
-        decorated_items: list[object] = []
-
-        for item in items:
-            if not isinstance(item, dict):
-                decorated_items.append(item)
-                continue
-
-            decorated = dict(item)
-            decorated["etag"] = (
-                self._etag_for_resource(
-                    kind,
-                    decorated,
-                )
-            )
-            decorated_items.append(decorated)
-
-        body = dict(response.body)
-        body["items"] = decorated_items
-        return ApiResponse(
-            status=response.status,
-            body=body,
-            headers=response.headers,
+        """Delegates to :func:`gateway_etags.decorate_collection_etags`."""
+        return decorate_collection_etags(
+            self,
+            response,
+            kind,
         )
+
 
     def _decorate_resource_etag(
         self,
         response: ApiResponse,
         kind: str,
     ) -> ApiResponse:
-        if not isinstance(response.body, dict):
-            return response
-
-        etag = self._etag_for_resource(
+        """Delegates to :func:`gateway_etags.decorate_resource_etag`."""
+        return decorate_resource_etag(
+            self,
+            response,
             kind,
-            response.body,
         )
-        body = dict(response.body)
-        body["etag"] = etag
-        headers = dict(response.headers)
-        headers["etag"] = etag
 
-        return ApiResponse(
-            status=response.status,
-            body=body,
-            headers=headers,
-        )
 
     def _editable_resource(
         self,
@@ -1507,726 +746,63 @@ class AuthenticatedApi:
         route: RouteMetadata,
         payload: dict[str, object],
     ) -> dict[str, object] | None:
-        if route.concurrency_kind == "routing_policy":
-            with database.connect() as connection:
-                row = connection.execute(
-                    """
-                    SELECT *
-                    FROM project_policies
-                    WHERE project_id = ?
-                    """,
-                    (
-                        route.path_params[
-                            "project_id"
-                        ],
-                    ),
-                ).fetchone()
+        """Delegates to :func:`gateway_etags.editable_resource`."""
+        return editable_resource(
+            self,
+            database,
+            legacy_api,
+            route,
+            payload,
+        )
 
-            if row is None:
-                return None
-
-            return legacy_api.routing._normalize_policy(
-                dict(row)
-            )
-
-        if route.concurrency_kind == "binding":
-            system_name = str(
-                payload.get("system_name", "")
-            ).strip()
-            binding_type = str(
-                payload.get("binding_type", "")
-            ).strip().upper()
-
-            if (
-                not system_name
-                or not binding_type
-            ):
-                return None
-
-            with database.connect() as connection:
-                row = connection.execute(
-                    """
-                    SELECT *
-                    FROM integration_bindings
-                    WHERE project_id = ?
-                      AND system_name = ?
-                      AND binding_type = ?
-                    """,
-                    (
-                        route.path_params[
-                            "project_id"
-                        ],
-                        system_name,
-                        binding_type,
-                    ),
-                ).fetchone()
-
-            if row is None:
-                return None
-
-            return legacy_api.exports._normalize_binding(
-                dict(row)
-            )
-
-        if route.concurrency_kind == "provider":
-            name = str(
-                payload.get("name", "")
-            ).strip()
-
-            if not name:
-                return None
-
-            with database.connect() as connection:
-                row = connection.execute(
-                    """
-                    SELECT *
-                    FROM provider_configs
-                    WHERE project_id = ?
-                      AND name = ?
-                    """,
-                    (
-                        route.path_params[
-                            "project_id"
-                        ],
-                        name,
-                    ),
-                ).fetchone()
-
-            if row is None:
-                return None
-
-            return legacy_api.routing._normalize_provider(
-                dict(row)
-            )
-
-        if route.concurrency_kind == "renderer":
-            name = str(
-                payload.get("name", "")
-            ).strip()
-
-            if not name:
-                return None
-
-            with database.connect() as connection:
-                row = connection.execute(
-                    """
-                    SELECT *
-                    FROM renderer_configs
-                    WHERE project_id = ?
-                      AND name = ?
-                    """,
-                    (
-                        route.path_params[
-                            "project_id"
-                        ],
-                        name,
-                    ),
-                ).fetchone()
-
-            if row is None:
-                return None
-
-            return legacy_api.routing._normalize_renderer(
-                dict(row)
-            )
-
-        return None
 
     @staticmethod
     def _etag_for_resource(
         kind: str | None,
         resource: dict[str, object],
     ) -> str:
-        if kind == "binding":
-            return binding_etag(resource)
-        if kind == "routing_policy":
-            return routing_policy_etag(resource)
-        if kind == "provider":
-            return provider_etag(resource)
-        if kind == "renderer":
-            return renderer_etag(resource)
-
-        raise ValueError(
-            f"unsupported ETag kind: {kind}"
+        """Delegates to :func:`gateway_etags.etag_for_resource`."""
+        return etag_for_resource(
+            kind,
+            resource,
         )
+
 
     @staticmethod
     def _resource_reference(
         route: RouteMetadata,
         body: dict[str, object],
     ) -> tuple[str | None, str | None]:
-        if "id" in body and isinstance(
-            body["id"],
-            str,
-        ):
-            return route.operation, str(
-                body["id"]
-            )
+        """Delegates to :func:`gateway_etags.resource_reference`."""
+        return resource_reference(
+            route,
+            body,
+        )
 
-        task = body.get("task")
-        if isinstance(task, dict) and isinstance(
-            task.get("id"),
-            str,
-        ):
-            return route.operation, str(
-                task["id"]
-            )
-
-        claim = body.get("claim")
-        if isinstance(claim, dict):
-            attempt = claim.get("attempt")
-            if isinstance(
-                attempt,
-                dict,
-            ) and isinstance(
-                attempt.get("id"),
-                str,
-            ):
-                return route.operation, str(
-                    attempt["id"]
-                )
-
-        renderer = body.get("renderer")
-        if isinstance(
-            renderer,
-            dict,
-        ) and isinstance(
-            renderer.get("id"),
-            str,
-        ):
-            return route.operation, str(
-                renderer["id"]
-            )
-
-        return None, None
 
     @staticmethod
     def _workspace_body(
         database: Database,
         parts: list[str],
     ) -> dict[str, object] | None:
-        if (
-            len(parts) == 4
-            and parts[:2] == [
-                "v1",
-                "projects",
-            ]
-        ):
-            project_id = parts[2]
-            workspace_name = parts[3]
+        """Delegates to :func:`gateway_responses.workspace_body`."""
+        return workspace_body(
+            database,
+            parts,
+        )
 
-            if workspace_name == "source-workspace":
-                return (
-                    SourceWorkspaceService(
-                        database
-                    ).get_project(project_id)
-                )
-
-            if workspace_name == "research-workspace":
-                return (
-                    ResearchWorkspaceService(
-                        database
-                    ).get(project_id)
-                )
-
-            if workspace_name == "planning-workspace":
-                return (
-                    PlanningWorkspaceService(
-                        database
-                    ).get(project_id)
-                )
-
-            if workspace_name == "handoff-workspace":
-                return (
-                    HandoffWorkspaceService(
-                        database
-                    ).get(project_id)
-                )
-
-        if (
-            len(parts) == 4
-            and parts[:2] == [
-                "v1",
-                "documents",
-            ]
-            and parts[3] == "provenance"
-        ):
-            return (
-                SourceWorkspaceService(
-                    database
-                ).get_document(
-                    parts[2]
-                )
-            )
-
-        return None
 
     @staticmethod
     def _route_metadata(
         method: str,
         parts: list[str],
     ) -> RouteMetadata | None:
-        if parts == ["v1", "projects"] and method == "POST":
-            return RouteMetadata(
-                operation="create_project",
-                path_params={},
-            )
+        """Delegates to :func:`gateway_routes.route_metadata`."""
+        return route_metadata(
+            method,
+            parts,
+        )
 
-        if (
-            len(parts) == 4
-            and parts[:2] == ["v1", "projects"]
-            and parts[3] == "documents"
-        ):
-            if method == "GET":
-                return RouteMetadata(
-                    operation="list_project_documents",
-                    path_params={
-                        "project_id": parts[2]
-                    },
-                )
-            if method == "POST":
-                return RouteMetadata(
-                    operation="ingest_project_document",
-                    path_params={
-                        "project_id": parts[2]
-                    },
-                    idempotency_required=True,
-                )
-
-        if (
-            len(parts) == 4
-            and parts[:2] == ["v1", "projects"]
-            and parts[3] == "source-uploads"
-            and method == "POST"
-        ):
-            return RouteMetadata(
-                operation="create_source_upload_intent",
-                path_params={
-                    "project_id": parts[2]
-                },
-                idempotency_required=True,
-            )
-
-        if (
-            len(parts) == 3
-            and parts[:2] == ["v1", "source-uploads"]
-            and method == "GET"
-        ):
-            return RouteMetadata(
-                operation="get_source_upload",
-                path_params={
-                    "upload_id": parts[2]
-                },
-            )
-
-        if (
-            len(parts) == 4
-            and parts[:2] == ["v1", "source-uploads"]
-            and parts[3] == "finalize"
-            and method == "POST"
-        ):
-            return RouteMetadata(
-                operation="finalize_source_upload",
-                path_params={
-                    "upload_id": parts[2]
-                },
-                idempotency_required=True,
-            )
-
-        if (
-            len(parts) == 3
-            and parts[:2] == ["v1", "operations"]
-            and method == "GET"
-        ):
-            return RouteMetadata(
-                operation="get_operation",
-                path_params={
-                    "operation_id": parts[2]
-                },
-            )
-
-        if (
-            len(parts) == 4
-            and parts[:2] == ["v1", "operations"]
-            and parts[3] == "cancel"
-            and method == "POST"
-        ):
-            return RouteMetadata(
-                operation="cancel_operation",
-                path_params={
-                    "operation_id": parts[2]
-                },
-                idempotency_required=True,
-            )
-
-        if (
-            len(parts) == 4
-            and parts[:2] == ["v1", "projects"]
-            and parts[3] == "operations"
-            and method == "GET"
-        ):
-            return RouteMetadata(
-                operation="list_project_operations",
-                path_params={
-                    "project_id": parts[2]
-                },
-            )
-
-        if (
-            len(parts) == 4
-            and parts[:2] == ["v1", "documents"]
-            and parts[3] == "extract"
-            and method == "POST"
-        ):
-            return RouteMetadata(
-                operation="extract_document_atoms",
-                path_params={
-                    "document_id": parts[2]
-                },
-                idempotency_required=True,
-            )
-
-        if (
-            len(parts) == 4
-            and parts[:2] == ["v1", "documents"]
-            and parts[3] == "atoms"
-            and method == "GET"
-        ):
-            return RouteMetadata(
-                operation="list_document_atoms",
-                path_params={
-                    "document_id": parts[2]
-                },
-            )
-
-        if (
-            len(parts) == 4
-            and parts[:2] == ["v1", "projects"]
-            and parts[3] == "research-tasks"
-            and method == "GET"
-        ):
-            return RouteMetadata(
-                operation="list_project_research_tasks",
-                path_params={
-                    "project_id": parts[2]
-                },
-            )
-
-        if (
-            len(parts) == 5
-            and parts[:2] == ["v1", "projects"]
-            and parts[3] == "research-tasks"
-            and parts[4] == "claim"
-            and method == "POST"
-        ):
-            return RouteMetadata(
-                operation="claim_project_research_task",
-                path_params={
-                    "project_id": parts[2]
-                },
-                idempotency_required=True,
-            )
-
-        if (
-            len(parts) == 4
-            and parts[:2] == ["v1", "research-tasks"]
-        ):
-            task_id = parts[2]
-            suffix = parts[3]
-
-            if suffix == "evidence" and method == "POST":
-                return RouteMetadata(
-                    operation="add_research_evidence",
-                    path_params={"task_id": task_id},
-                    idempotency_required=True,
-                )
-
-            if suffix == "complete" and method == "POST":
-                return RouteMetadata(
-                    operation="complete_research_task",
-                    path_params={"task_id": task_id},
-                    idempotency_required=True,
-                )
-
-        if (
-            len(parts) == 4
-            and parts[:2] == ["v1", "projects"]
-            and parts[3] == "relations"
-            and method == "GET"
-        ):
-            return RouteMetadata(
-                operation="list_project_relations",
-                path_params={
-                    "project_id": parts[2]
-                },
-            )
-
-        if (
-            len(parts) == 4
-            and parts[:2] == ["v1", "projects"]
-            and parts[3] == "plans"
-            and method == "POST"
-        ):
-            return RouteMetadata(
-                operation="synthesize_project_plan",
-                path_params={
-                    "project_id": parts[2]
-                },
-                idempotency_required=True,
-            )
-
-        if (
-            len(parts) == 4
-            and parts[:2] == ["v1", "plans"]
-            and parts[3] == "verify"
-            and method == "POST"
-        ):
-            return RouteMetadata(
-                operation="verify_plan",
-                path_params={"plan_id": parts[2]},
-                idempotency_required=True,
-            )
-
-        if (
-            len(parts) == 4
-            and parts[:2] == ["v1", "projects"]
-            and parts[3] == "bindings"
-        ):
-            if method == "GET":
-                return RouteMetadata(
-                    operation="list_project_bindings",
-                    path_params={
-                        "project_id": parts[2]
-                    },
-                    collection_etag_kind="binding",
-                )
-
-            if method == "POST":
-                return RouteMetadata(
-                    operation="create_project_binding",
-                    path_params={
-                        "project_id": parts[2]
-                    },
-                    idempotency_required=True,
-                    response_etag_kind="binding",
-                    concurrency_kind="binding",
-                )
-
-        if (
-            len(parts) == 4
-            and parts[:2] == ["v1", "plans"]
-            and parts[3] == "exports"
-            and method == "POST"
-        ):
-            return RouteMetadata(
-                operation="export_plan",
-                path_params={"plan_id": parts[2]},
-                idempotency_required=True,
-            )
-
-        if (
-            len(parts) == 4
-            and parts[:2] == ["v1", "exports"]
-            and parts[3] == "verify"
-            and method == "POST"
-        ):
-            return RouteMetadata(
-                operation="verify_export",
-                path_params={
-                    "export_id": parts[2]
-                },
-                idempotency_required=True,
-            )
-
-        if (
-            len(parts) == 4
-            and parts[:2] == ["v1", "exports"]
-            and parts[3] == "download"
-            and method == "GET"
-        ):
-            return RouteMetadata(
-                operation="download_export_artifacts",
-                path_params={
-                    "export_id": parts[2]
-                },
-            )
-
-        if (
-            len(parts) == 4
-            and parts[:2] == ["v1", "plans"]
-            and parts[3] == "execution-runs"
-            and method == "POST"
-        ):
-            return RouteMetadata(
-                operation="start_execution_run",
-                path_params={"plan_id": parts[2]},
-                idempotency_required=True,
-            )
-
-        if (
-            len(parts) == 4
-            and parts[:2] == ["v1", "execution-runs"]
-        ):
-            if parts[3] == "claim" and method == "POST":
-                return RouteMetadata(
-                    operation="claim_execution_run_node",
-                    path_params={"run_id": parts[2]},
-                    idempotency_required=True,
-                )
-
-            if parts[3] == "verify" and method == "POST":
-                return RouteMetadata(
-                    operation="verify_execution_run",
-                    path_params={"run_id": parts[2]},
-                    idempotency_required=True,
-                )
-
-        if (
-            len(parts) == 4
-            and parts[:2] == ["v1", "execution-nodes"]
-            and parts[3] == "receipts"
-            and method == "POST"
-        ):
-            return RouteMetadata(
-                operation="submit_execution_receipt",
-                path_params={
-                    "run_node_id": parts[2]
-                },
-                idempotency_required=True,
-            )
-
-        if (
-            len(parts) == 4
-            and parts[:2] == ["v1", "projects"]
-            and parts[3] == "routing-policy"
-        ):
-            if method == "GET":
-                return RouteMetadata(
-                    operation="get_routing_policy",
-                    path_params={
-                        "project_id": parts[2]
-                    },
-                    response_etag_kind="routing_policy",
-                )
-
-            if method == "POST":
-                return RouteMetadata(
-                    operation="set_routing_policy",
-                    path_params={
-                        "project_id": parts[2]
-                    },
-                    response_etag_kind="routing_policy",
-                    concurrency_kind="routing_policy",
-                )
-
-        if (
-            len(parts) == 4
-            and parts[:2] == ["v1", "projects"]
-            and parts[3] == "providers"
-        ):
-            if method == "GET":
-                return RouteMetadata(
-                    operation="list_project_providers",
-                    path_params={
-                        "project_id": parts[2]
-                    },
-                    collection_etag_kind="provider",
-                )
-
-            if method == "POST":
-                return RouteMetadata(
-                    operation="create_project_provider",
-                    path_params={
-                        "project_id": parts[2]
-                    },
-                    idempotency_required=True,
-                    response_etag_kind="provider",
-                    concurrency_kind="provider",
-                )
-
-        if (
-            len(parts) == 4
-            and parts[:2] == ["v1", "providers"]
-            and parts[3] == "health"
-            and method == "POST"
-        ):
-            return RouteMetadata(
-                operation="record_provider_health",
-                path_params={
-                    "provider_id": parts[2]
-                },
-                idempotency_required=True,
-            )
-
-        if (
-            len(parts) == 4
-            and parts[:2] == ["v1", "projects"]
-            and parts[3] == "renderers"
-        ):
-            if method == "GET":
-                return RouteMetadata(
-                    operation="list_project_renderers",
-                    path_params={
-                        "project_id": parts[2]
-                    },
-                    collection_etag_kind="renderer",
-                )
-
-            if method == "POST":
-                return RouteMetadata(
-                    operation="create_project_renderer",
-                    path_params={
-                        "project_id": parts[2]
-                    },
-                    idempotency_required=True,
-                    response_etag_kind="renderer",
-                    concurrency_kind="renderer",
-                )
-
-        if (
-            len(parts) == 5
-            and parts[:2] == ["v1", "projects"]
-            and parts[3] == "renderers"
-            and parts[4] == "select"
-            and method == "POST"
-        ):
-            return RouteMetadata(
-                operation="select_project_renderer",
-                path_params={
-                    "project_id": parts[2]
-                },
-                idempotency_required=True,
-            )
-
-        if (
-            len(parts) == 4
-            and parts[:2] == ["v1", "projects"]
-            and parts[3] == "paid-unlocks"
-            and method == "POST"
-        ):
-            return RouteMetadata(
-                operation="grant_project_paid_unlock",
-                path_params={
-                    "project_id": parts[2]
-                },
-                idempotency_required=True,
-            )
-
-        if (
-            len(parts) == 4
-            and parts[:2] == ["v1", "projects"]
-            and parts[3] == "route-decisions"
-            and method == "POST"
-        ):
-            return RouteMetadata(
-                operation="create_project_route_decision",
-                path_params={
-                    "project_id": parts[2]
-                },
-                idempotency_required=True,
-            )
-
-        return None
 
 
 def new_request(
