@@ -22,11 +22,7 @@ from .errors import ConflictError, NotFoundError, ValidationError
 from .export_titles import sanitize_export_title
 from .plan_node_creation import create_atom_nodes
 from .plan_graph_rules import insert_edge, validate_dependency_acyclic
-from .plan_guards import (
-    existing_plan,
-    fingerprint as compute_fingerprint,
-    require_project,
-)
+from .plan_guards import existing_plan, fingerprint as compute_fingerprint, require_project
 from .plan_queries import get_plan
 from .plan_verification import verify_plan
 from .primitives import new_id, utc_now
