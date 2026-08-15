@@ -19,7 +19,7 @@ from ..errors import ConflictError, NotFoundError, ValidationError
 from .document_security import InvalidDocumentError
 from .document_security import normalized_filename
 from .document_security import validate_sha256
-from .storage import _utc_now
+from .storage_models import _utc_now
 import json
 
 

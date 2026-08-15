@@ -44,7 +44,7 @@ from .storage import StorageDependencyError
 from .storage import StorageObjectMissingError
 from .storage import StorageObjectTooLargeError
 from .storage import StorageProtocolError
-from .storage import _utc_now
+from .storage_models import _utc_now
 from datetime import timedelta
 import base64
 import hashlib

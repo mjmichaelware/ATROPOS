@@ -18,7 +18,7 @@ from .source_upload_errors import UploadStateConflictError
 from .source_upload_helpers import FINALIZING_TTL_SECONDS
 from .source_upload_helpers import display_status
 from .storage import DownloadedObject
-from .storage import _utc_now
+from .storage_models import _utc_now
 import base64
 import binascii
 import json

@@ -14,7 +14,7 @@ from .document_security import assert_supported_declared_media_type
 from .storage import DownloadedObject
 from .storage import SignedUploadTarget
 from .storage import StorageObjectMissingError
-from .storage import _utc_now
+from .storage_models import _utc_now
 import re
 import base64
 import binascii
