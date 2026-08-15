@@ -17,7 +17,8 @@ from .atom_research_tasks import (
 )
 from .atom_constants import EXTRACTOR_VERSION
 from .atom_schema import ATOM_SCHEMA
-from .atom_statements import extract_statements, research_question
+from .atom_research_questions import research_question
+from .atom_statements import extract_statements
 from .atom_vocabulary import DIMENSIONS, KIND_RULES
 from .rendering import (
     markdown_to_plain_text,
