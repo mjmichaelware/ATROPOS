@@ -529,4 +529,24 @@ class SelfHostCommandTest {
         assertEquals(GoalTerminalCondition.VERIFIED_COMPLETE, reopened.terminalCondition)
         assertTrue(events.any { it.category == EventCategory.LIFECYCLE && it.payload.contains("terminal=VERIFIED_COMPLETE") })
     }
+
+    @Test
+    fun `testGovernanceCliCommand invokes handleGovernance`() {
+        val tempDir = Files.createTempDirectory("self-host-test-gov-").toFile().toPath()
+        initializeGitRepo(tempDir)
+        val config = AtroposConfig(
+            apiKeys = ApiKeys(googleGemini = "dummy"),
+            lakehouse = LakehouseConfig(),
+            runtime = RuntimeConfig()
+        )
+        val out = java.io.ByteArrayOutputStream()
+        val plain = PlainTerminalOutput(PrintStream(out))
+        val ui = AnsiTerminalEngine(plain)
+        val command = SelfHostCommand(ui = ui, config = config, repoRoot = tempDir)
+
+        val result = command.execute(listOf("self-host", "governance"))
+        assertTrue(result is AgentCommandOutcome.Completed)
+        assertTrue((result as AgentCommandOutcome.Completed).text.contains("SELF-HOST GOVERNANCE"))
+        tempDir.toFile().deleteRecursively()
+    }
 }

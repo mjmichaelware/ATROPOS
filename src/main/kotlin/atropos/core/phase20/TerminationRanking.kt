@@ -136,3 +136,7 @@ data class TerminationStep(
     /** True when the loop should run again. */
     val continues: Boolean get() = legal && !terminated
 }
+
+interface TerminationRankingFunction {
+    fun evaluate(potential: TerminationPotential): Boolean
+}

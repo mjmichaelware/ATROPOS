@@ -90,6 +90,12 @@ class BenchmarkRunner(
         }.filterNotNull()
     }
 
+    fun runCases(cases: List<BenchmarkCase>): List<BenchmarkCaseResult> {
+        return cases.map { case ->
+            case.runner()
+        }
+    }
+
     private fun persist(result: BenchmarkResult) {
         runCatching {
             Files.createDirectories(root)
@@ -166,3 +172,16 @@ data class BenchmarkCoverage(
     fun render(): String =
         "$run of $total benchmarks run · $competitive competitive · $reproducible reproducible"
 }
+
+data class BenchmarkCaseResult(
+    val caseId: String,
+    val passed: Boolean,
+    val durationMs: Long,
+    val output: String
+)
+
+data class BenchmarkCase(
+    val id: String,
+    val name: String,
+    val runner: () -> BenchmarkCaseResult
+)

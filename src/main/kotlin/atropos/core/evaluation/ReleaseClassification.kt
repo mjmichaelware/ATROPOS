@@ -97,3 +97,55 @@ data class ReleaseThresholds(
         const val DEFAULT_FRONTIER = 0.95
     }
 }
+
+enum class ReleaseClass {
+    SCORE_REDUCTION,
+    MINIMUM,
+    COMPETITIVE,
+    FRONTIER,
+    SAFETY_HARD
+}
+
+class ReleaseClassifier(
+    private val thresholds: Map<MetricId, ReleaseThresholds> = emptyMap()
+) {
+    fun classify(metrics: List<AtroposMetric>): ReleaseClassification {
+        if (metrics.isEmpty()) return ReleaseClassification.PASS
+
+        var worstResult = ReleaseClassification.PASS
+        for (metric in metrics) {
+            val id = metric.id
+            if (id.safetyCritical && metric.value > 0.0) {
+                worstResult = ReleaseClassification.worst(worstResult, ReleaseClassification.SAFETY_HARD_FAILURE)
+                continue
+            }
+
+            val score = MetricNormalizer.score(id, metric.value)
+            if (score.isNaN()) continue
+
+            val thresh = thresholds[id] ?: ReleaseThresholds()
+            val classification = when {
+                score < thresh.minimum -> ReleaseClassification.MINIMUM_FAILURE
+                score < thresh.competitive -> ReleaseClassification.COMPETITIVE_FAILURE
+                score < thresh.frontier -> ReleaseClassification.FRONTIER_FAILURE
+                score < 1.0 -> ReleaseClassification.SCORE_REDUCTION
+                else -> ReleaseClassification.PASS
+            }
+            worstResult = ReleaseClassification.worst(worstResult, classification)
+        }
+        return worstResult
+    }
+
+    // Deprecated compat adapter
+    fun classifyToCompat(metrics: List<AtroposMetric>): ReleaseClass {
+        val result = classify(metrics)
+        return when (result) {
+            ReleaseClassification.PASS -> ReleaseClass.COMPETITIVE
+            ReleaseClassification.SCORE_REDUCTION -> ReleaseClass.SCORE_REDUCTION
+            ReleaseClassification.MINIMUM_FAILURE -> ReleaseClass.MINIMUM
+            ReleaseClassification.COMPETITIVE_FAILURE -> ReleaseClass.COMPETITIVE
+            ReleaseClassification.FRONTIER_FAILURE -> ReleaseClass.FRONTIER
+            ReleaseClassification.SAFETY_HARD_FAILURE -> ReleaseClass.SAFETY_HARD
+        }
+    }
+}

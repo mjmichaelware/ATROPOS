@@ -14,6 +14,24 @@ class AstSymbolGraph(
     private val parser: TreeSitterGrammarBridge = TreeSitterGrammarBridge()
 ) {
     private val importReconciler = AstImportReconciler(repoRoot)
+    val index = AstSymbolIndex()
+    private val nodes = mutableMapOf<String, AstSymbolNode>()
+    private val childrenMap = mutableMapOf<String, MutableList<AstSymbolNode>>()
+
+    fun addNode(node: AstSymbolNode) {
+        nodes[node.nodeId] = node
+        index.add(node)
+        if (node.parentId != null) {
+            childrenMap.getOrPut(node.parentId) { mutableListOf() }.add(node)
+        }
+    }
+
+    fun getNode(nodeId: String): AstSymbolNode? = nodes[nodeId]
+    fun getByAddress(address: String): AstSymbolNode? = index.lookup(address).firstOrNull { it.address == address }
+    fun getByFile(filePath: String): List<AstSymbolNode> = nodes.values.filter { it.filePath == filePath }
+    fun getChildren(nodeId: String): List<AstSymbolNode> = childrenMap[nodeId] ?: emptyList()
+
+
     fun build(): List<AstSymbol> {
         val sourceRoots = listOf(
             repoRoot.resolve("src/main/kotlin"),
@@ -230,5 +248,31 @@ class AstSymbolGraph(
 
     private companion object {
         val PACKAGE_OR_IMPORT_LINE = Regex("(?m)^[ \\t]*(?:package|import)\\b[^\\r\\n]*")
+    }
+}
+
+data class AstSymbolNode(
+    val nodeId: String,
+    val address: String, // document#section@Lstart-end
+    val symbolType: String,
+    val filePath: String,
+    val byteOffsetStart: Int,
+    val byteOffsetEnd: Int,
+    val parentId: String?
+)
+
+class AstSymbolIndex {
+    private val index = mutableMapOf<String, AstSymbolNode>()
+    fun add(node: AstSymbolNode) { index[node.address] = node }
+    fun lookup(prefix: String): List<AstSymbolNode> {
+        return index.values.filter { it.address.startsWith(prefix) }
+    }
+}
+
+object AstNamespaceReconciler {
+    fun reconcile(imports: List<String>, graph: AstSymbolGraph): List<AstSymbolNode> {
+        return imports.flatMap { imp ->
+            graph.index.lookup(imp)
+        }
     }
 }

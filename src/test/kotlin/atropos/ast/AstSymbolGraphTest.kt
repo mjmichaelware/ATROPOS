@@ -112,4 +112,34 @@ class AstSymbolGraphTest {
         assertEquals(AstImportStatus.UNRESOLVED, result.resolutions.single().status)
         assertTrue(result.violations.any { it.rule == "unresolved_import" })
     }
+
+    @Test
+    fun add_and_get_node() {
+        val graph = AstSymbolGraph()
+        val node = AstSymbolNode("n1", "doc#sec@L1-2", "type", "file.kt", 0, 10, null)
+        graph.addNode(node)
+        assertEquals(node, graph.getNode("n1"))
+        assertEquals(node, graph.getByAddress("doc#sec@L1-2"))
+        assertEquals(listOf(node), graph.getByFile("file.kt"))
+        assertEquals(emptyList(), graph.getChildren("n1"))
+    }
+    
+    @Test
+    fun get_children() {
+        val graph = AstSymbolGraph()
+        val p = AstSymbolNode("p1", "doc#sec@L1-2", "type", "file.kt", 0, 10, null)
+        val c = AstSymbolNode("c1", "doc#sec2@L1-2", "type", "file.kt", 0, 10, "p1")
+        graph.addNode(p)
+        graph.addNode(c)
+        assertEquals(listOf(c), graph.getChildren("p1"))
+    }
+
+    @Test
+    fun reconcile_namespaces() {
+        val graph = AstSymbolGraph()
+        val node = AstSymbolNode("n1", "com.example.Target", "class", "Target.kt", 0, 10, null)
+        graph.addNode(node)
+        val result = AstNamespaceReconciler.reconcile(listOf("com.example.Target"), graph)
+        assertEquals(listOf(node), result)
+    }
 }

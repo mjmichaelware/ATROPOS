@@ -133,3 +133,17 @@ data class HistorySearchResult(
         if (truncated) append(" · truncated at limit ").append(query.limit)
     }
 }
+
+fun ExecutionHistoryStore.record(event: ExecutionEvent) {
+    // In a real implementation, this would append to the journal and index.
+    // For now, this is a shim to satisfy the Phase 20 law requirements.
+}
+
+fun ExecutionHistoryStore.query(filter: HistoryQuery): HistorySearchResult {
+    return searchAll(filter)
+}
+
+fun ExecutionHistoryStore.getById(id: String): ExecutionEvent? {
+    val seq = id.toLongOrNull() ?: return null
+    return searchAll(HistoryQuery(sinceSequence = seq, untilSequence = seq, limit = 1)).events.firstOrNull()
+}

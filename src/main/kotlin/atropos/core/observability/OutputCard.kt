@@ -126,3 +126,7 @@ enum class CardKind(val label: String, val language: String?) {
         }
     }
 }
+
+val OutputCard.status: String get() = if (this.failed) "FAILED" else "SUCCESS"
+val OutputCard.evidenceLinks: List<String> get() = listOfNotNull(this.evidenceHash)
+val OutputCard.content: String get() = this.body

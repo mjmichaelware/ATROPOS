@@ -17,7 +17,7 @@ class AtroposConfig(val keys: ApiKeys, val lakehouse: LakehouseConfig, val runti
             // machine silently pointed its lakehouse at a directory that does
             // not exist, and only the original device worked.
             val mount = extract(content, "lakehouse_mount_path")
-                ?: AtroposRepoRootLocator.resolve().resolve("lakehouse").toString()
+                ?: AtroposRepoRootLocator.resolve().resolve(".atropos/lakehouse").toString()
             val db = extract(content, "lakehouse_db_path") ?: "$mount/vector_storage.db"
             val provider = extract(content, "default_provider") ?: "groq"
             return AtroposConfig(ApiKeys(groqKey, openAiKey, anthropicKey, xaiKey), LakehouseConfig(mount, db), RuntimeConfig(provider, 0.2))

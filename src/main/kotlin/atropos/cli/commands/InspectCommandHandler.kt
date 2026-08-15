@@ -14,7 +14,10 @@ import atropos.core.multimodal.ViewportCapture
  * more than the evidence behind it.
  */
 class InspectCommandHandler(
-    private val inspectionService: InspectionService = InspectionService()
+    private val inspectionService: InspectionService = InspectionService(),
+    private val repoRoot: java.nio.file.Path = atropos.core.AtroposRepoRootLocator.resolve(),
+    private val evidenceCollector: atropos.core.evidence.EvidenceCollector = atropos.core.evidence.EvidenceCollector(repoRoot),
+    private val previewService: atropos.core.preview.LivePreviewService = atropos.core.preview.LivePreviewService(repoRoot)
 ) {
     fun handle(args: List<String>): String = when (args.firstOrNull()) {
         "file" -> file(args)
@@ -22,6 +25,8 @@ class InspectCommandHandler(
         "viewport" -> viewport(args)
         "full" -> "Full inspection: ${inspectionService.runFullInspection(args.drop(1)).summary}"
         "report" -> "Inspection report: ${inspectionService.report().summary}"
+        "evidence" -> evidence(args)
+        "preview" -> preview(args)
         else -> recent()
     }
 
@@ -50,6 +55,19 @@ class InspectCommandHandler(
         return inspections.joinToString("\n") {
             "  ${it.id}: ${it.kind.name} ${if (it.passed) "PASS" else "FAIL"} sev=${it.severity}"
         }
+    }
+
+    private fun evidence(args: List<String>): String {
+        val subjectId = args.getOrNull(1)
+        val runId = args.getOrNull(2)
+        val bundle = evidenceCollector.collect(subjectId = subjectId, runId = runId)
+        return "Collected evidence: ${bundle.summary}"
+    }
+
+    private fun preview(args: List<String>): String {
+        if (args.size < 2) return "usage: /inspect preview <changed-file1> [changed-file2...]"
+        val impacts = previewService.inspectUI(args.drop(1))
+        return "UI components impacted: ${impacts.size} component(s)"
     }
 
     private fun verdict(id: String, passed: Boolean, findings: List<String>): String =

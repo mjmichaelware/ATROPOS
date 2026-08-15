@@ -37,6 +37,18 @@ class EvidenceStore(
     private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     private val root: Path = repoRoot.resolve(".atropos/evidence").normalize()
+    private val memoryEntries = mutableListOf<EvidenceEntry>()
+
+    fun store(entry: EvidenceEntry) {
+        memoryEntries.add(entry)
+    }
+
+    fun getByMetric(metric: String): List<EvidenceEntry> {
+        return memoryEntries.filter { it.metric == metric }
+    }
+
+    fun getAll(): List<EvidenceEntry> = memoryEntries.toList()
+
 
     /**
      * Stores [content] and returns its hash.
@@ -159,3 +171,10 @@ data class EvidenceVerification(
         else -> "${missing.size} missing of $cited cited"
     }
 }
+
+data class EvidenceEntry(
+    val id: String,
+    val metric: String,
+    val hash: String,
+    val timestamp: Long
+)

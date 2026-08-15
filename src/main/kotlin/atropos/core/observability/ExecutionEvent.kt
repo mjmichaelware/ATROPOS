@@ -133,3 +133,19 @@ data class ExecutionEvent(
             ExecutionEventCodec.decode(record)
     }
 }
+
+enum class EventKind {
+    COMMAND, MUTATION, VERIFICATION, PROMOTION, ROLLBACK, ERROR
+}
+
+fun ExecutionEvent.getId(): String = this.sequence.toString()
+fun ExecutionEvent.getKind(): EventKind = when (this.category.name) {
+    "COMMAND" -> EventKind.COMMAND
+    "FILE_MUTATION" -> EventKind.MUTATION
+    "VERIFICATION" -> EventKind.VERIFICATION
+    "ERROR" -> EventKind.ERROR
+    else -> EventKind.COMMAND // Default mapped
+}
+fun ExecutionEvent.getAgentId(): String? = this.provider
+fun ExecutionEvent.getContent(): String = this.payload
+fun ExecutionEvent.getHashes(): List<String> = listOfNotNull(this.evidenceHash)

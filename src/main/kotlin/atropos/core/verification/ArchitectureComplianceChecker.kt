@@ -45,7 +45,7 @@ data class ArchitectureComplianceReport(
  */
 class ArchitectureComplianceChecker(
     lineThreshold: Int = DEFAULT_LINE_THRESHOLD,
-    private val enforcing: Boolean = false,
+    private val enforcing: Boolean = true,
     private val policy: ArchitectureCompliancePolicy = ArchitectureCompliancePolicy(defaultLineThreshold = lineThreshold),
     private val concernDetector: ArchitectureConcernDetector = ArchitectureConcernDetector()
 ) {
@@ -101,6 +101,13 @@ class ArchitectureComplianceChecker(
             invariant = "file.atomic.single_responsibility",
             observed = "$lines lines mixing ${mixed.joinToString(", ")}"
         )
+    }
+
+    fun checkFileCountLimits(files: List<File>): Boolean {
+        val kotlinFiles = files.filter { it.isFile && isSupportedSource(it) }
+        val countsOver250 = kotlinFiles.count { runCatching { it.readText().lines().size }.getOrDefault(0) > 250 }
+        val countsOver400 = kotlinFiles.count { runCatching { it.readText().lines().size }.getOrDefault(0) > 400 }
+        return countsOver250 <= 55 && countsOver400 <= 4
     }
 
     private fun isSupportedSource(file: File): Boolean =

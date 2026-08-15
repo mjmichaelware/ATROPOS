@@ -149,6 +149,16 @@ class ArchitectureComplianceCheckerTest {
         assertFalse(masked.contains("verify"))
     }
 
+    @Test
+    fun file_count_limits_pass_within_thresholds() {
+        val root = Files.createTempDirectory("atropos-architecture-counts-")
+        val file1 = root.resolve("File1.kt")
+        Files.writeString(file1, "val a = 1\n")
+        val checker = ArchitectureComplianceChecker()
+        assertTrue(checker.checkFileCountLimits(listOf(file1.toFile())))
+        root.toFile().deleteRecursively()
+    }
+
     private fun largeKotlinFile(header: String, targetLines: Int): String {
         val lines = header.lines().toMutableList()
         while (lines.size < targetLines) {

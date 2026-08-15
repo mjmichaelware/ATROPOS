@@ -1,5 +1,6 @@
 package atropos.core.agent
 
+import atropos.core.ProviderCascadeResult
 import atropos.core.memory.LocalMemoryStore
 
 /**

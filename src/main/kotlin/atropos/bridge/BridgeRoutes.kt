@@ -160,7 +160,8 @@ class BridgeRoutes(
      */
     private val sessions: BridgeSessionStore = BridgeSessionStore(),
     private val menuView: CommandMenuProjection = CommandMenuProjection(),
-    private val clock: () -> Instant = { Instant.now() }
+    private val clock: () -> Instant = { Instant.now() },
+    private val mcpBridge: atropos.core.integration.McpTerritoryBridge = atropos.core.integration.McpTerritoryBridge(setOf("inspect", "verify"))
 ) {
     private val approvalHandler = BridgeApprovalHandler(approvals)
     private val thinkingHandler = BridgeThinkingHandler(thinkingView, thinking)
@@ -171,6 +172,7 @@ class BridgeRoutes(
     private val evidenceHandler = BridgeEvidenceHandler(work)
     private val eventsHandler = BridgeEventsHandler(work, approvals, sessions, conversation)
     private val filesHandler = BridgeFilesHandler()
+    private val mcpHandler = BridgeMcpHandler(mcpBridge)
 
     /** Queue routes exist in the table either way, so the surface a client
      *  discovers does not change with configuration; without a runner they
@@ -309,6 +311,9 @@ class BridgeRoutes(
                 },
                 HttpRoute("GET", "/v1/files", "list uploads under session folder") { request ->
                     filesHandler.list(request)
+                },
+                HttpRoute("POST", "/v1/mcp/judge", "evaluate MCP action proposal") { request ->
+                    mcpHandler.judge(request)
                 },
                 HttpRoute("GET", "/v1/answers/stream", "six continuous answers, pushed") {
                     // Advertised in /v1/routes and reachable as a stream; this

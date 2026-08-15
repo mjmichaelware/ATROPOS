@@ -131,10 +131,23 @@ class FactoryResearchService(
                 .onFailure { log += "lt_memory=SKIPPED_SOFT_FAIL:${safeReason(it)}" }
         }
 
-        val dLoIResult = runCatching {
+        var dLoIResult = runCatching {
             (dLoI ?: HigZeroGuard(DloiService(root))).resolveTask(query)
         }.getOrElse { failure ->
             DloiLookupResult.NoMatch(query, safeReason(failure))
+        }
+        if (dLoIResult is DloiLookupResult.NoMatch) {
+            // Fallback: try keyword search if no exact DLOI match found (AUD003)
+            val dloiService = DloiService(root)
+            val docs = dloiService.loadDocuments(ensureIndex = false)
+            val matchedDoc = docs.firstOrNull { it.originalFilename.contains(query, ignoreCase = true) || query.contains(it.id, ignoreCase = true) }
+            if (matchedDoc != null && matchedDoc.sections.isNotEmpty()) {
+                val sec = matchedDoc.sections.first()
+                val resolution = runCatching { dloiService.lookup("${matchedDoc.sourceId}#${sec.id}@L${sec.lineStart}-${sec.lineEnd}") }.getOrNull()
+                if (resolution != null) {
+                    dLoIResult = DloiLookupResult.Resolved(resolution)
+                }
+            }
         }
         when (dLoIResult) {
             is DloiLookupResult.Resolved -> {
@@ -154,9 +167,11 @@ class FactoryResearchService(
             log += "lakehouse=SKIPPED_SOFT_FAIL:ATROPOS_LAKEHOUSE_URL unset"
             log += "lakehouse_route=SKIPPED_SOFT_FAIL:lakehouse_unavailable; dLoI_attempted=true"
         } else {
-            fetcher.fetch(lakehouse).fold(
+            // Append target path query to lakehouse base URL (AUD002)
+            val requestUrl = "$lakehouse/retrieval?query=" + java.net.URLEncoder.encode(query, "UTF-8")
+            fetcher.fetch(requestUrl).fold(
                 onSuccess = { body ->
-                    hashes += "url_sha256=${sha256(lakehouse)}"
+                    hashes += "url_sha256=${sha256(requestUrl)}"
                     hashes += "body_sha256=${sha256(body)}"
                     log += "lakehouse=PASS bytes=${body.toByteArray(StandardCharsets.UTF_8).size}"
                     log += "lakehouse_route=PASS address_only=true; no_cosine_rag=true"
@@ -195,6 +210,13 @@ class FactoryResearchService(
             specGraphStatus = specGraphStatus,
             promptFingerprint = promptFingerprint
         )
+        
+        // Compute dynamic confidence score based on actual soft-failure rate of research channels (AUD005)
+        val channels = listOf("st_memory", "lt_memory", "dloi", "lakehouse", "bounded_fetch", "specgraph")
+        val failures = log.count { line -> channels.any { line.startsWith("$it=SKIPPED_SOFT_FAIL") } }
+        val confidence = ((channels.size - failures).toDouble() / channels.size * 100).toInt()
+        log += "confidence=$confidence"
+
         // The legacy flag is retained for source compatibility, but confidence
         // remains the sole authority for provider suggestions. Callers cannot
         // bypass the ordered local/DLOI/lakehouse/fetch research stack.
@@ -206,7 +228,8 @@ class FactoryResearchService(
         } else if (providerSuggestionsRequired && providerSuggestionsPredicate == null) {
             log += "provider_suggestions=SKIPPED_SOFT_FAIL:provider_not_configured; attempted_after_channels=true; prompt_spans=$promptSpans"
         } else if (suggestionDecision.getOrDefault(false)) {
-            log += "provider_suggestions=SKIPPED_SOFT_FAIL:provider_not_configured; attempted_after_channels=true; prompt_spans=$promptSpans"
+            // Fix: Trigger PASS when decision is true (AUD004)
+            log += "provider_suggestions=PASS suggestion_triggered=true; prompt_spans=$promptSpans"
         } else {
             log += "provider_suggestions=SKIPPED_SOFT_FAIL:confidence_threshold_met"
         }
