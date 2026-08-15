@@ -192,6 +192,43 @@ def handle(
 
     return False
 
+    if args.command == "set-routing-policy":
+        output(
+            routing.set_policy(
+                project_id=args.project_id,
+                allow_offline_degraded=(
+                    not args.disable_offline
+                ),
+                paid_emergency_enabled=(
+                    args.enable_paid_emergency
+                ),
+                max_paid_decisions_per_unlock=(
+                    args.max_paid_decisions
+                ),
+            )
+        )
+        return 0
+    if args.command == "list-renderers":
+        output(
+            {
+                "items": routing.list_renderers(
+                    args.project_id
+                )
+            }
+        )
+        return 0
+
+    return False
+    if args.command == "list-providers":
+        output(
+            {
+                "items": routing.list_providers(
+                    args.project_id
+                )
+            }
+        )
+        return 0
+
 
 
 
@@ -330,3 +367,29 @@ def register(commands, settings) -> None:
     route_decision.add_argument(
         "decision_id"
     )
+
+    set_policy = commands.add_parser(
+        "set-routing-policy"
+    )
+    set_policy.add_argument("project_id")
+    set_policy.add_argument(
+        "--disable-offline",
+        action="store_true",
+    )
+    set_policy.add_argument(
+        "--enable-paid-emergency",
+        action="store_true",
+    )
+    set_policy.add_argument(
+        "--max-paid-decisions",
+        type=int,
+        default=1,
+    )
+    renderers = commands.add_parser(
+        "list-renderers"
+    )
+    renderers.add_argument("project_id")
+    providers = commands.add_parser(
+        "list-providers"
+    )
+    providers.add_argument("project_id")

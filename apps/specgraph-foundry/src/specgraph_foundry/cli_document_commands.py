@@ -76,6 +76,14 @@ def handle(
 
     return False
 
+    if args.command == "extract-document":
+        output(
+            atoms.extract_document(
+                args.document_id
+            )
+        )
+        return 0
+
 
 
 
@@ -116,3 +124,8 @@ def register(commands, settings) -> None:
 
     atom = commands.add_parser("atom")
     atom.add_argument("atom_id")
+
+    extract = commands.add_parser(
+        "extract-document"
+    )
+    extract.add_argument("document_id")

@@ -49,6 +49,23 @@ def handle(
 
     return False
 
+    if args.command == "list-exports":
+        output(
+            {
+                "items": exports.list_exports(
+                    args.project_id
+                )
+            }
+        )
+        return 0
+    if args.command == "export-record":
+        output(
+            exports.get_export(
+                args.export_id
+            )
+        )
+        return 0
+
 
 
 
@@ -71,3 +88,12 @@ def register(commands, settings) -> None:
         "verify-export"
     )
     verify_export.add_argument("export_id")
+
+    exports = commands.add_parser(
+        "list-exports"
+    )
+    exports.add_argument("project_id")
+    export_record = commands.add_parser(
+        "export-record"
+    )
+    export_record.add_argument("export_id")
