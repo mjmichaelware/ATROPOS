@@ -193,7 +193,7 @@ def handle(
     return False
 
 
-def register(commands) -> None:
+def register(commands, settings) -> None:
     """Adds this group's subcommands to the parser.
 
     Registration sits beside the handler for the same command so the two
@@ -331,7 +331,7 @@ def register(commands) -> None:
     )
 
 
-def register(commands) -> None:
+def register(commands, settings) -> None:
     """Adds this group's subcommands to the parser.
 
     Registration sits beside the handler for the same command so the two

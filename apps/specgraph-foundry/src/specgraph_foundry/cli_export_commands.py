@@ -10,6 +10,7 @@ and falls through to its usage error.
 
 from __future__ import annotations
 
+from pathlib import Path
 from .cli_output import output
 import json
 
@@ -49,7 +50,7 @@ def handle(
     return False
 
 
-def register(commands) -> None:
+def register(commands, settings) -> None:
     """Adds this group's subcommands to the parser.
 
     Registration sits beside the handler for the same command so the two
@@ -71,7 +72,7 @@ def register(commands) -> None:
     verify_export.add_argument("export_id")
 
 
-def register(commands) -> None:
+def register(commands, settings) -> None:
     """Adds this group's subcommands to the parser.
 
     Registration sits beside the handler for the same command so the two

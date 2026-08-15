@@ -55,7 +55,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     for group in COMMAND_GROUPS:
-        group.register(commands)
+        group.register(commands, settings)
 
     return parser
 
