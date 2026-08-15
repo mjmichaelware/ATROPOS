@@ -140,6 +140,8 @@ confidence=${confidence.score}
 confidence_breakdown=${confidence.breakdown}
 prompt_spans=$promptSpans
 ${clarificationEvidence?.let { "clarification_answers_sha256=${it.answersSha256}\nclarification_lineage_sha256=${it.lineageSha256}\n" }.orEmpty()}${research.render().trimEnd()}
+
+${FactoryRequirementStatements.render(spec.intent)}
 """
         writeAtomically(runRoot.resolve("requirements.md"), researchDocument)
         val requirementsMemoryStatus = if (effectiveMemory == null) {

@@ -29,11 +29,17 @@ class InternalExecutionDagSynthesizer(
             ).filterNotNull().joinToString("\n")
             DagNode(
                 id = atom.id,
-                label = atom.dimension.name.lowercase() + ": " + atom.sectionId,
+                // The section id alone is not a name. A run atomizing two
+                // documents produced `accessibility_ux: sec-1` twice -- once for
+                // the requirements document and once for the raw prompt -- and
+                // the two nodes were indistinguishable in every listing, log and
+                // error message. The coordinates carry the document.
+                label = atom.dimension.name.lowercase() + ": " +
+                    atom.sourceCoordinates.ifBlank { atom.sectionId },
                 dependencies = atom.dependencies.filter { dependency -> authorityGraph.atoms.any { it.id == dependency } },
                 territory = atom.territory,
                 action = actionFor(atom.dimension),
-                actionPayload = listOf(atom.statement, lineage, contextBlock(atom))
+                actionPayload = listOf(dimensionBrief(atom), atom.statement, lineage, contextBlock(atom))
                     .filter { it.isNotBlank() }
                     .joinToString("\n"),
                 state = DagNodeState.PENDING,
@@ -52,6 +58,55 @@ class InternalExecutionDagSynthesizer(
             updatedAt = now,
             metaFile = repoRoot.resolve(".atropos/dag/execution/definitions/pending.meta")
         )
+    }
+
+    /**
+     * What this node is being asked to do, as opposed to what the section says.
+     *
+     * `statement` is `section.content` — the *whole* section — and every
+     * dimension of that section received it verbatim. A measured run produced
+     * nine nodes whose payloads were byte-identical: nine provider calls with
+     * the same input, differing only in a label the executor never sees. The
+     * dimension existed solely in the node label and reached the model in no
+     * form at all.
+     *
+     * Stating the dimension and its stage is what makes the nine calls nine
+     * different questions about one section instead of the same question asked
+     * nine times.
+     */
+    private fun dimensionBrief(atom: InternalAtom): String = buildString {
+        appendLine("dimension=${atom.dimension.name.lowercase()}")
+        appendLine("stage=${AtomStage.of(atom.dimension).name.lowercase()}")
+        appendLine("focus=${focusOf(atom.dimension)}")
+        if (atom.dependencies.isNotEmpty()) {
+            appendLine("depends_on=${atom.dependencies.joinToString(",")}")
+        }
+    }.trimEnd()
+
+    /**
+     * The question a dimension asks of a section.
+     *
+     * Deliberately one line each. This is the instruction that distinguishes
+     * otherwise identical nodes, so it has to be specific enough to change the
+     * answer and short enough not to crowd out the requirement itself.
+     */
+    private fun focusOf(dimension: AtomDimension): String = when (dimension) {
+        AtomDimension.FUNCTIONAL_CONTRACT -> "the behaviour this section requires, stated as a contract"
+        AtomDimension.DEPENDENCY_CONTRACT -> "what must exist before this section's behaviour can work"
+        AtomDimension.DATA_LIFECYCLE -> "what is stored, in what form, and when it is written and read"
+        AtomDimension.STATE_MODEL -> "the states this section's subject can be in, and the legal transitions"
+        AtomDimension.ERROR_MODEL -> "every way this can fail, and what each failure does next"
+        AtomDimension.SECURITY_SECRETS -> "secrets touched here, and where redaction must happen"
+        AtomDimension.TERRITORY_CAPABILITIES -> "the paths this may read and write, and those it must not"
+        AtomDimension.OBSERVABILITY_PROVENANCE -> "what evidence this emits, and what it proves"
+        AtomDimension.RESTART_RECOVERY -> "what happens if this is interrupted midway and resumed"
+        AtomDimension.PERFORMANCE_RESOURCES -> "the time and memory this may consume, and its bounds"
+        AtomDimension.PLATFORM_ENVIRONMENT -> "what this assumes about the platform it runs on"
+        AtomDimension.ACCESSIBILITY_UX -> "how this is presented, at narrow widths and without colour"
+        AtomDimension.TESTS_ACCEPTANCE -> "the checks that decide whether this section is satisfied"
+        AtomDimension.INTEGRATION_CALL_SITES -> "who calls this, and where it is registered"
+        AtomDimension.MIGRATION_COMPATIBILITY -> "what existing behaviour must keep working"
+        AtomDimension.ROLLBACK_FAILURE_EVIDENCE -> "how this is undone, and what records the failure"
     }
 
     /**

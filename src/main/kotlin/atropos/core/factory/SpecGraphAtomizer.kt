@@ -75,6 +75,13 @@ class SpecGraphAtomizer(
         val specGraphRoot = specGraphRootOverride
             ?: System.getenv("SPECGRAPH_ROOT")?.trim()
             ?.takeIf(String::isNotBlank)
+            // Resolved from the *installation*, not the working directory. This
+            // used to call AtroposRepoRootLocator, which walks up from cwd -- so
+            // despite the comment above, an operator running ATROPOS from their
+            // own project directory (the ordinary case) got root_missing on
+            // every run, and the canonical atomizer was reachable only from
+            // inside the source tree.
+            ?: atropos.core.AtroposInstallationLocator.resource(IN_REPO_SPECGRAPH)?.toString()
             ?: atropos.core.AtroposRepoRootLocator.resolve().resolve(IN_REPO_SPECGRAPH).toString()
         val canonicalRoot = runCatching {
             val candidate = Path.of(specGraphRoot).toAbsolutePath().normalize()
@@ -166,6 +173,31 @@ class SpecGraphAtomizer(
                         documentId = documentId,
                         evidenceLine = "SKIPPED_SOFT_FAIL:atom_schema_unreadable declared=$declaredCount " +
                             "observed_fields=${observedSchema.joinToString("|").ifBlank { "none" }}; " +
+                            "internal DAG fallback required",
+                        observedSchema = observedSchema
+                    )
+                } else if (atoms.isEmpty()) {
+                    // SpecGraph ran, understood the document, and found nothing
+                    // in it to atomize. That used to fall through to the PASS
+                    // branch below and record
+                    // `PASS:canonical_specgraph_atomizer atom_count=0`, which is
+                    // a success line for a stage that produced nothing and was
+                    // then discarded -- `usable` is `atoms.isNotEmpty()`, so the
+                    // internal extractor silently planned every one of these
+                    // runs while the evidence said the canonical atomizer had
+                    // worked.
+                    //
+                    // The cause is upstream and worth naming here rather than
+                    // leaving to be rediscovered: `AtomService.extract_document`
+                    // keys on modal requirement sentences (MUST/SHALL), and a
+                    // `key=value` document contains none, so it yields zero
+                    // atoms from a document that is not empty.
+                    CanonicalAtomization(
+                        atoms = emptyList(),
+                        sourceSha256 = sourceSha,
+                        documentId = documentId,
+                        evidenceLine = "SKIPPED_SOFT_FAIL:no_atoms_extracted source_sha256=$sourceSha " +
+                            "document=$documentId; source states no modal requirements; " +
                             "internal DAG fallback required",
                         observedSchema = observedSchema
                     )

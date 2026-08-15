@@ -46,7 +46,10 @@ class InternalAtomExtractor {
                 )
             }
         }
-        return atoms
+        // Stage edges are derived here rather than left to the synthesizer, so
+        // every consumer of an atom set sees the same ordering. Textual
+        // dependencies found above are merged, not replaced.
+        return InternalAtomDependencyModel.withStageDependencies(atoms)
     }
 
     private fun stableAtomId(

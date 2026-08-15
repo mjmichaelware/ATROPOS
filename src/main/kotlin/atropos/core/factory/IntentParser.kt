@@ -17,8 +17,15 @@ class IntentParser(
             words.any { it in DESKTOP_WORDS } -> "desktop"
             else -> "cli"
         }
-        val name = words.firstOrNull { it !in STOP_WORDS && !actionRegistry.isAction(it) } ?: "generated-app"
-        val features = words.filter { it !in STOP_WORDS && !actionRegistry.isAction(it) }.distinct().take(12)
+        // Both the name and the features come from the same filter, so a gap in
+        // the stop-word vocabulary corrupts both at once: "build me a todo list
+        // app" named the application `me` and spent half the twelve-feature
+        // budget on function words. See [AppPromptStopWords].
+        val name = AppPromptStopWords.firstMeaningful(words, actionRegistry::isAction) ?: "generated-app"
+        val features = words
+            .filter { !AppPromptStopWords.isStopWord(it) && !actionRegistry.isAction(it) && it.length > 1 }
+            .distinct()
+            .take(12)
         return AppIntent(name, kind, features)
     }
 
@@ -30,10 +37,5 @@ class IntentParser(
         val WEB_WORDS = setOf("web", "website", "frontend")
         val SERVICE_WORDS = setOf("api", "service", "backend")
         val DESKTOP_WORDS = setOf("desktop", "android", "mobile")
-        val STOP_WORDS = setOf(
-            "a", "an", "the", "simple", "small", "local", "with", "and", "for", "tests", "test", "readme",
-            "cli", "web", "website", "frontend", "api", "service", "backend", "desktop", "android", "mobile",
-            "app", "application", "project", "repository", "repo"
-        )
     }
 }

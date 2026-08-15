@@ -20,8 +20,19 @@ import java.nio.file.Path
 class SpecGraphCanonicalAtomProvider(
     private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
     private val atomizer: SpecGraphAtomizer = SpecGraphAtomizer(),
-    /** Where the provenance line is recorded. */
-    private val evidenceSink: (String) -> Unit = {}
+    /**
+     * Where the provenance line is recorded.
+     *
+     * Defaults to the thinking stream rather than to nothing. A no-op default
+     * meant that during planning — the one place these atoms actually decide
+     * the DAG — every per-source atomization was silent: whether SpecGraph
+     * planned a document or the internal extractor did could not be established
+     * from any artifact the run produced. That is the exact question this line
+     * exists to answer, and the run reported a node count either way.
+     */
+    private val evidenceSink: (String) -> Unit = { line ->
+        atropos.core.thinking.Thinking.stream.emit(atropos.core.thinking.ThinkingDepth.L2, line)
+    }
 ) : CanonicalAtomProvider {
 
     override fun atomsFor(
@@ -46,18 +57,46 @@ class SpecGraphCanonicalAtomProvider(
 
         if (!atomization.usable) return null
 
+        val mapped = atomization.atoms.map { record ->
+            record.toInternalAtom(
+                projectId = projectId,
+                documentId = atomization.documentId,
+                promptFingerprint = promptFingerprint,
+                promptSpans = promptSpans,
+                sourceDocumentSha256 = atomization.sourceSha256
+            )
+        }
+
+        // The same stage model the internal extractor uses. Applied here too so
+        // a plan orders the same way whichever atomizer produced it -- otherwise
+        // the canonical path, which is the one meant to be authoritative, is the
+        // only one that emits an edgeless graph.
+        val staged = atropos.core.planning.InternalAtomDependencyModel.withStageDependencies(mapped)
+
+        // SpecGraph's atoms carry its own vocabulary, not ATROPOS dimensions, so
+        // `dimensionOrDefault` maps every one of them to FUNCTIONAL_CONTRACT.
+        // That is a real loss and it is silent: a plan of nothing but contracts
+        // has no implementation or verification stage to depend on it, which is
+        // why a canonical atomization currently yields roots and no edges.
+        //
+        // The structural fix is to consume SpecGraph's *execution graph* rather
+        // than its atoms -- it already stages every atom into CONTRACT ->
+        // IMPLEMENTATION -> VERIFICATION and joins them with MUST_PRECEDE. Until
+        // that is wired, this at least says so out loud.
+        val distinctDimensions = staged.map { it.dimension }.distinct()
+        if (staged.size > 1 && distinctDimensions.size == 1) {
+            evidenceSink(
+                "specgraph source=$sourcePath SKIPPED_SOFT_FAIL:dimension_collapse " +
+                    "atoms=${staged.size} all=${distinctDimensions.single().name.lowercase()}; " +
+                    "canonical atoms carry no ATROPOS dimension, so the plan is contracts only"
+            )
+        }
+
         return CanonicalAtomSet(
-            atoms = atomization.atoms.map { record ->
-                record.toInternalAtom(
-                    projectId = projectId,
-                    documentId = atomization.documentId,
-                    promptFingerprint = promptFingerprint,
-                    promptSpans = promptSpans,
-                    sourceDocumentSha256 = atomization.sourceSha256
-                )
-            },
+            atoms = staged,
             provenance = "canonical_specgraph document=${atomization.documentId} " +
-                "atoms=${atomization.atoms.size} source_sha256=${atomization.sourceSha256}"
+                "atoms=${staged.size} source_sha256=${atomization.sourceSha256} " +
+                atropos.core.planning.InternalAtomDependencyModel.render(staged)
         )
     }
 }
