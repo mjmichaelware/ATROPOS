@@ -69,46 +69,6 @@ def handle(
     return False
 
 
-def register(commands, settings) -> None:
-    """Adds this group's subcommands to the parser.
-
-    Registration sits beside the handler for the same command so the two
-    cannot drift -- a flag added here and unread there was previously a
-    500-line scroll apart.
-    """
-    start_execution = commands.add_parser(
-        "start-execution"
-    )
-    start_execution.add_argument("plan_id")
-    start_execution.add_argument(
-        "runtime_system"
-    )
-    start_execution.add_argument(
-        "runtime_run_id"
-    )
-    start_execution.add_argument(
-        "--export-id"
-    )
-
-    execution_run = commands.add_parser(
-        "execution-run"
-    )
-    execution_run.add_argument("run_id")
-
-    execution_heartbeat = commands.add_parser(
-        "execution-heartbeat"
-    )
-    execution_heartbeat.add_argument(
-        "run_node_id"
-    )
-    execution_heartbeat.add_argument(
-        "worker_id"
-    )
-    execution_heartbeat.add_argument(
-        "--lease-seconds",
-        type=int,
-        default=900,
-    )
 
 
 def register(commands, settings) -> None:

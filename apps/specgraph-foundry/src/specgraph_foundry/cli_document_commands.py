@@ -77,44 +77,6 @@ def handle(
     return False
 
 
-def register(commands, settings) -> None:
-    """Adds this group's subcommands to the parser.
-
-    Registration sits beside the handler for the same command so the two
-    cannot drift -- a flag added here and unread there was previously a
-    500-line scroll apart.
-    """
-    ingest_file = commands.add_parser(
-        "ingest-file"
-    )
-    ingest_file.add_argument("project_id")
-    ingest_file.add_argument("path", type=Path)
-    ingest_file.add_argument("--title")
-    ingest_file.add_argument(
-        "--chunk-bytes",
-        type=int,
-        default=32768,
-    )
-
-    document = commands.add_parser("document")
-    document.add_argument("document_id")
-    document.add_argument(
-        "--include-chunks",
-        action="store_true",
-    )
-
-    verify = commands.add_parser(
-        "verify-document"
-    )
-    verify.add_argument("document_id")
-
-    list_atoms = commands.add_parser(
-        "list-atoms"
-    )
-    list_atoms.add_argument("document_id")
-
-    atom = commands.add_parser("atom")
-    atom.add_argument("atom_id")
 
 
 def register(commands, settings) -> None:

@@ -48,20 +48,6 @@ def handle(
     return False
 
 
-def register(commands, settings) -> None:
-    """Adds this group's subcommands to the parser.
-
-    Registration sits beside the handler for the same command so the two
-    cannot drift -- a flag added here and unread there was previously a
-    500-line scroll apart.
-    """
-    plan = commands.add_parser("plan")
-    plan.add_argument("plan_id")
-
-    verify_plan = commands.add_parser(
-        "verify-plan"
-    )
-    verify_plan.add_argument("plan_id")
 
 
 def register(commands, settings) -> None:
