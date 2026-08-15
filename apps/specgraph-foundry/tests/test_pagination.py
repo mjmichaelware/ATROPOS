@@ -1,3 +1,4 @@
+import importlib
 import inspect
 import tempfile
 import unittest
@@ -726,7 +727,19 @@ class PaginationApiTest(unittest.TestCase):
             AtomService.list_research_tasks_page,
             PlanningService.list_relations_page,
         ):
+            # Follow a delegating method through to the module function that
+            # holds the query. Splitting a service into focused modules moves
+            # where the SQL lives; it must not move whether it seeks.
             source = inspect.getsource(method)
+
+            if "Delegates to" in source:
+                target = source.split("return ", 1)[1].split("(", 1)[0].strip()
+                module = importlib.import_module(
+                    "specgraph_foundry."
+                    + source.split(":func:`", 1)[1].split(".", 1)[0]
+                )
+                source = inspect.getsource(getattr(module, target))
+
             self.assertNotIn("OFFSET", source)
             self.assertIn("LIMIT ?", source)
 

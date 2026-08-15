@@ -17,13 +17,9 @@ from .execution_events import record_event
 from .execution_queries import get_run
 from .exports import ExportService
 from .planning import PlanningService
+from .stages import STAGES
 from .primitives import canonical_json, new_id, utc_now
 
-STAGES = {
-    "CONTRACT",
-    "IMPLEMENTATION",
-    "VERIFICATION",
-}
 
 
 def start_run(
