@@ -77,3 +77,12 @@ def valid_string_list(
             for item in value
         )
     )
+
+
+def iso_now() -> str:
+    """The current instant as ISO text.
+
+    An alias kept because research spells it this way; both it and
+    `utc_now` return the stored string form.
+    """
+    return utc_now()
