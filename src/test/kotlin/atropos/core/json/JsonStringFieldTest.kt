@@ -3,6 +3,7 @@ package atropos.core.json
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -133,5 +134,113 @@ class JsonStringFieldTest {
 
         val elapsedMs = (System.nanoTime() - started) / 1_000_000
         assertTrue(elapsedMs < 5_000, "20 reads of 200k chars took ${elapsedMs}ms")
+    }
+
+    // -- object scoping, added for the SpecGraph handoff reader ---------------
+
+    /**
+     * The reason [JsonStringField.objectBody] exists. A handoff repeats `id` on
+     * the project, the plan, the graph and every node, so a document-wide read
+     * returns whichever comes first and looks entirely plausible.
+     */
+    @Test
+    fun `object bodies scope a read to one level of the document`() {
+        val json = """{"outer":"wrong","inner":{"outer":"right"},"tail":1}"""
+
+        assertEquals("right", JsonStringField.value(JsonStringField.objectBody(json, "inner")!!, "outer"))
+    }
+
+    @Test
+    fun `a brace inside a string does not close the object`() {
+        val json = """{"a":{"note":"} not the end {","x":"y"}}"""
+
+        val body = assertNotNull(JsonStringField.objectBody(json, "a"))
+        assertEquals("y", JsonStringField.value(body, "x"))
+    }
+
+    @Test
+    fun `nested objects close at the matching brace`() {
+        val json = """{"a":{"b":{"c":1},"d":2}}"""
+
+        assertEquals("""{"b":{"c":1},"d":2}""", "{" + JsonStringField.objectBody(json, "a") + "}")
+    }
+
+    /**
+     * Splitting on `},{` is the obvious shortcut and breaks on exactly the
+     * inputs that matter — a nested object, or a brace inside a statement.
+     */
+    @Test
+    fun `objectsIn splits elements without splitting nested ones`() {
+        val body = """{"id":"a","meta":{"k":"v"}},{"id":"b","note":"},{"}"""
+
+        val objects = JsonStringField.objectsIn(body)
+
+        assertEquals(2, objects.size)
+        assertEquals("a", JsonStringField.value(objects[0], "id"))
+        assertEquals("b", JsonStringField.value(objects[1], "id"))
+    }
+
+    @Test
+    fun `objectsIn on an empty or string-only array yields nothing`() {
+        assertEquals(emptyList(), JsonStringField.objectsIn(""))
+        assertEquals(emptyList(), JsonStringField.objectsIn(""""a","b""""))
+    }
+
+    @Test
+    fun `a large array of objects does not overflow`() {
+        val body = (1..20_000).joinToString(",") { """{"id":"n$it"}""" }
+
+        assertEquals(20_000, JsonStringField.objectsIn(body).size)
+    }
+
+    // -- typed reads ---------------------------------------------------------
+
+    @Test
+    fun `numbers are read from unquoted values`() {
+        val json = """{"bytes": 4096, "negative": -7, "name": "x"}"""
+
+        assertEquals(4096L, JsonStringField.longValue(json, "bytes"))
+        assertEquals(-7L, JsonStringField.longValue(json, "negative"))
+    }
+
+    /**
+     * A byte count that is missing and a byte count that is zero are different
+     * facts, and a verifier must not confuse them.
+     */
+    @Test
+    fun `an absent number is null rather than zero`() {
+        assertNull(JsonStringField.longValue("""{"a":1}""", "b"))
+        assertEquals(0L, JsonStringField.longValue("""{"b":0}""", "b"))
+    }
+
+    @Test
+    fun `a quoted number is not read as a number`() {
+        assertNull(JsonStringField.longValue("""{"bytes":"4096"}""", "bytes"))
+    }
+
+    @Test
+    fun `booleans are read and an absent one is null`() {
+        val json = """{"yes": true, "no": false}"""
+
+        assertEquals(true, JsonStringField.booleanValue(json, "yes"))
+        assertEquals(false, JsonStringField.booleanValue(json, "no"))
+        assertNull(JsonStringField.booleanValue(json, "missing"))
+    }
+
+    @Test
+    fun `text resolves escapes that value deliberately leaves in place`() {
+        val json = """{"s":"line\nbreak \"quoted\" \\ back A"}"""
+
+        assertEquals("line\nbreak \"quoted\" \\ back A", JsonStringField.text(json, "s"))
+        assertTrue(JsonStringField.value(json, "s")!!.contains("\\n"), "value stays escaped")
+    }
+
+    /**
+     * A single bad escape in one field should not fail the parse of an
+     * otherwise readable document.
+     */
+    @Test
+    fun `a malformed unicode escape is left as written rather than throwing`() {
+        assertEquals("\\uZZZZ", JsonStringField.unescape("""\uZZZZ"""))
     }
 }

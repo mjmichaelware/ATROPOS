@@ -402,14 +402,52 @@ replaced by a later locked design.
 
 ---
 
+# 17. SPECGRAPH BUILD LINE — ATROPOS consumes one stage of seven
+
+Found 2026-08-15 by reading both sides of the boundary, not from any authority
+document — no source doc states the integration contract, which is why the gap
+survived every prior audit.
+
+SpecGraph's pipeline is `ingest -> extract atoms -> research the atoms ->
+synthesize plan -> verify_plan -> bind -> export_plan`. `SpecGraphAtomizer.kt`
+runs an inline Python script that calls `AtomService.extract_document`, prints
+the atoms, and then **deletes the sqlite database** every later stage builds on.
+Everything downstream was re-derived locally.
+
+`ExportService.export_plan` writes 13 artifacts, one of them
+`atropos_handoff.json` (schema `specgraph.atropos.handoff.v1`) whose own
+`execution_contract` names `atropos` as `runtime_owner`. Before this session it
+had **zero readers** in this repository.
+
+| # | Status | Item |
+|---|---|---|
+| 281 | `DONE` | Export-contract artifact vocabulary (`HandoffArtifact`, 14 names mirroring `validate_artifact_name`) |
+| 282 | `DONE` | Manifest parse + per-artifact SHA-256 and length verification (`ExportManifest`, `ExportBundleVerifier`) |
+| 283 | `DONE` | `atropos_handoff.json` reader (`HandoffDocument`, `HandoffParser`) |
+| 284 | `DONE` | Handoff execution graph -> `DagDefinition` translation (`HandoffDagTranslator`) |
+| 285 | `DONE` | Build-line stage coverage as a checkable predicate (`HandoffStage`) |
+| 286 | `DONE` | Verified selective artifact access for context (`ExportBundleReader`) |
+| 287 | `ABSENT` | Wire the ingest into `FactoryRunOrchestrator` — prefer a verified handoff DAG over `InternalExecutionDagSynthesizer` |
+| 288 | `ABSENT` | Drive the full SpecGraph pipeline rather than only `extract_document` (research, synthesize, verify_plan) instead of re-deriving locally |
+| 289 | `ABSENT` | Stop deleting the SpecGraph sqlite database after atomization — later stages need it |
+| 290 | `ABSENT` | `research.json` ingest — retire the locally re-derived `FactoryResearchService` claims where SpecGraph has already researched the atom |
+| 291 | `ABSENT` | `authority_graph.json` ingest — retire `InternalAuthorityGraphBuilder` for handoff-planned runs |
+| 292 | `ABSENT` | Refuse execution of any plan whose `verify_plan` status is not verified (the reader supports it; nothing calls it yet) |
+| 293 | `ABSENT` | Blueprint (`implementation_blueprint.md`) as lakehouse context for atom execution |
+| 294 | `ABSENT` | CLI surface: import a downloaded export bundle (`/specgraph import <dir>`) |
+| 295 | `ABSENT` | Report orphaned and unverified requirements to the operator — the translator computes both, nothing displays them |
+
+---
+
 # Count
 
 | | |
 |---|---:|
-| Open items | **279** |
-| Closed this session | 1 |
+| Open items | **288** |
+| Closed this session | 7 |
 | Struck as superseded | 17 |
 | Previous list | 298 |
+| Added 2026-08-15 (SpecGraph boundary) | 15 |
 
 # Items needing your confirmation
 

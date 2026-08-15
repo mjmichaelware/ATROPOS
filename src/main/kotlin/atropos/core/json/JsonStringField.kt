@@ -96,28 +96,189 @@ object JsonStringField {
         while (true) {
             val at = json.indexOf(key, from)
             if (at < 0) return null
-            var index = skipToValue(json, at + key.length)
+            val index = skipToValue(json, at + key.length)
             if (index >= 0 && index < json.length && json[index] == '[') {
-                val start = index + 1
-                var depth = 1
-                index = start
-                while (index < json.length) {
-                    when (json[index]) {
-                        '"' -> {
-                            val closed = endOfString(json, index + 1)
-                            if (closed < 0) return null
-                            index = closed + 1
-                            continue
-                        }
-                        '[' -> depth++
-                        ']' -> {
-                            depth--
-                            if (depth == 0) return json.substring(start, index)
-                        }
-                    }
-                    index++
+                return balanced(json, index, '[', ']')
+            }
+            from = at + 1
+        }
+    }
+
+    /**
+     * The braced body of `"name": { ... }`, or null.
+     *
+     * The object counterpart of [arrayBody], and depth-tracked outside strings
+     * for the same reason: a `}` inside a value must not close the object. Used
+     * for reaching one level into a document — `"project"`, `"execution"` — so a
+     * caller can then read fields from that scope rather than from the whole
+     * file, where a name may appear more than once.
+     */
+    fun objectBody(json: String, name: String): String? {
+        val key = "\"" + name + "\""
+        var from = 0
+        while (true) {
+            val at = json.indexOf(key, from)
+            if (at < 0) return null
+            val index = skipToValue(json, at + key.length)
+            if (index >= 0 && index < json.length && json[index] == '{') {
+                return balanced(json, index, '{', '}')
+            }
+            from = at + 1
+        }
+    }
+
+    /**
+     * The top-level object bodies inside an array body, in order.
+     *
+     * For `[{...},{...}]` this yields each element's contents without its outer
+     * braces. Nested objects are stepped over rather than returned, so an
+     * element carrying its own sub-object still arrives as one element.
+     *
+     * Splitting on `},{` would be the obvious shortcut and is wrong on exactly
+     * the inputs that matter: a nested object, or a brace inside a quoted
+     * statement, both split an element in half. Depth tracking costs the same
+     * scan and cannot.
+     */
+    fun objectsIn(arrayBody: String): List<String> {
+        val found = mutableListOf<String>()
+        var index = 0
+        while (index < arrayBody.length) {
+            when (arrayBody[index]) {
+                '"' -> {
+                    val closed = endOfString(arrayBody, index + 1)
+                    if (closed < 0) return found
+                    index = closed + 1
                 }
-                return null
+                '{' -> {
+                    val body = balanced(arrayBody, index, '{', '}') ?: return found
+                    found += body
+                    // +2 for the braces the body excludes.
+                    index += body.length + 2
+                }
+                else -> index++
+            }
+        }
+        return found
+    }
+
+    /**
+     * The contents between a bracket at [open] and its match, exclusive.
+     *
+     * Shared by [arrayBody], [objectBody] and [objectsIn]. Quoted runs are
+     * skipped whole, which is what keeps a bracket inside a string from
+     * changing the depth.
+     */
+    private fun balanced(json: String, open: Int, opener: Char, closer: Char): String? {
+        val start = open + 1
+        var depth = 1
+        var index = start
+        while (index < json.length) {
+            when (json[index]) {
+                '"' -> {
+                    val closed = endOfString(json, index + 1)
+                    if (closed < 0) return null
+                    index = closed + 1
+                    continue
+                }
+                opener -> depth++
+                closer -> {
+                    depth--
+                    if (depth == 0) return json.substring(start, index)
+                }
+            }
+            index++
+        }
+        return null
+    }
+
+    /**
+     * The unescaped value of `"name": "..."`, or null.
+     *
+     * [value] deliberately leaves escapes in place for callers that re-encode.
+     * Callers that want the text — a requirement statement, a node title —
+     * would each have to write the same six-case decoder, so it lives here once.
+     */
+    fun text(json: String, name: String): String? = value(json, name)?.let(::unescape)
+
+    /**
+     * A JSON string literal's escapes resolved.
+     *
+     * `\uXXXX` is decoded; a malformed one is left as written rather than
+     * throwing, because a single bad escape in one field should not fail the
+     * parse of an otherwise readable document.
+     */
+    fun unescape(raw: String): String {
+        if (!raw.contains('\\')) return raw
+        val out = StringBuilder(raw.length)
+        var index = 0
+        while (index < raw.length) {
+            val current = raw[index]
+            if (current != '\\' || index + 1 >= raw.length) {
+                out.append(current)
+                index++
+                continue
+            }
+            when (val escape = raw[index + 1]) {
+                '"', '\\', '/' -> { out.append(escape); index += 2 }
+                'n' -> { out.append('\n'); index += 2 }
+                't' -> { out.append('\t'); index += 2 }
+                'r' -> { out.append('\r'); index += 2 }
+                'b' -> { out.append('\b'); index += 2 }
+                'f' -> { out.append('\u000C'); index += 2 }
+                'u' -> {
+                    val hex = raw.substring(index + 2, minOf(index + 6, raw.length))
+                    val code = if (hex.length == 4) hex.toIntOrNull(16) else null
+                    if (code == null) {
+                        out.append(current)
+                        index++
+                    } else {
+                        out.append(code.toChar())
+                        index += 6
+                    }
+                }
+                else -> { out.append(current); index++ }
+            }
+        }
+        return out.toString()
+    }
+
+    /**
+     * The numeric value of `"name": 123`, or null.
+     *
+     * Unquoted, so [value] cannot read it. Returns null rather than 0 for an
+     * absent field: a byte count that is missing and a byte count that is zero
+     * are different facts, and a verifier must not confuse them.
+     */
+    fun longValue(json: String, name: String): Long? {
+        val key = "\"" + name + "\""
+        var from = 0
+        while (true) {
+            val at = json.indexOf(key, from)
+            if (at < 0) return null
+            val index = skipToValue(json, at + key.length)
+            if (index in 0 until json.length) {
+                var end = index
+                if (end < json.length && json[end] == '-') end++
+                while (end < json.length && json[end].isDigit()) end++
+                if (end > index) {
+                    json.substring(index, end).toLongOrNull()?.let { return it }
+                }
+            }
+            from = at + 1
+        }
+    }
+
+    /** The boolean value of `"name": true`, or null when absent or non-boolean. */
+    fun booleanValue(json: String, name: String): Boolean? {
+        val key = "\"" + name + "\""
+        var from = 0
+        while (true) {
+            val at = json.indexOf(key, from)
+            if (at < 0) return null
+            val index = skipToValue(json, at + key.length)
+            if (index in 0 until json.length) {
+                if (json.startsWith("true", index)) return true
+                if (json.startsWith("false", index)) return false
             }
             from = at + 1
         }
