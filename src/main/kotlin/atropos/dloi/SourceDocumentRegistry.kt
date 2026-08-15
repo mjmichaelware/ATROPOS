@@ -26,4 +26,25 @@ object SourceDocumentRegistry {
             else -> null
         }
     }
+
+    private val metadataMap = mutableMapOf<String, DocumentMetadata>()
+    private val hashToMetadataMap = mutableMapOf<String, DocumentMetadata>()
+
+    fun register(id: String, name: String, version: String, hash: String, size: Long) {
+        val metadata = DocumentMetadata(id, name, version, hash, size)
+        metadataMap[id] = metadata
+        hashToMetadataMap[hash] = metadata
+    }
+
+    fun getByHash(hash: String): DocumentMetadata? = hashToMetadataMap[hash]
+
+    fun getById(id: String): DocumentMetadata? = metadataMap[id]
 }
+
+data class DocumentMetadata(
+    val id: String,
+    val name: String,
+    val version: String,
+    val hash: String,
+    val size: Long
+)

@@ -209,58 +209,6 @@ class BootstrapAcceptanceDag(
     }
 
     companion object {
-        fun verifyInvariants(): List<String> {
-            val issues = mutableListOf<String>()
-
-            // Verify no secret patterns in new files
-            val secretPatterns = listOf("secret", "token", "credential", "password", "api.key")
-            val newFiles = listOf(
-                "src/main/kotlin/atropos/core/agent/SupervisedProviderSession.kt",
-                "src/main/kotlin/atropos/core/agent/SupervisedSessionStore.kt",
-                "src/main/kotlin/atropos/core/agent/ProviderSessionSupervisor.kt",
-                "src/main/kotlin/atropos/core/agent/GoalRunModels.kt",
-                "src/main/kotlin/atropos/core/agent/GoalRunStore.kt",
-                "src/main/kotlin/atropos/core/agent/GoalContinuationService.kt",
-                "src/main/kotlin/atropos/core/policy/AutonomyPolicyExtensions.kt",
-                "src/main/kotlin/atropos/core/dag/DagModels.kt",
-                "src/main/kotlin/atropos/core/dag/DagStore.kt",
-                "src/main/kotlin/atropos/core/dag/DagExecutionService.kt",
-                "src/main/kotlin/atropos/core/journal/EventJournalModels.kt",
-                "src/main/kotlin/atropos/core/journal/EventJournalService.kt",
-                "src/main/kotlin/atropos/core/observability/RunObserver.kt",
-                "src/main/kotlin/atropos/core/recovery/CrashRecoveryService.kt",
-                "src/main/kotlin/atropos/core/worktree/IsolatedWorktreeService.kt",
-                "src/main/kotlin/atropos/core/verification/VerifiedCompletionGate.kt",
-                "src/main/kotlin/atropos/bootstrap/BootstrapAcceptanceDag.kt"
-            )
-
-            for (filePath in newFiles) {
-                val path = Path.of(System.getProperty("user.dir")).resolve(filePath)
-                if (!Files.isRegularFile(path)) {
-                    issues.add("MISSING: $filePath")
-                    continue
-                }
-                val content = Files.readString(path).lowercase()
-                for (pattern in secretPatterns) {
-                    // Allow "secret" in MemoryKind enum and security-related class names
-                    val lines = Files.readAllLines(path)
-                    lines.forEachIndexed { idx, line ->
-                        val lower = line.lowercase()
-                        if (lower.contains(pattern) &&
-                            !lower.contains("redaction") &&
-                            !lower.contains("secrets") &&
-                            !line.contains("MemoryKind") &&
-                            !line.contains("AutonomyActionClass") &&
-                            !line.contains("AutonomyPolicyRule") &&
-                            !line.contains("checkTerritoryAndSecrets")
-                        ) {
-                            issues.add("SECRET_PATTERN: $filePath:$idx: $line")
-                        }
-                    }
-                }
-            }
-
-            return issues
-        }
+        fun verifyInvariants(): List<String> = BootstrapAcceptanceInvariants.verifyInvariants()
     }
 }

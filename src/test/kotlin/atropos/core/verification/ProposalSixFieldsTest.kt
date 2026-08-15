@@ -1,0 +1,22 @@
+/* SPDX-License-Identifier: AGPL-3.0-only */
+package atropos.core.verification
+
+import kotlin.test.Test
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
+
+class ProposalSixFieldsTest {
+
+    @Test
+    fun `enforces presence of all six proposal fields`() {
+        val valid = Proposal(
+            "p1", "base", "target", listOf("g1"), listOf("/tmp"), mapOf("risk" to 0.1), "rollback_script"
+        )
+        assertTrue(ProposalSixFields.validate(valid))
+
+        val invalid = Proposal(
+            "p2", "base", "target", listOf("g1"), null, mapOf("risk" to 0.1), "rollback_script"
+        )
+        assertFalse(ProposalSixFields.validate(invalid))
+    }
+}

@@ -21,4 +21,16 @@ class TermuxPathResolverTest {
         assertFalse(TermuxPathResolver.isTermuxPath(standard))
         assertEquals("/data/data/com.termux/files/home/ATROPOS/file.txt", TermuxPathResolver.toTermuxPath(standard))
     }
+
+    @Test
+    fun `resolve handles bidirectional path translation`() {
+        val termux = "/data/data/com.termux/files/home/ATROPOS/file.txt"
+        val standard = "/home/ATROPOS/file.txt"
+        val root = "/root/ATROPOS/file.txt"
+
+        assertEquals(standard, TermuxPathResolver.resolve(termux))
+        assertEquals(termux, TermuxPathResolver.resolve(standard))
+        assertEquals(termux, TermuxPathResolver.resolve(root))
+        assertEquals("/tmp/file.txt", TermuxPathResolver.resolve("/tmp/file.txt"))
+    }
 }

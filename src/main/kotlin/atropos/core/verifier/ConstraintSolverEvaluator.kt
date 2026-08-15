@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.verifier
 
 import atropos.core.verification.DeterministicClassification
@@ -11,7 +12,9 @@ enum class BoundaryRule {
     PATH_WITHIN_ROOT,
     EXACT_VALUE,
     NON_EMPTY,
-    NO_FORBIDDEN_TOKEN
+    NO_FORBIDDEN_TOKEN,
+    REGEX_MATCH,
+    NUMERIC_RANGE
 }
 
 data class BoundaryConstraint(
@@ -81,6 +84,8 @@ class ConstraintSolverEvaluator {
                 BoundaryRule.PATH_WITHIN_ROOT -> pathWithinRoot(constraint.observed, constraint.expected)
                 BoundaryRule.EXACT_VALUE -> constraint.observed == constraint.expected
                 BoundaryRule.NON_EMPTY -> constraint.observed.isNotBlank()
+                BoundaryRule.REGEX_MATCH -> Regex(constraint.expected).containsMatchIn(constraint.observed)
+                BoundaryRule.NUMERIC_RANGE -> numericRangeMatch(constraint.observed, constraint.expected)
                 BoundaryRule.NO_FORBIDDEN_TOKEN -> constraint.expected
                     .split(',')
                     .map(String::trim)
@@ -98,12 +103,18 @@ class ConstraintSolverEvaluator {
             )
         }
 
+    private fun numericRangeMatch(observed: String, expectedRange: String): Boolean {
+        val obsVal = observed.toDoubleOrNull() ?: return false
+        val parts = expectedRange.split("..")
+        if (parts.size != 2) return false
+        val min = parts[0].toDoubleOrNull() ?: Double.MIN_VALUE
+        val max = parts[1].toDoubleOrNull() ?: Double.MAX_VALUE
+        return obsVal in min..max
+    }
+
     private fun invalidBoundaryFields(constraint: BoundaryConstraint): List<String> = buildList {
         if (constraint.invariantId.isBlank()) add("invariantId")
         if (constraint.expected.isBlank()) add("expected")
-        // An empty observation is the failing input for NON_EMPTY, not a
-        // malformed constraint. Preserve the rule-specific finding so the
-        // caller receives the correct invariant evidence.
         if (constraint.observed.isBlank() && constraint.rule != BoundaryRule.NON_EMPTY) add("observed")
         if (constraint.remediation.isBlank()) add("remediation")
         if (constraint.rule == BoundaryRule.NO_FORBIDDEN_TOKEN &&

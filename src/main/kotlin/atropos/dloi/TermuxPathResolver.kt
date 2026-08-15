@@ -21,4 +21,16 @@ object TermuxPathResolver {
         }
         return path
     }
+
+    fun resolve(path: String): String {
+        return if (isTermuxPath(path)) {
+            toStandardPath(path)
+        } else if (path.startsWith("/home/")) {
+            toTermuxPath(path)
+        } else if (path.startsWith("/root/")) {
+            TERMUX_PREFIX + path.removePrefix("/root/")
+        } else {
+            path
+        }
+    }
 }
