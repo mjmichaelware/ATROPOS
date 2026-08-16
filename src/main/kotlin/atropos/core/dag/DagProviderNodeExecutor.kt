@@ -1,6 +1,7 @@
 package atropos.core.dag
 
 import atropos.core.agent.AgentAskContextOverride
+import atropos.core.agent.AgentPatchStore
 import atropos.core.agent.AgentRunResult
 import atropos.core.agent.AgentService
 import atropos.core.memory.LocalMemoryStore
@@ -22,7 +23,17 @@ class DagProviderNodeExecutor(
     private val sourceBindingResolver: ActiveSourceBindingResolver = ActiveSourceBindingResolver(repoRoot),
     private val providerTruth: ProviderTruthService = ProviderTruthService(),
     private val askProvider: (String, String, AgentAskContextOverride) -> AgentRunResult =
-        { activeProvider, task, override -> agentService.ask(activeProvider, task, override) }
+        { activeProvider, task, override -> agentService.ask(activeProvider, task, override) },
+    /**
+     * Turns an attested answer into an applied patch.
+     *
+     * Without this the node recorded the answer as an advisory and completed —
+     * a self-host run reported success having written nothing, because the
+     * provider's diff was never handed to the patch pipeline that exists to
+     * apply it. See [DagPatchApplication].
+     */
+    private val patchApplication: DagPatchApplication =
+        DagPatchApplication(agentService, AgentPatchStore(repoRoot))
 ) {
     fun execute(node: DagNode, original: DagNode, store: DagStore): DagNodeExecutionResult {
         val running = store.writeNode(node.copy(state = DagNodeState.RUNNING))
@@ -119,31 +130,99 @@ class DagProviderNodeExecutor(
                 DagNodeExecutionResult(original.id, DagNodeState.BLOCKED, false, reason)
             } else {
                 val evidence = "provider=${answer.providerName} sourcePack=${pack.id} fetchReceipt=${pack.fetchReceipt.id}"
-                memoryStore.rememberDetailed(
-                    kind = atropos.core.memory.MemoryKind.BATCH,
-                    title = "DAG provider call attested: ${original.id}",
-                    body = "$evidence task=${task.take(100)}",
-                    tags = listOf("dag", "provider", "attested", "advisory"),
-                    subjectType = "dag_node",
-                    subjectId = original.id
+
+                // The answer is offered to the patch pipeline before it is
+                // recorded as advice. A diff that applies is the whole point of
+                // the node; prose is the fallback, not the goal.
+                val patch = patchApplication.applyFrom(
+                    answerText = answer.answerText,
+                    provider = answer.providerName,
+                    task = task,
+                    contextBytes = pack.text.length
                 )
-                finisher.complete(
-                    running,
-                    NodeResult(
-                        original.id,
-                        true,
-                        "attested provider advisory completed: ${answer.providerName}",
-                        DagNodeState.COMPLETE,
-                        result = "$evidence\n${answer.answerText}".take(2000)
-                    )
-                )
-                DagNodeExecutionResult(
-                    original.id,
-                    DagNodeState.COMPLETE,
-                    true,
-                    "attested provider advisory completed: ${answer.providerName}",
-                    result = evidence
-                )
+
+                when (patch) {
+                    is DagPatchApplication.Outcome.Applied -> {
+                        val line = "$evidence ${patch.evidenceLine()}"
+                        memoryStore.rememberDetailed(
+                            kind = atropos.core.memory.MemoryKind.BATCH,
+                            title = "DAG patch applied: ${original.id}",
+                            body = "$line task=${task.take(100)}",
+                            tags = listOf("dag", "provider", "attested", "patch", "applied"),
+                            subjectType = "dag_node",
+                            subjectId = original.id
+                        )
+                        finisher.complete(
+                            running,
+                            NodeResult(
+                                original.id,
+                                true,
+                                "patch applied from attested provider answer: ${patch.patchId}",
+                                DagNodeState.COMPLETE,
+                                result = line
+                            )
+                        )
+                        DagNodeExecutionResult(
+                            original.id,
+                            DagNodeState.COMPLETE,
+                            true,
+                            "patch applied: ${patch.changedPaths.size} file(s)",
+                            result = line
+                        )
+                    }
+
+                    is DagPatchApplication.Outcome.Refused -> {
+                        // A diff was produced and could not be applied. That is
+                        // a failed node, not an advisory one: reporting it as
+                        // complete would record a change that never landed.
+                        val reason = "patch refused: ${patch.reason}"
+                        memoryStore.rememberDetailed(
+                            kind = atropos.core.memory.MemoryKind.SESSION,
+                            title = "DAG patch refused: ${original.id}",
+                            body = "$evidence $reason",
+                            tags = listOf("dag", "provider", "patch", "refused"),
+                            subjectType = "dag_node",
+                            subjectId = original.id
+                        )
+                        finisher.complete(
+                            running,
+                            NodeResult(original.id, false, reason, DagNodeState.FAILED, failureReason = reason)
+                        )
+                        DagNodeExecutionResult(original.id, DagNodeState.FAILED, false, reason, result = evidence)
+                    }
+
+                    DagPatchApplication.Outcome.NoPatch -> {
+                        // Prose for a contract-shaped atom is the correct
+                        // output, and the node completes on it — but the
+                        // message says "advisory" so nobody reads a completed
+                        // node as a changed file.
+                        memoryStore.rememberDetailed(
+                            kind = atropos.core.memory.MemoryKind.BATCH,
+                            title = "DAG provider call attested: ${original.id}",
+                            body = "$evidence task=${task.take(100)}",
+                            tags = listOf("dag", "provider", "attested", "advisory"),
+                            subjectType = "dag_node",
+                            subjectId = original.id
+                        )
+                        finisher.complete(
+                            running,
+                            NodeResult(
+                                original.id,
+                                true,
+                                "attested provider advisory completed (no diff): ${answer.providerName}",
+                                DagNodeState.COMPLETE,
+                                result = "$evidence\n${answer.answerText}".take(2000)
+                            )
+                        )
+                        DagNodeExecutionResult(
+                            original.id,
+                            DagNodeState.COMPLETE,
+                            true,
+                            "attested provider advisory completed (no diff): ${answer.providerName}",
+                            result = evidence
+                        )
+                    }
+                }
             }
         } catch (e: Exception) {
             finisher.fail(running, original, e.message ?: "provider call failed")
