@@ -161,7 +161,23 @@ class BridgeRoutes(
     private val sessions: BridgeSessionStore = BridgeSessionStore(),
     private val menuView: CommandMenuProjection = CommandMenuProjection(),
     private val clock: () -> Instant = { Instant.now() },
-    private val mcpBridge: atropos.core.integration.McpTerritoryBridge = atropos.core.integration.McpTerritoryBridge(setOf("inspect", "verify"))
+    private val mcpBridge: atropos.core.integration.McpTerritoryBridge = atropos.core.integration.McpTerritoryBridge(setOf("inspect", "verify")),
+    /**
+     * The self-build service, when this build has a repository to build in.
+     *
+     * Null by default for the same reason the export resolver is: a runtime
+     * with no repository root has nothing to self-build, and refusing is
+     * correct where inventing a workspace is not. `AtroposBridge.server()`
+     * binds it for the running engine.
+     */
+    private val selfHost: atropos.core.agent.SelfHostGoalService? = null,
+    /**
+     * Runs one CLI command, when this build has a router to run it with.
+     *
+     * Null by default so the route table stays constructible without a
+     * provider, a config and a terminal. `AtroposBridge.server()` binds it.
+     */
+    private val commandRunner: ((String) -> BridgeCommandOutput)? = null
 ) {
     private val approvalHandler = BridgeApprovalHandler(approvals)
     private val thinkingHandler = BridgeThinkingHandler(thinkingView, thinking)
@@ -173,6 +189,29 @@ class BridgeRoutes(
     private val eventsHandler = BridgeEventsHandler(work, approvals, sessions, conversation)
     private val filesHandler = BridgeFilesHandler()
     private val mcpHandler = BridgeMcpHandler(mcpBridge)
+    private val selfHostHandler = selfHost?.let { BridgeSelfHostHandler(it) }
+    private val commandHandler = commandRunner?.let { BridgeCommandHandler(it) }
+
+    /** Present either way, so what a client discovers does not change with
+     *  configuration; without a router it says so rather than 404ing. */
+    private fun withCommands(action: (BridgeCommandHandler) -> HttpResponse): HttpResponse =
+        commandHandler?.let(action) ?: HttpResponse.refusal(
+            501,
+            "command-surface-not-wired",
+            "This engine build did not attach a command router to the bridge.",
+            "Start the engine normally; the router is wired by AtroposBridge.server()."
+        )
+
+    /** Self-build routes are present either way, so what a client discovers
+     *  does not change with configuration; without a service they say plainly
+     *  that this build has no repository to build in. */
+    private fun withSelfHost(action: (BridgeSelfHostHandler) -> HttpResponse): HttpResponse =
+        selfHostHandler?.let(action) ?: HttpResponse.refusal(
+            501,
+            "selfhost-not-wired",
+            "This engine build has no repository bound to self-build in.",
+            "Start the engine from a checkout; AtroposBridge.server() binds it."
+        )
 
     /** Queue routes exist in the table either way, so the surface a client
      *  discovers does not change with configuration; without a runner they
@@ -248,6 +287,21 @@ class BridgeRoutes(
                 },
                 HttpRoute("POST", "/v1/queue/cancel", "cancel a queue entry by ?id=") { request ->
                     withQueue { it.cancel(request) }
+                },
+                HttpRoute("POST", "/v1/command", "run one CLI command, shell families excluded") { request ->
+                    withCommands { it.execute(request) }
+                },
+                HttpRoute("GET", "/v1/command/allowed", "command families this surface accepts") {
+                    withCommands { it.allowed() }
+                },
+                HttpRoute("POST", "/v1/selfhost/start", "open a self-build goal from a prompt") { request ->
+                    withSelfHost { it.start(request) }
+                },
+                HttpRoute("POST", "/v1/selfhost/advance", "run one advance of a self-build goal") { request ->
+                    withSelfHost { it.advance(request) }
+                },
+                HttpRoute("GET", "/v1/selfhost/status", "the state of a self-build goal and its DAG") { request ->
+                    withSelfHost { it.status(request) }
                 },
                 HttpRoute("GET", "/v1/proposals", "self-improvement proposals and cooldowns") {
                     HttpResponse.json(

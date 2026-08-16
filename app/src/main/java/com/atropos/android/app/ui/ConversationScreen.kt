@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.atropos.android.app.bridge.MobileApproval
 import com.atropos.android.app.bridge.MobileCheckpoint
+import com.atropos.android.app.bridge.MobileSelfHostRun
 import com.atropos.android.app.bridge.MobileSixAnswers
 import com.atropos.android.app.bridge.MobileThinking
 
@@ -56,7 +57,22 @@ fun ConversationScreen(
     onApprovalDecided: (String, Boolean) -> Unit = { _, _ -> },
     activeProvider: String? = null,
     /** What is waiting to send, or null when nothing is. */
-    queuedNotice: String? = null
+    queuedNotice: String? = null,
+    selfHostRun: MobileSelfHostRun? = null,
+    selfHostBusy: Boolean = false,
+    onBuildRequested: ((String) -> Unit)? = null,
+    onAdvanceBuild: (String) -> Unit = {},
+    onDismissBuild: () -> Unit = {},
+    /**
+     * Runs input that begins with `/` as a CLI command.
+     *
+     * Routed on the leading slash rather than a mode toggle: that is already
+     * how the terminal distinguishes the two, so an operator moving between
+     * surfaces does not have to learn a second rule. Null when the engine has
+     * no command surface, in which case slash input falls through to
+     * conversation exactly as it did before.
+     */
+    onCommand: ((String) -> Unit)? = null
 ) {
     var input by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
@@ -72,6 +88,16 @@ fun ConversationScreen(
         ChatListScreen(sessions = sessions, onSelected = onSessionSelected)
         CheckpointChip(checkpoint = checkpoint, onAction = onCheckpointAction)
         ThinkingSheet(thinking = thinking, onDepthRequested = onThinkingDepthRequested)
+
+        // The build sits above the transcript with the approvals, for the same
+        // reason: it is the thing the operator is waiting on, and it must not
+        // scroll away while they read back through the conversation.
+        SelfHostPanel(
+            run = selfHostRun,
+            busy = selfHostBusy,
+            onAdvance = onAdvanceBuild,
+            onDismiss = onDismissBuild
+        )
 
         // Approvals sit above the transcript and outside the scrolling area.
         // An action the engine has stopped on is the one thing that must not
@@ -134,11 +160,21 @@ fun ConversationScreen(
             onSend = {
                 val text = input.trim()
                 if (text.isNotEmpty()) {
-                    onSendMessage(text)
+                    if (onCommand != null && text.startsWith("/")) onCommand(text)
+                    else onSendMessage(text)
                     input = ""
                 }
             },
-            isOnline = isOnline
+            isOnline = isOnline,
+            onBuild = onBuildRequested?.let { build ->
+                {
+                    val text = input.trim()
+                    if (text.isNotEmpty()) {
+                        build(text)
+                        input = ""
+                    }
+                }
+            }
         )
     }
 }

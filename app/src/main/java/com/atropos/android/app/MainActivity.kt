@@ -24,7 +24,10 @@ import com.atropos.android.app.ui.SessionTabModel
 import com.atropos.android.app.bridge.ApprovalOutcome
 import com.atropos.android.app.bridge.MobileApproval
 import com.atropos.android.app.bridge.MobileCheckpoint
+import com.atropos.android.app.bridge.MobileSelfHostRun
 import com.atropos.android.app.bridge.MobileSixAnswers
+import com.atropos.android.app.bridge.CommandOutcome
+import com.atropos.android.app.bridge.SelfHostOutcome
 import com.atropos.android.app.bridge.MobileThinking
 import com.atropos.android.app.ui.MobileMessage
 import kotlinx.coroutines.Dispatchers
@@ -65,6 +68,8 @@ private fun ComposeAppShell(repository: AndroidEngineBridge) {
     var approvals by remember { mutableStateOf<List<MobileApproval>>(emptyList()) }
     var activeProvider by remember { mutableStateOf<String?>(null) }
     var outbox by remember { mutableStateOf(ComposerOutbox()) }
+    var selfHostRun by remember { mutableStateOf<MobileSelfHostRun?>(null) }
+    var selfHostBusy by remember { mutableStateOf(false) }
     val oneHandDensity = remember { com.atropos.android.app.ui.OneHandDensity() }
     val scope = rememberCoroutineScope()
 
@@ -84,6 +89,16 @@ private fun ComposeAppShell(repository: AndroidEngineBridge) {
                 answers = withContext(Dispatchers.IO) { repository.sixAnswers() }
                 approvals = withContext(Dispatchers.IO) { repository.approvals() }
                 activeProvider = withContext(Dispatchers.IO) { repository.activeProvider() }
+                // Refreshed from the engine rather than only from the last
+                // advance's reply: the CLI may be driving the same goal, and
+                // two surfaces disagreeing about a build in progress is worse
+                // than a slightly stale one.
+                selfHostRun?.let { current ->
+                    if (!selfHostBusy) {
+                        withContext(Dispatchers.IO) { repository.selfHostStatus(current.goalId) }
+                            ?.let { selfHostRun = it }
+                    }
+                }
             } else {
                 // Cleared rather than kept. A stale answer panel beside an
                 // offline badge reads as current state, and the operator would
@@ -205,7 +220,90 @@ private fun ComposeAppShell(repository: AndroidEngineBridge) {
             }
         },
         activeProvider = activeProvider,
-        queuedNotice = outbox.describe()
+        queuedNotice = outbox.describe(),
+        selfHostRun = selfHostRun,
+        selfHostBusy = selfHostBusy,
+        onBuildRequested = { prompt ->
+            scope.launch {
+                selfHostBusy = true
+                val outcome = withContext(Dispatchers.IO) {
+                    repository.startSelfHost(prompt, DECIDED_BY)
+                }
+                selfHostBusy = false
+                when (outcome) {
+                    is SelfHostOutcome.Started -> {
+                        selfHostRun = outcome.run
+                        messages.add(
+                            localNotice(
+                                "Build opened: ${outcome.run.goalId}. " +
+                                    "Nothing is written until you take the next step."
+                            )
+                        )
+                    }
+                    is SelfHostOutcome.Advanced -> selfHostRun = outcome.run
+                    is SelfHostOutcome.Refused ->
+                        messages.add(localNotice("Build refused: ${outcome.detail}"))
+                    SelfHostOutcome.EngineUnreachable -> {
+                        isOnline = false
+                        messages.add(localNotice("Engine not reachable — no build was started."))
+                    }
+                }
+            }
+        },
+        onAdvanceBuild = { goalId ->
+            scope.launch {
+                selfHostBusy = true
+                val outcome = withContext(Dispatchers.IO) { repository.advanceSelfHost(goalId) }
+                selfHostBusy = false
+                when (outcome) {
+                    is SelfHostOutcome.Advanced -> selfHostRun = outcome.run
+                    is SelfHostOutcome.Started -> selfHostRun = outcome.run
+                    is SelfHostOutcome.Refused -> {
+                        // The refusal is shown and the run is re-read: the goal
+                        // may have completed or hit a gate, and the panel must
+                        // reflect which rather than freezing on the last step.
+                        messages.add(localNotice("Build step refused: ${outcome.detail}"))
+                        withContext(Dispatchers.IO) { repository.selfHostStatus(goalId) }
+                            ?.let { selfHostRun = it }
+                    }
+                    SelfHostOutcome.EngineUnreachable -> {
+                        isOnline = false
+                        messages.add(localNotice("Engine not reachable — the build did not advance."))
+                    }
+                }
+            }
+        },
+        onDismissBuild = { selfHostRun = null },
+        onCommand = { command ->
+            scope.launch {
+                // Echoed as the operator's own turn first, so the transcript
+                // reads the way the terminal does: what was typed, then what
+                // came back.
+                messages.add(
+                    MobileMessage(
+                        id = "cmd-${System.nanoTime()}",
+                        text = command,
+                        isUser = true,
+                        timestamp = System.currentTimeMillis()
+                    )
+                )
+                when (val outcome = withContext(Dispatchers.IO) { repository.runCommand(command, DECIDED_BY) }) {
+                    is CommandOutcome.Ran ->
+                        messages.add(
+                            localNotice(outcome.output.ifBlank { "(the command produced no output)" })
+                        )
+                    is CommandOutcome.Refused ->
+                        messages.add(localNotice("Refused: ${outcome.detail}"))
+                    CommandOutcome.EngineUnreachable -> {
+                        isOnline = false
+                        outbox = outbox.queue(command)
+                        messages.add(
+                            localNotice("Engine not reachable — command queued and will send on reconnect.")
+                        )
+                    }
+                }
+            }
+        }
     )
 }
 
