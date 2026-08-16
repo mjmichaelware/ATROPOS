@@ -347,4 +347,23 @@ class VerifiedCompletionGateTest {
         assertTrue(matrixResult.passed)
         assertTrue(matrixResult.detail.contains("matrix pinned and verified"))
     }
+
+    @Test
+    fun promotion_path_requires_independent_auditor() {
+        val root = repo()
+        Files.createDirectories(root.resolve("src"))
+        Files.writeString(root.resolve("src/A.kt"), "val a = 1\n", StandardCharsets.UTF_8)
+
+        val report = gate(root).evaluateNode(
+            node(
+                payload = "true",
+                territory = listOf("src"),
+                expectedOutputs = listOf("src/A.kt"),
+                claimOwner = "auditor"
+            )
+        )
+
+        assertFalse(report.canComplete)
+        assertFalse(report.gateResults.single { it.gateName == "Auditor Findings" }.passed)
+    }
 }

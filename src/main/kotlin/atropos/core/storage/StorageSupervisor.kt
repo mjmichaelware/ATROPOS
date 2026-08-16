@@ -2,7 +2,10 @@
 package atropos.core.storage
 
 import atropos.core.AtroposRepoRootLocator
+import atropos.core.phase20.GlobalByteCeiling
 import java.nio.file.Path
+import java.time.Duration
+import java.time.Instant
 
 /**
  * The one thing callers ask "may I write this?".
@@ -32,6 +35,104 @@ class StorageSupervisor(
     private val probe: FreeSpaceProbe = FreeSpaceProbe(stateRoot),
     private val accountant: StorageAccountant = StorageAccountant(stateRoot)
 ) {
+    private val accountingLedger = StorageAccountingLedger()
+    private val referenceGraph = ObjectReferenceGraph()
+    private val leaseStore = ObjectLeaseStore()
+    private val pinStore = ObjectPinStore()
+    private val legalHoldStore = LegalHoldStore()
+    private val tombstoneStore = TombstoneStore()
+    private val markSweepPlanner = MarkSweepPlanner(referenceGraph, leaseStore, pinStore, legalHoldStore)
+    private val garbageCollectionGate = GarbageCollectionGate()
+    private val compactionPlanner = CompactionPlanner()
+    private val tieringPolicy = TieringPolicy()
+    private val watermarkGuard = LocalWatermarkGuard()
+    private val remoteQuotaGuard = RemoteQuotaGuard(DEFAULT_CEILING_BYTES)
+    private val costLedger = StorageCostLedger()
+    private val deduplicationMetrics = DeduplicationMetricsCalculator()
+    private val compressionManifest = CompressionManifest()
+    private val orphanScanner = OrphanScanner(referenceGraph)
+    private val checksumScrubber = ChecksumScrubber()
+    private val deletionProofBuilder = DeletionProofBuilder()
+    private val archiveRestoreVerifier = ArchiveRestoreVerifier(checksumScrubber)
+    private val replicaHealthService = ReplicaHealthService()
+    private val reconciliationService = StorageReconciliationService()
+    private val projectBudgets = ProjectStorageBudgetStore()
+    private val growthForecaster = StorageGrowthForecaster()
+    private val inspector = StorageInspectorHOE()
+
+    /** Existing storage boundary for durable-object governance consumers. */
+    fun governanceStores(): StorageGovernanceStores = StorageGovernanceStores(
+        accountingLedger,
+        referenceGraph,
+        leaseStore,
+        pinStore,
+        legalHoldStore,
+        tombstoneStore
+    )
+
+    fun acquireLease(lease: ObjectLease, now: Instant): Boolean = leaseStore.acquire(lease, now)
+
+    fun pinObject(pin: ObjectPin) { pinStore.pin(pin) }
+
+    fun placeLegalHold(hold: LegalHold) { legalHoldStore.place(hold) }
+
+    fun recordTombstone(tombstone: Tombstone) { tombstoneStore.record(tombstone) }
+
+    fun planReclaim(objects: List<BlobObject>, now: Instant): List<MarkSweepCandidate> =
+        markSweepPlanner.plan(objects, now)
+
+    fun evaluateReclaim(bytes: Long): GarbageCollectionDecision =
+        garbageCollectionGate.evaluate(constitution(), bytes)
+
+    fun planCompaction(storageClass: String, objects: List<BlobObject>, maxBytes: Long): List<CompactionPlan> =
+        compactionPlanner.plan(storageClass, objects, maxBytes)
+
+    fun tierFor(age: java.time.Duration, pinned: Boolean, held: Boolean): RetentionTier =
+        tieringPolicy.tierFor(age, pinned, held)
+
+    /** Typed retention projection used by the operator surface. */
+    fun retentionClass(storageClass: StorageClass, age: Duration = Duration.ZERO, referenced: Boolean = false): RetentionClass =
+        RetentionClass(storageClass.id, tierFor(age, pinned = false, held = referenced), age)
+
+    fun evaluateWatermark(): WatermarkDecision {
+        val current = constitution()
+        return watermarkGuard.evaluate(current.usedBytes, current.ceilingBytes)
+    }
+
+    fun remoteQuota(): RemoteQuotaGuard = remoteQuotaGuard
+
+    fun recordStorageCost(entry: StorageCostEntry) { costLedger.record(entry) }
+
+    fun deduplicationMetrics(objects: Iterable<Pair<String, Long>>): DeduplicationMetrics =
+        deduplicationMetrics.calculate(objects)
+
+    fun recordCompression(record: CompressionRecord) { compressionManifest.record(record) }
+
+    fun orphanObjects(objectIds: Iterable<String>): List<String> = orphanScanner.scan(objectIds)
+
+    fun checksum(bytes: ByteArray): String = checksumScrubber.sha256(bytes)
+
+    fun deletionProof(objectId: String, bytes: Long, reason: String, references: Int, protected: Boolean): DeletionProof =
+        deletionProofBuilder.build(objectId, bytes, reason, references, protected)
+
+    fun verifyArchive(bytes: ByteArray, expectedSha256: String): Boolean =
+        archiveRestoreVerifier.verify(bytes, expectedSha256)
+
+    fun replicaHealth(replicaId: String, expected: Map<String, String>, actual: Map<String, String>): ReplicaHealth =
+        replicaHealthService.assess(replicaId, expected, actual)
+
+    fun reconcileStorage(ledgerIds: Set<String>, diskIds: Set<String>): StorageReconciliation =
+        reconciliationService.reconcile(ledgerIds, diskIds)
+
+    fun putProjectBudget(budget: ProjectStorageBudget) { projectBudgets.put(budget) }
+
+    fun projectBudget(projectId: String): ProjectStorageBudget? = projectBudgets.find(projectId)
+
+    fun forecastStorage(samples: List<Long>): StorageGrowthForecast =
+        growthForecaster.forecast(samples, ceilingBytes)
+
+    fun renderStorageStatus(): String = inspector.render(constitution(), evaluateWatermark())
+
     /** The current picture, for `/storage status` and for the gate. */
     fun constitution(): StorageConstitution = accountant.measure(ceilingBytes)
 
@@ -47,6 +148,14 @@ class StorageSupervisor(
      */
     fun admit(bytes: Long): FreeSpaceDecision {
         val constitution = constitution()
+
+        if (bytes > GlobalByteCeiling.MAX_WORKSPACE_CEILING) {
+            return FreeSpaceDecision.Refused(
+                reason = "requested write exceeds the global byte ceiling of " +
+                    "${GlobalByteCeiling.MAX_WORKSPACE_CEILING}B",
+                reclaimableBytes = constitution.reclaimableBytes()
+            )
+        }
 
         if (probe.wouldExhaustDevice(bytes)) {
             val usable = probe.usableBytes()

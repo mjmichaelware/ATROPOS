@@ -119,8 +119,12 @@ open class ExecutionPolicyEngine(
 ) {
     open fun evaluate(request: ExecutionPolicyRequest): ExecutionPolicyDecision {
         val decision = decide(request)
-        auditStore.append(ExecutionPolicyAuditRecord(Instant.now(), request, decision))
-        return decision
+        val enriched = decision.copy(
+            reason = decision.reason +
+                "; side_effect_inventory=${SideEffectInventory.getEnforcedCallers().size}"
+        )
+        auditStore.append(ExecutionPolicyAuditRecord(Instant.now(), request, enriched))
+        return enriched
     }
 
     private fun decide(request: ExecutionPolicyRequest): ExecutionPolicyDecision {

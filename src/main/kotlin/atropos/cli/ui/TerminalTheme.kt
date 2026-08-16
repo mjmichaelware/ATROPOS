@@ -8,6 +8,8 @@ import atropos.cli.ui.design.Surface
 import atropos.cli.ui.design.ThemeCatalog
 import atropos.cli.ui.design.ThemePalette
 import atropos.cli.ui.design.ThemePreference
+import atropos.core.phase20.AnsiScheme
+import atropos.core.observability.AccessibilitySettings
 
 /**
  * Resolves semantic [Role]s to SGR sequences for the active theme and terminal
@@ -28,6 +30,8 @@ class TerminalTheme(
     private val palette: ThemePalette = ThemeCatalog.byId(ThemePreference.resolve()),
     private val tierOverride: ColorTier? = null
 ) {
+    val accessibility: AccessibilitySettings = AccessibilitySettings.fromEnvironment()
+
     val colorEnabled: Boolean
         get() = capabilities.isColorEnabled
 
@@ -49,9 +53,20 @@ class TerminalTheme(
     /** Paints text with a semantic role. The single styling entry point. */
     fun paint(role: Role, text: String): String {
         if (text.isEmpty()) return text
-        val sgr = palette.style(role, tier)
+        AnsiScheme.assertNoRawEscapes(text)
+        val accessibleRole = if (accessibility.isHighContrast && role == Role.TEXT_MUTED) {
+            Role.TEXT_PRIMARY
+        } else {
+            role
+        }
+        val sgr = palette.style(accessibleRole, tier)
         return if (sgr.isEmpty()) text else "\u001B[${sgr}m$text\u001B[0m"
     }
+
+    fun accessibleLabel(key: String, fallback: String): String =
+        accessibility.label(key, fallback)
+
+    fun focus(text: String): String = accessibility.focus(text)
 
     // ---- established renderer API (aliases over roles) ----------------------
 

@@ -18,6 +18,7 @@ import atropos.core.security.RedactionFilter
 object ContextAttestationService {
 
     private val redactionFilter = RedactionFilter()
+    private val envelopeAttestor = ContextEnvelopeAttestor()
 
     /**
      * Result of a verified provider call.
@@ -50,6 +51,20 @@ object ContextAttestationService {
         envelope: ContextEnvelope,
         providerResponse: String
     ): VerifiedResult {
+        val envelopeVerdict = envelopeAttestor.verify(
+            envelope,
+            envelopeAttestor.seal(envelope)
+        )
+        if (!envelopeVerdict.trusted) {
+            return VerifiedResult.Rejected(
+                failure = TypedContextFailure.MalformedAttestation(
+                    providerId = envelope.providerId,
+                    reason = envelopeVerdict.reason()
+                ),
+                envelope = envelope,
+                providerResponse = redactionFilter.redact(providerResponse)
+            )
+        }
         // Parse the response
         val parsed = ProviderResponseContextParser.parse(providerResponse, envelope)
 

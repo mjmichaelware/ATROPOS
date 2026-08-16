@@ -38,6 +38,7 @@ class AnthropicProvider(private val apiKey: String?) : BaseHttpProvider() {
             append("{")
             append("\"model\":\"claude-3-5-sonnet-latest\",")
             append("\"max_tokens\":4096,")
+            append("\"temperature\":").append(currentGenerationParameters().temperature).append(",")
             if (redactedContext.isNotBlank()) {
                 append("\"system\":\"").append(jsonEscape(redactedContext.trim())).append("\",")
             }
@@ -150,8 +151,9 @@ class OllamaProvider : BaseHttpProvider() {
         val redactedContext = redactionFilter.redact(context)
         val content = jsonEscape(buildPrompt(redactedPrompt, redactedContext))
 
+        val generation = currentGenerationParameters()
         val payload =
-            """{"model":"$model","prompt":"$content","stream":false,"options":{"num_predict":$predict,"num_ctx":$ctx}}"""
+            """{"model":"$model","prompt":"$content","stream":false,"options":{"num_predict":$predict,"num_ctx":$ctx,"temperature":${generation.temperature},"top_p":${generation.topP}}}"""
 
         val raw = postJson("$host/api/generate", payload)
         return extractOllamaResponse(raw)

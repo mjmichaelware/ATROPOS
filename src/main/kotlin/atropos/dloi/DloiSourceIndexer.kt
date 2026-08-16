@@ -77,6 +77,13 @@ class DloiSourceIndexer(
             val bytes = Files.readAllBytes(file)
             val digest = sha256(bytes)
             liveDigests += digest
+            SourceDocumentRegistry.register(
+                id = digest.take(SOURCE_ID_LENGTH),
+                name = file.fileName.toString(),
+                version = digest.take(SOURCE_ID_LENGTH),
+                hash = digest,
+                size = bytes.size.toLong()
+            )
             val casResult = seedCas(bytes)
 
             val extracted = extractedPath(digest)
@@ -171,6 +178,7 @@ class DloiSourceIndexer(
             renderJson(
                 sourceId = sourceId,
                 originalFilename = "${sourceId}__${file.fileName}",
+                originalPath = TermuxPathResolver.resolve(file.toAbsolutePath().normalize().toString()),
                 normalizedPath = normalized,
                 casHash = casHash,
                 casStatus = casStatus,
@@ -211,6 +219,7 @@ class DloiSourceIndexer(
         val expected = renderJson(
             sourceId = digest.take(SOURCE_ID_LENGTH),
             originalFilename = "${digest.take(SOURCE_ID_LENGTH)}__${file.fileName}",
+            originalPath = TermuxPathResolver.resolve(file.toAbsolutePath().normalize().toString()),
             normalizedPath = normalized,
             casHash = casResult?.getOrNull(),
             casStatus = "IGNORED_FOR_CACHE_VALIDATION",
@@ -293,6 +302,7 @@ class DloiSourceIndexer(
     private fun renderJson(
         sourceId: String,
         originalFilename: String,
+        originalPath: String,
         normalizedPath: Path,
         casHash: String?,
         casStatus: String,
@@ -305,6 +315,7 @@ class DloiSourceIndexer(
         appendLine("{")
         appendLine("""  "source_id": "$sourceId",""")
         appendLine("""  "original_filename": "${escape(originalFilename)}",""")
+        appendLine("""  "original_path": "${escape(originalPath)}",""")
         appendLine("""  "kind": "text",""")
         appendLine("""  "normalized_path": "${escape(normalizedPath.toAbsolutePath().normalize().toString())}",""")
         appendLine("""  "cas_hash": $renderedCasHash,""")

@@ -83,7 +83,7 @@ class StatusCommandHandler(
                 )
                 uiEngine.renderNotice(statusRenderer.renderDefaultStatusSummary())
             }
-            else -> uiEngine.renderError("usage: /status [quota|route <task>|failures|adapters|assets|paid|factory|memory|ci|queue|security|tests|ops|endpoints]")
+            else -> uiEngine.renderError("usage: /status [quota|route <task>|failures|adapters|assets|paid|factory|memory|ci|queue|security|tests|ops|evaluation|endpoints]")
         }
     }
 

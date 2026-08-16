@@ -5,6 +5,7 @@ import atropos.bridge.http.HttpRequest
 import atropos.bridge.http.HttpResponse
 import atropos.bridge.http.JsonWriter
 import atropos.bridge.queue.ConversationWorkRunner
+import atropos.core.artifact.ArtifactHasher
 import atropos.core.security.RedactionFilter
 import java.nio.file.Files
 import java.nio.file.Path
@@ -96,13 +97,21 @@ internal class BridgeEvidenceHandler(
                 .replace(Regex("<redacted:[^>]+>"), "[REDACTED]")
         }
 
+        // A bridge client receives a stable evidence address and digest, not a
+        // terminal handle. This keeps terminals first-class and evidence-linkable
+        // while preserving the no-PTY-over-the-bridge boundary.
+        val contentHash = ArtifactHasher.sha256Bytes(redacted.toByteArray(Charsets.UTF_8))
+
         return HttpResponse.json(
             JsonWriter.obj(
                 "ok" to JsonWriter.bool(true),
                 "id" to JsonWriter.str(id),
                 "path" to JsonWriter.str(evidencePathStr),
                 "truncated" to JsonWriter.bool(isTruncated),
-                "content" to JsonWriter.str(redacted)
+                "content" to JsonWriter.str(redacted),
+                "evidenceHash" to JsonWriter.str(contentHash),
+                "evidenceLink" to JsonWriter.str("/v1/evidence?id=$id"),
+                "terminal" to JsonWriter.str("bridge-evidence")
             )
         )
     }

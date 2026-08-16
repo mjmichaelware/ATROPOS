@@ -2,6 +2,8 @@
 package atropos.core.auth
 
 import atropos.core.AtroposRepoRootLocator
+import atropos.core.intent.AdmissionRequest
+import atropos.core.intent.Sd5B0XValidator
 import java.nio.file.Path
 
 /**
@@ -35,6 +37,16 @@ class AuthBootstrap(
         if (swarmLoad is AuthorityLoad.Tampered) return AuthBootResult.Refused(swarmLoad)
 
         val spec = swarm.spec(swarmLoad)
+        val legacyTopologyValidation = validateLegacyTopology(swarmLoad)
+        if (legacyTopologyValidation != null) {
+            return AuthBootResult.Refused(
+                AuthorityLoad.Tampered(
+                    path = legacyTopologyValidation.path,
+                    reason = legacyTopologyValidation.reason,
+                    remedy = "Add a write-capable agent declaration, then re-attest the topology."
+                )
+            )
+        }
         // A declared-but-defective topology is a refusal, not a warning. The
         // alternative is booting with a topology nobody can describe, which is
         // precisely the emergent coordination this is meant to replace.
@@ -60,6 +72,32 @@ class AuthBootstrap(
             swarm = spec
         )
     }
+
+    /**
+     * Preserve the SD5 B01-B04 admission check for the older `agent:` topology
+     * syntax. The current pipe-delimited SwarmSpec grammar is validated by
+     * [SwarmMdLoader]; treating it as the legacy grammar would reject valid
+     * current documents and create a second topology parser.
+     */
+    private fun validateLegacyTopology(load: AuthorityLoad): LegacyTopologyFailure? {
+        if (load !is AuthorityLoad.Loaded) return null
+        val text = attestor.readText(load.layer.name) ?: return null
+        if (!text.lineSequence().any { it.trimStart().startsWith("agent:") }) return null
+        val accepted = Sd5B0XValidator.validateB01ThroughB04(
+            request = AdmissionRequest(
+                atomId = "authority:${load.layer.name}",
+                operatorOverride = false,
+                payloadSize = text.toByteArray(Charsets.UTF_8).size
+            ),
+            swarmConfig = text
+        )
+        return if (accepted) null else LegacyTopologyFailure(
+            path = load.layer.name,
+            reason = "legacy SD5 B01-B04 topology admission refused"
+        )
+    }
+
+    private data class LegacyTopologyFailure(val path: String, val reason: String)
 
     /** Accepts a document's current bytes. The `atropos auth accept` path. */
     fun accept(relativePath: String): Boolean = attestor.reattest(relativePath)

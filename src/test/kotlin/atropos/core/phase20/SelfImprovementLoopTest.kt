@@ -299,6 +299,7 @@ class SelfImprovementLoopTest {
 
         assertTrue(decision.promote)
         assertEquals(0.5, decision.improvement.distanceClosed, 0.01)
+        assertTrue(decision.reason.contains("learning="))
     }
 
     /**

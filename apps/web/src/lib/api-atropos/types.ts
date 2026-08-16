@@ -62,6 +62,8 @@ export interface WorkItem {
   progress?: number;
   six_answers?: SixAnswers;
   evidence?: Evidence[];
+  /** Subject-scoped pipeline, when matching engine activity exists. */
+  how?: string;
 }
 
 export interface Agent {

@@ -23,7 +23,7 @@ package atropos.cli.input
  * have already chosen, and re-opening the palette over it is noise.
  */
 class PromptSuggestionState(
-    private val matcher: (String) -> Boolean = { CommandRegistry.search(it).isNotEmpty() }
+    private val matcher: (String) -> Boolean = { TouchAutocomplete.getSuggestions(it).isNotEmpty() }
 ) {
     private var selection = 0
     private var dismissed = false

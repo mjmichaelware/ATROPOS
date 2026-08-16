@@ -44,6 +44,15 @@ class IntentLayerTest {
     }
 
     @Test
+    fun `canonical metadata remains the source for normalized commands`() {
+        val normalized = CommandConsolidator.consolidate(listOf("state"))
+        val verb = AliasResolver.resolve(normalized.first())
+        assertNotNull(verb)
+        assertEquals("/status", ActionRegistry.get(verb).usage)
+        assertEquals("/status", CommandMetadata(verb, ActionRegistry.get(verb).usage, 0, emptyList(), emptyList()).usage)
+    }
+
+    @Test
     fun `NlPhraseMapper maps phrases to canonical verbs`() {
         assertEquals(CanonicalVerb.GRILL_ME, NlPhraseMapper.mapPhrase("please interview me now"))
         assertEquals(CanonicalVerb.STORAGE, NlPhraseMapper.mapPhrase("disk garbage collect clean"))

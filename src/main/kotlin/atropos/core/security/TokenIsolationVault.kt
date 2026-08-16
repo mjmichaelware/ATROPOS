@@ -42,6 +42,19 @@ class TokenIsolationVault(
         return (readSecretResult(name) as? VaultReadResult.Available)?.value
     }
 
+    /**
+     * Sink-aware read boundary. Plaintext is never returned to a prohibited
+     * destination; callers must opt into a sink already admitted by the
+     * canonical [SecretSinkMatrix].
+     */
+    fun readSecretForSink(name: String, sink: SecretSinkKind): VaultReadResult {
+        val path = pathResolver.secretPath(name)
+        if (!SecretSinkMatrix.isEgressPermitted(sink)) {
+            return VaultReadResult.Refused(path, VaultReadRefusalReason.PROHIBITED_SINK)
+        }
+        return readSecretResult(name)
+    }
+
     fun readSecretResult(name: String): VaultReadResult {
         val path = pathResolver.secretPath(name)
         try {

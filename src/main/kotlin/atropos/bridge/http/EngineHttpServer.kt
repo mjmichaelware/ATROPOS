@@ -35,6 +35,7 @@ class EngineHttpServer(
     private val port: Int = DEFAULT_PORT,
     private val parser: HttpRequestParser = HttpRequestParser(),
     private val writer: HttpResponseWriter = HttpResponseWriter(),
+    private val authenticator: HttpRequestAuthenticator = HttpRequestAuthenticator(null),
     /**
      * Long-lived routes, matched before the request routes.
      *
@@ -114,6 +115,10 @@ class EngineHttpServer(
                             "Send a well-formed HTTP/1.1 request under the size limits."
                         )
                     )
+
+                authenticator.authorize(request)?.let { refusal ->
+                    return@use writer.write(socket.getOutputStream(), refusal)
+                }
 
                 val stream = streamRoutes.firstOrNull {
                     it.method.equals(request.method, ignoreCase = true) && it.path == request.path

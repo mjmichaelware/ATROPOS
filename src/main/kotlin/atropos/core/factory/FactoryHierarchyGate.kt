@@ -8,6 +8,7 @@ import atropos.core.hierarchy.HierarchyRole
 import atropos.core.hr.HrRouterAuditStore
 import atropos.core.hr.HrRouterService
 import atropos.core.hr.InformationKind
+import atropos.core.policy.ActionActor
 import atropos.core.verification.CompletionGateReport
 import java.time.Instant
 
@@ -17,7 +18,9 @@ import java.time.Instant
  */
 class FactoryHierarchyGate(
     private val registry: HierarchyRegistry = HierarchyRegistry(),
-    private val hrRouter: HrRouterService = HrRouterService()
+    private val hrRouter: HrRouterService = HrRouterService(),
+    /** Optional sub-agent birth channel; absent topology remains a refusal. */
+    private val subagentSpawner: SubagentSpawnService? = null
 ) {
     fun dispatch(
         projectId: String,
@@ -25,6 +28,13 @@ class FactoryHierarchyGate(
         sourceCoordinate: String,
         capabilities: List<String>
     ): FactoryHierarchyLease {
+        check(atropos.core.verification.AdmissionController.validateConfigUpdate(
+            mapOf(
+                "sourceAuthorityIsImmutable" to true,
+                "executionGraphMustBeAcyclic" to true,
+                "implementationRequiresVerification" to true
+            )
+        )) { "factory hierarchy admission refused immutable control-plane invariants" }
         val normalizedTerritory = territory.replace('\\', '/').trim().trimEnd('/')
         require(normalizedTerritory.startsWith(".atropos/generated-projects/")) {
             "factory hierarchy territory must remain under .atropos/generated-projects"
@@ -158,6 +168,13 @@ class FactoryHierarchyGate(
             acceptanceCriteria = listOf("generated source passes independent verification"),
             rollbackPlan = "remove only the generated project target",
             timeoutAt = timeoutAt
+        )
+        subagentSpawner?.spawn(
+            parent = ActionActor.HumanOwner,
+            childName = workerId,
+            childRole = "factory worker",
+            requestedPrefixes = listOf(normalizedTerritory),
+            depth = 1
         )
         dispatchOrRefuse(workerContract, dispatchedTaskIds)
         if (!registry.startTask(taskId)) {

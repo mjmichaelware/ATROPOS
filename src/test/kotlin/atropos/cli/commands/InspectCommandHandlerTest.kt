@@ -60,4 +60,24 @@ class InspectCommandHandlerTest {
         val result = handler.handle(listOf("preview", "src/main/kotlin/atropos/core/preview/LivePreviewService.kt"))
         assertTrue(result.contains("UI components impacted: 0 component(s)"))
     }
+
+    @Test
+    fun `routes preview patch through live preview hot reload`() {
+        val tempDir = Files.createTempDirectory("inspect-command-test-")
+        val handler = InspectCommandHandler(
+            inspectionService = InspectionService(repoRoot = tempDir),
+            repoRoot = tempDir
+        )
+        val result = handler.handle(
+            listOf(
+                "preview-patch",
+                """--- a/src/main.kt
+++ b/src/main.kt
+@@ -1 +1 @@
+-old
++new"""
+            )
+        )
+        assertTrue(result.contains("Preview patch: PASS"))
+    }
 }

@@ -6,18 +6,24 @@ import kotlin.test.*
 class Phase20LoopTest {
 
     @Test
-    fun `test complete phase 20 loop`() {
+    fun `legacy facade never fabricates evidence or verified mutations`() {
         val proposal = Phase20Loop.formulateProposal("MemoryStore", "Optimize retrieval")
-        assertEquals(1, proposal.evidence.size)
+        assertTrue(proposal.evidence.isEmpty())
 
         val decision = Phase20Loop.auditProposal(proposal)
-        assertEquals(AuditDecision.Approved, decision)
+        assertTrue(decision is AuditDecision.Rejected)
 
         val amendment = Phase20Loop.createAmendment(proposal, "+ optimizedLine()", 1)
         assertFalse(amendment.verified)
 
         val executed = Phase20Loop.executeAmendment(amendment)
-        assertTrue(executed.verified)
+        assertFalse(executed.verified)
+    }
+
+    @Test
+    fun `canonical factory returns the existing self improvement owner`() {
+        val loop = Phase20Loop.canonical(GovernanceLedger())
+        assertTrue(loop is SelfImprovementLoop)
     }
 
     @Test

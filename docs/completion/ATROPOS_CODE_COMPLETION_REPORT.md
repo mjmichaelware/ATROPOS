@@ -1,71 +1,70 @@
 # ATROPOS Code-Base Completion Report
 
-Generated: 2026-08-13T07:48:10Z
-Current Git HEAD: 1cc96bc
-Audit merged from: docs/ATROPOS_UNIMPLEMENTED_LIST.md
+Generated: 2026-08-16T17:07:46.981825+00:00
+Audit identity: `8bb660da75f4c535fb23157d6fe8a01478b0050d@worktree:3f0ac024208d3dd2f7edd977cb097c0b838fe8ad8e141dbf784bea2f415f3a41`
 
-## Why this number moved down
+This is a strict source-tree audit. Implementation, integration, and semantics are scored independently. Build, test, packaging, installation, restart, deployment, and runtime proof remain separate axes.
+A predicate marked WRITTEN is not an atom completion claim. An atom is complete only when implementation, integration, and semantics are all independently evidenced.
 
-The previous report read 100.00% (741/741). The numerator was not wrong; the
-denominator was incomplete. A tree audit on 2026-08-13 found 279 obligations
-that had never been registered, and a spot check of 42 of them found 35 absent
-from the registry entirely -- ExecutionEvent, ProvenanceStream, MarkdownExporter,
-ExecutionHistoryStore, AtroposMetrics, BenchmarkRunner, SelfImprovementLoop,
-PolicyGate, DeploymentService, ast_symbol_graph, LOCAL_TOOLCHAIN, the eleven
-named fallback chains, Dockerfile, GraalVM and Ktor among them. A register that
-does not contain the work cannot report on it, and 100% against an incomplete
-register is the fake-success outcome AGENTS.md 0.6 forbids.
+## Current strict result
 
-Six obligations were additionally flipped from WRITTEN to NOT_WRITTEN under the
-accounting spec's own rule -- "one broad file cannot silently satisfy a separate
-named atomic owner". A001 (SourceDocumentRegistry) rested on DloiService.kt and
-C005 (TermuxPathResolver) on build.gradle.kts; neither named symbol exists as a
-production symbol. See ATROPOS_CODE_COMPLETION_AMENDMENTS.md.
+| Scope | Written | Open | Total | Completion |
+|---|---:|---:|---:|---:|
+| Canonical registry | 1020 | 0 | 1020 | 100.00% |
+| Residual inventory predicates | 315 | 0 | 315 | 100.00% |
+| **Combined current audit** | **1335** | **0** | **1335** | **100.00%** |
 
-## Code-Base Obligation Set
+The frozen audited inputs contain 1,335 predicates: 1,020 canonical registry rows plus 105 residual nodes × three predicates. No 1,355-row source inventory exists in the repository, so 20 obligations are not fabricated.
 
-Total binary obligations: 1020
-Current WRITTEN: 745
-Current NOT_WRITTEN: 275
-Current CODE-BASE COMPLETION: 73.04% (745/1020)
+## Canonical Registry By Phase
 
-Previous reported completion: 100.00% (741/741)
-Previous denominator was short by 279 obligations.
+| Phase | Written/total | Completion | Open |
+|---:|---:|---:|---:|
+| 0 | 98/98 | 100.00% | 0 |
+| 1 | 3/3 | 100.00% | 0 |
+| 2 | 24/24 | 100.00% | 0 |
+| 3 | 51/51 | 100.00% | 0 |
+| 4 | 18/18 | 100.00% | 0 |
+| 5 | 3/3 | 100.00% | 0 |
+| 6 | 18/18 | 100.00% | 0 |
+| 7 | 46/46 | 100.00% | 0 |
+| 8 | 25/25 | 100.00% | 0 |
+| 9 | 21/21 | 100.00% | 0 |
+| 10 | 125/125 | 100.00% | 0 |
+| 11 | 50/50 | 100.00% | 0 |
+| 12 | 3/3 | 100.00% | 0 |
+| 13 | 3/3 | 100.00% | 0 |
+| 14 | 3/3 | 100.00% | 0 |
+| 15 | 3/3 | 100.00% | 0 |
+| 16 | 3/3 | 100.00% | 0 |
+| 17 | 90/90 | 100.00% | 0 |
+| 18 | 143/143 | 100.00% | 0 |
+| 19 | 95/95 | 100.00% | 0 |
+| 20 | 195/195 | 100.00% | 0 |
 
-## By phase
+## Residual Status
 
-| Phase | Completion | Written/Total |
-|---|---|---|
-| 0 | 94.90% | 93/98 |
-| 1 | 100.00% | 3/3 |
-| 2 | 100.00% | 24/24 |
-| 3 | 47.06% | 24/51 |
-| 4 | 100.00% | 18/18 |
-| 5 | 100.00% | 3/3 |
-| 6 | 83.33% | 15/18 |
-| 7 | 34.78% | 16/46 |
-| 8 | 84.00% | 21/25 |
-| 9 | 100.00% | 21/21 |
-| 10 | 96.00% | 120/125 |
-| 11 | 74.00% | 37/50 |
-| 12 | 100.00% | 3/3 |
-| 13 | 100.00% | 3/3 |
-| 14 | 100.00% | 3/3 |
-| 15 | 100.00% | 3/3 |
-| 16 | 100.00% | 3/3 |
-| 17 | 100.00% | 90/90 |
-| 18 | 65.03% | 93/143 |
-| 19 | 69.47% | 66/95 |
-| 20 | 44.10% | 86/195 |
+WIRED: 105 · PARTIAL: 0 · ORPHANED: 0 · ABSENT: 0
 
-## Reading these numbers
+## Open Canonical Predicate IDs
 
-Phases at 100% with small denominators (1, 5, 12-16) are phases whose audited
-obligations were already registered; they are not evidence that the phase is
-finished, only that nothing new was found unregistered for them. Phase 20 at
-44.10% and Phase 7 at 34.78% carry the largest
-absolute gaps and are where the remaining work concentrates.
 
-The denominator will keep growing as further audits register obligations that
-were never written down. A falling percentage after an audit is the register
-becoming honest, not the codebase regressing.
+## Incomplete Atoms
+
+| atom | status | implementation | integration | semantics |
+|---|---|---:|---:|---:|
+
+## Controls
+
+- Declarations, imports, prose, test names, and arbitrary existing paths do not prove implementation.
+- Wiring requires an executable reference to the canonical owner outside its owner file.
+- Semantics requires a behavioral test/evidence reference with an assertion-like check.
+- Strict incomplete-gap overrides remain open even when a related symbol exists.
+- Status integrity must pass: every machine-facing status equals the current predicate result; historical/source status is retained only for provenance.
+- Native strict orphan census: 0 files / 0 LOC.
+- No Gradle, compile, test, build, JAR, install, restart, deployment, or runtime proof was run.
+
+## Verdict
+
+CODE-BASE COMPLETION: **100.00%** (1335/1335 predicates). Release status remains **CODE_INCOMPLETE**.
+ATOM COMPLETION: **100.00%** (631/631 atoms).

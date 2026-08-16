@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.territory
 
+import atropos.core.verification.TerritoryGrant
 import atropos.core.director.DirectorService
 import atropos.core.policy.ActionActor
 
@@ -103,6 +104,10 @@ class TerritoryGrantService(
                 boundActorIdentity = node.identity
             )
         }
+        // Compatibility projection for the legacy verification contract. The
+        // durable grant remains owned by TerritoryService; this does not create
+        // a second decision path.
+        TerritoryGrant.recordGrant(node.identity, issued.map { it.allowedPrefix }, issued.any { it.readOnly })
         return GrantResult.Granted(issued)
     }
 

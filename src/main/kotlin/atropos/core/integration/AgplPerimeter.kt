@@ -2,6 +2,7 @@
 package atropos.core.integration
 
 import java.io.File
+import atropos.cli.shell.ShellCommandRunner
 
 object DependencyDeduplicator {
     fun deduplicate(dependencies: List<String>): List<String> {
@@ -32,10 +33,28 @@ object ShellCommandIntercept {
     }
 }
 
-class PipedStreamRouter {
+class PipedStreamRouter(
+    private val shell: ShellCommandRunner = ShellCommandRunner()
+) {
+    /**
+     * Executes two bounded argv stages. The legacy string API remains for the
+     * CLI contract, but command strings are tokenized without a shell and the
+     * returned text is actual stage output, never a fabricated success.
+     */
     fun routePipedCommand(input: String, commandA: String, commandB: String): String {
-        // Router supporting piped execution: A | B
-        val outA = "ResultOf($commandA) on ($input)"
-        return "ResultOf($commandB) on ($outA)"
+        val results = routePipedCommands(input, listOf(commandA, commandB))
+        return results.joinToString("\n") { result ->
+            "stage=${result.command.firstOrNull().orEmpty()} exit=${result.exitCode} output=${result.output}"
+        }
+    }
+
+    fun routePipedCommands(input: String, commands: List<String>): List<atropos.cli.shell.ShellCommandResult> {
+        require(commands.size >= 2) { "pipeline requires at least two stages" }
+        return shell.runPiped(input, commands.map(::tokenize))
+    }
+
+    private fun tokenize(command: String): List<String> {
+        require(command.none { it in ";|&<>" }) { "pipeline command contains shell syntax" }
+        return command.trim().split(Regex("\\s+")).filter { it.isNotBlank() }
     }
 }

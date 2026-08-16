@@ -41,6 +41,7 @@ import atropos.core.phase20.ObservationPeriod
 import atropos.core.storage.StorageConstitution
 import atropos.core.thinking.ThinkingRecord
 import atropos.core.welcome.WelcomeArtifact
+import atropos.core.parity.SurfaceParityProbe
 import java.time.Instant
 
 /**
@@ -148,6 +149,7 @@ class BridgeRoutes(
      */
     private val conversation: BridgeConversationStore = BridgeConversationStore(),
     private val responder: BridgeConversationResponder = UnwiredConversationResponder(),
+    private val parityProbe: SurfaceParityProbe = SurfaceParityProbe(),
     /**
      * Work a client can watch and advance. Null when this build was not given
      * a queue, in which case the queue routes answer 501 rather than pretending
@@ -173,6 +175,7 @@ class BridgeRoutes(
     private val eventsHandler = BridgeEventsHandler(work, approvals, sessions, conversation)
     private val filesHandler = BridgeFilesHandler()
     private val mcpHandler = BridgeMcpHandler(mcpBridge)
+    private val computerUseHandler = BridgeComputerUseHandler()
 
     /** Queue routes exist in the table either way, so the surface a client
      *  discovers does not change with configuration; without a runner they
@@ -194,7 +197,9 @@ class BridgeRoutes(
                         JsonWriter.obj(
                             "ok" to JsonWriter.bool(true),
                             "engine" to JsonWriter.str("atropos"),
-                            "surface" to JsonWriter.str("bridge")
+                            "surface" to JsonWriter.str("bridge"),
+                            "parityDanglingActions" to JsonWriter.num(parityProbe.danglingActions().size),
+                            "parityForbiddenPortEntries" to JsonWriter.num(parityProbe.forbiddenOnPort().size)
                         )
                     )
                 },
@@ -314,6 +319,9 @@ class BridgeRoutes(
                 },
                 HttpRoute("POST", "/v1/mcp/judge", "evaluate MCP action proposal") { request ->
                     mcpHandler.judge(request)
+                },
+                HttpRoute("POST", "/v1/computer-use/judge", "evaluate computer-use action proposal") { request ->
+                    computerUseHandler.judge(request)
                 },
                 HttpRoute("GET", "/v1/answers/stream", "six continuous answers, pushed") {
                     // Advertised in /v1/routes and reachable as a stream; this

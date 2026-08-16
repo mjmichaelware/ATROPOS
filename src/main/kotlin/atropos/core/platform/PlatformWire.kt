@@ -6,7 +6,8 @@ package atropos.core.platform
  */
 class PlatformWire(
     private val abstraction: PlatformAbstraction = Platform.current
-) : SharedPlatformContract {
+) : SharedPlatformContract, atropos.core.shared.PortableSurfaceContract {
+    private val hardwareProfile = atropos.core.adapter.HardwareProfileAdapter()
 
     override fun spawnProcess(command: List<String>, workingDir: String?): Result<ProcessOutput> {
         return abstraction.spawnProcess(command, workingDir)
@@ -23,4 +24,18 @@ class PlatformWire(
     override fun environment(): PlatformEnvironment {
         return abstraction.environment
     }
+
+    fun architecture(): String = hardwareProfile.getArch()
+
+    fun descriptor(): PlatformDescriptor = abstraction.descriptor
+
+    fun moduleTopology(root: java.nio.file.Path = atropos.core.AtroposRepoRootLocator.resolve()): PlatformModuleTopologyReport =
+        PlatformModuleTopology.inspect(root)
+
+    override fun surfaces(): List<atropos.core.shared.PortableSurface> = listOf(
+        atropos.core.shared.PortableSurface(
+            id = abstraction.descriptor.name.lowercase(),
+            capabilities = abstraction.descriptor.capabilities.map { it.name.lowercase() }.toSet()
+        )
+    )
 }

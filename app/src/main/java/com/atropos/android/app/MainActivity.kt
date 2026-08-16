@@ -8,19 +8,19 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshots.SnapshotStateList
-import androidx.compose.runtime.toMutableStateList
 import com.atropos.android.app.bridge.AndroidEngineBridge
 import com.atropos.android.app.bridge.SendOutcome
 import com.atropos.android.app.ui.ConversationScreen
 import com.atropos.android.app.ui.ChatListEntry
 import com.atropos.android.app.ui.ComposerOutbox
-import com.atropos.android.app.ui.SessionTabModel
+import com.atropos.android.app.ui.MobileAppIntent
+import com.atropos.android.app.ui.MobileAppMviStore
 import com.atropos.android.app.bridge.ApprovalOutcome
 import com.atropos.android.app.bridge.MobileApproval
 import com.atropos.android.app.bridge.MobileCheckpoint
@@ -55,16 +55,8 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun ComposeAppShell(repository: AndroidEngineBridge) {
-    val messages: SnapshotStateList<MobileMessage> = remember { mutableListOf<MobileMessage>().toMutableStateList() }
-    var isOnline by remember { mutableStateOf(false) }
-    var sessions by remember { mutableStateOf<List<ChatListEntry>>(emptyList()) }
-    var sessionTabs by remember { mutableStateOf(SessionTabModel()) }
-    var checkpoint by remember { mutableStateOf<MobileCheckpoint?>(null) }
-    var thinking by remember { mutableStateOf<MobileThinking?>(null) }
-    var answers by remember { mutableStateOf<MobileSixAnswers?>(null) }
-    var approvals by remember { mutableStateOf<List<MobileApproval>>(emptyList()) }
-    var activeProvider by remember { mutableStateOf<String?>(null) }
-    var outbox by remember { mutableStateOf(ComposerOutbox()) }
+    val mvi = remember { MobileAppMviStore() }
+    val state by mvi.state.collectAsState()
     val oneHandDensity = remember { com.atropos.android.app.ui.OneHandDensity() }
     val scope = rememberCoroutineScope()
 
@@ -74,39 +66,40 @@ private fun ComposeAppShell(repository: AndroidEngineBridge) {
     LaunchedEffect(Unit) {
         while (true) {
             val online = withContext(Dispatchers.IO) { repository.isOnline() }
+            val wasOnline = mvi.state.value.isOnline
 
             // Answers and approvals are refreshed on every tick, not only on
             // the reachability edge. They are the two things that change while
             // the engine stays up -- a run advances, an action stops for a
             // decision -- so binding them to the transition would leave the
             // screen frozen for exactly as long as the engine kept working.
+            mvi.dispatch(MobileAppIntent.ReachabilityChanged(online))
             if (online) {
-                answers = withContext(Dispatchers.IO) { repository.sixAnswers() }
-                approvals = withContext(Dispatchers.IO) { repository.approvals() }
-                activeProvider = withContext(Dispatchers.IO) { repository.activeProvider() }
+                mvi.dispatch(MobileAppIntent.AnswersLoaded(withContext(Dispatchers.IO) { repository.sixAnswers() }))
+                mvi.dispatch(MobileAppIntent.ApprovalsLoaded(withContext(Dispatchers.IO) { repository.approvals() }))
+                mvi.dispatch(MobileAppIntent.ProviderLoaded(withContext(Dispatchers.IO) { repository.activeProvider() }))
             } else {
                 // Cleared rather than kept. A stale answer panel beside an
                 // offline badge reads as current state, and the operator would
                 // act on a progress figure the engine stopped confirming.
-                answers = null
-                approvals = emptyList()
-                activeProvider = null
+                mvi.dispatch(MobileAppIntent.AnswersLoaded(null))
+                mvi.dispatch(MobileAppIntent.ApprovalsLoaded(emptyList()))
+                mvi.dispatch(MobileAppIntent.ProviderLoaded(null))
             }
 
-            if (online != isOnline) {
-                isOnline = online
+            if (online != wasOnline) {
                 // On reconnect the engine's transcript is authoritative; adopt
                 // it rather than keeping a local view that may have diverged.
                 if (online) {
                     val transcript = withContext(Dispatchers.IO) { repository.transcript() }
-                    messages.clear()
-                    messages.addAll(transcript)
-                    sessions = withContext(Dispatchers.IO) { repository.sessions() }
-                    sessionTabs = sessionTabs.replace(sessions)
-                    checkpoint = withContext(Dispatchers.IO) { repository.checkpoint() }
-                    thinking = checkpoint?.nodeId?.let { nodeId ->
+                    mvi.dispatch(MobileAppIntent.TranscriptLoaded(transcript))
+                    mvi.dispatch(MobileAppIntent.SessionsLoaded(withContext(Dispatchers.IO) { repository.sessions() }))
+                    val nextCheckpoint = withContext(Dispatchers.IO) { repository.checkpoint() }
+                    mvi.dispatch(MobileAppIntent.CheckpointLoaded(nextCheckpoint))
+                    val nextThinking = nextCheckpoint?.nodeId?.let { nodeId ->
                         withContext(Dispatchers.IO) { repository.thinking(nodeId) }
                     }
+                    mvi.dispatch(MobileAppIntent.ThinkingLoaded(nextThinking))
 
                     // The queue drains in order, one confirmed delivery at a
                     // time. The head is dropped only after the engine accepted
@@ -114,67 +107,65 @@ private fun ComposeAppShell(repository: AndroidEngineBridge) {
                     // messages queued rather than silently discarded — which
                     // is the failure the queue exists to survive.
                     while (true) {
-                        val next = outbox.head() ?: break
+                        val next = mvi.state.value.outbox.head() ?: break
                         val outcome = withContext(Dispatchers.IO) { repository.send(next) }
                         if (outcome is SendOutcome.Delivered) {
-                            messages.addAll(outcome.turns)
-                            outbox = outbox.dropHead()
+                            mvi.dispatch(MobileAppIntent.TranscriptLoaded(mvi.state.value.messages + outcome.turns))
+                            mvi.dispatch(MobileAppIntent.QueueHeadDelivered)
                         } else {
                             if (outcome is SendOutcome.Refused) {
                                 // A refusal is final for that message: the
                                 // engine read it and said no, so replaying it
                                 // forever would block every message behind it.
-                                messages.add(localNotice("Queued message refused: ${outcome.detail}"))
-                                outbox = outbox.dropHead()
+                                mvi.dispatch(MobileAppIntent.Notice(localNotice("Queued message refused: ${outcome.detail}")))
+                                mvi.dispatch(MobileAppIntent.QueueHeadDelivered)
                                 continue
                             }
-                            isOnline = false
+                            mvi.dispatch(MobileAppIntent.ReachabilityChanged(false))
                             break
                         }
                     }
                 }
             }
-            oneHandDensity.offlineResume("default", sessions.firstOrNull()?.id, online)
+            oneHandDensity.offlineResume("default", mvi.state.value.sessions.firstOrNull()?.id, online)
             delay(POLL_INTERVAL_MS)
         }
     }
 
     ConversationScreen(
-        messages = messages,
-        isOnline = isOnline,
+        messages = state.messages,
+        isOnline = state.isOnline,
         onSendMessage = { text ->
             scope.launch {
                 when (val outcome = withContext(Dispatchers.IO) { repository.send(text) }) {
                     is SendOutcome.Delivered -> {
-                        messages.addAll(outcome.turns)
-                        isOnline = true
+                        mvi.dispatch(MobileAppIntent.TranscriptLoaded(mvi.state.value.messages + outcome.turns))
+                        mvi.dispatch(MobileAppIntent.ReachabilityChanged(true))
                     }
-                    is SendOutcome.Refused -> messages.add(localNotice("Refused: ${outcome.detail}"))
+                    is SendOutcome.Refused -> mvi.dispatch(MobileAppIntent.Notice(localNotice("Refused: ${outcome.detail}")))
                     SendOutcome.EngineUnreachable -> {
                         // Queued, not lost. The composer has always said a
                         // message would queue while the engine was down; this
                         // is the code that makes that true.
-                        isOnline = false
-                        outbox = outbox.queue(text)
-                        messages.add(
-                            localNotice("Engine not reachable — message queued and will send on reconnect.")
-                        )
+                        mvi.dispatch(MobileAppIntent.ReachabilityChanged(false))
+                        mvi.dispatch(MobileAppIntent.MessageQueued(text))
+                        mvi.dispatch(MobileAppIntent.Notice(localNotice("Engine not reachable — message queued and will send on reconnect.")))
                     }
                 }
             }
         },
-        sessions = sessionTabs.tabs,
-        onSessionSelected = { id -> sessionTabs = sessionTabs.select(id) },
-        checkpoint = checkpoint,
-        thinking = thinking,
+        sessions = state.sessionTabs.tabs,
+        onSessionSelected = { id -> mvi.dispatch(MobileAppIntent.SessionSelected(id)) },
+        checkpoint = state.checkpoint,
+        thinking = state.thinking,
         onThinkingDepthRequested = { depth ->
             scope.launch {
-                val nodeId = checkpoint?.nodeId.orEmpty()
-                thinking = withContext(Dispatchers.IO) { repository.thinking(nodeId, depth) }
+                val nodeId = mvi.state.value.checkpoint?.nodeId.orEmpty()
+                mvi.dispatch(MobileAppIntent.ThinkingLoaded(withContext(Dispatchers.IO) { repository.thinking(nodeId, depth) }))
             }
         },
-        answers = answers,
-        approvals = approvals,
+        answers = state.answers,
+        approvals = state.approvals,
         onApprovalDecided = { id, approved ->
             scope.launch {
                 val outcome = withContext(Dispatchers.IO) {
@@ -185,27 +176,25 @@ private fun ComposeAppShell(repository: AndroidEngineBridge) {
                         // Removed locally so the card cannot be pressed twice
                         // while the next poll is in flight; the poll is still
                         // what re-establishes the truth.
-                        approvals = approvals.filterNot { it.id == outcome.id }
-                        messages.add(
+                        mvi.dispatch(MobileAppIntent.ApprovalRemoved(
+                            outcome.id,
                             localNotice(
                                 "Approval ${outcome.id}: " +
                                     if (outcome.approved) "approved." else "rejected."
                             )
-                        )
+                        ))
                     }
                     is ApprovalOutcome.Refused ->
-                        messages.add(localNotice("Approval not recorded: ${outcome.detail}"))
+                        mvi.dispatch(MobileAppIntent.Notice(localNotice("Approval not recorded: ${outcome.detail}")))
                     ApprovalOutcome.EngineUnreachable -> {
-                        isOnline = false
-                        messages.add(
-                            localNotice("Engine not reachable — the approval decision was not recorded.")
-                        )
+                        mvi.dispatch(MobileAppIntent.ReachabilityChanged(false))
+                        mvi.dispatch(MobileAppIntent.Notice(localNotice("Engine not reachable — the approval decision was not recorded.")))
                     }
                 }
             }
         },
-        activeProvider = activeProvider,
-        queuedNotice = outbox.describe()
+        activeProvider = state.activeProvider,
+        queuedNotice = state.outbox.describe()
     )
 }
 
@@ -234,4 +223,3 @@ private const val POLL_INTERVAL_MS = 3_000L
  * client is used by more than one person.
  */
 private const val DECIDED_BY = "android-client"
-

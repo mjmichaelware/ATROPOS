@@ -3,6 +3,7 @@ package atropos.cli.commands
 import atropos.core.agent.AgentService
 import atropos.core.agent.GoalContinuationService
 import atropos.core.agent.GoalRunRecord
+import atropos.core.verification.GoalRun
 import atropos.core.agent.SupervisedSessionState
 import atropos.core.agent.SupervisedSessionStore
 import java.nio.file.Path
@@ -54,7 +55,11 @@ class AgentIdentityResponder(
             appendLine("Last patch: ${snapshot.lastPatchId ?: "none"}")
             appendLine("Owns repo read/write: ${if (snapshot.ownsRepoReadWrite) "yes" else "no"}")
             appendLine("Self-host goals: ${selfHostGoals.size}")
-            selfHostGoals.firstOrNull()?.let { appendLine(it.renderSelfHostSummary()) }
+            selfHostGoals.firstOrNull()?.let {
+                appendLine(it.renderSelfHostSummary())
+                val legacy = GoalRun.from(it)
+                appendLine("  compatibility run: ${legacy.runId} status=${legacy.status}")
+            }
             appendLine()
             if (goals.isNotEmpty()) {
                 appendLine("Recent goal runs: ${goals.size}")

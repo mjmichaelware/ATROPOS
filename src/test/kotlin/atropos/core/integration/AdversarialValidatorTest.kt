@@ -71,6 +71,16 @@ class AdversarialValidatorTest {
     }
 
     @Test
+    fun `validation records separated contexts bounded fan out and ordered manifest`() {
+        val result = OnDeviceAdversarialValidator.validate("fun okay() = 1")
+        assertEquals(2, result.attentionContexts.size)
+        assertTrue(result.attentionContexts.first().startsWith("View-Only:"))
+        assertTrue(result.attentionContexts[1].startsWith("Edit-Mutation:"))
+        assertTrue(result.executionManifest.contains("syntax"))
+        assertEquals(listOf("fun okay() = 1".length, "fun okay() = 1".length), result.fanOutSizes)
+    }
+
+    @Test
     fun `AsyncFanOutController maps elements concurrently`() {
         val controller = AsyncFanOutController()
         val out = controller.fanOutAndCombine(listOf(1, 2, 3)) { it * 2 }

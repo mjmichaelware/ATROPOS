@@ -32,6 +32,73 @@ DECL = re.compile(
 )
 
 
+def code_only(text):
+    """Remove comments and literal bodies without breaking Kotlin syntax.
+
+    Regex-based string stripping is unsafe for Kotlin because escaped quotes
+    can make the expression consume declarations that follow the string. The
+    small scanner below preserves interpolation expressions, which are real
+    production references (for example `${FactoryRequirementStatements...}`).
+    """
+    out = []
+    i = 0
+    n = len(text)
+    while i < n:
+        if text.startswith("//", i):
+            end = text.find("\n", i)
+            i = n if end < 0 else end
+            out.append(" ")
+            continue
+        if text.startswith("/*", i):
+            end = text.find("*/", i + 2)
+            i = n if end < 0 else end + 2
+            out.append(" ")
+            continue
+        if text.startswith('"""', i):
+            end = text.find('"""', i + 3)
+            body = text[i + 3:] if end < 0 else text[i + 3:end]
+            out.append(" ")
+            out.extend(re.findall(r"\$\{([^{}]+)\}|\$([A-Za-z_][A-Za-z0-9_]*)", body))
+            i = n if end < 0 else end + 3
+            continue
+        if text[i] == '"':
+            j = i + 1
+            body = []
+            while j < n:
+                if text[j] == "\\":
+                    j += 2
+                    continue
+                if text[j] == '"':
+                    break
+                body.append(text[j])
+                j += 1
+            out.append(" ")
+            out.extend(re.findall(r"\$\{([^{}]+)\}|\$([A-Za-z_][A-Za-z0-9_]*)", "".join(body)))
+            i = min(j + 1, n)
+            continue
+        if text[i] == "'":
+            j = i + 1
+            while j < n:
+                if text[j] == "\\":
+                    j += 2
+                    continue
+                if text[j] == "'":
+                    j += 1
+                    break
+                j += 1
+            out.append(" ")
+            i = j
+            continue
+        out.append(text[i])
+        i += 1
+    # Interpolation extraction above returns tuples; flatten them so normal
+    # tokenization sees each referenced identifier.
+    return "".join(
+        " ".join(part for part in item if part) if isinstance(item, tuple) else item
+        for item in out
+    )
+
+
 def main() -> int:
     if not os.path.isdir(ROOT):
         print(f"{ROOT} not found -- run from the repository root", file=sys.stderr)
@@ -44,10 +111,15 @@ def main() -> int:
         if f.endswith(".kt")
     ]
     source = {p: open(p, encoding="utf-8", errors="replace").read() for p in files}
+    code = {p: code_only(t) for p, t in source.items()}
 
     declared = {}
     for path, text in source.items():
         names = set()
+        # Declaration discovery is line-oriented and must use the source line,
+        # not the string-stripped stream. A Kotlin interpolation may contain
+        # nested quoted expressions; that is irrelevant to a top-level
+        # `object`/`class` declaration later in the file.
         for line in text.splitlines():
             if line.startswith((" ", "\t")):
                 continue
@@ -60,7 +132,7 @@ def main() -> int:
     # reference to `GcSweeper`, and a comment mentioning a name is a reference
     # for this purpose only if it is spelled exactly.
     tokens = {
-        p: set(re.findall(r"\b[A-Za-z_][A-Za-z0-9_]*\b", t)) for p, t in source.items()
+        p: set(re.findall(r"\b[A-Za-z_][A-Za-z0-9_]*\b", t)) for p, t in code.items()
     }
 
     orphans = []

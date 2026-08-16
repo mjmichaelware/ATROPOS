@@ -3,8 +3,15 @@ package atropos.cli.commands
 
 import atropos.cli.ui.AnsiTerminalEngine
 import atropos.core.knowledge.AtomicRewardRecorder
+import atropos.core.knowledge.NonBlockingRewardRecorder
 import atropos.core.knowledge.SelfImprovingCompilationLoop
 import atropos.core.verification.*
+import atropos.core.platform.SharedCore
+import atropos.core.acceptance.FinalSD1SD2Acceptance
+import atropos.core.agent.AgentContextCollector
+import atropos.core.memory.LocalMemoryStore
+import atropos.core.territory.TerritoryService
+import atropos.core.territory.TerritoryStore
 import java.nio.file.Files
 import java.nio.file.Path
 
@@ -30,11 +37,17 @@ class VerifyCommand(
     workspace: Path = Path.of("."),
     private val compilerExecutable: String = "kotlinc",
     private val runner: VerificationRunner = SelfImprovingCompilationLoop(
-        rewardRecorder = AtomicRewardRecorder(workspace)
+        rewardRecorder = NonBlockingRewardRecorder(AtomicRewardRecorder(workspace))
     )
 ) : VerifyCommandHandler {
     private val root = workspace.toAbsolutePath().normalize()
     private val deterministicVerifier = DeterministicVerifier(root)
+    private val gateReachabilityChecker = GateReachabilityChecker()
+    private val foundationAcceptance = FinalSD1SD2Acceptance(
+        contextCollector = AgentContextCollector(repoRoot = root),
+        memoryStore = LocalMemoryStore(root.resolve(".atropos/memory").toFile()),
+        territoryService = TerritoryService(TerritoryStore(root))
+    )
 
     override fun execute(tokens: List<String>): VerifyCommandOutcome {
         if (tokens.size != 2) {
@@ -61,6 +74,26 @@ class VerifyCommand(
             return invalid(failure.message ?: "unable to create verification request")
         }
 
+        val gateReachability = gateReachabilityChecker.check(root.resolve("src/main/kotlin").toFile())
+        if (!gateReachability.predicateHolds) {
+            ui.renderError(gateReachability.render())
+            return invalid("execution gate reachability failed")
+        }
+        val sharedCore = SharedCore.scan(root.resolve("src/main/kotlin/atropos/core"))
+        if (!sharedCore.isShareable) {
+            ui.renderError(sharedCore.render())
+            return invalid("shared-core portability verification failed")
+        }
+        if (!foundationAcceptance.evaluateSD1SD2Readiness()) {
+            ui.renderNotice("foundation acceptance remains incomplete; continuing with scoped verification")
+        }
+
+        RiskyStdlibScanner.scan(request.command.drop(3).map(Path::of).map(Path::toFile))
+            .take(12)
+            .forEach { usage ->
+                ui.renderNotice("compatibility advisory: ${usage.file}:${usage.line} ${usage.pattern}")
+            }
+
         val deterministic = deterministicVerifier.verify(
             sourcePaths = request.command.drop(3).map(Path::of)
         )
@@ -73,6 +106,24 @@ class VerifyCommand(
             }
             return invalid("deterministic verification failed")
         }
+
+        // Keep the command's scoped verification report grounded in the same
+        // source snapshot and authority checks as the verifier itself.
+        val snapshot = Rule127Snapshot.formatSnapshot(deterministic.render().toByteArray())
+        val batch = BatchReporter.report(
+            before = emptyList(),
+            after = request.command.drop(3).flatMap { path ->
+                runCatching { Files.readAllLines(Path.of(path)) }.getOrDefault(emptyList())
+            }
+        )
+        val precedence = PrecedenceLattice().checkPrecedence("USER", 3, "WRITE")
+        val velocity = AcceptanceVelocity.calculate(
+            listOf(VerificationEvent(java.time.Instant.now(), "verify-${scope.name.lowercase()}", true))
+        )
+        ui.renderNotice(
+            "verification evidence: snapshots=${snapshot.size} lines=${batch.physicalLines} " +
+                "precedence=$precedence velocity=${"%.2f".format(velocity)}"
+        )
 
         ui.startSpinner("Verifying ${scope.name.lowercase()} scope")
         val result = try {

@@ -1,0 +1,23 @@
+name: Reproducible JAR
+
+on:
+  workflow_dispatch:
+  pull_request:
+
+jobs:
+  clean-builds-match:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: First clean JAR
+        run: ./gradlew --no-daemon clean jar --max-workers=1
+      - name: Preserve first JAR
+        run: cp build/libs/ATROPOS.jar "$RUNNER_TEMP/atropos-first.jar"
+      - name: Second clean JAR
+        run: ./gradlew --no-daemon clean jar --max-workers=1
+      - name: Compare JAR hashes
+        run: bash scripts/reproducible-jar-hash.sh "$RUNNER_TEMP/atropos-first.jar" build/libs/ATROPOS.jar

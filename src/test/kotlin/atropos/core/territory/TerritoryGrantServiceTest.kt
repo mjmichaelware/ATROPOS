@@ -13,6 +13,7 @@ import atropos.core.policy.PolicyActionClass
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.test.Test
+import kotlin.test.AfterTest
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -26,6 +27,11 @@ import kotlin.test.assertTrue
  * engine did not already forbid.
  */
 class TerritoryGrantServiceTest {
+
+    @AfterTest
+    fun clearLegacyProjection() {
+        atropos.core.verification.TerritoryGrant.clearGrants()
+    }
 
     private fun fixture(rootPrefix: String = "", director: DirectorService? = null): Pair<TerritoryGrantService, TerritoryService> {
         val root: Path = Files.createTempDirectory("atropos-territory-")
@@ -65,6 +71,7 @@ class TerritoryGrantServiceTest {
         assertNotNull(child.parentTerritoryId)
         assertEquals(grants.rootGrant().id, child.parentTerritoryId)
         assertTrue(service.getAll().any { it.id == child.id }, "the grant must be durable")
+        assertEquals(listOf("src/main/kotlin"), atropos.core.verification.TerritoryGrant.getGrant("dag-executor:node-1")?.allowedPaths)
     }
 
     @Test

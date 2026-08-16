@@ -20,7 +20,8 @@ data class KotlinParseTree(
     val packageName: String,
     val imports: List<String>,
     val declarations: List<KotlinDeclaration>,
-    val fullAstDepthLimitReached: Boolean = false
+    val fullAstDepthLimitReached: Boolean = false,
+    val parseErrors: List<String> = emptyList()
 )
 
 class TreeSitterGrammarBridge {
@@ -76,8 +77,28 @@ class TreeSitterGrammarBridge {
             packageName = packageName,
             imports = imports,
             declarations = declarations,
-            fullAstDepthLimitReached = false
+            fullAstDepthLimitReached = false,
+            parseErrors = structuralErrors(masked)
         )
+    }
+
+    private fun structuralErrors(masked: String): List<String> {
+        if (masked.isBlank()) return listOf("empty_source")
+        val stack = ArrayDeque<Pair<Char, Int>>()
+        masked.forEachIndexed { index, character ->
+            when (character) {
+                '(', '[', '{' -> stack.addLast(character to index)
+                ')' -> if (!popExpected(stack, '(')) return listOf("mismatched_delimiter@${index}")
+                ']' -> if (!popExpected(stack, '[')) return listOf("mismatched_delimiter@${index}")
+                '}' -> if (!popExpected(stack, '{')) return listOf("mismatched_delimiter@${index}")
+            }
+        }
+        return stack.map { (opening, index) -> "unclosed_${opening}@${index}" }
+    }
+
+    private fun popExpected(stack: ArrayDeque<Pair<Char, Int>>, expected: Char): Boolean {
+        val actual = stack.removeLastOrNull()?.first
+        return actual == expected
     }
 
     private fun matchingBrace(source: String, openBrace: Int): Int? {

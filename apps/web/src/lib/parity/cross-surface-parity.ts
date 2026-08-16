@@ -10,7 +10,7 @@ export enum StatusVocabulary {
   PLANNING = 'planning',
   WAITING = 'waiting',
   WORKING = 'working',
-  REVIEW_REQUIRED = 'review_required',
+  REVIEW_REQUIRED = 'review-required',
   BLOCKED = 'blocked',
   COMPLETED = 'completed',
   FAILED = 'failed',

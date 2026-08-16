@@ -92,7 +92,13 @@ class CommandPaletteRenderer(
 
     private fun renderGroup(category: String, count: Int, width: Int, selected: Boolean): String {
         val text = "${category.padEnd(14)} $count commands"
-        return if (selected) theme.paint(Role.ACCENT_SELECTION, TerminalText.padEnd("  $text", width))
+        return if (selected) theme.paint(
+            Role.ACCENT_SELECTION,
+            TerminalText.padEnd(
+                TerminalText.ellipsize("  ${theme.focus(text)}", width.coerceAtLeast(1)),
+                width.coerceAtLeast(1)
+            )
+        )
         else TerminalText.padEnd("  " + theme.strong(text), width)
     }
 

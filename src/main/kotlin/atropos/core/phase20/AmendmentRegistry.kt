@@ -16,10 +16,11 @@ class AmendmentRegistry(private val store: EvidenceStore = EvidenceStore()) {
         "sourceDoc2PlaceholderHash", 
         "sourceDoc3PlaceholderHash"
     )
+    private val amendmentGate = AmendmentGate(protectedSourceDocHashes)
 
     fun registerAmendment(amendmentContent: String, manifest: StructuralManifest, supersedesHash: String?): Pair<String, String> {
-        if (supersedesHash != null && protectedSourceDocHashes.contains(supersedesHash)) {
-            throw IllegalArgumentException("Hard rule violation: Cannot supersede or overwrite an original Source Doc hash")
+        require(amendmentGate.authorize(amendmentContent, supersedesHash, manifest)) {
+            "amendment rejected: content, superseded authority, or manifest is invalid"
         }
         
         val contentHash = store.put(amendmentContent, EvidenceKind.RAW)

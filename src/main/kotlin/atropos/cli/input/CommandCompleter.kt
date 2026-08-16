@@ -14,6 +14,9 @@ data class Completion(
 class CommandCompleter(
     workspace: Path = Path.of(".")
 ) {
+    var lastResolutionWasFuzzy: Boolean = false
+        private set
+
     private val root =
         workspace.toAbsolutePath().normalize()
 
@@ -85,6 +88,7 @@ class CommandCompleter(
         cursor: Int,
         selectedIndex: Int = 0
     ): String? {
+        lastResolutionWasFuzzy = false
         val position = cursor.coerceIn(0, buffer.length)
         val prefix = buffer.substring(0, position)
         val suffix = buffer.substring(position)
@@ -105,6 +109,7 @@ class CommandCompleter(
         val tail = parts.getOrNull(1).orEmpty()
         val command = resolveCommand(head, selectedIndex) ?: return null
         val resolved = if (tail.isBlank()) command else "$command $tail"
+        lastResolutionWasFuzzy = !trimmed.equals(resolved, ignoreCase = true)
         return if (suffix.isBlank()) resolved else resolved + suffix
     }
 

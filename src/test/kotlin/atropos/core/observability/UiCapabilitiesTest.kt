@@ -22,6 +22,37 @@ class UiCapabilitiesTest {
     }
 
     @Test
+    fun `AccessibilitySettings preserves reduced motion and contrast decisions`() {
+        val settings = AccessibilitySettings(
+            isReducedMotionEnabled = true,
+            isHighContrastEnabled = true,
+            hasFocusVisibility = true
+        )
+        assertTrue(settings.isReducedMotionEnabled)
+        assertTrue(settings.isHighContrastEnabled)
+        assertTrue(settings.hasFocusVisibility)
+        assertEquals("Calculator", settings.label("title", "Calculator"))
+        assertEquals("[focus] Calculator", settings.focus("Calculator"))
+    }
+
+    @Test
+    fun `AccessibilitySettings reads deterministic environment flags`() {
+        val settings = AccessibilitySettings.fromEnvironment { key ->
+            mapOf(
+                "ATROPOS_REDUCED_MOTION" to "1",
+                "ATROPOS_HIGH_CONTRAST" to "1",
+                "ATROPOS_FOCUS_VISIBILITY" to "0"
+            )[key]
+        }
+
+        assertTrue(settings.isReducedMotionEnabled)
+        assertTrue(settings.isHighContrastEnabled)
+        assertFalse(settings.hasFocusVisibility)
+        assertEquals("value", settings.label("missing", "value"))
+        assertEquals("value", settings.focus("value"))
+    }
+
+    @Test
     fun `TouchAutocomplete returns matching suggestion prefixes`() {
         val suggestions = TouchAutocomplete.getSuggestions("/st")
         assertEquals(listOf("/status"), suggestions)
@@ -32,6 +63,7 @@ class UiCapabilitiesTest {
         val gate = FuzzyExecutionGate()
         assertTrue(gate.requestConfirmation("verify", "verify"))
         assertFalse(gate.requestConfirmation("verify", "validate"))
+        assertTrue(gate.requestConfirmation(" /GIT PUSH ", "/git push"))
     }
 
     @Test

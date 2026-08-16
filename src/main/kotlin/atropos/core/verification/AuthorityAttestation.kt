@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.verification
 
-import java.security.MessageDigest
+import atropos.core.artifact.ArtifactHasher
 
 data class AttestationVerdict(
     val filename: String,
@@ -12,9 +12,7 @@ data class AttestationVerdict(
 
 object AuthorityAttestation {
     fun sha256(text: String): String {
-        val digest = MessageDigest.getInstance("SHA-256")
-        val hashBytes = digest.digest(text.toByteArray(Charsets.UTF_8))
-        return hashBytes.joinToString("") { "%02x".format(it) }
+        return ArtifactHasher.sha256Bytes(text.toByteArray(Charsets.UTF_8))
     }
 
     fun verify(filename: String, content: String, expectedHash: String): AttestationVerdict {

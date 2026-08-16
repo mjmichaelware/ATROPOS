@@ -5,6 +5,13 @@ import atropos.cli.config.ConfigurationManager
 import atropos.cli.session.QuotaSessionTracker
 import atropos.core.AtroposConfig
 import atropos.core.verification.VerificationResult
+import atropos.core.output.OutputMode
+import atropos.core.output.OutputModeDetector
+import atropos.cli.ui.chrome.CheckpointAge
+import atropos.cli.ui.design.HoeStatusVocabulary
+import atropos.cli.ui.design.AgentInspector
+import atropos.core.observability.BackgroundProcessPanel
+import atropos.core.observability.BoundedRenderingController
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
@@ -27,6 +34,13 @@ class AnsiTerminalEngine(
     private val help = CommandHelpRenderer(theme)
     private val errors = ErrorRenderer(theme)
     private val toasts = ToastRenderer(theme)
+    private val errorRenderer = ErrorRenderer(theme)
+    private val toastRenderer = ToastRenderer(theme)
+    private val dialogRenderer = DialogRenderer(theme)
+    private val dagReactorRenderer = DagReactorRenderer(theme)
+    private val backgroundProcesses = BackgroundProcessPanel()
+    private val boundedRendering = BoundedRenderingController
+    private val quotaFuelCellRenderer = QuotaFuelCellRenderer(theme)
     private val rendering = TerminalRenderingFacade(
         plainOutput, canvas, theme, transcript, markdown, welcome, statusBar, verification, help, transcriptBuffer
     )
@@ -43,7 +57,8 @@ class AnsiTerminalEngine(
 
     @Synchronized
     fun initializeReactive(useAlternateScreen: Boolean = true) {
-        state.reactive = capabilities.isInteractiveTerminal
+        state.reactive = capabilities.isInteractiveTerminal &&
+            OutputModeDetector.detect() != OutputMode.HEADLESS
         if (!state.reactive) return
         canvas.initialize(useAlternateScreen = useAlternateScreen)
         resizePoller.scheduleAtFixedRate({
@@ -122,6 +137,7 @@ class AnsiTerminalEngine(
         state.activeTab = activeTab
         state.activeScreen = activeScreen
         state.openTabCount = openTabCount
+        transcriptBuffer.append(transcript.notice(AgentInspector.inspectAgent(activeTab, activeScreen)))
         if (state.reactive) {
             val presentationState = SessionPresentationState(
                 provider = state.provider, mode = state.mode, workspace = state.workspace,
@@ -157,6 +173,7 @@ class AnsiTerminalEngine(
         state.provider = activeProvider
         tracker?.let { state.tracker = it }
         transcriptBuffer.append(statusBar.footer(state.provider, state.mode, state.workspace, state.tracker, state.verificationState, canvas.width))
+        transcriptBuffer.append(theme.subdued("checkpoint ${CheckpointAge.Unknown.label()} · ${quotaFuelCellRenderer.render(QuotaFuelCellRenderer.QuotaState(0.0, 0.0), canvas.width.coerceAtMost(24))}"))
         requestFrameLocked()
     }
 
@@ -210,12 +227,20 @@ class AnsiTerminalEngine(
 
     @Synchronized
     fun renderExecutionEvent(stage: String, detail: String? = null) {
+        backgroundProcesses.registerProcess(stage)
         val summary = "execution: $stage"
         if (state.verboseExecution && !detail.isNullOrBlank()) {
             renderNotice("$summary\n  ${detail.trim()}")
         } else {
             renderNotice(summary)
         }
+        val status = when {
+            stage.contains("fail", ignoreCase = true) -> HoeStatusVocabulary.FAILED
+            stage.contains("complete", ignoreCase = true) -> HoeStatusVocabulary.COMPLETED
+            else -> HoeStatusVocabulary.WORKING
+        }
+        renderBlock(dagReactorRenderer.render(listOf(DagReactorRenderer.ReactorNode(stage, status, detail)), canvas.width))
+        renderBlock(toastRenderer.render(Toast(null, summary), canvas.width))
     }
 
     @Synchronized
@@ -272,11 +297,28 @@ class AnsiTerminalEngine(
     @Synchronized
     fun renderError(message: String) {
         stopSpinner()
+        if (message.contains("approval", ignoreCase = true) || message.contains("confirm", ignoreCase = true)) {
+            val dialog = dialogRenderer.renderConfirm(
+                title = "Operator confirmation required",
+                body = message,
+                confirmLabel = "approve",
+                cancelLabel = "cancel",
+                confirmSelected = false,
+                terminalWidth = canvas.width
+            )
+            if (state.reactive) rendering.renderBlockReactive(dialog) else rendering.renderBlockPlain(dialog)
+            if (state.reactive) requestFrameLocked()
+            return
+        }
+        val lines = errorRenderer.render(
+            ErrorRenderer.ErrorInfo(title = "Command failed", message = message),
+            canvas.width
+        )
         if (state.reactive) {
-            rendering.renderErrorReactive(message)
+            rendering.renderBlockReactive(lines)
             requestFrameLocked()
         } else {
-            rendering.renderErrorPlain(message)
+            rendering.renderBlockPlain(lines)
         }
     }
 
@@ -307,6 +349,8 @@ class AnsiTerminalEngine(
             verificationState = state.verificationState, activeScreen = state.activeScreen, activeTab = state.activeTab,
             openTabCount = state.openTabCount, activePatchId = state.activePatchId
         )
-        canvas.render(frame)
+        boundedRendering.controlBackgroundUpdate(state.reactive) {
+            canvas.render(frame)
+        }
     }
 }

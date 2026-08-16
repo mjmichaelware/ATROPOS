@@ -2,6 +2,7 @@
 package atropos.bridge.projection
 
 import atropos.bridge.http.JsonWriter
+import atropos.core.integration.PipelineField
 import atropos.core.monitor.ActivityStage
 import atropos.core.monitor.ActivityStream
 
@@ -24,6 +25,13 @@ class ActivityProjection {
         return JsonWriter.obj(
             "ok" to JsonWriter.bool(true),
             "stages" to JsonWriter.strArr(ActivityStage.entries.map { it.canonical }),
+            "pipeline" to JsonWriter.arr(pipelineFields().map { field ->
+                JsonWriter.obj(
+                    "stage" to JsonWriter.str(field.stage),
+                    "description" to JsonWriter.str(field.description),
+                    "how" to JsonWriter.str(field.howDescription)
+                )
+            }),
             "missingStages" to JsonWriter.strArr(stream.missingStages().map { it.canonical }),
             // Coverage, not health. Named so the surface cannot mistake it.
             "everyStageReported" to JsonWriter.bool(stream.isComplete()),
@@ -39,6 +47,14 @@ class ActivityProjection {
                     )
                 }
             )
+        )
+    }
+
+    private fun pipelineFields(): List<PipelineField> = ActivityStage.entries.map { stage ->
+        PipelineField(
+            stage = stage.canonical,
+            description = "${stage.canonical} state from the canonical activity stream",
+            howDescription = "Read the ${stage.canonical} events already present in ActivityStream"
         )
     }
 }

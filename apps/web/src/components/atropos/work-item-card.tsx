@@ -6,6 +6,8 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { WhyHowEvidence } from '@/components/ui/why-how-evidence';
 import { ProgressiveDisclosure } from '@/components/ui/progressive-disclosure';
 import { useOptionalSessionState } from '@/lib/contexts/session-state-context';
+import { activity as activityClient, pipelineForSubject } from '@/lib/activity/client';
+import { useEffect, useState } from 'react';
 
 /**
  * One work item, with its explainability controls attached.
@@ -22,6 +24,19 @@ import { useOptionalSessionState } from '@/lib/contexts/session-state-context';
  */
 export function WorkItemCard({ item }: { item: WorkItem }) {
   const level = useOptionalSessionState()?.session.informationLevel ?? 2;
+  const [pipeline, setPipeline] = useState<string | undefined>(item.how);
+
+  useEffect(() => {
+    if (item.how?.trim()) return;
+    let cancelled = false;
+    void activityClient.read().then((result) => {
+      if (cancelled || !result.ok) return;
+      setPipeline(pipelineForSubject(result.data, item.id) ?? pipelineForSubject(result.data, item.title));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [item.how, item.id, item.title]);
 
   const isComplete = item.status === 'completed';
   const hasEvidence = Boolean(item.evidence && item.evidence.length > 0);
@@ -88,6 +103,7 @@ export function WorkItemCard({ item }: { item: WorkItem }) {
       <WhyHowEvidence
         answers={item.six_answers}
         evidence={item.evidence}
+        how={pipeline}
         subject={`"${item.title}"`}
       />
 

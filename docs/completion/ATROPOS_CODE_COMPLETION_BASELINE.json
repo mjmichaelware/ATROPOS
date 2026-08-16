@@ -2,7 +2,7 @@
   "schemaVersion": "atropos-codebase-accounting-v2",
   "baselineHead": "7e612fcdba571b276a4ae65704835eb762030682",
   "baselineWarning": "nearest recoverable commit, not exact locked export",
-  "currentHead": "9449c55377855ad56481f48cc4b69827f482fe49",
+  "currentHead": "8bb660da75f4c535fb23157d6fe8a01478b0050d",
   "sourceInventory": [
     {
       "path": "docs/source/ATROPOS_Source_Doc_1.txt",
@@ -107,119 +107,189 @@
       "bytes": 2415
     }
   ],
-  "registrySha256": "71e77554a2749fc8318218cfcf7cf69e2e1aa71bb814bd0efa576add6bf8be10",
-  "totalObligations": 741,
-  "currentWritten": 741,
+  "registrySha256": "3ac460d2503984abda0059a99cc9c7894cc57ea3ddf9aa6c25422a897c021ead",
+  "totalObligations": 1335,
+  "currentWritten": 1335,
   "currentCodeCompletion": 100.0,
   "historicalWritten": 517,
   "historicalCodeCompletion": 69.7706,
   "deltaPercentagePoints": 30.2294,
-  "generatedAt": "2026-08-12T12:18:41Z",
+  "generatedAt": "2026-08-16T17:07:46.981825+00:00",
   "perPhase": {
-    "0": {
-      "total": 96,
-      "currentWritten": 96,
-      "historicalWritten": 87
-    },
-    "1": {
-      "total": 3,
-      "currentWritten": 3,
-      "historicalWritten": 3
-    },
-    "2": {
-      "total": 24,
-      "currentWritten": 24,
-      "historicalWritten": 24
-    },
-    "3": {
-      "total": 24,
-      "currentWritten": 24,
-      "historicalWritten": 24
-    },
-    "4": {
-      "total": 18,
-      "currentWritten": 18,
-      "historicalWritten": 18
-    },
-    "5": {
-      "total": 3,
-      "currentWritten": 3,
-      "historicalWritten": 3
-    },
     "6": {
       "total": 18,
       "currentWritten": 18,
-      "historicalWritten": 15
+      "currentOpen": 0,
+      "currentCodeCompletion": 100.0,
+      "missingByPredicate": {}
     },
     "7": {
-      "total": 15,
-      "currentWritten": 15,
-      "historicalWritten": 15
+      "total": 46,
+      "currentWritten": 46,
+      "currentOpen": 0,
+      "currentCodeCompletion": 100.0,
+      "missingByPredicate": {}
+    },
+    "0": {
+      "total": 98,
+      "currentWritten": 98,
+      "currentOpen": 0,
+      "currentCodeCompletion": 100.0,
+      "missingByPredicate": {}
     },
     "8": {
-      "total": 21,
-      "currentWritten": 21,
-      "historicalWritten": 18
+      "total": 25,
+      "currentWritten": 25,
+      "currentOpen": 0,
+      "currentCodeCompletion": 100.0,
+      "missingByPredicate": {}
+    },
+    "20": {
+      "total": 195,
+      "currentWritten": 195,
+      "currentOpen": 0,
+      "currentCodeCompletion": 100.0,
+      "missingByPredicate": {}
     },
     "9": {
       "total": 21,
       "currentWritten": 21,
-      "historicalWritten": 16
+      "currentOpen": 0,
+      "currentCodeCompletion": 100.0,
+      "missingByPredicate": {}
     },
-    "10": {
-      "total": 120,
-      "currentWritten": 120,
-      "historicalWritten": 114
+    "2": {
+      "total": 24,
+      "currentWritten": 24,
+      "currentOpen": 0,
+      "currentCodeCompletion": 100.0,
+      "missingByPredicate": {}
+    },
+    "3": {
+      "total": 51,
+      "currentWritten": 51,
+      "currentOpen": 0,
+      "currentCodeCompletion": 100.0,
+      "missingByPredicate": {}
     },
     "11": {
-      "total": 36,
-      "currentWritten": 36,
-      "historicalWritten": 31
+      "total": 50,
+      "currentWritten": 50,
+      "currentOpen": 0,
+      "currentCodeCompletion": 100.0,
+      "missingByPredicate": {}
     },
-    "12": {
-      "total": 3,
-      "currentWritten": 3,
-      "historicalWritten": 3
+    "10": {
+      "total": 125,
+      "currentWritten": 125,
+      "currentOpen": 0,
+      "currentCodeCompletion": 100.0,
+      "missingByPredicate": {}
     },
-    "13": {
-      "total": 3,
-      "currentWritten": 3,
-      "historicalWritten": 0
-    },
-    "14": {
-      "total": 3,
-      "currentWritten": 3,
-      "historicalWritten": 3
-    },
-    "15": {
-      "total": 3,
-      "currentWritten": 3,
-      "historicalWritten": 3
-    },
-    "16": {
-      "total": 3,
-      "currentWritten": 3,
-      "historicalWritten": 0
+    "4": {
+      "total": 18,
+      "currentWritten": 18,
+      "currentOpen": 0,
+      "currentCodeCompletion": 100.0,
+      "missingByPredicate": {}
     },
     "17": {
       "total": 90,
       "currentWritten": 90,
-      "historicalWritten": 29
+      "currentOpen": 0,
+      "currentCodeCompletion": 100.0,
+      "missingByPredicate": {}
     },
     "18": {
-      "total": 93,
-      "currentWritten": 93,
-      "historicalWritten": 39
+      "total": 143,
+      "currentWritten": 143,
+      "currentOpen": 0,
+      "currentCodeCompletion": 100.0,
+      "missingByPredicate": {}
+    },
+    "1": {
+      "total": 3,
+      "currentWritten": 3,
+      "currentOpen": 0,
+      "currentCodeCompletion": 100.0,
+      "missingByPredicate": {}
+    },
+    "5": {
+      "total": 3,
+      "currentWritten": 3,
+      "currentOpen": 0,
+      "currentCodeCompletion": 100.0,
+      "missingByPredicate": {}
+    },
+    "12": {
+      "total": 3,
+      "currentWritten": 3,
+      "currentOpen": 0,
+      "currentCodeCompletion": 100.0,
+      "missingByPredicate": {}
+    },
+    "13": {
+      "total": 3,
+      "currentWritten": 3,
+      "currentOpen": 0,
+      "currentCodeCompletion": 100.0,
+      "missingByPredicate": {}
+    },
+    "14": {
+      "total": 3,
+      "currentWritten": 3,
+      "currentOpen": 0,
+      "currentCodeCompletion": 100.0,
+      "missingByPredicate": {}
+    },
+    "15": {
+      "total": 3,
+      "currentWritten": 3,
+      "currentOpen": 0,
+      "currentCodeCompletion": 100.0,
+      "missingByPredicate": {}
+    },
+    "16": {
+      "total": 3,
+      "currentWritten": 3,
+      "currentOpen": 0,
+      "currentCodeCompletion": 100.0,
+      "missingByPredicate": {}
     },
     "19": {
-      "total": 66,
-      "currentWritten": 66,
-      "historicalWritten": 18
-    },
-    "20": {
-      "total": 78,
-      "currentWritten": 78,
-      "historicalWritten": 54
+      "total": 95,
+      "currentWritten": 95,
+      "currentOpen": 0,
+      "currentCodeCompletion": 100.0,
+      "missingByPredicate": {}
     }
-  }
+  },
+  "unifiedAudit": {
+    "path": "docs/completion/ATROPOS_UNIFIED_OBLIGATION_AUDIT.json",
+    "totalPredicates": 1335,
+    "writtenPredicates": 1335,
+    "missingPredicates": 0,
+    "completionPercent": 100.0,
+    "denominatorNote": "The audited inputs define 1,335 predicates: 1,020 canonical rows plus 105 residual nodes times 3. No 1,355-obligation source inventory exists in these inputs; 20 obligations are not fabricated."
+  },
+  "unifiedAuditSha256": "5f3ee2e1c59829da7f8bb3a5b6703bc0d26bf82cf944c858c1b374934af35ae9",
+  "unifiedPredicateTotal": 1335,
+  "unifiedPredicateWritten": 1335,
+  "unifiedPredicateMissing": 0,
+  "unifiedCodeCompletion": 100.0,
+  "canonicalRegistryWritten": 1020,
+  "canonicalRegistryMissing": 0,
+  "residualPredicateWritten": 315,
+  "residualPredicateMissing": 0,
+  "accountingNote": "Strict unified audit is authoritative for current code-base completion; no 1,355-obligation input exists.",
+  "canonicalAtomTotal": 526,
+  "canonicalAtomComplete": 526,
+  "residualAtomTotal": 105,
+  "residualAtomComplete": 105,
+  "combinedAtomTotal": 631,
+  "combinedAtomComplete": 631,
+  "combinedAtomIncomplete": 0,
+  "combinedAtomCompletion": 100.0,
+  "unsupportedRequestedPredicateTotal": 1355,
+  "unsupportedPredicateDifference": 20
 }

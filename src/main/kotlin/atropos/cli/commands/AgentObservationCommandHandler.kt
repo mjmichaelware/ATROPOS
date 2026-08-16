@@ -4,12 +4,16 @@ import atropos.cli.ui.AnsiTerminalEngine
 import atropos.core.agent.GoalContinuationService
 import atropos.core.journal.EventJournalService
 import atropos.core.observability.RunObserver
+import atropos.core.observability.ExecutionHistoryStore
+import atropos.core.observability.JsonExporter
+import atropos.core.observability.MarkdownExporter
 
 class AgentObservationCommandHandler(
     private val ui: AnsiTerminalEngine,
     private val observer: RunObserver,
     private val journal: EventJournalService,
     private val continuationService: GoalContinuationService,
+    private val history: ExecutionHistoryStore = ExecutionHistoryStore(),
     private val invalid: (String) -> AgentCommandOutcome.Invalid
 ) {
     fun runs(): AgentCommandOutcome {
@@ -32,6 +36,22 @@ class AgentObservationCommandHandler(
 
     fun tests(args: List<String>): AgentCommandOutcome =
         renderObserved(args, "TESTS") { observer.testLog(it) }
+
+    fun export(args: List<String>): AgentCommandOutcome {
+        val ref = args.getOrNull(0) ?: "latest"
+        val runId = resolveObservedRunId(ref) ?: return invalid("no runs to export")
+        val format = args.getOrNull(1)?.lowercase() ?: "markdown"
+        val run = runCatching { history.exportRun(runId) }.getOrElse { failure ->
+            return invalid("unable to export $runId: ${failure.message ?: failure.javaClass.simpleName}")
+        }
+        val rendered = when (format) {
+            "markdown", "md" -> MarkdownExporter().export(run)
+            "json" -> JsonExporter().export(run)
+            else -> return invalid("usage: /agent export [run-id|latest] [markdown|json]")
+        }
+        ui.renderNotice(AgentCommandText.formatBlock("EXPORT $runId $format", rendered))
+        return AgentCommandOutcome.Completed(rendered)
+    }
 
     fun observe(args: List<String>): AgentCommandOutcome =
         when (args.getOrNull(0)?.lowercase()) {

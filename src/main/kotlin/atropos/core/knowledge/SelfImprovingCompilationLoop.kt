@@ -3,7 +3,9 @@ package atropos.core.knowledge
 
 import atropos.core.memory.LocalMemoryStore
 import atropos.core.policy.BoundedProcessRunner
+import atropos.core.security.RedactionFilter
 import atropos.core.verification.*
+import atropos.core.dopamine.RewardCalculator
 import atropos.core.verifier.ProbabilisticImmunityEngine
 import java.nio.file.*
 import java.time.Instant
@@ -43,7 +45,8 @@ class JdkVerificationProcessExecutor : VerificationProcessExecutor {
 class AtomicRewardRecorder(
     workspace: Path,
     relativePath: Path = Path.of(".atropos", "verification", "rewards.tsv"),
-    private val memoryStore: LocalMemoryStore = LocalMemoryStore(workspace.resolve(".atropos/memory").toFile())
+    private val memoryStore: LocalMemoryStore = LocalMemoryStore(workspace.resolve(".atropos/memory").toFile()),
+    private val redactionFilter: RedactionFilter = RedactionFilter()
 ) : RewardRecorder {
     private val root = workspace.toAbsolutePath().normalize()
     private val target = root.resolve(relativePath).normalize()
@@ -61,13 +64,17 @@ class AtomicRewardRecorder(
             emptyList()
         }
 
+        val trace = redactionFilter.compact(event.trace, maxChars = 400)
+            .replace("\t", " ")
+            .replace("\n", " ")
         val line = listOf(
             Instant.now().toString(),
             event.scope.name,
             event.reward.toString(),
             event.exitCode?.toString() ?: "none",
             event.timedOut.toString(),
-            event.durationMillis.toString()
+            event.durationMillis.toString(),
+            trace
         ).joinToString("\t")
 
         val temporary = Files.createTempFile(target.parent, "rewards-", ".tmp")
@@ -115,11 +122,16 @@ class SelfImprovingCompilationLoop(
     ): VerificationResult {
         val execution = processExecutor.execute(request)
         val report = analyzer.analyze(execution)
-        val reward = if (
+        val successRate = if (
             !execution.timedOut &&
             execution.launchError == null &&
             execution.exitCode == 0
-        ) 1.0 else -1.0
+        ) 1.0 else 0.0
+        val reward = RewardCalculator.computeReward(
+            successRate = successRate,
+            latencyMs = execution.durationMillis.toDouble(),
+            cost = 1.0
+        )
 
         val persistenceError = try {
             rewardRecorder.record(
@@ -128,7 +140,10 @@ class SelfImprovingCompilationLoop(
                     reward,
                     execution.exitCode,
                     execution.timedOut,
-                    execution.durationMillis
+                    execution.durationMillis,
+                    execution.stderr.text,
+                    successRate = successRate,
+                    cost = 1.0
                 )
             )
             null

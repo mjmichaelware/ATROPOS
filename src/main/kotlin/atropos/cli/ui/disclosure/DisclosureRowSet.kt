@@ -39,7 +39,7 @@ class DisclosureRowSet private constructor(
      */
     fun expand(kind: DisclosureRowKind): Change? {
         val target = row(kind) ?: return null
-        val expansion = target.expand() ?: return null
+        val expansion = ProgressiveDisclosure.expand(target) ?: return null
         return Change(replace(expansion.row), expansion.reveal)
     }
 

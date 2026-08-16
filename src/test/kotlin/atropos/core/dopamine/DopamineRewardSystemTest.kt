@@ -10,6 +10,7 @@ import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class DopamineRewardSystemTest {
@@ -42,6 +43,31 @@ class DopamineRewardSystemTest {
         val highHistory = listOf(RewardLogEntry("a", "action", 0.8, "good"))
         val tunedHigh = AlignmentTuner.tune(highHistory)
         assertEquals(0.7, tunedHigh.temperature)
+
+        val prompt = AlignmentTuner.apply("list providers", tunedHigh)
+        assertTrue(prompt.startsWith("prefix-standard"))
+        assertTrue(prompt.contains("temperature=0.7"))
+        assertTrue(prompt.contains("Task:"))
+    }
+
+    @Test
+    fun `AlignmentTuner uses only bounded recent rewards and emits bounded examples`() {
+        val history = (1..30).map {
+            RewardLogEntry("a", "old-$it", 0.1, "old")
+        } + listOf(
+            RewardLogEntry("a", "kept-1", 1.0, "success one"),
+            RewardLogEntry("a", "kept-2", 1.0, "success two"),
+            RewardLogEntry("a", "kept-3", 1.0, "success three"),
+            RewardLogEntry("a", "kept-4", 1.0, "success four")
+        )
+
+        val tuned = AlignmentTuner.tune(history, windowSize = 4)
+
+        assertEquals(0.7, tuned.temperature)
+        assertEquals(0.95, tuned.topP)
+        assertEquals(3, tuned.fewShotExamples.size)
+        assertTrue(tuned.fewShotExamples.none { it.contains("old-") })
+        assertTrue(tuned.fewShotExamples.all { it.length <= 180 })
     }
 
     @Test
@@ -66,8 +92,17 @@ class DopamineRewardSystemTest {
     @Test
     fun `PipedStreamRouter pipes output data`() {
         val router = PipedStreamRouter()
-        val out = router.routePipedCommand("data", "echo", "grep")
-        assertTrue(out.contains("grep"))
-        assertTrue(out.contains("echo"))
+        val out = router.routePipedCommand("data", "cat", "wc -c")
+        assertTrue(out.contains("stage=cat"))
+        assertTrue(out.contains("stage=wc"))
+        assertTrue(out.contains("output=4"), out)
+    }
+
+    @Test
+    fun `PipedStreamRouter refuses shell syntax instead of interpreting it`() {
+        val router = PipedStreamRouter()
+        assertFailsWith<IllegalArgumentException> {
+            router.routePipedCommand("data", "cat; rm -rf", "wc -c")
+        }
     }
 }

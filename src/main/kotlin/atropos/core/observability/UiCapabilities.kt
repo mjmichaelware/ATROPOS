@@ -53,15 +53,18 @@ class EngineStateTracker {
 
 object TouchAutocomplete {
     fun getSuggestions(input: String): List<String> {
-        val vocab = listOf("/goal", "/schedule", "/plan", "/grill-me", "/verify", "/status")
-        return vocab.filter { it.startsWith(input) }
+        return atropos.cli.input.CommandRegistry.search(input)
+            .map { it.command }
+            .distinct()
+            .take(24)
     }
 }
 
 class FuzzyExecutionGate {
     fun requestConfirmation(inputCommand: String, matchCommand: String): Boolean {
-        // Confirmation gate for fuzzy match commands
-        return inputCommand == matchCommand
+        // Exact input is already operator-selected. A rewritten fuzzy match
+        // must be confirmed by the command boundary before it executes.
+        return inputCommand.trim().equals(matchCommand.trim(), ignoreCase = true)
     }
 }
 
@@ -70,7 +73,22 @@ data class AccessibilitySettings(
     val isReducedMotionEnabled: Boolean = false,
     val isHighContrastEnabled: Boolean = false,
     val hasFocusVisibility: Boolean = true
-)
+) {
+    companion object {
+        fun fromEnvironment(get: (String) -> String? = System::getenv): AccessibilitySettings =
+            AccessibilitySettings(
+                isReducedMotionEnabled = get("ATROPOS_REDUCED_MOTION") == "1",
+                isHighContrastEnabled = get("ATROPOS_HIGH_CONTRAST") == "1",
+                hasFocusVisibility = get("ATROPOS_FOCUS_VISIBILITY") != "0"
+            )
+    }
+
+    fun label(key: String, fallback: String): String =
+        screenReaderLabels[key]?.takeIf(String::isNotBlank) ?: fallback
+
+    fun focus(text: String): String =
+        if (hasFocusVisibility) "[focus] $text" else text
+}
 
 object VirtualizedLogEngine {
     fun getLogWindow(logs: List<String>, offset: Int, limit: Int): List<String> {

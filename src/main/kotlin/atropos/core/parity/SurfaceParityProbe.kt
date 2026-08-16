@@ -3,6 +3,8 @@ package atropos.core.parity
 
 import atropos.bridge.menu.HelpRegistry
 import atropos.cli.input.CommandRegistry
+import atropos.core.contract.AtroposView
+import atropos.core.verification.UiParityVerifier
 
 /**
  * Observes each surface's vocabulary so [SurfaceContract] has something real
@@ -53,7 +55,14 @@ class SurfaceParityProbe(
         )
     )
 
-    fun check(): ParityReport = SurfaceContract(observe()).check()
+    fun check(): ParityReport {
+        val vocabulary = sharedVocabulary().toSet()
+        val viewVocabulary = AtroposView.values().associateWith { vocabulary }
+        check(UiParityVerifier.verifyStatusVocabularyParity(viewVocabulary)) {
+            "surface status vocabulary diverged"
+        }
+        return SurfaceContract(observe()).check()
+    }
 
     /**
      * Capabilities both surfaces expose, named identically.

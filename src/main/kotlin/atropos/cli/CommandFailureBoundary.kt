@@ -29,7 +29,6 @@ class CommandFailureBoundary(
     private val redactionFilter: RedactionFilter = RedactionFilter(),
     private val systemHandler: SystemExceptionHandler = SystemExceptionHandler(redactionFilter)
 ) {
-
     /**
      * Runs [action], returning its outcome. Any [Exception] is rendered as a
      * command error and reported as [RouterOutcome.CONTINUE] so the prompt

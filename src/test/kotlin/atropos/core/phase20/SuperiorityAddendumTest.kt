@@ -5,6 +5,8 @@ import java.nio.file.Paths
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import atropos.core.parity.SurfaceContract
+import atropos.core.parity.SurfaceObservation
 import kotlin.test.assertTrue
 
 class SuperiorityAddendumTest {
@@ -77,8 +79,13 @@ class SuperiorityAddendumTest {
     }
 
     @Test
-    fun `SurfaceContract asserts parity`() {
-        val cli = CliSurfaceContract()
-        assertTrue(cli.verifyParity(cli))
+    fun `SurfaceContract asserts parity through canonical owner`() {
+        val report = SurfaceContract(
+            listOf(
+                SurfaceObservation("cli", listOf("p"), listOf("Working"), listOf("Verified"), mapOf("n" to true)),
+                SurfaceObservation("web", listOf("p"), listOf("Working"), listOf("Verified"), mapOf("n" to true))
+            )
+        ).check()
+        assertTrue(report.holds)
     }
 }

@@ -286,7 +286,6 @@ class SelfHostCommand(
             nodeId = args.getOrNull(3)
         )
         val text = SelfHostCommandText.promote(result, args[0])
-
         // HOE-E08: the handoff itself, drawn. A promotion swaps the jar the
         // operator is running out from under them, and the one question they
         // need answered afterwards — which hash is seated and which is the
@@ -308,13 +307,13 @@ class SelfHostCommand(
                 )
             )
         }
-
+        val renderedText = text
         if (!result.promoted) {
-            ui.renderError(text)
-            return AgentCommandOutcome.Invalid(text)
+            ui.renderError(renderedText)
+            return AgentCommandOutcome.Invalid(renderedText)
         }
-        ui.renderNotice("SELF-HOST PROMOTE\n$text")
-        return AgentCommandOutcome.Completed(text)
+        ui.renderNotice("SELF-HOST PROMOTE\n$renderedText")
+        return AgentCommandOutcome.Completed(renderedText)
     }
 
     private fun handleExportEvidence(args: List<String>): AgentCommandOutcome {

@@ -1,11 +1,13 @@
 package atropos.cli.ui
 
 import atropos.core.ops.DeploymentOps
+import atropos.core.evaluation.EvaluationEngine
 import atropos.core.provider.QuotaLedgerBackup
 import java.io.File
 
 class StatusOpsRenderer(
-    private val ops: DeploymentOps = DeploymentOps()
+    private val ops: DeploymentOps = DeploymentOps(),
+    private val evaluation: EvaluationEngine = EvaluationEngine()
 ) {
     fun render(): String = ops.status()
 
@@ -29,6 +31,19 @@ class StatusOpsRenderer(
             result.checked.forEach { appendLine("  ok: $it") }
             result.missing.forEach { appendLine("  missing: $it") }
         }
+    }
+
+    fun evaluate(subjectId: String = "operator"): String {
+        val decision = evaluation.evaluateRelease(subjectId = subjectId)
+        return buildString {
+            appendLine("evaluation:")
+            appendLine("  accepted: ${decision.accepted}")
+            appendLine("  reason: ${decision.reason}")
+            appendLine("  report: ${decision.report.summary}")
+            decision.report.metrics.forEach { metric ->
+                appendLine("  ${metric.kind.name.lowercase()}: ${metric.passed} (${metric.evidence})")
+            }
+        }.trimEnd()
     }
 
     fun quotaBackup(): String {

@@ -30,14 +30,7 @@ class SelfHostBootstrapDagFactory(
         val testPath = "src/test/kotlin/atropos/core/agent/SelfHostCradleRuntimeStateTest.kt"
         val goalLiteral = kotlinString(record.id)
         val phaseLiteral = kotlinString(phase)
-        val markerContent = """
-            package atropos.core.agent
-
-            object SelfHostCradleRuntimeState {
-                const val LAST_SELF_HOST_GOAL: String = "$goalLiteral"
-                const val LAST_SELF_HOST_PHASE: String = "$phaseLiteral"
-            }
-        """.trimIndent()
+        val markerContent = SelfHostCradleRuntimeState.sourceFor(record.id, phase)
         val testContent = """
             package atropos.core.agent
 

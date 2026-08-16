@@ -89,7 +89,7 @@ class AgentCommand(
     )
     private val sessionHandler = AgentSessionCommandHandler(ui, sessionSupervisor, ::invalid)
     private val goalHandler = AgentGoalCommandHandler(ui, continuationService, ::invalid)
-    private val observationHandler = AgentObservationCommandHandler(ui, observer, journal, continuationService, ::invalid)
+    private val observationHandler = AgentObservationCommandHandler(ui, observer, journal, continuationService, invalid = ::invalid)
     private val recoveryHandler = AgentRecoveryCommandHandler(ui, recoveryService)
     private val dagHandler = AgentDagCommandHandler(ui, config, repoRoot, dagService, dagStore, ::invalid)
     private val worktreeHandler = AgentWorktreeCommandHandler(ui, worktreeService, ::invalid)
@@ -224,6 +224,7 @@ class AgentCommand(
             "transcript" -> observationHandler.transcript(tokens.drop(2))
             "diff" -> observationHandler.diff(tokens.drop(2))
             "tests" -> observationHandler.tests(tokens.drop(2))
+            "export" -> observationHandler.export(tokens.drop(2))
             "observe" -> observationHandler.observe(tokens.drop(2))
             "dag" -> dagHandler.execute(tokens.drop(2))
             "recover" -> recoveryHandler.execute()
@@ -237,7 +238,7 @@ class AgentCommand(
     }
 
     private fun agentUsage(): String =
-        "usage: /agent [status|run|enqueue|queue|daemon|jobs|job|ask|patch|apply|worker|verify|repair|session|runs|watch|tree|transcript|diff|tests|observe|dag|recover|worktree|gate|policy|goal|self-host]"
+        "usage: /agent [status|run|enqueue|queue|daemon|jobs|job|ask|patch|apply|worker|verify|repair|session|runs|watch|tree|transcript|diff|tests|export|observe|dag|recover|worktree|gate|policy|goal|self-host]"
 
     private fun terminalWidth(): Int =
         System.getenv("COLUMNS")?.toIntOrNull()?.coerceAtLeast(40) ?: 80

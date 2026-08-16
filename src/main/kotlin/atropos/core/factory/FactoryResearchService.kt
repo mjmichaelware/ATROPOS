@@ -140,9 +140,26 @@ class FactoryResearchService(
             // Fallback: try keyword search if no exact DLOI match found (AUD003)
             val dloiService = DloiService(root)
             val docs = dloiService.loadDocuments(ensureIndex = false)
-            val matchedDoc = docs.firstOrNull { it.originalFilename.contains(query, ignoreCase = true) || query.contains(it.id, ignoreCase = true) }
+            val terms = query.lowercase()
+                .split(Regex("[^a-z0-9._-]+"))
+                .filter { it.length >= 3 }
+                .distinct()
+            val ranked = docs.map { document ->
+                val haystack = buildString {
+                    append(document.id).append(' ')
+                    append(document.sourceId).append(' ')
+                    append(document.originalFilename).append(' ')
+                    document.sections.forEach { append(it.id).append(' ').append(it.title).append(' ') }
+                }.lowercase()
+                document to terms.count { it in haystack }
+            }
+            val matchedDoc = ranked.maxWithOrNull(compareBy<Pair<DloiDocument, Int>> { it.second }
+                .thenBy { it.first.id })?.takeIf { it.second > 0 }?.first
             if (matchedDoc != null && matchedDoc.sections.isNotEmpty()) {
-                val sec = matchedDoc.sections.first()
+                val sec = matchedDoc.sections.maxByOrNull { section ->
+                    val sectionText = "${section.id} ${section.title}".lowercase()
+                    terms.count { it in sectionText }
+                } ?: matchedDoc.sections.first()
                 val resolution = runCatching { dloiService.lookup("${matchedDoc.sourceId}#${sec.id}@L${sec.lineStart}-${sec.lineEnd}") }.getOrNull()
                 if (resolution != null) {
                     dLoIResult = DloiLookupResult.Resolved(resolution)

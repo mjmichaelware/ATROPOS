@@ -89,7 +89,18 @@ class RunObserver(
         }
     }.trimEnd()
 
-    fun transcript(runId: String, limit: Int = 100): String = journal.transcript(runId, limit)
+    /**
+     * Returns a bounded transcript window for the CLI and bridge projections.
+     * The journal remains the durable owner; virtualization only controls the
+     * amount presented to a surface and therefore cannot create a second log.
+     */
+    fun transcript(runId: String, limit: Int = 100): String {
+        val raw = journal.transcript(runId, limit)
+        if (raw.isBlank()) return raw
+        return VirtualizedLogEngine
+            .getLogWindow(raw.lines(), offset = 0, limit = limit.coerceAtLeast(0))
+            .joinToString(System.lineSeparator())
+    }
 
     fun diffLog(runId: String, limit: Int = 50): String = buildString {
         val events = journal.diffEvents(runId, limit)

@@ -94,6 +94,13 @@ class DloiService(
             }
 
     fun lookup(address: String): DloiResolution {
+        when (val authority = SourceAuthorityLaw(repoRoot).verify()) {
+            is SourceAuthorityLaw.SourceAuthorityVerdict.Rejected -> {
+                error("source authority verification failed: ${authority.reason}")
+            }
+            is SourceAuthorityLaw.SourceAuthorityVerdict.Verified,
+            is SourceAuthorityLaw.SourceAuthorityVerdict.NoSources -> Unit
+        }
         val parsed = addressParser.parse(address)
         val document = loadDocuments().firstOrNull { parsed.documentId in aliases.documentAliases(it) }
             ?: error("unknown DLOI document: ${parsed.documentId}")

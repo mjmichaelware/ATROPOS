@@ -10,13 +10,20 @@ import atropos.cli.commands.SelfHostNaturalLanguageRouter
 import atropos.cli.session.QuotaSessionTracker
 import atropos.cli.session.SessionTabs
 import atropos.cli.shell.ShellCommandRunner
+import atropos.core.integration.ShellCommandIntercept
+import atropos.core.integration.PipedStreamRouter
 import atropos.cli.ui.AnsiTerminalEngine
 import atropos.cli.ui.CommandRegistryRenderer
 import atropos.cli.ui.DialogOption
 import atropos.cli.ui.DialogRenderer
+import atropos.cli.input.CommandRisk
+import atropos.cli.input.CommandRiskCatalog
 import atropos.core.AIProvider
 import atropos.core.AtroposConfig
 import atropos.core.ProviderFactory
+import atropos.core.AtroposRepoRootLocator
+import atropos.core.nl.NlEntryPipeline
+import atropos.core.nl.NlSource
 
 enum class RouterOutcome { CONTINUE, EXIT }
 
@@ -76,12 +83,14 @@ class CommandRouter(
     private val providerCommand = ProviderCommandHandler(config, uiEngine)
     private val dloiCommand = DloiCommandHandler(uiEngine, higZeroGuard)
     private val shellCommand = ShellCommandHandler(uiEngine, shellRunner)
+    private val pipedStreamRouter = PipedStreamRouter(shellRunner)
     private val paidCommand = PaidCommandHandler(uiEngine)
     private val memoryCommand = MemoryCommandHandler(uiEngine)
     private val ciCommand = CiCommandHandler(uiEngine)
     private val assetCommand = AssetCommandHandler(uiEngine)
     private val factoryCommand = factoryCommandOverride ?: FactoryCommandHandler(uiEngine)
     private val naturalLanguageRiskGuard = NaturalLanguageRiskGuard()
+    private val fuzzyExecutionGate = atropos.core.observability.FuzzyExecutionGate()
     private var pendingRiskyNaturalLanguage: String? = null
     private val securityCommand = SecurityCommandHandler(uiEngine)
     private val keysCommand = KeysCommandHandler(uiEngine)
@@ -101,9 +110,24 @@ class CommandRouter(
         sessionTracker = sessionTracker,
         providerResolver = providerResolver,
         rateResolver = rateResolver,
-        cwd = shellCommand::currentDirectory
+        cwd = shellCommand::currentDirectory,
+        alignmentHistory = {
+            val store = atropos.core.autonomy.RewardPenaltyStore(
+                storageDir = java.io.File(shellCommand.currentDirectory(), ".atropos/autonomy")
+            )
+            atropos.core.dopamine.AlignmentTuner.historyFrom(store)
+        },
+        alignmentSignal = { successful ->
+            val store = atropos.core.autonomy.RewardPenaltyStore(
+                storageDir = java.io.File(shellCommand.currentDirectory(), ".atropos/autonomy")
+            )
+            if (successful) {
+                store.recordReward("operator", "provider.chat", 1.0, "provider response returned")
+            } else {
+                store.recordPenalty("operator", "provider.chat", 1.0, "provider dispatch failed")
+            }
+        }
     )
-
     val tabs = SessionTabs(
         initialProvider = activeProvider.name,
         initialWorkingDirectory = shellCommand.currentDirectory()
@@ -151,33 +175,74 @@ class CommandRouter(
                 }
             }
         }
+        // Bare native commands are normalized to the canonical slash command
+        // before lexing, so one route owns policy, confirmation, and evidence.
+        val intercepted = ShellCommandIntercept.intercept(input.trim())
+        if (intercepted != input.trim() && intercepted.startsWith("/")) {
+            return handleSingleInput(intercepted)
+        }
+        if (!input.trimStart().startsWith("/") && input.count { it == '|' } >= 1) {
+            return handlePipedInput(input)
+        }
         return when (val result = lex(input)) {
             is LexResult.Error -> {
                 uiEngine.renderError("lex: ${result.message}")
                 RouterOutcome.CONTINUE
             }
             is LexResult.Success -> failureBoundary.guard(result.tokens.firstOrNull() ?: "command") {
-                route(input, result.tokens)
+                // Normalize aliases once at the command boundary. This keeps
+                // every downstream handler on the canonical verb vocabulary.
+                route(input, atropos.core.intent.CommandConsolidator.consolidate(result.tokens))
             }
         }
+    }
+
+    private fun handlePipedInput(input: String): RouterOutcome {
+        val stages = input.split('|').map(String::trim)
+        if (stages.any(String::isBlank)) {
+            uiEngine.renderError("pipe: empty pipeline stage")
+            return RouterOutcome.CONTINUE
+        }
+        val results = runCatching {
+            pipedStreamRouter.routePipedCommands("", stages)
+        }.getOrElse { failure ->
+            uiEngine.renderError("pipe: ${failure.message ?: failure.javaClass.simpleName}")
+            return RouterOutcome.CONTINUE
+        }
+        results.forEach { result ->
+            uiEngine.renderBlock(
+                "${result.command.joinToString(" ")} [exit=${result.exitCode}]\n${result.output}".trimEnd()
+            )
+        }
+        return RouterOutcome.CONTINUE
     }
 
     private fun route(original: String, tokens: List<String>): RouterOutcome {
         if (tokens.isEmpty()) return RouterOutcome.CONTINUE
         if (original.trimStart().startsWith("!")) return shellCommand.bang(original)
 
-        val first = tokens.first().lowercase()
+        // Keep direct route callers on the canonical vocabulary too. The
+        // lexer path already consolidates aliases; this boundary protects
+        // embedded callers that invoke route-level handling.
+        val alias = atropos.core.intent.AliasResolver.resolve(tokens.first())
+        val routedTokens = if (alias == null || tokens.first() == alias.keyword) {
+            tokens
+        } else {
+            listOf(alias.keyword) + tokens.drop(1)
+        }
+
+        val first = routedTokens.first().lowercase()
         if (first in setOf("?", "/?", "help", "/help", "usage", "/usage")) {
-            renderHelpPage(tokens.drop(1).joinToString(" "))
+            renderHelpPage(routedTokens.drop(1).joinToString(" "))
             return RouterOutcome.CONTINUE
         }
 
         if (first in setOf("/self-host", "self-host")) {
-            selfHostAlias(tokens)
+            selfHostAlias(routedTokens)
             return RouterOutcome.CONTINUE
         }
 
-        return when (tokens.first().lowercase()) {
+        return when (routedTokens.first().lowercase()) {
             "/exit", "/quit", "exit" -> RouterOutcome.EXIT
 
             "/pwd" -> shellCommand.pwd()
@@ -312,7 +377,15 @@ class CommandRouter(
             }
 
             else -> {
-                if (tokens.first().startsWith("/")) uiEngine.renderError("unknown command: ${tokens.first()}")
+                if (tokens.first().startsWith("/")) {
+                    val guidance = atropos.core.intent.ArgumentGuidance.getGuidance(tokens.first())
+                    uiEngine.renderError(
+                        buildString {
+                            append("unknown command: ${tokens.first()}")
+                            guidance?.let { append("\n").append(it) }
+                        }
+                    )
+                }
                 else {
                     // SUP.NL.BYTE-CANONICAL-FORM asks for canonicalization "as
                     // first stage of any NL entry point", and this is the CLI's.
@@ -474,5 +547,17 @@ class CommandRouter(
                 footerHint = "type yes to continue · no to cancel"
             )
         )
+    }
+
+    /**
+     * Fuzzy command rewrites are harmless for ordinary commands, but a risky
+     * rewrite must use the same explicit confirmation contract as risky NL.
+     */
+    internal fun allowFuzzyExecution(input: String, resolved: String): Boolean {
+        if (fuzzyExecutionGate.requestConfirmation(input, resolved)) return true
+        if (CommandRiskCatalog.forCommand(resolved) != CommandRisk.RISKY) return true
+        pendingRiskyNaturalLanguage = resolved
+        renderRiskConfirmation("fuzzy command", resolved)
+        return false
     }
 }

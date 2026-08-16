@@ -66,6 +66,16 @@ class CommandCompleterTest {
     }
 
     @Test
+    fun risky_partial_rewrite_is_marked_for_confirmation() {
+        val completer = CommandCompleter(Path.of("."))
+
+        val resolved = completer.resolveSubmission("/she", 4)
+
+        assertEquals("/shell", resolved)
+        assertTrue(completer.lastResolutionWasFuzzy)
+    }
+
+    @Test
     fun complete_replaces_bare_command_prefixes_with_canonical_commands() {
         val completer = CommandCompleter(Path.of("."))
 

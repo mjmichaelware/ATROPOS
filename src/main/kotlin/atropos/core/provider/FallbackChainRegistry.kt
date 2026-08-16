@@ -75,4 +75,8 @@ object FallbackChainRegistry {
     fun getSortedProviders(): List<ProviderSpec> {
         return providers.sortedBy { it.quotaWeight }
     }
+
+    /** Compatibility lookup delegated to the canonical typed chain owner. */
+    fun canonicalChain(capability: ApiCapability): FallbackChain? =
+        FallbackChain.forCapability(capability)
 }

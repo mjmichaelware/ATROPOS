@@ -8,5 +8,7 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v3
         with: { java-version: '17', distribution: 'temurin' }
+      - name: Verify clean runner contract
+        run: bash scripts/github-actions-clean-runner.sh
       - name: Build Factory
         run: ./gradlew clean jar

@@ -42,14 +42,23 @@ data class FactoryConfidence(
         fun calculate(spec: AppProjectSpec, research: FactoryResearchReport): FactoryConfidence {
             val base = calculate(spec)
             val primaryChannels = setOf("st_memory", "lt_memory", "dloi", "lakehouse", "bounded_fetch")
-            val researchPasses = research.channelLog.count { line ->
-                val channel = line.substringBefore('=').trim()
-                channel in primaryChannels && line.startsWith("$channel=PASS")
+            val channelLines = primaryChannels.associateWith { channel ->
+                research.channelLog.lastOrNull { it.startsWith("$channel=") }
             }
-            val score = (base.score + researchPasses.coerceAtMost(2) * 5).coerceAtMost(100)
+            val researchPasses = channelLines.values.count { line ->
+                line != null && line.startsWith("${line.substringBefore('=')}=PASS")
+            }
+            val observed = channelLines.values.count { it != null }
+            val failures = channelLines.values.count { it?.contains("SKIPPED_SOFT_FAIL") == true }
+            val health = if (observed == 0) 0 else ((observed - failures).toDouble() / observed * 100).toInt()
+            // A strong app spec cannot conceal a failed research plane. The
+            // score remains deterministic, but channel health is a hard
+            // multiplier so the clarification path is reachable.
+            val score = (base.score * health / 100 + researchPasses.coerceAtMost(2) * 5)
+                .coerceAtMost(100)
             return base.copy(
                 score = score,
-                breakdown = "${base.breakdown},research_passes=$researchPasses",
+                breakdown = "${base.breakdown},research_passes=$researchPasses,research_observed=$observed,research_failures=$failures,research_health=$health",
                 questions = if (score < MINIMUM) base.questions else emptyList()
             )
         }

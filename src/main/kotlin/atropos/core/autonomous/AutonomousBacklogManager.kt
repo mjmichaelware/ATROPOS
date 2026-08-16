@@ -53,6 +53,10 @@ class AutonomousBacklogManager(
         service.snapshot()
     }
 
+    fun repairHistory() = lock.withLock { service.repairHistory() }
+
+    fun failoverHistory() = lock.withLock { service.failoverHistory() }
+
     fun clearAllTasks(backlogDir: Path) = lock.withLock {
         val taskFile = backlogDir.resolve(".atropos/autonomous/tasks.jsonl")
         java.nio.file.Files.deleteIfExists(taskFile)

@@ -3,6 +3,7 @@ package atropos.cli.ui
 
 import atropos.cli.input.CommandRegistry
 import atropos.cli.session.QuotaSessionTracker
+import atropos.cli.ui.chrome.StickyRegionSolver
 
 /**
  * HOE-B01: Sticky chrome persists project/status bar during resize.
@@ -92,39 +93,54 @@ class ViewportLayout(
         val transcriptStart = contentStart
         val transcriptHeight = (separatorRow - transcriptStart).coerceAtLeast(1)
 
+        // Run the canonical sticky-region solver at the same boundary where
+        // the frame reserves its chrome. The existing arithmetic remains the
+        // deliberate fallback for a terminal too short to hold the full plan.
+        val stickyPlan = StickyRegionSolver.solve(
+            totalRows = safeHeight,
+            columns = safeWidth,
+            headerRows = contentStart,
+            inputRows = paletteHeight + composerHeight + 1
+        )
+        val stickyRegions = stickyPlan.regionsOrNull()
+        val solvedTranscriptStart = stickyRegions?.transcript?.start ?: transcriptStart
+        val solvedTranscriptHeight = stickyRegions?.transcript?.rows?.coerceAtLeast(1) ?: transcriptHeight
+        val solvedPaletteStart = stickyRegions?.input?.start?.let { it + 0 } ?: paletteStart
+        val solvedComposerStart = stickyRegions?.input?.endExclusive?.minus(composerHeight + 1) ?: composerStart
+
         if (transcript.isEmpty) {
-            welcomePanel.render(state, safeWidth, transcriptHeight)
-                .take(transcriptHeight)
+            welcomePanel.render(state, safeWidth, solvedTranscriptHeight)
+                .take(solvedTranscriptHeight)
                 .forEachIndexed { index, line ->
-                    frame.setLine(transcriptStart + index, line)
+                    frame.setLine(solvedTranscriptStart + index, line)
                 }
         } else {
             val reserve = if (activity == null) 0 else 1
             val visible = transcript.visibleLines(
                 safeWidth,
-                (transcriptHeight - reserve).coerceAtLeast(1)
+                (solvedTranscriptHeight - reserve).coerceAtLeast(1)
             ).toMutableList()
             activity?.let(visible::add)
-            visible.takeLast(transcriptHeight).forEachIndexed { index, line ->
-                frame.setLine(transcriptStart + index, line)
+            visible.takeLast(solvedTranscriptHeight).forEachIndexed { index, line ->
+                frame.setLine(solvedTranscriptStart + index, line)
             }
         }
 
         paletteLines.forEachIndexed { index, line ->
-            val row = paletteStart + index
-            if (row in contentStart until composerStart) frame.setLine(row, line)
+            val row = solvedPaletteStart + index
+            if (row in contentStart until solvedComposerStart) frame.setLine(row, line)
         }
 
         composerSnapshot.lines.forEachIndexed { index, line ->
-            frame.setLine(composerStart + index, line)
+            frame.setLine(solvedComposerStart + index, line)
         }
         metaLines.forEachIndexed { index, line ->
-            frame.setLine(composerStart + composerSnapshot.lines.size + index, line)
+            frame.setLine(solvedComposerStart + composerSnapshot.lines.size + index, line)
         }
 
-        frame.setLine(footerRow, statusBar.footer(state, safeWidth))
+        frame.setLine(safeHeight - 1, statusBar.footer(state, safeWidth))
         frame.cursorX = composerSnapshot.cursorColumn
-        frame.cursorY = composerStart + composerSnapshot.cursorRow
+        frame.cursorY = solvedComposerStart + composerSnapshot.cursorRow
         frame.showCursor = true
         return frame
     }

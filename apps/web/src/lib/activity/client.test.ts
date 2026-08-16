@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 import { describe, expect, it } from 'vitest';
-import { byStage, hasBlockedStage, type ActivityPayload } from './client';
+import { byStage, hasBlockedStage, pipelineForSubject, type ActivityPayload } from './client';
 
 const STAGES = ['plan', 'provider', 'tool', 'diff', 'test', 'verifier', 'artifact', 'deploy'];
 
@@ -52,5 +52,11 @@ describe('coverage is not health', () => {
 
   it('a clean stream reports nothing blocked', () => {
     expect(hasBlockedStage(payload([event('plan')]))).toBe(false);
+  });
+
+  it('produces How? only for a matching recorded subject', () => {
+    const matching = payload([{ ...event('plan'), subject: 'work-42' }, { ...event('test'), subject: 'work-42' }]);
+    expect(pipelineForSubject(matching, 'work-42')).toContain('Stages: plan, test');
+    expect(pipelineForSubject(matching, 'unrelated-work')).toBeUndefined();
   });
 });

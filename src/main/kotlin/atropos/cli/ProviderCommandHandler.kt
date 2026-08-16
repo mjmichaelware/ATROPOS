@@ -8,6 +8,7 @@ import atropos.core.ProviderDecisionEngine
 import atropos.core.provider.ProviderActivationService
 import atropos.core.provider.ProviderDescriptorValidator
 import atropos.core.provider.ProviderTruthService
+import atropos.core.provider.RoutedTask
 import atropos.core.provider.StaticProviderDescriptorRegistry
 
 class ProviderCommandHandler(
@@ -20,7 +21,11 @@ class ProviderCommandHandler(
                 ProviderTruthService(config).snapshot(currentProviderName).renderInventory()
             )
             "descriptors" -> uiEngine.renderNotice(
-                StatusProviderDescriptorRenderer(StaticProviderDescriptorRegistry()).render(currentProviderName)
+                StatusProviderDescriptorRenderer(StaticProviderDescriptorRegistry()).render(currentProviderName) +
+                    "\n" + ProviderDescriptorReport(StaticProviderDescriptorRegistry()).generate()
+            )
+            "matrix" -> uiEngine.renderNotice(
+                RoutedTask.entries.joinToString("\n") { it.render() }
             )
             "validate" -> renderValidation()
             "verify" -> renderVerify(tokens)

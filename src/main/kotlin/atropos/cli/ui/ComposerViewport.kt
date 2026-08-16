@@ -16,6 +16,7 @@ data class ComposerSnapshot(
 class ComposerViewport(
     private val theme: TerminalTheme
 ) {
+    private val composerRenderer = ComposerRenderer()
     private val modeRetheme = ModeRetheme()
     private var buffer = ""
     private var suggestion = ""
@@ -36,13 +37,17 @@ class ComposerViewport(
         paletteGroup: String? = null,
         paletteCommand: String? = null
     ) {
-        this.buffer = TerminalText.sanitize(buffer)
-        this.suggestion = TerminalText.sanitize(suggestion).replace('\n', ' ')
-        this.cursor = safeCursorBoundary(
-            this.buffer,
-            cursor.coerceIn(0, this.buffer.length)
+        val prepared = composerRenderer.prepare(
+            buffer = buffer,
+            suggestion = suggestion,
+            cursor = cursor,
+            mode = mode,
+            terminalWidth = Int.MAX_VALUE
         )
-        this.mode = mode.uppercase()
+        this.buffer = prepared.buffer
+        this.suggestion = prepared.suggestion
+        this.cursor = safeCursorBoundary(this.buffer, prepared.cursor)
+        this.mode = prepared.mode
         this.paletteSelection = paletteSelection.coerceAtLeast(0)
         this.paletteLevel = paletteLevel
         this.paletteGroup = paletteGroup

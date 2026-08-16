@@ -4,6 +4,7 @@ package atropos.core.verification
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import java.nio.file.Files
 
 class IntegrityProofsTest {
 
@@ -17,6 +18,27 @@ class IntegrityProofsTest {
     fun `greenfield proof passes when absent count greater than zero`() {
         val res = GreenfieldFactoryProof.runProof(5)
         assertEquals("VERIFIED", res.verdict)
+    }
+
+    @Test
+    fun `greenfield proof checks the generated repository surface`() {
+        val root = Files.createTempDirectory("atropos-greenfield-")
+        Files.createDirectories(root.resolve("src/main"))
+        Files.writeString(root.resolve("README.md"), "readme")
+        Files.writeString(root.resolve("src/main/Main.kt"), "fun main() = Unit")
+
+        val passed = GreenfieldFactoryProof.verifyGeneratedProject(
+            root,
+            setOf("README.md", "src/main/Main.kt")
+        )
+        val failed = GreenfieldFactoryProof.verifyGeneratedProject(
+            root,
+            setOf("README.md", "src/main/Main.kt", "LICENSE")
+        )
+
+        assertEquals("VERIFIED", passed.verdict)
+        assertEquals("FAILED", failed.verdict)
+        assertTrue(passed.evidenceHash.matches(Regex("[0-9a-f]{64}")))
     }
 
     @Test

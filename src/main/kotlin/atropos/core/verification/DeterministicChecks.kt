@@ -5,6 +5,8 @@ import atropos.ast.AstImportStatus
 import atropos.cli.input.CommandRegistry
 import atropos.core.agent.AgentPatchExtractor
 import atropos.core.agent.AgentSmokeRunner
+import atropos.core.ast.CodebaseDeltaTreeTracker
+import atropos.core.ast.TopologicalMutationVector
 import atropos.core.security.RedactionFilter
 import atropos.core.verifier.ConstraintSolverEvaluator
 import atropos.core.verifier.BoundaryConstraint
@@ -55,6 +57,7 @@ class DeterministicChecks(
         val lines = Files.readAllLines(path, StandardCharsets.UTF_8)
         val packageLine = lines.firstOrNull { it.trimStart().startsWith("package ") } ?: return emptyList()
         val packageName = packageLine.trim().removePrefix("package ").trim()
+        NamedAssertion.require(packageName.isNotBlank(), "package_name", packageName)
         val relative = portablePath(repoRoot.relativize(path))
         val expectedSuffix = packageName.replace('.', '/') + "/" + path.fileName
         return constraintEvaluator.evaluate(
@@ -372,16 +375,47 @@ class DeterministicChecks(
                     remediation = "supply a valid unified diff"
                 )
             )
-        val validation = patchExtractor.validate(extraction.diff) ?: return emptyList()
-        return listOf(
-            finding(
+        val validation = patchExtractor.validate(extraction.diff)
+        val findings = mutableListOf<DeterministicFinding>()
+        // Preserve the changed paths as typed graph deltas before any
+        // adversarial or structural verdict is emitted.  This is the single
+        // deterministic verification path; it does not create a second
+        // mutation or verifier owner.
+        val mutationVectors = extraction.touchedPaths.map { path ->
+            TopologicalMutationVector(
+                nodeId = "patch:$path",
+                type = "UPDATE",
+                targetAddress = path,
+                newValue = CodebaseDeltaTreeTracker().trackTreeDelta("", extraction.diff)
+            )
+        }
+        if (mutationVectors.any { it.targetAddress.isBlank() || it.newValue.isBlank() }) {
+            findings += finding(
+                invariantId = "topological_mutation_delta",
+                severity = DiagnosticSeverity.ERROR,
+                file = extraction.touchedPaths.firstOrNull(),
+                evidence = "patch produced no typed graph delta",
+                remediation = "provide a non-empty unified diff with a concrete target path"
+            )
+        }
+        val adversarial = atropos.core.integration.OnDeviceAdversarialValidator.validate(extraction.diff)
+        if (!adversarial.syntaxValid || adversarial.missingImports.isNotEmpty()) {
+            findings += finding(
+                invariantId = "adversarial_patch_validation",
+                severity = DiagnosticSeverity.ERROR,
+                file = extraction.touchedPaths.firstOrNull(),
+                evidence = "syntaxValid=${adversarial.syntaxValid} missingImports=${adversarial.missingImports}",
+                remediation = "repair the patch before deterministic verification"
+            )
+        }
+        if (validation != null) findings += finding(
                 invariantId = "patch_structure",
                 severity = DiagnosticSeverity.ERROR,
                 file = extraction.touchedPaths.firstOrNull(),
                 evidence = validation,
                 remediation = "remove forbidden or malformed patch paths"
             )
-        )
+        return findings
     }
 
     fun checkShellSafety(shellCommand: String): List<DeterministicFinding> {

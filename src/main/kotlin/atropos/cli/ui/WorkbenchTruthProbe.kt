@@ -3,6 +3,8 @@ package atropos.cli.ui
 
 import atropos.core.provider.ProviderTruthRecord
 import atropos.core.provider.ProviderTruthService
+import atropos.data.cache.CodebaseDeltaTreeTracker
+import atropos.data.indexer.LatentOntologicalIndexer
 import java.io.File
 
 data class ProviderUiTruth(
@@ -89,12 +91,24 @@ class WorkbenchTruthProbe {
 
         val providers = providerTruth.map(::toUiTruth)
 
+        val deltaTrackerAvailable = runCatching {
+            CodebaseDeltaTreeTracker(root.path).getActiveWorkspaceDeltas()
+            true
+        }.getOrDefault(false)
+
+        val latentIndexerAvailable = runCatching {
+            // Diagnostic capability only. This never participates in DLOI
+            // resolution or supplies a nearest-match authority result.
+            LatentOntologicalIndexer(File(root, ".atropos/latent-index.diagnostic").path)
+                .computeCosineSimilarity(listOf(1.0), listOf(1.0)) == 1.0
+        }.getOrDefault(false)
+
         return WorkbenchTruth(
             providers = providers,
             ontologicalRouter = exists("src/main/kotlin/atropos/data/lakehouse/OntologicalAddressRouter.kt"),
-            latentIndexer = exists("src/main/kotlin/atropos/data/indexer/LatentOntologicalIndexer.kt"),
+            latentIndexer = latentIndexerAvailable && exists("src/main/kotlin/atropos/data/indexer/LatentOntologicalIndexer.kt"),
             cloudLakehouseSync = exists("src/main/kotlin/atropos/data/storage/CloudLakehouseSyncEngine.kt"),
-            deltaTracker = exists("src/main/kotlin/atropos/data/cache/CodebaseDeltaTreeTracker.kt"),
+            deltaTracker = deltaTrackerAvailable && exists("src/main/kotlin/atropos/data/cache/CodebaseDeltaTreeTracker.kt"),
             selfImprovingLoop = exists("src/main/kotlin/atropos/core/knowledge/SelfImprovingCompilationLoop.kt"),
             constraintSolver = exists("src/main/kotlin/atropos/core/verifier/ConstraintSolverEvaluator.kt"),
             immunityEngine = exists("src/main/kotlin/atropos/core/verifier/ProbabilisticImmunityEngine.kt"),

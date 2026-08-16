@@ -4,6 +4,8 @@ package atropos.core.factory
 import atropos.core.AtroposRepoRootLocator
 import atropos.core.planning.CanonicalAtomProvider
 import atropos.core.planning.CanonicalAtomSet
+import atropos.core.specgraph.ExportBundleReader
+import java.nio.file.Files
 import java.nio.file.Path
 
 /**
@@ -42,6 +44,7 @@ class SpecGraphCanonicalAtomProvider(
         promptFingerprint: String,
         promptSpans: String
     ): CanonicalAtomSet? {
+        inspectVerifiedExport(repoRoot)?.let(evidenceSink)
         val atomization = atomizer.atomizeToRecords(
             repoRoot = repoRoot,
             projectId = projectId,
@@ -98,5 +101,30 @@ class SpecGraphCanonicalAtomProvider(
                 "atoms=${staged.size} source_sha256=${atomization.sourceSha256} " +
                 atropos.core.planning.InternalAtomDependencyModel.render(staged)
         )
+    }
+
+    /**
+     * Consume an already-exported, verified SpecGraph handoff when one is
+     * available. Export ingestion is optional: a missing or invalid export is
+     * an explicit soft-fail and the canonical atomizer below remains the
+     * normal fallback. The reader and [atropos.core.specgraph.HandoffDagTranslator]
+     * stay the sole owners of bundle verification and graph translation.
+     */
+    private fun inspectVerifiedExport(repoRoot: Path): String? {
+        val configured = System.getenv("ATROPOS_SPECGRAPH_EXPORT")
+            ?.trim()
+            ?.takeIf(String::isNotBlank)
+            ?.let { Path.of(it) }
+        val candidate = configured ?: repoRoot.resolve(".atropos/specgraph/export")
+        val normalized = candidate.toAbsolutePath().normalize()
+        if (!Files.isDirectory(normalized)) {
+            return "specgraph_export SKIPPED_SOFT_FAIL:missing path=${normalized.fileName}"
+        }
+        val (reader, verification) = ExportBundleReader.openOrExplain(normalized)
+        if (reader == null) {
+            return "specgraph_export SKIPPED_SOFT_FAIL:${verification.failures.firstOrNull() ?: "unusable"}"
+        }
+        val translation = reader.executionDag(repoRoot)
+        return "specgraph_export ${translation?.evidenceLine() ?: "SKIPPED_SOFT_FAIL:handoff_missing"}"
     }
 }

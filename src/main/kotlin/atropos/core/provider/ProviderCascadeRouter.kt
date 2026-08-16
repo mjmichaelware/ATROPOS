@@ -6,6 +6,8 @@ import atropos.core.provider.ProviderDescriptorRegistry
 import atropos.core.provider.StaticProviderDescriptorRegistry
 import atropos.core.provider.ApiCapability
 import atropos.core.provider.ProviderCascadeOrder
+import atropos.core.provider.FallbackChain
+import atropos.core.provider.FallbackChainRegistry
 
 data class ProviderCascadeResult(
     val providerName: String,
@@ -23,6 +25,10 @@ class ProviderCascadeRouter(
     private val registry: ProviderDescriptorRegistry = StaticProviderDescriptorRegistry(),
     private val localHealth: () -> Boolean = { OllamaHealthProbe().probe().online }
 ) {
+    /** Returns the documented chain through the canonical route owner. */
+    fun declaredFallbackChain(capability: ApiCapability): FallbackChain? =
+        FallbackChainRegistry.canonicalChain(capability)
+
     fun completeWithCascade(
         requestedProvider: String,
         prompt: String,

@@ -8,6 +8,10 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.LinkOption
 import java.nio.file.Path
+import java.nio.file.StandardCopyOption
+import java.security.MessageDigest
+import java.util.NavigableMap
+import java.util.TreeMap
 
 class AstSymbolGraph(
     private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
@@ -38,7 +42,7 @@ class AstSymbolGraph(
             repoRoot.resolve("src/test/kotlin")
         ).filter { Files.isDirectory(it, LinkOption.NOFOLLOW_LINKS) && !Files.isSymbolicLink(it) }
         if (sourceRoots.isEmpty()) return emptyList()
-        return sourceRoots.flatMap { sourceRoot ->
+        val symbols = sourceRoots.flatMap { sourceRoot ->
             Files.walk(sourceRoot).use { stream ->
                 stream.filter {
                     Files.isRegularFile(it, LinkOption.NOFOLLOW_LINKS) &&
@@ -49,6 +53,96 @@ class AstSymbolGraph(
                     .toList()
             }
         }
+        index.clear()
+        nodes.clear()
+        childrenMap.clear()
+        symbols.forEach { symbol ->
+            val relative = portablePath(repoRoot.relativize(symbol.file))
+            val address = "$relative#${symbol.qualifiedName}@L${symbol.line}-${symbol.line}"
+            val node = AstSymbolNode(
+                nodeId = sha256("$address:${symbol.offset}"),
+                address = address,
+                symbolType = symbol.kind.name,
+                filePath = relative,
+                byteOffsetStart = byteOffset(symbol.file, symbol.offset),
+                byteOffsetEnd = byteOffset(symbol.file, symbol.offset + symbol.name.length),
+                parentId = null
+            )
+            addNode(node)
+        }
+        return symbols
+    }
+
+    /**
+     * Materializes the graph's canonical address table for consumers that
+     * need restart-safe lookup. Normal graph reads remain side-effect free;
+     * callers opt into persistence at an explicit mutation boundary.
+     */
+    fun buildAndPersist(relativePath: String = ".atropos/ast/ast_symbol_graph.tsv"): List<AstSymbol> {
+        val symbols = build()
+        val root = repoRoot.toAbsolutePath().normalize()
+        val destination = root.resolve(relativePath).normalize()
+        require(destination.startsWith(root)) { "AST persistence path escapes repository root" }
+        var current: Path? = destination
+        while (current != null && current.startsWith(root)) {
+            require(!Files.isSymbolicLink(current)) { "AST persistence path contains a symbolic link" }
+            current = current.parent
+        }
+        Files.createDirectories(destination.parent)
+        val temporary = Files.createTempFile(destination.parent, ".ast-symbol-", ".tmp")
+        try {
+            val body = buildString {
+                appendLine("node_id\taddress\tsymbol_type\tfile_path\tbyte_offset_start\tbyte_offset_end\tdependency_refs")
+                nodes.values.sortedBy { it.address }.forEach { node ->
+                    append(node.nodeId).append('\t')
+                    append(node.address).append('\t')
+                    append(node.symbolType).append('\t')
+                    append(node.filePath).append('\t')
+                    append(node.byteOffsetStart).append('\t')
+                    append(node.byteOffsetEnd).append('\t')
+                    appendLine(node.dependencyRefs.joinToString(","))
+                }
+            }
+            Files.writeString(temporary, body, StandardCharsets.UTF_8)
+            Files.move(temporary, destination, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
+        } catch (java.nio.file.AtomicMoveNotSupportedException) {
+            Files.move(temporary, destination, StandardCopyOption.REPLACE_EXISTING)
+        } finally {
+            Files.deleteIfExists(temporary)
+        }
+        return symbols
+    }
+
+    /** Loads a previously persisted graph without reparsing source files. */
+    fun loadPersisted(relativePath: String = ".atropos/ast/ast_symbol_graph.tsv"): Int {
+        val root = repoRoot.toAbsolutePath().normalize()
+        val source = root.resolve(relativePath).normalize()
+        require(source.startsWith(root)) { "AST persistence path escapes repository root" }
+        if (!Files.isRegularFile(source, LinkOption.NOFOLLOW_LINKS)) return 0
+        var current: Path? = source
+        while (current != null && current.startsWith(root)) {
+            require(!Files.isSymbolicLink(current)) { "AST persistence path contains a symbolic link" }
+            current = current.parent
+        }
+        val rows = Files.readAllLines(source, StandardCharsets.UTF_8).drop(1)
+        index.clear()
+        nodes.clear()
+        childrenMap.clear()
+        rows.mapNotNull { row ->
+            val fields = row.split('\t', limit = 7)
+            if (fields.size < 7) return@mapNotNull null
+            AstSymbolNode(
+                nodeId = fields[0],
+                address = fields[1],
+                symbolType = fields[2],
+                filePath = fields[3],
+                byteOffsetStart = fields[4].toIntOrNull() ?: return@mapNotNull null,
+                byteOffsetEnd = fields[5].toIntOrNull() ?: return@mapNotNull null,
+                dependencyRefs = fields[6].split(',').filter(String::isNotBlank),
+                parentId = null
+            )
+        }.forEach(::addNode)
+        return nodes.size
     }
 
     fun lookup(query: String): AstLookupResult {
@@ -164,6 +258,9 @@ class AstSymbolGraph(
     private fun parseFile(path: Path): List<AstSymbol> {
         val source = Files.readString(path, StandardCharsets.UTF_8)
         val tree = parser.parseTree(source)
+        require(tree.parseErrors.isEmpty()) {
+            "AST parse refused for ${path.fileName}: ${tree.parseErrors.joinToString(", ") }"
+        }
         val relative = portablePath(repoRoot.relativize(path))
         val expectedPathSuffix = expectedPathSuffix(tree.packageName, path)
         val packagePathInvariantHolds = relative.endsWith(expectedPathSuffix)
@@ -223,6 +320,16 @@ class AstSymbolGraph(
         return symbols
     }
 
+    private fun byteOffset(path: Path, characterOffset: Int): Int {
+        val source = runCatching { Files.readString(path, StandardCharsets.UTF_8) }.getOrDefault("")
+        return source.take(characterOffset.coerceIn(0, source.length)).toByteArray(StandardCharsets.UTF_8).size
+    }
+
+    private fun sha256(value: String): String =
+        MessageDigest.getInstance("SHA-256")
+            .digest(value.toByteArray(StandardCharsets.UTF_8))
+            .joinToString("") { "%02x".format(it) }
+
     private fun resolveScopedPath(path: String): Path {
         val root = repoRoot.toAbsolutePath().normalize()
         val target = root.resolve(path).normalize()
@@ -263,14 +370,24 @@ data class AstSymbolNode(
     val filePath: String,
     val byteOffsetStart: Int,
     val byteOffsetEnd: Int,
-    val parentId: String?
+    val parentId: String?,
+    val dependencyRefs: List<String> = emptyList()
 )
 
 class AstSymbolIndex {
-    private val index = mutableMapOf<String, AstSymbolNode>()
+    // Addresses are the query key. Keep them ordered so prefix resolution
+    // visits only the address range that can match, rather than scanning every
+    // symbol in the graph.
+    private val index: NavigableMap<String, AstSymbolNode> = TreeMap()
     fun add(node: AstSymbolNode) { index[node.address] = node }
+    fun clear() { index.clear() }
     fun lookup(prefix: String): List<AstSymbolNode> {
-        return index.values.filter { it.address.startsWith(prefix) }
+        if (prefix.isEmpty()) return index.values.toList()
+        return index.tailMap(prefix, true).entries
+            .asSequence()
+            .takeWhile { it.key.startsWith(prefix) }
+            .map { it.value }
+            .toList()
     }
 }
 

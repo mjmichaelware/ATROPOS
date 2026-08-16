@@ -56,13 +56,25 @@ data class DiagnosticReport(
     val riskScore: Int
 )
 
+data class RewardVector(
+    val score: Double,
+    val trace: String
+)
+
 data class RewardEvent(
     val scope: VerificationScope,
     val reward: Double,
     val exitCode: Int?,
     val timedOut: Boolean,
-    val durationMillis: Long
-)
+    val durationMillis: Long,
+    val trace: String = "",
+    /** Inputs retained so the canonical reward formula remains auditable. */
+    val successRate: Double = if (reward > 0.0) 1.0 else 0.0,
+    val cost: Double = 1.0
+) {
+    val vector: RewardVector
+        get() = RewardVector(reward, trace)
+}
 
 data class VerificationResult(
     val request: VerificationRequest,

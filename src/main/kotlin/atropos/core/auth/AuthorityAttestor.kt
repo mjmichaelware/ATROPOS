@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.auth
 
-import atropos.core.artifact.ArtifactHasher
+import atropos.core.verification.AuthorityAttestation
 import java.nio.file.Files
 import java.nio.file.Path
 
@@ -43,7 +43,7 @@ class AuthorityAttestor(
 
         val observed = AuthorityFingerprint(
             path = relativePath,
-            sha256 = ArtifactHasher.sha256Bytes(bytes),
+            sha256 = AuthorityAttestation.sha256(bytes.toString(Charsets.UTF_8)),
             sizeBytes = bytes.size.toLong(),
             modifiedEpochMillis = runCatching { Files.getLastModifiedTime(file).toMillis() }.getOrDefault(0L),
             loaderVersion = AuthorityFingerprint.LOADER_VERSION

@@ -75,3 +75,18 @@ export function byStage(payload: ActivityPayload): StageRow[] {
 export function hasBlockedStage(payload: ActivityPayload): boolean {
   return payload.events.some((event) => event.outcome === 'blocked');
 }
+
+/** Returns a subject-scoped How? explanation from recorded activity only. */
+export function pipelineForSubject(payload: ActivityPayload, subject: string): string | undefined {
+  const needle = subject.trim().toLowerCase();
+  if (!needle) return undefined;
+  const events = payload.events.filter((event) => {
+    const recorded = event.subject.trim().toLowerCase();
+    return recorded === needle || recorded.includes(needle);
+  });
+  if (events.length === 0) return undefined;
+  const stages = [...new Set(events.map((event) => event.stage))];
+  const outcomes = [...new Set(events.map((event) => event.outcome))];
+  return `Stages: ${stages.join(', ')}. Outcomes: ${outcomes.join(', ')}. ` +
+    `Recorded events: ${events.length}.`;
+}

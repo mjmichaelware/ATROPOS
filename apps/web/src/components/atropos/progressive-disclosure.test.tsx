@@ -4,6 +4,7 @@ import { WorkItemCard } from './work-item-card';
 import { SessionStateProvider, useSessionState } from '@/lib/contexts/session-state-context';
 import type { WorkItem } from '@/lib/api-atropos/types';
 import { useEffect } from 'react';
+import { ProgressiveDisclosure } from '@/components/ui/progressive-disclosure';
 
 const item: WorkItem = {
   id: 'w-42',
@@ -43,6 +44,16 @@ describe('progressive disclosure levels', () => {
   // The provider hydrates from localStorage on mount, so a level persisted by
   // one case would otherwise overwrite the next case's level.
   beforeEach(() => localStorage.clear());
+
+  it('starts collapsed and only expands the mounted stream item', () => {
+    const { getByRole, queryByText } = render(
+      <ProgressiveDisclosure title="stream item">detail</ProgressiveDisclosure>,
+    );
+    expect(getByRole('button', { name: 'Expand stream item' })).toHaveAttribute('aria-expanded', 'false');
+    expect(queryByText('detail')).toBeNull();
+    getByRole('button', { name: 'Expand stream item' }).click();
+    expect(getByRole('button', { name: 'Collapse stream item' })).toHaveAttribute('aria-expanded', 'true');
+  });
 
   it('level 1 shows the essentials', () => {
     renderAt(1);

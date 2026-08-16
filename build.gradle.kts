@@ -27,6 +27,7 @@ version = "2.0.0-rc.1"
 
 dependencies {
     implementation(kotlin("stdlib"))
+    implementation(project(":core"))
     testImplementation(kotlin("test-junit"))
 }
 
@@ -94,6 +95,35 @@ val portableSurfacePlan = tasks.register("portableSurfacePlan") {
     }
 }
 
+val phase0ToolchainContractTest = tasks.register<Exec>("phase0ToolchainContractTest") {
+    group = "verification"
+    description = "Check Phase 0 runtime, toolchain, compile-probe, and Git-state contracts without building."
+    commandLine(
+        "bash",
+        layout.projectDirectory.file("scripts/phase0-toolchain-contract-test.sh").asFile.absolutePath
+    )
+}
+
+val canonicalAcceptanceTest = tasks.register<Test>("canonicalAcceptanceTest") {
+    group = "verification"
+    description = "Run the canonical acceptance contract suite without broadening the test target."
+    filter {
+        includeTestsMatching("atropos.core.acceptance.CanonicalAcceptanceTests")
+    }
+}
+
+// Packaging remains an explicit operator action, but the canonical installer
+// owner is reachable from the root task graph instead of being a free script.
+val packageInstallers = tasks.register<Exec>("packageInstallers") {
+    group = "distribution"
+    description = "Package the already-built ATROPOS artifact for supported hosts."
+    dependsOn(tasks.named("jar"))
+    commandLine(
+        "bash",
+        layout.projectDirectory.file("scripts/package-installers.sh").asFile.absolutePath
+    )
+}
+
 // Phase 0 secret scan: the proof scripts existed but nothing ran them, so a
 // leak could reach a release without any gate objecting.
 val secretScan = tasks.register<Exec>("secretScan") {
@@ -132,7 +162,7 @@ val smokeTest = tasks.register("smokeTest") {
 }
 
 tasks.named("check") {
-    dependsOn(kotlinCompatScan, kotlinCompatScanEdge, portableSurfacePlan, secretScan)
+    dependsOn(kotlinCompatScan, kotlinCompatScanEdge, portableSurfacePlan, phase0ToolchainContractTest, secretScan, canonicalAcceptanceTest)
 }
 
 tasks.jar {

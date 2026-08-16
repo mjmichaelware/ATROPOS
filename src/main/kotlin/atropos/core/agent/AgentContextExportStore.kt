@@ -2,6 +2,7 @@ package atropos.core.agent
 
 import atropos.core.AtroposRepoRootLocator
 import atropos.core.security.RedactionFilter
+import atropos.core.verification.Rule142Export
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
@@ -40,6 +41,8 @@ class AgentContextExportStore(
         appendLine("final report:")
         appendLine(record.finalReport?.let(redactionFilter::redact) ?: "none")
         appendLine("context export path: ${exportDir.resolve("${record.id}.txt")}")
+        appendLine("next context export command: ${Rule142Export.generateExportCommand(changedFiles)}")
+        appendLine("context export media scan: ${Rule142Export.triggerMediaScan()}")
     }.trimEnd() + "\n"
 
     private fun renderStatus(status: AgentJobStatus): String = when (status) {

@@ -13,7 +13,8 @@ enum class VaultReadRefusalReason {
     UNSUPPORTED_FORMAT,
     TAMPERED,
     KEY_UNAVAILABLE,
-    IO_FAILURE
+    IO_FAILURE,
+    PROHIBITED_SINK
 }
 
 class VaultEnrollmentRefused(val reason: VaultReadRefusalReason) : RuntimeException(null, null, false, false)

@@ -9,6 +9,12 @@ interface ProviderAdapter {
     val providerId: String get() = descriptor.id
     val capabilities: Set<ApiCapability> get() = descriptor.capabilities
 
+    fun model(): AdapterModel = AdapterModel(
+        id = providerId,
+        free = descriptor.isFreeEligible(),
+        capabilities = capabilities
+    )
+
     fun status(): AdapterStatus
 
     fun canHandle(request: AdapterRequest): Boolean =

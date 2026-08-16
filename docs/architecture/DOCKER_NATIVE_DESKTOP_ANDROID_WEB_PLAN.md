@@ -26,7 +26,9 @@ and Web without creating a second orchestration engine.
 
 ## Current implementation boundary
 
-`PlatformAbstraction`, `PlatformAdapter`, `PlatformModels`, and the CLI engine are
-the existing owners. Future platform work extends these contracts or adds a thin
+`PlatformAbstraction`, `PlatformAdapter`, `PlatformModels`, `PlatformWire`, and
+`PlatformModuleTopology` are the existing owners. The Compose Desktop module at
+`desktop/` is a thin presentation adapter over `:core`; it owns window lifecycle
+and rendering only. Future platform work extends these contracts or adds a thin
 adapter; it must not create a second DAG, policy engine, memory root, or provider
 registry.

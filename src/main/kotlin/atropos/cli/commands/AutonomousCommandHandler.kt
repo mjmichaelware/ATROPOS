@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.cli.commands
 
+import atropos.core.autonomous.AutonomousBacklogManager
 import atropos.core.autonomous.AutonomousBacklogService
 import atropos.core.autonomous.AutonomousOrchestrator
 
@@ -13,7 +14,7 @@ import atropos.core.autonomous.AutonomousOrchestrator
  */
 class AutonomousCommandHandler(
     private val orchestrator: AutonomousOrchestrator = AutonomousOrchestrator(),
-    private val backlog: AutonomousBacklogService = AutonomousBacklogService()
+    private val backlog: AutonomousBacklogManager = AutonomousBacklogManager(AutonomousBacklogService())
 ) {
     fun handle(args: List<String>): String = when (args.firstOrNull()) {
         "init" -> "Autonomous session initialized: ${orchestrator.init().id}"
@@ -27,7 +28,7 @@ class AutonomousCommandHandler(
     }
 
     private fun backlog(): String {
-        val snapshot = backlog.snapshot()
+        val snapshot = backlog.getBacklogSnapshot()
         if (snapshot.tasks.isEmpty()) return "autonomous backlog empty"
         return snapshot.tasks.joinToString("\n") {
             "  [${it.state.name}] ${it.id}: ${it.description} (${it.kind.name})"

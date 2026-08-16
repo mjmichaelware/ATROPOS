@@ -24,4 +24,12 @@ class TreeSitterGrammarBridgeExtendedTest {
         assertEquals(listOf("Outer", "Inner"), deepMethod?.scope)
         assertEquals(2, deepMethod?.bodyDepth)
     }
+
+    @Test
+    fun `empty and malformed sources produce parse errors instead of success`() {
+        val bridge = TreeSitterGrammarBridge()
+
+        assertTrue(bridge.parseTree("").parseErrors.contains("empty_source"))
+        assertTrue(bridge.parseTree("class Broken {").parseErrors.isNotEmpty())
+    }
 }

@@ -28,6 +28,12 @@ class SelfHostGoalService(
     private val goalQueries = SelfHostGoalQueryService(store, dagService, memoryStore)
     private val contextPreflight = SelfHostContextPreflight(repoRoot)
     private val dagNodeEvaluator = SelfHostDagNodeEvaluator(store = store, dagService = dagService, contextPreflight = contextPreflight, cradleVerificationGate = cradleVerificationGate, experienceRecorder = SelfHostExperienceRecorder(memoryStore), worktreeNodeExecutor = SelfHostWorktreeNodeExecutor(repoRoot))
+    private val recoveryOrchestrator = SelfHostGoalRecoveryOrchestrator(
+        store = store,
+        dagService = dagService,
+        restartCoordinator = restartCoordinator,
+        goalQueries = goalQueries
+    )
     private val promotionService = SelfHostPromotionService(repoRoot = repoRoot, store = store, dagService = dagService, completionGate = completionGate)
     private val promotionBoundary = SelfHostGoalPromotionBoundary(store, stateSnapshotRecorder, promotionService)
     private val evidenceBundleExporter = SelfHostEvidenceBundleExporter(repoRoot = repoRoot, store = store, dagService = dagService, restartCoordinator = restartCoordinator)
@@ -245,57 +251,7 @@ class SelfHostGoalService(
     fun recoverAndContinue(
         goalId: String? = null,
         compactState: String? = "self-host restart recovery"
-    ): SelfHostResult {
-        val recovered = restartCoordinator.recoverAndSnapshot()
-        val selected = resolveResumableGoal(goalId)
-        if (!selected.ok) {
-            return SelfHostResult(false, "${recovered.message}; ${selected.message}", selected.goal)
-        }
-        val record = selected.goal?.record
-            ?: return SelfHostResult(false, "${recovered.message}; no resumable self-host goal selected")
-        if (!recovered.ok) {
-            val refusal = "restart recovery refused continuation: ${recovered.message}"
-            val recorded = addEvidence(
-                record.id,
-                "restart_recovery_stop goal=${record.id} reason=${recovered.message}"
-            )
-            return SelfHostResult(
-                false,
-                refusal,
-                recorded.goal ?: selected.goal
-            )
-        }
-        val restoredNode = recovered.restoredNodes
-            .firstOrNull { it.restored && it.dagId == record.dagId }
-        val nextAction = planNextAction(record.id)
-        val evidence = listOf(
-            "restart_snapshot id=${recovered.snapshot.id} goals=${recovered.snapshot.goalRuns.size} dags=${recovered.snapshot.dags.size}",
-            "restart_recovery ok=${recovered.ok} restored=${recovered.restoredNodes.count { it.restored }} blocked=${recovered.restoredNodes.count { !it.restored }}",
-            "restart_next goal=${record.id} node=${nextAction.nodeId ?: restoredNode?.nodeId ?: "none"}",
-            nextAction.evidenceLine()
-        )
-        store.update(record.copy(evidence = record.evidence + evidence))
-        return when (nextAction.kind) {
-            SelfHostNextActionKind.ADVANCE_NODE,
-            SelfHostNextActionKind.ADVANCE_GOAL -> advanceNextResumableGoal(record.id, compactState)
-            SelfHostNextActionKind.PROMOTE_JAR -> SelfHostResult(
-                false,
-                "restart continuation stopped at promotion boundary: ${nextAction.reason}",
-                SelfHostGoal(record, record.dagId?.let { dagService.readDag(it) })
-            )
-            SelfHostNextActionKind.WAIT_EXTERNAL_INPUT,
-            SelfHostNextActionKind.HARD_STOP -> SelfHostResult(
-                false,
-                "restart continuation stopped: ${nextAction.reason}",
-                SelfHostGoal(record, record.dagId?.let { dagService.readDag(it) })
-            )
-            SelfHostNextActionKind.COMPLETE -> SelfHostResult(
-                true,
-                "restart continuation complete: ${nextAction.reason}",
-                SelfHostGoal(record, record.dagId?.let { dagService.readDag(it) })
-            )
-        }
-    }
+    ): SelfHostResult = recoveryOrchestrator.recoverAndContinue(this, goalId, compactState)
 
     fun exportEvidenceBundle(goalId: String): SelfHostEvidenceBundleResult {
         val evidenceResult = addEvidence(goalId, stateSnapshotRecorder.captureEvidence("pre-evidence-export", goalId))

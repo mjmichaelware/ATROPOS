@@ -63,6 +63,16 @@ class ComputerUseBridge(
             territoryGrantId = territoryGrantId
         )
     }
+
+    /** Submit the converted intent to the same territory/policy gate. */
+    fun judge(
+        callerId: String,
+        operation: String,
+        paths: List<String>,
+        targetSurface: String,
+        territoryGrantId: String
+    ): atropos.core.integration.InboundGateResult =
+        mcpBridge.judge(convertRequest(callerId, operation, paths, targetSurface, territoryGrantId))
 }
 
 /** SessionManager (Item 266). */
@@ -107,18 +117,5 @@ class TerritoryMonitor {
         val linearCost = n
         val quadraticCost = n * n
         return "Territory monitor complexity: linearCost=$linearCost quadraticCost=$quadraticCost"
-    }
-}
-
-/** SurfaceContract (Item 270). */
-interface SurfaceContract {
-    val name: String
-    fun verifyParity(other: SurfaceContract): Boolean
-}
-
-class CliSurfaceContract : SurfaceContract {
-    override val name = "CLI"
-    override fun verifyParity(other: SurfaceContract): Boolean {
-        return other.name == "CLI" || other.name == "WEB"
     }
 }

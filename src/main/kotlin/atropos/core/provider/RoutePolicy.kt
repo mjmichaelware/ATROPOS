@@ -87,30 +87,24 @@ class RoutePolicy(
     fun decide(task: ProviderTask): RoutePolicyDecision {
         val candidates = registry.getByCapability(task.capability).ifEmpty { registry.getByCapability(ApiCapability.CHAT) }
         val evaluated = candidates.map { filter.evaluate(it, ledger.get(it.id)) }
-        val eligible = evaluated.filter { it.eligible }.sortedWith(
-            compareBy<ProviderEligibility>(
-                {
-                    if (!task.localFirst && it.provider.isLocal) 1 else 0
-                },
-                {
-                    when {
-                        costPolicy == AtroposCostPolicy.PAID_EMERGENCY_UNLOCKED &&
-                            it.provider.isPaidLocked() &&
-                            paidGate.isProviderUnlocked(it.provider.id) -> 0
-                        it.provider.isPaidLocked() -> 2
-                        costPolicy == AtroposCostPolicy.PAID_EMERGENCY_UNLOCKED &&
-                            it.provider.costMode != CostMode.LOCAL -> 0
-                        costPolicy == AtroposCostPolicy.PAID_EMERGENCY_UNLOCKED -> 1
-                        else -> 1
-                    }
-                },
-                { taskPriority(task, it.provider) },
-                { it.provider.quotaTier },
-                { it.quota?.successScore?.let { score -> -score } ?: 0.0 },
-                { it.quota?.latencyMsAvg ?: Long.MAX_VALUE },
-                { it.provider.id }
-            )
-        )
+        val eligibilityOrder = EligibilityAlgorithm.rank(
+            evaluated.map { candidate ->
+                ProviderHealth(
+                    providerId = candidate.provider.id,
+                    state = candidate.quota?.state ?: ProviderAvailabilityState.READY,
+                    verified = candidate.quota?.verified ?: candidate.provider.isLocal,
+                    activeModel = candidate.provider.endpointId ?: candidate.provider.id,
+                    latencyMsAvg = candidate.quota?.latencyMsAvg,
+                    successScore = candidate.quota?.successScore ?: 0.0
+                )
+            }
+        ).mapIndexed { index, score -> score.providerId to index }.toMap()
+        val eligible = ProviderPreferenceOrder.order(evaluated.filter { it.eligible }) { providerId ->
+            val descriptor = evaluated.first { it.provider.id == providerId }.provider
+            taskPriority(task, descriptor) +
+                (if (!task.localFirst && descriptor.isLocal) 1 else 0) +
+                (eligibilityOrder[providerId] ?: Int.MAX_VALUE)
+        }
         val selected = eligible.firstOrNull()?.provider
         return if (selected != null) {
             RoutePolicyDecision(task, selected.id, selected, eligible, evaluated.filterNot { it.eligible })

@@ -82,9 +82,10 @@ class StorageCommandHandler(
                 } else {
                     appendLine()
                     constitution.classes.forEach { storageClass ->
+                        val retention = supervisor.retentionClass(storageClass)
                         appendLine(
                             "  ${storageClass.id.padEnd(16)} ${mib(storageClass.bytes).padStart(10)}  " +
-                                storageClass.tier.canonical
+                                retention.tier.canonical
                         )
                     }
                 }

@@ -13,9 +13,10 @@ class OpsCommandHandler(
             null, "status" -> uiEngine.renderNotice(renderer.render())
             "export" -> uiEngine.renderNotice(renderer.export())
             "verify" -> uiEngine.renderNotice(renderer.verify())
+            "evaluate" -> uiEngine.renderNotice(renderer.evaluate(tokens.getOrNull(2) ?: "operator"))
             "quota-backup" -> uiEngine.renderNotice(renderer.quotaBackup())
             "quota-restore" -> restore(tokens)
-            else -> uiEngine.renderError("usage: /ops [status|export|verify|quota-backup|quota-restore <file>]")
+            else -> uiEngine.renderError("usage: /ops [status|export|verify|evaluate [subject]|quota-backup|quota-restore <file>]")
         }
         return RouterOutcome.CONTINUE
     }

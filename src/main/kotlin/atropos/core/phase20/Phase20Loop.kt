@@ -2,9 +2,14 @@
 package atropos.core.phase20
 
 object Phase20Loop {
+    /** Canonical loop factory used by governance; this object owns no loop. */
+    fun canonical(ledger: GovernanceLedger): SelfImprovementLoop = SelfImprovementLoop(ledger)
+
     // P20-20.1: Gather evidence
     fun gatherEvidence(target: String): List<String> {
-        return listOf("evidence_for_$target")
+        // Legacy callers cannot fabricate evidence. Real observations enter
+        // through Phase20GovernanceService and its detector/ledger chain.
+        return emptyList()
     }
 
     // P20-20.2: Formulate Proposal
@@ -40,7 +45,9 @@ object Phase20Loop {
 
     // P20-20.9: Phase 11 execution trigger
     fun executeAmendment(amendment: VersionedAmendment): VersionedAmendment {
-        // Simulates applying the amendment via Phase 11 VerifiedCompletionGate
-        return amendment.copy(verified = true)
+        // Phase 20 cannot execute source mutations. Phase 11 must return an
+        // independent gate result before this contract can become verified.
+        // Returning an unverified contract is intentionally fail-closed.
+        return amendment.copy(verified = false)
     }
 }

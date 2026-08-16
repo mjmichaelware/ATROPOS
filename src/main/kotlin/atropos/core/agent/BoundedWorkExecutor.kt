@@ -1,5 +1,6 @@
 package atropos.core.agent
 
+import atropos.core.ast.PreconditionChecker
 import atropos.core.policy.AgencyDisposition
 import atropos.core.policy.BoundedAgencyGate
 import atropos.core.policy.ExecutionPolicyEngine
@@ -47,8 +48,19 @@ class BoundedWorkExecutor(
     fun evaluateBatch(
         before: Map<String, String>,
         after: Map<String, String>,
-        declaredTerritory: Set<String>
-    ): BatchGateDecision = batchGate.evaluate(before, after, declaredTerritory)
+        declaredTerritory: Set<String>,
+        higValue: Double = 0.0,
+        hudValue: Double = 0.0
+    ): BatchGateDecision {
+        val decision = batchGate.evaluate(before, after, declaredTerritory, higValue, hudValue)
+        if (!PreconditionChecker.verifyCommitPrecondition(higValue, hudValue)) {
+            return decision.copy(
+                passed = false,
+                reason = "E(DELTA) commit precondition refused: HIG=$higValue HUD=$hudValue must sum to zero"
+            )
+        }
+        return decision
+    }
 
     companion object {
         fun forService(queueService: AgentQueueService, repoRoot: java.nio.file.Path): BoundedWorkExecutor =

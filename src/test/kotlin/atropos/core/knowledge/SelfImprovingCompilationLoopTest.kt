@@ -6,10 +6,42 @@ import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 import atropos.core.verification.VerificationScope
 import kotlin.test.Test
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 class SelfImprovingCompilationLoopTest {
+
+    @Test
+    fun `reward recorder enqueues persistence without blocking the caller`() {
+        val completed = CountDownLatch(1)
+        val recorder = NonBlockingRewardRecorder(
+            RewardRecorder { completed.countDown() }
+        )
+        try {
+            recorder.record(RewardEvent(VerificationScope.NARROW, 1.0, 0, false, 1L))
+            assertTrue(completed.await(2, TimeUnit.SECONDS))
+        } finally {
+            recorder.close()
+        }
+    }
+
+    @Test
+    fun `verification reward exposes the canonical score and stderr trace`() {
+        val vector = RewardEvent(
+            scope = VerificationScope.NARROW,
+            reward = 0.5,
+            exitCode = 1,
+            timedOut = false,
+            durationMillis = 25L,
+            trace = "compiler: missing symbol"
+        ).vector
+
+        assertEquals(0.5, vector.score)
+        assertEquals("compiler: missing symbol", vector.trace)
+    }
 
     @Test
     fun `test execution verification loop`() {

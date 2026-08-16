@@ -32,6 +32,28 @@ export type ControlVerb =
   | 'export'
   | 'inspect';
 
+/** The one contract-layer verb vocabulary consumed by every surface. */
+export const CANONICAL_CONTROL_VERBS = [
+  'approve',
+  'reject',
+  'retry',
+  'pause',
+  'resume',
+  'cancel',
+  'redirect',
+  'prioritize',
+  'split',
+  'merge',
+  'archive',
+  'export',
+  'inspect',
+] as const satisfies readonly ControlVerb[];
+
+export function validateControlVerbSet(verbs: readonly string[]): boolean {
+  return verbs.length <= CANONICAL_CONTROL_VERBS.length &&
+    verbs.every((verb) => (CANONICAL_CONTROL_VERBS as readonly string[]).includes(verb));
+}
+
 interface ControlVerbsProps {
   available: ControlVerb[];
   onAction?: (verb: ControlVerb) => void;

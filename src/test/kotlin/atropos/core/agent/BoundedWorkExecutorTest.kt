@@ -32,4 +32,21 @@ class BoundedWorkExecutorTest {
         assertTrue(result.accepted, result.reason)
         assertTrue(result.record?.task == "bounded task")
     }
+
+    @Test
+    fun batch_evaluation_refuses_nonzero_hig_or_hud_before_commit() {
+        val root = Files.createTempDirectory("atropos-bounded-work-batch-")
+        val queue = AgentQueueService(collector = AgentContextCollector(root))
+        val executor = BoundedWorkExecutor(queue, BoundedAgencyGate(ExecutionPolicyEngine(root)))
+
+        val result = executor.evaluateBatch(
+            before = mapOf("src/A.kt" to "same"),
+            after = mapOf("src/A.kt" to "same"),
+            declaredTerritory = setOf("src"),
+            higValue = 1.0
+        )
+
+        assertFalse(result.passed)
+        assertTrue(result.reason.contains("commit precondition"))
+    }
 }

@@ -39,7 +39,7 @@ class Phase20GovernanceService(
     private val evidence: EvidenceStore = EvidenceStore(),
     private val policyGate: PolicyGate = PolicyGate(),
     private val auditLog: Phase20AuditLog = Phase20AuditLog(),
-    private val loop: SelfImprovementLoop = SelfImprovementLoop(ledger),
+    private val loop: SelfImprovementLoop = Phase20Loop.canonical(ledger),
     private val clock: () -> Instant = { Instant.now() }
 ) {
     private val observationLedger = ObservationCasLedger(evidence)
@@ -72,6 +72,9 @@ class Phase20GovernanceService(
         val incomplete = detected.filter { it.id !in stored }
 
         val lawFindings = buildList {
+            InvariantContractCatalog.evaluate(InvariantContractCatalog.from(context)).forEach { violation ->
+                add("${violation.id}: missing ${violation.missingFact}")
+            }
             detected.forEach { observation ->
                 if (!SelfImprovementLaws.checkLaw20_2(observation)) {
                     add("20.2 ${observation.id}: not normalised into a complete tuple")

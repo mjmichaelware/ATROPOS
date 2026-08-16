@@ -23,5 +23,18 @@ data class GovernanceDetectorContext(
     val changes: List<String> = emptyList(),
     val territory: List<String> = emptyList(),
     val stateVocabularyCollapsed: Boolean = false,
-    val failures: Int = 0
+    val failures: Int = 0,
+    /** Explicit runtime evidence for invariants that cannot be inferred from identity fields. */
+    val lakehouseOptional: Boolean = false,
+    val webContentDataOnly: Boolean = false,
+    val storagePolicyDeclared: Boolean = false,
+    val growthObserved: Boolean = false,
+    val remoteStorageAccounted: Boolean = false,
+    val casByteDedupVerified: Boolean = false,
+    val causeFalsifiable: Boolean = false,
+    val humanEscalationReviewed: Boolean = false,
+    val evictionRegenerable: Boolean = false,
+    val archiveRestoreTested: Boolean = false,
+    val deleteReferenceProven: Boolean = false,
+    val deleteReclaimableVerdict: Boolean = false
 )

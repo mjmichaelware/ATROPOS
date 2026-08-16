@@ -123,6 +123,20 @@ class AstSymbolGraphTest {
         assertEquals(listOf(node), graph.getByFile("file.kt"))
         assertEquals(emptyList(), graph.getChildren("n1"))
     }
+
+    @Test
+    fun address_index_resolves_only_the_ordered_prefix_range() {
+        val index = AstSymbolIndex()
+        val first = AstSymbolNode("n1", "src/A.kt#one@L1-1", "class", "src/A.kt", 0, 1, null)
+        val second = AstSymbolNode("n2", "src/A.kt#two@L2-2", "class", "src/A.kt", 2, 3, null)
+        val other = AstSymbolNode("n3", "src/B.kt#one@L1-1", "class", "src/B.kt", 0, 1, null)
+        index.add(other)
+        index.add(second)
+        index.add(first)
+
+        assertEquals(listOf(first, second), index.lookup("src/A.kt#"))
+        assertEquals(listOf(other), index.lookup("src/B.kt#"))
+    }
     
     @Test
     fun get_children() {

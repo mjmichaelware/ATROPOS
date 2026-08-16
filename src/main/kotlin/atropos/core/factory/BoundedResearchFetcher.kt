@@ -1,9 +1,8 @@
 package atropos.core.factory
 
 import atropos.core.security.RedactionFilter
-import java.net.HttpURLConnection
 import java.net.URI
-import java.nio.charset.StandardCharsets
+import atropos.core.ProviderHttpClient
 
 /**
  * Owns the transport limits for optional factory research.
@@ -18,7 +17,8 @@ internal class BoundedResearchFetcher(
     private val maxRequests: Int = 2,
     private val maxQueryParameters: Int = 8,
     private val maxUrlChars: Int = 2048,
-    private val redactionFilter: RedactionFilter = RedactionFilter()
+    private val redactionFilter: RedactionFilter = RedactionFilter(),
+    private val httpClient: ProviderHttpClient = ProviderHttpClient(redactionFilter)
 ) {
     private var requestsUsed = 0
 
@@ -54,23 +54,10 @@ internal class BoundedResearchFetcher(
         }
         requestsUsed += 1
 
-        val connection = uri.toURL().openConnection() as HttpURLConnection
-        connection.requestMethod = method
-        connection.connectTimeout = timeoutMillis
-        connection.readTimeout = timeoutMillis
-        connection.instanceFollowRedirects = false
-        try {
-            require(connection.responseCode in 200..299) {
-                "bounded research request returned HTTP ${connection.responseCode}"
-            }
-            if (method == "HEAD") return@runCatching ""
-            connection.inputStream.use { input ->
-                val bytes = input.readNBytes(maxBytes + 1)
-                require(bytes.size <= maxBytes) { "bounded research response exceeded $maxBytes bytes" }
-                redactionFilter.redact(String(bytes, StandardCharsets.UTF_8))
-            }
-        } finally {
-            connection.disconnect()
+        val response = httpClient.requestBounded(uri.toString(), method, timeoutMillis, maxBytes)
+        require(response.statusCode in 200..299) {
+            "bounded research request returned HTTP ${response.statusCode}"
         }
+        response.body
     }
 }

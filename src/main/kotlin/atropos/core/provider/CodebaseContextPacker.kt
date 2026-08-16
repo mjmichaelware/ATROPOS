@@ -2,6 +2,7 @@ package atropos.core.provider
 
 import atropos.core.AtroposRepoRootLocator
 import atropos.core.security.RedactionFilter
+import atropos.data.cache.CodebaseDeltaTreeTracker
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.LinkOption
@@ -14,6 +15,7 @@ class CodebaseContextPacker(
     private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     private val contentHashPlaceholder = "0".repeat(64)
+    private val deltaTracker = CodebaseDeltaTreeTracker(repoRoot.toString())
 
     private val pendingPackId = "pack-0000000000000000"
 
@@ -60,6 +62,7 @@ class CodebaseContextPacker(
         BoundedUtf8Appender.append(builder, "TERRITORY=${allowed.joinToString("|")}\n\n", request.maxBytes) { truncated = true }
 
         val packedPaths = mutableListOf<String>()
+        var sourceByteCount = 0
         for (relative in included) {
             val currentBytes = BoundedUtf8Appender.utf8Size(builder)
             if (currentBytes >= request.maxBytes) {
@@ -71,6 +74,7 @@ class CodebaseContextPacker(
                 !Files.isRegularFile(file, LinkOption.NOFOLLOW_LINKS)
             ) continue
             val bytes = Files.readAllBytes(file)
+            sourceByteCount += bytes.size
             val body = String(bytes.take(request.maxFileBytes).toByteArray(), StandardCharsets.UTF_8)
             if (bytes.size > request.maxFileBytes) truncated = true
             val report = redactionFilter.report(body)
@@ -98,6 +102,11 @@ class CodebaseContextPacker(
             .replaceFirst("SOURCE_PACK_ID=$pendingPackId", "SOURCE_PACK_ID=$packId")
             .replaceFirst("PACK_CONTENT_HASH=$contentHashPlaceholder", "PACK_CONTENT_HASH=$contentHash")
         val bytes = text.toByteArray(StandardCharsets.UTF_8).size
+        val metrics = SourceContextMetrics(
+            sourceByteCount = sourceByteCount,
+            packedByteCount = bytes,
+            treeEditDistance = runCatching { deltaTracker.computeWorkspaceTreeEditDistance() }.getOrNull(),
+        )
         return SourcePackResult.Packed(
             CodebaseContextPack(
                 id = packId,
@@ -107,7 +116,8 @@ class CodebaseContextPacker(
                 byteCount = bytes,
                 truncated = truncated,
                 redacted = redacted,
-                text = text
+                text = text,
+                metrics = metrics,
             )
         )
     }

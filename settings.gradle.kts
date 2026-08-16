@@ -23,3 +23,7 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "ATROPOS"
+
+// Portable contracts and the optional Ktor transport are separate modules;
+// neither owns engine policy or durable state.
+include(":core", ":server", ":desktop")

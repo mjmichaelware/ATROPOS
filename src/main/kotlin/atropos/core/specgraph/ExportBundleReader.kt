@@ -4,6 +4,7 @@ package atropos.core.specgraph
 import java.nio.file.Files
 import java.nio.file.LinkOption
 import java.nio.file.Path
+import java.time.Instant
 
 /**
  * Reads artifacts out of a bundle that has already verified.
@@ -44,6 +45,10 @@ class ExportBundleReader private constructor(
 
     /** The parsed handoff, or null when it is absent or of another schema. */
     fun handoff(): HandoffDocument? = text(HandoffArtifact.ATROPOS_HANDOFF)?.let(HandoffParser::parse)
+
+    /** Translates the verified handoff through the canonical ATROPOS DAG owner. */
+    fun executionDag(repoRoot: Path, now: Instant = Instant.now()): Translation? =
+        handoff()?.let { HandoffDagTranslator().translate(it, repoRoot, now) }
 
     /**
      * The implementation blueprint, preferring markdown.

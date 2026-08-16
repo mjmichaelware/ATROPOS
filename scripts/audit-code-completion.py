@@ -8,6 +8,13 @@ from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
 OUT=ROOT/"docs/completion"
+# The legacy extractor has a smaller 741-row universe and must never replace
+# the canonical 1,020-row registry.  The unified audit is the sole writer for
+# current code-base status once it exists.
+UNIFIED_AUDIT=OUT/"ATROPOS_UNIFIED_OBLIGATION_AUDIT.json"
+if UNIFIED_AUDIT.is_file():
+ print("LEGACY_AUDIT_REFUSED: use scripts/audit-residual-obligations.py; canonical denominator is 1,020 rows plus residual predicates")
+ raise SystemExit(0)
 SCHEMA="atropos-codebase-accounting-v2"
 HISTORICAL_HEAD="7e612fcdba571b276a4ae65704835eb762030682"
 NOW=datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00","Z")

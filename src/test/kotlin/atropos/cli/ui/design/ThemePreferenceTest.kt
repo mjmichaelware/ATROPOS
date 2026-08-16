@@ -1,10 +1,13 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.cli.ui.design
 
+import atropos.cli.config.ConfigurationManager
+import atropos.cli.ui.TerminalTheme
 import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -14,6 +17,14 @@ import kotlin.test.assertTrue
  * palette nobody can select is decoration.
  */
 class ThemePreferenceTest {
+
+    @Test
+    fun `terminal theme rejects raw escape input before painting`() {
+        val theme = TerminalTheme(ConfigurationManager(), tierOverride = ColorTier.NONE)
+        assertFailsWith<IllegalArgumentException> {
+            theme.strong("unsafe\u001B[31mtext")
+        }
+    }
 
     private fun home(): String = Files.createTempDirectory("atropos-theme").toString()
 

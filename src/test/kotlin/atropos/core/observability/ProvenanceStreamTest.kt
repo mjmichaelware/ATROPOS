@@ -31,7 +31,8 @@ class ProvenanceStreamTest {
     fun `a subscriber receives what it asked for`() {
         val stream = ProvenanceStream()
         val seen = mutableListOf<Long>()
-        stream.subscribe("renderer") { seen += it.sequence }
+        val subscriber = EventSubscriber { seen += it.sequence }
+        stream.subscribe("renderer", subscriber = subscriber)
 
         stream.emit(event(1))
         stream.emit(event(2))

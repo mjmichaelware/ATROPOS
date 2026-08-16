@@ -27,10 +27,20 @@ class EvaluationDashboard(
         coverage: BenchmarkCoverage? = null
     ): String {
         val run = classifier.classifyAll(metrics)
+        val denominator = metrics.size.coerceAtLeast(1).toDouble()
+        val completion = CompletionCalculus.calculateRealCompletion(
+            ComponentCompletion(
+                implementationPercent = metrics.count { !it.unmeasured } / denominator,
+                integrationPercent = metrics.count { it.supported } / denominator,
+                verificationPercent = run.metrics.count { !it.classification.blocksRelease } / denominator,
+                evidencePercent = metrics.count { it.evidenceHashes.isNotEmpty() } / denominator
+            )
+        )
         return buildString {
             appendLine("ATROPOS EVALUATION")
             appendLine()
             appendLine("verdict            ${run.overall.label}")
+            appendLine("completion         ${(completion * 100.0).toInt()}% (minimum axis)")
             run.tierVerdicts().forEach { (tier, met) ->
                 appendLine("${tier.padEnd(18)} ${if (met) "met" else "NOT MET"}")
             }

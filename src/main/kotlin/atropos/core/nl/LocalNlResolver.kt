@@ -37,6 +37,8 @@ class LocalNlResolver(
     private val fuzzyMatcher: FuzzyMatcher = FuzzyMatcher(),
     private val knownCommands: () -> List<String> = { CommandRegistry.commands() }
 ) {
+    private val messyIntentParser = MessyIntentParser(emptySet())
+
     fun resolve(envelope: NlEnvelope): NlResolution {
         val text = envelope.canonical.trim()
         if (text.isEmpty()) return NlResolution.Empty
@@ -66,6 +68,21 @@ class LocalNlResolver(
         commands.firstOrNull { it.equals(text, ignoreCase = true) || it.equals("/$text", ignoreCase = true) }
             ?.let { return NlResolution.ExactCommand(it) }
 
+        // Keep the byte-level messy-input owner on the same local path as the
+        // command registry. It proposes a canonical command; execution still
+        // remains the caller's responsibility.
+        messyIntentParser.parseAgainst(text, commands)
+            ?.let { return NlResolution.Suggested(it, text) }
+
+        // Phrase mappings are the canonical verb vocabulary, not a second
+        // command registry. They run before edit-distance matching so a
+        // meaningful sentence such as "search execution logs" is proposed as
+        // /history rather than being sent to a provider or treated as a typo.
+        atropos.core.intent.NlPhraseMapper.mapPhrase(text)
+            ?.keyword
+            ?.takeIf { command -> commands.any { it.equals(command, ignoreCase = true) } }
+            ?.let { return NlResolution.Suggested(it, text) }
+
         // Only single-word input is fuzzy-matched. A sentence that happens to
         // start near a command name is prose -- "status of the build please"
         // is a question, and matching it to /status would answer something the
@@ -87,6 +104,11 @@ class LocalNlResolver(
         /** More than a handful of options is a list, not a suggestion. */
         const val MAX_SUGGESTIONS = 5
     }
+}
+
+private fun MessyIntentParser.parseAgainst(input: String, commands: List<String>): String? {
+    val parser = MessyIntentParser(commands.map { it.removePrefix("/") }.toSet())
+    return parser.parse(input)?.let { "/$it" }
 }
 
 sealed class NlResolution {

@@ -136,7 +136,7 @@ class AppProjectGenerator(
             check(deterministicReport.passed) {
                 "generated deterministic verification failed: ${deterministicReport.render().take(800)}"
             }
-            val astSymbols = AstSymbolGraph(repoRoot = target).build()
+            val astSymbols = AstSymbolGraph(repoRoot = target).buildAndPersist()
             check(astSymbols.any { it.kind != AstSymbolKind.FILE }) {
                 "generated AST symbol graph found no source declarations"
             }

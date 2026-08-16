@@ -12,7 +12,17 @@ import java.time.Duration
 interface AIProvider {
     val name: String
     fun complete(prompt: String, context: String = ""): String
+
+    /** Optional generation controls; legacy providers retain their old entry point. */
+    fun complete(prompt: String, context: String, parameters: GenerationParameters): String =
+        complete(prompt, context)
 }
+
+data class GenerationParameters(
+    val temperature: Double = 0.1,
+    val topP: Double = 0.95,
+    val fewShotExamples: List<String> = emptyList()
+)
 
 class ProviderFactory(private val config: AtroposConfig = AtroposConfig.load()) {
     private val canonicalAdapters by lazy {
@@ -53,6 +63,24 @@ abstract class BaseHttpProvider : AIProvider {
     protected val client: HttpClient = HttpClient.newBuilder()
         .connectTimeout(Duration.ofSeconds(45))
         .build()
+
+    private val generationParameters = ThreadLocal.withInitial { GenerationParameters() }
+
+    final override fun complete(
+        prompt: String,
+        context: String,
+        parameters: GenerationParameters
+    ): String {
+        val previous = generationParameters.get()
+        generationParameters.set(parameters)
+        return try {
+            complete(prompt, context)
+        } finally {
+            generationParameters.set(previous)
+        }
+    }
+
+    protected fun currentGenerationParameters(): GenerationParameters = generationParameters.get()
 
     protected fun jsonEscape(input: String): String {
         val out = StringBuilder(input.length + 16)
@@ -103,9 +131,16 @@ abstract class BaseHttpProvider : AIProvider {
         context: String = "",
         bearerToken: String? = null,
         extraHeaders: Map<String, String> = emptyMap(),
-        temperature: Double = 0.1
+        temperature: Double? = null
     ): String {
-        val payload = buildOpenAiCompatiblePayload(model, prompt, context, temperature)
+        val generation = currentGenerationParameters()
+        val payload = buildOpenAiCompatiblePayload(
+            model,
+            prompt,
+            context,
+            temperature ?: generation.temperature,
+            generation.topP
+        )
         val raw = postJson(uri, payload, bearerToken = bearerToken, extraHeaders = extraHeaders)
         return extractOpenAiChatContent(raw) ?: raw.trim()
     }
@@ -114,7 +149,8 @@ abstract class BaseHttpProvider : AIProvider {
         model: String,
         prompt: String,
         context: String = "",
-        temperature: Double = 0.1
+        temperature: Double = 0.1,
+        topP: Double = 0.95
     ): String = buildString {
         append("{")
         append("\"model\":\"").append(jsonEscape(model)).append("\",")
@@ -128,7 +164,8 @@ abstract class BaseHttpProvider : AIProvider {
         if (!first) append(",")
         append("{\"role\":\"user\",\"content\":\"").append(jsonEscape(prompt.trim())).append("\"}")
         append("],")
-        append("\"temperature\":").append(temperature)
+        append("\"temperature\":").append(temperature).append(",")
+        append("\"top_p\":").append(topP)
         append("}")
     }
 

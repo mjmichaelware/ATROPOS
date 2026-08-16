@@ -8,6 +8,15 @@ import java.nio.file.Path
 class SelfHostWorktreeDiffInspector(
     private val gitRunner: BoundedGitWorktreeCommandRunner = BoundedGitWorktreeCommandRunner()
 ) {
+    fun diffFromBaseline(baselineCommit: String?, worktreeRoot: Path): String? {
+        val result = gitRunner.run(
+            GitWorktreeOperation.DIFF_FROM_BASELINE,
+            worktreeRoot,
+            baselineCommit
+        )
+        return result.output.takeIf { result.exitCode == 0 && it.isNotBlank() }
+    }
+
     fun changedPaths(baselineCommit: String?, worktreeRoot: Path, path: Path): List<String> {
         val result = gitRunner.run(
             GitWorktreeOperation.DIFF_NAME_ONLY,

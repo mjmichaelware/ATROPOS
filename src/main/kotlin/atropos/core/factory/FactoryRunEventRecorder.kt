@@ -2,10 +2,15 @@ package atropos.core.factory
 
 import atropos.core.journal.EventCategory
 import atropos.core.journal.EventJournalService
+import atropos.cli.ui.design.RunState
+import atropos.core.observability.EventPublisher
+import atropos.core.observability.ExecutionRole
 
 class FactoryRunEventRecorder(
     private val journal: EventJournalService
 ) {
+    private val publisher = EventPublisher(journal = journal)
+
     fun recordLifecycleStart(
         runId: String,
         intent: String,
@@ -296,6 +301,23 @@ class FactoryRunEventRecorder(
         )
     }
 
+    fun recordPreview(
+        runId: String,
+        state: String,
+        impactedSymbols: Int,
+        browserStatus: String,
+        dagId: String,
+        promptFingerprint: String
+    ) {
+        record(
+            runId = runId,
+            category = EventCategory.VERIFICATION,
+            payload = "factory_preview state=$state impacted_symbols=$impactedSymbols browser=$browserStatus",
+            dagId = dagId,
+            promptFingerprint = promptFingerprint
+        )
+    }
+
     fun recordAssetReady(
         runId: String,
         assetPath: String,
@@ -393,15 +415,27 @@ class FactoryRunEventRecorder(
         dagId: String? = null,
         promptFingerprint: String? = null
     ) {
-        journal.record(
+        publisher.publish(
             runId = runId,
+            role = ExecutionRole.SYSTEM,
             category = category,
+            state = stateFor(category, payload),
             payload = buildString {
                 promptFingerprint?.takeIf { it.isNotBlank() }?.let { append("prompt_fingerprint=$it ") }
                 append(payload)
             },
             projectId = runId,
-            dagId = dagId
+            dagId = dagId,
+            requirement = promptFingerprint
         )
+    }
+
+    private fun stateFor(category: EventCategory, payload: String): RunState = when {
+        category == EventCategory.FAILURE -> RunState.FAILED
+        category == EventCategory.COMPLETION -> RunState.COMPLETED
+        category == EventCategory.VERIFICATION || category == EventCategory.TEST -> RunState.REVIEW_REQUIRED
+        payload.contains("state=PLANNED") || payload.contains("kind=PLAN") -> RunState.PLANNING
+        payload.contains("state=SKIPPED") -> RunState.WAITING
+        else -> RunState.RUNNING
     }
 }

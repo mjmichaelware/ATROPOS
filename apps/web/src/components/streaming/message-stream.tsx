@@ -2,6 +2,7 @@
 'use client'
 
 import React, { useEffect, useRef, useState } from 'react'
+import { ProgressiveDisclosure } from '@/components/ui/progressive-disclosure'
 
 /**
  * HOE-C05: Streaming + approval cards + command palette.
@@ -57,12 +58,13 @@ export function StreamingApprovalCards({ eventSourceUrl, onApproval }: MessageSt
   return (
     <div className="flex flex-col gap-3 w-full">
       {messages.map((msg, idx) => (
-        <div key={idx} className="message-item">
-          {msg.type === 'text' && (
-            <div className="prose prose-sm max-w-none">
-              {msg.data}
-            </div>
-          )}
+        <ProgressiveDisclosure
+          key={idx}
+          title={msg.type === 'approval' ? 'Approval required' : `Stream item ${idx + 1}`}
+          defaultExpanded={false}
+          className="message-item"
+        >
+          {msg.type === 'text' && <div className="prose prose-sm max-w-none">{msg.data}</div>}
           {msg.type === 'approval' && (
             <ApprovalCard
               id={msg.data}
@@ -70,12 +72,8 @@ export function StreamingApprovalCards({ eventSourceUrl, onApproval }: MessageSt
               onReject={() => onApproval?.(msg.data, false)}
             />
           )}
-          {msg.type === 'error' && (
-            <div className="p-3 bg-red-100 border border-red-300 rounded">
-              {msg.data}
-            </div>
-          )}
-        </div>
+          {msg.type === 'error' && <div className="p-3 bg-red-100 border border-red-300 rounded">{msg.data}</div>}
+        </ProgressiveDisclosure>
       ))}
       {isStreaming && (
         <div className="flex items-center gap-2 text-sm text-gray-500">

@@ -43,7 +43,7 @@ class ReproducibilityGate {
         for ((relative, expectedHash) in input.expectedFiles.toSortedMap()) {
             val normalized = normalizeRelative(relative)
                 ?: return failure(input.expectedFiles.size, actual.size, "unsafe baseline path $relative")
-            val path = input.actualRoot.resolve(normalized).normalize()
+            val path = PathResolver.resolveSafe(input.actualRoot, normalized)
             if (!path.startsWith(input.actualRoot.normalize()) || !Files.isRegularFile(path)) {
                 return failure(input.expectedFiles.size, actual.size, "baseline file missing $relative")
             }
@@ -66,7 +66,7 @@ class ReproducibilityGate {
     fun snapshot(root: Path, relativeFiles: Iterable<String>): Map<String, String> =
         relativeFiles.mapNotNull { relative ->
             val normalized = normalizeRelative(relative) ?: return@mapNotNull null
-            val path = root.resolve(normalized).normalize()
+            val path = PathResolver.resolveSafe(root, normalized)
             if (!path.startsWith(root.normalize()) || !Files.isRegularFile(path)) return@mapNotNull null
             normalized to sha256(Files.readAllBytes(path))
         }.toMap().toSortedMap()

@@ -7,6 +7,18 @@ import kotlin.test.assertTrue
 
 class CapabilityEnforcerTest {
     @Test
+    fun capability_owner_allows_a_proposal_without_requirements() {
+        val proposal = ActionProposal(
+            id = "capability-none",
+            actionClass = PolicyActionClass.NETWORK,
+            actor = ActionActor.HumanOwner,
+            command = listOf("status"),
+            metadata = emptyMap()
+        )
+        assertEquals(null, CapabilityEnforcer().evaluate(proposal))
+    }
+
+    @Test
     fun boundedAgencyGateBlocksMissingCapabilitiesBeforeExecutionPolicy() {
         val repoRoot = Files.createTempDirectory("atropos-capability-block-")
         val gate = BoundedAgencyGate(ExecutionPolicyEngine(repoRoot))

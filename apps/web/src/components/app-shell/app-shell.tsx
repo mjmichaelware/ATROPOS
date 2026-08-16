@@ -7,6 +7,7 @@ import { AppHeader } from "./app-header";
 import { AppSidebar } from "./app-sidebar";
 import { MobileNavigation } from "./mobile-navigation";
 import { SkipLink } from "./skip-link";
+import { ACCESSIBILITY_REQUIREMENTS } from "@/lib/a11y/requirements";
 
 export function AppShell({ children, userEmail }: { children: ReactNode; userEmail?: string }) {
   return (
@@ -17,7 +18,12 @@ export function AppShell({ children, userEmail }: { children: ReactNode; userEma
         <span className="sg-splash-blob sg-shell-blob-a" />
         <span className="sg-splash-blob sg-shell-blob-b" />
       </div>
-      <div className="sg-shell">
+      <div
+        className="sg-shell"
+        data-accessibility-keyboard={ACCESSIBILITY_REQUIREMENTS.keyboard}
+        data-accessibility-focus={ACCESSIBILITY_REQUIREMENTS.focusVisibility}
+        data-accessibility-reduced-motion={ACCESSIBILITY_REQUIREMENTS.reducedMotion}
+      >
         <AppHeader userEmail={userEmail} />
         <div className="sg-mobile-nav">
           <MobileNavigation />

@@ -6,10 +6,21 @@ import java.io.File
 data class CompilerState(val code: String, val compileResultExitCode: Int, val errors: List<String>)
 
 class MdpCompilerState(val initialCode: String) {
-    fun transition(action: String, delta: String): CompilerState {
-        // MDP state transition against a non-differentiable compiler
+    fun transition(
+        action: String,
+        delta: String,
+        compileCheck: ((String) -> Int?)? = null
+    ): CompilerState {
+        require(action == "ADD" || action == "REMOVE" || action == "UPDATE") {
+            "unsupported compiler-state action: $action"
+        }
         val nextCode = initialCode + delta
-        return CompilerState(nextCode, 0, emptyList())
+        val exitCode = compileCheck?.invoke(nextCode)
+        return CompilerState(
+            code = nextCode,
+            compileResultExitCode = exitCode ?: -1,
+            errors = if (exitCode == null) listOf("compile evaluation not executed") else emptyList()
+        )
     }
 }
 

@@ -1,6 +1,12 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.cli.session
 
+import atropos.core.contract.MviIntent
+import atropos.core.contract.MviReducer
+import atropos.core.contract.MviState
+import atropos.core.contract.ViewStateManager
+import atropos.core.observability.TabRestorationService
+
 enum class ScreenId(
     val title: String
 ) {
@@ -31,9 +37,19 @@ data class SessionTabsSnapshot(
     val activeTab: SessionTab
 )
 
+data class SessionTabsViewState(val snapshot: SessionTabsSnapshot) : MviState
+
+data class RefreshSessionTabs(val snapshot: SessionTabsSnapshot) : MviIntent
+
+private object SessionTabsViewReducer : MviReducer<SessionTabsViewState, RefreshSessionTabs> {
+    override fun reduce(currentState: SessionTabsViewState, intent: RefreshSessionTabs): SessionTabsViewState =
+        SessionTabsViewState(intent.snapshot)
+}
+
 class SessionTabs(
     initialProvider: String,
-    initialWorkingDirectory: String
+    initialWorkingDirectory: String,
+    private val projectId: String = initialWorkingDirectory
 ) {
     private val tabs = mutableListOf(
         SessionTab(
@@ -48,14 +64,33 @@ class SessionTabs(
     private var nextId = 2
     private var activeIndex = 0
 
+    init {
+        TabRestorationService.restoreState(projectId)?.let { restored ->
+            val index = tabs.indexOfFirst { it.title == restored.activeTab }
+            if (index >= 0) activeIndex = index
+        }
+    }
+
+    // The manager is a derived UI projection. SessionTabs remains the durable
+    // session owner; the contract module owns only state publication/reduction.
+    private lateinit var viewStateManager: ViewStateManager<SessionTabsViewState, RefreshSessionTabs>
+
     val active: SessionTab
         get() = tabs[activeIndex]
 
-    fun snapshot(): SessionTabsSnapshot =
-        SessionTabsSnapshot(
+    fun snapshot(): SessionTabsSnapshot {
+        val current = SessionTabsSnapshot(
             tabs = tabs.toList(),
             activeTab = active
         )
+        if (!::viewStateManager.isInitialized) {
+            viewStateManager = ViewStateManager(SessionTabsViewState(current), SessionTabsViewReducer)
+        } else {
+            viewStateManager.dispatch(RefreshSessionTabs(current))
+        }
+        TabRestorationService.saveState(projectId, TabState(active.title, active.scrollback.size))
+        return viewStateManager.state.value.snapshot
+    }
 
     fun openTab(
         screen: ScreenId = active.screen,

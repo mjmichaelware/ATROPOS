@@ -3,6 +3,7 @@ package atropos.core.preview
 
 import atropos.core.multimodal.BrowserEvidenceStatus
 import atropos.core.visual.VisualComparisonStatus
+import atropos.core.visual.VisualComparison
 import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -78,5 +79,12 @@ class LivePreviewServiceTest {
         } finally {
             tempDir.toFile().deleteRecursively()
         }
+    }
+
+    @Test
+    fun test_visual_comparison_owner_classifies_identical_snapshots() {
+        val result = VisualComparison.compareHashes("same", "same")
+        assertEquals(VisualComparisonStatus.UNCHANGED, result.status)
+        assertTrue(result.comparable)
     }
 }

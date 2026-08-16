@@ -11,6 +11,8 @@ import atropos.core.planning.InternalPlanningGraphService
 import atropos.core.journal.EventJournalService
 import atropos.core.provider.ContextEnvelopeFactory
 import atropos.core.security.RedactionFilter
+import atropos.core.preview.LivePreviewService
+import atropos.core.multimodal.BrowserEvidenceStatus
 import java.nio.file.Path
 
 class FactoryRunOrchestrator(
@@ -19,7 +21,9 @@ class FactoryRunOrchestrator(
     private val assets: LocalAssetGenerator,
     private val projectRegistry: ProjectRegistry,
     private val planningGraph: InternalPlanningGraphService,
-    private val journal: EventJournalService
+    private val journal: EventJournalService,
+    private val deploymentService: DeploymentService = DeploymentService(),
+    private val previewService: LivePreviewService = LivePreviewService(repoRoot)
 ) {
     fun orchestrateRun(
         plan: FactoryPlan,
@@ -216,6 +220,25 @@ class FactoryRunOrchestrator(
             dagId = planningDag.id,
             promptFingerprint = lineage.promptFingerprint
         )
+        val previewFiles = generatedProject.files.filter {
+            it.endsWith(".html", ignoreCase = true) ||
+                it.endsWith(".tsx", ignoreCase = true) ||
+                it.endsWith(".jsx", ignoreCase = true)
+        }
+        val previewImpacts = previewService.inspectUI(previewFiles)
+        val browserEvidence = previewFiles.firstOrNull { it.endsWith(".html", ignoreCase = true) }
+            ?.let { relative ->
+                val html = java.nio.file.Files.readString(java.nio.file.Path.of(generatedProject.path).resolve(relative))
+                previewService.captureStaticHtml("factory-${plan.id}", html)
+            }
+        recorder.recordPreview(
+            runId = plan.id,
+            state = if (previewFiles.isEmpty()) "SKIPPED_NO_RENDERABLE_SURFACE" else "INSPECTED",
+            impactedSymbols = previewImpacts.size,
+            browserStatus = browserEvidence?.status?.name ?: BrowserEvidenceStatus.UNSUPPORTED.name,
+            dagId = planningDag.id,
+            promptFingerprint = lineage.promptFingerprint
+        )
         recorder.recordCodeCompletion(
             runId = plan.id,
             projectPath = generatedProject.path,
@@ -280,9 +303,14 @@ class FactoryRunOrchestrator(
             dagId = planningDag.id,
             promptFingerprint = lineage.promptFingerprint
         )
+        val previewDeployment = deploymentService.deploy(
+            env = DeploymentEnvironment.PREVIEW,
+            domain = "local://${generatedProject.path}",
+            gitCommitHash = generatedProject.commitId
+        )
         recorder.recordDeployment(
             runId = plan.id,
-            state = "OPTIONAL_NOT_REQUESTED",
+            state = "PREVIEW_REGISTERED id=${previewDeployment.id}",
             dagId = planningDag.id,
             promptFingerprint = lineage.promptFingerprint
         )

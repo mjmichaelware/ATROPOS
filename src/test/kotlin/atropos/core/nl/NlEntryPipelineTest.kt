@@ -118,6 +118,15 @@ class NlEntryPipelineTest {
         assertFalse(wrapped.evidence().contains("SECRET"))
     }
 
+    @Test
+    fun `accepted entry exposes the canonical typed intent envelope`() {
+        val entry = NlEntryPipeline(emptyList()).accept("/status", NlSource.CLI_PROMPT)
+
+        assertEquals("/status", entry.intentEnvelope.command)
+        assertEquals(entry.envelope.canonicalSha256, entry.intentEnvelope.intentId)
+        assertTrue(entry.intentEnvelope.parsedOk)
+    }
+
     // ── SUP.NL.LOCAL-MEMORY-LOOKUP ───────────────────────────────────────
 
     private fun resolve(text: String, commands: List<String>): NlResolution =

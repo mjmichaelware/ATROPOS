@@ -67,7 +67,8 @@ data class CodebaseContextPack(
     val byteCount: Int,
     val truncated: Boolean,
     val redacted: Boolean,
-    val text: String
+    val text: String,
+    val metrics: SourceContextMetrics = SourceContextMetrics(0, byteCount, null),
 ) {
     fun hasValidContentHash(): Boolean {
         val canonical = text
@@ -88,7 +89,8 @@ data class CodebaseContextPack(
         bindingKind = fetchReceipt.bindingKind,
         includedPaths = includedPaths,
         redacted = redacted,
-        truncated = truncated
+        truncated = truncated,
+        metrics = metrics,
     )
 }
 
@@ -100,7 +102,8 @@ data class SourcePackProvenance(
     val bindingKind: SourceBindingKind,
     val includedPaths: List<String>,
     val redacted: Boolean,
-    val truncated: Boolean
+    val truncated: Boolean,
+    val metrics: SourceContextMetrics,
 )
 
 sealed class SourcePackResult {

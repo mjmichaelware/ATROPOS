@@ -7,7 +7,15 @@ import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.time.Duration
 
+class ProviderRequestException(
+    val statusCode: Int,
+    val failureState: atropos.core.provider.ProviderFailureState,
+    message: String
+) : RuntimeException(message)
+
 class ProviderHttpClient(private val redactionFilter: RedactionFilter = RedactionFilter()) {
+    data class BoundedResponse(val statusCode: Int, val body: String)
+
     private val client: HttpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(45)).build()
 
     fun postJson(uri: String, payload: String, bearerToken: String? = null, extraHeaders: Map<String, String> = emptyMap()): String {
@@ -19,7 +27,14 @@ class ProviderHttpClient(private val redactionFilter: RedactionFilter = Redactio
         if (!bearerToken.isNullOrBlank()) builder.header("Authorization", "Bearer $bearerToken")
         for ((k, v) in extraHeaders) builder.header(k, v)
         val response = client.send(builder.build(), HttpResponse.BodyHandlers.ofString())
-        if (response.statusCode() !in 200..299) throw RuntimeException("HTTP ${response.statusCode()} :: ${response.body()}")
+        if (response.statusCode() !in 200..299) {
+            val body = redactionFilter.redact(response.body())
+            throw ProviderRequestException(
+                statusCode = response.statusCode(),
+                failureState = atropos.core.provider.ProviderFailureState.fromErrorCode(response.statusCode()),
+                message = "HTTP ${response.statusCode()} :: $body"
+            )
+        }
         return response.body()
     }
 
@@ -31,8 +46,43 @@ class ProviderHttpClient(private val redactionFilter: RedactionFilter = Redactio
         if (!bearerToken.isNullOrBlank()) builder.header("Authorization", "Bearer $bearerToken")
         for ((k, v) in extraHeaders) builder.header(k, v)
         val response = client.send(builder.build(), HttpResponse.BodyHandlers.ofString())
-        if (response.statusCode() !in 200..299) throw RuntimeException("HTTP ${response.statusCode()}")
+        if (response.statusCode() !in 200..299) {
+            throw ProviderRequestException(
+                statusCode = response.statusCode(),
+                failureState = atropos.core.provider.ProviderFailureState.fromErrorCode(response.statusCode()),
+                message = "HTTP ${response.statusCode()}"
+            )
+        }
         return response.body()
+    }
+
+    fun requestBounded(
+        uri: String,
+        method: String,
+        timeoutMillis: Int,
+        maxBytes: Int
+    ): BoundedResponse {
+        require(method == "GET" || method == "HEAD") { "bounded provider requests permit GET or HEAD only" }
+        require(timeoutMillis > 0 && maxBytes > 0) { "bounded provider request limits must be positive" }
+        val builder = HttpRequest.newBuilder()
+            .uri(URI.create(uri))
+            .timeout(Duration.ofMillis(timeoutMillis.toLong()))
+            .method(method, HttpRequest.BodyPublishers.noBody())
+        val response = client.send(builder.build(), HttpResponse.BodyHandlers.ofByteArray())
+        if (method == "HEAD") return BoundedResponse(response.statusCode(), "")
+        val bytes = response.body()
+        require(bytes.size <= maxBytes) { "bounded provider response exceeded $maxBytes bytes" }
+        if (response.statusCode() !in 200..299) {
+            throw ProviderRequestException(
+                statusCode = response.statusCode(),
+                failureState = atropos.core.provider.ProviderFailureState.fromErrorCode(response.statusCode()),
+                message = "HTTP ${response.statusCode()} :: ${redactionFilter.redact(bytes.toString(Charsets.UTF_8))}"
+            )
+        }
+        return BoundedResponse(
+            statusCode = response.statusCode(),
+            body = redactionFilter.redact(bytes.toString(Charsets.UTF_8))
+        )
     }
 
     fun postOpenAiCompatibleChat(uri: String, model: String, prompt: String, context: String = "", bearerToken: String? = null, extraHeaders: Map<String, String> = emptyMap(), temperature: Double = 0.1): String {

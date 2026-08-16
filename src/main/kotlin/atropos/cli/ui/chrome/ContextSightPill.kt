@@ -48,6 +48,10 @@ data class ContextSightPill(
     /** The field that must survive every truncation. */
     fun mostSignificantField(): Field = fields().first()
 
+    /** Fits the pill through the canonical responsive header-line owner. */
+    fun fitForColumns(columns: Int): ContextSightPillLine.Fitted =
+        ContextSightPillLine.fitForColumns(this, columns)
+
     companion object {
         const val UNKNOWN_STATE = "unknown"
         private const val HASH_CELLS = 8

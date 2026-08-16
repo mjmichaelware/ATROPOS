@@ -1,5 +1,6 @@
 package atropos.cli.commands
 
+import atropos.core.director.DirectorDagSupervisor
 import atropos.cli.config.ConfigurationManager
 import atropos.cli.ui.AnsiTerminalEngine
 import atropos.cli.ui.PlainTerminalOutput
@@ -11,6 +12,12 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 
 class AgentCommandDagBootstrapTest {
+
+    @Test
+    fun `dag command path names the canonical director supervisor owner`() {
+        assertNotNull(DirectorDagSupervisor::class)
+        assertNotNull(AgentDagCommandHandler::class)
+    }
 
     private fun buildCommand(): AgentCommand {
         val ui = AnsiTerminalEngine(

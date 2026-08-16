@@ -11,8 +11,13 @@ import atropos.core.AtroposConfig
 import atropos.core.ProviderDecisionEngine
 import atropos.core.agent.AgentPromptContract
 import atropos.core.provider.ContextAttestationService
+import atropos.core.security.SecretEgressGate
 import atropos.core.provider.ContextEnvelopeFactory
 import atropos.core.provider.ProviderResponseContextParser
+import atropos.core.provider.ImmutablePrompt
+import atropos.core.provider.PromptRole
+import atropos.core.dopamine.AlignmentTuner
+import atropos.core.dopamine.RewardLogEntry
 import java.nio.file.Path
 
 class ProviderChatDispatcher(
@@ -26,10 +31,17 @@ class ProviderChatDispatcher(
     private val attestationRenderer: ContextAttestationRenderer =
         ContextAttestationRenderer(TerminalTheme(atropos.cli.config.ConfigurationManager())),
     private val redactionFilter: atropos.core.security.RedactionFilter =
-        atropos.core.security.RedactionFilter()
+        atropos.core.security.RedactionFilter(),
+    private val alignmentHistory: () -> List<RewardLogEntry> = { emptyList() },
+    private val alignmentSignal: (Boolean) -> Unit = {}
 ) {
 
     fun dispatch(prompt: String, currentProviderName: String) {
+        val immutablePrompt = ImmutablePrompt.of(prompt, PromptRole.TASK)
+            ?: run {
+                uiEngine.renderError("provider dispatch refused: prompt is blank")
+                return
+            }
         sessionTracker.recordPrompt(prompt, rateResolver(currentProviderName))
         uiEngine.renderExecutionEvent("accepted", "natural-language request received")
         uiEngine.startSpinner("Thinking")
@@ -53,7 +65,18 @@ class ProviderChatDispatcher(
                 explicitMythologyRequest = mythologyRequested
             )
 
-            val response = provider.complete(prompt, context)
+            val tuning = AlignmentTuner.tune(alignmentHistory())
+            val tunedPrompt = AlignmentTuner.apply(immutablePrompt.text, tuning)
+            uiEngine.renderExecutionEvent("alignment", "prefix=${tuning.promptPrefix} examples=${tuning.fewShotExamples.size}")
+            val response = provider.complete(
+                tunedPrompt,
+                context,
+                atropos.core.GenerationParameters(
+                    temperature = tuning.temperature,
+                    topP = tuning.topP,
+                    fewShotExamples = tuning.fewShotExamples
+                )
+            )
             uiEngine.renderExecutionEvent("response", "provider returned output")
             renderVerifiedResponse(
                 prompt = prompt,
@@ -63,6 +86,7 @@ class ProviderChatDispatcher(
                 envelope = envelope,
                 mythologyRequested = mythologyRequested
             )
+            alignmentSignal(true)
         } catch (failure: Exception) {
             // A provider exception is the most secret-dense string the CLI ever
             // renders: HTTP clients put the request URL and the Authorization
@@ -72,6 +96,7 @@ class ProviderChatDispatcher(
             // these — it just had no caller — and RedactionFilter strips whatever
             // survives normalisation.
             uiEngine.renderError(safeProviderFailure(failure, currentProviderName))
+            alignmentSignal(false)
         } finally {
             uiEngine.renderExecutionEvent("complete", "provider execution finished")
             uiEngine.stopSpinner()
@@ -113,8 +138,14 @@ class ProviderChatDispatcher(
         mythologyRequested: Boolean
     ) {
         when (val verified = ContextAttestationService.verify(envelope, response)) {
-            is ContextAttestationService.VerifiedResult.Accepted ->
-                uiEngine.renderNotice(markdownRenderer.render(verified.cleanedResponse))
+            is ContextAttestationService.VerifiedResult.Accepted -> {
+                val egress = SecretEgressGate.scan(verified.cleanedResponse)
+                if (egress.isNotEmpty()) {
+                    uiEngine.renderError("provider response refused by secret egress gate")
+                } else {
+                    uiEngine.renderNotice(markdownRenderer.render(verified.cleanedResponse))
+                }
+            }
 
             is ContextAttestationService.VerifiedResult.Rejected ->
                 renderRejected(prompt, context, response, provider, envelope, mythologyRequested, verified)
@@ -150,7 +181,12 @@ class ProviderChatDispatcher(
         val retryVerified = retry?.let { ContextAttestationService.verify(envelope, it) }
 
         if (retryVerified is ContextAttestationService.VerifiedResult.Accepted) {
-            uiEngine.renderNotice(markdownRenderer.render(retryVerified.cleanedResponse))
+            val egress = SecretEgressGate.scan(retryVerified.cleanedResponse)
+            if (egress.isNotEmpty()) {
+                uiEngine.renderError("provider retry refused by secret egress gate")
+            } else {
+                uiEngine.renderNotice(markdownRenderer.render(retryVerified.cleanedResponse))
+            }
         } else {
             uiEngine.renderNotice(attestationRenderer.renderAdvisory(verified.failure, ATTESTATION_WIDTH))
             val shown = ProviderResponseContextParser.parse(retry ?: response, envelope).cleanedResponse

@@ -28,11 +28,18 @@ import atropos.core.security.LocalVaultSecretSource
 import atropos.core.security.RedactionFilter
 import java.io.FileInputStream
 
+const val ATROPOS_HEALTH_MARKER = "ATROPOS_HEALTHY"
+
 fun main(args: Array<String>) {
     val enrollment = SecretEnrollment(listOf(EnvironmentSecretSource(), LocalVaultSecretSource()))
         .enrollInto(RedactionFilter.defaultRegistry)
     if (enrollment.failures.isNotEmpty()) {
         println("${enrollment.evidenceLine()} status=DEGRADED")
+    }
+
+    if (args.firstOrNull() == "--health") {
+        println(ATROPOS_HEALTH_MARKER)
+        return
     }
 
     if (args.firstOrNull() == "--agent-daemon-foreground") {
@@ -156,7 +163,7 @@ private fun runInteractive(
                 )
             }
 
-            fun resolvePromptSubmission() {
+            fun resolvePromptSubmission(): Boolean {
                 val resolved = completer.resolveSubmission(
                     prompt.text,
                     prompt.cursor,
@@ -164,9 +171,13 @@ private fun runInteractive(
                 )
 
                 if (resolved != null && resolved != prompt.text) {
+                    if (completer.lastResolutionWasFuzzy &&
+                        !router.allowFuzzyExecution(prompt.text, resolved)
+                    ) return false
                     prompt.clear()
                     prompt.insert(resolved)
                 }
+                return true
             }
 
             fun applyPromptCompletion() {
@@ -256,7 +267,10 @@ private fun runInteractive(
                 // quitting on its own.
                 try {
                 if (key == KeyEvent.Enter && !prompt.isPaletteGroupLevel()) {
-                    resolvePromptSubmission()
+                    if (!resolvePromptSubmission()) {
+                        redraw()
+                        continue@inputLoop
+                    }
                 }
 
                 when (key) {

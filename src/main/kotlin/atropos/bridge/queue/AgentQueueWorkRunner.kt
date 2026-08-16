@@ -70,7 +70,10 @@ class AgentQueueWorkRunner(
         attempts = record.attempts,
         maxAttempts = record.maxAttempts,
         terminal = record.state.terminal,
-        failureReason = record.failureReason,
+        // A malformed persisted record has no ordinary failureReason. Keep
+        // the codec's explicit corruption diagnosis visible to the bridge so
+        // clients cannot mistake CORRUPT for an idle or merely failed entry.
+        failureReason = record.failureReason ?: record.corruptReason,
         evidence = record.sourceEvidence ?: record.contextExportPath,
         createdAt = record.createdAt.toString(),
         updatedAt = record.updatedAt.toString()

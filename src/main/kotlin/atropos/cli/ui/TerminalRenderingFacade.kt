@@ -3,6 +3,10 @@ package atropos.cli.ui
 
 import atropos.cli.session.QuotaSessionTracker
 import atropos.core.verification.VerificationResult
+import atropos.core.observability.ResponsiveBranding
+import atropos.cli.ui.disclosure.DisclosureRowSet
+import atropos.cli.ui.disclosure.DisclosureRowStyle
+import atropos.cli.ui.disclosure.DisclosureRowFormatter
 
 class TerminalRenderingFacade(
     private val plainOutput: PlainTerminalOutput,
@@ -25,9 +29,10 @@ class TerminalRenderingFacade(
     private val sessionOverview: SessionOverviewRenderer = SessionOverviewRenderer(theme)
 ) {
     fun renderWelcomePlain(provider: String, workspace: String) {
-        plainOutput.emitPlain("ATROPOS", canvas.width)
+        plainOutput.emitPlain(ResponsiveBranding.renderBrandingLogo(canvas.width), canvas.width)
         plainOutput.emitPlain(
-            "${provider.lowercase()} · ${TerminalText.compactPath(workspace)} · /help",
+            "${theme.accessibleLabel("provider", provider.lowercase())} · " +
+                "${TerminalText.compactPath(workspace)} · /help",
             canvas.width
         )
     }
@@ -99,6 +104,12 @@ class TerminalRenderingFacade(
 
     fun renderBlockReactive(lines: List<String>) {
         lines.forEach(transcriptBuffer::append)
+    }
+
+    /** Renders the canonical expandable disclosure set into the transcript. */
+    fun renderDisclosurePlain(rows: DisclosureRowSet, style: DisclosureRowStyle = DisclosureRowStyle.DEFAULT) {
+        rows.rows.flatMap { DisclosureRowFormatter.render(it, style) }
+            .forEach { plainOutput.emitPlain(it, canvas.width) }
     }
 
     fun renderNoticePlain(message: String) {

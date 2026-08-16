@@ -33,10 +33,23 @@ class VerifiedCompletionGate(
     private val processRunner: BoundedProcessRunner = BoundedProcessRunner(),
     private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
+    private val falseGreenGuard = FalseGreenGuard()
+    private val antiOscillation = AntiOscillation()
     private val sourceSecretScanner = SourceSecretScanner(redactionFilter)
     private val checks = CompletionGateChecks(repoRoot, clock, processRunner, gitRunner, redactionFilter, sourceSecretScanner)
     private val evidence = CompletionGateEvidence(repoRoot, clock)
     private val factoryVerifier = FactoryCompletionVerifier(repoRoot, clock, gitRunner)
+    private val goalInvariants = GoalInvariantSet(
+        rootAuthorityHash = "runtime-goal-invariants",
+        clauses = listOf(
+            InvariantClause(
+                clauseId = "no-secret-path-mutation",
+                textHash = "runtime-goal-invariants",
+                prohibition = true,
+                targetPathPattern = ".atropos/secrets"
+            )
+        )
+    )
 
     fun evaluateNode(node: DagNode): CompletionGateReport {
         return IndependentVerificationGate(config, repoRoot, processRunner).verify(node)
@@ -58,6 +71,35 @@ class VerifiedCompletionGate(
         gates.add(checks.checkExpectedOutputs(node))
         gates.add(checks.checkUnresolvedDimensions(node))
         gates.add(evidence.checkAuditorFindings(node, auditorFactory))
+        val mutationPath = node.actionPayload ?: node.expectedOutputs.firstOrNull().orEmpty()
+        val invariantPasses = goalInvariants.validateMutation(
+            path = mutationPath,
+            isProhibitedAction = node.action in setOf(DagNodeAction.CREATE_FILE, DagNodeAction.EDIT_FILE)
+        )
+        gates.add(
+            GateResult(
+                node.id,
+                invariantPasses,
+                "Goal Invariants",
+                if (invariantPasses) "mutation satisfies goal invariant set" else "mutation violates goal invariant set",
+                clock()
+            )
+        )
+        val falseGreen = falseGreenGuard.assess(node)
+        val nonRepeating = antiOscillation.observe("${node.id}:${node.result.orEmpty()}")
+        gates.add(
+            GateResult(
+                node.id,
+                falseGreen.passed && nonRepeating,
+                "False-Green Guard",
+                when {
+                    !falseGreen.passed -> falseGreen.reasons.joinToString("; ")
+                    !nonRepeating -> "identical completion outcome repeated without new evidence"
+                    else -> "completion claim has required structural evidence"
+                },
+                clock()
+            )
+        )
 
         val allPassed = gates.all { it.passed }
         return CompletionGateReport(

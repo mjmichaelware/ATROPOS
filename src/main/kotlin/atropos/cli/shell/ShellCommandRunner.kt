@@ -112,13 +112,47 @@ class ShellCommandRunner(
             )
         }
 
+        return execute(cleaned)
+    }
+
+    /**
+     * Runs a bounded argv pipeline. Each stage is independently proposed to
+     * the same agency gate; output is passed as stdin to the next stage and is
+     * never interpreted as a command line.
+     */
+    fun runPiped(input: String, commands: List<List<String>>): List<ShellCommandResult> {
+        var pipedInput = input
+        val results = mutableListOf<ShellCommandResult>()
+        for (command in commands) {
+            val cleaned = command.filter { it.isNotBlank() }
+            val result = if (cleaned.isEmpty()) {
+                ShellCommandResult(
+                    command = emptyList(),
+                    cwd = cwd.path,
+                    exitCode = 2,
+                    elapsedMs = 0L,
+                    timedOut = false,
+                    output = "shell: empty pipeline stage"
+                )
+            } else {
+                execute(cleaned, pipedInput)
+            }
+            results += result
+            if (!result.passed) break
+            pipedInput = result.output
+        }
+        return results
+    }
+
+    private fun execute(cleaned: List<String>, input: String? = null): ShellCommandResult {
+
         val proposal = ShellActionProposals.forCommand(cleaned, cwd.toPath())
 
         // The executor lambda is the only place a process can be born, and the
         // gate decides whether it is ever invoked.
         var executed: ShellCommandResult? = null
         val outcome = agency.execute(proposal) {
-            val result = spawnAndCollect(cleaned, proposal)
+            val result = spawnAndCollect(cleaned, proposal, input)
             executed = result
             result.output
         }
@@ -153,12 +187,16 @@ class ShellCommandRunner(
         policyReason = outcome.policyDecision.reason
     )
 
-    private fun spawnAndCollect(cleaned: List<String>, proposal: ActionProposal): ShellCommandResult {
+    private fun spawnAndCollect(cleaned: List<String>, proposal: ActionProposal, input: String? = null): ShellCommandResult {
         val started = System.currentTimeMillis()
         val output = ByteArrayOutputStream()
 
         return try {
             val process = spawn(cleaned, cwd)
+
+            process.outputStream.use { stdin ->
+                if (input != null) stdin.write(input.toByteArray(Charsets.UTF_8))
+            }
 
             val reader = thread(
                 start = true,

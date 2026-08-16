@@ -22,6 +22,10 @@ internal class FactoryCompletionVerifier(
         val required = setOf("README.md", "LICENSE", ".gitignore", "AGENTS.md")
         val sourceFiles = input.files.filter { it.startsWith("src/main/") && it.endsWith(".kt") }
         val testFiles = input.files.filter { it.startsWith("src/test/") && it.endsWith(".kt") }
+        val greenfieldProof = GreenfieldFactoryProof.verifyGeneratedProject(
+            projectRoot = Path.of(input.projectRoot),
+            requiredFiles = required + sourceFiles + testFiles
+        )
         val hasClassifiedPromptSpans = input.promptSpans != "none" && input.promptSpans.split(';').all {
             it.matches(Regex("[^@;]+@[0-9]+-[0-9]+\\|class=[a-z-]+"))
         }
@@ -41,6 +45,7 @@ internal class FactoryCompletionVerifier(
             GateResult(input.nodeId, sourceFiles.isNotEmpty(), "Factory source", "Kotlin source files present", clock()),
             GateResult(input.nodeId, testFiles.isNotEmpty(), "Factory tests", "Kotlin test files present", clock()),
             GateResult(input.nodeId, required.all(input.files::contains), "Factory repository kit", "standard files present", clock()),
+            GateResult(input.nodeId, greenfieldProof.verdict == "VERIFIED", "Factory greenfield proof", "evidenceHash=${greenfieldProof.evidenceHash}", clock()),
             GateResult(input.nodeId, input.files.contains("verify.sh"), "Factory verifier", "bounded verifier present", clock()),
             GateResult(
                 input.nodeId,

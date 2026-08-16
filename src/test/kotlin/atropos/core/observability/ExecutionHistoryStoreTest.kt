@@ -62,6 +62,18 @@ class ExecutionHistoryStoreTest {
     }
 
     @Test
+    fun `history index is the explicit seekable index owner`() {
+        val (root, publisher, _) = fixture()
+        seed(publisher)
+
+        val index = HistoryIndex(root.resolve(".atropos/runs"))
+        val entries = index.load("run-1")
+
+        assertEquals(4, entries.size)
+        assertTrue(entries.all { it.byteOffset >= 0L })
+    }
+
+    @Test
     fun `filter by agent`() {
         val (_, publisher, store) = fixture()
         seed(publisher)

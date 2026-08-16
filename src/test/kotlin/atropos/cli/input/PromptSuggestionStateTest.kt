@@ -16,6 +16,11 @@ class PromptSuggestionStateTest {
     }
 
     @Test
+    fun `default matcher uses the canonical command autocomplete owner`() {
+        assertTrue(PromptSuggestionState().isActive("/sta"))
+    }
+
+    @Test
     fun `an empty line has nothing to suggest`() {
         assertFalse(alwaysMatching().isActive(""))
         assertFalse(alwaysMatching().isActive("   "))

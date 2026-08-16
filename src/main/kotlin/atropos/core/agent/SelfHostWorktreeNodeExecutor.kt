@@ -30,7 +30,9 @@ class SelfHostWorktreeNodeExecutor(
     private val agencyGate: BoundedAgencyGate = BoundedAgencyGate(
         policyEngine = ExecutionPolicyEngine(repoRoot),
         territory = territoryGrants
-    )
+    ),
+    private val mutationVerificationGate: SelfHostMutationVerificationGate =
+        SelfHostMutationVerificationGate(repoRoot)
 ) {
     fun canExecute(node: DagNode): Boolean =
         node.action == DagNodeAction.CREATE_FILE || node.action == DagNodeAction.EDIT_FILE
@@ -97,8 +99,17 @@ class SelfHostWorktreeNodeExecutor(
             if (changedOutputFailure != null) {
                 return fail(running, "self-host mutation changed undeclared output: $changedOutputFailure")
             }
+            val mergedDiff = diffInspector.diffFromBaseline(worktree.baselineCommit, worktree.worktreePath)
+                ?: return fail(running, "self-host mutation diff unavailable before merge")
             val merged = worktreeService.verifyAndMerge(worktree.id, "git diff --check")
             if (!merged.ok) return fail(node, merged.message)
+            when (val verdict = mutationVerificationGate.verifyMerged(node, mergedDiff)) {
+                is SelfHostMutationVerdict.Accepted -> Unit
+                is SelfHostMutationVerdict.Rejected -> return fail(
+                    running,
+                    verdict.evidenceLine()
+                )
+            }
 
             val completed = dagStore.writeNode(
                 running.copy(

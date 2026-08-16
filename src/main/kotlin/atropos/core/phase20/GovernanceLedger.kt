@@ -2,12 +2,15 @@
 package atropos.core.phase20
 
 import atropos.core.AtroposRepoRootLocator
+import atropos.core.evaluation.EvidenceStore
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
 import java.security.MessageDigest
 import java.time.Instant
+import atropos.core.verification.Proposal as LegacyProposal
+import atropos.core.verification.ProposalSixFields
 import java.util.concurrent.atomic.AtomicLong
 
 /**
@@ -39,6 +42,87 @@ class GovernanceLedger(
 ) {
     private val file: Path = repoRoot.resolve(".atropos/governance/ledger.log").normalize()
     private val counter = AtomicLong(0)
+    private val evidenceStore = EvidenceStore(repoRoot)
+    private val evidenceLedger = EvidenceLedger(evidenceStore)
+    private val proposalStore = ProposalStore(evidenceStore)
+    private val memoryLedger = MemoryLedger(evidenceStore)
+    private val amendmentRegistry = AmendmentRegistry(evidenceStore)
+    private val lakehouseRetrieve = LakehouseRetrieve(evidenceStore)
+    private val selfBuildValidationRule = SelfBuildValidationRule(Phase20Laws())
+    private val observationCasLedger = ObservationCasLedger(evidenceStore)
+    private val evidenceCasLedger = EvidenceCasLedger(evidenceStore)
+    private val proposalCasLedger = ProposalCasLedger(evidenceStore)
+    private val amendmentCasLedger = AmendmentCasLedger(evidenceStore)
+    private val selfImprovementLoop = SelfImprovementLoop(this)
+
+    /** Enters the canonical Phase 20 loop through the durable governance owner. */
+    fun advanceSelfImprovement(request: LoopRequest): LoopOutcome = selfImprovementLoop.advance(request)
+
+    /** Evaluates a completed Phase 11 contract without granting Phase 20 a mutation path. */
+    fun evaluateSelfImprovement(
+        proposal: ImprovementProposal,
+        observedValue: Double,
+        verificationPassed: Boolean,
+        guardrailsBefore: List<atropos.core.evaluation.AtroposMetric> = emptyList(),
+        guardrailsAfter: List<atropos.core.evaluation.AtroposMetric> = emptyList()
+    ): PromotionDecision = selfImprovementLoop.evaluate(
+        proposal,
+        observedValue,
+        verificationPassed,
+        guardrailsBefore,
+        guardrailsAfter
+    )
+
+    /** Runs the canonical governance detector registry for an observed run. */
+    fun detectObservations(context: GovernanceDetectorContext): List<RuntimeObservation> =
+        GovernanceDetectorsRegistry.runAll(context)
+
+    /** Stores an evidence manifest in the shared governance CAS. */
+    fun storeEvidenceManifest(manifest: StructuralManifest): String =
+        evidenceLedger.storeManifest(manifest)
+
+    /** Builds a manifest using the same byte-offset convention as the ledger. */
+    fun manifest(documentHash: String): ManifestBuilder = ManifestBuilder(documentHash)
+
+    /** Retrieves a previously stored evidence region from the shared CAS. */
+    fun retrieveEvidenceRegion(manifest: StructuralManifest, regionIndex: Int): String? =
+        lakehouseRetrieve.retrieveRegion(manifest, regionIndex)
+
+    /** Stores a memory snapshot against the shared evidence CAS. */
+    fun storeMemorySnapshot(content: String, manifest: StructuralManifest): Pair<String, String> =
+        memoryLedger.storeMemory(content, manifest)
+
+    /** Stores a proposal manifest against the shared evidence CAS. */
+    fun storeProposalManifest(content: String, manifest: StructuralManifest): Pair<String, String> =
+        proposalStore.storeProposal(content, manifest)
+
+    /** Stores an accepted amendment without creating a second authority store. */
+    fun storeAmendmentManifest(
+        content: String,
+        manifest: StructuralManifest,
+        supersedesHash: String?
+    ): Pair<String, String> = amendmentRegistry.registerAmendment(content, manifest, supersedesHash)
+
+    /** Applies the canonical Phase 20 law checks before self-build promotion. */
+    fun validateSelfBuildPromotion(
+        callerComponent: String,
+        proposerId: String,
+        evaluatorId: String,
+        oldComplianceScore: Int,
+        newComplianceScore: Int,
+        compileExitCode: Int,
+        testExitCode: Int,
+        targetClaim: ClaimLevel
+    ) = selfBuildValidationRule.validateAmendmentPromotion(
+        callerComponent,
+        proposerId,
+        evaluatorId,
+        oldComplianceScore,
+        newComplianceScore,
+        compileExitCode,
+        testExitCode,
+        targetClaim
+    )
 
     /**
      * Records a proposal.
@@ -56,6 +140,13 @@ class GovernanceLedger(
         append(codec.encodeProposal(proposal))
         return proposal
     }
+
+    /** Compatibility ingress; all legacy proposals enter the canonical ledger. */
+    fun propose(
+        proposal: LegacyProposal,
+        proposedBy: String,
+        now: Instant = clock()
+    ): ImprovementProposal? = ProposalSixFields.toCanonical(proposal, proposedBy, now)?.let(::propose)
 
     /** Generates and records a proposal without bypassing ledger durability. */
     fun propose(deficiency: ProposalDeficiency): ImprovementProposal =

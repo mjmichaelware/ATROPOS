@@ -128,7 +128,7 @@ class SourceAuthorityIndexer(
             sections = sections,
             sha256 = sha256,
             sizeBytes = bytes.size.toLong(),
-            originalPath = path
+            originalPath = Path.of(TermuxPathResolver.resolve(path.toString()))
         )
         Files.writeString(extractedPath, json, StandardCharsets.UTF_8)
 

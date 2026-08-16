@@ -4,6 +4,7 @@ import { SixAnswersPanel, SixAnswer } from '@/components/ui/six-answers-panel';
 import { AllInspectors } from '@/components/dev-tools/inspectors';
 import { SpecGraphEntry } from '@/components/dev-tools/specgraph-entry';
 import { DeveloperToolsContainer } from '@/components/dev-tools/developer-tools-container';
+import { OperationSurfaceRegistry } from '@/components/dev-tools/operation-surface-registry';
 import { AlertCircle } from 'lucide-react';
 
 export default function DevToolsPage() {
@@ -61,6 +62,13 @@ export default function DevToolsPage() {
           coordinates this subsystem; it is not the application itself.
         </p>
         <SpecGraphEntry />
+      </section>
+
+      <section className="space-y-4" aria-labelledby="operation-surfaces-heading">
+        <h2 id="operation-surfaces-heading" className="text-2xl font-semibold text-sg-neutral-900 dark:text-sg-neutral-50">
+          Operation surfaces
+        </h2>
+        <OperationSurfaceRegistry />
       </section>
       </div>
     </DeveloperToolsContainer>

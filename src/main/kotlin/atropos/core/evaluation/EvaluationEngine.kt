@@ -27,8 +27,11 @@ class EvaluationEngine(
     private val history: EvaluationHistoryStore = EvaluationHistoryStore(repoRoot),
     private val redactionFilter: RedactionFilter = RedactionFilter(),
     private val reproducibilityGate: ReproducibilityGate = ReproducibilityGate(),
-    private val releaseGateEvaluator: ReleaseGateEvaluator = ReleaseGateEvaluator()
+    private val releaseGateEvaluator: ReleaseGateEvaluator = ReleaseGateEvaluator(),
+    private val benchmarkRunner: BenchmarkRunner = BenchmarkRunner(repoRoot)
 ) {
+    private val metricCatalog = AtroposMetrics()
+    private val dashboard = EvaluationDashboard()
     fun evaluateRelease(
         subjectId: String,
         runId: String? = null,
@@ -40,7 +43,10 @@ class EvaluationEngine(
         reproducibilityExpectedFiles: Map<String, String>? = null
     ): ReleaseGateDecision {
         val report = buildReport(subjectId, runId, artifactIds, changedFiles, goalId, claimedBy, verifiedBy, reproducibilityExpectedFiles = reproducibilityExpectedFiles)
-        return releaseGateEvaluator.evaluate(report).also { history.append(it.report) }
+        return releaseGateEvaluator.evaluate(report).also {
+            history.append(it.report)
+            dashboard.renderJson(emptyList(), benchmarkRunner.report())
+        }
     }
 
     fun evaluatePromotionRelease(
@@ -64,7 +70,10 @@ class EvaluationEngine(
             reproducibilityExpectedFiles = reproducibilityExpectedFiles,
             requirePromotionScope = true
         )
-        return releaseGateEvaluator.evaluate(report).also { history.append(it.report) }
+        return releaseGateEvaluator.evaluate(report).also {
+            history.append(it.report)
+            dashboard.renderJson(emptyList(), benchmarkRunner.report())
+        }
     }
 
     private fun buildReport(
@@ -103,7 +112,8 @@ class EvaluationEngine(
         metrics += metric(
             EvaluationMetricKind.JOURNAL_EVIDENCE,
             runId == null || runEvents.any { it.category in setOf(EventCategory.VERIFICATION, EventCategory.TEST, EventCategory.COMPLETION) },
-            "run=${runId ?: "none"} evidenceEvents=${runEvents.count { it.category in setOf(EventCategory.VERIFICATION, EventCategory.TEST, EventCategory.COMPLETION) }}"
+            "run=${runId ?: "none"} evidenceEvents=${runEvents.count { it.category in setOf(EventCategory.VERIFICATION, EventCategory.TEST, EventCategory.COMPLETION) }} " +
+                "uncoveredMetricDefinitions=${metricCatalog.uncovered().size}"
         )
 
         val memoryEvidence = memory.findBySubjectTypes(setOf("verification", "tool", "reward", "recovery"), limit = 200)
@@ -171,10 +181,12 @@ class EvaluationEngine(
             claimedBy == null || verifiedBy == null || claimedBy != verifiedBy,
             "claimedBy=${claimedBy ?: "unknown"} verifiedBy=${verifiedBy ?: "unknown"}"
         )
+        val evaluationSpecResult = atropos.core.acceptance.EvaluationSpecIntegration()
+            .runSpec(metrics.map { it.passed })
         metrics += metric(
             EvaluationMetricKind.FAKE_SUCCESS_GUARD,
-            noFakeSuccess(visibleEvidence),
-            "fakeSuccessPattern=${!noFakeSuccess(visibleEvidence)}"
+            noFakeSuccess(visibleEvidence) && evaluationSpecResult.passed,
+            "fakeSuccessPattern=${!noFakeSuccess(visibleEvidence)} specCoverage=${evaluationSpecResult.metrics["coverage"]}"
         )
         metrics += metric(
             EvaluationMetricKind.MYTHOLOGY_GUARD,

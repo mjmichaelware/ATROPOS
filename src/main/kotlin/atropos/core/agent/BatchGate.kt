@@ -10,7 +10,9 @@ data class BatchDelta(
 data class BatchGateDecision(
     val passed: Boolean,
     val delta: BatchDelta,
-    val reason: String
+    val reason: String,
+    val higValue: Double = 0.0,
+    val hudValue: Double = 0.0
 )
 
 /** Enforces E(DELTA)=0 for changes outside the declared batch territory. */
@@ -18,7 +20,9 @@ class BatchGate {
     fun evaluate(
         before: Map<String, String>,
         after: Map<String, String>,
-        declaredTerritory: Set<String>
+        declaredTerritory: Set<String>,
+        higValue: Double = 0.0,
+        hudValue: Double = 0.0
     ): BatchGateDecision {
         val changed = (before.keys + after.keys).filterTo(sortedSetOf()) { path ->
             before[path] != after[path]
@@ -31,14 +35,20 @@ class BatchGate {
             }
         }
         val delta = BatchDelta(changed, unauthorized)
+        val finiteZero = higValue.isFinite() && hudValue.isFinite() &&
+            (higValue + hudValue) == 0.0
         return BatchGateDecision(
-            passed = delta.isZero,
+            passed = delta.isZero && finiteZero,
             delta = delta,
-            reason = if (delta.isZero) {
-                "batch delta authorized paths=${changed.size}"
-            } else {
+            reason = if (!delta.isZero) {
                 "batch delta escaped territory: ${unauthorized.joinToString(", ")}"
-            }
+            } else if (!finiteZero) {
+                "E(DELTA) refused: HIG=$higValue HUD=$hudValue must be finite and sum to zero"
+            } else {
+                "batch delta authorized paths=${changed.size}"
+            },
+            higValue = higValue,
+            hudValue = hudValue
         )
     }
 

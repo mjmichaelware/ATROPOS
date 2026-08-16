@@ -34,6 +34,7 @@ class AgentRepairService(
     private val repairValidator = AgentRepairValidator(patchValidator, attestation, memoryStore)
     private val repairCascade = AgentRepairCascade(router, collector, repairValidator, attempts, agencyGate)
     private val repairFinalization = AgentRepairFinalization(memoryStore)
+    private val errorGradientExtractor = atropos.core.ast.ErrorGradientExtractor()
 
     fun previewRepair(patchReference: String): AgentPatchRunResult? {
         val patch = patchStore.resolvePatchSnapshot(patchReference)
@@ -75,6 +76,7 @@ class AgentRepairService(
             return refuseForSourcePack(patch.id, refusal.message, contextSnapshot.byteCount)
         }
 
+        val errorGradient = errorGradientExtractor.extract(verification.stderr)
         val repairContext = AgentRepairPromptContext(
             patchId = patch.id,
             changedPaths = patch.extraction.touchedPaths,
@@ -82,7 +84,7 @@ class AgentRepairService(
             exitCode = verification.exitCode,
             durationMillis = verification.durationMillis,
             stdout = verification.stdout,
-            stderr = verification.stderr,
+            stderr = errorGradient.joinToString("\n").ifBlank { verification.stderr },
             context = contextSnapshot.text
         )
         val cascade = repairCascade.runCascade(selection.patchOrder, repairContext)

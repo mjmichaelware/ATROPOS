@@ -2,6 +2,12 @@
 package atropos.core.phase20
 
 import atropos.core.evaluation.AtroposMetric
+import atropos.core.ast.CompilerState
+import atropos.core.ast.MdpCompilerState
+import atropos.core.ast.MonteCarloBranchPruner
+import atropos.core.verification.LearningProof
+import atropos.core.time.RealClock
+import atropos.core.time.SystemClock
 import java.time.Instant
 
 /**
@@ -52,8 +58,29 @@ class SelfImprovementLoop(
     private val ledger: GovernanceLedger,
     private val bounds: SelfImprovementBounds = SelfImprovementBounds(),
     private val generator: ProposalGenerator = ProposalGenerator(),
-    private val clock: () -> Instant = { Instant.now() }
+    private val policyGate: PolicyGate = PolicyGate(bounds),
+    private val clock: (() -> Instant)? = null,
+    private val systemClock: SystemClock = RealClock()
 ) {
+    private val branchPruner = MonteCarloBranchPruner()
+
+    /**
+     * Keeps candidate mutation selection on the canonical compiler-state
+     * owner. Phase 20 proposes candidates; Phase 11 still performs mutation.
+     */
+    fun pruneCandidateMutations(initialCode: String, mutations: List<String>): List<String> {
+        val stateOwner = MdpCompilerState(initialCode)
+        val compilable = mutations.filter { delta ->
+            stateOwner.transition("UPDATE", delta) { candidate ->
+                if (candidate.isNotBlank() && !candidate.contains("\u0000")) 0 else 1
+            }.compileResultExitCode == 0
+        }
+        return branchPruner.sampleAndPrune(
+            initialState = CompilerState(initialCode, compileResultExitCode = 0, errors = emptyList()),
+            mutations = compilable,
+            compileCheck = { candidate -> candidate.isNotBlank() && !candidate.contains("\u0000") }
+        )
+    }
 
     /**
      * Runs `L01` through `L09` for one candidate deficiency.
@@ -63,7 +90,21 @@ class SelfImprovementLoop(
      * "not yet" needs refusals to be as cheap and as legible as acceptances.
      */
     fun advance(request: LoopRequest): LoopOutcome {
-        val now = clock()
+        val now = (clock ?: { systemClock.now() })()
+
+        val policy = policyGate.evaluate(
+            PolicyGateContext(
+                depth = request.depth,
+                proposalsInPeriod = request.proposalsInPeriod,
+                filesChanged = request.deficiency.territory.size,
+                linesChanged = request.estimatedLines,
+                retries = request.retries,
+                tokensSpentInPeriod = request.tokensSpentInPeriod,
+                subsystemUnderObservationUntil = request.subsystemUnderObservationUntil
+            ),
+            now
+        )
+        if (!policy.allowed) return LoopOutcome.Refused(LoopStage.BOUNDS, policy.reason)
 
         // L01 — observations are normalised or rejected.
         val incomplete = request.observations.filterNot { it.complete }
@@ -127,6 +168,14 @@ class SelfImprovementLoop(
             )
         }
 
+        if (!SelfImprovementLaws.checkLaw20_1(proposal, request.humanAuthorised) ||
+            !SelfImprovementLaws.checkLaw20_6(proposal)) {
+            return LoopOutcome.Refused(
+                LoopStage.PROPOSAL,
+                "proposal violates human-authority or predeclared-metric law"
+            )
+        }
+
         // H01/H02 — invariants and meta-level separation.
         val invariants = ImmutableInvariants.classify(proposal)
         if (invariants.requiresHumanAuthorisation && !request.humanAuthorised) {
@@ -178,11 +227,12 @@ class SelfImprovementLoop(
             guardrailsBefore = guardrailsBefore,
             guardrailsAfter = guardrailsAfter
         )
+        val learningProof = LearningProof.runProof(observedValue)
         if (!improvement.holds) {
             ledger.recordFailure(proposal.id)
-            return PromotionDecision(false, improvement, "rolled back: " + improvement.reason)
+            return PromotionDecision(false, improvement, "rolled back: ${improvement.reason}; learning=${learningProof.evidenceHash}")
         }
-        return PromotionDecision(true, improvement, "promoted: " + improvement.reason)
+        return PromotionDecision(true, improvement, "promoted: ${improvement.reason}; learning=${learningProof.evidenceHash}")
     }
 
     /**

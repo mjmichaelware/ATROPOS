@@ -3,6 +3,7 @@ package atropos.cli.commands
 
 import atropos.core.agent.SelfHostRunProof
 import atropos.core.agent.SelfHostRunVerdict
+import atropos.core.agent.SelfHostInstalledProofEvidence
 
 /**
  * Presentation only for [SelfHostRunProof].
@@ -15,6 +16,7 @@ import atropos.core.agent.SelfHostRunVerdict
 class SelfHostRunProofRenderer(
     private val maxStatusLines: Int = 12
 ) {
+    private val installedProof = SelfHostInstalledProofEvidence()
     fun render(proof: SelfHostRunProof): String = buildString {
         appendLine("verdict: ${proof.verdict}${if (proof.verdict == SelfHostRunVerdict.PARTIAL) " (predicates still unmet)" else ""}")
         appendLine("predicates:")
@@ -51,5 +53,11 @@ class SelfHostRunProofRenderer(
 
         proof.evidenceMarkdownPath?.let { appendLine("evidence markdown: $it") }
         proof.evidenceJsonPath?.let { appendLine("evidence json: $it") }
+        val evidenceMarkers = buildList {
+            proof.compileGate?.let { add("candidate_jar_build ok=${it.passed}") }
+            if (proof.evidenceMarkdownPath != null || proof.evidenceJsonPath != null) add("promotion_gate")
+            if (proof.gitStatusLines.isNotEmpty()) add("git_status_short")
+        }
+        appendLine(installedProof.evidenceLine(installedProof.assess(evidenceMarkers)))
     }.trimEnd()
 }

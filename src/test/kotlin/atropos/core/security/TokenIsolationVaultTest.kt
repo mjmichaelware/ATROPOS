@@ -80,4 +80,26 @@ class TokenIsolationVaultTest {
         assertFalse(vault.inspectSecret("TOKEN").isolated)
         assertEquals(null, vault.readSecret("TOKEN"))
     }
+
+    @Test
+    fun refuses_plaintext_for_prohibited_sink_before_reading_ciphertext() {
+        val root = Files.createTempDirectory("atropos-vault-sink-")
+        val vault = TokenIsolationVault(root, TestSecretVaultKeyProvider())
+        vault.writeSecret("SINK_KEY", "sink-bound-secret-123")
+
+        val result = vault.readSecretForSink("SINK_KEY", SecretSinkKind.PERSISTENT_MEMORY)
+
+        assertTrue(result is VaultReadResult.Refused)
+        assertEquals(VaultReadRefusalReason.PROHIBITED_SINK, (result as VaultReadResult.Refused).reason)
+    }
+
+    @Test
+    fun encoding_closure_contains_representations_of_a_vault_secret() {
+        val secret = "encoded-vault-secret-456"
+        val variants = SecretEncodingClosure.variantsOf(secret)
+
+        assertTrue(variants.contains(secret))
+        assertTrue(variants.any { it != secret })
+        assertTrue(variants.contains(SecretEncodingClosure.whitespaceStripped("encoded-vault-\nsecret-456")))
+    }
 }

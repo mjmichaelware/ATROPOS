@@ -2,6 +2,7 @@
 package atropos.bridge
 
 import atropos.bridge.http.EngineHttpServer
+import atropos.bridge.http.HttpRequestAuthenticator
 import atropos.bridge.conversation.QueuedWorkConversationResponder
 import atropos.bridge.queue.AgentQueueWorkRunner
 import atropos.core.AtroposRepoRootLocator
@@ -100,6 +101,7 @@ object LocalEngineBridge {
             EngineHttpServer(
                 routeTable = routes.table(),
                 port = port,
+                authenticator = HttpRequestAuthenticator(System.getenv("ATROPOS_BRIDGE_PASSWORD")),
                 streamRoutes = routes.streamRoutes()
             )
         }

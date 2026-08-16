@@ -36,6 +36,12 @@ class NlEntryPipeline(
     private val wrapper: NlEnvelopeWrapper = NlEnvelopeWrapper(),
     private val resolver: LocalNlResolver = LocalNlResolver(),
     private val mentions: MentionResolver = MentionResolver(territoryRoots),
+    private val mentionExtractor: MentionExtractor = MentionExtractor(
+        territoryRoots.flatMap { root ->
+            runCatching { Files.list(root).use { stream -> stream.map { it.fileName.toString() }.toList() } }
+                .getOrDefault(emptyList())
+        }.toSet()
+    ),
     /** Injected so the pipeline can be tested without a filesystem. */
     private val sizeOf: (Path) -> Long = { path ->
         runCatching { Files.size(path) }.getOrDefault(-1L)
@@ -47,7 +53,8 @@ class NlEntryPipeline(
         val attachments = mutableListOf<Path>()
         val refusedAttachments = mutableListOf<String>()
 
-        AtMentionScanner.scan(canonical.canonical).forEach { mention ->
+        mentionExtractor.extractMentions(canonical.canonical).forEach { extracted ->
+            val mention = extracted.token.removePrefix("@")
             val candidate = territoryRoots.firstNotNullOfOrNull { root ->
                 runCatching { root.resolve(mention.removePrefix("@")).normalize() }.getOrNull()
             }
@@ -90,6 +97,24 @@ data class NlEntry(
     val canonicalization: NlCanonicalResult
 ) {
     val needsProvider: Boolean get() = resolution is NlResolution.Prose
+
+    /** The typed intent boundary consumed by command and factory callers. */
+    val intentEnvelope: atropos.core.intent.IntentEnvelope
+        get() = atropos.core.intent.IntentEnvelope(
+            intentId = envelope.canonicalSha256,
+            command = when (resolution) {
+                is NlResolution.ExactCommand -> resolution.command
+                is NlResolution.Suggested -> resolution.command
+                is NlResolution.Ambiguous -> resolution.candidates.firstOrNull().orEmpty()
+                is NlResolution.Prose -> envelope.canonical
+                NlResolution.Empty -> ""
+            },
+            parameters = when (val resolved = resolution) {
+                is NlResolution.ExactCommand -> mapOf("arguments" to resolved.arguments)
+                else -> emptyMap()
+            },
+            parsedOk = resolution !is NlResolution.Empty
+        )
 
     /** What to tell the operator before acting, or null when there is nothing. */
     fun notice(): String? {

@@ -7,7 +7,9 @@ import { WorkItemCard } from '@/components/atropos/work-item-card';
 import type { TrustIndicators } from '@/components/ui/trust-indicators';
 import { ControlVerbs, ControlVerb } from '@/components/ui/control-verbs';
 import { useProject, useWorkItems } from '@/lib/api-atropos/hooks';
+import { approvalOperations } from '@/lib/api-atropos/operations';
 import { useAppContext } from '@/lib/contexts/app-context';
+import { StreamingApprovalCards } from '@/components/streaming/message-stream';
 import { Plus, Filter } from 'lucide-react';
 
 export default function WorkPage({ params }: { params: Promise<{ id: string }> }) {
@@ -111,6 +113,22 @@ export default function WorkPage({ params }: { params: Promise<{ id: string }> }
             Active Work
           </h2>
           <SixAnswersPanel answers={workAnswers} compact={false} expandable={true} />
+        </section>
+
+        <section className="space-y-3" aria-label="Streaming approvals">
+          <h2 className="text-lg font-semibold text-sg-neutral-900 dark:text-sg-neutral-50">
+            Live approvals
+          </h2>
+          <StreamingApprovalCards
+            eventSourceUrl={`/api/atropos/events?project=${encodeURIComponent(projectId)}`}
+            onApproval={(approvalId, approved) => {
+              if (approved) {
+                void approvalOperations.approve(approvalId)
+              } else {
+                void approvalOperations.reject(approvalId, 'Rejected from project work surface')
+              }
+            }}
+          />
         </section>
 
         {/* Filters + Actions */}
