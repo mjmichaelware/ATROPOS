@@ -87,6 +87,15 @@ class RoutePolicy(
     fun decide(task: ProviderTask): RoutePolicyDecision {
         val candidates = registry.getByCapability(task.capability).ifEmpty { registry.getByCapability(ApiCapability.CHAT) }
         val evaluated = candidates.map { filter.evaluate(it, ledger.get(it.id)) }
+        // Health ranking supplies the tie-break, not the decision.
+        //
+        // These keys are precedence tiers, not weights: a paid-locked provider
+        // must lose to every unlocked one no matter how healthy it looks, and a
+        // local provider must sit behind the remote ones when the task did not
+        // ask for local first. Summing the tiers into one number let a good
+        // health rank outrank the cost policy, which is how `ollama` came to be
+        // selected ahead of `groq` and ahead of an emergency-unlocked `openai`.
+        // Lexicographic ordering is the only shape that says "then".
         val eligibilityOrder = EligibilityAlgorithm.rank(
             evaluated.map { candidate ->
                 ProviderHealth(
@@ -99,12 +108,29 @@ class RoutePolicy(
                 )
             }
         ).mapIndexed { index, score -> score.providerId to index }.toMap()
-        val eligible = ProviderPreferenceOrder.order(evaluated.filter { it.eligible }) { providerId ->
-            val descriptor = evaluated.first { it.provider.id == providerId }.provider
-            taskPriority(task, descriptor) +
-                (if (!task.localFirst && descriptor.isLocal) 1 else 0) +
-                (eligibilityOrder[providerId] ?: Int.MAX_VALUE)
-        }
+        val eligible = evaluated.filter { it.eligible }.sortedWith(
+            compareBy<ProviderEligibility>(
+                {
+                    if (!task.localFirst && it.provider.isLocal) 1 else 0
+                },
+                {
+                    when {
+                        costPolicy == AtroposCostPolicy.PAID_EMERGENCY_UNLOCKED &&
+                            it.provider.isPaidLocked() &&
+                            paidGate.isProviderUnlocked(it.provider.id) -> 0
+                        it.provider.isPaidLocked() -> 2
+                        costPolicy == AtroposCostPolicy.PAID_EMERGENCY_UNLOCKED &&
+                            it.provider.costMode != CostMode.LOCAL -> 0
+                        costPolicy == AtroposCostPolicy.PAID_EMERGENCY_UNLOCKED -> 1
+                        else -> 1
+                    }
+                },
+                { taskPriority(task, it.provider) },
+                { it.provider.quotaTier },
+                { eligibilityOrder[it.provider.id] ?: Int.MAX_VALUE },
+                { it.provider.id }
+            )
+        )
         val selected = eligible.firstOrNull()?.provider
         return if (selected != null) {
             RoutePolicyDecision(task, selected.id, selected, eligible, evaluated.filterNot { it.eligible })

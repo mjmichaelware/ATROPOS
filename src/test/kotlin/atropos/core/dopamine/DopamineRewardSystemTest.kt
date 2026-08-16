@@ -27,10 +27,11 @@ class DopamineRewardSystemTest {
         val store = RewardPenaltyStore(tempLogFile)
         store.recordReward(RewardLogEntry("agent-1", "MUTATE", 10.0, "reasoning"))
         store.shutdown()
-        // Wait briefly for asynchronous execution to complete
-        Thread.sleep(100)
         val content = tempLogFile.readText()
-        assertTrue(content.contains("agent-1\tMUTATE\t10.0\treasoning"))
+        // The canonical autonomy store owns the row format, and it carries a
+        // signal type between the action and the value. This facade only makes
+        // the write asynchronous; it does not get its own schema.
+        assertTrue(content.contains("agent-1\tMUTATE\tREWARD\t10.0\treasoning"), content)
         tempLogFile.delete()
     }
 

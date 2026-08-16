@@ -53,7 +53,7 @@ class TerminalTheme(
     /** Paints text with a semantic role. The single styling entry point. */
     fun paint(role: Role, text: String): String {
         if (text.isEmpty()) return text
-        AnsiScheme.assertNoRawEscapes(text)
+        AnsiScheme.assertNoEscapes(text)
         val accessibleRole = if (accessibility.isHighContrastEnabled && role == Role.TEXT_MUTED) {
             Role.TEXT_PRIMARY
         } else {

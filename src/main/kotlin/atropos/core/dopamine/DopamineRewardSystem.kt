@@ -31,8 +31,16 @@ class RewardPenaltyStore(private val logFile: File) {
         }
     }
 
+    /**
+     * Stops accepting work and waits for what was already submitted.
+     *
+     * A shutdown that returned while rows were still queued would make the
+     * store's one durability promise untrue: the caller has no other signal
+     * that a recorded reward reached the file.
+     */
     fun shutdown() {
         executor.shutdown()
+        runCatching { executor.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS) }
     }
 }
 

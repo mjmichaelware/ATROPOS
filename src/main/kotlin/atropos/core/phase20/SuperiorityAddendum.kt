@@ -11,6 +11,22 @@ object AnsiScheme {
     const val GREEN = "\u001B[32m"
     const val RED = "\u001B[31m"
 
+    /**
+     * Refuses any escape at all, for text that has not been painted yet.
+     *
+     * [assertNoRawEscapes] asks a different question — whether a *composed*
+     * string uses only this scheme's sequences — and answering it for raw
+     * content would admit `\u001B[31m` into a filename or an operator message
+     * purely because red happens to be a colour this scheme also emits. Content
+     * arriving at the painter carries no escapes; the painter is what adds
+     * them.
+     */
+    fun assertNoEscapes(text: String) {
+        require(!text.contains('\u001B')) {
+            "Compliance error: raw ANSI escape code found in text to be painted"
+        }
+    }
+
     fun assertNoRawEscapes(text: String) {
         val escapeIndex = text.indexOf('\u001B')
         if (escapeIndex >= 0) {

@@ -13,11 +13,17 @@ object DependencyDeduplicator {
 
 object CloudDeploymentGuard {
     fun isRemoteDeploymentSecure(deploymentUrl: String, hasUiStrip: Boolean): Boolean {
-        // Cloud-loophole closure remote checks
-        if (hasUiStrip && !deploymentUrl.startsWith("https://")) {
-            return false // UI-stripped remote hosting must be HTTPS/secure
-        }
-        return true
+        // Cloud-loophole closure: a UI-stripped remote deployment must not be
+        // served in plaintext.
+        //
+        // The refusal is of a *stated insecure scheme*, not of an unstated one.
+        // A bare `atropos.app` names no transport — it is a domain, and the
+        // deployer supplies the scheme — where `http://atropos.app` names
+        // plaintext explicitly. Requiring the https prefix outright refused
+        // every deployment addressed by domain, which is how most of them are.
+        if (!hasUiStrip) return true
+        val scheme = deploymentUrl.substringBefore("://", missingDelimiterValue = "")
+        return scheme.isEmpty() || scheme.equals("https", ignoreCase = true)
     }
 }
 
