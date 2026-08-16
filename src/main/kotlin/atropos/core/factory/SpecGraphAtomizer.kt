@@ -341,26 +341,60 @@ document = IngestionService(database).ingest_text(str(project["id"]), "factory-r
 extraction = AtomService(database).extract_document(str(document["id"]))
 atoms = extraction.get("atoms", []) or []
 
+# The atom row carries SpecGraph's orthogonal *kind* -- SECURITY, DATA, API --
+# which is an eight-value vocabulary, not the sixteen dimensions. ATROPOS reads
+# a single `dimension` field, found none that matched, and defaulted every atom
+# to FUNCTIONAL_CONTRACT. The result was a plan of nothing but contracts: no
+# implementation or verification stage depended on anything, so a canonical
+# atomization produced roots and no edges, and every node became a PROVIDER_CALL.
+#
+# The dimensions are real and are stored per atom in atom_dimensions, one row
+# each, applicable or not. Read here rather than re-derived on the Kotlin side:
+# determine_applicable_dimensions is the owner of that mapping and lives in this
+# process, and a second copy across the boundary would drift the first time
+# SpecGraph added a kind.
+def applicable_dimensions(connection, atom_id):
+    rows = connection.execute(
+        "SELECT dimension FROM atom_dimensions "
+        "WHERE atom_id = ? AND applicability != 'NOT_APPLICABLE'",
+        (atom_id,),
+    ).fetchall()
+    return [str(row[0]) for row in rows]
+
+# The most specific applicable dimension, or the contract when none is.
+#
+# FUNCTIONAL_CONTRACT is in every atom's applicable set as the baseline, so
+# picking it whenever it is present would reproduce exactly the collapse this
+# replaces. It is therefore the answer only when nothing more specific applies.
+#
+# Comments rather than a docstring: this script is embedded in a Kotlin raw
+# string, and a Python triple-quote would end the literal.
+def specific_dimension(connection, atom_id):
+    names = applicable_dimensions(connection, atom_id)
+    specific = sorted(n for n in names if n != "FUNCTIONAL_CONTRACT")
+    return specific[0] if specific else "FUNCTIONAL_CONTRACT"
+
 reported_schema = False
-for atom in atoms:
-    identifier = pick(atom, ["id", "atom_id", "uuid", "key"])
-    statement = pick(atom, ["canonical_statement", "statement", "exact_quote", "text", "body"])
-    if not identifier or not statement:
-        if not reported_schema and isinstance(atom, dict):
-            print("SCHEMA\t" + ",".join(sorted(str(k) for k in atom.keys())))
-            reported_schema = True
-        continue
-    print("\t".join([
-        "ATOM",
-        esc(identifier),
-        esc(pick(atom, ["kind", "dimension", "modality", "category"])),
-        esc(pick(atom, ["section_id", "sectionId", "section"])),
-        esc(coordinates(atom)),
-        listed(pick(atom, ["dependencies", "depends_on", "requires"])),
-        listed(pick(atom, ["territory", "paths", "files"])),
-        esc(statement),
-        esc(pick(atom, ["confidence"], "")),
-    ]))
+with database.connect() as connection:
+    for atom in atoms:
+        identifier = pick(atom, ["id", "atom_id", "uuid", "key"])
+        statement = pick(atom, ["canonical_statement", "statement", "exact_quote", "text", "body"])
+        if not identifier or not statement:
+            if not reported_schema and isinstance(atom, dict):
+                print("SCHEMA\t" + ",".join(sorted(str(k) for k in atom.keys())))
+                reported_schema = True
+            continue
+        print("\t".join([
+            "ATOM",
+            esc(identifier),
+            esc(specific_dimension(connection, identifier)),
+            esc(pick(atom, ["section_id", "sectionId", "section"])),
+            esc(coordinates(atom)),
+            listed(pick(atom, ["dependencies", "depends_on", "requires"])),
+            listed(pick(atom, ["territory", "paths", "files"])),
+            esc(statement),
+            esc(pick(atom, ["confidence"], "")),
+        ]))
 
 # input_sha256 is over the exact bytes this bridge handed across, not over
 # SpecGraph's normalized copy of them. The old check compared ATROPOS's hash of
