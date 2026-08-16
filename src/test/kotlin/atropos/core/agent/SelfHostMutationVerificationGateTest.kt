@@ -37,6 +37,11 @@ class SelfHostMutationVerificationGateTest {
         }
         Files.createDirectories(root.resolve("src"))
         Files.writeString(root.resolve("src/A.kt"), "class A\n", StandardCharsets.UTF_8)
+        // A build file, so the compile lane applies. Without one the gate
+        // reports "not applicable" rather than a failure — a tree with nothing
+        // to build cannot fail to build — and the test below, which is about a
+        // compile that fails, would have nothing to fail.
+        Files.writeString(root.resolve("build.gradle.kts"), "plugins { }\n", StandardCharsets.UTF_8)
         listOf(listOf("git", "add", "."), listOf("git", "commit", "-m", "initial")).forEach { command ->
             ProcessBuilder(command).directory(root.toFile()).redirectErrorStream(true).start().waitFor()
         }
@@ -56,10 +61,19 @@ class SelfHostMutationVerificationGateTest {
         metaFile = Path.of("unused")
     )
 
+    /**
+     * All three core lanes, because that is what the gate reads.
+     *
+     * A report carrying only one of them is indistinguishable from a run where
+     * the other two never happened, and a lane that did not run is not a lane
+     * that passed.
+     */
     private fun report(canComplete: Boolean, detail: String) = CompletionGateReport(
         nodeId = "node-mutate",
         canComplete = canComplete,
-        gateResults = listOf(GateResult("node-mutate", canComplete, "Compile Gate", detail, Instant.now())),
+        gateResults = listOf("Auditor Findings", "Deterministic Verification", "Compile Gate").map { lane ->
+            GateResult("node-mutate", canComplete, lane, detail, Instant.now())
+        },
         message = if (canComplete) "all gates passed" else "gates failed: Compile Gate: $detail"
     )
 

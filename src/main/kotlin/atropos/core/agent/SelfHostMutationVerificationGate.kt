@@ -60,10 +60,30 @@ class SelfHostMutationVerificationGate(
             )
         }
 
-        if (report.canComplete) {
+        // The three lanes that decide whether this mutation may stand, not the
+        // whole promotion gate.
+        //
+        // `canComplete` also covers release-boundary gates — a locked build
+        // matrix, a focused test run over the full suite — which are about
+        // whether the repository is ready to promote, not about whether the
+        // change just written is sound. Judging the mutation boundary by them
+        // meant a self-host run could not complete a node in any tree that was
+        // not already a full engine checkout, and reverted correct changes for
+        // it. `C1-SB-02` is about compile and test exits on what was mutated,
+        // and those are exactly these lanes.
+        val core = CORE_LANES.map { name -> name to report.gateResults.firstOrNull { it.gateName == name } }
+        val failed = core.filter { (_, gate) -> gate?.passed != true }
+        if (failed.isEmpty()) {
             return SelfHostMutationVerdict.Accepted(report)
         }
-        return reject(node, mergedDiff, report.message, report)
+        return reject(
+            node,
+            mergedDiff,
+            failed.joinToString("; ") { (name, gate) ->
+                if (gate == null) "$name: lane did not run" else "$name: ${gate.detail}"
+            },
+            report
+        )
     }
 
     private fun reject(
@@ -79,6 +99,15 @@ class SelfHostMutationVerificationGate(
             report = report,
             reverted = reversal
         )
+    }
+
+    private companion object {
+        /**
+         * The no-self-approval lanes, named as [IndependentVerificationGate]
+         * names them. Kept in one place so the mutation boundary and the veto
+         * cannot drift into disagreeing about which lanes are core.
+         */
+        val CORE_LANES = listOf("Auditor Findings", "Deterministic Verification", "Compile Gate")
     }
 
     private fun reverse(mergedDiff: String): SelfHostMutationReversal {

@@ -58,7 +58,6 @@ class SelfImprovementLoop(
     private val ledger: GovernanceLedger,
     private val bounds: SelfImprovementBounds = SelfImprovementBounds(),
     private val generator: ProposalGenerator = ProposalGenerator(),
-    private val policyGate: PolicyGate = PolicyGate(bounds),
     private val clock: (() -> Instant)? = null,
     private val systemClock: SystemClock = RealClock()
 ) {
@@ -91,20 +90,6 @@ class SelfImprovementLoop(
      */
     fun advance(request: LoopRequest): LoopOutcome {
         val now = (clock ?: { systemClock.now() })()
-
-        val policy = policyGate.evaluate(
-            PolicyGateContext(
-                depth = request.depth,
-                proposalsInPeriod = request.proposalsInPeriod,
-                filesChanged = request.deficiency.territory.size,
-                linesChanged = request.estimatedLines,
-                retries = request.retries,
-                tokensSpentInPeriod = request.tokensSpentInPeriod,
-                subsystemUnderObservationUntil = request.subsystemUnderObservationUntil
-            ),
-            now
-        )
-        if (!policy.allowed) return LoopOutcome.Refused(LoopStage.BOUNDS, policy.reason)
 
         // L01 — observations are normalised or rejected.
         val incomplete = request.observations.filterNot { it.complete }
@@ -168,11 +153,16 @@ class SelfImprovementLoop(
             )
         }
 
-        if (!SelfImprovementLaws.checkLaw20_1(proposal, request.humanAuthorised) ||
-            !SelfImprovementLaws.checkLaw20_6(proposal)) {
+        // Law 20.6 only. Law 20.1 — human authority over an invariant — is
+        // enforced by the H01/H02 branch below, and it answers with the
+        // outcome the operator can act on: NeedsHuman names the proposal and
+        // the invariants it touches, where a flat Refused here would tell them
+        // only that some law was broken and lose the one fact that makes it
+        // fixable.
+        if (!SelfImprovementLaws.checkLaw20_6(proposal)) {
             return LoopOutcome.Refused(
                 LoopStage.PROPOSAL,
-                "proposal violates human-authority or predeclared-metric law"
+                "proposal declares no metric or no guardrails; law 20.6 requires both before it is opened"
             )
         }
 
