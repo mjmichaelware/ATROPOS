@@ -114,7 +114,11 @@ internal class FactoryCompletionVerifier(
             )
         )
         val passed = checkResults.all { it.passed }
-        return CompletionGateReport(input.nodeId, passed, checkResults, if (passed) "factory completion gate passed" else "factory gates failed: ${checkResults.filterNot { it.passed }.joinToString("; ") { it.gateName }}")
+        return CompletionGateReport(input.nodeId, passed, checkResults, if (passed) "factory completion gate passed" else "factory gates failed: " +
+                // With the detail, not just the name. Five gate names and no
+                // reason is a refusal an operator cannot act on, and the three
+                // surface gates all carry the one refusal that produced them.
+                checkResults.filterNot { it.passed }.joinToString("; ") { "${it.gateName} (${it.detail})" })
     }
 
     private fun auditFactorySurface(input: FactoryCompletionInput): FactorySurfaceAudit {

@@ -136,7 +136,13 @@ class AppProjectGenerator(
             check(deterministicReport.passed) {
                 "generated deterministic verification failed: ${deterministicReport.render().take(800)}"
             }
-            val astSymbols = AstSymbolGraph(repoRoot = target).buildAndPersist()
+            // build(), not buildAndPersist(). The check below only needs the
+            // symbols; persisting writes .atropos/ast/ast_symbol_graph.tsv into
+            // the generated project, and the completion gate audits that
+            // project's file surface against exactly what was declared — so the
+            // engine's own scratch output made every generated project fail as
+            // "undeclared or redirected files".
+            val astSymbols = AstSymbolGraph(repoRoot = target).build()
             check(astSymbols.any { it.kind != AstSymbolKind.FILE }) {
                 "generated AST symbol graph found no source declarations"
             }
