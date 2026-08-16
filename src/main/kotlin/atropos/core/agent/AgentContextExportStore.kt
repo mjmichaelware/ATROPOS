@@ -41,7 +41,14 @@ class AgentContextExportStore(
         appendLine("final report:")
         appendLine(record.finalReport?.let(redactionFilter::redact) ?: "none")
         appendLine("context export path: ${exportDir.resolve("${record.id}.txt")}")
-        appendLine("next context export command: ${Rule142Export.generateExportCommand(changedFiles)}")
+        // Redacted before the command is built, not after. The paths are
+        // operator-supplied and reach the export verbatim otherwise, which put
+        // `client_secret-prod.json` into a file every other line of this
+        // renderer is careful to keep it out of.
+        appendLine(
+            "next context export command: " +
+                Rule142Export.generateExportCommand(changedFiles.map(redactionFilter::redact))
+        )
         appendLine("context export media scan: ${Rule142Export.triggerMediaScan()}")
     }.trimEnd() + "\n"
 

@@ -90,9 +90,24 @@ class StorageSupervisor(
     fun tierFor(age: java.time.Duration, pinned: Boolean, held: Boolean): RetentionTier =
         tieringPolicy.tierFor(age, pinned, held)
 
-    /** Typed retention projection used by the operator surface. */
-    fun retentionClass(storageClass: StorageClass, age: Duration = Duration.ZERO, referenced: Boolean = false): RetentionClass =
-        RetentionClass(storageClass.id, tierFor(age, pinned = false, held = referenced), age)
+    /**
+     * Typed retention projection used by the operator surface.
+     *
+     * The declared tier is a floor, not a suggestion. Age can only move a class
+     * further down the reclaim order — a class declared COLD stays cold however
+     * fresh it is — because the declaration says what the data is for, and age
+     * says only how long it has sat. Reading the tier from age alone reported
+     * every class as HOT the moment it was written, which is the "hidden
+     * accumulation" `SUP.STOR.RETENTION-TIERS` exists to prevent.
+     *
+     * A referenced class is the exception: something is using it now, so it is
+     * HOT regardless of what it was declared as.
+     */
+    fun retentionClass(storageClass: StorageClass, age: Duration = Duration.ZERO, referenced: Boolean = false): RetentionClass {
+        val byAge = tierFor(age, pinned = false, held = referenced)
+        val tier = if (referenced) byAge else maxOf(storageClass.tier, byAge)
+        return RetentionClass(storageClass.id, tier, age)
+    }
 
     fun evaluateWatermark(): WatermarkDecision {
         val current = constitution()

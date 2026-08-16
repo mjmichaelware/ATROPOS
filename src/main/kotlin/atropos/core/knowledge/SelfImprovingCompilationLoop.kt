@@ -5,7 +5,6 @@ import atropos.core.memory.LocalMemoryStore
 import atropos.core.policy.BoundedProcessRunner
 import atropos.core.security.RedactionFilter
 import atropos.core.verification.*
-import atropos.core.dopamine.RewardCalculator
 import atropos.core.verifier.ProbabilisticImmunityEngine
 import java.nio.file.*
 import java.time.Instant
@@ -127,11 +126,14 @@ class SelfImprovingCompilationLoop(
             execution.launchError == null &&
             execution.exitCode == 0
         ) 1.0 else 0.0
-        val reward = RewardCalculator.computeReward(
-            successRate = successRate,
-            latencyMs = execution.durationMillis.toDouble(),
-            cost = 1.0
-        )
+        // A verification outcome, not a throughput ratio.
+        //
+        // RewardCalculator.computeReward answers a different question — success
+        // per second per unit cost, for comparing providers — and it is
+        // unbounded: a run that finishes in ten milliseconds scores 100. This
+        // signal is read as a sign by the recorder, which files anything below
+        // zero as a penalty, so scale and direction are the whole meaning.
+        val reward = if (successRate > 0.0) 1.0 else -1.0
 
         val persistenceError = try {
             rewardRecorder.record(

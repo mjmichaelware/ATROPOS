@@ -54,7 +54,9 @@ data class ExecutionPolicyDecision(
 data class ExecutionPolicyAuditRecord(
     val decidedAt: Instant,
     val request: ExecutionPolicyRequest,
-    val decision: ExecutionPolicyDecision
+    val decision: ExecutionPolicyDecision,
+    /** How many callers the side-effect inventory was enforcing when this was decided. */
+    val sideEffectInventorySize: Int = 0
 ) {
     fun encode(redactionFilter: RedactionFilter): String = buildString {
         append("ts=").append(decidedAt)
@@ -62,6 +64,7 @@ data class ExecutionPolicyAuditRecord(
         append("\tdecision=").append(decision.decision.name)
         append("\tdestructive=").append(decision.destructive)
         append("\treason=").append(redactionFilter.redact(decision.reason).replace('\t', ' '))
+        append("\tside_effect_inventory=").append(sideEffectInventorySize)
         append("\tprovider=").append(request.providerId.orEmpty())
         append("\tnetwork=").append(redactionFilter.redact(request.networkTarget.orEmpty()).replace('\t', ' '))
         append("\tcommand=").append(redactionFilter.redact(request.command.joinToString(" ")).replace('\t', ' '))
@@ -119,12 +122,19 @@ open class ExecutionPolicyEngine(
 ) {
     open fun evaluate(request: ExecutionPolicyRequest): ExecutionPolicyDecision {
         val decision = decide(request)
-        val enriched = decision.copy(
-            reason = decision.reason +
-                "; side_effect_inventory=${SideEffectInventory.getEnforcedCallers().size}"
+        // The inventory size travels in its own audit column, not appended to
+        // the reason. The reason is the refusal — callers match on it and show
+        // it to the operator — and a diagnostic counter glued onto the end
+        // makes "forbidden target path" stop being that string.
+        auditStore.append(
+            ExecutionPolicyAuditRecord(
+                Instant.now(),
+                request,
+                decision,
+                sideEffectInventorySize = SideEffectInventory.getEnforcedCallers().size
+            )
         )
-        auditStore.append(ExecutionPolicyAuditRecord(Instant.now(), request, enriched))
-        return enriched
+        return decision
     }
 
     private fun decide(request: ExecutionPolicyRequest): ExecutionPolicyDecision {
