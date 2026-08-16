@@ -71,10 +71,10 @@ class SelfHostMutationVerificationGate(
         // not already a full engine checkout, and reverted correct changes for
         // it. `C1-SB-02` is about compile and test exits on what was mutated,
         // and those are exactly these lanes.
-        val core = CORE_LANES.map { name -> name to report.gateResults.firstOrNull { it.gateName == name } }
+        val core = requiredLanes().map { name -> name to report.gateResults.firstOrNull { it.gateName == name } }
         val failed = core.filter { (_, gate) -> gate?.passed != true }
         if (failed.isEmpty()) {
-            return SelfHostMutationVerdict.Accepted(report)
+            return SelfHostMutationVerdict.Accepted(report, lanes = core.map { it.first })
         }
         return reject(
             node,
@@ -100,6 +100,27 @@ class SelfHostMutationVerificationGate(
             reverted = reversal
         )
     }
+
+    /**
+     * The lanes this mutation must clear.
+     *
+     * The compile lane is dropped when the mutated tree has no build file in
+     * it. `./gradlew compileKotlin` in such a directory exits non-zero because
+     * there is nothing to run, and treating that as a compile failure reverted
+     * correct mutations in every tree that was not already a Gradle project.
+     *
+     * The exclusion is stated rather than hidden: [SelfHostMutationVerdict]
+     * carries the lanes that actually ran, so nothing downstream can read a
+     * verdict as a compile that happened. In the engine's own checkout the
+     * build file is present and the lane always applies.
+     */
+    private fun requiredLanes(): List<String> =
+        if (hasBuildSystem()) CORE_LANES else CORE_LANES - "Compile Gate"
+
+    private fun hasBuildSystem(): Boolean =
+        java.nio.file.Files.isRegularFile(repoRoot.resolve("build.gradle.kts")) ||
+            java.nio.file.Files.isRegularFile(repoRoot.resolve("build.gradle")) ||
+            java.nio.file.Files.isRegularFile(repoRoot.resolve("gradlew"))
 
     private companion object {
         /**
@@ -130,7 +151,11 @@ class SelfHostMutationVerificationGate(
 /** Whether a merged mutation survived verification, and what was done if it did not. */
 sealed interface SelfHostMutationVerdict {
 
-    data class Accepted(val report: CompletionGateReport) : SelfHostMutationVerdict
+    /** @param lanes the verification lanes that actually ran and passed. */
+    data class Accepted(
+        val report: CompletionGateReport,
+        val lanes: List<String> = emptyList()
+    ) : SelfHostMutationVerdict
 
     data class Rejected(
         val nodeId: String,
@@ -148,7 +173,8 @@ sealed interface SelfHostMutationVerdict {
     }
 
     fun evidenceLine(): String = when (this) {
-        is Accepted -> "self_host_mutation_verified accepted=true gates=${report.gateResults.size}"
+        is Accepted -> "self_host_mutation_verified accepted=true gates=${report.gateResults.size} " +
+            "lanes=${lanes.joinToString(",").ifBlank { "none" }}"
         is Rejected -> "self_host_mutation_verified accepted=false reverted=${reverted.ok} " +
             "dirty=$treeIsDirty reason=${reason.replace('\n', ' ').take(240)}"
     }

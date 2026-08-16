@@ -36,24 +36,6 @@ class GovernedCompileGate(
      * names the requester rather than an anonymous build.
      */
     fun verify(actorId: String): GovernedCompileGateResult {
-        // A tree with no build cannot be compiled, and reporting that as a
-        // compile failure is a false negative — the same defect as a false
-        // VERIFIED, pointed the other way. `./gradlew compileKotlin` in a
-        // directory with no gradlew exits non-zero because there is nothing to
-        // run, not because the source is broken, and a self-host mutation in
-        // such a tree was being reverted for it.
-        //
-        // Narrow on purpose: the engine's own checkout has both files, so the
-        // gate still runs everywhere a compile is actually possible.
-        if (!hasBuildSystem()) {
-            return GovernedCompileGateResult(
-                passed = true,
-                command = command,
-                exitCode = null,
-                message = "compile gate not applicable: no build system in ${repoRoot.fileName}",
-                proposalId = "compile-gate-not-applicable"
-            )
-        }
         val proposal = VerificationActionProposals.buildTest(
             command = command,
             repoRoot = repoRoot,
@@ -111,11 +93,6 @@ class GovernedCompileGate(
             proposalId = proposal.id
         )
     }
-
-    private fun hasBuildSystem(): Boolean =
-        java.nio.file.Files.isRegularFile(repoRoot.resolve("gradlew")) ||
-            java.nio.file.Files.isRegularFile(repoRoot.resolve("build.gradle.kts")) ||
-            java.nio.file.Files.isRegularFile(repoRoot.resolve("build.gradle"))
 
     data class CompileRun(val exitCode: Int, val output: String)
 
