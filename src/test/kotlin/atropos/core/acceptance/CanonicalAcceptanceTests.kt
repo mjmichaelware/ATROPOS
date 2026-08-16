@@ -6,6 +6,7 @@ import atropos.core.territory.TerritoryService
 import atropos.core.territory.TerritoryStore
 import java.nio.file.Files
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.test.assertFalse
@@ -42,9 +43,18 @@ class CanonicalAcceptanceTests {
     @Test
     fun `test evaluation spec integration`() {
         val spec = EvaluationSpecIntegration()
-        val result = spec.runSpec()
+
+        // A spec with no assertions has proved nothing, so it does not pass —
+        // that is the same law that forbids a VERIFIED with no evidence, and
+        // asserting the empty run passes would assert the opposite of it.
+        assertFalse(spec.runSpec().passed)
+        assertEquals(0.0, spec.runSpec().metrics.getValue("coverage"))
+
+        val result = spec.runSpec(listOf(true, true))
         assertNotNull(result)
         assertTrue(result.passed)
+        assertEquals(1.0, result.metrics.getValue("coverage"))
+        assertFalse(spec.runSpec(listOf(true, false)).passed)
     }
 }
 

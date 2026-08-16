@@ -318,7 +318,7 @@ class AnsiTerminalEngine(
             rendering.renderBlockReactive(lines)
             requestFrameLocked()
         } else {
-            rendering.renderBlockPlain(lines)
+            rendering.renderErrorBlockPlain(lines)
         }
     }
 

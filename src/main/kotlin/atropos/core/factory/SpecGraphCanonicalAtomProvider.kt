@@ -118,7 +118,16 @@ class SpecGraphCanonicalAtomProvider(
         val candidate = configured ?: repoRoot.resolve(".atropos/specgraph/export")
         val normalized = candidate.toAbsolutePath().normalize()
         if (!Files.isDirectory(normalized)) {
-            return "specgraph_export SKIPPED_SOFT_FAIL:missing path=${normalized.fileName}"
+            // Silent only when nobody asked for an export. A configured path
+            // that is not there is a real soft failure and gets a line; the
+            // default path simply not existing is the ordinary case, and
+            // reporting it on every atomisation would bury the one trace the
+            // fallback leaves behind in noise.
+            return if (configured != null) {
+                "specgraph_export SKIPPED_SOFT_FAIL:missing path=${normalized.fileName}"
+            } else {
+                null
+            }
         }
         val (reader, verification) = ExportBundleReader.openOrExplain(normalized)
         if (reader == null) {

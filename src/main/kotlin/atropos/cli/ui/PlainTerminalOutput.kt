@@ -25,6 +25,25 @@ class PlainTerminalOutput(
         }
     }
 
+    /**
+     * Pre-rendered error lines, wrapped like plain output but on [errors].
+     *
+     * Distinct from [emitError], which prefixes `error: ` for a bare message.
+     * These lines already carry the error renderer's chrome.
+     */
+    fun emitErrorBlock(lines: List<String>, canvasWidth: Int = 80) {
+        synchronized(outputLock) {
+            val width = canvasWidth.coerceAtLeast(1)
+            lines.forEach { line ->
+                TerminalText.stripAnsi(line)
+                    .split('\n')
+                    .flatMap { AnsiLineWrapper.wrap(it, width) }
+                    .forEach(errors::println)
+            }
+            errors.flush()
+        }
+    }
+
     fun emitError(message: String) {
         errors.println("error: $message")
         errors.flush()

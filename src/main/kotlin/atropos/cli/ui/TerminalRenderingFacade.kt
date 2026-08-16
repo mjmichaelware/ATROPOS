@@ -106,6 +106,18 @@ class TerminalRenderingFacade(
         lines.forEach(transcriptBuffer::append)
     }
 
+    /**
+     * A rendered error block, on the error stream.
+     *
+     * [renderBlockPlain] would put it on stdout, where nothing downstream can
+     * separate a refusal from a result — a caller capturing the two streams
+     * apart, which is the only reason to have two, would find every error in
+     * the wrong one.
+     */
+    fun renderErrorBlockPlain(lines: List<String>) {
+        plainOutput.emitErrorBlock(lines, canvas.width)
+    }
+
     /** Renders the canonical expandable disclosure set into the transcript. */
     fun renderDisclosurePlain(rows: DisclosureRowSet, style: DisclosureRowStyle = DisclosureRowStyle.DEFAULT) {
         rows.rows.flatMap { DisclosureRowFormatter.render(it, style) }

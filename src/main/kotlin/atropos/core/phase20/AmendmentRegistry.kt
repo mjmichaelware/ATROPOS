@@ -19,8 +19,8 @@ class AmendmentRegistry(private val store: EvidenceStore = EvidenceStore()) {
     private val amendmentGate = AmendmentGate(protectedSourceDocHashes)
 
     fun registerAmendment(amendmentContent: String, manifest: StructuralManifest, supersedesHash: String?): Pair<String, String> {
-        require(amendmentGate.authorize(amendmentContent, supersedesHash, manifest)) {
-            "amendment rejected: content, superseded authority, or manifest is invalid"
+        amendmentGate.refusal(amendmentContent, supersedesHash, manifest)?.let { reason ->
+            throw IllegalArgumentException("amendment rejected: $reason")
         }
         
         val contentHash = store.put(amendmentContent, EvidenceKind.RAW)
