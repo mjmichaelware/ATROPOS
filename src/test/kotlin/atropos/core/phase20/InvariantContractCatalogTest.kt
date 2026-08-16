@@ -53,6 +53,7 @@ class InvariantContractCatalogTest {
             growthObserved = true,
             remoteStorageAccounted = true,
             casByteDedupVerified = true,
+            fallbackTruthParity = true,
             causeFalsifiable = true,
             humanEscalationReviewed = true,
             evictionRegenerable = true,

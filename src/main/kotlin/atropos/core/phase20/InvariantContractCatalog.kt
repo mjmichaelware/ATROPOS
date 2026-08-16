@@ -51,7 +51,11 @@ object InvariantContractCatalog {
             "research_not_authority" to context.authorityFingerprint.isNotBlank(),
             "goal_spec_research_separate" to context.projectId.isNotBlank(),
             "user_source_preserved" to context.authorityFingerprint.isNotBlank(),
-            "fallback_truth_parity" to (context.exitCode == 0),
+            // Explicit evidence, not an exit code. A fallback path that exits 0
+            // has not thereby shown it reports the same truth as the primary
+            // one, and reading parity off a status code is exactly the
+            // unearned VERIFIED this catalog exists to catch.
+            "fallback_truth_parity" to context.fallbackTruthParity,
             "context_has_inclusion_reason" to (context.nodeId != null),
             "context_attested" to context.environmentFingerprint.isNotBlank(),
             "memory_write_provenance" to context.artifactHashes.isNotEmpty(),

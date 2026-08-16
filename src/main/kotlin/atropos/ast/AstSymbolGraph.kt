@@ -257,6 +257,10 @@ class AstSymbolGraph(
 
     private fun parseFile(path: Path): List<AstSymbol> {
         val source = Files.readString(path, StandardCharsets.UTF_8)
+        // An empty file declares nothing, which is an answer rather than a
+        // failure. Refusing it aborted the scan of the whole repository over a
+        // placeholder that had no content to be wrong about.
+        if (source.isBlank()) return emptyList()
         val tree = parser.parseTree(source)
         require(tree.parseErrors.isEmpty()) {
             "AST parse refused for ${path.fileName}: ${tree.parseErrors.joinToString(", ") }"

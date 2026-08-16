@@ -4,7 +4,6 @@ package atropos.core.nl
 import atropos.core.ingest.AtMentionScanner
 import atropos.core.ingest.MentionResolution
 import atropos.core.ingest.MentionResolver
-import atropos.core.intent.MentionExtractor
 import java.nio.file.Files
 import java.nio.file.Path
 
@@ -37,12 +36,6 @@ class NlEntryPipeline(
     private val wrapper: NlEnvelopeWrapper = NlEnvelopeWrapper(),
     private val resolver: LocalNlResolver = LocalNlResolver(),
     private val mentions: MentionResolver = MentionResolver(territoryRoots),
-    private val mentionExtractor: MentionExtractor = MentionExtractor(
-        territoryRoots.flatMap { root ->
-            runCatching { Files.list(root).use { stream -> stream.map { it.fileName.toString() }.toList() } }
-                .getOrDefault(emptyList())
-        }.toSet()
-    ),
     /** Injected so the pipeline can be tested without a filesystem. */
     private val sizeOf: (Path) -> Long = { path ->
         runCatching { Files.size(path) }.getOrDefault(-1L)
@@ -54,8 +47,14 @@ class NlEntryPipeline(
         val attachments = mutableListOf<Path>()
         val refusedAttachments = mutableListOf<String>()
 
-        mentionExtractor.extractMentions(canonical.canonical).forEach { extracted ->
-            val mention = extracted.token.removePrefix("@")
+        // [AtMentionScanner], not MentionExtractor. The two answer different
+        // questions and only one of them is about files: the extractor matches
+        // `@name` against a set of known root names, so its grammar stops at
+        // the first `/` or `.` and `@docs/spec.txt` reaches the resolver as
+        // `docs` — a directory, refused, with the operator told nothing useful.
+        // The scanner's grammar is path-shaped on purpose, which is what an
+        // attachment is.
+        AtMentionScanner.scan(canonical.canonical).forEach { mention ->
             val candidate = territoryRoots.firstNotNullOfOrNull { root ->
                 runCatching { root.resolve(mention.removePrefix("@")).normalize() }.getOrNull()
             }

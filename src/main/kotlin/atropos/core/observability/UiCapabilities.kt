@@ -53,9 +53,14 @@ class EngineStateTracker {
 
 object TouchAutocomplete {
     fun getSuggestions(input: String): List<String> {
+        // Prefix, not the registry's fuzzy search. On a touch keyboard the
+        // operator is completing what they have already typed; offering
+        // commands that merely resemble it puts the wrong one under a thumb.
         return atropos.cli.input.CommandRegistry.search(input)
             .map { it.command }
+            .filter { it.startsWith(input, ignoreCase = true) }
             .distinct()
+            .sorted()
             .take(24)
     }
 }

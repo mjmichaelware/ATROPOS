@@ -55,7 +55,14 @@ class UiCapabilitiesTest {
     @Test
     fun `TouchAutocomplete returns matching suggestion prefixes`() {
         val suggestions = TouchAutocomplete.getSuggestions("/st")
-        assertEquals(listOf("/status"), suggestions)
+
+        // Every suggestion continues what was typed, and the registry holds
+        // more than one command that does — `/storage` is as valid a
+        // completion of `/st` as `/status` is, so asserting a single answer
+        // would assert something the command set does not support.
+        assertTrue(suggestions.isNotEmpty())
+        assertTrue(suggestions.all { it.startsWith("/st") }, "got $suggestions")
+        assertTrue(suggestions.containsAll(listOf("/status", "/storage")))
     }
 
     @Test

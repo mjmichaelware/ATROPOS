@@ -31,6 +31,7 @@ data class GovernanceDetectorContext(
     val growthObserved: Boolean = false,
     val remoteStorageAccounted: Boolean = false,
     val casByteDedupVerified: Boolean = false,
+    val fallbackTruthParity: Boolean = false,
     val causeFalsifiable: Boolean = false,
     val humanEscalationReviewed: Boolean = false,
     val evictionRegenerable: Boolean = false,

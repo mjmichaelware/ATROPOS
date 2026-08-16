@@ -68,7 +68,17 @@ class SessionTabs(
     init {
         TabRestorationService.restoreState(projectId)?.let { restored ->
             val index = tabs.indexOfFirst { it.title == restored.activeTab }
-            if (index >= 0) activeIndex = index
+            if (index >= 0) {
+                activeIndex = index
+            } else {
+                // A reopened session starts with one default tab, so a saved
+                // title the operator chose can never match by name. Restoration
+                // stores a title and a scroll position — not a tab set — so the
+                // only thing it can honestly restore is that name, on the tab
+                // the operator lands in. Dropping it would make `/tab rename`
+                // look like it did not persist.
+                tabs[activeIndex] = tabs[activeIndex].copy(title = restored.activeTab)
+            }
         }
     }
 
