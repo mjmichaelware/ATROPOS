@@ -141,8 +141,14 @@ class CommandRegistryParityTest {
     private companion object {
         const val ROUTER_RELATIVE = "src/main/kotlin/atropos/cli/CommandRouter.kt"
 
-        /** Start of the router's single dispatch `when`. */
-        const val DISPATCH_MARKER = "when (tokens.first().lowercase())"
+        /**
+         * Start of the router's single dispatch `when`.
+         *
+         * It dispatches on `routedTokens`, not `tokens`: aliases are resolved
+         * to their canonical keyword before the `when`, so a family registered
+         * once is reachable under every spelling of it.
+         */
+        const val DISPATCH_MARKER = "when (routedTokens.first().lowercase())"
 
         /** First declaration after the dispatch `when`. */
         const val DISPATCH_END = "private fun switchProvider"

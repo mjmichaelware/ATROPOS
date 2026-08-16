@@ -56,9 +56,15 @@ object TouchAutocomplete {
         // Prefix, not the registry's fuzzy search. On a touch keyboard the
         // operator is completing what they have already typed; offering
         // commands that merely resemble it puts the wrong one under a thumb.
+        // The leading slash is optional on both sides. The prompt offers
+        // suggestions for a bare token too — an operator typing `self-host`
+        // means `/self-host` — so comparing the raw strings would silently
+        // stop completing every command typed without it.
+        val needle = input.trim().removePrefix("/")
+        if (needle.isEmpty()) return emptyList()
         return atropos.cli.input.CommandRegistry.search(input)
             .map { it.command }
-            .filter { it.startsWith(input, ignoreCase = true) }
+            .filter { it.removePrefix("/").startsWith(needle, ignoreCase = true) }
             .distinct()
             .sorted()
             .take(24)

@@ -112,6 +112,9 @@ class SecretEgressGateTest {
         )
 
         assertEquals(SecretSinkKind.PERSISTENT_MEMORY, violations.single().sink)
-        assertTrue(violations.single().patternName.startsWith("blocked-sink:"))
+        // The verdict is its own field. The pattern name stays the canary's
+        // name so a caller can still recognise which secret leaked.
+        assertFalse(violations.single().sinkPermitted)
+        assertEquals("Sink", violations.single().patternName)
     }
 }

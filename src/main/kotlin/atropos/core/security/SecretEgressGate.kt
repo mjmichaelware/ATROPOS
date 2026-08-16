@@ -7,6 +7,15 @@ data class EgressViolation(
     val patternName: String,
     val matchedFragment: String,
     val sink: SecretSinkKind = SecretSinkKind.MODEL_OUTPUT,
+    /**
+     * Whether [SecretSinkMatrix] permits this sink to carry the value.
+     *
+     * A separate field rather than a decoration on [patternName]. The name
+     * identifies the canary and callers match on it; encoding the policy
+     * verdict into it means every consumer looking for its own canary stops
+     * finding it the moment the sink changes.
+     */
+    val sinkPermitted: Boolean = false,
     val timestamp: Instant = Instant.now()
 )
 
@@ -37,12 +46,25 @@ object SecretEgressGate {
     fun scan(output: String, sink: SecretSinkKind = SecretSinkKind.MODEL_OUTPUT): List<EgressViolation> {
         val lower = output.lowercase()
         val normalized = SecretEncodingClosure.whitespaceStripped(lower)
-        val sinkPermitted = SecretSinkMatrix.isEgressPermitted(sink)
         val violations = mutableListOf<EgressViolation>()
         for ((pattern, name) in blacklistedPatterns) {
             if (lower.contains(pattern) || normalized.contains(pattern)) {
-                val policyName = if (sinkPermitted) name else "blocked-sink:$name"
-                violations.add(EgressViolation(policyName, "Matched pattern $name", sink = sink))
+                // The registered name, unmodified. Whether this sink may carry
+                // the value is [EgressViolation.sink] plus the matrix, and a
+                // caller asks that question by name — decorating the pattern
+                // name with the answer means every consumer matching on
+                // "AwsKeyPattern" stops recognising its own canary.
+                violations.add(
+                    EgressViolation(
+                        name,
+                        "Matched pattern $name",
+                        sink = sink,
+                        sinkPermitted = SecretSinkMatrix.isEgressPermitted(sink)
+                    )
+                )
+                // One violation per leak. registerCanary enrols a secret under
+                // every encoding variant it has, so continuing would report the
+                // same disclosure once per spelling.
                 break
             }
         }
