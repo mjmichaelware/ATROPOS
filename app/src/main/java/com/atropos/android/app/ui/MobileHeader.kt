@@ -26,8 +26,15 @@ import androidx.compose.ui.unit.dp
  * client that silently stops answering is indistinguishable from one that is
  * thinking, and the operator has no way to tell which without being told.
  */
+/**
+ * @param activeProvider which model is answering, as the engine reports it.
+ *   Null when the engine has not said — rendered as nothing rather than as a
+ *   guess, because "which model produced this answer" is a question the
+ *   operator asks precisely when the answer looked wrong, and a stale or
+ *   invented name sends them to the wrong place.
+ */
 @Composable
-fun MobileHeader(isOnline: Boolean) {
+fun MobileHeader(isOnline: Boolean, activeProvider: String? = null) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -42,10 +49,19 @@ fun MobileHeader(isOnline: Boolean) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(
-                text = "ATROPOS",
-                style = MaterialTheme.typography.titleMedium
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = "ATROPOS",
+                    style = MaterialTheme.typography.titleMedium
+                )
+                activeProvider?.takeIf { it.isNotBlank() }?.let { provider ->
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = provider,
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                }
+            }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Surface(
                     modifier = Modifier.size(10.dp),
