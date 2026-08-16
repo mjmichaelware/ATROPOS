@@ -432,7 +432,7 @@ class FactoryRunEventRecorder(
 
     private fun stateFor(category: EventCategory, payload: String): RunState = when {
         category == EventCategory.FAILURE -> RunState.FAILED
-        category == EventCategory.COMPLETION -> RunState.COMPLETED
+        category == EventCategory.COMPLETION -> RunState.COMPLETE
         category == EventCategory.VERIFICATION || category == EventCategory.TEST -> RunState.REVIEW_REQUIRED
         payload.contains("state=PLANNED") || payload.contains("kind=PLAN") -> RunState.PLANNING
         payload.contains("state=SKIPPED") -> RunState.WAITING

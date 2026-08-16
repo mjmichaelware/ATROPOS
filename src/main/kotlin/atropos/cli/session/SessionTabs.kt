@@ -6,6 +6,7 @@ import atropos.core.contract.MviReducer
 import atropos.core.contract.MviState
 import atropos.core.contract.ViewStateManager
 import atropos.core.observability.TabRestorationService
+import atropos.core.observability.TabState
 
 enum class ScreenId(
     val title: String

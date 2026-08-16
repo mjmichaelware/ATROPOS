@@ -2,6 +2,7 @@ package atropos.core.agent
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class SelfHostCradleRuntimeStateTest {
     @Test

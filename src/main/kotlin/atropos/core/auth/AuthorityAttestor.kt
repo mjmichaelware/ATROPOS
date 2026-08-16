@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.auth
 
+import atropos.core.artifact.ArtifactHasher
 import atropos.core.verification.AuthorityAttestation
 import java.nio.file.Files
 import java.nio.file.Path

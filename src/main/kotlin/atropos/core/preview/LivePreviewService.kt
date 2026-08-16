@@ -5,6 +5,7 @@ import atropos.ast.AstSymbol
 import atropos.ast.AstSymbolGraph
 import atropos.core.agent.AgentPatchExtractor
 import atropos.core.multimodal.BrowserEvidenceResult
+import atropos.core.multimodal.BrowserEvidenceStatus
 import atropos.core.multimodal.LivePreviewEvidenceService
 import atropos.core.visual.VisualComparison
 import atropos.core.visual.VisualComparisonResult

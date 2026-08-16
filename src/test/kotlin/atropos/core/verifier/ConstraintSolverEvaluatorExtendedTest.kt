@@ -55,7 +55,7 @@ class ConstraintSolverEvaluatorExtendedTest {
             )
         }
 
-        assertTrue(ConstraintSolverEvaluator().evaluateBoundaries(constraints).isEmpty())
+        assertTrue(ConstraintSolverEvaluator().evaluateBoundaries(*constraints.toTypedArray()).isEmpty())
     }
 
     @Test
@@ -84,7 +84,7 @@ class ConstraintSolverEvaluatorExtendedTest {
             }
         }
 
-        val findings = ConstraintSolverEvaluator().evaluateBoundaries(constraints)
+        val findings = ConstraintSolverEvaluator().evaluateBoundaries(*constraints.toTypedArray())
         assertEquals(BoundaryRule.entries.size, findings.size)
         assertEquals(BoundaryRule.entries.map { "invalid-${it.name}" }.toSet(), findings.map { it.invariantId }.toSet())
     }

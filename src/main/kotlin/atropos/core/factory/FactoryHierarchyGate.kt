@@ -9,6 +9,7 @@ import atropos.core.hr.HrRouterAuditStore
 import atropos.core.hr.HrRouterService
 import atropos.core.hr.InformationKind
 import atropos.core.policy.ActionActor
+import atropos.core.territory.SubagentSpawnService
 import atropos.core.verification.CompletionGateReport
 import java.time.Instant
 

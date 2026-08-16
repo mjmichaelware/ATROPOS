@@ -1,6 +1,7 @@
 package atropos.server
 
 import atropos.bridge.BridgeRoutes
+import io.ktor.server.application.Application
 import kotlin.test.Test
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -11,6 +12,8 @@ class AtroposKtorServerTest {
         val routes = BridgeRoutes().table().describe()
 
         assertTrue(routes.contains("/v1/health"))
-        assertNotNull(::atroposBridgeModule)
+        // Qualified by receiver: `::atroposBridgeModule` inside a class binds
+        // the reference to the test instance, which is not an Application.
+        assertNotNull(Application::atroposBridgeModule)
     }
 }

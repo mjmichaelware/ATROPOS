@@ -25,7 +25,7 @@ class AgentQueueRecordCodecCorruptionTest {
         val record = codec.parse(meta)
 
         assertEquals(AgentQueueState.CORRUPT, record.state)
-        assertTrue(record.terminal)
+        assertTrue(record.state.terminal)
         assertNotNull(record.corruptReason)
         assertTrue(record.corruptReason!!.contains("malformed queue record"))
         assertEquals("inspect ${meta}", record.nextCommand())

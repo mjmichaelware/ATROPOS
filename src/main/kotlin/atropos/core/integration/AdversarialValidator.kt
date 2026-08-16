@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.integration
 
+import atropos.core.ast.AttentionRole
+import atropos.core.ast.DecomposedAttentionNode
 import atropos.core.parser.KotlinLexicalMasker
 import java.io.File
 

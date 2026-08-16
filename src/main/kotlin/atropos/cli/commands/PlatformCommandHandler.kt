@@ -5,6 +5,7 @@ import atropos.core.platform.Platform
 import atropos.core.platform.PlatformAdapterRegistry
 import atropos.core.platform.PlatformWire
 import atropos.core.AtroposRepoRootLocator
+import atropos.core.platform.PortableSurfacePlan
 
 /**
  * `/platform` — Phase 18 host descriptor, health, and environment.

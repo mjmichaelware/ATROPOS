@@ -58,23 +58,15 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun ComposeAppShell(repository: AndroidEngineBridge) {
-<<<<<<< HEAD
     val mvi = remember { MobileAppMviStore() }
     val state by mvi.state.collectAsState()
-=======
-    val messages: SnapshotStateList<MobileMessage> = remember { mutableListOf<MobileMessage>().toMutableStateList() }
-    var isOnline by remember { mutableStateOf(false) }
-    var sessions by remember { mutableStateOf<List<ChatListEntry>>(emptyList()) }
-    var sessionTabs by remember { mutableStateOf(SessionTabModel()) }
-    var checkpoint by remember { mutableStateOf<MobileCheckpoint?>(null) }
-    var thinking by remember { mutableStateOf<MobileThinking?>(null) }
-    var answers by remember { mutableStateOf<MobileSixAnswers?>(null) }
-    var approvals by remember { mutableStateOf<List<MobileApproval>>(emptyList()) }
-    var activeProvider by remember { mutableStateOf<String?>(null) }
-    var outbox by remember { mutableStateOf(ComposerOutbox()) }
+
+    // The build panel's state is held here rather than in [MobileAppState]
+    // because it is not a projection of the engine's conversation: `selfHostBusy`
+    // is true only while this screen has a request in flight, which no reducer
+    // can know. `selfHostRun` sits beside it so the two move together.
     var selfHostRun by remember { mutableStateOf<MobileSelfHostRun?>(null) }
     var selfHostBusy by remember { mutableStateOf(false) }
->>>>>>> 3aff05e9704107f2f6583f1aa07170aba596c164
     val oneHandDensity = remember { com.atropos.android.app.ui.OneHandDensity() }
     val scope = rememberCoroutineScope()
 
@@ -93,14 +85,9 @@ private fun ComposeAppShell(repository: AndroidEngineBridge) {
             // screen frozen for exactly as long as the engine kept working.
             mvi.dispatch(MobileAppIntent.ReachabilityChanged(online))
             if (online) {
-<<<<<<< HEAD
                 mvi.dispatch(MobileAppIntent.AnswersLoaded(withContext(Dispatchers.IO) { repository.sixAnswers() }))
                 mvi.dispatch(MobileAppIntent.ApprovalsLoaded(withContext(Dispatchers.IO) { repository.approvals() }))
                 mvi.dispatch(MobileAppIntent.ProviderLoaded(withContext(Dispatchers.IO) { repository.activeProvider() }))
-=======
-                answers = withContext(Dispatchers.IO) { repository.sixAnswers() }
-                approvals = withContext(Dispatchers.IO) { repository.approvals() }
-                activeProvider = withContext(Dispatchers.IO) { repository.activeProvider() }
                 // Refreshed from the engine rather than only from the last
                 // advance's reply: the CLI may be driving the same goal, and
                 // two surfaces disagreeing about a build in progress is worse
@@ -111,7 +98,6 @@ private fun ComposeAppShell(repository: AndroidEngineBridge) {
                             ?.let { selfHostRun = it }
                     }
                 }
->>>>>>> 3aff05e9704107f2f6583f1aa07170aba596c164
             } else {
                 // Cleared rather than kept. A stale answer panel beside an
                 // offline badge reads as current state, and the operator would
@@ -227,12 +213,8 @@ private fun ComposeAppShell(repository: AndroidEngineBridge) {
                 }
             }
         },
-<<<<<<< HEAD
         activeProvider = state.activeProvider,
-        queuedNotice = state.outbox.describe()
-=======
-        activeProvider = activeProvider,
-        queuedNotice = outbox.describe(),
+        queuedNotice = state.outbox.describe(),
         selfHostRun = selfHostRun,
         selfHostBusy = selfHostBusy,
         onBuildRequested = { prompt ->
@@ -245,19 +227,21 @@ private fun ComposeAppShell(repository: AndroidEngineBridge) {
                 when (outcome) {
                     is SelfHostOutcome.Started -> {
                         selfHostRun = outcome.run
-                        messages.add(
-                            localNotice(
-                                "Build opened: ${outcome.run.goalId}. " +
-                                    "Nothing is written until you take the next step."
+                        mvi.dispatch(
+                            MobileAppIntent.Notice(
+                                localNotice(
+                                    "Build opened: ${outcome.run.goalId}. " +
+                                        "Nothing is written until you take the next step."
+                                )
                             )
                         )
                     }
                     is SelfHostOutcome.Advanced -> selfHostRun = outcome.run
                     is SelfHostOutcome.Refused ->
-                        messages.add(localNotice("Build refused: ${outcome.detail}"))
+                        mvi.dispatch(MobileAppIntent.Notice(localNotice("Build refused: ${outcome.detail}")))
                     SelfHostOutcome.EngineUnreachable -> {
-                        isOnline = false
-                        messages.add(localNotice("Engine not reachable — no build was started."))
+                        mvi.dispatch(MobileAppIntent.ReachabilityChanged(false))
+                        mvi.dispatch(MobileAppIntent.Notice(localNotice("Engine not reachable — no build was started.")))
                     }
                 }
             }
@@ -274,13 +258,13 @@ private fun ComposeAppShell(repository: AndroidEngineBridge) {
                         // The refusal is shown and the run is re-read: the goal
                         // may have completed or hit a gate, and the panel must
                         // reflect which rather than freezing on the last step.
-                        messages.add(localNotice("Build step refused: ${outcome.detail}"))
+                        mvi.dispatch(MobileAppIntent.Notice(localNotice("Build step refused: ${outcome.detail}")))
                         withContext(Dispatchers.IO) { repository.selfHostStatus(goalId) }
                             ?.let { selfHostRun = it }
                     }
                     SelfHostOutcome.EngineUnreachable -> {
-                        isOnline = false
-                        messages.add(localNotice("Engine not reachable — the build did not advance."))
+                        mvi.dispatch(MobileAppIntent.ReachabilityChanged(false))
+                        mvi.dispatch(MobileAppIntent.Notice(localNotice("Engine not reachable — the build did not advance.")))
                     }
                 }
             }
@@ -291,32 +275,37 @@ private fun ComposeAppShell(repository: AndroidEngineBridge) {
                 // Echoed as the operator's own turn first, so the transcript
                 // reads the way the terminal does: what was typed, then what
                 // came back.
-                messages.add(
-                    MobileMessage(
-                        id = "cmd-${System.nanoTime()}",
-                        text = command,
-                        isUser = true,
-                        timestamp = System.currentTimeMillis()
+                mvi.dispatch(
+                    MobileAppIntent.TranscriptLoaded(
+                        mvi.state.value.messages + MobileMessage(
+                            id = "cmd-${System.nanoTime()}",
+                            text = command,
+                            isUser = true,
+                            timestamp = System.currentTimeMillis()
+                        )
                     )
                 )
                 when (val outcome = withContext(Dispatchers.IO) { repository.runCommand(command, DECIDED_BY) }) {
                     is CommandOutcome.Ran ->
-                        messages.add(
-                            localNotice(outcome.output.ifBlank { "(the command produced no output)" })
+                        mvi.dispatch(
+                            MobileAppIntent.Notice(
+                                localNotice(outcome.output.ifBlank { "(the command produced no output)" })
+                            )
                         )
                     is CommandOutcome.Refused ->
-                        messages.add(localNotice("Refused: ${outcome.detail}"))
+                        mvi.dispatch(MobileAppIntent.Notice(localNotice("Refused: ${outcome.detail}")))
                     CommandOutcome.EngineUnreachable -> {
-                        isOnline = false
-                        outbox = outbox.queue(command)
-                        messages.add(
-                            localNotice("Engine not reachable — command queued and will send on reconnect.")
+                        mvi.dispatch(MobileAppIntent.ReachabilityChanged(false))
+                        mvi.dispatch(MobileAppIntent.MessageQueued(command))
+                        mvi.dispatch(
+                            MobileAppIntent.Notice(
+                                localNotice("Engine not reachable — command queued and will send on reconnect.")
+                            )
                         )
                     }
                 }
             }
         }
->>>>>>> 3aff05e9704107f2f6583f1aa07170aba596c164
     )
 }
 

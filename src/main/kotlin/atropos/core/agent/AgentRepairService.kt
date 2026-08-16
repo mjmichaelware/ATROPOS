@@ -76,7 +76,7 @@ class AgentRepairService(
             return refuseForSourcePack(patch.id, refusal.message, contextSnapshot.byteCount)
         }
 
-        val errorGradient = errorGradientExtractor.extract(verification.stderr)
+        val errorGradient = errorGradientExtractor.extractFailingSubgraph(verification.stderr)
         val repairContext = AgentRepairPromptContext(
             patchId = patch.id,
             changedPaths = patch.extraction.touchedPaths,

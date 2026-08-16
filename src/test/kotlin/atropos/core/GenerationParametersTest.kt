@@ -20,6 +20,10 @@ class GenerationParametersTest {
             "0.2:0.9:example",
             provider.complete(
                 "task",
+                // Named-only would not compile: the tuned overload takes context
+                // positionally and has no default for it, which is what keeps a
+                // caller from tuning parameters while silently dropping context.
+                context = "",
                 parameters = GenerationParameters(0.2, 0.9, listOf("example"))
             )
         )

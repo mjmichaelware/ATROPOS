@@ -105,7 +105,7 @@ class AstSymbolGraph(
             }
             Files.writeString(temporary, body, StandardCharsets.UTF_8)
             Files.move(temporary, destination, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
-        } catch (java.nio.file.AtomicMoveNotSupportedException) {
+        } catch (unsupported: java.nio.file.AtomicMoveNotSupportedException) {
             Files.move(temporary, destination, StandardCopyOption.REPLACE_EXISTING)
         } finally {
             Files.deleteIfExists(temporary)

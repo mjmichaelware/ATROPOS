@@ -235,9 +235,9 @@ class AnsiTerminalEngine(
             renderNotice(summary)
         }
         val status = when {
-            stage.contains("fail", ignoreCase = true) -> HoeStatusVocabulary.FAILED
-            stage.contains("complete", ignoreCase = true) -> HoeStatusVocabulary.COMPLETED
-            else -> HoeStatusVocabulary.WORKING
+            stage.contains("fail", ignoreCase = true) -> "failed"
+            stage.contains("complete", ignoreCase = true) -> "completed"
+            else -> "working"
         }
         renderBlock(dagReactorRenderer.render(listOf(DagReactorRenderer.ReactorNode(stage, status, detail)), canvas.width))
         renderBlock(toastRenderer.render(Toast(null, summary), canvas.width))

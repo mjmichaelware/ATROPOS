@@ -4,6 +4,7 @@ package atropos.core.nl
 import atropos.core.ingest.AtMentionScanner
 import atropos.core.ingest.MentionResolution
 import atropos.core.ingest.MentionResolver
+import atropos.core.intent.MentionExtractor
 import java.nio.file.Files
 import java.nio.file.Path
 

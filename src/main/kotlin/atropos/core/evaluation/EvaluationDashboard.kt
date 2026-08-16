@@ -1,6 +1,9 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.evaluation
 
+import atropos.core.verification.CompletionCalculus
+import atropos.core.verification.ComponentCompletion
+
 /**
  * The evaluation report as text, for a terminal and for a machine.
  *

@@ -12,8 +12,14 @@
 // unbuildable for a reason that has nothing to do with the engine.
 //
 // The engine builds from mavenCentral alone. See app/settings.gradle.kts.
+// The Kotlin version is declared once, here. A subproject that restates it
+// fails configuration outright — the plugin is already on the build classpath
+// from this block, and Gradle refuses to re-resolve a version it cannot check
+// against. `apply false` puts the multiplatform variant on the classpath for
+// :core without applying it to the engine, which is a JVM project.
 plugins {
     id("org.jetbrains.kotlin.jvm") version "1.9.24"
+    id("org.jetbrains.kotlin.multiplatform") version "1.9.24" apply false
     application
 }
 

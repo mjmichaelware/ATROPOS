@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.cli.input
 
+import atropos.core.observability.TouchAutocomplete
+
 /**
  * Whether the command palette is open, and which row is highlighted.
  *

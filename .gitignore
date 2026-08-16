@@ -79,3 +79,15 @@ token.json
 
 /build/
 atropos.jar.backup-*
+
+# Module build directories.
+#
+# The `!build/` negation above exists so build/reports/architecture/*.json can
+# be committed from the root project; it also un-ignores every nested build/,
+# so the new modules need naming explicitly.
+/core/build/
+/server/build/
+/desktop/build/
+/core/.gradle/
+/server/.gradle/
+/desktop/.gradle/

@@ -6,6 +6,7 @@ import atropos.cli.ui.StatusProviderDescriptorRenderer
 import atropos.core.AtroposConfig
 import atropos.core.ProviderDecisionEngine
 import atropos.core.provider.ProviderActivationService
+import atropos.core.provider.ProviderDescriptorReport
 import atropos.core.provider.ProviderDescriptorValidator
 import atropos.core.provider.ProviderTruthService
 import atropos.core.provider.RoutedTask

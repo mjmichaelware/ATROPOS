@@ -2,6 +2,7 @@ package atropos.core.factory
 
 import atropos.core.memory.LocalMemoryStore
 import atropos.core.memory.MemorySearchHit
+import atropos.dloi.DloiDocument
 import atropos.dloi.DloiLookupResult
 import atropos.dloi.DloiService
 import atropos.dloi.HigZeroGuard

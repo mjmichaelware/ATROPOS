@@ -211,7 +211,12 @@ class CommandRouter(
         }
         results.forEach { result ->
             uiEngine.renderBlock(
-                "${result.command.joinToString(" ")} [exit=${result.exitCode}]\n${result.output}".trimEnd()
+                // Split rather than joined with \n: renderBlock lays out one
+                // list element per row, so a single embedded newline would be
+                // drawn inside one row and the output would run off the canvas.
+                "${result.command.joinToString(" ")} [exit=${result.exitCode}]\n${result.output}"
+                    .trimEnd()
+                    .lines()
             )
         }
         return RouterOutcome.CONTINUE

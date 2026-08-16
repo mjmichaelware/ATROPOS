@@ -3,6 +3,7 @@ package atropos.core.nl
 
 import atropos.cli.input.CommandRegistry
 import atropos.cli.input.FuzzyMatcher
+import atropos.core.intent.MessyIntentParser
 
 /**
  * Resolves natural language locally before any provider is consulted.

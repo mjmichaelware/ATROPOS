@@ -54,7 +54,7 @@ class TerminalTheme(
     fun paint(role: Role, text: String): String {
         if (text.isEmpty()) return text
         AnsiScheme.assertNoRawEscapes(text)
-        val accessibleRole = if (accessibility.isHighContrast && role == Role.TEXT_MUTED) {
+        val accessibleRole = if (accessibility.isHighContrastEnabled && role == Role.TEXT_MUTED) {
             Role.TEXT_PRIMARY
         } else {
             role

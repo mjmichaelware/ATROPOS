@@ -191,9 +191,7 @@ class BridgeRoutes(
     private val eventsHandler = BridgeEventsHandler(work, approvals, sessions, conversation)
     private val filesHandler = BridgeFilesHandler()
     private val mcpHandler = BridgeMcpHandler(mcpBridge)
-<<<<<<< HEAD
     private val computerUseHandler = BridgeComputerUseHandler()
-=======
     private val selfHostHandler = selfHost?.let { BridgeSelfHostHandler(it) }
     private val commandHandler = commandRunner?.let { BridgeCommandHandler(it) }
 
@@ -217,7 +215,6 @@ class BridgeRoutes(
             "This engine build has no repository bound to self-build in.",
             "Start the engine from a checkout; AtroposBridge.server() binds it."
         )
->>>>>>> 3aff05e9704107f2f6583f1aa07170aba596c164
 
     /** Queue routes exist in the table either way, so the surface a client
      *  discovers does not change with configuration; without a runner they

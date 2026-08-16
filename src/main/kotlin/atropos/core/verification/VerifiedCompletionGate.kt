@@ -4,6 +4,7 @@ import atropos.core.AtroposConfig
 import atropos.core.AtroposRepoRootLocator
 import atropos.core.agent.AgentRunService
 import atropos.core.auditor.AuditorService
+import atropos.core.dag.DagNodeAction
 import atropos.core.director.DirectorService
 import atropos.core.director.DirectorStore
 import atropos.core.factory.FactoryLineage
