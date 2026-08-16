@@ -30,6 +30,18 @@ from .compiler_fingerprints import generate_fingerprint
 from .proof_bundle import verify_proof_bundle
 
 
+# Roles that are prose, not requirements. A statement classified into one of
+# these is not a dropped requirement and must not be reported as one -- listing
+# every heading and note as a rejection would bury the handful that matter.
+EXCLUSION_ROLES = {
+    "TITLE", "HEADING", "SECTION_HEADER", "SEPARATOR", "METADATA",
+    "DOCUMENT_METADATA", "STATUS_WORD", "RATIONALE", "EXAMPLE",
+    "NOTE", "WARNING", "BACKGROUND", "OBSERVATION", "DEFECT_FINDING",
+    "CODE_SAMPLE", "INCOMPLETE_FRAGMENT", "FRAGMENT", "CAPTION",
+    "TABLE_HEADER", "OUT_OF_SCOPE", "OPEN_QUESTION",
+}
+
+
 class SpecGraphCompiler:
     def __init__(self, project_id: str, compiler_namespace: str = "specgraph-v1"):
         self.project_id = project_id
@@ -77,14 +89,6 @@ class SpecGraphCompiler:
             parent_role = parent_node.role if parent_node else "UNKNOWN"
 
             intrinsic_role = classify_discourse_role(stmt, parent_role)
-
-            EXCLUSION_ROLES = {
-                "TITLE", "HEADING", "SECTION_HEADER", "SEPARATOR", "METADATA",
-                "DOCUMENT_METADATA", "STATUS_WORD", "RATIONALE", "EXAMPLE",
-                "NOTE", "WARNING", "BACKGROUND", "OBSERVATION", "DEFECT_FINDING",
-                "CODE_SAMPLE", "INCOMPLETE_FRAGMENT", "FRAGMENT", "CAPTION",
-                "TABLE_HEADER", "OUT_OF_SCOPE", "OPEN_QUESTION",
-            }
 
             if intrinsic_role in EXCLUSION_ROLES:
                 role = intrinsic_role
@@ -304,6 +308,23 @@ class SpecGraphCompiler:
         return {
             "fingerprint": generate_fingerprint(requirements_payload),
             "requirements": requirements_payload,
+            # Every statement that looked like a requirement and did not become
+            # one, with the reason. Returned rather than left in the event log:
+            # a sentence dropped for lacking a recognised actor, or for a role
+            # nobody made executable, is indistinguishable from a sentence the
+            # author never wrote -- and a caller comparing "five MUSTs in, three
+            # atoms out" had no way to find the other two.
+            "rejected_candidates": [
+                {
+                    "statement_id": c.statement.statement_id,
+                    "text": c.statement.canonical_text,
+                    "role": c.role,
+                    "reason": c.rejection_reason,
+                    "coordinates": c.statement.coordinates,
+                }
+                for c in all_candidacies
+                if not c.is_candidate and c.role not in EXCLUSION_ROLES
+            ],
             "relations": relations_payload,
             "dependencies": dependencies_payload,
             "validation_findings": validation_findings,

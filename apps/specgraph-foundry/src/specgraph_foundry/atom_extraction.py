@@ -120,15 +120,45 @@ def extract_document(
     from .compiler import SpecGraphCompiler
     import uuid
 
+    # Every domain the compiler can produce, mapped to a kind.
+    #
+    # This table used to accept nine names and the compiler emits twenty, so
+    # fourteen domains resolved to UNRESOLVED and their atoms collapsed to the
+    # baseline FUNCTIONAL_CONTRACT. RECOVERY and TESTABILITY were the visible
+    # cases -- "MUST recover after a restart" and "the tests MUST verify" both
+    # classified correctly upstream and then lost the classification here.
+    #
+    # Kept exhaustive rather than permissive: an unlisted domain still returns
+    # UNRESOLVED, which is the honest answer for a vocabulary this has not been
+    # taught. What changed is that the vocabulary it has been taught is now the
+    # whole of DOMAINS rather than half of it.
+    DOMAIN_TO_KIND = {
+        "SECURITY": "SECURITY",
+        "PRIVACY": "SECURITY",
+        "COMPLIANCE": "SECURITY",
+        "PERFORMANCE": "PERFORMANCE",
+        "DATA": "DATA",
+        "API": "API",
+        "UI_UX": "UX",
+        "ACCESSIBILITY": "UX",
+        "TESTABILITY": "TEST",
+        "INTEGRATION": "INTEGRATION",
+        "RECOVERY": "OPERATIONS",
+        "RELIABILITY": "OPERATIONS",
+        "SAFETY": "OPERATIONS",
+        "DEPLOYMENT": "OPERATIONS",
+        "OBSERVABILITY": "OBSERVABILITY",
+        "PLATFORM": "PLATFORM",
+        "GOVERNANCE": "GOVERNANCE",
+        "ARCHITECTURE": "ARCHITECTURE",
+        "FUNCTIONAL_BEHAVIOR": "FUNCTIONAL",
+        "DOCUMENTATION": "FUNCTIONAL",
+    }
+
     def map_orthogonal_kind(domains: list[str]) -> str:
         if not domains:
             return "UNRESOLVED"
-        primary = domains[0]
-        if primary == "UI_UX":
-            return "UX"
-        if primary in {"SECURITY", "PERFORMANCE", "DATA", "API", "UX", "TEST", "OPERATIONS", "INTEGRATION", "FUNCTIONAL"}:
-            return primary
-        return "UNRESOLVED"
+        return DOMAIN_TO_KIND.get(domains[0], "UNRESOLVED")
 
     def map_orthogonal_modality(force: str) -> str:
         if force == "MUST_NOT":
@@ -157,6 +187,16 @@ def extract_document(
             applicable.add("TESTS_ACCEPTANCE")
         elif kind == "INTEGRATION":
             applicable.add("INTEGRATION_CALL_SITES")
+        # Six of the sixteen dimensions were unreachable: no kind assigned them,
+        # so no atom could ever carry them however the source was written.
+        elif kind == "OBSERVABILITY":
+            applicable.add("OBSERVABILITY_PROVENANCE")
+        elif kind == "PLATFORM":
+            applicable.add("PLATFORM_ENVIRONMENT")
+        elif kind == "GOVERNANCE":
+            applicable.add("TERRITORY_CAPABILITIES")
+        elif kind == "ARCHITECTURE":
+            applicable.add("DEPENDENCY_CONTRACT")
         return applicable
 
     compiler = SpecGraphCompiler(project_id=str(document["project_id"]))

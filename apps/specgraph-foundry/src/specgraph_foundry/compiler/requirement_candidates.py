@@ -7,7 +7,14 @@ EXECUTABLE_ROLES = {
     "PROHIBITION",
     "DESIGN_DECISION",
     "ARCHITECTURAL_PRINCIPLE",
-    "REMEDIATION_REQUIREMENT"
+    "REMEDIATION_REQUIREMENT",
+    # An acceptance criterion is executable: it states a condition the built
+    # thing must satisfy, which is exactly what a verification atom is for.
+    # Excluding it made TESTS_ACCEPTANCE an unreachable dimension -- the
+    # vocabulary declared it, determine_applicable_dimensions could assign it,
+    # and no sentence could ever produce an atom in it, because every sentence
+    # that would have been classified here was dropped before candidacy.
+    "ACCEPTANCE_CRITERION",
 }
 
 class RequirementCandidacy:
@@ -106,6 +113,28 @@ def evaluate_candidacy(
         "configuration", "migration", "user", "artifact", "resource", "policy", "file",
         "encryption", "framework", "middleware", "pipeline", "template", "encoder",
         "decoder", "adapter", "connector", "gateway", "proxy", "cache",
+        # Architectural nouns this list was missing. Each one was rejecting
+        # real requirements as "lacks a valid system actor" -- "The runtime
+        # MUST recover after a restart" is unambiguously a requirement about
+        # the system, and it was silently discarded because `runtime` was not
+        # spelled here.
+        #
+        # A closed word list will always be incomplete; that is why the
+        # rejection is now *reported* rather than only recorded. Extending the
+        # list narrows the gap, surfacing the rejection is what stops the next
+        # gap being invisible.
+        "runtime", "engine", "bridge", "router", "store", "gate", "queue",
+        "scheduler", "planner", "orchestrator", "runner", "session", "node",
+        "task", "job", "loop", "monitor", "index", "ledger", "repository",
+        "controller", "listener", "endpoint", "transport", "serializer",
+        "collector", "exporter", "importer", "watcher", "supervisor",
+        "installer", "packager", "renderer", "extractor", "atomizer",
+        # Test artifacts are system actors too. Without these, "The generated
+        # tests MUST verify the acceptance criteria" was rejected for lacking an
+        # actor -- so ACCEPTANCE_CRITERION became executable and still produced
+        # nothing, and TESTS_ACCEPTANCE stayed an unreachable dimension for a
+        # second, entirely different reason than the first.
+        "test", "tests", "suite", "harness", "fixture", "assertion", "check",
     }
 
     for candidate_actor in actor_matches:

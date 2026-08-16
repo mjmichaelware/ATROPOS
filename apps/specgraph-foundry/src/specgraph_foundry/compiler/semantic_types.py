@@ -36,12 +36,28 @@ DOMAIN_KEYWORDS = {
     "API": ["endpoint", "http", "api", "request", "response", "rest", "graphql", "grpc", "port", "routes"],
     "UI_UX": ["ui", "ux", "screen", "button", "widget", "layout", "font", "css", "color", "visual"],
     "RELIABILITY": ["failover", "retry", "reliability", "redundancy", "heartbeat", "health check"],
-    "RECOVERY": ["backup", "restore", "recovery", "rollback", "reboot", "disaster"],
+    "RECOVERY": ["backup", "restore", "recovery", "recover", "rollback", "roll back", "reboot", "disaster", "restart", "resume"],
     "OBSERVABILITY": ["log", "metric", "trace", "observability", "provenance", "event", "telemetry"],
     "PLATFORM": ["os", "linux", "termux", "windows", "macos", "docker", "runtime", "environment"],
     "DEPLOYMENT": ["deploy", "ci/cd", "kubernetes", "vercel", "supabase", "cloud run", "dockerfile"],
     "COMPLIANCE": ["regulatory", "gdpr", "hipaa", "audit", "compliance"],
-    "SAFETY": ["safety", "fail-safe", "emergency"]
+    "SAFETY": ["safety", "fail-safe", "emergency"],
+    # Eight of the twenty declared DOMAINS had no keywords at all, so no
+    # sentence could ever be classified into them. TESTABILITY is the clearest
+    # loss: "The generated tests MUST verify the acceptance criteria" matched
+    # nothing, fell through to UNSPECIFIED, and the atom lost its dimension.
+    #
+    # `test` deliberately excludes bare "verify"/"validate", which appear in
+    # requirements about the system verifying its own inputs and are not about
+    # testability at all.
+    "TESTABILITY": ["test", "tests", "unit test", "acceptance", "assertion", "test suite", "coverage"],
+    "ACCESSIBILITY": ["accessibility", "screen reader", "contrast", "keyboard navigation", "aria", "a11y"],
+    "INTEGRATION": ["integration", "adapter", "connector", "webhook", "third-party", "external service", "sdk"],
+    "PRIVACY": ["privacy", "personal data", "pii", "anonymize", "anonymise", "retention", "consent"],
+    "GOVERNANCE": ["governance", "approval", "authority", "territory", "permission boundary", "attestation"],
+    "ARCHITECTURE": ["architecture", "dependency", "coupling", "boundary", "layering", "interface contract"],
+    "DOCUMENTATION": ["documentation", "docstring", "readme", "changelog", "comment"],
+    "FUNCTIONAL_BEHAVIOR": ["behavior", "behaviour", "workflow", "business rule", "state machine"],
 }
 
 TARGET_KEYWORDS = {
@@ -90,14 +106,35 @@ def classify_orthogonal_types(text: str, inherited_modality: Optional[str] = Non
         modality = inherited_modality
 
     # 2. Domain Kind (Multi-label but returns primary or a list of matching domains)
-    matched_domains = []
+    # Scored, not first-past-the-post.
+    #
+    # This used to take the first domain in *dictionary order* that matched a
+    # single keyword, which made the classification an artifact of how the table
+    # happened to be written. "The runtime MUST recover after a restart" matched
+    # PLATFORM on `runtime` and RECOVERY on `recover`/`restart`, and PLATFORM won
+    # for no better reason than being declared earlier. Same for "emit a trace
+    # event for every provenance record": DATA matched `record`, OBSERVABILITY
+    # matched `trace`, `event` and `provenance`, and DATA won.
+    #
+    # Ranking by how many distinct keywords hit makes the strongest signal win.
+    # Ties keep declaration order, so the table stays a tiebreak rather than the
+    # decision, and a single-keyword match is still a match -- this narrows what
+    # is misclassified, it does not raise the bar for being classified at all.
+    domain_scores = []
     for domain, keywords in DOMAIN_KEYWORDS.items():
-        if any(re.search(r"\b" + re.escape(kw) + r"\b", text_lower) for kw in keywords):
-            matched_domains.append(domain)
+        hits = sum(
+            1 for kw in keywords
+            if re.search(r"\b" + re.escape(kw) + r"\b", text_lower)
+        )
+        if hits:
+            domain_scores.append((hits, domain))
 
-    # Avoid classification if just a casual mention (needs direct behavioral context)
-    # We look for verbs and constraints to verify domain kind
-    # If no domains match, set to UNSPECIFIED. The compiler specification prohibits defaulting to FUNCTIONAL.
+    matched_domains = [
+        domain for _, domain in sorted(domain_scores, key=lambda pair: -pair[0])
+    ]
+
+    # If no domains match, set to UNSPECIFIED. The compiler specification
+    # prohibits defaulting to FUNCTIONAL.
     kind = matched_domains[0] if matched_domains else "UNSPECIFIED"
 
     # 3. Target Artifact

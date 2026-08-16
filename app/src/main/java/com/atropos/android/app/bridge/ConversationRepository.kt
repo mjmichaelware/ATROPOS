@@ -12,6 +12,33 @@ sealed class SendOutcome {
 }
 
 /**
+ * What asking the engine to build something did.
+ *
+ * A refusal carries the engine's own reason. `startedBy` missing, no
+ * repository bound, a goal the policy gate declined — each is a different
+ * thing for the operator to do next, and a boolean would erase all three.
+ */
+/**
+ * What running a CLI command from the phone did.
+ *
+ * `Refused` carries the engine's own reason — not permitted over a port, not a
+ * registered command, no attribution — because each needs a different response
+ * from the operator, and only one of them means "go to the terminal".
+ */
+sealed class CommandOutcome {
+    data class Ran(val command: String, val output: String) : CommandOutcome()
+    data class Refused(val detail: String) : CommandOutcome()
+    object EngineUnreachable : CommandOutcome()
+}
+
+sealed class SelfHostOutcome {
+    data class Started(val run: MobileSelfHostRun) : SelfHostOutcome()
+    data class Advanced(val run: MobileSelfHostRun) : SelfHostOutcome()
+    data class Refused(val detail: String) : SelfHostOutcome()
+    object EngineUnreachable : SelfHostOutcome()
+}
+
+/**
  * What an approval decision did.
  *
  * Three outcomes rather than a boolean, for the same reason [SendOutcome] has
@@ -147,6 +174,113 @@ class AndroidEngineBridge(
                 discovery.forget()
                 ApprovalOutcome.EngineUnreachable
             }
+        }
+    }
+
+    /**
+     * Asks the engine to build something.
+     *
+     * The prompt is the same natural language `/agent self-host run` takes, and
+     * `startedBy` is required — the engine answers 403 without it, because a
+     * run that mutates the source tree and names nobody cannot be audited.
+     *
+     * Starting does not advance. The engine opens the goal and plans; nothing
+     * is written until [advanceSelfHost] is called, so the operator can see
+     * what will be attempted before anything acts on it.
+     */
+    fun startSelfHost(prompt: String, startedBy: String): SelfHostOutcome {
+        if (prompt.isBlank()) return SelfHostOutcome.Refused("a build needs a prompt")
+        if (startedBy.isBlank()) return SelfHostOutcome.Refused("a build must name who asked for it")
+        val port = discovery.resolve() ?: return SelfHostOutcome.EngineUnreachable
+        val body = "{\"prompt\":${JsonString.quote(prompt)}," +
+            "\"startedBy\":${JsonString.quote(startedBy)}}"
+        return when (val result = http.post(BridgeEndpoint.url(port, "/v1/selfhost/start"), body)) {
+            is BridgeResult.Ok ->
+                SelfHostParser.parse(result.body)
+                    ?.let { SelfHostOutcome.Started(it) }
+                    ?: SelfHostOutcome.Refused("the engine started a run but did not describe it")
+            is BridgeResult.HttpError -> SelfHostOutcome.Refused(
+                SelfHostParser.refusal(result.body).ifBlank { "refused (${result.code})" }
+            )
+            is BridgeResult.Unreachable -> {
+                discovery.forget()
+                SelfHostOutcome.EngineUnreachable
+            }
+        }
+    }
+
+    /**
+     * Runs one advance of an existing goal.
+     *
+     * One step per call, matching the route. A phone on a dropped connection
+     * cannot interrupt a long run, so the client drives the loop and can stop
+     * between steps.
+     */
+    fun advanceSelfHost(goalId: String): SelfHostOutcome {
+        if (goalId.isBlank()) return SelfHostOutcome.Refused("advancing needs a goal id")
+        val port = discovery.resolve() ?: return SelfHostOutcome.EngineUnreachable
+        val encoded = java.net.URLEncoder.encode(goalId, Charsets.UTF_8.name())
+        return when (
+            val result = http.post(BridgeEndpoint.url(port, "/v1/selfhost/advance?goalId=$encoded"), "")
+        ) {
+            is BridgeResult.Ok ->
+                SelfHostParser.parse(result.body)
+                    ?.let { SelfHostOutcome.Advanced(it) }
+                    ?: SelfHostOutcome.Refused("the engine advanced but did not describe the run")
+            is BridgeResult.HttpError -> SelfHostOutcome.Refused(
+                SelfHostParser.refusal(result.body).ifBlank { "refused (${result.code})" }
+            )
+            is BridgeResult.Unreachable -> {
+                discovery.forget()
+                SelfHostOutcome.EngineUnreachable
+            }
+        }
+    }
+
+    /** The current state of a goal, or the most recent one when id is blank. */
+    fun selfHostStatus(goalId: String = ""): MobileSelfHostRun? {
+        val port = discovery.resolve() ?: return null
+        val suffix = if (goalId.isBlank()) "" else
+            "?goalId=" + java.net.URLEncoder.encode(goalId, Charsets.UTF_8.name())
+        return when (val result = http.get(BridgeEndpoint.url(port, "/v1/selfhost/status$suffix"))) {
+            is BridgeResult.Ok -> SelfHostParser.parse(result.body)
+            else -> null
+        }
+    }
+
+    /**
+     * Runs one CLI command on the engine.
+     *
+     * The phone sends the command as typed; the engine decides whether it may
+     * run. The shell families are refused there rather than hidden here — a
+     * client-side filter would be a second copy of a security rule, and the two
+     * only have to disagree once.
+     */
+    fun runCommand(command: String, issuedBy: String): CommandOutcome {
+        if (command.isBlank()) return CommandOutcome.Refused("a command needs text")
+        if (issuedBy.isBlank()) return CommandOutcome.Refused("a command must name who issued it")
+        val port = discovery.resolve() ?: return CommandOutcome.EngineUnreachable
+        val body = "{\"command\":${JsonString.quote(command)}," +
+            "\"issuedBy\":${JsonString.quote(issuedBy)}}"
+        return when (val result = http.post(BridgeEndpoint.url(port, "/v1/command"), body)) {
+            is BridgeResult.Ok -> CommandParser.parse(result.body)
+                ?: CommandOutcome.Refused("the engine ran the command but returned nothing readable")
+            is BridgeResult.HttpError -> CommandOutcome.Refused(
+                SelfHostParser.refusal(result.body).ifBlank { "refused (${result.code})" }
+            )
+            is BridgeResult.Unreachable -> {
+                discovery.forget()
+                CommandOutcome.EngineUnreachable
+            }
+        }
+    }
+
+    /** Command families this engine accepts over the port, for a client menu. */
+    fun allowedCommands(): List<String> {
+        val port = discovery.resolve() ?: return emptyList()
+        return when (val result = http.get(BridgeEndpoint.url(port, "/v1/command/allowed"))) {
+            is BridgeResult.Ok -> CommandParser.allowedFamilies(result.body)
+            else -> emptyList()
         }
     }
 

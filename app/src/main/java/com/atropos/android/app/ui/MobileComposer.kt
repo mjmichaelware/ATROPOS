@@ -13,6 +13,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -34,7 +35,16 @@ fun ComposerScreen(
     value: String,
     onValueChange: (String) -> Unit,
     onSend: () -> Unit,
-    isOnline: Boolean
+    isOnline: Boolean,
+    /**
+     * Asks the engine to build what was typed, rather than answer it.
+     *
+     * A separate action from Send, not a mode toggle. Sending is a question and
+     * building mutates the source tree; a toggle makes those one keystroke
+     * apart and remembers its position, so the destructive one eventually
+     * happens because the operator forgot which state they left it in.
+     */
+    onBuild: (() -> Unit)? = null
 ) {
     val density = OneHandDensity()
     Surface(
@@ -59,6 +69,15 @@ fun ComposerScreen(
                 },
                 maxLines = 4
             )
+            if (onBuild != null) {
+                Spacer(modifier = Modifier.width(4.dp))
+                TextButton(
+                    onClick = onBuild,
+                    enabled = isOnline && canSendComposerInput(value)
+                ) {
+                    Text("Build")
+                }
+            }
             Spacer(modifier = Modifier.width(8.dp))
             IconButton(
                 onClick = onSend,
