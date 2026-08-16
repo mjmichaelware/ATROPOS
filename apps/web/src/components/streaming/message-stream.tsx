@@ -27,6 +27,10 @@ export function StreamingApprovalCards({ eventSourceUrl, onApproval }: MessageSt
 
   useEffect(() => {
     if (!eventSourceUrl) return
+    // Feature-detected for the same reason scrollIntoView is below: not every
+    // host provides EventSource, and a stream component that throws on mount
+    // takes down the view it was embedded in rather than simply not streaming.
+    if (typeof EventSource === 'undefined') return
 
     const eventSource = new EventSource(eventSourceUrl)
 
@@ -52,7 +56,14 @@ export function StreamingApprovalCards({ eventSourceUrl, onApproval }: MessageSt
   }, [eventSourceUrl])
 
   useEffect(() => {
-    containerRef.current?.scrollIntoView({ behavior: 'smooth' })
+    // Feature-detected, not assumed. `scrollIntoView` is a convenience the
+    // host may not implement — jsdom does not — and an effect that throws
+    // takes the whole component down with it. Following the tail is worth
+    // having and not worth crashing over.
+    const container = containerRef.current
+    if (typeof container?.scrollIntoView === 'function') {
+      container.scrollIntoView({ behavior: 'smooth' })
+    }
   }, [messages])
 
   return (

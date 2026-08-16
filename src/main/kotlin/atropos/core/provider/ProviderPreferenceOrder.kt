@@ -37,15 +37,39 @@ object ProviderPreferenceOrder {
      */
     fun order(
         eligible: List<ProviderEligibility>,
-        taskPriority: (String) -> Int = { Int.MAX_VALUE }
+        taskPriority: (String) -> Int = { Int.MAX_VALUE },
+        /**
+         * A precedence tier applied *before* the document's six terms.
+         *
+         * The six describe how to choose among providers that are equally
+         * permitted. A caller may know something that outranks all of them —
+         * the cost policy has emergency-unlocked a paid provider, or the task
+         * did not ask for local-first — and those are tiers, not terms: no
+         * amount of success rate may promote a paid-locked provider past an
+         * unlocked one. Sorting them ahead is the only shape that says so.
+         *
+         * Zero for every candidate by default, which leaves the document's
+         * ordering exactly as it stands.
+         */
+        tier: (ProviderEligibility) -> Int = { 0 },
+        /**
+         * A last tie-break after all six terms, before falling back to id.
+         *
+         * Alphabetical order is a deterministic answer, not a good one. A
+         * caller with a live health ranking has something better to say about
+         * two providers the six terms could not separate.
+         */
+        finalTieBreak: (String) -> Int = { 0 }
     ): List<ProviderEligibility> =
         eligible.sortedWith(
-            compareBy<ProviderEligibility> { weightOf(it) }
+            compareBy<ProviderEligibility> { tier(it) }
+                .thenBy { weightOf(it) }
                 .thenBy { taskPriority(it.provider.id) }
                 .thenByDescending { remainingEstimate(it) }
                 .thenByDescending { it.quota?.successScore ?: 0.0 }
                 .thenBy { it.quota?.latencyMsAvg ?: Long.MAX_VALUE }
                 .thenBy { cooldownRisk(it) }
+                .thenBy { finalTieBreak(it.provider.id) }
                 .thenBy { it.provider.id }
         )
 

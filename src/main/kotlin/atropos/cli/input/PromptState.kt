@@ -37,6 +37,7 @@ class PromptState(
     private val history = historyStore ?: PromptHistoryRing(historyLimit, redactionFilter)
     private val browser = PromptHistoryBrowser(history)
     private val suggestions = PromptSuggestionState()
+    private val collapsedPastes = CollapsedPasteRegistry()
 
     private var lastCommittedLane = PromptHistoryLane.PROMPT
     private var reverseSearchNeedle = ""
@@ -69,7 +70,18 @@ class PromptState(
 
     fun apply(event: KeyEvent): PromptEffect = when (event) {
         is KeyEvent.Printable -> insertEvent(event.text)
-        is KeyEvent.Paste -> insertEvent(event.text)
+        is KeyEvent.Paste -> insertEvent(
+            // A large paste goes into the registry and a summary goes into the
+            // line. The buffer has a length ceiling and the composer redraws on
+            // every keystroke, so a pasted Source Document previously either
+            // overflowed the line outright or made every subsequent keypress
+            // redraw three thousand words.
+            if (collapsedPastes.shouldCollapse(event.text)) {
+                collapsedPastes.collapse(event.text)
+            } else {
+                event.text
+            }
+        )
         is KeyEvent.InvalidInput -> PromptEffect.InputError(event.reason)
         is KeyEvent.UnknownEscape -> PromptEffect.None
 
@@ -218,7 +230,11 @@ class PromptState(
      * falling back to prose.
      */
     fun commit(): String {
-        val result = line.text
+        // Expanded before anything else sees it. History records the full text
+        // too: a recalled line holding a placeholder would expand to nothing
+        // once the registry had been cleared, and would send a prompt with the
+        // document silently missing.
+        val result = collapsedPastes.expand(line.text)
         if (result.isNotBlank()) {
             val lane = PromptHistoryLane.classify(result)
             lastCommittedLane = lane
@@ -228,10 +244,18 @@ class PromptState(
         return result
     }
 
+    /** What the line stands for beyond what it shows, or null when nothing. */
+    fun collapsedPasteSummary(): String? =
+        collapsedPastes.placeholders()
+            .filter { it in line.text }
+            .takeIf { it.isNotEmpty() }
+            ?.joinToString(" ")
+
     fun clear() {
         line.clear()
         browser.detach()
         suggestions.reset()
+        collapsedPastes.clear()
         reverseSearchNeedle = ""
     }
 

@@ -156,10 +156,113 @@ export async function readEngine<T>(path: string): Promise<EngineResult<T>> {
   return { ok: true, data: body as T };
 }
 
+/**
+ * The same POST path every read goes through.
+ *
+ * Separate from readEngine only in method and body — every failure shape,
+ * remedy and no-store rule is shared, because a write that reported
+ * unreachability differently from a read would make the cockpit's two halves
+ * disagree about whether the engine is running.
+ */
+export async function writeEngine<T>(path: string, payload: Record<string, unknown>): Promise<EngineResult<T>> {
+  let response: Response;
+  try {
+    response = await fetch(`${engineBaseUrl()}${path}`, {
+      method: 'POST',
+      cache: 'no-store',
+      headers: { accept: 'application/json', 'content-type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  } catch {
+    return {
+      ok: false,
+      reason: 'bridge-unreachable',
+      detail: 'The ATROPOS engine bridge did not answer.',
+      remedy: UNREACHABLE_REMEDY,
+    };
+  }
+
+  let body: unknown;
+  try {
+    body = await response.json();
+  } catch {
+    return {
+      ok: false,
+      reason: 'malformed-response',
+      detail: `The bridge answered ${response.status} with a body this surface could not parse.`,
+      remedy: 'Check the engine log, then retry.',
+    };
+  }
+
+  if (!response.ok) {
+    const refusal = body as { detail?: string; remedy?: string };
+    return {
+      ok: false,
+      reason: 'bridge-refused',
+      detail: refusal?.detail ?? `The bridge refused with status ${response.status}.`,
+      remedy: refusal?.remedy ?? 'Call GET /v1/routes for the routes this build exposes.',
+    };
+  }
+
+  return { ok: true, data: body as T };
+}
+
+/** What `POST /v1/command` returned. */
+export interface EngineCommandResult {
+  ok: boolean;
+  command: string;
+  output: string;
+  exited?: boolean;
+  failure?: string;
+}
+
+/** What the self-build routes return for one goal. */
+export interface EngineSelfHostRun {
+  goalId: string;
+  phase: string;
+  status: string;
+  currentNode?: string;
+  completed?: number;
+  total?: number;
+  detail?: string;
+}
+
+/**
+ * Who the engine records as having driven this from the browser.
+ *
+ * The bridge refuses an unattributed command or build with 403, and it is right
+ * to: both mutate the operator's workspace, and "which surface did this" is the
+ * first question asked afterwards.
+ */
+export const WEB_ACTOR = 'web-cockpit';
+
 export const engine = {
   answers: () => readEngine<EngineAnswersPayload>('/v1/answers'),
   projects: () => readEngine<EngineProjectsPayload>('/v1/projects'),
   commands: () => readEngine<unknown>('/v1/commands'),
   vocabulary: () => readEngine<unknown>('/v1/vocabulary'),
   health: () => readEngine<{ ok: true; engine: string }>('/v1/health'),
+
+  /**
+   * Runs one CLI command through the engine's own router.
+   *
+   * The browser reimplements nothing: `/v1/command` builds the same router the
+   * terminal uses and returns what it printed. The shell family is refused by
+   * PortCommandPolicy on the engine side, once, for every surface — a second
+   * list here would be a second answer to the same question.
+   */
+  runCommand: (command: string, issuedBy: string = WEB_ACTOR) =>
+    writeEngine<EngineCommandResult>('/v1/command', { command, issuedBy }),
+
+  /** The command families this surface may run, so the palette can say so. */
+  allowedCommands: () => readEngine<{ families: string[]; forbidden: string[] }>('/v1/command/allowed'),
+
+  startSelfHost: (prompt: string, startedBy: string = WEB_ACTOR) =>
+    writeEngine<EngineSelfHostRun>('/v1/selfhost/start', { prompt, startedBy }),
+
+  advanceSelfHost: (goalId: string) =>
+    writeEngine<EngineSelfHostRun>('/v1/selfhost/advance', { goalId }),
+
+  selfHostStatus: (goalId: string) =>
+    readEngine<EngineSelfHostRun>(`/v1/selfhost/status?goalId=${encodeURIComponent(goalId)}`),
 };

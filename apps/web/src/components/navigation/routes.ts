@@ -19,6 +19,18 @@ export const globalRoutes = {
   devTools: "/developer" as Route,
   specGraph: "/developer/specgraph" as Route,
   signIn: "/auth/sign-in" as Route,
+  /**
+   * Cross-project surfaces. Each of these already existed only under
+   * `/projects/[id]/…`, so the whole-workspace view of them was reachable by
+   * typing a URL and by nothing else.
+   */
+  work: "/work" as Route,
+  conversations: "/conversations" as Route,
+  files: "/files" as Route,
+  agents: "/agents" as Route,
+  /** What the system proposed about itself, and what it has done. */
+  governance: "/governance" as Route,
+  activity: "/activity" as Route,
 };
 
 /**
@@ -33,13 +45,52 @@ export const globalRoutes = {
  */
 export type SpineItem = { id: string; label: string; href: Route };
 
+/**
+ * HOE-A02's ten entries, in the order the atom names them.
+ *
+ * Declared separately from [navigationSpine] so the order is asserted against
+ * a stated list rather than against whatever the array happens to contain — a
+ * parity test that reads its expectation out of the thing it is testing
+ * passes no matter what either one says.
+ */
+export const HOE_A02_SPINE_ORDER = [
+  "home",
+  "projects",
+  "work",
+  "conversations",
+  "files",
+  "agents",
+  "models",
+  "automation",
+  "history",
+  "settings",
+] as const;
+
 export const navigationSpine: SpineItem[] = [
   { id: "home", label: "Home", href: globalRoutes.home },
   { id: "projects", label: "Projects", href: globalRoutes.projects },
+  { id: "work", label: "Work", href: globalRoutes.work },
+  { id: "conversations", label: "Conversations", href: globalRoutes.conversations },
+  { id: "files", label: "Files", href: globalRoutes.files },
+  { id: "agents", label: "Agents", href: globalRoutes.agents },
   { id: "models", label: "Models", href: globalRoutes.models },
   { id: "automation", label: "Automation", href: globalRoutes.automation },
   { id: "history", label: "History", href: globalRoutes.history },
   { id: "settings", label: "Settings", href: globalRoutes.settings },
+];
+
+/**
+ * Engine-state surfaces, carried beside the spine rather than in it.
+ *
+ * Governance and Activity are real pages that nothing linked to. Adding them
+ * to [navigationSpine] would make HOE-A02's ten-entry count pass only by being
+ * rewritten, so they are their own group: visible, and not counted as spine.
+ * They are deliberately not behind Developer Tools — what the system proposed
+ * about itself is not a developer concern.
+ */
+export const engineStateGroup: SpineItem[] = [
+  { id: "governance", label: "Governance", href: globalRoutes.governance },
+  { id: "activity", label: "Activity", href: globalRoutes.activity },
 ];
 
 /** §2.10: hidden until the operator asks for it. */

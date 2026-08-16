@@ -52,7 +52,10 @@ describe('AccessibilityValidator', () => {
     expect(findings[0].category).toBe('color')
   })
 
-  it('validates status vocabulary', () => {
-    expect(AccessibilityValidator.validate).toBeDefined()
+  it('exposes one entry point that runs every gate', () => {
+    // An instance method, not a static: the validator accumulates findings
+    // across calls, so a static entry point would share them between callers.
+    const findings = new AccessibilityValidator().validate(testElement)
+    expect(Array.isArray(findings)).toBe(true)
   })
 })

@@ -11,6 +11,7 @@ import {
 } from '@/components/navigation/routes';
 import { useOptionalSessionState } from '@/lib/contexts/session-state-context';
 import { useEngineCommands } from '@/lib/engine/use-engine-commands';
+import { engine } from '@/lib/engine/client';
 import { COMMON_SHORTCUTS, useKeyboardShortcuts } from '@/lib/hooks/use-keyboard-shortcuts';
 
 interface CommandItem {
@@ -44,6 +45,9 @@ export function CommandPalette() {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
+  /** What the last engine command printed, or the refusal it met. */
+  const [commandResult, setCommandResult] = useState<string | null>(null);
+  const [commandRunning, setCommandRunning] = useState(false);
 
   // Navigation commands
   //
@@ -139,11 +143,28 @@ export function CommandPalette() {
         description: entry.description,
         icon: <Zap className="w-4 h-4" />,
         action: () => {
-          // The bridge is read-only for actions; running a command belongs to
-          // the CLI. Copying it is the honest affordance — offering to "run"
-          // it here would imply an execution path that does not exist.
-          void navigator.clipboard?.writeText(entry.command);
-          setOpen(false);
+          // Run it, don't copy it. This used to write the command to the
+          // clipboard because the bridge had no execution path — POST
+          // /v1/command is that path now, and it builds the same router the
+          // terminal uses, so the browser reimplements nothing and the shell
+          // family is refused once, on the engine side, for every surface.
+          //
+          // The palette stays open while it runs: closing on the result would
+          // discard the one thing the operator asked for.
+          setCommandRunning(true);
+          setCommandResult(null);
+          void engine.runCommand(entry.command).then((result) => {
+            setCommandRunning(false);
+            if (!result.ok) {
+              setCommandResult(`${result.detail}\n${result.remedy}`);
+              return;
+            }
+            setCommandResult(
+              result.data.ok
+                ? result.data.output || '(the command produced no output)'
+                : result.data.failure ?? 'the command failed'
+            );
+          });
         },
         category: 'action' as const,
         keywords: [entry.command.toLowerCase(), entry.description.toLowerCase()],
@@ -244,6 +265,29 @@ export function CommandPalette() {
             />
             <span className="text-xs text-sg-neutral-500">ESC</span>
           </div>
+
+          {/* What the last engine command said. Rendered verbatim: the
+              engine's own output is the answer, and reformatting it here would
+              be a second presentation of the same run. */}
+          {(commandRunning || commandResult !== null) && (
+            <div className="px-4 py-3 border-b border-sg-neutral-200 dark:border-sg-neutral-800">
+              {commandRunning ? (
+                <p className="text-sm text-sg-neutral-600 dark:text-sg-neutral-400">Running…</p>
+              ) : (
+                <>
+                  <pre className="max-h-40 overflow-auto whitespace-pre-wrap break-words text-xs text-sg-neutral-800 dark:text-sg-neutral-200">
+                    {commandResult}
+                  </pre>
+                  <button
+                    onClick={() => setCommandResult(null)}
+                    className="mt-2 text-xs text-sg-neutral-500 hover:text-sg-neutral-700 dark:hover:text-sg-neutral-300"
+                  >
+                    Dismiss
+                  </button>
+                </>
+              )}
+            </div>
+          )}
 
           {/* Results */}
           <div className="max-h-96 overflow-y-auto">

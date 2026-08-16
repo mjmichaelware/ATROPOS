@@ -87,15 +87,19 @@ class RoutePolicy(
     fun decide(task: ProviderTask): RoutePolicyDecision {
         val candidates = registry.getByCapability(task.capability).ifEmpty { registry.getByCapability(ApiCapability.CHAT) }
         val evaluated = candidates.map { filter.evaluate(it, ledger.get(it.id)) }
-        // Health ranking supplies the tie-break, not the decision.
+        // [ProviderPreferenceOrder] owns the ordering. It is Source Doc 2
+        // §.300 §7's six terms, already written as a lexicographic comparator
+        // for exactly the reason this route needs — a later term may only break
+        // a tie in an earlier one, so a fast paid provider can never beat a
+        // slow free one. Restating those six here was a second ordering of the
+        // same thing, and the two only have to disagree once for the free-first
+        // guarantee to stop holding.
         //
-        // These keys are precedence tiers, not weights: a paid-locked provider
-        // must lose to every unlocked one no matter how healthy it looks, and a
-        // local provider must sit behind the remote ones when the task did not
-        // ask for local first. Summing the tiers into one number let a good
-        // health rank outrank the cost policy, which is how `ollama` came to be
-        // selected ahead of `groq` and ahead of an emergency-unlocked `openai`.
-        // Lexicographic ordering is the only shape that says "then".
+        // What this route knows that the document's terms do not is the cost
+        // policy in force: whether the operator has emergency-unlocked a paid
+        // provider, and whether this task asked for local first. Those outrank
+        // all six, so they go in as a tier ahead of them rather than as terms
+        // among them.
         val eligibilityOrder = EligibilityAlgorithm.rank(
             evaluated.map { candidate ->
                 ProviderHealth(
@@ -108,28 +112,16 @@ class RoutePolicy(
                 )
             }
         ).mapIndexed { index, score -> score.providerId to index }.toMap()
-        val eligible = evaluated.filter { it.eligible }.sortedWith(
-            compareBy<ProviderEligibility>(
-                {
-                    if (!task.localFirst && it.provider.isLocal) 1 else 0
-                },
-                {
-                    when {
-                        costPolicy == AtroposCostPolicy.PAID_EMERGENCY_UNLOCKED &&
-                            it.provider.isPaidLocked() &&
-                            paidGate.isProviderUnlocked(it.provider.id) -> 0
-                        it.provider.isPaidLocked() -> 2
-                        costPolicy == AtroposCostPolicy.PAID_EMERGENCY_UNLOCKED &&
-                            it.provider.costMode != CostMode.LOCAL -> 0
-                        costPolicy == AtroposCostPolicy.PAID_EMERGENCY_UNLOCKED -> 1
-                        else -> 1
-                    }
-                },
-                { taskPriority(task, it.provider) },
-                { it.provider.quotaTier },
-                { eligibilityOrder[it.provider.id] ?: Int.MAX_VALUE },
-                { it.provider.id }
-            )
+
+        val eligible = ProviderPreferenceOrder.order(
+            eligible = evaluated.filter { it.eligible },
+            taskPriority = { providerId ->
+                evaluated.firstOrNull { it.provider.id == providerId }
+                    ?.let { taskPriority(task, it.provider) }
+                    ?: Int.MAX_VALUE
+            },
+            tier = { candidate -> localTier(task, candidate) * COST_TIERS + costTier(candidate) },
+            finalTieBreak = { providerId -> eligibilityOrder[providerId] ?: Int.MAX_VALUE }
         )
         val selected = eligible.firstOrNull()?.provider
         return if (selected != null) {
@@ -148,9 +140,43 @@ class RoutePolicy(
         }
     }
 
+    /**
+     * Whether a local provider must wait behind the remote ones.
+     *
+     * `localFirst` is the task saying it wants the on-device toolchain tried
+     * first. When it does not, local sorts last — not because local is worse,
+     * but because a task that asked for a remote capability is not served by
+     * the thing that cannot provide it.
+     */
+    private fun localTier(task: ProviderTask, candidate: ProviderEligibility): Int =
+        if (!task.localFirst && candidate.provider.isLocal) 1 else 0
+
+    /**
+     * Where the cost policy places this provider, lowest first.
+     *
+     * Combined with [localTier] by multiplying by [COST_TIERS], which is a
+     * lexicographic encoding rather than a sum: cost values are strictly below
+     * the radix, so no cost tier can ever carry a candidate past a better local
+     * tier.
+     */
+    private fun costTier(candidate: ProviderEligibility): Int = when {
+        costPolicy == AtroposCostPolicy.PAID_EMERGENCY_UNLOCKED &&
+            candidate.provider.isPaidLocked() &&
+            paidGate.isProviderUnlocked(candidate.provider.id) -> 0
+        candidate.provider.isPaidLocked() -> 2
+        costPolicy == AtroposCostPolicy.PAID_EMERGENCY_UNLOCKED &&
+            candidate.provider.costMode != CostMode.LOCAL -> 0
+        else -> 1
+    }
+
     private fun taskPriority(task: ProviderTask, descriptor: ProviderDescriptor): Int {
         val capabilityPenalty = if (descriptor.hasCapability(task.capability)) 0 else 20
         val localityPenalty = if (task.localFirst && descriptor.isLocal) 0 else 1
         return capabilityPenalty + localityPenalty + descriptor.quotaTier
+    }
+
+    private companion object {
+        /** One more than the largest value [costTier] returns. */
+        const val COST_TIERS = 3
     }
 }

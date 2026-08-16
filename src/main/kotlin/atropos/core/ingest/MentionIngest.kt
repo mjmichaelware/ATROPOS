@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.ingest
 
+import java.nio.file.Files
 import java.nio.file.Path
 
 /**
@@ -18,7 +19,19 @@ import java.nio.file.Path
 class MentionResolver(
     private val territoryRoots: List<Path>,
     private val maxBytes: Long = 8L * 1024 * 1024,
-    private val allowedExtensions: Set<String> = DEFAULT_EXTENSIONS
+    private val allowedExtensions: Set<String> = DEFAULT_EXTENSIONS,
+    /**
+     * Whether the resolved path is a readable regular file.
+     *
+     * Injected so the resolver stays testable without a filesystem, and named
+     * as a predicate rather than read from a size, because size cannot answer
+     * it: a missing file reports `-1`, which is under every ceiling, so a
+     * mistyped name inside a granted territory resolved clean and attached
+     * nothing. The operator was told "attached" for a file that was not there.
+     */
+    private val isReadableFile: (Path) -> Boolean = { path ->
+        Files.isRegularFile(path) && Files.isReadable(path)
+    }
 ) {
     fun resolve(mention: String, sizeBytes: Long): MentionResolution {
         val raw = mention.removePrefix("@").trim()
@@ -56,6 +69,16 @@ class MentionResolver(
                 "$raw resolves outside every granted territory",
                 "mention a file inside a granted path"
             )
+
+        // Existence last, and only inside territory. A path that failed the
+        // grant is never stat-ed, so the refusal cannot be used to probe for
+        // files the operator was not allowed to name in the first place.
+        if (!isReadableFile(resolved.first)) {
+            return MentionResolution.Refused(
+                "$raw is not a readable file",
+                "check the spelling and that the file exists"
+            )
+        }
 
         return MentionResolution.Resolved(resolved.first, extension)
     }

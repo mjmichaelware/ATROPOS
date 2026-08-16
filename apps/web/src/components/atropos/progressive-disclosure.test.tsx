@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { WorkItemCard } from './work-item-card';
 import { SessionStateProvider, useSessionState } from '@/lib/contexts/session-state-context';
 import type { WorkItem } from '@/lib/api-atropos/types';
@@ -51,7 +51,10 @@ describe('progressive disclosure levels', () => {
     );
     expect(getByRole('button', { name: 'Expand stream item' })).toHaveAttribute('aria-expanded', 'false');
     expect(queryByText('detail')).toBeNull();
-    getByRole('button', { name: 'Expand stream item' }).click();
+    // fireEvent, not a raw .click(): a bare DOM click is not wrapped in act,
+    // so React never flushes the state update and the assertion below reads
+    // the collapsed markup back.
+    fireEvent.click(getByRole('button', { name: 'Expand stream item' }));
     expect(getByRole('button', { name: 'Collapse stream item' })).toHaveAttribute('aria-expanded', 'true');
   });
 

@@ -426,7 +426,16 @@ class CommandRouter(
                         // input: SUP.NL.ENVELOPE-WRAP requires it, and sending
                         // the raw bytes here would mean the text the guard
                         // cleared and the text the provider sees are different.
-                        else -> providerChatDispatcher.dispatch(canonical, currentProviderName)
+                        //
+                        // promptText(), not envelope.canonical: the canonical
+                        // form is the operator's own words and nothing else, so
+                        // sending it alone asked the provider a question about a
+                        // document it had never been given, right after the CLI
+                        // said "attached: spec.txt". The risk guard still reads
+                        // the canonical form above — it classifies what the
+                        // operator asked for, and an attached document is
+                        // evidence, not intent.
+                        else -> providerChatDispatcher.dispatch(entry.promptText(), currentProviderName)
                     }
                 }
                 RouterOutcome.CONTINUE

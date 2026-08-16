@@ -200,8 +200,85 @@ class NlEntryPipelineTest {
 
         val entry = NlEntryPipeline(listOf(root)).accept("summarise @docs/spec.txt", NlSource.CLI_PROMPT)
 
-        assertEquals(listOf<Path>(root.resolve("docs/spec.txt")), entry.attachments)
+        assertEquals(listOf<Path>(root.resolve("docs/spec.txt")), entry.attachments.map { it.path })
         assertTrue(entry.notice()!!.contains("attached: spec.txt"))
+    }
+
+    @Test
+    fun `an attached file reaches the prompt, not just the notice`() {
+        val root = Files.createTempDirectory("atropos-nl-test")
+        Files.createDirectories(root.resolve("docs"))
+        Files.writeString(root.resolve("docs/spec.txt"), "the requirement is X")
+
+        val entry = NlEntryPipeline(listOf(root)).accept("summarise @docs/spec.txt", NlSource.CLI_PROMPT)
+
+        // The defect this closes: the CLI printed "attached: spec.txt" and then
+        // asked the provider a question about a document it never sent.
+        assertTrue(entry.promptText().contains("the requirement is X"), entry.promptText())
+        assertTrue(entry.promptText().contains("summarise"))
+
+        // The envelope stays the operator's own words, because originalSha256
+        // is what proves them.
+        assertFalse(entry.envelope.canonical.contains("the requirement is X"))
+    }
+
+    @Test
+    fun `a prompt with no attachments is exactly the canonical form`() {
+        val root = Files.createTempDirectory("atropos-nl-test")
+
+        val entry = NlEntryPipeline(listOf(root)).accept("what is the status", NlSource.CLI_PROMPT)
+
+        assertEquals(entry.envelope.canonical, entry.promptText())
+    }
+
+    @Test
+    fun `a bare name matching a granted territory is recognised`() {
+        val root = Files.createTempDirectory("atropos-nl-test")
+
+        val entry = NlEntryPipeline(listOf(root))
+            .accept("what is the status of @${root.fileName}", NlSource.CLI_PROMPT)
+
+        assertEquals(listOf(root.fileName.toString()), entry.namedTerritories)
+        assertTrue(entry.unknownNames.isEmpty())
+    }
+
+    @Test
+    fun `a bare name matching nothing is reported rather than ignored`() {
+        val root = Files.createTempDirectory("atropos-nl-test")
+
+        val entry = NlEntryPipeline(listOf(root)).accept("build @myapp please", NlSource.CLI_PROMPT)
+
+        assertEquals(listOf("@myapp"), entry.unknownNames)
+        assertTrue(entry.notice()!!.contains("not recognised"), entry.notice().orEmpty())
+    }
+
+    @Test
+    fun `the head of a file path is not also reported as a territory`() {
+        val root = Files.createTempDirectory("atropos-nl-test")
+        Files.createDirectories(root.resolve("docs"))
+        Files.writeString(root.resolve("docs/spec.txt"), "the spec")
+
+        val entry = NlEntryPipeline(listOf(root)).accept("read @docs/spec.txt", NlSource.CLI_PROMPT)
+
+        // `@docs` is the head of an attachment, not a place. Reporting both
+        // would tell the operator about a territory when they attached a file.
+        assertEquals(1, entry.attachments.size)
+        assertTrue(entry.namedTerritories.isEmpty())
+        assertTrue(entry.unknownNames.isEmpty())
+    }
+
+    @Test
+    fun `a mention naming a file that does not exist is refused, not silently attached`() {
+        val root = Files.createTempDirectory("atropos-nl-test")
+        Files.createDirectories(root.resolve("docs"))
+
+        val entry = NlEntryPipeline(listOf(root)).accept("read @docs/typo.txt", NlSource.CLI_PROMPT)
+
+        // A missing file reports size -1, which is under every ceiling, so this
+        // used to resolve clean and attach nothing at all.
+        assertTrue(entry.attachments.isEmpty())
+        assertEquals(1, entry.refusedAttachments.size)
+        assertTrue(entry.notice()!!.contains("not attached"), entry.notice().orEmpty())
     }
 
     @Test
