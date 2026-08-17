@@ -200,7 +200,15 @@ def segment_document_node(
             current_list_item_id = node.node_id
 
         # Only segment PARAGRAPH, LIST_ITEM, and TABLE_CELL
-        if node.role in {"PARAGRAPH", "LIST_ITEM", "TABLE_CELL", "UNKNOWN", "HEADING"}:
+        # LABEL is segmented too.
+        #
+        # format_adapters turns a line ending in ':' with few words into a
+        # LABEL node, and this set used to exclude it -- so those lines produced
+        # no statement, never reached rejected_candidates, and disappeared with
+        # no record anywhere. They are exactly the declared-item lines this
+        # compiler is meant to catch. A loss that leaves no trace is worse than
+        # a rejection, because nothing can tell you it happened.
+        if node.role in {"PARAGRAPH", "LIST_ITEM", "TABLE_CELL", "TABLE_ROW", "UNKNOWN", "HEADING", "LABEL"}:
             node_text = node.content
             sents = split_on_atom_declarations(split_sentences_custom(node_text), node_text)
 

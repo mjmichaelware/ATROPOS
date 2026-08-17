@@ -13,6 +13,56 @@ SEPARATOR_RE = re.compile(r"^\s*(?:-{3,}|_{3,}|\*{3,}|__PART [A-Z]__|_+PART [A-Z
 LABEL_RE = re.compile(r"^\s*(?:[a-zA-Z0-9_\-\s#]+):\s*$")
 BLANK_RE = re.compile(r"^\s*$")
 
+# ---------------------------------------------------------------------------
+# Wrap damage
+#
+# Text extracted from a PDF often arrives one word per line: the extractor
+# preserves visual line breaks that were never sentence breaks. A document in
+# that state has no statements left to find -- every structural boundary this
+# parser depends on has been shredded into single tokens. In one real document
+# 49% of lines held a single word, and thirty-eight declared atoms were
+# unreachable purely because of it.
+#
+# Repaired rather than refused, because the operator usually cannot get a better
+# copy. Detected first and only repaired when detected, because joining lines
+# unconditionally would corrupt a document whose short lines are deliberate --
+# a list of one-word options, a glossary column.
+WRAP_DAMAGE_RATIO = 0.30
+_STRUCTURAL_LINE_START = re.compile(r"^\s*(?:[-*+]\s|\d+[.)]\s|#{1,6}\s|\||>)")
+
+
+def wrap_damage_ratio(text: str) -> float:
+    """Share of non-blank lines holding exactly one whitespace-delimited token."""
+    lines = [line for line in text.split("\n") if line.strip()]
+    if not lines:
+        return 0.0
+    return sum(1 for line in lines if len(line.split()) == 1) / len(lines)
+
+
+def repair_wrapped_text(text: str) -> str:
+    """Rejoin lines broken mid-sentence by a PDF or copy-paste extraction.
+
+    A single-token line that opens no markdown construct is a continuation of
+    the line above it. Structural openers are left alone so a genuine one-word
+    bullet survives.
+    """
+    out: List[str] = []
+    for line in text.split("\n"):
+        stripped = line.strip()
+        is_continuation = (
+            bool(out)
+            and out[-1].strip()
+            and stripped
+            and len(stripped.split()) == 1
+            and not _STRUCTURAL_LINE_START.match(line)
+        )
+        if is_continuation:
+            out[-1] = out[-1].rstrip() + " " + stripped
+        else:
+            out.append(line)
+    return "\n".join(out)
+
+
 def parse_markdown_to_ir(project_id: str, source_sha256: str, text: str) -> DocumentNode:
     raw_bytes = text.encode("utf-8")
     lines = text.splitlines(keepends=True)

@@ -54,13 +54,34 @@ HEADING_RE = re.compile(r"^#{1,6}\s+")
 #   IMPL     -- what must be built. Normative.
 #   WIRE     -- what must call it. The document's own acceptance condition:
 #               "Acceptance = callers >= 1 outside tests".
+# The final segment may be digits or a bare letter.
+#
+# `B-MCP-GH-a` and `B-MCP-CORE-k` end in a letter with no number after the
+# family, and a digits-only pattern missed fifty-nine ids in one document --
+# 228 seen where 286 were declared. The letter form is how the source marks a
+# micro-atom split off an integration, which is exactly the content this rule
+# exists to catch.
 ATOM_DECLARATION_RE = re.compile(
-    r"^\s*(?P<id>[A-Z]+(?:-[A-Z]+)*-\d+(?:\.\d+)*[a-z]?)\s*[\u00b7\u2022:\-]\s*(?P<title>\S.*)$"
+    r"^\s*(?P<id>[A-Z]{1,6}(?:-[A-Z]{1,6})*-(?:\d+(?:\.\d+)*[a-z]?|[a-z]))"
+    r"\s*[\u00b7\u2022:\-]\s*(?P<title>\S.*)$"
 )
 OBLIGATION_RESEARCH_RE = re.compile(r"^\s*RESEARCH\s*:", re.IGNORECASE)
 OBLIGATION_IMPL_RE = re.compile(r"^\s*IMPL\s*:", re.IGNORECASE)
 OBLIGATION_WIRE_RE = re.compile(r"^\s*WIRE\s*:", re.IGNORECASE)
 DEPENDS_ON_RE = re.compile(r"^\s*dependsOn\s*:", re.IGNORECASE)
+
+
+# Roles whose nodes are delimited units of content.
+#
+# TABLE_CELL and TABLE_ROW are included although no parser emits them yet: the
+# vocabulary and the downstream handling already exist, so the table work
+# becomes a parser change only.
+STRUCTURAL_ITEM_ROLES = frozenset({"LIST_ITEM", "TABLE_CELL", "TABLE_ROW"})
+
+
+def is_structural_item(parent_role):
+    """Whether this statement's node is a delimited item rather than prose."""
+    return parent_role in STRUCTURAL_ITEM_ROLES
 
 
 def declared_atom_id(text):
@@ -177,6 +198,27 @@ def classify_discourse_role(
     if proposal_role and proposal_role in DISCOURSE_ROLES:
         return proposal_role
 
-    # Fallback to UNRESOLVED or BACKGROUND/OBSERVATION based on modals
-    # If no modal word at all, default to UNRESOLVED (abstention)
+    # 6. Structure, when language did not decide.
+    #
+    # Everything above still runs first, so a rationale, an example, a heading
+    # or a prose paragraph is excluded exactly as before. What changes is the
+    # fallthrough: a statement reaching here carries no modal verb, and
+    # returning UNRESOLVED made it unreachable -- UNRESOLVED is not in
+    # EXECUTABLE_ROLES, so a plain bullet list produced zero atoms however
+    # clearly it stated the work.
+    #
+    # A delimited item is a deliberate unit. Someone wrote a list, a table row
+    # or a declared line because those are separate things, and that is a more
+    # reliable signal than whether the sentence happens to contain "shall".
+    # Documents do not always speak in modal verbs, and a compiler that hears
+    # only those cannot read most real specifications.
+    #
+    # Admitting the statement is not the same as claiming an obligation
+    # strength the document never stated: the modality ladder downstream
+    # records UNSPECIFIED, which is the honest answer.
+    if is_structural_item(parent_role) or declared_atom_id(text):
+        return "NORMATIVE_REQUIREMENT"
+
+    # Prose that named no obligation and sits in no structure. Abstaining is
+    # right here -- there is nothing to point at.
     return "UNRESOLVED"

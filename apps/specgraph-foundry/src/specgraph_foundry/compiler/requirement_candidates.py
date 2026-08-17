@@ -54,7 +54,8 @@ class RequirementCandidacy:
 def evaluate_candidacy(
     stmt: StatementIR,
     role: str,
-    is_inherited: bool = False
+    is_inherited: bool = False,
+    is_structural: bool = False
 ) -> RequirementCandidacy:
     """
     Check if the discourse role is executable.
@@ -167,6 +168,17 @@ def evaluate_candidacy(
         declared = declared_atom_id(text)
         if declared:
             actor = declared.rsplit("-", 1)[0].lower()
+
+    # A delimited item carries its own context.
+    #
+    # The same reasoning as `is_inherited` directly below, which has always
+    # bypassed this gate for a list item under an introducing line: the actor
+    # requirement exists to stop a floating sentence becoming a requirement with
+    # nothing to attach it to, and a bullet in a list is not floating. Rejecting
+    # it asked the operator to write "the system shall" inside every bullet of
+    # every document, which is not how documents are written.
+    if is_structural and not actor:
+        actor = "system"
 
     # Standalone requirements without system context get rejected
     if not is_inherited and not actor:

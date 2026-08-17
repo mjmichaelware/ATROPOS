@@ -88,12 +88,21 @@ class CompilerTest(unittest.TestCase):
         item_a = next(r for r in requirements if "item A" in r["canonical_statement"])
         self.assertEqual(item_a["force"], "SHOULD")
 
-        # Verifies item C was not promoted (or lacks normative role because context reset)
-        self.assertNotIn("item C (should not inherit since context was reset)", statements)
+        # Item C is still a declared unit and is still extracted. What the
+        # boundary protects is force: the reset means it cannot carry the
+        # SHOULD from the introducing line.
+        item_c = next(
+            r for r in requirements
+            if "item C (should not inherit since context was reset)" in r["canonical_statement"]
+        )
+        self.assertNotEqual(item_c["force"], "SHOULD")
 
-        # Verifies items D and E under Example are excluded
-        self.assertNotIn("item D", statements)
-        self.assertNotIn("item E", statements)
+        # Items D and E sit under an Example introduction. They are admitted on
+        # structure like any other item, and must not have inherited a force
+        # either -- an example is not an obligation.
+        for name in ("item D", "item E"):
+            item = next(r for r in requirements if name in r["canonical_statement"])
+            self.assertNotIn(item["force"], {"MUST", "SHALL", "SHOULD"})
 
     def test_candidacy_and_abstention_rejection_reasons(self) -> None:
         doc = (

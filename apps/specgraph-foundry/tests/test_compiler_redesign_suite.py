@@ -126,8 +126,15 @@ class TestListInheritanceBoundaries(unittest.TestCase):
             "- item C (no inheritance)\n"
         )
         r = self.compiler.compile("test.md", doc.encode("utf-8"))
-        statements = [req["canonical_statement"] for req in r["requirements"]]
-        self.assertNotIn("item C (no inheritance)", statements)
+        # Still admitted -- a list item is a declared unit of work whether or
+        # not a modal verb reached it. What must not survive the boundary is
+        # the *force*: item C states no obligation strength of its own, and
+        # inheriting MUST across a paragraph would invent one.
+        item_c = next(
+            req for req in r["requirements"]
+            if "item C (no inheritance)" in req["canonical_statement"]
+        )
+        self.assertNotEqual(item_c["force"], "MUST")
 
     def test_list_inheritance_stops_at_heading(self):
         doc = (
@@ -137,17 +144,32 @@ class TestListInheritanceBoundaries(unittest.TestCase):
             "- item B (no inheritance)\n"
         )
         r = self.compiler.compile("test.md", doc.encode("utf-8"))
-        statements = [req["canonical_statement"] for req in r["requirements"]]
-        self.assertNotIn("item B (no inheritance)", statements)
+        # A heading resets force for the same reason a paragraph does. The item
+        # remains a requirement; it simply carries no inherited obligation.
+        item_b = next(
+            req for req in r["requirements"]
+            if "item B (no inheritance)" in req["canonical_statement"]
+        )
+        self.assertNotEqual(item_b["force"], "MUST")
 
-    def test_list_item_not_executable_merely_as_list_item(self):
+    def test_list_item_is_executable_as_a_declared_unit(self):
+        """A list item is admitted on its structure, with no force invented.
+
+        This asserts the opposite of what it used to. Requiring a modal verb
+        meant a document written as plain bullets produced no atoms at all --
+        and most documents are written that way. Structure is the signal;
+        obligation strength is a separate question, and the honest answer for
+        an item that states none is UNSPECIFIED rather than exclusion.
+        """
         doc = (
             "Example list:\n"
             "- non-normative item\n"
             "- another non-normative item\n"
         )
         r = self.compiler.compile("test.md", doc.encode("utf-8"))
-        self.assertEqual(len(r["requirements"]), 0)
+        self.assertEqual(len(r["requirements"]), 2)
+        for req in r["requirements"]:
+            self.assertNotIn(req["force"], {"MUST", "SHALL", "MUST_NOT"})
 
 
 class TestCandidacyAndUnresolved(unittest.TestCase):

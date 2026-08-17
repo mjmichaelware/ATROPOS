@@ -1,5 +1,6 @@
 from typing import List, Dict, Any, Optional
 from .requirement_candidates import RequirementCandidacy
+from .verb_lexicon import verb_count
 from .source_coordinates import SourceCoordinates
 
 class AtomicRequirement:
@@ -68,6 +69,14 @@ def decompose_requirement(
                 last_idx = match.start() + 5 # skip ' and '
             clauses.append(text[last_idx:].strip())
 
+    # The source rule: two verbs means two atoms.
+    #
+    # The splits above both require a modal verb in every clause, so a
+    # statement that states two actions without saying "shall" stayed whole --
+    # which is most of a bullet list, and most of a declared obligation.
+    if not clauses:
+        clauses = split_on_action_verbs(text)
+
     if not clauses:
         # Single atomic requirement
         req_id = f"req-{candidate.statement.statement_id.split('-')[-1]}"
@@ -118,3 +127,62 @@ def decompose_requirement(
         ))
 
     return atomics
+
+
+# The conjunctions a compound statement is built from, longest first so " and
+# then " is cut before " and " would leave a dangling "then".
+_CONJUNCTIONS = (" and then ", " and also ", "; ", " and ", ", then ")
+
+# A guard, not a tuning knob. Splitting is applied until nothing changes; this
+# stops a pathological line from looping and states the bound in one place.
+MAX_SPLIT_PASSES = 6
+
+# Below this, a fragment is not a requirement -- it is the tail of a phrase the
+# splitter cut in the wrong place, and emitting it as an atom would be worse
+# than leaving the sentence whole.
+MIN_CLAUSE_WORDS = 3
+
+
+def split_on_action_verbs(text: str) -> List[str]:
+    """Split a statement that states more than one action.
+
+    Returns [] when the statement states one action, which the caller reads as
+    "leave this alone" -- distinct from returning [text], which would claim a
+    decomposition happened.
+    """
+    parts = [text]
+    for _ in range(MAX_SPLIT_PASSES):
+        expanded = []
+        for part in parts:
+            expanded.extend(_split_once(part))
+        if expanded == parts:
+            break
+        parts = expanded
+
+    cleaned = [p.strip(" ,;") for p in parts if p.strip(" ,;")]
+    if len(cleaned) < 2:
+        return []
+    # A split that produced a fragment did not find a real boundary. Keeping
+    # the statement whole is the safer half of that mistake: an atom too coarse
+    # can still be read, where an atom that is half a clause cannot.
+    if any(len(c.split()) < MIN_CLAUSE_WORDS for c in cleaned):
+        return []
+    return cleaned
+
+
+def _split_once(text: str) -> List[str]:
+    """One cut, at the first conjunction that has a verb on both sides."""
+    if verb_count(text) < 2:
+        return [text]
+    lowered = text.lower()
+    for conjunction in _CONJUNCTIONS:
+        start = lowered.find(conjunction)
+        while start != -1:
+            head, tail = text[:start], text[start + len(conjunction):]
+            # Both halves must state an action. Cutting at an "and" that joins
+            # two nouns -- "reads config and secrets" -- would split one action
+            # into two fragments of itself.
+            if verb_count(head) >= 1 and verb_count(tail) >= 1:
+                return [head, tail]
+            start = lowered.find(conjunction, start + 1)
+    return [text]

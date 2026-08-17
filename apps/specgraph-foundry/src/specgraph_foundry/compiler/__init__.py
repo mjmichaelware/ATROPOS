@@ -2,11 +2,12 @@ from typing import List, Dict, Any, Optional
 from .proof import build_proof_bundle, compute_frontier_metrics
 from .source_coordinates import SourceCoordinates, compute_sha256
 from .document_ir import DocumentNode, generate_stable_id, STRUCTURAL_ROLES
-from .format_adapters import parse_markdown_to_ir
+from .format_adapters import parse_markdown_to_ir, repair_wrapped_text, wrap_damage_ratio, WRAP_DAMAGE_RATIO
 from .structural_validation import StructuralValidator, ValidationFinding, QuarantineResult
 from .statement_segmentation import segment_document_node, StatementIR
 from .discourse_roles import classify_discourse_role
 from .requirement_candidates import evaluate_candidacy, RequirementCandidacy
+from .discourse_roles import is_structural_item
 from .atomic_decomposition import decompose_requirement, AtomicRequirement
 from .requirement_ir import CanonicalRequirementIR
 from .requirement_quality import analyze_quality, convert_defect_findings
@@ -60,6 +61,21 @@ class SpecGraphCompiler:
         self.prov_graph.add_agent("compiler-agent", "Compiler", "SpecGraph Compiler")
 
         text_content = content.decode("utf-8", errors="strict")
+
+        # Repaired before parsing, and said out loud. A document whose lines
+        # were shredded by a PDF extractor has no structure left for the parser
+        # to find, and silently repairing it would make two runs over visibly
+        # different text claim the same provenance.
+        damage = wrap_damage_ratio(text_content)
+        wrap_repaired = damage >= WRAP_DAMAGE_RATIO
+        if wrap_repaired:
+            text_content = repair_wrapped_text(text_content)
+        self.event_log.record_event(
+            "WrapDamageRepair",
+            {"single_token_line_ratio": round(damage, 4), "threshold": WRAP_DAMAGE_RATIO},
+            {"repaired": wrap_repaired, "repaired_sha256": compute_sha256(text_content.encode("utf-8"))}
+        )
+
         root_node = parse_markdown_to_ir(self.project_id, source_sha256, text_content)
         self.event_log.record_event("FormatAdapter", text_content, root_node.to_dict())
 
@@ -135,26 +151,32 @@ class SpecGraphCompiler:
                     actor_present=has_actor,
                 )
 
-            classified_statements.append((stmt, role))
+            classified_statements.append((stmt, role, parent_role))
 
         self.event_log.record_event(
             "DiscourseRoleClassification",
             [s.to_dict() for s in statements],
-            [{"statement_id": s.statement_id, "role": r} for s, r in classified_statements]
+            [{"statement_id": s.statement_id, "role": r} for s, r, _ in classified_statements]
         )
 
         all_candidacies = []
         candidates = []
-        for stmt, role in classified_statements:
+        for stmt, role, parent_role in classified_statements:
             is_inh = stmt.statement_id in inherited_statements
-            cand = evaluate_candidacy(stmt, role, is_inherited=is_inh)
+            cand = evaluate_candidacy(
+                stmt, role, is_inherited=is_inh,
+                # Structure travels with the statement. Candidacy has to know
+                # whether this was a delimited item, because that is what
+                # supplies the context an actor keyword otherwise would.
+                is_structural=is_structural_item(parent_role)
+            )
             all_candidacies.append(cand)
             if cand.is_candidate:
                 candidates.append(cand)
 
         self.event_log.record_event(
             "RequirementCandidacy",
-            [s.to_dict() for s, _ in classified_statements],
+            [s.to_dict() for s, _, _ in classified_statements],
             {"candidacies": [c.to_dict() for c in all_candidacies], "candidate_count": len(candidates)}
         )
 
@@ -277,7 +299,7 @@ class SpecGraphCompiler:
         defect_remediations = convert_defect_findings(
             findings=[],
             statements=[{"role": r, "canonical_text": s.canonical_text, "coordinates": s.coordinates.to_dict()}
-                        for s, r in classified_statements],
+                        for s, r, _ in classified_statements],
         )
         requirements_payload = [r.to_dict() for r in canonical_reqs]
         relations_payload = [rel.to_dict() for rel in semantic_relations]
