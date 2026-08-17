@@ -33,7 +33,14 @@ class ProviderChatDispatcher(
     private val redactionFilter: atropos.core.security.RedactionFilter =
         atropos.core.security.RedactionFilter(),
     private val alignmentHistory: () -> List<RewardLogEntry> = { emptyList() },
-    private val alignmentSignal: (Boolean) -> Unit = {}
+    private val alignmentSignal: (Boolean) -> Unit = {},
+    /**
+     * The chain walker. Injected so a test can drive the fallback without a
+     * network, and shared with AgentService rather than reimplemented -- there
+     * is one answer to "which provider next" and this is not a second one.
+     */
+    private val cascadeRouter: atropos.core.ProviderCascadeRouter =
+        atropos.core.ProviderCascadeRouter(atropos.core.ProviderFactory(config))
 ) {
 
     fun dispatch(prompt: String, currentProviderName: String) {
@@ -68,15 +75,42 @@ class ProviderChatDispatcher(
             val tuning = AlignmentTuner.tune(alignmentHistory())
             val tunedPrompt = AlignmentTuner.apply(immutablePrompt.text, tuning)
             uiEngine.renderExecutionEvent("alignment", "prefix=${tuning.promptPrefix} examples=${tuning.fewShotExamples.size}")
-            val response = provider.complete(
-                tunedPrompt,
-                context,
-                atropos.core.GenerationParameters(
-                    temperature = tuning.temperature,
-                    topP = tuning.topP,
-                    fewShotExamples = tuning.fewShotExamples
-                )
+            // Through the cascade, not one provider.
+            //
+            // This called `provider.complete` directly and let the catch below
+            // end the turn, so a single refusal was fatal: an operator with
+            // twenty-three configured providers lost the turn because Groq had
+            // retired one model. ProviderCascadeRouter already knew how to walk
+            // the declared chain -- AgentService and AgentRepairService have
+            // used it all along -- so chat was the one path that gave up.
+            //
+            // Each attempt is announced, so the operator can see the fallback
+            // happening rather than wondering why the answer came from
+            // somewhere other than the provider in the status bar.
+            val cascade = cascadeRouter.completeWithCascade(
+                requestedProvider = routedProvider,
+                prompt = tunedPrompt,
+                context = context,
+                beforeAttempt = { candidate ->
+                    if (candidate != routedProvider) {
+                        uiEngine.renderExecutionEvent("provider", "falling back to $candidate")
+                    }
+                },
+                onFailure = { error ->
+                    // Reported per attempt rather than only at the end: a chain
+                    // that quietly tried six providers and failed looks like one
+                    // that never tried, and the operator cannot tell which key
+                    // is the broken one.
+                    uiEngine.renderExecutionEvent(
+                        "provider",
+                        "${error.provider} refused: ${redactionFilter.compact(error.cleanMessage, 120)}"
+                    )
+                }
             )
+            if (cascade.providerName != routedProvider) {
+                uiEngine.renderNotice("answered by ${cascade.providerName} after ${cascade.errors.size} refusal(s)")
+            }
+            val response = cascade.response
             uiEngine.renderExecutionEvent("response", "provider returned output")
             renderVerifiedResponse(
                 prompt = prompt,

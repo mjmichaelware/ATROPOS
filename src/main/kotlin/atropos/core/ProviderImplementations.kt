@@ -1,12 +1,14 @@
 package atropos.core
 
+import atropos.core.provider.ProviderModelResolver
+
 class GroqProvider(private val apiKey: String?) : BaseHttpProvider() {
     override val name = "groq"
     override fun complete(prompt: String, context: String): String {
         val token = requireKey(apiKey, name)
         return postOpenAiCompatibleChat(
             uri = "https://api.groq.com/openai/v1/chat/completions",
-            model = "llama-3.3-70b-versatile",
+            model = ProviderModelResolver.DEFAULT.resolve(name, "llama-3.1-8b-instant"),
             prompt = redactionFilter.redact(prompt),
             context = redactionFilter.redact(context),
             bearerToken = token
@@ -20,7 +22,7 @@ class OpenAiProvider(private val apiKey: String?) : BaseHttpProvider() {
         val token = requireKey(apiKey, name)
         return postOpenAiCompatibleChat(
             uri = "https://api.openai.com/v1/chat/completions",
-            model = "gpt-4o-mini",
+            model = ProviderModelResolver.DEFAULT.resolve(name, "gpt-4o-mini"),
             prompt = redactionFilter.redact(prompt),
             context = redactionFilter.redact(context),
             bearerToken = token
@@ -36,7 +38,7 @@ class AnthropicProvider(private val apiKey: String?) : BaseHttpProvider() {
         val redactedContext = redactionFilter.redact(context)
         val payload = buildString {
             append("{")
-            append("\"model\":\"claude-3-5-sonnet-latest\",")
+            append("\"model\":\"").append(ProviderModelResolver.DEFAULT.resolve(name, "claude-3-5-sonnet-latest")).append("\",")
             append("\"max_tokens\":4096,")
             append("\"temperature\":").append(currentGenerationParameters().temperature).append(",")
             if (redactedContext.isNotBlank()) {
