@@ -41,6 +41,8 @@ class AnsiTerminalEngine(
     private val backgroundProcesses = BackgroundProcessPanel()
     private val boundedRendering = BoundedRenderingController
     private val quotaFuelCellRenderer = QuotaFuelCellRenderer(theme)
+    private val startupSequence = StartupSequence(theme)
+    private var startupPlayed = false
     private val rendering = TerminalRenderingFacade(
         plainOutput, canvas, theme, transcript, markdown, welcome, statusBar, verification, help, transcriptBuffer
     )
@@ -72,8 +74,60 @@ class AnsiTerminalEngine(
     @Synchronized
     fun renderWelcome(config: AtroposConfig, activeProvider: String) {
         state.provider = activeProvider
-        if (state.reactive) requestFrameLocked() else rendering.renderWelcomePlain(state.provider, state.workspace)
+        if (state.reactive) {
+            playStartupSequence(config, activeProvider)
+            requestFrameLocked()
+        } else {
+            rendering.renderWelcomePlain(state.provider, state.workspace)
+        }
     }
+
+    /**
+     * The opening animation, played once into the canvas.
+     *
+     * It runs before the first real frame and is skipped whenever it would be
+     * rude: on a pipe, on a terminal too small to hold it, and whenever
+     * `ATROPOS_NO_ANIMATION` is set — a startup a script has to wait out is a
+     * startup someone will disable by not launching the tool. Interruption
+     * cuts it short rather than swallowing the flag; Ctrl-C during the opening
+     * must still mean Ctrl-C.
+     */
+    private fun playStartupSequence(config: AtroposConfig, activeProvider: String) {
+        if (startupPlayed) return
+        startupPlayed = true
+        if (!System.getenv("ATROPOS_NO_ANIMATION").isNullOrBlank()) return
+        if (canvas.height < MINIMUM_ANIMATION_ROWS || canvas.width < MINIMUM_ANIMATION_COLUMNS) return
+
+        val facts = StartupSequence.Facts(
+            version = versionLabel(),
+            provider = activeProvider,
+            providerCount = with(config.keys) {
+                listOf(groq, openai, anthropic, xai).count(String::isNotBlank)
+            },
+            workspace = state.workspace
+        )
+
+        for (lines in startupSequence.frames(canvas.width, canvas.height, facts)) {
+            val frame = ScreenFrame(canvas.width, canvas.height)
+            lines.forEachIndexed(frame::setLine)
+            frame.showCursor = false
+            canvas.render(frame)
+            if (!pause(FRAME_MILLIS)) return
+        }
+        pause(SETTLE_MILLIS)
+    }
+
+    private fun pause(millis: Long): Boolean = try {
+        Thread.sleep(millis)
+        true
+    } catch (_: InterruptedException) {
+        Thread.currentThread().interrupt()
+        false
+    }
+
+    /** The jar's manifest version, or `dev` when running from classes. */
+    private fun versionLabel(): String =
+        javaClass.`package`?.implementationVersion?.takeIf(String::isNotBlank) ?: "dev"
 
     @Synchronized
     fun redrawPrompt(
@@ -339,6 +393,14 @@ class AnsiTerminalEngine(
         resizePoller.shutdownNow()
         spinner.close()
         canvas.close()
+    }
+
+    private companion object {
+        /** Five rows of wordmark, a gap, four facts, and room to breathe. */
+        const val MINIMUM_ANIMATION_ROWS = 14
+        const val MINIMUM_ANIMATION_COLUMNS = 24
+        const val FRAME_MILLIS = 28L
+        const val SETTLE_MILLIS = 320L
     }
 
     private fun requestFrameLocked() {

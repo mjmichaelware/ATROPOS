@@ -58,23 +58,29 @@ class ComposerViewport(
         renderMultiline(width, 4)
 
     /**
-     * Composer in the pinned reference's shape: a left rail down the input with
-     * two columns of padding, and a `╹` rail terminator closing it off.
+     * The composer as an enclosed box, not a rail.
      *
-     * The reference has no `[mode] >` prompt prefix — the input line carries
-     * only the text, and mode/provider live on a meta row beneath, which is
-     * what [metaRow] renders. Cursor arithmetic accounts for the rail so the
-     * caret still lands on the right cell.
+     * The input line used to be drawn with a left rail and nothing else, which
+     * put it on the same visual plane as the transcript scrolling above it: an
+     * operator looking at the screen could not tell what they had typed from
+     * what the engine had printed back, because both were text starting two
+     * columns in. A closed border is the cheapest thing that says "this region
+     * is yours" — the top edge is drawn here as the first snapshot line and the
+     * bottom edge by [metaRow], so the two together enclose the input and the
+     * height arithmetic in `ViewportLayout` is unchanged.
+     *
+     * There is no `[mode] >` prefix inside the box. Mode and provider are
+     * written into the bottom border instead, where they label the region
+     * rather than competing with the caret for the start of the line.
      */
     fun renderMultiline(width: Int, maximumLines: Int): ComposerSnapshot {
         val safeWidth = width.coerceAtLeast(1)
         val limit = maximumLines.coerceAtLeast(1)
 
-        val railGlyph = if (asciiOnly()) Glyphs.Ascii.RAIL else Glyphs.RAIL
-        val rail = theme.paint(Role.ACCENT_FOCUS, railGlyph)
-        val pad = " ".repeat(Glyphs.RAIL_PADDING)
-        val prefixCells = railGlyph.length + Glyphs.RAIL_PADDING
-        val innerWidth = (safeWidth - prefixCells).coerceAtLeast(1)
+        val edge = edge()
+        val prefixCells = edge.vertical.length + Glyphs.RAIL_PADDING
+        // Both borders and both pads: `│ text │`.
+        val innerWidth = (safeWidth - (prefixCells * 2)).coerceAtLeast(1)
 
         val before = buffer.substring(0, cursor)
         val after = buffer.substring(cursor)
@@ -92,31 +98,85 @@ class ComposerViewport(
         val visible = wrapped.drop(start).take(limit).ifEmpty { listOf("") }
         absoluteRow -= start
 
-        val railed = visible.map { rail + pad + it }
+        val rail = theme.paint(Role.ACCENT_FOCUS, edge.vertical)
+        val pad = " ".repeat(Glyphs.RAIL_PADDING)
+        val boxed = visible.map { line ->
+            // padEnd, never clip: clip() strips ANSI, and the suggestion in
+            // this line is subdued by a colour code. The wrapper already
+            // guarantees the width, so there is nothing to cut.
+            rail + pad + TerminalText.padEnd(line, innerWidth) + pad + rail
+        }
+
+        // The top border occupies snapshot row 0, so every body row — and the
+        // caret with it — sits one lower than the wrap arithmetic computed.
+        val lines = listOf(topBorder(safeWidth, edge)) + boxed
 
         return ComposerSnapshot(
-            line = railed.first(),
+            line = lines.first(),
             cursorColumn = cursorColumn.coerceIn(1, safeWidth),
-            lines = railed,
-            cursorRow = absoluteRow.coerceIn(0, railed.lastIndex)
+            lines = lines,
+            cursorRow = (absoluteRow + 1).coerceIn(0, lines.lastIndex)
         )
     }
 
     /**
-     * Meta row beneath the composer. The reference renders
-     * `Agent · model provider`; ATROPOS renders `mode · provider`, then closes
-     * the composer with the reference's `╹` rail terminator.
+     * The composer's bottom border, with mode and provider written into it.
+     *
+     * A single line, because the box already separates the input from the
+     * transcript and a second row of chrome beneath it would only take a row
+     * away from the transcript to say the same thing twice.
      */
     fun metaRow(provider: String, width: Int): List<String> {
-        val railGlyph = if (asciiOnly()) Glyphs.Ascii.RAIL else Glyphs.RAIL
-        val terminator = if (asciiOnly()) "'" else "╹"
-        val pad = " ".repeat(Glyphs.RAIL_PADDING)
+        val safeWidth = width.coerceAtLeast(1)
+        val edge = edge()
         val modeStyle = modeRetheme.style(mode)
-        val meta = theme.paint(modeStyle.role, modeStyle.label) +
+        val label = modeStyle.label.lowercase() + " · " + provider.lowercase()
+        val painted = theme.paint(modeStyle.role, modeStyle.label.lowercase()) +
             theme.subdued(" · ") + theme.metadata(provider.lowercase())
+
+        // `╰─ ask · groq ──────╯`: corners, one lead dash, the label, then fill.
+        val decoration = 2 + edge.horizontal.length + 2
+        val fill = (safeWidth - decoration - TerminalText.cellWidth(label)).coerceAtLeast(0)
+        val body =
+            if (fill == 0 && safeWidth > 2) {
+                edge.horizontal.repeat(safeWidth - 2)
+            } else {
+                edge.horizontal + " " + painted + " " + edge.horizontal.repeat(fill)
+            }
+
         return listOf(
-            TerminalText.ellipsize(theme.paint(Role.ACCENT_FOCUS, railGlyph) + pad + meta, width),
-            theme.paint(Role.ACCENT_FOCUS, terminator)
+            theme.paint(Role.ACCENT_FOCUS, edge.bottomLeft) +
+                body +
+                theme.paint(Role.ACCENT_FOCUS, edge.bottomRight)
+        )
+    }
+
+    private fun topBorder(width: Int, edge: Edge): String =
+        theme.paint(
+            Role.ACCENT_FOCUS,
+            edge.topLeft + edge.horizontal.repeat((width - 2).coerceAtLeast(0)) + edge.topRight
+        )
+
+    private data class Edge(
+        val vertical: String,
+        val horizontal: String,
+        val topLeft: String,
+        val topRight: String,
+        val bottomLeft: String,
+        val bottomRight: String
+    )
+
+    private fun edge(): Edge = if (asciiOnly()) {
+        Edge(
+            Glyphs.Ascii.RAIL, Glyphs.Ascii.RULE,
+            Glyphs.Ascii.BOX_TOP_LEFT, Glyphs.Ascii.BOX_TOP_RIGHT,
+            Glyphs.Ascii.BOX_BOTTOM_LEFT, Glyphs.Ascii.BOX_BOTTOM_RIGHT
+        )
+    } else {
+        Edge(
+            Glyphs.RAIL, Glyphs.RULE,
+            Glyphs.BOX_TOP_LEFT, Glyphs.BOX_TOP_RIGHT,
+            Glyphs.BOX_BOTTOM_LEFT, Glyphs.BOX_BOTTOM_RIGHT
         )
     }
 

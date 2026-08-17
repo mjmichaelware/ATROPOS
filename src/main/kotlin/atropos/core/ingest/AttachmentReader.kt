@@ -85,7 +85,13 @@ class AttachmentReader(
         val name = resolution.path.fileName?.toString().orEmpty()
         val sha = ArtifactHasher.sha256Bytes(bytes)
 
-        if (resolution.extension !in TEXT_EXTENSIONS) {
+        val decoded = when {
+            resolution.extension in TEXT_EXTENSIONS -> String(bytes, StandardCharsets.UTF_8)
+            resolution.extension == "docx" -> DocxTextExtractor.extract(bytes)
+            else -> null
+        }
+
+        if (decoded == null) {
             return IngestedAttachment(
                 path = resolution.path,
                 name = name,
@@ -97,7 +103,6 @@ class AttachmentReader(
             )
         }
 
-        val decoded = String(bytes, StandardCharsets.UTF_8)
         val truncated = decoded.length > maxPromptChars
         return IngestedAttachment(
             path = resolution.path,
@@ -114,13 +119,13 @@ class AttachmentReader(
         const val DEFAULT_MAX_PROMPT_CHARS = 200_000
 
         /**
-         * Extensions whose bytes are text.
+         * Extensions whose bytes are already text.
          *
-         * `docx` and `pdf` are ingestible and are deliberately absent: both are
-         * containers, and decoding them is a different job with its own
-         * failure modes. Until something owns that, they arrive described
-         * rather than transcribed, which is true, where handing the model a
-         * zip archive's bytes as if they were prose would not be.
+         * `docx` is a container and is handled separately by
+         * [DocxTextExtractor], which returns markdown or null. `pdf` has no
+         * owner yet and so still arrives described rather than transcribed —
+         * true, where handing the model a compressed stream as if it were
+         * prose would not be.
          */
         val TEXT_EXTENSIONS = setOf("txt", "md")
     }

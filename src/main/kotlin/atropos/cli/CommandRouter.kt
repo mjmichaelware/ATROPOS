@@ -65,14 +65,27 @@ class CommandRouter(
     private val commandRegistryRenderer = CommandRegistryRenderer(theme)
 
     /**
-     * The single front door for natural language.
+     * Which directories an `@mention` may read from.
      *
-     * Territory is the working directory, so an `@mention` can only reach a
-     * file the operator is already standing in.
+     * The launch directory always, plus whatever the operator has granted —
+     * see [atropos.core.ingest.IngestTerritory]. Resolved once and shared with
+     * the completer, so the paths `@` offers are exactly the paths `@` accepts.
      */
-    private val nlEntryPipeline = atropos.core.nl.NlEntryPipeline(
-        territoryRoots = listOf(java.nio.file.Path.of(shellRunner.currentDirectory()))
+    private val ingestTerritory = atropos.core.ingest.IngestTerritory(
+        java.nio.file.Path.of(shellRunner.currentDirectory())
     )
+
+    /** The single front door for natural language. */
+    private val nlEntryPipeline = atropos.core.nl.NlEntryPipeline(
+        territoryRoots = ingestTerritory.paths(),
+        mentions = atropos.core.ingest.MentionResolver(
+            territoryRoots = ingestTerritory.paths(),
+            describeTerritory = ingestTerritory::describe
+        )
+    )
+
+    /** The granted ingest roots, for the completer and for `/help`. */
+    val ingestRoots: List<java.nio.file.Path> get() = ingestTerritory.paths()
 
     private val homeStateProvider = atropos.cli.ui.HomeStateProvider()
 

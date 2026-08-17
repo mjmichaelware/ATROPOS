@@ -134,9 +134,10 @@ private fun runInteractive(
     router: CommandRouter
 ) {
     val prompt = PromptState(historyStore = CommandHistoryStore(java.nio.file.Path.of(".atropos/command-history.tsv")))
-    val completer = CommandCompleter(
-        java.nio.file.Path.of(capabilities.workspace)
-    )
+    // The router's granted roots, not the workspace: the completer has to
+    // offer exactly the paths the resolver would accept, or `@` suggests
+    // nothing for a file it would have read.
+    val completer = CommandCompleter(router.ingestRoots)
     val tabs = router.tabs
 
     ui.initializeReactive()

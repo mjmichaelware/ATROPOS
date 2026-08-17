@@ -12,13 +12,27 @@ data class Completion(
 )
 
 class CommandCompleter(
-    workspace: Path = Path.of(".")
+    /**
+     * Every directory an `@mention` may read from, in the order they are
+     * offered.
+     *
+     * A list rather than one workspace because the completer and the resolver
+     * must agree: completing only inside the launch directory while the
+     * resolver accepts a granted Downloads folder means `@` suggests nothing
+     * for the exact path it would have accepted, and the operator concludes
+     * the file is unreachable.
+     */
+    roots: List<Path> = listOf(Path.of("."))
 ) {
+    constructor(workspace: Path) : this(listOf(workspace))
+
     var lastResolutionWasFuzzy: Boolean = false
         private set
 
-    private val root =
-        workspace.toAbsolutePath().normalize()
+    private val roots: List<Path> =
+        roots.map { it.toAbsolutePath().normalize() }.distinct().ifEmpty {
+            listOf(Path.of(".").toAbsolutePath().normalize())
+        }
 
     private val providers: List<String> =
         CommandRegistry.providers
@@ -134,38 +148,52 @@ class CommandCompleter(
             if (slash >= 0) fragment.substring(slash + 1)
             else fragment
 
-        val directory =
-            root.resolve(parent.ifEmpty { "." }).normalize()
-
-        if (
-            !directory.startsWith(root) ||
-            !Files.isDirectory(directory)
-        ) {
-            return Completion()
-        }
-
-        val stream = try {
-            Files.list(directory)
-        } catch (_: Exception) {
-            return Completion()
-        }
-
-        val candidates = try {
-            stream.map { path ->
-                val name = path.fileName.toString()
-                if (Files.isDirectory(path)) "$name/" else name
-            }.filter {
-                it.startsWith(namePrefix)
-            }.sorted().toList()
-        } finally {
-            stream.close()
-        }
+        val candidates = roots.asSequence()
+            .map { root -> listing(root, parent, namePrefix) }
+            .flatten()
+            .distinct()
+            // A shared-storage root can hold thousands of files, and a
+            // suggestion list longer than the screen is not a suggestion.
+            .take(MAXIMUM_PATH_CANDIDATES)
+            .sorted()
+            .toList()
 
         return select(
             namePrefix,
             candidates,
             selectedIndex
         )
+    }
+
+    /** The entries of one root's [parent] directory matching [namePrefix]. */
+    private fun listing(
+        root: Path,
+        parent: String,
+        namePrefix: String
+    ): List<String> {
+        val directory = root.resolve(parent.ifEmpty { "." }).normalize()
+        if (!directory.startsWith(root) || !Files.isDirectory(directory)) {
+            return emptyList()
+        }
+
+        val stream = try {
+            Files.list(directory)
+        } catch (_: Exception) {
+            return emptyList()
+        }
+
+        return try {
+            stream.map { path ->
+                val name = path.fileName.toString()
+                if (Files.isDirectory(path)) "$name/" else name
+            }.filter {
+                it.startsWith(namePrefix)
+            }.toList()
+        } catch (_: Exception) {
+            emptyList()
+        } finally {
+            stream.close()
+        }
     }
 
     private fun completeCommandPrefix(
@@ -267,6 +295,10 @@ class CommandCompleter(
         if (normalized.isBlank()) return null
 
         return enterSelector.resolve(normalized, selectedIndex)
+    }
+
+    private companion object {
+        const val MAXIMUM_PATH_CANDIDATES = 200
     }
 
     private fun commonPrefix(

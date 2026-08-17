@@ -31,6 +31,17 @@ class MentionResolver(
      */
     private val isReadableFile: (Path) -> Boolean = { path ->
         Files.isRegularFile(path) && Files.isReadable(path)
+    },
+    /**
+     * What the boundary is, for the one refusal that is about the boundary.
+     *
+     * "resolves outside every granted territory" told an operator that they
+     * had hit a wall and nothing about where the wall was, so the next thing
+     * they tried was another guess. Naming the roots turns a refusal into an
+     * instruction.
+     */
+    private val describeTerritory: () -> String = {
+        territoryRoots.joinToString("\n") { "  $it" }
     }
 ) {
     fun resolve(mention: String, sizeBytes: Long): MentionResolution {
@@ -67,7 +78,8 @@ class MentionResolver(
             .firstOrNull { (target, root) -> target.startsWith(root) }
             ?: return MentionResolution.Refused(
                 "$raw resolves outside every granted territory",
-                "mention a file inside a granted path"
+                "granted:\n" + describeTerritory() +
+                    "\nadd one with ATROPOS_INGEST_ROOTS=<path> or a line in .atropos/ingest-roots"
             )
 
         // Existence last, and only inside territory. A path that failed the
