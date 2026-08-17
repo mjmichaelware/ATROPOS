@@ -82,7 +82,20 @@ class RedactionFilter(
         }
         apply("credential_path", LOCAL_CREDENTIAL_PATH_PATTERN) { "<redacted:credential_path>" }
 
-        return RedactionReport(value.length, text.length, text != value, findings, text.take(4000))
+        // The whole redacted text, not a 4000-character prefix.
+        //
+        // `redactedLength` above is `text.length` — the untruncated figure — so
+        // a report carrying `text.take(4000)` disagreed with itself, which is
+        // what shows this was a preview bound that escaped into the general
+        // entry point rather than a deliberate ceiling. `redact()` returns this
+        // field, so every string in the system longer than 4000 characters was
+        // silently cut: a 57k-character Source Document reached the factory's
+        // atomizer as its first 4000 characters and yielded one atom out of
+        // forty-two declared in it.
+        //
+        // Callers that want bounded output have [compact], which says it bounds
+        // and marks where it cut.
+        return RedactionReport(value.length, text.length, text != value, findings, text)
     }
 
     fun stableFingerprint(value: String): String {

@@ -59,6 +59,79 @@ class NlEntryPipeline(
         runCatching { Files.size(path) }.getOrDefault(-1L)
     }
 ) {
+    /**
+     * Resolves the mentions in [raw] and substitutes what they name.
+     *
+     * For callers that are not asking a question — a `/factory run` whose
+     * prompt *is* the document, rather than a request about it. Those go
+     * through the command router, which never reached [accept], so
+     * `/factory run implement @spec.md` took the literal path string as its
+     * prompt and named the generated app after a directory.
+     *
+     * The text is substituted raw, without [IngestedAttachment.promptBlock]'s
+     * fences. Fences exist to keep a document from being read as the operator's
+     * request when both are sent to a model; here the document *is* the
+     * request, and the fence markers would end up in extracted requirements.
+     *
+     * Shares [MentionResolver] and [AttachmentReader] with [accept]. A second
+     * resolution path would be a second answer to "may this file be read".
+     */
+    fun expandMentions(raw: String): MentionExpansion {
+        val attachments = mutableListOf<IngestedAttachment>()
+        val refused = mutableListOf<String>()
+        var expanded = raw
+
+        AtMentionScanner.scan(raw).forEach { mention ->
+            when (val ingested = ingest(mention, attachments, refused)) {
+                null -> Unit
+                else -> if (ingested.text != null) {
+                    expanded = expanded.replace("@$mention", ingested.text)
+                }
+            }
+        }
+        return MentionExpansion(expanded, attachments, refused)
+    }
+
+    /**
+     * Resolves one mention, recording it as attached or refused.
+     *
+     * @return the attachment when it was read, null when it was refused.
+     */
+    private fun ingest(
+        mention: String,
+        attachments: MutableList<IngestedAttachment>,
+        refused: MutableList<String>
+    ): IngestedAttachment? {
+        val candidate = territoryRoots.firstNotNullOfOrNull { root ->
+            runCatching { root.resolve(mention.removePrefix("@")).normalize() }.getOrNull()
+        }
+        // Size is read before the resolver decides, because the ceiling is one
+        // of the things it decides on.
+        val size = candidate?.let(sizeOf) ?: -1L
+
+        return when (val resolution = mentions.resolve(mention, size)) {
+            is MentionResolution.Resolved -> {
+                val ingested = attachmentReader.read(resolution)
+                if (ingested == null) {
+                    // Resolved but unreadable: permitted by every boundary and
+                    // still not delivered. Reported as a refusal because that
+                    // is what the operator experiences.
+                    refused += "@$mention — could not be read (check permissions)"
+                    null
+                } else {
+                    // add(), not +=: Path is itself Iterable<Path>, so `+=` is
+                    // ambiguous between appending the path and its segments.
+                    attachments.add(ingested)
+                    ingested
+                }
+            }
+            is MentionResolution.Refused -> {
+                refused += "@$mention — ${resolution.reason} (${resolution.remedy})"
+                null
+            }
+        }
+    }
+
     fun accept(raw: String, source: NlSource): NlEntry {
         val canonical = canonicalizer.canonicalize(raw)
 
@@ -73,32 +146,7 @@ class NlEntryPipeline(
         // The scanner's grammar is path-shaped on purpose, which is what an
         // attachment is.
         AtMentionScanner.scan(canonical.canonical).forEach { mention ->
-            val candidate = territoryRoots.firstNotNullOfOrNull { root ->
-                runCatching { root.resolve(mention.removePrefix("@")).normalize() }.getOrNull()
-            }
-            // Size is read before the resolver decides, because the ceiling is
-            // one of the things it decides on. A missing file reports -1, which
-            // is under any ceiling and is caught by the territory check instead.
-            val size = candidate?.let(sizeOf) ?: -1L
-
-            when (val resolution = mentions.resolve(mention, size)) {
-                is MentionResolution.Resolved -> {
-                    val ingested = attachmentReader.read(resolution)
-                    if (ingested == null) {
-                        // Resolved but unreadable: permitted by every boundary
-                        // and still not delivered. Reported as a refusal
-                        // because that is what the operator experiences.
-                        refusedAttachments += "@$mention — could not be read (check permissions)"
-                    } else {
-                        // add(), not +=: Path is itself Iterable<Path>, so `+=`
-                        // is ambiguous between appending the path and appending
-                        // its segments.
-                        attachments.add(ingested)
-                    }
-                }
-                is MentionResolution.Refused ->
-                    refusedAttachments += "@$mention — ${resolution.reason} (${resolution.remedy})"
-            }
+            ingest(mention, attachments, refusedAttachments)
         }
 
         // Bare `@name` mentions, after the path-shaped ones have been taken.
@@ -131,6 +179,38 @@ class NlEntryPipeline(
             canonicalization = canonical
         )
     }
+}
+
+/**
+ * The text of a command with its mentions substituted, and what they were.
+ *
+ * @param refused never silently empty when a mention was refused: a command
+ *   that ran against a document the engine could not read must not look like
+ *   one that ran against the document.
+ */
+data class MentionExpansion(
+    val text: String,
+    val attachments: List<IngestedAttachment>,
+    val refused: List<String>
+) {
+    val changed: Boolean get() = attachments.isNotEmpty() || refused.isNotEmpty()
+
+    /** What to tell the operator, or null when no mention was involved. */
+    fun notice(): String? = buildList {
+        if (attachments.isNotEmpty()) {
+            add(
+                "attached: " + attachments.joinToString(", ") { attachment ->
+                    attachment.name +
+                        when {
+                            attachment.truncated -> " (truncated)"
+                            !attachment.isText -> " (binary; contents not included)"
+                            else -> ""
+                        }
+                }
+            )
+        }
+        refused.forEach { add("not attached: $it") }
+    }.takeIf { it.isNotEmpty() }?.joinToString("\n")
 }
 
 /**

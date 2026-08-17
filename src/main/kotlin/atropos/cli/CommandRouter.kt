@@ -175,6 +175,25 @@ class CommandRouter(
                 }
             }
         }
+        // Mentions are expanded before lexing, for commands too.
+        //
+        // `accept()` runs only on the prose path, so `/factory run implement
+        // @spec.md` reached the factory as the literal string `@spec.md`: the
+        // generated app was named after a directory and the document was never
+        // read. A prompt that *is* a document is the main way this command is
+        // meant to be used.
+        //
+        // Only for slash input, and only when a mention is present, so the
+        // ordinary typing path is untouched.
+        val trimmedForMention = input.trimStart()
+        if (trimmedForMention.startsWith("/") && trimmedForMention.contains('@')) {
+            val expansion = nlEntryPipeline.expandMentions(input)
+            if (expansion.changed) {
+                expansion.notice()?.let(uiEngine::renderNotice)
+                if (expansion.text != input) return handleSingleInput(expansion.text)
+            }
+        }
+
         // Bare native commands are normalized to the canonical slash command
         // before lexing, so one route owns policy, confirmation, and evidence.
         val intercepted = ShellCommandIntercept.intercept(input.trim())
