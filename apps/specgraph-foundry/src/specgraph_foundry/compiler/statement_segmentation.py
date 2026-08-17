@@ -138,6 +138,39 @@ def split_sentences_custom(text: str) -> List[tuple[int, int, str]]:
 
     return sentences
 
+# An atom declaration starts a new statement.
+#
+# split_sentences_custom breaks on '.', '!' and '?' only, which is right for
+# prose and wrong for a declared obligation list: `B-INST-001a - Detect linux -
+# estLOC 5` carries no terminator, so a run of forty microatoms arrived as one
+# statement and yielded one requirement. The id at the start of a declaration is
+# this document grammar's terminator, and it is treated as one here rather than
+# in the sentence splitter so ordinary prose keeps the punctuation rule.
+ATOM_BOUNDARY_RE = re.compile(
+    r"(?<!\S)(?P<id>[A-Z]+(?:-[A-Z]+)*-\d+(?:\.\d+)*[a-z]?)\s*[\u00b7\u2022]"
+)
+
+
+def split_on_atom_declarations(spans, text):
+    """Re-split spans that carry more than one atom declaration."""
+    out = []
+    for start, end, span_text in spans:
+        cuts = [m.start() for m in ATOM_BOUNDARY_RE.finditer(span_text)]
+        # A single declaration, or none, is left exactly as the sentence
+        # splitter produced it.
+        if len(cuts) < 2:
+            out.append((start, end, span_text))
+            continue
+        if cuts[0] != 0:
+            cuts.insert(0, 0)
+        for index, cut in enumerate(cuts):
+            stop = cuts[index + 1] if index + 1 < len(cuts) else len(span_text)
+            piece = span_text[cut:stop]
+            if piece.strip():
+                out.append((start + cut, start + stop, piece))
+    return out
+
+
 def segment_document_node(
     project_id: str,
     source_sha256: str,
@@ -169,7 +202,7 @@ def segment_document_node(
         # Only segment PARAGRAPH, LIST_ITEM, and TABLE_CELL
         if node.role in {"PARAGRAPH", "LIST_ITEM", "TABLE_CELL", "UNKNOWN", "HEADING"}:
             node_text = node.content
-            sents = split_sentences_custom(node_text)
+            sents = split_on_atom_declarations(split_sentences_custom(node_text), node_text)
 
             for idx, (s_start, s_end, sent_text) in enumerate(sents):
                 # Calculate byte offsets for each sentence relative to original file bytes

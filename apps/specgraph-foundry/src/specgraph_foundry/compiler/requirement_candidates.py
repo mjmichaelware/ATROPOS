@@ -1,5 +1,6 @@
 from typing import List, Dict, Any, Optional
 from .statement_segmentation import StatementIR
+from .discourse_roles import declared_atom_id
 
 EXECUTABLE_ROLES = {
     "NORMATIVE_REQUIREMENT",
@@ -149,6 +150,23 @@ def evaluate_candidacy(
             if re.search(r"\b" + re.escape(keyword) + r"\b", text_lower):
                 actor = keyword
                 break
+
+    # A declared atom names its own actor.
+    #
+    # `S-001 - Six-answers status contract` carries no system noun, so the
+    # keyword scan above finds nothing and the statement is rejected for
+    # lacking actor context. But the declaration *is* the context: the document
+    # already states that this is a unit of work in a named track, which is
+    # strictly more than "the system shall" would have told us. Rejecting it
+    # dropped seventy-five atoms from a document whose whole purpose was to
+    # declare them.
+    #
+    # The track prefix becomes the actor, so downstream sees `S`, `B-PROV`,
+    # `F-CLI` rather than an undifferentiated "system".
+    if not actor:
+        declared = declared_atom_id(text)
+        if declared:
+            actor = declared.rsplit("-", 1)[0].lower()
 
     # Standalone requirements without system context get rejected
     if not is_inherited and not actor:

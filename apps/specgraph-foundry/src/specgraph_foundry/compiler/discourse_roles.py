@@ -34,6 +34,40 @@ PROSE_RE = re.compile(
 
 HEADING_RE = re.compile(r"^#{1,6}\s+")
 
+# ---------------------------------------------------------------------------
+# Pre-structured obligation documents
+#
+# A source document is not always prose to be mined. An obligation DAG arrives
+# with its atoms already declared -- an id, a title, its dependencies, and a
+# typed obligation triple -- and mining it for modal verbs finds nothing,
+# because "S-001 - Six-answers status contract" contains no "shall". A 227-atom
+# document classified 188 of its statements UNRESOLVED and yielded one
+# requirement.
+#
+# These rules read that grammar directly. They are hard structural rules like
+# the heading and separator rules above, and they run before the modal lattice
+# for the same reason those do: the form of the line already says what it is,
+# and guessing from its words can only be worse.
+#
+# The triple maps by what each line obliges, not by keyword:
+#   RESEARCH -- what must be found out first. An open question, not buildable.
+#   IMPL     -- what must be built. Normative.
+#   WIRE     -- what must call it. The document's own acceptance condition:
+#               "Acceptance = callers >= 1 outside tests".
+ATOM_DECLARATION_RE = re.compile(
+    r"^\s*(?P<id>[A-Z]+(?:-[A-Z]+)*-\d+(?:\.\d+)*[a-z]?)\s*[\u00b7\u2022:\-]\s*(?P<title>\S.*)$"
+)
+OBLIGATION_RESEARCH_RE = re.compile(r"^\s*RESEARCH\s*:", re.IGNORECASE)
+OBLIGATION_IMPL_RE = re.compile(r"^\s*IMPL\s*:", re.IGNORECASE)
+OBLIGATION_WIRE_RE = re.compile(r"^\s*WIRE\s*:", re.IGNORECASE)
+DEPENDS_ON_RE = re.compile(r"^\s*dependsOn\s*:", re.IGNORECASE)
+
+
+def declared_atom_id(text):
+    """The atom id this line declares, or None when it declares none."""
+    match = ATOM_DECLARATION_RE.match(text.strip())
+    return match.group("id") if match else None
+
 def classify_discourse_role(
     stmt: StatementIR,
     parent_role: str,
@@ -59,6 +93,26 @@ def classify_discourse_role(
     for pattern in structural_forbidden:
         if pattern in text_lower:
             return "OUT_OF_SCOPE"
+
+    # 0. Declared obligations, before any prose rule.
+    #
+    # Ordered inside the block by specificity: the triple lines are checked
+    # before the declaration pattern, because "WIRE: X - Y" would otherwise
+    # match the id-and-title shape.
+    if OBLIGATION_IMPL_RE.match(text):
+        return "NORMATIVE_REQUIREMENT"
+    if OBLIGATION_WIRE_RE.match(text):
+        return "ACCEPTANCE_CRITERION"
+    if OBLIGATION_RESEARCH_RE.match(text):
+        return "OPEN_QUESTION"
+    if DEPENDS_ON_RE.match(text):
+        # The edge, not the work. Carried as metadata so the dependency is
+        # available downstream without becoming an atom of its own.
+        return "DOCUMENT_METADATA"
+    if declared_atom_id(text):
+        # The atom's own line: an id and what it is. Normative because the
+        # document declares it as work to be done, not as commentary about it.
+        return "NORMATIVE_REQUIREMENT"
 
     # 0. Heading/Markdown Title detection
     if HEADING_RE.match(text) or text.startswith("#"):
