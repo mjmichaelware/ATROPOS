@@ -200,7 +200,7 @@ class CommandRouter(
         if (intercepted != input.trim() && intercepted.startsWith("/")) {
             return handleSingleInput(intercepted)
         }
-        if (!input.trimStart().startsWith("/") && input.count { it == '|' } >= 1) {
+        if (looksLikeShellPipeline(input)) {
             return handlePipedInput(input)
         }
         return when (val result = lex(input)) {
@@ -213,6 +213,42 @@ class CommandRouter(
                 // every downstream handler on the canonical verb vocabulary.
                 route(input, atropos.core.intent.CommandConsolidator.consolidate(result.tokens))
             }
+        }
+    }
+
+    /**
+     * Whether this input is a shell pipeline rather than prose containing a bar.
+     *
+     * A single `|` anywhere used to be enough, which made every pasted document
+     * a pipeline: markdown tables are built from bars, and so is any line like
+     * `auth|list|get|mutate`. Pasting a specification produced "pipeline command
+     * contains shell syntax" and nothing else — the document was rejected for
+     * containing punctuation.
+     *
+     * A pipeline is a single line, because a shell pipeline is; a document is
+     * usually many. Each stage must also read as a command rather than a
+     * sentence — short, and with no sentence punctuation in it. Prose that
+     * happens to hold a bar fails every one of those and is left alone, which is
+     * the safe direction: a missed pipeline is retried with an explicit `!`,
+     * where a document eaten as one is simply lost.
+     */
+    private fun looksLikeShellPipeline(input: String): Boolean {
+        val trimmed = input.trim()
+        if (trimmed.startsWith("/") || !trimmed.contains('|')) return false
+        if (trimmed.contains('\n')) return false
+        val stages = trimmed.split('|').map(String::trim)
+        if (stages.size < 2 || stages.any(String::isBlank)) return false
+        // Every stage must open with a bare command name.
+        //
+        // Punctuation alone was not enough to tell the two apart:
+        // `IDs: B-MCP-<SYS>-auth|list|get|mutate` carries none of it and still
+        // is not a pipeline. What a command has and prose does not is a
+        // lowercase program name in first position — `git`, `grep`, `./verify`.
+        // A capital letter, a colon or an angle bracket there means the line is
+        // describing something rather than running it.
+        return stages.all { stage ->
+            stage.length <= MAX_PIPELINE_STAGE_CHARS &&
+                PIPELINE_STAGE_HEAD.matches(stage.substringBefore(' '))
         }
     }
 
@@ -460,6 +496,14 @@ class CommandRouter(
                 RouterOutcome.CONTINUE
             }
         }
+    }
+
+    private companion object {
+        /** Longer than this, a bar-separated run is prose, not a command. */
+        const val MAX_PIPELINE_STAGE_CHARS = 60
+
+        /** A program name: lowercase, and nothing a sentence would put there. */
+        val PIPELINE_STAGE_HEAD = Regex("^[a-z][a-z0-9._/-]*$")
     }
 
     private fun switchProvider(tokens: List<String>) {
