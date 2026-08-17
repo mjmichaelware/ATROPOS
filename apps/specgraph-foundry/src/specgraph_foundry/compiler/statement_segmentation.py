@@ -146,8 +146,13 @@ def split_sentences_custom(text: str) -> List[tuple[int, int, str]]:
 # statement and yielded one requirement. The id at the start of a declaration is
 # this document grammar's terminator, and it is treated as one here rather than
 # in the sentence splitter so ordinary prose keeps the punctuation rule.
+# Kept in step with ATOM_DECLARATION_RE in discourse_roles: the final segment
+# may be digits or a bare letter. These two patterns describe the same grammar
+# from two sides -- where a declaration *starts* and what a declaration *is* --
+# and widening only one of them is how eleven `B-MCP-CORE-*` atoms stayed
+# invisible after the declaration side already understood them.
 ATOM_BOUNDARY_RE = re.compile(
-    r"(?<!\S)(?P<id>[A-Z]+(?:-[A-Z]+)*-\d+(?:\.\d+)*[a-z]?)\s*[\u00b7\u2022]"
+    r"(?<!\S)(?P<id>[A-Z]{1,6}(?:-[A-Z]{1,6})*-(?:\d+(?:\.\d+)*[a-z]?|[a-z]))\s*[\u00b7\u2022]"
 )
 
 
@@ -156,9 +161,21 @@ def split_on_atom_declarations(spans, text):
     out = []
     for start, end, span_text in spans:
         cuts = [m.start() for m in ATOM_BOUNDARY_RE.finditer(span_text)]
-        # A single declaration, or none, is left exactly as the sentence
+        # Nothing declared here: leave the span exactly as the sentence
         # splitter produced it.
-        if len(cuts) < 2:
+        if not cuts:
+            out.append((start, end, span_text))
+            continue
+        # One declaration that does not start the span still needs cutting.
+        #
+        # A section header and the first atom under it often share a line --
+        # `VISUAL BLUEPRINT ATOMS (what you see) F-VIS-001 - CLI open frame`.
+        # Requiring two declarations left that whole line as one statement, and
+        # the declaration test is anchored at the start, so the atom was
+        # invisible: the header prose classified the line and the atom went
+        # down with it. Twenty-one atoms were lost this way on clean input,
+        # which is why this is not a wrap-damage problem.
+        if len(cuts) == 1 and cuts[0] == 0:
             out.append((start, end, span_text))
             continue
         if cuts[0] != 0:
