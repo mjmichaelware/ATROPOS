@@ -109,14 +109,21 @@ class CommandCompleter(
         val trimmed = prefix.trim()
         if (trimmed.isBlank()) return null
 
-        // Enter must never reinterpret ordinary natural language as a slash
-        // command. Multi-word aliases are limited to the explicit self-host
-        // vocabulary; app prompts such as "build a notes CLI" remain NL.
+        // The slash is the operator declaring intent, and Enter honours that
+        // declaration rather than second-guessing it.
+        //
+        // This used to fire on any single word, so typing `status` — a
+        // perfectly ordinary thing to say to an assistant — silently became
+        // `/status` and ran a command. The operator watched their sentence get
+        // rewritten and executed, and there was no way to ask the engine about
+        // a word that happened to be in the registry. Tab still completes an
+        // un-slashed prefix, so the shortcut is a keystroke away; it is only
+        // no longer automatic.
+        //
+        // `self-host` stays because it is an explicit multi-word alias the
+        // operator chose, not a word that collided with a command name.
         val commandLikeNaturalLanguage = trimmed.startsWith("self-host", ignoreCase = true)
-        if (!trimmed.startsWith("/") &&
-            !commandLikeNaturalLanguage &&
-            trimmed.contains(Regex("\\s"))
-        ) return null
+        if (!trimmed.startsWith("/") && !commandLikeNaturalLanguage) return null
 
         val parts = trimmed.split(" ", limit = 2)
         val head = parts.first()

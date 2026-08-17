@@ -6,13 +6,26 @@ import kotlin.test.assertTrue
 import java.nio.file.Path
 
 class CommandCompleterTest {
+    /**
+     * Deliberate contract change: an un-slashed word is prose.
+     *
+     * This test previously asserted that `help` and `usage` resolved to
+     * `/help` on Enter. They no longer do, and that is the fix rather than a
+     * regression — a bare word matching the registry was being silently
+     * rewritten and executed, so there was no way to ask the engine about any
+     * word that collided with a command name. Tab still completes them.
+     *
+     * `self-host` keeps resolving: it is an explicit multi-word alias the
+     * operator chose, not a collision.
+     */
     @Test
-    fun resolveSubmission_maps_help_and_self_host_aliases() {
+    fun resolveSubmission_requires_a_slash_except_for_the_self_host_alias() {
         val completer = CommandCompleter(Path.of("."))
 
-        assertEquals("/help", completer.resolveSubmission("?", 1))
-        assertEquals("/help", completer.resolveSubmission("usage", 5))
-        assertEquals("/help", completer.resolveSubmission("help", 4))
+        assertEquals(null, completer.resolveSubmission("?", 1))
+        assertEquals(null, completer.resolveSubmission("usage", 5))
+        assertEquals(null, completer.resolveSubmission("help", 4))
+
         assertEquals("/help", completer.resolveSubmission("/usage", 7))
         assertEquals("/self-host", completer.resolveSubmission("self-host", 9))
         assertEquals("/self-host build yourself", completer.resolveSubmission("self-host build yourself", 24))
@@ -46,13 +59,19 @@ class CommandCompleterTest {
         assertEquals("/status quota", completer.resolveSubmission("/quo", 4))
     }
 
+    /**
+     * The selection is still honoured — but only once a slash has declared
+     * that a command was meant. `status` alone is now a word.
+     */
     @Test
-    fun enter_preserves_selected_command_for_bare_prefixes() {
+    fun enter_preserves_selected_command_for_slashed_prefixes() {
         val completer = CommandCompleter(Path.of("."))
 
+        assertEquals(null, completer.resolveSubmission("status", 6, 3))
+
         // selectedIndex 3 picks the status-adapters entry from search results
-        val statusResult = completer.resolveSubmission("status", 6, 3)
-        assertTrue(statusResult != null && statusResult.contains("status"), "status prefix should resolve: $statusResult")
+        val statusResult = completer.resolveSubmission("/status", 7, 3)
+        assertTrue(statusResult != null && statusResult.contains("status"), "slashed prefix should resolve: $statusResult")
         // selectedIndex 2 picks a self-host variant from search results
         val selfHostResult = completer.resolveSubmission("self-host", 9, 2)
         assertTrue(selfHostResult != null && selfHostResult.contains("self-host"), "self-host prefix should resolve: $selfHostResult")

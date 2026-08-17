@@ -88,6 +88,7 @@ class AttachmentReader(
         val decoded = when {
             resolution.extension in TEXT_EXTENSIONS -> String(bytes, StandardCharsets.UTF_8)
             resolution.extension == "docx" -> DocxTextExtractor.extract(bytes)
+            resolution.extension == "pdf" -> PdfTextExtractor.extract(bytes)
             else -> null
         }
 

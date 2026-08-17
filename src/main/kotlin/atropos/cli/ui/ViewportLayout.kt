@@ -52,9 +52,13 @@ class ViewportLayout(
         val chromeHeight = chrome.height
         chrome.lines.forEachIndexed { idx, line -> frame.setLine(idx, line) }
 
-        // HOE-B02: Session tab bar below chrome
-        val tabBarHeight = if (tabs.isEmpty()) 0 else 1
+        // HOE-B02: Session tab bar below chrome.
+        //
+        // Height is measured from what the bar actually produced rather than
+        // assumed to be one row: the renderer can add a territory line, and a
+        // hardcoded 1 put the transcript's first row on top of it.
         val tabLines = tabBar.render(tabs, safeWidth)
+        val tabBarHeight = tabLines.size
         tabLines.forEachIndexed { idx, line -> frame.setLine(chromeHeight + idx, line) }
 
         val contentStart = chromeHeight + tabBarHeight

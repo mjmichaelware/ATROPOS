@@ -28,16 +28,25 @@ class SessionTabBar(private val theme: TerminalTheme) {
                 ViewportLayout.TrustIndicator.UNKNOWN -> "?"
             }
 
-            val marker = if (tab.isActive) "┃" else " "
-            val label = tab.name.take(if (isNarrow) 10 else 20)
+            val label = TerminalText.clip(tab.name, if (isNarrow) 10 else 20)
+            val body = "$trustIcon $label"
 
-            "$marker $trustIcon $label"
+            // The active tab is the one thing this row exists to tell you, so
+            // it is inverted rather than marked with a character the eye has
+            // to hunt for among the separators.
+            if (tab.isActive) theme.selection(" $body ") else theme.subdued(" $body ")
         }
 
-        val tabLine = rendered.joinToString(" │ ").take(safeWidth).padEnd(safeWidth)
+        // Padded to the full width: a bar that stopped at its content left the
+        // frame's own background showing through, which read as a gap in the
+        // chrome rather than as the end of the tabs.
+        val tabLine = TerminalText.padEnd(
+            TerminalText.ellipsize(rendered.joinToString(theme.subdued("│")), safeWidth),
+            safeWidth
+        )
         val territoryLine = territories.firstOrNull()?.let {
             territoryMaterial.render(it, safeWidth)
         }
-        return listOfNotNull("┌$tabLine┐".take(safeWidth), territoryLine)
+        return listOfNotNull(tabLine, territoryLine)
     }
 }

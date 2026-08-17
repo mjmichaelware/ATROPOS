@@ -15,6 +15,7 @@ import atropos.cli.input.TerminalModeManager
 import atropos.cli.session.QuotaSessionTracker
 import atropos.cli.session.ScreenId
 import atropos.cli.ui.AnsiTerminalEngine
+import atropos.cli.ui.ViewportLayout
 import atropos.core.AtroposConfig
 import atropos.core.agent.SelfHostStartupContinuationService
 import atropos.core.agent.AgentDaemonService
@@ -219,6 +220,21 @@ private fun runInteractive(
                 )
 
                 preserveTabState()
+
+                // The tab bar's contents, every repaint. ViewportLayout has
+                // always accepted a tab list and always been handed the empty
+                // default, so the bar rendered zero rows: tabs existed, `/tabs`
+                // switched between them, and none of it was visible.
+                ui.setTabs(
+                    tabs.snapshot().tabs.map { tab ->
+                        ViewportLayout.TabState(
+                            id = tab.id.toString(),
+                            name = tab.title,
+                            isActive = tab.id == tabs.active.id,
+                            trustLevel = ViewportLayout.TrustIndicator.UNKNOWN
+                        )
+                    }
+                )
 
                 ui.redrawPrompt(
                     buffer = prompt.text,

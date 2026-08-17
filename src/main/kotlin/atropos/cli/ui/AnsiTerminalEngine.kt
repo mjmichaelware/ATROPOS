@@ -64,8 +64,16 @@ class AnsiTerminalEngine(
         if (!state.reactive) return
         canvas.initialize(useAlternateScreen = useAlternateScreen)
         resizePoller.scheduleAtFixedRate({
-            synchronized(this) {
-                if (state.reactive && canvas.refreshGeometry()) requestFrameLocked()
+            // Guarded for the same reason the spinner is: one throw and
+            // scheduleAtFixedRate cancels the schedule for the rest of the
+            // session, so the window would stop tracking resizes with no sign
+            // that anything had gone wrong.
+            try {
+                synchronized(this) {
+                    if (state.reactive && canvas.refreshGeometry()) requestFrameLocked()
+                }
+            } catch (_: Throwable) {
+                // Next tick will try again.
             }
         }, 250, 250, TimeUnit.MILLISECONDS)
         requestFrameLocked()
@@ -149,6 +157,21 @@ class AnsiTerminalEngine(
 
     fun redrawPrompt(buffer: String, cursor: Int, provider: String, tracker: QuotaSessionTracker) =
         redrawPrompt(buffer, cursor, "", state.mode, provider, tracker, 0, state.activeScreen, state.activeTab, state.openTabCount)
+
+    /**
+     * The open tabs, as the tab bar should show them.
+     *
+     * Called whenever a tab is opened, closed, or switched. Trust is reported
+     * as UNKNOWN rather than guessed: a tab bar that showed every tab as
+     * attested because nothing had checked would be a §0.6 violation drawn in
+     * the chrome, and the indicator exists precisely to be believed.
+     */
+    @Synchronized
+    fun setTabs(tabs: List<ViewportLayout.TabState>) {
+        state.tabs = tabs
+        state.openTabCount = tabs.size.coerceAtLeast(1)
+        requestFrameLocked()
+    }
 
     @Synchronized
     fun updateAgentPatchState(patchId: String?) {
@@ -409,7 +432,7 @@ class AnsiTerminalEngine(
             width = canvas.width, height = canvas.height, transcript = transcriptBuffer, composer = composer,
             provider = state.provider, workspace = state.workspace, tracker = state.tracker, activity = state.activity,
             verificationState = state.verificationState, activeScreen = state.activeScreen, activeTab = state.activeTab,
-            openTabCount = state.openTabCount, activePatchId = state.activePatchId
+            openTabCount = state.openTabCount, activePatchId = state.activePatchId, tabs = state.tabs
         )
         boundedRendering.controlBackgroundUpdate(state.reactive) {
             canvas.render(frame)

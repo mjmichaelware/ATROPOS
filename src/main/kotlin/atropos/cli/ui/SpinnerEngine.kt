@@ -24,10 +24,23 @@ class SpinnerEngine(
 
         var frame = 0
         task = executor.scheduleAtFixedRate({
+            // Guarded, because scheduleAtFixedRate cancels the schedule
+            // permanently and silently the first time its task throws. One
+            // exception anywhere under renderer() — a layout arithmetic slip,
+            // a resize mid-frame — and the spinner drew exactly one frame and
+            // then sat there forever. The operator sees a thinking indicator
+            // that never moves and no error explaining why, which is the worst
+            // of both: it looks alive and it is not.
             val current = message.get() ?: return@scheduleAtFixedRate
-            renderer(thinkingBuffer.render(frame, current))
+            try {
+                renderer(thinkingBuffer.render(frame, current))
+            } catch (_: Throwable) {
+                // Dropped on purpose. A frame that cannot be drawn is not
+                // worth ending the animation over, and there is nowhere to
+                // report it from here that would not itself be a render.
+            }
             frame++
-        }, 0, 80, TimeUnit.MILLISECONDS)
+        }, 0, FRAME_INTERVAL_MILLIS, TimeUnit.MILLISECONDS)
     }
 
     fun update(value: String) {
@@ -37,16 +50,27 @@ class SpinnerEngine(
 
     fun isRunning(): Boolean = message.get() != null
 
-    @Synchronized
     fun stop() {
-        message.set(null)
-        task?.cancel(false)
-        task = null
-        renderer(null)
+        // The clear is deliberately outside the lock. `renderer` reaches back
+        // into the terminal engine and takes its monitor, so calling it while
+        // holding this one gives two threads two locks in opposite orders —
+        // engine-then-spinner from `startSpinner`, spinner-then-engine from
+        // here. That inversion is a hang, and a hung UI is indistinguishable
+        // from a slow provider.
+        synchronized(this) {
+            message.set(null)
+            task?.cancel(false)
+            task = null
+        }
+        runCatching { renderer(null) }
     }
 
     override fun close() {
         stop()
         executor.shutdownNow()
+    }
+
+    private companion object {
+        const val FRAME_INTERVAL_MILLIS = 80L
     }
 }
