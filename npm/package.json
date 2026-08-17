@@ -1,0 +1,39 @@
+{
+  "name": "@mjmichaelware/atropos",
+  "version": "2.0.0-rc.1",
+  "description": "ATROPOS — a deterministic engine that turns a research document into a verified execution DAG, and builds against it.",
+  "bin": {
+    "atropos": "bin/atropos.js"
+  },
+  "files": [
+    "bin/",
+    "scripts/",
+    "README.md"
+  ],
+  "scripts": {
+    "postinstall": "node scripts/postinstall.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "os": [
+    "linux",
+    "darwin",
+    "win32",
+    "android"
+  ],
+  "keywords": [
+    "atropos",
+    "specgraph",
+    "requirements",
+    "dag",
+    "agent",
+    "deterministic"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mjmichaelware/ATROPOS.git"
+  },
+  "license": "AGPL-3.0-only",
+  "author": "mjmichaelware"
+}

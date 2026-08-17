@@ -18,6 +18,66 @@ It is built for developers who want to own their tools, their process, and their
 
 ---
 
+## Install
+
+ATROPOS is a JVM engine. It needs Java 17 or newer and nothing else.
+
+**One line:**
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/mjmichaelware/ATROPOS/main/install.sh | sh
+```
+
+**Or with npm:**
+
+```sh
+npm install -g @mjmichaelware/atropos
+```
+
+Both fetch a prebuilt jar from the latest release and verify it against the
+SHA-256 the build published. Then:
+
+```sh
+cd your-project
+atropos
+```
+
+ATROPOS reads and writes only inside the directory you launch it from, so start
+it from the project you want it to work on.
+
+### Building it yourself
+
+```sh
+git clone https://github.com/mjmichaelware/ATROPOS.git
+cd ATROPOS
+./gradlew jar          # build/libs/ATROPOS.jar
+java -jar build/libs/ATROPOS.jar
+```
+
+Compiling needs roughly 1.5 GB of heap. That is more than a phone usually has
+free, which is why the installers exist: the device that most needs to run
+ATROPOS is often the one least able to build it. If `./gradlew jar` dies with
+`OutOfMemoryError`, check `~/.gradle/gradle.properties` — it overrides the
+project's settings, and a low `org.gradle.jvmargs` there wins.
+
+### Pinning a version
+
+`latest` is rebuilt on every push to main. For a fixed build:
+
+```sh
+ATROPOS_VERSION=v2.0.0 curl -fsSL https://raw.githubusercontent.com/mjmichaelware/ATROPOS/main/install.sh | sh
+```
+
+| Variable | Default | What it does |
+| --- | --- | --- |
+| `ATROPOS_VERSION` | `latest` | Release tag to install |
+| `ATROPOS_PREFIX` | `~/.atropos` | Where the jar goes |
+| `ATROPOS_BIN_DIR` | `~/.local/bin` | Where the `atropos` launcher goes |
+| `ATROPOS_JAVA_OPTS` | *(none)* | JVM flags for each run |
+| `ATROPOS_JAR` | *(none)* | Use a jar you already have |
+
+---
+
 ## The Vision
 
 Most AI coding tools optimize for speed and convenience.  

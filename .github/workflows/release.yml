@@ -1,0 +1,101 @@
+# Publishes the jar so a device that cannot build it can still run it.
+#
+# The engine is a 967-file Kotlin tree. Compiling it needs more heap than an
+# aarch64 phone has spare -- the target device this is built for reports 876 MiB
+# available against a 512 MiB default heap, and the compile dies in frontend
+# analysis. A runner has ~16 GB and no such problem, so the jar is built here
+# once and downloaded there.
+#
+# Two kinds of release, because they answer different questions:
+#
+#   latest  -- a moving tag rebuilt on every push to main. "What is on main
+#              right now." This is what install.sh pulls, so a device is never
+#              more than one push behind.
+#   v*      -- a fixed tag, built once and never moved. "What was shipped."
+#              This is what a README pins to and what a bug report cites.
+#
+# Factory CI already builds the jar on every push; it does not publish one.
+# This does not duplicate that check -- it produces the artifact.
+name: Release JAR
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+# The moving `latest` tag is rewritten on every push to main, so two runs
+# racing would leave the release pointing at whichever finished last rather
+# than whichever is newest. One at a time, newest wins.
+concurrency:
+  group: release-jar
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Verify clean runner contract
+        run: bash scripts/github-actions-clean-runner.sh
+
+      - name: Build the jar
+        run: ./gradlew --no-daemon clean jar --max-workers=1
+
+      - name: Record the hash
+        id: hash
+        run: |
+          set -euo pipefail
+          sha256sum build/libs/ATROPOS.jar | awk '{print $1}' > build/libs/ATROPOS.jar.sha256
+          echo "sha256=$(cat build/libs/ATROPOS.jar.sha256)" >> "$GITHUB_OUTPUT"
+          echo "commit=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+      # A jar that cannot start is not a release. This is the same check the
+      # engine answers for its own health, so a broken build is caught here
+      # rather than on the operator's phone.
+      - name: Prove the jar runs
+        run: |
+          set -euo pipefail
+          java -jar build/libs/ATROPOS.jar --health | tee /tmp/health.txt
+          grep -q ATROPOS_HEALTHY /tmp/health.txt
+
+      - name: Publish the rolling build
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: "Rolling build (${{ steps.hash.outputs.commit }})"
+          # Marked prerelease so `releases/latest` keeps pointing at the newest
+          # *tagged* version for anyone who wants stability, while this URL
+          # stays available for anyone who wants current.
+          prerelease: true
+          body: |
+            Built from `${{ steps.hash.outputs.commit }}` on main.
+
+            sha256: `${{ steps.hash.outputs.sha256 }}`
+
+            Rebuilt on every push. For a fixed version, use a `v*` release.
+          files: |
+            build/libs/ATROPOS.jar
+            build/libs/ATROPOS.jar.sha256
+
+      - name: Publish the tagged release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          body: |
+            Built from `${{ steps.hash.outputs.commit }}`.
+
+            sha256: `${{ steps.hash.outputs.sha256 }}`
+          files: |
+            build/libs/ATROPOS.jar
+            build/libs/ATROPOS.jar.sha256

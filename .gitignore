@@ -91,3 +91,4 @@ atropos.jar.backup-*
 /core/.gradle/
 /server/.gradle/
 /desktop/.gradle/
+npm/vendor/
