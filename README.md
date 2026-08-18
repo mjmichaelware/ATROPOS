@@ -1,16 +1,16 @@
 <p align="center">
-  <img src="docs/assets/atropos-wordmark.svg" alt="ATROPOS" width="480" onerror="this.style.display='none'"/>
+  <img src="docs/assets/atropos-wordmark.svg" alt="ATROPOS" width="480"/>
 </p>
 
 <h1 align="center">ATROPOS</h1>
 
 <p align="center">
-  <strong>Open-source AI coding agent</strong>
+  <strong>Open-source multi-agent AI coding engine</strong>
 </p>
 
 <p align="center">
-  Multi-provider CLI that plans, edits, verifies, and ships code.<br/>
-  Local-first · Termux-native · verification gates · durable projects
+  Terminal · Web · Android<br/>
+  Plans, edits, verifies, and ships software across every surface.
 </p>
 
 <p align="center">
@@ -47,20 +47,21 @@ java -jar ~/ATROPOS.jar
 
 | Platform | Install JDK |
 |----------|-------------|
-| Termux | `pkg install openjdk-21` |
+| Android (Termux) | `pkg install openjdk-21` |
 | Debian/Ubuntu | `sudo apt install openjdk-21-jre-headless` |
 | macOS | `brew install openjdk@21` |
+| Windows | Install a JDK 17+ and use Windows Terminal |
 
 Python 3.11+ is optional (recommended for the atomizer). No `pip install` required — the atomizer ships inside the JAR.
 
-Then:
+Then, from any project directory, in **any terminal** (phone or desktop):
 
 ```sh
 cd your-project
 atropos
 ```
 
-Works in Termux, iTerm, Windows Terminal, GNOME Terminal, Alacritty — plain JVM + ANSI.
+Termux · iTerm · Windows Terminal · GNOME Terminal · Alacritty · Warp — same JVM + ANSI binary.
 
 ### Useful environment variables
 
@@ -85,7 +86,19 @@ atropos auth accept AGENTS.md
 
 ---
 
-## Commands worth knowing
+## Surfaces
+
+| Surface | What you get |
+|---------|----------------|
+| **Terminal / CLI TUI** | Full engine control plane — works on mobile and desktop terminals |
+| **Web** | Browser client over the local engine (session, files, evidence, agents) |
+| **Android** | Native APK client aimed at dense, one-hand operator UX |
+
+One engine. Multiple surfaces. Same projects, verification, and providers.
+
+---
+
+## Commands worth knowing (terminal)
 
 | Area | Commands |
 |------|----------|
@@ -98,7 +111,7 @@ atropos auth accept AGENTS.md
 `/` opens the command palette · arrows navigate · Enter runs · Tab completes · Esc closes  
 Attach files with `@path` (txt, md, docx, pdf; images described)
 
-Full command surface lives in-app (`/help`). This README stays short on purpose.
+Full command surface lives in-app (`/help`).
 
 ---
 
@@ -107,13 +120,14 @@ Full command surface lives in-app (`/help`). This README stays short on purpose.
 | | |
 |--|--|
 | **Open source** | Inspect and modify the client — AGPL-3.0 |
+| **Multi-agent** | Hierarchical dispatch with scope control — not a single chat thread |
 | **Multi-provider** | Keys in env → auto-discover; free-first routing |
 | **Verification before done** | Gates block fake success |
-| **Scope safety** | Agents stay inside assigned paths by default |
-| **Termux-native** | Built to run on phone terminals, not only desktops |
+| **Multi-surface** | Terminal, web, and Android over one engine |
+| **Any terminal** | Phone or desktop — same binary |
 | **Durable work** | Projects and checkpoints survive restart |
 
-Not offline by default — providers need network. Local models (e.g. Ollama) work when you configure them.
+Providers need network. Local models (e.g. Ollama) work when configured.
 
 ---
 
