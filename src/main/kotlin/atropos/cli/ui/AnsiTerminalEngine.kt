@@ -419,11 +419,17 @@ class AnsiTerminalEngine(
     }
 
     private companion object {
-        /** Five rows of wordmark, a gap, four facts, and room to breathe. */
-        const val MINIMUM_ANIMATION_ROWS = 14
+        /**
+         * Two threads, five rows of wordmark, a greeting, four facts and the
+         * blank rows between them come to sixteen; below eighteen the opening
+         * would be cropped, and a cropped opening is worse than none.
+         */
+        const val MINIMUM_ANIMATION_ROWS = 18
         const val MINIMUM_ANIMATION_COLUMNS = 24
-        const val FRAME_MILLIS = 28L
-        const val SETTLE_MILLIS = 320L
+
+        /** ~60 frames at this cadence is between three and four seconds. */
+        const val FRAME_MILLIS = 50L
+        const val SETTLE_MILLIS = 400L
     }
 
     private fun requestFrameLocked() {

@@ -24,6 +24,14 @@ class ViewportLayout(
     data class TabState(val id: String, val name: String, val isActive: Boolean, val trustLevel: TrustIndicator)
     enum class TrustIndicator { ATTESTED, UNATTESTED, UNKNOWN }
 
+    private companion object {
+        /** Columns of margin down each side of the screen. */
+        const val GUTTER_CELLS = 1
+
+        /** Below this, the margin costs more than the breathing room returns. */
+        const val MINIMUM_WIDTH_FOR_GUTTER = 30
+    }
+
     fun build(
         width: Int,
         height: Int,
@@ -41,16 +49,34 @@ class ViewportLayout(
         tabs: List<TabState> = emptyList(),
         isDensity: Boolean = false
     ): ScreenFrame {
-        val safeWidth = width.coerceAtLeast(1)
+        val outerWidth = width.coerceAtLeast(1)
         val safeHeight = height.coerceAtLeast(6)
+
+        // A column of breathing room down each edge.
+        //
+        // Every line used to start at column 0 and end at the last cell, so
+        // text sat flush against both sides of the screen and the interface
+        // read as a wall. The gutter is dropped entirely below the width where
+        // two columns would cost more than they return -- on a narrow phone
+        // terminal the content matters more than the margin.
+        val gutter = if (outerWidth >= MINIMUM_WIDTH_FOR_GUTTER) GUTTER_CELLS else 0
+        val safeWidth = (outerWidth - gutter * 2).coerceAtLeast(1)
+        val margin = " ".repeat(gutter)
+
         responsiveGrammar.layout(safeWidth)
-        val frame = ScreenFrame(safeWidth, safeHeight)
+        val frame = ScreenFrame(outerWidth, safeHeight)
         val operation = activity?.let(TerminalText::stripAnsi) ?: verificationState
+
+        // Every row goes through here so the inset is applied once, in one
+        // place, rather than being remembered at each of the nine call sites.
+        fun place(row: Int, line: String) {
+            frame.setLine(row, if (gutter == 0) line else margin + line)
+        }
 
         // HOE-B02: Sticky chrome bar at top (project/status)
         val chrome = stickyHeader.render(activeTab, openTabCount, safeWidth, isDensity)
         val chromeHeight = chrome.height
-        chrome.lines.forEachIndexed { idx, line -> frame.setLine(idx, line) }
+        chrome.lines.forEachIndexed { idx, line -> place(idx, line) }
 
         // HOE-B02: Session tab bar below chrome.
         //
@@ -59,7 +85,7 @@ class ViewportLayout(
         // hardcoded 1 put the transcript's first row on top of it.
         val tabLines = tabBar.render(tabs, safeWidth)
         val tabBarHeight = tabLines.size
-        tabLines.forEachIndexed { idx, line -> frame.setLine(chromeHeight + idx, line) }
+        tabLines.forEachIndexed { idx, line -> place(chromeHeight + idx, line) }
 
         val contentStart = chromeHeight + tabBarHeight
 
@@ -116,7 +142,7 @@ class ViewportLayout(
             welcomePanel.render(state, safeWidth, solvedTranscriptHeight)
                 .take(solvedTranscriptHeight)
                 .forEachIndexed { index, line ->
-                    frame.setLine(solvedTranscriptStart + index, line)
+                    place(solvedTranscriptStart + index, line)
                 }
         } else {
             val reserve = if (activity == null) 0 else 1
@@ -126,24 +152,26 @@ class ViewportLayout(
             ).toMutableList()
             activity?.let(visible::add)
             visible.takeLast(solvedTranscriptHeight).forEachIndexed { index, line ->
-                frame.setLine(solvedTranscriptStart + index, line)
+                place(solvedTranscriptStart + index, line)
             }
         }
 
         paletteLines.forEachIndexed { index, line ->
             val row = solvedPaletteStart + index
-            if (row in contentStart until solvedComposerStart) frame.setLine(row, line)
+            if (row in contentStart until solvedComposerStart) place(row, line)
         }
 
         composerSnapshot.lines.forEachIndexed { index, line ->
-            frame.setLine(solvedComposerStart + index, line)
+            place(solvedComposerStart + index, line)
         }
         metaLines.forEachIndexed { index, line ->
-            frame.setLine(solvedComposerStart + composerSnapshot.lines.size + index, line)
+            place(solvedComposerStart + composerSnapshot.lines.size + index, line)
         }
 
-        frame.setLine(safeHeight - 1, statusBar.footer(state, safeWidth))
-        frame.cursorX = composerSnapshot.cursorColumn
+        place(safeHeight - 1, statusBar.footer(state, safeWidth))
+        // The caret is placed in screen coordinates, so it carries the inset
+        // that every rendered line carries.
+        frame.cursorX = composerSnapshot.cursorColumn + gutter
         frame.cursorY = solvedComposerStart + composerSnapshot.cursorRow
         frame.showCursor = true
         return frame

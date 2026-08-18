@@ -15,6 +15,9 @@ import kotlin.test.assertTrue
  */
 class StartupSequenceTest {
 
+    /** Mirrors AnsiTerminalEngine.FRAME_MILLIS. */
+    private val FRAME_MILLIS = 50L
+
     private val theme = TerminalTheme(ConfigurationManager(envProvider = { null }, hasConsole = false))
     private val sequence = StartupSequence(theme)
     private val facts = StartupSequence.Facts(
@@ -45,11 +48,50 @@ class StartupSequenceTest {
         // Centring each frame on its own measured width would re-centre the
         // wordmark on every step, so it would crawl sideways as it revealed
         // rather than wiping in place.
-        val indents = sequence.frames(80, 24, facts).map { frame ->
-            plain(frame).first { it.isNotBlank() }.takeWhile { it == ' ' }.length
+        val indents = sequence.frames(80, 24, facts).mapNotNull { frame ->
+            plain(frame).firstOrNull { it.contains('█') }?.takeWhile { it == ' ' }?.length
         }
 
         assertEquals(1, indents.distinct().size, "the wordmark moved horizontally: $indents")
+    }
+
+    @Test
+    fun the_opening_runs_for_between_three_and_five_seconds() {
+        // The cadence lives in AnsiTerminalEngine; this asserts the frame count
+        // that cadence is chosen against, so shortening the sequence without
+        // noticing is a failing test rather than an opening nobody sees.
+        val count = sequence.frames(80, 24, facts).size
+        val seconds = count * FRAME_MILLIS / 1000.0
+
+        assertTrue(seconds in 3.0..5.0, "the opening runs for ${seconds}s across $count frames")
+    }
+
+    @Test
+    fun the_thread_draws_before_the_wordmark_does() {
+        val frames = sequence.frames(80, 24, facts).map(::plain)
+        val firstThread = frames.indexOfFirst { frame -> frame.any { it.contains('─') } }
+        val firstLetter = frames.indexOfFirst { frame -> frame.any { it.contains('█') } }
+
+        assertTrue(firstThread >= 0, "the thread never appeared")
+        assertTrue(firstThread < firstLetter, "the wordmark arrived before the thread it is woven from")
+    }
+
+    @Test
+    fun the_operator_is_greeted() {
+        val settled = plain(sequence.finalFrame(80, 24, facts)).joinToString("\n")
+
+        assertTrue(
+            listOf("Good morning", "Good afternoon", "Good evening").any(settled::contains),
+            "nothing on the opening screen addresses the person reading it:\n$settled"
+        )
+    }
+
+    @Test
+    fun the_settled_screen_says_how_to_start() {
+        val settled = plain(sequence.finalFrame(80, 24, facts)).joinToString("\n")
+
+        assertTrue(settled.contains("/ for commands"), "no way in is offered:\n$settled")
+        assertTrue(settled.contains("@ to attach"), "attaching a file is undiscoverable:\n$settled")
     }
 
     @Test

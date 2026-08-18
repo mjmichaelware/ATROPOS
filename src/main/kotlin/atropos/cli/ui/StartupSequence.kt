@@ -2,24 +2,34 @@
 package atropos.cli.ui
 
 import atropos.cli.ui.design.Role
+import java.time.LocalTime
 
 /**
  * The frames of the opening animation, as data.
  *
- * A wordmark wipes in left to right, then the facts about this run appear
- * beneath it one line at a time. Two deliberate choices shape it:
+ * Atropos is the Fate who measures the thread and cuts it, so the opening is
+ * a thread: it draws itself across the screen from the centre out, the
+ * wordmark is woven out of it, and then the run states what it is. The motif
+ * is not decoration for its own sake — it is the one image that says what this
+ * engine claims to do, which is decide where something ends.
+ *
+ * Two deliberate choices shape the implementation:
  *
  * **It is a list of frames, not a loop.** Producing the frames and playing
  * them are separate jobs, so the sequence can be asserted on — that the last
- * frame holds the whole wordmark, that the workspace really appears in it —
- * without a test ever sleeping. The engine owns the clock.
+ * frame holds the whole wordmark, that the workspace really appears in it,
+ * that it runs for the length it claims — without a test ever sleeping. The
+ * engine owns the clock.
  *
- * **The facts are facts.** Every line under the wordmark is read from the
- * live configuration, not written here. A startup screen that announced
- * "verified" or "ready" on a timer would be exactly the fake attestation
- * AGENTS.md §0.6 forbids, and it would be the first thing an operator saw.
+ * **The facts are facts.** Every line under the wordmark is read from the live
+ * configuration, not written here. A startup screen that announced "verified"
+ * or "ready" on a timer would be exactly the fake attestation AGENTS.md §0.6
+ * forbids, and it would be the first thing an operator ever saw.
  */
-class StartupSequence(private val theme: TerminalTheme) {
+class StartupSequence(
+    private val theme: TerminalTheme,
+    private val clock: () -> LocalTime = LocalTime::now
+) {
 
     /**
      * @param providerCount how many providers hold a key, which is a different
@@ -36,21 +46,40 @@ class StartupSequence(private val theme: TerminalTheme) {
     fun frames(width: Int, height: Int, facts: Facts): List<List<String>> {
         val safeWidth = width.coerceAtLeast(1)
         val safeHeight = height.coerceAtLeast(1)
+
         val art = if (safeWidth >= WORDMARK_CELLS + 2) wordmark() else listOf(spaced(NAME))
         val span = art.first().length
         val lines = factLines(facts)
+        val greeting = greetingLine()
         val block = maxOf(span, lines.maxOfOrNull(TerminalText::cellWidth) ?: 0)
 
         val sequence = mutableListOf<List<String>>()
 
+        // 1. The thread draws itself outward from the centre of the screen.
+        var reach = 0
+        val half = (safeWidth + 1) / 2
+        while (reach < half) {
+            reach = (reach + THREAD_STEP).coerceAtMost(half)
+            sequence += compose(safeWidth, safeHeight, block, reach, blank(art), null, emptyList())
+        }
+
+        // 2. The wordmark is woven out of it.
         var revealed = 0
         while (revealed < span) {
             revealed = (revealed + REVEAL_STEP).coerceAtMost(span)
-            sequence += compose(safeWidth, safeHeight, block, wipe(art, revealed), emptyList())
+            sequence += compose(safeWidth, safeHeight, block, half, wipe(art, revealed), null, emptyList())
         }
+
+        // 3. The greeting, then what this run actually is, a line at a time.
+        sequence += compose(safeWidth, safeHeight, block, half, wipe(art, span), greeting, emptyList())
         lines.indices.forEach { index ->
-            sequence += compose(safeWidth, safeHeight, block, wipe(art, span), lines.take(index + 1))
+            sequence += compose(safeWidth, safeHeight, block, half, wipe(art, span), greeting, lines.take(index + 1))
         }
+
+        // 4. Held, so the finished screen is something an operator reads rather
+        //    than something that flickers past on the way to a prompt.
+        val settled = sequence.last()
+        repeat(HOLD_FRAMES) { sequence += settled }
 
         return sequence
     }
@@ -73,43 +102,85 @@ class StartupSequence(private val theme: TerminalTheme) {
         theme.brand(settled) + theme.paint(Role.ACCENT_FOCUS, edge)
     }
 
+    private fun blank(art: List<String>): List<String> = art.map { "" }
+
+    /**
+     * A greeting, because the first thing a tool says to a person should be
+     * addressed to them.
+     */
+    private fun greetingLine(): String {
+        val hour = clock().hour
+        val greeting = when {
+            hour < 12 -> "Good morning"
+            hour < 18 -> "Good afternoon"
+            else -> "Good evening"
+        }
+        return theme.strong(greeting) + theme.subdued(" — the thread is yours to cut.")
+    }
+
     private fun factLines(facts: Facts): List<String> = listOf(
         label("version") + theme.strong(facts.version),
         label("provider") + theme.strong(facts.provider) +
             theme.subdued(" · ${facts.providerCount} configured"),
         label("territory") + theme.path(TerminalText.compactPath(facts.workspace)),
-        label("") + theme.metadata("/help for commands · @path to attach a file")
+        label("") + theme.metadata("/ for commands · @ to attach a file")
     )
 
     private fun label(name: String): String =
         theme.subdued(name.padEnd(LABEL_CELLS))
 
     /**
-     * Centres the block in the viewport, with the art and the facts sharing one
-     * left edge.
+     * Centres the block in the viewport, with the thread spanning the screen.
      *
      * [block] is passed in rather than measured, because a partially revealed
-     * wordmark is narrower than a whole one and measuring each frame would
-     * make the animation slide sideways as it drew.
+     * wordmark is narrower than a whole one and measuring each frame would make
+     * the animation slide sideways as it drew.
      */
     private fun compose(
         width: Int,
         height: Int,
         block: Int,
+        reach: Int,
         art: List<String>,
+        greeting: String?,
         facts: List<String>
     ): List<String> {
-        val body = art + listOf("") + facts
+        val thread = thread(width, reach)
+        val body = buildList {
+            add(thread)
+            add("")
+            addAll(art)
+            add("")
+            greeting?.let { add(it); add("") }
+            addAll(facts)
+            add("")
+            add(thread)
+        }
+
         val left = ((width - block.coerceAtMost(width)) / 2).coerceAtLeast(0)
         val top = ((height - body.size) / 2).coerceAtLeast(0)
         val pad = " ".repeat(left)
-        return List(top) { "" } +
-            body.map { line ->
+
+        return List(top) { "" } + body.map { line ->
+            when {
+                line.isEmpty() -> ""
+                // The thread is already full-width and centred on the screen,
+                // not on the text block, so it is placed rather than indented.
+                line === thread -> line
                 // Ellipsized, not wrapped: a fact that does not fit is one the
                 // operator can read the start of, where a wrapped one would
                 // push the wordmark off a short terminal to finish a hint.
-                if (line.isEmpty()) "" else TerminalText.ellipsize(pad + line, width)
+                else -> TerminalText.ellipsize(pad + line, width)
             }
+        }
+    }
+
+    /** A rule reaching [reach] cells either side of the screen's centre. */
+    private fun thread(width: Int, reach: Int): String {
+        if (reach <= 0) return ""
+        val drawn = (reach * 2).coerceAtMost(width)
+        val left = ((width - drawn) / 2).coerceAtLeast(0)
+        return " ".repeat(left) + theme.paint(Role.ACCENT_FOCUS, THREAD.repeat(drawn))
     }
 
     private fun wordmark(): List<String> = (0 until GLYPH_ROWS).map { row ->
@@ -123,16 +194,22 @@ class StartupSequence(private val theme: TerminalTheme) {
         const val NAME = "ATROPOS"
         const val GLYPH_ROWS = 5
         const val GLYPH_CELLS = 5
+        const val THREAD = "─"
 
         /** Seven glyphs of five cells, six single-cell gaps between them. */
         const val WORDMARK_CELLS = NAME.length * GLYPH_CELLS + (NAME.length - 1)
 
-        /** Columns drawn per frame. Small enough to read as motion, large
-         *  enough that the whole reveal is under half a second. */
-        const val REVEAL_STEP = 3
+        /** Cells the thread gains per frame, each side of centre. */
+        const val THREAD_STEP = 2
+
+        /** Columns of wordmark drawn per frame. */
+        const val REVEAL_STEP = 2
 
         /** How much of the leading edge is painted as the moving front. */
         const val EDGE_CELLS = 3
+
+        /** Frames the finished screen is held for before the prompt takes over. */
+        const val HOLD_FRAMES = 14
 
         const val LABEL_CELLS = 11
 

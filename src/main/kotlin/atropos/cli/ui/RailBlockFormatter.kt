@@ -22,6 +22,9 @@ import atropos.cli.ui.design.Role
 object RailBlockFormatter {
 
     /** Widest label seen in the reference's aligned rows before it wraps. */
+    /** Any SGR sequence starts here. */
+    private const val ESCAPE = '\u001B'
+
     private const val MAX_LABEL = 22
 
     /**
@@ -53,6 +56,23 @@ object RailBlockFormatter {
         return lines.flatMap { line ->
             when {
                 line.isBlank() -> listOf("")
+
+                // Already coloured by its own renderer, so it is shaped but
+                // never repainted.
+                //
+                // `renderNoticeReactive` runs SemanticLineColorizer first and
+                // hands the result here, and painting a string that already
+                // carries an SGR sequence trips the compliance guard in
+                // TerminalTheme.paint -- an IllegalArgumentException thrown
+                // out of frame construction, which the router reported as
+                // `/tabs failed (IllegalArgumentException)`. Every notice the
+                // colorizer decorated crashed the command that produced it,
+                // and the message named ANSI rather than the command, so the
+                // failure looked like it belonged to whatever ran last.
+                //
+                // The same guard SemanticLineColorizer.colorizeLine already
+                // applies to its own input, for the same reason.
+                line.contains(ESCAPE) -> wrapped(line.trimStart(), inner).map { prefix + it }
 
                 // `header:` becomes the block title, uppercased like the
                 // reference's section labels.

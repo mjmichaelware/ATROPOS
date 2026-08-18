@@ -84,7 +84,13 @@ class ComposerViewport(
 
         val before = buffer.substring(0, cursor)
         val after = buffer.substring(cursor)
-        val rendered = before + theme.subdued(suggestion) + after
+        // An empty composer says what to do with itself. A blank box is a
+        // blank box: nothing on the old screen told an operator that `/`
+        // opened the palette or that `@` attached a file, so both were
+        // features you had to already know about.
+        val rendered =
+            if (buffer.isEmpty() && suggestion.isEmpty()) theme.subdued(placeholder(innerWidth))
+            else before + theme.subdued(suggestion) + after
         val wrapped = AnsiLineWrapper.wrap(rendered, innerWidth).toMutableList()
 
         val cursorPosition = cursorPosition(before, innerWidth)
@@ -151,6 +157,19 @@ class ComposerViewport(
         )
     }
 
+    /** The hint shown in an empty composer, trimmed to what the width holds. */
+    private fun placeholder(innerWidth: Int): String {
+        val full = "Ask anything  ·  / for commands  ·  @ to attach a file"
+        val medium = "/ for commands  ·  @ to attach"
+        val short = "/ for commands"
+        return when {
+            TerminalText.cellWidth(full) <= innerWidth -> full
+            TerminalText.cellWidth(medium) <= innerWidth -> medium
+            TerminalText.cellWidth(short) <= innerWidth -> short
+            else -> ""
+        }
+    }
+
     private fun topBorder(width: Int, edge: Edge): String =
         theme.paint(
             Role.ACCENT_FOCUS,
@@ -184,11 +203,22 @@ class ComposerViewport(
 
     fun mode(): String = mode
 
+    /**
+     * The command palette's query, or null when the palette should be closed.
+     *
+     * The leading slash is required. It used to open on any word that matched
+     * the registry, so typing `hi` covered two thirds of the screen with
+     * eighteen commands nobody had asked for -- the palette appeared while the
+     * operator was writing a sentence, and there was no way to type an
+     * ordinary word without dismissing it. `/` is the operator asking for
+     * commands; anything else is them talking.
+     */
     fun commandQuery(): CommandPaletteQuery? {
         val value = buffer.trimStart()
         return value
             .takeIf {
-                !it.contains(' ') &&
+                it.startsWith('/') &&
+                    !it.contains(' ') &&
                     !it.contains('\n') &&
                     CommandRegistry.search(it).isNotEmpty()
             }

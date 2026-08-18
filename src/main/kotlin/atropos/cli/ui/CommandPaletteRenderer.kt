@@ -39,7 +39,11 @@ class CommandPaletteRenderer(
         // One row is spent on the title. Rows are windowed around the selection,
         // so ArrowDown can traverse the complete result set instead of only the
         // first four rows visible in a short terminal.
-        val rowBudget = (maximumRows - 1).coerceAtLeast(1)
+        // Two rows are chrome: the title, and the key legend beneath the list.
+        // The legend is not optional decoration -- every navigation key this
+        // palette supports was invisible, so an operator had to discover
+        // left/right group traversal by accident or never use it.
+        val rowBudget = (maximumRows - 2).coerceAtLeast(1)
         val matches = when (query.level) {
             CommandPaletteLevel.GROUPS -> emptyList()
             CommandPaletteLevel.COMMANDS -> query.selectedGroup
@@ -82,7 +86,28 @@ class CommandPaletteRenderer(
                 }
                 CommandPaletteLevel.DETAIL -> matches.forEach { addAll(renderDetail(it, width)) }
             }
+            add(keyLegend(query.level, width))
         }
+    }
+
+    /**
+     * The keys this palette answers to, spelled out.
+     *
+     * Discoverability is the whole point: arrow-key navigation existed and
+     * worked, and nothing on screen said so, so the only way to find out that
+     * left and right move between groups was to press them and notice.
+     */
+    private fun keyLegend(level: CommandPaletteLevel, width: Int): String {
+        val keys = when (level) {
+            CommandPaletteLevel.GROUPS -> listOf("up down" to "group", "right" to "open", "enter" to "run", "esc" to "close")
+            CommandPaletteLevel.COMMANDS -> listOf("up down" to "select", "left right" to "group", "enter" to "run", "tab" to "complete", "esc" to "close")
+            CommandPaletteLevel.DETAIL -> listOf("left" to "back", "enter" to "run", "esc" to "close")
+        }
+        val pad = " ".repeat(Glyphs.RAIL_PADDING)
+        val legend = keys.joinToString(theme.subdued("  ")) { (key, action) ->
+            theme.paint(Role.ACCENT_FOCUS, key) + theme.subdued(" " + action)
+        }
+        return TerminalText.padEnd(TerminalText.ellipsize(pad + legend, width.coerceAtLeast(1)), width)
     }
 
     private fun windowStart(selected: Int, size: Int, budget: Int): Int {
