@@ -176,17 +176,31 @@ class ComposerViewport(
         )
     }
 
-    /** The hint shown in an empty composer, trimmed to what the width holds. */
+    /**
+     * The hint shown in an empty composer, trimmed to what the width holds.
+     *
+     * The pipeline, not the keybindings. This used to read "/ for commands ·
+     * @ to attach a file", which the startup screen already says a few rows
+     * above -- the same tip twice, and the second one occupying the most
+     * valuable line on the screen.
+     *
+     * What that line is worth saying is what this engine does, because it is
+     * not what the box looks like it does. Every other CLI with a prompt in a
+     * box takes a sentence and starts writing code. This one reads a document
+     * or a prompt, splits it into atoms, researches them, orders them into a
+     * DAG, builds them and proves it. Someone who types a sentence expecting
+     * an immediate diff has misunderstood the tool, and the honest place to
+     * prevent that is the box they are about to type into -- in six words,
+     * once, rather than in a paragraph they would have to be told to read.
+     */
     private fun placeholder(innerWidth: Int): String {
-        val full = "Ask anything  ·  / for commands  ·  @ to attach a file"
-        val medium = "/ for commands  ·  @ to attach"
-        val short = "/ for commands"
-        return when {
-            TerminalText.cellWidth(full) <= innerWidth -> full
-            TerminalText.cellWidth(medium) <= innerWidth -> medium
-            TerminalText.cellWidth(short) <= innerWidth -> short
-            else -> ""
-        }
+        val full = "prompt or @document  →  atoms  →  research  →  DAG  →  build  →  proof"
+        val medium = "prompt → atoms → research → DAG → build → proof"
+        val short = "prompt → atoms → DAG → build"
+        val shortest = "prompt → DAG → build"
+        return listOf(full, medium, short, shortest)
+            .firstOrNull { TerminalText.cellWidth(it) <= innerWidth }
+            .orEmpty()
     }
 
     private fun topBorder(width: Int, edge: Edge): String =
