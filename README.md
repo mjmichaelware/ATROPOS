@@ -19,9 +19,11 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="License AGPL-3.0"/>
-  <img src="https://img.shields.io/badge/kotlin-primary-7F52FF" alt="Kotlin"/>
-  <img src="https://img.shields.io/badge/open--source-multi--agent-a855f7" alt="Open source multi-agent"/>
+  <img src="https://img.shields.io/badge/Kotlin-7F52FF?logo=kotlin&logoColor=white" alt="Kotlin"/>
+  <img src="https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white" alt="Python"/>
+  <img src="https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white" alt="TypeScript"/>
+  <img src="https://img.shields.io/badge/Java-ED8B00?logo=openjdk&logoColor=white" alt="Java"/>
+  <img src="https://img.shields.io/badge/CSS-1572B6?logo=css3&logoColor=white" alt="CSS"/>
 </p>
 
 ---
@@ -37,60 +39,71 @@ cd your-project && atropos
 
 **Java 17+.** Termux: `pkg install openjdk-21` · Debian: `sudo apt install openjdk-21-jre-headless` · macOS: `brew install openjdk@21`
 
-Keys in the environment are enough — ATROPOS discovers providers on startup. Optional: `ATROPOS_MODEL_<PROVIDER>`, `ATROPOS_INGEST_ROOTS`, `ATROPOS_JAVA_OPTS`. In-app: `/help` · palette `/` · `@path` to attach files.
+Put provider keys in the environment. ATROPOS discovers what you have on startup. In-app: `/help` · command palette `/` · `@path` to attach files.
+
+---
+
+## The flat-context fantasy is dead
+
+Shoving an entire product into one giant context window and hoping a single model “understands everything” is how you buy confident nonsense. Flat prompts do not create structure. They hide the lack of it until the agent rewrites the wrong half of the tree.
+
+ATROPOS does not pretend a bigger window is a plan. Work is atomized into a **directed acyclic graph (DAG)** of obligations — ordered, dependency-aware, and runnable without circular busywork. **SpecGraph** is the planning and verification substrate: it turns requirements into research-enriched, checkable blueprints that the engine can execute node by node. The DAG is the spine. SpecGraph is how serious plans enter that spine. Hierarchy and territory keep each node from becoming a free-for-all.
+
+That is the opposite of chatty sub-agents renegotiating scope in prose while your quota evaporates.
 
 ---
 
 ## Why the field is broken
 
-Most “autonomous” stacks share one failure mode: **worktree isolation + LLM group chat**. Agents get separate trees, then burn your quota *talking to each other* about scope, status, and handoffs. Drift is found after the damage. Context fills with meta-chat. The cloud sees your repo again and again. That is not intelligence. That is an expensive meeting with extra steps.
+Most “autonomous” stacks still do this: isolate workers in worktrees, then spend the budget on **LLM group chat** — mailboxes, status ping-pong, soft scope, drift found after the damage. The cloud sees your repo on a loop. Providers stay locked. “Done” means the model stopped typing.
 
 ### Cursor Agent
-Cloud agents and soft scope. Users report agents that keep editing **after stop**, recreate deleted files, and commit without clear intent. Cloud sessions have served **stale default-branch file reads** while git on the same machine was correct — silent prompt drift. Autonomy is real; **control is not**. Product gravity pulls code and loops into the cloud. Closed client.
+Real autonomy with soft control. Agents that keep moving after stop, recreate deleted files, and commit without clear intent show up in the wild. Cloud paths have served **stale default-branch reads** while local git was correct — silent drift. Closed product; gravity pulls loops into the cloud.
 
-**ATROPOS:** territory is assigned at dispatch. Out-of-territory writes are blocked *before* they land. Local-first engine. Cloud is an optional model provider, not the control plane.
+**ATROPOS:** territory at dispatch. Illegal paths blocked before write. Local-first engine. Cloud is a model endpoint, not the brain.
 
 ### Claude Code
-Best-in-class single-agent quality — and a **quota furnace**. Subagent fan-out is reported around **~7×** token cost vs a normal session; MCP tool defs can eat a third of the window before you type. Weekly and 5-hour caps die on long agent teams. Anthropic-first lock-in. Coordination is still LLM-mediated handoffs, not hard scope law.
+Excellent single-agent depth — and a **quota furnace**. Subagent fan-out is reported near **~7×** a normal session; MCP tool defs can eat a large slice of the window before real work starts. Weekly and rolling caps die on long teams. Anthropic-first.
 
-**ATROPOS:** multi-provider from env keys; free-first routing. Coordination is hierarchy + policy state, not another subagent meeting on your bill.
+**ATROPOS:** multi-provider from env keys; free-first routing. Coordination is hierarchy and state, not another paid meeting between agents.
 
 ### Codex CLI
-Strong sandbox. OpenAI-shaped economics and defaults. Users hit **opaque quota drain** (single prompts eating large chunks of rolling windows). Built-in wait/re-sample loops have burned weekly quota on long jobs. Harness/sandbox mismatch when supervising other CLIs. Vendor core.
+Strong sandbox. OpenAI-shaped defaults and metering. Opaque quota drain and wait/re-sample loops have burned weekly allowance on long jobs. Vendor core under the open edges.
 
-**ATROPOS:** open client (AGPL-3.0). Provider is a backend, not the product identity. Durable projects instead of rolling-window anxiety as architecture.
+**ATROPOS:** open client (AGPL-3.0). Durable projects instead of living inside a rolling window as architecture.
 
 ### OpenHands
-Ambitious multi-agent / issue→PR autonomy. Orchestration is **message-heavy**. Drift and failure modes are post-hoc (job ended, PR opened, tests maybe). Remote runner gravity is common. You pay for the chat between agents as much as for the patch.
+Ambitious issue→PR autonomy with **message-heavy** orchestration. Drift is post-hoc. You pay for the chat between agents as much as for the patch.
 
-**ATROPOS:** preventive territory, not post-hoc regret. Promotion after independent checks — not when the swarm stops typing.
+**ATROPOS:** preventive scope. Promote only after independent checks — not when the swarm goes quiet.
 
 ### OpenCode
-Excellent OSS TUI and real BYOK. Still **session-shaped**. Research measurements have shown order-of-magnitude **token waste per solved task** vs tighter harnesses (idle/no-action turns compounding context). You bring the keys; you still pay for chatter if the loop is chatty.
+Best-in-class OSS TUI and real BYOK. Still session-shaped; measured harness work has shown large **token waste per solved task** when loops idle and re-sample. Keys are free; chatter is not.
 
-**ATROPOS:** long-running durable projects + restart continuity. Scoped hierarchy so “open source multi-provider” is not the same as “unbounded session spend.”
+**ATROPOS:** DAG-ordered long runs, durable projects, restart continuity — multi-provider without treating “open” as “unbounded session spend.”
 
 ### Aider
-Git discipline is real. Autonomy is not — it is a **pair-programmer**, turn-by-turn. Maintenance-mode trajectory in 2026. Terminal UX is **dated and sparse** next to modern TUIs. Fine for small diffs; wrong tool for multi-day hierarchical work.
+Git discipline is real. Autonomy is not. It is a turn-by-turn pair programmer with a **dated terminal UX**, now on a maintenance trajectory. Right tool for small diffs. Wrong tool for multi-day hierarchical delivery.
 
-**ATROPOS:** reactive multi-surface control plane (terminal, web, Android) built for operators, not a 2023 REPL aesthetic.
+**ATROPOS:** multi-surface control plane (terminal, web, Android) built for operators who run real work, not a 2023 REPL aesthetic.
 
 ---
 
-## What ATROPOS actually optimizes
+## What ATROPOS optimizes
 
-| Failure mode in the field | ATROPOS response |
-|---------------------------|------------------|
-| Unscoped autonomy / drift | Territory at dispatch; block illegal paths before write |
-| Chatty sub-agents eating quota | Hierarchy + state/policy coordination — not agent group chat |
-| Provider lock | Multi-provider discovery from env; free-first cascade |
+| Field failure | ATROPOS |
+|---------------|---------|
+| Flat mega-context “understanding” | **DAG + SpecGraph** — ordered atoms, not one blob |
+| Unscoped autonomy / drift | Territory at dispatch; block before write |
+| Chatty sub-agents | Hierarchy + policy state, not agent group chat |
+| Provider lock | Multi-provider discovery; free-first cascade |
 | Session death | Durable projects, checkpoints, restart continuity |
-| Cloud-as-brain | Local-first engine; providers are interchangeable backends |
+| Cloud-as-brain | Local-first engine; providers are backends |
 | “Done” when the model stops | Independent checks before promotion |
-| IDE-only or terminal-only | One engine: terminal · web · Android |
-| Closed client | AGPL-3.0 — inspect and change it |
+| One surface only | Terminal · web · Android, one engine |
+| Closed client | AGPL-3.0 |
 
-Autonomy without the drift is not a slogan. It is the architecture: **scoped hierarchical agents, durable projects, multi-provider routing, multi-surface control.**
+Autonomy without the drift is the architecture: **scoped hierarchical agents, DAG-ordered work, SpecGraph-backed plans, multi-provider routing, multi-surface control.**
 
 Providers need network unless you configure a local model (e.g. Ollama).
 
