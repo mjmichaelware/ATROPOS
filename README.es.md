@@ -1,12 +1,12 @@
 <h1 align="center">ATROPOS</h1>
 
 <p align="center">
-  <strong>Agente de codificación con IA de código abierto</strong>
+  <strong>Motor de codificación multi-agente con IA de código abierto</strong>
 </p>
 
 <p align="center">
-  CLI multi-proveedor que planifica, edita, verifica y entrega código.<br/>
-  Local-first · nativo en Termux · puertas de verificación · proyectos duraderos
+  Terminal · Web · Android<br/>
+  Planifica, edita, verifica y entrega software en cada superficie.
 </p>
 
 <p align="center">
@@ -24,12 +24,18 @@ curl -fsSL https://raw.githubusercontent.com/mjmichaelware/ATROPOS/main/install.
 npm install -g @mjmichaelware/atropos
 ```
 
-Requiere Java 17+. Luego:
+Requiere Java 17+. En **cualquier terminal** (móvil o escritorio):
 
 ```sh
 cd tu-proyecto
 atropos
 ```
+
+## Superficies
+
+- **Terminal / CLI TUI** — control total del motor
+- **Web** — cliente en el navegador sobre el motor local
+- **Android** — APK nativa de alta densidad
 
 ## Comandos útiles
 
