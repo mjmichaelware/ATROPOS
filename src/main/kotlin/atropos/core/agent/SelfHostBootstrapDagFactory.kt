@@ -68,13 +68,26 @@ class SelfHostBootstrapDagFactory(
             .getOrNull() ?: return null
 
         val now = clock()
-        val nodeIds = plan.atoms.indices.associateBy(
-            keySelector = { plan.atoms[it].id },
-            valueTransform = { "${record.id}-atom-${(it + 1).toString().padStart(ATOM_INDEX_CELLS, '0')}" }
-        )
+        // One node id per atom, by position.
+        //
+        // Keyed by position and not by atom id, because two atoms carrying the
+        // same id would collapse to one entry in a map and the graph would
+        // come back one node short of the document -- silently, and only
+        // visible by counting. An end-to-end run produced 389 nodes from 390
+        // atoms for exactly that reason.
+        val nodeIdAt = plan.atoms.indices.map { index ->
+            "${record.id}-atom-${(index + 1).toString().padStart(ATOM_INDEX_CELLS, '0')}"
+        }
+        // And a separate map for resolving what an atom's stated dependencies
+        // point at. First declaration wins, so a repeated id resolves to the
+        // atom that earned it rather than to whichever came last.
+        val nodeIdByAtom = mutableMapOf<String, String>()
+        plan.atoms.forEachIndexed { index, atom ->
+            nodeIdByAtom.putIfAbsent(atom.id, nodeIdAt[index])
+        }
 
         val nodes = plan.atoms.mapIndexed { index, atom ->
-            val nodeId = nodeIds.getValue(atom.id)
+            val nodeId = nodeIdAt[index]
             Narrate.plan.item(index + 1, plan.atoms.size, atom.id, atom.statement.take(90))
             DagNode(
                 id = nodeId,
@@ -90,7 +103,7 @@ class SelfHostBootstrapDagFactory(
                 // dependency as written and a forward one is either a repaired
                 // cycle or a reference the document makes ahead of itself.
                 dependencies = atom.dependencies
-                    .mapNotNull(nodeIds::get)
+                    .mapNotNull(nodeIdByAtom::get)
                     .filter { it < nodeId }
                     .distinct(),
                 territory = atom.territory.ifEmpty { DEFAULT_TERRITORY },
@@ -102,11 +115,11 @@ class SelfHostBootstrapDagFactory(
             )
         }
 
-        Narrate.plan.counted("DAG nodes from ${plan.source.fileName}", nodes.size)
+        Narrate.plan.counted("DAG nodes from ${plan.label}", nodes.size)
         Narrate.plan.counted("edges between them", nodes.sumOf { it.dependencies.size })
 
         return dagService.createDag(
-            label = "self-host phase $phase from ${plan.source.fileName}: ${nodes.size} atoms",
+            label = "self-host phase $phase from ${plan.label}: ${nodes.size} atoms",
             projectId = "atropos-self-host",
             nodes = nodes
         )

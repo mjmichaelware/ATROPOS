@@ -9,7 +9,7 @@ dependencies {
     // coordinate rather than project(":"), because this is a separate build:
     // settings.gradle.kts includeBuild("..") substitutes the engine's root
     // project for it.
-    implementation("atropos:ATROPOS:2.0.0-rc.1")
+    implementation("atropos:ATROPOS:2.0.0")
     implementation(compose.desktop.currentOs)
     implementation(compose.material3)
     implementation(compose.runtime)

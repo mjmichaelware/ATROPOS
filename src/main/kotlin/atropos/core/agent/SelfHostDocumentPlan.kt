@@ -57,8 +57,16 @@ class SelfHostDocumentPlan(
     private val territory: IngestTerritory = IngestTerritory(repoRoot)
 ) {
 
+    /**
+     * @param label what the atoms came from, for a human reading the trace: a
+     *   file name when a path was named, and the goal itself when the prompt
+     *   carried the document inline.
+     * @param source the file, when there was one. Null is not a failure -- it
+     *   is the normal case once the CLI has expanded a mention.
+     */
     data class Atomized(
-        val source: Path,
+        val label: String,
+        val source: Path?,
         val text: String,
         val atoms: List<CanonicalAtomRecord>,
         val evidenceLine: String
@@ -69,40 +77,43 @@ class SelfHostDocumentPlan(
      * run can read.
      */
     fun atomize(goalId: String, task: String): Atomized? {
-        val source = locate(task) ?: return null
-        Narrate.ingest.stage("self-host goal $goalId points at $source")
+        val source = locate(task)
+        val label = source?.fileName?.toString() ?: "the goal prompt"
 
-        val attachment = attachmentReader.read(
-            MentionResolution.Resolved(source, source.fileName.toString().substringAfterLast('.', ""))
-        )
-        val text = attachment?.text
+        // Either the path the operator named, or the document the CLI already
+        // expanded on their behalf.
+        //
+        // The second is the normal case and it is what an end-to-end run
+        // found: by the time a self-host goal exists, `@spec.md` has been
+        // replaced with the file's contents, so the goal's task was 45,518
+        // characters of specification with no filename anywhere in it. Looking
+        // for a path found nothing, and a run against a four-hundred-atom
+        // document silently got the three-node cradle graph -- the exact
+        // failure this class was written to remove, one layer further out.
+        // Unit tests could not catch it because they were the ones supplying
+        // the path.
+        val text = source?.let(::readFile) ?: task.takeIf { looksLikeADocument(it) }
         if (text.isNullOrBlank()) {
             Narrate.ingest.skipped(
-                source.fileName.toString(),
-                "nothing readable came out of it — self-host falls back to the cradle graph"
+                label,
+                if (source == null) "the goal states an instruction, not a document"
+                else "nothing readable came out of it — self-host falls back to the cradle graph"
             )
             return null
         }
-        if (attachment.truncated) {
-            // Said, not swallowed. A plan built from the first fifth of a
-            // specification is a plan that will finish and be wrong.
-            Narrate.ingest.trouble(
-                "${source.fileName} was truncated at ${text.length} characters",
-                "atoms below that point are not in this graph"
-            )
-        }
+        Narrate.ingest.stage("self-host goal $goalId atomizing $label")
         Narrate.ingest.counted("characters read", text.length)
 
         val atomization = atomize(
             repoRoot,
             goalId,
             text,
-            attachment.sha256.take(16),
-            "document:${source.fileName}"
+            fingerprint(text),
+            "document:$label"
         )
         if (!atomization.usable) {
             Narrate.atomize.skipped(
-                "atomization of ${source.fileName}",
+                "atomization of $label",
                 atomization.evidenceLine
             )
             return null
@@ -116,8 +127,45 @@ class SelfHostDocumentPlan(
             )
         }
         Narrate.atomize.counted("atoms to plan", atoms.size, of = atomization.atoms.size)
-        return Atomized(source, text, atoms, atomization.evidenceLine)
+        return Atomized(label, source, text, atoms, atomization.evidenceLine)
     }
+
+    /**
+     * Whether this prompt is a document rather than an instruction.
+     *
+     * Length is the whole test, and it is a blunt one on purpose. "Make
+     * ATROPOS build itself" is a sentence; an expanded attachment is tens of
+     * thousands of characters. Anything subtler -- looking for headings, for
+     * bullet structure, for a title -- would be a classifier guessing at
+     * intent, and guessing wrong in the quiet direction means silently
+     * planning the cradle graph again.
+     *
+     * A wrong guess in the other direction costs an atomization that finds
+     * nothing, which falls back and says so.
+     */
+    private fun looksLikeADocument(task: String): Boolean =
+        task.length >= MINIMUM_DOCUMENT_CHARACTERS
+
+    private fun readFile(source: Path): String? {
+        val attachment = attachmentReader.read(
+            MentionResolution.Resolved(source, source.fileName.toString().substringAfterLast('.', ""))
+        ) ?: return null
+        if (attachment.truncated) {
+            // Said, not swallowed. A plan built from the first fifth of a
+            // specification is a plan that will finish and be wrong.
+            Narrate.ingest.trouble(
+                "${source.fileName} was truncated at ${attachment.text?.length} characters",
+                "atoms below that point are not in this graph"
+            )
+        }
+        return attachment.text
+    }
+
+    private fun fingerprint(text: String): String =
+        java.security.MessageDigest.getInstance("SHA-256")
+            .digest(text.toByteArray(Charsets.UTF_8))
+            .joinToString("") { "%02x".format(it) }
+            .take(16)
 
     /**
      * The document [task] names.
@@ -167,6 +215,15 @@ class SelfHostDocumentPlan(
 
         /** Well above any specification, well below the 8 MiB ingest ceiling. */
         const val MAXIMUM_DOCUMENT_CHARACTERS = 4_000_000
+
+        /**
+         * Below this, a prompt is an instruction and not a document.
+         *
+         * Two thousand characters is several paragraphs -- far longer than
+         * anyone types into a goal, far shorter than any specification worth
+         * atomizing.
+         */
+        const val MINIMUM_DOCUMENT_CHARACTERS = 2_000
 
         /** `@path/to/file.ext` or the bare path, with a readable extension. */
         val CANDIDATE_PATTERN = Regex("""@?[\w./\-]+\.(?:md|txt|docx|pdf)\b""", RegexOption.IGNORE_CASE)

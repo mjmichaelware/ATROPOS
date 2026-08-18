@@ -76,7 +76,7 @@ class SelfHostDocumentPlanTest {
 
         assertNotNull(plan)
         assertEquals(1, plan.atoms.size)
-        assertEquals("spec.md", plan.source.fileName.toString())
+        assertEquals("spec.md", plan.label)
     }
 
     @Test
@@ -91,8 +91,41 @@ class SelfHostDocumentPlanTest {
     }
 
     @Test
-    fun a_goal_naming_no_document_plans_nothing() {
+    fun a_goal_stating_an_instruction_plans_nothing() {
         assertNull(planWith(listOf(atom("a1", "x"))).atomize("shg-test", "make ATROPOS build itself"))
+    }
+
+    @Test
+    fun a_goal_carrying_the_document_inline_is_atomized_from_it() {
+        // The case an end-to-end run found and the unit tests could not: by
+        // the time a self-host goal exists, the CLI has already replaced
+        // `@spec.md` with the file's contents, so the task is tens of
+        // thousands of characters of specification with no filename anywhere
+        // in it. Requiring a path meant a four-hundred-atom document silently
+        // got the three-node cradle graph.
+        val expanded = "implement the following.\n" + "- an obligation stated at length.\n".repeat(200)
+
+        val plan = planWith(listOf(atom("a1", "An obligation."))).atomize("shg-test", expanded)
+
+        assertNotNull(plan)
+        assertNull(plan.source)
+        assertEquals("the goal prompt", plan.label)
+        assertEquals(1, plan.atoms.size)
+    }
+
+    @Test
+    fun the_dag_is_built_from_an_inline_document_too() {
+        val expanded = "implement the following.\n" + "- an obligation stated at length.\n".repeat(200)
+
+        val dag = SelfHostBootstrapDagFactory(
+            repoRoot = repoRoot,
+            dagService = DagExecutionService(repoRoot = repoRoot),
+            clock = clock,
+            documentPlan = planWith(listOf(atom("a1", "First."), atom("a2", "Second.")))
+        ).create(record(expanded), "11")
+
+        assertEquals(2, dag.nodes.size)
+        assertTrue(dag.label.contains("the goal prompt"), dag.label)
     }
 
     @Test
@@ -130,6 +163,7 @@ class SelfHostDocumentPlanTest {
 
         assertNotNull(plan)
         assertEquals(downloads.resolve("spec.md"), plan.source)
+        assertEquals("spec.md", plan.label)
     }
 
     @Test
@@ -183,6 +217,32 @@ class SelfHostDocumentPlanTest {
 
         assertEquals(emptyList(), dag.nodes[0].dependencies)
         assertEquals(listOf(dag.nodes[0].id), dag.nodes[1].dependencies)
+    }
+
+    @Test
+    fun every_atom_gets_a_node_even_when_two_share_an_id() {
+        // Node ids used to be keyed by atom id, so a repeated id collapsed two
+        // atoms into one entry and the graph came back a node short of the
+        // document -- silently, and visible only by counting. An end-to-end
+        // run produced 389 nodes from 390 atoms for exactly this reason.
+        writeDocument("docs/spec.md", "- a\n- b\n")
+        val atoms = listOf(
+            atom("same", "First."),
+            atom("same", "Second."),
+            atom("other", "Third.", dependsOn = listOf("same"))
+        )
+
+        val dag = SelfHostBootstrapDagFactory(
+            repoRoot = repoRoot,
+            dagService = DagExecutionService(repoRoot = repoRoot),
+            clock = clock,
+            documentPlan = planWith(atoms)
+        ).create(record("implement @docs/spec.md"), "11")
+
+        assertEquals(3, dag.nodes.size)
+        assertEquals(3, dag.nodes.map { it.id }.distinct().size, "two nodes share an id")
+        // The dependency resolves to the atom that earned the id first.
+        assertEquals(listOf(dag.nodes[0].id), dag.nodes[2].dependencies)
     }
 
     @Test

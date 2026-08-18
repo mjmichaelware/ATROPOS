@@ -103,6 +103,9 @@ class GovernedCompileGate(
         /** The environment variable that moves the compile off this machine. */
         const val REMOTE_FLAG = "ATROPOS_COMPILE_GATE"
 
+        /** How a gate says, in its own `command`, that it runs remotely. */
+        const val REMOTE_COMMAND = "github-actions"
+
         /**
          * The gate, wired to whichever machine can actually compile.
          *
@@ -131,7 +134,7 @@ class GovernedCompileGate(
                 // Named for what ran, so the policy record and the evidence
                 // line say GitHub Actions rather than claiming a local gradle
                 // invocation that never happened.
-                command = listOf("github-actions", GitHubActionsCompileRunner.DEFAULT_WORKFLOW, "compileKotlin"),
+                command = listOf(REMOTE_COMMAND, GitHubActionsCompileRunner.DEFAULT_WORKFLOW, "compileKotlin"),
                 processRunner = GitHubActionsCompileRunner(repoRoot)
             )
         }

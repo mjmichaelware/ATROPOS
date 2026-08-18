@@ -24,7 +24,7 @@ plugins {
 }
 
 group = "atropos"
-version = "2.0.0-rc.1"
+version = "2.0.0"
 
 // No `repositories` block here on purpose: settings.gradle.kts sets
 // RepositoriesMode.FAIL_ON_PROJECT_REPOS, so declaring project-level
