@@ -7,8 +7,9 @@
 </p>
 
 <p align="center">
-  Scoped hierarchical agents. Durable projects.<br/>
-  Terminal · Web · Android — same engine.
+  Open-source multi-agent AI coding engine for terminal, web, and Android.<br/>
+  Long-running hierarchical agents · durable projects · <strong>26 providers</strong>.<br/>
+  Agentic coding agent · BYOK multi-provider · MCP-ready · self-hosted control plane.
 </p>
 
 <p align="center">
@@ -32,78 +33,38 @@
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/mjmichaelware/ATROPOS/main/install.sh | sh
-# or: npm install -g @mjmichaelware/atropos
+
+npm install -g @mjmichaelware/atropos
 
 cd your-project && atropos
 ```
 
 **Java 17+.** Termux: `pkg install openjdk-21` · Debian: `sudo apt install openjdk-21-jre-headless` · macOS: `brew install openjdk@21`
 
-Put provider keys in the environment. ATROPOS discovers what you have on startup. In-app: `/help` · command palette `/` · `@path` to attach files.
-
----
-
-## The flat-context fantasy is dead
-
-Shoving an entire product into one giant context window and hoping a single model “understands everything” is how you buy confident nonsense. Flat prompts do not create structure. They hide the lack of it until the agent rewrites the wrong half of the tree.
-
-ATROPOS does not pretend a bigger window is a plan. Work is atomized into a **directed acyclic graph (DAG)** of obligations — ordered, dependency-aware, and runnable without circular busywork. **SpecGraph** is the planning and verification substrate: it turns requirements into research-enriched, checkable blueprints that the engine can execute node by node. The DAG is the spine. SpecGraph is how serious plans enter that spine. Hierarchy and territory keep each node from becoming a free-for-all.
-
-That is the opposite of chatty sub-agents renegotiating scope in prose while your quota evaporates.
-
----
-
-## Why the field is broken
-
-Most “autonomous” stacks still do this: isolate workers in worktrees, then spend the budget on **LLM group chat** — mailboxes, status ping-pong, soft scope, drift found after the damage. The cloud sees your repo on a loop. Providers stay locked. “Done” means the model stopped typing.
-
-### Cursor Agent
-Real autonomy with soft control. Agents that keep moving after stop, recreate deleted files, and commit without clear intent show up in the wild. Cloud paths have served **stale default-branch reads** while local git was correct — silent drift. Closed product; gravity pulls loops into the cloud.
-
-**ATROPOS:** territory at dispatch. Illegal paths blocked before write. Local-first engine. Cloud is a model endpoint, not the brain.
-
-### Claude Code
-Excellent single-agent depth — and a **quota furnace**. Subagent fan-out is reported near **~7×** a normal session; MCP tool defs can eat a large slice of the window before real work starts. Weekly and rolling caps die on long teams. Anthropic-first.
-
-**ATROPOS:** multi-provider from env keys; free-first routing. Coordination is hierarchy and state, not another paid meeting between agents.
-
-### Codex CLI
-Strong sandbox. OpenAI-shaped defaults and metering. Opaque quota drain and wait/re-sample loops have burned weekly allowance on long jobs. Vendor core under the open edges.
-
-**ATROPOS:** open client (AGPL-3.0). Durable projects instead of living inside a rolling window as architecture.
-
-### OpenHands
-Ambitious issue→PR autonomy with **message-heavy** orchestration. Drift is post-hoc. You pay for the chat between agents as much as for the patch.
-
-**ATROPOS:** preventive scope. Promote only after independent checks — not when the swarm goes quiet.
-
-### OpenCode
-Best-in-class OSS TUI and real BYOK. Still session-shaped; measured harness work has shown large **token waste per solved task** when loops idle and re-sample. Keys are free; chatter is not.
-
-**ATROPOS:** DAG-ordered long runs, durable projects, restart continuity — multi-provider without treating “open” as “unbounded session spend.”
-
-### Aider
-Git discipline is real. Autonomy is not. It is a turn-by-turn pair programmer with a **dated terminal UX**, now on a maintenance trajectory. Right tool for small diffs. Wrong tool for multi-day hierarchical delivery.
-
-**ATROPOS:** multi-surface control plane (terminal, web, Android) built for operators who run real work, not a 2023 REPL aesthetic.
+Drop in the API keys you already use. ATROPOS auto-discovers providers on startup — you do not configure all 26. In-app: `/help` · command palette `/` · `@path` to attach files.
 
 ---
 
 ## What ATROPOS optimizes
 
-| Field failure | ATROPOS |
-|---------------|---------|
-| Flat mega-context “understanding” | **DAG + SpecGraph** — ordered atoms, not one blob |
-| Unscoped autonomy / drift | Territory at dispatch; block before write |
-| Chatty sub-agents | Hierarchy + policy state, not agent group chat |
-| Provider lock | Multi-provider discovery; free-first cascade |
-| Session death | Durable projects, checkpoints, restart continuity |
-| Cloud-as-brain | Local-first engine; providers are backends |
-| “Done” when the model stops | Independent checks before promotion |
-| One surface only | Terminal · web · Android, one engine |
-| Closed client | AGPL-3.0 |
+| Pain most coding agents still cause | What ATROPOS does |
+|-------------------------------------|-------------------|
+| Uncontrolled autonomous edits and **agent drift** | **Scoped multi-agent hierarchy** — territory assigned at dispatch, illegal paths blocked before write |
+| **Token waste**, **quota** burn, and chatty sub-agents | **Multi-agent orchestration** via policy and state — not LLM group chat |
+| **Provider lock-in** and one-vendor launch hell | **BYOK** · **26 providers** · free-first multi-provider routing from keys you already have |
+| Session dies and long work is lost | **Long-running autonomous** projects with **checkpoint**, **resume**, and restart continuity |
+| Stuffing everything into a **flat context window** | **DAG-ordered** work units — dependency-aware atoms, not one mega-prompt |
+| Parallel agents that thrash each other | Controlled **parallel agents** and swarm dispatch without circular busywork |
+| Mega-prompt guessing instead of a real plan | **Planning and verification** via SpecGraph before execution |
+| Cloud-as-brain and closed clients | **Local-first** · **self-hosted** · **open-source** engine (AGPL-3.0); cloud is optional LLM backend |
+| “Done” when the model stops talking | **Verified completion** — independent checks before promotion |
+| IDE-only or terminal-only tools | **Multi-surface**: terminal **CLI** / **TUI**, web app, Android / mobile — one engine |
 
-Autonomy without the drift is the architecture: **scoped hierarchical agents, DAG-ordered work, SpecGraph-backed plans, multi-provider routing, multi-surface control.**
+---
+
+## SpecGraph and the DAG
+
+**SpecGraph** is the document analyzer and **DAG** builder inside ATROPOS — a full planning and verification app embedded in the engine. It turns source documents into a research-backed **directed acyclic graph** (task graph / dependency graph) of obligations so **long-horizon** autonomous coding agents and the multi-agent swarm execute ordered software-engineering work instead of dumping an entire product into one flat **context window**. Checkpoint and resume keep that graph alive across restarts. SpecGraph is how serious software blueprints enter the swarm without circular thrash or hallucinated structure.
 
 Providers need network unless you configure a local model (e.g. Ollama).
 
