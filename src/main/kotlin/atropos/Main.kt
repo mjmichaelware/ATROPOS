@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos
 
+import kotlin.system.exitProcess
 import atropos.bridge.LocalEngineBridge
 import atropos.cli.BackgroundCommandRunner
 import atropos.cli.CommandRouter
@@ -111,6 +112,31 @@ fun main(args: Array<String>) {
             } else {
                 ui.renderError("bridge failed to start: ${server.lastError() ?: "unknown"}")
             }
+        }
+
+        // `atropos auth accept AGENTS.md` -- argv as one command, then exit.
+        //
+        // This did not exist. `main` read argv for exactly two flags and threw
+        // the rest away, so every `atropos <something>` booted the CLI and
+        // ignored what it was asked to do. The visible consequence was a
+        // deadlock in the authority gate: a changed AGENTS.md holds dispatch
+        // and prints "accept it with 'atropos auth accept AGENTS.md'", and that
+        // command did nothing at all. The only remedy the engine offered was
+        // one it did not implement.
+        //
+        // Reads and writes both go through the same router the interactive
+        // session uses, so a one-shot cannot do anything a typed command
+        // could not, and there is no second dispatch path to keep in step.
+        val oneShot = args.filterNot { it.startsWith("--") }
+        if (oneShot.isNotEmpty()) {
+            // Boot noise (the authority error, the continuity notice) has
+            // already printed and is not this command's failure. Counting it
+            // would make `atropos auth accept AGENTS.md` exit non-zero on the
+            // very run that fixed the thing it was complaining about.
+            ui.resetErrorCount()
+            val line = oneShot.joinToString(" ").let { if (it.startsWith("/")) it else "/$it" }
+            router.handleInput(line)
+            exitProcess(if (ui.errorCount > 0) 1 else 0)
         }
 
         if (capabilities.isInteractiveTerminal) {
