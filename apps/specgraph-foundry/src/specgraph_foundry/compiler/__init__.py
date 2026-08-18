@@ -280,9 +280,13 @@ class SpecGraphCompiler:
         })
         self.event_log.record_event("SHACLValidation", {"nodes": len(authority_nodes), "edges": len(all_edges)}, shacl_result)
 
+        # `all_edges`, not `authority_edges`. The dependency compiler's output
+        # was assembled two statements above, validated, SHACL-checked -- and
+        # then withheld from the one consumer that decides build order, so the
+        # execution graph came out as isolated nodes with no edges at all.
         exec_dag = build_execution_dag(
             atoms=[r.to_dict() for r in canonical_reqs],
-            authority_edges=authority_edges,
+            authority_edges=all_edges,
             resolved_unresolved_ids=set(),
         )
         _attach_execution_support(canonical_reqs, exec_dag)
