@@ -5,6 +5,7 @@ import atropos.core.planning.AtomContext
 import atropos.core.planning.AtomContextProvider
 import atropos.core.planning.InternalAtom
 import atropos.core.security.RedactionFilter
+import atropos.core.thinking.Narrate
 import java.nio.charset.StandardCharsets
 
 /**
@@ -36,10 +37,22 @@ class LakehouseAtomContextProvider(
 ) : AtomContextProvider {
 
     override fun contextFor(atom: InternalAtom): List<AtomContext> {
-        if (!index.available) return emptyList()
+        // Every branch here says what happened. A retrieval stage that reports
+        // only its successes is indistinguishable from one that never ran, and
+        // "the lakehouse had nothing for this atom" is a finding an operator
+        // reading a trace needs as much as a hit.
+        if (!index.available) {
+            Narrate.lakehouse.skipped("retrieval for ${atom.id}", "no lakehouse index is mounted")
+            return emptyList()
+        }
 
         val keywords = AtomKeywordExtractor.keywords(atom.statement)
         val matches = index.match(keywords, limit = maxPaths)
+        Narrate.lakehouse.lookup(
+            store = "lakehouse",
+            query = keywords.joinToString(" "),
+            hits = matches.size
+        )
         if (matches.isEmpty()) return emptyList()
 
         return matches.map { match ->
@@ -47,6 +60,7 @@ class LakehouseAtomContextProvider(
             if (result == null) {
                 // A retriever that threw is not a miss. Calling it one would
                 // hide a broken mount behind a shelf that merely looked empty.
+                Narrate.lakehouse.trouble("${match.path} could not be retrieved", "retriever threw")
                 return@map AtomContext(
                     path = match.path,
                     sha256 = null,
@@ -56,6 +70,12 @@ class LakehouseAtomContextProvider(
                 )
             }
 
+            Narrate.lakehouse.item(
+                index = matches.indexOf(match) + 1,
+                total = matches.size,
+                id = result.path,
+                what = "${result.status}${result.reason?.let { " ($it)" }.orEmpty()}"
+            )
             AtomContext(
                 path = result.path,
                 sha256 = result.nodeId,

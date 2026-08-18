@@ -266,8 +266,18 @@ class FactoryResearchService(
         promptFingerprint: String,
         promptSpans: String = "none",
         researchDocumentSha256: String = ""
-    ): List<String> = atomIds.map {
-        "atom=$it prompt_fingerprint=$promptFingerprint prompt_spans=$promptSpans research_sha256=$researchDocumentSha256 research=bounded_channels_attempted"
+    ): List<String> {
+        atropos.core.thinking.Narrate.research.counted("atoms to research", atomIds.size)
+        return atomIds.mapIndexed { index, id ->
+            atropos.core.thinking.Narrate.research.item(
+                index = index + 1,
+                total = atomIds.size,
+                id = id,
+                what = "bounded research channels attempted"
+            )
+            "atom=$id prompt_fingerprint=$promptFingerprint prompt_spans=$promptSpans " +
+                "research_sha256=$researchDocumentSha256 research=bounded_channels_attempted"
+        }
     }
 
     private fun safeReason(failure: Throwable): String =

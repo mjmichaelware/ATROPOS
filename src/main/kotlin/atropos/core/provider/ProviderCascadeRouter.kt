@@ -71,7 +71,36 @@ class ProviderCascadeRouter(
             try {
                 beforeAttempt(provider)
                 val aiProvider = factory.getProvider(provider)
+
+                // What was asked, in the operator's words rather than in the
+                // engine's. A trace that says "asking anthropic" and then goes
+                // quiet for ninety seconds has told the operator nothing they
+                // could not see from the spinner; a trace that says what the
+                // question was, and then what came back, is the run explaining
+                // itself.
+                atropos.core.thinking.Narrate.provider.lookup(
+                    store = provider,
+                    query = firstLine(prompt),
+                    hits = 0
+                )
+                atropos.core.thinking.Thinking.detail(
+                    "provider",
+                    "$provider: sending ${prompt.length} characters" +
+                        (context?.let { " with ${it.length} characters of context" } ?: " with no extra context")
+                )
+
+                val startedAt = System.currentTimeMillis()
                 val response = aiProvider.complete(prompt, context)
+                val elapsed = System.currentTimeMillis() - startedAt
+
+                atropos.core.thinking.Thinking.step(
+                    "provider",
+                    "$provider answered in ${elapsed}ms, ${response.length} characters"
+                )
+                atropos.core.thinking.Thinking.detail(
+                    "provider",
+                    "$provider said: ${firstLine(response)}"
+                )
 
                 return ProviderCascadeResult(
                     providerName = provider,
@@ -83,6 +112,13 @@ class ProviderCascadeRouter(
                 val error = classifier.classify(provider, failure)
                 errors += error
                 onFailure(error)
+                // Named at L2, not L3. A provider dropping out changes which
+                // model answered, which is a fact about the result and not a
+                // detail of how it was obtained.
+                atropos.core.thinking.Thinking.step(
+                    "provider",
+                    "$provider did not answer (${error.type}): ${error.cleanMessage}"
+                )
 
                 if (
                     error.type == FailureType.AUTH_INVALID ||
@@ -100,6 +136,10 @@ class ProviderCascadeRouter(
                 errors.joinToString(" | ") { it.cleanMessage }
             }
 
+        atropos.core.thinking.Thinking.step(
+            "provider",
+            "no provider answered; queuing for retry — $cleanAggregate"
+        )
         val retryAt = System.currentTimeMillis() + 60_000L
         return ProviderCascadeResult(
             providerName = "local_queue",
@@ -110,6 +150,18 @@ class ProviderCascadeRouter(
             earliestRetryEpochMs = retryAt,
             queueReason = cleanAggregate
         )
+    }
+
+    /**
+     * The gist of a prompt or an answer for the trace.
+     *
+     * The first non-blank line, clipped. Narrating a whole prompt would put a
+     * research brief into the terminal and narrating a whole answer would put
+     * the run's output there twice.
+     */
+    private fun firstLine(text: String): String {
+        val line = text.lineSequence().firstOrNull { it.isNotBlank() }?.trim().orEmpty()
+        return if (line.length <= GIST_CELLS) line else line.take(GIST_CELLS) + "…"
     }
 
     fun providerOrderPreview(requestedProvider: String, providerOrderOverride: List<String>? = null): List<String> =
@@ -134,5 +186,10 @@ class ProviderCascadeRouter(
                 .distinct(),
             registry
         )
+    }
+
+    private companion object {
+        /** How much of a prompt or an answer one narrated line carries. */
+        const val GIST_CELLS = 100
     }
 }

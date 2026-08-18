@@ -37,9 +37,26 @@ class ExportBundleReader private constructor(
      * fact arrived with nothing in it.
      */
     fun text(artifact: HandoffArtifact): String? {
-        if (artifact !in verification.verified) return null
+        // Every read of a handoff artifact is narrated, by name.
+        //
+        // The operator asked to be told whether `atropos_handoff.json` and the
+        // rest of the bundle exist, and until now the only way to find out was
+        // to go and look in the directory. Both answers are worth having: a
+        // present artifact says the stage produced what it claimed, and an
+        // absent one names exactly which file the next failure will be about.
+        if (artifact !in verification.verified) {
+            atropos.core.thinking.Narrate.evidence.skipped(
+                artifact.fileName,
+                "not in the verified manifest"
+            )
+            return null
+        }
         val path = root.resolve(artifact.fileName)
-        if (!Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS)) return null
+        if (!Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS)) {
+            atropos.core.thinking.Narrate.evidence.artifact(artifact.fileName, path)
+            return null
+        }
+        atropos.core.thinking.Narrate.evidence.artifact(artifact.fileName, path)
         return runCatching { Files.readString(path) }.getOrNull()
     }
 

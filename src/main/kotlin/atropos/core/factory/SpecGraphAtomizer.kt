@@ -1,6 +1,7 @@
 package atropos.core.factory
 
 import atropos.core.policy.BoundedProcessRunner
+import atropos.core.thinking.Narrate
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.LinkOption
@@ -124,6 +125,10 @@ class SpecGraphAtomizer(
                 append(source)
             }
             Files.writeString(sourceFile, lineageSource, StandardCharsets.UTF_8)
+            Narrate.atomize.stage(
+                "atomizing ${lineageSource.length} characters through SpecGraph at $canonicalRoot"
+            )
+            Narrate.atomize.artifact("atomizer input", sourceFile)
             try {
                 val result = processRunner.run(
                     command = listOf(
@@ -161,6 +166,25 @@ class SpecGraphAtomizer(
                 require(sourceSha == sha256(lineageSource)) { "source_hash_mismatch" }
 
                 val atoms = lines.mapNotNull(CanonicalAtomRecord::decode)
+                // The number an operator is actually waiting for. It was
+                // computed here on every run and never said out loud, so a
+                // fourteen-minute atomization of a four-hundred-atom document
+                // and one of an empty file looked identical from the outside.
+                Narrate.atomize.counted("atoms decoded", atoms.size, of = declaredCount)
+                if (atoms.size != declaredCount) {
+                    Narrate.atomize.trouble(
+                        "SpecGraph declared $declaredCount atoms and this side could read ${atoms.size}",
+                        "the rest carried no id or no statement"
+                    )
+                }
+                atoms.forEachIndexed { index, atom ->
+                    Narrate.atomize.item(
+                        index = index + 1,
+                        total = atoms.size,
+                        id = atom.id,
+                        what = atom.statement.take(ATOM_NARRATION_CELLS)
+                    )
+                }
                 val observedSchema = lines
                     .firstOrNull { it.startsWith(CanonicalAtomRecord.SCHEMA_PREFIX + "\t") }
                     ?.substringAfter('\t')
@@ -194,11 +218,13 @@ class SpecGraphAtomizer(
                     // runs while the evidence said the canonical atomizer had
                     // worked.
                     //
-                    // The cause is upstream and worth naming here rather than
-                    // leaving to be rediscovered: `AtomService.extract_document`
-                    // keys on modal requirement sentences (MUST/SHALL), and a
-                    // `key=value` document contains none, so it yields zero
-                    // atoms from a document that is not empty.
+                    // This used to be caused by extraction keying on modal
+                    // requirement sentences, so a `key=value` or bullet-list
+                    // document produced zero atoms however much work it
+                    // described. That is fixed upstream: admission is
+                    // structural now, and the same document that yielded
+                    // nothing yields 390 atoms. Reaching this branch today
+                    // means the source genuinely has no delimited items in it.
                     CanonicalAtomization(
                         atoms = emptyList(),
                         sourceSha256 = sourceSha,
@@ -268,6 +294,15 @@ class SpecGraphAtomizer(
         .joinToString("") { "%02x".format(it) }
 
     private companion object {
+        /**
+         * How much of an atom's statement the per-atom line carries.
+         *
+         * Enough to recognise which atom it is; not the whole statement, which
+         * on this document runs to a paragraph and would make the trace
+         * unreadable at exactly the moment it became complete.
+         */
+        const val ATOM_NARRATION_CELLS = 90
+
         /** Where SpecGraph lives inside ATROPOS. */
         const val IN_REPO_SPECGRAPH = "apps/specgraph-foundry"
 

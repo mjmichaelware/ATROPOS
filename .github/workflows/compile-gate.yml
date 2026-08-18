@@ -1,0 +1,42 @@
+# The compile gate, run on GitHub's hardware.
+#
+# ATROPOS runs on a phone, where `./gradlew compileKotlin` exits 127 -- there is
+# no JDK toolchain to run it. A self-host run there mutates source, cannot
+# compile it, and correctly refuses to promote anything, which leaves the engine
+# unable to finish its own loop on the only machine its operator has.
+#
+# This workflow is the other half of GitHubActionsCompileRunner: the engine
+# pushes a snapshot of the mutated tree to a scratch ref and dispatches this,
+# then reads the conclusion as the gate's exit code. Nothing here decides
+# anything the local gate would not have decided -- it is the same command, on a
+# machine that can run it.
+name: compile gate
+
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: Who asked for this compile, and for what
+        required: false
+        default: manual
+
+permissions:
+  contents: read
+
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      # The exact command the local gate runs. If this diverges, the gate is
+      # verifying something other than what it claims to verify.
+      - name: compileKotlin
+        run: ./gradlew --no-daemon compileKotlin
