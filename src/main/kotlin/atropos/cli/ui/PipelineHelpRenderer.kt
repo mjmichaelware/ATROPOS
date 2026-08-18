@@ -142,7 +142,7 @@ class PipelineHelpRenderer(private val theme: TerminalTheme) {
                     "the research, the gate results. A claim you can check beats " +
                     "a claim you have to trust.",
                 "an evidence bundle on disk",
-                listOf("/self-host export-evidence", "/export")
+                listOf("/self-host export-evidence", "/export", "/scavenge")
             )
         )
     }

@@ -67,6 +67,7 @@ class CommandRouter(
     private val shortcutsRenderer = atropos.cli.ui.ShortcutsRenderer(theme)
 
     private val pipelineHelpRenderer = atropos.cli.ui.PipelineHelpRenderer(theme)
+    private val scavengeRenderer = atropos.cli.ui.ScavengeRenderer(theme)
 
     /**
      * Which directories an `@mention` may read from.
@@ -384,6 +385,27 @@ class CommandRouter(
 
             "/pipeline" -> {
                 uiEngine.renderBlock(pipelineHelpRenderer.render(uiEngine.viewportWidth))
+                RouterOutcome.CONTINUE
+            }
+
+            "/scavenge" -> {
+                // Read-only by construction. The scavenger finds work and
+                // reports it; nothing in this branch can write to a repository
+                // the operator does not own, because nothing downstream of it
+                // writes anywhere at all.
+                val owner = tokens.drop(1).firstOrNull { !it.startsWith("-") }.orEmpty()
+                val result = runCatching {
+                    atropos.core.scavenge.GitHubScavenger().scavenge(
+                        atropos.core.scavenge.GitHubScavenger.Query(
+                            owner = owner,
+                            includeOthersConflicts = tokens.contains("--anyone")
+                        )
+                    )
+                }
+                result.fold(
+                    onSuccess = { uiEngine.renderBlock(scavengeRenderer.render(it, uiEngine.viewportWidth)) },
+                    onFailure = { uiEngine.renderNotice("scavenge: ${it.message}") }
+                )
                 RouterOutcome.CONTINUE
             }
 
