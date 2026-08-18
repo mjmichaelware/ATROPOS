@@ -6,6 +6,7 @@ object CommandCatalog {
         CommandEntry("/help", "show command help", "System", aliases = listOf("/usage", "/?")),
         CommandEntry("/shortcuts", "every keyboard shortcut", "System", aliases = listOf("/keys-help")),
         CommandEntry("/ps", "ask a second provider without joining the queue", "Models"),
+        CommandEntry("/pipeline", "what ATROPOS does, stage by stage", "System"),
         CommandEntry("/dashboard", "return to dashboard"),
         CommandEntry("/home", "return to dashboard"),
         CommandEntry("/tabs", "list open tabs"),

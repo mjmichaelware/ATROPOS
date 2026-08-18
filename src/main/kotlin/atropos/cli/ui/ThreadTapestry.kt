@@ -2,7 +2,6 @@
 package atropos.cli.ui
 
 import atropos.cli.ui.design.Role
-import kotlin.math.abs
 import kotlin.math.sin
 
 /**
@@ -46,44 +45,55 @@ class ThreadTapestry(private val theme: TerminalTheme) {
             val line = StringBuilder()
             var previousTier = -1
 
+            val onWeft = row % WEFT_ROWS == 0
+
             for (column in 0 until width) {
-                val x = column.toDouble() / width
-                val y = row.toDouble() / height.coerceAtLeast(1)
+                val onWarp = column % WARP_COLUMNS == 0
 
-                // Three threads at different frequencies. Where they agree the
-                // cloth is dense; where they cancel it opens up.
-                val woven =
-                    sin(x * 9.0 + drift) +
-                        sin((x * 4.0) + (y * 7.0) - drift * 0.6) +
-                        sin((y * 11.0) - (x * 2.0) + drift * 0.3)
+                // A diagonal sheen across the cloth. Smooth and shallow: the
+                // lattice is the subject, and a field that swings through the
+                // whole ramp would turn the threads into the background.
+                val sheen = (
+                    sin((column.toDouble() / width) * 3.0 + (row.toDouble() / height) * 2.0 + drift) + 1.0
+                    ) / 2.0
 
-                val tier = tierOf(abs(woven) / 3.0)
+                val glyph = when {
+                    onWarp && onWeft -> CROSS
+                    onWarp -> WARP
+                    onWeft -> WEFT
+                    else -> FIELD[(sheen * FIELD.size).toInt().coerceIn(0, FIELD.lastIndex)]
+                }
+
+                // Threads sit two tiers brighter than the field they cross, so
+                // the weave reads as structure lit from one side rather than as
+                // a grid drawn over noise.
+                val base = (sheen * (RAMP_RGB.size - 2)).toInt().coerceIn(0, RAMP_RGB.size - 2)
+                val tier = when {
+                    onWarp && onWeft -> RAMP_RGB.lastIndex
+                    onWarp || onWeft -> (base + 2).coerceAtMost(RAMP_RGB.lastIndex)
+                    else -> base
+                }
 
                 // Colour is emitted only when it changes. A per-cell escape
                 // sequence would make one row of a wide terminal several
                 // kilobytes, and the diffing renderer would rewrite all of it
                 // on every frame.
                 if (tier != previousTier) {
-                    if (previousTier >= 0) line.append(RESET)
+                    // No RESET first: setting a foreground colour replaces the
+                    // previous one outright, so emitting both doubled every
+                    // row's escape count for nothing. A 120-cell row was
+                    // carrying 126 escape sequences -- more than one per cell,
+                    // which is the exact waste this batching exists to avoid.
                     line.append(open(tier))
                     previousTier = tier
                 }
-                line.append(GLYPHS[tier])
+                line.append(glyph)
             }
 
             if (previousTier >= 0) line.append(RESET)
             line.toString()
         }
     }
-
-    private fun tierOf(intensity: Double): Int =
-        when {
-            intensity < 0.16 -> 0
-            intensity < 0.32 -> 1
-            intensity < 0.48 -> 2
-            intensity < 0.64 -> 3
-            else -> 4
-        }
 
     /**
      * The 24-bit colour for a tier, or empty when the terminal has none.
@@ -111,8 +121,18 @@ class ThreadTapestry(private val theme: TerminalTheme) {
         const val RESET = "\u001B[0m"
         const val PHASE_STEP = 0.22
 
-        /** Sparse to dense. Space carries the negative space the weave needs. */
-        val GLYPHS = charArrayOf(' ', '·', '░', '▒', '▓')
+        /** Warp runs down, weft runs across, and they cross. */
+        const val WARP = '\u2502'
+        const val WEFT = '\u2500'
+        const val CROSS = '\u253C'
+
+        /** Threads every four columns and every three rows: dense enough to
+         *  read as cloth, open enough that the field shows through. */
+        const val WARP_COLUMNS = 4
+        const val WEFT_ROWS = 3
+
+        /** The cloth between the threads, sparse to dense. */
+        val FIELD = charArrayOf(' ', '\u00b7', '\u2591', '\u2592')
 
         /**
          * Deep indigo through periwinkle to near-white.
@@ -121,11 +141,13 @@ class ThreadTapestry(private val theme: TerminalTheme) {
          * hue competes with the mark instead of sitting behind it.
          */
         val RAMP_RGB = listOf(
-            Triple(0x1B, 0x1E, 0x3A),
-            Triple(0x2E, 0x35, 0x6B),
-            Triple(0x4C, 0x5A, 0xA8),
+            Triple(0x14, 0x18, 0x30),
+            Triple(0x24, 0x2B, 0x5C),
+            Triple(0x3A, 0x44, 0x8E),
+            Triple(0x56, 0x63, 0xB8),
             Triple(0x7E, 0x8F, 0xD6),
-            Triple(0xC8, 0xD4, 0xF5)
+            Triple(0xA8, 0xB8, 0xEC),
+            Triple(0xDA, 0xE3, 0xFB)
         )
     }
 }

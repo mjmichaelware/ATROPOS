@@ -66,6 +66,8 @@ class CommandRouter(
 
     private val shortcutsRenderer = atropos.cli.ui.ShortcutsRenderer(theme)
 
+    private val pipelineHelpRenderer = atropos.cli.ui.PipelineHelpRenderer(theme)
+
     /**
      * Which directories an `@mention` may read from.
      *
@@ -377,6 +379,11 @@ class CommandRouter(
                 // §2.2: every meaningful activity belongs to a project, and
                 // that boundary is reachable from the terminal, not only the web.
                 projectCommand.execute(tokens.drop(1))
+                RouterOutcome.CONTINUE
+            }
+
+            "/pipeline" -> {
+                uiEngine.renderBlock(pipelineHelpRenderer.render(uiEngine.viewportWidth))
                 RouterOutcome.CONTINUE
             }
 
