@@ -2,8 +2,6 @@
   <img src="docs/assets/atropos-wordmark.svg" alt="ATROPOS" width="480"/>
 </p>
 
-<h1 align="center">ATROPOS</h1>
-
 <p align="center">
   <strong>Open-source multi-agent AI coding engine</strong>
 </p>
@@ -21,9 +19,10 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/mjmichaelware/ATROPOS/stargazers"><img src="https://img.shields.io/github/stars/mjmichaelware/ATROPOS?style=flat" alt="Stars"/></a>
-  <a href="LICENSE"><img src="https://img.shields.io/github/license/mjmichaelware/ATROPOS?style=flat" alt="License"/></a>
-  <a href="https://github.com/mjmichaelware/ATROPOS/releases"><img src="https://img.shields.io/github/v/release/mjmichaelware/ATROPOS?style=flat" alt="Release"/></a>
+  <img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="License AGPL-3.0"/>
+  <img src="https://img.shields.io/badge/kotlin-primary-7F52FF" alt="Kotlin"/>
+  <img src="https://img.shields.io/badge/surfaces-terminal%20%7C%20web%20%7C%20android-a855f7" alt="Surfaces"/>
+  <img src="https://img.shields.io/badge/languages-EN%20%7C%20ES%20%7C%20ZH%20%7C%20FR-0ea5e9" alt="Languages"/>
 </p>
 
 ---
@@ -94,7 +93,7 @@ atropos auth accept AGENTS.md
 | **Web** | Browser client over the local engine (session, files, evidence, agents) |
 | **Android** | Native APK client aimed at dense, one-hand operator UX |
 
-One engine. Multiple surfaces. Same projects, verification, and providers.
+One engine. Multiple surfaces. Same projects, evidence, and providers.
 
 ---
 
@@ -122,10 +121,9 @@ Full command surface lives in-app (`/help`).
 | **Open source** | Inspect and modify the client — AGPL-3.0 |
 | **Multi-agent** | Hierarchical dispatch with scope control — not a single chat thread |
 | **Multi-provider** | Keys in env → auto-discover; free-first routing |
-| **Verification before done** | Gates block fake success |
+| **Long-running** | Durable projects and checkpoints — not a chatty prompt-driven session |
 | **Multi-surface** | Terminal, web, and Android over one engine |
 | **Any terminal** | Phone or desktop — same binary |
-| **Durable work** | Projects and checkpoints survive restart |
 
 Providers need network. Local models (e.g. Ollama) work when configured.
 
