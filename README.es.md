@@ -3,11 +3,12 @@
 </p>
 
 <p align="center">
-  <strong>Deja de cuidar agentes de codificación charlatanes.</strong>
+  <strong>Autonomía sin deriva.</strong>
 </p>
 
 <p align="center">
-  Trabajo jerárquico de larga duración. Proyectos duraderos. Cualquier terminal—móvil o escritorio.
+  Agentes jerárquicos con alcance. Proyectos duraderos.<br/>
+  Terminal · Web · Android — el mismo motor.
 </p>
 
 <p align="center">
@@ -36,41 +37,11 @@ curl -fL -o ~/ATROPOS.jar \
 java -jar ~/ATROPOS.jar
 ```
 
-**Requiere Java 17+**
+**Requiere Java 17+** — luego `cd tu-proyecto && atropos`
 
-| Plataforma | JDK |
-|------------|-----|
-| Android (Termux) | `pkg install openjdk-21` |
-| Debian/Ubuntu | `sudo apt install openjdk-21-jre-headless` |
-| macOS | `brew install openjdk@21` |
-| Windows | JDK 17+ + Windows Terminal |
+Detalle de instalación, variables y la tabla de comparación completa: ver [README en inglés](README.md).
 
-```sh
-cd tu-proyecto
-atropos
-```
-
-### Variables de entorno
-
-| Variable | Efecto |
-|----------|--------|
-| `ATROPOS_MODEL_<PROVIDER>` | Modelo por proveedor |
-| `ATROPOS_INGEST_ROOTS` | Raíces de lectura extra |
-| `ATROPOS_NO_ANIMATION` | Sin secuencia de apertura |
-| `ATROPOS_ASCII` | UI ASCII |
-| `ATROPOS_JAVA_OPTS` | Flags JVM |
-| `ATROPOS_JAR` | Jar existente |
-| `ATROPOS_VERSION` | Versión del instalador |
-
-En la app: `/help` · paleta `/` · archivos con `@ruta`.
-
----
-
-## Por qué no otro agente de codificación
-
-La mayoría son **sesiones impulsadas por prompts**: un hilo de chat, pasos reactivos, el trabajo muere al cerrar la sesión, y el agente no duda en tocar todo el árbol.
-
-ATROPOS está construido al revés: agentes jerárquicos de larga duración, proyectos duraderos, multi-proveedor desde el entorno, el mismo motor en terminal / web / Android, cliente open source (AGPL-3.0).
+En la app: `/help` · paleta `/` · `@ruta`
 
 ---
 

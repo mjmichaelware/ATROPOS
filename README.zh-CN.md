@@ -3,11 +3,12 @@
 </p>
 
 <p align="center">
-  <strong>别再照看话痨式编码代理了。</strong>
+  <strong>有自主，无漂移。</strong>
 </p>
 
 <p align="center">
-  长时间分层工作。持久项目。任意终端——手机或桌面。
+  有范围的分层智能体。持久项目。<br/>
+  终端 · Web · Android — 同一引擎。
 </p>
 
 <p align="center">
@@ -36,41 +37,11 @@ curl -fL -o ~/ATROPOS.jar \
 java -jar ~/ATROPOS.jar
 ```
 
-**需要 Java 17+**
+**需要 Java 17+** — 然后 `cd 你的项目 && atropos`
 
-| 平台 | JDK |
-|------|-----|
-| Android (Termux) | `pkg install openjdk-21` |
-| Debian/Ubuntu | `sudo apt install openjdk-21-jre-headless` |
-| macOS | `brew install openjdk@21` |
-| Windows | JDK 17+ + Windows Terminal |
+完整安装说明、环境变量与对比表见 [英文 README](README.md)。
 
-```sh
-cd 你的项目
-atropos
-```
-
-### 环境变量
-
-| 变量 | 作用 |
-|------|------|
-| `ATROPOS_MODEL_<PROVIDER>` | 覆盖提供商模型 |
-| `ATROPOS_INGEST_ROOTS` | 额外可读根目录 |
-| `ATROPOS_NO_ANIMATION` | 跳过开场 |
-| `ATROPOS_ASCII` | ASCII UI |
-| `ATROPOS_JAVA_OPTS` | JVM 参数 |
-| `ATROPOS_JAR` | 使用已有 jar |
-| `ATROPOS_VERSION` | 固定安装版本 |
-
-应用内：`/help` · 命令面板 `/` · `@路径` 附加文件。
-
----
-
-## 为什么不是又一个编码代理
-
-多数工具是**提示驱动的会话**：单聊天线程、被动步进、会话结束工作即丢，还容易改动整个目录树。
-
-ATROPOS 相反：长时间运行的分层多智能体、持久项目、环境变量多提供商、同一引擎覆盖终端 / Web / Android、开源客户端（AGPL-3.0）。
+应用内：`/help` · 面板 `/` · `@路径`
 
 ---
 

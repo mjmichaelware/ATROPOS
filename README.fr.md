@@ -3,11 +3,12 @@
 </p>
 
 <p align="center">
-  <strong>Arrêtez de babysitter des agents de codage bavards.</strong>
+  <strong>De l'autonomie sans la dérive.</strong>
 </p>
 
 <p align="center">
-  Travail hiérarchique de longue durée. Projets durables. N'importe quel terminal—mobile ou bureau.
+  Agents hiérarchiques à portée contrôlée. Projets durables.<br/>
+  Terminal · Web · Android — le même moteur.
 </p>
 
 <p align="center">
@@ -36,41 +37,11 @@ curl -fL -o ~/ATROPOS.jar \
 java -jar ~/ATROPOS.jar
 ```
 
-**Nécessite Java 17+**
+**Nécessite Java 17+** — puis `cd votre-projet && atropos`
 
-| Plateforme | JDK |
-|------------|-----|
-| Android (Termux) | `pkg install openjdk-21` |
-| Debian/Ubuntu | `sudo apt install openjdk-21-jre-headless` |
-| macOS | `brew install openjdk@21` |
-| Windows | JDK 17+ + Windows Terminal |
+Détail d'install, variables et tableau de comparaison : [README anglais](README.md).
 
-```sh
-cd votre-projet
-atropos
-```
-
-### Variables d'environnement
-
-| Variable | Effet |
-|----------|--------|
-| `ATROPOS_MODEL_<PROVIDER>` | Modèle par fournisseur |
-| `ATROPOS_INGEST_ROOTS` | Racines de lecture extra |
-| `ATROPOS_NO_ANIMATION` | Sans séquence d'ouverture |
-| `ATROPOS_ASCII` | UI ASCII |
-| `ATROPOS_JAVA_OPTS` | Options JVM |
-| `ATROPOS_JAR` | Jar existant |
-| `ATROPOS_VERSION` | Version d'install |
-
-Dans l'app : `/help` · palette `/` · fichiers avec `@chemin`.
-
----
-
-## Pourquoi pas un agent de codage de plus
-
-La plupart sont des **sessions pilotées par prompts** : un fil de chat, des étapes réactives, le travail meurt avec la session, et l'agent touche volontiers tout l'arbre.
-
-ATROPOS est construit à l'envers : agents hiérarchiques de longue durée, projets durables, multi-fournisseurs depuis l'env, le même moteur en terminal / web / Android, client open source (AGPL-3.0).
+Dans l'app : `/help` · palette `/` · `@chemin`
 
 ---
 
