@@ -56,14 +56,14 @@ class StartupSequenceTest {
     }
 
     @Test
-    fun the_opening_runs_for_between_three_and_five_seconds() {
+    fun the_opening_runs_long_enough_for_the_facts_to_be_read() {
         // The cadence lives in AnsiTerminalEngine; this asserts the frame count
         // that cadence is chosen against, so shortening the sequence without
         // noticing is a failing test rather than an opening nobody sees.
         val count = sequence.frames(80, 24, facts).size
         val seconds = count * FRAME_MILLIS / 1000.0
 
-        assertTrue(seconds in 3.0..5.0, "the opening runs for ${seconds}s across $count frames")
+        assertTrue(seconds in 4.0..7.0, "the opening runs for ${seconds}s across $count frames")
     }
 
     @Test

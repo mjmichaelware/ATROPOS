@@ -90,7 +90,7 @@ class TabBarVisibilityTest {
             .joinToString("\n")
             .let(TerminalText::stripAnsi)
 
-        assertTrue(rendered.contains("?"), "trust was claimed rather than marked unknown: $rendered")
+        assertTrue(rendered.contains("·"), "trust was claimed rather than marked unknown: $rendered")
         assertTrue(!rendered.contains("●"), "an unchecked tab was drawn as attested: $rendered")
     }
 }

@@ -57,13 +57,18 @@ class LiveThinkingRenderer(
                 return@subscribe
             }
 
-            // At L2 and L3 the thoughts are the output, so the spinner stops
-            // once they start: an animation under scrolling text is noise.
+            // The indicator keeps running at every depth.
+            //
+            // It used to stop the moment the first L2 thought arrived, on the
+            // theory that an animation under scrolling text is noise. In
+            // practice that left a long run with nothing moving on screen
+            // between one line of output and the next -- and the gap between
+            // two lines is exactly when an operator asks whether the thing has
+            // hung. The indicator renders on its own row beneath the
+            // transcript, so it does not sit under anything.
             if (!visible(thought)) return@subscribe
-            if (first) {
-                uiEngine.stopSpinner()
-                first = false
-            }
+            first = false
+            uiEngine.updateSpinner(redactionFilter.redact(thought.text))
             uiEngine.renderNotice(format(thought))
         }
     }
@@ -96,15 +101,18 @@ class LiveThinkingRenderer(
     private fun visible(thought: StreamedThought): Boolean = depth().includes(thought.depth)
 
     /**
-     * Marks the depth a line came from.
+     * The line, indented by the depth it came from.
      *
-     * At L1 the marker is dropped — everything visible is L1, so a column of
-     * identical prefixes is pure noise. It appears only once more than one
-     * depth is on screen and the distinction is worth a character.
+     * The depth used to be stamped as a literal `L1`/`L2` column down the left
+     * of every line, which read as debug output leaking into the interface —
+     * two characters of machine label in front of every sentence. Indentation
+     * carries the same information the way a reader already understands
+     * nesting, and costs no words.
      */
     private fun format(thought: StreamedThought): String {
         val body = redactionFilter.redact(thought.text)
-        return if (depth() == ThinkingDepth.L1) body else "L${thought.depth.level}  $body"
+        val nesting = (thought.depth.level - 1).coerceAtLeast(0)
+        return "  ".repeat(nesting) + body
     }
 
     private companion object {

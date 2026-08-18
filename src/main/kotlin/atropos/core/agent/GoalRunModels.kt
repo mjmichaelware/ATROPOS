@@ -59,6 +59,27 @@ data class GoalRunRecord(
         GoalRunStatus.COMPLETED, GoalRunStatus.FAILED, GoalRunStatus.CANCELLED, GoalRunStatus.BLOCKED
     )
 
+    /**
+     * Whether an operator can pick this run back up.
+     *
+     * Deliberately not the inverse of [isTerminal]. A run that stopped with
+     * `EXTERNAL_INPUT_REQUIRED` is terminal for the *autonomous* loop -- it
+     * must not spin on work that is waiting for a human -- and is exactly the
+     * run a human then comes back to. Reading resumability off `isTerminal()`
+     * meant `/self-host resume` answered "no unfinished self-host goals" for a
+     * goal that had stopped specifically to ask for something, which made the
+     * durable goal id look pointless: recorded, reported, and unreachable the
+     * moment the session ended.
+     *
+     * `RECOVERY_REQUIRED` is included for the crash case: a process killed
+     * mid-run leaves the record needing recovery, and that is the whole reason
+     * the record is durable.
+     */
+    fun isResumable(): Boolean =
+        !isTerminal() ||
+            terminalCondition == GoalTerminalCondition.EXTERNAL_INPUT_REQUIRED ||
+            status == GoalRunStatus.RECOVERY_REQUIRED
+
     fun canContinue(): Boolean =
         !isTerminal() && continuationCount < maxContinuations
 

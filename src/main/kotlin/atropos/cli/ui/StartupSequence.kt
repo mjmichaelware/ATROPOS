@@ -71,9 +71,17 @@ class StartupSequence(
         }
 
         // 3. The greeting, then what this run actually is, a line at a time.
-        sequence += compose(safeWidth, safeHeight, block, half, wipe(art, span), greeting, emptyList())
+        // Each line dwells rather than flashing past. At one frame apiece the
+        // whole block arrived and was replaced inside a fifth of a second --
+        // long enough to see that something appeared, far too short to read
+        // any of it.
+        repeat(FACT_DWELL_FRAMES) {
+            sequence += compose(safeWidth, safeHeight, block, half, wipe(art, span), greeting, emptyList())
+        }
         lines.indices.forEach { index ->
-            sequence += compose(safeWidth, safeHeight, block, half, wipe(art, span), greeting, lines.take(index + 1))
+            repeat(FACT_DWELL_FRAMES) {
+                sequence += compose(safeWidth, safeHeight, block, half, wipe(art, span), greeting, lines.take(index + 1))
+            }
         }
 
         // 4. Held, so the finished screen is something an operator reads rather
@@ -208,8 +216,11 @@ class StartupSequence(
         /** How much of the leading edge is painted as the moving front. */
         const val EDGE_CELLS = 3
 
+        /** Frames each fact line is left on screen before the next joins it. */
+        const val FACT_DWELL_FRAMES = 6
+
         /** Frames the finished screen is held for before the prompt takes over. */
-        const val HOLD_FRAMES = 14
+        const val HOLD_FRAMES = 40
 
         const val LABEL_CELLS = 11
 

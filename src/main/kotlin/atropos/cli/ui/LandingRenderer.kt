@@ -9,6 +9,10 @@ class LandingRenderer(
 
     /** Below this the wordmark and one tip are all that fit honestly. */
     private val MINIMUM_ROWS_FOR_DETAIL = 20
+
+    /** Fewer rows than this and the weave reads as a stray band, not a field. */
+    private val MINIMUM_ROWS_FOR_ART = 4
+    private val tapestry = ThreadTapestry(theme)
     private val truthProbe = WorkbenchTruthProbe()
     private val agentProbe = AgentWorkbenchProbe()
 
@@ -49,7 +53,19 @@ class LandingRenderer(
             out += KeyboardLegend.line(theme, KeyboardLegend.Surface.COMPOSER, width)
         }
 
-        return out.take(targetHeight).map { TerminalText.ellipsize(it, width) }
+        val body = out.take(targetHeight).map { TerminalText.ellipsize(it, width) }
+
+        // Whatever is left over becomes cloth rather than void.
+        //
+        // The rows below the tips were black on every terminal taller than the
+        // content, which read as a screen that had not finished drawing. The
+        // weave is generated for these exact dimensions, so it fits any
+        // terminal without a crop or a stretch, and it is deterministic so the
+        // home screen never shimmers under the prompt.
+        val remaining = targetHeight - body.size
+        if (remaining < MINIMUM_ROWS_FOR_ART) return body
+
+        return body + tapestry.render(width, remaining)
     }
 
     /** `── SECTION ──────`, so the block reads as one region and not a list. */
@@ -69,8 +85,10 @@ class LandingRenderer(
     private fun facts(state: SessionPresentationState, width: Int): List<String> {
         val rows = buildList {
             add("workspace" to TerminalText.compactPath(state.workspace))
-            add("provider" to state.provider.lowercase())
-            add("mode" to state.mode.lowercase())
+            // Provider and mode are deliberately absent: the composer's bottom
+            // border states both, two rows below this block. Repeating them
+            // here made the same two words appear twice on one screen without
+            // either copy being the authoritative one.
             // Only when git actually answered. "branch: unknown" is noise
             // dressed as information, and this panel is the first screen an
             // operator reads.

@@ -26,6 +26,7 @@ class ComposerViewport(
     private var paletteLevel = CommandPaletteLevel.COMMANDS
     private var paletteGroup: String? = null
     private var paletteCommand: String? = null
+    private var mentionOptions: List<String> = emptyList()
 
     fun update(
         buffer: String,
@@ -35,7 +36,8 @@ class ComposerViewport(
         paletteSelection: Int = 0,
         paletteLevel: CommandPaletteLevel = CommandPaletteLevel.COMMANDS,
         paletteGroup: String? = null,
-        paletteCommand: String? = null
+        paletteCommand: String? = null,
+        mentionOptions: List<String> = emptyList()
     ) {
         val prepared = composerRenderer.prepare(
             buffer = buffer,
@@ -52,6 +54,7 @@ class ComposerViewport(
         this.paletteLevel = paletteLevel
         this.paletteGroup = paletteGroup
         this.paletteCommand = paletteCommand
+        this.mentionOptions = mentionOptions
     }
 
     fun render(width: Int): ComposerSnapshot =
@@ -136,9 +139,25 @@ class ComposerViewport(
         val safeWidth = width.coerceAtLeast(1)
         val edge = edge()
         val modeStyle = modeRetheme.style(mode)
-        val label = modeStyle.label.lowercase() + " · " + provider.lowercase()
+
+        // The model, when the operator has actually chosen one.
+        //
+        // Read live through the same resolver the providers use, so this can
+        // never drift from what a request is really sent with. Absent when the
+        // compiled catalog default is in play: this bar is the only place the
+        // model is stated, and stating a guess here would be worse than
+        // stating nothing.
+        val model = atropos.core.provider.ProviderModelResolver.DEFAULT
+            .resolveWithSource(provider.lowercase(), "")
+            .takeIf { it.source != atropos.core.provider.ProviderModelResolver.Source.CATALOG_DEFAULT }
+            ?.model
+            ?.takeIf(String::isNotBlank)
+
+        val suffix = if (model == null) "" else " · $model"
+        val label = modeStyle.label.lowercase() + " · " + provider.lowercase() + suffix
         val painted = theme.paint(modeStyle.role, modeStyle.label.lowercase()) +
-            theme.subdued(" · ") + theme.metadata(provider.lowercase())
+            theme.subdued(" · ") + theme.metadata(provider.lowercase()) +
+            (if (model == null) "" else theme.subdued(" · ") + theme.metadata(model))
 
         // `╰─ ask · groq ──────╯`: corners, one lead dash, the label, then fill.
         val decoration = 2 + edge.horizontal.length + 2
@@ -202,6 +221,24 @@ class ComposerViewport(
     private fun asciiOnly(): Boolean = !System.getenv("ATROPOS_ASCII").isNullOrBlank()
 
     fun mode(): String = mode
+
+    /**
+     * The `@` fragment being typed, or null when none is.
+     *
+     * Mirrors the grammar [atropos.cli.input.CommandCompleter] completes on --
+     * the run after the last `@`, ending at whitespace -- so the panel opens
+     * exactly when completion would produce something.
+     */
+    fun mentionFragment(): String? {
+        val marker = buffer.lastIndexOf('@')
+        if (marker < 0) return null
+        val fragment = buffer.substring(marker + 1)
+        return if (fragment.any(Char::isWhitespace)) null else fragment
+    }
+
+    fun mentionOptions(): List<String> = mentionOptions
+
+    fun mentionSelection(): Int = paletteSelection
 
     /**
      * The command palette's query, or null when the palette should be closed.

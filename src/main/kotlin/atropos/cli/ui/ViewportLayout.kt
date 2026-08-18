@@ -20,6 +20,7 @@ class ViewportLayout(
 ) {
     private val responsiveGrammar = ResponsiveNativeGrammar()
     private val palette = CommandPaletteRenderer(theme)
+    private val mentionPalette = MentionPaletteRenderer(theme)
 
     data class TabState(val id: String, val name: String, val isActive: Boolean, val trustLevel: TrustIndicator)
     enum class TrustIndicator { ATTESTED, UNATTESTED, UNKNOWN }
@@ -73,8 +74,16 @@ class ViewportLayout(
             frame.setLine(row, if (gutter == 0) line else margin + line)
         }
 
-        // HOE-B02: Sticky chrome bar at top (project/status)
-        val chrome = stickyHeader.render(activeTab, openTabCount, safeWidth, isDensity)
+        // HOE-B01: sticky chrome, but only when there is no tab strip.
+        //
+        // The chrome printed the active tab's name and a `[n tabs]` count in
+        // plain text directly above a tab bar that shows both, and the footer
+        // showed them a third time. Two of those three were noise. The chrome
+        // stays for surfaces that render no tabs at all, which is where it is
+        // the only thing carrying that information.
+        val chrome =
+            if (tabs.isEmpty()) stickyHeader.render(activeTab, openTabCount, safeWidth, isDensity)
+            else StickyHeader.Frame(emptyList())
         val chromeHeight = chrome.height
         chrome.lines.forEachIndexed { idx, line -> place(idx, line) }
 
@@ -114,7 +123,19 @@ class ViewportLayout(
         // cap made the command list appear truncated on desktop terminals;
         // the renderer still windows the list for compact screens.
         val paletteRows = (safeHeight / 2).coerceIn(5, 18)
-        val paletteLines = palette.render(composer.commandQuery(), safeWidth, paletteRows)
+        // `/` and `@` are mutually exclusive -- the command grammar stops at
+        // the first space and the mention grammar starts at an `@` -- so the
+        // two share one surface rather than competing for the same rows.
+        val commandLines = palette.render(composer.commandQuery(), safeWidth, paletteRows)
+        val paletteLines = commandLines.ifEmpty {
+            mentionPalette.render(
+                composer.mentionFragment(),
+                composer.mentionOptions(),
+                composer.mentionSelection(),
+                safeWidth,
+                paletteRows
+            )
+        }
         val composerHeight = composerSnapshot.lines.size + metaLines.size
         val paletteHeight = paletteLines.size
         val composerStart = footerRow - composerHeight
@@ -172,7 +193,11 @@ class ViewportLayout(
         // The caret is placed in screen coordinates, so it carries the inset
         // that every rendered line carries.
         frame.cursorX = composerSnapshot.cursorColumn + gutter
-        frame.cursorY = solvedComposerStart + composerSnapshot.cursorRow
+        // +1 because the canvas emits `ESC[row;colH`, which counts from one,
+        // while every row index in this layout counts from zero. Without it the
+        // caret was drawn one row above the composer — sitting on the box's own
+        // top border instead of on the line being typed.
+        frame.cursorY = solvedComposerStart + composerSnapshot.cursorRow + 1
         frame.showCursor = true
         return frame
     }

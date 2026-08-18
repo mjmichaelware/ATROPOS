@@ -143,7 +143,8 @@ class AnsiTerminalEngine(
         tracker: QuotaSessionTracker, paletteSelection: Int = 0, activeScreen: String = "Dashboard",
         activeTab: String = "tab 1", openTabCount: Int = 1,
         paletteLevel: atropos.cli.input.CommandPaletteLevel = atropos.cli.input.CommandPaletteLevel.COMMANDS,
-        paletteGroup: String? = null, paletteCommand: String? = null
+        paletteGroup: String? = null, paletteCommand: String? = null,
+        mentionOptions: List<String> = emptyList()
     ) {
         state.mode = inputMode
         state.provider = provider
@@ -151,7 +152,7 @@ class AnsiTerminalEngine(
         state.activeScreen = activeScreen
         state.activeTab = activeTab
         state.openTabCount = openTabCount
-        composer.update(buffer = buffer, suggestion = suggestion, cursor = cursor, mode = inputMode, paletteSelection = paletteSelection, paletteLevel = paletteLevel, paletteGroup = paletteGroup, paletteCommand = paletteCommand)
+        composer.update(buffer = buffer, suggestion = suggestion, cursor = cursor, mode = inputMode, paletteSelection = paletteSelection, paletteLevel = paletteLevel, paletteGroup = paletteGroup, paletteCommand = paletteCommand, mentionOptions = mentionOptions)
         requestFrameLocked()
     }
 
@@ -305,6 +306,23 @@ class AnsiTerminalEngine(
     @Synchronized
     fun renderExecutionEvent(stage: String, detail: String? = null) {
         backgroundProcesses.registerProcess(stage)
+
+        // Every execution event is also a full-trace thought.
+        //
+        // `/thinking 3` promises "everything, including evidence detail" and
+        // was delivering a dozen lines for an entire self-host run, because
+        // almost nothing published to the stream -- the depth filter was fine,
+        // there was simply nothing to filter. This is the widest funnel the
+        // engine already has: provider attempts, gate results, DAG advances
+        // and repair steps all pass through it, so routing it here makes the
+        // back end visible without a publish call at each of a hundred sites.
+        //
+        // L3, not lower: at L1 and L2 this volume would bury the outline the
+        // operator asked for.
+        atropos.core.thinking.Thinking.stream.emit(
+            atropos.core.thinking.ThinkingDepth.L3,
+            if (detail.isNullOrBlank()) stage else "$stage — ${detail.trim()}"
+        )
         val summary = "execution: $stage"
         if (state.verboseExecution && !detail.isNullOrBlank()) {
             renderNotice("$summary\n  ${detail.trim()}")

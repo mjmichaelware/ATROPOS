@@ -24,7 +24,7 @@ import atropos.cli.ui.design.Role
 object KeyboardLegend {
 
     /** Where a legend is being drawn, which decides what is worth saying. */
-    enum class Surface { PALETTE, GROUPS, DETAIL, COMPOSER }
+    enum class Surface { PALETTE, GROUPS, DETAIL, COMPOSER, MENTION }
 
     data class Binding(val keys: String, val action: String)
 
@@ -45,6 +45,12 @@ object KeyboardLegend {
         Surface.DETAIL -> listOf(
             Binding("left", "back"),
             Binding("enter", "run"),
+            Binding("esc", "close")
+        )
+        Surface.MENTION -> listOf(
+            Binding("up down", "select"),
+            Binding("tab", "insert"),
+            Binding("enter", "send"),
             Binding("esc", "close")
         )
         Surface.COMPOSER -> listOf(

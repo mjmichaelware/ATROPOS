@@ -44,11 +44,12 @@ class IdleHomeScreenTest {
     }
 
     @Test
-    fun it_says_where_you_are_and_what_is_answering() {
+    fun it_says_where_you_are() {
         val rendered = text(72, 30)
 
-        assertTrue(rendered.contains("groq"), "the active provider is not shown:\n$rendered")
+        // The provider is stated once, on the composer's border, not here.
         assertTrue(rendered.contains("ATROPOS"), "the workspace is not shown:\n$rendered")
+        assertTrue(rendered.contains("workspace"), "the session block is missing:\n$rendered")
     }
 
     @Test

@@ -9,8 +9,13 @@ class AnimatedThinkingBufferTest {
     fun frame_sequence_is_deterministic_and_wraps_without_clock_input() {
         val buffer = AnimatedThinkingBuffer(listOf(".", "..", "..."))
 
-        assertEquals(listOf(". Thinking", ".. Thinking", "... Thinking", ". Thinking"), buffer.sequence(4, "Thinking"))
-        assertEquals("... Thinking", buffer.render(-1, "Thinking"))
+        // Two spaces between the indicator and the message: the pulse is a
+        // block bar now, and one space ran the message straight into it.
+        assertEquals(
+            listOf(".  Thinking", "..  Thinking", "...  Thinking", ".  Thinking"),
+            buffer.sequence(4, "Thinking")
+        )
+        assertEquals("...  Thinking", buffer.render(-1, "Thinking"))
     }
 
     @Test

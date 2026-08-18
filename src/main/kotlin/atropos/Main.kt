@@ -249,7 +249,11 @@ private fun runInteractive(
                     paletteCommand = prompt.paletteCommand(),
                     activeScreen = tabs.active.title,
                     activeTab = "tab ${tabs.active.id}",
-                    openTabCount = tabs.snapshot().tabs.size
+                    openTabCount = tabs.snapshot().tabs.size,
+                    // The completer already walked the granted roots for this
+                    // keystroke; the panel shows what it found rather than
+                    // walking them a second time.
+                    mentionOptions = selected.options
                 )
             }
 

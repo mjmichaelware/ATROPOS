@@ -67,7 +67,10 @@ class StatusBarRenderer(
 
         // Right-hand pills, least important last so they shed first.
         val pills = buildList {
-            add(theme.metadata("◇ ") + theme.strong(state.provider.lowercase()))
+            // The provider is deliberately absent. It is written into the
+            // composer's bottom border, where it labels the thing it applies
+            // to; a second copy down here said the same word twice on one
+            // screen and neither one told you which was authoritative.
             add(theme.metadata("▸ ") + theme.strong(state.mode.lowercase()))
             add(theme.metadata("▤ ") + theme.strong(tab))
             state.tokens.text().takeIf { it != "--" }?.let {

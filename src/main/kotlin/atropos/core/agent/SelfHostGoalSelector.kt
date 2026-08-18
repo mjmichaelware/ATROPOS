@@ -5,7 +5,10 @@ class SelfHostGoalSelector(
 ) {
     fun unfinishedSelfHostRuns(): List<GoalRunRecord> =
         allSelfHostRuns()
-            .filter { !it.isTerminal() }
+            // Resumable, not merely non-terminal -- see GoalRunRecord.isResumable.
+            // A goal blocked on external input is the single most likely thing
+            // an operator returns to, and it was the one this filter excluded.
+            .filter { it.isResumable() }
             .sortedWith(
                 compareByDescending<GoalRunRecord> { it.status == GoalRunStatus.RECOVERY_REQUIRED }
                     .thenByDescending { it.updatedAt }

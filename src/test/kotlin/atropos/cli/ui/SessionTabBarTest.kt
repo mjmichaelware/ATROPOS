@@ -25,10 +25,13 @@ class SessionTabBarTest {
                 trustLevel = ViewportLayout.TrustIndicator.ATTESTED
             )
         )
+        // Two rows now, not one. A single inverted row was a highlighted
+        // word; a tab needs a box, and the box needs a top.
         val lines = tabBar.render(tabs, 60)
-        assertEquals(1, lines.size, "Should render one line")
-        assertTrue(lines[0].contains("●"), "Should show attested indicator")
-        assertTrue(lines[0].contains("Session 1"), "Should show tab name")
+        assertEquals(2, lines.size, "Should render a tab box: a top edge and a label row")
+        assertTrue(TerminalText.stripAnsi(lines[0]).contains("╭"), "Should draw the tab's top edge")
+        assertTrue(TerminalText.stripAnsi(lines[1]).contains("●"), "Should show attested indicator")
+        assertTrue(TerminalText.stripAnsi(lines[1]).contains("Session 1"), "Should show tab name")
     }
 
     @Test
@@ -39,10 +42,13 @@ class SessionTabBarTest {
             ViewportLayout.TabState("tab3", "Session 3", false, ViewportLayout.TrustIndicator.UNKNOWN)
         )
         val lines = tabBar.render(tabs, 80)
-        assertEquals(1, lines.size)
-        assertTrue(lines[0].contains("●"), "Should show attested indicator")
-        assertTrue(lines[0].contains("○"), "Should show unattested indicator")
-        assertTrue(lines[0].contains("?"), "Should show unknown indicator")
+        assertEquals(2, lines.size)
+        val labels = TerminalText.stripAnsi(lines[1])
+        assertTrue(labels.contains("●"), "Should show attested indicator")
+        assertTrue(labels.contains("○"), "Should show unattested indicator")
+        // `·` rather than `?`: a question mark in a tab reads as a broken
+        // glyph, where a dot reads as "nothing has been checked here".
+        assertTrue(labels.contains("·"), "Should show unknown indicator")
     }
 
     @Test
@@ -51,7 +57,9 @@ class SessionTabBarTest {
             ViewportLayout.TabState("tab1", "VeryLongSessionName", true, ViewportLayout.TrustIndicator.ATTESTED)
         )
         val lines = tabBar.render(tabs, 35)
-        assertEquals(1, lines.size)
-        assertTrue(lines[0].length <= 35, "Should not exceed width")
+        assertEquals(2, lines.size)
+        lines.forEach { line ->
+            assertTrue(TerminalText.cellWidth(line) <= 35, "Should not exceed width")
+        }
     }
 }
