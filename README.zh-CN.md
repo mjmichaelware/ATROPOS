@@ -1,12 +1,12 @@
 <h1 align="center">ATROPOS</h1>
 
 <p align="center">
-  <strong>开源 AI 编码代理</strong>
+  <strong>开源多智能体 AI 编码引擎</strong>
 </p>
 
 <p align="center">
-  多模型提供商 CLI：规划、编辑、验证并交付代码。<br/>
-  本地优先 · Termux 原生 · 验证门控 · 可持久项目
+  终端 · Web · Android<br/>
+  在每个界面上规划、编辑、验证并交付软件。
 </p>
 
 <p align="center">
@@ -24,12 +24,18 @@ curl -fsSL https://raw.githubusercontent.com/mjmichaelware/ATROPOS/main/install.
 npm install -g @mjmichaelware/atropos
 ```
 
-需要 Java 17+。然后：
+需要 Java 17+。在**任意终端**（手机或桌面）：
 
 ```sh
 cd 你的项目
 atropos
 ```
+
+## 界面
+
+- **终端 / CLI TUI** — 完整引擎控制面
+- **Web** — 浏览器客户端连接本地引擎
+- **Android** — 原生高密度 APK
 
 ## 常用命令
 
