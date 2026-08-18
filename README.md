@@ -19,9 +19,11 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="License AGPL-3.0"/>
-  <img src="https://img.shields.io/badge/kotlin-primary-7F52FF" alt="Kotlin"/>
-  <img src="https://img.shields.io/badge/open--source-multi--agent-a855f7" alt="Open source multi-agent"/>
+  <img src="https://img.shields.io/badge/Kotlin-7F52FF?logo=kotlin&logoColor=white" alt="Kotlin"/>
+  <img src="https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white" alt="Python"/>
+  <img src="https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white" alt="TypeScript"/>
+  <img src="https://img.shields.io/badge/Java-ED8B00?logo=openjdk&logoColor=white" alt="Java"/>
+  <img src="https://img.shields.io/badge/CSS-1572B6?logo=css3&logoColor=white" alt="CSS"/>
 </p>
 
 ---
@@ -29,82 +31,79 @@
 ## Install
 
 ```sh
-# One-line installer
 curl -fsSL https://raw.githubusercontent.com/mjmichaelware/ATROPOS/main/install.sh | sh
+# or: npm install -g @mjmichaelware/atropos
 
-# npm
-npm install -g @mjmichaelware/atropos
-
-# Direct JAR
-curl -fL -o ~/ATROPOS.jar \
-  https://github.com/mjmichaelware/ATROPOS/releases/download/latest/ATROPOS.jar
-java -jar ~/ATROPOS.jar
+cd your-project && atropos
 ```
 
-**Requires Java 17+**
+**Java 17+.** Termux: `pkg install openjdk-21` · Debian: `sudo apt install openjdk-21-jre-headless` · macOS: `brew install openjdk@21`
 
-| Platform | Install JDK |
-|----------|-------------|
-| Android (Termux) | `pkg install openjdk-21` |
-| Debian/Ubuntu | `sudo apt install openjdk-21-jre-headless` |
-| macOS | `brew install openjdk@21` |
-| Windows | Install a JDK 17+ and use Windows Terminal |
+Put provider keys in the environment. ATROPOS discovers what you have on startup. In-app: `/help` · command palette `/` · `@path` to attach files.
 
-Python 3.11+ is optional (recommended for the atomizer). No `pip install` required — the atomizer ships inside the JAR.
+---
 
-```sh
-cd your-project
-atropos
-```
+## The flat-context fantasy is dead
 
-Termux · iTerm · Windows Terminal · GNOME Terminal · Alacritty · Warp — same JVM + ANSI binary.
+Shoving an entire product into one giant context window and hoping a single model “understands everything” is how you buy confident nonsense. Flat prompts do not create structure. They hide the lack of it until the agent rewrites the wrong half of the tree.
 
-### Environment variables
+ATROPOS does not pretend a bigger window is a plan. Work is atomized into a **directed acyclic graph (DAG)** of obligations — ordered, dependency-aware, and runnable without circular busywork. **SpecGraph** is the planning and verification substrate: it turns requirements into research-enriched, checkable blueprints that the engine can execute node by node. The DAG is the spine. SpecGraph is how serious plans enter that spine. Hierarchy and territory keep each node from becoming a free-for-all.
 
-| Variable | Effect |
-|----------|--------|
-| `ATROPOS_MODEL_<PROVIDER>` | Override model for one provider (e.g. `ATROPOS_MODEL_GROQ`) |
-| `ATROPOS_INGEST_ROOTS` | Extra read roots (`:`-separated) |
-| `ATROPOS_NO_ANIMATION` | Skip opening sequence |
-| `ATROPOS_ASCII` | ASCII UI instead of box-drawing |
-| `ATROPOS_JAVA_OPTS` | JVM flags |
-| `ATROPOS_JAR` | Use a jar you already have |
-| `ATROPOS_VERSION` | Pin installer release |
-
-```sh
-ATROPOS_MODEL_GROQ=llama-3.1-8b-instant atropos
-ATROPOS_INGEST_ROOTS=/storage/emulated/0/Download atropos
-atropos auth accept AGENTS.md
-```
-
-In-app: `/help` · command palette `/` · attach files with `@path`.
+That is the opposite of chatty sub-agents renegotiating scope in prose while your quota evaporates.
 
 ---
 
 ## Why the field is broken
 
-Most “autonomous” coding stacks share the same structural failure mode: **isolated worktrees + LLM-mediated chat between agents**.
+Most “autonomous” stacks still do this: isolate workers in worktrees, then spend the budget on **LLM group chat** — mailboxes, status ping-pong, soft scope, drift found after the damage. The cloud sees your repo on a loop. Providers stay locked. “Done” means the model stopped typing.
 
-They give each worker its own worktree (good), then immediately nullify that isolation with mailboxes, shared task lists, and coordinator agents that spend your quota **talking about work instead of doing it**. Drift is detected after damage. Scope is negotiated in prose. Context fills with meta-chat. Providers stay locked. The cloud sees your tree over and over.
+### Cursor Agent
+Real autonomy with soft control. Agents that keep moving after stop, recreate deleted files, and commit without clear intent show up in the wild. Cloud paths have served **stale default-branch reads** while local git was correct — silent drift. Closed product; gravity pulls loops into the cloud.
 
-That pattern is not a feature. It is an expensive way to pretend coordination is intelligence.
+**ATROPOS:** territory at dispatch. Illegal paths blocked before write. Local-first engine. Cloud is a model endpoint, not the brain.
 
-| | Cursor Agent | Claude Code | Codex CLI | OpenHands | OpenCode | Aider | **ATROPOS** |
-|--|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| **Coordination** | Chat / IDE agent loop | Strong single-agent + subagents; still LLM-mediated handoffs | Sandbox-heavy single harness | Multi-agent, message-heavy | Flexible BYOK TUI | Pair-programmer turns | **Hierarchy + territory at dispatch — not agent group chat** |
-| **Drift control** | Aggressive autonomy; scope is soft | Reactive review / tests after edits | Sandbox limits blast radius; not preventive scope law | Issue→PR autonomy; drift is post-hoc | Session-bound | Git commits help *after* the mess | **Preventive scope: out-of-territory mutation blocked before write** |
-| **Quota / context** | Cloud session economics | Burns hard on long agent teams | Better token story on plan; still session-shaped | Heavy orchestration chat | BYOK — you pay for chatter | Cheap turns; not long-horizon | **Coordination is state + policy, not another LLM meeting** |
-| **Provider lock** | Product-tied models + BYOK edges | Anthropic-first | OpenAI-first | BYOK possible; product gravity elsewhere | Strong BYOK | Strong BYOK | **Multi-provider from env keys; free-first routing** |
-| **Repo in the cloud** | Cloud agents / remote loops common | Cloud-backed product path | Local + cloud handoff | Often remote runner / sandbox | Local-first TUI | Local | **Local-first engine; cloud is optional provider, not the brain** |
-| **Surfaces** | IDE-first (+ agent CLI) | Terminal-first | Terminal-first | Web / remote agent UX | Terminal TUI | Terminal; UX is dated and sparse | **Terminal + web + Android, one engine** |
-| **UX honesty** | Polished IDE | Strong TUI | Solid CLI | Heavy product surface | Best-in-class OSS TUI feel | **Weak, aging terminal UX** | Reactive TUI built for real terminals (including phone) |
-| **“Done” means** | Agent stopped / PR opened | Model finished the loop | Sandbox run finished | Issue closed / PR opened | Session outcome | Commit landed | **Promotion only after independent checks — not when the model shuts up** |
-| **Long runs** | Session / product limits | Quota pressure on long teams | Plan windows | Job-shaped | Session | Turn-shaped | **Durable projects + restart continuity** |
-| **Client** | Closed | Closed / restricted | Open parts, vendor core | Open core | Open | Open | **Open source (AGPL-3.0)** |
+### Claude Code
+Excellent single-agent depth — and a **quota furnace**. Subagent fan-out is reported near **~7×** a normal session; MCP tool defs can eat a large slice of the window before real work starts. Weekly and rolling caps die on long teams. Anthropic-first.
 
-**Read the failure mode once:** worktree isolation is worthless if agents spend the budget in a group chat, renegotiate scope in natural language, and only notice drift when tests or humans scream. That is how you buy hallucination with extra steps — and how context dies before the feature ships.
+**ATROPOS:** multi-provider from env keys; free-first routing. Coordination is hierarchy and state, not another paid meeting between agents.
 
-ATROPOS does not win by “more autonomy.” It wins by **scoped autonomy**: hierarchical dispatch, territory at assignment time, controlled cross-boundary information, multi-provider routing, and durable project state across terminal, web, and Android.
+### Codex CLI
+Strong sandbox. OpenAI-shaped defaults and metering. Opaque quota drain and wait/re-sample loops have burned weekly allowance on long jobs. Vendor core under the open edges.
+
+**ATROPOS:** open client (AGPL-3.0). Durable projects instead of living inside a rolling window as architecture.
+
+### OpenHands
+Ambitious issue→PR autonomy with **message-heavy** orchestration. Drift is post-hoc. You pay for the chat between agents as much as for the patch.
+
+**ATROPOS:** preventive scope. Promote only after independent checks — not when the swarm goes quiet.
+
+### OpenCode
+Best-in-class OSS TUI and real BYOK. Still session-shaped; measured harness work has shown large **token waste per solved task** when loops idle and re-sample. Keys are free; chatter is not.
+
+**ATROPOS:** DAG-ordered long runs, durable projects, restart continuity — multi-provider without treating “open” as “unbounded session spend.”
+
+### Aider
+Git discipline is real. Autonomy is not. It is a turn-by-turn pair programmer with a **dated terminal UX**, now on a maintenance trajectory. Right tool for small diffs. Wrong tool for multi-day hierarchical delivery.
+
+**ATROPOS:** multi-surface control plane (terminal, web, Android) built for operators who run real work, not a 2023 REPL aesthetic.
+
+---
+
+## What ATROPOS optimizes
+
+| Field failure | ATROPOS |
+|---------------|---------|
+| Flat mega-context “understanding” | **DAG + SpecGraph** — ordered atoms, not one blob |
+| Unscoped autonomy / drift | Territory at dispatch; block before write |
+| Chatty sub-agents | Hierarchy + policy state, not agent group chat |
+| Provider lock | Multi-provider discovery; free-first cascade |
+| Session death | Durable projects, checkpoints, restart continuity |
+| Cloud-as-brain | Local-first engine; providers are backends |
+| “Done” when the model stops | Independent checks before promotion |
+| One surface only | Terminal · web · Android, one engine |
+| Closed client | AGPL-3.0 |
+
+Autonomy without the drift is the architecture: **scoped hierarchical agents, DAG-ordered work, SpecGraph-backed plans, multi-provider routing, multi-surface control.**
 
 Providers need network unless you configure a local model (e.g. Ollama).
 
