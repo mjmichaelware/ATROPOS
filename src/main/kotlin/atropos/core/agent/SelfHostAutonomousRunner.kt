@@ -74,7 +74,12 @@ class SelfHostAutonomousRunner(
             // The one line that tells a watching operator the run is alive and
             // where it is. Without it, a long advance is indistinguishable from
             // a hang, and the operator's only move is to kill it.
-            steps.outline("advance $advances of $maxAdvances")
+            // Named for what it is. "advance 3 of 25" reads as "3 of 25 nodes",
+            // and an operator who had just attached a 400-atom document
+            // reasonably concluded the atomizer had found 25 of them. It is the
+            // continuation budget: how many times this loop may iterate before
+            // it stops on its own.
+            steps.outline("advance $advances (run budget $advances/$maxAdvances)")
             val advanced = service.advanceNextResumableGoal(
                 goalId = goalId,
                 compactState = "self-host natural-language continuation"

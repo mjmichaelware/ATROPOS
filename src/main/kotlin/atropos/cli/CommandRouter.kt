@@ -151,6 +151,18 @@ class CommandRouter(
     private val tabCommand = TabCommandHandler(uiEngine, tabs) { currentProviderName }
 
     /**
+     * `/ps` — a question answered beside the running work rather than behind it.
+     *
+     * Deliberately not routed through the command queue: the queue exists to
+     * sequence writes, and a question is a read.
+     */
+    private val sideConversation = SideConversationService(
+        uiEngine = uiEngine,
+        cascade = atropos.core.ProviderCascadeRouter(ProviderFactory(config)),
+        activeProvider = { currentProviderName }
+    )
+
+    /**
      * Whether this input ends the session.
      *
      * Asked rather than pattern-matched at the call site, so the exit
@@ -367,6 +379,8 @@ class CommandRouter(
                 projectCommand.execute(tokens.drop(1))
                 RouterOutcome.CONTINUE
             }
+
+            "/ps" -> sideConversation.ask(original.trim().removePrefix("/ps").trim())
 
             "/shortcuts", "/keys-help" -> {
                 uiEngine.renderBlock(shortcutsRenderer.render(uiEngine.viewportWidth))
