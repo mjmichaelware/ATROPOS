@@ -41,7 +41,7 @@ cd your-project && atropos
 
 **Java 17+.** Termux: `pkg install openjdk-21` · Debian: `sudo apt install openjdk-21-jre-headless` · macOS: `brew install openjdk@21`
 
-Drop in the API keys you already use. ATROPOS auto-discovers providers on startup — you do not configure all 26. In-app: `/help` · command palette `/` · `@path` to attach files.
+Drop in the API keys you already use. ATROPOS auto-discovers providers on startup — you do not configure all 26. 
 
 ---
 
