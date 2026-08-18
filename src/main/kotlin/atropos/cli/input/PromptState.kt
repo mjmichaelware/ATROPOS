@@ -69,6 +69,10 @@ class PromptState(
     }
 
     fun apply(event: KeyEvent): PromptEffect = when (event) {
+        // Scrollback is the transcript's, not the line's, so these are
+        // reported upward untouched rather than editing the prompt.
+        is KeyEvent.PageUp -> PromptEffect.Scroll(-SCROLL_LINES)
+        is KeyEvent.PageDown -> PromptEffect.Scroll(SCROLL_LINES)
         is KeyEvent.Printable -> insertEvent(event.text)
         is KeyEvent.Paste -> insertEvent(
             // A large paste goes into the registry and a summary goes into the
@@ -306,5 +310,13 @@ class PromptState(
     private companion object {
         const val DEFAULT_HISTORY_LIMIT = 100
         const val DEFAULT_MAXIMUM_BUFFER_LENGTH = 1024 * 1024
+
+        /**
+         * Rows a page key moves.
+         *
+         * Deliberately less than a full screen, so a few lines of context
+         * survive the jump and the operator can tell where they landed.
+         */
+        const val SCROLL_LINES = 6
     }
 }

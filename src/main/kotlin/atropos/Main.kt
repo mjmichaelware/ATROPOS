@@ -2,6 +2,7 @@
 package atropos
 
 import atropos.bridge.LocalEngineBridge
+import atropos.cli.BackgroundCommandRunner
 import atropos.cli.CommandRouter
 import atropos.cli.RouterOutcome
 import atropos.cli.config.ConfigurationManager
@@ -141,9 +142,19 @@ private fun runInteractive(
     val completer = CommandCompleter(router.ingestRoots)
     val tabs = router.tabs
 
+    // Commands run here, not on the key loop.
+    //
+    // `router.handleInput()` used to be called straight from the loop, so the
+    // loop sat inside a self-host run for minutes and read no keys at all —
+    // the composer drew its border and its caret and swallowed everything
+    // typed into it. onIdle repaints when a run finishes, so the prompt is
+    // current again without waiting for the next keystroke.
+    val commands = BackgroundCommandRunner(router::handleInput, ui) { ui.renderPrompt() }
+
     ui.initializeReactive()
     ui.renderWelcome(config, router.currentProviderName)
 
+    commands.use {
     TerminalModeManager().use { terminalMode ->
         terminalMode.enableRawMode()
 
@@ -277,6 +288,7 @@ private fun runInteractive(
             redraw()
 
             inputLoop@ while (true) {
+                if (commands.hasExited()) break@inputLoop
                 val key = keys.readKey() ?: break
 
                 // Only two things may end this session: end of input, and an
@@ -333,10 +345,22 @@ private fun runInteractive(
                     effect is PromptEffect.Submit -> {
                         ui.commitPrompt(effect.text, effect.mode.name)
                         if (effect.text.isNotBlank()) {
-                            if (router.handleInput(effect.text) == RouterOutcome.EXIT) {
+                            // Exit runs here, everything else goes to the
+                            // worker. The loop is blocked reading a key, so a
+                            // worker that merely set an "exited" flag would
+                            // not be noticed until the operator pressed
+                            // something else — quitting would look like a hang.
+                            if (router.isExitCommand(effect.text)) {
+                                router.handleInput(effect.text)
                                 break@inputLoop
                             }
+                            commands.submit(effect.text)
                         }
+                        redraw()
+                    }
+
+                    effect is PromptEffect.Scroll -> {
+                        ui.scrollTranscript(effect.lines)
                         redraw()
                     }
 
@@ -363,6 +387,7 @@ private fun runInteractive(
                 }
             }
         }
+    }
     }
 
     ui.renderNotice("session closed")

@@ -174,6 +174,24 @@ class AnsiTerminalEngine(
         requestFrameLocked()
     }
 
+    /**
+     * Moves the transcript's viewport.
+     *
+     * [TranscriptBuffer] has had `scrollUp`, `scrollDown` and `followTail`
+     * since it was written and nothing ever called them, so output that
+     * scrolled past was simply gone. On a phone viewport that is most of a
+     * run.
+     */
+    @Synchronized
+    fun scrollTranscript(lines: Int) {
+        when {
+            lines < 0 -> transcriptBuffer.scrollUp(-lines)
+            lines > 0 -> transcriptBuffer.scrollDown(lines)
+            else -> transcriptBuffer.followTail()
+        }
+        requestFrameLocked()
+    }
+
     @Synchronized
     fun updateAgentPatchState(patchId: String?) {
         state.activePatchId = patchId?.takeIf { it.isNotBlank() }

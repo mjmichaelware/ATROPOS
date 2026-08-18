@@ -37,6 +37,17 @@ sealed class KeyEvent {
     object Home : KeyEvent()
     object End : KeyEvent()
     object ShiftTab : KeyEvent()
+
+    /**
+     * Scrollback movement.
+     *
+     * The transcript has had `scrollUp`, `scrollDown` and `followTail` since
+     * it was written, and nothing could reach them: no key produced these
+     * events, so output that scrolled past was gone. On a phone, where the
+     * viewport is a dozen rows, that meant most of a run was unreadable.
+     */
+    object PageUp : KeyEvent()
+    object PageDown : KeyEvent()
 }
 
 class RawKeyReader(

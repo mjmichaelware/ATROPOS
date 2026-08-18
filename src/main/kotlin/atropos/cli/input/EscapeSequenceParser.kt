@@ -57,6 +57,11 @@ class EscapeSequenceParser(
                     "H", "1~", "7~" -> KeyEvent.Home
                     "F", "4~", "8~" -> KeyEvent.End
                     "3~" -> KeyEvent.Delete
+                    // `5~`/`6~` are PageUp/PageDown; the `;2` and `;5` forms
+                    // are shift- and ctrl-modified, which Termux's soft
+                    // keyboard and most desktop terminals send interchangeably.
+                    "5~", "5;2~", "5;5~" -> KeyEvent.PageUp
+                    "6~", "6;2~", "6;5~" -> KeyEvent.PageDown
                     "Z" -> KeyEvent.ShiftTab
                     "9;5u", "27;5;9~", "1;5I" -> KeyEvent.CtrlTab
                     "200~" -> parseBracketedPaste()

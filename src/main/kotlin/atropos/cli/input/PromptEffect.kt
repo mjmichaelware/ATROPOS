@@ -19,6 +19,15 @@ sealed class PromptEffect {
     /** Tab: run completion against the current line. */
     object Complete : PromptEffect()
 
+    /**
+     * Move the transcript's viewport rather than the caret.
+     *
+     * Separate from [Redraw] because the caller has to move the buffer before
+     * it repaints, and a scroll that only repainted would look like a key that
+     * did nothing.
+     */
+    data class Scroll(val lines: Int) : PromptEffect()
+
     /** Ctrl-C on an empty line: abandon the current operation. */
     object Cancel : PromptEffect()
 

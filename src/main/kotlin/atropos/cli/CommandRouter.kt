@@ -150,6 +150,18 @@ class CommandRouter(
 
     private val tabCommand = TabCommandHandler(uiEngine, tabs) { currentProviderName }
 
+    /**
+     * Whether this input ends the session.
+     *
+     * Asked rather than pattern-matched at the call site, so the exit
+     * vocabulary has one owner. [BackgroundCommandRunner] needs it because
+     * exit is the one command that cannot run off the input thread: the loop
+     * is blocked reading a key, and a flag set by a worker would not be seen
+     * until the operator pressed something else.
+     */
+    fun isExitCommand(input: String): Boolean =
+        input.trim().lowercase() in EXIT_COMMANDS
+
     internal fun lex(input: String): LexResult = CommandLexer.lex(input)
 
     fun handleInput(input: String): RouterOutcome {
@@ -519,6 +531,9 @@ class CommandRouter(
     }
 
     private companion object {
+        /** Every spelling that ends the session — see [isExitCommand]. */
+        val EXIT_COMMANDS = setOf("/exit", "/quit", "exit", "quit")
+
         /** Longer than this, a bar-separated run is prose, not a command. */
         const val MAX_PIPELINE_STAGE_CHARS = 60
 
