@@ -2,15 +2,12 @@
   <img src="docs/assets/atropos-wordmark.svg" alt="ATROPOS" width="480"/>
 </p>
 
-<h1 align="center">ATROPOS</h1>
-
 <p align="center">
-  <strong>Open-source multi-agent AI coding engine</strong>
+  <strong>Stop babysitting chatty coding agents.</strong>
 </p>
 
 <p align="center">
-  Terminal · Web · Android<br/>
-  Plans, edits, verifies, and ships software across every surface.
+  Long-running hierarchical work. Durable projects. Any terminal—phone or desktop.
 </p>
 
 <p align="center">
@@ -21,9 +18,9 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/mjmichaelware/ATROPOS/stargazers"><img src="https://img.shields.io/github/stars/mjmichaelware/ATROPOS?style=flat" alt="Stars"/></a>
-  <a href="LICENSE"><img src="https://img.shields.io/github/license/mjmichaelware/ATROPOS?style=flat" alt="License"/></a>
-  <a href="https://github.com/mjmichaelware/ATROPOS/releases"><img src="https://img.shields.io/github/v/release/mjmichaelware/ATROPOS?style=flat" alt="Release"/></a>
+  <img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="License AGPL-3.0"/>
+  <img src="https://img.shields.io/badge/kotlin-primary-7F52FF" alt="Kotlin"/>
+  <img src="https://img.shields.io/badge/open--source-multi--agent-a855f7" alt="Open source multi-agent"/>
 </p>
 
 ---
@@ -54,8 +51,6 @@ java -jar ~/ATROPOS.jar
 
 Python 3.11+ is optional (recommended for the atomizer). No `pip install` required — the atomizer ships inside the JAR.
 
-Then, from any project directory, in **any terminal** (phone or desktop):
-
 ```sh
 cd your-project
 atropos
@@ -63,7 +58,7 @@ atropos
 
 Termux · iTerm · Windows Terminal · GNOME Terminal · Alacritty · Warp — same JVM + ANSI binary.
 
-### Useful environment variables
+### Environment variables
 
 | Variable | Effect |
 |----------|--------|
@@ -78,56 +73,28 @@ Termux · iTerm · Windows Terminal · GNOME Terminal · Alacritty · Warp — s
 ```sh
 ATROPOS_MODEL_GROQ=llama-3.1-8b-instant atropos
 ATROPOS_INGEST_ROOTS=/storage/emulated/0/Download atropos
-```
-
-```sh
 atropos auth accept AGENTS.md
 ```
 
----
-
-## Surfaces
-
-| Surface | What you get |
-|---------|----------------|
-| **Terminal / CLI TUI** | Full engine control plane — works on mobile and desktop terminals |
-| **Web** | Browser client over the local engine (session, files, evidence, agents) |
-| **Android** | Native APK client aimed at dense, one-hand operator UX |
-
-One engine. Multiple surfaces. Same projects, verification, and providers.
+In-app: `/help` · command palette `/` · attach files with `@path`.
 
 ---
 
-## Commands worth knowing (terminal)
+## Why not another coding agent
 
-| Area | Commands |
-|------|----------|
-| Orient | `/help` · `/status` · `/dashboard` · `/providers` · `/keys status` · `/verify` |
-| Work | `/factory run <prompt>` · `/factory plan` · `/agent run` · `/self-host run` |
-| Providers | `/use <provider>` · `/use auto` · `/keys setup` · `/providers live-test` |
-| DAG | `/dag status` · `/dag nodes` · `/dag runnable` |
-| Recovery | `/resume` · `/interrupt soft` · `/snapshot capture` |
+Most tools are **prompt-driven sessions**: one chat thread, reactive steps, work dies when the session ends, and the agent is happy to spray the whole tree.
 
-`/` opens the command palette · arrows navigate · Enter runs · Tab completes · Esc closes  
-Attach files with `@path` (txt, md, docx, pdf; images described)
+ATROPOS is built the other way:
 
-Full command surface lives in-app (`/help`).
+| Pain with typical CLIs / agents | Here |
+|--------------------------------|------|
+| Chatty, turn-by-turn babysitting | Long-running autonomous hierarchical agents |
+| Session dies → start over | Durable projects and checkpoints |
+| Vendor lock or one-provider launch hell | Multi-provider from env keys |
+| Desktop-only or IDE-only | Same engine in any terminal, web, and Android |
+| Closed client | Open source (AGPL-3.0) — inspect and change it |
 
----
-
-## Why ATROPOS
-
-| | |
-|--|--|
-| **Open source** | Inspect and modify the client — AGPL-3.0 |
-| **Multi-agent** | Hierarchical dispatch with scope control — not a single chat thread |
-| **Multi-provider** | Keys in env → auto-discover; free-first routing |
-| **Verification before done** | Gates block fake success |
-| **Multi-surface** | Terminal, web, and Android over one engine |
-| **Any terminal** | Phone or desktop — same binary |
-| **Durable work** | Projects and checkpoints survive restart |
-
-Providers need network. Local models (e.g. Ollama) work when configured.
+Local-first by design. Providers need network unless you wire a local model (e.g. Ollama).
 
 ---
 

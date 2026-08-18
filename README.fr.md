@@ -1,12 +1,13 @@
-<h1 align="center">ATROPOS</h1>
-
 <p align="center">
-  <strong>Moteur de codage multi-agents IA open source</strong>
+  <img src="docs/assets/atropos-wordmark.svg" alt="ATROPOS" width="480"/>
 </p>
 
 <p align="center">
-  Terminal · Web · Android<br/>
-  Planifie, édite, vérifie et livre du logiciel sur chaque surface.
+  <strong>Arrêtez de babysitter des agents de codage bavards.</strong>
+</p>
+
+<p align="center">
+  Travail hiérarchique de longue durée. Projets durables. N'importe quel terminal—mobile ou bureau.
 </p>
 
 <p align="center">
@@ -16,30 +17,62 @@
   <a href="README.fr.md">Français</a>
 </p>
 
+<p align="center">
+  <img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="License AGPL-3.0"/>
+  <img src="https://img.shields.io/badge/kotlin-primary-7F52FF" alt="Kotlin"/>
+  <img src="https://img.shields.io/badge/open--source-multi--agent-a855f7" alt="Open source multi-agent"/>
+</p>
+
+---
+
 ## Installation
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/mjmichaelware/ATROPOS/main/install.sh | sh
-# ou
 npm install -g @mjmichaelware/atropos
+
+curl -fL -o ~/ATROPOS.jar \
+  https://github.com/mjmichaelware/ATROPOS/releases/download/latest/ATROPOS.jar
+java -jar ~/ATROPOS.jar
 ```
 
-Nécessite Java 17+. Dans **n'importe quel terminal** (mobile ou bureau) :
+**Nécessite Java 17+**
+
+| Plateforme | JDK |
+|------------|-----|
+| Android (Termux) | `pkg install openjdk-21` |
+| Debian/Ubuntu | `sudo apt install openjdk-21-jre-headless` |
+| macOS | `brew install openjdk@21` |
+| Windows | JDK 17+ + Windows Terminal |
 
 ```sh
 cd votre-projet
 atropos
 ```
 
-## Surfaces
+### Variables d'environnement
 
-- **Terminal / CLI TUI** — plan de contrôle complet du moteur
-- **Web** — client navigateur sur le moteur local
-- **Android** — APK native haute densité
+| Variable | Effet |
+|----------|--------|
+| `ATROPOS_MODEL_<PROVIDER>` | Modèle par fournisseur |
+| `ATROPOS_INGEST_ROOTS` | Racines de lecture extra |
+| `ATROPOS_NO_ANIMATION` | Sans séquence d'ouverture |
+| `ATROPOS_ASCII` | UI ASCII |
+| `ATROPOS_JAVA_OPTS` | Options JVM |
+| `ATROPOS_JAR` | Jar existant |
+| `ATROPOS_VERSION` | Version d'install |
 
-## Commandes utiles
+Dans l'app : `/help` · palette `/` · fichiers avec `@chemin`.
 
-`/help` · `/status` · `/dashboard` · `/providers` · `/factory run` · `/verify` · `/resume`
+---
+
+## Pourquoi pas un agent de codage de plus
+
+La plupart sont des **sessions pilotées par prompts** : un fil de chat, des étapes réactives, le travail meurt avec la session, et l'agent touche volontiers tout l'arbre.
+
+ATROPOS est construit à l'envers : agents hiérarchiques de longue durée, projets durables, multi-fournisseurs depuis l'env, le même moteur en terminal / web / Android, client open source (AGPL-3.0).
+
+---
 
 ## Licence
 
