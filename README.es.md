@@ -3,12 +3,11 @@
 </p>
 
 <p align="center">
-  <strong>Motor de codificación multi-agente con IA de código abierto</strong>
+  <strong>Deja de cuidar agentes de codificación charlatanes.</strong>
 </p>
 
 <p align="center">
-  Terminal · Web · Android<br/>
-  Planifica, edita, verifica y entrega software en cada superficie.
+  Trabajo jerárquico de larga duración. Proyectos duraderos. Cualquier terminal—móvil o escritorio.
 </p>
 
 <p align="center">
@@ -21,8 +20,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="License AGPL-3.0"/>
   <img src="https://img.shields.io/badge/kotlin-primary-7F52FF" alt="Kotlin"/>
-  <img src="https://img.shields.io/badge/surfaces-terminal%20%7C%20web%20%7C%20android-a855f7" alt="Surfaces"/>
-  <img src="https://img.shields.io/badge/languages-EN%20%7C%20ES%20%7C%20ZH%20%7C%20FR-0ea5e9" alt="Languages"/>
+  <img src="https://img.shields.io/badge/open--source-multi--agent-a855f7" alt="Open source multi-agent"/>
 </p>
 
 ---
@@ -30,13 +28,9 @@
 ## Instalación
 
 ```sh
-# Instalador de una línea
 curl -fsSL https://raw.githubusercontent.com/mjmichaelware/ATROPOS/main/install.sh | sh
-
-# npm
 npm install -g @mjmichaelware/atropos
 
-# JAR directo
 curl -fL -o ~/ATROPOS.jar \
   https://github.com/mjmichaelware/ATROPOS/releases/download/latest/ATROPOS.jar
 java -jar ~/ATROPOS.jar
@@ -44,88 +38,39 @@ java -jar ~/ATROPOS.jar
 
 **Requiere Java 17+**
 
-| Plataforma | Instalar JDK |
-|------------|--------------|
+| Plataforma | JDK |
+|------------|-----|
 | Android (Termux) | `pkg install openjdk-21` |
 | Debian/Ubuntu | `sudo apt install openjdk-21-jre-headless` |
 | macOS | `brew install openjdk@21` |
-| Windows | Instala un JDK 17+ y usa Windows Terminal |
-
-Python 3.11+ es opcional (recomendado para el atomizer). No hace falta `pip install` — el atomizer va dentro del JAR.
-
-Luego, desde cualquier proyecto, en **cualquier terminal** (móvil o escritorio):
+| Windows | JDK 17+ + Windows Terminal |
 
 ```sh
 cd tu-proyecto
 atropos
 ```
 
-Termux · iTerm · Windows Terminal · GNOME Terminal · Alacritty · Warp — el mismo binario JVM + ANSI.
-
-### Variables de entorno útiles
+### Variables de entorno
 
 | Variable | Efecto |
 |----------|--------|
-| `ATROPOS_MODEL_<PROVIDER>` | Modelo por proveedor (ej. `ATROPOS_MODEL_GROQ`) |
-| `ATROPOS_INGEST_ROOTS` | Raíces de lectura extra (`:` separadas) |
-| `ATROPOS_NO_ANIMATION` | Omite la secuencia de apertura |
-| `ATROPOS_ASCII` | UI ASCII en lugar de caracteres de caja |
-| `ATROPOS_JAVA_OPTS` | Flags de la JVM |
-| `ATROPOS_JAR` | Usa un jar que ya tengas |
-| `ATROPOS_VERSION` | Fija la versión del instalador |
+| `ATROPOS_MODEL_<PROVIDER>` | Modelo por proveedor |
+| `ATROPOS_INGEST_ROOTS` | Raíces de lectura extra |
+| `ATROPOS_NO_ANIMATION` | Sin secuencia de apertura |
+| `ATROPOS_ASCII` | UI ASCII |
+| `ATROPOS_JAVA_OPTS` | Flags JVM |
+| `ATROPOS_JAR` | Jar existente |
+| `ATROPOS_VERSION` | Versión del instalador |
 
-```sh
-ATROPOS_MODEL_GROQ=llama-3.1-8b-instant atropos
-ATROPOS_INGEST_ROOTS=/storage/emulated/0/Download atropos
-```
-
-```sh
-atropos auth accept AGENTS.md
-```
+En la app: `/help` · paleta `/` · archivos con `@ruta`.
 
 ---
 
-## Superficies
+## Por qué no otro agente de codificación
 
-| Superficie | Qué obtienes |
-|------------|----------------|
-| **Terminal / CLI TUI** | Plano de control completo del motor — móvil y escritorio |
-| **Web** | Cliente en el navegador sobre el motor local |
-| **Android** | APK nativa de alta densidad, una mano |
+La mayoría son **sesiones impulsadas por prompts**: un hilo de chat, pasos reactivos, el trabajo muere al cerrar la sesión, y el agente no duda en tocar todo el árbol.
 
-Un motor. Varias superficies. Mismos proyectos, evidencia y proveedores.
-
----
-
-## Comandos útiles (terminal)
-
-| Área | Comandos |
-|------|----------|
-| Orientar | `/help` · `/status` · `/dashboard` · `/providers` · `/keys status` · `/verify` |
-| Trabajo | `/factory run <prompt>` · `/factory plan` · `/agent run` · `/self-host run` |
-| Proveedores | `/use <provider>` · `/use auto` · `/keys setup` · `/providers live-test` |
-| DAG | `/dag status` · `/dag nodes` · `/dag runnable` |
-| Recuperación | `/resume` · `/interrupt soft` · `/snapshot capture` |
-
-`/` abre la paleta · flechas navegan · Enter ejecuta · Tab completa · Esc cierra  
-Adjunta archivos con `@ruta`
-
-La superficie completa de comandos está en la app (`/help`).
-
----
-
-## Por qué ATROPOS
-
-| | |
-|--|--|
-| **Código abierto** | Inspecciona y modifica el cliente — AGPL-3.0 |
-| **Multi-agente** | Despacho jerárquico con control de alcance — no un solo hilo de chat |
-| **Multi-proveedor** | Claves en el entorno → auto-descubrimiento; prioriza gratis |
-| **Larga duración** | Proyectos y checkpoints duraderos — no un agente reactivo de prompts |
-| **Multi-superficie** | Terminal, web y Android sobre un motor |
-| **Cualquier terminal** | Móvil o escritorio — el mismo binario |
-
-Los proveedores necesitan red. Modelos locales (p. ej. Ollama) funcionan si los configuras.
+ATROPOS está construido al revés: agentes jerárquicos de larga duración, proyectos duraderos, multi-proveedor desde el entorno, el mismo motor en terminal / web / Android, cliente open source (AGPL-3.0).
 
 ---
 
