@@ -56,6 +56,13 @@ class BoundedProcessRunner(
         inputRedirect: Path? = null
     ): BoundedProcessResult {
         validate(command, directory, timeoutMillis, maxOutputBytes, maxOutputLines)
+
+        // Every subprocess the engine runs passes through here -- gradle, git,
+        // python, the atomizer. Narrating at this one point is what turns a
+        // full trace from a dozen summary lines into an account of what the
+        // run actually did, without a publish call at each of a hundred sites.
+        atropos.core.thinking.Thinking.detail("process", command.joinToString(" "))
+
         val started = System.nanoTime()
         val process = try {
             launch(command, directory, environment, removeEnvironmentKeys, inputRedirect)
@@ -68,6 +75,7 @@ class BoundedProcessRunner(
                 stderr = "",
                 outputTruncated = false,
                 launchError = "${failure.javaClass.simpleName}: ${failure.message ?: "process launch failed"}"
+                    .also { atropos.core.thinking.Thinking.detail("process", "launch failed — $it") }
             )
         }
         if (standardInput == null) {
@@ -89,8 +97,22 @@ class BoundedProcessRunner(
         val out = result(stdout)
         val err = result(stderr)
         pumps.shutdownNow()
+
+        // The outcome, not just the intent. An exit code is the single most
+        // useful line in a trace -- `exit=127` on `./gradlew compileKotlin` is
+        // "gradle is not runnable here", which reads nothing like a compile
+        // failure and was previously invisible.
+        val code = if (finished) process.exitValue() else null
+        atropos.core.thinking.Thinking.detail(
+            "process",
+            command.first() + " " +
+                (if (finished) "exit=$code" else "timed out") +
+                " in ${elapsed(started)}ms" +
+                (err.text.lineSequence().firstOrNull { it.isNotBlank() }?.let { " — ${it.take(120)}" } ?: "")
+        )
+
         return BoundedProcessResult(
-            exitCode = if (finished) process.exitValue() else null,
+            exitCode = code,
             timedOut = !finished,
             durationMillis = elapsed(started),
             stdout = out.text,

@@ -35,9 +35,14 @@ class ThinkingStream(private val bound: Int = DEFAULT_BOUND) {
      * the engine would turn it into a lost run, which is precisely the outcome
      * this whole file exists to prevent.
      */
-    fun emit(depth: ThinkingDepth, text: String, at: Instant = Instant.now()) {
+    fun emit(
+        depth: ThinkingDepth,
+        text: String,
+        at: Instant = Instant.now(),
+        category: String = ""
+    ) {
         if (text.isBlank()) return
-        val thought = StreamedThought(depth, text.trim(), at)
+        val thought = StreamedThought(depth, text.trim(), at, category)
         synchronized(lines) {
             lines.addLast(thought)
             while (lines.size > bound) lines.removeFirst()
@@ -67,10 +72,18 @@ class ThinkingStream(private val bound: Int = DEFAULT_BOUND) {
     }
 }
 
+/**
+ * @param category what part of the engine spoke — `process`, `provider`,
+ *   `dag`, `gate`, `goal`, `file`. Carried rather than baked into [text] so a
+ *   renderer can align it into a column and colour it by kind. A full trace
+ *   that is one undifferentiated wall of sentences is technically complete and
+ *   practically unreadable; the eye needs a column to scan down.
+ */
 data class StreamedThought(
     val depth: ThinkingDepth,
     val text: String,
-    val at: Instant
+    val at: Instant,
+    val category: String = ""
 )
 
 /**
@@ -84,4 +97,26 @@ data class StreamedThought(
  */
 object Thinking {
     val stream: ThinkingStream = ThinkingStream()
+
+    /**
+     * Narrates a step of the run.
+     *
+     * The engine's side of the reasoning surface, kept here so core code can
+     * say what it is doing without importing anything from the CLI. `/thinking
+     * 3` promises "everything, including evidence detail" and was delivering a
+     * dozen lines for an entire self-host run -- the depth filter was correct
+     * all along, almost nothing published.
+     *
+     * Failures are swallowed on purpose. Narration must never be able to fail
+     * a run: a trace that takes down the work it was describing is worse than
+     * no trace.
+     */
+    fun step(category: String, text: String) {
+        runCatching { stream.emit(ThinkingDepth.L2, text, category = category) }
+    }
+
+    /** Detail only a full trace wants: commands, exit codes, byte counts. */
+    fun detail(category: String, text: String) {
+        runCatching { stream.emit(ThinkingDepth.L3, text, category = category) }
+    }
 }

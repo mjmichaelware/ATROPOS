@@ -153,16 +153,16 @@ class StartupSequence(
         greeting: String?,
         facts: List<String>
     ): List<String> {
-        val thread = thread(width, reach)
+        val band = threadBand(width, reach)
         val body = buildList {
-            add(thread)
+            addAll(band)
             add("")
             addAll(art)
             add("")
             greeting?.let { add(it); add("") }
             addAll(facts)
             add("")
-            add(thread)
+            addAll(band.asReversed())
         }
 
         val left = ((width - block.coerceAtMost(width)) / 2).coerceAtLeast(0)
@@ -172,9 +172,9 @@ class StartupSequence(
         return List(top) { "" } + body.map { line ->
             when {
                 line.isEmpty() -> ""
-                // The thread is already full-width and centred on the screen,
-                // not on the text block, so it is placed rather than indented.
-                line === thread -> line
+                // The band is already centred on the screen rather than on
+                // the text block, so it is placed rather than indented.
+                line in band -> line
                 // Ellipsized, not wrapped: a fact that does not fit is one the
                 // operator can read the start of, where a wrapped one would
                 // push the wordmark off a short terminal to finish a hint.
@@ -183,12 +183,24 @@ class StartupSequence(
         }
     }
 
-    /** A rule reaching [reach] cells either side of the screen's centre. */
-    private fun thread(width: Int, reach: Int): String {
-        if (reach <= 0) return ""
+    /**
+     * The threads, as a band reaching [reach] cells either side of centre.
+     *
+     * Three rows rather than one. A single hairline growing across the screen
+     * was over in a second and read as a flash of something rather than as a
+     * thread being drawn -- the eye registered that a frame had changed and
+     * could not say what it had seen. Three rows with the weight in the middle
+     * is a band: it has a shape to recognise before the wordmark arrives.
+     */
+    private fun threadBand(width: Int, reach: Int): List<String> {
+        if (reach <= 0) return List(BAND_ROWS) { "" }
         val drawn = (reach * 2).coerceAtMost(width)
         val left = ((width - drawn) / 2).coerceAtLeast(0)
-        return " ".repeat(left) + theme.paint(Role.ACCENT_FOCUS, THREAD.repeat(drawn))
+        val pad = " ".repeat(left)
+
+        return BAND_GLYPHS.map { glyph ->
+            pad + theme.paint(Role.ACCENT_FOCUS, glyph.toString().repeat(drawn))
+        }
     }
 
     private fun wordmark(): List<String> = (0 until GLYPH_ROWS).map { row ->
@@ -207,8 +219,18 @@ class StartupSequence(
         /** Seven glyphs of five cells, six single-cell gaps between them. */
         const val WORDMARK_CELLS = NAME.length * GLYPH_CELLS + (NAME.length - 1)
 
-        /** Cells the thread gains per frame, each side of centre. */
-        const val THREAD_STEP = 2
+        /**
+         * Cells the band gains per frame, each side of centre.
+         *
+         * One, not two. At two the draw was over in well under a second on a
+         * phone-width terminal, which is the "quick flash" an operator sees
+         * and cannot identify.
+         */
+        const val THREAD_STEP = 1
+
+        /** Rows in the band, weighted toward the middle. */
+        val BAND_GLYPHS = charArrayOf('─', '━', '─').toList()
+        const val BAND_ROWS = 3
 
         /** Columns of wordmark drawn per frame. */
         const val REVEAL_STEP = 2

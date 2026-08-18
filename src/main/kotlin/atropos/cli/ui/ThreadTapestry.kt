@@ -64,14 +64,14 @@ class ThreadTapestry(private val theme: TerminalTheme) {
                 // kilobytes, and the diffing renderer would rewrite all of it
                 // on every frame.
                 if (tier != previousTier) {
-                    if (previousTier >= 0) line.append(theme.reset())
+                    if (previousTier >= 0) line.append(RESET)
                     line.append(open(tier))
                     previousTier = tier
                 }
                 line.append(GLYPHS[tier])
             }
 
-            if (previousTier >= 0) line.append(theme.reset())
+            if (previousTier >= 0) line.append(RESET)
             line.toString()
         }
     }
@@ -85,18 +85,47 @@ class ThreadTapestry(private val theme: TerminalTheme) {
             else -> 4
         }
 
-    /** The opening sequence for a tier, or empty when the theme has no colour. */
+    /**
+     * The 24-bit colour for a tier, or empty when the terminal has none.
+     *
+     * Truecolor rather than the theme's semantic roles. Roles exist to say
+     * what a thing *means* — an error, a path, a heading — and this field
+     * means nothing; it is texture. Borrowing `BRAND` for it would make the
+     * artwork change colour whenever the brand did, and would put the same ink
+     * on the wordmark and on the wallpaper behind it.
+     *
+     * The ramp runs deep indigo → violet → periwinkle → near-white, so the
+     * densest threads read as lit and the sparse ones recede. Blue and white
+     * against the purple wordmark rather than more purple: a field in the
+     * brand colour competes with the brand mark, where a cooler field sits
+     * behind it.
+     */
     private fun open(tier: Int): String {
-        val role = if (tier >= 3) Role.BRAND else Role.TEXT_MUTED
-        val painted = theme.paint(role, "x")
-        return painted.substringBefore('x').takeIf { it.isNotEmpty() && it != painted } ?: ""
+        if (!theme.colorEnabled) return ""
+        val (r, g, b) = RAMP_RGB[tier.coerceIn(0, RAMP_RGB.lastIndex)]
+        return "\u001B[38;2;$r;$g;${b}m"
     }
 
     private companion object {
         const val MINIMUM_CELLS = 24
+        const val RESET = "\u001B[0m"
         const val PHASE_STEP = 0.22
 
         /** Sparse to dense. Space carries the negative space the weave needs. */
         val GLYPHS = charArrayOf(' ', '·', '░', '▒', '▓')
+
+        /**
+         * Deep indigo through periwinkle to near-white.
+         *
+         * Cool on purpose: the wordmark is purple, and a field in the same
+         * hue competes with the mark instead of sitting behind it.
+         */
+        val RAMP_RGB = listOf(
+            Triple(0x1B, 0x1E, 0x3A),
+            Triple(0x2E, 0x35, 0x6B),
+            Triple(0x4C, 0x5A, 0xA8),
+            Triple(0x7E, 0x8F, 0xD6),
+            Triple(0xC8, 0xD4, 0xF5)
+        )
     }
 }

@@ -109,9 +109,16 @@ class AnsiTerminalEngine(
         val facts = StartupSequence.Facts(
             version = versionLabel(),
             provider = activeProvider,
-            providerCount = with(config.keys) {
-                listOf(groq, openai, anthropic, xai).count(String::isNotBlank)
-            },
+            // Counted from the descriptor registry, not from the legacy
+            // four-field key struct.
+            //
+            // `config.keys` holds exactly groq, openai, anthropic and xai, so
+            // the opening screen reported "4 configured" on a machine with
+            // twenty-three providers keyed and would have reported 4 on a
+            // machine with none of those four but all the others. The number
+            // was a constant wearing a fact's clothing, on the first screen an
+            // operator ever reads.
+            providerCount = configuredProviderCount(config),
             workspace = state.workspace
         )
 
@@ -123,6 +130,31 @@ class AnsiTerminalEngine(
             if (!pause(FRAME_MILLIS)) return
         }
         pause(SETTLE_MILLIS)
+    }
+
+    /**
+     * How many providers actually hold credentials.
+     *
+     * A provider counts when every environment variable its descriptor
+     * declares is present, or when the legacy config file carries its key.
+     * Local providers declare no key and are counted when they are reachable
+     * at all, because "configured" for Ollama means installed, not keyed.
+     */
+    private fun configuredProviderCount(config: AtroposConfig): Int {
+        val legacy = with(config.keys) {
+            listOf("groq" to groq, "openai" to openai, "anthropic" to anthropic, "xai" to xai)
+                .filter { it.second.isNotBlank() }
+                .map { it.first }
+        }.toSet()
+
+        return atropos.core.provider.StaticProviderDescriptorRegistry().getAll().count { descriptor ->
+            when {
+                descriptor.id in legacy -> true
+                descriptor.isLocal -> false
+                descriptor.requiredEnv.isEmpty() -> false
+                else -> descriptor.requiredEnv.all { !System.getenv(it).isNullOrBlank() }
+            }
+        }
     }
 
     private fun pause(millis: Long): Boolean = try {

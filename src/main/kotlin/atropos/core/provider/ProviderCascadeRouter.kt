@@ -42,9 +42,19 @@ class ProviderCascadeRouter(
         val errors = mutableListOf<ProviderError>()
         val blocked = mutableSetOf<String>()
 
+        // Which providers will be tried, and in what order. A run that waits
+        // on a model has to say what it is waiting on -- an operator watching
+        // a silent minute cannot tell a slow provider from a hung one.
+        atropos.core.thinking.Thinking.detail(
+            "provider",
+            "cascade order: " + order.joinToString(" → ")
+        )
+
         for (providerName in order) {
             val provider = providerName.lowercase()
             if (provider in blocked) continue
+
+            atropos.core.thinking.Thinking.step("provider", "asking $provider")
 
             val descriptor = registry.getById(provider)
             if (descriptor?.isLocal == true && descriptor.hasCapability(ApiCapability.CHAT) && !localHealth()) {
