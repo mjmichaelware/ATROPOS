@@ -82,6 +82,13 @@ class SpecGraphAtomizer(
             // every run, and the canonical atomizer was reachable only from
             // inside the source tree.
             ?: atropos.core.AtroposInstallationLocator.resource(IN_REPO_SPECGRAPH)?.toString()
+            // Last: the copy this jar carries, unpacked on first use. Every
+            // resolution above needs the source tree to be on the machine
+            // already, which is true when ATROPOS was cloned and false when it
+            // was installed -- and installing is the ordinary case. Without
+            // this, a curl-installed jar reported root_missing on every run
+            // and silently planned with the weaker internal extractor.
+            ?: BundledSpecGraph.root()?.toString()
             ?: atropos.core.AtroposRepoRootLocator.resolve().resolve(IN_REPO_SPECGRAPH).toString()
         val canonicalRoot = runCatching {
             val candidate = Path.of(specGraphRoot).toAbsolutePath().normalize()

@@ -171,6 +171,49 @@ tasks.named("check") {
     dependsOn(kotlinCompatScan, kotlinCompatScanEdge, portableSurfacePlan, phase0ToolchainContractTest, secretScan, canonicalAcceptanceTest)
 }
 
+// The canonical atomizer travels inside the jar.
+//
+// Without this, a fresh install has no SPECGRAPH_ROOT, SpecGraphAtomizer
+// soft-fails to the weaker internal extractor, and a factory run quietly
+// produces a fraction of the atoms the document contains. Asking an operator
+// to `pkg install python && pip install -e .` on a phone before the tool works
+// is not an install story -- the atomizer is part of the product.
+//
+// Source, not a wheel: the atom path imports nothing outside the standard
+// library (pypdf and fpdf2 are lazy imports inside the PDF renderer, which
+// atomization never reaches), so there is no `pip`, no network and no native
+// wheel to carry. A python3 interpreter is still required and its absence is
+// still reported honestly.
+val specGraphSource = layout.projectDirectory.dir("apps/specgraph-foundry/src")
+
+// Python cannot import from inside a jar, so BundledSpecGraph unpacks the tree
+// on first use and needs to know what is in it. Enumerating a jar directory
+// through a classloader is not reliable, so the manifest is written here.
+val specGraphIndex by tasks.registering {
+    // Both sides captured as plain files at configuration time. Reaching for
+    // `specGraphSource` inside doLast captures the build script itself, which
+    // the configuration cache cannot serialise -- the task then fails with a
+    // null receiver rather than anything that names the real problem.
+    val sourceDirectory = specGraphSource.asFile
+    val indexFile = layout.buildDirectory.file("specgraph/INDEX").get().asFile
+
+    inputs.dir(sourceDirectory).withPathSensitivity(PathSensitivity.RELATIVE)
+    outputs.file(indexFile)
+
+    doLast {
+        val root = sourceDirectory.toPath()
+        val files = sourceDirectory.walkTopDown()
+            .filter { it.isFile && it.extension == "py" }
+            .filterNot { it.path.contains("__pycache__") }
+            .map { root.relativize(it.toPath()).toString().replace(File.separatorChar, '/') }
+            .sorted()
+            .toList()
+        require(files.isNotEmpty()) { "no SpecGraph sources found under $root" }
+        indexFile.parentFile.mkdirs()
+        indexFile.writeText(files.joinToString("\n", postfix = "\n"))
+    }
+}
+
 tasks.jar {
     manifest {
         attributes["Main-Class"] = "atropos.MainKt"
@@ -179,5 +222,15 @@ tasks.jar {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) }) {
         exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA", "META-INF/MANIFEST.MF")
+    }
+    from(specGraphSource) {
+        into("specgraph")
+        include("**/*.py")
+        // Compiled bytecode is machine- and version-specific and would make the
+        // jar non-reproducible for no benefit.
+        exclude("**/__pycache__/**")
+    }
+    from(specGraphIndex) {
+        into("specgraph")
     }
 }
