@@ -1,5 +1,6 @@
 package atropos.core.factory
 
+import atropos.core.thinking.Narrate
 import atropos.core.assets.LocalAssetGenerator
 import atropos.core.memory.LocalMemoryStore
 import atropos.core.memory.MemoryAuthority
@@ -93,6 +94,17 @@ class FactoryRunOrchestrator(
             promptSpans = lineage.promptSpans
         )
         val plannedAtomIds = planningDag.nodes.map { it.id }
+        // The two numbers an operator waits through a long plan for. Both were
+        // computed here and reported only into the run journal, which is not
+        // something anyone reads while the run is still going.
+        Narrate.plan.counted("nodes planned", planningDag.nodes.size)
+        Narrate.plan.counted(
+            "edges between them",
+            planningDag.nodes.sumOf { it.dependencies.size }
+        )
+        planningDag.nodes.forEachIndexed { index, node ->
+            Narrate.plan.item(index + 1, planningDag.nodes.size, node.id, node.label)
+        }
         recorder.recordPlanDag(
             runId = plan.id,
             dagId = planningDag.id,

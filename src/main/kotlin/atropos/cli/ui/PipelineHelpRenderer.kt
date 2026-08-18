@@ -129,7 +129,10 @@ class PipelineHelpRenderer(private val theme: TerminalTheme) {
                 "7", "Verify",
                 "Gates decide whether the work actually holds -- compilation, " +
                     "tests, the checks the specification asked for. Nothing is " +
-                    "reported as done on a gate that did not run.",
+                    "reported as done on a gate that did not run. On a phone " +
+                    "there is no JDK to compile with, so set " +
+                    "ATROPOS_COMPILE_GATE=github and the compile runs on " +
+                    "GitHub Actions instead of stalling here.",
                 "a pass or a named failure, never a guess",
                 listOf("/verify narrow", "/verify wide", "/tests matrix")
             ),

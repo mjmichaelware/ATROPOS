@@ -25,7 +25,8 @@ import java.nio.file.Path
  */
 class GovernedCompileGate(
     private val repoRoot: Path,
-    private val command: List<String> = listOf("./gradlew", "compileKotlin"),
+    /** What this gate runs, readable so a caller can say where it will run. */
+    val command: List<String> = listOf("./gradlew", "compileKotlin"),
     private val agency: TypedToolExecutor = TypedToolExecutor(BoundedAgencyGate(ExecutionPolicyEngine(repoRoot))),
     private val redactionFilter: RedactionFilter = RedactionFilter(),
     private val processRunner: (List<String>, Path) -> CompileRun = ::runGovernedCompileProcess
@@ -96,8 +97,47 @@ class GovernedCompileGate(
 
     data class CompileRun(val exitCode: Int, val output: String)
 
-    private companion object {
-        val EXIT_PATTERN = Regex("""exit=(-?\d+)""")
+    companion object {
+        private val EXIT_PATTERN = Regex("""exit=(-?\d+)""")
+
+        /** The environment variable that moves the compile off this machine. */
+        const val REMOTE_FLAG = "ATROPOS_COMPILE_GATE"
+
+        /** How a gate says, in its own `command`, that it runs remotely. */
+        const val REMOTE_COMMAND = "github-actions"
+
+        /**
+         * The gate, wired to whichever machine can actually compile.
+         *
+         * `ATROPOS_COMPILE_GATE=github` runs `./gradlew compileKotlin` on
+         * GitHub Actions instead of here. That is not a preference: on the
+         * Android/Termux install there is no JDK toolchain, `./gradlew` exits
+         * 127, and a self-host run stalls one step short of promotion forever
+         * with `missing=CANDIDATE_BUILD,JAR_SWAP`. Anything else -- unset
+         * included -- keeps the local behaviour, so no existing install
+         * changes.
+         *
+         * Both routes end in the same command and the same
+         * [GovernedCompileGateResult]. There is one compile gate; this only
+         * decides where its process runs.
+         */
+        fun forRepository(
+            repoRoot: Path,
+            environment: Map<String, String> = System.getenv()
+        ): GovernedCompileGate {
+            val remote = environment[REMOTE_FLAG]?.trim()?.lowercase()
+            if (remote != "github" && remote != "ci" && remote != "actions") {
+                return GovernedCompileGate(repoRoot)
+            }
+            return GovernedCompileGate(
+                repoRoot = repoRoot,
+                // Named for what ran, so the policy record and the evidence
+                // line say GitHub Actions rather than claiming a local gradle
+                // invocation that never happened.
+                command = listOf(REMOTE_COMMAND, GitHubActionsCompileRunner.DEFAULT_WORKFLOW, "compileKotlin"),
+                processRunner = GitHubActionsCompileRunner(repoRoot)
+            )
+        }
     }
 }
 

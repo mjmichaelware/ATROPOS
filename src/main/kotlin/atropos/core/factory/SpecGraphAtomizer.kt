@@ -1,6 +1,7 @@
 package atropos.core.factory
 
 import atropos.core.policy.BoundedProcessRunner
+import atropos.core.thinking.Narrate
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.LinkOption
@@ -118,18 +119,37 @@ class SpecGraphAtomizer(
             ) { "research_root_redirected" }
             val sourceFile = Files.createTempFile(runRoot, ".specgraph-source-", ".md")
             val databaseFile = Files.createTempFile(runRoot, ".specgraph-", ".sqlite3")
+            // The script goes in a file, not in argv.
+            //
+            // It used to be passed to `python3 -c`, and BoundedProcessRunner
+            // caps a single argument at 8,192 characters -- a real bound worth
+            // keeping, since an unbounded argv is how a command line becomes a
+            // memory limit. The script had grown to within a few hundred
+            // characters of that cap, so the next edit to it -- adding the
+            // trace channel -- pushed it over, and every atomization began
+            // refusing with `bounded_process_arguments_must_be_non_blank_and_
+            // limited`. The caller falls back to the internal extractor on a
+            // soft fail, so the visible symptom was a four-hundred-atom
+            // document quietly planning as a three-node graph.
+            //
+            // A file has no such ceiling and no cliff to walk back up to.
+            val scriptFile = Files.createTempFile(runRoot, ".specgraph-atomize-", ".py")
             val lineageSource = buildString {
                 appendLine("prompt_fingerprint=$promptFingerprint")
                 appendLine("prompt_spans=$promptSpans")
                 append(source)
             }
             Files.writeString(sourceFile, lineageSource, StandardCharsets.UTF_8)
+            Files.writeString(scriptFile, PYTHON_ATOMIZE_SCRIPT, StandardCharsets.UTF_8)
+            Narrate.atomize.stage(
+                "atomizing ${lineageSource.length} characters through SpecGraph at $canonicalRoot"
+            )
+            Narrate.atomize.artifact("atomizer input", sourceFile)
             try {
                 val result = processRunner.run(
                     command = listOf(
                         pythonExecutable,
-                        "-c",
-                        PYTHON_ATOMIZE_SCRIPT,
+                        scriptFile.toString(),
                         canonicalRoot.toString(),
                         sourceFile.toString(),
                         databaseFile.toString()
@@ -146,6 +166,29 @@ class SpecGraphAtomizer(
                 require(!result.outputTruncated) { "output_truncated" }
                 val lines = result.stdout.lineSequence().map { it.trimEnd() }.toList()
 
+                // Forward what the pipeline said about itself.
+                //
+                // Everything SpecGraph knows -- which of the sixteen dimensions
+                // applied to each atom, how many research tasks that raised --
+                // used to die with the subprocess. `/thinking 3` promised
+                // "absolutely every step" and delivered a spinner, because the
+                // stage that knew was on the other side of a pipe.
+                //
+                // Batched rather than streamed: BoundedProcessRunner returns
+                // the output when the process exits, and streaming it would
+                // mean an unbounded reader on a subprocess the whole point of
+                // that class is to bound. The trace arrives late; it arrives.
+                lines.asSequence()
+                    .filter { it.startsWith(TRACE_PREFIX + "\t") }
+                    .map { it.split('\t') }
+                    .filter { it.size >= 3 }
+                    .forEach { parts ->
+                        atropos.core.thinking.Thinking.detail(
+                            parts[1],
+                            parts.drop(2).joinToString("\t").replace("\\n", " ")
+                        )
+                    }
+
                 val meta = lines.lastOrNull { it.startsWith(CanonicalAtomRecord.META_PREFIX + "\t") }
                     ?.split('\t')
                     ?: error("invalid_output")
@@ -161,6 +204,25 @@ class SpecGraphAtomizer(
                 require(sourceSha == sha256(lineageSource)) { "source_hash_mismatch" }
 
                 val atoms = lines.mapNotNull(CanonicalAtomRecord::decode)
+                // The number an operator is actually waiting for. It was
+                // computed here on every run and never said out loud, so a
+                // fourteen-minute atomization of a four-hundred-atom document
+                // and one of an empty file looked identical from the outside.
+                Narrate.atomize.counted("atoms decoded", atoms.size, of = declaredCount)
+                if (atoms.size != declaredCount) {
+                    Narrate.atomize.trouble(
+                        "SpecGraph declared $declaredCount atoms and this side could read ${atoms.size}",
+                        "the rest carried no id or no statement"
+                    )
+                }
+                atoms.forEachIndexed { index, atom ->
+                    Narrate.atomize.item(
+                        index = index + 1,
+                        total = atoms.size,
+                        id = atom.id,
+                        what = atom.statement.take(ATOM_NARRATION_CELLS)
+                    )
+                }
                 val observedSchema = lines
                     .firstOrNull { it.startsWith(CanonicalAtomRecord.SCHEMA_PREFIX + "\t") }
                     ?.substringAfter('\t')
@@ -194,11 +256,13 @@ class SpecGraphAtomizer(
                     // runs while the evidence said the canonical atomizer had
                     // worked.
                     //
-                    // The cause is upstream and worth naming here rather than
-                    // leaving to be rediscovered: `AtomService.extract_document`
-                    // keys on modal requirement sentences (MUST/SHALL), and a
-                    // `key=value` document contains none, so it yields zero
-                    // atoms from a document that is not empty.
+                    // This used to be caused by extraction keying on modal
+                    // requirement sentences, so a `key=value` or bullet-list
+                    // document produced zero atoms however much work it
+                    // described. That is fixed upstream: admission is
+                    // structural now, and the same document that yielded
+                    // nothing yields 390 atoms. Reaching this branch today
+                    // means the source genuinely has no delimited items in it.
                     CanonicalAtomization(
                         atoms = emptyList(),
                         sourceSha256 = sourceSha,
@@ -221,6 +285,7 @@ class SpecGraphAtomizer(
                     )
                 }
             } finally {
+                Files.deleteIfExists(scriptFile)
                 Files.deleteIfExists(sourceFile)
                 Files.deleteIfExists(databaseFile)
                 Files.deleteIfExists(Path.of("${databaseFile}-wal"))
@@ -268,6 +333,18 @@ class SpecGraphAtomizer(
         .joinToString("") { "%02x".format(it) }
 
     private companion object {
+        /**
+         * How much of an atom's statement the per-atom line carries.
+         *
+         * Enough to recognise which atom it is; not the whole statement, which
+         * on this document runs to a paragraph and would make the trace
+         * unreadable at exactly the moment it became complete.
+         */
+        const val ATOM_NARRATION_CELLS = 90
+
+        /** The bridge's channel for narration rather than data. */
+        const val TRACE_PREFIX = "TRACE"
+
         /** Where SpecGraph lives inside ATROPOS. */
         const val IN_REPO_SPECGRAPH = "apps/specgraph-foundry"
 
@@ -381,7 +458,27 @@ def specific_dimension(connection, atom_id):
     specific = sorted(n for n in names if n != "FUNCTIONAL_CONTRACT")
     return specific[0] if specific else "FUNCTIONAL_CONTRACT"
 
+# A channel for the pipeline to say what it is doing.
+#
+# Everything this process knows -- how many dimensions applied to an atom, how
+# many research tasks it raised, what the compiler resolved -- used to die with
+# the subprocess, and `/thinking 3` promised the operator "absolutely every
+# step" while showing them a spinner. TRACE lines are forwarded verbatim into
+# the thinking stream by the Kotlin side, so a stage that wants to be heard
+# only has to say something.
+#
+# Not on the ATOM protocol: a trace line is not data the plan depends on, and
+# a decoder that had to tell them apart would fail closed on one it did not
+# recognise. Unknown prefixes are already ignored, so this is additive.
+def trace(category, message):
+    print("TRACE\t" + esc(category) + "\t" + esc(message))
+
+trace("atomize", "SpecGraph extracted %d atoms from %d bytes of source" % (len(atoms), len(source_bytes)))
+
 reported_schema = False
+dimension_total = 0
+applicable_total = 0
+research_total = 0
 with database.connect() as connection:
     for atom in atoms:
         identifier = pick(atom, ["id", "atom_id", "uuid", "key"])
@@ -391,6 +488,33 @@ with database.connect() as connection:
                 print("SCHEMA\t" + ",".join(sorted(str(k) for k in atom.keys())))
                 reported_schema = True
             continue
+        # The sixteen dimensions, per atom, said out loud.
+        #
+        # They are computed and stored on every run -- one row per atom per
+        # dimension, applicable or not -- and were visible to an operator only
+        # as the single most specific one on the ATOM line. "Each atom is
+        # examined across sixteen fixed dimensions" was true and unevidenced.
+        dimension_rows = connection.execute(
+            "SELECT dimension, applicability FROM atom_dimensions "
+            "WHERE atom_id = ? ORDER BY dimension",
+            (identifier,),
+        ).fetchall()
+        applicable = [str(row[0]) for row in dimension_rows if str(row[1]) != "NOT_APPLICABLE"]
+        research_count = connection.execute(
+            "SELECT COUNT(*) FROM research_tasks WHERE atom_id = ?",
+            (identifier,),
+        ).fetchone()[0]
+        dimension_total += len(dimension_rows)
+        applicable_total += len(applicable)
+        research_total += research_count
+        trace("dimension", "%s: %d of %d dimensions apply (%s); %d research tasks raised" % (
+            str(identifier)[:12],
+            len(applicable),
+            len(dimension_rows),
+            ", ".join(applicable) or "none",
+            research_count,
+        ))
+
         print("\t".join([
             "ATOM",
             esc(identifier),
@@ -408,6 +532,10 @@ with database.connect() as connection:
 # what it sent against the document hash SpecGraph stored, so any normalization
 # on the far side -- a stripped BOM, rewritten line endings -- read as a hash
 # mismatch and discarded a perfectly good atomization.
+trace("dimension", "%d dimension verdicts across %d atoms, %d applicable" % (
+    dimension_total, len(atoms), applicable_total))
+trace("research", "%d research tasks raised from this document" % research_total)
+
 print("\t".join([
     "META",
     str(len(atoms)),

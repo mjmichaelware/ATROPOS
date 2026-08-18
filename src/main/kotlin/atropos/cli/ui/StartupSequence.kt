@@ -56,10 +56,24 @@ class StartupSequence(
         val sequence = mutableListOf<List<String>>()
 
         // 1. The thread draws itself outward from the centre of the screen.
-        var reach = 0
+        //
+        // Timed in frames, not in cells. A fixed one-cell step meant the draw
+        // took as long as the terminal was wide: on a phone it was over in
+        // under a second and read as a flash of something the eye could not
+        // identify, and on a wide desktop it crawled for ten. The step is
+        // derived so the band always takes the same time to reach the edges,
+        // whatever screen it is reaching across.
         val half = (safeWidth + 1) / 2
-        while (reach < half) {
-            reach = (reach + THREAD_STEP).coerceAtMost(half)
+        repeat(THREAD_FRAMES) { frame ->
+            // Interpolated rather than stepped by a whole cell. An integer step
+            // has to be rounded, and rounding a step quantises the duration:
+            // the same "about thirty frames" came out as twenty on one width
+            // and twenty-five on another. Advancing by a fraction of the
+            // distance makes the count exact and lets a terminal narrower than
+            // the frame count simply hold a cell for a frame or two.
+            val reach = ((frame + 1).toDouble() / THREAD_FRAMES * half)
+                .toInt()
+                .coerceIn(0, half)
             sequence += compose(safeWidth, safeHeight, block, reach, blank(art), null, emptyList())
         }
 
@@ -220,13 +234,14 @@ class StartupSequence(
         const val WORDMARK_CELLS = NAME.length * GLYPH_CELLS + (NAME.length - 1)
 
         /**
-         * Cells the band gains per frame, each side of centre.
+         * Frames the band takes to reach the edges, on any width.
          *
-         * One, not two. At two the draw was over in well under a second on a
-         * phone-width terminal, which is the "quick flash" an operator sees
-         * and cannot identify.
+         * Thirty, at fifty milliseconds a frame: a second and a half, which is
+         * long enough to watch a line being drawn and short enough that nobody
+         * waits for it. The old constant was a *step* rather than a duration,
+         * so the same code gave a phone a flash and a desktop a crawl.
          */
-        const val THREAD_STEP = 1
+        const val THREAD_FRAMES = 30
 
         /** Rows in the band, weighted toward the middle. */
         val BAND_GLYPHS = charArrayOf('─', '━', '─').toList()
@@ -241,8 +256,14 @@ class StartupSequence(
         /** Frames each fact line is left on screen before the next joins it. */
         const val FACT_DWELL_FRAMES = 6
 
-        /** Frames the finished screen is held for before the prompt takes over. */
-        const val HOLD_FRAMES = 40
+        /**
+         * Frames the finished screen is held for before the prompt takes over.
+         *
+         * Shorter than it was. The hold is the one part of the sequence with
+         * nothing happening in it, so it is the part to spend when the opening
+         * needs the time more -- and the opening did.
+         */
+        const val HOLD_FRAMES = 24
 
         const val LABEL_CELLS = 11
 

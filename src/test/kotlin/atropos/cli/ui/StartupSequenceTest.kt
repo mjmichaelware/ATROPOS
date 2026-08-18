@@ -67,6 +67,26 @@ class StartupSequenceTest {
     }
 
     @Test
+    fun the_thread_takes_the_same_time_to_draw_on_any_width() {
+        // The band used to advance a fixed cell per frame, so the draw took as
+        // long as the terminal was wide: under a second on a phone, which is
+        // the "quick flash" nobody could identify, and ten seconds across a
+        // wide desktop. It is timed in frames now, so the same second and a
+        // half reaches whichever edges it has.
+        val durations = listOf(46, 80, 200).map { width ->
+            sequence.frames(width, 24, facts)
+                .map(::plain)
+                .indexOfFirst { frame ->
+                    frame.any { row -> row.count { it == '─' || it == '━' } >= width - 1 }
+                } + 1
+        }
+
+        assertEquals(1, durations.distinct().size, "the draw takes $durations frames depending on width")
+        val seconds = durations.first() * FRAME_MILLIS / 1000.0
+        assertTrue(seconds in 1.2..2.0, "the thread draws in ${seconds}s, which is a flash or a wait")
+    }
+
+    @Test
     fun the_thread_draws_before_the_wordmark_does() {
         val frames = sequence.frames(80, 24, facts).map(::plain)
         val firstThread = frames.indexOfFirst { frame -> frame.any { it.contains('─') } }

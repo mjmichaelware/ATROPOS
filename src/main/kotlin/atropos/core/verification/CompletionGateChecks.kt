@@ -21,28 +21,39 @@ class CompletionGateChecks(
     /**
      * The governed compile owner.
      *
-     * Defaulted from this checker's own [processRunner] rather than letting
-     * [GovernedCompileGate] build its own. Two runners in one gate means the
-     * bounds a caller injected — timeout, output ceiling, and the process seam a
-     * test substitutes — silently do not apply to the compile, which is the one
-     * command in this gate most likely to hang or flood.
+     * Locally, defaulted from this checker's own [processRunner] rather than
+     * letting [GovernedCompileGate] build its own. Two runners in one gate
+     * means the bounds a caller injected — timeout, output ceiling, and the
+     * process seam a test substitutes — silently do not apply to the compile,
+     * which is the one command in this gate most likely to hang or flood.
+     *
+     * With `ATROPOS_COMPILE_GATE=github` it is the CI-backed gate instead.
+     * That check used to move only for self-host runs, so an operator who had
+     * set the variable because their machine cannot compile still watched
+     * `/verify` fail on exit 127 — the same failure, on the surface they were
+     * more likely to be looking at. The bounds argument does not apply there:
+     * a remote gate runs no local compile to bound, and its own timeout is the
+     * one that matters.
      */
-    private val compileGate: GovernedCompileGate = GovernedCompileGate(
-        repoRoot = repoRoot,
-        processRunner = { command, directory ->
-            val result = processRunner.run(
-                command = command,
-                directory = directory,
-                timeoutMillis = COMPILE_TIMEOUT_MILLIS,
-                maxOutputBytes = 256 * 1024,
-                maxOutputLines = 4_000
-            )
-            GovernedCompileGate.CompileRun(
-                exitCode = result.exitCode ?: 1,
-                output = listOf(result.stdout, result.stderr).filter { it.isNotBlank() }.joinToString("\n")
-            )
-        }
-    )
+    private val compileGate: GovernedCompileGate = GovernedCompileGate
+        .forRepository(repoRoot)
+        .takeIf { it.command.firstOrNull() == GovernedCompileGate.REMOTE_COMMAND }
+        ?: GovernedCompileGate(
+            repoRoot = repoRoot,
+            processRunner = { command, directory ->
+                val result = processRunner.run(
+                    command = command,
+                    directory = directory,
+                    timeoutMillis = COMPILE_TIMEOUT_MILLIS,
+                    maxOutputBytes = 256 * 1024,
+                    maxOutputLines = 4_000
+                )
+                GovernedCompileGate.CompileRun(
+                    exitCode = result.exitCode ?: 1,
+                    output = listOf(result.stdout, result.stderr).filter { it.isNotBlank() }.joinToString("\n")
+                )
+            }
+        )
 ) {
     fun checkBuildMatrix(node: DagNode): GateResult {
         val javaVersion = System.getProperty("java.specification.version") ?: ""

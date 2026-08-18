@@ -23,10 +23,15 @@ class SelfHostAutonomousRunner(
      * compile failure, stop-before-promotion, or promotion — carries the same
      * evidence about what is actually on disk.
      */
+    /**
+     * @param maxAdvances null derives the budget from the DAG once it exists,
+     *   which is the only point at which the amount of work is known. A caller
+     *   that passes a number keeps it.
+     */
     fun run(
         prompt: String,
         phase: String = "11",
-        maxAdvances: Int = SelfHostRuntimeRunLimits.maxAdvances(),
+        maxAdvances: Int? = null,
         lifecycleEmitter: (String) -> Unit = ::println
     ): SelfHostAutonomousRunResult =
         attachProof(runChain(prompt, phase, maxAdvances, lifecycleEmitter))
@@ -48,7 +53,7 @@ class SelfHostAutonomousRunner(
     private fun runChain(
         prompt: String,
         phase: String,
-        maxAdvances: Int,
+        maxAdvances: Int?,
         lifecycleEmitter: (String) -> Unit
     ): SelfHostAutonomousRunResult {
         // Narrated rather than merely collected. Every `steps +=` below now
@@ -65,11 +70,25 @@ class SelfHostAutonomousRunner(
         lifecycleEmitter("ATROPOS_SELF_HOST_RUN_STARTED goal=$goalId")
         steps.outline("ATROPOS_SELF_HOST_RUN_STARTED goal=$goalId")
 
+        // The budget, measured against the graph rather than assumed.
+        //
+        // It has to be resolved here and not at the call site: `startGoal` is
+        // what builds the DAG, so before this line there is no node count to
+        // derive from. A run against a three-node bootstrap graph gets fifteen
+        // advances; one against a four-hundred-node document graph gets what it
+        // needs instead of stopping, silently and successfully, at 25.
+        val nodeCount = started.goal?.dag?.nodes?.size ?: 0
+        val budget = maxAdvances ?: SelfHostRuntimeRunLimits.forNodeCount(nodeCount)
+        steps.outline(
+            "run budget $budget advances for $nodeCount DAG " +
+                (if (nodeCount == 1) "node" else "nodes")
+        )
+
         var latest = started
         var advances = 0
         var automaticRecoveries = 0
         val recoveryBudget = 2
-        while (advances < maxAdvances.coerceAtLeast(1)) {
+        while (advances < budget.coerceAtLeast(1)) {
             advances += 1
             // The one line that tells a watching operator the run is alive and
             // where it is. Without it, a long advance is indistinguishable from
@@ -79,7 +98,7 @@ class SelfHostAutonomousRunner(
             // reasonably concluded the atomizer had found 25 of them. It is the
             // continuation budget: how many times this loop may iterate before
             // it stops on its own.
-            steps.outline("advance $advances (run budget $advances/$maxAdvances)")
+            steps.outline("advance $advances of at most $budget (continuation budget, not node count)")
             val advanced = service.advanceNextResumableGoal(
                 goalId = goalId,
                 compactState = "self-host natural-language continuation"

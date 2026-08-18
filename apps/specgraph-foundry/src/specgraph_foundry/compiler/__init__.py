@@ -7,7 +7,7 @@ from .structural_validation import StructuralValidator, ValidationFinding, Quara
 from .statement_segmentation import segment_document_node, StatementIR
 from .discourse_roles import classify_discourse_role
 from .requirement_candidates import evaluate_candidacy, RequirementCandidacy
-from .discourse_roles import is_structural_item
+from .discourse_roles import is_structural_item, declared_atom_id
 from .atomic_decomposition import decompose_requirement, AtomicRequirement
 from .requirement_ir import CanonicalRequirementIR
 from .requirement_quality import analyze_quality, convert_defect_findings
@@ -16,7 +16,7 @@ from .provenance import ProvGraph
 from .source_authority import AuthorityRegistry, SourceAuthority
 from .semantic_relations import evaluate_semantic_relation, SemanticRelation
 from .artifact_contracts import extract_artifact_ports
-from .dependency_compiler import compile_dependencies, DependencyEdge
+from .dependency_compiler import compile_dependencies, compile_declared_dependencies, DependencyEdge
 from .graph_validation import validate_graph_invariants, compute_graph_metrics
 from .shacl_validation import validate_graph as validate_shacl
 from .unresolved_tracker import UnresolvedTracker, detect_unresolved_candidacy
@@ -264,7 +264,60 @@ class SpecGraphCompiler:
         } for r in canonical_reqs]
         authority_edges = [{"from_node_id": rel.from_req_id, "to_node_id": rel.to_req_id, "edge_type": rel.relation_type} for rel in semantic_relations]
 
-        dependency_edges = compile_dependencies(canonical_reqs, [rel.to_dict() for rel in semantic_relations])
+        # The edges the document states outright, before the inferred ones.
+        #
+        # An obligation DAG writes its own graph down -- every atom followed by
+        # `dependsOn: [...]`. Those lines classify as DOCUMENT_METADATA, which
+        # is right, and then nothing read them: the whole execution graph was
+        # built from phrase matching while the author's explicit answer sat one
+        # line below in the source.
+        # Which statement produced which requirement.
+        #
+        # Read off the atomic requirements, which still carry the candidacy
+        # they came from; CanonicalRequirementIR keeps the coordinates but not
+        # the statement, so asking it produced an empty map and every declared
+        # edge came back unowned. Restricted to requirements that survived
+        # duplicate resolution, so an edge cannot point at an atom that is no
+        # longer in the graph.
+        surviving = {req.stable_id for req in canonical_reqs}
+        statement_to_requirement = {}
+        for atomic in atomic_requirements:
+            statement_id = atomic.candidacy.statement.statement_id
+            # First requirement wins: decomposition can split one statement
+            # into several atoms, and an edge stated against the statement
+            # belongs to the first thing it produced rather than to all of them.
+            if atomic.requirement_id in surviving and statement_id not in statement_to_requirement:
+                statement_to_requirement[statement_id] = atomic.requirement_id
+
+        # Which requirement declared which atom id.
+        #
+        # Read off the requirement rather than off the raw statement: the
+        # accumulator glues a whole atom block into one statement, and
+        # decomposition is what splits `S-012c - Build caller graph edges` back
+        # out as a line of its own that begins with its id.
+        declared_to_requirement = {}
+        for req in canonical_reqs:
+            declared = declared_atom_id(req.canonical_statement)
+            # First declaration wins. A document naming the same id twice has a
+            # defect, and binding to the later one would silently repoint edges
+            # the earlier one had already earned.
+            if declared and declared not in declared_to_requirement:
+                declared_to_requirement[declared] = req.stable_id
+
+        ordered_statements = [
+            {"statement_id": stmt.statement_id, "text": stmt.canonical_text}
+            for stmt, _, _ in classified_statements
+        ]
+        declared_edges, declared_report = compile_declared_dependencies(
+            ordered_statements, statement_to_requirement, declared_to_requirement
+        )
+        self.event_log.record_event(
+            "DeclaredDependencyCompilation", ordered_statements, declared_report
+        )
+
+        dependency_edges = declared_edges + compile_dependencies(
+            canonical_reqs, [rel.to_dict() for rel in semantic_relations]
+        )
         _attach_dependency_support(canonical_reqs, dependency_edges)
         self.event_log.record_event("DependencyCompilation", [r.to_dict() for r in canonical_reqs], [d.to_dict() for d in dependency_edges])
 
@@ -280,9 +333,13 @@ class SpecGraphCompiler:
         })
         self.event_log.record_event("SHACLValidation", {"nodes": len(authority_nodes), "edges": len(all_edges)}, shacl_result)
 
+        # `all_edges`, not `authority_edges`. The dependency compiler's output
+        # was assembled two statements above, validated, SHACL-checked -- and
+        # then withheld from the one consumer that decides build order, so the
+        # execution graph came out as isolated nodes with no edges at all.
         exec_dag = build_execution_dag(
             atoms=[r.to_dict() for r in canonical_reqs],
-            authority_edges=authority_edges,
+            authority_edges=all_edges,
             resolved_unresolved_ids=set(),
         )
         _attach_execution_support(canonical_reqs, exec_dag)
@@ -349,6 +406,7 @@ class SpecGraphCompiler:
             ],
             "relations": relations_payload,
             "dependencies": dependencies_payload,
+            "declared_dependencies": declared_report,
             "validation_findings": validation_findings,
             "authority_graph_metrics": authority_graph_metrics,
             "shacl_validation": shacl_result,

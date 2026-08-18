@@ -278,7 +278,7 @@ class SelfHostGoalService(
             service = this,
             jarLocator = SelfHostRuntimeJarLocator(repoRoot),
             jarBuilder = SelfHostCandidateJarBuilder(repoRoot),
-            compileGate = atropos.core.verification.GovernedCompileGate(repoRoot),
+            compileGate = atropos.core.verification.GovernedCompileGate.forRepository(repoRoot),
             proofBuilder = SelfHostRunProofBuilder(repoRoot),
             gitStatusEvidence = SelfHostGitStatusEvidence(repoRoot)
         ).run(prompt, phase, lifecycleEmitter = lifecycleEmitter)

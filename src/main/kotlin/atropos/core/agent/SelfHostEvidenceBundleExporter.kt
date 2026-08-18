@@ -39,6 +39,11 @@ class SelfHostEvidenceBundleExporter(
             val provenanceSha256 = provenanceSha256(record, dag, snapshot)
             Files.writeString(markdownPath, renderMarkdown(record, dag, snapshot, provenanceSha256), StandardCharsets.UTF_8)
             Files.writeString(jsonPath, renderJson(record, dag, snapshot, provenanceSha256), StandardCharsets.UTF_8)
+            // Named on the way out. "Did it write the bundle, and where?" was
+            // answerable only by going and looking, which is the question a
+            // trace exists to answer.
+            atropos.core.thinking.Narrate.evidence.artifact("evidence bundle", markdownPath)
+            atropos.core.thinking.Narrate.evidence.artifact("evidence json", jsonPath)
             val markdownSha256 = hasher.sha256(markdownPath)
             val jsonSha256 = hasher.sha256(jsonPath)
             if (markdownSha256.isNullOrBlank() || jsonSha256.isNullOrBlank()) {

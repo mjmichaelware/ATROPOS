@@ -1022,12 +1022,99 @@ class TestExecutionDAG(unittest.TestCase):
         self.assertGreater(len(dag["nodes"]), 0)
         self.assertEqual(dag["nodes"][0]["node_type"], "CONTRACT")
 
-    def test_no_edges_for_unresolved_atoms(self):
-        atoms = [{"id": "bad", "stable_id": "bad", "force": "UNSPECIFIED",
-                  "canonical_statement": "unresolved", "produced_artifacts": [],
-                  "consumed_artifacts": []}]
+    def test_atom_without_a_modal_verb_still_gets_a_node(self):
+        """Contract change, deliberate.
+
+        This test previously asserted that an atom with force UNSPECIFIED
+        produced no execution node. That was the modal-verb requirement
+        surviving one stage past the point where extraction stopped applying
+        it: on a real obligation DAG, 361 of 390 extracted atoms recorded
+        UNSPECIFIED and the execution graph held only the 29 that happened to
+        contain "must" or "may". The document's work was extracted and then
+        discarded here.
+        """
+        atoms = [{"id": "plain", "stable_id": "plain", "force": "UNSPECIFIED",
+                  "canonical_statement": "Provider registry lists every provider.",
+                  "produced_artifacts": [], "consumed_artifacts": []}]
         dag = build_execution_dag(atoms, [], set())
-        self.assertEqual(len(dag["nodes"]), 0)
+
+        self.assertEqual(len(dag["nodes"]), 1)
+        self.assertEqual(dag["nodes"][0]["source_atom_id"], "plain")
+        # Admitted, but the unstated strength is recorded rather than invented.
+        self.assertEqual(dag["nodes"][0]["force"], "UNSPECIFIED")
+
+    def test_resolved_unresolved_atoms_are_still_excluded(self):
+        """Admitting unstated force did not disable the real exclusion."""
+        atoms = [
+            {"id": "keep", "stable_id": "keep", "force": "UNSPECIFIED",
+             "canonical_statement": "Kept.", "produced_artifacts": [], "consumed_artifacts": []},
+            {"id": "drop", "stable_id": "drop", "force": "MUST",
+             "canonical_statement": "Dropped.", "produced_artifacts": [], "consumed_artifacts": []},
+        ]
+        dag = build_execution_dag(atoms, [], {"drop"})
+
+        self.assertEqual([n["source_atom_id"] for n in dag["nodes"]], ["keep"])
+
+    def test_dependency_compiler_edges_reach_the_execution_graph(self):
+        """The rules the dependency compiler emits are execution ordering.
+
+        They were computed on every run and passed only to validation, so the
+        execution graph came back with zero edges however many dependencies
+        the document stated.
+        """
+        atoms = [
+            {"id": "a1", "stable_id": "a1", "force": "UNSPECIFIED", "canonical_statement": "A",
+             "produced_artifacts": [], "consumed_artifacts": []},
+            {"id": "a2", "stable_id": "a2", "force": "UNSPECIFIED", "canonical_statement": "B",
+             "produced_artifacts": [], "consumed_artifacts": []},
+        ]
+        edges = [{"from_node_id": "a1", "to_node_id": "a2", "edge_type": "EXPLICIT_PHRASE"}]
+        dag = build_execution_dag(atoms, edges, set())
+
+        self.assertEqual(len(dag["edges"]), 1)
+        self.assertEqual(dag["edges"][0]["edge_type"], "EXPLICIT_PHRASE")
+
+    def test_refines_is_not_an_execution_edge(self):
+        """One statement narrowing another says nothing about build order."""
+        atoms = [
+            {"id": "a1", "stable_id": "a1", "force": "MUST", "canonical_statement": "A",
+             "produced_artifacts": [], "consumed_artifacts": []},
+            {"id": "a2", "stable_id": "a2", "force": "MUST", "canonical_statement": "B",
+             "produced_artifacts": [], "consumed_artifacts": []},
+        ]
+        edges = [{"from_node_id": "a1", "to_node_id": "a2", "relation_type": "REFINES"}]
+
+        self.assertEqual(build_execution_dag(atoms, edges, set())["edges"], [])
+
+    def test_a_node_with_a_predecessor_is_blocked(self):
+        """Readiness could not return BLOCKED for any input before this."""
+        atoms = [
+            {"id": "first", "stable_id": "first", "force": "MUST", "canonical_statement": "A",
+             "produced_artifacts": ["X"], "consumed_artifacts": []},
+            {"id": "second", "stable_id": "second", "force": "MUST", "canonical_statement": "B",
+             "produced_artifacts": [], "consumed_artifacts": ["X"]},
+        ]
+        states = build_execution_dag(atoms, [], set())["ready_states"]
+
+        self.assertEqual(states["contract-first"], "READY")
+        self.assertEqual(states["contract-second"], "BLOCKED")
+
+    def test_a_cycle_is_broken_rather_than_carried(self):
+        atoms = [
+            {"id": f"a{i}", "stable_id": f"a{i}", "force": "MUST", "canonical_statement": f"A{i}",
+             "produced_artifacts": [], "consumed_artifacts": []}
+            for i in range(1, 4)
+        ]
+        edges = [
+            {"from_node_id": "a1", "to_node_id": "a2", "edge_type": "REQUIRES"},
+            {"from_node_id": "a2", "to_node_id": "a3", "edge_type": "REQUIRES"},
+            {"from_node_id": "a3", "to_node_id": "a1", "edge_type": "REQUIRES"},
+        ]
+        dag = build_execution_dag(atoms, edges, set())
+
+        # Every node still orders, which is only possible with the back edge gone.
+        self.assertEqual(len(dag["execution_order"]), 3)
+        self.assertEqual(len(dag["edges"]), 2)
 
     def test_kahn_acyclic(self):
         atoms = [
