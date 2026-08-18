@@ -7,8 +7,9 @@
 </p>
 
 <p align="center">
-  Scoped hierarchical agents. Durable projects.<br/>
-  Terminal · Web · Android — same engine.
+  <strong>SpecGraph</strong> turns documents into a research-backed DAG.<br/>
+  Hierarchical agents execute it. Durable projects survive restart.<br/>
+  Terminal · Web · Android — one engine · <strong>26 providers</strong> integrated.
 </p>
 
 <p align="center">
@@ -39,23 +40,23 @@ cd your-project && atropos
 
 **Java 17+.** Termux: `pkg install openjdk-21` · Debian: `sudo apt install openjdk-21-jre-headless` · macOS: `brew install openjdk@21`
 
-Put provider keys in the environment. ATROPOS discovers what you have on startup. In-app: `/help` · command palette `/` · `@path` to attach files.
+Drop in the API keys you already use. ATROPOS auto-discovers providers on startup — you do not configure all 26. In-app: `/help` · command palette `/` · `@path` to attach files.
 
 ---
 
-## The flat-context fantasy is dead
+## SpecGraph: the app inside the app
 
-Shoving an entire product into one giant context window and hoping a single model “understands everything” is how you buy confident nonsense. Flat prompts do not create structure. They hide the lack of it until the agent rewrites the wrong half of the tree.
+Long-horizon autonomy dies without structure. **SpecGraph** is the document analyzer and DAG builder inside ATROPOS — an entire planning and verification application embedded in the engine.
 
-ATROPOS does not pretend a bigger window is a plan. Work is atomized into a **directed acyclic graph (DAG)** of obligations — ordered, dependency-aware, and runnable without circular busywork. **SpecGraph** is the planning and verification substrate: it turns requirements into research-enriched, checkable blueprints that the engine can execute node by node. The DAG is the spine. SpecGraph is how serious plans enter that spine. Hierarchy and territory keep each node from becoming a free-for-all.
+You feed it source docs, specs, and research. It does not dump them into one flat context window and hope. It atomizes obligations, wires dependencies into a **directed acyclic graph (DAG)**, and produces research-enriched nodes the hierarchical swarm can execute without circular thrash. The DAG is the spine of multi-day work. SpecGraph is how serious plans enter that spine.
 
-That is the opposite of chatty sub-agents renegotiating scope in prose while your quota evaporates.
+Shoving a whole product into a single model context is how teams buy confident nonsense. Flat prompts hide missing structure until the agent rewrites the wrong half of the tree. SpecGraph + DAG is the opposite: ordered atoms, explicit dependencies, checkable promotion — the substrate for long-horizon autonomy, not another chat session with a bigger window.
 
 ---
 
 ## Why the field is broken
 
-Most “autonomous” stacks still do this: isolate workers in worktrees, then spend the budget on **LLM group chat** — mailboxes, status ping-pong, soft scope, drift found after the damage. The cloud sees your repo on a loop. Providers stay locked. “Done” means the model stopped typing.
+Most “autonomous” stacks still isolate workers in worktrees, then burn quota on **LLM group chat** — mailboxes, status ping-pong, soft scope, drift found after the damage. The cloud sees your repo on a loop. Providers stay locked. “Done” means the model stopped typing.
 
 ### Cursor Agent
 Real autonomy with soft control. Agents that keep moving after stop, recreate deleted files, and commit without clear intent show up in the wild. Cloud paths have served **stale default-branch reads** while local git was correct — silent drift. Closed product; gravity pulls loops into the cloud.
@@ -65,7 +66,7 @@ Real autonomy with soft control. Agents that keep moving after stop, recreate de
 ### Claude Code
 Excellent single-agent depth — and a **quota furnace**. Subagent fan-out is reported near **~7×** a normal session; MCP tool defs can eat a large slice of the window before real work starts. Weekly and rolling caps die on long teams. Anthropic-first.
 
-**ATROPOS:** multi-provider from env keys; free-first routing. Coordination is hierarchy and state, not another paid meeting between agents.
+**ATROPOS:** **26 providers** integrated; use whatever keys you have. Free-first routing. Coordination is hierarchy and state, not another paid meeting between agents.
 
 ### Codex CLI
 Strong sandbox. OpenAI-shaped defaults and metering. Opaque quota drain and wait/re-sample loops have burned weekly allowance on long jobs. Vendor core under the open edges.
@@ -80,7 +81,7 @@ Ambitious issue→PR autonomy with **message-heavy** orchestration. Drift is pos
 ### OpenCode
 Best-in-class OSS TUI and real BYOK. Still session-shaped; measured harness work has shown large **token waste per solved task** when loops idle and re-sample. Keys are free; chatter is not.
 
-**ATROPOS:** DAG-ordered long runs, durable projects, restart continuity — multi-provider without treating “open” as “unbounded session spend.”
+**ATROPOS:** SpecGraph → DAG long runs, durable projects, restart continuity — multi-provider without unbounded session spend.
 
 ### Aider
 Git discipline is real. Autonomy is not. It is a turn-by-turn pair programmer with a **dated terminal UX**, now on a maintenance trajectory. Right tool for small diffs. Wrong tool for multi-day hierarchical delivery.
@@ -93,17 +94,17 @@ Git discipline is real. Autonomy is not. It is a turn-by-turn pair programmer wi
 
 | Field failure | ATROPOS |
 |---------------|---------|
-| Flat mega-context “understanding” | **DAG + SpecGraph** — ordered atoms, not one blob |
+| Flat mega-context “understanding” | **SpecGraph + DAG** — document → ordered atoms |
 | Unscoped autonomy / drift | Territory at dispatch; block before write |
 | Chatty sub-agents | Hierarchy + policy state, not agent group chat |
-| Provider lock | Multi-provider discovery; free-first cascade |
+| Provider lock | **26 providers**; use the keys you have |
 | Session death | Durable projects, checkpoints, restart continuity |
 | Cloud-as-brain | Local-first engine; providers are backends |
 | “Done” when the model stops | Independent checks before promotion |
 | One surface only | Terminal · web · Android, one engine |
 | Closed client | AGPL-3.0 |
 
-Autonomy without the drift is the architecture: **scoped hierarchical agents, DAG-ordered work, SpecGraph-backed plans, multi-provider routing, multi-surface control.**
+Autonomy without the drift: **SpecGraph-built DAGs, scoped hierarchical agents, multi-provider routing, multi-surface control.**
 
 Providers need network unless you configure a local model (e.g. Ollama).
 
