@@ -64,6 +64,8 @@ class CommandRouter(
 
     private val commandRegistryRenderer = CommandRegistryRenderer(theme)
 
+    private val shortcutsRenderer = atropos.cli.ui.ShortcutsRenderer(theme)
+
     /**
      * Which directories an `@mention` may read from.
      *
@@ -351,6 +353,11 @@ class CommandRouter(
                 // §2.2: every meaningful activity belongs to a project, and
                 // that boundary is reachable from the terminal, not only the web.
                 projectCommand.execute(tokens.drop(1))
+                RouterOutcome.CONTINUE
+            }
+
+            "/shortcuts", "/keys-help" -> {
+                uiEngine.renderBlock(shortcutsRenderer.render(uiEngine.viewportWidth))
                 RouterOutcome.CONTINUE
             }
 

@@ -99,3 +99,61 @@ jobs:
           files: |
             build/libs/ATROPOS.jar
             build/libs/ATROPOS.jar.sha256
+
+  # The Android client, as an installable APK.
+  #
+  # A separate job on purpose: app/ is a standalone Gradle build that resolves
+  # the Android Gradle Plugin, and the jar release must not wait on -- or be
+  # blocked by -- Android tooling. `continue-on-error` keeps a broken APK from
+  # holding back a good engine build; the jar is the product, the APK is a
+  # client of it.
+  #
+  # `assembleDebug`, not `assembleRelease`. The release build type sets
+  # `signingConfig = null`, so it produces an unsigned APK that Android refuses
+  # to install -- publishing one would be shipping a file that cannot be used.
+  # The debug build is signed with the standard debug key and installs on any
+  # device with "install unknown apps" enabled. A signed release APK needs the
+  # operator's keystore, which is a secret this workflow deliberately does not
+  # hold.
+  apk:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Build the APK
+        run: ./gradlew --no-daemon -p app assembleDebug --max-workers=1
+
+      - name: Name it, and record the hash
+        id: apk
+        run: |
+          set -euo pipefail
+          built=$(find app/build/outputs/apk -name '*.apk' | head -1)
+          test -n "$built"
+          mkdir -p build/apk
+          cp "$built" build/apk/ATROPOS.apk
+          sha256sum build/apk/ATROPOS.apk | awk '{print $1}' > build/apk/ATROPOS.apk.sha256
+          echo "sha256=$(cat build/apk/ATROPOS.apk.sha256)" >> "$GITHUB_OUTPUT"
+
+      - name: Publish it alongside the jar
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          prerelease: true
+          files: |
+            build/apk/ATROPOS.apk
+            build/apk/ATROPOS.apk.sha256
+
+      - name: Publish it on the tagged release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            build/apk/ATROPOS.apk
+            build/apk/ATROPOS.apk.sha256

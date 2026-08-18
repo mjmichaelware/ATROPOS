@@ -6,6 +6,9 @@ import atropos.cli.ui.design.Role
 class LandingRenderer(
     private val theme: TerminalTheme
 ) {
+
+    /** Below this the wordmark and one tip are all that fit honestly. */
+    private val MINIMUM_ROWS_FOR_DETAIL = 20
     private val truthProbe = WorkbenchTruthProbe()
     private val agentProbe = AgentWorkbenchProbe()
 
@@ -29,7 +32,76 @@ class LandingRenderer(
         out += ""
         out += tipLine(state, width)
 
+        // The home screen used to end here, leaving two thirds of the display
+        // black. Minimal is right while you are working -- this panel is
+        // rendered only when the transcript is empty, so the moment a message
+        // arrives it is gone -- but an empty screen on first launch teaches an
+        // operator nothing and impresses nobody. What fills it has to earn the
+        // rows: where you are, what is configured, and what to press.
+        if (targetHeight >= MINIMUM_ROWS_FOR_DETAIL) {
+            out += ""
+            out += sectionRule("SESSION", width)
+            out += facts(state, width)
+            out += ""
+            out += sectionRule("START HERE", width)
+            out += starters(width)
+            out += ""
+            out += KeyboardLegend.line(theme, KeyboardLegend.Surface.COMPOSER, width)
+        }
+
         return out.take(targetHeight).map { TerminalText.ellipsize(it, width) }
+    }
+
+    /** `── SECTION ──────`, so the block reads as one region and not a list. */
+    private fun sectionRule(label: String, width: Int): String {
+        val head = " " + label + " "
+        val fill = (width - TerminalText.cellWidth(head) - 2).coerceAtLeast(0)
+        return theme.subdued("─") + theme.paint(Role.BRAND, head) + theme.subdued("─".repeat(fill))
+    }
+
+    /**
+     * What this session is, read live.
+     *
+     * Facts only. A home screen that announced a health state nothing had
+     * checked would be a fake attestation on the first screen an operator ever
+     * sees, which is the worst possible place for one.
+     */
+    private fun facts(state: SessionPresentationState, width: Int): List<String> {
+        val rows = buildList {
+            add("workspace" to TerminalText.compactPath(state.workspace))
+            add("provider" to state.provider.lowercase())
+            add("mode" to state.mode.lowercase())
+            // Only when git actually answered. "branch: unknown" is noise
+            // dressed as information, and this panel is the first screen an
+            // operator reads.
+            state.repository.takeIf { it.isRepository }?.let { repository ->
+                val branch = repository.branch ?: "detached"
+                val changes = repository.changedFiles
+                    ?.let { count -> if (count == 0) "clean" else "$count changed" }
+                    ?: "status unknown"
+                add("repository" to "$branch · $changes")
+            }
+            add("tabs" to "${state.openTabCount} open · ${state.activeTab}")
+        }
+        val column = rows.maxOf { it.first.length }
+        return rows.map { (label, value) ->
+            "  " + theme.subdued(TerminalText.padEnd(label, column)) + "  " + theme.strong(value)
+        }
+    }
+
+    /** Three things worth typing first, with what each one is for. */
+    private fun starters(width: Int): List<String> {
+        val rows = listOf(
+            "/factory run <prompt>" to "turn a document or an idea into a DAG",
+            "@path/to/file" to "attach a document — txt, md, docx, pdf",
+            "/status" to "providers, quota, and what is configured",
+            "/shortcuts" to "every keyboard shortcut"
+        )
+        val column = rows.maxOf { it.first.length }
+        return rows.map { (command, purpose) ->
+            "  " + theme.paint(Role.ACCENT_FOCUS, TerminalText.padEnd(command, column)) +
+                "  " + theme.subdued(purpose)
+        }
     }
 
     /**

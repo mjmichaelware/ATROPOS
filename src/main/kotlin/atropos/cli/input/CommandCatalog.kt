@@ -4,6 +4,7 @@ package atropos.cli.input
 object CommandCatalog {
     val catalog: List<CommandEntry> = listOf(
         CommandEntry("/help", "show command help", "System", aliases = listOf("/usage", "/?")),
+        CommandEntry("/shortcuts", "every keyboard shortcut", "System", aliases = listOf("/keys-help")),
         CommandEntry("/dashboard", "return to dashboard"),
         CommandEntry("/home", "return to dashboard"),
         CommandEntry("/tabs", "list open tabs"),

@@ -91,24 +91,21 @@ class CommandPaletteRenderer(
     }
 
     /**
-     * The keys this palette answers to, spelled out.
-     *
-     * Discoverability is the whole point: arrow-key navigation existed and
-     * worked, and nothing on screen said so, so the only way to find out that
-     * left and right move between groups was to press them and notice.
+     * The keys this palette answers to, delegated to the one owner of that
+     * question so the palette and the shortcuts panel cannot describe the same
+     * key two different ways.
      */
-    private fun keyLegend(level: CommandPaletteLevel, width: Int): String {
-        val keys = when (level) {
-            CommandPaletteLevel.GROUPS -> listOf("up down" to "group", "right" to "open", "enter" to "run", "esc" to "close")
-            CommandPaletteLevel.COMMANDS -> listOf("up down" to "select", "left right" to "group", "enter" to "run", "tab" to "complete", "esc" to "close")
-            CommandPaletteLevel.DETAIL -> listOf("left" to "back", "enter" to "run", "esc" to "close")
-        }
-        val pad = " ".repeat(Glyphs.RAIL_PADDING)
-        val legend = keys.joinToString(theme.subdued("  ")) { (key, action) ->
-            theme.paint(Role.ACCENT_FOCUS, key) + theme.subdued(" " + action)
-        }
-        return TerminalText.padEnd(TerminalText.ellipsize(pad + legend, width.coerceAtLeast(1)), width)
-    }
+    private fun keyLegend(level: CommandPaletteLevel, width: Int): String =
+        KeyboardLegend.line(
+            theme,
+            when (level) {
+                CommandPaletteLevel.GROUPS -> KeyboardLegend.Surface.GROUPS
+                CommandPaletteLevel.COMMANDS -> KeyboardLegend.Surface.PALETTE
+                CommandPaletteLevel.DETAIL -> KeyboardLegend.Surface.DETAIL
+            },
+            width,
+            Glyphs.RAIL_PADDING
+        )
 
     private fun windowStart(selected: Int, size: Int, budget: Int): Int {
         if (size <= budget) return 0
