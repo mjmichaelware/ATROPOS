@@ -3,11 +3,12 @@
 </p>
 
 <p align="center">
-  <strong>Stop babysitting chatty coding agents.</strong>
+  <strong>Autonomy without the drift.</strong>
 </p>
 
 <p align="center">
-  Long-running hierarchical work. Durable projects. Any terminal—phone or desktop.
+  Scoped hierarchical agents. Durable projects.<br/>
+  Terminal · Web · Android — same engine.
 </p>
 
 <p align="center">
@@ -80,21 +81,32 @@ In-app: `/help` · command palette `/` · attach files with `@path`.
 
 ---
 
-## Why not another coding agent
+## Why the field is broken
 
-Most tools are **prompt-driven sessions**: one chat thread, reactive steps, work dies when the session ends, and the agent is happy to spray the whole tree.
+Most “autonomous” coding stacks share the same structural failure mode: **isolated worktrees + LLM-mediated chat between agents**.
 
-ATROPOS is built the other way:
+They give each worker its own worktree (good), then immediately nullify that isolation with mailboxes, shared task lists, and coordinator agents that spend your quota **talking about work instead of doing it**. Drift is detected after damage. Scope is negotiated in prose. Context fills with meta-chat. Providers stay locked. The cloud sees your tree over and over.
 
-| Pain with typical CLIs / agents | Here |
-|--------------------------------|------|
-| Chatty, turn-by-turn babysitting | Long-running autonomous hierarchical agents |
-| Session dies → start over | Durable projects and checkpoints |
-| Vendor lock or one-provider launch hell | Multi-provider from env keys |
-| Desktop-only or IDE-only | Same engine in any terminal, web, and Android |
-| Closed client | Open source (AGPL-3.0) — inspect and change it |
+That pattern is not a feature. It is an expensive way to pretend coordination is intelligence.
 
-Local-first by design. Providers need network unless you wire a local model (e.g. Ollama).
+| | Cursor Agent | Claude Code | Codex CLI | OpenHands | OpenCode | Aider | **ATROPOS** |
+|--|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| **Coordination** | Chat / IDE agent loop | Strong single-agent + subagents; still LLM-mediated handoffs | Sandbox-heavy single harness | Multi-agent, message-heavy | Flexible BYOK TUI | Pair-programmer turns | **Hierarchy + territory at dispatch — not agent group chat** |
+| **Drift control** | Aggressive autonomy; scope is soft | Reactive review / tests after edits | Sandbox limits blast radius; not preventive scope law | Issue→PR autonomy; drift is post-hoc | Session-bound | Git commits help *after* the mess | **Preventive scope: out-of-territory mutation blocked before write** |
+| **Quota / context** | Cloud session economics | Burns hard on long agent teams | Better token story on plan; still session-shaped | Heavy orchestration chat | BYOK — you pay for chatter | Cheap turns; not long-horizon | **Coordination is state + policy, not another LLM meeting** |
+| **Provider lock** | Product-tied models + BYOK edges | Anthropic-first | OpenAI-first | BYOK possible; product gravity elsewhere | Strong BYOK | Strong BYOK | **Multi-provider from env keys; free-first routing** |
+| **Repo in the cloud** | Cloud agents / remote loops common | Cloud-backed product path | Local + cloud handoff | Often remote runner / sandbox | Local-first TUI | Local | **Local-first engine; cloud is optional provider, not the brain** |
+| **Surfaces** | IDE-first (+ agent CLI) | Terminal-first | Terminal-first | Web / remote agent UX | Terminal TUI | Terminal; UX is dated and sparse | **Terminal + web + Android, one engine** |
+| **UX honesty** | Polished IDE | Strong TUI | Solid CLI | Heavy product surface | Best-in-class OSS TUI feel | **Weak, aging terminal UX** | Reactive TUI built for real terminals (including phone) |
+| **“Done” means** | Agent stopped / PR opened | Model finished the loop | Sandbox run finished | Issue closed / PR opened | Session outcome | Commit landed | **Promotion only after independent checks — not when the model shuts up** |
+| **Long runs** | Session / product limits | Quota pressure on long teams | Plan windows | Job-shaped | Session | Turn-shaped | **Durable projects + restart continuity** |
+| **Client** | Closed | Closed / restricted | Open parts, vendor core | Open core | Open | Open | **Open source (AGPL-3.0)** |
+
+**Read the failure mode once:** worktree isolation is worthless if agents spend the budget in a group chat, renegotiate scope in natural language, and only notice drift when tests or humans scream. That is how you buy hallucination with extra steps — and how context dies before the feature ships.
+
+ATROPOS does not win by “more autonomy.” It wins by **scoped autonomy**: hierarchical dispatch, territory at assignment time, controlled cross-boundary information, multi-provider routing, and durable project state across terminal, web, and Android.
+
+Providers need network unless you configure a local model (e.g. Ollama).
 
 ---
 
