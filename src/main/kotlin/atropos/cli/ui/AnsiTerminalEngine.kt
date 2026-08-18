@@ -418,6 +418,7 @@ class AnsiTerminalEngine(
      */
     @Synchronized
     fun renderErrorDetail(error: ErrorRenderer.ErrorInfo, critical: Boolean = false) {
+        renderedErrors.incrementAndGet()
         stopSpinner()
         val lines =
             if (critical) errors.renderCritical(error, canvas.width)
@@ -439,8 +440,25 @@ class AnsiTerminalEngine(
         if (lines.isNotEmpty()) renderBlock(lines)
     }
 
+    /**
+     * Errors rendered since [resetErrorCount].
+     *
+     * Exists so a one-shot `atropos <command>` invocation can exit non-zero
+     * when the command failed. Without it every one-shot exits 0, which makes
+     * the binary unusable in a script or a CI step: `atropos auth verify &&
+     * deploy` would deploy on a tampered authority document.
+     */
+    private val renderedErrors = java.util.concurrent.atomic.AtomicInteger(0)
+
+    val errorCount: Int get() = renderedErrors.get()
+
+    fun resetErrorCount() {
+        renderedErrors.set(0)
+    }
+
     @Synchronized
     fun renderError(message: String) {
+        renderedErrors.incrementAndGet()
         stopSpinner()
         if (message.contains("approval", ignoreCase = true) || message.contains("confirm", ignoreCase = true)) {
             val dialog = dialogRenderer.renderConfirm(
