@@ -208,7 +208,7 @@ class SpecGraphAtomizer(
                 // computed here on every run and never said out loud, so a
                 // fourteen-minute atomization of a four-hundred-atom document
                 // and one of an empty file looked identical from the outside.
-                Narrate.atomize.counted("atoms decoded", atoms.size, of = declaredCount)
+                Narrate.atomize.headlineCount("atoms decoded", atoms.size, of = declaredCount)
                 if (atoms.size != declaredCount) {
                     Narrate.atomize.trouble(
                         "SpecGraph declared $declaredCount atoms and this side could read ${atoms.size}",

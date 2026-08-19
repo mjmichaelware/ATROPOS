@@ -45,15 +45,32 @@ class ThreadTapestry(private val theme: TerminalTheme) {
      *   caller animates by stepping it, which is how the same code serves a
      *   still home screen and a moving one without a second implementation.
      */
-    fun render(width: Int, height: Int, phase: Int = 0): List<String> {
+    /**
+     * @param confidence how much of the work is settled, 0.0 to 1.0. The weave
+     *   tightens as it rises: loose cloth where atoms are still unresearched,
+     *   close cloth where they are proven. A project's health becomes something
+     *   an operator reads from across the room without a single number, and the
+     *   background stops being a pattern and starts being a reading. Left at
+     *   1.0 the panel is the settled weave, which is right for a home screen
+     *   with no run to report on -- an idle screen must not imply a finished
+     *   one, so callers pass what they actually know.
+     */
+    fun render(width: Int, height: Int, phase: Int = 0, confidence: Double = 1.0): List<String> {
         if (width < MINIMUM_CELLS || height <= 0) return emptyList()
 
         val availableWidth = width - MARGIN_COLUMNS * 2
         val availableHeight = height - MARGIN_ROWS * 2
         if (availableWidth < MINIMUM_CELLS || availableHeight < WEFT_ROWS + 1) return emptyList()
 
-        val clothWidth = ((availableWidth - 1) / WARP_COLUMNS) * WARP_COLUMNS + 1
-        val clothHeight = ((availableHeight - 1) / WEFT_ROWS) * WEFT_ROWS + 1
+
+        // Loose cloth is cloth with fewer threads in it. The pitch widens as
+        // confidence falls, so an unresearched project literally looks thinner.
+        val settled = confidence.coerceIn(0.0, 1.0)
+        val warp = WARP_COLUMNS + ((1.0 - settled) * LOOSENING_COLUMNS).toInt()
+        val weft = WEFT_ROWS + ((1.0 - settled) * LOOSENING_ROWS).toInt()
+
+        val clothWidth = ((availableWidth - 1) / warp) * warp + 1
+        val clothHeight = ((availableHeight - 1) / weft) * weft + 1
         if (clothWidth < MINIMUM_CELLS) return emptyList()
 
         val left = MARGIN_COLUMNS + (availableWidth - clothWidth) / 2
@@ -64,7 +81,7 @@ class ThreadTapestry(private val theme: TerminalTheme) {
         return (0 until height).map { row ->
             val clothRow = row - top
             if (clothRow < 0 || clothRow >= clothHeight) ""
-            else indent + weave(clothRow, clothWidth, clothHeight, drift)
+            else indent + weave(clothRow, clothWidth, clothHeight, drift, warp, weft)
         }
     }
 
@@ -85,10 +102,17 @@ class ThreadTapestry(private val theme: TerminalTheme) {
      * panel fades from lit at the top to shadow at the bottom, the way hanging
      * fabric does. Depth without a single extra mark.
      */
-    private fun weave(row: Int, width: Int, height: Int, drift: Double): String {
+    private fun weave(
+        row: Int,
+        width: Int,
+        height: Int,
+        drift: Double,
+        warp: Int,
+        weft: Int
+    ): String {
         val line = StringBuilder()
         var previousTier = -1
-        val onWeft = row % WEFT_ROWS == 0
+        val onWeft = row % weft == 0
         val onEdgeRow = row == 0 || row == height - 1
 
         // Lit from above. The gradient runs down the panel rather than across
@@ -98,7 +122,7 @@ class ThreadTapestry(private val theme: TerminalTheme) {
         val sheen = (sin(fall * 1.4 + drift) + 1.0) / 2.0
 
         for (column in 0 until width) {
-            val onWarp = column % WARP_COLUMNS == 0
+            val onWarp = column % warp == 0
             val onEdgeColumn = column == 0 || column == width - 1
 
             val glyph = when {
@@ -181,6 +205,10 @@ class ThreadTapestry(private val theme: TerminalTheme) {
          */
         const val WARP_COLUMNS = 6
         const val WEFT_ROWS = 3
+
+        /** How far the pitch opens as confidence falls to nothing. */
+        const val LOOSENING_COLUMNS = 6
+        const val LOOSENING_ROWS = 3
 
         /** The finished edge. Heavier than the threads it contains. */
         const val SELVEDGE_HORIZONTAL = '\u2501'

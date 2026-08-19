@@ -97,7 +97,7 @@ class FactoryRunOrchestrator(
         // The two numbers an operator waits through a long plan for. Both were
         // computed here and reported only into the run journal, which is not
         // something anyone reads while the run is still going.
-        Narrate.plan.counted("nodes planned", planningDag.nodes.size)
+        Narrate.plan.headlineCount("nodes planned", planningDag.nodes.size)
         Narrate.plan.counted(
             "edges between them",
             planningDag.nodes.sumOf { it.dependencies.size }
