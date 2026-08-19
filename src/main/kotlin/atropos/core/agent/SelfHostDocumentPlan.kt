@@ -126,7 +126,7 @@ class SelfHostDocumentPlan(
                 "planning the first $maximumAtoms; the rest need a second run"
             )
         }
-        Narrate.atomize.counted("atoms to plan", atoms.size, of = atomization.atoms.size)
+        Narrate.atomize.headlineCount("atoms to plan", atoms.size, of = atomization.atoms.size)
         return Atomized(label, source, text, atoms, atomization.evidenceLine)
     }
 

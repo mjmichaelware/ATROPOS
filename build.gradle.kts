@@ -234,3 +234,51 @@ tasks.jar {
         into("specgraph")
     }
 }
+
+// The build stamp the running jar can report.
+//
+// `atropos --version` had nothing to read. An operator on a phone cannot
+// rebuild -- every install comes from a release asset -- so "is the binary I
+// am running the one I just pulled?" was answerable only by hashing the jar
+// against a URL, and when it was not, the symptom was a fix that appeared not
+// to work. The version and the commit are written at build time and read back
+// at runtime.
+val buildStamp by tasks.registering {
+    val stampFile = layout.buildDirectory.file("generated/atropos-build.properties").get().asFile
+    val declaredVersion = project.version.toString()
+    val head = providers.exec {
+        commandLine("git", "rev-parse", "--short", "HEAD")
+    }.standardOutput.asText.map { it.trim() }.orElse("unknown")
+
+    outputs.file(stampFile)
+    doLast {
+        stampFile.parentFile.mkdirs()
+        stampFile.writeText(
+            "version=$declaredVersion\ncommit=${head.getOrElse("unknown")}\n"
+        )
+    }
+}
+
+sourceSets.named("main") {
+    output.dir(mapOf("builtBy" to buildStamp), layout.buildDirectory.dir("generated"))
+}
+
+// Stale test scratch is swept before the suite, not after.
+//
+// The suite creates temporary directories in a hundred and seventy-seven
+// places and deletes almost none of them; on the operator's phone that had
+// grown to roughly sixty abandoned copies of a 9 MB jar. Sweeping before the
+// run rather than after means a crashed or killed run still gets cleaned up on
+// the next one, which is exactly the case that produced the pile.
+//
+// Bounded to this project's own prefix and to directories older than a day, so
+// it cannot touch another run's live scratch.
+tasks.withType<Test>().configureEach {
+    doFirst {
+        val cutoff = System.currentTimeMillis() - 24 * 60 * 60 * 1000L
+        val temp = File(System.getProperty("java.io.tmpdir"))
+        temp.listFiles { file -> file.isDirectory && file.name.startsWith("atropos-") }
+            ?.filter { it.lastModified() < cutoff }
+            ?.forEach { it.deleteRecursively() }
+    }
+}

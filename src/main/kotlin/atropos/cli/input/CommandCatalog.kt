@@ -8,6 +8,7 @@ object CommandCatalog {
         CommandEntry("/ps", "ask a second provider without joining the queue", "Models"),
         CommandEntry("/pipeline", "what ATROPOS does, stage by stage", "System"),
         CommandEntry("/scavenge", "find public work people asked for help with", "System"),
+        CommandEntry("/start", "the first three steps, checked against this install", "System", aliases = listOf("/first-run")),
         CommandEntry("/dashboard", "return to dashboard"),
         CommandEntry("/home", "return to dashboard"),
         CommandEntry("/tabs", "list open tabs"),

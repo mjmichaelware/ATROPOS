@@ -40,6 +40,16 @@ fun main(args: Array<String>) {
         println("${enrollment.evidenceLine()} status=DEGRADED")
     }
 
+    // Answered before anything else boots.
+    //
+    // A version flag that needed a working config, a provider registry and an
+    // authority gate to answer would be unable to report the one thing an
+    // operator asks it for when something is wrong.
+    if (args.firstOrNull() == "--version" || args.firstOrNull() == "-v") {
+        println(atropos.core.BuildStamp.line())
+        return
+    }
+
     if (args.firstOrNull() == "--health") {
         println(ATROPOS_HEALTH_MARKER)
         return

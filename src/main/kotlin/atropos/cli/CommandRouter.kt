@@ -68,6 +68,7 @@ class CommandRouter(
 
     private val pipelineHelpRenderer = atropos.cli.ui.PipelineHelpRenderer(theme)
     private val scavengeRenderer = atropos.cli.ui.ScavengeRenderer(theme)
+    private val firstRunGuide = atropos.cli.ui.FirstRunGuide(theme)
 
     /**
      * Which directories an `@mention` may read from.
@@ -385,6 +386,16 @@ class CommandRouter(
 
             "/pipeline" -> {
                 uiEngine.renderBlock(pipelineHelpRenderer.render(uiEngine.viewportWidth))
+                RouterOutcome.CONTINUE
+            }
+
+            "/start", "/first-run" -> {
+                uiEngine.renderBlock(
+                    firstRunGuide.render(
+                        atropos.cli.FirstRunProbe(config).progress(),
+                        uiEngine.viewportWidth
+                    )
+                )
                 RouterOutcome.CONTINUE
             }
 

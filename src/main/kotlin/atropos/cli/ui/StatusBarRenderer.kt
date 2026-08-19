@@ -76,6 +76,16 @@ class StatusBarRenderer(
             state.tokens.text().takeIf { it != "--" }?.let {
                 add(theme.metadata("⋯ ") + theme.strong("$it tok"))
             }
+            // Cost as a shape, not only as a number.
+            //
+            // A total answers "what has this cost" and hides "what is it
+            // doing" -- a spend that doubled over the last three calls and one
+            // that has been flat read identically as a figure and completely
+            // differently as a line. Six cells is enough to tell those apart
+            // and cheap enough to shed first when the footer runs out of room.
+            Sparkline.render(state.costHistory, COST_SPARK_CELLS)
+                .takeIf(String::isNotEmpty)
+                ?.let { add(theme.metadata("$ ") + theme.strong(it)) }
             state.activePatchId?.takeIf { it.isNotBlank() }?.let {
                 add(theme.metadata("⊙ ") + theme.strong(TerminalText.ellipsize(it, 18)))
             }
@@ -109,5 +119,10 @@ class StatusBarRenderer(
         val line = if (fits()) left + " ".repeat(gap) + right else TerminalText.ellipsize(left, safeWidth)
 
         return TerminalText.padEnd(TerminalText.ellipsize(line, safeWidth), safeWidth)
+    }
+
+    private companion object {
+        /** Enough cells to show a trend, few enough to shed cheaply. */
+        const val COST_SPARK_CELLS = 6
     }
 }

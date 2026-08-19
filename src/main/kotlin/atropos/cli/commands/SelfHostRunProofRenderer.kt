@@ -14,10 +14,36 @@ import atropos.core.agent.SelfHostInstalledProofEvidence
  * unmet predicate is printed as unmet, never softened.
  */
 class SelfHostRunProofRenderer(
-    private val maxStatusLines: Int = 12
+    private val maxStatusLines: Int = 12,
+    /**
+     * Plain by default. This renderer's output goes into evidence bundles and
+     * logs as well as onto a terminal, and a seal full of escape codes in a
+     * text file is worse than no seal.
+     */
+    private val theme: atropos.cli.ui.TerminalTheme = atropos.cli.ui.TerminalTheme(
+        atropos.cli.config.ConfigurationManager(),
+        tierOverride = atropos.cli.ui.design.ColorTier.NONE
+    )
 ) {
+    private val sigil = atropos.cli.ui.EvidenceSigil(theme)
     private val installedProof = SelfHostInstalledProofEvidence()
     fun render(proof: SelfHostRunProof): String = buildString {
+        // The seal, before the detail.
+        //
+        // A run ends in hashes nobody reads and nobody can compare at a
+        // glance. Drawn as a mark, two runs that agree look identical and two
+        // that differ look different immediately -- and the mark is a pure
+        // function of the digest, so a screenshot of one is as checkable as
+        // the string it came from.
+        //
+        // Drawn from the mutation the run actually produced, and coloured for
+        // verification only when the verdict says verified. A seal that looked
+        // authoritative for a PARTIAL run would be the fake attestation
+        // AGENTS.md 0.6 exists to prevent.
+        proof.mutations.firstNotNullOfOrNull { it.sha256 }?.let { digest ->
+            sigil.render(digest, proof.verdict == SelfHostRunVerdict.VERIFIED)
+                .forEach { appendLine(it) }
+        }
         appendLine("verdict: ${proof.verdict}${if (proof.verdict == SelfHostRunVerdict.PARTIAL) " (predicates still unmet)" else ""}")
         appendLine("predicates:")
         proof.satisfiedPredicates.forEach { appendLine("  [ok]      ${it.id} — ${it.description}") }

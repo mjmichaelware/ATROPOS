@@ -115,7 +115,7 @@ class SelfHostBootstrapDagFactory(
             )
         }
 
-        Narrate.plan.counted("DAG nodes from ${plan.label}", nodes.size)
+        Narrate.plan.headlineCount("DAG nodes from ${plan.label}", nodes.size)
         Narrate.plan.counted("edges between them", nodes.sumOf { it.dependencies.size })
 
         return dagService.createDag(

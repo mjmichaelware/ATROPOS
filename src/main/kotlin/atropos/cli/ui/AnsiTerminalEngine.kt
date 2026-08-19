@@ -46,7 +46,50 @@ class AnsiTerminalEngine(
     private val rendering = TerminalRenderingFacade(
         plainOutput, canvas, theme, transcript, markdown, welcome, statusBar, verification, help, transcriptBuffer
     )
-    private val spinner = SpinnerEngine { frame ->
+    /**
+     * Whether the engine behind the spinner is actually producing anything.
+     *
+     * Owned here because the spinner is drawn here and the thing that observes
+     * output ([LiveThinkingRenderer]) is a different object with a different
+     * lifetime. One sentinel per terminal, marked from wherever output
+     * appears.
+     */
+    val stallSentinel = StallSentinel()
+
+    private val threadProgress = ThreadProgress(theme)
+
+    @Volatile
+    private var runProgress: Triple<Int, Int, Boolean>? = null
+
+    /**
+     * How far through the work the run is, for the indicator to draw.
+     *
+     * Set from whatever knows -- today the per-item narration the pipeline
+     * already emits, which carries `[3/390]` by contract. Cleared with a null
+     * total, because a stale bar left over from a finished run claims progress
+     * on work nobody is doing.
+     */
+    fun setRunProgress(done: Int, total: Int, cut: Boolean = false) {
+        runProgress = if (total <= 0) null else Triple(done, total, cut)
+    }
+
+    fun clearRunProgress() {
+        runProgress = null
+    }
+
+    private val spinner = SpinnerEngine(
+        annotate = {
+            // The thread first, then the sentinel: how far along, and whether
+            // it is still moving. Either can be empty and the separator only
+            // appears between two things that are both present.
+            listOf(
+                runProgress?.let { (done, total, cut) ->
+                    TerminalText.stripAnsi(threadProgress.render(done, total, PROGRESS_CELLS, cut))
+                }.orEmpty(),
+                stallSentinel.note()
+            ).filter(String::isNotBlank).joinToString("  ·  ")
+        }
+    ) { frame ->
         synchronized(this) {
             state.activity = frame?.let(transcript::activity)
             requestFrameLocked()
@@ -246,6 +289,11 @@ class AnsiTerminalEngine(
 
     @Synchronized
     fun startSpinner(message: String) {
+        // A fresh run starts honest: the clock for "how long has it been
+        // quiet" begins when the work does, not when the terminal was created,
+        // and no progress is claimed until something reports some.
+        stallSentinel.observedOutput()
+        clearRunProgress()
         if (state.reactive) spinner.start(message) else rendering.renderSpinnerPlain(message)
     }
 
@@ -515,6 +563,15 @@ class AnsiTerminalEngine(
 
         /** ~60 frames at this cadence is between three and four seconds. */
         const val FRAME_MILLIS = 50L
+
+        /**
+         * Cells the thread occupies beside the indicator.
+         *
+         * Narrow on purpose: this sits next to a spinner and a message, not on
+         * a row of its own, and a bar wide enough to be precise would push the
+         * message it annotates off the screen.
+         */
+        const val PROGRESS_CELLS = 22
         const val SETTLE_MILLIS = 400L
     }
 

@@ -48,7 +48,14 @@ class ViewportLayout(
         openTabCount: Int = 1,
         activePatchId: String? = null,
         tabs: List<TabState> = emptyList(),
-        isDensity: Boolean = false
+        isDensity: Boolean = false,
+        /**
+         * The run, when there is one, so the home screen's empty rows can
+         * carry it instead of a pattern.
+         */
+        dagNodeStates: List<DagWallpaper.NodeState> = emptyList(),
+        confidence: Double = 1.0,
+        firstRun: FirstRunGuide.Progress? = null
     ): ScreenFrame {
         val outerWidth = width.coerceAtLeast(1)
         val safeHeight = height.coerceAtLeast(6)
@@ -113,7 +120,14 @@ class ViewportLayout(
             activeScreen = activeScreen,
             activeTab = activeTab,
             openTabCount = openTabCount,
-            activePatchId = activePatchId
+            activePatchId = activePatchId,
+            dagNodeStates = dagNodeStates,
+            confidence = confidence,
+            // Read from the tracker rather than passed in: the footer's shape
+            // is a fact about this session, and a caller that had to remember
+            // to forward it would eventually forget.
+            costHistory = tracker.costHistory(),
+            firstRun = firstRun
         )
 
         val footerRow = safeHeight - 1

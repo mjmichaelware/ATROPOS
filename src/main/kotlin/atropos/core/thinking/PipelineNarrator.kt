@@ -38,6 +38,23 @@ import java.nio.file.Path
  */
 class PipelineNarrator(private val category: String) {
 
+    /**
+     * The handful of facts an operator wants without asking for detail.
+     *
+     * L1 is the *default* depth, and until this existed nothing in the
+     * pipeline vocabulary emitted there -- so an operator who never touched
+     * `/thinking` saw none of the factory's narration at all. The stages were
+     * speaking to a level nobody was listening at.
+     *
+     * Reserved for run-level answers: how many atoms came out of the document,
+     * how many nodes are in the graph, whether the run finished. Anything that
+     * happens per atom or per file belongs further down the ladder, because
+     * L1 stops being an outline the moment it has more than a screen in it.
+     */
+    fun headline(what: String) {
+        runCatching { Thinking.stream.emit(ThinkingDepth.L1, what, category = category) }
+    }
+
     /** A stage of the pipeline beginning. The spine of the trace. */
     fun stage(what: String) = Thinking.step(category, what)
 
@@ -51,6 +68,11 @@ class PipelineNarrator(private val category: String) {
     fun counted(noun: String, quantity: Int, of: Int? = null) {
         val population = of?.let { " of $it" }.orEmpty()
         Thinking.step(category, "$quantity$population $noun")
+    }
+
+    /** A count worth seeing at the default depth. */
+    fun headlineCount(noun: String, quantity: Int, of: Int? = null) {
+        headline("$quantity${of?.let { " of $it" }.orEmpty()} $noun")
     }
 
     /** Work done to one item among many. Thousands of these per run, by design. */

@@ -113,14 +113,50 @@ object KeyboardLegend {
      * reminder that costs a second row is competing with the thing it is
      * reminding you about.
      */
-    fun line(theme: TerminalTheme, surface: Surface, width: Int, indent: Int = 1): String {
-        val body = bindingsFor(surface).joinToString(theme.subdued("  ")) { binding ->
-            theme.paint(Role.ACCENT_FOCUS, binding.keys) + theme.subdued(" " + binding.action)
+    fun line(theme: TerminalTheme, surface: Surface, width: Int, indent: Int = 1): String =
+        lines(theme, surface, width, indent).firstOrNull().orEmpty()
+
+    /**
+     * The bindings, over as many rows as it takes to show all of them.
+     *
+     * This used to be one row, ellipsized. On a phone that produced
+     * `/ commands  @ attach  ctrl+t new tab  ctrl+r histor…` -- the bindings
+     * past the cut were simply unavailable to anyone who could not widen their
+     * terminal, and widening means shrinking the font, which is how this
+     * interface became unreadable in the first place.
+     *
+     * Broken between bindings, never inside one: half a shortcut is worse than
+     * no shortcut, because it looks like the whole of a binding that does not
+     * exist.
+     */
+    fun lines(theme: TerminalTheme, surface: Surface, width: Int, indent: Int = 1): List<String> {
+        val room = width.coerceAtLeast(1)
+        val margin = " ".repeat(indent.coerceAtLeast(0))
+        val separator = "  "
+
+        val rendered = mutableListOf<String>()
+        var current = StringBuilder()
+        var currentCells = 0
+
+        bindingsFor(surface).forEach { binding ->
+            val plain = binding.keys + " " + binding.action
+            val painted = theme.paint(Role.ACCENT_FOCUS, binding.keys) +
+                theme.subdued(" " + binding.action)
+            val needed = plain.length + if (currentCells == 0) 0 else separator.length
+
+            if (currentCells > 0 && margin.length + currentCells + needed > room) {
+                rendered += TerminalText.padEnd(margin + current, room)
+                current = StringBuilder()
+                currentCells = 0
+            }
+            if (currentCells > 0) {
+                current.append(theme.subdued(separator))
+                currentCells += separator.length
+            }
+            current.append(painted)
+            currentCells += plain.length
         }
-        val padded = " ".repeat(indent.coerceAtLeast(0)) + body
-        return TerminalText.padEnd(
-            TerminalText.ellipsize(padded, width.coerceAtLeast(1)),
-            width.coerceAtLeast(1)
-        )
+        if (currentCells > 0) rendered += TerminalText.padEnd(margin + current, room)
+        return rendered.ifEmpty { listOf(TerminalText.padEnd(margin, room)) }
     }
 }

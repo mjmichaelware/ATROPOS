@@ -45,28 +45,34 @@ class ThreadTapestry(private val theme: TerminalTheme) {
      *   caller animates by stepping it, which is how the same code serves a
      *   still home screen and a moving one without a second implementation.
      */
-    fun render(width: Int, height: Int, phase: Int = 0): List<String> {
+    /**
+     * @param confidence how much of the work is settled, 0.0 to 1.0. The weave
+     *   tightens as it rises: loose cloth where atoms are still unresearched,
+     *   close cloth where they are proven. A project's health becomes something
+     *   an operator reads from across the room without a single number, and the
+     *   background stops being a pattern and starts being a reading. Left at
+     *   1.0 the panel is the settled weave, which is right for a home screen
+     *   with no run to report on -- an idle screen must not imply a finished
+     *   one, so callers pass what they actually know.
+     */
+    fun render(width: Int, height: Int, phase: Int = 0, confidence: Double = 1.0): List<String> {
         if (width < MINIMUM_CELLS || height <= 0) return emptyList()
 
-        // The cloth is a panel, not a fill.
-        //
-        // Two things make it one. It is inset, so there is plain background
-        // around it -- a field running edge to edge reads as the terminal
-        // having been repainted rather than as artwork on the screen, and the
-        // eye needs somewhere for the composition to stop. And it is trimmed
-        // to close on a thread at every edge, so the lattice finishes instead
-        // of being cut off mid-cell. A cropped weave looks like a mistake; a
-        // closed one looks chosen.
         val availableWidth = width - MARGIN_COLUMNS * 2
         val availableHeight = height - MARGIN_ROWS * 2
         if (availableWidth < MINIMUM_CELLS || availableHeight < WEFT_ROWS + 1) return emptyList()
 
-        val clothWidth = ((availableWidth - 1) / WARP_COLUMNS) * WARP_COLUMNS + 1
-        val clothHeight = ((availableHeight - 1) / WEFT_ROWS) * WEFT_ROWS + 1
+
+        // Loose cloth is cloth with fewer threads in it. The pitch widens as
+        // confidence falls, so an unresearched project literally looks thinner.
+        val settled = confidence.coerceIn(0.0, 1.0)
+        val warp = WARP_COLUMNS + ((1.0 - settled) * LOOSENING_COLUMNS).toInt()
+        val weft = WEFT_ROWS + ((1.0 - settled) * LOOSENING_ROWS).toInt()
+
+        val clothWidth = ((availableWidth - 1) / warp) * warp + 1
+        val clothHeight = ((availableHeight - 1) / weft) * weft + 1
         if (clothWidth < MINIMUM_CELLS) return emptyList()
 
-        // Centred in what is left, so the panel sits on the screen rather than
-        // hanging off one side of it.
         val left = MARGIN_COLUMNS + (availableWidth - clothWidth) / 2
         val top = MARGIN_ROWS + (availableHeight - clothHeight) / 2
         val indent = " ".repeat(left)
@@ -75,62 +81,87 @@ class ThreadTapestry(private val theme: TerminalTheme) {
         return (0 until height).map { row ->
             val clothRow = row - top
             if (clothRow < 0 || clothRow >= clothHeight) ""
-            else indent + weave(clothRow, clothWidth, clothHeight, drift)
+            else indent + weave(clothRow, clothWidth, clothHeight, drift, warp, weft)
         }
     }
 
     /**
-     * One row of the lattice.
+     * One row of the panel.
      *
-     * Threads only. An earlier version filled every cell between them from a
-     * four-step density ramp, and a later one scattered dots where the light
-     * was brightest; both put more information on the screen than a background
-     * is allowed to carry, and opening the app meant reading a picture before
-     * finding the prompt in front of it. The light lives entirely in the
-     * colour now -- the glyphs are a perfectly regular grid, which is what
-     * makes it read as formal, and the sheen across it is what stops it
-     * reading as graph paper.
+     * A selvedge, then the lattice inside it.
+     *
+     * The bare lattice was formal and it was scaffolding: an open grid with
+     * nothing to say where it began or ended, so it read as the terminal
+     * having drawn guide lines rather than as an object placed on the screen.
+     * A finished edge is what makes cloth a piece of cloth. It costs one ring
+     * of glyphs and adds no interior noise whatsoever, which is the only kind
+     * of decoration a background is allowed.
+     *
+     * Everything else is carried in colour: the selvedge sits at the top of
+     * the ramp, crossings a tier below it, threads dimmer still, and the whole
+     * panel fades from lit at the top to shadow at the bottom, the way hanging
+     * fabric does. Depth without a single extra mark.
      */
-    private fun weave(row: Int, width: Int, height: Int, drift: Double): String {
+    private fun weave(
+        row: Int,
+        width: Int,
+        height: Int,
+        drift: Double,
+        warp: Int,
+        weft: Int
+    ): String {
         val line = StringBuilder()
         var previousTier = -1
-        val onWeft = row % WEFT_ROWS == 0
+        val onWeft = row % weft == 0
+        val onEdgeRow = row == 0 || row == height - 1
+
+        // Lit from above. The gradient runs down the panel rather than across
+        // it because a light source overhead is what the eye expects, and a
+        // horizontal ramp reads as a highlight sliding sideways.
+        val fall = 1.0 - (row.toDouble() / (height - 1).coerceAtLeast(1))
+        val sheen = (sin(fall * 1.4 + drift) + 1.0) / 2.0
 
         for (column in 0 until width) {
-            val onWarp = column % WARP_COLUMNS == 0
-            if (!onWarp && !onWeft) {
-                // Between the threads there is nothing to draw, so there is
-                // nothing to colour. An escape sequence for a blank cell costs
-                // bytes and buys no pixels.
+            val onWarp = column % warp == 0
+            val onEdgeColumn = column == 0 || column == width - 1
+
+            val glyph = when {
+                onEdgeRow && onEdgeColumn -> corner(row == 0, column == 0)
+                onEdgeRow -> SELVEDGE_HORIZONTAL
+                onEdgeColumn -> SELVEDGE_VERTICAL
+                onWarp && onWeft -> CROSS
+                onWarp -> WARP
+                onWeft -> WEFT
+                else -> ' '
+            }
+            if (glyph == ' ') {
                 line.append(' ')
                 continue
             }
 
-            // A shallow diagonal sheen, carried in colour alone. Smooth and
-            // slow: one pass of light across the cloth, not a pattern.
-            val sheen = (
-                sin((column.toDouble() / width) * 2.2 + (row.toDouble() / height) * 1.6 + drift) + 1.0
-                ) / 2.0
-            val tier = (sheen * RAMP_RGB.lastIndex).toInt().coerceIn(0, RAMP_RGB.lastIndex)
+            val base = (sheen * (RAMP_RGB.size - 3)).toInt().coerceIn(0, RAMP_RGB.size - 3)
+            val tier = when {
+                onEdgeRow || onEdgeColumn -> RAMP_RGB.lastIndex
+                onWarp && onWeft -> (base + 2).coerceAtMost(RAMP_RGB.lastIndex)
+                else -> base
+            }
 
-            // Colour is emitted only when it changes. A per-cell escape
-            // sequence would make one row of a wide terminal several
-            // kilobytes, and the diffing renderer would rewrite all of it
-            // on every frame.
             if (tier != previousTier) {
-                // No RESET first: setting a foreground colour replaces the
-                // previous one outright, so emitting both doubled every
-                // row's escape count for nothing. A 120-cell row was
-                // carrying 126 escape sequences -- more than one per cell,
-                // which is the exact waste this batching exists to avoid.
                 line.append(open(tier))
                 previousTier = tier
             }
-            line.append(if (onWarp && onWeft) CROSS else if (onWarp) WARP else WEFT)
+            line.append(glyph)
         }
 
         if (previousTier >= 0) line.append(RESET)
         return line.toString()
+    }
+
+    private fun corner(top: Boolean, left: Boolean): Char = when {
+        top && left -> '\u250F'
+        top -> '\u2513'
+        left -> '\u2517'
+        else -> '\u251B'
     }
 
     /**
@@ -167,14 +198,21 @@ class ThreadTapestry(private val theme: TerminalTheme) {
         /**
          * How far apart the threads sit.
          *
-         * Wide. The first version wove every four columns and three rows, and
-         * the first impression of the app was a wall of texture with a prompt
-         * somewhere in it. At ten and five the black ground does most of the
-         * work and the threads are a frame around it, which is the difference
-         * between a background and a picture.
+         * Six and three. Ten and five was open to the point of emptiness --
+         * four enormous cells filling the lower half of a phone, which reads
+         * as an unfinished layout rather than as a considered one. This pitch
+         * is close enough to be cloth and open enough to stay quiet.
          */
-        const val WARP_COLUMNS = 10
-        const val WEFT_ROWS = 5
+        const val WARP_COLUMNS = 6
+        const val WEFT_ROWS = 3
+
+        /** How far the pitch opens as confidence falls to nothing. */
+        const val LOOSENING_COLUMNS = 6
+        const val LOOSENING_ROWS = 3
+
+        /** The finished edge. Heavier than the threads it contains. */
+        const val SELVEDGE_HORIZONTAL = '\u2501'
+        const val SELVEDGE_VERTICAL = '\u2503'
 
         /** A blank margin either side, and a blank row above and below. */
         const val MARGIN_COLUMNS = 2

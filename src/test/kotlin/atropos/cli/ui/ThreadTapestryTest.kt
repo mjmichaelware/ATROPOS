@@ -60,10 +60,11 @@ class ThreadTapestryTest {
     @Test
     fun the_weave_has_structure_rather_than_noise() {
         // Warp threads at a regular interval are the difference between cloth
-        // and static.
-        val rows = cloth(80, 16)
+        // and static. Measured inside the selvedge, which is a frame and not a
+        // thread.
+        val rows = cloth(80, 20).drop(1).dropLast(1).map { it.trim() }
         val columns = rows.minOf { it.length }
-        val warpColumns = (0 until columns).filter { column ->
+        val warpColumns = (1 until columns - 1).filter { column ->
             rows.all { it[column] == WARP || it[column] == CROSS }
         }
 
@@ -80,22 +81,27 @@ class ThreadTapestryTest {
         // was meant to sit behind.
         val glyphs = cloth(80, 16).flatMap { it.trim().toList() }.toSet()
 
-        assertEquals(setOf(WARP, WEFT, CROSS, ' '), glyphs, "the field carries marks of its own")
+        assertEquals(WEAVE_GLYPHS + ' ', glyphs, "the field carries marks of its own")
     }
 
     @Test
-    fun the_lattice_closes_on_a_thread_at_every_edge() {
-        // A weave cut off mid-cell looks like a mistake; one that finishes
-        // looks chosen.
+    fun the_panel_is_finished_with_a_selvedge() {
+        // Contract change, deliberate. The bare lattice ended on a warp thread,
+        // which was closed but was still an open grid -- it read as guide lines
+        // the terminal had drawn rather than as an object placed on the screen.
+        // A finished edge is what makes cloth a piece of cloth, and it costs
+        // one ring of glyphs and no interior noise.
         val rows = cloth(80, 16)
 
-        rows.forEach { row ->
+        assertTrue(rows.first().trim().first() == CORNER_TOP_LEFT, rows.first())
+        assertTrue(rows.first().trim().last() == CORNER_TOP_RIGHT, rows.first())
+        assertTrue(rows.last().trim().first() == CORNER_BOTTOM_LEFT, rows.last())
+        assertTrue(rows.last().trim().last() == CORNER_BOTTOM_RIGHT, rows.last())
+        rows.drop(1).dropLast(1).forEach { row ->
             val line = row.trim()
-            assertTrue(line.first() in setOf(WARP, CROSS), "the left edge is not a thread: '$line'")
-            assertTrue(line.last() in setOf(WARP, CROSS), "the right edge is not a thread: '$line'")
+            assertTrue(line.first() == SELVEDGE_VERTICAL, "the left edge is unfinished: '$line'")
+            assertTrue(line.last() == SELVEDGE_VERTICAL, "the right edge is unfinished: '$line'")
         }
-        assertTrue(rows.first().contains(CROSS), "the top row is not a weft thread")
-        assertTrue(rows.last().contains(CROSS), "the bottom row is not a weft thread")
     }
 
     @Test
@@ -141,6 +147,18 @@ class ThreadTapestryTest {
         const val WARP = '\u2502'
         const val WEFT = '\u2500'
         const val CROSS = '\u253C'
+        const val SELVEDGE_VERTICAL = '\u2503'
+        const val SELVEDGE_HORIZONTAL = '\u2501'
+        const val CORNER_TOP_LEFT = '\u250F'
+        const val CORNER_TOP_RIGHT = '\u2513'
+        const val CORNER_BOTTOM_LEFT = '\u2517'
+        const val CORNER_BOTTOM_RIGHT = '\u251B'
+
+        /** Every mark the panel is allowed to make. */
+        val WEAVE_GLYPHS = setOf(
+            WARP, WEFT, CROSS, SELVEDGE_VERTICAL, SELVEDGE_HORIZONTAL,
+            CORNER_TOP_LEFT, CORNER_TOP_RIGHT, CORNER_BOTTOM_LEFT, CORNER_BOTTOM_RIGHT
+        )
         const val ESCAPE = '\u001B'
     }
 }

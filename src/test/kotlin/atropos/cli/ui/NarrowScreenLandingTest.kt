@@ -82,7 +82,7 @@ class NarrowScreenLandingTest {
         val lines = render(80)
 
         assertTrue(
-            lines.any { it.contains("/factory run <prompt>") && it.contains("the whole build") },
+            lines.any { it.contains("/factory run <prompt>") && it.contains("describe an app") },
             "the wide layout lost its columns:\n" + lines.joinToString("\n")
         )
     }
@@ -97,7 +97,7 @@ class NarrowScreenLandingTest {
         // Asserting on how the text happens to end would catch "here" as a
         // broken "re", which is the mistake this assertion replaces.
         val rendered = lines.joinToString("\n")
-        listOf("atoms,", "research,", "code,", "proof").forEach { word ->
+        listOf("describe", "researches,", "plans,", "builds,", "proves").forEach { word ->
             assertTrue(
                 lines.any { line -> line.split(' ').any { it == word } },
                 "'$word' was broken across lines:\n$rendered"
@@ -106,15 +106,41 @@ class NarrowScreenLandingTest {
     }
 
     @Test
-    fun the_factory_is_not_described_as_only_making_a_dag() {
-        // The DAG is stage five of eight. Calling the factory "turn a document
-        // into a DAG" told an operator the build stops there.
+    fun the_factory_is_described_as_building_applications() {
+        // The app factory builds applications. The DAG is one stage of how it
+        // does that, and "turn a document into a DAG" told an operator both
+        // that the build stops there and that the feature is a graph tool.
         val text = render(80).joinToString(" ")
 
         assertTrue(text.contains("/factory run"), text)
-        assertFalse(
-            text.contains("into a DAG"),
-            "the factory is still described as a DAG generator: $text"
-        )
+        assertTrue(text.contains("describe an app"), text)
+        assertFalse(text.contains("into a DAG"), "still described as a DAG generator: $text")
+    }
+
+    @Test
+    fun the_tip_does_not_repeat_what_the_legend_says_below_it() {
+        // `/` and `@` appear in the keyboard legend a few rows down and in
+        // START HERE a third time. A tip that repeats what is already on the
+        // screen twice teaches nothing and makes the screen look like it is
+        // padding itself.
+        listOf(30, 46, 66, 80, 120).forEach { width ->
+            val tip = render(width).first { it.contains("Tip") }
+
+            assertFalse(
+                tip.contains("command palette") || tip.contains("attaches a file"),
+                "at $width cells the tip repeats the legend: $tip"
+            )
+        }
+    }
+
+    @Test
+    fun the_keyboard_legend_shows_every_binding_rather_than_cutting_them() {
+        // Half a shortcut is worse than no shortcut: it looks like the whole
+        // of a binding that does not exist.
+        val text = render(46).joinToString(" ")
+
+        listOf("ctrl+t", "ctrl+r", "ctrl+c").forEach { key ->
+            assertTrue(text.contains(key), "the legend dropped $key at 46 cells:\n$text")
+        }
     }
 }
