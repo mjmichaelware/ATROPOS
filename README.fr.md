@@ -3,6 +3,10 @@
 </p>
 
 <p align="center">
+  <img src="docs/assets/atropos-demo.gif" alt="ATROPOS demo" width="360"/>
+</p>
+
+<p align="center">
   <strong>De l'autonomie sans la dérive.</strong>
 </p>
 
