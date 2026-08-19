@@ -33,13 +33,33 @@
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/mjmichaelware/ATROPOS/main/install.sh | sh
+```
 
+```sh
 npm install -g @mjmichaelware/atropos
+```
 
+```sh
 cd 你的项目 && atropos
 ```
 
-**需要 Java 17+。** Termux：`pkg install openjdk-21` · Debian：`sudo apt install openjdk-21-jre-headless` · macOS：`brew install openjdk@21`
+**需要 Java 17+**（手机或桌面上的任意终端 — Termux、iSH、a-Shell、iTerm、Windows Terminal、GNOME、Alacritty、Warp 等）。
+
+```sh
+pkg install openjdk-21
+```
+
+```sh
+sudo apt install openjdk-21-jre-headless
+```
+
+```sh
+brew install openjdk@21
+```
+
+```sh
+sudo dnf install java-21-openjdk-headless
+```
 
 放入你已有的 API 密钥即可。ATROPOS 启动时自动发现提供商——不必配置全部 26 个。应用内：`/help` · 命令面板 `/` · `@路径` 附加文件。
 
