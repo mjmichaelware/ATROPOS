@@ -14,22 +14,28 @@ class LandingRenderer(
     private val MINIMUM_ROWS_FOR_ART = 4
 
     /**
-     * Below this width, a label and its meaning go on separate lines.
+     * Two columns only when two columns actually fit.
      *
-     * A phone terminal is only narrow because the font is large enough to
-     * read. Laying `command` and `what it does` side by side spends the label
-     * column first and ellipsizes the half that carries the meaning -- at
-     * thirty columns every row read `/factory run <prompt>  turn…`, which
-     * tells an operator nothing and forces them to shrink the font until the
-     * text fits, which is the opposite of what they wanted.
-     *
-     * Stacked, nothing is cut. The interface gets taller instead of narrower,
-     * and vertical space is the thing a phone has.
+     * This was a width threshold, and a threshold is the wrong shape for the
+     * question. Set at 56 it still truncated a 66-column phone, because what
+     * matters is not how wide the screen is but whether the longest row fits
+     * in it. The screen and the content both vary; comparing them directly is
+     * the only rule that cannot be wrong by a few columns.
      */
-    private val MINIMUM_WIDTH_FOR_COLUMNS = 56
+    private fun fitsInColumns(rows: List<Pair<String, String>>, width: Int): Boolean {
+        val column = rows.maxOf { it.first.length }
+        val longest = rows.maxOf { column + GUTTER_CELLS + it.second.length }
+        return longest + INDENT_CELLS <= width
+    }
 
     /** `● Tip ` before the text, and a cell of breathing room after it. */
     private val TIP_PREFIX_CELLS = 7
+
+    /** Two spaces between a label column and its value. */
+    private val GUTTER_CELLS = 2
+
+    /** The two cells every row is indented by. */
+    private val INDENT_CELLS = 2
 
     /** The indent a stacked detail line sits at. */
     private val STACKED_INDENT_CELLS = 4
@@ -71,7 +77,7 @@ class LandingRenderer(
             out += sectionRule("START HERE", width)
             out += starters(width)
             out += ""
-            out += KeyboardLegend.line(theme, KeyboardLegend.Surface.COMPOSER, width)
+            out += KeyboardLegend.lines(theme, KeyboardLegend.Surface.COMPOSER, width)
         }
 
         val body = out.take(targetHeight).map { TerminalText.ellipsize(it, width) }
@@ -162,7 +168,7 @@ class LandingRenderer(
             add("tabs" to "${state.openTabCount} open · ${state.activeTab}")
         }
         val column = rows.maxOf { it.first.length }
-        if (width < MINIMUM_WIDTH_FOR_COLUMNS) {
+        if (!fitsInColumns(rows, width)) {
             return rows.flatMap { (label, value) ->
                 listOf("  " + theme.subdued(label)) +
                     stacked(value, width).map { "    " + theme.strong(it) }
@@ -176,12 +182,12 @@ class LandingRenderer(
     /** Three things worth typing first, with what each one is for. */
     private fun starters(width: Int): List<String> {
         val rows = listOf(
-            "/factory run <prompt>" to "the whole build: atoms, research, DAG, code, proof",
+            "/factory run <prompt>" to "describe an app; it researches, plans, builds, proves",
             "@path/to/file" to "attach a document — txt, md, docx, pdf",
             "/status" to "providers, quota, and what is configured",
             "/shortcuts" to "every keyboard shortcut"
         )
-        if (width < MINIMUM_WIDTH_FOR_COLUMNS) {
+        if (!fitsInColumns(rows, width)) {
             return rows.flatMap { (command, purpose) ->
                 listOf("  " + theme.paint(Role.ACCENT_FOCUS, command)) +
                     stacked(purpose, width).map { "    " + theme.subdued(it) }
@@ -202,7 +208,12 @@ class LandingRenderer(
      */
     private fun tipLine(state: SessionPresentationState, width: Int): String {
         val tips = listOf(
-            "Type {/} to open the command palette",
+            // `/` and `@` are not in this rotation.
+            //
+            // The keyboard legend prints them a few rows below on the same
+            // screen, and START HERE lists them a third time. A tip that
+            // repeats what is already visible twice teaches nothing and makes
+            // the screen look like it is padding itself.
             "Start a message with {!} to run a shell command (e.g. {!ls -la})",
             "Use {/agent patch <task>} to have a provider draft a diff ATROPOS applies",
             "Use {/agent apply --check latest} to validate a patch before applying it",
@@ -215,8 +226,6 @@ class LandingRenderer(
             // Short enough for a phone held at a readable font size. Without
             // these, every tip was longer than the screen and the rotation
             // fell back to showing a cut sentence.
-            "Type {/} for commands",
-            "{@} attaches a file",
             "{/home} returns here",
             "{/pipeline} explains it",
             "Press {ctrl+t} for a tab"
