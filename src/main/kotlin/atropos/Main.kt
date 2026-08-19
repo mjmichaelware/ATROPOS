@@ -50,6 +50,17 @@ fun main(args: Array<String>) {
         return
     }
 
+    // Answered before the config boots, like --version.
+    //
+    // An install too broken to start is exactly the install that needs
+    // replacing, so the updater must not depend on anything the update might
+    // be fixing.
+    if (args.firstOrNull() == "update" || args.firstOrNull() == "--update") {
+        val outcome = atropos.core.SelfUpdate().update()
+        println(atropos.core.SelfUpdateText.render(outcome))
+        return
+    }
+
     if (args.firstOrNull() == "--health") {
         println(ATROPOS_HEALTH_MARKER)
         return
