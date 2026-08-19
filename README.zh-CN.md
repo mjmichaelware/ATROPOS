@@ -3,6 +3,10 @@
 </p>
 
 <p align="center">
+  <img src="docs/assets/atropos-demo.gif" alt="ATROPOS demo" width="360"/>
+</p>
+
+<p align="center">
   <strong>有自主，无漂移。</strong>
 </p>
 
