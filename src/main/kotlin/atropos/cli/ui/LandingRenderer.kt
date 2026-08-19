@@ -12,6 +12,27 @@ class LandingRenderer(
 
     /** Fewer rows than this and the weave reads as a stray band, not a field. */
     private val MINIMUM_ROWS_FOR_ART = 4
+
+    /**
+     * Below this width, a label and its meaning go on separate lines.
+     *
+     * A phone terminal is only narrow because the font is large enough to
+     * read. Laying `command` and `what it does` side by side spends the label
+     * column first and ellipsizes the half that carries the meaning -- at
+     * thirty columns every row read `/factory run <prompt>  turn…`, which
+     * tells an operator nothing and forces them to shrink the font until the
+     * text fits, which is the opposite of what they wanted.
+     *
+     * Stacked, nothing is cut. The interface gets taller instead of narrower,
+     * and vertical space is the thing a phone has.
+     */
+    private val MINIMUM_WIDTH_FOR_COLUMNS = 56
+
+    /** `● Tip ` before the text, and a cell of breathing room after it. */
+    private val TIP_PREFIX_CELLS = 7
+
+    /** The indent a stacked detail line sits at. */
+    private val STACKED_INDENT_CELLS = 4
     private val tapestry = ThreadTapestry(theme)
     private val truthProbe = WorkbenchTruthProbe()
     private val agentProbe = AgentWorkbenchProbe()
@@ -68,6 +89,45 @@ class LandingRenderer(
         return body + tapestry.render(width, remaining)
     }
 
+    /**
+     * A detail line broken to fit under its label.
+     *
+     * Wrapped rather than ellipsized. The four cells of indent are already
+     * spent, so a purpose that runs long has to continue on the next line or
+     * lose the half that says what the thing is for -- and losing that half
+     * is what made an operator shrink the font until it fit.
+     */
+    private fun stacked(value: String, width: Int): List<String> {
+        val room = (width - STACKED_INDENT_CELLS).coerceAtLeast(8)
+        val lines = mutableListOf<String>()
+        val line = StringBuilder()
+        // Broken between words, not through them. AnsiLineWrapper cuts at the
+        // cell, which is right for a transcript of arbitrary output and wrong
+        // here: it turned "research" into "re" and "search" on two lines, and
+        // a reader has to reassemble the word before they can read the row.
+        value.split(' ').filter(String::isNotEmpty).forEach { word ->
+            when {
+                line.isEmpty() -> line.append(word)
+                line.length + 1 + word.length <= room -> line.append(' ').append(word)
+                else -> {
+                    lines += line.toString()
+                    line.setLength(0)
+                    line.append(word)
+                }
+            }
+            // A single word longer than the line still has to go somewhere, so
+            // it is cut rather than allowed to overrun the frame.
+            while (line.length > room) {
+                lines += line.substring(0, room)
+                val rest = line.substring(room)
+                line.setLength(0)
+                line.append(rest)
+            }
+        }
+        if (line.isNotEmpty()) lines += line.toString()
+        return lines.ifEmpty { listOf("") }
+    }
+
     /** `── SECTION ──────`, so the block reads as one region and not a list. */
     private fun sectionRule(label: String, width: Int): String {
         val head = " " + label + " "
@@ -102,6 +162,12 @@ class LandingRenderer(
             add("tabs" to "${state.openTabCount} open · ${state.activeTab}")
         }
         val column = rows.maxOf { it.first.length }
+        if (width < MINIMUM_WIDTH_FOR_COLUMNS) {
+            return rows.flatMap { (label, value) ->
+                listOf("  " + theme.subdued(label)) +
+                    stacked(value, width).map { "    " + theme.strong(it) }
+            }
+        }
         return rows.map { (label, value) ->
             "  " + theme.subdued(TerminalText.padEnd(label, column)) + "  " + theme.strong(value)
         }
@@ -110,11 +176,17 @@ class LandingRenderer(
     /** Three things worth typing first, with what each one is for. */
     private fun starters(width: Int): List<String> {
         val rows = listOf(
-            "/factory run <prompt>" to "turn a document or an idea into a DAG",
+            "/factory run <prompt>" to "the whole build: atoms, research, DAG, code, proof",
             "@path/to/file" to "attach a document — txt, md, docx, pdf",
             "/status" to "providers, quota, and what is configured",
             "/shortcuts" to "every keyboard shortcut"
         )
+        if (width < MINIMUM_WIDTH_FOR_COLUMNS) {
+            return rows.flatMap { (command, purpose) ->
+                listOf("  " + theme.paint(Role.ACCENT_FOCUS, command)) +
+                    stacked(purpose, width).map { "    " + theme.subdued(it) }
+            }
+        }
         val column = rows.maxOf { it.first.length }
         return rows.map { (command, purpose) ->
             "  " + theme.paint(Role.ACCENT_FOCUS, TerminalText.padEnd(command, column)) +
@@ -139,9 +211,26 @@ class LandingRenderer(
             "Use {/home} from anywhere to return to this screen",
             "Use {/providers} to see which providers are configured and free",
             "Use {/verify narrow} for a fast toolchain check before you commit",
-            "Paid providers stay locked; {/paid status} shows the gate"
+            "Paid providers stay locked; {/paid status} shows the gate",
+            // Short enough for a phone held at a readable font size. Without
+            // these, every tip was longer than the screen and the rotation
+            // fell back to showing a cut sentence.
+            "Type {/} for commands",
+            "{@} attaches a file",
+            "{/home} returns here",
+            "{/pipeline} explains it",
+            "Press {ctrl+t} for a tab"
         )
-        val tip = tips[(state.workspace.hashCode().toLong().mod(tips.size.toLong())).toInt()]
+        // On a narrow screen only tips that fit are offered.
+        //
+        // The final ellipsize guard trims any line that overruns, and a
+        // truncated tip is worse than a different one: "Use /agent apply
+        // --check latest to valid…" teaches nothing and reads as a defect.
+        // Picking from what fits keeps the rotation deterministic and keeps
+        // every tip whole.
+        val plainLength = { text: String -> text.count { it != '{' && it != '}' } + TIP_PREFIX_CELLS }
+        val offered = tips.filter { plainLength(it) <= width }.ifEmpty { tips }
+        val tip = offered[(state.workspace.hashCode().toLong().mod(offered.size.toLong())).toInt()]
 
         val body = buildString {
             var rest = tip
