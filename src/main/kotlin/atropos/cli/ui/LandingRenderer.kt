@@ -40,6 +40,8 @@ class LandingRenderer(
     /** The indent a stacked detail line sits at. */
     private val STACKED_INDENT_CELLS = 4
     private val tapestry = ThreadTapestry(theme)
+    private val wallpaper = DagWallpaper(theme)
+    private val firstRunGuide = FirstRunGuide(theme)
     private val truthProbe = WorkbenchTruthProbe()
     private val agentProbe = AgentWorkbenchProbe()
 
@@ -69,6 +71,21 @@ class LandingRenderer(
         // arrives it is gone -- but an empty screen on first launch teaches an
         // operator nothing and impresses nobody. What fills it has to earn the
         // rows: where you are, what is configured, and what to press.
+        // A fresh install is told what to do before it is told where it is.
+        //
+        // The session facts and the starter list assume an operator who
+        // already knows what this program is for. Someone who has no provider
+        // configured and has never attached a document needs the three steps
+        // first, and needs them instead of the panel rather than beneath it --
+        // a screen with both is a screen where neither is the answer.
+        val guide = state.firstRun
+        if (guide != null && targetHeight >= MINIMUM_ROWS_FOR_DETAIL) {
+            out += ""
+            out += firstRunGuide.render(guide, width)
+            return (out.take(targetHeight) + fill(out.size, targetHeight, width, state))
+                .map { TerminalText.ellipsize(it, width) }
+        }
+
         if (targetHeight >= MINIMUM_ROWS_FOR_DETAIL) {
             out += ""
             out += sectionRule("SESSION", width)
@@ -81,18 +98,33 @@ class LandingRenderer(
         }
 
         val body = out.take(targetHeight).map { TerminalText.ellipsize(it, width) }
+        return body + fill(body.size, targetHeight, width, state)
+    }
 
-        // Whatever is left over becomes cloth rather than void.
-        //
-        // The rows below the tips were black on every terminal taller than the
-        // content, which read as a screen that had not finished drawing. The
-        // weave is generated for these exact dimensions, so it fits any
-        // terminal without a crop or a stretch, and it is deterministic so the
-        // home screen never shimmers under the prompt.
-        val remaining = targetHeight - body.size
-        if (remaining < MINIMUM_ROWS_FOR_ART) return body
+    /**
+     * Whatever is left over, filled with the run if there is one and with
+     * cloth if there is not.
+     *
+     * Same rows, same place, two meanings. An operator learns one image and it
+     * fills with their own work as the run progresses, rather than being
+     * replaced by a different screen they have to learn separately -- and a
+     * pattern occupying rows that could have carried the graph is a wasted
+     * screen.
+     */
+    private fun fill(
+        used: Int,
+        targetHeight: Int,
+        width: Int,
+        state: SessionPresentationState
+    ): List<String> {
+        val remaining = targetHeight - used
+        if (remaining < MINIMUM_ROWS_FOR_ART) return emptyList()
 
-        return body + tapestry.render(width, remaining)
+        return if (state.dagNodeStates.isNotEmpty()) {
+            wallpaper.render(state.dagNodeStates, width, remaining)
+        } else {
+            tapestry.render(width, remaining, confidence = state.confidence)
+        }
     }
 
     /**

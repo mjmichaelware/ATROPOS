@@ -53,6 +53,26 @@ class LiveThinkingRenderer(
         uiEngine.startSpinner(headline)
         var first = true
         unsubscribe = stream.subscribe { thought ->
+            // Output arrived, so the indicator is telling the truth again.
+            // Marked for every thought at every depth, because the question
+            // the sentinel answers is "is the engine producing anything", not
+            // "is it producing something this surface chose to show".
+            uiEngine.stallSentinel.observedOutput()
+
+            // Progress, read off the narration the pipeline already emits.
+            //
+            // `PipelineNarrator.item` writes `[3/390] id — what` by contract,
+            // which is a number the engine computed and then used only as
+            // prose. Parsing it here keeps the count in one place -- the stage
+            // that knows it -- instead of threading a progress callback from
+            // core through every layer between, where the first layer that
+            // forgot to pass it along would silently disconnect the bar.
+            ITEM_PROGRESS.find(thought.text)?.let { match ->
+                val done = match.groupValues[1].toIntOrNull()
+                val total = match.groupValues[2].toIntOrNull()
+                if (done != null && total != null) uiEngine.setRunProgress(done, total)
+            }
+
             if (depth() == ThinkingDepth.L1) {
                 // An outline, not a transcript. The spinner stays and its
                 // message becomes whatever is happening right now, so a long
@@ -162,3 +182,12 @@ class LiveThinkingRenderer(
 object CliThinkingChannel {
     val channels: ThinkingChannels = ThinkingChannels()
 }
+
+/**
+ * The shape `PipelineNarrator.item` promises: `[done/total] id — what`.
+ *
+ * File-private rather than a member, because it belongs to the format and not
+ * to any one renderer: the day a second surface wants the same number, it
+ * should read the same pattern rather than write a second one that drifts.
+ */
+private val ITEM_PROGRESS = Regex("""^\[(\d+)/(\d+)]""")

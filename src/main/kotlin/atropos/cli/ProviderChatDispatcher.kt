@@ -32,6 +32,8 @@ class ProviderChatDispatcher(
         ContextAttestationRenderer(TerminalTheme(atropos.cli.config.ConfigurationManager())),
     private val redactionFilter: atropos.core.security.RedactionFilter =
         atropos.core.security.RedactionFilter(),
+    private val providerRelay: atropos.cli.ui.ProviderRelay =
+        atropos.cli.ui.ProviderRelay(TerminalTheme(atropos.cli.config.ConfigurationManager())),
     private val alignmentHistory: () -> List<RewardLogEntry> = { emptyList() },
     private val alignmentSignal: (Boolean) -> Unit = {},
     /**
@@ -108,7 +110,19 @@ class ProviderChatDispatcher(
                 }
             )
             if (cascade.providerName != routedProvider) {
-                uiEngine.renderNotice("answered by ${cascade.providerName} after ${cascade.errors.size} refusal(s)")
+                // Drawn as a relay rather than counted in a sentence.
+                //
+                // "answered by groq after 2 refusal(s)" tells an operator that
+                // something happened and not what: which providers were tried,
+                // why each dropped out, and therefore whether the answer they
+                // are reading came from the model they chose or from a
+                // fallback whose output they might weigh differently. The
+                // cascade is the most distinctive thing this engine does and
+                // it was reaching them as a number.
+                val legs = cascade.errors.map {
+                    atropos.cli.ui.ProviderRelay.Leg(it.provider, redactionFilter.compact(it.cleanMessage, 60))
+                } + atropos.cli.ui.ProviderRelay.Leg(cascade.providerName)
+                uiEngine.renderBlock(providerRelay.render(legs, uiEngine.viewportWidth))
             }
             val response = cascade.response
             uiEngine.renderExecutionEvent("response", "provider returned output")
