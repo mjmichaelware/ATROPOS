@@ -33,13 +33,33 @@
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/mjmichaelware/ATROPOS/main/install.sh | sh
+```
 
+```sh
 npm install -g @mjmichaelware/atropos
+```
 
+```sh
 cd votre-projet && atropos
 ```
 
-**Java 17+.** Termux : `pkg install openjdk-21` · Debian : `sudo apt install openjdk-21-jre-headless` · macOS : `brew install openjdk@21`
+**Nécessite Java 17+** (n'importe quel terminal sur mobile ou bureau — Termux, iSH, a-Shell, iTerm, Windows Terminal, GNOME, Alacritty, Warp, et d'autres).
+
+```sh
+pkg install openjdk-21
+```
+
+```sh
+sudo apt install openjdk-21-jre-headless
+```
+
+```sh
+brew install openjdk@21
+```
+
+```sh
+sudo dnf install java-21-openjdk-headless
+```
 
 Ajoutez les clés API que vous avez déjà. ATROPOS découvre les fournisseurs au démarrage — vous ne configurez pas les 26. Dans l'app : `/help` · palette `/` · `@chemin` pour joindre des fichiers.
 
