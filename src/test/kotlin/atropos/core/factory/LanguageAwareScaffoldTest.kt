@@ -105,9 +105,61 @@ class LanguageAwareScaffoldTest {
         // A Python blueprint that mentions Kotlin once in a comparison is
         // still a Python project.
         assertEquals(
-            ProjectLanguage.PYTHON,
+            ProjectLanguage.Detection.Scaffolded(ProjectLanguage.PYTHON),
             ProjectLanguage.detect("$pythonBlueprint\n\nUnlike the Kotlin engine, this runs on Python.")
         )
+    }
+
+    @Test
+    fun the_languages_that_used_to_become_kotlin_no_longer_do() {
+        // Every one of these silently produced a JVM source tree. "A Spring
+        // Boot service in Java" was the worst: `jvm` was a Kotlin signal, so
+        // Java actively matched the wrong language.
+        mapOf(
+            "Build a Rails app with Ruby and ActiveRecord" to ProjectLanguage.RUBY,
+            "A Spring Boot service in Java with Maven" to ProjectLanguage.JAVA,
+            "An ASP.NET Core API in C# with Entity Framework" to ProjectLanguage.CSHARP,
+            "A Laravel app in PHP with composer.json" to ProjectLanguage.PHP,
+            "An iOS app in Swift with SwiftUI and Xcode" to ProjectLanguage.SWIFT,
+            "A game engine in C++ with CMake" to ProjectLanguage.CPP
+        ).forEach { (prompt, expected) ->
+            assertEquals(
+                ProjectLanguage.Detection.Scaffolded(expected),
+                ProjectLanguage.detect(prompt),
+                "'$prompt' still resolves to the wrong language"
+            )
+        }
+    }
+
+    @Test
+    fun a_language_it_cannot_lay_out_is_named_rather_than_faked() {
+        // Silence was the defect. A tool that cannot scaffold Elixir should
+        // say so, not hand back a JVM tree and let the operator discover the
+        // mismatch when their files land in src/main/kotlin.
+        val detection = ProjectLanguage.detect("An Elixir Phoenix framework app built with mix.exs")
+
+        assertTrue(detection is ProjectLanguage.Detection.Unsupported, detection.toString())
+        assertEquals("Elixir", (detection as ProjectLanguage.Detection.Unsupported).displayName)
+    }
+
+    @Test
+    fun an_unsupported_language_gets_no_source_tree_and_an_honest_verify() {
+        val files = scaffold("An Elixir Phoenix framework app built with mix.exs")
+
+        assertFalse(
+            files.keys.any { it.contains("src/main/kotlin") },
+            "an Elixir project was given a JVM source tree: ${files.keys}"
+        )
+        assertTrue(files.getValue("README.md").contains("no scaffold for Elixir"), files.getValue("README.md"))
+        assertTrue(files.getValue("verify.sh").contains("no scaffold for Elixir"), files.getValue("verify.sh"))
+        // It refuses rather than printing the success marker, so nothing
+        // downstream can read it as a passing verification.
+        assertFalse(files.getValue("verify.sh").contains("APP_FACTORY_VERIFY_OK"))
+    }
+
+    @Test
+    fun nothing_stated_is_a_different_answer_from_a_language_named() {
+        assertEquals(ProjectLanguage.Detection.Unstated, ProjectLanguage.detect("track my expenses"))
     }
 
     @Test

@@ -42,7 +42,37 @@ data class LanguageScaffold(
                 ProjectLanguage.GO -> go(packageName, title)
                 ProjectLanguage.RUST -> rust(packageName, title)
                 ProjectLanguage.KOTLIN -> kotlin(packageName, title)
+                ProjectLanguage.JAVA -> java(packageName, title)
+                ProjectLanguage.RUBY -> ruby(packageName, title)
+                ProjectLanguage.CSHARP -> csharp(packageName, title)
+                ProjectLanguage.PHP -> php(packageName, title)
+                ProjectLanguage.SWIFT -> swift(packageName, title)
+                ProjectLanguage.CPP -> cpp(packageName, title)
             }
+
+        /**
+         * A tree for a language this cannot lay out.
+         *
+         * No source file at all, on purpose. Writing a `Main.kt` into an
+         * Elixir project is how the old default failed; writing a `main.ex`
+         * this cannot verify would fail the same way one language further on.
+         * The repository gets its documentation, its licence and a verify.sh
+         * that refuses honestly, and the operator supplies the layout their
+         * ecosystem expects.
+         */
+        fun generic(displayName: String) = LanguageScaffold(
+            language = ProjectLanguage.KOTLIN,
+            sourcePath = "",
+            testPath = "",
+            source = "",
+            test = "",
+            manifests = emptyMap(),
+            verify = "#!/usr/bin/env sh\nset -eu\n" +
+                "printf '%s\\n' 'ATROPOS has no scaffold for $displayName; " +
+                "add this project\\'s own build and test commands here.' >&2\nexit 1\n",
+            ignore = "*.log\n",
+            commentPrefix = "#"
+        )
 
         private fun python(packageName: String, title: String) = LanguageScaffold(
             language = ProjectLanguage.PYTHON,
@@ -139,5 +169,127 @@ data class LanguageScaffold(
             ignore = "build/\n.gradle/\n.idea/\n",
             commentPrefix = "//"
         )
+
+        private fun java(packageName: String, title: String) = LanguageScaffold(
+            language = ProjectLanguage.JAVA,
+            sourcePath = "src/main/java/$packageName/Main.java",
+            testPath = "src/test/java/$packageName/MainTest.java",
+            source = "package $packageName;\n\npublic final class Main {\n" +
+                "    public static String describe() {\n        return \"$title\";\n    }\n\n" +
+                "    public static void main(String[] args) {\n        System.out.println(describe());\n    }\n}\n",
+            test = "package $packageName;\n\npublic final class MainTest {\n" +
+                "    public static void main(String[] args) {\n" +
+                "        if (!Main.describe().equals(\"$title\")) throw new AssertionError(\"unexpected\");\n" +
+                "        System.out.println(\"ok\");\n    }\n}\n",
+            manifests = mapOf(
+                "pom.xml" to "<project>\n  <modelVersion>4.0.0</modelVersion>\n" +
+                    "  <groupId>$packageName</groupId>\n  <artifactId>$packageName</artifactId>\n" +
+                    "  <version>0.1.0</version>\n</project>\n"
+            ),
+            verify = "#!/usr/bin/env sh\nset -eu\ncommand -v javac >/dev/null 2>&1 || " +
+                "{ printf '%s\\n' 'javac is required' >&2; exit 1; }\nmkdir -p build\n" +
+                "javac -d build src/main/java/$packageName/Main.java src/test/java/$packageName/MainTest.java\n" +
+                "java -cp build ${packageName}.MainTest\nprintf '%s\\n' APP_FACTORY_VERIFY_OK\n",
+            ignore = "build/\ntarget/\n*.class\n",
+            commentPrefix = "//"
+        )
+
+        private fun ruby(packageName: String, title: String) = LanguageScaffold(
+            language = ProjectLanguage.RUBY,
+            sourcePath = "lib/$packageName.rb",
+            testPath = "spec/${packageName}_spec.rb",
+            source = "# frozen_string_literal: true\n\nmodule $packageName\n" +
+                "  def self.describe\n    '$title'\n  end\nend\n",
+            test = "require_relative '../lib/$packageName'\n\n" +
+                "RSpec.describe $packageName do\n  it 'describes itself' do\n" +
+                "    expect($packageName.describe).to eq('$title')\n  end\nend\n",
+            manifests = mapOf("Gemfile" to "source 'https://rubygems.org'\n\ngem 'rspec'\n"),
+            verify = "#!/usr/bin/env sh\nset -eu\ncommand -v rspec >/dev/null 2>&1 || " +
+                "{ printf '%s\\n' 'rspec is required' >&2; exit 1; }\nrspec\n" +
+                "printf '%s\\n' APP_FACTORY_VERIFY_OK\n",
+            ignore = ".bundle/\nvendor/bundle/\n",
+            commentPrefix = "#"
+        )
+
+        private fun csharp(packageName: String, title: String) = LanguageScaffold(
+            language = ProjectLanguage.CSHARP,
+            sourcePath = "src/Program.cs",
+            testPath = "tests/ProgramTests.cs",
+            source = "public static class Program\n{\n" +
+                "    public static string Describe() => \"$title\";\n\n" +
+                "    public static void Main() => System.Console.WriteLine(Describe());\n}\n",
+            test = "public static class ProgramTests\n{\n    public static void Main()\n    {\n" +
+                "        if (Program.Describe() != \"$title\") throw new System.Exception(\"unexpected\");\n" +
+                "        System.Console.WriteLine(\"ok\");\n    }\n}\n",
+            manifests = mapOf(
+                "$packageName.csproj" to "<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n" +
+                    "    <OutputType>Exe</OutputType>\n    <TargetFramework>net8.0</TargetFramework>\n" +
+                    "  </PropertyGroup>\n</Project>\n"
+            ),
+            verify = "#!/usr/bin/env sh\nset -eu\ncommand -v dotnet >/dev/null 2>&1 || " +
+                "{ printf '%s\\n' 'dotnet is required' >&2; exit 1; }\ndotnet build\n" +
+                "printf '%s\\n' APP_FACTORY_VERIFY_OK\n",
+            ignore = "bin/\nobj/\n",
+            commentPrefix = "//"
+        )
+
+        private fun php(packageName: String, title: String) = LanguageScaffold(
+            language = ProjectLanguage.PHP,
+            sourcePath = "src/$packageName.php",
+            testPath = "tests/${packageName}Test.php",
+            source = "<?php\n\nfunction describe(): string\n{\n    return '$title';\n}\n",
+            test = "<?php\n\nrequire __DIR__ . '/../src/$packageName.php';\n\n" +
+                "if (describe() !== '$title') {\n    fwrite(STDERR, \"unexpected\\n\");\n    exit(1);\n}\n" +
+                "echo \"ok\\n\";\n",
+            manifests = mapOf(
+                "composer.json" to "{\n  \"name\": \"atropos/$packageName\",\n" +
+                    "  \"require\": { \"php\": \">=8.2\" }\n}\n"
+            ),
+            verify = "#!/usr/bin/env sh\nset -eu\ncommand -v php >/dev/null 2>&1 || " +
+                "{ printf '%s\\n' 'php is required' >&2; exit 1; }\nphp tests/${packageName}Test.php\n" +
+                "printf '%s\\n' APP_FACTORY_VERIFY_OK\n",
+            ignore = "vendor/\n",
+            commentPrefix = "//"
+        )
+
+        private fun swift(packageName: String, title: String) = LanguageScaffold(
+            language = ProjectLanguage.SWIFT,
+            sourcePath = "Sources/$packageName/$packageName.swift",
+            testPath = "Tests/${packageName}Tests/${packageName}Tests.swift",
+            source = "public func describe() -> String {\n    return \"$title\"\n}\n",
+            test = "import XCTest\n@testable import $packageName\n\n" +
+                "final class ${packageName}Tests: XCTestCase {\n" +
+                "    func testDescribe() { XCTAssertEqual(describe(), \"$title\") }\n}\n",
+            manifests = mapOf(
+                "Package.swift" to "// swift-tools-version:5.9\nimport PackageDescription\n\n" +
+                    "let package = Package(\n    name: \"$packageName\",\n    targets: [\n" +
+                    "        .target(name: \"$packageName\"),\n" +
+                    "        .testTarget(name: \"${packageName}Tests\", dependencies: [\"$packageName\"])\n    ]\n)\n"
+            ),
+            verify = "#!/usr/bin/env sh\nset -eu\ncommand -v swift >/dev/null 2>&1 || " +
+                "{ printf '%s\\n' 'swift is required' >&2; exit 1; }\nswift test\n" +
+                "printf '%s\\n' APP_FACTORY_VERIFY_OK\n",
+            ignore = ".build/\n*.xcodeproj\n",
+            commentPrefix = "//"
+        )
+
+        private fun cpp(packageName: String, title: String) = LanguageScaffold(
+            language = ProjectLanguage.CPP,
+            sourcePath = "src/main.cpp",
+            testPath = "tests/main_test.cpp",
+            source = "#include <string>\n\nstd::string describe() {\n    return \"$title\";\n}\n",
+            test = "#include <cassert>\n#include <string>\n\nstd::string describe();\n\n" +
+                "int main() {\n    assert(describe() == \"$title\");\n    return 0;\n}\n",
+            manifests = mapOf(
+                "CMakeLists.txt" to "cmake_minimum_required(VERSION 3.20)\nproject($packageName CXX)\n" +
+                    "set(CMAKE_CXX_STANDARD 20)\nadd_executable($packageName src/main.cpp)\n"
+            ),
+            verify = "#!/usr/bin/env sh\nset -eu\ncommand -v cmake >/dev/null 2>&1 || " +
+                "{ printf '%s\\n' 'cmake is required' >&2; exit 1; }\ncmake -S . -B build && cmake --build build\n" +
+                "printf '%s\\n' APP_FACTORY_VERIFY_OK\n",
+            ignore = "build/\n",
+            commentPrefix = "//"
+        )
+
     }
 }
