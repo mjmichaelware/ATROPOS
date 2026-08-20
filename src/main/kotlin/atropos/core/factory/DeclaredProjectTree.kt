@@ -70,6 +70,36 @@ object DeclaredProjectTree {
         return stripSharedRoot(withoutModulePackageCollisions(entries.values.toList()))
     }
 
+    /**
+     * The directory the listing is rooted at, when it has exactly one.
+     *
+     * [read] strips it, because the generated repository *is* that project --
+     * but it is also the best name the document gives for what is being built,
+     * and naming an application after the first word of a ten-kilobyte
+     * specification is not.
+     */
+    fun rootOf(document: String): String? {
+        val roots = readRaw(document).map { it.path.substringBefore('/') }.distinct()
+        return roots.singleOrNull()?.takeIf { it.isNotBlank() }
+    }
+
+    private fun readRaw(document: String): List<Entry> {
+        val lines = document.replace("\r\n", "\n").replace('\r', '\n').split("\n")
+        val entries = LinkedHashMap<String, Entry>()
+        var index = 0
+        while (index < lines.size) {
+            val block = treeAt(lines, index)
+            if (block == null) {
+                index++
+                continue
+            }
+            block.second.forEach { entry -> entries.putIfAbsent(entry.path, entry) }
+            index = block.first
+            if (entries.size >= MAX_ENTRIES) break
+        }
+        return entries.values.toList()
+    }
+
     /** The block starting at [start], as (next index, entries), or null. */
     private fun treeAt(lines: List<String>, start: Int): Pair<Int, List<Entry>>? {
         val matched = mutableListOf<MatchResult>()

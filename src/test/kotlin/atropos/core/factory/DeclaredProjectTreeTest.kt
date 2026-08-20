@@ -160,6 +160,29 @@ class DeclaredProjectTreeTest {
     }
 
     @Test
+    fun a_document_is_named_and_described_by_its_own_structure() {
+        // The first twelve meaningful words of a ten-kilobyte specification
+        // became the generated application's commands, so the CLI offered
+        // `built`, `during` and `monetization` as things to run, and the
+        // application was named after whichever word came first.
+        val intent = IntentParser().parse(blueprint)
+
+        assertEquals("musicmakerlm", intent.name)
+        assertTrue("routes" in intent.features, intent.features.toString())
+        assertTrue("core" in intent.features, intent.features.toString())
+        assertFalse("engine" in intent.features, intent.features.toString())
+        assertFalse("tests" in intent.features, intent.features.toString())
+    }
+
+    @Test
+    fun a_short_request_is_still_read_as_a_request() {
+        val intent = IntentParser().parse("build me a todo list app")
+
+        assertEquals("todo", intent.name)
+        assertTrue("todo" in intent.features, intent.features.toString())
+    }
+
+    @Test
     fun a_document_declaring_no_tree_still_gets_the_language_layout() {
         val spec = AppProjectSpec(
             prompt = "a Python 3.11 tool built with pytest and pyproject.toml",
