@@ -40,7 +40,8 @@ class LanguageBehaviorTemplate(
         val extraSources: Map<String, String> = emptyMap()
     )
 
-    fun render(language: ProjectLanguage, spec: AppProjectSpec, packageName: String): Program {
+    fun render(layout: ProjectLayout, spec: AppProjectSpec, packageName: String): Program {
+        val language = layout.language
         // Kotlin keeps AppSourceTemplate, which already renders web, service,
         // desktop and expression variants this does not attempt to translate.
         if (language == ProjectLanguage.KOTLIN) {
@@ -52,16 +53,16 @@ class LanguageBehaviorTemplate(
         val app = appName(spec)
         val features = features(spec)
         return when (language) {
-            ProjectLanguage.PYTHON -> python(packageName, app, features)
-            ProjectLanguage.TYPESCRIPT -> typescript(app, features)
+            ProjectLanguage.PYTHON -> python(layout, app, features)
+            ProjectLanguage.TYPESCRIPT -> typescript(layout, app, features)
             ProjectLanguage.GO -> go(app, features)
             ProjectLanguage.RUST -> rust(app, features)
             ProjectLanguage.JAVA -> java(packageName, app, features)
-            ProjectLanguage.RUBY -> ruby(packageName, app, features)
+            ProjectLanguage.RUBY -> ruby(layout, app, features)
             ProjectLanguage.CSHARP -> csharp(app, features)
-            ProjectLanguage.PHP -> php(packageName, app, features)
+            ProjectLanguage.PHP -> php(layout, app, features)
             ProjectLanguage.SWIFT -> swift(packageName, app, features)
-            ProjectLanguage.CPP -> cpp(app, features)
+            ProjectLanguage.CPP -> cpp(layout, app, features)
             ProjectLanguage.KOTLIN -> error("handled above")
         }
     }
@@ -99,7 +100,7 @@ class LanguageBehaviorTemplate(
 
     // ---------------------------------------------------------------- Python
 
-    private fun python(packageName: String, app: String, features: List<String>): Program {
+    private fun python(layout: ProjectLayout, app: String, features: List<String>): Program {
         val featureAssertions = features.joinToString("\n\n") { feature ->
             "def test_${feature.replace('-', '_')}_is_its_own_command():\n" +
                 "    assert run_app([\"$feature\", \"sample\"], []) == (0, \"$feature: sample\", \"\")"
@@ -134,7 +135,7 @@ class LanguageBehaviorTemplate(
             append("if __name__ == \"__main__\":\n    main()\n")
         }
         val test = buildString {
-            append("from $packageName import run_app, USAGE\n\n\n")
+            append("from ${layout.importReference} import run_app, USAGE\n\n\n")
             append("def test_help_prints_usage():\n")
             append("    assert run_app([\"--help\"]) == (0, USAGE, \"\")\n\n\n")
             append("def test_no_arguments_exits_nonzero():\n")
@@ -155,16 +156,21 @@ class LanguageBehaviorTemplate(
             append("        if name.startswith(\"test_\"):\n            case()\n")
             append("    print(\"checks passed\")\n")
         }
-        return Program(
-            source = source,
-            test = test,
-            extraSources = mapOf("$packageName/__main__.py" to "from . import main\n\nmain()\n")
-        )
+        // `python -m <package>` needs a `__main__.py`, and there is nowhere
+        // to put one unless the program lives in a package's `__init__.py`.
+        // When the document put it in a module of its own, that module is
+        // already runnable with `python <path>`.
+        val packageRoot = layout.sourcePath.removeSuffix("/__init__.py")
+        val extras =
+            if (layout.sourcePath.endsWith("/__init__.py"))
+                mapOf("$packageRoot/__main__.py" to "from . import main\n\nmain()\n")
+            else emptyMap()
+        return Program(source = source, test = test, extraSources = extras)
     }
 
     // ------------------------------------------------------------ TypeScript
 
-    private fun typescript(app: String, features: List<String>): Program {
+    private fun typescript(layout: ProjectLayout, app: String, features: List<String>): Program {
         val featureTests = features.joinToString("\n\n") { feature ->
             "test(\"$feature is its own command\", () => {\n" +
                 "  assert.equal(runApp([\"$feature\", \"sample\"], []).output, \"$feature: sample\");\n});"
@@ -199,12 +205,13 @@ class LanguageBehaviorTemplate(
             append("  if (result.output !== \"\") console.log(result.output);\n")
             append("  if (result.error !== \"\") console.error(result.error);\n")
             append("  if (result.exitCode !== 0) process.exit(result.exitCode);\n}\n\n")
-            append("if (process.argv[1]?.endsWith(\"index.ts\")) {\n  main(process.argv.slice(2));\n}\n")
+            append("if (process.argv[1]?.endsWith(\"${layout.sourcePath.substringAfterLast('/')}\")) " +
+                "{\n  main(process.argv.slice(2));\n}\n")
         }
         val test = buildString {
             append("import { test } from \"node:test\";\n")
             append("import assert from \"node:assert/strict\";\n")
-            append("import { runApp, USAGE } from \"./index.ts\";\n\n")
+            append("import { runApp, USAGE } from \"${layout.importReference}\";\n\n")
             append("test(\"help prints usage\", () => {\n")
             append("  assert.equal(runApp([\"--help\"]).exitCode, 0);\n")
             append("  assert.equal(runApp([\"--help\"]).output, USAGE);\n});\n\n")
@@ -436,7 +443,8 @@ class LanguageBehaviorTemplate(
 
     // ------------------------------------------------------------------ Ruby
 
-    private fun ruby(packageName: String, app: String, features: List<String>): Program {
+    private fun ruby(layout: ProjectLayout, app: String, features: List<String>): Program {
+        val packageName = AppProjectGenerator.safeName(layout.sourcePath.substringAfterLast('/').removeSuffix(".rb"))
         val moduleName = packageName.split('-', '_')
             .joinToString("") { part -> part.replaceFirstChar { it.titlecase(Locale.US) } }
             .ifBlank { "App" }
@@ -483,7 +491,7 @@ class LanguageBehaviorTemplate(
         val test = buildString {
             append("# frozen_string_literal: true\n\n")
             append("require 'minitest/autorun'\n")
-            append("require_relative '../lib/$packageName'\n\n")
+            append("require_relative '${layout.importReference}'\n\n")
             append("class Test$moduleName < Minitest::Test\n")
             append("  def test_help_prints_usage\n")
             append("    assert_equal 0, $moduleName.run_app(['--help']).exit_code\n  end\n\n")
@@ -576,7 +584,7 @@ class LanguageBehaviorTemplate(
 
     // ------------------------------------------------------------------- PHP
 
-    private fun php(packageName: String, app: String, features: List<String>): Program {
+    private fun php(layout: ProjectLayout, app: String, features: List<String>): Program {
         val featureChecks = features.joinToString("\n") { feature ->
             "check(run_app(['$feature', 'sample'], \$scratch)->output === '$feature: sample'," +
                 " '$feature is its own command');"
@@ -626,7 +634,7 @@ class LanguageBehaviorTemplate(
         val test = buildString {
             append("<?php\n\n")
             append("declare(strict_types=1);\n\n")
-            append("require_once __DIR__ . '/../src/$packageName.php';\n\n")
+            append("require_once __DIR__ . '/${layout.importReference}';\n\n")
             append("\$failures = 0;\n\n")
             append("function check(bool \$condition, string \$what): void\n{\n")
             append("    global \$failures;\n")
@@ -718,13 +726,15 @@ class LanguageBehaviorTemplate(
 
     // ------------------------------------------------------------------- C++
 
-    private fun cpp(app: String, features: List<String>): Program {
+    private fun cpp(layout: ProjectLayout, app: String, features: List<String>): Program {
+        val headerPath = layout.sourcePath.removeSuffix(".cpp") + ".hpp"
+        val headerName = headerPath.substringAfterLast('/')
         val featureChecks = features.joinToString("\n") { feature ->
             "    check(run_app({\"$feature\", \"sample\"}, scratch).output == \"$feature: sample\"," +
                 " \"$feature is its own command\");"
         }
         val source = buildString {
-            append("#include \"app.hpp\"\n\n")
+            append("#include \"$headerName\"\n\n")
             append("#include <iostream>\n#include <sstream>\n\n")
             append("const char* const USAGE = \"${usage(app, features)}\";\n\n")
             append("namespace {\n\n")
@@ -772,7 +782,7 @@ class LanguageBehaviorTemplate(
             append("    return result.exit_code;\n}\n#endif\n")
         }
         val test = buildString {
-            append("#include \"../src/app.hpp\"\n\n")
+            append("#include \"${layout.importReference}\"\n\n")
             append("#include <iostream>\n#include <string>\n#include <vector>\n\n")
             append("namespace {\n\nint failures = 0;\n\n")
             append("void check(bool condition, const std::string& what) {\n")
@@ -794,7 +804,7 @@ class LanguageBehaviorTemplate(
             source = source,
             test = test,
             extraSources = mapOf(
-                "src/app.hpp" to buildString {
+                headerPath to buildString {
                     append("#ifndef APP_FACTORY_APP_HPP\n#define APP_FACTORY_APP_HPP\n\n")
                     append("#include <string>\n#include <vector>\n\n")
                     append("/** The outcome of one command: what to print and what to exit with. */\n")

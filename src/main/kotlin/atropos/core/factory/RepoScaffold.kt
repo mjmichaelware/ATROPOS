@@ -16,8 +16,9 @@ class RepoScaffold(
         // assumption. A scaffold is a claim about where code goes, and making
         // that claim in the wrong ecosystem files every subsequently generated
         // file under it -- beside a verify.sh that cannot run any of them.
-        val detection = ProjectLanguage.detect(spec.prompt)
-        val language = ProjectLanguage.layoutFor(detection)
+        val projectLayout = ProjectLayout.resolve(spec)
+        val detection = projectLayout.detection
+        val language = projectLayout.language
         val title = spec.intent.name.replaceFirstChar { it.titlecase(Locale.US) }
         val featureText = redactionFilter.redact(spec.intent.features.joinToString(", ")).ifBlank { "general application" }
         val safePrompt = redactionFilter.redact(spec.prompt)
@@ -28,10 +29,7 @@ class RepoScaffold(
         // that refuses honestly, not a JVM tree that pretends. The operator
         // finds out now, rather than after the providers have filled the wrong
         // directories with correct code.
-        val layout = when (detection) {
-            is ProjectLanguage.Detection.Unsupported -> LanguageScaffold.generic(detection.displayName)
-            else -> LanguageScaffold.forLanguage(language, packageName)
-        }
+        val layout = projectLayout.scaffold
         // `//` at the top of a Python file is a syntax error, so the
         // provenance header would have broken the very file it documented.
         val mark = layout.commentPrefix
@@ -51,8 +49,28 @@ class RepoScaffold(
         val map = linkedMapOf<String, String>()
         // A generic layout declares no source or test path. Writing an empty
         // key would put a file at the repository root with no name.
+        // Every file the document said the project has.
+        //
+        // A build specification states its layout as a directory listing, and
+        // the factory used to lay out whatever its own scaffold decided
+        // instead -- so a document naming two hundred files produced eleven of
+        // someone else's, and every file a provider wrote afterwards landed in
+        // a tree the specification never described. Written first, so the
+        // seed program and the standard repository files below overwrite their
+        // own entries rather than being overwritten by an empty seed.
+        projectLayout.declared
+            .filterNot { it.isDirectory }
+            .forEach { entry -> map[entry.path] = DeclaredFileSeed.contentFor(entry) }
+        // A declared directory with no files in it still has to exist.
+        projectLayout.declared
+            .filter { it.isDirectory }
+            .filterNot { directory ->
+                projectLayout.declared.any { !it.isDirectory && it.path.startsWith(directory.path + "/") }
+            }
+            .forEach { directory -> map["${directory.path}/.gitkeep"] = "" }
+
         if (layout.sourcePath.isNotBlank()) {
-            val program = behaviorTemplate.render(language, spec, packageName)
+            val program = behaviorTemplate.render(projectLayout, spec, packageName)
             map[layout.sourcePath] = layout.withLineage(program.source, sourceLineage)
             map[layout.testPath] = layout.withLineage(program.test, sourceLineage)
             // Whatever else the language needs beside those two: a Python

@@ -50,13 +50,50 @@ data class LanguageScaffold(
         return source.substring(0, firstBreak + 1) + "\n" + lineage + source.substring(firstBreak + 1)
     }
 
+    /**
+     * The same scaffold, verifying the files the project actually has.
+     *
+     * `verify.sh` names the paths it compiles and runs. When the source
+     * document declares its own tree, the program moves and the script has to
+     * move with it -- otherwise the generated repository fails its own
+     * verification for a reason that has nothing to do with its code, which is
+     * the failure this whole layout exists to avoid.
+     *
+     * Only the languages whose seed program can follow a declared tree need a
+     * rewrite; the rest verify by build tool or by glob and are unaffected.
+     */
+    fun withPaths(sourcePath: String, testPath: String): LanguageScaffold {
+        if (sourcePath == this.sourcePath && testPath == this.testPath) return this
+        val testDirectory = testPath.substringBeforeLast('/', ".")
+        val rewritten = when (language) {
+            ProjectLanguage.PYTHON -> shell(
+                requires("python3") +
+                    "if python3 -c 'import pytest' >/dev/null 2>&1; then\n" +
+                    "  python3 -m pytest $testDirectory -q\nelse\n" +
+                    "  PYTHONPATH=. python3 $testPath\nfi\n"
+            )
+            ProjectLanguage.TYPESCRIPT -> shell(requires("node") + "node --test $testPath\n")
+            ProjectLanguage.RUBY -> shell(
+                requires("ruby") + "ruby -I${sourcePath.substringBeforeLast('/', ".")} $testPath\n"
+            )
+            ProjectLanguage.PHP -> shell(requires("php") + "php $testPath\n")
+            ProjectLanguage.CPP -> shell(
+                requires("c++") + "mkdir -p build\n" +
+                    "c++ -std=c++17 -DAPP_FACTORY_NO_MAIN -o build/app_tests $sourcePath $testPath\n" +
+                    "./build/app_tests\n"
+            )
+            else -> verify
+        }
+        return copy(sourcePath = sourcePath, testPath = testPath, verify = rewritten)
+    }
+
     companion object {
 
-        private const val OK = "printf '%s\\n' APP_FACTORY_VERIFY_OK\n"
+        const val OK = "printf '%s\\n' APP_FACTORY_VERIFY_OK\n"
 
-        private fun shell(body: String) = "#!/usr/bin/env sh\nset -eu\n$body$OK"
+        fun shell(body: String) = "#!/usr/bin/env sh\nset -eu\n$body$OK"
 
-        private fun requires(tool: String) =
+        fun requires(tool: String) =
             "command -v $tool >/dev/null 2>&1 || { printf '%s\\n' '$tool is required' >&2; exit 1; }\n"
 
         fun forLanguage(language: ProjectLanguage, packageName: String): LanguageScaffold =

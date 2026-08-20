@@ -17,7 +17,8 @@ package atropos.core.factory
 class AppGeneratedBehaviorGuard {
 
     fun requireRealBehavior(spec: AppProjectSpec, files: Map<String, String>) {
-        val detection = ProjectLanguage.detect(spec.prompt)
+        val resolved = ProjectLayout.resolve(spec)
+        val detection = resolved.detection
         // Refusing here, rather than writing a repository whose verify.sh
         // cannot pass, means the operator hears it at the moment they ask.
         if (detection is ProjectLanguage.Detection.Unsupported) {
@@ -26,11 +27,10 @@ class AppGeneratedBehaviorGuard {
                     "name a language it can lay out, or scaffold the project yourself"
             )
         }
-        val language = ProjectLanguage.layoutFor(detection)
-        if (language == ProjectLanguage.KOTLIN) {
+        if (resolved.language == ProjectLanguage.KOTLIN) {
             requireKotlinBehavior(spec, files)
         } else {
-            requireLanguageBehavior(spec, files, language)
+            requireLanguageBehavior(spec, files, resolved)
         }
     }
 
@@ -44,10 +44,9 @@ class AppGeneratedBehaviorGuard {
     private fun requireLanguageBehavior(
         spec: AppProjectSpec,
         files: Map<String, String>,
-        language: ProjectLanguage
+        layout: ProjectLayout
     ) {
-        val packageName = AppProjectGenerator.safeName(spec.intent.name)
-        val layout = LanguageScaffold.forLanguage(language, packageName)
+        val language = layout.language
         val name = language.displayName
 
         val main = files[layout.sourcePath]
@@ -59,7 +58,7 @@ class AppGeneratedBehaviorGuard {
         require(markers.entrypoint in main) { "generated $name entrypoint is missing" }
         require(markers.nonZeroExit in main) { "generated $name has no nonzero exit path" }
         require(markers.runnerDefinition in main) { "generated $name command runner is missing" }
-        require(hasLineage(main, layout.commentPrefix) && hasLineage(tests, layout.commentPrefix)) {
+        require(hasLineage(main, layout.scaffold.commentPrefix) && hasLineage(tests, layout.scaffold.commentPrefix)) {
             "generated $name source and tests must retain prompt lineage"
         }
 

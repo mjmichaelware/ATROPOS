@@ -273,6 +273,30 @@ class LanguageAwareScaffoldTest {
     }
 
     @Test
+    fun a_signal_is_a_word_rather_than_a_substring() {
+        // `lua` inside "evaluation" made a research paper on musical tension
+        // detect as a Lua project, and the factory refused to build it. The
+        // failure was correct behaviour on a wrong answer, which is the worst
+        // kind: it named a language the document never mentioned.
+        val paper = """
+            Model listener expectations via style-specific transition
+            probabilities. Automatic evaluation harness running the full metric
+            suite. The evaluative threshold must be crossed before any building
+            begins, valued against expert judgement.
+        """.trimIndent()
+
+        assertEquals(ProjectLanguage.Detection.Unstated, ProjectLanguage.detect(paper))
+    }
+
+    @Test
+    fun a_language_named_as_a_word_is_still_found() {
+        assertEquals(
+            ProjectLanguage.Detection.Unsupported("Lua"),
+            ProjectLanguage.detect("a Lua plugin published to luarocks")
+        )
+    }
+
+    @Test
     fun web_assets_are_written_where_the_ecosystem_serves_them_from() {
         // JVM resource paths inside a Python project put the frontend
         // somewhere nothing will serve it from.

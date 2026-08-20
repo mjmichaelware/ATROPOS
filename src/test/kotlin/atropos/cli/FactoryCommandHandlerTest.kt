@@ -62,9 +62,9 @@ class FactoryCommandHandlerTest {
     }
 
     @Test
-    fun a_prompt_the_original_line_does_not_match_falls_back_to_the_words() {
-        // A different entry point, or an alias rewrite, means the original is
-        // not the text the rest of the router acted on. The words win then.
+    fun a_different_command_line_falls_back_to_the_words() {
+        // The original has to be the line these tokens were lexed from, and
+        // the head is what establishes that.
         val output = ByteArrayOutputStream()
         var seen = ""
         val handler = FactoryCommandHandler(
@@ -72,9 +72,35 @@ class FactoryCommandHandlerTest {
             runFactory = { seen = it; "generated_project: ok" }
         )
 
-        handler.execute(listOf("/factory", "run", "build", "notes"), "/factory run something else entirely")
+        handler.execute(listOf("/factory", "run", "build", "notes"), "/agent ask something entirely")
 
         assertEquals("build notes", seen)
+    }
+
+    @Test
+    fun the_lexer_normalising_the_body_does_not_discard_the_document() {
+        // Comparing the whole collapsed body against the joined tokens looked
+        // safer and was useless: the lexer normalises quoting and punctuation,
+        // so on any real document the two differed somewhere and the
+        // structured text was thrown away every time. Measured: the same
+        // build specification atomizes to 282 with its line breaks and 1
+        // without.
+        val output = ByteArrayOutputStream()
+        var seen = ""
+        val handler = FactoryCommandHandler(
+            uiEngine = engine(output, ByteArrayOutputStream()),
+            runFactory = { seen = it; "generated_project: ok" }
+        )
+        val document = "implement\nStack:\n  app/\n    main.py\n\n\"quoted\" and (punctuated)"
+
+        // Tokens as a lexer would hand them over: quoting resolved, so they no
+        // longer match the raw body character for character.
+        handler.execute(
+            listOf("/factory", "run", "implement", "Stack:", "app/", "main.py", "quoted", "and", "punctuated"),
+            "/factory run $document"
+        )
+
+        assertEquals(document, seen)
     }
 
     @Test

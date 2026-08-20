@@ -9,6 +9,8 @@ import atropos.core.AtroposRepoRootLocator
 import atropos.core.security.RedactionFilter
 import java.nio.file.Path
 
+private val WHITESPACE = Regex("\\s+")
+
 class FactoryCommandHandler(
     private val uiEngine: AnsiTerminalEngine,
     private val renderer: AppFactoryPlanRenderer = AppFactoryPlanRenderer(),
@@ -40,17 +42,24 @@ class FactoryCommandHandler(
 
     /**
      * The prompt with its structure intact, or the joined words when the
-     * original cannot be trusted to be the same text.
+     * original cannot be trusted to be the same command line.
      *
-     * The two are compared with whitespace collapsed: if an alias rewrite or a
-     * different entry point means `tokens` no longer came from `original`, the
-     * words win, because they are what the rest of the router acted on.
+     * The check is on the head, not on the body. Comparing the whole
+     * whitespace-collapsed body against the joined tokens looked safer and was
+     * useless: the lexer normalises punctuation and quoting, so on any real
+     * document the two differed somewhere and the structured text was thrown
+     * away every time. What has to be true is that `original` is the line these
+     * tokens were lexed from, and the first two words establish that.
      */
     private fun promptFrom(tokens: List<String>, original: String): String {
         val joined = tokens.drop(2).joinToString(" ")
-        if (original.isBlank()) return joined
-        val remainder = afterWords(original, 2)
-        return if (collapse(remainder) == collapse(joined)) remainder else joined
+        if (original.isBlank() || tokens.size < 2) return joined
+        val head = original.trimStart().split(WHITESPACE, limit = 3)
+        if (head.size < 2) return joined
+        val sameCommand = head[0].trimStart('/').equals(tokens[0].trimStart('/'), ignoreCase = true) &&
+            head[1].equals(tokens[1], ignoreCase = true)
+        if (!sameCommand) return joined
+        return afterWords(original, 2).ifBlank { joined }
     }
 
     private fun afterWords(original: String, words: Int): String {
@@ -62,8 +71,6 @@ class FactoryCommandHandler(
         }
         return text.substring(index)
     }
-
-    private fun collapse(text: String): String = text.split(Regex("\\s+")).filter { it.isNotEmpty() }.joinToString(" ")
 
     private fun renderPlan(prompt: String) {
         if (prompt.isBlank()) uiEngine.renderError("/factory plan requires a prompt")

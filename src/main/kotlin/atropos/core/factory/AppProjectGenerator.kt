@@ -150,9 +150,9 @@ class AppProjectGenerator(
             // the proof is the one that already ran: verify.sh compiled the
             // source, executed its tests and printed APP_FACTORY_VERIFY_OK.
             // Recorded as what it is, rather than reported as an AST graph.
-            val projectLanguage = ProjectLanguage.layoutFor(ProjectLanguage.detect(spec.prompt))
-            val projectLayout =
-                LanguageScaffold.forLanguage(projectLanguage, safeName(spec.intent.name))
+            val resolvedLayout = ProjectLayout.resolve(spec)
+            val projectLanguage = resolvedLayout.language
+            val projectLayout = resolvedLayout.scaffold
             val astVerification =
                 if (projectLanguage == ProjectLanguage.KOTLIN) {
                     val astSymbols = AstSymbolGraph(repoRoot = target).build()

@@ -93,8 +93,19 @@ enum class ProjectLanguage(
          */
         fun detect(text: String): Detection {
             val haystack = " " + text.lowercase().replace(Regex("[\\n\\r\\t]"), " ") + " "
-            fun score(signals: List<String>) =
-                signals.sumOf { Regex(Regex.escape(it)).findAll(haystack).count() }
+            // Whole words, not substrings.
+            //
+            // A three-letter signal matched inside longer words: `lua` inside
+            // "evaluation" made a research paper on musical tension detect as
+            // a Lua project and refused to build. Bounded on both sides by
+            // something that is not a word character, so `go.mod` and
+            // `node --test` still match while `evaluation` and `django` do not.
+            fun score(signals: List<String>) = signals.sumOf { signal ->
+                val body = Regex.escape(signal)
+                val before = if (signal.first().isLetterOrDigit()) "(?<![\\w-])" else ""
+                val after = if (signal.last().isLetterOrDigit()) "(?![\\w-])" else ""
+                Regex("$before$body$after").findAll(haystack).count()
+            }
 
             val scaffolded = entries.map { it to score(it.signals) }.maxByOrNull { it.second }
             val unsupported = RECOGNISED_WITHOUT_LAYOUT
