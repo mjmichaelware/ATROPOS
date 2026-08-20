@@ -1,6 +1,7 @@
 import re
 from typing import List, Dict, Any
 from .source_coordinates import SourceCoordinates
+from .block_structures import detect_blocks
 from .document_ir import DocumentNode, generate_stable_id
 
 # Common Markdown regexes
@@ -11,6 +12,15 @@ BULLET_LIST_ITEM_RE = re.compile(r"^\s*([-*+])\s+(.+)$")
 NUMBERED_LIST_ITEM_RE = re.compile(r"^\s*(\d+)[.)]\s+(.+)$")
 SEPARATOR_RE = re.compile(r"^\s*(?:-{3,}|_{3,}|\*{3,}|__PART [A-Z]__|_+PART [A-Z]_+|END OF SPECIFICATION)\s*$", re.IGNORECASE)
 LABEL_RE = re.compile(r"^\s*(?:[a-zA-Z0-9_\-\s#]+):\s*$")
+
+# `Symbolic core: music21, pretty_midi, mido` -- a key naming what follows.
+# LABEL_RE only matches a line that ends at the colon, so a line that states
+# its value on the same line fell into the paragraph accumulator and was glued
+# to its neighbours. A whole stack section was lost that way, as one rejection.
+KEY_VALUE_RE = re.compile(
+    r"^\s*(?P<key>[A-Za-z][A-Za-z0-9 _/&+.,'()\-]{2,60}):\s+(?P<value>\S.*)$"
+)
+KEY_VALUE_MAX_KEY_WORDS = 6
 BLANK_RE = re.compile(r"^\s*$")
 
 # ---------------------------------------------------------------------------
@@ -31,29 +41,58 @@ WRAP_DAMAGE_RATIO = 0.30
 _STRUCTURAL_LINE_START = re.compile(r"^\s*(?:[-*+]\s|\d+[.)]\s|#{1,6}\s|\||>)")
 
 
+def _block_protected_lines(lines: List[str]) -> set:
+    """Line indices belonging to a structure, which wrap repair must not touch.
+
+    A directory listing has exactly the shape this repair was written to fix --
+    one token per line -- and is not damage. Repairing a build specification
+    glued two hundred file paths into paragraphs before the parser ever saw
+    them, which is how the most literal statement of work in the document
+    became two rejected blobs.
+    """
+    return {
+        line_index
+        for block in detect_blocks(lines).values()
+        for line_index in range(block.start, block.end)
+    }
+
+
 def wrap_damage_ratio(text: str) -> float:
-    """Share of non-blank lines holding exactly one whitespace-delimited token."""
-    lines = [line for line in text.split("\n") if line.strip()]
-    if not lines:
+    """Share of non-blank lines holding exactly one whitespace-delimited token.
+
+    Lines inside a detected structure are excluded from both sides of the
+    ratio: they are neither evidence of damage nor candidates for repair.
+    """
+    lines = text.split("\n")
+    protected = _block_protected_lines(lines)
+    counted = [
+        line for index, line in enumerate(lines)
+        if line.strip() and index not in protected
+    ]
+    if not counted:
         return 0.0
-    return sum(1 for line in lines if len(line.split()) == 1) / len(lines)
+    return sum(1 for line in counted if len(line.split()) == 1) / len(counted)
 
 
 def repair_wrapped_text(text: str) -> str:
     """Rejoin lines broken mid-sentence by a PDF or copy-paste extraction.
 
     A single-token line that opens no markdown construct is a continuation of
-    the line above it. Structural openers are left alone so a genuine one-word
-    bullet survives.
+    the line above it. Structural openers and lines inside a detected structure
+    are left alone, so a genuine one-word bullet and a directory listing both
+    survive.
     """
+    lines = text.split("\n")
+    protected = _block_protected_lines(lines)
     out: List[str] = []
-    for line in text.split("\n"):
+    for index, line in enumerate(lines):
         stripped = line.strip()
         is_continuation = (
             bool(out)
             and out[-1].strip()
             and stripped
             and len(stripped.split()) == 1
+            and index not in protected
             and not _STRUCTURAL_LINE_START.match(line)
         )
         if is_continuation:
@@ -107,9 +146,36 @@ def parse_markdown_to_ir(project_id: str, source_sha256: str, text: str) -> Docu
                 nodes.append(DocumentNode(node_id, "PARAGRAPH", para_text, coords))
             current_paragraph_lines = []
 
+    # Structures that need more than one line to recognise: a directory tree, a
+    # fixed-width table, a pipe table. Found first, so the line loop can emit
+    # their rows instead of accumulating them into a paragraph.
+    blocks = detect_blocks([raw_line.rstrip("\n\r") for raw_line in lines])
+    consumed_by_block = {
+        line_index
+        for block in blocks.values()
+        for line_index in range(block.start, block.end)
+    }
+
     for i, line in enumerate(lines):
         line_bytes_start, line_bytes_end = get_line_byte_offsets(i)
         stripped = line.strip()
+
+        if i in blocks:
+            flush_paragraph()
+            block = blocks[i]
+            for row in block.rows:
+                row_start, row_end = get_line_byte_offsets(row.line_index)
+                coords = SourceCoordinates(
+                    byte_start=row_start,
+                    byte_end=row_end,
+                    line_start=row.line_index + 1,
+                    line_end=row.line_index + 1
+                )
+                node_id = generate_stable_id(project_id, source_sha256, row.role, coords)
+                nodes.append(DocumentNode(node_id, row.role, row.text, coords, metadata=dict(row.metadata)))
+            continue
+        if i in consumed_by_block:
+            continue
 
         # Check code block fences
         if stripped.startswith("```") or stripped.startswith("~~~"):
@@ -215,6 +281,22 @@ def parse_markdown_to_ir(project_id: str, source_sha256: str, text: str) -> Docu
             )
             node_id = generate_stable_id(project_id, source_sha256, "LIST_ITEM", coords)
             nodes.append(DocumentNode(node_id, "LIST_ITEM", item_text, coords, metadata={"ordinal": int(numbered_match.group(1))}))
+            continue
+
+        key_value_match = KEY_VALUE_RE.match(line.rstrip())
+        if key_value_match and len(key_value_match.group("key").split()) <= KEY_VALUE_MAX_KEY_WORDS:
+            flush_paragraph()
+            coords = SourceCoordinates(
+                byte_start=line_bytes_start,
+                byte_end=line_bytes_end,
+                line_start=i + 1,
+                line_end=i + 1
+            )
+            node_id = generate_stable_id(project_id, source_sha256, "KEY_VALUE", coords)
+            nodes.append(DocumentNode(
+                node_id, "KEY_VALUE", stripped, coords,
+                metadata={"key": key_value_match.group("key").strip(), "value": key_value_match.group("value").strip()}
+            ))
             continue
 
         # Append to current paragraph block

@@ -1,7 +1,68 @@
+import re
 from typing import List, Dict, Any, Optional
 from .requirement_candidates import RequirementCandidacy
 from .verb_lexicon import verb_count
 from .source_coordinates import SourceCoordinates
+
+# The lead-in that names what an inventory is a list of: everything up to the
+# first colon, when the colon is not inside a URL or a time.
+_INVENTORY_LEAD_RE = re.compile(r"^(?P<lead>[^:]{3,120}):\s+(?P<body>\S.*)$")
+
+# A trailing conjunction on the last item of a list.
+_TRAILING_CONJUNCTION_RE = re.compile(r"^(?:and|or)\s+", re.IGNORECASE)
+
+# A part that is really two sentences: a full stop followed by a new one.
+_SENTENCE_BREAK_RE = re.compile(r"[.!?]\s+[A-Z]")
+
+MIN_INVENTORY_ITEMS = 3
+MAX_INVENTORY_ITEM_WORDS = 16
+MIN_SEMICOLONS = 2
+MIN_COMMAS = 3
+
+
+def split_inventory(text: str) -> List[str]:
+    """One atom per item, when a statement is a list of things rather than a sentence.
+
+    Documents state most of their feature surface this way::
+
+        From Suno/Udio's inability to edit: note-level piano roll editor;
+        chord symbol click-to-change; drag to extend note duration; ...
+
+    That is seven features, and every split above it needs a modal verb in each
+    clause, so it stayed one statement and was rejected as one. The source
+    document's own rule is the right one -- if an atom still contains "and",
+    split again -- and it depends on punctuation and item shape, not on
+    modality.
+
+    Guarded so ordinary prose is left alone: a run of commas inside a sentence
+    is not an inventory, so the items have to be short, none of them may
+    contain a sentence break, and there have to be enough of them to be a list.
+    """
+    match = _INVENTORY_LEAD_RE.match(text.strip())
+    lead = match.group("lead").strip() if match else ""
+    body = match.group("body").strip() if match else text.strip()
+
+    if body.count(";") >= MIN_SEMICOLONS:
+        separator = ";"
+    elif body.count(",") >= MIN_COMMAS:
+        separator = ","
+    else:
+        return []
+
+    parts = [part.strip().strip(".") for part in body.split(separator)]
+    parts = [_TRAILING_CONJUNCTION_RE.sub("", part).strip() for part in parts]
+    parts = [part for part in parts if part]
+    if len(parts) < MIN_INVENTORY_ITEMS:
+        return []
+    if any(len(part.split()) > MAX_INVENTORY_ITEM_WORDS for part in parts):
+        return []
+    if any(_SENTENCE_BREAK_RE.search(part) for part in parts):
+        return []
+
+    # The lead-in travels with every item, because `MIDI export` on its own
+    # loses which surface it belongs to.
+    return [f"{lead}: {part}" if lead else part for part in parts]
+
 
 class AtomicRequirement:
     def __init__(
@@ -76,6 +137,10 @@ def decompose_requirement(
     # which is most of a bullet list, and most of a declared obligation.
     if not clauses:
         clauses = split_on_action_verbs(text)
+
+    # A list of things, rather than a sentence with two verbs in it.
+    if not clauses:
+        clauses = split_inventory(text)
 
     if not clauses:
         # Single atomic requirement

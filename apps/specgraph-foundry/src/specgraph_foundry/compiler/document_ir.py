@@ -9,6 +9,10 @@ STRUCTURAL_ROLES = {
     "TABLE_HEADER", "TABLE_ROW", "TABLE_CELL", "CODE_BLOCK", "INLINE_CODE",
     "QUOTE", "NOTE", "WARNING", "EXAMPLE_BLOCK", "CAPTION", "FIGURE",
     "FORMULA", "FOOTNOTE", "REFERENCE", "SEPARATOR", "LABEL", "METADATA",
+    # A path from a directory listing, and a `Key: value` line. Both state
+    # work as structure rather than as a sentence, and both used to be
+    # swallowed by the paragraph accumulator.
+    "FILE_PATH", "KEY_VALUE",
     "PAGE_HEADER", "PAGE_FOOTER", "UNKNOWN"
 }
 

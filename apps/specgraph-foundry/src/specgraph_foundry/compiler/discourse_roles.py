@@ -17,8 +17,36 @@ DISCOURSE_ROLES = {
 RATIONALE_RE = re.compile(r"^\s*(?:rationale|reason|why|background|explanation|context)[:\-]?\s", re.IGNORECASE)
 EXAMPLE_RE = re.compile(r"^\s*(?:example|e\.g\.|illustration)[:\-]?\s", re.IGNORECASE)
 NOTE_RE = re.compile(r"^\s*(?:note|nb|attention|remark)[:\-]?\s", re.IGNORECASE)
+
+# `Key: value` lines whose key names a property of the document rather than
+# work to do. Admitting a delimited item is right; admitting `Status: DRAFT`
+# as an obligation is not, and the difference is which key it is.
+DOCUMENT_FIELD_RE = re.compile(
+    r"^\s*(?:status|version|revision|author|authors|owner|date|last\s+updated|"
+    r"document|doc|id|identifier|classification|confidentiality|copyright|"
+    r"license|applies\s+to|supersedes|prepared\s+by|reviewed\s+by|approved\s+by)"
+    r"\s*:",
+    re.IGNORECASE,
+)
+
+# `Key: value` lines whose key marks commentary about the system rather than a
+# statement of what it must do.
+COMMENTARY_FIELD_RE = re.compile(
+    r"^\s*(?:observation|observations|finding|findings|caveat|caveats|"
+    r"assumption|assumptions|conclusion|summary|abstract|disclaimer|"
+    r"glossary|terminology|scope\s+note)\s*:",
+    re.IGNORECASE,
+)
 WARNING_RE = re.compile(r"^\s*(?:warning|caution|danger|alert)[:\-]?\s", re.IGNORECASE)
-DEFECT_FINDING_RE = re.compile(r"^\s*(?:defect|bug|issue|failure|broken|defect_finding)[:\-]?\s", re.IGNORECASE)
+# `Todo:` and `Fixme:` join the defect family rather than becoming
+# requirements. Once a `Key: value` line is a delimited item in its own
+# right, an outstanding-work marker would otherwise be admitted as an
+# obligation the document never made; the compiler already has a channel
+# for acknowledged gaps, and this is one.
+DEFECT_FINDING_RE = re.compile(
+    r"^\s*(?:defect|bug|issue|failure|broken|defect_finding|todo|to-do|fixme|action\s+item)[:\-]?\s",
+    re.IGNORECASE,
+)
 PROHIBITION_RE = re.compile(r"\b(?:must\s+not|shall\s+not|should\s+not|never|prohibited|forbidden|cannot)\b", re.IGNORECASE)
 NORMATIVE_RE = re.compile(r"\b(?:shall|must|should|required\s+to|shall\s+be|must\s+be|needs\s+to|mandatory|shall be|must be)\b", re.IGNORECASE)
 PERMISSION_RE = re.compile(r"\b(?:may|can|optionally|permitted|allowed)\b", re.IGNORECASE)
@@ -76,7 +104,13 @@ DEPENDS_ON_RE = re.compile(r"^\s*dependsOn\s*:", re.IGNORECASE)
 # TABLE_CELL and TABLE_ROW are included although no parser emits them yet: the
 # vocabulary and the downstream handling already exist, so the table work
 # becomes a parser change only.
-STRUCTURAL_ITEM_ROLES = frozenset({"LIST_ITEM", "TABLE_CELL", "TABLE_ROW"})
+# A path in a directory listing and a `Key: value` line are delimited items in
+# exactly the sense the fallthrough below means: someone wrote them as
+# separate things. `app/routes/generate.py` is the most literal statement of
+# work a document can make, and it contains no verb at all.
+STRUCTURAL_ITEM_ROLES = frozenset({
+    "LIST_ITEM", "TABLE_CELL", "TABLE_ROW", "FILE_PATH", "KEY_VALUE",
+})
 
 
 def is_structural_item(parent_role):
@@ -156,7 +190,13 @@ def classify_discourse_role(
         return "TABLE_HEADER"
 
     # 2. Incompleteness Check
-    if parent_role != "LIST_ITEM" and (stmt.completeness_state == "INCOMPLETE_FRAGMENT" or len(text.split()) < 3):
+    # A three-word minimum is a reasonable guard against fragments of prose
+    # and completely wrong for a delimited item: `app/routes/generate.py` is
+    # one token and is a complete statement of a file that must exist. Every
+    # path in a directory listing failed here.
+    if not is_structural_item(parent_role) and (
+        stmt.completeness_state == "INCOMPLETE_FRAGMENT" or len(text.split()) < 3
+    ):
         return "INCOMPLETE_FRAGMENT"
 
     # 3. Specific markers inside statement text
@@ -216,6 +256,14 @@ def classify_discourse_role(
     # Admitting the statement is not the same as claiming an obligation
     # strength the document never stated: the modality ladder downstream
     # records UNSPECIFIED, which is the honest answer.
+    # A key naming a property of the document, or commentary about the system,
+    # is not work however it is delimited. Checked here rather than earlier so
+    # nothing that already classified as an obligation is downgraded.
+    if DOCUMENT_FIELD_RE.match(text):
+        return "DOCUMENT_METADATA"
+    if COMMENTARY_FIELD_RE.match(text):
+        return "OBSERVATION"
+
     if is_structural_item(parent_role) or declared_atom_id(text):
         return "NORMATIVE_REQUIREMENT"
 

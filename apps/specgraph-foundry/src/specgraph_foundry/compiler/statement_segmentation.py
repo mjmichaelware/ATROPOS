@@ -225,7 +225,8 @@ def segment_document_node(
         # no record anywhere. They are exactly the declared-item lines this
         # compiler is meant to catch. A loss that leaves no trace is worse than
         # a rejection, because nothing can tell you it happened.
-        if node.role in {"PARAGRAPH", "LIST_ITEM", "TABLE_CELL", "TABLE_ROW", "UNKNOWN", "HEADING", "LABEL"}:
+        if node.role in {"PARAGRAPH", "LIST_ITEM", "TABLE_CELL", "TABLE_ROW", "TABLE_HEADER",
+                         "FILE_PATH", "KEY_VALUE", "UNKNOWN", "HEADING", "LABEL"}:
             node_text = node.content
             sents = split_on_atom_declarations(split_sentences_custom(node_text), node_text)
 
