@@ -17,25 +17,60 @@ class FactoryCommandHandler(
     private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
     private val resumeFactory: (String, List<Boolean>) -> String = renderer::renderClarifiedRun
 ) {
-    fun execute(tokens: List<String>): RouterOutcome {
+    /**
+     * @param original the command line as typed, before it was split into
+     *   words. A `/factory run` prompt is usually a document -- an attached
+     *   specification expanded in place by `@mention` -- and rebuilding it from
+     *   `tokens` joined with single spaces destroyed every line break in it.
+     *   SpecGraph segments on structure, so the whole document arrived as one
+     *   paragraph and atomized to nothing: measured at 14 atoms with the line
+     *   breaks and 0 without, reported as `SKIPPED_SOFT_FAIL:no_atoms_extracted`
+     *   and silently fell back to the internal DAG.
+     */
+    fun execute(tokens: List<String>, original: String = ""): RouterOutcome {
         when (tokens.getOrNull(1)?.lowercase()) {
             null, "status" -> uiEngine.renderNotice(renderer.renderStatus())
-            "plan" -> renderPlan(tokens.drop(2))
-            "run" -> renderRun(tokens.drop(2))
+            "plan" -> renderPlan(promptFrom(tokens, original))
+            "run" -> renderRun(promptFrom(tokens, original))
             "answer" -> renderClarificationAnswer(tokens.drop(2))
             else -> uiEngine.renderError("usage: /factory [status|plan|run|answer] <prompt>")
         }
         return RouterOutcome.CONTINUE
     }
 
-    private fun renderPlan(parts: List<String>) {
-        val prompt = parts.joinToString(" ")
+    /**
+     * The prompt with its structure intact, or the joined words when the
+     * original cannot be trusted to be the same text.
+     *
+     * The two are compared with whitespace collapsed: if an alias rewrite or a
+     * different entry point means `tokens` no longer came from `original`, the
+     * words win, because they are what the rest of the router acted on.
+     */
+    private fun promptFrom(tokens: List<String>, original: String): String {
+        val joined = tokens.drop(2).joinToString(" ")
+        if (original.isBlank()) return joined
+        val remainder = afterWords(original, 2)
+        return if (collapse(remainder) == collapse(joined)) remainder else joined
+    }
+
+    private fun afterWords(original: String, words: Int): String {
+        val text = original.trimStart()
+        var index = 0
+        repeat(words) {
+            while (index < text.length && !text[index].isWhitespace()) index++
+            while (index < text.length && text[index].isWhitespace()) index++
+        }
+        return text.substring(index)
+    }
+
+    private fun collapse(text: String): String = text.split(Regex("\\s+")).filter { it.isNotEmpty() }.joinToString(" ")
+
+    private fun renderPlan(prompt: String) {
         if (prompt.isBlank()) uiEngine.renderError("/factory plan requires a prompt")
         else uiEngine.renderNotice(renderer.renderPlan(prompt))
     }
 
-    private fun renderRun(parts: List<String>) {
-        val prompt = parts.joinToString(" ")
+    private fun renderRun(prompt: String) {
         if (prompt.isBlank()) {
             uiEngine.renderError("/factory run requires a prompt")
         } else {

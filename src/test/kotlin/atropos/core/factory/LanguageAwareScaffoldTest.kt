@@ -3,6 +3,7 @@ package atropos.core.factory
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -160,6 +161,115 @@ class LanguageAwareScaffoldTest {
     @Test
     fun nothing_stated_is_a_different_answer_from_a_language_named() {
         assertEquals(ProjectLanguage.Detection.Unstated, ProjectLanguage.detect("track my expenses"))
+    }
+
+    private fun lineage(prompt: String) = FactoryLineage(
+        promptFingerprint = "fp",
+        promptSha256 = "a".repeat(64),
+        researchSha256 = "b".repeat(64),
+        researchDocument = "",
+        promptDocument = prompt,
+        projectId = "p",
+        confidence = FactoryConfidence(score = 90, breakdown = "", questions = emptyList()),
+        promptSpans = "1"
+    )
+
+    private fun generated(prompt: String, features: List<String> = listOf("report")): Map<String, String> =
+        RepoScaffold().files(
+            AppProjectSpec(prompt = prompt, intent = AppIntent("trackr", "cli", features)),
+            lineage(prompt)
+        )
+
+    @Test
+    fun the_behavior_guard_accepts_the_language_the_scaffold_produced() {
+        // The guard read `src/main/**.kt` and `fun main(` and nothing else, so
+        // the first correctly laid out Python project failed the whole factory
+        // run with "generated application source is missing" -- a true sentence
+        // about a language nobody asked for.
+        val prompt = "a Python 3.11 tool built with pytest and pyproject.toml"
+        val spec = AppProjectSpec(prompt = prompt, intent = AppIntent("trackr", "cli", listOf("report")))
+
+        AppGeneratedBehaviorGuard().requireRealBehavior(spec, RepoScaffold().files(spec, lineage(prompt)))
+    }
+
+    @Test
+    fun a_language_it_cannot_lay_out_is_refused_by_name_rather_than_half_built() {
+        val prompt = "An Elixir Phoenix framework app built with mix.exs"
+        val spec = AppProjectSpec(prompt = prompt, intent = AppIntent("trackr", "cli", listOf("report")))
+
+        val failure = assertFailsWith<IllegalArgumentException> {
+            AppGeneratedBehaviorGuard().requireRealBehavior(spec, RepoScaffold().files(spec, lineage(prompt)))
+        }
+        assertTrue("no scaffold for Elixir" in failure.message.orEmpty(), failure.message.orEmpty())
+    }
+
+    @Test
+    fun the_generated_program_is_a_working_command_line_tool_not_a_describe_stub() {
+        // Every non-Kotlin language got `def describe(): return "Trackr"`:
+        // precisely the scaffold-shaped output AppGeneratedBehaviorGuard was
+        // written to reject, waved through because it could not read Python.
+        val source = generated("a Python 3.11 tool built with pytest and pyproject.toml")
+            .getValue("trackr/__init__.py")
+
+        assertTrue("def run_app(" in source, source)
+        assertTrue("unknown command" in source, source)
+        assertTrue("sys.exit(" in source, source)
+        assertFalse("def describe(" in source, source)
+    }
+
+    @Test
+    fun a_declared_feature_becomes_a_command_in_every_language() {
+        mapOf(
+            "a Python 3.11 tool with pytest" to "trackr/__init__.py",
+            "a TypeScript project with npm and tsconfig.json" to "src/index.ts",
+            "a Go module with go.mod" to "main.go",
+            "a Rust crate with cargo and Cargo.toml" to "src/main.rs",
+            "a Ruby gem with Gemfile and rubygems" to "lib/trackr.rb",
+            "a PHP app with composer.json and Laravel" to "src/trackr.php"
+        ).forEach { (prompt, path) ->
+            val source = generated(prompt, features = listOf("export")).getValue(path)
+            assertTrue("export" in source, "$prompt did not carry the declared feature into $path")
+        }
+    }
+
+    @Test
+    fun php_lineage_goes_inside_the_opening_tag_rather_than_above_it() {
+        // A comment above `<?php` is not a comment, it is output: the header
+        // would have printed itself on every run of the generated program.
+        val source = generated("a PHP application with composer.json and Laravel")
+            .getValue("src/trackr.php")
+
+        assertTrue(source.startsWith("<?php"), source.take(120))
+        assertTrue("// ATROPOS lineage:" in source, source.take(300))
+        assertFalse(source.lineSequence().first().startsWith("//"), source.take(120))
+    }
+
+    @Test
+    fun the_guard_accepts_every_language_the_scaffold_can_produce() {
+        // Checking only Python would leave the same marker mismatch hiding in
+        // the other nine: the guard reads a definition in the source and a
+        // call in the tests, and those are spelled differently in each one.
+        mapOf(
+            "a Python 3.11 tool with pytest and pyproject.toml" to ProjectLanguage.PYTHON,
+            "a TypeScript project with npm and tsconfig.json" to ProjectLanguage.TYPESCRIPT,
+            "a Go module with go.mod and goroutines" to ProjectLanguage.GO,
+            "a Rust crate with cargo and Cargo.toml" to ProjectLanguage.RUST,
+            "a Java service with Maven and pom.xml" to ProjectLanguage.JAVA,
+            "a Ruby gem with Gemfile and rubygems" to ProjectLanguage.RUBY,
+            "a C# ASP.NET Core API with Entity Framework and .csproj" to ProjectLanguage.CSHARP,
+            "a PHP application with composer.json and Laravel" to ProjectLanguage.PHP,
+            "a Swift iOS app with SwiftUI and Xcode" to ProjectLanguage.SWIFT,
+            "a C++ project with CMake and CMakeLists.txt" to ProjectLanguage.CPP,
+            "a plain Kotlin gradle service" to ProjectLanguage.KOTLIN
+        ).forEach { (prompt, language) ->
+            assertEquals(
+                ProjectLanguage.Detection.Scaffolded(language),
+                ProjectLanguage.detect(prompt),
+                "'$prompt' did not resolve to $language"
+            )
+            val spec = AppProjectSpec(prompt = prompt, intent = AppIntent("trackr", "cli", listOf("report")))
+            AppGeneratedBehaviorGuard().requireRealBehavior(spec, RepoScaffold().files(spec, lineage(prompt)))
+        }
     }
 
     @Test

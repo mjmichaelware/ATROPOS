@@ -142,11 +142,28 @@ class AppProjectGenerator(
             // project's file surface against exactly what was declared — so the
             // engine's own scratch output made every generated project fail as
             // "undeclared or redirected files".
-            val astSymbols = AstSymbolGraph(repoRoot = target).build()
-            check(astSymbols.any { it.kind != AstSymbolKind.FILE }) {
-                "generated AST symbol graph found no source declarations"
-            }
-            val astVerification = "ast symbol graph: passed=true symbols=${astSymbols.size}"
+            //
+            // AstSymbolGraph parses Kotlin: it walks src/main/kotlin and reads
+            // `.kt`. Pointed at a correctly laid out Python project it finds
+            // nothing and this check failed the run -- a Kotlin-shaped proof
+            // demanded of a language that cannot supply it. For those projects
+            // the proof is the one that already ran: verify.sh compiled the
+            // source, executed its tests and printed APP_FACTORY_VERIFY_OK.
+            // Recorded as what it is, rather than reported as an AST graph.
+            val projectLanguage = ProjectLanguage.layoutFor(ProjectLanguage.detect(spec.prompt))
+            val projectLayout =
+                LanguageScaffold.forLanguage(projectLanguage, safeName(spec.intent.name))
+            val astVerification =
+                if (projectLanguage == ProjectLanguage.KOTLIN) {
+                    val astSymbols = AstSymbolGraph(repoRoot = target).build()
+                    check(astSymbols.any { it.kind != AstSymbolKind.FILE }) {
+                        "generated AST symbol graph found no source declarations"
+                    }
+                    "ast symbol graph: passed=true symbols=${astSymbols.size}"
+                } else {
+                    "ast symbol graph: not applicable (Kotlin parser); " +
+                        "source proven by the project's own verify.sh"
+                }
             val completeVerificationOutput = buildString {
                 appendLine(verificationOutput)
                 appendLine(deterministicReport.render())
@@ -216,7 +233,9 @@ class AppProjectGenerator(
                     factoryTerritory = relativeTarget,
                     directorDecision = directorAdvisory.message,
                     auditorDecision = auditDecision.message,
-                    auditorReportSha256 = auditDecision.reportEvidenceSha256
+                    auditorReportSha256 = auditDecision.reportEvidenceSha256,
+                    sourcePath = projectLayout.sourcePath,
+                    testPath = projectLayout.testPath
                 )
             )
             check(gate.canComplete) { gate.message }

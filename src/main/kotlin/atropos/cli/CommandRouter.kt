@@ -455,7 +455,7 @@ class CommandRouter(
 
             "/assets" -> assetCommand.execute(tokens)
 
-            "/factory" -> factoryCommand.execute(tokens)
+            "/factory" -> factoryCommand.execute(routedTokens, original)
 
             "/verbose", "/debug" -> {
                 uiEngine.toggleVerboseExecution()

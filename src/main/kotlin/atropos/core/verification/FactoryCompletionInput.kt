@@ -21,5 +21,14 @@ data class FactoryCompletionInput(
     val factoryTerritory: String = "",
     val directorDecision: String = "",
     val auditorDecision: String = "",
-    val auditorReportSha256: String = ""
+    val auditorReportSha256: String = "",
+    /**
+     * Where this project's source and tests actually live.
+     *
+     * The gate used to look for a `.kt` file under `src/main`, which is a
+     * question only a Kotlin project can answer yes to. Blank keeps the
+     * old Kotlin-shaped default for callers that predate the layouts.
+     */
+    val sourcePath: String = "",
+    val testPath: String = ""
 )

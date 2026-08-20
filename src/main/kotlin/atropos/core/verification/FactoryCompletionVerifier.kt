@@ -20,8 +20,15 @@ internal class FactoryCompletionVerifier(
 ) {
     fun evaluateFactory(input: FactoryCompletionInput): CompletionGateReport {
         val required = setOf("README.md", "LICENSE", ".gitignore", "AGENTS.md")
-        val sourceFiles = input.files.filter { it.startsWith("src/main/") && it.endsWith(".kt") }
-        val testFiles = input.files.filter { it.startsWith("src/test/") && it.endsWith(".kt") }
+        // The project says where its source is; the gate no longer assumes a
+        // JVM tree. A Python project has no `src/main/**.kt` and never will,
+        // and demanding one failed correctly generated repositories.
+        val sourceFiles =
+            if (input.sourcePath.isNotBlank()) input.files.filter { it == input.sourcePath }
+            else input.files.filter { it.startsWith("src/main/") && it.endsWith(".kt") }
+        val testFiles =
+            if (input.testPath.isNotBlank()) input.files.filter { it == input.testPath }
+            else input.files.filter { it.startsWith("src/test/") && it.endsWith(".kt") }
         val greenfieldProof = GreenfieldFactoryProof.verifyGeneratedProject(
             projectRoot = Path.of(input.projectRoot),
             requiredFiles = required + sourceFiles + testFiles
@@ -42,8 +49,8 @@ internal class FactoryCompletionVerifier(
             GateResult(input.nodeId, surfaceAudit.territoryValid, "Factory territory", surfaceAudit.detail, clock()),
             GateResult(input.nodeId, surfaceAudit.lineageValid, "Factory lineage binding", surfaceAudit.detail, clock()),
             GateResult(input.nodeId, surfaceAudit.integrityValid, "Factory source integrity", surfaceAudit.detail, clock()),
-            GateResult(input.nodeId, sourceFiles.isNotEmpty(), "Factory source", "Kotlin source files present", clock()),
-            GateResult(input.nodeId, testFiles.isNotEmpty(), "Factory tests", "Kotlin test files present", clock()),
+            GateResult(input.nodeId, sourceFiles.isNotEmpty(), "Factory source", "source files present", clock()),
+            GateResult(input.nodeId, testFiles.isNotEmpty(), "Factory tests", "test files present", clock()),
             GateResult(input.nodeId, required.all(input.files::contains), "Factory repository kit", "standard files present", clock()),
             GateResult(input.nodeId, greenfieldProof.verdict == "VERIFIED", "Factory greenfield proof", "evidenceHash=${greenfieldProof.evidenceHash}", clock()),
             GateResult(input.nodeId, input.files.contains("verify.sh"), "Factory verifier", "bounded verifier present", clock()),
@@ -243,11 +250,51 @@ internal class FactoryCompletionVerifier(
         }
     }.getOrDefault(false)
 
-    private fun isDerivedVerifierPath(relative: String): Boolean =
-        relative == ".git" || relative.startsWith(".git/") ||
-            relative == "build" || relative.startsWith("build/") ||
-            relative == ".atropos/evidence/app-manifest.txt" ||
-            relative == ".atropos/evidence/build" || relative.startsWith(".atropos/evidence/build/")
+    /**
+     * Output the project's own verification produced, rather than files it
+     * declared.
+     *
+     * `verify.sh` runs before this audit and compiles the generated source, so
+     * whatever the toolchain writes is sitting in the tree by the time the
+     * surface is counted. `build/` covered Gradle and nothing else, which was
+     * invisible while every generated project was Kotlin -- and Kotlin needs
+     * `kotlinc`, so on a machine without it verification wrote nothing at all.
+     * The first Python project to actually compile failed here on the
+     * `__pycache__` that running its tests had just created.
+     *
+     * The list is stated here rather than read from the audited project's
+     * `.gitignore`: an audit that takes its exclusions from the artifact under
+     * audit can be widened by the artifact.
+     */
+    private fun isDerivedVerifierPath(relative: String): Boolean {
+        if (relative == ".git" || relative.startsWith(".git/")) return true
+        if (relative == ".atropos/evidence/app-manifest.txt") return true
+        if (relative == ".atropos/evidence/build" || relative.startsWith(".atropos/evidence/build/")) return true
+        val segments = relative.split('/')
+        if (segments.any { it in DERIVED_DIRECTORIES }) return true
+        return DERIVED_SUFFIXES.any { relative.endsWith(it) }
+    }
+
+    private companion object {
+        /** Build output, by the name each of the scaffolded ecosystems gives it. */
+        val DERIVED_DIRECTORIES = setOf(
+            "build",          // Gradle, Kotlin, Java, CMake
+            ".gradle",
+            "target",         // Cargo, Maven
+            "__pycache__",    // CPython, at every level of the package tree
+            ".pytest_cache",
+            ".venv",
+            "node_modules",   // npm
+            "dist",
+            "bin",            // .NET
+            "obj",
+            ".build",         // SwiftPM
+            "vendor",         // Composer, Bundler
+            ".bundle"
+        )
+
+        val DERIVED_SUFFIXES = setOf(".pyc", ".class", ".exe", ".o")
+    }
 
     private fun isNonSymlinkPath(path: Path, root: Path): Boolean {
         var cursor = root
