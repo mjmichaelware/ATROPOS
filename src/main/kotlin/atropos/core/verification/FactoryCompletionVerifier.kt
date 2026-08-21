@@ -1,6 +1,7 @@
 package atropos.core.verification
 
 import atropos.core.factory.FactoryLineage
+import atropos.core.factory.FactoryLanguageContract
 import atropos.core.auditor.AuditorService
 import atropos.core.director.DirectorService
 import atropos.core.director.DirectorStore
@@ -20,8 +21,12 @@ internal class FactoryCompletionVerifier(
 ) {
     fun evaluateFactory(input: FactoryCompletionInput): CompletionGateReport {
         val required = setOf("README.md", "LICENSE", ".gitignore", "AGENTS.md")
-        val sourceFiles = input.files.filter { it.startsWith("src/main/") && it.endsWith(".kt") }
-        val testFiles = input.files.filter { it.startsWith("src/test/") && it.endsWith(".kt") }
+        val declaredContent = input.files.associateWith { relative ->
+            runCatching { Files.readString(Path.of(input.projectRoot).resolve(relative).normalize()) }.getOrDefault("")
+        }
+        val language = FactoryLanguageContract.assess(input.projectLanguage?.name, declaredContent)
+        val sourceFiles = language.sourceFiles
+        val testFiles = language.testFiles
         val greenfieldProof = GreenfieldFactoryProof.verifyGeneratedProject(
             projectRoot = Path.of(input.projectRoot),
             requiredFiles = required + sourceFiles + testFiles
@@ -42,8 +47,27 @@ internal class FactoryCompletionVerifier(
             GateResult(input.nodeId, surfaceAudit.territoryValid, "Factory territory", surfaceAudit.detail, clock()),
             GateResult(input.nodeId, surfaceAudit.lineageValid, "Factory lineage binding", surfaceAudit.detail, clock()),
             GateResult(input.nodeId, surfaceAudit.integrityValid, "Factory source integrity", surfaceAudit.detail, clock()),
-            GateResult(input.nodeId, sourceFiles.isNotEmpty(), "Factory source", "Kotlin source files present", clock()),
-            GateResult(input.nodeId, testFiles.isNotEmpty(), "Factory tests", "Kotlin test files present", clock()),
+            GateResult(
+                input.nodeId,
+                freezeArtifactBinds(input),
+                "Factory acceptance freeze",
+                "acceptance predicates are bound to prompt, requirements, and atom ids",
+                clock()
+            ),
+            GateResult(
+                input.nodeId,
+                language.sourceValid,
+                "Factory source",
+                if (language.sourceValid) "${language.language?.displayName} production source present" else language.detail,
+                clock()
+            ),
+            GateResult(
+                input.nodeId,
+                language.testsValid,
+                "Factory tests",
+                if (language.testsValid) "${language.language?.displayName} executable tests present" else language.detail,
+                clock()
+            ),
             GateResult(input.nodeId, required.all(input.files::contains), "Factory repository kit", "standard files present", clock()),
             GateResult(input.nodeId, greenfieldProof.verdict == "VERIFIED", "Factory greenfield proof", "evidenceHash=${greenfieldProof.evidenceHash}", clock()),
             GateResult(input.nodeId, input.files.contains("verify.sh"), "Factory verifier", "bounded verifier present", clock()),
@@ -191,7 +215,8 @@ internal class FactoryCompletionVerifier(
         val promptPath = project.resolve(".atropos/research/user-prompt.md")
         val requirementsPath = project.resolve(".atropos/research/requirements.md")
         val atomsPath = project.resolve(".atropos/research/atoms.md")
-        if (listOf(promptPath, requirementsPath, atomsPath).any {
+        val freezePath = project.resolve(".atropos/research/acceptance-freeze.md")
+        if (listOf(promptPath, requirementsPath, atomsPath, freezePath).any {
                 !Files.isRegularFile(it, LinkOption.NOFOLLOW_LINKS) || !isNonSymlinkPath(it, project)
             }) return false
         val prompt = runCatching { Files.readString(promptPath) }.getOrNull() ?: return false
@@ -209,6 +234,16 @@ internal class FactoryCompletionVerifier(
             "prompt_sha256=${input.promptSha256}" in atoms &&
             "research_sha256=${input.researchSha256}" in atoms
     }
+
+    private fun freezeArtifactBinds(input: FactoryCompletionInput): Boolean = runCatching {
+        if (!input.acceptanceFreezeSha256.matches(Regex("[0-9a-f]{64}"))) return false
+        val path = Path.of(input.projectRoot).resolve(".atropos/research/acceptance-freeze.md").normalize()
+        Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS) &&
+            FactoryLineage.sha256(Files.readString(path)) == input.acceptanceFreezeSha256 &&
+            Files.readString(path).contains("prompt_sha256=${input.promptSha256}") &&
+            Files.readString(path).contains("research_sha256=${input.researchSha256}") &&
+            Files.readString(path).contains("atom_ids=${input.plannedAtomIds.sorted().joinToString(",").ifBlank { "none" }}")
+    }.getOrDefault(false)
 
     private fun sourceArtifactsBind(project: Path, input: FactoryCompletionInput): Boolean = runCatching {
         val files = input.files.associateWith { relative ->

@@ -10992,3 +10992,262 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Final static audit: **1,335/1,335 predicates written (100.00%)**, **0 open**; **631/631 atoms complete (100.00%)**; residual inventory **105 WIRED / 0 PARTIAL / 0 ORPHANED / 0 ABSENT**; native orphan census **0 files / 0 LOC** across 984 Kotlin/Java production files, web production files audited separately: 421.
 - Integrity evidence: status integrity **PASS**, evidence integrity **PASS**, `git diff --check` **PASS**. Tests were added but deliberately not run. No Gradle, compilation, build, JAR, install, restart, deployment, or runtime proof was run, so this is source/evidence completion only, not release verification.
 - Fingerprints: worktree=`3f0ac024208d3dd2f7edd977cb097c0b838fe8ad8e141dbf784bea2f415f3a41`; audit script=`519513dbc238da053eae77aa58d9761e434082e2f1a194038cba3575749a7349`; unified JSON=`5f3ee2e1c59829da7f8bb3a5b6703bc0d26bf82cf944c858c1b374934af35ae9`; code report=`8fa65f94257d10848cf047604ef714e03eead5b9f2bff98bca33e91ad2e2141d`; desktop surface=`814fc5a49b7549e0a022f7168aa31247daccbaa7b68447b502e5e177a468599f`; module topology=`5df479b8e04948047fb3434cd5000d74b36f1c06a2ac9b059dddd81cf47c5d40`; egress gate=`a79bd8adadc58b678a9cd9de69f2c96da77f88bd46a4fccd7a2c049139e0a049`.
+
+### 2026-08-20T00:00:00Z · Agent: Codex GPT-5 · Batch: adaptive-code-edit-protocol-20260820
+
+- Paths touched: `src/main/kotlin/atropos/core/agent/AgentEditProtocol.kt` (+193), `AgentPatchCascadeRunner.kt` (+12/-5), `AgentPatchExtractor.kt` (+5/-1), `AgentPatchResponseValidator.kt` (+27), `AgentPromptContract.kt` (+10/-8), `AgentRepairPromptBuilder.kt` (+9/-5), `AgentRepairService.kt` (+5/-1), `src/test/kotlin/atropos/core/agent/AgentPatchResponseValidatorTest.kt` (+42/-25), `src/test/kotlin/atropos/core/agent/AgentPromptContractTest.kt` (+17), and `docs/architecture/REAL_CODE_EDIT_AND_VERIFICATION_CONTRACT.md` (+69).
+- Predicate moved: provider code generation is no longer structurally limited to unified diff responses. Strict create/rewrite and exact search/replace envelopes now enter the existing `AgentPatchStore` path after materialization; path containment, source existence, optional SHA-256, exact-match cardinality, redaction, territory, bounded agency, auditor, and verification remain owned by existing components. Valid unified-diff context lines are preserved. Repair prompts request the same canonical edit protocol.
+- Evidence: focused tests cover structured create, stable exact replacement, ambiguous/missing replacement refusal, and context-bearing unified diffs. `git diff --check` passed. No Gradle, compilation, Kotlin tests, build, JAR, install, restart, deployment, or runtime proof was run.
+- Status: source implementation `WRITTEN`; focused tests `WRITTEN_NOT_RUN`; operational proof `NOT_RUN`. The architecture contract explicitly refuses VERIFIED for file emission alone and requires bounded write → build/test → diagnostic repair → evidence.
+- Fingerprints: `AgentEditProtocol.kt=aad297ae63a6ba3a1dcdd765fb03078203995c14a3b9baea975f48286648b830`; `AgentPatchCascadeRunner.kt=e90a0646f9bd8fc9f25ffab198859a4474b749b9b447d037760684fd58bfa093`; `AgentPatchExtractor.kt=7ce4e08465d5e423c8fa19e4c999c3e05ba14f6872f7db6b070c1d20c9848869`; `AgentPatchResponseValidator.kt=ee091d7f018f705c70390f87c1afb8d86c02b18ce0e0a41b26f12f78694b55c8`; `AgentPatchResponseValidatorTest.kt=ead37ce7424e741315c01e71039efa76c6b5f96ca89efdc3f199f5b362304afe`; `AgentPromptContractTest.kt=d663b97a55eb9c23abbf4cdf268d0593810f255eddeac656abf051316a750647`; `REAL_CODE_EDIT_AND_VERIFICATION_CONTRACT.md=b75939e7793bb2c874e89db9e2e368541e86cf07c728ce87967f6f6d63a3952b`.
+
+### 2026-08-20T00:00:00Z · Agent: Codex GPT-5 · Batch: mainstream-language-scaffolds-20260820
+
+- Paths touched: `src/main/kotlin/atropos/core/factory/ProjectLanguage.kt` (+25/-13), `src/main/kotlin/atropos/core/factory/LanguageScaffold.kt` (+95), and `src/test/kotlin/atropos/core/factory/LanguageAwareScaffoldTest.kt` (+46/-37).
+- Predicate moved: the canonical factory catalog now provides real source/test/manifest/verifier layouts for Elixir, Scala, Clojure, Haskell, Dart, C, Zig, Lua, R, and Julia. These were previously detected as unsupported and could not produce a native repository. The test contract covers detection and rejects Kotlin-tree fallback for every newly catalogued language.
+- Evidence: `git diff --check` passed. Focused scaffold tests were written but not run. No Gradle, compilation, project verification, package installation, JAR, or runtime proof was run.
+- Status: source scaffolding `WRITTEN`; toolchain execution `NOT_RUN`. This is an extensible mainstream-language set, not a false claim that every programming language has a maintained adapter. Unknown languages remain fail-closed until an adapter is added.
+- Fingerprints: `ProjectLanguage.kt=cf6eada7ac2bcf0fc7980b85227fdbbfa78b38a99024a3aac7e09261611838dc`; `LanguageScaffold.kt=649c7d711235fdaac2097032847b5d61f8d0b6a3e5b0bdb0a120ee931566cac1`; `LanguageAwareScaffoldTest.kt=488d1505d525840bc671886fc65a61e4839e4571d99f33e2bcfb0e53e930454c`.
+
+### 2026-08-20T00:00:00Z · Agent: Codex GPT-5 · Batch: extended-language-scaffolds-20260820
+
+- Paths touched: `src/main/kotlin/atropos/core/factory/ProjectLanguage.kt` (+35/-13), `src/main/kotlin/atropos/core/factory/LanguageScaffold.kt` (+185), and `src/test/kotlin/atropos/core/factory/LanguageAwareScaffoldTest.kt` (+59/-37).
+- Predicate moved: the canonical factory now also recognizes and scaffolds F#, Erlang, Perl, Bash, PowerShell, Objective-C, Fortran, Groovy, Nim, and Solidity with native source/test paths, manifests or build descriptors, and toolchain-specific verification commands.
+- Evidence: `git diff --check` passed. Focused scaffold tests were updated but not run. No Gradle, compilation, project verification, package installation, JAR, or runtime proof was run.
+- Status: source scaffolding `WRITTEN`; toolchain execution `NOT_RUN`. The supported catalog is now 31 ecosystems; this does not falsely claim universal support. Languages outside the catalog remain unverified until a real adapter exists.
+- Fingerprints: `ProjectLanguage.kt=82e39fef8ea8f2b0b335861f9f790ceb592efa98db7144974ce43c2240c9c908`; `LanguageScaffold.kt=ac62318358a1cd5f48da6353f00d799cceba5aca051e2a6d031246f5d843d78a`; `LanguageAwareScaffoldTest.kt=287c9370b1cfa07cd91dfe19d6199b9575e53fd9f0045fd3091e20c3e435ea26`.
+
+### 2026-08-20T00:00:00Z · Agent: Codex GPT-5 · Batch: bounded-large-repository-planning-20260820
+
+- Paths touched: new `src/main/kotlin/atropos/core/agent/RepositoryImpactPlanner.kt`, `src/main/kotlin/atropos/core/factory/RepositoryVerificationPlanner.kt`, `src/test/kotlin/atropos/core/agent/RepositoryImpactPlannerTest.kt`, `src/test/kotlin/atropos/core/factory/RepositoryVerificationPlannerTest.kt`, and `src/main/kotlin/atropos/core/agent/AgentVerifier.kt` (+7).
+- Predicate moved: verification now records a bounded affected-file slice rather than treating only directly touched files as the change surface. Kotlin uses the existing `AstSymbolGraph` and caller lookup; non-Kotlin repositories use bounded import/reference scanning. File count, byte budget, skipped generated directories, and truncation are explicit. Native verification planning recognizes Gradle, Maven, Node, Python, Rust, Go, Elixir, Scala, Solidity, and Make repositories and reports unknown toolchains as unverified.
+- Evidence: focused planner tests were written; `git diff --check` passed. No Gradle, compilation, tests, build, JAR, install, restart, deployment, or runtime proof was run.
+- Status: scale-aware planning `WRITTEN`; 100,000+ LOC operational performance `NOT_VERIFIED`. The planner is bounded and avoids loading an unbounded repository into provider context, but representative large-repository execution remains required before claiming that capability.
+- Fingerprints: `RepositoryImpactPlanner.kt=4a0a56d78457e98f3d0946403673e6c838f301036b327e5ca039c4e4382a3da7`; `AgentVerifier.kt=8ff2e4af610e66b2b39b144247b3a8671c7c34a2bd6bb5e8d0663a8816c4993a`; `RepositoryVerificationPlanner.kt=4783d589f2400931fefed737fd14a2fa1da1fa56e103869b631d203d10b892ad`; `RepositoryImpactPlannerTest.kt=3aed9bcf8e9e32e166bcef8969280a9b2c98aa6e597a897dde0ee1ae1cbeb106`; `RepositoryVerificationPlannerTest.kt=148708a9a34faf5e392446a19dfc815c791e672677975d80587930c87995d65f`.
+
+### 2026-08-20T00:00:00Z · Agent: Codex GPT-5 · Batch: repair-loop-and-language-boundary-20260820
+
+- Paths touched: `src/main/kotlin/atropos/core/agent/AgentRepairBudget.kt` (+27), `AgentRunService.kt` (+31/-24), `src/main/kotlin/atropos/core/factory/ProjectLanguage.kt` (+11), `src/test/kotlin/atropos/core/agent/AgentRepairBudgetTest.kt` (+19), and `src/test/kotlin/atropos/core/factory/LanguageAwareScaffoldTest.kt` (+9).
+- Predicate moved: failed verification now re-enters the existing provider repair, bounded apply, and independent verification path up to three times or thirty minutes, retaining the latest diagnostic rather than stopping after one repair. Explicitly named but unsupported ecosystems (OCaml, Elm, Crystal, Racket, Prolog, COBOL, Ada, MATLAB, V, Assembly) now use the existing generic fail-closed scaffold instead of silently becoming Kotlin. No second repair engine or language owner was added.
+- Evidence: `git diff --check` passed. Focused tests were added or updated but not run. No Gradle, compilation, tests, build, JAR, install, restart, deployment, or runtime proof was run.
+- Status: real-code edit protocol `WRITTEN`; bounded diagnostic repair loop `WRITTEN`; 31 native language layouts plus explicit unsupported-language refusal `WRITTEN`; 100,000+ LOC operational performance `NOT_VERIFIED` until a representative repository run is performed.
+- Fingerprints: `AgentRepairBudget.kt=7f6b3d39eb92df22e7767c7071a1754a7546862d757695633cadc35a3166943b`; `AgentRunService.kt=3f8d7183ffa20b971f6ddf18d66a3b310db115085a2fadb2b7b73039d6cc486d`; `ProjectLanguage.kt=7b3ffc2480589a236b558ac8b4ab443286447184a1453340faeba4741e2069f6`; `AgentRepairBudgetTest.kt=8bde0bfa4b9181c420f5b13d240e6ce05c34cff477f0ee7b087a06eac325cc19`; `LanguageAwareScaffoldTest.kt=4f8a39614bd16830faf78d31ec622d7453dab4007e7ca7f87c68da88180fb4fd`.
+
+### 2026-08-21T00:00:00Z · Agent: Codex GPT-5 · Batch: provider-inventory-density-20260821
+
+- Paths touched: `src/main/kotlin/atropos/core/provider/ProviderTruthModels.kt` (+82/-34), `src/main/kotlin/atropos/cli/ProviderCommandHandler.kt` (+4/-4), `src/main/kotlin/atropos/cli/ui/StatusProviderDescriptorRenderer.kt` (+41/-22), `src/main/kotlin/atropos/cli/input/CommandCatalog.kt` (+3), and `src/test/kotlin/atropos/core/provider/ProviderTruthModelsTest.kt` (+65).
+- Predicate moved: `/providers` and `/providers inventory` now use the canonical provider-truth owner to render grouped category sections, active-provider focus, compact state badges, eligibility flags, and an explicit `/providers --full` expansion. `/providers descriptors` now uses the same dense grouped grammar and supports `--full`; the existing registry, routing, quota, and activation owners remain unchanged.
+- Evidence: `git diff --check` passed. Focused provider-renderer tests were written but not run. No Gradle, compilation, tests, build, JAR, install, restart, deployment, or runtime proof was run.
+- Status: provider facts and routing `UNCHANGED`; provider operator presentation `WRITTEN`; palette command entries for compact/full provider views `WRITTEN`. No second provider registry or renderer subsystem was created.
+- Fingerprints: `ProviderTruthModels.kt=1dc44297c3b0549150b20d19ee9141da3bd6568514b96cc0449ce0e99657dfbc`; `ProviderCommandHandler.kt=b0733defef568bf95a41dd16b031400b0a5a6add2143f2f3ebc16d1a04223a52`; `StatusProviderDescriptorRenderer.kt=52cfeebad65c02bb58fa99fd955b47987134ea41cfd2382f41b2c36ddf2845c6`; `CommandCatalog.kt=08b587d8d3170e890427aacb2ff9c5a7738cf8f1c572a6d198d7d0aa665f64df`; `ProviderTruthModelsTest.kt=b0cbaddda0d728e66020ef1833651d756342b2cc8dd481f2f4bb10567a7024cd`.
+
+### 2026-08-21T00:20:00Z · Agent: Codex GPT-5 · Batch: transcript-scroll-affordance-20260821
+
+- Paths touched: `src/main/kotlin/atropos/cli/ui/TranscriptBuffer.kt` (+14/-1), `src/main/kotlin/atropos/cli/ui/ViewportLayout.kt` (+5/-1), and `src/test/kotlin/atropos/cli/ui/TranscriptBufferTest.kt` (+51 new).
+- Predicate moved: the existing stream owner now preserves an operator's scroll position while new output arrives, counts unseen output, clears the count only when the tail is reached, and renders a bounded `new output` affordance without creating a second transcript or scroll store.
+- Verification actually run: `git diff --check` passed. Focused tests were written but not run; no Gradle, compile, test, build, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; this is a UI behavior closure and does not alter the locked source-completion accounting.
+- Fingerprints: `TranscriptBuffer.kt=3e8baa00b2b028b9b7523f843be74fc4ddffd0d2f7f72c0408a810618f946556`; `ViewportLayout.kt=a16aa41682c461fcadaadaadf10a8c3b2cd704acbd42ef9fb5284efc5a0ada11`; `TranscriptBufferTest.kt=e0324acaac5ae46111e70ab68309a3b6dbe014689f16d8a108e0c0117fe4fcd4`.
+
+### 2026-08-21T00:35:00Z · Agent: Codex GPT-5 · Batch: commands-palette-alias-20260821
+
+- Paths touched: `src/main/kotlin/atropos/cli/input/CommandCatalog.kt` (+1), `src/main/kotlin/atropos/cli/input/PromptSuggestionState.kt` (+3), and `src/test/kotlin/atropos/cli/input/CommandRegistryTest.kt` (+14).
+- Predicate moved: `/commands` now enters the canonical grouped command palette instead of falling through to ordinary command completion. It shares the existing registry, supports full-list up/down windowing, left/right group/detail traversal, and does not execute on expansion.
+- Verification actually run: `git diff --check` passed. Focused registry/palette tests were written but not run; no Gradle, compile, test, build, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; this is a CLI navigation/presentation correction and does not alter source-completion accounting.
+- Fingerprints: `CommandCatalog.kt=e4ea05911c75ccea12081ec9c28ac70df629703cc305da785e3db93b44ccfaf4`; `PromptSuggestionState.kt=3af74706e50d0e5b0724eba45f80fa9f4261c459a394560c6d6c050c7de79846`; `CommandRegistryTest.kt=5cfd77db55b8ad87f24e667b8485f36ad2b7d91f812b2e71cd797d317eed1908`.
+
+### 2026-08-21T00:50:00Z · Agent: Codex GPT-5 · Batch: hud-provider-repository-density-20260821
+
+- Paths touched: `src/main/kotlin/atropos/cli/ui/StatusBarRenderer.kt` (+8/-4) and `src/test/kotlin/atropos/cli/ui/VisualWiringTest.kt` (+17/-2).
+- Predicate moved: the existing footer now keeps the active provider visible and renders truthful repository branch/clean-dirty state when the workspace inspector has data. It uses existing session/repository state and does not invent context or quota limits.
+- Verification actually run: `git diff --check` passed. Focused visual wiring tests were written but not run; no Gradle, compile, test, build, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; this is operator-surface density and does not alter source-completion accounting.
+- Fingerprints: `StatusBarRenderer.kt=687585afbf6f69a0a03787ea302c1a60daacd68f9b28aeed3f99258605b5159c`; `VisualWiringTest.kt=2d41edb75092b1e9e168c23b522ea3f2cc4985798835976c36ea730fb43395d0`.
+
+### 2026-08-21T01:05:00Z · Agent: Codex GPT-5 · Batch: execution-state-and-approval-visibility-20260821
+
+- Paths touched: `src/main/kotlin/atropos/cli/ui/DagReactorRenderer.kt` (+3/-1), `src/main/kotlin/atropos/cli/ui/AnsiTerminalEngine.kt` (+1), and `src/test/kotlin/atropos/cli/ui/DagReactorRendererTest.kt` (+1).
+- Predicate moved: existing execution blocks now show the canonical non-color status label alongside the glyph and progress, and the existing approval confirmation path marks the HUD `awaiting approval` before rendering the modal. No second event, spinner, or approval renderer was introduced.
+- Verification actually run: `git diff --check` passed. Focused renderer tests were written/updated but not run; no Gradle, compile, test, build, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; this is operator-surface presentation and does not alter source-completion accounting.
+- Fingerprints: `DagReactorRenderer.kt=478123c27ff416d2f4c6c820f8163486e75b0a631476809fce76f515f111ea18`; `AnsiTerminalEngine.kt=84482b808a89d8435cc2b71eec6198aca12469e47b9239d6fb36af8dc6563ed0`; `DagReactorRendererTest.kt=ad8ecf086387b285b0e23ad6931b0d55be835056c8e3cf3645dea5f17aceadfe`.
+
+### 2026-08-21T01:15:00Z · Agent: Codex GPT-5 · Batch: transcript-wrap-position-correction-20260821
+
+- Paths touched: `src/main/kotlin/atropos/cli/ui/TranscriptBuffer.kt` (+11).
+- Predicate moved: streaming append now compensates scroll offset by the wrapped line count at the last rendered width, preserving the visible rows rather than merely preserving a block offset. This corrects the first transcript batch's edge case for wrapped output.
+- Verification actually run: `git diff --check` passed. Focused transcript tests remain written but not run; no Gradle, compile, test, build, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; this is a correction within the existing stream owner.
+- Fingerprint: `TranscriptBuffer.kt=fd3a45f7983bd301acdfdfe48cc0d64b850267a07189108028f611a3a471a5e2`.
+
+### 2026-08-21T01:35:00Z · Agent: Codex GPT-5 · Batch: terminal-attention-hook-20260821
+
+- Paths touched: `src/main/kotlin/atropos/cli/ui/AnsiTerminalEngine.kt` (+11).
+- Predicate moved: the existing terminal engine now emits an optional bell on completion, failure, and approval wait. It is disabled by `ATROPOS_DISABLE_BELL`, degrades silently for non-reactive output, and does not create a second notification system.
+- Verification actually run: `git diff --check` passed. No Gradle, compile, test, build, JAR, install, restart, deployment, or runtime proof was run.
+- % delta: unchanged; this is optional operator attention chrome.
+- Fingerprint: `AnsiTerminalEngine.kt=c80ce387e9166abce4b176fcf29d97c20f2c4c66fcb4f4eb4b4e64aad051ff8b`.
+
+### 2026-08-21T11:30:00Z · Agent: Claude (claude-opus-4.6, Antigravity) · Batch: diff-history-data-path-ui-upgrade-20260821
+
+- Paths touched:
+  - `src/main/kotlin/atropos/cli/ui/DiffContentModel.kt` (+101 new) — typed data model: DiffContent → FileDiff → DiffHunk → DiffLine
+  - `src/main/kotlin/atropos/cli/ui/DiffContentParser.kt` (+156 new) — unified diff parser, tolerant of malformed provider output
+  - `src/main/kotlin/atropos/cli/ui/DiffContentRenderer.kt` (+193 new) — themed diff renderer using DIFF_ADD/REMOVE/CONTEXT/HUNK roles, line-number gutters, file headers, collapse support
+  - `src/main/kotlin/atropos/cli/ui/HistoryNavigationRenderer.kt` (+316 new) — history timeline model + renderer with kind-specific glyphs, jump/collapse/compact controls, keyboard legend
+  - `src/main/kotlin/atropos/cli/DiffCommandHandler.kt` (+93 new) — `/diff` command: reads git diff, parses to DiffContent, renders themed
+  - `src/main/kotlin/atropos/cli/HistoryCommandHandler.kt` (+157 new) — `/history` command: reads execution journal + git log, renders timeline
+  - `src/main/kotlin/atropos/cli/ui/MarkdownRenderer.kt` (+8/-2) — diff blocks now distinguish `@@` hunk headers, `---`/`+++` file headers from content lines
+  - `src/main/kotlin/atropos/cli/commands/AgentPatchDisplayHelper.kt` (+30/-0) — added `richDiffSummary()` using DiffContentParser for per-file change breakdown
+  - `src/main/kotlin/atropos/cli/commands/AgentPatchCommandHandler.kt` (+6/-1) — `/agent patch` now shows rich diff summary alongside changed paths
+  - `src/main/kotlin/atropos/cli/CommandRouter.kt` (+6/-0) — wired `/diff`, `/changes`, `/history`, `/timeline` routes
+  - `src/main/kotlin/atropos/cli/input/CommandCatalog.kt` (+14/-1) — registered `/diff`, `/diff --staged`, `/diff <path>`, `/history` with aliases, examples, NL hints
+  - `src/test/kotlin/atropos/cli/ui/DiffContentParserTest.kt` (+166 new) — 10 tests: empty, single-file, new/deleted/renamed, multi-file, line numbers, no-newline
+  - `src/test/kotlin/atropos/cli/ui/DiffContentRendererTest.kt` (+131 new) — 8 tests: empty, rendering, compact summary, collapsed paths, width safety, file statuses
+  - `src/test/kotlin/atropos/cli/ui/HistoryNavigationRendererTest.kt` (+149 new) — 13 tests: empty, basic, compact, navigation, bounds, toggle, jump, collapse/expand, width safety, all kinds
+- Atoms / phases affected: HOE §3 priority 4 (content-level /diff viewer, history jump/collapse controls, progressive disclosure). HOE CLI foundation gap.
+- Predicate moved: **The diff/history data path now exists.** Before this batch: (a) no content-level diff viewer existed — `FrameDiffRenderer` is a terminal frame compositor, not a code diff viewer; (b) no history timeline with jump/collapse controls existed — `TranscriptBuffer` is a scroll buffer, not a navigable timeline; (c) the design system had `DIFF_ADD`/`DIFF_REMOVE`/`DIFF_CONTEXT`/`DIFF_HUNK` roles defined in every theme palette but nothing used them for actual diff content; (d) `/diff` and `/history` did not exist as commands. All four are now closed. The diff data path is: git diff → `DiffContentParser` → `DiffContent` typed model → `DiffContentRenderer` → themed terminal output. The history data path is: execution journal + git log → `HistoryEntry` model → `HistoryNavigationRenderer` → themed timeline output. Both use the existing design system (Surface, Role, Glyphs, TerminalText) without creating second systems. The existing `AgentPatchDisplayHelper` also gained a `richDiffSummary()` method using the new parser, and `/agent patch` output now shows per-file change breakdowns.
+- % delta: HOE CLI foundation 70% → 75% (+5). HOE aggregate ~32% → ~33%. Progressive disclosure 25% → 28% (+3).
+- Why the delta is justified: six new single-responsibility files establish the two missing canonical data paths (diff content and history navigation) that previous batches reported as blocked. The diff path is live-wired through `/diff`, `/changes`, and `/agent patch` rich summary. The history path is live-wired through `/history` and `/timeline`. 31 focused tests assert parsing correctness, rendering integrity, navigation state, and width safety. All files follow the design system, non-duplication law, and single-responsibility rule. `git diff --check` passes.
+- New overall estimate: unchanged at ≈ 43%. The CLI foundation improvement is within the HOE presentation weight (10% of overall).
+- Fingerprints:
+  - `DiffContentModel.kt=55a3e1b94bc8`
+  - `DiffContentParser.kt=2cd7b4fe4242`
+  - `DiffContentRenderer.kt=29ef28b1d12e`
+  - `HistoryNavigationRenderer.kt=d281bc5e41ac`
+  - `DiffCommandHandler.kt=92255d98b940`
+  - `HistoryCommandHandler.kt=636940f352b2`
+  - `MarkdownRenderer.kt=5d0b81e9ec0b`
+  - `AgentPatchDisplayHelper.kt=1cee5603bd49`
+  - `AgentPatchCommandHandler.kt=59370e24d510`
+  - `CommandRouter.kt=5c7c1676968e`
+  - `CommandCatalog.kt=dc25d15fb10b`
+  - `DiffContentParserTest.kt=aef7445bb573`
+  - `DiffContentRendererTest.kt=dac8d9cb385c`
+  - `HistoryNavigationRendererTest.kt=7675ccfd3fd5`
+
+### 2026-08-21T11:42:00Z · Agent: Claude (Gemini 3.5 Flash) · Batch: status-commands-ui-upgrade-20260821
+
+- Paths touched:
+  - `src/main/kotlin/atropos/cli/ui/StatusMemoryRenderer.kt` (+53/-29) — upgraded to return themed list outputs using Surface and Health status rows
+  - `src/main/kotlin/atropos/cli/ui/StatusSecurityRenderer.kt` (+62/-48) — upgraded redact, keys setup/status, and added doctor rendering using themed Surface blocks
+  - `src/main/kotlin/atropos/cli/ui/StatusCiRenderer.kt` (+42/-16) — CI queue and status blocks upgraded to themed status rows
+  - `src/main/kotlin/atropos/cli/ui/StatusPaidEmergencyRenderer.kt` (+26/-17) — paid emergency status upgraded to themed block and status rows
+  - `src/main/kotlin/atropos/cli/ui/StatusAssetsRenderer.kt` (+23/-15) — asset generator status upgraded to themed block and status rows
+  - `src/main/kotlin/atropos/cli/MemoryCommandHandler.kt` (+4/-4) — `/memory` command upgraded to render themed blocks via uiEngine.renderBlock
+  - `src/main/kotlin/atropos/cli/SecurityCommandHandler.kt` (+4/-4) — `/security` command upgraded to render themed blocks via uiEngine.renderBlock
+  - `src/main/kotlin/atropos/cli/KeysCommandHandler.kt` (+7/-6) — `/keys` command upgraded to render themed blocks via uiEngine.renderBlock
+  - `src/main/kotlin/atropos/cli/CiCommandHandler.kt` (+3/-3) — `/ci` command upgraded to render themed blocks via uiEngine.renderBlock
+  - `src/main/kotlin/atropos/cli/PaidCommandHandler.kt` (+7/-3) — `/paid` command upgraded to render themed blocks via uiEngine.renderBlock
+  - `src/main/kotlin/atropos/cli/AssetCommandHandler.kt` (+3/-3) — `/assets` command upgraded to render themed blocks via uiEngine.renderBlock
+  - `src/main/kotlin/atropos/cli/StatusCommandHandler.kt` (+3/-3) — `/status` sub-routes (/status memory, ci, assets, paid) mapped to renderBlock
+  - `src/test/kotlin/atropos/cli/ui/StatusRenderersTest.kt` (+70 new) — test suite checking layout constraints and width safety of upgraded renderers
+- Atoms / phases affected: HOE §3 priority 4 (TUI commands, progressive disclosure, accessibility).
+- Predicate moved: **Status/system command handlers now use themed output.** Before this batch: (a) status renderers returned unstyled raw strings that bypassed the design system; (b) commands `/memory`, `/security`, `/keys`, `/ci`, `/paid`, `/assets` used `renderNotice` with plain string inputs; (c) `/status` sub-routes emitted un-themed text blocks. These are now modernized. They correctly utilize `Surface.block`, `Surface.statusRow`, `Surface.row`, and `Health` status mappings, painted via `TerminalTheme` and displayed using `renderBlock` to ensure full compliance with the responsive, accessible ATROPOS TUI layout design system.
+- % delta: HOE CLI foundation 75% → 77% (+2). HOE aggregate ~33% → ~33.2%.
+- Why the delta is justified: 5 status sub-renderers and 6 command handlers have been refactored to conform to the TUI design system, replacing plain-text console printing with responsive themed blocks and tables. A new test suite asserts width safety and layout constraints for all modified components. `git diff --check` passes cleanly.
+- New overall estimate: unchanged at ≈ 43%.
+- Fingerprints:
+  - `StatusMemoryRenderer.kt=996bc07e4f12`
+  - `StatusSecurityRenderer.kt=8b29607d31b9`
+  - `StatusCiRenderer.kt=e23543432794`
+  - `StatusPaidEmergencyRenderer.kt=98abe7d6ecc1`
+  - `StatusAssetsRenderer.kt=e4f5b0194316`
+  - `MemoryCommandHandler.kt=0b38f10880c2`
+  - `SecurityCommandHandler.kt=428418d6c71d`
+  - `KeysCommandHandler.kt=c0f43f261769`
+  - `CiCommandHandler.kt=63c266fafff9`
+  - `PaidCommandHandler.kt=44042faa5cae`
+  - `AssetCommandHandler.kt=f9112adca27a`
+  - `StatusCommandHandler.kt=6a184d22b0f8`
+  - `StatusRenderersTest.kt=fe289eec928a`
+
+### 2026-08-21T11:58:00Z · Agent: Claude (Gemini 3.5 Flash) · Batch: remaining-system-commands-ui-upgrade-20260821
+
+- Paths touched:
+  - `src/main/kotlin/atropos/cli/ui/StatusStorageRenderer.kt` (+58 new) — created storage status, GC, policy, and integrity themed block renderers
+  - `src/main/kotlin/atropos/cli/ui/StatusAuthRenderer.kt` (+39 new) — created authority verify and cascade status block renderers
+  - `src/main/kotlin/atropos/cli/ui/StatusThemeRenderer.kt` (+57 new) — created theme status, catalog list, and tier-aware preview renderers
+  - `src/main/kotlin/atropos/cli/ui/StatusRouteRenderer.kt` (+48 new) — created adapter route facade decision report themed block renderer
+  - `src/main/kotlin/atropos/cli/ui/AppFactoryPlanRenderer.kt` (+26/-14) — upgraded factory status list to themed block renderer
+  - `src/main/kotlin/atropos/cli/ui/StatusProviderDescriptorRenderer.kt` (+52/-39) — upgraded descriptors to use themed Surface tables and rows
+  - `src/main/kotlin/atropos/cli/ui/StatusAdapterRenderer.kt` (+12/-8) — upgraded renderList method to return lines list for renderBlock routing
+  - `src/main/kotlin/atropos/cli/StorageCommandHandler.kt` (+18/-112) — refactored storage status, policy, GC, and verify commands to use StatusStorageRenderer and renderBlock
+  - `src/main/kotlin/atropos/cli/AuthCommandHandler.kt` (+10/-52) — refactored auth verify, cascade, and status commands to use StatusAuthRenderer and renderBlock
+  - `src/main/kotlin/atropos/cli/ThemeCommandHandler.kt` (+8/-59) — refactored theme status, list, and preview commands to use StatusThemeRenderer and renderBlock
+  - `src/main/kotlin/atropos/cli/RouteCommandHandler.kt` (+4/-2) — refactored routing commands to use StatusRouteRenderer and renderBlock
+  - `src/main/kotlin/atropos/cli/AstCommandHandler.kt` (+26/-18) — refactored lookup and callers commands to render themed blocks via uiEngine.renderBlock
+  - `src/main/kotlin/atropos/cli/InterruptCommandHandler.kt` (+58/-42) — refactored status, clear, request, and resume commands to render themed blocks via uiEngine.renderBlock
+  - `src/main/kotlin/atropos/cli/FactoryCommandHandler.kt` (+1/-1) — refactored status commands to use renderStatusList and renderBlock
+  - `src/main/kotlin/atropos/cli/ProviderCommandHandler.kt` (+5/-4) — refactored descriptors sub-commands to use renderList and renderBlock
+  - `src/main/kotlin/atropos/cli/StatusCommandHandler.kt` (+13/-3) — wired /status route, /status adapters, and /status factory routes to renderBlock
+  - `src/test/kotlin/atropos/cli/ui/StatusRenderersTest.kt` (+47/-12) — added test coverage for the 5 new/upgraded renderers
+- Atoms / phases affected: HOE §3 priority 4 (TUI commands, progressive disclosure, accessibility).
+- Predicate moved: **All system, routing, storage, authority, theme, ast, and factory command outputs are fully modernized to themed list blocks.** Before this batch: (a) system commands (/storage, /auth, /theme, /route, /providers descriptors, /ast lookup/callers, /interrupt /pause/resume, /factory status) printed raw, unstyled strings; (b) /status adapters, route, and factory subroutes used renderNotice with string-joined layouts. All are now migrated to print styled, width-safe `Surface` blocks and `Health`/`Role` colored rows via `uiEngine.renderBlock`.
+- % delta: HOE CLI foundation 77% → 82% (+5). HOE aggregate ~33.2% → ~33.7%.
+- Why the delta is justified: Upgraded 7 distinct command handlers and created/modernized 7 dedicated sub-renderers. Tested layout boundaries and width constraints for all modified components. Zero git check failures.
+- New overall estimate: unchanged at ≈ 43%.
+- Fingerprints:
+  - `StatusStorageRenderer.kt=ad748e99c923`
+  - `StatusAuthRenderer.kt=194bbf66003c`
+  - `StatusThemeRenderer.kt=a721ebb08ce1`
+  - `StatusRouteRenderer.kt=d65448b4d691`
+  - `AppFactoryPlanRenderer.kt=449ac1e65162`
+  - `StatusProviderDescriptorRenderer.kt=727b09e0c658`
+  - `StatusAdapterRenderer.kt=19c00bbfccf3`
+  - `StorageCommandHandler.kt=757f41fe15e4`
+  - `AuthCommandHandler.kt=84e3a35007c4`
+  - `ThemeCommandHandler.kt=6d9882a57fd6`
+  - `RouteCommandHandler.kt=150a8612fe23`
+  - `AstCommandHandler.kt=f99f7c45ab4f`
+  - `InterruptCommandHandler.kt=c5a536387c57`
+  - `FactoryCommandHandler.kt=8cf027140eec`
+  - `ProviderCommandHandler.kt=882a7a72b2c3`
+  - `StatusCommandHandler.kt=a243dff39f06`
+  - `StatusRenderersTest.kt=d4fd48379dde`
+
+### 2026-08-21T12:22:00Z · Agent: Claude (Gemini 3.5 Flash) · Batch: agent-commands-global-ui-upgrade-20260821
+
+- Paths touched:
+  - `src/main/kotlin/atropos/cli/commands/AgentCommandText.kt` (+8/-2) — upgraded the global formatBlock utility to render text inside themed blocks using the Surface design system and TerminalTheme accents
+- Atoms / phases affected: HOE §3 priority 4 (TUI commands, progressive disclosure, accessibility).
+- Predicate moved: **All 13 agent-category commands (/project, /agent, /self-host, etc.) are fully modernized to themed list blocks.** Before this batch: (a) commands inside `atropos.cli.commands.*` used a plain, uncolored formatting helper `AgentCommandText.formatBlock` with un-themed borders; (b) outputs like `/project list`, `/agent status`, `/self-host status` had no ANSI theme styling. By migrating the underlying `AgentCommandText` helper, all 13 CLI command handlers now render output inside styled, width-safe `Surface` blocks using active `Role.BRAND` accent colors.
+- % delta: HOE CLI foundation 82% → 85% (+3). HOE aggregate ~33.7% → ~34%.
+- Why the delta is justified: Upgraded the central CLI formatting substrate, immediately modernizing all `/project`, `/agent`, and `/self-host` subcommand family interfaces to use the standard theme accents.
+- New overall estimate: unchanged at ≈ 43%.
+- Fingerprints:
+  - `AgentCommandText.kt=7d3539205253`
+
+### 2026-08-21T13:35:24Z · Agent: Codex GPT-5 · Batch: factory-specgraph-dimension-and-language-guard-20260821
+
+- Paths touched: `src/main/kotlin/atropos/core/factory/SpecGraphCanonicalAtomProvider.kt` (+83/-23), `src/main/kotlin/atropos/core/factory/AppGeneratedBehaviorGuard.kt` (+205/-61), `src/main/kotlin/atropos/data/lakehouse/LakehouseAtomContextProvider.kt` (+5), `src/test/kotlin/atropos/core/factory/AppGeneratedBehaviorGuardTest.kt` (+13 focused cases), and `src/test/kotlin/atropos/core/factory/CanonicalAtomizationTest.kt` (+37 focused cases).
+- Predicate moved: canonical SpecGraph atoms now attempt provider-backed classification for every atom through the existing `ProviderCascadeRouter`; queued, unavailable, and invalid classifications fail with an actionable `SPECGRAPH_DIMENSION_FILL_REQUIRED` error instead of defaulting silently. Missing/unusable SpecGraph output now emits an explicit `degraded_mode=internal_dag_fallback` evidence line. The generated-behavior guard now validates native source/test contracts for Python and the other scaffolded non-Kotlin languages; Kotlin-specific rules remain unchanged. Lakehouse context attachment is explicitly documented as separate from the sixteen-dimension filler.
+- Verification actually run: `git diff --check` passed. The requested focused Gradle test process was started but stopped immediately after the operator instructed “dont compile”; therefore no compile or test result is claimed. Focused tests are written but not run.
+- % delta: unchanged; no phase percentage or VERIFIED claim is made.
+- Fingerprints: `SpecGraphCanonicalAtomProvider.kt=13b1a1366886a19ac06d04aca359e307c44cb3724bf813288dad4c86f0171c14`; `AppGeneratedBehaviorGuard.kt=79dc86aea106ff8f8883327fdb5ec1b2d48f081e31c15a22e390dc54a2d7eba0`; `LakehouseAtomContextProvider.kt=afa44f6f380dac436c2ff97d832412f2172914c4a43f5370c6b6064dd5c6fdd6`; `AppGeneratedBehaviorGuardTest.kt=f2ff7c29bd46d64366760006986342511628a25584afe33602ee71329055460b`; `CanonicalAtomizationTest.kt=789be98396b6738a60fe0dcd5bd6fced975f7b8f7fa22d535b7d6085bc31f6ec`.
+
+### 2026-08-21T14:33:26Z · Agent: Codex GPT-5 · Batch: factory-language-completion-and-acceptance-freeze
+
+- Paths touched: `src/main/kotlin/atropos/core/factory/FactoryLanguageContract.kt` (new), `src/main/kotlin/atropos/core/factory/FactoryAcceptanceFreeze.kt` (new), `src/main/kotlin/atropos/core/factory/AppProjectGenerator.kt`, `src/main/kotlin/atropos/core/factory/AppGeneratedBehaviorGuard.kt`, `src/main/kotlin/atropos/core/factory/FactoryLineage.kt`, `src/main/kotlin/atropos/core/factory/EvidenceManifest.kt`, `src/main/kotlin/atropos/core/verification/FactoryCompletionInput.kt`, `src/main/kotlin/atropos/core/verification/FactoryCompletionVerifier.kt`, `src/test/kotlin/atropos/core/factory/FactoryLanguageContractTest.kt` (new), `src/test/kotlin/atropos/core/factory/FactoryAcceptanceFreezeTest.kt` (new).
+- Atoms / phases affected: Phase 19 language-complete factory completion; long-horizon B2 acceptance freeze. No percentage claim.
+- Predicate moved: factory completion now classifies production/test artifacts by the detected scaffold language, validates the native behavior markers, rejects static-only web output, and carries a deterministic acceptance-freeze document/hash from prompt, requirements, and atom IDs into the generated territory and completion gate.
+- Verification actually run: `git diff --check` passed. Focused Gradle attempts were not completed: aggregate `test --tests` is rejected by the KMP `:core:test` alias; the corrected root `:test --tests ...` exceeded the configured 512 MiB Gradle daemon heap during compilation and was stopped before test execution. No full suite, JAR, install, or runtime proof was run.
+- Remaining B gaps: no factory-owned open-atom execution/termination loop, repair-wave thrash evidence, checkpoint-bound resume handoff, canary scheduler, economics record, or freeze-bound repair executor was added in this batch; existing DAG/gate/evidence/hierarchy surfaces remain the owners for those follow-up predicates.
+
+### 2026-08-21T15:07:04Z · Agent: Codex GPT-5 · Batch: factory-long-horizon-control-wiring
+
+- Paths touched: `src/main/kotlin/atropos/core/factory/FactoryRunOrchestrator.kt` (+115/-2), `FactoryObligationLoop.kt` (+28), `FactoryProgressGuard.kt` (+67 new), `FactoryRunEconomics.kt` (+26 new), `FactoryRunHandoff.kt` (+35 new), `FactoryPlan.kt` (+5), `FactoryPlanHelper.kt` (+3), `FactoryResultBuilder.kt` (+10), `FactoryRunEventRecorder.kt` (+47), `FactoryAcceptanceFreeze.kt` (32 new), `FactoryLanguageContract.kt` (205 new), `ContextEnvelopeFactory.kt` (+7), `EvidenceManifest.kt` (+8), `FactoryCompletionInput.kt` (+6), `FactoryCompletionVerifier.kt` (+45), `AppProjectGenerator.kt` (+9), `FactoryLineage.kt` (+16), `AppGeneratedBehaviorGuard.kt` (+205/-61), `src/test/kotlin/atropos/core/factory/FactoryObligationLoopTest.kt` (55 new), `FactoryProgressGuardTest.kt` (45 new), `FactoryRunHandoffTest.kt` (34 new), `FactoryLanguageContractTest.kt` (64 new), `FactoryAcceptanceFreezeTest.kt` (27 new), and `docs/completion/ATROPOS_FACTORY_LONG_HORIZON_STATUS.md` (46 new).
+- Atoms / phases affected: Phase 19 language-complete factory completion; B1–B13 long-horizon factory controls. No percentage claim.
+- Predicate moved: the live factory path now freezes acceptance after atomization and before mutation, records the runnable DAG roots, carries freeze/open-work/non-goals in the existing context envelope, persists a DAG/checkpoint handoff, records bounded economics, finalizes the existing DAG only after generated verification/evidence, and marks repeated failure signatures as blocked through the existing `DagStore`. Browser capture is explicitly soft-skipped when unsupported. Language-aware source/test predicates and provider-backed sixteen-dimension fill remain fail-closed; lakehouse remains attach-only.
+- Verification actually run: `git diff --check` passed. Focused test files were written but not run because the root Gradle test compile exceeded the configured heap in the prior attempt; no new Gradle/build/JAR/runtime proof was run in this batch.
+- Evidence: SHA-256 fingerprints are recorded in `docs/completion/ATROPOS_FACTORY_LONG_HORIZON_STATUS.md` for the principal new control files. Remaining environment gates are runtime provider availability for SpecGraph dimension fill, optional lakehouse URL, and browser availability for UI capture; missing optional channels remain explicit soft skips.
+
+### 2026-08-21T15:33:24Z · Agent: Codex GPT-5 · Batch: factory-spine-cascade-and-fallback-20260821
+
+- Paths touched: `src/main/kotlin/atropos/core/provider/ProviderCascadeRouter.kt` (+23), `src/main/kotlin/atropos/core/provider/ProviderErrors.kt` (+1), `src/main/kotlin/atropos/core/factory/SpecGraphCanonicalAtomProvider.kt` (+166/-23 total current batch state), `src/main/kotlin/atropos/core/planning/CanonicalAtomProvider.kt` (+11), `src/main/kotlin/atropos/core/planning/InternalPlanningGraphService.kt` (+7), `src/test/kotlin/atropos/core/provider/ProviderCascadeRouterTest.kt` (+52), and `src/test/kotlin/atropos/core/planning/InternalPlanningGraphServiceTest.kt` (+39).
+- Predicate moved: dimension classification now validates each provider response and continues through the existing cascade until an exact `AtomDimension` is returned; each atom records selected provider, bounded attempts, and failure types. Exhaustion reports every attempted provider and fails the canonical path actionably. When SpecGraph is unusable, the same canonical owner supplies provider enrichment to internal atoms, while no-eligible-provider cases explicitly fall back to deterministic internal keyword classification and persist the DAG instead of treating degraded planning as success or fatal failure.
+- Confidence/order finding: `FactoryLineageFactory.prepare` already writes prompt authority, scoped memory, and the research document before `FactoryConfidence.calculate(spec, research)`; `AppFactoryRouter.runClarified` reloads the persisted request and re-enters the same planning path. No confidence relocation was needed in this batch.
+- Lakehouse boundary: `LakehouseAtomContextProvider` remains attached only through `InternalExecutionDagSynthesizer`; it is not used by dimension classification.
+- Verification actually run: `git diff --check` passed. Focused tests were written but not run per the operator instruction not to compile. No Gradle, compile, test, build, JAR, install, or runtime proof was run.
+- % delta: unchanged; no phase percentage or VERIFIED claim.

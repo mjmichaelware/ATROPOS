@@ -37,76 +37,23 @@ class ThemeCommandHandler(private val uiEngine: AnsiTerminalEngine) {
         return RouterOutcome.CONTINUE
     }
 
+    private val renderer = atropos.cli.ui.StatusThemeRenderer()
+
     private fun renderStatus() {
         val active = ThemePreference.resolve()
         val theme = ThemeCatalog.byId(active)
         val fromEnvironment = System.getenv("ATROPOS_THEME")?.isNotBlank() == true
-
-        uiEngine.renderNotice(
-            buildString {
-                appendLine("Theme: ${theme.displayName} (${theme.id})")
-                appendLine("Colour depth: ${TerminalTheme(ConfigurationManager()).tier.name.lowercase()}")
-                if (fromEnvironment) {
-                    appendLine("Set by ATROPOS_THEME, which overrides the stored choice.")
-                } else if (ThemePreference.read() != null) {
-                    appendLine("Stored in ~/.atropos/theme.")
-                } else {
-                    appendLine("No choice stored; this is the default.")
-                }
-                appendLine()
-                append("  /theme list · /theme preview · /theme <id> · /theme reset")
-            }
-        )
+        val hasChoiceStored = ThemePreference.read() != null
+        uiEngine.renderBlock(renderer.renderStatus(active, theme, fromEnvironment, hasChoiceStored, uiEngine.viewportWidth))
     }
 
     private fun renderList() {
         val active = ThemePreference.resolve()
-        uiEngine.renderNotice(
-            buildString {
-                appendLine("Themes")
-                ThemeCatalog.all.forEach { theme ->
-                    val marker = if (theme.id.equals(active, ignoreCase = true)) ">" else " "
-                    appendLine("  $marker ${theme.id.padEnd(16)} ${theme.displayName}")
-                }
-            }.trimEnd()
-        )
+        uiEngine.renderBlock(renderer.renderList(active, uiEngine.viewportWidth))
     }
 
-    /**
-     * Each theme rendered in its own palette.
-     *
-     * Built by constructing a [TerminalTheme] per palette rather than by
-     * painting with the active one, so what you see is genuinely that theme at
-     * this terminal's colour depth — a preview drawn in the current theme would
-     * show every option looking identical.
-     */
     private fun renderPreview() {
-        val capabilities = ConfigurationManager()
-        val tier = TerminalTheme(capabilities).tier
-
-        uiEngine.renderNotice(
-            buildString {
-                appendLine("Theme preview at ${tier.name.lowercase()} colour depth")
-                appendLine()
-                ThemeCatalog.all.forEach { palette ->
-                    val paint = { role: Role, text: String ->
-                        val sgr = palette.style(role, tier)
-                        if (sgr.isEmpty() || tier == ColorTier.NONE) text else "[${sgr}m$text[0m"
-                    }
-                    appendLine(
-                        "  ${palette.id.padEnd(16)} " +
-                            paint(Role.BRAND, "ATROPOS") + "  " +
-                            paint(Role.STATUS_RUNNING, "running") + "  " +
-                            paint(Role.STATUS_VERIFIED, "verified") + "  " +
-                            paint(Role.STATUS_ERROR, "error") + "  " +
-                            paint(Role.ACCENT_SELECTION, " selected ")
-                    )
-                }
-                appendLine()
-                append("  Verified, pending and error keep their colours in every theme, ")
-                append("so a failure reads the same whichever accent you pick.")
-            }
-        )
+        uiEngine.renderBlock(renderer.renderPreview(uiEngine.viewportWidth))
     }
 
     private fun set(requested: String) {

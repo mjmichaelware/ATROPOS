@@ -22,7 +22,9 @@ class StatusAdapterRenderer(
 
     fun render(): String = render(DEFAULT_WIDTH)
 
-    fun render(width: Int): String {
+    fun render(width: Int): String = renderList(width).joinToString("\n")
+
+    fun renderList(width: Int): List<String> {
         val statuses = facade.adapterStatus()
         val openAiIds = OpenAiCompatibleProviderCatalog.all().map { it.providerId }.toSet()
         val nonOpenAiIds = NonOpenAiFreeProviderCatalog.all().map { it.providerId }.toSet()
@@ -34,7 +36,7 @@ class StatusAdapterRenderer(
                 DataInfraKernelFixtures.runDataInfraResearchFamily().filterNot { it.passed } +
                 AssetProviderFixtures.runAssetFamily().filterNot { it.passed }
 
-        val lines = buildList {
+        return buildList {
             add(surface.sectionHeading("ADAPTERS", width))
             add(surface.row("total", statuses.size.toString(), width))
             add(surface.statusRow("implemented", "${statuses.count { it.implemented }}", Health.VERIFIED, width))
@@ -61,8 +63,6 @@ class StatusAdapterRenderer(
                 addAll(detail(statuses, width))
             }
         }
-
-        return lines.joinToString("\n").trimEnd()
     }
 
     /** Stacks at phone width, tabulates when there is room. */

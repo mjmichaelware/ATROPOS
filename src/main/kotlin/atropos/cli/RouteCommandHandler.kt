@@ -10,6 +10,8 @@ import java.io.File
 class RouteCommandHandler(
     private val uiEngine: AnsiTerminalEngine
 ) {
+    private val renderer = atropos.cli.ui.StatusRouteRenderer()
+
     fun execute(tokens: List<String>): RouterOutcome {
         val prompt = tokens.drop(1).joinToString(" ").trim()
         if (prompt.isBlank()) {
@@ -20,7 +22,9 @@ class RouteCommandHandler(
                 File(".atropos/provider/quota-ledger.tsv"),
                 FileQuotaLedger.seedFromDescriptors(registry)
             )
-            uiEngine.renderNotice(AdapterRouteFacade(descriptorRegistry = registry, ledger = ledger).renderRoute(prompt))
+            val facade = AdapterRouteFacade(descriptorRegistry = registry, ledger = ledger)
+            val result = facade.decide(prompt, dryRun = true)
+            uiEngine.renderBlock(renderer.renderRoute(result, uiEngine.viewportWidth))
         }
         return RouterOutcome.CONTINUE
     }

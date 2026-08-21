@@ -38,6 +38,8 @@ class AgentVerifier(
     private val redactionFilter: RedactionFilter = RedactionFilter(),
     private val processRunner: BoundedProcessRunner = BoundedProcessRunner()
 ) {
+    private val impactPlanner = RepositoryImpactPlanner(collector.repoRoot)
+
     fun verify(reference: String): AgentVerificationRunResult {
         val patch = resolvePatch(reference)
             ?: return AgentVerificationRunResult(
@@ -48,6 +50,8 @@ class AgentVerifier(
                 refusalReason = refusalForMissingPatch(reference)
             )
 
+        val impact = runCatching { impactPlanner.plan(patch.extraction.touchedPaths) }
+            .getOrElse { RepositoryImpactPlan(patch.extraction.touchedPaths, patch.extraction.touchedPaths, 0, 0, true) }
         val execution = runVerificationCommand(patch.id)
         val passed = execution.exitCode == 0 && !execution.timedOut && execution.launchError == null
         val stdout = redactSensitiveOutput(execution.stdout.text)
@@ -79,6 +83,9 @@ class AgentVerifier(
                 appendLine("exit=${execution.exitCode ?: "none"}")
                 appendLine("duration=${execution.durationMillis}")
                 appendLine("changed=${patch.extraction.touchedPaths.joinToString(", ").ifBlank { "none" }}")
+                appendLine("impact=${impact.impactedPaths.joinToString(", ").ifBlank { "none" }}")
+                appendLine("impact_scanned_files=${impact.scannedFiles}")
+                appendLine("impact_truncated=${impact.truncated}")
                 appendLine("failure=${failureReason ?: "none"}")
             }.trimEnd(),
             tags = listOf("agent", "verification", if (passed) "passed" else "failed")

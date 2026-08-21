@@ -27,5 +27,8 @@ data class FactoryPlan(
     val memoryPointers: List<String> = emptyList(),
     val contextHash: String? = null,
     val specGraphStatus: String? = null,
-    val eventJournalPath: String? = null
+    val eventJournalPath: String? = null,
+    val acceptanceFreezeSha256: String? = null,
+    val economics: FactoryRunEconomics? = null,
+    val terminationReason: String? = null
 )

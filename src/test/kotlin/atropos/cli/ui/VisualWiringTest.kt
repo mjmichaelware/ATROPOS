@@ -29,7 +29,8 @@ class VisualWiringTest {
         dag: List<DagWallpaper.NodeState> = emptyList(),
         confidence: Double = 1.0,
         costs: List<Double> = emptyList(),
-        firstRun: FirstRunGuide.Progress? = null
+        firstRun: FirstRunGuide.Progress? = null,
+        repository: RepositoryState = RepositoryState.unknown()
     ) = SessionPresentationState(
         provider = "groq",
         mode = "ASK",
@@ -38,7 +39,7 @@ class VisualWiringTest {
         tokens = MetricValue.Known("1200"),
         cost = MetricValue.Known("$0.0100"),
         activeOperation = null,
-        repository = RepositoryState.unknown(),
+        repository = repository,
         activeScreen = "Dashboard",
         dagNodeStates = dag,
         confidence = confidence,
@@ -101,6 +102,20 @@ class VisualWiringTest {
 
         assertFalse(quiet.contains("▁"), "a flat line was drawn from no readings: $quiet")
         assertTrue(spending.any { it in "▁▂▃▄▅▆▇█" }, spending)
+    }
+
+    @Test
+    fun the_footer_keeps_active_provider_and_repository_dirty_state_visible() {
+        val rendered = TerminalText.stripAnsi(
+            StatusBarRenderer(theme).footer(
+                state(repository = RepositoryState(true, "main", 2, true)),
+                140
+            )
+        )
+
+        assertTrue(rendered.contains("groq"), rendered)
+        assertTrue(rendered.contains("main"), rendered)
+        assertTrue(rendered.contains("!"), rendered)
     }
 
     @Test

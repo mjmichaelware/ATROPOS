@@ -17,9 +17,12 @@ class AppVerificationHelper(
     private val processRunner: BoundedProcessRunner = BoundedProcessRunner(),
     private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
+    private val verificationPlanner = RepositoryVerificationPlanner()
+
     fun runVerify(directory: Path): String {
         val actor = ActionActor.HierarchyNode("factory-worker", "factory-${directory.fileName}")
-        val command = listOf("sh", "verify.sh")
+        val command = verificationPlanner.plan(directory).commands.firstOrNull()?.argv
+            ?: error("generated repository has no known verification command")
         val targetPath = repoRoot.toAbsolutePath().normalize()
             .relativize(directory.resolve("verify.sh").toAbsolutePath().normalize())
             .toString()

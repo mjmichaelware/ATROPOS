@@ -4,7 +4,6 @@ package atropos.cli
 import atropos.cli.ui.AnsiTerminalEngine
 import atropos.cli.ui.StatusProviderDescriptorRenderer
 import atropos.core.AtroposConfig
-import atropos.core.ProviderDecisionEngine
 import atropos.core.provider.ProviderActivationService
 import atropos.core.provider.ProviderDescriptorReport
 import atropos.core.provider.ProviderDescriptorValidator
@@ -17,14 +16,16 @@ class ProviderCommandHandler(
     private val uiEngine: AnsiTerminalEngine
 ) {
     fun execute(tokens: List<String>, currentProviderName: String) {
+        val expanded = tokens.any { it.equals("--full", ignoreCase = true) }
         when (tokens.getOrNull(1)?.lowercase()) {
             "inventory" -> uiEngine.renderNotice(
-                ProviderTruthService(config).snapshot(currentProviderName).renderInventory()
+                ProviderTruthService(config).snapshot(currentProviderName).renderInventory(expanded)
             )
-            "descriptors" -> uiEngine.renderNotice(
-                StatusProviderDescriptorRenderer(StaticProviderDescriptorRegistry()).render(currentProviderName) +
-                    "\n" + ProviderDescriptorReport(StaticProviderDescriptorRegistry()).generate()
-            )
+            "descriptors" -> {
+                val registry = StaticProviderDescriptorRegistry()
+                val list = StatusProviderDescriptorRenderer(registry).renderList(currentProviderName, expanded, uiEngine.viewportWidth)
+                uiEngine.renderBlock(list)
+            }
             "matrix" -> uiEngine.renderNotice(
                 RoutedTask.entries.joinToString("\n") { it.render() }
             )
@@ -32,7 +33,7 @@ class ProviderCommandHandler(
             "verify" -> renderVerify(tokens)
             "live-test" -> renderLiveTest(tokens)
             else -> uiEngine.renderNotice(
-                "active provider: $currentProviderName\n" + ProviderDecisionEngine().providersReport(config)
+                ProviderTruthService(config).snapshot(currentProviderName).renderInventory(expanded)
             )
         }
     }

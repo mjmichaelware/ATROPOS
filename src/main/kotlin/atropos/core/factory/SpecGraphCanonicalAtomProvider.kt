@@ -2,8 +2,12 @@
 package atropos.core.factory
 
 import atropos.core.AtroposRepoRootLocator
+import atropos.core.AtroposConfig
+import atropos.core.ProviderCascadeRouter
+import atropos.core.ProviderFactory
 import atropos.core.planning.CanonicalAtomProvider
 import atropos.core.planning.CanonicalAtomSet
+import atropos.core.planning.AtomDimension
 import atropos.core.specgraph.ExportBundleReader
 import java.nio.file.Files
 import java.nio.file.Path
@@ -34,8 +38,17 @@ class SpecGraphCanonicalAtomProvider(
      */
     private val evidenceSink: (String) -> Unit = { line ->
         atropos.core.thinking.Thinking.stream.emit(atropos.core.thinking.ThinkingDepth.L2, line)
-    }
+    },
+    /** Test seam; production uses the canonical provider cascade below. */
+    private val dimensionCompletion: ((String, String) -> String)? = null
 ) : CanonicalAtomProvider {
+
+    private data class DimensionClassification(
+        val response: String,
+        val provider: String,
+        val attempts: Int,
+        val failures: String
+    )
 
     override fun atomsFor(
         projectId: String,
@@ -58,7 +71,13 @@ class SpecGraphCanonicalAtomProvider(
         // fallback that left no trace would make every plan look canonical.
         evidenceSink("specgraph source=$sourcePath ${atomization.evidenceLine}")
 
-        if (!atomization.usable) return null
+        if (!atomization.usable) {
+            evidenceSink(
+                "specgraph source=$sourcePath degraded_mode=internal_dag_fallback " +
+                    "reason=${atomization.evidenceLine}"
+            )
+            return null
+        }
 
         val mapped = atomization.atoms.map { record ->
             record.toInternalAtom(
@@ -76,31 +95,127 @@ class SpecGraphCanonicalAtomProvider(
         // only one that emits an edgeless graph.
         val staged = atropos.core.planning.InternalAtomDependencyModel.withStageDependencies(mapped)
 
-        // SpecGraph's atoms carry its own vocabulary, not ATROPOS dimensions, so
-        // `dimensionOrDefault` maps every one of them to FUNCTIONAL_CONTRACT.
-        // That is a real loss and it is silent: a plan of nothing but contracts
-        // has no implementation or verification stage to depend on it, which is
-        // why a canonical atomization currently yields roots and no edges.
-        //
-        // The structural fix is to consume SpecGraph's *execution graph* rather
-        // than its atoms -- it already stages every atom into CONTRACT ->
-        // IMPLEMENTATION -> VERIFICATION and joins them with MUST_PRECEDE. Until
-        // that is wired, this at least says so out loud.
-        val distinctDimensions = staged.map { it.dimension }.distinct()
-        if (staged.size > 1 && distinctDimensions.size == 1) {
-            evidenceSink(
-                "specgraph source=$sourcePath SKIPPED_SOFT_FAIL:dimension_collapse " +
-                    "atoms=${staged.size} all=${distinctDimensions.single().name.lowercase()}; " +
-                    "canonical atoms carry no ATROPOS dimension, so the plan is contracts only"
-            )
-        }
+        // Canonical SpecGraph dimensions are transport data, not a substitute
+        // for the provider-backed dimension contract. Every atom is classified
+        // so partial or collapsed upstream labels cannot silently become a
+        // false-green execution plan.
+        val finalStaged = fillDimensions(staged, promptFingerprint, sourcePath)
+        evidenceSink(
+            "specgraph source=$sourcePath provider filled atom dimensions " +
+                "count=${finalStaged.size} categories=${finalStaged.map { it.dimension }.distinct().size}"
+        )
 
         return CanonicalAtomSet(
-            atoms = staged,
+            atoms = finalStaged,
             provenance = "canonical_specgraph document=${atomization.documentId} " +
-                "atoms=${staged.size} source_sha256=${atomization.sourceSha256} " +
-                atropos.core.planning.InternalAtomDependencyModel.render(staged)
+                "atoms=${finalStaged.size} source_sha256=${atomization.sourceSha256} " +
+                atropos.core.planning.InternalAtomDependencyModel.render(finalStaged)
         )
+    }
+
+    internal fun fillDimensions(
+        atoms: List<atropos.core.planning.InternalAtom>,
+        promptFingerprint: String,
+        sourcePath: String
+    ): List<atropos.core.planning.InternalAtom> = atoms.map { atom ->
+        val prompt = """
+            Classify this software requirement into exactly one ATROPOS AtomDimension.
+            Return only the exact enum constant, with no markdown or explanation.
+            Categories: ${AtomDimension.entries.joinToString(", ") { it.name }}
+            Prompt fingerprint: $promptFingerprint
+            Source: $sourcePath
+            Requirement: ${atom.statement}
+        """.trimIndent()
+        val classification = runCatching {
+            dimensionCompletion?.invoke(prompt, "System: classify one requirement")?.let {
+                DimensionClassification(
+                    response = it,
+                    provider = "injected",
+                    attempts = 1,
+                    failures = "none"
+                )
+            } ?: completeThroughProviderCascade(prompt)
+        }.getOrElse { failure ->
+            if (failure.message?.startsWith("NO_ELIGIBLE_DIMENSION_PROVIDER") == true) {
+                throw failure
+            }
+            throw IllegalStateException(
+                "SPECGRAPH_DIMENSION_FILL_REQUIRED: provider unavailable for atom=${atom.id}; " +
+                    "configure an eligible provider and retry (${failure.message ?: failure.javaClass.simpleName})",
+                failure
+            )
+        }
+        evidenceSink(
+            "specgraph source=$sourcePath atom=${atom.id} dimension_provider=${classification.provider} " +
+                "attempts=${classification.attempts} failures=${classification.failures}"
+        )
+        val classified = parseDimension(classification.response)
+            ?: throw IllegalStateException(
+                "SPECGRAPH_DIMENSION_FILL_REQUIRED: provider returned no valid AtomDimension " +
+                    "for atom=${atom.id}; response must be one exact enum constant"
+            )
+        atom.copy(dimension = classified)
+    }
+
+    override fun fillDimensionsForFallback(
+        atoms: List<atropos.core.planning.InternalAtom>,
+        promptFingerprint: String,
+        sourcePath: String
+    ): List<atropos.core.planning.InternalAtom>? {
+        return try {
+            fillDimensions(atoms, promptFingerprint, sourcePath)
+        } catch (failure: IllegalStateException) {
+            if (failure.message?.startsWith("NO_ELIGIBLE_DIMENSION_PROVIDER") == true) {
+                evidenceSink(
+                    "specgraph source=$sourcePath fallback dimensions=deterministic_keyword_classification " +
+                        "reason=${failure.message}"
+                )
+                null
+            } else {
+                throw failure
+            }
+        }
+    }
+
+    private fun completeThroughProviderCascade(prompt: String): DimensionClassification {
+        val config = AtroposConfig.load()
+        val result = ProviderCascadeRouter(ProviderFactory(config)).completeWithCascade(
+            requestedProvider = config.runtime.defaultProvider,
+            prompt = prompt,
+            context = "System: classify one requirement into the supplied closed vocabulary.",
+            acceptResponse = { response -> parseDimension(response) != null }
+        )
+        if (result.queued || result.response.isBlank()) {
+            val attempted = result.errors.joinToString(",") { error ->
+                "${error.provider}:${error.type.name.lowercase()}"
+            }.ifBlank { "none" }
+            val prefix = if (
+                result.errors.isEmpty() ||
+                result.errors.all { it.type == atropos.core.FailureType.MISSING_KEY }
+            ) {
+                "NO_ELIGIBLE_DIMENSION_PROVIDER"
+            } else {
+                "SPECGRAPH_DIMENSION_FILL_REQUIRED"
+            }
+            throw IllegalStateException(
+                "$prefix: no eligible provider completed the AtomDimension classification; " +
+                    "attempted=$attempted; configure or repair an eligible provider and retry" +
+                    result.queueReason?.let { "; queue=$it" }.orEmpty()
+            )
+        }
+        return DimensionClassification(
+            response = result.response,
+            provider = result.providerName,
+            attempts = result.errors.size + 1,
+            failures = result.errors.joinToString(",") { error ->
+                "${error.provider}:${error.type.name.lowercase()}"
+            }.ifBlank { "none" }
+        )
+    }
+
+    internal fun parseDimension(response: String): AtomDimension? {
+        val normalized = response.trim().uppercase()
+        return AtomDimension.entries.firstOrNull { it.name == normalized }
     }
 
     /**

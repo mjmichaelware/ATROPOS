@@ -24,6 +24,8 @@ class AuthCommandHandler(
     private val bootstrap: AuthBootstrap = AuthBootstrap(),
     private val resolver: AuthCascadeResolver = AuthCascadeResolver()
 ) {
+    private val renderer = atropos.cli.ui.StatusAuthRenderer()
+
     fun execute(tokens: List<String>): RouterOutcome {
         when (tokens.getOrNull(1)?.lowercase()) {
             null, "verify", "status" -> renderVerify()
@@ -36,20 +38,7 @@ class AuthCommandHandler(
 
     private fun renderVerify() {
         val statuses = bootstrap.verify().filter { it.state != "absent" }
-        if (statuses.isEmpty()) {
-            uiEngine.renderNotice(
-                "No authority documents found. Add AGENTS.md to declare rules that survive provider drift."
-            )
-            return
-        }
-        uiEngine.renderNotice(
-            buildString {
-                appendLine("Authority documents")
-                statuses.forEach { status ->
-                    appendLine("  ${status.state.padEnd(9)} ${status.path}  ${status.sha256.take(16)}")
-                }
-            }.trimEnd()
-        )
+        uiEngine.renderBlock(renderer.renderVerify(statuses, uiEngine.viewportWidth))
     }
 
     private fun renderCascade() {
@@ -63,27 +52,10 @@ class AuthCommandHandler(
                     uiEngine.renderNotice("No authority layers are declared, so nothing is cascaded.")
                     return
                 }
-                uiEngine.renderNotice(
-                    buildString {
-                        appendLine("Authority cascade")
-                        resolver.snapshot(boot.layers).forEach { line ->
-                            appendLine("  " + describe(line))
-                        }
-                    }.trimEnd()
-                )
+                val resolutions = resolver.snapshot(boot.layers)
+                uiEngine.renderBlock(renderer.renderCascade(resolutions, uiEngine.viewportWidth))
             }
         }
-    }
-
-    private fun describe(resolution: CascadeResolution): String = when (resolution) {
-        is CascadeResolution.Resolved ->
-            "${resolution.key} = ${resolution.value}  (${resolution.source}" +
-                if (resolution.final) ", final)" else ")"
-
-        is CascadeResolution.Violation ->
-            "${resolution.key} REFUSED — ${resolution.reason}"
-
-        is CascadeResolution.Undefined -> "${resolution.key} undefined"
     }
 
     private fun renderAccept(path: String?) {

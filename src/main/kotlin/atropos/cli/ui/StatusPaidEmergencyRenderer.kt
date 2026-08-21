@@ -1,26 +1,35 @@
 package atropos.cli.ui
 
+import atropos.cli.config.ConfigurationManager
+import atropos.cli.ui.design.Health
+import atropos.cli.ui.design.Role
 import atropos.core.paid.EmergencyPaidGate
 
 class StatusPaidEmergencyRenderer(
-    private val gate: EmergencyPaidGate = EmergencyPaidGate()
+    private val gate: EmergencyPaidGate = EmergencyPaidGate(),
+    private val theme: TerminalTheme = TerminalTheme(ConfigurationManager())
 ) {
-    fun render(): String {
+    private val surface get() = theme.surface
+
+    fun render(): String = render(80).joinToString("\n")
+
+    fun render(width: Int): List<String> {
         val status = gate.status()
-        return buildString {
-            appendLine("paid emergency:")
-            if (status.active == null) {
-                appendLine("  state: locked")
-                appendLine("  unlock: /paid unlock <provider> <duration> reason=\"...\"")
+        val active = status.active
+        val body = buildList {
+            if (active == null) {
+                add(surface.statusRow("state", "locked", Health.ERROR, width))
+                add(surface.hint("unlock: /paid unlock <provider> <duration> reason=\"...\"", width))
             } else {
-                appendLine("  state: unlocked")
-                appendLine("  provider: ${status.active.providerId}")
-                appendLine("  expires_at_epoch_ms: ${status.active.expiresAtEpochMs}")
-                appendLine("  reason: ${status.active.reason}")
+                add(surface.statusRow("state", "unlocked", Health.VERIFIED, width))
+                add(surface.row("provider", active.providerId, width))
+                add(surface.row("expires", active.expiresAtEpochMs.toString(), width))
+                add(surface.row("reason", active.reason, width))
             }
-            appendLine("  providers: ${status.knownPaidProviders.joinToString(",")}")
-            appendLine("  audit: ${status.auditFile.path}")
-            appendLine("  policy: paid providers are never selected automatically")
+            add(surface.row("paid providers", status.knownPaidProviders.joinToString(", "), width))
+            add(surface.row("audit", status.auditFile.name, width))
+            add(surface.hint("policy: paid providers are never selected automatically", width))
         }
+        return surface.block("PAID EMERGENCY GATE", body, width, Role.BRAND)
     }
 }

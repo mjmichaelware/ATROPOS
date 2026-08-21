@@ -29,7 +29,8 @@ data class EvidenceManifest(
     val hrRouterAction: String? = null,
     val proposalSha256: String? = null,
     val clarificationAnswersSha256: String? = null,
-    val clarificationLineageSha256: String? = null
+    val clarificationLineageSha256: String? = null,
+    val acceptanceFreezeSha256: String? = null
 ) {
     /**
      * Fail closed before the evidence commit when the manifest cannot prove
@@ -54,6 +55,9 @@ data class EvidenceManifest(
         }
         require(promptSha256?.matches(Regex("[0-9a-f]{64}")) == true && researchSha256?.matches(Regex("[0-9a-f]{64}")) == true) {
             "evidence lineage hashes are missing or malformed"
+        }
+        require(acceptanceFreezeSha256?.matches(Regex("[0-9a-f]{64}")) == true) {
+            "evidence acceptance freeze hash is missing or malformed"
         }
         require(proposalSha256?.matches(Regex("[0-9a-f]{64}")) == true) {
             "evidence source proposal hash is missing or malformed"
@@ -113,11 +117,13 @@ data class EvidenceManifest(
         promptSha256?.let { appendLine("prompt_sha256=$it") }
         promptFingerprint?.let { appendLine("prompt_fingerprint=$it") }
         researchSha256?.let { appendLine("research_sha256=$it") }
+        acceptanceFreezeSha256?.let { appendLine("acceptance_freeze_sha256=$it") }
         proposalSha256?.let { appendLine("proposal_sha256=$it") }
         if (promptFingerprint != null || promptSha256 != null || researchSha256 != null) {
             appendLine("prompt_artifact=.atropos/research/user-prompt.md")
             appendLine("requirements_artifact=.atropos/research/requirements.md")
             appendLine("atoms_artifact=.atropos/research/atoms.md")
+            appendLine("acceptance_freeze_artifact=.atropos/research/acceptance-freeze.md")
         }
         directorDecision?.let { appendLine("director=$it") }
         auditorDecision?.let { appendLine("auditor=$it") }

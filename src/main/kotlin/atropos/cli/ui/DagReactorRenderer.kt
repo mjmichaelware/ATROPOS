@@ -2,6 +2,7 @@
 package atropos.cli.ui
 
 import atropos.cli.ui.design.HoeStatusVocabulary
+import java.util.Locale
 
 /**
  * HOE-E03: DAG reactor presentation.
@@ -37,7 +38,7 @@ class DagReactorRenderer(private val theme: TerminalTheme) {
             val detailText = node.detail?.let { " - $it" } ?: ""
             val pct = (node.progress * 100).toInt().toString().padStart(3) + "%"
 
-            "$icon $name $pct$detailText".take(safeWidth)
+            "$icon [${signal.text.uppercase(Locale.ROOT)}] $name $pct$detailText".take(safeWidth)
         }
     }
 }

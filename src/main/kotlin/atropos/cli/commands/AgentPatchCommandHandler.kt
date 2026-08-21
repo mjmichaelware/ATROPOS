@@ -77,7 +77,13 @@ class AgentPatchCommandHandler(
             val result = service.patch(activeProviderName(), task, patchRequest.providerOverride)
             val body = buildString {
                 append(result.render())
-                patchDisplay.changedPathsPreview(result.patchPath)?.let {
+                patchDisplay.richDiffSummary(result.patchPath)?.let {
+                    appendLine()
+                    appendLine()
+                    append("Changes:")
+                    appendLine()
+                    append(it)
+                } ?: patchDisplay.changedPathsPreview(result.patchPath)?.let {
                     appendLine()
                     append("Changed paths: $it")
                 }

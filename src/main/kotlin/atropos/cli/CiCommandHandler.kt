@@ -18,7 +18,7 @@ class CiCommandHandler(
                 if (result == null) uiEngine.renderNotice("queue empty")
                 else uiEngine.renderNotice("job ${result.item.id} exit=${result.exitCode}\n${result.outputTail}")
             }
-            else -> uiEngine.renderNotice(renderer.render())
+            else -> uiEngine.renderBlock(renderer.render(uiEngine.viewportWidth))
         }
         return RouterOutcome.CONTINUE
     }

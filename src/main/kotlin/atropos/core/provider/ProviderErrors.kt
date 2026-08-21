@@ -12,6 +12,7 @@ enum class FailureType {
     TIMEOUT,
     MODEL_MISSING,
     BAD_JSON,
+    INVALID_RESPONSE,
     UNKNOWN
 }
 

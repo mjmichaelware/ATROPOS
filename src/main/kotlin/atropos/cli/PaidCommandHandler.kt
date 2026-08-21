@@ -11,10 +11,14 @@ class PaidCommandHandler(
 ) {
     fun execute(tokens: List<String>): RouterOutcome {
         when (tokens.getOrNull(1)?.lowercase()) {
-            null, "status" -> uiEngine.renderNotice(StatusPaidEmergencyRenderer(gate).render())
+            null, "status" -> uiEngine.renderBlock(renderer.render(uiEngine.viewportWidth))
             "unlock" -> unlock(tokens)
-            "lock" -> uiEngine.renderNotice(if (gate.lock()) "paid emergency locked" else "paid emergency already locked")
-            else -> uiEngine.renderError("usage: /paid [status|unlock <provider> <duration> reason=\"...\"|lock]")
+            "lock" -> uiEngine.renderBlock(
+                listOf(
+                    if (gate.lock()) "paid emergency locked" else "paid emergency already locked"
+                )
+            )
+            else -> uiEngine.renderError("usage: /paid [status|unlock <provider> <duration> reason=\"...\"]")
         }
         return RouterOutcome.CONTINUE
     }

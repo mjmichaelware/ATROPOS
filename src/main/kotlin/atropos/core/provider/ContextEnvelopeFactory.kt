@@ -26,7 +26,10 @@ object ContextEnvelopeFactory {
         promptSpans: String = "none",
         memoryPointers: List<String> = emptyList(),
         branch: String = currentBranch(repoRoot),
-        baselineCommit: String = currentCommit(repoRoot)
+        baselineCommit: String = currentCommit(repoRoot),
+        acceptanceFreezeSha256: String = "",
+        openAtomCount: Int? = null,
+        nonGoals: List<String> = emptyList()
     ): ContextEnvelope {
         val envelope = ContextEnvelope(
             repository = repoRoot.fileName.toString(),
@@ -34,7 +37,7 @@ object ContextEnvelopeFactory {
             branch = branch,
             baselineCommit = baselineCommit,
             goalId = projectId,
-            task = "factory project=$projectId prompt=$promptFingerprint prompt_sha256=${promptSha256.ifBlank { "UNRECORDED" }} research=$researchSha256 atoms=${atomIds.joinToString(",")} spans=$promptSpans channels=$researchChannels memory=${memoryPointers.joinToString(",")}",
+            task = "factory project=$projectId prompt=$promptFingerprint prompt_sha256=${promptSha256.ifBlank { "UNRECORDED" }} research=$researchSha256 atoms=${atomIds.joinToString(",")} open_work=${openAtomCount ?: "unknown"} freeze=${acceptanceFreezeSha256.ifBlank { "UNRECORDED" }} spans=$promptSpans channels=$researchChannels memory=${memoryPointers.joinToString(",")} non_goals=${nonGoals.joinToString("|")}",
             phaseOrPass = "phase-19-app-factory",
             hierarchyRole = "factory-worker",
             authority = "proposal-only",

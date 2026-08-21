@@ -27,6 +27,11 @@ import java.nio.charset.StandardCharsets
  * library; an atom carrying a megabyte of context has buried the sentence that
  * mattered. Redaction applies because retrieved documents are rendered into
  * prompts and evidence like anything else.
+ *
+ * This provider attaches bounded research context only. It never classifies or
+ * fills the sixteen [atropos.core.planning.AtomDimension] fields; canonical
+ * dimension filling belongs to the provider cascade in the SpecGraph factory
+ * path, so lakehouse availability cannot manufacture canonical atom metadata.
  */
 class LakehouseAtomContextProvider(
     private val index: LakehousePathIndex = LakehousePathIndex(),

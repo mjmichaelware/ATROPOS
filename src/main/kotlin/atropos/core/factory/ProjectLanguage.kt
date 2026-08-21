@@ -42,7 +42,27 @@ enum class ProjectLanguage(
     CSHARP("C#", listOf("c#", "csharp", ".net", "asp.net", "entity framework", "nuget")),
     PHP("PHP", listOf("php", "laravel", "symfony", "composer.json")),
     SWIFT("Swift", listOf("swift", "swiftui", "xcode", "cocoapods")),
-    CPP("C++", listOf("c++", "cpp", "cmake", "catch2"));
+    CPP("C++", listOf("c++", "cpp", "cmake", "catch2")),
+    ELIXIR("Elixir", listOf("elixir", "phoenix", "mix.exs", "exunit")),
+    SCALA("Scala", listOf("scala", "sbt", "scalatest")),
+    CLOJURE("Clojure", listOf("clojure", "leiningen", "deps.edn")),
+    HASKELL("Haskell", listOf("haskell", "cabal", "stack.yaml", "ghc")),
+    DART("Dart", listOf("dart", "flutter", "pubspec", "dart test")),
+    C("C", listOf("ansi c", " c99", " c11", "gcc")),
+    ZIG("Zig", listOf("zig", "build.zig")),
+    LUA("Lua", listOf("lua", "luarocks")),
+    R("R", listOf("rstudio", "cran", "tidyverse", "rscript")),
+    JULIA("Julia", listOf("julia", "project.toml julia")),
+    FSHARP("F#", listOf("f#", "fsharp", "dotnet fsi")),
+    ERLANG("Erlang", listOf("erlang", "rebar3", "otp")),
+    PERL("Perl", listOf("perl", "cpan", "prove")),
+    BASH("Bash", listOf("bash script", "shell script", "shellcheck")),
+    POWERSHELL("PowerShell", listOf("powershell", "pwsh", "ps1")),
+    OBJECTIVE_C("Objective-C", listOf("objective-c", "objective c", "objc")),
+    FORTRAN("Fortran", listOf("fortran", "gfortran", "f90")),
+    GROOVY("Groovy", listOf("groovy", "gradle groovy")),
+    NIM("Nim", listOf("nim", "nimble")),
+    SOLIDITY("Solidity", listOf("solidity", "solc", "foundry", "forge"));
 
     /** What the detector concluded, and how confident that conclusion is. */
     sealed interface Detection {
@@ -72,16 +92,16 @@ enum class ProjectLanguage(
          * layout.
          */
         val RECOGNISED_WITHOUT_LAYOUT: Map<String, List<String>> = mapOf(
-            "Elixir" to listOf("elixir", "phoenix framework", "mix.exs"),
-            "Scala" to listOf("scala", "sbt "),
-            "Clojure" to listOf("clojure", "leiningen", "deps.edn"),
-            "Haskell" to listOf("haskell", "cabal", "stack.yaml"),
-            "Dart" to listOf("dart", "flutter", "pubspec"),
-            "C" to listOf("ansi c", " c99", " c11"),
-            "Zig" to listOf("zig", "build.zig"),
-            "Lua" to listOf("lua", "luarocks"),
-            "R" to listOf("rstudio", "cran", "tidyverse"),
-            "Julia" to listOf("julia", "project.toml julia")
+            "OCaml" to listOf("ocaml", "opam", "dune"),
+            "Elm" to listOf("elm", "elm.json"),
+            "Crystal" to listOf("crystal", "shards.yml"),
+            "Racket" to listOf("racket", "#lang racket"),
+            "Prolog" to listOf("prolog", "swipl"),
+            "COBOL" to listOf("cobol", "gnucobol"),
+            "Ada" to listOf("ada", "gnat"),
+            "MATLAB" to listOf("matlab", "octave"),
+            "V" to listOf("vlang", "vlang.org", "v fmt"),
+            "Assembly" to listOf("assembly", "asm", "nasm", "gas")
         )
 
         /**

@@ -1,10 +1,18 @@
 package atropos.cli.commands
 
+import atropos.cli.config.ConfigurationManager
+import atropos.cli.ui.TerminalTheme
+import atropos.cli.ui.design.Role
+
 object AgentCommandText {
-    fun formatBlock(title: String, body: String): String = buildString {
-        appendLine("── $title ──")
-        body.lineSequence().forEach { line -> append(wrapLine(line)).append('\n') }
-    }.trimEnd()
+    private val theme = TerminalTheme(ConfigurationManager())
+    private val surface get() = theme.surface
+
+    fun formatBlock(title: String, body: String): String {
+        val width = 80
+        val lines = body.lineSequence().flatMap { wrapLine(it, width - 4).lineSequence() }.toList()
+        return surface.block(title.uppercase(), lines, width, Role.BRAND).joinToString("\n")
+    }
 
     fun renderRendererOutput(lines: List<String>): String =
         lines.joinToString("\n").trimEnd()

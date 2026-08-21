@@ -14,8 +14,8 @@ class MemoryCommandHandler(
     fun execute(tokens: List<String>): RouterOutcome {
         when (tokens.getOrNull(1)?.lowercase()) {
             "remember" -> remember(tokens)
-            "search" -> uiEngine.renderNotice(renderer.renderSearch(memoryStore.search(tokens.drop(2).joinToString(" "))))
-            else -> uiEngine.renderNotice(renderer.render())
+            "search" -> uiEngine.renderBlock(renderer.renderSearch(memoryStore.search(tokens.drop(2).joinToString(" ")), uiEngine.viewportWidth))
+            else -> uiEngine.renderBlock(renderer.render(uiEngine.viewportWidth))
         }
         return RouterOutcome.CONTINUE
     }

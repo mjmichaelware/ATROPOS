@@ -28,6 +28,17 @@ interface CanonicalAtomProvider {
         promptSpans: String
     ): CanonicalAtomSet?
 
+    /**
+     * Optional dimension enrichment for the first-class internal fallback.
+     * Null means no eligible provider is available; a thrown error means
+     * eligible providers were attempted and all failed.
+     */
+    fun fillDimensionsForFallback(
+        atoms: List<InternalAtom>,
+        promptFingerprint: String,
+        sourcePath: String
+    ): List<InternalAtom>? = null
+
     companion object {
         val NONE: CanonicalAtomProvider = object : CanonicalAtomProvider {
             override fun atomsFor(

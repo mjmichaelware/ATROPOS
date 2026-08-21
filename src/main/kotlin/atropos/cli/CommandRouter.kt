@@ -123,6 +123,8 @@ class CommandRouter(
     private val opsCommand = OpsCommandHandler(uiEngine)
     private val routeCommand = RouteCommandHandler(uiEngine)
     private val astCommand = AstCommandHandler(uiEngine)
+    private val diffCommand = DiffCommandHandler(uiEngine)
+    private val historyCommand = HistoryCommandHandler(uiEngine)
     private val providerChatDispatcher = ProviderChatDispatcher(
         config = config,
         uiEngine = uiEngine,
@@ -488,6 +490,10 @@ class CommandRouter(
                 dloiCommand.execute(tokens)
                 RouterOutcome.CONTINUE
             }
+
+            "/diff", "/changes" -> diffCommand.execute(tokens)
+
+            "/history", "/timeline" -> historyCommand.execute(tokens)
 
             "/ast" -> astCommand.execute(tokens)
 

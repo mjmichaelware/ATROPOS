@@ -60,7 +60,12 @@ class InternalPlanningGraphService(
             )
             canonical?.atoms ?: run {
                 val document = ingestionService.ingestText(projectId, sourcePath, content)
-                atomExtractor.extract(document)
+                val internal = atomExtractor.extract(document)
+                canonicalAtoms.fillDimensionsForFallback(
+                    atoms = internal,
+                    promptFingerprint = promptFingerprint,
+                    sourcePath = sourcePath
+                ) ?: internal
             }
         }.map { atom -> atom.copy(promptFingerprint = promptFingerprint, promptSpans = promptSpans) }
         return persistPlan(projectId, label, atoms)

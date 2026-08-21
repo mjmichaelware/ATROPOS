@@ -434,6 +434,7 @@ class AnsiTerminalEngine(
         }
         renderBlock(dagReactorRenderer.render(listOf(DagReactorRenderer.ReactorNode(stage, status, detail)), canvas.width))
         renderBlock(toastRenderer.render(Toast(null, summary), canvas.width))
+        if (status == "completed" || status == "failed") signalAttention()
     }
 
     @Synchronized
@@ -509,6 +510,8 @@ class AnsiTerminalEngine(
         renderedErrors.incrementAndGet()
         stopSpinner()
         if (message.contains("approval", ignoreCase = true) || message.contains("confirm", ignoreCase = true)) {
+            state.verificationState = "awaiting approval"
+            signalAttention()
             val dialog = dialogRenderer.renderConfirm(
                 title = "Operator confirmation required",
                 body = message,
@@ -585,6 +588,15 @@ class AnsiTerminalEngine(
         )
         boundedRendering.controlBackgroundUpdate(state.reactive) {
             canvas.render(frame)
+        }
+    }
+
+    /** A terminal bell is optional attention, never a requirement for progress. */
+    private fun signalAttention() {
+        if (!state.reactive || !System.getenv("ATROPOS_DISABLE_BELL").isNullOrBlank()) return
+        synchronized(plainOutput.lock) {
+            plainOutput.out.print('\u0007')
+            plainOutput.out.flush()
         }
     }
 }

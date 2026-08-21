@@ -32,8 +32,14 @@ class MarkdownRenderer(
 
             if (language != null) {
                 val rendered = when {
-                    language == "diff" && original.startsWith("+") -> style("  $original", "32")
-                    language == "diff" && original.startsWith("-") -> style("  $original", "31")
+                    language == "diff" && original.startsWith("+") && !original.startsWith("+++") ->
+                        style("  $original", if (colorEnabled) "32" else "")
+                    language == "diff" && original.startsWith("-") && !original.startsWith("---") ->
+                        style("  $original", if (colorEnabled) "31" else "")
+                    language == "diff" && original.startsWith("@@") ->
+                        style("  $original", if (colorEnabled) "1;31" else "")
+                    language == "diff" && (original.startsWith("---") || original.startsWith("+++")) ->
+                        style("  $original", if (colorEnabled) "1;37" else "")
                     else -> style("  $original", "36")
                 }
                 output += rendered

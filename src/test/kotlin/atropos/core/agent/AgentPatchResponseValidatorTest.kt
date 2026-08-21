@@ -3,9 +3,11 @@ package atropos.core.agent
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import java.nio.file.Files
 
 /**
  * Pins the single answer to "is this response a usable patch".
@@ -93,30 +95,58 @@ class AgentPatchResponseValidatorTest {
         assertFalse(validator.containsDiffHeader("no patch here, just an explanation"))
     }
 
-    /**
-     * Documents a live limitation of [AgentPatchExtractor], found by this suite.
-     *
-     * `extractUnifiedDiff` classifies each line after `trimStart()`, so a
-     * context line — which is identified precisely by its leading space — never
-     * matches, and the scan stops at the first one. The headers and `@@` survive,
-     * the body does not, and the response is then rejected as "diff body
-     * missing" rather than as the valid patch it is.
-     *
-     * This matters beyond a fixture detail: `git diff` emits three lines of
-     * context by default, so a hunk generally opens with one. The assertion
-     * below pins current behaviour rather than the desired behaviour, so that
-     * fixing the extractor turns this test red on purpose.
-     */
     @Test
-    fun `context lines truncate the hunk body`() {
-        assertNull(
-            validator.usableDiff(diffWithContextLines),
-            "current behaviour: a hunk opening with a context line loses its body"
+    fun `context lines remain part of a usable hunk`() {
+        assertNotNull(validator.usableDiff(diffWithContextLines))
+    }
+
+    @Test
+    fun `strict create envelope is materialized into the canonical patch shape`() {
+        val root = kotlin.io.path.createTempDirectory("atropos-edit").toAbsolutePath()
+        val editValidator = AgentPatchResponseValidator(
+            AgentPatchExtractor(),
+            editMaterializer = AgentEditMaterializer(root)
         )
-        assertEquals(
-            AgentPatchResponseValidator.DIFF_BODY_MISSING,
-            validator.rejectionReason(diffWithContextLines)
+        val response = "<atropos-create path=\"src/Main.kt\">package demo\n\nfun main() = println(42)</atropos-create>"
+        val extraction = editValidator.usableEdit(response)
+        assertNotNull(extraction)
+        assertEquals(listOf("src/Main.kt"), extraction.touchedPaths)
+        assertTrue(extraction.diff.contains("@@ -0,0 +1,3 @@"))
+    }
+
+    @Test
+    fun `exact replacement refuses ambiguous or stale source`() {
+        val root = kotlin.io.path.createTempDirectory("atropos-edit").toAbsolutePath()
+        val file = root.resolve("src/Main.kt")
+        Files.createDirectories(file.parent)
+        Files.writeString(file, "one\none\n")
+        val materializer = AgentEditMaterializer(root)
+        assertFailsWith<IllegalArgumentException> {
+            materializer.materialize(
+                listOf(AgentEditOperation.Replace("src/Main.kt", "one", "two"))
+            )
+        }
+        assertFailsWith<IllegalArgumentException> {
+            materializer.materialize(
+                listOf(AgentEditOperation.Replace("src/Main.kt", "missing", "two"))
+            )
+        }
+    }
+
+    @Test
+    fun `exact replacement produces a patch with stable context`() {
+        val root = kotlin.io.path.createTempDirectory("atropos-edit").toAbsolutePath()
+        val file = root.resolve("src/Main.kt")
+        Files.createDirectories(file.parent)
+        Files.writeString(file, "fun main() {\n    println(1)\n}\n")
+        val materialized = AgentEditMaterializer(root).materialize(
+            listOf(AgentEditOperation.Replace("src/Main.kt", "println(1)", "println(2)"))
         )
+        val extraction = AgentPatchExtractor().extract(materialized.diff)
+        assertNotNull(extraction)
+        assertTrue(extraction.hasHunkBody)
+        assertTrue(extraction.diff.contains("-    println(1)"))
+        assertTrue(extraction.diff.contains("+    println(2)"))
     }
 
     @Test

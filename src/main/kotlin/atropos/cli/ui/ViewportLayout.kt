@@ -180,12 +180,16 @@ class ViewportLayout(
                     place(solvedTranscriptStart + index, line)
                 }
         } else {
-            val reserve = if (activity == null) 0 else 1
+            val hasNewOutput = !transcript.isFollowingTail && transcript.newOutputCount > 0
+            val reserve = (if (activity == null) 0 else 1) + (if (hasNewOutput) 1 else 0)
             val visible = transcript.visibleLines(
                 safeWidth,
                 (solvedTranscriptHeight - reserve).coerceAtLeast(1)
             ).toMutableList()
             activity?.let(visible::add)
+            if (hasNewOutput) {
+                visible += "↓ ${transcript.newOutputCount} new output · scroll down to follow"
+            }
             visible.takeLast(solvedTranscriptHeight).forEachIndexed { index, line ->
                 place(solvedTranscriptStart + index, line)
             }

@@ -19,7 +19,7 @@ class FactoryCommandHandler(
 ) {
     fun execute(tokens: List<String>): RouterOutcome {
         when (tokens.getOrNull(1)?.lowercase()) {
-            null, "status" -> uiEngine.renderNotice(renderer.renderStatus())
+            null, "status" -> uiEngine.renderBlock(renderer.renderStatusList(uiEngine.viewportWidth))
             "plan" -> renderPlan(tokens.drop(2))
             "run" -> renderRun(tokens.drop(2))
             "answer" -> renderClarificationAnswer(tokens.drop(2))

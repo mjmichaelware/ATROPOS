@@ -1,6 +1,7 @@
 package atropos.core.factory
 
 import atropos.core.thinking.Narrate
+import atropos.core.dag.DagStore
 import atropos.core.assets.LocalAssetGenerator
 import atropos.core.memory.LocalMemoryStore
 import atropos.core.memory.MemoryAuthority
@@ -14,6 +15,8 @@ import atropos.core.provider.ContextEnvelopeFactory
 import atropos.core.security.RedactionFilter
 import atropos.core.preview.LivePreviewService
 import atropos.core.multimodal.BrowserEvidenceStatus
+import java.time.Duration
+import java.time.Instant
 import java.nio.file.Path
 
 class FactoryRunOrchestrator(
@@ -30,6 +33,7 @@ class FactoryRunOrchestrator(
         plan: FactoryPlan,
         lineage: FactoryLineage
     ): FactoryPlan {
+        val startedAt = Instant.now()
         val recorder = FactoryRunEventRecorder(journal)
 
         recorder.recordLifecycleStart(
@@ -150,10 +154,35 @@ class FactoryRunOrchestrator(
             atomResearch,
             memoryPointers = listOfNotNull(atomMemory?.id?.let { "st:$it" })
         )
+        val frozenLineage = plannedLineage.withAcceptanceFreeze(plannedAtomIds)
+        val acceptanceFreeze = requireNotNull(frozenLineage.acceptanceFreeze)
+        val obligationLoop = FactoryObligationLoop(DagStore(repoRoot))
+        val initialObligations = obligationLoop.beforeMutation(planningDag)
+        recorder.recordAcceptanceFreeze(
+            runId = plan.id,
+            freezeSha256 = acceptanceFreeze.sha256,
+            openWork = initialObligations.openWork,
+            canaryAtomIds = initialObligations.runnableAtomIds,
+            dagId = planningDag.id,
+            promptFingerprint = lineage.promptFingerprint
+        )
+        recorder.recordObligationLoop(
+            runId = plan.id,
+            snapshot = initialObligations,
+            dagId = planningDag.id,
+            promptFingerprint = lineage.promptFingerprint
+        )
+        FactoryRunHandoff.write(
+            repoRoot = repoRoot,
+            runId = plan.id,
+            dagId = planningDag.id,
+            snapshot = initialObligations,
+            freeze = acceptanceFreeze
+        )
         recorder.recordAtomizationStatus(
             runId = plan.id,
-            state = plannedLineage.atomizationState(),
-            specgraph = plannedLineage.atomizerStatus,
+            state = frozenLineage.atomizationState(),
+            specgraph = frozenLineage.atomizerStatus,
             atomCount = plannedAtomIds.size,
             dagId = planningDag.id,
             promptFingerprint = lineage.promptFingerprint
@@ -174,7 +203,10 @@ class FactoryRunOrchestrator(
             researchChannels = plannedLineage.researchChannels,
             promptSpans = plannedLineage.promptSpans,
             memoryPointers = plannedLineage.memoryPointers,
-            branch = plannedBranch
+            branch = plannedBranch,
+            acceptanceFreezeSha256 = acceptanceFreeze.sha256,
+            openAtomCount = initialObligations.openWork,
+            nonGoals = listOf("host repository mutation", "provider prose execution")
         )
         val registration = projectRegistry.register(
             name = plan.projectSpec.intent.name,
@@ -198,9 +230,22 @@ class FactoryRunOrchestrator(
                 plan.id,
                 planningDagId = planningDag.id,
                 plannedAtomIds = plannedAtomIds,
-                lineage = plannedLineage.withContext(context.canonicalContextHash)
+                lineage = frozenLineage.withContext(context.canonicalContextHash)
             )
         } catch (failure: Throwable) {
+            initialObligations.runnableAtomIds.firstOrNull()?.let { atomId ->
+                val failureSnapshot = obligationLoop.recordFailure(
+                    dagId = planningDag.id,
+                    atomId = atomId,
+                    failure = failure.message ?: failure.javaClass.name
+                )
+                recorder.recordObligationLoop(
+                    runId = plan.id,
+                    snapshot = failureSnapshot,
+                    dagId = planningDag.id,
+                    promptFingerprint = lineage.promptFingerprint
+                )
+            }
             recorder.recordGenerationFailure(
                 runId = plan.id,
                 failureType = failure.javaClass.simpleName,
@@ -245,7 +290,11 @@ class FactoryRunOrchestrator(
             }
         recorder.recordPreview(
             runId = plan.id,
-            state = if (previewFiles.isEmpty()) "SKIPPED_NO_RENDERABLE_SURFACE" else "INSPECTED",
+            state = when {
+                previewFiles.isEmpty() -> "SKIPPED_NO_RENDERABLE_SURFACE"
+                browserEvidence?.status == BrowserEvidenceStatus.CAPTURED -> "STATIC_CAPTURED_SOFT"
+                else -> "SKIPPED_SOFT_BROWSER_UNAVAILABLE"
+            },
             impactedSymbols = previewImpacts.size,
             browserStatus = browserEvidence?.status?.name ?: BrowserEvidenceStatus.UNSUPPORTED.name,
             dagId = planningDag.id,
@@ -327,6 +376,55 @@ class FactoryRunOrchestrator(
             promptFingerprint = lineage.promptFingerprint
         )
 
+        val finalObligations = try {
+            obligationLoop.finalizeAfterVerifiedEvidence(planningDag.id, acceptanceFreeze)
+        } catch (failure: Throwable) {
+            projectRegistry.setStatus(generatedRecord, ProjectStatus.FAILED, actor = "factory")
+            recorder.recordCompletionFailure(
+                runId = plan.id,
+                failureType = failure.javaClass.simpleName,
+                dagId = planningDag.id,
+                promptFingerprint = lineage.promptFingerprint
+            )
+            throw failure
+        }
+        recorder.recordObligationLoop(
+            runId = plan.id,
+            snapshot = finalObligations,
+            dagId = planningDag.id,
+            promptFingerprint = lineage.promptFingerprint
+        )
+        check(finalObligations.canComplete) {
+            "factory completion refused: open_work=${finalObligations.openWork} " +
+                "blocked=${finalObligations.blockedAtomIds} failed=${finalObligations.failedAtomIds}"
+        }
+        val terminationReason = "open_work=0 acceptance_freeze_green completion_gate_green evidence_complete"
+        val economics = FactoryRunEconomics(
+            wallTimeMillis = Duration.between(startedAt, Instant.now()).toMillis(),
+            providerCalls = null,
+            tokens = null,
+            atomsDone = finalObligations.doneAtomIds.size,
+            atomsFailed = finalObligations.failedAtomIds.size,
+            atomsBlocked = finalObligations.blockedAtomIds.size,
+            softSkips = softFailures.size,
+            gateDecision = "PASS",
+            terminationReason = terminationReason
+        )
+        recorder.recordEconomics(
+            runId = plan.id,
+            economics = economics,
+            dagId = planningDag.id,
+            promptFingerprint = lineage.promptFingerprint
+        )
+        FactoryRunHandoff.write(
+            repoRoot = repoRoot,
+            runId = plan.id,
+            dagId = planningDag.id,
+            snapshot = finalObligations,
+            freeze = acceptanceFreeze,
+            lastGoodCommit = generatedProject.commitId
+        )
+
         val project = try {
             projectRegistry.update(
                 generatedRecord.copy(
@@ -363,7 +461,7 @@ class FactoryRunOrchestrator(
         val resultBuilder = FactoryResultBuilder()
         return resultBuilder.buildResult(
             originalPlan = plan,
-            lineage = plannedLineage,
+            lineage = frozenLineage,
             generatedProject = generatedProject,
             planningDagId = planningDag.id,
             plannedAtomIds = plannedAtomIds,
@@ -371,7 +469,10 @@ class FactoryRunOrchestrator(
             softFailures = softFailures,
             memoryRecordId = memoryRecord?.id,
             projectRecordId = project.id,
-            contextHash = context.canonicalContextHash
+            contextHash = context.canonicalContextHash,
+            acceptanceFreezeSha256 = acceptanceFreeze.sha256,
+            economics = economics,
+            terminationReason = terminationReason
         )
     }
 }

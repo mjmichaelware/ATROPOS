@@ -31,6 +31,7 @@ class AgentRunService(
     private val prompts = AgentRunPromptComposer()
     private val lifecycle = AgentJobLifecycle(jobStore)
     private val failureSummary = AgentFailureSummary(redactionFilter)
+    private val repairBudget = AgentRepairBudget()
 
     fun run(
         activeProviderName: String,
@@ -137,15 +138,20 @@ class AgentRunService(
                 job = lifecycle.complete(job)
             }
 
-            if (job.status != AgentJobStatus.COMPLETED) {
-                val applyFailure = applyResult.verificationResult?.refusalReason
-                    ?: applyResult.refusalReason
-                    ?: applyResult.checkResult?.output
-                    ?: applyResult.applyOutput
-                    ?: "verification failed"
+            var repairsUsed = 0
+            var lastVerificationFailure = applyResult.verificationResult?.refusalReason
+                ?: applyResult.refusalReason
+                ?: applyResult.checkResult?.output
+                ?: applyResult.applyOutput
+                ?: "verification failed"
+            while (job.status != AgentJobStatus.COMPLETED &&
+                repairBudget.allows(repairsUsed, startedAt, Instant.now())
+            ) {
+                repairsUsed++
+                val failedPatchReference = job.appliedPatchId ?: patchId
 
                 hooks.beforeStage(AgentQueueCheckpoint.REPAIR_GENERATED, job)
-                val repairResult = agentService.repair(activeProviderName, patchId)
+                val repairResult = agentService.repair(activeProviderName, failedPatchReference)
                 val repairAt = Instant.now()
                 job = lifecycle.persist(
                     job.copy(
@@ -164,9 +170,9 @@ class AgentRunService(
                     val failureReason = repairResult.failureSummary
                         ?: repairResult.rejectionReason
                         ?: repairResult.message
-                        ?: applyFailure
+                        ?: lastVerificationFailure
                     job = lifecycle.fail(job, failureReason, "repair generation failed after verification failure")
-                    return finalizeRun(job, task, smokeCommand, null, baselineStatus, sourceEvidence)
+                    break
                 }
 
                 hooks.beforeStage(AgentQueueCheckpoint.REPAIR_APPLIED, job)
@@ -181,7 +187,7 @@ class AgentRunService(
                         status = if (repairedApply.applied && repairedApply.verificationResult?.passed == true) {
                             AgentJobStatus.COMPLETED
                         } else {
-                            AgentJobStatus.FAILED
+                            AgentJobStatus.REPAIRING
                         },
                         applyAt = repairedAt,
                         verificationAt = if (repairedVerificationId != null) repairedAt else job.verificationAt,
@@ -201,15 +207,20 @@ class AgentRunService(
                 if (repairedApply.verificationResult?.passed == true) {
                     hooks.checkpoint(AgentQueueCheckpoint.REVERIFIED, job, "repair verification passed")
                 }
-
                 if (job.status != AgentJobStatus.COMPLETED) {
-                    val failureReason = repairedApply.verificationResult?.refusalReason
+                    lastVerificationFailure = repairedApply.verificationResult?.refusalReason
                         ?: repairedApply.refusalReason
                         ?: repairedApply.checkResult?.output
                         ?: repairedApply.applyOutput
                         ?: "verification failed after repair"
-                    job = lifecycle.fail(job, failureReason, "repair patch did not verify")
                 }
+
+            }
+
+            if (job.status != AgentJobStatus.COMPLETED) {
+                val budgetReason = repairBudget.exhaustedReason(repairsUsed, startedAt, Instant.now())
+                val failureReason = budgetReason ?: job.failureReason ?: lastVerificationFailure
+                job = lifecycle.fail(job, failureReason, "repair loop stopped: $failureReason")
             }
 
             val smokeExecution = if (smokeCommand.isNullOrBlank()) {

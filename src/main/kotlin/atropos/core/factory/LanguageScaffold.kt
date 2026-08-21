@@ -48,6 +48,26 @@ data class LanguageScaffold(
                 ProjectLanguage.PHP -> php(packageName, title)
                 ProjectLanguage.SWIFT -> swift(packageName, title)
                 ProjectLanguage.CPP -> cpp(packageName, title)
+                ProjectLanguage.ELIXIR -> elixir(packageName, title)
+                ProjectLanguage.SCALA -> scala(packageName, title)
+                ProjectLanguage.CLOJURE -> clojure(packageName, title)
+                ProjectLanguage.HASKELL -> haskell(packageName, title)
+                ProjectLanguage.DART -> dart(packageName, title)
+                ProjectLanguage.C -> c(packageName, title)
+                ProjectLanguage.ZIG -> zig(packageName, title)
+                ProjectLanguage.LUA -> lua(packageName, title)
+                ProjectLanguage.R -> r(packageName, title)
+                ProjectLanguage.JULIA -> julia(packageName, title)
+                ProjectLanguage.FSHARP -> fsharp(packageName, title)
+                ProjectLanguage.ERLANG -> erlang(packageName, title)
+                ProjectLanguage.PERL -> perl(packageName, title)
+                ProjectLanguage.BASH -> bash(packageName, title)
+                ProjectLanguage.POWERSHELL -> powershell(packageName, title)
+                ProjectLanguage.OBJECTIVE_C -> objectiveC(packageName, title)
+                ProjectLanguage.FORTRAN -> fortran(packageName, title)
+                ProjectLanguage.GROOVY -> groovy(packageName, title)
+                ProjectLanguage.NIM -> nim(packageName, title)
+                ProjectLanguage.SOLIDITY -> solidity(packageName, title)
             }
 
         /**
@@ -290,6 +310,169 @@ data class LanguageScaffold(
             ignore = "build/\n",
             commentPrefix = "//"
         )
+
+        private fun elixir(packageName: String, title: String) = LanguageScaffold(
+            ProjectLanguage.ELIXIR, "lib/$packageName.ex", "test/${packageName}_test.exs",
+            "defmodule ${packageName.replaceFirstChar { it.uppercase() }} do\n  def describe, do: \"$title\"\nend\n",
+            "ExUnit.start()\n\ndefmodule ${packageName.replaceFirstChar { it.uppercase() }}Test do\n  use ExUnit.Case\n  test \"describes itself\" do\n    assert ${packageName.replaceFirstChar { it.uppercase() }}.describe() == \"$title\"\n  end\nend\n",
+            mapOf("mix.exs" to "defmodule ${packageName.replaceFirstChar { it.uppercase() }}.MixProject do\n  use Mix.Project\n  def project, do: [app: :$packageName, version: \"0.1.0\", elixir: \"~> 1.14\"]\nend\n"),
+            verifyScript("mix", "mix test"), "_build/\ndeps/\n", "#"
+        )
+
+        private fun scala(packageName: String, title: String) = LanguageScaffold(
+            ProjectLanguage.SCALA, "src/main/scala/$packageName/Main.scala", "src/test/scala/$packageName/MainTest.scala",
+            "package $packageName\n\nobject Main { def describe: String = \"$title\" }\n",
+            "package $packageName\n\nobject MainTest extends App { assert(Main.describe == \"$title\") }\n",
+            mapOf("build.sbt" to "ThisBuild / scalaVersion := \"2.13.14\"\nlibraryDependencies += \"org.scala-lang\" %% \"scala-library\" % \"2.13.14\"\n"),
+            verifyScript("sbt", "sbt \"Test / runMain $packageName.MainTest\""), "target/\n", "//"
+        )
+
+        private fun clojure(packageName: String, title: String) = LanguageScaffold(
+            ProjectLanguage.CLOJURE, "src/$packageName/core.clj", "test/$packageName/core_test.clj",
+            "(ns $packageName.core)\n\n(defn describe [] \"$title\")\n",
+            "(ns $packageName.core-test\n  (:require [clojure.test :refer :all]\n            [$packageName.core :as core]))\n\n(deftest describes-itself\n  (is (= \"$title\" (core/describe))))\n",
+            mapOf("deps.edn" to "{:paths [\"src\"] :aliases {:test {:extra-paths [\"test\"]}}}\n"),
+            verifyScript("clojure", "clojure -M:test -e \"(require '$packageName.core-test)(clojure.test/run-tests '$packageName.core-test)\""), ".cpcache/\n", ";"
+        )
+
+        private fun haskell(packageName: String, title: String) = LanguageScaffold(
+            ProjectLanguage.HASKELL, "src/Lib.hs", "test/Spec.hs",
+            "module Lib (describe) where\n\ndescribe :: String\ndescribe = \"$title\"\n",
+            "module Main where\nimport Lib\nmain :: IO ()\nmain = if describe == \"$title\" then pure () else fail \"unexpected\"\n",
+            mapOf("$packageName.cabal" to "cabal-version: 2.4\nname: $packageName\nversion: 0.1.0.0\nlibrary\n  hs-source-dirs: src\n  exposed-modules: Lib\n  build-depends: base\n  default-language: Haskell2010\nexecutable $packageName-test\n  hs-source-dirs: test\n  main-is: Spec.hs\n  build-depends: base, $packageName\n  default-language: Haskell2010\n"),
+            verifyScript("cabal", "cabal test"), "dist-newstyle/\n", "--"
+        )
+
+        private fun dart(packageName: String, title: String) = LanguageScaffold(
+            ProjectLanguage.DART, "lib/$packageName.dart", "test/$packageName_test.dart",
+            "String describe() => '$title';\n",
+            "import 'package:test/test.dart';\nimport 'package:$packageName/$packageName.dart';\nvoid main() { test('describes itself', () { expect(describe(), '$title'); }); }\n",
+            mapOf("pubspec.yaml" to "name: $packageName\nenvironment:\n  sdk: '>=3.0.0 <4.0.0'\ndev_dependencies:\n  test: any\n"),
+            verifyScript("dart", "dart pub get && dart test"), ".dart_tool/\nbuild/\n", "//"
+        )
+
+        private fun c(packageName: String, title: String) = LanguageScaffold(
+            ProjectLanguage.C, "src/main.c", "tests/main_test.c",
+            "#include <stdio.h>\nconst char *describe(void) { return \"$title\"; }\nint main(void) { puts(describe()); return 0; }\n",
+            "#include <assert.h>\n#include <string.h>\nconst char *describe(void);\nint main(void) { assert(strcmp(describe(), \"$title\") == 0); return 0; }\n",
+            mapOf("Makefile" to "CC ?= cc\nCFLAGS ?= -std=c11 -Wall -Wextra\nall: app\napp: src/main.c\n\t${'$'}(CC) ${'$'}(CFLAGS) -o ${'$'}@ ${'$'}<\ntest: src/main.c tests/main_test.c\n\t${'$'}(CC) ${'$'}(CFLAGS) -Dmain=app_main -o build_test src/main.c tests/main_test.c\n\t./build_test\n"),
+            verifyScript("cc", "mkdir -p .atropos-build && cc -std=c11 -Wall -Wextra -Dmain=app_main -c src/main.c -o .atropos-build/main.o && cc -std=c11 -Wall -Wextra .atropos-build/main.o tests/main_test.c -o .atropos-build/test && .atropos-build/test"), ".atropos-build/\n*.o\n", "//"
+        )
+
+        private fun zig(packageName: String, title: String) = LanguageScaffold(
+            ProjectLanguage.ZIG, "src/main.zig", "src/main_test.zig",
+            "pub fn describe() []const u8 { return \"$title\"; }\npub fn main() void { }\n",
+            "const std = @import(\"std\");\nconst main = @import(\"main.zig\");\ntest \"describes itself\" { try std.testing.expectEqualStrings(\"$title\", main.describe()); }\n",
+            mapOf("build.zig.zon" to ".{ .name = \"$packageName\", .version = \"0.1.0\" }\n"),
+            verifyScript("zig", "zig test src/main_test.zig"), ".zig-cache/\nzig-out/\n", "//"
+        )
+
+        private fun lua(packageName: String, title: String) = LanguageScaffold(
+            ProjectLanguage.LUA, "$packageName.lua", "test/$packageName_test.lua",
+            "local M = {}\nfunction M.describe() return '$title' end\nreturn M\n",
+            "local app = require('$packageName')\nassert(app.describe() == '$title')\nprint('ok')\n",
+            mapOf("$packageName-1.0-1.rockspec" to "package = '$packageName'\nversion = '1.0-1'\nsource = { url = 'local' }\ndescription = { summary = '$title' }\nbuild = { type = 'builtin', modules = { ['$packageName'] = '$packageName.lua' } }\n"),
+            verifyScript("lua", "LUA_PATH='./?.lua;./?/init.lua' lua test/$packageName_test.lua"), ".luarocks/\n", "--"
+        )
+
+        private fun r(packageName: String, title: String) = LanguageScaffold(
+            ProjectLanguage.R, "R/$packageName.R", "tests/testthat/test-$packageName.R",
+            "describe <- function() '$title'\n",
+            "stopifnot(describe() == '$title')\n",
+            mapOf("DESCRIPTION" to "Package: $packageName\nVersion: 0.1.0\nTitle: $title\nDescription: Generated by ATROPOS.\n"),
+            verifyScript("Rscript", "Rscript tests/testthat/test-$packageName.R"), ".Rhistory\n.Rproj.user/\n", "#"
+        )
+
+        private fun julia(packageName: String, title: String) = LanguageScaffold(
+            ProjectLanguage.JULIA, "src/$packageName.jl", "test/runtests.jl",
+            "module $packageName\nexport describe\ndescribe() = \"$title\"\nend\n",
+            "using Test\ninclude(\"../src/$packageName.jl\")\n@test $packageName.describe() == \"$title\"\n",
+            mapOf("Project.toml" to "name = \"$packageName\"\nversion = \"0.1.0\"\n"),
+            verifyScript("julia", "julia --project=. test/runtests.jl"), ".julia/\n", "#"
+        )
+
+        private fun fsharp(packageName: String, title: String) = LanguageScaffold(
+            ProjectLanguage.FSHARP, "src/Library.fs", "tests/Tests.fs",
+            "namespace $packageName\n\nmodule Library =\n    let describe () = \"$title\"\n",
+            "open $packageName.Library\nif describe () <> \"$title\" then failwith \"unexpected\"\n",
+            mapOf("$packageName.fsproj" to "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net8.0</TargetFramework></PropertyGroup><ItemGroup><Compile Include=\"src/Library.fs\" /><Compile Include=\"tests/Tests.fs\" /></ItemGroup></Project>\n"),
+            verifyScript("dotnet", "dotnet test"), "bin/\nobj/\n", "//"
+        )
+
+        private fun erlang(packageName: String, title: String) = LanguageScaffold(
+            ProjectLanguage.ERLANG, "src/$packageName.erl", "test/${packageName}_tests.erl",
+            "-module($packageName).\n-export([describe/0]).\ndescribe() -> \"$title\".\n",
+            "-module(${packageName}_tests).\n-include_lib(\"eunit/include/eunit.hrl\").\ndescribe_test() -> ?assertEqual(\"$title\", $packageName:describe()).\n",
+            mapOf("rebar.config" to "{erl_opts, [debug_info]}.\n{deps, []}.\n"),
+            verifyScript("rebar3", "rebar3 eunit"), "_build/\n", "%"
+        )
+
+        private fun perl(packageName: String, title: String) = LanguageScaffold(
+            ProjectLanguage.PERL, "lib/$packageName.pm", "t/${packageName}.t",
+            "package $packageName;\nuse strict; use warnings;\nsub describe { '$title' }\n1;\n",
+            "use lib 'lib'; use $packageName; use Test::More tests => 1; is($packageName::describe(), '$title');\n",
+            mapOf("Makefile.PL" to "use ExtUtils::MakeMaker; WriteMakefile(NAME => '$packageName');\n"),
+            verifyScript("prove", "prove -l t"), "blib/\nMYMETA.*\n", "#"
+        )
+
+        private fun bash(packageName: String, title: String) = LanguageScaffold(
+            ProjectLanguage.BASH, "bin/$packageName", "tests/test_$packageName.sh",
+            "#!/usr/bin/env bash\nset -euo pipefail\ndescribe() { printf '%s\\n' '$title'; }\nif [[ \"${'$'}{BASH_SOURCE[0]}\" == \"${'$'}0\" ]]; then describe; fi\n",
+            "#!/usr/bin/env bash\nset -euo pipefail\nsource bin/$packageName\ntest \"${'$'}(describe)\" = '$title'\n",
+            mapOf("Makefile" to "test:\n\tbash tests/test_$packageName.sh\n"),
+            verifyScript("bash", "bash tests/test_$packageName.sh"), ".shellcheck-cache/\n", "#"
+        )
+
+        private fun powershell(packageName: String, title: String) = LanguageScaffold(
+            ProjectLanguage.POWERSHELL, "src/$packageName.ps1", "tests/$packageName.Tests.ps1",
+            "function Get-Description { '$title' }\n",
+            ". ./src/$packageName.ps1\nif ((Get-Description) -ne '$title') { throw 'unexpected' }\n",
+            mapOf("README.ps1.md" to "# $title PowerShell project\n"),
+            verifyScript("pwsh", "pwsh -NoProfile -File tests/$packageName.Tests.ps1"), ".pytest_cache/\n", "#"
+        )
+
+        private fun objectiveC(packageName: String, title: String) = LanguageScaffold(
+            ProjectLanguage.OBJECTIVE_C, "src/main.m", "tests/main_test.m",
+            "#import <Foundation/Foundation.h>\nconst char *describe(void) { return \"$title\"; }\nint main(void) { @autoreleasepool { NSLog(@\"%s\", describe()); } return 0; }\n",
+            "#include <assert.h>\n#include <string.h>\nconst char *describe(void);\nint main(void) { assert(strcmp(describe(), \"$title\") == 0); return 0; }\n",
+            mapOf("Makefile" to "test:\n\tclang -fobjc-arc src/main.m tests/main_test.m -framework Foundation -o test && ./test\n"),
+            verifyScript("clang", "mkdir -p .atropos-build && clang src/main.m tests/main_test.m -framework Foundation -o .atropos-build/test && .atropos-build/test"), ".atropos-build/\n", "//"
+        )
+
+        private fun fortran(packageName: String, title: String) = LanguageScaffold(
+            ProjectLanguage.FORTRAN, "src/main.f90", "tests/main.f90",
+            "module app\ncontains\nfunction describe() result(value)\ncharacter(len=256) :: value\nvalue = '$title'\nend function describe\nend module app\n",
+            "program test\nuse app\nif (trim(describe()) /= '$title') error stop 1\nend program test\n",
+            mapOf("Makefile" to "test:\n\tgfortran tests/main.f90 -o test && ./test\n"),
+            verifyScript("gfortran", "mkdir -p .atropos-build && gfortran src/main.f90 tests/main.f90 -o .atropos-build/test && .atropos-build/test"), ".atropos-build/\n", "!"
+        )
+
+        private fun groovy(packageName: String, title: String) = LanguageScaffold(
+            ProjectLanguage.GROOVY, "src/Main.groovy", "test/MainTest.groovy",
+            "class App { static String describe() { '$title' } }\n",
+            "new GroovyShell().evaluate(new File('src/Main.groovy'))\nassert App.describe() == '$title'\n",
+            mapOf("build.gradle" to "plugins { id 'groovy' }\nrepositories { mavenCentral() }\n"),
+            verifyScript("groovy", "groovy test/MainTest.groovy"), ".gradle/\nbuild/\n", "//"
+        )
+
+        private fun nim(packageName: String, title: String) = LanguageScaffold(
+            ProjectLanguage.NIM, "src/main.nim", "tests/main_test.nim",
+            "proc describe(): string = \"$title\"\nwhen isMainModule: echo describe()\n",
+            "import ../src/main\nassert describe() == \"$title\"\n",
+            mapOf("$packageName.nimble" to "version = \"0.1.0\"\nauthor = \"ATROPOS\"\ndescription = \"$title\"\n"),
+            verifyScript("nim", "mkdir -p .atropos-build && nim c -r --hints:off --nimcache:.atropos-build tests/main_test.nim"), ".atropos-build/\n", "#"
+        )
+
+        private fun solidity(packageName: String, title: String) = LanguageScaffold(
+            ProjectLanguage.SOLIDITY, "src/Counter.sol", "test/Counter.t.sol",
+            "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.20;\ncontract Counter { string public constant DESCRIPTION = \"$title\"; }\n",
+            "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.20;\nimport \"forge-std/Test.sol\";\nimport \"../src/Counter.sol\";\ncontract CounterTest is Test { function testDescription() public { assertEq(new Counter().DESCRIPTION(), \"$title\"); } }\n",
+            mapOf("foundry.toml" to "[profile.default]\nsrc = 'src'\ntest = 'test'\n"),
+            verifyScript("forge", "forge test"), "out/\ncache/\n", "//"
+        )
+
+        private fun verifyScript(tool: String, command: String): String =
+            "#!/usr/bin/env sh\nset -eu\ncommand -v $tool >/dev/null 2>&1 || { printf '%s\\n' '$tool is required' >&2; exit 1; }\n$command\nprintf '%s\\n' APP_FACTORY_VERIFY_OK\n"
 
     }
 }

@@ -3,6 +3,7 @@ package atropos.core.factory
 
 import atropos.core.planning.AtomDimension
 import atropos.core.planning.CanonicalAtomProvider
+import atropos.core.planning.InternalAtom
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -187,5 +188,41 @@ class CanonicalAtomizationTest {
         assertNull(
             CanonicalAtomProvider.NONE.atomsFor("p", "s", "content", "prompt-0123456789abcdef", "spans")
         )
+    }
+
+    @Test
+    fun `provider dimension fill is attempted for every canonical atom`() {
+        val responses = mutableListOf<String>()
+        val provider = SpecGraphCanonicalAtomProvider(
+            dimensionCompletion = { prompt, _ ->
+                responses += prompt
+                if (responses.size == 1) "STATE_MODEL" else "TESTS_ACCEPTANCE"
+            }
+        )
+        val atoms = provider.fillDimensions(
+            atoms = listOf(
+                InternalAtom(
+                    id = "atom-1", projectId = "p", documentId = "d", sectionId = "s",
+                    dimension = AtomDimension.FUNCTIONAL_CONTRACT, statement = "record state",
+                    sourceCoordinates = "doc:1"
+                ),
+                InternalAtom(
+                    id = "atom-2", projectId = "p", documentId = "d", sectionId = "s",
+                    dimension = AtomDimension.FUNCTIONAL_CONTRACT, statement = "run tests",
+                    sourceCoordinates = "doc:2"
+                )
+            ),
+            promptFingerprint = "prompt-0123456789abcdef",
+            sourcePath = "prompt"
+        )
+
+        assertEquals(2, responses.size)
+        assertEquals(listOf(AtomDimension.STATE_MODEL, AtomDimension.TESTS_ACCEPTANCE), atoms.map { it.dimension })
+    }
+
+    @Test
+    fun `invalid provider dimension is rejected instead of defaulted`() {
+        val provider = SpecGraphCanonicalAtomProvider()
+        assertNull(provider.parseDimension("not-a-dimension"))
     }
 }

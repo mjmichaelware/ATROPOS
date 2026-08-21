@@ -1,5 +1,7 @@
 package atropos.core.verification
 
+import atropos.core.factory.ProjectLanguage
+
 data class FactoryCompletionInput(
     val nodeId: String,
     val branch: String,
@@ -21,5 +23,7 @@ data class FactoryCompletionInput(
     val factoryTerritory: String = "",
     val directorDecision: String = "",
     val auditorDecision: String = "",
-    val auditorReportSha256: String = ""
+    val auditorReportSha256: String = "",
+    val projectLanguage: ProjectLanguage? = null,
+    val acceptanceFreezeSha256: String = ""
 )

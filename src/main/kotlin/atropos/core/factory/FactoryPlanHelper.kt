@@ -39,6 +39,9 @@ object FactoryPlanHelper {
             if (plan.memoryPointers.isNotEmpty()) appendLine("  memory_pointers: ${plan.memoryPointers.joinToString(",")}")
             plan.contextHash?.let { appendLine("  context_hash: $it") }
             plan.specGraphStatus?.let { appendLine("  specgraph_status: $it") }
+            plan.acceptanceFreezeSha256?.let { appendLine("  acceptance_freeze_sha256: $it") }
+            plan.terminationReason?.let { appendLine("  termination_reason: $it") }
+            plan.economics?.let { appendLine("  economics: ${it.render()}") }
             plan.eventJournalPath?.let { appendLine("  event_journal: $it") }
             plan.generatedProject?.let {
                 appendLine("  generated_project: ${it.path}")

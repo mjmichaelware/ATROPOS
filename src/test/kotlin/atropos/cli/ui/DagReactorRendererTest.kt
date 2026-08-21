@@ -17,5 +17,6 @@ class DagReactorRendererTest {
         assertTrue(output[0].contains("node1"))
         assertTrue(output[0].contains("50%"))
         assertTrue(output[0].contains("compiling"))
+        assertTrue(output[0].contains("RUNNING"))
     }
 }

@@ -22,13 +22,14 @@ data class FactoryLineage(
     val atomResearch: List<String> = emptyList(),
     val atomizerStatus: String = "SKIPPED_SOFT_FAIL:SpecGraph unavailable; internal DAG fallback required",
     val clarificationAnswersSha256: String? = null,
-    val clarificationLineageSha256: String? = null
+    val clarificationLineageSha256: String? = null,
+    val acceptanceFreeze: FactoryAcceptanceFreeze? = null
 ) {
     fun atomizationState(): String = if (
         atomizerStatus.contains("SKIPPED_SOFT_FAIL", ignoreCase = true) ||
         atomizerStatus.contains("SOFT_SKIP", ignoreCase = true)
     ) {
-        "COMPLETED_WITH_SOFT_FAILS"
+        "DEGRADED"
     } else {
         "COMPLETED"
     }
@@ -49,6 +50,16 @@ data class FactoryLineage(
     }
 
     fun withContext(hash: String): FactoryLineage = copy(contextHash = hash)
+
+    fun withAcceptanceFreeze(atomIds: List<String>): FactoryLineage =
+        if (acceptanceFreeze != null) this else copy(
+            acceptanceFreeze = FactoryAcceptanceFreeze.create(
+                promptSha256 = promptSha256,
+                researchSha256 = researchSha256,
+                atomIds = atomIds,
+                promptSpans = promptSpans
+            )
+        )
 
     fun requireBoundTo(expectedProjectId: String, spec: AppProjectSpec) {
         val canonicalPrompt = spec.prompt.trim()
@@ -114,6 +125,7 @@ data class FactoryLineage(
     fun projectFiles(planId: String, atomIds: List<String>): Map<String, String> = mapOf(
         ".atropos/research/user-prompt.md" to promptDocument,
         ".atropos/research/requirements.md" to researchDocument,
+        ".atropos/research/acceptance-freeze.md" to acceptanceFreeze?.document.orEmpty(),
         ".atropos/research/atoms.md" to buildString {
             appendLine("# Factory atoms")
             appendLine("project_id=$projectId")

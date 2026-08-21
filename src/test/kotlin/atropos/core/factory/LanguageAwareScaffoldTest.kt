@@ -121,7 +121,27 @@ class LanguageAwareScaffoldTest {
             "An ASP.NET Core API in C# with Entity Framework" to ProjectLanguage.CSHARP,
             "A Laravel app in PHP with composer.json" to ProjectLanguage.PHP,
             "An iOS app in Swift with SwiftUI and Xcode" to ProjectLanguage.SWIFT,
-            "A game engine in C++ with CMake" to ProjectLanguage.CPP
+            "A game engine in C++ with CMake" to ProjectLanguage.CPP,
+            "An Elixir Phoenix service with mix.exs" to ProjectLanguage.ELIXIR,
+            "A Scala service built with sbt" to ProjectLanguage.SCALA,
+            "A Clojure service using deps.edn" to ProjectLanguage.CLOJURE,
+            "A Haskell app built with cabal" to ProjectLanguage.HASKELL,
+            "A Dart CLI with pubspec" to ProjectLanguage.DART,
+            "An ANSI C11 program built with gcc" to ProjectLanguage.C,
+            "A Zig tool using build.zig" to ProjectLanguage.ZIG,
+            "A Lua script with luarocks" to ProjectLanguage.LUA,
+            "An R package using testthat and Rscript" to ProjectLanguage.R,
+            "A Julia package with Project.toml julia" to ProjectLanguage.JULIA,
+            "An F# service using dotnet fsi" to ProjectLanguage.FSHARP,
+            "An Erlang service with rebar3 and OTP" to ProjectLanguage.ERLANG,
+            "A Perl module tested with prove" to ProjectLanguage.PERL,
+            "A bash script with shellcheck" to ProjectLanguage.BASH,
+            "A PowerShell script using pwsh" to ProjectLanguage.POWERSHELL,
+            "An Objective-C app using objc and clang" to ProjectLanguage.OBJECTIVE_C,
+            "A Fortran 90 program using gfortran" to ProjectLanguage.FORTRAN,
+            "A Groovy app with Gradle Groovy" to ProjectLanguage.GROOVY,
+            "A Nim app using nimble" to ProjectLanguage.NIM,
+            "A Solidity contract using forge" to ProjectLanguage.SOLIDITY
         ).forEach { (prompt, expected) ->
             assertEquals(
                 ProjectLanguage.Detection.Scaffolded(expected),
@@ -132,34 +152,35 @@ class LanguageAwareScaffoldTest {
     }
 
     @Test
-    fun a_language_it_cannot_lay_out_is_named_rather_than_faked() {
-        // Silence was the defect. A tool that cannot scaffold Elixir should
-        // say so, not hand back a JVM tree and let the operator discover the
-        // mismatch when their files land in src/main/kotlin.
-        val detection = ProjectLanguage.detect("An Elixir Phoenix framework app built with mix.exs")
-
-        assertTrue(detection is ProjectLanguage.Detection.Unsupported, detection.toString())
-        assertEquals("Elixir", (detection as ProjectLanguage.Detection.Unsupported).displayName)
-    }
-
-    @Test
-    fun an_unsupported_language_gets_no_source_tree_and_an_honest_verify() {
-        val files = scaffold("An Elixir Phoenix framework app built with mix.exs")
-
-        assertFalse(
-            files.keys.any { it.contains("src/main/kotlin") },
-            "an Elixir project was given a JVM source tree: ${files.keys}"
+    fun every_catalogued_language_has_a_real_tree_manifest_and_verifier() {
+        val prompts = listOf(
+            "Elixir Phoenix with mix.exs", "Scala with sbt", "Clojure with deps.edn",
+            "Haskell with cabal", "Dart with pubspec", "ANSI C11 with gcc",
+            "Zig with build.zig", "Lua with luarocks", "R with Rscript", "Julia with Project.toml julia"
+            , "F# with dotnet fsi", "Erlang with rebar3", "Perl with prove", "bash script with shellcheck",
+            "PowerShell with pwsh", "Objective-C with clang", "Fortran with gfortran", "Groovy with Gradle Groovy",
+            "Nim with nimble", "Solidity with forge"
         )
-        assertTrue(files.getValue("README.md").contains("no scaffold for Elixir"), files.getValue("README.md"))
-        assertTrue(files.getValue("verify.sh").contains("no scaffold for Elixir"), files.getValue("verify.sh"))
-        // It refuses rather than printing the success marker, so nothing
-        // downstream can read it as a passing verification.
-        assertFalse(files.getValue("verify.sh").contains("APP_FACTORY_VERIFY_OK"))
+        prompts.forEach { prompt ->
+            val files = scaffold(prompt)
+            assertFalse(files.keys.any { it.contains("src/main/kotlin") }, files.keys.toString())
+            assertTrue(files.keys.any { it.contains("test") || it.contains("tests") }, files.keys.toString())
+            assertTrue(files.keys.any { it in setOf("mix.exs", "build.sbt", "deps.edn", "Project.toml", "DESCRIPTION", "pubspec.yaml", "Makefile", "build.zig", "rebar.config", "build.gradle", "foundry.toml", "README.ps1.md") || it.endsWith(".cabal") || it.endsWith(".rockspec") || it.endsWith(".fsproj") || it.endsWith(".nimble") }, files.keys.toString())
+            assertTrue(files.getValue("verify.sh").contains("APP_FACTORY_VERIFY_OK"), files.getValue("verify.sh"))
+        }
     }
 
     @Test
     fun nothing_stated_is_a_different_answer_from_a_language_named() {
         assertEquals(ProjectLanguage.Detection.Unstated, ProjectLanguage.detect("track my expenses"))
+    }
+
+    @Test
+    fun named_language_without_adapter_is_refused_instead_of_becoming_kotlin() {
+        assertEquals(
+            ProjectLanguage.Detection.Unsupported("OCaml"),
+            ProjectLanguage.detect("Build an OCaml service with dune")
+        )
     }
 
     @Test

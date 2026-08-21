@@ -28,7 +28,10 @@ class AgentRepairService(
     private val memoryStore: LocalMemoryStore = LocalMemoryStore(collector.repoRoot.resolve(".atropos/memory").toFile()),
     private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
-    private val patchValidator = AgentPatchResponseValidator(patchExtractor)
+    private val patchValidator = AgentPatchResponseValidator(
+        patchExtractor = patchExtractor,
+        editMaterializer = AgentEditMaterializer(collector.repoRoot)
+    )
     private val attempts = AgentPatchAttemptFactory(patchExtractor, patchValidator, redactionFilter)
     private val attestation = AgentPatchAttestationGate()
     private val repairValidator = AgentRepairValidator(patchValidator, attestation, memoryStore)

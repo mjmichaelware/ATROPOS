@@ -10,6 +10,7 @@ class CommandRegistryTest {
         assertTrue(helpMatches.contains("/help"), helpMatches.joinToString(", "))
         assertTrue(helpMatches.contains("/usage"), helpMatches.joinToString(", "))
         assertTrue(helpMatches.contains("/?"), helpMatches.joinToString(", "))
+        assertTrue(helpMatches.contains("/commands"), helpMatches.joinToString(", "))
 
         val selfHostMatches = CommandRegistry.search("/self-host").map { it.command }
         assertTrue(selfHostMatches.contains("/self-host"), selfHostMatches.joinToString(", "))
@@ -28,6 +29,7 @@ class CommandRegistryTest {
 
         assertTrue(helpEntry.aliases.contains("/usage"), helpEntry.aliases.joinToString(", "))
         assertTrue(helpEntry.aliases.contains("/?"), helpEntry.aliases.joinToString(", "))
+        assertTrue(helpEntry.aliases.contains("/commands"), helpEntry.aliases.joinToString(", "))
 
         val selfHostSection = CommandRegistry.helpSections().first { it.category == "Self-host" }
         val root = selfHostSection.entries.first { it.command == "/self-host" }
@@ -49,6 +51,18 @@ class CommandRegistryTest {
             ),
             commands.filter { it.startsWith("/self-host") }.joinToString(", ")
         )
+    }
+
+    @Test
+    fun commands_alias_opens_the_same_grouped_palette() {
+        val state = PromptSuggestionState { true }
+
+        assertTrue(state.isGroupLevel("/commands"))
+        state.moveSelectionDown("/commands")
+        assertTrue(state.paletteLevel("/commands") == CommandPaletteLevel.GROUPS)
+        assertTrue(state.expand("/commands"))
+        assertTrue(state.paletteLevel("/commands") == CommandPaletteLevel.COMMANDS)
+        assertTrue(state.selectedCommand("/commands") != null)
     }
 
     @Test

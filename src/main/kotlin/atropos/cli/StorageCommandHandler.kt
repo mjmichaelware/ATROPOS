@@ -42,7 +42,8 @@ class StorageCommandHandler(
     private val blobGc: () -> BlobStoreGc = {
         BlobStoreGc(BlobStoreGc.defaultDriver(repoRoot), policy)
     }
-) {
+    private val renderer = atropos.cli.ui.StatusStorageRenderer()
+
     fun execute(tokens: List<String>): RouterOutcome {
         when (tokens.getOrNull(1)?.lowercase()) {
             null, "status" -> renderStatus()
@@ -54,57 +55,19 @@ class StorageCommandHandler(
         return RouterOutcome.CONTINUE
     }
 
-    /**
-     * `SUP.STOR.INTEGRITY`: a store that cannot say whether what it holds is
-     * still what was written is a store that has already lost data without
-     * anyone noticing.
-     */
     private fun renderVerify() {
         val report = blobGc().verifyIntegrity()
-        val body = buildString {
-            appendLine(report.render())
-            report.auditLines().forEach { appendLine("  $it") }
-        }.trimEnd()
-        if (report.sound) uiEngine.renderNotice(body) else uiEngine.renderError(body)
+        val lines = renderer.renderVerify(report, uiEngine.viewportWidth)
+        if (report.sound) uiEngine.renderBlock(lines) else uiEngine.renderError(lines.joinToString("\n"))
     }
 
     private fun renderStatus() {
         val constitution = supervisor.constitution()
-        uiEngine.renderNotice(
-            buildString {
-                appendLine("Storage")
-                appendLine("  used     ${mib(constitution.usedBytes)} of ${mib(constitution.ceilingBytes)} " +
-                    "(${(constitution.fractionUsed * 100).toInt()}%)")
-                appendLine("  free     ${mib(constitution.remainingBytes)} before the declared ceiling")
-                appendLine("  reclaim  ${mib(constitution.reclaimableBytes())} available to collect")
-                if (constitution.classes.isEmpty()) {
-                    appendLine("  (nothing stored yet)")
-                } else {
-                    appendLine()
-                    constitution.classes.forEach { storageClass ->
-                        val retention = supervisor.retentionClass(storageClass)
-                        appendLine(
-                            "  ${storageClass.id.padEnd(16)} ${mib(storageClass.bytes).padStart(10)}  " +
-                                retention.tier.canonical
-                        )
-                    }
-                }
-            }.trimEnd()
-        )
+        uiEngine.renderBlock(renderer.renderStatus(constitution, supervisor, uiEngine.viewportWidth))
     }
 
     private fun renderPolicy() {
-        uiEngine.renderNotice(
-            buildString {
-                appendLine("Retention policy")
-                policy.declared().forEach { (name, rule) ->
-                    appendLine("  ${name.padEnd(16)} ${rule.describe()}")
-                }
-                appendLine()
-                appendLine("  Anything referenced by an open run, gate or fingerprint is never collected,")
-                appendLine("  whatever its age and however full the disk is.")
-            }.trimEnd()
-        )
+        uiEngine.renderBlock(renderer.renderPolicy(policy, uiEngine.viewportWidth))
     }
 
     private fun renderGc(tokens: List<String>) {
@@ -141,23 +104,8 @@ class StorageCommandHandler(
             uiEngine.renderError(USAGE)
             return
         }
-        uiEngine.renderNotice(render(outcomes, apply))
+        uiEngine.renderBlock(renderer.renderGc(outcomes, apply, uiEngine.viewportWidth))
     }
-
-    private fun render(outcomes: List<GcOutcome>, applied: Boolean): String = buildString {
-        appendLine(if (applied) "Collected" else "Dry run — nothing was deleted")
-        outcomes.forEach { outcome ->
-            appendLine("  ${outcome.render()}")
-            outcome.auditLines().forEach { appendLine("    $it") }
-        }
-        if (!applied) {
-            appendLine()
-            appendLine("  Re-run with --apply to delete.")
-        }
-    }.trimEnd()
-
-    private fun mib(bytes: Long): String =
-        if (bytes < 1024 * 1024) "${bytes}B" else "${bytes / (1024 * 1024)}MiB"
 
     private companion object {
         const val WORKTREE_DIR = ".atropos/worktrees"

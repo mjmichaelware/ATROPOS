@@ -8,6 +8,9 @@ class AstCommandHandler(
     private val uiEngine: AnsiTerminalEngine,
     private val graph: AstSymbolGraph = AstSymbolGraph()
 ) {
+    private val theme = atropos.cli.ui.TerminalTheme(atropos.cli.config.ConfigurationManager())
+    private val surface get() = theme.surface
+
     fun execute(tokens: List<String>): RouterOutcome {
         when (tokens.getOrNull(1)?.lowercase()) {
             "lookup" -> lookup(tokens)
@@ -22,7 +25,9 @@ class AstCommandHandler(
         if (query.isBlank()) {
             uiEngine.renderError("usage: /ast lookup <symbol>")
         } else {
-            uiEngine.renderNotice(graph.lookup(query).render())
+            val result = graph.lookup(query)
+            val body = result.render().lines().map { "  $it" }
+            uiEngine.renderBlock(surface.block("AST LOOKUP: $query", body, uiEngine.viewportWidth, atropos.cli.ui.design.Role.BRAND))
         }
     }
 
@@ -33,15 +38,19 @@ class AstCommandHandler(
         } else {
             val callers = graph.findCallers(query)
             if (callers.isEmpty()) {
-                uiEngine.renderNotice("no callers found for $query")
+                uiEngine.renderBlock(
+                    surface.block(
+                        "AST CALLERS: $query",
+                        listOf(surface.hint("no callers found", uiEngine.viewportWidth)),
+                        uiEngine.viewportWidth,
+                        atropos.cli.ui.design.Role.BRAND
+                    )
+                )
             } else {
-                val output = buildString {
-                    appendLine("callers for $query:")
-                    callers.forEach {
-                        appendLine("  file: ${it.qualifiedName} location=${it.file.fileName}")
-                    }
-                }.trimEnd()
-                uiEngine.renderNotice(output)
+                val body = callers.map { caller ->
+                    surface.statusRow(caller.qualifiedName, "file=${caller.file.fileName}", atropos.cli.ui.design.Health.VERIFIED, uiEngine.viewportWidth)
+                }
+                uiEngine.renderBlock(surface.block("AST CALLERS: $query", body, uiEngine.viewportWidth, atropos.cli.ui.design.Role.BRAND))
             }
         }
     }

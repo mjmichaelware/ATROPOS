@@ -137,5 +137,7 @@ class PromptSuggestionState(
     }
 
     private fun isHelpPalette(textBeforeCursor: String): Boolean =
-        textBeforeCursor.trim().lowercase() in setOf("?", "/?", "/help", "/usage", "help", "usage")
+        textBeforeCursor.trim().lowercase() in setOf(
+            "?", "/?", "/help", "/usage", "/commands", "help", "usage", "commands"
+        )
 }

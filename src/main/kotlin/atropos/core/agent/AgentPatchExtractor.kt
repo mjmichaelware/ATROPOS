@@ -93,7 +93,10 @@ class AgentPatchExtractor {
 
                 val hunkLine =
                     leading.startsWith("@@") ||
-                        leading.startsWith(" ") ||
+                        // Keep the raw leading space. It is the unified-diff
+                        // context marker; trimStart() turns context into
+                        // ordinary prose and truncates otherwise valid hunks.
+                        line.startsWith(" ") ||
                         leading.startsWith("+") ||
                         leading.startsWith("-") ||
                         leading.startsWith("\\ No newline at end of file")

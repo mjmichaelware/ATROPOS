@@ -15,6 +15,21 @@ import kotlin.test.assertTrue
 
 class AgentPromptContractTest {
     @Test
+    fun patch_prompt_prefers_strict_edits_over_fragile_diff_offsets() {
+        val prompt = AgentPromptContract.buildPatch(
+            context = "FILE src/Main.py\nprint(1)\nEND FILE",
+            providerId = "local",
+            task = "change the output",
+            repoRoot = Files.createTempDirectory("atropos-edit-prompt-")
+        )
+
+        assertTrue(prompt.contains("<atropos-create"), prompt)
+        assertTrue(prompt.contains("<atropos-replace"), prompt)
+        assertTrue(prompt.contains("exact SEARCH/REPLACE"), prompt)
+        assertTrue(prompt.contains("unified diff only"), prompt)
+    }
+
+    @Test
     fun buildRepair_redacts_verification_streams_before_provider_context() {
         val repoRoot = Files.createTempDirectory("atropos-repair-prompt-redaction-")
         val envelope = ContextEnvelopeFactory.createSimple(

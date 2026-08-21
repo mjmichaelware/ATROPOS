@@ -22,7 +22,9 @@ package atropos.core.agent
  * distinction between a model that ignored the format and one that half-followed it.
  */
 internal class AgentPatchResponseValidator(
-    private val patchExtractor: AgentPatchExtractor
+    private val patchExtractor: AgentPatchExtractor,
+    private val editDecoder: AgentEditDecoder = AgentEditDecoder(),
+    private val editMaterializer: AgentEditMaterializer? = null
 ) {
 
     /** The extraction when the response is usable, null when it is not. */
@@ -31,6 +33,18 @@ internal class AgentPatchResponseValidator(
         if (!extraction.hasHunkBody) return null
         if (patchExtractor.validate(extraction.diff) != null) return null
         return extraction
+    }
+
+    /**
+     * Accept a strict whole-file/search-replace envelope and materialize it
+     * into the same extraction shape consumed by AgentPatchStore.
+     */
+    fun usableEdit(response: String): AgentPatchExtraction? {
+        val materializer = editMaterializer ?: return null
+        val operations = editDecoder.decode(response) ?: return null
+        return runCatching { materializer.materialize(operations) }
+            .getOrNull()
+            ?.let { AgentPatchExtraction(it.diff, it.touchedPaths, hasHunkBody = true) }
     }
 
     /**
@@ -43,8 +57,11 @@ internal class AgentPatchResponseValidator(
     fun rejectionReason(response: String): String {
         val extraction = patchExtractor.extract(response)
         return when {
+            usableEdit(response) != null -> ""
             extraction == null ->
-                if (containsDiffHeader(response)) DIFF_BODY_MISSING else NO_DIFF_FOUND
+                if (containsDiffHeader(response)) DIFF_BODY_MISSING
+                else if (containsEditEnvelope(response)) EDIT_INVALID
+                else NO_DIFF_FOUND
 
             !extraction.hasHunkBody -> DIFF_BODY_MISSING
 
@@ -64,9 +81,15 @@ internal class AgentPatchResponseValidator(
             text.contains("\n--- ") ||
             text.trimStart().startsWith("--- ")
 
+    fun containsEditEnvelope(text: String): Boolean =
+        text.contains("<atropos-create ") ||
+            text.contains("<atropos-rewrite ") ||
+            text.contains("<atropos-replace ")
+
     internal companion object {
         const val NO_DIFF_FOUND = "no unified diff found"
         const val DIFF_BODY_MISSING = "diff body missing"
+        const val EDIT_INVALID = "structured edit envelope was invalid or stale"
         const val UNKNOWN_REJECTION = "unknown patch rejection"
 
         /** The empty extraction used to fill a failure attempt that has no diff. */

@@ -16,14 +16,16 @@ object AgentPromptContract {
         "You cannot directly access files. Use the provided context. Do not ask for API keys. Return direct answers, plans, or diffs only."
 
     const val PATCH_SYSTEM_TEXT =
-        "You are an ATROPOS patch provider. Return ONLY a unified diff. No markdown fences. No explanation. " +
+        "You are an ATROPOS code-edit provider. Prefer strict edit envelopes: whole-file create/rewrite or exact search/replace. " +
+        "Use unified diff only when an envelope cannot express the change. No markdown fences. No explanation. " +
         "No secrets. Stay inside allowed repo paths. Do not edit .env, secrets, credentials, jars, build outputs, or git metadata. " +
-        "Prefer narrow diffs. File snapshots in the context are marked with FILE and END FILE and are not diff headers. " +
-        "If the task names a file, use the provided file content and include the full file headers and hunk lines."
+        "For create/rewrite use <atropos-create path=\"...\">content</atropos-create> or <atropos-rewrite path=\"...\">content</atropos-rewrite>. " +
+        "For existing files prefer <atropos-replace path=\"...\"> with exact SEARCH/REPLACE blocks. " +
+        "Never use approximate matching. File snapshots in context are not edit envelopes."
 
     const val REPAIR_SYSTEM_TEXT =
         "You are an ATROPOS repair provider. ATROPOS has read the local repo and supplied bounded context. " +
-        "You cannot directly access files. Use the provided context. Return ONLY a unified diff. No markdown fences. " +
+        "You cannot directly access files. Use the provided context. Prefer strict edit envelopes or a unified diff. No markdown fences. " +
         "No explanation. No prose before or after. No secrets. Stay inside allowed repo paths. Do not edit .env, secrets, " +
         "credentials, jars, build outputs, or git metadata. Prefer narrow diffs that fix the failed verification."
 

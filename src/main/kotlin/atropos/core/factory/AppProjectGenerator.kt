@@ -78,7 +78,7 @@ class AppProjectGenerator(
             } else {
                 prepared
             }
-        }
+        }.withAcceptanceFreeze(plannedAtomIds)
         val root = repoRoot.toAbsolutePath().normalize()
         val target = freeTargetPath(root, spec, projectId).toAbsolutePath().normalize()
         require(target.startsWith(root)) { "app target escaped repository root" }
@@ -216,7 +216,9 @@ class AppProjectGenerator(
                     factoryTerritory = relativeTarget,
                     directorDecision = directorAdvisory.message,
                     auditorDecision = auditDecision.message,
-                    auditorReportSha256 = auditDecision.reportEvidenceSha256
+                    auditorReportSha256 = auditDecision.reportEvidenceSha256,
+                    projectLanguage = ProjectLanguage.layoutFor(ProjectLanguage.detect(spec.prompt)),
+                    acceptanceFreezeSha256 = effectiveLineage.acceptanceFreeze?.sha256.orEmpty()
                 )
             )
             check(gate.canComplete) { gate.message }
@@ -253,7 +255,8 @@ class AppProjectGenerator(
                 hrRouterAction = hierarchyLease.hrAction,
                 proposalSha256 = proposalSha256,
                 clarificationAnswersSha256 = effectiveLineage.clarificationAnswersSha256,
-                clarificationLineageSha256 = effectiveLineage.clarificationLineageSha256
+                clarificationLineageSha256 = effectiveLineage.clarificationLineageSha256,
+                acceptanceFreezeSha256 = effectiveLineage.acceptanceFreeze?.sha256
             )
             evidenceManifest.requireComplete(hashes)
             AppFileHelper.writeAtomic(evidence, evidenceManifest.render(hashes))

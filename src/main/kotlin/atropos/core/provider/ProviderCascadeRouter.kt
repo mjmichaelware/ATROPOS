@@ -23,7 +23,8 @@ class ProviderCascadeRouter(
     private val factory: ProviderFactory,
     private val classifier: ProviderFailureClassifier = ProviderFailureClassifier(),
     private val registry: ProviderDescriptorRegistry = StaticProviderDescriptorRegistry(),
-    private val localHealth: () -> Boolean = { OllamaHealthProbe().probe().online }
+    private val localHealth: () -> Boolean = { OllamaHealthProbe().probe().online },
+    private val providerResolver: ((String) -> AIProvider)? = null
 ) {
     /** Returns the documented chain through the canonical route owner. */
     fun declaredFallbackChain(capability: ApiCapability): FallbackChain? =
@@ -36,7 +37,8 @@ class ProviderCascadeRouter(
         providerOrderOverride: List<String>? = null,
         beforeAttempt: (String) -> Unit = {},
         onFailure: (ProviderError) -> Unit = {},
-        contextEnvelope: ContextEnvelope? = null
+        contextEnvelope: ContextEnvelope? = null,
+        acceptResponse: (String) -> Boolean = { true }
     ): ProviderCascadeResult {
         val order = providerOrder(requestedProvider, providerOrderOverride)
         val errors = mutableListOf<ProviderError>()
@@ -70,7 +72,7 @@ class ProviderCascadeRouter(
 
             try {
                 beforeAttempt(provider)
-                val aiProvider = factory.getProvider(provider)
+                val aiProvider = providerResolver?.invoke(provider) ?: factory.getProvider(provider)
 
                 // What was asked, in the operator's words rather than in the
                 // engine's. A trace that says "asking anthropic" and then goes
@@ -92,6 +94,21 @@ class ProviderCascadeRouter(
                 val startedAt = System.currentTimeMillis()
                 val response = aiProvider.complete(prompt, context)
                 val elapsed = System.currentTimeMillis() - startedAt
+
+                if (!acceptResponse(response)) {
+                    val error = ProviderError(
+                        provider = provider,
+                        type = FailureType.INVALID_RESPONSE,
+                        cleanMessage = "$provider returned an invalid response for this request"
+                    )
+                    errors += error
+                    onFailure(error)
+                    atropos.core.thinking.Thinking.step(
+                        "provider",
+                        "$provider response rejected; trying the next eligible provider"
+                    )
+                    continue
+                }
 
                 atropos.core.thinking.Thinking.step(
                     "provider",

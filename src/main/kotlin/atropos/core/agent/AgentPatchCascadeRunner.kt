@@ -54,7 +54,10 @@ class AgentPatchCascadeRunner(
         )
     }
 ) {
-    private val validator = AgentPatchResponseValidator(patchExtractor)
+    private val validator = AgentPatchResponseValidator(
+        patchExtractor = patchExtractor,
+        editMaterializer = AgentEditMaterializer(repoRoot)
+    )
     private val attempts = AgentPatchAttemptFactory(patchExtractor, validator, redactionFilter)
     private val attestation = AgentPatchAttestationGate()
 
@@ -122,7 +125,9 @@ class AgentPatchCascadeRunner(
 
     private fun accept(result: ProviderCascadeResult, retryAttempted: Boolean): AgentPatchAttempt? {
         if (!attestation.isAttested(result)) return null
-        val extraction = validator.usableDiff(result.response) ?: return null
+        val extraction = validator.usableDiff(result.response)
+            ?: validator.usableEdit(result.response)
+            ?: return null
         return AgentPatchAttempt(result, extraction, retryAttempted)
     }
 
@@ -148,10 +153,12 @@ class AgentPatchCascadeRunner(
         appendLine(prompt)
         appendLine()
         appendLine(
-            "Your previous response was rejected because no unified diff was found. " +
-                "Return ONLY a valid unified diff for the same task."
+            "Your previous response was rejected. Return one strict edit envelope " +
+                "or a valid unified diff for the same task."
         )
-        appendLine("Include file headers, at least one @@ hunk header, and the added or removed line(s).")
+        appendLine("Preferred envelope: <atropos-create path=\"...\">...content...</atropos-create>")
+        appendLine("For existing files use <atropos-replace> with exact SEARCH/REPLACE blocks.")
+        appendLine("Do not use approximate matching, omitted context, or prose around the edit.")
     }.trimEnd()
 
     private fun runPatchAttempt(provider: String, prompt: String, context: String): ProviderCascadeResult {

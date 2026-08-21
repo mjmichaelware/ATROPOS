@@ -13,7 +13,7 @@ class AssetCommandHandler(
 ) {
     fun execute(tokens: List<String>): RouterOutcome {
         when (tokens.getOrNull(1)?.lowercase()) {
-            null, "status" -> uiEngine.renderNotice(StatusAssetsRenderer(generator).render())
+            null, "status" -> uiEngine.renderBlock(StatusAssetsRenderer(generator).render(uiEngine.viewportWidth))
             "text", "ansi", "svg" -> writeAsset(tokens)
             else -> uiEngine.renderError("usage: /assets [status|text|ansi|svg] <name> <prompt>")
         }

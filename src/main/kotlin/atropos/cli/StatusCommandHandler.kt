@@ -66,12 +66,12 @@ class StatusCommandHandler(
             "quota" -> uiEngine.renderNotice(statusRenderer.renderQuota())
             "route" -> renderRoute(tokens, statusRenderer)
             "failures" -> uiEngine.renderNotice(statusRenderer.renderFailures())
-            "adapters" -> uiEngine.renderNotice(StatusAdapterRenderer().render())
-            "memory" -> uiEngine.renderNotice(StatusMemoryRenderer().render())
-            "ci", "queue" -> uiEngine.renderNotice(StatusCiRenderer().render())
-            "assets" -> uiEngine.renderNotice(StatusAssetsRenderer().render())
-            "paid" -> uiEngine.renderNotice(StatusPaidEmergencyRenderer().render())
-            "factory" -> uiEngine.renderNotice(AppFactoryPlanRenderer().renderStatus())
+            "adapters" -> uiEngine.renderBlock(StatusAdapterRenderer().renderList(uiEngine.viewportWidth))
+            "memory" -> uiEngine.renderBlock(StatusMemoryRenderer().render(uiEngine.viewportWidth))
+            "ci", "queue" -> uiEngine.renderBlock(StatusCiRenderer().render(uiEngine.viewportWidth))
+            "assets" -> uiEngine.renderBlock(StatusAssetsRenderer().render(uiEngine.viewportWidth))
+            "paid" -> uiEngine.renderBlock(StatusPaidEmergencyRenderer().render(uiEngine.viewportWidth))
+            "factory" -> uiEngine.renderBlock(AppFactoryPlanRenderer().renderStatusList(uiEngine.viewportWidth))
             "security" -> uiEngine.renderNotice(StatusSecurityRenderer().render())
             "tests" -> uiEngine.renderNotice(TestMatrixRenderer().render())
             "ops" -> uiEngine.renderNotice(StatusOpsRenderer().render())
@@ -88,10 +88,20 @@ class StatusCommandHandler(
     }
 
     private fun renderRoute(tokens: List<String>, statusRenderer: StatusQuotaRenderer) {
-        val expanded = tokens.any { it.equals("--full", ignoreCase = true) || it.equals("--expanded", ignoreCase = true) }
         val task = tokens.drop(2).filterNot { it.equals("--full", ignoreCase = true) || it.equals("--expanded", ignoreCase = true) }.joinToString(" ").trim()
-        if (task.isBlank()) uiEngine.renderError("/status route requires a task")
-        else uiEngine.renderNotice(statusRenderer.renderRoute(task, expanded))
+        if (task.isBlank()) {
+            uiEngine.renderError("/status route requires a task")
+        } else {
+            val registry = StaticProviderDescriptorRegistry()
+            val ledger = FileQuotaLedger(
+                java.io.File(".atropos/provider/quota-ledger.tsv"),
+                FileQuotaLedger.seedFromDescriptors(registry)
+            )
+            val facade = atropos.core.provider.adapter.AdapterRouteFacade(descriptorRegistry = registry, ledger = ledger)
+            val result = facade.decide(task, dryRun = true)
+            val routeRenderer = atropos.cli.ui.StatusRouteRenderer()
+            uiEngine.renderBlock(routeRenderer.renderRoute(result, uiEngine.viewportWidth))
+        }
     }
 
 

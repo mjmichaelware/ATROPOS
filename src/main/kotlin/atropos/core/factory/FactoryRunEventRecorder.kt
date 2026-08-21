@@ -98,6 +98,53 @@ class FactoryRunEventRecorder(
         )
     }
 
+    fun recordAcceptanceFreeze(
+        runId: String,
+        freezeSha256: String,
+        openWork: Int,
+        canaryAtomIds: List<String>,
+        dagId: String,
+        promptFingerprint: String
+    ) {
+        record(
+            runId = runId,
+            category = EventCategory.STATUS,
+            payload = "factory_acceptance_freeze sha256=$freezeSha256 open_work=$openWork canary=${canaryAtomIds.joinToString(",").ifBlank { "none" }}",
+            dagId = dagId,
+            promptFingerprint = promptFingerprint
+        )
+    }
+
+    fun recordObligationLoop(
+        runId: String,
+        snapshot: FactoryObligationSnapshot,
+        dagId: String,
+        promptFingerprint: String
+    ) {
+        record(
+            runId = runId,
+            category = EventCategory.DAG,
+            payload = "factory_obligation_loop open_work=${snapshot.openWork} runnable=${snapshot.runnableAtomIds.joinToString(",")} blocked=${snapshot.blockedAtomIds.joinToString(",")} failed=${snapshot.failedAtomIds.joinToString(",")} done=${snapshot.doneAtomIds.size} stop_reason=${snapshot.stopReason ?: "none"}",
+            dagId = dagId,
+            promptFingerprint = promptFingerprint
+        )
+    }
+
+    fun recordEconomics(
+        runId: String,
+        economics: FactoryRunEconomics,
+        dagId: String,
+        promptFingerprint: String
+    ) {
+        record(
+            runId = runId,
+            category = EventCategory.STATUS,
+            payload = "factory_economics ${economics.render()}",
+            dagId = dagId,
+            promptFingerprint = promptFingerprint
+        )
+    }
+
     fun recordAtomizationStatus(
         runId: String,
         state: String,

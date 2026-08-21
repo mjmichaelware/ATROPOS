@@ -3,7 +3,7 @@ package atropos.cli.input
 
 object CommandCatalog {
     val catalog: List<CommandEntry> = listOf(
-        CommandEntry("/help", "show command help", "System", aliases = listOf("/usage", "/?")),
+        CommandEntry("/help", "show command help", "System", aliases = listOf("/usage", "/?", "/commands")),
         CommandEntry("/shortcuts", "every keyboard shortcut", "System", aliases = listOf("/keys-help")),
         CommandEntry("/ps", "ask a second provider without joining the queue", "Models"),
         CommandEntry("/pipeline", "what ATROPOS does, stage by stage", "System"),
@@ -25,6 +25,9 @@ object CommandCatalog {
         CommandEntry("/status quota", "quota ledger"),
         CommandEntry("/status route", "provider route decision (add --full for expanded cascade details)"),
         CommandEntry("/providers", "provider inventory"),
+        CommandEntry("/providers --full", "expanded provider inventory with capabilities and requirements"),
+        CommandEntry("/providers inventory", "provider inventory grouped by category"),
+        CommandEntry("/providers descriptors --full", "expanded provider contracts and environment requirements"),
         CommandEntry("/providers matrix", "read-only provider task routing matrix"),
         CommandEntry("/providers descriptors", "provider contract grid"),
         CommandEntry("/providers validate", "provider descriptor validation"),
@@ -369,6 +372,19 @@ object CommandCatalog {
         CommandEntry("/assets status", "asset generator status", "Assets"),
         CommandEntry("/assets text", "write a text asset (use <name> <prompt>)", "Assets"),
         CommandEntry("/assets ansi", "write an ansi asset (use <name> <prompt>)", "Assets"),
-        CommandEntry("/assets svg", "write an svg asset (use <name> <prompt>)", "Assets")
+        CommandEntry("/assets svg", "write an svg asset (use <name> <prompt>)", "Assets"),
+
+        CommandEntry("/diff", "show the current worktree diff with syntax-highlighted hunks", "Repository",
+            aliases = listOf("/changes"),
+            example = "/diff",
+            nlHint = "show me the changes, show diff, what did I change"),
+        CommandEntry("/diff --staged", "show staged changes only", "Repository",
+            example = "/diff --staged"),
+        CommandEntry("/diff <path>", "show diff for a specific file", "Repository",
+            example = "/diff src/main/kotlin/Example.kt"),
+        CommandEntry("/history", "navigate the session execution timeline", "Session",
+            aliases = listOf("/timeline"),
+            example = "/history",
+            nlHint = "show history, what happened, timeline")
     )
 }

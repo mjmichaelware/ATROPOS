@@ -11,7 +11,10 @@ class FactoryResultBuilder {
         softFailures: List<String>,
         memoryRecordId: String?,
         projectRecordId: String,
-        contextHash: String
+        contextHash: String,
+        acceptanceFreezeSha256: String?,
+        economics: FactoryRunEconomics,
+        terminationReason: String
     ): FactoryPlan {
         return originalPlan.copy(
             queuedWork = emptyList(),
@@ -34,7 +37,10 @@ class FactoryResultBuilder {
             memoryPointers = lineage.memoryPointers,
             contextHash = contextHash,
             specGraphStatus = lineage.atomizerStatus,
-            eventJournalPath = ".atropos/runs/${originalPlan.id}/events.journal"
+            eventJournalPath = ".atropos/runs/${originalPlan.id}/events.journal",
+            acceptanceFreezeSha256 = acceptanceFreezeSha256,
+            economics = economics,
+            terminationReason = terminationReason
         )
     }
 }
