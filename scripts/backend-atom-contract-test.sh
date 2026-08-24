@@ -46,6 +46,13 @@ text src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt 'ProviderCascad
 text src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt 'no healthy providers; set one key'
 text src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt 'export GROQ_API_KEY='
 text src/main/kotlin/atropos/core/provider/RoutePolicy.kt 'candidate.id !in healthyProviderIds.invoke()'
+file src/main/kotlin/atropos/core/policy/ExecutionPolicyEngine.kt
+file src/main/kotlin/atropos/core/paid/EmergencyPaidGate.kt
+text src/main/kotlin/atropos/core/policy/ExecutionPolicyEngine.kt 'if (request.paidProvider)'
+text src/main/kotlin/atropos/core/policy/ExecutionPolicyEngine.kt 'paidGate.isProviderUnlocked(provider)'
+text src/main/kotlin/atropos/core/policy/ExecutionPolicyEngine.kt 'paid provider remains locked'
+text src/main/kotlin/atropos/core/provider/ProviderCascadeRouter.kt 'paidApprovalAfterFreeExhaustion'
+text src/main/kotlin/atropos/core/provider/ProviderCascadeRouter.kt 'FREE/LOCAL cascade exhausted'
 text src/main/kotlin/atropos/Main.kt 'ProviderOnboardingService().renderLaunchSummary()'
 text src/main/kotlin/atropos/core/provider/SourceBindingFetcher.kt 'localOnly'
 text src/main/kotlin/atropos/core/provider/SourceBindingFetcher.kt 'disabled by localOnly'
