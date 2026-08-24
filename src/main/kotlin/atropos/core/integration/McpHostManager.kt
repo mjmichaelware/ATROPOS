@@ -406,16 +406,19 @@ class McpHostManager(
             .build()
         val response = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(3))
+            .followRedirects(HttpClient.Redirect.NEVER)
             .build()
-            .send(request, HttpResponse.BodyHandlers.ofByteArray())
+            .send(request, HttpResponse.BodyHandlers.ofInputStream())
         require(response.statusCode() in 200..299) {
             "MCP HTTP request failed status=${response.statusCode()} server=${server.name}"
         }
-        val bytes = response.body()
-        require(bytes.size <= DEFAULT_REMOTE_RESPONSE_BYTES) {
-            "MCP HTTP response exceeds the bounded response size"
+        return response.body().use { input ->
+            val bytes = input.readNBytes(DEFAULT_REMOTE_RESPONSE_BYTES + 1)
+            require(bytes.size <= DEFAULT_REMOTE_RESPONSE_BYTES) {
+                "MCP HTTP response exceeds the bounded response size"
+            }
+            String(bytes, StandardCharsets.UTF_8)
         }
-        return String(bytes, StandardCharsets.UTF_8)
     }
 
     private fun jsonEscape(value: String): String = value

@@ -46,6 +46,8 @@ text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'BoundedProcessR
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'RedactionFilter'
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'SecretSinkMatrix.isEgressPermitted'
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'McpConfigParser.requireJsonObject'
+text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'HttpClient.Redirect.NEVER'
+text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'readNBytes(DEFAULT_REMOTE_RESPONSE_BYTES + 1)'
 
 # Tier-0 integrations compose onto existing gates and secret/evidence owners.
 file src/main/kotlin/atropos/core/integration/IntegrationRegistry.kt
