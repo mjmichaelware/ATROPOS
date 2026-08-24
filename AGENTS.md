@@ -12115,3 +12115,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: source inspection and `git diff --check` are the available local evidence; root Gradle and hosted execution remain unrun, so no test green claim is made.
 - % delta: unchanged; source-wired but partial pending hosted execution evidence.
 - Fingerprints: recorded after commit.
+
+### 2026-08-23T10:00:00Z · Agent: Codex GPT-5 · Batch: bridge-approval-attribution-proof
+
+- Paths touched: `src/test/kotlin/atropos/bridge/BridgeApprovalHandlerTest.kt` (new), `.github/workflows/compile-gate.yml` (+1), `scripts/atropos-verify-worktree.sh` (+1), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-005 approval endpoint role boundary.
+- Predicate moved: the existing bridge approval path now has focused proof that unattributed decisions are refused, recorded decisions return success, and settled approvals cannot be changed by a second actor.
+- Verification actually run: `git diff --check`, shell syntax, and selector inspection are the available local evidence; root Gradle and hosted execution remain unrun, so no test green claim is made.
+- % delta: unchanged; source-wired but partial pending hosted execution evidence.
+- Fingerprints: recorded after commit.

@@ -281,3 +281,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-HELP-001 command/help registry parity | source-wired / partial | `src/main/kotlin/atropos/cli/input/CommandCatalog.kt`, `src/main/kotlin/atropos/cli/CommandRouter.kt`, `src/test/kotlin/atropos/cli/input/CommandCatalogBackendEntriesTest.kt` | `/help` → existing `CommandRouter`/`HelpGenerator` → shared `CommandCatalog` | Focused contract now asserts factory resume, provider connect/prefer/disable, MCP search/call/ingest, keys status, and context import are all discoverable from the one registry. Hosted/root test execution remains pending. |
+
+### 2026-08-23T10:00:00Z · Backend batch: bridge-approval-attribution-proof
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-005 approval endpoint role boundary | source-wired / partial | `src/main/kotlin/atropos/bridge/BridgeApprovalHandler.kt`, `src/main/kotlin/atropos/bridge/BridgeRoutes.kt`, `src/test/kotlin/atropos/bridge/BridgeApprovalHandlerTest.kt`, hosted selectors | `POST /v1/approvals/decide` → `BridgeApprovalHandler` → `PendingApprovalStore.decide` | Focused proof covers required attribution, durable approval recording, and refusal of a second decision; no route or policy owner was duplicated. Root/hosted execution remains pending. |
