@@ -12287,6 +12287,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; B-013 remains source-wired / partial pending hosted execution.
 - Fingerprint (sha256, first 12): `BridgeEditorHandlerTest.kt=a36a163c6c15`.
 
+### 2026-08-24T06:44:00Z · Agent: Codex GPT-5 · Batch: backend-blocker-ledger-audit
+
+- Paths touched: `STATUS-BACKEND.md` (+16); no production code changes.
+- Atoms / phases affected: explicit truth accounting for B-MCP-SENTRY/B-017, OAuth, B-PROV-006, Bedrock, Perplexity, local-git mutation, and deferred distribution/browser atoms.
+- Predicate moved: every remaining non-source-complete backend atom in the current DAG is now classified with a concrete missing authority/transport/scope reason and a next evidence condition. No blocked atom was represented as implemented, and no parallel system was introduced.
+- Verification actually run: the worktree was clean at batch start after `fff02909`; prior local diff/orphan/contract evidence remains valid. No compile/test claim is made for this documentation-only audit.
+- % delta: unchanged.
+- Fingerprint: recorded after commit.
+
 ### 2026-08-24T10:35:00Z · Agent: Codex GPT-5 · Batch: gha-pull-request-trigger
 
 - Paths touched: `.github/workflows/atropos-verify-example.yml` (+1), `scripts/atropos-verify-action-contract-test.sh` (+8), `STATUS-BACKEND.md` (+2).
