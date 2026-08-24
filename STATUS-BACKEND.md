@@ -51,6 +51,12 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | --- | --- | --- | --- | --- |
 | P18 / live-test unhealthy without cascade crash | source-wired / partial | `src/main/kotlin/atropos/core/provider/ProviderActivationService.kt`, `src/test/kotlin/atropos/core/provider/ProviderActivationServiceTest.kt` | `/providers live-test` → existing `ProviderCommandHandler` → `ProviderActivationService.liveTest` → canonical `ProviderAdapter.complete` | Adapter exceptions are normalized into the existing `ProviderFailure`/quota/state path, so an injected connection failure returns `OFFLINE` and persists a non-success activation record instead of escaping the command. Hosted selector parity (382), orphan gate, and diff check pass; root/hosted Kotlin execution and real provider calls remain unrun. |
 
+### 2026-08-24T22:40:00Z · Backend verification: provider-live-test-root-timeout
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| P18 focused Kotlin execution | inconclusive / partial | `STATUS-BACKEND.md` | GitHub Actions `focused-backend-tests` → existing `ProviderActivationServiceTest` selector | `timeout 60s ./gradlew --no-daemon :test --rerun --max-workers=1 --tests 'atropos.core.provider.ProviderActivationServiceTest'` exited 124 during Gradle task-graph calculation with no compilation or test output. This is not a pass or source failure; GitHub Actions remains the authoritative execution lane. |
+
 ## Wave residual audit
 
 | residual | status | evidence / caller | remaining truth |

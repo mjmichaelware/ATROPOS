@@ -12791,3 +12791,10 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (382 tests)`), `timeout 90s python3 scripts/find-orphans.py --fail-on-new` (exit 0; only 4 pre-existing baseline orphan files / 360 LOC), and `git diff --check` passed. The focused Kotlin test and GitHub Actions remain unrun; no compile/test-green claim.
 - % delta: unchanged; P18 remains source-wired / partial pending hosted execution and real provider runtime evidence.
 - Fingerprints (sha256, first 12): `ProviderActivationService.kt=6b017b5c26a7`, `ProviderActivationServiceTest.kt=fbd42a6c7f16`; ledger files were appended in this batch.
+
+### 2026-08-24T22:40:00Z · Agent: Codex GPT-5 · Verification: provider-live-test-root-timeout
+
+- Paths touched: `STATUS-BACKEND.md` (+7).
+- Acceptance predicate checked: focused root execution of `ProviderActivationServiceTest` after the fail-closed live-test boundary.
+- Evidence: `timeout 60s ./gradlew --no-daemon :test --rerun --max-workers=1 --tests 'atropos.core.provider.ProviderActivationServiceTest'` exited 124 during Gradle task-graph calculation and emitted no compilation/test result. This is inconclusive, not green; the GitHub Actions focused lane remains the required execution source.
+- % delta: unchanged; P18 remains source-wired / partial.
