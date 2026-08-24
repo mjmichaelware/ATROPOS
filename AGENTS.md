@@ -452,6 +452,24 @@ End of AGENTS.md
 - % delta: unchanged; no VERIFIED claim. FTY-01, FTY-02, and FTY-04 are marked done in `STATUS-BACKEND.md` based on production source plus narrow compilation; FTY-03 and FTY-05 remain partial until root focused tests and a runtime-owned repair callback are proven.
 - Fingerprints (sha256): `DagStore.kt=fb932962f947`; `FactoryProgressGuard.kt=50bb25ea712d`; `FactoryRunHandoff.kt=537cf1c24fc2`; `FactoryRunOrchestrator.kt=652e100a59b7`; `FactoryRepairExecutor.kt=16e2c5cd36a8`; `FactoryCommandHandler.kt=392afeb3eb37`; `FactoryProgressGuardTest.kt=1e5d81c78c09`; `FactoryResumeAndRepairTest.kt=bca553b18f46`; `STATUS-BACKEND.md=2669342e3735`.
 
+### 2026-08-23T23:00:00Z · Agent: Codex GPT-5 · Batch: backend-root-proof-and-factory-audit
+
+- Paths touched: `src/test/kotlin/atropos/core/provider/QuotaLedgerRouteTruthTest.kt` (+25), `STATUS-BACKEND.md`, `AGENTS.md`.
+- Atoms / phases affected: provider prefer/disable route truth; factory runtime repair/resume/termination audit.
+- Predicate moved: the provider route test now covers preference tie-breaking and healthy-set exclusion. Factory source inspection identifies production caller paths at `FactoryRunOrchestrator.kt:258-290`, `FactoryCommandHandler.kt:20-47`, and `FactoryRunHandoff.kt:84-108`; no implementation re-claim was made for already-partial factory atoms.
+- Verification actually run: `git diff --check` passed. The smallest root selector command `./gradlew :test --no-daemon --max-workers=1 --rerun --tests ...Provider... --tests ...Bridge... --tests ...Mcp... --tests ...Factory...` reached `:compileKotlin` but was interrupted after a bounded wait with no test output/count. `:core:jvmTest` remains the only completed Gradle target: 2 tests, 0 failures, 0 errors, 0 skipped. GitHub Actions remains required for root proof; no GHA green claim.
+- % delta: unchanged; provider/factory atoms remain partial.
+- Fingerprint: `QuotaLedgerRouteTruthTest.kt=00359ea4a11e`.
+
+### 2026-08-23T22:20:00Z · Agent: Codex GPT-5 · Batch: provider-route-policy-focused-proof
+
+- Paths touched: `src/test/kotlin/atropos/core/provider/QuotaLedgerRouteTruthTest.kt` (+25), `STATUS-BACKEND.md`.
+- Atoms / phases affected: provider cleanup: prefer/disable route truth.
+- Predicate moved: a focused route test now proves the persisted-preference supplier wins an otherwise tied free-provider selection, while a healthy-set excluding `groq` prevents it from being selected and records `not_in_healthy_set`.
+- Verification actually run: `git diff --check` passed. The root focused `:test` task was attempted with Provider/Bridge/MCP/Factory selectors and interrupted after remaining at `:compileKotlin`; no root test count or pass is claimed. Existing core test evidence remains 2 tests, 0 failures from the prior `:core:jvmTest` run.
+- % delta: unchanged; provider atom remains partial pending root/hosted execution.
+- Fingerprint: `QuotaLedgerRouteTruthTest.kt=00359ea4a11e`.
+
 ### 2026-08-23T21:45:00Z · Agent: Codex GPT-5 · Batch: backend-proof-audit-new-session
 
 - Paths touched: `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt`, hosted selector files, `STATUS-BACKEND.md`.
