@@ -170,6 +170,9 @@ jobs:
         with:
           node-version: '20'
           registry-url: https://registry.npmjs.org
+      - name: Align npm version with release tag
+        working-directory: npm
+        run: npm pkg set version="${GITHUB_REF_NAME#v}"
       - name: Publish npm launcher
         if: env.NODE_AUTH_TOKEN != ''
         working-directory: npm

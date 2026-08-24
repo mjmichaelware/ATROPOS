@@ -21,6 +21,7 @@ grep -Fq 'publish-npm:' "$release"
 grep -Fq "if: startsWith(github.ref, 'refs/tags/v')" "$release"
 grep -Fq 'needs: publish' "$release"
 grep -Fq 'NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}' "$release"
+grep -Fq 'npm pkg set version="${GITHUB_REF_NAME#v}"' "$release"
 grep -Fq 'npm publish --access public --provenance' "$release"
 if grep -Fq 'secrets.NPM_TOKEN !=' "$release"; then
   echo 'NPM_INSTALLER_CONTRACT_FAIL: secrets cannot be used directly in job if expressions' >&2

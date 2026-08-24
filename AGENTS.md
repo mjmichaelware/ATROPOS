@@ -13008,6 +13008,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; B-INST-006 remains source-wired / partial pending hosted release evidence.
 - Fingerprint: `scripts/npm-installer-contract-test.sh=a6306145f118`.
 
+### 2026-08-24T17:34:00Z · Agent: Codex GPT-5 · Batch: npm-tag-version-alignment
+
+- Paths touched: `.github/workflows/release.yml` (+4), `scripts/npm-installer-contract-test.sh` (+1), `AGENTS.md`, `STATUS-BACKEND.md`.
+- Atoms / phases affected: B-INST-006 immutable npm release publication.
+- Predicate moved: the tag-based npm publisher now sets `npm/package.json`’s version from `${GITHUB_REF_NAME#v}` immediately before publishing, preventing a future immutable release from attempting to publish stale package metadata. The release contract requires this step.
+- Verification actually run: `NPM_INSTALLER_CONTRACT_OK` and `git diff --check` passed. Hosted release and registry publication remain unproven; no npm publish claim.
+- % delta: unchanged; B-INST-006 remains source-wired / partial.
+- Fingerprints: `.github/workflows/release.yml=68ed6e96c65e`, `scripts/npm-installer-contract-test.sh=83efd31c96ae`.
+
 ### 2026-08-24T17:29:00Z · Agent: Codex GPT-5 · Verification: backend-static-gate-recheck
 
 - Paths touched: `AGENTS.md`, `STATUS-BACKEND.md` only.

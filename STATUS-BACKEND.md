@@ -564,6 +564,12 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | --- | --- | --- | --- | --- |
 | B-INST-006 npm publish workflow contract | source-wired / partial | `scripts/npm-installer-contract-test.sh`, `.github/workflows/release.yml` | release workflow → `publish-npm` tag job → npm registry | Static contract now checks immutable-tag gating, `needs: publish`, token environment, provenance publish, and absence of invalid secret job conditions. Local contract passes; GitHub Actions and npm registry evidence remain pending. |
 
+### 2026-08-24T17:34:00Z · Backend batch: npm-tag-version-alignment
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-INST-006 npm release version alignment | source-wired / partial | `.github/workflows/release.yml`, `scripts/npm-installer-contract-test.sh` | immutable `v*` tag → existing `publish-npm` job → `npm pkg set version` → npm publish | Future tag releases derive package version from the tag before publishing. Contract passes; hosted release and registry publication remain unproven. |
+
 ### 2026-08-24T17:29:00Z · Backend verification: composed-static-gates
 
 | check | result | evidence |
