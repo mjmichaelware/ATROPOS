@@ -211,6 +211,12 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | --- | --- | --- | --- | --- |
 | B-MCP-CORE-a/b transport safety | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` | existing `/mcp` and bridge calls → `McpHostManager.statuses/callTool` → supported transport guard | Unknown transports now report `untested` and cannot fall through to stdio process execution; focused refusal/status fixture added. `git diff --check` passed; hosted/root execution remains pending. |
 
+### 2026-08-24T06:05:00Z · Backend batch: provider-discovery-count-summary
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-PROV-003a/b/c/d discovery summary | source-wired / partial | `src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt`, `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` | launch `CommandRouter` → existing `ProviderOnboardingService.refresh/render` | Provider launch output now reports deterministic discovered, healthy, and disabled counts before the existing rows/cascade; focused renderer assertion added. `git diff --check` passed; hosted/root provider tests remain pending. |
+
 ### 2026-08-24T05:36:00Z · Backend batch: mcp-evidence-reason-bridge-field
 
 | atom | status | files | caller | tests / notes |

@@ -524,6 +524,15 @@ End of AGENTS.md
 - % delta: unchanged; source-wired but partial pending hosted execution.
 - Fingerprints: `McpHostManager.kt=d47ce773bf29`; `McpHostManagerTest.kt=a3582abcb256`.
 
+### 2026-08-24T06:05:00Z · Agent: Codex GPT-5 · Batch: provider-discovery-count-summary
+
+- Paths touched: `src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt` (+4/-1), `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` (+10), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-PROV-003a/b/c/d launch discovery summary.
+- Predicate moved: the existing provider onboarding renderer now reports deterministic discovered, healthy, and disabled counts before its detailed matrix and cascade; no second discovery pass or registry was introduced.
+- Verification actually run: `git diff --check` passed; hosted/root provider execution remains pending, so no green claim.
+- % delta: unchanged; source-wired but partial pending hosted execution.
+- Fingerprints: `ProviderOnboarding.kt=85224f95f453`; `ProviderOnboardingTest.kt=b55bacb83d3a`.
+
 ### 2026-08-24T04:41:10Z · Agent: Codex GPT-5 · Batch: mcp-http-request-validity
 
 - Paths touched: `src/main/kotlin/atropos/core/integration/McpHostManager.kt` (+10/-4), `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+2).

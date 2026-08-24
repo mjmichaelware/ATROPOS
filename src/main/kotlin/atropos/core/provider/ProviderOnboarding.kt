@@ -119,8 +119,10 @@ class ProviderOnboardingService(
         aliases[providerId]?.firstOrNull() ?: "${providerId.uppercase()}_API_KEY"
 
     fun render(): String = buildString {
-        appendLine("PROVIDERS")
         val rows = list()
+        val healthy = rows.count { it.health == CheapProviderHealth.HEALTHY && !it.disabled }
+        appendLine("PROVIDERS")
+        appendLine("  discovered=${rows.size} healthy=$healthy disabled=${rows.count { it.disabled }}")
         rows.forEach { record ->
             appendLine("  ${record.providerId} health=${record.health.name.lowercase()} " +
                 "keys=${record.matchedEnvNames.joinToString(",").ifBlank { "none" }} " +

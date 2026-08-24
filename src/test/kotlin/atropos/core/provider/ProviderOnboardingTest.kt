@@ -8,6 +8,16 @@ import atropos.core.security.TokenIsolationVault
 
 class ProviderOnboardingTest {
     @Test
+    fun render_reports_discovered_healthy_and_disabled_counts() {
+        val service = ProviderOnboardingService(
+            root = Files.createTempDirectory("provider-onboarding-render"),
+            environment = mapOf("GROQ_API_KEY" to "secret")
+        )
+        service.refresh()
+        assertTrue(service.render().contains(Regex("discovered=\\d+ healthy=\\d+ disabled=\\d+")))
+    }
+
+    @Test
     fun discovery_accepts_common_aliases_without_persisting_values() {
         val root = Files.createTempDirectory("provider-onboarding")
         val service = ProviderOnboardingService(
