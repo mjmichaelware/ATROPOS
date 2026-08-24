@@ -515,6 +515,15 @@ End of AGENTS.md
 - % delta: unchanged.
 - Fingerprints: `docs/OPEN_CORE_BOUNDARY.md=0ebc84ccb65884ce3aecfc84`; `README.md=31226028717aca01e684f56c`.
 
+### 2026-08-24T04:55:26Z · Agent: Codex GPT-5 · Batch: gha-verification-check-publication
+
+- Paths touched: `.github/workflows/atropos-verify-example.yml` (+29).
+- Atoms / phases affected: B-MCP-GHA-f/g explicit verification check publication and example workflow wiring.
+- Predicate moved: the existing reusable verification example now publishes a completed GitHub Check with the actual step outcome, commit identity, and bounded-gate summary; it does not convert a failed action into success. `checks: write` is scoped to this workflow and no repository mutation or credential transport was added.
+- Verification actually run: `git diff --check` passed; hosted workflow/YAML execution has not run in this environment, so no check-run or compile green claim is made.
+- % delta: unchanged; source-wired / partial pending hosted execution.
+- Fingerprint: `.github/workflows/atropos-verify-example.yml=f92d022c78bdc29e5228d01b`.
+
 ### 2026-08-24T02:25:00Z · Agent: Codex GPT-5 · Batch: reusable-orphan-gate-wire
 
 - Paths touched: `scripts/atropos-verify-worktree.sh` (+4), `.github/workflows/atropos-verify-example.yml` (+2), `STATUS-BACKEND.md` (+7).

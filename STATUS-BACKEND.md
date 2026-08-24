@@ -162,3 +162,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-OC-001 / B-OC-003 boundary documentation | source-wired / partial | `docs/OPEN_CORE_BOUNDARY.md`, `README.md` | README → boundary document; runtime enforcement remains existing `AtroposConfig`, `FactoryResearchService`, `McpHostManager`, and policy owners | Documented local authority, additive hosted sync, local-only behavior, and AGPL section-13 review note. Documentation-only; `git diff --check` passed. |
+
+### 2026-08-24T04:55:26Z · Backend batch: gha-verification-check-publication
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-GHA-f/g check publication | source-wired / partial | `.github/workflows/atropos-verify-example.yml` | manual workflow → existing composite `atropos-verify` action → `github-script` check publication | Publishes outcome/commit summary with fail-closed conclusion mapping and scoped `checks: write`. `git diff --check` passed; workflow has not executed. |

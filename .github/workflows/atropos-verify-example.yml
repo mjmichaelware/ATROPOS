@@ -5,6 +5,7 @@ on:
 
 permissions:
   contents: read
+  checks: write
 
 jobs:
   verify:
@@ -17,4 +18,35 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - uses: ./.github/actions/atropos-verify
+      - id: verify
+        uses: ./.github/actions/atropos-verify
+
+      - name: Publish ATROPOS verification check
+        if: always()
+        uses: actions/github-script@v7
+        env:
+          VERIFY_OUTCOME: ${{ steps.verify.outcome }}
+        with:
+          script: |
+            const outcome = process.env.VERIFY_OUTCOME;
+            const conclusion = outcome === 'success' ? 'success' :
+              outcome === 'cancelled' ? 'cancelled' : 'failure';
+            const summary = [
+              `Bounded ATROPOS verification outcome: **${outcome}**.`,
+              `Commit: \`${context.sha}\`.`,
+              'The check covers hosted compilation, focused backend tests,',
+              'new-production caller enforcement, territory, redaction, and evidence gates.',
+              'Detailed compiler/test evidence remains in the workflow log.'
+            ].join('\n\n');
+            await github.rest.checks.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'ATROPOS bounded verification',
+              head_sha: context.sha,
+              status: 'completed',
+              conclusion,
+              output: {
+                title: `ATROPOS verify: ${outcome}`,
+                summary
+              }
+            });
