@@ -180,3 +180,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | ADD-MCP-002 / M12 pre-call enforcement | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` | existing `McpHostManager.callTool` from bridge and CLI; stdio exchange now handshakes/list-checks before writing request id 3 | Added a focused fixture asserting an over-budget tool is refused before the server sees `tools/call`; `git diff --check` passed. Gradle execution remains inconclusive in this environment; no root or hosted green claim. |
+
+### 2026-08-24T05:14:00Z · Backend batch: mcp-budget-doctor-visibility
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| ADD-MCP-002 doctor budget visibility | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `src/main/kotlin/atropos/cli/BackendDoctor.kt`, `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` | existing `CommandRouter` → `BackendDoctor.render` → shared `McpHostManager.budgetSummary` | `/doctor` now prints the same default MCP injection limits used by the host; focused assertion added. `git diff --check` passed; hosted/root execution remains pending. |

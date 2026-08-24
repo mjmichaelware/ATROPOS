@@ -470,6 +470,15 @@ End of AGENTS.md
 - % delta: unchanged; source-wired but partial pending hosted execution.
 - Fingerprints: `McpHostManager.kt=472244d3ce26`; `McpHostManagerTest.kt=9daa29d46914`.
 
+### 2026-08-24T05:14:00Z · Agent: Codex GPT-5 · Batch: mcp-budget-doctor-visibility
+
+- Paths touched: `src/main/kotlin/atropos/core/integration/McpHostManager.kt` (+6), `src/main/kotlin/atropos/cli/BackendDoctor.kt` (+1), `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+1), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: ADD-MCP-002 doctor/status visibility.
+- Predicate moved: the existing doctor surface now reports the host’s declared MCP tool limits through the same `McpHostManager` owner used by CLI and bridge execution; no duplicate budget or policy was added.
+- Verification actually run: `git diff --check` passed; focused Gradle/root and hosted execution remain pending, so no green claim.
+- % delta: unchanged; source-wired but partial pending hosted execution.
+- Fingerprints: `McpHostManager.kt=e4e64b2263a6`; `BackendDoctor.kt=1c9edbd0e9ce`; `McpHostManagerTest.kt=516628b48869`.
+
 ### 2026-08-24T04:41:10Z · Agent: Codex GPT-5 · Batch: mcp-http-request-validity
 
 - Paths touched: `src/main/kotlin/atropos/core/integration/McpHostManager.kt` (+10/-4), `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+2).

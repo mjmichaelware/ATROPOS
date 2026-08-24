@@ -26,6 +26,7 @@ class BackendDoctor(
             add("  remediation: set one provider key, for example export GROQ_API_KEY=…")
         }
         add("mcp:")
+        add("  budget: ${mcp.budgetSummary()}")
         val mcpStatuses = mcp.statuses()
         if (mcpStatuses.isEmpty()) add("  none configured")
         else mcpStatuses.forEach { status ->

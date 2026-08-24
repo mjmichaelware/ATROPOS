@@ -147,6 +147,12 @@ class McpHostManager(
     fun boundedTools(tools: List<McpToolDescriptor>, budget: McpToolBudget = McpToolBudget()): List<McpToolDescriptor> =
         tools.asSequence().take(budget.maxTools).map { it.copy(description = it.description.take(budget.maxDescriptionChars)) }.toList()
 
+    /** Human-readable declaration of the default injection budget for doctor/status surfaces. */
+    fun budgetSummary(): String {
+        val budget = McpToolBudget()
+        return "max_tools=${budget.maxTools} max_description_chars=${budget.maxDescriptionChars}"
+    }
+
     /** Executes one allowlisted local stdio tool and persists its result evidence. */
     fun callTool(
         serverName: String,

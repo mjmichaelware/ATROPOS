@@ -17,6 +17,7 @@ class McpHostManagerTest {
             ]}
         """.trimIndent())
         val manager = McpHostManager(root, probe = { McpHealth.HEALTHY })
+        assertEquals("max_tools=32 max_description_chars=4000", manager.budgetSummary())
         val statuses = manager.statuses().associateBy { it.server.name }
         assertEquals(McpHealth.UNTESTED, statuses.getValue("community").health)
         assertEquals(McpHealth.HEALTHY, statuses.getValue("local").health)
