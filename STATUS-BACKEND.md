@@ -558,6 +558,12 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | B-HELP-002 provider environment one-pager | source-wired / partial | `docs/PROVIDER_ENVIRONMENT.md`, `scripts/provider-env-contract-test.sh`, `.github/workflows/compile-gate.yml`, `.github/workflows/release.yml` | provider descriptor registry → environment contract → generated/documented onboarding table | Canonical descriptor names, aliases, globs, and AWS discovery names are checked against the onboarding document. Hosted execution and release publication remain pending. |
 | B-OC-003 AGPL enterprise note | blocked by territory | no new file; `LEGAL.md` is absent | no production caller added | The requested legal note is documentation outside this backend-only territory and is not silently fabricated. It remains blocked until a documentation/legal territory is authorized. |
 
+### 2026-08-24T17:27:00Z · Backend batch: npm-publish-contract
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-INST-006 npm publish workflow contract | source-wired / partial | `scripts/npm-installer-contract-test.sh`, `.github/workflows/release.yml` | release workflow → `publish-npm` tag job → npm registry | Static contract now checks immutable-tag gating, `needs: publish`, token environment, provenance publish, and absence of invalid secret job conditions. Local contract passes; GitHub Actions and npm registry evidence remain pending. |
+
 ### 2026-08-24T06:48:39Z · Backend batch: anti-synthetic-velocity-output
 
 | atom | status | files | caller | tests / notes |

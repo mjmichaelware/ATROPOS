@@ -12999,6 +12999,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: source inspection confirmed the existing B-013 editor bridge, B-018/B-019 deferral, local-only/zero-retention owners, and missing `LEGAL.md`; no code or authority behavior changed. `git diff --check` remains required. Hosted/root Kotlin execution and GitHub push remain unavailable.
 - % delta: unchanged; this is a truth-ledger correction only.
 
+### 2026-08-24T17:27:00Z · Agent: Codex GPT-5 · Batch: npm-publish-contract
+
+- Paths touched: `scripts/npm-installer-contract-test.sh` (+10), `AGENTS.md`, `STATUS-BACKEND.md`.
+- Atoms / phases affected: B-INST-006 GitHub Actions npm publication caller.
+- Predicate moved: the existing npm installer contract now rejects a release workflow that publishes outside immutable `v*` tags, omits the `publish` dependency/token path, or directly references secrets in a job-level conditional. The contract checks the actual `npm publish --access public --provenance` caller.
+- Verification actually run: `bash scripts/npm-installer-contract-test.sh` (`NPM_INSTALLER_CONTRACT_OK`), shell syntax, and `git diff --check` passed. Hosted workflow execution and registry publication remain unproven.
+- % delta: unchanged; B-INST-006 remains source-wired / partial pending hosted release evidence.
+- Fingerprint: `scripts/npm-installer-contract-test.sh=a6306145f118`.
+
 ### 2026-08-24T17:22:01Z · Agent: Codex GPT-5 · Batch: npm-local-jar-and-publish-wire
 
 - Paths touched: `npm/scripts/postinstall.js` (+12), `npm/README.md` (+5), `scripts/npm-installer-contract-test.sh` (+2), `.github/workflows/release.yml` (+27), `AGENTS.md`, `STATUS-BACKEND.md`.
