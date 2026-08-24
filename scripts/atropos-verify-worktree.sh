@@ -399,6 +399,7 @@ if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
     --tests 'atropos.core.autonomous.AutonomousLearningAdvisorTest' \
     --tests 'atropos.core.autonomous.AutonomousOrchestratorLearningTest' \
     --tests 'atropos.core.github.GitHubApiClientTest' \
+    --tests 'atropos.core.github.GitHubDeviceAuthClientTest' \
     --tests 'atropos.core.github.GitHubBindingTest' \
     --tests 'atropos.core.scavenge.GitHubScavengerTest'
 fi

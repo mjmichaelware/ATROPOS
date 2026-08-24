@@ -6,6 +6,7 @@ import atropos.core.auth.AuthBootResult
 import atropos.core.auth.AuthBootstrap
 import atropos.core.auth.AuthCascadeResolver
 import atropos.core.auth.CascadeResolution
+import atropos.core.github.GitHubDeviceAuthClient
 
 /**
  * `/auth` — the operator's view of the governing documents.
@@ -22,7 +23,8 @@ import atropos.core.auth.CascadeResolution
 class AuthCommandHandler(
     private val uiEngine: AnsiTerminalEngine,
     private val bootstrap: AuthBootstrap = AuthBootstrap(),
-    private val resolver: AuthCascadeResolver = AuthCascadeResolver()
+    private val resolver: AuthCascadeResolver = AuthCascadeResolver(),
+    private val githubOAuth: GitHubDeviceAuthClient = GitHubDeviceAuthClient()
 ) {
     private val renderer = atropos.cli.ui.StatusAuthRenderer()
 
@@ -31,7 +33,8 @@ class AuthCommandHandler(
             null, "verify", "status" -> renderVerify()
             "cascade" -> renderCascade()
             "accept" -> renderAccept(tokens.getOrNull(2))
-            else -> uiEngine.renderError("usage: /auth [verify|cascade|accept <path>]")
+            "github" -> renderGitHub()
+            else -> uiEngine.renderError("usage: /auth [verify|cascade|github|accept <path>]")
         }
         return RouterOutcome.CONTINUE
     }
@@ -67,6 +70,20 @@ class AuthCommandHandler(
             uiEngine.renderNotice("Recorded the current contents of $path as authoritative.")
         } else {
             uiEngine.renderError("Could not record $path. Check that it exists inside the repository.")
+        }
+    }
+
+    private fun renderGitHub() {
+        runCatching {
+            val authorization = githubOAuth.begin()
+            uiEngine.renderNotice(
+                "GitHub OAuth: open ${authorization.verificationUri} and enter code ${authorization.userCode}; waiting for approval"
+            )
+            val token = githubOAuth.poll(authorization)
+            val path = githubOAuth.store(token)
+            uiEngine.renderNotice("GitHub connected locally: source=local_vault path=${path.fileName}")
+        }.onFailure {
+            uiEngine.renderError("GitHub OAuth refused: ${it.message ?: it.javaClass.simpleName}")
         }
     }
 }

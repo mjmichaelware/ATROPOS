@@ -758,3 +758,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-GITHUB integration registration gate | source-wired / partial | `src/main/kotlin/atropos/core/github/GitHubApiClient.kt`, `src/test/kotlin/atropos/core/github/GitHubApiClientTest.kt` | `/github *` → existing `GitHubCommandHandler`/`GitHubBinding` → sole `GitHubApiClient.execute` → `IntegrationRegistry` → agency/secret/transport/evidence | GitHub requests now fail before any request work if the canonical integration is not registered. Selector/orphan/diff checks pass; root/hosted Kotlin and credentialed network proof remain pending. |
+
+### 2026-08-24T16:05:00Z · Backend batch: github-device-oauth-owner
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-OAUTH-UX GitHub device authorization | source-wired / partial | `src/main/kotlin/atropos/core/github/GitHubDeviceAuthClient.kt`, `src/main/kotlin/atropos/cli/AuthCommandHandler.kt`, `src/test/kotlin/atropos/core/github/GitHubDeviceAuthClientTest.kt`, `src/main/kotlin/atropos/cli/input/CommandCatalog.kt` | `/auth github` → existing `AuthCommandHandler` → `GitHubDeviceAuthClient` → GitHub device/token endpoints → existing `TokenIsolationVault` | Requires operator-registered public `ATROPOS_GITHUB_OAUTH_CLIENT_ID`; no client secret or token logging. Selector/orphan/diff checks pass. Focused root Gradle selection timed out during task graph/configuration with no test result; hosted OAuth/Kotlin execution remains pending. |

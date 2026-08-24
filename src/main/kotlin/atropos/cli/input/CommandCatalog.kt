@@ -121,6 +121,7 @@ object CommandCatalog {
         ),
         CommandEntry("/auth verify", "report each authority document as attested, changed or absent", "Authority"),
         CommandEntry("/auth cascade", "which layer wins each key, and which keys no layer may override", "Authority"),
+        CommandEntry("/auth github", "connect GitHub through bounded device OAuth and local secret storage", "Developer Tools"),
         CommandEntry(
             "/auth accept",
             "record a document's current contents as authoritative after reviewing the change",

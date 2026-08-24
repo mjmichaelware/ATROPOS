@@ -36,5 +36,6 @@ class CommandCatalogBackendEntriesTest {
         assertTrue("/git rebase-continue" in commands)
         assertTrue("/agent context import <path>" in commands)
         assertTrue("/keys status" in commands)
+        assertTrue("/auth github" in commands)
     }
 }
