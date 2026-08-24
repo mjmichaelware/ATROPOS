@@ -6,6 +6,7 @@ import atropos.core.policy.AgencyDisposition
 import atropos.core.policy.BoundedAgencyGate
 import atropos.core.policy.BoundedProcessRunner
 import atropos.core.policy.ExecutionPolicyEngine
+import atropos.core.policy.PolicyActionClass
 import atropos.core.policy.ShellActionProposals
 import atropos.core.policy.ToolExecutionResult
 import atropos.core.policy.TypedToolExecutor
@@ -102,6 +103,18 @@ class ShellCommandRunner(
     fun gitDiff(): ShellCommandResult =
         run(listOf("git", "diff", "--"))
 
+    /** Runs a parsed, explicitly confirmed repository mutation. */
+    fun runGitMutation(command: List<String>, targetPaths: List<String>): ShellCommandResult {
+        require(command.firstOrNull() == "git") { "Git mutation command must start with git" }
+        require(targetPaths.isNotEmpty()) { "Git mutation requires a territory" }
+        val proposal = ShellActionProposals.forCommand(command, cwd.toPath()).copy(
+            actionClass = PolicyActionClass.FILE_MUTATION,
+            targetPaths = targetPaths,
+            metadata = mapOf("git_mutation" to "explicit_confirmation")
+        )
+        return execute(command, proposal)
+    }
+
     fun run(command: List<String>): ShellCommandResult {
         val cleaned = command.filter { it.isNotBlank() }
         if (cleaned.isEmpty()) {
@@ -147,10 +160,14 @@ class ShellCommandRunner(
         return results
     }
 
-    private fun execute(cleaned: List<String>, input: String? = null): ShellCommandResult {
+    private fun execute(cleaned: List<String>, input: String? = null): ShellCommandResult =
+        execute(cleaned, ShellActionProposals.forCommand(cleaned, cwd.toPath()), input)
 
-        val proposal = ShellActionProposals.forCommand(cleaned, cwd.toPath())
-
+    private fun execute(
+        cleaned: List<String>,
+        proposal: ActionProposal,
+        input: String? = null
+    ): ShellCommandResult {
         // The executor lambda is the only place a process can be born, and the
         // gate decides whether it is ever invoked.
         var executed: ShellCommandResult? = null

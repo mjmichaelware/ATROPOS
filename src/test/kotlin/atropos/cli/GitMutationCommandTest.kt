@@ -9,7 +9,7 @@ class GitMutationCommandTest {
     @Test
     fun mutations_require_confirmation_and_emit_no_confirmation_token() {
         val parsed = GitMutationCommandParser.parse(listOf("/git", "commit", "safe change", "--confirm", "operator-1"))
-        assertEquals(GitMutationParse.Accepted(listOf("git", "commit", "-m", "safe change")), parsed)
+        assertEquals(GitMutationParse.Accepted(listOf("git", "commit", "-m", "safe change"), listOf(".")), parsed)
         assertTrue(GitMutationCommandParser.parse(listOf("/git", "commit", "safe change")) is GitMutationParse.Refused)
     }
 
@@ -17,7 +17,7 @@ class GitMutationCommandTest {
     fun add_rejects_traversal_and_rebase_accepts_only_the_exact_shape() {
         assertTrue(GitMutationCommandParser.parse(listOf("/git", "add", "../outside", "--confirm", "operator-1")) is GitMutationParse.Refused)
         assertEquals(
-            GitMutationParse.Accepted(listOf("git", "rebase", "--continue")),
+            GitMutationParse.Accepted(listOf("git", "rebase", "--continue"), listOf(".")),
             GitMutationCommandParser.parse(listOf("/git", "rebase-continue", "--confirm", "operator-1"))
         )
         assertTrue(GitMutationCommandParser.parse(listOf("/git", "rebase-continue", "extra", "--confirm", "operator-1")) is GitMutationParse.Refused)

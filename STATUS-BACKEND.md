@@ -426,3 +426,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-GITLOCAL-c/d/e/f mutation callers | source-wired / partial | `src/main/kotlin/atropos/cli/GitMutationCommand.kt`, `ShellCommandHandler.kt`, `CommandCatalog.kt`, `src/test/kotlin/atropos/cli/GitMutationCommandTest.kt`, hosted selectors | `/git add|commit|rebase-continue` → `GitMutationCommandParser` → existing `ShellCommandRunner` → `TypedToolExecutor`/`BoundedAgencyGate` | Added local Git mutation commands with mandatory `--confirm <id>`, traversal-safe add paths, bounded commit messages, exact rebase shape, and no confirmation token forwarded to Git. Existing agency policy still decides execution; no mutation was run. Root/hosted tests remain pending. |
+
+### 2026-08-24T07:25:00Z · Backend batch: local-git-policy-composition
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-GITLOCAL mutation policy execution | source-wired / partial | `src/main/kotlin/atropos/cli/shell/ShellCommandRunner.kt`, `GitMutationCommand.kt`, `src/test/kotlin/atropos/cli/shell/ShellBoundedAgencyTest.kt` | parsed confirmed `/git` command → `ShellCommandRunner.runGitMutation` → repository-scoped `FILE_MUTATION` proposal → existing agency gate | Explicitly confirmed Git mutations now compose as bounded repository file mutations instead of being rejected merely by the read-only `GIT` class; the confirmation token is never sent to the process. The execution seam test asserts exact argv; no real mutation was run. Root/hosted tests remain pending. |

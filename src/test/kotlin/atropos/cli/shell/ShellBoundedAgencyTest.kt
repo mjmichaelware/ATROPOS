@@ -200,4 +200,22 @@ class ShellBoundedAgencyTest {
 
         assertEquals(listOf("git", "diff", "--"), observed)
     }
+
+    @Test
+    fun confirmed_git_mutation_uses_repository_scoped_file_mutation_argv() {
+        val repoRoot = Files.createTempDirectory("atropos-git-mutation-argv-")
+        var observed: List<String> = emptyList()
+        val runner = ShellCommandRunner(
+            initialDirectory = repoRoot,
+            agency = TypedToolExecutor(BoundedAgencyGate(FixedDecisionEngine(repoRoot, PolicyDecisionType.ALLOW, "test allow"))),
+            spawn = { command, _ ->
+                observed = command
+                error("test spawn seam")
+            }
+        )
+
+        runner.runGitMutation(listOf("git", "add", "--", "src/Main.kt"), listOf("src/Main.kt"))
+
+        assertEquals(listOf("git", "add", "--", "src/Main.kt"), observed)
+    }
 }

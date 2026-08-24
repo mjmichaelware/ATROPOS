@@ -4,7 +4,7 @@ package atropos.cli
 import java.nio.file.Path
 
 sealed interface GitMutationParse {
-    data class Accepted(val command: List<String>) : GitMutationParse
+    data class Accepted(val command: List<String>, val targetPaths: List<String>) : GitMutationParse
     data class Refused(val message: String) : GitMutationParse
 }
 
@@ -19,7 +19,7 @@ object GitMutationCommandParser {
             "add" -> parseAdd(tokens, confirmation)
             "commit" -> parseCommit(tokens, confirmation)
             "rebase-continue" -> if (confirmation == 2) {
-                GitMutationParse.Accepted(listOf("git", "rebase", "--continue"))
+                GitMutationParse.Accepted(listOf("git", "rebase", "--continue"), listOf("."))
             } else GitMutationParse.Refused("usage: /git rebase-continue --confirm <id>")
             else -> GitMutationParse.Refused("usage: /git [status|diff|add|commit|rebase-continue]")
         }
@@ -29,14 +29,14 @@ object GitMutationCommandParser {
         if (confirmation != 3) return GitMutationParse.Refused("usage: /git add <path> --confirm <id>")
         val path = tokens[2]
         if (!safeRelativePath(path)) return GitMutationParse.Refused("git add path must stay inside the current territory")
-        return GitMutationParse.Accepted(listOf("git", "add", "--", path))
+        return GitMutationParse.Accepted(listOf("git", "add", "--", path), listOf(path))
     }
 
     private fun parseCommit(tokens: List<String>, confirmation: Int): GitMutationParse {
         if (confirmation < 3) return GitMutationParse.Refused("usage: /git commit <message> --confirm <id>")
         val message = tokens.subList(2, confirmation).joinToString(" ").trim()
         if (message.isBlank() || message.length > 500) return GitMutationParse.Refused("git commit message must be 1-500 characters")
-        return GitMutationParse.Accepted(listOf("git", "commit", "-m", message))
+        return GitMutationParse.Accepted(listOf("git", "commit", "-m", message), listOf("."))
     }
 
     private fun safeRelativePath(raw: String): Boolean {

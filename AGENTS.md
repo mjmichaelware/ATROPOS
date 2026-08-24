@@ -12187,6 +12187,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: `git diff --check`, `bash -n scripts/atropos-verify-worktree.sh`, and `timeout 90s python3 scripts/find-orphans.py --fail-on-new` passed; orphan census reports four pre-existing orphan files and 1034 production files. Focused tests are selected in both GitHub lanes; no mutation, root Gradle run, or hosted green claim.
 - % delta: unchanged; source-wired and policy-gated, hosted test evidence pending.
 
+### 2026-08-24T07:25:00Z · Agent: Codex GPT-5 · Batch: local-git-policy-composition
+
+- Paths touched: `src/main/kotlin/atropos/cli/GitMutationCommand.kt` (+6/-4), `src/main/kotlin/atropos/cli/ShellCommandHandler.kt` (+1/-1), `src/main/kotlin/atropos/cli/shell/ShellCommandRunner.kt` (+24/-7), `src/test/kotlin/atropos/cli/GitMutationCommandTest.kt` (+4/-2), `src/test/kotlin/atropos/cli/shell/ShellBoundedAgencyTest.kt` (+22), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-MCP-GITLOCAL-c/d/e/f policy composition.
+- Predicate moved: confirmed local Git mutations now reach the existing agency gate as repository-scoped `FILE_MUTATION` proposals, while ordinary read-only Git commands remain `GIT` proposals. The process receives only sanitized Git argv; confirmation metadata is not forwarded.
+- Verification actually run: `git diff --check` and `timeout 90s python3 scripts/find-orphans.py --fail-on-new` passed; four pre-existing orphan files remain. Exact-argv execution coverage is added to `ShellBoundedAgencyTest`; root Gradle and hosted GitHub Actions remain unrun.
+- % delta: unchanged; source-wired and policy-gated, hosted test evidence pending.
+- Fingerprints: `GitMutationCommand.kt=3e0c67003b54`; `ShellCommandRunner.kt=168ab01d2e1e`; `ShellBoundedAgencyTest.kt=e75d247e39ac`.
+
 ### 2026-08-24T06:57:00Z · Agent: Codex GPT-5 · Batch: mcp-sse-frame-normalization
 
 - Paths touched: `src/main/kotlin/atropos/core/integration/McpHostManager.kt` (+20), `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+24), `STATUS-BACKEND.md` (+7).
