@@ -13774,6 +13774,16 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprints: `scripts/backend-atom-contract-test.sh=c9196a07301a`.
 
+### 2026-08-25T01:40:00Z · Agent: Codex GPT-5 · Batch: github-cli-owner-contract
+
+- Paths touched: `scripts/backend-atom-contract-test.sh` (+6), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-MCP-GITHUB CLI/binding caller chain.
+- Predicate moved: the backend source gate now proves GitHub CLI operations reach the existing `GitHubCommandHandler` → `GitHubBinding` → gated `GitHubApiClient` owner, with no alternate integration stack.
+- Verification actually run: backend atom contract, `GITHUB_WRITE_CONTRACT_OK operations=7`, hosted selector parity (`421 tests`), and `git diff --check` passed. Hosted credentialed GitHub execution remains unverified.
+- % delta: unchanged; B-MCP-GITHUB remains source-wired/partial pending hosted/live evidence.
+- New overall estimate: unchanged.
+- Fingerprints: `scripts/backend-atom-contract-test.sh=d09b36d4fb45`.
+
 ### 2026-08-24T22:35:00Z · Agent: Codex GPT-5 · Batch: local-health-response-bounds
 
 - Paths touched: `src/main/kotlin/atropos/core/ProviderState.kt` (+10/-2), `src/main/kotlin/atropos/core/agent/ProviderSessionSupervisor.kt` (+13/-3), `scripts/backend-atom-contract-test.sh` (+2).

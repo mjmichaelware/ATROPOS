@@ -90,6 +90,7 @@ file src/main/kotlin/atropos/core/sentry/SentryRepairCoordinator.kt
 file src/main/kotlin/atropos/cli/SentryCommandHandler.kt
 file src/main/kotlin/atropos/core/github/GitHubApiClient.kt
 file src/main/kotlin/atropos/core/github/GitHubBinding.kt
+file src/main/kotlin/atropos/cli/GitHubCommandHandler.kt
 file src/main/kotlin/atropos/cli/shell/ShellCommandRunner.kt
 text src/main/kotlin/atropos/core/sentry/SentryApiClient.kt 'IntegrationRegistry'
 text src/main/kotlin/atropos/core/sentry/SentryApiClient.kt 'isJsonObjectEnvelope'
@@ -104,6 +105,11 @@ text src/main/kotlin/atropos/cli/CommandRouter.kt '"/sentry" ->'
 text src/main/kotlin/atropos/core/github/GitHubApiClient.kt 'SecretSinkMatrix'
 text src/main/kotlin/atropos/core/github/GitHubApiClient.kt 'BoundedAgencyGate'
 text src/main/kotlin/atropos/core/github/GitHubApiClient.kt 'MAX_RESPONSE_CHARS'
+text src/main/kotlin/atropos/cli/GitHubCommandHandler.kt 'GitHubBinding'
+text src/main/kotlin/atropos/cli/GitHubCommandHandler.kt 'create-issue'
+text src/main/kotlin/atropos/cli/GitHubCommandHandler.kt '"issues" -> binding.listIssues'
+text src/main/kotlin/atropos/cli/CommandRouter.kt 'GitHubCommandHandler(config, uiEngine)'
+text src/main/kotlin/atropos/cli/CommandRouter.kt '"/github" ->'
 text src/main/kotlin/atropos/core/ProviderHttpClient.kt 'MAX_RESPONSE_BYTES'
 text src/main/kotlin/atropos/core/Provider.kt 'MAX_RESPONSE_BYTES'
 text src/main/kotlin/atropos/core/provider/adapter/NonOpenAiFreeKernelAdapter.kt 'readNBytes'

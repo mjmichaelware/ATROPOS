@@ -1166,3 +1166,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-SENTRY issue → territory → proposal → evidence | source-wired / partial | `src/main/kotlin/atropos/cli/SentryCommandHandler.kt`, `src/main/kotlin/atropos/core/sentry/SentryApiClient.kt`, `SentryRepairCoordinator.kt`, `scripts/backend-atom-contract-test.sh` | `/sentry list|inspect|propose` → registered `SentryCommandHandler` → gated `SentryApiClient` → `TerritoryEnforcer` → `WorkerCodeProposalService` independent verification → `EvidenceStore` | Added CI assertions for the complete existing Sentry caller chain and no parallel repair owner. Backend contract, hosted selector parity (421), and diff check pass; hosted Kotlin/live credentialed Sentry execution remains unverified. |
+
+### 2026-08-25T01:40:00Z · Agent: Codex GPT-5 · Batch: github-cli-owner-contract
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-GITHUB CLI/binding caller chain | source-wired / partial | `src/main/kotlin/atropos/cli/GitHubCommandHandler.kt`, `GitHubBinding.kt`, `CommandRouter.kt`, `scripts/backend-atom-contract-test.sh`, `scripts/github-write-contract-test.sh` | `/github issues|issue|prs|pr-files|checks|branch-protection|mutations` → existing `GitHubCommandHandler` → `GitHubBinding` → gated `GitHubApiClient` | Added backend source assertions for the production router/handler/binding chain. Backend contract, GitHub write contract (`7` operations), hosted selector parity (`421`), and diff check pass; hosted credentialed GitHub execution remains unverified. |
