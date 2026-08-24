@@ -462,6 +462,15 @@ End of AGENTS.md
 - % delta: unchanged; source-wired but partial pending hosted execution evidence.
 - Fingerprints: recorded after the batch commit.
 
+### 2026-08-24T18:45:00Z · Agent: Codex GPT-5 · Batch: agent-continuation-selector-completion
+
+- Paths touched: `.github/workflows/compile-gate.yml` (+17 selectors), `scripts/atropos-verify-worktree.sh` (+17 selectors), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: Phase 11 agent continuation, lease, proposal, redaction, and self-build focused evidence.
+- Predicate moved: the hosted backend test command now includes the remaining existing `core.agent` continuation/lease/proposal tests, so those production owners are no longer omitted from the CI selector. The existing single test runner and selector contract remain the only execution path.
+- Verification actually run: selector/source parity, shell syntax, `git diff --check`, and orphan gate are required next; hosted Kotlin execution remains pending and no phase-green claim is made.
+- % delta: unchanged; source-wired but partial pending hosted execution evidence.
+- Fingerprints: recorded after the batch commit.
+
 ### 2026-08-24T13:00:00Z · Agent: Codex GPT-5 · Batch: attested-upload-envelope-proof
 
 - Paths touched: `src/test/kotlin/atropos/bridge/BridgeFilesHandlerTest.kt` (+8), `STATUS-BACKEND.md` (+7).

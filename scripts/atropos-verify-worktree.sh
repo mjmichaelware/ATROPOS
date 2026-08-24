@@ -172,6 +172,23 @@ if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
     --tests 'atropos.core.agent.SelfHostStateSnapshotRecorderTest' \
     --tests 'atropos.core.agent.SelfHostWorktreeNodeExecutorTest' \
     --tests 'atropos.core.agent.Utf8BoundedBuilderTest' \
+    --tests 'atropos.core.agent.AgentAskAnswerNormalizerTest' \
+    --tests 'atropos.core.agent.AgentFailureSummaryTest' \
+    --tests 'atropos.core.agent.AgentPromptContractTest' \
+    --tests 'atropos.core.agent.AgentProviderContextBoundaryTest' \
+    --tests 'atropos.core.agent.AgentSecurityRedactionSurfaceTest' \
+    --tests 'atropos.core.agent.AgentSelfBuildLoopTest' \
+    --tests 'atropos.core.agent.AgentSourceContextRequirementTest' \
+    --tests 'atropos.core.agent.BatchGateTest' \
+    --tests 'atropos.core.agent.GoalContinuationServiceTest' \
+    --tests 'atropos.core.agent.GoalEvidenceGateTest' \
+    --tests 'atropos.core.agent.GoalRunStoreTest' \
+    --tests 'atropos.core.agent.LeaseTokenDigestTest' \
+    --tests 'atropos.core.agent.LeaseTokenPersistenceTest' \
+    --tests 'atropos.core.agent.RepositoryImpactPlannerTest' \
+    --tests 'atropos.core.agent.ResumableGoalTest' \
+    --tests 'atropos.core.agent.SupervisedSessionStoreLeaseTokenTest' \
+    --tests 'atropos.core.agent.WorkerCodeProposalServiceTest' \
     --tests 'atropos.cli.shell.ShellBoundedAgencyTest' \
     --tests 'atropos.cli.GitMutationCommandTest' \
     --tests 'atropos.core.worktree.BoundedGitWorktreeCommandRunnerTest' \

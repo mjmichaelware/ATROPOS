@@ -582,3 +582,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | Phase 11 self-build/resume/repair focused evidence | source-wired / partial | `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh` | existing hosted `:jvmTest` invocation → explicit `atropos.core.agent.*Test` selectors → existing agent/self-host production owners | Added the remaining existing `core.agent` test classes (48 selectors; hosted selector set 158 → 206) to both CI entrypoints. Selector/source parity, shell syntax, diff check, and orphan gate pass locally; GitHub-hosted Kotlin execution remains pending, so no Phase 11/root-green claim. |
+
+### 2026-08-24T18:45:00Z · Backend batch: agent-continuation-selector-completion
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| Phase 11 agent continuation/lease/proposal focused evidence | source-wired / partial | `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh` | existing hosted `:test` invocation → explicit remaining `atropos.core.agent.*Test` selectors → existing continuation, lease, proposal, and redaction owners | Added 17 previously unselected existing agent tests; selector set moves 206 → 223. Structural selector parity, shell syntax, diff check, and orphan gate remain local evidence only; hosted Kotlin execution is still pending. |
