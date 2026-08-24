@@ -38,8 +38,9 @@ Fetching from the release keeps one artifact with one checksum — which the
 install verifies against the hash the build published, because "it downloaded"
 is not the same as "it is what was built".
 
-An offline install does not fail. The package installs, the jar is missing,
-and the launcher says how to fetch it.
+Normal installs require both `ATROPOS.jar` and `ATROPOS.jar.sha256`; a missing
+or mismatched checksum fails before the jar is written. Use
+`ATROPOS_SKIP_DOWNLOAD=1` for an explicit offline launcher-only install.
 
 ## Environment
 

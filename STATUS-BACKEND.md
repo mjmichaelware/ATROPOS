@@ -233,3 +233,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-IMPORT hosted acceptance wiring | source-wired / partial | `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh` | GitHub Actions focused backend lane → `atropos.core.agent.AgentContextCollectorTest` | The canonical hosted workflow and reusable verification script now execute the import/redaction/hash/load test class after root compilation. YAML/shell static checks and hosted execution remain pending. |
+
+### 2026-08-24T06:50:00Z · Backend batch: npm-artifact-hash-fail-closed
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-INST-006 npm fallback integrity | source-wired / partial | `npm/scripts/postinstall.js`, `npm/README.md`, `scripts/npm-installer-contract-test.sh`, `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh` | npm `postinstall` → existing release artifact URL/checksum files; hosted compile lane and reusable verifier invoke the contract script | npm installation now fails closed when the published checksum is missing, malformed, mismatched, or the download fails; explicit `ATROPOS_SKIP_DOWNLOAD=1` remains the only offline launcher-only path. `NPM_INSTALLER_CONTRACT_OK`, `bash -n`, and `git diff --check` passed; release/network execution remains pending. |

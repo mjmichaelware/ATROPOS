@@ -65,6 +65,9 @@ jobs:
       - name: reject newly orphaned production files
         run: python3 scripts/find-orphans.py --fail-on-new
 
+      - name: npm installer contract
+        run: bash scripts/npm-installer-contract-test.sh
+
       - name: focused factory provider bridge MCP tests
         run: >-
           ./gradlew --no-daemon :test --rerun

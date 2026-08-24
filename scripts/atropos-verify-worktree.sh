@@ -44,4 +44,7 @@ fi
 echo "=== DIFF CHECK ==="
 git diff --check
 
+echo "=== NPM INSTALLER CONTRACT ==="
+bash scripts/npm-installer-contract-test.sh
+
 echo "ATROPOS_WORKTREE_VERIFY_OK"

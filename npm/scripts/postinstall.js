@@ -46,20 +46,17 @@ async function main() {
 
   // Verified against the hash the build published. A jar is executable code,
   // and "it downloaded" is not the same as "it is what was built".
-  let expected = null;
-  try {
-    expected = (await get(`${BASE}/ATROPOS.jar.sha256`)).toString().trim();
-  } catch {
-    console.log("ATROPOS: no published checksum; skipping verification.");
+  const expectedDocument = await get(`${BASE}/ATROPOS.jar.sha256`);
+  const expected = expectedDocument.toString().trim().split(/\s+/)[0].toLowerCase();
+  if (!/^[0-9a-f]{64}$/.test(expected)) {
+    throw new Error("published checksum is missing or malformed; nothing was installed.");
   }
-  if (expected) {
-    const actual = crypto.createHash("sha256").update(jar).digest("hex");
-    if (actual !== expected) {
-      throw new Error(
-        `checksum mismatch\n  expected ${expected}\n  actual   ${actual}\n` +
-          "Nothing was installed."
-      );
-    }
+  const actual = crypto.createHash("sha256").update(jar).digest("hex");
+  if (actual !== expected) {
+    throw new Error(
+      `checksum mismatch\n  expected ${expected}\n  actual   ${actual}\n` +
+        "Nothing was installed."
+    );
   }
 
   fs.mkdirSync(DEST_DIR, { recursive: true });
@@ -74,8 +71,5 @@ main().catch((error) => {
       "  npm rebuild @mjmichaelware/atropos\n" +
       "or set ATROPOS_JAR to a jar you already have."
   );
-  // Exit 0 deliberately. A failed download is a missing artifact, not a broken
-  // package, and taking down the whole `npm install` for it would punish every
-  // other dependency in the tree for this one's network.
-  process.exit(0);
+  process.exit(1);
 });

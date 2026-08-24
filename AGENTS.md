@@ -12043,3 +12043,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: `git diff --check` and shell/YAML source inspection pending in this batch; GitHub Actions has not run, so no hosted green claim.
 - % delta: unchanged; source-wired but partial pending hosted execution.
 - Fingerprints (sha256, first 12): `compile-gate.yml=dd010ec451bd`; `atropos-verify-worktree.sh=c4fad8a7f10e`; `STATUS-BACKEND.md=005f8b831981`.
+
+### 2026-08-24T06:50:00Z · Agent: Codex GPT-5 · Batch: npm-artifact-hash-fail-closed
+
+- Paths touched: `npm/scripts/postinstall.js` (+14/-18), `npm/README.md` (+5/-4), `scripts/npm-installer-contract-test.sh` (+12), `.github/workflows/compile-gate.yml` (+3), `scripts/atropos-verify-worktree.sh` (+3), and `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-INST-006 npm fallback artifact/hash verification.
+- Predicate moved: npm postinstall no longer soft-succeeds on missing checksum or failed download. It verifies a published 64-hex SHA-256 before writing the jar and exits nonzero on all failed artifact paths; offline use requires the explicit skip variable.
+- Verification actually run: `bash scripts/npm-installer-contract-test.sh` passed with `NPM_INSTALLER_CONTRACT_OK`; shell syntax and `git diff --check` passed. GitHub Actions/release execution remains unrun, so no hosted or release green claim.
+- % delta: unchanged; source-wired but partial pending hosted/release evidence.
+- Fingerprints (sha256, first 12): `postinstall.js=f79ecc032e24`; `npm/README.md=0209d90bd19d`; `npm-installer-contract-test.sh=1a49c53ad078`; `compile-gate.yml=18775db169f2`; `atropos-verify-worktree.sh=43d9eb68467d`.
