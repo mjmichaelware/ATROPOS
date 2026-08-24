@@ -644,3 +644,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | hosted/source compile lane | inconclusive / partial | `scripts/atropos-fast-gate.sh` | GitHub compile workflow and reusable verifier → existing source manifest/Gradle compile | `timeout 120s scripts/atropos-fast-gate.sh classes` exited 124 with no compiler output on Termux. This is not a pass; GitHub Actions remains authoritative. |
+
+### 2026-08-24T16:00:00Z · Backend verification: narrow-bridge-classpath-inconclusive
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| bridge production compile | inconclusive / partial | `src/main/kotlin/atropos/bridge/BridgeMcpHandler.kt`, `BridgeRoutes.kt` | local `kotlinc` diagnostic attempt | A narrow compile against the assumed `build/classes/kotlin/main` path failed because that production classpath does not exist in this checkout; errors were unresolved dependencies, not an isolated source verdict. No compile pass/fail claim; hosted Gradle remains authoritative. |

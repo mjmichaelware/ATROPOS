@@ -12748,3 +12748,10 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Acceptance predicate checked: bounded whole-production Kotlin source compilation through `scripts/atropos-fast-gate.sh classes`.
 - Evidence: `timeout 120s scripts/atropos-fast-gate.sh classes` exited 124 with no compiler output on Termux. This is inconclusive, not green; hosted Gradle remains the required compile evidence.
 - % delta: unchanged; hosted/source compile lane remains partial.
+
+### 2026-08-24T16:00:00Z · Agent: Codex GPT-5 · Verification: narrow-bridge-classpath-inconclusive
+
+- Paths touched: `STATUS-BACKEND.md` (+7).
+- Acceptance predicate checked: isolated compilation of the changed bridge production files.
+- Evidence: the attempted `kotlinc` classpath referenced `build/classes/kotlin/main`, which is absent in this checkout; it therefore emitted unresolved dependency errors rather than a valid source verdict. No compile pass/fail claim is made; hosted Gradle remains authoritative.
+- % delta: unchanged; bridge compile evidence remains partial.
