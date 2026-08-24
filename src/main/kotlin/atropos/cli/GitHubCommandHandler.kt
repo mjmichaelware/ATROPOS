@@ -30,9 +30,12 @@ class GitHubCommandHandler(
         val response = runCatching {
             when (operation) {
                 "issues" -> binding.listIssues(owner, name, page(tokens.getOrNull(3)))
+                "issue" -> binding.getIssue(owner, name, number(tokens.getOrNull(3)))
                 "prs", "pulls" -> binding.listPullRequests(owner, name, page(tokens.getOrNull(3)))
+                "pr-files" -> binding.getPullRequestFiles(owner, name, number(tokens.getOrNull(3)))
                 "checks" -> binding.listCheckRuns(owner, name, tokens.getOrNull(3) ?: error("check ref is required"))
-                else -> error("usage: /github issues|prs <owner/repository> [page]; /github checks <owner/repository> <ref>")
+                "branch-protection" -> binding.getBranchProtection(owner, name, tokens.getOrNull(3) ?: error("branch is required"))
+                else -> error("usage: /github issues|issue|prs|pr-files|checks|branch-protection <owner/repository> <arg>")
             }
         }
         response.fold(
@@ -42,6 +45,9 @@ class GitHubCommandHandler(
     }
 
     private fun page(raw: String?): Int = raw?.toIntOrNull()?.coerceAtLeast(1) ?: 1
+
+    private fun number(raw: String?): Int = raw?.toIntOrNull()?.takeIf { it > 0 }
+        ?: error("positive issue or pull-request number is required")
 
     private fun render(response: GitHubApiResponse) {
         uiEngine.renderNotice(

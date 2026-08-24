@@ -136,6 +136,9 @@ class GitHubApiClient(
     fun getPullRequestFiles(owner: String, repository: String, number: Int): GitHubApiResponse =
         execute(GitHubApiRequest("GET", repoPath(owner, repository, "pulls/${positive(number)}/files")))
 
+    fun getBranchProtection(owner: String, repository: String, branch: String): GitHubApiResponse =
+        execute(GitHubApiRequest("GET", repoPath(owner, repository, "branches/${refPath(branch)}/protection")))
+
     fun listCheckRuns(owner: String, repository: String, ref: String): GitHubApiResponse =
         execute(GitHubApiRequest("GET", repoPath(owner, repository, "commits/${refPath(ref)}/check-runs")))
 

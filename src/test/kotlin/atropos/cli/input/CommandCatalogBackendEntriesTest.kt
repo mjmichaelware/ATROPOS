@@ -19,8 +19,11 @@ class CommandCatalogBackendEntriesTest {
         assertTrue("/mcp call <server> <tool>" in commands)
         assertTrue("/mcp ingest <path>" in commands)
         assertTrue("/github issues" in commands)
+        assertTrue("/github issue" in commands)
         assertTrue("/github prs" in commands)
+        assertTrue("/github pr-files" in commands)
         assertTrue("/github checks" in commands)
+        assertTrue("/github branch-protection" in commands)
         assertTrue("/agent context import <path>" in commands)
         assertTrue("/keys status" in commands)
     }

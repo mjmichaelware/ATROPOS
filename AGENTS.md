@@ -12161,6 +12161,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; source-wired but partial pending hosted execution evidence.
 - Fingerprints: recorded after the batch commit.
 
+### 2026-08-24T14:10:00Z · Agent: Codex GPT-5 · Batch: github-read-operation-callers
+
+- Paths touched: `src/main/kotlin/atropos/core/github/GitHubApiClient.kt` (+4), `GitHubBinding.kt` (+9), `src/main/kotlin/atropos/cli/GitHubCommandHandler.kt` (+8), `CommandCatalog.kt` (+4), `src/test/kotlin/atropos/core/github/GitHubApiClientTest.kt` (+3), `CommandCatalogBackendEntriesTest.kt` (+4), and `STATUS-BACKEND.md` (+2).
+- Atoms / phases affected: B-MCP-GH-d/h/o read operations and production caller wiring.
+- Predicate moved: issue detail, pull-request file listing, and branch-protection reads now execute through the existing gated GitHub client and have CLI/catalog callers; branch refs and numeric IDs are bounded before transport.
+- Verification actually run: source inspection and `git diff --check` are available; root/hosted tests remain pending, so no test green claim is made.
+- % delta: unchanged; source-wired but partial pending hosted execution evidence.
+- Fingerprints: recorded after the batch commit.
+
 ### 2026-08-24T13:20:00Z · Agent: Codex GPT-5 · Batch: caller-contract-audit-after-github-wire
 
 - Paths touched: `STATUS-BACKEND.md` (+2); no source changes.

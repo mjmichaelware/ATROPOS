@@ -38,10 +38,12 @@ class GitHubApiClientTest {
             assertEquals(200, client.listIssues("owner", "repo").status)
             assertEquals(200, client.getPullRequestFiles("owner", "repo", 7).status)
             assertEquals(200, client.updateCheckRun("owner", "repo", 9, "{\"status\":\"completed\"}").status)
+            assertEquals(200, client.getBranchProtection("owner", "repo", "release/v1").status)
         }
 
-        assertEquals(listOf("GET", "GET", "PATCH"), requests.map { it.method })
+        assertEquals(listOf("GET", "GET", "PATCH", "GET"), requests.map { it.method })
         assertTrue(requests.all { it.url.startsWith("https://api.github.com/repos/owner/repo/") })
+        assertTrue(requests.last().url.endsWith("/branches/release/v1/protection"))
         assertTrue(requests.all { it.token == secret })
         assertFalse(requests.any { it.body.orEmpty().contains(secret) })
         assertEquals(listOf("."), declaredTerritory)

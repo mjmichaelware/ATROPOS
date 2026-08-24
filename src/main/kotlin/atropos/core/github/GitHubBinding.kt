@@ -61,11 +61,20 @@ class GitHubBinding(
     fun listIssues(owner: String, repository: String, page: Int = 1): GitHubApiResponse =
         apiClient.listIssues(owner, repository, page)
 
+    fun getIssue(owner: String, repository: String, number: Int): GitHubApiResponse =
+        apiClient.getIssue(owner, repository, number)
+
     fun listPullRequests(owner: String, repository: String, page: Int = 1): GitHubApiResponse =
         apiClient.listPullRequests(owner, repository, page)
 
+    fun getPullRequestFiles(owner: String, repository: String, number: Int): GitHubApiResponse =
+        apiClient.getPullRequestFiles(owner, repository, number)
+
     fun listCheckRuns(owner: String, repository: String, ref: String): GitHubApiResponse =
         apiClient.listCheckRuns(owner, repository, ref)
+
+    fun getBranchProtection(owner: String, repository: String, branch: String): GitHubApiResponse =
+        apiClient.getBranchProtection(owner, repository, branch)
 
     fun createRepository(request: GitHubRepositoryRequest): GitHubBindingResult {
         validateRepositoryName(request.repositoryName)
