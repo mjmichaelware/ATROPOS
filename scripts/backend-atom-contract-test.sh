@@ -21,6 +21,7 @@ text install.sh 'chmod +x "$BIN_DIR/atropos"'
 file src/main/kotlin/atropos/core/Config.kt
 text src/main/kotlin/atropos/core/Config.kt 'ATROPOS_CONFIG_DIR'
 text install.sh 'export ATROPOS_CONFIG_DIR='
+text install.sh 'CONFIG_DIR="${ATROPOS_CONFIG_DIR:-${ATROPOS_PREFIX:-$HOME/.atropos}}"'
 file src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt
 file src/main/kotlin/atropos/core/provider/ProviderDescriptor.kt
 file src/main/kotlin/atropos/core/provider/RoutePolicy.kt

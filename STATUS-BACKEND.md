@@ -1190,3 +1190,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | ADD-MCP-001/008 health persistence and localOnly refusal | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `scripts/backend-atom-contract-test.sh` | `/mcp list|test` and bridge status → `McpHostManager.statuses()` → explicit remote/localOnly branch → `persistHealth()` → `.atropos/mcp/health.tsv` | Added CI assertions tying health persistence to the host’s explicit remote refusal under localOnly; no parallel route-policy or health owner introduced. Backend contract, hosted selector parity (421), and diff check pass; hosted MCP runtime execution remains unverified. |
+
+### 2026-08-25T03:00:00Z · Agent: Codex GPT-5 · Batch: installer-config-env-alignment
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-INST-004 config root environment alignment | source-wired / partial | `install.sh`, `scripts/install-contract-test.sh`, `scripts/backend-atom-contract-test.sh` | installer → `ATROPOS_CONFIG_DIR` (fallback `ATROPOS_PREFIX`) → generated launcher export → existing `AtroposConfig.configRoot()` | Installer now honors the same `ATROPOS_CONFIG_DIR` override as the runtime, while preserving the legacy prefix fallback. Shell syntax, installer/backend contracts, and diff check pass; hosted release/device installation remains unverified. |

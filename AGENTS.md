@@ -13814,6 +13814,16 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprints: `scripts/backend-atom-contract-test.sh=873c45075dd3`.
 
+### 2026-08-25T03:00:00Z · Agent: Codex GPT-5 · Batch: installer-config-env-alignment
+
+- Paths touched: `install.sh` (+1/-1), `scripts/install-contract-test.sh` (+1), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-INST-004 config root environment alignment.
+- Predicate moved: the installer and generated launcher now honor the same `ATROPOS_CONFIG_DIR` override, with `ATROPOS_PREFIX` retained only as a compatibility fallback; provider/vault/runtime state cannot silently split across roots.
+- Verification actually run: shell syntax, installer contract, backend atom contract, and `git diff --check` passed. Hosted release/device installation remains unverified.
+- % delta: unchanged; B-INST-004 remains source-wired/partial pending hosted release/device proof.
+- New overall estimate: unchanged.
+- Fingerprints: `install.sh=d09dd10e364f`; `scripts/install-contract-test.sh=2f219281d77e`; `scripts/backend-atom-contract-test.sh=8eb5ded62f0b`.
+
 ### 2026-08-24T22:35:00Z · Agent: Codex GPT-5 · Batch: local-health-response-bounds
 
 - Paths touched: `src/main/kotlin/atropos/core/ProviderState.kt` (+10/-2), `src/main/kotlin/atropos/core/agent/ProviderSessionSupervisor.kt` (+13/-3), `scripts/backend-atom-contract-test.sh` (+2).

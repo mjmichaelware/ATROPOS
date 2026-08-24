@@ -17,7 +17,7 @@ REPO="${ATROPOS_REPO:-mjmichaelware/ATROPOS}"
 # fixed release, which is what a bug report should cite.
 VERSION="${ATROPOS_VERSION:-latest}"
 HOST_PREFIX="${PREFIX:-}"
-CONFIG_DIR="${ATROPOS_PREFIX:-$HOME/.atropos}"
+CONFIG_DIR="${ATROPOS_CONFIG_DIR:-${ATROPOS_PREFIX:-$HOME/.atropos}}"
 BIN_DIR="${ATROPOS_BIN_DIR:-}"
 
 say()  { printf '%s\n' "$*"; }
