@@ -462,6 +462,15 @@ End of AGENTS.md
 - % delta: unchanged; B-005 / ADD-W-029 remains partial pending hosted execution.
 - Fingerprints: recorded after this batch.
 
+### 2026-08-24T18:00:00Z · Agent: Codex GPT-5 · Batch: hosted-cli-command-surface
+
+- Paths touched: `.github/workflows/compile-gate.yml` (+4), `scripts/atropos-verify-worktree.sh` (+4), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: FTY-01 resume command, B-HELP-001 command/help registry.
+- Predicate moved: hosted CI now executes the existing factory resume command-handler, router help/identity, and help-generator tests in addition to the backend command catalog tests.
+- Verification actually run: selector contract, `git diff --check`, shell syntax, and orphan gate pass; hosted Kotlin execution remains pending.
+- % delta: unchanged; CLI backend atoms remain partial pending hosted execution.
+- Fingerprints: recorded after this batch.
+
 ### 2026-08-24T17:30:00Z · Agent: Codex GPT-5 · Batch: hosted-paid-autonomy-proof
 
 - Paths touched: `.github/workflows/compile-gate.yml` (+4), `scripts/atropos-verify-worktree.sh` (+4), `STATUS-BACKEND.md` (+7).

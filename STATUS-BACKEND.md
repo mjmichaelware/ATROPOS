@@ -155,6 +155,12 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | --- | --- | --- | --- | --- |
 | B-PROV-012 / B-SUP autonomy policy surface | source-wired / partial | `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh`, existing `src/test/kotlin/atropos/core/paid/**`, `src/test/kotlin/atropos/core/autonomous/**` | existing `EmergencyPaidGate` and `AutonomousOrchestrator` owners → hosted focused selectors | Added the paid approval gate and autonomous backlog/learning tests to both canonical hosted lanes. No second autonomy or policy owner was introduced; hosted execution remains pending. |
 
+### 2026-08-24T18:00:00Z · Backend batch: hosted-cli-command-surface
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| FTY-01 / B-HELP-001 CLI command surface | source-wired / partial | `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh`, existing `src/test/kotlin/atropos/cli/{FactoryCommandHandler,CommandRouterHelp,CommandRouterIdentity}Test.kt`, `src/test/kotlin/atropos/cli/help/HelpGeneratorTest.kt` | `CommandRouter`/`CommandCatalog` → factory resume, help, identity handlers | Added existing user-facing backend command tests to both hosted lanes; UI renderer tests remain outside the backend-only lane. Hosted execution remains pending. |
+
 ### 2026-08-24T16:35:00Z · Backend batch: provider-disable-route-proof
 
 | atom | status | files | caller | tests / notes |

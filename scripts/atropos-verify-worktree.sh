@@ -117,6 +117,10 @@ if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
     --tests 'atropos.bridge.menu.HelpRegistryTest' \
     --tests 'atropos.cli.input.CommandRegistryParityTest' \
     --tests 'atropos.cli.BackendDoctorTest' \
+    --tests 'atropos.cli.FactoryCommandHandlerTest' \
+    --tests 'atropos.cli.CommandRouterHelpTest' \
+    --tests 'atropos.cli.CommandRouterIdentityTest' \
+    --tests 'atropos.cli.help.HelpGeneratorTest' \
     --tests 'atropos.cli.FirstRunDoctorRendererTest' \
     --tests 'atropos.cli.input.CommandCatalogBackendEntriesTest' \
     --tests 'atropos.core.agent.AgentContextCollectorTest' \
