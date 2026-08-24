@@ -764,3 +764,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-OAUTH-UX GitHub device authorization | source-wired / partial | `src/main/kotlin/atropos/core/github/GitHubDeviceAuthClient.kt`, `src/main/kotlin/atropos/cli/AuthCommandHandler.kt`, `src/test/kotlin/atropos/core/github/GitHubDeviceAuthClientTest.kt`, `src/main/kotlin/atropos/cli/input/CommandCatalog.kt` | `/auth github` → existing `AuthCommandHandler` → `GitHubDeviceAuthClient` → GitHub device/token endpoints → existing `TokenIsolationVault` | Requires operator-registered public `ATROPOS_GITHUB_OAUTH_CLIENT_ID`; no client secret or token logging. Selector/orphan/diff checks pass. Focused root Gradle selection timed out during task graph/configuration with no test result; hosted OAuth/Kotlin execution remains pending. |
+
+### 2026-08-24T16:20:00Z · Backend verification: oauth-residual-ledger-correction
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-OAUTH-UX historical blocked-row correction | superseded / partial | `STATUS-BACKEND.md`, prior `GitHubDeviceAuthClient.kt` batch | prior `/auth github` production caller; no new owner | Historical rows at the earlier residual-audit locations said no OAuth owner existed. The later device-flow batch supersedes that statement for GitHub only. Linear/browser OAuth, approved client registration, hosted Kotlin execution, and live OAuth remain unproven; no completion claim is made. |

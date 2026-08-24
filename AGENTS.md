@@ -12919,3 +12919,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: `git diff --check`, `bash -n scripts/atropos-verify-worktree.sh`, `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (383 tests)`), and `timeout 90s python3 scripts/find-orphans.py --fail-on-new` (exit 0; 4 historical baseline orphans / 360 LOC) passed. Focused root Gradle test selection timed out at 90s during task-graph/configuration work after `:core:jvmJar`, with no test result; no Kotlin test-green claim. GitHub-hosted execution and operator OAuth registration remain pending.
 - % delta: unchanged; B-MCP-OAUTH-UX is source-wired / partial pending hosted Kotlin execution and a registered public OAuth client ID.
 - Fingerprints (sha256, first 12): `GitHubDeviceAuthClient.kt=cab9bc66f75a`, `GitHubDeviceAuthClientTest.kt=08f1734ca806`.
+
+### 2026-08-24T16:20:00Z · Agent: Codex GPT-5 · Batch: oauth-residual-ledger-correction
+
+- Paths touched: `STATUS-BACKEND.md` (+7), `AGENTS.md` (+7).
+- Atoms / phases affected: B-MCP-OAUTH-UX residual truth only; no implementation owner added.
+- Predicate moved: the append-only ledger now explicitly supersedes the historical “no production OAuth owner” rows with the source-wired GitHub device-flow owner from batch `github-device-oauth-owner`; Linear/browser OAuth and operator client registration remain unimplemented/external and are not silently marked complete.
+- Verification actually run: `git diff --check`, selector parity (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (383 tests)`), and orphan gate (4 historical baseline orphans / 360 LOC) remain passing; no new Gradle or hosted result is claimed.
+- % delta: unchanged; GitHub B-MCP-OAUTH-UX remains source-wired / partial.
+- Fingerprint: ledger-only correction; implementation fingerprints remain `GitHubDeviceAuthClient.kt=cab9bc66f75a`, `GitHubDeviceAuthClientTest.kt=08f1734ca806`.
