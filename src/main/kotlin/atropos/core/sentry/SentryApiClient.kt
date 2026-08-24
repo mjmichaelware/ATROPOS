@@ -141,6 +141,7 @@ object SentryIssueParser {
     private val frameObject = Regex("\\{[^{}]{0,800}\\\"filename\\\"\\s*:\\s*\\\"((?:\\\\.|[^\\\"\\\\])*)\\\"[^{}]{0,800}?(?:\\\"lineno\\\"\\s*:\\s*(\\d+))?[^{}]{0,200}\\}")
 
     fun parse(issueId: String, json: String): SentryIssue {
+        require(isJsonObjectEnvelope(json)) { "Sentry issue response is not a complete JSON object" }
         val fields = stringField.findAll(json).associate { it.groupValues[1] to unescape(it.groupValues[2]) }
         val frames = frameObject.findAll(json).map { match ->
             SentryStackFrame(
@@ -161,4 +162,37 @@ object SentryIssueParser {
         .replace("\\\\", "\\")
         .replace("\\\"", "\"")
         .replace("\\n", "\n")
+
+    /**
+     * This parser intentionally extracts only the fields needed by the repair
+     * path, but it must never extract them from a truncated wire response.
+     * Validate delimiters while respecting quoted strings before the bounded
+     * field regexes run. Full JSON semantics remain the transport owner's job.
+     */
+    private fun isJsonObjectEnvelope(raw: String): Boolean {
+        val text = raw.trim()
+        if (text.isEmpty() || text.first() != '{' || text.last() != '}') return false
+        var depth = 0
+        var quoted = false
+        var escaped = false
+        text.forEach { ch ->
+            if (quoted) {
+                when {
+                    escaped -> escaped = false
+                    ch == '\\' -> escaped = true
+                    ch == '"' -> quoted = false
+                }
+                return@forEach
+            }
+            when (ch) {
+                '"' -> quoted = true
+                '{', '[' -> depth++
+                '}', ']' -> {
+                    depth--
+                    if (depth < 0) return false
+                }
+            }
+        }
+        return !quoted && !escaped && depth == 0
+    }
 }

@@ -38,6 +38,8 @@ This file records backend implementation status for the current engine wave. A r
 
 | B-MCP-CORE-a malformed member validation | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpConfigParser.kt`, `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` | `McpHostManager.load()` → existing `McpConfigParser.rawMember()` | Top-level MCP object members missing `:` now fail explicitly instead of being ignored and producing a misleading empty/default catalog. Static backend contract, selector parity (418), and diff check pass; hosted/root Kotlin execution remains pending. |
 
+| R4 / B-MCP-SENTRY wire-envelope validation | source-wired / partial | `src/main/kotlin/atropos/core/sentry/SentryApiClient.kt`, `src/test/kotlin/atropos/core/sentry/SentryApiClientTest.kt` | `/sentry inspect|propose` → existing `SentryApiClient.getIssue()` → `SentryIssueParser` → `SentryRepairCoordinator` | Sentry issue responses must have a complete balanced JSON-object envelope before bounded field extraction; truncated/non-object responses fail closed instead of becoming fallback issue data. Backend contract, hosted selector parity (418), and diff check pass; hosted/root Kotlin execution and live Sentry evidence remain pending. |
+
 ## Commands
 
 - `/factory resume <runId>` — read-only attested resume inspection; execution requires the existing router callback path.

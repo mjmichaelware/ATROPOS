@@ -10,6 +10,7 @@ import atropos.core.security.SecretSinkKind
 import atropos.core.security.SecretSinkMatrix
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -55,6 +56,16 @@ class SentryApiClientTest {
         assertEquals("worker", issue.culprit)
         assertEquals(null, issue.frames.single().lineNumber)
         assertTrue(issue.frames.single().filename.endsWith("App.kt"))
+    }
+
+    @Test
+    fun `parser refuses truncated or non-object wire responses`() {
+        assertThrows(IllegalArgumentException::class.java) {
+            SentryIssueParser.parse("issue", "{\"title\":\"Broken\"")
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            SentryIssueParser.parse("issue", "upstream unavailable")
+        }
     }
 
     private fun allow(proposal: ActionProposal): AgencyDecision = AgencyDecision(

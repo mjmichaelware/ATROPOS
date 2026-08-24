@@ -13168,3 +13168,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: backend atom contract (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), hosted selector contract (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (418 tests)`), and `git diff --check` passed. Root/hosted Kotlin execution remains pending; no test-green claim.
 - % delta: unchanged; B-MCP-CORE-a remains source-wired / partial pending executable Kotlin evidence.
 - Fingerprints (sha256, first 12): `McpConfigParser.kt=74facf83db95`, `McpHostManagerTest.kt=8f570e8c21d1`.
+
+### 2026-08-24T19:28:31Z · Agent: Codex GPT-5 · Batch: sentry-wire-envelope-hardening
+
+- Paths touched: `src/main/kotlin/atropos/core/sentry/SentryApiClient.kt` (+33), `src/test/kotlin/atropos/core/sentry/SentryApiClientTest.kt` (+11).
+- Atoms / phases affected: B-MCP-SENTRY response parsing and issue-to-frame repair input.
+- Predicate moved: the existing Sentry parser now refuses non-object, truncated, unbalanced, or unterminated-quoted wire responses before extracting fallback issue fields. A malformed upstream response can no longer become a fabricated default issue through regex extraction.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh` (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (418 tests)`), and `git diff --check` passed. Root/hosted Kotlin execution remains pending; no Sentry test-green claim.
+- % delta: unchanged; R4/B-MCP-SENTRY remains source-wired/partial pending hosted tests, configured credentials, and live issue/repair evidence.
+- Fingerprints (sha256, first 12): `SentryApiClient.kt=99b8c44c0246`; `SentryApiClientTest.kt=9117660098b8`.
