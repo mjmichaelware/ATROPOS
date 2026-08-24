@@ -12161,6 +12161,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; source-wired but partial pending hosted execution evidence.
 - Fingerprints: recorded after the batch commit.
 
+### 2026-08-24T13:20:00Z · Agent: Codex GPT-5 · Batch: caller-contract-audit-after-github-wire
+
+- Paths touched: `STATUS-BACKEND.md` (+2); no source changes.
+- Atoms / phases affected: S-012 caller gate, B-MCP-GHA contracts, MCP example catalog.
+- Predicate moved: the new GitHub CLI production caller remains inside the orphan gate: `find-orphans.py --fail-on-new` exited 0 with only the four pre-existing baseline orphans. Reusable action/workflow contracts and all 14 MCP examples also pass.
+- Verification actually run: orphan gate exit 0, `ATROPOS_VERIFY_ACTION_CONTRACT_OK`, `ATROPOS_VERIFY_WORKFLOW_CONTRACT_OK`, `MCP_EXAMPLE_CONTRACT_OK files=14 servers=14`, and `git diff --check`. Hosted Gradle execution remains pending.
+- % delta: unchanged; source-wired but partial pending hosted execution evidence.
+- Fingerprints: recorded after the batch commit.
+
 ### 2026-08-24T12:55:00Z · Agent: Codex GPT-5 · Batch: github-binding-hosted-selector
 
 - Paths touched: `.github/workflows/compile-gate.yml` (+1), `scripts/atropos-verify-worktree.sh` (+1), `STATUS-BACKEND.md` (+2).
