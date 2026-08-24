@@ -1106,3 +1106,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-INST-004 config-root bootstrap | source-wired / partial | `src/main/kotlin/atropos/core/Config.kt`, `install.sh`, `scripts/install-contract-test.sh`, `scripts/backend-atom-contract-test.sh`, `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh`, `src/test/kotlin/atropos/core/ConfigTest.kt` | installer-generated launcher → `ATROPOS_CONFIG_DIR` → existing `AtroposConfig.configRoot()` → provider/vault/quota/bridge state owners | Fixed custom-prefix installs so the JAR reads the same local config root that the installer bootstraps; default `$HOME/.atropos` fallback remains unchanged. Narrow `kotlinc` Config slice passed; install/backend contracts, hosted selector parity (421), and diff check passed. GitHub Actions execution and a real published custom-prefix install remain unverified. |
+
+### 2026-08-25T00:20:00Z · Agent: Codex GPT-5 · Batch: gha-verify-script-boundary
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-GHA bounded verify action input | source-wired / partial | `.github/actions/atropos-verify/action.yml`, `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-action-contract-test.sh`, `scripts/atropos-verify-action-path-test.sh`, `scripts/atropos-verify-worktree.sh`, `scripts/backend-atom-contract-test.sh` | GitHub composite action → existing bounded verification script → same compile/test/evidence lane | The reusable action now rejects absolute/path-traversal `verify-script` inputs and missing files before execution; both hosted entrypoints run the path contract. Action/workflow/path/backend contracts and diff check pass; GitHub-hosted execution remains unverified. |

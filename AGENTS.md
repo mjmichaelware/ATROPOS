@@ -13295,6 +13295,16 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprints (sha256, first 12): `Config.kt=864af867d4d86`; `install.sh=169a7790371e`; `ConfigTest.kt=7ed29a6693ae`.
 
+### 2026-08-25T00:20:00Z · Agent: Codex GPT-5 · Batch: gha-verify-script-boundary
+
+- Paths touched: `.github/actions/atropos-verify/action.yml` (+9), `.github/workflows/compile-gate.yml` (+3), `scripts/atropos-verify-action-contract-test.sh` (+2), `scripts/atropos-verify-action-path-test.sh` (+13), `scripts/atropos-verify-worktree.sh` (+1), `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-MCP-GHA-a..h action input/evidence execution boundary.
+- Predicate moved: the reusable GitHub verification action refuses path traversal and missing verify scripts before invoking the existing verifier; no second verification owner was introduced.
+- Verification actually run: action/workflow/path contracts, backend atom contract, hosted selector parity (421), shell syntax, and `git diff --check` passed. GitHub-hosted execution remains unverified.
+- % delta: unchanged; B-MCP-GHA remains source-wired/partial pending hosted check-run evidence.
+- New overall estimate: unchanged.
+- Fingerprints: pending post-commit hash.
+
 ### 2026-08-24T22:26:59Z · Agent: Codex GPT-5 · Batch: provider-live-health-projection
 
 - Paths touched: `src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt` (+20), `src/main/kotlin/atropos/core/provider/ProviderActivationService.kt` (+10), `src/main/kotlin/atropos/cli/ProviderCommandHandler.kt` (+10), `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` (+18), `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+8).

@@ -453,6 +453,7 @@ bash scripts/npm-installer-contract-test.sh
 
 echo "=== GITHUB ACTION CONTRACT ==="
 bash scripts/atropos-verify-action-contract-test.sh
+bash scripts/atropos-verify-action-path-test.sh
 
 echo "=== HOSTED TEST SELECTOR CONTRACT ==="
 bash scripts/hosted-test-selector-contract.sh

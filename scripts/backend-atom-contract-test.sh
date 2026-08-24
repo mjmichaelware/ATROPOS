@@ -44,6 +44,8 @@ text src/main/kotlin/atropos/core/provider/SourceBindingFetcher.kt 'SecretSinkMa
 text src/main/kotlin/atropos/core/provider/SourceBindingFetcher.kt 'HttpClient.Redirect.NEVER'
 text src/main/kotlin/atropos/core/github/GitHubDeviceAuthClient.kt 'GitHub OAuth disabled by local-only mode'
 text src/main/kotlin/atropos/core/github/GitHubDeviceAuthClient.kt 'requireJsonObject(response.body)'
+text .github/actions/atropos-verify/action.yml 'verify-script must stay inside working-directory'
+text .github/actions/atropos-verify/action.yml 'test -f "$VERIFY_SCRIPT"'
 
 # One bridge owner for the declared local HTTP/SSE surface.
 file src/main/kotlin/atropos/bridge/http/EngineHttpServer.kt

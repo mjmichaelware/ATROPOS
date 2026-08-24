@@ -17,6 +17,8 @@ grep -Fq 'PIPESTATUS[0]' "$ACTION"
 grep -Fq 'GITHUB_OUTPUT' "$ACTION"
 grep -Fq 'tee "$log_file"' "$ACTION"
 grep -Fq 'exit "$verify_exit"' "$ACTION"
+grep -Fq 'verify-script must stay inside working-directory' "$ACTION"
+grep -Fq 'test -f "$VERIFY_SCRIPT"' "$ACTION"
 
 printf '%s\n' ATROPOS_VERIFY_ACTION_CONTRACT_OK
 

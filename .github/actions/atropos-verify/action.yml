@@ -22,6 +22,16 @@ runs:
       env:
         VERIFY_SCRIPT: ${{ inputs.verify-script }}
       run: |
+        case "$VERIFY_SCRIPT" in
+          /*|../*|*/../*|*'/../'*|*'/..')
+            echo "ATROPOS verify refused: verify-script must stay inside working-directory" >&2
+            exit 2
+            ;;
+        esac
+        test -f "$VERIFY_SCRIPT" || {
+          echo "ATROPOS verify refused: verify-script does not exist: $VERIFY_SCRIPT" >&2
+          exit 2
+        }
         set +e
         log_file="${RUNNER_TEMP}/atropos-verify.log"
         bash "$VERIFY_SCRIPT" 2>&1 | tee "$log_file"
