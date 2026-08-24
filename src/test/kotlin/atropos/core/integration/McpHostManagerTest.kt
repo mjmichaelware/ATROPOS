@@ -55,7 +55,7 @@ class McpHostManagerTest {
             while IFS= read -r line; do
               case "$line" in
                 *'"id":1'*) printf '%s\n' '{"id":1}' ;;
-                *'"id":2'*) printf '%s\n' '{"id":2,"result":{"tools":[]}}' ;;
+                *'"id":2'*) printf '%s\n' '{"id":2,"result":{"tools":[{"name":"inspect"}]}}' ;;
                 *'"id":3'*) printf '%s\n' '{"id":3,"result":{"content":[{"text":"ok"}]}}' ;;
               esac
             done
@@ -79,7 +79,7 @@ class McpHostManagerTest {
             while IFS= read -r line; do
               case "$line" in
                 *'\"id\":1'*) printf '%s\n' '{"id":1}' ;;
-                *'\"id\":2'*) printf '%s\n' '{"id":2}' ;;
+                *'\"id\":2'*) printf '%s\n' '{"id":2,"result":{"tools":[{"name":"convert_to_markdown"}]}}' ;;
                 *'\"id\":3'*) printf '%s\n' '{"id":3,"result":{"content":[{"text":"# ok"}]}}' ;;
               esac
             done
@@ -172,7 +172,7 @@ class McpHostManagerTest {
             localOnly = false,
             remoteRequest = { _, body ->
                 requests += body
-                if (body.contains("\"id\":1")) "{\"id\":1}" else "{\"id\":2}"
+                if (body.contains("\"id\":1")) "{\"id\":1}" else "{\"id\":2,\"result\":{\"tools\":[{\"name\":\"inspect\"}]}}"
             }
         ).statuses().single()
 

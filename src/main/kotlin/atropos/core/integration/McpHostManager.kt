@@ -155,7 +155,8 @@ class McpHostManager(
         maxResponseBytes: Int = 128 * 1024,
         callerId: String = "mcp-cli",
         operation: String = toolName,
-        territoryPaths: List<String> = listOf(".")
+        territoryPaths: List<String> = listOf("."),
+        toolBudget: McpToolBudget = McpToolBudget()
     ): McpToolCallResult {
         require(serverName.isNotBlank() && toolName.isNotBlank()) { "MCP server and tool are required" }
         require(argumentsJson.length <= 32 * 1024) { "MCP tool arguments exceed the bounded request size" }
@@ -182,7 +183,7 @@ class McpHostManager(
         }
         require(!localOnly || !server.remote) { "remote MCP disabled by localOnly" }
         if (server.remote) {
-            val response = remoteCall(server, toolName, argumentsJson, maxResponseBytes)
+            val response = remoteCall(server, toolName, argumentsJson, maxResponseBytes, toolBudget)
             val safeResponse = redactionFilter.redact(response)
             return McpToolCallResult(safeResponse, recordToolResult(serverName, toolName, safeResponse))
         }
@@ -210,6 +211,7 @@ class McpHostManager(
                 }
             }.get(5, TimeUnit.SECONDS)
             require(response.contains("\"id\":3")) { "MCP tools/call returned no response" }
+            requireToolWithinBudget(response, toolName, toolBudget)
             val safeResponse = redactionFilter.redact(response)
             McpToolCallResult(safeResponse, recordToolResult(serverName, toolName, safeResponse))
         } finally {
@@ -233,11 +235,19 @@ class McpHostManager(
         return McpEvidenceRef(hash, path, null)
     }
 
-    private fun remoteCall(server: McpServerConfig, toolName: String, argumentsJson: String, maxResponseBytes: Int): String {
+    private fun remoteCall(
+        server: McpServerConfig,
+        toolName: String,
+        argumentsJson: String,
+        maxResponseBytes: Int,
+        toolBudget: McpToolBudget
+    ): String {
         val initialize = "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{}}"
         require(remoteExchange(server, initialize).contains("\"id\":1")) { "MCP HTTP initialize returned no response" }
         val toolsList = "{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/list\",\"params\":{}}"
-        require(remoteExchange(server, toolsList).contains("\"id\":2")) { "MCP HTTP tools/list returned no response" }
+        val toolsListResponse = remoteExchange(server, toolsList)
+        require(toolsListResponse.contains("\"id\":2")) { "MCP HTTP tools/list returned no response" }
+        requireToolWithinBudget(toolsListResponse, toolName, toolBudget)
         val request = buildString {
             append("{\"jsonrpc\":\"2.0\",\"id\":3,\"method\":\"tools/call\",\"params\":{")
             append("\"name\":\"").append(jsonEscape(toolName)).append("\",")
@@ -247,6 +257,19 @@ class McpHostManager(
         val bounded = response.take(maxResponseBytes)
         require(bounded.contains("\"id\":3")) { "MCP HTTP tools/call returned no response" }
         return bounded
+    }
+
+    /** Applies the single MCP injection budget before any tools/call is sent. */
+    private fun requireToolWithinBudget(response: String, toolName: String, budget: McpToolBudget) {
+        val toolsBody = Regex("\\\"tools\\\"\\s*:\\s*\\[(.*?)]", setOf(RegexOption.DOT_MATCHES_ALL))
+            .find(response)?.groupValues?.getOrNull(1).orEmpty()
+        val descriptors = Regex("\\\"name\\\"\\s*:\\s*\\\"([^\\\"]+)\\\"")
+            .findAll(toolsBody)
+            .map { McpToolDescriptor(it.groupValues[1]) }
+            .toList()
+        require(descriptors.any { it.name == toolName && boundedTools(descriptors, budget).any { bounded -> bounded.name == toolName } }) {
+            "MCP tool '$toolName' is not advertised within the configured tool budget"
+        }
     }
 
     private fun defaultProbe(server: McpServerConfig): McpHealth =

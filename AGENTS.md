@@ -452,6 +452,15 @@ End of AGENTS.md
 - % delta: unchanged; no VERIFIED claim. FTY-01, FTY-02, and FTY-04 are marked done in `STATUS-BACKEND.md` based on production source plus narrow compilation; FTY-03 and FTY-05 remain partial until root focused tests and a runtime-owned repair callback are proven.
 - Fingerprints (sha256): `DagStore.kt=fb932962f947`; `FactoryProgressGuard.kt=50bb25ea712d`; `FactoryRunHandoff.kt=537cf1c24fc2`; `FactoryRunOrchestrator.kt=652e100a59b7`; `FactoryRepairExecutor.kt=16e2c5cd36a8`; `FactoryCommandHandler.kt=392afeb3eb37`; `FactoryProgressGuardTest.kt=1e5d81c78c09`; `FactoryResumeAndRepairTest.kt=bca553b18f46`; `STATUS-BACKEND.md=2669342e3735`.
 
+### 2026-08-24T05:02:00Z · Agent: Codex GPT-5 · Batch: mcp-tool-budget-production-wire
+
+- Paths touched: `src/main/kotlin/atropos/core/integration/McpHostManager.kt` (+31/-3), `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+3/-3), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: ADD-MCP-002 / M12 MCP tool injection budget.
+- Predicate moved: the existing MCP host now applies `McpToolBudget` to the advertised `tools/list` result before allowing a `tools/call`, for both stdio and configured HTTP transports. `boundedTools` now has production callers through the existing bridge and CLI call path; no second MCP owner was created.
+- Verification actually run: `git diff --check` passed. The focused Gradle selector `./gradlew :test --no-daemon --max-workers=1 --rerun --tests 'atropos.core.integration.McpHostManagerTest'` hung before compiler/test output and was terminated; no test count, root compile, hosted run, or green claim.
+- % delta: unchanged; source-wired but partial pending GitHub Actions/root execution.
+- Fingerprints: `McpHostManager.kt=2925535c6320`; `McpHostManagerTest.kt=77e978f3c626`.
+
 ### 2026-08-24T04:41:10Z · Agent: Codex GPT-5 · Batch: mcp-http-request-validity
 
 - Paths touched: `src/main/kotlin/atropos/core/integration/McpHostManager.kt` (+10/-4), `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+2).
