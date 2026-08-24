@@ -992,3 +992,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | T04 bridge failure rendering | source-wired / partial | `src/main/kotlin/atropos/bridge/BridgeCommandHandler.kt`, `src/main/kotlin/atropos/bridge/BridgeEvidenceHandler.kt`, `src/test/kotlin/atropos/bridge/BridgeCommandHandlerTest.kt`, `scripts/backend-atom-contract-test.sh` | `/v1/cli` and `/v1/evidence` → existing bridge handlers | Bridge command exceptions and evidence-read failures now use the canonical compact redaction boundary before JSON response construction; focused command failure coverage proves an API key is absent from the response. Static backend contract, hosted selector parity (418), and `git diff --check` pass; hosted/root Kotlin execution remains pending. |
+
+### 2026-08-25T01:45:00Z · Agent: Codex GPT-5 · Batch: hosted-redaction-selector-coverage
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| T04 hosted focused coverage | source-wired / partial | `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh`, `scripts/hosted-test-selector-contract.sh` | GitHub Actions compile/focused lane → bridge/terminal redaction test classes | Added `BridgeCommandHandlerTest` and `TerminalErrorCountTest` to both mirrored hosted selectors; selector parity now validates 420 tests instead of silently omitting the new regressions. Static backend contract, selector contract (420), and `git diff --check` pass; GitHub Actions execution remains pending. |

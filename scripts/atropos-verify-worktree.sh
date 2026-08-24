@@ -85,6 +85,7 @@ if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
     --tests 'atropos.bridge.BridgeEventsHandlerTest' \
     --tests 'atropos.bridge.BridgeStreamTest' \
     --tests 'atropos.bridge.BridgeEditorHandlerTest' \
+    --tests 'atropos.bridge.BridgeCommandHandlerTest' \
     --tests 'atropos.bridge.BridgeEvidenceHandlerTest' \
     --tests 'atropos.bridge.BridgeApprovalHandlerTest' \
     --tests 'atropos.bridge.BridgeMcpHandlerTest' \
@@ -108,6 +109,7 @@ if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
     --tests 'atropos.bridge.BridgeSelfHostRoutesTest' \
     --tests 'atropos.bridge.BridgeSessionHandlerTest' \
     --tests 'atropos.bridge.GovernanceRoutesTest' \
+    --tests 'atropos.cli.ui.TerminalErrorCountTest' \
     --tests 'atropos.bridge.LocalEngineBridgeTest' \
     --tests 'atropos.bridge.conversation.BridgeConversationStoreTest' \
     --tests 'atropos.bridge.conversation.BridgeSessionStoreTest' \
