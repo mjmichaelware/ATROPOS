@@ -1,6 +1,8 @@
 package atropos.core.provider
 
 import java.io.File
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 import atropos.core.AtroposConfig
 
 object ProviderQuotaPaths {
@@ -109,7 +111,7 @@ class FileQuotaLedger(private val file: File, seed: List<ProviderQuotaRecord> = 
     override fun recordFailure(providerId: String, failure: ProviderFailure, nowEpochMs: Long) { memory.recordFailure(providerId, failure, nowEpochMs); persist() }
     private fun persist() {
         file.parentFile?.mkdirs()
-        file.writeText(memory.all().joinToString("\n") { r ->
+        val content = memory.all().joinToString("\n") { r ->
             listOf(
                 r.providerId,
                 r.costMode.name,
@@ -131,7 +133,25 @@ class FileQuotaLedger(private val file: File, seed: List<ProviderQuotaRecord> = 
             ).joinToString("\t") { value ->
                 value.toString().replace('\t', ' ').replace('\n', ' ').replace('\r', ' ')
             }
-        } + "\n")
+        } + "\n"
+        val parent = file.toPath().toAbsolutePath().normalize().parent
+            ?: error("quota ledger has no parent directory: ${file.path}")
+        val temporary = Files.createTempFile(parent, ".${file.name}.", ".tmp")
+        try {
+            Files.writeString(temporary, content)
+            try {
+                Files.move(
+                    temporary,
+                    file.toPath(),
+                    StandardCopyOption.ATOMIC_MOVE,
+                    StandardCopyOption.REPLACE_EXISTING
+                )
+            } catch (_: java.nio.file.AtomicMoveNotSupportedException) {
+                Files.move(temporary, file.toPath(), StandardCopyOption.REPLACE_EXISTING)
+            }
+        } finally {
+            Files.deleteIfExists(temporary)
+        }
     }
     companion object {
         fun seedFromDescriptors(registry: ProviderDescriptorRegistry) =

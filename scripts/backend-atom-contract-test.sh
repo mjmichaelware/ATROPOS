@@ -74,6 +74,8 @@ text src/main/kotlin/atropos/core/verification/GitHubActionsCompileRunner.kt 'Ht
 text src/main/kotlin/atropos/core/verification/GitHubActionsCompileRunner.kt 'MAX_RESPONSE_CHARS'
 text src/main/kotlin/atropos/core/platform/PlatformAbstraction.kt 'requestMethod = "HEAD"'
 text src/main/kotlin/atropos/core/platform/PlatformAbstraction.kt 'runtime.localOnly'
+text src/main/kotlin/atropos/core/provider/QuotaLedger.kt 'StandardCopyOption.ATOMIC_MOVE'
+text src/main/kotlin/atropos/core/provider/QuotaLedger.kt 'Files.createTempFile'
 text src/main/kotlin/atropos/cli/shell/ShellCommandRunner.kt 'BoundedAgencyGate'
 
 # Factory resume/repair and the single obligation loop remain production-wired.

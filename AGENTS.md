@@ -13331,6 +13331,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; B-MCP-CORE remains source-wired/partial pending hosted MCP fixtures.
 - Fingerprints (sha256, first 12): `McpHostManager.kt=bc1592778f1f`; `backend-atom-contract-test.sh=f8bcedb00cad`.
 
+### 2026-08-24T21:10:00Z · Agent: Codex GPT-5 · Batch: quota-ledger-atomic-persist
+
+- Paths touched: `src/main/kotlin/atropos/core/provider/QuotaLedger.kt` (+25/-3), `scripts/backend-atom-contract-test.sh` (+2).
+- Atoms / phases affected: P15/B-PROV quota ledger persistence and route truth.
+- Predicate moved: the existing `FileQuotaLedger` now writes a complete snapshot to a same-directory temporary file and atomically replaces the ledger, with a non-atomic filesystem fallback and cleanup; an interrupted write cannot intentionally overwrite the authoritative TSV with a partial body.
+- Verification actually run: pending this batch; root/hosted Kotlin quota tests remain unproven.
+- % delta: unchanged; P15 remains source-wired/partial pending hosted restart and failure-state tests.
+- Fingerprints (sha256, first 12): to be recorded after commit.
+
 ### 2026-08-24T19:50:50Z · Agent: Codex GPT-5 · Batch: github-response-size-bound
 
 - Paths touched: `src/main/kotlin/atropos/core/github/GitHubApiClient.kt` (+4), `src/test/kotlin/atropos/core/github/GitHubApiClientTest.kt` (+17), `scripts/backend-atom-contract-test.sh` (+1).
