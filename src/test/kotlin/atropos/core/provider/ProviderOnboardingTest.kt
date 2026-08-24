@@ -79,6 +79,23 @@ class ProviderOnboardingTest {
     }
 
     @Test
+    fun malformed_credential_shape_is_unhealthy_without_rendering_the_value() {
+        val root = Files.createTempDirectory("provider-onboarding-malformed")
+        val secret = "not-rendered\nsecond-line"
+        val service = ProviderOnboardingService(
+            root = root,
+            environment = mapOf("GROQ_API_KEY" to secret)
+        )
+
+        val record = service.refresh().first { it.providerId == "groq" }
+
+        assertEquals(CheapProviderHealth.UNHEALTHY, record.health)
+        val persisted = Files.readString(root.resolve(".atropos/provider/providers.json"))
+        assertTrue(!persisted.contains(secret))
+        assertTrue(!service.render().contains("second-line"))
+    }
+
+    @Test
     fun generic_namespace_matches_multiword_provider_and_preference_changes_order() {
         val root = Files.createTempDirectory("provider-onboarding-preference")
         val service = ProviderOnboardingService(

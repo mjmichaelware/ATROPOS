@@ -59,14 +59,18 @@ class ProviderOnboardingService(
             val names = (aliases[id].orEmpty().filter { !environment[it].isNullOrBlank() } +
                 aliases[id].orEmpty().filter(::localSecretPresent) +
                 environment.keys.filter { key ->
-                genericProviderKeyMatches(key, id) && !environment[key].isNullOrBlank()
+                    genericProviderKeyMatches(key, id) && !environment[key].isNullOrBlank()
                 } + aliasPrefixes[id].orEmpty().flatMap { prefix ->
-                    environment.keys.filter { it.startsWith(prefix, ignoreCase = true) && !environment[it].isNullOrBlank() }
+                    environment.keys.filter {
+                        it.startsWith(prefix, ignoreCase = true) && !environment[it].isNullOrBlank()
+                    }
                 }).distinct()
             val descriptor = registry.getById(id)
             val hasCredential = names.any(::looksLikeCredentialName)
+            val malformedCredential = names.any(::malformedEnvironmentCredential)
             val health = when {
                 prior[id]?.disabled == true -> CheapProviderHealth.UNHEALTHY
+                malformedCredential -> CheapProviderHealth.UNHEALTHY
                 descriptor?.isLocal == true && id == "local" -> CheapProviderHealth.HEALTHY
                 descriptor?.isLocal == true && names.isNotEmpty() -> CheapProviderHealth.HEALTHY
                 hasCredential -> CheapProviderHealth.HEALTHY
@@ -180,6 +184,18 @@ class ProviderOnboardingService(
             normalized.endsWith("_TOKEN") ||
             normalized == "AWS_ACCESS_KEY_ID" ||
             normalized == "AWS_SECRET_ACCESS_KEY"
+    }
+
+    /**
+     * Cheap shape validation only. It deliberately does not inspect prefixes,
+     * lengths, or provider-specific formats: those rules change and would
+     * misclassify valid tokens. Control characters cannot be valid shell/env
+     * credential values and are safe to reject without logging the value.
+     */
+    private fun malformedEnvironmentCredential(name: String): Boolean {
+        if (!looksLikeCredentialName(name)) return false
+        val value = environment[name] ?: return false
+        return value.any { it == '\n' || it == '\r' || it.isISOControl() }
     }
 }
 

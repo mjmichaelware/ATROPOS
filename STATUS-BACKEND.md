@@ -358,3 +358,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | P02/P18 provider activation and failure cascade proof | source-wired / partial | `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh` | canonical hosted compile/focused lane and reusable verifier → existing provider test classes | Added the existing `ProviderActivationServiceTest`, `ProviderCascadeOrderTest`, `ProviderFailureClassifierTest`, and `ProviderErrorNormalizerTest` to both GitHub-focused lanes. This covers paid live-test refusal, explicit-network opt-in, cooldown/quota transitions, billing non-retry, and normalized 429/billing failures without live provider calls. `bash -n` and `git diff --check` passed; hosted execution remains pending. |
+
+### 2026-08-24T06:35:49Z · Backend batch: provider-credential-shape-health
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-PROV-002a/b cheap credential-shape health | source-wired / partial | `src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt`, `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` | launch/CLI `ProviderOnboardingService.refresh` → persisted provider health and RoutePolicy healthy set | Added secret-safe shape validation: control characters/newlines in credential-shaped environment values classify the provider `unhealthy`; no value is persisted or rendered, and provider-specific prefix/length guesses are intentionally avoided. Focused test added; local diff/orphan/contracts pass; hosted provider test execution remains pending. |

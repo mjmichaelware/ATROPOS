@@ -12251,6 +12251,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; proof wiring improved, source remains partial until hosted execution.
 - Fingerprints (sha256, first 12): `compile-gate.yml=df3646e1c4e20`, `atropos-verify-worktree.sh=52f5c5eba805d`.
 
+### 2026-08-24T06:35:49Z · Agent: Codex GPT-5 · Batch: provider-credential-shape-health
+
+- Paths touched: `src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt` (+14), `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` (+17), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-PROV-002a/b cheap credential validation and health classification.
+- Predicate moved: a credential-shaped environment value containing control characters is now classified `unhealthy` before it enters the healthy routing set; the value itself is never persisted or rendered. Validation remains deliberately shape-only and does not guess provider-specific token prefixes or lengths.
+- Verification actually run: `git diff --check`, shell contracts, and `timeout 90s python3 scripts/find-orphans.py --fail-on-new` passed; orphan output remains 4 pre-existing files of 1032. Root/hosted Gradle execution remains pending; no test green claim.
+- % delta: unchanged; source-wired but partial pending hosted execution.
+- Fingerprints (sha256, first 12): `ProviderOnboarding.kt=ed22c3ddbe79`, `ProviderOnboardingTest.kt=f5f937a0eb14`.
+
 ### 2026-08-24T10:35:00Z · Agent: Codex GPT-5 · Batch: gha-pull-request-trigger
 
 - Paths touched: `.github/workflows/atropos-verify-example.yml` (+1), `scripts/atropos-verify-action-contract-test.sh` (+8), `STATUS-BACKEND.md` (+2).
