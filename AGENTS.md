@@ -13305,6 +13305,11 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprints: pending post-commit hash.
 
+### 2026-08-25T01:01:00Z · Agent: Codex GPT-5 · Batch: installer-owner-repository-fingerprint
+
+- Fingerprint: `install.sh=7f23a9dbec1c`.
+- Commit evidence: `4d1e8d3a`.
+
 ### 2026-08-25T00:41:00Z · Agent: Codex GPT-5 · Batch: installer-artifact-input-fingerprint
 
 - Fingerprint: `install.sh=8d0a1b7bbfd9`.
