@@ -12771,4 +12771,4 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: `bash scripts/provider-connect-contract-test.sh` (`ATROPOS_PROVIDER_CONNECT_CONTRACT_OK`), `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (382 tests)`), `bash -n scripts/provider-connect-contract-test.sh scripts/atropos-verify-worktree.sh`, `git diff --check`, and `timeout 90s python3 scripts/find-orphans.py --fail-on-new` passed. The orphan gate still reports only the four pre-existing baseline files (4/1041, 360 LOC). Root/hosted Kotlin execution remains pending; no compile/test-green claim.
 - % delta: unchanged; provider connect remains source-wired / partial pending hosted execution and interactive runtime evidence.
 - New overall estimate: unchanged.
-- Fingerprints: recorded after this batch commit.
+- Fingerprints (sha256, first 12): `ProviderCommandHandler.kt=b9f49f772f24`, `provider-connect-contract-test.sh=64d1f8bd6c9a`, `compile-gate.yml=87964b12d5ee`, `atropos-verify-worktree.sh=47364fec3baa`, `STATUS-BACKEND.md=de35ec7a9d7a`, `AGENTS.md=0e1641a15476`.
