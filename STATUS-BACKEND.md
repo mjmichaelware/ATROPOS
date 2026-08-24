@@ -1250,3 +1250,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-PROV-004 prefer/disable route ownership | source-wired / partial | `src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt`, `src/main/kotlin/atropos/core/provider/adapter/AdapterRouteFacade.kt`, `src/main/kotlin/atropos/core/provider/RoutePolicy.kt`, `scripts/backend-atom-contract-test.sh` | `/providers prefer|disable` → persisted onboarding metadata → `AdapterRouteFacade` healthy/preference suppliers → sole `RoutePolicy` eligibility/order | Backend contract now protects the production caller edges for persisted preference and disabled-provider exclusion. Hosted route execution remains unverified; no second routing policy added. |
+
+### 2026-08-25T06:20:00Z · Agent: Codex GPT-5 · Batch: mcp-search-authority-contract
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| ADD-MCP-005/006/007 configured search and authority policy | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `src/main/kotlin/atropos/cli/McpCommandHandler.kt`, `src/main/kotlin/atropos/cli/input/CommandCatalog.kt`, `scripts/backend-atom-contract-test.sh` | `/mcp search` → sole `McpHostManager.search()` gated configured-catalog query; `/mcp call` → `isMemoryAuthorityMutation()` refusal before transport | Backend contract now protects search’s no-install caller and the memory-to-authority refusal edge. Hosted MCP runtime execution remains unverified. |

@@ -83,6 +83,9 @@ file src/main/kotlin/atropos/cli/McpCommandHandler.kt
 file src/main/kotlin/atropos/bridge/BridgeMcpHandler.kt
 file src/main/kotlin/atropos/cli/input/CommandCatalog.kt
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'McpConfigParser.parse'
+text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'fun search(query: String)'
+text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'MCP search refused by territory bridge'
+text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'isMemoryAuthorityMutation'
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'health.tsv'
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'localOnly && server.remote'
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'persistHealth(statuses)'
@@ -123,8 +126,10 @@ text src/main/kotlin/atropos/bridge/BridgeRoutes.kt '"/v1/mcp/call"'
 text src/main/kotlin/atropos/bridge/BridgeRoutes.kt '"/v1/mcp/status"'
 text src/main/kotlin/atropos/cli/McpCommandHandler.kt 'null, "list" -> uiEngine.renderBlock(manager.statuses()'
 text src/main/kotlin/atropos/cli/McpCommandHandler.kt '"test" -> uiEngine.renderBlock(manager.statuses()'
+text src/main/kotlin/atropos/cli/McpCommandHandler.kt '"search" -> search(tokens)'
 text src/main/kotlin/atropos/cli/input/CommandCatalog.kt '"/mcp list"'
 text src/main/kotlin/atropos/cli/input/CommandCatalog.kt '"/mcp test"'
+text src/main/kotlin/atropos/cli/input/CommandCatalog.kt '"/mcp search <query>"'
 
 # Tier-0 integrations compose onto existing gates and secret/evidence owners.
 file src/main/kotlin/atropos/core/integration/IntegrationRegistry.kt

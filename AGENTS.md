@@ -13914,6 +13914,16 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprints: `backend-atom-contract-test.sh=992940ef334f`.
 
+### 2026-08-25T06:20:00Z · Agent: Codex GPT-5 · Batch: mcp-search-authority-contract
+
+- Paths touched: `scripts/backend-atom-contract-test.sh` (+6), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: ADD-MCP-005/006/007 configured search and authority policy.
+- Predicate moved: CI now protects the existing `/mcp search` configured-catalog caller and the sole MCP host’s memory-to-SourceAuthority/ledger mutation refusal; no registry installer or parallel authority owner was introduced.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh`, `bash scripts/hosted-test-selector-contract.sh` (`421 tests`), and `git diff --check` passed. Hosted MCP runtime execution remains unverified.
+- % delta: unchanged; these atoms remain source-wired/partial pending hosted execution.
+- New overall estimate: unchanged.
+- Fingerprints: `backend-atom-contract-test.sh=13916d36c3c0`.
+
 ### 2026-08-24T22:35:00Z · Agent: Codex GPT-5 · Batch: local-health-response-bounds
 
 - Paths touched: `src/main/kotlin/atropos/core/ProviderState.kt` (+10/-2), `src/main/kotlin/atropos/core/agent/ProviderSessionSupervisor.kt` (+13/-3), `scripts/backend-atom-contract-test.sh` (+2).
