@@ -54,6 +54,8 @@ if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
     --tests 'atropos.core.provider.adapter.AdapterRouteFacadePolicyTest' \
     --tests 'atropos.core.provider.ContextAttestationTest' \
     --tests 'atropos.core.provider.adapter.CredentialSafeHttpTransportTest' \
+    --tests 'atropos.core.provider.adapter.AwsSigV4Test' \
+    --tests 'atropos.core.provider.adapter.BedrockKernelAdapterTest' \
     --tests 'atropos.core.provider.EligibilityAlgorithmTest' \
     --tests 'atropos.core.provider.FallbackChainRegistryTest' \
     --tests 'atropos.core.provider.FallbackChainTest' \

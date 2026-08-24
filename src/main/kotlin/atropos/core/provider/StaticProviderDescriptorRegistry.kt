@@ -31,6 +31,7 @@ class StaticProviderDescriptorRegistry : ProviderDescriptorRegistry {
         d("anthropic","Anthropic",CostMode.PAID_LOCKED,9,c(ApiCapability.CHAT,ApiCapability.CODE,ApiCapability.REPAIR,ApiCapability.PLAN,ApiCapability.LARGE_CONTEXT),e("ANTHROPIC_API_KEY"),f("gemini","groq"),"provider.anthropic.messages"),
         d("openai","OpenAI",CostMode.PAID_LOCKED,9,c(ApiCapability.CHAT,ApiCapability.CODE,ApiCapability.REPAIR,ApiCapability.PLAN,ApiCapability.VISION,ApiCapability.EMBED),e("OPENAI_API_KEY"),f("gemini","groq"),"provider.openai.chat"),
         d("xai","xAI",CostMode.PAID_LOCKED,9,c(ApiCapability.CHAT,ApiCapability.PLAN),e("XAI_API_KEY"),f("gemini","groq"),"provider.xai.chat"),
+        d("aws_bedrock","AWS Bedrock",CostMode.PAID_LOCKED,9,c(ApiCapability.CHAT,ApiCapability.CODE,ApiCapability.REPAIR,ApiCapability.PLAN),e("AWS_ACCESS_KEY_ID","AWS_SECRET_ACCESS_KEY","AWS_REGION"),f("openrouter","groq"),"provider.aws_bedrock.converse"),
         d("fal","Fal.ai",CostMode.CREDIT_POOL,3,c(ApiCapability.ASSET,ApiCapability.VISION),e("FAL_AI_API_KEY"),f("huggingface","replicate")),
         d("replicate","Replicate",CostMode.CREDIT_POOL,3,c(ApiCapability.ASSET,ApiCapability.VISION),e("REPLICATE_API_TOKEN"),f("fal","huggingface")),
         d("serpapi","SerpAPI",CostMode.CREDIT_POOL,3,c(ApiCapability.WEB),e("SERPAPI_API_KEY"),f("jina","local"))

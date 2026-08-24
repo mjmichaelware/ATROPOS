@@ -453,6 +453,15 @@ End of AGENTS.md
 - % delta: unchanged; B-INST-002 remains partial pending hosted release evidence.
 - Fingerprints (sha256, first 12): `scripts/release-installer-contract-test.sh=c4139f3e1fe4`; `.github/workflows/release.yml=46bf3530786b`; `install.sh=6ece5f472305`.
 
+### 2026-08-24T21:05:00Z · Agent: Codex GPT-5 · Batch: bedrock-sigv4-provider-owner
+
+- Paths touched: `src/main/kotlin/atropos/core/provider/adapter/AwsSigV4.kt` (+91), `BedrockKernelAdapter.kt` (+151), `StaticProviderDescriptorRegistry.kt` (+1), `BuildKernelAdapter.kt` (+2), two focused adapter tests (+58), hosted selectors (+4), `docs/PROVIDER_ENVIRONMENT.md` (+4), `STATUS-BACKEND.md` (+5).
+- Atoms / phases affected: P07 AWS Bedrock; provider adapter transport and paid routing.
+- Predicate moved: AWS Bedrock now has a real paid descriptor, adapter-registry caller, SigV4 signing owner, Converse request/response path, injected transport seam, and offline signer/status tests. Credentials remain env/vault inputs; the existing paid approval policy remains authoritative.
+- Verification actually run: provider environment contract passed, hosted selector contract passed (`382 tests`), shell syntax, diff check, and orphan gate passed. Focused root Gradle execution timed out at 90 seconds during Termux compilation (exit 124); no Bedrock test/compile or live AWS call is claimed.
+- % delta: P07 moved blocked → source-wired/partial; hosted execution and real approved transport evidence remain open.
+- Fingerprints: record after the batch commit.
+
 ### 2026-08-24T20:15:00Z · Agent: Codex GPT-5 · Batch: sentry-tier0-composition
 
 - Paths touched: `src/main/kotlin/atropos/core/sentry/SentryApiClient.kt` (+161), `SentryRepairCoordinator.kt` (+93), `src/main/kotlin/atropos/cli/SentryCommandHandler.kt` (+54), `CommandRouter.kt` (+6), `CommandCatalog.kt` (+2), `CommandRiskCatalog.kt` (+3), two focused Sentry tests (+120), hosted selectors (+4), `STATUS-BACKEND.md` (+7).

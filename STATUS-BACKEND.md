@@ -68,6 +68,8 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | P05 OpenRouter | source-wired | descriptor + OpenAI-compatible catalog |
 | P06 Ollama | source-wired | local descriptor + local adapter; `OLLAMA_HOST` discovery |
 | P07 AWS Bedrock | blocked | discovery metadata recognizes `AWS_*`; no Bedrock signing/transport owner exists, so it is excluded from routing rather than misrepresented |
+
+| P07 AWS Bedrock correction | source-wired / partial | `src/main/kotlin/atropos/core/provider/adapter/AwsSigV4.kt`, `BedrockKernelAdapter.kt`, `StaticProviderDescriptorRegistry.kt`, `BuildKernelAdapter.kt`, focused adapter tests | existing `StaticProviderAdapterRegistry` → `buildKernelAdapter` → paid `aws_bedrock` descriptor → SigV4 Converse transport | The signing/transport owner now exists with injected offline tests; the historical blocked row above is superseded. Hosted execution and real approved AWS calls remain unproven. |
 | P08 Cohere | source-wired | descriptor + OpenAI-compatible catalog |
 | P09 Perplexity | skipped | no existing Perplexity reference or accepted descriptor in this tree |
 | P10 Anthropic | source-wired | native Anthropic adapter/catalog plus alias-aware adapter registry |

@@ -39,9 +39,10 @@ evidence.
 | Replicate | `REPLICATE_API_TOKEN` |
 | Generic ATROPOS provider | `ATROPOS_PROVIDER_*` when the suffix identifies a known descriptor |
 
-AWS variables (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`) are
-recorded for future Bedrock transport support but are not routed as a working
-Bedrock provider until a signing/transport owner exists.
+AWS Bedrock uses `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and
+`AWS_REGION` (or `AWS_DEFAULT_REGION`) with the existing paid-provider approval
+gate. `AWS_BEDROCK_MODEL` optionally selects the Converse model; credentials
+remain environment/vault inputs and are never written to provider metadata.
 
 Useful commands:
 

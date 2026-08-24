@@ -9,6 +9,8 @@ fun buildKernelAdapter(
     when {
         descriptor.isLocal ->
             LocalKernelAdapter(descriptor)
+        descriptor.id == "aws_bedrock" ->
+            BedrockKernelAdapter(descriptor, env)
         OpenAiCompatibleProviderCatalog.get(descriptor.id) != null ->
             OpenAiCompatibleKernelAdapter(
                 descriptor = descriptor,
