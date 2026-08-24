@@ -123,7 +123,7 @@ class FileQuotaLedger(private val file: File, seed: List<ProviderQuotaRecord> = 
                     configured = d.isLocal,
                     verified = d.isLocal,
                     state = if (d.isLocal) ProviderAvailabilityState.READY else ProviderAvailabilityState.UNKNOWN,
-                    paidLocked = d.isPaidLocked()
+                    paidLocked = d.isPaid()
                 )
             }
         private fun load(file: File): List<ProviderQuotaRecord> {

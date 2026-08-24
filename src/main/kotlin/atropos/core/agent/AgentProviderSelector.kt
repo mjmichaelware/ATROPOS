@@ -37,7 +37,7 @@ class AgentProviderSelector(
 
         val requestedPatchProvider = patchProviderOverride?.trim()?.lowercase().orEmpty()
         val requestedPatchDescriptor = registry.getById(requestedPatchProvider)
-            ?.takeIf { !it.isPaidLocked() && (it.hasCapability(ApiCapability.CODE) || it.hasCapability(ApiCapability.REPAIR)) }
+            ?.takeIf { !it.isPaid() && (it.hasCapability(ApiCapability.CODE) || it.hasCapability(ApiCapability.REPAIR)) }
         val patchOrder = buildList {
             if (requestedPatchDescriptor != null) {
                 add(requestedPatchDescriptor.id)

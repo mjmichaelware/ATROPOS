@@ -177,9 +177,9 @@ class RoutePolicy(
      */
     private fun costTier(candidate: ProviderEligibility): Int = when {
         costPolicy == AtroposCostPolicy.PAID_EMERGENCY_UNLOCKED &&
-            candidate.provider.isPaidLocked() &&
+            candidate.provider.isPaid() &&
             paidGate.isProviderUnlocked(candidate.provider.id) -> 0
-        candidate.provider.isPaidLocked() -> 2
+        candidate.provider.isPaid() -> 2
         costPolicy == AtroposCostPolicy.PAID_EMERGENCY_UNLOCKED &&
             candidate.provider.costMode != CostMode.LOCAL -> 0
         else -> 1

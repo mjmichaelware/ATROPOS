@@ -194,6 +194,6 @@ class AdapterRouteFacade(
             configured = isLocal,
             verified = isLocal,
             state = if (isLocal) ProviderAvailabilityState.READY else ProviderAvailabilityState.UNKNOWN,
-            paidLocked = isPaidLocked()
+            paidLocked = isPaid()
         )
 }

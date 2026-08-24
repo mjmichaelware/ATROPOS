@@ -12956,6 +12956,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; B-PROV-003/004 remain source-wired / partial pending hosted/root execution.
 - Fingerprints (sha256, first 12): `ProviderOnboarding.kt=0464b1a241bda`, `ProviderOnboardingTest.kt=7afc90bb703d`.
 
+### 2026-08-24T17:10:00Z · Agent: Codex GPT-5 · Batch: canonical-paid-classification-callers
+
+- Paths touched: `src/main/kotlin/atropos/core/provider/ProviderDescriptor.kt`, `ProviderActivationService.kt`, `RoutePolicy.kt`, `ProviderTruthService.kt`, `QuotaLedger.kt`, `StaticProviderDescriptorRegistry.kt`, `src/main/kotlin/atropos/core/provider/adapter/AdapterRouteFacade.kt`, `src/main/kotlin/atropos/core/agent/AgentProviderSelector.kt`, `AgentService.kt`, `src/main/kotlin/atropos/cli/commands/AgentPatchCommandHandler.kt`, `src/main/kotlin/atropos/cli/ui/StatusQuotaRenderer.kt`.
+- Atoms / phases affected: B-PROV-012 paid approval, provider truth/doctor, activation live-test refusal, agent patch routing, quota metadata.
+- Predicate moved: all production payment-sensitive callers now use the descriptor’s canonical `BillingClass.PAID` projection. Credit-pool providers are no longer reported executable/free-tier, selected for automatic patch work, admitted by activation live tests, or rendered as unlocked merely because they are not `PAID_LOCKED`. The stale unused paid-provider literal in `AgentService` was removed; no second policy owner was introduced.
+- Verification actually run: provider environment contract, hosted selector contract (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (383 tests)`), orphan gate (exit 0; 4 historical baseline orphan files / 360 LOC), and `git diff --check` passed. Root Gradle focused Kotlin execution remains unavailable in the local Termux budget; the prior command exited 124 during root `:compileKotlin` before tests. No Kotlin/provider test-green or hosted-green claim.
+- % delta: unchanged; B-PROV-012 and dependent provider truth remain source-wired / partial pending hosted execution.
+- Fingerprints (sha256, first 12): `ProviderDescriptor.kt=f77e508d0f80`, `ProviderActivationService.kt=df292d374479`, `RoutePolicy.kt=b1db23bdb872`, `ProviderTruthService.kt=79e780c8f94e`, `QuotaLedger.kt=212cdab22d1e`, `StaticProviderDescriptorRegistry.kt=ed8139362420`, `AdapterRouteFacade.kt=b9bb484f47a7`, `AgentProviderSelector.kt=0b83b8c45013`, `AgentService.kt=7c94effaca7e`, `AgentPatchCommandHandler.kt=b19b90af4a3f`, `StatusQuotaRenderer.kt=e385e9a1b6d3`.
+
 ### 2026-08-24T16:55:00Z · Agent: Codex GPT-5 · Batch: credit-pool-paid-gate
 
 - Paths touched: `src/main/kotlin/atropos/core/provider/ProviderDescriptor.kt` (+1/-1), `ProviderActionProposals.kt` (+4), `ProviderCascadeOrder.kt` (+1), `RoutePolicy.kt` (+3), `ProviderActionProposalsTest.kt` (+2), `ProviderCascadeOrderTest.kt` (+7), `AGENTS.md`, `STATUS-BACKEND.md`.

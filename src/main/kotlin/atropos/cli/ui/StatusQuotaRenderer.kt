@@ -186,7 +186,7 @@ class StatusQuotaRenderer(
         val quota = item.quota
         val state = quota?.state?.name?.lowercase() ?: "quota_unknown"
         val cost = provider.costMode.name.lowercase()
-        val paidLock = quota?.paidLocked ?: provider.isPaidLocked()
+        val paidLock = quota?.paidLocked ?: provider.isPaid()
         val reset = formatEpoch(quota?.resetAtEpochMs)
         val cooldown = formatEpoch(quota?.cooldownUntilEpochMs)
         return "${provider.id.padEnd(18)} cost=$cost q=${provider.quotaTier} state=$state reason=${item.reason} reset=$reset cooldown=$cooldown paid_locked=$paidLock"
@@ -241,7 +241,7 @@ class StatusQuotaRenderer(
             configured = isLocal,
             verified = isLocal,
             state = if (isLocal) ProviderAvailabilityState.READY else ProviderAvailabilityState.UNKNOWN,
-            paidLocked = isPaidLocked()
+            paidLocked = isPaid()
         )
 
     private fun terminalState(state: ProviderAvailabilityState): Boolean =

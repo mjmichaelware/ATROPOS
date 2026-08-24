@@ -157,7 +157,7 @@ class AgentPatchCommandHandler(
             .filter { descriptor ->
                 (descriptor.hasCapability(ApiCapability.CODE) ||
                     descriptor.hasCapability(ApiCapability.REPAIR)) &&
-                    !descriptor.isPaidLocked()
+                    !descriptor.isPaid()
             }
             .map { it.id }
             .toSet()

@@ -28,7 +28,7 @@ class ProviderTruthService(
             val keyPresent = configuration.isConfigured(descriptor)
             val adapterPresent = adapterIntrospection.adapterPresent(descriptor.id)
             val availability = health(descriptor, keyPresent)
-            val executable = adapterPresent && keyPresent && !descriptor.isPaidLocked() && availability != ProviderAvailabilityState.OFFLINE
+            val executable = adapterPresent && keyPresent && !descriptor.isPaid() && availability != ProviderAvailabilityState.OFFLINE
             ProviderTruthRecord(
                 id = descriptor.id,
                 category = category(descriptor),
@@ -40,7 +40,7 @@ class ProviderTruthService(
                 health = availability,
                 askEligible = descriptor.id in selection.askOrder,
                 patchEligible = descriptor.id in selection.patchOrder,
-                paidLocked = descriptor.isPaidLocked(),
+                paidLocked = descriptor.isPaid(),
                 missingRequirements = missing
             )
         }
@@ -61,7 +61,7 @@ class ProviderTruthService(
         when {
             descriptor.isLocal && descriptor.hasCapability(ApiCapability.CHAT) ->
                 if (ollamaProbe()) ProviderAvailabilityState.READY else ProviderAvailabilityState.OFFLINE
-            descriptor.isPaidLocked() -> ProviderAvailabilityState.DISABLED
+            descriptor.isPaid() -> ProviderAvailabilityState.DISABLED
             !configured -> ProviderAvailabilityState.AUTH_FAILED
             adapterIntrospection.adapterPresent(descriptor.id) -> ProviderAvailabilityState.READY
             else -> ProviderAvailabilityState.UNKNOWN

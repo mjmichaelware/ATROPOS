@@ -89,7 +89,7 @@ class ProviderActivationService(
         val quotaCooldownUntil = quotaRecord?.cooldownUntilEpochMs?.let { java.time.Instant.ofEpochMilli(it) }
         val routeEligibility = listOfNotNull(
             if (descriptor.isLocal) "local" else null,
-            if (!descriptor.isPaidLocked()) "free-tier" else null,
+            if (!descriptor.isPaid()) "free-tier" else null,
             if (keyLookups.all { it.configured }) "live-key-ready" else null,
             if (quotaRecord?.state?.name?.lowercase() != "unavailable") quotaRecord?.state?.name?.lowercase() else null
         ).distinctBy { it }
@@ -100,7 +100,7 @@ class ProviderActivationService(
             val configuredForExecution = descriptor.isLocal || keyLookups.all { it.configured }
             val storedRecord = store.read(providerId)
             val state = when {
-                mode == ProviderVerificationMode.VERIFY && descriptor.isPaidLocked() && !paidGate.isProviderUnlocked(providerId) -> ProviderActivationState.LOCKED
+                mode == ProviderVerificationMode.VERIFY && descriptor.isPaid() && !paidGate.isProviderUnlocked(providerId) -> ProviderActivationState.LOCKED
                 mode == ProviderVerificationMode.VERIFY && executableSupport && fixture.passed && configuredForExecution -> ProviderActivationState.VERIFIED
                 storedRecord != null && (storedRecord.state == ProviderActivationState.VERIFIED || storedRecord.state == ProviderActivationState.READY) -> storedRecord.state
                 else -> snapshotState(descriptor, adapterStatus, keyLookups, fixture)
@@ -139,7 +139,7 @@ class ProviderActivationService(
         quotaCooldownUntil: java.time.Instant? = null,
         routeEligibility: List<String> = emptyList()
     ): ProviderActivationRecord {
-        if (descriptor.isPaidLocked() && !paidGate.isProviderUnlocked(descriptor.id)) {
+        if (descriptor.isPaid() && !paidGate.isProviderUnlocked(descriptor.id)) {
             return ProviderActivationRecord(
                 providerId = descriptor.id,
                 mode = mode,
@@ -222,13 +222,13 @@ class ProviderActivationService(
         task: ProviderTask,
         prompt: String
     ): ProviderCallResult {
-        val unlockedPaid = descriptor.isPaidLocked() && paidGate.isProviderUnlocked(descriptor.id)
+        val unlockedPaid = descriptor.isPaid() && paidGate.isProviderUnlocked(descriptor.id)
         val proposal = ProviderActionProposals.forCall(
             provider = descriptor.id,
             operation = "activation-live-test",
             promptLength = prompt.length,
             actor = ActionActor.SystemService("provider-activation")
-        ).copy(paidProvider = descriptor.isPaidLocked() && !unlockedPaid)
+        ).copy(paidProvider = descriptor.isPaid() && !unlockedPaid)
         val decision = agencyGate.evaluate(proposal)
         if (decision.disposition != AgencyDisposition.ALLOWED) {
             return ProviderCallResult.Failure(
@@ -261,7 +261,7 @@ class ProviderActivationService(
         keyLookups: List<SecretLookup>,
         fixture: ProviderFixtureMatrixRecord
     ): ProviderActivationState {
-        if (descriptor.isPaidLocked() && !paidGate.isProviderUnlocked(descriptor.id)) return ProviderActivationState.LOCKED
+        if (descriptor.isPaid() && !paidGate.isProviderUnlocked(descriptor.id)) return ProviderActivationState.LOCKED
         if (descriptor.isLocal && descriptor.hasCapability(ApiCapability.CHAT) && !ollamaProbe()) {
             return ProviderActivationState.OFFLINE
         }

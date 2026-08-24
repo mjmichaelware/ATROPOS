@@ -143,7 +143,4 @@ class AgentService(
         policyEnforcer.enforce(provider, prompt, operation)
     }
 
-    private companion object {
-        val paidProviders = setOf("openai", "anthropic", "xai", "mistral", "cohere", "deepseek_direct")
-    }
 }

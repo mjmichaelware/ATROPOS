@@ -794,3 +794,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-PROV-012 paid approval and free-first route truth | source-wired / partial | `src/main/kotlin/atropos/core/provider/ProviderDescriptor.kt`, `ProviderActionProposals.kt`, `ProviderCascadeOrder.kt`, `RoutePolicy.kt`, focused provider policy tests | existing `AdapterRouteFacade` / `RoutePolicy` → `ProviderActionProposals` → `BoundedAgencyGate` and `EmergencyPaidGate`; existing cascade → `ProviderCascadeOrder` | Canonical `BillingClass.PAID` now covers `CREDIT_POOL` providers; they cannot enter an unapproved cascade and route refusal is `paid_approval_required`. Selector contract (383), orphan gate (4 historical baseline orphans / 360 LOC), and diff check pass. Focused root Gradle selection timed out at root `:compileKotlin` after `:core:jvmJar` before tests; no Kotlin or hosted green claim. |
+
+### 2026-08-24T17:10:00Z · Backend batch: canonical-paid-classification-callers
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-PROV-012 payment-sensitive provider callers | source-wired / partial | provider descriptor, activation, route, truth, quota, adapter facade, agent selector/patch, status renderer | existing activation/doctor, `RoutePolicy`, `AdapterRouteFacade`, `AgentProviderSelector`, `AgentPatchCommandHandler`, and quota/status projections all call `ProviderDescriptor.isPaid()` | `BillingClass.PAID` is now the sole production classification for credit-pool and paid-locked providers across payment-sensitive paths. Provider env contract, selector (383), orphan gate (4 historical baseline orphans / 360 LOC), and diff check pass. Root Gradle remained unproven due compile timeout; no Kotlin or hosted green claim. |

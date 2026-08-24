@@ -39,7 +39,7 @@ class StaticProviderDescriptorRegistry : ProviderDescriptorRegistry {
     override fun getAll() = descriptors
     override fun getById(id: String) = descriptors.find { it.id == id }
     override fun getFreeEligible() = descriptors.filter { it.isFreeEligible() }
-    override fun getPaidLocked() = descriptors.filter { it.isPaidLocked() }
+    override fun getPaidLocked() = descriptors.filter { it.isPaid() }
     override fun getByCapability(capability: ApiCapability) = descriptors.filter { it.hasCapability(capability) }
     private fun d(id:String,name:String,cost:CostMode,tier:Int,caps:Set<ApiCapability>,env:List<String> = emptyList(),fb:List<String> = emptyList(),endpoint:String? = null,local:Boolean = false,notes:String = "") =
         ProviderDescriptor(id,name,cost,tier,caps,env,fb,endpoint,local,notes)
