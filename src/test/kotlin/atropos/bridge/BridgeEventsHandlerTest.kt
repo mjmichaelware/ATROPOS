@@ -61,4 +61,19 @@ class BridgeEventsHandlerTest {
             tempDir.toFile().deleteRecursively()
         }
     }
+
+    @Test
+    fun event_poll_honors_requested_session_identity() {
+        val approvals = PendingApprovalStore(Files.createTempDirectory("events-session-test-"))
+        val sessions = BridgeSessionStore()
+        val handler = BridgeEventsHandler(null, approvals, sessions, BridgeConversationStore())
+        BridgeEventHub.clear()
+        val wanted = sessions.create()
+        val other = sessions.create()
+        sessions.append(wanted.id, TurnAuthor.OPERATOR, "wanted")
+        sessions.append(other.id, TurnAuthor.OPERATOR, "other")
+        val response = handler.getEvents(HttpRequest("GET", "/v1/events", mapOf("after" to "0", "session" to wanted.id), emptyMap(), ""))
+        assertTrue(response.body.contains(wanted.id))
+        assertTrue(!response.body.contains(other.id))
+    }
 }

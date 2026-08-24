@@ -6,6 +6,8 @@ import atropos.core.AIProvider
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import java.nio.file.Files
+import atropos.core.paid.EmergencyPaidGate
 
 class ProviderCascadeRouterTest {
     @Test
@@ -64,5 +66,56 @@ class ProviderCascadeRouterTest {
         assertEquals(listOf("provider-one", "provider-two"), result.errors.map { it.provider })
         assertTrue(result.errors.all { it.type == atropos.core.FailureType.MISSING_KEY })
         assertTrue(result.queueReason.orEmpty().contains("missing API key"))
+    }
+
+    @Test
+    fun free_exhaustion_surfaces_paid_approval_instead_of_spending() {
+        val paidGate = EmergencyPaidGate(Files.createTempDirectory("paid-approval").toFile())
+        val router = ProviderCascadeRouter(
+            factory = ProviderFactory(),
+            providerResolver = { throw IllegalStateException("free provider unavailable") },
+            healthyProviderIds = { setOf("groq", "openai") },
+            localOnly = { false },
+            paidGate = paidGate
+        )
+        val result = router.completeWithCascade(
+            requestedProvider = "groq",
+            prompt = "answer",
+            context = "",
+            providerOrderOverride = listOf("groq", "openai")
+        )
+        assertTrue(result.paidApproval != null)
+        assertTrue(!result.queued)
+        assertEquals("paid_approval_required", result.providerName)
+        assertTrue(result.queueReason.orEmpty().contains("PAID APPROVAL REQUIRED"))
+    }
+
+    @Test
+    fun unlocked_paid_provider_can_resume_the_same_cascade() {
+        val paidGate = EmergencyPaidGate(Files.createTempDirectory("paid-resume").toFile())
+        paidGate.unlock("openai", "1m", "operator approved this session")
+        val attempts = mutableListOf<String>()
+        val router = ProviderCascadeRouter(
+            factory = ProviderFactory(),
+            providerResolver = { provider ->
+                attempts += provider
+                if (provider == "openai") object : AIProvider {
+                    override val name: String = provider
+                    override fun complete(prompt: String, context: String): String = "approved"
+                } else throw IllegalStateException("free provider unavailable")
+            },
+            healthyProviderIds = { setOf("groq", "openai") },
+            localOnly = { false },
+            paidGate = paidGate
+        )
+        val result = router.completeWithCascade(
+            requestedProvider = "groq",
+            prompt = "answer",
+            context = "",
+            providerOrderOverride = listOf("groq", "openai")
+        )
+        assertEquals("openai", result.providerName)
+        assertEquals("approved", result.response)
+        assertEquals(listOf("groq", "openai"), attempts)
     }
 }

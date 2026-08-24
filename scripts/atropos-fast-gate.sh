@@ -9,13 +9,22 @@ TMP="${TMPDIR:-/tmp}/atropos-fast-gate"
 rm -rf "$TMP"
 mkdir -p "$TMP/classes"
 
+collect_sources() {
+  local manifest="$TMP/sources.list"
+  find src/main/kotlin -type f -name '*.kt' -print0 > "$manifest"
+  SOURCES=()
+  while IFS= read -r -d '' source; do
+    SOURCES+=("$source")
+  done < "$manifest"
+}
+
 compile_classes() {
-  mapfile -d '' SOURCES < <(find src/main/kotlin -type f -name '*.kt' -print0)
+  collect_sources
   kotlinc -d "$TMP/classes" "${SOURCES[@]}"
 }
 
 compile_jar() {
-  mapfile -d '' SOURCES < <(find src/main/kotlin -type f -name '*.kt' -print0)
+  collect_sources
   kotlinc -include-runtime -d "$TMP/atropos.jar" "${SOURCES[@]}"
 }
 

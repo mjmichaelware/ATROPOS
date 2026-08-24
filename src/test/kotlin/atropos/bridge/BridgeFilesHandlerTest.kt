@@ -39,6 +39,8 @@ class BridgeFilesHandlerTest {
             assertTrue(responseOk.body.contains("\"ok\":true"))
             assertTrue(responseOk.body.contains("hello.txt"))
             assertTrue(responseOk.body.contains("sha256"))
+            assertTrue(responseOk.body.contains("\"attested\":true"))
+            assertTrue(responseOk.body.contains("envelopeSha256"))
 
             // Verify file exists on disk under uploads directory
             val expectedPath = tempDir.resolve(".atropos/uploads/s1/hello.txt")

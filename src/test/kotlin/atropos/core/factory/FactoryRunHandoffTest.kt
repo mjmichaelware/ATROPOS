@@ -30,5 +30,9 @@ class FactoryRunHandoffTest {
         assertContains(body, "next_runnable_atoms=atom-1")
         assertContains(body, "last_good_commit=commit-1")
         assertEquals(root.resolve(".atropos/runs/run-1/factory-handoff.md"), path)
+        val restored = FactoryRunHandoff.read(root, "run-1")
+        assertEquals("dag-1", restored.dagId)
+        assertEquals(listOf("atom-1"), restored.nextRunnableAtomIds)
+        assertEquals("commit-1", restored.lastGoodCommit)
     }
 }

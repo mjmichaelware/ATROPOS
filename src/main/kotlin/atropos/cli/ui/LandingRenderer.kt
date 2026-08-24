@@ -309,7 +309,11 @@ class LandingRenderer(
         val lines = when {
             width >= 30 -> full
             width >= 14 -> compact
-            else -> return listOf(theme.paint(Role.BRAND, "ATROPOS"))
+            else -> return if (BlockType.cellsFor("ATROPOS") <= width) {
+                BlockType.render("ATROPOS", width).map { theme.paint(Role.BRAND, it) }
+            } else {
+                listOf(theme.paint(Role.BRAND, "ATROPOS"))
+            }
         }
 
         // Reference technique: muted left half, bright right half.

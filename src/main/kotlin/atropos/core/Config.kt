@@ -1,12 +1,22 @@
 package atropos.core
 import java.io.File
+import java.nio.file.Path
 data class ApiKeys(val groq: String, val openai: String, val anthropic: String, val xai: String)
 data class LakehouseConfig(val mountPath: String, val dbPath: String)
-data class RuntimeConfig(val defaultProvider: String, val temperature: Double)
+data class RuntimeConfig(val defaultProvider: String, val temperature: Double, val localOnly: Boolean = false)
+
+/** One process-wide runtime mode source shared by routing and side-effect policy. */
+object RuntimeMode {
+    fun localOnly(environment: Map<String, String> = System.getenv()): Boolean =
+        environment["ATROPOS_LOCAL_ONLY"]?.trim()?.lowercase() in setOf("1", "true", "yes", "on")
+}
+
 class AtroposConfig(val keys: ApiKeys, val lakehouse: LakehouseConfig, val runtime: RuntimeConfig) {
     companion object {
+        fun configRoot(): Path = Path.of(System.getProperty("user.home")).resolve(".atropos")
+
         fun load(): AtroposConfig {
-            val configPath = File(System.getProperty("user.home"), ".atropos/config.json")
+            val configPath = configRoot().resolve("config.json").toFile()
             val content = if (configPath.exists()) configPath.readText() else "{}"
             val groqKey = extract(content, "groq_api_key") ?: ""
             val openAiKey = extract(content, "openai_api_key") ?: ""
@@ -20,11 +30,14 @@ class AtroposConfig(val keys: ApiKeys, val lakehouse: LakehouseConfig, val runti
                 ?: AtroposRepoRootLocator.resolve().resolve(".atropos/lakehouse").toString()
             val db = extract(content, "lakehouse_db_path") ?: "$mount/vector_storage.db"
             val provider = extract(content, "default_provider") ?: "groq"
-            return AtroposConfig(ApiKeys(groqKey, openAiKey, anthropicKey, xaiKey), LakehouseConfig(mount, db), RuntimeConfig(provider, 0.2))
+            val localOnly = RuntimeMode.localOnly() || extractBoolean(content, "local_only")
+            return AtroposConfig(ApiKeys(groqKey, openAiKey, anthropicKey, xaiKey), LakehouseConfig(mount, db), RuntimeConfig(provider, 0.2, localOnly))
         }
         private fun extract(json: String, key: String): String? {
             return "\"$key\"\\s*:\\s*\"([^\"]+)\"".toRegex().find(json)?.groups?.get(1)?.value
         }
+        private fun extractBoolean(json: String, key: String): Boolean =
+            "\"$key\"\\s*:\\s*(true|false)".toRegex().find(json)?.groups?.get(1)?.value?.toBoolean() == true
     }
     fun debugDump() {
         println("Groq Key:      ${if (keys.groq.isNotEmpty()) "ONLINE [●]" else "OFFLINE [○]"}")

@@ -1,6 +1,6 @@
 package atropos.core.security
 
-import atropos.core.AtroposRepoRootLocator
+import atropos.core.AtroposConfig
 import java.io.File
 import java.nio.channels.FileChannel
 import java.nio.charset.StandardCharsets
@@ -18,7 +18,7 @@ data class TokenIsolationReport(
 )
 
 class TokenIsolationVault(
-    private val root: Path = AtroposRepoRootLocator.resolve().resolve(".atropos/secrets"),
+    private val root: Path = AtroposConfig.configRoot().resolve("secrets"),
     /**
      * Device-first by default, operator key still wins.
      *

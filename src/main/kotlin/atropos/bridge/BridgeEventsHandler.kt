@@ -8,6 +8,7 @@ import atropos.bridge.http.HttpResponse
 import atropos.bridge.http.JsonWriter
 import atropos.bridge.queue.ConversationWorkRunner
 import atropos.core.approval.PendingApprovalStore
+import atropos.bridge.http.StreamSink
 
 internal class BridgeEventsHandler(
     private val work: ConversationWorkRunner?,
@@ -17,9 +18,10 @@ internal class BridgeEventsHandler(
 ) {
     fun getEvents(request: HttpRequest): HttpResponse {
         val cursor = request.query["after"]?.toLongOrNull() ?: 0L
+        val sessionId = request.query["session"].orEmpty().trim()
         BridgeEventHub.detectChanges(work, approvals, sessions, defaultStore)
 
-        val newEvents = BridgeEventHub.getAfter(cursor)
+        val newEvents = filter(BridgeEventHub.getAfter(cursor), sessionId)
         val eventListJson = newEvents.map { event ->
             JsonWriter.obj(
                 "cursor" to JsonWriter.num(event.cursor),
@@ -36,4 +38,34 @@ internal class BridgeEventsHandler(
             )
         )
     }
+
+    fun streamEvents(
+        request: HttpRequest,
+        sink: StreamSink,
+        intervalMillis: Long,
+        maxFrames: Int,
+        sleep: (Long) -> Unit
+    ) {
+        var cursor = request.query["after"]?.toLongOrNull() ?: 0L
+        val sessionId = request.query["session"].orEmpty().trim()
+        var frames = 0
+        while (sink.isOpen() && frames < maxFrames) {
+            BridgeEventHub.detectChanges(work, approvals, sessions, defaultStore)
+            filter(BridgeEventHub.getAfter(cursor), sessionId).forEach { event ->
+                if (sink.emit("event", JsonWriter.obj(
+                        "cursor" to JsonWriter.num(event.cursor),
+                        "type" to JsonWriter.str(event.type),
+                        "timestamp" to JsonWriter.str(event.timestamp.toString()),
+                        "detail" to JsonWriter.str(event.detail)
+                    ))) cursor = maxOf(cursor, event.cursor)
+            }
+            frames += 1
+            if (frames < maxFrames) sleep(intervalMillis)
+        }
+    }
+
+    private fun filter(events: List<BridgeEventHub.Event>, sessionId: String): List<BridgeEventHub.Event> =
+        if (sessionId.isBlank()) events else events.filter { event ->
+            event.detail.split(' ', '\n').any { it == "session=$sessionId" }
+        }
 }

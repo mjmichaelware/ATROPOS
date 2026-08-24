@@ -61,5 +61,6 @@ class BridgeStatusHandlerTest {
         assertTrue(body.contains("\"engine\":\"atropos\""))
         assertTrue(body.contains("\"answers\""))
         assertTrue(body.contains("\"checkpoint\""))
+        assertTrue(body.contains("\"quota\""))
     }
 }

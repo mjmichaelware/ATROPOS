@@ -63,7 +63,8 @@ class StatusQuotaRenderer(
             registry = registry,
             ledger = ledger,
             costPolicy = costPolicy,
-            nowEpochMs = nowEpochMs
+            nowEpochMs = nowEpochMs,
+            preferredProviderIds = { atropos.core.provider.ProviderOnboardingService().preferredProviderIds() }
         ).decide(task.copy(localFirst = false))
 
         val out = mutableListOf<String>()

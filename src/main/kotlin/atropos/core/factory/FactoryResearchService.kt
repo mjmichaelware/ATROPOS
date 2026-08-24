@@ -1,5 +1,6 @@
 package atropos.core.factory
 
+import atropos.core.AtroposConfig
 import atropos.core.memory.LocalMemoryStore
 import atropos.core.memory.MemorySearchHit
 import atropos.dloi.DloiDocument
@@ -57,7 +58,8 @@ class FactoryResearchService(
     private val dLoI: HigZeroGuard? = null,
     private val minimumScopedRelevance: Int = 2,
     private val operatorId: String? = System.getenv("ATROPOS_OPERATOR_ID")?.trim()?.takeIf { it.isNotBlank() },
-    private val specGraphAtomizer: SpecGraphAtomizer = SpecGraphAtomizer()
+    private val specGraphAtomizer: SpecGraphAtomizer = SpecGraphAtomizer(),
+    private val localOnly: Boolean = AtroposConfig.load().runtime.localOnly
 ) {
     init {
         require(maxFetchBytes > 0) { "bounded research byte limit must be positive" }
@@ -181,7 +183,10 @@ class FactoryResearchService(
         }
 
         val lakehouse = System.getenv("ATROPOS_LAKEHOUSE_URL")
-        if (lakehouse.isNullOrBlank()) {
+        if (localOnly) {
+            log += "lakehouse=SKIPPED_LOCAL_ONLY"
+            log += "lakehouse_route=SKIPPED_LOCAL_ONLY:remote_research_disabled"
+        } else if (lakehouse.isNullOrBlank()) {
             log += "lakehouse=SKIPPED_SOFT_FAIL:ATROPOS_LAKEHOUSE_URL unset"
             log += "lakehouse_route=SKIPPED_SOFT_FAIL:lakehouse_unavailable; dLoI_attempted=true"
         } else {
@@ -202,7 +207,9 @@ class FactoryResearchService(
         }
 
         val boundedUrl = System.getenv("ATROPOS_FACTORY_RESEARCH_URL")
-        if (boundedUrl.isNullOrBlank()) {
+        if (localOnly) {
+            log += "bounded_fetch=SKIPPED_LOCAL_ONLY"
+        } else if (boundedUrl.isNullOrBlank()) {
             log += "bounded_fetch=SKIPPED_SOFT_FAIL:ATROPOS_FACTORY_RESEARCH_URL unset"
         } else {
             fetcher.fetch(boundedUrl).fold(

@@ -1,0 +1,3 @@
+{
+  "servers": [{"name":"chrome-devtools","transport":"stdio","command":"npx","args":["-y","chrome-devtools-mcp@latest"],"enabled":false,"community":true}]
+}

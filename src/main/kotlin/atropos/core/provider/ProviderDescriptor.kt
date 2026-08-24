@@ -2,6 +2,8 @@ package atropos.core.provider
 
 enum class CostMode { LOCAL, FREE, COOLDOWN_OK, CREDIT_POOL, OPTIONAL_FREE, PAID_LOCKED }
 
+enum class BillingClass { FREE, LOCAL, PAID }
+
 enum class ApiCapability {
     CHAT, CODE, REPAIR, PLAN, LARGE_CONTEXT, VISION, EMBED, ASSET, WEB, READER,
     VECTOR_DB, DATABASE, STORAGE, EDGE, SECRET, CI, LOCAL_TOOL
@@ -19,6 +21,12 @@ data class ProviderDescriptor(
     val isLocal: Boolean = false,
     val notes: String = ""
 ) {
+    fun billingClass(): BillingClass = when (costMode) {
+        CostMode.LOCAL -> BillingClass.LOCAL
+        CostMode.FREE, CostMode.COOLDOWN_OK, CostMode.OPTIONAL_FREE -> BillingClass.FREE
+        CostMode.CREDIT_POOL, CostMode.PAID_LOCKED -> BillingClass.PAID
+    }
+
     fun isFreeEligible(): Boolean =
         costMode in setOf(CostMode.LOCAL, CostMode.FREE, CostMode.COOLDOWN_OK, CostMode.CREDIT_POOL, CostMode.OPTIONAL_FREE)
 

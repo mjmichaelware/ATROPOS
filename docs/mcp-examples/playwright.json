@@ -1,0 +1,3 @@
+{
+  "servers": [{"name":"playwright","transport":"stdio","command":"npx","args":["-y","@playwright/mcp"],"enabled":false,"community":true}]
+}

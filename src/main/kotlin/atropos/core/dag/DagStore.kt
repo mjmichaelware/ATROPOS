@@ -53,6 +53,9 @@ class DagStore(private val root: Path = AtroposRepoRootLocator.resolve()) {
 
     fun dagDir(): Path = executionDefinitionsDir
 
+    /** Stable repository anchor for other durable DAG-bound guards. */
+    fun rootPath(): Path = root.toAbsolutePath().normalize()
+
     fun createDag(label: String, nodes: List<DagNode>, projectId: String? = null): DagDefinition {
         Files.createDirectories(executionDefinitionsDir)
         require(nodes.isNotEmpty()) { "execution DAG requires at least one node" }

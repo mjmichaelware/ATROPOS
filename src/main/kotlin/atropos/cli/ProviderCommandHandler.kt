@@ -10,14 +10,23 @@ import atropos.core.provider.ProviderDescriptorValidator
 import atropos.core.provider.ProviderTruthService
 import atropos.core.provider.RoutedTask
 import atropos.core.provider.StaticProviderDescriptorRegistry
+import atropos.core.provider.ProviderOnboardingService
 
 class ProviderCommandHandler(
     private val config: AtroposConfig,
-    private val uiEngine: AnsiTerminalEngine
+    private val uiEngine: AnsiTerminalEngine,
+    private val secretReader: (String) -> CharArray? = ::readSecretFromTerminal
 ) {
     fun execute(tokens: List<String>, currentProviderName: String) {
+        val onboarding = ProviderOnboardingService()
         val expanded = tokens.any { it.equals("--full", ignoreCase = true) }
         when (tokens.getOrNull(1)?.lowercase()) {
+            "list" -> uiEngine.renderBlock(onboarding.render().lines())
+            "refresh" -> uiEngine.renderBlock(onboarding.refresh().map { "${it.providerId} health=${it.health.name.lowercase()}" })
+            "test" -> uiEngine.renderBlock(onboarding.refresh().map { "${it.providerId} health=${it.health.name.lowercase()}" })
+            "prefer" -> renderPreference(onboarding, tokens)
+            "disable" -> renderDisable(onboarding, tokens)
+            "connect" -> renderConnect(onboarding, tokens)
             "inventory" -> uiEngine.renderNotice(
                 ProviderTruthService(config).snapshot(currentProviderName).renderInventory(expanded)
             )
@@ -35,6 +44,50 @@ class ProviderCommandHandler(
             else -> uiEngine.renderNotice(
                 ProviderTruthService(config).snapshot(currentProviderName).renderInventory(expanded)
             )
+        }
+    }
+
+    private fun renderPreference(onboarding: ProviderOnboardingService, tokens: List<String>) {
+        val id = tokens.getOrNull(2)
+        if (id == null) uiEngine.renderError("usage: /providers prefer <provider>")
+        else runCatching { onboarding.prefer(id); uiEngine.renderNotice("preferred provider: $id") }
+            .onFailure { uiEngine.renderError(it.message ?: "provider preference failed") }
+    }
+
+    private fun renderDisable(onboarding: ProviderOnboardingService, tokens: List<String>) {
+        val id = tokens.getOrNull(2)
+        if (id == null) uiEngine.renderError("usage: /providers disable <provider>")
+        else runCatching { onboarding.disable(id); uiEngine.renderNotice("disabled provider: $id") }
+            .onFailure { uiEngine.renderError(it.message ?: "provider disable failed") }
+    }
+
+    private fun renderConnect(onboarding: ProviderOnboardingService, tokens: List<String>) {
+        val providerId = tokens.getOrNull(2)?.trim()?.lowercase()
+        if (providerId.isNullOrBlank()) {
+            uiEngine.renderError("usage: /providers connect <provider>; the key is requested privately and is never a command argument")
+            return
+        }
+        val envName = onboarding.defaultEnvName(providerId)
+        val secret = secretReader("$providerId key ($envName), input hidden: ")
+        if (secret == null || secret.isEmpty()) {
+            uiEngine.renderError("provider connect cancelled; no key was stored")
+            return
+        }
+        try {
+            val path = onboarding.connectToVault(providerId, String(secret), envName)
+            uiEngine.renderNotice("provider connected locally: $providerId source=local_vault path=${path.fileName}")
+        } catch (failure: RuntimeException) {
+            uiEngine.renderError("provider connect failed: ${failure.message ?: "local vault refused the key"}")
+        } finally {
+            secret.fill('\u0000')
+        }
+    }
+
+    private companion object {
+        fun readSecretFromTerminal(prompt: String): CharArray? {
+            System.console()?.let { return it.readPassword(prompt) }
+            System.err.print(prompt)
+            return System.`in`.bufferedReader().readLine()?.toCharArray()
         }
     }
 

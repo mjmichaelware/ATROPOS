@@ -101,6 +101,25 @@ internal class AgentAskHandler(
                 contextEnvelope = envelope
             )
 
+            result.paidApproval?.let { approval ->
+                val message = approval.render()
+                memoryStore.rememberFailure(
+                    subjectType = "agent_ask",
+                    subjectId = null,
+                    title = "paid provider approval required",
+                    body = message,
+                    tags = listOf("agent", "ask", "paid-approval", "blocked")
+                )
+                return AgentRunResult(
+                    providerName = "paid_approval_required",
+                    answerText = message,
+                    contextByteCount = snapshot.byteCount,
+                    failureSummary = message,
+                    sourcePackId = snapshot.sourcePackId,
+                    fetchReceiptId = snapshot.fetchReceiptId
+                )
+            }
+
             if (result.queued) {
                 val queueRecord = queueService.enqueueUnavailable(
                     sanitizedTask,

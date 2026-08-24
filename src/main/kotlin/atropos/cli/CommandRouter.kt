@@ -41,6 +41,7 @@ class CommandRouter(
 ) {
     /** A failing command renders an error; it must not end the session. */
     private val failureBoundary = CommandFailureBoundary(uiEngine)
+    private val backendDoctor = BackendDoctor(config)
 
     private var activeProvider = providerResolver(config.runtime.defaultProvider)
 
@@ -100,6 +101,8 @@ class CommandRouter(
     private val selfHostNaturalLanguageRouter = SelfHostNaturalLanguageRouter()
     private val statusCommand = StatusCommandHandler(config, uiEngine, sessionTracker)
     private val providerCommand = ProviderCommandHandler(config, uiEngine)
+    private val mcpCommand = McpCommandHandler(uiEngine)
+    private val providerOnboarding = atropos.core.provider.ProviderOnboardingService()
     private val dloiCommand = DloiCommandHandler(uiEngine, higZeroGuard)
     private val shellCommand = ShellCommandHandler(uiEngine, shellRunner)
     private val pipedStreamRouter = PipedStreamRouter(shellRunner)
@@ -149,6 +152,20 @@ class CommandRouter(
             }
         }
     )
+
+    init {
+        // Cheap, local-only discovery. It records labels and health, never key bytes,
+        // and does not make a model/network call during launch.
+        val discovered = providerOnboarding.refresh()
+        // Keep launch useful with zero configured providers: routing will fail
+        // actionably, while the operator gets one safe environment example.
+        uiEngine.renderBlock(
+            providerOnboarding.render().lines().plus(
+                "cascade=${discovered.filter { it.health == atropos.core.provider.CheapProviderHealth.HEALTHY && !it.disabled }"
+                    .joinToString(" -> ") { it.providerId }.ifBlank { "none" }}"
+            )
+        )
+    }
     val tabs = SessionTabs(
         initialProvider = activeProvider.name,
         initialWorkingDirectory = shellCommand.currentDirectory()
@@ -164,7 +181,11 @@ class CommandRouter(
      */
     private val sideConversation = SideConversationService(
         uiEngine = uiEngine,
-        cascade = atropos.core.ProviderCascadeRouter(ProviderFactory(config)),
+        cascade = atropos.core.ProviderCascadeRouter(
+            ProviderFactory(config),
+            healthyProviderIds = { providerOnboarding.healthyProviderIds() },
+            localOnly = { config.runtime.localOnly }
+        ),
         activeProvider = { currentProviderName }
     )
 
@@ -402,6 +423,10 @@ class CommandRouter(
             }
 
             "/scavenge" -> {
+                if (config.runtime.localOnly) {
+                    uiEngine.renderNotice("scavenge: blocked by local-only mode; unset ATROPOS_LOCAL_ONLY to enable remote research")
+                    return RouterOutcome.CONTINUE
+                }
                 // Read-only by construction. The scavenger finds work and
                 // reports it; nothing in this branch can write to a repository
                 // the operator does not own, because nothing downstream of it
@@ -440,6 +465,16 @@ class CommandRouter(
 
             "/providers" -> {
                 providerCommand.execute(tokens, currentProviderName)
+                RouterOutcome.CONTINUE
+            }
+
+            "/mcp" -> {
+                mcpCommand.execute(tokens)
+                RouterOutcome.CONTINUE
+            }
+
+            "/doctor" -> {
+                uiEngine.renderBlock(backendDoctor.render())
                 RouterOutcome.CONTINUE
             }
 

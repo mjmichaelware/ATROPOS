@@ -1,6 +1,8 @@
 package atropos.core.policy
 
 import atropos.core.AtroposRepoRootLocator
+import atropos.core.AtroposConfig
+import atropos.core.paid.EmergencyPaidGate
 import atropos.core.security.RedactionFilter
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
@@ -118,7 +120,9 @@ class ExecutionPolicyAuditStore(
 open class ExecutionPolicyEngine(
     private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
     private val auditStore: ExecutionPolicyAuditStore = ExecutionPolicyAuditStore(repoRoot),
-    private val redactionFilter: RedactionFilter = RedactionFilter()
+    private val redactionFilter: RedactionFilter = RedactionFilter(),
+    private val localOnly: Boolean = AtroposConfig.load().runtime.localOnly,
+    private val paidGate: EmergencyPaidGate = EmergencyPaidGate()
 ) {
     open fun evaluate(request: ExecutionPolicyRequest): ExecutionPolicyDecision {
         val decision = decide(request)
@@ -203,8 +207,14 @@ open class ExecutionPolicyEngine(
             }
 
             PolicyActionClass.PROVIDER_CALL -> {
+                if (localOnly && request.metadata["provider_local"] != "true") {
+                    return deny("local-only mode blocks remote provider calls")
+                }
                 if (request.paidProvider) {
-                    return deny("paid provider remains locked")
+                    val provider = request.providerId
+                    if (provider.isNullOrBlank() || !paidGate.isProviderUnlocked(provider)) {
+                        return deny("paid provider remains locked")
+                    }
                 }
                 if (request.providerId.isNullOrBlank()) {
                     return deny("provider call requires provider id")
@@ -214,6 +224,7 @@ open class ExecutionPolicyEngine(
 
             PolicyActionClass.NETWORK -> {
                 if (request.networkTarget.isNullOrBlank()) return deny("network action requires target")
+                if (localOnly) return deny("local-only mode blocks network actions")
                 return approve("network action requires explicit integration ownership")
             }
 

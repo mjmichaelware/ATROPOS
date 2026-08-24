@@ -46,7 +46,8 @@ object ProviderActionProposals {
             paidProvider = isPaid(provider),
             metadata = mapOf(
                 "operation" to operation,
-                "prompt_length" to promptLength.toString()
+                "prompt_length" to promptLength.toString(),
+                "provider_local" to (StaticProviderDescriptorRegistry().getById(provider)?.isLocal == true).toString()
             )
         )
 

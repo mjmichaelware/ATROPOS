@@ -26,6 +26,7 @@ import atropos.bridge.projection.ProjectProjection
 import atropos.bridge.projection.SixAnswersProjection
 import atropos.bridge.projection.VocabularyProjection
 import atropos.bridge.projection.WelcomeProjection
+import atropos.bridge.projection.RecoveryProjection
 import atropos.cli.ui.HomeStateProvider
 import atropos.core.approval.PendingApprovalStore
 import atropos.core.artifact.export.ArtifactLandingResolver
@@ -42,6 +43,7 @@ import atropos.core.storage.StorageConstitution
 import atropos.core.thinking.ThinkingRecord
 import atropos.core.welcome.WelcomeArtifact
 import atropos.core.parity.SurfaceParityProbe
+import atropos.core.recovery.StateSnapshot
 import java.time.Instant
 
 /**
@@ -163,6 +165,7 @@ class BridgeRoutes(
     private val sessions: BridgeSessionStore = BridgeSessionStore(),
     private val menuView: CommandMenuProjection = CommandMenuProjection(),
     private val clock: () -> Instant = { Instant.now() },
+    private val quotaSummary: () -> String = { "{\"readable\":false,\"reason\":\"quota-ledger-not-wired\"}" },
     private val mcpBridge: atropos.core.integration.McpTerritoryBridge = atropos.core.integration.McpTerritoryBridge(setOf("inspect", "verify")),
     /**
      * The self-build service, when this build has a repository to build in.
@@ -179,18 +182,21 @@ class BridgeRoutes(
      * Null by default so the route table stays constructible without a
      * provider, a config and a terminal. `AtroposBridge.server()` binds it.
      */
-    private val commandRunner: ((String) -> BridgeCommandOutput)? = null
+    private val commandRunner: ((String) -> BridgeCommandOutput)? = null,
+    private val mcpHost: atropos.core.integration.McpHostManager? = null,
+    private val recoverySnapshot: () -> StateSnapshot? = { null },
+    private val recoveryView: RecoveryProjection = RecoveryProjection()
 ) {
     private val approvalHandler = BridgeApprovalHandler(approvals)
     private val thinkingHandler = BridgeThinkingHandler(thinkingView, thinking)
     private val conversationHandler = BridgeConversationHandler(conversation, responder, sessions = sessions)
     private val queueHandler = work?.let { BridgeQueueHandler(it) }
     private val sessionHandler = BridgeSessionHandler(sessions)
-    private val statusHandler = BridgeStatusHandler(homeState, activeProvider, sixAnswers, checkpoint, checkpointView, work, clock = clock)
+    private val statusHandler = BridgeStatusHandler(homeState, activeProvider, sixAnswers, checkpoint, checkpointView, work, quotaSummary = quotaSummary, clock = clock)
     private val evidenceHandler = BridgeEvidenceHandler(work)
     private val eventsHandler = BridgeEventsHandler(work, approvals, sessions, conversation)
     private val filesHandler = BridgeFilesHandler()
-    private val mcpHandler = BridgeMcpHandler(mcpBridge)
+    private val mcpHandler = BridgeMcpHandler(mcpBridge, mcpHost)
     private val computerUseHandler = BridgeComputerUseHandler()
     private val selfHostHandler = selfHost?.let { BridgeSelfHostHandler(it) }
     private val commandHandler = commandRunner?.let { BridgeCommandHandler(it) }
@@ -331,6 +337,9 @@ class BridgeRoutes(
                 HttpRoute("GET", "/v1/checkpoint", "the resume checkpoint and its primary action") {
                     HttpResponse.json(checkpointView.render(checkpoint(), clock()))
                 },
+                HttpRoute("GET", "/v1/recovery", "durable restart recovery state for the recovery ribbon") {
+                    HttpResponse.json(recoveryView.render(recoverySnapshot()))
+                },
                 HttpRoute("GET", "/v1/activity", "one ordered stream of pipeline state changes") {
                     HttpResponse.json(activityView.render(activity()))
                 },
@@ -359,11 +368,22 @@ class BridgeRoutes(
                 HttpRoute("GET", "/v1/status", "composite engine liveness and cockpit status") {
                     statusHandler.getStatus()
                 },
+                HttpRoute("GET", "/v1/quota", "provider quota and billing metadata") {
+                    HttpResponse.json(quotaSummary())
+                },
                 HttpRoute("GET", "/v1/evidence", "durable evidence contents") { request ->
                     evidenceHandler.getEvidence(request)
                 },
                 HttpRoute("GET", "/v1/events", "cursor-based poll for event hub notifications") { request ->
                     eventsHandler.getEvents(request)
+                },
+                HttpRoute("GET", "/v1/events/stream", "session-scoped event stream") {
+                    HttpResponse.refusal(
+                        400,
+                        "stream-required",
+                        "/v1/events/stream is a server-sent event stream.",
+                        "Open it with an EventSource, optionally using ?session=<session-id>."
+                    )
                 },
                 HttpRoute("POST", "/v1/files", "base64 file upload under session folder") { request ->
                     filesHandler.upload(request)
@@ -373,6 +393,12 @@ class BridgeRoutes(
                 },
                 HttpRoute("POST", "/v1/mcp/judge", "evaluate MCP action proposal") { request ->
                     mcpHandler.judge(request)
+                },
+                HttpRoute("POST", "/v1/mcp/call", "call one bounded local MCP tool") { request ->
+                    mcpHandler.call(request)
+                },
+                HttpRoute("GET", "/v1/mcp/status", "configured MCP server health") {
+                    mcpHandler.status()
                 },
                 HttpRoute("POST", "/v1/computer-use/judge", "evaluate computer-use action proposal") { request ->
                     computerUseHandler.judge(request)
@@ -422,6 +448,9 @@ class BridgeRoutes(
                 if (frames >= maxFrames) return@HttpStreamRoute
                 sleep(intervalMillis)
             }
+        },
+        HttpStreamRoute("GET", "/v1/events/stream", "session-scoped events, pushed") { request, sink ->
+            eventsHandler.streamEvents(request, sink, intervalMillis, maxFrames, sleep)
         }
     )
 

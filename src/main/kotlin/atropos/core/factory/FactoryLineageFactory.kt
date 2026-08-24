@@ -1,6 +1,7 @@
 package atropos.core.factory
 
 import atropos.core.security.RedactionFilter
+import atropos.core.AtroposConfig
 import atropos.core.memory.LocalMemoryStore
 import atropos.core.memory.MemoryAuthority
 import atropos.core.memory.MemoryKind
@@ -21,7 +22,8 @@ object FactoryLineageFactory {
         prompt: String,
         spec: AppProjectSpec,
         runMemory: LocalMemoryStore? = null,
-        clarificationAnswers: List<Boolean> = emptyList()
+        clarificationAnswers: List<Boolean> = emptyList(),
+        localOnly: Boolean = AtroposConfig.load().runtime.localOnly
     ): FactoryLineage {
         require(FACTORY_PROJECT_ID_PATTERN.matches(projectId)) {
             "factory project id must contain only portable identifier characters"
@@ -112,7 +114,7 @@ raw_text_redacted=$redacted
         }.getOrElse { failure ->
             "SKIPPED_SOFT_FAIL:${failure.javaClass.simpleName.lowercase().replace(Regex("[^a-z0-9]+"), "_").take(80)}"
         }
-        val research = FactoryResearchService(memory = effectiveMemory).collect(
+        val research = FactoryResearchService(memory = effectiveMemory, localOnly = localOnly).collect(
             root = root,
             prompt = redacted,
             projectId = projectId,

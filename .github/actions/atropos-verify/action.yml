@@ -1,0 +1,7 @@
+name: ATROPOS verify
+description: Run the repository's bounded verification lane as a GitHub check
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: bash scripts/atropos-verify-worktree.sh

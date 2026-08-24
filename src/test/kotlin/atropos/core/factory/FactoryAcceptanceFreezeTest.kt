@@ -24,4 +24,20 @@ class FactoryAcceptanceFreezeTest {
         assertContains(first.document, "atom_ids=atom-a,atom-b")
         assertContains(first.document, "predicate=verify_sh_exit_zero_and_marker_present")
     }
+
+    @Test
+    fun repair_must_reuse_freeze_and_record_command_exit_stderr_and_predicates() {
+        val freeze = FactoryAcceptanceFreeze.create("a".repeat(64), "b".repeat(64), listOf("atom"), "CLI@1-1")
+        val evidence = freeze.requireRepairEvidence(
+            FactoryAcceptanceFreeze.RepairEvidence(
+                freezeSha256 = freeze.sha256,
+                command = "./verify.sh",
+                exitCode = 0,
+                stderr = "no diagnostics",
+                predicateResults = mapOf("verify" to true)
+            )
+        )
+        assertContains(evidence, "acceptance_freeze_sha256=${freeze.sha256}")
+        assertContains(evidence, "stderr_sha256=")
+    }
 }

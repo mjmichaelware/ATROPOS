@@ -113,6 +113,25 @@ class QuotaLedgerRouteTruthTest {
     }
 
     @Test
+    fun local_only_route_excludes_remote_candidates() {
+        val registry = StaticProviderDescriptorRegistry()
+        val seed = FileQuotaLedger.seedFromDescriptors(registry)
+        val ledger = InMemoryQuotaLedger(seed)
+        ledger.put(readyRemote(seed, "ollama"))
+        ledger.put(readyRemote(seed, "groq"))
+
+        val decision = RoutePolicy(
+            registry = registry,
+            ledger = ledger,
+            costPolicy = AtroposCostPolicy.FREE_ONLY,
+            localOnly = true
+        ).decide(ProviderTask(ProviderTaskKind.CHAT_PROMPT, ApiCapability.CHAT, "hello"))
+
+        assertEquals("ollama", decision.selectedProviderId)
+        assertTrue(decision.skipped.any { it.provider.id == "groq" && it.reason == "blocked_by_local_only" })
+    }
+
+    @Test
     fun emergency_paid_gate_bypass_allows_unlocked_paid_provider() {
         val temp = Files.createTempDirectory("atropos-paid-bypass")
         val registry = StaticProviderDescriptorRegistry()

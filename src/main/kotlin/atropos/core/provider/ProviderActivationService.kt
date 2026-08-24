@@ -1,7 +1,6 @@
 package atropos.core.provider
 
 import atropos.core.AtroposConfig
-import atropos.core.AtroposRepoRootLocator
 import atropos.core.OllamaHealthProbe
 import atropos.core.paid.EmergencyPaidGate
 import atropos.core.provider.adapter.AdapterRequest
@@ -24,7 +23,7 @@ class ProviderActivationService(
     private val adapterRegistry: ProviderAdapterRegistry = StaticProviderAdapterRegistry(registry),
     private val secretSource: SecretSource = DefaultSecretSource.create(),
     private val quotaLedger: QuotaLedger = FileQuotaLedger(
-        AtroposRepoRootLocator.resolve().resolve(".atropos/provider/quota-ledger.tsv").toFile(),
+        ProviderQuotaPaths.defaultLedger(),
         FileQuotaLedger.seedFromDescriptors(registry)
     ),
     private val fixtureMatrix: ProviderFixtureMatrixService = ProviderFixtureMatrixService(registry, adapterRegistry),

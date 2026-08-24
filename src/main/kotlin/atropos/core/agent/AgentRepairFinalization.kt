@@ -27,6 +27,17 @@ internal class AgentRepairFinalization(
         sourceVerificationId: String,
         patchStore: AgentPatchStore
     ): AgentPatchRunResult {
+        val paidApproval = cascadeResult.failure?.result?.paidApproval
+        if (paidApproval != null) {
+            val message = paidApproval.render()
+            return AgentPatchRunResultFactory.localFailure(
+                providerName = "paid_approval_required",
+                contextByteCount = contextByteCount,
+                retryAttempted = false,
+                failureSummary = message,
+                rejectionReason = message
+            )
+        }
         val queued = cascadeResult.failure?.result?.takeIf { it.queued }
         if (queued != null) {
             val reason = queued.queueReason ?: "all repair providers unavailable"

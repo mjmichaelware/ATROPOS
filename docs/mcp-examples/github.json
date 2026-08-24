@@ -1,0 +1,3 @@
+{
+  "servers": [{"name":"github","transport":"stdio","command":"npx","args":["-y","@modelcontextprotocol/server-github"],"enabled":false,"community":true}]
+}

@@ -82,6 +82,15 @@ jobs:
           echo "the dependency host stayed unreachable across three attempts"
           exit 1
 
+      - name: Exercise installer packaging contract
+        run: bash scripts/package-installers-test.sh
+
+      - name: Exercise first-run installer contract
+        run: bash scripts/install-contract-test.sh
+
+      - name: Package install artifacts
+        run: bash scripts/package-installers.sh build/libs/ATROPOS.jar build/installers
+
       - name: Record the hash
         id: hash
         run: |
@@ -118,6 +127,7 @@ jobs:
           files: |
             build/libs/ATROPOS.jar
             build/libs/ATROPOS.jar.sha256
+            build/installers/**
 
       - name: Publish the tagged release
         if: startsWith(github.ref, 'refs/tags/v')
@@ -130,6 +140,7 @@ jobs:
           files: |
             build/libs/ATROPOS.jar
             build/libs/ATROPOS.jar.sha256
+            build/installers/**
 
   # The Android client, as an installable APK.
   #

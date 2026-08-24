@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.provider
 
+import atropos.core.paid.EmergencyPaidGate
+
 /**
  * Orders cascade candidates local-first, then free-first.
  *
@@ -40,7 +42,9 @@ object ProviderCascadeOrder {
      */
     fun order(
         candidates: List<String>,
-        registry: ProviderDescriptorRegistry = StaticProviderDescriptorRegistry()
+        registry: ProviderDescriptorRegistry = StaticProviderDescriptorRegistry(),
+        allowUnlockedPaid: Boolean = false,
+        paidGate: EmergencyPaidGate = EmergencyPaidGate()
     ): List<String> {
         val descriptors = registry.getAll().associateBy { it.id }
         return candidates
@@ -48,7 +52,10 @@ object ProviderCascadeOrder {
             // A paid provider must never enter the cascade. The policy engine
             // would refuse the call anyway; leaving it in the order would mean
             // the cascade spends attempts discovering that.
-            .filterNot { descriptors[it]?.costMode == CostMode.PAID_LOCKED }
+            .filterNot {
+                descriptors[it]?.costMode == CostMode.PAID_LOCKED &&
+                    !(allowUnlockedPaid && paidGate.isProviderUnlocked(it))
+            }
             .withIndex()
             .sortedWith(compareBy({ rank(descriptors[it.value]?.costMode) }, { it.index }))
             .map { it.value }

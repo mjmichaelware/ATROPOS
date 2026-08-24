@@ -6,6 +6,30 @@ data class FactoryAcceptanceFreeze(
     val document: String,
     val sha256: String
 ) {
+    data class RepairEvidence(
+        val freezeSha256: String,
+        val command: String,
+        val exitCode: Int,
+        val stderr: String,
+        val predicateResults: Map<String, Boolean>
+    )
+
+    fun requireRepairEvidence(evidence: RepairEvidence): String {
+        require(evidence.freezeSha256 == sha256) { "repair changed the acceptance freeze" }
+        require(evidence.exitCode == 0) { "repair acceptance command failed: exit=${evidence.exitCode}" }
+        require(evidence.stderr.isNotBlank()) { "repair must record stderr evidence" }
+        require(evidence.predicateResults.isNotEmpty() && evidence.predicateResults.values.all { it }) {
+            "repair acceptance predicates did not all pass"
+        }
+        return buildString {
+            appendLine("acceptance_freeze_sha256=$sha256")
+            appendLine("command=${evidence.command.replace(Regex("\\s+"), " ").trim()}")
+            appendLine("exit_code=${evidence.exitCode}")
+            appendLine("stderr_sha256=${FactoryLineage.sha256(evidence.stderr)}")
+            evidence.predicateResults.toSortedMap().forEach { (name, passed) -> appendLine("predicate=$name passed=$passed") }
+        }.trimEnd()
+    }
+
     companion object {
         fun create(
             promptSha256: String,

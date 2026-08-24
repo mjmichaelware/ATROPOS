@@ -42,7 +42,11 @@ class ProviderChatDispatcher(
      * is one answer to "which provider next" and this is not a second one.
      */
     private val cascadeRouter: atropos.core.ProviderCascadeRouter =
-        atropos.core.ProviderCascadeRouter(atropos.core.ProviderFactory(config))
+        atropos.core.ProviderCascadeRouter(
+            atropos.core.ProviderFactory(config),
+            healthyProviderIds = { atropos.core.provider.ProviderOnboardingService().healthyProviderIds() },
+            localOnly = { config.runtime.localOnly }
+        )
 ) {
 
     fun dispatch(prompt: String, currentProviderName: String) {
@@ -109,6 +113,10 @@ class ProviderChatDispatcher(
                     )
                 }
             )
+            cascade.paidApproval?.let { approval ->
+                uiEngine.renderNotice(approval.render())
+                return
+            }
             if (cascade.providerName != routedProvider) {
                 // Drawn as a relay rather than counted in a sentence.
                 //

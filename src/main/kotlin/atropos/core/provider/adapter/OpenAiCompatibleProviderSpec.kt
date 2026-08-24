@@ -10,7 +10,9 @@ data class OpenAiCompatibleProviderSpec(
     val fallbackModels: List<String>,
     val apiKeyEnv: String,
     val freeTier: Boolean,
-    val headers: Map<String, String> = emptyMap()
+    val headers: Map<String, String> = emptyMap(),
+    val endpointEnv: String? = null,
+    val apiKeyHeader: String = "Authorization"
 ) {
     val models: List<String> = (listOf(defaultModel) + fallbackModels).distinct()
 }

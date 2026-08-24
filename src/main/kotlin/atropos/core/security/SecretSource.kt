@@ -1,6 +1,6 @@
 package atropos.core.security
 
-import atropos.core.AtroposRepoRootLocator
+import atropos.core.AtroposConfig
 import java.io.File
 
 data class SecretLookup(
@@ -33,7 +33,7 @@ class EnvSecretSource(private val env: Map<String, String> = System.getenv()) : 
 }
 
 class LocalFileSecretSource(
-    private val root: File = AtroposRepoRootLocator.resolve().resolve(".atropos/secrets").toFile()
+    private val root: File = AtroposConfig.configRoot().resolve("secrets").toFile()
 ) : SecretSource {
     private val vault = TokenIsolationVault(root.toPath())
 
@@ -83,7 +83,7 @@ object DefaultSecretSource {
     fun create(
         explicit: Map<String, String> = emptyMap(),
         env: Map<String, String> = System.getenv(),
-        localRoot: File = AtroposRepoRootLocator.resolve().resolve(".atropos/secrets").toFile()
+        localRoot: File = AtroposConfig.configRoot().resolve("secrets").toFile()
     ): CompositeSecretSource = CompositeSecretSource(
         listOf(
             MapSecretSource(explicit, "explicit"),
@@ -102,7 +102,7 @@ data class KeySetupResult(
 )
 
 class KeySetupHelper(
-    private val root: File = AtroposRepoRootLocator.resolve().resolve(".atropos/secrets").toFile()
+    private val root: File = AtroposConfig.configRoot().resolve("secrets").toFile()
 ) {
     private val vault = TokenIsolationVault(root.toPath())
 

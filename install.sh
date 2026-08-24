@@ -47,7 +47,15 @@ else
 fi
 
 # --- fetch ------------------------------------------------------------------
-mkdir -p "$PREFIX" "$BIN_DIR"
+mkdir -p "$PREFIX" "$PREFIX/provider" "$BIN_DIR"
+# Bootstrap only missing local configuration files. Existing operator config is
+# never overwritten by an upgrade.
+if [ ! -f "$PREFIX/config.json" ]; then
+  printf '%s\n' '{}' > "$PREFIX/config.json"
+fi
+if [ ! -f "$PREFIX/provider/providers.json" ]; then
+  printf '%s\n' '[]' > "$PREFIX/provider/providers.json"
+fi
 TMP="$PREFIX/.ATROPOS.jar.part"
 
 say "Downloading ATROPOS ($VERSION) ..."
@@ -94,6 +102,16 @@ cat > "$BIN_DIR/atropos" <<EOF
 exec java \${ATROPOS_JAVA_OPTS:-} -jar "$PREFIX/ATROPOS.jar" "\$@"
 EOF
 chmod +x "$BIN_DIR/atropos"
+
+# A downloaded executable is not a usable install until the same health entry
+# point used by the release workflow starts successfully. This check is local,
+# provider-free, and never sends credentials or project data anywhere.
+if "$BIN_DIR/atropos" --health > "$PREFIX/first-run-doctor.txt" 2>&1; then
+  say "doctor: PASS"
+else
+  say "doctor: FAIL (see $PREFIX/first-run-doctor.txt)" >&2
+  fail "the installed JAR did not pass its first-run health check"
+fi
 
 say ""
 say "Installed:"

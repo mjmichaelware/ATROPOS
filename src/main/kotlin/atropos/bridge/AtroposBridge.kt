@@ -6,10 +6,15 @@ import atropos.bridge.http.HttpRequestAuthenticator
 import atropos.bridge.conversation.QueuedWorkConversationResponder
 import atropos.bridge.queue.AgentQueueWorkRunner
 import atropos.core.AtroposRepoRootLocator
+import atropos.core.AtroposConfig
 import atropos.core.agent.AgentQueueService
 import atropos.core.agent.GoalRunStore
 import atropos.core.checkpoint.CheckpointSummary
 import atropos.core.phase20.GovernanceLedger
+import atropos.core.provider.FileQuotaLedger
+import atropos.core.provider.StaticProviderDescriptorRegistry
+import atropos.core.recovery.RestartCoordinator
+import atropos.bridge.projection.QuotaProjection
 import java.time.Instant
 
 /**
@@ -62,6 +67,12 @@ object LocalEngineBridge {
         // One queue instance serves both enqueueing and running, so a client
         // runs the very entries it created.
         val queueService = AgentQueueService()
+        val quotaRegistry = StaticProviderDescriptorRegistry()
+        val quotaLedger = FileQuotaLedger(
+            AtroposConfig.configRoot().resolve("provider/quota-ledger.tsv").toFile(),
+            FileQuotaLedger.seedFromDescriptors(quotaRegistry)
+        )
+        val restartCoordinator = RestartCoordinator(repoRoot)
 
         return BridgeRoutes(
             activeProvider = activeProvider,
@@ -106,7 +117,13 @@ object LocalEngineBridge {
             // buffer. This is what makes the phone and the browser equal to the
             // CLI: not a reimplementation of each command, the command itself.
             // PortCommandPolicy decides what may reach it.
-            commandRunner = BridgeCommandRunner()::run
+            commandRunner = BridgeCommandRunner()::run,
+            mcpHost = atropos.core.integration.McpHostManager(
+                repoRoot,
+                localOnly = AtroposConfig.load().runtime.localOnly
+            ),
+            quotaSummary = { QuotaProjection(quotaRegistry, quotaLedger).render() },
+            recoverySnapshot = { restartCoordinator.snapshot() }
         ).let { routes ->
             EngineHttpServer(
                 routeTable = routes.table(),

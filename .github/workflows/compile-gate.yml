@@ -13,6 +13,9 @@
 name: compile gate
 
 on:
+  push:
+    branches: [main, master]
+  pull_request:
   workflow_dispatch:
     inputs:
       reason:
@@ -36,7 +39,44 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
-      # The exact command the local gate runs. If this diverges, the gate is
-      # verifying something other than what it claims to verify.
+      # Keep production and test compilation in the hosted lane. The local
+      # phone lane remains allowed to use the same command through its remote
+      # compile gate when the device cannot finish Gradle in its heap budget.
       - name: compileKotlin
-        run: ./gradlew --no-daemon compileKotlin
+        run: ./gradlew --no-daemon compileKotlin compileTestKotlin
+
+  focused-backend-tests:
+    needs: compile
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: focused factory provider bridge MCP tests
+        run: >-
+          ./gradlew --no-daemon :test --rerun
+          --tests 'atropos.core.factory.FactoryResumeAndRepairTest'
+          --tests 'atropos.core.factory.FactoryLiveRepairActionTest'
+          --tests 'atropos.core.factory.FactoryProgressGuardTest'
+          --tests 'atropos.core.factory.FactoryRunHandoffTest'
+          --tests 'atropos.core.factory.FactoryObligationLoopTest'
+          --tests 'atropos.core.factory.FactoryAcceptanceFreezeTest'
+          --tests 'atropos.core.provider.ProviderOnboardingTest'
+          --tests 'atropos.core.provider.ProviderCascadeRouterTest'
+          --tests 'atropos.core.policy.ProviderActionProposalsTest'
+          --tests 'atropos.core.provider.QuotaLedgerRouteTruthTest'
+          --tests 'atropos.bridge.BridgeEventsHandlerTest'
+          --tests 'atropos.bridge.BridgeMcpHandlerTest'
+          --tests 'atropos.core.integration.McpHostManagerTest'
+          --tests 'atropos.core.integration.InboundToolBridgeTest'
+          --tests 'atropos.core.integration.MarkItDownIngestServiceTest'
+          --tests 'atropos.bridge.BridgeQuotaRouteTest'
+          --tests 'atropos.bridge.RecoveryProjectionTest'
+          --tests 'atropos.bridge.BridgeFilesHandlerTest'
+          --tests 'atropos.cli.BackendDoctorTest'

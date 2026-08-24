@@ -1,5 +1,6 @@
 package atropos.core.provider
 
+import atropos.core.AtroposConfig
 import atropos.core.paid.EmergencyPaidGate
 
 enum class AtroposCostPolicy { FREE_ONLY, FREE_AND_CREDIT, LOCAL_ONLY, PAID_EMERGENCY_UNLOCKED }
@@ -80,13 +81,23 @@ class RoutePolicy(
     private val ledger: QuotaLedger,
     private val costPolicy: AtroposCostPolicy = AtroposCostPolicy.FREE_ONLY,
     private val paidGate: EmergencyPaidGate = EmergencyPaidGate(),
-    private val nowEpochMs: () -> Long = { System.currentTimeMillis() }
+    private val nowEpochMs: () -> Long = { System.currentTimeMillis() },
+    private val healthyProviderIds: (() -> Set<String>)? = null,
+    private val preferredProviderIds: (() -> List<String>)? = null,
+    private val localOnly: Boolean = AtroposConfig.load().runtime.localOnly
 ) {
     private val filter = ProviderEligibilityFilter(FreeModeGuard(costPolicy), paidGate, nowEpochMs)
 
     fun decide(task: ProviderTask): RoutePolicyDecision {
         val candidates = registry.getByCapability(task.capability).ifEmpty { registry.getByCapability(ApiCapability.CHAT) }
-        val evaluated = candidates.map { filter.evaluate(it, ledger.get(it.id)) }
+        val evaluated = candidates.map { candidate ->
+            val base = filter.evaluate(candidate, ledger.get(candidate.id))
+            if (localOnly && !candidate.isLocal) {
+                base.copy(eligible = false, reason = "blocked_by_local_only")
+            } else if (healthyProviderIds != null && candidate.id !in healthyProviderIds.invoke()) {
+                base.copy(eligible = false, reason = "not_in_healthy_set")
+            } else base
+        }
         // [ProviderPreferenceOrder] owns the ordering. It is Source Doc 2
         // §.300 §7's six terms, already written as a lexicographic comparator
         // for exactly the reason this route needs — a later term may only break
@@ -121,7 +132,10 @@ class RoutePolicy(
                     ?: Int.MAX_VALUE
             },
             tier = { candidate -> localTier(task, candidate) * COST_TIERS + costTier(candidate) },
-            finalTieBreak = { providerId -> eligibilityOrder[providerId] ?: Int.MAX_VALUE }
+            finalTieBreak = { providerId ->
+                preferredProviderIds?.invoke()?.indexOf(providerId)?.takeIf { it >= 0 }?.minus(1)
+                    ?: eligibilityOrder[providerId] ?: Int.MAX_VALUE
+            }
         )
         val selected = eligible.firstOrNull()?.provider
         return if (selected != null) {

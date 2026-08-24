@@ -19,7 +19,7 @@ class RouteCommandHandler(
         } else {
             val registry = StaticProviderDescriptorRegistry()
             val ledger = FileQuotaLedger(
-                File(".atropos/provider/quota-ledger.tsv"),
+                atropos.core.provider.ProviderQuotaPaths.defaultLedger(),
                 FileQuotaLedger.seedFromDescriptors(registry)
             )
             val facade = AdapterRouteFacade(descriptorRegistry = registry, ledger = ledger)

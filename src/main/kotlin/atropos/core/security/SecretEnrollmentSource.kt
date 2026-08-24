@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.security
 
-import atropos.core.AtroposRepoRootLocator
+import atropos.core.AtroposConfig
 
 /**
  * Where a device's own credentials come from, as a port rather than a hard-coded
@@ -95,7 +95,7 @@ class EnvironmentSecretSource(
 class LocalVaultSecretSource(
     private val names: List<String> = KeySetupHelper.defaultNames(),
     private val vault: TokenIsolationVault = TokenIsolationVault(
-        AtroposRepoRootLocator.resolve().resolve(".atropos/secrets")
+        AtroposConfig.configRoot().resolve("secrets")
     )
 ) : SecretEnrollmentSource {
     override val sourceName: String = "local_vault"

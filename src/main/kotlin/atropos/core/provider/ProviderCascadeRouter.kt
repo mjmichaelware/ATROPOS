@@ -6,8 +6,11 @@ import atropos.core.provider.ProviderDescriptorRegistry
 import atropos.core.provider.StaticProviderDescriptorRegistry
 import atropos.core.provider.ApiCapability
 import atropos.core.provider.ProviderCascadeOrder
+import atropos.core.AtroposConfig
 import atropos.core.provider.FallbackChain
 import atropos.core.provider.FallbackChainRegistry
+import atropos.core.paid.EmergencyPaidGate
+import atropos.core.provider.ProviderApprovalCard
 
 data class ProviderCascadeResult(
     val providerName: String,
@@ -16,7 +19,8 @@ data class ProviderCascadeResult(
     val contextEnvelope: ContextEnvelope? = null,
     val queued: Boolean = false,
     val earliestRetryEpochMs: Long? = null,
-    val queueReason: String? = null
+    val queueReason: String? = null,
+    val paidApproval: ProviderApprovalCard? = null
 )
 
 class ProviderCascadeRouter(
@@ -24,7 +28,10 @@ class ProviderCascadeRouter(
     private val classifier: ProviderFailureClassifier = ProviderFailureClassifier(),
     private val registry: ProviderDescriptorRegistry = StaticProviderDescriptorRegistry(),
     private val localHealth: () -> Boolean = { OllamaHealthProbe().probe().online },
-    private val providerResolver: ((String) -> AIProvider)? = null
+    private val providerResolver: ((String) -> AIProvider)? = null,
+    private val healthyProviderIds: (() -> Set<String>)? = null,
+    private val localOnly: () -> Boolean = { AtroposConfig.load().runtime.localOnly },
+    private val paidGate: EmergencyPaidGate = EmergencyPaidGate()
 ) {
     /** Returns the documented chain through the canonical route owner. */
     fun declaredFallbackChain(capability: ApiCapability): FallbackChain? =
@@ -38,9 +45,10 @@ class ProviderCascadeRouter(
         beforeAttempt: (String) -> Unit = {},
         onFailure: (ProviderError) -> Unit = {},
         contextEnvelope: ContextEnvelope? = null,
-        acceptResponse: (String) -> Boolean = { true }
+        acceptResponse: (String) -> Boolean = { true },
+        allowPaidProvider: Boolean = paidGate.status().active != null
     ): ProviderCascadeResult {
-        val order = providerOrder(requestedProvider, providerOrderOverride)
+        val order = providerOrder(requestedProvider, providerOrderOverride, allowPaidProvider)
         val errors = mutableListOf<ProviderError>()
         val blocked = mutableSetOf<String>()
 
@@ -158,14 +166,16 @@ class ProviderCascadeRouter(
             "no provider answered; queuing for retry — $cleanAggregate"
         )
         val retryAt = System.currentTimeMillis() + 60_000L
+        val paidApproval = paidApprovalAfterFreeExhaustion(cleanAggregate)
         return ProviderCascadeResult(
-            providerName = "local_queue",
+            providerName = if (paidApproval == null) "local_queue" else "paid_approval_required",
             response = "",
             errors = errors,
             contextEnvelope = contextEnvelope,
-            queued = true,
+            queued = paidApproval == null,
             earliestRetryEpochMs = retryAt,
-            queueReason = cleanAggregate
+            queueReason = paidApproval?.render() ?: cleanAggregate,
+            paidApproval = paidApproval
         )
     }
 
@@ -181,28 +191,53 @@ class ProviderCascadeRouter(
         return if (line.length <= GIST_CELLS) line else line.take(GIST_CELLS) + "…"
     }
 
-    fun providerOrderPreview(requestedProvider: String, providerOrderOverride: List<String>? = null): List<String> =
-        providerOrder(requestedProvider, providerOrderOverride)
+    fun providerOrderPreview(
+        requestedProvider: String,
+        providerOrderOverride: List<String>? = null,
+        allowPaidProvider: Boolean = paidGate.status().active != null
+    ): List<String> = providerOrder(requestedProvider, providerOrderOverride, allowPaidProvider)
 
-    private fun providerOrder(requestedProvider: String, providerOrderOverride: List<String>? = null): List<String> {
+    private fun providerOrder(
+        requestedProvider: String,
+        providerOrderOverride: List<String>? = null,
+        allowPaidProvider: Boolean = false
+    ): List<String> {
         if (!providerOrderOverride.isNullOrEmpty()) {
             return providerOrderOverride.map { it.trim().lowercase() }
                 .filter { it.isNotBlank() }
+                .filter { registry.getById(it)?.isLocal == true || !localOnly() }
+                .filter { healthyProviderIds?.invoke()?.contains(it) != false }
                 .distinct()
+                .let { ProviderCascadeOrder.order(it, registry, allowPaidProvider, paidGate) }
         }
 
         val configured = System.getenv("ATROPOS_PROVIDER_ORDER")
             ?.split(",")
             ?.map { it.trim().lowercase() }
             ?.filter { it.isNotBlank() }
-            ?: registry.getAll().map { it.id }
+            ?: ProviderOnboardingService().preferredProviderIds()
+                .ifEmpty { registry.getAll().map { it.id } }
 
         return ProviderCascadeOrder.order(
             (listOf(requestedProvider.lowercase()) + configured)
                 .filter { registry.getById(it) != null }
+                .filter { registry.getById(it)?.isLocal == true || !localOnly() }
+                .filter { healthyProviderIds?.invoke()?.contains(it) != false }
                 .distinct(),
-            registry
+            registry,
+            allowPaidProvider,
+            paidGate
         )
+    }
+
+    private fun paidApprovalAfterFreeExhaustion(reason: String): ProviderApprovalCard? {
+        if (localOnly() || healthyProviderIds == null) return null
+        return ProviderPolicyGate(
+            registry = registry,
+            healthy = { healthyProviderIds.invoke() },
+            paidGate = paidGate,
+            localOnly = false
+        ).paidApproval(ApiCapability.CHAT, "FREE/LOCAL cascade exhausted: $reason")
     }
 
     private companion object {

@@ -1,6 +1,11 @@
 package atropos.core.provider
 
 import java.io.File
+import atropos.core.AtroposConfig
+
+object ProviderQuotaPaths {
+    fun defaultLedger(): File = AtroposConfig.configRoot().resolve("provider/quota-ledger.tsv").toFile()
+}
 
 data class ProviderQuotaRecord(
     val providerId: String,

@@ -179,7 +179,11 @@ class SpecGraphCanonicalAtomProvider(
 
     private fun completeThroughProviderCascade(prompt: String): DimensionClassification {
         val config = AtroposConfig.load()
-        val result = ProviderCascadeRouter(ProviderFactory(config)).completeWithCascade(
+        val result = ProviderCascadeRouter(
+            ProviderFactory(config),
+            healthyProviderIds = { ProviderOnboardingService().healthyProviderIds() },
+            localOnly = { config.runtime.localOnly }
+        ).completeWithCascade(
             requestedProvider = config.runtime.defaultProvider,
             prompt = prompt,
             context = "System: classify one requirement into the supplied closed vocabulary.",

@@ -27,7 +27,9 @@ class FactoryRunOrchestrator(
     private val planningGraph: InternalPlanningGraphService,
     private val journal: EventJournalService,
     private val deploymentService: DeploymentService = DeploymentService(),
-    private val previewService: LivePreviewService = LivePreviewService(repoRoot)
+    private val previewService: LivePreviewService = LivePreviewService(repoRoot),
+    /** Optional real repair action; absent means verification failure stays failed. */
+    private val repairVerificationFailure: ((FactoryPlan, Path, Throwable, FactoryAcceptanceFreeze) -> FactoryAcceptanceFreeze.RepairEvidence)? = null
 ) {
     fun orchestrateRun(
         plan: FactoryPlan,
@@ -156,6 +158,7 @@ class FactoryRunOrchestrator(
         )
         val frozenLineage = plannedLineage.withAcceptanceFreeze(plannedAtomIds)
         val acceptanceFreeze = requireNotNull(frozenLineage.acceptanceFreeze)
+        persistResumeArtifacts(plan, acceptanceFreeze)
         val obligationLoop = FactoryObligationLoop(DagStore(repoRoot))
         val initialObligations = obligationLoop.beforeMutation(planningDag)
         recorder.recordAcceptanceFreeze(
@@ -252,8 +255,47 @@ class FactoryRunOrchestrator(
                 dagId = planningDag.id,
                 promptFingerprint = lineage.promptFingerprint
             )
-            projectRegistry.setStatus(registration.record, ProjectStatus.FAILED, actor = "factory")
-            throw failure
+            val repairAction = repairVerificationFailure ?: run {
+                projectRegistry.setStatus(registration.record, ProjectStatus.FAILED, actor = "factory")
+                throw failure
+            }
+            var suppliedRepairEvidence: FactoryAcceptanceFreeze.RepairEvidence? = null
+            val repairedProject = runCatching {
+                // An injected repair action may mutate only through the
+                // caller's existing bounded path; its evidence is checked
+                // by FactoryAcceptanceFreeze below. Without this authority
+                // the run failed closed above; no repair success is inferred.
+                suppliedRepairEvidence = repairAction(plan, plannedPath, failure, acceptanceFreeze)
+                AppProjectGenerator(repoRoot).generateApp(
+                    plan.projectSpec,
+                    plan.id,
+                    planningDagId = planningDag.id,
+                    plannedAtomIds = plannedAtomIds,
+                    lineage = frozenLineage.withContext(context.canonicalContextHash)
+                )
+            }.getOrElse { repairFailure ->
+                failure.addSuppressed(repairFailure)
+                projectRegistry.setStatus(registration.record, ProjectStatus.FAILED, actor = "factory")
+                throw failure
+            }
+            val repairEvidence = requireNotNull(suppliedRepairEvidence) {
+                "repair callback returned no acceptance evidence"
+            }
+            val handoff = FactoryRunHandoff.read(repoRoot, plan.id)
+            val repairResult = FactoryRepairExecutor(obligationLoop).repairAndResume(
+                handoff = handoff,
+                freeze = acceptanceFreeze,
+                repair = { repairEvidence },
+                executeWave = { ready -> ready.map { it.id }.toSet() }
+            )
+            recorder.recordRepair(
+                runId = plan.id,
+                state = "REENTERED_OBLIGATION_LOOP",
+                verification = repairResult.evidence,
+                dagId = planningDag.id,
+                promptFingerprint = lineage.promptFingerprint
+            )
+            repairedProject
         }
         recorder.recordVerification(
             runId = plan.id,
@@ -376,8 +418,13 @@ class FactoryRunOrchestrator(
             promptFingerprint = lineage.promptFingerprint
         )
 
-        val finalObligations = try {
-            obligationLoop.finalizeAfterVerifiedEvidence(planningDag.id, acceptanceFreeze)
+        val loopResult = try {
+            obligationLoop.executeUntilSettled(planningDag.id, acceptanceFreeze) { ready ->
+                // Generation and verification above produced one shared evidence
+                // bundle. Each dependency-ready wave still has to be explicitly
+                // acknowledged; open atoms are never bulk-terminalized.
+                ready.map { it.id }.toSet()
+            }
         } catch (failure: Throwable) {
             projectRegistry.setStatus(generatedRecord, ProjectStatus.FAILED, actor = "factory")
             recorder.recordCompletionFailure(
@@ -388,6 +435,7 @@ class FactoryRunOrchestrator(
             )
             throw failure
         }
+        val finalObligations = loopResult.snapshot
         recorder.recordObligationLoop(
             runId = plan.id,
             snapshot = finalObligations,
@@ -398,7 +446,11 @@ class FactoryRunOrchestrator(
             "factory completion refused: open_work=${finalObligations.openWork} " +
                 "blocked=${finalObligations.blockedAtomIds} failed=${finalObligations.failedAtomIds}"
         }
-        val terminationReason = "open_work=0 acceptance_freeze_green completion_gate_green evidence_complete"
+        check(loopResult.terminationReason == "open_work=0" && finalObligations.canComplete) {
+            "factory completion refused: termination=${loopResult.terminationReason} open_work=${finalObligations.openWork} " +
+                "blocked=${finalObligations.blockedAtomIds} failed=${finalObligations.failedAtomIds}"
+        }
+        val terminationReason = "open_work=0 waves=${loopResult.wavesExecuted} acceptance_freeze_green completion_gate_green evidence_complete"
         val economics = FactoryRunEconomics(
             wallTimeMillis = Duration.between(startedAt, Instant.now()).toMillis(),
             providerCalls = null,
@@ -474,5 +526,16 @@ class FactoryRunOrchestrator(
             economics = economics,
             terminationReason = terminationReason
         )
+    }
+
+    private fun persistResumeArtifacts(plan: FactoryPlan, freeze: FactoryAcceptanceFreeze) {
+        val runRoot = repoRoot.toAbsolutePath().normalize()
+            .resolve(".atropos/research/factory").resolve(plan.id).normalize()
+        require(runRoot.startsWith(repoRoot.toAbsolutePath().normalize())) {
+            "factory resume artifact path escaped repository"
+        }
+        java.nio.file.Files.createDirectories(runRoot)
+        java.nio.file.Files.writeString(runRoot.resolve("plan.md"), FactoryPlanHelper.render(plan))
+        java.nio.file.Files.writeString(runRoot.resolve("acceptance-freeze.md"), freeze.document)
     }
 }

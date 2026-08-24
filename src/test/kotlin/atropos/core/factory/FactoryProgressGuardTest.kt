@@ -34,6 +34,29 @@ class FactoryProgressGuardTest {
         assertFalse(guard.observeWrite("atom-1", listOf("a")).allowed)
     }
 
+    @Test
+    fun production_write_decision_can_fail_closed_with_evidence() {
+        val guard = FactoryProgressGuard(DagStore(Files.createTempDirectory("factory-write")))
+        guard.observeWriteOrThrow("atom-1", listOf("a"))
+        guard.observeWriteOrThrow("atom-1", listOf("b"))
+        val failure = runCatching { guard.observeWriteOrThrow("atom-1", listOf("a")) }.exceptionOrNull()
+        assertTrue(failure?.message?.contains("evidence_sha256=") == true)
+    }
+
+    @Test
+    fun thrash_state_survives_a_new_guard_after_process_death() {
+        val root = Files.createTempDirectory("factory-progress-durable")
+        val store = DagStore(root)
+        val dag = store.createDag("progress", listOf(node("atom-1")), "run-1")
+        FactoryProgressGuard(store, identicalFailureLimit = 3).also { guard ->
+            assertTrue(guard.observeFailure(dag.id, "atom-1", "same failure").allowed)
+            assertTrue(guard.observeFailure(dag.id, "atom-1", "same failure").allowed)
+        }
+        val afterRestart = FactoryProgressGuard(store, identicalFailureLimit = 3)
+        assertFalse(afterRestart.observeFailure(dag.id, "atom-1", "same failure").allowed)
+        assertTrue(store.readDag(dag.id)!!.nodes.single().state == DagNodeState.BLOCKED)
+    }
+
     private fun node(id: String): DagNode = DagNode(
         id = id,
         label = id,

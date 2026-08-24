@@ -18,6 +18,7 @@ internal class BridgeStatusHandler(
     private val checkpointView: CheckpointProjection,
     private val work: ConversationWorkRunner?,
     private val statusView: StatusProjection = StatusProjection(),
+    private val quotaSummary: () -> String = { statusViewQuotaUnavailable() },
     private val clock: () -> Instant = { Instant.now() }
 ) {
     fun getStatus(): HttpResponse {
@@ -31,8 +32,17 @@ internal class BridgeStatusHandler(
             checkpointJson = checkpointJson,
             queueDepth = queueDepth,
             activeProvider = provider,
-            engineIdentity = "atropos"
+            engineIdentity = "atropos",
+            quotaJson = quotaSummary()
         )
         return HttpResponse.json(json)
+    }
+
+    private companion object {
+        fun statusViewQuotaUnavailable(): String =
+            atropos.bridge.http.JsonWriter.obj(
+                "readable" to atropos.bridge.http.JsonWriter.bool(false),
+                "reason" to atropos.bridge.http.JsonWriter.str("quota-ledger-not-wired")
+            )
     }
 }

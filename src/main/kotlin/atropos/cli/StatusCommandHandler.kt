@@ -20,6 +20,7 @@ import atropos.core.AtroposConfig
 import atropos.core.provider.FileQuotaLedger
 import atropos.core.provider.ProviderTruthService
 import atropos.core.provider.StaticProviderDescriptorRegistry
+import atropos.core.provider.ProviderQuotaPaths
 
 class StatusCommandHandler(
     private val config: AtroposConfig,
@@ -55,7 +56,7 @@ class StatusCommandHandler(
         val statusRenderer = StatusQuotaRenderer(
             registry = quotaRegistry,
             ledger = FileQuotaLedger(
-                java.io.File(".atropos/provider/quota-ledger.tsv"),
+                ProviderQuotaPaths.defaultLedger(),
                 FileQuotaLedger.seedFromDescriptors(quotaRegistry)
             )
         )
@@ -94,7 +95,7 @@ class StatusCommandHandler(
         } else {
             val registry = StaticProviderDescriptorRegistry()
             val ledger = FileQuotaLedger(
-                java.io.File(".atropos/provider/quota-ledger.tsv"),
+                ProviderQuotaPaths.defaultLedger(),
                 FileQuotaLedger.seedFromDescriptors(registry)
             )
             val facade = atropos.core.provider.adapter.AdapterRouteFacade(descriptorRegistry = registry, ledger = ledger)

@@ -7,6 +7,7 @@ import atropos.core.factory.FactoryClarificationRequired
 import atropos.core.factory.FactoryClarificationRequest
 import atropos.core.AtroposRepoRootLocator
 import atropos.core.security.RedactionFilter
+import atropos.core.factory.AppFactoryRouter
 import java.nio.file.Path
 
 class FactoryCommandHandler(
@@ -15,17 +16,35 @@ class FactoryCommandHandler(
     private val runFactory: (String) -> String = renderer::renderRun,
     private val redactionFilter: RedactionFilter = RedactionFilter(),
     private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
-    private val resumeFactory: (String, List<Boolean>) -> String = renderer::renderClarifiedRun
+    private val resumeFactory: (String, List<Boolean>) -> String = renderer::renderClarifiedRun,
+    private val resumeRun: (String) -> String = { runId ->
+        val context = AppFactoryRouter(repoRoot = repoRoot).resume(runId)
+        "resume attested: run=$runId dag=${context.handoff.dagId} prompt=${context.promptFingerprint} " +
+            "freeze=${context.acceptanceFreeze.sha256} open_work=${context.handoff.openWork} " +
+            "next=${context.handoff.nextRunnableAtomIds.joinToString(",").ifBlank { "none" }}"
+    }
 ) {
     fun execute(tokens: List<String>): RouterOutcome {
         when (tokens.getOrNull(1)?.lowercase()) {
             null, "status" -> uiEngine.renderBlock(renderer.renderStatusList(uiEngine.viewportWidth))
             "plan" -> renderPlan(tokens.drop(2))
             "run" -> renderRun(tokens.drop(2))
+            "resume" -> renderResume(tokens.drop(2))
             "answer" -> renderClarificationAnswer(tokens.drop(2))
-            else -> uiEngine.renderError("usage: /factory [status|plan|run|answer] <prompt>")
+            else -> uiEngine.renderError("usage: /factory [status|plan|run|resume|answer] <prompt|run-id>")
         }
         return RouterOutcome.CONTINUE
+    }
+
+    private fun renderResume(parts: List<String>) {
+        val runId = parts.singleOrNull()?.trim()
+        if (runId.isNullOrBlank()) {
+            uiEngine.renderError("usage: /factory resume <run-id>")
+            return
+        }
+        runCatching { resumeRun(runId) }
+            .onSuccess(uiEngine::renderNotice)
+            .onFailure { uiEngine.renderError(redactionFilter.compact(it.message ?: "factory resume failed")) }
     }
 
     private fun renderPlan(parts: List<String>) {

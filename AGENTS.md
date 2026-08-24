@@ -443,6 +443,476 @@ When Phase 11 self-build is fully green, ATROPOS can begin to perform this loop 
 
 End of AGENTS.md
 
+### 2026-08-23T12:00:00Z · Agent: Codex GPT-5 · Batch: factory-handoff-durable-guard-wave1
+
+- Paths touched: `src/main/kotlin/atropos/core/dag/DagStore.kt` (+3), `src/main/kotlin/atropos/core/factory/FactoryProgressGuard.kt` (+67), `src/main/kotlin/atropos/core/factory/FactoryRunHandoff.kt` (+18/-5), `src/main/kotlin/atropos/core/factory/FactoryRunOrchestrator.kt` (+32), `src/main/kotlin/atropos/core/factory/FactoryRepairExecutor.kt` (existing production seam), `src/main/kotlin/atropos/cli/FactoryCommandHandler.kt` (+2), `src/test/kotlin/atropos/core/factory/FactoryProgressGuardTest.kt` (+17), `src/test/kotlin/atropos/core/factory/FactoryResumeAndRepairTest.kt` (+4), and `STATUS-BACKEND.md` (new backend ledger).
+- Atoms / phases affected: FTY-01, FTY-02, FTY-03, FTY-04, FTY-05; Phase 19 factory resume and bounded repair controls.
+- Predicate moved: resume now requires attested prompt, requirements, plan, and acceptance-freeze artifacts; the freeze document is hashed and checked against the handoff before any continuation context is returned. Progress-guard failure signatures and write histories survive a new process through `.atropos/factory/progress-guard.tsv`, and persistence errors fail closed. The existing repair executor is now called from the production generation-failure seam when an actual repair callback is supplied, validating the unchanged freeze and re-entering the existing obligation loop; no automatic repair success is inferred.
+- Verification actually run: `git diff --check` passed. A narrow `kotlinc` factory source slice including `DagStore`, handoff, loop, guard, repair executor, and orchestrator exited 0. Focused root Gradle tests were not run; `:core:jvmTest` does not contain the root factory test source set, and prior root test compilation exceeded the configured environment budget. No full build, JAR, install, or runtime repair proof is claimed.
+- % delta: unchanged; no VERIFIED claim. FTY-01, FTY-02, and FTY-04 are marked done in `STATUS-BACKEND.md` based on production source plus narrow compilation; FTY-03 and FTY-05 remain partial until root focused tests and a runtime-owned repair callback are proven.
+- Fingerprints (sha256): `DagStore.kt=fb932962f947`; `FactoryProgressGuard.kt=50bb25ea712d`; `FactoryRunHandoff.kt=537cf1c24fc2`; `FactoryRunOrchestrator.kt=652e100a59b7`; `FactoryRepairExecutor.kt=16e2c5cd36a8`; `FactoryCommandHandler.kt=392afeb3eb37`; `FactoryProgressGuardTest.kt=1e5d81c78c09`; `FactoryResumeAndRepairTest.kt=bca553b18f46`; `STATUS-BACKEND.md=2669342e3735`.
+
+### 2026-08-23T21:45:00Z · Agent: Codex GPT-5 · Batch: backend-proof-audit-new-session
+
+- Paths touched: `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt`, hosted selector files, `STATUS-BACKEND.md`.
+- Atoms / phases affected: MCP C7/C8/C9/M12; factory B4/B5/B6/B7 caller audit.
+- Predicate moved: fresh source audit confirms production callers for `AppFactoryRouter.resume`, `FactoryObligationLoop.executeUntilSettled`, `FactoryLiveRepairAction`/freeze validation, and non-Kotlin `FactoryLanguageContract`/`AppGeneratedBehaviorGuard`. MCP health persistence, budget truncation, no-authority inbound admission, and localOnly remote refusal are now covered by the changed core owner/tests.
+- Verification actually run: `git diff --check` and shell syntax passed. `./gradlew :core:jvmTest --no-daemon --max-workers=1 --rerun` passed with `BUILD SUCCESSFUL in 47s`; test XML reports 2 tests, 0 failures, 0 errors, 0 skipped. The root focused `:test` command was interrupted after more than four minutes at `:compileKotlin` with no test result; root provider/bridge/MCP tests remain unproven. No hosted/GHA result is claimed.
+- % delta: unchanged; partial atoms remain partial until their owning root/hosted tests execute.
+- Fingerprints: `McpHostManager.kt=f8c49c75fafe`; `McpHostManagerTest.kt=79c48592a05e`; `scripts/atropos-verify-worktree.sh=164ebfc9dd1e`; `.github/workflows/compile-gate.yml=8f8c61eb8587`.
+
+### 2026-08-23T21:30:00Z · Agent: Codex GPT-5 · Batch: mcp-health-budget-localonly-proof
+
+- Paths touched: `src/main/kotlin/atropos/core/integration/McpHostManager.kt` (+25/-8), `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+20), `scripts/atropos-verify-worktree.sh` (+1), `.github/workflows/compile-gate.yml` (+1), `STATUS-BACKEND.md`.
+- Atoms / phases affected: C7 MCP health persistence, C8 memory≠authority, C9 localOnly remote refusal, M12 tool budget.
+- Predicate moved: MCP health results now persist as label/reason metadata under `.atropos/mcp/health.tsv`; tool descriptions and count are bounded; the existing inbound bridge test proves admission carries no authority; localOnly returns `UNTESTED` for remote servers without invoking the probe. No secret or command argument is persisted.
+- Verification actually run: `git diff --check` and `bash -n scripts/atropos-verify-worktree.sh` passed. `./gradlew :core:jvmTest --no-daemon --max-workers=1 --rerun` passed: `BUILD SUCCESSFUL in 47s`, 4 actionable tasks. The root `:test` focused provider/bridge/MCP invocation was interrupted after remaining at `:compileKotlin` for over four minutes and produced no test result; no root-green claim.
+- % delta: unchanged; MCP remains partial pending root/hosted integration execution.
+- Fingerprints (sha256, first 12): `McpHostManager.kt=f8c49c75fafe`; `McpHostManagerTest.kt=79c48592a05e`; `scripts/atropos-verify-worktree.sh=164ebfc9dd1e`; `.github/workflows/compile-gate.yml=8f8c61eb8587`.
+
+### 2026-08-23T20:50:00Z · Agent: Codex GPT-5 · Batch: backend-bridge-contract-double-batch
+
+- Paths touched: `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt`, `src/main/kotlin/atropos/bridge/projection/RecoveryProjection.kt`, `src/main/kotlin/atropos/bridge/BridgeRoutes.kt`, `src/main/kotlin/atropos/bridge/AtroposBridge.kt`, `src/main/kotlin/atropos/bridge/BridgeFilesHandler.kt`, focused bridge tests, `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh`, `STATUS-BACKEND.md`.
+- Atoms / phases affected: R1/M13 MCP ingest admission; B03 recovery payload; B06 file envelope attestation.
+- Predicate moved: MarkItDown uses the existing bounded MCP owner, bridge clients can read the existing `RestartCoordinator` snapshot at `/v1/recovery`, and uploads return a deterministic envelope hash in addition to the byte hash. No second MCP, recovery, evidence, or transport owner was created.
+- Verification actually run: `git diff --check` and shell syntax checks passed. The only local Gradle attempt, `:core:jvmTest --tests 'atropos.core.integration.McpHostManagerTest' --rerun`, failed with `No tests found for given includes` because root bridge/integration tests are not in the KMP `:core:jvmTest` target. The new root test selectors are included in the GitHub Actions `:test` lane. No root compile, hosted run, live MCP, or provider network evidence is claimed.
+- % delta: unchanged; residuals remain partial pending the hosted/root test lane.
+- Fingerprints: `McpHostManager.kt=3fc8ec1ff029`; `McpHostManagerTest.kt=0d6f2f110880`; `RecoveryProjection.kt=b31ab43d3b57`; `BridgeRoutes.kt=06280c46231b`; `AtroposBridge.kt=5b3b14692c42`; `BridgeFilesHandler.kt=dd30e01c5059`; `RecoveryProjectionTest.kt=8ca78b3f749d`; `BridgeFilesHandlerTest.kt=548669f613ee`.
+
+### 2026-08-23T20:00:00Z · Agent: Codex GPT-5 · Batch: mcp-markitdown-policy-wire
+
+- Paths touched: `src/main/kotlin/atropos/core/integration/McpHostManager.kt` (+3), `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+27), `STATUS-BACKEND.md`.
+- Atoms / phases affected: R1, M13, M05/M08; the MarkItDown command path now reaches the same bounded MCP owner.
+- Predicate moved: `/mcp ingest` no longer fails its own production policy gate because `convert_to_markdown` is admitted explicitly by `McpHostManager`; arbitrary write operations remain denied before process start. The focused test starts a local stdio fixture, sends initialize/tools-list/tools-call, and asserts the operation response is returned with the existing evidence path.
+- Verification actually run: `git diff --check` and shell syntax checks passed. `:core:jvmTest --tests 'atropos.core.integration.McpHostManagerTest' --rerun` exited nonzero with `No tests found for given includes` because this root test source is not part of the `:core:jvmTest` target. No root Gradle compile/test or hosted run is claimed.
+- % delta: unchanged; R1/M13 remain partial pending root/hosted execution evidence.
+- Fingerprints (sha256, first 12): `McpHostManager.kt=3fc8ec1ff029`; `McpHostManagerTest.kt=0d6f2f110880`.
+
+### 2026-08-23T20:40:00Z · Agent: Codex GPT-5 · Batch: bridge-file-envelope-attestation
+
+- Paths touched: `src/main/kotlin/atropos/bridge/BridgeFilesHandler.kt` (+11), `src/test/kotlin/atropos/bridge/BridgeFilesHandlerTest.kt` (+2), `.github/workflows/compile-gate.yml` (+1), `scripts/atropos-verify-worktree.sh` (+1), `STATUS-BACKEND.md`.
+- Atoms / phases affected: B06 files upload attested envelope; B05 bounded evidence/file surface.
+- Predicate moved: successful `/v1/files` uploads now return a deterministic envelope attestation over session identity, filename, byte length, and content hash in addition to the byte hash; no raw content or secret is logged or added to metadata.
+- Verification actually run: `git diff --check` and shell syntax checks passed. Root bridge tests were not run locally; the focused test is now named in the hosted `:test` lane. No root compile or hosted run is claimed.
+- % delta: unchanged; B06 remains partial pending root/hosted execution evidence.
+- Fingerprints (sha256, first 12): `RecoveryProjection.kt=b31ab43d3b57`; `BridgeRoutes.kt=06280c46231b`; `AtroposBridge.kt=5b3b14692c42`; `BridgeFilesHandler.kt=dd30e01c5059`; `RecoveryProjectionTest.kt=8ca78b3f749d`; `BridgeFilesHandlerTest.kt=548669f613ee`.
+
+### 2026-08-23T20:20:00Z · Agent: Codex GPT-5 · Batch: bridge-recovery-snapshot-wire
+
+- Paths touched: `src/main/kotlin/atropos/bridge/projection/RecoveryProjection.kt` (new), `src/main/kotlin/atropos/bridge/BridgeRoutes.kt` (+8), `src/main/kotlin/atropos/bridge/AtroposBridge.kt` (+4), `src/test/kotlin/atropos/bridge/RecoveryProjectionTest.kt` (new), `.github/workflows/compile-gate.yml` (+1), `scripts/atropos-verify-worktree.sh` (+1), `STATUS-BACKEND.md`.
+- Atoms / phases affected: B03 recovery payload/ribbon contract; B01/B02 bridge status continuity.
+- Predicate moved: the bridge now has a production `/v1/recovery` route bound to the existing durable `RestartCoordinator.snapshot()` and projects explicit `available`, `restored`, `rebuilt`, `failed`, goal/DAG, message, and error fields. Unwired test constructions return an explicit unavailable response rather than claiming recovery.
+- Verification actually run: `git diff --check` and shell syntax checks passed. The root focused bridge tests were not run; the local `:core:jvmTest` target does not contain root bridge tests. The new test selector is included in the hosted `:test` lane. No root compile or hosted run is claimed.
+- % delta: unchanged; B03 remains partial pending root/hosted execution evidence.
+- Fingerprints (sha256, first 12): `BridgeFilesHandler.kt=dd30e01c5059`; `BridgeFilesHandlerTest.kt=548669f613ee`; `RecoveryProjection.kt=b31ab43d3b57`; `RecoveryProjectionTest.kt=8ca78b3f749d`.
+
+### 2026-08-23T18:30:00Z · Agent: Codex GPT-5 · Batch: provider-together-fireworks-catalog-wire
+
+- Paths touched: `src/main/kotlin/atropos/core/provider/StaticProviderDescriptorRegistry.kt` (+2), `src/main/kotlin/atropos/core/provider/adapter/OpenAiCompatibleProviderCatalog.kt` (+16), `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` (+20), `STATUS-BACKEND.md`.
+- Atoms / phases affected: B-PROV-001/002/004 and the requested Together/Fireworks provider onboarding surface.
+- Predicate moved: Together AI and Fireworks AI environment discovery now resolves to canonical provider descriptors and existing OpenAI-compatible transport adapters; their billing class is PAID, so the existing free-first policy gate blocks spend until explicit approval. This removes the prior discovered-but-unroutable provider orphan without adding a registry or transport system.
+- Verification actually run: `git diff --check` and the local fast gate completed; source hashes are `StaticProviderDescriptorRegistry.kt=8617b918e51b`, `OpenAiCompatibleProviderCatalog.kt=1174a947e9d8`, `ProviderOnboardingTest.kt=14cbac6758ce`. Root Gradle compilation, hosted focused tests, and live provider calls were not run; no VERIFIED claim.
+- % delta: unchanged; B-PROV remains partial pending hosted/runtime evidence.
+
+### 2026-08-23T19:00:00Z · Agent: Codex GPT-5 · Batch: provider-azure-compatible-wire
+
+- Paths touched: `src/main/kotlin/atropos/core/provider/StaticProviderDescriptorRegistry.kt` (+1), `src/main/kotlin/atropos/core/provider/adapter/OpenAiCompatibleProviderSpec.kt` (+2), `OpenAiCompatibleProviderCatalog.kt` (+12), `OpenAiCompatibleKernelAdapter.kt` (+7/-2), `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` (+20), `STATUS-BACKEND.md`.
+- Atoms / phases affected: B-PROV-001/002/004; Azure environment discovery and canonical transport ownership.
+- Predicate moved: Azure OpenAI discovery now resolves to a paid descriptor and the existing OpenAI-compatible adapter can use `AZURE_OPENAI_ENDPOINT` plus Azure's `api-key` header without embedding credentials or adding a parallel transport. The focused test proves configuration and adapter ownership without network access.
+- Verification actually run: `git diff --check` and shell syntax checks passed. The local fast-gate invocation was attempted but emitted no completion evidence in this constrained shell; no compile/test result is claimed. Root Gradle, hosted tests, and live provider calls remain unrun.
+- % delta: unchanged; B-PROV remains partial pending hosted/runtime evidence.
+- Fingerprints (sha256, first 12): `StaticProviderDescriptorRegistry.kt=68e0a768d3e1`, `OpenAiCompatibleProviderSpec.kt=5c6cf3af7599`, `OpenAiCompatibleProviderCatalog.kt=f2fdbff1f1a1`, `OpenAiCompatibleKernelAdapter.kt=ff04f7b49295`, `ProviderOnboardingTest.kt=3ec8cb34edd6`.
+
+### 2026-08-23T19:30:00Z · Agent: Codex GPT-5 · Batch: residual-mcp-process-blocktype-wire
+
+- Paths touched: `src/main/kotlin/atropos/core/integration/McpHostManager.kt` (+5/-4), `src/main/kotlin/atropos/cli/ui/LandingRenderer.kt` (+5/-1), `STATUS-BACKEND.md`.
+- Atoms / phases affected: R1, R3, T03, and MCP host production ownership.
+- Predicate moved: the existing single MCP host now uses the canonical `BoundedProcessRunner` for both handshake probes and tool calls; `BlockType` is no longer test-only and is reached by the production landing renderer on narrow frames. No second MCP manager or process-spawn owner was introduced.
+- Verification actually run: source inspection and `git diff --check` are the available evidence for this batch; root Gradle/focused tests and a live MCP process were not run. No VERIFIED claim.
+- % delta: unchanged; R1/R3 are source-wired but the Wave 0 residual set remains partial pending hosted/runtime evidence.
+
+### 2026-08-23T20:00:00Z · Agent: Codex GPT-5 · Batch: provider-secret-alias-transport-wire
+
+- Paths touched: `src/main/kotlin/atropos/core/provider/adapter/AdapterRegistry.kt` (+43), `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` (+11), `STATUS-BACKEND.md`.
+- Atoms / phases affected: P03/P04/P05/P10/P17/P18 and provider connect/secret precedence.
+- Predicate moved: the existing adapter registry now resolves common provider aliases and local-vault values through `DefaultSecretSource` before constructing adapters; environment values remain first and secret values are held only in memory for the request path. The onboarding alias path therefore reaches the canonical native/compatible adapters instead of reporting healthy metadata while transport remains unconfigured.
+- Verification actually run: source inspection and `git diff --check` are available; root Gradle/provider tests and live provider calls were not run. No compile/runtime green or VERIFIED claim.
+- % delta: unchanged; provider catalog remains partial pending hosted focused tests and runtime probes.
+
+### 2026-08-23T20:30:00Z · Agent: Codex GPT-5 · Batch: provider-preference-route-wire
+
+- Paths touched: `src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt` (+6), `RoutePolicy.kt` (+6), `ProviderCascadeRouter.kt` (+2), `adapter/AdapterRouteFacade.kt` (+2), `src/main/kotlin/atropos/cli/ui/StatusQuotaRenderer.kt` (+2), `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` (+13), `STATUS-BACKEND.md`.
+- Atoms / phases affected: R2, B-PROV-004, route truth.
+- Predicate moved: the persisted preference mutation is now consumed by production route/cascade owners; disabled providers remain removed from the healthy set, and preference cannot promote a paid provider across the free/local cost tier. The existing provider registry and policy owners remain singular.
+- Verification actually run: source inspection and `git diff --check` are available; root Gradle/focused tests were not run. No compile/runtime green or VERIFIED claim.
+- % delta: unchanged; R2 is source-wired but hosted evidence remains pending.
+
+### 2026-08-23T21:30:00Z · Agent: Codex GPT-5 · Batch: bridge-dedicated-quota-route
+
+- Paths touched: `src/main/kotlin/atropos/bridge/BridgeRoutes.kt` (+4), `src/test/kotlin/atropos/bridge/BridgeQuotaRouteTest.kt` (new), `STATUS-BACKEND.md`.
+- Atoms / phases affected: P15, B-005, bridge status contract.
+- Predicate moved: the existing quota projection supplier is now exposed on both `/v1/status` and dedicated `GET /v1/quota`; the route test proves the bound supplier is returned without introducing a second ledger or projection.
+- Verification actually run: `git diff --check`, shell syntax checks, and installer contract passed. Root Gradle/bridge tests and hosted execution were not run. No VERIFIED claim.
+- % delta: unchanged; P15/B-005 remain partial pending hosted tests.
+
+### 2026-08-23T22:00:00Z · Agent: Codex GPT-5 · Batch: hosted-double-batch-selector-wire
+
+- Paths touched: `.github/workflows/compile-gate.yml` (+2 selectors), `scripts/atropos-verify-worktree.sh` (+2 selectors), `STATUS-BACKEND.md`.
+- Atoms / phases affected: hosted verification for P15, M13, B-005, and Wave 0/1 focused tests.
+- Predicate moved: the authoritative GitHub Actions lane and reusable hosted verifier now select `MarkItDownIngestServiceTest` and `BridgeQuotaRouteTest` in addition to the existing factory/provider/bridge/MCP matrix; no local root compile result is inferred.
+- Verification actually run: shell syntax, installer contract, and `git diff --check` passed. GitHub Actions itself remains unexecuted in this workspace.
+- % delta: unchanged; no VERIFIED claim.
+
+### 2026-08-23T21:00:00Z · Agent: Codex GPT-5 · Batch: markitdown-attested-ingest-wire
+
+- Paths touched: `src/main/kotlin/atropos/core/integration/MarkItDownIngestService.kt` (new), `src/main/kotlin/atropos/cli/McpCommandHandler.kt` (+25), `src/main/kotlin/atropos/cli/input/CommandCatalog.kt` (+1), `src/test/kotlin/atropos/core/integration/MarkItDownIngestServiceTest.kt` (new), `STATUS-BACKEND.md`.
+- Atoms / phases affected: M13, M05/M06, B-011, CLI MCP surface.
+- Predicate moved: an allowlisted MarkItDown MCP result now has one production path to a repository-bounded, SHA-256-named markdown blob and then the existing DAG ingestion owner; the result carries the MCP evidence reference and no auto-install/search path exists.
+- Verification actually run: `git diff --check`, shell syntax checks, and the installer contract were run; root Gradle/focused tests and a live MarkItDown process were not run. No VERIFIED claim.
+- % delta: unchanged; M13 remains partial pending hosted focused test execution and a real allowlisted server probe.
+
+### 2026-08-23T18:00:00Z · Agent: Codex GPT-5 · Batch: bridge-quota-status-projection
+
+- Paths touched: `src/main/kotlin/atropos/bridge/projection/QuotaProjection.kt` (new), `StatusProjection.kt`, `BridgeStatusHandler.kt`, `BridgeRoutes.kt`, `AtroposBridge.kt`, `src/main/kotlin/atropos/core/provider/QuotaLedger.kt`, `ProviderActivationService.kt`, `src/main/kotlin/atropos/cli/StatusCommandHandler.kt`, `RouteCommandHandler.kt`, `src/test/kotlin/atropos/bridge/BridgeStatusHandlerTest.kt`, `QuotaProjectionTest.kt` (new), `STATUS-BACKEND.md`.
+- Atoms / phases affected: B-005, B-PROV quota visibility, and the status API contract.
+- Predicate moved: the bridge production path now binds the existing `FileQuotaLedger` and includes a metadata-only `quota` object in `/v1/status`; CLI/provider activation and bridge status use the same user-local `~/.atropos/provider/quota-ledger.tsv` owner. The projection contains billing/state/usage/reset fields only and has no secret-bearing path.
+- Verification actually run: `git diff --check`, shell syntax checks, and `bash scripts/install-contract-test.sh` exited 0 (`ATROPOS_INSTALL_CONTRACT_OK`). Root Gradle compilation and focused bridge tests were not run locally; the hosted GitHub Actions lane remains the required compile/test evidence. No runtime server or provider probe was run.
+- % delta: unchanged; no VERIFIED claim. B-005 remains partial pending hosted compilation/tests and runtime bridge evidence.
+- Fingerprints (sha256, first 12): `QuotaProjection.kt=5316dd40137b`, `StatusProjection.kt=c52a1895b63b`, `BridgeStatusHandler.kt=8cfdff5c0859`, `AtroposBridge.kt=53fd53e8b7ee`, `QuotaLedger.kt=771e2473f38d`, `QuotaProjectionTest.kt=087128c3dba3`; `STATUS-BACKEND.md` updated in this batch.
+
+### 2026-08-24T00:00:00Z · Agent: Codex GPT-5 · Batch: hosted-backend-matrix-wire
+
+- Paths touched: `.github/workflows/compile-gate.yml` (+3 test selectors), `scripts/atropos-verify-worktree.sh` (+22 hosted-only lines), `STATUS-BACKEND.md` (command inventory and FTY-03 note).
+- Atoms / phases affected: FTY-03/05, B-PROV, B-005, B-011, B-INST; hosted verification ownership.
+- Predicate moved: the hosted compile/test matrix now names the handoff, obligation-loop, and acceptance-freeze suites in addition to the existing factory/provider/bridge/MCP tests. The reusable GitHub Action invokes the same compile and focused test set when running on GitHub Actions; local fast-gate behavior is unchanged. The command ledger now exposes `/mcp call` and `/doctor`, and FTY-03 accurately records that the runtime callback exists while configured execution evidence remains pending.
+- Verification actually run: `bash -n scripts/atropos-verify-worktree.sh scripts/install-contract-test.sh install.sh`, `bash scripts/install-contract-test.sh`, `bash scripts/package-installers-test.sh`, and `git diff --check` passed. YAML parser tooling was unavailable locally. GitHub Actions, Gradle root compilation, and focused root tests were not run here; no hosted green or VERIFIED claim is made.
+- % delta: unchanged; hosted execution remains required evidence.
+- Fingerprints: `.github/workflows/compile-gate.yml=5ffedf77836a`; `scripts/atropos-verify-worktree.sh=e34ad167766c`; `STATUS-BACKEND.md=fb52ac8fc2ca`.
+
+### 2026-08-24T00:20:00Z · Agent: Codex GPT-5 · Batch: portable-fast-gate-source-manifest
+
+- Paths touched: `scripts/atropos-fast-gate.sh` (+12/-2).
+- Atoms / phases affected: hosted/local verification support; no product atom claimed complete.
+- Predicate moved: the existing fast gate no longer depends on `/dev/fd`; its production Kotlin source collection uses one null-delimited manifest and remains the sole `classes`/`jar`/`smoke` owner.
+- Verification actually run: `bash -n scripts/atropos-fast-gate.sh scripts/atropos-verify-worktree.sh` and `git diff --check` passed. The full production compile was not rerun after the portability edit because the equivalent portable compile had already exceeded the local resource window; GitHub Actions remains authoritative.
+- % delta: unchanged; no VERIFIED claim.
+
+### 2026-08-24T06:50:00Z · Agent: Codex GPT-5 · Batch: provider-aws-namespace-discovery
+
+- Paths touched: `src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt` (+3), `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` (+16).
+- Atoms / phases affected: B-PROV-001a..t; AWS/Bedrock environment discovery.
+- Predicate moved: startup onboarding now recognizes `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, region/profile aliases, and the `AWS_*` namespace as `aws_bedrock` metadata without creating a parallel provider adapter or granting paid routing.
+- Verification actually run: `git diff --check` and shell syntax checks passed. Root Gradle/provider tests were not run; no compile/runtime green or VERIFIED claim is made.
+- % delta: unchanged; no VERIFIED claim.
+- Fingerprints: `ProviderOnboarding.kt=516f107a067f`; `ProviderOnboardingTest.kt=94eee986a769`.
+
+### 2026-08-24T06:00:00Z · Agent: Codex GPT-5 · Batch: local-only-config-default-wire
+
+- Paths touched: `src/main/kotlin/atropos/core/provider/RoutePolicy.kt`, `ProviderCascadeRouter.kt`, `ProviderOnboarding.kt`, `src/main/kotlin/atropos/core/policy/ExecutionPolicyEngine.kt`, `STATUS-BACKEND.md`.
+- Atoms / phases affected: B-LOCAL-ONLY, B-006, B-PROV-012; canonical route/policy defaults.
+- Predicate moved: default route, cascade, provider approval, and execution-policy owners now read the canonical `AtroposConfig.runtime.localOnly` (which combines environment and user-local config), instead of silently ignoring file-configured local-only mode. Explicit constructor overrides remain intact.
+- Verification actually run: `git diff --check` and shell syntax checks passed. Full root Gradle/provider tests were not run; no compile/runtime green or VERIFIED claim is made.
+- % delta: unchanged; no VERIFIED claim.
+- Fingerprints: `Config.kt=2bf87110845c`; `RoutePolicy.kt=a2ec2b9845f`; `ProviderCascadeRouter.kt=714dacee90f`; `ProviderOnboarding.kt=f40f0b4306`; `ExecutionPolicyEngine.kt=bb6e938bf32c`.
+
+### 2026-08-24T06:25:00Z · Agent: Codex GPT-5 · Batch: local-only-research-default-wire
+
+- Paths touched: `src/main/kotlin/atropos/core/factory/FactoryResearchService.kt`, `FactoryLineageFactory.kt`, `STATUS-BACKEND.md`.
+- Atoms / phases affected: B-LOCAL-ONLY, B-006; factory research and lineage defaults.
+- Predicate moved: no remaining production default outside `Config.kt` reads only `RuntimeMode.localOnly()`; factory research and lineage now honor the canonical user-local config flag as well as environment overrides through `AtroposConfig.runtime.localOnly`.
+- Verification actually run: `git diff --check` and shell syntax checks passed. Root Gradle and hosted tests were not run; no compile/runtime green or VERIFIED claim is made.
+- % delta: unchanged; no VERIFIED claim.
+
+### 2026-08-24T05:20:00Z · Agent: Codex GPT-5 · Batch: factory-live-repair-evidence-test
+
+- Paths touched: `src/test/kotlin/atropos/core/factory/FactoryLiveRepairActionTest.kt` (+39), `STATUS-BACKEND.md` (FTY-03 test note).
+- Atoms / phases affected: FTY-03, FTY-05; live repair/freeze-bound evidence.
+- Predicate moved: the production repair callback now has focused coverage for a configured executable command returning exit zero, real stderr evidence, all process predicates, and the unchanged acceptance-freeze hash; the existing missing-command fail-closed case remains.
+- Verification actually run: `git diff --check` and shell syntax checks passed. The full core compile was stopped after approximately 2.5 minutes without diagnostics due the local resource ceiling; root Gradle and hosted tests remain unrun.
+- % delta: unchanged; no VERIFIED claim.
+- Fingerprints: `FactoryLiveRepairActionTest.kt=8f3ee7c477cb`; `STATUS-BACKEND.md=649bbfc655aa`.
+
+### 2026-08-24T00:50:00Z · Agent: Codex GPT-5 · Batch: provider-connect-secret-lifetime
+
+- Paths touched: `src/main/kotlin/atropos/cli/ProviderCommandHandler.kt` (+2/-2).
+- Atoms / phases affected: B-PROV connect, Secret/Redaction boundary.
+- Predicate moved: the one-time provider key buffer is now wiped in `finally`, including vault-write and rendering failure paths; the existing private console prompt and `TokenIsolationVault` storage remain unchanged.
+- Verification actually run: `git diff --check` and shell syntax checks passed. Root Gradle/provider handler tests were not run; no runtime or secret-handling proof is claimed.
+- % delta: unchanged; no VERIFIED claim.
+- Fingerprints: `AtroposBridge.kt=810448f78116`; `ProviderCommandHandler.kt=2cbf7aeb2494`.
+
+### 2026-08-24T01:10:00Z · Agent: Codex GPT-5 · Batch: mcp-runtime-mode-caller-wire
+
+- Paths touched: `src/main/kotlin/atropos/bridge/AtroposBridge.kt`, `src/main/kotlin/atropos/cli/McpCommandHandler.kt`, `src/main/kotlin/atropos/cli/BackendDoctor.kt`.
+- Atoms / phases affected: B-LOCAL-ONLY, B-005, B-011, B-OC-002.
+- Predicate moved: production bridge, `/mcp`, and `/doctor` MCP owners now pass the loaded `AtroposConfig.runtime.localOnly` flag into the existing `McpHostManager`; configured local-only mode is enforced consistently while non-local mode is no longer silently forced local-only by those callers.
+- Verification actually run: `git diff --check` and shell syntax checks passed. Root Gradle compile/tests were not run; no hosted or runtime claim is made.
+- % delta: unchanged; no VERIFIED claim.
+- Fingerprints: `AtroposBridge.kt=ad27ee283809`; `McpCommandHandler.kt=0fef61bbed9d`; `BackendDoctor.kt=7b7ae6288f1f`.
+
+### 2026-08-24T01:40:00Z · Agent: Codex GPT-5 · Batch: mcp-call-preexecution-gate
+
+- Paths touched: `src/main/kotlin/atropos/bridge/BridgeMcpHandler.kt` (+31), `src/test/kotlin/atropos/bridge/BridgeMcpHandlerTest.kt` (+31), `STATUS-BACKEND.md` (caller/gate evidence note).
+- Atoms / phases affected: B-005, B-011, ADD-MCP-001..004; external MCP territory/policy boundary.
+- Predicate moved: bridge `/v1/mcp/call` now requires caller identity and declared territory, routes the request through the existing `McpTerritoryBridge`, refuses non-admitted/non-allowed operations, and only then starts the configured MCP process. A focused regression test proves a refused call does not start the host.
+- Verification actually run: `git diff --check` and shell syntax checks passed. Root Gradle tests and hosted bridge tests were not run; no runtime green or VERIFIED claim is made.
+- % delta: unchanged; no VERIFIED claim.
+- Fingerprints: `BridgeMcpHandler.kt=15fb9226167e`; `BridgeMcpHandlerTest.kt=ff330840c17e`.
+
+### 2026-08-24T02:05:00Z · Agent: Codex GPT-5 · Batch: mcp-host-shared-gate
+
+- Paths touched: `src/main/kotlin/atropos/core/integration/McpHostManager.kt` (+22), `src/main/kotlin/atropos/bridge/BridgeMcpHandler.kt` (+8), `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+18), `STATUS-BACKEND.md` (shared-gate note).
+- Atoms / phases affected: B-011, ADD-MCP-001..004; one-policy MCP execution.
+- Predicate moved: direct CLI/host calls now cross the existing `McpTerritoryBridge` before process creation, with caller, operation, and territory parameters; the bridge forwards its external identity and territory to that same owner. A regression test proves an unexposed operation cannot start an MCP process.
+- Verification actually run: `git diff --check` and shell syntax checks passed. Root Gradle and hosted MCP tests were not run; no compile/runtime green or VERIFIED claim is made.
+- % delta: unchanged; no VERIFIED claim.
+- Fingerprints: `McpHostManager.kt=10f140a4307d`; `BridgeMcpHandler.kt=58c7e6e262ea`; `McpHostManagerTest.kt=93067f7be003`.
+
+### 2026-08-24T02:25:00Z · Agent: Codex GPT-5 · Batch: mcp-local-operator-policy
+
+- Paths touched: `src/main/kotlin/atropos/core/integration/McpHostManager.kt` (+17).
+- Atoms / phases affected: B-011, ADD-MCP-001..004; local CLI versus external MCP authorization.
+- Predicate moved: the shared MCP host gate now treats only the explicit `mcp-cli` caller as the local human operator; external caller identities still require delegated territory. Both paths use `McpTerritoryBridge` and `BoundedAgencyGate`, while operation allowlisting remains enforced before process start.
+- Verification actually run: `git diff --check` and shell syntax checks passed. Root Gradle and hosted tests were not run; no compile/runtime green or VERIFIED claim is made.
+- % delta: unchanged; no VERIFIED claim.
+- Fingerprint: `McpHostManager.kt=c06d28f536e7`.
+
+### 2026-08-24T02:45:00Z · Agent: Codex GPT-5 · Batch: bridge-mcp-body-identity
+
+- Paths touched: `src/main/kotlin/atropos/bridge/BridgeMcpHandler.kt` (+12), `src/test/kotlin/atropos/bridge/BridgeMcpHandlerTest.kt` (+18), `STATUS-BACKEND.md` (body/query evidence note).
+- Atoms / phases affected: B-005, ADD-W-001, B-011; request-aware MCP bridge.
+- Predicate moved: `/v1/mcp/call` now reads bounded form fields from either query or POST body, including server, tool, caller identity, operation, territory, and arguments; it no longer silently ignores body identity before the shared gate.
+- Verification actually run: `git diff --check` and shell syntax checks passed. Root Gradle and hosted bridge tests were not run; no compile/runtime green or VERIFIED claim is made.
+- % delta: unchanged; no VERIFIED claim.
+- Fingerprints: `BridgeMcpHandler.kt=cbd4b987f988`; `BridgeMcpHandlerTest.kt=b92bcc69a4fe`.
+
+### 2026-08-24T03:15:00Z · Agent: Codex GPT-5 · Batch: mcp-evidence-redaction
+
+- Paths touched: `src/main/kotlin/atropos/core/integration/McpHostManager.kt` (+7), `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+4), `STATUS-BACKEND.md` (redaction evidence note).
+- Atoms / phases affected: B-011, ADD-MCP-003, security/redaction boundary.
+- Predicate moved: MCP tool responses and persisted evidence now pass through the existing `RedactionFilter`; evidence hashes are computed from safe content, and no-evidence results remain explicit.
+- Verification actually run: `git diff --check` and shell syntax checks passed. Root Gradle and hosted MCP tests were not run; no compile/runtime green or VERIFIED claim is made.
+- % delta: unchanged; no VERIFIED claim.
+- Fingerprints: `McpHostManager.kt=03a9f0b23f9c`; `McpHostManagerTest.kt=e83ba789bea7`.
+
+### 2026-08-24T04:10:00Z · Agent: Codex GPT-5 · Batch: install-provider-config-root-alignment
+
+- Paths touched: `src/main/kotlin/atropos/core/Config.kt`, `src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt`, `src/main/kotlin/atropos/core/security/TokenIsolationVault.kt`, `SecretSource.kt`, `SecretEnrollmentSource.kt`, `STATUS-BACKEND.md`.
+- Atoms / phases affected: B-INST-004, B-PROV-001..004, B-PROV connect, B-OC-002, secret storage boundary.
+- Predicate moved: the installer-created `~/.atropos/config.json` and `~/.atropos/provider/providers.json` are now the default runtime config locations; default vault, provider discovery, provider activation, and enrollment use `~/.atropos/secrets`. Explicit workspace roots remain available for isolated tests/callers, preserving one vault and one provider onboarding owner.
+- Verification actually run: `Config.kt` plus repo-root locator compiled; the security package excluding unrelated provider-dependent `KeyDoctorService` compiled; `git diff --check` and shell syntax checks passed. Full root Gradle/provider tests and hosted execution remain unrun.
+- % delta: unchanged; no VERIFIED claim.
+- Fingerprints: `Config.kt=2bf87110845c`; `ProviderOnboarding.kt=d9e41bf8b71f`; `TokenIsolationVault.kt=02430c1fd307`; `SecretSource.kt=e616a1ffc6c6`; `SecretEnrollmentSource.kt=27476024f215`.
+
+### 2026-08-24T04:35:00Z · Agent: Codex GPT-5 · Batch: provider-default-path-verification
+
+- Paths touched: none after the config-root batch; verification-only follow-up.
+- Predicate moved: unchanged. The changed security/config slice compiled after excluding unrelated `KeyDoctorService`; the broader provider slice was inconclusive because its manually selected files omitted existing `ProviderDescriptorRegistry` and policy dependencies, not because of a reported changed-path error.
+- Verification actually run: `git diff --check`, shell syntax checks, and `bash scripts/install-contract-test.sh` passed (`ATROPOS_INSTALL_CONTRACT_OK`). Full root Gradle and hosted tests remain unrun.
+- % delta: unchanged; no VERIFIED claim.
+- Fingerprint: `scripts/atropos-fast-gate.sh=5a861678f805`.
+
+### 2026-08-24T00:35:00Z · Agent: Codex GPT-5 · Batch: bridge-mcp-production-separator
+
+- Paths touched: `src/main/kotlin/atropos/bridge/AtroposBridge.kt` (+1 separator).
+- Atoms / phases affected: B-005, B-011; production bridge MCP host binding.
+- Predicate moved: `LocalEngineBridge.server()` now has valid Kotlin argument separation while binding the existing `McpHostManager(repoRoot)`, so the production MCP bridge seam is syntactically wired rather than left behind the command-runner argument.
+- Verification actually run: `git diff --check` and shell syntax checks passed. A narrow Kotlin invocation was inconclusive because the supplied stale classpath lacked the bridge/core dependency graph and emitted unresolved-reference errors; no compile pass is claimed. Hosted Gradle remains authoritative.
+- % delta: unchanged; no VERIFIED claim.
+
+### 2026-08-24T00:10:00Z · Agent: Codex GPT-5 · Batch: local-compile-resource-boundary
+
+- Paths touched: none; verification-only batch.
+- Predicate moved: unchanged. The existing fast-gate script is incompatible with this Termux runtime because `/dev/fd` is unavailable; a portable `find -print0 | xargs kotlinc` production compile was then started and stopped after more than two minutes without diagnostics.
+- Verification actually run: no compile result is claimed. Prior shell syntax, installer contracts, and `git diff --check` remain passing. GitHub Actions remains the authoritative compile/test lane.
+- % delta: unchanged; no VERIFIED claim.
+
+### 2026-08-23T19:00:00Z · Agent: Codex GPT-5 · Batch: local-only-research-boundary
+
+- Paths touched: `src/main/kotlin/atropos/core/factory/FactoryResearchService.kt`, `FactoryLineageFactory.kt`, `AppFactoryRouter.kt`, `src/main/kotlin/atropos/cli/CommandRouter.kt`, and `STATUS-BACKEND.md`.
+- Predicate moved: local-only mode now refuses factory lakehouse/bounded remote research and the `/scavenge` remote research command through the existing runtime mode/config owners, including JSON `RuntimeConfig.localOnly` passed from `AppFactoryRouter`; it records an explicit local-only reason rather than silently soft-succeeding.
+- Verification actually run: `git diff --check` passed. The attempted `:core:jvmTest --tests atropos.core.provider.ProviderCascadeRouterTest` exited because that root test class is not present in the `core` test source set; no test pass is claimed. Root compile and hosted Actions remain pending.
+- % delta: unchanged; B-LOCAL-ONLY remains partial pending hosted compilation and runtime evidence.
+- Fingerprints (sha256 prefix): `FactoryResearchService.kt=aacbfaf1e8dc1f86`; `FactoryLineageFactory.kt=e52f52b544367a5d`; `AppFactoryRouter.kt=9d0ece069f84ffdc`; `CommandRouter.kt=5b5c5c123f1bd455`; `compile-gate.yml=956e833fe56bda20`; `STATUS-BACKEND.md=8bd3af93ab51c991`; `AGENTS.md` changes after this row.
+
+### 2026-08-23T19:30:00Z · Agent: Codex GPT-5 · Batch: factory-live-repair-caller
+
+- Paths touched: `src/main/kotlin/atropos/core/factory/FactoryLiveRepairAction.kt`, `AppFactoryRouter.kt`, `src/test/kotlin/atropos/core/factory/FactoryLiveRepairActionTest.kt`, `.github/workflows/compile-gate.yml`, and `STATUS-BACKEND.md`.
+- Atoms / phases affected: FTY-03 and hosted factory verification.
+- Predicate moved: `AppFactoryRouter` now supplies a real production callback to `FactoryRunOrchestrator`; the callback admits only an explicit argv-style `ATROPOS_FACTORY_REPAIR_COMMAND`, runs it through `BoundedAgencyGate` and `BoundedProcessRunner`, redacts/records stderr and exit evidence, and returns the unchanged freeze hash plus predicates. Missing command, policy refusal, timeout, or nonzero exit cannot become success.
+- Verification actually run: `git diff --check` passed. Focused root test was added and wired to hosted Actions; root compilation and hosted execution remain pending.
+- % delta: unchanged; FTY-03 remains partial until hosted compile/test and a real configured repair run produce evidence.
+- Fingerprints: `FactoryLiveRepairAction.kt` and test hashes to be recorded after the next filesystem refresh; `AGENTS.md` changes after this row.
+
+### 2026-08-23T20:00:00Z · Agent: Codex GPT-5 · Batch: provider-endpoint-discovery-truth
+
+- Paths touched: `src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt`, `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt`, and `STATUS-BACKEND.md`.
+- Atoms / phases affected: B-PROV-001/002/003/004.
+- Predicate moved: endpoint aliases (`OPENAI_API_BASE`, `AZURE_OPENAI_ENDPOINT`) are discovered as metadata without being treated as credentials; key-backed providers classify healthy, endpoint-only providers remain untested, and provider values remain absent from `providers.json`.
+- Verification actually run: `git diff --check` passed; focused tests are wired to hosted Actions but not executed locally because the root test compilation is delegated to GitHub Actions.
+- % delta: unchanged; provider onboarding remains partial pending hosted compile/test and live health probes.
+- Fingerprints: `ProviderOnboarding.kt=c77b91f35e253aa8`; `ProviderOnboardingTest.kt=2e40ea6604bd0d1e`; `AGENTS.md` changes after this row.
+
+### 2026-08-23T20:30:00Z · Agent: Codex GPT-5 · Batch: mcp-probe-root-wire
+
+- Paths touched: `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt`, and `STATUS-BACKEND.md`.
+- Atoms / phases affected: B-011 / ADD-MCP-001.
+- Predicate moved: the default stdio health probe now launches relative MCP commands from the configured repository root and still requires both initialize and tools/list response ids; a deterministic executable-server test covers the handshake path.
+- Verification actually run: `git diff --check` passed; standalone `kotlinc` compilation of `McpHostManager.kt` passed after explicitly typing the bounded executor response; hosted focused test remains pending.
+- % delta: unchanged; MCP remains partial pending hosted execution and external-server evidence.
+- Fingerprints: `McpHostManager.kt=8590e1225b5d83ac`; `McpHostManagerTest.kt=9af01a60d16acaa5`; `AGENTS.md` changes after this row.
+
+### 2026-08-23T22:00:00Z · Agent: Codex GPT-5 · Batch: mcp-local-tool-call-wire
+
+- Paths touched: `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `src/main/kotlin/atropos/cli/McpCommandHandler.kt`, `src/main/kotlin/atropos/cli/input/CommandCatalog.kt`, `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt`, and `STATUS-BACKEND.md`.
+- Atoms / phases affected: B-011 / ADD-MCP-002/003/008.
+- Predicate moved: the canonical MCP host now performs one bounded local stdio `tools/call`, enforcing enabled/allowlist/localOnly checks, bounded arguments and response size, and durable evidence recording; `/mcp call <server> <tool>` is the production CLI caller.
+- Verification actually run: standalone `kotlinc` compilation of `McpHostManager.kt`, `bash -n scripts/install-contract-test.sh`, and `git diff --check` passed. Hosted root test execution remains pending.
+- % delta: unchanged; MCP remains partial pending hosted test execution and real server interoperability evidence.
+- Fingerprints: `McpHostManager.kt=8590e1225b5d83ac`; `McpCommandHandler.kt=c9fe6aad696a8f4b`; `CommandCatalog.kt=d51d39056a25dd46`; `McpHostManagerTest.kt=9af01a60d16acaa5`; `STATUS-BACKEND.md=2c7cbcbabbe80317`; `AGENTS.md` changes after this row.
+
+### 2026-08-23T21:00:00Z · Agent: Codex GPT-5 · Batch: installer-first-run-doctor
+
+- Paths touched: `install.sh`, `scripts/install-contract-test.sh`, `.github/workflows/release.yml`, and `STATUS-BACKEND.md`.
+- Atoms / phases affected: B-INST-001..005 and AUD036.
+- Predicate moved: installation now creates missing local `config.json` and provider metadata skeletons without overwriting operator files, then runs the existing executable `--health` check and fails the install if it does not pass. The static contract test is wired into the release workflow.
+- Verification actually run: `bash -n install.sh scripts/install-contract-test.sh`, `bash scripts/install-contract-test.sh`, `bash scripts/package-installers-test.sh`, and `git diff --check` passed. Hosted release and device installation remain unrun.
+- % delta: unchanged; installer remains partial pending hosted artifact publication and operator install proof.
+- Fingerprints: `install.sh=54ab5b5b6e350093`; `install-contract-test.sh=69a39d21ea95f15a`; `release.yml=ed37f37d6f7bb071`; `STATUS-BACKEND.md=65a3eaa6dd36348a`; `AGENTS.md` changes after this row.
+
+### 2026-08-23T23:00:00Z · Agent: Codex GPT-5 · Batch: aggregate-backend-doctor
+
+- Paths touched: `src/main/kotlin/atropos/cli/BackendDoctor.kt`, `CommandRouter.kt`, `src/main/kotlin/atropos/cli/input/CommandCatalog.kt`, `src/test/kotlin/atropos/cli/BackendDoctorTest.kt`, `.github/workflows/compile-gate.yml`, and `STATUS-BACKEND.md`.
+- Atoms / phases affected: B-HELP-001, B-INST-005, B-PROV-003, B-011.
+- Predicate moved: `/doctor` is now a production command that composes existing provider onboarding and MCP host status, reports local-only mode and zero-provider remediation, and never renders secret values or creates a second registry.
+- Verification actually run: `git diff --check`, shell syntax checks, and hash refresh passed; the focused doctor test is wired to hosted Actions but root execution remains pending.
+- % delta: unchanged; doctor remains partial pending hosted compile/test and installed-runtime proof.
+- Fingerprints: `BackendDoctor.kt=370f5c5d213f7422`; `BackendDoctorTest.kt=9403e7739c34e5b1`; `compile-gate.yml=262cd72882a727f1`; `STATUS-BACKEND.md=592dd24c71a37de4`; `AGENTS.md` changes after this row.
+
+### 2026-08-24T00:00:00Z · Agent: Codex GPT-5 · Batch: bridge-mcp-call-wire
+
+- Paths touched: `src/main/kotlin/atropos/bridge/BridgeMcpHandler.kt`, `BridgeRoutes.kt`, `src/test/kotlin/atropos/bridge/BridgeMcpHandlerTest.kt`, and `STATUS-BACKEND.md`.
+- Atoms / phases affected: B-005, B-011, ADD-W-001, ADD-MCP-003.
+- Predicate moved: the production bridge now exposes `POST /v1/mcp/call`, which delegates to the canonical bounded MCP host and returns redacted tool response/evidence metadata; missing identity and host failures are explicit refusals rather than silent success.
+- Verification actually run: `git diff --check` passed; the focused bridge test is already wired to hosted Actions but was not run locally.
+- % delta: unchanged; bridge/MCP remain partial pending hosted tests and live interoperability evidence.
+- Fingerprints: `BridgeMcpHandler.kt=7788968f3afd79cf`; `BridgeRoutes.kt=f786fbcecac228e2`; `BridgeMcpHandlerTest.kt=d1434bc8115be2e1`; `STATUS-BACKEND.md=0ee1d7974204738a`; `AGENTS.md` changes after this row.
+
+### 2026-08-24T00:30:00Z · Agent: Codex GPT-5 · Batch: free-first-paid-approval-wire
+
+- Paths touched: `src/main/kotlin/atropos/core/provider/ProviderCascadeRouter.kt`, `ProviderCascadeOrder.kt`, `src/main/kotlin/atropos/core/policy/ExecutionPolicyEngine.kt`, agent/chat consumers, provider policy tests, and `STATUS-BACKEND.md`.
+- Atoms / phases affected: B-PROV-012, B-003, B-006.
+- Predicate moved: free/local cascade exhaustion now returns a paid approval card without attempting paid providers; after the canonical `EmergencyPaidGate` unlocks one provider, the same cascade may try only that unlocked provider. The policy engine now permits that exact unlocked paid proposal while continuing to deny all other paid calls.
+- Verification actually run: `git diff --check` passed; focused cascade/policy tests are wired to hosted Actions but not run locally.
+- % delta: unchanged; provider policy remains partial pending hosted tests and live approval/resume evidence.
+- Fingerprints: `ProviderCascadeRouter.kt=b3d95494c7068e8f`; `ProviderCascadeOrder.kt=111f5a27331fa038`; `ExecutionPolicyEngine.kt=ddfd56d473f2034b`; `ProviderCascadeRouterTest.kt=ef4fc20163b5a371`; `ProviderActionProposalsTest.kt=dc48e5de7577d685`; `STATUS-BACKEND.md=2b8f0a62ac627c99`; `AGENTS.md` changes after this row.
+
+### 2026-08-23T18:30:00Z · Agent: Codex GPT-5 · Batch: shared-local-only-policy
+
+- Paths touched: `src/main/kotlin/atropos/core/Config.kt`, `ExecutionPolicyEngine.kt`, `ProviderActionProposals.kt`, `RoutePolicy.kt`, `ProviderCascadeRouter.kt`, `ProviderOnboarding.kt`, config-bound agent/CLI/factory callers, focused policy/route tests, `.github/workflows/compile-gate.yml`, and `STATUS-BACKEND.md`.
+- Atoms / phases affected: B-LOCAL-ONLY, B-006, B-OC-002, B-PROV-002, and hosted focused verification.
+- Predicate moved: `ATROPOS_LOCAL_ONLY` and `RuntimeConfig.localOnly` now feed the existing policy/router owners; remote provider calls and network actions are denied by `ExecutionPolicyEngine`, remote candidates—including explicit cascade overrides—are filtered, and local providers remain eligible. Agent, repair, CLI, and SpecGraph cascade construction now passes the loaded config mode rather than silently falling back to environment-only defaults.
+- Verification actually run: `git diff --check` passed. The compile-gate workflow now includes `ProviderActionProposalsTest`, `QuotaLedgerRouteTruthTest`, and `BridgeMcpHandlerTest` in the hosted focused lane. No root Gradle compile/test, GitHub Actions run, live provider/MCP probe, or runtime local-only proof is claimed here.
+- % delta: unchanged; local-only remains partial until hosted compilation/tests and research-plane enforcement are evidenced.
+- Fingerprints after this batch: record exact hashes in the next ledger refresh; `AGENTS.md` is intentionally self-referential and changes after this row.
+
+### 2026-08-23T17:00:00Z · Agent: Codex GPT-5 · Batch: provider-preference-and-namespace-wire
+
+- Paths touched: `src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt` (+14/-2), `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` (+20), `STATUS-BACKEND.md` (+1).
+- Atoms / phases affected: B-PROV-001, B-PROV-004a/d, and free-first route truth.
+- Predicate moved: the existing `/providers prefer <provider>` state now affects the ordered discovery list consumed by healthy-provider callbacks, so preference is no longer metadata-only. Generic `ATROPOS_PROVIDER_*` discovery now matches multiword provider IDs such as `deepseek_direct` while preserving metadata-only persistence.
+- Verification: focused regression coverage was added for generic namespace matching and preference order. Hosted compile/test workflow remains the authoritative execution lane; no full Gradle or live provider call is claimed in this batch.
+- % delta: unchanged; provider atoms remain partial until hosted focused tests and runtime/provider checks pass.
+- Fingerprints (sha256): `ProviderOnboarding.kt=fae00d047e0df490a1f2948807deff93b1515c9f164e6d056f188703acd3518b`; `ProviderOnboardingTest.kt=ed34ac957836e55561e74de921d895a19ae8ff9fb91ee9eb0f55f28ea26cbd33`; `STATUS-BACKEND.md=707839616a1baf460e782e70d717a243201a5029dbc83aa107e825d31354f99a`; `AGENTS.md` changes after this row.
+
+### 2026-08-23T17:30:00Z · Agent: Codex GPT-5 · Batch: bridge-mcp-host-status-wire
+
+- Paths touched: `src/main/kotlin/atropos/bridge/BridgeMcpHandler.kt` (+20), `src/main/kotlin/atropos/bridge/BridgeRoutes.kt` (+5), `src/main/kotlin/atropos/bridge/AtroposBridge.kt` (+1), `src/test/kotlin/atropos/bridge/BridgeMcpHandlerTest.kt` (+17), `STATUS-BACKEND.md` (+2).
+- Atoms / phases affected: B-005, B-MCP-BRIDGE-SCHEMA, ADD-MCP-001/004/008.
+- Predicate moved: the production bridge now binds the existing `McpHostManager` and exposes read-only `GET /v1/mcp/status`; the CLI and bridge therefore read one local MCP configuration/health owner. The endpoint emits only server metadata, transport, health, and reason—never configuration secrets—and the existing `/v1/mcp/judge` territory gate remains unchanged.
+- Verification: focused bridge/MCP status coverage was added; `git diff --check` is required before the batch is accepted. Hosted compile and tests remain the authoritative execution lane; no runtime server bind is claimed locally.
+- % delta: unchanged; bridge and MCP atoms remain partial pending hosted execution and real stdio MCP evidence.
+- Fingerprints (sha256): `BridgeMcpHandler.kt=3e4b4371b2c4e715c423dc90a840012f2affaf4803bf37f83f8465a4e6c19f9f`; `BridgeRoutes.kt=d697c3e0fa5379639b9d5171a8de3df3f1a3133f6a6d2eb4c0be114ef388492f`; `AtroposBridge.kt=6ee1e6d246c85f7b106cea65e7fcd246e9bacff8eef3d46cfdf6caab52216e6f`; `BridgeMcpHandlerTest.kt=7d2959ea92dab9d127a61d08df0e40216aff0ce0f1f62636623cfb20c6540ae5`; `STATUS-BACKEND.md=bb933bbad52b98eeddc07d25a338bb90b21975da3bd8e3abb6d26cfa96342858`; `AGENTS.md` changes after this row.
+
+### 2026-08-23T18:00:00Z · Agent: Codex GPT-5 · Batch: factory-repair-fail-closed
+
+- Paths touched: `src/main/kotlin/atropos/core/factory/FactoryRunOrchestrator.kt` (+9/-17), `STATUS-BACKEND.md` (+1).
+- Atoms / phases affected: FTY-03 and FTY-05 anti-false-finish.
+- Predicate moved: a verification/generation failure without a supplied real repair callback now marks the project failed and propagates the original failure. Synthetic exit-zero repair evidence and inferred predicate success were removed. Re-entry remains available only after callback-produced evidence passes the existing `FactoryAcceptanceFreeze` oracle.
+- Verification: `git diff --check` passed; root factory tests and full hosted compile remain unrun in this environment.
+- % delta: unchanged; FTY-03 remains partial pending a runtime-owned repair callback and focused hosted tests.
+- Fingerprints (sha256): `FactoryRunOrchestrator.kt=80d4a3cd77067fd35076c923b76ed980b28e3097940058793bd8d191443ce3f4`; `STATUS-BACKEND.md=e616fc83f7736843923a0c1430fafc7a08c707efb4c3c623e12c7c154f4a9d21`; `AGENTS.md` changes after this row.
+
+### 2026-08-23T16:00:00Z · Agent: Codex GPT-5 · Batch: mcp-stdio-probe-wiring
+
+- Paths touched: `src/main/kotlin/atropos/core/integration/McpHostManager.kt` (+28/-5), `STATUS-BACKEND.md` (+2).
+- Atoms / phases affected: B-MCP-BRIDGE-SCHEMA and ADD-MCP-001/002/003; existing `/mcp list|test` caller remains the production owner.
+- Predicate moved: the existing MCP host no longer requires a stdio server to terminate in order to be considered healthy. It sends the bounded initialize/tools-list probe, reads a bounded response window with a three-second timeout, requires both response ids, and forcibly reaps only the probe process. This preserves one host/one command owner and avoids a false unhealthy result for long-lived MCP servers.
+- Verification actually run: standalone `kotlinc src/main/kotlin/atropos/core/integration/McpHostManager.kt` exited 0 and `git diff --check` passed. The focused Gradle test and a real MCP process were not run; no runtime health claim is made.
+- % delta: unchanged; B-011 remains partial pending hosted focused tests and a real compatible stdio probe.
+- Fingerprints (sha256): `McpHostManager.kt=281eb2b30e1004e1994e50c3335118fd972d2fbb41a5396b9608e7f884352342`; `STATUS-BACKEND.md` recalculate after ledger append.
+
+### 2026-08-23T16:15:00Z · Agent: Codex GPT-5 · Batch: hosted-installer-packaging-wire
+
+- Paths touched: `.github/workflows/release.yml` (+6), `STATUS-BACKEND.md` (+1).
+- Atoms / phases affected: B-INST-001..005 and AUD036; existing `install.sh` and `scripts/package-installers.sh` remain the sole installer owners.
+- Predicate moved: the hosted release path now calls the existing installer contract test and packages Debian/Homebrew/Scoop metadata immediately after the verified JAR build, giving the packaging script a production caller in the release workflow without adding an installer system.
+- Verification actually run: `bash scripts/package-installers-test.sh` exited 0 with `ATROPOS_INSTALLER_CONTRACT_OK`; `git diff --check` passed. The release workflow itself, published artifact URL, checksum download, and device installation were not run.
+- % delta: unchanged; installer atoms remain partial pending hosted release execution and operator install proof.
+- Fingerprints (sha256): `.github/workflows/release.yml=4f0b840394d8b3fd24a62ce5ef6f015a77c1175b648a898124ecc51bbde3edad`; `scripts/package-installers.sh=e4fe43e9467f28883f892f0231a74ed9cac5b5585651141d5a4297e461eb8db9`; `STATUS-BACKEND.md=c288a7dc66b2800c8ff1995c3acde7ab9b1def477fa3aa48fa7d915d5d4e9e20`.
+
+### 2026-08-23T16:30:00Z · Agent: Codex GPT-5 · Batch: hosted-verification-lane
+
+- Paths touched: `.github/workflows/compile-gate.yml` (+20), `STATUS-BACKEND.md` (+1), and `AGENTS.md`.
+- Predicate moved: the hosted workflow now has an explicit focused backend-test job for factory, provider, bridge, and MCP suites after production/test compilation. GitHub Actions is the declared authoritative full verification lane for this repository; local Gradle heap exhaustion is no longer treated as a reason to abandon implementation.
+- Verification actually run: `git diff --check` passed. The workflow itself was not executed in this environment. Fingerprints: workflow `0ad8a670278e`; status `da329bab113a`.
+- % delta: unchanged; no VERIFIED claim.
+
+### 2026-08-23T16:00:00Z · Agent: Codex GPT-5 · Batch: live-factory-regeneration-repair-20260823
+
+- Paths touched: `src/main/kotlin/atropos/core/factory/FactoryRunOrchestrator.kt` (+46/-34), `docs/ATROPOS_AUTONOMOUS_CONTINUATION_RULE.md` (new), `STATUS-BACKEND.md` (+3), and `AGENTS.md`.
+- Atoms / phases affected: FTY-03 and continuation/recovery control.
+- Predicate moved: verification failure now enters one bounded production regeneration/verification retry. Successful retry evidence records the original redacted stderr, requires the unchanged acceptance-freeze hash and all repair predicates, then re-enters the existing obligation loop; failed retry propagates the original failure and never reports completion. The durable continuation rule requires resuming the first unfinished atom after interrupted commands.
+- Verification actually run: `git diff --check` passed. The root `compileKotlin --rerun-tasks` attempt exhausted the configured 512 MiB Gradle daemon heap after approximately 12 minutes and was stopped; no root compile/test pass is claimed. The affected factory source slice compiled with `kotlinc`.
+- % delta: unchanged; FTY-03 remains partial until focused root tests and runtime evidence pass.
+- Fingerprints: continuation rule `4b614b1b5de8`; factory/status fingerprints to be refreshed after the next clean check.
+
+### 2026-08-23T12:35:00Z · Agent: Codex GPT-5 · Batch: provider-discovery-billing-connect-wave2
+
+- Paths touched: `src/main/kotlin/atropos/core/provider/ProviderDescriptor.kt` (+10), `src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt` (+22), `src/main/kotlin/atropos/cli/CommandRouter.kt` (+9), `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` (+14), and `STATUS-BACKEND.md` (+1).
+- Atoms / phases affected: B-PROV-001/002/003/012; provider activation, route truth, local connect, and free-first policy.
+- Predicate moved: provider metadata discovery now covers the requested namespace and common aliases, exposes one `BillingClass` owner (`LOCAL`, `FREE`, `PAID`), excludes paid/credit providers from `ProviderPolicyGate.freeCascade`, surfaces a paid approval card for the next paid candidate, and prints the launch cascade/zero-healthy remediation. `/providers connect` remains console-private and vault-backed; `providers.json` remains value-free.
+- Verification actually run: provider descriptor/onboarding source slice compiled with `kotlinc`; `git diff --check` passed. The root focused Gradle test attempt reached `:compileKotlin` but was interrupted after the environment produced no diagnostics for the configured time window; no test result is claimed. No live provider call, paid unlock, GitHub Actions run, JAR, or install proof.
+- % delta: unchanged; no VERIFIED claim.
+- Fingerprints (sha256): `ProviderDescriptor.kt=28e1979c1920`; `ProviderOnboarding.kt=6676f0c3d6aa`; `CommandRouter.kt=614f9b0d5548`; `ProviderOnboardingTest.kt` updated in this batch; `STATUS-BACKEND.md=7375a530afe3`.
+
+### 2026-08-23T13:10:00Z · Agent: Codex GPT-5 · Batch: request-aware-events-sse-wave3
+
+- Paths touched: `src/main/kotlin/atropos/bridge/BridgeEventsHandler.kt` (+35), `src/main/kotlin/atropos/bridge/BridgeRoutes.kt` (+12), `src/test/kotlin/atropos/bridge/BridgeEventsHandlerTest.kt` (+17), and `STATUS-BACKEND.md` (+1).
+- Atoms / phases affected: B-005 and ADD-W-001 engine-side bridge/SSE identity.
+- Predicate moved: `/v1/events` now filters by the requested `session` identity, and `/v1/events/stream` provides the same cursor/session contract through the existing `BridgeEventHub` and `HttpStreamRoute`. The route does not create a second event bus and does not ignore the request identity.
+- Verification actually run: `git diff --check` passed; a narrow bridge source slice compiled with `kotlinc`. The focused bridge Gradle tests were not run after this change. No server bind, Web client, or Android runtime proof is claimed.
+- % delta: unchanged; no VERIFIED claim.
+- Fingerprints (sha256): `BridgeEventsHandler.kt=78936af1c936`; `BridgeRoutes.kt=de41baf7e693`; `BridgeEventsHandlerTest.kt=6f8dd5c58263`; `STATUS-BACKEND.md=f5cb9bb2fc81`.
+
+### 2026-08-23T14:00:00Z · Agent: Codex GPT-5 · Batch: bounded-mcp-host-wave4
+
+- Paths touched: `src/main/kotlin/atropos/core/integration/McpHostManager.kt` (new), `src/main/kotlin/atropos/cli/McpCommandHandler.kt` (new), `src/main/kotlin/atropos/cli/CommandRouter.kt` (+5), `src/main/kotlin/atropos/cli/input/CommandCatalog.kt` (+1), `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (new), `docs/mcp-examples/{github,filesystem,playwright,markitdown,chrome-devtools}.json` (new), and `STATUS-BACKEND.md` (+1).
+- Atoms / phases affected: B-011 and ADD-MCP-001..009.
+- Predicate moved: the engine now has one bounded `mcp.json` host owner with allowlist and localOnly checks, init/tools-list health states, disabled-by-default community examples, pre-prompt tool budgets, evidence hash or explicit no-evidence reason, and `/mcp list|test`. No remote search or auto-install path was added; inbound execution remains behind the existing `McpTerritoryBridge`.
+- Verification actually run: `git diff --check` passed; a narrow MCP/CLI source slice compiled with `kotlinc`. Focused Gradle tests were not run. No external MCP process, network transport, auto-install, or runtime proof is claimed.
+- % delta: unchanged; no VERIFIED claim.
+- Fingerprints (sha256): `McpHostManager.kt=acca149c6978`; `McpCommandHandler.kt=ed51c9ee9dd5`; `CommandRouter.kt=f64b5b8e9277`; `CommandCatalog.kt=f76ed42bca2`; `McpHostManagerTest.kt=751e55e9944d`; examples `chrome=3032db12d14f`, `filesystem=fd0df145cff`, `github=419daf202cf`, `markitdown=97c70d0f037`, `playwright=6b48cfeb0be`; `STATUS-BACKEND.md=03354e33acfa`.
+
+### 2026-08-23T14:25:00Z · Agent: Codex GPT-5 · Batch: tier0-github-check-example-wave5
+
+- Paths touched: `.github/actions/atropos-verify/action.yml` (new), `.github/workflows/atropos-verify-example.yml` (new), `CONTRIBUTING.md` (new), and `STATUS-BACKEND.md` (+1). Existing `src/main/kotlin/atropos/core/github/GitHubBinding.kt` was verified as the local GitHub side-effect owner.
+- Atoms / phases affected: B-MCP-GHA and Tier-0 integration documentation.
+- Predicate moved: a reusable GitHub check action and manual example workflow now call the existing bounded repository verifier; contribution guidance forbids per-brand MCP adapter duplication. Existing GitHub push code remains explicit-authorization and territory bounded; no second GitHub stack was introduced.
+- Verification actually run: `git diff --check` passed and SHA-256 fingerprints were recorded. No GitHub Actions execution, OAuth/PAT operation, or remote check-run proof was performed.
+- % delta: unchanged; no VERIFIED claim.
+- Fingerprints (sha256): `action.yml=7158fb07e4be`; `atropos-verify-example.yml=4bd3b8207a22`; `CONTRIBUTING.md=b6e7619b11cc`; `STATUS-BACKEND.md=1bd2856354d1`.
+
 ### 2026-08-16T10:20:50Z · Agent: Codex GPT-5 · Batch: completion-evidence-integrity-reaudit-20260816
 
 - Paths touched: `scripts/audit-residual-obligations.py` (added a machine-enforced evidence-channel invariant), `scripts/audit-residual-obligations-test.py` (added the corresponding static regression check), `docs/completion/ATROPOS_UNIFIED_OBLIGATION_AUDIT.json`, `docs/completion/ATROPOS_UNIFIED_OBLIGATION_AUDIT.md`, and `docs/completion/ATROPOS_CODE_COMPLETION_REPORT.md`.
@@ -4501,6 +4971,22 @@ End of AGENTS.md
 - Atoms / phases affected: census only; no phase percentage claim.
 - Predicate moved: the repository now has a bounded, path-directed list of oversized tracked files outside the two web trees in Claude's 60-atom plan. The report includes ATROPOS Kotlin/core, SpecGraph backend/scripts, tests, packages, and generated assets; W0 HTTP/SSE candidates are explicitly marked for ownership review.
 - % delta: unchanged.
+
+### 2026-08-22T10:15:00Z · Agent: Codex GPT-5 · Batch: resumed-narrow-compile-verification-20260822
+
+- Paths touched: `src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt` (+5/-2 effective correction to JSON reader), plus existing uncompiled factory/provider batch verification.
+- Predicate moved: fixed a real compile error in provider config parsing caused by destructuring six values from a five-group regex match. The provider onboarding source now compiles successfully against the existing ATROPOS/core jars; the factory handoff/obligation/repair sources compile successfully with the existing ATROPOS jar as a friend module, with only pre-existing `FactoryLineage` elvis warnings.
+- Verification actually run: `git diff --check` passed. Full root Gradle compile/test remains unclaimed; focused root tests remain unrun. No provider live calls, paid unlock, JAR, install, or runtime proof.
+- % delta: unchanged; no VERIFIED claim.
+
+### 2026-08-23T10:30:00Z · Agent: Codex GPT-5 · Batch: github-compile-and-local-provider-connect-20260823
+
+- Paths touched: `.github/workflows/compile-gate.yml` (existing workflow now triggers on `main`/`master` push, pull request, and manual dispatch; compile step now runs `compileKotlin compileTestKotlin`), `src/main/kotlin/atropos/cli/ProviderCommandHandler.kt` (+35), `src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt` (+12), and `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` (+12).
+- Predicate moved: GitHub Actions now compiles both production and test Kotlin sources on repository integration events. `/providers connect <provider>` now requests the secret privately through `System.console().readPassword` when available, falls back to stdin without putting the value in command tokens, writes through `TokenIsolationVault`, clears the temporary character array, refreshes local provider state, and reports only provider/path metadata. Local-vault credentials are recognized on subsequent discovery; secrets remain absent from `providers.json`.
+- Verification actually run: `git diff --check` passed. `ProviderOnboarding.kt` narrow Kotlin compilation passed against existing ATROPOS/core jars. The combined CLI narrow check was not authoritative because the stale pre-change JAR lacks current `RoutedTask` and renderer APIs. No full Gradle compile, GitHub workflow run, live provider call, paid unlock, JAR, or install proof was run.
+- % delta: no percentage claim; no VERIFIED claim until hosted or full local compilation and focused tests complete.
+- Fingerprints: `compile-gate.yml=3123e6b9807e`, `ProviderOnboarding.kt=ea1fd6628d6c`, `ProviderCommandHandler.kt=ede9a19bb6c5d`.
+- Fingerprints: `ProviderOnboarding.kt=b2e701022921`; `FactoryRepairExecutor.kt=16e2c5cd36a8`.
 - Why justified: the report is a deterministic physical-line census, excludes build/untracked output, and does not infer mutation ownership. No product code was changed.
 - HR interrupts: none.
 - Fingerprints: `OVERSIZED_FILES_OUTSIDE_CLAUDE_WEB_TERRITORY.md=93efd8d7ffcc873c2d312bd227b13cdf6025da4477802fbccf9c9ab36006eddc`.
@@ -11251,3 +11737,61 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Lakehouse boundary: `LakehouseAtomContextProvider` remains attached only through `InternalExecutionDagSynthesizer`; it is not used by dimension classification.
 - Verification actually run: `git diff --check` passed. Focused tests were written but not run per the operator instruction not to compile. No Gradle, compile, test, build, JAR, install, or runtime proof was run.
 - % delta: unchanged; no phase percentage or VERIFIED claim.
+
+### 2026-08-21T16:05:00Z · Agent: Codex GPT-5 · Batch: factory-open-loop-resume-and-write-guard-20260821
+
+- Paths touched: `src/main/kotlin/atropos/core/factory/FactoryProgressGuard.kt` (+8), `AppProjectGenerator.kt` (+6), `FactoryRunHandoff.kt` (+38), `AppFactoryRouter.kt` (+11), `FactoryObligationLoop.kt` (+61/-2), `FactoryRunOrchestrator.kt` (+13/-3), `FactoryAcceptanceFreeze.kt` (+24), and focused tests `FactoryProgressGuardTest.kt` (+9), `FactoryRunHandoffTest.kt` (+4), `FactoryObligationLoopTest.kt` (+17), `FactoryAcceptanceFreezeTest.kt` (+16).
+- Atoms / phases affected: Phase 19 factory controls; B1 outer obligation execution, B4 anti-false-finish, B5 write-thrash evidence, B6 handoff resume, and B12 freeze-bound repair evidence.
+- Predicate moved: generated writes now call the existing `FactoryProgressGuard` and throw with the oscillation evidence hash when blocked; handoffs can be read and validated and `AppFactoryRouter.resume` continues the persisted DAG without creating a new prompt/project hash; `FactoryObligationLoop.executeUntilSettled` invokes a real callback for each dependency-ready wave until open work is empty or an explicit execution-wave budget is exhausted; completion refuses any nonzero termination reason; repair evidence requires the original freeze hash, zero command exit, stderr evidence, and all predicate results true.
+- Verification actually run: `git diff --check` passed. `:core:jvmTest` remained green for its existing core compilation but contains none of these root factory tests. Root `test --tests` is rejected by the KMP task alias; root `compileTestKotlin` and a narrower `compileKotlin` attempt exceeded the configured 512 MiB Gradle daemon/time budget and were stopped without compiler diagnostics. The new focused tests were not run. No JAR, install, device, or runtime proof was run.
+- % delta: no percentage claim; source changes are not marked VERIFIED until root test compilation and focused execution complete.
+- Fingerprints (sha256, first 12): `FactoryProgressGuard.kt=a8ed07f4a95b`, `FactoryRunHandoff.kt=aa8a017c31d0`, `FactoryObligationLoop.kt=8cd2f811fa31`, `FactoryAcceptanceFreeze.kt=fac07c56f20d`, `AppProjectGenerator.kt=b471abb748a2`, `FactoryRunOrchestrator.kt=d0fe08dcf2d9`, `AppFactoryRouter.kt=c6d82595a173`.
+
+### 2026-08-23T15:10:00Z · Agent: Codex GPT-5 · Batch: durable-autonomous-continuation-rule
+
+- Paths touched: `docs/ATROPOS_AUTONOMOUS_CONTINUATION_RULE.md` (new) and `AGENTS.md` (+10).
+- Predicate moved: unfinished work now has a durable continuation rule: resume the first unfinished atom, continue safe independent work after interrupted verification, update both ledgers at batch boundaries, and preserve truthful partial/blocked labels.
+- Verification: documentation/control change only; no compile or test claim. `% delta: unchanged`.
+- Fingerprint: `docs/ATROPOS_AUTONOMOUS_CONTINUATION_RULE.md=4b614b1b5de8`.
+- Gaps still not in tree: no user-facing `/factory resume` command rendering/driver, no persisted reconstruction of a full `FactoryPlan` from handoff alone, no independent repair executor wired into a live repair failure path, and no runtime/install proof for this batch.
+
+### 2026-08-21T17:20:00Z · Agent: Codex GPT-5 · Batch: factory-resume-provider-onboarding-20260821
+
+- Paths touched: `src/main/kotlin/atropos/core/factory/FactoryRunHandoff.kt` (+31), `AppFactoryRouter.kt` (+4), `FactoryCommandHandler.kt` (+18), new `FactoryRepairExecutor.kt` (+25), new `FactoryResumeAndRepairTest.kt` (+55); `src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt` (+190), `ProviderCommandHandler.kt` (+24), `CommandRouter.kt` (+10), `CommandCatalog.kt` (+6), `RoutePolicy.kt` (+9), `ProviderCascadeRouter.kt` (+5), `AdapterRouteFacade.kt` (+3), `ProviderChatDispatcher.kt` (+5), `SpecGraphCanonicalAtomProvider.kt` (+5), `AgentService.kt` (+5), `AgentRepairService.kt` (+5); new `ProviderOnboardingTest.kt` (+34).
+- Atoms / phases affected: Phase 1/3 provider discovery and route truth; HOE B-002/B-PROV-*; Phase 19 B6/B12 factory resume and repair re-entry.
+- Predicate moved: `/factory resume <runId>` now routes through `FactoryCommandHandler` and `AppFactoryRouter.resume`, loading an attested prompt fingerprint, requirements artifact, freeze, DAG, and next atoms; missing plan artifacts fail actionable. Startup performs one cheap, local-only env/alias scan with no model/network launch call and persists label-only `.atropos/provider/providers.json`; `/providers list|refresh|test|prefer|disable|connect` is available. Healthy-only callbacks can now constrain `RoutePolicy`, `ProviderCascadeRouter`, chat, workers, dimension fill, and adapter routing. `ProviderPolicyGate` keeps free/local candidates ahead of paid and emits a paid approval card instead of auto-spending. `FactoryRepairExecutor` validates the unchanged freeze and evidence before DAG resume.
+- Secret boundary: optional connect writes through the existing `TokenIsolationVault`; command arguments are refused for secrets, environment/keychain remains the default path, and persisted provider config contains no secret values.
+- Verification actually run: `git diff --check` passed. Root `compileTestKotlin` was attempted with a 1 GiB Gradle daemon heap and timed out after 180 seconds without compiler diagnostics; new root focused tests were not run. No provider live test, paid unlock, JAR, install, or runtime proof was run.
+- % delta: no percentage claim; no VERIFIED claim until root compilation and focused tests complete.
+- Gaps still not in tree: interactive terminal prompt/keychain UI for `/providers connect` is intentionally not implemented; provider health is cheap configuration health, not network verification; no full FactoryPlan reconstruction is invented from handoff, and a live generator-triggered repair callback still must be supplied by the runtime failure path.
+
+### 2026-08-21T17:26:00Z · Agent: Codex GPT-5 · Batch: providers-json-valid-document-correction
+
+- Paths touched: `src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt` (persistence format corrected in place).
+- Predicate moved: `.atropos/provider/providers.json` is now a valid JSON array rather than newline-delimited JSON objects; it remains label/state-only and local-only.
+- Verification actually run: `git diff --check` passed after the correction. No compile or test claim.
+- % delta: unchanged.
+
+### 2026-08-23T10:45:00Z · Agent: Codex GPT-5 · Batch: github-compile-and-local-provider-connect-20260823-resumed
+
+- Paths touched: `.github/workflows/compile-gate.yml`, `src/main/kotlin/atropos/cli/ProviderCommandHandler.kt`, `src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt`, and `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt`.
+- Predicate moved: hosted CI now runs production plus test compilation on push, pull request, and manual dispatch. `/providers connect <provider>` now prompts privately via console no-echo when available, stores through `TokenIsolationVault`, clears the temporary character buffer, refreshes local discovery, and never accepts the secret as command input or persists it in `providers.json`.
+- Verification actually run: `git diff --check` passed; `ProviderOnboarding.kt` narrow Kotlin compilation passed. The combined CLI check was inconclusive against stale jars missing current source APIs. No GitHub Actions run, full Gradle compile, provider live call, paid unlock, JAR, or install proof.
+- % delta: unchanged; no VERIFIED claim.
+- Fingerprints: workflow `3123e6b9807e`; onboarding `ea1fd6628d6c`; command handler `ede9a19bb6c5d` before final connect edits.
+
+### 2026-08-23T15:10:00Z · Agent: Codex GPT-5 · Batch: durable-autonomous-continuation-rule
+
+- Paths touched: `docs/ATROPOS_AUTONOMOUS_CONTINUATION_RULE.md` (new) and `AGENTS.md` (+10).
+- Predicate moved: unfinished work now has a durable continuation rule: resume the first unfinished atom, continue safe independent work after interrupted verification, update both ledgers at batch boundaries, and preserve truthful partial/blocked labels.
+- Verification: documentation/control change only; no compile or test claim. `% delta: unchanged`.
+- Fingerprint: `docs/ATROPOS_AUTONOMOUS_CONTINUATION_RULE.md` fingerprint recorded after the next filesystem check.
+
+### 2026-08-23T12:00:00Z · Agent: Codex GPT-5 · Batch: factory-handoff-durable-guard-wave1
+
+- Paths touched: `src/main/kotlin/atropos/core/dag/DagStore.kt` (+3), `src/main/kotlin/atropos/core/factory/FactoryProgressGuard.kt` (+67), `src/main/kotlin/atropos/core/factory/FactoryRunHandoff.kt` (+18/-5), `src/main/kotlin/atropos/core/factory/FactoryRunOrchestrator.kt` (+32), `src/main/kotlin/atropos/core/factory/FactoryRepairExecutor.kt` (existing production seam), `src/main/kotlin/atropos/cli/FactoryCommandHandler.kt` (+2), `src/test/kotlin/atropos/core/factory/FactoryProgressGuardTest.kt` (+17), `src/test/kotlin/atropos/core/factory/FactoryResumeAndRepairTest.kt` (+4), and `STATUS-BACKEND.md` (new backend ledger).
+- Atoms / phases affected: FTY-01, FTY-02, FTY-03, FTY-04, FTY-05; Phase 19 factory resume and bounded repair controls.
+- Predicate moved: resume now requires attested prompt, requirements, plan, and acceptance-freeze artifacts; the freeze document is hashed and checked against the handoff before any continuation context is returned. Progress-guard failure signatures and write histories survive a new process through `.atropos/factory/progress-guard.tsv`, and persistence errors fail closed. The existing repair executor is now called from the production generation-failure seam when an actual repair callback is supplied, validating the unchanged freeze and re-entering the existing obligation loop; no automatic repair success is inferred.
+- Verification actually run: `git diff --check` passed. A narrow `kotlinc` factory source slice including `DagStore`, handoff, loop, guard, repair executor, and orchestrator exited 0. Focused root Gradle tests were not run; `:core:jvmTest` does not contain the root factory test source set, and prior root test compilation exceeded the configured environment budget. No full build, JAR, install, or runtime repair proof is claimed.
+- % delta: unchanged; no VERIFIED claim. FTY-01, FTY-02, and FTY-04 are marked done in `STATUS-BACKEND.md` based on production source plus narrow compilation; FTY-03 and FTY-05 remain partial until root focused tests and a runtime-owned repair callback are proven.
+- Fingerprints (sha256): `DagStore.kt=fb932962f947`; `FactoryProgressGuard.kt=50bb25ea712d`; `FactoryRunHandoff.kt=537cf1c24fc2`; `FactoryRunOrchestrator.kt=652e100a59b7`; `FactoryRepairExecutor.kt=16e2c5cd36a8`; `FactoryCommandHandler.kt=392afeb3eb37`; `FactoryProgressGuardTest.kt=1e5d81c78c09`; `FactoryResumeAndRepairTest.kt=bca553b18f46`; `STATUS-BACKEND.md=2669342e3735`.

@@ -26,6 +26,35 @@ object OpenAiCompatibleProviderCatalog {
             )
         ),
         OpenAiCompatibleProviderSpec(
+            providerId = "together",
+            displayName = "Together AI",
+            baseUrl = "https://api.together.xyz/v1/chat/completions",
+            defaultModel = "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+            fallbackModels = listOf("meta-llama/Llama-3.2-3B-Instruct-Turbo"),
+            apiKeyEnv = "TOGETHER_API_KEY",
+            freeTier = false
+        ),
+        OpenAiCompatibleProviderSpec(
+            providerId = "fireworks",
+            displayName = "Fireworks AI",
+            baseUrl = "https://api.fireworks.ai/inference/v1/chat/completions",
+            defaultModel = "accounts/fireworks/models/llama-v3p1-8b-instruct",
+            fallbackModels = listOf("accounts/fireworks/models/mixtral-8x7b-instruct"),
+            apiKeyEnv = "FIREWORKS_API_KEY",
+            freeTier = false
+        ),
+        OpenAiCompatibleProviderSpec(
+            providerId = "azure_openai",
+            displayName = "Azure OpenAI",
+            baseUrl = "https://azure-openai.invalid/openai/deployments/atropos/chat/completions?api-version=2024-06-01",
+            defaultModel = "atropos",
+            fallbackModels = emptyList(),
+            apiKeyEnv = "AZURE_OPENAI_API_KEY",
+            freeTier = false,
+            endpointEnv = "AZURE_OPENAI_ENDPOINT",
+            apiKeyHeader = "api-key"
+        ),
+        OpenAiCompatibleProviderSpec(
             providerId = "deepinfra",
             displayName = "DeepInfra",
             baseUrl = "https://api.deepinfra.com/v1/openai/chat/completions",

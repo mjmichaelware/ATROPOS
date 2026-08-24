@@ -63,16 +63,26 @@ internal class BridgeFilesHandler(
         val digest = MessageDigest.getInstance("SHA-256")
         val hashBytes = digest.digest(bytes)
         val sha256 = hashBytes.joinToString("") { "%02x".format(it) }
+        // The content hash identifies bytes; the envelope hash attests the
+        // bridge-bound identity as well, so a client cannot detach those bytes
+        // from their session and filename without changing the attestation.
+        val envelopeSha256 = sha256("$session\n$filename\n$sha256\n${bytes.size}")
 
         return HttpResponse.json(
             JsonWriter.obj(
                 "ok" to JsonWriter.bool(true),
                 "filename" to JsonWriter.str(filename),
                 "sha256" to JsonWriter.str(sha256),
+                "attested" to JsonWriter.bool(true),
+                "envelopeSha256" to JsonWriter.str(envelopeSha256),
                 "size" to JsonWriter.num(bytes.size.toLong())
             )
         )
     }
+
+    private fun sha256(value: String): String = MessageDigest.getInstance("SHA-256")
+        .digest(value.toByteArray(Charsets.UTF_8))
+        .joinToString("") { "%02x".format(it) }
 
     fun list(request: HttpRequest): HttpResponse {
         val session = request.query["session"].orEmpty().trim()

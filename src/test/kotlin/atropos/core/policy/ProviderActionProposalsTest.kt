@@ -6,6 +6,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import atropos.core.paid.EmergencyPaidGate
 
 /**
  * Phase 10 Batch 3 — the paid-provider lock now has one definition, and it must
@@ -57,7 +58,7 @@ class ProviderActionProposalsTest {
         assertEquals("groq", proposal.providerId)
         assertFalse(proposal.paidProvider)
         assertEquals(
-            mapOf("operation" to "repair", "prompt_length" to "4096"),
+            mapOf("operation" to "repair", "prompt_length" to "4096", "provider_local" to "false"),
             proposal.metadata
         )
 
@@ -71,5 +72,39 @@ class ProviderActionProposalsTest {
         assertTrue(ProviderActionProposals.forCall("anthropic", "patch", 1, ActionActor.HumanOwner).paidProvider)
         assertFalse(ProviderActionProposals.isPaid("groq"))
         assertFalse(ProviderActionProposals.forCall("groq", "patch", 1, ActionActor.HumanOwner).paidProvider)
+    }
+
+    @Test
+    fun local_only_engine_blocks_remote_provider_and_network_but_allows_local_provider() {
+        val engine = ExecutionPolicyEngine(
+            repoRoot = Files.createTempDirectory("atropos-local-only"),
+            localOnly = true
+        )
+        val remote = engine.evaluate(ProviderActionProposals.forCall("groq", "chat", 8, ActionActor.HumanOwner))
+        assertEquals(PolicyDecisionType.DENY, remote.decision)
+        assertTrue(remote.reason.contains("local-only"))
+
+        val local = engine.evaluate(ProviderActionProposals.forCall("ollama", "chat", 8, ActionActor.HumanOwner))
+        assertEquals(PolicyDecisionType.ALLOW, local.decision)
+
+        val network = engine.evaluate(
+            ExecutionPolicyRequest(
+                actionClass = PolicyActionClass.NETWORK,
+                networkTarget = "https://example.invalid"
+            )
+        )
+        assertEquals(PolicyDecisionType.DENY, network.decision)
+    }
+
+    @Test
+    fun explicitly_unlocked_paid_provider_can_pass_the_same_policy_engine() {
+        val root = Files.createTempDirectory("atropos-paid-approved")
+        val paidGate = EmergencyPaidGate(root.resolve("paid").toFile())
+        paidGate.unlock("openai", "1m", "operator approved")
+        val engine = ExecutionPolicyEngine(root, paidGate = paidGate)
+        val decision = engine.evaluate(
+            ProviderActionProposals.forCall("openai", "chat", 8, ActionActor.HumanOwner)
+        )
+        assertEquals(PolicyDecisionType.ALLOW, decision.decision)
     }
 }

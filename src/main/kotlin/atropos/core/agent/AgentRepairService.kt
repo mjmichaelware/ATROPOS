@@ -19,12 +19,18 @@ import atropos.core.security.RedactionFilter
 class AgentRepairService(
     private val config: AtroposConfig = AtroposConfig.load(),
     private val collector: AgentContextCollector = AgentContextCollector(),
-    private val router: ProviderCascadeRouter = ProviderCascadeRouter(ProviderFactory(config)),
+    private val router: ProviderCascadeRouter = ProviderCascadeRouter(
+        ProviderFactory(config),
+        healthyProviderIds = { atropos.core.provider.ProviderOnboardingService().healthyProviderIds() },
+        localOnly = { config.runtime.localOnly }
+    ),
     private val selector: AgentProviderSelector = AgentProviderSelector(config),
     private val patchStore: AgentPatchStore = AgentPatchStore(collector.repoRoot),
     private val verificationStore: AgentVerificationStore = AgentVerificationStore(collector.repoRoot),
     private val patchExtractor: AgentPatchExtractor = AgentPatchExtractor(),
-    private val agencyGate: BoundedAgencyGate = BoundedAgencyGate(ExecutionPolicyEngine(collector.repoRoot)),
+    private val agencyGate: BoundedAgencyGate = BoundedAgencyGate(
+        ExecutionPolicyEngine(collector.repoRoot, localOnly = config.runtime.localOnly)
+    ),
     private val memoryStore: LocalMemoryStore = LocalMemoryStore(collector.repoRoot.resolve(".atropos/memory").toFile()),
     private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {

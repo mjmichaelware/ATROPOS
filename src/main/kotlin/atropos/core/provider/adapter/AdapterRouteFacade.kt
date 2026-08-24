@@ -63,7 +63,9 @@ class AdapterRouteFacade(
             registry = descriptorRegistry,
             ledger = ledger,
             costPolicy = costPolicy,
-            paidGate = paidGate
+            paidGate = paidGate,
+            healthyProviderIds = { atropos.core.provider.ProviderOnboardingService().healthyProviderIds() },
+            preferredProviderIds = { atropos.core.provider.ProviderOnboardingService().preferredProviderIds() }
         ).decide(task)
 
         val adapter = policyDecision.selectedProviderId?.let {

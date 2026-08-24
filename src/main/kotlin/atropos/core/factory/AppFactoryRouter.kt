@@ -2,10 +2,12 @@ package atropos.core.factory
 
 import atropos.core.assets.LocalAssetGenerator
 import atropos.core.AtroposRepoRootLocator
+import atropos.core.AtroposConfig
 import atropos.core.memory.LocalMemoryStore
 import atropos.core.paid.EmergencyPaidGate
 import atropos.core.project.ProjectRegistry
 import atropos.core.planning.InternalPlanningGraphService
+import atropos.core.dag.DagStore
 import atropos.core.journal.EventJournalService
 import java.nio.file.Path
 
@@ -35,8 +37,10 @@ class AppFactoryRouter(
         ),
         canonicalAtoms = SpecGraphCanonicalAtomProvider(repoRoot = repoRoot)
     ),
-    private val journal: EventJournalService = EventJournalService(repoRoot)
+    private val journal: EventJournalService = EventJournalService(repoRoot),
+    private val liveRepairAction: FactoryLiveRepairAction = FactoryLiveRepairAction(repoRoot)
 ) {
+    private val runtimeConfig: AtroposConfig = AtroposConfig.load()
     fun plan(prompt: String): FactoryPlan {
         val clean = prompt.trim().ifBlank { "build local app" }
         val projectSpec = projectSpecParser.parse(clean)
@@ -56,6 +60,19 @@ class AppFactoryRouter(
     }
 
     fun runLocal(prompt: String): FactoryPlan = runLocalInternal(prompt)
+
+    fun resume(runId: String): FactoryResumeContext =
+        FactoryRunHandoff.readContext(repoRoot, runId)
+
+    /** Resumes the persisted DAG; it never creates a new prompt or project hash. */
+    fun resume(
+        runId: String,
+        freeze: FactoryAcceptanceFreeze,
+        executeWave: (List<atropos.core.dag.DagNode>) -> Set<String>
+    ): FactoryLoopResult {
+        val handoff = FactoryRunHandoff.read(repoRoot, runId)
+        return FactoryObligationLoop(DagStore(repoRoot)).resume(handoff, freeze, executeWave)
+    }
 
     fun runClarified(projectId: String, answers: List<Boolean>): FactoryPlan {
         require(projectId.matches(Regex("[A-Za-z0-9][A-Za-z0-9._-]{0,127}"))) {
@@ -84,7 +101,8 @@ class AppFactoryRouter(
             base.prompt,
             base.projectSpec,
             runMemory = memory,
-            clarificationAnswers = clarificationAnswers
+            clarificationAnswers = clarificationAnswers,
+            localOnly = runtimeConfig.runtime.localOnly
         )
         val orchestrator = FactoryRunOrchestrator(
             repoRoot = repoRoot,
@@ -92,7 +110,8 @@ class AppFactoryRouter(
             assets = assets,
             projectRegistry = projectRegistry,
             planningGraph = planningGraph,
-            journal = journal
+            journal = journal,
+            repairVerificationFailure = liveRepairAction
         )
         return orchestrator.orchestrateRun(base, lineage)
     }

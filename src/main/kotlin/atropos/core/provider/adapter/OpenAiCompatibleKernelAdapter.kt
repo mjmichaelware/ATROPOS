@@ -64,12 +64,16 @@ internal class OpenAiCompatibleKernelAdapter(
             )
 
         return try {
-            val connection = CredentialSafeHttpTransport.open(URI(spec.baseUrl))
+            val endpoint = spec.endpointEnv?.let { env[it] }?.takeIf { it.isNotBlank() } ?: spec.baseUrl
+            val connection = CredentialSafeHttpTransport.open(URI(endpoint))
             connection.requestMethod = "POST"
             connection.connectTimeout = remainingMs(request).coerceIn(1_000, 30_000).toInt()
             connection.readTimeout = remainingMs(request).coerceIn(1_000, 60_000).toInt()
             connection.doOutput = true
-            connection.setRequestProperty("Authorization", "Bearer $key")
+            connection.setRequestProperty(
+                spec.apiKeyHeader,
+                if (spec.apiKeyHeader.equals("Authorization", ignoreCase = true)) "Bearer $key" else key
+            )
             connection.setRequestProperty("Content-Type", "application/json")
             spec.headers.forEach { (name, value) -> connection.setRequestProperty(name, value) }
 

@@ -28,6 +28,7 @@ import atropos.core.verification.DeterministicVerifier
 import atropos.core.verification.VerifiedCompletionGate
 import atropos.core.worktree.BoundedGitWorktreeCommandRunner
 import atropos.core.worktree.GitWorktreeOperation
+import atropos.core.dag.DagStore
 
 class AppProjectGenerator(
     private val repoRoot: Path,
@@ -39,6 +40,7 @@ class AppProjectGenerator(
     private val agencyGate: BoundedAgencyGate = localAgency(repoRoot),
     private val redactionFilter: RedactionFilter = RedactionFilter(),
     private val behaviorGuard: AppGeneratedBehaviorGuard = AppGeneratedBehaviorGuard(),
+    private val progressGuard: FactoryProgressGuard = FactoryProgressGuard(DagStore(repoRoot)),
     private val hierarchyGate: FactoryHierarchyGate = FactoryHierarchyGate(
         hrRouter = HrRouterService(auditStore = HrRouterAuditStore(repoRoot))
     )
@@ -129,6 +131,10 @@ class AppProjectGenerator(
                 require(file.startsWith(target)) { "app file escaped target" }
                 Files.createDirectories(file.parent)
                 AppFileHelper.writeAtomic(file, content)
+            }
+            if (plannedAtomIds.isNotEmpty()) {
+                val writtenHashes = allFiles.keys.map { relative -> AppFileHelper.sha256(target.resolve(relative)) }
+                plannedAtomIds.forEach { atomId -> progressGuard.observeWriteOrThrow(atomId, writtenHashes) }
             }
             target.resolve("verify.sh").toFile().setExecutable(true)
             val verificationOutput = verificationHelper.runVerify(target)
