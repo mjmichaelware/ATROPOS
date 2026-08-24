@@ -444,7 +444,6 @@ When Phase 11 self-build is fully green, ATROPOS can begin to perform this loop 
 
 End of AGENTS.md
 
-
 ### 2026-08-24T07:45:00Z · Agent: Codex GPT-5 · Batch: installer-release-asset-contract
 
 - Paths touched: `.github/workflows/release.yml` (+3), `scripts/release-installer-contract-test.sh` (+16), `STATUS-BACKEND.md` (+7).
@@ -13285,6 +13284,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: backend atom contract, hosted selector contract (418), and `git diff --check` passed. Root/hosted Kotlin and credentialed GitHub execution remain pending.
 - % delta: unchanged; B-MCP-GITHUB remains source-wired/partial pending hosted/live evidence.
 - Fingerprints (sha256, first 12): `GitHubApiClient.kt=a19a92174c97`; `GitHubApiClientTest.kt=8575643120ff`; `backend-atom-contract-test.sh=16174e6e1e43`.
+
+### 2026-08-25T00:45:00Z · Agent: Codex GPT-5 · Batch: markitdown-bounded-attested-write
+
+- Paths touched: `src/main/kotlin/atropos/core/integration/MarkItDownIngestService.kt` (+24/-1), `src/test/kotlin/atropos/core/integration/MarkItDownIngestServiceTest.kt` (+16), `scripts/backend-atom-contract-test.sh` (+3), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: `ADD-MCP-009` MarkItDown ingest path; B-MCP host evidence boundary.
+- Predicate moved: the existing `/mcp ingest` production caller now refuses symbolic-link and oversized sources before invoking the configured MCP server, bounds returned markdown, and atomically publishes the hash-addressed attested artifact without leaving a partial file.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh` (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (418 tests)`), and `git diff --check` passed. Root/hosted Kotlin execution was not run in Termux; no test-green or root-green claim.
+- % delta: unchanged; ADD-MCP-009 remains partial pending hosted execution and live allowlisted MarkItDown evidence.
+- Fingerprints (sha256, first 12): `MarkItDownIngestService.kt=bd544aceaa33`, `MarkItDownIngestServiceTest.kt=b3a5399a800b`, `backend-atom-contract-test.sh=a9788ad9ffb3`.
 
 ### 2026-08-25T03:35:00Z · Agent: Codex GPT-5 · Batch: paid-side-refusal-redaction
 

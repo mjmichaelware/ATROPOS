@@ -974,3 +974,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | B-PROV-012/T04 paid and side-channel refusal rendering | source-wired / partial | `src/main/kotlin/atropos/cli/PaidCommandHandler.kt`, `src/main/kotlin/atropos/cli/SideConversationService.kt`, `scripts/backend-atom-contract-test.sh` | `/paid unlock` and `/ps` → existing command/side-conversation owners | Paid unlock and side-conversation failure text now passes through the canonical compact redaction boundary before terminal output. Hosted tests remain pending. |
 
 | T04 route/quota reason rendering | source-wired / partial | `src/main/kotlin/atropos/cli/ui/StatusQuotaRenderer.kt`, `src/main/kotlin/atropos/core/provider/adapter/AdapterRouteFacade.kt`, `scripts/backend-atom-contract-test.sh` | `/status quota|route` and `/route` → existing route/quota render owners | Eligibility reasons now pass through the shared `RedactionFilter` in both route render paths; the backend source contract protects the status boundaries. Hosted/root Kotlin execution remains pending. |
+
+### 2026-08-25T00:45:00Z · Agent: Codex GPT-5 · Batch: markitdown-bounded-attested-write
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| ADD-MCP-009 / MarkItDown ingest boundary | source-wired / partial | `src/main/kotlin/atropos/core/integration/MarkItDownIngestService.kt`, `src/test/kotlin/atropos/core/integration/MarkItDownIngestServiceTest.kt`, `scripts/backend-atom-contract-test.sh` | `/mcp ingest <path>` → existing `McpCommandHandler` → `MarkItDownIngestService.ingest()` → existing `McpHostManager` and `DocumentIngestionService` | MarkItDown now rejects symlink and >8 MiB sources before MCP execution, bounds returned markdown to 8 MiB, and writes the hash-addressed markdown artifact through temp + atomic move with cleanup. Static backend contract, hosted selector parity (418), and `git diff --check` pass; root/hosted Kotlin execution remains pending. |
