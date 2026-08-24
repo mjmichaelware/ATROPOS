@@ -13794,6 +13794,16 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprints: `scripts/backend-atom-contract-test.sh=a929032823bc`.
 
+### 2026-08-25T02:20:00Z · Agent: Codex GPT-5 · Batch: bridge-mcp-evidence-contract
+
+- Paths touched: `scripts/backend-atom-contract-test.sh` (+7), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-MCP-CORE-f bridge result evidence.
+- Predicate moved: the backend source gate now proves `/v1/mcp/call` uses the sole host’s redacted evidence response and includes explicit `noEvidenceReason` rather than silently dropping proof.
+- Verification actually run: backend atom contract, hosted selector parity (`421 tests`), and `git diff --check` passed. Hosted bridge Kotlin execution remains unverified.
+- % delta: unchanged; B-MCP-CORE-f remains source-wired/partial pending hosted execution.
+- New overall estimate: unchanged.
+- Fingerprints: `scripts/backend-atom-contract-test.sh=712cd842596b`.
+
 ### 2026-08-24T22:35:00Z · Agent: Codex GPT-5 · Batch: local-health-response-bounds
 
 - Paths touched: `src/main/kotlin/atropos/core/ProviderState.kt` (+10/-2), `src/main/kotlin/atropos/core/agent/ProviderSessionSupervisor.kt` (+13/-3), `scripts/backend-atom-contract-test.sh` (+2).

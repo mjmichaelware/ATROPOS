@@ -1178,3 +1178,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-GITLOCAL-a/b/f read operations | source-wired / partial | `src/main/kotlin/atropos/cli/ShellCommandHandler.kt`, `src/main/kotlin/atropos/cli/shell/ShellCommandRunner.kt`, `CommandRouter.kt`, `scripts/backend-atom-contract-test.sh` | `/git status|diff|conflicts` → `ShellCommandHandler.git()` → existing bounded `ShellCommandRunner.gitStatus/gitDiff/gitConflicts()` → `TypedToolExecutor`/`BoundedAgencyGate` | Added CI assertions for the three production read callers and their shared bounded execution owner. Backend contract, hosted selector parity (421), and diff check pass; hosted Kotlin CLI execution remains unverified. |
+
+### 2026-08-25T02:20:00Z · Agent: Codex GPT-5 · Batch: bridge-mcp-evidence-contract
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-CORE-f bridge result evidence | source-wired / partial | `src/main/kotlin/atropos/bridge/BridgeMcpHandler.kt`, `BridgeRoutes.kt`, `scripts/backend-atom-contract-test.sh` | HTTP `/v1/mcp/call` → existing `BridgeMcpHandler` → sole `McpHostManager.callTool()` → redacted `evidenceSha256/evidencePath/noEvidenceReason` response | Added CI assertions that bridge calls use the same host result/evidence object and expose explicit evidence absence, with redaction before rendering. Backend contract, hosted selector parity (421), and diff check pass; hosted bridge Kotlin execution remains unverified. |
