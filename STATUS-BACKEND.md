@@ -299,3 +299,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-GITHUB issues/PRs/checks | source-wired / partial | `src/main/kotlin/atropos/core/github/GitHubApiClient.kt`, `GitHubBinding.kt`, `src/test/kotlin/atropos/core/github/GitHubApiClientTest.kt`, hosted selectors | existing `GitHubBinding.api` → single `GitHubApiClient` → `BoundedAgencyGate` decision → `SecretSource`/`SecretSinkMatrix` → injected/default HTTPS transport | Added typed list/get/create/comment issue, PR/files, and check-run operations with repository path bounds, response redaction/hash, token aliases plus vault source, and approval-required network policy. No live credential/network call was made; focused injected tests are wired for GitHub Actions. |
+
+### 2026-08-23T11:20:00Z · Backend batch: github-territory-argument-hardening
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-GITHUB territory declaration | source-wired / partial | `src/main/kotlin/atropos/core/github/GitHubApiClient.kt`, `src/test/kotlin/atropos/core/github/GitHubApiClientTest.kt` | `GitHubBinding.api` → `GitHubApiClient.execute` → `ActionProposal.targetPaths` | GitHub API requests now require a non-empty traversal-free declared territory, which is carried into the canonical policy proposal; injected test asserts the territory reaches the gate. Hosted/root execution remains pending. |

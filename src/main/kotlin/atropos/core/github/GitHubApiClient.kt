@@ -21,7 +21,8 @@ import java.time.Duration
 data class GitHubApiRequest(
     val method: String,
     val path: String,
-    val body: String? = null
+    val body: String? = null,
+    val declaredTerritory: List<String> = listOf(".")
 )
 
 data class GitHubApiResponse(
@@ -63,6 +64,8 @@ class GitHubApiClient(
         require(request.body.orEmpty().length <= MAX_BODY_CHARS) {
             "GitHub API request body exceeds $MAX_BODY_CHARS characters"
         }
+        val territory = request.declaredTerritory.map(::validateTerritoryPath)
+        require(territory.isNotEmpty()) { "GitHub API request requires declared territory" }
         if (!SecretSinkMatrix.isEgressPermitted(SecretSinkKind.EGRESS_URL)) {
             error("GitHub API refused: SecretSinkMatrix does not permit network credential egress")
         }
@@ -71,7 +74,7 @@ class GitHubApiClient(
             id = "github-api-${redactionFilter.stableFingerprint("$method $path")}",
             actionClass = PolicyActionClass.NETWORK,
             actor = ActionActor.HumanOwner,
-            targetPaths = listOf("."),
+            targetPaths = territory,
             networkTarget = "api.github.com",
             metadata = mapOf("integration" to "github", "operation" to method.lowercase())
         )
@@ -152,6 +155,14 @@ class GitHubApiClient(
             "GitHub API path must be a repository-scoped relative API path"
         }
         require(path.length <= MAX_PATH_CHARS) { "GitHub API path is too long" }
+        return path
+    }
+
+    private fun validateTerritoryPath(raw: String): String {
+        val path = raw.trim()
+        require(path.isNotBlank() && !path.startsWith('/') && !path.contains('\\') && !path.contains("..")) {
+            "GitHub API territory must be relative and traversal-free"
+        }
         return path
     }
 

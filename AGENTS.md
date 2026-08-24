@@ -12142,3 +12142,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: static checks and hosted selector wiring are the available evidence; root Gradle and hosted tests remain unrun, so no green claim is made.
 - % delta: unchanged; source-wired but partial pending hosted execution and operator-approved network validation.
 - Fingerprints: recorded after commit.
+
+### 2026-08-23T11:20:00Z · Agent: Codex GPT-5 · Batch: github-territory-argument-hardening
+
+- Paths touched: `src/main/kotlin/atropos/core/github/GitHubApiClient.kt` (+12), `src/test/kotlin/atropos/core/github/GitHubApiClientTest.kt` (+7), and `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-MCP-GITHUB territory gate argument.
+- Predicate moved: every typed GitHub request now carries a non-empty traversal-free declared territory into the existing `ActionProposal.targetPaths`; the test observes that exact gate input.
+- Verification actually run: static checks are pending immediately after this edit; root Gradle and hosted execution remain unrun, so no green claim is made.
+- % delta: unchanged; source-wired but partial pending hosted execution evidence.
+- Fingerprints: recorded after commit.

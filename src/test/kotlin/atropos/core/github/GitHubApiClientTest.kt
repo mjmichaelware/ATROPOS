@@ -21,10 +21,14 @@ class GitHubApiClientTest {
     fun typed_endpoints_use_one_gated_transport_and_never_put_token_in_body() {
         val secret = "ghs-super-secret-token"
         val requests = mutableListOf<GitHubApiWireRequest>()
+        var declaredTerritory: List<String>? = null
         withNetworkSink {
             val client = GitHubApiClient(
                 secretSource = MapSecretSource(mapOf("GITHUB_TOKEN" to secret)),
-                gate = ::allowed,
+                gate = { proposal ->
+                    declaredTerritory = proposal.targetPaths
+                    allowed(proposal)
+                },
                 transport = GitHubApiTransport { request ->
                     requests += request
                     GitHubApiWireResponse(200, "{\"ok\":true}")
@@ -40,6 +44,7 @@ class GitHubApiClientTest {
         assertTrue(requests.all { it.url.startsWith("https://api.github.com/repos/owner/repo/") })
         assertTrue(requests.all { it.token == secret })
         assertFalse(requests.any { it.body.orEmpty().contains(secret) })
+        assertEquals(listOf("."), declaredTerritory)
     }
 
     @Test
