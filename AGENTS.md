@@ -13312,6 +13312,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; T04 remains partial pending hosted execution and non-bridge diagnostic review.
 - Fingerprints (sha256, first 12): `EngineHttpServer.kt=7eb9bce2e89f`, `AtroposBridgeTest.kt=f7745580116e`, `backend-atom-contract-test.sh=eb188ba7767f`.
 
+### 2026-08-25T02:25:00Z · Agent: Codex GPT-5 · Batch: bridge-queue-redaction-boundary
+
+- Paths touched: `src/main/kotlin/atropos/bridge/BridgeQueueHandler.kt` (+12/-8), `src/main/kotlin/atropos/bridge/conversation/QueuedWorkConversationResponder.kt` (+8/-2), `src/test/kotlin/atropos/bridge/BridgeQueueHandlerTest.kt` (+18), `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: T04 bridge queue/conversation secret-safe output.
+- Predicate moved: queue task text, failure reasons, evidence paths, and run outcomes are redacted before bridge JSON; conversation enqueue refusals are compact-redacted before reply construction; a production queue test proves API-key and credential-path patterns do not cross the bridge.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh` (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (420 tests)`), and `git diff --check` passed. Root/hosted Kotlin execution was not run in Termux; no test-green or root-green claim.
+- % delta: unchanged; T04 remains partial pending hosted execution and remaining bridge projection audit.
+- Fingerprints (sha256, first 12): `BridgeQueueHandler.kt=2bd83bb125b3`, `QueuedWorkConversationResponder.kt=378264dc5808`, `BridgeQueueHandlerTest.kt=da476085b15a`, `backend-atom-contract-test.sh=f2c0e0ea0dc0`.
+
 ### 2026-08-25T01:45:00Z · Agent: Codex GPT-5 · Batch: hosted-redaction-selector-coverage
 
 - Paths touched: `.github/workflows/compile-gate.yml` (+2), `scripts/atropos-verify-worktree.sh` (+2), `STATUS-BACKEND.md` (+7).

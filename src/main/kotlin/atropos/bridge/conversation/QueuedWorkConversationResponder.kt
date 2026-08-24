@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.bridge.conversation
 
+import atropos.core.security.RedactionFilter
+
 /**
  * The seam through which a conversation turn becomes real work.
  *
@@ -32,7 +34,8 @@ fun interface ConversationWorkQueue {
  */
 class QueuedWorkConversationResponder(
     private val queue: ConversationWorkQueue,
-    private val maxTaskChars: Int = 2_000
+    private val maxTaskChars: Int = 2_000,
+    private val redactionFilter: RedactionFilter = RedactionFilter()
 ) : BridgeConversationResponder {
 
     override fun reply(message: String): String {
@@ -59,7 +62,9 @@ class QueuedWorkConversationResponder(
                 onFailure = { failure ->
                     // Refusals from the policy gate arrive as exceptions and are
                     // the operator's answer, not an internal error to swallow.
-                    val detail = failure.message?.takeIf { it.isNotBlank() } ?: failure.javaClass.simpleName
+                    val detail = redactionFilter.compact(
+                        failure.message?.takeIf { it.isNotBlank() } ?: failure.javaClass.simpleName
+                    )
                     "The engine did not accept that as work: $detail"
                 }
             )

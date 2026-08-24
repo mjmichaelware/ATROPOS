@@ -1004,3 +1004,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | T04 bridge diagnostic sink | source-wired / partial | `src/main/kotlin/atropos/bridge/http/EngineHttpServer.kt`, `src/test/kotlin/atropos/bridge/AtroposBridgeTest.kt`, `scripts/backend-atom-contract-test.sh` | existing `EngineHttpServer` accept/request/SSE handlers → `lastErrorRef` → bridge diagnostics | Bind, accept, request, and stream exception diagnostics are compact-redacted before durable in-memory exposure; real HTTP route coverage proves a provider-style key is absent from `lastError()`. Static backend contract, selector parity (420), and `git diff --check` pass; hosted/root Kotlin execution remains pending. |
+
+### 2026-08-25T02:25:00Z · Agent: Codex GPT-5 · Batch: bridge-queue-redaction-boundary
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| T04 queue/conversation bridge rendering | source-wired / partial | `src/main/kotlin/atropos/bridge/BridgeQueueHandler.kt`, `src/main/kotlin/atropos/bridge/conversation/QueuedWorkConversationResponder.kt`, `src/test/kotlin/atropos/bridge/BridgeQueueHandlerTest.kt`, `scripts/backend-atom-contract-test.sh` | `/v1/queue` and bridge conversation → existing queue handler/responder | Queue task, failure, evidence, and outcome text now crosses the canonical redaction boundary before JSON/reply construction; queue coverage proves both API-key and credential-path patterns are removed. Static backend contract, selector parity (420), and `git diff --check` pass; hosted/root Kotlin execution remains pending. |

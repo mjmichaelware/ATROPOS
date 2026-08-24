@@ -162,4 +162,19 @@ class BridgeQueueHandlerTest {
         val runner = FakeRunner(mutableListOf(entry("q-1")), isThrottled = true)
         assertTrue(BridgeQueueHandler(runner).list(request()).body.contains("\"throttled\":true"))
     }
+
+    @Test
+    fun queue_payload_redacts_task_and_failure_fields() {
+        val secret = "sk-live-secret-123456789"
+        val sensitive = entry("q-secret", "FAILED").copy(
+            task = "use api_key=$secret",
+            failureReason = "provider api_key=$secret",
+            evidence = "/tmp/token-credentials.txt"
+        )
+        val body = BridgeQueueHandler(FakeRunner(mutableListOf(sensitive))).list(request()).body
+
+        assertTrue(!body.contains(secret))
+        assertTrue(body.contains("<redacted:api_key>"))
+        assertTrue(body.contains("<redacted:credential_path>"))
+    }
 }

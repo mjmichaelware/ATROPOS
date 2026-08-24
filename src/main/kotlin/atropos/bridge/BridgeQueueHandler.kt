@@ -7,6 +7,7 @@ import atropos.bridge.http.JsonWriter
 import atropos.bridge.queue.QueueEntryView
 import atropos.bridge.queue.QueueRunOutcome
 import atropos.bridge.queue.ConversationWorkRunner
+import atropos.core.security.RedactionFilter
 
 /**
  * Work a client can watch and advance.
@@ -20,7 +21,8 @@ import atropos.bridge.queue.ConversationWorkRunner
  * design — an identifier arrives as `?id=`.
  */
 internal class BridgeQueueHandler(
-    private val runner: ConversationWorkRunner
+    private val runner: ConversationWorkRunner,
+    private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
 
     fun list(request: HttpRequest): HttpResponse {
@@ -59,7 +61,7 @@ internal class BridgeQueueHandler(
                 JsonWriter.obj(
                     "ok" to JsonWriter.bool(true),
                     "ran" to JsonWriter.bool(true),
-                    "message" to JsonWriter.str(outcome.message),
+                    "message" to JsonWriter.str(redactionFilter.redact(outcome.message)),
                     "entry" to (outcome.entry?.let(::entryJson) ?: "null")
                 )
             )
@@ -67,19 +69,19 @@ internal class BridgeQueueHandler(
                 JsonWriter.obj(
                     "ok" to JsonWriter.bool(true),
                     "ran" to JsonWriter.bool(false),
-                    "message" to JsonWriter.str(outcome.message)
+                    "message" to JsonWriter.str(redactionFilter.redact(outcome.message))
                 )
             )
             is QueueRunOutcome.Unknown -> HttpResponse.refusal(
                 404,
                 "queue-entry-unknown",
-                outcome.message,
+                redactionFilter.compact(outcome.message),
                 "List the queue with GET /v1/queue to see current identifiers."
             )
             is QueueRunOutcome.Refused -> HttpResponse.refusal(
                 409,
                 "queue-run-refused",
-                outcome.message,
+                redactionFilter.compact(outcome.message),
                 "The engine declined to run this entry; its state explains why."
             )
         }
@@ -111,14 +113,14 @@ internal class BridgeQueueHandler(
 
     private fun entryJson(entry: QueueEntryView): String = JsonWriter.obj(
         "id" to JsonWriter.str(entry.id),
-        "task" to JsonWriter.str(entry.task),
+        "task" to JsonWriter.str(redactionFilter.redact(entry.task)),
         "state" to JsonWriter.str(entry.state),
         "checkpoint" to JsonWriter.str(entry.checkpoint),
         "attempts" to JsonWriter.num(entry.attempts.toLong()),
         "maxAttempts" to JsonWriter.num(entry.maxAttempts.toLong()),
         "terminal" to JsonWriter.bool(entry.terminal),
-        "failureReason" to JsonWriter.str(entry.failureReason.orEmpty()),
-        "evidence" to JsonWriter.str(entry.evidence.orEmpty()),
+        "failureReason" to JsonWriter.str(redactionFilter.redact(entry.failureReason.orEmpty())),
+        "evidence" to JsonWriter.str(redactionFilter.redact(entry.evidence.orEmpty())),
         "createdAt" to JsonWriter.str(entry.createdAt),
         "updatedAt" to JsonWriter.str(entry.updatedAt)
     )
