@@ -462,6 +462,15 @@ End of AGENTS.md
 - % delta: unchanged; B-005 / ADD-W-029 remains partial pending hosted execution.
 - Fingerprints: recorded after this batch.
 
+### 2026-08-24T15:40:00Z · Agent: Codex GPT-5 · Batch: hosted-verification-security-surface
+
+- Paths touched: `.github/workflows/compile-gate.yml` (+34), `scripts/atropos-verify-worktree.sh` (+34), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-006 policy, B-007 security/local-only, completion and verification invariants.
+- Predicate moved: all existing verification and security test classes are now selected by both canonical GitHub Actions lanes, covering false-green guards, completion gates, authority/territory, redaction, secret sinks, vaults, and bounded execution.
+- Verification actually run: selector/source presence, `git diff --check`, shell syntax, action contract, and orphan gate pass; hosted Kotlin execution remains pending.
+- % delta: unchanged; verification/security atoms remain partial pending hosted execution.
+- Fingerprints: recorded after this batch.
+
 ### 2026-08-24T15:10:00Z · Agent: Codex GPT-5 · Batch: hosted-provider-policy-surface
 
 - Paths touched: `.github/workflows/compile-gate.yml` (+21), `scripts/atropos-verify-worktree.sh` (+21), `STATUS-BACKEND.md` (+7).

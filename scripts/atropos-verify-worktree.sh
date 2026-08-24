@@ -127,6 +127,40 @@ if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
     --tests 'atropos.core.verification.AcceptanceVelocityTest' \
     --tests 'atropos.core.verification.GitHubActionsCompileRunnerTest' \
     --tests 'atropos.core.security.ContextPathExclusionsTest' \
+    --tests 'atropos.core.verification.AdmissionControllerTest' \
+    --tests 'atropos.core.verification.ArchitectureComplianceCheckerTest' \
+    --tests 'atropos.core.verification.ArchitectureSourceMaskerTest' \
+    --tests 'atropos.core.verification.AssertionNamingTest' \
+    --tests 'atropos.core.verification.AuthorityAttestationTest' \
+    --tests 'atropos.core.verification.BatchReporterTest' \
+    --tests 'atropos.core.verification.CompletionCalculusTest' \
+    --tests 'atropos.core.verification.DeterministicVerifierTest' \
+    --tests 'atropos.core.verification.FalseGreenGuardTest' \
+    --tests 'atropos.core.verification.GoalInvariantSetTest' \
+    --tests 'atropos.core.verification.GoalRunTest' \
+    --tests 'atropos.core.verification.GovernedCompileGateTest' \
+    --tests 'atropos.core.verification.IntegrityProofsTest' \
+    --tests 'atropos.core.verification.OutputValidatorTest' \
+    --tests 'atropos.core.verification.PrecedenceLatticeTest' \
+    --tests 'atropos.core.verification.ProposalSixFieldsTest' \
+    --tests 'atropos.core.verification.RiskyStdlibScannerTest' \
+    --tests 'atropos.core.verification.SourceDoc2RulesTest' \
+    --tests 'atropos.core.verification.TerritoryGrantTest' \
+    --tests 'atropos.core.verification.VerifiedCompletionGateTest' \
+    --tests 'atropos.core.security.DeviceSecretVaultKeyProviderTest' \
+    --tests 'atropos.core.security.KeyDoctorServiceTest' \
+    --tests 'atropos.core.security.KnownSecretEgressTest' \
+    --tests 'atropos.core.security.RedactionFilterTest' \
+    --tests 'atropos.core.security.SecretEgressGateTest' \
+    --tests 'atropos.core.security.SecretEnrollmentSourceTest' \
+    --tests 'atropos.core.security.SecretSinkMatrixTest' \
+    --tests 'atropos.core.security.SecretVaultKeyProviderTest' \
+    --tests 'atropos.core.security.SecretVaultRuntimeProofTest' \
+    --tests 'atropos.core.security.SourceSecretScannerTest' \
+    --tests 'atropos.core.security.TokenIsolationVaultEncryptionContractTest' \
+    --tests 'atropos.core.security.TokenIsolationVaultTest' \
+    --tests 'atropos.core.security.VaultPathResolverTest' \
+    --tests 'atropos.core.security.VaultReadResultTest' \
     --tests 'atropos.core.github.GitHubApiClientTest' \
     --tests 'atropos.core.github.GitHubBindingTest' \
     --tests 'atropos.core.scavenge.GitHubScavengerTest'
