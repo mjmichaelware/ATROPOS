@@ -12161,6 +12161,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; source-wired but partial pending hosted execution evidence.
 - Fingerprints: recorded after the batch commit.
 
+### 2026-08-24T12:05:00Z · Agent: Codex GPT-5 · Batch: focused-compile-inconclusive
+
+- Paths touched: `STATUS-BACKEND.md` (+2); no source changes.
+- Atoms / phases affected: hosted verification evidence for the GitHub CLI/client batch.
+- Predicate moved: none. A bounded `kotlinc` attempt against the stale JAR classpath hung without diagnostics and was terminated; it cannot support a compile claim. The exact compiler process was stopped and the worktree remains clean.
+- Verification actually run: `git diff --check` passed; GitHub Actions remains the required root compile/test lane. No green claim is made.
+- % delta: unchanged; source-wired but partial pending hosted execution evidence.
+- Fingerprints: recorded after the batch commit.
+
 ### 2026-08-24T11:30:00Z · Agent: Codex GPT-5 · Batch: github-cli-operation-callers
 
 - Paths touched: `src/main/kotlin/atropos/cli/GitHubCommandHandler.kt` (+56 new), `src/main/kotlin/atropos/cli/CommandRouter.kt` (+5), `src/main/kotlin/atropos/core/github/GitHubBinding.kt` (+9), `src/main/kotlin/atropos/cli/input/CommandCatalog.kt` (+3), `src/test/kotlin/atropos/cli/input/CommandCatalogBackendEntriesTest.kt` (+3), and `STATUS-BACKEND.md` (+2).
