@@ -18,7 +18,7 @@ REPO="${ATROPOS_REPO:-mjmichaelware/ATROPOS}"
 VERSION="${ATROPOS_VERSION:-latest}"
 HOST_PREFIX="${PREFIX:-}"
 CONFIG_DIR="${ATROPOS_PREFIX:-$HOME/.atropos}"
-BIN_DIR="${ATROPOS_BIN_DIR:-$HOME/.local/bin}"
+BIN_DIR="${ATROPOS_BIN_DIR:-}"
 
 if [ "$VERSION" = "latest" ]; then
   # The rolling `latest` release is deliberately a prerelease. GitHub's
@@ -49,6 +49,12 @@ else
     Linux) PLATFORM="linux-$CPU_ARCH" ;;
     Darwin) PLATFORM="darwin-$CPU_ARCH" ;;
     *) fail "unsupported operating system: $OS_NAME (expected Linux or Darwin)" ;;
+  esac
+fi
+if [ -z "$BIN_DIR" ]; then
+  case "$PLATFORM" in
+    termux-*) BIN_DIR="$HOST_PREFIX/bin" ;;
+    *) BIN_DIR="$HOME/.local/bin" ;;
   esac
 fi
 

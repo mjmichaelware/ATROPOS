@@ -13195,3 +13195,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: backend atom contract (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), hosted selector contract (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (418 tests)`), and `git diff --check` passed. Root/hosted Kotlin execution remains pending; no Sentry test-green claim.
 - % delta: unchanged; R4/B-MCP-SENTRY remains source-wired/partial pending hosted tests, configured credentials, and live issue/repair evidence.
 - Fingerprints (sha256, first 12): `SentryApiClient.kt=48b2dca1fbce`; `SentryCommandHandler.kt=00ad7ad1ede1`; `CommandCatalog.kt=4f1ac148ca76`; `SentryApiClientTest.kt=38a9be8a01b3`; `backend-atom-contract-test.sh=3dc5ec959366`.
+
+### 2026-08-24T19:34:01Z · Agent: Codex GPT-5 · Batch: installer-termux-bin-boundary
+
+- Paths touched: `install.sh` (+8/-1), `scripts/install-contract-test.sh` (+1).
+- Atoms / phases affected: B-INST-003 Termux PATH/PREFIX installation.
+- Predicate moved: when no explicit binary directory is supplied, a detected Termux host now installs the launcher under `$PREFIX/bin`; desktop Linux/macOS retain `~/.local/bin`. The existing `ATROPOS_BIN_DIR` override remains authoritative.
+- Verification actually run: `bash -n install.sh scripts/install-contract-test.sh`, `ATROPOS_INSTALL_CONTRACT_OK`, backend atom contract, hosted selector contract (418), and `git diff --check` passed. Hosted release/device execution remains pending.
+- % delta: unchanged; B-INST-003 remains source-wired/partial pending hosted artifact and device evidence.
+- Fingerprints (sha256, first 12): `install.sh=3d82bdf46b4a`; `install-contract-test.sh=d78524d0c5ee`.

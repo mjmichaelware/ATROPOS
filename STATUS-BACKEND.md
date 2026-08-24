@@ -44,6 +44,8 @@ This file records backend implementation status for the current engine wave. A r
 
 | R4 / B-MCP-SENTRY-b unresolved issue listing | source-wired / partial | `src/main/kotlin/atropos/core/sentry/SentryApiClient.kt`, `src/main/kotlin/atropos/cli/SentryCommandHandler.kt`, `src/main/kotlin/atropos/cli/input/CommandCatalog.kt`, `src/test/kotlin/atropos/core/sentry/SentryApiClientTest.kt` | `/sentry list <organization/project>` → existing `SentryCommandHandler` → `SentryApiClient.listUnresolvedIssues` → registered/gated transport → redacted evidence response | The missing list-unresolved-issues production caller now exists and is constrained to `is:unresolved`; backend contract, hosted selector parity (418), and diff check pass. Hosted/root Kotlin execution, credentials, and live Sentry evidence remain pending. |
 
+| B-INST-003 Termux launcher destination | source-wired / partial | `install.sh`, `scripts/install-contract-test.sh` | install script platform detection → existing `BIN_DIR` selection → generated launcher | Default Termux installs now target `$PREFIX/bin`; explicit `ATROPOS_BIN_DIR` still wins and desktop defaults remain `~/.local/bin`. Installer contract, backend contract, hosted selector parity (418), shell syntax, and diff check pass; hosted release/device evidence remains pending. |
+
 ## Commands
 
 - `/factory resume <runId>` — read-only attested resume inspection; execution requires the existing router callback path.
