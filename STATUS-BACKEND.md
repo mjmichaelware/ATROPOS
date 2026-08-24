@@ -600,3 +600,15 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | Remaining core ingest/intent/parser/platform/project contract evidence | source-wired / partial | `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh` | existing hosted `:test` invocation → 39 explicit core selectors → existing ingest, intent, parser, platform, project, and contract owners | Added every remaining existing `src/test/kotlin/atropos/core/**Test.kt` class to both CI entrypoints; selector set moves 338 → 377. Selector/source parity, shell syntax, diff check, and orphan gate pass locally. Hosted Kotlin execution remains pending. |
+
+### 2026-08-24T20:15:00Z · Backend batch: sentry-tier0-composition
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-SENTRY issue→frame→territory→proposal→evidence | source-wired / partial | `src/main/kotlin/atropos/core/sentry/SentryApiClient.kt`, `SentryRepairCoordinator.kt`, `src/main/kotlin/atropos/cli/SentryCommandHandler.kt`, `CommandRouter.kt`, `CommandCatalog.kt`, `CommandRiskCatalog.kt`, focused Sentry tests, hosted selectors | `/sentry inspect|propose` → `SentryCommandHandler` → gated `SentryApiClient` → `SentryRepairCoordinator` → existing `WorkerCodeProposalService` → existing independent verification and `EvidenceStore` | Added an injectable Sentry REST owner with env/vault token precedence, egress/gate checks, redacted response hashing, issue/frame parsing, repository/territory mapping, and proposal evidence. Focused Gradle attempt timed out during root compilation on Termux; selector/static checks remain pending in this batch. No live Sentry credential or network call was used. |
+
+### 2026-08-24T20:35:00Z · Backend batch: first-party-integration-catalog
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-SENTRY registry/doctor ownership | source-wired / partial | `src/main/kotlin/atropos/core/integration/IntegrationRegistry.kt`, `BackendDoctor.kt`, `SentryApiClient.kt`, focused registry test, hosted selectors | `/doctor` → `BackendDoctor` → canonical `IntegrationRegistry`; Sentry request path → `requireRegistered("sentry")` | Added one canonical first-party integration catalog for existing GitHub/MCP/Sentry owners; no parallel registry. Local selector contract, orphan gate, shell syntax, and diff checks pass; Kotlin execution remains pending. |

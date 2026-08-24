@@ -87,6 +87,9 @@ if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
     --tests 'atropos.core.integration.InboundActionProposalBridgeTest' \
     --tests 'atropos.core.integration.InboundToolBridgeTest' \
     --tests 'atropos.core.integration.MarkItDownIngestServiceTest' \
+    --tests 'atropos.core.integration.IntegrationRegistryTest' \
+    --tests 'atropos.core.sentry.SentryApiClientTest' \
+    --tests 'atropos.core.sentry.SentryRepairCoordinatorTest' \
     --tests 'atropos.bridge.BridgeQuotaRouteTest' \
     --tests 'atropos.bridge.BridgeStatusHandlerTest' \
     --tests 'atropos.bridge.projection.SixAnswersProjectionTest' \

@@ -453,6 +453,24 @@ End of AGENTS.md
 - % delta: unchanged; B-INST-002 remains partial pending hosted release evidence.
 - Fingerprints (sha256, first 12): `scripts/release-installer-contract-test.sh=c4139f3e1fe4`; `.github/workflows/release.yml=46bf3530786b`; `install.sh=6ece5f472305`.
 
+### 2026-08-24T20:15:00Z · Agent: Codex GPT-5 · Batch: sentry-tier0-composition
+
+- Paths touched: `src/main/kotlin/atropos/core/sentry/SentryApiClient.kt` (+161), `SentryRepairCoordinator.kt` (+93), `src/main/kotlin/atropos/cli/SentryCommandHandler.kt` (+54), `CommandRouter.kt` (+6), `CommandCatalog.kt` (+2), `CommandRiskCatalog.kt` (+3), two focused Sentry tests (+120), hosted selectors (+4), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-MCP-SENTRY issue→frame→territory→proposal→gates→evidence.
+- Predicate moved: Sentry now has a production caller and one composed path: gated REST fetch with env/vault token precedence, redaction and evidence hash; parsed stack frame mapped into declared repository territory; proposal delegated to the existing worker proposal/independent verification owner; CLI exposes inspect/propose without applying mutations. No second orchestrator, registry, policy gate, or secret store was introduced.
+- Verification actually run: the focused root Gradle attempt for the two new tests timed out during Termux compilation with no test result, so no Sentry test or compile pass is claimed. No live Sentry call was made.
+- % delta: R4 Sentry moved blocked → source-wired/partial; hosted test and configured/live transport evidence remain open.
+- Fingerprints: record after the batch commit.
+
+### 2026-08-24T20:35:00Z · Agent: Codex GPT-5 · Batch: first-party-integration-catalog
+
+- Paths touched: `src/main/kotlin/atropos/core/integration/IntegrationRegistry.kt` (+22), `BackendDoctor.kt` (+5), `SentryApiClient.kt` (+2), `IntegrationRegistryTest.kt` (+15), hosted selectors (+2), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-MCP-SENTRY registry ownership and doctor visibility.
+- Predicate moved: GitHub, MCP, and Sentry now share one canonical first-party integration catalog consumed by doctor and the Sentry request path; no brand-adapter farm or second registry was introduced.
+- Verification actually run: `ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (380 tests)`, shell syntax, `git diff --check`, and orphan gate passed. Root/hosted Kotlin execution remains pending; no green claim.
+- % delta: unchanged; Sentry remains source-wired/partial pending execution and live configuration evidence.
+- Fingerprints: record after the batch commit.
+
 ### 2026-08-24T18:30:00Z · Agent: Codex GPT-5 · Batch: hosted-agent-runtime-test-surface
 
 - Paths touched: `.github/workflows/compile-gate.yml` (+48 selectors), `scripts/atropos-verify-worktree.sh` (+48 selectors), `STATUS-BACKEND.md` (+7).

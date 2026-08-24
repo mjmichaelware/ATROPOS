@@ -2,6 +2,7 @@ package atropos.cli
 
 import atropos.core.AtroposConfig
 import atropos.core.integration.McpHostManager
+import atropos.core.integration.IntegrationRegistry
 import atropos.core.provider.ProviderOnboardingService
 
 /** Read-only aggregate doctor composed from the canonical provider/MCP owners. */
@@ -18,6 +19,10 @@ class BackendDoctor(
         add("local_only=${config.runtime.localOnly}")
         add("zero_retention_research=${config.runtime.zeroRetentionResearch}")
         add("health=process-ready")
+        add("integrations:")
+        IntegrationRegistry.all().forEach { integration ->
+            add("  ${integration.id} transport=${integration.transport} enabled=${integration.enabledByDefault}")
+        }
         add("providers:")
         providers.list().forEach { provider ->
             add("  ${provider.providerId} health=${provider.health.name.lowercase()} disabled=${provider.disabled}")

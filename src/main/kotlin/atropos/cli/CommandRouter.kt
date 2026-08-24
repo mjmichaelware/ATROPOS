@@ -102,6 +102,7 @@ class CommandRouter(
     private val statusCommand = StatusCommandHandler(config, uiEngine, sessionTracker)
     private val providerCommand = ProviderCommandHandler(config, uiEngine)
     private val githubCommand = GitHubCommandHandler(config, uiEngine)
+    private val sentryCommand = SentryCommandHandler(uiEngine)
     private val mcpCommand = McpCommandHandler(uiEngine)
     private val providerOnboarding = atropos.core.provider.ProviderOnboardingService()
     private val dloiCommand = DloiCommandHandler(uiEngine, higZeroGuard)
@@ -471,6 +472,11 @@ class CommandRouter(
 
             "/github" -> {
                 githubCommand.execute(tokens)
+                RouterOutcome.CONTINUE
+            }
+
+            "/sentry" -> {
+                sentryCommand.execute(tokens)
                 RouterOutcome.CONTINUE
             }
 

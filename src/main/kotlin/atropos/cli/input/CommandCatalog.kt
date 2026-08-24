@@ -21,6 +21,8 @@ object CommandCatalog {
         CommandEntry("/github request-review", "request a pull-request review with explicit confirmation", "Developer Tools"),
         CommandEntry("/github create-check", "create a check run with explicit confirmation", "Developer Tools"),
         CommandEntry("/github update-check", "update a check run with explicit confirmation", "Developer Tools"),
+        CommandEntry("/sentry inspect", "inspect a Sentry issue and attest its top frame", "Developer Tools"),
+        CommandEntry("/sentry propose", "propose a bounded repair from a Sentry issue", "Developer Tools"),
         CommandEntry("/start", "the first three steps, checked against this install", "System", aliases = listOf("/first-run")),
         CommandEntry("/dashboard", "return to dashboard"),
         CommandEntry("/home", "return to dashboard"),

@@ -23,7 +23,8 @@ object CommandRiskCatalog {
                 value.startsWith("/artifact gate") || value.startsWith("/artifact verify") ||
                 value.startsWith("/agent run") || value.startsWith("/agent enqueue") ||
                 value.startsWith("/agent queue run") || value.startsWith("/agent queue resume") ||
-                value.startsWith("/agent worker propose") ||
+            value.startsWith("/agent worker propose") ||
+                value.startsWith("/sentry propose") ||
                 value.startsWith("/autonomous run") || value.startsWith("/autonomous tick") ||
                 value.startsWith("/verify wide") || value.startsWith("/tests") -> CommandRisk.MODERATE
             else -> CommandRisk.AUTOMATIC
