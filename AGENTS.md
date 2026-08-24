@@ -462,6 +462,15 @@ End of AGENTS.md
 - % delta: unchanged; B-005 / ADD-W-029 remains partial pending hosted execution.
 - Fingerprints: recorded after this batch.
 
+### 2026-08-24T15:10:00Z · Agent: Codex GPT-5 · Batch: hosted-provider-policy-surface
+
+- Paths touched: `.github/workflows/compile-gate.yml` (+21), `scripts/atropos-verify-worktree.sh` (+21), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-PROV-001..018 and B-006 execution policy.
+- Predicate moved: all existing provider and policy test classes are now selected by both canonical GitHub Actions lanes, covering descriptor discovery, adapters, routing, quota, credentials, redaction, bounded processes, and paid/free policy owners.
+- Verification actually run: selector/source presence, `git diff --check`, shell syntax, action contract, and orphan gate pass; hosted Kotlin execution remains pending.
+- % delta: unchanged; provider/policy atoms remain partial pending hosted execution.
+- Fingerprints: recorded after this batch.
+
 ### 2026-08-24T14:45:00Z · Agent: Codex GPT-5 · Batch: hosted-factory-integration-surface
 
 - Paths touched: `.github/workflows/compile-gate.yml` (+25), `scripts/atropos-verify-worktree.sh` (+25), `STATUS-BACKEND.md` (+7).

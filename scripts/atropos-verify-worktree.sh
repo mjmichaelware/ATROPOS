@@ -50,8 +50,29 @@ if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
     --tests 'atropos.core.provider.ProviderCascadeRouterTest' \
     --tests 'atropos.core.provider.ProviderCascadeOrderTest' \
     --tests 'atropos.core.provider.ProviderFailureClassifierTest' \
+    --tests 'atropos.core.provider.ActiveSourceBindingResolverTest' \
+    --tests 'atropos.core.provider.adapter.AdapterRouteFacadePolicyTest' \
+    --tests 'atropos.core.provider.ContextAttestationTest' \
+    --tests 'atropos.core.provider.adapter.CredentialSafeHttpTransportTest' \
+    --tests 'atropos.core.provider.EligibilityAlgorithmTest' \
+    --tests 'atropos.core.provider.FallbackChainRegistryTest' \
+    --tests 'atropos.core.provider.FallbackChainTest' \
+    --tests 'atropos.core.provider.GitRepositoryMetadataReaderTest' \
+    --tests 'atropos.core.provider.LocalRootTest' \
+    --tests 'atropos.core.provider.ProviderFailureRedactionTest' \
+    --tests 'atropos.core.provider.ProviderFixtureMatrixServiceTest' \
+    --tests 'atropos.core.provider.ProviderTruthModelsTest' \
+    --tests 'atropos.core.provider.SourceBindingContextPackerTest' \
+    --tests 'atropos.core.provider.SourceContextMetricsTest' \
+    --tests 'atropos.core.provider.TypedFailureStatesTest' \
     --tests 'atropos.core.provider.ProviderErrorNormalizerTest' \
     --tests 'atropos.core.policy.ProviderActionProposalsTest' \
+    --tests 'atropos.core.policy.ActionActorTest' \
+    --tests 'atropos.core.policy.BoundedProcessRunnerTest' \
+    --tests 'atropos.core.policy.CapabilityEnforcerTest' \
+    --tests 'atropos.core.policy.ExecutionPolicyEngineTest' \
+    --tests 'atropos.core.policy.LifecycleActionProposalsTest' \
+    --tests 'atropos.core.policy.TypedToolExecutorTest' \
     --tests 'atropos.core.provider.QuotaLedgerRouteTruthTest' \
     --tests 'atropos.bridge.BridgeEventsHandlerTest' \
     --tests 'atropos.bridge.BridgeStreamTest' \
