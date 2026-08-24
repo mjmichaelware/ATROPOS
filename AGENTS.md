@@ -13304,6 +13304,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; B-INST-002 remains source-wired/partial pending hosted release evidence.
 - Fingerprints (sha256, first 12): `SelfUpdate.kt=c2b204619de8`; `backend-atom-contract-test.sh=32c1c84235f3`.
 
+### 2026-08-24T20:25:00Z · Agent: Codex GPT-5 · Batch: github-actions-transport-boundary
+
+- Paths touched: `src/main/kotlin/atropos/core/verification/GitHubActionsCompileRunner.kt` (+18), `scripts/backend-atom-contract-test.sh` (+3).
+- Atoms / phases affected: B-MCP-GHA/T01 GitHub Actions verification transport and B-OC-002 local-only network boundary.
+- Predicate moved: the existing governed compile transport now requires HTTPS, refuses local-only mode and unapproved egress, disables redirects, and caps API responses at one MiB before returning them to the compile gate. The injected test HTTP seam remains the only test transport.
+- Verification actually run: pending this batch; root/hosted Kotlin and live GitHub Actions remain unproven.
+- % delta: unchanged; B-MCP-GHA remains source-wired/partial pending hosted Action execution.
+- Fingerprints (sha256, first 12): to be recorded after commit.
+
 ### 2026-08-24T19:50:50Z · Agent: Codex GPT-5 · Batch: github-response-size-bound
 
 - Paths touched: `src/main/kotlin/atropos/core/github/GitHubApiClient.kt` (+4), `src/test/kotlin/atropos/core/github/GitHubApiClientTest.kt` (+17), `scripts/backend-atom-contract-test.sh` (+1).

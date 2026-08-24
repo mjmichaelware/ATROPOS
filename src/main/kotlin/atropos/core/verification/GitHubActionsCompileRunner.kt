@@ -1,8 +1,11 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.verification
 
+import atropos.core.AtroposConfig
 import atropos.core.policy.BoundedProcessRunner
 import atropos.core.security.ContextPathExclusions
+import atropos.core.security.SecretSinkKind
+import atropos.core.security.SecretSinkMatrix
 import atropos.core.thinking.Thinking
 import java.net.URI
 import java.net.http.HttpClient
@@ -332,6 +335,15 @@ class GitHubActionsCompileRunner(
 }
 
 private fun sendOverHttps(request: GitHubActionsCompileRunner.Request): GitHubActionsCompileRunner.Response {
+    require(URI.create(request.url).scheme.equals("https", ignoreCase = true)) {
+        "GitHub Actions transport requires HTTPS"
+    }
+    check(!AtroposConfig.load().runtime.localOnly) {
+        "GitHub Actions compile transport disabled by local-only mode"
+    }
+    check(SecretSinkMatrix.isEgressPermitted(SecretSinkKind.EGRESS_URL)) {
+        "GitHub Actions network egress is not permitted by SecretSinkMatrix"
+    }
     val builder = HttpRequest.newBuilder(URI.create(request.url))
         .header("Accept", "application/vnd.github+json")
         .header("Authorization", "Bearer ${request.token}")
@@ -346,7 +358,13 @@ private fun sendOverHttps(request: GitHubActionsCompileRunner.Request): GitHubAc
     }
     val response = HttpClient.newBuilder()
         .connectTimeout(Duration.ofSeconds(30))
+        .followRedirects(HttpClient.Redirect.NEVER)
         .build()
         .send(builder.build(), HttpResponse.BodyHandlers.ofString())
+    require(response.body().length <= MAX_RESPONSE_CHARS) {
+        "GitHub Actions response exceeded $MAX_RESPONSE_CHARS characters"
+    }
     return GitHubActionsCompileRunner.Response(response.statusCode(), response.body())
 }
+
+private const val MAX_RESPONSE_CHARS = 1_024 * 1_024

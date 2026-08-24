@@ -67,6 +67,9 @@ text src/main/kotlin/atropos/core/provider/adapter/DataInfraKernelAdapter.kt 're
 text src/main/kotlin/atropos/core/SelfUpdate.kt 'SecretSinkMatrix.isEgressPermitted'
 text src/main/kotlin/atropos/core/SelfUpdate.kt 'HttpClient.Redirect.NEVER'
 text src/main/kotlin/atropos/core/SelfUpdate.kt 'MAX_DOWNLOAD_BYTES'
+text src/main/kotlin/atropos/core/verification/GitHubActionsCompileRunner.kt 'SecretSinkMatrix.isEgressPermitted'
+text src/main/kotlin/atropos/core/verification/GitHubActionsCompileRunner.kt 'HttpClient.Redirect.NEVER'
+text src/main/kotlin/atropos/core/verification/GitHubActionsCompileRunner.kt 'MAX_RESPONSE_CHARS'
 text src/main/kotlin/atropos/cli/shell/ShellCommandRunner.kt 'BoundedAgencyGate'
 
 # Factory resume/repair and the single obligation loop remain production-wired.
