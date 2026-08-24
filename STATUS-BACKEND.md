@@ -32,6 +32,8 @@ This file records backend implementation status for the current engine wave. A r
 
 | B-006 local-only source retrieval | source-wired / partial | `src/main/kotlin/atropos/core/provider/SourceBindingFetcher.kt`, `src/test/kotlin/atropos/core/provider/SourceBindingContextPackerTest.kt` | `CodebaseContextPacker` → existing `SourceBindingFetcher.fetch()` → localOnly branch | Remote Git clones and HTTP bundles now refuse before process/network side effects when the shared `ATROPOS_LOCAL_ONLY` runtime mode is enabled; local paths and local archives remain available. Backend contract, hosted selector parity (418), and diff check pass; hosted/root Kotlin execution remains pending. |
 
+| B-006 local-only source contract | source-wired / partial | `scripts/backend-atom-contract-test.sh`, `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh` | hosted compile/focused lanes → backend atom source contract → `SourceBindingFetcher` localOnly guard | The CI-owned backend source gate now explicitly protects the local-only source-fetch caller and refusal marker, preventing a future regression from silently reopening remote Git/HTTP retrieval. Static contract, selector parity (418), and diff check pass; hosted execution remains pending. |
+
 ## Commands
 
 - `/factory resume <runId>` — read-only attested resume inspection; execution requires the existing router callback path.

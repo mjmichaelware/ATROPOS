@@ -14,10 +14,13 @@ file install.sh
 file src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt
 file src/main/kotlin/atropos/core/provider/ProviderDescriptor.kt
 file src/main/kotlin/atropos/core/provider/RoutePolicy.kt
+file src/main/kotlin/atropos/core/provider/SourceBindingFetcher.kt
 file src/main/kotlin/atropos/cli/ProviderCommandHandler.kt
 file src/main/kotlin/atropos/core/autonomous/ProviderWorkerDirector.kt
 text src/main/kotlin/atropos/core/autonomous/AutonomousOrchestrator.kt "ProviderWorkerDirector"
 text src/main/kotlin/atropos/cli/CommandRouter.kt '"/providers"'
+text src/main/kotlin/atropos/core/provider/SourceBindingFetcher.kt 'localOnly'
+text src/main/kotlin/atropos/core/provider/SourceBindingFetcher.kt 'disabled by localOnly'
 
 # One bridge owner for the declared local HTTP/SSE surface.
 file src/main/kotlin/atropos/bridge/http/EngineHttpServer.kt

@@ -13141,3 +13141,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: backend atom contract (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), hosted selector contract (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (418 tests)`), and `git diff --check` passed. Root/hosted Kotlin execution remains pending; no test-green claim.
 - % delta: unchanged; B-006 remains source-wired / partial pending executable Kotlin evidence.
 - Fingerprints (sha256, first 12): `SourceBindingFetcher.kt=d2c274df7519`, `SourceBindingContextPackerTest.kt=df44d2406421`.
+
+### 2026-08-24T20:39:00Z · Agent: Codex GPT-5 · Batch: local-only-source-contract
+
+- Paths touched: `scripts/backend-atom-contract-test.sh` (+3), `AGENTS.md`, `STATUS-BACKEND.md`.
+- Atoms / phases affected: B-006/B-LOCAL-ONLY source retrieval regression gate.
+- Predicate moved: the existing CI-owned backend source contract now names `SourceBindingFetcher` and asserts its local-only refusal marker, so both hosted entrypoints protect the production caller against reopening remote source retrieval.
+- Verification actually run: backend atom contract (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), hosted selector contract (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (418 tests)`), and `git diff --check` passed. GitHub Actions execution remains pending.
+- % delta: unchanged; B-006 remains source-wired / partial pending executable hosted evidence.
+- Fingerprint: `backend-atom-contract-test.sh=f9c43ff89e91`.
