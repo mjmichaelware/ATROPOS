@@ -64,14 +64,35 @@ class GitHubBinding(
     fun getIssue(owner: String, repository: String, number: Int): GitHubApiResponse =
         apiClient.getIssue(owner, repository, number)
 
+    fun createIssue(owner: String, repository: String, body: String, authorization: GitHubWriteAuthorization): GitHubApiResponse =
+        apiClient.createIssue(owner, repository, body, authorization)
+
+    fun commentIssue(owner: String, repository: String, number: Int, body: String, authorization: GitHubWriteAuthorization): GitHubApiResponse =
+        apiClient.commentIssue(owner, repository, number, body, authorization)
+
     fun listPullRequests(owner: String, repository: String, page: Int = 1): GitHubApiResponse =
         apiClient.listPullRequests(owner, repository, page)
 
     fun getPullRequestFiles(owner: String, repository: String, number: Int): GitHubApiResponse =
         apiClient.getPullRequestFiles(owner, repository, number)
 
+    fun createPullRequest(owner: String, repository: String, body: String, authorization: GitHubWriteAuthorization): GitHubApiResponse =
+        apiClient.createPullRequest(owner, repository, body, authorization)
+
+    fun commentPullRequest(owner: String, repository: String, number: Int, body: String, authorization: GitHubWriteAuthorization): GitHubApiResponse =
+        apiClient.commentPullRequest(owner, repository, number, body, authorization)
+
+    fun requestPullReview(owner: String, repository: String, number: Int, body: String, authorization: GitHubWriteAuthorization): GitHubApiResponse =
+        apiClient.requestPullReview(owner, repository, number, body, authorization)
+
     fun listCheckRuns(owner: String, repository: String, ref: String): GitHubApiResponse =
         apiClient.listCheckRuns(owner, repository, ref)
+
+    fun createCheckRun(owner: String, repository: String, body: String, authorization: GitHubWriteAuthorization): GitHubApiResponse =
+        apiClient.createCheckRun(owner, repository, body, authorization)
+
+    fun updateCheckRun(owner: String, repository: String, runId: Long, body: String, authorization: GitHubWriteAuthorization): GitHubApiResponse =
+        apiClient.updateCheckRun(owner, repository, runId, body, authorization)
 
     fun getBranchProtection(owner: String, repository: String, branch: String): GitHubApiResponse =
         apiClient.getBranchProtection(owner, repository, branch)

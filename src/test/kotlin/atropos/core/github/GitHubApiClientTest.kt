@@ -37,7 +37,16 @@ class GitHubApiClientTest {
 
             assertEquals(200, client.listIssues("owner", "repo").status)
             assertEquals(200, client.getPullRequestFiles("owner", "repo", 7).status)
-            assertEquals(200, client.updateCheckRun("owner", "repo", 9, "{\"status\":\"completed\"}").status)
+            assertEquals(
+                200,
+                client.updateCheckRun(
+                    "owner",
+                    "repo",
+                    9,
+                    "{\"status\":\"completed\"}",
+                    GitHubWriteAuthorization("operator", "confirm-1")
+                ).status
+            )
             assertEquals(200, client.getBranchProtection("owner", "repo", "release/v1").status)
         }
 
@@ -86,6 +95,26 @@ class GitHubApiClientTest {
                 client.execute(GitHubApiRequest("GET", "/repos/owner/repo/issues"))
             }
         }
+    }
+
+    @Test
+    fun writes_require_operator_confirmation_before_secret_or_transport() {
+        var called = false
+        val client = GitHubApiClient(
+            secretSource = MapSecretSource(mapOf("GITHUB_TOKEN" to "token")),
+            gate = ::allowed,
+            transport = GitHubApiTransport {
+                called = true
+                GitHubApiWireResponse(200, "{}")
+            }
+        )
+
+        withNetworkSink {
+            assertFailsWith<IllegalArgumentException> {
+                client.execute(GitHubApiRequest("POST", "/repos/owner/repo/issues", "{}"))
+            }
+        }
+        assertFalse(called)
     }
 
     private fun withNetworkSink(block: () -> Unit) {

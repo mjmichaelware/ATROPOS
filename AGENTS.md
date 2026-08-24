@@ -12161,6 +12161,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; source-wired but partial pending hosted execution evidence.
 - Fingerprints: recorded after the batch commit.
 
+### 2026-08-24T15:05:00Z · Agent: Codex GPT-5 · Batch: github-write-microatoms-gated
+
+- Paths touched: `src/main/kotlin/atropos/core/github/GitHubApiClient.kt` (+36), `GitHubBinding.kt` (+24), `src/main/kotlin/atropos/cli/GitHubCommandHandler.kt` (+31), `CommandCatalog.kt` (+7), `src/test/kotlin/atropos/core/github/GitHubApiClientTest.kt` (+28), `CommandCatalogBackendEntriesTest.kt` (+7), and `STATUS-BACKEND.md` (+2).
+- Atoms / phases affected: B-MCP-GH-e/f/i/j/k/m/n and explicit write authorization.
+- Predicate moved: issue creation/commenting, PR creation/commenting/review requests, and check-run create/update now have production callers through the one GitHub client; every POST/PATCH requires a nonblank operator/confirmation object before token lookup or transport, while existing policy and secret-sink gates remain mandatory.
+- Verification actually run: source inspection and `git diff --check` are available; no external mutation was executed, and root/hosted tests remain pending.
+- % delta: unchanged; source-wired but partial pending hosted execution evidence.
+- Fingerprints: recorded after the batch commit.
+
 ### 2026-08-24T14:10:00Z · Agent: Codex GPT-5 · Batch: github-read-operation-callers
 
 - Paths touched: `src/main/kotlin/atropos/core/github/GitHubApiClient.kt` (+4), `GitHubBinding.kt` (+9), `src/main/kotlin/atropos/cli/GitHubCommandHandler.kt` (+8), `CommandCatalog.kt` (+4), `src/test/kotlin/atropos/core/github/GitHubApiClientTest.kt` (+3), `CommandCatalogBackendEntriesTest.kt` (+4), and `STATUS-BACKEND.md` (+2).

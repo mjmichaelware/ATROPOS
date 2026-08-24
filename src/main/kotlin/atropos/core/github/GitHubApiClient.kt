@@ -24,8 +24,19 @@ data class GitHubApiRequest(
     val method: String,
     val path: String,
     val body: String? = null,
-    val declaredTerritory: List<String> = listOf(".")
+    val declaredTerritory: List<String> = listOf("."),
+    val authorization: GitHubWriteAuthorization? = null
 )
+
+data class GitHubWriteAuthorization(
+    val operatorId: String,
+    val confirmationId: String
+) {
+    init {
+        require(operatorId.isNotBlank()) { "GitHub write operator is required" }
+        require(confirmationId.isNotBlank()) { "GitHub write confirmation is required" }
+    }
+}
 
 data class GitHubApiResponse(
     val status: Int,
@@ -62,6 +73,9 @@ class GitHubApiClient(
     fun execute(request: GitHubApiRequest): GitHubApiResponse {
         val method = request.method.trim().uppercase()
         require(method in METHODS) { "unsupported GitHub API method: $method" }
+        if (method != "GET") requireNotNull(request.authorization) {
+            "GitHub write requires explicit operator confirmation"
+        }
         val path = validatePath(request.path)
         require(request.body.orEmpty().length <= MAX_BODY_CHARS) {
             "GitHub API request body exceeds $MAX_BODY_CHARS characters"
@@ -124,11 +138,11 @@ class GitHubApiClient(
     fun getIssue(owner: String, repository: String, number: Int): GitHubApiResponse =
         execute(GitHubApiRequest("GET", repoPath(owner, repository, "issues/${positive(number)}")))
 
-    fun createIssue(owner: String, repository: String, body: String): GitHubApiResponse =
-        execute(GitHubApiRequest("POST", repoPath(owner, repository, "issues"), body))
+    fun createIssue(owner: String, repository: String, body: String, authorization: GitHubWriteAuthorization): GitHubApiResponse =
+        execute(GitHubApiRequest("POST", repoPath(owner, repository, "issues"), body, authorization = authorization))
 
-    fun commentIssue(owner: String, repository: String, number: Int, body: String): GitHubApiResponse =
-        execute(GitHubApiRequest("POST", repoPath(owner, repository, "issues/${positive(number)}/comments"), body))
+    fun commentIssue(owner: String, repository: String, number: Int, body: String, authorization: GitHubWriteAuthorization): GitHubApiResponse =
+        execute(GitHubApiRequest("POST", repoPath(owner, repository, "issues/${positive(number)}/comments"), body, authorization = authorization))
 
     fun listPullRequests(owner: String, repository: String, page: Int = 1): GitHubApiResponse =
         execute(GitHubApiRequest("GET", repoPath(owner, repository, "pulls?page=${page.coerceAtLeast(1)}")))
@@ -136,17 +150,26 @@ class GitHubApiClient(
     fun getPullRequestFiles(owner: String, repository: String, number: Int): GitHubApiResponse =
         execute(GitHubApiRequest("GET", repoPath(owner, repository, "pulls/${positive(number)}/files")))
 
+    fun createPullRequest(owner: String, repository: String, body: String, authorization: GitHubWriteAuthorization): GitHubApiResponse =
+        execute(GitHubApiRequest("POST", repoPath(owner, repository, "pulls"), body, authorization = authorization))
+
+    fun commentPullRequest(owner: String, repository: String, number: Int, body: String, authorization: GitHubWriteAuthorization): GitHubApiResponse =
+        execute(GitHubApiRequest("POST", repoPath(owner, repository, "pulls/${positive(number)}/comments"), body, authorization = authorization))
+
+    fun requestPullReview(owner: String, repository: String, number: Int, body: String, authorization: GitHubWriteAuthorization): GitHubApiResponse =
+        execute(GitHubApiRequest("POST", repoPath(owner, repository, "pulls/${positive(number)}/requested_reviewers"), body, authorization = authorization))
+
     fun getBranchProtection(owner: String, repository: String, branch: String): GitHubApiResponse =
         execute(GitHubApiRequest("GET", repoPath(owner, repository, "branches/${refPath(branch)}/protection")))
 
     fun listCheckRuns(owner: String, repository: String, ref: String): GitHubApiResponse =
         execute(GitHubApiRequest("GET", repoPath(owner, repository, "commits/${refPath(ref)}/check-runs")))
 
-    fun createCheckRun(owner: String, repository: String, body: String): GitHubApiResponse =
-        execute(GitHubApiRequest("POST", repoPath(owner, repository, "check-runs"), body))
+    fun createCheckRun(owner: String, repository: String, body: String, authorization: GitHubWriteAuthorization): GitHubApiResponse =
+        execute(GitHubApiRequest("POST", repoPath(owner, repository, "check-runs"), body, authorization = authorization))
 
-    fun updateCheckRun(owner: String, repository: String, runId: Long, body: String): GitHubApiResponse =
-        execute(GitHubApiRequest("PATCH", repoPath(owner, repository, "check-runs/${positive(runId)}"), body))
+    fun updateCheckRun(owner: String, repository: String, runId: Long, body: String, authorization: GitHubWriteAuthorization): GitHubApiResponse =
+        execute(GitHubApiRequest("PATCH", repoPath(owner, repository, "check-runs/${positive(runId)}"), body, authorization = authorization))
 
     private fun repoPath(owner: String, repository: String, suffix: String): String {
         val safeOwner = segment(owner)

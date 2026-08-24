@@ -24,7 +24,7 @@ This file records backend implementation status for the current engine wave. A r
 - `/factory resume <runId>` — read-only attested resume inspection; execution requires the existing router callback path.
 - `/providers list|refresh|test|prefer|disable|connect <provider>` — local provider discovery and vault-backed connect.
 - `/mcp list|test|search <query>|call <server> <tool>` — configured MCP inventory/search, health probe, and bounded tool call.
-- `/github issues|prs <owner/repository>` and `/github checks <owner/repository> <ref>` — read-only gated GitHub inspection.
+- `/github issues|issue|prs|pr-files|checks|branch-protection <owner/repository> ...` — gated GitHub inspection; `create-issue|comment-issue|create-pr|comment-pr|request-review|create-check|update-check` additionally require `--confirm <id>`.
 - `/keys` — existing local secret status surface.
 
 ## Secret and policy boundary
@@ -340,6 +340,8 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | B-MCP-GITHUB binding test selector | source-wired / partial | `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh` | hosted focused backend Gradle command → `atropos.core.github.GitHubBindingTest` | Existing authorization, territory, push, and repository-provisioning binding tests now run with the typed client/scavenger tests in both hosted lanes. Hosted execution remains pending. |
 
 | B-MCP-GITHUB read operation callers | source-wired / partial | `src/main/kotlin/atropos/core/github/GitHubApiClient.kt`, `GitHubBinding.kt`, `src/main/kotlin/atropos/cli/GitHubCommandHandler.kt`, `CommandCatalog.kt`, `GitHubApiClientTest.kt` | `/github issue|pr-files|branch-protection` → existing `GitHubBinding` → `GitHubApiClient` | Added bounded get-issue, PR-files, and branch-protection read paths with positive-number/ref validation, shared policy/secret gates, catalog callers, and injected endpoint assertions. Hosted/root tests remain pending. |
+
+| B-MCP-GH write micro-atoms | source-wired / partial | `GitHubApiClient.kt`, `GitHubBinding.kt`, `GitHubCommandHandler.kt`, `CommandCatalog.kt`, `GitHubApiClientTest.kt` | `/github create-issue|comment-issue|create-pr|comment-pr|request-review|create-check|update-check` → existing gated client | Added issue/PR/check mutation callers behind mandatory `GitHubWriteAuthorization` (`--confirm <id>`); POST/PATCH refuse before secret lookup/transport without confirmation. No mutation was executed; hosted tests remain pending. |
 
 | caller/contract audit after GitHub CLI wire | passed locally / hosted pending | `scripts/find-orphans.py`, `.github/actions/atropos-verify/action.yml`, `.github/workflows/atropos-verify-example.yml`, `docs/mcp-examples/*.json` | canonical orphan gate and reusable contracts | `find-orphans.py --fail-on-new` exited 0 with 4 pre-existing baseline orphans of 1032 production files; action/workflow contracts and 14 MCP examples passed; root/hosted Gradle remains pending. |
 
