@@ -23,6 +23,15 @@ const BASE = `https://github.com/${REPO}/releases/download/${VERSION}`;
 const DEST_DIR = path.join(__dirname, "..", "vendor");
 const DEST = path.join(DEST_DIR, "ATROPOS.jar");
 
+function installLocalJar(source) {
+  if (!fs.existsSync(source) || !fs.statSync(source).isFile()) {
+    throw new Error(`ATROPOS_JAR does not point to a readable jar: ${source}`);
+  }
+  fs.mkdirSync(DEST_DIR, { recursive: true });
+  fs.copyFileSync(source, DEST);
+  console.log(`ATROPOS: installed local jar ${DEST}`);
+}
+
 async function get(url) {
   const response = await fetch(url, { redirect: "follow" });
   if (!response.ok) {
@@ -32,6 +41,11 @@ async function get(url) {
 }
 
 async function main() {
+  if (process.env.ATROPOS_JAR) {
+    installLocalJar(path.resolve(process.env.ATROPOS_JAR));
+    return;
+  }
+
   // An offline install is a normal thing on the target device. Failing the
   // whole npm install for it would be worse than deferring: the launcher
   // checks for the jar and says what to do, so the package installs and the

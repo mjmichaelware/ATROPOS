@@ -807,3 +807,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-PROV-012 activation paid refusal coverage | source-wired / partial | `src/test/kotlin/atropos/core/provider/ProviderActivationServiceTest.kt` | existing `/providers test <id>` → `ProviderActivationService.liveTest` | Added credit-pool (`cerebras`) refusal fixture; static selector/orphan/diff checks pass. Root/hosted Kotlin execution remains pending; no test-green claim. |
+
+### 2026-08-24T17:22:01Z · Backend batch: npm-local-jar-and-publish-wire
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-INST-006 npm local-jar fallback and tag publication | source-wired / partial | `npm/scripts/postinstall.js`, `npm/README.md`, `scripts/npm-installer-contract-test.sh`, `.github/workflows/release.yml` | `npm install` → existing `postinstall.js`; immutable `v*` release → existing `publish-npm` job → npm registry | `ATROPOS_JAR` now copies a local jar without network access; the package contract and isolated local-jar install pass. Tag publication is skipped when `NPM_TOKEN` is absent and therefore remains unproven until GitHub Actions runs with the operator-configured secret. |

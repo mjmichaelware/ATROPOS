@@ -54,6 +54,11 @@ or mismatched checksum fails before the jar is written. Use
 | `ATROPOS_JAR` | Run a jar you already have instead of the fetched one. |
 | `ATROPOS_VERSION` | Which release to fetch at install time. Defaults to `latest`. |
 
+When `ATROPOS_JAR` is set during `npm install`, the package copies that local
+jar into its launcher cache and performs no network download. This supports
+air-gapped or locally built installs; normal installs still require the
+published JAR and matching SHA-256 file.
+
 Set them per-run or in your shell profile:
 
 ```

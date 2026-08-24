@@ -12990,3 +12990,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (383 tests)`), `timeout 90s python3 scripts/find-orphans.py --fail-on-new` (exit 0; 4 historical baseline orphan files / 360 LOC), and `git diff --check` passed. Focused root Gradle selection (`ProviderActionProposalsTest`, `ProviderCascadeOrderTest`) exited 124 during root `:compileKotlin` after `:core:jvmJar`, before test execution; no Kotlin/provider test-green or hosted-green claim.
 - % delta: unchanged; B-PROV-012 remains source-wired / partial pending hosted execution.
 - Fingerprints (sha256, first 12): `ProviderDescriptor.kt=639cfd348464`, `ProviderActionProposals.kt=b4c7a990c275`, `ProviderCascadeOrder.kt=6901c0928943`, `RoutePolicy.kt=3d3d07ef94b5`, `ProviderActionProposalsTest.kt=c62ee6e8a5ac`, `ProviderCascadeOrderTest.kt=be0c86dee693`.
+
+### 2026-08-24T17:22:01Z · Agent: Codex GPT-5 · Batch: npm-local-jar-and-publish-wire
+
+- Paths touched: `npm/scripts/postinstall.js` (+12), `npm/README.md` (+5), `scripts/npm-installer-contract-test.sh` (+2), `.github/workflows/release.yml` (+27), `AGENTS.md`, `STATUS-BACKEND.md`.
+- Atoms / phases affected: B-INST-006 npm fallback package and release publication caller.
+- Predicate moved: an operator-provided `ATROPOS_JAR` now short-circuits npm network download and copies a validated local jar into the existing launcher cache; immutable `v*` tags now have an existing GitHub Actions caller that publishes the same npm wrapper when `NPM_TOKEN` is configured, while rolling releases remain jar-only. No second artifact owner was introduced.
+- Verification actually run: `bash scripts/npm-installer-contract-test.sh`, `node --check npm/scripts/postinstall.js`, isolated temporary-package local-jar installation, `bash scripts/hosted-test-selector-contract.sh` (`384 tests`), and `git diff --check` passed. Hosted release, npm registry publication, and device execution remain unproven; no release-green claim.
+- % delta: unchanged; B-INST-006 remains source-wired / partial pending hosted publication and runtime evidence.
+- Fingerprints (sha256, first 12): `npm/scripts/postinstall.js=2234e707b3b7`, `npm/README.md=e585ed97b83a`, `scripts/npm-installer-contract-test.sh=52d5500f60d2`, `.github/workflows/release.yml=e65850003831`.
