@@ -199,6 +199,12 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | --- | --- | --- | --- | --- |
 | FTY-05 anti-false-finish/orphan cleanup | source-wired / partial | `src/main/kotlin/atropos/core/factory/FactoryObligationLoop.kt`, `src/test/kotlin/atropos/core/factory/FactoryObligationLoopTest.kt` | production `FactoryRunOrchestrator` → `executeUntilSettled`; no caller remains for the deleted blind finalizer | Removed the test-only `finalizeAfterVerifiedEvidence` method that marked all open nodes complete without executing them. Replaced it with a refusal test for an empty execution wave. Orphan gate exited 0 with only 4 pre-existing baseline orphans; `git diff --check` passed. Hosted/root factory tests remain pending. |
 
+### 2026-08-24T05:48:00Z · Backend verification batch: local-core-lane-inconclusive
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| hosted verification evidence | unchanged / partial | `STATUS-BACKEND.md`, `AGENTS.md` | GitHub Actions compile/focused-test workflow remains the authoritative root caller | `timeout 75s ./gradlew :core:jvmTest --no-daemon --max-workers=1 --rerun` produced only daemon startup output and was terminated; no test count or pass is claimed. Worktree remained clean and `git diff --check` passed. |
+
 ### 2026-08-24T05:36:00Z · Backend batch: mcp-evidence-reason-bridge-field
 
 | atom | status | files | caller | tests / notes |

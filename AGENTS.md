@@ -506,6 +506,15 @@ End of AGENTS.md
 - % delta: unchanged; source-wired but partial pending hosted execution.
 - Fingerprints: `BridgeMcpHandler.kt=818e3a14b940`; `BridgeMcpHandlerTest.kt=f83b010d08d5`.
 
+### 2026-08-24T05:48:00Z · Agent: Codex GPT-5 · Batch: local-core-lane-inconclusive
+
+- Paths touched: `STATUS-BACKEND.md` (+7), `AGENTS.md` (+6).
+- Atoms / phases affected: verification evidence only; no implementation status changed.
+- Predicate moved: none. The available local `:core:jvmTest` lane was re-attempted after the current backend changes but hung after daemon startup and was terminated; GitHub Actions remains the only valid root proof lane.
+- Verification actually run: `git diff --check` passed; no test count, compile green, or hosted green claim.
+- % delta: unchanged.
+- Fingerprint: documentation ledger update only.
+
 ### 2026-08-24T04:41:10Z · Agent: Codex GPT-5 · Batch: mcp-http-request-validity
 
 - Paths touched: `src/main/kotlin/atropos/core/integration/McpHostManager.kt` (+10/-4), `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+2).
