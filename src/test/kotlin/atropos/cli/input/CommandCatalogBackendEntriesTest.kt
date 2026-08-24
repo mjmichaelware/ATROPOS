@@ -31,6 +31,9 @@ class CommandCatalogBackendEntriesTest {
         assertTrue("/github request-review" in commands)
         assertTrue("/github create-check" in commands)
         assertTrue("/github update-check" in commands)
+        assertTrue("/git add" in commands)
+        assertTrue("/git commit" in commands)
+        assertTrue("/git rebase-continue" in commands)
         assertTrue("/agent context import <path>" in commands)
         assertTrue("/keys status" in commands)
     }

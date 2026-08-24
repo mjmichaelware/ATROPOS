@@ -420,3 +420,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | AcceptanceVelocity hosted proof wiring | source-wired / partial | `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh` | GitHub compile/focused backend lanes → existing `AcceptanceVelocityTest` | Added the existing metric-owner test to both canonical hosted selectors. `bash -n`, action/workflow contract, `git diff --check`, and orphan gate passed locally; hosted execution remains pending. |
+
+### 2026-08-24T07:18:00Z · Backend batch: gated-local-git-mutations
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-GITLOCAL-c/d/e/f mutation callers | source-wired / partial | `src/main/kotlin/atropos/cli/GitMutationCommand.kt`, `ShellCommandHandler.kt`, `CommandCatalog.kt`, `src/test/kotlin/atropos/cli/GitMutationCommandTest.kt`, hosted selectors | `/git add|commit|rebase-continue` → `GitMutationCommandParser` → existing `ShellCommandRunner` → `TypedToolExecutor`/`BoundedAgencyGate` | Added local Git mutation commands with mandatory `--confirm <id>`, traversal-safe add paths, bounded commit messages, exact rebase shape, and no confirmation token forwarded to Git. Existing agency policy still decides execution; no mutation was run. Root/hosted tests remain pending. |

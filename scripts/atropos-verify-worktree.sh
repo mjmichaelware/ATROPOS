@@ -47,6 +47,7 @@ if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
     --tests 'atropos.cli.input.CommandCatalogBackendEntriesTest' \
     --tests 'atropos.core.agent.AgentContextCollectorTest' \
     --tests 'atropos.cli.shell.ShellBoundedAgencyTest' \
+    --tests 'atropos.cli.GitMutationCommandTest' \
     --tests 'atropos.core.worktree.BoundedGitWorktreeCommandRunnerTest' \
     --tests 'atropos.core.verification.GateReachabilityCheckerTest' \
     --tests 'atropos.core.verification.AcceptanceVelocityTest' \

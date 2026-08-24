@@ -12179,6 +12179,14 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; source-wired but partial pending hosted execution evidence.
 - Fingerprints: recorded after the batch commit.
 
+### 2026-08-24T07:18:00Z · Agent: Codex GPT-5 · Batch: gated-local-git-mutations
+
+- Paths touched: `src/main/kotlin/atropos/cli/GitMutationCommand.kt` (+47), `src/main/kotlin/atropos/cli/ShellCommandHandler.kt` (+7/-1), `src/main/kotlin/atropos/cli/input/CommandCatalog.kt` (+3), `src/test/kotlin/atropos/cli/GitMutationCommandTest.kt` (+25), `src/test/kotlin/atropos/cli/input/CommandCatalogBackendEntriesTest.kt` (+3), `.github/workflows/compile-gate.yml` (+1), `scripts/atropos-verify-worktree.sh` (+1), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-MCP-GITLOCAL-c/d/e/f local Git mutation commands and caller wiring.
+- Predicate moved: bounded local `git add`, `git commit`, and `git rebase --continue` now have production callers through the existing shell agency path. Commands require explicit confirmation, reject traversal and malformed input, strip confirmation metadata before process execution, and remain subject to `TypedToolExecutor`/`BoundedAgencyGate`.
+- Verification actually run: `git diff --check`, `bash -n scripts/atropos-verify-worktree.sh`, and `timeout 90s python3 scripts/find-orphans.py --fail-on-new` passed; orphan census reports four pre-existing orphan files and 1034 production files. Focused tests are selected in both GitHub lanes; no mutation, root Gradle run, or hosted green claim.
+- % delta: unchanged; source-wired and policy-gated, hosted test evidence pending.
+
 ### 2026-08-24T06:57:00Z · Agent: Codex GPT-5 · Batch: mcp-sse-frame-normalization
 
 - Paths touched: `src/main/kotlin/atropos/core/integration/McpHostManager.kt` (+20), `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+24), `STATUS-BACKEND.md` (+7).
