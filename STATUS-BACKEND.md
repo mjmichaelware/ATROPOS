@@ -222,3 +222,8 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | ADD-MCP-003 result evidence contract | source-wired / partial | `src/main/kotlin/atropos/bridge/BridgeMcpHandler.kt`, `src/test/kotlin/atropos/bridge/BridgeMcpHandlerTest.kt` | `/v1/mcp/call` → existing `BridgeMcpHandler.call` → `McpToolCallResult.evidence` | Bridge responses now include `noEvidenceReason` alongside hash/path, preserving explicit no-evidence outcomes instead of making them indistinguishable from missing fields. Injected HTTP fixture asserts the empty reason on durable evidence. `git diff --check` passed; hosted/root tests remain pending. |
+### 2026-08-24T06:20:00Z · Backend batch: attested-instruction-context-import
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-IMPORT cursor-rules / copilot-instructions | source-wired / partial | `src/main/kotlin/atropos/core/agent/ImportedInstructionPackStore.kt`, `AgentContextCollector.kt`, `src/main/kotlin/atropos/cli/commands/AgentCommand.kt`, `CommandCatalog.kt`, `src/test/kotlin/atropos/core/agent/AgentContextCollectorTest.kt` | `/agent context import <path>` → `ImportedInstructionPackStore.import`; existing `AgentContextCollector.collect/collectPatch/collectRepair` → verified local packs | Imported files stay inside repo territory, are redacted before persistence, receive a SHA-256 id, and load only when the hash and `CONTEXT_ONLY` authority marker verify. Source Docs/ATROPOS policy remain authoritative. Focused tests added; `git diff --check` and Python orphan-script syntax passed. Gradle/root and hosted execution remain pending; no green claim. |

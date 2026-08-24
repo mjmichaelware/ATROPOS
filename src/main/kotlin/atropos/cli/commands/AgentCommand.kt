@@ -70,6 +70,7 @@ class AgentCommand(
     private val autonomyAdvisor: AutonomyPolicyEngine = AutonomyPolicyEngine()
 ) : AgentCommandHandler {
     private val repoRoot = AtroposRepoRootLocator.resolve()
+    private val importedInstructionPacks = ImportedInstructionPackStore(repoRoot)
     private val selfHostHandler: SelfHostCommand = SelfHostCommand(ui, config, repoRoot)
     private val queueRenderer = AgentQueueRenderer(TerminalTheme(ConfigurationManager()))
     private val daemonHandler = AgentDaemonCommandHandler(
@@ -141,6 +142,7 @@ class AgentCommand(
         }
 
         return when (tokens[1].lowercase()) {
+            "context" -> importContext(tokens.drop(2))
             "run" -> {
                 val result = jobHandler.run(tokens.drop(2))
                 lastKnownPatchId = result.lastKnownPatchId ?: lastKnownPatchId
@@ -235,6 +237,18 @@ class AgentCommand(
             "self-host" -> selfHostHandler.execute(tokens)
             else -> invalid(agentUsage())
         }
+    }
+
+    private fun importContext(arguments: List<String>): AgentCommandOutcome {
+        if (arguments.firstOrNull()?.lowercase() != "import" || arguments.size != 2) {
+            return invalid("usage: /agent context import <cursor-rules-or-copilot-instructions-file>")
+        }
+        return importedInstructionPacks.import(arguments[1]).fold(
+            onSuccess = { pack -> AgentCommandOutcome.Completed(
+                "imported context pack ${pack.id} sha256=${pack.contentHash}; context-only (Source Authority and ATROPOS policy remain authoritative)"
+            ) },
+            onFailure = { failure -> invalid("context import refused: ${failure.message ?: "invalid instruction file"}") }
+        )
     }
 
     private fun agentUsage(): String =

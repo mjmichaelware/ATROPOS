@@ -37,6 +37,7 @@ class AgentContextCollector(
     private val sourceBindingResolver: ActiveSourceBindingResolver = ActiveSourceBindingResolver(repoRoot),
     private val redactionFilter: RedactionFilter = RedactionFilter(),
     private val processRunner: BoundedProcessRunner = BoundedProcessRunner(),
+    private val importedInstructionPacks: ImportedInstructionPackStore = ImportedInstructionPackStore(repoRoot),
     private val commandTimeoutMillis: Long = 5_000L,
     private val commandOutputLines: Int = 256
 ) {
@@ -73,6 +74,7 @@ class AgentContextCollector(
             "# Source Context Pack\n${sourcePack.pack?.text ?: "[source context pack refused: ${sourcePack.failure}]"}\n",
             truncated
         )
+        truncated = appendImportedInstructions(builder, truncated)
         if (sourcePack.failure != null) truncated = true
         val pack = sourcePack.pack
 
@@ -111,6 +113,7 @@ class AgentContextCollector(
             "# Source Context Pack\n${sourcePack.pack?.text ?: "[source context pack refused: ${sourcePack.failure}]"}\n",
             truncated
         )
+        truncated = appendImportedInstructions(builder, truncated)
         if (sourcePack.failure != null) truncated = true
         val pack = sourcePack.pack
 
@@ -150,6 +153,7 @@ class AgentContextCollector(
             "# Source Context Pack\n${sourcePack.pack?.text ?: "[source context pack refused: ${sourcePack.failure}]"}\n",
             truncated
         )
+        truncated = appendImportedInstructions(builder, truncated)
         if (sourcePack.failure != null) truncated = true
         val pack = sourcePack.pack
 
@@ -344,4 +348,18 @@ class AgentContextCollector(
 
     private fun appendSection(builder: StringBuilder, text: String, truncated: Boolean): Boolean =
         boundedBuilder.append(builder, text, truncated)
+
+    private fun appendImportedInstructions(builder: StringBuilder, truncated: Boolean): Boolean {
+        val packs = importedInstructionPacks.latest()
+        if (packs.isEmpty()) return truncated
+        val content = buildString {
+            appendLine("# Imported Instructions (context-only; Source Authority remains authoritative)")
+            packs.forEach { pack ->
+                appendLine("--- ${pack.id} source=${pack.sourcePath} sha256=${pack.contentHash} ---")
+                appendLine(pack.text)
+                appendLine("--- END ${pack.id} ---")
+            }
+        }
+        return appendSection(builder, content, truncated)
+    }
 }

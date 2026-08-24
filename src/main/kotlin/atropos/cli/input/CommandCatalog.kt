@@ -68,6 +68,7 @@ object CommandCatalog {
         CommandEntry("/agent job", "agent job details (use --raw for full record)"),
         CommandEntry("/agent job --raw", "full raw agent job record"),
         CommandEntry("/agent ask", "agent bridge ask"),
+        CommandEntry("/agent context import <path>", "import redacted, hash-attested cursor rules or copilot instructions as context-only"),
         CommandEntry("/agent patch", "agent bridge patch placeholder"),
         CommandEntry(
             "/agent worker propose",

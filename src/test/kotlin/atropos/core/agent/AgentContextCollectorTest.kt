@@ -9,6 +9,32 @@ import kotlin.test.assertTrue
 
 class AgentContextCollectorTest {
     @Test
+    fun imported_instruction_pack_is_redacted_attested_and_loaded_into_context() {
+        val root = Files.createTempDirectory("atropos-imported-instructions-")
+        val source = root.resolve(".github/copilot-instructions.md")
+        Files.createDirectories(source.parent)
+        Files.writeString(source, "use the bounded runner\nOPENAI_API_KEY=sk-live-abcdefghijklmnopqrstuvwxyz\n")
+
+        val imported = ImportedInstructionPackStore(root).import(".github/copilot-instructions.md").getOrThrow()
+        assertTrue(imported.hasValidContentHash())
+        assertTrue(imported.text.contains("use the bounded runner"))
+        assertFalse(imported.text.contains("sk-live-abcdefghijklmnopqrstuvwxyz"))
+
+        val snapshot = AgentContextCollector(repoRoot = root).collectPatch("read README.md")
+        assertTrue(snapshot.text.contains("Imported Instructions (context-only"), snapshot.text)
+        assertTrue(snapshot.text.contains("use the bounded runner"), snapshot.text)
+        assertFalse(snapshot.text.contains("sk-live-abcdefghijklmnopqrstuvwxyz"), snapshot.text)
+    }
+
+    @Test
+    fun imported_instruction_pack_rejects_paths_outside_repository() {
+        val root = Files.createTempDirectory("atropos-imported-instructions-boundary-")
+        val outside = Files.createTempFile("atropos-outside-", ".md")
+        val result = ImportedInstructionPackStore(root).import(outside.toString())
+        assertTrue(result.isFailure)
+    }
+
+    @Test
     fun collectPatchRefusesExcludedSecretHintFiles() {
         val root = Files.createTempDirectory("atropos-context-secret-excluded-")
         Files.writeString(root.resolve(".env"), "OPENAI_API_KEY=sk-live-abcdefghijklmnopqrstuvwxyz\n")
