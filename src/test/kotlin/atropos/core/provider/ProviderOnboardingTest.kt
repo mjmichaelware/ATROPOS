@@ -282,6 +282,31 @@ class ProviderOnboardingTest {
     }
 
     @Test
+    fun required_provider_catalog_entries_have_a_production_transport_owner() {
+        val registry = StaticProviderDescriptorRegistry()
+        val adapters = atropos.core.provider.adapter.StaticProviderAdapterRegistry(registry, emptyMap())
+        val required = listOf(
+            "deepseek_direct",
+            "mistral",
+            "gemini",
+            "xai",
+            "openrouter",
+            "ollama",
+            "aws_bedrock",
+            "anthropic",
+            "openai",
+            "azure_openai"
+        )
+
+        required.forEach { providerId ->
+            val adapter = adapters.getByProviderId(providerId)
+            assertTrue(adapter != null, "missing adapter owner for $providerId")
+            assertTrue(adapter!!.status().implemented, "adapter is not implemented for $providerId")
+        }
+        assertEquals("provider.anthropic.messages", registry.getById("anthropic")?.endpointId)
+    }
+
+    @Test
     fun adapter_registry_resolves_common_alias_without_logging_or_network() {
         val registry = StaticProviderDescriptorRegistry()
         val adapter = atropos.core.provider.adapter.StaticProviderAdapterRegistry(

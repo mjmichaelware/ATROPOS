@@ -13348,6 +13348,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; T04 remains partial pending hosted execution and final bridge sink audit.
 - Fingerprints recorded by commit; unrelated `docs/completion/*` files were not staged.
 
+### 2026-08-25T06:45:00Z · Agent: Codex GPT-5 · Batch: provider-catalog-transport-coverage
+
+- Paths touched: `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` (+25), `scripts/backend-atom-contract-test.sh` (+4), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: P01-P07 and P10-P11 provider descriptor/adapter onboarding coverage.
+- Predicate moved: the canonical adapter registry now has an executable focused assertion that every required catalog provider resolves to an implemented production transport owner, with Anthropic’s native endpoint explicitly checked.
+- Verification actually run: static backend and hosted-selector contracts are next in this batch; no root/hosted Kotlin test is claimed.
+- % delta: unchanged; provider catalog remains partial pending hosted execution and live operator credentials.
+- Fingerprints recorded by commit; unrelated `docs/completion/*` files were not staged.
+
 ### 2026-08-25T06:20:00Z · Agent: Codex GPT-5 · Batch: bridge-evidence-metadata-redaction
 
 - Paths touched: `src/main/kotlin/atropos/bridge/BridgeEvidenceHandler.kt` (+2/-2), `src/test/kotlin/atropos/bridge/BridgeEvidenceHandlerTest.kt` (+31), `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+7).

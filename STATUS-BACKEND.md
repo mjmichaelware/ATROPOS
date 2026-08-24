@@ -1082,3 +1082,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-005 evidence listing metadata safety | source-wired / partial | `src/main/kotlin/atropos/bridge/BridgeEvidenceHandler.kt`, `src/test/kotlin/atropos/bridge/BridgeEvidenceHandlerTest.kt`, `scripts/backend-atom-contract-test.sh` | `GET /v1/evidence` → existing `BridgeEvidenceHandler.listEvidence/getEvidence` | Evidence paths in both indexed metadata and single-item responses now pass through the canonical redaction boundary; pagination, repository/symlink bounds, content limit, and content hashing remain in the same owner. Static backend contract and selector parity (420) pass; hosted/root Kotlin execution remains pending. |
+
+### 2026-08-25T06:45:00Z · Agent: Codex GPT-5 · Batch: provider-catalog-transport-coverage
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| P01-P07/P10-P11 provider transport coverage | source-wired / partial | `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt`, `scripts/backend-atom-contract-test.sh`, existing adapter/catalog owners | `StaticProviderAdapterRegistry` → `buildKernelAdapter` → native/OpenAI-compatible/Bedrock adapter owners | Added one focused assertion covering DeepSeek, Mistral, Gemini, xAI, OpenRouter, Ollama, Bedrock, Anthropic, OpenAI, and Azure transport ownership, including Anthropic native endpoint identity. Static backend contract and selector parity (420) pass; hosted/root Kotlin execution remains pending. |
