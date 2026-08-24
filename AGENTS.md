@@ -13894,6 +13894,16 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprints: `scripts/backend-atom-contract-test.sh=9909e6c63f54`.
 
+### 2026-08-25T05:40:00Z · Agent: Codex GPT-5 · Batch: mcp-remote-handshake-notification
+
+- Paths touched: `src/main/kotlin/atropos/core/integration/McpHostManager.kt` (+1), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-MCP-CORE-c remote initialized notification.
+- Predicate moved: the sole MCP host now sends the required `notifications/initialized` JSON-RPC notification on the HTTP path before `tools/list`, matching the existing stdio handshake without adding a transport owner.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh`, `bash scripts/hosted-test-selector-contract.sh` (`421 tests`), and `git diff --check` passed. Hosted remote MCP execution remains unverified.
+- % delta: unchanged; B-MCP-CORE-c remains source-wired/partial pending hosted execution.
+- New overall estimate: unchanged.
+- Fingerprints: `McpHostManager.kt=502c26ebea7c`; `backend-atom-contract-test.sh=cf400397e60d`.
+
 ### 2026-08-24T22:35:00Z · Agent: Codex GPT-5 · Batch: local-health-response-bounds
 
 - Paths touched: `src/main/kotlin/atropos/core/ProviderState.kt` (+10/-2), `src/main/kotlin/atropos/core/agent/ProviderSessionSupervisor.kt` (+13/-3), `scripts/backend-atom-contract-test.sh` (+2).

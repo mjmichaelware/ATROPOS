@@ -297,6 +297,7 @@ class McpHostManager(
     ): String {
         val initialize = "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{}}"
         require(remoteExchange(server, initialize, maxResponseBytes).contains("\"id\":1")) { "MCP HTTP initialize returned no response" }
+        remoteExchange(server, "{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}", maxResponseBytes)
         val toolsList = "{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/list\",\"params\":{}}"
         val toolsListResponse = remoteExchange(server, toolsList, maxResponseBytes)
         require(toolsListResponse.contains("\"id\":2")) { "MCP HTTP tools/list returned no response" }

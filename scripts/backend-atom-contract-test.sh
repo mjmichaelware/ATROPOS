@@ -93,6 +93,7 @@ text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'requireToolWith
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'method\":\"initialize\"'
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'method\":\"tools/list\"'
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'notifications/initialized'
+text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'remoteExchange(server, "{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}'
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'processRunner.start(listOf(command) + server.args, root)'
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'if (server.remote)'
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'private fun postRemote'
