@@ -12885,3 +12885,10 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: `git diff --check`, `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (382 tests)`), and `timeout 90s python3 scripts/find-orphans.py --fail-on-new` (exit 0; only 4 pre-existing baseline orphan files / 360 LOC) passed. Focused `./gradlew --no-daemon :test --rerun --max-workers=1 --tests 'atropos.bridge.QuotaProjectionTest'` reached Gradle task-graph calculation but produced no test result before the local execution window ended; no Kotlin test-green claim. GitHub Actions remains pending because repository push authentication is unavailable.
 - % delta: unchanged; P15 remains source-wired / partial pending hosted execution and live provider quota headers.
 - Fingerprints (sha256, first 12): `QuotaLedger.kt=0b542b2dd9ef`, `QuotaProjection.kt=ef64122dcaea`, `QuotaProjectionTest.kt=d5f00c8b4be4`.
+
+### 2026-08-24T15:04:00Z · Agent: Codex GPT-5 · Verification: core-test-boundary
+
+- Paths touched: `AGENTS.md` (+7), `STATUS-BACKEND.md` (+7); no production implementation change in this verification batch.
+- Acceptance predicate checked: the available local Gradle lane must be measured without being generalized to the root backend test suite.
+- Evidence: `./gradlew :core:jvmTest --no-daemon --max-workers=1 --rerun` completed successfully in 49s; XML reports show exactly 2 tests, 0 failures, 0 errors, 0 skipped (`PortableSurfaceContractTest`, `PortableEngineStateTest`). `bash scripts/hosted-test-selector-contract.sh` passed with 382 selectors, and `timeout 90s python3 scripts/find-orphans.py --fail-on-new` passed with only 4 historical baseline orphans / 360 LOC.
+- % delta: unchanged; root provider/bridge/MCP/factory execution remains unproven and GitHub Actions remains the authoritative pending lane.

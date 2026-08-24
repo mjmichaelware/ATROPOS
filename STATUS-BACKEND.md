@@ -244,6 +244,12 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | --- | --- | --- | --- | --- |
 | P15 / quota remaining projection | source-wired / partial | `src/main/kotlin/atropos/core/provider/QuotaLedger.kt`, `src/main/kotlin/atropos/bridge/projection/QuotaProjection.kt`, `src/test/kotlin/atropos/bridge/QuotaProjectionTest.kt` | provider adapter success usage → existing `QuotaLedger.recordSuccess` → file-backed ledger → `AtroposBridge` `/v1/quota` projection | `remainingRequests` and `remainingTokens` now persist with backward-compatible reads of old 14-column ledgers and render as numeric values or explicit `null`. Static selector/orphan/diff checks pass; focused Gradle reached task-graph calculation without a test result, so hosted/root Kotlin execution remains pending. |
 
+### 2026-08-24T15:04:00Z · Backend verification: core-test-boundary
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| local-vs-hosted test boundary | measured / partial | `AGENTS.md`, `STATUS-BACKEND.md` | `:core:jvmTest` local lane; GitHub Actions `focused-backend-tests` remains root backend owner | Local `:core:jvmTest --rerun --no-daemon --max-workers=1` passed exactly 2 tests with 0 failures/errors/skips. Hosted selector contract passes for 382 root test classes; no root-green or hosted-green claim. |
+
 ### 2026-08-24T00:25:00Z · Backend batch: configured-mcp-search
 
 | atom | status | files | caller | tests / notes |
