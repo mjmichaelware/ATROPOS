@@ -13313,6 +13313,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; B-MCP-GHA remains source-wired/partial pending hosted Action execution.
 - Fingerprints (sha256, first 12): `GitHubActionsCompileRunner.kt=dad712a4a5f4`; `backend-atom-contract-test.sh=f64bac80626d`.
 
+### 2026-08-24T20:35:00Z · Agent: Codex GPT-5 · Batch: platform-health-real-probe
+
+- Paths touched: `src/main/kotlin/atropos/core/platform/PlatformAbstraction.kt` (+17/-2), `scripts/backend-atom-contract-test.sh` (+2).
+- Atoms / phases affected: B-OC-002 local-only mode and platform health reporting.
+- Predicate moved: `JvmPlatformAbstraction.health` no longer reports network reachability merely because a URL object was created; it performs a bounded HEAD connection, closes it, treats local-only as offline, and returns false on probe failure.
+- Verification actually run: pending this batch; root/hosted Kotlin and live network behavior remain unproven.
+- % delta: unchanged; platform health remains source-wired/partial pending hosted platform tests.
+- Fingerprints (sha256, first 12): to be recorded after commit.
+
 ### 2026-08-24T19:50:50Z · Agent: Codex GPT-5 · Batch: github-response-size-bound
 
 - Paths touched: `src/main/kotlin/atropos/core/github/GitHubApiClient.kt` (+4), `src/test/kotlin/atropos/core/github/GitHubApiClientTest.kt` (+17), `scripts/backend-atom-contract-test.sh` (+1).

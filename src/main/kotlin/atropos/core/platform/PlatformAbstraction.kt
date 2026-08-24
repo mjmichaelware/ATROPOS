@@ -1,6 +1,7 @@
 package atropos.core.platform
 
 import atropos.core.AtroposRepoRootLocator
+import atropos.core.AtroposConfig
 import atropos.core.policy.BoundedProcessRunner
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
@@ -41,8 +42,24 @@ class JvmPlatformAbstraction(
     override val health: PlatformHealth by lazy {
         PlatformHealth(
             platform = descriptor.platform,
-            networkReachable = try { java.net.URL("https://google.com").openConnection().connectTimeout = 2000; true }
-                catch (_: Exception) { false }
+            networkReachable = if (AtroposConfig.load().runtime.localOnly) {
+                false
+            } else {
+                runCatching {
+                    val connection = java.net.URI("https://google.com").toURL().openConnection()
+                        as java.net.HttpURLConnection
+                    connection.connectTimeout = 2_000
+                    connection.readTimeout = 2_000
+                    connection.instanceFollowRedirects = false
+                    connection.requestMethod = "HEAD"
+                    try {
+                        connection.connect()
+                        connection.responseCode in 200..499
+                    } finally {
+                        connection.disconnect()
+                    }
+                }.getOrDefault(false)
+            }
         )
     }
 
