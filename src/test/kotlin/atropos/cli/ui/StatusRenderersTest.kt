@@ -122,4 +122,26 @@ class StatusRenderersTest {
 
         assertTrue(list40.isNotEmpty())
     }
+
+    @Test
+    fun `StatusRouteRenderer redacts provider secrets before painting`() {
+        val renderer = StatusRouteRenderer(theme = theme)
+        val task = atropos.core.provider.ProviderTask(
+            atropos.core.provider.ProviderTaskKind.RESEARCH,
+            atropos.core.provider.ApiCapability.COMPLETION
+        )
+        val decision = atropos.core.provider.RoutePolicyDecision(task, null, emptyList(), emptyList())
+        val result = atropos.core.provider.adapter.AdapterRouteResult(
+            "prompt",
+            decision,
+            null,
+            null,
+            "provider failed api_key=sk-live-secret-123456789"
+        )
+
+        val rendered = renderer.renderRoute(result, 120).joinToString("\n")
+
+        assertTrue(rendered.contains("<redacted:secret>"), rendered)
+        assertTrue(!rendered.contains("sk-live-secret-123456789"), rendered)
+    }
 }

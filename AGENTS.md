@@ -13286,6 +13286,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; B-MCP-GITHUB remains source-wired/partial pending hosted/live evidence.
 - Fingerprints (sha256, first 12): `GitHubApiClient.kt=a19a92174c97`; `GitHubApiClientTest.kt=8575643120ff`; `backend-atom-contract-test.sh=16174e6e1e43`.
 
+### 2026-08-25T00:20:00Z · Agent: Codex GPT-5 · Batch: status-route-redaction-boundary
+
+- Paths touched: `src/main/kotlin/atropos/cli/ui/StatusRouteRenderer.kt` (+6/-3), `src/test/kotlin/atropos/cli/ui/StatusRenderersTest.kt` (+21), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: T04 secret-safe render paths; backend status/route observability.
+- Predicate moved: provider adapter notes and eligibility/skip reasons are redacted through the existing `RedactionFilter` before terminal painting; the focused regression fixture proves a credential-shaped value is replaced and not emitted.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh` (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (418 tests)`), and `git diff --check` passed. Root/hosted Kotlin execution remains unproven; no compile-green claim.
+- % delta: unchanged; the render path is source-wired/partial pending hosted focused test execution.
+- Fingerprints: recorded in `STATUS-BACKEND.md` after commit.
+
 ### 2026-08-24T20:05:00Z · Agent: Codex GPT-5 · Batch: provider-response-size-bounds
 
 - Paths touched: `src/main/kotlin/atropos/core/ProviderHttpClient.kt` (+20/-10), `src/main/kotlin/atropos/core/Provider.kt` (+11/-4), `src/main/kotlin/atropos/core/provider/adapter/NonOpenAiFreeKernelAdapter.kt` (+11/-4), `src/main/kotlin/atropos/core/provider/adapter/DataInfraKernelAdapter.kt` (+11/-4), `scripts/backend-atom-contract-test.sh` (+4).

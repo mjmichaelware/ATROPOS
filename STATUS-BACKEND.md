@@ -952,3 +952,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | B-006 source-bundle redirect boundary | source-wired / partial | `src/main/kotlin/atropos/core/provider/SourceBindingFetcher.kt`, `scripts/backend-atom-contract-test.sh` | `CodebaseContextPacker` → existing `SourceBindingFetcher.fetch()` → HTTP bundle owner | Hash-pinned HTTP bundle retrieval now refuses redirects while preserving localOnly, egress, timeout, streaming-size, and hash checks. Static contracts pass; hosted/approved remote retrieval remains pending. |
 
 | P15 quota backup atomicity | source-wired / partial | `src/main/kotlin/atropos/core/provider/QuotaLedger.kt`, `scripts/backend-atom-contract-test.sh` | `/status` quota-backup/restore → existing `QuotaLedgerBackup` → shared `atomicWrite` owner | Live ledger, backup, and restore writes now share atomic replacement and cleanup. Static contracts pass after this batch; hosted backup/restart tests remain pending. |
+
+### 2026-08-25T00:20:00Z · Agent: Codex GPT-5 · Batch: status-route-redaction-boundary
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| T04 secret-safe status rendering | source-wired / partial | `src/main/kotlin/atropos/cli/ui/StatusRouteRenderer.kt`, `src/test/kotlin/atropos/cli/ui/StatusRenderersTest.kt` | `/status route` and `/route` → existing `StatusRouteRenderer` | Adapter notes and eligibility reasons now pass through the existing `RedactionFilter` before terminal painting. Static backend contract, hosted selector contract (418), and `git diff --check` pass; hosted/root Kotlin execution remains pending. |

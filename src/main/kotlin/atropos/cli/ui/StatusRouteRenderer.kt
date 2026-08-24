@@ -5,10 +5,12 @@ import atropos.cli.config.ConfigurationManager
 import atropos.cli.ui.design.Health
 import atropos.cli.ui.design.Role
 import atropos.core.provider.adapter.AdapterRouteResult
+import atropos.core.security.RedactionFilter
 import java.util.Locale
 
 class StatusRouteRenderer(
-    private val theme: TerminalTheme = TerminalTheme(ConfigurationManager())
+    private val theme: TerminalTheme = TerminalTheme(ConfigurationManager()),
+    private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     private val surface get() = theme.surface
 
@@ -19,7 +21,7 @@ class StatusRouteRenderer(
             add(surface.row("task capability", decision.task.capability.name.lowercase(Locale.US), width))
             add(surface.row("cost policy", "cost_conscious", width))
             add(surface.row("adapter", result.adapterStatus?.providerId ?: "none", width))
-            add(surface.row("note", result.note, width))
+            add(surface.row("note", redactionFilter.redact(result.note), width))
 
             add(surface.sectionHeading("ELIGIBLE PROVIDERS", width))
             if (decision.eligible.isEmpty()) {
@@ -31,7 +33,7 @@ class StatusRouteRenderer(
                         "unknown" -> Health.UNKNOWN
                         else -> Health.PENDING
                     }
-                    add(surface.statusRow(eligible.provider.id, "reason=${eligible.reason}", health, width))
+                    add(surface.statusRow(eligible.provider.id, "reason=${redactionFilter.redact(eligible.reason)}", health, width))
                 }
             }
 
@@ -40,7 +42,7 @@ class StatusRouteRenderer(
                 add(surface.hint("  none", width))
             } else {
                 decision.skipped.forEach { skipped ->
-                    add(surface.statusRow(skipped.provider.id, "reason=${skipped.reason}", Health.ERROR, width))
+                    add(surface.statusRow(skipped.provider.id, "reason=${redactionFilter.redact(skipped.reason)}", Health.ERROR, width))
                 }
             }
         }
