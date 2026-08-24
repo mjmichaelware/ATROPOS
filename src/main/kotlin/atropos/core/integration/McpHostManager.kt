@@ -101,6 +101,7 @@ class McpHostManager(
             !server.enabled -> McpServerStatus(server, McpHealth.UNTESTED, "disabled by default")
             server.community && server.name !in allowlist -> McpServerStatus(server, McpHealth.UNTESTED, "community server requires explicit allowlist")
             localOnly && server.remote -> McpServerStatus(server, McpHealth.UNTESTED, "remote MCP disabled by localOnly")
+            !supportedTransport(server.transport) -> McpServerStatus(server, McpHealth.UNTESTED, "unsupported MCP transport: ${server.transport}")
             else -> runCatching { McpServerStatus(server, (probe ?: ::defaultProbe)(server), "init + tools/list probe") }
                 .getOrElse { McpServerStatus(server, McpHealth.UNHEALTHY, "probe failed: ${it.javaClass.simpleName}") }
             }
@@ -183,6 +184,7 @@ class McpHostManager(
         }
         val server = load().firstOrNull { it.name == serverName }
             ?: error("MCP server is not configured: $serverName")
+        require(supportedTransport(server.transport)) { "unsupported MCP transport: ${server.transport}" }
         require(!isMemoryAuthorityMutation(server, operation, territoryPaths)) {
             "memory MCP cannot write SourceAuthority or governance ledger paths"
         }
@@ -318,6 +320,9 @@ class McpHostManager(
         }
         return memoryServer && mutation && authorityPath
     }
+
+    private fun supportedTransport(transport: String): Boolean =
+        transport.lowercase() in setOf("stdio", "http", "sse", "streamable-http")
 
     private fun defaultProbe(server: McpServerConfig): McpHealth =
         if (server.remote) {

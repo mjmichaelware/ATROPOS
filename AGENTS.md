@@ -515,6 +515,15 @@ End of AGENTS.md
 - % delta: unchanged.
 - Fingerprint: documentation ledger update only.
 
+### 2026-08-24T05:57:00Z · Agent: Codex GPT-5 · Batch: mcp-transport-validation
+
+- Paths touched: `src/main/kotlin/atropos/core/integration/McpHostManager.kt` (+5), `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+12), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-MCP-CORE-a/b transport/config safety and R6 generic host boundary.
+- Predicate moved: MCP configuration now admits only `stdio`, `http`, `sse`, and `streamable-http`; unknown transports are reported as `untested` and refused before any process can start instead of implicitly becoming stdio.
+- Verification actually run: `git diff --check` passed; focused Gradle/root and hosted execution remain pending, so no green claim.
+- % delta: unchanged; source-wired but partial pending hosted execution.
+- Fingerprints: `McpHostManager.kt=d47ce773bf29`; `McpHostManagerTest.kt=a3582abcb256`.
+
 ### 2026-08-24T04:41:10Z · Agent: Codex GPT-5 · Batch: mcp-http-request-validity
 
 - Paths touched: `src/main/kotlin/atropos/core/integration/McpHostManager.kt` (+10/-4), `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+2).

@@ -205,6 +205,12 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | --- | --- | --- | --- | --- |
 | hosted verification evidence | unchanged / partial | `STATUS-BACKEND.md`, `AGENTS.md` | GitHub Actions compile/focused-test workflow remains the authoritative root caller | `timeout 75s ./gradlew :core:jvmTest --no-daemon --max-workers=1 --rerun` produced only daemon startup output and was terminated; no test count or pass is claimed. Worktree remained clean and `git diff --check` passed. |
 
+### 2026-08-24T05:57:00Z · Backend batch: mcp-transport-validation
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-CORE-a/b transport safety | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` | existing `/mcp` and bridge calls → `McpHostManager.statuses/callTool` → supported transport guard | Unknown transports now report `untested` and cannot fall through to stdio process execution; focused refusal/status fixture added. `git diff --check` passed; hosted/root execution remains pending. |
+
 ### 2026-08-24T05:36:00Z · Backend batch: mcp-evidence-reason-bridge-field
 
 | atom | status | files | caller | tests / notes |

@@ -218,6 +218,18 @@ class McpHostManagerTest {
     }
 
     @Test
+    fun unsupported_transport_is_reported_and_never_spawned() {
+        val root = Files.createTempDirectory("mcp-unsupported-transport")
+        Files.writeString(root.resolve("mcp.json"),
+            """{"servers":[{"name":"bad","transport":"telnet","command":"would-run","enabled":true,"community":false}]}""")
+        val status = McpHostManager(root).statuses().single()
+        assertEquals(McpHealth.UNTESTED, status.health)
+        assertTrue(status.reason.contains("unsupported MCP transport"))
+        val failure = runCatching { McpHostManager(root).callTool("bad", "inspect") }.exceptionOrNull()
+        assertTrue(failure?.message?.contains("unsupported MCP transport") == true)
+    }
+
+    @Test
     fun allowlisted_http_server_uses_the_same_evidence_and_call_gate() {
         val root = Files.createTempDirectory("mcp-http-call")
         Files.writeString(root.resolve("mcp.json"), """
