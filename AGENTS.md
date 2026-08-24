@@ -13295,6 +13295,16 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprints (sha256, first 12): `ProviderOnboarding.kt=64d1c98f9618`; `ProviderActivationService.kt=c731a343a07f`; `ProviderCommandHandler.kt=c5e544f26993`; `ProviderOnboardingTest.kt=933730f616ce`; `backend-atom-contract-test.sh=996a77dc2254`.
 
+### 2026-08-24T22:35:00Z · Agent: Codex GPT-5 · Batch: provider-live-health-seam-proof
+
+- Paths touched: `src/test/kotlin/atropos/core/provider/ProviderActivationServiceTest.kt` (+7), `STATUS-BACKEND.md` (+1).
+- Atoms / phases affected: P18 live-test unhealthy routing; B-PROV-002/004.
+- Predicate moved: the focused injected transport-failure test now crosses the production callback seam and proves that an enabled live-test failure updates the existing onboarding health set used by routing.
+- Verification actually run: static backend/selector contracts and `git diff --check` pass; no additional Kotlin execution was possible because the prior local Gradle selector stalled before output. No hosted result is claimed.
+- % delta: unchanged; P18 remains source-wired/partial pending hosted Kotlin execution and live approved credentials.
+- New overall estimate: unchanged.
+- Fingerprints: pending post-commit hash.
+
 ### 2026-08-25T00:45:00Z · Agent: Codex GPT-5 · Batch: markitdown-bounded-attested-write
 
 - Paths touched: `src/main/kotlin/atropos/core/integration/MarkItDownIngestService.kt` (+24/-1), `src/test/kotlin/atropos/core/integration/MarkItDownIngestServiceTest.kt` (+16), `scripts/backend-atom-contract-test.sh` (+3), `STATUS-BACKEND.md` (+7).

@@ -201,6 +201,11 @@ class ProviderActivationServiceTest {
     fun live_test_converts_adapter_exception_to_unhealthy_record_without_crashing() {
         val temp = Files.createTempDirectory("atropos-provider-live-failure")
         val registry = StaticProviderDescriptorRegistry()
+        val onboarding = ProviderOnboardingService(
+            root = temp.resolve("onboarding"),
+            environment = mapOf("GROQ_API_KEY" to "test-groq-key")
+        )
+        onboarding.refresh()
         val groqDescriptor = registry.getById("groq") ?: error("groq descriptor missing")
         val throwingAdapter = object : ProviderAdapter {
             override val descriptor = groqDescriptor
@@ -235,13 +240,15 @@ class ProviderActivationServiceTest {
             store = ProviderActivationStore(temp.resolve("activation")),
             paidGate = EmergencyPaidGate(temp.resolve("paid").toFile()),
             ollamaProbe = { false },
-            environment = emptyMap()
+            environment = mapOf("ATROPOS_LIVE_PROVIDER_TESTS" to "1"),
+            liveTestHealthReporter = { providerId, healthy -> onboarding.recordLiveTest(providerId, healthy) }
         )
 
         val record = service.liveTest("groq")
 
         assertEquals(ProviderActivationState.OFFLINE, record.state)
         assertTrue(record.verificationSummary.contains("unavailable"))
+        assertTrue(onboarding.healthyProviderIds().isEmpty())
         assertEquals(ProviderActivationState.OFFLINE, service.liveTest("groq").state)
     }
 }
