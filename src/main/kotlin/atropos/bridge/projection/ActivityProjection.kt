@@ -5,6 +5,7 @@ import atropos.bridge.http.JsonWriter
 import atropos.core.integration.PipelineField
 import atropos.core.monitor.ActivityStage
 import atropos.core.monitor.ActivityStream
+import atropos.core.security.RedactionFilter
 
 /**
  * Projects the activity monitor's single stream onto the wire.
@@ -18,7 +19,9 @@ import atropos.core.monitor.ActivityStream
  * Missing stages are emitted by name so the monitor can render a gap as a gap
  * rather than as a shorter list.
  */
-class ActivityProjection {
+class ActivityProjection(
+    private val redactionFilter: RedactionFilter = RedactionFilter()
+) {
 
     fun render(stream: ActivityStream): String {
         val ordered = stream.ordered()
@@ -41,9 +44,9 @@ class ActivityProjection {
                         "id" to JsonWriter.str(event.id),
                         "at" to JsonWriter.str(event.at.toString()),
                         "stage" to JsonWriter.str(event.stage.canonical),
-                        "subject" to JsonWriter.str(event.subject),
-                        "outcome" to JsonWriter.str(event.outcome),
-                        "detail" to JsonWriter.str(event.detail)
+                        "subject" to JsonWriter.str(redactionFilter.redact(event.subject)),
+                        "outcome" to JsonWriter.str(redactionFilter.redact(event.outcome)),
+                        "detail" to JsonWriter.str(redactionFilter.redact(event.detail))
                     )
                 }
             )

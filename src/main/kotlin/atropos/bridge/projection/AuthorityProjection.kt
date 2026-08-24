@@ -4,6 +4,7 @@ package atropos.bridge.projection
 import atropos.bridge.http.JsonWriter
 import atropos.core.auth.AttestationResult
 import atropos.core.auth.CascadeResolution
+import atropos.core.security.RedactionFilter
 
 /**
  * Projects which authority is in force and whether it is intact.
@@ -22,7 +23,9 @@ import atropos.core.auth.CascadeResolution
  * something is being overridden without telling them which invariant, which is
  * the only part they can act on.
  */
-class AuthorityProjection {
+class AuthorityProjection(
+    private val redactionFilter: RedactionFilter = RedactionFilter()
+) {
 
     fun render(
         attestations: List<AttestationResult>,
@@ -41,13 +44,13 @@ class AuthorityProjection {
             "resolved" to JsonWriter.bool(resolved),
             // The strongest document in force, so the ribbon can name a source.
             "source" to JsonWriter.nullable(
-                attested.minByOrNull { it.document.precedenceRank }?.document?.path
+                attested.minByOrNull { it.document.precedenceRank }?.document?.path?.let(redactionFilter::redact)
             ),
             "documents" to JsonWriter.arr(
                 attestations.map { result ->
                     when (result) {
                         is AttestationResult.Attested -> JsonWriter.obj(
-                            "path" to JsonWriter.str(result.document.path),
+                            "path" to JsonWriter.str(redactionFilter.redact(result.document.path)),
                             "state" to JsonWriter.str("attested"),
                             "sha256" to JsonWriter.str(result.document.sha256),
                             "rank" to JsonWriter.num(result.document.precedenceRank),
@@ -55,14 +58,14 @@ class AuthorityProjection {
                             "nonOverridable" to JsonWriter.bool(result.document.precedenceRank == 0)
                         )
                         is AttestationResult.Mismatch -> JsonWriter.obj(
-                            "path" to JsonWriter.str(result.path),
+                            "path" to JsonWriter.str(redactionFilter.redact(result.path)),
                             "state" to JsonWriter.str("mismatch"),
-                            "detail" to JsonWriter.str(result.reason())
+                            "detail" to JsonWriter.str(redactionFilter.redact(result.reason()))
                         )
                         is AttestationResult.Missing -> JsonWriter.obj(
-                            "path" to JsonWriter.str(result.path),
+                            "path" to JsonWriter.str(redactionFilter.redact(result.path)),
                             "state" to JsonWriter.str("missing"),
-                            "detail" to JsonWriter.str("${result.path} was not found where it was recorded.")
+                            "detail" to JsonWriter.str(redactionFilter.redact("${result.path} was not found where it was recorded."))
                         )
                     }
                 }
@@ -70,10 +73,10 @@ class AuthorityProjection {
             "violations" to JsonWriter.arr(
                 violations.map { violation ->
                     JsonWriter.obj(
-                        "key" to JsonWriter.str(violation.key),
-                        "heldBy" to JsonWriter.str(violation.heldBy),
-                        "attemptedBy" to JsonWriter.strArr(violation.attemptedBy),
-                        "detail" to JsonWriter.str(violation.reason)
+                        "key" to JsonWriter.str(redactionFilter.redact(violation.key)),
+                        "heldBy" to JsonWriter.str(redactionFilter.redact(violation.heldBy)),
+                        "attemptedBy" to JsonWriter.strArr(violation.attemptedBy.map(redactionFilter::redact)),
+                        "detail" to JsonWriter.str(redactionFilter.redact(violation.reason))
                     )
                 }
             )

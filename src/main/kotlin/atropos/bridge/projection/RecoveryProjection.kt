@@ -3,9 +3,12 @@ package atropos.bridge.projection
 
 import atropos.bridge.http.JsonWriter
 import atropos.core.recovery.StateSnapshot
+import atropos.core.security.RedactionFilter
 
 /** Renders the existing restart snapshot for recovery ribbons and diagnostics. */
-class RecoveryProjection {
+class RecoveryProjection(
+    private val redactionFilter: RedactionFilter = RedactionFilter()
+) {
     fun render(snapshot: StateSnapshot?): String {
         if (snapshot == null) {
             return JsonWriter.obj(
@@ -23,8 +26,8 @@ class RecoveryProjection {
             "failed" to JsonWriter.num((report?.errors?.size ?: 0).toLong()),
             "goalRuns" to JsonWriter.num(snapshot.goalRuns.size.toLong()),
             "dags" to JsonWriter.num(snapshot.dags.size.toLong()),
-            "message" to JsonWriter.str(report?.message.orEmpty()),
-            "errors" to JsonWriter.arr(report?.errors.orEmpty().map(JsonWriter::str))
+            "message" to JsonWriter.str(redactionFilter.redact(report?.message.orEmpty())),
+            "errors" to JsonWriter.arr(report?.errors.orEmpty().map(redactionFilter::redact).map(JsonWriter::str))
         )
     }
 }

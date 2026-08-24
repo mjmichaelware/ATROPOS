@@ -5,6 +5,7 @@ import atropos.bridge.http.JsonWriter
 import atropos.core.artifact.export.ArtifactLanding
 import atropos.core.artifact.export.ArtifactLandingResolver
 import atropos.core.artifact.export.LandingResolution
+import atropos.core.security.RedactionFilter
 import java.nio.file.Path
 
 /**
@@ -20,7 +21,9 @@ import java.nio.file.Path
  * Downloads exists as a concept and why it is unavailable here, which a silently
  * shorter list cannot tell them.
  */
-class ExportProjection {
+class ExportProjection(
+    private val redactionFilter: RedactionFilter = RedactionFilter()
+) {
 
     fun render(resolver: ArtifactLandingResolver, grantedTerritory: List<Path>): String {
         val zones = listOf(
@@ -30,21 +33,21 @@ class ExportProjection {
 
         return JsonWriter.obj(
             "ok" to JsonWriter.bool(true),
-            "grantedTerritory" to JsonWriter.strArr(grantedTerritory.map { it.toString() }),
+            "grantedTerritory" to JsonWriter.strArr(grantedTerritory.map { redactionFilter.redact(it.toString()) }),
             "zones" to JsonWriter.arr(
                 zones.map { (id, landing) ->
                     when (val resolution = resolver.resolve(landing, grantedTerritory)) {
                         is LandingResolution.Resolved -> JsonWriter.obj(
                             "id" to JsonWriter.str(id),
                             "available" to JsonWriter.bool(true),
-                            "directory" to JsonWriter.str(resolution.directory.toString()),
-                            "zone" to JsonWriter.str(resolution.zone)
+                            "directory" to JsonWriter.str(redactionFilter.redact(resolution.directory.toString())),
+                            "zone" to JsonWriter.str(redactionFilter.redact(resolution.zone))
                         )
                         is LandingResolution.Refused -> JsonWriter.obj(
                             "id" to JsonWriter.str(id),
                             "available" to JsonWriter.bool(false),
-                            "detail" to JsonWriter.str(resolution.reason),
-                            "remedy" to JsonWriter.str(resolution.remedy)
+                            "detail" to JsonWriter.str(redactionFilter.redact(resolution.reason)),
+                            "remedy" to JsonWriter.str(redactionFilter.redact(resolution.remedy))
                         )
                     }
                 }

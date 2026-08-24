@@ -4,6 +4,7 @@ package atropos.bridge.projection
 import atropos.bridge.http.JsonWriter
 import atropos.core.thinking.ThinkingDepth
 import atropos.core.thinking.ThinkingRecord
+import atropos.core.security.RedactionFilter
 
 /**
  * Projects stored reasoning at the depth a surface asked for.
@@ -19,7 +20,9 @@ import atropos.core.thinking.ThinkingRecord
  * control should exist. A drawer that opens onto nothing is worse than no
  * drawer: it teaches the operator the gesture is meaningless.
  */
-class ThinkingProjection {
+class ThinkingProjection(
+    private val redactionFilter: RedactionFilter = RedactionFilter()
+) {
 
     fun render(record: ThinkingRecord?, depth: ThinkingDepth): String {
         if (record == null || record.isEmpty()) {
@@ -36,7 +39,7 @@ class ThinkingProjection {
         return JsonWriter.obj(
             "ok" to JsonWriter.bool(true),
             "present" to JsonWriter.bool(true),
-            "nodeId" to JsonWriter.str(record.nodeId),
+            "nodeId" to JsonWriter.str(redactionFilter.redact(record.nodeId)),
             "depth" to JsonWriter.num(depth.level),
             "depthLabel" to JsonWriter.str(depth.label),
             // Whether expanding would reveal anything, not how much is hidden.
@@ -53,9 +56,9 @@ class ThinkingProjection {
             "lines" to JsonWriter.arr(
                 record.at(depth).map { line ->
                     JsonWriter.obj(
-                        "id" to JsonWriter.str(line.id),
+                        "id" to JsonWriter.str(redactionFilter.redact(line.id)),
                         "minDepth" to JsonWriter.num(line.minDepth.level),
-                        "text" to JsonWriter.str(line.text)
+                        "text" to JsonWriter.str(redactionFilter.redact(line.text))
                     )
                 }
             )

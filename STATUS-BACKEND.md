@@ -1010,3 +1010,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | T04 queue/conversation bridge rendering | source-wired / partial | `src/main/kotlin/atropos/bridge/BridgeQueueHandler.kt`, `src/main/kotlin/atropos/bridge/conversation/QueuedWorkConversationResponder.kt`, `src/test/kotlin/atropos/bridge/BridgeQueueHandlerTest.kt`, `scripts/backend-atom-contract-test.sh` | `/v1/queue` and bridge conversation → existing queue handler/responder | Queue task, failure, evidence, and outcome text now crosses the canonical redaction boundary before JSON/reply construction; queue coverage proves both API-key and credential-path patterns are removed. Static backend contract, selector parity (420), and `git diff --check` pass; hosted/root Kotlin execution remains pending. |
+
+### 2026-08-25T02:50:00Z · Agent: Codex GPT-5 · Batch: bridge-projection-redaction-boundary
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| T04 bridge ordinary-view rendering | source-wired / partial | `src/main/kotlin/atropos/bridge/projection/RecoveryProjection.kt`, `ActivityProjection.kt`, `AuthorityProjection.kt`, `ExportProjection.kt`, `ThinkingProjection.kt`, `scripts/backend-atom-contract-test.sh` | existing bridge routes → canonical projection owners → HTTP JSON responses | Recovery errors/messages, activity event text, authority paths/reasons, export paths/reasons, and thinking node/text fields now cross `RedactionFilter` before JSON painting. Static backend contract, selector parity (420), and `git diff --check` pass; hosted/root projection tests remain pending. |

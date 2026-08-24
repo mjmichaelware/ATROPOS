@@ -13321,6 +13321,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; T04 remains partial pending hosted execution and remaining bridge projection audit.
 - Fingerprints (sha256, first 12): `BridgeQueueHandler.kt=2bd83bb125b3`, `QueuedWorkConversationResponder.kt=378264dc5808`, `BridgeQueueHandlerTest.kt=da476085b15a`, `backend-atom-contract-test.sh=f2c0e0ea0dc0`.
 
+### 2026-08-25T02:50:00Z · Agent: Codex GPT-5 · Batch: bridge-projection-redaction-boundary
+
+- Paths touched: `src/main/kotlin/atropos/bridge/projection/RecoveryProjection.kt` (+9/-2), `ActivityProjection.kt` (+11/-3), `AuthorityProjection.kt` (+25/-12), `ExportProjection.kt` (+15/-7), `ThinkingProjection.kt` (+11/-3), `scripts/backend-atom-contract-test.sh` (+5), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: T04 ordinary bridge view/render paths.
+- Predicate moved: dynamic text and paths from recovery, activity, authority, export, and thinking projections now use the canonical redaction owner before JSON serialization, closing a class of non-error bridge responses that could bypass terminal redaction.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh` (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (420 tests)`), and `git diff --check` passed. Root/hosted Kotlin execution was not run in Termux; no test-green or root-green claim.
+- % delta: unchanged; T04 remains partial pending hosted projection execution and residual dynamic-field audit.
+- Fingerprints: production projection hashes recorded in the commit; no unrelated `docs/completion/*` files were staged.
+
 ### 2026-08-25T01:45:00Z · Agent: Codex GPT-5 · Batch: hosted-redaction-selector-coverage
 
 - Paths touched: `.github/workflows/compile-gate.yml` (+2), `scripts/atropos-verify-worktree.sh` (+2), `STATUS-BACKEND.md` (+7).
