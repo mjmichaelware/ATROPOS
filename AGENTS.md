@@ -13186,3 +13186,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: backend atom contract (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), hosted selector contract (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (418 tests)`), and `git diff --check` passed. Hosted Kotlin execution remains pending.
 - % delta: unchanged; R4/B-MCP-SENTRY remains source-wired/partial.
 - Fingerprint: `backend-atom-contract-test.sh` updated; exact hash recorded at commit.
+
+### 2026-08-24T19:32:24Z · Agent: Codex GPT-5 · Batch: sentry-unresolved-issue-list
+
+- Paths touched: `src/main/kotlin/atropos/core/sentry/SentryApiClient.kt` (+15), `src/main/kotlin/atropos/cli/SentryCommandHandler.kt` (+19/-3), `src/main/kotlin/atropos/cli/input/CommandCatalog.kt` (+1), `src/test/kotlin/atropos/core/sentry/SentryApiClientTest.kt` (+22), `scripts/backend-atom-contract-test.sh` (+1).
+- Atoms / phases affected: B-MCP-SENTRY-b unresolved issue listing and production CLI caller.
+- Predicate moved: `/sentry list <organization/project>` now reaches the existing gated Sentry transport, requests only the bounded unresolved-issues endpoint, redacts and evidence-hashes the response, and renders it through the existing CLI owner. No second Sentry client or registry was introduced.
+- Verification actually run: backend atom contract (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), hosted selector contract (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (418 tests)`), and `git diff --check` passed. Root/hosted Kotlin execution remains pending; no Sentry test-green claim.
+- % delta: unchanged; R4/B-MCP-SENTRY remains source-wired/partial pending hosted tests, configured credentials, and live issue/repair evidence.
+- Fingerprints (sha256, first 12): `SentryApiClient.kt=48b2dca1fbce`; `SentryCommandHandler.kt=00ad7ad1ede1`; `CommandCatalog.kt=4f1ac148ca76`; `SentryApiClientTest.kt=38a9be8a01b3`; `backend-atom-contract-test.sh=3dc5ec959366`.

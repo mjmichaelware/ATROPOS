@@ -13,14 +13,27 @@ class SentryCommandHandler(
 ) {
     fun execute(tokens: List<String>) {
         val operation = tokens.getOrNull(1)?.lowercase()
-        val issueId = tokens.getOrNull(2)
-        if (operation !in setOf("inspect", "propose") || issueId.isNullOrBlank()) {
-            uiEngine.renderError("usage: /sentry inspect <issue-id> [--territory path[,path...]] | /sentry propose <issue-id> --provider <id> [--territory path[,path...]]")
+        if (operation !in setOf("list", "inspect", "propose")) {
+            uiEngine.renderError("usage: /sentry list <organization/project> [--territory path[,path...]] | /sentry inspect <issue-id> [--territory path[,path...]] | /sentry propose <issue-id> --provider <id> [--territory path[,path...]]")
             return
         }
         val territory = option(tokens, "--territory")?.split(',')?.map(String::trim)?.filter(String::isNotBlank)
             ?: listOf(".")
         runCatching {
+            if (operation == "list") {
+                val project = tokens.getOrNull(2)?.split('/')
+                    ?.takeIf { it.size == 2 && it.all(String::isNotBlank) }
+                    ?: error("/sentry list requires <organization/project>")
+                val response = client.listUnresolvedIssues(project[0], project[1], territory)
+                return@runCatching listOf(
+                    "sentry unresolved organization=${project[0]} project=${project[1]}",
+                    "status=${response.status}",
+                    "evidence_sha256=${response.evidenceHash}",
+                    response.body
+                )
+            }
+            val issueId = tokens.getOrNull(2)?.takeIf(String::isNotBlank)
+                ?: error("/sentry $operation requires <issue-id>")
             val issue = client.getIssue(issueId, territory)
             val context = coordinator.prepare(issue, territory)
             if (operation == "inspect") {

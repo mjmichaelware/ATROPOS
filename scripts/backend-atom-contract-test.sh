@@ -49,6 +49,7 @@ file src/main/kotlin/atropos/core/github/GitHubBinding.kt
 file src/main/kotlin/atropos/cli/shell/ShellCommandRunner.kt
 text src/main/kotlin/atropos/core/sentry/SentryApiClient.kt 'IntegrationRegistry'
 text src/main/kotlin/atropos/core/sentry/SentryApiClient.kt 'isJsonObjectEnvelope'
+text src/main/kotlin/atropos/core/sentry/SentryApiClient.kt 'listUnresolvedIssues'
 text src/main/kotlin/atropos/core/github/GitHubApiClient.kt 'SecretSinkMatrix'
 text src/main/kotlin/atropos/core/github/GitHubApiClient.kt 'BoundedAgencyGate'
 text src/main/kotlin/atropos/cli/shell/ShellCommandRunner.kt 'BoundedAgencyGate'

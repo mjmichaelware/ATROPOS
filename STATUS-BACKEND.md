@@ -42,6 +42,8 @@ This file records backend implementation status for the current engine wave. A r
 
 | R4 Sentry envelope CI guard | source-wired / partial | `scripts/backend-atom-contract-test.sh`, `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh` | hosted backend lanes → source contract → `SentryApiClient.isJsonObjectEnvelope` | The two hosted entrypoints now protect the Sentry malformed-response guard from removal. Static contract, hosted selector parity (418), and diff check pass; hosted execution remains pending. |
 
+| R4 / B-MCP-SENTRY-b unresolved issue listing | source-wired / partial | `src/main/kotlin/atropos/core/sentry/SentryApiClient.kt`, `src/main/kotlin/atropos/cli/SentryCommandHandler.kt`, `src/main/kotlin/atropos/cli/input/CommandCatalog.kt`, `src/test/kotlin/atropos/core/sentry/SentryApiClientTest.kt` | `/sentry list <organization/project>` → existing `SentryCommandHandler` → `SentryApiClient.listUnresolvedIssues` → registered/gated transport → redacted evidence response | The missing list-unresolved-issues production caller now exists and is constrained to `is:unresolved`; backend contract, hosted selector parity (418), and diff check pass. Hosted/root Kotlin execution, credentials, and live Sentry evidence remain pending. |
+
 ## Commands
 
 - `/factory resume <runId>` — read-only attested resume inspection; execution requires the existing router callback path.

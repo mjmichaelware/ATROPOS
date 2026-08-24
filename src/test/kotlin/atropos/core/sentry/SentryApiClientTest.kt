@@ -68,6 +68,28 @@ class SentryApiClientTest {
         }
     }
 
+    @Test
+    fun `list unresolved issues uses the bounded project endpoint`() {
+        SecretSinkMatrix.setPermitted(SecretSinkKind.EGRESS_URL, true)
+        val requests = mutableListOf<SentryApiRequest>()
+        val client = SentryApiClient(
+            secretSource = MapSecretSource(mapOf("SENTRY_AUTH_TOKEN" to "token")),
+            gate = ::allow,
+            transport = { request ->
+                requests += request
+                SentryApiWireResponse(200, "[]")
+            },
+            baseUrl = "https://sentry.example.test"
+        )
+
+        val response = client.listUnresolvedIssues("org", "project", listOf("src"))
+
+        assertEquals(200, response.status)
+        assertEquals("GET", requests.single().method)
+        assertTrue(requests.single().url.contains("/api/0/projects/org/project/issues/"))
+        assertTrue(requests.single().url.contains("is%3Aunresolved"))
+    }
+
     private fun allow(proposal: ActionProposal): AgencyDecision = AgencyDecision(
         proposal = proposal,
         policyDecision = ExecutionPolicyDecision(

@@ -14,6 +14,7 @@ import atropos.core.security.SecretSinkKind
 import atropos.core.security.SecretSinkMatrix
 import atropos.core.security.SecretSource
 import java.net.URI
+import java.net.URLEncoder
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
@@ -56,6 +57,20 @@ class SentryApiClient(
         val response = execute("/api/0/issues/${segment(issueId)}/", declaredTerritory)
         require(response.status in 200..299) { "Sentry issue request failed: HTTP ${response.status}" }
         return SentryIssueParser.parse(issueId, response.body)
+    }
+
+    fun listUnresolvedIssues(
+        organization: String,
+        project: String,
+        declaredTerritory: List<String> = listOf(".")
+    ): SentryApiResponse {
+        val organizationSegment = segment(organization)
+        val projectSegment = segment(project)
+        val query = URLEncoder.encode("is:unresolved", Charsets.UTF_8)
+        return execute(
+            "/api/0/projects/$organizationSegment/$projectSegment/issues/?query=$query",
+            declaredTerritory
+        )
     }
 
     fun execute(path: String, declaredTerritory: List<String> = listOf(".")): SentryApiResponse {
