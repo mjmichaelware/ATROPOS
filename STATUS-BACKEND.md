@@ -112,6 +112,12 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-005 / S-001 status, six answers, and quota bridge projections | source-wired / partial | `src/main/kotlin/atropos/bridge/BridgeStatusHandler.kt`, `src/main/kotlin/atropos/bridge/projection/SixAnswersProjection.kt`, `src/main/kotlin/atropos/bridge/projection/QuotaProjection.kt`, `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh` | `BridgeRoutes` → `/v1/status`/`/v1/answers`/`/v1/quota` → existing projections | Added existing `BridgeStatusHandlerTest`, `SixAnswersProjectionTest`, and `QuotaProjectionTest` to both hosted focused lanes. No parallel status or quota owner was introduced; hosted execution remains pending. |
+
+### 2026-08-24T14:20:00Z · Backend batch: hosted-bridge-surface-complete
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-005 bridge transport/projection test coverage | source-wired / partial | `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh`, existing `src/test/kotlin/atropos/bridge/**` | existing `EngineHttpServer`/`BridgeRoutes`/projection owners → full bridge test surface in hosted selectors | Added all existing bridge, conversation, HTTP, menu, and projection test classes to both canonical hosted lanes. No new bridge owner was introduced; hosted execution remains pending. |
 - Provider route policy now has a focused test covering both the preferred-provider tie-break and exclusion through the healthy set; the root test remains unexecuted locally because `:test` stalled at compilation.
 - Factory runtime audit: `FactoryRunOrchestrator.kt:258-290` invokes the injected repair action, then `FactoryRepairExecutor` and the existing obligation loop; `FactoryCommandHandler.kt:20-47` is the user-facing resume caller; `FactoryRunHandoff.kt:84-108` fails actionable on missing/malformed/mismatched artifacts. No factory status was upgraded without root test evidence.
 - Clean-checkout proof after commit `b1479fe8`: `./gradlew :core:jvmTest --no-daemon --max-workers=1 --rerun` passed in 52s; XML reports contain 2 tests, 0 failures, 0 errors, 0 skipped. Root Provider/Bridge/MCP/Factory tests were not re-claimed or executed.

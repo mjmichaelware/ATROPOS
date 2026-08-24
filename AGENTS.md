@@ -462,6 +462,15 @@ End of AGENTS.md
 - % delta: unchanged; B-005 / ADD-W-029 remains partial pending hosted execution.
 - Fingerprints: recorded after this batch.
 
+### 2026-08-24T14:20:00Z · Agent: Codex GPT-5 · Batch: hosted-bridge-surface-complete
+
+- Paths touched: `.github/workflows/compile-gate.yml` (+21), `scripts/atropos-verify-worktree.sh` (+21), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-005 bridge transport, session, HTTP, conversation, and projection coverage.
+- Predicate moved: every existing test class under `src/test/kotlin/atropos/bridge/**` is now selected by both canonical GitHub Actions focused lanes, closing the prior selector omissions without adding a parallel bridge implementation.
+- Verification actually run: all referenced test files were inspected by path, `git diff --check`, shell syntax, action contract, and orphan gate pass; hosted Kotlin execution remains pending.
+- % delta: unchanged; B-005 remains partial pending hosted execution.
+- Fingerprints: recorded after this batch.
+
 ### 2026-08-24T14:00:00Z · Agent: Codex GPT-5 · Batch: hosted-status-quota-selector
 
 - Paths touched: `.github/workflows/compile-gate.yml` (+3), `scripts/atropos-verify-worktree.sh` (+3), `STATUS-BACKEND.md` (+7).
