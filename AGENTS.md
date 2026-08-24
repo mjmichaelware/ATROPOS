@@ -13177,3 +13177,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: `bash scripts/backend-atom-contract-test.sh` (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (418 tests)`), and `git diff --check` passed. Root/hosted Kotlin execution remains pending; no Sentry test-green claim.
 - % delta: unchanged; R4/B-MCP-SENTRY remains source-wired/partial pending hosted tests, configured credentials, and live issue/repair evidence.
 - Fingerprints (sha256, first 12): `SentryApiClient.kt=99b8c44c0246`; `SentryApiClientTest.kt=9117660098b8`.
+
+### 2026-08-24T19:34:00Z · Agent: Codex GPT-5 · Batch: sentry-envelope-regression-contract
+
+- Paths touched: `scripts/backend-atom-contract-test.sh` (+1), `AGENTS.md`.
+- Atoms / phases affected: B-MCP-SENTRY source-wiring regression protection.
+- Predicate moved: both hosted backend entrypoints now fail if the Sentry production client loses its malformed-envelope guard, preserving the parser hardening as a CI-owned source contract.
+- Verification actually run: backend atom contract (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), hosted selector contract (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (418 tests)`), and `git diff --check` passed. Hosted Kotlin execution remains pending.
+- % delta: unchanged; R4/B-MCP-SENTRY remains source-wired/partial.
+- Fingerprint: `backend-atom-contract-test.sh` updated; exact hash recorded at commit.
