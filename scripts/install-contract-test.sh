@@ -5,6 +5,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 INSTALLER="$ROOT/install.sh"
 
 grep -Fq 'HOST_PREFIX="${PREFIX:-}"' "$INSTALLER"
+grep -Fq 'if [ -n "$HOST_PREFIX" ]; then' "$INSTALLER"
 grep -Fq 'mkdir -p "$CONFIG_DIR" "$CONFIG_DIR/provider" "$BIN_DIR"' "$INSTALLER"
 grep -Fq "printf '%s\\n' '{}' > \"\$CONFIG_DIR/config.json\"" "$INSTALLER"
 grep -Fq "printf '%s\\n' '[]' > \"\$CONFIG_DIR/provider/providers.json\"" "$INSTALLER"

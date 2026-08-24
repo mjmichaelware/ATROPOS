@@ -1124,3 +1124,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-GHA bounded verify action input | source-wired / partial | `.github/actions/atropos-verify/action.yml`, `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-action-contract-test.sh`, `scripts/atropos-verify-action-path-test.sh`, `scripts/atropos-verify-worktree.sh`, `scripts/backend-atom-contract-test.sh` | GitHub composite action → existing bounded verification script → same compile/test/evidence lane | The reusable action now rejects absolute/path-traversal `verify-script` inputs and missing files before execution; both hosted entrypoints run the path contract. Action/workflow/path/backend contracts and diff check pass; GitHub-hosted execution remains unverified. |
+
+### 2026-08-24T23:19:06Z · Agent: Codex GPT-5 · Batch: installer-termux-prefix-detection
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-INST-001e Termux PREFIX detection | source-wired / partial | `install.sh`, `scripts/install-contract-test.sh`, `scripts/backend-atom-contract-test.sh` | installer platform detection → `HOST_PREFIX` → `termux-$CPU_ARCH` and `$PREFIX/bin` | Termux detection now uses the documented PREFIX boundary without requiring the optional `TERMUX_VERSION` marker. `bash -n`, installer/backend contracts, and `git diff --check` pass; hosted release/device proof remains unverified. |

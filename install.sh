@@ -54,7 +54,7 @@ case "$CPU_NAME" in
   x86_64|amd64) CPU_ARCH=x86_64 ;;
   *) fail "unsupported CPU architecture: $CPU_NAME (expected aarch64 or x86_64)" ;;
 esac
-if [ -n "$HOST_PREFIX" ] && [ -n "${TERMUX_VERSION:-}" ]; then
+if [ -n "$HOST_PREFIX" ]; then
   PLATFORM="termux-$CPU_ARCH"
 else
   case "$OS_NAME" in
