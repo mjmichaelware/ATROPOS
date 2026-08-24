@@ -13394,6 +13394,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; B-006 remains source-wired/partial pending approved remote retrieval evidence.
 - Fingerprints (sha256, first 12): `SourceBindingFetcher.kt=9141ffd5b23c`; `backend-atom-contract-test.sh=65f3283675c2`.
 
+### 2026-08-25T00:05:00Z · Agent: Codex GPT-5 · Batch: quota-backup-atomic-persist
+
+- Paths touched: `src/main/kotlin/atropos/core/provider/QuotaLedger.kt` (+25/-23), `scripts/backend-atom-contract-test.sh` (+1).
+- Atoms / phases affected: P15 quota backup/restore correctness and durable route truth.
+- Predicate moved: live ledger writes, backup creation, and restore output now share one atomic file writer; backup/restore cannot leave a partially written authoritative artifact on process interruption.
+- Verification actually run: pending this batch; root/hosted quota backup tests remain unproven.
+- % delta: unchanged; P15 remains source-wired/partial pending hosted restart/backup tests.
+- Fingerprints (sha256, first 12): to be recorded after commit.
+
 ### 2026-08-24T19:50:50Z · Agent: Codex GPT-5 · Batch: github-response-size-bound
 
 - Paths touched: `src/main/kotlin/atropos/core/github/GitHubApiClient.kt` (+4), `src/test/kotlin/atropos/core/github/GitHubApiClientTest.kt` (+17), `scripts/backend-atom-contract-test.sh` (+1).

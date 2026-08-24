@@ -134,24 +134,7 @@ class FileQuotaLedger(private val file: File, seed: List<ProviderQuotaRecord> = 
                 value.toString().replace('\t', ' ').replace('\n', ' ').replace('\r', ' ')
             }
         } + "\n"
-        val parent = file.toPath().toAbsolutePath().normalize().parent
-            ?: error("quota ledger has no parent directory: ${file.path}")
-        val temporary = Files.createTempFile(parent, ".${file.name}.", ".tmp")
-        try {
-            Files.writeString(temporary, content)
-            try {
-                Files.move(
-                    temporary,
-                    file.toPath(),
-                    StandardCopyOption.ATOMIC_MOVE,
-                    StandardCopyOption.REPLACE_EXISTING
-                )
-            } catch (_: java.nio.file.AtomicMoveNotSupportedException) {
-                Files.move(temporary, file.toPath(), StandardCopyOption.REPLACE_EXISTING)
-            }
-        } finally {
-            Files.deleteIfExists(temporary)
-        }
+        atomicWrite(file, content)
     }
     companion object {
         fun seedFromDescriptors(registry: ProviderDescriptorRegistry) =
@@ -225,7 +208,7 @@ class QuotaLedgerBackup(
                 ).joinToString("\t")
             } + "\n"
         }
-        target.writeText(content)
+        atomicWrite(target, content)
         return QuotaBackupResult(target, content.lineSequence().count { it.isNotBlank() })
     }
 
@@ -234,10 +217,28 @@ class QuotaLedgerBackup(
         val records = source.readLines().count { it.isNotBlank() }
         val restored = File(root, "restored-quota-ledger.tsv")
         restored.parentFile?.mkdirs()
-        restored.writeText(source.readText())
+        atomicWrite(restored, source.readText())
         return QuotaBackupResult(restored, records)
     }
 
     private fun defaultBackupFile(): File =
         File(root, "quota-ledger-${System.currentTimeMillis()}.tsv")
+}
+
+/** Reused by the live ledger and its backup/restore caller paths. */
+private fun atomicWrite(file: File, content: String) {
+    file.parentFile?.mkdirs()
+    val target = file.toPath().toAbsolutePath().normalize()
+    val parent = target.parent ?: error("atomic file has no parent directory: ${file.path}")
+    val temporary = Files.createTempFile(parent, ".${file.name}.", ".tmp")
+    try {
+        Files.writeString(temporary, content)
+        try {
+            Files.move(temporary, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
+        } catch (_: java.nio.file.AtomicMoveNotSupportedException) {
+            Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING)
+        }
+    } finally {
+        Files.deleteIfExists(temporary)
+    }
 }
