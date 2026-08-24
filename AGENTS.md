@@ -13365,7 +13365,7 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Predicate moved: the sole GitHub Actions API owner now streams and bounds its one-MiB response before decoding, while retaining the existing HTTPS, redirect, localOnly, and SecretSinkMatrix gates.
 - Verification actually run: pending this batch; hosted compile and live Actions execution remain unproven.
 - % delta: unchanged; B-MCP-GHA remains source-wired/partial pending hosted Action execution.
-- Fingerprints (sha256, first 12): to be recorded after commit.
+- Fingerprints (sha256, first 12): `GitHubActionsCompileRunner.kt=bc63929a20be`; `backend-atom-contract-test.sh=bf10b47aeba8`.
 
 ### 2026-08-24T19:50:50Z · Agent: Codex GPT-5 · Batch: github-response-size-bound
 
