@@ -352,3 +352,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-GH write authorization regression gate | source-wired / partial | `scripts/github-write-contract-test.sh`, `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh` | GitHub compile/focused lane and reusable verifier → contract script → `GitHubApiClient`/`GitHubCommandHandler` write boundary | Added a CI contract requiring `GitHubWriteAuthorization`, the pre-secret/pre-transport refusal test, all seven `/github` mutation commands, and `--confirm <id>`. Local result: `GITHUB_WRITE_CONTRACT_OK operations=7`; action/workflow and MCP-example contracts also passed; orphan gate exited 0 with 4 pre-existing orphans. Hosted Gradle/Actions execution remains pending. |
+
+### 2026-08-24T06:33:33Z · Backend batch: provider-runtime-test-selector-completion
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| P02/P18 provider activation and failure cascade proof | source-wired / partial | `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh` | canonical hosted compile/focused lane and reusable verifier → existing provider test classes | Added the existing `ProviderActivationServiceTest`, `ProviderCascadeOrderTest`, `ProviderFailureClassifierTest`, and `ProviderErrorNormalizerTest` to both GitHub-focused lanes. This covers paid live-test refusal, explicit-network opt-in, cooldown/quota transitions, billing non-retry, and normalized 429/billing failures without live provider calls. `bash -n` and `git diff --check` passed; hosted execution remains pending. |

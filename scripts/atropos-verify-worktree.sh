@@ -25,7 +25,11 @@ if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
     --tests 'atropos.core.factory.FactoryEvidenceWaveExecutorTest' \
     --tests 'atropos.core.factory.FactoryResearchDloiTest' \
     --tests 'atropos.core.provider.ProviderOnboardingTest' \
+    --tests 'atropos.core.provider.ProviderActivationServiceTest' \
     --tests 'atropos.core.provider.ProviderCascadeRouterTest' \
+    --tests 'atropos.core.provider.ProviderCascadeOrderTest' \
+    --tests 'atropos.core.provider.ProviderFailureClassifierTest' \
+    --tests 'atropos.core.provider.ProviderErrorNormalizerTest' \
     --tests 'atropos.core.policy.ProviderActionProposalsTest' \
     --tests 'atropos.core.provider.QuotaLedgerRouteTruthTest' \
     --tests 'atropos.bridge.BridgeEventsHandlerTest' \

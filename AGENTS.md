@@ -12242,6 +12242,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; source-wired but partial pending hosted execution evidence.
 - Fingerprints (sha256, first 12): `github-write-contract-test.sh=32657a8bb1c0`, `compile-gate.yml=dc70147d989a4`, `atropos-verify-worktree.sh=3bbcbcf2155c1`.
 
+### 2026-08-24T06:33:33Z · Agent: Codex GPT-5 · Batch: provider-runtime-test-selector-completion
+
+- Paths touched: `.github/workflows/compile-gate.yml` (+4), `scripts/atropos-verify-worktree.sh` (+4), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: P02/P18 provider activation/live-test state and free-first failure/quota cascade proof.
+- Predicate moved: the canonical hosted backend lanes now execute the existing provider activation, cascade ordering, failure classifier, and error normalizer suites. Paid live tests remain locked, explicit-network opt-in remains required, and rate-limit/quota/billing transitions are tested without external calls; no provider adapter or registry was duplicated.
+- Verification actually run: shell syntax and `git diff --check` passed; local Gradle/root and hosted Actions execution remain pending, so no test green claim is made.
+- % delta: unchanged; proof wiring improved, source remains partial until hosted execution.
+- Fingerprints (sha256, first 12): `compile-gate.yml=df3646e1c4e20`, `atropos-verify-worktree.sh=52f5c5eba805d`.
+
 ### 2026-08-24T10:35:00Z · Agent: Codex GPT-5 · Batch: gha-pull-request-trigger
 
 - Paths touched: `.github/workflows/atropos-verify-example.yml` (+1), `scripts/atropos-verify-action-contract-test.sh` (+8), `STATUS-BACKEND.md` (+2).
