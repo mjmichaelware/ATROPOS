@@ -105,6 +105,12 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | --- | --- | --- | --- | --- |
 | B-005 / ADD-W-029 upload mutation policy wire | source-wired / partial | `src/main/kotlin/atropos/bridge/BridgeFilesHandler.kt`, `src/test/kotlin/atropos/bridge/BridgeFilesHandlerTest.kt` | `POST /v1/files` → existing `BridgeFilesHandler.upload` → `TypedToolExecutor`/`BoundedAgencyGate` → bounded write | The existing attested upload write now runs inside the canonical `FILE_MUTATION` executor with an explicit repo-relative target and HumanOwner bridge attribution; policy refusal returns 403 before directory/file creation. Size, path, symlink, content hash, and envelope hash checks remain intact. Static selector/orphan/diff checks pass; root/hosted execution remains pending. |
 
+### 2026-08-25T00:55:00Z · Backend verification: bridge-upload-policy-refusal-fixture
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-005 / ADD-W-029 mutation refusal evidence | source-wired / partial | `src/test/kotlin/atropos/bridge/BridgeFilesHandlerTest.kt` | existing `BridgeFilesHandlerTest` → `POST /v1/files` upload path → canonical policy gate | Focused fixture now proves a policy-forbidden `.jar` upload returns 403 and leaves no file, alongside the oversized refusal and successful attestation cases. Static selector/orphan/diff checks pass; root/hosted Kotlin execution remains pending. |
+
 ## Wave residual audit
 
 | residual | status | evidence / caller | remaining truth |

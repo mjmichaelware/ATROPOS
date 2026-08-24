@@ -54,6 +54,12 @@ class BridgeFilesHandlerTest {
             assertTrue(responseOk.body.contains("\"sha256\":\"$contentSha256\""))
             assertTrue(responseOk.body.contains("\"envelopeSha256\":\"$envelopeSha256\""))
 
+            val responsePolicyRefused = handler.upload(
+                HttpRequest("POST", "/v1/files", mapOf("session" to "s1", "filename" to "blocked.jar"), emptyMap(), base64Content)
+            )
+            assertEquals(403, responsePolicyRefused.status)
+            assertFalse(Files.exists(tempDir.resolve(".atropos/uploads/s1/blocked.jar")))
+
             // Verify file exists on disk under uploads directory
             val expectedPath = tempDir.resolve(".atropos/uploads/s1/hello.txt")
             assertTrue(Files.isRegularFile(expectedPath))

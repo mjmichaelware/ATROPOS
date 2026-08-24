@@ -12868,3 +12868,11 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: `git diff --check`, `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (382 tests)`), and `timeout 90s python3 scripts/find-orphans.py --fail-on-new` (exit 0; only 4 pre-existing baseline orphan files / 360 LOC) passed. Root/hosted Kotlin execution remains pending; no test-green claim.
 - % delta: unchanged; B-005 / ADD-W-029 remains source-wired / partial pending hosted execution.
 - Fingerprints (sha256, first 12): `BridgeFilesHandler.kt=d741d4019d74`, `BridgeFilesHandlerTest.kt=8082906494dc`.
+
+### 2026-08-25T00:55:00Z · Agent: Codex GPT-5 · Verification: bridge-upload-policy-refusal-fixture
+
+- Paths touched: `src/test/kotlin/atropos/bridge/BridgeFilesHandlerTest.kt` (+7), `STATUS-BACKEND.md` (+7), `AGENTS.md` (+7).
+- Acceptance predicate checked: upload policy refusal must happen before file creation, not merely be described by the handler.
+- Evidence: the focused fixture submits a repository-policy-forbidden `.jar`, asserts HTTP 403, and asserts no target file exists; static selector parity, orphan gate, and diff check pass. Root/hosted Kotlin execution remains pending; no test-green claim.
+- % delta: unchanged; B-005 / ADD-W-029 remains source-wired / partial.
+- Fingerprint: `BridgeFilesHandlerTest.kt=dc05f24018c4`.
