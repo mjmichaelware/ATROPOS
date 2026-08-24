@@ -106,7 +106,7 @@ internal class BridgeEvidenceHandler(
             JsonWriter.obj(
                 "ok" to JsonWriter.bool(true),
                 "id" to JsonWriter.str(id),
-                "path" to JsonWriter.str(evidencePathStr),
+                "path" to JsonWriter.str(redactionFilter.redact(evidencePathStr)),
                 "truncated" to JsonWriter.bool(isTruncated),
                 "content" to JsonWriter.str(redacted),
                 "evidenceHash" to JsonWriter.str(contentHash),
@@ -130,7 +130,7 @@ internal class BridgeEvidenceHandler(
                     JsonWriter.obj(
                         "id" to JsonWriter.str(entry.id),
                         "state" to JsonWriter.str(entry.state),
-                        "evidence" to JsonWriter.str(entry.evidence.orEmpty()),
+                        "evidence" to JsonWriter.str(redactionFilter.redact(entry.evidence.orEmpty())),
                         "updatedAt" to JsonWriter.str(entry.updatedAt),
                         "evidenceLink" to JsonWriter.str("/v1/evidence?id=${entry.id}")
                     )

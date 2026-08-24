@@ -138,4 +138,36 @@ class BridgeEvidenceHandlerTest {
         assertTrue(response.body.contains("evidenceLink"))
         assertFalse(response.body.contains("secret task"), "index must not expose queue task text")
     }
+
+    @Test
+    fun evidence_index_redacts_untrusted_evidence_path_metadata() {
+        val secret = "sk-live-evidence-path-secret"
+        val entries = listOf(
+            QueueEntryView(
+                id = "q-secret",
+                task = "task",
+                state = "SUCCEEDED",
+                checkpoint = "FINALIZED",
+                attempts = 1,
+                maxAttempts = 1,
+                terminal = true,
+                failureReason = null,
+                evidence = "evidence-$secret.txt",
+                createdAt = "now",
+                updatedAt = "now"
+            )
+        )
+        val handler = BridgeEvidenceHandler(
+            FakeWorkRunner(null, entries),
+            repoRoot = Files.createTempDirectory("evidence-index-redaction-")
+        )
+
+        val response = handler.getEvidence(
+            HttpRequest("GET", "/v1/evidence", emptyMap(), emptyMap(), "")
+        )
+
+        assertEquals(200, response.status)
+        assertFalse(response.body.contains(secret), "evidence path metadata must be redacted")
+        assertTrue(response.body.contains("[REDACTED]"))
+    }
 }

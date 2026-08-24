@@ -13348,6 +13348,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; T04 remains partial pending hosted execution and final bridge sink audit.
 - Fingerprints recorded by commit; unrelated `docs/completion/*` files were not staged.
 
+### 2026-08-25T06:20:00Z · Agent: Codex GPT-5 · Batch: bridge-evidence-metadata-redaction
+
+- Paths touched: `src/main/kotlin/atropos/bridge/BridgeEvidenceHandler.kt` (+2/-2), `src/test/kotlin/atropos/bridge/BridgeEvidenceHandlerTest.kt` (+31), `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-005 evidence listing/limit-safe bridge surface and T04 rendered metadata redaction.
+- Predicate moved: untrusted evidence path metadata is now redacted in both paginated index and single-evidence responses; the existing bridge evidence owner retains pagination, size, repository, symlink, and hash controls.
+- Verification actually run: static backend and hosted-selector contracts are next in this batch; no root/hosted Kotlin test is claimed.
+- % delta: unchanged; B-005 remains partial pending hosted execution.
+- Fingerprints recorded by commit; unrelated `docs/completion/*` files were not staged.
+
 ### 2026-08-25T06:00:00Z · Agent: Codex GPT-5 · Batch: providers-enable-lifecycle
 
 - Paths touched: `src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt` (+9), `src/main/kotlin/atropos/cli/ProviderCommandHandler.kt` (+9), `src/main/kotlin/atropos/cli/input/CommandCatalog.kt` (+1), `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` (+16), `src/test/kotlin/atropos/cli/input/CommandCatalogBackendEntriesTest.kt` (+1), `scripts/backend-atom-contract-test.sh` (+3), `STATUS-BACKEND.md` (+7).

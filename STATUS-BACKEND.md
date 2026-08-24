@@ -1076,3 +1076,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-PROV-004 provider enable lifecycle | source-wired / partial | `src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt`, `src/main/kotlin/atropos/cli/ProviderCommandHandler.kt`, `src/main/kotlin/atropos/cli/input/CommandCatalog.kt`, focused tests, `scripts/backend-atom-contract-test.sh` | `/providers enable <id>` → existing `ProviderOnboardingService.enable()` → metadata store + refresh classification | Added a production re-enable path that clears the disabled flag and reclassifies current environment/vault inputs; no direct config editing or second registry is required. Static backend contract and selector parity (420) pass; hosted/root Kotlin execution remains pending. |
+
+### 2026-08-25T06:20:00Z · Agent: Codex GPT-5 · Batch: bridge-evidence-metadata-redaction
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-005 evidence listing metadata safety | source-wired / partial | `src/main/kotlin/atropos/bridge/BridgeEvidenceHandler.kt`, `src/test/kotlin/atropos/bridge/BridgeEvidenceHandlerTest.kt`, `scripts/backend-atom-contract-test.sh` | `GET /v1/evidence` → existing `BridgeEvidenceHandler.listEvidence/getEvidence` | Evidence paths in both indexed metadata and single-item responses now pass through the canonical redaction boundary; pagination, repository/symlink bounds, content limit, and content hashing remain in the same owner. Static backend contract and selector parity (420) pass; hosted/root Kotlin execution remains pending. |

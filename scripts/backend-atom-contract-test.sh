@@ -111,6 +111,8 @@ text src/main/kotlin/atropos/bridge/BridgeFilesHandler.kt 'StandardCopyOption.AT
 text src/main/kotlin/atropos/bridge/BridgeFilesHandler.kt 'Files.size(it) <= MAX_UPLOAD_BYTES'
 text src/main/kotlin/atropos/bridge/BridgeCommandHandler.kt 'redactionFilter.compact(failure.message.orEmpty())'
 text src/main/kotlin/atropos/bridge/BridgeEvidenceHandler.kt 'redactionFilter.compact(e.message ?: e.javaClass.simpleName)'
+text src/main/kotlin/atropos/bridge/BridgeEvidenceHandler.kt 'redactionFilter.redact(evidencePathStr)'
+text src/main/kotlin/atropos/bridge/BridgeEvidenceHandler.kt 'redactionFilter.redact(entry.evidence.orEmpty())'
 text src/main/kotlin/atropos/bridge/http/EngineHttpServer.kt 'lastErrorRef.set(redactionFilter.compact(e.message ?: "request failed"))'
 text src/main/kotlin/atropos/bridge/BridgeQueueHandler.kt 'redactionFilter.redact(entry.task)'
 text src/main/kotlin/atropos/bridge/conversation/QueuedWorkConversationResponder.kt 'redactionFilter.compact('
