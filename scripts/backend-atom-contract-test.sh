@@ -66,6 +66,8 @@ text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'McpConfigParser
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'health.tsv'
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'TypedToolExecutor'
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'BoundedProcessRunner'
+text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'process.destroyForcibly()'
+text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'process.waitFor(1, TimeUnit.SECONDS)'
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'RedactionFilter'
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'SecretSinkMatrix.isEgressPermitted'
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'McpConfigParser.requireJsonObject'

@@ -13714,6 +13714,16 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprints: `install.sh=54a92c7a647a`; `scripts/install-contract-test.sh=15bb8cfd7424`; `scripts/backend-atom-contract-test.sh=04e9f2790197`.
 
+### 2026-08-24T23:35:00Z · Agent: Codex GPT-5 · Batch: mcp-process-lifecycle-contract
+
+- Paths touched: `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-MCP-CORE-g process termination/reap.
+- Predicate moved: the existing sole MCP host’s stdio path is now CI-guarded for forced child destruction and bounded wait after probe/tool exchange; no second process owner was introduced.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh`, `bash scripts/hosted-test-selector-contract.sh` (`421 tests`), and `git diff --check` passed. Hosted Kotlin lifecycle execution remains unverified.
+- % delta: unchanged; B-MCP-CORE-g remains source-wired/partial pending hosted lifecycle execution.
+- New overall estimate: unchanged.
+- Fingerprints: `scripts/backend-atom-contract-test.sh=7cb7224d6faa`.
+
 ### 2026-08-24T22:35:00Z · Agent: Codex GPT-5 · Batch: local-health-response-bounds
 
 - Paths touched: `src/main/kotlin/atropos/core/ProviderState.kt` (+10/-2), `src/main/kotlin/atropos/core/agent/ProviderSessionSupervisor.kt` (+13/-3), `scripts/backend-atom-contract-test.sh` (+2).

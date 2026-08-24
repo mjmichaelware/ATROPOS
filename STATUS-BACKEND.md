@@ -1130,3 +1130,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-INST-001e Termux PREFIX detection | source-wired / partial | `install.sh`, `scripts/install-contract-test.sh`, `scripts/backend-atom-contract-test.sh` | installer platform detection → `HOST_PREFIX` → `termux-$CPU_ARCH` and `$PREFIX/bin` | Termux detection now uses the documented PREFIX boundary without requiring the optional `TERMUX_VERSION` marker. `bash -n`, installer/backend contracts, and `git diff --check` pass; hosted release/device proof remains unverified. |
+
+### 2026-08-24T23:35:00Z · Agent: Codex GPT-5 · Batch: mcp-process-lifecycle-contract
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-CORE-g process termination/reap | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `scripts/backend-atom-contract-test.sh` | CLI/bridge → sole `McpHostManager` stdio probe/call → existing `BoundedProcessRunner` child → forced destroy + bounded wait at exchange end | Added CI source assertions for the production child cleanup and reap boundary. Backend contract, hosted selector parity (421), and `git diff --check` pass; hosted Kotlin lifecycle execution remains unverified. |
