@@ -570,6 +570,12 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | --- | --- | --- | --- | --- |
 | B-INST-006 npm release version alignment | source-wired / partial | `.github/workflows/release.yml`, `scripts/npm-installer-contract-test.sh` | immutable `v*` tag → existing `publish-npm` job → `npm pkg set version` → npm publish | Future tag releases derive package version from the tag before publishing. Contract passes; hosted release and registry publication remain unproven. |
 
+### 2026-08-24T17:42:00Z · Backend batch: hosted-cli-selector-completion
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| hosted backend CLI/self-build selector coverage | source-wired / partial | `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh` | existing GitHub focused-test lanes → seven previously unselected existing CLI test classes | Selector set increased from 384 to 391. Shell syntax, selector parity, explicit completion assertion, and diff checks pass locally; Actions execution remains pending and no Kotlin pass/count is claimed. |
+
 ### 2026-08-24T17:29:00Z · Backend verification: composed-static-gates
 
 | check | result | evidence |

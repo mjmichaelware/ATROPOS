@@ -131,6 +131,13 @@ if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
     --tests 'atropos.cli.help.HelpGeneratorTest' \
     --tests 'atropos.cli.FirstRunDoctorRendererTest' \
     --tests 'atropos.cli.input.CommandCatalogBackendEntriesTest' \
+    --tests 'atropos.cli.SelfHostInsideOutSandboxProofTest' \
+    --tests 'atropos.cli.SelfHostAliasTranslatorTest' \
+    --tests 'atropos.cli.NaturalLanguageRiskGuardTest' \
+    --tests 'atropos.cli.CommandLexerTest' \
+    --tests 'atropos.cli.PipelineDetectionTest' \
+    --tests 'atropos.cli.BackgroundCommandRunnerTest' \
+    --tests 'atropos.cli.SideConversationServiceTest' \
     --tests 'atropos.core.agent.AgentContextCollectorTest' \
     --tests 'atropos.core.agent.AgentContextExportStoreTest' \
     --tests 'atropos.core.agent.AgentDaemonLogWriterTest' \

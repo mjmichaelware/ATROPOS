@@ -13017,6 +13017,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; B-INST-006 remains source-wired / partial.
 - Fingerprints: `.github/workflows/release.yml=68ed6e96c65e`, `scripts/npm-installer-contract-test.sh=83efd31c96ae`.
 
+### 2026-08-24T17:42:00Z · Agent: Codex GPT-5 · Batch: hosted-cli-selector-completion
+
+- Paths touched: `.github/workflows/compile-gate.yml` (+7), `scripts/atropos-verify-worktree.sh` (+7), `AGENTS.md`, `STATUS-BACKEND.md`.
+- Atoms / phases affected: backend hosted verification coverage for CLI/self-build callers.
+- Predicate moved: seven existing backend-relevant CLI test classes that were present in the tree but absent from both hosted selector entrypoints are now selected: self-host sandbox, alias translation, natural-language risk, lexer, pipeline detection, background runner, and side conversation tests. No production owner or test system was duplicated.
+- Verification actually run: shell syntax, selector contract (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (391 tests)`), explicit selector-completion assertion, and `git diff --check` passed. GitHub execution and Kotlin result counts remain pending.
+- % delta: unchanged; hosted verification remains source-wired / partial until Actions executes.
+- Fingerprints: `.github/workflows/compile-gate.yml=1269c35217ed`, `scripts/atropos-verify-worktree.sh=f14b95dee9a0`.
+
 ### 2026-08-24T17:29:00Z · Agent: Codex GPT-5 · Verification: backend-static-gate-recheck
 
 - Paths touched: `AGENTS.md`, `STATUS-BACKEND.md` only.
