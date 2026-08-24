@@ -452,6 +452,15 @@ End of AGENTS.md
 - % delta: unchanged; no VERIFIED claim. FTY-01, FTY-02, and FTY-04 are marked done in `STATUS-BACKEND.md` based on production source plus narrow compilation; FTY-03 and FTY-05 remain partial until root focused tests and a runtime-owned repair callback are proven.
 - Fingerprints (sha256): `DagStore.kt=fb932962f947`; `FactoryProgressGuard.kt=50bb25ea712d`; `FactoryRunHandoff.kt=537cf1c24fc2`; `FactoryRunOrchestrator.kt=652e100a59b7`; `FactoryRepairExecutor.kt=16e2c5cd36a8`; `FactoryCommandHandler.kt=392afeb3eb37`; `FactoryProgressGuardTest.kt=1e5d81c78c09`; `FactoryResumeAndRepairTest.kt=bca553b18f46`; `STATUS-BACKEND.md=2669342e3735`.
 
+### 2026-08-24T04:41:10Z · Agent: Codex GPT-5 · Batch: mcp-http-request-validity
+
+- Paths touched: `src/main/kotlin/atropos/core/integration/McpHostManager.kt` (+10/-4), `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+2).
+- Atoms / phases affected: B-MCP-CORE-e HTTP MCP call validity and transport failure truth.
+- Predicate moved: the existing HTTP MCP owner now emits syntactically valid JSON-RPC `tools/call` requests with escaped tool names and bounded arguments; real HTTP responses must be 2xx before probe/call can be accepted. The same `McpHostManager` remains the production caller through CLI and bridge paths.
+- Verification actually run: `git diff --check` passed. `:core:jvmTest` was started with `--rerun` but the interrupted local session produced no completed Gradle result or test count; root compile/tests remain delegated to GitHub Actions. No green claim.
+- % delta: unchanged; source correctness improved, atom remains partial pending hosted root proof.
+- Fingerprints: `McpHostManager.kt=7e1734ff763d8b57e0010662`; `McpHostManagerTest.kt=80add8a73bf393ff529ea3ca`.
+
 ### 2026-08-24T02:25:00Z · Agent: Codex GPT-5 · Batch: reusable-orphan-gate-wire
 
 - Paths touched: `scripts/atropos-verify-worktree.sh` (+4), `.github/workflows/atropos-verify-example.yml` (+2), `STATUS-BACKEND.md` (+7).

@@ -238,7 +238,11 @@ class McpHostManager(
         require(remoteExchange(server, initialize).contains("\"id\":1")) { "MCP HTTP initialize returned no response" }
         val toolsList = "{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/list\",\"params\":{}}"
         require(remoteExchange(server, toolsList).contains("\"id\":2")) { "MCP HTTP tools/list returned no response" }
-        val request = "{\"jsonrpc\":\"2.0\",\"id\":3,\"method\":\"tools/call\",\"params\":{"name":"${jsonEscape(toolName)}","arguments":$argumentsJson}}"
+        val request = buildString {
+            append("{\"jsonrpc\":\"2.0\",\"id\":3,\"method\":\"tools/call\",\"params\":{")
+            append("\"name\":\"").append(jsonEscape(toolName)).append("\",")
+            append("\"arguments\":").append(argumentsJson).append("}}")
+        }
         val response = remoteExchange(server, request)
         val bounded = response.take(maxResponseBytes)
         require(bounded.contains("\"id\":3")) { "MCP HTTP tools/call returned no response" }
@@ -269,11 +273,14 @@ class McpHostManager(
             .header("Accept", "application/json, text/event-stream")
             .POST(HttpRequest.BodyPublishers.ofString(body))
             .build()
-        return HttpClient.newBuilder()
+        val response = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(3))
             .build()
             .send(request, HttpResponse.BodyHandlers.ofString())
-            .body()
+        require(response.statusCode() in 200..299) {
+            "MCP HTTP request failed status=${response.statusCode()} server=${server.name}"
+        }
+        return response.body()
     }
 
     private fun jsonEscape(value: String): String = value

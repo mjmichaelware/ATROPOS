@@ -155,6 +155,8 @@ class McpHostManagerTest {
 
         assertEquals(3, requests.size)
         assertTrue(requests.last().contains("tools/call"))
+        assertTrue(requests.last().contains("\"name\":\"inspect\""))
+        assertTrue(requests.last().contains("\"arguments\":{}"))
         assertNotNull(result.evidence.sha256)
     }
 

@@ -120,3 +120,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | S-012 / reusable CI orphan gate | source-wired / partial | `scripts/atropos-verify-worktree.sh`, `.github/workflows/atropos-verify-example.yml` | reusable composite action → `scripts/atropos-verify-worktree.sh` → canonical `scripts/find-orphans.py --fail-on-new` | Both compile-gate and reusable verify paths now enforce the same new-file caller check; `git diff --check` passed, hosted execution remains pending. |
+
+### 2026-08-24T04:41:10Z · Backend batch: mcp-http-request-validity
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-CORE-e HTTP MCP request validity | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` | CLI/bridge → existing `McpHostManager.callTool` and `statuses` | Corrected invalid Kotlin/JSON string construction; added tool/argument assertions and 2xx response enforcement. `git diff --check` passed. The local `:core:jvmTest` attempt was interrupted before a result; no Gradle count or root-green claim. |
