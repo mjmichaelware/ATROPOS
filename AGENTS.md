@@ -13348,6 +13348,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; T04 remains partial pending hosted execution and final bridge sink audit.
 - Fingerprints recorded by commit; unrelated `docs/completion/*` files were not staged.
 
+### 2026-08-25T05:00:00Z · Agent: Codex GPT-5 · Batch: providers-test-live-owner
+
+- Paths touched: `src/main/kotlin/atropos/cli/ProviderCommandHandler.kt` (+1/-1), `src/main/kotlin/atropos/cli/input/CommandCatalog.kt` (+1/-1), `src/test/kotlin/atropos/cli/input/CommandCatalogBackendEntriesTest.kt` (+1), `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-PROV-004 provider test command and B-PROV-018 live-test failure classification.
+- Predicate moved: `/providers test <id>` now reaches the pre-existing `ProviderActivationService.liveTest()` path, so failures can become persisted unhealthy activation states instead of being silently treated as discovery refresh; no parallel health or provider registry was added.
+- Verification actually run: static backend and hosted-selector contracts are next in this batch; no root/hosted Kotlin test is claimed.
+- % delta: unchanged; provider atoms remain partial pending hosted execution and live operator evidence.
+- Fingerprints recorded by commit; unrelated `docs/completion/*` files were not staged.
+
 ### 2026-08-25T04:35:00Z · Agent: Codex GPT-5 · Batch: upload-refusal-redaction
 
 - Paths touched: `src/main/kotlin/atropos/bridge/BridgeFilesHandler.kt` (+7/-3), `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+7).

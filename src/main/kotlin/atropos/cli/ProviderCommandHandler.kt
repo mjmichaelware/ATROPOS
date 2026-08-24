@@ -26,7 +26,7 @@ class ProviderCommandHandler(
         when (tokens.getOrNull(1)?.lowercase()) {
             "list" -> uiEngine.renderBlock(onboarding.render().lines())
             "refresh" -> uiEngine.renderBlock(onboarding.refresh().map { "${it.providerId} health=${it.health.name.lowercase()}" })
-            "test" -> uiEngine.renderBlock(onboarding.refresh().map { "${it.providerId} health=${it.health.name.lowercase()}" })
+            "test" -> renderLiveTest(tokens)
             "prefer" -> renderPreference(onboarding, tokens)
             "disable" -> renderDisable(onboarding, tokens)
             "connect" -> renderConnect(onboarding, tokens)

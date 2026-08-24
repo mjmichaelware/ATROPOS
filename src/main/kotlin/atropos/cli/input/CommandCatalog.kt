@@ -56,7 +56,7 @@ object CommandCatalog {
         CommandEntry("/providers live-test", "explicit free/credit provider live test"),
         CommandEntry("/providers list", "local provider health inventory"),
         CommandEntry("/providers refresh", "refresh local provider discovery"),
-        CommandEntry("/providers test", "cheap local provider health test"),
+        CommandEntry("/providers test <id>", "explicit provider health test; paid providers remain approval-locked"),
         CommandEntry("/providers prefer", "prefer a healthy provider"),
         CommandEntry("/providers disable", "disable a provider locally"),
         CommandEntry("/providers connect", "connect a provider through local secret storage"),
