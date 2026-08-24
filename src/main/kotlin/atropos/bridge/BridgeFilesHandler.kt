@@ -32,6 +32,14 @@ internal class BridgeFilesHandler(
         } catch (e: Exception) {
             return HttpResponse.badRequest("Request body must be valid Base64 encoded file contents.", "Encode files before POSTing.")
         }
+        if (bytes.size > MAX_UPLOAD_BYTES) {
+            return HttpResponse.refusal(
+                413,
+                "payload-too-large",
+                "Uploaded file exceeds the ${MAX_UPLOAD_BYTES / 1024} KiB limit.",
+                ""
+            )
+        }
 
         // Territory check and normalization
         val sessionDir = uploadsRoot.resolve(session).normalize()
@@ -83,6 +91,10 @@ internal class BridgeFilesHandler(
     private fun sha256(value: String): String = MessageDigest.getInstance("SHA-256")
         .digest(value.toByteArray(Charsets.UTF_8))
         .joinToString("") { "%02x".format(it) }
+
+    private companion object {
+        const val MAX_UPLOAD_BYTES = 512 * 1024
+    }
 
     fun list(request: HttpRequest): HttpResponse {
         val session = request.query["session"].orEmpty().trim()

@@ -57,6 +57,12 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | --- | --- | --- | --- | --- |
 | P18 focused Kotlin execution | inconclusive / partial | `STATUS-BACKEND.md` | GitHub Actions `focused-backend-tests` → existing `ProviderActivationServiceTest` selector | `timeout 60s ./gradlew --no-daemon :test --rerun --max-workers=1 --tests 'atropos.core.provider.ProviderActivationServiceTest'` exited 124 during Gradle task-graph calculation with no compilation or test output. This is not a pass or source failure; GitHub Actions remains the authoritative execution lane. |
 
+### 2026-08-24T23:05:00Z · Backend batch: bounded-file-upload-envelope
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-005 / ADD-W-029 file upload size bound | source-wired / partial | `src/main/kotlin/atropos/bridge/BridgeFilesHandler.kt`, `src/test/kotlin/atropos/bridge/BridgeFilesHandlerTest.kt` | `POST /v1/files` → existing `BridgeRoutes` → `BridgeFilesHandler.upload` | Existing territory/path and envelope hashing now refuse decoded uploads over 512 KiB with HTTP 413 before directory/file creation; focused test proves no oversized file is written. Selector parity, orphan gate, and diff check pass; root/hosted Kotlin execution remains pending. |
+
 ## Wave residual audit
 
 | residual | status | evidence / caller | remaining truth |

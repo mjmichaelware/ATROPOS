@@ -12798,3 +12798,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Acceptance predicate checked: focused root execution of `ProviderActivationServiceTest` after the fail-closed live-test boundary.
 - Evidence: `timeout 60s ./gradlew --no-daemon :test --rerun --max-workers=1 --tests 'atropos.core.provider.ProviderActivationServiceTest'` exited 124 during Gradle task-graph calculation and emitted no compilation/test result. This is inconclusive, not green; the GitHub Actions focused lane remains the required execution source.
 - % delta: unchanged; P18 remains source-wired / partial.
+
+### 2026-08-24T23:05:00Z · Agent: Codex GPT-5 · Batch: bounded-file-upload-envelope
+
+- Paths touched: `src/main/kotlin/atropos/bridge/BridgeFilesHandler.kt` (+12), `src/test/kotlin/atropos/bridge/BridgeFilesHandlerTest.kt` (+8), `STATUS-BACKEND.md` (+7), `AGENTS.md` (+7).
+- Atoms / phases affected: B-005 / ADD-W-029 attested file upload size boundary.
+- Predicate moved: the existing bridge upload owner now enforces a decoded 512 KiB maximum before creating directories or writing bytes, while preserving session/filename territory checks and content/envelope SHA-256 attestation. An oversized upload returns explicit 413 and cannot leave a file behind; no second upload service was introduced.
+- Verification actually run: `git diff --check`, `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (382 tests)`), and `timeout 90s python3 scripts/find-orphans.py --fail-on-new` (exit 0; only 4 pre-existing baseline orphan files / 360 LOC) passed. Root/hosted Kotlin execution remains pending; no test-green claim.
+- % delta: unchanged; B-005 / ADD-W-029 remains source-wired / partial pending hosted execution.
+- Fingerprints (sha256, first 12): `BridgeFilesHandler.kt=85ce026ca817`, `BridgeFilesHandlerTest.kt=8082906494dc`.

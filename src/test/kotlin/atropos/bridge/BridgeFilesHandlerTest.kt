@@ -29,6 +29,13 @@ class BridgeFilesHandlerTest {
             )
             assertEquals(400, responseBadFile.status)
 
+            val oversized = Base64.getEncoder().encodeToString(ByteArray(512 * 1024 + 1))
+            val responseTooLarge = handler.upload(
+                HttpRequest("POST", "/v1/files", mapOf("session" to "s1", "filename" to "large.bin"), emptyMap(), oversized)
+            )
+            assertEquals(413, responseTooLarge.status)
+            assertFalse(Files.exists(tempDir.resolve(".atropos/uploads/s1/large.bin")))
+
             // 2. Successful file upload
             val fileContent = "Hello World Files Handler"
             val base64Content = Base64.getEncoder().encodeToString(fileContent.toByteArray())
