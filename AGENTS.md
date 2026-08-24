@@ -13824,6 +13824,16 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprints: `install.sh=d09dd10e364f`; `scripts/install-contract-test.sh=2f219281d77e`; `scripts/backend-atom-contract-test.sh=8eb5ded62f0b`.
 
+### 2026-08-25T03:20:00Z · Agent: Codex GPT-5 · Batch: provider-zero-health-cascade-contract
+
+- Paths touched: `scripts/backend-atom-contract-test.sh` (+3), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-PROV-003/005 cascade and zero-healthy UX.
+- Predicate moved: the backend source gate now protects the actionable zero-healthy environment example, canonical cascade ordering, and healthy-set route exclusion rather than only checking that a summary method exists.
+- Verification actually run: backend atom contract, provider environment contract, hosted selector parity (`421 tests`), and `git diff --check` passed. Hosted provider execution remains unverified.
+- % delta: unchanged; B-PROV-003/005 remain source-wired/partial pending hosted execution.
+- New overall estimate: unchanged.
+- Fingerprints: `scripts/backend-atom-contract-test.sh=f19895456a18`.
+
 ### 2026-08-24T22:35:00Z · Agent: Codex GPT-5 · Batch: local-health-response-bounds
 
 - Paths touched: `src/main/kotlin/atropos/core/ProviderState.kt` (+10/-2), `src/main/kotlin/atropos/core/agent/ProviderSessionSupervisor.kt` (+13/-3), `scripts/backend-atom-contract-test.sh` (+2).

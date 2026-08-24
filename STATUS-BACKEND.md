@@ -1196,3 +1196,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-INST-004 config root environment alignment | source-wired / partial | `install.sh`, `scripts/install-contract-test.sh`, `scripts/backend-atom-contract-test.sh` | installer → `ATROPOS_CONFIG_DIR` (fallback `ATROPOS_PREFIX`) → generated launcher export → existing `AtroposConfig.configRoot()` | Installer now honors the same `ATROPOS_CONFIG_DIR` override as the runtime, while preserving the legacy prefix fallback. Shell syntax, installer/backend contracts, and diff check pass; hosted release/device installation remains unverified. |
+
+### 2026-08-25T03:20:00Z · Agent: Codex GPT-5 · Batch: provider-zero-health-cascade-contract
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-PROV-003/005 cascade and zero-healthy UX | source-wired / partial | `src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt`, `RoutePolicy.kt`, `ProviderCascadeOrder.kt`, `scripts/backend-atom-contract-test.sh` | `Main` launch → `ProviderOnboardingService.renderLaunchSummary()` → canonical `ProviderCascadeOrder`; route decision → healthy-provider supplier | Added CI assertions for the actionable zero-healthy environment example, canonical cascade ordering, and unhealthy-provider exclusion from `RoutePolicy`. Backend/provider-env contracts, hosted selector parity (421), and diff check pass; hosted provider execution remains unverified. |
