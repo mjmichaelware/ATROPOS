@@ -370,3 +370,11 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-PROV-002g/h metadata persistence and reload | source-wired / partial | `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` | fresh `ProviderOnboardingService` instance → existing `providers.json` reader → healthy/preference/disable route metadata | Added a fresh-instance proof that preferred and disabled state survives a process boundary while both environment secret values stay absent from persisted metadata. Local diff/orphan/contract checks pass; hosted provider test execution remains pending. |
+
+### 2026-08-24T06:39:26Z · Backend batch: editor-bridge-contract
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-013 thin editor extension host | source-wired / partial | `src/main/kotlin/atropos/bridge/BridgeEditorHandler.kt`, `BridgeRoutes.kt`, `src/test/kotlin/atropos/bridge/BridgeEditorHandlerTest.kt`, hosted selectors | VS Code/JetBrains/Neovim-compatible local client → `GET /v1/editor/context` and `POST /v1/editor/selection` → existing status/six-answers/checkpoint projections and `BridgeConversationHandler` | Added one bridge adapter exposing existing status, six answers, checkpoint, and bounded selection forwarding. Selection requires attribution, relative territory-safe path, bounded size, valid lines, and redaction; it creates no editor process or orchestration owner. Local diff/orphan/contract checks pass; hosted root tests remain pending. |
+
+| B-013 focused execution evidence | inconclusive / partial | `src/test/kotlin/atropos/bridge/BridgeEditorHandlerTest.kt`, `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh` | hosted selector → `BridgeEditorHandlerTest` | A 45-second local root selector stalled before compile/test output and was terminated; no local pass/count is claimed. The focused class is wired into both GitHub backend lanes. |

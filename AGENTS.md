@@ -12269,6 +12269,24 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; source-wired but partial pending hosted execution.
 - Fingerprint (sha256, first 12): `ProviderOnboardingTest.kt=f811881118699`.
 
+### 2026-08-24T06:39:26Z · Agent: Codex GPT-5 · Batch: editor-bridge-contract
+
+- Paths touched: `src/main/kotlin/atropos/bridge/BridgeEditorHandler.kt` (+102), `src/main/kotlin/atropos/bridge/BridgeRoutes.kt` (+18), `src/test/kotlin/atropos/bridge/BridgeEditorHandlerTest.kt` (+58), `.github/workflows/compile-gate.yml` (+1), `scripts/atropos-verify-worktree.sh` (+1), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-013 thin VS Code/JetBrains/Neovim extension host; B-005 bridge contract.
+- Predicate moved: a thin local editor client can read the existing status/six-answer/checkpoint projections and send a bounded attributed selection through the existing conversation owner. The adapter validates workspace-relative paths and line ranges, redacts selection text, and adds no second status, queue, provider, or orchestrator system.
+- Verification actually run: `git diff --check`, shell syntax, GitHub write contract, and `timeout 90s python3 scripts/find-orphans.py --fail-on-new` passed; orphan gate reports 4 pre-existing orphaned files of 1033 production files. Root/hosted Gradle remains pending.
+- % delta: unchanged; source-wired but partial pending hosted execution.
+- Fingerprints (sha256, first 12): `BridgeEditorHandler.kt=fe2d63204b76`, `BridgeRoutes.kt=72a7580798f4`, `BridgeEditorHandlerTest.kt=c655ffaf0f42`.
+
+### 2026-08-24T06:41:22Z · Agent: Codex GPT-5 · Batch: editor-bridge-focused-evidence
+
+- Paths touched: `src/test/kotlin/atropos/bridge/BridgeEditorHandlerTest.kt` (+1), `STATUS-BACKEND.md` (+5); selector wiring from the preceding batch remains in `.github/workflows/compile-gate.yml` and `scripts/atropos-verify-worktree.sh`.
+- Atoms / phases affected: B-013 focused execution evidence.
+- Predicate moved: none beyond selector coverage; the local root selector was attempted honestly and stalled before compilation output, so no pass/count or root-green claim is made. The exact focused class remains queued in both GitHub lanes.
+- Verification actually run: `git diff --check`, shell syntax, GitHub write contract, and orphan gate passed; the bounded `./gradlew :test --tests 'atropos.bridge.BridgeEditorHandlerTest'` attempt was inconclusive and its exact wrapper was terminated.
+- % delta: unchanged; B-013 remains source-wired / partial pending hosted execution.
+- Fingerprint (sha256, first 12): `BridgeEditorHandlerTest.kt=a36a163c6c15`.
+
 ### 2026-08-24T10:35:00Z · Agent: Codex GPT-5 · Batch: gha-pull-request-trigger
 
 - Paths touched: `.github/workflows/atropos-verify-example.yml` (+1), `scripts/atropos-verify-action-contract-test.sh` (+8), `STATUS-BACKEND.md` (+2).

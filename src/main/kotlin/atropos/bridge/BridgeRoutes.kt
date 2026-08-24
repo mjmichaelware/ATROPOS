@@ -200,6 +200,19 @@ class BridgeRoutes(
     private val computerUseHandler = BridgeComputerUseHandler()
     private val selfHostHandler = selfHost?.let { BridgeSelfHostHandler(it) }
     private val commandHandler = commandRunner?.let { BridgeCommandHandler(it) }
+    private val editorHandler = BridgeEditorHandler(
+        context = {
+            JsonWriter.obj(
+                "ok" to JsonWriter.bool(true),
+                "transport" to JsonWriter.str("local-bridge"),
+                "status" to statusHandler.getStatus().body,
+                "answers" to sixAnswers.render(capture()),
+                "checkpoint" to checkpointView.render(checkpoint(), clock()),
+                "sendSelection" to JsonWriter.str("POST /v1/editor/selection")
+            )
+        },
+        sendMessage = conversationHandler::postMessage
+    )
 
     /** Present either way, so what a client discovers does not change with
      *  configuration; without a router it says so rather than 404ing. */
@@ -367,6 +380,12 @@ class BridgeRoutes(
                 },
                 HttpRoute("GET", "/v1/status", "composite engine liveness and cockpit status") {
                     statusHandler.getStatus()
+                },
+                HttpRoute("GET", "/v1/editor/context", "editor extension status, answers, and checkpoint") {
+                    editorHandler.context()
+                },
+                HttpRoute("POST", "/v1/editor/selection", "send a bounded editor selection to the engine") { request ->
+                    editorHandler.sendSelection(request)
                 },
                 HttpRoute("GET", "/v1/quota", "provider quota and billing metadata") {
                     HttpResponse.json(quotaSummary())
