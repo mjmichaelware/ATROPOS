@@ -1232,3 +1232,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-CORE-c/d initialize and tools/list handshake | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `scripts/backend-atom-contract-test.sh` | CLI/bridge → sole host stdio/HTTP transport → JSON-RPC initialize + initialized notification + tools/list → bounded tool call | Added CI assertions for the exact handshake messages shared by stdio and remote paths, preserving one host transport sequence. Backend contract, hosted selector parity (421), and diff check pass; hosted MCP runtime execution remains unverified. |
+
+### 2026-08-25T05:20:00Z · Agent: Codex GPT-5 · Batch: mcp-transport-dispatch-contract
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-CORE-b remote/stdio transport dispatch | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `scripts/backend-atom-contract-test.sh` | `callTool` → supported transport branch → injected `BoundedProcessRunner` stdio spawn or single bounded `postRemote` HTTP client | Added CI assertions for both transport owners, redirect refusal, and no alternate process/network path. Backend contract, hosted selector parity (421), and diff check pass; hosted MCP runtime execution remains unverified. |
