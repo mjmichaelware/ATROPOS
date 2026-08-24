@@ -12079,3 +12079,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: selector checks, shell syntax, and `git diff --check` passed. Root Gradle and hosted tests remain unrun; no test green claim.
 - % delta: unchanged; source-wired but partial pending hosted execution evidence.
 - Fingerprints (sha256, first 12): `ShellBoundedAgencyTest.kt=f5630cc0dcd0`; `compile-gate.yml=5bb0b8789d48`; `atropos-verify-worktree.sh=976c22c7b505`; `STATUS-BACKEND.md=a8a3060ce8ca`.
+
+### 2026-08-24T08:20:00Z · Agent: Codex GPT-5 · Batch: gated-configured-mcp-search
+
+- Paths touched: `src/main/kotlin/atropos/core/integration/McpHostManager.kt` (+15), `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+29), and `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: ADD-MCP-005 optional configured MCP search and BoundedAgencyGate wiring.
+- Predicate moved: `/mcp search` now crosses the existing MCP territory/policy gate before searching configured entries; policy denial is explicit and no registry download, install, enable, or probe occurs.
+- Verification actually run: `git diff --check` pending after this batch; root Gradle and hosted tests remain unrun, so no green claim.
+- % delta: unchanged; source-wired but partial pending hosted execution evidence.
+- Fingerprints recorded after static verification/commit.

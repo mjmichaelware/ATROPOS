@@ -257,3 +257,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-GITLOCAL status/diff bounded wire | source-wired / partial | `src/main/kotlin/atropos/cli/shell/ShellCommandRunner.kt`, `src/main/kotlin/atropos/cli/ShellCommandHandler.kt`, `src/test/kotlin/atropos/cli/shell/ShellBoundedAgencyTest.kt`, hosted selectors | `/git status|diff` → `ShellCommandHandler` → existing `ShellCommandRunner` → `TypedToolExecutor`/`BoundedAgencyGate` | Focused tests now assert exact literal argv and the `git diff --` path boundary at the process seam; both GitHub backend lanes select the suite. Static selector checks and `git diff --check` passed; root/hosted test execution remains pending. |
+
+### 2026-08-24T08:20:00Z · Backend batch: gated-configured-mcp-search
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| ADD-MCP-005 gated configured search | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` | `/mcp search` → `McpCommandHandler` → shared `McpHostManager.search` → existing `McpTerritoryBridge`/policy gate | Configured-only search now requires the same inspect admission and policy decision before reading candidates; a denied gate test proves no search result bypass. No download/install/enable/probe behavior was added. Root/hosted tests remain pending. |

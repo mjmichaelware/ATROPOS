@@ -117,6 +117,20 @@ class McpHostManager(
      */
     fun search(query: String): List<McpServerConfig> {
         require(query.isNotBlank()) { "MCP search query is required" }
+        val gate = territoryBridge.judge(
+            InboundToolRequest(
+                source = InboundSource.MCP,
+                callerId = "mcp-cli",
+                operation = "inspect",
+                paths = listOf(".")
+            )
+        )
+        when (gate) {
+            is InboundGateResult.Refused -> error("MCP search refused by territory bridge: ${gate.reason}")
+            is InboundGateResult.Judged -> require(gate.decision.disposition == AgencyDisposition.ALLOWED) {
+                "MCP search refused by policy: ${gate.decision.reason}"
+            }
+        }
         val needle = query.trim().lowercase()
         return load().asSequence()
             .filter { server ->

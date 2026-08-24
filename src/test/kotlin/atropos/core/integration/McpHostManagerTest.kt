@@ -8,6 +8,7 @@ import atropos.core.policy.PolicyActionClass
 import atropos.core.policy.PolicyDecisionType
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -215,6 +216,30 @@ class McpHostManagerTest {
 
         assertEquals(listOf("local-files"), results.map { it.name })
         assertTrue(results.single().enabled.not())
+    }
+
+    @Test
+    fun search_cannot_bypass_the_existing_mcp_territory_gate() {
+        val root = Files.createTempDirectory("mcp-search-gate")
+        Files.writeString(root.resolve("mcp.json"), """
+            {"servers":[{"name":"local-files","transport":"stdio","command":"local","enabled":false,"community":false}]}
+        """.trimIndent())
+        val manager = McpHostManager(
+            root,
+            territoryBridge = McpTerritoryBridge(setOf("inspect")) { proposal ->
+                val decision = ExecutionPolicyDecision(
+                    id = "search-denied",
+                    decision = PolicyDecisionType.DENY,
+                    actionClass = PolicyActionClass.FILE_MUTATION,
+                    destructive = false,
+                    reason = "search denied in fixture"
+                )
+                AgencyDecision(proposal, decision, AgencyDisposition.POLICY_BLOCKED, decision.reason)
+            }
+        )
+
+        val failure = assertFailsWith<IllegalArgumentException> { manager.search("files") }
+        assertTrue(failure.message.orEmpty().contains("search refused by policy"))
     }
 
     @Test
