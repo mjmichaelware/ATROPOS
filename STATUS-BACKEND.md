@@ -238,6 +238,12 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 - Factory runtime audit: `FactoryRunOrchestrator.kt:258-290` invokes the injected repair action, then `FactoryRepairExecutor` and the existing obligation loop; `FactoryCommandHandler.kt:20-47` is the user-facing resume caller; `FactoryRunHandoff.kt:84-108` fails actionable on missing/malformed/mismatched artifacts. No factory status was upgraded without root test evidence.
 - Clean-checkout proof after commit `b1479fe8`: `./gradlew :core:jvmTest --no-daemon --max-workers=1 --rerun` passed in 52s; XML reports contain 2 tests, 0 failures, 0 errors, 0 skipped. Root Provider/Bridge/MCP/Factory tests were not re-claimed or executed.
 
+### 2026-08-24T14:57:11Z · Backend batch: quota-remaining-ledger-projection
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| P15 / quota remaining projection | source-wired / partial | `src/main/kotlin/atropos/core/provider/QuotaLedger.kt`, `src/main/kotlin/atropos/bridge/projection/QuotaProjection.kt`, `src/test/kotlin/atropos/bridge/QuotaProjectionTest.kt` | provider adapter success usage → existing `QuotaLedger.recordSuccess` → file-backed ledger → `AtroposBridge` `/v1/quota` projection | `remainingRequests` and `remainingTokens` now persist with backward-compatible reads of old 14-column ledgers and render as numeric values or explicit `null`. Static selector/orphan/diff checks pass; focused Gradle reached task-graph calculation without a test result, so hosted/root Kotlin execution remains pending. |
+
 ### 2026-08-24T00:25:00Z · Backend batch: configured-mcp-search
 
 | atom | status | files | caller | tests / notes |
@@ -734,9 +740,3 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | ADD-MCP-001 / B-MCP-CORE health exclusion at call time | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` | CLI/bridge → existing `McpHostManager.callTool` → `statuses()` probe/persistence → bounded transport | Direct tool calls now consult the canonical health probe after allowlist/policy checks and refuse `UNHEALTHY` servers before process or remote transport starts. Added a fixture proving no unhealthy stdio process starts and health.tsv records the refusal state. Selector parity, diff check, and orphan gate pass locally; hosted/root Kotlin execution remains pending. |
-
-### 2026-08-24T14:57:11Z · Backend batch: quota-remaining-ledger-projection
-
-| atom | status | files | caller | tests / notes |
-| --- | --- | --- | --- | --- |
-| P15 / quota remaining projection | source-wired / partial | `src/main/kotlin/atropos/core/provider/QuotaLedger.kt`, `src/main/kotlin/atropos/bridge/projection/QuotaProjection.kt`, `src/test/kotlin/atropos/bridge/QuotaProjectionTest.kt` | provider adapter success usage → existing `QuotaLedger.recordSuccess` → file-backed ledger → `AtroposBridge` `/v1/quota` projection | `remainingRequests` and `remainingTokens` now persist with backward-compatible reads of old 14-column ledgers and render as numeric values or explicit `null`. Static selector/orphan/diff checks pass; focused Gradle reached task-graph calculation without a test result, so hosted/root Kotlin execution remains pending. |
