@@ -452,6 +452,15 @@ End of AGENTS.md
 - % delta: unchanged; no VERIFIED claim. FTY-01, FTY-02, and FTY-04 are marked done in `STATUS-BACKEND.md` based on production source plus narrow compilation; FTY-03 and FTY-05 remain partial until root focused tests and a runtime-owned repair callback are proven.
 - Fingerprints (sha256): `DagStore.kt=fb932962f947`; `FactoryProgressGuard.kt=50bb25ea712d`; `FactoryRunHandoff.kt=537cf1c24fc2`; `FactoryRunOrchestrator.kt=652e100a59b7`; `FactoryRepairExecutor.kt=16e2c5cd36a8`; `FactoryCommandHandler.kt=392afeb3eb37`; `FactoryProgressGuardTest.kt=1e5d81c78c09`; `FactoryResumeAndRepairTest.kt=bca553b18f46`; `STATUS-BACKEND.md=2669342e3735`.
 
+### 2026-08-24T01:25:00Z · Agent: Codex GPT-5 · Batch: zero-retention-research-policy
+
+- Paths touched: `src/main/kotlin/atropos/core/Config.kt` (+17/-3), `src/main/kotlin/atropos/core/factory/FactoryResearchService.kt` (+8/-1), `src/main/kotlin/atropos/cli/BackendDoctor.kt` (+1), `src/test/kotlin/atropos/core/factory/FactoryResearchDloiTest.kt` (+15), `src/test/kotlin/atropos/cli/BackendDoctorTest.kt` (+16), `.github/workflows/compile-gate.yml` (+1), `scripts/atropos-verify-worktree.sh` (+1), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-OC-004 zero-retention research plane; backend doctor/status visibility.
+- Predicate moved: the existing runtime config now accepts `ATROPOS_ZERO_RETENTION` or `zero_retention_research`; the existing factory research owner refuses lakehouse and bounded remote fetches in that mode and records explicit `SKIPPED_ZERO_RETENTION` outcomes; the existing doctor exposes the active mode. No second policy or research owner was created.
+- Verification actually run: `git diff --check` passed. Focused factory/doctor tests and the hosted `:test` selector were wired; root compilation/test execution was not completed locally, so no green claim is made.
+- % delta: unchanged; source-wired but partial pending hosted execution.
+- Fingerprints: `Config.kt=b4a72a82ada6`; `FactoryResearchService.kt=5da54c4848f0`; `BackendDoctor.kt=3e32a7ce7af5`; `FactoryResearchDloiTest.kt=91f04a86bb97`; `BackendDoctorTest.kt=ffb718628313`; `compile-gate.yml=a098836197a2`; `atropos-verify-worktree.sh=2420d8ccf9b3`.
+
 ### 2026-08-24T01:05:00Z · Agent: Codex GPT-5 · Batch: orphan-gate-enforcement
 
 - Paths touched: `scripts/find-orphans.py` (+20), `.github/workflows/compile-gate.yml` (+7), `STATUS-BACKEND.md` (+7).

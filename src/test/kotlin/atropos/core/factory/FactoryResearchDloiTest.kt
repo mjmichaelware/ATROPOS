@@ -20,4 +20,19 @@ class FactoryResearchDloiTest {
         assertTrue(report.channelLog.any { it.startsWith("dloi_route=") })
         assertTrue(report.channelLog.any { it.contains("no_cosine_rag") })
     }
+
+    @Test
+    fun `zero retention skips remote research channels and records the policy outcome`() {
+        val root = Files.createTempDirectory("atropos-factory-zero-retention-")
+        val report = FactoryResearchService(zeroRetentionResearch = true).collect(
+            root = root,
+            prompt = "research a remote authority",
+            projectId = "factory-zero-retention"
+        )
+
+        assertTrue(report.channelLog.contains("lakehouse=SKIPPED_ZERO_RETENTION"))
+        assertTrue(report.channelLog.contains("lakehouse_route=SKIPPED_ZERO_RETENTION:remote_research_disabled"))
+        assertTrue(report.channelLog.contains("bounded_fetch=SKIPPED_ZERO_RETENTION"))
+        assertTrue(report.fetchHashes.isEmpty())
+    }
 }

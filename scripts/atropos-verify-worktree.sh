@@ -19,6 +19,7 @@ if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
     --tests 'atropos.core.factory.FactoryRunHandoffTest' \
     --tests 'atropos.core.factory.FactoryObligationLoopTest' \
     --tests 'atropos.core.factory.FactoryAcceptanceFreezeTest' \
+    --tests 'atropos.core.factory.FactoryResearchDloiTest' \
     --tests 'atropos.core.provider.ProviderOnboardingTest' \
     --tests 'atropos.core.provider.ProviderCascadeRouterTest' \
     --tests 'atropos.core.policy.ProviderActionProposalsTest' \

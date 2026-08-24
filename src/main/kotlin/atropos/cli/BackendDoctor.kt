@@ -16,6 +16,7 @@ class BackendDoctor(
     fun render(): List<String> = buildList {
         add("ATROPOS DOCTOR")
         add("local_only=${config.runtime.localOnly}")
+        add("zero_retention_research=${config.runtime.zeroRetentionResearch}")
         add("health=process-ready")
         add("providers:")
         providers.list().forEach { provider ->

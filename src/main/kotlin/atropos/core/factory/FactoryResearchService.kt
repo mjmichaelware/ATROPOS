@@ -59,7 +59,8 @@ class FactoryResearchService(
     private val minimumScopedRelevance: Int = 2,
     private val operatorId: String? = System.getenv("ATROPOS_OPERATOR_ID")?.trim()?.takeIf { it.isNotBlank() },
     private val specGraphAtomizer: SpecGraphAtomizer = SpecGraphAtomizer(),
-    private val localOnly: Boolean = AtroposConfig.load().runtime.localOnly
+    private val localOnly: Boolean = AtroposConfig.load().runtime.localOnly,
+    private val zeroRetentionResearch: Boolean = AtroposConfig.load().runtime.zeroRetentionResearch
 ) {
     init {
         require(maxFetchBytes > 0) { "bounded research byte limit must be positive" }
@@ -186,6 +187,9 @@ class FactoryResearchService(
         if (localOnly) {
             log += "lakehouse=SKIPPED_LOCAL_ONLY"
             log += "lakehouse_route=SKIPPED_LOCAL_ONLY:remote_research_disabled"
+        } else if (zeroRetentionResearch) {
+            log += "lakehouse=SKIPPED_ZERO_RETENTION"
+            log += "lakehouse_route=SKIPPED_ZERO_RETENTION:remote_research_disabled"
         } else if (lakehouse.isNullOrBlank()) {
             log += "lakehouse=SKIPPED_SOFT_FAIL:ATROPOS_LAKEHOUSE_URL unset"
             log += "lakehouse_route=SKIPPED_SOFT_FAIL:lakehouse_unavailable; dLoI_attempted=true"
@@ -209,6 +213,8 @@ class FactoryResearchService(
         val boundedUrl = System.getenv("ATROPOS_FACTORY_RESEARCH_URL")
         if (localOnly) {
             log += "bounded_fetch=SKIPPED_LOCAL_ONLY"
+        } else if (zeroRetentionResearch) {
+            log += "bounded_fetch=SKIPPED_ZERO_RETENTION"
         } else if (boundedUrl.isNullOrBlank()) {
             log += "bounded_fetch=SKIPPED_SOFT_FAIL:ATROPOS_FACTORY_RESEARCH_URL unset"
         } else {

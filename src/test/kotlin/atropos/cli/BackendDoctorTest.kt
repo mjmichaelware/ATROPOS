@@ -29,4 +29,20 @@ class BackendDoctorTest {
         assertTrue(output.contains("mcp:"))
         assertTrue(!output.contains("API_KEY="))
     }
+
+    @Test
+    fun doctor_exposes_zero_retention_research_mode() {
+        val root = Files.createTempDirectory("backend-doctor-zero-retention")
+        val config = AtroposConfig(
+            ApiKeys("", "", "", ""),
+            LakehouseConfig(root.toString(), root.resolve("db").toString()),
+            RuntimeConfig("local", 0.2, zeroRetentionResearch = true)
+        )
+        val output = BackendDoctor(
+            config,
+            providers = ProviderOnboardingService(root, emptyMap()),
+            mcp = McpHostManager(root)
+        ).render().joinToString("\n")
+        assertTrue(output.contains("zero_retention_research=true"))
+    }
 }

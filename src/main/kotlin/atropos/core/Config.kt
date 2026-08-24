@@ -3,12 +3,20 @@ import java.io.File
 import java.nio.file.Path
 data class ApiKeys(val groq: String, val openai: String, val anthropic: String, val xai: String)
 data class LakehouseConfig(val mountPath: String, val dbPath: String)
-data class RuntimeConfig(val defaultProvider: String, val temperature: Double, val localOnly: Boolean = false)
+data class RuntimeConfig(
+    val defaultProvider: String,
+    val temperature: Double,
+    val localOnly: Boolean = false,
+    val zeroRetentionResearch: Boolean = false
+)
 
 /** One process-wide runtime mode source shared by routing and side-effect policy. */
 object RuntimeMode {
     fun localOnly(environment: Map<String, String> = System.getenv()): Boolean =
         environment["ATROPOS_LOCAL_ONLY"]?.trim()?.lowercase() in setOf("1", "true", "yes", "on")
+
+    fun zeroRetentionResearch(environment: Map<String, String> = System.getenv()): Boolean =
+        environment["ATROPOS_ZERO_RETENTION"]?.trim()?.lowercase() in setOf("1", "true", "yes", "on")
 }
 
 class AtroposConfig(val keys: ApiKeys, val lakehouse: LakehouseConfig, val runtime: RuntimeConfig) {
@@ -31,7 +39,12 @@ class AtroposConfig(val keys: ApiKeys, val lakehouse: LakehouseConfig, val runti
             val db = extract(content, "lakehouse_db_path") ?: "$mount/vector_storage.db"
             val provider = extract(content, "default_provider") ?: "groq"
             val localOnly = RuntimeMode.localOnly() || extractBoolean(content, "local_only")
-            return AtroposConfig(ApiKeys(groqKey, openAiKey, anthropicKey, xaiKey), LakehouseConfig(mount, db), RuntimeConfig(provider, 0.2, localOnly))
+            val zeroRetention = RuntimeMode.zeroRetentionResearch() || extractBoolean(content, "zero_retention_research")
+            return AtroposConfig(
+                ApiKeys(groqKey, openAiKey, anthropicKey, xaiKey),
+                LakehouseConfig(mount, db),
+                RuntimeConfig(provider, 0.2, localOnly, zeroRetention)
+            )
         }
         private fun extract(json: String, key: String): String? {
             return "\"$key\"\\s*:\\s*\"([^\"]+)\"".toRegex().find(json)?.groups?.get(1)?.value

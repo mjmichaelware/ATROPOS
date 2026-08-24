@@ -96,3 +96,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | S-012 / new production orphan gate | source-wired / partial | `scripts/find-orphans.py:103-177`, `.github/workflows/compile-gate.yml:31-65` | GitHub Actions `focused-backend-tests` invokes `python3 scripts/find-orphans.py --fail-on-new` | Existing canonical census now indexes token callers instead of scanning every file pair; the opt-in gate fails only newly added `.kt`/`.java` production paths with no caller, preserving known baseline orphans. `python3 -m py_compile`, `timeout 60s ... --fail-on-new` (exit 0), and `git diff --check` passed; hosted CI remains unrun. |
+
+### 2026-08-24T01:25:00Z · Backend batch: zero-retention-research-policy
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-OC-004 / zero-retention research plane | source-wired / partial | `src/main/kotlin/atropos/core/Config.kt`, `src/main/kotlin/atropos/core/factory/FactoryResearchService.kt`, `src/main/kotlin/atropos/cli/BackendDoctor.kt`, focused factory/doctor tests, hosted selector scripts | `AtroposConfig.load` → `FactoryResearchService.collect`; `CommandRouter` → `BackendDoctor.render` | `ATROPOS_ZERO_RETENTION` and `zero_retention_research` config are recognized; lakehouse/bounded remote fetches are skipped with explicit audit lines and doctor status. `git diff --check` passed; root compile/tests remain GitHub Actions evidence. |
