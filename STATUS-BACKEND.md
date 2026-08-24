@@ -1214,3 +1214,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-CORE-h/i allowlist and disabled admission | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `scripts/backend-atom-contract-test.sh` | `/mcp`/bridge → `McpHostManager.statuses/callTool` → configured allowlist, community opt-in, enabled check → bounded transport | Added CI assertions for both status-time filtering and call-time refusal of unallowlisted, community, and disabled servers. Backend contract, hosted selector parity (421), and diff check pass; hosted MCP runtime execution remains unverified. |
+
+### 2026-08-25T04:20:00Z · Agent: Codex GPT-5 · Batch: mcp-tool-budget-contract
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| ADD-MCP-002 tool injection budget | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `scripts/backend-atom-contract-test.sh` | CLI/bridge `callTool` → bounded `McpToolBudget` → `boundedTools`/`requireToolWithinBudget` before stdio or remote `tools/call` | Added CI assertions for both schema truncation and pre-call budget enforcement. Backend contract, hosted selector parity (421), and diff check pass; hosted MCP runtime execution remains unverified. |

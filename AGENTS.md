@@ -13854,6 +13854,16 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprints: `scripts/backend-atom-contract-test.sh=f17279575911`.
 
+### 2026-08-25T04:20:00Z · Agent: Codex GPT-5 · Batch: mcp-tool-budget-contract
+
+- Paths touched: `scripts/backend-atom-contract-test.sh` (+4), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: ADD-MCP-002 tool injection budget.
+- Predicate moved: the backend source gate now protects both tool-description truncation and the pre-transport `requireToolWithinBudget` check on the sole MCP host.
+- Verification actually run: backend atom contract, hosted selector parity (`421 tests`), and `git diff --check` passed. Hosted MCP runtime execution remains unverified.
+- % delta: unchanged; ADD-MCP-002 remains source-wired/partial pending hosted execution.
+- New overall estimate: unchanged.
+- Fingerprints: `scripts/backend-atom-contract-test.sh=311c3a7b3b5`.
+
 ### 2026-08-24T22:35:00Z · Agent: Codex GPT-5 · Batch: local-health-response-bounds
 
 - Paths touched: `src/main/kotlin/atropos/core/ProviderState.kt` (+10/-2), `src/main/kotlin/atropos/core/agent/ProviderSessionSupervisor.kt` (+13/-3), `scripts/backend-atom-contract-test.sh` (+2).
