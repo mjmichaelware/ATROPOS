@@ -202,6 +202,24 @@ class ShellBoundedAgencyTest {
     }
 
     @Test
+    fun git_conflicts_uses_read_only_unmerged_path_query() {
+        val repoRoot = Files.createTempDirectory("atropos-git-conflicts-")
+        var observed: List<String> = emptyList()
+        val runner = ShellCommandRunner(
+            initialDirectory = repoRoot,
+            agency = TypedToolExecutor(BoundedAgencyGate(FixedDecisionEngine(repoRoot, PolicyDecisionType.ALLOW, "test allow"))),
+            spawn = { command, _ ->
+                observed = command
+                error("test spawn seam")
+            }
+        )
+
+        runner.gitConflicts()
+
+        assertEquals(listOf("git", "diff", "--name-only", "--diff-filter=U"), observed)
+    }
+
+    @Test
     fun confirmed_git_mutation_uses_repository_scoped_file_mutation_argv() {
         val repoRoot = Files.createTempDirectory("atropos-git-mutation-argv-")
         var observed: List<String> = emptyList()

@@ -103,6 +103,10 @@ class ShellCommandRunner(
     fun gitDiff(): ShellCommandResult =
         run(listOf("git", "diff", "--"))
 
+    /** Lists only paths currently marked unmerged; read-only and bounded by the same gate. */
+    fun gitConflicts(): ShellCommandResult =
+        run(listOf("git", "diff", "--name-only", "--diff-filter=U"))
+
     /** Runs a parsed, explicitly confirmed repository mutation. */
     fun runGitMutation(command: List<String>, targetPaths: List<String>): ShellCommandResult {
         require(command.firstOrNull() == "git") { "Git mutation command must start with git" }

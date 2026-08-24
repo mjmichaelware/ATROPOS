@@ -437,7 +437,7 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
-| B-INST-002 latest artifact resolution | source-wired / partial | `install.sh`, `scripts/install-contract-test.sh` | installer entrypoint → version branch → GitHub latest-release or pinned-release asset URL | Default installation now uses `/releases/latest/download/ATROPOS.jar`; pinned `ATROPOS_VERSION` continues using `/releases/download/<version>/ATROPOS.jar`. Checksum verification and doctor remain fail-closed. `bash -n`, installer contract, diff check, and orphan gate passed; live release/device proof remains pending. |
+| B-INST-002 latest artifact resolution | source-wired / partial | `install.sh`, `scripts/install-contract-test.sh` | installer entrypoint → version branch → exact rolling `latest` tag or pinned-release asset URL | Default installation now uses `/releases/download/latest/ATROPOS.jar` because the rolling `latest` release is prerelease; pinned `ATROPOS_VERSION` continues using `/releases/download/<version>/ATROPOS.jar`. Checksum verification and doctor remain fail-closed. Local installer/release contracts, diff check, and orphan gate passed; live release/device proof remains pending. |
 
 ### 2026-08-24T07:45:00Z · Backend batch: installer-release-asset-contract
 
@@ -456,3 +456,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-CORE-e stdio tool call cardinality | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` | CLI/bridge → `McpHostManager.callTool` → one bounded stdio handshake/tools-list/tools-call exchange | Added a focused fixture asserting exactly one `tools/call` reaches the configured server. The production path already has the duplicate exchange removed; hosted/root Gradle execution remains pending. |
+
+### 2026-08-24T08:25:00Z · Backend batch: bounded-git-conflict-list
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-GITLOCAL-f conflict file list | source-wired / partial | `src/main/kotlin/atropos/cli/ShellCommandHandler.kt`, `src/main/kotlin/atropos/cli/shell/ShellCommandRunner.kt`, `src/main/kotlin/atropos/cli/input/CommandCatalog.kt`, `src/test/kotlin/atropos/cli/shell/ShellBoundedAgencyTest.kt` | `/git conflicts` → existing `ShellCommandHandler` → `ShellCommandRunner.gitConflicts` → existing `TypedToolExecutor`/`BoundedAgencyGate` | Added a read-only literal `git diff --name-only --diff-filter=U` caller. No raw process path, mutation, remote operation, or parallel git owner was added; hosted/root tests remain pending. |

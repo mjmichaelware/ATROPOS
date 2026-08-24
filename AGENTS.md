@@ -470,6 +470,15 @@ End of AGENTS.md
 - % delta: unchanged; B-MCP-CORE-e remains partial pending hosted execution.
 - Fingerprints (sha256, first 12): `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt=5931e220c01b`; `STATUS-BACKEND.md=d97551b36c8c`.
 
+### 2026-08-24T08:25:00Z · Agent: Codex GPT-5 · Batch: bounded-git-conflict-list
+
+- Paths touched: `src/main/kotlin/atropos/cli/ShellCommandHandler.kt` (+2), `src/main/kotlin/atropos/cli/shell/ShellCommandRunner.kt` (+4), `src/main/kotlin/atropos/cli/input/CommandCatalog.kt` (+1), `src/test/kotlin/atropos/cli/shell/ShellBoundedAgencyTest.kt` (+19), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-MCP-GITLOCAL-f conflict file list.
+- Predicate moved: `/git conflicts` now has a production caller through the existing bounded shell/agency path and emits only the literal unmerged-path query; no new process, git owner, mutation, or remote path was introduced.
+- Verification actually run: `git diff --check`, production/test caller assertions, hosted-selector presence, and `timeout 90s python3 scripts/find-orphans.py --fail-on-new` passed. The orphan gate still reports only 4 pre-existing files of 1034 production files (360 orphan LOC); hosted/root Gradle evidence remains unproven.
+- % delta: unchanged; the atom remains partial pending hosted execution.
+- Fingerprints (sha256, first 12): `ShellCommandHandler.kt=5b47d7896ae6`; `ShellCommandRunner.kt=c87f2b69d7c5`; `ShellBoundedAgencyTest.kt=43990ccdc183`; `STATUS-BACKEND.md=33c663243934`.
+
 ### 2026-08-24T06:48:39Z · Agent: Codex GPT-5 · Batch: anti-synthetic-velocity-output
 
 - Paths touched: `src/main/kotlin/atropos/cli/commands/VerifyCommand.kt` (+10/-4), `STATUS-BACKEND.md` (+7).

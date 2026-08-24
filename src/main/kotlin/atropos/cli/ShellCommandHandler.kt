@@ -53,12 +53,13 @@ class ShellCommandHandler(
         when {
             tokens.getOrNull(1)?.lowercase() == "status" && tokens.size == 2 -> render(shellRunner.gitStatus())
             tokens.getOrNull(1)?.lowercase() == "diff" && tokens.size == 2 -> render(shellRunner.gitDiff())
+            tokens.getOrNull(1)?.lowercase() == "conflicts" && tokens.size == 2 -> render(shellRunner.gitConflicts())
             tokens.getOrNull(1)?.lowercase() in setOf("add", "commit", "rebase-continue") ->
                 when (val parsed = GitMutationCommandParser.parse(tokens)) {
                     is GitMutationParse.Accepted -> render(shellRunner.runGitMutation(parsed.command, parsed.targetPaths))
                     is GitMutationParse.Refused -> uiEngine.renderError(parsed.message)
                 }
-            else -> uiEngine.renderError("usage: /git [status|diff|add|commit|rebase-continue]")
+            else -> uiEngine.renderError("usage: /git [status|diff|conflicts|add|commit|rebase-continue]")
         }
         return RouterOutcome.CONTINUE
     }

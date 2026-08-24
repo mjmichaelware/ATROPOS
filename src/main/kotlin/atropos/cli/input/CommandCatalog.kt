@@ -301,6 +301,7 @@ object CommandCatalog {
         CommandEntry("/ls", "list files through shell bridge"),
         CommandEntry("/git status", "git status through shell bridge"),
         CommandEntry("/git diff", "read-only git diff through the bounded shell bridge"),
+        CommandEntry("/git conflicts", "list unmerged git paths through the bounded shell bridge"),
         CommandEntry("/git add", "stage one in-territory path with explicit confirmation"),
         CommandEntry("/git commit", "create a local commit with explicit confirmation"),
         CommandEntry("/git rebase-continue", "continue a local rebase with explicit confirmation"),
