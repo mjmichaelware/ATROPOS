@@ -462,6 +462,15 @@ End of AGENTS.md
 - % delta: unchanged; B-005 / ADD-W-029 remains partial pending hosted execution.
 - Fingerprints: recorded after this batch.
 
+### 2026-08-24T13:40:00Z · Agent: Codex GPT-5 · Batch: hosted-help-bridge-selector
+
+- Paths touched: `.github/workflows/compile-gate.yml` (+3), `scripts/atropos-verify-worktree.sh` (+3), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-HELP-001 and B-005 command/help bridge contract.
+- Predicate moved: the existing CLI registry, bridge command projection, and real bridge route tests are now selected by both canonical GitHub Actions backend lanes; previously these tests could not prove the hosted root compilation path.
+- Verification actually run: selector/source presence and `git diff --check` are the local checks for this batch; hosted Kotlin execution remains pending, so no compile or bridge-green claim is made.
+- % delta: unchanged; B-HELP-001/B-005 remain partial pending hosted execution.
+- Fingerprints: recorded after this batch.
+
 ### 2026-08-24T13:20:00Z · Agent: Codex GPT-5 · Batch: mcp-stdio-lifecycle-proof
 
 - Paths touched: `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+26), `STATUS-BACKEND.md` (+7).
