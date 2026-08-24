@@ -12106,3 +12106,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: `bash scripts/mcp-example-contract-test.sh`, JSON parsing, `bash -n`, and `git diff --check` passed. Root Gradle and hosted execution remain unrun; no green claim is made.
 - % delta: unchanged; source-wired but partial pending hosted execution evidence.
 - Fingerprints: recorded after commit.
+
+### 2026-08-23T09:45:00Z · Agent: Codex GPT-5 · Batch: command-catalog-backend-parity
+
+- Paths touched: `src/test/kotlin/atropos/cli/input/CommandCatalogBackendEntriesTest.kt` (+12), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-HELP-001 command catalog/help parity.
+- Predicate moved: the focused backend contract now checks that factory resume, provider onboarding controls, MCP operations, key status, and attested context import are all advertised by the existing shared `CommandCatalog` consumed by `CommandRouter`/`HelpGenerator`.
+- Verification actually run: source inspection and `git diff --check` are the available local evidence; root Gradle and hosted execution remain unrun, so no test green claim is made.
+- % delta: unchanged; source-wired but partial pending hosted execution evidence.
+- Fingerprints: recorded after commit.

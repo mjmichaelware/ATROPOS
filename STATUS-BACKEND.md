@@ -275,3 +275,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | ADD-MCP-EX-001..013 catalog examples | source-wired / partial | `docs/mcp-examples/*.json`, `scripts/mcp-example-contract-test.sh`, `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh` | GitHub compile gate and reusable verifier → `mcp-example-contract-test.sh` → JSON catalog fixtures | Added the missing config-only examples for fetch, SQLite, Postgres, Docker, code intelligence, npm, cloud deploy, browser use, and n8n. Every example is disabled, marked community, and carries no secret; no adapter or auto-install path was added. Contract and JSON parse passed locally; hosted execution remains pending. |
+
+### 2026-08-23T09:45:00Z · Backend batch: command-catalog-backend-parity
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-HELP-001 command/help registry parity | source-wired / partial | `src/main/kotlin/atropos/cli/input/CommandCatalog.kt`, `src/main/kotlin/atropos/cli/CommandRouter.kt`, `src/test/kotlin/atropos/cli/input/CommandCatalogBackendEntriesTest.kt` | `/help` → existing `CommandRouter`/`HelpGenerator` → shared `CommandCatalog` | Focused contract now asserts factory resume, provider connect/prefer/disable, MCP search/call/ingest, keys status, and context import are all discoverable from the one registry. Hosted/root test execution remains pending. |
