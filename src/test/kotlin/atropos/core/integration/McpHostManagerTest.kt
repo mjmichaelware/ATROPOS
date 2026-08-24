@@ -9,6 +9,7 @@ import atropos.core.policy.PolicyDecisionType
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -77,6 +78,32 @@ class McpHostManagerTest {
         assertNotNull(result.evidence.sha256)
         assertTrue(Files.isRegularFile(result.evidence.path))
         assertEquals(1, Files.readAllLines(calls).size)
+    }
+
+    @Test
+    fun stdio_tool_call_reaps_server_process_after_response() {
+        val root = Files.createTempDirectory("mcp-reap")
+        val pidFile = root.resolve("pid")
+        val script = root.resolve("mcp-reap.sh")
+        Files.writeString(script, """
+            #!/bin/sh
+            printf '%s' "$$" > '${pidFile.fileName}'
+            while IFS= read -r line; do
+              case "$line" in
+                *'\"id\":1'*) printf '%s\n' '{"id":1}' ;;
+                *'\"id\":2'*) printf '%s\n' '{"id":2,"result":{"tools":[{"name":"inspect"}]}}' ;;
+                *'\"id\":3'*) printf '%s\n' '{"id":3,"result":{"content":[{"text":"ok"}]}}' ;;
+              esac
+            done
+        """.trimIndent())
+        script.toFile().setExecutable(true)
+        Files.writeString(root.resolve("mcp.json"),
+            """{"servers":[{"name":"local","transport":"stdio","command":"./mcp-reap.sh","enabled":true,"community":false}]}""")
+
+        McpHostManager(root).callTool("local", "inspect")
+
+        val pid = Files.readString(pidFile).trim().toLong()
+        assertFalse(ProcessHandle.of(pid).map { it.isAlive }.orElse(false), "MCP child process survived call")
     }
 
     @Test

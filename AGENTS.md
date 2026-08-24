@@ -462,6 +462,15 @@ End of AGENTS.md
 - % delta: unchanged; B-005 / ADD-W-029 remains partial pending hosted execution.
 - Fingerprints: recorded after this batch.
 
+### 2026-08-24T13:20:00Z · Agent: Codex GPT-5 · Batch: mcp-stdio-lifecycle-proof
+
+- Paths touched: `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+26), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-MCP-CORE-g stdio server lifecycle.
+- Predicate moved: the existing sole `McpHostManager` production path is now covered by a fixture that records the child PID and verifies the process is dead after `callTool` returns, exercising the existing `finally` cleanup rather than creating a second lifecycle owner.
+- Verification actually run: `git diff --check` passed; `atropos.core.integration.McpHostManagerTest` is already selected in both GitHub Actions lanes. Kotlin execution remains delegated to GitHub Actions; no root or hosted green claim.
+- % delta: unchanged; B-MCP-CORE-g remains partial pending hosted execution.
+- Fingerprints: recorded after this batch.
+
 ### 2026-08-24T11:20:00Z · Agent: Codex GPT-5 · Batch: github-gate-unique-ref
 
 - Paths touched: `src/main/kotlin/atropos/core/verification/GitHubActionsCompileRunner.kt` (+18/-14), `src/test/kotlin/atropos/core/verification/GitHubActionsCompileRunnerTest.kt` (+8/-1), `.github/workflows/compile-gate.yml` (+1), `scripts/atropos-verify-worktree.sh` (+1), `STATUS-BACKEND.md` (+7).

@@ -94,6 +94,12 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-005 / ADD-W-029 attested file envelope | source-wired / partial | `src/main/kotlin/atropos/bridge/BridgeFilesHandler.kt`, `src/test/kotlin/atropos/bridge/BridgeFilesHandlerTest.kt`, hosted selectors | `POST /v1/files` → existing `BridgeFilesHandler.upload` → bounded workspace upload | The focused test now recomputes and asserts both the content SHA-256 and the session/filename/content/size envelope SHA-256, proving the response is bound to the uploaded identity rather than merely containing an arbitrary hash. Hosted/root Kotlin execution remains pending; no upload-green claim. |
+
+### 2026-08-24T13:20:00Z · Backend batch: mcp-stdio-lifecycle-proof
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-CORE-g stdio lifecycle cleanup | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` | CLI/bridge → existing `McpHostManager.callTool` → `BoundedProcessRunner` → `finally` destroy/reap | Added a fixture that records the configured MCP child PID and asserts it is no longer alive after the bounded tool call returns. Hosted/root Kotlin execution remains pending; no MCP-green claim. |
 - Provider route policy now has a focused test covering both the preferred-provider tie-break and exclusion through the healthy set; the root test remains unexecuted locally because `:test` stalled at compilation.
 - Factory runtime audit: `FactoryRunOrchestrator.kt:258-290` invokes the injected repair action, then `FactoryRepairExecutor` and the existing obligation loop; `FactoryCommandHandler.kt:20-47` is the user-facing resume caller; `FactoryRunHandoff.kt:84-108` fails actionable on missing/malformed/mismatched artifacts. No factory status was upgraded without root test evidence.
 - Clean-checkout proof after commit `b1479fe8`: `./gradlew :core:jvmTest --no-daemon --max-workers=1 --rerun` passed in 52s; XML reports contain 2 tests, 0 failures, 0 errors, 0 skipped. Root Provider/Bridge/MCP/Factory tests were not re-claimed or executed.
