@@ -1148,3 +1148,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-GITLOCAL-g bounded worktree add | source-wired / partial | `src/main/kotlin/atropos/core/worktree/BoundedGitWorktreeCommandRunner.kt`, `IsolatedWorktreeService.kt`, `src/main/kotlin/atropos/cli/commands/AgentWorktreeCommandHandler.kt`, `scripts/backend-atom-contract-test.sh` | agent worktree command → existing `IsolatedWorktreeService.createWorktree()` → typed `GitWorktreeOperation.WORKTREE_ADD` → bounded process runner | Added CI source assertions for the existing production worktree-add caller and typed operation; no second Git/process owner was introduced. Backend contract, hosted selector parity (421), and diff check pass; hosted Kotlin/runtime worktree execution remains unverified. |
+
+### 2026-08-25T00:35:00Z · Agent: Codex GPT-5 · Batch: shared-help-owner-contract
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-HELP-001a/b/c shared command help | source-wired / partial | `src/main/kotlin/atropos/cli/help/HelpGenerator.kt`, `CommandRegistry.kt`, `CommandRouter.kt`, `src/main/kotlin/atropos/bridge/BridgeRoutes.kt`, `scripts/backend-atom-contract-test.sh` | CLI `/help` → `CommandRouter.renderHelpPage()` → `HelpGenerator`/`RegistryHelpSource`; bridge `/v1/commands` → same `CommandRegistry` | Added CI assertions that CLI and bridge help consume the single command registry/help generator. Backend contract, hosted selector parity (421), and diff check pass; hosted Kotlin help execution remains unverified. |

@@ -109,6 +109,13 @@ text src/main/kotlin/atropos/cli/SentryCommandHandler.kt 'redactionFilter.compac
 text src/main/kotlin/atropos/cli/McpCommandHandler.kt 'redactionFilter.compact'
 text src/main/kotlin/atropos/cli/ProviderCommandHandler.kt 'redactionFilter.compact'
 text src/main/kotlin/atropos/cli/AuthCommandHandler.kt 'redactionFilter.compact'
+file src/main/kotlin/atropos/cli/help/HelpGenerator.kt
+file src/main/kotlin/atropos/cli/input/CommandRegistry.kt
+file src/main/kotlin/atropos/bridge/BridgeRoutes.kt
+text src/main/kotlin/atropos/cli/CommandRouter.kt 'renderHelpPage'
+text src/main/kotlin/atropos/cli/help/HelpGenerator.kt 'RegistryHelpSource'
+text src/main/kotlin/atropos/cli/input/CommandRegistry.kt 'helpSections()'
+text src/main/kotlin/atropos/bridge/BridgeRoutes.kt '"/v1/commands"'
 text src/main/kotlin/atropos/cli/ui/StatusAuthRenderer.kt 'redactionFilter.redact(resolution.value)'
 text src/main/kotlin/atropos/cli/PaidCommandHandler.kt 'redactionFilter.compact'
 text src/main/kotlin/atropos/cli/SideConversationService.kt 'redactionFilter.compact'

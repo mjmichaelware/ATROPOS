@@ -13744,6 +13744,16 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprints: `scripts/backend-atom-contract-test.sh=f69b0982e3fe`.
 
+### 2026-08-25T00:35:00Z · Agent: Codex GPT-5 · Batch: shared-help-owner-contract
+
+- Paths touched: `scripts/backend-atom-contract-test.sh` (+8), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-HELP-001a/b/c shared command help.
+- Predicate moved: the backend source gate now proves CLI `/help` and bridge `/v1/commands` consume the existing `CommandRegistry`/`HelpGenerator` owner rather than diverging help tables.
+- Verification actually run: backend atom contract, hosted selector parity (`421 tests`), and `git diff --check` passed. Hosted Kotlin help execution remains unverified.
+- % delta: unchanged; B-HELP-001 remains source-wired/partial pending hosted execution.
+- New overall estimate: unchanged.
+- Fingerprints: `scripts/backend-atom-contract-test.sh=b886f690ae67`.
+
 ### 2026-08-24T22:35:00Z · Agent: Codex GPT-5 · Batch: local-health-response-bounds
 
 - Paths touched: `src/main/kotlin/atropos/core/ProviderState.kt` (+10/-2), `src/main/kotlin/atropos/core/agent/ProviderSessionSupervisor.kt` (+13/-3), `scripts/backend-atom-contract-test.sh` (+2).
