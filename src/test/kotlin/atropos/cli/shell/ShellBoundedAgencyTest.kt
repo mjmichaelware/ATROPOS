@@ -164,4 +164,40 @@ class ShellBoundedAgencyTest {
         assertEquals(AgencyDisposition.POLICY_BLOCKED, gitMutation.disposition)
         assertEquals(126, gitMutation.exitCode)
     }
+
+    @Test
+    fun git_status_uses_the_bounded_executor_with_literal_argv() {
+        val repoRoot = Files.createTempDirectory("atropos-git-status-argv-")
+        var observed: List<String> = emptyList()
+        val runner = ShellCommandRunner(
+            initialDirectory = repoRoot,
+            agency = TypedToolExecutor(BoundedAgencyGate(FixedDecisionEngine(repoRoot, PolicyDecisionType.ALLOW, "test allow"))),
+            spawn = { command, _ ->
+                observed = command
+                error("test spawn seam")
+            }
+        )
+
+        runner.gitStatus()
+
+        assertEquals(listOf("git", "status", "--short"), observed)
+    }
+
+    @Test
+    fun git_diff_uses_the_bounded_executor_with_literal_argv_and_path_boundary() {
+        val repoRoot = Files.createTempDirectory("atropos-git-diff-argv-")
+        var observed: List<String> = emptyList()
+        val runner = ShellCommandRunner(
+            initialDirectory = repoRoot,
+            agency = TypedToolExecutor(BoundedAgencyGate(FixedDecisionEngine(repoRoot, PolicyDecisionType.ALLOW, "test allow"))),
+            spawn = { command, _ ->
+                observed = command
+                error("test spawn seam")
+            }
+        )
+
+        runner.gitDiff()
+
+        assertEquals(listOf("git", "diff", "--"), observed)
+    }
 }

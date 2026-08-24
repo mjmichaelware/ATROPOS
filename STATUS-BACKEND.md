@@ -251,3 +251,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-INST release acceptance | source-wired / partial | `.github/workflows/release.yml` | Release JAR job → shell installer contract + npm installer contract before artifact packaging/publish | Release CI now executes both installer contract scripts before publishing the JAR and checksums. Local static checks remain available; hosted release execution has not run. |
+
+### 2026-08-24T07:40:00Z · Backend batch: bounded-local-git-argv-proof
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-GITLOCAL status/diff bounded wire | source-wired / partial | `src/main/kotlin/atropos/cli/shell/ShellCommandRunner.kt`, `src/main/kotlin/atropos/cli/ShellCommandHandler.kt`, `src/test/kotlin/atropos/cli/shell/ShellBoundedAgencyTest.kt`, hosted selectors | `/git status|diff` → `ShellCommandHandler` → existing `ShellCommandRunner` → `TypedToolExecutor`/`BoundedAgencyGate` | Focused tests now assert exact literal argv and the `git diff --` path boundary at the process seam; both GitHub backend lanes select the suite. Static selector checks and `git diff --check` passed; root/hosted test execution remains pending. |

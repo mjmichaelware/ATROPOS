@@ -12070,3 +12070,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: source inspection and prior shell/npm contract evidence remain valid; hosted release execution has not run and no release green claim is made.
 - % delta: unchanged; source-wired but partial pending hosted release evidence.
 - Fingerprints (sha256, first 12): `release.yml=c1189cd7a35f`; `STATUS-BACKEND.md=a8a3060ce8ca`.
+
+### 2026-08-24T07:40:00Z · Agent: Codex GPT-5 · Batch: bounded-local-git-argv-proof
+
+- Paths touched: `src/test/kotlin/atropos/cli/shell/ShellBoundedAgencyTest.kt` (+38), `.github/workflows/compile-gate.yml` (+1), `scripts/atropos-verify-worktree.sh` (+1), and `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-MCP-GITLOCAL status/diff bounded ToolExecutor wire.
+- Predicate moved: the existing `/git status` and `/git diff` production path now has focused process-seam proof that it emits only the literal bounded argv `git status --short` and `git diff --`; no raw shell interpolation or second git executor was added.
+- Verification actually run: selector checks, shell syntax, and `git diff --check` passed. Root Gradle and hosted tests remain unrun; no test green claim.
+- % delta: unchanged; source-wired but partial pending hosted execution evidence.
+- Fingerprints (sha256, first 12): `ShellBoundedAgencyTest.kt=f5630cc0dcd0`; `compile-gate.yml=5bb0b8789d48`; `atropos-verify-worktree.sh=976c22c7b505`; `STATUS-BACKEND.md=a8a3060ce8ca`.

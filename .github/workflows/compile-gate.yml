@@ -94,3 +94,4 @@ jobs:
           --tests 'atropos.cli.BackendDoctorTest'
           --tests 'atropos.cli.input.CommandCatalogBackendEntriesTest'
           --tests 'atropos.core.agent.AgentContextCollectorTest'
+          --tests 'atropos.cli.shell.ShellBoundedAgencyTest'
