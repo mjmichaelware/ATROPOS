@@ -474,3 +474,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-GITLOCAL-f conflict file list | source-wired / partial | `src/main/kotlin/atropos/cli/ShellCommandHandler.kt`, `src/main/kotlin/atropos/cli/shell/ShellCommandRunner.kt`, `src/main/kotlin/atropos/cli/input/CommandCatalog.kt`, `src/test/kotlin/atropos/cli/shell/ShellBoundedAgencyTest.kt` | `/git conflicts` → existing `ShellCommandHandler` → `ShellCommandRunner.gitConflicts` → existing `TypedToolExecutor`/`BoundedAgencyGate` | Added a read-only literal `git diff --name-only --diff-filter=U` caller. No raw process path, mutation, remote operation, or parallel git owner was added; hosted/root tests remain pending. |
+
+### 2026-08-24T11:20:00Z · Backend batch: github-gate-unique-ref
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| Phase 11 remote compile gate / GitHub Actions snapshot isolation | source-wired / partial | `src/main/kotlin/atropos/core/verification/GitHubActionsCompileRunner.kt`, `src/test/kotlin/atropos/core/verification/GitHubActionsCompileRunnerTest.kt`, `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh` | `GovernedCompileGate.forRepository` → existing `GitHubActionsCompileRunner` → one commit-derived workflow ref → `compile-gate.yml` | Remote snapshots now push without `--force` to `atropos/compile-gate/<commit-prefix>`, dispatch and polling use that same ref, and the focused test asserts the ref and absence of force-push. Shell syntax and `git diff --check` pass; GitHub-hosted execution is still required and no CI green claim is made. |

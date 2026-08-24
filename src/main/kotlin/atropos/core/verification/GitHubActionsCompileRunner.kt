@@ -31,7 +31,7 @@ import java.time.Duration
  *
  * 1. Snapshots the working tree -- including files the run has just created --
  *    into a commit, without touching the operator's index or worktree.
- * 2. Force-pushes that commit to a scratch ref.
+ * 2. Pushes that commit to a unique scratch ref.
  * 3. Dispatches the `compile gate` workflow against it.
  * 4. Waits for the run whose head SHA matches the snapshot, and reports its
  *    conclusion as an exit code.
@@ -106,12 +106,13 @@ class GitHubActionsCompileRunner(
 
         val snapshot = snapshotWorkingTree()
         Thinking.detail("ci-gate", "snapshot commit ${snapshot.take(12)} (working tree, including new files)")
+        val snapshotBranch = "$branch/${snapshot.take(12)}"
 
-        push(snapshot)
-        Thinking.detail("ci-gate", "pushed snapshot to $branch")
+        push(snapshot, snapshotBranch)
+        Thinking.detail("ci-gate", "pushed snapshot to $snapshotBranch")
 
-        dispatch(slug, authorization)
-        val run = awaitRun(slug, authorization, snapshot)
+        dispatch(slug, authorization, snapshotBranch)
+        val run = awaitRun(slug, authorization, snapshot, snapshotBranch)
 
         val conclusion = run.conclusion ?: "no conclusion"
         Thinking.step("ci-gate", "GitHub Actions concluded: $conclusion")
@@ -154,8 +155,10 @@ class GitHubActionsCompileRunner(
         }
     }
 
-    private fun push(commit: String) {
-        git(listOf("git", "push", "--force", "origin", "$commit:refs/heads/$branch"))
+    private fun push(commit: String, snapshotBranch: String) {
+        // The commit-derived ref makes concurrent gates independent and the
+        // absence of --force preserves unrelated remote history.
+        git(listOf("git", "push", "origin", "$commit:refs/heads/$snapshotBranch"))
     }
 
     private fun resolveSlug(): String {
@@ -177,13 +180,13 @@ class GitHubActionsCompileRunner(
 
     // ----- GitHub ----------------------------------------------------------
 
-    private fun dispatch(slug: String, authorization: String) {
+    private fun dispatch(slug: String, authorization: String, snapshotBranch: String) {
         val response = http(
             Request(
                 method = "POST",
                 url = "$API/repos/$slug/actions/workflows/$workflowFile/dispatches",
                 token = authorization,
-                body = """{"ref":${quote(branch)},"inputs":{"reason":"atropos compile gate"}}"""
+                body = """{"ref":${quote(snapshotBranch)},"inputs":{"reason":"atropos compile gate"}}"""
             )
         )
         // 204 is the documented success. Anything else is worth reading, and a
@@ -205,7 +208,7 @@ class GitHubActionsCompileRunner(
      * `head_sha` rather than on "most recent" matters: two gate runs from the
      * same operator minutes apart would otherwise read each other's results.
      */
-    private fun awaitRun(slug: String, authorization: String, headSha: String): RunHandle {
+    private fun awaitRun(slug: String, authorization: String, headSha: String, snapshotBranch: String): RunHandle {
         val deadline = now() + maximumWait.toMillis()
         // Bounded by iterations as well as by the clock. A wall-clock bound is
         // the right one, and it is also the one that fails open if a clock
@@ -223,7 +226,7 @@ class GitHubActionsCompileRunner(
                 Request(
                     method = "GET",
                     url = "$API/repos/$slug/actions/workflows/$workflowFile/runs" +
-                        "?branch=$branch&per_page=20",
+                        "?branch=$snapshotBranch&per_page=20",
                     token = authorization
                 )
             )
@@ -280,11 +283,12 @@ class GitHubActionsCompileRunner(
         const val DEFAULT_WORKFLOW = "compile-gate.yml"
 
         /**
-         * A dedicated ref, force-pushed.
+         * A base for unique commit-derived refs.
          *
          * Not the operator's branch: a gate run is a snapshot of a tree
-         * mid-mutation, and it has no business landing anywhere a human is
-         * reading history.
+         * mid-mutation, and it has no business landing on a human branch. Each
+         * invocation appends its commit prefix, so it never overwrites another
+         * gate's ref and never needs a force push.
          */
         const val DEFAULT_BRANCH = "atropos/compile-gate"
 

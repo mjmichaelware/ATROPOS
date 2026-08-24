@@ -160,7 +160,13 @@ class GitHubActionsCompileRunnerTest {
         // has just written are in the snapshot.
         assertTrue(commands.any { it.startsWith("git add -A") }, commands.toString())
         assertTrue(commands.any { it.startsWith("git commit-tree") }, commands.toString())
-        assertTrue(commands.any { it.contains("push") }, commands.toString())
+        val push = commands.firstOrNull { it.startsWith("git push ") }
+            ?: error("snapshot must be pushed")
+        assertTrue(push.contains("refs/heads/atropos/compile-gate/$SHA"), push)
+        assertTrue(!push.contains("--force"), push)
+        val dispatch = github.requests.first { it.method == "POST" }
+        assertTrue(dispatch.body.orEmpty().contains("atropos/compile-gate/$SHA"), dispatch.body)
+        assertTrue(dispatch.body.orEmpty().contains("reason"), dispatch.body)
         assertTrue(
             git.environments.any { it.containsKey("GIT_INDEX_FILE") },
             "the snapshot must not stage into the operator's real index"

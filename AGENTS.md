@@ -443,6 +443,7 @@ When Phase 11 self-build is fully green, ATROPOS can begin to perform this loop 
 
 End of AGENTS.md
 
+
 ### 2026-08-24T07:45:00Z · Agent: Codex GPT-5 · Batch: installer-release-asset-contract
 
 - Paths touched: `.github/workflows/release.yml` (+3), `scripts/release-installer-contract-test.sh` (+16), `STATUS-BACKEND.md` (+7).
@@ -451,6 +452,15 @@ End of AGENTS.md
 - Verification actually run: `bash -n scripts/release-installer-contract-test.sh`, `bash scripts/release-installer-contract-test.sh`, `bash scripts/install-contract-test.sh`, `timeout 90s python3 scripts/find-orphans.py --fail-on-new`, and `git diff --check` passed. The orphan gate still reports only the four pre-existing baseline files (4/1034, 360 LOC). GitHub Actions execution, published release, and device installation remain unproven; no root-green claim.
 - % delta: unchanged; B-INST-002 remains partial pending hosted release evidence.
 - Fingerprints (sha256, first 12): `scripts/release-installer-contract-test.sh=c4139f3e1fe4`; `.github/workflows/release.yml=46bf3530786b`; `install.sh=6ece5f472305`.
+
+### 2026-08-24T11:20:00Z · Agent: Codex GPT-5 · Batch: github-gate-unique-ref
+
+- Paths touched: `src/main/kotlin/atropos/core/verification/GitHubActionsCompileRunner.kt` (+18/-14), `src/test/kotlin/atropos/core/verification/GitHubActionsCompileRunnerTest.kt` (+8/-1), `.github/workflows/compile-gate.yml` (+1), `scripts/atropos-verify-worktree.sh` (+1), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: Phase 11 remote compile-gate path; GitHub Actions backend verification lane.
+- Predicate moved: remote self-host compilation no longer force-pushes a shared scratch branch. Each snapshot is pushed to `atropos/compile-gate/<commit-prefix>`, and dispatch plus run polling use that exact ref, preserving concurrent-run isolation while keeping `GovernedCompileGate` as the sole compile owner.
+- Verification actually run: targeted `git diff --check`, `bash -n scripts/atropos-verify-worktree.sh`, provider/install/release/action contracts passed. The focused `GitHubActionsCompileRunnerTest` is now selected by both canonical hosted lanes; hosted execution remains unrun, so no compile/test green claim is made.
+- % delta: unchanged; Phase 11 remains partial for live hosted self-build proof.
+- Fingerprints (sha256, first 12): `GitHubActionsCompileRunner.kt=0f2f30a4d176`, `GitHubActionsCompileRunnerTest.kt=7621dcb09a0`, `compile-gate.yml=f063f1035e3d`, `atropos-verify-worktree.sh=8c193534ad5f`, `STATUS-BACKEND.md=5656652f27c5`.
 
 ### 2026-08-24T07:55:00Z · Agent: Codex GPT-5 · Batch: installer-prerelease-tag-correction
 
@@ -12232,6 +12242,7 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: `bash -n scripts/atropos-verify-worktree.sh scripts/atropos-verify-action-contract-test.sh`, `bash scripts/atropos-verify-action-contract-test.sh` (`ATROPOS_VERIFY_ACTION_CONTRACT_OK`), and `git diff --check` passed. GitHub Actions has not run; no root compile/test green claim is made.
 - % delta: unchanged; source-wired but partial pending hosted execution evidence.
 - Fingerprints: recorded after the batch commit.
+
 
 ### 2026-08-24T07:18:00Z · Agent: Codex GPT-5 · Batch: gated-local-git-mutations
 

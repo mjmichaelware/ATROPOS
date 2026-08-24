@@ -52,6 +52,7 @@ if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
     --tests 'atropos.core.worktree.BoundedGitWorktreeCommandRunnerTest' \
     --tests 'atropos.core.verification.GateReachabilityCheckerTest' \
     --tests 'atropos.core.verification.AcceptanceVelocityTest' \
+    --tests 'atropos.core.verification.GitHubActionsCompileRunnerTest' \
     --tests 'atropos.core.github.GitHubApiClientTest' \
     --tests 'atropos.core.github.GitHubBindingTest' \
     --tests 'atropos.core.scavenge.GitHubScavengerTest'
