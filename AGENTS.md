@@ -12850,3 +12850,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: `git diff --check`, `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (382 tests)`), and `timeout 90s python3 scripts/find-orphans.py --fail-on-new` (exit 0; only 4 pre-existing baseline orphan files / 360 LOC) passed. Root/hosted Kotlin execution remains pending; no test-green claim.
 - % delta: unchanged; R6 remains source-wired / partial pending hosted execution and runtime MCP proof.
 - Fingerprints (sha256, first 12): `McpHostManager.kt=70e91654b2ab`, `TypedToolExecutor.kt=45d96929747a`, `TypedToolExecutorTest.kt=3a21c1522164`.
+
+### 2026-08-25T00:25:00Z · Agent: Codex GPT-5 · Correction: typed-executor-decision-reference
+
+- Paths touched: `src/main/kotlin/atropos/core/policy/TypedToolExecutor.kt` (+5/-5), `STATUS-BACKEND.md` (+7), `AGENTS.md` (+7).
+- Acceptance predicate checked: the new pre-judged `TypedToolExecutor.execute(AgencyDecision)` overload must compile without references to the proposal-only overload scope.
+- Correction: all result metadata now references `decision.proposal`; no behavior or policy owner changed.
+- Verification actually run: `git diff --check` passed. Root/hosted Kotlin execution remains pending; no test-green claim.
+- % delta: unchanged; R6 remains source-wired / partial.
+- Fingerprint: `TypedToolExecutor.kt=4daca2b9a91b`.

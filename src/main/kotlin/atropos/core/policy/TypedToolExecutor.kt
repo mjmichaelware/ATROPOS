@@ -25,7 +25,7 @@ class TypedToolExecutor(
     ): ToolExecutionResult {
         return when (decision.disposition) {
             AgencyDisposition.POLICY_BLOCKED -> ToolExecutionResult(
-                proposalId = proposal.id,
+                proposalId = decision.proposal.id,
                 disposition = decision.disposition,
                 policyDecision = decision.policyDecision,
                 authorized = false,
@@ -34,7 +34,7 @@ class TypedToolExecutor(
             )
 
             AgencyDisposition.APPROVAL_REQUIRED -> ToolExecutionResult(
-                proposalId = proposal.id,
+                proposalId = decision.proposal.id,
                 disposition = decision.disposition,
                 policyDecision = decision.policyDecision,
                 authorized = false,
@@ -45,16 +45,16 @@ class TypedToolExecutor(
             AgencyDisposition.ALLOWED -> {
                 if (executor == null) {
                     ToolExecutionResult(
-                        proposalId = proposal.id,
+                        proposalId = decision.proposal.id,
                         disposition = decision.disposition,
                         policyDecision = decision.policyDecision,
                         authorized = true,
                         executed = false,
-                        refusalReason = "no typed executor bound for ${proposal.actionClass.name.lowercase()}"
+                        refusalReason = "no typed executor bound for ${decision.proposal.actionClass.name.lowercase()}"
                     )
                 } else {
                     ToolExecutionResult(
-                        proposalId = proposal.id,
+                        proposalId = decision.proposal.id,
                         disposition = decision.disposition,
                         policyDecision = decision.policyDecision,
                         authorized = true,

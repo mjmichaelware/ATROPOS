@@ -93,6 +93,12 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | --- | --- | --- | --- | --- |
 | R6 / B-MCP-FS typed execution seam | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `src/main/kotlin/atropos/core/policy/TypedToolExecutor.kt`, `src/test/kotlin/atropos/core/policy/TypedToolExecutorTest.kt` | CLI/bridge → `McpHostManager.callTool` → existing `McpTerritoryBridge` decision → `TypedToolExecutor.execute(AgencyDecision)` → bounded stdio/HTTP transport | MCP transport now executes through the existing typed executor using the already-judged decision, avoiding a second gate evaluation while preserving the single inbound territory/policy crossing. Added proof for executing an already-admitted decision. Static selector/orphan/diff checks pass; root/hosted Kotlin execution remains pending. |
 
+### 2026-08-25T00:25:00Z · Backend correction: typed-executor-decision-reference
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| R6 typed executor overload compile correction | source-wired / partial | `src/main/kotlin/atropos/core/policy/TypedToolExecutor.kt` | existing `McpHostManager` pre-judged decision caller | Corrected the overload’s result metadata to use `decision.proposal` rather than the removed local `proposal` variable. `git diff --check` passes; root/hosted Kotlin execution remains pending and no test-green claim is made. |
+
 ## Wave residual audit
 
 | residual | status | evidence / caller | remaining truth |
