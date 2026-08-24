@@ -13305,6 +13305,11 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprints: pending post-commit hash.
 
+### 2026-08-25T00:41:00Z · Agent: Codex GPT-5 · Batch: installer-artifact-input-fingerprint
+
+- Fingerprint: `install.sh=8d0a1b7bbfd9`.
+- Commit evidence: `5e85eb79`.
+
 ### 2026-08-25T00:20:00Z · Agent: Codex GPT-5 · Batch: gha-verify-script-boundary
 
 - Paths touched: `.github/actions/atropos-verify/action.yml` (+9), `.github/workflows/compile-gate.yml` (+3), `scripts/atropos-verify-action-contract-test.sh` (+2), `scripts/atropos-verify-action-path-test.sh` (+13), `scripts/atropos-verify-worktree.sh` (+1), `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+7).
