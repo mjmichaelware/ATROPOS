@@ -87,12 +87,20 @@ text src/main/kotlin/atropos/cli/input/CommandCatalog.kt '"/mcp test"'
 file src/main/kotlin/atropos/core/integration/IntegrationRegistry.kt
 file src/main/kotlin/atropos/core/sentry/SentryApiClient.kt
 file src/main/kotlin/atropos/core/sentry/SentryRepairCoordinator.kt
+file src/main/kotlin/atropos/cli/SentryCommandHandler.kt
 file src/main/kotlin/atropos/core/github/GitHubApiClient.kt
 file src/main/kotlin/atropos/core/github/GitHubBinding.kt
 file src/main/kotlin/atropos/cli/shell/ShellCommandRunner.kt
 text src/main/kotlin/atropos/core/sentry/SentryApiClient.kt 'IntegrationRegistry'
 text src/main/kotlin/atropos/core/sentry/SentryApiClient.kt 'isJsonObjectEnvelope'
 text src/main/kotlin/atropos/core/sentry/SentryApiClient.kt 'listUnresolvedIssues'
+text src/main/kotlin/atropos/core/sentry/SentryRepairCoordinator.kt 'fun prepare'
+text src/main/kotlin/atropos/core/sentry/SentryRepairCoordinator.kt 'TerritoryEnforcer'
+text src/main/kotlin/atropos/core/sentry/SentryRepairCoordinator.kt 'workerProposals.propose'
+text src/main/kotlin/atropos/core/sentry/SentryRepairCoordinator.kt 'evidenceStore.put'
+text src/main/kotlin/atropos/cli/SentryCommandHandler.kt '"list", "inspect", "propose"'
+text src/main/kotlin/atropos/cli/CommandRouter.kt 'SentryCommandHandler(uiEngine)'
+text src/main/kotlin/atropos/cli/CommandRouter.kt '"/sentry" ->'
 text src/main/kotlin/atropos/core/github/GitHubApiClient.kt 'SecretSinkMatrix'
 text src/main/kotlin/atropos/core/github/GitHubApiClient.kt 'BoundedAgencyGate'
 text src/main/kotlin/atropos/core/github/GitHubApiClient.kt 'MAX_RESPONSE_CHARS'

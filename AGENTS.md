@@ -13764,6 +13764,16 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprints: `CommandCatalog.kt=412f3489b233`; `scripts/backend-atom-contract-test.sh=db900ae05686`.
 
+### 2026-08-25T01:20:00Z · Agent: Codex GPT-5 · Batch: sentry-repair-loop-contract
+
+- Paths touched: `scripts/backend-atom-contract-test.sh` (+9), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-MCP-SENTRY issue-to-territory proposal/evidence loop.
+- Predicate moved: the backend source gate now proves `/sentry list|inspect|propose` reaches the registered Sentry client, territory enforcement, existing independently verified worker proposal service, and evidence store.
+- Verification actually run: backend atom contract, hosted selector parity (`421 tests`), and `git diff --check` passed. Hosted Kotlin/live credentialed Sentry execution remains unverified.
+- % delta: unchanged; B-MCP-SENTRY remains source-wired/partial pending hosted/live evidence.
+- New overall estimate: unchanged.
+- Fingerprints: `scripts/backend-atom-contract-test.sh=c9196a07301a`.
+
 ### 2026-08-24T22:35:00Z · Agent: Codex GPT-5 · Batch: local-health-response-bounds
 
 - Paths touched: `src/main/kotlin/atropos/core/ProviderState.kt` (+10/-2), `src/main/kotlin/atropos/core/agent/ProviderSessionSupervisor.kt` (+13/-3), `scripts/backend-atom-contract-test.sh` (+2).
