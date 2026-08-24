@@ -1172,3 +1172,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-GITHUB CLI/binding caller chain | source-wired / partial | `src/main/kotlin/atropos/cli/GitHubCommandHandler.kt`, `GitHubBinding.kt`, `CommandRouter.kt`, `scripts/backend-atom-contract-test.sh`, `scripts/github-write-contract-test.sh` | `/github issues|issue|prs|pr-files|checks|branch-protection|mutations` → existing `GitHubCommandHandler` → `GitHubBinding` → gated `GitHubApiClient` | Added backend source assertions for the production router/handler/binding chain. Backend contract, GitHub write contract (`7` operations), hosted selector parity (`421`), and diff check pass; hosted credentialed GitHub execution remains unverified. |
+
+### 2026-08-25T02:00:00Z · Agent: Codex GPT-5 · Batch: git-read-cli-owner-contract
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-GITLOCAL-a/b/f read operations | source-wired / partial | `src/main/kotlin/atropos/cli/ShellCommandHandler.kt`, `src/main/kotlin/atropos/cli/shell/ShellCommandRunner.kt`, `CommandRouter.kt`, `scripts/backend-atom-contract-test.sh` | `/git status|diff|conflicts` → `ShellCommandHandler.git()` → existing bounded `ShellCommandRunner.gitStatus/gitDiff/gitConflicts()` → `TypedToolExecutor`/`BoundedAgencyGate` | Added CI assertions for the three production read callers and their shared bounded execution owner. Backend contract, hosted selector parity (421), and diff check pass; hosted Kotlin CLI execution remains unverified. |

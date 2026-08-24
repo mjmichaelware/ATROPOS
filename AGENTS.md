@@ -13784,6 +13784,16 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprints: `scripts/backend-atom-contract-test.sh=d09b36d4fb45`.
 
+### 2026-08-25T02:00:00Z · Agent: Codex GPT-5 · Batch: git-read-cli-owner-contract
+
+- Paths touched: `scripts/backend-atom-contract-test.sh` (+8), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-MCP-GITLOCAL-a/b/f read operations.
+- Predicate moved: the backend source gate now proves `/git status`, `/git diff`, and `/git conflicts` reach the existing bounded shell runner and agency gate, without a raw process or second Git owner.
+- Verification actually run: backend atom contract, hosted selector parity (`421 tests`), and `git diff --check` passed. Hosted Kotlin CLI execution remains unverified.
+- % delta: unchanged; B-MCP-GITLOCAL-a/b/f remain source-wired/partial pending hosted execution.
+- New overall estimate: unchanged.
+- Fingerprints: `scripts/backend-atom-contract-test.sh=a929032823bc`.
+
 ### 2026-08-24T22:35:00Z · Agent: Codex GPT-5 · Batch: local-health-response-bounds
 
 - Paths touched: `src/main/kotlin/atropos/core/ProviderState.kt` (+10/-2), `src/main/kotlin/atropos/core/agent/ProviderSessionSupervisor.kt` (+13/-3), `scripts/backend-atom-contract-test.sh` (+2).

@@ -92,6 +92,7 @@ file src/main/kotlin/atropos/core/github/GitHubApiClient.kt
 file src/main/kotlin/atropos/core/github/GitHubBinding.kt
 file src/main/kotlin/atropos/cli/GitHubCommandHandler.kt
 file src/main/kotlin/atropos/cli/shell/ShellCommandRunner.kt
+file src/main/kotlin/atropos/cli/ShellCommandHandler.kt
 text src/main/kotlin/atropos/core/sentry/SentryApiClient.kt 'IntegrationRegistry'
 text src/main/kotlin/atropos/core/sentry/SentryApiClient.kt 'isJsonObjectEnvelope'
 text src/main/kotlin/atropos/core/sentry/SentryApiClient.kt 'listUnresolvedIssues'
@@ -149,6 +150,13 @@ text src/main/kotlin/atropos/core/provider/QuotaLedger.kt 'StandardCopyOption.AT
 text src/main/kotlin/atropos/core/provider/QuotaLedger.kt 'Files.createTempFile'
 text src/main/kotlin/atropos/core/provider/QuotaLedger.kt 'atomicWrite(restored'
 text src/main/kotlin/atropos/cli/shell/ShellCommandRunner.kt 'BoundedAgencyGate'
+text src/main/kotlin/atropos/cli/shell/ShellCommandRunner.kt 'fun gitStatus()'
+text src/main/kotlin/atropos/cli/shell/ShellCommandRunner.kt 'fun gitDiff()'
+text src/main/kotlin/atropos/cli/shell/ShellCommandRunner.kt 'fun gitConflicts()'
+text src/main/kotlin/atropos/cli/ShellCommandHandler.kt 'tokens.getOrNull(1)?.lowercase() == "status"'
+text src/main/kotlin/atropos/cli/ShellCommandHandler.kt 'tokens.getOrNull(1)?.lowercase() == "diff"'
+text src/main/kotlin/atropos/cli/ShellCommandHandler.kt 'tokens.getOrNull(1)?.lowercase() == "conflicts"'
+text src/main/kotlin/atropos/cli/CommandRouter.kt 'shellCommand.git(tokens)'
 text src/main/kotlin/atropos/cli/ui/StatusQuotaRenderer.kt 'redactionFilter.redact(item.reason)'
 text src/main/kotlin/atropos/core/provider/adapter/AdapterRouteFacade.kt 'redactionFilter.redact(it.reason)'
 text src/main/kotlin/atropos/cli/ui/AnsiTerminalEngine.kt 'val safeLines = lines.map(redactionFilter::redact)'
