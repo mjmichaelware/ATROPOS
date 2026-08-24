@@ -189,7 +189,7 @@ class StatusQuotaRenderer(
         val paidLock = quota?.paidLocked ?: provider.isPaid()
         val reset = formatEpoch(quota?.resetAtEpochMs)
         val cooldown = formatEpoch(quota?.cooldownUntilEpochMs)
-        return "${provider.id.padEnd(18)} cost=$cost q=${provider.quotaTier} state=$state reason=${item.reason} reset=$reset cooldown=$cooldown paid_locked=$paidLock"
+        return "${provider.id.padEnd(18)} cost=$cost q=${provider.quotaTier} state=$state reason=${redactionFilter.redact(item.reason)} reset=$reset cooldown=$cooldown paid_locked=$paidLock"
     }
 
     private fun renderFallbackChain(decision: RoutePolicyDecision): String {

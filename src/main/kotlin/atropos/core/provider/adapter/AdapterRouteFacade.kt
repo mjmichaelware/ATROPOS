@@ -24,6 +24,7 @@ import atropos.core.policy.BoundedAgencyGate
 import atropos.core.policy.ProviderActionProposals
 import atropos.core.provider.NormalizedProviderFailureType
 import atropos.core.provider.ProviderFailure
+import atropos.core.security.RedactionFilter
 import java.util.Locale
 
 data class AdapterRouteResult(
@@ -47,6 +48,7 @@ class AdapterRouteFacade(
 ) {
     private val classifier = ProviderTaskClassifier()
     private val agencyGate = BoundedAgencyGate()
+    private val redactionFilter = RedactionFilter()
     private val unavailableQueue by lazy { AgentQueueService() }
 
     fun decide(prompt: String, dryRun: Boolean = true): AdapterRouteResult {
@@ -169,8 +171,8 @@ class AdapterRouteFacade(
         if (decision.eligible.isEmpty()) {
             out += "  none"
         } else {
-            decision.eligible.take(10).forEach {
-                out += "  ${it.provider.id} reason=${it.reason} state=${it.quota?.state?.name?.lowercase(Locale.US) ?: "quota_unknown"}"
+                decision.eligible.take(10).forEach {
+                    out += "  ${it.provider.id} reason=${redactionFilter.redact(it.reason)} state=${it.quota?.state?.name?.lowercase(Locale.US) ?: "quota_unknown"}"
             }
         }
 
@@ -178,8 +180,8 @@ class AdapterRouteFacade(
         if (decision.skipped.isEmpty()) {
             out += "  none"
         } else {
-            decision.skipped.take(14).forEach {
-                out += "  ${it.provider.id} reason=${it.reason} state=${it.quota?.state?.name?.lowercase(Locale.US) ?: "quota_unknown"}"
+                decision.skipped.take(14).forEach {
+                    out += "  ${it.provider.id} reason=${redactionFilter.redact(it.reason)} state=${it.quota?.state?.name?.lowercase(Locale.US) ?: "quota_unknown"}"
             }
         }
 
