@@ -58,6 +58,8 @@ This file records backend implementation status for the current engine wave. A r
 
 | B-006 HTTP source-binding egress gate | source-wired / partial | `src/main/kotlin/atropos/core/provider/SourceBindingFetcher.kt`, `src/test/kotlin/atropos/core/provider/SourceBindingContextPackerTest.kt`, `scripts/backend-atom-contract-test.sh` | `CodebaseContextPacker` → existing `SourceBindingFetcher.fetch()` → HTTP bundle branch → `SecretSinkMatrix` | Remote HTTP source retrieval now refuses before network access unless the canonical egress sink is permitted. Backend contract, hosted selector parity (418), and diff check pass; hosted Kotlin and approved remote evidence remain pending. |
 
+| B-MCP-OAUTH-UX GitHub egress/localOnly gate | source-wired / partial | `src/main/kotlin/atropos/core/github/GitHubDeviceAuthClient.kt`, `src/test/kotlin/atropos/core/github/GitHubDeviceAuthClientTest.kt`, `scripts/backend-atom-contract-test.sh` | `/auth github` → existing `AuthCommandHandler` → `GitHubDeviceAuthClient.begin/poll` → existing OAuth transport/vault | GitHub OAuth now refuses before transport when localOnly is active or network secret egress is not permitted. Backend contract, hosted selector parity (418), and diff check pass; hosted/live OAuth and operator client registration remain pending. |
+
 ## Commands
 
 - `/factory resume <runId>` — read-only attested resume inspection; execution requires the existing router callback path.

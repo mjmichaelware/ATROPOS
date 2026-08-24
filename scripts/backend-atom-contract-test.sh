@@ -24,6 +24,7 @@ text src/main/kotlin/atropos/core/provider/SourceBindingFetcher.kt 'disabled by 
 text src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt 'genericProviderIds'
 text src/main/kotlin/atropos/core/provider/SourceBindingFetcher.kt 'connectTimeout(java.time.Duration.ofSeconds(5))'
 text src/main/kotlin/atropos/core/provider/SourceBindingFetcher.kt 'SecretSinkMatrix.isEgressPermitted'
+text src/main/kotlin/atropos/core/github/GitHubDeviceAuthClient.kt 'GitHub OAuth disabled by local-only mode'
 
 # One bridge owner for the declared local HTTP/SSE surface.
 file src/main/kotlin/atropos/bridge/http/EngineHttpServer.kt

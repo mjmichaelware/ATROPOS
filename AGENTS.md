@@ -13258,3 +13258,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: backend atom contract, hosted selector contract (418), and `git diff --check` passed. Root/hosted Kotlin execution remains pending.
 - % delta: unchanged; B-006 remains source-wired/partial pending executable hosted evidence and approved remote retrieval proof.
 - Fingerprints (sha256, first 12): `SourceBindingFetcher.kt=cd89ddb84b1b`; `SourceBindingContextPackerTest.kt=3084078a795c`; `backend-atom-contract-test.sh=c82c479993a1`.
+
+### 2026-08-24T19:47:59Z · Agent: Codex GPT-5 · Batch: github-oauth-egress-localonly-gate
+
+- Paths touched: `src/main/kotlin/atropos/core/github/GitHubDeviceAuthClient.kt` (+13), `src/test/kotlin/atropos/core/github/GitHubDeviceAuthClientTest.kt` (+35), `scripts/backend-atom-contract-test.sh` (+1).
+- Atoms / phases affected: B-MCP-OAUTH-UX, B-LOCAL-ONLY, and secret-egress enforcement.
+- Predicate moved: GitHub device authorization and polling now refuse before transport in local-only mode or when `SecretSinkMatrix.EGRESS_URL` is not permitted; the existing public-client/device flow and `TokenIsolationVault` storage remain unchanged.
+- Verification actually run: backend atom contract, hosted selector contract (418), and `git diff --check` passed. Root/hosted Kotlin and live OAuth execution remain pending.
+- % delta: unchanged; B-MCP-OAUTH-UX remains source-wired/partial pending operator client registration and hosted/live evidence.
+- Fingerprints (sha256, first 12): `GitHubDeviceAuthClient.kt=61489dc364c9`; `GitHubDeviceAuthClientTest.kt=c52d4e043b57`; `backend-atom-contract-test.sh=5da4b5c05fd3`.

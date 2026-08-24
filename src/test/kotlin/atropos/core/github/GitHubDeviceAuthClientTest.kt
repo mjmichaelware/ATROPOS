@@ -2,13 +2,27 @@
 package atropos.core.github
 
 import atropos.core.security.TokenIsolationVault
+import atropos.core.security.SecretSinkKind
+import atropos.core.security.SecretSinkMatrix
 import java.nio.file.Files
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class GitHubDeviceAuthClientTest {
+    @BeforeTest
+    fun permitOAuthFixtureEgress() {
+        SecretSinkMatrix.setPermitted(SecretSinkKind.EGRESS_URL, true)
+    }
+
+    @AfterTest
+    fun resetOAuthFixtureEgress() {
+        SecretSinkMatrix.resetDefaults()
+    }
+
     @Test
     fun device_flow_polls_pending_then_stores_token_in_existing_vault() {
         val root = Files.createTempDirectory("github-device-auth")
@@ -45,5 +59,31 @@ class GitHubDeviceAuthClientTest {
         val client = GitHubDeviceAuthClient(clientId = " ", transport = GitHubOAuthTransport { error("network must not run") })
         val failure = assertFailsWith<IllegalStateException> { client.begin() }
         assertTrue(failure.message!!.contains("ATROPOS_GITHUB_OAUTH_CLIENT_ID"))
+    }
+
+    @Test
+    fun local_only_mode_refuses_before_oauth_transport() {
+        val client = GitHubDeviceAuthClient(
+            clientId = "public-client-id",
+            localOnly = true,
+            transport = GitHubOAuthTransport { error("network must not run") }
+        )
+
+        val failure = assertFailsWith<IllegalStateException> { client.begin() }
+
+        assertTrue(failure.message!!.contains("local-only"))
+    }
+
+    @Test
+    fun egress_sink_refusal_precedes_oauth_transport() {
+        SecretSinkMatrix.resetDefaults()
+        val client = GitHubDeviceAuthClient(
+            clientId = "public-client-id",
+            transport = GitHubOAuthTransport { error("network must not run") }
+        )
+
+        val failure = assertFailsWith<IllegalStateException> { client.begin() }
+
+        assertTrue(failure.message!!.contains("SecretSinkMatrix"))
     }
 }

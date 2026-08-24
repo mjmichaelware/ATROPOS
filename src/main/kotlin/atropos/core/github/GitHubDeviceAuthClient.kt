@@ -3,6 +3,8 @@ package atropos.core.github
 
 import atropos.core.AtroposConfig
 import atropos.core.security.TokenIsolationVault
+import atropos.core.security.SecretSinkKind
+import atropos.core.security.SecretSinkMatrix
 import java.net.URI
 import java.net.URLEncoder
 import java.net.http.HttpClient
@@ -43,9 +45,11 @@ class GitHubDeviceAuthClient(
         AtroposConfig.configRoot().resolve("secrets")
     ),
     private val sleeper: (Long) -> Unit = Thread::sleep,
-    private val maxPolls: Int = 60
+    private val maxPolls: Int = 60,
+    private val localOnly: Boolean = AtroposConfig.load().runtime.localOnly
 ) {
     fun begin(): GitHubDeviceAuthorization {
+        requireNetworkAccess()
         val id = clientId?.trim()?.takeIf { it.isNotEmpty() }
             ?: error("GitHub OAuth client id is not configured; set ATROPOS_GITHUB_OAUTH_CLIENT_ID")
         val response = transport.send(
@@ -75,6 +79,7 @@ class GitHubDeviceAuthClient(
     }
 
     fun poll(authorization: GitHubDeviceAuthorization): GitHubDeviceToken {
+        requireNetworkAccess()
         val id = clientId?.trim()?.takeIf { it.isNotEmpty() }
             ?: error("GitHub OAuth client id is not configured; set ATROPOS_GITHUB_OAUTH_CLIENT_ID")
         repeat(maxPolls.coerceAtLeast(1)) {
@@ -110,6 +115,13 @@ class GitHubDeviceAuthClient(
     fun store(token: GitHubDeviceToken): Path {
         require(token.accessToken.isNotBlank()) { "GitHub OAuth returned an empty token" }
         return vault.writeSecret("GITHUB_TOKEN", token.accessToken)
+    }
+
+    private fun requireNetworkAccess() {
+        check(!localOnly) { "GitHub OAuth disabled by local-only mode" }
+        check(SecretSinkMatrix.isEgressPermitted(SecretSinkKind.EGRESS_URL)) {
+            "GitHub OAuth refused: SecretSinkMatrix does not permit network egress"
+        }
     }
 
     private fun form(vararg values: Pair<String, String>): String = values.joinToString("&") { (key, value) ->
