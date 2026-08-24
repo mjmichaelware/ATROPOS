@@ -7,6 +7,8 @@ import atropos.core.provider.InMemoryQuotaLedger
 import atropos.core.provider.ProviderAvailabilityState
 import atropos.core.provider.ProviderQuotaRecord
 import atropos.core.provider.StaticProviderDescriptorRegistry
+import atropos.core.provider.ProviderUsage
+import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
@@ -32,5 +34,26 @@ class QuotaProjectionTest {
         assertTrue(json.contains("\"id\":\"groq\""))
         assertTrue(json.contains("\"usedTokens\":123"))
         assertTrue(!json.contains("api_key", ignoreCase = true))
+    }
+
+    @Test
+    fun remaining_quota_survives_ledger_restart_and_is_projected() {
+        val root = Files.createTempDirectory("quota-remaining")
+        val registry = StaticProviderDescriptorRegistry()
+        val seed = InMemoryQuotaLedger.seedFromDescriptors(registry)
+        val file = root.resolve("quota.tsv").toFile()
+        val ledger = atropos.core.provider.FileQuotaLedger(file, seed)
+        ledger.put(
+            seed.first { it.providerId == "groq" }.copy(configured = true, verified = true)
+        )
+        ledger.recordSuccess(
+            "groq",
+            ProviderUsage(inputTokens = 2, outputTokens = 3, latencyMs = 1, remainingRequests = 17, remainingTokens = 900)
+        )
+
+        val reopened = atropos.core.provider.FileQuotaLedger(file, seed)
+        val json = QuotaProjection(registry, reopened).render()
+        assertTrue(json.contains("\"remainingRequests\":17"), json)
+        assertTrue(json.contains("\"remainingTokens\":900"), json)
     }
 }

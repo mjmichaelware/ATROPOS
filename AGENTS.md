@@ -12876,3 +12876,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Evidence: the focused fixture submits a repository-policy-forbidden `.jar`, asserts HTTP 403, and asserts no target file exists; static selector parity, orphan gate, and diff check pass. Root/hosted Kotlin execution remains pending; no test-green claim.
 - % delta: unchanged; B-005 / ADD-W-029 remains source-wired / partial.
 - Fingerprint: `BridgeFilesHandlerTest.kt=dc05f24018c4`.
+
+### 2026-08-24T14:57:11Z · Agent: Codex GPT-5 · Batch: quota-remaining-ledger-projection
+
+- Paths touched: `src/main/kotlin/atropos/core/provider/QuotaLedger.kt` (+13/-1), `src/main/kotlin/atropos/bridge/projection/QuotaProjection.kt` (+2), `src/test/kotlin/atropos/bridge/QuotaProjectionTest.kt` (+23), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: P15 / quota ledger visible API.
+- Predicate moved: adapter-reported `ProviderUsage.remainingRequests` and `remainingTokens` now survive the existing file-backed quota ledger restart and are exposed by `/v1/quota`; absent provider headers remain explicit JSON `null`, with no invented quota ceiling or cost metric.
+- Verification actually run: `git diff --check`, `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (382 tests)`), and `timeout 90s python3 scripts/find-orphans.py --fail-on-new` (exit 0; only 4 pre-existing baseline orphan files / 360 LOC) passed. Focused `./gradlew --no-daemon :test --rerun --max-workers=1 --tests 'atropos.bridge.QuotaProjectionTest'` reached Gradle task-graph calculation but produced no test result before the local execution window ended; no Kotlin test-green claim. GitHub Actions remains pending because repository push authentication is unavailable.
+- % delta: unchanged; P15 remains source-wired / partial pending hosted execution and live provider quota headers.
+- Fingerprints (sha256, first 12): `QuotaLedger.kt=0b542b2dd9ef`, `QuotaProjection.kt=ef64122dcaea`, `QuotaProjectionTest.kt=d5f00c8b4be4`.

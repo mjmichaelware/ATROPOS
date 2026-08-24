@@ -16,6 +16,8 @@ data class ProviderQuotaRecord(
     val state: ProviderAvailabilityState = ProviderAvailabilityState.UNKNOWN,
     val usedRequests: Int = 0,
     val usedTokens: Int = 0,
+    val remainingRequests: Int? = null,
+    val remainingTokens: Int? = null,
     val resetAtEpochMs: Long? = null,
     val cooldownUntilEpochMs: Long? = null,
     val lastErrorClass: String? = null,
@@ -66,6 +68,8 @@ class InMemoryQuotaLedger(seed: List<ProviderQuotaRecord> = emptyList()) : Quota
             state = ProviderAvailabilityState.READY,
             usedRequests = current.usedRequests + 1,
             usedTokens = current.usedTokens + usage.inputTokens + usage.outputTokens,
+            remainingRequests = usage.remainingRequests ?: current.remainingRequests,
+            remainingTokens = usage.remainingTokens ?: current.remainingTokens,
             latencyMsAvg = ((oldAvg + usage.latencyMs) / 2).coerceAtLeast(0),
             successScore = (current.successScore + 0.1).coerceAtMost(1.0),
             lastErrorClass = null,
@@ -106,7 +110,7 @@ class FileQuotaLedger(private val file: File, seed: List<ProviderQuotaRecord> = 
     private fun persist() {
         file.parentFile?.mkdirs()
         file.writeText(memory.all().joinToString("\n") { r ->
-            listOf(r.providerId, r.costMode.name, r.quotaWeight, r.configured, r.verified, r.state.name, r.usedRequests, r.usedTokens, r.cooldownUntilEpochMs ?: "", r.resetAtEpochMs ?: "", r.lastErrorClass ?: "", r.lastErrorSummary ?: "", r.successScore, r.paidLocked).joinToString("\t")
+            listOf(r.providerId, r.costMode.name, r.quotaWeight, r.configured, r.verified, r.state.name, r.usedRequests, r.usedTokens, r.cooldownUntilEpochMs ?: "", r.resetAtEpochMs ?: "", r.lastErrorClass ?: "", r.lastErrorSummary ?: "", r.successScore, r.paidLocked, r.remainingRequests ?: "", r.remainingTokens ?: "").joinToString("\t")
         } + "\n")
     }
     companion object {
@@ -129,10 +133,23 @@ class FileQuotaLedger(private val file: File, seed: List<ProviderQuotaRecord> = 
                 if (p.size < 14) return@mapNotNull null
                 runCatching {
                     ProviderQuotaRecord(
-                        p[0], CostMode.valueOf(p[1]), p[2].toInt(), p[3].toBoolean(), p[4].toBoolean(),
-                        ProviderAvailabilityState.valueOf(p[5]), p[6].toInt(), p[7].toInt(),
-                        p[9].toLongOrNull(), p[8].toLongOrNull(), p[10].ifBlank { null },
-                        p[11].ifBlank { null }, null, p[12].toDoubleOrNull() ?: 0.0, p[13].toBoolean()
+                        providerId = p[0],
+                        costMode = CostMode.valueOf(p[1]),
+                        quotaWeight = p[2].toInt(),
+                        configured = p[3].toBoolean(),
+                        verified = p[4].toBoolean(),
+                        state = ProviderAvailabilityState.valueOf(p[5]),
+                        usedRequests = p[6].toInt(),
+                        usedTokens = p[7].toInt(),
+                        remainingRequests = p.getOrNull(14)?.toIntOrNull(),
+                        remainingTokens = p.getOrNull(15)?.toIntOrNull(),
+                        resetAtEpochMs = p[9].toLongOrNull(),
+                        cooldownUntilEpochMs = p[8].toLongOrNull(),
+                        lastErrorClass = p[10].ifBlank { null },
+                        lastErrorSummary = p[11].ifBlank { null },
+                        latencyMsAvg = null,
+                        successScore = p[12].toDoubleOrNull() ?: 0.0,
+                        paidLocked = p[13].toBoolean()
                     )
                 }.getOrNull()
             }
@@ -169,7 +186,9 @@ class QuotaLedgerBackup(
                     record.lastErrorClass ?: "",
                     record.lastErrorSummary ?: "",
                     record.successScore,
-                    record.paidLocked
+                    record.paidLocked,
+                    record.remainingRequests ?: "",
+                    record.remainingTokens ?: ""
                 ).joinToString("\t")
             } + "\n"
         )

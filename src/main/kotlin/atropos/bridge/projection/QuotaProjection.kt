@@ -28,6 +28,8 @@ class QuotaProjection(
                     "verified" to JsonWriter.bool(record.verified),
                     "usedRequests" to JsonWriter.num(record.usedRequests),
                     "usedTokens" to JsonWriter.num(record.usedTokens),
+                    "remainingRequests" to (record.remainingRequests?.let(JsonWriter::num) ?: "null"),
+                    "remainingTokens" to (record.remainingTokens?.let(JsonWriter::num) ?: "null"),
                     "resetAtEpochMs" to (record.resetAtEpochMs?.let(JsonWriter::num) ?: "null"),
                     "cooldownUntilEpochMs" to (record.cooldownUntilEpochMs?.let(JsonWriter::num) ?: "null"),
                     "paidLocked" to JsonWriter.bool(record.paidLocked)
