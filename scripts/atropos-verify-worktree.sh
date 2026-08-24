@@ -161,6 +161,8 @@ if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
     --tests 'atropos.core.security.TokenIsolationVaultTest' \
     --tests 'atropos.core.security.VaultPathResolverTest' \
     --tests 'atropos.core.security.VaultReadResultTest' \
+    --tests 'atropos.core.BuildStampTest' \
+    --tests 'atropos.core.SelfUpdateTest' \
     --tests 'atropos.core.github.GitHubApiClientTest' \
     --tests 'atropos.core.github.GitHubBindingTest' \
     --tests 'atropos.core.scavenge.GitHubScavengerTest'

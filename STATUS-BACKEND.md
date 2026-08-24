@@ -143,6 +143,12 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | --- | --- | --- | --- | --- |
 | hosted focused-test integrity | source-wired / partial | `scripts/hosted-test-selector-contract.sh`, `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh` | GitHub Actions and reusable verify script → selector contract → all `--tests` identifiers and source paths | Added a fail-closed contract that requires canonical/reusable selector parity and a real Kotlin test source for every selected class. Local execution passes; hosted Kotlin execution remains pending. |
 
+### 2026-08-24T17:00:00Z · Backend batch: hosted-buildstamp-update-proof
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-INST-002 / B-SUP-030 artifact provenance | source-wired / partial | `src/main/kotlin/atropos/core/BuildStamp.kt`, `src/main/kotlin/atropos/core/SelfUpdate.kt`, `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh` | `Main --version`/installer → existing `BuildStamp` and `SelfUpdate` owners | Added existing build identity and update tests to both hosted lanes. Release/install contracts already verify the JAR and checksum asset coupling; hosted execution remains pending. |
+
 ### 2026-08-24T16:35:00Z · Backend batch: provider-disable-route-proof
 
 | atom | status | files | caller | tests / notes |

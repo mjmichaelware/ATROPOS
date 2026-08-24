@@ -462,6 +462,15 @@ End of AGENTS.md
 - % delta: unchanged; B-005 / ADD-W-029 remains partial pending hosted execution.
 - Fingerprints: recorded after this batch.
 
+### 2026-08-24T17:00:00Z · Agent: Codex GPT-5 · Batch: hosted-buildstamp-update-proof
+
+- Paths touched: `.github/workflows/compile-gate.yml` (+2), `scripts/atropos-verify-worktree.sh` (+2), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-INST-002 artifact identity and updater provenance.
+- Predicate moved: hosted CI now executes the existing `BuildStampTest` and `SelfUpdateTest`, covering `--version` identity and fail-closed update behavior in addition to the release checksum contracts.
+- Verification actually run: selector contract, `git diff --check`, shell syntax, action contract, and orphan gate pass; hosted Kotlin execution remains pending.
+- % delta: unchanged; install provenance remains partial pending hosted/release evidence.
+- Fingerprints: recorded after this batch.
+
 ### 2026-08-24T16:35:00Z · Agent: Codex GPT-5 · Batch: provider-disable-route-proof
 
 - Paths touched: `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` (+29), `STATUS-BACKEND.md` (+7).
