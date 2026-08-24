@@ -13327,9 +13327,9 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Paths touched: `src/main/kotlin/atropos/core/integration/McpHostManager.kt` (+10/-8), `scripts/backend-atom-contract-test.sh` (+2).
 - Atoms / phases affected: B-MCP-CORE-b/c/e and ADD-MCP-001 remote MCP transport safety.
 - Predicate moved: the sole remote MCP HTTP/SSE owner now refuses redirects and reads at most one byte beyond its 256 KiB response bound before decoding, rather than materializing an unbounded response first. Existing health, allowlist, territory, egress, and evidence owners remain unchanged.
-- Verification actually run: pending this batch; root/hosted Kotlin and live MCP server execution remain unproven.
+- Verification actually run: `ATROPOS_BACKEND_ATOM_CONTRACT_OK`, `ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (418 tests)`, and `git diff --check` passed. Root/hosted Kotlin and live MCP server execution remain unproven.
 - % delta: unchanged; B-MCP-CORE remains source-wired/partial pending hosted MCP fixtures.
-- Fingerprints (sha256, first 12): to be recorded after commit.
+- Fingerprints (sha256, first 12): `McpHostManager.kt=bc1592778f1f`; `backend-atom-contract-test.sh=f8bcedb00cad`.
 
 ### 2026-08-24T19:50:50Z · Agent: Codex GPT-5 · Batch: github-response-size-bound
 
