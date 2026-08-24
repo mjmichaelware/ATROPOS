@@ -9,12 +9,14 @@ import atropos.bridge.http.JsonWriter
 import atropos.bridge.queue.ConversationWorkRunner
 import atropos.core.approval.PendingApprovalStore
 import atropos.bridge.http.StreamSink
+import atropos.core.security.RedactionFilter
 
 internal class BridgeEventsHandler(
     private val work: ConversationWorkRunner?,
     private val approvals: PendingApprovalStore,
     private val sessions: BridgeSessionStore,
-    private val defaultStore: BridgeConversationStore
+    private val defaultStore: BridgeConversationStore,
+    private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     fun getEvents(request: HttpRequest): HttpResponse {
         val cursor = request.query["after"]?.toLongOrNull() ?: 0L
@@ -27,7 +29,7 @@ internal class BridgeEventsHandler(
                 "cursor" to JsonWriter.num(event.cursor),
                 "type" to JsonWriter.str(event.type),
                 "timestamp" to JsonWriter.str(event.timestamp.toString()),
-                "detail" to JsonWriter.str(event.detail)
+                "detail" to JsonWriter.str(redactionFilter.redact(event.detail))
             )
         }
 
@@ -56,7 +58,7 @@ internal class BridgeEventsHandler(
                         "cursor" to JsonWriter.num(event.cursor),
                         "type" to JsonWriter.str(event.type),
                         "timestamp" to JsonWriter.str(event.timestamp.toString()),
-                        "detail" to JsonWriter.str(event.detail)
+                        "detail" to JsonWriter.str(redactionFilter.redact(event.detail))
                     ))) cursor = maxOf(cursor, event.cursor)
             }
             frames += 1

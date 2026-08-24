@@ -1022,3 +1022,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | T04 session/checkpoint bridge rendering | source-wired / partial | `src/main/kotlin/atropos/bridge/BridgeSessionHandler.kt`, `src/main/kotlin/atropos/bridge/projection/CheckpointProjection.kt`, `scripts/backend-atom-contract-test.sh` | `/v1/sessions` and `/v1/checkpoint` routes → existing session/checkpoint owners | User-controlled session titles and checkpoint goal/node/phase/action fields now cross the shared redaction filter before JSON construction. Static backend contract, selector parity (420), and `git diff --check` pass; hosted/root Kotlin execution remains pending. |
+
+### 2026-08-25T03:30:00Z · Agent: Codex GPT-5 · Batch: bridge-event-redaction-boundary
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| T04 bridge event/SSE rendering | source-wired / partial | `src/main/kotlin/atropos/bridge/BridgeEventsHandler.kt`, `scripts/backend-atom-contract-test.sh` | `/v1/events` and `/v1/events/stream` → existing `BridgeEventsHandler` → shared `BridgeEventHub` | Polling and SSE event details now pass through the canonical redaction filter while preserving the existing session identity/cursor filtering and single event bus. Static backend contract, selector parity (420), and `git diff --check` pass; hosted/root event tests remain pending. |
