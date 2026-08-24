@@ -13286,6 +13286,14 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; B-MCP-GITHUB remains source-wired/partial pending hosted/live evidence.
 - Fingerprints (sha256, first 12): `GitHubApiClient.kt=a19a92174c97`; `GitHubApiClientTest.kt=8575643120ff`; `backend-atom-contract-test.sh=16174e6e1e43`.
 
+### 2026-08-25T03:35:00Z · Agent: Codex GPT-5 · Batch: paid-side-refusal-redaction
+
+- Paths touched: `src/main/kotlin/atropos/cli/PaidCommandHandler.kt` (+3/-2), `src/main/kotlin/atropos/cli/SideConversationService.kt` (+4/-2), `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+2).
+- Atoms / phases affected: B-PROV-012 paid gate, provider side-channel routing, and T04 secret-safe render paths.
+- Predicate moved: paid unlock and side-conversation failure messages now use the canonical compact redaction boundary before terminal output.
+- Verification: pending this batch; root/hosted Kotlin execution remains unproven.
+- % delta: unchanged; source-wired/partial pending hosted focused execution.
+
 ### 2026-08-25T03:05:00Z · Agent: Codex GPT-5 · Batch: authority-cascade-redaction
 
 - Paths touched: `src/main/kotlin/atropos/cli/ui/StatusAuthRenderer.kt` (+5/-3), `src/main/kotlin/atropos/cli/AuthCommandHandler.kt` (+1/-1), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+2).

@@ -4,6 +4,7 @@ package atropos.cli
 import atropos.cli.ui.AnsiTerminalEngine
 import atropos.core.ProviderCascadeRouter
 import atropos.core.thinking.Thinking
+import atropos.core.security.RedactionFilter
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicReference
 
@@ -36,7 +37,8 @@ class SideConversationService(
     private val cascade: ProviderCascadeRouter,
     private val activeProvider: () -> String,
     /** What the main run is using right now, when anything is. */
-    private val busyProvider: () -> String? = { null }
+    private val busyProvider: () -> String? = { null },
+    private val redactionFilter: RedactionFilter = RedactionFilter()
 ) : AutoCloseable {
 
     private val executor = Executors.newSingleThreadExecutor { task ->
@@ -78,7 +80,7 @@ class SideConversationService(
             } catch (failure: Throwable) {
                 uiEngine.renderError(
                     "side conversation failed (${failure.javaClass.simpleName}): " +
-                        (failure.message ?: "unknown failure")
+                        redactionFilter.compact(failure.message ?: "unknown failure")
                 )
             } finally {
                 inFlight.set(null)

@@ -4,10 +4,12 @@ package atropos.cli
 import atropos.cli.ui.AnsiTerminalEngine
 import atropos.cli.ui.StatusPaidEmergencyRenderer
 import atropos.core.paid.EmergencyPaidGate
+import atropos.core.security.RedactionFilter
 
 class PaidCommandHandler(
     private val uiEngine: AnsiTerminalEngine,
-    private val gate: EmergencyPaidGate = EmergencyPaidGate()
+    private val gate: EmergencyPaidGate = EmergencyPaidGate(),
+    private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     fun execute(tokens: List<String>): RouterOutcome {
         when (tokens.getOrNull(1)?.lowercase()) {
@@ -35,7 +37,7 @@ class PaidCommandHandler(
             val unlock = gate.unlock(provider, duration, reason)
             uiEngine.renderNotice("unlocked ${unlock.providerId} until ${unlock.expiresAtEpochMs}")
         } catch (failure: IllegalArgumentException) {
-            uiEngine.renderError(failure.message ?: "paid unlock failed")
+            uiEngine.renderError(redactionFilter.compact(failure.message ?: "paid unlock failed"))
         }
     }
 }
