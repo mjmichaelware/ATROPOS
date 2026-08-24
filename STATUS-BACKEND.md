@@ -564,6 +564,17 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | --- | --- | --- | --- | --- |
 | B-INST-006 npm publish workflow contract | source-wired / partial | `scripts/npm-installer-contract-test.sh`, `.github/workflows/release.yml` | release workflow → `publish-npm` tag job → npm registry | Static contract now checks immutable-tag gating, `needs: publish`, token environment, provenance publish, and absence of invalid secret job conditions. Local contract passes; GitHub Actions and npm registry evidence remain pending. |
 
+### 2026-08-24T17:29:00Z · Backend verification: composed-static-gates
+
+| check | result | evidence |
+| --- | --- | --- |
+| provider environment contract | pass | `ATROPOS_PROVIDER_ENV_CONTRACT_OK` |
+| npm installer/release contract | pass | `NPM_INSTALLER_CONTRACT_OK` |
+| MCP examples contract | pass | `MCP_EXAMPLE_CONTRACT_OK files=14 servers=14` |
+| orphan gate | pass | `4 orphaned of 1043 production files`, all four historical baseline files / 360 LOC |
+| diff check | pass | `git diff --check` |
+| root/hosted Kotlin and GHA | unproven | local Gradle budget and GitHub credentials remain unavailable |
+
 ### 2026-08-24T06:48:39Z · Backend batch: anti-synthetic-velocity-output
 
 | atom | status | files | caller | tests / notes |

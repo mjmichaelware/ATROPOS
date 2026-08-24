@@ -13008,6 +13008,14 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; B-INST-006 remains source-wired / partial pending hosted release evidence.
 - Fingerprint: `scripts/npm-installer-contract-test.sh=a6306145f118`.
 
+### 2026-08-24T17:29:00Z · Agent: Codex GPT-5 · Verification: backend-static-gate-recheck
+
+- Paths touched: `AGENTS.md`, `STATUS-BACKEND.md` only.
+- Atoms / phases affected: installer/provider/MCP example contract evidence; orphan rule.
+- Predicate moved: none; this batch rechecked the composed backend gates after the npm workflow changes.
+- Verification actually run: provider environment contract passed; npm installer/release contract passed; MCP example contract passed (`14` files / `14` servers); orphan gate exited `0` with only the four historical baseline files (`1043` production files / `360` orphan LOC); `git diff --check` passed. Root/hosted Kotlin execution and GitHub push remain unavailable.
+- % delta: unchanged.
+
 ### 2026-08-24T17:22:01Z · Agent: Codex GPT-5 · Batch: npm-local-jar-and-publish-wire
 
 - Paths touched: `npm/scripts/postinstall.js` (+12), `npm/README.md` (+5), `scripts/npm-installer-contract-test.sh` (+2), `.github/workflows/release.yml` (+27), `AGENTS.md`, `STATUS-BACKEND.md`.
