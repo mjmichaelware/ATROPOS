@@ -3,6 +3,7 @@ package atropos.bridge
 
 import atropos.bridge.http.HttpRequest
 import java.nio.file.Files
+import java.security.MessageDigest
 import java.util.Base64
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -41,6 +42,10 @@ class BridgeFilesHandlerTest {
             assertTrue(responseOk.body.contains("sha256"))
             assertTrue(responseOk.body.contains("\"attested\":true"))
             assertTrue(responseOk.body.contains("envelopeSha256"))
+            val contentSha256 = sha256(fileContent)
+            val envelopeSha256 = sha256("s1\nhello.txt\n$contentSha256\n${fileContent.toByteArray().size}")
+            assertTrue(responseOk.body.contains("\"sha256\":\"$contentSha256\""))
+            assertTrue(responseOk.body.contains("\"envelopeSha256\":\"$envelopeSha256\""))
 
             // Verify file exists on disk under uploads directory
             val expectedPath = tempDir.resolve(".atropos/uploads/s1/hello.txt")
@@ -65,4 +70,8 @@ class BridgeFilesHandlerTest {
             tempDir.toFile().deleteRecursively()
         }
     }
+
+    private fun sha256(value: String): String = MessageDigest.getInstance("SHA-256")
+        .digest(value.toByteArray())
+        .joinToString("") { "%02x".format(it) }
 }

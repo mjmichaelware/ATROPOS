@@ -88,6 +88,12 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 - Bridge recovery projection now exposes the existing `RestartCoordinator.snapshot()` as `/v1/recovery` with restored/rebuilt/failed counts, goal/DAG counts, message, and redacted error strings; no second recovery store or event bus was introduced.
 - Bridge file uploads now return both a content hash and an envelope hash over session, filename, size, and content hash, with `attested=true`; the existing territory/symlink boundary remains the write owner.
 - MCP health/budget/local-only proof is now source-wired: `McpHostManager.statuses()` persists label-only health metadata, `boundedTools()` truncates to the declared budget, `McpTerritoryBridge` carries no authority, and localOnly refuses remote probing. Core test target passed; root integration test target did not finish locally.
+
+### 2026-08-24T13:00:00Z · Backend batch: attested-upload-envelope-proof
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-005 / ADD-W-029 attested file envelope | source-wired / partial | `src/main/kotlin/atropos/bridge/BridgeFilesHandler.kt`, `src/test/kotlin/atropos/bridge/BridgeFilesHandlerTest.kt`, hosted selectors | `POST /v1/files` → existing `BridgeFilesHandler.upload` → bounded workspace upload | The focused test now recomputes and asserts both the content SHA-256 and the session/filename/content/size envelope SHA-256, proving the response is bound to the uploaded identity rather than merely containing an arbitrary hash. Hosted/root Kotlin execution remains pending; no upload-green claim. |
 - Provider route policy now has a focused test covering both the preferred-provider tie-break and exclusion through the healthy set; the root test remains unexecuted locally because `:test` stalled at compilation.
 - Factory runtime audit: `FactoryRunOrchestrator.kt:258-290` invokes the injected repair action, then `FactoryRepairExecutor` and the existing obligation loop; `FactoryCommandHandler.kt:20-47` is the user-facing resume caller; `FactoryRunHandoff.kt:84-108` fails actionable on missing/malformed/mismatched artifacts. No factory status was upgraded without root test evidence.
 - Clean-checkout proof after commit `b1479fe8`: `./gradlew :core:jvmTest --no-daemon --max-workers=1 --rerun` passed in 52s; XML reports contain 2 tests, 0 failures, 0 errors, 0 skipped. Root Provider/Bridge/MCP/Factory tests were not re-claimed or executed.

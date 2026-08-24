@@ -453,6 +453,15 @@ End of AGENTS.md
 - % delta: unchanged; B-INST-002 remains partial pending hosted release evidence.
 - Fingerprints (sha256, first 12): `scripts/release-installer-contract-test.sh=c4139f3e1fe4`; `.github/workflows/release.yml=46bf3530786b`; `install.sh=6ece5f472305`.
 
+### 2026-08-24T13:00:00Z · Agent: Codex GPT-5 · Batch: attested-upload-envelope-proof
+
+- Paths touched: `src/test/kotlin/atropos/bridge/BridgeFilesHandlerTest.kt` (+8), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-005 / ADD-W-029 attested file upload envelope.
+- Predicate moved: the existing upload test now independently recomputes the content hash and the session/filename/content/size envelope hash, then requires both exact values in the production response. This strengthens evidence for the existing `BridgeFilesHandler` caller without adding a second upload or evidence owner.
+- Verification actually run: patch applied successfully; hosted selector already contains `atropos.bridge.BridgeFilesHandlerTest`. Kotlin execution remains delegated to GitHub Actions; no root or hosted green claim.
+- % delta: unchanged; B-005 / ADD-W-029 remains partial pending hosted execution.
+- Fingerprints: recorded after this batch.
+
 ### 2026-08-24T11:20:00Z · Agent: Codex GPT-5 · Batch: github-gate-unique-ref
 
 - Paths touched: `src/main/kotlin/atropos/core/verification/GitHubActionsCompileRunner.kt` (+18/-14), `src/test/kotlin/atropos/core/verification/GitHubActionsCompileRunnerTest.kt` (+8/-1), `.github/workflows/compile-gate.yml` (+1), `scripts/atropos-verify-worktree.sh` (+1), `STATUS-BACKEND.md` (+7).
