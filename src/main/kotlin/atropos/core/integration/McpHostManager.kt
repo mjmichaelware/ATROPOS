@@ -207,6 +207,11 @@ class McpHostManager(
             "MCP server is not allowlisted: $serverName"
         }
         require(!localOnly || !server.remote) { "remote MCP disabled by localOnly" }
+        val health = statuses().firstOrNull { it.server.name == serverName }
+            ?: error("MCP server status is unavailable: $serverName")
+        require(health.health == McpHealth.HEALTHY) {
+            "MCP server is not healthy: $serverName (${health.reason})"
+        }
         if (server.remote) {
             val response = remoteCall(server, toolName, argumentsJson, maxResponseBytes, toolBudget)
             val safeResponse = redactionFilter.redact(response)

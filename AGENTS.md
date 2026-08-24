@@ -12772,3 +12772,13 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; provider connect remains source-wired / partial pending hosted execution and interactive runtime evidence.
 - New overall estimate: unchanged.
 - Fingerprints (sha256, first 12): `ProviderCommandHandler.kt=b9f49f772f24`, `provider-connect-contract-test.sh=64d1f8bd6c9a`, `compile-gate.yml=87964b12d5ee`, `atropos-verify-worktree.sh=47364fec3baa`, `STATUS-BACKEND.md=de35ec7a9d7a`, `AGENTS.md=0e1641a15476`.
+
+### 2026-08-24T21:35:00Z · Agent: Codex GPT-5 · Batch: mcp-health-execution-gate
+
+- Paths touched: `src/main/kotlin/atropos/core/integration/McpHostManager.kt` (+5), `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+20), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: ADD-MCP-001 / B-MCP-CORE health probe and unhealthy-server exclusion.
+- Predicate moved: the sole MCP host now applies its persisted/probed health result to direct tool execution. After the existing territory, allowlist, memory-authority, enabled, and local-only checks, `callTool` refuses an `UNHEALTHY` server before starting a stdio process or issuing remote transport. The focused fixture proves both refusal and no child-process marker; no second MCP picker, route policy, or process owner was introduced.
+- Verification actually run: `git diff --check`, `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (382 tests)`), and `timeout 90s python3 scripts/find-orphans.py --fail-on-new` passed. The orphan gate still reports only the four pre-existing baseline files (4/1041, 360 LOC). Root/hosted Kotlin execution remains pending; no test-green claim.
+- % delta: unchanged; ADD-MCP-001 remains source-wired / partial pending hosted execution and configured runtime evidence.
+- New overall estimate: unchanged.
+- Fingerprints (sha256, first 12): `McpHostManager.kt=3bbbdddfdac7`, `McpHostManagerTest.kt=aeaf86a10c41`, `STATUS-BACKEND.md=10a5d2b83d1b`, `AGENTS.md=4b19a3118cb1`.

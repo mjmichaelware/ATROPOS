@@ -220,6 +220,26 @@ class McpHostManagerTest {
     }
 
     @Test
+    fun unhealthy_server_is_refused_before_tool_process_starts() {
+        val root = Files.createTempDirectory("mcp-unhealthy-call")
+        val marker = root.resolve("started")
+        val script = root.resolve("mcp-call.sh")
+        Files.writeString(script, "#!/bin/sh\ntouch '${marker.fileName}'\n")
+        script.toFile().setExecutable(true)
+        Files.writeString(root.resolve("mcp.json"), """
+            {"servers":[{"name":"local","transport":"stdio","command":"./mcp-call.sh","enabled":true,"community":false}]}
+        """.trimIndent())
+
+        val failure = runCatching {
+            McpHostManager(root, probe = { McpHealth.UNHEALTHY }).callTool("local", "inspect")
+        }.exceptionOrNull()
+
+        assertTrue(failure?.message?.contains("not healthy") == true)
+        assertTrue(!Files.exists(marker))
+        assertTrue(Files.readString(root.resolve(".atropos/mcp/health.tsv")).contains("local\tUNHEALTHY"))
+    }
+
+    @Test
     fun local_only_persists_remote_refusal_without_probing() {
         val root = Files.createTempDirectory("mcp-remote")
         Files.writeString(root.resolve("mcp.json"),

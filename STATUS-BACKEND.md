@@ -662,3 +662,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-PROV connect local-only secret entry | source-wired / partial | `src/main/kotlin/atropos/cli/ProviderCommandHandler.kt`, `scripts/provider-connect-contract-test.sh`, `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh` | `/providers connect <provider>` → existing `ProviderCommandHandler` → `TerminalModeManager` echo suppression → `ProviderOnboardingService.connectToVault` → `TokenIsolationVault` | Removed the unsafe console-less `readLine()` fallback. The existing `TerminalModeManager` now owns temporary no-echo input and is restored in `finally`; unavailable TTY returns cancellation without reading an echoed secret. `ATROPOS_PROVIDER_CONNECT_CONTRACT_OK`, selector contract (382 tests), shell syntax, diff check, and orphan gate pass locally. Hosted Kotlin execution remains pending; no provider-connect test-green claim. |
+
+### 2026-08-24T21:35:00Z · Backend batch: mcp-health-execution-gate
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| ADD-MCP-001 / B-MCP-CORE health exclusion at call time | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` | CLI/bridge → existing `McpHostManager.callTool` → `statuses()` probe/persistence → bounded transport | Direct tool calls now consult the canonical health probe after allowlist/policy checks and refuse `UNHEALTHY` servers before process or remote transport starts. Added a fixture proving no unhealthy stdio process starts and health.tsv records the refusal state. Selector parity, diff check, and orphan gate pass locally; hosted/root Kotlin execution remains pending. |
