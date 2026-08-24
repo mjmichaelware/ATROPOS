@@ -1136,3 +1136,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-CORE-g process termination/reap | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `scripts/backend-atom-contract-test.sh` | CLI/bridge → sole `McpHostManager` stdio probe/call → existing `BoundedProcessRunner` child → forced destroy + bounded wait at exchange end | Added CI source assertions for the production child cleanup and reap boundary. Backend contract, hosted selector parity (421), and `git diff --check` pass; hosted Kotlin lifecycle execution remains unverified. |
+
+### 2026-08-24T23:50:00Z · Agent: Codex GPT-5 · Batch: installer-artifact-handoff-contract
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-INST-002b/c and B-INST-003a/b artifact handoff | source-wired / partial | `install.sh`, `scripts/install-contract-test.sh`, `scripts/backend-atom-contract-test.sh` | installer → bounded download/checksum path → `ATROPOS_PLATFORM` launcher export → executable `$BIN_DIR/atropos` | Install contracts now assert the selected downloader receives the exact JAR URL, platform metadata is exported to the generated launcher, and the launcher is made executable. Shell syntax, install/backend contracts, and diff check pass; hosted release/device proof remains unverified. |

@@ -13724,6 +13724,16 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprints: `scripts/backend-atom-contract-test.sh=7cb7224d6faa`.
 
+### 2026-08-24T23:50:00Z · Agent: Codex GPT-5 · Batch: installer-artifact-handoff-contract
+
+- Paths touched: `scripts/install-contract-test.sh` (+4), `scripts/backend-atom-contract-test.sh` (+4), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-INST-002b/c and B-INST-003a/b.
+- Predicate moved: the installer’s CI contract now proves the selected downloader receives the exact JAR URL, `ATROPOS_PLATFORM` is exported into the generated launcher, and the launcher is made executable after the verified artifact handoff.
+- Verification actually run: `bash -n install.sh scripts/install-contract-test.sh scripts/backend-atom-contract-test.sh`, installer/backend contracts, and `git diff --check` passed. Hosted release/device execution remains unverified.
+- % delta: unchanged; installer atoms remain source-wired/partial pending hosted release/device proof.
+- New overall estimate: unchanged.
+- Fingerprints: `scripts/install-contract-test.sh=ad1eeefab18c`; `scripts/backend-atom-contract-test.sh=c46ab87965d`.
+
 ### 2026-08-24T22:35:00Z · Agent: Codex GPT-5 · Batch: local-health-response-bounds
 
 - Paths touched: `src/main/kotlin/atropos/core/ProviderState.kt` (+10/-2), `src/main/kotlin/atropos/core/agent/ProviderSessionSupervisor.kt` (+13/-3), `scripts/backend-atom-contract-test.sh` (+2).

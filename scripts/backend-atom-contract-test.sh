@@ -14,6 +14,10 @@ file install.sh
 text install.sh 'invalid repository; expected owner/name'
 text install.sh 'invalid version; expected latest or a v-prefixed release tag'
 text install.sh 'if [ -n "$HOST_PREFIX" ]; then'
+text install.sh 'DOWNLOAD='
+text install.sh '$DOWNLOAD "$TMP" "$JAR_URL"'
+text install.sh 'export ATROPOS_PLATFORM='
+text install.sh 'chmod +x "$BIN_DIR/atropos"'
 file src/main/kotlin/atropos/core/Config.kt
 text src/main/kotlin/atropos/core/Config.kt 'ATROPOS_CONFIG_DIR'
 text install.sh 'export ATROPOS_CONFIG_DIR='
