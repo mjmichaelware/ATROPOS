@@ -582,6 +582,12 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | --- | --- | --- | --- | --- |
 | hosted non-UI backend test selector parity | source-wired / partial | `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh`, `scripts/hosted-test-selector-contract.sh` | GitHub focused-test lanes → 418 explicit selectors → existing 404 non-UI backend test classes | Added the remaining CLI command/input/session and core thinking selectors. Declaration-content fallback handles the existing `ThinkingChannelsTest`/`ThinkingRecordTest.kt` filename mismatch. Local selector contract and parity pass; hosted Kotlin execution remains unproven. |
 
+### 2026-08-24T18:02:00Z · Backend batch: backend-atom-source-contract
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| backend atom source-wiring contract | source-wired / partial | `scripts/backend-atom-contract-test.sh`, `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh` | hosted compile/focused lanes → source contract → existing provider, bridge, MCP, Tier-0, factory owners | Contract passes and checks caller edges without creating a parallel orchestrator, registry, bus, or verifier. Hosted Kotlin/Actions execution remains required; no runtime-green claim. |
+
 ### 2026-08-24T17:29:00Z · Backend verification: composed-static-gates
 
 | check | result | evidence |

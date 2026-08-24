@@ -14,6 +14,9 @@ if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
   echo "=== PROVIDER CONNECT CONTRACT ==="
   bash scripts/provider-connect-contract-test.sh
 
+  echo "=== BACKEND ATOM SOURCE CONTRACT ==="
+  bash scripts/backend-atom-contract-test.sh
+
   echo "=== HOSTED COMPILE ==="
   ./gradlew --no-daemon compileJava compileTestJava compileKotlin compileTestKotlin
 

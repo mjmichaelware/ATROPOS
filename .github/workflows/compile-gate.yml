@@ -80,6 +80,9 @@ jobs:
       - name: hosted test selector contract
         run: bash scripts/hosted-test-selector-contract.sh
 
+      - name: backend atom source contract
+        run: bash scripts/backend-atom-contract-test.sh
+
       - name: focused factory provider bridge MCP tests
         run: >-
           ./gradlew --no-daemon :test --rerun

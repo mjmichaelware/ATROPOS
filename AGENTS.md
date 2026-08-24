@@ -13035,6 +13035,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; hosted verification remains source-wired / partial.
 - Fingerprints: `.github/workflows/compile-gate.yml=e400ecc4df71`, `scripts/atropos-verify-worktree.sh=f83873263271`, `scripts/hosted-test-selector-contract.sh=5a90a3955743`.
 
+### 2026-08-24T18:02:00Z · Agent: Codex GPT-5 · Batch: backend-atom-source-contract
+
+- Paths touched: `scripts/backend-atom-contract-test.sh` (+73), `.github/workflows/compile-gate.yml` (+3), `scripts/atropos-verify-worktree.sh` (+3), `AGENTS.md`, `STATUS-BACKEND.md`.
+- Atoms / phases affected: install/provider/bridge/MCP/Tier-0/factory source-wiring acceptance.
+- Predicate moved: one CI-owned contract now checks the production files and caller edges for the allowed backend atom lane: provider onboarding/routing/Director fan-out, all declared bridge routes, sole MCP host plus bounded policy/process/evidence, Sentry/GitHub/git Tier-0 composition, and factory resume/handoff/obligation loop. Both hosted entrypoints invoke it. It is a source-wiring check and does not claim runtime verification.
+- Verification actually run: backend atom contract (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), selector contract (`418 tests`), shell syntax, orphan gate (4 historical baseline orphans / 360 LOC), and `git diff --check` passed. Root/hosted Kotlin execution and GitHub push remain unavailable.
+- % delta: unchanged; atoms remain source-wired / partial pending executable hosted evidence.
+- Fingerprints: `scripts/backend-atom-contract-test.sh=febea3f79ded`, `.github/workflows/compile-gate.yml=dd7c1044cd92`, `scripts/atropos-verify-worktree.sh=f9f3c36dcf18`.
+
 ### 2026-08-24T17:29:00Z · Agent: Codex GPT-5 · Verification: backend-static-gate-recheck
 
 - Paths touched: `AGENTS.md`, `STATUS-BACKEND.md` only.
