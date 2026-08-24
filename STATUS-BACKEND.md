@@ -638,3 +638,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | M13 / ADD-MCP-009 bridge preflight parity | source-wired / partial | `src/main/kotlin/atropos/bridge/BridgeMcpHandler.kt`, `src/main/kotlin/atropos/bridge/BridgeRoutes.kt`, `src/test/kotlin/atropos/bridge/BridgeMcpHandlerTest.kt` | `POST /v1/mcp/judge` → `BridgeMcpHandler.judge` → existing `McpTerritoryBridge` | Default bridge preflight now admits the same bounded `convert_to_markdown` operation already used by `McpHostManager`; focused test added. Static checks pass; root/hosted Kotlin and configured MarkItDown runtime evidence remain pending. |
+
+### 2026-08-24T15:30:00Z · Backend verification: fast-source-compile-timeout
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| hosted/source compile lane | inconclusive / partial | `scripts/atropos-fast-gate.sh` | GitHub compile workflow and reusable verifier → existing source manifest/Gradle compile | `timeout 120s scripts/atropos-fast-gate.sh classes` exited 124 with no compiler output on Termux. This is not a pass; GitHub Actions remains authoritative. |

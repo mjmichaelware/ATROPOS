@@ -12741,3 +12741,10 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: `git diff --check`, hosted selector contract, and orphan gate passed; focused root Gradle test had already timed out in this environment and was not re-claimed.
 - % delta: unchanged; M13 remains source-wired / partial pending hosted and configured runtime evidence.
 - Fingerprints: `BridgeMcpHandler.kt=8b0d68c62dae`; `BridgeRoutes.kt=4909efa910f3`; `BridgeMcpHandlerTest.kt=50bb8564ad00`.
+
+### 2026-08-24T15:30:00Z · Agent: Codex GPT-5 · Verification: fast-source-compile-timeout
+
+- Paths touched: `STATUS-BACKEND.md` (+7).
+- Acceptance predicate checked: bounded whole-production Kotlin source compilation through `scripts/atropos-fast-gate.sh classes`.
+- Evidence: `timeout 120s scripts/atropos-fast-gate.sh classes` exited 124 with no compiler output on Termux. This is inconclusive, not green; hosted Gradle remains the required compile evidence.
+- % delta: unchanged; hosted/source compile lane remains partial.
