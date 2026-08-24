@@ -443,4 +443,22 @@ class McpHostManagerTest {
         }
         assertTrue(failure.message.orEmpty().contains("bounded response size"))
     }
+
+    @Test
+    fun malformed_tool_arguments_are_refused_before_transport() {
+        val root = Files.createTempDirectory("mcp-arguments")
+        Files.writeString(root.resolve("mcp.json"),
+            """{"servers":[{"name":"remote","transport":"http","url":"https://mcp.example.test/rpc","enabled":true,"community":false}]}""")
+        var called = false
+        val failure = assertFailsWith<IllegalArgumentException> {
+            McpHostManager(
+                root,
+                localOnly = false,
+                probe = { McpHealth.HEALTHY },
+                remoteRequest = { _, _ -> called = true; "{}" }
+            ).callTool("remote", "inspect", argumentsJson = "{}\n,\"injected\":true")
+        }
+        assertTrue(failure.message.orEmpty().contains("JSON object"))
+        assertTrue(!called)
+    }
 }

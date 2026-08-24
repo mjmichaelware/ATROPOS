@@ -7,6 +7,41 @@ package atropos.core.integration
  * descriptions containing braces cannot truncate the servers[] catalog.
  */
 internal object McpConfigParser {
+    fun requireJsonObject(raw: String): String {
+        val text = raw.trim()
+        require(text.isNotEmpty() && text.first() == '{' && text.last() == '}') {
+            "MCP tool arguments must be a JSON object"
+        }
+        var depth = 0
+        var quoted = false
+        var escaped = false
+        text.forEachIndexed { index, ch ->
+            if (quoted) {
+                when {
+                    escaped -> escaped = false
+                    ch == '\\' -> escaped = true
+                    ch == '"' -> quoted = false
+                }
+                return@forEachIndexed
+            }
+            when (ch) {
+                '"' -> quoted = true
+                '{', '[' -> depth++
+                '}', ']' -> {
+                    depth--
+                    require(depth >= 0) { "MCP tool arguments have unbalanced delimiters" }
+                    require(index == text.lastIndex || depth > 0) {
+                        "MCP tool arguments contain trailing JSON content"
+                    }
+                }
+            }
+        }
+        require(!quoted && !escaped && depth == 0) {
+            "MCP tool arguments have an incomplete JSON envelope"
+        }
+        return text
+    }
+
     fun parse(text: String): List<McpServerConfig> {
         val rootStart = skipWhitespace(text, 0)
         require(rootStart < text.length && text[rootStart] == '{') { "mcp.json root must be an object" }

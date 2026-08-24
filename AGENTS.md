@@ -13213,3 +13213,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: backend atom contract (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), hosted selector contract (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (418 tests)`), and `git diff --check` passed. Root/hosted Kotlin execution remains pending.
 - % delta: unchanged; B-011/ADD-MCP-001 remains source-wired/partial pending hosted execution and live remote evidence.
 - Fingerprints (sha256, first 12): `McpHostManager.kt=ed83d0c54e52`; `backend-atom-contract-test.sh=45d0e02f010e`.
+
+### 2026-08-24T19:38:14Z · Agent: Codex GPT-5 · Batch: mcp-argument-envelope-gate
+
+- Paths touched: `src/main/kotlin/atropos/core/integration/McpConfigParser.kt` (+35), `src/main/kotlin/atropos/core/integration/McpHostManager.kt` (+5/-3), `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+19), `scripts/backend-atom-contract-test.sh` (+1).
+- Atoms / phases affected: B-MCP-CORE-e bounded tool-call argument handling.
+- Predicate moved: MCP tool calls now require one bounded JSON-object envelope before policy-approved stdio/HTTP execution; trailing injected content and incomplete delimiters fail before transport. The existing config parser remains the sole structural parser owner.
+- Verification actually run: backend atom contract (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), hosted selector contract (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (418 tests)`), and `git diff --check` passed. Root/hosted Kotlin execution remains pending.
+- % delta: unchanged; B-MCP-CORE-e remains source-wired/partial pending hosted execution and real server evidence.
+- Fingerprints (sha256, first 12): `McpConfigParser.kt=8fe33e7cbdf2`; `McpHostManager.kt=7e2a85f19de7`; `McpHostManagerTest.kt=d1ecff938383`; `backend-atom-contract-test.sh=9554ac253966`.

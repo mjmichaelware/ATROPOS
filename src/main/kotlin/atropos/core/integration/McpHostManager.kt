@@ -171,7 +171,8 @@ class McpHostManager(
         toolBudget: McpToolBudget = McpToolBudget()
     ): McpToolCallResult {
         require(serverName.isNotBlank() && toolName.isNotBlank()) { "MCP server and tool are required" }
-        require(argumentsJson.length <= 32 * 1024) { "MCP tool arguments exceed the bounded request size" }
+        val boundedArguments = McpConfigParser.requireJsonObject(argumentsJson)
+        require(boundedArguments.length <= 32 * 1024) { "MCP tool arguments exceed the bounded request size" }
         require(maxResponseBytes in 1..1024 * 1024) { "MCP response limit is outside the bounded range" }
         val gate = territoryBridge.judge(
             InboundToolRequest(
@@ -206,14 +207,14 @@ class McpHostManager(
         }
         val execution = toolExecutor.execute(judged.decision) {
             if (server.remote) {
-                remoteCall(server, toolName, argumentsJson, maxResponseBytes, toolBudget)
+                remoteCall(server, toolName, boundedArguments, maxResponseBytes, toolBudget)
             } else {
                 val command = server.command ?: error("MCP server has no stdio command: $serverName")
                 val process = processRunner.start(listOf(command) + server.args, root)
                 val worker = Executors.newSingleThreadExecutor()
                 try {
                     val response = worker.submit<String> {
-                        exchangeStdio(process, toolName, argumentsJson, maxResponseBytes, toolBudget)
+                        exchangeStdio(process, toolName, boundedArguments, maxResponseBytes, toolBudget)
                     }.get(5, TimeUnit.SECONDS)
                     require(response.contains("\"id\":3")) { "MCP tools/call returned no response" }
                     response

@@ -48,6 +48,8 @@ This file records backend implementation status for the current engine wave. A r
 
 | B-011 / ADD-MCP-001 remote probe egress gate | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `scripts/backend-atom-contract-test.sh` | `McpHostManager.statuses()` → existing `defaultProbe` → sole `postRemote` transport → `SecretSinkMatrix` + `McpTerritoryBridge` | Real HTTP/SSE MCP probes now require network secret-egress permission and the existing territory/policy decision before sending initialize/tools-list requests. Backend contract, hosted selector parity (418), and diff check pass; hosted Kotlin/live remote evidence remains pending. |
 
+| B-MCP-CORE-e argument envelope validation | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpConfigParser.kt`, `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` | CLI/bridge → existing `McpHostManager.callTool` → `McpConfigParser.requireJsonObject` → bounded transport | Tool arguments must be one complete bounded JSON object before stdio/HTTP execution; malformed/trailing injected content is refused before transport. Backend contract, hosted selector parity (418), and diff check pass; hosted Kotlin/live server evidence remains pending. |
+
 ## Commands
 
 - `/factory resume <runId>` — read-only attested resume inspection; execution requires the existing router callback path.
