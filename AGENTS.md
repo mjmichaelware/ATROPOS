@@ -13240,3 +13240,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: backend atom contract, hosted selector contract (418), and `git diff --check` passed. Root/hosted Kotlin execution remains pending.
 - % delta: unchanged; B-MCP-CORE-e remains source-wired/partial pending executable hosted evidence.
 - Fingerprints (sha256, first 12): `McpConfigParser.kt=52ff1bdc09a8`; `McpHostManagerTest.kt=0925841404569`.
+
+### 2026-08-24T19:45:02Z · Agent: Codex GPT-5 · Batch: source-http-bounded-transport
+
+- Paths touched: `src/main/kotlin/atropos/core/provider/SourceBindingFetcher.kt` (+10/-2), `scripts/backend-atom-contract-test.sh` (+1).
+- Atoms / phases affected: B-006/B-LOCAL-ONLY HTTP source-binding transport boundedness.
+- Predicate moved: non-local HTTP bundle retrieval now accepts only HTTP(S), has a five-second connect timeout and a thirty-second request timeout, and remains behind the existing localOnly refusal branch. No second fetcher or network owner was introduced.
+- Verification actually run: backend atom contract, hosted selector contract (418), and `git diff --check` passed. Root/hosted Kotlin execution remains pending.
+- % delta: unchanged; B-006 remains source-wired/partial pending executable hosted evidence and approved remote retrieval proof.
+- Fingerprints (sha256, first 12): `SourceBindingFetcher.kt=1fa3b88b02c6`; `backend-atom-contract-test.sh=cc3138a43ac2`.

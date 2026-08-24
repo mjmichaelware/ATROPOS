@@ -130,8 +130,18 @@ class SourceBindingFetcher(
         }.getOrNull() ?: "bundle"
         val target = temporaryDir("http-bundle-").resolve(targetName)
         return try {
-            val request = HttpRequest.newBuilder(URI.create(binding.uri)).GET().build()
-            val response = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofInputStream())
+            val uri = URI.create(binding.uri)
+            require(uri.scheme.equals("http", ignoreCase = true) || uri.scheme.equals("https", ignoreCase = true)) {
+                "http_bundle requires an http or https URI"
+            }
+            val request = HttpRequest.newBuilder(uri)
+                .timeout(java.time.Duration.ofSeconds(30))
+                .GET()
+                .build()
+            val response = HttpClient.newBuilder()
+                .connectTimeout(java.time.Duration.ofSeconds(5))
+                .build()
+                .send(request, HttpResponse.BodyHandlers.ofInputStream())
             if (response.statusCode() !in 200..299) {
                 return SourceFetchResult.Failed("http_bundle fetch failed: status=${response.statusCode()}")
             }

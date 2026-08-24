@@ -54,6 +54,8 @@ This file records backend implementation status for the current engine wave. A r
 
 | B-MCP-CORE-e delimiter matching | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpConfigParser.kt`, `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` | existing `McpHostManager.callTool` → `McpConfigParser.requireJsonObject` | Tool argument validation now rejects mismatched object/array delimiters as well as trailing/incomplete envelopes. Backend contract, hosted selector parity (418), and diff check pass; hosted Kotlin execution remains pending. |
 
+| B-006 HTTP source-binding bounded transport | source-wired / partial | `src/main/kotlin/atropos/core/provider/SourceBindingFetcher.kt`, `scripts/backend-atom-contract-test.sh` | `CodebaseContextPacker` → existing `SourceBindingFetcher.fetch()` → bounded HTTP bundle branch | Non-local HTTP bundle fetches now require HTTP(S) and use explicit connect/request timeouts; localOnly still refuses them before transport. Backend contract, hosted selector parity (418), and diff check pass; hosted Kotlin and approved remote evidence remain pending. |
+
 ## Commands
 
 - `/factory resume <runId>` — read-only attested resume inspection; execution requires the existing router callback path.
