@@ -14,7 +14,8 @@ data class DiscoveredProvider(
     val health: CheapProviderHealth,
     val matchedEnvNames: List<String> = emptyList(),
     val disabled: Boolean = false,
-    val preferred: Boolean = false
+    val preferred: Boolean = false,
+    val preferenceRank: Int = Int.MAX_VALUE
 )
 
 /** Local-only provider inventory. It persists labels and state, never values. */
@@ -77,14 +78,22 @@ class ProviderOnboardingService(
                 names.isNotEmpty() -> CheapProviderHealth.UNTESTED
                 else -> CheapProviderHealth.UNTESTED
             }
-            DiscoveredProvider(id, health, names.distinct().sorted(), prior[id]?.disabled == true, prior[id]?.preferred == true)
+            val priorRank = prior[id]?.preferenceRank ?: Int.MAX_VALUE
+            DiscoveredProvider(
+                id,
+                health,
+                names.distinct().sorted(),
+                prior[id]?.disabled == true,
+                prior[id]?.preferred == true,
+                if (prior[id]?.preferred == true && priorRank == Int.MAX_VALUE) 0 else priorRank
+            )
         }
         writeConfig(records)
         return records
     }
 
     fun list(): List<DiscoveredProvider> = readConfig().values.sortedWith(
-        compareByDescending<DiscoveredProvider> { it.preferred }.thenBy { it.providerId }
+        compareBy<DiscoveredProvider> { preferenceKey(it) }.thenBy { it.providerId }
     )
         .ifEmpty { refresh() }
 
@@ -94,12 +103,21 @@ class ProviderOnboardingService(
     /** Persisted operator preference, limited to configured healthy providers. */
     fun preferredProviderIds(): List<String> = list()
         .filter { it.health == CheapProviderHealth.HEALTHY && !it.disabled && it.preferred }
-        .sortedWith(compareByDescending<DiscoveredProvider> { it.preferred }.thenBy { it.providerId })
+        .sortedWith(compareBy<DiscoveredProvider> { preferenceKey(it) }.thenBy { it.providerId })
         .map { it.providerId }
 
     fun prefer(providerId: String): List<DiscoveredProvider> {
-        require(providerId in list().map { it.providerId }) { "unknown provider: $providerId" }
-        val updated = list().map { it.copy(preferred = it.providerId == providerId) }
+        val current = list()
+        require(providerId in current.map { it.providerId }) { "unknown provider: $providerId" }
+        val priorPreferred = current
+            .filter { it.preferred && it.providerId != providerId }
+            .sortedWith(compareBy<DiscoveredProvider> { preferenceKey(it) }.thenBy { it.providerId })
+            .map { it.providerId }
+        val ranks = (listOf(providerId) + priorPreferred).distinct().withIndex().associate { it.value to it.index }
+        val updated = current.map { record ->
+            val rank = ranks[record.providerId] ?: Int.MAX_VALUE
+            record.copy(preferred = rank != Int.MAX_VALUE, preferenceRank = rank)
+        }
         writeConfig(updated)
         return updated
     }
@@ -139,7 +157,7 @@ class ProviderOnboardingService(
 
     private fun readConfig(): Map<String, DiscoveredProvider> {
         if (!Files.isRegularFile(configFile)) return emptyMap()
-        val objectPattern = Regex("\\{\\\"id\\\":\\\"([^\"]+)\\\",\\\"health\\\":\\\"([^\"]+)\\\",\\\"env\\\":\\\"([^\"]*)\\\",\\\"disabled\\\":(true|false),\\\"preferred\\\":(true|false)\\}")
+        val objectPattern = Regex("\\{\\\"id\\\":\\\"([^\"]+)\\\",\\\"health\\\":\\\"([^\"]+)\\\",\\\"env\\\":\\\"([^\"]*)\\\",\\\"disabled\\\":(true|false),\\\"preferred\\\":(true|false)(?:,\\\"rank\\\":(-?\\d+))?\\}")
         return objectPattern.findAll(Files.readString(configFile)).mapNotNull { match ->
             val groups = match.groupValues
             val id = groups[1]
@@ -147,7 +165,17 @@ class ProviderOnboardingService(
             val env = groups[3]
             val disabled = groups[4]
             val preferred = groups[5]
-            runCatching { id to DiscoveredProvider(id, CheapProviderHealth.valueOf(health), env.split(',').filter { it.isNotBlank() }, disabled.toBoolean(), preferred.toBoolean()) }.getOrNull()
+            val rank = groups.getOrNull(6)?.toIntOrNull() ?: Int.MAX_VALUE
+            runCatching {
+                id to DiscoveredProvider(
+                    id,
+                    CheapProviderHealth.valueOf(health),
+                    env.split(',').filter { it.isNotBlank() },
+                    disabled.toBoolean(),
+                    preferred.toBoolean(),
+                    rank
+                )
+            }.getOrNull()
         }.toMap()
     }
 
@@ -156,7 +184,7 @@ class ProviderOnboardingService(
         Files.createDirectories(configDir)
         val temp = Files.createTempFile(configDir, "providers", ".tmp")
         val content = records.sortedBy { it.providerId }.joinToString(",", prefix = "[", postfix = "]\n") { record ->
-            "{\"id\":\"${json(record.providerId)}\",\"health\":\"${record.health.name}\",\"env\":\"${json(record.matchedEnvNames.joinToString(","))}\",\"disabled\":${record.disabled},\"preferred\":${record.preferred}}"
+            "{\"id\":\"${json(record.providerId)}\",\"health\":\"${record.health.name}\",\"env\":\"${json(record.matchedEnvNames.joinToString(","))}\",\"disabled\":${record.disabled},\"preferred\":${record.preferred},\"rank\":${record.preferenceRank}}"
         } + "\n"
         Files.writeString(temp, content)
         try { Files.move(temp, configFile, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE) }
@@ -164,6 +192,9 @@ class ProviderOnboardingService(
     }
 
     private fun json(value: String): String = value.replace("\\", "\\\\").replace("\"", "\\\"")
+
+    private fun preferenceKey(record: DiscoveredProvider): Int =
+        if (record.preferred && record.preferenceRank == Int.MAX_VALUE) 0 else record.preferenceRank
 
     private fun genericProviderKeyMatches(key: String, providerId: String): Boolean {
         if (!key.startsWith("ATROPOS_PROVIDER_", ignoreCase = true)) return false

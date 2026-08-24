@@ -12937,3 +12937,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: `bash -n install.sh scripts/install-contract-test.sh`, `bash scripts/install-contract-test.sh` (`ATROPOS_INSTALL_CONTRACT_OK`), `git diff --check`, selector/orphan gates previously passing; no network download, release, device install, or hosted result is claimed.
 - % delta: B-INST-001/004 remain source-wired / partial pending hosted release and device evidence, but the Termux prefix detection defect is closed locally.
 - Fingerprints (sha256, first 12): `install.sh=ecee1ecd8332`, `scripts/install-contract-test.sh=41172e9f84e9`.
+
+### 2026-08-24T15:38:14Z · Agent: Codex GPT-5 · Batch: provider-preference-order
+
+- Paths touched: `src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt` (+40/-9), `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` (+14), `AGENTS.md`, `STATUS-BACKEND.md`.
+- Atoms / phases affected: B-PROV-004d / R2 provider preference persistence and RoutePolicy order input.
+- Predicate moved: the existing `ProviderOnboardingService` now persists an ordered preference rank in metadata-only `providers.json`; repeated `/providers prefer` calls retain prior preferred providers behind the newly selected provider, and refresh/restart preserves that order. Legacy records without a rank remain readable. No second provider registry was introduced.
+- Verification actually run: `bash scripts/provider-env-contract-test.sh` passed; `bash scripts/hosted-test-selector-contract.sh` passed with 383 selectors; orphan gate passed with only 4 historical baseline orphans / 360 LOC; `git diff --check` passed. Focused root Gradle command `timeout 90s ./gradlew --no-daemon :test --rerun --tests 'atropos.core.provider.ProviderOnboardingTest' --max-workers=1` exited 124 while compiling root `:compileKotlin`, before test execution; no Kotlin/provider test-green claim and no hosted-green claim.
+- % delta: unchanged; B-PROV-004d remains source-wired / partial pending root or GitHub Actions test execution.
+- Fingerprints (sha256, first 12): `ProviderOnboarding.kt=6aa58de89eb5`, `ProviderOnboardingTest.kt=8c163c1a2fc4`.

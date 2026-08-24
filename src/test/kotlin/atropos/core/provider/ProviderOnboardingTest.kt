@@ -225,6 +225,20 @@ class ProviderOnboardingTest {
     }
 
     @Test
+    fun repeated_prefer_commands_persist_order_across_refresh() {
+        val root = Files.createTempDirectory("provider-preference-order")
+        val environment = mapOf("GROQ_API_KEY" to "groq", "GEMINI_API_KEY" to "gemini")
+        val first = ProviderOnboardingService(root = root, environment = environment)
+        first.refresh()
+        first.prefer("groq")
+        first.prefer("gemini")
+
+        val reloaded = ProviderOnboardingService(root = root, environment = environment)
+        assertEquals(listOf("gemini", "groq"), reloaded.preferredProviderIds())
+        assertTrue(Files.readString(root.resolve(".atropos/provider/providers.json")).contains("\"rank\":0"))
+    }
+
+    @Test
     fun paid_provider_requires_approval_and_free_cascade_stays_free_first() {
         val gate = ProviderPolicyGate(healthy = { setOf("openai", "groq", "gemini") })
         assertTrue(gate.freeCascade(ApiCapability.CHAT).all { it.isFreeEligible() })

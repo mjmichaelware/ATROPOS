@@ -776,3 +776,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-INST-001 Termux platform boundary | source-wired / partial | `install.sh`, `scripts/install-contract-test.sh` | `curl .../install.sh` → installer host detection → generated `ATROPOS_PLATFORM` launcher variable | Fixed the installer’s variable collision: the host `PREFIX` is captured before ATROPOS config-root selection, so Termux detection now observes the real Termux prefix. Contract and shell syntax pass; hosted release/device execution remains pending. |
+
+### 2026-08-24T15:38:14Z · Backend batch: provider-preference-order
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-PROV-004d / R2 ordered provider preference | source-wired / partial | `src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt`, `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` | `/providers prefer <id>` → existing `ProviderCommandHandler` → `ProviderOnboardingService.prefer` → `RoutePolicy.preferredProviderIds` | Preference ranks are persisted in metadata-only `providers.json`, repeated preferences survive refresh/restart, and legacy no-rank metadata remains readable. Provider env contract, hosted selector contract (383), orphan gate (4 historical baseline orphans / 360 LOC), and diff check pass. Focused root Gradle timed out at root `:compileKotlin` before tests; no Kotlin or hosted green claim. |
