@@ -1,5 +1,6 @@
 package atropos.core.provider
 
+import atropos.core.AtroposConfig
 import atropos.core.AtroposRepoRootLocator
 import atropos.core.policy.BoundedProcessRunner
 import atropos.core.security.RedactionFilter
@@ -22,7 +23,8 @@ class SourceBindingFetcher(
     private val storeRoot: Path = repoRoot.resolve(".atropos/source-bindings/trees"),
     private val treeWriter: ContentAddressedTreeWriter = ContentAddressedTreeWriter(storeRoot),
     private val processRunner: BoundedProcessRunner = BoundedProcessRunner(),
-    private val redactionFilter: RedactionFilter = RedactionFilter()
+    private val redactionFilter: RedactionFilter = RedactionFilter(),
+    private val localOnly: Boolean = AtroposConfig.load().runtime.localOnly
 ) {
     fun fetch(binding: SourceBinding): SourceFetchResult {
         return when (binding.kind) {
@@ -59,6 +61,8 @@ class SourceBindingFetcher(
             val commit = runCommand(listOf("git", "rev-parse", "HEAD"), checkout).output.trim().ifBlank { ref }
             val tree = treeWriter.materialize(checkout)
             SourceFetchResult.Fetched(receipt(binding, binding.uri, commit, tree))
+        } else if (localOnly) {
+            SourceFetchResult.Failed("remote git source binding disabled by localOnly")
         } else {
             val checkout = temporaryDir("git-remote-")
             val cloneCommand = if (binding.ref.isNullOrBlank() || binding.ref == "HEAD") {
@@ -118,6 +122,7 @@ class SourceBindingFetcher(
     }
 
     private fun fetchHttpBundle(binding: SourceBinding): SourceFetchResult {
+        if (localOnly) return SourceFetchResult.Failed("http source binding disabled by localOnly")
         val expected = binding.expectedSha256
             ?: return SourceFetchResult.Unsupported("http_bundle requires expectedSha256")
         val targetName = runCatching {

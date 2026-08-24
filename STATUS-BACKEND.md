@@ -30,6 +30,8 @@ This file records backend implementation status for the current engine wave. A r
 
 | P15 quota backup correctness | source-wired / partial | `src/main/kotlin/atropos/core/provider/QuotaLedger.kt`, `src/test/kotlin/atropos/core/provider/QuotaLedgerRouteTruthTest.kt` | existing `/status` backup caller → `QuotaLedgerBackup` → authoritative `ProviderQuotaPaths.defaultLedger()` | Quota backups now copy the live ledger and preserve failure/usage state; descriptor seeds are used only when no source ledger exists. Regression asserts a persisted cooldown appears in the backup. Backend contract, hosted selector parity (418), and diff check pass; hosted/root Kotlin execution remains pending. |
 
+| B-006 local-only source retrieval | source-wired / partial | `src/main/kotlin/atropos/core/provider/SourceBindingFetcher.kt`, `src/test/kotlin/atropos/core/provider/SourceBindingContextPackerTest.kt` | `CodebaseContextPacker` → existing `SourceBindingFetcher.fetch()` → localOnly branch | Remote Git clones and HTTP bundles now refuse before process/network side effects when the shared `ATROPOS_LOCAL_ONLY` runtime mode is enabled; local paths and local archives remain available. Backend contract, hosted selector parity (418), and diff check pass; hosted/root Kotlin execution remains pending. |
+
 ## Commands
 
 - `/factory resume <runId>` — read-only attested resume inspection; execution requires the existing router callback path.

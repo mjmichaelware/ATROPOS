@@ -13132,3 +13132,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: backend atom contract (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), hosted selector contract (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (418 tests)`), and `git diff --check` passed. Root/hosted Kotlin execution remains pending; no test-green claim.
 - % delta: unchanged; P15 remains source-wired / partial pending executable Kotlin evidence.
 - Fingerprints (sha256, first 12): `QuotaLedger.kt=d5e12fda3236`, `QuotaLedgerRouteTruthTest.kt=773273fdcf7d`.
+
+### 2026-08-24T20:24:00Z · Agent: Codex GPT-5 · Batch: local-only-source-fetch-gate
+
+- Paths touched: `src/main/kotlin/atropos/core/provider/SourceBindingFetcher.kt` (+6/-1), `src/test/kotlin/atropos/core/provider/SourceBindingContextPackerTest.kt` (+16), `AGENTS.md`, `STATUS-BACKEND.md`.
+- Atoms / phases affected: B-006/B-LOCAL-ONLY research and source retrieval boundary.
+- Predicate moved: the existing source-binding owner now refuses remote Git and HTTP bundle retrieval before any process or network side effect when `RuntimeMode.localOnly` is active; local filesystem and archive bindings remain usable. No second policy or fetcher was introduced.
+- Verification actually run: backend atom contract (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), hosted selector contract (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (418 tests)`), and `git diff --check` passed. Root/hosted Kotlin execution remains pending; no test-green claim.
+- % delta: unchanged; B-006 remains source-wired / partial pending executable Kotlin evidence.
+- Fingerprints (sha256, first 12): `SourceBindingFetcher.kt=d2c274df7519`, `SourceBindingContextPackerTest.kt=df44d2406421`.

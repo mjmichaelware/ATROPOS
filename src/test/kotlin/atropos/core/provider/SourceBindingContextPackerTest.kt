@@ -264,6 +264,22 @@ class SourceBindingContextPackerTest {
     }
 
     @Test
+    fun localOnly_refuses_remote_git_and_http_before_side_effects() {
+        val root = Files.createTempDirectory("atropos-source-local-only-")
+        val fetcher = SourceBindingFetcher(repoRoot = root, localOnly = true)
+
+        val git = assertIs<SourceFetchResult.Failed>(
+            fetcher.fetch(SourceBinding.git("https://example.invalid/repo", "main"))
+        )
+        assertTrue(git.reason.contains("disabled by localOnly"))
+
+        val http = assertIs<SourceFetchResult.Failed>(
+            fetcher.fetch(SourceBinding.httpBundle("https://example.invalid/bundle.zip", "a".repeat(64)))
+        )
+        assertTrue(http.reason.contains("disabled by localOnly"))
+    }
+
+    @Test
     fun httpBundleBindingIsHashPinnedAndFeedsTheSameContextPacker() {
         val root = Files.createTempDirectory("atropos-source-http-bundle-")
         val archive = root.resolve("bundle.zip")
