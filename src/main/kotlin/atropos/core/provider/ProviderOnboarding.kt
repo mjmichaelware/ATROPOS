@@ -158,6 +158,30 @@ class ProviderOnboardingService(
         }
     }.trimEnd()
 
+    /**
+     * Compact startup projection. Discovery owns the inventory; routing still
+     * owns the actual provider ordering. This line intentionally exposes only
+     * healthy, enabled identifiers so launch never prints a provider wall or
+     * any credential material.
+     */
+    fun renderLaunchSummary(): String {
+        val rows = list()
+        // `local` is the built-in tooling descriptor, not a model endpoint;
+        // keep it available to route policy while excluding it from the
+        // launch provider-health count and cascade candidate line.
+        val healthy = rows.filter {
+            it.providerId != "local" && it.health == CheapProviderHealth.HEALTHY && !it.disabled
+        }
+        val candidates = healthy.joinToString(" -> ") { it.providerId }.ifBlank { "none" }
+        return buildString {
+            append("providers: discovered=${rows.size} healthy=${healthy.size} ")
+            append("cascade_candidates=$candidates")
+            if (healthy.isEmpty()) {
+                append("; no healthy providers; set one key, for example: export GROQ_API_KEY=…")
+            }
+        }
+    }
+
     private fun readConfig(): Map<String, DiscoveredProvider> {
         if (!Files.isRegularFile(configFile)) return emptyMap()
         val objectPattern = Regex("\\{\\\"id\\\":\\\"([^\"]+)\\\",\\\"health\\\":\\\"([^\"]+)\\\",\\\"env\\\":\\\"([^\"]*)\\\",\\\"disabled\\\":(true|false),\\\"preferred\\\":(true|false)(?:,\\\"rank\\\":(-?\\d+))?\\}")

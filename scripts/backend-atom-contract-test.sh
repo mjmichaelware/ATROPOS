@@ -21,6 +21,8 @@ text src/main/kotlin/atropos/core/autonomous/AutonomousOrchestrator.kt "Provider
 text src/main/kotlin/atropos/cli/CommandRouter.kt '"/providers"'
 text src/main/kotlin/atropos/cli/ProviderCommandHandler.kt '"test" -> renderLiveTest(tokens)'
 text src/main/kotlin/atropos/cli/input/CommandCatalog.kt '"/providers test <id>"'
+text src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt 'renderLaunchSummary'
+text src/main/kotlin/atropos/Main.kt 'ProviderOnboardingService().renderLaunchSummary()'
 text src/main/kotlin/atropos/core/provider/SourceBindingFetcher.kt 'localOnly'
 text src/main/kotlin/atropos/core/provider/SourceBindingFetcher.kt 'disabled by localOnly'
 text src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt 'genericProviderIds'

@@ -18,6 +18,26 @@ class ProviderOnboardingTest {
     }
 
     @Test
+    fun launch_summary_prints_only_healthy_candidates_and_zero_provider_remedy() {
+        val healthy = ProviderOnboardingService(
+            root = Files.createTempDirectory("provider-onboarding-launch-healthy"),
+            environment = mapOf("GROQ_API_KEY" to "secret")
+        )
+        val healthySummary = healthy.renderLaunchSummary()
+        assertTrue(healthySummary.contains("healthy=1"))
+        assertTrue(healthySummary.contains("cascade_candidates=groq"))
+        assertTrue(!healthySummary.contains("secret"))
+
+        val empty = ProviderOnboardingService(
+            root = Files.createTempDirectory("provider-onboarding-launch-empty"),
+            environment = emptyMap()
+        )
+        val emptySummary = empty.renderLaunchSummary()
+        assertTrue(emptySummary.contains("healthy=0"))
+        assertTrue(emptySummary.contains("export GROQ_API_KEY=…"))
+    }
+
+    @Test
     fun discovery_accepts_common_aliases_without_persisting_values() {
         val root = Files.createTempDirectory("provider-onboarding")
         val service = ProviderOnboardingService(

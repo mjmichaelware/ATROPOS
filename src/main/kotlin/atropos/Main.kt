@@ -80,6 +80,11 @@ fun main(args: Array<String>) {
     try {
         val config = AtroposConfig.load()
 
+        // Discovery is cheap and metadata-only. Print its compact candidate
+        // line once at launch; the canonical route owner still decides the
+        // actual cascade when work is requested.
+        ui.renderNotice(atropos.core.provider.ProviderOnboardingService().renderLaunchSummary())
+
         if (args.firstOrNull() == "--doctor") {
             atropos.cli.FirstRunDoctorRenderer(
                 backendDoctor = atropos.cli.BackendDoctor(config),

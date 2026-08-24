@@ -13348,6 +13348,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; T04 remains partial pending hosted execution and final bridge sink audit.
 - Fingerprints recorded by commit; unrelated `docs/completion/*` files were not staged.
 
+### 2026-08-25T05:20:00Z · Agent: Codex GPT-5 · Batch: provider-launch-cascade-summary
+
+- Paths touched: `src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt` (+20), `src/main/kotlin/atropos/Main.kt` (+6), `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` (+21), `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-PROV-003 cascade print and B-PROV-005 zero-healthy launch UX.
+- Predicate moved: normal startup now calls one existing onboarding owner for a compact healthy-provider candidate line; the built-in local tooling descriptor is excluded from model-provider counts, and zero configured model providers yields a single example environment line without failure.
+- Verification actually run: static backend and hosted-selector contracts are next in this batch; no root/hosted Kotlin test is claimed.
+- % delta: unchanged; provider atoms remain partial pending hosted execution.
+- Fingerprints recorded by commit; unrelated `docs/completion/*` files were not staged.
+
 ### 2026-08-25T05:00:00Z · Agent: Codex GPT-5 · Batch: providers-test-live-owner
 
 - Paths touched: `src/main/kotlin/atropos/cli/ProviderCommandHandler.kt` (+1/-1), `src/main/kotlin/atropos/cli/input/CommandCatalog.kt` (+1/-1), `src/test/kotlin/atropos/cli/input/CommandCatalogBackendEntriesTest.kt` (+1), `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+7).

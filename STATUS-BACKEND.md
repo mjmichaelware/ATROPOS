@@ -1058,3 +1058,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-PROV-004/B-PROV-018 providers test command | source-wired / partial | `src/main/kotlin/atropos/cli/ProviderCommandHandler.kt`, `src/main/kotlin/atropos/cli/input/CommandCatalog.kt`, `src/test/kotlin/atropos/cli/input/CommandCatalogBackendEntriesTest.kt`, `scripts/backend-atom-contract-test.sh` | `/providers test <id>` → existing `ProviderCommandHandler.renderLiveTest()` → `ProviderActivationService.liveTest()` → adapter/policy/quota owners | `/providers test <id>` now invokes the existing explicit live-test owner instead of silently refreshing metadata; paid providers remain locked and network remains opt-in. Static backend contract and selector parity (420) pass; hosted/root Kotlin execution remains pending. |
+
+### 2026-08-25T05:20:00Z · Agent: Codex GPT-5 · Batch: provider-launch-cascade-summary
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-PROV-003/B-PROV-005 launch cascade and zero-provider UX | source-wired / partial | `src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt`, `src/main/kotlin/atropos/Main.kt`, `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt`, `scripts/backend-atom-contract-test.sh` | `atropos` startup → existing `ProviderOnboardingService.renderLaunchSummary()` → metadata-only discovery | Startup now prints one compact healthy-candidate cascade line; built-in local tooling is not miscounted as a model provider, and zero configured model providers gets one actionable env example without crashing. Static backend contract and selector parity (420) pass; hosted/root Kotlin execution remains pending. |
