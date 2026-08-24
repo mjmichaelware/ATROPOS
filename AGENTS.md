@@ -12088,3 +12088,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: `git diff --check` pending after this batch; root Gradle and hosted tests remain unrun, so no green claim.
 - % delta: unchanged; source-wired but partial pending hosted execution evidence.
 - Fingerprints recorded after static verification/commit.
+
+### 2026-08-23T09:05:00Z · Agent: Codex GPT-5 · Batch: paged-evidence-index
+
+- Paths touched: `src/main/kotlin/atropos/bridge/BridgeEvidenceHandler.kt` (+25), `src/main/kotlin/atropos/bridge/queue/ConversationWorkRunner.kt` (+11), `src/main/kotlin/atropos/bridge/queue/AgentQueueWorkRunner.kt` (+9), `src/test/kotlin/atropos/bridge/BridgeEvidenceHandlerTest.kt` (+40), `.github/workflows/compile-gate.yml` (+1), `scripts/atropos-verify-worktree.sh` (+1), and `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-005 evidence list pagination/limit safety.
+- Predicate moved: `GET /v1/evidence` without an id now exposes a bounded metadata-only page over the existing durable queue projection; content remains id-addressed, repository-bounded, redacted, and capped. No second evidence store or queue was added.
+- Verification actually run: `git diff --check` passed; workflow and reusable-script selectors were inspected. Root Gradle and hosted tests remain unrun, so no green claim is made.
+- % delta: unchanged; source-wired but partial pending hosted execution evidence.
+- Fingerprints after ledger append: `BridgeEvidenceHandler.kt` and related files are recorded by the subsequent commit/CI history.

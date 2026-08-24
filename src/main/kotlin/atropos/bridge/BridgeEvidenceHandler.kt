@@ -26,7 +26,7 @@ internal class BridgeEvidenceHandler(
         }
         val id = request.query["id"].orEmpty().trim()
         if (id.isBlank()) {
-            return HttpResponse.badRequest("Evidence request needs an 'id'.", "GET /v1/evidence?id=<queue-id>")
+            return listEvidence(request)
         }
 
         val entry = work.find(id)
@@ -112,6 +112,29 @@ internal class BridgeEvidenceHandler(
                 "evidenceHash" to JsonWriter.str(contentHash),
                 "evidenceLink" to JsonWriter.str("/v1/evidence?id=$id"),
                 "terminal" to JsonWriter.str("bridge-evidence")
+            )
+        )
+    }
+
+    private fun listEvidence(request: HttpRequest): HttpResponse {
+        val limit = request.query["limit"]?.toIntOrNull()?.coerceIn(1, 100) ?: 20
+        val offset = request.query["offset"]?.toIntOrNull()?.coerceIn(0, 1_000) ?: 0
+        val entries = work?.list(limit, offset).orEmpty().filter { !it.evidence.isNullOrBlank() }
+        return HttpResponse.json(
+            JsonWriter.obj(
+                "ok" to JsonWriter.bool(true),
+                "limit" to JsonWriter.num(limit.toLong()),
+                "offset" to JsonWriter.num(offset.toLong()),
+                "count" to JsonWriter.num(entries.size.toLong()),
+                "entries" to JsonWriter.arr(entries.map { entry ->
+                    JsonWriter.obj(
+                        "id" to JsonWriter.str(entry.id),
+                        "state" to JsonWriter.str(entry.state),
+                        "evidence" to JsonWriter.str(entry.evidence.orEmpty()),
+                        "updatedAt" to JsonWriter.str(entry.updatedAt),
+                        "evidenceLink" to JsonWriter.str("/v1/evidence?id=${entry.id}")
+                    )
+                })
             )
         )
     }

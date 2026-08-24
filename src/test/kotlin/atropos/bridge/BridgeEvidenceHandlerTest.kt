@@ -15,8 +15,11 @@ import kotlin.test.assertFalse
 
 class BridgeEvidenceHandlerTest {
 
-    private class FakeWorkRunner(val evidencePath: String?) : ConversationWorkRunner {
-        override fun list(limit: Int): List<QueueEntryView> = emptyList()
+    private class FakeWorkRunner(
+        val evidencePath: String?,
+        private val entries: List<QueueEntryView> = emptyList()
+    ) : ConversationWorkRunner {
+        override fun list(limit: Int): List<QueueEntryView> = entries.take(limit)
         override fun find(id: String): QueueEntryView? {
             if (id == "q-1") {
                 return QueueEntryView(
@@ -101,5 +104,38 @@ class BridgeEvidenceHandlerTest {
         } finally {
             tempDir.toFile().deleteRecursively()
         }
+    }
+
+    @Test
+    fun evidence_index_is_paginated_and_metadata_only() {
+        val entries = (1..3).map { number ->
+            QueueEntryView(
+                id = "q-$number",
+                task = "secret task $number",
+                state = "SUCCEEDED",
+                checkpoint = "FINALIZED",
+                attempts = 1,
+                maxAttempts = 1,
+                terminal = true,
+                failureReason = null,
+                evidence = "evidence-$number.txt",
+                createdAt = "now",
+                updatedAt = "now"
+            )
+        }
+        val handler = BridgeEvidenceHandler(
+            FakeWorkRunner("unused.txt", entries),
+            repoRoot = Files.createTempDirectory("evidence-index-")
+        )
+
+        val response = handler.getEvidence(
+            HttpRequest("GET", "/v1/evidence", mapOf("limit" to "1", "offset" to "1"), emptyMap(), "")
+        )
+
+        assertEquals(200, response.status)
+        assertTrue(response.body.contains("\"count\":1"))
+        assertTrue(response.body.contains("\"id\":\"q-2\""))
+        assertTrue(response.body.contains("evidenceLink"))
+        assertFalse(response.body.contains("secret task"), "index must not expose queue task text")
     }
 }

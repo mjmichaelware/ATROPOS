@@ -21,6 +21,15 @@ class AgentQueueWorkRunner(
     override fun list(limit: Int): List<QueueEntryView> =
         service.list(limit).map(::view)
 
+    override fun list(limit: Int, offset: Int): List<QueueEntryView> {
+        val safeLimit = limit.coerceIn(0, 100)
+        val safeOffset = offset.coerceIn(0, 1_000)
+        return service.list((safeLimit + safeOffset).coerceAtMost(1_000))
+            .drop(safeOffset)
+            .take(safeLimit)
+            .map(::view)
+    }
+
     override fun find(id: String): QueueEntryView? =
         service.resolve(id)?.let(::view)
 

@@ -29,6 +29,7 @@ if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
     --tests 'atropos.core.policy.ProviderActionProposalsTest' \
     --tests 'atropos.core.provider.QuotaLedgerRouteTruthTest' \
     --tests 'atropos.bridge.BridgeEventsHandlerTest' \
+    --tests 'atropos.bridge.BridgeEvidenceHandlerTest' \
     --tests 'atropos.bridge.BridgeMcpHandlerTest' \
     --tests 'atropos.core.integration.McpHostManagerTest' \
     --tests 'atropos.core.integration.InboundToolBridgeTest' \

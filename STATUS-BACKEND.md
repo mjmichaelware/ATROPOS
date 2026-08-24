@@ -33,6 +33,12 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 ## Remaining blocked or partial work
 
 - FTY-03 has a runtime-owned repair callback; a configured real repair run and hosted test evidence are still pending. Absent that callback or command, failures remain failed.
+
+### 2026-08-23T09:05:00Z · Backend batch: paged-evidence-index
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-005 evidence listing/limit safety | source-wired / partial | `src/main/kotlin/atropos/bridge/BridgeEvidenceHandler.kt`, `src/main/kotlin/atropos/bridge/queue/ConversationWorkRunner.kt`, `src/main/kotlin/atropos/bridge/queue/AgentQueueWorkRunner.kt`, `src/test/kotlin/atropos/bridge/BridgeEvidenceHandlerTest.kt`, hosted selectors | `GET /v1/evidence` → `BridgeEvidenceHandler` → existing `AgentQueueWorkRunner`/`AgentQueueService` | No-id requests now return bounded metadata-only pages (`limit` 1–100, `offset` 0–1000); content still requires an id and keeps redaction/100 KB cap. Focused test and both GitHub selectors added; local Gradle/root and hosted execution remain pending. |
 - Root factory focused tests and full root compilation have not completed within the available Gradle heap/time envelope. `:core:jvmTest` does not contain the root factory test source set.
 - Root Gradle compilation remains unsuitable for the local device heap; `.github/workflows/compile-gate.yml` is the authoritative hosted compile and focused-test lane. Live provider/MCP probes, install/doctor, and device proof remain external/runtime gates.
 - MCP runtime probe remains untested against a real external deployment; the local bounded stdio fixture and core test target now pass. Health labels persist to `.atropos/mcp/health.tsv`; hosted/root integration proof remains pending.

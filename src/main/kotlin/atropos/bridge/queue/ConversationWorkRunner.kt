@@ -34,6 +34,17 @@ sealed class QueueRunOutcome {
  */
 interface ConversationWorkRunner {
     fun list(limit: Int): List<QueueEntryView>
+
+    /**
+     * Bounded page over the same durable queue projection. Implementations
+     * may override this to avoid materialising earlier pages; the default
+     * keeps existing test seams source-compatible.
+     */
+    fun list(limit: Int, offset: Int): List =
+        list((limit.coerceAtLeast(0) + offset.coerceAtLeast(0)).coerceAtMost(1_000))
+            .drop(offset.coerceAtLeast(0))
+            .take(limit.coerceAtLeast(0))
+
     fun find(id: String): QueueEntryView?
 
     /** Runs [id], or the next eligible entry when null. */
