@@ -1113,6 +1113,12 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | --- | --- | --- | --- | --- |
 | B-INST-002a artifact URL input validation | source-wired / partial | `install.sh`, `scripts/install-contract-test.sh`, `scripts/backend-atom-contract-test.sh` | installer entrypoint → validated `ATROPOS_REPO`/`ATROPOS_VERSION` → existing checksum-verified download path | Installer now rejects malformed repository selectors, traversal, and non-`latest`/`v*` release inputs before constructing or downloading an artifact URL. Invalid-input smoke checks, shell syntax, install/backend contracts, and diff check pass; live release/device proof remains unverified. |
 
+### 2026-08-25T01:00:00Z · Agent: Codex GPT-5 · Batch: installer-owner-repository-boundary
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-INST-002a exact repository selector | source-wired / partial | `install.sh`, `scripts/install-contract-test.sh`, `scripts/backend-atom-contract-test.sh` | installer entrypoint → exact two-segment repository validation → existing release URL/checksum path | Closed the remaining validation hole where `owner/name/extra` could pass the prior broad glob. Deep-path smoke test now fails before URL construction; installer/backend contracts and diff check pass. Hosted release/device execution remains unverified. |
+
 ### 2026-08-25T00:20:00Z · Agent: Codex GPT-5 · Batch: gha-verify-script-boundary
 
 | atom | status | files | caller | tests / notes |

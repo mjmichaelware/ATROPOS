@@ -13310,6 +13310,16 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Fingerprint: `install.sh=8d0a1b7bbfd9`.
 - Commit evidence: `5e85eb79`.
 
+### 2026-08-25T01:00:00Z · Agent: Codex GPT-5 · Batch: installer-owner-repository-boundary
+
+- Paths touched: `install.sh` (+5/-2), `scripts/install-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-INST-002a exact repository selector validation.
+- Predicate moved: the installer now rejects repository values with more than one slash, including `owner/name/extra`, before constructing the artifact URL.
+- Verification actually run: deep-path invalid-input smoke test returned exit 1 with the expected message; installer/backend contracts and `git diff --check` passed. Hosted release/device execution remains unverified.
+- % delta: unchanged; B-INST-002 remains source-wired/partial pending hosted release evidence.
+- New overall estimate: unchanged.
+- Fingerprints: pending post-commit hash.
+
 ### 2026-08-25T00:20:00Z · Agent: Codex GPT-5 · Batch: gha-verify-script-boundary
 
 - Paths touched: `.github/actions/atropos-verify/action.yml` (+9), `.github/workflows/compile-gate.yml` (+3), `scripts/atropos-verify-action-contract-test.sh` (+2), `scripts/atropos-verify-action-path-test.sh` (+13), `scripts/atropos-verify-worktree.sh` (+1), `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+7).

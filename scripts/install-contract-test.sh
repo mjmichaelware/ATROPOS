@@ -23,5 +23,6 @@ grep -Fq 'releases/download/latest/ATROPOS.jar' "$INSTALLER"
 grep -Fq 'releases/download/$VERSION/ATROPOS.jar' "$INSTALLER"
 grep -Fq 'invalid repository; expected owner/name' "$INSTALLER"
 grep -Fq 'invalid version; expected latest or a v-prefixed release tag' "$INSTALLER"
+grep -Fq '*/*/*' "$INSTALLER"
 
 printf '%s\n' 'ATROPOS_INSTALL_CONTRACT_OK'

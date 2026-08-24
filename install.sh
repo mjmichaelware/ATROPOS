@@ -24,7 +24,10 @@ say()  { printf '%s\n' "$*"; }
 fail() { printf 'error: %s\n' "$*" >&2; exit 1; }
 
 case "$REPO" in
-  */*|*[!A-Za-z0-9._/-]*|/*|*/|*//*|*..*) : ;;
+  */*/*|*[!A-Za-z0-9._/-]*|/*|*/|*//*|*..*)
+    fail "invalid repository; expected owner/name"
+    ;;
+  */*) : ;;
   *) fail "invalid repository; expected owner/name" ;;
 esac
 case "$VERSION" in
