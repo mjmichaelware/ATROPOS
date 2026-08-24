@@ -4,6 +4,8 @@ import atropos.core.AtroposConfig
 import atropos.core.AtroposRepoRootLocator
 import atropos.core.policy.BoundedProcessRunner
 import atropos.core.security.RedactionFilter
+import atropos.core.security.SecretSinkKind
+import atropos.core.security.SecretSinkMatrix
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.net.URI
@@ -123,6 +125,9 @@ class SourceBindingFetcher(
 
     private fun fetchHttpBundle(binding: SourceBinding): SourceFetchResult {
         if (localOnly) return SourceFetchResult.Failed("http source binding disabled by localOnly")
+        if (!SecretSinkMatrix.isEgressPermitted(SecretSinkKind.EGRESS_URL)) {
+            return SourceFetchResult.Failed("http source binding refused by SecretSinkMatrix")
+        }
         val expected = binding.expectedSha256
             ?: return SourceFetchResult.Unsupported("http_bundle requires expectedSha256")
         val targetName = runCatching {

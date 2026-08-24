@@ -13249,3 +13249,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: backend atom contract, hosted selector contract (418), and `git diff --check` passed. Root/hosted Kotlin execution remains pending.
 - % delta: unchanged; B-006 remains source-wired/partial pending executable hosted evidence and approved remote retrieval proof.
 - Fingerprints (sha256, first 12): `SourceBindingFetcher.kt=1fa3b88b02c6`; `backend-atom-contract-test.sh=cc3138a43ac2`.
+
+### 2026-08-24T19:46:25Z · Agent: Codex GPT-5 · Batch: source-http-egress-gate
+
+- Paths touched: `src/main/kotlin/atropos/core/provider/SourceBindingFetcher.kt` (+5), `src/test/kotlin/atropos/core/provider/SourceBindingContextPackerTest.kt` (+20), `scripts/backend-atom-contract-test.sh` (+1).
+- Atoms / phases affected: B-006/B-LOCAL-ONLY remote source-binding secret egress.
+- Predicate moved: when remote source retrieval is enabled, the existing HTTP bundle owner now refuses before network access unless `SecretSinkMatrix.EGRESS_URL` is explicitly permitted; the test proves the refusal and restores the global sink state.
+- Verification actually run: backend atom contract, hosted selector contract (418), and `git diff --check` passed. Root/hosted Kotlin execution remains pending.
+- % delta: unchanged; B-006 remains source-wired/partial pending executable hosted evidence and approved remote retrieval proof.
+- Fingerprints (sha256, first 12): `SourceBindingFetcher.kt=cd89ddb84b1b`; `SourceBindingContextPackerTest.kt=3084078a795c`; `backend-atom-contract-test.sh=c82c479993a1`.

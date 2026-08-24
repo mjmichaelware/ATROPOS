@@ -56,6 +56,8 @@ This file records backend implementation status for the current engine wave. A r
 
 | B-006 HTTP source-binding bounded transport | source-wired / partial | `src/main/kotlin/atropos/core/provider/SourceBindingFetcher.kt`, `scripts/backend-atom-contract-test.sh` | `CodebaseContextPacker` → existing `SourceBindingFetcher.fetch()` → bounded HTTP bundle branch | Non-local HTTP bundle fetches now require HTTP(S) and use explicit connect/request timeouts; localOnly still refuses them before transport. Backend contract, hosted selector parity (418), and diff check pass; hosted Kotlin and approved remote evidence remain pending. |
 
+| B-006 HTTP source-binding egress gate | source-wired / partial | `src/main/kotlin/atropos/core/provider/SourceBindingFetcher.kt`, `src/test/kotlin/atropos/core/provider/SourceBindingContextPackerTest.kt`, `scripts/backend-atom-contract-test.sh` | `CodebaseContextPacker` → existing `SourceBindingFetcher.fetch()` → HTTP bundle branch → `SecretSinkMatrix` | Remote HTTP source retrieval now refuses before network access unless the canonical egress sink is permitted. Backend contract, hosted selector parity (418), and diff check pass; hosted Kotlin and approved remote evidence remain pending. |
+
 ## Commands
 
 - `/factory resume <runId>` — read-only attested resume inspection; execution requires the existing router callback path.

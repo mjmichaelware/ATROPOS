@@ -2,6 +2,8 @@ package atropos.core.provider
 
 import com.sun.net.httpserver.HttpServer
 import atropos.core.policy.BoundedProcessRunner
+import atropos.core.security.SecretSinkKind
+import atropos.core.security.SecretSinkMatrix
 import java.net.InetSocketAddress
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -12,6 +14,16 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
 class SourceBindingContextPackerTest {
+    @kotlin.test.BeforeTest
+    fun permitHttpFixtureEgress() {
+        SecretSinkMatrix.setPermitted(SecretSinkKind.EGRESS_URL, true)
+    }
+
+    @kotlin.test.AfterTest
+    fun resetHttpFixtureEgress() {
+        SecretSinkMatrix.resetDefaults()
+    }
+
     @Test
     fun git_fetch_uses_literal_bounded_argv_and_refuses_nonzero_result() {
         val root = Files.createTempDirectory("atropos-source-git-command-")
@@ -315,6 +327,17 @@ class SourceBindingContextPackerTest {
         } finally {
             server.stop(0)
         }
+    }
+
+    @Test
+    fun httpBundle_refuses_before_network_when_egress_sink_is_disabled() {
+        SecretSinkMatrix.resetDefaults()
+        val result = SourceBindingFetcher(
+            repoRoot = Files.createTempDirectory("atropos-source-http-egress-")
+        ).fetch(SourceBinding.httpBundle("https://example.invalid/bundle.zip", "a".repeat(64)))
+
+        val failure = assertIs<SourceFetchResult.Failed>(result)
+        assertTrue(failure.reason.contains("SecretSinkMatrix"))
     }
 
     @Test
