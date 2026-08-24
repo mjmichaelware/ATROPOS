@@ -6,13 +6,15 @@ import atropos.core.AtroposRepoRootLocator
 import atropos.core.integration.McpHostManager
 import atropos.core.integration.MarkItDownIngestService
 import atropos.core.dag.DocumentIngestionService
+import atropos.core.security.RedactionFilter
 
 class McpCommandHandler(
     private val uiEngine: AnsiTerminalEngine,
     private val manager: McpHostManager = McpHostManager(
         AtroposRepoRootLocator.resolve(),
         localOnly = AtroposConfig.load().runtime.localOnly
-    )
+    ),
+    private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     fun execute(tokens: List<String>) {
         when (tokens.getOrNull(1)?.lowercase()) {
@@ -39,7 +41,7 @@ class McpCommandHandler(
                     }
                 )
             }
-            .onFailure { uiEngine.renderError("MCP search refused: ${it.message ?: it.javaClass.simpleName}") }
+            .onFailure { uiEngine.renderError("MCP search refused: ${redactionFilter.compact(it.message ?: it.javaClass.simpleName)}") }
     }
 
     private fun call(tokens: List<String>) {
@@ -57,7 +59,7 @@ class McpCommandHandler(
                         result.response.take(8_000)
                 )
             }
-            .onFailure { uiEngine.renderError("MCP tool call refused: ${it.message ?: it.javaClass.simpleName}") }
+            .onFailure { uiEngine.renderError("MCP tool call refused: ${redactionFilter.compact(it.message ?: it.javaClass.simpleName)}") }
     }
 
     private fun ingest(tokens: List<String>) {
@@ -75,6 +77,6 @@ class McpCommandHandler(
             ).ingest(source)
         }.onSuccess { result ->
             uiEngine.renderNotice("MarkItDown ingested path=${result.markdownPath} sha256=${result.markdownSha256} evidence=${result.evidence.sha256} requirements=${result.requirements}")
-        }.onFailure { failure -> uiEngine.renderError("MarkItDown ingest refused: ${failure.message ?: failure.javaClass.simpleName}") }
+        }.onFailure { failure -> uiEngine.renderError("MarkItDown ingest refused: ${redactionFilter.compact(failure.message ?: failure.javaClass.simpleName)}") }
     }
 }

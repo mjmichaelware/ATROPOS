@@ -13286,6 +13286,14 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; B-MCP-GITHUB remains source-wired/partial pending hosted/live evidence.
 - Fingerprints (sha256, first 12): `GitHubApiClient.kt=a19a92174c97`; `GitHubApiClientTest.kt=8575643120ff`; `backend-atom-contract-test.sh=16174e6e1e43`.
 
+### 2026-08-25T02:05:00Z · Agent: Codex GPT-5 · Batch: mcp-cli-redaction-boundary
+
+- Paths touched: `src/main/kotlin/atropos/cli/McpCommandHandler.kt` (+6/-3), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+2).
+- Atoms / phases affected: B-MCP-CORE/ADD-MCP-009 and T04 secret-safe render paths.
+- Predicate moved: MCP search/call and MarkItDown failure text now passes through the existing compact redaction boundary before terminal output; no host, transport, or event owner changed.
+- Verification: pending this batch; root/hosted Kotlin execution remains unproven.
+- % delta: unchanged; source-wired/partial pending hosted focused execution.
+
 ### 2026-08-25T01:45:00Z · Agent: Codex GPT-5 · Batch: sentry-cli-redaction-boundary
 
 - Paths touched: `src/main/kotlin/atropos/cli/SentryCommandHandler.kt` (+8/-1), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+2).
