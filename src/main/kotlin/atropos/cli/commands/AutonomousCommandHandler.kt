@@ -4,6 +4,7 @@ package atropos.cli.commands
 import atropos.core.autonomous.AutonomousBacklogManager
 import atropos.core.autonomous.AutonomousBacklogService
 import atropos.core.autonomous.AutonomousOrchestrator
+import atropos.core.autonomous.ProviderWorkerTask
 
 /**
  * `/autonomous` — Phase 20 orchestrator control and backlog inspection.
@@ -21,6 +22,7 @@ class AutonomousCommandHandler(
         "tick" -> orchestrator.tick()
         "run" -> orchestrator.runOnce()
         "run-max" -> orchestrator.runMax(args.getOrNull(1)?.toIntOrNull() ?: DEFAULT_RUN_MAX)
+        "provider-workers" -> providerWorkers(args.drop(1))
         "backlog" -> backlog()
         "repairs" -> repairs()
         "failovers" -> failovers()
@@ -50,6 +52,22 @@ class AutonomousCommandHandler(
         return failovers.joinToString("\n") {
             "  ${it.id}: ${it.primaryProviderId} -> ${it.fallbackProviderId} success=${it.success}"
         }
+    }
+
+    private fun providerWorkers(specs: List<String>): String {
+        return runCatching {
+            val tasks = specs.mapIndexed { index, spec ->
+                val parts = spec.split('|', limit = 3)
+                require(parts.size == 3) { "usage: /autonomous provider-workers provider|territory|task [...]" }
+                ProviderWorkerTask(
+                    workerId = "provider-worker-${index + 1}",
+                    providerId = parts[0],
+                    territory = listOf(parts[1]),
+                    task = parts[2]
+                )
+            }
+            orchestrator.runProviderWorkers(tasks).render()
+        }.getOrElse { it.message ?: "provider worker request refused" }
     }
 
     private companion object {

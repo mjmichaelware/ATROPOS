@@ -25,7 +25,7 @@ object SystemCommandCatalog {
         SystemCommandEntry(17, "inspect", "file|dag|viewport|full|report"),
         SystemCommandEntry(18, "platform", "adapters|health|env"),
         SystemCommandEntry(19, "artifact", "plan|build|verify|install|commit|gate"),
-        SystemCommandEntry(20, "autonomous", "init|tick|run|run-max|backlog|repairs|failovers")
+        SystemCommandEntry(20, "autonomous", "init|tick|run|run-max|provider-workers|backlog|repairs|failovers")
     )
 
     /** The command words the dispatcher accepts, without their leading slash. */

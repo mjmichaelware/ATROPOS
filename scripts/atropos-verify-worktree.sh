@@ -398,6 +398,7 @@ if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
     --tests 'atropos.core.autonomous.AutonomousBacklogManagerTest' \
     --tests 'atropos.core.autonomous.AutonomousLearningAdvisorTest' \
     --tests 'atropos.core.autonomous.AutonomousOrchestratorLearningTest' \
+    --tests 'atropos.core.autonomous.ProviderWorkerDirectorTest' \
     --tests 'atropos.core.github.GitHubApiClientTest' \
     --tests 'atropos.core.github.GitHubDeviceAuthClientTest' \
     --tests 'atropos.core.github.GitHubBindingTest' \

@@ -19,6 +19,7 @@ import atropos.core.security.SourceSecretScanner
 import atropos.core.worktree.BoundedGitWorktreeCommandRunner
 import java.nio.file.Path
 import java.time.Instant
+import atropos.core.agent.WorkerCodeProposal
 
 class VerifiedCompletionGate(
     private val config: AtroposConfig = AtroposConfig.load(),
@@ -51,6 +52,34 @@ class VerifiedCompletionGate(
             )
         )
     )
+
+    fun mergeProviderProposals(proposals: List<WorkerCodeProposal>): ProviderProposalMergeReport {
+        if (proposals.isEmpty()) return ProviderProposalMergeReport(false, emptyList(), "no provider proposals")
+        val failures = proposals.filterNot { proposal ->
+            proposal.accepted &&
+                !proposal.proposalSha256.isNullOrBlank() &&
+                proposal.patchPath != null &&
+                java.nio.file.Files.isRegularFile(proposal.patchPath) &&
+                proposal.verification?.passed == true
+        }
+        if (failures.isNotEmpty()) {
+            return ProviderProposalMergeReport(
+                false,
+                failures.map { it.workerId },
+                "proposal verification failed: ${failures.joinToString(",") { it.workerId }}"
+            )
+        }
+        val paths = proposals.flatMap { proposal ->
+            proposal.territory.map { it.replace('\\', '/').trim().trim('/') }
+        }
+        val overlap = paths.flatMapIndexed { index, left ->
+            paths.drop(index + 1).mapNotNull { right ->
+                if (left == right || left.startsWith("$right/") || right.startsWith("$left/")) "$left <> $right" else null
+            }
+        }.firstOrNull()
+        if (overlap != null) return ProviderProposalMergeReport(false, emptyList(), "proposal territories overlap: $overlap")
+        return ProviderProposalMergeReport(true, emptyList(), "${proposals.size} independently verified proposals admitted for merge")
+    }
 
     fun evaluateNode(node: DagNode): CompletionGateReport {
         return IndependentVerificationGate(config, repoRoot, processRunner).verify(node)
@@ -151,3 +180,9 @@ class VerifiedCompletionGate(
         return falseCompletions
     }
 }
+
+data class ProviderProposalMergeReport(
+    val accepted: Boolean,
+    val rejectedWorkerIds: List<String>,
+    val reason: String
+)

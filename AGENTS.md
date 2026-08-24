@@ -12973,6 +12973,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; B-PROV-012 remains source-wired / partial.
 - Fingerprint: `ProviderActivationServiceTest.kt=383177de2196`.
 
+### 2026-08-24T18:05:00Z · Agent: Codex GPT-5 · Batch: director-provider-worker-fanout
+
+- Paths touched: `src/main/kotlin/atropos/core/autonomous/ProviderWorkerDirector.kt` (+280), `AutonomousOrchestrator.kt` (+5), `src/main/kotlin/atropos/core/verification/VerifiedCompletionGate.kt` (+31), `src/main/kotlin/atropos/cli/commands/AutonomousCommandHandler.kt` (+20), `SystemCommandCatalog.kt` (+1), `src/main/kotlin/atropos/cli/input/CommandCatalog.kt` (+1), `src/test/kotlin/atropos/core/autonomous/ProviderWorkerDirectorTest.kt` (+86), `scripts/atropos-verify-worktree.sh` (+1), `.github/workflows/compile-gate.yml` (+1), `STATUS-BACKEND.md` (+1 row).
+- Atoms / phases affected: B-PROV-006 provider workers under Director; provider paid/free policy and territory/verification composition.
+- Predicate moved: the existing autonomous production path now exposes bounded provider fan-out. It registers Director→Manager→Worker hierarchy assignments, rejects paid/unhealthy/overlapping work before dispatch, runs up to four non-overlapping worker proposals through the existing `WorkerCodeProposalService`, and admits the batch only when the existing `VerifiedCompletionGate` sees accepted proposals with evidence hashes, regular patch files, passed independent verification, and disjoint territories. No patch is silently applied and no second orchestrator/verifier/provider registry was created.
+- Verification actually run: `bash -n scripts/atropos-verify-worktree.sh`, `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (384 tests)`), `timeout 90s python3 scripts/find-orphans.py --fail-on-new` (exit 0; 4 historical baseline orphan files / 360 LOC), and `git diff --check` passed. `timeout 120s ./gradlew --no-daemon compileKotlin --max-workers=1` reached root `:compileKotlin` after `:core:jvmJar` and exited 124 without compiler/test output; no Kotlin compile-green or hosted-green claim. Push remains externally unavailable because GitHub credentials are absent.
+- % delta: unchanged; B-PROV-006 moves from blocked to source-wired / partial pending hosted compile and focused execution.
+- Fingerprints (sha256, first 12): `ProviderWorkerDirector.kt=2476625f8221`, `AutonomousOrchestrator.kt=8c081a42e2ee`, `VerifiedCompletionGate.kt=c1f780fe47f4`, `AutonomousCommandHandler.kt=d67843e9b733`, `SystemCommandCatalog.kt=84aa77cd4110`, `CommandCatalog.kt=0fe0b9217cb4`, `ProviderWorkerDirectorTest.kt=06ac6160361c`, `atropos-verify-worktree.sh=49325efd3c53`, `compile-gate.yml=75e21d153bb3`.
+
 ### 2026-08-24T16:55:00Z · Agent: Codex GPT-5 · Batch: credit-pool-paid-gate
 
 - Paths touched: `src/main/kotlin/atropos/core/provider/ProviderDescriptor.kt` (+1/-1), `ProviderActionProposals.kt` (+4), `ProviderCascadeOrder.kt` (+1), `RoutePolicy.kt` (+3), `ProviderActionProposalsTest.kt` (+2), `ProviderCascadeOrderTest.kt` (+7), `AGENTS.md`, `STATUS-BACKEND.md`.

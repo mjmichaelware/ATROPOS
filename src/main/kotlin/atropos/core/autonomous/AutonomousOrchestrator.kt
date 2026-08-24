@@ -47,6 +47,10 @@ class AutonomousOrchestrator(
 ) {
     private var session = AutonomousSession()
     private val stopConditions = mutableListOf<StopCondition>()
+    private val providerWorkers = ProviderWorkerDirector()
+
+    fun runProviderWorkers(tasks: List<ProviderWorkerTask>): ProviderWorkerBatchReport =
+        providerWorkers.run(tasks)
 
     fun init(): AutonomousSession {
         directorService.observe(

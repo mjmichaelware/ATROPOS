@@ -374,6 +374,7 @@ object CommandCatalog {
         CommandEntry("/autonomous tick", "run one autonomous orchestrator tick"),
         CommandEntry("/autonomous run", "run one eligible autonomous task"),
         CommandEntry("/autonomous run-max", "run up to N autonomous tasks"),
+        CommandEntry("/autonomous provider-workers", "fan out bounded provider workers under the Director"),
         CommandEntry("/autonomous backlog", "show autonomous task backlog"),
         CommandEntry("/autonomous repairs", "show repair history"),
         CommandEntry("/autonomous failovers", "show provider failover history"),
