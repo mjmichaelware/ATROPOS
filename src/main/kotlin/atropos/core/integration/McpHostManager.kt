@@ -18,6 +18,8 @@ import atropos.core.policy.BoundedAgencyGate
 import atropos.core.policy.BoundedProcessRunner
 import atropos.core.policy.TypedToolExecutor
 import atropos.core.security.RedactionFilter
+import atropos.core.security.SecretSinkKind
+import atropos.core.security.SecretSinkMatrix
 
 enum class McpHealth { HEALTHY, UNHEALTHY, UNTESTED }
 
@@ -377,6 +379,23 @@ class McpHostManager(
             ?: error("MCP remote server has no url: ${server.name}")
         require(url.startsWith("https://") || url.startsWith("http://")) {
             "MCP remote url must use http or https: ${server.name}"
+        }
+        check(SecretSinkMatrix.isEgressPermitted(SecretSinkKind.EGRESS_URL)) {
+            "MCP remote request refused: SecretSinkMatrix does not permit network egress"
+        }
+        val admission = territoryBridge.judge(
+            InboundToolRequest(
+                source = InboundSource.MCP,
+                callerId = "mcp-cli",
+                operation = "inspect",
+                paths = listOf(".")
+            )
+        )
+        when (admission) {
+            is InboundGateResult.Refused -> error("MCP remote request refused by territory bridge: ${admission.reason}")
+            is InboundGateResult.Judged -> require(admission.decision.disposition == AgencyDisposition.ALLOWED) {
+                "MCP remote request refused by policy: ${admission.decision.reason}"
+            }
         }
         val request = HttpRequest.newBuilder(URI.create(url))
             .timeout(Duration.ofSeconds(5))

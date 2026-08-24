@@ -46,6 +46,8 @@ This file records backend implementation status for the current engine wave. A r
 
 | B-INST-003 Termux launcher destination | source-wired / partial | `install.sh`, `scripts/install-contract-test.sh` | install script platform detection → existing `BIN_DIR` selection → generated launcher | Default Termux installs now target `$PREFIX/bin`; explicit `ATROPOS_BIN_DIR` still wins and desktop defaults remain `~/.local/bin`. Installer contract, backend contract, hosted selector parity (418), shell syntax, and diff check pass; hosted release/device evidence remains pending. |
 
+| B-011 / ADD-MCP-001 remote probe egress gate | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `scripts/backend-atom-contract-test.sh` | `McpHostManager.statuses()` → existing `defaultProbe` → sole `postRemote` transport → `SecretSinkMatrix` + `McpTerritoryBridge` | Real HTTP/SSE MCP probes now require network secret-egress permission and the existing territory/policy decision before sending initialize/tools-list requests. Backend contract, hosted selector parity (418), and diff check pass; hosted Kotlin/live remote evidence remains pending. |
+
 ## Commands
 
 - `/factory resume <runId>` — read-only attested resume inspection; execution requires the existing router callback path.

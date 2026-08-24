@@ -13204,3 +13204,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: `bash -n install.sh scripts/install-contract-test.sh`, `ATROPOS_INSTALL_CONTRACT_OK`, backend atom contract, hosted selector contract (418), and `git diff --check` passed. Hosted release/device execution remains pending.
 - % delta: unchanged; B-INST-003 remains source-wired/partial pending hosted artifact and device evidence.
 - Fingerprints (sha256, first 12): `install.sh=3d82bdf46b4a`; `install-contract-test.sh=d78524d0c5ee`.
+
+### 2026-08-24T19:36:46Z · Agent: Codex GPT-5 · Batch: mcp-remote-probe-egress-gate
+
+- Paths touched: `src/main/kotlin/atropos/core/integration/McpHostManager.kt` (+20), `scripts/backend-atom-contract-test.sh` (+1).
+- Atoms / phases affected: B-MCP-CORE-b/c and ADD-MCP-001 remote MCP probe transport safety.
+- Predicate moved: the sole real HTTP/SSE MCP transport now checks `SecretSinkMatrix` and the existing `McpTerritoryBridge` before network egress, including health probes; injected test transports remain test seams and do not create a second production owner.
+- Verification actually run: backend atom contract (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), hosted selector contract (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (418 tests)`), and `git diff --check` passed. Root/hosted Kotlin execution remains pending.
+- % delta: unchanged; B-011/ADD-MCP-001 remains source-wired/partial pending hosted execution and live remote evidence.
+- Fingerprints (sha256, first 12): `McpHostManager.kt=ed83d0c54e52`; `backend-atom-contract-test.sh=45d0e02f010e`.

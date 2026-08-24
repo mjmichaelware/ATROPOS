@@ -39,6 +39,7 @@ text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'health.tsv'
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'TypedToolExecutor'
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'BoundedProcessRunner'
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'RedactionFilter'
+text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'SecretSinkMatrix.isEgressPermitted'
 
 # Tier-0 integrations compose onto existing gates and secret/evidence owners.
 file src/main/kotlin/atropos/core/integration/IntegrationRegistry.kt
