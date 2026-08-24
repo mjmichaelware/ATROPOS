@@ -390,3 +390,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | P09 Perplexity | skipped | No accepted descriptor, transport reference, or existing tree owner is present. | Re-open only with an accepted provider contract. |
 | B-MCP-GITLOCAL mutation micro-atoms | constrained | Current backend scope authorizes bounded status/diff only; add/commit/rebase would be destructive mutations without a separate approval contract. | Extend the existing bounded git owner only after explicit mutation authorization is defined. |
 | B-018 Slack/Discord distribution; B-019 browser verification | deferred | Distribution/browser execution is outside the current Tier-0 backend lane; generic MCP examples remain disabled-by-default and no adapter farm is allowed. | Re-open after core bridge/GHA proof is hosted-green and a transport owner is accepted. |
+
+### 2026-08-24T06:48:39Z · Backend batch: anti-synthetic-velocity-output
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| AcceptanceVelocity / verification evidence honesty | source-wired / partial | `src/main/kotlin/atropos/cli/commands/VerifyCommand.kt` | `/verify narrow|wide` → existing `VerifyCommand` → `AcceptanceVelocity.calculate` with an explicitly empty authoritative event set | Removed the fabricated successful `VerificationEvent` that reported velocity before compilation. `/verify` now renders `velocity=unmeasured` until a real event-store projection supplies predicate events. `git diff --check` passed; orphan gate reports only the same 4 pre-existing files; root/hosted tests remain pending. |

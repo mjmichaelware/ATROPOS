@@ -117,12 +117,20 @@ class VerifyCommand(
             }
         )
         val precedence = PrecedenceLattice().checkPrecedence("USER", 3, "WRITE")
-        val velocity = AcceptanceVelocity.calculate(
-            listOf(VerificationEvent(java.time.Instant.now(), "verify-${scope.name.lowercase()}", true))
-        )
+        // Do not manufacture a successful predicate event merely because a
+        // verification request was assembled. Acceptance velocity is a
+        // historical metric over authoritative predicate events; this command
+        // has no event-store projection here, so the honest value is unknown.
+        val authoritativeEvents = emptyList<VerificationEvent>()
+        val velocity = AcceptanceVelocity.calculate(authoritativeEvents)
+        val velocityDisplay = if (authoritativeEvents.isEmpty()) {
+            "unmeasured"
+        } else {
+            "%.2f".format(velocity)
+        }
         ui.renderNotice(
             "verification evidence: snapshots=${snapshot.size} lines=${batch.physicalLines} " +
-                "precedence=$precedence velocity=${"%.2f".format(velocity)}"
+                "precedence=$precedence velocity=$velocityDisplay"
         )
 
         ui.startSpinner("Verifying ${scope.name.lowercase()} scope")

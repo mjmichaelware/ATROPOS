@@ -443,6 +443,15 @@ When Phase 11 self-build is fully green, ATROPOS can begin to perform this loop 
 
 End of AGENTS.md
 
+### 2026-08-24T06:48:39Z · Agent: Codex GPT-5 · Batch: anti-synthetic-velocity-output
+
+- Paths touched: `src/main/kotlin/atropos/cli/commands/VerifyCommand.kt` (+10/-4), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: AcceptanceVelocity / verification evidence honesty; backend metrics surface.
+- Predicate moved: `/verify` no longer creates a successful verification event merely from assembling a request. Because the current command has no authoritative event-store projection carrying predicate identities, it now calls the existing `AcceptanceVelocity` owner with an explicitly empty event set and renders `velocity=unmeasured`; no false metric is reported.
+- Verification actually run: `git diff --check` passed; `python3 -m py_compile scripts/find-orphans.py` passed; `timeout 90s python3 scripts/find-orphans.py --fail-on-new` exited 0 and reported only the four pre-existing baseline orphan files (4 files / 360 LOC). Root Gradle and hosted GitHub Actions remain unrun; no green claim.
+- % delta: unchanged; source truth improved, but the metric remains partial until a real predicate-event projection exists.
+- Fingerprint: `VerifyCommand.kt=d219e5c43963`.
+
 ### 2026-08-23T12:00:00Z · Agent: Codex GPT-5 · Batch: factory-handoff-durable-guard-wave1
 
 - Paths touched: `src/main/kotlin/atropos/core/dag/DagStore.kt` (+3), `src/main/kotlin/atropos/core/factory/FactoryProgressGuard.kt` (+67), `src/main/kotlin/atropos/core/factory/FactoryRunHandoff.kt` (+18/-5), `src/main/kotlin/atropos/core/factory/FactoryRunOrchestrator.kt` (+32), `src/main/kotlin/atropos/core/factory/FactoryRepairExecutor.kt` (existing production seam), `src/main/kotlin/atropos/cli/FactoryCommandHandler.kt` (+2), `src/test/kotlin/atropos/core/factory/FactoryProgressGuardTest.kt` (+17), `src/test/kotlin/atropos/core/factory/FactoryResumeAndRepairTest.kt` (+4), and `STATUS-BACKEND.md` (new backend ledger).
