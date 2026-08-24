@@ -13286,6 +13286,14 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; B-MCP-GITHUB remains source-wired/partial pending hosted/live evidence.
 - Fingerprints (sha256, first 12): `GitHubApiClient.kt=a19a92174c97`; `GitHubApiClientTest.kt=8575643120ff`; `backend-atom-contract-test.sh=16174e6e1e43`.
 
+### 2026-08-25T01:45:00Z · Agent: Codex GPT-5 · Batch: sentry-cli-redaction-boundary
+
+- Paths touched: `src/main/kotlin/atropos/cli/SentryCommandHandler.kt` (+8/-1), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+2).
+- Atoms / phases affected: R4/B-MCP-SENTRY and T04 secret-safe render paths.
+- Predicate moved: Sentry command failures now pass through the existing compact redaction boundary before terminal output; no new Sentry client or repair owner was introduced.
+- Verification: pending this batch; root/hosted Kotlin execution remains unproven.
+- % delta: unchanged; source-wired/partial pending hosted focused execution.
+
 ### 2026-08-25T01:20:00Z · Agent: Codex GPT-5 · Batch: bridge-file-atomic-bound
 
 - Paths touched: `src/main/kotlin/atropos/bridge/BridgeFilesHandler.kt` (+14/-1), `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+2).

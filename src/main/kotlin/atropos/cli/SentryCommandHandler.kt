@@ -5,11 +5,13 @@ import atropos.cli.ui.AnsiTerminalEngine
 import atropos.core.AtroposRepoRootLocator
 import atropos.core.sentry.SentryApiClient
 import atropos.core.sentry.SentryRepairCoordinator
+import atropos.core.security.RedactionFilter
 
 class SentryCommandHandler(
     private val uiEngine: AnsiTerminalEngine,
     private val client: SentryApiClient = SentryApiClient(),
-    private val coordinator: SentryRepairCoordinator = SentryRepairCoordinator(AtroposRepoRootLocator.resolve())
+    private val coordinator: SentryRepairCoordinator = SentryRepairCoordinator(AtroposRepoRootLocator.resolve()),
+    private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     fun execute(tokens: List<String>) {
         val operation = tokens.getOrNull(1)?.lowercase()
@@ -56,7 +58,12 @@ class SentryCommandHandler(
                 )
             }
         }.onSuccess(uiEngine::renderBlock)
-            .onFailure { uiEngine.renderError("Sentry operation refused: ${it.message ?: it.javaClass.simpleName}") }
+            .onFailure {
+                uiEngine.renderError(
+                    "Sentry operation refused: " +
+                        redactionFilter.compact(it.message ?: it.javaClass.simpleName)
+                )
+            }
     }
 
     private fun option(tokens: List<String>, name: String): String? {
