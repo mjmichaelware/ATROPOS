@@ -12296,6 +12296,13 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged.
 - Fingerprint: recorded after commit.
 
+### 2026-08-24T06:44:30Z · Agent: Codex GPT-5 · Batch: backend-blocker-ledger-fingerprint
+
+- Paths touched: `AGENTS.md` (+5); no production code changes.
+- Predicate moved: the blocker ledger batch has post-commit content fingerprints: `STATUS-BACKEND.md=c5e6814bb492c`, `AGENTS.md=c9a11dd3e0451`.
+- Verification actually run: commit `402bc382` is present, worktree was clean after commit, and `git diff --check` passed.
+- % delta: unchanged.
+
 ### 2026-08-24T10:35:00Z · Agent: Codex GPT-5 · Batch: gha-pull-request-trigger
 
 - Paths touched: `.github/workflows/atropos-verify-example.yml` (+1), `scripts/atropos-verify-action-contract-test.sh` (+8), `STATUS-BACKEND.md` (+2).
