@@ -186,3 +186,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | ADD-MCP-002 doctor budget visibility | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `src/main/kotlin/atropos/cli/BackendDoctor.kt`, `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` | existing `CommandRouter` → `BackendDoctor.render` → shared `McpHostManager.budgetSummary` | `/doctor` now prints the same default MCP injection limits used by the host; focused assertion added. `git diff --check` passed; hosted/root execution remains pending. |
+
+### 2026-08-24T05:21:00Z · Backend batch: mcp-memory-authority-gate
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| ADD-MCP-007 memory non-authority | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` | existing CLI/bridge `McpHostManager.callTool` → memory/server authority-path mutation guard before process start | Memory-named MCP servers are refused for write-like operations targeting SourceAuthority/governance/ledger paths, even when an injected outer gate allows the request; fixture asserts no process start. `git diff --check` passed; hosted/root execution remains pending. |

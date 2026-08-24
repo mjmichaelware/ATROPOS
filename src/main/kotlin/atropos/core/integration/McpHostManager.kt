@@ -183,6 +183,9 @@ class McpHostManager(
         }
         val server = load().firstOrNull { it.name == serverName }
             ?: error("MCP server is not configured: $serverName")
+        require(!isMemoryAuthorityMutation(server, operation, territoryPaths)) {
+            "memory MCP cannot write SourceAuthority or governance ledger paths"
+        }
         require(server.enabled) { "MCP server is disabled: $serverName" }
         require(server.name in allowlist || (!server.community && allowlist.isEmpty())) {
             "MCP server is not allowlisted: $serverName"
@@ -299,6 +302,21 @@ class McpHostManager(
         require(descriptors.any { it.name == toolName && boundedTools(descriptors, budget).any { bounded -> bounded.name == toolName } }) {
             "MCP tool '$toolName' is not advertised within the configured tool budget"
         }
+    }
+
+    private fun isMemoryAuthorityMutation(
+        server: McpServerConfig,
+        operation: String,
+        paths: List<String>
+    ): Boolean {
+        val memoryServer = server.name.lowercase().contains("memory")
+        val mutation = operation.lowercase() in setOf("write", "append", "update", "replace", "delete", "create", "set")
+        val authorityPath = paths.any { path ->
+            val normalized = path.lowercase().replace('\\', '/')
+            normalized.contains("sourceauthority") || normalized.contains("source-authority") ||
+                normalized.contains("governance") || normalized.contains("ledger")
+        }
+        return memoryServer && mutation && authorityPath
     }
 
     private fun defaultProbe(server: McpServerConfig): McpHealth =

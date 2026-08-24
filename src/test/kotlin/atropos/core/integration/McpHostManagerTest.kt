@@ -1,6 +1,11 @@
 package atropos.core.integration
 
 import java.nio.file.Files
+import atropos.core.policy.AgencyDecision
+import atropos.core.policy.AgencyDisposition
+import atropos.core.policy.ExecutionPolicyDecision
+import atropos.core.policy.PolicyActionClass
+import atropos.core.policy.PolicyDecisionType
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -99,6 +104,47 @@ class McpHostManagerTest {
             )
         }.exceptionOrNull()
         assertTrue(failure?.message?.contains("not advertised within the configured tool budget") == true)
+        assertTrue(!Files.exists(marker))
+    }
+
+    @Test
+    fun memory_mcp_cannot_write_authority_paths_even_when_outer_gate_allows() {
+        val root = Files.createTempDirectory("mcp-memory-authority")
+        val marker = root.resolve("started")
+        val script = root.resolve("memory.sh")
+        Files.writeString(script, "#!/bin/sh\ntouch '${marker.fileName}'\n")
+        script.toFile().setExecutable(true)
+        Files.writeString(root.resolve("mcp.json"),
+            """{"servers":[{"name":"memory-local","transport":"stdio","command":"./memory.sh","enabled":true,"community":false}]}""")
+        val manager = McpHostManager(
+            root,
+            territoryBridge = McpTerritoryBridge(
+                setOf("write"),
+                gate = { proposal ->
+                    AgencyDecision(
+                        proposal = proposal,
+                        policyDecision = ExecutionPolicyDecision(
+                            id = "test",
+                            decision = PolicyDecisionType.ALLOW,
+                            actionClass = PolicyActionClass.FILE_MUTATION,
+                            destructive = false,
+                            reason = "test allow"
+                        ),
+                        disposition = AgencyDisposition.ALLOWED,
+                        reason = "test allow"
+                    )
+                }
+            )
+        )
+        val failure = runCatching {
+            manager.callTool(
+                serverName = "memory-local",
+                toolName = "write",
+                operation = "write",
+                territoryPaths = listOf(".atropos/governance/ledger.tsv")
+            )
+        }.exceptionOrNull()
+        assertTrue(failure?.message?.contains("memory MCP cannot write") == true)
         assertTrue(!Files.exists(marker))
     }
 

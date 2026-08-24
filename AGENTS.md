@@ -479,6 +479,15 @@ End of AGENTS.md
 - % delta: unchanged; source-wired but partial pending hosted execution.
 - Fingerprints: `McpHostManager.kt=e4e64b2263a6`; `BackendDoctor.kt=1c9edbd0e9ce`; `McpHostManagerTest.kt=516628b48869`.
 
+### 2026-08-24T05:21:00Z · Agent: Codex GPT-5 · Batch: mcp-memory-authority-gate
+
+- Paths touched: `src/main/kotlin/atropos/core/integration/McpHostManager.kt` (+18), `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+46), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: ADD-MCP-007 memory MCP non-authority policy.
+- Predicate moved: memory-named MCP servers cannot perform write-like operations against SourceAuthority, governance, or ledger paths, even if the surrounding test-injected gate allows the request; refusal occurs before process start. The existing MCP host remains the sole owner.
+- Verification actually run: `git diff --check` passed; focused Gradle/root and hosted execution remain pending, so no green claim.
+- % delta: unchanged; source-wired but partial pending hosted execution.
+- Fingerprints: `McpHostManager.kt=0babaa5c0340`; `McpHostManagerTest.kt=be4718a9c5d5`.
+
 ### 2026-08-24T04:41:10Z · Agent: Codex GPT-5 · Batch: mcp-http-request-validity
 
 - Paths touched: `src/main/kotlin/atropos/core/integration/McpHostManager.kt` (+10/-4), `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+2).
