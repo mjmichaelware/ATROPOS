@@ -471,6 +471,15 @@ End of AGENTS.md
 - % delta: unchanged; B-INST-006 remains partial pending hosted release and runtime installation evidence.
 - Fingerprints (sha256, first 12): recorded after this batch.
 
+### 2026-08-24T12:10:00Z · Agent: Codex GPT-5 · Batch: hosted-snapshot-secret-boundary
+
+- Paths touched: `src/main/kotlin/atropos/core/verification/GitHubActionsCompileRunner.kt` (+22), `src/main/kotlin/atropos/core/security/ContextPathExclusions.kt` (+1), `src/test/kotlin/atropos/core/verification/GitHubActionsCompileRunnerTest.kt` (+22), `src/test/kotlin/atropos/core/security/ContextPathExclusionsTest.kt` (+8), `.github/workflows/compile-gate.yml` (+1), `scripts/atropos-verify-worktree.sh` (+1), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-MCP-GHA hosted compile snapshot boundary; T04 secret redaction/exclusion.
+- Predicate moved: the remote compile gate now refuses a changed excluded credential path before staging or pushing its scratch ref, and the shared exclusion owner recognizes vendor-prefixed `.env` files without excluding Kotlin source files. No second secret policy or snapshot owner was introduced.
+- Verification actually run: targeted shell syntax and `git diff --check` passed; focused Kotlin tests are selected in both hosted lanes but were not executed locally, so no compile/test green claim is made.
+- % delta: unchanged; hosted snapshot proof remains partial pending GitHub Actions execution.
+- Fingerprints (sha256, first 12): recorded after this batch.
+
 ### 2026-08-24T07:55:00Z · Agent: Codex GPT-5 · Batch: installer-prerelease-tag-correction
 
 - Paths touched: `install.sh` (+5), `scripts/install-contract-test.sh` (+1), `scripts/release-installer-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7).

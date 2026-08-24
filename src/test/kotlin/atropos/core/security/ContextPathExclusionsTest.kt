@@ -41,6 +41,8 @@ class ContextPathExclusionsTest {
         excluded(".env.local")
         excluded(".env.production")
         excluded("config/.env")
+        excluded("atropos-provider.env")
+        excluded("config/provider.env")
     }
 
     @Test
@@ -69,6 +71,7 @@ class ContextPathExclusionsTest {
         allowed("src/main/kotlin/atropos/core/secret/SecretStore.kt")
         allowed("src/main/kotlin/atropos/core/ApiKeys.kt")
         allowed("build.gradle.kts")
+        allowed("src/main/kotlin/ProviderEnv.kt")
     }
 
     @Test

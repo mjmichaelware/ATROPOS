@@ -139,6 +139,24 @@ class GitHubActionsCompileRunnerTest {
     }
 
     @Test
+    fun a_changed_environment_file_refuses_remote_snapshot_before_push() {
+        val github = FakeGitHub(runsBody(SHA, "success"))
+        val git = ScriptedGit(SHA, status = "?? atropos-provider.env\u0000")
+
+        val failure = assertFailsWith<IllegalArgumentException> {
+            GitHubActionsCompileRunner(
+                repoRoot = repoRoot,
+                token = "t0ken",
+                runGit = git::run,
+                http = github::handle
+            ).invoke(listOf("github-actions"), repoRoot)
+        }
+
+        assertTrue(failure.message.orEmpty().contains("excluded credential paths"))
+        assertTrue(git.commands.none { it.contains(" push ") }, git.commands.toString())
+    }
+
+    @Test
     fun the_snapshot_is_pushed_before_the_workflow_is_dispatched() {
         val github = FakeGitHub(runsBody(SHA, "success"))
         val git = ScriptedGit(SHA)
@@ -204,7 +222,7 @@ class GitHubActionsCompileRunnerTest {
 }
 
 /** A git that answers plausibly and records what it was asked. */
-private class ScriptedGit(private val sha: String) {
+private class ScriptedGit(private val sha: String, private val status: String = "") {
     val commands = mutableListOf<List<String>>()
     val environments = mutableListOf<Map<String, String>>()
 
@@ -216,6 +234,7 @@ private class ScriptedGit(private val sha: String) {
         environments += environment
         val stdout = when {
             command.contains("remote") -> "git@github.com:o/r.git"
+            command.contains("status") -> status
             command.contains("write-tree") -> "tree0000"
             else -> sha
         }

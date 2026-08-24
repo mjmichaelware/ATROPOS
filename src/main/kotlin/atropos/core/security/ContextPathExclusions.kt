@@ -47,6 +47,7 @@ object ContextPathExclusions {
         if (DIRECTORIES.any { normalized == it || normalized.startsWith("$it/") }) return true
         if (normalized == ENV_FILE || normalized.startsWith("$ENV_FILE.")) return true
         if (name == ENV_FILE || name.startsWith("$ENV_FILE.")) return true
+        if (name.endsWith(ENV_FILE, ignoreCase = true)) return true
         if (SUFFIXES.any { name.endsWith(it) }) return true
         if (isSourceFile(name)) return false
         return NAME_FRAGMENTS.any { name.contains(it, ignoreCase = true) }

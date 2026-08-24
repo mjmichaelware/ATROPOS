@@ -2,6 +2,7 @@
 package atropos.core.verification
 
 import atropos.core.policy.BoundedProcessRunner
+import atropos.core.security.ContextPathExclusions
 import atropos.core.thinking.Thinking
 import java.net.URI
 import java.net.http.HttpClient
@@ -140,6 +141,7 @@ class GitHubActionsCompileRunner(
         Files.deleteIfExists(index)
         val environment = mapOf("GIT_INDEX_FILE" to index.toAbsolutePath().toString())
         return try {
+            refuseExcludedChangedPaths()
             git(listOf("git", "add", "-A"), environment)
             val tree = git(listOf("git", "write-tree"), environment)
             val parent = git(listOf("git", "rev-parse", "HEAD"))
@@ -152,6 +154,22 @@ class GitHubActionsCompileRunner(
             )
         } finally {
             Files.deleteIfExists(index)
+        }
+    }
+
+    /** Never send a changed credential-shaped path to a hosted compiler. */
+    private fun refuseExcludedChangedPaths() {
+        val status = git(listOf("git", "status", "--porcelain=v1", "--untracked-files=all", "-z"))
+        val excluded = status.split('\u0000')
+            .asSequence()
+            .filter { it.length > 3 }
+            .map { it.substring(3) }
+            .flatMap { path -> path.split(" -> ").asSequence() }
+            .filter(ContextPathExclusions::isExcluded)
+            .distinct()
+            .toList()
+        require(excluded.isEmpty()) {
+            "compile gate snapshot refused excluded credential paths: ${excluded.joinToString(", ")}"
         }
     }
 
