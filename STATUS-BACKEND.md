@@ -1088,3 +1088,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | P01-P07/P10-P11 provider transport coverage | source-wired / partial | `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt`, `scripts/backend-atom-contract-test.sh`, existing adapter/catalog owners | `StaticProviderAdapterRegistry` → `buildKernelAdapter` → native/OpenAI-compatible/Bedrock adapter owners | Added one focused assertion covering DeepSeek, Mistral, Gemini, xAI, OpenRouter, Ollama, Bedrock, Anthropic, OpenAI, and Azure transport ownership, including Anthropic native endpoint identity. Static backend contract and selector parity (420) pass; hosted/root Kotlin execution remains pending. |
+
+### 2026-08-25T07:00:00Z · Agent: Codex GPT-5 · Batch: backend-contract-sweep
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| backend contract coverage sweep | source-wired / partial | `scripts/backend-atom-contract-test.sh`, `scripts/hosted-test-selector-contract.sh`, `scripts/provider-env-contract-test.sh`, `scripts/atropos-verify-action-contract-test.sh`, `scripts/mcp-example-contract-test.sh`, `scripts/npm-installer-contract-test.sh`, `scripts/install-contract-test.sh` | GitHub compile/reusable verifier lanes → static backend/install/MCP/provider contracts | All local static contracts pass: backend atoms, hosted selector parity (420), provider environment docs, GHA action/workflow, 14 MCP examples, npm installer, and shell installer. Kotlin execution, hosted workflow, published release, and device proof remain unverified. |

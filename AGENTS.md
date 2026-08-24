@@ -13348,6 +13348,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; T04 remains partial pending hosted execution and final bridge sink audit.
 - Fingerprints recorded by commit; unrelated `docs/completion/*` files were not staged.
 
+### 2026-08-25T07:00:00Z · Agent: Codex GPT-5 · Batch: backend-contract-sweep
+
+- Paths touched: `STATUS-BACKEND.md` (+7); no production source changes in this batch.
+- Atoms / phases affected: backend verification evidence across provider, MCP, GHA, install, and package lanes.
+- Predicate moved: the complete local static contract sweep passed: backend atom contract, 420-test hosted selector parity, provider environment table, GHA action/workflow, 14 MCP examples, npm installer, and shell installer contracts.
+- Verification actually run: all commands passed; no root/hosted Kotlin test, published release, or device proof is claimed.
+- % delta: unchanged; source-wired atoms remain partial until executable hosted evidence exists.
+- Fingerprints recorded by commit; unrelated `docs/completion/*` files were not staged.
+
 ### 2026-08-25T06:45:00Z · Agent: Codex GPT-5 · Batch: provider-catalog-transport-coverage
 
 - Paths touched: `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` (+25), `scripts/backend-atom-contract-test.sh` (+4), `STATUS-BACKEND.md` (+7).
