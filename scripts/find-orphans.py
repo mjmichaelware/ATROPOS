@@ -17,6 +17,7 @@ this script exists to strip away.
 
 import os
 import re
+import subprocess
 import sys
 
 ROOT = "src/main/kotlin"
@@ -99,6 +100,20 @@ def code_only(text):
     )
 
 
+def added_production_paths() -> set[str]:
+    """Return newly added production source paths in the current revision."""
+    base = os.environ.get("ATROPOS_ORPHAN_BASE", "HEAD^")
+    result = subprocess.run(
+        ["git", "diff", "--name-only", "--diff-filter=A", base, "HEAD", "--", "src/main"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(f"could not determine added production paths: {result.stderr.strip()}")
+    return {line.strip() for line in result.stdout.splitlines() if line.strip().endswith((".kt", ".java"))}
+
+
 def main() -> int:
     if not os.path.isdir(ROOT):
         print(f"{ROOT} not found -- run from the repository root", file=sys.stderr)
@@ -134,12 +149,16 @@ def main() -> int:
     tokens = {
         p: set(re.findall(r"\b[A-Za-z_][A-Za-z0-9_]*\b", t)) for p, t in code.items()
     }
+    token_files = {}
+    for path, names in tokens.items():
+        for name in names:
+            token_files.setdefault(name, set()).add(path)
 
     orphans = []
     for path, names in declared.items():
         if not names:
             continue
-        if any(names & tokens[other] for other in files if other != path):
+        if any(token_files.get(name, set()) - {path} for name in names):
             continue
         orphans.append((path, len(source[path].splitlines()), sorted(names)))
 
@@ -150,6 +169,11 @@ def main() -> int:
     print()
     print(f"{len(orphans)} orphaned of {len(files)} production files")
     print(f"{sum(row[1] for row in orphans)} orphan LOC")
+    if "--fail-on-new" in sys.argv:
+        new_orphans = [row for row in orphans if row[0] in added_production_paths()]
+        if new_orphans:
+            print("new production orphan(s) detected; every added production file needs a caller", file=sys.stderr)
+            return 1
     return 0
 
 

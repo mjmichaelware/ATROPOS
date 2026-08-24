@@ -90,3 +90,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | ADD-MCP-005 / `/mcp search` | partial / source-wired | `McpHostManager.kt:105-120`, `McpCommandHandler.kt:21-43`, `CommandCatalog.kt:29-32`, `McpHostManagerTest.kt` | `CommandRouter` → `McpCommandHandler` → existing `McpHostManager.search` | focused test added; no local root test result claimed. Search is config-only, does not network/install/enable/probe, and localOnly omits remote candidates. `git diff --check` passed. |
+
+### 2026-08-24T01:05:00Z · Backend batch: orphan-gate-enforcement
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| S-012 / new production orphan gate | source-wired / partial | `scripts/find-orphans.py:103-177`, `.github/workflows/compile-gate.yml:31-65` | GitHub Actions `focused-backend-tests` invokes `python3 scripts/find-orphans.py --fail-on-new` | Existing canonical census now indexes token callers instead of scanning every file pair; the opt-in gate fails only newly added `.kt`/`.java` production paths with no caller, preserving known baseline orphans. `python3 -m py_compile`, `timeout 60s ... --fail-on-new` (exit 0), and `git diff --check` passed; hosted CI remains unrun. |

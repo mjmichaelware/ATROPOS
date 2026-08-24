@@ -452,6 +452,15 @@ End of AGENTS.md
 - % delta: unchanged; no VERIFIED claim. FTY-01, FTY-02, and FTY-04 are marked done in `STATUS-BACKEND.md` based on production source plus narrow compilation; FTY-03 and FTY-05 remain partial until root focused tests and a runtime-owned repair callback are proven.
 - Fingerprints (sha256): `DagStore.kt=fb932962f947`; `FactoryProgressGuard.kt=50bb25ea712d`; `FactoryRunHandoff.kt=537cf1c24fc2`; `FactoryRunOrchestrator.kt=652e100a59b7`; `FactoryRepairExecutor.kt=16e2c5cd36a8`; `FactoryCommandHandler.kt=392afeb3eb37`; `FactoryProgressGuardTest.kt=1e5d81c78c09`; `FactoryResumeAndRepairTest.kt=bca553b18f46`; `STATUS-BACKEND.md=2669342e3735`.
 
+### 2026-08-24T01:05:00Z · Agent: Codex GPT-5 · Batch: orphan-gate-enforcement
+
+- Paths touched: `scripts/find-orphans.py` (+20), `.github/workflows/compile-gate.yml` (+7), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: S-012 orphan doctor gate / backend CI enforcement.
+- Predicate moved: the existing canonical orphan census now has an indexed caller calculation and an opt-in `--fail-on-new` mode. The existing GitHub focused backend job invokes it after a two-commit checkout, so newly added production Kotlin/Java files without a production caller fail CI while pre-existing baseline orphans remain visible but do not create a false red gate.
+- Verification actually run: `python3 -m py_compile scripts/find-orphans.py` passed; `timeout 60s python3 scripts/find-orphans.py --fail-on-new` completed with `ORPHAN_GATE_EXIT=0` and reported `4 orphaned of 1028 production files` / `360 orphan LOC`; `git diff --check` passed. Hosted GitHub Actions has not run.
+- % delta: unchanged; source-wired but partial pending hosted CI evidence.
+- Fingerprints (sha256): `scripts/find-orphans.py=4e8a48ccca76`; `.github/workflows/compile-gate.yml=dcfbd9094b74`.
+
 ### 2026-08-24T00:25:00Z · Agent: Codex GPT-5 · Batch: configured-mcp-search
 
 - Paths touched: `src/main/kotlin/atropos/core/integration/McpHostManager.kt` (+17), `src/main/kotlin/atropos/cli/McpCommandHandler.kt` (+20/-1), `src/main/kotlin/atropos/cli/input/CommandCatalog.kt` (+1), `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+17), `STATUS-BACKEND.md` (+7).
