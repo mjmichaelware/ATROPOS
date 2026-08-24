@@ -650,3 +650,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | bridge production compile | inconclusive / partial | `src/main/kotlin/atropos/bridge/BridgeMcpHandler.kt`, `BridgeRoutes.kt` | local `kotlinc` diagnostic attempt | A narrow compile against the assumed `build/classes/kotlin/main` path failed because that production classpath does not exist in this checkout; errors were unresolved dependencies, not an isolated source verdict. No compile pass/fail claim; hosted Gradle remains authoritative. |
+
+### 2026-08-24T16:30:00Z · Backend verification: stale-jar-compile-inconclusive
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| bridge production compile | inconclusive / partial | `build/libs/ATROPOS.jar`, changed bridge sources | narrow `kotlinc` diagnostic attempt | The prior JAR lacks newer MCP/bridge symbols and cannot serve as a valid current module classpath; the attempt reported unresolved/stale internal symbols. No source verdict is claimed. Full hosted Gradle remains authoritative. |

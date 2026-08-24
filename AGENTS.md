@@ -12755,3 +12755,10 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Acceptance predicate checked: isolated compilation of the changed bridge production files.
 - Evidence: the attempted `kotlinc` classpath referenced `build/classes/kotlin/main`, which is absent in this checkout; it therefore emitted unresolved dependency errors rather than a valid source verdict. No compile pass/fail claim is made; hosted Gradle remains authoritative.
 - % delta: unchanged; bridge compile evidence remains partial.
+
+### 2026-08-24T16:30:00Z · Agent: Codex GPT-5 · Verification: stale-jar-compile-inconclusive
+
+- Paths touched: `STATUS-BACKEND.md` (+7).
+- Acceptance predicate checked: narrow bridge compilation against the existing assembled JAR.
+- Evidence: the prior `build/libs/ATROPOS.jar` lacks newer MCP/bridge symbols and produced stale/unresolved internal-symbol diagnostics. This is not a current source verdict; no compile pass/fail claim is made.
+- % delta: unchanged; bridge compile evidence remains partial pending hosted Gradle.
