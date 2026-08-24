@@ -61,9 +61,49 @@ internal object McpConfigParser {
         rawMember(text, name)?.trim()?.takeIf { it == "true" || it == "false" }?.toBoolean()
 
     private fun rawMember(text: String, name: String): String? {
-        val key = Regex("\\\"${Regex.escape(name)}\\\"\\s*:").find(text) ?: return null
-        var index = skipWhitespace(text, key.range.last + 1)
-        require(index < text.length) { "mcp.json field '$name' has no value" }
+        var index = skipWhitespace(text, 0)
+        require(index < text.length && text[index] == '{') { "mcp.json object expected" }
+        var objectDepth = 0
+        var arrayDepth = 0
+        while (index < text.length) {
+            when (text[index]) {
+                '"' -> {
+                    val end = stringEnd(text, index)
+                    if (objectDepth == 1 && arrayDepth == 0) {
+                        val key = decode(text.substring(index, end + 1))
+                        val colon = skipWhitespace(text, end + 1)
+                        if (colon < text.length && text[colon] == ':') {
+                            val valueStart = skipWhitespace(text, colon + 1)
+                            if (key == name) return rawValue(text, valueStart)
+                        }
+                    }
+                    index = end + 1
+                }
+                '{' -> {
+                    objectDepth++
+                    index++
+                }
+                '}' -> {
+                    objectDepth--
+                    index++
+                }
+                '[' -> {
+                    arrayDepth++
+                    index++
+                }
+                ']' -> {
+                    arrayDepth--
+                    index++
+                }
+                else -> index++
+            }
+        }
+        return null
+    }
+
+    private fun rawValue(text: String, start: Int): String {
+        var index = start
+        require(index < text.length) { "mcp.json field has no value" }
         return when (text[index]) {
             '"' -> text.substring(index, stringEnd(text, index) + 1)
             '[', '{' -> {

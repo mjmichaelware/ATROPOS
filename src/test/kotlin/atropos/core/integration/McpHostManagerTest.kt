@@ -33,6 +33,17 @@ class McpHostManagerTest {
     }
 
     @Test
+    fun config_parser_does_not_match_member_names_inside_string_values() {
+        val root = Files.createTempDirectory("mcp-config-string")
+        Files.writeString(root.resolve("mcp.json"), """
+            {"description":"text containing \"servers\":[{\"name\":\"wrong\"}]",
+             "servers":[{"name":"actual","enabled":true,"community":false}]}
+        """.trimIndent())
+
+        assertEquals("actual", McpHostManager(root).load().single().name)
+    }
+
+    @Test
     fun community_servers_are_disabled_and_tool_results_get_evidence() {
         val root = Files.createTempDirectory("mcp-host")
         Files.writeString(root.resolve("mcp.json"), """

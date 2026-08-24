@@ -13053,6 +13053,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; B-MCP-CORE-a moves from regex source-wired / partial to structurally source-wired / partial pending hosted execution.
 - Fingerprints: `McpConfigParser.kt=98443e3b5c64`, `McpHostManager.kt=8e18ba8325e3`, `McpHostManagerTest.kt=bd13b184e880`, `backend-atom-contract-test.sh=9f9d9672f4c3`.
 
+### 2026-08-24T18:27:00Z · Agent: Codex GPT-5 · Batch: mcp-config-depth-aware-members
+
+- Paths touched: `src/main/kotlin/atropos/core/integration/McpConfigParser.kt` (+46/-8), `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+13), `AGENTS.md`, `STATUS-BACKEND.md`.
+- Atoms / phases affected: B-MCP-CORE-a structural member lookup.
+- Predicate moved: MCP config field lookup now tracks object and array depth and cannot match member names embedded in quoted descriptions or nested objects. Added a regression fixture proving a fake servers token inside a string does not replace the real top-level catalog.
+- Verification actually run: backend atom contract, hosted selector contract (`418 tests`), and `git diff --check` passed. Root focused Kotlin execution remains environment-limited; no runtime-green claim.
+- % delta: unchanged; B-MCP-CORE-a remains structurally source-wired / partial pending hosted execution.
+- Fingerprints: `McpConfigParser.kt=1136425a06b5`, `McpHostManagerTest.kt=d54f006878a3`.
+
 ### 2026-08-24T17:29:00Z · Agent: Codex GPT-5 · Verification: backend-static-gate-recheck
 
 - Paths touched: `AGENTS.md`, `STATUS-BACKEND.md` only.
