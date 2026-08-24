@@ -12161,6 +12161,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; source-wired but partial pending hosted execution evidence.
 - Fingerprints: recorded after the batch commit.
 
+### 2026-08-24T10:35:00Z · Agent: Codex GPT-5 · Batch: gha-pull-request-trigger
+
+- Paths touched: `.github/workflows/atropos-verify-example.yml` (+1), `scripts/atropos-verify-action-contract-test.sh` (+8), `STATUS-BACKEND.md` (+2).
+- Atoms / phases affected: B-MCP-GHA PR verification trigger.
+- Predicate moved: the existing reusable verification example now runs on `pull_request` in addition to manual dispatch, while retaining checkout, hosted Java setup, bounded verification, evidence output, and fail-closed check publication.
+- Verification actually run: the local action/workflow contract and `git diff --check` are available; hosted execution remains pending and no CI green claim is made.
+- % delta: unchanged; source-wired but partial pending hosted execution evidence.
+- Fingerprints: recorded after the batch commit.
+
 ### 2026-08-24T10:10:00Z · Agent: Codex GPT-5 · Batch: github-scavenge-unified-behavior-test
 
 - Paths touched: `src/test/kotlin/atropos/core/scavenge/GitHubScavengerTest.kt` (+45), `STATUS-BACKEND.md` (+2).

@@ -314,6 +314,8 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 
 | B-MCP-GHA check evidence publication | source-wired / partial | `.github/workflows/atropos-verify-example.yml` | existing reusable action output → `actions/github-script` check summary | The example check now includes the bounded action's evidence-hash output in its published summary while preserving failure/cancelled conclusions. Hosted workflow execution remains pending. |
 
+| B-MCP-GHA pull-request trigger | source-wired / partial | `.github/workflows/atropos-verify-example.yml`, `scripts/atropos-verify-action-contract-test.sh` | GitHub `pull_request` event → existing `atropos-verify` composite action | The example verification check now runs on pull requests as well as manual dispatch; the local workflow contract checks the trigger and required checkout/setup/action/check steps. Hosted execution remains pending. |
+
 ### 2026-08-24T09:20:00Z · Backend batch: github-single-transport-owner
 
 | atom | status | files | caller | tests / notes |

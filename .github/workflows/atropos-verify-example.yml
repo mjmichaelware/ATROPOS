@@ -1,6 +1,7 @@
 name: ATROPOS verify example
 
 on:
+  pull_request:
   workflow_dispatch:
 
 permissions:
