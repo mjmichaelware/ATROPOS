@@ -52,7 +52,7 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | R1 MCP single owner | partial | `McpHostManager.kt` is the only MCP manager; `/mcp`, bridge, and doctor call it; process starts use `BoundedProcessRunner` | hosted tests and a real allowlisted stdio server remain unrun |
 | R2 provider prefer/disable | partial | `ProviderOnboardingService.preferredProviderIds`, `RoutePolicy`, and `ProviderCascadeRouter` consume persisted metadata; `/providers prefer|disable` is registered | hosted route tests remain unrun |
 | R3 BlockType caller | source-wired | `LandingRenderer.logo` calls `BlockType` on narrow frames | no root UI test run |
-| R4 Sentry loop | blocked | no Sentry client, registry, or production caller exists in the current tree | needs an accepted public API/MCP owner and operator credentials; no fake loop added |
+| R4 Sentry loop | source-wired / partial | `SentryCommandHandler` → `SentryApiClient` → `SentryRepairCoordinator` → existing worker proposal and `EvidenceStore`; `IntegrationRegistry` owns registration | hosted tests, configured Sentry credentials, and live issue/repair evidence remain unrun; proposal path never silently applies a patch |
 | R5 factory resume/handoff | partial | `FactoryCommandHandler` → `AppFactoryRouter.resume` → `FactoryRunHandoff.read`; durable guard exists | configured runtime repair and hosted factory tests remain unrun |
 | R6 local git/FS tool wire | partial | existing `ShellCommandHandler`/`BoundedGitWorktreeCommandRunner` own local git; MCP FS remains configured through `McpHostManager` | no standalone `LocalGitTool` symbol exists; full ToolExecutor integration and hosted proof remain open |
 | M13 MarkItDown ingest | partial | `/mcp ingest <path>` → `MarkItDownIngestService` → existing MCP host + `DocumentIngestionService` | hosted test and real allowlisted MarkItDown probe remain unrun |
@@ -67,7 +67,7 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | P04 xAI | source-wired | descriptor + OpenAI-compatible catalog; GROK aliases |
 | P05 OpenRouter | source-wired | descriptor + OpenAI-compatible catalog |
 | P06 Ollama | source-wired | local descriptor + local adapter; `OLLAMA_HOST` discovery |
-| P07 AWS Bedrock | blocked | discovery metadata recognizes `AWS_*`; no Bedrock signing/transport owner exists, so it is excluded from routing rather than misrepresented |
+| P07 AWS Bedrock | source-wired / partial | `aws_bedrock` descriptor → `BuildKernelAdapter` → `BedrockKernelAdapter` → pure `AwsSigV4` signer and Converse transport | hosted adapter tests and real approved AWS transport evidence remain unrun; paid gate still applies |
 
 | P07 AWS Bedrock correction | source-wired / partial | `src/main/kotlin/atropos/core/provider/adapter/AwsSigV4.kt`, `BedrockKernelAdapter.kt`, `StaticProviderDescriptorRegistry.kt`, `BuildKernelAdapter.kt`, focused adapter tests | existing `StaticProviderAdapterRegistry` → `buildKernelAdapter` → paid `aws_bedrock` descriptor → SigV4 Converse transport | The signing/transport owner now exists with injected offline tests; the historical blocked row above is superseded. Hosted execution and real approved AWS calls remain unproven. |
 | P08 Cohere | source-wired | descriptor + OpenAI-compatible catalog |
