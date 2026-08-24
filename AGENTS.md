@@ -13305,6 +13305,11 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprints: pending post-commit hash.
 
+### 2026-08-24T22:43:00Z · Agent: Codex GPT-5 · Batch: provider-live-health-route-fingerprint
+
+- Fingerprint correction for the immediately preceding batch: `ProviderOnboardingTest.kt=41688445e462`.
+- Commit evidence: `8abc41a4`.
+
 ### 2026-08-24T22:36:00Z · Agent: Codex GPT-5 · Batch: provider-live-health-seam-fingerprint
 
 - Fingerprint correction for the immediately preceding batch: `ProviderActivationServiceTest.kt=15021d3c6f4b`.
