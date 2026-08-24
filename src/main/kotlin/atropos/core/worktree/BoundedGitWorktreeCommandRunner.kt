@@ -2,6 +2,7 @@ package atropos.core.worktree
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.Path
+import atropos.core.policy.BoundedProcessRunner
 
 /**
  * The only process boundary used by the self-host worktree path.
@@ -178,16 +179,16 @@ class BoundedGitWorktreeCommandRunner(
             directory: Path,
             input: String?
         ): GitWorktreeCommandResult = runCatching {
-            val process = ProcessBuilder(command)
-                .directory(directory.toFile())
-                .redirectErrorStream(true)
-                .start()
-            input?.let { process.outputStream.write(it.toByteArray(StandardCharsets.UTF_8)) }
-            // Git commands that do not consume input still need EOF. Leaving
-            // this pipe open can suspend commands such as worktree removal.
-            process.outputStream.close()
-            val output = process.inputStream.bufferedReader().readText()
-            GitWorktreeCommandResult(process.waitFor(), output)
+            val result = BoundedProcessRunner().run(
+                command = command,
+                directory = directory,
+                timeoutMillis = 30_000,
+                maxOutputBytes = 1_000_000,
+                maxOutputLines = 20_000,
+                standardInput = input?.toByteArray(StandardCharsets.UTF_8)
+            )
+            val output = (result.stdout + result.stderr).trimEnd()
+            GitWorktreeCommandResult(result.exitCode ?: 1, output)
         }.getOrElse { failure ->
             GitWorktreeCommandResult(1, failure.message ?: failure.javaClass.simpleName)
         }

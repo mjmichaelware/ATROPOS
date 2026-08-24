@@ -6,6 +6,8 @@ import atropos.cli.ui.DiffContentParser
 import atropos.cli.ui.DiffContentRenderer
 import atropos.cli.ui.TerminalTheme
 import atropos.cli.config.ConfigurationManager
+import atropos.core.policy.BoundedProcessRunner
+import java.nio.file.Path
 
 /**
  * Handles the `/diff` command: shows the current worktree diff with
@@ -26,6 +28,7 @@ class DiffCommandHandler(
     private val theme = TerminalTheme(ConfigurationManager())
     private val parser = DiffContentParser()
     private val renderer = DiffContentRenderer(theme)
+    private val processRunner = BoundedProcessRunner()
 
     fun execute(tokens: List<String>): RouterOutcome {
         val args = tokens.drop(1)
@@ -75,12 +78,15 @@ class DiffCommandHandler(
             command += "--no-color"
             command += "--"
             command += paths
-            val process = ProcessBuilder(command)
-                .redirectErrorStream(true)
-                .start()
-            val output = process.inputStream.bufferedReader().readText()
-            val exitCode = process.waitFor()
-            if (exitCode != 0 && output.contains("not a git repository", ignoreCase = true)) {
+            val result = processRunner.run(
+                command = command,
+                directory = Path.of("").toAbsolutePath().normalize(),
+                timeoutMillis = 10_000,
+                maxOutputBytes = 1_000_000,
+                maxOutputLines = 20_000
+            )
+            val output = (result.stdout + result.stderr).trimEnd()
+            if (result.exitCode != 0 && output.contains("not a git repository", ignoreCase = true)) {
                 null
             } else {
                 output

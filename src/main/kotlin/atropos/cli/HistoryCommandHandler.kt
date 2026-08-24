@@ -8,6 +8,7 @@ import atropos.cli.ui.HistoryNavigationRenderer
 import atropos.cli.ui.HistoryNavigationState
 import atropos.cli.ui.TerminalTheme
 import atropos.cli.config.ConfigurationManager
+import atropos.core.policy.BoundedProcessRunner
 import java.nio.file.Files
 import java.nio.file.Path
 
@@ -29,6 +30,7 @@ class HistoryCommandHandler(
 ) {
     private val theme = TerminalTheme(ConfigurationManager())
     private val renderer = HistoryNavigationRenderer(theme)
+    private val processRunner = BoundedProcessRunner()
 
     fun execute(tokens: List<String>): RouterOutcome {
         val args = tokens.drop(1).map(String::lowercase)
@@ -147,16 +149,19 @@ class HistoryCommandHandler(
 
     private fun readGitLogEntries(limit: Int): List<HistoryEntry> {
         return try {
-            val process = ProcessBuilder(
-                "git", "log", "--oneline", "--no-decorate", "-n", limit.toString(),
-                "--format=%H|%ai|%s"
+            val result = processRunner.run(
+                command = listOf(
+                    "git", "log", "--oneline", "--no-decorate", "-n", limit.toString(),
+                    "--format=%H|%ai|%s"
+                ),
+                directory = Path.of("").toAbsolutePath().normalize(),
+                timeoutMillis = 10_000,
+                maxOutputBytes = 200_000,
+                maxOutputLines = 10_000
             )
-                .redirectErrorStream(true)
-                .start()
-            val output = process.inputStream.bufferedReader().readText()
-            if (process.waitFor() != 0) return emptyList()
+            if (result.exitCode != 0 || result.timedOut || result.launchError != null) return emptyList()
 
-            output.lines()
+            result.stdout.lines()
                 .filter { it.contains('|') }
                 .mapNotNull { line ->
                     val parts = line.split('|', limit = 3)

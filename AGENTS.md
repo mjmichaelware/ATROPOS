@@ -12124,3 +12124,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: `git diff --check`, shell syntax, and selector inspection are the available local evidence; root Gradle and hosted execution remain unrun, so no test green claim is made.
 - % delta: unchanged; source-wired but partial pending hosted execution evidence.
 - Fingerprints: recorded after commit.
+
+### 2026-08-23T10:20:00Z · Agent: Codex GPT-5 · Batch: bounded-process-owner-cleanup
+
+- Paths touched: `src/main/kotlin/atropos/cli/HistoryCommandHandler.kt` (+19/-19), `src/main/kotlin/atropos/cli/DiffCommandHandler.kt` (+17/-12), `src/main/kotlin/atropos/core/worktree/BoundedGitWorktreeCommandRunner.kt` (+14/-15), `.github/workflows/compile-gate.yml` (+2), `scripts/atropos-verify-worktree.sh` (+2), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: T03 bounded process runner ownership.
+- Predicate moved: all three remaining direct production process-spawn callers now use the existing bounded runner with timeout/output caps; no second process abstraction was introduced. `rg -l 'ProcessBuilder\\(' src/main/kotlin` now returns only `BoundedProcessRunner.kt` and the verifier scanner.
+- Verification actually run: `git diff --check`, shell syntax, and the production source scan passed; root Gradle and hosted tests remain unrun, so no green claim is made.
+- % delta: unchanged; source-wired but partial pending hosted execution evidence.
+- Fingerprints: recorded after commit.

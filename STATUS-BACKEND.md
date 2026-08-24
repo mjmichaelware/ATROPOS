@@ -287,3 +287,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-005 approval endpoint role boundary | source-wired / partial | `src/main/kotlin/atropos/bridge/BridgeApprovalHandler.kt`, `src/main/kotlin/atropos/bridge/BridgeRoutes.kt`, `src/test/kotlin/atropos/bridge/BridgeApprovalHandlerTest.kt`, hosted selectors | `POST /v1/approvals/decide` → `BridgeApprovalHandler` → `PendingApprovalStore.decide` | Focused proof covers required attribution, durable approval recording, and refusal of a second decision; no route or policy owner was duplicated. Root/hosted execution remains pending. |
+
+### 2026-08-23T10:20:00Z · Backend batch: bounded-process-owner-cleanup
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| T03 bounded process ownership | source-wired / partial | `src/main/kotlin/atropos/cli/HistoryCommandHandler.kt`, `src/main/kotlin/atropos/cli/DiffCommandHandler.kt`, `src/main/kotlin/atropos/core/worktree/BoundedGitWorktreeCommandRunner.kt`, hosted selectors | `/history` and `/diff` plus all typed worktree operations → existing `BoundedProcessRunner` | Removed the three direct production `ProcessBuilder` call sites; source scan now leaves only the canonical runner and verifier scanner. Existing bounded worktree and reachability tests are selected in both GitHub lanes; hosted/root execution remains pending. |
