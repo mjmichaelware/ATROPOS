@@ -1094,3 +1094,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | backend contract coverage sweep | source-wired / partial | `scripts/backend-atom-contract-test.sh`, `scripts/hosted-test-selector-contract.sh`, `scripts/provider-env-contract-test.sh`, `scripts/atropos-verify-action-contract-test.sh`, `scripts/mcp-example-contract-test.sh`, `scripts/npm-installer-contract-test.sh`, `scripts/install-contract-test.sh` | GitHub compile/reusable verifier lanes → static backend/install/MCP/provider contracts | All local static contracts pass: backend atoms, hosted selector parity (420), provider environment docs, GHA action/workflow, 14 MCP examples, npm installer, and shell installer. Kotlin execution, hosted workflow, published release, and device proof remain unverified. |
+
+### 2026-08-24T22:26:59Z · Agent: Codex GPT-5 · Batch: provider-live-health-projection
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| P18 live-test unhealthy routing | source-wired / partial | `src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt`, `ProviderActivationService.kt`, `src/main/kotlin/atropos/cli/ProviderCommandHandler.kt`, `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt`, `scripts/backend-atom-contract-test.sh` | `/providers live-test <id>` → existing `ProviderActivationService` → CLI-owned `ProviderOnboardingService.recordLiveTest()` → persisted metadata/`RoutePolicy` healthy set | Explicit live tests now project actual enabled test results into the existing provider metadata owner; failed probes become `UNHEALTHY` and leave the cascade without a routable entry, while paid-lock and non-live policy refusals do not mutate health. Static backend and selector contracts pass. Local Gradle stalled before compile/test output and was terminated; no Kotlin pass is claimed. |

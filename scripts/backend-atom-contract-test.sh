@@ -20,10 +20,12 @@ file src/main/kotlin/atropos/core/autonomous/ProviderWorkerDirector.kt
 text src/main/kotlin/atropos/core/autonomous/AutonomousOrchestrator.kt "ProviderWorkerDirector"
 text src/main/kotlin/atropos/cli/CommandRouter.kt '"/providers"'
 text src/main/kotlin/atropos/cli/ProviderCommandHandler.kt '"test" -> renderLiveTest(tokens)'
+text src/main/kotlin/atropos/cli/ProviderCommandHandler.kt 'liveTestHealthReporter'
 text src/main/kotlin/atropos/cli/input/CommandCatalog.kt '"/providers test <id>"'
 text src/main/kotlin/atropos/cli/input/CommandCatalog.kt '"/providers enable"'
 text src/main/kotlin/atropos/cli/ProviderCommandHandler.kt '"enable" -> renderEnable(onboarding, tokens)'
 text src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt 'fun enable(providerId: String)'
+text src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt 'fun recordLiveTest(providerId: String, healthy: Boolean)'
 text src/main/kotlin/atropos/core/provider/adapter/AnthropicKernelAdapter.kt 'x-api-key'
 text src/main/kotlin/atropos/core/provider/adapter/BedrockKernelAdapter.kt 'AwsSigV4'
 text src/main/kotlin/atropos/core/provider/adapter/OpenAiCompatibleProviderCatalog.kt 'providerId = "deepseek_direct"'

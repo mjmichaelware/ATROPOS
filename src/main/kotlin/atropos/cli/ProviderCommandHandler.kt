@@ -146,7 +146,14 @@ class ProviderCommandHandler(
         if (providerId == null) {
             uiEngine.renderError("usage: /providers live-test <id>")
         } else {
-            uiEngine.renderNotice(ProviderActivationService(config = config).liveTest(providerId).render())
+            val onboarding = ProviderOnboardingService()
+            val service = ProviderActivationService(
+                config = config,
+                liveTestHealthReporter = { testedId, healthy ->
+                    onboarding.recordLiveTest(testedId, healthy)
+                }
+            )
+            uiEngine.renderNotice(service.liveTest(providerId).render())
         }
     }
 }

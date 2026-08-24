@@ -140,6 +140,24 @@ class ProviderOnboardingService(
         return refresh()
     }
 
+    /**
+     * Records the result of an explicitly requested live probe in the same
+     * metadata store used by refresh and RoutePolicy.  This never stores the
+     * probe credential or response body; it only changes the cheap health
+     * classification so a failed live test cannot remain routable.
+     */
+    fun recordLiveTest(providerId: String, healthy: Boolean): List<DiscoveredProvider> {
+        val current = list()
+        require(providerId in current.map { it.providerId }) { "unknown provider: $providerId" }
+        val updated = current.map { record ->
+            if (record.providerId == providerId && !record.disabled) {
+                record.copy(health = if (healthy) CheapProviderHealth.HEALTHY else CheapProviderHealth.UNHEALTHY)
+            } else record
+        }
+        writeConfig(updated)
+        return updated
+    }
+
     fun connectToVault(providerId: String, secret: String, envName: String = aliases[providerId]?.firstOrNull() ?: "${providerId.uppercase()}_API_KEY"): Path {
         require(providerId in aliases || registry.getById(providerId) != null) { "unknown provider: $providerId" }
         require(secret.isNotBlank()) { "provider secret must not be blank" }

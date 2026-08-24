@@ -30,7 +30,9 @@ class ProviderActivationService(
     private val store: ProviderActivationStore = ProviderActivationStore(),
     private val paidGate: EmergencyPaidGate = EmergencyPaidGate(),
     private val ollamaProbe: () -> Boolean = { OllamaHealthProbe().probe().online },
-    private val environment: Map<String, String> = System.getenv()
+    private val environment: Map<String, String> = System.getenv(),
+    /** Caller-owned onboarding projection; default keeps library callers side-effect free. */
+    private val liveTestHealthReporter: (String, Boolean) -> Unit = { _, _ -> }
 ) {
     private val agencyGate = BoundedAgencyGate()
 
@@ -123,9 +125,16 @@ class ProviderActivationService(
             )
         }
 
+        if (live && shouldReportLiveHealth(record)) {
+            liveTestHealthReporter(providerId, record.state == ProviderActivationState.VERIFIED || record.state == ProviderActivationState.READY)
+        }
         if (persist) store.write(record)
         return record
     }
+
+    private fun shouldReportLiveHealth(record: ProviderActivationRecord): Boolean =
+        record.state != ProviderActivationState.LOCKED &&
+            environment["ATROPOS_LIVE_PROVIDER_TESTS"] == "1"
 
     private fun liveRecord(
         descriptor: ProviderDescriptor,

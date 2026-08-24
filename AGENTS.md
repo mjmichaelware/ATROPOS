@@ -13285,6 +13285,16 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; B-MCP-GITHUB remains source-wired/partial pending hosted/live evidence.
 - Fingerprints (sha256, first 12): `GitHubApiClient.kt=a19a92174c97`; `GitHubApiClientTest.kt=8575643120ff`; `backend-atom-contract-test.sh=16174e6e1e43`.
 
+### 2026-08-24T22:26:59Z · Agent: Codex GPT-5 · Batch: provider-live-health-projection
+
+- Paths touched: `src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt` (+20), `src/main/kotlin/atropos/core/provider/ProviderActivationService.kt` (+10), `src/main/kotlin/atropos/cli/ProviderCommandHandler.kt` (+10), `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` (+18), `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+8).
+- Atoms / phases affected: P18 live-test unhealthy routing; B-PROV-002/004 route-health truth.
+- Predicate moved: an explicitly permitted live provider test now updates the existing onboarding metadata consumed by routing; a failed test is persisted as `UNHEALTHY` without persisting the secret, while locked paid providers and non-live policy refusals do not poison health.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh` passed; `bash scripts/hosted-test-selector-contract.sh` passed with 420 tests; `git diff --check` passed. A 60-second local focused Gradle attempt stalled before compile/test output and was terminated; no Kotlin pass/count or GitHub Actions result is claimed.
+- % delta: unchanged; provider onboarding remains source-wired/partial pending hosted Kotlin execution and live approved credentials.
+- New overall estimate: unchanged.
+- Fingerprints (sha256, first 12): `ProviderOnboarding.kt=64d1c98f9618`; `ProviderActivationService.kt=c731a343a07f`; `ProviderCommandHandler.kt=c5e544f26993`; `ProviderOnboardingTest.kt=933730f616ce`; `backend-atom-contract-test.sh=996a77dc2254`.
+
 ### 2026-08-25T00:45:00Z · Agent: Codex GPT-5 · Batch: markitdown-bounded-attested-write
 
 - Paths touched: `src/main/kotlin/atropos/core/integration/MarkItDownIngestService.kt` (+24/-1), `src/test/kotlin/atropos/core/integration/MarkItDownIngestServiceTest.kt` (+16), `scripts/backend-atom-contract-test.sh` (+3), `STATUS-BACKEND.md` (+7).

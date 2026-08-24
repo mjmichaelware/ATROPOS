@@ -318,6 +318,23 @@ class ProviderOnboardingTest {
     }
 
     @Test
+    fun live_test_health_is_persisted_for_route_policy_without_secret_material() {
+        val root = Files.createTempDirectory("provider-live-health")
+        val service = ProviderOnboardingService(
+            root = root,
+            environment = mapOf("GROQ_API_KEY" to "secret-value")
+        )
+        service.refresh()
+
+        service.recordLiveTest("groq", healthy = false)
+
+        assertTrue(service.healthyProviderIds().isEmpty())
+        val persisted = Files.readString(root.resolve(".atropos/provider/providers.json"))
+        assertTrue(persisted.contains("\"health\":\"UNHEALTHY\""))
+        assertTrue(!persisted.contains("secret-value"))
+    }
+
+    @Test
     fun preferred_provider_is_exposed_in_route_order_without_overriding_cost_policy() {
         val root = Files.createTempDirectory("provider-preference-route")
         val service = ProviderOnboardingService(
