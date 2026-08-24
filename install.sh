@@ -19,7 +19,11 @@ VERSION="${ATROPOS_VERSION:-latest}"
 PREFIX="${ATROPOS_PREFIX:-$HOME/.atropos}"
 BIN_DIR="${ATROPOS_BIN_DIR:-$HOME/.local/bin}"
 
-JAR_URL="https://github.com/$REPO/releases/download/$VERSION/ATROPOS.jar"
+if [ "$VERSION" = "latest" ]; then
+  JAR_URL="https://github.com/$REPO/releases/latest/download/ATROPOS.jar"
+else
+  JAR_URL="https://github.com/$REPO/releases/download/$VERSION/ATROPOS.jar"
+fi
 SHA_URL="$JAR_URL.sha256"
 
 say()  { printf '%s\n' "$*"; }

@@ -12196,6 +12196,14 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; source-wired and policy-gated, hosted test evidence pending.
 - Fingerprints: `GitMutationCommand.kt=3e0c67003b54`; `ShellCommandRunner.kt=168ab01d2e1e`; `ShellBoundedAgencyTest.kt=e75d247e39ac`.
 
+### 2026-08-24T07:32:00Z · Agent: Codex GPT-5 · Batch: installer-latest-release-url
+
+- Paths touched: `install.sh` (+5/-1), `scripts/install-contract-test.sh` (+2), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-INST-002 latest artifact resolution.
+- Predicate moved: a no-flag installer invocation now resolves the GitHub latest-release asset path correctly; pinned versions still use the versioned release path. The existing checksum and first-run doctor gates remain unchanged and fail closed.
+- Verification actually run: `bash -n install.sh scripts/install-contract-test.sh`, `bash scripts/install-contract-test.sh`, `git diff --check`, and `timeout 90s python3 scripts/find-orphans.py --fail-on-new` passed; orphan census remains four pre-existing files. No network release or device install was executed.
+- % delta: unchanged; installer source contract is stronger, external release proof pending.
+
 ### 2026-08-24T06:57:00Z · Agent: Codex GPT-5 · Batch: mcp-sse-frame-normalization
 
 - Paths touched: `src/main/kotlin/atropos/core/integration/McpHostManager.kt` (+20), `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+24), `STATUS-BACKEND.md` (+7).

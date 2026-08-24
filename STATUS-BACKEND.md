@@ -432,3 +432,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-GITLOCAL mutation policy execution | source-wired / partial | `src/main/kotlin/atropos/cli/shell/ShellCommandRunner.kt`, `GitMutationCommand.kt`, `src/test/kotlin/atropos/cli/shell/ShellBoundedAgencyTest.kt` | parsed confirmed `/git` command → `ShellCommandRunner.runGitMutation` → repository-scoped `FILE_MUTATION` proposal → existing agency gate | Explicitly confirmed Git mutations now compose as bounded repository file mutations instead of being rejected merely by the read-only `GIT` class; the confirmation token is never sent to the process. The execution seam test asserts exact argv; no real mutation was run. Root/hosted tests remain pending. |
+
+### 2026-08-24T07:32:00Z · Backend batch: installer-latest-release-url
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-INST-002 latest artifact resolution | source-wired / partial | `install.sh`, `scripts/install-contract-test.sh` | installer entrypoint → version branch → GitHub latest-release or pinned-release asset URL | Default installation now uses `/releases/latest/download/ATROPOS.jar`; pinned `ATROPOS_VERSION` continues using `/releases/download/<version>/ATROPOS.jar`. Checksum verification and doctor remain fail-closed. `bash -n`, installer contract, diff check, and orphan gate passed; live release/device proof remains pending. |

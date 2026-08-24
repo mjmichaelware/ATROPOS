@@ -15,5 +15,7 @@ grep -Fq 'termux-$CPU_ARCH' "$INSTALLER"
 grep -Fq 'ATROPOS_PLATFORM' "$INSTALLER"
 grep -Fq 'refusing to install an unverified jar' "$INSTALLER"
 grep -Fq 'checksum mismatch' "$INSTALLER"
+grep -Fq 'releases/latest/download/ATROPOS.jar' "$INSTALLER"
+grep -Fq 'releases/download/$VERSION/ATROPOS.jar' "$INSTALLER"
 
 printf '%s\n' 'ATROPOS_INSTALL_CONTRACT_OK'
