@@ -32,14 +32,17 @@ jobs:
         uses: actions/github-script@v7
         env:
           VERIFY_OUTCOME: ${{ steps.verify.outcome }}
+          EVIDENCE_HASHES: ${{ steps.verify.outputs.evidence-hashes }}
         with:
           script: |
             const outcome = process.env.VERIFY_OUTCOME;
+            const evidenceHashes = process.env.EVIDENCE_HASHES || 'none emitted';
             const conclusion = outcome === 'success' ? 'success' :
               outcome === 'cancelled' ? 'cancelled' : 'failure';
             const summary = [
               `Bounded ATROPOS verification outcome: **${outcome}**.`,
               `Commit: \`${context.sha}\`.`,
+              `Evidence hashes: \`${evidenceHashes}\`.`,
               'The check covers hosted compilation, focused backend tests,',
               'new-production caller enforcement, territory, redaction, and evidence gates.',
               'Detailed compiler/test evidence remains in the workflow log.'

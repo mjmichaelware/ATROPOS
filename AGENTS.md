@@ -12160,3 +12160,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: `bash -n scripts/atropos-verify-worktree.sh scripts/atropos-verify-action-contract-test.sh`, `bash scripts/atropos-verify-action-contract-test.sh` (`ATROPOS_VERIFY_ACTION_CONTRACT_OK`), and `git diff --check` passed. GitHub Actions has not run; no root compile/test green claim is made.
 - % delta: unchanged; source-wired but partial pending hosted execution evidence.
 - Fingerprints: recorded after the batch commit.
+
+### 2026-08-24T09:00:00Z · Agent: Codex GPT-5 · Batch: hosted-check-evidence-summary
+
+- Paths touched: `.github/workflows/atropos-verify-example.yml` (+2), `STATUS-BACKEND.md` (+2).
+- Atoms / phases affected: B-MCP-GHA evidence publication.
+- Predicate moved: the existing GitHub check publisher now consumes the reusable action's `evidence-hashes` output and includes it in the check summary; no parallel event/check system was added.
+- Verification actually run: static YAML/text inspection and `git diff --check` are the available local evidence; hosted Actions execution remains pending, so no CI green claim is made.
+- % delta: unchanged; source-wired but partial pending hosted execution evidence.
+- Fingerprints: recorded after the batch commit.
