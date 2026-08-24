@@ -1,0 +1,3 @@
+{
+  "servers": [{"name":"fetch","transport":"stdio","command":"npx","args":["-y","@modelcontextprotocol/server-fetch"],"enabled":false,"community":true,"researchPlaneOnly":true}]
+}

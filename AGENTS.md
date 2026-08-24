@@ -12097,3 +12097,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: `git diff --check` passed; workflow and reusable-script selectors were inspected. Root Gradle and hosted tests remain unrun, so no green claim is made.
 - % delta: unchanged; source-wired but partial pending hosted execution evidence.
 - Fingerprints after ledger append: `BridgeEvidenceHandler.kt` and related files are recorded by the subsequent commit/CI history.
+
+### 2026-08-23T09:30:00Z · Agent: Codex GPT-5 · Batch: mcp-example-catalog-contract
+
+- Paths touched: `docs/mcp-examples/{fetch,sqlite,postgres,docker,code-intelligence,npm,cloud-deploy,browser-use,n8n}.json` (new), `scripts/mcp-example-contract-test.sh` (new), `.github/workflows/compile-gate.yml` (+3), `scripts/atropos-verify-worktree.sh` (+3), and `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: ADD-MCP-EX-001..013 config catalog coverage and ADD-MCP-006 no-adapter policy.
+- Predicate moved: the backend now has a CI-checked, disabled-by-default example for every catalog class in the addendum; examples are config fixtures only, with community markers and no credential material. No per-brand Kotlin adapter or auto-install behavior was introduced.
+- Verification actually run: `bash scripts/mcp-example-contract-test.sh`, JSON parsing, `bash -n`, and `git diff --check` passed. Root Gradle and hosted execution remain unrun; no green claim is made.
+- % delta: unchanged; source-wired but partial pending hosted execution evidence.
+- Fingerprints: recorded after commit.

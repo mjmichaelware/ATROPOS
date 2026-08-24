@@ -269,3 +269,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | ADD-MCP-005 gated configured search | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` | `/mcp search` → `McpCommandHandler` → shared `McpHostManager.search` → existing `McpTerritoryBridge`/policy gate | Configured-only search now requires the same inspect admission and policy decision before reading candidates; a denied gate test proves no search result bypass. No download/install/enable/probe behavior was added. Root/hosted tests remain pending. |
+
+### 2026-08-23T09:30:00Z · Backend batch: mcp-example-catalog-contract
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| ADD-MCP-EX-001..013 catalog examples | source-wired / partial | `docs/mcp-examples/*.json`, `scripts/mcp-example-contract-test.sh`, `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh` | GitHub compile gate and reusable verifier → `mcp-example-contract-test.sh` → JSON catalog fixtures | Added the missing config-only examples for fetch, SQLite, Postgres, Docker, code intelligence, npm, cloud deploy, browser use, and n8n. Every example is disabled, marked community, and carries no secret; no adapter or auto-install path was added. Contract and JSON parse passed locally; hosted execution remains pending. |

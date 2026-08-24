@@ -1,0 +1,3 @@
+{
+  "servers": [{"name":"browser-use","transport":"stdio","command":"browser-use-mcp","args":[],"enabled":false,"community":true,"actuation":"approval-required"}]
+}

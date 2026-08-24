@@ -1,0 +1,3 @@
+{
+  "servers": [{"name":"docker","transport":"stdio","command":"docker","args":["mcp","gateway","run"],"enabled":false,"community":true}]
+}

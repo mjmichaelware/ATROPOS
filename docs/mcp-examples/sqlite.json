@@ -1,0 +1,3 @@
+{
+  "servers": [{"name":"sqlite","transport":"stdio","command":"mcp-server-sqlite","args":["--db-path","./.atropos/data/example.sqlite"],"enabled":false,"community":true,"readOnly":true}]
+}

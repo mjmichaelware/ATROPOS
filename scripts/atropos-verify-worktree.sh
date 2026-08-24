@@ -49,4 +49,7 @@ git diff --check
 echo "=== NPM INSTALLER CONTRACT ==="
 bash scripts/npm-installer-contract-test.sh
 
+echo "=== MCP EXAMPLE CONTRACT ==="
+bash scripts/mcp-example-contract-test.sh
+
 echo "ATROPOS_WORKTREE_VERIFY_OK"

@@ -96,3 +96,6 @@ jobs:
           --tests 'atropos.cli.input.CommandCatalogBackendEntriesTest'
           --tests 'atropos.core.agent.AgentContextCollectorTest'
           --tests 'atropos.cli.shell.ShellBoundedAgencyTest'
+
+      - name: validate MCP example catalog
+        run: bash scripts/mcp-example-contract-test.sh

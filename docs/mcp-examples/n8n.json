@@ -1,0 +1,3 @@
+{
+  "servers": [{"name":"n8n","transport":"http","url":"http://127.0.0.1:5678/mcp","enabled":false,"community":true,"policy":"distribution-only; no automatic install or workflow mutation"}]
+}

@@ -1,0 +1,3 @@
+{
+  "servers": [{"name":"cloud-deploy","transport":"stdio","command":"vercel-mcp","args":[],"enabled":false,"community":true,"deployEvidenceRequired":true}]
+}
