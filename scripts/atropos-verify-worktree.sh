@@ -11,6 +11,9 @@ if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
   echo "=== HOSTED ORPHAN GATE ==="
   python3 scripts/find-orphans.py --fail-on-new
 
+  echo "=== PROVIDER CONNECT CONTRACT ==="
+  bash scripts/provider-connect-contract-test.sh
+
   echo "=== HOSTED COMPILE ==="
   ./gradlew --no-daemon compileJava compileTestJava compileKotlin compileTestKotlin
 

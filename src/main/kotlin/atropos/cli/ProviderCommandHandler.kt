@@ -3,6 +3,7 @@ package atropos.cli
 
 import atropos.cli.ui.AnsiTerminalEngine
 import atropos.cli.ui.StatusProviderDescriptorRenderer
+import atropos.cli.input.TerminalModeManager
 import atropos.core.AtroposConfig
 import atropos.core.provider.ProviderActivationService
 import atropos.core.provider.ProviderDescriptorReport
@@ -86,8 +87,27 @@ class ProviderCommandHandler(
     private companion object {
         fun readSecretFromTerminal(prompt: String): CharArray? {
             System.console()?.let { return it.readPassword(prompt) }
-            System.err.print(prompt)
-            return System.`in`.bufferedReader().readLine()?.toCharArray()
+            // Codespaces and some Termux launchers expose no java.io.Console even
+            // though /dev/tty is available. Reuse the sole terminal-mode owner so
+            // the fallback never reads a secret with terminal echo enabled.
+            val terminal = TerminalModeManager()
+            if (!terminal.enableRawMode()) return null
+            return try {
+                System.err.print(prompt)
+                val value = StringBuilder()
+                while (true) {
+                    when (val code = System.`in`.read()) {
+                        -1, '\n'.code, '\r'.code -> break
+                        3 -> return null // Ctrl-C: cancel without storing anything.
+                        8, 127 -> if (value.isNotEmpty()) value.deleteAt(value.length - 1)
+                        else -> value.append(code.toChar())
+                    }
+                }
+                value.toString().toCharArray()
+            } finally {
+                System.err.println()
+                terminal.close()
+            }
         }
     }
 

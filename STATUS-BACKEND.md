@@ -656,3 +656,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | bridge production compile | inconclusive / partial | `build/libs/ATROPOS.jar`, changed bridge sources | narrow `kotlinc` diagnostic attempt | The prior JAR lacks newer MCP/bridge symbols and cannot serve as a valid current module classpath; the attempt reported unresolved/stale internal symbols. No source verdict is claimed. Full hosted Gradle remains authoritative. |
+
+### 2026-08-24T21:10:00Z · Backend batch: provider-connect-no-echo-fallback
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-PROV connect local-only secret entry | source-wired / partial | `src/main/kotlin/atropos/cli/ProviderCommandHandler.kt`, `scripts/provider-connect-contract-test.sh`, `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh` | `/providers connect <provider>` → existing `ProviderCommandHandler` → `TerminalModeManager` echo suppression → `ProviderOnboardingService.connectToVault` → `TokenIsolationVault` | Removed the unsafe console-less `readLine()` fallback. The existing `TerminalModeManager` now owns temporary no-echo input and is restored in `finally`; unavailable TTY returns cancellation without reading an echoed secret. `ATROPOS_PROVIDER_CONNECT_CONTRACT_OK`, selector contract (382 tests), shell syntax, diff check, and orphan gate pass locally. Hosted Kotlin execution remains pending; no provider-connect test-green claim. |

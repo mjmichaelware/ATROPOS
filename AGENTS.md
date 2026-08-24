@@ -12762,3 +12762,13 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Acceptance predicate checked: narrow bridge compilation against the existing assembled JAR.
 - Evidence: the prior `build/libs/ATROPOS.jar` lacks newer MCP/bridge symbols and produced stale/unresolved internal-symbol diagnostics. This is not a current source verdict; no compile pass/fail claim is made.
 - % delta: unchanged; bridge compile evidence remains partial pending hosted Gradle.
+
+### 2026-08-24T21:10:00Z · Agent: Codex GPT-5 · Batch: provider-connect-no-echo-fallback
+
+- Paths touched: `src/main/kotlin/atropos/cli/ProviderCommandHandler.kt` (+22/-2), `scripts/provider-connect-contract-test.sh` (+20), `.github/workflows/compile-gate.yml` (+3), `scripts/atropos-verify-worktree.sh` (+3), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-PROV provider connect / keychain-first local onboarding; secret-safe terminal render path.
+- Predicate moved: `/providers connect <provider>` no longer falls back to `System.in.bufferedReader().readLine()` when Java has no `Console`, which could echo a pasted key. It now reuses the existing `TerminalModeManager` to disable echo, reads one secret, and restores terminal state in `finally`; if no controllable TTY exists, it cancels without reading unsafe input. No second secret vault, terminal owner, or provider registry was introduced.
+- Verification actually run: `bash scripts/provider-connect-contract-test.sh` (`ATROPOS_PROVIDER_CONNECT_CONTRACT_OK`), `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (382 tests)`), `bash -n scripts/provider-connect-contract-test.sh scripts/atropos-verify-worktree.sh`, `git diff --check`, and `timeout 90s python3 scripts/find-orphans.py --fail-on-new` passed. The orphan gate still reports only the four pre-existing baseline files (4/1041, 360 LOC). Root/hosted Kotlin execution remains pending; no compile/test-green claim.
+- % delta: unchanged; provider connect remains source-wired / partial pending hosted execution and interactive runtime evidence.
+- New overall estimate: unchanged.
+- Fingerprints: recorded after this batch commit.

@@ -71,6 +71,9 @@ jobs:
       - name: provider environment contract
         run: bash scripts/provider-env-contract-test.sh
 
+      - name: provider connect secret-input contract
+        run: bash scripts/provider-connect-contract-test.sh
+
       - name: reusable verify action contract
         run: bash scripts/atropos-verify-action-contract-test.sh
 
