@@ -462,6 +462,15 @@ End of AGENTS.md
 - % delta: unchanged; source-wired but partial pending hosted execution evidence.
 - Fingerprints: recorded after the batch commit.
 
+### 2026-08-24T19:25:00Z · Agent: Codex GPT-5 · Batch: remaining-core-contract-selector-sweep
+
+- Paths touched: `.github/workflows/compile-gate.yml` (+39 selectors), `scripts/atropos-verify-worktree.sh` (+39 selectors), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: remaining core ingest/intent/parser/platform/project/knowledge/contract evidence.
+- Predicate moved: every existing `src/test/kotlin/atropos/core/**Test.kt` class is now named by the same hosted backend test selector used by the reusable local verification script; no existing core test is silently omitted from that lane.
+- Verification actually run: `bash scripts/hosted-test-selector-contract.sh` passed (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (377 tests)`), `bash -n scripts/atropos-verify-worktree.sh`, `git diff --check`, and the orphan gate passed. Hosted/root Kotlin execution remains pending; no green claim.
+- % delta: unchanged; source-wired but partial pending hosted execution evidence.
+- Fingerprints: recorded after the batch commit.
+
 ### 2026-08-24T19:05:00Z · Agent: Codex GPT-5 · Batch: core-runtime-verification-selector-sweep
 
 - Paths touched: `.github/workflows/compile-gate.yml` (+115 selectors), `scripts/atropos-verify-worktree.sh` (+115 selectors), `STATUS-BACKEND.md` (+7).

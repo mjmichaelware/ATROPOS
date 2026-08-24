@@ -594,3 +594,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | Backend runtime/recovery/DAG/territory/evidence test coverage | source-wired / partial | `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh` | existing hosted `:test` invocation → 115 explicit core selectors → existing backend owners | Added the remaining existing core backend test classes for approval, artifacts, authority, DAG/director, recovery, Phase 20 ledgers, storage, territory, verifier, and worktree. Selector set moves 223 → 338; structural checks pass locally. Hosted Kotlin execution remains pending; no root-green claim. |
+
+### 2026-08-24T19:25:00Z · Backend batch: remaining-core-contract-selector-sweep
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| Remaining core ingest/intent/parser/platform/project contract evidence | source-wired / partial | `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh` | existing hosted `:test` invocation → 39 explicit core selectors → existing ingest, intent, parser, platform, project, and contract owners | Added every remaining existing `src/test/kotlin/atropos/core/**Test.kt` class to both CI entrypoints; selector set moves 338 → 377. Selector/source parity, shell syntax, diff check, and orphan gate pass locally. Hosted Kotlin execution remains pending. |
