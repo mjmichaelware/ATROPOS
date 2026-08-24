@@ -121,4 +121,21 @@ class McpHostManagerTest {
         assertTrue(status.reason.contains("localOnly"))
         assertTrue(Files.readString(root.resolve(".atropos/mcp/health.tsv")).contains("remote\tUNTESTED"))
     }
+
+    @Test
+    fun search_is_configured_only_and_hides_remote_and_unallowlisted_community_entries() {
+        val root = Files.createTempDirectory("mcp-search")
+        Files.writeString(root.resolve("mcp.json"), """
+            {"servers":[
+              {"name":"local-files","transport":"stdio","command":"local","enabled":false,"community":false},
+              {"name":"remote-files","transport":"http","command":"remote","enabled":true,"community":false},
+              {"name":"community-files","transport":"stdio","command":"community","enabled":true,"community":true}
+            ]}
+        """.trimIndent())
+
+        val results = McpHostManager(root, localOnly = true).search("files")
+
+        assertEquals(listOf("local-files"), results.map { it.name })
+        assertTrue(results.single().enabled.not())
+    }
 }

@@ -102,6 +102,23 @@ class McpHostManager(
         return statuses
     }
 
+    /**
+     * Searches the configured MCP catalog only. This is deliberately not a
+     * registry client: search cannot download, install, enable, or probe a
+     * server. Local-only mode also hides remote candidates from the result.
+     */
+    fun search(query: String): List<McpServerConfig> {
+        require(query.isNotBlank()) { "MCP search query is required" }
+        val needle = query.trim().lowercase()
+        return load().asSequence()
+            .filter { server ->
+                (server.name.lowercase().contains(needle) || server.transport.lowercase().contains(needle)) &&
+                    !(localOnly && server.remote) &&
+                    (allowlist.isEmpty() && !server.community || server.name in allowlist)
+            }
+            .toList()
+    }
+
     /** Persists labels and probe state only; command arguments and secrets never enter this file. */
     private fun persistHealth(statuses: List<McpServerStatus>) {
         val absoluteRoot = root.toAbsolutePath().normalize()

@@ -452,6 +452,15 @@ End of AGENTS.md
 - % delta: unchanged; no VERIFIED claim. FTY-01, FTY-02, and FTY-04 are marked done in `STATUS-BACKEND.md` based on production source plus narrow compilation; FTY-03 and FTY-05 remain partial until root focused tests and a runtime-owned repair callback are proven.
 - Fingerprints (sha256): `DagStore.kt=fb932962f947`; `FactoryProgressGuard.kt=50bb25ea712d`; `FactoryRunHandoff.kt=537cf1c24fc2`; `FactoryRunOrchestrator.kt=652e100a59b7`; `FactoryRepairExecutor.kt=16e2c5cd36a8`; `FactoryCommandHandler.kt=392afeb3eb37`; `FactoryProgressGuardTest.kt=1e5d81c78c09`; `FactoryResumeAndRepairTest.kt=bca553b18f46`; `STATUS-BACKEND.md=2669342e3735`.
 
+### 2026-08-24T00:25:00Z · Agent: Codex GPT-5 · Batch: configured-mcp-search
+
+- Paths touched: `src/main/kotlin/atropos/core/integration/McpHostManager.kt` (+17), `src/main/kotlin/atropos/cli/McpCommandHandler.kt` (+20/-1), `src/main/kotlin/atropos/cli/input/CommandCatalog.kt` (+1), `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+17), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: ADD-MCP-005 / optional MCP search surface.
+- Predicate moved: `/mcp search <query>` now searches only configured MCP entries through the existing `McpHostManager`; it cannot download, install, enable, or probe servers, and local-only mode excludes remote candidates. The production caller is `CommandRouter` → `McpCommandHandler` → `McpHostManager.search`.
+- Verification actually run: `git diff --check` passed. A focused test was added for local-only filtering, disabled-entry preservation, and community allowlist behavior. The root test task was not completed locally; GitHub Actions remains the authoritative compile/test lane. No root-green or hosted-run claim.
+- % delta: unchanged; source-wired but partial pending hosted execution evidence.
+- Fingerprints (sha256): `McpHostManager.kt=accd808bb80c`; `McpCommandHandler.kt=4334cd6a1c49`; `CommandCatalog.kt=0fb4a8b96fa6`; `McpHostManagerTest.kt=ad85a3abbd08`.
+
 ### 2026-08-23T23:00:00Z · Agent: Codex GPT-5 · Batch: backend-root-proof-and-factory-audit
 
 - Paths touched: `src/test/kotlin/atropos/core/provider/QuotaLedgerRouteTruthTest.kt` (+25), `STATUS-BACKEND.md`, `AGENTS.md`.
@@ -460,6 +469,14 @@ End of AGENTS.md
 - Verification actually run: `git diff --check` passed. The smallest root selector command `./gradlew :test --no-daemon --max-workers=1 --rerun --tests ...Provider... --tests ...Bridge... --tests ...Mcp... --tests ...Factory...` reached `:compileKotlin` but was interrupted after a bounded wait with no test output/count. `:core:jvmTest` remains the only completed Gradle target: 2 tests, 0 failures, 0 errors, 0 skipped. GitHub Actions remains required for root proof; no GHA green claim.
 - % delta: unchanged; provider/factory atoms remain partial.
 - Fingerprint: `QuotaLedgerRouteTruthTest.kt=00359ea4a11e`.
+
+### 2026-08-24T00:10:00Z · Agent: Codex GPT-5 · Batch: clean-checkout-core-proof
+
+- Paths touched: `STATUS-BACKEND.md`, `AGENTS.md`.
+- Atoms / phases affected: proof ledger only; excluded MCP health/budget/localOnly/MarkItDown/recovery/upload atoms were not re-claimed.
+- Predicate moved: none; this batch records fresh execution evidence from the pushed clean checkout at `b1479fe8`.
+- Verification actually run: `./gradlew :core:jvmTest --no-daemon --max-workers=1 --rerun` passed in 52s. XML reports show 2 tests, 0 failures, 0 errors, 0 skipped. Root Provider/Bridge/MCP/Factory test execution remains unproven and requires GitHub Actions/root test resources.
+- % delta: unchanged.
 
 ### 2026-08-23T22:20:00Z · Agent: Codex GPT-5 · Batch: provider-route-policy-focused-proof
 

@@ -18,10 +18,28 @@ class McpCommandHandler(
         when (tokens.getOrNull(1)?.lowercase()) {
             null, "list" -> uiEngine.renderBlock(manager.statuses().map { "${it.server.name} health=${it.health.name.lowercase()} ${it.reason}" })
             "test" -> uiEngine.renderBlock(manager.statuses().map { "${it.server.name} health=${it.health.name.lowercase()} ${it.reason}" })
+            "search" -> search(tokens)
             "call" -> call(tokens)
             "ingest" -> ingest(tokens)
-            else -> uiEngine.renderError("usage: /mcp [list|test|call <server> <tool> [arguments-json]|ingest <path>]")
+            else -> uiEngine.renderError("usage: /mcp [list|test|search <query>|call <server> <tool> [arguments-json]|ingest <path>]")
         }
+    }
+
+    private fun search(tokens: List<String>) {
+        val query = tokens.drop(2).joinToString(" ").trim()
+        if (query.isBlank()) {
+            uiEngine.renderError("usage: /mcp search <query>")
+            return
+        }
+        runCatching { manager.search(query) }
+            .onSuccess { servers ->
+                uiEngine.renderBlock(
+                    servers.map { server ->
+                        "${server.name} transport=${server.transport} enabled=${server.enabled} community=${server.community}"
+                    }
+                )
+            }
+            .onFailure { uiEngine.renderError("MCP search refused: ${it.message ?: it.javaClass.simpleName}") }
     }
 
     private fun call(tokens: List<String>) {
