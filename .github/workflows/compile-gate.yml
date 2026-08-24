@@ -74,6 +74,9 @@ jobs:
       - name: reusable verify action contract
         run: bash scripts/atropos-verify-action-contract-test.sh
 
+      - name: hosted test selector contract
+        run: bash scripts/hosted-test-selector-contract.sh
+
       - name: focused factory provider bridge MCP tests
         run: >-
           ./gradlew --no-daemon :test --rerun

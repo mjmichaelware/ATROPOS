@@ -175,6 +175,9 @@ bash scripts/npm-installer-contract-test.sh
 echo "=== GITHUB ACTION CONTRACT ==="
 bash scripts/atropos-verify-action-contract-test.sh
 
+echo "=== HOSTED TEST SELECTOR CONTRACT ==="
+bash scripts/hosted-test-selector-contract.sh
+
 echo "=== MCP EXAMPLE CONTRACT ==="
 bash scripts/mcp-example-contract-test.sh
 

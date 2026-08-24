@@ -462,6 +462,15 @@ End of AGENTS.md
 - % delta: unchanged; B-005 / ADD-W-029 remains partial pending hosted execution.
 - Fingerprints: recorded after this batch.
 
+### 2026-08-24T16:10:00Z · Agent: Codex GPT-5 · Batch: hosted-selector-drift-gate
+
+- Paths touched: `scripts/hosted-test-selector-contract.sh` (+31), `.github/workflows/compile-gate.yml` (+3), `scripts/atropos-verify-worktree.sh` (+3), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: hosted verification integrity across B-005, B-006, B-011, B-PROV, and FTY selectors.
+- Predicate moved: hosted focused-test omission and selector drift now fail closed before Gradle starts; every selected fully qualified test class must exist in both canonical lanes.
+- Verification actually run: shell syntax, selector contract, action contract, `git diff --check`, and orphan gate pass; hosted Kotlin execution remains pending.
+- % delta: unchanged; runtime atoms remain partial pending hosted execution.
+- Fingerprints: recorded after this batch.
+
 ### 2026-08-24T15:40:00Z · Agent: Codex GPT-5 · Batch: hosted-verification-security-surface
 
 - Paths touched: `.github/workflows/compile-gate.yml` (+34), `scripts/atropos-verify-worktree.sh` (+34), `STATUS-BACKEND.md` (+7).
