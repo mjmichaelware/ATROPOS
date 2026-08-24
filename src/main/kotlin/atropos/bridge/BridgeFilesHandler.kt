@@ -12,6 +12,7 @@ import atropos.core.policy.PolicyActionClass
 import atropos.core.policy.TypedToolExecutor
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.StandardCopyOption
 import java.security.MessageDigest
 import java.util.Base64
 import kotlin.streams.toList
@@ -80,7 +81,17 @@ internal class BridgeFilesHandler(
             )
         ) {
             Files.createDirectories(targetPath.parent)
-            Files.write(targetPath, bytes)
+            val temporary = Files.createTempFile(targetPath.parent, ".upload-", ".tmp")
+            try {
+                Files.write(temporary, bytes)
+                try {
+                    Files.move(temporary, targetPath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
+                } catch (_: Exception) {
+                    Files.move(temporary, targetPath, StandardCopyOption.REPLACE_EXISTING)
+                }
+            } finally {
+                Files.deleteIfExists(temporary)
+            }
             "written"
         }
         if (!execution.executed) {
@@ -152,6 +163,7 @@ internal class BridgeFilesHandler(
 
         val files = Files.list(sessionDir).use { stream ->
             stream.filter { Files.isRegularFile(it) }
+                .filter { runCatching { Files.size(it) <= MAX_UPLOAD_BYTES }.getOrDefault(false) }
                 .map { path ->
                     val bytes = Files.readAllBytes(path)
                     val digest = MessageDigest.getInstance("SHA-256")

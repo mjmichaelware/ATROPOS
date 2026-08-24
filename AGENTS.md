@@ -13286,6 +13286,14 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; B-MCP-GITHUB remains source-wired/partial pending hosted/live evidence.
 - Fingerprints (sha256, first 12): `GitHubApiClient.kt=a19a92174c97`; `GitHubApiClientTest.kt=8575643120ff`; `backend-atom-contract-test.sh=16174e6e1e43`.
 
+### 2026-08-25T01:20:00Z · Agent: Codex GPT-5 · Batch: bridge-file-atomic-bound
+
+- Paths touched: `src/main/kotlin/atropos/bridge/BridgeFilesHandler.kt` (+14/-1), `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+2).
+- Atoms / phases affected: B06 attested file upload; ADD-W-029 bounded file bridge.
+- Predicate moved: the existing bridge upload owner now writes through a cleaned-up atomic temporary file and the listing path checks the same 512 KiB bound before reading bytes.
+- Verification: pending this batch; root/hosted Kotlin execution remains unproven.
+- % delta: unchanged; source-wired/partial pending hosted focused execution.
+
 ### 2026-08-25T00:50:00Z · Agent: Codex GPT-5 · Batch: route-quota-reason-redaction
 
 - Paths touched: `src/main/kotlin/atropos/cli/ui/StatusQuotaRenderer.kt` (+1/-1), `src/main/kotlin/atropos/core/provider/adapter/AdapterRouteFacade.kt` (+5/-3), `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+2).

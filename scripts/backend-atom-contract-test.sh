@@ -90,6 +90,8 @@ text src/main/kotlin/atropos/core/provider/QuotaLedger.kt 'atomicWrite(restored'
 text src/main/kotlin/atropos/cli/shell/ShellCommandRunner.kt 'BoundedAgencyGate'
 text src/main/kotlin/atropos/cli/ui/StatusQuotaRenderer.kt 'redactionFilter.redact(item.reason)'
 text src/main/kotlin/atropos/core/provider/adapter/AdapterRouteFacade.kt 'redactionFilter.redact(it.reason)'
+text src/main/kotlin/atropos/bridge/BridgeFilesHandler.kt 'StandardCopyOption.ATOMIC_MOVE'
+text src/main/kotlin/atropos/bridge/BridgeFilesHandler.kt 'Files.size(it) <= MAX_UPLOAD_BYTES'
 
 # Factory resume/repair and the single obligation loop remain production-wired.
 file src/main/kotlin/atropos/cli/FactoryCommandHandler.kt
