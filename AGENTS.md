@@ -443,6 +443,15 @@ When Phase 11 self-build is fully green, ATROPOS can begin to perform this loop 
 
 End of AGENTS.md
 
+### 2026-08-24T07:45:00Z · Agent: Codex GPT-5 · Batch: installer-release-asset-contract
+
+- Paths touched: `.github/workflows/release.yml` (+3), `scripts/release-installer-contract-test.sh` (+16), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-INST-002 artifact download/hash producer-consumer contract.
+- Predicate moved: the release workflow now executes a source contract that proves the installer’s latest-release URL has matching workflow producers for `ATROPOS.jar` and `ATROPOS.jar.sha256`, including checksum generation and the rolling `latest` tag. No second installer or artifact owner was introduced.
+- Verification actually run: `bash -n scripts/release-installer-contract-test.sh`, `bash scripts/release-installer-contract-test.sh`, `bash scripts/install-contract-test.sh`, `timeout 90s python3 scripts/find-orphans.py --fail-on-new`, and `git diff --check` passed. The orphan gate still reports only the four pre-existing baseline files (4/1034, 360 LOC). GitHub Actions execution, published release, and device installation remain unproven; no root-green claim.
+- % delta: unchanged; B-INST-002 remains partial pending hosted release evidence.
+- Fingerprints (sha256, first 12): `scripts/release-installer-contract-test.sh=c4139f3e1fe4`; `.github/workflows/release.yml=46bf3530786b`; `install.sh=6ece5f472305`.
+
 ### 2026-08-24T06:48:39Z · Agent: Codex GPT-5 · Batch: anti-synthetic-velocity-output
 
 - Paths touched: `src/main/kotlin/atropos/cli/commands/VerifyCommand.kt` (+10/-4), `STATUS-BACKEND.md` (+7).
@@ -12425,3 +12434,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: static YAML/text inspection and `git diff --check` are the available local evidence; hosted Actions execution remains pending, so no CI green claim is made.
 - % delta: unchanged; source-wired but partial pending hosted execution evidence.
 - Fingerprints: recorded after the batch commit.
+
+### 2026-08-24T07:45:00Z · Agent: Codex GPT-5 · Batch: installer-release-asset-contract
+
+- Paths touched: `.github/workflows/release.yml` (+3), `scripts/release-installer-contract-test.sh` (+16), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-INST-002 artifact download/hash producer-consumer contract.
+- Predicate moved: the release workflow now executes a source contract that proves the installer’s latest-release URL has matching workflow producers for `ATROPOS.jar` and `ATROPOS.jar.sha256`, including checksum generation and the rolling `latest` tag. No second installer or artifact owner was introduced.
+- Verification actually run: `bash -n scripts/release-installer-contract-test.sh`, `bash scripts/release-installer-contract-test.sh`, `bash scripts/install-contract-test.sh`, `timeout 90s python3 scripts/find-orphans.py --fail-on-new`, and `git diff --check` passed. The orphan gate still reports only the four pre-existing baseline files (4/1034, 360 LOC). GitHub Actions execution, published release, and device installation remain unproven; no root-green claim.
+- % delta: unchanged; B-INST-002 remains partial pending hosted release evidence.
+- Fingerprints (sha256, first 12): `scripts/release-installer-contract-test.sh=c4139f3e1fe4`; `.github/workflows/release.yml=46bf3530786b`; `install.sh=6ece5f472305`.

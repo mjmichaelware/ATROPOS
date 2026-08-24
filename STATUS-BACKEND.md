@@ -388,7 +388,7 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | B-PROV-006 provider workers | blocked | No existing Director fan-out owner can host provider workers; creating one would create a second orchestrator. | Extend the existing Director hierarchy when that owner is available. |
 | P07 AWS Bedrock | blocked | Environment discovery exists, but no signing and transport owner exists. | Add and test an approved Bedrock transport before routing it. |
 | P09 Perplexity | skipped | No accepted descriptor, transport reference, or existing tree owner is present. | Re-open only with an accepted provider contract. |
-| B-MCP-GITLOCAL mutation micro-atoms | constrained | Current backend scope authorizes bounded status/diff only; add/commit/rebase would be destructive mutations without a separate approval contract. | Extend the existing bounded git owner only after explicit mutation authorization is defined. |
+| B-MCP-GITLOCAL mutation micro-atoms | source-wired / partial | `GitMutationCommand.kt`, `ShellCommandHandler.kt`, `ShellCommandRunner.kt` → existing `TypedToolExecutor`/`BoundedAgencyGate` | Explicit `/git add|commit|rebase-continue --confirm <id>` path now exists; the existing agency gate remains authoritative and no real mutation was run. | Hosted/root focused tests and operator-approved execution evidence remain pending. |
 | B-018 Slack/Discord distribution; B-019 browser verification | deferred | Distribution/browser execution is outside the current Tier-0 backend lane; generic MCP examples remain disabled-by-default and no adapter farm is allowed. | Re-open after core bridge/GHA proof is hosted-green and a transport owner is accepted. |
 
 ### 2026-08-24T06:48:39Z · Backend batch: anti-synthetic-velocity-output
@@ -438,3 +438,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-INST-002 latest artifact resolution | source-wired / partial | `install.sh`, `scripts/install-contract-test.sh` | installer entrypoint → version branch → GitHub latest-release or pinned-release asset URL | Default installation now uses `/releases/latest/download/ATROPOS.jar`; pinned `ATROPOS_VERSION` continues using `/releases/download/<version>/ATROPOS.jar`. Checksum verification and doctor remain fail-closed. `bash -n`, installer contract, diff check, and orphan gate passed; live release/device proof remains pending. |
+
+### 2026-08-24T07:45:00Z · Backend batch: installer-release-asset-contract
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-INST-002 release producer/consumer coupling | source-wired / partial | `.github/workflows/release.yml`, `scripts/release-installer-contract-test.sh` | GitHub Release JAR job → contract script → exact `ATROPOS.jar` and `ATROPOS.jar.sha256` assets consumed by `install.sh` | Added a deterministic release contract asserting the rolling `latest` tag, checksum generation, and both asset names. Local `bash -n`, release/install contracts, orphan gate, and `git diff --check` pass. GitHub Actions execution, published release, and device install remain unproven. |
