@@ -103,6 +103,7 @@ text src/main/kotlin/atropos/bridge/BridgeFilesHandler.kt 'StandardCopyOption.AT
 text src/main/kotlin/atropos/bridge/BridgeFilesHandler.kt 'Files.size(it) <= MAX_UPLOAD_BYTES'
 text src/main/kotlin/atropos/bridge/BridgeCommandHandler.kt 'redactionFilter.compact(failure.message.orEmpty())'
 text src/main/kotlin/atropos/bridge/BridgeEvidenceHandler.kt 'redactionFilter.compact(e.message ?: e.javaClass.simpleName)'
+text src/main/kotlin/atropos/bridge/http/EngineHttpServer.kt 'lastErrorRef.set(redactionFilter.compact(e.message ?: "request failed"))'
 text src/main/kotlin/atropos/core/integration/MarkItDownIngestService.kt 'MAX_SOURCE_BYTES'
 text src/main/kotlin/atropos/core/integration/MarkItDownIngestService.kt 'Files.isSymbolicLink(source)'
 text src/main/kotlin/atropos/core/integration/MarkItDownIngestService.kt 'StandardCopyOption.ATOMIC_MOVE'

@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.bridge.http
 
+import atropos.core.security.RedactionFilter
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.InetAddress
@@ -45,6 +46,7 @@ class EngineHttpServer(
      */
     private val streamRoutes: List<HttpStreamRoute> = emptyList()
 ) {
+    private val redactionFilter = RedactionFilter()
     private val running = AtomicBoolean(false)
     private val socketRef = AtomicReference<ServerSocket?>(null)
     private val lastErrorRef = AtomicReference<String?>(null)
@@ -74,7 +76,7 @@ class EngineHttpServer(
             true
         } catch (e: Exception) {
             running.set(false)
-            lastErrorRef.set(e.message ?: "bridge failed to bind")
+            lastErrorRef.set(redactionFilter.compact(e.message ?: "bridge failed to bind"))
             false
         }
     }
@@ -90,7 +92,7 @@ class EngineHttpServer(
             val client = try {
                 socket.accept()
             } catch (e: Exception) {
-                if (running.get()) lastErrorRef.set(e.message ?: "accept failed")
+                if (running.get()) lastErrorRef.set(redactionFilter.compact(e.message ?: "accept failed"))
                 return
             }
             // A rejected connection is reported, never silently dropped: a
@@ -130,7 +132,7 @@ class EngineHttpServer(
                 // The reason is recorded for the operator but never returned:
                 // an exception message can carry a path or a value, and this
                 // response leaves the process.
-                lastErrorRef.set(e.message ?: "request failed")
+                lastErrorRef.set(redactionFilter.compact(e.message ?: "request failed"))
                 HttpResponse.refusal(
                     500,
                     "engine-error",
@@ -172,7 +174,7 @@ class EngineHttpServer(
         try {
             route.handler(request, sink)
         } catch (e: Exception) {
-            lastErrorRef.set(e.message ?: "stream failed")
+            lastErrorRef.set(redactionFilter.compact(e.message ?: "stream failed"))
         }
     }
 

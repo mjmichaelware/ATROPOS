@@ -13303,6 +13303,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; T04 remains partial pending hosted execution and review of remaining non-renderer diagnostic sinks.
 - Fingerprints (sha256, first 12): `BridgeCommandHandler.kt=e2b94f4d8ced`, `BridgeEvidenceHandler.kt=0c52035afa79`, `BridgeCommandHandlerTest.kt=b813000d053e`, `backend-atom-contract-test.sh=88aedb9e262a`.
 
+### 2026-08-25T02:05:00Z · Agent: Codex GPT-5 · Batch: bridge-diagnostic-redaction
+
+- Paths touched: `src/main/kotlin/atropos/bridge/http/EngineHttpServer.kt` (+6/-4), `src/test/kotlin/atropos/bridge/AtroposBridgeTest.kt` (+25), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: T04 bridge diagnostic/log boundary.
+- Predicate moved: all exception messages retained by the existing bridge server (`bind`, `accept`, request, and SSE stream paths) now cross the canonical `RedactionFilter` before storage; the real HTTP bridge test exercises a throwing route and proves the raw key is absent from `lastError()`.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh` (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (420 tests)`), and `git diff --check` passed. Root/hosted Kotlin execution was not run in Termux; no test-green or root-green claim.
+- % delta: unchanged; T04 remains partial pending hosted execution and non-bridge diagnostic review.
+- Fingerprints (sha256, first 12): `EngineHttpServer.kt=7eb9bce2e89f`, `AtroposBridgeTest.kt=f7745580116e`, `backend-atom-contract-test.sh=eb188ba7767f`.
+
 ### 2026-08-25T01:45:00Z · Agent: Codex GPT-5 · Batch: hosted-redaction-selector-coverage
 
 - Paths touched: `.github/workflows/compile-gate.yml` (+2), `scripts/atropos-verify-worktree.sh` (+2), `STATUS-BACKEND.md` (+7).

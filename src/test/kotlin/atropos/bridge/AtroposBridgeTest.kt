@@ -5,6 +5,9 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URI
+import atropos.bridge.http.EngineHttpServer
+import atropos.bridge.http.HttpRoute
+import atropos.bridge.http.HttpRouteTable
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -119,5 +122,26 @@ class AtroposBridgeTest {
         assertTrue(assertNotNull(server).isRunning())
         assertTrue(port > 0)
         assertNull(assertNotNull(server).lastError())
+    }
+
+    @Test
+    fun `server diagnostic sink redacts route exceptions`() {
+        val direct = EngineHttpServer(
+            routeTable = HttpRouteTable(
+                listOf(HttpRoute("GET", "/boom", "test") {
+                    error("provider api_key=sk-live-secret-123456789")
+                })
+            ),
+            port = 0
+        )
+        server = direct
+        assertTrue(direct.start())
+
+        val (status, body) = get(assertNotNull(direct.boundPort()), "/boom")
+
+        assertEquals(500, status)
+        assertTrue(body.contains("engine-error"))
+        assertTrue(direct.lastError()?.contains("sk-live-secret-123456789") == false)
+        assertTrue(direct.lastError()?.contains("<redacted:api_key>") == true)
     }
 }
