@@ -13305,6 +13305,11 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprints: pending post-commit hash.
 
+### 2026-08-24T22:36:00Z · Agent: Codex GPT-5 · Batch: provider-live-health-seam-fingerprint
+
+- Fingerprint correction for the immediately preceding batch: `ProviderActivationServiceTest.kt=15021d3c6f4b`.
+- Commit evidence: `284682fb`.
+
 ### 2026-08-25T00:45:00Z · Agent: Codex GPT-5 · Batch: markitdown-bounded-attested-write
 
 - Paths touched: `src/main/kotlin/atropos/core/integration/MarkItDownIngestService.kt` (+24/-1), `src/test/kotlin/atropos/core/integration/MarkItDownIngestServiceTest.kt` (+16), `scripts/backend-atom-contract-test.sh` (+3), `STATUS-BACKEND.md` (+7).
