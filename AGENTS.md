@@ -13336,9 +13336,9 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Paths touched: `src/main/kotlin/atropos/core/provider/QuotaLedger.kt` (+25/-3), `scripts/backend-atom-contract-test.sh` (+2).
 - Atoms / phases affected: P15/B-PROV quota ledger persistence and route truth.
 - Predicate moved: the existing `FileQuotaLedger` now writes a complete snapshot to a same-directory temporary file and atomically replaces the ledger, with a non-atomic filesystem fallback and cleanup; an interrupted write cannot intentionally overwrite the authoritative TSV with a partial body.
-- Verification actually run: pending this batch; root/hosted Kotlin quota tests remain unproven.
+- Verification actually run: `ATROPOS_BACKEND_ATOM_CONTRACT_OK`, `ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (418 tests)`, and `git diff --check` passed. Root/hosted Kotlin quota tests remain unproven.
 - % delta: unchanged; P15 remains source-wired/partial pending hosted restart and failure-state tests.
-- Fingerprints (sha256, first 12): to be recorded after commit.
+- Fingerprints (sha256, first 12): `QuotaLedger.kt=7291a3f9b978`; `backend-atom-contract-test.sh=db83504ccad2`.
 
 ### 2026-08-24T19:50:50Z · Agent: Codex GPT-5 · Batch: github-response-size-bound
 
