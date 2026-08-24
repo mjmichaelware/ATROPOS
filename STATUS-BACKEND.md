@@ -81,6 +81,12 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | --- | --- | --- | --- | --- |
 | B-005 / ADD-W-001 session bridge endpoint | source-wired / partial | `src/main/kotlin/atropos/bridge/BridgeRoutes.kt`, `src/test/kotlin/atropos/bridge/AtroposBridgeTest.kt` | Web/Android/editor bridge client → `GET|POST /v1/session` → existing `BridgeSessionHandler` → durable session store | Added singular contract aliases for session list/create while preserving `/v1/sessions`; both methods reuse the existing handler and store. Route-description test and hosted selector wiring remain present; root/hosted execution remains pending. |
 
+### 2026-08-24T23:59:00Z · Backend verification: github-actions-handoff-auth
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| hosted compile/focused-test execution | blocked externally / partial | none; commits `8ac8a75b`, `534f6aae`, `d192b1a5`, `0a0616aa`, `97f064d8`, `e3519807` are ready locally | `git push origin main` → GitHub Actions workflows | Push failed before network submission: `fatal: could not read Username for 'https://github.com': No such device or address`. No hosted compile/test result is claimed; local static checks remain the only new evidence. |
+
 ## Wave residual audit
 
 | residual | status | evidence / caller | remaining truth |

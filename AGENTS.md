@@ -12834,3 +12834,10 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: `git diff --check`, `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (382 tests)`), and `timeout 90s python3 scripts/find-orphans.py --fail-on-new` (exit 0; only 4 pre-existing baseline orphan files / 360 LOC) passed. Root/hosted Kotlin execution remains pending; no test-green claim.
 - % delta: unchanged; B-005 / ADD-W-001 remains source-wired / partial pending hosted execution.
 - Fingerprints (sha256, first 12): `BridgeRoutes.kt=1c2622850823`, `AtroposBridgeTest.kt=1926bca9ed49`.
+
+### 2026-08-24T23:59:00Z · Agent: Codex GPT-5 · Verification: github-actions-handoff-auth
+
+- Paths touched: `STATUS-BACKEND.md` (+7), `AGENTS.md` (+7).
+- Acceptance predicate checked: handoff of the accumulated backend changes to the authoritative GitHub Actions compile/focused-test lane.
+- Evidence: `git push origin main` failed before submission with `fatal: could not read Username for 'https://github.com': No such device or address`. No hosted execution or green result is claimed; commits `8ac8a75b`, `534f6aae`, `d192b1a5`, `0a0616aa`, `97f064d8`, and `e3519807` remain local and ready to push.
+- % delta: unchanged; all affected atoms remain source-wired / partial pending hosted execution where applicable.
