@@ -13310,6 +13310,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Fingerprint correction for the immediately preceding batch: `ProviderActivationServiceTest.kt=15021d3c6f4b`.
 - Commit evidence: `284682fb`.
 
+### 2026-08-24T22:42:00Z · Agent: Codex GPT-5 · Batch: provider-live-health-route-proof
+
+- Paths touched: `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` (+11), `STATUS-BACKEND.md` (+1).
+- Atoms / phases affected: P18 live-test unhealthy routing; B-PROV-002/004.
+- Predicate moved: the focused provider test now invokes the existing `RoutePolicy.decide()` with the onboarding healthy-set callback and proves a failed live-test provider is skipped as `not_in_healthy_set`.
+- Verification: pending this batch; static contracts and diff check will run before commit. Hosted/root Kotlin execution remains unproven.
+- % delta: unchanged; P18 remains source-wired/partial pending hosted Kotlin execution and live approved credentials.
+- Fingerprints: pending post-commit hash.
+
 ### 2026-08-25T00:45:00Z · Agent: Codex GPT-5 · Batch: markitdown-bounded-attested-write
 
 - Paths touched: `src/main/kotlin/atropos/core/integration/MarkItDownIngestService.kt` (+24/-1), `src/test/kotlin/atropos/core/integration/MarkItDownIngestServiceTest.kt` (+16), `scripts/backend-atom-contract-test.sh` (+3), `STATUS-BACKEND.md` (+7).

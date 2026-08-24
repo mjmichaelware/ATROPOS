@@ -329,6 +329,17 @@ class ProviderOnboardingTest {
         service.recordLiveTest("groq", healthy = false)
 
         assertTrue(service.healthyProviderIds().isEmpty())
+        val ledger = FileQuotaLedger(
+            root.resolve("quota.tsv").toFile(),
+            FileQuotaLedger.seedFromDescriptors(StaticProviderDescriptorRegistry())
+        )
+        val decision = RoutePolicy(
+            registry = StaticProviderDescriptorRegistry(),
+            ledger = ledger,
+            healthyProviderIds = service::healthyProviderIds
+        ).decide(ProviderTask(ProviderTaskKind.CHAT_PROMPT, ApiCapability.CHAT, "hello"))
+        assertTrue(decision.selectedProviderId != "groq")
+        assertTrue(decision.skipped.any { it.provider.id == "groq" && it.reason == "not_in_healthy_set" })
         val persisted = Files.readString(root.resolve(".atropos/provider/providers.json"))
         assertTrue(persisted.contains("\"health\":\"UNHEALTHY\""))
         assertTrue(!persisted.contains("secret-value"))
