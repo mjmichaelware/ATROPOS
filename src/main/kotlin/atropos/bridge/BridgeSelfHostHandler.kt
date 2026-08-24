@@ -5,6 +5,7 @@ import atropos.bridge.http.HttpRequest
 import atropos.bridge.http.HttpResponse
 import atropos.bridge.projection.SelfHostProjection
 import atropos.core.agent.SelfHostGoalService
+import atropos.core.security.RedactionFilter
 
 /**
  * Starting, advancing and watching a self-build run from a client surface.
@@ -38,7 +39,8 @@ import atropos.core.agent.SelfHostGoalService
  */
 internal class BridgeSelfHostHandler(
     private val service: SelfHostGoalService,
-    private val view: SelfHostProjection = SelfHostProjection()
+    private val view: SelfHostProjection = SelfHostProjection(),
+    private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
 
     /**
@@ -75,12 +77,15 @@ internal class BridgeSelfHostHandler(
             return HttpResponse.refusal(
                 409,
                 "selfhost-start-refused",
-                result.message,
+                redactionFilter.compact(result.message),
                 "The engine declined to open this goal; its message explains why."
             )
         }
 
-        service.addEvidence(goalId, "bridge_start startedBy=$startedBy phase=$phase")
+        service.addEvidence(
+            goalId,
+            redactionFilter.redact("bridge_start startedBy=$startedBy phase=$phase")
+        )
         return HttpResponse.json(view.renderStart(service.status(goalId), true, result.message))
     }
 
@@ -115,7 +120,7 @@ internal class BridgeSelfHostHandler(
             HttpResponse.refusal(
                 409,
                 "selfhost-advance-refused",
-                advanced.message,
+                redactionFilter.compact(advanced.message),
                 "GET /v1/selfhost/status?goalId=$goalId shows the DAG state behind this refusal."
             )
         }

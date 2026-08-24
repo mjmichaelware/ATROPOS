@@ -1040,3 +1040,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | T04 inbound bridge refusal/status rendering | source-wired / partial | `src/main/kotlin/atropos/bridge/BridgeInboundToolHandler.kt`, `BridgeMcpHandler.kt`, `BridgeApprovalHandler.kt`, `scripts/backend-atom-contract-test.sh` | `/v1/tools/inbound`, `/v1/mcp/*`, and `/v1/approvals/*` → existing bridge handlers | Inbound policy reasons, MCP evidence/status/failure fields, and approval refusal reasons now cross the canonical redaction boundary before JSON construction. Static backend contract, selector parity (420), and `git diff --check` pass; hosted/root Kotlin execution remains pending. |
+
+### 2026-08-25T04:20:00Z · Agent: Codex GPT-5 · Batch: selfhost-bridge-refusal-redaction
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| T04 self-host bridge refusal/evidence rendering | source-wired / partial | `src/main/kotlin/atropos/bridge/BridgeSelfHostHandler.kt`, `scripts/backend-atom-contract-test.sh` | `/v1/selfhost/start|advance` → existing `BridgeSelfHostHandler` → `SelfHostGoalService` | Start/advance refusal details and `startedBy` evidence now cross the canonical redaction boundary before response/persistence. Static backend contract, selector parity (420), and `git diff --check` pass; hosted/root Kotlin execution remains pending. |

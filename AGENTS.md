@@ -13348,6 +13348,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; T04 remains partial pending hosted execution and final bridge sink audit.
 - Fingerprints recorded by commit; unrelated `docs/completion/*` files were not staged.
 
+### 2026-08-25T04:20:00Z · Agent: Codex GPT-5 · Batch: selfhost-bridge-refusal-redaction
+
+- Paths touched: `src/main/kotlin/atropos/bridge/BridgeSelfHostHandler.kt` (+9/-4), `scripts/backend-atom-contract-test.sh` (+3), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: T04 self-host bridge refusal and evidence rendering.
+- Predicate moved: start/advance refusal detail and the `startedBy` evidence line now cross the canonical `RedactionFilter` before response construction or durable evidence write; the existing self-host service and projection remain the sole owners.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh` (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (420 tests)`), and `git diff --check` passed. Root/hosted Kotlin execution was not run in Termux; no test-green or root-green claim.
+- % delta: unchanged; T04 remains partial pending hosted execution and final residual sink audit.
+- Fingerprints recorded by commit; unrelated `docs/completion/*` files were not staged.
+
 ### 2026-08-25T04:05:00Z · Agent: Codex GPT-5 · Batch: inbound-bridge-refusal-redaction
 
 - Paths touched: `src/main/kotlin/atropos/bridge/BridgeInboundToolHandler.kt` (+6/-2), `BridgeMcpHandler.kt` (+8/-4), `BridgeApprovalHandler.kt` (+4/-1), `scripts/backend-atom-contract-test.sh` (+3), `STATUS-BACKEND.md` (+7).
