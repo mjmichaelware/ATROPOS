@@ -453,6 +453,15 @@ End of AGENTS.md
 - % delta: unchanged; B-INST-002 remains partial pending hosted release evidence.
 - Fingerprints (sha256, first 12): `scripts/release-installer-contract-test.sh=c4139f3e1fe4`; `.github/workflows/release.yml=46bf3530786b`; `install.sh=6ece5f472305`.
 
+### 2026-08-24T18:30:00Z · Agent: Codex GPT-5 · Batch: hosted-agent-runtime-test-surface
+
+- Paths touched: `.github/workflows/compile-gate.yml` (+48 selectors), `scripts/atropos-verify-worktree.sh` (+48 selectors), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: Phase 11 self-build/resume/repair focused evidence; existing agent safety and bounded mutation owners.
+- Predicate moved: the hosted compile lane now explicitly executes the remaining existing `atropos.core.agent.*Test` classes instead of leaving the self-build/runtime test surface outside the selector. Both CI entrypoints remain aligned through the selector contract; no second runner or orchestrator was introduced.
+- Verification actually run: `bash scripts/hosted-test-selector-contract.sh` passed (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (206 tests)`), `bash -n scripts/atropos-verify-worktree.sh`, `git diff --check`, and `timeout 90s python3 scripts/find-orphans.py --fail-on-new` passed. The orphan gate remains 4 pre-existing files of 1035 production files (360 orphan LOC). GitHub-hosted/root Gradle execution remains pending; no green claim.
+- % delta: unchanged; source-wired but partial pending hosted execution evidence.
+- Fingerprints: recorded after the batch commit.
+
 ### 2026-08-24T13:00:00Z · Agent: Codex GPT-5 · Batch: attested-upload-envelope-proof
 
 - Paths touched: `src/test/kotlin/atropos/bridge/BridgeFilesHandlerTest.kt` (+8), `STATUS-BACKEND.md` (+7).

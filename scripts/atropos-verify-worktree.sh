@@ -124,6 +124,54 @@ if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
     --tests 'atropos.cli.FirstRunDoctorRendererTest' \
     --tests 'atropos.cli.input.CommandCatalogBackendEntriesTest' \
     --tests 'atropos.core.agent.AgentContextCollectorTest' \
+    --tests 'atropos.core.agent.AgentContextExportStoreTest' \
+    --tests 'atropos.core.agent.AgentDaemonLogWriterTest' \
+    --tests 'atropos.core.agent.AgentDaemonRootResolverTest' \
+    --tests 'atropos.core.agent.AgentDaemonStoreTest' \
+    --tests 'atropos.core.agent.AgentJobStoreTest' \
+    --tests 'atropos.core.agent.AgentPatchAuditorTest' \
+    --tests 'atropos.core.agent.AgentPatchBoundedAgencyTest' \
+    --tests 'atropos.core.agent.AgentPatchCascadeRunnerTest' \
+    --tests 'atropos.core.agent.AgentPatchResponseValidatorTest' \
+    --tests 'atropos.core.agent.AgentPatchRunResultFactoryTest' \
+    --tests 'atropos.core.agent.AgentQueueRecordCodecCorruptionTest' \
+    --tests 'atropos.core.agent.AgentQueueStoreTest' \
+    --tests 'atropos.core.agent.AgentRepairAttestationTest' \
+    --tests 'atropos.core.agent.AgentRepairBudgetTest' \
+    --tests 'atropos.core.agent.AgentRunPromptComposerTest' \
+    --tests 'atropos.core.agent.AgentRunRepoStatusTest' \
+    --tests 'atropos.core.agent.AgentServiceModelsTest' \
+    --tests 'atropos.core.agent.AgentSmokeBoundedAgencyTest' \
+    --tests 'atropos.core.agent.BoundedWorkExecutorTest' \
+    --tests 'atropos.core.agent.SelfHostAutonomousRunnerTest' \
+    --tests 'atropos.core.agent.SelfHostCandidateJarBuilderTest' \
+    --tests 'atropos.core.agent.SelfHostContextPreflightTest' \
+    --tests 'atropos.core.agent.SelfHostCradleRuntimeStateTest' \
+    --tests 'atropos.core.agent.SelfHostCradleVerificationGateTest' \
+    --tests 'atropos.core.agent.SelfHostDocumentPlanIntegrationTest' \
+    --tests 'atropos.core.agent.SelfHostDocumentPlanTest' \
+    --tests 'atropos.core.agent.SelfHostEvidenceBundleExporterTest' \
+    --tests 'atropos.core.agent.SelfHostEvidenceProvenanceTest' \
+    --tests 'atropos.core.agent.SelfHostEvidenceTextCodecTest' \
+    --tests 'atropos.core.agent.SelfHostFailureCodeTest' \
+    --tests 'atropos.core.agent.SelfHostGitBaselineReaderTest' \
+    --tests 'atropos.core.agent.SelfHostGitStatusEvidenceTest' \
+    --tests 'atropos.core.agent.SelfHostGoalQueryServiceTest' \
+    --tests 'atropos.core.agent.SelfHostGoalServiceTest' \
+    --tests 'atropos.core.agent.SelfHostInstalledProofEvidenceTest' \
+    --tests 'atropos.core.agent.SelfHostMutationPayloadParserTest' \
+    --tests 'atropos.core.agent.SelfHostMutationVerificationGateTest' \
+    --tests 'atropos.core.agent.SelfHostPromotionGateContractTest' \
+    --tests 'atropos.core.agent.SelfHostPromotionServiceTest' \
+    --tests 'atropos.core.agent.SelfHostRecoveryContinuationTest' \
+    --tests 'atropos.core.agent.SelfHostRunProofBuilderTest' \
+    --tests 'atropos.core.agent.SelfHostRuntimeJarLocatorTest' \
+    --tests 'atropos.core.agent.SelfHostRuntimeRunLimitsTest' \
+    --tests 'atropos.core.agent.SelfHostSafetyHardFailGateTest' \
+    --tests 'atropos.core.agent.SelfHostStartupContinuationServiceTest' \
+    --tests 'atropos.core.agent.SelfHostStateSnapshotRecorderTest' \
+    --tests 'atropos.core.agent.SelfHostWorktreeNodeExecutorTest' \
+    --tests 'atropos.core.agent.Utf8BoundedBuilderTest' \
     --tests 'atropos.cli.shell.ShellBoundedAgencyTest' \
     --tests 'atropos.cli.GitMutationCommandTest' \
     --tests 'atropos.core.worktree.BoundedGitWorktreeCommandRunnerTest' \

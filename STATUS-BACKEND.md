@@ -576,3 +576,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-005 / ADD-W-001 event stream request identity | source-wired / partial | `src/main/kotlin/atropos/bridge/http/EngineHttpServer.kt`, `src/main/kotlin/atropos/bridge/BridgeRoutes.kt`, `src/main/kotlin/atropos/bridge/BridgeEventsHandler.kt`, `src/test/kotlin/atropos/bridge/BridgeStreamTest.kt`, hosted selectors | loopback `EngineHttpServer` → existing `BridgeRoutes.streamRoutes` → `BridgeEventsHandler.streamEvents(request, ...)` → `BridgeEventHub` | Added a real-socket focused test proving `/v1/events/stream?session=<id>&after=0` emits the requested session’s event and excludes another session’s event. Hosted/root Kotlin execution remains pending; no bridge-green claim. |
+
+### 2026-08-24T18:30:00Z · Backend batch: hosted-agent-runtime-test-surface
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| Phase 11 self-build/resume/repair focused evidence | source-wired / partial | `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh` | existing hosted `:jvmTest` invocation → explicit `atropos.core.agent.*Test` selectors → existing agent/self-host production owners | Added the remaining existing `core.agent` test classes (48 selectors; hosted selector set 158 → 206) to both CI entrypoints. Selector/source parity, shell syntax, diff check, and orphan gate pass locally; GitHub-hosted Kotlin execution remains pending, so no Phase 11/root-green claim. |
