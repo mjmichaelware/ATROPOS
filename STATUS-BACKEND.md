@@ -1226,3 +1226,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | ADD-MCP-003 result-to-EvidenceRef mapping | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `scripts/backend-atom-contract-test.sh` | `callTool` → redacted response → `recordToolResult` → SHA-256 CAS artifact or explicit no-evidence reason → `McpToolCallResult` | Added CI assertions for the production result-to-evidence return edge, durable hash, and explicit evidence absence branch. Backend contract, hosted selector parity (421), and diff check pass; hosted MCP runtime execution remains unverified. |
+
+### 2026-08-25T05:00:00Z · Agent: Codex GPT-5 · Batch: mcp-handshake-sequence-contract
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-CORE-c/d initialize and tools/list handshake | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `scripts/backend-atom-contract-test.sh` | CLI/bridge → sole host stdio/HTTP transport → JSON-RPC initialize + initialized notification + tools/list → bounded tool call | Added CI assertions for the exact handshake messages shared by stdio and remote paths, preserving one host transport sequence. Backend contract, hosted selector parity (421), and diff check pass; hosted MCP runtime execution remains unverified. |
