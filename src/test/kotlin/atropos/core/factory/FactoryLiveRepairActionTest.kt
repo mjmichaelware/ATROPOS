@@ -75,4 +75,38 @@ class FactoryLiveRepairActionTest {
         assertTrue(evidence.predicateResults.values.all { it })
         assertTrue(freeze.requireRepairEvidence(evidence).contains("stderr_sha256="))
     }
+
+    @Test
+    fun repair_command_evidence_redacts_api_key_arguments() {
+        val root = Files.createTempDirectory("factory-live-repair-redaction")
+        val script = root.resolve("repair.sh")
+        Files.writeString(script, "#!/bin/sh\nprintf '%s\\n' 'repair complete' >&2\n")
+        script.toFile().setExecutable(true)
+        val plan = FactoryPlan(
+            id = "run-redaction",
+            prompt = "repair",
+            intent = "repair",
+            projectSpec = AppProjectSpec("repair", AppIntent("repair", "cli", emptyList())),
+            steps = emptyList(),
+            paidAllowed = false,
+            queuedWork = emptyList(),
+            assetFiles = emptyList(),
+            memoryRecordId = null
+        )
+        val freeze = FactoryAcceptanceFreeze.create(
+            promptSha256 = "a".repeat(64),
+            researchSha256 = "b".repeat(64),
+            atomIds = emptyList(),
+            promptSpans = "none"
+        )
+        val secret = "sk-live-12345678"
+
+        val evidence = FactoryLiveRepairAction(
+            root,
+            command = listOf("./repair.sh", "--api-key=$secret")
+        ).invoke(plan, root.resolve("target"), IllegalStateException("verification failed"), freeze)
+
+        assertTrue(!evidence.command.contains(secret))
+        assertTrue(evidence.command.contains("<redacted:api_key>"))
+    }
 }

@@ -61,7 +61,7 @@ class FactoryLiveRepairAction(
         )
         return FactoryAcceptanceFreeze.RepairEvidence(
             freezeSha256 = freeze.sha256,
-            command = argv.joinToString(" "),
+            command = redactionFilter.redact(argv.joinToString(" ")),
             exitCode = result.exitCode ?: 1,
             stderr = stderr,
             predicateResults = mapOf(

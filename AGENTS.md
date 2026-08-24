@@ -12161,6 +12161,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; source-wired but partial pending hosted execution evidence.
 - Fingerprints: recorded after the batch commit.
 
+### 2026-08-24T10:55:00Z · Agent: Codex GPT-5 · Batch: factory-repair-command-redaction
+
+- Paths touched: `src/main/kotlin/atropos/core/factory/FactoryLiveRepairAction.kt` (+1), `src/test/kotlin/atropos/core/factory/FactoryLiveRepairActionTest.kt` (+34), and `STATUS-BACKEND.md` (+2).
+- Atoms / phases affected: FTY-03 repair evidence and T04 secret-safe new render/log path.
+- Predicate moved: persisted repair evidence no longer records raw command arguments; the existing `RedactionFilter` is applied to the command field while the bounded process receives the original argv. A focused test proves an API-key argument is absent from evidence.
+- Verification actually run: `git diff --check` and source inspection passed; root Gradle and hosted tests remain pending, so no test green claim is made.
+- % delta: unchanged; source-wired but partial pending hosted execution evidence.
+- Fingerprints: recorded after the batch commit.
+
 ### 2026-08-24T10:35:00Z · Agent: Codex GPT-5 · Batch: gha-pull-request-trigger
 
 - Paths touched: `.github/workflows/atropos-verify-example.yml` (+1), `scripts/atropos-verify-action-contract-test.sh` (+8), `STATUS-BACKEND.md` (+2).
