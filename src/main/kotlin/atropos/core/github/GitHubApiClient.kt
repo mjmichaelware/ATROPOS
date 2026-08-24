@@ -247,9 +247,15 @@ class GitHubApiClient(
             }
             val response = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(5))
+                .followRedirects(HttpClient.Redirect.NEVER)
                 .build()
-                .send(httpRequest, HttpResponse.BodyHandlers.ofString())
-            return GitHubApiWireResponse(response.statusCode(), response.body())
+                .send(httpRequest, HttpResponse.BodyHandlers.ofInputStream())
+            val body = response.body().use { input ->
+                input.readNBytes(MAX_RESPONSE_CHARS + 1).also {
+                    require(it.size <= MAX_RESPONSE_CHARS) { "GitHub API response exceeds $MAX_RESPONSE_CHARS characters" }
+                }.toString(Charsets.UTF_8)
+            }
+            return GitHubApiWireResponse(response.statusCode(), body)
         }
     }
 }

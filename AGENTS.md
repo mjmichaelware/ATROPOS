@@ -13349,6 +13349,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; B-PROV-002 remains source-wired/partial pending hosted adapter fixtures.
 - Fingerprints (sha256, first 12): `OpenAiCompatibleKernelAdapter.kt=2d0c80368b7b`; `backend-atom-contract-test.sh=2ba9147e8930`.
 
+### 2026-08-24T21:50:00Z · Agent: Codex GPT-5 · Batch: tier0-response-stream-bounds
+
+- Paths touched: `src/main/kotlin/atropos/core/sentry/SentryApiClient.kt` (+10/-3), `src/main/kotlin/atropos/core/github/GitHubApiClient.kt` (+10/-3), `src/main/kotlin/atropos/core/github/GitHubDeviceAuthClient.kt` (+15/-5), `scripts/backend-atom-contract-test.sh` (+4).
+- Atoms / phases affected: B-MCP-SENTRY, B-MCP-GITHUB, and B-MCP-OAUTH-UX transport safety.
+- Predicate moved: the three existing Tier-0 HTTP owners now refuse redirects and stream bounded responses before decoding; Sentry caps at 2 MiB, GitHub API at 1 MiB, and OAuth at 256 KiB. No new integration stack was introduced.
+- Verification actually run: `ATROPOS_BACKEND_ATOM_CONTRACT_OK`, `ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (418 tests)`, and `git diff --check` passed. Root/hosted Kotlin and live credentials remain unproven.
+- % delta: unchanged; Tier-0 integrations remain source-wired/partial pending hosted/live evidence.
+- Fingerprints (sha256, first 12): to be recorded after commit.
+
 ### 2026-08-24T19:50:50Z · Agent: Codex GPT-5 · Batch: github-response-size-bound
 
 - Paths touched: `src/main/kotlin/atropos/core/github/GitHubApiClient.kt` (+4), `src/test/kotlin/atropos/core/github/GitHubApiClientTest.kt` (+17), `scripts/backend-atom-contract-test.sh` (+1).

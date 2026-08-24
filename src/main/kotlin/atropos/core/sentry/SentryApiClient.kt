@@ -144,10 +144,18 @@ class SentryApiClient(
                 .build()
             val response = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(5))
+                .followRedirects(HttpClient.Redirect.NEVER)
                 .build()
-                .send(httpRequest, HttpResponse.BodyHandlers.ofString())
-            return SentryApiWireResponse(response.statusCode(), response.body())
+                .send(httpRequest, HttpResponse.BodyHandlers.ofInputStream())
+            val body = response.body().use { input ->
+                input.readNBytes(MAX_RESPONSE_BYTES + 1).also {
+                    require(it.size <= MAX_RESPONSE_BYTES) { "Sentry response exceeded $MAX_RESPONSE_BYTES bytes" }
+                }.toString(Charsets.UTF_8)
+            }
+            return SentryApiWireResponse(response.statusCode(), body)
         }
+
+        const val MAX_RESPONSE_BYTES = 2 * 1024 * 1024
     }
 }
 

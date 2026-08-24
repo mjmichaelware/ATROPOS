@@ -179,18 +179,27 @@ class GitHubDeviceAuthClient(
         const val DEVICE_CODE_URL = "https://github.com/login/device/code"
         const val ACCESS_TOKEN_URL = "https://github.com/login/oauth/access_token"
         const val DEVICE_GRANT = "urn:ietf:params:oauth:grant-type:device_code"
+        const val MAX_RESPONSE_BYTES = 256 * 1024
 
         fun sendOverHttps(request: GitHubOAuthRequest): GitHubOAuthResponse {
-            val response = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build().send(
+            val response = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(5))
+                .followRedirects(HttpClient.Redirect.NEVER)
+                .build().send(
                 HttpRequest.newBuilder(URI.create(request.url))
                     .timeout(Duration.ofSeconds(15))
                     .header("Accept", "application/json")
                     .header("Content-Type", "application/x-www-form-urlencoded")
                     .method(request.method, HttpRequest.BodyPublishers.ofString(request.form))
                     .build(),
-                HttpResponse.BodyHandlers.ofString()
+                HttpResponse.BodyHandlers.ofInputStream()
             )
-            return GitHubOAuthResponse(response.statusCode(), response.body())
+            val body = response.body().use { input ->
+                input.readNBytes(MAX_RESPONSE_BYTES + 1).also {
+                    require(it.size <= MAX_RESPONSE_BYTES) { "GitHub OAuth response exceeds $MAX_RESPONSE_BYTES bytes" }
+                }.toString(Charsets.UTF_8)
+            }
+            return GitHubOAuthResponse(response.statusCode(), body)
         }
     }
 }
