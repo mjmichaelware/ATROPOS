@@ -1220,3 +1220,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | ADD-MCP-002 tool injection budget | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `scripts/backend-atom-contract-test.sh` | CLI/bridge `callTool` → bounded `McpToolBudget` → `boundedTools`/`requireToolWithinBudget` before stdio or remote `tools/call` | Added CI assertions for both schema truncation and pre-call budget enforcement. Backend contract, hosted selector parity (421), and diff check pass; hosted MCP runtime execution remains unverified. |
+
+### 2026-08-25T04:40:00Z · Agent: Codex GPT-5 · Batch: mcp-result-evidence-contract
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| ADD-MCP-003 result-to-EvidenceRef mapping | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `scripts/backend-atom-contract-test.sh` | `callTool` → redacted response → `recordToolResult` → SHA-256 CAS artifact or explicit no-evidence reason → `McpToolCallResult` | Added CI assertions for the production result-to-evidence return edge, durable hash, and explicit evidence absence branch. Backend contract, hosted selector parity (421), and diff check pass; hosted MCP runtime execution remains unverified. |
