@@ -227,3 +227,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-IMPORT cursor-rules / copilot-instructions | source-wired / partial | `src/main/kotlin/atropos/core/agent/ImportedInstructionPackStore.kt`, `AgentContextCollector.kt`, `src/main/kotlin/atropos/cli/commands/AgentCommand.kt`, `CommandCatalog.kt`, `src/test/kotlin/atropos/core/agent/AgentContextCollectorTest.kt` | `/agent context import <path>` → `ImportedInstructionPackStore.import`; existing `AgentContextCollector.collect/collectPatch/collectRepair` → verified local packs | Imported files stay inside repo territory, are redacted before persistence, receive a SHA-256 id, and load only when the hash and `CONTEXT_ONLY` authority marker verify. Source Docs/ATROPOS policy remain authoritative. Focused tests added; `git diff --check` and Python orphan-script syntax passed. Gradle/root and hosted execution remain pending; no green claim. |
+
+### 2026-08-24T06:35:00Z · Backend batch: hosted-context-import-test-wire
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-IMPORT hosted acceptance wiring | source-wired / partial | `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh` | GitHub Actions focused backend lane → `atropos.core.agent.AgentContextCollectorTest` | The canonical hosted workflow and reusable verification script now execute the import/redaction/hash/load test class after root compilation. YAML/shell static checks and hosted execution remain pending. |

@@ -90,3 +90,4 @@ jobs:
           --tests 'atropos.bridge.BridgeFilesHandlerTest'
           --tests 'atropos.cli.BackendDoctorTest'
           --tests 'atropos.cli.input.CommandCatalogBackendEntriesTest'
+          --tests 'atropos.core.agent.AgentContextCollectorTest'

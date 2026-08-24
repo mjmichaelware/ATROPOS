@@ -12034,3 +12034,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: `git diff --check` passed; `python3 -m py_compile scripts/find-orphans.py` passed. `find-orphans.py --fail-on-new` did not produce a completed result within the local tool window, so no orphan-gate pass is claimed for this batch. Root Gradle and hosted tests remain unrun/inconclusive; no compile or test green claim.
 - % delta: unchanged; source-wired but partial pending root/hosted execution evidence.
 - Fingerprints (sha256, first 12): `ImportedInstructionPackStore.kt=b73869cb4299`; `AgentContextCollector.kt=24c2219527bb`; `AgentCommand.kt=2888d9eee82`; `CommandCatalog.kt=2be4cf5adbb1`; `AgentContextCollectorTest.kt=eeda83d5b723`.
+
+### 2026-08-24T06:35:00Z · Agent: Codex GPT-5 · Batch: hosted-context-import-test-wire
+
+- Paths touched: `.github/workflows/compile-gate.yml` (+1), `scripts/atropos-verify-worktree.sh` (+1), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-IMPORT hosted acceptance wiring.
+- Predicate moved: both canonical GitHub verification paths now select `atropos.core.agent.AgentContextCollectorTest`, covering redaction, hash attestation, collector loading, and repository-boundary refusal after hosted compilation.
+- Verification actually run: `git diff --check` and shell/YAML source inspection pending in this batch; GitHub Actions has not run, so no hosted green claim.
+- % delta: unchanged; source-wired but partial pending hosted execution.
+- Fingerprints (sha256, first 12): `compile-gate.yml=dd010ec451bd`; `atropos-verify-worktree.sh=c4fad8a7f10e`; `STATUS-BACKEND.md=005f8b831981`.
