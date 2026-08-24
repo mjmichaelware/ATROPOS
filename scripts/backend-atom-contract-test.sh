@@ -114,6 +114,7 @@ text src/main/kotlin/atropos/bridge/projection/ThinkingProjection.kt 'redactionF
 text src/main/kotlin/atropos/bridge/BridgeSessionHandler.kt 'redactionFilter.redact(session.title)'
 text src/main/kotlin/atropos/bridge/projection/CheckpointProjection.kt 'redactionFilter.redact(summary.goalId)'
 text src/main/kotlin/atropos/bridge/BridgeEventsHandler.kt 'redactionFilter.redact(event.detail)'
+text src/main/kotlin/atropos/bridge/BridgeEditorHandler.kt 'HttpResponse.json(redactionFilter.redact(context()))'
 text src/main/kotlin/atropos/core/integration/MarkItDownIngestService.kt 'MAX_SOURCE_BYTES'
 text src/main/kotlin/atropos/core/integration/MarkItDownIngestService.kt 'Files.isSymbolicLink(source)'
 text src/main/kotlin/atropos/core/integration/MarkItDownIngestService.kt 'StandardCopyOption.ATOMIC_MOVE'

@@ -1028,3 +1028,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | T04 bridge event/SSE rendering | source-wired / partial | `src/main/kotlin/atropos/bridge/BridgeEventsHandler.kt`, `scripts/backend-atom-contract-test.sh` | `/v1/events` and `/v1/events/stream` → existing `BridgeEventsHandler` → shared `BridgeEventHub` | Polling and SSE event details now pass through the canonical redaction filter while preserving the existing session identity/cursor filtering and single event bus. Static backend contract, selector parity (420), and `git diff --check` pass; hosted/root event tests remain pending. |
+
+### 2026-08-25T03:50:00Z · Agent: Codex GPT-5 · Batch: editor-context-redaction
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| T04 editor bridge context rendering | source-wired / partial | `src/main/kotlin/atropos/bridge/BridgeEditorHandler.kt`, `scripts/backend-atom-contract-test.sh` | `/v1/editor/context` → existing `BridgeEditorHandler` context provider | Editor context JSON now crosses the canonical redaction filter before returning to extension clients; selection forwarding already used the same owner. Static backend contract, selector parity (420), and `git diff --check` pass; hosted/root bridge execution remains pending. |

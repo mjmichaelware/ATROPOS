@@ -13339,6 +13339,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; T04 remains partial pending hosted event execution and final bridge projection audit.
 - Fingerprints (sha256, first 12): `BridgeEventsHandler.kt=26917d690951`, `backend-atom-contract-test.sh=f878c1e0f895`.
 
+### 2026-08-25T03:50:00Z · Agent: Codex GPT-5 · Batch: editor-context-redaction
+
+- Paths touched: `src/main/kotlin/atropos/bridge/BridgeEditorHandler.kt` (+1/-1), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: T04 editor/extension bridge context output.
+- Predicate moved: the existing editor context endpoint now redacts the context payload immediately before JSON response construction, closing the remaining raw context return in that bridge owner.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh` (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (420 tests)`), and `git diff --check` passed. Root/hosted Kotlin execution was not run in Termux; no test-green or root-green claim.
+- % delta: unchanged; T04 remains partial pending hosted execution and final bridge sink audit.
+- Fingerprints recorded by commit; unrelated `docs/completion/*` files were not staged.
+
 ### 2026-08-25T02:50:00Z · Agent: Codex GPT-5 · Batch: bridge-projection-redaction-boundary
 
 - Paths touched: `src/main/kotlin/atropos/bridge/projection/RecoveryProjection.kt` (+9/-2), `ActivityProjection.kt` (+11/-3), `AuthorityProjection.kt` (+25/-12), `ExportProjection.kt` (+15/-7), `ThinkingProjection.kt` (+11/-3), `scripts/backend-atom-contract-test.sh` (+5), `STATUS-BACKEND.md` (+7).

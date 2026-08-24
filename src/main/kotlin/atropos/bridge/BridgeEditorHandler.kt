@@ -18,7 +18,7 @@ internal class BridgeEditorHandler(
     private val sendMessage: (HttpRequest) -> HttpResponse,
     private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
-    fun context(): HttpResponse = HttpResponse.json(context())
+    fun context(): HttpResponse = HttpResponse.json(redactionFilter.redact(context()))
 
     fun sendSelection(request: HttpRequest): HttpResponse {
         val issuedBy = value(request, "issuedBy")
