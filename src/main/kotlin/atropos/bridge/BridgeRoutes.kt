@@ -317,6 +317,9 @@ class BridgeRoutes(
                 HttpRoute("POST", "/v1/command", "run one CLI command, shell families excluded") { request ->
                     withCommands { it.execute(request) }
                 },
+                HttpRoute("POST", "/v1/cli", "run one CLI command through the bridge contract") { request ->
+                    withCommands { it.execute(request) }
+                },
                 HttpRoute("GET", "/v1/command/allowed", "command families this surface accepts") {
                     withCommands { it.allowed() }
                 },

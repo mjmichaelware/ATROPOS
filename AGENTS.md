@@ -12807,3 +12807,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: `git diff --check`, `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (382 tests)`), and `timeout 90s python3 scripts/find-orphans.py --fail-on-new` (exit 0; only 4 pre-existing baseline orphan files / 360 LOC) passed. Root/hosted Kotlin execution remains pending; no test-green claim.
 - % delta: unchanged; B-005 / ADD-W-029 remains source-wired / partial pending hosted execution.
 - Fingerprints (sha256, first 12): `BridgeFilesHandler.kt=85ce026ca817`, `BridgeFilesHandlerTest.kt=8082906494dc`.
+
+### 2026-08-24T23:25:00Z · Agent: Codex GPT-5 · Batch: bridge-cli-contract-alias
+
+- Paths touched: `src/main/kotlin/atropos/bridge/BridgeRoutes.kt` (+3), `src/test/kotlin/atropos/bridge/AtroposBridgeTest.kt` (+1), `STATUS-BACKEND.md` (+7), `AGENTS.md` (+7).
+- Atoms / phases affected: B-005 / ADD-W-001 thin bridge CLI endpoint.
+- Predicate moved: the engine now exposes the declared `POST /v1/cli` endpoint while reusing the existing `BridgeCommandHandler` and command policy path; `/v1/command` remains backward-compatible. A real route-description test asserts the new endpoint, with no parallel command owner or bus.
+- Verification actually run: `git diff --check`, `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (382 tests)`), and `timeout 90s python3 scripts/find-orphans.py --fail-on-new` (exit 0; only 4 pre-existing baseline orphan files / 360 LOC) passed. Root/hosted Kotlin execution remains pending; no test-green claim.
+- % delta: unchanged; B-005 / ADD-W-001 remains source-wired / partial pending hosted execution.
+- Fingerprints (sha256, first 12): `BridgeRoutes.kt=137447fc38ec`, `AtroposBridgeTest.kt=bcfa6e985327`.
