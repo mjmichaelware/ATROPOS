@@ -36,6 +36,7 @@ class OllamaHealthProbe(
         return try {
             val client = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofMillis(800))
+                .followRedirects(HttpClient.Redirect.NEVER)
                 .build()
 
             val request = HttpRequest.newBuilder()
@@ -46,8 +47,14 @@ class OllamaHealthProbe(
 
             val response = client.send(
                 request,
-                HttpResponse.BodyHandlers.ofString()
+                HttpResponse.BodyHandlers.ofInputStream()
             )
+
+            val body = response.body().use { input ->
+                input.readNBytes(MAX_RESPONSE_BYTES + 1).also {
+                    require(it.size <= MAX_RESPONSE_BYTES)
+                }.toString(Charsets.UTF_8)
+            }
 
             if (response.statusCode() !in 200..299) {
                 return OllamaStatus(
@@ -60,7 +67,7 @@ class OllamaHealthProbe(
 
             val models = Regex(
                 """"name"\s*:\s*"([^"]+)""""
-            ).findAll(response.body())
+            ).findAll(body)
                 .map { it.groupValues[1] }
                 .distinct()
                 .toList()
@@ -86,5 +93,7 @@ class OllamaHealthProbe(
                 host = host.trimEnd('/')
             )
         }
+
+        private const val MAX_RESPONSE_BYTES = 1 * 1024 * 1024
     }
 }

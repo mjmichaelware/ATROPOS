@@ -78,6 +78,8 @@ text src/main/kotlin/atropos/core/sentry/SentryApiClient.kt 'HttpClient.Redirect
 text src/main/kotlin/atropos/core/sentry/SentryApiClient.kt 'readNBytes(MAX_RESPONSE_BYTES + 1)'
 text src/main/kotlin/atropos/core/github/GitHubApiClient.kt 'readNBytes(MAX_RESPONSE_CHARS + 1)'
 text src/main/kotlin/atropos/core/github/GitHubDeviceAuthClient.kt 'HttpClient.Redirect.NEVER'
+text src/main/kotlin/atropos/core/ProviderState.kt 'readNBytes(MAX_RESPONSE_BYTES + 1)'
+text src/main/kotlin/atropos/core/agent/ProviderSessionSupervisor.kt 'HttpClient.Redirect.NEVER'
 text src/main/kotlin/atropos/core/platform/PlatformAbstraction.kt 'requestMethod = "HEAD"'
 text src/main/kotlin/atropos/core/platform/PlatformAbstraction.kt 'runtime.localOnly'
 text src/main/kotlin/atropos/core/provider/QuotaLedger.kt 'StandardCopyOption.ATOMIC_MOVE'

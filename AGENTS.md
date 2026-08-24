@@ -13367,6 +13367,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; B-MCP-GHA remains source-wired/partial pending hosted Action execution.
 - Fingerprints (sha256, first 12): `GitHubActionsCompileRunner.kt=bc63929a20be`; `backend-atom-contract-test.sh=bf10b47aeba8`.
 
+### 2026-08-24T22:35:00Z · Agent: Codex GPT-5 · Batch: local-health-response-bounds
+
+- Paths touched: `src/main/kotlin/atropos/core/ProviderState.kt` (+10/-2), `src/main/kotlin/atropos/core/agent/ProviderSessionSupervisor.kt` (+13/-3), `scripts/backend-atom-contract-test.sh` (+2).
+- Atoms / phases affected: B-PROV-002 local Ollama health and supervised provider-session health paths.
+- Predicate moved: local health probes now refuse redirects and stream bounded status responses before parsing or rendering; Ollama is capped at 1 MiB and supervised runtime status at 64 KiB.
+- Verification actually run: pending this batch; root/hosted provider and supervisor tests remain unproven.
+- % delta: unchanged; provider health remains source-wired/partial pending hosted fixtures.
+- Fingerprints (sha256, first 12): to be recorded after commit.
+
 ### 2026-08-24T19:50:50Z · Agent: Codex GPT-5 · Batch: github-response-size-bound
 
 - Paths touched: `src/main/kotlin/atropos/core/github/GitHubApiClient.kt` (+4), `src/test/kotlin/atropos/core/github/GitHubApiClientTest.kt` (+17), `scripts/backend-atom-contract-test.sh` (+1).

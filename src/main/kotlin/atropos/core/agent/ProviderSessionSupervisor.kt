@@ -17,6 +17,7 @@ class ProviderSessionSupervisor(
     private val clock: () -> Instant = { Instant.now() },
     private val httpClient: HttpClient = HttpClient.newBuilder()
         .connectTimeout(Duration.ofSeconds(5))
+        .followRedirects(HttpClient.Redirect.NEVER)
         .build()
 ) {
     private val maxBackoffSeconds = 300L
@@ -134,9 +135,14 @@ class ProviderSessionSupervisor(
                 .timeout(Duration.ofSeconds(5))
                 .GET()
                 .build()
-            val response = httpClient.send(request, HttpResponse.BodyHandlers.ofString())
+            val response = httpClient.send(request, HttpResponse.BodyHandlers.ofInputStream())
+            val body = response.body().use { input ->
+                input.readNBytes(MAX_RESPONSE_BYTES + 1).also {
+                    require(it.size <= MAX_RESPONSE_BYTES)
+                }.toString(Charsets.UTF_8)
+            }
             if (response.statusCode() == 200) {
-                SupervisedSessionHealth(record.id, record.state, true, "runtime responded: ${response.body().take(80)}")
+                SupervisedSessionHealth(record.id, record.state, true, "runtime responded: ${body.take(80)}")
             } else {
                 SupervisedSessionHealth(record.id, record.state, false, "runtime returned status ${response.statusCode()}")
             }
@@ -195,5 +201,9 @@ class ProviderSessionSupervisor(
             subjectType = "supervised_session",
             subjectId = record.id
         )
+    }
+
+    private companion object {
+        const val MAX_RESPONSE_BYTES = 64 * 1024
     }
 }
