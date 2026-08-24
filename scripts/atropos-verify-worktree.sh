@@ -42,6 +42,9 @@ if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
     --tests 'atropos.core.integration.InboundToolBridgeTest' \
     --tests 'atropos.core.integration.MarkItDownIngestServiceTest' \
     --tests 'atropos.bridge.BridgeQuotaRouteTest' \
+    --tests 'atropos.bridge.BridgeStatusHandlerTest' \
+    --tests 'atropos.bridge.projection.SixAnswersProjectionTest' \
+    --tests 'atropos.bridge.QuotaProjectionTest' \
     --tests 'atropos.bridge.RecoveryProjectionTest' \
     --tests 'atropos.bridge.BridgeFilesHandlerTest' \
     --tests 'atropos.bridge.AtroposBridgeTest' \

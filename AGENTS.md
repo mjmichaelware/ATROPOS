@@ -462,6 +462,15 @@ End of AGENTS.md
 - % delta: unchanged; B-005 / ADD-W-029 remains partial pending hosted execution.
 - Fingerprints: recorded after this batch.
 
+### 2026-08-24T14:00:00Z · Agent: Codex GPT-5 · Batch: hosted-status-quota-selector
+
+- Paths touched: `.github/workflows/compile-gate.yml` (+3), `scripts/atropos-verify-worktree.sh` (+3), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-005 / S-001 status contract and quota projection.
+- Predicate moved: existing tests now exercise the hosted root lane for `/v1/status`, the six continuous answers projection, and `/v1/quota`; these acceptance tests were previously omitted from both canonical selectors.
+- Verification actually run: test-file presence, selector/source presence, `git diff --check`, action contract, and orphan gate are the local checks; hosted Kotlin execution remains pending.
+- % delta: unchanged; B-005/S-001 remain partial pending hosted execution.
+- Fingerprints: recorded after this batch.
+
 ### 2026-08-24T13:40:00Z · Agent: Codex GPT-5 · Batch: hosted-help-bridge-selector
 
 - Paths touched: `.github/workflows/compile-gate.yml` (+3), `scripts/atropos-verify-worktree.sh` (+3), `STATUS-BACKEND.md` (+7).
