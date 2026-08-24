@@ -346,3 +346,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | caller/contract audit after GitHub CLI wire | passed locally / hosted pending | `scripts/find-orphans.py`, `.github/actions/atropos-verify/action.yml`, `.github/workflows/atropos-verify-example.yml`, `docs/mcp-examples/*.json` | canonical orphan gate and reusable contracts | `find-orphans.py --fail-on-new` exited 0 with 4 pre-existing baseline orphans of 1032 production files; action/workflow contracts and 14 MCP examples passed; root/hosted Gradle remains pending. |
 
 | FTY-03 repair evidence redaction | source-wired / partial | `src/main/kotlin/atropos/core/factory/FactoryLiveRepairAction.kt`, `src/test/kotlin/atropos/core/factory/FactoryLiveRepairActionTest.kt` | `FactoryRunOrchestrator` repair callback → `FactoryLiveRepairAction` → `FactoryAcceptanceFreeze.RepairEvidence` | Repair command evidence is now passed through the existing `RedactionFilter`; execution argv is unchanged. Focused test covers an API-key argument; hosted/root execution remains pending. |
+
+### 2026-08-24T06:29:57Z · Backend batch: github-write-contract-gate
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-GH write authorization regression gate | source-wired / partial | `scripts/github-write-contract-test.sh`, `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh` | GitHub compile/focused lane and reusable verifier → contract script → `GitHubApiClient`/`GitHubCommandHandler` write boundary | Added a CI contract requiring `GitHubWriteAuthorization`, the pre-secret/pre-transport refusal test, all seven `/github` mutation commands, and `--confirm <id>`. Local result: `GITHUB_WRITE_CONTRACT_OK operations=7`; action/workflow and MCP-example contracts also passed; orphan gate exited 0 with 4 pre-existing orphans. Hosted Gradle/Actions execution remains pending. |

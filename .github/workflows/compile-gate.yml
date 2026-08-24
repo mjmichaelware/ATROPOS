@@ -108,3 +108,6 @@ jobs:
 
       - name: validate MCP example catalog
         run: bash scripts/mcp-example-contract-test.sh
+
+      - name: validate GitHub write authorization contract
+        run: bash scripts/github-write-contract-test.sh

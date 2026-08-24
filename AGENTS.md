@@ -12233,6 +12233,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; source-wired but partial pending hosted execution evidence.
 - Fingerprints: recorded after the batch commit.
 
+### 2026-08-24T06:29:57Z · Agent: Codex GPT-5 · Batch: github-write-contract-gate
+
+- Paths touched: `scripts/github-write-contract-test.sh` (+27), `.github/workflows/compile-gate.yml` (+3), `scripts/atropos-verify-worktree.sh` (+3), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-MCP-GH write authorization regression gate; B-MCP-GHA focused contract wiring.
+- Predicate moved: the hosted compile/focused lane and reusable verifier now fail if any of the seven GitHub mutation commands loses its explicit `--confirm <id>` path, if `GitHubApiClient` loses the authorization boundary, or if the pre-secret/pre-transport refusal test disappears. No second GitHub transport or policy owner was added.
+- Verification actually run: `GITHUB_WRITE_CONTRACT_OK operations=7`, `ATROPOS_VERIFY_ACTION_CONTRACT_OK`, `ATROPOS_VERIFY_WORKFLOW_CONTRACT_OK`, `MCP_EXAMPLE_CONTRACT_OK files=14 servers=14`, `bash -n`, `git diff --check`, and `timeout 90s python3 scripts/find-orphans.py --fail-on-new` exited 0 with 4 pre-existing orphaned production files of 1032. Root Gradle and hosted Actions execution remain pending; no green claim.
+- % delta: unchanged; source-wired but partial pending hosted execution evidence.
+- Fingerprints (sha256, first 12): `github-write-contract-test.sh=32657a8bb1c0`, `compile-gate.yml=dc70147d989a4`, `atropos-verify-worktree.sh=3bbcbcf2155c1`.
+
 ### 2026-08-24T10:35:00Z · Agent: Codex GPT-5 · Batch: gha-pull-request-trigger
 
 - Paths touched: `.github/workflows/atropos-verify-example.yml` (+1), `scripts/atropos-verify-action-contract-test.sh` (+8), `STATUS-BACKEND.md` (+2).
