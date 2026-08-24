@@ -462,6 +462,15 @@ End of AGENTS.md
 - % delta: unchanged; B-005 / ADD-W-029 remains partial pending hosted execution.
 - Fingerprints: recorded after this batch.
 
+### 2026-08-24T16:35:00Z · Agent: Codex GPT-5 · Batch: provider-disable-route-proof
+
+- Paths touched: `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` (+29), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: R2 / B-PROV-004 provider disable and route policy composition.
+- Predicate moved: the real persisted onboarding disable state is now proven to flow into the real `RoutePolicy` healthy-set supplier; a disabled Groq route is skipped and OpenRouter is selected.
+- Verification actually run: test is covered by `ProviderOnboardingTest` in both hosted lanes; `git diff --check` and selector contract pass. Kotlin execution remains delegated to GitHub Actions.
+- % delta: unchanged; R2 remains partial pending hosted execution.
+- Fingerprints: recorded after this batch.
+
 ### 2026-08-24T16:10:00Z · Agent: Codex GPT-5 · Batch: hosted-selector-drift-gate
 
 - Paths touched: `scripts/hosted-test-selector-contract.sh` (+31), `.github/workflows/compile-gate.yml` (+3), `scripts/atropos-verify-worktree.sh` (+3), `STATUS-BACKEND.md` (+7).

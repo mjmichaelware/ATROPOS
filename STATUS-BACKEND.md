@@ -142,6 +142,12 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | hosted focused-test integrity | source-wired / partial | `scripts/hosted-test-selector-contract.sh`, `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh` | GitHub Actions and reusable verify script → selector contract → all `--tests` identifiers and source paths | Added a fail-closed contract that requires canonical/reusable selector parity and a real Kotlin test source for every selected class. Local execution passes; hosted Kotlin execution remains pending. |
+
+### 2026-08-24T16:35:00Z · Backend batch: provider-disable-route-proof
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| R2 / B-PROV-004 provider disable route composition | source-wired / partial | `src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt`, `src/main/kotlin/atropos/core/provider/RoutePolicy.kt`, `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` | `/providers disable` → persisted `ProviderOnboardingService.healthyProviderIds` → `RoutePolicy` | Added an end-to-end fixture proving a disabled configured provider is excluded by the real onboarding healthy-set supplier while the next eligible free provider is selected. Hosted/root Kotlin execution remains pending. |
 - Provider route policy now has a focused test covering both the preferred-provider tie-break and exclusion through the healthy set; the root test remains unexecuted locally because `:test` stalled at compilation.
 - Factory runtime audit: `FactoryRunOrchestrator.kt:258-290` invokes the injected repair action, then `FactoryRepairExecutor` and the existing obligation loop; `FactoryCommandHandler.kt:20-47` is the user-facing resume caller; `FactoryRunHandoff.kt:84-108` fails actionable on missing/malformed/mismatched artifacts. No factory status was upgraded without root test evidence.
 - Clean-checkout proof after commit `b1479fe8`: `./gradlew :core:jvmTest --no-daemon --max-workers=1 --rerun` passed in 52s; XML reports contain 2 tests, 0 failures, 0 errors, 0 skipped. Root Provider/Bridge/MCP/Factory tests were not re-claimed or executed.

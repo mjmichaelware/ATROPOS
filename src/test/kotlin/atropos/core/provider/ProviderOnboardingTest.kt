@@ -132,6 +132,39 @@ class ProviderOnboardingTest {
     }
 
     @Test
+    fun disable_metadata_is_consumed_by_route_policy_healthy_set() {
+        val root = Files.createTempDirectory("provider-disable-route")
+        val service = ProviderOnboardingService(
+            root = root,
+            environment = mapOf("GROQ_API_KEY" to "groq-secret", "OPENROUTER_API_KEY" to "router-secret")
+        )
+        service.refresh()
+        service.disable("groq")
+
+        val registry = StaticProviderDescriptorRegistry()
+        val seed = FileQuotaLedger.seedFromDescriptors(registry)
+        val ledger = InMemoryQuotaLedger(seed)
+        listOf("groq", "openrouter").forEach { id ->
+            ledger.put(seed.first { it.providerId == id }.copy(
+                configured = true,
+                verified = true,
+                state = ProviderAvailabilityState.READY
+            ))
+        }
+
+        val decision = RoutePolicy(
+            registry = registry,
+            ledger = ledger,
+            costPolicy = AtroposCostPolicy.FREE_ONLY,
+            healthyProviderIds = service::healthyProviderIds,
+            preferredProviderIds = service::preferredProviderIds
+        ).decide(ProviderTask(ProviderTaskKind.CHAT_PROMPT, ApiCapability.CHAT, "hello"))
+
+        assertEquals("openrouter", decision.selectedProviderId)
+        assertTrue(decision.skipped.any { it.provider.id == "groq" && it.reason == "not_in_healthy_set" })
+    }
+
+    @Test
     fun discovered_together_and_fireworks_are_wired_to_paid_adapters() {
         val registry = StaticProviderDescriptorRegistry()
         val records = ProviderOnboardingService(
