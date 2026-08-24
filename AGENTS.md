@@ -13401,7 +13401,7 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Predicate moved: live ledger writes, backup creation, and restore output now share one atomic file writer; backup/restore cannot leave a partially written authoritative artifact on process interruption.
 - Verification actually run: pending this batch; root/hosted quota backup tests remain unproven.
 - % delta: unchanged; P15 remains source-wired/partial pending hosted restart/backup tests.
-- Fingerprints (sha256, first 12): to be recorded after commit.
+- Fingerprints (sha256, first 12): `QuotaLedger.kt=ddebe8e3fd7f`; `backend-atom-contract-test.sh=fbb43a684043`.
 
 ### 2026-08-24T19:50:50Z · Agent: Codex GPT-5 · Batch: github-response-size-bound
 
