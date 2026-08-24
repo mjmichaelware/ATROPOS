@@ -479,6 +479,15 @@ End of AGENTS.md
 - % delta: unchanged; the atom remains partial pending hosted execution.
 - Fingerprints (sha256, first 12): `ShellCommandHandler.kt=5b47d7896ae6`; `ShellCommandRunner.kt=c87f2b69d7c5`; `ShellBoundedAgencyTest.kt=43990ccdc183`; `STATUS-BACKEND.md=33c663243934`.
 
+### 2026-08-24T08:45:00Z · Agent: Codex GPT-5 · Batch: provider-env-documentation-contract
+
+- Paths touched: `scripts/provider-env-contract-test.sh` (+29), `docs/PROVIDER_ENVIRONMENT.md` (+18), `.github/workflows/compile-gate.yml` (+3), `.github/workflows/release.yml` (+3), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-HELP-002a provider environment table parity.
+- Predicate moved: the existing provider descriptor registry is now the checked source for the onboarding table; every canonical descriptor environment name plus alias/glob/AWS discovery names must be documented before hosted compile/release jobs proceed. No second provider registry was introduced.
+- Verification actually run: `bash -n scripts/provider-env-contract-test.sh`, `bash scripts/provider-env-contract-test.sh` (`ATROPOS_PROVIDER_ENV_CONTRACT_OK`), `git diff --check`, and `timeout 90s python3 scripts/find-orphans.py --fail-on-new` passed. The orphan gate reports only 4 pre-existing files of 1034 production files (360 orphan LOC); hosted execution remains pending.
+- % delta: unchanged; B-HELP-002a remains partial pending hosted execution.
+- Fingerprints (sha256, first 12): `scripts/provider-env-contract-test.sh=45c99c9476c6`; `docs/PROVIDER_ENVIRONMENT.md=df6da2c489d0`; `compile-gate.yml=3f3233553365`; `release.yml=8cfdedd301b1`.
+
 ### 2026-08-24T06:48:39Z · Agent: Codex GPT-5 · Batch: anti-synthetic-velocity-output
 
 - Paths touched: `src/main/kotlin/atropos/cli/commands/VerifyCommand.kt` (+10/-4), `STATUS-BACKEND.md` (+7).

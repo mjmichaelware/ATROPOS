@@ -17,13 +17,31 @@ evidence.
 | Together | `TOGETHER_API_KEY`, `TOGETHERAI_API_KEY` |
 | DeepSeek | `DEEPSEEK_API_KEY`, `DEEPSEEK_KEY` |
 | Mistral | `MISTRAL_API_KEY`, `MISTRAL_TOKEN` |
+| Cohere | `COHERE_API_KEY` |
 | Fireworks | `FIREWORKS_API_KEY`, `FIREWORKS_AI_API_KEY` |
 | Azure OpenAI | `AZURE_OPENAI_API_KEY`, `AZURE_API_KEY`, `AZURE_OPENAI_ENDPOINT`, `AZURE_*` |
 | Ollama | `OLLAMA_HOST`, `OLLAMA_MODEL` |
+| GitHub Models | `GITHUB_MODELS_TOKEN` |
+| GitHub Actions | `GITHUB_TOKEN` |
+| Cloudflare | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` |
+| Google application credentials | `GOOGLE_APPLICATION_CREDENTIALS` |
+| Cerebras | `CEREBRAS_API_KEY` |
+| DeepInfra | `DEEPINFRA_API_KEY` |
+| Hugging Face | `HUGGINGFACE_API_KEY` |
+| NVIDIA NIM | `NVIDIA_API_KEY` |
+| SambaNova | `SAMBANOVA_API_KEY` |
+| SiliconFlow | `SILICONFLOW_API_KEY` |
+| Jina Reader | `JINA_API_KEY` |
+| SerpAPI | `SERPAPI_API_KEY` |
+| Supabase | `SUPABASE_URL`, `SUPABASE_ANON_KEY` |
+| Pinecone | `PINECONE_API_KEY` |
+| Fal.ai | `FAL_AI_API_KEY` |
+| Replicate | `REPLICATE_API_TOKEN` |
 | Generic ATROPOS provider | `ATROPOS_PROVIDER_*` when the suffix identifies a known descriptor |
 
-AWS variables are recorded for future Bedrock transport support but are not
-routed as a working Bedrock provider until a signing/transport owner exists.
+AWS variables (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`) are
+recorded for future Bedrock transport support but are not routed as a working
+Bedrock provider until a signing/transport owner exists.
 
 Useful commands:
 

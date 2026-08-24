@@ -457,6 +457,12 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | --- | --- | --- | --- | --- |
 | B-MCP-CORE-e stdio tool call cardinality | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` | CLI/bridge → `McpHostManager.callTool` → one bounded stdio handshake/tools-list/tools-call exchange | Added a focused fixture asserting exactly one `tools/call` reaches the configured server. The production path already has the duplicate exchange removed; hosted/root Gradle execution remains pending. |
 
+### 2026-08-24T08:45:00Z · Backend batch: provider-env-documentation-contract
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-HELP-002a provider environment table parity | source-wired / partial | `scripts/provider-env-contract-test.sh`, `docs/PROVIDER_ENVIRONMENT.md`, `.github/workflows/compile-gate.yml`, `.github/workflows/release.yml` | GitHub compile/release jobs → contract script → canonical `StaticProviderDescriptorRegistry.kt` and onboarding document | Added a Termux-compatible contract deriving every canonical descriptor env name from the existing registry, checking documentation coverage, and checking aliases/globs/AWS discovery names. Local contract, orphan gate, and diff check pass; hosted execution remains pending. |
+
 ### 2026-08-24T08:25:00Z · Backend batch: bounded-git-conflict-list
 
 | atom | status | files | caller | tests / notes |
