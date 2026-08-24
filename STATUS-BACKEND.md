@@ -144,3 +144,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | FTY-03 / FTY-05 evidence-backed obligation waves | source-wired / partial | `FactoryEvidenceWaveExecutor.kt`, `FactoryRunOrchestrator.kt`, `FactoryEvidenceWaveExecutorTest.kt` | `FactoryRunOrchestrator` normal and repair paths → `FactoryEvidenceWaveExecutor.execute` → existing `FactoryObligationLoop.executeUntilSettled` | Blind ready-ID acknowledgement was removed. Manifest/freeze/verification/completion/atom coverage is now checked before terminalization. `git diff --check` passed; root factory tests and runtime repair remain unproven. |
+
+### 2026-08-24T04:51:40Z · Backend batch: provider-onboarding-contract-docs
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-HELP-002 / provider onboarding table | source-wired / partial | `docs/PROVIDER_ENVIRONMENT.md`, `README.md` | README install path → authoritative provider onboarding document; runtime owner remains `ProviderOnboardingService` | Documented aliases, vault/env precedence, secret exclusion, free-first/paid approval, zero-healthy UX, and Bedrock blocked status. `git diff --check` passed. Fast Kotlin lane timed out at 120s with no diagnostics; no compile/test claim. |

@@ -67,6 +67,8 @@ sudo dnf install java-21-openjdk-headless
 
 Drop in the API keys you already use. ATROPOS auto-discovers providers on startup — you do not configure all 26. In-app: `/help` · command palette `/` · `@path` to attach files.
 
+See [provider onboarding](docs/PROVIDER_ENVIRONMENT.md) for the supported environment aliases, local connect path, and free-first paid approval policy.
+
 ---
 
 ## What ATROPOS optimizes

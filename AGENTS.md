@@ -488,6 +488,15 @@ End of AGENTS.md
 - % delta: unchanged; factory atoms remain partial pending hosted execution and runtime repair proof.
 - Fingerprints: `FactoryEvidenceWaveExecutor.kt=39ed4e0b94c966d5b09d83fc`; `FactoryRunOrchestrator.kt=4ee80aaa6a299ca99fd91da6`; `FactoryEvidenceWaveExecutorTest.kt=f193e2b61effa97f63cdd2f4`.
 
+### 2026-08-24T04:51:40Z · Agent: Codex GPT-5 · Batch: provider-onboarding-contract-docs
+
+- Paths touched: `docs/PROVIDER_ENVIRONMENT.md` (+49), `README.md` (+2).
+- Atoms / phases affected: B-HELP-002 provider environment table and B-PROV onboarding policy visibility.
+- Predicate moved: the supported provider aliases, generic `ATROPOS_PROVIDER_*` rule, vault/env precedence, secret boundary, free-first cascade, paid approval stop, and zero-healthy behavior are now operator-visible from the repository README without requiring launch flags.
+- Verification actually run: `git diff --check` passed. The bounded `scripts/atropos-fast-gate.sh classes` attempt timed out after 120 seconds with `FAST_CLASSES_EXIT=124` and no compiler diagnostics; no compile/test green claim.
+- % delta: unchanged; documentation/source contract only, runtime atoms remain partial where hosted proof is missing.
+- Fingerprints: `docs/PROVIDER_ENVIRONMENT.md=fd09f349a9ff068fe8049cf3`; `README.md=dbfdbfee78f7b1d57b6f5538`.
+
 ### 2026-08-24T02:25:00Z · Agent: Codex GPT-5 · Batch: reusable-orphan-gate-wire
 
 - Paths touched: `scripts/atropos-verify-worktree.sh` (+4), `.github/workflows/atropos-verify-example.yml` (+2), `STATUS-BACKEND.md` (+7).
