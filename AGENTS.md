@@ -13383,7 +13383,7 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Predicate moved: the existing SigV4/Converse adapter now reads at most one byte beyond its 8 MiB response bound before decoding, while retaining the credential-safe HTTPS transport and paid policy.
 - Verification actually run: pending this batch; root/hosted Bedrock adapter tests and approved AWS calls remain unproven.
 - % delta: unchanged; P07 remains source-wired/partial pending hosted adapter fixtures and live approval.
-- Fingerprints (sha256, first 12): to be recorded after commit.
+- Fingerprints (sha256, first 12): `BedrockKernelAdapter.kt=ce42351ff527`; `backend-atom-contract-test.sh=b03cf8875d27`.
 
 ### 2026-08-24T19:50:50Z · Agent: Codex GPT-5 · Batch: github-response-size-bound
 
