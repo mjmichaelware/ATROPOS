@@ -6,6 +6,7 @@ import atropos.bridge.conversation.BridgeSessionStore
 import atropos.bridge.http.HttpRequest
 import atropos.bridge.http.HttpResponse
 import atropos.bridge.http.JsonWriter
+import atropos.core.security.RedactionFilter
 
 /**
  * The chat list, and the explicit resume.
@@ -18,7 +19,8 @@ import atropos.bridge.http.JsonWriter
  * something that happens because a surface loaded.
  */
 internal class BridgeSessionHandler(
-    private val sessions: BridgeSessionStore
+    private val sessions: BridgeSessionStore,
+    private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
 
     fun list(request: HttpRequest): HttpResponse {
@@ -87,7 +89,7 @@ internal class BridgeSessionHandler(
 
     private fun sessionJson(session: BridgeSession): String = JsonWriter.obj(
         "id" to JsonWriter.str(session.id),
-        "title" to JsonWriter.str(session.title),
+        "title" to JsonWriter.str(redactionFilter.redact(session.title)),
         "turnCount" to JsonWriter.num(session.turnCount.toLong()),
         "createdAt" to JsonWriter.str(session.createdAt.toString()),
         "updatedAt" to JsonWriter.str(session.updatedAt.toString())

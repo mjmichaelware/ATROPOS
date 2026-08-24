@@ -1016,3 +1016,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | T04 bridge ordinary-view rendering | source-wired / partial | `src/main/kotlin/atropos/bridge/projection/RecoveryProjection.kt`, `ActivityProjection.kt`, `AuthorityProjection.kt`, `ExportProjection.kt`, `ThinkingProjection.kt`, `scripts/backend-atom-contract-test.sh` | existing bridge routes → canonical projection owners → HTTP JSON responses | Recovery errors/messages, activity event text, authority paths/reasons, export paths/reasons, and thinking node/text fields now cross `RedactionFilter` before JSON painting. Static backend contract, selector parity (420), and `git diff --check` pass; hosted/root projection tests remain pending. |
+
+### 2026-08-25T03:10:00Z · Agent: Codex GPT-5 · Batch: session-checkpoint-redaction
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| T04 session/checkpoint bridge rendering | source-wired / partial | `src/main/kotlin/atropos/bridge/BridgeSessionHandler.kt`, `src/main/kotlin/atropos/bridge/projection/CheckpointProjection.kt`, `scripts/backend-atom-contract-test.sh` | `/v1/sessions` and `/v1/checkpoint` routes → existing session/checkpoint owners | User-controlled session titles and checkpoint goal/node/phase/action fields now cross the shared redaction filter before JSON construction. Static backend contract, selector parity (420), and `git diff --check` pass; hosted/root Kotlin execution remains pending. |

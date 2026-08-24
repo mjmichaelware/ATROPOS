@@ -13321,6 +13321,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; T04 remains partial pending hosted execution and remaining bridge projection audit.
 - Fingerprints (sha256, first 12): `BridgeQueueHandler.kt=2bd83bb125b3`, `QueuedWorkConversationResponder.kt=378264dc5808`, `BridgeQueueHandlerTest.kt=da476085b15a`, `backend-atom-contract-test.sh=f2c0e0ea0dc0`.
 
+### 2026-08-25T03:10:00Z · Agent: Codex GPT-5 · Batch: session-checkpoint-redaction
+
+- Paths touched: `src/main/kotlin/atropos/bridge/BridgeSessionHandler.kt` (+5/-2), `src/main/kotlin/atropos/bridge/projection/CheckpointProjection.kt` (+16/-9), `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: T04 bridge session/checkpoint ordinary-view rendering.
+- Predicate moved: user-controlled session titles and checkpoint metadata now pass through the canonical redaction owner before bridge JSON serialization; engine-generated identifiers remain structurally intact.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh` (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (420 tests)`), and `git diff --check` passed. Root/hosted Kotlin execution was not run in Termux; no test-green or root-green claim.
+- % delta: unchanged; T04 remains partial pending hosted execution and final dynamic projection audit.
+- Fingerprints (sha256, first 12): `BridgeSessionHandler.kt=d72c8e1b9087`, `CheckpointProjection.kt=151add543718`, `backend-atom-contract-test.sh=f419f1dc7713`.
+
 ### 2026-08-25T02:50:00Z · Agent: Codex GPT-5 · Batch: bridge-projection-redaction-boundary
 
 - Paths touched: `src/main/kotlin/atropos/bridge/projection/RecoveryProjection.kt` (+9/-2), `ActivityProjection.kt` (+11/-3), `AuthorityProjection.kt` (+25/-12), `ExportProjection.kt` (+15/-7), `ThinkingProjection.kt` (+11/-3), `scripts/backend-atom-contract-test.sh` (+5), `STATUS-BACKEND.md` (+7).

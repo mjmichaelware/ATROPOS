@@ -5,6 +5,7 @@ import atropos.bridge.http.JsonWriter
 import atropos.core.checkpoint.CheckpointAction
 import atropos.core.checkpoint.CheckpointSummary
 import java.time.Instant
+import atropos.core.security.RedactionFilter
 
 /**
  * Projects the resume checkpoint onto the wire.
@@ -19,7 +20,9 @@ import java.time.Instant
  * engine does not offer to discard resumable state, so the surface has nothing
  * to bind such a control to.
  */
-class CheckpointProjection {
+class CheckpointProjection(
+    private val redactionFilter: RedactionFilter = RedactionFilter()
+) {
 
     fun render(summary: CheckpointSummary?, now: Instant): String {
         if (summary == null) {
@@ -35,23 +38,23 @@ class CheckpointProjection {
         return JsonWriter.obj(
             "ok" to JsonWriter.bool(true),
             "present" to JsonWriter.bool(true),
-            "goalId" to JsonWriter.str(summary.goalId),
-            "nodeId" to JsonWriter.nullable(summary.nodeId),
-            "phase" to JsonWriter.nullable(summary.phase),
+            "goalId" to JsonWriter.str(redactionFilter.redact(summary.goalId)),
+            "nodeId" to JsonWriter.nullable(summary.nodeId?.let(redactionFilter::redact)),
+            "phase" to JsonWriter.nullable(summary.phase?.let(redactionFilter::redact)),
             "recordedAt" to JsonWriter.str(summary.recordedAt.toString()),
             "ageMinutes" to JsonWriter.num(summary.ageAt(now).toMinutes()),
             "resumable" to JsonWriter.bool(summary.resumable),
             "evidenceCount" to JsonWriter.num(summary.evidenceCount),
-            "nextAction" to JsonWriter.nullable(summary.nextAction),
+            "nextAction" to JsonWriter.nullable(summary.nextAction?.let(redactionFilter::redact)),
             "primaryAction" to JsonWriter.obj(
-                "id" to JsonWriter.str(summary.primaryAction.canonical),
-                "label" to JsonWriter.str(summary.primaryAction.label)
+                "id" to JsonWriter.str(redactionFilter.redact(summary.primaryAction.canonical)),
+                "label" to JsonWriter.str(redactionFilter.redact(summary.primaryAction.label))
             ),
             "actions" to JsonWriter.arr(
                 CheckpointAction.entries.map {
                     JsonWriter.obj(
-                        "id" to JsonWriter.str(it.canonical),
-                        "label" to JsonWriter.str(it.label),
+                        "id" to JsonWriter.str(redactionFilter.redact(it.canonical)),
+                        "label" to JsonWriter.str(redactionFilter.redact(it.label)),
                         "primary" to JsonWriter.bool(it == summary.primaryAction)
                     )
                 }
