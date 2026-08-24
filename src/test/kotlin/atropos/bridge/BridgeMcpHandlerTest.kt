@@ -55,6 +55,25 @@ class BridgeMcpHandlerTest {
     }
 
     @Test
+    fun `BridgeMcpHandler preflight exposes the host MarkItDown operation`() {
+        val handler = BridgeMcpHandler(
+            McpTerritoryBridge(setOf("inspect", "verify", "convert_to_markdown")) { proposal ->
+                val decision = ExecutionPolicyDecision("markitdown", PolicyDecisionType.ALLOW, PolicyActionClass.FILE_MUTATION, false, "allowed")
+                AgencyDecision(proposal, decision, AgencyDisposition.ALLOWED, decision.reason)
+            }
+        )
+        val response = handler.judge(
+            HttpRequest(
+                "POST", "/v1/mcp/judge",
+                mapOf("callerId" to "client", "operation" to "convert_to_markdown", "paths" to "input.pdf"),
+                emptyMap(), ""
+            )
+        )
+        assertEquals(200, response.status)
+        assertTrue(response.body.contains("\"allowed\":true"))
+    }
+
+    @Test
     fun `BridgeMcpHandler exposes the configured host status without secrets`() {
         val root = Files.createTempDirectory("bridge-mcp-status")
         Files.writeString(root.resolve("mcp.json"), """{"servers":[{"name":"local","transport":"stdio","enabled":false,"community":false}]}""")

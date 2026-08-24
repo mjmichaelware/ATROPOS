@@ -454,31 +454,6 @@ End of AGENTS.md
 - % delta: unchanged; B-INST-002 remains partial pending hosted release evidence.
 - Fingerprints (sha256, first 12): `scripts/release-installer-contract-test.sh=c4139f3e1fe4`; `.github/workflows/release.yml=46bf3530786b`; `install.sh=6ece5f472305`.
 
-### 2026-08-24T14:25:00Z · Agent: Codex GPT-5 · Verification: bridge-mcp-focused-root-timeout
-
-- Paths touched: `STATUS-BACKEND.md` (+7).
-- Acceptance predicate checked: focused root execution of `BridgeMcpHandlerTest` after the single-gate change.
-- Evidence: `timeout 90s ./gradlew --no-daemon :test --rerun --max-workers=1 --tests 'atropos.bridge.BridgeMcpHandlerTest'` exited 124 during Gradle task-graph setup and emitted no test result. This is inconclusive, not green; GitHub Actions remains the required execution lane.
-- % delta: unchanged; R6/B-005 remains source-wired / partial.
-
-### 2026-08-24T13:52:33Z · Agent: Codex GPT-5 · Batch: mcp-bridge-single-gate
-
-- Paths touched: `src/main/kotlin/atropos/bridge/BridgeMcpHandler.kt` (-32), `src/test/kotlin/atropos/bridge/BridgeMcpHandlerTest.kt` (+32), `STATUS-BACKEND.md` (+7).
-- Atoms / phases affected: R6 / B-MCP-FS execution gate composition; B-005 bridge caller integrity.
-- Predicate moved: `POST /v1/mcp/call` no longer evaluates the same inbound action in a bridge-local gate and then again in `McpHostManager`. Execution now has one authoritative host-owned `McpTerritoryBridge` admission immediately before transport start; `/v1/mcp/judge` remains a separate explicit preflight endpoint. The new counting-gate fixture asserts exactly one evaluation.
-- Verification actually run: `git diff --check`, `timeout 90s python3 scripts/find-orphans.py --fail-on-new` (exit 0; only the four pre-existing baseline orphan files, 360 LOC), and `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (382 tests)`) passed. Root Kotlin execution and GitHub Actions remain unrun; no compile/test-green claim.
-- % delta: unchanged; R6/B-MCP-FS remains partial pending hosted execution and full ToolExecutor/runtime evidence.
-- Fingerprints (sha256, first 12): `BridgeMcpHandler.kt=fc21c00221f1`; `BridgeMcpHandlerTest.kt=d3c16509d470`.
-
-### 2026-08-24T13:55:00Z · Agent: Codex GPT-5 · Batch: residual-status-reconciliation
-
-- Paths touched: `STATUS-BACKEND.md` (+7).
-- Atoms / phases affected: B-MCP-SENTRY and P07 AWS Bedrock residual truth.
-- Predicate moved: the current residual table now distinguishes “source-wired but unverified” from “transport absent” for Sentry and Bedrock, matching the production files and preserving the external hosted/credential gates. No atom was promoted to done.
-- Verification actually run: documentation reconciliation only; `git diff --check` to be run with the batch final checks. No Kotlin or hosted test claim.
-- % delta: unchanged.
-- Fingerprint: recorded after final checks.
-
 
 ### 2026-08-24T21:05:00Z · Agent: Codex GPT-5 · Batch: bedrock-sigv4-provider-owner
 
@@ -12733,3 +12708,36 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: `bash -n scripts/release-installer-contract-test.sh`, `bash scripts/release-installer-contract-test.sh`, `bash scripts/install-contract-test.sh`, `timeout 90s python3 scripts/find-orphans.py --fail-on-new`, and `git diff --check` passed. The orphan gate still reports only the four pre-existing baseline files (4/1034, 360 LOC). GitHub Actions execution, published release, and device installation remain unproven; no root-green claim.
 - % delta: unchanged; B-INST-002 remains partial pending hosted release evidence.
 - Fingerprints (sha256, first 12): `scripts/release-installer-contract-test.sh=c4139f3e1fe4`; `.github/workflows/release.yml=46bf3530786b`; `install.sh=6ece5f472305`.
+
+### 2026-08-24T13:52:33Z · Agent: Codex GPT-5 · Batch: mcp-bridge-single-gate
+
+- Paths touched: `src/main/kotlin/atropos/bridge/BridgeMcpHandler.kt` (-32), `src/test/kotlin/atropos/bridge/BridgeMcpHandlerTest.kt` (+32), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: R6 / B-MCP-FS execution gate composition; B-005 bridge caller integrity.
+- Predicate moved: `POST /v1/mcp/call` no longer evaluates the same inbound action in a bridge-local gate and then again in `McpHostManager`. Execution now has one authoritative host-owned `McpTerritoryBridge` admission immediately before transport start; `/v1/mcp/judge` remains a separate explicit preflight endpoint. The new counting-gate fixture asserts exactly one evaluation.
+- Verification actually run: `git diff --check`, `timeout 90s python3 scripts/find-orphans.py --fail-on-new` (exit 0; only the four pre-existing baseline orphan files, 360 LOC), and `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (382 tests)`) passed. Root Kotlin execution and GitHub Actions remain unrun; no compile/test-green claim.
+- % delta: unchanged; R6/B-MCP-FS remains partial pending hosted execution and full ToolExecutor/runtime evidence.
+- Fingerprints (sha256, first 12): `BridgeMcpHandler.kt=fc21c00221f1`; `BridgeMcpHandlerTest.kt=d3c16509d470`.
+
+### 2026-08-24T13:55:00Z · Agent: Codex GPT-5 · Batch: residual-status-reconciliation
+
+- Paths touched: `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-MCP-SENTRY and P07 AWS Bedrock residual truth.
+- Predicate moved: the current residual table now distinguishes “source-wired but unverified” from “transport absent”, matching the production files and preserving the external hosted/credential gates. No atom was promoted to done.
+- Verification actually run: documentation reconciliation only; no Kotlin or hosted test claim.
+- % delta: unchanged.
+
+### 2026-08-24T14:25:00Z · Agent: Codex GPT-5 · Verification: bridge-mcp-focused-root-timeout
+
+- Paths touched: `STATUS-BACKEND.md` (+7).
+- Acceptance predicate checked: focused root execution of `BridgeMcpHandlerTest` after the single-gate change.
+- Evidence: `timeout 90s ./gradlew --no-daemon :test --rerun --max-workers=1 --tests 'atropos.bridge.BridgeMcpHandlerTest'` exited 124 during Gradle task-graph setup and emitted no test result. This is inconclusive, not green; GitHub Actions remains the required execution lane.
+- % delta: unchanged; R6/B-005 remains source-wired / partial.
+
+### 2026-08-24T14:45:00Z · Agent: Codex GPT-5 · Batch: mcp-preflight-operation-parity
+
+- Paths touched: `src/main/kotlin/atropos/bridge/BridgeMcpHandler.kt`, `src/main/kotlin/atropos/bridge/BridgeRoutes.kt`, `src/test/kotlin/atropos/bridge/BridgeMcpHandlerTest.kt`.
+- Atoms / phases affected: M13 / ADD-MCP-009 MarkItDown bridge preflight parity.
+- Predicate moved: the default bridge preflight allowlist now includes the same bounded `convert_to_markdown` operation already admitted by the canonical `McpHostManager`; a focused test proves the preflight response is allowed. No adapter or policy owner was added.
+- Verification actually run: `git diff --check`, hosted selector contract, and orphan gate passed; focused root Gradle test had already timed out in this environment and was not re-claimed.
+- % delta: unchanged; M13 remains source-wired / partial pending hosted and configured runtime evidence.
+- Fingerprints: `BridgeMcpHandler.kt=8b0d68c62dae`; `BridgeRoutes.kt=4909efa910f3`; `BridgeMcpHandlerTest.kt=50bb8564ad00`.

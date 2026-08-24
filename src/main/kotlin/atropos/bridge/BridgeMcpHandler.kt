@@ -8,7 +8,9 @@ import atropos.bridge.http.HttpResponse
 import atropos.bridge.http.JsonWriter
 
 internal class BridgeMcpHandler(
-    private val mcpBridge: McpTerritoryBridge = McpTerritoryBridge(setOf("inspect", "verify")),
+    private val mcpBridge: McpTerritoryBridge = McpTerritoryBridge(
+        setOf("inspect", "verify", "convert_to_markdown")
+    ),
     private val host: McpHostManager? = null
 ) {
     private val delegate = BridgeInboundToolHandler(InboundSource.MCP, mcpBridge::judge, "MCP")

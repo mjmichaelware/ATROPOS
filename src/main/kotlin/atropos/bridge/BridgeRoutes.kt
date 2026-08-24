@@ -166,7 +166,9 @@ class BridgeRoutes(
     private val menuView: CommandMenuProjection = CommandMenuProjection(),
     private val clock: () -> Instant = { Instant.now() },
     private val quotaSummary: () -> String = { "{\"readable\":false,\"reason\":\"quota-ledger-not-wired\"}" },
-    private val mcpBridge: atropos.core.integration.McpTerritoryBridge = atropos.core.integration.McpTerritoryBridge(setOf("inspect", "verify")),
+    private val mcpBridge: atropos.core.integration.McpTerritoryBridge = atropos.core.integration.McpTerritoryBridge(
+        setOf("inspect", "verify", "convert_to_markdown")
+    ),
     /**
      * The self-build service, when this build has a repository to build in.
      *
