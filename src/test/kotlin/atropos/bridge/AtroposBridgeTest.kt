@@ -71,7 +71,7 @@ class AtroposBridgeTest {
         val (status, body) = get(port, "/v1/routes")
 
         assertEquals(200, status)
-        listOf("/v1/health", "/v1/answers", "/v1/projects", "/v1/commands", "/v1/vocabulary", "/v1/cli")
+        listOf("/v1/health", "/v1/answers", "/v1/projects", "/v1/commands", "/v1/vocabulary", "/v1/cli", "/v1/approve")
             .forEach { assertTrue(body.contains(it), "route $it missing from description") }
     }
 

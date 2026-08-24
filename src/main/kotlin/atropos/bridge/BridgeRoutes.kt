@@ -284,6 +284,9 @@ class BridgeRoutes(
                 HttpRoute("POST", "/v1/approvals/decide", "record a human approval decision") { request ->
                     approvalHandler.decideApproval(request)
                 },
+                HttpRoute("POST", "/v1/approve", "record a human approval decision through the bridge contract") { request ->
+                    approvalHandler.decideApproval(request)
+                },
                 HttpRoute("GET", "/v1/messages", "conversation transcript for a client surface") { request ->
                     conversationHandler.getMessages(request)
                 },

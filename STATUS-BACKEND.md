@@ -69,6 +69,12 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | --- | --- | --- | --- | --- |
 | B-005 / ADD-W-001 CLI bridge endpoint | source-wired / partial | `src/main/kotlin/atropos/bridge/BridgeRoutes.kt`, `src/test/kotlin/atropos/bridge/AtroposBridgeTest.kt` | Web/Android/editor bridge client → `POST /v1/cli` → existing `BridgeCommandHandler`/`CommandRouter` owner | Added the declared `/v1/cli` contract route as a compatibility alias to the existing `/v1/command` handler; no second command executor or event bus exists. Real bridge route-description test and hosted selector wiring are present; root/hosted execution remains pending. |
 
+### 2026-08-24T23:45:00Z · Backend batch: bridge-approval-contract-alias
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-005 / ADD-W-001 approval bridge endpoint | source-wired / partial | `src/main/kotlin/atropos/bridge/BridgeRoutes.kt`, `src/test/kotlin/atropos/bridge/AtroposBridgeTest.kt` | Web/Android/editor bridge client → `POST /v1/approve` → existing `BridgeApprovalHandler.decideApproval` → `PendingApprovalStore` | Added the declared `/v1/approve` contract route as an alias to the existing role/decision owner; `/v1/approvals/decide` remains compatible. Route-description proof is wired; root/hosted execution remains pending. |
+
 ## Wave residual audit
 
 | residual | status | evidence / caller | remaining truth |
