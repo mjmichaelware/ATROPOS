@@ -13096,3 +13096,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: `bash scripts/backend-atom-contract-test.sh` (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (418 tests)`), and `git diff --check` passed. Narrow Termux `kotlinc` compilation of `McpConfigParser.kt` + `McpHostManager.kt` hung before diagnostics and is not claimed; root/hosted Kotlin execution remains pending.
 - % delta: unchanged; B-MCP-CORE-a remains source-wired / partial pending executable Kotlin evidence.
 - Fingerprints (sha256, first 12): `McpConfigParser.kt=71e50c585cde`, `McpHostManagerTest.kt=5f6964eb99c9`.
+
+### 2026-08-24T19:08:00Z · Agent: Codex GPT-5 · Batch: factory-repair-evidence-shape
+
+- Paths touched: `src/main/kotlin/atropos/core/factory/FactoryAcceptanceFreeze.kt` (+6), `src/test/kotlin/atropos/core/factory/FactoryResumeAndRepairTest.kt` (+18), `AGENTS.md`, `STATUS-BACKEND.md`.
+- Atoms / phases affected: FTY-03 freeze-bound repair validation.
+- Predicate moved: the existing repair oracle now refuses empty repair commands and blank predicate identifiers before obligation-loop re-entry; the prior freeze-hash, exit, stderr, and all-true predicate checks remain authoritative. No second repair executor or verifier was introduced.
+- Verification actually run: backend atom contract (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), hosted selector contract (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (418 tests)`), and `git diff --check` passed. A narrow Termux factory `kotlinc` invocation hung before diagnostics and is not claimed; root/hosted Kotlin execution remains pending.
+- % delta: unchanged; FTY-03 remains source-wired / partial pending executable Kotlin evidence.
+- Fingerprints (sha256, first 12): `FactoryAcceptanceFreeze.kt=67c742458266`, `FactoryResumeAndRepairTest.kt=cf6371454b7d`.

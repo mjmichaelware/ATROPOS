@@ -22,6 +22,8 @@ This file records backend implementation status for the current engine wave. A r
 
 | B-MCP-CORE-a config fail-closed validation | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpConfigParser.kt`, `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` | `McpHostManager.load()` → existing `McpConfigParser.parse()` | MCP server entries now reject missing/blank or duplicate names, trailing commas, malformed args arrays, and non-boolean enable/community flags instead of silently dropping or coercing configuration. `backend-atom-contract-test.sh`, hosted selector parity (418), and `git diff --check` pass; narrow `kotlinc` MCP compilation hung before diagnostics and is not claimed. |
 
+| FTY-03 repair evidence shape | source-wired / partial | `src/main/kotlin/atropos/core/factory/FactoryAcceptanceFreeze.kt`, `src/test/kotlin/atropos/core/factory/FactoryResumeAndRepairTest.kt` | `FactoryRepairExecutor.repairAndResume()` → existing `FactoryAcceptanceFreeze.requireRepairEvidence()` | Repair evidence now requires a nonblank command and named predicate keys in addition to the unchanged freeze hash, zero exit, stderr, and all-true predicates. Backend contract, hosted selector parity (418), and diff check pass; narrow Termux factory `kotlinc` was inconclusive before diagnostics, so no Kotlin test pass is claimed. |
+
 ## Commands
 
 - `/factory resume <runId>` — read-only attested resume inspection; execution requires the existing router callback path.

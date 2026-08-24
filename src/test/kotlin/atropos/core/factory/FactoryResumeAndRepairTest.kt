@@ -9,6 +9,7 @@ import java.time.Instant
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 class FactoryResumeAndRepairTest {
     @Test
@@ -44,6 +45,20 @@ class FactoryResumeAndRepairTest {
         )
         assertContains(result.evidence, "acceptance_freeze_sha256=${freeze.sha256}")
         assertEquals("open_work=0", result.loop.terminationReason)
+    }
+
+    @Test
+    fun repair_evidence_requires_command_and_named_predicates() {
+        val freeze = FactoryAcceptanceFreeze.create("a".repeat(64), "b".repeat(64), listOf("atom"), "CLI@1-1")
+        val missingCommand = FactoryAcceptanceFreeze.RepairEvidence(
+            freeze.sha256, "", 0, "stderr", mapOf("verify" to true)
+        )
+        assertFailsWith<IllegalArgumentException> { freeze.requireRepairEvidence(missingCommand) }
+
+        val blankPredicate = FactoryAcceptanceFreeze.RepairEvidence(
+            freeze.sha256, "./verify.sh", 0, "stderr", mapOf("   " to true)
+        )
+        assertFailsWith<IllegalArgumentException> { freeze.requireRepairEvidence(blankPredicate) }
     }
 
     private fun node(id: String): DagNode = DagNode(id, label = id, action = DagNodeAction.VERIFY, createdAt = Instant.EPOCH, updatedAt = Instant.EPOCH, metaFile = Paths.get("placeholder"))

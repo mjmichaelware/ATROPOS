@@ -16,9 +16,12 @@ data class FactoryAcceptanceFreeze(
 
     fun requireRepairEvidence(evidence: RepairEvidence): String {
         require(evidence.freezeSha256 == sha256) { "repair changed the acceptance freeze" }
+        require(evidence.command.isNotBlank()) { "repair acceptance command is missing" }
         require(evidence.exitCode == 0) { "repair acceptance command failed: exit=${evidence.exitCode}" }
         require(evidence.stderr.isNotBlank()) { "repair must record stderr evidence" }
-        require(evidence.predicateResults.isNotEmpty() && evidence.predicateResults.values.all { it }) {
+        require(evidence.predicateResults.isNotEmpty() &&
+            evidence.predicateResults.keys.all { it.isNotBlank() } &&
+            evidence.predicateResults.values.all { it }) {
             "repair acceptance predicates did not all pass"
         }
         return buildString {
