@@ -12260,6 +12260,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; source-wired but partial pending hosted execution.
 - Fingerprints (sha256, first 12): `ProviderOnboarding.kt=ed22c3ddbe79`, `ProviderOnboardingTest.kt=f5f937a0eb14`.
 
+### 2026-08-24T06:36:45Z · Agent: Codex GPT-5 · Batch: provider-metadata-reload-proof
+
+- Paths touched: `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` (+20), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-PROV-002g/h metadata-only `providers.json` persistence and process-boundary reload.
+- Predicate moved: a fresh `ProviderOnboardingService` instance now has focused proof that preference and disable metadata reload correctly while secret values are absent from disk. No new persistence owner was added.
+- Verification actually run: `git diff --check`, GitHub write contract, and `timeout 90s python3 scripts/find-orphans.py --fail-on-new` passed; orphan gate remains 4 pre-existing files of 1032. Root/hosted Gradle execution remains pending.
+- % delta: unchanged; source-wired but partial pending hosted execution.
+- Fingerprint (sha256, first 12): `ProviderOnboardingTest.kt=f811881118699`.
+
 ### 2026-08-24T10:35:00Z · Agent: Codex GPT-5 · Batch: gha-pull-request-trigger
 
 - Paths touched: `.github/workflows/atropos-verify-example.yml` (+1), `scripts/atropos-verify-action-contract-test.sh` (+8), `STATUS-BACKEND.md` (+2).

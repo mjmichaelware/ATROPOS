@@ -113,6 +113,25 @@ class ProviderOnboardingTest {
     }
 
     @Test
+    fun persisted_preference_and_disable_metadata_reload_without_secret_values() {
+        val root = Files.createTempDirectory("provider-onboarding-reload")
+        val environment = mapOf("GROQ_API_KEY" to "reload-secret", "GEMINI_API_KEY" to "gemini-secret")
+        val first = ProviderOnboardingService(root = root, environment = environment)
+        first.refresh()
+        first.prefer("gemini")
+        first.disable("groq")
+
+        val second = ProviderOnboardingService(root = root, environment = environment)
+        val records = second.list().associateBy { it.providerId }
+        val persisted = Files.readString(root.resolve(".atropos/provider/providers.json"))
+
+        assertTrue(records.getValue("gemini").preferred)
+        assertTrue(records.getValue("groq").disabled)
+        assertTrue(!persisted.contains("reload-secret"))
+        assertTrue(!persisted.contains("gemini-secret"))
+    }
+
+    @Test
     fun discovered_together_and_fireworks_are_wired_to_paid_adapters() {
         val registry = StaticProviderDescriptorRegistry()
         val records = ProviderOnboardingService(

@@ -364,3 +364,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-PROV-002a/b cheap credential-shape health | source-wired / partial | `src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt`, `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` | launch/CLI `ProviderOnboardingService.refresh` → persisted provider health and RoutePolicy healthy set | Added secret-safe shape validation: control characters/newlines in credential-shaped environment values classify the provider `unhealthy`; no value is persisted or rendered, and provider-specific prefix/length guesses are intentionally avoided. Focused test added; local diff/orphan/contracts pass; hosted provider test execution remains pending. |
+
+### 2026-08-24T06:36:45Z · Backend batch: provider-metadata-reload-proof
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-PROV-002g/h metadata persistence and reload | source-wired / partial | `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` | fresh `ProviderOnboardingService` instance → existing `providers.json` reader → healthy/preference/disable route metadata | Added a fresh-instance proof that preferred and disabled state survives a process boundary while both environment secret values stay absent from persisted metadata. Local diff/orphan/contract checks pass; hosted provider test execution remains pending. |
