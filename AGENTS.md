@@ -13374,7 +13374,7 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Predicate moved: local health probes now refuse redirects and stream bounded status responses before parsing or rendering; Ollama is capped at 1 MiB and supervised runtime status at 64 KiB.
 - Verification actually run: pending this batch; root/hosted provider and supervisor tests remain unproven.
 - % delta: unchanged; provider health remains source-wired/partial pending hosted fixtures.
-- Fingerprints (sha256, first 12): to be recorded after commit.
+- Fingerprints (sha256, first 12): `ProviderState.kt=9f9ac34a0436`; `ProviderSessionSupervisor.kt=a71460a809ad`; `backend-atom-contract-test.sh=9110e98ae15f`.
 
 ### 2026-08-24T19:50:50Z · Agent: Codex GPT-5 · Batch: github-response-size-bound
 
