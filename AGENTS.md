@@ -13305,6 +13305,11 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprints: pending post-commit hash.
 
+### 2026-08-25T00:21:00Z · Agent: Codex GPT-5 · Batch: gha-verify-script-boundary-fingerprint
+
+- Fingerprints: `action.yml=f61a0079adc7`; `atropos-verify-action-path-test.sh=1c0b66921758`.
+- Commit evidence: `7241808c`.
+
 ### 2026-08-24T22:26:59Z · Agent: Codex GPT-5 · Batch: provider-live-health-projection
 
 - Paths touched: `src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt` (+20), `src/main/kotlin/atropos/core/provider/ProviderActivationService.kt` (+10), `src/main/kotlin/atropos/cli/ProviderCommandHandler.kt` (+10), `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` (+18), `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+8).
