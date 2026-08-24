@@ -782,3 +782,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-PROV-004d / R2 ordered provider preference | source-wired / partial | `src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt`, `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` | `/providers prefer <id>` → existing `ProviderCommandHandler` → `ProviderOnboardingService.prefer` → `RoutePolicy.preferredProviderIds` | Preference ranks are persisted in metadata-only `providers.json`, repeated preferences survive refresh/restart, and legacy no-rank metadata remains readable. Provider env contract, hosted selector contract (383), orphan gate (4 historical baseline orphans / 360 LOC), and diff check pass. Focused root Gradle timed out at root `:compileKotlin` before tests; no Kotlin or hosted green claim. |
+
+### 2026-08-24T15:48:31Z · Backend batch: provider-launch-cascade-preference
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-PROV-003 / B-PROV-004d launch cascade order | source-wired / partial | src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt, src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt | process startup → existing CommandRouter initializer → ProviderOnboardingService.refresh() → rendered cascade= line | refresh() now returns persisted preference order; added a restart/refresh assertion for preferred order. Provider contract, selector (383), orphan gate (4 historical baseline orphans / 360 LOC), and diff check pass. Root/provider Kotlin execution remains pending after the earlier root :compileKotlin timeout. |

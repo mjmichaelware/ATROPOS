@@ -12946,3 +12946,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: `bash scripts/provider-env-contract-test.sh` passed; `bash scripts/hosted-test-selector-contract.sh` passed with 383 selectors; orphan gate passed with only 4 historical baseline orphans / 360 LOC; `git diff --check` passed. Focused root Gradle command `timeout 90s ./gradlew --no-daemon :test --rerun --tests 'atropos.core.provider.ProviderOnboardingTest' --max-workers=1` exited 124 while compiling root `:compileKotlin`, before test execution; no Kotlin/provider test-green claim and no hosted-green claim.
 - % delta: unchanged; B-PROV-004d remains source-wired / partial pending root or GitHub Actions test execution.
 - Fingerprints (sha256, first 12): `ProviderOnboarding.kt=6aa58de89eb5`, `ProviderOnboardingTest.kt=8c163c1a2fc4`.
+
+### 2026-08-24T15:48:31Z · Agent: Codex GPT-5 · Batch: provider-launch-cascade-preference
+
+- Paths touched: `src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt` (+1/-1), `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` (+1), AGENTS.md, STATUS-BACKEND.md.
+- Atoms / phases affected: B-PROV-003 / B-PROV-004d cascade print and preference wiring.
+- Predicate moved: the production CommandRouter launch summary now receives ProviderOnboardingService.refresh() in persisted preference order, so the displayed healthy cascade reflects /providers prefer instead of raw descriptor order. Health and disabled filtering remain unchanged.
+- Verification actually run: provider environment contract passed; hosted selector contract passed with 383 selectors; orphan gate passed with only 4 historical baseline orphans / 360 LOC; git diff --check passed. Root/provider Kotlin tests were not rerun after this one-line source change because the prior focused command timed out in root :compileKotlin; no test-green claim.
+- % delta: unchanged; B-PROV-003/004 remain source-wired / partial pending hosted/root execution.
+- Fingerprints (sha256, first 12): `ProviderOnboarding.kt=0464b1a241bda`, `ProviderOnboardingTest.kt=7afc90bb703d`.

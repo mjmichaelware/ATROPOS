@@ -89,7 +89,7 @@ class ProviderOnboardingService(
             )
         }
         writeConfig(records)
-        return records
+        return records.sortedWith(compareBy<DiscoveredProvider> { preferenceKey(it) }.thenBy { it.providerId })
     }
 
     fun list(): List<DiscoveredProvider> = readConfig().values.sortedWith(

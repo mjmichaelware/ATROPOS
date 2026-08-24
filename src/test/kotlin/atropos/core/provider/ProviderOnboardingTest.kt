@@ -235,6 +235,7 @@ class ProviderOnboardingTest {
 
         val reloaded = ProviderOnboardingService(root = root, environment = environment)
         assertEquals(listOf("gemini", "groq"), reloaded.preferredProviderIds())
+        assertEquals(listOf("gemini", "groq"), reloaded.refresh().filter { it.preferred }.map { it.providerId })
         assertTrue(Files.readString(root.resolve(".atropos/provider/providers.json")).contains("\"rank\":0"))
     }
 
