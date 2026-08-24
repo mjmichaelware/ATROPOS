@@ -980,3 +980,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | ADD-MCP-009 / MarkItDown ingest boundary | source-wired / partial | `src/main/kotlin/atropos/core/integration/MarkItDownIngestService.kt`, `src/test/kotlin/atropos/core/integration/MarkItDownIngestServiceTest.kt`, `scripts/backend-atom-contract-test.sh` | `/mcp ingest <path>` → existing `McpCommandHandler` → `MarkItDownIngestService.ingest()` → existing `McpHostManager` and `DocumentIngestionService` | MarkItDown now rejects symlink and >8 MiB sources before MCP execution, bounds returned markdown to 8 MiB, and writes the hash-addressed markdown artifact through temp + atomic move with cleanup. Static backend contract, hosted selector parity (418), and `git diff --check` pass; root/hosted Kotlin execution remains pending. |
+
+### 2026-08-25T01:05:00Z · Agent: Codex GPT-5 · Batch: terminal-paint-redaction-boundary
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| T04 secret-safe terminal paint | source-wired / partial | `src/main/kotlin/atropos/cli/ui/AnsiTerminalEngine.kt`, `src/test/kotlin/atropos/cli/ui/TerminalErrorCountTest.kt`, `scripts/backend-atom-contract-test.sh` | all existing CLI renderers → sole `AnsiTerminalEngine.renderNotice/renderBlock/renderError` paint boundary | Notices, rendered blocks, approval dialogs, and command errors are redacted once immediately before terminal painting; captured-output coverage proves an OpenAI-style secret never reaches stdout/stderr. Static backend contract, hosted selector parity (418), and `git diff --check` pass; hosted/root Kotlin execution remains pending. |

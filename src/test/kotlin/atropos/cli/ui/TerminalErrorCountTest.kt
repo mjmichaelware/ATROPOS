@@ -2,8 +2,13 @@
 package atropos.cli.ui
 
 import atropos.cli.config.ConfigurationManager
+import java.io.ByteArrayOutputStream
+import java.io.PrintStream
+import java.nio.charset.StandardCharsets
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 /**
  * The counter a one-shot `atropos <command>` exits on.
@@ -49,5 +54,27 @@ class TerminalErrorCountTest {
         engine.renderNotice("Recorded the current contents of AGENTS.md as authoritative.")
 
         assertEquals(0, engine.errorCount)
+    }
+
+    @Test
+    fun terminal_paint_boundary_redacts_notices_blocks_and_errors() {
+        val output = ByteArrayOutputStream()
+        val errors = ByteArrayOutputStream()
+        val engine = AnsiTerminalEngine(
+            ConfigurationManager(envProvider = { null }, hasConsole = false),
+            plainOutput = PlainTerminalOutput(
+                out = PrintStream(output, true, StandardCharsets.UTF_8),
+                errors = PrintStream(errors, true, StandardCharsets.UTF_8)
+            )
+        )
+        val secret = "sk-live-secret-123456789"
+
+        engine.renderNotice("notice $secret")
+        engine.renderBlock(listOf("block $secret"))
+        engine.renderError("error $secret")
+
+        val painted = output.toString(StandardCharsets.UTF_8) + errors.toString(StandardCharsets.UTF_8)
+        assertFalse(painted.contains(secret))
+        assertTrue(painted.contains("<redacted:api_key>"))
     }
 }

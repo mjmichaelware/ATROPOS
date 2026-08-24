@@ -12,6 +12,7 @@ import atropos.cli.ui.design.HoeStatusVocabulary
 import atropos.cli.ui.design.AgentInspector
 import atropos.core.observability.BackgroundProcessPanel
 import atropos.core.observability.BoundedRenderingController
+import atropos.core.security.RedactionFilter
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
@@ -37,6 +38,7 @@ class AnsiTerminalEngine(
     private val errorRenderer = ErrorRenderer(theme)
     private val toastRenderer = ToastRenderer(theme)
     private val dialogRenderer = DialogRenderer(theme)
+    private val redactionFilter = RedactionFilter()
     private val dagReactorRenderer = DagReactorRenderer(theme)
     private val backgroundProcesses = BackgroundProcessPanel()
     private val boundedRendering = BoundedRenderingController
@@ -439,13 +441,15 @@ class AnsiTerminalEngine(
 
     @Synchronized
     fun renderBlock(lines: List<String>) {
-        if (!state.reactive) rendering.renderBlockPlain(lines) else rendering.renderBlockReactive(lines)
+        val safeLines = lines.map(redactionFilter::redact)
+        if (!state.reactive) rendering.renderBlockPlain(safeLines) else rendering.renderBlockReactive(safeLines)
         if (state.reactive) requestFrameLocked()
     }
 
     @Synchronized
     fun renderNotice(message: String) {
-        if (!state.reactive) rendering.renderNoticePlain(message) else rendering.renderNoticeReactive(message)
+        val safeMessage = redactionFilter.redact(message)
+        if (!state.reactive) rendering.renderNoticePlain(safeMessage) else rendering.renderNoticeReactive(safeMessage)
         if (state.reactive) requestFrameLocked()
     }
 
@@ -509,12 +513,13 @@ class AnsiTerminalEngine(
     fun renderError(message: String) {
         renderedErrors.incrementAndGet()
         stopSpinner()
-        if (message.contains("approval", ignoreCase = true) || message.contains("confirm", ignoreCase = true)) {
+        val safeMessage = redactionFilter.redact(message)
+        if (safeMessage.contains("approval", ignoreCase = true) || safeMessage.contains("confirm", ignoreCase = true)) {
             state.verificationState = "awaiting approval"
             signalAttention()
             val dialog = dialogRenderer.renderConfirm(
                 title = "Operator confirmation required",
-                body = message,
+                body = safeMessage,
                 confirmLabel = "approve",
                 cancelLabel = "cancel",
                 confirmSelected = false,
@@ -525,7 +530,7 @@ class AnsiTerminalEngine(
             return
         }
         val lines = errorRenderer.render(
-            ErrorRenderer.ErrorInfo(title = "Command failed", message = message),
+            ErrorRenderer.ErrorInfo(title = "Command failed", message = safeMessage),
             canvas.width
         )
         if (state.reactive) {
