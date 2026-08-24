@@ -15,6 +15,7 @@ class CommandCatalogBackendEntriesTest {
         assertTrue("/providers connect" in commands)
         assertTrue("/providers prefer" in commands)
         assertTrue("/providers disable" in commands)
+        assertTrue("/providers enable" in commands)
         assertTrue("/providers test <id>" in commands)
         assertTrue("/mcp search <query>" in commands)
         assertTrue("/mcp call <server> <tool>" in commands)

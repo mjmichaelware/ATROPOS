@@ -59,6 +59,7 @@ object CommandCatalog {
         CommandEntry("/providers test <id>", "explicit provider health test; paid providers remain approval-locked"),
         CommandEntry("/providers prefer", "prefer a healthy provider"),
         CommandEntry("/providers disable", "disable a provider locally"),
+        CommandEntry("/providers enable", "re-enable and reclassify a provider locally"),
         CommandEntry("/providers connect", "connect a provider through local secret storage"),
         CommandEntry("/agent", "agent bridge"),
         CommandEntry("/agent status", "agent bridge status"),

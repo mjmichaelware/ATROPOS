@@ -29,6 +29,7 @@ class ProviderCommandHandler(
             "test" -> renderLiveTest(tokens)
             "prefer" -> renderPreference(onboarding, tokens)
             "disable" -> renderDisable(onboarding, tokens)
+            "enable" -> renderEnable(onboarding, tokens)
             "connect" -> renderConnect(onboarding, tokens)
             "inventory" -> uiEngine.renderNotice(
                 ProviderTruthService(config).snapshot(currentProviderName).renderInventory(expanded)
@@ -62,6 +63,13 @@ class ProviderCommandHandler(
         if (id == null) uiEngine.renderError("usage: /providers disable <provider>")
         else runCatching { onboarding.disable(id); uiEngine.renderNotice("disabled provider: $id") }
             .onFailure { uiEngine.renderError(redactionFilter.compact(it.message ?: "provider disable failed")) }
+    }
+
+    private fun renderEnable(onboarding: ProviderOnboardingService, tokens: List<String>) {
+        val id = tokens.getOrNull(2)
+        if (id == null) uiEngine.renderError("usage: /providers enable <provider>")
+        else runCatching { onboarding.enable(id); uiEngine.renderNotice("enabled provider: $id") }
+            .onFailure { uiEngine.renderError(redactionFilter.compact(it.message ?: "provider enable failed")) }
     }
 
     private fun renderConnect(onboarding: ProviderOnboardingService, tokens: List<String>) {

@@ -1070,3 +1070,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-PROV-003/B-PROV-004d canonical launch order | source-wired / partial | `src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt`, `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt`, `scripts/backend-atom-contract-test.sh` | startup summary → existing `ProviderCascadeOrder.order()` | Launch output now uses the canonical free/local cascade ordering and labels configured paid candidates as approval-only; it cannot imply an automatic paid transition. Static backend contract and selector parity (420) pass; hosted/root Kotlin execution remains pending. |
+
+### 2026-08-25T06:00:00Z · Agent: Codex GPT-5 · Batch: providers-enable-lifecycle
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-PROV-004 provider enable lifecycle | source-wired / partial | `src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt`, `src/main/kotlin/atropos/cli/ProviderCommandHandler.kt`, `src/main/kotlin/atropos/cli/input/CommandCatalog.kt`, focused tests, `scripts/backend-atom-contract-test.sh` | `/providers enable <id>` → existing `ProviderOnboardingService.enable()` → metadata store + refresh classification | Added a production re-enable path that clears the disabled flag and reclassifies current environment/vault inputs; no direct config editing or second registry is required. Static backend contract and selector parity (420) pass; hosted/root Kotlin execution remains pending. |

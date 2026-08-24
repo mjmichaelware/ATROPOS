@@ -13348,6 +13348,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; T04 remains partial pending hosted execution and final bridge sink audit.
 - Fingerprints recorded by commit; unrelated `docs/completion/*` files were not staged.
 
+### 2026-08-25T06:00:00Z · Agent: Codex GPT-5 · Batch: providers-enable-lifecycle
+
+- Paths touched: `src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt` (+9), `src/main/kotlin/atropos/cli/ProviderCommandHandler.kt` (+9), `src/main/kotlin/atropos/cli/input/CommandCatalog.kt` (+1), `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` (+16), `src/test/kotlin/atropos/cli/input/CommandCatalogBackendEntriesTest.kt` (+1), `scripts/backend-atom-contract-test.sh` (+3), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-PROV-004 provider lifecycle control.
+- Predicate moved: a disabled provider can now be re-enabled and immediately reclassified through the same metadata-only onboarding owner; the command is discoverable through the shared catalog and does not expose secrets.
+- Verification actually run: static backend and hosted-selector contracts are next in this batch; no root/hosted Kotlin test is claimed.
+- % delta: unchanged; provider atoms remain partial pending hosted execution.
+- Fingerprints recorded by commit; unrelated `docs/completion/*` files were not staged.
+
 ### 2026-08-25T05:40:00Z · Agent: Codex GPT-5 · Batch: provider-launch-canonical-order
 
 - Paths touched: `src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt` (+8), `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` (+19), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7).

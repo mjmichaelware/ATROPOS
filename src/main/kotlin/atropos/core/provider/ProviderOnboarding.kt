@@ -132,6 +132,14 @@ class ProviderOnboardingService(
         return updated
     }
 
+    /** Re-enables one provider and immediately reclassifies its current inputs. */
+    fun enable(providerId: String): List<DiscoveredProvider> {
+        val current = list()
+        require(providerId in current.map { it.providerId }) { "unknown provider: $providerId" }
+        writeConfig(current.map { if (it.providerId == providerId) it.copy(disabled = false) else it })
+        return refresh()
+    }
+
     fun connectToVault(providerId: String, secret: String, envName: String = aliases[providerId]?.firstOrNull() ?: "${providerId.uppercase()}_API_KEY"): Path {
         require(providerId in aliases || registry.getById(providerId) != null) { "unknown provider: $providerId" }
         require(secret.isNotBlank()) { "provider secret must not be blank" }

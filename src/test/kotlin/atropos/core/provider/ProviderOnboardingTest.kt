@@ -198,6 +198,20 @@ class ProviderOnboardingTest {
     }
 
     @Test
+    fun enable_reclassifies_a_disabled_provider_without_editing_metadata_by_hand() {
+        val root = Files.createTempDirectory("provider-onboarding-enable")
+        val service = ProviderOnboardingService(root = root, environment = mapOf("GROQ_API_KEY" to "enable-secret"))
+        service.refresh()
+        service.disable("groq")
+        assertTrue(service.list().first { it.providerId == "groq" }.disabled)
+
+        val enabled = service.enable("groq").first { it.providerId == "groq" }
+        assertTrue(!enabled.disabled)
+        assertEquals(CheapProviderHealth.HEALTHY, enabled.health)
+        assertTrue(!Files.readString(root.resolve(".atropos/provider/providers.json")).contains("enable-secret"))
+    }
+
+    @Test
     fun disable_metadata_is_consumed_by_route_policy_healthy_set() {
         val root = Files.createTempDirectory("provider-disable-route")
         val service = ProviderOnboardingService(
