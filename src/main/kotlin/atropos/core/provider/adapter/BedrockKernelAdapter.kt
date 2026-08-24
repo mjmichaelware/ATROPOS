@@ -6,8 +6,6 @@ import atropos.core.provider.ProviderCallResult
 import atropos.core.provider.ProviderDescriptor
 import atropos.core.provider.ProviderFailure
 import atropos.core.provider.ProviderUsage
-import java.io.BufferedReader
-import java.io.InputStreamReader
 import java.net.URI
 import java.util.Locale
 
@@ -105,6 +103,7 @@ internal class BedrockKernelAdapter(
 
     private companion object {
         const val DEFAULT_MODEL = "anthropic.claude-3-haiku-20240307-v1:0"
+        const val MAX_RESPONSE_BYTES = 8 * 1024 * 1024
 
         fun sendOverHttps(request: BedrockRequest): BedrockResponse {
             val connection = CredentialSafeHttpTransport.open(URI(request.endpoint))
@@ -118,7 +117,13 @@ internal class BedrockKernelAdapter(
             connection.outputStream.use { it.write(request.body.toByteArray(Charsets.UTF_8)) }
             val status = connection.responseCode
             val stream = if (status in 200..299) connection.inputStream else connection.errorStream
-            val body = stream?.use { input -> BufferedReader(InputStreamReader(input, Charsets.UTF_8)).readText() }.orEmpty()
+            val body = stream?.use { input ->
+                input.readNBytes(MAX_RESPONSE_BYTES + 1).also {
+                    require(it.size <= MAX_RESPONSE_BYTES) {
+                        "${request.region} Bedrock response exceeded $MAX_RESPONSE_BYTES bytes"
+                    }
+                }.toString(Charsets.UTF_8)
+            }.orEmpty()
             return BedrockResponse(status, body)
         }
     }

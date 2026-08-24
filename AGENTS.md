@@ -13376,6 +13376,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; provider health remains source-wired/partial pending hosted fixtures.
 - Fingerprints (sha256, first 12): `ProviderState.kt=9f9ac34a0436`; `ProviderSessionSupervisor.kt=a71460a809ad`; `backend-atom-contract-test.sh=9110e98ae15f`.
 
+### 2026-08-24T23:00:00Z · Agent: Codex GPT-5 · Batch: bedrock-response-bound
+
+- Paths touched: `src/main/kotlin/atropos/core/provider/adapter/BedrockKernelAdapter.kt` (+10/-4), `scripts/backend-atom-contract-test.sh` (+1).
+- Atoms / phases affected: P07 AWS Bedrock provider transport.
+- Predicate moved: the existing SigV4/Converse adapter now reads at most one byte beyond its 8 MiB response bound before decoding, while retaining the credential-safe HTTPS transport and paid policy.
+- Verification actually run: pending this batch; root/hosted Bedrock adapter tests and approved AWS calls remain unproven.
+- % delta: unchanged; P07 remains source-wired/partial pending hosted adapter fixtures and live approval.
+- Fingerprints (sha256, first 12): to be recorded after commit.
+
 ### 2026-08-24T19:50:50Z · Agent: Codex GPT-5 · Batch: github-response-size-bound
 
 - Paths touched: `src/main/kotlin/atropos/core/github/GitHubApiClient.kt` (+4), `src/test/kotlin/atropos/core/github/GitHubApiClientTest.kt` (+17), `scripts/backend-atom-contract-test.sh` (+1).
