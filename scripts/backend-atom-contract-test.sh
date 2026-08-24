@@ -69,6 +69,8 @@ file src/main/kotlin/atropos/bridge/BridgeMcpHandler.kt
 file src/main/kotlin/atropos/cli/input/CommandCatalog.kt
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'McpConfigParser.parse'
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'health.tsv'
+text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'localOnly && server.remote'
+text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'persistHealth(statuses)'
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'TypedToolExecutor'
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'BoundedProcessRunner'
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'process.destroyForcibly()'

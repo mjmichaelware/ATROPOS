@@ -13804,6 +13804,16 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprints: `scripts/backend-atom-contract-test.sh=712cd842596b`.
 
+### 2026-08-25T02:40:00Z · Agent: Codex GPT-5 · Batch: mcp-localonly-health-contract
+
+- Paths touched: `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: ADD-MCP-001/008 health persistence and localOnly refusal.
+- Predicate moved: the backend source gate now ties `McpHostManager.statuses()` health persistence to its explicit `localOnly && server.remote` refusal branch and `.atropos/mcp/health.tsv` owner.
+- Verification actually run: backend atom contract, hosted selector parity (`421 tests`), and `git diff --check` passed. Hosted MCP runtime execution remains unverified.
+- % delta: unchanged; ADD-MCP-001/008 remain source-wired/partial pending hosted execution.
+- New overall estimate: unchanged.
+- Fingerprints: `scripts/backend-atom-contract-test.sh=873c45075dd3`.
+
 ### 2026-08-24T22:35:00Z · Agent: Codex GPT-5 · Batch: local-health-response-bounds
 
 - Paths touched: `src/main/kotlin/atropos/core/ProviderState.kt` (+10/-2), `src/main/kotlin/atropos/core/agent/ProviderSessionSupervisor.kt` (+13/-3), `scripts/backend-atom-contract-test.sh` (+2).
