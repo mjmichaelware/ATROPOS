@@ -12,11 +12,13 @@ import atropos.core.provider.ProviderTruthService
 import atropos.core.provider.RoutedTask
 import atropos.core.provider.StaticProviderDescriptorRegistry
 import atropos.core.provider.ProviderOnboardingService
+import atropos.core.security.RedactionFilter
 
 class ProviderCommandHandler(
     private val config: AtroposConfig,
     private val uiEngine: AnsiTerminalEngine,
-    private val secretReader: (String) -> CharArray? = ::readSecretFromTerminal
+    private val secretReader: (String) -> CharArray? = ::readSecretFromTerminal,
+    private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     fun execute(tokens: List<String>, currentProviderName: String) {
         val onboarding = ProviderOnboardingService()
@@ -52,14 +54,14 @@ class ProviderCommandHandler(
         val id = tokens.getOrNull(2)
         if (id == null) uiEngine.renderError("usage: /providers prefer <provider>")
         else runCatching { onboarding.prefer(id); uiEngine.renderNotice("preferred provider: $id") }
-            .onFailure { uiEngine.renderError(it.message ?: "provider preference failed") }
+            .onFailure { uiEngine.renderError(redactionFilter.compact(it.message ?: "provider preference failed")) }
     }
 
     private fun renderDisable(onboarding: ProviderOnboardingService, tokens: List<String>) {
         val id = tokens.getOrNull(2)
         if (id == null) uiEngine.renderError("usage: /providers disable <provider>")
         else runCatching { onboarding.disable(id); uiEngine.renderNotice("disabled provider: $id") }
-            .onFailure { uiEngine.renderError(it.message ?: "provider disable failed") }
+            .onFailure { uiEngine.renderError(redactionFilter.compact(it.message ?: "provider disable failed")) }
     }
 
     private fun renderConnect(onboarding: ProviderOnboardingService, tokens: List<String>) {
@@ -78,7 +80,7 @@ class ProviderCommandHandler(
             val path = onboarding.connectToVault(providerId, String(secret), envName)
             uiEngine.renderNotice("provider connected locally: $providerId source=local_vault path=${path.fileName}")
         } catch (failure: RuntimeException) {
-            uiEngine.renderError("provider connect failed: ${failure.message ?: "local vault refused the key"}")
+            uiEngine.renderError("provider connect failed: ${redactionFilter.compact(failure.message ?: "local vault refused the key")}")
         } finally {
             secret.fill('\u0000')
         }

@@ -79,6 +79,8 @@ text src/main/kotlin/atropos/core/sentry/SentryApiClient.kt 'HttpClient.Redirect
 text src/main/kotlin/atropos/core/sentry/SentryApiClient.kt 'readNBytes(MAX_RESPONSE_BYTES + 1)'
 text src/main/kotlin/atropos/cli/SentryCommandHandler.kt 'redactionFilter.compact'
 text src/main/kotlin/atropos/cli/McpCommandHandler.kt 'redactionFilter.compact'
+text src/main/kotlin/atropos/cli/ProviderCommandHandler.kt 'redactionFilter.compact'
+text src/main/kotlin/atropos/cli/AuthCommandHandler.kt 'redactionFilter.compact'
 text src/main/kotlin/atropos/core/github/GitHubApiClient.kt 'readNBytes(MAX_RESPONSE_CHARS + 1)'
 text src/main/kotlin/atropos/core/github/GitHubDeviceAuthClient.kt 'HttpClient.Redirect.NEVER'
 text src/main/kotlin/atropos/core/ProviderState.kt 'readNBytes(MAX_RESPONSE_BYTES + 1)'

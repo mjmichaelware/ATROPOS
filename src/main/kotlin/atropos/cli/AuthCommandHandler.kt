@@ -7,6 +7,7 @@ import atropos.core.auth.AuthBootstrap
 import atropos.core.auth.AuthCascadeResolver
 import atropos.core.auth.CascadeResolution
 import atropos.core.github.GitHubDeviceAuthClient
+import atropos.core.security.RedactionFilter
 
 /**
  * `/auth` — the operator's view of the governing documents.
@@ -24,7 +25,8 @@ class AuthCommandHandler(
     private val uiEngine: AnsiTerminalEngine,
     private val bootstrap: AuthBootstrap = AuthBootstrap(),
     private val resolver: AuthCascadeResolver = AuthCascadeResolver(),
-    private val githubOAuth: GitHubDeviceAuthClient = GitHubDeviceAuthClient()
+    private val githubOAuth: GitHubDeviceAuthClient = GitHubDeviceAuthClient(),
+    private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     private val renderer = atropos.cli.ui.StatusAuthRenderer()
 
@@ -83,7 +85,7 @@ class AuthCommandHandler(
             val path = githubOAuth.store(token)
             uiEngine.renderNotice("GitHub connected locally: source=local_vault path=${path.fileName}")
         }.onFailure {
-            uiEngine.renderError("GitHub OAuth refused: ${it.message ?: it.javaClass.simpleName}")
+            uiEngine.renderError("GitHub OAuth refused: ${redactionFilter.compact(it.message ?: it.javaClass.simpleName)}")
         }
     }
 }
