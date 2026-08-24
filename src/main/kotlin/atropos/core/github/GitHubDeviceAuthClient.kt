@@ -62,6 +62,7 @@ class GitHubDeviceAuthClient(
         require(response.status in 200..299) {
             "GitHub device authorization failed: HTTP ${response.status}"
         }
+        requireJsonObject(response.body)
         val deviceCode = jsonString(response.body, "device_code")
         val userCode = jsonString(response.body, "user_code")
         val verificationUri = (jsonOptionalString(response.body, "verification_uri")
@@ -73,7 +74,7 @@ class GitHubDeviceAuthClient(
             deviceCode = deviceCode,
             userCode = userCode,
             verificationUri = verificationUri,
-            expiresInSeconds = jsonLong(response.body, "expires_in"),
+            expiresInSeconds = jsonLong(response.body, "expires_in").also { require(it > 0) { "GitHub returned invalid device expiry" } },
             intervalSeconds = jsonLong(response.body, "interval").coerceAtLeast(1)
         )
     }
@@ -94,6 +95,7 @@ class GitHubDeviceAuthClient(
                     )
                 )
             )
+            requireJsonObject(response.body)
             val accessToken = jsonOptionalString(response.body, "access_token")
             if (response.status in 200..299 && !accessToken.isNullOrBlank()) {
                 return GitHubDeviceToken(
@@ -139,6 +141,39 @@ class GitHubDeviceAuthClient(
     private fun jsonLong(body: String, key: String): Long =
         Regex("\\\"${Regex.escape(key)}\\\"\\s*:\\s*(\\d+)").find(body)?.groupValues?.get(1)?.toLongOrNull()
             ?: error("GitHub OAuth response omitted numeric $key")
+
+    private fun requireJsonObject(raw: String) {
+        val text = raw.trim()
+        require(text.length >= 2 && text.first() == '{' && text.last() == '}') {
+            "GitHub OAuth response is not a complete JSON object"
+        }
+        var depth = 0
+        var quoted = false
+        var escaped = false
+        text.forEachIndexed { index, ch ->
+            if (quoted) {
+                when {
+                    escaped -> escaped = false
+                    ch == '\\' -> escaped = true
+                    ch == '"' -> quoted = false
+                }
+                return@forEachIndexed
+            }
+            when (ch) {
+                '"' -> quoted = true
+                '{', '[' -> depth++
+                '}', ']' -> {
+                    depth--
+                    require(depth >= 0 && (depth > 0 || index == text.lastIndex)) {
+                        "GitHub OAuth response has an incomplete JSON envelope"
+                    }
+                }
+            }
+        }
+        require(!quoted && !escaped && depth == 0) {
+            "GitHub OAuth response has an incomplete JSON envelope"
+        }
+    }
 
     private companion object {
         const val DEVICE_CODE_URL = "https://github.com/login/device/code"

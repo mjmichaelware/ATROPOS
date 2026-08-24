@@ -86,4 +86,18 @@ class GitHubDeviceAuthClientTest {
 
         assertTrue(failure.message!!.contains("SecretSinkMatrix"))
     }
+
+    @Test
+    fun truncated_oauth_response_is_rejected_before_token_storage() {
+        val client = GitHubDeviceAuthClient(
+            clientId = "public-client-id",
+            transport = GitHubOAuthTransport {
+                GitHubOAuthResponse(200, "{\"device_code\":\"device\"")
+            }
+        )
+
+        val failure = assertFailsWith<IllegalArgumentException> { client.begin() }
+
+        assertTrue(failure.message!!.contains("complete JSON object"))
+    }
 }

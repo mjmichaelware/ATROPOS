@@ -13267,3 +13267,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: backend atom contract, hosted selector contract (418), and `git diff --check` passed. Root/hosted Kotlin and live OAuth execution remain pending.
 - % delta: unchanged; B-MCP-OAUTH-UX remains source-wired/partial pending operator client registration and hosted/live evidence.
 - Fingerprints (sha256, first 12): `GitHubDeviceAuthClient.kt=61489dc364c9`; `GitHubDeviceAuthClientTest.kt=c52d4e043b57`; `backend-atom-contract-test.sh=5da4b5c05fd3`.
+
+### 2026-08-24T19:49:29Z · Agent: Codex GPT-5 · Batch: github-oauth-response-envelope
+
+- Paths touched: `src/main/kotlin/atropos/core/github/GitHubDeviceAuthClient.kt` (+40), `src/test/kotlin/atropos/core/github/GitHubDeviceAuthClientTest.kt` (+15), `scripts/backend-atom-contract-test.sh` (+1).
+- Atoms / phases affected: B-MCP-OAUTH-UX device response parsing and token-storage safety.
+- Predicate moved: GitHub OAuth begin/poll now reject truncated or unbalanced response envelopes before extracting fields; device expiry must be positive, and malformed responses cannot reach `TokenIsolationVault`.
+- Verification actually run: backend atom contract, hosted selector contract (418), and `git diff --check` passed. Root/hosted Kotlin and live OAuth execution remain pending.
+- % delta: unchanged; B-MCP-OAUTH-UX remains source-wired/partial pending operator client registration and hosted/live evidence.
+- Fingerprints (sha256, first 12): `GitHubDeviceAuthClient.kt=6c4e351876b4`; `GitHubDeviceAuthClientTest.kt=48c8bb871157`; `backend-atom-contract-test.sh=5151d37885b7`.
