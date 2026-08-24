@@ -8,6 +8,10 @@ package atropos.core.integration
  */
 internal object McpConfigParser {
     fun parse(text: String): List<McpServerConfig> {
+        val rootStart = skipWhitespace(text, 0)
+        require(rootStart < text.length && text[rootStart] == '{') { "mcp.json root must be an object" }
+        val rootEnd = matchingEnd(text, rootStart, '{', '}')
+        require(text.substring(rootEnd + 1).isBlank()) { "mcp.json has trailing content" }
         val serversRaw = rawMember(text, "servers") ?: return emptyList()
         require(serversRaw.trimStart().startsWith("[")) { "mcp.json servers must be an array" }
         val body = serversRaw.trim().let { extractBalanced(it, 0, '[', ']') }

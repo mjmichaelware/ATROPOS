@@ -44,6 +44,16 @@ class McpHostManagerTest {
     }
 
     @Test
+    fun config_parser_rejects_truncated_or_trailing_root_documents() {
+        val root = Files.createTempDirectory("mcp-config-invalid")
+        val config = root.resolve("mcp.json")
+        Files.writeString(config, "{\"servers\":[{\"name\":\"local\"}]")
+        assertFailsWith<IllegalArgumentException> { McpHostManager(root).load() }
+        Files.writeString(config, "{\"servers\":[]} trailing")
+        assertFailsWith<IllegalArgumentException> { McpHostManager(root).load() }
+    }
+
+    @Test
     fun community_servers_are_disabled_and_tool_results_get_evidence() {
         val root = Files.createTempDirectory("mcp-host")
         Files.writeString(root.resolve("mcp.json"), """

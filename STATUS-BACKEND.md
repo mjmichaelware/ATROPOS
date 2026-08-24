@@ -600,6 +600,12 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | --- | --- | --- | --- | --- |
 | B-MCP-CORE-a depth-aware config members | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpConfigParser.kt`, `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` | `McpHostManager.load()` → structural parser member scanner | Top-level `servers` lookup no longer matches text inside quoted values or nested arrays/objects. Static gates pass; hosted/root Kotlin execution remains pending. |
 
+### 2026-08-24T18:36:00Z · Backend batch: mcp-root-envelope-validation
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-CORE-a root document validation | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpConfigParser.kt`, `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` | `McpHostManager.load()` → `McpConfigParser.parse()` root envelope check | Truncated and trailing-content configs now fail closed. Static gates pass; hosted/root Kotlin execution remains unproven. |
+
 ### 2026-08-24T17:29:00Z · Backend verification: composed-static-gates
 
 | check | result | evidence |

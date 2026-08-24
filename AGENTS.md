@@ -13062,6 +13062,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; B-MCP-CORE-a remains structurally source-wired / partial pending hosted execution.
 - Fingerprints: `McpConfigParser.kt=1136425a06b5`, `McpHostManagerTest.kt=d54f006878a3`.
 
+### 2026-08-24T18:36:00Z · Agent: Codex GPT-5 · Batch: mcp-root-envelope-validation
+
+- Paths touched: `src/main/kotlin/atropos/core/integration/McpConfigParser.kt` (+4), `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+12), `AGENTS.md`, `STATUS-BACKEND.md`.
+- Atoms / phases affected: B-MCP-CORE-a malformed `mcp.json` refusal.
+- Predicate moved: MCP config loading now requires a complete root object with no trailing content before reading `servers[]`; truncated and trailing documents fail closed instead of partially loading.
+- Verification actually run: backend atom contract, hosted selector contract (`418 tests`), and `git diff --check` passed. Root/hosted Kotlin execution remains pending; no test-green claim.
+- % delta: unchanged; B-MCP-CORE-a remains source-wired / partial pending hosted execution.
+- Fingerprints: `McpConfigParser.kt=bb4090e86eea`, `McpHostManagerTest.kt=9357759e78f5`.
+
 ### 2026-08-24T17:29:00Z · Agent: Codex GPT-5 · Verification: backend-static-gate-recheck
 
 - Paths touched: `AGENTS.md`, `STATUS-BACKEND.md` only.
