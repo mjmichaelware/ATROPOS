@@ -13286,6 +13286,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; B-MCP-GITHUB remains source-wired/partial pending hosted/live evidence.
 - Fingerprints (sha256, first 12): `GitHubApiClient.kt=a19a92174c97`; `GitHubApiClientTest.kt=8575643120ff`; `backend-atom-contract-test.sh=16174e6e1e43`.
 
+### 2026-08-24T20:05:00Z · Agent: Codex GPT-5 · Batch: provider-response-size-bounds
+
+- Paths touched: `src/main/kotlin/atropos/core/ProviderHttpClient.kt` (+20/-10), `src/main/kotlin/atropos/core/Provider.kt` (+11/-4), `src/main/kotlin/atropos/core/provider/adapter/NonOpenAiFreeKernelAdapter.kt` (+11/-4), `src/main/kotlin/atropos/core/provider/adapter/DataInfraKernelAdapter.kt` (+11/-4), `scripts/backend-atom-contract-test.sh` (+4).
+- Atoms / phases affected: B-PROV-002 provider transport safety and free-first provider cascade failure handling.
+- Predicate moved: the existing provider transport owners now cap successful and error responses at 8 MiB before decoding or rendering; the adapter base readers stop after one byte beyond the bound, and BaseHttpProvider error bodies pass through the existing redaction filter. No provider registry or adapter stack was added.
+- Verification actually run: `ATROPOS_BACKEND_ATOM_CONTRACT_OK`, `ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (418 tests)`, and `git diff --check` passed. Root/hosted Kotlin execution remains pending; no runtime provider claim is made.
+- % delta: unchanged; B-PROV-002 remains source-wired/partial pending executable hosted provider fixtures.
+- Fingerprints (sha256, first 12): to be recorded after commit.
+
 ### 2026-08-24T19:50:50Z · Agent: Codex GPT-5 · Batch: github-response-size-bound
 
 - Paths touched: `src/main/kotlin/atropos/core/github/GitHubApiClient.kt` (+4), `src/test/kotlin/atropos/core/github/GitHubApiClientTest.kt` (+17), `scripts/backend-atom-contract-test.sh` (+1).

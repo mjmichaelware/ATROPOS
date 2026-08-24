@@ -4,8 +4,6 @@ import atropos.core.provider.NormalizedProviderFailureType
 import atropos.core.provider.ProviderCallResult
 import atropos.core.provider.ProviderDescriptor
 import atropos.core.provider.ProviderFailure
-import java.io.BufferedReader
-import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.util.Locale
 
@@ -55,9 +53,17 @@ internal abstract class DataInfraKernelAdapter(
         val code = connection.responseCode
         val stream = if (code in 200..299) connection.inputStream else connection.errorStream
         val raw = stream?.use { input ->
-            BufferedReader(InputStreamReader(input, Charsets.UTF_8)).readText()
+            input.readNBytes(MAX_RESPONSE_BYTES + 1).also {
+                require(it.size <= MAX_RESPONSE_BYTES) {
+                    "${descriptor.id} response exceeded $MAX_RESPONSE_BYTES bytes"
+                }
+            }.toString(Charsets.UTF_8)
         }.orEmpty()
         return code to raw
+    }
+
+    private companion object {
+        const val MAX_RESPONSE_BYTES = 8 * 1024 * 1024
     }
 
     protected fun remainingMs(request: AdapterRequest): Int =

@@ -117,11 +117,16 @@ abstract class BaseHttpProvider : AIProvider {
         if (!bearerToken.isNullOrBlank()) builder.header("Authorization", "Bearer $bearerToken")
         for ((k, v) in extraHeaders) builder.header(k, v)
 
-        val response = client.send(builder.build(), HttpResponse.BodyHandlers.ofString())
-        if (response.statusCode() !in 200..299) {
-            throw RuntimeException("HTTP ${response.statusCode()} :: ${response.body()}")
+        val response = client.send(builder.build(), HttpResponse.BodyHandlers.ofByteArray())
+        val bodyBytes = response.body()
+        require(bodyBytes.size <= MAX_RESPONSE_BYTES) {
+            "provider response exceeded $MAX_RESPONSE_BYTES bytes"
         }
-        return response.body()
+        val body = bodyBytes.toString(Charsets.UTF_8)
+        if (response.statusCode() !in 200..299) {
+            throw RuntimeException("HTTP ${response.statusCode()} :: ${redactionFilter.redact(body)}")
+        }
+        return body
     }
 
     protected fun postOpenAiCompatibleChat(
@@ -189,6 +194,10 @@ abstract class BaseHttpProvider : AIProvider {
         return extractQuotedJsonString(raw, textIndex + "\"text\"".length)
             ?.trim()
             ?.takeIf { it.isNotBlank() }
+    }
+
+    private companion object {
+        const val MAX_RESPONSE_BYTES = 8 * 1024 * 1024
     }
 
     private fun extractQuotedJsonString(raw: String, afterKeyIndex: Int): String? {

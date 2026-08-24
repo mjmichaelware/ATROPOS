@@ -26,16 +26,16 @@ class ProviderHttpClient(private val redactionFilter: RedactionFilter = Redactio
             .POST(HttpRequest.BodyPublishers.ofString(payload))
         if (!bearerToken.isNullOrBlank()) builder.header("Authorization", "Bearer $bearerToken")
         for ((k, v) in extraHeaders) builder.header(k, v)
-        val response = client.send(builder.build(), HttpResponse.BodyHandlers.ofString())
+        val response = client.send(builder.build(), HttpResponse.BodyHandlers.ofByteArray())
+        val body = boundedBody(response.body())
         if (response.statusCode() !in 200..299) {
-            val body = redactionFilter.redact(response.body())
             throw ProviderRequestException(
                 statusCode = response.statusCode(),
                 failureState = atropos.core.provider.ProviderFailureState.fromErrorCode(response.statusCode()),
-                message = "HTTP ${response.statusCode()} :: $body"
+                message = "HTTP ${response.statusCode()} :: ${redactionFilter.redact(body)}"
             )
         }
-        return response.body()
+        return body
     }
 
     fun getJson(uri: String, bearerToken: String? = null, extraHeaders: Map<String, String> = emptyMap()): String {
@@ -45,7 +45,8 @@ class ProviderHttpClient(private val redactionFilter: RedactionFilter = Redactio
             .GET()
         if (!bearerToken.isNullOrBlank()) builder.header("Authorization", "Bearer $bearerToken")
         for ((k, v) in extraHeaders) builder.header(k, v)
-        val response = client.send(builder.build(), HttpResponse.BodyHandlers.ofString())
+        val response = client.send(builder.build(), HttpResponse.BodyHandlers.ofByteArray())
+        val body = boundedBody(response.body())
         if (response.statusCode() !in 200..299) {
             throw ProviderRequestException(
                 statusCode = response.statusCode(),
@@ -53,7 +54,7 @@ class ProviderHttpClient(private val redactionFilter: RedactionFilter = Redactio
                 message = "HTTP ${response.statusCode()}"
             )
         }
-        return response.body()
+        return body
     }
 
     fun requestBounded(
@@ -123,5 +124,16 @@ class ProviderHttpClient(private val redactionFilter: RedactionFilter = Redactio
     fun requireKey(token: String?, providerName: String): String {
         if (token.isNullOrBlank()) throw IllegalStateException("$providerName API key is missing.")
         return token
+    }
+
+    private fun boundedBody(bytes: ByteArray): String {
+        require(bytes.size <= MAX_RESPONSE_BYTES) {
+            "provider response exceeded $MAX_RESPONSE_BYTES bytes"
+        }
+        return bytes.toString(Charsets.UTF_8)
+    }
+
+    private companion object {
+        const val MAX_RESPONSE_BYTES = 8 * 1024 * 1024
     }
 }
