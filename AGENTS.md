@@ -13295,6 +13295,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; B-PROV-002 remains source-wired/partial pending executable hosted provider fixtures.
 - Fingerprints (sha256, first 12): `ProviderHttpClient.kt=c9d1b8e85252`; `Provider.kt=983562526a1d`; `NonOpenAiFreeKernelAdapter.kt=671be2d6eff8`; `DataInfraKernelAdapter.kt=430547f7d803`; `backend-atom-contract-test.sh=6ef6ff31ed41`.
 
+### 2026-08-24T20:15:00Z · Agent: Codex GPT-5 · Batch: self-update-egress-bound
+
+- Paths touched: `src/main/kotlin/atropos/core/SelfUpdate.kt` (+23/-3), `scripts/backend-atom-contract-test.sh` (+3).
+- Atoms / phases affected: B-INST-002 artifact download integrity and B-OC-002 local-first egress safety.
+- Predicate moved: the existing self-update fetch owner now requires HTTPS and the canonical egress sink, refuses redirects, and streams at most 128 MiB before checksum verification; injected test download seams remain unaffected.
+- Verification actually run: backend atom contract, hosted selector contract (418), and `git diff --check` passed. Root/hosted Kotlin and live release download remain pending.
+- % delta: unchanged; B-INST-002 remains source-wired/partial pending hosted release evidence.
+- Fingerprints (sha256, first 12): to be recorded after commit.
+
 ### 2026-08-24T19:50:50Z · Agent: Codex GPT-5 · Batch: github-response-size-bound
 
 - Paths touched: `src/main/kotlin/atropos/core/github/GitHubApiClient.kt` (+4), `src/test/kotlin/atropos/core/github/GitHubApiClientTest.kt` (+17), `scripts/backend-atom-contract-test.sh` (+1).

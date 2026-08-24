@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core
 
+import atropos.core.security.SecretSinkKind
+import atropos.core.security.SecretSinkMatrix
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
@@ -134,14 +136,28 @@ private fun runningJar(): Path? {
 }
 
 private fun fetch(url: String): ByteArray {
+    require(URI.create(url).scheme.equals("https", ignoreCase = true)) {
+        "self-update requires an HTTPS URL"
+    }
+    check(SecretSinkMatrix.isEgressPermitted(SecretSinkKind.EGRESS_URL)) {
+        "self-update network egress is not permitted by SecretSinkMatrix"
+    }
     val response = HttpClient.newBuilder()
-        .followRedirects(HttpClient.Redirect.ALWAYS)
+        .followRedirects(HttpClient.Redirect.NEVER)
         .connectTimeout(Duration.ofSeconds(30))
         .build()
         .send(
             HttpRequest.newBuilder(URI.create(url)).timeout(Duration.ofMinutes(5)).GET().build(),
-            HttpResponse.BodyHandlers.ofByteArray()
+            HttpResponse.BodyHandlers.ofInputStream()
         )
     require(response.statusCode() == 200) { "HTTP ${response.statusCode()} for $url" }
-    return response.body()
+    return response.body().use { input ->
+        input.readNBytes(MAX_DOWNLOAD_BYTES + 1).also {
+            require(it.size <= MAX_DOWNLOAD_BYTES) {
+                "self-update download exceeded $MAX_DOWNLOAD_BYTES bytes"
+            }
+        }
+    }
 }
+
+private const val MAX_DOWNLOAD_BYTES = 128 * 1024 * 1024
