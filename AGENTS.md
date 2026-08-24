@@ -497,6 +497,15 @@ End of AGENTS.md
 - % delta: unchanged; documentation/source contract only, runtime atoms remain partial where hosted proof is missing.
 - Fingerprints: `docs/PROVIDER_ENVIRONMENT.md=fd09f349a9ff068fe8049cf3`; `README.md=dbfdbfee78f7b1d57b6f5538`.
 
+### 2026-08-24T04:52:47Z · Agent: Codex GPT-5 · Batch: hosted-backend-gate-expansion
+
+- Paths touched: `.github/workflows/compile-gate.yml` (+3), `scripts/atropos-verify-worktree.sh` (+3).
+- Atoms / phases affected: hosted proof lane for factory evidence waves, factory resume catalog, and Java/test compilation.
+- Predicate moved: the authoritative GitHub Actions compile job now includes `compileJava`, `compileTestJava`, `compileKotlin`, and `compileTestKotlin`; both focused hosted lanes include the new factory evidence-wave and command-catalog tests. The reusable script remains the same verification owner.
+- Verification actually run: `bash -n scripts/atropos-verify-worktree.sh` and `git diff --check` passed. GitHub Actions has not run from this environment; no hosted green claim.
+- % delta: unchanged; CI coverage is wired but unexecuted.
+- Fingerprints: `compile-gate.yml=5fef5b6cdfeca50940b0574c`; `atropos-verify-worktree.sh=c3e332e2647afd6275f08924`.
+
 ### 2026-08-24T02:25:00Z · Agent: Codex GPT-5 · Batch: reusable-orphan-gate-wire
 
 - Paths touched: `scripts/atropos-verify-worktree.sh` (+4), `.github/workflows/atropos-verify-example.yml` (+2), `STATUS-BACKEND.md` (+7).

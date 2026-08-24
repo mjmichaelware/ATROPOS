@@ -12,7 +12,7 @@ if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
   python3 scripts/find-orphans.py --fail-on-new
 
   echo "=== HOSTED COMPILE ==="
-  ./gradlew --no-daemon compileKotlin compileTestKotlin
+  ./gradlew --no-daemon compileJava compileTestJava compileKotlin compileTestKotlin
 
   echo "=== HOSTED FOCUSED BACKEND TESTS ==="
   ./gradlew --no-daemon :test --rerun \
@@ -22,6 +22,7 @@ if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
     --tests 'atropos.core.factory.FactoryRunHandoffTest' \
     --tests 'atropos.core.factory.FactoryObligationLoopTest' \
     --tests 'atropos.core.factory.FactoryAcceptanceFreezeTest' \
+    --tests 'atropos.core.factory.FactoryEvidenceWaveExecutorTest' \
     --tests 'atropos.core.factory.FactoryResearchDloiTest' \
     --tests 'atropos.core.provider.ProviderOnboardingTest' \
     --tests 'atropos.core.provider.ProviderCascadeRouterTest' \
@@ -35,7 +36,8 @@ if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
     --tests 'atropos.bridge.BridgeQuotaRouteTest' \
     --tests 'atropos.bridge.RecoveryProjectionTest' \
     --tests 'atropos.bridge.BridgeFilesHandlerTest' \
-    --tests 'atropos.cli.BackendDoctorTest'
+    --tests 'atropos.cli.BackendDoctorTest' \
+    --tests 'atropos.cli.input.CommandCatalogBackendEntriesTest'
 fi
 
 echo "=== DIFF CHECK ==="

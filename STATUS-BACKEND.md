@@ -150,3 +150,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-HELP-002 / provider onboarding table | source-wired / partial | `docs/PROVIDER_ENVIRONMENT.md`, `README.md` | README install path → authoritative provider onboarding document; runtime owner remains `ProviderOnboardingService` | Documented aliases, vault/env precedence, secret exclusion, free-first/paid approval, zero-healthy UX, and Bedrock blocked status. `git diff --check` passed. Fast Kotlin lane timed out at 120s with no diagnostics; no compile/test claim. |
+
+### 2026-08-24T04:52:47Z · Backend batch: hosted-backend-gate-expansion
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| hosted compile/focused test gate | source-wired / partial | `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh` | GitHub Actions `compile` and `focused-backend-tests` jobs; reusable verify script shares the same selectors | Added Java compilation and the new factory/catalog selectors. `bash -n` and `git diff --check` passed; workflow has not executed here and remains the required proof source. |

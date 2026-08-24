@@ -45,7 +45,7 @@ jobs:
       # phone lane remains allowed to use the same command through its remote
       # compile gate when the device cannot finish Gradle in its heap budget.
       - name: compileKotlin
-        run: ./gradlew --no-daemon compileKotlin compileTestKotlin
+        run: ./gradlew --no-daemon compileJava compileTestJava compileKotlin compileTestKotlin
 
   focused-backend-tests:
     needs: compile
@@ -74,6 +74,7 @@ jobs:
           --tests 'atropos.core.factory.FactoryRunHandoffTest'
           --tests 'atropos.core.factory.FactoryObligationLoopTest'
           --tests 'atropos.core.factory.FactoryAcceptanceFreezeTest'
+          --tests 'atropos.core.factory.FactoryEvidenceWaveExecutorTest'
           --tests 'atropos.core.factory.FactoryResearchDloiTest'
           --tests 'atropos.core.provider.ProviderOnboardingTest'
           --tests 'atropos.core.provider.ProviderCascadeRouterTest'
@@ -88,3 +89,4 @@ jobs:
           --tests 'atropos.bridge.RecoveryProjectionTest'
           --tests 'atropos.bridge.BridgeFilesHandlerTest'
           --tests 'atropos.cli.BackendDoctorTest'
+          --tests 'atropos.cli.input.CommandCatalogBackendEntriesTest'
