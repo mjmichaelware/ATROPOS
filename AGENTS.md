@@ -461,6 +461,15 @@ End of AGENTS.md
 - % delta: unchanged; source correctness improved, atom remains partial pending hosted root proof.
 - Fingerprints: `McpHostManager.kt=7e1734ff763d8b57e0010662`; `McpHostManagerTest.kt=80add8a73bf393ff529ea3ca`.
 
+### 2026-08-24T04:43:45Z · Agent: Codex GPT-5 · Batch: installer-platform-contract
+
+- Paths touched: `install.sh` (+24), `scripts/install-contract-test.sh` (+4).
+- Atoms / phases affected: B-INST-001 platform detection and B-INST-003 launcher environment.
+- Predicate moved: the existing installer now identifies Linux, macOS, or Termux plus `aarch64`/`x86_64`, refuses unsupported targets before download, prints the selected platform, and exports `ATROPOS_PLATFORM` from the generated launcher. Existing config bootstrap, checksum, and health-doctor paths remain unchanged.
+- Verification actually run: `bash -n install.sh`, `bash scripts/install-contract-test.sh` (`ATROPOS_INSTALL_CONTRACT_OK`), and `git diff --check` passed. No artifact download, JAR install, or hosted release proof was run.
+- % delta: unchanged; source-wired / partial pending GitHub release and operator install evidence.
+- Fingerprints: `install.sh=699c5d45429c8f8f3187777e`; `scripts/install-contract-test.sh=e0ff5831669798aa8a2878c1`.
+
 ### 2026-08-24T02:25:00Z · Agent: Codex GPT-5 · Batch: reusable-orphan-gate-wire
 
 - Paths touched: `scripts/atropos-verify-worktree.sh` (+4), `.github/workflows/atropos-verify-example.yml` (+2), `STATUS-BACKEND.md` (+7).

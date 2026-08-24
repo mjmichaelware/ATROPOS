@@ -126,3 +126,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-CORE-e HTTP MCP request validity | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` | CLI/bridge → existing `McpHostManager.callTool` and `statuses` | Corrected invalid Kotlin/JSON string construction; added tool/argument assertions and 2xx response enforcement. `git diff --check` passed. The local `:core:jvmTest` attempt was interrupted before a result; no Gradle count or root-green claim. |
+
+### 2026-08-24T04:43:45Z · Backend batch: installer-platform-contract
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-INST-001 / B-INST-003 platform-aware install | source-wired / partial | `install.sh`, `scripts/install-contract-test.sh` | release/install entrypoint → existing installer → generated `atropos` launcher | Detects Linux/Darwin/Termux and aarch64/x86_64, exports `ATROPOS_PLATFORM`, and rejects unsupported targets before download. `bash -n`, installer contract, and `git diff --check` passed; no JAR/release/device proof claimed. |
