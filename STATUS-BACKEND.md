@@ -34,6 +34,8 @@ This file records backend implementation status for the current engine wave. A r
 
 | B-006 local-only source contract | source-wired / partial | `scripts/backend-atom-contract-test.sh`, `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh` | hosted compile/focused lanes → backend atom source contract → `SourceBindingFetcher` localOnly guard | The CI-owned backend source gate now explicitly protects the local-only source-fetch caller and refusal marker, preventing a future regression from silently reopening remote Git/HTTP retrieval. Static contract, selector parity (418), and diff check pass; hosted execution remains pending. |
 
+| B-MCP-CORE-a root JSON fail-closed validation | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpConfigParser.kt`, `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` | `McpHostManager.load()` → existing `McpConfigParser.parse()` | The MCP parser now rejects a trailing comma at the root object as well as nested server/args commas, preventing malformed config from being accepted as a valid catalog. Static backend contract, selector parity (418), and diff check pass; hosted/root Kotlin execution remains pending. |
+
 ## Commands
 
 - `/factory resume <runId>` — read-only attested resume inspection; execution requires the existing router callback path.

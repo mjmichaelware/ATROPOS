@@ -12,6 +12,9 @@ internal object McpConfigParser {
         require(rootStart < text.length && text[rootStart] == '{') { "mcp.json root must be an object" }
         val rootEnd = matchingEnd(text, rootStart, '{', '}')
         require(text.substring(rootEnd + 1).isBlank()) { "mcp.json has trailing content" }
+        require(!hasTopLevelTrailingComma(text.substring(rootStart, rootEnd + 1))) {
+            "mcp.json root object cannot have a trailing comma"
+        }
         val serversRaw = rawMember(text, "servers") ?: return emptyList()
         require(serversRaw.trimStart().startsWith("[")) { "mcp.json servers must be an array" }
         val body = serversRaw.trim().let { extractBalanced(it, 0, '[', ']') }

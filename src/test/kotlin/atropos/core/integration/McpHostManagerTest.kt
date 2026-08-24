@@ -51,6 +51,8 @@ class McpHostManagerTest {
         assertFailsWith<IllegalArgumentException> { McpHostManager(root).load() }
         Files.writeString(config, "{\"servers\":[]} trailing")
         assertFailsWith<IllegalArgumentException> { McpHostManager(root).load() }
+        Files.writeString(config, "{\"servers\":[],}")
+        assertFailsWith<IllegalArgumentException> { McpHostManager(root).load() }
     }
 
     @Test

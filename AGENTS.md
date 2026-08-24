@@ -13150,3 +13150,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: backend atom contract (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), hosted selector contract (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (418 tests)`), and `git diff --check` passed. GitHub Actions execution remains pending.
 - % delta: unchanged; B-006 remains source-wired / partial pending executable hosted evidence.
 - Fingerprint: `backend-atom-contract-test.sh=f9c43ff89e91`.
+
+### 2026-08-24T20:57:00Z · Agent: Codex GPT-5 · Batch: mcp-root-trailing-comma
+
+- Paths touched: `src/main/kotlin/atropos/core/integration/McpConfigParser.kt` (+3), `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+2), `AGENTS.md`, `STATUS-BACKEND.md`.
+- Atoms / phases affected: B-MCP-CORE-a strict `mcp.json` root parsing.
+- Predicate moved: the sole MCP config parser now rejects root-level trailing commas in addition to nested malformed entries, so invalid JSON cannot silently become an executable catalog.
+- Verification actually run: backend atom contract (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), hosted selector contract (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (418 tests)`), and `git diff --check` passed. Root/hosted Kotlin execution remains pending; no test-green claim.
+- % delta: unchanged; B-MCP-CORE-a remains source-wired / partial pending executable Kotlin evidence.
+- Fingerprints (sha256, first 12): `McpConfigParser.kt=19a6b283765a`, `McpHostManagerTest.kt=ddb1f1a89d53`.
