@@ -13026,6 +13026,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; hosted verification remains source-wired / partial until Actions executes.
 - Fingerprints: `.github/workflows/compile-gate.yml=1269c35217ed`, `scripts/atropos-verify-worktree.sh=f14b95dee9a0`.
 
+### 2026-08-24T17:48:00Z · Agent: Codex GPT-5 · Batch: backend-selector-parity-expansion
+
+- Paths touched: `.github/workflows/compile-gate.yml` (+27), `scripts/atropos-verify-worktree.sh` (+27), `scripts/hosted-test-selector-contract.sh` (+9), `AGENTS.md`, `STATUS-BACKEND.md`.
+- Atoms / phases affected: hosted backend/CLI test evidence and selector ownership.
+- Predicate moved: all 404 discovered non-UI backend test classes under core, bridge, CLI commands/input/shell/session are now present in both hosted selector entrypoints. The selector contract now accepts valid Kotlin test declarations whose source filename differs from the class name, while still failing undeclared classes.
+- Verification actually run: shell syntax, selector contract (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (418 tests)`), full non-UI backend parity (`BACKEND_SELECTOR_PARITY_OK classes=404`), and `git diff --check` passed. Hosted execution and Kotlin result counts remain pending.
+- % delta: unchanged; hosted verification remains source-wired / partial.
+- Fingerprints: `.github/workflows/compile-gate.yml=e400ecc4df71`, `scripts/atropos-verify-worktree.sh=f83873263271`, `scripts/hosted-test-selector-contract.sh=5a90a3955743`.
+
 ### 2026-08-24T17:29:00Z · Agent: Codex GPT-5 · Verification: backend-static-gate-recheck
 
 - Paths touched: `AGENTS.md`, `STATUS-BACKEND.md` only.

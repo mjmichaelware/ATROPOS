@@ -576,6 +576,12 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | --- | --- | --- | --- | --- |
 | hosted backend CLI/self-build selector coverage | source-wired / partial | `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh` | existing GitHub focused-test lanes → seven previously unselected existing CLI test classes | Selector set increased from 384 to 391. Shell syntax, selector parity, explicit completion assertion, and diff checks pass locally; Actions execution remains pending and no Kotlin pass/count is claimed. |
 
+### 2026-08-24T17:48:00Z · Backend batch: backend-selector-parity-expansion
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| hosted non-UI backend test selector parity | source-wired / partial | `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh`, `scripts/hosted-test-selector-contract.sh` | GitHub focused-test lanes → 418 explicit selectors → existing 404 non-UI backend test classes | Added the remaining CLI command/input/session and core thinking selectors. Declaration-content fallback handles the existing `ThinkingChannelsTest`/`ThinkingRecordTest.kt` filename mismatch. Local selector contract and parity pass; hosted Kotlin execution remains unproven. |
+
 ### 2026-08-24T17:29:00Z · Backend verification: composed-static-gates
 
 | check | result | evidence |

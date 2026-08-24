@@ -138,6 +138,33 @@ if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
     --tests 'atropos.cli.PipelineDetectionTest' \
     --tests 'atropos.cli.BackgroundCommandRunnerTest' \
     --tests 'atropos.cli.SideConversationServiceTest' \
+    --tests 'atropos.cli.commands.AgentCommandDagBootstrapTest' \
+    --tests 'atropos.cli.commands.AgentCommandObservabilityTest' \
+    --tests 'atropos.cli.commands.SelfHostCommandTest' \
+    --tests 'atropos.cli.commands.ArtifactPromoteCommandTest' \
+    --tests 'atropos.cli.commands.SelfHostNaturalLanguageRouterTest' \
+    --tests 'atropos.cli.commands.SystemCommandCatalogTest' \
+    --tests 'atropos.cli.commands.SelfHostRunProofRendererTest' \
+    --tests 'atropos.cli.commands.SelfHostChangeRequestClassifierTest' \
+    --tests 'atropos.cli.commands.AgentIdentityResponderTest' \
+    --tests 'atropos.cli.commands.InspectCommandHandlerTest' \
+    --tests 'atropos.cli.input.PromptStateTest' \
+    --tests 'atropos.cli.input.CommandCompleterTest' \
+    --tests 'atropos.cli.input.CommandRegistryTest' \
+    --tests 'atropos.cli.input.PromptHistoryBrowserTest' \
+    --tests 'atropos.cli.input.PromptHistoryLaneTest' \
+    --tests 'atropos.cli.input.PromptHistoryRingTest' \
+    --tests 'atropos.cli.input.PromptSuggestionStateTest' \
+    --tests 'atropos.cli.input.PromptTextBufferTest' \
+    --tests 'atropos.cli.input.FuzzyMatcherTest' \
+    --tests 'atropos.cli.input.SuggestionEngineTest' \
+    --tests 'atropos.cli.input.CommandHistoryStoreTest' \
+    --tests 'atropos.cli.input.PartialCommandEnterToSelectTest' \
+    --tests 'atropos.cli.input.PastedInputSplitterTest' \
+    --tests 'atropos.cli.input.CollapsedPasteRegistryTest' \
+    --tests 'atropos.cli.input.BareWordIsNotACommandTest' \
+    --tests 'atropos.core.thinking.ThinkingChannelsTest' \
+    --tests 'atropos.cli.session.SessionTabsTest' \
     --tests 'atropos.core.agent.AgentContextCollectorTest' \
     --tests 'atropos.core.agent.AgentContextExportStoreTest' \
     --tests 'atropos.core.agent.AgentDaemonLogWriterTest' \
