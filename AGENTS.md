@@ -506,6 +506,15 @@ End of AGENTS.md
 - % delta: unchanged; CI coverage is wired but unexecuted.
 - Fingerprints: `compile-gate.yml=5fef5b6cdfeca50940b0574c`; `atropos-verify-worktree.sh=c3e332e2647afd6275f08924`.
 
+### 2026-08-24T04:53:50Z · Agent: Codex GPT-5 · Batch: open-core-boundary-doc
+
+- Paths touched: `docs/OPEN_CORE_BOUNDARY.md` (+16), `README.md` (+2).
+- Atoms / phases affected: B-OC-001 and B-OC-003 open-core host boundary and AGPL section-13 note.
+- Predicate moved: the repository now documents that planner/policy/evidence authority stays local and open, hosted sync is additive only, local-only disables remote research/MCP, and AGPL-3.0 section 13 obligations require operator legal review.
+- Verification actually run: `git diff --check` passed; documentation-only batch, no compile/test claim.
+- % delta: unchanged.
+- Fingerprints: `docs/OPEN_CORE_BOUNDARY.md=0ebc84ccb65884ce3aecfc84`; `README.md=31226028717aca01e684f56c`.
+
 ### 2026-08-24T02:25:00Z · Agent: Codex GPT-5 · Batch: reusable-orphan-gate-wire
 
 - Paths touched: `scripts/atropos-verify-worktree.sh` (+4), `.github/workflows/atropos-verify-example.yml` (+2), `STATUS-BACKEND.md` (+7).

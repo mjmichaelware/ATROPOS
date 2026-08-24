@@ -156,3 +156,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | hosted compile/focused test gate | source-wired / partial | `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh` | GitHub Actions `compile` and `focused-backend-tests` jobs; reusable verify script shares the same selectors | Added Java compilation and the new factory/catalog selectors. `bash -n` and `git diff --check` passed; workflow has not executed here and remains the required proof source. |
+
+### 2026-08-24T04:53:50Z · Backend batch: open-core-boundary-doc
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-OC-001 / B-OC-003 boundary documentation | source-wired / partial | `docs/OPEN_CORE_BOUNDARY.md`, `README.md` | README → boundary document; runtime enforcement remains existing `AtroposConfig`, `FactoryResearchService`, `McpHostManager`, and policy owners | Documented local authority, additive hosted sync, local-only behavior, and AGPL section-13 review note. Documentation-only; `git diff --check` passed. |

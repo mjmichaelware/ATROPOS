@@ -69,6 +69,8 @@ Drop in the API keys you already use. ATROPOS auto-discovers providers on startu
 
 See [provider onboarding](docs/PROVIDER_ENVIRONMENT.md) for the supported environment aliases, local connect path, and free-first paid approval policy.
 
+See the [open-core boundary](docs/OPEN_CORE_BOUNDARY.md) for the local-authority and optional-hosted-service contract.
+
 ---
 
 ## What ATROPOS optimizes
