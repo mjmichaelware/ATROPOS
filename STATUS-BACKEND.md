@@ -1064,3 +1064,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-PROV-003/B-PROV-005 launch cascade and zero-provider UX | source-wired / partial | `src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt`, `src/main/kotlin/atropos/Main.kt`, `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt`, `scripts/backend-atom-contract-test.sh` | `atropos` startup → existing `ProviderOnboardingService.renderLaunchSummary()` → metadata-only discovery | Startup now prints one compact healthy-candidate cascade line; built-in local tooling is not miscounted as a model provider, and zero configured model providers gets one actionable env example without crashing. Static backend contract and selector parity (420) pass; hosted/root Kotlin execution remains pending. |
+
+### 2026-08-25T05:40:00Z · Agent: Codex GPT-5 · Batch: provider-launch-canonical-order
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-PROV-003/B-PROV-004d canonical launch order | source-wired / partial | `src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt`, `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt`, `scripts/backend-atom-contract-test.sh` | startup summary → existing `ProviderCascadeOrder.order()` | Launch output now uses the canonical free/local cascade ordering and labels configured paid candidates as approval-only; it cannot imply an automatic paid transition. Static backend contract and selector parity (420) pass; hosted/root Kotlin execution remains pending. |

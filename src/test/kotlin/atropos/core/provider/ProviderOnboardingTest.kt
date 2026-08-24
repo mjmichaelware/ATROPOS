@@ -38,6 +38,22 @@ class ProviderOnboardingTest {
     }
 
     @Test
+    fun launch_summary_uses_free_cascade_and_labels_paid_candidates() {
+        val service = ProviderOnboardingService(
+            root = Files.createTempDirectory("provider-onboarding-launch-order"),
+            environment = mapOf(
+                "OPENAI_API_KEY" to "paid-secret",
+                "GROQ_API_KEY" to "free-secret"
+            )
+        )
+        val summary = service.renderLaunchSummary()
+        assertTrue(summary.contains("cascade_candidates=groq"))
+        assertTrue(summary.contains("paid_approval=openai"))
+        assertTrue(!summary.contains("paid-secret"))
+        assertTrue(!summary.contains("free-secret"))
+    }
+
+    @Test
     fun discovery_accepts_common_aliases_without_persisting_values() {
         val root = Files.createTempDirectory("provider-onboarding")
         val service = ProviderOnboardingService(

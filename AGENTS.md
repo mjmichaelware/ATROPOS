@@ -13348,6 +13348,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; T04 remains partial pending hosted execution and final bridge sink audit.
 - Fingerprints recorded by commit; unrelated `docs/completion/*` files were not staged.
 
+### 2026-08-25T05:40:00Z · Agent: Codex GPT-5 · Batch: provider-launch-canonical-order
+
+- Paths touched: `src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt` (+8), `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` (+19), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-PROV-003 cascade print and B-PROV-004d canonical preference/cost ordering.
+- Predicate moved: startup candidate output now calls the existing `ProviderCascadeOrder` owner; paid configured providers are shown separately as approval candidates and are removed from the free/local runnable cascade.
+- Verification actually run: static backend and hosted-selector contracts are next in this batch; no root/hosted Kotlin test is claimed.
+- % delta: unchanged; provider atoms remain partial pending hosted execution.
+- Fingerprints recorded by commit; unrelated `docs/completion/*` files were not staged.
+
 ### 2026-08-25T05:20:00Z · Agent: Codex GPT-5 · Batch: provider-launch-cascade-summary
 
 - Paths touched: `src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt` (+20), `src/main/kotlin/atropos/Main.kt` (+6), `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` (+21), `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+7).

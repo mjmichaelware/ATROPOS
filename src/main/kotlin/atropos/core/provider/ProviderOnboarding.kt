@@ -172,10 +172,17 @@ class ProviderOnboardingService(
         val healthy = rows.filter {
             it.providerId != "local" && it.health == CheapProviderHealth.HEALTHY && !it.disabled
         }
-        val candidates = healthy.joinToString(" -> ") { it.providerId }.ifBlank { "none" }
+        val candidateIds = healthy.map { it.providerId }
+        val cascade = ProviderCascadeOrder.order(candidateIds, registry)
+        val candidates = cascade.joinToString(" -> ").ifBlank { "none" }
+        val paidApproval = healthy
+            .map { it.providerId }
+            .filter { registry.getById(it)?.isPaid() == true }
+            .joinToString(" -> ")
         return buildString {
             append("providers: discovered=${rows.size} healthy=${healthy.size} ")
             append("cascade_candidates=$candidates")
+            if (paidApproval.isNotBlank()) append(" paid_approval=$paidApproval")
             if (healthy.isEmpty()) {
                 append("; no healthy providers; set one key, for example: export GROQ_API_KEY=…")
             }
