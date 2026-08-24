@@ -50,10 +50,10 @@ class ShellCommandHandler(
     }
 
     fun git(tokens: List<String>): RouterOutcome {
-        if (tokens.getOrNull(1)?.lowercase() == "status" && tokens.size == 2) {
-            render(shellRunner.gitStatus())
-        } else {
-            uiEngine.renderError("usage: /git status")
+        when {
+            tokens.getOrNull(1)?.lowercase() == "status" && tokens.size == 2 -> render(shellRunner.gitStatus())
+            tokens.getOrNull(1)?.lowercase() == "diff" && tokens.size == 2 -> render(shellRunner.gitDiff())
+            else -> uiEngine.renderError("usage: /git [status|diff]")
         }
         return RouterOutcome.CONTINUE
     }

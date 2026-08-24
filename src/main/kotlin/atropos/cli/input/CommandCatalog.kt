@@ -285,6 +285,7 @@ object CommandCatalog {
         CommandEntry("/cd", "change shell cwd"),
         CommandEntry("/ls", "list files through shell bridge"),
         CommandEntry("/git status", "git status through shell bridge"),
+        CommandEntry("/git diff", "read-only git diff through the bounded shell bridge"),
         CommandEntry("/shell", "run explicit shell command"),
         CommandEntry("/exit", "close session"),
         CommandEntry("/quit", "close session"),

@@ -452,6 +452,14 @@ End of AGENTS.md
 - % delta: unchanged; no VERIFIED claim. FTY-01, FTY-02, and FTY-04 are marked done in `STATUS-BACKEND.md` based on production source plus narrow compilation; FTY-03 and FTY-05 remain partial until root focused tests and a runtime-owned repair callback are proven.
 - Fingerprints (sha256): `DagStore.kt=fb932962f947`; `FactoryProgressGuard.kt=50bb25ea712d`; `FactoryRunHandoff.kt=537cf1c24fc2`; `FactoryRunOrchestrator.kt=652e100a59b7`; `FactoryRepairExecutor.kt=16e2c5cd36a8`; `FactoryCommandHandler.kt=392afeb3eb37`; `FactoryProgressGuardTest.kt=1e5d81c78c09`; `FactoryResumeAndRepairTest.kt=bca553b18f46`; `STATUS-BACKEND.md=2669342e3735`.
 
+### 2026-08-24T02:10:00Z · Agent: Codex GPT-5 · Batch: bounded-git-diff-caller
+
+- Paths touched: `src/main/kotlin/atropos/cli/ShellCommandHandler.kt` (+5/-4), `src/main/kotlin/atropos/cli/shell/ShellCommandRunner.kt` (+3), `src/main/kotlin/atropos/cli/input/CommandCatalog.kt` (+1), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: R6 / B-MCP-GITLOCAL-b local git diff.
+- Predicate moved: the existing bounded shell/policy path now has a production `/git diff` caller using literal `git diff --`; command mutation and remote operations remain refused by the existing policy engine. No parallel git executor was introduced.
+- Verification actually run: `git diff --check` passed; root compile/tests remain delegated to GitHub Actions and are not claimed.
+- % delta: unchanged; source-wired but partial pending hosted proof.
+
 ### 2026-08-24T01:50:00Z · Agent: Codex GPT-5 · Batch: mcp-http-transport
 
 - Paths touched: `src/main/kotlin/atropos/core/integration/McpHostManager.kt` (+71/-5), `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+39), `STATUS-BACKEND.md` (+7).

@@ -108,3 +108,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-CORE-b/c/d/e / HTTP MCP host transport | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt:18-28,236-290`, `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` | existing `CommandRouter`/`BridgeMcpHandler` → `McpHostManager.callTool` and `statuses` | Remote `http`/`sse`/`streamable-http` entries now parse `url`, perform bounded initialize + tools/list + tools/call JSON-RPC over the existing host, and persist redacted evidence. Local-only and territory gates remain in front. Focused injected-transport tests added; no live network or root Gradle result claimed. |
+
+### 2026-08-24T02:10:00Z · Backend batch: bounded-git-diff-caller
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| R6 / B-MCP-GITLOCAL-b / git diff | source-wired / partial | `src/main/kotlin/atropos/cli/ShellCommandHandler.kt`, `src/main/kotlin/atropos/cli/shell/ShellCommandRunner.kt`, `src/main/kotlin/atropos/cli/input/CommandCatalog.kt` | `CommandRouter` → `ShellCommandHandler.git` → `ShellCommandRunner.gitDiff` → existing `TypedToolExecutor`/`BoundedAgencyGate` | `/git diff` is read-only and uses literal `git diff --`; no mutation or remote command was added. `git diff --check` and source inspection passed; root tests remain hosted evidence. |

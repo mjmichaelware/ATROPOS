@@ -99,6 +99,9 @@ class ShellCommandRunner(
     fun gitStatus(): ShellCommandResult =
         run(listOf("git", "status", "--short"))
 
+    fun gitDiff(): ShellCommandResult =
+        run(listOf("git", "diff", "--"))
+
     fun run(command: List<String>): ShellCommandResult {
         val cleaned = command.filter { it.isNotBlank() }
         if (cleaned.isEmpty()) {
