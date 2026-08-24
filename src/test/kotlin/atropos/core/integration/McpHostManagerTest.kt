@@ -71,6 +71,37 @@ class McpHostManagerTest {
     }
 
     @Test
+    fun tool_budget_refuses_before_stdio_call_is_sent() {
+        val root = Files.createTempDirectory("mcp-budget")
+        val marker = root.resolve("called")
+        val script = root.resolve("mcp-budget.sh")
+        Files.writeString(script, """
+            #!/bin/sh
+            while IFS= read -r line; do
+              case "$line" in
+                *'\"id\":1'*) printf '%s\n' '{"id":1}' ;;
+                *'\"id\":2'*) printf '%s\n' '{"id":2,"result":{"tools":[{"name":"first"},{"name":"second"}]}}' ;;
+                *'\"id\":3'*) touch '${marker.fileName}'; printf '%s\n' '{"id":3}' ;;
+              esac
+            done
+        """.trimIndent())
+        script.toFile().setExecutable(true)
+        Files.writeString(root.resolve("mcp.json"),
+            """{"servers":[{"name":"local","transport":"stdio","command":"./mcp-budget.sh","enabled":true,"community":false}]}""")
+
+        val failure = runCatching {
+            McpHostManager(root).callTool(
+                serverName = "local",
+                toolName = "second",
+                operation = "inspect",
+                toolBudget = McpToolBudget(maxTools = 1)
+            )
+        }.exceptionOrNull()
+        assertTrue(failure?.message?.contains("not advertised within the configured tool budget") == true)
+        assertTrue(!Files.exists(marker))
+    }
+
+    @Test
     fun markitdown_operation_is_admitted_by_the_same_bounded_mcp_owner() {
         val root = Files.createTempDirectory("mcp-markitdown-gate")
         val script = root.resolve("mcp-call.sh")

@@ -189,35 +189,58 @@ class McpHostManager(
         }
         val command = server.command ?: error("MCP server has no stdio command: $serverName")
         val process = processRunner.start(listOf(command) + server.args, root)
-        process.outputStream.bufferedWriter().use { writer ->
-            writer.write("{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{}}\n")
-            writer.write("{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}\n")
-            writer.write("{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/list\",\"params\":{}}\n")
-            val escapedTool = toolName.replace("\\", "\\\\").replace("\"", "\\\"")
-            writer.write("{\"jsonrpc\":\"2.0\",\"id\":3,\"method\":\"tools/call\",\"params\":{\"name\":\"$escapedTool\",\"arguments\":$argumentsJson}}\n")
-            writer.flush()
-        }
         val executor = Executors.newSingleThreadExecutor()
         return try {
             val response = executor.submit<String> {
-                process.inputStream.bufferedReader().use { reader ->
-                    val output = StringBuilder()
-                    while (output.length < maxResponseBytes) {
-                        val line = reader.readLine() ?: break
-                        output.append(line).append('\n')
-                        if (line.contains("\"id\":3")) break
-                    }
-                    output.toString().take(maxResponseBytes)
-                }
+                exchangeStdio(process, toolName, argumentsJson, maxResponseBytes, toolBudget)
             }.get(5, TimeUnit.SECONDS)
             require(response.contains("\"id\":3")) { "MCP tools/call returned no response" }
-            requireToolWithinBudget(response, toolName, toolBudget)
             val safeResponse = redactionFilter.redact(response)
             McpToolCallResult(safeResponse, recordToolResult(serverName, toolName, safeResponse))
         } finally {
             process.destroyForcibly()
             process.waitFor(1, TimeUnit.SECONDS)
             executor.shutdownNow()
+        }
+    }
+
+    /** Performs the handshake and budget check before sending the call request. */
+    private fun exchangeStdio(
+        process: Process,
+        toolName: String,
+        argumentsJson: String,
+        maxResponseBytes: Int,
+        toolBudget: McpToolBudget
+    ): String {
+        val writer = process.outputStream.bufferedWriter()
+        val reader = process.inputStream.bufferedReader()
+        try {
+            writer.write("{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{}}\n")
+            writer.write("{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}\n")
+            writer.write("{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/list\",\"params\":{}}\n")
+            writer.flush()
+            val handshake = StringBuilder()
+            while (handshake.length < maxResponseBytes) {
+                val line = reader.readLine() ?: break
+                handshake.append(line).append('\n')
+                if (line.contains("\"id\":2")) break
+            }
+            require(handshake.contains("\"id\":2")) { "MCP tools/list returned no response" }
+            requireToolWithinBudget(handshake.toString(), toolName, toolBudget)
+
+            val escapedTool = toolName.replace("\\", "\\\\").replace("\"", "\\\"")
+            writer.write("{\"jsonrpc\":\"2.0\",\"id\":3,\"method\":\"tools/call\",\"params\":{\"name\":\"$escapedTool\",\"arguments\":$argumentsJson}}\n")
+            writer.flush()
+            val response = StringBuilder(handshake)
+            while (response.length < maxResponseBytes) {
+                val line = reader.readLine() ?: break
+                response.append(line).append('\n')
+                if (line.contains("\"id\":3")) break
+            }
+            return response.toString().take(maxResponseBytes)
+        } finally {
+            writer.close()
+            reader.close()
         }
     }
 

@@ -174,3 +174,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | ADD-MCP-002 / M12 tool injection budget | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` | `BridgeMcpHandler.call` and `McpCommandHandler` → shared `McpHostManager.callTool` → `tools/list` parsing → existing `boundedTools` | Stdio and HTTP MCP calls now refuse a requested tool unless it is advertised within the configured bounded tool set; fixtures advertise their tools. `git diff --check` passed. Focused Gradle invocation hung before compile/test output and was terminated; no test count or green claim. |
+
+### 2026-08-24T05:08:00Z · Backend batch: mcp-budget-before-call-ordering
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| ADD-MCP-002 / M12 pre-call enforcement | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` | existing `McpHostManager.callTool` from bridge and CLI; stdio exchange now handshakes/list-checks before writing request id 3 | Added a focused fixture asserting an over-budget tool is refused before the server sees `tools/call`; `git diff --check` passed. Gradle execution remains inconclusive in this environment; no root or hosted green claim. |

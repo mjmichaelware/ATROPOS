@@ -461,6 +461,15 @@ End of AGENTS.md
 - % delta: unchanged; source-wired but partial pending GitHub Actions/root execution.
 - Fingerprints: `McpHostManager.kt=2925535c6320`; `McpHostManagerTest.kt=77e978f3c626`.
 
+### 2026-08-24T05:08:00Z · Agent: Codex GPT-5 · Batch: mcp-budget-before-call-ordering
+
+- Paths touched: `src/main/kotlin/atropos/core/integration/McpHostManager.kt` (+45/-18), `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+31), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: ADD-MCP-002 / M12 pre-call tool budget enforcement.
+- Predicate moved: stdio MCP now reads and bounds `tools/list` before it writes JSON-RPC request id 3; remote HTTP already follows the same order. A focused fixture proves an over-budget tool is refused before the server receives the call. The existing bridge and CLI remain the only production callers.
+- Verification actually run: `git diff --check` passed. No Gradle test count was obtained after the prior bounded invocation hung before compiler output; GitHub Actions remains the authoritative compile/test lane.
+- % delta: unchanged; source-wired but partial pending hosted execution.
+- Fingerprints: `McpHostManager.kt=472244d3ce26`; `McpHostManagerTest.kt=9daa29d46914`.
+
 ### 2026-08-24T04:41:10Z · Agent: Codex GPT-5 · Batch: mcp-http-request-validity
 
 - Paths touched: `src/main/kotlin/atropos/core/integration/McpHostManager.kt` (+10/-4), `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+2).
