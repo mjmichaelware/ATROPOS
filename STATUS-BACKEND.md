@@ -114,3 +114,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | R6 / B-MCP-GITLOCAL-b / git diff | source-wired / partial | `src/main/kotlin/atropos/cli/ShellCommandHandler.kt`, `src/main/kotlin/atropos/cli/shell/ShellCommandRunner.kt`, `src/main/kotlin/atropos/cli/input/CommandCatalog.kt` | `CommandRouter` → `ShellCommandHandler.git` → `ShellCommandRunner.gitDiff` → existing `TypedToolExecutor`/`BoundedAgencyGate` | `/git diff` is read-only and uses literal `git diff --`; no mutation or remote command was added. `git diff --check` and source inspection passed; root tests remain hosted evidence. |
+
+### 2026-08-24T02:25:00Z · Backend batch: reusable-orphan-gate-wire
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| S-012 / reusable CI orphan gate | source-wired / partial | `scripts/atropos-verify-worktree.sh`, `.github/workflows/atropos-verify-example.yml` | reusable composite action → `scripts/atropos-verify-worktree.sh` → canonical `scripts/find-orphans.py --fail-on-new` | Both compile-gate and reusable verify paths now enforce the same new-file caller check; `git diff --check` passed, hosted execution remains pending. |

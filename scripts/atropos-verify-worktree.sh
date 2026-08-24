@@ -8,6 +8,9 @@ echo "=== FULL SMOKE ==="
 scripts/atropos-fast-gate.sh smoke
 
 if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
+  echo "=== HOSTED ORPHAN GATE ==="
+  python3 scripts/find-orphans.py --fail-on-new
+
   echo "=== HOSTED COMPILE ==="
   ./gradlew --no-daemon compileKotlin compileTestKotlin
 

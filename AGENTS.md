@@ -452,6 +452,14 @@ End of AGENTS.md
 - % delta: unchanged; no VERIFIED claim. FTY-01, FTY-02, and FTY-04 are marked done in `STATUS-BACKEND.md` based on production source plus narrow compilation; FTY-03 and FTY-05 remain partial until root focused tests and a runtime-owned repair callback are proven.
 - Fingerprints (sha256): `DagStore.kt=fb932962f947`; `FactoryProgressGuard.kt=50bb25ea712d`; `FactoryRunHandoff.kt=537cf1c24fc2`; `FactoryRunOrchestrator.kt=652e100a59b7`; `FactoryRepairExecutor.kt=16e2c5cd36a8`; `FactoryCommandHandler.kt=392afeb3eb37`; `FactoryProgressGuardTest.kt=1e5d81c78c09`; `FactoryResumeAndRepairTest.kt=bca553b18f46`; `STATUS-BACKEND.md=2669342e3735`.
 
+### 2026-08-24T02:25:00Z · Agent: Codex GPT-5 · Batch: reusable-orphan-gate-wire
+
+- Paths touched: `scripts/atropos-verify-worktree.sh` (+4), `.github/workflows/atropos-verify-example.yml` (+2), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: S-012 reusable CI orphan gate.
+- Predicate moved: the reusable GitHub verification path now invokes the same canonical `find-orphans.py --fail-on-new` gate as `compile-gate.yml`; checkout depth is sufficient for the added-path comparison. No second verifier or caller graph was added.
+- Verification actually run: `git diff --check` passed; hosted action not executed locally.
+- % delta: unchanged; source-wired but partial pending GitHub Actions evidence.
+
 ### 2026-08-24T02:10:00Z · Agent: Codex GPT-5 · Batch: bounded-git-diff-caller
 
 - Paths touched: `src/main/kotlin/atropos/cli/ShellCommandHandler.kt` (+5/-4), `src/main/kotlin/atropos/cli/shell/ShellCommandRunner.kt` (+3), `src/main/kotlin/atropos/cli/input/CommandCatalog.kt` (+1), `STATUS-BACKEND.md` (+7).
