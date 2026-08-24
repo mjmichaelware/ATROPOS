@@ -1208,3 +1208,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-PROV-012/P16 paid approval boundary | source-wired / partial | `src/main/kotlin/atropos/core/policy/ExecutionPolicyEngine.kt`, `EmergencyPaidGate.kt`, `src/main/kotlin/atropos/core/provider/ProviderCascadeRouter.kt`, `scripts/backend-atom-contract-test.sh` | provider proposal/cascade → single `ExecutionPolicyEngine` → exact-provider `EmergencyPaidGate.isProviderUnlocked()`; free exhaustion → `paidApprovalAfterFreeExhaustion()` | Added CI assertions that paid execution remains locked per provider and that free/local exhaustion produces an approval card instead of silent spend. Backend contract, hosted selector parity (421), and diff check pass; hosted policy execution remains unverified. |
+
+### 2026-08-25T04:00:00Z · Agent: Codex GPT-5 · Batch: mcp-allowlist-admission-contract
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-CORE-h/i allowlist and disabled admission | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `scripts/backend-atom-contract-test.sh` | `/mcp`/bridge → `McpHostManager.statuses/callTool` → configured allowlist, community opt-in, enabled check → bounded transport | Added CI assertions for both status-time filtering and call-time refusal of unallowlisted, community, and disabled servers. Backend contract, hosted selector parity (421), and diff check pass; hosted MCP runtime execution remains unverified. |
