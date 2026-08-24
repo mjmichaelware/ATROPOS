@@ -132,6 +132,33 @@ class QuotaLedgerRouteTruthTest {
     }
 
     @Test
+    fun healthy_set_and_preference_supplier_control_route_selection() {
+        val registry = StaticProviderDescriptorRegistry()
+        val seed = FileQuotaLedger.seedFromDescriptors(registry)
+        val ledger = InMemoryQuotaLedger(seed)
+        ledger.put(readyRemote(seed, "groq"))
+        ledger.put(readyRemote(seed, "openrouter"))
+
+        val preferred = RoutePolicy(
+            registry = registry,
+            ledger = ledger,
+            costPolicy = AtroposCostPolicy.FREE_ONLY,
+            healthyProviderIds = { setOf("groq", "openrouter") },
+            preferredProviderIds = { listOf("openrouter", "groq") }
+        ).decide(ProviderTask(ProviderTaskKind.CHAT_PROMPT, ApiCapability.CHAT, "hello"))
+        assertEquals("openrouter", preferred.selectedProviderId)
+
+        val disabled = RoutePolicy(
+            registry = registry,
+            ledger = ledger,
+            costPolicy = AtroposCostPolicy.FREE_ONLY,
+            healthyProviderIds = { setOf("openrouter") }
+        ).decide(ProviderTask(ProviderTaskKind.CHAT_PROMPT, ApiCapability.CHAT, "hello"))
+        assertEquals("openrouter", disabled.selectedProviderId)
+        assertTrue(disabled.skipped.any { it.provider.id == "groq" && it.reason == "not_in_healthy_set" })
+    }
+
+    @Test
     fun emergency_paid_gate_bypass_allows_unlocked_paid_provider() {
         val temp = Files.createTempDirectory("atropos-paid-bypass")
         val registry = StaticProviderDescriptorRegistry()
