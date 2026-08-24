@@ -13392,7 +13392,7 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Predicate moved: the existing hash-pinned HTTP bundle owner now refuses redirects in addition to its localOnly, egress, HTTPS/HTTP scheme, timeout, streaming-size, and content-hash checks.
 - Verification actually run: pending this batch; hosted/source-binding execution remains unproven.
 - % delta: unchanged; B-006 remains source-wired/partial pending approved remote retrieval evidence.
-- Fingerprints (sha256, first 12): to be recorded after commit.
+- Fingerprints (sha256, first 12): `SourceBindingFetcher.kt=9141ffd5b23c`; `backend-atom-contract-test.sh=65f3283675c2`.
 
 ### 2026-08-24T19:50:50Z · Agent: Codex GPT-5 · Batch: github-response-size-bound
 
