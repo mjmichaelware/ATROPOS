@@ -28,6 +28,8 @@ This file records backend implementation status for the current engine wave. A r
 
 | P15 quota ledger restart durability | source-wired / partial | `src/main/kotlin/atropos/core/provider/QuotaLedger.kt`, `src/test/kotlin/atropos/bridge/QuotaProjectionTest.kt` | provider result/failure owners → existing `FileQuotaLedger` → `QuotaProjection`/`/v1/quota` | File quota persistence now appends latency metadata backward-compatibly and sanitizes tab/newline field content so one provider error cannot corrupt subsequent TSV rows. Restart projection asserts latency and remaining quota; backend contract, hosted selector parity (418), and diff check pass; hosted/root Kotlin execution remains pending. |
 
+| P15 quota backup correctness | source-wired / partial | `src/main/kotlin/atropos/core/provider/QuotaLedger.kt`, `src/test/kotlin/atropos/core/provider/QuotaLedgerRouteTruthTest.kt` | existing `/status` backup caller → `QuotaLedgerBackup` → authoritative `ProviderQuotaPaths.defaultLedger()` | Quota backups now copy the live ledger and preserve failure/usage state; descriptor seeds are used only when no source ledger exists. Regression asserts a persisted cooldown appears in the backup. Backend contract, hosted selector parity (418), and diff check pass; hosted/root Kotlin execution remains pending. |
+
 ## Commands
 
 - `/factory resume <runId>` — read-only attested resume inspection; execution requires the existing router callback path.

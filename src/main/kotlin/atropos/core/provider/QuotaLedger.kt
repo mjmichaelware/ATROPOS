@@ -185,34 +185,28 @@ data class QuotaBackupResult(
 
 class QuotaLedgerBackup(
     private val registry: ProviderDescriptorRegistry = StaticProviderDescriptorRegistry(),
-    private val root: File = File(".atropos/quota-backups")
+    private val root: File = File(".atropos/quota-backups"),
+    private val source: File = ProviderQuotaPaths.defaultLedger()
 ) {
     fun backup(target: File = defaultBackupFile()): QuotaBackupResult {
         target.parentFile?.mkdirs()
-        val rows = FileQuotaLedger.seedFromDescriptors(registry)
-        target.writeText(
+        val content = if (source.isFile) source.readText() else {
+            val rows = FileQuotaLedger.seedFromDescriptors(registry)
             rows.joinToString("\n") { record ->
                 listOf(
-                    record.providerId,
-                    record.costMode.name,
-                    record.quotaWeight,
-                    record.configured,
-                    record.verified,
-                    record.state.name,
-                    record.usedRequests,
-                    record.usedTokens,
-                    record.cooldownUntilEpochMs ?: "",
-                    record.resetAtEpochMs ?: "",
-                    record.lastErrorClass ?: "",
-                    record.lastErrorSummary ?: "",
-                    record.successScore,
-                    record.paidLocked,
-                    record.remainingRequests ?: "",
-                    record.remainingTokens ?: ""
+                    record.providerId, record.costMode.name, record.quotaWeight,
+                    record.configured, record.verified, record.state.name,
+                    record.usedRequests, record.usedTokens,
+                    record.cooldownUntilEpochMs ?: "", record.resetAtEpochMs ?: "",
+                    record.lastErrorClass ?: "", record.lastErrorSummary ?: "",
+                    record.successScore, record.paidLocked,
+                    record.remainingRequests ?: "", record.remainingTokens ?: "",
+                    record.latencyMsAvg ?: ""
                 ).joinToString("\t")
             } + "\n"
-        )
-        return QuotaBackupResult(target, rows.size)
+        }
+        target.writeText(content)
+        return QuotaBackupResult(target, content.lineSequence().count { it.isNotBlank() })
     }
 
     fun restore(source: File): QuotaBackupResult {

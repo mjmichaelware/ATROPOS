@@ -33,6 +33,26 @@ class QuotaLedgerRouteTruthTest {
     }
 
     @Test
+    fun quota_backup_copies_live_ledger_instead_of_descriptor_seed() {
+        val root = Files.createTempDirectory("atropos-quota-backup")
+        val registry = StaticProviderDescriptorRegistry()
+        val seed = FileQuotaLedger.seedFromDescriptors(registry)
+        val source = root.resolve("quota.tsv").toFile()
+        val ledger = FileQuotaLedger(source, seed)
+        ledger.put(readyRemote(seed, "groq"))
+        ledger.recordFailure(
+            "groq",
+            ProviderFailure("groq", NormalizedProviderFailureType.RATE_LIMITED, "rate limited", retryAfterMs = 60_000),
+            1_000L
+        )
+
+        val target = root.resolve("backup.tsv").toFile()
+        val result = QuotaLedgerBackup(registry, root.resolve("backups").toFile(), source).backup(target)
+        assertEquals(ledger.all().size, result.records)
+        assertTrue(target.readText().contains("groq\tFREE\t1\ttrue\ttrue\tCOOLDOWN"))
+    }
+
+    @Test
     fun route_explanation_reports_selected_skipped_fallback_cooldown_reset_paid_lock_and_outcome() {
         val registry = StaticProviderDescriptorRegistry()
         val seed = FileQuotaLedger.seedFromDescriptors(registry)
