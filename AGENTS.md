@@ -461,6 +461,15 @@ End of AGENTS.md
 - % delta: unchanged; B-INST-002 remains partial pending hosted release evidence.
 - Fingerprints (sha256, first 12): `install.sh=1262ffc866ea`; `scripts/install-contract-test.sh=7971dbb24d7a`; `scripts/release-installer-contract-test.sh=9e0cf8f2eaf`.
 
+### 2026-08-24T08:10:00Z · Agent: Codex GPT-5 · Batch: mcp-single-stdio-call
+
+- Paths touched: `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+3), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-MCP-CORE-e stdio tool-call execution.
+- Predicate moved: a focused production-path fixture now asserts exactly one `initialize/tools/list/tools/call` exchange reaches a local MCP server; the existing sole `McpHostManager` remains the caller path.
+- Verification actually run: `git diff --check`, source assertion presence, and hosted-selector presence passed. Root/hosted Gradle evidence remains unproven.
+- % delta: unchanged; B-MCP-CORE-e remains partial pending hosted execution.
+- Fingerprints (sha256, first 12): `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt=5931e220c01b`; `STATUS-BACKEND.md=d97551b36c8c`.
+
 ### 2026-08-24T06:48:39Z · Agent: Codex GPT-5 · Batch: anti-synthetic-velocity-output
 
 - Paths touched: `src/main/kotlin/atropos/cli/commands/VerifyCommand.kt` (+10/-4), `STATUS-BACKEND.md` (+7).

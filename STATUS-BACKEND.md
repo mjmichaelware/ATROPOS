@@ -450,3 +450,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-INST-002 rolling artifact selection | source-wired / partial | `install.sh`, `scripts/install-contract-test.sh`, `scripts/release-installer-contract-test.sh` | default installer → exact `latest` release tag → release workflow assets | Corrected default download selection to `/releases/download/latest/ATROPOS.jar`; the release workflow marks that rolling tag prerelease, so `/releases/latest/download` could select an older stable release. Local contracts and syntax checks pass; hosted release/device proof remains pending. |
+
+### 2026-08-24T08:10:00Z · Backend batch: mcp-single-stdio-call
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-CORE-e stdio tool call cardinality | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` | CLI/bridge → `McpHostManager.callTool` → one bounded stdio handshake/tools-list/tools-call exchange | Added a focused fixture asserting exactly one `tools/call` reaches the configured server. The production path already has the duplicate exchange removed; hosted/root Gradle execution remains pending. |

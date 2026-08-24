@@ -56,6 +56,7 @@ class McpHostManagerTest {
     @Test
     fun local_stdio_tool_call_is_bounded_and_persisted_as_evidence() {
         val root = Files.createTempDirectory("mcp-call")
+        val calls = root.resolve("calls")
         val script = root.resolve("mcp-call.sh")
         Files.writeString(script, """
             #!/bin/sh
@@ -63,7 +64,7 @@ class McpHostManagerTest {
               case "$line" in
                 *'"id":1'*) printf '%s\n' '{"id":1}' ;;
                 *'"id":2'*) printf '%s\n' '{"id":2,"result":{"tools":[{"name":"inspect"}]}}' ;;
-                *'"id":3'*) printf '%s\n' '{"id":3,"result":{"content":[{"text":"ok"}]}}' ;;
+                *'"id":3'*) printf '%s\n' x >> '${calls.fileName}'; printf '%s\n' '{"id":3,"result":{"content":[{"text":"ok"}]}}' ;;
               esac
             done
         """.trimIndent())
@@ -75,6 +76,7 @@ class McpHostManagerTest {
         assertTrue(result.response.contains("\"id\":3"))
         assertNotNull(result.evidence.sha256)
         assertTrue(Files.isRegularFile(result.evidence.path))
+        assertEquals(1, Files.readAllLines(calls).size)
     }
 
     @Test
