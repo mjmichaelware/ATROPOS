@@ -4,6 +4,12 @@ package atropos.bridge
 import atropos.bridge.http.HttpRequest
 import atropos.bridge.http.HttpResponse
 import atropos.bridge.http.JsonWriter
+import atropos.core.policy.ActionActor
+import atropos.core.policy.ActionProposal
+import atropos.core.policy.BoundedAgencyGate
+import atropos.core.policy.ExecutionPolicyEngine
+import atropos.core.policy.PolicyActionClass
+import atropos.core.policy.TypedToolExecutor
 import java.nio.file.Files
 import java.nio.file.Path
 import java.security.MessageDigest
@@ -11,7 +17,10 @@ import java.util.Base64
 import kotlin.streams.toList
 
 internal class BridgeFilesHandler(
-    private val repoRoot: Path = Path.of("").toAbsolutePath().normalize()
+    private val repoRoot: Path = Path.of("").toAbsolutePath().normalize(),
+    private val agency: TypedToolExecutor = TypedToolExecutor(
+        BoundedAgencyGate(ExecutionPolicyEngine(repoRoot))
+    )
 ) {
     private val uploadsRoot = repoRoot.resolve(".atropos/uploads").normalize()
 
@@ -59,12 +68,28 @@ internal class BridgeFilesHandler(
             current = current.parent
         }
 
-        // Create directory
-        try {
+        val relativeTarget = targetPath.relativeTo(repoRoot).toString()
+        val execution = agency.execute(
+            ActionProposal(
+                id = "bridge-upload-${session}-${filename}",
+                actionClass = PolicyActionClass.FILE_MUTATION,
+                actor = ActionActor.HumanOwner,
+                cwd = repoRoot.toString(),
+                targetPaths = listOf(relativeTarget),
+                metadata = mapOf("operation" to "attested_upload", "session" to session)
+            )
+        ) {
             Files.createDirectories(targetPath.parent)
             Files.write(targetPath, bytes)
-        } catch (e: Exception) {
-            return HttpResponse.refusal(500, "write-error", "Failed to write file: ${e.message}", "")
+            "written"
+        }
+        if (!execution.executed) {
+            return HttpResponse.refusal(
+                403,
+                "policy-refused",
+                execution.refusalReason ?: "Upload refused by bounded agency policy.",
+                "Declare a valid repository-scoped upload target."
+            )
         }
 
         // Calculate SHA-256

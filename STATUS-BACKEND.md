@@ -99,6 +99,12 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | --- | --- | --- | --- | --- |
 | R6 typed executor overload compile correction | source-wired / partial | `src/main/kotlin/atropos/core/policy/TypedToolExecutor.kt` | existing `McpHostManager` pre-judged decision caller | Corrected the overload’s result metadata to use `decision.proposal` rather than the removed local `proposal` variable. `git diff --check` passes; root/hosted Kotlin execution remains pending and no test-green claim is made. |
 
+### 2026-08-25T00:45:00Z · Backend batch: bridge-upload-typed-mutation-gate
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-005 / ADD-W-029 upload mutation policy wire | source-wired / partial | `src/main/kotlin/atropos/bridge/BridgeFilesHandler.kt`, `src/test/kotlin/atropos/bridge/BridgeFilesHandlerTest.kt` | `POST /v1/files` → existing `BridgeFilesHandler.upload` → `TypedToolExecutor`/`BoundedAgencyGate` → bounded write | The existing attested upload write now runs inside the canonical `FILE_MUTATION` executor with an explicit repo-relative target and HumanOwner bridge attribution; policy refusal returns 403 before directory/file creation. Size, path, symlink, content hash, and envelope hash checks remain intact. Static selector/orphan/diff checks pass; root/hosted execution remains pending. |
+
 ## Wave residual audit
 
 | residual | status | evidence / caller | remaining truth |

@@ -12859,3 +12859,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: `git diff --check` passed. Root/hosted Kotlin execution remains pending; no test-green claim.
 - % delta: unchanged; R6 remains source-wired / partial.
 - Fingerprint: `TypedToolExecutor.kt=4daca2b9a91b`.
+
+### 2026-08-25T00:45:00Z · Agent: Codex GPT-5 · Batch: bridge-upload-typed-mutation-gate
+
+- Paths touched: `src/main/kotlin/atropos/bridge/BridgeFilesHandler.kt` (+31/-6), `src/test/kotlin/atropos/bridge/BridgeFilesHandlerTest.kt` (selector-covered existing fixture), `STATUS-BACKEND.md` (+7), `AGENTS.md` (+7).
+- Atoms / phases affected: B-005 / ADD-W-029 attested upload mutation policy boundary.
+- Predicate moved: `/v1/files` no longer writes directly after path checks; it submits the explicit repo-relative target to the existing `TypedToolExecutor`/`BoundedAgencyGate` and only writes after an allowed decision. Refusals are typed HTTP 403 outcomes; no parallel file policy or executor was introduced.
+- Verification actually run: `git diff --check`, `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (382 tests)`), and `timeout 90s python3 scripts/find-orphans.py --fail-on-new` (exit 0; only 4 pre-existing baseline orphan files / 360 LOC) passed. Root/hosted Kotlin execution remains pending; no test-green claim.
+- % delta: unchanged; B-005 / ADD-W-029 remains source-wired / partial pending hosted execution.
+- Fingerprints (sha256, first 12): `BridgeFilesHandler.kt=d741d4019d74`, `BridgeFilesHandlerTest.kt=8082906494dc`.
