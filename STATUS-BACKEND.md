@@ -132,3 +132,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-INST-001 / B-INST-003 platform-aware install | source-wired / partial | `install.sh`, `scripts/install-contract-test.sh` | release/install entrypoint → existing installer → generated `atropos` launcher | Detects Linux/Darwin/Termux and aarch64/x86_64, exports `ATROPOS_PLATFORM`, and rejects unsupported targets before download. `bash -n`, installer contract, and `git diff --check` passed; no JAR/release/device proof claimed. |
+
+### 2026-08-24T04:45:46Z · Backend batch: factory-resume-command-catalog
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| FTY-01 resume command discoverability | source-wired / partial | `src/main/kotlin/atropos/cli/input/CommandCatalog.kt`, `src/test/kotlin/atropos/cli/input/CommandCatalogBackendEntriesTest.kt` | shared `CommandCatalog` → CLI completion/help; execution remains `CommandRouter` → `FactoryCommandHandler` | Added `/factory resume <run-id>` to the single registry and a focused assertion. `git diff --check` passed; hosted root test evidence remains pending. |

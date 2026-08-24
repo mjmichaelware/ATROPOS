@@ -470,6 +470,15 @@ End of AGENTS.md
 - % delta: unchanged; source-wired / partial pending GitHub release and operator install evidence.
 - Fingerprints: `install.sh=699c5d45429c8f8f3187777e`; `scripts/install-contract-test.sh=e0ff5831669798aa8a2878c1`.
 
+### 2026-08-24T04:45:46Z · Agent: Codex GPT-5 · Batch: factory-resume-command-catalog
+
+- Paths touched: `src/main/kotlin/atropos/cli/input/CommandCatalog.kt` (+1), `src/test/kotlin/atropos/cli/input/CommandCatalogBackendEntriesTest.kt` (+11).
+- Atoms / phases affected: FTY-01 user-facing resume command registry.
+- Predicate moved: `/factory resume <run-id>` is now discoverable through the shared command registry used by help/completion while the existing `CommandRouter` → `FactoryCommandHandler` → `AppFactoryRouter.resume` production path remains the sole executor.
+- Verification actually run: `git diff --check` passed. Root test execution remains delegated to GitHub Actions; no local Gradle result is claimed.
+- % delta: unchanged; source-wired / partial pending hosted focused test evidence.
+- Fingerprints: `CommandCatalog.kt=1620ae5c08a2f37c0933faad`; `CommandCatalogBackendEntriesTest.kt=6052c648bbbec8e560e852cf`.
+
 ### 2026-08-24T02:25:00Z · Agent: Codex GPT-5 · Batch: reusable-orphan-gate-wire
 
 - Paths touched: `scripts/atropos-verify-worktree.sh` (+4), `.github/workflows/atropos-verify-example.yml` (+2), `STATUS-BACKEND.md` (+7).

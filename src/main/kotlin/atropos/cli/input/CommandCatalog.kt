@@ -187,6 +187,7 @@ object CommandCatalog {
         CommandEntry("/factory", "factory status"),
         CommandEntry("/factory plan", "bounded app-factory plan"),
         CommandEntry("/factory run", "queue app-factory run"),
+        CommandEntry("/factory resume <run-id>", "resume an attested factory handoff"),
         CommandEntry("/factory answer", "persist YES/NO factory clarification answers", "Build", keywords = listOf("factory", "confidence", "clarification", "yes", "no")),
         CommandEntry(
             "/self-host",
