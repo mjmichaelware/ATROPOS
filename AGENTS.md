@@ -13904,6 +13904,16 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprints: `McpHostManager.kt=502c26ebea7c`; `backend-atom-contract-test.sh=cf400397e60d`.
 
+### 2026-08-25T06:00:00Z · Agent: Codex GPT-5 · Batch: provider-preference-route-contract
+
+- Paths touched: `scripts/backend-atom-contract-test.sh` (+4), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-PROV-004 prefer/disable route ownership.
+- Predicate moved: CI now protects the existing production edge from `/providers prefer|disable` persistence through `ProviderOnboardingService` into the sole `RoutePolicy` path used by `AdapterRouteFacade`.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh`, `bash scripts/hosted-test-selector-contract.sh` (`421 tests`), and `git diff --check` passed. Hosted route execution remains unverified.
+- % delta: unchanged; B-PROV-004 remains source-wired/partial pending hosted execution.
+- New overall estimate: unchanged.
+- Fingerprints: `backend-atom-contract-test.sh=992940ef334f`.
+
 ### 2026-08-24T22:35:00Z · Agent: Codex GPT-5 · Batch: local-health-response-bounds
 
 - Paths touched: `src/main/kotlin/atropos/core/ProviderState.kt` (+10/-2), `src/main/kotlin/atropos/core/agent/ProviderSessionSupervisor.kt` (+13/-3), `scripts/backend-atom-contract-test.sh` (+2).

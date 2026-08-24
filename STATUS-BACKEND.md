@@ -1244,3 +1244,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-CORE-c remote initialized notification | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `scripts/backend-atom-contract-test.sh` | `callTool` → remote `initialize` → single host `notifications/initialized` → `tools/list` → bounded tool call | Remote MCP now follows the same initialized-notification sequence as stdio before tool discovery. Backend contract, hosted selector parity (421), and diff check pass; hosted remote MCP runtime remains unverified. |
+
+### 2026-08-25T06:00:00Z · Agent: Codex GPT-5 · Batch: provider-preference-route-contract
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-PROV-004 prefer/disable route ownership | source-wired / partial | `src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt`, `src/main/kotlin/atropos/core/provider/adapter/AdapterRouteFacade.kt`, `src/main/kotlin/atropos/core/provider/RoutePolicy.kt`, `scripts/backend-atom-contract-test.sh` | `/providers prefer|disable` → persisted onboarding metadata → `AdapterRouteFacade` healthy/preference suppliers → sole `RoutePolicy` eligibility/order | Backend contract now protects the production caller edges for persisted preference and disabled-provider exclusion. Hosted route execution remains unverified; no second routing policy added. |
