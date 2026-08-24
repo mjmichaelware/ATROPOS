@@ -480,3 +480,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | Phase 11 remote compile gate / GitHub Actions snapshot isolation | source-wired / partial | `src/main/kotlin/atropos/core/verification/GitHubActionsCompileRunner.kt`, `src/test/kotlin/atropos/core/verification/GitHubActionsCompileRunnerTest.kt`, `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh` | `GovernedCompileGate.forRepository` → existing `GitHubActionsCompileRunner` → one commit-derived workflow ref → `compile-gate.yml` | Remote snapshots now push without `--force` to `atropos/compile-gate/<commit-prefix>`, dispatch and polling use that same ref, and the focused test asserts the ref and absence of force-push. Shell syntax and `git diff --check` pass; GitHub-hosted execution is still required and no CI green claim is made. |
+
+### 2026-08-24T11:45:00Z · Backend batch: npm-launcher-contract
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-INST-006 npm fallback launcher | source-wired / partial | `npm/bin/atropos.js`, `npm/scripts/postinstall.js`, `scripts/npm-installer-contract-test.sh`, `.github/workflows/compile-gate.yml`, `.github/workflows/release.yml` | `npm install -g @mjmichaelware/atropos` → postinstall checksum path → `npm/bin/atropos.js` → JVM jar | Contract now proves the launcher honors `ATROPOS_JAR` and `ATROPOS_JAVA_OPTS`, inherits terminal streams, preserves JVM exit status, and fails nonzero on signal termination; postinstall remains checksum fail-closed. `NPM_INSTALLER_CONTRACT_OK` passes locally; release/network/device proof remains external. |

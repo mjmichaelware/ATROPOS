@@ -462,6 +462,15 @@ End of AGENTS.md
 - % delta: unchanged; Phase 11 remains partial for live hosted self-build proof.
 - Fingerprints (sha256, first 12): `GitHubActionsCompileRunner.kt=0f2f30a4d176`, `GitHubActionsCompileRunnerTest.kt=7621dcb09a0`, `compile-gate.yml=f063f1035e3d`, `atropos-verify-worktree.sh=8c193534ad5f`, `STATUS-BACKEND.md=5656652f27c5`.
 
+### 2026-08-24T11:45:00Z · Agent: Codex GPT-5 · Batch: npm-launcher-contract
+
+- Paths touched: `scripts/npm-installer-contract-test.sh` (+6), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-INST-006 npm fallback launcher.
+- Predicate moved: the existing npm distribution contract now verifies the complete launcher boundary: explicit `ATROPOS_JAR` override, JVM option forwarding, inherited terminal streams, signal-to-nonzero handling, and JVM exit-status propagation. No second installer or artifact owner was introduced.
+- Verification actually run: `node --check npm/bin/atropos.js`, `node --check npm/scripts/postinstall.js`, `bash scripts/npm-installer-contract-test.sh` (`NPM_INSTALLER_CONTRACT_OK`), and targeted `git diff --check` passed. Hosted release/network/device execution remains unrun.
+- % delta: unchanged; B-INST-006 remains partial pending hosted release and runtime installation evidence.
+- Fingerprints (sha256, first 12): recorded after this batch.
+
 ### 2026-08-24T07:55:00Z · Agent: Codex GPT-5 · Batch: installer-prerelease-tag-correction
 
 - Paths touched: `install.sh` (+5), `scripts/install-contract-test.sh` (+1), `scripts/release-installer-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7).
