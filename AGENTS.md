@@ -12061,3 +12061,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: `bash -n install.sh scripts/install-contract-test.sh`, `bash scripts/install-contract-test.sh`, `bash scripts/npm-installer-contract-test.sh`, and `git diff --check` passed. GitHub release/device execution remains unrun; no artifact or install green claim.
 - % delta: unchanged; source-wired but partial pending hosted/release evidence.
 - Fingerprints (sha256, first 12): `install.sh=f41bdd99f2ed`; `install-contract-test.sh=7ac2dbc47b39`; `STATUS-BACKEND.md=a3b8a2320cd7`.
+
+### 2026-08-24T07:20:00Z · Agent: Codex GPT-5 · Batch: release-installer-contract-wire
+
+- Paths touched: `.github/workflows/release.yml` (+3), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-INST release acceptance and GitHub-hosted artifact path.
+- Predicate moved: the release publisher now runs both shell and npm installer contracts before packaging or publishing artifacts, so the release path cannot silently omit installer integrity checks.
+- Verification actually run: source inspection and prior shell/npm contract evidence remain valid; hosted release execution has not run and no release green claim is made.
+- % delta: unchanged; source-wired but partial pending hosted release evidence.
+- Fingerprints (sha256, first 12): `release.yml=c1189cd7a35f`; `STATUS-BACKEND.md=a8a3060ce8ca`.

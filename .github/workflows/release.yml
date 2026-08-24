@@ -88,6 +88,9 @@ jobs:
       - name: Exercise first-run installer contract
         run: bash scripts/install-contract-test.sh
 
+      - name: Exercise npm installer contract
+        run: bash scripts/npm-installer-contract-test.sh
+
       - name: Package install artifacts
         run: bash scripts/package-installers.sh build/libs/ATROPOS.jar build/installers
 

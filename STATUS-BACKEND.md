@@ -245,3 +245,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-INST-002 artifact hash verification | source-wired / partial | `install.sh`, `scripts/install-contract-test.sh` | installer download path → required `.sha256` artifact → `sha256sum`/`shasum` verification before atomic jar move | The shell installer now refuses missing/malformed checksums, refuses hosts without a SHA-256 tool, and refuses mismatches; it no longer installs an unverified jar. `bash -n`, `ATROPOS_INSTALL_CONTRACT_OK`, npm contract, and `git diff --check` passed. Live release/device execution remains pending. |
+
+### 2026-08-24T07:20:00Z · Backend batch: release-installer-contract-wire
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-INST release acceptance | source-wired / partial | `.github/workflows/release.yml` | Release JAR job → shell installer contract + npm installer contract before artifact packaging/publish | Release CI now executes both installer contract scripts before publishing the JAR and checksums. Local static checks remain available; hosted release execution has not run. |
