@@ -145,6 +145,7 @@ class SourceBindingFetcher(
                 .build()
             val response = HttpClient.newBuilder()
                 .connectTimeout(java.time.Duration.ofSeconds(5))
+                .followRedirects(HttpClient.Redirect.NEVER)
                 .build()
                 .send(request, HttpResponse.BodyHandlers.ofInputStream())
             if (response.statusCode() !in 200..299) {

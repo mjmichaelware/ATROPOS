@@ -24,6 +24,7 @@ text src/main/kotlin/atropos/core/provider/SourceBindingFetcher.kt 'disabled by 
 text src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt 'genericProviderIds'
 text src/main/kotlin/atropos/core/provider/SourceBindingFetcher.kt 'connectTimeout(java.time.Duration.ofSeconds(5))'
 text src/main/kotlin/atropos/core/provider/SourceBindingFetcher.kt 'SecretSinkMatrix.isEgressPermitted'
+text src/main/kotlin/atropos/core/provider/SourceBindingFetcher.kt 'HttpClient.Redirect.NEVER'
 text src/main/kotlin/atropos/core/github/GitHubDeviceAuthClient.kt 'GitHub OAuth disabled by local-only mode'
 text src/main/kotlin/atropos/core/github/GitHubDeviceAuthClient.kt 'requireJsonObject(response.body)'
 

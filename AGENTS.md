@@ -13385,6 +13385,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; P07 remains source-wired/partial pending hosted adapter fixtures and live approval.
 - Fingerprints (sha256, first 12): `BedrockKernelAdapter.kt=ce42351ff527`; `backend-atom-contract-test.sh=b03cf8875d27`.
 
+### 2026-08-24T23:30:00Z · Agent: Codex GPT-5 · Batch: source-bundle-redirect-boundary
+
+- Paths touched: `src/main/kotlin/atropos/core/provider/SourceBindingFetcher.kt` (+1), `scripts/backend-atom-contract-test.sh` (+1).
+- Atoms / phases affected: B-006/B-LOCAL-ONLY remote source-binding transport.
+- Predicate moved: the existing hash-pinned HTTP bundle owner now refuses redirects in addition to its localOnly, egress, HTTPS/HTTP scheme, timeout, streaming-size, and content-hash checks.
+- Verification actually run: pending this batch; hosted/source-binding execution remains unproven.
+- % delta: unchanged; B-006 remains source-wired/partial pending approved remote retrieval evidence.
+- Fingerprints (sha256, first 12): to be recorded after commit.
+
 ### 2026-08-24T19:50:50Z · Agent: Codex GPT-5 · Batch: github-response-size-bound
 
 - Paths touched: `src/main/kotlin/atropos/core/github/GitHubApiClient.kt` (+4), `src/test/kotlin/atropos/core/github/GitHubApiClientTest.kt` (+17), `scripts/backend-atom-contract-test.sh` (+1).
