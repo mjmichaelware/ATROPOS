@@ -335,6 +335,7 @@ Oldest entries stay. Newest entries go at the bottom. Never delete or rewrite pr
 - New overall estimate: ≈ 43% (42.4 → 42.9). Arithmetic: only Phase 11 moved, +13 points; §1 does not state Horizon II's internal weighting, so it is treated as even across its six phases → +13/6 = +2.2 on the horizon → 55% → 57.2%; weighted II = 25% × 57.2% = 14.3 (was 13.8), so 18.0 + 14.3 + 2.2 + 4.0 + 1.2 + 3.2 = 42.9.
 - Fingerprints (sha256, first 12): `GovernedCompileGate.kt` d076577e94fe · `GovernedCompileGateModels.kt` aa705b9051c0 · `SelfHostRunProofModels.kt` e20f6efb2c74 · `SelfHostRunProofBuilder.kt` 8298587081c0 · `SelfHostRunProofRenderer.kt` ecfe20bdd045 · `GovernedCompileGateTest.kt` 9a49e7c8acdd · `SelfHostRunProofBuilderTest.kt` 60be46f002c0 · `SelfHostRunProofRendererTest.kt` 71a9f386e7e7
 
+
 ---
 
 ## 3. CURRENT OPEN PRIORITIES (ordered)
@@ -452,6 +453,24 @@ End of AGENTS.md
 - Verification actually run: `bash -n scripts/release-installer-contract-test.sh`, `bash scripts/release-installer-contract-test.sh`, `bash scripts/install-contract-test.sh`, `timeout 90s python3 scripts/find-orphans.py --fail-on-new`, and `git diff --check` passed. The orphan gate still reports only the four pre-existing baseline files (4/1034, 360 LOC). GitHub Actions execution, published release, and device installation remain unproven; no root-green claim.
 - % delta: unchanged; B-INST-002 remains partial pending hosted release evidence.
 - Fingerprints (sha256, first 12): `scripts/release-installer-contract-test.sh=c4139f3e1fe4`; `.github/workflows/release.yml=46bf3530786b`; `install.sh=6ece5f472305`.
+
+### 2026-08-24T13:52:33Z · Agent: Codex GPT-5 · Batch: mcp-bridge-single-gate
+
+- Paths touched: `src/main/kotlin/atropos/bridge/BridgeMcpHandler.kt` (-32), `src/test/kotlin/atropos/bridge/BridgeMcpHandlerTest.kt` (+32), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: R6 / B-MCP-FS execution gate composition; B-005 bridge caller integrity.
+- Predicate moved: `POST /v1/mcp/call` no longer evaluates the same inbound action in a bridge-local gate and then again in `McpHostManager`. Execution now has one authoritative host-owned `McpTerritoryBridge` admission immediately before transport start; `/v1/mcp/judge` remains a separate explicit preflight endpoint. The new counting-gate fixture asserts exactly one evaluation.
+- Verification actually run: `git diff --check`, `timeout 90s python3 scripts/find-orphans.py --fail-on-new` (exit 0; only the four pre-existing baseline orphan files, 360 LOC), and `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (382 tests)`) passed. Root Kotlin execution and GitHub Actions remain unrun; no compile/test-green claim.
+- % delta: unchanged; R6/B-MCP-FS remains partial pending hosted execution and full ToolExecutor/runtime evidence.
+- Fingerprints (sha256, first 12): `BridgeMcpHandler.kt=fc21c00221f1`; `BridgeMcpHandlerTest.kt=d3c16509d470`.
+
+### 2026-08-24T13:55:00Z · Agent: Codex GPT-5 · Batch: residual-status-reconciliation
+
+- Paths touched: `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-MCP-SENTRY and P07 AWS Bedrock residual truth.
+- Predicate moved: the current residual table now distinguishes “source-wired but unverified” from “transport absent” for Sentry and Bedrock, matching the production files and preserving the external hosted/credential gates. No atom was promoted to done.
+- Verification actually run: documentation reconciliation only; `git diff --check` to be run with the batch final checks. No Kotlin or hosted test claim.
+- % delta: unchanged.
+- Fingerprint: recorded after final checks.
 
 ### 2026-08-24T21:05:00Z · Agent: Codex GPT-5 · Batch: bedrock-sigv4-provider-owner
 

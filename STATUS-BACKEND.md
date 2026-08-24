@@ -463,10 +463,10 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 
 | atom | status | reason | safe next evidence |
 | --- | --- | --- | --- |
-| B-MCP-SENTRY / B-017 | blocked | No approved Sentry API/MCP transport, registry owner, or operator credential is present; implementing a fake issue→patch loop would violate the no-soft-success rule. | Add an approved transport/registry seam and credentials, then wire the existing gate/evidence path. |
+| B-MCP-SENTRY / B-017 | source-wired / partial | The approved-in-tree REST seam, canonical `IntegrationRegistry`, `BoundedAgencyGate`, territory mapping, proposal, and evidence path now exist; configured credentials and live issue evidence are absent. | Run the existing `/sentry inspect|propose` path with operator-approved credentials and hosted tests; do not claim live repair without that evidence. |
 | B-MCP-OAUTH-UX | blocked | GitHub/Linear browser OAuth requires an operator-approved OAuth client ID and authorization; PAT/env/vault paths are already available. | Supply approved client configuration, then add a bounded OAuth flow through the existing vault. |
 | B-PROV-006 provider workers | blocked | No existing Director fan-out owner can host provider workers; creating one would create a second orchestrator. | Extend the existing Director hierarchy when that owner is available. |
-| P07 AWS Bedrock | blocked | Environment discovery exists, but no signing and transport owner exists. | Add and test an approved Bedrock transport before routing it. |
+| P07 AWS Bedrock | source-wired / partial | `aws_bedrock` now has the descriptor, `BuildKernelAdapter` route, pure SigV4 signer, injected Converse transport, and offline-focused tests; hosted execution and approved AWS credentials are absent. | Run the existing focused adapter tests in GitHub Actions; use live AWS only after explicit paid approval. |
 | P09 Perplexity | skipped | No accepted descriptor, transport reference, or existing tree owner is present. | Re-open only with an accepted provider contract. |
 | B-MCP-GITLOCAL mutation micro-atoms | source-wired / partial | `GitMutationCommand.kt`, `ShellCommandHandler.kt`, `ShellCommandRunner.kt` → existing `TypedToolExecutor`/`BoundedAgencyGate` | Explicit `/git add|commit|rebase-continue --confirm <id>` path now exists; the existing agency gate remains authoritative and no real mutation was run. | Hosted/root focused tests and operator-approved execution evidence remain pending. |
 | B-018 Slack/Discord distribution; B-019 browser verification | deferred | Distribution/browser execution is outside the current Tier-0 backend lane; generic MCP examples remain disabled-by-default and no adapter farm is allowed. | Re-open after core bridge/GHA proof is hosted-green and a transport owner is accepted. |
@@ -614,3 +614,15 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-SENTRY registry/doctor ownership | source-wired / partial | `src/main/kotlin/atropos/core/integration/IntegrationRegistry.kt`, `BackendDoctor.kt`, `SentryApiClient.kt`, focused registry test, hosted selectors | `/doctor` → `BackendDoctor` → canonical `IntegrationRegistry`; Sentry request path → `requireRegistered("sentry")` | Added one canonical first-party integration catalog for existing GitHub/MCP/Sentry owners; no parallel registry. Local selector contract, orphan gate, shell syntax, and diff checks pass; Kotlin execution remains pending. |
+
+### 2026-08-24T13:52:33Z · Backend batch: mcp-bridge-single-gate
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| R6 / B-MCP-FS execution gate composition | source-wired / partial | `src/main/kotlin/atropos/bridge/BridgeMcpHandler.kt`, `src/test/kotlin/atropos/bridge/BridgeMcpHandlerTest.kt` | `POST /v1/mcp/call` → existing `BridgeMcpHandler` → bound `McpHostManager.callTool` → its single `McpTerritoryBridge` → bounded process/HTTP transport | Removed the duplicate bridge-side admission for execution calls; `/v1/mcp/judge` remains the explicit preflight surface, while `/v1/mcp/call` now crosses the host's canonical gate exactly once. Added a counting-gate test. `git diff --check`, orphan gate, and hosted selector contract pass; Kotlin/hosted execution remains unproven. |
+
+### 2026-08-24T13:55:00Z · Backend batch: residual-status-reconciliation
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-SENTRY / P07 Bedrock residual truth | source-wired / partial | `STATUS-BACKEND.md` | Existing Sentry command/registry and Bedrock descriptor/adapter callers | Corrected the current residual table so it no longer says the already-created Sentry transport or Bedrock SigV4 transport is absent. Live credentials, hosted Kotlin execution, and paid AWS operation remain explicitly unproven; no completion claim changed. `git diff --check` remains required. |

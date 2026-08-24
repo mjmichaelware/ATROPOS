@@ -154,4 +154,36 @@ class BridgeMcpHandlerTest {
         assertEquals(200, response.status)
         assertTrue(response.body.contains("\"noEvidenceReason\":\"\""))
     }
+
+    @Test
+    fun `BridgeMcpHandler executes through the host gate exactly once`() {
+        val root = Files.createTempDirectory("bridge-mcp-single-gate")
+        Files.writeString(root.resolve("mcp.json"),
+            """{"servers":[{"name":"remote","transport":"http","url":"https://mcp.test/rpc","enabled":true,"community":false}]}""")
+        var evaluations = 0
+        val gate = McpTerritoryBridge(setOf("inspect")) { proposal ->
+            evaluations++
+            val decision = ExecutionPolicyDecision("single", PolicyDecisionType.ALLOW, PolicyActionClass.FILE_MUTATION, false, "allowed")
+            AgencyDecision(proposal, decision, AgencyDisposition.ALLOWED, decision.reason)
+        }
+        val host = McpHostManager(
+            root,
+            localOnly = false,
+            territoryBridge = gate,
+            remoteRequest = { _, request ->
+                when {
+                    request.contains("\"id\":1") -> "{\"id\":1}"
+                    request.contains("\"id\":2") -> "{\"id\":2,\"result\":{\"tools\":[{\"name\":\"inspect\"}]}}"
+                    else -> "{\"id\":3,\"result\":{\"content\":[{\"text\":\"ok\"}]}}"
+                }
+            }
+        )
+        val response = BridgeMcpHandler(gate, host).call(
+            HttpRequest("POST", "/v1/mcp/call", mapOf(
+                "server" to "remote", "tool" to "inspect", "callerId" to "client", "paths" to "src/main"
+            ), emptyMap(), "")
+        )
+        assertEquals(200, response.status)
+        assertEquals(1, evaluations)
+    }
 }

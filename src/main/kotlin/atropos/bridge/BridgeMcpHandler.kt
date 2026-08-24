@@ -2,8 +2,6 @@
 package atropos.bridge
 
 import atropos.core.integration.InboundSource
-import atropos.core.integration.InboundGateResult
-import atropos.core.integration.InboundToolRequest
 import atropos.core.integration.McpHostManager
 import atropos.core.integration.McpTerritoryBridge
 import atropos.bridge.http.HttpResponse
@@ -44,31 +42,11 @@ internal class BridgeMcpHandler(
                 "POST /v1/mcp/call?server=<name>&tool=<tool>&callerId=<id>&paths=<path>"
             )
         }
-        val gate = mcpBridge.judge(
-            InboundToolRequest(
-                source = InboundSource.MCP,
-                callerId = callerId,
-                operation = operation,
-                paths = paths,
-                territoryGrantId = value(request, "territoryGrantId").trim().ifBlank { null }
-            )
-        )
-        when (gate) {
-            is InboundGateResult.Refused -> return HttpResponse.refusal(
-                403,
-                "mcp-call-refused",
-                gate.reason,
-                "Use an exposed operation and a declared territory."
-            )
-            is InboundGateResult.Judged -> if (gate.decision.disposition.name != "ALLOWED") {
-                return HttpResponse.refusal(
-                    403,
-                    "mcp-call-refused",
-                    gate.decision.reason,
-                    "Obtain the required approval or narrow the MCP territory."
-                )
-            }
-        }
+        // The bound host owns the execution admission for /call.  Judging here
+        // as well would evaluate one request twice and create a bridge-local
+        // policy path beside McpHostManager.  `/v1/mcp/judge` remains the
+        // explicit read-only preflight endpoint; execution crosses the host's
+        // single McpTerritoryBridge immediately before process/HTTP start.
         return runCatching {
             val result = manager.callTool(
                 serverName = server,
