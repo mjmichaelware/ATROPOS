@@ -20,6 +20,18 @@ HOST_PREFIX="${PREFIX:-}"
 CONFIG_DIR="${ATROPOS_PREFIX:-$HOME/.atropos}"
 BIN_DIR="${ATROPOS_BIN_DIR:-}"
 
+say()  { printf '%s\n' "$*"; }
+fail() { printf 'error: %s\n' "$*" >&2; exit 1; }
+
+case "$REPO" in
+  */*|*[!A-Za-z0-9._/-]*|/*|*/|*//*|*..*) : ;;
+  *) fail "invalid repository; expected owner/name" ;;
+esac
+case "$VERSION" in
+  latest|v[0-9]*) : ;;
+  *) fail "invalid version; expected latest or a v-prefixed release tag" ;;
+esac
+
 if [ "$VERSION" = "latest" ]; then
   # The rolling `latest` release is deliberately a prerelease. GitHub's
   # `/releases/latest` endpoint skips prereleases, so address its immutable tag
@@ -29,9 +41,6 @@ else
   JAR_URL="https://github.com/$REPO/releases/download/$VERSION/ATROPOS.jar"
 fi
 SHA_URL="$JAR_URL.sha256"
-
-say()  { printf '%s\n' "$*"; }
-fail() { printf 'error: %s\n' "$*" >&2; exit 1; }
 
 # Detect the install target once. Termux is Linux underneath, but its PREFIX
 # is the important boundary and must not be silently treated as desktop Linux.

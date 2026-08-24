@@ -11,6 +11,8 @@ text() { rg -Fq -- "$2" "$ROOT/$1" || { echo "BACKEND_ATOM_CONTRACT_FAIL missing
 
 # Install, onboarding, routing, and the single autonomous hierarchy owner.
 file install.sh
+text install.sh 'invalid repository; expected owner/name'
+text install.sh 'invalid version; expected latest or a v-prefixed release tag'
 file src/main/kotlin/atropos/core/Config.kt
 text src/main/kotlin/atropos/core/Config.kt 'ATROPOS_CONFIG_DIR'
 text install.sh 'export ATROPOS_CONFIG_DIR='

@@ -13295,6 +13295,16 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprints (sha256, first 12): `Config.kt=864af867d4d86`; `install.sh=169a7790371e`; `ConfigTest.kt=7ed29a6693ae`.
 
+### 2026-08-25T00:40:00Z · Agent: Codex GPT-5 · Batch: installer-artifact-input-validation
+
+- Paths touched: `install.sh` (+15), `scripts/install-contract-test.sh` (+2), `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-INST-002a artifact URL/release selector validation.
+- Predicate moved: installer-controlled repository and version inputs are rejected before artifact URL construction/download unless they match the bounded owner/name and `latest`/`v*` contract.
+- Verification actually run: invalid repository/version smoke checks returned exit 1 with actionable messages; `bash -n`, install/backend contracts, and `git diff --check` passed. Hosted release/device execution remains unverified.
+- % delta: unchanged; B-INST-002 remains source-wired/partial pending hosted release evidence.
+- New overall estimate: unchanged.
+- Fingerprints: pending post-commit hash.
+
 ### 2026-08-25T00:20:00Z · Agent: Codex GPT-5 · Batch: gha-verify-script-boundary
 
 - Paths touched: `.github/actions/atropos-verify/action.yml` (+9), `.github/workflows/compile-gate.yml` (+3), `scripts/atropos-verify-action-contract-test.sh` (+2), `scripts/atropos-verify-action-path-test.sh` (+13), `scripts/atropos-verify-worktree.sh` (+1), `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+7).

@@ -1107,6 +1107,12 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | --- | --- | --- | --- | --- |
 | B-INST-004 config-root bootstrap | source-wired / partial | `src/main/kotlin/atropos/core/Config.kt`, `install.sh`, `scripts/install-contract-test.sh`, `scripts/backend-atom-contract-test.sh`, `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh`, `src/test/kotlin/atropos/core/ConfigTest.kt` | installer-generated launcher → `ATROPOS_CONFIG_DIR` → existing `AtroposConfig.configRoot()` → provider/vault/quota/bridge state owners | Fixed custom-prefix installs so the JAR reads the same local config root that the installer bootstraps; default `$HOME/.atropos` fallback remains unchanged. Narrow `kotlinc` Config slice passed; install/backend contracts, hosted selector parity (421), and diff check passed. GitHub Actions execution and a real published custom-prefix install remain unverified. |
 
+### 2026-08-25T00:40:00Z · Agent: Codex GPT-5 · Batch: installer-artifact-input-validation
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-INST-002a artifact URL input validation | source-wired / partial | `install.sh`, `scripts/install-contract-test.sh`, `scripts/backend-atom-contract-test.sh` | installer entrypoint → validated `ATROPOS_REPO`/`ATROPOS_VERSION` → existing checksum-verified download path | Installer now rejects malformed repository selectors, traversal, and non-`latest`/`v*` release inputs before constructing or downloading an artifact URL. Invalid-input smoke checks, shell syntax, install/backend contracts, and diff check pass; live release/device proof remains unverified. |
+
 ### 2026-08-25T00:20:00Z · Agent: Codex GPT-5 · Batch: gha-verify-script-boundary
 
 | atom | status | files | caller | tests / notes |
