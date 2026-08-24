@@ -12133,3 +12133,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: `git diff --check`, shell syntax, and the production source scan passed; root Gradle and hosted tests remain unrun, so no green claim is made.
 - % delta: unchanged; source-wired but partial pending hosted execution evidence.
 - Fingerprints: recorded after commit.
+
+### 2026-08-23T11:00:00Z · Agent: Codex GPT-5 · Batch: github-rest-boundary
+
+- Paths touched: `src/main/kotlin/atropos/core/github/GitHubApiClient.kt` (new), `src/main/kotlin/atropos/core/github/GitHubBinding.kt` (+4), `src/test/kotlin/atropos/core/github/GitHubApiClientTest.kt` (new), `.github/workflows/compile-gate.yml` (+1), `scripts/atropos-verify-worktree.sh` (+1), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-MCP-GITHUB typed REST boundary and GitHub micro-atoms for issue/PR/check reads and writes.
+- Predicate moved: GitHub operations now have one production owner and caller, bounded repository paths and methods, explicit network approval through `BoundedAgencyGate`, secret-source precedence and egress control, redacted response evidence hashes, and injected transport proof without live credentials.
+- Verification actually run: static checks and hosted selector wiring are the available evidence; root Gradle and hosted tests remain unrun, so no green claim is made.
+- % delta: unchanged; source-wired but partial pending hosted execution and operator-approved network validation.
+- Fingerprints: recorded after commit.

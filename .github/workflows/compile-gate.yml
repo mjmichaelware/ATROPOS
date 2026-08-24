@@ -99,6 +99,7 @@ jobs:
           --tests 'atropos.cli.shell.ShellBoundedAgencyTest'
           --tests 'atropos.core.worktree.BoundedGitWorktreeCommandRunnerTest'
           --tests 'atropos.core.verification.GateReachabilityCheckerTest'
+          --tests 'atropos.core.github.GitHubApiClientTest'
 
       - name: validate MCP example catalog
         run: bash scripts/mcp-example-contract-test.sh

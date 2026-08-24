@@ -293,3 +293,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | T03 bounded process ownership | source-wired / partial | `src/main/kotlin/atropos/cli/HistoryCommandHandler.kt`, `src/main/kotlin/atropos/cli/DiffCommandHandler.kt`, `src/main/kotlin/atropos/core/worktree/BoundedGitWorktreeCommandRunner.kt`, hosted selectors | `/history` and `/diff` plus all typed worktree operations → existing `BoundedProcessRunner` | Removed the three direct production `ProcessBuilder` call sites; source scan now leaves only the canonical runner and verifier scanner. Existing bounded worktree and reachability tests are selected in both GitHub lanes; hosted/root execution remains pending. |
+
+### 2026-08-23T11:00:00Z · Backend batch: github-rest-boundary
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-GITHUB issues/PRs/checks | source-wired / partial | `src/main/kotlin/atropos/core/github/GitHubApiClient.kt`, `GitHubBinding.kt`, `src/test/kotlin/atropos/core/github/GitHubApiClientTest.kt`, hosted selectors | existing `GitHubBinding.api` → single `GitHubApiClient` → `BoundedAgencyGate` decision → `SecretSource`/`SecretSinkMatrix` → injected/default HTTPS transport | Added typed list/get/create/comment issue, PR/files, and check-run operations with repository path bounds, response redaction/hash, token aliases plus vault source, and approval-required network policy. No live credential/network call was made; focused injected tests are wired for GitHub Actions. |

@@ -52,8 +52,12 @@ class GitHubBinding(
     private val gitRunner: BoundedGitWorktreeCommandRunner = BoundedGitWorktreeCommandRunner(),
     private val repositoryProvisioner: GitHubRepositoryProvisioner = GitHubRepositoryProvisioner {
         GitHubBindingResult(false, "create", "GitHub repository provisioner is not configured")
-    }
+    },
+    private val apiClient: GitHubApiClient = GitHubApiClient()
 ) {
+    /** The sole production handoff into the gated GitHub REST owner. */
+    fun api(request: GitHubApiRequest): GitHubApiResponse = apiClient.execute(request)
+
     fun createRepository(request: GitHubRepositoryRequest): GitHubBindingResult {
         validateRepositoryName(request.repositoryName)
         validateBranch(request.defaultBranch)
