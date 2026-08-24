@@ -632,3 +632,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | R6 / B-005 bridge MCP gate | source-wired / partial | `src/main/kotlin/atropos/bridge/BridgeMcpHandler.kt`, `src/test/kotlin/atropos/bridge/BridgeMcpHandlerTest.kt` | `/v1/mcp/call` → `BridgeMcpHandler` → `McpHostManager` | `timeout 90s ./gradlew --no-daemon :test --rerun --max-workers=1 --tests 'atropos.bridge.BridgeMcpHandlerTest'` exited 124 during Gradle task-graph setup with no test output/count. No local pass or root-green claim; GitHub selector remains wired. |
+
+### 2026-08-24T14:45:00Z · Backend batch: mcp-preflight-operation-parity
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| M13 / ADD-MCP-009 bridge preflight parity | source-wired / partial | `src/main/kotlin/atropos/bridge/BridgeMcpHandler.kt`, `src/main/kotlin/atropos/bridge/BridgeRoutes.kt`, `src/test/kotlin/atropos/bridge/BridgeMcpHandlerTest.kt` | `POST /v1/mcp/judge` → `BridgeMcpHandler.judge` → existing `McpTerritoryBridge` | Default bridge preflight now admits the same bounded `convert_to_markdown` operation already used by `McpHostManager`; focused test added. Static checks pass; root/hosted Kotlin and configured MarkItDown runtime evidence remain pending. |
