@@ -24,6 +24,7 @@ This file records backend implementation status for the current engine wave. A r
 - `/factory resume <runId>` — read-only attested resume inspection; execution requires the existing router callback path.
 - `/providers list|refresh|test|prefer|disable|connect <provider>` — local provider discovery and vault-backed connect.
 - `/mcp list|test|search <query>|call <server> <tool>` — configured MCP inventory/search, health probe, and bounded tool call.
+- `/github issues|prs <owner/repository>` and `/github checks <owner/repository> <ref>` — read-only gated GitHub inspection.
 - `/keys` — existing local secret status surface.
 
 ## Secret and policy boundary
