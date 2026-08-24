@@ -13,5 +13,7 @@ grep -Fq 'uname -s' "$INSTALLER"
 grep -Fq 'uname -m' "$INSTALLER"
 grep -Fq 'termux-$CPU_ARCH' "$INSTALLER"
 grep -Fq 'ATROPOS_PLATFORM' "$INSTALLER"
+grep -Fq 'refusing to install an unverified jar' "$INSTALLER"
+grep -Fq 'checksum mismatch' "$INSTALLER"
 
 printf '%s\n' 'ATROPOS_INSTALL_CONTRACT_OK'

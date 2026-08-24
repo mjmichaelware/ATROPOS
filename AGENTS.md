@@ -12052,3 +12052,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: `bash scripts/npm-installer-contract-test.sh` passed with `NPM_INSTALLER_CONTRACT_OK`; shell syntax and `git diff --check` passed. GitHub Actions/release execution remains unrun, so no hosted or release green claim.
 - % delta: unchanged; source-wired but partial pending hosted/release evidence.
 - Fingerprints (sha256, first 12): `postinstall.js=f79ecc032e24`; `npm/README.md=0209d90bd19d`; `npm-installer-contract-test.sh=1a49c53ad078`; `compile-gate.yml=18775db169f2`; `atropos-verify-worktree.sh=43d9eb68467d`.
+
+### 2026-08-24T07:05:00Z · Agent: Codex GPT-5 · Batch: shell-installer-hash-fail-closed
+
+- Paths touched: `install.sh` (+19/-25), `scripts/install-contract-test.sh` (+2), and `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-INST-002 artifact download/hash verification.
+- Predicate moved: the POSIX installer now requires a published 64-hex checksum and a local SHA-256 implementation before moving the jar into the install prefix; missing, malformed, unavailable, and mismatched verification states fail closed.
+- Verification actually run: `bash -n install.sh scripts/install-contract-test.sh`, `bash scripts/install-contract-test.sh`, `bash scripts/npm-installer-contract-test.sh`, and `git diff --check` passed. GitHub release/device execution remains unrun; no artifact or install green claim.
+- % delta: unchanged; source-wired but partial pending hosted/release evidence.
+- Fingerprints (sha256, first 12): `install.sh=f41bdd99f2ed`; `install-contract-test.sh=7ac2dbc47b39`; `STATUS-BACKEND.md=a3b8a2320cd7`.

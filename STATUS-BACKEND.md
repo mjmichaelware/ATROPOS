@@ -239,3 +239,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-INST-006 npm fallback integrity | source-wired / partial | `npm/scripts/postinstall.js`, `npm/README.md`, `scripts/npm-installer-contract-test.sh`, `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh` | npm `postinstall` → existing release artifact URL/checksum files; hosted compile lane and reusable verifier invoke the contract script | npm installation now fails closed when the published checksum is missing, malformed, mismatched, or the download fails; explicit `ATROPOS_SKIP_DOWNLOAD=1` remains the only offline launcher-only path. `NPM_INSTALLER_CONTRACT_OK`, `bash -n`, and `git diff --check` passed; release/network execution remains pending. |
+
+### 2026-08-24T07:05:00Z · Backend batch: shell-installer-hash-fail-closed
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-INST-002 artifact hash verification | source-wired / partial | `install.sh`, `scripts/install-contract-test.sh` | installer download path → required `.sha256` artifact → `sha256sum`/`shasum` verification before atomic jar move | The shell installer now refuses missing/malformed checksums, refuses hosts without a SHA-256 tool, and refuses mismatches; it no longer installs an unverified jar. `bash -n`, `ATROPOS_INSTALL_CONTRACT_OK`, npm contract, and `git diff --check` passed. Live release/device execution remains pending. |

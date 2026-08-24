@@ -88,27 +88,31 @@ $DOWNLOAD "$TMP" "$JAR_URL" || fail \
 # A jar is executable code. Checking it against the hash the build published is
 # the difference between installing what was built and installing whatever
 # answered the request.
-if $DOWNLOAD "$TMP.sha256" "$SHA_URL" 2>/dev/null; then
-  EXPECTED=$(tr -d ' \n\r\t' < "$TMP.sha256")
-  if command -v sha256sum >/dev/null 2>&1; then
-    ACTUAL=$(sha256sum "$TMP" | awk '{print $1}')
-  elif command -v shasum >/dev/null 2>&1; then
-    ACTUAL=$(shasum -a 256 "$TMP" | awk '{print $1}')
-  else
-    ACTUAL=""
-    say "note: no sha256 tool found; skipping verification."
-  fi
-  if [ -n "$ACTUAL" ] && [ "$ACTUAL" != "$EXPECTED" ]; then
-    rm -f "$TMP" "$TMP.sha256"
-    fail "checksum mismatch.
+$DOWNLOAD "$TMP.sha256" "$SHA_URL" 2>/dev/null || {
+  rm -f "$TMP" "$TMP.sha256"
+  fail "no published checksum at $SHA_URL; refusing to install an unverified jar."
+}
+EXPECTED=$(awk 'NF { print tolower($1); exit }' "$TMP.sha256")
+if ! printf '%s\n' "$EXPECTED" | grep -Eq '^[0-9a-f]{64}$'; then
+  rm -f "$TMP" "$TMP.sha256"
+  fail "published checksum is missing or malformed; nothing was installed."
+fi
+if command -v sha256sum >/dev/null 2>&1; then
+  ACTUAL=$(sha256sum "$TMP" | awk '{print $1}')
+elif command -v shasum >/dev/null 2>&1; then
+  ACTUAL=$(shasum -a 256 "$TMP" | awk '{print $1}')
+else
+  rm -f "$TMP" "$TMP.sha256"
+  fail "no sha256 tool found; refusing to install an unverified jar."
+fi
+if [ "$ACTUAL" != "$EXPECTED" ]; then
+  rm -f "$TMP" "$TMP.sha256"
+  fail "checksum mismatch.
   expected $EXPECTED
   actual   $ACTUAL
   The download was corrupted or tampered with. Nothing was installed."
-  fi
-  rm -f "$TMP.sha256"
-else
-  say "note: no published checksum for $VERSION; skipping verification."
 fi
+rm -f "$TMP.sha256"
 
 mv "$TMP" "$PREFIX/ATROPOS.jar"
 
