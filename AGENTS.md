@@ -479,6 +479,15 @@ End of AGENTS.md
 - % delta: unchanged; source-wired / partial pending hosted focused test evidence.
 - Fingerprints: `CommandCatalog.kt=1620ae5c08a2f37c0933faad`; `CommandCatalogBackendEntriesTest.kt=6052c648bbbec8e560e852cf`.
 
+### 2026-08-24T04:48:06Z · Agent: Codex GPT-5 · Batch: factory-evidence-backed-waves
+
+- Paths touched: `src/main/kotlin/atropos/core/factory/FactoryEvidenceWaveExecutor.kt` (+42), `src/main/kotlin/atropos/core/factory/FactoryRunOrchestrator.kt` (+10/-11), `src/test/kotlin/atropos/core/factory/FactoryEvidenceWaveExecutorTest.kt` (+48).
+- Atoms / phases affected: FTY-03/FTY-05 live repair re-entry and outer obligation execution.
+- Predicate moved: normal and repair factory waves no longer acknowledge runnable atom IDs blindly. The single new executor validates the generated evidence manifest, exact acceptance-freeze hash, verification marker, completion-gate decision, and per-wave atom coverage before returning IDs to the existing `FactoryObligationLoop`.
+- Verification actually run: `git diff --check` passed. Root factory compilation/tests were not completed locally; GitHub Actions remains authoritative. No VERIFIED claim.
+- % delta: unchanged; factory atoms remain partial pending hosted execution and runtime repair proof.
+- Fingerprints: `FactoryEvidenceWaveExecutor.kt=39ed4e0b94c966d5b09d83fc`; `FactoryRunOrchestrator.kt=4ee80aaa6a299ca99fd91da6`; `FactoryEvidenceWaveExecutorTest.kt=f193e2b61effa97f63cdd2f4`.
+
 ### 2026-08-24T02:25:00Z · Agent: Codex GPT-5 · Batch: reusable-orphan-gate-wire
 
 - Paths touched: `scripts/atropos-verify-worktree.sh` (+4), `.github/workflows/atropos-verify-example.yml` (+2), `STATUS-BACKEND.md` (+7).

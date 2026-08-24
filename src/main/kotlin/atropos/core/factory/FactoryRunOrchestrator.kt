@@ -286,7 +286,10 @@ class FactoryRunOrchestrator(
                 handoff = handoff,
                 freeze = acceptanceFreeze,
                 repair = { repairEvidence },
-                executeWave = { ready -> ready.map { it.id }.toSet() }
+                executeWave = FactoryEvidenceWaveExecutor(
+                    java.nio.file.Path.of(repairedProject.evidencePath),
+                    acceptanceFreeze
+                )::execute
             )
             recorder.recordRepair(
                 runId = plan.id,
@@ -419,12 +422,14 @@ class FactoryRunOrchestrator(
         )
 
         val loopResult = try {
-            obligationLoop.executeUntilSettled(planningDag.id, acceptanceFreeze) { ready ->
-                // Generation and verification above produced one shared evidence
-                // bundle. Each dependency-ready wave still has to be explicitly
-                // acknowledged; open atoms are never bulk-terminalized.
-                ready.map { it.id }.toSet()
-            }
+            obligationLoop.executeUntilSettled(
+                planningDag.id,
+                acceptanceFreeze,
+                FactoryEvidenceWaveExecutor(
+                    java.nio.file.Path.of(generatedProject.evidencePath),
+                    acceptanceFreeze
+                )::execute
+            )
         } catch (failure: Throwable) {
             projectRegistry.setStatus(generatedRecord, ProjectStatus.FAILED, actor = "factory")
             recorder.recordCompletionFailure(

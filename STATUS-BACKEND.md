@@ -138,3 +138,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | FTY-01 resume command discoverability | source-wired / partial | `src/main/kotlin/atropos/cli/input/CommandCatalog.kt`, `src/test/kotlin/atropos/cli/input/CommandCatalogBackendEntriesTest.kt` | shared `CommandCatalog` → CLI completion/help; execution remains `CommandRouter` → `FactoryCommandHandler` | Added `/factory resume <run-id>` to the single registry and a focused assertion. `git diff --check` passed; hosted root test evidence remains pending. |
+
+### 2026-08-24T04:48:06Z · Backend batch: factory-evidence-backed-waves
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| FTY-03 / FTY-05 evidence-backed obligation waves | source-wired / partial | `FactoryEvidenceWaveExecutor.kt`, `FactoryRunOrchestrator.kt`, `FactoryEvidenceWaveExecutorTest.kt` | `FactoryRunOrchestrator` normal and repair paths → `FactoryEvidenceWaveExecutor.execute` → existing `FactoryObligationLoop.executeUntilSettled` | Blind ready-ID acknowledgement was removed. Manifest/freeze/verification/completion/atom coverage is now checked before terminalization. `git diff --check` passed; root factory tests and runtime repair remain unproven. |
