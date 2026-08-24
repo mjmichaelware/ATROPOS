@@ -6,7 +6,7 @@ WORKFLOW="$ROOT/.github/workflows/release.yml"
 
 # The installer consumes these exact GitHub release asset names. Keep the
 # producer and consumer coupled by a cheap source contract in the release job.
-grep -Fq 'releases/latest/download/ATROPOS.jar' "$ROOT/install.sh"
+grep -Fq 'releases/download/latest/ATROPOS.jar' "$ROOT/install.sh"
 grep -Fq 'build/libs/ATROPOS.jar' "$WORKFLOW"
 grep -Fq 'build/libs/ATROPOS.jar.sha256' "$WORKFLOW"
 grep -Fq 'sha256sum build/libs/ATROPOS.jar' "$WORKFLOW"

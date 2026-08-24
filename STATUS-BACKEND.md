@@ -444,3 +444,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-INST-002 release producer/consumer coupling | source-wired / partial | `.github/workflows/release.yml`, `scripts/release-installer-contract-test.sh` | GitHub Release JAR job → contract script → exact `ATROPOS.jar` and `ATROPOS.jar.sha256` assets consumed by `install.sh` | Added a deterministic release contract asserting the rolling `latest` tag, checksum generation, and both asset names. Local `bash -n`, release/install contracts, orphan gate, and `git diff --check` pass. GitHub Actions execution, published release, and device install remain unproven. |
+
+### 2026-08-24T07:55:00Z · Backend batch: installer-prerelease-tag-correction
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-INST-002 rolling artifact selection | source-wired / partial | `install.sh`, `scripts/install-contract-test.sh`, `scripts/release-installer-contract-test.sh` | default installer → exact `latest` release tag → release workflow assets | Corrected default download selection to `/releases/download/latest/ATROPOS.jar`; the release workflow marks that rolling tag prerelease, so `/releases/latest/download` could select an older stable release. Local contracts and syntax checks pass; hosted release/device proof remains pending. |

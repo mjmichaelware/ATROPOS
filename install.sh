@@ -20,7 +20,10 @@ PREFIX="${ATROPOS_PREFIX:-$HOME/.atropos}"
 BIN_DIR="${ATROPOS_BIN_DIR:-$HOME/.local/bin}"
 
 if [ "$VERSION" = "latest" ]; then
-  JAR_URL="https://github.com/$REPO/releases/latest/download/ATROPOS.jar"
+  # The rolling `latest` release is deliberately a prerelease. GitHub's
+  # `/releases/latest` endpoint skips prereleases, so address its immutable tag
+  # directly instead of silently installing an older stable artifact.
+  JAR_URL="https://github.com/$REPO/releases/download/latest/ATROPOS.jar"
 else
   JAR_URL="https://github.com/$REPO/releases/download/$VERSION/ATROPOS.jar"
 fi

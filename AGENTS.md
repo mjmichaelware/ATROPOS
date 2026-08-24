@@ -452,6 +452,15 @@ End of AGENTS.md
 - % delta: unchanged; B-INST-002 remains partial pending hosted release evidence.
 - Fingerprints (sha256, first 12): `scripts/release-installer-contract-test.sh=c4139f3e1fe4`; `.github/workflows/release.yml=46bf3530786b`; `install.sh=6ece5f472305`.
 
+### 2026-08-24T07:55:00Z · Agent: Codex GPT-5 · Batch: installer-prerelease-tag-correction
+
+- Paths touched: `install.sh` (+5), `scripts/install-contract-test.sh` (+1), `scripts/release-installer-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-INST-002 rolling artifact selection.
+- Predicate moved: default installation now addresses the exact rolling `latest` release tag, matching the release workflow’s prerelease policy; it can no longer resolve an older non-prerelease release through GitHub’s `/releases/latest` alias. No second artifact or installer owner was introduced.
+- Verification actually run: `bash -n install.sh scripts/install-contract-test.sh scripts/release-installer-contract-test.sh`, both installer/release contracts, `timeout 90s python3 scripts/find-orphans.py --fail-on-new`, and `git diff --check` passed. The orphan gate still reports only 4 pre-existing files of 1034 production files (360 orphan LOC); hosted release/device evidence remains unproven.
+- % delta: unchanged; B-INST-002 remains partial pending hosted release evidence.
+- Fingerprints (sha256, first 12): `install.sh=1262ffc866ea`; `scripts/install-contract-test.sh=7971dbb24d7a`; `scripts/release-installer-contract-test.sh=9e0cf8f2eaf`.
+
 ### 2026-08-24T06:48:39Z · Agent: Codex GPT-5 · Batch: anti-synthetic-velocity-output
 
 - Paths touched: `src/main/kotlin/atropos/cli/commands/VerifyCommand.kt` (+10/-4), `STATUS-BACKEND.md` (+7).
