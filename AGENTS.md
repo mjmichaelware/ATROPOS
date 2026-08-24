@@ -13293,7 +13293,7 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Predicate moved: the existing provider transport owners now cap successful and error responses at 8 MiB before decoding or rendering; the adapter base readers stop after one byte beyond the bound, and BaseHttpProvider error bodies pass through the existing redaction filter. No provider registry or adapter stack was added.
 - Verification actually run: `ATROPOS_BACKEND_ATOM_CONTRACT_OK`, `ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (418 tests)`, and `git diff --check` passed. Root/hosted Kotlin execution remains pending; no runtime provider claim is made.
 - % delta: unchanged; B-PROV-002 remains source-wired/partial pending executable hosted provider fixtures.
-- Fingerprints (sha256, first 12): to be recorded after commit.
+- Fingerprints (sha256, first 12): `ProviderHttpClient.kt=c9d1b8e85252`; `Provider.kt=983562526a1d`; `NonOpenAiFreeKernelAdapter.kt=671be2d6eff8`; `DataInfraKernelAdapter.kt=430547f7d803`; `backend-atom-contract-test.sh=6ef6ff31ed41`.
 
 ### 2026-08-24T19:50:50Z · Agent: Codex GPT-5 · Batch: github-response-size-bound
 
