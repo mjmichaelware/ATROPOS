@@ -66,6 +66,27 @@ class ProviderActivationServiceTest {
     }
 
     @Test
+    fun live_test_refuses_credit_pool_provider_before_transport() {
+        val temp = Files.createTempDirectory("atropos-provider-credit-pool-live")
+        val registry = StaticProviderDescriptorRegistry()
+        val service = ProviderActivationService(
+            registry = registry,
+            adapterRegistry = StaticProviderAdapterRegistry(registry, emptyMap()),
+            secretSource = MapSecretSource(emptyMap()),
+            quotaLedger = FileQuotaLedger(temp.resolve("quota.tsv").toFile(), FileQuotaLedger.seedFromDescriptors(registry)),
+            fixtureMatrix = ProviderFixtureMatrixService(registry, StaticProviderAdapterRegistry(registry, emptyMap())),
+            store = ProviderActivationStore(temp.resolve("activation")),
+            paidGate = EmergencyPaidGate(temp.resolve("paid").toFile()),
+            ollamaProbe = { false }
+        )
+
+        val record = service.liveTest("cerebras")
+
+        assertEquals(ProviderActivationState.LOCKED, record.state)
+        assertTrue(record.verificationSummary.contains("refused"))
+    }
+
+    @Test
     fun verify_reports_missing_service_provider_execution_requirement() {
         val temp = Files.createTempDirectory("atropos-service-provider-missing")
         val registry = StaticProviderDescriptorRegistry()

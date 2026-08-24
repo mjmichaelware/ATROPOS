@@ -12965,6 +12965,14 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; B-PROV-012 and dependent provider truth remain source-wired / partial pending hosted execution.
 - Fingerprints (sha256, first 12): `ProviderDescriptor.kt=f77e508d0f80`, `ProviderActivationService.kt=df292d374479`, `RoutePolicy.kt=b1db23bdb872`, `ProviderTruthService.kt=79e780c8f94e`, `QuotaLedger.kt=212cdab22d1e`, `StaticProviderDescriptorRegistry.kt=ed8139362420`, `AdapterRouteFacade.kt=b9bb484f47a7`, `AgentProviderSelector.kt=0b83b8c45013`, `AgentService.kt=7c94effaca7e`, `AgentPatchCommandHandler.kt=b19b90af4a3f`, `StatusQuotaRenderer.kt=e385e9a1b6d3`.
 
+### 2026-08-24T17:20:00Z · Agent: Codex GPT-5 · Verification: credit-pool-activation-fixture
+
+- Paths touched: `src/test/kotlin/atropos/core/provider/ProviderActivationServiceTest.kt` (+23), `AGENTS.md`, `STATUS-BACKEND.md`.
+- Acceptance predicate checked: activation live-test refusal must cover a credit-pool provider, not only a `PAID_LOCKED` provider.
+- Evidence: the focused fixture calls the existing `ProviderActivationService.liveTest("cerebras")` with empty credentials and asserts `LOCKED` plus refusal evidence before transport; selector parity (383), orphan gate (4 historical baseline orphan files / 360 LOC), and diff check pass. Root/hosted Kotlin execution remains pending; no test-green claim.
+- % delta: unchanged; B-PROV-012 remains source-wired / partial.
+- Fingerprint: `ProviderActivationServiceTest.kt=383177de2196`.
+
 ### 2026-08-24T16:55:00Z · Agent: Codex GPT-5 · Batch: credit-pool-paid-gate
 
 - Paths touched: `src/main/kotlin/atropos/core/provider/ProviderDescriptor.kt` (+1/-1), `ProviderActionProposals.kt` (+4), `ProviderCascadeOrder.kt` (+1), `RoutePolicy.kt` (+3), `ProviderActionProposalsTest.kt` (+2), `ProviderCascadeOrderTest.kt` (+7), `AGENTS.md`, `STATUS-BACKEND.md`.
