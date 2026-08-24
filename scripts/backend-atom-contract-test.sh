@@ -157,6 +157,15 @@ text src/main/kotlin/atropos/core/integration/MarkItDownIngestService.kt 'MAX_SO
 text src/main/kotlin/atropos/core/integration/MarkItDownIngestService.kt 'Files.isSymbolicLink(source)'
 text src/main/kotlin/atropos/core/integration/MarkItDownIngestService.kt 'StandardCopyOption.ATOMIC_MOVE'
 
+# Local Git worktree creation stays on the existing bounded typed Git owner.
+file src/main/kotlin/atropos/core/worktree/BoundedGitWorktreeCommandRunner.kt
+file src/main/kotlin/atropos/core/worktree/IsolatedWorktreeService.kt
+file src/main/kotlin/atropos/cli/commands/AgentWorktreeCommandHandler.kt
+text src/main/kotlin/atropos/core/worktree/BoundedGitWorktreeCommandRunner.kt 'GitWorktreeOperation.WORKTREE_ADD'
+text src/main/kotlin/atropos/core/worktree/IsolatedWorktreeService.kt 'fun createWorktree'
+text src/main/kotlin/atropos/core/worktree/IsolatedWorktreeService.kt 'GitWorktreeOperation.WORKTREE_ADD'
+text src/main/kotlin/atropos/cli/commands/AgentWorktreeCommandHandler.kt 'worktreeService.createWorktree'
+
 # Factory resume/repair and the single obligation loop remain production-wired.
 file src/main/kotlin/atropos/cli/FactoryCommandHandler.kt
 file src/main/kotlin/atropos/core/factory/AppFactoryRouter.kt

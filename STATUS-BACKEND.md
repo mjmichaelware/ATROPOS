@@ -1142,3 +1142,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-INST-002b/c and B-INST-003a/b artifact handoff | source-wired / partial | `install.sh`, `scripts/install-contract-test.sh`, `scripts/backend-atom-contract-test.sh` | installer → bounded download/checksum path → `ATROPOS_PLATFORM` launcher export → executable `$BIN_DIR/atropos` | Install contracts now assert the selected downloader receives the exact JAR URL, platform metadata is exported to the generated launcher, and the launcher is made executable. Shell syntax, install/backend contracts, and diff check pass; hosted release/device proof remains unverified. |
+
+### 2026-08-25T00:15:00Z · Agent: Codex GPT-5 · Batch: git-worktree-add-contract
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-GITLOCAL-g bounded worktree add | source-wired / partial | `src/main/kotlin/atropos/core/worktree/BoundedGitWorktreeCommandRunner.kt`, `IsolatedWorktreeService.kt`, `src/main/kotlin/atropos/cli/commands/AgentWorktreeCommandHandler.kt`, `scripts/backend-atom-contract-test.sh` | agent worktree command → existing `IsolatedWorktreeService.createWorktree()` → typed `GitWorktreeOperation.WORKTREE_ADD` → bounded process runner | Added CI source assertions for the existing production worktree-add caller and typed operation; no second Git/process owner was introduced. Backend contract, hosted selector parity (421), and diff check pass; hosted Kotlin/runtime worktree execution remains unverified. |

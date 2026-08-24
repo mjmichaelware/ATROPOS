@@ -13734,6 +13734,16 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprints: `scripts/install-contract-test.sh=ad1eeefab18c`; `scripts/backend-atom-contract-test.sh=c46ab87965d`.
 
+### 2026-08-25T00:15:00Z · Agent: Codex GPT-5 · Batch: git-worktree-add-contract
+
+- Paths touched: `scripts/backend-atom-contract-test.sh` (+7), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-MCP-GITLOCAL-g bounded worktree add.
+- Predicate moved: the backend source gate now proves the existing agent worktree caller reaches the typed `WORKTREE_ADD` operation through `IsolatedWorktreeService` and the bounded process owner.
+- Verification actually run: backend atom contract, hosted selector parity (`421 tests`), and `git diff --check` passed. Hosted Kotlin/runtime worktree execution remains unverified.
+- % delta: unchanged; B-MCP-GITLOCAL-g remains source-wired/partial pending hosted runtime evidence.
+- New overall estimate: unchanged.
+- Fingerprints: `scripts/backend-atom-contract-test.sh=f69b0982e3fe`.
+
 ### 2026-08-24T22:35:00Z · Agent: Codex GPT-5 · Batch: local-health-response-bounds
 
 - Paths touched: `src/main/kotlin/atropos/core/ProviderState.kt` (+10/-2), `src/main/kotlin/atropos/core/agent/ProviderSessionSupervisor.kt` (+13/-3), `scripts/backend-atom-contract-test.sh` (+2).
