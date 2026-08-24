@@ -12161,6 +12161,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; source-wired but partial pending hosted execution evidence.
 - Fingerprints: recorded after the batch commit.
 
+### 2026-08-24T11:30:00Z · Agent: Codex GPT-5 · Batch: github-cli-operation-callers
+
+- Paths touched: `src/main/kotlin/atropos/cli/GitHubCommandHandler.kt` (+56 new), `src/main/kotlin/atropos/cli/CommandRouter.kt` (+5), `src/main/kotlin/atropos/core/github/GitHubBinding.kt` (+9), `src/main/kotlin/atropos/cli/input/CommandCatalog.kt` (+3), `src/test/kotlin/atropos/cli/input/CommandCatalogBackendEntriesTest.kt` (+3), and `STATUS-BACKEND.md` (+2).
+- Atoms / phases affected: B-MCP-GITHUB typed issue/PR/check callers and CLI registry wiring.
+- Predicate moved: typed GitHub operations now have a production `/github issues|prs|checks` caller through the existing binding/client owner, with local-only refusal, policy/secret gates preserved, bounded redacted output, and evidence hashes. No second GitHub transport or tool registry was added.
+- Verification actually run: source inspection and `git diff --check` are available; root compilation and hosted tests remain pending, so no test green claim is made.
+- % delta: unchanged; source-wired but partial pending hosted execution evidence.
+- Fingerprints: recorded after the batch commit.
+
 ### 2026-08-24T10:55:00Z · Agent: Codex GPT-5 · Batch: factory-repair-command-redaction
 
 - Paths touched: `src/main/kotlin/atropos/core/factory/FactoryLiveRepairAction.kt` (+1), `src/test/kotlin/atropos/core/factory/FactoryLiveRepairActionTest.kt` (+34), and `STATUS-BACKEND.md` (+2).

@@ -58,6 +58,15 @@ class GitHubBinding(
     /** The sole production handoff into the gated GitHub REST owner. */
     fun api(request: GitHubApiRequest): GitHubApiResponse = apiClient.execute(request)
 
+    fun listIssues(owner: String, repository: String, page: Int = 1): GitHubApiResponse =
+        apiClient.listIssues(owner, repository, page)
+
+    fun listPullRequests(owner: String, repository: String, page: Int = 1): GitHubApiResponse =
+        apiClient.listPullRequests(owner, repository, page)
+
+    fun listCheckRuns(owner: String, repository: String, ref: String): GitHubApiResponse =
+        apiClient.listCheckRuns(owner, repository, ref)
+
     fun createRepository(request: GitHubRepositoryRequest): GitHubBindingResult {
         validateRepositoryName(request.repositoryName)
         validateBranch(request.defaultBranch)

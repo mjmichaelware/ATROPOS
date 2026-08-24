@@ -101,6 +101,7 @@ class CommandRouter(
     private val selfHostNaturalLanguageRouter = SelfHostNaturalLanguageRouter()
     private val statusCommand = StatusCommandHandler(config, uiEngine, sessionTracker)
     private val providerCommand = ProviderCommandHandler(config, uiEngine)
+    private val githubCommand = GitHubCommandHandler(config, uiEngine)
     private val mcpCommand = McpCommandHandler(uiEngine)
     private val providerOnboarding = atropos.core.provider.ProviderOnboardingService()
     private val dloiCommand = DloiCommandHandler(uiEngine, higZeroGuard)
@@ -465,6 +466,11 @@ class CommandRouter(
 
             "/providers" -> {
                 providerCommand.execute(tokens, currentProviderName)
+                RouterOutcome.CONTINUE
+            }
+
+            "/github" -> {
+                githubCommand.execute(tokens)
                 RouterOutcome.CONTINUE
             }
 
