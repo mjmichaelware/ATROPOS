@@ -13294,6 +13294,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; ADD-MCP-009 remains partial pending hosted execution and live allowlisted MarkItDown evidence.
 - Fingerprints (sha256, first 12): `MarkItDownIngestService.kt=bd544aceaa33`, `MarkItDownIngestServiceTest.kt=b3a5399a800b`, `backend-atom-contract-test.sh=a9788ad9ffb3`.
 
+### 2026-08-25T01:25:00Z · Agent: Codex GPT-5 · Batch: bridge-failure-redaction-boundary
+
+- Paths touched: `src/main/kotlin/atropos/bridge/BridgeCommandHandler.kt` (+5/-3), `src/main/kotlin/atropos/bridge/BridgeEvidenceHandler.kt` (+1/-1), `src/test/kotlin/atropos/bridge/BridgeCommandHandlerTest.kt` (+31), `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: T04 secret-safe bridge/log paths; bridge status/error contract.
+- Predicate moved: `/v1/cli` command failures and `/v1/evidence` read failures now pass exception text through the canonical `RedactionFilter` before JSON serialization; a production-caller test proves a provider-style key cannot cross the bridge response.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh` (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (418 tests)`), and `git diff --check` passed. Root/hosted Kotlin execution was not run in Termux; no test-green or root-green claim.
+- % delta: unchanged; T04 remains partial pending hosted execution and review of remaining non-renderer diagnostic sinks.
+- Fingerprints (sha256, first 12): `BridgeCommandHandler.kt=e2b94f4d8ced`, `BridgeEvidenceHandler.kt=0c52035afa79`, `BridgeCommandHandlerTest.kt=b813000d053e`, `backend-atom-contract-test.sh=88aedb9e262a`.
+
 ### 2026-08-25T03:35:00Z · Agent: Codex GPT-5 · Batch: paid-side-refusal-redaction
 
 - Paths touched: `src/main/kotlin/atropos/cli/PaidCommandHandler.kt` (+3/-2), `src/main/kotlin/atropos/cli/SideConversationService.kt` (+4/-2), `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+2).

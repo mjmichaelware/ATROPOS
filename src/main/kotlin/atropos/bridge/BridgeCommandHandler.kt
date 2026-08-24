@@ -5,6 +5,7 @@ import atropos.bridge.http.HttpRequest
 import atropos.bridge.http.HttpResponse
 import atropos.bridge.http.JsonWriter
 import atropos.core.policy.PortCommandPolicy
+import atropos.core.security.RedactionFilter
 
 /**
  * Runs one CLI command on behalf of a client reached over a port.
@@ -36,7 +37,8 @@ internal class BridgeCommandHandler(
      * provider, a config and a terminal. `AtroposBridge.server()` binds the
      * real router.
      */
-    private val run: (String) -> BridgeCommandOutput
+    private val run: (String) -> BridgeCommandOutput,
+    private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
 
     fun execute(request: HttpRequest): HttpResponse {
@@ -80,7 +82,7 @@ internal class BridgeCommandHandler(
                             "command" to JsonWriter.str(verdict.normalized),
                             "output" to JsonWriter.str(""),
                             "failure" to JsonWriter.str(
-                                "${failure.javaClass.simpleName}: ${failure.message.orEmpty()}"
+                                "${failure.javaClass.simpleName}: ${redactionFilter.compact(failure.message.orEmpty())}"
                             )
                         )
                     )

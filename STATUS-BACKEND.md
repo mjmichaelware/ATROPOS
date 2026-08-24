@@ -986,3 +986,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | T04 secret-safe terminal paint | source-wired / partial | `src/main/kotlin/atropos/cli/ui/AnsiTerminalEngine.kt`, `src/test/kotlin/atropos/cli/ui/TerminalErrorCountTest.kt`, `scripts/backend-atom-contract-test.sh` | all existing CLI renderers → sole `AnsiTerminalEngine.renderNotice/renderBlock/renderError` paint boundary | Notices, rendered blocks, approval dialogs, and command errors are redacted once immediately before terminal painting; captured-output coverage proves an OpenAI-style secret never reaches stdout/stderr. Static backend contract, hosted selector parity (418), and `git diff --check` pass; hosted/root Kotlin execution remains pending. |
+
+### 2026-08-25T01:25:00Z · Agent: Codex GPT-5 · Batch: bridge-failure-redaction-boundary
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| T04 bridge failure rendering | source-wired / partial | `src/main/kotlin/atropos/bridge/BridgeCommandHandler.kt`, `src/main/kotlin/atropos/bridge/BridgeEvidenceHandler.kt`, `src/test/kotlin/atropos/bridge/BridgeCommandHandlerTest.kt`, `scripts/backend-atom-contract-test.sh` | `/v1/cli` and `/v1/evidence` → existing bridge handlers | Bridge command exceptions and evidence-read failures now use the canonical compact redaction boundary before JSON response construction; focused command failure coverage proves an API key is absent from the response. Static backend contract, hosted selector parity (418), and `git diff --check` pass; hosted/root Kotlin execution remains pending. |

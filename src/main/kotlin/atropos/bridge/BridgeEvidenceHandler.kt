@@ -73,7 +73,7 @@ internal class BridgeEvidenceHandler(
             return HttpResponse.refusal(
                 500,
                 "read-error",
-                "Failed to read evidence file: ${e.message}",
+                "Failed to read evidence file: ${redactionFilter.compact(e.message ?: e.javaClass.simpleName)}",
                 ""
             )
         }
