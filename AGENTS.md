@@ -13340,6 +13340,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; P15 remains source-wired/partial pending hosted restart and failure-state tests.
 - Fingerprints (sha256, first 12): `QuotaLedger.kt=7291a3f9b978`; `backend-atom-contract-test.sh=db83504ccad2`.
 
+### 2026-08-24T21:30:00Z · Agent: Codex GPT-5 · Batch: openai-compatible-response-bound
+
+- Paths touched: `src/main/kotlin/atropos/core/provider/adapter/OpenAiCompatibleKernelAdapter.kt` (+11/-4), `scripts/backend-atom-contract-test.sh` (+1).
+- Atoms / phases affected: B-PROV-002 transport safety for OpenAI-compatible catalog providers (DeepSeek, Mistral, xAI, OpenRouter, Together, Fireworks, Cohere, Azure, and related descriptors).
+- Predicate moved: the shared OpenAI-compatible live adapter now stops after one byte beyond the existing 8 MiB response bound before decoding; no provider-specific adapter or alternate registry was introduced.
+- Verification actually run: pending this batch; root/hosted provider adapter tests remain unproven.
+- % delta: unchanged; B-PROV-002 remains source-wired/partial pending hosted adapter fixtures.
+- Fingerprints (sha256, first 12): to be recorded after commit.
+
 ### 2026-08-24T19:50:50Z · Agent: Codex GPT-5 · Batch: github-response-size-bound
 
 - Paths touched: `src/main/kotlin/atropos/core/github/GitHubApiClient.kt` (+4), `src/test/kotlin/atropos/core/github/GitHubApiClientTest.kt` (+17), `scripts/backend-atom-contract-test.sh` (+1).
