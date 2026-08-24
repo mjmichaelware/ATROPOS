@@ -296,7 +296,13 @@ class BridgeRoutes(
                 HttpRoute("GET", "/v1/sessions", "conversations, or one with ?id=") { request ->
                     sessionHandler.list(request)
                 },
+                HttpRoute("GET", "/v1/session", "conversation session contract alias") { request ->
+                    sessionHandler.list(request)
+                },
                 HttpRoute("POST", "/v1/sessions", "start a new conversation") { request ->
+                    sessionHandler.create(request)
+                },
+                HttpRoute("POST", "/v1/session", "start a conversation through the bridge contract") { request ->
                     sessionHandler.create(request)
                 },
                 HttpRoute("GET", "/v1/sessions/recent", "the last conversation, offered not opened") {

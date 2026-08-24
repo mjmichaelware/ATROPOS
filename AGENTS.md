@@ -12825,3 +12825,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: `git diff --check`, `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (382 tests)`), and `timeout 90s python3 scripts/find-orphans.py --fail-on-new` (exit 0; only 4 pre-existing baseline orphan files / 360 LOC) passed. Root/hosted Kotlin execution remains pending; no test-green claim.
 - % delta: unchanged; B-005 / ADD-W-001 remains source-wired / partial pending hosted execution.
 - Fingerprints (sha256, first 12): `BridgeRoutes.kt=31c8c16a6ec9`, `AtroposBridgeTest.kt=45a6c2196a37`.
+
+### 2026-08-24T23:58:00Z · Agent: Codex GPT-5 · Batch: bridge-session-contract-alias
+
+- Paths touched: `src/main/kotlin/atropos/bridge/BridgeRoutes.kt` (+6), `src/test/kotlin/atropos/bridge/AtroposBridgeTest.kt` (+1), `STATUS-BACKEND.md` (+7), `AGENTS.md` (+7).
+- Atoms / phases affected: B-005 / ADD-W-001 session endpoint contract.
+- Predicate moved: the engine now exposes the declared singular `GET|POST /v1/session` endpoints while reusing the existing `BridgeSessionHandler` and durable session store; plural routes remain compatible. No second session system was introduced.
+- Verification actually run: `git diff --check`, `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (382 tests)`), and `timeout 90s python3 scripts/find-orphans.py --fail-on-new` (exit 0; only 4 pre-existing baseline orphan files / 360 LOC) passed. Root/hosted Kotlin execution remains pending; no test-green claim.
+- % delta: unchanged; B-005 / ADD-W-001 remains source-wired / partial pending hosted execution.
+- Fingerprints (sha256, first 12): `BridgeRoutes.kt=1c2622850823`, `AtroposBridgeTest.kt=1926bca9ed49`.
