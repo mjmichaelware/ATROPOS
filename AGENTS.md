@@ -13222,3 +13222,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: backend atom contract (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), hosted selector contract (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (418 tests)`), and `git diff --check` passed. Root/hosted Kotlin execution remains pending.
 - % delta: unchanged; B-MCP-CORE-e remains source-wired/partial pending hosted execution and real server evidence.
 - Fingerprints (sha256, first 12): `McpConfigParser.kt=8fe33e7cbdf2`; `McpHostManager.kt=7e2a85f19de7`; `McpHostManagerTest.kt=d1ecff938383`; `backend-atom-contract-test.sh=9554ac253966`.
+
+### 2026-08-24T19:40:34Z · Agent: Codex GPT-5 · Batch: provider-generic-namespace-visibility
+
+- Paths touched: `src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt` (+17), `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` (+17), `scripts/backend-atom-contract-test.sh` (+1).
+- Atoms / phases affected: B-PROV-001t generic `ATROPOS_PROVIDER_*` scan and route eligibility.
+- Predicate moved: unknown generic provider keys are now persisted as metadata-only `UNTESTED` entries instead of disappearing; because no descriptor/adapter exists, they are excluded from `healthyProviderIds()` and cannot enter routing by accident.
+- Verification actually run: backend atom contract, provider environment contract (`ATROPOS_PROVIDER_ENV_CONTRACT_OK`), hosted selector contract (418), and `git diff --check` passed. Root/hosted Kotlin execution remains pending.
+- % delta: unchanged; B-PROV-001/002 remains source-wired/partial pending executable hosted evidence.
+- Fingerprints (sha256, first 12): `ProviderOnboarding.kt=48c380853b72`; `ProviderOnboardingTest.kt=638b1e79c13b`; `backend-atom-contract-test.sh=85012c917058`.

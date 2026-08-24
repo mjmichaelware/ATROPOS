@@ -55,7 +55,7 @@ class ProviderOnboardingService(
 
     fun refresh(): List<DiscoveredProvider> {
         val prior = readConfig()
-        val ids = (aliases.keys + registry.getAll().map { it.id }).distinct()
+        val ids = (aliases.keys + registry.getAll().map { it.id } + genericProviderIds()).distinct()
         val records = ids.map { id ->
             val descriptorEnv = registry.getById(id)?.requiredEnv.orEmpty()
             val knownNames = (aliases[id].orEmpty() + descriptorEnv).distinct()
@@ -73,6 +73,7 @@ class ProviderOnboardingService(
             val malformedCredential = names.any(::malformedEnvironmentCredential)
             val health = when {
                 prior[id]?.disabled == true -> CheapProviderHealth.UNHEALTHY
+                descriptor == null -> CheapProviderHealth.UNTESTED
                 malformedCredential -> CheapProviderHealth.UNHEALTHY
                 descriptor?.isLocal == true && id == "local" -> CheapProviderHealth.HEALTHY
                 descriptor?.isLocal == true && names.isNotEmpty() -> CheapProviderHealth.HEALTHY
@@ -206,6 +207,21 @@ class ProviderOnboardingService(
             suffix.startsWith("${providerId}_", ignoreCase = true) ||
             suffix.startsWith("${providerPrefix}_", ignoreCase = true)
     }
+
+    /**
+     * Surface operator-configured generic namespace entries even when this
+     * build has no descriptor/adapter for them. They remain UNTESTED and are
+     * therefore excluded from routing; silently dropping the key would make
+     * onboarding look successful while providing no actionable explanation.
+     */
+    private fun genericProviderIds(): List<String> = environment.keys
+        .asSequence()
+        .filter { it.startsWith("ATROPOS_PROVIDER_", ignoreCase = true) }
+        .map { it.substring("ATROPOS_PROVIDER_".length).substringBefore('_') }
+        .map(String::lowercase)
+        .filter { it.matches(Regex("[a-z0-9][a-z0-9-]{0,63}")) }
+        .distinct()
+        .toList()
 
     private fun localSecretPresent(name: String): Boolean =
         runCatching { localVault.readSecretResult(name) is atropos.core.security.VaultReadResult.Available }.getOrDefault(false)

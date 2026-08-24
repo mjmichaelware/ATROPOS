@@ -21,6 +21,7 @@ text src/main/kotlin/atropos/core/autonomous/AutonomousOrchestrator.kt "Provider
 text src/main/kotlin/atropos/cli/CommandRouter.kt '"/providers"'
 text src/main/kotlin/atropos/core/provider/SourceBindingFetcher.kt 'localOnly'
 text src/main/kotlin/atropos/core/provider/SourceBindingFetcher.kt 'disabled by localOnly'
+text src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt 'genericProviderIds'
 
 # One bridge owner for the declared local HTTP/SSE surface.
 file src/main/kotlin/atropos/bridge/http/EngineHttpServer.kt

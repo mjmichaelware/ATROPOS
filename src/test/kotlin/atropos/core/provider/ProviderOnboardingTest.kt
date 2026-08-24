@@ -44,6 +44,24 @@ class ProviderOnboardingTest {
     }
 
     @Test
+    fun unknown_atropos_provider_namespace_is_visible_but_not_route_eligible() {
+        val root = Files.createTempDirectory("provider-onboarding-generic-unknown")
+        val service = ProviderOnboardingService(
+            root = root,
+            environment = mapOf("ATROPOS_PROVIDER_CUSTOM_API_KEY" to "secret")
+        )
+
+        val records = service.refresh().associateBy { it.providerId }
+
+        assertEquals(CheapProviderHealth.UNTESTED, records.getValue("custom").health)
+        assertTrue(records.getValue("custom").matchedEnvNames.contains("ATROPOS_PROVIDER_CUSTOM_API_KEY"))
+        assertTrue("custom" !in service.healthyProviderIds())
+        val persisted = Files.readString(root.resolve(".atropos/provider/providers.json"))
+        assertTrue(persisted.contains("custom"))
+        assertTrue(!persisted.contains("secret"))
+    }
+
+    @Test
     fun discovery_accepts_aws_bedrock_credentials_without_registering_a_new_adapter() {
         val root = Files.createTempDirectory("provider-onboarding-aws")
         val records = ProviderOnboardingService(
