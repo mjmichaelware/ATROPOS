@@ -12161,6 +12161,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; source-wired but partial pending hosted execution evidence.
 - Fingerprints: recorded after the batch commit.
 
+### 2026-08-24T09:45:00Z · Agent: Codex GPT-5 · Batch: backend-ownership-audit
+
+- Paths touched: `STATUS-BACKEND.md` (+2); no production source changes.
+- Atoms / phases affected: backend ownership and hosted-proof audit.
+- Predicate moved: source inspection confirms a single production GitHub HTTP owner after the scavenger composition and only the canonical bounded process runner for production process creation. The action contract and MCP example contract remain executable locally.
+- Verification actually run: `ATROPOS_VERIFY_ACTION_CONTRACT_OK`, `MCP_EXAMPLE_CONTRACT_OK files=14 servers=14`, `git diff --check`, and clean worktree passed. `find-orphans.py --fail-on-new` timed out before output in this audit; prior recorded run passed with `ORPHAN_GATE_EXIT=0`. Root Gradle and GitHub-hosted execution remain pending.
+- % delta: unchanged; source-wired but partial pending hosted execution evidence.
+- Fingerprints: recorded after the batch commit.
+
 ### 2026-08-24T09:30:00Z · Agent: Codex GPT-5 · Batch: github-scavenge-focused-selector
 
 - Paths touched: `.github/workflows/compile-gate.yml` (+1), `scripts/atropos-verify-worktree.sh` (+2), and `STATUS-BACKEND.md` (+2).
