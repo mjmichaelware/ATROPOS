@@ -626,3 +626,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-SENTRY / P07 Bedrock residual truth | source-wired / partial | `STATUS-BACKEND.md` | Existing Sentry command/registry and Bedrock descriptor/adapter callers | Corrected the current residual table so it no longer says the already-created Sentry transport or Bedrock SigV4 transport is absent. Live credentials, hosted Kotlin execution, and paid AWS operation remain explicitly unproven; no completion claim changed. `git diff --check` remains required. |
+
+### 2026-08-24T14:25:00Z · Backend verification: bridge-mcp-focused-root-timeout
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| R6 / B-005 bridge MCP gate | source-wired / partial | `src/main/kotlin/atropos/bridge/BridgeMcpHandler.kt`, `src/test/kotlin/atropos/bridge/BridgeMcpHandlerTest.kt` | `/v1/mcp/call` → `BridgeMcpHandler` → `McpHostManager` | `timeout 90s ./gradlew --no-daemon :test --rerun --max-workers=1 --tests 'atropos.bridge.BridgeMcpHandlerTest'` exited 124 during Gradle task-graph setup with no test output/count. No local pass or root-green claim; GitHub selector remains wired. |

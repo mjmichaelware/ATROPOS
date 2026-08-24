@@ -454,6 +454,13 @@ End of AGENTS.md
 - % delta: unchanged; B-INST-002 remains partial pending hosted release evidence.
 - Fingerprints (sha256, first 12): `scripts/release-installer-contract-test.sh=c4139f3e1fe4`; `.github/workflows/release.yml=46bf3530786b`; `install.sh=6ece5f472305`.
 
+### 2026-08-24T14:25:00Z · Agent: Codex GPT-5 · Verification: bridge-mcp-focused-root-timeout
+
+- Paths touched: `STATUS-BACKEND.md` (+7).
+- Acceptance predicate checked: focused root execution of `BridgeMcpHandlerTest` after the single-gate change.
+- Evidence: `timeout 90s ./gradlew --no-daemon :test --rerun --max-workers=1 --tests 'atropos.bridge.BridgeMcpHandlerTest'` exited 124 during Gradle task-graph setup and emitted no test result. This is inconclusive, not green; GitHub Actions remains the required execution lane.
+- % delta: unchanged; R6/B-005 remains source-wired / partial.
+
 ### 2026-08-24T13:52:33Z · Agent: Codex GPT-5 · Batch: mcp-bridge-single-gate
 
 - Paths touched: `src/main/kotlin/atropos/bridge/BridgeMcpHandler.kt` (-32), `src/test/kotlin/atropos/bridge/BridgeMcpHandlerTest.kt` (+32), `STATUS-BACKEND.md` (+7).
@@ -471,6 +478,7 @@ End of AGENTS.md
 - Verification actually run: documentation reconciliation only; `git diff --check` to be run with the batch final checks. No Kotlin or hosted test claim.
 - % delta: unchanged.
 - Fingerprint: recorded after final checks.
+
 
 ### 2026-08-24T21:05:00Z · Agent: Codex GPT-5 · Batch: bedrock-sigv4-provider-owner
 
