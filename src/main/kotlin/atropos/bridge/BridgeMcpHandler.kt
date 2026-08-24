@@ -6,12 +6,14 @@ import atropos.core.integration.McpHostManager
 import atropos.core.integration.McpTerritoryBridge
 import atropos.bridge.http.HttpResponse
 import atropos.bridge.http.JsonWriter
+import atropos.core.security.RedactionFilter
 
 internal class BridgeMcpHandler(
     private val mcpBridge: McpTerritoryBridge = McpTerritoryBridge(
         setOf("inspect", "verify", "convert_to_markdown")
     ),
-    private val host: McpHostManager? = null
+    private val host: McpHostManager? = null,
+    private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     private val delegate = BridgeInboundToolHandler(InboundSource.MCP, mcpBridge::judge, "MCP")
 
@@ -65,15 +67,15 @@ internal class BridgeMcpHandler(
                     "tool" to JsonWriter.str(tool),
                     "response" to JsonWriter.str(result.response),
                     "evidenceSha256" to JsonWriter.str(result.evidence.sha256.orEmpty()),
-                    "evidencePath" to JsonWriter.str(result.evidence.path?.toString().orEmpty()),
-                    "noEvidenceReason" to JsonWriter.str(result.evidence.noEvidenceReason.orEmpty())
+                    "evidencePath" to JsonWriter.str(redactionFilter.redact(result.evidence.path?.toString().orEmpty())),
+                    "noEvidenceReason" to JsonWriter.str(redactionFilter.redact(result.evidence.noEvidenceReason.orEmpty()))
                 )
             )
         }.getOrElse { failure ->
             HttpResponse.refusal(
                 403,
                 "mcp-call-refused",
-                failure.message ?: "MCP tool call refused",
+                redactionFilter.compact(failure.message ?: "MCP tool call refused"),
                 "Check /v1/mcp/status and the local allowlist before retrying."
             )
         }
@@ -85,7 +87,7 @@ internal class BridgeMcpHandler(
                 "name" to JsonWriter.str(status.server.name),
                 "transport" to JsonWriter.str(status.server.transport),
                 "health" to JsonWriter.str(status.health.name.lowercase()),
-                "reason" to JsonWriter.str(status.reason)
+                "reason" to JsonWriter.str(redactionFilter.redact(status.reason))
             )
         }))
     } ?: HttpResponse.refusal(

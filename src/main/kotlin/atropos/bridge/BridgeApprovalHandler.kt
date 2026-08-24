@@ -6,9 +6,11 @@ import atropos.bridge.http.JsonWriter
 import atropos.core.approval.ApprovalOutcome
 import atropos.core.approval.ApprovalSurface
 import atropos.core.approval.PendingApprovalStore
+import atropos.core.security.RedactionFilter
 
 internal class BridgeApprovalHandler(
-    private val approvals: PendingApprovalStore
+    private val approvals: PendingApprovalStore,
+    private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     fun decideApproval(request: HttpRequest): HttpResponse {
         val id = request.query["id"].orEmpty().ifBlank { field(request.body, "id") }
@@ -42,7 +44,7 @@ internal class BridgeApprovalHandler(
             is ApprovalOutcome.Refused -> HttpResponse.refusal(
                 409,
                 "approval-refused",
-                outcome.reason,
+                redactionFilter.compact(outcome.reason),
                 "Call GET /v1/approvals for what is actually pending."
             )
         }

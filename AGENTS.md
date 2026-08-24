@@ -13348,6 +13348,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; T04 remains partial pending hosted execution and final bridge sink audit.
 - Fingerprints recorded by commit; unrelated `docs/completion/*` files were not staged.
 
+### 2026-08-25T04:05:00Z · Agent: Codex GPT-5 · Batch: inbound-bridge-refusal-redaction
+
+- Paths touched: `src/main/kotlin/atropos/bridge/BridgeInboundToolHandler.kt` (+6/-2), `BridgeMcpHandler.kt` (+8/-4), `BridgeApprovalHandler.kt` (+4/-1), `scripts/backend-atom-contract-test.sh` (+3), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: T04 inbound bridge refusal, MCP status/evidence, and approval response rendering.
+- Predicate moved: dynamic refusal reasons, MCP evidence/status/failure fields, and approval refusal reasons now pass through the canonical `RedactionFilter` before JSON/reply construction; no second renderer or secret store was introduced.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh` (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (420 tests)`), and `git diff --check` passed. Root/hosted Kotlin execution was not run in Termux; no test-green or root-green claim.
+- % delta: unchanged; T04 remains partial pending hosted execution and final residual sink audit.
+- Fingerprints recorded by commit; unrelated `docs/completion/*` files were not staged.
+
 ### 2026-08-25T02:50:00Z · Agent: Codex GPT-5 · Batch: bridge-projection-redaction-boundary
 
 - Paths touched: `src/main/kotlin/atropos/bridge/projection/RecoveryProjection.kt` (+9/-2), `ActivityProjection.kt` (+11/-3), `AuthorityProjection.kt` (+25/-12), `ExportProjection.kt` (+15/-7), `ThinkingProjection.kt` (+11/-3), `scripts/backend-atom-contract-test.sh` (+5), `STATUS-BACKEND.md` (+7).

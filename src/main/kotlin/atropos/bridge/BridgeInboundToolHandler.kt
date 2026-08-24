@@ -7,6 +7,7 @@ import atropos.bridge.http.JsonWriter
 import atropos.core.integration.InboundGateResult
 import atropos.core.integration.InboundSource
 import atropos.core.integration.InboundToolRequest
+import atropos.core.security.RedactionFilter
 
 /**
  * Wire-format adapter shared by the external proposal surfaces.
@@ -18,7 +19,8 @@ import atropos.core.integration.InboundToolRequest
 internal class BridgeInboundToolHandler(
     private val source: InboundSource,
     private val judge: (InboundToolRequest) -> InboundGateResult,
-    private val surfaceName: String
+    private val surfaceName: String,
+    private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     fun judge(request: HttpRequest): HttpResponse {
         val callerId = request.query["callerId"].orEmpty().ifBlank { field(request.body, "callerId") }
@@ -51,13 +53,13 @@ internal class BridgeInboundToolHandler(
                     "ok" to JsonWriter.bool(true),
                     "disposition" to JsonWriter.str(result.decision.disposition.name),
                     "allowed" to JsonWriter.bool(result.decision.disposition.name == "ALLOWED"),
-                    "reason" to JsonWriter.str(result.decision.reason)
+                    "reason" to JsonWriter.str(redactionFilter.redact(result.decision.reason))
                 )
             )
             is InboundGateResult.Refused -> HttpResponse.refusal(
                 400,
                 "${surfaceName.lowercase()}-refused",
-                result.reason,
+                redactionFilter.compact(result.reason),
                 "Expose the operation or correct the caller type."
             )
         }

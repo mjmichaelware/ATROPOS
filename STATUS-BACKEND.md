@@ -1034,3 +1034,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | T04 editor bridge context rendering | source-wired / partial | `src/main/kotlin/atropos/bridge/BridgeEditorHandler.kt`, `scripts/backend-atom-contract-test.sh` | `/v1/editor/context` → existing `BridgeEditorHandler` context provider | Editor context JSON now crosses the canonical redaction filter before returning to extension clients; selection forwarding already used the same owner. Static backend contract, selector parity (420), and `git diff --check` pass; hosted/root bridge execution remains pending. |
+
+### 2026-08-25T04:05:00Z · Agent: Codex GPT-5 · Batch: inbound-bridge-refusal-redaction
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| T04 inbound bridge refusal/status rendering | source-wired / partial | `src/main/kotlin/atropos/bridge/BridgeInboundToolHandler.kt`, `BridgeMcpHandler.kt`, `BridgeApprovalHandler.kt`, `scripts/backend-atom-contract-test.sh` | `/v1/tools/inbound`, `/v1/mcp/*`, and `/v1/approvals/*` → existing bridge handlers | Inbound policy reasons, MCP evidence/status/failure fields, and approval refusal reasons now cross the canonical redaction boundary before JSON construction. Static backend contract, selector parity (420), and `git diff --check` pass; hosted/root Kotlin execution remains pending. |
