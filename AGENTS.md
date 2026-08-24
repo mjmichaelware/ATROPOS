@@ -462,6 +462,15 @@ End of AGENTS.md
 - % delta: unchanged; B-005 / ADD-W-029 remains partial pending hosted execution.
 - Fingerprints: recorded after this batch.
 
+### 2026-08-24T17:30:00Z · Agent: Codex GPT-5 · Batch: hosted-paid-autonomy-proof
+
+- Paths touched: `.github/workflows/compile-gate.yml` (+4), `scripts/atropos-verify-worktree.sh` (+4), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-PROV-012 paid approval and autonomous loop policy coverage.
+- Predicate moved: hosted CI now executes the existing paid-gate and autonomous learning/backlog tests in addition to provider routing tests.
+- Verification actually run: selector contract, `git diff --check`, shell syntax, and orphan gate pass; hosted Kotlin execution remains pending.
+- % delta: unchanged; paid/autonomy atoms remain partial pending hosted execution.
+- Fingerprints: recorded after this batch.
+
 ### 2026-08-24T17:00:00Z · Agent: Codex GPT-5 · Batch: hosted-buildstamp-update-proof
 
 - Paths touched: `.github/workflows/compile-gate.yml` (+2), `scripts/atropos-verify-worktree.sh` (+2), `STATUS-BACKEND.md` (+7).

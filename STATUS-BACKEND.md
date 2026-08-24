@@ -149,6 +149,12 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | --- | --- | --- | --- | --- |
 | B-INST-002 / B-SUP-030 artifact provenance | source-wired / partial | `src/main/kotlin/atropos/core/BuildStamp.kt`, `src/main/kotlin/atropos/core/SelfUpdate.kt`, `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh` | `Main --version`/installer → existing `BuildStamp` and `SelfUpdate` owners | Added existing build identity and update tests to both hosted lanes. Release/install contracts already verify the JAR and checksum asset coupling; hosted execution remains pending. |
 
+### 2026-08-24T17:30:00Z · Backend batch: hosted-paid-autonomy-proof
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-PROV-012 / B-SUP autonomy policy surface | source-wired / partial | `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh`, existing `src/test/kotlin/atropos/core/paid/**`, `src/test/kotlin/atropos/core/autonomous/**` | existing `EmergencyPaidGate` and `AutonomousOrchestrator` owners → hosted focused selectors | Added the paid approval gate and autonomous backlog/learning tests to both canonical hosted lanes. No second autonomy or policy owner was introduced; hosted execution remains pending. |
+
 ### 2026-08-24T16:35:00Z · Backend batch: provider-disable-route-proof
 
 | atom | status | files | caller | tests / notes |

@@ -163,6 +163,10 @@ if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
     --tests 'atropos.core.security.VaultReadResultTest' \
     --tests 'atropos.core.BuildStampTest' \
     --tests 'atropos.core.SelfUpdateTest' \
+    --tests 'atropos.core.paid.EmergencyPaidGateTest' \
+    --tests 'atropos.core.autonomous.AutonomousBacklogManagerTest' \
+    --tests 'atropos.core.autonomous.AutonomousLearningAdvisorTest' \
+    --tests 'atropos.core.autonomous.AutonomousOrchestratorLearningTest' \
     --tests 'atropos.core.github.GitHubApiClientTest' \
     --tests 'atropos.core.github.GitHubBindingTest' \
     --tests 'atropos.core.scavenge.GitHubScavengerTest'
