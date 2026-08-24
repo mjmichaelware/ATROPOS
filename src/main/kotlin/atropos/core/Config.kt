@@ -21,7 +21,22 @@ object RuntimeMode {
 
 class AtroposConfig(val keys: ApiKeys, val lakehouse: LakehouseConfig, val runtime: RuntimeConfig) {
     companion object {
-        fun configRoot(): Path = Path.of(System.getProperty("user.home")).resolve(".atropos")
+        /**
+         * One config-root owner for the engine and its launcher.  Installers
+         * may choose a local root (for example a Termux prefix); environment
+         * and user-home fallback preserve the existing desktop behavior.
+         */
+        fun configRoot(
+            environment: Map<String, String> = System.getenv(),
+            userHome: String = System.getProperty("user.home")
+        ): Path {
+            val configured = environment["ATROPOS_CONFIG_DIR"]?.trim()?.takeIf { it.isNotEmpty() }
+            return if (configured != null) {
+                Path.of(configured).toAbsolutePath().normalize()
+            } else {
+                Path.of(userHome).resolve(".atropos").toAbsolutePath().normalize()
+            }
+        }
 
         fun load(): AtroposConfig {
             val configPath = configRoot().resolve("config.json").toFile()

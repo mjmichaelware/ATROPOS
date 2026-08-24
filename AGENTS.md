@@ -13285,6 +13285,16 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; B-MCP-GITHUB remains source-wired/partial pending hosted/live evidence.
 - Fingerprints (sha256, first 12): `GitHubApiClient.kt=a19a92174c97`; `GitHubApiClientTest.kt=8575643120ff`; `backend-atom-contract-test.sh=16174e6e1e43`.
 
+### 2026-08-25T00:00:00Z · Agent: Codex GPT-5 · Batch: installer-config-root-alignment
+
+- Paths touched: `src/main/kotlin/atropos/core/Config.kt` (+19/-3), `install.sh` (+1), `scripts/install-contract-test.sh` (+1), `scripts/backend-atom-contract-test.sh` (+3), `.github/workflows/compile-gate.yml` (+1), `scripts/atropos-verify-worktree.sh` (+1), `src/test/kotlin/atropos/core/ConfigTest.kt` (+25), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-INST-004 config-root bootstrap and B-INST-005 hosted selector coverage.
+- Predicate moved: a custom installer config root is now exported by the generated launcher and consumed by the single `AtroposConfig.configRoot()` owner; all existing vault/provider/quota/bridge owners therefore share the bootstrapped root.
+- Verification actually run: narrow `kotlinc` Config slice passed; install/backend contracts passed; hosted selector parity passed with 421 tests; `git diff --check` passed. GitHub Actions execution, release artifact, and real custom-prefix install remain unverified.
+- % delta: unchanged; B-INST-004 remains source-wired/partial pending hosted and runtime installation evidence.
+- New overall estimate: unchanged.
+- Fingerprints (sha256, first 12): `Config.kt=864af867d4d86`; `install.sh=169a7790371e`; `ConfigTest.kt=7ed29a6693ae`.
+
 ### 2026-08-24T22:26:59Z · Agent: Codex GPT-5 · Batch: provider-live-health-projection
 
 - Paths touched: `src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt` (+20), `src/main/kotlin/atropos/core/provider/ProviderActivationService.kt` (+10), `src/main/kotlin/atropos/cli/ProviderCommandHandler.kt` (+10), `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` (+18), `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+8).
