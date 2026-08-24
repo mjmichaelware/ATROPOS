@@ -6,9 +6,11 @@ import atropos.cli.ui.design.Health
 import atropos.cli.ui.design.Role
 import atropos.core.auth.CascadeResolution
 import atropos.core.auth.AuthVerifyResult
+import atropos.core.security.RedactionFilter
 
 class StatusAuthRenderer(
-    private val theme: TerminalTheme = TerminalTheme(ConfigurationManager())
+    private val theme: TerminalTheme = TerminalTheme(ConfigurationManager()),
+    private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     private val surface get() = theme.surface
 
@@ -40,9 +42,9 @@ class StatusAuthRenderer(
             val text = when (resolution) {
                 is CascadeResolution.Resolved -> {
                     val suffix = if (resolution.final) " (final)" else ""
-                    "${resolution.value} [${resolution.source}]$suffix"
+                    "${redactionFilter.redact(resolution.value)} [${redactionFilter.redact(resolution.source)}]$suffix"
                 }
-                is CascadeResolution.Violation -> "REFUSED: ${resolution.reason}"
+                is CascadeResolution.Violation -> "REFUSED: ${redactionFilter.redact(resolution.reason)}"
                 is CascadeResolution.Undefined -> "undefined"
             }
             surface.statusRow(resolution.key, text, health, width)

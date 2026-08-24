@@ -13286,6 +13286,14 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; B-MCP-GITHUB remains source-wired/partial pending hosted/live evidence.
 - Fingerprints (sha256, first 12): `GitHubApiClient.kt=a19a92174c97`; `GitHubApiClientTest.kt=8575643120ff`; `backend-atom-contract-test.sh=16174e6e1e43`.
 
+### 2026-08-25T03:05:00Z · Agent: Codex GPT-5 · Batch: authority-cascade-redaction
+
+- Paths touched: `src/main/kotlin/atropos/cli/ui/StatusAuthRenderer.kt` (+5/-3), `src/main/kotlin/atropos/cli/AuthCommandHandler.kt` (+1/-1), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+2).
+- Atoms / phases affected: S-005 authority cascade/status contract and T04 secret-safe render paths.
+- Predicate moved: authority cascade values, sources, violations, and boot refusal text now pass through the canonical redaction boundary before terminal painting.
+- Verification: pending this batch; root/hosted Kotlin execution remains unproven.
+- % delta: unchanged; source-wired/partial pending hosted focused execution.
+
 ### 2026-08-25T02:35:00Z · Agent: Codex GPT-5 · Batch: provider-auth-cli-redaction
 
 - Paths touched: `src/main/kotlin/atropos/cli/ProviderCommandHandler.kt` (+7/-5), `src/main/kotlin/atropos/cli/AuthCommandHandler.kt` (+4/-2), `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+2).

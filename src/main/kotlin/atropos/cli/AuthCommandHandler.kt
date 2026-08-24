@@ -49,7 +49,7 @@ class AuthCommandHandler(
     private fun renderCascade() {
         when (val boot = bootstrap.boot()) {
             is AuthBootResult.Refused -> uiEngine.renderError(
-                "${boot.cause.reason}\n${boot.cause.remedy}"
+                redactionFilter.compact("${boot.cause.reason}\n${boot.cause.remedy}")
             )
 
             is AuthBootResult.Booted -> {
