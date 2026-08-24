@@ -110,7 +110,27 @@ class FileQuotaLedger(private val file: File, seed: List<ProviderQuotaRecord> = 
     private fun persist() {
         file.parentFile?.mkdirs()
         file.writeText(memory.all().joinToString("\n") { r ->
-            listOf(r.providerId, r.costMode.name, r.quotaWeight, r.configured, r.verified, r.state.name, r.usedRequests, r.usedTokens, r.cooldownUntilEpochMs ?: "", r.resetAtEpochMs ?: "", r.lastErrorClass ?: "", r.lastErrorSummary ?: "", r.successScore, r.paidLocked, r.remainingRequests ?: "", r.remainingTokens ?: "").joinToString("\t")
+            listOf(
+                r.providerId,
+                r.costMode.name,
+                r.quotaWeight,
+                r.configured,
+                r.verified,
+                r.state.name,
+                r.usedRequests,
+                r.usedTokens,
+                r.cooldownUntilEpochMs ?: "",
+                r.resetAtEpochMs ?: "",
+                r.lastErrorClass ?: "",
+                r.lastErrorSummary ?: "",
+                r.successScore,
+                r.paidLocked,
+                r.remainingRequests ?: "",
+                r.remainingTokens ?: "",
+                r.latencyMsAvg ?: ""
+            ).joinToString("\t") { value ->
+                value.toString().replace('\t', ' ').replace('\n', ' ').replace('\r', ' ')
+            }
         } + "\n")
     }
     companion object {
@@ -147,7 +167,7 @@ class FileQuotaLedger(private val file: File, seed: List<ProviderQuotaRecord> = 
                         cooldownUntilEpochMs = p[8].toLongOrNull(),
                         lastErrorClass = p[10].ifBlank { null },
                         lastErrorSummary = p[11].ifBlank { null },
-                        latencyMsAvg = null,
+                        latencyMsAvg = p.getOrNull(16)?.toLongOrNull(),
                         successScore = p[12].toDoubleOrNull() ?: 0.0,
                         paidLocked = p[13].toBoolean()
                     )

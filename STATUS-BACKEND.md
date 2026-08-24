@@ -26,6 +26,8 @@ This file records backend implementation status for the current engine wave. A r
 
 | B-PROV-001 descriptor environment discovery | source-wired / partial | `src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt`, `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` | launch/CLI `ProviderOnboardingService.refresh()` → existing `ProviderDescriptorRegistry.requiredEnv` → persisted healthy set/RoutePolicy | Discovery now composes aliases with each canonical descriptor’s `requiredEnv`, fixing catalog providers such as Cohere that previously could be configured yet remain undiscovered. Metadata-only persistence is asserted; backend contract, hosted selector parity (418), and diff check pass; hosted/root Kotlin execution remains pending. |
 
+| P15 quota ledger restart durability | source-wired / partial | `src/main/kotlin/atropos/core/provider/QuotaLedger.kt`, `src/test/kotlin/atropos/bridge/QuotaProjectionTest.kt` | provider result/failure owners → existing `FileQuotaLedger` → `QuotaProjection`/`/v1/quota` | File quota persistence now appends latency metadata backward-compatibly and sanitizes tab/newline field content so one provider error cannot corrupt subsequent TSV rows. Restart projection asserts latency and remaining quota; backend contract, hosted selector parity (418), and diff check pass; hosted/root Kotlin execution remains pending. |
+
 ## Commands
 
 - `/factory resume <runId>` — read-only attested resume inspection; execution requires the existing router callback path.

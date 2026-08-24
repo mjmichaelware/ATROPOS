@@ -10,6 +10,7 @@ import atropos.core.provider.StaticProviderDescriptorRegistry
 import atropos.core.provider.ProviderUsage
 import java.nio.file.Files
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class QuotaProjectionTest {
@@ -55,5 +56,6 @@ class QuotaProjectionTest {
         val json = QuotaProjection(registry, reopened).render()
         assertTrue(json.contains("\"remainingRequests\":17"), json)
         assertTrue(json.contains("\"remainingTokens\":900"), json)
+        assertEquals(1L, reopened.get("groq")?.latencyMsAvg)
     }
 }

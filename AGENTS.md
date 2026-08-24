@@ -13114,3 +13114,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: backend atom contract (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), hosted selector contract (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (418 tests)`), and `git diff --check` passed. Root/hosted Kotlin execution remains pending; no test-green claim.
 - % delta: unchanged; B-PROV-001/002 remains source-wired / partial pending executable Kotlin evidence.
 - Fingerprints (sha256, first 12): `ProviderOnboarding.kt=b8fd4554a59a`, `ProviderOnboardingTest.kt=63332ff2cc98`.
+
+### 2026-08-24T19:41:00Z · Agent: Codex GPT-5 · Batch: quota-ledger-restart-durability
+
+- Paths touched: `src/main/kotlin/atropos/core/provider/QuotaLedger.kt` (+22/-2), `src/test/kotlin/atropos/bridge/QuotaProjectionTest.kt` (+2), `AGENTS.md`, `STATUS-BACKEND.md`.
+- Atoms / phases affected: P15 quota persistence and visible quota projection.
+- Predicate moved: the existing file-backed quota ledger now preserves `latencyMsAvg` across restart by appending a backward-compatible column, while sanitizing tab/newline field content before TSV persistence. The existing `/v1/quota` projection remains the sole read path.
+- Verification actually run: backend atom contract (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), hosted selector contract (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (418 tests)`), and `git diff --check` passed. Root/hosted Kotlin execution remains pending; no test-green claim.
+- % delta: unchanged; P15 remains source-wired / partial pending executable Kotlin evidence.
+- Fingerprints (sha256, first 12): `QuotaLedger.kt=e1b2ed310e26`, `QuotaProjectionTest.kt=bc3b80261e06`.
