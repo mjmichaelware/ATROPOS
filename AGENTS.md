@@ -13318,9 +13318,9 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Paths touched: `src/main/kotlin/atropos/core/platform/PlatformAbstraction.kt` (+17/-2), `scripts/backend-atom-contract-test.sh` (+2).
 - Atoms / phases affected: B-OC-002 local-only mode and platform health reporting.
 - Predicate moved: `JvmPlatformAbstraction.health` no longer reports network reachability merely because a URL object was created; it performs a bounded HEAD connection, closes it, treats local-only as offline, and returns false on probe failure.
-- Verification actually run: pending this batch; root/hosted Kotlin and live network behavior remain unproven.
+- Verification actually run: `ATROPOS_BACKEND_ATOM_CONTRACT_OK`, `ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (418 tests)`, and `git diff --check` passed. Root/hosted Kotlin and live network behavior remain unproven.
 - % delta: unchanged; platform health remains source-wired/partial pending hosted platform tests.
-- Fingerprints (sha256, first 12): to be recorded after commit.
+- Fingerprints (sha256, first 12): `PlatformAbstraction.kt=cf46909d859d`; `backend-atom-contract-test.sh=5d21d5ffd0cb`.
 
 ### 2026-08-24T19:50:50Z · Agent: Codex GPT-5 · Batch: github-response-size-bound
 
