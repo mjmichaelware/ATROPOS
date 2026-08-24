@@ -44,7 +44,8 @@ if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
     --tests 'atropos.cli.shell.ShellBoundedAgencyTest' \
     --tests 'atropos.core.worktree.BoundedGitWorktreeCommandRunnerTest' \
     --tests 'atropos.core.verification.GateReachabilityCheckerTest' \
-    --tests 'atropos.core.github.GitHubApiClientTest'
+    --tests 'atropos.core.github.GitHubApiClientTest' \
+    --tests 'atropos.core.scavenge.GitHubScavengerTest'
 fi
 
 echo "=== DIFF CHECK ==="

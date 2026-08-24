@@ -1,14 +1,10 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.scavenge
 
+import atropos.core.github.GitHubApiClient
 import atropos.core.thinking.Narrate
-import java.net.URI
 import java.net.URLEncoder
-import java.net.http.HttpClient
-import java.net.http.HttpRequest
-import java.net.http.HttpResponse
 import java.nio.charset.StandardCharsets
-import java.time.Duration
 
 /**
  * Public work someone has asked for help with, found rather than guessed at.
@@ -41,7 +37,8 @@ class GitHubScavenger(
     private val token: String? = System.getenv("ATROPOS_GITHUB_TOKEN")
         ?: System.getenv("GITHUB_TOKEN")
         ?: System.getenv("GH_TOKEN"),
-    private val http: (Request) -> Response = ::sendOverHttps
+    private val http: ((Request) -> Response)? = null,
+    private val apiClient: GitHubApiClient = GitHubApiClient()
 ) {
 
     data class Request(val url: String, val token: String)
@@ -88,11 +85,13 @@ class GitHubScavenger(
     )
 
     fun scavenge(query: Query): List<Candidate> {
-        val authorization = token?.takeIf(String::isNotBlank) ?: throw IllegalStateException(
-            "no GitHub token: set ATROPOS_GITHUB_TOKEN (or GITHUB_TOKEN) to a token with " +
-                "`public_repo` scope. Searching GitHub anonymously is rate-limited to " +
-                "the point of uselessness."
-        )
+        val authorization = if (http != null) {
+            token?.takeIf(String::isNotBlank) ?: throw IllegalStateException(
+                "no GitHub token: set ATROPOS_GITHUB_TOKEN (or GITHUB_TOKEN) to a token with " +
+                    "`public_repo` scope. Searching GitHub anonymously is rate-limited to " +
+                    "the point of uselessness."
+            )
+        } else null
         require(query.owner.isNotBlank() || query.includeOthersConflicts) {
             "a scavenge needs an owner to search; scanning all of GitHub finds noise"
         }
@@ -118,7 +117,7 @@ class GitHubScavenger(
         return candidates
     }
 
-    private fun invitedIssues(query: Query, authorization: String): List<Candidate> {
+    private fun invitedIssues(query: Query, authorization: String?): List<Candidate> {
         val terms = buildList {
             add("is:issue")
             add("is:open")
@@ -137,7 +136,7 @@ class GitHubScavenger(
         }
     }
 
-    private fun conflictedPullRequests(query: Query, authorization: String): List<Candidate> {
+    private fun conflictedPullRequests(query: Query, authorization: String?): List<Candidate> {
         val terms = buildList {
             add("is:pr")
             add("is:open")
@@ -160,14 +159,17 @@ class GitHubScavenger(
      */
     private fun search(
         terms: List<String>,
-        authorization: String,
+        authorization: String?,
         kind: Kind,
         signal: (String) -> String
     ): List<Candidate> {
         val query = URLEncoder.encode(terms.joinToString(" "), StandardCharsets.UTF_8)
-        val response = http(
-            Request("$API/search/issues?q=$query&sort=updated&per_page=$PAGE_SIZE", authorization)
-        )
+        val response = http?.let { send ->
+            send(Request("$API/search/issues?q=$query&sort=updated&per_page=$PAGE_SIZE", authorization!!))
+        } ?: apiClient.searchIssues(
+            query = terms.joinToString(" "),
+            declaredTerritory = listOf(".")
+        ).let { GitHubScavenger.Response(it.status, it.body) }
         if (response.status != 200) {
             // Reported, not thrown. One search failing should not lose the
             // results of the other, and a rate limit is a normal thing to hit.
@@ -220,19 +222,4 @@ class GitHubScavenger(
         private val REPOSITORY_PATTERN =
             Regex("""github\.com/([^/]+/[^/]+)/(issues|pull)/(\d+)""")
     }
-}
-
-private fun sendOverHttps(request: GitHubScavenger.Request): GitHubScavenger.Response {
-    val built = HttpRequest.newBuilder(URI.create(request.url))
-        .header("Accept", "application/vnd.github+json")
-        .header("Authorization", "Bearer ${request.token}")
-        .header("X-GitHub-Api-Version", "2022-11-28")
-        .timeout(Duration.ofSeconds(60))
-        .GET()
-        .build()
-    val response = HttpClient.newBuilder()
-        .connectTimeout(Duration.ofSeconds(30))
-        .build()
-        .send(built, HttpResponse.BodyHandlers.ofString())
-    return GitHubScavenger.Response(response.statusCode(), response.body())
 }

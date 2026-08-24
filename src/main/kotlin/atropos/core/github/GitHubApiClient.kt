@@ -13,9 +13,11 @@ import atropos.core.security.SecretSinkKind
 import atropos.core.security.SecretSinkMatrix
 import atropos.core.security.SecretSource
 import java.net.URI
+import java.net.URLEncoder
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
+import java.nio.charset.StandardCharsets
 import java.time.Duration
 
 data class GitHubApiRequest(
@@ -107,6 +109,18 @@ class GitHubApiClient(
     fun listIssues(owner: String, repository: String, page: Int = 1): GitHubApiResponse =
         execute(GitHubApiRequest("GET", repoPath(owner, repository, "issues?page=${page.coerceAtLeast(1)}")))
 
+    fun searchIssues(query: String, page: Int = 1, declaredTerritory: List<String> = listOf(".")): GitHubApiResponse {
+        require(query.isNotBlank()) { "GitHub search query is required" }
+        val encoded = URLEncoder.encode(query, StandardCharsets.UTF_8)
+        return execute(
+            GitHubApiRequest(
+                method = "GET",
+                path = "/search/issues?q=$encoded&page=${page.coerceAtLeast(1)}&per_page=30",
+                declaredTerritory = declaredTerritory
+            )
+        )
+    }
+
     fun getIssue(owner: String, repository: String, number: Int): GitHubApiResponse =
         execute(GitHubApiRequest("GET", repoPath(owner, repository, "issues/${positive(number)}")))
 
@@ -151,8 +165,9 @@ class GitHubApiClient(
 
     private fun validatePath(raw: String): String {
         val path = raw.trim()
-        require(path.startsWith("/repos/") && !path.contains("..") && !path.contains('\\')) {
-            "GitHub API path must be a repository-scoped relative API path"
+        require((path.startsWith("/repos/") || path.startsWith("/search/issues")) &&
+            !path.contains("..") && !path.contains('\\')) {
+            "GitHub API path must be repository-scoped or the bounded issue-search path"
         }
         require(path.length <= MAX_PATH_CHARS) { "GitHub API path is too long" }
         return path

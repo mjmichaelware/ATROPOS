@@ -12161,6 +12161,24 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; source-wired but partial pending hosted execution evidence.
 - Fingerprints: recorded after the batch commit.
 
+### 2026-08-24T09:30:00Z · Agent: Codex GPT-5 · Batch: github-scavenge-focused-selector
+
+- Paths touched: `.github/workflows/compile-gate.yml` (+1), `scripts/atropos-verify-worktree.sh` (+2), and `STATUS-BACKEND.md` (+2).
+- Atoms / phases affected: B-MCP-GITHUB focused acceptance wiring.
+- Predicate moved: the existing GitHub scavenger tests are now executed by both canonical hosted backend lanes after the production scavenger was composed onto `GitHubApiClient`; no test-only transport is used by the production command path.
+- Verification actually run: `git diff --check` passed; GitHub-hosted/root Gradle execution remains pending.
+- % delta: unchanged; source-wired but partial pending hosted execution evidence.
+- Fingerprints: recorded after the batch commit.
+
+### 2026-08-24T09:20:00Z · Agent: Codex GPT-5 · Batch: github-single-transport-owner
+
+- Paths touched: `src/main/kotlin/atropos/core/github/GitHubApiClient.kt` (+20), `src/main/kotlin/atropos/core/scavenge/GitHubScavenger.kt` (+25/-17), and `STATUS-BACKEND.md` (+2).
+- Atoms / phases affected: B-MCP-GITHUB single transport composition; existing read-only scavenge caller.
+- Predicate moved: production `/scavenge` no longer uses its separate raw HTTP transport. It now calls the existing gated `GitHubApiClient.searchIssues`, retaining the callback only as an injected deterministic test seam. Search remains read-only, territory-declared, secret-source controlled, and policy-gated.
+- Verification actually run: source inspection and `git diff --check` passed; root compilation and hosted tests remain pending, and no live GitHub call was made.
+- % delta: unchanged; source-wired but partial pending hosted execution evidence.
+- Fingerprints: recorded after the batch commit.
+
 ### 2026-08-24T09:00:00Z · Agent: Codex GPT-5 · Batch: hosted-check-evidence-summary
 
 - Paths touched: `.github/workflows/atropos-verify-example.yml` (+2), `STATUS-BACKEND.md` (+2).
