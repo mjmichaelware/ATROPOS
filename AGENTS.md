@@ -13345,9 +13345,9 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Paths touched: `src/main/kotlin/atropos/core/provider/adapter/OpenAiCompatibleKernelAdapter.kt` (+11/-4), `scripts/backend-atom-contract-test.sh` (+1).
 - Atoms / phases affected: B-PROV-002 transport safety for OpenAI-compatible catalog providers (DeepSeek, Mistral, xAI, OpenRouter, Together, Fireworks, Cohere, Azure, and related descriptors).
 - Predicate moved: the shared OpenAI-compatible live adapter now stops after one byte beyond the existing 8 MiB response bound before decoding; no provider-specific adapter or alternate registry was introduced.
-- Verification actually run: pending this batch; root/hosted provider adapter tests remain unproven.
+- Verification actually run: `ATROPOS_BACKEND_ATOM_CONTRACT_OK`, `ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (418 tests)`, and `git diff --check` passed. Root/hosted provider adapter tests remain unproven.
 - % delta: unchanged; B-PROV-002 remains source-wired/partial pending hosted adapter fixtures.
-- Fingerprints (sha256, first 12): to be recorded after commit.
+- Fingerprints (sha256, first 12): `OpenAiCompatibleKernelAdapter.kt=2d0c80368b7b`; `backend-atom-contract-test.sh=2ba9147e8930`.
 
 ### 2026-08-24T19:50:50Z · Agent: Codex GPT-5 · Batch: github-response-size-bound
 
