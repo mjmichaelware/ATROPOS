@@ -12161,6 +12161,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; source-wired but partial pending hosted execution evidence.
 - Fingerprints: recorded after the batch commit.
 
+### 2026-08-24T12:35:00Z · Agent: Codex GPT-5 · Batch: constrained-backend-blocker-audit
+
+- Paths touched: `STATUS-BACKEND.md` (+4); no production source changes.
+- Atoms / phases affected: B-MCP-OAUTH-UX and B-PROV-006 blocker truth.
+- Predicate moved: none. The ledger now explicitly records why OAuth and provider-worker atoms remain blocked: no approved OAuth client/authorization exists, and no existing Director provider-worker fan-out owner exists. No secret, network credential, or second orchestrator was invented.
+- Verification actually run: source inspection and prior ownership scans are the evidence; root/hosted execution remains pending. This is not a completion claim.
+- % delta: unchanged.
+- Fingerprints: recorded after the batch commit.
+
 ### 2026-08-24T12:05:00Z · Agent: Codex GPT-5 · Batch: focused-compile-inconclusive
 
 - Paths touched: `STATUS-BACKEND.md` (+2); no source changes.
