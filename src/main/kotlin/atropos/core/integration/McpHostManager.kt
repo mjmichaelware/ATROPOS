@@ -5,6 +5,11 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.security.MessageDigest
+import java.net.URI
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
+import java.time.Duration
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import atropos.core.policy.ActionActor
@@ -21,7 +26,8 @@ data class McpServerConfig(
     val command: String?,
     val args: List<String>,
     val enabled: Boolean,
-    val community: Boolean
+    val community: Boolean,
+    val url: String? = null
 ) {
     val remote: Boolean get() = transport.lowercase() in setOf("http", "sse", "streamable-http")
 }
@@ -42,7 +48,7 @@ class McpHostManager(
     private val root: Path,
     private val localOnly: Boolean = true,
     private val allowlist: Set<String> = emptySet(),
-    private val probe: (McpServerConfig) -> McpHealth = { server -> probeProcess(server, root) },
+    private val probe: ((McpServerConfig) -> McpHealth)? = null,
     /**
      * The CLI is an explicitly local operator surface, so its root territory
      * is the human owner's. Any other caller remains a hierarchy node and
@@ -62,7 +68,8 @@ class McpHostManager(
             BoundedAgencyGate().evaluate(policyProposal)
         }
     ),
-    private val processRunner: BoundedProcessRunner = BoundedProcessRunner()
+    private val processRunner: BoundedProcessRunner = BoundedProcessRunner(),
+    private val remoteRequest: ((McpServerConfig, String) -> String)? = null
 ) {
     private val configPath = root.resolve("mcp.json").normalize()
     private val evidenceRoot = root.resolve(".atropos/mcp/evidence").normalize()
@@ -83,7 +90,7 @@ class McpHostManager(
             val args = Regex("\\\"args\\\"\\s*:\\s*\\[(.*?)]", setOf(RegexOption.DOT_MATCHES_ALL)).find(body)
                 ?.groupValues?.get(1)?.let { values -> Regex("\\\"([^\\\"]*)\\\"").findAll(values).map { it.groupValues[1] }.toList() }
                 .orEmpty()
-            McpServerConfig(name, field("transport") ?: "stdio", field("command"), args, bool("enabled", false), bool("community", true))
+            McpServerConfig(name, field("transport") ?: "stdio", field("command"), args, bool("enabled", false), bool("community", true), field("url"))
         }.toList()
     }
 
@@ -94,7 +101,7 @@ class McpHostManager(
             !server.enabled -> McpServerStatus(server, McpHealth.UNTESTED, "disabled by default")
             server.community && server.name !in allowlist -> McpServerStatus(server, McpHealth.UNTESTED, "community server requires explicit allowlist")
             localOnly && server.remote -> McpServerStatus(server, McpHealth.UNTESTED, "remote MCP disabled by localOnly")
-            else -> runCatching { McpServerStatus(server, probe(server), "init + tools/list probe") }
+            else -> runCatching { McpServerStatus(server, (probe ?: ::defaultProbe)(server), "init + tools/list probe") }
                 .getOrElse { McpServerStatus(server, McpHealth.UNHEALTHY, "probe failed: ${it.javaClass.simpleName}") }
             }
         }
@@ -174,6 +181,11 @@ class McpHostManager(
             "MCP server is not allowlisted: $serverName"
         }
         require(!localOnly || !server.remote) { "remote MCP disabled by localOnly" }
+        if (server.remote) {
+            val response = remoteCall(server, toolName, argumentsJson, maxResponseBytes)
+            val safeResponse = redactionFilter.redact(response)
+            return McpToolCallResult(safeResponse, recordToolResult(serverName, toolName, safeResponse))
+        }
         val command = server.command ?: error("MCP server has no stdio command: $serverName")
         val process = processRunner.start(listOf(command) + server.args, root)
         process.outputStream.bufferedWriter().use { writer ->
@@ -220,6 +232,55 @@ class McpHostManager(
         catch (_: Exception) { Files.move(temp, path, StandardCopyOption.REPLACE_EXISTING) }
         return McpEvidenceRef(hash, path, null)
     }
+
+    private fun remoteCall(server: McpServerConfig, toolName: String, argumentsJson: String, maxResponseBytes: Int): String {
+        val initialize = "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{}}"
+        require(remoteExchange(server, initialize).contains("\"id\":1")) { "MCP HTTP initialize returned no response" }
+        val toolsList = "{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/list\",\"params\":{}}"
+        require(remoteExchange(server, toolsList).contains("\"id\":2")) { "MCP HTTP tools/list returned no response" }
+        val request = "{\"jsonrpc\":\"2.0\",\"id\":3,\"method\":\"tools/call\",\"params\":{"name":"${jsonEscape(toolName)}","arguments":$argumentsJson}}"
+        val response = remoteExchange(server, request)
+        val bounded = response.take(maxResponseBytes)
+        require(bounded.contains("\"id\":3")) { "MCP HTTP tools/call returned no response" }
+        return bounded
+    }
+
+    private fun defaultProbe(server: McpServerConfig): McpHealth =
+        if (server.remote) {
+            val initialize = remoteExchange(server, "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{}}")
+            val toolsList = remoteExchange(server, "{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/list\",\"params\":{}}")
+            if (initialize.contains("\"id\":1") && toolsList.contains("\"id\":2")) McpHealth.HEALTHY else McpHealth.UNHEALTHY
+        } else {
+            probeProcess(server, root)
+        }
+
+    private fun remoteExchange(server: McpServerConfig, body: String): String =
+        remoteRequest?.invoke(server, body) ?: postRemote(server, body)
+
+    private fun postRemote(server: McpServerConfig, body: String): String {
+        val url = server.url?.trim()?.takeIf { it.isNotBlank() }
+            ?: error("MCP remote server has no url: ${server.name}")
+        require(url.startsWith("https://") || url.startsWith("http://")) {
+            "MCP remote url must use http or https: ${server.name}"
+        }
+        val request = HttpRequest.newBuilder(URI.create(url))
+            .timeout(Duration.ofSeconds(5))
+            .header("Content-Type", "application/json")
+            .header("Accept", "application/json, text/event-stream")
+            .POST(HttpRequest.BodyPublishers.ofString(body))
+            .build()
+        return HttpClient.newBuilder()
+            .connectTimeout(Duration.ofSeconds(3))
+            .build()
+            .send(request, HttpResponse.BodyHandlers.ofString())
+            .body()
+    }
+
+    private fun jsonEscape(value: String): String = value
+        .replace("\\", "\\\\")
+        .replace("\"", "\\\"")
+        .replace("\n", "\\n")
+        .replace("\r", "\\r")
 
     private companion object {
         fun probeProcess(server: McpServerConfig, root: Path): McpHealth {

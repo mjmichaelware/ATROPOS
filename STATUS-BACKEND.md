@@ -102,3 +102,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-OC-004 / zero-retention research plane | source-wired / partial | `src/main/kotlin/atropos/core/Config.kt`, `src/main/kotlin/atropos/core/factory/FactoryResearchService.kt`, `src/main/kotlin/atropos/cli/BackendDoctor.kt`, focused factory/doctor tests, hosted selector scripts | `AtroposConfig.load` → `FactoryResearchService.collect`; `CommandRouter` → `BackendDoctor.render` | `ATROPOS_ZERO_RETENTION` and `zero_retention_research` config are recognized; lakehouse/bounded remote fetches are skipped with explicit audit lines and doctor status. `git diff --check` passed; root compile/tests remain GitHub Actions evidence. |
+
+### 2026-08-24T01:50:00Z · Backend batch: mcp-http-transport
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-CORE-b/c/d/e / HTTP MCP host transport | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt:18-28,236-290`, `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` | existing `CommandRouter`/`BridgeMcpHandler` → `McpHostManager.callTool` and `statuses` | Remote `http`/`sse`/`streamable-http` entries now parse `url`, perform bounded initialize + tools/list + tools/call JSON-RPC over the existing host, and persist redacted evidence. Local-only and territory gates remain in front. Focused injected-transport tests added; no live network or root Gradle result claimed. |

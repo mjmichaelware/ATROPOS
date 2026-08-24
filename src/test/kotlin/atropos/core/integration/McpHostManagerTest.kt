@@ -138,4 +138,43 @@ class McpHostManagerTest {
         assertEquals(listOf("local-files"), results.map { it.name })
         assertTrue(results.single().enabled.not())
     }
+
+    @Test
+    fun allowlisted_http_server_uses_the_same_evidence_and_call_gate() {
+        val root = Files.createTempDirectory("mcp-http-call")
+        Files.writeString(root.resolve("mcp.json"), """
+            {"servers":[{"name":"remote","transport":"http","url":"https://mcp.example.test/rpc","enabled":true,"community":false}]}
+        """.trimIndent())
+        val requests = mutableListOf<String>()
+        val result = McpHostManager(
+            root,
+            localOnly = false,
+            probe = { McpHealth.HEALTHY },
+            remoteRequest = { _, body -> requests += body; "{\"jsonrpc\":\"2.0\",\"id\":3,\"result\":{\"content\":[{\"text\":\"ok\"}]}}" }
+        ).callTool("remote", "inspect")
+
+        assertEquals(3, requests.size)
+        assertTrue(requests.last().contains("tools/call"))
+        assertNotNull(result.evidence.sha256)
+    }
+
+    @Test
+    fun default_http_probe_runs_initialize_and_tools_list() {
+        val root = Files.createTempDirectory("mcp-http-probe")
+        Files.writeString(root.resolve("mcp.json"), """
+            {"servers":[{"name":"remote","transport":"streamable-http","url":"https://mcp.example.test/rpc","enabled":true,"community":false}]}
+        """.trimIndent())
+        val requests = mutableListOf<String>()
+        val status = McpHostManager(
+            root,
+            localOnly = false,
+            remoteRequest = { _, body ->
+                requests += body
+                if (body.contains("\"id\":1")) "{\"id\":1}" else "{\"id\":2}"
+            }
+        ).statuses().single()
+
+        assertEquals(McpHealth.HEALTHY, status.health)
+        assertEquals(2, requests.size)
+    }
 }

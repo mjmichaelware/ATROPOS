@@ -452,6 +452,15 @@ End of AGENTS.md
 - % delta: unchanged; no VERIFIED claim. FTY-01, FTY-02, and FTY-04 are marked done in `STATUS-BACKEND.md` based on production source plus narrow compilation; FTY-03 and FTY-05 remain partial until root focused tests and a runtime-owned repair callback are proven.
 - Fingerprints (sha256): `DagStore.kt=fb932962f947`; `FactoryProgressGuard.kt=50bb25ea712d`; `FactoryRunHandoff.kt=537cf1c24fc2`; `FactoryRunOrchestrator.kt=652e100a59b7`; `FactoryRepairExecutor.kt=16e2c5cd36a8`; `FactoryCommandHandler.kt=392afeb3eb37`; `FactoryProgressGuardTest.kt=1e5d81c78c09`; `FactoryResumeAndRepairTest.kt=bca553b18f46`; `STATUS-BACKEND.md=2669342e3735`.
 
+### 2026-08-24T01:50:00Z · Agent: Codex GPT-5 · Batch: mcp-http-transport
+
+- Paths touched: `src/main/kotlin/atropos/core/integration/McpHostManager.kt` (+71/-5), `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+39), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-MCP-CORE-b/c/d/e generic HTTP MCP transport.
+- Predicate moved: the existing `McpHostManager` now supports configured remote HTTP/SSE/streamable-HTTP entries with URL metadata, bounded initialize/tools-list probing, and tools/call execution. Calls still require the existing allowlist, local-only, `McpTerritoryBridge`, response-size, redaction, and evidence controls; no second MCP owner was created.
+- Verification actually run: `git diff --check` passed. Two focused injected-transport tests cover probe and call sequencing without external network. Root compile and hosted tests remain unrun; no green claim.
+- % delta: unchanged; source-wired but partial pending hosted execution and live operator-owned transport validation.
+- Fingerprints: `McpHostManager.kt=5f8c6ddf3f10`; `McpHostManagerTest.kt=fa18a64c04ce`.
+
 ### 2026-08-24T01:25:00Z · Agent: Codex GPT-5 · Batch: zero-retention-research-policy
 
 - Paths touched: `src/main/kotlin/atropos/core/Config.kt` (+17/-3), `src/main/kotlin/atropos/core/factory/FactoryResearchService.kt` (+8/-1), `src/main/kotlin/atropos/cli/BackendDoctor.kt` (+1), `src/test/kotlin/atropos/core/factory/FactoryResearchDloiTest.kt` (+15), `src/test/kotlin/atropos/cli/BackendDoctorTest.kt` (+16), `.github/workflows/compile-gate.yml` (+1), `scripts/atropos-verify-worktree.sh` (+1), `STATUS-BACKEND.md` (+7).
