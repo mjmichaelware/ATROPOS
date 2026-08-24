@@ -752,3 +752,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-GHA / T01 fail-closed verification contract | source-wired / partial | `scripts/atropos-verify-action-contract-test.sh`, `.github/actions/atropos-verify/action.yml`, `.github/workflows/atropos-verify-example.yml` | existing compile-gate job → action contract → composite action exit status and GitHub check conclusion | The contract now asserts `exit \"$verify_exit\"`, success-only check conclusion, failure mapping for all other outcomes, and `checks.create`. Local shell/action/orphan/diff checks pass; hosted Action execution remains unrun. |
+
+### 2026-08-24T15:25:00Z · Backend batch: github-integration-registry-gate
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-GITHUB integration registration gate | source-wired / partial | `src/main/kotlin/atropos/core/github/GitHubApiClient.kt`, `src/test/kotlin/atropos/core/github/GitHubApiClientTest.kt` | `/github *` → existing `GitHubCommandHandler`/`GitHubBinding` → sole `GitHubApiClient.execute` → `IntegrationRegistry` → agency/secret/transport/evidence | GitHub requests now fail before any request work if the canonical integration is not registered. Selector/orphan/diff checks pass; root/hosted Kotlin and credentialed network proof remain pending. |

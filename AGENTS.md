@@ -12901,3 +12901,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: `bash -n scripts/atropos-verify-action-contract-test.sh`, `bash scripts/atropos-verify-action-contract-test.sh` (`ATROPOS_VERIFY_ACTION_CONTRACT_OK`, `ATROPOS_VERIFY_WORKFLOW_CONTRACT_OK`), `git diff --check`, and `timeout 90s python3 scripts/find-orphans.py --fail-on-new` (exit 0; 4 historical baseline orphan files / 360 LOC) passed. GitHub-hosted execution remains pending; no hosted-green claim.
 - % delta: unchanged; B-MCP-GHA remains source-wired / partial pending hosted execution.
 - Fingerprint: `scripts/atropos-verify-action-contract-test.sh=19f3b7fd8877`.
+
+### 2026-08-24T15:25:00Z · Agent: Codex GPT-5 · Batch: github-integration-registry-gate
+
+- Paths touched: `src/main/kotlin/atropos/core/github/GitHubApiClient.kt` (+2), `src/test/kotlin/atropos/core/github/GitHubApiClientTest.kt` (+5), `AGENTS.md` (+7), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-MCP-GITHUB integration registration and Tier-0 network boundary.
+- Predicate moved: every GitHub API request now crosses the existing `IntegrationRegistry.requireRegistered("github")` owner before method/path validation, policy, secret egress, transport, or evidence handling. No second GitHub client or registry was introduced.
+- Verification actually run: `git diff --check`, `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (382 tests)`), and `timeout 90s python3 scripts/find-orphans.py --fail-on-new` (exit 0; 4 historical baseline orphan files / 360 LOC) passed. Root/hosted Kotlin execution remains pending; no test-green claim.
+- % delta: unchanged; B-MCP-GITHUB remains source-wired / partial pending hosted execution and credentialed runtime proof.
+- Fingerprints (sha256, first 12): `GitHubApiClient.kt=4e2c8960ac26`, `GitHubApiClientTest.kt=786757b5431b`.

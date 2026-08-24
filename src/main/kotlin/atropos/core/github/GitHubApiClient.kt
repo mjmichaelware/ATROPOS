@@ -7,6 +7,7 @@ import atropos.core.policy.AgencyDecision
 import atropos.core.policy.AgencyDisposition
 import atropos.core.policy.BoundedAgencyGate
 import atropos.core.policy.PolicyActionClass
+import atropos.core.integration.IntegrationRegistry
 import atropos.core.security.DefaultSecretSource
 import atropos.core.security.RedactionFilter
 import atropos.core.security.SecretSinkKind
@@ -71,6 +72,7 @@ class GitHubApiClient(
     private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     fun execute(request: GitHubApiRequest): GitHubApiResponse {
+        IntegrationRegistry.requireRegistered("github")
         val method = request.method.trim().uppercase()
         require(method in METHODS) { "unsupported GitHub API method: $method" }
         if (method != "GET") requireNotNull(request.authorization) {

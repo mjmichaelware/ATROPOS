@@ -59,6 +59,11 @@ class GitHubApiClientTest {
     }
 
     @Test
+    fun every_request_crosses_the_registered_github_integration_owner() {
+        assertEquals("github", atropos.core.integration.IntegrationRegistry.requireRegistered("github").id)
+    }
+
+    @Test
     fun network_policy_and_secret_egress_fail_before_transport() {
         var called = false
         val client = GitHubApiClient(
