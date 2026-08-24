@@ -550,6 +550,14 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | B-MCP-GITLOCAL mutation micro-atoms | source-wired / partial | `GitMutationCommand.kt`, `ShellCommandHandler.kt`, `ShellCommandRunner.kt` → existing `TypedToolExecutor`/`BoundedAgencyGate` | Explicit `/git add|commit|rebase-continue --confirm <id>` path now exists; the existing agency gate remains authoritative and no real mutation was run. | Hosted/root focused tests and operator-approved execution evidence remain pending. |
 | B-018 Slack/Discord distribution; B-019 browser verification | deferred | Distribution/browser execution is outside the current Tier-0 backend lane; generic MCP examples remain disabled-by-default and no adapter farm is allowed. | Re-open after core bridge/GHA proof is hosted-green and a transport owner is accepted. |
 
+### 2026-08-24T17:24:00Z · Backend ledger correction: provider-worker-owner-now-present
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-PROV-006 provider workers | source-wired / partial | `src/main/kotlin/atropos/core/autonomous/ProviderWorkerDirector.kt`, `AutonomousOrchestrator.kt`, `src/main/kotlin/atropos/core/hierarchy/HierarchyRegistry.kt`, `src/main/kotlin/atropos/core/verification/VerifiedCompletionGate.kt` | `/autonomous provider-workers` → existing `AutonomousOrchestrator` → `ProviderWorkerDirector` → existing Director→Manager→Worker hierarchy | The earlier blocked row is superseded by the `741a761c` implementation. Bounded fan-out and fail-closed proposal merge are source-wired; hosted/root Kotlin execution remains pending. |
+| B-HELP-002 provider environment one-pager | source-wired / partial | `docs/PROVIDER_ENVIRONMENT.md`, `scripts/provider-env-contract-test.sh`, `.github/workflows/compile-gate.yml`, `.github/workflows/release.yml` | provider descriptor registry → environment contract → generated/documented onboarding table | Canonical descriptor names, aliases, globs, and AWS discovery names are checked against the onboarding document. Hosted execution and release publication remain pending. |
+| B-OC-003 AGPL enterprise note | blocked by territory | no new file; `LEGAL.md` is absent | no production caller added | The requested legal note is documentation outside this backend-only territory and is not silently fabricated. It remains blocked until a documentation/legal territory is authorized. |
+
 ### 2026-08-24T06:48:39Z · Backend batch: anti-synthetic-velocity-output
 
 | atom | status | files | caller | tests / notes |

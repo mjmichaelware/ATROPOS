@@ -12991,6 +12991,14 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; B-PROV-012 remains source-wired / partial pending hosted execution.
 - Fingerprints (sha256, first 12): `ProviderDescriptor.kt=639cfd348464`, `ProviderActionProposals.kt=b4c7a990c275`, `ProviderCascadeOrder.kt=6901c0928943`, `RoutePolicy.kt=3d3d07ef94b5`, `ProviderActionProposalsTest.kt=c62ee6e8a5ac`, `ProviderCascadeOrderTest.kt=be0c86dee693`.
 
+### 2026-08-24T17:24:00Z · Agent: Codex GPT-5 · Verification: backend-ledger-correction
+
+- Paths touched: `STATUS-BACKEND.md` (+6), `AGENTS.md` (+7).
+- Atoms / phases affected: B-PROV-006, B-HELP-002, B-OC-003 residual truth.
+- Predicate moved: the append-only backend ledger no longer contradicts the production tree about provider-worker ownership; it now records the existing Director fan-out as source-wired/partial, records the provider environment one-pager contract, and explicitly marks the out-of-territory legal note blocked instead of implying completion.
+- Verification actually run: source inspection confirmed the existing B-013 editor bridge, B-018/B-019 deferral, local-only/zero-retention owners, and missing `LEGAL.md`; no code or authority behavior changed. `git diff --check` remains required. Hosted/root Kotlin execution and GitHub push remain unavailable.
+- % delta: unchanged; this is a truth-ledger correction only.
+
 ### 2026-08-24T17:22:01Z · Agent: Codex GPT-5 · Batch: npm-local-jar-and-publish-wire
 
 - Paths touched: `npm/scripts/postinstall.js` (+12), `npm/README.md` (+5), `scripts/npm-installer-contract-test.sh` (+2), `.github/workflows/release.yml` (+27), `AGENTS.md`, `STATUS-BACKEND.md`.
