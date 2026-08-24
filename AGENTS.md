@@ -12161,6 +12161,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; source-wired but partial pending hosted execution evidence.
 - Fingerprints: recorded after the batch commit.
 
+### 2026-08-24T12:55:00Z · Agent: Codex GPT-5 · Batch: github-binding-hosted-selector
+
+- Paths touched: `.github/workflows/compile-gate.yml` (+1), `scripts/atropos-verify-worktree.sh` (+1), `STATUS-BACKEND.md` (+2).
+- Atoms / phases affected: B-MCP-GITHUB binding acceptance wiring.
+- Predicate moved: the existing GitHub binding suite is now selected by both canonical hosted backend lanes alongside the typed client and scavenger suites.
+- Verification actually run: `git diff --check` and selector inspection are available; hosted/root Gradle execution remains pending.
+- % delta: unchanged; source-wired but partial pending hosted execution evidence.
+- Fingerprints: recorded after the batch commit.
+
 ### 2026-08-24T12:35:00Z · Agent: Codex GPT-5 · Batch: constrained-backend-blocker-audit
 
 - Paths touched: `STATUS-BACKEND.md` (+4); no production source changes.

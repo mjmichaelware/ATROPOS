@@ -103,6 +103,7 @@ jobs:
           --tests 'atropos.core.worktree.BoundedGitWorktreeCommandRunnerTest'
           --tests 'atropos.core.verification.GateReachabilityCheckerTest'
           --tests 'atropos.core.github.GitHubApiClientTest'
+          --tests 'atropos.core.github.GitHubBindingTest'
           --tests 'atropos.core.scavenge.GitHubScavengerTest'
 
       - name: validate MCP example catalog

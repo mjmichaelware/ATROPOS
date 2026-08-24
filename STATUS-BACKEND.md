@@ -337,4 +337,6 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 
 | focused production compile proof | inconclusive / partial | changed GitHub CLI/client slice | GitHub Actions compile job is the authoritative caller | A Termux `kotlinc` compile against the stale JAR classpath hung without diagnostics and was terminated; no focused compile or root-green claim is made. Worktree remains clean. |
 
+| B-MCP-GITHUB binding test selector | source-wired / partial | `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh` | hosted focused backend Gradle command → `atropos.core.github.GitHubBindingTest` | Existing authorization, territory, push, and repository-provisioning binding tests now run with the typed client/scavenger tests in both hosted lanes. Hosted execution remains pending. |
+
 | FTY-03 repair evidence redaction | source-wired / partial | `src/main/kotlin/atropos/core/factory/FactoryLiveRepairAction.kt`, `src/test/kotlin/atropos/core/factory/FactoryLiveRepairActionTest.kt` | `FactoryRunOrchestrator` repair callback → `FactoryLiveRepairAction` → `FactoryAcceptanceFreeze.RepairEvidence` | Repair command evidence is now passed through the existing `RedactionFilter`; execution argv is unchanged. Focused test covers an API-key argument; hosted/root execution remains pending. |
