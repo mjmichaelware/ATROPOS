@@ -13044,6 +13044,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; atoms remain source-wired / partial pending executable hosted evidence.
 - Fingerprints: `scripts/backend-atom-contract-test.sh=febea3f79ded`, `.github/workflows/compile-gate.yml=dd7c1044cd92`, `scripts/atropos-verify-worktree.sh=f9f3c36dcf18`.
 
+### 2026-08-24T18:18:00Z · Agent: Codex GPT-5 · Batch: mcp-structural-config-parser
+
+- Paths touched: `src/main/kotlin/atropos/core/integration/McpConfigParser.kt` (+159), `McpHostManager.kt` (+1/-16), `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+21), `scripts/backend-atom-contract-test.sh` (+2), `AGENTS.md`, `STATUS-BACKEND.md`.
+- Atoms / phases affected: B-MCP-CORE-a generic `mcp.json` `servers[]` loading.
+- Predicate moved: the sole MCP manager now delegates config loading to a bounded structural parser that tracks quoted strings and balanced arrays/objects, preserving nested braces and escaped arguments and refusing malformed array/object/string structure instead of silently truncating the catalog. The parser has a production caller and focused fixture.
+- Verification actually run: backend atom contract, hosted selector contract (`418 tests`), and `git diff --check` passed. Focused root Gradle command `timeout 90s ./gradlew --no-daemon :test --rerun --tests 'atropos.core.integration.McpHostManagerTest' --max-workers=1` reached root `:compileKotlin` and timed out before test output; no Kotlin pass or runtime-green claim.
+- % delta: unchanged; B-MCP-CORE-a moves from regex source-wired / partial to structurally source-wired / partial pending hosted execution.
+- Fingerprints: `McpConfigParser.kt=98443e3b5c64`, `McpHostManager.kt=8e18ba8325e3`, `McpHostManagerTest.kt=bd13b184e880`, `backend-atom-contract-test.sh=9f9d9672f4c3`.
+
 ### 2026-08-24T17:29:00Z · Agent: Codex GPT-5 · Verification: backend-static-gate-recheck
 
 - Paths touched: `AGENTS.md`, `STATUS-BACKEND.md` only.

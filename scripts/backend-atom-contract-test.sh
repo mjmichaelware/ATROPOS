@@ -28,8 +28,10 @@ done
 
 # One MCP host, with bounded process/policy/evidence and the existing callers.
 file src/main/kotlin/atropos/core/integration/McpHostManager.kt
+file src/main/kotlin/atropos/core/integration/McpConfigParser.kt
 file src/main/kotlin/atropos/cli/McpCommandHandler.kt
 file src/main/kotlin/atropos/bridge/BridgeMcpHandler.kt
+text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'McpConfigParser.parse'
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'health.tsv'
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'TypedToolExecutor'
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'BoundedProcessRunner'

@@ -15,6 +15,24 @@ import kotlin.test.assertTrue
 
 class McpHostManagerTest {
     @Test
+    fun config_parser_handles_nested_braces_escaped_strings_and_args() {
+        val root = Files.createTempDirectory("mcp-config")
+        Files.writeString(root.resolve("mcp.json"), """
+            {"servers":[
+              {"name":"local","transport":"stdio","command":"tool-{local}",
+               "args":["--label","a\"b", "{nested}"],"enabled":true,"community":false}
+            ],"metadata":{"description":"braces { stay nested }"}}
+        """.trimIndent())
+
+        val server = McpHostManager(root).load().single()
+        assertEquals("local", server.name)
+        assertEquals("tool-{local}", server.command)
+        assertEquals(listOf("--label", "a\"b", "{nested}"), server.args)
+        assertTrue(server.enabled)
+        assertFalse(server.community)
+    }
+
+    @Test
     fun community_servers_are_disabled_and_tool_results_get_evidence() {
         val root = Files.createTempDirectory("mcp-host")
         Files.writeString(root.resolve("mcp.json"), """

@@ -80,20 +80,7 @@ class McpHostManager(
 
     fun load(): List<McpServerConfig> {
         if (!Files.isRegularFile(configPath)) return emptyList()
-        val text = Files.readString(configPath)
-        val serversBody = Regex("\\\"servers\\\"\\s*:\\s*\\[(.*?)]", setOf(RegexOption.DOT_MATCHES_ALL))
-            .find(text)?.groupValues?.getOrNull(1).orEmpty()
-        return Regex("\\{(.*?)}", setOf(RegexOption.DOT_MATCHES_ALL)).findAll(serversBody).mapNotNull { match ->
-            val body = match.groupValues[1]
-            fun field(name: String): String? = Regex("\\\"$name\\\"\\s*:\\s*\\\"([^\\\"]*)\\\"").find(body)?.groupValues?.get(1)
-            fun bool(name: String, default: Boolean): Boolean =
-                Regex("\\\"$name\\\"\\s*:\\s*(true|false)").find(body)?.groupValues?.get(1)?.toBoolean() ?: default
-            val name = field("name") ?: return@mapNotNull null
-            val args = Regex("\\\"args\\\"\\s*:\\s*\\[(.*?)]", setOf(RegexOption.DOT_MATCHES_ALL)).find(body)
-                ?.groupValues?.get(1)?.let { values -> Regex("\\\"([^\\\"]*)\\\"").findAll(values).map { it.groupValues[1] }.toList() }
-                .orEmpty()
-            McpServerConfig(name, field("transport") ?: "stdio", field("command"), args, bool("enabled", false), bool("community", true), field("url"))
-        }.toList()
+        return McpConfigParser.parse(Files.readString(configPath))
     }
 
     fun statuses(): List<McpServerStatus> {

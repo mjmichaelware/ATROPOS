@@ -588,6 +588,12 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | --- | --- | --- | --- | --- |
 | backend atom source-wiring contract | source-wired / partial | `scripts/backend-atom-contract-test.sh`, `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh` | hosted compile/focused lanes → source contract → existing provider, bridge, MCP, Tier-0, factory owners | Contract passes and checks caller edges without creating a parallel orchestrator, registry, bus, or verifier. Hosted Kotlin/Actions execution remains required; no runtime-green claim. |
 
+### 2026-08-24T18:18:00Z · Backend batch: mcp-structural-config-parser
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-CORE-a `mcp.json` structural `servers[]` parser | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpConfigParser.kt`, `McpHostManager.kt`, `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` | CLI/bridge → sole `McpHostManager.load()` → `McpConfigParser.parse()` | Nested braces, escaped strings, args, booleans, and malformed structure are handled by one bounded parser. Static contracts pass; focused root Gradle reached `:compileKotlin` then timed out before tests, so runtime execution remains unproven. |
+
 ### 2026-08-24T17:29:00Z · Backend verification: composed-static-gates
 
 | check | result | evidence |
