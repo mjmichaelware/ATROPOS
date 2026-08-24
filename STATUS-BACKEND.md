@@ -198,3 +198,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | FTY-05 anti-false-finish/orphan cleanup | source-wired / partial | `src/main/kotlin/atropos/core/factory/FactoryObligationLoop.kt`, `src/test/kotlin/atropos/core/factory/FactoryObligationLoopTest.kt` | production `FactoryRunOrchestrator` → `executeUntilSettled`; no caller remains for the deleted blind finalizer | Removed the test-only `finalizeAfterVerifiedEvidence` method that marked all open nodes complete without executing them. Replaced it with a refusal test for an empty execution wave. Orphan gate exited 0 with only 4 pre-existing baseline orphans; `git diff --check` passed. Hosted/root factory tests remain pending. |
+
+### 2026-08-24T05:36:00Z · Backend batch: mcp-evidence-reason-bridge-field
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| ADD-MCP-003 result evidence contract | source-wired / partial | `src/main/kotlin/atropos/bridge/BridgeMcpHandler.kt`, `src/test/kotlin/atropos/bridge/BridgeMcpHandlerTest.kt` | `/v1/mcp/call` → existing `BridgeMcpHandler.call` → `McpToolCallResult.evidence` | Bridge responses now include `noEvidenceReason` alongside hash/path, preserving explicit no-evidence outcomes instead of making them indistinguishable from missing fields. Injected HTTP fixture asserts the empty reason on durable evidence. `git diff --check` passed; hosted/root tests remain pending. |

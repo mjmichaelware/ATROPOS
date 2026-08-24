@@ -120,4 +120,38 @@ class BridgeMcpHandlerTest {
         assertEquals(403, response.status)
         assertTrue(!response.body.contains("needs 'server' and 'tool'"))
     }
+
+    @Test
+    fun `BridgeMcpHandler exposes explicit evidence absence field`() {
+        val root = Files.createTempDirectory("bridge-mcp-evidence")
+        Files.writeString(root.resolve("mcp.json"),
+            """{"servers":[{"name":"remote","transport":"http","url":"https://mcp.test/rpc","enabled":true,"community":false}]}""")
+        val allowedBridge = McpTerritoryBridge(setOf("inspect")) { proposal ->
+            AgencyDecision(
+                proposal = proposal,
+                policyDecision = ExecutionPolicyDecision("mock", PolicyDecisionType.ALLOW, PolicyActionClass.FILE_MUTATION, false, "allowed"),
+                disposition = AgencyDisposition.ALLOWED,
+                reason = "allowed"
+            )
+        }
+        val host = McpHostManager(
+            root,
+            localOnly = false,
+            territoryBridge = allowedBridge,
+            remoteRequest = { _, request ->
+                when {
+                    request.contains("\"id\":1") -> "{\"id\":1}"
+                    request.contains("\"id\":2") -> "{\"id\":2,\"result\":{\"tools\":[{\"name\":\"inspect\"}]}}"
+                    else -> "{\"id\":3,\"result\":{\"content\":[{\"text\":\"ok\"}]}}"
+                }
+            }
+        )
+        val response = BridgeMcpHandler(allowedBridge, host).call(
+            HttpRequest("POST", "/v1/mcp/call", mapOf(
+                "server" to "remote", "tool" to "inspect", "callerId" to "client", "paths" to "src/main"
+            ), emptyMap(), "")
+        )
+        assertEquals(200, response.status)
+        assertTrue(response.body.contains("\"noEvidenceReason\":\"\""))
+    }
 }

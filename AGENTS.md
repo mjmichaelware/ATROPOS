@@ -497,6 +497,15 @@ End of AGENTS.md
 - % delta: unchanged; source-wired but partial pending hosted execution.
 - Fingerprints: `FactoryObligationLoop.kt=1449df8a8577`; `FactoryObligationLoopTest.kt=0bc08def8ce4`.
 
+### 2026-08-24T05:36:00Z · Agent: Codex GPT-5 · Batch: mcp-evidence-reason-bridge-field
+
+- Paths touched: `src/main/kotlin/atropos/bridge/BridgeMcpHandler.kt` (+2/-1), `src/test/kotlin/atropos/bridge/BridgeMcpHandlerTest.kt` (+34), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: ADD-MCP-003 MCP result-to-evidence contract.
+- Predicate moved: `/v1/mcp/call` now preserves the existing `McpEvidenceRef.noEvidenceReason` field in its JSON response, so clients can distinguish durable evidence from an explicit no-evidence outcome. The existing bridge/host owners remain unchanged.
+- Verification actually run: `git diff --check` passed; focused Gradle/root and hosted execution remain pending, so no green claim.
+- % delta: unchanged; source-wired but partial pending hosted execution.
+- Fingerprints: `BridgeMcpHandler.kt=818e3a14b940`; `BridgeMcpHandlerTest.kt=f83b010d08d5`.
+
 ### 2026-08-24T04:41:10Z · Agent: Codex GPT-5 · Batch: mcp-http-request-validity
 
 - Paths touched: `src/main/kotlin/atropos/core/integration/McpHostManager.kt` (+10/-4), `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+2).

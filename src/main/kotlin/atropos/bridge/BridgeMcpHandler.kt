@@ -85,7 +85,8 @@ internal class BridgeMcpHandler(
                     "tool" to JsonWriter.str(tool),
                     "response" to JsonWriter.str(result.response),
                     "evidenceSha256" to JsonWriter.str(result.evidence.sha256.orEmpty()),
-                    "evidencePath" to JsonWriter.str(result.evidence.path?.toString().orEmpty())
+                    "evidencePath" to JsonWriter.str(result.evidence.path?.toString().orEmpty()),
+                    "noEvidenceReason" to JsonWriter.str(result.evidence.noEvidenceReason.orEmpty())
                 )
             )
         }.getOrElse { failure ->
