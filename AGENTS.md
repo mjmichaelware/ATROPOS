@@ -452,6 +452,15 @@ End of AGENTS.md
 - % delta: unchanged; source truth improved, but the metric remains partial until a real predicate-event projection exists.
 - Fingerprint: `VerifyCommand.kt=d219e5c43963`.
 
+### 2026-08-24T06:52:00Z · Agent: Codex GPT-5 · Batch: mcp-process-owner-injection
+
+- Paths touched: `src/main/kotlin/atropos/core/integration/McpHostManager.kt` (+6/-2), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-MCP-CORE-b/g process transport and lifecycle ownership.
+- Predicate moved: the sole MCP host now routes default stdio health probes through its injected `BoundedProcessRunner`, the same process owner used by tool calls. This removes the hidden second runner and preserves bounded lifecycle control and test injection at the host boundary.
+- Verification actually run: `git diff --check` passed; `timeout 90s python3 scripts/find-orphans.py --fail-on-new` exited 0 with only the four pre-existing baseline orphan files (4 files / 360 LOC); source scan found no direct `BoundedProcessRunner()\.start` in the MCP host. Root Gradle and hosted GitHub Actions remain unrun.
+- % delta: unchanged; transport ownership is stronger, but hosted test evidence remains pending.
+- Fingerprint: `McpHostManager.kt=c394fd0d0464`.
+
 ### 2026-08-23T12:00:00Z · Agent: Codex GPT-5 · Batch: factory-handoff-durable-guard-wave1
 
 - Paths touched: `src/main/kotlin/atropos/core/dag/DagStore.kt` (+3), `src/main/kotlin/atropos/core/factory/FactoryProgressGuard.kt` (+67), `src/main/kotlin/atropos/core/factory/FactoryRunHandoff.kt` (+18/-5), `src/main/kotlin/atropos/core/factory/FactoryRunOrchestrator.kt` (+32), `src/main/kotlin/atropos/core/factory/FactoryRepairExecutor.kt` (existing production seam), `src/main/kotlin/atropos/cli/FactoryCommandHandler.kt` (+2), `src/test/kotlin/atropos/core/factory/FactoryProgressGuardTest.kt` (+17), `src/test/kotlin/atropos/core/factory/FactoryResumeAndRepairTest.kt` (+4), and `STATUS-BACKEND.md` (new backend ledger).

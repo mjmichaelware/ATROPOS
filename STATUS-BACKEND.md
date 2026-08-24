@@ -396,3 +396,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | AcceptanceVelocity / verification evidence honesty | source-wired / partial | `src/main/kotlin/atropos/cli/commands/VerifyCommand.kt` | `/verify narrow|wide` → existing `VerifyCommand` → `AcceptanceVelocity.calculate` with an explicitly empty authoritative event set | Removed the fabricated successful `VerificationEvent` that reported velocity before compilation. `/verify` now renders `velocity=unmeasured` until a real event-store projection supplies predicate events. `git diff --check` passed; orphan gate reports only the same 4 pre-existing files; root/hosted tests remain pending. |
+
+### 2026-08-24T06:52:00Z · Backend batch: mcp-process-owner-injection
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-CORE-b/g bounded MCP process ownership | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt` | `/mcp` and bridge → shared `McpHostManager.statuses/callTool` → the manager's injected `BoundedProcessRunner` | Default stdio health probes now use the same injected bounded process runner as tool calls; a hidden second runner was removed. Static source check confirms no direct `BoundedProcessRunner()\.start` remains in the MCP host. Root/hosted tests remain pending. |
