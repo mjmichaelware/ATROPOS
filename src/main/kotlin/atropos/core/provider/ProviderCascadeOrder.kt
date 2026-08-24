@@ -53,7 +53,7 @@ object ProviderCascadeOrder {
             // would refuse the call anyway; leaving it in the order would mean
             // the cascade spends attempts discovering that.
             .filterNot {
-                descriptors[it]?.costMode == CostMode.PAID_LOCKED &&
+                descriptors[it]?.billingClass() == BillingClass.PAID &&
                     !(allowUnlockedPaid && paidGate.isProviderUnlocked(it))
             }
             .withIndex()

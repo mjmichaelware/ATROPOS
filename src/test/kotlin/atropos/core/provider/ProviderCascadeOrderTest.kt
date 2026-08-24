@@ -43,6 +43,13 @@ class ProviderCascadeOrderTest {
     }
 
     @Test
+    fun a_credit_pool_provider_never_enters_the_cascade_without_approval() {
+        val ordered = ProviderCascadeOrder.order(listOf("groq", "cerebras", "deepinfra", "ollama"))
+
+        assertEquals(listOf("ollama", "groq"), ordered)
+    }
+
+    @Test
     fun an_unknown_provider_is_ranked_last_not_assumed_free() {
         val ordered = ProviderCascadeOrder.order(listOf("mystery_provider", "groq"))
 

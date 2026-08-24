@@ -23,7 +23,10 @@ object ProviderActionProposals {
      * where this is true, so adding a name here disables it everywhere at once.
      */
     val PAID_PROVIDERS: Set<String> =
-        StaticProviderDescriptorRegistry().getPaidLocked().map { it.id }.toSet()
+        StaticProviderDescriptorRegistry().getAll()
+            .filter { it.billingClass() == atropos.core.provider.BillingClass.PAID }
+            .map { it.id }
+            .toSet()
 
     fun isPaid(provider: String): Boolean = provider in PAID_PROVIDERS
 

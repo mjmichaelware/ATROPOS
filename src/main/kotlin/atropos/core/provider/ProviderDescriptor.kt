@@ -28,7 +28,7 @@ data class ProviderDescriptor(
     }
 
     fun isFreeEligible(): Boolean =
-        costMode in setOf(CostMode.LOCAL, CostMode.FREE, CostMode.COOLDOWN_OK, CostMode.CREDIT_POOL, CostMode.OPTIONAL_FREE)
+        costMode in setOf(CostMode.LOCAL, CostMode.FREE, CostMode.COOLDOWN_OK, CostMode.OPTIONAL_FREE)
 
     fun isPaidLocked(): Boolean = costMode == CostMode.PAID_LOCKED
     fun hasCapability(capability: ApiCapability): Boolean = capability in capabilities

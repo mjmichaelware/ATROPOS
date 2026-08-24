@@ -788,3 +788,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-PROV-003 / B-PROV-004d launch cascade order | source-wired / partial | src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt, src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt | process startup → existing CommandRouter initializer → ProviderOnboardingService.refresh() → rendered cascade= line | refresh() now returns persisted preference order; added a restart/refresh assertion for preferred order. Provider contract, selector (383), orphan gate (4 historical baseline orphans / 360 LOC), and diff check pass. Root/provider Kotlin execution remains pending after the earlier root :compileKotlin timeout. |
+
+### 2026-08-24T16:55:00Z · Backend batch: credit-pool-paid-gate
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-PROV-012 paid approval and free-first route truth | source-wired / partial | `src/main/kotlin/atropos/core/provider/ProviderDescriptor.kt`, `ProviderActionProposals.kt`, `ProviderCascadeOrder.kt`, `RoutePolicy.kt`, focused provider policy tests | existing `AdapterRouteFacade` / `RoutePolicy` → `ProviderActionProposals` → `BoundedAgencyGate` and `EmergencyPaidGate`; existing cascade → `ProviderCascadeOrder` | Canonical `BillingClass.PAID` now covers `CREDIT_POOL` providers; they cannot enter an unapproved cascade and route refusal is `paid_approval_required`. Selector contract (383), orphan gate (4 historical baseline orphans / 360 LOC), and diff check pass. Focused root Gradle selection timed out at root `:compileKotlin` after `:core:jvmJar` before tests; no Kotlin or hosted green claim. |

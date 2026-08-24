@@ -54,7 +54,9 @@ class ProviderEligibilityFilter(
         if (!descriptor.isLocal && !quota.configured) return ProviderEligibility(descriptor, quota, false, "not_configured")
         if (!descriptor.isLocal && !quota.verified) return ProviderEligibility(descriptor, quota, false, "not_verified")
         val isUnlocked = paidGate.isProviderUnlocked(descriptor.id)
-        if (quota.paidLocked && descriptor.isPaidLocked() && !isUnlocked) return ProviderEligibility(descriptor, quota, false, "paid_locked")
+        if (descriptor.billingClass() == BillingClass.PAID && !isUnlocked) {
+            return ProviderEligibility(descriptor, quota, false, "paid_approval_required")
+        }
         if (!quota.availableAt(nowEpochMs())) return ProviderEligibility(descriptor, quota, false, quota.state.name.lowercase())
         return ProviderEligibility(descriptor, quota, true, "eligible")
     }

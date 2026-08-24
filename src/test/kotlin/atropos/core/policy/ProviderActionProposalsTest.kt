@@ -69,6 +69,8 @@ class ProviderActionProposalsTest {
     @Test
     fun paid_flag_tracks_the_single_canonical_set() {
         assertTrue(ProviderActionProposals.isPaid("openai"))
+        assertTrue(ProviderActionProposals.isPaid("cerebras"))
+        assertTrue(ProviderActionProposals.forCall("deepinfra", "chat", 1, ActionActor.HumanOwner).paidProvider)
         assertTrue(ProviderActionProposals.forCall("anthropic", "patch", 1, ActionActor.HumanOwner).paidProvider)
         assertFalse(ProviderActionProposals.isPaid("groq"))
         assertFalse(ProviderActionProposals.forCall("groq", "patch", 1, ActionActor.HumanOwner).paidProvider)

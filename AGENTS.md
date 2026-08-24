@@ -12955,3 +12955,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: provider environment contract passed; hosted selector contract passed with 383 selectors; orphan gate passed with only 4 historical baseline orphans / 360 LOC; git diff --check passed. Root/provider Kotlin tests were not rerun after this one-line source change because the prior focused command timed out in root :compileKotlin; no test-green claim.
 - % delta: unchanged; B-PROV-003/004 remain source-wired / partial pending hosted/root execution.
 - Fingerprints (sha256, first 12): `ProviderOnboarding.kt=0464b1a241bda`, `ProviderOnboardingTest.kt=7afc90bb703d`.
+
+### 2026-08-24T16:55:00Z · Agent: Codex GPT-5 · Batch: credit-pool-paid-gate
+
+- Paths touched: `src/main/kotlin/atropos/core/provider/ProviderDescriptor.kt` (+1/-1), `ProviderActionProposals.kt` (+4), `ProviderCascadeOrder.kt` (+1), `RoutePolicy.kt` (+3), `ProviderActionProposalsTest.kt` (+2), `ProviderCascadeOrderTest.kt` (+7), `AGENTS.md`, `STATUS-BACKEND.md`.
+- Atoms / phases affected: B-PROV-012 paid approval, free-first cascade, route truth.
+- Predicate moved: every descriptor whose canonical `BillingClass` is `PAID`, including `CREDIT_POOL` providers such as Cerebras and DeepInfra, is now included in the shared paid set, refused by the cascade without an unlock, and refused by `RoutePolicy` with `paid_approval_required`; free eligibility no longer contradicts the billing classification. No second policy owner was introduced.
+- Verification actually run: `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (383 tests)`), `timeout 90s python3 scripts/find-orphans.py --fail-on-new` (exit 0; 4 historical baseline orphan files / 360 LOC), and `git diff --check` passed. Focused root Gradle selection (`ProviderActionProposalsTest`, `ProviderCascadeOrderTest`) exited 124 during root `:compileKotlin` after `:core:jvmJar`, before test execution; no Kotlin/provider test-green or hosted-green claim.
+- % delta: unchanged; B-PROV-012 remains source-wired / partial pending hosted execution.
+- Fingerprints (sha256, first 12): `ProviderDescriptor.kt=639cfd348464`, `ProviderActionProposals.kt=b4c7a990c275`, `ProviderCascadeOrder.kt=6901c0928943`, `RoutePolicy.kt=3d3d07ef94b5`, `ProviderActionProposalsTest.kt=c62ee6e8a5ac`, `ProviderCascadeOrderTest.kt=be0c86dee693`.
