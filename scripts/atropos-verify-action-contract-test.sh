@@ -16,6 +16,7 @@ grep -Eq '^    - id: verify$' "$ACTION"
 grep -Fq 'PIPESTATUS[0]' "$ACTION"
 grep -Fq 'GITHUB_OUTPUT' "$ACTION"
 grep -Fq 'tee "$log_file"' "$ACTION"
+grep -Fq 'exit "$verify_exit"' "$ACTION"
 
 printf '%s\n' ATROPOS_VERIFY_ACTION_CONTRACT_OK
 
@@ -25,5 +26,8 @@ grep -Eq 'actions/checkout@v[0-9]+' "$WORKFLOW"
 grep -Eq 'actions/setup-java@v[0-9]+' "$WORKFLOW"
 grep -Fq 'uses: ./.github/actions/atropos-verify' "$WORKFLOW"
 grep -Fq 'actions/github-script@v' "$WORKFLOW"
+grep -Fq "outcome === 'success' ? 'success'" "$WORKFLOW"
+grep -Fq "outcome === 'cancelled' ? 'cancelled' : 'failure'" "$WORKFLOW"
+grep -Fq 'checks.create' "$WORKFLOW"
 
 printf '%s\n' ATROPOS_VERIFY_WORKFLOW_CONTRACT_OK

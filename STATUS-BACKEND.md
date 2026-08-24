@@ -746,3 +746,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | ADD-MCP-001 / B-MCP-CORE health exclusion at call time | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` | CLI/bridge → existing `McpHostManager.callTool` → `statuses()` probe/persistence → bounded transport | Direct tool calls now consult the canonical health probe after allowlist/policy checks and refuse `UNHEALTHY` servers before process or remote transport starts. Added a fixture proving no unhealthy stdio process starts and health.tsv records the refusal state. Selector parity, diff check, and orphan gate pass locally; hosted/root Kotlin execution remains pending. |
+
+### 2026-08-24T15:12:00Z · Backend batch: gha-fail-closed-contract
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-GHA / T01 fail-closed verification contract | source-wired / partial | `scripts/atropos-verify-action-contract-test.sh`, `.github/actions/atropos-verify/action.yml`, `.github/workflows/atropos-verify-example.yml` | existing compile-gate job → action contract → composite action exit status and GitHub check conclusion | The contract now asserts `exit \"$verify_exit\"`, success-only check conclusion, failure mapping for all other outcomes, and `checks.create`. Local shell/action/orphan/diff checks pass; hosted Action execution remains unrun. |

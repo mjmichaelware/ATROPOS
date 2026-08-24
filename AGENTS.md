@@ -12892,3 +12892,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Acceptance predicate checked: the available local Gradle lane must be measured without being generalized to the root backend test suite.
 - Evidence: `./gradlew :core:jvmTest --no-daemon --max-workers=1 --rerun` completed successfully in 49s; XML reports show exactly 2 tests, 0 failures, 0 errors, 0 skipped (`PortableSurfaceContractTest`, `PortableEngineStateTest`). `bash scripts/hosted-test-selector-contract.sh` passed with 382 selectors, and `timeout 90s python3 scripts/find-orphans.py --fail-on-new` passed with only 4 historical baseline orphans / 360 LOC.
 - % delta: unchanged; root provider/bridge/MCP/factory execution remains unproven and GitHub Actions remains the authoritative pending lane.
+
+### 2026-08-24T15:12:00Z · Agent: Codex GPT-5 · Batch: gha-fail-closed-contract
+
+- Paths touched: `scripts/atropos-verify-action-contract-test.sh` (+4), `AGENTS.md` (+7), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-MCP-GHA / T01 GitHub Actions verification action.
+- Predicate moved: the existing reusable action contract now explicitly requires propagation of the verifier exit code, and the example workflow contract requires non-success outcomes to publish a failing check conclusion. No second verifier or workflow owner was introduced.
+- Verification actually run: `bash -n scripts/atropos-verify-action-contract-test.sh`, `bash scripts/atropos-verify-action-contract-test.sh` (`ATROPOS_VERIFY_ACTION_CONTRACT_OK`, `ATROPOS_VERIFY_WORKFLOW_CONTRACT_OK`), `git diff --check`, and `timeout 90s python3 scripts/find-orphans.py --fail-on-new` (exit 0; 4 historical baseline orphan files / 360 LOC) passed. GitHub-hosted execution remains pending; no hosted-green claim.
+- % delta: unchanged; B-MCP-GHA remains source-wired / partial pending hosted execution.
+- Fingerprint: `scripts/atropos-verify-action-contract-test.sh=19f3b7fd8877`.
