@@ -13295,6 +13295,14 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; the render path is source-wired/partial pending hosted focused test execution.
 - Fingerprints: recorded in `STATUS-BACKEND.md` after commit.
 
+### 2026-08-25T00:35:00Z · Agent: Codex GPT-5 · Batch: paid-status-redaction-defense
+
+- Paths touched: `src/main/kotlin/atropos/cli/ui/StatusPaidEmergencyRenderer.kt` (+3/-2), `STATUS-BACKEND.md` (+2).
+- Atoms / phases affected: T04 secret-safe render paths; paid approval observability.
+- Predicate moved: `/paid status` now invokes the existing `RedactionFilter` before painting the unlock reason, defense-in-depth over the gate’s already-redacted persistence format.
+- Verification: pending this batch; no Kotlin or hosted green claim until the static checks are rerun.
+- % delta: unchanged; source-wired/partial pending hosted focused execution.
+
 ### 2026-08-24T20:05:00Z · Agent: Codex GPT-5 · Batch: provider-response-size-bounds
 
 - Paths touched: `src/main/kotlin/atropos/core/ProviderHttpClient.kt` (+20/-10), `src/main/kotlin/atropos/core/Provider.kt` (+11/-4), `src/main/kotlin/atropos/core/provider/adapter/NonOpenAiFreeKernelAdapter.kt` (+11/-4), `src/main/kotlin/atropos/core/provider/adapter/DataInfraKernelAdapter.kt` (+11/-4), `scripts/backend-atom-contract-test.sh` (+4).

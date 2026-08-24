@@ -958,3 +958,5 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | T04 secret-safe status rendering | source-wired / partial | `src/main/kotlin/atropos/cli/ui/StatusRouteRenderer.kt`, `src/test/kotlin/atropos/cli/ui/StatusRenderersTest.kt` | `/status route` and `/route` → existing `StatusRouteRenderer` | Adapter notes and eligibility reasons now pass through the existing `RedactionFilter` before terminal painting. Static backend contract, hosted selector contract (418), and `git diff --check` pass; hosted/root Kotlin execution remains pending. |
+
+| T04 paid-gate status rendering | source-wired / partial | `src/main/kotlin/atropos/cli/ui/StatusPaidEmergencyRenderer.kt` | `/paid status` → existing `StatusPaidEmergencyRenderer` | Paid unlock reason is redacted at the terminal boundary even though the canonical gate already persists only a redacted reason. Static contracts remain passing; hosted/root Kotlin execution remains pending. |

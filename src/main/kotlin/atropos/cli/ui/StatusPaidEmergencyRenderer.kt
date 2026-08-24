@@ -4,10 +4,12 @@ import atropos.cli.config.ConfigurationManager
 import atropos.cli.ui.design.Health
 import atropos.cli.ui.design.Role
 import atropos.core.paid.EmergencyPaidGate
+import atropos.core.security.RedactionFilter
 
 class StatusPaidEmergencyRenderer(
     private val gate: EmergencyPaidGate = EmergencyPaidGate(),
-    private val theme: TerminalTheme = TerminalTheme(ConfigurationManager())
+    private val theme: TerminalTheme = TerminalTheme(ConfigurationManager()),
+    private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     private val surface get() = theme.surface
 
@@ -24,7 +26,7 @@ class StatusPaidEmergencyRenderer(
                 add(surface.statusRow("state", "unlocked", Health.VERIFIED, width))
                 add(surface.row("provider", active.providerId, width))
                 add(surface.row("expires", active.expiresAtEpochMs.toString(), width))
-                add(surface.row("reason", active.reason, width))
+                add(surface.row("reason", redactionFilter.redact(active.reason), width))
             }
             add(surface.row("paid providers", status.knownPaidProviders.joinToString(", "), width))
             add(surface.row("audit", status.auditFile.name, width))
