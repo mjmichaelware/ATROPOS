@@ -16,6 +16,7 @@ import atropos.core.policy.ActionActor
 import atropos.core.policy.AgencyDisposition
 import atropos.core.policy.BoundedAgencyGate
 import atropos.core.policy.BoundedProcessRunner
+import atropos.core.policy.TypedToolExecutor
 import atropos.core.security.RedactionFilter
 
 enum class McpHealth { HEALTHY, UNHEALTHY, UNTESTED }
@@ -69,7 +70,8 @@ class McpHostManager(
         }
     ),
     private val processRunner: BoundedProcessRunner = BoundedProcessRunner(),
-    private val remoteRequest: ((McpServerConfig, String) -> String)? = null
+    private val remoteRequest: ((McpServerConfig, String) -> String)? = null,
+    private val toolExecutor: TypedToolExecutor = TypedToolExecutor()
 ) {
     private val configPath = root.resolve("mcp.json").normalize()
     private val evidenceRoot = root.resolve(".atropos/mcp/evidence").normalize()
@@ -190,11 +192,12 @@ class McpHostManager(
                 paths = territoryPaths
             )
         )
-        when (gate) {
+        val judged = when (gate) {
             is InboundGateResult.Refused -> error("MCP tool refused by territory bridge: ${gate.reason}")
-            is InboundGateResult.Judged -> require(gate.decision.disposition == AgencyDisposition.ALLOWED) {
-                "MCP tool refused by policy: ${gate.decision.reason}"
-            }
+            is InboundGateResult.Judged -> gate
+        }
+        require(judged.decision.disposition == AgencyDisposition.ALLOWED) {
+            "MCP tool refused by policy: ${judged.decision.reason}"
         }
         val server = load().firstOrNull { it.name == serverName }
             ?: error("MCP server is not configured: $serverName")
@@ -212,26 +215,33 @@ class McpHostManager(
         require(health.health == McpHealth.HEALTHY) {
             "MCP server is not healthy: $serverName (${health.reason})"
         }
-        if (server.remote) {
-            val response = remoteCall(server, toolName, argumentsJson, maxResponseBytes, toolBudget)
-            val safeResponse = redactionFilter.redact(response)
-            return McpToolCallResult(safeResponse, recordToolResult(serverName, toolName, safeResponse))
+        val execution = toolExecutor.execute(judged.decision) {
+            if (server.remote) {
+                remoteCall(server, toolName, argumentsJson, maxResponseBytes, toolBudget)
+            } else {
+                val command = server.command ?: error("MCP server has no stdio command: $serverName")
+                val process = processRunner.start(listOf(command) + server.args, root)
+                val worker = Executors.newSingleThreadExecutor()
+                try {
+                    val response = worker.submit<String> {
+                        exchangeStdio(process, toolName, argumentsJson, maxResponseBytes, toolBudget)
+                    }.get(5, TimeUnit.SECONDS)
+                    require(response.contains("\"id\":3")) { "MCP tools/call returned no response" }
+                    response
+                } finally {
+                    process.destroyForcibly()
+                    process.waitFor(1, TimeUnit.SECONDS)
+                    worker.shutdownNow()
+                }
+            }
         }
-        val command = server.command ?: error("MCP server has no stdio command: $serverName")
-        val process = processRunner.start(listOf(command) + server.args, root)
-        val executor = Executors.newSingleThreadExecutor()
-        return try {
-            val response = executor.submit<String> {
-                exchangeStdio(process, toolName, argumentsJson, maxResponseBytes, toolBudget)
-            }.get(5, TimeUnit.SECONDS)
-            require(response.contains("\"id\":3")) { "MCP tools/call returned no response" }
-            val safeResponse = redactionFilter.redact(response)
-            McpToolCallResult(safeResponse, recordToolResult(serverName, toolName, safeResponse))
-        } finally {
-            process.destroyForcibly()
-            process.waitFor(1, TimeUnit.SECONDS)
-            executor.shutdownNow()
+        require(execution.executed) {
+            execution.refusalReason ?: "MCP tool execution was not authorized"
         }
+        val rawResponse = execution.output
+            ?: error("MCP tool execution returned no response")
+        val safeResponse = redactionFilter.redact(rawResponse)
+        return McpToolCallResult(safeResponse, recordToolResult(serverName, toolName, safeResponse))
     }
 
     /** Performs the handshake and budget check before sending the call request. */

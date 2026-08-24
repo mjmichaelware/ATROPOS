@@ -12841,3 +12841,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Acceptance predicate checked: handoff of the accumulated backend changes to the authoritative GitHub Actions compile/focused-test lane.
 - Evidence: `git push origin main` failed before submission with `fatal: could not read Username for 'https://github.com': No such device or address`. No hosted execution or green result is claimed; commits `8ac8a75b`, `534f6aae`, `d192b1a5`, `0a0616aa`, `97f064d8`, and `e3519807` remain local and ready to push.
 - % delta: unchanged; all affected atoms remain source-wired / partial pending hosted execution where applicable.
+
+### 2026-08-25T00:20:00Z · Agent: Codex GPT-5 · Batch: mcp-typed-tool-executor-wire
+
+- Paths touched: `src/main/kotlin/atropos/core/integration/McpHostManager.kt` (+37/-35), `src/main/kotlin/atropos/core/policy/TypedToolExecutor.kt` (+18/-1), `src/test/kotlin/atropos/core/policy/TypedToolExecutorTest.kt` (+28), `STATUS-BACKEND.md` (+7), `AGENTS.md` (+7).
+- Atoms / phases affected: R6 / B-MCP-FS full typed execution wire; non-duplication of policy gates.
+- Predicate moved: MCP’s bounded transport callback now crosses the existing `TypedToolExecutor` after the canonical `McpTerritoryBridge` decision, using a new pre-judged overload so the same policy decision is not evaluated twice. The existing stdio lifecycle cleanup, HTTP transport, evidence, health, and territory owners remain unchanged; no second executor or orchestrator was created.
+- Verification actually run: `git diff --check`, `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (382 tests)`), and `timeout 90s python3 scripts/find-orphans.py --fail-on-new` (exit 0; only 4 pre-existing baseline orphan files / 360 LOC) passed. Root/hosted Kotlin execution remains pending; no test-green claim.
+- % delta: unchanged; R6 remains source-wired / partial pending hosted execution and runtime MCP proof.
+- Fingerprints (sha256, first 12): `McpHostManager.kt=70e91654b2ab`, `TypedToolExecutor.kt=45d96929747a`, `TypedToolExecutorTest.kt=3a21c1522164`.

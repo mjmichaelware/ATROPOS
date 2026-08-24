@@ -87,6 +87,12 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | --- | --- | --- | --- | --- |
 | hosted compile/focused-test execution | blocked externally / partial | none; commits `8ac8a75b`, `534f6aae`, `d192b1a5`, `0a0616aa`, `97f064d8`, `e3519807` are ready locally | `git push origin main` → GitHub Actions workflows | Push failed before network submission: `fatal: could not read Username for 'https://github.com': No such device or address`. No hosted compile/test result is claimed; local static checks remain the only new evidence. |
 
+### 2026-08-25T00:20:00Z · Backend batch: mcp-typed-tool-executor-wire
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| R6 / B-MCP-FS typed execution seam | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `src/main/kotlin/atropos/core/policy/TypedToolExecutor.kt`, `src/test/kotlin/atropos/core/policy/TypedToolExecutorTest.kt` | CLI/bridge → `McpHostManager.callTool` → existing `McpTerritoryBridge` decision → `TypedToolExecutor.execute(AgencyDecision)` → bounded stdio/HTTP transport | MCP transport now executes through the existing typed executor using the already-judged decision, avoiding a second gate evaluation while preserving the single inbound territory/policy crossing. Added proof for executing an already-admitted decision. Static selector/orphan/diff checks pass; root/hosted Kotlin execution remains pending. |
+
 ## Wave residual audit
 
 | residual | status | evidence / caller | remaining truth |

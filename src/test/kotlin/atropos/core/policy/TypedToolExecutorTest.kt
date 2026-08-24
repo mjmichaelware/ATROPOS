@@ -65,4 +65,32 @@ class TypedToolExecutorTest {
         assertEquals("ok", result.output)
         assertEquals(AgencyDisposition.ALLOWED, result.disposition)
     }
+
+    @Test
+    fun typed_tool_executor_can_run_the_already_judged_decision_without_a_second_gate() {
+        val proposal = ActionProposal(
+            id = "proposal-inbound",
+            actionClass = PolicyActionClass.FILE_MUTATION,
+            actor = ActionActor.HierarchyNode("mcp", "fixture"),
+            targetPaths = listOf(".")
+        )
+        val policyDecision = ExecutionPolicyDecision(
+            id = "decision-inbound",
+            decision = PolicyDecisionType.ALLOW,
+            actionClass = PolicyActionClass.FILE_MUTATION,
+            destructive = false,
+            reason = "already admitted by inbound territory bridge"
+        )
+        val executor = TypedToolExecutor(
+            BoundedAgencyGate(ExecutionPolicyEngine(Files.createTempDirectory("atropos-policy-inbound-")))
+        )
+
+        val result = executor.execute(
+            AgencyDecision(proposal, policyDecision, AgencyDisposition.ALLOWED, policyDecision.reason)
+        ) { "mcp-result" }
+
+        assertTrue(result.authorized)
+        assertTrue(result.executed)
+        assertEquals("mcp-result", result.output)
+    }
 }
