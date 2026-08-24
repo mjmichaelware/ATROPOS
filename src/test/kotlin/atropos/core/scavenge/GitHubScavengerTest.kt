@@ -1,12 +1,53 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.scavenge
 
+import atropos.core.github.GitHubApiClient
+import atropos.core.github.GitHubApiWireRequest
+import atropos.core.github.GitHubApiWireResponse
+import atropos.core.policy.ActionProposal
+import atropos.core.policy.AgencyDecision
+import atropos.core.policy.AgencyDisposition
+import atropos.core.policy.ExecutionPolicyDecision
+import atropos.core.policy.PolicyActionClass
+import atropos.core.policy.PolicyDecisionType
+import atropos.core.security.MapSecretSource
+import atropos.core.security.SecretSinkKind
+import atropos.core.security.SecretSinkMatrix
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class GitHubScavengerTest {
+
+    @Test
+    fun production_path_delegates_to_the_gated_github_client() {
+        val requests = mutableListOf<GitHubApiWireRequest>()
+        val client = GitHubApiClient(
+            secretSource = MapSecretSource(mapOf("GITHUB_TOKEN" to "test-token")),
+            gate = ::allowNetwork,
+            transport = { request ->
+                requests += request
+                GitHubApiWireResponse(
+                    200,
+                    if (request.url.contains("is%3Aissue")) issueBody() else "{\"items\":[]}"
+                )
+            }
+        )
+
+        SecretSinkMatrix.setPermitted(SecretSinkKind.EGRESS_URL, true)
+        try {
+            val found = GitHubScavenger(apiClient = client)
+                .scavenge(GitHubScavenger.Query(owner = "acme"))
+
+            assertEquals(1, found.size)
+            assertEquals(2, requests.size)
+            assertTrue(requests.all { it.url.startsWith("https://api.github.com/search/issues") })
+            assertTrue(requests.all { it.token == "test-token" })
+        } finally {
+            SecretSinkMatrix.resetDefaults()
+        }
+    }
 
     private fun issueBody() = """
         {"total_count":1,"items":[
@@ -38,6 +79,21 @@ class GitHubScavengerTest {
 
     private fun scavenger(github: FakeGitHub, token: String? = "t0ken") =
         GitHubScavenger(token = token, http = github::handle)
+
+    private companion object {
+        fun allowNetwork(proposal: ActionProposal): AgencyDecision = AgencyDecision(
+            proposal = proposal,
+            policyDecision = ExecutionPolicyDecision(
+                id = "test-network",
+                decision = PolicyDecisionType.ALLOW,
+                actionClass = PolicyActionClass.NETWORK,
+                destructive = false,
+                reason = "test allowed"
+            ),
+            disposition = AgencyDisposition.ALLOWED,
+            reason = "test allowed"
+        )
+    }
 
     @Test
     fun it_finds_issues_a_maintainer_labelled_for_help() {

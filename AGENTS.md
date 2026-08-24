@@ -12161,6 +12161,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; source-wired but partial pending hosted execution evidence.
 - Fingerprints: recorded after the batch commit.
 
+### 2026-08-24T10:10:00Z · Agent: Codex GPT-5 · Batch: github-scavenge-unified-behavior-test
+
+- Paths touched: `src/test/kotlin/atropos/core/scavenge/GitHubScavengerTest.kt` (+45), `STATUS-BACKEND.md` (+2).
+- Atoms / phases affected: B-MCP-GITHUB single transport owner and caller proof.
+- Predicate moved: a focused behavioral test now exercises the production-mode `/scavenge` composition through `GitHubApiClient.searchIssues` with injected transport, explicit secret source, egress permission, and policy approval; it asserts both searches use the canonical GitHub endpoint and token path.
+- Verification actually run: source inspection and `git diff --check` are available; root Gradle and hosted execution remain pending, so no test green claim is made.
+- % delta: unchanged; source-wired but partial pending hosted execution evidence.
+- Fingerprints: recorded after the batch commit.
+
 ### 2026-08-24T09:45:00Z · Agent: Codex GPT-5 · Batch: backend-ownership-audit
 
 - Paths touched: `STATUS-BACKEND.md` (+2); no production source changes.
