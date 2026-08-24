@@ -13754,6 +13754,16 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprints: `scripts/backend-atom-contract-test.sh=b886f690ae67`.
 
+### 2026-08-25T01:00:00Z · Agent: Codex GPT-5 · Batch: mcp-cli-discovery-entries
+
+- Paths touched: `src/main/kotlin/atropos/cli/input/CommandCatalog.kt` (+2), `scripts/backend-atom-contract-test.sh` (+4), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-MCP-CORE-j/k `/mcp list|test` discoverability.
+- Predicate moved: `/mcp list` and `/mcp test` are now explicit command-catalog entries and CI-guarded to reach the existing `McpCommandHandler`/`McpHostManager.statuses()` owner.
+- Verification actually run: backend atom contract, hosted selector parity (`421 tests`), and `git diff --check` passed. Hosted Kotlin CLI execution remains unverified.
+- % delta: unchanged; B-MCP-CORE-j/k remain source-wired/partial pending hosted execution.
+- New overall estimate: unchanged.
+- Fingerprints: `CommandCatalog.kt=412f3489b233`; `scripts/backend-atom-contract-test.sh=db900ae05686`.
+
 ### 2026-08-24T22:35:00Z · Agent: Codex GPT-5 · Batch: local-health-response-bounds
 
 - Paths touched: `src/main/kotlin/atropos/core/ProviderState.kt` (+10/-2), `src/main/kotlin/atropos/core/agent/ProviderSessionSupervisor.kt` (+13/-3), `scripts/backend-atom-contract-test.sh` (+2).

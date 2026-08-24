@@ -66,6 +66,7 @@ file src/main/kotlin/atropos/core/integration/McpHostManager.kt
 file src/main/kotlin/atropos/core/integration/McpConfigParser.kt
 file src/main/kotlin/atropos/cli/McpCommandHandler.kt
 file src/main/kotlin/atropos/bridge/BridgeMcpHandler.kt
+file src/main/kotlin/atropos/cli/input/CommandCatalog.kt
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'McpConfigParser.parse'
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'health.tsv'
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'TypedToolExecutor'
@@ -77,6 +78,10 @@ text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'SecretSinkMatri
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'McpConfigParser.requireJsonObject'
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'HttpClient.Redirect.NEVER'
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'readNBytes(DEFAULT_REMOTE_RESPONSE_BYTES + 1)'
+text src/main/kotlin/atropos/cli/McpCommandHandler.kt 'null, "list" -> uiEngine.renderBlock(manager.statuses()'
+text src/main/kotlin/atropos/cli/McpCommandHandler.kt '"test" -> uiEngine.renderBlock(manager.statuses()'
+text src/main/kotlin/atropos/cli/input/CommandCatalog.kt '"/mcp list"'
+text src/main/kotlin/atropos/cli/input/CommandCatalog.kt '"/mcp test"'
 
 # Tier-0 integrations compose onto existing gates and secret/evidence owners.
 file src/main/kotlin/atropos/core/integration/IntegrationRegistry.kt

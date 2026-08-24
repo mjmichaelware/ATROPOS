@@ -1154,3 +1154,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-HELP-001a/b/c shared command help | source-wired / partial | `src/main/kotlin/atropos/cli/help/HelpGenerator.kt`, `CommandRegistry.kt`, `CommandRouter.kt`, `src/main/kotlin/atropos/bridge/BridgeRoutes.kt`, `scripts/backend-atom-contract-test.sh` | CLI `/help` → `CommandRouter.renderHelpPage()` → `HelpGenerator`/`RegistryHelpSource`; bridge `/v1/commands` → same `CommandRegistry` | Added CI assertions that CLI and bridge help consume the single command registry/help generator. Backend contract, hosted selector parity (421), and diff check pass; hosted Kotlin help execution remains unverified. |
+
+### 2026-08-25T01:00:00Z · Agent: Codex GPT-5 · Batch: mcp-cli-discovery-entries
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-CORE-j/k `/mcp list|test` discoverability | source-wired / partial | `src/main/kotlin/atropos/cli/McpCommandHandler.kt`, `src/main/kotlin/atropos/cli/input/CommandCatalog.kt`, `scripts/backend-atom-contract-test.sh` | command registry → `/mcp list|test` → existing `McpCommandHandler` → sole `McpHostManager.statuses()` probe path | Added explicit catalog entries and CI assertions for both commands; backend contract, hosted selector parity (421), and diff check pass; hosted Kotlin CLI execution remains unverified. |

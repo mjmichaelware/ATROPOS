@@ -43,6 +43,8 @@ object CommandCatalog {
         CommandEntry("/status route", "provider route decision (add --full for expanded cascade details)"),
         CommandEntry("/providers", "provider inventory"),
         CommandEntry("/mcp", "local MCP servers and health"),
+        CommandEntry("/mcp list", "list configured MCP servers and health"),
+        CommandEntry("/mcp test", "probe configured MCP servers"),
         CommandEntry("/mcp search <query>", "search configured MCP entries without installing or downloading servers"),
         CommandEntry("/mcp call <server> <tool>", "call one allowlisted local MCP tool"),
         CommandEntry("/mcp ingest <path>", "convert a repository file through allowlisted MarkItDown and attest markdown"),
