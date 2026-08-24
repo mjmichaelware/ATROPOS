@@ -12179,6 +12179,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; source-wired but partial pending hosted execution evidence.
 - Fingerprints: recorded after the batch commit.
 
+### 2026-08-24T06:57:00Z · Agent: Codex GPT-5 · Batch: mcp-sse-frame-normalization
+
+- Paths touched: `src/main/kotlin/atropos/core/integration/McpHostManager.kt` (+20), `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+24), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-MCP-CORE-b/c/d/e HTTP/SSE MCP transport.
+- Predicate moved: configured SSE MCP servers can now return standard `data:` JSON-RPC frames through the existing host; normalization occurs before the existing bounded initialize/tools-list/tools-call parser, while raw JSON behavior is unchanged. No second transport owner was added.
+- Verification actually run: `git diff --check` passed; `timeout 90s python3 scripts/find-orphans.py --fail-on-new` exited 0 with only four pre-existing orphan files (4 files / 360 LOC). The new SSE fixture is wired into the existing `McpHostManagerTest`; root Gradle and hosted GitHub Actions remain unrun.
+- % delta: unchanged; transport coverage is source-wired, hosted execution pending.
+- Fingerprints: `McpHostManager.kt=73521ee16845`; `McpHostManagerTest.kt=064d594dcf86`.
+
 ### 2026-08-24T15:05:00Z · Agent: Codex GPT-5 · Batch: github-write-microatoms-gated
 
 - Paths touched: `src/main/kotlin/atropos/core/github/GitHubApiClient.kt` (+36), `GitHubBinding.kt` (+24), `src/main/kotlin/atropos/cli/GitHubCommandHandler.kt` (+31), `CommandCatalog.kt` (+7), `src/test/kotlin/atropos/core/github/GitHubApiClientTest.kt` (+28), `CommandCatalogBackendEntriesTest.kt` (+7), and `STATUS-BACKEND.md` (+2).

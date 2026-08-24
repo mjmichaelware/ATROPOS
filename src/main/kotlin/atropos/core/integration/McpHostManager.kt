@@ -347,8 +347,26 @@ class McpHostManager(
             probeProcess(server, root, processRunner)
         }
 
-    private fun remoteExchange(server: McpServerConfig, body: String): String =
-        remoteRequest?.invoke(server, body) ?: postRemote(server, body)
+    private fun remoteExchange(server: McpServerConfig, body: String): String {
+        val raw = remoteRequest?.invoke(server, body) ?: postRemote(server, body)
+        return normalizeRemoteResponse(raw)
+    }
+
+    /**
+     * MCP HTTP/SSE servers may wrap each JSON-RPC response in one or more
+     * `data:` frames. Keep the host's existing bounded JSON-RPC parser as the
+     * single consumer by extracting only those frames; ordinary JSON remains
+     * byte-for-byte unchanged.
+     */
+    private fun normalizeRemoteResponse(raw: String): String {
+        val frames = raw.lineSequence()
+            .map(String::trim)
+            .filter { it.startsWith("data:") }
+            .map { it.removePrefix("data:").trim() }
+            .filter(String::isNotBlank)
+            .toList()
+        return if (frames.isEmpty()) raw else frames.joinToString("\n")
+    }
 
     private fun postRemote(server: McpServerConfig, body: String): String {
         val url = server.url?.trim()?.takeIf { it.isNotBlank() }

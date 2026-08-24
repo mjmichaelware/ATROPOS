@@ -294,4 +294,24 @@ class McpHostManagerTest {
         assertEquals(McpHealth.HEALTHY, status.health)
         assertEquals(2, requests.size)
     }
+
+    @Test
+    fun sse_frames_are_normalized_before_the_existing_json_rpc_probe() {
+        val root = Files.createTempDirectory("mcp-sse-probe")
+        Files.writeString(root.resolve("mcp.json"),
+            """{"servers":[{"name":"remote","transport":"sse","url":"https://mcp.example.test/events","enabled":true,"community":false}]}""")
+        val requests = mutableListOf<String>()
+        val status = McpHostManager(
+            root,
+            localOnly = false,
+            remoteRequest = { _, body ->
+                requests += body
+                if (body.contains("\"id\":1")) "event: message\ndata: {\"id\":1}\n\n"
+                else "data: {\"id\":2,\"result\":{\"tools\":[{\"name\":\"inspect\"}]}}\n"
+            }
+        ).statuses().single()
+
+        assertEquals(McpHealth.HEALTHY, status.health)
+        assertEquals(2, requests.size)
+    }
 }

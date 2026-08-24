@@ -402,3 +402,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-CORE-b/g bounded MCP process ownership | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt` | `/mcp` and bridge → shared `McpHostManager.statuses/callTool` → the manager's injected `BoundedProcessRunner` | Default stdio health probes now use the same injected bounded process runner as tool calls; a hidden second runner was removed. Static source check confirms no direct `BoundedProcessRunner()\.start` remains in the MCP host. Root/hosted tests remain pending. |
+
+### 2026-08-24T06:57:00Z · Backend batch: mcp-sse-frame-normalization
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-CORE-b/c/d/e SSE response framing | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` | configured `/mcp` and bridge remote calls → `McpHostManager.remoteExchange` → existing JSON-RPC probe/call parser | Existing HTTP/SSE/streamable-HTTP owner now extracts bounded `data:` frames while leaving raw JSON unchanged; an injected SSE probe fixture proves initialize/tools-list recognition. Root/hosted tests remain pending. |
