@@ -770,3 +770,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-OAUTH-UX historical blocked-row correction | superseded / partial | `STATUS-BACKEND.md`, prior `GitHubDeviceAuthClient.kt` batch | prior `/auth github` production caller; no new owner | Historical rows at the earlier residual-audit locations said no OAuth owner existed. The later device-flow batch supersedes that statement for GitHub only. Linear/browser OAuth, approved client registration, hosted Kotlin execution, and live OAuth remain unproven; no completion claim is made. |
+
+### 2026-08-24T16:40:00Z · Backend batch: installer-termux-prefix-boundary
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-INST-001 Termux platform boundary | source-wired / partial | `install.sh`, `scripts/install-contract-test.sh` | `curl .../install.sh` → installer host detection → generated `ATROPOS_PLATFORM` launcher variable | Fixed the installer’s variable collision: the host `PREFIX` is captured before ATROPOS config-root selection, so Termux detection now observes the real Termux prefix. Contract and shell syntax pass; hosted release/device execution remains pending. |

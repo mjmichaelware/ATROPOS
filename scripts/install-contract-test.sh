@@ -4,9 +4,10 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 INSTALLER="$ROOT/install.sh"
 
-grep -Fq 'mkdir -p "$PREFIX" "$PREFIX/provider" "$BIN_DIR"' "$INSTALLER"
-grep -Fq "printf '%s\\n' '{}' > \"\$PREFIX/config.json\"" "$INSTALLER"
-grep -Fq "printf '%s\\n' '[]' > \"\$PREFIX/provider/providers.json\"" "$INSTALLER"
+grep -Fq 'HOST_PREFIX="${PREFIX:-}"' "$INSTALLER"
+grep -Fq 'mkdir -p "$CONFIG_DIR" "$CONFIG_DIR/provider" "$BIN_DIR"' "$INSTALLER"
+grep -Fq "printf '%s\\n' '{}' > \"\$CONFIG_DIR/config.json\"" "$INSTALLER"
+grep -Fq "printf '%s\\n' '[]' > \"\$CONFIG_DIR/provider/providers.json\"" "$INSTALLER"
 grep -Fq '"$BIN_DIR/atropos" --health' "$INSTALLER"
 grep -Fq '"$BIN_DIR/atropos" --doctor' "$INSTALLER"
 grep -Fq 'doctor: PASS' "$INSTALLER"

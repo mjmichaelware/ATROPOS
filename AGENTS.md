@@ -12928,3 +12928,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: `git diff --check`, selector parity (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (383 tests)`), and orphan gate (4 historical baseline orphans / 360 LOC) remain passing; no new Gradle or hosted result is claimed.
 - % delta: unchanged; GitHub B-MCP-OAUTH-UX remains source-wired / partial.
 - Fingerprint: ledger-only correction; implementation fingerprints remain `GitHubDeviceAuthClient.kt=cab9bc66f75a`, `GitHubDeviceAuthClientTest.kt=08f1734ca806`.
+
+### 2026-08-24T16:40:00Z · Agent: Codex GPT-5 · Batch: installer-termux-prefix-boundary
+
+- Paths touched: `install.sh` (+16/-16), `scripts/install-contract-test.sh` (+5/-3), `AGENTS.md` (+7), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-INST-001 platform detection and B-INST-004 config bootstrap.
+- Predicate moved: installer platform detection now captures the host-provided Termux `PREFIX` before assigning ATROPOS’s independent config directory. Termux detection is therefore based on the actual shell/runtime boundary, while config, provider metadata, jar, and first-run doctor files remain under `ATROPOS_PREFIX`/`~/.atropos`; no host prefix is overwritten or written into.
+- Verification actually run: `bash -n install.sh scripts/install-contract-test.sh`, `bash scripts/install-contract-test.sh` (`ATROPOS_INSTALL_CONTRACT_OK`), `git diff --check`, selector/orphan gates previously passing; no network download, release, device install, or hosted result is claimed.
+- % delta: B-INST-001/004 remain source-wired / partial pending hosted release and device evidence, but the Termux prefix detection defect is closed locally.
+- Fingerprints (sha256, first 12): `install.sh=ecee1ecd8332`, `scripts/install-contract-test.sh=41172e9f84e9`.
