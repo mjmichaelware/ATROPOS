@@ -408,3 +408,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-CORE-b/c/d/e SSE response framing | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` | configured `/mcp` and bridge remote calls → `McpHostManager.remoteExchange` → existing JSON-RPC probe/call parser | Existing HTTP/SSE/streamable-HTTP owner now extracts bounded `data:` frames while leaving raw JSON unchanged; an injected SSE probe fixture proves initialize/tools-list recognition. Root/hosted tests remain pending. |
+
+### 2026-08-24T07:02:00Z · Backend batch: hosted-velocity-selector
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| AcceptanceVelocity hosted proof wiring | source-wired / partial | `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh` | GitHub compile/focused backend lanes → existing `AcceptanceVelocityTest` | Added the existing metric-owner test to both canonical hosted selectors. `bash -n`, action/workflow contract, `git diff --check`, and orphan gate passed locally; hosted execution remains pending. |

@@ -12188,6 +12188,14 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; transport coverage is source-wired, hosted execution pending.
 - Fingerprints: `McpHostManager.kt=73521ee16845`; `McpHostManagerTest.kt=064d594dcf86`.
 
+### 2026-08-24T07:02:00Z · Agent: Codex GPT-5 · Batch: hosted-velocity-selector
+
+- Paths touched: `.github/workflows/compile-gate.yml` (+1), `scripts/atropos-verify-worktree.sh` (+1), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: AcceptanceVelocity metric-owner proof wiring.
+- Predicate moved: the changed verification-metric owner is now selected by both canonical GitHub focused backend lanes, so hosted proof covers the existing `AcceptanceVelocityTest` alongside bridge/provider/MCP/factory tests.
+- Verification actually run: `bash -n scripts/atropos-verify-worktree.sh`, `bash scripts/atropos-verify-action-contract-test.sh`, `git diff --check`, and `timeout 90s python3 scripts/find-orphans.py --fail-on-new` passed; orphan census remains 4 pre-existing files / 360 LOC. GitHub Actions itself remains unrun.
+- % delta: unchanged; selector wiring is complete, hosted evidence pending.
+
 ### 2026-08-24T15:05:00Z · Agent: Codex GPT-5 · Batch: github-write-microatoms-gated
 
 - Paths touched: `src/main/kotlin/atropos/core/github/GitHubApiClient.kt` (+36), `GitHubBinding.kt` (+24), `src/main/kotlin/atropos/cli/GitHubCommandHandler.kt` (+31), `CommandCatalog.kt` (+7), `src/test/kotlin/atropos/core/github/GitHubApiClientTest.kt` (+28), `CommandCatalogBackendEntriesTest.kt` (+7), and `STATUS-BACKEND.md` (+2).
