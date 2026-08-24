@@ -13302,7 +13302,7 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Predicate moved: the existing self-update fetch owner now requires HTTPS and the canonical egress sink, refuses redirects, and streams at most 128 MiB before checksum verification; injected test download seams remain unaffected.
 - Verification actually run: backend atom contract, hosted selector contract (418), and `git diff --check` passed. Root/hosted Kotlin and live release download remain pending.
 - % delta: unchanged; B-INST-002 remains source-wired/partial pending hosted release evidence.
-- Fingerprints (sha256, first 12): to be recorded after commit.
+- Fingerprints (sha256, first 12): `SelfUpdate.kt=c2b204619de8`; `backend-atom-contract-test.sh=32c1c84235f3`.
 
 ### 2026-08-24T19:50:50Z · Agent: Codex GPT-5 · Batch: github-response-size-bound
 
