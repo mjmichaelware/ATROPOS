@@ -80,6 +80,14 @@ fun main(args: Array<String>) {
     try {
         val config = AtroposConfig.load()
 
+        if (args.firstOrNull() == "--doctor") {
+            atropos.cli.FirstRunDoctorRenderer(
+                backendDoctor = atropos.cli.BackendDoctor(config),
+                homeState = HomeStateProvider()
+            ).render(config.runtime.defaultProvider).forEach(::println)
+            return
+        }
+
         // Repair is automatic; resuming is not.
         //
         // Durable state left by a previous process is still repaired before the

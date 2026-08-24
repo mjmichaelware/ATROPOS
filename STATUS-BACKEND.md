@@ -463,6 +463,12 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | --- | --- | --- | --- | --- |
 | B-HELP-002a provider environment table parity | source-wired / partial | `scripts/provider-env-contract-test.sh`, `docs/PROVIDER_ENVIRONMENT.md`, `.github/workflows/compile-gate.yml`, `.github/workflows/release.yml` | GitHub compile/release jobs → contract script → canonical `StaticProviderDescriptorRegistry.kt` and onboarding document | Added a Termux-compatible contract deriving every canonical descriptor env name from the existing registry, checking documentation coverage, and checking aliases/globs/AWS discovery names. Local contract, orphan gate, and diff check pass; hosted execution remains pending. |
 
+### 2026-08-24T09:15:00Z · Backend batch: installer-six-answer-doctor
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-INST-005 post-install doctor + six answers | source-wired / partial | `src/main/kotlin/atropos/cli/FirstRunDoctorRenderer.kt`, `src/main/kotlin/atropos/Main.kt`, `install.sh`, `scripts/install-contract-test.sh`, `src/test/kotlin/atropos/cli/FirstRunDoctorRendererTest.kt`, hosted selectors | installer → generated launcher `--doctor` → `FirstRunDoctorRenderer` → existing `HomeStateProvider` six answers + `BackendDoctor` | Added a non-interactive `--doctor` entrypoint that reads all six answers from durable runtime state and composes existing provider/MCP truth; installer now runs it after `--health` and stores the report. Local shell/install/orphan/diff checks pass; root/hosted Kotlin execution remains pending. |
+
 ### 2026-08-24T08:25:00Z · Backend batch: bounded-git-conflict-list
 
 | atom | status | files | caller | tests / notes |

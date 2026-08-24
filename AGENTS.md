@@ -488,6 +488,15 @@ End of AGENTS.md
 - % delta: unchanged; B-HELP-002a remains partial pending hosted execution.
 - Fingerprints (sha256, first 12): `scripts/provider-env-contract-test.sh=45c99c9476c6`; `docs/PROVIDER_ENVIRONMENT.md=df6da2c489d0`; `compile-gate.yml=3f3233553365`; `release.yml=8cfdedd301b1`.
 
+### 2026-08-24T09:15:00Z · Agent: Codex GPT-5 · Batch: installer-six-answer-doctor
+
+- Paths touched: `src/main/kotlin/atropos/cli/FirstRunDoctorRenderer.kt` (+24), `src/main/kotlin/atropos/Main.kt` (+8), `install.sh` (+3), `scripts/install-contract-test.sh` (+1), `src/test/kotlin/atropos/cli/FirstRunDoctorRendererTest.kt` (+39), `.github/workflows/compile-gate.yml` (+1), `scripts/atropos-verify-worktree.sh` (+1), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-INST-005 post-install doctor and six-answer report.
+- Predicate moved: installation now invokes a non-interactive engine-owned `--doctor` report after health verification; the report reads the six answers through `HomeStateProvider` and backend provider/MCP truth through `BackendDoctor`, so unknown state remains explicit rather than static installer mythology.
+- Verification actually run: `bash -n` for installer/scripts, `ATROPOS_INSTALL_CONTRACT_OK`, selector presence, `git diff --check`, and `timeout 90s python3 scripts/find-orphans.py --fail-on-new` passed. The orphan gate reports 4 pre-existing files of 1035 production files (360 orphan LOC); root/hosted Kotlin execution remains pending.
+- % delta: unchanged; B-INST-005 remains partial pending hosted/root execution and real release/device proof.
+- Fingerprints (sha256, first 12): `FirstRunDoctorRenderer.kt=34a0bf0499ff`; `Main.kt=723133e8f757`; `FirstRunDoctorRendererTest.kt=20e588b5778b`; `install.sh=ab1e9077edb2`.
+
 ### 2026-08-24T06:48:39Z · Agent: Codex GPT-5 · Batch: anti-synthetic-velocity-output
 
 - Paths touched: `src/main/kotlin/atropos/cli/commands/VerifyCommand.kt` (+10/-4), `STATUS-BACKEND.md` (+7).

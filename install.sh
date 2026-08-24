@@ -138,7 +138,8 @@ chmod +x "$BIN_DIR/atropos"
 # A downloaded executable is not a usable install until the same health entry
 # point used by the release workflow starts successfully. This check is local,
 # provider-free, and never sends credentials or project data anywhere.
-if "$BIN_DIR/atropos" --health > "$PREFIX/first-run-doctor.txt" 2>&1; then
+if "$BIN_DIR/atropos" --health > "$PREFIX/first-run-doctor.txt" 2>&1 &&
+   "$BIN_DIR/atropos" --doctor >> "$PREFIX/first-run-doctor.txt" 2>&1; then
   say "doctor: PASS"
 else
   say "doctor: FAIL (see $PREFIX/first-run-doctor.txt)" >&2

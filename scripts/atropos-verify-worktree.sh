@@ -44,6 +44,7 @@ if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
     --tests 'atropos.bridge.RecoveryProjectionTest' \
     --tests 'atropos.bridge.BridgeFilesHandlerTest' \
     --tests 'atropos.cli.BackendDoctorTest' \
+    --tests 'atropos.cli.FirstRunDoctorRendererTest' \
     --tests 'atropos.cli.input.CommandCatalogBackendEntriesTest' \
     --tests 'atropos.core.agent.AgentContextCollectorTest' \
     --tests 'atropos.cli.shell.ShellBoundedAgencyTest' \
