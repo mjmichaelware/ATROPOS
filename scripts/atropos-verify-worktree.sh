@@ -33,6 +33,7 @@ if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
     --tests 'atropos.core.policy.ProviderActionProposalsTest' \
     --tests 'atropos.core.provider.QuotaLedgerRouteTruthTest' \
     --tests 'atropos.bridge.BridgeEventsHandlerTest' \
+    --tests 'atropos.bridge.BridgeStreamTest' \
     --tests 'atropos.bridge.BridgeEditorHandlerTest' \
     --tests 'atropos.bridge.BridgeEvidenceHandlerTest' \
     --tests 'atropos.bridge.BridgeApprovalHandlerTest' \

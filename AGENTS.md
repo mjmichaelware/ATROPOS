@@ -480,6 +480,15 @@ End of AGENTS.md
 - % delta: unchanged; hosted snapshot proof remains partial pending GitHub Actions execution.
 - Fingerprints (sha256, first 12): recorded after this batch.
 
+### 2026-08-24T12:35:00Z · Agent: Codex GPT-5 · Batch: bridge-event-stream-identity-proof
+
+- Paths touched: `src/test/kotlin/atropos/bridge/BridgeStreamTest.kt` (+22), `.github/workflows/compile-gate.yml` (+1), `scripts/atropos-verify-worktree.sh` (+1), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-005 / ADD-W-001 request-reading HTTP+SSE bridge identity.
+- Predicate moved: a real loopback socket test now proves the existing `/v1/events/stream` route honors the request’s session identity and cursor path through `EngineHttpServer` → `BridgeRoutes` → `BridgeEventsHandler`; events from another session are not emitted.
+- Verification actually run: targeted `git diff --check` passed; the focused `BridgeStreamTest` is selected in both hosted lanes but was not executed locally, so no bridge or root compile green claim is made.
+- % delta: unchanged; B-005 remains partial pending hosted execution.
+- Fingerprints (sha256, first 12): recorded after this batch.
+
 ### 2026-08-24T07:55:00Z · Agent: Codex GPT-5 · Batch: installer-prerelease-tag-correction
 
 - Paths touched: `install.sh` (+5), `scripts/install-contract-test.sh` (+1), `scripts/release-installer-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7).

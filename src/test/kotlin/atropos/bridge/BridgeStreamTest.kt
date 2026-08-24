@@ -2,6 +2,8 @@
 package atropos.bridge
 
 import atropos.bridge.http.EngineHttpServer
+import atropos.bridge.conversation.BridgeSessionStore
+import atropos.bridge.conversation.TurnAuthor
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.io.PrintWriter
@@ -30,8 +32,8 @@ class BridgeStreamTest {
         server?.stop()
     }
 
-    private fun start(maxFrames: Int): Int {
-        val routes = BridgeRoutes(activeProvider = { "test-provider" })
+    private fun start(maxFrames: Int, sessions: BridgeSessionStore = BridgeSessionStore()): Int {
+        val routes = BridgeRoutes(activeProvider = { "test-provider" }, sessions = sessions)
         val started = EngineHttpServer(
             routeTable = routes.table(),
             port = 0,
@@ -121,5 +123,22 @@ class BridgeStreamTest {
         assertEquals(400, response.status)
         assertTrue(response.body.contains("stream-required"))
         assertTrue(response.body.contains("EventSource"))
+    }
+
+    @Test
+    fun `event stream honors the requested session over a real socket`() {
+        BridgeEventHub.clear()
+        val sessions = BridgeSessionStore()
+        val wanted = sessions.create()
+        val other = sessions.create()
+        sessions.append(wanted.id, TurnAuthor.OPERATOR, "wanted")
+        sessions.append(other.id, TurnAuthor.OPERATOR, "other")
+        val port = start(maxFrames = 1, sessions = sessions)
+
+        val received = readStream(port, "/v1/events/stream?session=${wanted.id}&after=0", 80)
+        val data = received.firstOrNull { it.startsWith("data: ") }
+        assertNotNull(data, "no event frame arrived: $received")
+        assertTrue(data.contains(wanted.id), data)
+        assertTrue(!data.contains(other.id), data)
     }
 }

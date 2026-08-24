@@ -492,3 +492,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-GHA / T04 hosted compile snapshot secret boundary | source-wired / partial | `src/main/kotlin/atropos/core/verification/GitHubActionsCompileRunner.kt`, `src/main/kotlin/atropos/core/security/ContextPathExclusions.kt`, `src/test/kotlin/atropos/core/verification/GitHubActionsCompileRunnerTest.kt`, `src/test/kotlin/atropos/core/security/ContextPathExclusionsTest.kt`, hosted selectors | `GovernedCompileGate.forRepository` → `GitHubActionsCompileRunner.snapshotWorkingTree` → existing `ContextPathExclusions` | Changed excluded credential paths, including vendor-prefixed `.env` files, now fail the remote snapshot before `git push`; source files remain allowed. Focused refusal tests and selectors were added. Local Kotlin/hosted execution remains pending; no CI green claim. |
+
+### 2026-08-24T12:35:00Z · Backend batch: bridge-event-stream-identity-proof
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-005 / ADD-W-001 event stream request identity | source-wired / partial | `src/main/kotlin/atropos/bridge/http/EngineHttpServer.kt`, `src/main/kotlin/atropos/bridge/BridgeRoutes.kt`, `src/main/kotlin/atropos/bridge/BridgeEventsHandler.kt`, `src/test/kotlin/atropos/bridge/BridgeStreamTest.kt`, hosted selectors | loopback `EngineHttpServer` → existing `BridgeRoutes.streamRoutes` → `BridgeEventsHandler.streamEvents(request, ...)` → `BridgeEventHub` | Added a real-socket focused test proving `/v1/events/stream?session=<id>&after=0` emits the requested session’s event and excludes another session’s event. Hosted/root Kotlin execution remains pending; no bridge-green claim. |
