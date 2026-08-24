@@ -3,6 +3,9 @@ package atropos.core.provider
 import atropos.core.AtroposRepoRootLocator
 import atropos.core.paid.EmergencyPaidGate
 import atropos.core.provider.adapter.AdapterStatus
+import atropos.core.provider.adapter.AdapterRequest
+import atropos.core.provider.adapter.ProviderAdapter
+import atropos.core.provider.adapter.ProviderAdapterRegistry
 import atropos.core.provider.adapter.StaticProviderAdapterRegistry
 import atropos.core.security.MapSecretSource
 import kotlin.test.Test
@@ -171,5 +174,53 @@ class ProviderActivationServiceTest {
 
         assertEquals(ProviderActivationState.DEGRADED, record.state)
         assertTrue(record.verificationSummary.contains("requires ATROPOS_LIVE_PROVIDER_TESTS"))
+    }
+
+    @Test
+    fun live_test_converts_adapter_exception_to_unhealthy_record_without_crashing() {
+        val temp = Files.createTempDirectory("atropos-provider-live-failure")
+        val registry = StaticProviderDescriptorRegistry()
+        val groqDescriptor = registry.getById("groq") ?: error("groq descriptor missing")
+        val throwingAdapter = object : ProviderAdapter {
+            override val descriptor = groqDescriptor
+
+            override fun status() = AdapterStatus(
+                providerId = groqDescriptor.id,
+                implemented = true,
+                configured = true,
+                dryRunOnly = false,
+                modelCount = 1,
+                health = "ready",
+                detail = "injected failure fixture"
+            )
+
+            override fun complete(request: AdapterRequest): ProviderCallResult {
+                error("connection refused by injected transport")
+            }
+        }
+        val adapters = object : ProviderAdapterRegistry {
+            override fun getAll() = listOf(throwingAdapter)
+            override fun getByProviderId(providerId: String) = throwingAdapter.takeIf { it.providerId == providerId }
+            override fun getByCapability(capability: ApiCapability) =
+                listOf(throwingAdapter).filter { capability in it.capabilities }
+            override fun status() = listOf(throwingAdapter.status())
+        }
+        val service = ProviderActivationService(
+            registry = registry,
+            adapterRegistry = adapters,
+            secretSource = MapSecretSource(mapOf("GROQ_API_KEY" to "test-groq-key")),
+            quotaLedger = FileQuotaLedger(temp.resolve("quota.tsv").toFile(), FileQuotaLedger.seedFromDescriptors(registry)),
+            fixtureMatrix = ProviderFixtureMatrixService(registry, StaticProviderAdapterRegistry(registry, emptyMap())),
+            store = ProviderActivationStore(temp.resolve("activation")),
+            paidGate = EmergencyPaidGate(temp.resolve("paid").toFile()),
+            ollamaProbe = { false },
+            environment = emptyMap()
+        )
+
+        val record = service.liveTest("groq")
+
+        assertEquals(ProviderActivationState.OFFLINE, record.state)
+        assertTrue(record.verificationSummary.contains("unavailable"))
+        assertEquals(ProviderActivationState.OFFLINE, service.liveTest("groq").state)
     }
 }

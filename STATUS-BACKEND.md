@@ -45,6 +45,12 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 - MCP runtime probe remains untested against a real external deployment; the local bounded stdio fixture and core test target now pass. Health labels persist to `.atropos/mcp/health.tsv`; hosted/root integration proof remains pending.
 - Quota status projection is source-wired and locally statically checked; hosted bridge tests still need to prove the complete root compilation and response contract.
 
+### 2026-08-24T22:05:00Z · Backend batch: provider-live-test-exception-boundary
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| P18 / live-test unhealthy without cascade crash | source-wired / partial | `src/main/kotlin/atropos/core/provider/ProviderActivationService.kt`, `src/test/kotlin/atropos/core/provider/ProviderActivationServiceTest.kt` | `/providers live-test` → existing `ProviderCommandHandler` → `ProviderActivationService.liveTest` → canonical `ProviderAdapter.complete` | Adapter exceptions are normalized into the existing `ProviderFailure`/quota/state path, so an injected connection failure returns `OFFLINE` and persists a non-success activation record instead of escaping the command. Hosted selector parity (382), orphan gate, and diff check pass; root/hosted Kotlin execution and real provider calls remain unrun. |
+
 ## Wave residual audit
 
 | residual | status | evidence / caller | remaining truth |

@@ -240,15 +240,19 @@ class ProviderActivationService(
                 )
             )
         }
-        return adapter.complete(
-            AdapterRequest(
-                task = task,
-                prompt = prompt,
-                context = "Return one short line only.",
-                dryRun = false,
-                liveNetworkAllowed = environment["ATROPOS_LIVE_PROVIDER_TESTS"] == "1"
+        return try {
+            adapter.complete(
+                AdapterRequest(
+                    task = task,
+                    prompt = prompt,
+                    context = "Return one short line only.",
+                    dryRun = false,
+                    liveNetworkAllowed = environment["ATROPOS_LIVE_PROVIDER_TESTS"] == "1"
+                )
             )
-        )
+        } catch (exception: Exception) {
+            ProviderCallResult.Failure(ProviderErrorNormalizer().normalize(descriptor.id, exception))
+        }
     }
 
     private fun snapshotState(

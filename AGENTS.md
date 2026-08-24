@@ -12782,3 +12782,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; ADD-MCP-001 remains source-wired / partial pending hosted execution and configured runtime evidence.
 - New overall estimate: unchanged.
 - Fingerprints (sha256, first 12): `McpHostManager.kt=3bbbdddfdac7`, `McpHostManagerTest.kt=aeaf86a10c41`, `STATUS-BACKEND.md=10a5d2b83d1b`, `AGENTS.md=4b19a3118cb1`.
+
+### 2026-08-24T22:05:00Z · Agent: Codex GPT-5 · Batch: provider-live-test-exception-boundary
+
+- Paths touched: `src/main/kotlin/atropos/core/provider/ProviderActivationService.kt` (+10/-9), `src/test/kotlin/atropos/core/provider/ProviderActivationServiceTest.kt` (+42), `STATUS-BACKEND.md` (+7), `AGENTS.md` (+7).
+- Atoms / phases affected: P18 live-test unhealthy classification; provider cascade safety.
+- Predicate moved: an exception thrown by a provider adapter during `/providers live-test` is now converted through the existing `ProviderErrorNormalizer` and `failureState` path. The command returns a persisted non-success activation record (`OFFLINE` for a connection-refused fixture) rather than crashing or implying verification; no second adapter registry or cascade was introduced.
+- Verification actually run: `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (382 tests)`), `timeout 90s python3 scripts/find-orphans.py --fail-on-new` (exit 0; only 4 pre-existing baseline orphan files / 360 LOC), and `git diff --check` passed. The focused Kotlin test and GitHub Actions remain unrun; no compile/test-green claim.
+- % delta: unchanged; P18 remains source-wired / partial pending hosted execution and real provider runtime evidence.
+- Fingerprints (sha256, first 12): `ProviderActivationService.kt=6b017b5c26a7`, `ProviderActivationServiceTest.kt=fbd42a6c7f16`; ledger files were appended in this batch.
