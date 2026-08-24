@@ -462,6 +462,15 @@ End of AGENTS.md
 - % delta: unchanged; B-005 / ADD-W-029 remains partial pending hosted execution.
 - Fingerprints: recorded after this batch.
 
+### 2026-08-24T14:45:00Z · Agent: Codex GPT-5 · Batch: hosted-factory-integration-surface
+
+- Paths touched: `.github/workflows/compile-gate.yml` (+25), `scripts/atropos-verify-worktree.sh` (+25), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: FTY-01..05, B-005 bridge admission, B-011 MCP/integration boundary.
+- Predicate moved: all existing factory and core integration test classes are now selected by both canonical GitHub Actions lanes; the previous selector covered only a subset of factory resume/repair/obligation/language and integration bridge acceptance.
+- Verification actually run: test-file presence, selector/source presence, `git diff --check`, shell syntax, action contract, and orphan gate pass; hosted Kotlin execution remains pending.
+- % delta: unchanged; factory/integration atoms remain partial pending hosted execution.
+- Fingerprints: recorded after this batch.
+
 ### 2026-08-24T14:20:00Z · Agent: Codex GPT-5 · Batch: hosted-bridge-surface-complete
 
 - Paths touched: `.github/workflows/compile-gate.yml` (+21), `scripts/atropos-verify-worktree.sh` (+21), `STATUS-BACKEND.md` (+7).

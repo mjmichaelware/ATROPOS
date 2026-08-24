@@ -24,6 +24,27 @@ if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
     --tests 'atropos.core.factory.FactoryAcceptanceFreezeTest' \
     --tests 'atropos.core.factory.FactoryEvidenceWaveExecutorTest' \
     --tests 'atropos.core.factory.FactoryResearchDloiTest' \
+    --tests 'atropos.core.factory.AppActionRegistryTest' \
+    --tests 'atropos.core.factory.AppAuthPlannerTest' \
+    --tests 'atropos.core.factory.AppBackendIntegrationPlannerTest' \
+    --tests 'atropos.core.factory.AppDatabaseSecurityPlannerTest' \
+    --tests 'atropos.core.factory.AppDeploymentServiceTest' \
+    --tests 'atropos.core.factory.AppDurableStoreTest' \
+    --tests 'atropos.core.factory.AppFactoryAcceptanceContractTest' \
+    --tests 'atropos.core.factory.AppFactoryRouterTest' \
+    --tests 'atropos.core.factory.AppGeneratedBehaviorGuardTest' \
+    --tests 'atropos.core.factory.AppProjectGeneratorTest' \
+    --tests 'atropos.core.factory.BundledSpecGraphTest' \
+    --tests 'atropos.core.factory.CanonicalAtomizationTest' \
+    --tests 'atropos.core.factory.FactoryLanguageContractTest' \
+    --tests 'atropos.core.factory.FactoryLineageTest' \
+    --tests 'atropos.core.factory.FactoryRequirementStatementsTest' \
+    --tests 'atropos.core.factory.FactoryRunEventRecorderTest' \
+    --tests 'atropos.core.factory.FactoryRunRootGuardTest' \
+    --tests 'atropos.core.factory.IntentParserTest' \
+    --tests 'atropos.core.factory.LanguageAwareScaffoldTest' \
+    --tests 'atropos.core.factory.RepositoryVerificationPlannerTest' \
+    --tests 'atropos.core.factory.ReservedPackageNameTest' \
     --tests 'atropos.core.provider.ProviderOnboardingTest' \
     --tests 'atropos.core.provider.ProviderActivationServiceTest' \
     --tests 'atropos.core.provider.ProviderCascadeRouterTest' \
@@ -39,6 +60,10 @@ if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
     --tests 'atropos.bridge.BridgeApprovalHandlerTest' \
     --tests 'atropos.bridge.BridgeMcpHandlerTest' \
     --tests 'atropos.core.integration.McpHostManagerTest' \
+    --tests 'atropos.core.integration.AdversarialValidatorTest' \
+    --tests 'atropos.core.integration.AndroidShellBridgeTest' \
+    --tests 'atropos.core.integration.BridgeEndpointsTest' \
+    --tests 'atropos.core.integration.InboundActionProposalBridgeTest' \
     --tests 'atropos.core.integration.InboundToolBridgeTest' \
     --tests 'atropos.core.integration.MarkItDownIngestServiceTest' \
     --tests 'atropos.bridge.BridgeQuotaRouteTest' \

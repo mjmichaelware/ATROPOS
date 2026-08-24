@@ -118,6 +118,12 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-005 bridge transport/projection test coverage | source-wired / partial | `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh`, existing `src/test/kotlin/atropos/bridge/**` | existing `EngineHttpServer`/`BridgeRoutes`/projection owners → full bridge test surface in hosted selectors | Added all existing bridge, conversation, HTTP, menu, and projection test classes to both canonical hosted lanes. No new bridge owner was introduced; hosted execution remains pending. |
+
+### 2026-08-24T14:45:00Z · Backend batch: hosted-factory-integration-surface
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| FTY-01..05 / B-005 / B-011 factory and integration evidence | source-wired / partial | `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh`, existing `src/test/kotlin/atropos/core/factory/**`, `src/test/kotlin/atropos/core/integration/**` | existing factory routers/loops/guards and integration bridge owners → complete factory/integration test selectors | Added all existing factory and integration test classes to both canonical hosted lanes. No implementation owner was duplicated; hosted execution remains pending. |
 - Provider route policy now has a focused test covering both the preferred-provider tie-break and exclusion through the healthy set; the root test remains unexecuted locally because `:test` stalled at compilation.
 - Factory runtime audit: `FactoryRunOrchestrator.kt:258-290` invokes the injected repair action, then `FactoryRepairExecutor` and the existing obligation loop; `FactoryCommandHandler.kt:20-47` is the user-facing resume caller; `FactoryRunHandoff.kt:84-108` fails actionable on missing/malformed/mismatched artifacts. No factory status was upgraded without root test evidence.
 - Clean-checkout proof after commit `b1479fe8`: `./gradlew :core:jvmTest --no-daemon --max-workers=1 --rerun` passed in 52s; XML reports contain 2 tests, 0 failures, 0 errors, 0 skipped. Root Provider/Bridge/MCP/Factory tests were not re-claimed or executed.
