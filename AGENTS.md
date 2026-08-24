@@ -488,6 +488,15 @@ End of AGENTS.md
 - % delta: unchanged; source-wired but partial pending hosted execution.
 - Fingerprints: `McpHostManager.kt=0babaa5c0340`; `McpHostManagerTest.kt=be4718a9c5d5`.
 
+### 2026-08-24T05:29:00Z · Agent: Codex GPT-5 · Batch: factory-remove-blind-finalizer
+
+- Paths touched: `src/main/kotlin/atropos/core/factory/FactoryObligationLoop.kt` (-30), `src/test/kotlin/atropos/core/factory/FactoryObligationLoopTest.kt` (+8/-29), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: FTY-05 completion anti-false-finish and orphan cleanup.
+- Predicate moved: the production factory loop no longer exposes a test-only method that could mark every open DAG node complete without execution. The remaining production caller is `FactoryRunOrchestrator → executeUntilSettled`, which requires a non-empty executed wave; the replacement test proves an empty wave fails closed.
+- Verification actually run: `git diff --check` passed; `python3 scripts/find-orphans.py --fail-on-new` exited 0 with 4 pre-existing baseline orphans. Hosted/root factory execution remains pending; no green claim.
+- % delta: unchanged; source-wired but partial pending hosted execution.
+- Fingerprints: `FactoryObligationLoop.kt=1449df8a8577`; `FactoryObligationLoopTest.kt=0bc08def8ce4`.
+
 ### 2026-08-24T04:41:10Z · Agent: Codex GPT-5 · Batch: mcp-http-request-validity
 
 - Paths touched: `src/main/kotlin/atropos/core/integration/McpHostManager.kt` (+10/-4), `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+2).

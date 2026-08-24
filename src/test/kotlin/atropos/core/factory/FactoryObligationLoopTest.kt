@@ -8,35 +8,21 @@ import java.nio.file.Files
 import java.time.Instant
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class FactoryObligationLoopTest {
     @Test
-    fun verified_factory_wave_closes_only_the_existing_dag() {
+    fun outer_loop_refuses_wave_that_executes_no_atoms() {
         val root = Files.createTempDirectory("factory-loop")
         val store = DagStore(root)
-        val dag = store.createDag(
-            label = "calculator",
-            nodes = listOf(
-                node("requirements"),
-                node("source", dependencies = listOf("requirements"))
-            ),
-            projectId = "run-1"
-        )
-        val loop = FactoryObligationLoop(store)
-        val before = loop.beforeMutation(dag)
-        assertEquals(listOf("requirements"), before.runnableAtomIds)
+        val dag = store.createDag("calculator", listOf(node("requirements")), "run-1")
+        val freeze = FactoryAcceptanceFreeze.create("a".repeat(64), "b".repeat(64), dag.nodes.map { it.id }, "CLI@1-1")
 
-        val freeze = FactoryAcceptanceFreeze.create(
-            promptSha256 = "a".repeat(64),
-            researchSha256 = "b".repeat(64),
-            atomIds = dag.nodes.map { it.id },
-            promptSpans = "CLI@1-1|class=surface"
-        )
-        val after = loop.finalizeAfterVerifiedEvidence(dag.id, freeze)
-        assertTrue(after.canComplete)
-        assertEquals(2, after.doneAtomIds.size)
-        assertTrue(store.readDag(dag.id)!!.nodes.all { it.state == DagNodeState.COMPLETE })
+        assertFailsWith<IllegalArgumentException> {
+            FactoryObligationLoop(store).executeUntilSettled(dag.id, freeze) { emptySet() }
+        }
+        assertTrue(store.readDag(dag.id)!!.nodes.none { it.state == DagNodeState.COMPLETE })
     }
 
     @Test

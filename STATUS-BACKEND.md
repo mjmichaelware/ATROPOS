@@ -192,3 +192,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | ADD-MCP-007 memory non-authority | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` | existing CLI/bridge `McpHostManager.callTool` → memory/server authority-path mutation guard before process start | Memory-named MCP servers are refused for write-like operations targeting SourceAuthority/governance/ledger paths, even when an injected outer gate allows the request; fixture asserts no process start. `git diff --check` passed; hosted/root execution remains pending. |
+
+### 2026-08-24T05:29:00Z · Backend batch: factory-remove-blind-finalizer
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| FTY-05 anti-false-finish/orphan cleanup | source-wired / partial | `src/main/kotlin/atropos/core/factory/FactoryObligationLoop.kt`, `src/test/kotlin/atropos/core/factory/FactoryObligationLoopTest.kt` | production `FactoryRunOrchestrator` → `executeUntilSettled`; no caller remains for the deleted blind finalizer | Removed the test-only `finalizeAfterVerifiedEvidence` method that marked all open nodes complete without executing them. Replaced it with a refusal test for an empty execution wave. Orphan gate exited 0 with only 4 pre-existing baseline orphans; `git diff --check` passed. Hosted/root factory tests remain pending. |

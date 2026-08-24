@@ -71,38 +71,6 @@ class FactoryObligationLoop(
         return snapshot
     }
 
-    /**
-     * The generator and verifier are one bounded factory wave. Only after
-     * their independent evidence passes may that wave terminalize its planned
-     * atoms in the existing DagStore.
-     */
-    fun finalizeAfterVerifiedEvidence(dagId: String, freeze: FactoryAcceptanceFreeze): FactoryObligationSnapshot {
-        require(freeze.sha256.matches(Regex("[0-9a-f]{64}"))) { "factory finalization requires an acceptance freeze hash" }
-        val dag = dagStore.readDag(dagId) ?: return FactoryObligationSnapshot(
-            openWork = 0,
-            runnableAtomIds = emptyList(),
-            blockedAtomIds = emptyList(),
-            failedAtomIds = emptyList(),
-            doneAtomIds = emptyList(),
-            stopReason = "DAG missing during factory finalization"
-        )
-        val current = snapshot(dag)
-        require(current.failedAtomIds.isEmpty() && current.blockedAtomIds.isEmpty()) {
-            "factory finalization refused: failed or blocked atoms remain"
-        }
-        dag.nodes.filterNot { it.state.terminal }.forEach { node ->
-            dagStore.writeNode(
-                node.copy(
-                    state = DagNodeState.COMPLETE,
-                    result = "factory verified against acceptance_freeze_sha256=${freeze.sha256}",
-                    lastMessage = "verified factory wave",
-                    finishedAt = Instant.now()
-                )
-            )
-        }
-        return snapshot(dagStore.readDag(dagId) ?: dag)
-    }
-
     /** Run real generator/verifier waves until the existing DAG is settled. */
     fun executeUntilSettled(
         dagId: String,
