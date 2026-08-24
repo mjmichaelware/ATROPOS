@@ -13159,3 +13159,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: backend atom contract (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), hosted selector contract (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (418 tests)`), and `git diff --check` passed. Root/hosted Kotlin execution remains pending; no test-green claim.
 - % delta: unchanged; B-MCP-CORE-a remains source-wired / partial pending executable Kotlin evidence.
 - Fingerprints (sha256, first 12): `McpConfigParser.kt=19a6b283765a`, `McpHostManagerTest.kt=ddb1f1a89d53`.
+
+### 2026-08-24T21:16:00Z · Agent: Codex GPT-5 · Batch: mcp-member-colon-validation
+
+- Paths touched: `src/main/kotlin/atropos/core/integration/McpConfigParser.kt` (+6/-5), `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+2), `AGENTS.md`, `STATUS-BACKEND.md`.
+- Atoms / phases affected: B-MCP-CORE-a strict `mcp.json` object-member parsing.
+- Predicate moved: the existing parser now rejects a top-level member without a colon instead of silently skipping it and returning an empty/default catalog; the manager remains the sole production caller.
+- Verification actually run: backend atom contract (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), hosted selector contract (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (418 tests)`), and `git diff --check` passed. Root/hosted Kotlin execution remains pending; no test-green claim.
+- % delta: unchanged; B-MCP-CORE-a remains source-wired / partial pending executable Kotlin evidence.
+- Fingerprints (sha256, first 12): `McpConfigParser.kt=74facf83db95`, `McpHostManagerTest.kt=8f570e8c21d1`.

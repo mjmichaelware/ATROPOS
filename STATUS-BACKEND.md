@@ -36,6 +36,8 @@ This file records backend implementation status for the current engine wave. A r
 
 | B-MCP-CORE-a root JSON fail-closed validation | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpConfigParser.kt`, `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` | `McpHostManager.load()` → existing `McpConfigParser.parse()` | The MCP parser now rejects a trailing comma at the root object as well as nested server/args commas, preventing malformed config from being accepted as a valid catalog. Static backend contract, selector parity (418), and diff check pass; hosted/root Kotlin execution remains pending. |
 
+| B-MCP-CORE-a malformed member validation | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpConfigParser.kt`, `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` | `McpHostManager.load()` → existing `McpConfigParser.rawMember()` | Top-level MCP object members missing `:` now fail explicitly instead of being ignored and producing a misleading empty/default catalog. Static backend contract, selector parity (418), and diff check pass; hosted/root Kotlin execution remains pending. |
+
 ## Commands
 
 - `/factory resume <runId>` — read-only attested resume inspection; execution requires the existing router callback path.

@@ -117,10 +117,11 @@ internal object McpConfigParser {
                     if (objectDepth == 1 && arrayDepth == 0) {
                         val key = decode(text.substring(index, end + 1))
                         val colon = skipWhitespace(text, end + 1)
-                        if (colon < text.length && text[colon] == ':') {
-                            val valueStart = skipWhitespace(text, colon + 1)
-                            if (key == name) return rawValue(text, valueStart)
+                        require(colon < text.length && text[colon] == ':') {
+                            "mcp.json object member '$key' is missing ':'"
                         }
+                        val valueStart = skipWhitespace(text, colon + 1)
+                        if (key == name) return rawValue(text, valueStart)
                     }
                     index = end + 1
                 }
