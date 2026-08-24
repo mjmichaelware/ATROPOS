@@ -409,6 +409,12 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | --- | --- | --- | --- | --- |
 | B-MCP-CORE-b/c/d/e SSE response framing | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` | configured `/mcp` and bridge remote calls → `McpHostManager.remoteExchange` → existing JSON-RPC probe/call parser | Existing HTTP/SSE/streamable-HTTP owner now extracts bounded `data:` frames while leaving raw JSON unchanged; an injected SSE probe fixture proves initialize/tools-list recognition. Root/hosted tests remain pending. |
 
+### 2026-08-24T07:08:00Z · Backend batch: mcp-remote-response-bound
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-CORE-e/f bounded remote response | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` | `/mcp` and bridge remote calls → shared `remoteExchange` → bounded HTTP/SSE JSON-RPC parser/evidence path | Remote responses are now size-checked before normalization/parsing; the default HTTP body handler also refuses responses over the host bound. An injected oversized-response fixture proves refusal before `tools/call` can succeed. Root/hosted tests remain pending. |
+
 ### 2026-08-24T07:02:00Z · Backend batch: hosted-velocity-selector
 
 | atom | status | files | caller | tests / notes |

@@ -314,4 +314,19 @@ class McpHostManagerTest {
         assertEquals(McpHealth.HEALTHY, status.health)
         assertEquals(2, requests.size)
     }
+
+    @Test
+    fun remote_response_is_refused_before_tool_call_when_over_bound() {
+        val root = Files.createTempDirectory("mcp-remote-bound")
+        Files.writeString(root.resolve("mcp.json"),
+            """{"servers":[{"name":"remote","transport":"http","url":"https://mcp.example.test/rpc","enabled":true,"community":false}]}""")
+        val failure = assertFailsWith<IllegalArgumentException> {
+            McpHostManager(
+                root,
+                localOnly = false,
+                remoteRequest = { _, _ -> "x".repeat(128) }
+            ).callTool("remote", "inspect", maxResponseBytes = 64)
+        }
+        assertTrue(failure.message.orEmpty().contains("bounded response size"))
+    }
 }

@@ -291,9 +291,9 @@ class McpHostManager(
         toolBudget: McpToolBudget
     ): String {
         val initialize = "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{}}"
-        require(remoteExchange(server, initialize).contains("\"id\":1")) { "MCP HTTP initialize returned no response" }
+        require(remoteExchange(server, initialize, maxResponseBytes).contains("\"id\":1")) { "MCP HTTP initialize returned no response" }
         val toolsList = "{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/list\",\"params\":{}}"
-        val toolsListResponse = remoteExchange(server, toolsList)
+        val toolsListResponse = remoteExchange(server, toolsList, maxResponseBytes)
         require(toolsListResponse.contains("\"id\":2")) { "MCP HTTP tools/list returned no response" }
         requireToolWithinBudget(toolsListResponse, toolName, toolBudget)
         val request = buildString {
@@ -301,10 +301,9 @@ class McpHostManager(
             append("\"name\":\"").append(jsonEscape(toolName)).append("\",")
             append("\"arguments\":").append(argumentsJson).append("}}")
         }
-        val response = remoteExchange(server, request)
-        val bounded = response.take(maxResponseBytes)
-        require(bounded.contains("\"id\":3")) { "MCP HTTP tools/call returned no response" }
-        return bounded
+        val response = remoteExchange(server, request, maxResponseBytes)
+        require(response.contains("\"id\":3")) { "MCP HTTP tools/call returned no response" }
+        return response
     }
 
     /** Applies the single MCP injection budget before any tools/call is sent. */
@@ -340,15 +339,18 @@ class McpHostManager(
 
     private fun defaultProbe(server: McpServerConfig): McpHealth =
         if (server.remote) {
-            val initialize = remoteExchange(server, "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{}}")
-            val toolsList = remoteExchange(server, "{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/list\",\"params\":{}}")
+            val initialize = remoteExchange(server, "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{}}", DEFAULT_PROBE_RESPONSE_BYTES)
+            val toolsList = remoteExchange(server, "{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/list\",\"params\":{}}", DEFAULT_PROBE_RESPONSE_BYTES)
             if (initialize.contains("\"id\":1") && toolsList.contains("\"id\":2")) McpHealth.HEALTHY else McpHealth.UNHEALTHY
         } else {
             probeProcess(server, root, processRunner)
         }
 
-    private fun remoteExchange(server: McpServerConfig, body: String): String {
+    private fun remoteExchange(server: McpServerConfig, body: String, maxResponseBytes: Int): String {
         val raw = remoteRequest?.invoke(server, body) ?: postRemote(server, body)
+        require(raw.toByteArray(StandardCharsets.UTF_8).size <= maxResponseBytes) {
+            "MCP HTTP response exceeds the bounded response size"
+        }
         return normalizeRemoteResponse(raw)
     }
 
@@ -383,11 +385,15 @@ class McpHostManager(
         val response = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(3))
             .build()
-            .send(request, HttpResponse.BodyHandlers.ofString())
+            .send(request, HttpResponse.BodyHandlers.ofByteArray())
         require(response.statusCode() in 200..299) {
             "MCP HTTP request failed status=${response.statusCode()} server=${server.name}"
         }
-        return response.body()
+        val bytes = response.body()
+        require(bytes.size <= DEFAULT_REMOTE_RESPONSE_BYTES) {
+            "MCP HTTP response exceeds the bounded response size"
+        }
+        return String(bytes, StandardCharsets.UTF_8)
     }
 
     private fun jsonEscape(value: String): String = value
@@ -397,6 +403,9 @@ class McpHostManager(
         .replace("\r", "\\r")
 
     private companion object {
+        const val DEFAULT_PROBE_RESPONSE_BYTES = 64 * 1024
+        const val DEFAULT_REMOTE_RESPONSE_BYTES = 256 * 1024
+
         fun probeProcess(
             server: McpServerConfig,
             root: Path,

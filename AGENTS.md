@@ -12188,6 +12188,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; transport coverage is source-wired, hosted execution pending.
 - Fingerprints: `McpHostManager.kt=73521ee16845`; `McpHostManagerTest.kt=064d594dcf86`.
 
+### 2026-08-24T07:08:00Z · Agent: Codex GPT-5 · Batch: mcp-remote-response-bound
+
+- Paths touched: `src/main/kotlin/atropos/core/integration/McpHostManager.kt` (+28/-12), `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+19), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-MCP-CORE-e/f bounded remote call and evidence safety.
+- Predicate moved: the sole MCP host now bounds remote HTTP/SSE response bytes before normalization and JSON-RPC parsing; the default network body handler also refuses oversized bodies. This closes the pre-parse memory gap without adding a transport owner.
+- Verification actually run: `git diff --check` passed; `timeout 90s python3 scripts/find-orphans.py --fail-on-new` exited 0 with four pre-existing orphan files (4 files / 360 LOC). The oversized-response fixture is wired into `McpHostManagerTest`; root Gradle and hosted GitHub Actions remain unrun.
+- % delta: unchanged; source-wired, hosted execution pending.
+- Fingerprints: `McpHostManager.kt=3b527d27f8fa`; `McpHostManagerTest.kt=e071b95c2faff`.
+
 ### 2026-08-24T07:02:00Z · Agent: Codex GPT-5 · Batch: hosted-velocity-selector
 
 - Paths touched: `.github/workflows/compile-gate.yml` (+1), `scripts/atropos-verify-worktree.sh` (+1), `STATUS-BACKEND.md` (+7).
