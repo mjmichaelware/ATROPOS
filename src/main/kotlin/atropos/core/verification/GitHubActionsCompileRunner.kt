@@ -360,11 +360,15 @@ private fun sendOverHttps(request: GitHubActionsCompileRunner.Request): GitHubAc
         .connectTimeout(Duration.ofSeconds(30))
         .followRedirects(HttpClient.Redirect.NEVER)
         .build()
-        .send(builder.build(), HttpResponse.BodyHandlers.ofString())
-    require(response.body().length <= MAX_RESPONSE_CHARS) {
-        "GitHub Actions response exceeded $MAX_RESPONSE_CHARS characters"
+        .send(builder.build(), HttpResponse.BodyHandlers.ofInputStream())
+    val body = response.body().use { input ->
+        input.readNBytes(MAX_RESPONSE_CHARS + 1).also {
+            require(it.size <= MAX_RESPONSE_CHARS) {
+                "GitHub Actions response exceeded $MAX_RESPONSE_CHARS characters"
+            }
+        }.toString(Charsets.UTF_8)
     }
-    return GitHubActionsCompileRunner.Response(response.statusCode(), response.body())
+    return GitHubActionsCompileRunner.Response(response.statusCode(), body)
 }
 
 private const val MAX_RESPONSE_CHARS = 1_024 * 1_024

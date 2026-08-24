@@ -13358,6 +13358,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; Tier-0 integrations remain source-wired/partial pending hosted/live evidence.
 - Fingerprints (sha256, first 12): `SentryApiClient.kt=39f44cf357a2`; `GitHubApiClient.kt=077def19fb97`; `GitHubDeviceAuthClient.kt=fe5d280f64ae`; `backend-atom-contract-test.sh=aeea8a55b4b6`.
 
+### 2026-08-24T22:10:00Z · Agent: Codex GPT-5 · Batch: github-actions-response-stream-bound
+
+- Paths touched: `src/main/kotlin/atropos/core/verification/GitHubActionsCompileRunner.kt` (+9/-7), `scripts/backend-atom-contract-test.sh` (+1).
+- Atoms / phases affected: B-MCP-GHA/T01 governed remote compile transport.
+- Predicate moved: the sole GitHub Actions API owner now streams and bounds its one-MiB response before decoding, while retaining the existing HTTPS, redirect, localOnly, and SecretSinkMatrix gates.
+- Verification actually run: pending this batch; hosted compile and live Actions execution remain unproven.
+- % delta: unchanged; B-MCP-GHA remains source-wired/partial pending hosted Action execution.
+- Fingerprints (sha256, first 12): to be recorded after commit.
+
 ### 2026-08-24T19:50:50Z · Agent: Codex GPT-5 · Batch: github-response-size-bound
 
 - Paths touched: `src/main/kotlin/atropos/core/github/GitHubApiClient.kt` (+4), `src/test/kotlin/atropos/core/github/GitHubApiClientTest.kt` (+17), `scripts/backend-atom-contract-test.sh` (+1).
