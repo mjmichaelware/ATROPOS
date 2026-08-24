@@ -52,6 +52,8 @@ This file records backend implementation status for the current engine wave. A r
 
 | B-PROV-001t unknown generic namespace visibility | source-wired / partial | `src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt`, `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt`, `scripts/backend-atom-contract-test.sh` | startup/`/providers refresh` → existing `ProviderOnboardingService.refresh()` → metadata-only providers.json and healthy-set filter | Unknown `ATROPOS_PROVIDER_*` keys are surfaced as `UNTESTED` metadata entries and excluded from routing until a descriptor/adapter exists; known descriptor aliases remain unchanged. Backend/provider-env contracts, hosted selector parity (418), and diff check pass; hosted Kotlin execution remains pending. |
 
+| B-MCP-CORE-e delimiter matching | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpConfigParser.kt`, `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` | existing `McpHostManager.callTool` → `McpConfigParser.requireJsonObject` | Tool argument validation now rejects mismatched object/array delimiters as well as trailing/incomplete envelopes. Backend contract, hosted selector parity (418), and diff check pass; hosted Kotlin execution remains pending. |
+
 ## Commands
 
 - `/factory resume <runId>` — read-only attested resume inspection; execution requires the existing router callback path.

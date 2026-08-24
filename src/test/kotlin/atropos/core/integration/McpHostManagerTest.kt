@@ -461,4 +461,11 @@ class McpHostManagerTest {
         assertTrue(failure.message.orEmpty().contains("JSON object"))
         assertTrue(!called)
     }
+
+    @Test
+    fun mismatched_tool_argument_delimiters_are_refused() {
+        assertFailsWith<IllegalArgumentException> {
+            McpConfigParser.requireJsonObject("{\"value\":]}")
+        }
+    }
 }

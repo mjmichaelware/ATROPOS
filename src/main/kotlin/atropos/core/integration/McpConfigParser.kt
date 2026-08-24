@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.integration
 
+import java.util.ArrayDeque
+
 /**
  * Small bounded parser for the MCP config subset owned by [McpHostManager].
  * It tracks quoted strings and balanced arrays/objects so command arguments or
@@ -12,7 +14,7 @@ internal object McpConfigParser {
         require(text.isNotEmpty() && text.first() == '{' && text.last() == '}') {
             "MCP tool arguments must be a JSON object"
         }
-        var depth = 0
+        val delimiters = ArrayDeque<Char>()
         var quoted = false
         var escaped = false
         text.forEachIndexed { index, ch ->
@@ -26,17 +28,20 @@ internal object McpConfigParser {
             }
             when (ch) {
                 '"' -> quoted = true
-                '{', '[' -> depth++
+                '{', '[' -> delimiters.addLast(ch)
                 '}', ']' -> {
-                    depth--
-                    require(depth >= 0) { "MCP tool arguments have unbalanced delimiters" }
-                    require(index == text.lastIndex || depth > 0) {
+                    require(delimiters.isNotEmpty()) { "MCP tool arguments have unbalanced delimiters" }
+                    val expected = if (ch == '}') '{' else '['
+                    require(delimiters.removeLast() == expected) {
+                        "MCP tool arguments have mismatched delimiters"
+                    }
+                    require(index == text.lastIndex || delimiters.isNotEmpty()) {
                         "MCP tool arguments contain trailing JSON content"
                     }
                 }
             }
         }
-        require(!quoted && !escaped && depth == 0) {
+        require(!quoted && !escaped && delimiters.isEmpty()) {
             "MCP tool arguments have an incomplete JSON envelope"
         }
         return text

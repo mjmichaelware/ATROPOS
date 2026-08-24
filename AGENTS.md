@@ -13231,3 +13231,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: backend atom contract, provider environment contract (`ATROPOS_PROVIDER_ENV_CONTRACT_OK`), hosted selector contract (418), and `git diff --check` passed. Root/hosted Kotlin execution remains pending.
 - % delta: unchanged; B-PROV-001/002 remains source-wired/partial pending executable hosted evidence.
 - Fingerprints (sha256, first 12): `ProviderOnboarding.kt=48c380853b72`; `ProviderOnboardingTest.kt=638b1e79c13b`; `backend-atom-contract-test.sh=85012c917058`.
+
+### 2026-08-24T19:42:44Z · Agent: Codex GPT-5 · Batch: mcp-matching-delimiter-validation
+
+- Paths touched: `src/main/kotlin/atropos/core/integration/McpConfigParser.kt` (+12/-8), `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+7).
+- Atoms / phases affected: B-MCP-CORE-e argument envelope correctness.
+- Predicate moved: MCP argument validation now matches `{}` and `[]` pairs rather than tracking only aggregate depth; mismatched delimiters fail before any tool transport.
+- Verification actually run: backend atom contract, hosted selector contract (418), and `git diff --check` passed. Root/hosted Kotlin execution remains pending.
+- % delta: unchanged; B-MCP-CORE-e remains source-wired/partial pending executable hosted evidence.
+- Fingerprints (sha256, first 12): `McpConfigParser.kt=52ff1bdc09a8`; `McpHostManagerTest.kt=0925841404569`.
