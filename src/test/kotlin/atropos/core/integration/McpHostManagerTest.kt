@@ -54,6 +54,28 @@ class McpHostManagerTest {
     }
 
     @Test
+    fun config_parser_rejects_silent_server_drops_and_duplicate_names() {
+        val root = Files.createTempDirectory("mcp-config-server-validation")
+        val config = root.resolve("mcp.json")
+        Files.writeString(config, """{"servers":[{"transport":"stdio"}]}""")
+        assertFailsWith<IllegalArgumentException> { McpHostManager(root).load() }
+        Files.writeString(config, """{"servers":[{"name":"same"},{"name":"same"}]}""")
+        assertFailsWith<IllegalArgumentException> { McpHostManager(root).load() }
+    }
+
+    @Test
+    fun config_parser_rejects_trailing_commas_invalid_args_and_non_boolean_flags() {
+        val root = Files.createTempDirectory("mcp-config-fields")
+        val config = root.resolve("mcp.json")
+        Files.writeString(config, """{"servers":[{"name":"local",}]}""")
+        assertFailsWith<IllegalArgumentException> { McpHostManager(root).load() }
+        Files.writeString(config, """{"servers":[{"name":"local","args":["one",]}]}""")
+        assertFailsWith<IllegalArgumentException> { McpHostManager(root).load() }
+        Files.writeString(config, """{"servers":[{"name":"local","enabled":"yes"}]}""")
+        assertFailsWith<IllegalArgumentException> { McpHostManager(root).load() }
+    }
+
+    @Test
     fun community_servers_are_disabled_and_tool_results_get_evidence() {
         val root = Files.createTempDirectory("mcp-host")
         Files.writeString(root.resolve("mcp.json"), """

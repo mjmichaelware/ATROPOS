@@ -15,12 +15,22 @@ internal object McpConfigParser {
         val serversRaw = rawMember(text, "servers") ?: return emptyList()
         require(serversRaw.trimStart().startsWith("[")) { "mcp.json servers must be an array" }
         val body = serversRaw.trim().let { extractBalanced(it, 0, '[', ']') }
-        return objectValues(body).mapNotNull { objectText ->
-            val name = stringMember(objectText, "name") ?: return@mapNotNull null
+        val servers = objectValues(body).map { objectText ->
+            require(!hasTopLevelTrailingComma(objectText)) {
+                "mcp.json server object cannot have a trailing comma"
+            }
+            val name = stringMember(objectText, "name")
+                ?.trim()
+                ?.takeIf { it.isNotEmpty() }
+                ?: error("mcp.json server name is required")
             val args = rawMember(objectText, "args")?.let(::stringValues).orEmpty()
             McpServerConfig(
                 name = name,
-                transport = stringMember(objectText, "transport") ?: "stdio",
+                transport = stringMember(objectText, "transport")
+                    ?.trim()
+                    ?.lowercase()
+                    ?.takeIf { it.isNotEmpty() }
+                    ?: "stdio",
                 command = stringMember(objectText, "command"),
                 args = args,
                 enabled = booleanMember(objectText, "enabled") ?: false,
@@ -28,32 +38,55 @@ internal object McpConfigParser {
                 url = stringMember(objectText, "url")
             )
         }
+        require(servers.map { it.name }.toSet().size == servers.size) {
+            "mcp.json server names must be unique"
+        }
+        return servers
     }
 
     private fun objectValues(arrayText: String): List<String> {
         val values = mutableListOf<String>()
         var index = 1
         while (index < arrayText.length - 1) {
-            index = skipWhitespaceAndCommas(arrayText, index)
+            index = skipWhitespace(arrayText, index)
             if (index >= arrayText.length - 1) break
+            require(arrayText[index] != ',') { "mcp.json servers has an unexpected comma" }
             require(arrayText[index] == '{') { "mcp.json servers entries must be objects" }
             val end = matchingEnd(arrayText, index, '{', '}')
             values += arrayText.substring(index, end + 1)
-            index = end + 1
+            index = skipWhitespace(arrayText, end + 1)
+            if (index < arrayText.length - 1) {
+                require(arrayText[index] == ',') { "mcp.json server entries must be comma separated" }
+                index++
+                val next = skipWhitespace(arrayText, index)
+                require(next < arrayText.length - 1) { "mcp.json servers cannot have a trailing comma" }
+                index = next
+            }
         }
         return values
     }
 
     private fun stringValues(arrayText: String): List<String> {
+        require(arrayText.trimStart().startsWith("[")) { "mcp.json args must be an array" }
         val values = mutableListOf<String>()
         var index = 1
         while (index < arrayText.length - 1) {
-            index = skipWhitespaceAndCommas(arrayText, index)
+            val before = index
+            index = skipWhitespace(arrayText, index)
             if (index >= arrayText.length - 1) break
+            require(arrayText[index] != ',') { "mcp.json args has an unexpected comma" }
             require(arrayText[index] == '"') { "mcp.json args must contain strings" }
             val end = stringEnd(arrayText, index)
             values += decode(arrayText.substring(index, end + 1))
-            index = end + 1
+            index = skipWhitespace(arrayText, end + 1)
+            if (index < arrayText.length - 1) {
+                require(arrayText[index] == ',') { "mcp.json args entries must be comma separated" }
+                index++
+                val next = skipWhitespace(arrayText, index)
+                require(next < arrayText.length - 1) { "mcp.json args cannot have a trailing comma" }
+                index = next
+            }
+            require(index > before) { "mcp.json args parser made no progress" }
         }
         return values
     }
@@ -61,8 +94,13 @@ internal object McpConfigParser {
     private fun stringMember(text: String, name: String): String? =
         rawMember(text, name)?.let(::decode)
 
-    private fun booleanMember(text: String, name: String): Boolean? =
-        rawMember(text, name)?.trim()?.takeIf { it == "true" || it == "false" }?.toBoolean()
+    private fun booleanMember(text: String, name: String): Boolean? {
+        val raw = rawMember(text, name)?.trim() ?: return null
+        require(raw == "true" || raw == "false") {
+            "mcp.json '$name' must be boolean"
+        }
+        return raw == "true"
+    }
 
     private fun rawMember(text: String, name: String): String? {
         var index = skipWhitespace(text, 0)
@@ -158,6 +196,31 @@ internal object McpConfigParser {
 
     private fun extractBalanced(text: String, start: Int, open: Char, close: Char): String =
         text.substring(start, matchingEnd(text, start, open, close) + 1)
+
+    private fun hasTopLevelTrailingComma(text: String): Boolean {
+        var quoted = false
+        var escaped = false
+        var objectDepth = 0
+        var arrayDepth = 0
+        var lastTopLevel = '\u0000'
+        text.forEach { current ->
+            if (quoted) {
+                if (escaped) escaped = false
+                else if (current == '\\') escaped = true
+                else if (current == '"') quoted = false
+                return@forEach
+            }
+            when (current) {
+                '"' -> quoted = true
+                '{' -> objectDepth++
+                '}' -> objectDepth--
+                '[' -> arrayDepth++
+                ']' -> arrayDepth--
+                else -> if (objectDepth == 1 && arrayDepth == 0 && !current.isWhitespace()) lastTopLevel = current
+            }
+        }
+        return lastTopLevel == ','
+    }
 
     private fun matchingEnd(text: String, start: Int, open: Char, close: Char): Int {
         var depth = 0

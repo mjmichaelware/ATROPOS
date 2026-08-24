@@ -13087,3 +13087,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: `bash scripts/npm-installer-contract-test.sh`, `node --check npm/scripts/postinstall.js`, isolated temporary-package local-jar installation, `bash scripts/hosted-test-selector-contract.sh` (`384 tests`), and `git diff --check` passed. Hosted release, npm registry publication, and device execution remain unproven; no release-green claim.
 - % delta: unchanged; B-INST-006 remains source-wired / partial pending hosted publication and runtime evidence.
 - Fingerprints (sha256, first 12): `npm/scripts/postinstall.js=2234e707b3b7`, `npm/README.md=e585ed97b83a`, `scripts/npm-installer-contract-test.sh=52d5500f60d2`, `.github/workflows/release.yml=e65850003831`.
+
+### 2026-08-24T18:52:00Z · Agent: Codex GPT-5 · Batch: mcp-config-entry-fail-closed
+
+- Paths touched: `src/main/kotlin/atropos/core/integration/McpConfigParser.kt` (+47), `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+27), `AGENTS.md`, `STATUS-BACKEND.md`.
+- Atoms / phases affected: B-MCP-CORE-a generic `mcp.json` server-entry validation.
+- Predicate moved: the existing structural MCP parser now rejects missing/blank or duplicate server names, trailing commas, non-array args, malformed args separators, and non-boolean `enabled`/`community` values. Invalid entries can no longer be silently dropped or coerced into a different runtime policy; `McpHostManager.load()` remains the sole production caller.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh` (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (418 tests)`), and `git diff --check` passed. Narrow Termux `kotlinc` compilation of `McpConfigParser.kt` + `McpHostManager.kt` hung before diagnostics and is not claimed; root/hosted Kotlin execution remains pending.
+- % delta: unchanged; B-MCP-CORE-a remains source-wired / partial pending executable Kotlin evidence.
+- Fingerprints (sha256, first 12): `McpConfigParser.kt=71e50c585cde`, `McpHostManagerTest.kt=5f6964eb99c9`.
