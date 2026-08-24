@@ -1046,3 +1046,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | T04 self-host bridge refusal/evidence rendering | source-wired / partial | `src/main/kotlin/atropos/bridge/BridgeSelfHostHandler.kt`, `scripts/backend-atom-contract-test.sh` | `/v1/selfhost/start|advance` → existing `BridgeSelfHostHandler` → `SelfHostGoalService` | Start/advance refusal details and `startedBy` evidence now cross the canonical redaction boundary before response/persistence. Static backend contract, selector parity (420), and `git diff --check` pass; hosted/root Kotlin execution remains pending. |
+
+### 2026-08-25T04:35:00Z · Agent: Codex GPT-5 · Batch: upload-refusal-redaction
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| T04 attested upload refusal rendering | source-wired / partial | `src/main/kotlin/atropos/bridge/BridgeFilesHandler.kt`, `scripts/backend-atom-contract-test.sh` | `/v1/files` upload → existing `BridgeFilesHandler` → `TypedToolExecutor` / `BoundedAgencyGate` | Bounded-agency refusal text now crosses the canonical redaction boundary before the upload response; file size, territory, symlink, content hash, and envelope hash controls remain in the existing owner. Static backend contract, selector parity (420), and `git diff --check` pass; hosted/root Kotlin execution remains pending. |

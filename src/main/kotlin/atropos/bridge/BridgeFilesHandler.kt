@@ -10,6 +10,7 @@ import atropos.core.policy.BoundedAgencyGate
 import atropos.core.policy.ExecutionPolicyEngine
 import atropos.core.policy.PolicyActionClass
 import atropos.core.policy.TypedToolExecutor
+import atropos.core.security.RedactionFilter
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
@@ -21,7 +22,8 @@ internal class BridgeFilesHandler(
     private val repoRoot: Path = Path.of("").toAbsolutePath().normalize(),
     private val agency: TypedToolExecutor = TypedToolExecutor(
         BoundedAgencyGate(ExecutionPolicyEngine(repoRoot))
-    )
+    ),
+    private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     private val uploadsRoot = repoRoot.resolve(".atropos/uploads").normalize()
 
@@ -98,7 +100,9 @@ internal class BridgeFilesHandler(
             return HttpResponse.refusal(
                 403,
                 "policy-refused",
-                execution.refusalReason ?: "Upload refused by bounded agency policy.",
+                redactionFilter.compact(
+                    execution.refusalReason ?: "Upload refused by bounded agency policy."
+                ),
                 "Declare a valid repository-scoped upload target."
             )
         }
