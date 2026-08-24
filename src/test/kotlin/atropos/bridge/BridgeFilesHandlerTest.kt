@@ -65,6 +65,10 @@ class BridgeFilesHandlerTest {
             assertTrue(Files.isRegularFile(expectedPath))
             assertEquals(fileContent, Files.readString(expectedPath))
 
+            // Externally-created oversized files are not read or exposed by listing.
+            val oversizedExisting = tempDir.resolve(".atropos/uploads/s1/oversized.bin")
+            Files.write(oversizedExisting, ByteArray(512 * 1024 + 1))
+
             // 3. List uploads for the session
             val responseList = handler.list(
                 HttpRequest("GET", "/v1/files", mapOf("session" to "s1"), emptyMap(), "")
@@ -72,6 +76,7 @@ class BridgeFilesHandlerTest {
             assertEquals(200, responseList.status)
             assertTrue(responseList.body.contains("\"count\":1"))
             assertTrue(responseList.body.contains("hello.txt"))
+            assertFalse(responseList.body.contains("oversized.bin"))
 
             // 4. List uploads for empty session directory should return count 0
             val responseEmptyList = handler.list(
