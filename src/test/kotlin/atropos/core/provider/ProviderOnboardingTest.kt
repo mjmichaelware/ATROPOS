@@ -59,6 +59,18 @@ class ProviderOnboardingTest {
     }
 
     @Test
+    fun discovery_uses_descriptor_environment_contract_for_catalog_providers() {
+        val root = Files.createTempDirectory("provider-onboarding-descriptor-env")
+        val records = ProviderOnboardingService(
+            root = root,
+            environment = mapOf("COHERE_API_KEY" to "cohere-secret")
+        ).refresh().associateBy { it.providerId }
+        assertEquals(CheapProviderHealth.HEALTHY, records.getValue("cohere").health)
+        assertTrue(records.getValue("cohere").matchedEnvNames.contains("COHERE_API_KEY"))
+        assertTrue(!Files.readString(root.resolve(".atropos/provider/providers.json")).contains("cohere-secret"))
+    }
+
+    @Test
     fun endpoint_metadata_does_not_count_as_a_key_without_credentials() {
         val root = Files.createTempDirectory("provider-onboarding-endpoint")
         val endpointOnly = ProviderOnboardingService(

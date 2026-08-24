@@ -13105,3 +13105,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: backend atom contract (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), hosted selector contract (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (418 tests)`), and `git diff --check` passed. A narrow Termux factory `kotlinc` invocation hung before diagnostics and is not claimed; root/hosted Kotlin execution remains pending.
 - % delta: unchanged; FTY-03 remains source-wired / partial pending executable Kotlin evidence.
 - Fingerprints (sha256, first 12): `FactoryAcceptanceFreeze.kt=67c742458266`, `FactoryResumeAndRepairTest.kt=cf6371454b7d`.
+
+### 2026-08-24T19:22:00Z · Agent: Codex GPT-5 · Batch: provider-descriptor-env-discovery
+
+- Paths touched: `src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt` (+4/-3), `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` (+13), `AGENTS.md`, `STATUS-BACKEND.md`.
+- Atoms / phases affected: B-PROV-001 environment table and B-PROV-002 discovery health.
+- Predicate moved: provider startup discovery now uses the existing `ProviderDescriptorRegistry.requiredEnv` contract in addition to compatibility aliases, so a canonical catalog key such as `COHERE_API_KEY` produces a healthy discovered provider and metadata-only `providers.json` state. No second registry or adapter was introduced.
+- Verification actually run: backend atom contract (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), hosted selector contract (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (418 tests)`), and `git diff --check` passed. Root/hosted Kotlin execution remains pending; no test-green claim.
+- % delta: unchanged; B-PROV-001/002 remains source-wired / partial pending executable Kotlin evidence.
+- Fingerprints (sha256, first 12): `ProviderOnboarding.kt=b8fd4554a59a`, `ProviderOnboardingTest.kt=63332ff2cc98`.

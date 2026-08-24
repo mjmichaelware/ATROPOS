@@ -57,8 +57,10 @@ class ProviderOnboardingService(
         val prior = readConfig()
         val ids = (aliases.keys + registry.getAll().map { it.id }).distinct()
         val records = ids.map { id ->
-            val names = (aliases[id].orEmpty().filter { !environment[it].isNullOrBlank() } +
-                aliases[id].orEmpty().filter(::localSecretPresent) +
+            val descriptorEnv = registry.getById(id)?.requiredEnv.orEmpty()
+            val knownNames = (aliases[id].orEmpty() + descriptorEnv).distinct()
+            val names = (knownNames.filter { !environment[it].isNullOrBlank() } +
+                knownNames.filter(::localSecretPresent) +
                 environment.keys.filter { key ->
                     genericProviderKeyMatches(key, id) && !environment[key].isNullOrBlank()
                 } + aliasPrefixes[id].orEmpty().flatMap { prefix ->

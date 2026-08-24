@@ -24,6 +24,8 @@ This file records backend implementation status for the current engine wave. A r
 
 | FTY-03 repair evidence shape | source-wired / partial | `src/main/kotlin/atropos/core/factory/FactoryAcceptanceFreeze.kt`, `src/test/kotlin/atropos/core/factory/FactoryResumeAndRepairTest.kt` | `FactoryRepairExecutor.repairAndResume()` → existing `FactoryAcceptanceFreeze.requireRepairEvidence()` | Repair evidence now requires a nonblank command and named predicate keys in addition to the unchanged freeze hash, zero exit, stderr, and all-true predicates. Backend contract, hosted selector parity (418), and diff check pass; narrow Termux factory `kotlinc` was inconclusive before diagnostics, so no Kotlin test pass is claimed. |
 
+| B-PROV-001 descriptor environment discovery | source-wired / partial | `src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt`, `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` | launch/CLI `ProviderOnboardingService.refresh()` → existing `ProviderDescriptorRegistry.requiredEnv` → persisted healthy set/RoutePolicy | Discovery now composes aliases with each canonical descriptor’s `requiredEnv`, fixing catalog providers such as Cohere that previously could be configured yet remain undiscovered. Metadata-only persistence is asserted; backend contract, hosted selector parity (418), and diff check pass; hosted/root Kotlin execution remains pending. |
+
 ## Commands
 
 - `/factory resume <runId>` — read-only attested resume inspection; execution requires the existing router callback path.
