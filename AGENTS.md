@@ -13276,3 +13276,21 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: backend atom contract, hosted selector contract (418), and `git diff --check` passed. Root/hosted Kotlin and live OAuth execution remain pending.
 - % delta: unchanged; B-MCP-OAUTH-UX remains source-wired/partial pending operator client registration and hosted/live evidence.
 - Fingerprints (sha256, first 12): `GitHubDeviceAuthClient.kt=6c4e351876b4`; `GitHubDeviceAuthClientTest.kt=48c8bb871157`; `backend-atom-contract-test.sh=5151d37885b7`.
+
+### 2026-08-24T19:50:50Z · Agent: Codex GPT-5 · Batch: github-response-size-bound
+
+- Paths touched: `src/main/kotlin/atropos/core/github/GitHubApiClient.kt` (+4), `src/test/kotlin/atropos/core/github/GitHubApiClientTest.kt` (+17), `scripts/backend-atom-contract-test.sh` (+1).
+- Atoms / phases affected: B-MCP-GITHUB bounded REST response/evidence handling.
+- Predicate moved: the sole GitHub API owner now refuses responses over one MiB before redaction and evidence hashing, preventing unbounded response memory through the gated integration path.
+- Verification actually run: backend atom contract, hosted selector contract (418), and `git diff --check` passed. Root/hosted Kotlin and credentialed GitHub execution remain pending.
+- % delta: unchanged; B-MCP-GITHUB remains source-wired/partial pending hosted/live evidence.
+- Fingerprints (sha256, first 12): `GitHubApiClient.kt=a19a92174c97`; `GitHubApiClientTest.kt=8575643120ff`; `backend-atom-contract-test.sh=16174e6e1e43`.
+
+### 2026-08-24T19:50:50Z · Agent: Codex GPT-5 · Batch: github-response-size-bound
+
+- Paths touched: `src/main/kotlin/atropos/core/github/GitHubApiClient.kt` (+4), `src/test/kotlin/atropos/core/github/GitHubApiClientTest.kt` (+17), `scripts/backend-atom-contract-test.sh` (+1).
+- Atoms / phases affected: B-MCP-GITHUB bounded REST response/evidence handling.
+- Predicate moved: the sole GitHub API owner now refuses responses over one MiB before redaction and evidence hashing, preventing unbounded response memory through the gated integration path.
+- Verification actually run: backend atom contract, hosted selector contract (418), and `git diff --check` passed. Root/hosted Kotlin and credentialed GitHub execution remain pending.
+- % delta: unchanged; B-MCP-GITHUB remains source-wired/partial pending hosted/live evidence.
+- Fingerprints (sha256, first 12): `GitHubApiClient.kt=a19a92174c97`; `GitHubApiClientTest.kt=8575643120ff`; `backend-atom-contract-test.sh=16174e6e1e43`.

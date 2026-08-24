@@ -59,6 +59,7 @@ text src/main/kotlin/atropos/core/sentry/SentryApiClient.kt 'isJsonObjectEnvelop
 text src/main/kotlin/atropos/core/sentry/SentryApiClient.kt 'listUnresolvedIssues'
 text src/main/kotlin/atropos/core/github/GitHubApiClient.kt 'SecretSinkMatrix'
 text src/main/kotlin/atropos/core/github/GitHubApiClient.kt 'BoundedAgencyGate'
+text src/main/kotlin/atropos/core/github/GitHubApiClient.kt 'MAX_RESPONSE_CHARS'
 text src/main/kotlin/atropos/cli/shell/ShellCommandRunner.kt 'BoundedAgencyGate'
 
 # Factory resume/repair and the single obligation loop remain production-wired.

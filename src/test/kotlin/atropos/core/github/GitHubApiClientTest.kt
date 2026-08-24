@@ -122,6 +122,23 @@ class GitHubApiClientTest {
         assertFalse(called)
     }
 
+    @Test
+    fun oversized_response_is_refused_before_redaction_and_evidence_persistence() {
+        withNetworkSink {
+            val client = GitHubApiClient(
+                secretSource = MapSecretSource(mapOf("GITHUB_TOKEN" to "token")),
+                gate = ::allowed,
+                transport = GitHubApiTransport {
+                    GitHubApiWireResponse(200, "x".repeat(1_024 * 1_024 + 1))
+                }
+            )
+
+            assertFailsWith<IllegalArgumentException> {
+                client.listIssues("owner", "repo")
+            }
+        }
+    }
+
     private fun withNetworkSink(block: () -> Unit) {
         SecretSinkMatrix.setPermitted(SecretSinkKind.EGRESS_URL, true)
         try {

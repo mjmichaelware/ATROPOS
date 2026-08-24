@@ -114,6 +114,9 @@ class GitHubApiClient(
         val response = transport.send(
             GitHubApiWireRequest(method, "$API_ROOT$path", request.body, token)
         )
+        require(response.body.length <= MAX_RESPONSE_CHARS) {
+            "GitHub API response exceeds $MAX_RESPONSE_CHARS characters"
+        }
         val safeBody = redactionFilter.redact(response.body)
         return GitHubApiResponse(
             status = response.status,
@@ -223,6 +226,7 @@ class GitHubApiClient(
     private companion object {
         const val API_ROOT = "https://api.github.com"
         const val MAX_BODY_CHARS = 64 * 1024
+        const val MAX_RESPONSE_CHARS = 1_024 * 1_024
         const val MAX_PATH_CHARS = 512
         val METHODS = setOf("GET", "POST", "PATCH")
         val TOKEN_NAMES = listOf("ATROPOS_GITHUB_TOKEN", "GITHUB_TOKEN", "GH_TOKEN")

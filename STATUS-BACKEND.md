@@ -62,6 +62,8 @@ This file records backend implementation status for the current engine wave. A r
 
 | B-MCP-OAUTH-UX GitHub response envelope | source-wired / partial | `src/main/kotlin/atropos/core/github/GitHubDeviceAuthClient.kt`, `src/test/kotlin/atropos/core/github/GitHubDeviceAuthClientTest.kt`, `scripts/backend-atom-contract-test.sh` | existing `GitHubDeviceAuthClient.begin/poll` → bounded response parser → `TokenIsolationVault.store` | OAuth responses now require a complete balanced object before field extraction; positive device expiry is enforced. Backend contract, hosted selector parity (418), and diff check pass; hosted/live OAuth evidence remains pending. |
 
+| B-MCP-GITHUB response size bound | source-wired / partial | `src/main/kotlin/atropos/core/github/GitHubApiClient.kt`, `src/test/kotlin/atropos/core/github/GitHubApiClientTest.kt`, `scripts/backend-atom-contract-test.sh` | `/github *` → existing `GitHubBinding` → `GitHubApiClient.execute` → bounded response/evidence path | GitHub responses over one MiB are refused before redaction/evidence hashing. Backend contract, hosted selector parity (418), and diff check pass; hosted/credentialed execution remains pending. |
+
 ## Commands
 
 - `/factory resume <runId>` — read-only attested resume inspection; execution requires the existing router callback path.
@@ -922,3 +924,5 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-INST-006 npm local-jar fallback and tag publication | source-wired / partial | `npm/scripts/postinstall.js`, `npm/README.md`, `scripts/npm-installer-contract-test.sh`, `.github/workflows/release.yml` | `npm install` → existing `postinstall.js`; immutable `v*` release → existing `publish-npm` job → npm registry | `ATROPOS_JAR` now copies a local jar without network access; the package contract and isolated local-jar install pass. Tag publication is skipped when `NPM_TOKEN` is absent and therefore remains unproven until GitHub Actions runs with the operator-configured secret. |
+
+| B-MCP-GITHUB response size bound | source-wired / partial | `src/main/kotlin/atropos/core/github/GitHubApiClient.kt`, `src/test/kotlin/atropos/core/github/GitHubApiClientTest.kt`, `scripts/backend-atom-contract-test.sh` | `/github *` → existing `GitHubCommandHandler`/`GitHubBinding` → sole `GitHubApiClient.execute` | Responses over 1 MiB are refused before redaction/evidence hashing. Static backend/hosted-selector contracts and diff check pass; root/hosted Kotlin and credentialed GitHub execution remain pending. |
