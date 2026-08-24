@@ -21,6 +21,12 @@ jobs:
       - id: verify
         uses: ./.github/actions/atropos-verify
 
+      - name: Show verification evidence hashes
+        if: always()
+        env:
+          EVIDENCE_HASHES: ${{ steps.verify.outputs.evidence-hashes }}
+        run: printf 'ATROPOS_EVIDENCE_HASHES=%s\n' "$EVIDENCE_HASHES"
+
       - name: Publish ATROPOS verification check
         if: always()
         uses: actions/github-script@v7

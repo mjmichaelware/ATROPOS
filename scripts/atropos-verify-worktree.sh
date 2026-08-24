@@ -43,7 +43,7 @@ if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
     --tests 'atropos.core.agent.AgentContextCollectorTest' \
     --tests 'atropos.cli.shell.ShellBoundedAgencyTest' \
     --tests 'atropos.core.worktree.BoundedGitWorktreeCommandRunnerTest' \
-    --tests 'atropos.core.verification.GateReachabilityCheckerTest'
+    --tests 'atropos.core.verification.GateReachabilityCheckerTest' \
     --tests 'atropos.core.github.GitHubApiClientTest'
 fi
 
@@ -52,6 +52,9 @@ git diff --check
 
 echo "=== NPM INSTALLER CONTRACT ==="
 bash scripts/npm-installer-contract-test.sh
+
+echo "=== GITHUB ACTION CONTRACT ==="
+bash scripts/atropos-verify-action-contract-test.sh
 
 echo "=== MCP EXAMPLE CONTRACT ==="
 bash scripts/mcp-example-contract-test.sh

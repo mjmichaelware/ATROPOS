@@ -305,3 +305,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-GITHUB territory declaration | source-wired / partial | `src/main/kotlin/atropos/core/github/GitHubApiClient.kt`, `src/test/kotlin/atropos/core/github/GitHubApiClientTest.kt` | `GitHubBinding.api` → `GitHubApiClient.execute` → `ActionProposal.targetPaths` | GitHub API requests now require a non-empty traversal-free declared territory, which is carried into the canonical policy proposal; injected test asserts the territory reaches the gate. Hosted/root execution remains pending. |
+
+### 2026-08-24T08:45:00Z · Backend batch: reusable-action-evidence-output
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-GHA action inputs/output and evidence capture | source-wired / partial | `.github/actions/atropos-verify/action.yml`, `.github/workflows/atropos-verify-example.yml`, `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh`, `scripts/atropos-verify-action-contract-test.sh` | GitHub reusable action → existing `scripts/atropos-verify-worktree.sh`; example workflow publishes the action output | The single reusable action now accepts its working directory and verifier path, preserves the verifier exit code, captures unique SHA-256 tokens, and exposes them as `evidence-hashes`; a local action contract checks the metadata and `PIPESTATUS`/`GITHUB_OUTPUT` behavior. Also fixed the detached `GitHubApiClientTest` selector in the reusable script. `bash -n`, action contract, and `git diff --check` passed; GitHub-hosted execution remains pending. |

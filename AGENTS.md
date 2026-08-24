@@ -12151,3 +12151,12 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: static checks are pending immediately after this edit; root Gradle and hosted execution remain unrun, so no green claim is made.
 - % delta: unchanged; source-wired but partial pending hosted execution evidence.
 - Fingerprints: recorded after commit.
+
+### 2026-08-24T08:45:00Z · Agent: Codex GPT-5 · Batch: reusable-action-evidence-output
+
+- Paths touched: `.github/actions/atropos-verify/action.yml` (+32/-3), `.github/workflows/atropos-verify-example.yml` (+6), `.github/workflows/compile-gate.yml` (+3), `scripts/atropos-verify-worktree.sh` (+5/-1), `scripts/atropos-verify-action-contract-test.sh` (+18 new), and `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-MCP-GHA reusable action inputs/output/evidence capture and hosted backend verification wiring.
+- Predicate moved: the existing single reusable GitHub Action now preserves the bounded verifier's nonzero exit, captures unique SHA-256 tokens from its log into a declared action output, and accepts explicit working-directory/script inputs. The example workflow prints the output for the existing check publication path. A missing continuation slash that detached `GitHubApiClientTest` from the Gradle command was corrected; no second CI verifier was added.
+- Verification actually run: `bash -n scripts/atropos-verify-worktree.sh scripts/atropos-verify-action-contract-test.sh`, `bash scripts/atropos-verify-action-contract-test.sh` (`ATROPOS_VERIFY_ACTION_CONTRACT_OK`), and `git diff --check` passed. GitHub Actions has not run; no root compile/test green claim is made.
+- % delta: unchanged; source-wired but partial pending hosted execution evidence.
+- Fingerprints: recorded after the batch commit.

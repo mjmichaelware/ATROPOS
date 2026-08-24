@@ -68,6 +68,9 @@ jobs:
       - name: npm installer contract
         run: bash scripts/npm-installer-contract-test.sh
 
+      - name: reusable verify action contract
+        run: bash scripts/atropos-verify-action-contract-test.sh
+
       - name: focused factory provider bridge MCP tests
         run: >-
           ./gradlew --no-daemon :test --rerun

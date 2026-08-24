@@ -1,7 +1,35 @@
 name: ATROPOS verify
 description: Run the repository's bounded verification lane as a GitHub check
+inputs:
+  working-directory:
+    description: Repository directory containing the verification script
+    required: false
+    default: .
+  verify-script:
+    description: Relative path to the bounded verification script
+    required: false
+    default: scripts/atropos-verify-worktree.sh
+outputs:
+  evidence-hashes:
+    description: Unique SHA-256 evidence tokens emitted by the verification lane
+    value: ${{ steps.verify.outputs.evidence_hashes }}
 runs:
   using: composite
   steps:
-    - shell: bash
-      run: bash scripts/atropos-verify-worktree.sh
+    - id: verify
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        VERIFY_SCRIPT: ${{ inputs.verify-script }}
+      run: |
+        set +e
+        log_file="${RUNNER_TEMP}/atropos-verify.log"
+        bash "$VERIFY_SCRIPT" 2>&1 | tee "$log_file"
+        verify_exit=${PIPESTATUS[0]}
+        evidence_hashes="$(grep -Eo '[0-9a-fA-F]{64}' "$log_file" | sort -u | tr '\n' ' ' || true)"
+        {
+          echo 'evidence_hashes<<ATROPOS_EVIDENCE_HASHES'
+          echo "$evidence_hashes"
+          echo 'ATROPOS_EVIDENCE_HASHES'
+        } >> "$GITHUB_OUTPUT"
+        exit "$verify_exit"
