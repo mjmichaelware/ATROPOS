@@ -90,10 +90,12 @@ fun main(args: Array<String>) {
     try {
         val config = AtroposConfig.load()
 
-        // Discovery is cheap and metadata-only. Print its compact candidate
-        // line once at launch; the canonical route owner still decides the
-        // actual cascade when work is requested.
-        ui.renderNotice(atropos.core.provider.ProviderOnboardingService().renderLaunchSummary(refresh = true))
+        // Discovery is cheap and metadata-only. Construct one owner and pass
+        // that same instance to the router; otherwise Main and CommandRouter
+        // would each scan the environment during one launch.
+        val providerOnboarding = atropos.core.provider.ProviderOnboardingService()
+        providerOnboarding.refresh()
+        ui.renderNotice(providerOnboarding.renderLaunchSummary(refresh = false))
 
         if (args.firstOrNull() == "--doctor" || args.firstOrNull() == "doctor") {
             atropos.cli.FirstRunDoctorRenderer(
@@ -142,7 +144,9 @@ fun main(args: Array<String>) {
             config = config,
             uiEngine = ui,
             sessionTracker = tracker,
-            rateResolver = capabilities::inputUsdPerToken
+            rateResolver = capabilities::inputUsdPerToken,
+            providerOnboarding = providerOnboarding,
+            providerDiscoveryAlreadyRefreshed = true
         )
 
         // The engine's client-facing listener. Off unless the operator asks for

@@ -24,6 +24,7 @@ import atropos.core.ProviderFactory
 import atropos.core.AtroposRepoRootLocator
 import atropos.core.nl.NlEntryPipeline
 import atropos.core.nl.NlSource
+import atropos.core.provider.ProviderOnboardingService
 
 enum class RouterOutcome { CONTINUE, EXIT }
 
@@ -36,6 +37,8 @@ class CommandRouter(
     private val verifyCommand: VerifyCommandHandler = VerifyCommand(uiEngine),
     private val shellRunner: ShellCommandRunner = ShellCommandRunner(),
     private val factoryCommandOverride: FactoryCommandHandler? = null,
+    private val providerOnboarding: ProviderOnboardingService = ProviderOnboardingService(),
+    private val providerDiscoveryAlreadyRefreshed: Boolean = false,
     /** The only way this router reaches DLOI: failures arrive typed, not thrown. */
     private val higZeroGuard: atropos.dloi.HigZeroGuard = atropos.dloi.HigZeroGuard(atropos.dloi.DloiService())
 ) {
@@ -104,7 +107,6 @@ class CommandRouter(
     private val githubCommand = GitHubCommandHandler(config, uiEngine)
     private val sentryCommand = SentryCommandHandler(uiEngine)
     private val mcpCommand = McpCommandHandler(uiEngine)
-    private val providerOnboarding = atropos.core.provider.ProviderOnboardingService()
     private val dloiCommand = DloiCommandHandler(uiEngine, higZeroGuard)
     private val shellCommand = ShellCommandHandler(uiEngine, shellRunner)
     private val pipedStreamRouter = PipedStreamRouter(shellRunner)
@@ -158,7 +160,11 @@ class CommandRouter(
     init {
         // Cheap, local-only discovery. It records labels and health, never key bytes,
         // and does not make a model/network call during launch.
-        val discovered = providerOnboarding.refresh()
+        val discovered = if (providerDiscoveryAlreadyRefreshed) {
+            providerOnboarding.list()
+        } else {
+            providerOnboarding.refresh()
+        }
         // Keep launch useful with zero configured providers: routing will fail
         // actionably, while the operator gets one safe environment example.
         uiEngine.renderBlock(

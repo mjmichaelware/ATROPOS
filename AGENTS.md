@@ -12397,6 +12397,14 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; source-wired but partial pending hosted execution evidence.
 - Fingerprints: recorded after commit.
 
+### 2026-08-24T15:00:00Z · Agent: Codex GPT-5 · Batch: provider-startup-single-scan
+- Paths touched: `src/main/kotlin/atropos/Main.kt` (+14/-6), `src/main/kotlin/atropos/cli/CommandRouter.kt` (+10/-1), `scripts/backend-atom-contract-test.sh` (+7/-1), `STATUS-BACKEND.md` (+7), `AGENTS.md` (+7).
+- Atoms / phases affected: B-PROV-001/B-PROV-003 startup discovery and cascade print.
+- Predicate moved: one normal launch now performs one onboarding refresh and shares that owner with the router; no second environment scan occurs during router initialization. Explicit operator refresh remains available.
+- Verification actually run: backend atom, provider environment, hosted-selector (440 tests), and `git diff --check` passed. Root/hosted Kotlin execution remains unverified.
+- % delta: unchanged; startup wiring corrected.
+- Fingerprints: recorded after commit.
+
 ### 2026-08-24T14:30:00Z · Agent: Codex GPT-5 · Batch: tier0-microatom-owner-crosswalk
 - Paths touched: `STATUS-BACKEND.md` (+8), `AGENTS.md` (+7).
 - Atoms / phases affected: B-MCP-CORE-a..k and Tier-0 Sentry/GitHub/GHA/local-Git micro-atoms.
