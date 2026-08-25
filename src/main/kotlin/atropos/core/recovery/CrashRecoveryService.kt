@@ -48,7 +48,7 @@ class CrashRecoveryService(
     private val dagService: DagExecutionService = DagExecutionService(config, repoRoot, onboarding = onboarding),
     private val dagStore: DagStore = DagStore(repoRoot),
     private val memoryStore: LocalMemoryStore = LocalMemoryStore(repoRoot.resolve(".atropos/memory").toFile()),
-    private val daemonService: AgentDaemonService = AgentDaemonService(config),
+    private val daemonService: AgentDaemonService = AgentDaemonService(config, onboarding = onboarding),
     private val clock: () -> Instant = { Instant.now() },
     private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {

@@ -6,6 +6,7 @@ import atropos.core.policy.AgencyDisposition
 import atropos.core.policy.BoundedAgencyGate
 import atropos.core.policy.ExecutionPolicyEngine
 import atropos.core.policy.LifecycleActionProposals
+import atropos.core.provider.ProviderOnboardingService
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
@@ -14,8 +15,9 @@ import java.util.concurrent.TimeUnit
 class AgentDaemonService(
     private val config: AtroposConfig = AtroposConfig.load(),
     private val repoRoot: Path = AgentDaemonRootResolver.resolve(),
+    private val onboarding: ProviderOnboardingService = ProviderOnboardingService(),
     private val store: AgentDaemonStore = AgentDaemonStore(repoRoot),
-    private val queueService: AgentQueueService = AgentQueueService(config),
+    private val queueService: AgentQueueService = AgentQueueService(config, onboarding = onboarding),
     private val agencyGate: BoundedAgencyGate = BoundedAgencyGate(ExecutionPolicyEngine(repoRoot)),
     private val memoryStore: LocalMemoryStore = LocalMemoryStore(repoRoot.resolve(".atropos/memory").toFile()),
     private val sessionSupervisor: ProviderSessionSupervisor = ProviderSessionSupervisor(repoRoot),

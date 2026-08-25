@@ -77,9 +77,15 @@ fun main(args: Array<String>) {
         return
     }
 
+    // Discovery is cheap and metadata-only. Construct one owner for every
+    // launch mode, including the daemon foreground entrypoint.
+    val providerOnboarding = atropos.core.provider.ProviderOnboardingService()
+    providerOnboarding.refresh()
+
     if (args.firstOrNull() == "--agent-daemon-foreground") {
         val config = AtroposConfig.load()
-        val result = AgentDaemonService(config).foreground(config.runtime.defaultProvider)
+        val result = AgentDaemonService(config, onboarding = providerOnboarding)
+            .foreground(config.runtime.defaultProvider)
         println(result.render())
         return
     }
@@ -91,11 +97,8 @@ fun main(args: Array<String>) {
     try {
         val config = AtroposConfig.load()
 
-        // Discovery is cheap and metadata-only. Construct one owner and pass
-        // that same instance to the router; otherwise Main and CommandRouter
-        // would each scan the environment during one launch.
-        val providerOnboarding = atropos.core.provider.ProviderOnboardingService()
-        providerOnboarding.refresh()
+        // Pass the one launch owner to every downstream router/service; no
+        // second environment scan is permitted during this process.
         ui.renderNotice(providerOnboarding.renderLaunchSummary(refresh = false))
 
         if (args.firstOrNull() == "--doctor" || args.firstOrNull() == "doctor") {

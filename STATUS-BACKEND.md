@@ -1730,3 +1730,9 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-005/B-PROV-002 crash recovery queue and DAG owner | source-wired / partial | `src/main/kotlin/atropos/core/recovery/CrashRecoveryService.kt`, `src/main/kotlin/atropos/Main.kt`, `src/main/kotlin/atropos/cli/commands/AgentCommand.kt`, `src/main/kotlin/atropos/bridge/AtroposBridge.kt`, `scripts/backend-atom-contract-test.sh` | startup/CLI/bridge recovery → shared onboarding → `CrashRecoveryService` → existing queue/DAG/restart owners | Stale queue, stale DAG, CLI recovery, startup continuity, and bridge restart snapshots now share the provider owner. Backend contract, hosted selector (`440 tests`), and diff check pass; hosted recovery runtime remains unverified. |
+
+### 2026-08-25T06:36:52Z · Agent: Codex GPT-5 · Batch: daemon-provider-owner
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-PROV-002 daemon queue owner | source-wired / partial | `src/main/kotlin/atropos/core/agent/AgentDaemonService.kt`, `src/main/kotlin/atropos/core/recovery/CrashRecoveryService.kt`, `src/main/kotlin/atropos/cli/commands/AgentCommand.kt`, `src/main/kotlin/atropos/Main.kt` | `--agent-daemon-foreground`, CLI daemon commands, and crash recovery → injected launch/command onboarding → `AgentDaemonService` → existing queue processor/cascade | Foreground daemon and recovery-created daemon now receive the same provider onboarding owner; the daemon no longer creates a second queue provider inventory. Backend atom contract, hosted selector (`440 tests`), and diff check pass. Kotlin daemon/runtime execution remains unverified; no hosted-green claim. |

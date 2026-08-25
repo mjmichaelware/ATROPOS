@@ -13461,6 +13461,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprints: `McpHostManagerTest.kt=9fdff3a705fe`; `backend-atom-contract-test.sh=82cb37547703`.
 
+### 2026-08-25T06:36:52Z · Agent: Codex GPT-5 · Batch: daemon-provider-owner
+
+- Paths touched: `src/main/kotlin/atropos/core/agent/AgentDaemonService.kt` (+4), `src/main/kotlin/atropos/core/recovery/CrashRecoveryService.kt` (+1), `src/main/kotlin/atropos/cli/commands/AgentCommand.kt` (+1), `src/main/kotlin/atropos/Main.kt` (+10/-6), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-PROV-002 shared provider inventory through daemon and recovery paths.
+- Predicate moved: `--agent-daemon-foreground`, CLI daemon commands, and crash recovery now inject the existing launch/command onboarding owner into `AgentDaemonService`; its durable queue no longer constructs a separate provider onboarding owner on the production daemon path.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh` (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (440 tests)`), and `git diff --check` passed. Root/hosted Kotlin daemon and runtime execution remain unverified; no root-green claim.
+- % delta: unchanged; B-PROV-002 remains source-wired/partial pending hosted execution and live provider evidence.
+- Fingerprints (sha256, first 12): `AgentDaemonService.kt=92279b855393`; `CrashRecoveryService.kt=33bb6de68f8a`; `AgentCommand.kt=a2a8a942810a`; `Main.kt=143da17cba455`.
+
 ### 2026-08-25T05:18:00Z · Agent: Codex GPT-5 · Batch: provider-chat-owner-injection
 
 - Paths touched: `src/main/kotlin/atropos/cli/CommandRouter.kt` (+2), `src/main/kotlin/atropos/cli/ProviderChatDispatcher.kt` (+4/-2), `scripts/backend-atom-contract-test.sh` (+2).
