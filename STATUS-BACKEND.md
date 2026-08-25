@@ -1256,3 +1256,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | ADD-MCP-005/006/007 configured search and authority policy | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `src/main/kotlin/atropos/cli/McpCommandHandler.kt`, `src/main/kotlin/atropos/cli/input/CommandCatalog.kt`, `scripts/backend-atom-contract-test.sh` | `/mcp search` → sole `McpHostManager.search()` gated configured-catalog query; `/mcp call` → `isMemoryAuthorityMutation()` refusal before transport | Backend contract now protects search’s no-install caller and the memory-to-authority refusal edge. Hosted MCP runtime execution remains unverified. |
+
+### 2026-08-25T06:40:00Z · Agent: Codex GPT-5 · Batch: tier0-integration-registry-entries
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-FS / B-MCP-GITLOCAL registry ownership | source-wired / partial | `src/main/kotlin/atropos/core/integration/IntegrationRegistry.kt`, `src/test/kotlin/atropos/core/integration/IntegrationRegistryTest.kt`, `scripts/backend-atom-contract-test.sh` | `BackendDoctor` → existing `IntegrationRegistry.all()` → canonical filesystem and git-local descriptors; execution remains on `McpHostManager`/bounded git owners | Filesystem and local-git Tier-0 integrations are now visible through the existing doctor registry. Hosted Kotlin execution remains unverified; no second tool executor or registry was added. |

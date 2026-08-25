@@ -11,6 +11,11 @@ class IntegrationRegistryTest {
 
         assertEquals("https", sentry.transport)
         assertTrue(sentry.capabilities.contains("repair_proposals"))
-        assertEquals(setOf("github", "mcp", "sentry"), IntegrationRegistry.all().map { it.id }.toSet())
+        assertEquals(
+            setOf("github", "mcp", "filesystem", "git-local", "sentry"),
+            IntegrationRegistry.all().map { it.id }.toSet()
+        )
+        assertEquals("stdio_or_http", IntegrationRegistry.requireRegistered("filesystem").transport)
+        assertEquals("process", IntegrationRegistry.requireRegistered("git-local").transport)
     }
 }

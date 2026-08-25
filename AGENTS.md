@@ -13285,6 +13285,16 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; B-MCP-GITHUB remains source-wired/partial pending hosted/live evidence.
 - Fingerprints (sha256, first 12): `GitHubApiClient.kt=a19a92174c97`; `GitHubApiClientTest.kt=8575643120ff`; `backend-atom-contract-test.sh=16174e6e1e43`.
 
+### 2026-08-25T06:40:00Z · Agent: Codex GPT-5 · Batch: tier0-integration-registry-entries
+
+- Paths touched: `src/main/kotlin/atropos/core/integration/IntegrationRegistry.kt` (+2), `src/test/kotlin/atropos/core/integration/IntegrationRegistryTest.kt` (+7), `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-MCP-FS and B-MCP-GITLOCAL registry ownership.
+- Predicate moved: the existing doctor/integration catalog now has canonical filesystem and local-git descriptors, with production execution still delegated to the existing MCP host and bounded git owners.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh`, `bash scripts/hosted-test-selector-contract.sh` (`421 tests`), and `git diff --check` passed. Hosted Kotlin execution remains unverified.
+- % delta: unchanged; these atoms remain source-wired/partial pending hosted execution.
+- New overall estimate: unchanged.
+- Fingerprints: `IntegrationRegistry.kt=7da75ba4a73c`; `IntegrationRegistryTest.kt=173807f892b5`; `backend-atom-contract-test.sh=b4bb3bdf8e78`.
+
 ### 2026-08-25T00:00:00Z · Agent: Codex GPT-5 · Batch: installer-config-root-alignment
 
 - Paths touched: `src/main/kotlin/atropos/core/Config.kt` (+19/-3), `install.sh` (+1), `scripts/install-contract-test.sh` (+1), `scripts/backend-atom-contract-test.sh` (+3), `.github/workflows/compile-gate.yml` (+1), `scripts/atropos-verify-worktree.sh` (+1), `src/test/kotlin/atropos/core/ConfigTest.kt` (+25), `STATUS-BACKEND.md` (+7).

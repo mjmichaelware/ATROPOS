@@ -133,6 +133,8 @@ text src/main/kotlin/atropos/cli/input/CommandCatalog.kt '"/mcp search <query>"'
 
 # Tier-0 integrations compose onto existing gates and secret/evidence owners.
 file src/main/kotlin/atropos/core/integration/IntegrationRegistry.kt
+text src/main/kotlin/atropos/core/integration/IntegrationRegistry.kt 'IntegrationDescriptor("filesystem", "stdio_or_http"'
+text src/main/kotlin/atropos/core/integration/IntegrationRegistry.kt 'IntegrationDescriptor("git-local", "process"'
 file src/main/kotlin/atropos/core/sentry/SentryApiClient.kt
 file src/main/kotlin/atropos/core/sentry/SentryRepairCoordinator.kt
 file src/main/kotlin/atropos/cli/SentryCommandHandler.kt

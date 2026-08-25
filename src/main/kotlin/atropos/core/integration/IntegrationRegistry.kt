@@ -13,6 +13,8 @@ object IntegrationRegistry {
     private val descriptors = listOf(
         IntegrationDescriptor("github", "https", true, listOf("issues", "pull_requests", "checks")),
         IntegrationDescriptor("mcp", "stdio_or_http", true, listOf("tools", "evidence", "allowlist")),
+        IntegrationDescriptor("filesystem", "stdio_or_http", true, listOf("workspace_read", "workspace_write", "sandbox")),
+        IntegrationDescriptor("git-local", "process", true, listOf("status", "diff", "worktree")),
         IntegrationDescriptor("sentry", "https", true, listOf("issues", "stack_frames", "repair_proposals"))
     )
 
