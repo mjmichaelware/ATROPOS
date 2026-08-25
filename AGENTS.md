@@ -13319,6 +13319,14 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; B-MCP-GITLOCAL remains source-wired/partial pending hosted runtime evidence.
 - Fingerprint (sha256, first 12): `backend-atom-contract-test.sh=0af013629f0b`.
 
+### 2026-08-25T03:40:52Z · Agent: Codex GPT-5 · Batch: open-core-legal-note
+- Paths touched: `LEGAL.md` (+12), `README.md` (+1), `scripts/backend-atom-contract-test.sh` (+4), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-OC-003 AGPL section 13 procurement note.
+- Predicate moved: the required root `LEGAL.md` procurement note now exists, is linked from README, points to the authoritative license/open-core boundary, and is protected by the backend source contract.
+- Verification actually run: backend atom contract passed; hosted selector passed (`440 tests`); orphan gate passed with only 4 historical baseline files (1045 production files / 362 orphan LOC); `git diff --check` passed. No legal advice or hosted runtime claim is made.
+- % delta: unchanged; B-OC-003 remains source-wired/partial pending external legal/hosted evidence.
+- Fingerprints (sha256, first 12): `LEGAL.md=41d6926c53c1`; `README.md=09b635196cec`; `backend-atom-contract-test.sh=730dc427bb1f`.
+
 ### 2026-08-25T02:44:07Z · Agent: Codex GPT-5 · Batch: release-backend-atom-gate
 
 - Paths touched: `.github/workflows/release.yml` (+3), `scripts/release-installer-contract-test.sh` (+1), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7).

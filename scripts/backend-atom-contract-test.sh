@@ -86,6 +86,7 @@ text src/main/kotlin/atropos/core/agent/ImportedInstructionPackStore.kt 'pack.ha
 file src/main/kotlin/atropos/core/factory/FactoryResearchService.kt
 file src/main/kotlin/atropos/cli/BackendDoctor.kt
 file docs/OPEN_CORE_BOUNDARY.md
+file LEGAL.md
 text src/main/kotlin/atropos/core/Config.kt 'zero_retention_research'
 text src/main/kotlin/atropos/core/factory/FactoryResearchService.kt 'zeroRetentionResearch'
 text src/main/kotlin/atropos/core/factory/FactoryResearchService.kt 'lakehouse_route=SKIPPED_ZERO_RETENTION:remote_research_disabled'
@@ -93,12 +94,15 @@ text src/main/kotlin/atropos/core/factory/FactoryResearchService.kt 'bounded_fet
 text src/main/kotlin/atropos/cli/BackendDoctor.kt 'zero_retention_research=${config.runtime.zeroRetentionResearch}'
 text docs/OPEN_CORE_BOUNDARY.md 'local-only mode'
 text README.md 'docs/OPEN_CORE_BOUNDARY.md'
+text README.md 'LEGAL.md'
 text README.md 'docs/PROVIDER_ENVIRONMENT.md'
 file scripts/provider-env-readme-generator.py
 text scripts/provider-env-contract-test.sh 'provider-env-readme-generator.py" --check'
 text README.md '<!-- BEGIN GENERATED PROVIDER ENVIRONMENT TABLE -->'
 text CONTRIBUTING.md 'Do not add one Kotlin adapter per brand'
 text docs/OPEN_CORE_BOUNDARY.md 'AGPL section 13'
+text LEGAL.md 'AGPL section 13'
+text LEGAL.md 'open-core boundary'
 text scripts/atropos-verify-worktree.sh "atropos.core.provider.ProviderConfigurationResolverTest"
 text .github/workflows/compile-gate.yml "atropos.core.provider.ProviderConfigurationResolverTest"
 text scripts/atropos-verify-worktree.sh "atropos.ast.AstSymbolGraphTest"

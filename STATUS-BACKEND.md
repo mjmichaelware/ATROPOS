@@ -1540,3 +1540,9 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-GIT-a..g / local Git micro-atom caller completeness | source-wired / partial | `scripts/backend-atom-contract-test.sh`, `src/main/kotlin/atropos/cli/GitMutationCommand.kt`, `src/main/kotlin/atropos/cli/ShellCommandHandler.kt`, `src/main/kotlin/atropos/cli/shell/ShellCommandRunner.kt` | `/git status|diff|conflicts|add|commit|rebase-continue` → existing bounded shell runner and explicit mutation parser | CI now protects all read and mutation command edges, confirmation parsing, file-mutation policy classification, and the sole bounded process owner. Backend contract, hosted selector (`440` tests), orphan gate, and `git diff --check` pass; hosted runtime Git execution remains unverified. |
+
+### 2026-08-25T03:40:52Z · Agent: Codex GPT-5 · Batch: open-core-legal-note
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-OC-003 / AGPL procurement note | source-wired / partial | `LEGAL.md`, `README.md`, `docs/OPEN_CORE_BOUNDARY.md`, `scripts/backend-atom-contract-test.sh` | README/install documentation → `LEGAL.md` and existing open-core boundary; license text remains authoritative | Added the specified procurement-facing legal pointer without modifying licensing authority. Backend contract, hosted selector (`440` tests), orphan gate, and `git diff --check` pass. Legal review and hosted CI remain external evidence. |

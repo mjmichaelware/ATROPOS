@@ -107,6 +107,7 @@ See [provider onboarding](docs/PROVIDER_ENVIRONMENT.md) for the supported enviro
 <!-- END GENERATED PROVIDER ENVIRONMENT TABLE -->
 
 See the [open-core boundary](docs/OPEN_CORE_BOUNDARY.md) for the local-authority and optional-hosted-service contract.
+See [LEGAL.md](LEGAL.md) for the short procurement and licensing note.
 
 ---
 
