@@ -1534,3 +1534,9 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-GH-a..r / GitHub REST caller completeness | source-wired / partial | `scripts/backend-atom-contract-test.sh`, `src/main/kotlin/atropos/core/github/GitHubApiClient.kt`, `src/main/kotlin/atropos/core/github/GitHubBinding.kt`, `src/main/kotlin/atropos/cli/GitHubCommandHandler.kt` | `/github` command → `GitHubCommandHandler` → `GitHubBinding` → single gated `GitHubApiClient` method surface | Contract now checks all issue, PR, review, check-run, branch-protection, write-authorization, territory, and egress edges. Backend contract, hosted selector (`440` tests), orphan gate, and `git diff --check` pass; hosted/credentialed GitHub execution remains unverified. |
+
+### 2026-08-25T03:36:17Z · Agent: Codex GPT-5 · Batch: local-git-mutation-edge-contract
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-GIT-a..g / local Git micro-atom caller completeness | source-wired / partial | `scripts/backend-atom-contract-test.sh`, `src/main/kotlin/atropos/cli/GitMutationCommand.kt`, `src/main/kotlin/atropos/cli/ShellCommandHandler.kt`, `src/main/kotlin/atropos/cli/shell/ShellCommandRunner.kt` | `/git status|diff|conflicts|add|commit|rebase-continue` → existing bounded shell runner and explicit mutation parser | CI now protects all read and mutation command edges, confirmation parsing, file-mutation policy classification, and the sole bounded process owner. Backend contract, hosted selector (`440` tests), orphan gate, and `git diff --check` pass; hosted runtime Git execution remains unverified. |

@@ -252,6 +252,14 @@ text src/main/kotlin/atropos/cli/ShellCommandHandler.kt 'shellRunner.gitStatus()
 text src/main/kotlin/atropos/cli/ShellCommandHandler.kt 'shellRunner.gitDiff()'
 text src/main/kotlin/atropos/cli/shell/ShellCommandRunner.kt 'BoundedProcessRunner().start(command, directory.toPath())'
 text src/main/kotlin/atropos/cli/shell/ShellCommandRunner.kt 'fun gitConflicts()'
+file src/main/kotlin/atropos/cli/GitMutationCommand.kt
+text src/main/kotlin/atropos/cli/GitMutationCommand.kt '"add"'
+text src/main/kotlin/atropos/cli/GitMutationCommand.kt '"commit"'
+text src/main/kotlin/atropos/cli/GitMutationCommand.kt '"rebase-continue"'
+text src/main/kotlin/atropos/cli/GitMutationCommand.kt '--confirm'
+text src/main/kotlin/atropos/cli/ShellCommandHandler.kt 'GitMutationCommandParser.parse(tokens)'
+text src/main/kotlin/atropos/cli/shell/ShellCommandRunner.kt 'fun runGitMutation(command: List<String>, targetPaths: List<String>)'
+text src/main/kotlin/atropos/cli/shell/ShellCommandRunner.kt 'PolicyActionClass.FILE_MUTATION'
 file src/main/kotlin/atropos/core/sentry/SentryApiClient.kt
 file src/main/kotlin/atropos/core/sentry/SentryRepairCoordinator.kt
 file src/main/kotlin/atropos/cli/SentryCommandHandler.kt
