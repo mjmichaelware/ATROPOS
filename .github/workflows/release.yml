@@ -194,6 +194,10 @@ jobs:
   # operator's keystore, which is a secret this workflow deliberately does not
   # hold.
   apk:
+    # Both jobs publish assets to the same release tag. Serialize this
+    # optional client publication behind the canonical JAR release so two
+    # release writers cannot race while creating or updating the tag.
+    needs: publish
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:

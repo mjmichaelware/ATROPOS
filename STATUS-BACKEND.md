@@ -1426,3 +1426,9 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-FS / B-MCP-GITLOCAL | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `src/main/kotlin/atropos/core/policy/TypedToolExecutor.kt`, `src/main/kotlin/atropos/bridge/BridgeMcpHandler.kt`, `src/main/kotlin/atropos/cli/ShellCommandHandler.kt`, `src/main/kotlin/atropos/cli/shell/ShellCommandRunner.kt`, `scripts/backend-atom-contract-test.sh` | configured filesystem MCP calls cross `McpHostManager → TypedToolExecutor`; `/git status|diff|conflicts` cross `ShellCommandHandler → ShellCommandRunner → BoundedProcessRunner` | Backend source contract now protects the exact Tier-0 caller edges without creating a second tool executor or git owner. Backend contract, hosted selector contract (440), reusable-action contracts, and `git diff --check` pass. Hosted Kotlin/runtime MCP execution remains unverified. |
+
+### 2026-08-25T03:05:00Z · Agent: Codex GPT-5 · Batch: release-asset-publication-order
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-INST-002 / B-INST-003 / B-MCP-GHA release publication | source-wired / partial | `.github/workflows/release.yml`, `scripts/release-installer-contract-test.sh`, `install.sh` | release `publish` JAR/checksum producer → dependent `apk` asset publisher → installer exact `latest`/tag asset consumer | APK publication is now serialized behind the canonical JAR release job, preventing concurrent writes to the same GitHub Release tag. Release, installer, package, backend contracts, and `git diff --check` pass. Hosted release publication and device installation remain unverified. |

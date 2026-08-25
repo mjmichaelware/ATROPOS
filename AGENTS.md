@@ -13311,6 +13311,14 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; Tier-0 integrations remain source-wired/partial pending hosted/runtime evidence.
 - Fingerprints: commit `5bbac4fd`, `backend-atom-contract-test.sh` current hash `3a33f7d9d8da`.
 
+### 2026-08-25T03:05:00Z · Agent: Codex GPT-5 · Batch: release-asset-publication-order
+- Paths touched: `.github/workflows/release.yml` (+5), `scripts/release-installer-contract-test.sh` (+1).
+- Atoms / phases affected: B-INST-002/B-INST-003 artifact publication and B-MCP-GHA release wiring.
+- Predicate moved: the JAR release is now the sole prerequisite for the optional APK asset publisher; both no longer mutate the same GitHub Release tag concurrently. The installer’s exact rolling/tagged asset consumer remains coupled to the JAR/checksum producer.
+- Verification actually run: release installer contract, installer contract, package installer contract, backend atom contract, and `git diff --check` passed. Hosted release publication/device installation remain unverified.
+- % delta: unchanged; release/install atoms remain source-wired/partial pending hosted release evidence.
+- Fingerprints: pending scoped commit.
+
 ### 2026-08-25T02:30:00Z · Agent: Codex GPT-5 · Batch: hosted-verifier-gradle-lane
 - Paths touched: `scripts/atropos-verify-worktree.sh` (+11/-7), `scripts/atropos-verify-action-contract-test.sh` (+5).
 - Atoms / phases affected: B-MCP-GHA hosted verification lane.
