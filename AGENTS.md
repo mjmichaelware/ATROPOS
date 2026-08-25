@@ -12397,6 +12397,14 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; source-wired but partial pending hosted execution evidence.
 - Fingerprints: recorded after commit.
 
+### 2026-08-25T22:30:00Z · Agent: Codex GPT-5 · Batch: provider-metadata-alias-separation
+- Paths touched: `src/main/kotlin/atropos/core/provider/ProviderEnvironmentAliases.kt` (+4/-2), `src/test/kotlin/atropos/core/provider/ProviderFixtureMatrixServiceTest.kt` (+8), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-PROV-001b/r/s and B-PROV-002 credential-health truth.
+- Predicate moved: endpoint, AWS profile, and Ollama model metadata can no longer satisfy required transport fields. The shared alias owner and focused test now enforce this across discovery and adapter status rather than fixing one provider locally.
+- Verification actually run: backend atom contract, provider environment contract, hosted selector (`441 tests`), and `git diff --check` passed. Kotlin/hosted runtime execution remains unverified; no green claim.
+- % delta: unchanged; provider catalog remains source-wired/partial pending hosted execution.
+- Fingerprints: recorded after commit.
+
 ### 2026-08-25T22:00:00Z · Agent: Codex GPT-5 · Batch: openai-endpoint-credential-separation
 - Paths touched: `src/main/kotlin/atropos/core/provider/ProviderEnvironmentAliases.kt` (+5/-1), `src/test/kotlin/atropos/core/provider/ProviderFixtureMatrixServiceTest.kt` (+10), `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+7).
 - Atoms / phases affected: B-PROV-001b endpoint metadata and B-PROV-002 credential health truth.

@@ -17,8 +17,10 @@ object ProviderEnvironmentAliases {
         "FIREWORKS_API_KEY" to listOf("FIREWORKS_AI_API_KEY"),
         "TOGETHER_API_KEY" to listOf("TOGETHERAI_API_KEY"),
         "AZURE_OPENAI_API_KEY" to listOf("AZURE_API_KEY"),
-        "AWS_REGION" to listOf("AWS_DEFAULT_REGION", "AWS_PROFILE"),
-        "OLLAMA_HOST" to listOf("OLLAMA_MODEL")
+        // Profiles and model selectors are separate configuration fields; they
+        // cannot stand in for a region or a reachable local host.
+        "AWS_REGION" to listOf("AWS_DEFAULT_REGION"),
+        "OLLAMA_HOST" to emptyList()
     )
 
     private val providerCanonical = mapOf(

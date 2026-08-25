@@ -1898,3 +1898,9 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-PROV-001b endpoint metadata vs credential separation | source-wired / partial | `src/main/kotlin/atropos/core/provider/ProviderEnvironmentAliases.kt`, `src/test/kotlin/atropos/core/provider/ProviderFixtureMatrixServiceTest.kt`, `scripts/backend-atom-contract-test.sh` | provider alias resolver → existing OpenAI-compatible adapter status/cascade | Removed `OPENAI_API_BASE` from credential aliases; endpoint-only discovery remains metadata-only and cannot become configured/routable. Backend/provider/connect contracts, hosted selector (`441 tests`), and diff check passed; Kotlin/hosted execution remains unverified. |
+
+### 2026-08-25T22:30:00Z · Agent: Codex GPT-5 · Batch: provider-metadata-alias-separation
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-PROV-001b/r/s metadata alias separation | source-wired / partial | `src/main/kotlin/atropos/core/provider/ProviderEnvironmentAliases.kt`, `src/test/kotlin/atropos/core/provider/ProviderFixtureMatrixServiceTest.kt`, `scripts/backend-atom-contract-test.sh` | shared alias resolver → provider discovery and adapter configuration owners | Removed `AWS_PROFILE`→`AWS_REGION` and `OLLAMA_MODEL`→`OLLAMA_HOST` false aliases. Focused assertions protect endpoint/profile/model metadata from satisfying transport requirements. Backend/provider contracts, hosted selector (`441 tests`), and diff check passed; Kotlin/hosted execution remains unverified. |

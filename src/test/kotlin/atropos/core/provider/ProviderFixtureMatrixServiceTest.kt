@@ -15,6 +15,7 @@ import atropos.core.provider.adapter.ProviderAdapterRegistry
 import atropos.core.provider.adapter.StaticProviderAdapterRegistry
 import atropos.core.security.MapSecretSource
 import kotlin.test.Test
+import kotlin.test.assertFalse
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
@@ -34,6 +35,13 @@ class ProviderFixtureMatrixServiceTest {
         ).getByProviderId("openai")
 
         assertTrue(adapter?.status()?.configured == false)
+    }
+
+    @Test
+    fun metadata_fields_are_not_transport_aliases() {
+        assertFalse(ProviderEnvironmentAliases.names("OPENAI_API_KEY").contains("OPENAI_API_BASE"))
+        assertFalse(ProviderEnvironmentAliases.names("AWS_REGION").contains("AWS_PROFILE"))
+        assertFalse(ProviderEnvironmentAliases.names("OLLAMA_HOST").contains("OLLAMA_MODEL"))
     }
 
     @Test
