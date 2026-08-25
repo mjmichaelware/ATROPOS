@@ -82,6 +82,10 @@ text src/main/kotlin/atropos/core/factory/FactoryResearchService.kt 'lakehouse_r
 text src/main/kotlin/atropos/core/factory/FactoryResearchService.kt 'bounded_fetch=SKIPPED_ZERO_RETENTION'
 text src/main/kotlin/atropos/cli/BackendDoctor.kt 'zero_retention_research=${config.runtime.zeroRetentionResearch}'
 text docs/OPEN_CORE_BOUNDARY.md 'local-only mode'
+text README.md 'docs/OPEN_CORE_BOUNDARY.md'
+text README.md 'docs/PROVIDER_ENVIRONMENT.md'
+text CONTRIBUTING.md 'Do not add one Kotlin adapter per brand'
+text docs/OPEN_CORE_BOUNDARY.md 'AGPL section 13'
 text scripts/atropos-verify-worktree.sh "atropos.core.provider.ProviderConfigurationResolverTest"
 text .github/workflows/compile-gate.yml "atropos.core.provider.ProviderConfigurationResolverTest"
 text scripts/atropos-verify-worktree.sh "atropos.ast.AstSymbolGraphTest"

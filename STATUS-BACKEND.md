@@ -1432,3 +1432,9 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-INST-002 / B-INST-003 / B-MCP-GHA release publication | source-wired / partial | `.github/workflows/release.yml`, `scripts/release-installer-contract-test.sh`, `install.sh` | release `publish` JAR/checksum producer → dependent `apk` asset publisher → installer exact `latest`/tag asset consumer | APK publication is now serialized behind the canonical JAR release job, preventing concurrent writes to the same GitHub Release tag. Release, installer, package, backend contracts, and `git diff --check` pass. Hosted release publication and device installation remain unverified. |
+
+### 2026-08-25T03:25:00Z · Agent: Codex GPT-5 · Batch: open-core-policy-caller-contract
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-OC-001 / B-OC-002 / B-OC-004 and MCP example policy | source-wired / partial | `README.md`, `CONTRIBUTING.md`, `docs/OPEN_CORE_BOUNDARY.md`, `docs/mcp-examples/*.json`, `scripts/backend-atom-contract-test.sh`, `scripts/mcp-example-contract-test.sh` | README → open-core/provider one-pagers; CONTRIBUTING → no per-brand adapter policy; backend config/research owners → local-only/zero-retention behavior; MCP example catalog → disabled community servers | Backend source contract, MCP example contract (14 files/14 servers), provider-env contract, hosted selector (440), and `git diff --check` pass. Hosted/runtime behavior remains unverified; no Tier-1/2 adapter farm added. |
