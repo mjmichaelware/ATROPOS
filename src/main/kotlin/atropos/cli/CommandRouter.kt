@@ -127,7 +127,7 @@ class CommandRouter(
     private var pendingRiskyNaturalLanguage: String? = null
     private val securityCommand = SecurityCommandHandler(uiEngine)
     private val keysCommand = KeysCommandHandler(uiEngine)
-    private val authCommand = AuthCommandHandler(uiEngine)
+    private val authCommand = AuthCommandHandler(uiEngine, config = config)
     private val storageCommand = StorageCommandHandler(uiEngine)
     private val interruptCommand = InterruptCommandHandler(uiEngine)
     private val exportCommand = ExportCommandHandler(uiEngine)

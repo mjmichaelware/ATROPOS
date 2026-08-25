@@ -2,6 +2,7 @@
 package atropos.cli
 
 import atropos.cli.ui.AnsiTerminalEngine
+import atropos.core.AtroposConfig
 import atropos.core.auth.AuthBootResult
 import atropos.core.auth.AuthBootstrap
 import atropos.core.auth.AuthCascadeResolver
@@ -25,7 +26,10 @@ class AuthCommandHandler(
     private val uiEngine: AnsiTerminalEngine,
     private val bootstrap: AuthBootstrap = AuthBootstrap(),
     private val resolver: AuthCascadeResolver = AuthCascadeResolver(),
-    private val githubOAuth: GitHubDeviceAuthClient = GitHubDeviceAuthClient(),
+    private val config: AtroposConfig = AtroposConfig.load(),
+    private val githubOAuth: GitHubDeviceAuthClient = GitHubDeviceAuthClient(
+        localOnly = config.runtime.localOnly
+    ),
     private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     private val renderer = atropos.cli.ui.StatusAuthRenderer()

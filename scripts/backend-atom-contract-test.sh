@@ -195,6 +195,8 @@ text src/main/kotlin/atropos/core/github/GitHubDeviceAuthClient.kt 'GitHub OAuth
 text src/main/kotlin/atropos/core/github/GitHubDeviceAuthClient.kt 'requireJsonObject(response.body)'
 text src/main/kotlin/atropos/core/github/GitHubDeviceAuthClient.kt 'vault.writeSecret("GITHUB_TOKEN"'
 text src/main/kotlin/atropos/cli/AuthCommandHandler.kt '"github" -> renderGitHub()'
+text src/main/kotlin/atropos/cli/CommandRouter.kt 'AuthCommandHandler(uiEngine, config = config)'
+text src/main/kotlin/atropos/cli/AuthCommandHandler.kt 'localOnly = config.runtime.localOnly'
 text src/main/kotlin/atropos/cli/AuthCommandHandler.kt 'redactionFilter.compact(it.message'
 text src/main/kotlin/atropos/cli/input/CommandCatalog.kt '"/auth github"'
 text .github/actions/atropos-verify/action.yml 'verify-script must stay inside working-directory'

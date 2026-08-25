@@ -15054,8 +15054,6 @@ Local verification note for this batch: `timeout 120s ./gradlew test --tests 'at
 - Verification actually run: source audit matched the numbered owner paths; no production implementation changed in this documentation batch. Existing static contract evidence remains authoritative; hosted Gradle/live integration proof remains unclaimed.
 - % delta: unchanged; this closes ledger traceability, not runtime implementation or hosted verification.
 - Fingerprints (sha256, first 12): `STATUS-BACKEND.md=da4c7d5a8ec4`, `AGENTS.md=1c7f4be8533f`.
-<<<<<<< HEAD
-=======
 ### 2026-08-25T16:00:00Z · Agent: Codex GPT-5 · Batch: first-run-onboarding-owner
 - Paths touched: `src/main/kotlin/atropos/cli/FirstRunProbe.kt` (+8), `src/main/kotlin/atropos/cli/CommandRouter.kt` (+1), `src/test/kotlin/atropos/cli/FirstRunProbeTest.kt` (+36), `.github/workflows/compile-gate.yml` (+1), `scripts/atropos-verify-worktree.sh` (+1), `scripts/backend-atom-contract-test.sh` (+3), `STATUS-BACKEND.md` (+1).
 - Atoms / phases affected: B-002 provider discovery truth in first-run UX and hosted backend test coverage.
@@ -15070,4 +15068,15 @@ Local verification note for this batch: `timeout 120s ./gradlew test --tests 'at
 - Verification actually run: `ATROPOS_BACKEND_ATOM_CONTRACT_OK`, `ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (441 tests)`, `git diff --check`, and the orphan gate (`4 pre-existing baseline files; exit 0`). The focused local Gradle attempt timed out during setup; no Kotlin pass claim.
 - % delta: unchanged; B-002 remains source-wired/partial pending hosted execution.
 - Fingerprints (sha256, first 12): `STATUS-BACKEND.md=8ed9225309ae`, `AGENTS.md=980b0eda1936`.
->>>>>>> 0e34c825 (test: cover shared first-run provider discovery)
+<<<<<<< HEAD
+=======
+
+### 2026-08-25T17:00:00Z · Agent: Codex GPT-5 · Batch: github-oauth-config-owner
+
+- Paths touched: `src/main/kotlin/atropos/cli/AuthCommandHandler.kt` (+6/-1), `src/main/kotlin/atropos/cli/CommandRouter.kt` (+1/-1), `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-MCP-OAUTH-UX launch configuration and localOnly policy binding.
+- Predicate moved: `/auth github` now receives the already-loaded `AtroposConfig` from `CommandRouter`; the existing `GitHubDeviceAuthClient` therefore evaluates the same launch `localOnly` decision as the rest of the engine, without a second config/policy owner.
+- Verification actually run: `ATROPOS_BACKEND_ATOM_CONTRACT_OK`, `ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (441 tests)`, provider environment contract, MCP example contract, `git diff --check`, and the orphan gate passed. No Kotlin test pass or GitHub-hosted green claim; hosted/live OAuth remains pending external execution and operator OAuth client registration.
+- % delta: unchanged; B-MCP-OAUTH-UX remains source-wired/partial pending hosted/live evidence.
+- Fingerprints (sha256, first 12): `AuthCommandHandler.kt=7aeba04ebd3a`, `CommandRouter.kt=9fabc00ca665`, `backend-atom-contract-test.sh=cc4011b2c5e0`, `STATUS-BACKEND.md=65346ae70b27`.
+>>>>>>> f743c3fd (fix: bind github oauth to launch config)

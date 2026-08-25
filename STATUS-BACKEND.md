@@ -1831,3 +1831,9 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-GHA-e/f/h reusable verify action | source-wired / partial | `.github/actions/atropos-verify/action.yml`, `.github/workflows/atropos-verify-example.yml`, `scripts/atropos-verify-action-contract-test.sh`, `scripts/atropos-verify-action-path-test.sh`, `scripts/backend-atom-contract-test.sh`, `scripts/hosted-test-selector-contract.sh` | GitHub Actions composite action → `scripts/atropos-verify-worktree.sh` → evidence-hash output and exit propagation → example workflow `checks.create` | `ATROPOS_VERIFY_ACTION_CONTRACT_OK`, `ATROPOS_VERIFY_WORKFLOW_CONTRACT_OK`, `ATROPOS_VERIFY_ACTION_PATH_CONTRACT_OK`, `ATROPOS_BACKEND_ATOM_CONTRACT_OK`, `ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (440 tests)`, and `git diff --check` pass. GitHub-hosted execution, published check, and root Kotlin execution remain unverified; no hosted-green claim. |
+
+### 2026-08-25T17:00:00Z · Agent: Codex GPT-5 · Batch: github-oauth-config-owner
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-OAUTH-UX / launch-config policy binding | source-wired / partial | `src/main/kotlin/atropos/cli/AuthCommandHandler.kt`, `src/main/kotlin/atropos/cli/CommandRouter.kt`, `scripts/backend-atom-contract-test.sh` | `Main.main()` → one loaded `AtroposConfig` → `CommandRouter` → `/auth github` → existing `GitHubDeviceAuthClient(localOnly=...)` | `/auth github` now uses the already-loaded launch configuration for the OAuth localOnly gate instead of reloading configuration inside the handler. Backend contract, provider/MCP example contracts, hosted selector (`441 tests`), orphan gate, and `git diff --check` passed; hosted Kotlin, live OAuth, and operator client registration remain unverified. |
