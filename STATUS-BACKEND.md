@@ -1748,3 +1748,9 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-011 / ADD-MCP-001..008 CLI host ownership | source-wired / partial | `src/main/kotlin/atropos/cli/CommandRouter.kt`, `BackendDoctor.kt`, `McpCommandHandler.kt`, `scripts/backend-atom-contract-test.sh` | one `CommandRouter`-owned `McpHostManager` → `/doctor` `BackendDoctor` and `/mcp` `McpCommandHandler` | CLI diagnostics and MCP commands now share one configured MCP host, eliminating the remaining same-process duplicate host/probe owner. Backend atom contract, hosted selector (`440 tests`), and diff check pass; hosted Kotlin CLI runtime remains unverified. |
+
+### 2026-08-25T06:53:51Z · Agent: Codex GPT-5 · Batch: mcp-cli-render-redaction
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-CORE-f / secret-safe CLI render | source-wired / partial | `src/main/kotlin/atropos/cli/McpCommandHandler.kt`, `scripts/backend-atom-contract-test.sh` | `/mcp call` → existing `McpHostManager.callTool()` → `McpCommandHandler` → `RedactionFilter` → terminal output | Successful MCP responses now pass through the terminal redaction boundary immediately before rendering, in addition to host-side evidence redaction. Backend atom contract, hosted selector (`440 tests`), and diff check pass; hosted Kotlin/secret fixture execution remains unverified. |

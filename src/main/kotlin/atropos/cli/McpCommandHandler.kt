@@ -56,7 +56,7 @@ class McpCommandHandler(
             .onSuccess { result ->
                 uiEngine.renderNotice(
                     "MCP tool result server=$server tool=$tool evidence_sha256=${result.evidence.sha256}\n" +
-                        result.response.take(8_000)
+                        redactionFilter.redact(result.response.take(8_000))
                 )
             }
             .onFailure { uiEngine.renderError("MCP tool call refused: ${redactionFilter.compact(it.message ?: it.javaClass.simpleName)}") }
