@@ -13397,6 +13397,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; B-005/B-PROV-002 remains source-wired/partial pending hosted runtime proof.
 - Fingerprints (sha256, full): `AgentQueueService.kt=2b38296acc3a2c9bfefb0722b31e65139bf8da3575cadd257c823ebdc463cf6a`; `AgentQueueProcessor.kt=cce6f378cb8739023b73461bbcd408709f7663e8c1197551d7a237c18ea3c4d6`; `AgentQueueExecutor.kt=6f8d6c42b0e218a07e6a85a71f937d5f7b3b4cc81b4646c4a0f1c3b9e1257101`; `AtroposBridge.kt=dd5d46a4ba3e94bb5bb064772ceed57df70b80ae2f7abd2e9720ce648cc51953`; `backend-atom-contract-test.sh=5289010c56b905f766ef6d59006d2e90f29721cda1ce32011c319976473b5686`.
 
+### 2026-08-25T10:30:00Z · Agent: Codex GPT-5 · Batch: dag-execution-provider-owner
+
+- Paths touched: `src/main/kotlin/atropos/core/dag/DagExecutionService.kt` (+8/-3), `src/main/kotlin/atropos/cli/commands/AgentCommand.kt` (+1/-1), `scripts/backend-atom-contract-test.sh` (+3).
+- Atoms / phases affected: B-PROV-002 DAG provider route ownership and queue execution composition.
+- Predicate moved: DAG execution now receives one onboarding owner and passes it into its queue and agent services; the CLI agent command passes its already shared owner into `DagExecutionService`.
+- Verification actually run: backend atom contract, hosted selector contract (`440 tests`), and `git diff --check` passed. Root/hosted Kotlin execution remains unverified; no DAG runtime claim.
+- % delta: unchanged; B-PROV-002 remains source-wired/partial pending hosted runtime evidence.
+- Fingerprints (sha256, full): `DagExecutionService.kt=af9f64fa80cfd5f5ff266e7c355758037c9c5c6d1578e73d77e5d1c76f124ba0`; `AgentCommand.kt=028248d470c0c7b36085b0bbf8ae4371073de6b498849e6047aa340e95d5b5da`; `backend-atom-contract-test.sh=ca722d570e1da5c2784dda8855f883bd6a51599e9d3cd3e82f32b7ebf079e73d`.
+
 ### 2026-08-25T07:20:00Z · Agent: Codex GPT-5 · Batch: mcp-probe-handshake-test-proof-append
 
 - Paths touched: `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+6), `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+7).

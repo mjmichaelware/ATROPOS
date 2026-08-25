@@ -1694,3 +1694,9 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-005 bridge queue / B-PROV-002 queued cascade owner | source-wired / partial | `src/main/kotlin/atropos/bridge/AtroposBridge.kt`, `src/main/kotlin/atropos/core/agent/AgentQueueService.kt`, `AgentQueueProcessor.kt`, `AgentQueueExecutor.kt`, `AgentService.kt`, `src/main/kotlin/atropos/cli/commands/AgentCommand.kt`, `scripts/backend-atom-contract-test.sh` | `LocalEngineBridge.server()` → one `ProviderOnboardingService` → `AgentQueueService` → processor/executor → `AgentRunService`/cascade | Queued HTTP work now shares the bridge onboarding inventory through the entire queue execution chain; CLI agent queue execution shares its injected owner too. Backend contract, hosted selector (`440 tests`), and diff check pass. Hosted Kotlin/bridge runtime execution remains unverified. |
+
+### 2026-08-25T10:30:00Z · Agent: Codex GPT-5 · Batch: dag-execution-provider-owner
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-PROV-002 DAG execution cascade owner | source-wired / partial | `src/main/kotlin/atropos/core/dag/DagExecutionService.kt`, `src/main/kotlin/atropos/cli/commands/AgentCommand.kt`, `scripts/backend-atom-contract-test.sh` | `/agent` and DAG execution → injected onboarding → existing `AgentQueueService`/`AgentService` → existing cascade/policy owners | DAG queue and provider-node execution now share the agent command's onboarding owner; no DAG-specific provider registry or route policy was added. Backend contract, hosted selector (`440 tests`), and diff check pass; hosted Kotlin DAG runtime remains unverified. |

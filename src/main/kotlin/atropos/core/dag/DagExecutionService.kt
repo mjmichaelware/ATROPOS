@@ -21,15 +21,21 @@ import atropos.core.policy.AgencyDisposition
 import atropos.core.policy.BoundedAgencyGate
 import atropos.core.policy.ExecutionPolicyEngine
 import atropos.core.provider.ProviderTruthService
+import atropos.core.provider.ProviderOnboardingService
 import java.nio.file.Path
 import java.time.Instant
 
 class DagExecutionService(
     private val config: AtroposConfig = AtroposConfig.load(),
     private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
+    private val onboarding: ProviderOnboardingService = ProviderOnboardingService(),
     private val store: DagStore = DagStore(repoRoot),
-    private val queueService: AgentQueueService = AgentQueueService(config),
-    private val agentService: AgentService = AgentService(config, collector = AgentContextCollector(repoRoot = repoRoot)),
+    private val queueService: AgentQueueService = AgentQueueService(config, onboarding = onboarding),
+    private val agentService: AgentService = AgentService(
+        config,
+        collector = AgentContextCollector(repoRoot = repoRoot),
+        onboarding = onboarding
+    ),
     private val continuationService: GoalContinuationService = GoalContinuationService(repoRoot),
     private val credentialGuard: atropos.core.security.CredentialDiffGuard =
         atropos.core.security.CredentialDiffGuard(),

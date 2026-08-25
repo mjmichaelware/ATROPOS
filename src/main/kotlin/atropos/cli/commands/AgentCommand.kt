@@ -62,7 +62,7 @@ class AgentCommand(
     private val sessionSupervisor: ProviderSessionSupervisor = ProviderSessionSupervisor(),
     private val sessionStore: SupervisedSessionStore = SupervisedSessionStore(),
     private val continuationService: GoalContinuationService = GoalContinuationService(),
-    private val dagService: DagExecutionService = DagExecutionService(config),
+    private val dagService: DagExecutionService = DagExecutionService(config, onboarding = providerOnboarding),
     private val dagStore: DagStore = DagStore(),
     private val journal: EventJournalService = EventJournalService(),
     private val observer: RunObserver = RunObserver(config),
