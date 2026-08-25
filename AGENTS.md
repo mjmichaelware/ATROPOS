@@ -12397,6 +12397,14 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; source-wired but partial pending hosted execution evidence.
 - Fingerprints: recorded after commit.
 
+### 2026-08-25T21:00:00Z · Agent: Codex GPT-5 · Batch: launch-shared-provider-mcp-owners
+- Paths touched: `src/main/kotlin/atropos/Main.kt` (+10/-5), `src/main/kotlin/atropos/bridge/AtroposBridge.kt` (+45/-20), `scripts/backend-atom-contract-test.sh` (+2/-2), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-PROV-002 startup ownership and B-MCP-CORE canonical host composition.
+- Predicate moved: the normal launch path now passes one already-refreshed `ProviderOnboardingService` and one `McpHostManager` into both the terminal router and opt-in bridge. Injected bridge onboarding is not rescanned; standalone bridge construction remains source-compatible and owns defaults only when no shared owner is supplied. No second provider registry, MCP host, or event bus was introduced.
+- Verification actually run: `ATROPOS_BACKEND_ATOM_CONTRACT_OK`, `ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (441 tests)`, `timeout 90s python3 scripts/find-orphans.py --fail-on-new` exited 0 with only the four historical baseline orphan files (4/1045, 364 LOC), and `git diff --check` passed. Kotlin/hosted execution and live integration evidence remain unverified; no green claim.
+- % delta: unchanged; provider/MCP composition remains source-wired/partial pending hosted execution.
+- Fingerprints: recorded after commit.
+
 ### 2026-08-25T21:00:00Z · Agent: Codex GPT-5 · Batch: factory-verification-repair-reentry
 
 - Paths touched: `src/main/kotlin/atropos/core/factory/FactoryRunOrchestrator.kt` (+67/-20), `scripts/backend-atom-contract-test.sh` (+1).

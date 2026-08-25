@@ -1880,3 +1880,9 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-CORE / canonical MCP integration registration | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `scripts/backend-atom-contract-test.sh` | `/mcp`, `/doctor`, bridge MCP routes → sole `McpHostManager.load()` → `IntegrationRegistry.requireRegistered("mcp")` → existing config/transport/policy owner | MCP configuration loading now fails closed if the canonical first-party `mcp` integration descriptor is absent; no second host or registry was introduced. Backend contract, hosted selector (`441 tests`), and diff check passed; Kotlin/hosted execution remains unverified. |
+
+### 2026-08-25T21:00:00Z · Agent: Codex GPT-5 · Batch: launch-shared-provider-mcp-owners
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-PROV-002 / B-MCP-CORE single launch owner composition | source-wired / partial | `src/main/kotlin/atropos/Main.kt`, `src/main/kotlin/atropos/bridge/AtroposBridge.kt`, `scripts/backend-atom-contract-test.sh` | `Main.main()` → one `ProviderOnboardingService` and one `McpHostManager` → `CommandRouter` plus `LocalEngineBridge` → bridge routes/command runner | Removed the real launch-path duplication: bridge construction now accepts the already-refreshed provider owner and shared MCP host, while standalone bridge callers retain safe defaults. Backend contract, hosted selector (`441 tests`), orphan gate (4 historical baseline orphans only), and `git diff --check` passed. Kotlin/hosted execution and live provider/MCP evidence remain unverified. |

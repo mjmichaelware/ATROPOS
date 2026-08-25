@@ -146,20 +146,29 @@ fun main(args: Array<String>) {
                 }
         }
 
+        val mcpHostManager = atropos.core.integration.McpHostManager(
+            AtroposRepoRootLocator.resolve(),
+            localOnly = config.runtime.localOnly
+        )
         val router = CommandRouter(
             config = config,
             uiEngine = ui,
             sessionTracker = tracker,
             rateResolver = capabilities::inputUsdPerToken,
             providerOnboarding = providerOnboarding,
-            providerDiscoveryAlreadyRefreshed = true
+            providerDiscoveryAlreadyRefreshed = true,
+            sharedMcpHostManager = mcpHostManager
         )
 
         // The engine's client-facing listener. Off unless the operator asks for
         // it: Source Doc 4 makes Web and Android clients of this engine, but a
         // port that opens on every start is a surface nobody chose to expose.
         // Loopback-bound and read-only regardless — see BridgeRoutes.
-        val bridge = LocalEngineBridge.fromEnvironment { config.runtime.defaultProvider }
+        val bridge = LocalEngineBridge.fromEnvironment(
+            activeProvider = { config.runtime.defaultProvider },
+            onboarding = providerOnboarding,
+            mcpHostManager = mcpHostManager
+        )
         bridge?.let { server ->
             if (server.start()) {
                 ui.renderNotice("bridge listening on 127.0.0.1:${server.boundPort()} (read-only)")

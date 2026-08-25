@@ -14,6 +14,7 @@ import atropos.core.phase20.GovernanceLedger
 import atropos.core.provider.FileQuotaLedger
 import atropos.core.provider.StaticProviderDescriptorRegistry
 import atropos.core.provider.ProviderOnboardingService
+import atropos.core.integration.McpHostManager
 import atropos.core.recovery.RestartCoordinator
 import atropos.core.recovery.CrashRecoveryService
 import atropos.bridge.projection.QuotaProjection
@@ -37,18 +38,33 @@ object LocalEngineBridge {
 
     fun fromEnvironment(
         environment: (String) -> String? = System::getenv,
-        activeProvider: () -> String
+        activeProvider: () -> String,
+        onboarding: ProviderOnboardingService? = null,
+        mcpHostManager: McpHostManager? = null
     ): EngineHttpServer? {
         val raw = environment(PORT_VARIABLE)?.trim().orEmpty()
         if (raw.isEmpty()) return null
         val port = raw.toIntOrNull() ?: return null
         if (port !in 0..65_535) return null
-        return server(port, activeProvider = activeProvider)
+        return server(
+            port,
+            activeProvider = activeProvider,
+            onboarding = onboarding,
+            mcpHostManager = mcpHostManager
+        )
     }
 
     /** Convenience for the common call shape: default environment lookup. */
-    fun fromEnvironment(activeProvider: () -> String): EngineHttpServer? =
-        fromEnvironment(System::getenv, activeProvider)
+    fun fromEnvironment(
+        activeProvider: () -> String,
+        onboarding: ProviderOnboardingService? = null,
+        mcpHostManager: McpHostManager? = null
+    ): EngineHttpServer? = fromEnvironment(
+        System::getenv,
+        activeProvider,
+        onboarding,
+        mcpHostManager
+    )
 
     /**
      * Builds the server against the durable governance ledger.
@@ -61,15 +77,17 @@ object LocalEngineBridge {
     fun server(
         port: Int,
         governance: GovernanceLedger = GovernanceLedger(),
-        activeProvider: () -> String
+        activeProvider: () -> String,
+        onboarding: ProviderOnboardingService? = null,
+        mcpHostManager: McpHostManager? = null
     ): EngineHttpServer {
         val repoRoot = AtroposRepoRootLocator.resolve()
         val goalRunStore = GoalRunStore(repoRoot)
         val exportResolver = atropos.core.artifact.export.ArtifactLandingResolver(repoRoot, null)
         // One queue instance serves both enqueueing and running, so a client
         // runs the very entries it created.
-        val providerOnboarding = ProviderOnboardingService()
-        providerOnboarding.refresh()
+        val providerOnboarding = onboarding ?: ProviderOnboardingService()
+        if (onboarding == null) providerOnboarding.refresh()
         val queueService = AgentQueueService(onboarding = providerOnboarding)
         val quotaRegistry = StaticProviderDescriptorRegistry()
         val quotaLedger = FileQuotaLedger(
@@ -83,7 +101,7 @@ object LocalEngineBridge {
                 onboarding = providerOnboarding
             )
         )
-        val mcpHostManager = atropos.core.integration.McpHostManager(
+        val effectiveMcpHostManager = mcpHostManager ?: McpHostManager(
             repoRoot,
             localOnly = AtroposConfig.load().runtime.localOnly
         )
@@ -144,9 +162,9 @@ object LocalEngineBridge {
             commandRunner = BridgeCommandRunner(
                 onboarding = providerOnboarding,
                 providerDiscoveryAlreadyRefreshed = true,
-                mcpHostManager = mcpHostManager
+                mcpHostManager = effectiveMcpHostManager
             )::run,
-            mcpHost = mcpHostManager,
+            mcpHost = effectiveMcpHostManager,
             quotaSummary = { QuotaProjection(quotaRegistry, quotaLedger).render() },
             recoverySnapshot = { restartCoordinator.snapshot() },
             repoRoot = repoRoot
@@ -169,15 +187,37 @@ object LocalEngineBridge {
 object AtroposBridge {
     fun fromEnvironment(
         environment: (String) -> String? = System::getenv,
-        activeProvider: () -> String
-    ): EngineHttpServer? = LocalEngineBridge.fromEnvironment(environment, activeProvider)
+        activeProvider: () -> String,
+        onboarding: ProviderOnboardingService? = null,
+        mcpHostManager: McpHostManager? = null
+    ): EngineHttpServer? = LocalEngineBridge.fromEnvironment(
+        environment,
+        activeProvider,
+        onboarding,
+        mcpHostManager
+    )
 
-    fun fromEnvironment(activeProvider: () -> String): EngineHttpServer? =
-        LocalEngineBridge.fromEnvironment(activeProvider)
+    fun fromEnvironment(
+        activeProvider: () -> String,
+        onboarding: ProviderOnboardingService? = null,
+        mcpHostManager: McpHostManager? = null
+    ): EngineHttpServer? = LocalEngineBridge.fromEnvironment(
+        activeProvider,
+        onboarding,
+        mcpHostManager
+    )
 
     fun server(
         port: Int,
         governance: GovernanceLedger = GovernanceLedger(),
-        activeProvider: () -> String
-    ): EngineHttpServer = LocalEngineBridge.server(port, governance, activeProvider)
+        activeProvider: () -> String,
+        onboarding: ProviderOnboardingService? = null,
+        mcpHostManager: McpHostManager? = null
+    ): EngineHttpServer = LocalEngineBridge.server(
+        port,
+        governance,
+        activeProvider,
+        onboarding,
+        mcpHostManager
+    )
 }
