@@ -23,6 +23,7 @@ evidence.
 | Ollama | `OLLAMA_HOST`, `OLLAMA_MODEL` |
 | GitHub Models | `GITHUB_MODELS_TOKEN` |
 | GitHub Actions | `GITHUB_TOKEN` |
+| GitHub device OAuth | `ATROPOS_GITHUB_OAUTH_CLIENT_ID` (public client configuration; token goes to the local vault) |
 | Cloudflare | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` |
 | Google application credentials | `GOOGLE_APPLICATION_CREDENTIALS` |
 | Cerebras | `CEREBRAS_API_KEY` |

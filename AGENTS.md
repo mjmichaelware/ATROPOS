@@ -13295,6 +13295,16 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprints: `McpHostManagerTest.kt=9fdff3a705fe`; `backend-atom-contract-test.sh=82cb37547703`.
 
+### 2026-08-25T12:20:00Z · Agent: Codex GPT-5 · Batch: github-oauth-contract-hardening
+
+- Paths touched: `scripts/backend-atom-contract-test.sh` (+4), `docs/PROVIDER_ENVIRONMENT.md` (+1), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-MCP-OAUTH-UX GitHub device-connect source truth.
+- Predicate moved: the backend source gate now protects the real `/auth github` production caller, `GitHubDeviceAuthClient` vault write, command-catalog registration, and redacted OAuth failure rendering. The public `ATROPOS_GITHUB_OAUTH_CLIENT_ID` prerequisite is documented without treating it as a secret; token storage remains in the existing `TokenIsolationVault`.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh` (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), `bash scripts/provider-env-contract-test.sh` (`ATROPOS_PROVIDER_ENV_CONTRACT_OK`), `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (440 tests)`), `bash -n scripts/backend-atom-contract-test.sh`, and `git diff --check` passed. GitHub Actions execution, hosted Kotlin execution, operator OAuth registration, and live OAuth remain unverified.
+- % delta: unchanged; B-MCP-OAUTH-UX remains source-wired / partial.
+- New overall estimate: unchanged.
+- Fingerprints (sha256, first 12): `backend-atom-contract-test.sh=3159d0b6f553`; `PROVIDER_ENVIRONMENT.md=61566020e6ee`.
+
 ### 2026-08-25T08:00:00Z · Agent: Codex GPT-5 · Batch: provider-namespace-adapter-alias-append
 - Paths touched: `src/main/kotlin/atropos/core/provider/adapter/AdapterRegistry.kt` (+5), `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` (+12), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7).
 - Atoms / phases affected: B-PROV-001t provider namespace scan reaching live adapter configuration.

@@ -1322,3 +1322,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | backend hosted selector completeness | source-wired / partial | `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh`, `scripts/hosted-test-selector-contract.sh`, `scripts/backend-atom-contract-test.sh` | GitHub compile/focused lanes → AST, DLOI/source-authority, lakehouse, runtime-health, and canonical-acceptance test classes | Added 18 previously unselected non-UI backend classes to both canonical lanes; selector parity now reports 440 tests. The selector parser now recognizes class names ending in `Test` and `Tests`. Contracts, shell syntax, and diff check pass; GitHub Actions execution remains pending. |
+
+### 2026-08-25T12:20:00Z · Agent: Codex GPT-5 · Batch: github-oauth-contract-hardening
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-OAUTH-UX GitHub device connect contract | source-wired / partial | `src/main/kotlin/atropos/core/github/GitHubDeviceAuthClient.kt`, `src/main/kotlin/atropos/cli/AuthCommandHandler.kt`, `src/main/kotlin/atropos/cli/input/CommandCatalog.kt`, `docs/PROVIDER_ENVIRONMENT.md`, `scripts/backend-atom-contract-test.sh` | `/auth github` → `AuthCommandHandler.renderGitHub()` → `GitHubDeviceAuthClient` → existing `TokenIsolationVault.writeSecret("GITHUB_TOKEN", …)` | Backend source gate now protects the production CLI caller, local-vault write, redacted failure rendering, and command registration. Documentation identifies `ATROPOS_GITHUB_OAUTH_CLIENT_ID` as public configuration; tokens remain vault-only. `backend-atom-contract-test.sh`, provider-env contract, hosted selector contract (440), shell syntax, and `git diff --check` pass. Hosted Kotlin/live OAuth and operator client registration remain unverified. |

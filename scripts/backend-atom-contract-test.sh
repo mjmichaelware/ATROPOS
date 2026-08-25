@@ -76,6 +76,10 @@ text src/main/kotlin/atropos/core/provider/SourceBindingFetcher.kt 'SecretSinkMa
 text src/main/kotlin/atropos/core/provider/SourceBindingFetcher.kt 'HttpClient.Redirect.NEVER'
 text src/main/kotlin/atropos/core/github/GitHubDeviceAuthClient.kt 'GitHub OAuth disabled by local-only mode'
 text src/main/kotlin/atropos/core/github/GitHubDeviceAuthClient.kt 'requireJsonObject(response.body)'
+text src/main/kotlin/atropos/core/github/GitHubDeviceAuthClient.kt 'vault.writeSecret("GITHUB_TOKEN"'
+text src/main/kotlin/atropos/cli/AuthCommandHandler.kt '"github" -> renderGitHub()'
+text src/main/kotlin/atropos/cli/AuthCommandHandler.kt 'redactionFilter.compact(it.message'
+text src/main/kotlin/atropos/cli/input/CommandCatalog.kt '"/auth github"'
 text .github/actions/atropos-verify/action.yml 'verify-script must stay inside working-directory'
 text .github/actions/atropos-verify/action.yml 'test -f "$VERIFY_SCRIPT"'
 
