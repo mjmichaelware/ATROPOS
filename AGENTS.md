@@ -13385,6 +13385,16 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprints: `Main.kt=afc4f8459147`; `install.sh=901a96791124`; `install-contract-test.sh=ca2a05d033c2`; `backend-atom-contract-test.sh=831810e7172f`.
 
+### 2026-08-25T03:12:31Z · Agent: Codex GPT-5 · Batch: top-level-help-entrypoint
+
+- Paths touched: `src/main/kotlin/atropos/Main.kt` (+5), `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-HELP-001 top-level help entrypoint.
+- Predicate moved: `-h`, `--help`, and `help` now return the existing registry-derived summary before configuration/provider boot; interactive `/help` behavior remains on the same `HelpGenerator` owner.
+- Verification actually run: backend, install, provider-env contracts, hosted selector (`440 tests`), shell syntax, and `git diff --check` passed. Root/hosted Kotlin execution remains unverified.
+- % delta: unchanged; B-HELP-001 remains source-wired/partial pending hosted execution.
+- New overall estimate: unchanged.
+- Fingerprints: `Main.kt=35cd01f58f46`; `backend-atom-contract-test.sh=5ed530765d04`.
+
 ### 2026-08-25T02:16:59Z · Agent: Codex GPT-5 · Batch: install-help-caller-contract
 - Paths touched: `scripts/backend-atom-contract-test.sh` (+16).
 - Atoms / phases affected: B-INST-001..005 and B-HELP-001..002 caller enforcement.

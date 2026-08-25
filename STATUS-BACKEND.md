@@ -1493,6 +1493,12 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | --- | --- | --- | --- | --- |
 | B-INST-005 / B-HELP-001 first-run doctor command | source-wired / partial | `src/main/kotlin/atropos/Main.kt`, `install.sh`, `scripts/install-contract-test.sh`, `scripts/backend-atom-contract-test.sh` | installer → `atropos doctor --first-run` → existing `FirstRunDoctorRenderer`; legacy `--doctor` remains accepted | Install, release, backend/provider contracts, hosted selector (440), shell syntax, and `git diff --check` pass. Main/root Kotlin and hosted runtime execution remain unverified. |
 
+### 2026-08-25T03:12:31Z · Agent: Codex GPT-5 · Batch: top-level-help-entrypoint
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-HELP-001 top-level `-h`/`--help` | source-wired / partial | `src/main/kotlin/atropos/Main.kt`, `src/main/kotlin/atropos/cli/help/HelpGenerator.kt`, `src/main/kotlin/atropos/cli/input/CommandRegistry.kt`, `scripts/backend-atom-contract-test.sh` | process launch → `Main.main()` → existing registry-derived `HelpGenerator`/`HelpLevel.SUMMARY` | Backend, install, provider, hosted selector (440), shell syntax, and `git diff --check` pass. No second help catalogue was introduced; root/hosted Kotlin execution remains unverified. |
+
 ### 2026-08-25T03:50:00Z · Agent: Codex GPT-5 · Batch: generated-provider-readme-table
 
 | atom | status | files | caller | tests / notes |

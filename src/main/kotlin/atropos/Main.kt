@@ -50,6 +50,11 @@ fun main(args: Array<String>) {
         return
     }
 
+    if (args.firstOrNull() == "--help" || args.firstOrNull() == "-h" || args.firstOrNull() == "help") {
+        println(atropos.cli.help.HelpGenerator().render(atropos.cli.help.HelpLevel.SUMMARY).joinToString("\n"))
+        return
+    }
+
     // Answered before the config boots, like --version.
     //
     // An install too broken to start is exactly the install that needs
