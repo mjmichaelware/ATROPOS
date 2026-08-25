@@ -1262,3 +1262,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-FS / B-MCP-GITLOCAL registry ownership | source-wired / partial | `src/main/kotlin/atropos/core/integration/IntegrationRegistry.kt`, `src/test/kotlin/atropos/core/integration/IntegrationRegistryTest.kt`, `scripts/backend-atom-contract-test.sh` | `BackendDoctor` → existing `IntegrationRegistry.all()` → canonical filesystem and git-local descriptors; execution remains on `McpHostManager`/bounded git owners | Filesystem and local-git Tier-0 integrations are now visible through the existing doctor registry. Hosted Kotlin execution remains unverified; no second tool executor or registry was added. |
+
+### 2026-08-25T07:00:00Z · Agent: Codex GPT-5 · Batch: mcp-probe-handshake-parity
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| ADD-MCP-001 / B-MCP-CORE-c probe handshake parity | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `scripts/backend-atom-contract-test.sh` | `/mcp list|test` and bridge status → `statuses()` → one initialized stdio/remote probe → `tools/list` health result | Health probes now send `notifications/initialized` on both supported transports, matching bounded tool calls. Backend contract and diff check pass; hosted MCP runtime execution remains unverified. |

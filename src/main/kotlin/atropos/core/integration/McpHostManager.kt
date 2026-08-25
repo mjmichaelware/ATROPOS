@@ -346,6 +346,7 @@ class McpHostManager(
     private fun defaultProbe(server: McpServerConfig): McpHealth =
         if (server.remote) {
             val initialize = remoteExchange(server, "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{}}", DEFAULT_PROBE_RESPONSE_BYTES)
+            remoteExchange(server, "{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}", DEFAULT_PROBE_RESPONSE_BYTES)
             val toolsList = remoteExchange(server, "{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/list\",\"params\":{}}", DEFAULT_PROBE_RESPONSE_BYTES)
             if (initialize.contains("\"id\":1") && toolsList.contains("\"id\":2")) McpHealth.HEALTHY else McpHealth.UNHEALTHY
         } else {
@@ -441,6 +442,7 @@ class McpHostManager(
             val process = processRunner.start(listOf(command) + server.args, root)
             process.outputStream.bufferedWriter().use { writer ->
                 writer.write("{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{}}\n")
+                writer.write("{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}\n")
                 writer.write("{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/list\",\"params\":{}}\n")
                 writer.flush()
             }
