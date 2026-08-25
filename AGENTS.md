@@ -12406,6 +12406,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; provider truth remains source-wired/partial pending hosted execution.
 - Fingerprints: `ProviderTruthService.kt=1079af040c47`, `StatusCommandHandler.kt=1c213e9f9477`, `AgentService.kt=193c2d8bc314`, `DagExecutionService.kt=2af2f97da52d`, `AutonomousOrchestrator.kt=2ebf80981089`, `ProviderTruthModelsTest.kt=f58d30760a91`, `backend-atom-contract-test.sh=d7014c9d499f`.
 
+### 2026-08-25T13:12:00Z · Agent: Codex GPT-5 · Batch: provider-command-truth-owner
+
+- Paths touched: `src/main/kotlin/atropos/cli/ProviderCommandHandler.kt` (+2/-2), `scripts/backend-atom-contract-test.sh` (+1).
+- Atoms / phases affected: B-PROV-002 `/providers inventory` truth owner.
+- Predicate moved: provider inventory fallback routes now pass the already-injected launch onboarding owner into `ProviderTruthService`, keeping `/providers inventory` aligned with persisted disable/live-test health state and the normal cascade.
+- Verification actually run: `ATROPOS_BACKEND_ATOM_CONTRACT_OK` and `git diff --check` passed. Kotlin execution and GitHub-hosted CI remain unverified; no green claim.
+- % delta: unchanged; provider truth remains source-wired/partial pending hosted execution.
+- Fingerprints: `ProviderCommandHandler.kt=62c7274793ba`, `backend-atom-contract-test.sh=7b1e5b9482d1`.
+
 ### 2026-08-25T22:30:00Z · Agent: Codex GPT-5 · Batch: provider-metadata-alias-separation
 - Paths touched: `src/main/kotlin/atropos/core/provider/ProviderEnvironmentAliases.kt` (+4/-2), `src/test/kotlin/atropos/core/provider/ProviderFixtureMatrixServiceTest.kt` (+8), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7).
 - Atoms / phases affected: B-PROV-001b/r/s and B-PROV-002 credential-health truth.
