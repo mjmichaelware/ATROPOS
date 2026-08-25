@@ -1724,3 +1724,9 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-PROV-002 startup self-host continuation owner | source-wired / partial | `src/main/kotlin/atropos/Main.kt`, `src/main/kotlin/atropos/core/agent/SelfHostStartupContinuationService.kt`, `scripts/backend-atom-contract-test.sh` | startup provider refresh → `SelfHostStartupContinuationService(onboarding=...)` → existing `SelfHostGoalService`/DAG recovery | Automatic post-crash self-host continuation now uses the launch provider inventory instead of constructing a separate self-host provider owner. Backend contract, hosted selector (`440 tests`), and diff check pass; hosted startup recovery remains unverified. |
+
+### 2026-08-25T13:00:00Z · Agent: Codex GPT-5 · Batch: crash-recovery-provider-owner
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-005/B-PROV-002 crash recovery queue and DAG owner | source-wired / partial | `src/main/kotlin/atropos/core/recovery/CrashRecoveryService.kt`, `src/main/kotlin/atropos/Main.kt`, `src/main/kotlin/atropos/cli/commands/AgentCommand.kt`, `src/main/kotlin/atropos/bridge/AtroposBridge.kt`, `scripts/backend-atom-contract-test.sh` | startup/CLI/bridge recovery → shared onboarding → `CrashRecoveryService` → existing queue/DAG/restart owners | Stale queue, stale DAG, CLI recovery, startup continuity, and bridge restart snapshots now share the provider owner. Backend contract, hosted selector (`440 tests`), and diff check pass; hosted recovery runtime remains unverified. |

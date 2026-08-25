@@ -13,6 +13,7 @@ import atropos.core.dag.DagExecutionService
 import atropos.core.dag.DagStore
 import atropos.core.memory.LocalMemoryStore
 import atropos.core.security.RedactionFilter
+import atropos.core.provider.ProviderOnboardingService
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
@@ -37,13 +38,14 @@ enum class RecoveryOutcome {
 class CrashRecoveryService(
     private val config: AtroposConfig = AtroposConfig.load(),
     private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
-    private val queueService: AgentQueueService = AgentQueueService(config),
+    private val onboarding: ProviderOnboardingService = ProviderOnboardingService(),
+    private val queueService: AgentQueueService = AgentQueueService(config, onboarding = onboarding),
     private val queueStore: AgentQueueStore = AgentQueueStore(repoRoot),
     private val queueRecovery: AgentQueueRecovery = AgentQueueRecovery(queueStore),
     private val sessionSupervisor: ProviderSessionSupervisor = ProviderSessionSupervisor(repoRoot),
     private val continuationService: GoalContinuationService = GoalContinuationService(repoRoot),
     private val goalRunStore: GoalRunStore = GoalRunStore(repoRoot),
-    private val dagService: DagExecutionService = DagExecutionService(config, repoRoot),
+    private val dagService: DagExecutionService = DagExecutionService(config, repoRoot, onboarding = onboarding),
     private val dagStore: DagStore = DagStore(repoRoot),
     private val memoryStore: LocalMemoryStore = LocalMemoryStore(repoRoot.resolve(".atropos/memory").toFile()),
     private val daemonService: AgentDaemonService = AgentDaemonService(config),

@@ -13442,6 +13442,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; B-PROV-002/startup recovery remains source-wired/partial pending hosted runtime evidence.
 - Fingerprints (sha256, full): `Main.kt=16df27ed8ffda8e0e370feea2da23bc6399e05d6a8343face7d042b937650a6f`; `SelfHostStartupContinuationService.kt=064111dc8ffa6ec02d1d24142be416b90518acc86f03abcd8669c04d6e3fca3d`; `backend-atom-contract-test.sh=24b55e5c6666d29f818833741718340bbfae0e4cd147e23e6f306755c4227f80`.
 
+### 2026-08-25T13:00:00Z · Agent: Codex GPT-5 · Batch: crash-recovery-provider-owner
+
+- Paths touched: `src/main/kotlin/atropos/core/recovery/CrashRecoveryService.kt` (+5/-3), `src/main/kotlin/atropos/Main.kt` (+4/-1), `src/main/kotlin/atropos/cli/commands/AgentCommand.kt` (+4/-1), `src/main/kotlin/atropos/bridge/AtroposBridge.kt` (+8/-1), `scripts/backend-atom-contract-test.sh` (+4).
+- Atoms / phases affected: B-005 bridge/CLI/startup recovery and B-PROV-002 queue/DAG route truth.
+- Predicate moved: crash recovery now receives the same provider onboarding owner from startup, CLI, and bridge composition; its queue and DAG recovery services no longer allocate independent provider inventories.
+- Verification actually run: backend atom contract, hosted selector contract (`440 tests`), and `git diff --check` passed. Root/hosted recovery runtime remains unverified; no compile-green claim.
+- % delta: unchanged; B-005/B-PROV-002 remains source-wired/partial pending hosted runtime evidence.
+- Fingerprints (sha256, full): `CrashRecoveryService.kt=41978deecc0c7b1d4693ff3d58b363d4ad59de713d06e4920129c84afaa752d0`; `Main.kt=8d2ac3696770bf9a4383fc7ec1818ac29037b702bd4c092be7dd85d7f26e1b90`; `AtroposBridge.kt=cd7116edfb1c8edb6e550fc8ee1deea5a7fcd53b1b091301305e8f23b7f47dab`; `AgentCommand.kt=9243345c0873d876ec817e022c4afc7b3741834ee8a713ef9b6a37555f22a238`; `backend-atom-contract-test.sh=fd99d1cce66185784ba08492be04ff8a5f6d443fff4e532275b2511cd0afe554`.
+
 ### 2026-08-25T07:20:00Z · Agent: Codex GPT-5 · Batch: mcp-probe-handshake-test-proof-append
 
 - Paths touched: `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+6), `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+7).

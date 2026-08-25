@@ -23,6 +23,7 @@ import atropos.core.agent.SelfHostStartupContinuationService
 import atropos.core.agent.AgentDaemonService
 import atropos.core.auth.AuthorityBootGate
 import atropos.core.recovery.RuntimeContinuitySupervisor
+import atropos.core.recovery.CrashRecoveryService
 import atropos.core.recovery.StartupContinuationDecider
 import atropos.core.recovery.ContinuityOutcome
 import atropos.core.security.SecretEnrollment
@@ -123,7 +124,9 @@ fun main(args: Array<String>) {
         authority.notice?.let(ui::renderNotice)
         authority.error?.let(ui::renderError)
 
-        val continuity = RuntimeContinuitySupervisor()
+        val continuity = RuntimeContinuitySupervisor {
+            CrashRecoveryService(config = config, onboarding = providerOnboarding).recover()
+        }
         val continuityOutcome = continuity.ensureRecovered()
         continuity.startupNotice(continuityOutcome)?.let(ui::renderNotice)
 

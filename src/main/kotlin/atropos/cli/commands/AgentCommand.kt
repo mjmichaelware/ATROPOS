@@ -66,7 +66,10 @@ class AgentCommand(
     private val dagStore: DagStore = DagStore(),
     private val journal: EventJournalService = EventJournalService(),
     private val observer: RunObserver = RunObserver(config),
-    private val recoveryService: CrashRecoveryService = CrashRecoveryService(config),
+    private val recoveryService: CrashRecoveryService = CrashRecoveryService(
+        config = config,
+        onboarding = providerOnboarding
+    ),
     private val worktreeService: IsolatedWorktreeService = IsolatedWorktreeService(),
     private val completionGate: VerifiedCompletionGate = VerifiedCompletionGate(config),
     private val autonomyAdvisor: AutonomyPolicyEngine = AutonomyPolicyEngine()

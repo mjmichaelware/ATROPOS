@@ -15,6 +15,7 @@ import atropos.core.provider.FileQuotaLedger
 import atropos.core.provider.StaticProviderDescriptorRegistry
 import atropos.core.provider.ProviderOnboardingService
 import atropos.core.recovery.RestartCoordinator
+import atropos.core.recovery.CrashRecoveryService
 import atropos.bridge.projection.QuotaProjection
 import java.time.Instant
 
@@ -75,7 +76,13 @@ object LocalEngineBridge {
             AtroposConfig.configRoot().resolve("provider/quota-ledger.tsv").toFile(),
             FileQuotaLedger.seedFromDescriptors(quotaRegistry)
         )
-        val restartCoordinator = RestartCoordinator(repoRoot)
+        val restartCoordinator = RestartCoordinator(
+            repoRoot = repoRoot,
+            crashRecovery = CrashRecoveryService(
+                repoRoot = repoRoot,
+                onboarding = providerOnboarding
+            )
+        )
 
         return BridgeRoutes(
             activeProvider = activeProvider,
