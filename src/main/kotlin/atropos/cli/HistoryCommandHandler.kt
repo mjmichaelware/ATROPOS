@@ -9,6 +9,10 @@ import atropos.cli.ui.HistoryNavigationState
 import atropos.cli.ui.TerminalTheme
 import atropos.cli.config.ConfigurationManager
 import atropos.core.policy.BoundedProcessRunner
+import atropos.core.journal.EventCategory
+import atropos.core.observability.ExecutionEvent
+import atropos.core.observability.ExecutionHistoryStore
+import atropos.core.observability.HistoryQuery
 import java.nio.file.Files
 import java.nio.file.Path
 
@@ -31,6 +35,7 @@ class HistoryCommandHandler(
     private val theme = TerminalTheme(ConfigurationManager())
     private val renderer = HistoryNavigationRenderer(theme)
     private val processRunner = BoundedProcessRunner()
+    private val historyStore = ExecutionHistoryStore()
 
     fun execute(tokens: List<String>): RouterOutcome {
         val args = tokens.drop(1).map(String::lowercase)
@@ -68,6 +73,11 @@ class HistoryCommandHandler(
      * last resort.
      */
     private fun readHistoryEntries(limit: Int): List<HistoryEntry> {
+        val durableEntries = runCatching {
+            historyStore.searchAll(HistoryQuery(limit = limit)).events.map(::toHistoryEntry)
+        }.getOrDefault(emptyList())
+        if (durableEntries.isNotEmpty()) return durableEntries.takeLast(limit)
+
         val entries = mutableListOf<HistoryEntry>()
 
         // Try reading from execution history journal
@@ -93,6 +103,28 @@ class HistoryCommandHandler(
         }
 
         return entries.takeLast(limit).sortedBy { it.timestamp }
+    }
+
+    private fun toHistoryEntry(event: ExecutionEvent): HistoryEntry = HistoryEntry(
+        id = event.runId?.let { "$it-${event.sequence}" } ?: "event-${event.sequence}",
+        timestamp = formatTimestamp(event.timestamp.toString()),
+        kind = event.category.toHistoryEntryKind(),
+        title = event.task?.take(120) ?: event.category.name.lowercase().replace('_', ' ').take(120),
+        detail = event.payload.take(500),
+        provider = event.provider,
+        durationMs = null
+    )
+
+    private fun EventCategory.toHistoryEntryKind(): HistoryEntryKind = when (this) {
+        EventCategory.TEST -> HistoryEntryKind.VERIFICATION
+        EventCategory.VERIFICATION -> HistoryEntryKind.VERIFICATION
+        EventCategory.FILE_MUTATION, EventCategory.DIFF -> HistoryEntryKind.PATCH
+        EventCategory.TOOL_CALL -> HistoryEntryKind.TOOL
+        EventCategory.COMMAND -> HistoryEntryKind.COMMAND
+        EventCategory.ERROR, EventCategory.FAILURE -> HistoryEntryKind.ERROR
+        EventCategory.DAG, EventCategory.CONTINUATION, EventCategory.CHILD_RUN -> HistoryEntryKind.DAG_NODE
+        EventCategory.TEXT, EventCategory.REASONING -> HistoryEntryKind.RESPONSE
+        else -> HistoryEntryKind.SYSTEM
     }
 
     private fun parseJournalEntry(json: String): HistoryEntry? {

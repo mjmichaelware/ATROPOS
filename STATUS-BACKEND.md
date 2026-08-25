@@ -1632,3 +1632,9 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-PROV-002/004 `/route` health and preference truth | source-wired / partial | `src/main/kotlin/atropos/cli/RouteCommandHandler.kt`, `src/main/kotlin/atropos/cli/CommandRouter.kt`, `src/main/kotlin/atropos/core/provider/adapter/AdapterRouteFacade.kt`, `scripts/backend-atom-contract-test.sh` | `/route <prompt>` → injected `ProviderOnboardingService` → canonical `AdapterRouteFacade` → sole `RoutePolicy` | The standalone route command now shares the launch/CLI provider inventory for health and preference filtering. Backend atom contract and `git diff --check` pass. Root/hosted Kotlin execution remains unverified. |
+
+### 2026-08-25T06:00:00Z · Agent: Codex GPT-5 · Batch: history-command-indexed-owner
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| backend observability history caller | source-wired / partial | `src/main/kotlin/atropos/cli/HistoryCommandHandler.kt`, `src/main/kotlin/atropos/core/observability/ExecutionHistoryStore.kt`, `src/main/kotlin/atropos/core/observability/HistoryIndex.kt`, `scripts/backend-atom-contract-test.sh` | `/history` → existing `ExecutionHistoryStore.searchAll(HistoryQuery)` → `HistoryIndex`/per-run `events.journal` → existing CLI timeline renderer | `/history` now reads the authoritative indexed execution store instead of the nonexistent flat `events.jsonl`; legacy JSONL and bounded git history remain fallback-only when no durable events exist. Backend atom contract and `git diff --check` pass. Root/hosted Kotlin execution remains unverified. |

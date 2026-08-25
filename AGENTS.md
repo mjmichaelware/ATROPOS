@@ -13365,6 +13365,16 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprints: `RouteCommandHandler.kt=b6ab618ae9cc`; `CommandRouter.kt=8d810be99179`; `backend-atom-contract-test.sh=a9288dc0c9ed`.
 
+### 2026-08-25T06:00:00Z · Agent: Codex GPT-5 · Batch: history-command-indexed-owner
+
+- Paths touched: `src/main/kotlin/atropos/cli/HistoryCommandHandler.kt` (+34), `scripts/backend-atom-contract-test.sh` (+2).
+- Atoms / phases affected: backend execution-history/observability caller wiring.
+- Predicate moved: `/history` now consumes the existing indexed `ExecutionHistoryStore` and per-run journals, so durable engine history is actually visible through the production CLI path; the old flat-file and git paths are bounded compatibility fallbacks only.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh` (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`) and `git diff --check` passed. Root/hosted Kotlin execution remains unverified.
+- % delta: unchanged; observability remains source-wired/partial pending hosted execution.
+- New overall estimate: unchanged.
+- Fingerprints: `HistoryCommandHandler.kt=88fc7640394e`; `backend-atom-contract-test.sh=e8b9f7782f88`.
+
 ### 2026-08-25T05:11:34Z · Agent: Codex GPT-5 · Batch: provider-command-owner-injection
 
 - Paths touched: `src/main/kotlin/atropos/cli/CommandRouter.kt` (+1), `src/main/kotlin/atropos/cli/ProviderCommandHandler.kt` (+2/-2), `scripts/backend-atom-contract-test.sh` (+2).

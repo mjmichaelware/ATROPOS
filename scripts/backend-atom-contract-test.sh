@@ -130,6 +130,8 @@ text src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt 'fun disable(pr
 text src/main/kotlin/atropos/core/provider/adapter/AdapterRouteFacade.kt 'healthyProviderIds = { onboarding.healthyProviderIds() }'
 text src/main/kotlin/atropos/core/provider/adapter/AdapterRouteFacade.kt 'preferredProviderIds = { onboarding.preferredProviderIds() }'
 text src/main/kotlin/atropos/cli/RouteCommandHandler.kt 'onboarding = onboarding'
+text src/main/kotlin/atropos/cli/HistoryCommandHandler.kt 'historyStore.searchAll(HistoryQuery(limit = limit))'
+text src/main/kotlin/atropos/cli/HistoryCommandHandler.kt 'private fun toHistoryEntry(event: ExecutionEvent)'
 text src/main/kotlin/atropos/core/provider/RoutePolicy.kt 'preferredProviderIds?.invoke()?.indexOf(providerId)'
 
 # Help and installer callers. These atoms are deliberately guarded here rather
