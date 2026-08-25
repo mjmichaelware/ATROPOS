@@ -13427,6 +13427,16 @@ Local verification note for this batch: `timeout 120s ./gradlew test --tests 'at
 - New overall estimate: unchanged.
 - Fingerprints (sha256, first 12): `AtroposTestMatrix.kt=468eacfa81ad`; `backend-atom-contract-test.sh=367b769d5a2e`; commit `0d19f7f2`. Unrelated `docs/completion/*` remains unstaged and untouched.
 
+### 2026-08-25T20:55:00Z · Agent: Codex GPT-5 · Batch: test-matrix-policy-branch-parity
+
+- Paths touched: `src/main/kotlin/atropos/core/testing/AtroposTestMatrix.kt` (+8/-4), `AGENTS.md` (+7), `STATUS-BACKEND.md` (+1).
+- Atoms / phases affected: B-PROV-002 route health/configuration policy coverage.
+- Predicate moved: paid-lock and local-only branches in the production `/tests matrix` now use the same explicit fixture truth and healthy supplier as the primary/free-fallback route branches.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh` (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), `bash scripts/hosted-test-selector-contract.sh` (`440 tests`), and `git diff --check` passed. Root/hosted Kotlin execution remains unverified; no green claim.
+- % delta: unchanged; provider routing remains source-wired / partial pending hosted execution.
+- New overall estimate: unchanged.
+- Fingerprints (sha256, first 12): pending until scoped commit; unrelated `docs/completion/*` remains unstaged and untouched.
+
 ### 2026-08-25T12:45:00Z · Agent: Codex GPT-5 · Batch: imported-context-authority-contract
 
 - Paths touched: `scripts/backend-atom-contract-test.sh` (+5).

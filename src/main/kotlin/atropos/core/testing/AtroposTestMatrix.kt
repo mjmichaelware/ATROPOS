@@ -88,8 +88,9 @@ class AtroposTestMatrix(
 
         val paidRoute = RoutePolicy(
             registry,
-            InMemoryQuotaLedger(seed),
-            AtroposCostPolicy.FREE_ONLY
+            InMemoryQuotaLedger(fixtureSeed),
+            AtroposCostPolicy.FREE_ONLY,
+            healthyProviderIds = { fixtureHealthy }
         ).decide(ProviderTask(ProviderTaskKind.ARCHITECTURE_PLAN, ApiCapability.PLAN, "design", true))
         row("paid_lock", paidRoute.skipped.any { it.provider.id == "anthropic" && it.reason == "blocked_by_cost_policy" }, "anthropic_blocked=${paidRoute.skipped.any { it.provider.id == "anthropic" }}")
 
@@ -111,8 +112,9 @@ class AtroposTestMatrix(
 
         val localOnly = RoutePolicy(
             registry,
-            InMemoryQuotaLedger(seed),
-            AtroposCostPolicy.LOCAL_ONLY
+            InMemoryQuotaLedger(fixtureSeed),
+            AtroposCostPolicy.LOCAL_ONLY,
+            healthyProviderIds = { fixtureHealthy }
         ).decide(ProviderTask(ProviderTaskKind.LOCAL_ONLY, ApiCapability.LOCAL_TOOL, "startup", true))
         row("local_only_startup", localOnly.selectedProviderId == "local", "selected=${localOnly.selectedProviderId}")
 
