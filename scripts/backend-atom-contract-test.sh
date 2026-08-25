@@ -84,6 +84,9 @@ text src/main/kotlin/atropos/cli/BackendDoctor.kt 'zero_retention_research=${con
 text docs/OPEN_CORE_BOUNDARY.md 'local-only mode'
 text README.md 'docs/OPEN_CORE_BOUNDARY.md'
 text README.md 'docs/PROVIDER_ENVIRONMENT.md'
+file scripts/provider-env-readme-generator.py
+text scripts/provider-env-contract-test.sh 'provider-env-readme-generator.py" --check'
+text README.md '<!-- BEGIN GENERATED PROVIDER ENVIRONMENT TABLE -->'
 text CONTRIBUTING.md 'Do not add one Kotlin adapter per brand'
 text docs/OPEN_CORE_BOUNDARY.md 'AGPL section 13'
 text scripts/atropos-verify-worktree.sh "atropos.core.provider.ProviderConfigurationResolverTest"

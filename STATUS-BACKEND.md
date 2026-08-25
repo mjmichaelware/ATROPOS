@@ -1438,3 +1438,9 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-OC-001 / B-OC-002 / B-OC-004 and MCP example policy | source-wired / partial | `README.md`, `CONTRIBUTING.md`, `docs/OPEN_CORE_BOUNDARY.md`, `docs/mcp-examples/*.json`, `scripts/backend-atom-contract-test.sh`, `scripts/mcp-example-contract-test.sh` | README → open-core/provider one-pagers; CONTRIBUTING → no per-brand adapter policy; backend config/research owners → local-only/zero-retention behavior; MCP example catalog → disabled community servers | Backend source contract, MCP example contract (14 files/14 servers), provider-env contract, hosted selector (440), and `git diff --check` pass. Hosted/runtime behavior remains unverified; no Tier-1/2 adapter farm added. |
+
+### 2026-08-25T03:50:00Z · Agent: Codex GPT-5 · Batch: generated-provider-readme-table
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-HELP-002a / B-HELP-002b provider environment one-pager | source-wired / partial | `src/main/kotlin/atropos/core/provider/StaticProviderDescriptorRegistry.kt`, `scripts/provider-env-readme-generator.py`, `scripts/provider-env-contract-test.sh`, `README.md`, `scripts/backend-atom-contract-test.sh` | descriptor registry → generator `--check` → README generated table; existing compile/release workflows → provider environment contract | README’s canonical required-env table is now generated from the runtime descriptor registry and fails CI on drift. Generator, provider-env, backend atom, hosted selector (440), and `git diff --check` pass; hosted compile/release execution remains unverified. |

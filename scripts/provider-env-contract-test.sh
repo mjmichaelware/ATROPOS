@@ -7,6 +7,7 @@ DOC="$ROOT/docs/PROVIDER_ENVIRONMENT.md"
 
 test -f "$REGISTRY"
 test -f "$DOC"
+python3 "$ROOT/scripts/provider-env-readme-generator.py" --check
 
 # The descriptor registry is the runtime source of truth. Keep the human
 # onboarding table complete without introducing a second provider catalogue.

@@ -13327,6 +13327,14 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; open-core and example atoms remain source-wired/partial pending hosted/runtime evidence.
 - Fingerprints: commit `80664bee`.
 
+### 2026-08-25T03:50:00Z · Agent: Codex GPT-5 · Batch: generated-provider-readme-table
+- Paths touched: `scripts/provider-env-readme-generator.py` (+68), `scripts/provider-env-contract-test.sh` (+1), `scripts/backend-atom-contract-test.sh` (+3), `README.md` (+34).
+- Atoms / phases affected: B-HELP-002a/B-HELP-002b provider environment table and one-pager caller wiring.
+- Predicate moved: README’s provider environment table is generated from `StaticProviderDescriptorRegistry` and the existing provider contract fails when it drifts; no second provider registry was introduced.
+- Verification actually run: Python syntax, generator check, provider-env contract, backend atom contract, hosted selector contract (440), and `git diff --check` passed. Hosted compile/release execution remains unverified.
+- % delta: unchanged; provider help remains source-wired/partial pending hosted evidence.
+- Fingerprints: pending scoped commit.
+
 ### 2026-08-25T02:30:00Z · Agent: Codex GPT-5 · Batch: hosted-verifier-gradle-lane
 - Paths touched: `scripts/atropos-verify-worktree.sh` (+11/-7), `scripts/atropos-verify-action-contract-test.sh` (+5).
 - Atoms / phases affected: B-MCP-GHA hosted verification lane.

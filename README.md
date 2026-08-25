@@ -69,6 +69,43 @@ Drop in the API keys you already use. ATROPOS auto-discovers providers on startu
 
 See [provider onboarding](docs/PROVIDER_ENVIRONMENT.md) for the supported environment aliases, local connect path, and free-first paid approval policy.
 
+<!-- BEGIN GENERATED PROVIDER ENVIRONMENT TABLE -->
+| Provider | Required environment names |
+| --- | --- |
+| Ollama | `OLLAMA_HOST`, `OLLAMA_MODEL` |
+| Groq | `GROQ_API_KEY` |
+| Google Gemini | `GEMINI_API_KEY` |
+| GitHub Models | `GITHUB_MODELS_TOKEN` |
+| OpenRouter | `OPENROUTER_API_KEY` |
+| Together AI | `TOGETHER_API_KEY` |
+| Fireworks AI | `FIREWORKS_API_KEY` |
+| Azure OpenAI | `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_ENDPOINT` |
+| Cloudflare AI | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` |
+| Cloudflare Workers | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` |
+| Google Drive | `GOOGLE_APPLICATION_CREDENTIALS` |
+| Jina Reader | `JINA_API_KEY` |
+| Cerebras | `CEREBRAS_API_KEY` |
+| DeepInfra | `DEEPINFRA_API_KEY` |
+| Hugging Face | `HUGGINGFACE_API_KEY` |
+| NVIDIA NIM | `NVIDIA_API_KEY` |
+| SambaNova | `SAMBANOVA_API_KEY` |
+| SiliconFlow | `SILICONFLOW_API_KEY` |
+| Supabase | `SUPABASE_URL`, `SUPABASE_ANON_KEY` |
+| Pinecone | `PINECONE_API_KEY` |
+| GitHub Actions | `GITHUB_TOKEN` |
+| Google Cloud Free Tier | `GOOGLE_APPLICATION_CREDENTIALS` |
+| DeepSeek Direct | `DEEPSEEK_API_KEY` |
+| Cohere | `COHERE_API_KEY` |
+| Mistral | `MISTRAL_API_KEY` |
+| Anthropic | `ANTHROPIC_API_KEY` |
+| OpenAI | `OPENAI_API_KEY` |
+| xAI | `XAI_API_KEY` |
+| AWS Bedrock | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION` |
+| Fal.ai | `FAL_AI_API_KEY` |
+| Replicate | `REPLICATE_API_TOKEN` |
+| SerpAPI | `SERPAPI_API_KEY` |
+<!-- END GENERATED PROVIDER ENVIRONMENT TABLE -->
+
 See the [open-core boundary](docs/OPEN_CORE_BOUNDARY.md) for the local-authority and optional-hosted-service contract.
 
 ---
