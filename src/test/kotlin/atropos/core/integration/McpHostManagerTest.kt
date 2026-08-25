@@ -16,6 +16,21 @@ import kotlin.test.assertTrue
 
 class McpHostManagerTest {
     @Test
+    fun everything_ref_test_fixture_is_disabled_by_default_and_visible_to_status() {
+        val root = Files.createTempDirectory("mcp-everything-ref")
+        Files.writeString(root.resolve("mcp.json"), """
+            {"servers":[{"name":"everything-ref","transport":"stdio",
+              "command":"everything-ref-fixture","enabled":false,"community":true}]}
+        """.trimIndent())
+
+        val status = McpHostManager(root).statuses().single()
+
+        assertEquals("everything-ref", status.server.name)
+        assertEquals(McpHealth.UNTESTED, status.health)
+        assertTrue(status.reason.contains("disabled"))
+    }
+
+    @Test
     fun config_parser_handles_nested_braces_escaped_strings_and_args() {
         val root = Files.createTempDirectory("mcp-config")
         Files.writeString(root.resolve("mcp.json"), """

@@ -1576,3 +1576,9 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-PROV-001 / ATROPOS-prefixed common aliases | source-wired / partial | `src/main/kotlin/atropos/core/provider/ProviderEnvironmentAliases.kt`, `ProviderOnboarding.kt`, `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt`, `scripts/backend-atom-contract-test.sh` | startup and `/providers` → `ProviderOnboardingService.refresh()` → shared `ProviderEnvironmentAliases` | `ATROPOS_PROVIDER_GROK_API_KEY`, `ATROPOS_PROVIDER_GOOGLE_API_KEY`, and `ATROPOS_PROVIDER_CLAUDE_API_KEY` now resolve to xAI, Gemini, and Anthropic without creating generic duplicate records. Backend/provider contracts, hosted selector (440), orphan gate (4 historical files), and `git diff --check` pass. Hosted Kotlin execution remains unverified. |
+
+### 2026-08-24T13:00:00Z · Agent: Codex GPT-5 · Batch: mcp-everything-reference-fixture
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-EVERYTHING-REF | source-wired / partial | `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt`, `scripts/backend-atom-contract-test.sh` | hosted MCP test selector → existing `McpHostManager.statuses()` → disabled/community reference fixture | Added the authority’s test-only reference fixture: it is visible as `UNTESTED` with an explicit disabled reason and never spawns a process. Backend contract, hosted selector (440), orphan gate, and `git diff --check` pass; hosted Kotlin execution remains unverified. |

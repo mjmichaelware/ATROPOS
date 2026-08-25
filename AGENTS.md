@@ -12397,6 +12397,14 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; source-wired but partial pending hosted execution evidence.
 - Fingerprints: recorded after commit.
 
+### 2026-08-24T13:00:00Z · Agent: Codex GPT-5 · Batch: mcp-everything-reference-fixture
+- Paths touched: `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+16), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7), `AGENTS.md` (+7).
+- Atoms / phases affected: B-MCP-EVERYTHING-REF test-only reference fixture.
+- Predicate moved: the reference fixture is now exercised through the sole MCP host and proves disabled/community entries remain visible as `UNTESTED` without process execution.
+- Verification actually run: backend atom contract, hosted-selector contract (440 tests), orphan gate, and `git diff --check` passed. Hosted Kotlin execution remains unverified.
+- % delta: unchanged; test-only coverage improved without adding a production adapter.
+- Fingerprints: recorded after commit.
+
 ### 2026-08-23T09:45:00Z · Agent: Codex GPT-5 · Batch: command-catalog-backend-parity
 
 - Paths touched: `src/test/kotlin/atropos/cli/input/CommandCatalogBackendEntriesTest.kt` (+12), `STATUS-BACKEND.md` (+7).
