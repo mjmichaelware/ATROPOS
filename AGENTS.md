@@ -13375,6 +13375,16 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprints: `BuildStamp.kt=833cbe6d1680`; `BuildStampTest.kt=91f47f42f1e4`; `install.sh=c3c4875e4c21`; `.github/workflows/release.yml=cc488f2c2aed`; `backend-atom-contract-test.sh=1b5a86c47ac1`.
 
+### 2026-08-25T03:10:02Z · Agent: Codex GPT-5 · Batch: installer-first-run-command-contract
+
+- Paths touched: `src/main/kotlin/atropos/Main.kt` (+1), `install.sh` (+1/-1), `scripts/install-contract-test.sh` (+1/-1), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-INST-005 first-run doctor and B-HELP-001 command entrypoint.
+- Predicate moved: the installer now invokes the authority-specified `atropos doctor --first-run` path through the existing `Main`/`FirstRunDoctorRenderer` owner; the prior `--doctor` spelling remains compatible.
+- Verification actually run: install/release/backend/provider contracts, hosted selector (`440 tests`), shell syntax, and `git diff --check` passed. Main/root Kotlin and hosted runtime execution remain unverified.
+- % delta: unchanged; installer doctor remains source-wired/partial pending hosted/device execution.
+- New overall estimate: unchanged.
+- Fingerprints: `Main.kt=afc4f8459147`; `install.sh=901a96791124`; `install-contract-test.sh=ca2a05d033c2`; `backend-atom-contract-test.sh=831810e7172f`.
+
 ### 2026-08-25T02:16:59Z · Agent: Codex GPT-5 · Batch: install-help-caller-contract
 - Paths touched: `scripts/backend-atom-contract-test.sh` (+16).
 - Atoms / phases affected: B-INST-001..005 and B-HELP-001..002 caller enforcement.

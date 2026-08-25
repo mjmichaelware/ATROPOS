@@ -159,7 +159,7 @@ chmod +x "$BIN_DIR/atropos"
 # point used by the release workflow starts successfully. This check is local,
 # provider-free, and never sends credentials or project data anywhere.
 if "$BIN_DIR/atropos" --health > "$CONFIG_DIR/first-run-doctor.txt" 2>&1 &&
-   "$BIN_DIR/atropos" --doctor >> "$CONFIG_DIR/first-run-doctor.txt" 2>&1 &&
+   "$BIN_DIR/atropos" doctor --first-run >> "$CONFIG_DIR/first-run-doctor.txt" 2>&1 &&
    "$BIN_DIR/atropos" --version >> "$CONFIG_DIR/first-run-doctor.txt" 2>&1; then
   say "doctor: PASS"
 else

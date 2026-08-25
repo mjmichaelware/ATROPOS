@@ -390,5 +390,6 @@ text .github/workflows/release.yml 'mcp-example-contract-test.sh'
 text .github/workflows/release.yml 'Prove version reports the published hash'
 text src/main/kotlin/atropos/core/BuildStamp.kt 'artifactSha256'
 text src/main/kotlin/atropos/Main.kt 'BuildStamp.line()'
+text src/main/kotlin/atropos/Main.kt 'args.firstOrNull() == "doctor"'
 
 printf '%s\n' 'ATROPOS_BACKEND_ATOM_CONTRACT_OK'

@@ -85,7 +85,7 @@ fun main(args: Array<String>) {
         // actual cascade when work is requested.
         ui.renderNotice(atropos.core.provider.ProviderOnboardingService().renderLaunchSummary(refresh = true))
 
-        if (args.firstOrNull() == "--doctor") {
+        if (args.firstOrNull() == "--doctor" || args.firstOrNull() == "doctor") {
             atropos.cli.FirstRunDoctorRenderer(
                 backendDoctor = atropos.cli.BackendDoctor(config),
                 homeState = HomeStateProvider()

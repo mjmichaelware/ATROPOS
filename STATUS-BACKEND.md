@@ -1487,6 +1487,12 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | --- | --- | --- | --- | --- |
 | B-INST-002 / B-INST-005 artifact hash visibility | source-wired / partial | `src/main/kotlin/atropos/core/BuildStamp.kt`, `src/main/kotlin/atropos/Main.kt`, `src/test/kotlin/atropos/core/BuildStampTest.kt`, `install.sh`, `.github/workflows/release.yml`, related contracts | `atropos --version` → existing `BuildStamp.line()` → running JAR SHA-256; installer captures the version line; release job compares it with the published `.sha256` asset | Narrow `kotlinc` compile of `BuildStamp.kt` passed; install, release, backend/provider contracts, hosted selector (440), shell syntax, and `git diff --check` pass. Root Gradle, hosted release, and device execution remain unverified. |
 
+### 2026-08-25T03:10:02Z · Agent: Codex GPT-5 · Batch: installer-first-run-command-contract
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-INST-005 / B-HELP-001 first-run doctor command | source-wired / partial | `src/main/kotlin/atropos/Main.kt`, `install.sh`, `scripts/install-contract-test.sh`, `scripts/backend-atom-contract-test.sh` | installer → `atropos doctor --first-run` → existing `FirstRunDoctorRenderer`; legacy `--doctor` remains accepted | Install, release, backend/provider contracts, hosted selector (440), shell syntax, and `git diff --check` pass. Main/root Kotlin and hosted runtime execution remain unverified. |
+
 ### 2026-08-25T03:50:00Z · Agent: Codex GPT-5 · Batch: generated-provider-readme-table
 
 | atom | status | files | caller | tests / notes |
