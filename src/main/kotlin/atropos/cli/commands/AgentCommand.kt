@@ -73,7 +73,12 @@ class AgentCommand(
 ) : AgentCommandHandler {
     private val repoRoot = AtroposRepoRootLocator.resolve()
     private val importedInstructionPacks = ImportedInstructionPackStore(repoRoot)
-    private val selfHostHandler: SelfHostCommand = SelfHostCommand(ui, config, repoRoot)
+    private val selfHostHandler: SelfHostCommand = SelfHostCommand(
+        ui = ui,
+        config = config,
+        repoRoot = AtroposRepoRootLocator.resolve(),
+        onboarding = providerOnboarding
+    )
     private val queueRenderer = AgentQueueRenderer(TerminalTheme(ConfigurationManager()))
     private val daemonHandler = AgentDaemonCommandHandler(
         ui = ui,

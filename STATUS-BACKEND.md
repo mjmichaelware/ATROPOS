@@ -1712,3 +1712,9 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-005 bridge self-host/DAG provider owner | source-wired / partial | `src/main/kotlin/atropos/bridge/AtroposBridge.kt`, `src/main/kotlin/atropos/core/agent/SelfHostGoalService.kt`, `scripts/backend-atom-contract-test.sh` | bridge server → shared onboarding → `SelfHostGoalService` → `DagExecutionService`/existing self-host gates | Bridge self-host/resume execution now shares the same onboarding owner as queue and command routes. Backend contract, hosted selector (`440 tests`), and diff check pass; hosted self-host runtime remains unverified. |
+
+### 2026-08-25T12:00:00Z · Agent: Codex GPT-5 · Batch: cli-selfhost-provider-owner
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-PROV-002 `/agent self-host` cascade owner | source-wired / partial | `src/main/kotlin/atropos/cli/commands/SelfHostCommand.kt`, `src/main/kotlin/atropos/cli/commands/AgentCommand.kt`, `scripts/backend-atom-contract-test.sh` | `/agent self-host` → shared `AgentCommand` onboarding → `SelfHostCommand` → existing self-host service/DAG/cascade | CLI self-host start/resume/recover/verify paths now share the agent command provider inventory. Backend contract, hosted selector (`440 tests`), and diff check pass; hosted self-host runtime remains unverified. |

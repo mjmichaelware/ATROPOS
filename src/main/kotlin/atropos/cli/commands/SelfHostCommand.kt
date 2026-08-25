@@ -12,6 +12,7 @@ import atropos.core.dag.DagExecutionService
 import atropos.core.journal.EventJournalService
 import atropos.core.phase20.GovernanceDetectorContext
 import atropos.core.phase20.Phase20GovernanceService
+import atropos.core.provider.ProviderOnboardingService
 import atropos.core.verification.VerifiedCompletionGate
 import java.nio.file.Path
 
@@ -19,9 +20,10 @@ class SelfHostCommand(
     private val ui: AnsiTerminalEngine,
     private val config: AtroposConfig = AtroposConfig.load(),
     private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
-    private val selfHostService: SelfHostGoalService = SelfHostGoalService(repoRoot),
+    private val onboarding: ProviderOnboardingService = ProviderOnboardingService(),
+    private val selfHostService: SelfHostGoalService = SelfHostGoalService(repoRoot, onboarding = onboarding),
     private val selfHostRunner: (String) -> SelfHostAutonomousRunResult = { prompt -> selfHostService.runNaturalLanguageSelfBuild(prompt) },
-    private val dagService: DagExecutionService = DagExecutionService(config, repoRoot),
+    private val dagService: DagExecutionService = DagExecutionService(config, repoRoot, onboarding = onboarding),
     private val journal: EventJournalService = EventJournalService(repoRoot),
     private val completionGate: VerifiedCompletionGate = VerifiedCompletionGate(config, repoRoot),
     private val proofRenderer: SelfHostRunProofRenderer = SelfHostRunProofRenderer(),

@@ -13424,6 +13424,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; B-005/B-PROV-002 remains source-wired/partial pending hosted runtime evidence.
 - Fingerprints (sha256, full): `SelfHostGoalService.kt=1c204607840784b0693f22d828c42252aad3d7171991f935fdee09fef9347a5e`; `AtroposBridge.kt=ed0ff354c365410427889e2e1f02e8c41daaf7d5f08cac9398650720c8cc7d2f`; `backend-atom-contract-test.sh=7c9aabc1fac018de054aa751a3239203776d1ebf06d06ecc72e19b66072630dc`.
 
+### 2026-08-25T12:00:00Z · Agent: Codex GPT-5 · Batch: cli-selfhost-provider-owner
+
+- Paths touched: `src/main/kotlin/atropos/cli/commands/SelfHostCommand.kt` (+6/-2), `AgentCommand.kt` (+7/-1), `scripts/backend-atom-contract-test.sh` (+3).
+- Atoms / phases affected: B-PROV-002 `/agent self-host` routing and Phase 11/20 self-host composition.
+- Predicate moved: CLI self-host commands now receive the `AgentCommand` onboarding owner and pass it into both `SelfHostGoalService` and `DagExecutionService`; self-host resume/recovery no longer creates a separate provider inventory.
+- Verification actually run: backend atom contract, hosted selector contract (`440 tests`), and `git diff --check` passed. Root/hosted Kotlin self-host execution remains unverified; no runtime-green claim.
+- % delta: unchanged; B-PROV-002/self-host remains source-wired/partial pending hosted runtime evidence.
+- Fingerprints (sha256, full): `SelfHostCommand.kt=f0b79155c9b08c62c081140c764fb1b9e7fbd4c05dc72032f38a88dc5383fd8c`; `AgentCommand.kt=ce2f97a8dea21cf62bed012bebe2cef5135d7ffed69722cff0e5e198fdc5f2da`; `backend-atom-contract-test.sh=6695e9b8027fa4e31668be4c734a75c251215eec53713d3801e35505968fe3fc`.
+
 ### 2026-08-25T07:20:00Z · Agent: Codex GPT-5 · Batch: mcp-probe-handshake-test-proof-append
 
 - Paths touched: `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+6), `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+7).
