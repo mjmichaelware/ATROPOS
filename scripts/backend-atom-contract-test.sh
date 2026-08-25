@@ -227,6 +227,13 @@ text src/main/kotlin/atropos/cli/input/CommandCatalog.kt '"/mcp search <query>"'
 file src/main/kotlin/atropos/core/integration/IntegrationRegistry.kt
 text src/main/kotlin/atropos/core/integration/IntegrationRegistry.kt 'IntegrationDescriptor("filesystem", "stdio_or_http"'
 text src/main/kotlin/atropos/core/integration/IntegrationRegistry.kt 'IntegrationDescriptor("git-local", "process"'
+text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'private val toolExecutor: TypedToolExecutor = TypedToolExecutor()'
+text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'val execution = toolExecutor.execute(judged.decision)'
+text src/main/kotlin/atropos/bridge/BridgeMcpHandler.kt 'manager.callTool('
+text src/main/kotlin/atropos/cli/ShellCommandHandler.kt 'shellRunner.gitStatus()'
+text src/main/kotlin/atropos/cli/ShellCommandHandler.kt 'shellRunner.gitDiff()'
+text src/main/kotlin/atropos/cli/shell/ShellCommandRunner.kt 'BoundedProcessRunner().start(command, directory.toPath())'
+text src/main/kotlin/atropos/cli/shell/ShellCommandRunner.kt 'fun gitConflicts()'
 file src/main/kotlin/atropos/core/sentry/SentryApiClient.kt
 file src/main/kotlin/atropos/core/sentry/SentryRepairCoordinator.kt
 file src/main/kotlin/atropos/cli/SentryCommandHandler.kt

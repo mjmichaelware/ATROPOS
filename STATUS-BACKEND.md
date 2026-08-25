@@ -1420,3 +1420,9 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-GHA / hosted verification lane | source-wired / partial | `scripts/atropos-verify-worktree.sh`, `scripts/atropos-verify-action-contract-test.sh` | reusable GitHub composite action → `atropos-verify-worktree.sh`; hosted branch now skips standalone local `kotlinc` and reaches the existing Gradle compile/focused-test lane | Shell syntax, reusable-action/path contracts, backend atom contract, hosted selector contract (440), and `git diff --check` pass. GitHub-hosted execution remains unverified; no green claim. |
+
+### 2026-08-25T02:45:00Z · Agent: Codex GPT-5 · Batch: tier0-filesystem-git-caller-contract
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-FS / B-MCP-GITLOCAL | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `src/main/kotlin/atropos/core/policy/TypedToolExecutor.kt`, `src/main/kotlin/atropos/bridge/BridgeMcpHandler.kt`, `src/main/kotlin/atropos/cli/ShellCommandHandler.kt`, `src/main/kotlin/atropos/cli/shell/ShellCommandRunner.kt`, `scripts/backend-atom-contract-test.sh` | configured filesystem MCP calls cross `McpHostManager → TypedToolExecutor`; `/git status|diff|conflicts` cross `ShellCommandHandler → ShellCommandRunner → BoundedProcessRunner` | Backend source contract now protects the exact Tier-0 caller edges without creating a second tool executor or git owner. Backend contract, hosted selector contract (440), reusable-action contracts, and `git diff --check` pass. Hosted Kotlin/runtime MCP execution remains unverified. |

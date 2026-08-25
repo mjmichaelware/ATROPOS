@@ -13303,6 +13303,14 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; these atoms remain source-wired/partial pending hosted/runtime evidence.
 - Fingerprints: pending scoped commit.
 
+### 2026-08-25T02:45:00Z · Agent: Codex GPT-5 · Batch: tier0-filesystem-git-caller-contract
+- Paths touched: `scripts/backend-atom-contract-test.sh` (+7).
+- Atoms / phases affected: B-MCP-FS and B-MCP-GITLOCAL production caller enforcement.
+- Predicate moved: the CI-owned source gate now proves configured filesystem MCP execution crosses the sole `McpHostManager`/`TypedToolExecutor` seam and local git reads cross the existing bounded shell owner; no parallel filesystem, git, or tool-executor subsystem was introduced.
+- Verification actually run: backend atom contract, hosted selector contract (440), reusable action contracts, and `git diff --check` passed. Hosted Kotlin/runtime MCP execution remains unverified.
+- % delta: unchanged; Tier-0 integrations remain source-wired/partial pending hosted/runtime evidence.
+- Fingerprints: pending scoped commit.
+
 ### 2026-08-25T02:30:00Z · Agent: Codex GPT-5 · Batch: hosted-verifier-gradle-lane
 - Paths touched: `scripts/atropos-verify-worktree.sh` (+11/-7), `scripts/atropos-verify-action-contract-test.sh` (+5).
 - Atoms / phases affected: B-MCP-GHA hosted verification lane.
