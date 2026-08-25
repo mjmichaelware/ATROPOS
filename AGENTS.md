@@ -12406,6 +12406,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; FTY-03/FTY-05 remain partial pending hosted execution.
 - Fingerprints: recorded after static verification.
 
+### 2026-08-25T23:00:00Z · Agent: Codex GPT-5 · Batch: bridge-mcp-single-owner
+
+- Paths touched: `src/main/kotlin/atropos/cli/CommandRouter.kt` (+2/-1), `src/main/kotlin/atropos/bridge/BridgeCommandRunner.kt` (+5/-2), `src/main/kotlin/atropos/bridge/AtroposBridge.kt` (+5/-5), `scripts/backend-atom-contract-test.sh` (+2).
+- Atoms / phases affected: B-005 bridge and B-011/ADD-MCP host ownership.
+- Predicate moved: the bridge now constructs one `McpHostManager` and injects it into request-scoped `CommandRouter` instances; `/mcp`, `/doctor`, and bridge MCP routes no longer create parallel MCP hosts.
+- Verification actually run: pending in this batch; hosted bridge/MCP selectors remain required. No Kotlin or hosted-green claim.
+- % delta: unchanged; bridge/MCP remain source-wired/partial pending hosted execution.
+- Fingerprints: recorded after static verification.
+
 ### 2026-08-25T22:00:00Z · Agent: Codex GPT-5 · Batch: factory-resume-execution-owner
 
 - Paths touched: `src/main/kotlin/atropos/core/factory/FactoryRunHandoff.kt` (+14/-2), `src/main/kotlin/atropos/core/factory/FactoryRunOrchestrator.kt` (+14), `src/main/kotlin/atropos/cli/FactoryCommandHandler.kt` (+14/-5), `src/test/kotlin/atropos/core/factory/FactoryRunHandoffTest.kt` (+13), `scripts/backend-atom-contract-test.sh` (+3).

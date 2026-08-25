@@ -268,7 +268,7 @@ text src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt 'secret_name
 # CLI diagnostics and MCP commands must share the same host instance. This is
 # the production caller edge that prevents `/doctor` and `/mcp` from becoming
 # parallel MCP registries/probe owners inside one command session.
-text src/main/kotlin/atropos/cli/CommandRouter.kt 'private val mcpHostManager = McpHostManager('
+text src/main/kotlin/atropos/cli/CommandRouter.kt 'private val mcpHostManager = sharedMcpHostManager ?: McpHostManager('
 text src/main/kotlin/atropos/cli/CommandRouter.kt 'BackendDoctor(config, providerOnboarding, mcpHostManager)'
 text src/main/kotlin/atropos/cli/CommandRouter.kt 'McpCommandHandler(uiEngine, mcpHostManager)'
 text src/main/kotlin/atropos/cli/BackendDoctor.kt 'private val mcp: McpHostManager'
@@ -331,7 +331,7 @@ text src/main/kotlin/atropos/core/integration/IntegrationRegistry.kt 'Integratio
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'private val toolExecutor: TypedToolExecutor = TypedToolExecutor()'
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'val execution = toolExecutor.execute(judged.decision)'
 text src/main/kotlin/atropos/bridge/BridgeMcpHandler.kt 'manager.callTool('
-text src/main/kotlin/atropos/bridge/AtroposBridge.kt 'mcpHost = atropos.core.integration.McpHostManager('
+text src/main/kotlin/atropos/bridge/AtroposBridge.kt 'mcpHost = mcpHostManager'
 text src/main/kotlin/atropos/bridge/AtroposBridge.kt 'quotaSummary = { QuotaProjection(quotaRegistry, quotaLedger).render() }'
 text src/main/kotlin/atropos/bridge/AtroposBridge.kt 'work = AgentQueueWorkRunner(queueService, activeProvider)'
 text src/main/kotlin/atropos/bridge/AtroposBridge.kt 'responder = QueuedWorkConversationResponder('
@@ -389,6 +389,8 @@ text src/main/kotlin/atropos/core/github/GitHubBinding.kt 'fun fileBlame('
 text src/main/kotlin/atropos/cli/GitHubCommandHandler.kt '"blame" -> binding.fileBlame('
 text src/main/kotlin/atropos/cli/shell/ShellCommandRunner.kt 'IntegrationRegistry.requireRegistered("git-local")'
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'IntegrationRegistry.requireRegistered("mcp")'
+text src/main/kotlin/atropos/bridge/BridgeCommandRunner.kt 'sharedMcpHostManager = mcpHostManager'
+text src/main/kotlin/atropos/bridge/AtroposBridge.kt 'mcpHost = mcpHostManager'
 text src/main/kotlin/atropos/cli/CommandRouter.kt 'GitHubCommandHandler(config, uiEngine)'
 text src/main/kotlin/atropos/cli/CommandRouter.kt '"/github" ->'
 text src/main/kotlin/atropos/core/ProviderHttpClient.kt 'MAX_RESPONSE_BYTES'

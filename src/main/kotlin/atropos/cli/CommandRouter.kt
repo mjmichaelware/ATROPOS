@@ -40,13 +40,14 @@ class CommandRouter(
     private val factoryCommandOverride: FactoryCommandHandler? = null,
     private val providerOnboarding: ProviderOnboardingService = ProviderOnboardingService(),
     private val providerDiscoveryAlreadyRefreshed: Boolean = false,
+    private val sharedMcpHostManager: McpHostManager? = null,
     /** The only way this router reaches DLOI: failures arrive typed, not thrown. */
     private val higZeroGuard: atropos.dloi.HigZeroGuard = atropos.dloi.HigZeroGuard(atropos.dloi.DloiService())
 ) {
     /** A failing command renders an error; it must not end the session. */
     private val failureBoundary = CommandFailureBoundary(uiEngine)
     /** One MCP host serves both diagnostics and interactive MCP commands. */
-    private val mcpHostManager = McpHostManager(
+    private val mcpHostManager = sharedMcpHostManager ?: McpHostManager(
         AtroposRepoRootLocator.resolve(),
         localOnly = config.runtime.localOnly
     )

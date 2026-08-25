@@ -83,6 +83,10 @@ object LocalEngineBridge {
                 onboarding = providerOnboarding
             )
         )
+        val mcpHostManager = atropos.core.integration.McpHostManager(
+            repoRoot,
+            localOnly = AtroposConfig.load().runtime.localOnly
+        )
 
         return BridgeRoutes(
             activeProvider = activeProvider,
@@ -139,12 +143,10 @@ object LocalEngineBridge {
             // PortCommandPolicy decides what may reach it.
             commandRunner = BridgeCommandRunner(
                 onboarding = providerOnboarding,
-                providerDiscoveryAlreadyRefreshed = true
+                providerDiscoveryAlreadyRefreshed = true,
+                mcpHostManager = mcpHostManager
             )::run,
-            mcpHost = atropos.core.integration.McpHostManager(
-                repoRoot,
-                localOnly = AtroposConfig.load().runtime.localOnly
-            ),
+            mcpHost = mcpHostManager,
             quotaSummary = { QuotaProjection(quotaRegistry, quotaLedger).render() },
             recoverySnapshot = { restartCoordinator.snapshot() },
             repoRoot = repoRoot
