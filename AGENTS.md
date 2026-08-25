@@ -12397,6 +12397,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; source-wired but partial pending hosted execution evidence.
 - Fingerprints: recorded after commit.
 
+### 2026-08-25T21:00:00Z · Agent: Codex GPT-5 · Batch: factory-verification-repair-reentry
+
+- Paths touched: `src/main/kotlin/atropos/core/factory/FactoryRunOrchestrator.kt` (+67/-20), `scripts/backend-atom-contract-test.sh` (+1).
+- Atoms / phases affected: FTY-03 live repair executor on verification failure; FTY-05 obligation-loop completion safety.
+- Predicate moved: failures thrown by the real obligation-wave verifier, and settled snapshots with unresolved obligations, now enter the existing freeze-checked `FactoryRepairExecutor` path when a bounded repair callback exists. Missing/failed repair evidence still fails the run and records completion failure; no success is inferred.
+- Verification actually run: pending in this batch; hosted factory selectors remain required. No Kotlin or hosted-green claim.
+- % delta: unchanged; FTY-03/FTY-05 remain partial pending hosted execution.
+- Fingerprints: recorded after static verification.
+
 ### 2026-08-24T15:00:00Z · Agent: Codex GPT-5 · Batch: provider-startup-single-scan
 - Paths touched: `src/main/kotlin/atropos/Main.kt` (+14/-6), `src/main/kotlin/atropos/cli/CommandRouter.kt` (+10/-1), `scripts/backend-atom-contract-test.sh` (+7/-1), `STATUS-BACKEND.md` (+7), `AGENTS.md` (+7).
 - Atoms / phases affected: B-PROV-001/B-PROV-003 startup discovery and cascade print.

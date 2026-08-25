@@ -423,7 +423,42 @@ class FactoryRunOrchestrator(
             promptFingerprint = lineage.promptFingerprint
         )
 
-        val loopResult = try {
+        fun repairAfterVerificationFailure(failure: Throwable): FactoryLoopResult {
+            val repairAction = repairVerificationFailure
+                ?: throw failure
+            return try {
+                repairWasExecuted = true
+                val evidence = repairAction(
+                    plan,
+                    java.nio.file.Path.of(generatedProject.path),
+                    failure,
+                    acceptanceFreeze
+                )
+                val handoff = FactoryRunHandoff.read(repoRoot, plan.id)
+                val result = FactoryRepairExecutor(obligationLoop).repairAndResume(
+                    handoff = handoff,
+                    freeze = acceptanceFreeze,
+                    repair = { evidence },
+                    executeWave = FactoryEvidenceWaveExecutor(
+                        java.nio.file.Path.of(generatedProject.evidencePath),
+                        acceptanceFreeze
+                    )::execute
+                )
+                recorder.recordRepair(
+                    runId = plan.id,
+                    state = "REENTERED_OBLIGATION_LOOP",
+                    verification = result.evidence,
+                    dagId = planningDag.id,
+                    promptFingerprint = lineage.promptFingerprint
+                )
+                result.loop
+            } catch (repairFailure: Throwable) {
+                failure.addSuppressed(repairFailure)
+                throw failure
+            }
+        }
+
+        var loopResult = try {
             obligationLoop.executeUntilSettled(
                 planningDag.id,
                 acceptanceFreeze,
@@ -433,14 +468,39 @@ class FactoryRunOrchestrator(
                 )::execute
             )
         } catch (failure: Throwable) {
-            projectRegistry.setStatus(generatedRecord, ProjectStatus.FAILED, actor = "factory")
-            recorder.recordCompletionFailure(
-                runId = plan.id,
-                failureType = failure.javaClass.simpleName,
-                dagId = planningDag.id,
-                promptFingerprint = lineage.promptFingerprint
-            )
-            throw failure
+            try {
+                repairAfterVerificationFailure(failure)
+            } catch (terminalFailure: Throwable) {
+                projectRegistry.setStatus(generatedRecord, ProjectStatus.FAILED, actor = "factory")
+                recorder.recordCompletionFailure(
+                    runId = plan.id,
+                    failureType = terminalFailure.javaClass.simpleName,
+                    dagId = planningDag.id,
+                    promptFingerprint = lineage.promptFingerprint
+                )
+                throw terminalFailure
+            }
+        }
+        if (!loopResult.snapshot.canComplete) {
+            loopResult = try {
+                repairAfterVerificationFailure(
+                    IllegalStateException(
+                        "factory verification left obligations unresolved: " +
+                            "open_work=${loopResult.snapshot.openWork} " +
+                            "blocked=${loopResult.snapshot.blockedAtomIds} " +
+                            "failed=${loopResult.snapshot.failedAtomIds}"
+                    )
+                )
+            } catch (failure: Throwable) {
+                projectRegistry.setStatus(generatedRecord, ProjectStatus.FAILED, actor = "factory")
+                recorder.recordCompletionFailure(
+                    runId = plan.id,
+                    failureType = failure.javaClass.simpleName,
+                    dagId = planningDag.id,
+                    promptFingerprint = lineage.promptFingerprint
+                )
+                throw failure
+            }
         }
         val finalObligations = loopResult.snapshot
         recorder.recordObligationLoop(

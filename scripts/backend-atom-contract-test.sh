@@ -493,6 +493,7 @@ text src/main/kotlin/atropos/core/factory/AppFactoryRouter.kt 'FactoryRunHandoff
 text src/main/kotlin/atropos/core/factory/FactoryObligationLoop.kt 'executeUntilSettled'
 text src/main/kotlin/atropos/core/factory/FactoryRunOrchestrator.kt 'repairVerificationFailure'
 text src/main/kotlin/atropos/core/factory/FactoryRunOrchestrator.kt 'FactoryRepairExecutor(obligationLoop).repairAndResume'
+text src/main/kotlin/atropos/core/factory/FactoryRunOrchestrator.kt 'repairAfterVerificationFailure'
 text src/main/kotlin/atropos/core/factory/FactoryRunOrchestrator.kt 'state = if (repairWasExecuted) "REENTERED_OBLIGATION_LOOP" else "NOT_NEEDED"'
 text src/main/kotlin/atropos/core/factory/FactoryRepairExecutor.kt 'obligationLoop.recordRepairEvidence'
 text src/main/kotlin/atropos/core/factory/FactoryAcceptanceFreeze.kt 'repair acceptance predicates did not all pass'
