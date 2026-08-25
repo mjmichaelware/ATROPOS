@@ -1564,3 +1564,9 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-GH-c..n / typed GitHub method matrix | source-wired / partial | `src/test/kotlin/atropos/core/github/GitHubApiClientTest.kt`, `src/main/kotlin/atropos/core/github/GitHubApiClient.kt`, `scripts/backend-atom-contract-test.sh` | focused GitHub test → injected `GitHubApiTransport` → all issue/PR/review/check-run methods on the canonical client | Added a deterministic matrix test covering issue create/comment, PR list/files/create/comment/review, and check-run list/create/update through one transport, with token non-disclosure assertions. Backend contract, hosted selector (`440` tests), orphan gate, and `git diff --check` pass; Kotlin execution remains hosted-only/unverified. |
+
+### 2026-08-24T12:00:00Z · Agent: Codex GPT-5 · Batch: backend-production-marker-audit
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| backend production-marker audit | source-wired / partial | `src/main/kotlin/atropos/bridge/AtroposBridge.kt`, `src/main/kotlin/atropos/bridge/BridgeRoutes.kt`, `src/main/kotlin/atropos/bridge/BridgeMcpHandler.kt`, `src/main/kotlin/atropos/bridge/BridgeEvidenceHandler.kt`, `src/main/kotlin/atropos/bridge/projection/RecoveryProjection.kt`, `src/main/kotlin/atropos/core/provider/ProviderActivationService.kt` | `LocalEngineBridge.server()` → real queue/responder, quota projection, MCP host, command runner, and restart snapshot; direct projection/test constructors retain explicit refusal defaults | Targeted marker scan found no unowned backend production marker. Remaining refusal strings are safe-constructor fallbacks or honest provider remediation text. Backend/provider/connect/MCP-example/GHA contracts, hosted selector, and `git diff --check` pass; root/hosted Kotlin and external GitHub authentication remain unverified. |

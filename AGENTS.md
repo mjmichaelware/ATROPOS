@@ -13295,6 +13295,14 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprints: `McpHostManagerTest.kt=9fdff3a705fe`; `backend-atom-contract-test.sh=82cb37547703`.
 
+### 2026-08-24T12:00:00Z · Agent: Codex GPT-5 · Batch: backend-production-marker-audit
+- Paths touched: `STATUS-BACKEND.md` (+7), `AGENTS.md` (+7).
+- Atoms / phases affected: backend caller/orphan audit across bridge, provider, MCP, factory, GitHub, Sentry, and installer owners.
+- Predicate moved: targeted production marker review found no unowned backend `TODO`, `FIXME`, `not-wired`, `not implemented`, `stub`, or `placeholder` contradicting existing production wiring. Safe direct-constructor refusals remain explicit and are protected by the real `LocalEngineBridge.server()` binding.
+- Verification actually run: backend atom, provider environment, provider connect, MCP example, GHA action, hosted-selector, and `git diff --check` contracts passed. Root/hosted Kotlin execution and GitHub authentication remain unverified; no green claim.
+- % delta: unchanged; source is audited, but hosted execution remains the acceptance gap.
+- Fingerprints: recorded from the committed files.
+
 ### 2026-08-25T03:25:28Z · Agent: Codex GPT-5 · Batch: factory-repair-evidence-state
 - Paths touched: `src/main/kotlin/atropos/core/factory/FactoryRunOrchestrator.kt` (+4), `scripts/backend-atom-contract-test.sh` (+5), `STATUS-BACKEND.md` (+7).
 - Atoms / phases affected: FTY-03 repair execution and freeze-bound obligation-loop re-entry.
