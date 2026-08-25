@@ -13542,6 +13542,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; B-005 remains source-wired/partial pending hosted execution.
 - Fingerprint: `BridgeCommandHandlerTest.kt=6b1a9ecb4744`.
 
+### 2026-08-25T07:31:00Z · Agent: Codex GPT-5 · Batch: bridge-output-contract-doc-correction
+
+- Paths touched: `src/main/kotlin/atropos/bridge/BridgeCommandHandler.kt` (+6/-5), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-005 bridge output contract.
+- Predicate moved: documentation now accurately states that `/v1/command` preserves engine output structure while applying mandatory redaction at the wire boundary; no behavior or owner was duplicated.
+- Verification actually run: `git diff --check` passed. Hosted Kotlin execution remains unverified.
+- % delta: unchanged; B-005 remains source-wired/partial pending hosted execution.
+- Fingerprint: `BridgeCommandHandler.kt` pending final commit hash.
+
 ### 2026-08-25T05:18:00Z · Agent: Codex GPT-5 · Batch: provider-chat-owner-injection
 
 - Paths touched: `src/main/kotlin/atropos/cli/CommandRouter.kt` (+2), `src/main/kotlin/atropos/cli/ProviderChatDispatcher.kt` (+4/-2), `scripts/backend-atom-contract-test.sh` (+2).

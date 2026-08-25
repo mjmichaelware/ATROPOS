@@ -1784,3 +1784,9 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-005 secret-safe command output fixture | source-wired / partial | `src/test/kotlin/atropos/bridge/BridgeCommandHandlerTest.kt` | existing `/v1/cli` command handler → success renderer → redaction boundary | Added a focused success-path fixture proving a provider-shaped secret is absent from successful bridge command JSON and replaced with the canonical redaction marker. Hosted selector (`440 tests`) and diff check pass; hosted Kotlin execution remains unverified. |
+
+### 2026-08-25T07:31:00Z · Agent: Codex GPT-5 · Batch: bridge-output-contract-doc-correction
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-005 bridge output contract | source-wired / partial | `src/main/kotlin/atropos/bridge/BridgeCommandHandler.kt` | `/v1/command` → existing renderer output → canonical redaction boundary | Corrected the handler contract comment to describe structure-preserving output with mandatory secret redaction; implementation and ownership are unchanged. `git diff --check` passes; hosted Kotlin execution remains unverified. |

@@ -21,13 +21,14 @@ import atropos.core.security.RedactionFilter
  * would be a second answer to the same question, and the two only have to
  * disagree once for a port to reach `sh`.
  *
- * ## Output is the engine's, verbatim
+ * ## Output preserves engine structure with secret redaction
  *
  * The command runs against a real renderer and its output is returned
- * unrewritten. A bridge that summarised would be reimplementing the CLI's
- * presentation on the other side of a socket, which is exactly the drift
- * `HOE-C02` forbids: the two surfaces would start describing the same run
- * differently.
+ * with its structure preserved and the canonical secret filter applied at
+ * the wire boundary. A bridge that summarised would be reimplementing the
+ * CLI's presentation on the other side of a socket, which is exactly the
+ * drift `HOE-C02` forbids: the two surfaces would start describing the same
+ * run differently.
  */
 internal class BridgeCommandHandler(
     /**
