@@ -8,13 +8,16 @@ import atropos.core.policy.BoundedAgencyGate
 import atropos.core.policy.ExecutionPolicyEngine
 import atropos.core.provider.ProviderTruthService
 import atropos.core.security.RedactionFilter
+import atropos.core.provider.ProviderOnboardingService
 
 class AgentService(
     private val config: AtroposConfig = AtroposConfig.load(),
     private val collector: AgentContextCollector = AgentContextCollector(),
+    private val onboarding: ProviderOnboardingService = ProviderOnboardingService(),
     private val router: ProviderCascadeRouter = ProviderCascadeRouter(
         ProviderFactory(config),
-        healthyProviderIds = { atropos.core.provider.ProviderOnboardingService().healthyProviderIds() },
+        healthyProviderIds = { onboarding.healthyProviderIds() },
+        preferredProviderIds = { onboarding.preferredProviderIds() },
         localOnly = { config.runtime.localOnly }
     ),
     private val selector: AgentProviderSelector = AgentProviderSelector(config),
@@ -24,7 +27,16 @@ class AgentService(
     private val providerTruthService: ProviderTruthService = ProviderTruthService(config),
     private val verificationStore: AgentVerificationStore = AgentVerificationStore(collector.repoRoot),
     private val verifier: AgentVerifier = AgentVerifier(config, collector, patchStore, verificationStore),
-    private val repairService: AgentRepairService = AgentRepairService(config, collector, router, selector, patchStore, verificationStore, patchExtractor),
+    private val repairService: AgentRepairService = AgentRepairService(
+        config = config,
+        collector = collector,
+        onboarding = onboarding,
+        router = router,
+        selector = selector,
+        patchStore = patchStore,
+        verificationStore = verificationStore,
+        patchExtractor = patchExtractor
+    ),
     private val queueService: AgentQueueService = AgentQueueService(config, collector),
     private val agencyGate: BoundedAgencyGate = BoundedAgencyGate(
         ExecutionPolicyEngine(collector.repoRoot, localOnly = config.runtime.localOnly)

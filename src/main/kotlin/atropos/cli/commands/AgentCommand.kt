@@ -22,6 +22,7 @@ import atropos.core.policy.AutonomyPolicyEngine
 import atropos.core.recovery.CrashRecoveryService
 import atropos.core.worktree.IsolatedWorktreeService
 import atropos.core.verification.VerifiedCompletionGate
+import atropos.core.provider.ProviderOnboardingService
 
 sealed class AgentCommandOutcome {
     data class Completed(val text: String) : AgentCommandOutcome()
@@ -53,8 +54,9 @@ class AgentCommand(
     private val ui: AnsiTerminalEngine,
     private val config: AtroposConfig = AtroposConfig.load(),
     private val activeProviderName: () -> String,
-    private val service: AgentService = AgentService(config),
-    private val runService: AgentRunService = AgentRunService(config),
+    private val providerOnboarding: ProviderOnboardingService = ProviderOnboardingService(),
+    private val service: AgentService = AgentService(config, providerOnboarding = providerOnboarding),
+    private val runService: AgentRunService = AgentRunService(config, onboarding = providerOnboarding),
     private val queueService: AgentQueueService = AgentQueueService(config),
     private val daemonService: AgentDaemonService = AgentDaemonService(config),
     private val sessionSupervisor: ProviderSessionSupervisor = ProviderSessionSupervisor(),

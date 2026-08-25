@@ -1650,3 +1650,9 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-PROV-002/004 cascade preference source | source-wired / partial | `src/main/kotlin/atropos/core/provider/ProviderCascadeRouter.kt`, `src/main/kotlin/atropos/cli/ProviderChatDispatcher.kt`, `src/main/kotlin/atropos/cli/CommandRouter.kt`, `scripts/backend-atom-contract-test.sh` | CLI chat and side-conversation cascades → injected preferred-provider supplier → existing `ProviderCascadeOrder` | Provider cascades no longer allocate a fresh onboarding service when deriving preference order; both CLI callers share the launch inventory. Backend atom contract and `git diff --check` pass. Root/hosted Kotlin execution remains unverified. |
+
+### 2026-08-25T07:00:00Z · Agent: Codex GPT-5 · Batch: provider-agent-path-owner
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-PROV-002/004 agent and repair cascade owner | source-wired / partial | `src/main/kotlin/atropos/core/agent/AgentService.kt`, `AgentRepairService.kt`, `AgentRunService.kt`, `src/main/kotlin/atropos/cli/commands/AgentCommand.kt`, `src/main/kotlin/atropos/cli/CommandRouter.kt`, `scripts/backend-atom-contract-test.sh` | `/agent` → `CommandRouter`'s injected `ProviderOnboardingService` → `AgentCommand` → `AgentService`/`AgentRepairService` → existing `ProviderCascadeRouter` | Agent ask, patch, repair, and run paths now share the same onboarding owner and preferred/healthy suppliers instead of allocating a route inventory inside each agent cascade. `ATROPOS_BACKEND_ATOM_CONTRACT_OK`, hosted selector contract (`440 tests`), and `git diff --check` pass. GitHub-hosted Kotlin execution remains unverified; no root-green claim. |

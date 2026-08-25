@@ -7,6 +7,7 @@ import atropos.core.memory.LocalMemoryStore
 import atropos.core.policy.BoundedAgencyGate
 import atropos.core.policy.ExecutionPolicyEngine
 import atropos.core.security.RedactionFilter
+import atropos.core.provider.ProviderOnboardingService
 
 /**
  * Asks a provider to fix the change that failed its own verification.
@@ -19,9 +20,11 @@ import atropos.core.security.RedactionFilter
 class AgentRepairService(
     private val config: AtroposConfig = AtroposConfig.load(),
     private val collector: AgentContextCollector = AgentContextCollector(),
+    private val onboarding: ProviderOnboardingService = ProviderOnboardingService(),
     private val router: ProviderCascadeRouter = ProviderCascadeRouter(
         ProviderFactory(config),
-        healthyProviderIds = { atropos.core.provider.ProviderOnboardingService().healthyProviderIds() },
+        healthyProviderIds = { onboarding.healthyProviderIds() },
+        preferredProviderIds = { onboarding.preferredProviderIds() },
         localOnly = { config.runtime.localOnly }
     ),
     private val selector: AgentProviderSelector = AgentProviderSelector(config),

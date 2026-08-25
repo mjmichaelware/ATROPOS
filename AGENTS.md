@@ -13325,6 +13325,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; B-MCP-GITHUB remains source-wired/partial pending hosted/live evidence.
 - Fingerprints (sha256, first 12): `GitHubApiClient.kt=a19a92174c97`; `GitHubApiClientTest.kt=8575643120ff`; `backend-atom-contract-test.sh=16174e6e1e43`.
 
+### 2026-08-25T07:00:00Z · Agent: Codex GPT-5 · Batch: provider-agent-path-owner
+
+- Paths touched: `src/main/kotlin/atropos/core/agent/AgentService.kt` (+10/-4), `AgentRepairService.kt` (+4/-1), `AgentRunService.kt` (+3/-1), `src/main/kotlin/atropos/cli/commands/AgentCommand.kt` (+4/-2), `src/main/kotlin/atropos/cli/CommandRouter.kt` (+3/-1), `scripts/backend-atom-contract-test.sh` (+6).
+- Atoms / phases affected: B-PROV-002/004 agent and repair cascade owner; free-first route truth.
+- Predicate moved: `/agent` ask/patch/repair/run now receives the launch `ProviderOnboardingService` through `CommandRouter` and passes its healthy/preferred suppliers into the existing `ProviderCascadeRouter`; no agent cascade allocates an independent onboarding inventory on the production CLI path.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh` (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (440 tests)`), and `git diff --check` passed. Root/hosted Kotlin execution remains unverified; no compile-green claim.
+- % delta: unchanged; B-PROV-002/004 remains source-wired/partial pending hosted Kotlin execution and live provider evidence.
+- Fingerprints (sha256, full): `AgentService.kt=e096686ab2ab00001a4ccaeebf086509949f50e93b7789a1d239a723e7498dd8`; `AgentRepairService.kt=23f466e3ae8924041b13b2865f6e1f9dece038778b11c9544f3b4f4d30bc51ee`; `AgentRunService.kt=0fdfd10a472eff97cc0128b2513f25f8584817868588e8fa0496acef2b52da53`; `AgentCommand.kt=6b212914486effcc0bfb13e10f11caea6b12064d5bd55395064fc602925d3281`; `CommandRouter.kt=909f4d96c816773c10b5ff8058464bfeb4041186cb8e75577ca484ce1fa24495`; `backend-atom-contract-test.sh=2a9312e3244e6f4d558a244371fbe66dc79c8a270ae3f23521db20fd4e3d8a0e`.
+
 ### 2026-08-25T07:20:00Z · Agent: Codex GPT-5 · Batch: mcp-probe-handshake-test-proof-append
 
 - Paths touched: `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+6), `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+7).

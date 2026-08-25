@@ -54,7 +54,8 @@ class CommandRouter(
     private val agentCommand = AgentCommand(
         ui = uiEngine,
         config = config,
-        activeProviderName = { currentProviderName }
+        activeProviderName = { currentProviderName },
+        providerOnboarding = providerOnboarding
     )
 
     private val hierarchyCommand = HierarchyCommand()

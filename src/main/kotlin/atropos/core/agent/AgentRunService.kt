@@ -4,6 +4,7 @@ import atropos.core.AtroposConfig
 import atropos.ast.AstSymbolGraph
 import atropos.core.memory.LocalMemoryStore
 import atropos.core.security.RedactionFilter
+import atropos.core.provider.ProviderOnboardingService
 import atropos.dloi.DloiService
 import atropos.dloi.HigZeroGuard
 import java.time.Instant
@@ -11,7 +12,8 @@ import java.time.Instant
 class AgentRunService(
     private val config: AtroposConfig = AtroposConfig.load(),
     private val collector: AgentContextCollector = AgentContextCollector(),
-    private val agentService: AgentService = AgentService(config, collector),
+    private val onboarding: ProviderOnboardingService = ProviderOnboardingService(),
+    private val agentService: AgentService = AgentService(config, collector, onboarding),
     private val patchStore: AgentPatchStore = AgentPatchStore(collector.repoRoot),
     private val jobStore: AgentJobStore = AgentJobStore(collector.repoRoot),
     private val smokeRunner: AgentSmokeRunner = AgentSmokeRunner(collector.repoRoot),
