@@ -1522,3 +1522,9 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-GHA / factory hosted build contract | source-wired / partial | `.github/workflows/factory-test.yml`, `scripts/github-actions-clean-runner.sh`, `scripts/github-actions-clean-runner-test.sh`, `scripts/backend-atom-contract-test.sh` | Factory CI → clean-runner contract test → clean-runner implementation → Gradle factory build | Factory workflow now uses v4 checkout/JDK actions, Gradle setup, and executes its own contract test before building. Clean-runner test/implementation, backend atom, hosted selector (440), and `git diff --check` pass; hosted workflow execution remains unverified. |
+
+### 2026-08-25T03:25:28Z · Agent: Codex GPT-5 · Batch: factory-repair-evidence-state
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| FTY-03 / repair evidence truth | source-wired / partial | `src/main/kotlin/atropos/core/factory/FactoryRunOrchestrator.kt`, `scripts/backend-atom-contract-test.sh` | verification-failure callback → `FactoryRepairExecutor.repairAndResume` → obligation loop; final recorder state preserves `REENTERED_OBLIGATION_LOOP` when repair ran | Backend atom contract, hosted selector (`440` tests), orphan gate, and `git diff --check` pass. Root/hosted factory execution remains unverified; no VERIFIED claim. |

@@ -13295,6 +13295,14 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprints: `McpHostManagerTest.kt=9fdff3a705fe`; `backend-atom-contract-test.sh=82cb37547703`.
 
+### 2026-08-25T03:25:28Z · Agent: Codex GPT-5 · Batch: factory-repair-evidence-state
+- Paths touched: `src/main/kotlin/atropos/core/factory/FactoryRunOrchestrator.kt` (+4), `scripts/backend-atom-contract-test.sh` (+5), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: FTY-03 repair execution and freeze-bound obligation-loop re-entry.
+- Predicate moved: a successful repair can no longer be overwritten by the later generic `NOT_NEEDED` recorder event; the production orchestrator preserves `REENTERED_OBLIGATION_LOOP`, while the existing executor/freeze evidence checks remain the sole acceptance path.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh` passed; `bash scripts/hosted-test-selector-contract.sh` passed (`440 tests`); `timeout 90s python3 scripts/find-orphans.py --fail-on-new` passed with only 4 historical baseline files (1045 production files / 362 orphan LOC); `git diff --check` passed. Root/hosted Gradle and runtime factory execution remain unverified.
+- % delta: unchanged; FTY-03 remains source-wired/partial pending hosted focused factory tests and runtime repair evidence.
+- Fingerprints (sha256, first 12): `FactoryRunOrchestrator.kt=15ce8f28aff5`; `backend-atom-contract-test.sh=6e6175ae2f7c`.
+
 ### 2026-08-25T02:44:07Z · Agent: Codex GPT-5 · Batch: release-backend-atom-gate
 
 - Paths touched: `.github/workflows/release.yml` (+3), `scripts/release-installer-contract-test.sh` (+1), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7).

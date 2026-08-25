@@ -220,6 +220,7 @@ class FactoryRunOrchestrator(
             ),
             objective = redactedPrompt
         )
+        var repairWasExecuted = false
         val generatedProject = try {
             recorder.recordFileMutation(
                 runId = plan.id,
@@ -265,6 +266,7 @@ class FactoryRunOrchestrator(
                 // caller's existing bounded path; its evidence is checked
                 // by FactoryAcceptanceFreeze below. Without this authority
                 // the run failed closed above; no repair success is inferred.
+                repairWasExecuted = true
                 suppliedRepairEvidence = repairAction(plan, plannedPath, failure, acceptanceFreeze)
                 AppProjectGenerator(repoRoot).generateApp(
                     plan.projectSpec,
@@ -359,8 +361,8 @@ class FactoryRunOrchestrator(
         )
         recorder.recordRepair(
             runId = plan.id,
-            state = "NOT_NEEDED",
-            verification = "passed",
+            state = if (repairWasExecuted) "REENTERED_OBLIGATION_LOOP" else "NOT_NEEDED",
+            verification = if (repairWasExecuted) "repair_evidence_recorded" else "passed",
             dagId = planningDag.id,
             promptFingerprint = lineage.promptFingerprint
         )
