@@ -17,7 +17,9 @@ import atropos.core.policy.AgencyDisposition
 import atropos.core.policy.BoundedAgencyGate
 import atropos.core.policy.BoundedProcessRunner
 import atropos.core.policy.TypedToolExecutor
+import atropos.core.security.DefaultSecretSource
 import atropos.core.security.RedactionFilter
+import atropos.core.security.SecretSource
 import atropos.core.security.SecretSinkKind
 import atropos.core.security.SecretSinkMatrix
 
@@ -74,7 +76,8 @@ class McpHostManager(
     ),
     private val processRunner: BoundedProcessRunner = BoundedProcessRunner(),
     private val remoteRequest: ((McpServerConfig, String) -> String)? = null,
-    private val toolExecutor: TypedToolExecutor = TypedToolExecutor()
+    private val toolExecutor: TypedToolExecutor = TypedToolExecutor(),
+    private val secretSource: SecretSource = DefaultSecretSource.create()
 ) {
     private val configPath = root.resolve("mcp.json").normalize()
     private val evidenceRoot = root.resolve(".atropos/mcp/evidence").normalize()
@@ -214,7 +217,7 @@ class McpHostManager(
                 val process = processRunner.start(
                     listOf(command) + server.args,
                     root,
-                    environment = server.environment
+                    environment = runtimeEnvironment(server)
                 )
                 val worker = Executors.newSingleThreadExecutor()
                 try {
@@ -348,6 +351,20 @@ class McpHostManager(
     private fun supportedTransport(transport: String): Boolean =
         transport.lowercase() in setOf("stdio", "http", "sse", "streamable-http")
 
+    private fun runtimeEnvironment(server: McpServerConfig): Map<String, String> =
+        server.environment.mapValues { (name, value) ->
+            val reference = ENV_REFERENCE.matchEntire(value)?.groupValues?.getOrNull(1)
+            if (reference != null) {
+                secretSource.lookup(reference).value
+                    ?: error("MCP environment reference is not configured: $reference")
+            } else {
+                require(!SECRET_ENV_NAME.containsMatchIn(name)) {
+                    "MCP secret environment '$name' must use an environment or vault reference"
+                }
+                value
+            }
+        }
+
     private fun defaultProbe(server: McpServerConfig): McpHealth =
         if (server.remote) {
             val initialize = remoteExchange(server, "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{}}", DEFAULT_PROBE_RESPONSE_BYTES)
@@ -355,7 +372,7 @@ class McpHostManager(
             val toolsList = remoteExchange(server, "{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/list\",\"params\":{}}", DEFAULT_PROBE_RESPONSE_BYTES)
             if (initialize.contains("\"id\":1") && toolsList.contains("\"id\":2")) McpHealth.HEALTHY else McpHealth.UNHEALTHY
         } else {
-            probeProcess(server, root, processRunner)
+            probeProcess(server, root, processRunner, runtimeEnvironment(server))
         }
 
     private fun remoteExchange(server: McpServerConfig, body: String, maxResponseBytes: Int): String {
@@ -437,17 +454,20 @@ class McpHostManager(
     private companion object {
         const val DEFAULT_PROBE_RESPONSE_BYTES = 64 * 1024
         const val DEFAULT_REMOTE_RESPONSE_BYTES = 256 * 1024
+        val ENV_REFERENCE = Regex("\\$\\{([A-Za-z_][A-Za-z0-9_]*)}")
+        val SECRET_ENV_NAME = Regex("(?i)(key|token|secret|password|credential|authorization)")
 
         fun probeProcess(
             server: McpServerConfig,
             root: Path,
-            processRunner: BoundedProcessRunner
+            processRunner: BoundedProcessRunner,
+            environment: Map<String, String>
         ): McpHealth {
             val command = server.command ?: return McpHealth.UNHEALTHY
             val process = processRunner.start(
                 listOf(command) + server.args,
                 root,
-                environment = server.environment
+                environment = environment
             )
             process.outputStream.bufferedWriter().use { writer ->
                 writer.write("{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{}}\n")

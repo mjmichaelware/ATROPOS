@@ -6,6 +6,7 @@ import atropos.core.policy.AgencyDisposition
 import atropos.core.policy.ExecutionPolicyDecision
 import atropos.core.policy.PolicyActionClass
 import atropos.core.policy.PolicyDecisionType
+import atropos.core.security.MapSecretSource
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -171,6 +172,24 @@ class McpHostManagerTest {
         McpHostManager(root).callTool("local", "inspect")
 
         assertEquals("bounded-value", Files.readString(marker))
+    }
+
+    @Test
+    fun secret_named_environment_must_reference_existing_secret_source() {
+        val root = Files.createTempDirectory("mcp-secret-env")
+        val script = root.resolve("mcp-secret-env.sh")
+        Files.writeString(script, "#!/bin/sh\nexit 0\n")
+        script.toFile().setExecutable(true)
+        Files.writeString(root.resolve("mcp.json"), """
+            {"servers":[{"name":"local","transport":"stdio","command":"./mcp-secret-env.sh",
+              "env":{"MCP_API_KEY":"literal-secret"},"enabled":true,"community":false}]}
+        """.trimIndent())
+
+        val failure = runCatching {
+            McpHostManager(root, secretSource = MapSecretSource(emptyMap())).callTool("local", "inspect")
+        }.exceptionOrNull()
+
+        assertTrue(failure?.message.orEmpty().contains("must use an environment or vault reference"))
     }
 
     @Test

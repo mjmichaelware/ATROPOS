@@ -1352,3 +1352,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-CORE-a/b generic stdio env configuration | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpConfigParser.kt`, `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt`, `scripts/backend-atom-contract-test.sh` | `mcp.json servers[].env` → sole `McpConfigParser` → `McpServerConfig.environment` → existing `BoundedProcessRunner.start(environment=…)` for probe and tool call | Generic MCP stdio configuration now accepts bounded, validated environment maps (32 names, 8192 chars/value) and passes them only through the existing bounded process owner; command/evidence render paths never include env values. Parser and runtime fixture coverage are hosted-selected; backend contract, hosted selector contract (440), shell syntax, and `git diff --check` pass. Hosted Kotlin execution remains unverified. |
+
+### 2026-08-25T14:25:00Z · Agent: Codex GPT-5 · Batch: mcp-secret-env-reference-boundary
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-CORE-a/b secret-safe stdio env resolution | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt`, `scripts/backend-atom-contract-test.sh` | MCP config → existing `McpHostManager.runtimeEnvironment()` → `DefaultSecretSource` env/vault precedence → bounded process environment | Secret-looking env names now reject literal config secrets and require `${NAME}` references resolved through the existing secret boundary; a focused refusal fixture covers the rule. Backend contract, hosted selector contract (440), shell syntax, and `git diff --check` pass. Hosted Kotlin execution remains unverified. |
