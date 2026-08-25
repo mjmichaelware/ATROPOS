@@ -52,7 +52,10 @@ class AdapterRouteFacade(
     private val classifier = ProviderTaskClassifier()
     private val agencyGate = BoundedAgencyGate()
     private val redactionFilter = RedactionFilter()
-    private val unavailableQueue by lazy { AgentQueueService() }
+    // Degraded/queued routing remains on the same provider policy path. The
+    // fallback must reuse the caller's inventory rather than discovering a
+    // second provider set while enqueueing unavailable work.
+    private val unavailableQueue by lazy { AgentQueueService(onboarding = onboarding) }
 
     fun decide(prompt: String, dryRun: Boolean = true): AdapterRouteResult {
         val task = classifier.classify(prompt)

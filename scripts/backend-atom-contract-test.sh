@@ -162,6 +162,7 @@ text src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt 'fun preferredP
 text src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt 'fun disable(providerId: String)'
 text src/main/kotlin/atropos/core/provider/adapter/AdapterRouteFacade.kt 'healthyProviderIds = { onboarding.healthyProviderIds() }'
 text src/main/kotlin/atropos/core/provider/adapter/AdapterRouteFacade.kt 'preferredProviderIds = { onboarding.preferredProviderIds() }'
+text src/main/kotlin/atropos/core/provider/adapter/AdapterRouteFacade.kt 'private val unavailableQueue by lazy { AgentQueueService(onboarding = onboarding) }'
 text src/main/kotlin/atropos/cli/RouteCommandHandler.kt 'onboarding = onboarding'
 text src/main/kotlin/atropos/cli/HistoryCommandHandler.kt 'historyStore.searchAll(HistoryQuery(limit = limit))'
 text src/main/kotlin/atropos/cli/HistoryCommandHandler.kt 'private fun toHistoryEntry(event: ExecutionEvent)'
