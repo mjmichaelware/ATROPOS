@@ -1292,3 +1292,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-PROV-001t provider truth alias parity | source-wired / partial | `src/main/kotlin/atropos/core/provider/ProviderConfigurationResolver.kt`, `src/test/kotlin/atropos/core/provider/ProviderConfigurationResolverTest.kt`, `scripts/backend-atom-contract-test.sh` | `ProviderTruthService` → `ProviderConfigurationResolver` → shared `ProviderEnvironmentAliases` | Provider truth now accepts the same namespace/alias contract as activation and adapters, with injectable environment input for deterministic hosted testing. Backend contract, hosted-selector contract (421), and diff check pass; root/hosted Kotlin execution remains pending. |
+
+### 2026-08-25T09:30:00Z · Agent: Codex GPT-5 · Batch: mcp-remote-call-sequence-proof
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-CORE-c/d/e remote call sequence | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt`, `scripts/backend-atom-contract-test.sh` | `/mcp call`/bridge → `McpHostManager.remoteCall()` → initialize → one initialized notification → tools/list → tools/call | The existing remote owner is now guarded by a four-request fixture and a CI assertion preventing duplicate initialized notifications. Backend contract, hosted-selector contract (421), and diff check pass; hosted Kotlin execution remains pending. |

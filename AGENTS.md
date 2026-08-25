@@ -13319,6 +13319,14 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; provider catalog remains source-wired / partial pending hosted execution.
 - Fingerprints (sha256, first 12): `ProviderConfigurationResolver.kt=b20bfa3d81fb`; `ProviderConfigurationResolverTest.kt=1bc242499c04`; `backend-atom-contract-test.sh=ef8bc59277bd`.
 
+### 2026-08-25T09:30:00Z · Agent: Codex GPT-5 · Batch: mcp-remote-call-sequence-proof
+- Paths touched: `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+4), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7). The production `McpHostManager` already had one initialized notification; this batch adds proof around that existing owner rather than creating another transport.
+- Atoms / phases affected: B-MCP-CORE-c/d/e remote call sequence.
+- Predicate moved: the existing remote MCP caller is now contract-checked as exactly initialize → one initialized notification → tools/list → tools/call, preventing duplicate protocol messages from reappearing.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh`, `bash scripts/hosted-test-selector-contract.sh` (`421 tests`), and `git diff --check` passed. Root/hosted Kotlin execution remains unverified; no root-green claim.
+- % delta: unchanged; remote MCP runtime remains source-wired / partial pending hosted execution.
+- Fingerprints (sha256, first 12): `McpHostManager.kt=6841ce173abf`; `McpHostManagerTest.kt=a9bd2e043be2`; `backend-atom-contract-test.sh=ec17c6761246`.
+
 ### 2026-08-25T08:00:00Z · Agent: Codex GPT-5 · Batch: provider-namespace-adapter-alias
 - Paths touched: `src/main/kotlin/atropos/core/provider/adapter/AdapterRegistry.kt` (+5), `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` (+12), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7).
 - Atoms / phases affected: B-PROV-001t provider namespace scan reaching live adapter configuration.

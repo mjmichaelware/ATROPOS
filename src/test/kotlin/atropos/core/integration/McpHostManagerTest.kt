@@ -382,7 +382,10 @@ class McpHostManagerTest {
             remoteRequest = { _, body -> requests += body; "{\"jsonrpc\":\"2.0\",\"id\":3,\"result\":{\"content\":[{\"text\":\"ok\"}]}}" }
         ).callTool("remote", "inspect")
 
-        assertEquals(3, requests.size)
+        assertEquals(4, requests.size)
+        assertTrue(requests[0].contains("\"method\":\"initialize\""))
+        assertTrue(requests[1].contains("notifications/initialized"))
+        assertTrue(requests[2].contains("\"method\":\"tools/list\""))
         assertTrue(requests.last().contains("tools/call"))
         assertTrue(requests.last().contains("\"name\":\"inspect\""))
         assertTrue(requests.last().contains("\"arguments\":{}"))
