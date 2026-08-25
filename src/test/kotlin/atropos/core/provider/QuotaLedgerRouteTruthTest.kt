@@ -33,6 +33,27 @@ class QuotaLedgerRouteTruthTest {
     }
 
     @Test
+    fun verified_predicate_cost_is_persisted_only_from_explicit_verification_caller() {
+        val temp = Files.createTempDirectory("atropos-quota-predicate")
+        val registry = StaticProviderDescriptorRegistry()
+        val seed = FileQuotaLedger.seedFromDescriptors(registry)
+        val file = temp.resolve("quota.tsv").toFile()
+        val ledger = FileQuotaLedger(file, seed)
+        ledger.put(readyRemote(seed, "groq"))
+
+        assertEquals(null, ledger.get("groq")?.costPerVerifiedPredicateTokens)
+        ledger.recordVerifiedPredicate(
+            "groq",
+            "provider_activation_live_probe",
+            ProviderUsage(inputTokens = 7, outputTokens = 5)
+        )
+
+        val reopened = FileQuotaLedger(file, seed)
+        assertEquals(1, reopened.get("groq")?.verifiedPredicateCount)
+        assertEquals(12.0, reopened.get("groq")?.costPerVerifiedPredicateTokens)
+    }
+
+    @Test
     fun quota_backup_copies_live_ledger_instead_of_descriptor_seed() {
         val root = Files.createTempDirectory("atropos-quota-backup")
         val registry = StaticProviderDescriptorRegistry()

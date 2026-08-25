@@ -40,6 +40,7 @@ class QuotaProjectionTest {
         assertTrue(json.contains("\"quotaWeight\":1"))
         assertTrue(json.contains("\"latencyMsAvg\":42"))
         assertTrue(json.contains("\"successScore\":0.75"))
+        assertTrue(json.contains("\"costPerVerifiedPredicateTokens\":null"))
         assertTrue(json.contains("\"lastErrorClass\":\"timeout\""))
         assertTrue(!json.contains("api_key", ignoreCase = true))
     }
@@ -58,11 +59,17 @@ class QuotaProjectionTest {
             "groq",
             ProviderUsage(inputTokens = 2, outputTokens = 3, latencyMs = 1, remainingRequests = 17, remainingTokens = 900)
         )
+        ledger.recordVerifiedPredicate(
+            "groq",
+            "provider_activation_live_probe",
+            ProviderUsage(inputTokens = 2, outputTokens = 3, latencyMs = 1)
+        )
 
         val reopened = atropos.core.provider.FileQuotaLedger(file, seed)
         val json = QuotaProjection(registry, reopened).render()
         assertTrue(json.contains("\"remainingRequests\":17"), json)
         assertTrue(json.contains("\"remainingTokens\":900"), json)
+        assertTrue(json.contains("\"costPerVerifiedPredicateTokens\":5.0"), json)
         assertEquals(1L, reopened.get("groq")?.latencyMsAvg)
     }
 }

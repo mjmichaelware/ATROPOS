@@ -26,8 +26,15 @@ data class ProviderQuotaRecord(
     val lastErrorSummary: String? = null,
     val latencyMsAvg: Long? = null,
     val successScore: Double = 0.0,
+    val verifiedPredicateCount: Int = 0,
+    val verifiedPredicateTokens: Int = 0,
     val paidLocked: Boolean = costMode == CostMode.PAID_LOCKED
 ) {
+    val costPerVerifiedPredicateTokens: Double?
+        get() = verifiedPredicateCount.takeIf { it > 0 }?.let {
+            verifiedPredicateTokens.toDouble() / it
+        }
+
     fun availableAt(nowEpochMs: Long): Boolean =
         when (state) {
             ProviderAvailabilityState.READY,
@@ -53,6 +60,12 @@ interface QuotaLedger {
     fun put(record: ProviderQuotaRecord)
     fun all(): List<ProviderQuotaRecord>
     fun recordSuccess(providerId: String, usage: ProviderUsage, nowEpochMs: Long = System.currentTimeMillis())
+    fun recordVerifiedPredicate(
+        providerId: String,
+        predicateId: String,
+        usage: ProviderUsage,
+        nowEpochMs: Long = System.currentTimeMillis()
+    )
     fun recordFailure(providerId: String, failure: ProviderFailure, nowEpochMs: Long = System.currentTimeMillis())
 }
 
@@ -76,6 +89,20 @@ class InMemoryQuotaLedger(seed: List<ProviderQuotaRecord> = emptyList()) : Quota
             successScore = (current.successScore + 0.1).coerceAtMost(1.0),
             lastErrorClass = null,
             lastErrorSummary = null
+        )
+    }
+    override fun recordVerifiedPredicate(
+        providerId: String,
+        predicateId: String,
+        usage: ProviderUsage,
+        nowEpochMs: Long
+    ) {
+        require(predicateId.isNotBlank()) { "verified predicate id must not be blank" }
+        val current = records[providerId] ?: return
+        records[providerId] = current.copy(
+            verifiedPredicateCount = current.verifiedPredicateCount + 1,
+            verifiedPredicateTokens = current.verifiedPredicateTokens +
+                usage.inputTokens + usage.outputTokens
         )
     }
     override fun recordFailure(providerId: String, failure: ProviderFailure, nowEpochMs: Long) {
@@ -108,6 +135,7 @@ class FileQuotaLedger(private val file: File, seed: List<ProviderQuotaRecord> = 
     override fun put(record: ProviderQuotaRecord) { memory.put(record); persist() }
     override fun all() = memory.all()
     override fun recordSuccess(providerId: String, usage: ProviderUsage, nowEpochMs: Long) { memory.recordSuccess(providerId, usage, nowEpochMs); persist() }
+    override fun recordVerifiedPredicate(providerId: String, predicateId: String, usage: ProviderUsage, nowEpochMs: Long) { memory.recordVerifiedPredicate(providerId, predicateId, usage, nowEpochMs); persist() }
     override fun recordFailure(providerId: String, failure: ProviderFailure, nowEpochMs: Long) { memory.recordFailure(providerId, failure, nowEpochMs); persist() }
     private fun persist() {
         file.parentFile?.mkdirs()
@@ -129,7 +157,9 @@ class FileQuotaLedger(private val file: File, seed: List<ProviderQuotaRecord> = 
                 r.paidLocked,
                 r.remainingRequests ?: "",
                 r.remainingTokens ?: "",
-                r.latencyMsAvg ?: ""
+                r.latencyMsAvg ?: "",
+                r.verifiedPredicateCount,
+                r.verifiedPredicateTokens
             ).joinToString("\t") { value ->
                 value.toString().replace('\t', ' ').replace('\n', ' ').replace('\r', ' ')
             }
@@ -172,7 +202,9 @@ class FileQuotaLedger(private val file: File, seed: List<ProviderQuotaRecord> = 
                         lastErrorSummary = p[11].ifBlank { null },
                         latencyMsAvg = p.getOrNull(16)?.toLongOrNull(),
                         successScore = p[12].toDoubleOrNull() ?: 0.0,
-                        paidLocked = p[13].toBoolean()
+                        paidLocked = p[13].toBoolean(),
+                        verifiedPredicateCount = p.getOrNull(17)?.toIntOrNull() ?: 0,
+                        verifiedPredicateTokens = p.getOrNull(18)?.toIntOrNull() ?: 0
                     )
                 }.getOrNull()
             }
@@ -204,7 +236,8 @@ class QuotaLedgerBackup(
                     record.lastErrorClass ?: "", record.lastErrorSummary ?: "",
                     record.successScore, record.paidLocked,
                     record.remainingRequests ?: "", record.remainingTokens ?: "",
-                    record.latencyMsAvg ?: ""
+                    record.latencyMsAvg ?: "", record.verifiedPredicateCount,
+                    record.verifiedPredicateTokens
                 ).joinToString("\t")
             } + "\n"
         }

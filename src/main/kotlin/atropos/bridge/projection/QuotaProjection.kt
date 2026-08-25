@@ -35,6 +35,8 @@ class QuotaProjection(
                     "cooldownUntilEpochMs" to (record.cooldownUntilEpochMs?.let(JsonWriter::num) ?: "null"),
                     "latencyMsAvg" to (record.latencyMsAvg?.let(JsonWriter::num) ?: "null"),
                     "successScore" to JsonWriter.num(record.successScore),
+                    "verifiedPredicateCount" to JsonWriter.num(record.verifiedPredicateCount),
+                    "costPerVerifiedPredicateTokens" to (record.costPerVerifiedPredicateTokens?.let(JsonWriter::num) ?: "null"),
                     "lastErrorClass" to (record.lastErrorClass?.let(JsonWriter::str) ?: "null"),
                     "paidLocked" to JsonWriter.bool(record.paidLocked)
                 )

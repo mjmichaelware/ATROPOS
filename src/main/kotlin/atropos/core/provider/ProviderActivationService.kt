@@ -200,6 +200,11 @@ class ProviderActivationService(
         val state = when (result) {
             is ProviderCallResult.Success -> {
                 quotaLedger.recordSuccess(descriptor.id, result.usage.copy(latencyMs = result.usage.latencyMs.coerceAtLeast(1)))
+                quotaLedger.recordVerifiedPredicate(
+                    providerId = descriptor.id,
+                    predicateId = "provider_activation_live_probe",
+                    usage = result.usage
+                )
                 ProviderActivationState.VERIFIED
             }
             is ProviderCallResult.LocalOnly -> ProviderActivationState.READY

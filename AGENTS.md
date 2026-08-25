@@ -13337,6 +13337,16 @@ Local verification note for this batch: `timeout 120s ./gradlew test --tests 'at
 - New overall estimate: unchanged.
 - Fingerprints (sha256, first 12): `ProviderOnboarding.kt=ae1d0a43f755`; `ProviderWorkerDirector.kt=da80a59aa461`; `ProviderWorkerDirectorTest.kt=df5c07766a84`; `backend-atom-contract-test.sh=94b270c37f60`.
 
+### 2026-08-25T17:35:00Z · Agent: Codex GPT-5 · Batch: quota-verified-predicate-projection
+
+- Paths touched: `src/main/kotlin/atropos/core/provider/QuotaLedger.kt` (+39/-1), `src/main/kotlin/atropos/core/provider/ProviderActivationService.kt` (+5), `src/main/kotlin/atropos/bridge/projection/QuotaProjection.kt` (+2), `src/test/kotlin/atropos/bridge/QuotaProjectionTest.kt` (+7), `src/test/kotlin/atropos/core/provider/QuotaLedgerRouteTruthTest.kt` (+21), `scripts/backend-atom-contract-test.sh` (+3), `AGENTS.md` (+7), `STATUS-BACKEND.md` (+1).
+- Atoms / phases affected: P15 quota ledger visible API and verified-predicate cost accounting.
+- Predicate moved: the existing durable quota ledger now records explicit verified-predicate observations from the live provider activation probe, persists their token cost, and projects `costPerVerifiedPredicateTokens`; unmeasured providers remain `null` rather than receiving a synthetic zero.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh` (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (440 tests)`), and `git diff --check` passed. Root/hosted Kotlin execution remains unverified; no green claim.
+- % delta: unchanged; P15 remains source-wired / partial pending hosted Kotlin tests and broader predicate-event integration.
+- New overall estimate: unchanged.
+- Fingerprints (sha256, first 12): pending until scoped commit; unrelated `docs/completion/*` remains unstaged and untouched.
+
 ### 2026-08-25T12:45:00Z · Agent: Codex GPT-5 · Batch: imported-context-authority-contract
 
 - Paths touched: `scripts/backend-atom-contract-test.sh` (+5).
