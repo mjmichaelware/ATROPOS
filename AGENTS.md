@@ -13305,6 +13305,16 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprints: `McpHostManager.kt=6841ce173abf`; `backend-atom-contract-test.sh=b8df832844bc`.
 
+### 2026-08-25T07:20:00Z · Agent: Codex GPT-5 · Batch: mcp-probe-handshake-test-proof
+
+- Paths touched: `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+6), `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: ADD-MCP-001 probe sequence regression test.
+- Predicate moved: remote HTTP and SSE probe fixtures now require the three-message initialize → initialized → tools/list sequence, preventing a regression to the old incomplete probe protocol.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh`, `bash scripts/hosted-test-selector-contract.sh` (`421 tests`), and `git diff --check` passed. Hosted Gradle execution remains unverified.
+- % delta: unchanged; runtime probe remains source-wired/partial pending hosted execution.
+- New overall estimate: unchanged.
+- Fingerprints: `McpHostManagerTest.kt=9fdff3a705fe`; `backend-atom-contract-test.sh=82cb37547703`.
+
 ### 2026-08-25T00:00:00Z · Agent: Codex GPT-5 · Batch: installer-config-root-alignment
 
 - Paths touched: `src/main/kotlin/atropos/core/Config.kt` (+19/-3), `install.sh` (+1), `scripts/install-contract-test.sh` (+1), `scripts/backend-atom-contract-test.sh` (+3), `.github/workflows/compile-gate.yml` (+1), `scripts/atropos-verify-worktree.sh` (+1), `src/test/kotlin/atropos/core/ConfigTest.kt` (+25), `STATUS-BACKEND.md` (+7).

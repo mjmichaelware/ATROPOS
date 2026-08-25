@@ -406,7 +406,9 @@ class McpHostManagerTest {
         ).statuses().single()
 
         assertEquals(McpHealth.HEALTHY, status.health)
-        assertEquals(2, requests.size)
+        assertEquals(3, requests.size)
+        assertTrue(requests[1].contains("notifications/initialized"))
+        assertTrue(requests[2].contains("tools/list"))
     }
 
     @Test
@@ -426,7 +428,9 @@ class McpHostManagerTest {
         ).statuses().single()
 
         assertEquals(McpHealth.HEALTHY, status.health)
-        assertEquals(2, requests.size)
+        assertEquals(3, requests.size)
+        assertTrue(requests[1].contains("notifications/initialized"))
+        assertTrue(requests[2].contains("tools/list"))
     }
 
     @Test

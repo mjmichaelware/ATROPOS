@@ -102,6 +102,8 @@ text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'method\":\"tool
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'notifications/initialized'
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'remoteExchange(server, "{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}'
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'writer.write("{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}'
+text src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt 'assertEquals(3, requests.size)'
+text src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt 'requests[1].contains("notifications/initialized")'
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'processRunner.start(listOf(command) + server.args, root)'
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'if (server.remote)'
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'private fun postRemote'

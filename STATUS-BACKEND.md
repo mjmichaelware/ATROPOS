@@ -1268,3 +1268,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | ADD-MCP-001 / B-MCP-CORE-c probe handshake parity | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `scripts/backend-atom-contract-test.sh` | `/mcp list|test` and bridge status → `statuses()` → one initialized stdio/remote probe → `tools/list` health result | Health probes now send `notifications/initialized` on both supported transports, matching bounded tool calls. Backend contract and diff check pass; hosted MCP runtime execution remains unverified. |
+
+### 2026-08-25T07:20:00Z · Agent: Codex GPT-5 · Batch: mcp-probe-handshake-test-proof
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| ADD-MCP-001 probe sequence regression test | source-wired / partial | `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt`, `scripts/backend-atom-contract-test.sh` | hosted `McpHostManagerTest` HTTP/SSE probe fixtures → request capture → initialize/initialized/tools-list assertions | Focused remote and SSE probe fixtures now assert three requests and the initialized notification before tool discovery. Backend contract and diff check pass; hosted Gradle execution remains pending. |
