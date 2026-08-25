@@ -1718,3 +1718,9 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-PROV-002 `/agent self-host` cascade owner | source-wired / partial | `src/main/kotlin/atropos/cli/commands/SelfHostCommand.kt`, `src/main/kotlin/atropos/cli/commands/AgentCommand.kt`, `scripts/backend-atom-contract-test.sh` | `/agent self-host` → shared `AgentCommand` onboarding → `SelfHostCommand` → existing self-host service/DAG/cascade | CLI self-host start/resume/recover/verify paths now share the agent command provider inventory. Backend contract, hosted selector (`440 tests`), and diff check pass; hosted self-host runtime remains unverified. |
+
+### 2026-08-25T12:30:00Z · Agent: Codex GPT-5 · Batch: startup-selfhost-provider-owner
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-PROV-002 startup self-host continuation owner | source-wired / partial | `src/main/kotlin/atropos/Main.kt`, `src/main/kotlin/atropos/core/agent/SelfHostStartupContinuationService.kt`, `scripts/backend-atom-contract-test.sh` | startup provider refresh → `SelfHostStartupContinuationService(onboarding=...)` → existing `SelfHostGoalService`/DAG recovery | Automatic post-crash self-host continuation now uses the launch provider inventory instead of constructing a separate self-host provider owner. Backend contract, hosted selector (`440 tests`), and diff check pass; hosted startup recovery remains unverified. |

@@ -131,7 +131,7 @@ fun main(args: Array<String>) {
             .decide(continuityOutcome.safeForSelfHostContinuation)
         continuation.message?.let(ui::renderNotice)
         if (continuation.continued) {
-            SelfHostStartupContinuationService()
+            SelfHostStartupContinuationService(onboarding = providerOnboarding)
                 .continueOnce(true)
                 .takeIf { it.attempted }
                 ?.let { result ->

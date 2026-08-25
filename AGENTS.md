@@ -13433,6 +13433,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; B-PROV-002/self-host remains source-wired/partial pending hosted runtime evidence.
 - Fingerprints (sha256, full): `SelfHostCommand.kt=f0b79155c9b08c62c081140c764fb1b9e7fbd4c05dc72032f38a88dc5383fd8c`; `AgentCommand.kt=ce2f97a8dea21cf62bed012bebe2cef5135d7ffed69722cff0e5e198fdc5f2da`; `backend-atom-contract-test.sh=6695e9b8027fa4e31668be4c734a75c251215eec53713d3801e35505968fe3fc`.
 
+### 2026-08-25T12:30:00Z · Agent: Codex GPT-5 · Batch: startup-selfhost-provider-owner
+
+- Paths touched: `src/main/kotlin/atropos/Main.kt` (+1/-1), `src/main/kotlin/atropos/core/agent/SelfHostStartupContinuationService.kt` (+3/-1), `scripts/backend-atom-contract-test.sh` (+2).
+- Atoms / phases affected: B-PROV-002 startup self-host continuation and crash recovery composition.
+- Predicate moved: automatic startup continuation now passes the single launch onboarding owner into `SelfHostGoalService`, so a recovered goal uses the same health/preference inventory as the rest of the session.
+- Verification actually run: backend atom contract, hosted selector contract (`440 tests`), and `git diff --check` passed. Root/hosted startup recovery execution remains unverified; no runtime-green claim.
+- % delta: unchanged; B-PROV-002/startup recovery remains source-wired/partial pending hosted runtime evidence.
+- Fingerprints (sha256, full): `Main.kt=16df27ed8ffda8e0e370feea2da23bc6399e05d6a8343face7d042b937650a6f`; `SelfHostStartupContinuationService.kt=064111dc8ffa6ec02d1d24142be416b90518acc86f03abcd8669c04d6e3fca3d`; `backend-atom-contract-test.sh=24b55e5c6666d29f818833741718340bbfae0e4cd147e23e6f306755c4227f80`.
+
 ### 2026-08-25T07:20:00Z · Agent: Codex GPT-5 · Batch: mcp-probe-handshake-test-proof-append
 
 - Paths touched: `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+6), `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+7).

@@ -1,6 +1,7 @@
 package atropos.core.agent
 
 import java.util.concurrent.atomic.AtomicBoolean
+import atropos.core.provider.ProviderOnboardingService
 
 data class SelfHostStartupContinuationResult(
     val attempted: Boolean,
@@ -10,7 +11,8 @@ data class SelfHostStartupContinuationResult(
 
 /** Advances one unfinished self-host goal after process-start recovery. */
 class SelfHostStartupContinuationService(
-    private val selfHostService: SelfHostGoalService = SelfHostGoalService(),
+    private val onboarding: ProviderOnboardingService = ProviderOnboardingService(),
+    private val selfHostService: SelfHostGoalService = SelfHostGoalService(onboarding = onboarding),
     private val hasUnfinishedGoals: () -> Boolean = {
         selfHostService.loadUnfinishedGoals().isNotEmpty()
     },
