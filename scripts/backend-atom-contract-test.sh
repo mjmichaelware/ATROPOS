@@ -93,6 +93,8 @@ text src/main/kotlin/atropos/core/dag/DagExecutionService.kt 'onboarding = onboa
 text src/main/kotlin/atropos/cli/commands/AgentCommand.kt 'DagExecutionService(config, onboarding = providerOnboarding)'
 text src/main/kotlin/atropos/bridge/BridgeCommandRunner.kt 'providerOnboarding = onboarding'
 text src/main/kotlin/atropos/bridge/AtroposBridge.kt 'BridgeCommandRunner('
+text src/main/kotlin/atropos/core/agent/SelfHostGoalService.kt 'onboarding = onboarding'
+text src/main/kotlin/atropos/bridge/AtroposBridge.kt 'SelfHostGoalService('
 text src/main/kotlin/atropos/cli/StatusCommandHandler.kt 'healthyProviderIds = providerOnboarding::healthyProviderIds'
 text src/main/kotlin/atropos/cli/ui/StatusQuotaRenderer.kt 'preferredProviderIds = { onboarding.preferredProviderIds() }'
 text src/main/kotlin/atropos/core/agent/AgentService.kt 'healthyProviderIds = { onboarding.healthyProviderIds() }'
