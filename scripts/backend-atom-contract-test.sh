@@ -264,6 +264,8 @@ text src/main/kotlin/atropos/cli/BackendDoctor.kt 'private val mcp: McpHostManag
 text src/main/kotlin/atropos/cli/McpCommandHandler.kt 'private val manager: McpHostManager'
 text src/main/kotlin/atropos/cli/McpCommandHandler.kt 'redactionFilter.redact(result.response.take(8_000))'
 text src/main/kotlin/atropos/bridge/BridgeMcpHandler.kt 'JsonWriter.str(redactionFilter.redact(result.response))'
+text src/main/kotlin/atropos/bridge/BridgeCommandHandler.kt 'JsonWriter.str(redactionFilter.redact(output.text))'
+text src/main/kotlin/atropos/cli/CiCommandHandler.kt 'redactionFilter.redact("job ${result.item.id} exit=${result.exitCode}\n${result.outputTail}")'
 text src/main/kotlin/atropos/bridge/projection/QuotaProjection.kt '"latencyMsAvg"'
 text src/main/kotlin/atropos/bridge/projection/QuotaProjection.kt '"successScore"'
 text src/main/kotlin/atropos/bridge/projection/QuotaProjection.kt '"costPerVerifiedPredicateTokens"'

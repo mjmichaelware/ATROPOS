@@ -91,7 +91,7 @@ internal class BridgeCommandHandler(
                     JsonWriter.obj(
                         "ok" to JsonWriter.bool(true),
                         "command" to JsonWriter.str(verdict.normalized),
-                        "output" to JsonWriter.str(output.text),
+                        "output" to JsonWriter.str(redactionFilter.redact(output.text)),
                         "exited" to JsonWriter.bool(output.exited)
                     )
                 )
