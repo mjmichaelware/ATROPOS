@@ -109,6 +109,8 @@ text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'writer.write("{
 text src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt 'assertEquals(3, requests.size)'
 text src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt 'requests[1].contains("notifications/initialized")'
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'processRunner.start(listOf(command) + server.args, root)'
+text src/main/kotlin/atropos/bridge/projection/QuotaProjection.kt '"latencyMsAvg"'
+text src/main/kotlin/atropos/bridge/projection/QuotaProjection.kt '"successScore"'
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'if (server.remote)'
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'private fun postRemote'
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'HttpClient.Redirect.NEVER'

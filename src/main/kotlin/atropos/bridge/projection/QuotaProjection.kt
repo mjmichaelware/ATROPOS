@@ -23,6 +23,7 @@ class QuotaProjection(
                 JsonWriter.obj(
                     "id" to JsonWriter.str(descriptor.id),
                     "billingClass" to JsonWriter.str(descriptor.billingClass().name),
+                    "quotaWeight" to JsonWriter.num(record.quotaWeight),
                     "state" to JsonWriter.str(record.state.name),
                     "configured" to JsonWriter.bool(record.configured),
                     "verified" to JsonWriter.bool(record.verified),
@@ -32,6 +33,9 @@ class QuotaProjection(
                     "remainingTokens" to (record.remainingTokens?.let(JsonWriter::num) ?: "null"),
                     "resetAtEpochMs" to (record.resetAtEpochMs?.let(JsonWriter::num) ?: "null"),
                     "cooldownUntilEpochMs" to (record.cooldownUntilEpochMs?.let(JsonWriter::num) ?: "null"),
+                    "latencyMsAvg" to (record.latencyMsAvg?.let(JsonWriter::num) ?: "null"),
+                    "successScore" to JsonWriter.num(record.successScore),
+                    "lastErrorClass" to (record.lastErrorClass?.let(JsonWriter::str) ?: "null"),
                     "paidLocked" to JsonWriter.bool(record.paidLocked)
                 )
             }

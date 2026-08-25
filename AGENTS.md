@@ -13335,6 +13335,14 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; remote MCP runtime remains source-wired / partial pending hosted execution.
 - Fingerprints (sha256, first 12): `McpHostManagerTest.kt=5f10aea7a072`.
 
+### 2026-08-25T10:30:00Z · Agent: Codex GPT-5 · Batch: quota-projection-metrics
+- Paths touched: `src/main/kotlin/atropos/bridge/projection/QuotaProjection.kt` (+4), `src/test/kotlin/atropos/bridge/QuotaProjectionTest.kt` (+8), `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: P15 quota ledger visible API.
+- Predicate moved: the existing `/v1/quota` projection now exposes persisted quota weight, latency average, success score, and redacted last-error class without exposing credentials or creating a second metrics owner.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh`, `bash scripts/hosted-test-selector-contract.sh` (`421 tests`), and `git diff --check` passed. Root/hosted Kotlin execution remains unverified; no root-green claim.
+- % delta: unchanged; P15 remains source-wired / partial because hosted execution and an authoritative cost-per-verified-predicate ledger are still absent.
+- Fingerprints (sha256, first 12): `QuotaProjection.kt=d5d4c3d25c1c`; `QuotaProjectionTest.kt=8cdf8925858e`; `backend-atom-contract-test.sh=e4887fbd2754`.
+
 ### 2026-08-25T08:00:00Z · Agent: Codex GPT-5 · Batch: provider-namespace-adapter-alias
 - Paths touched: `src/main/kotlin/atropos/core/provider/adapter/AdapterRegistry.kt` (+5), `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` (+12), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7).
 - Atoms / phases affected: B-PROV-001t provider namespace scan reaching live adapter configuration.

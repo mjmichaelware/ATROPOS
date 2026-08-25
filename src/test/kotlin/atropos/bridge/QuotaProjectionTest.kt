@@ -27,13 +27,20 @@ class QuotaProjectionTest {
                     verified = true,
                     state = ProviderAvailabilityState.READY,
                     usedRequests = 2,
-                    usedTokens = 123
+                    usedTokens = 123,
+                    latencyMsAvg = 42,
+                    successScore = 0.75,
+                    lastErrorClass = "timeout"
                 )
             )
         )
         val json = QuotaProjection(registry, ledger).render()
         assertTrue(json.contains("\"id\":\"groq\""))
         assertTrue(json.contains("\"usedTokens\":123"))
+        assertTrue(json.contains("\"quotaWeight\":1"))
+        assertTrue(json.contains("\"latencyMsAvg\":42"))
+        assertTrue(json.contains("\"successScore\":0.75"))
+        assertTrue(json.contains("\"lastErrorClass\":\"timeout\""))
         assertTrue(!json.contains("api_key", ignoreCase = true))
     }
 

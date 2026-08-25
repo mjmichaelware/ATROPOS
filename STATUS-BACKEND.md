@@ -1304,3 +1304,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-CORE-c/d/e remote fixture fidelity | source-wired / partial | `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` | hosted `McpHostManagerTest.allowlisted_http_server_uses_the_same_evidence_and_call_gate` → injected remote transport → method-specific JSON-RPC responses | The remote fixture now returns matching ids/tools for initialize, tools/list, and tools/call, proving the production handshake/evidence path rather than accepting an invalid all-id-3 response. Backend contract, hosted-selector contract (421), and diff check pass; hosted Kotlin execution remains pending. |
+
+### 2026-08-25T10:30:00Z · Agent: Codex GPT-5 · Batch: quota-projection-metrics
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| P15 quota metrics projection | source-wired / partial | `src/main/kotlin/atropos/bridge/projection/QuotaProjection.kt`, `src/test/kotlin/atropos/bridge/QuotaProjectionTest.kt`, `scripts/backend-atom-contract-test.sh` | provider ledger → existing `QuotaProjection` → `/v1/quota` and `/v1/status` | The existing quota API now exposes persisted quota weight, average latency, success score, and redacted last-error class alongside balances and billing state. Backend contract, hosted-selector contract (421), and diff check pass; hosted Kotlin execution remains pending. Cost-per-verified-predicate is still absent because no authoritative predicate-cost ledger exists. |
