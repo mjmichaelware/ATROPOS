@@ -105,11 +105,11 @@ class ProviderOnboardingTest {
             environment = mapOf(
                 "AWS_ACCESS_KEY_ID" to "access",
                 "AWS_SECRET_ACCESS_KEY" to "secret",
-                "AWS_REGION" to "us-east-1"
+                "AWS_DEFAULT_REGION" to "us-east-1"
             )
         ).refresh().associateBy { it.providerId }
         assertEquals(CheapProviderHealth.HEALTHY, records.getValue("aws_bedrock").health)
-        assertTrue(records.getValue("aws_bedrock").matchedEnvNames.contains("AWS_REGION"))
+        assertTrue(records.getValue("aws_bedrock").matchedEnvNames.contains("AWS_DEFAULT_REGION"))
     }
 
     @Test

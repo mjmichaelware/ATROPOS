@@ -29,21 +29,6 @@ class ProviderOnboardingService(
     private val configDir = configRoot.resolve("provider").normalize()
     private val configFile = configDir.resolve("providers.json")
     private val localVault = TokenIsolationVault(configRoot.resolve("secrets"))
-    private val aliases = linkedMapOf(
-        "openai" to listOf("OPENAI_API_KEY", "OPENAI_KEY", "OPENAI_TOKEN", "OPENAI_API_BASE"),
-        "anthropic" to listOf("ANTHROPIC_API_KEY", "ANTHROPIC_KEY", "CLAUDE_API_KEY", "CLAUDE_TOKEN"),
-        "groq" to listOf("GROQ_API_KEY", "GROQ_KEY", "GROQ_TOKEN"),
-        "xai" to listOf("XAI_API_KEY", "XAI_KEY", "GROK_API_KEY", "GROK_TOKEN"),
-        "gemini" to listOf("GEMINI_API_KEY", "GOOGLE_API_KEY", "GOOGLE_GEMINI_API_KEY"),
-        "openrouter" to listOf("OPENROUTER_API_KEY", "OPENROUTER_KEY"),
-        "together" to listOf("TOGETHER_API_KEY", "TOGETHERAI_API_KEY"),
-        "deepseek_direct" to listOf("DEEPSEEK_API_KEY", "DEEPSEEK_KEY"),
-        "mistral" to listOf("MISTRAL_API_KEY", "MISTRAL_TOKEN"),
-        "fireworks" to listOf("FIREWORKS_API_KEY", "FIREWORKS_AI_API_KEY"),
-        "azure_openai" to listOf("AZURE_OPENAI_API_KEY", "AZURE_API_KEY", "AZURE_OPENAI_ENDPOINT"),
-        "aws_bedrock" to listOf("AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_REGION", "AWS_DEFAULT_REGION", "AWS_PROFILE"),
-        "ollama" to listOf("OLLAMA_HOST", "OLLAMA_MODEL")
-    )
     private val aliasPrefixes = mapOf(
         "anthropic" to listOf("CLAUDE_"),
         "xai" to listOf("GROK_"),
@@ -55,10 +40,10 @@ class ProviderOnboardingService(
 
     fun refresh(): List<DiscoveredProvider> {
         val prior = readConfig()
-        val ids = (aliases.keys + registry.getAll().map { it.id } + genericProviderIds()).distinct()
+        val ids = (registry.getAll().map { it.id } + genericProviderIds()).distinct()
         val records = ids.map { id ->
             val descriptorEnv = registry.getById(id)?.requiredEnv.orEmpty()
-            val knownNames = (aliases[id].orEmpty() + descriptorEnv).distinct()
+            val knownNames = ProviderEnvironmentAliases.forProvider(id, descriptorEnv)
             val names = (knownNames.filter { !environment[it].isNullOrBlank() } +
                 knownNames.filter(::localSecretPresent) +
                 environment.keys.filter { key ->
@@ -158,8 +143,8 @@ class ProviderOnboardingService(
         return updated
     }
 
-    fun connectToVault(providerId: String, secret: String, envName: String = aliases[providerId]?.firstOrNull() ?: "${providerId.uppercase()}_API_KEY"): Path {
-        require(providerId in aliases || registry.getById(providerId) != null) { "unknown provider: $providerId" }
+    fun connectToVault(providerId: String, secret: String, envName: String = defaultEnvName(providerId)): Path {
+        require(registry.getById(providerId) != null) { "unknown provider: $providerId" }
         require(secret.isNotBlank()) { "provider secret must not be blank" }
         val path = localVault.writeSecret(envName, secret)
         refresh()
@@ -167,7 +152,8 @@ class ProviderOnboardingService(
     }
 
     fun defaultEnvName(providerId: String): String =
-        aliases[providerId]?.firstOrNull() ?: "${providerId.uppercase()}_API_KEY"
+        ProviderEnvironmentAliases.forProvider(providerId, registry.getById(providerId)?.requiredEnv.orEmpty())
+            .firstOrNull() ?: "${providerId.uppercase()}_API_KEY"
 
     fun render(): String = buildString {
         val rows = list()

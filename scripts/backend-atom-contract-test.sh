@@ -167,6 +167,8 @@ text src/main/kotlin/atropos/bridge/projection/QuotaProjection.kt '"successScore
 text src/main/kotlin/atropos/bridge/projection/QuotaProjection.kt '"costPerVerifiedPredicateTokens"'
 text src/main/kotlin/atropos/core/provider/QuotaLedger.kt 'recordVerifiedPredicate'
 text src/main/kotlin/atropos/core/provider/ProviderActivationService.kt 'provider_activation_live_probe'
+text src/main/kotlin/atropos/core/provider/ProviderEnvironmentAliases.kt 'fun forProvider'
+text src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt 'ProviderEnvironmentAliases.forProvider'
 text src/main/kotlin/atropos/core/provider/adapter/AdapterRouteFacade.kt 'ledger.recordSuccess'
 text src/main/kotlin/atropos/core/provider/adapter/AdapterRouteFacade.kt 'ledger.recordFailure'
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'if (server.remote)'

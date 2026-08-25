@@ -13357,6 +13357,16 @@ Local verification note for this batch: `timeout 120s ./gradlew test --tests 'at
 - New overall estimate: unchanged.
 - Fingerprints (sha256, first 12): `AdapterRouteFacade.kt=8776b6a4789f`; `backend-atom-contract-test.sh=378c0c1a1b16`; commit `4d2cb9b4`. Unrelated `docs/completion/*` remains unstaged and untouched.
 
+### 2026-08-25T18:20:00Z · Agent: Codex GPT-5 · Batch: provider-alias-owner-consolidation
+
+- Paths touched: `src/main/kotlin/atropos/core/provider/ProviderEnvironmentAliases.kt` (+24), `src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt` (-35/+8), `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` (+2/-2), `scripts/backend-atom-contract-test.sh` (+2), `AGENTS.md` (+7), `STATUS-BACKEND.md` (+1).
+- Atoms / phases affected: B-PROV-001a–u discovery aliases and B-PROV-004 connect naming.
+- Predicate moved: discovery and vault connect now use one shared alias owner; the onboarding service no longer contains a parallel provider alias registry. AWS default/profile region, OpenAI base, Ollama metadata, provider aliases, and descriptor-required environment names remain discoverable through the shared function.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh`, `bash scripts/provider-env-contract-test.sh`, `bash scripts/hosted-test-selector-contract.sh` (`440 tests`), and `git diff --check` passed. Root/hosted Kotlin execution remains unverified; no green claim.
+- % delta: unchanged; provider catalog remains source-wired / partial pending hosted execution.
+- New overall estimate: unchanged.
+- Fingerprints (sha256, first 12): pending until scoped commit; unrelated `docs/completion/*` remains unstaged and untouched.
+
 ### 2026-08-25T12:45:00Z · Agent: Codex GPT-5 · Batch: imported-context-authority-contract
 
 - Paths touched: `scripts/backend-atom-contract-test.sh` (+5).
