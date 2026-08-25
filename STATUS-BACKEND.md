@@ -1772,3 +1772,9 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-005 / secret-safe conversation and factory render | source-wired / partial | `src/main/kotlin/atropos/bridge/BridgeConversationHandler.kt`, `src/main/kotlin/atropos/cli/FactoryCommandHandler.kt`, `scripts/backend-atom-contract-test.sh` | bridge conversation projection and `/factory` output → existing `RedactionFilter` → JSON/terminal paint | Conversation turn text and factory result text now pass through their existing redaction filters immediately before rendering. Backend atom contract, hosted selector (`440 tests`), and diff check pass; hosted secret-fixture execution remains unverified. |
+
+### 2026-08-25T07:18:00Z · Agent: Codex GPT-5 · Batch: sentry-render-redaction
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-SENTRY / secret-safe issue listing render | source-wired / partial | `src/main/kotlin/atropos/cli/SentryCommandHandler.kt`, `scripts/backend-atom-contract-test.sh` | `/sentry list` → existing `SentryApiClient`/handler → `RedactionFilter` → terminal output | Sentry issue-list response bodies now pass through the handler redaction boundary immediately before rendering, in addition to API-client redaction. Backend atom contract, hosted selector (`440 tests`), and diff check pass; hosted/live Sentry secret-fixture execution remains unverified. |

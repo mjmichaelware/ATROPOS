@@ -31,7 +31,7 @@ class SentryCommandHandler(
                     "sentry unresolved organization=${project[0]} project=${project[1]}",
                     "status=${response.status}",
                     "evidence_sha256=${response.evidenceHash}",
-                    response.body
+                    redactionFilter.redact(response.body)
                 )
             }
             val issueId = tokens.getOrNull(2)?.takeIf(String::isNotBlank)

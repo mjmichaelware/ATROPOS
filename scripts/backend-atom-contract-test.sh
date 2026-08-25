@@ -268,6 +268,7 @@ text src/main/kotlin/atropos/bridge/BridgeCommandHandler.kt 'JsonWriter.str(reda
 text src/main/kotlin/atropos/cli/CiCommandHandler.kt 'redactionFilter.redact("job ${result.item.id} exit=${result.exitCode}\n${result.outputTail}")'
 text src/main/kotlin/atropos/bridge/BridgeConversationHandler.kt 'JsonWriter.str(redactionFilter.redact(turn.text))'
 text src/main/kotlin/atropos/cli/FactoryCommandHandler.kt 'uiEngine.renderNotice(redactionFilter.redact(result))'
+text src/main/kotlin/atropos/cli/SentryCommandHandler.kt 'redactionFilter.redact(response.body)'
 text src/main/kotlin/atropos/bridge/projection/QuotaProjection.kt '"latencyMsAvg"'
 text src/main/kotlin/atropos/bridge/projection/QuotaProjection.kt '"successScore"'
 text src/main/kotlin/atropos/bridge/projection/QuotaProjection.kt '"costPerVerifiedPredicateTokens"'

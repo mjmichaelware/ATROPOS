@@ -13524,6 +13524,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; B-005 remains source-wired/partial pending hosted execution.
 - Fingerprints (sha256, first 12): `BridgeConversationHandler.kt=9745a182b6af`; `FactoryCommandHandler.kt=da333d03a1ef`; `backend-atom-contract-test.sh=51ceb4dbc9f0`.
 
+### 2026-08-25T07:18:00Z · Agent: Codex GPT-5 · Batch: sentry-render-redaction
+
+- Paths touched: `src/main/kotlin/atropos/cli/SentryCommandHandler.kt` (+1/-1), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-MCP-SENTRY secret-safe issue-list rendering.
+- Predicate moved: `/sentry list` now applies the existing `RedactionFilter` immediately before terminal rendering; the Sentry API client remains the sole network/evidence owner.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh` (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (440 tests)`), and `git diff --check` passed. Root/hosted/live Sentry execution remains unverified.
+- % delta: unchanged; B-MCP-SENTRY remains source-wired/partial pending hosted/live evidence.
+- Fingerprints (sha256, first 12): `SentryCommandHandler.kt=aa97405f6a15`; `backend-atom-contract-test.sh=f2a2bb1f9462`.
+
 ### 2026-08-25T05:18:00Z · Agent: Codex GPT-5 · Batch: provider-chat-owner-injection
 
 - Paths touched: `src/main/kotlin/atropos/cli/CommandRouter.kt` (+2), `src/main/kotlin/atropos/cli/ProviderChatDispatcher.kt` (+4/-2), `scripts/backend-atom-contract-test.sh` (+2).
