@@ -1862,6 +1862,10 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
+| B-PROV-001g/h Google/Gemini alias transport | source-wired / partial | `src/main/kotlin/atropos/core/provider/adapter/GeminiKernelAdapter.kt`, `src/main/kotlin/atropos/core/provider/adapter/NonOpenAiFreeKernelAdapter.kt`, `src/test/kotlin/atropos/core/provider/ProviderFixtureMatrixServiceTest.kt`, `scripts/backend-atom-contract-test.sh` | provider discovery → existing native `GeminiKernelAdapter` and shared non-OpenAI adapter status → canonical alias resolver | `GOOGLE_API_KEY` and namespaced aliases now configure the native Gemini adapter instead of merely classifying discovery as healthy while transport later reported a missing canonical key. Hosted Kotlin execution remains unverified. |
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
 | B-PROV-001b OpenAI base endpoint consumption | source-wired / partial | `src/main/kotlin/atropos/core/provider/adapter/OpenAiCompatibleProviderCatalog.kt`, `src/main/kotlin/atropos/core/provider/adapter/OpenAiCompatibleKernelAdapter.kt`, `src/test/kotlin/atropos/core/provider/ProviderFixtureMatrixServiceTest.kt`, `scripts/backend-atom-contract-test.sh` | provider discovery → canonical OpenAI-compatible catalog → existing `OpenAiCompatibleKernelAdapter.liveComplete()` endpoint selection | `OPENAI_API_BASE` is now consumed by the existing OpenAI adapter transport when `OPENAI_API_KEY` is present; endpoint-only discovery remains `UNTESTED` and never becomes routable. Static backend contract and `git diff --check` are required; hosted Kotlin execution remains unverified. |
 
 | atom | status | files | caller | tests / notes |

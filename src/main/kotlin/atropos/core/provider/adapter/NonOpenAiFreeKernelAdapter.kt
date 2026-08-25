@@ -4,6 +4,7 @@ import atropos.core.provider.NormalizedProviderFailureType
 import atropos.core.provider.ProviderCallResult
 import atropos.core.provider.ProviderDescriptor
 import atropos.core.provider.ProviderFailure
+import atropos.core.provider.ProviderEnvironmentAliases
 import java.net.HttpURLConnection
 import java.util.Locale
 
@@ -21,7 +22,9 @@ internal abstract class NonOpenAiFreeKernelAdapter(
     override fun implemented(): Boolean = true
 
     override fun status(): AdapterStatus {
-        val configured = spec.requiredEnv.all { env[it].isNullOrBlank().not() }
+        val configured = spec.requiredEnv.all { required ->
+            ProviderEnvironmentAliases.names(required).any { env[it].isNullOrBlank().not() }
+        }
         return AdapterStatus(
             providerId = descriptor.id,
             implemented = true,

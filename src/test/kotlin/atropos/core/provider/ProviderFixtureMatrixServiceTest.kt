@@ -14,6 +14,7 @@ import atropos.core.provider.adapter.ProviderAdapter
 import atropos.core.provider.adapter.ProviderAdapterRegistry
 import atropos.core.provider.adapter.StaticProviderAdapterRegistry
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class ProviderFixtureMatrixServiceTest {
@@ -22,6 +23,17 @@ class ProviderFixtureMatrixServiceTest {
         val spec = OpenAiCompatibleProviderCatalog.get("openai")
 
         assertEquals("OPENAI_API_BASE", spec?.endpointEnv)
+    }
+
+    @Test
+    fun gemini_native_adapter_accepts_google_api_key_alias() {
+        val registry = StaticProviderDescriptorRegistry()
+        val adapter = StaticProviderAdapterRegistry(
+            registry,
+            env = mapOf("GOOGLE_API_KEY" to "fixture-secret")
+        ).getByProviderId("gemini")
+
+        assertTrue(adapter?.status()?.configured == true)
     }
 
     @Test

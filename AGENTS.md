@@ -15122,3 +15122,12 @@ Local verification note for this batch: `timeout 120s ./gradlew test --tests 'at
 - Verification actually run: not yet run in this batch; hosted selector and Kotlin execution remain required. No green claim.
 - % delta: unchanged; provider catalog remains source-wired/partial pending hosted execution.
 - Fingerprints: recorded after static verification.
+
+### 2026-08-25T19:20:00Z · Agent: Codex GPT-5 · Batch: gemini-alias-transport-owner
+
+- Paths touched: `src/main/kotlin/atropos/core/provider/adapter/GeminiKernelAdapter.kt` (+6/-1), `src/main/kotlin/atropos/core/provider/adapter/NonOpenAiFreeKernelAdapter.kt` (+4/-1), `src/test/kotlin/atropos/core/provider/ProviderFixtureMatrixServiceTest.kt` (+12), `scripts/backend-atom-contract-test.sh` (+1).
+- Atoms / phases affected: B-PROV-001g/h Google/Gemini alias transport.
+- Predicate moved: `GOOGLE_API_KEY` and namespaced Gemini aliases now configure the native Gemini adapter and its status projection, matching discovery rather than failing later on a canonical-name-only lookup.
+- Verification actually run: not yet run in this batch; hosted selector and Kotlin execution remain required. No green claim.
+- % delta: unchanged; provider catalog remains source-wired/partial pending hosted execution.
+- Fingerprints: recorded after static verification.

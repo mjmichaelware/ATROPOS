@@ -52,6 +52,7 @@ for provider_id in \
 done
 text src/main/kotlin/atropos/core/provider/adapter/BuildKernelAdapter.kt 'AnthropicKernelAdapter(descriptor'
 text src/main/kotlin/atropos/core/provider/adapter/BuildKernelAdapter.kt 'BedrockKernelAdapter(descriptor, env)'
+text src/main/kotlin/atropos/core/provider/adapter/GeminiKernelAdapter.kt 'ProviderEnvironmentAliases.names("GEMINI_API_KEY")'
 for provider_id in openai groq xai openrouter together fireworks deepseek_direct mistral cohere; do
   text src/main/kotlin/atropos/core/provider/adapter/OpenAiCompatibleProviderCatalog.kt "providerId = \"$provider_id\""
 done
