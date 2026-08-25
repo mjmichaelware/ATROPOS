@@ -13395,6 +13395,16 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprints: `Main.kt=35cd01f58f46`; `backend-atom-contract-test.sh=5ed530765d04`.
 
+### 2026-08-25T03:16:54Z · Agent: Codex GPT-5 · Batch: backend-contract-suite-audit
+
+- Paths touched: `STATUS-BACKEND.md` (+7), `AGENTS.md` (+7).
+- Atoms / phases affected: backend Tier-0 source wiring, provider/install/MCP/GHA contracts, and orphan-gate acceptance.
+- Predicate moved: the complete available local contract set was executed against the current tree; every contract passed, hosted selector parity remained 440 tests, and the orphan gate confirmed no newly orphaned production file.
+- Verification actually run: backend atom, provider-env, provider-connect, MCP example, npm installer, install, package installer, release installer, hosted selector, reusable action, reusable action path, clean-runner contracts, `git diff --check`, and `timeout 90s python3 scripts/find-orphans.py --fail-on-new` all passed. Orphan census remains four historical baseline files; hosted Gradle/runtime execution remains unverified.
+- % delta: unchanged; static source-wiring is green, but runtime/hosted evidence remains partial.
+- New overall estimate: unchanged.
+- Fingerprints: `backend-atom-contract-test.sh=5ed530765d04`; `STATUS-BACKEND.md=2cd14abe1754`; `AGENTS.md=4e0195138c82`.
+
 ### 2026-08-25T02:16:59Z · Agent: Codex GPT-5 · Batch: install-help-caller-contract
 - Paths touched: `scripts/backend-atom-contract-test.sh` (+16).
 - Atoms / phases affected: B-INST-001..005 and B-HELP-001..002 caller enforcement.

@@ -1499,6 +1499,12 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | --- | --- | --- | --- | --- |
 | B-HELP-001 top-level `-h`/`--help` | source-wired / partial | `src/main/kotlin/atropos/Main.kt`, `src/main/kotlin/atropos/cli/help/HelpGenerator.kt`, `src/main/kotlin/atropos/cli/input/CommandRegistry.kt`, `scripts/backend-atom-contract-test.sh` | process launch → `Main.main()` → existing registry-derived `HelpGenerator`/`HelpLevel.SUMMARY` | Backend, install, provider, hosted selector (440), shell syntax, and `git diff --check` pass. No second help catalogue was introduced; root/hosted Kotlin execution remains unverified. |
 
+### 2026-08-25T03:16:54Z · Agent: Codex GPT-5 · Batch: backend-contract-suite-audit
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| backend Tier-0 contract suite / orphan gate | source-wired / partial | `scripts/backend-atom-contract-test.sh`, `scripts/provider-env-contract-test.sh`, `scripts/provider-connect-contract-test.sh`, `scripts/mcp-example-contract-test.sh`, `scripts/npm-installer-contract-test.sh`, `scripts/install-contract-test.sh`, `scripts/package-installers-test.sh`, `scripts/release-installer-contract-test.sh`, `scripts/hosted-test-selector-contract.sh`, reusable-action contracts, `scripts/find-orphans.py` | GitHub compile/release lanes → canonical static contracts and orphan census | All 13 available contracts passed; hosted selector reports 440 tests; orphan gate exits 0 with only 4 historical baseline files (1045 production files / 362 orphan LOC). No new orphan or source-contract regression found. Hosted Gradle/runtime execution remains unverified. |
+
 ### 2026-08-25T03:50:00Z · Agent: Codex GPT-5 · Batch: generated-provider-readme-table
 
 | atom | status | files | caller | tests / notes |
