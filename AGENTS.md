@@ -13311,6 +13311,14 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; provider catalog remains source-wired / partial pending hosted execution.
 - Fingerprints (sha256, first 12): `ProviderEnvironmentAliases.kt=8c03ae463058`; `ProviderActivationService.kt=b33c88f662ff`; `AdapterRegistry.kt=d3f9b9a07b06`; `ProviderActivationServiceTest.kt=d57fa494917f`; `backend-atom-contract-test.sh=6ee741349ad9`.
 
+### 2026-08-25T09:00:00Z · Agent: Codex GPT-5 · Batch: provider-truth-namespace-alias
+- Paths touched: `src/main/kotlin/atropos/core/provider/ProviderConfigurationResolver.kt` (+25/-9), `src/test/kotlin/atropos/core/provider/ProviderConfigurationResolverTest.kt` (+20), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-PROV-001t provider truth alias parity.
+- Predicate moved: `ProviderTruthService` now accepts the same canonical/alias/`ATROPOS_PROVIDER_*` environment contract used by activation and adapters, so status truth cannot report a configured provider as missing solely because the operator used the supported namespace.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh`, `bash scripts/hosted-test-selector-contract.sh` (`421 tests`), and `git diff --check` passed. Root/hosted Kotlin execution and live provider calls remain unverified; no root-green claim.
+- % delta: unchanged; provider catalog remains source-wired / partial pending hosted execution.
+- Fingerprints (sha256, first 12): `ProviderConfigurationResolver.kt=b20bfa3d81fb`; `ProviderConfigurationResolverTest.kt=1bc242499c04`; `backend-atom-contract-test.sh=ef8bc59277bd`.
+
 ### 2026-08-25T08:00:00Z · Agent: Codex GPT-5 · Batch: provider-namespace-adapter-alias
 - Paths touched: `src/main/kotlin/atropos/core/provider/adapter/AdapterRegistry.kt` (+5), `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` (+12), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7).
 - Atoms / phases affected: B-PROV-001t provider namespace scan reaching live adapter configuration.
