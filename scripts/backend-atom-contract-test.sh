@@ -74,6 +74,8 @@ text src/main/kotlin/atropos/cli/CommandRouter.kt 'if (providerDiscoveryAlreadyR
 text src/main/kotlin/atropos/cli/CommandRouter.kt 'providerOnboarding.list()'
 text src/main/kotlin/atropos/cli/CommandRouter.kt 'ProviderCommandHandler(config, uiEngine, onboarding = providerOnboarding)'
 text src/main/kotlin/atropos/cli/ProviderCommandHandler.kt 'private val onboarding: ProviderOnboardingService'
+text src/main/kotlin/atropos/cli/ProviderChatDispatcher.kt 'healthyProviderIds = { onboarding.healthyProviderIds() }'
+text src/main/kotlin/atropos/cli/CommandRouter.kt 'onboarding = providerOnboarding'
 text src/main/kotlin/atropos/core/provider/SourceBindingFetcher.kt 'localOnly'
 text src/main/kotlin/atropos/core/provider/SourceBindingFetcher.kt 'disabled by localOnly'
 text src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt 'genericProviderIds'

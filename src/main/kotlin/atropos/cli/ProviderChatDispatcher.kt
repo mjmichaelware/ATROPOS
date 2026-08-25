@@ -36,6 +36,8 @@ class ProviderChatDispatcher(
         atropos.cli.ui.ProviderRelay(TerminalTheme(atropos.cli.config.ConfigurationManager())),
     private val alignmentHistory: () -> List<RewardLogEntry> = { emptyList() },
     private val alignmentSignal: (Boolean) -> Unit = {},
+    private val onboarding: atropos.core.provider.ProviderOnboardingService =
+        atropos.core.provider.ProviderOnboardingService(),
     /**
      * The chain walker. Injected so a test can drive the fallback without a
      * network, and shared with AgentService rather than reimplemented -- there
@@ -44,7 +46,7 @@ class ProviderChatDispatcher(
     private val cascadeRouter: atropos.core.ProviderCascadeRouter =
         atropos.core.ProviderCascadeRouter(
             atropos.core.ProviderFactory(config),
-            healthyProviderIds = { atropos.core.provider.ProviderOnboardingService().healthyProviderIds() },
+            healthyProviderIds = { onboarding.healthyProviderIds() },
             localOnly = { config.runtime.localOnly }
         )
 ) {

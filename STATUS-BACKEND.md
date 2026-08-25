@@ -1614,3 +1614,9 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-PROV-004 / single CLI onboarding owner | source-wired / partial | `src/main/kotlin/atropos/cli/CommandRouter.kt`, `src/main/kotlin/atropos/cli/ProviderCommandHandler.kt`, `scripts/backend-atom-contract-test.sh` | `Main.main()` → injected `ProviderOnboardingService` → `CommandRouter` → `/providers list|refresh|test|prefer|disable|connect` handler; explicit live-test result still reports through the same service | `/providers` no longer constructs a second onboarding service per command; existing positional constructor compatibility is preserved by adding the injected owner last. `bash scripts/backend-atom-contract-test.sh` and `git diff --check` pass. Root/hosted Kotlin execution remains unverified. |
+
+### 2026-08-25T05:18:00Z · Agent: Codex GPT-5 · Batch: provider-chat-owner-injection
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-PROV-002 / chat cascade discovery owner | source-wired / partial | `src/main/kotlin/atropos/cli/CommandRouter.kt`, `src/main/kotlin/atropos/cli/ProviderChatDispatcher.kt`, `scripts/backend-atom-contract-test.sh` | `CommandRouter` → `ProviderChatDispatcher` → existing `ProviderCascadeRouter` → injected `ProviderOnboardingService.healthyProviderIds()` | Natural-language chat no longer allocates a separate onboarding service for its cascade supplier; it shares the launch/CLI discovery owner. Backend atom contract and `git diff --check` pass. Root/hosted Kotlin execution remains unverified. |

@@ -154,7 +154,8 @@ class CommandRouter(
             } else {
                 store.recordPenalty("operator", "provider.chat", 1.0, "provider dispatch failed")
             }
-        }
+        },
+        onboarding = providerOnboarding
     )
 
     init {

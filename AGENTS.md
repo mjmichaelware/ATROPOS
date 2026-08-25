@@ -13335,6 +13335,16 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprints: `McpHostManagerTest.kt=9fdff3a705fe`; `backend-atom-contract-test.sh=82cb37547703`.
 
+### 2026-08-25T05:18:00Z · Agent: Codex GPT-5 · Batch: provider-chat-owner-injection
+
+- Paths touched: `src/main/kotlin/atropos/cli/CommandRouter.kt` (+2), `src/main/kotlin/atropos/cli/ProviderChatDispatcher.kt` (+4/-2), `scripts/backend-atom-contract-test.sh` (+2).
+- Atoms / phases affected: B-PROV-002 chat cascade health-source ownership.
+- Predicate moved: the natural-language chat cascade now reads healthy provider IDs from the same injected `ProviderOnboardingService` as launch and `/providers`; it no longer creates a separate onboarding service at dispatcher construction.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh` (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`) and `git diff --check` passed. Root/hosted Kotlin execution remains unverified.
+- % delta: unchanged; B-PROV-002 remains source-wired/partial pending hosted route execution.
+- New overall estimate: unchanged.
+- Fingerprints: `ProviderChatDispatcher.kt=e821d3608695`; `CommandRouter.kt=f021a3c93402`; `backend-atom-contract-test.sh=801d6b06b7ac`.
+
 ### 2026-08-25T05:11:34Z · Agent: Codex GPT-5 · Batch: provider-command-owner-injection
 
 - Paths touched: `src/main/kotlin/atropos/cli/CommandRouter.kt` (+1), `src/main/kotlin/atropos/cli/ProviderCommandHandler.kt` (+2/-2), `scripts/backend-atom-contract-test.sh` (+2).
