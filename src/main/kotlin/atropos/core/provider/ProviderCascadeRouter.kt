@@ -30,6 +30,7 @@ class ProviderCascadeRouter(
     private val localHealth: () -> Boolean = { OllamaHealthProbe().probe().online },
     private val providerResolver: ((String) -> AIProvider)? = null,
     private val healthyProviderIds: (() -> Set<String>)? = null,
+    private val preferredProviderIds: (() -> List<String>)? = null,
     private val localOnly: () -> Boolean = { AtroposConfig.load().runtime.localOnly },
     private val paidGate: EmergencyPaidGate = EmergencyPaidGate()
 ) {
@@ -215,7 +216,7 @@ class ProviderCascadeRouter(
             ?.split(",")
             ?.map { it.trim().lowercase() }
             ?.filter { it.isNotBlank() }
-            ?: ProviderOnboardingService().preferredProviderIds()
+            ?: preferredProviderIds?.invoke().orEmpty()
                 .ifEmpty { registry.getAll().map { it.id } }
 
         return ProviderCascadeOrder.order(

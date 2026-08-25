@@ -13385,6 +13385,16 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprints: `ExecutionHistoryStore.kt=7549fae6c7db`; `ExecutionHistoryStoreTest.kt=0e07675446e3`; `backend-atom-contract-test.sh=51ed5cbb941f`.
 
+### 2026-08-25T06:40:00Z · Agent: Codex GPT-5 · Batch: provider-cascade-preference-owner
+
+- Paths touched: `src/main/kotlin/atropos/core/provider/ProviderCascadeRouter.kt` (+2/-1), `src/main/kotlin/atropos/cli/ProviderChatDispatcher.kt` (+1), `src/main/kotlin/atropos/cli/CommandRouter.kt` (+1), `scripts/backend-atom-contract-test.sh` (+2).
+- Atoms / phases affected: B-PROV-002 health/preference cascade truth and B-PROV-004 preference control.
+- Predicate moved: CLI provider cascades now receive preference order from the canonical injected onboarding service instead of constructing a fresh inventory when no explicit environment order exists.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh` (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`) and `git diff --check` passed. Hosted Kotlin execution remains unverified.
+- % delta: unchanged; provider cascade remains source-wired/partial pending hosted execution.
+- New overall estimate: unchanged.
+- Fingerprints: `ProviderCascadeRouter.kt=db63a8291aa1`; `ProviderChatDispatcher.kt=3f3af27ee0e2`; `CommandRouter.kt=f97e3cf83af9`; `backend-atom-contract-test.sh=bb94d817d55a`.
+
 ### 2026-08-25T05:11:34Z · Agent: Codex GPT-5 · Batch: provider-command-owner-injection
 
 - Paths touched: `src/main/kotlin/atropos/cli/CommandRouter.kt` (+1), `src/main/kotlin/atropos/cli/ProviderCommandHandler.kt` (+2/-2), `scripts/backend-atom-contract-test.sh` (+2).

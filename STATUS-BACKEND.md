@@ -1644,3 +1644,9 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | backend observability history persistence | source-wired / partial | `src/main/kotlin/atropos/core/observability/ExecutionHistoryStore.kt`, `src/main/kotlin/atropos/core/journal/EventJournalService.kt`, `src/test/kotlin/atropos/core/observability/ExecutionHistoryStoreTest.kt`, `scripts/backend-atom-contract-test.sh` | `ExecutionHistoryStore.record(event)` → existing `EventJournalService.record()` → existing `HistoryIndex.rebuild()` | Replaced the no-op history extension with journal append plus index rebuild; restart fixture proves the recorded event is queryable. Backend atom contract, hosted selector (440 tests), and `git diff --check` pass. Hosted Kotlin execution remains unverified. |
+
+### 2026-08-25T06:40:00Z · Agent: Codex GPT-5 · Batch: provider-cascade-preference-owner
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-PROV-002/004 cascade preference source | source-wired / partial | `src/main/kotlin/atropos/core/provider/ProviderCascadeRouter.kt`, `src/main/kotlin/atropos/cli/ProviderChatDispatcher.kt`, `src/main/kotlin/atropos/cli/CommandRouter.kt`, `scripts/backend-atom-contract-test.sh` | CLI chat and side-conversation cascades → injected preferred-provider supplier → existing `ProviderCascadeOrder` | Provider cascades no longer allocate a fresh onboarding service when deriving preference order; both CLI callers share the launch inventory. Backend atom contract and `git diff --check` pass. Root/hosted Kotlin execution remains unverified. |

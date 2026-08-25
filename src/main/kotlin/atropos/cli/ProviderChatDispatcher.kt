@@ -47,6 +47,7 @@ class ProviderChatDispatcher(
         atropos.core.ProviderCascadeRouter(
             atropos.core.ProviderFactory(config),
             healthyProviderIds = { onboarding.healthyProviderIds() },
+            preferredProviderIds = { onboarding.preferredProviderIds() },
             localOnly = { config.runtime.localOnly }
         )
 ) {

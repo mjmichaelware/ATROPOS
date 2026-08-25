@@ -193,6 +193,7 @@ class CommandRouter(
         cascade = atropos.core.ProviderCascadeRouter(
             ProviderFactory(config),
             healthyProviderIds = { providerOnboarding.healthyProviderIds() },
+            preferredProviderIds = { providerOnboarding.preferredProviderIds() },
             localOnly = { config.runtime.localOnly }
         ),
         activeProvider = { currentProviderName }
