@@ -13,6 +13,7 @@ import atropos.core.provider.adapter.OpenAiCompatibleProviderCatalog
 import atropos.core.provider.adapter.ProviderAdapter
 import atropos.core.provider.adapter.ProviderAdapterRegistry
 import atropos.core.provider.adapter.StaticProviderAdapterRegistry
+import atropos.core.security.MapSecretSource
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -46,6 +47,18 @@ class ProviderFixtureMatrixServiceTest {
 
         assertTrue(adapters.getByProviderId("xai")?.status()?.configured == true)
         assertTrue(adapters.getByProviderId("anthropic")?.status()?.configured == true)
+    }
+
+    @Test
+    fun connected_catalog_secret_reaches_adapter_without_environment_export() {
+        val registry = StaticProviderDescriptorRegistry()
+        val adapters = StaticProviderAdapterRegistry(
+            registry,
+            env = emptyMap(),
+            secretSource = MapSecretSource(mapOf("COHERE_API_KEY" to "vault-secret"), "local_vault")
+        )
+
+        assertTrue(adapters.getByProviderId("cohere")?.status()?.configured == true)
     }
 
     @Test

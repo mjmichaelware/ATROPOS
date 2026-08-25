@@ -55,6 +55,7 @@ text src/main/kotlin/atropos/core/provider/adapter/BuildKernelAdapter.kt 'Bedroc
 text src/main/kotlin/atropos/core/provider/adapter/GeminiKernelAdapter.kt 'ProviderEnvironmentAliases.names("GEMINI_API_KEY")'
 text src/main/kotlin/atropos/core/provider/adapter/AnthropicKernelAdapter.kt 'ProviderEnvironmentAliases.names("ANTHROPIC_API_KEY")'
 text src/main/kotlin/atropos/core/provider/adapter/OpenAiCompatibleKernelAdapter.kt 'ProviderEnvironmentAliases.names(spec.apiKeyEnv)'
+text src/main/kotlin/atropos/core/provider/adapter/AdapterRegistry.kt 'flatMap { it.requiredEnv }'
 for provider_id in openai groq xai openrouter together fireworks deepseek_direct mistral cohere; do
   text src/main/kotlin/atropos/core/provider/adapter/OpenAiCompatibleProviderCatalog.kt "providerId = \"$provider_id\""
 done

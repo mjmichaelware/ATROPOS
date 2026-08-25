@@ -19,6 +19,9 @@ class StaticProviderAdapterRegistry(
     private val env: Map<String, String> = System.getenv(),
     private val secretSource: SecretSource = DefaultSecretSource.create(env = env)
 ) : ProviderAdapterRegistry {
+    private val canonicalKeys: List<String> = descriptorRegistry.getAll()
+        .flatMap { it.requiredEnv }
+        .distinct()
     private val effectiveEnv: Map<String, String> = resolveAliases(env)
     private val adapters: List<ProviderAdapter> =
         descriptorRegistry.getAll().map { buildKernelAdapter(it, effectiveEnv) }
@@ -37,7 +40,7 @@ class StaticProviderAdapterRegistry(
 
     private fun resolveAliases(source: Map<String, String>): Map<String, String> {
         val resolved = source.toMutableMap()
-        CANONICAL_KEYS.forEach { canonical ->
+        canonicalKeys.forEach { canonical ->
             if (resolved[canonical].isNullOrBlank()) {
                 val value = ProviderEnvironmentAliases.names(canonical).asSequence()
                     .mapNotNull { name ->
@@ -51,13 +54,4 @@ class StaticProviderAdapterRegistry(
         return resolved
     }
 
-    private companion object {
-        val CANONICAL_KEYS = ProviderEnvironmentAliases.names("OPENAI_API_KEY").let {
-            listOf(
-                "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "GROQ_API_KEY", "XAI_API_KEY",
-                "GEMINI_API_KEY", "OPENROUTER_API_KEY", "DEEPSEEK_API_KEY", "MISTRAL_API_KEY",
-                "FIREWORKS_API_KEY", "TOGETHER_API_KEY", "AZURE_OPENAI_API_KEY"
-            )
-        }
-    }
 }

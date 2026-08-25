@@ -15140,3 +15140,12 @@ Local verification note for this batch: `timeout 120s ./gradlew test --tests 'at
 - Verification actually run: not yet run in this batch; hosted selector and Kotlin execution remain required. No green claim.
 - % delta: unchanged; provider catalog remains source-wired/partial pending hosted execution.
 - Fingerprints: recorded after static verification.
+
+### 2026-08-25T20:00:00Z · Agent: Codex GPT-5 · Batch: vault-secret-adapter-owner
+
+- Paths touched: `src/main/kotlin/atropos/core/provider/adapter/AdapterRegistry.kt` (+6/-13), `src/test/kotlin/atropos/core/provider/ProviderFixtureMatrixServiceTest.kt` (+13), `scripts/backend-atom-contract-test.sh` (+1).
+- Atoms / phases affected: B-PROV-004 connect path and provider secret isolation.
+- Predicate moved: adapter alias hydration now derives canonical secret names from the existing descriptor registry, so vault-only connects for catalog providers such as Cohere reach the existing adapter without environment exports. No second secret store or provider registry was introduced.
+- Verification actually run: `ATROPOS_BACKEND_ATOM_CONTRACT_OK`, `ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (441 tests)`, and `git diff --check` passed. Kotlin execution remains unverified.
+- % delta: unchanged; provider connect remains source-wired/partial pending hosted/runtime execution.
+- Fingerprints: recorded after commit.

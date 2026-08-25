@@ -1860,6 +1860,12 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 
 ### 2026-08-25T19:00:00Z · Agent: Codex GPT-5 · Batch: openai-endpoint-owner
 
+### 2026-08-25T20:00:00Z · Agent: Codex GPT-5 · Batch: vault-secret-adapter-owner
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-PROV-004 connect secret reaches adapter | source-wired / partial | `src/main/kotlin/atropos/core/provider/adapter/AdapterRegistry.kt`, `src/test/kotlin/atropos/core/provider/ProviderFixtureMatrixServiceTest.kt`, `scripts/backend-atom-contract-test.sh` | `/providers connect` → existing `TokenIsolationVault`/`DefaultSecretSource` → existing `StaticProviderAdapterRegistry` → provider adapter | Canonical secret hydration now derives from descriptor `requiredEnv`, allowing vault-only catalog providers such as Cohere to configure their existing adapter without exporting a key. Hosted Kotlin/runtime execution remains unverified. |
+
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-PROV-001g/h Google/Gemini alias transport | source-wired / partial | `src/main/kotlin/atropos/core/provider/adapter/GeminiKernelAdapter.kt`, `src/main/kotlin/atropos/core/provider/adapter/NonOpenAiFreeKernelAdapter.kt`, `src/test/kotlin/atropos/core/provider/ProviderFixtureMatrixServiceTest.kt`, `scripts/backend-atom-contract-test.sh` | provider discovery → existing native `GeminiKernelAdapter` and shared non-OpenAI adapter status → canonical alias resolver | `GOOGLE_API_KEY` and namespaced aliases now configure the native Gemini adapter instead of merely classifying discovery as healthy while transport later reported a missing canonical key. Hosted Kotlin execution remains unverified. |
