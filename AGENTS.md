@@ -13315,6 +13315,16 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprints: `.github/workflows/release.yml=66ff295a6562`; `scripts/release-installer-contract-test.sh=6ba14d81be13`; `scripts/backend-atom-contract-test.sh=f2c8b5ab16fc`.
 
+### 2026-08-25T02:54:02Z · Agent: Codex GPT-5 · Batch: hosted-backend-selector-completeness
+
+- Paths touched: `scripts/hosted-test-selector-contract.sh` (+20), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-MCP-GHA hosted backend test selector coverage.
+- Predicate moved: the hosted selector contract now fails when any non-UI `core`, `bridge`, or `cli` `*Test.kt` source is absent from the reusable verifier’s selector. The check uses a temporary file rather than `/dev/fd`, so it works in Termux and GitHub runners; no second test owner was introduced.
+- Verification actually run: `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (440 tests)`), `bash scripts/backend-atom-contract-test.sh` (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), `bash -n`, and `git diff --check` passed. GitHub-hosted Gradle execution remains unverified.
+- % delta: unchanged; B-MCP-GHA remains source-wired/partial pending hosted execution.
+- New overall estimate: unchanged.
+- Fingerprints: `scripts/hosted-test-selector-contract.sh=e2569f9d538e`; `scripts/backend-atom-contract-test.sh=24bd58df13e3`.
+
 ### 2026-08-25T02:16:59Z · Agent: Codex GPT-5 · Batch: install-help-caller-contract
 - Paths touched: `scripts/backend-atom-contract-test.sh` (+16).
 - Atoms / phases affected: B-INST-001..005 and B-HELP-001..002 caller enforcement.

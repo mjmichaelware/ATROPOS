@@ -1451,6 +1451,12 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | --- | --- | --- | --- | --- |
 | B-MCP-GHA / release clean-runner contract | source-wired / partial | `.github/workflows/release.yml`, `scripts/github-actions-clean-runner-test.sh`, `scripts/release-installer-contract-test.sh`, `scripts/backend-atom-contract-test.sh` | release job → `github-actions-clean-runner-test.sh` → canonical `github-actions-clean-runner.sh`; release/backend contracts protect the caller | `bash scripts/github-actions-clean-runner-test.sh` (`GITHUB_ACTIONS_CLEAN_RUNNER_TEST_OK`), release contract, backend atom contract, and `git diff --check` pass. Hosted release execution and artifact publication remain unverified. |
 
+### 2026-08-25T02:54:02Z · Agent: Codex GPT-5 · Batch: hosted-backend-selector-completeness
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-GHA / hosted backend test selector completeness | source-wired / partial | `scripts/hosted-test-selector-contract.sh`, `scripts/backend-atom-contract-test.sh` | compile-gate focused job → hosted selector contract → every non-UI `core`, `bridge`, and `cli` `*Test.kt` source is required to appear in `atropos-verify-worktree.sh` | Selector contract passes with 440 tests; backend atom contract, shell syntax, and `git diff --check` pass. The check is now Termux-compatible after replacing `/dev/fd` process substitution. GitHub-hosted execution remains unverified. |
+
 ### 2026-08-25T03:50:00Z · Agent: Codex GPT-5 · Batch: generated-provider-readme-table
 
 | atom | status | files | caller | tests / notes |

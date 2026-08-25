@@ -96,6 +96,7 @@ text scripts/atropos-verify-worktree.sh "atropos.dloi.SourceAuthorityLawTest"
 text .github/workflows/compile-gate.yml "atropos.data.lakehouse.AtomLakehouseContextTest"
 text .github/workflows/compile-gate.yml "atropos.core.acceptance.CanonicalAcceptanceTests"
 text scripts/hosted-test-selector-contract.sh "Tests?"
+text scripts/hosted-test-selector-contract.sh 'backend test source is outside hosted selector'
 text src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt 'fun preferredProviderIds()'
 text src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt 'fun disable(providerId: String)'
 text src/main/kotlin/atropos/core/provider/adapter/AdapterRouteFacade.kt 'preferredProviderIds = { atropos.core.provider.ProviderOnboardingService().preferredProviderIds() }'
