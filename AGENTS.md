@@ -13327,6 +13327,16 @@ Local verification note for this batch: `timeout 120s ./gradlew test --tests 'at
 - New overall estimate: unchanged.
 - Fingerprints (sha256, first 12): `postinstall.js=f1701eb88e12`; `npm-installer-contract-test.sh=53e7f279d218`.
 
+### 2026-08-25T17:05:00Z · Agent: Codex GPT-5 · Batch: provider-worker-policy-gate
+
+- Paths touched: `src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt` (+17), `src/main/kotlin/atropos/core/autonomous/ProviderWorkerDirector.kt` (+20/-3), `src/test/kotlin/atropos/core/autonomous/ProviderWorkerDirectorTest.kt` (+29), `scripts/backend-atom-contract-test.sh` (+3), `AGENTS.md` (+7), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-PROV-006 provider workers and B-LOCAL-ONLY shared policy enforcement.
+- Predicate moved: provider-worker dispatch can no longer bypass the canonical policy path; eligibility now includes healthy state, capability, localOnly, free/local cascade, and explicit paid unlock before hierarchy dispatch.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh` (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (440 tests)`), and `git diff --check` passed. Hosted/root Kotlin execution remains unverified; no green claim.
+- % delta: unchanged; B-PROV-006 remains source-wired / partial pending hosted worker tests.
+- New overall estimate: unchanged.
+- Fingerprints (sha256, first 12): `ProviderOnboarding.kt=ae1d0a43f755`; `ProviderWorkerDirector.kt=da80a59aa461`; `ProviderWorkerDirectorTest.kt=df5c07766a84`; `backend-atom-contract-test.sh=94b270c37f60`.
+
 ### 2026-08-25T12:45:00Z · Agent: Codex GPT-5 · Batch: imported-context-authority-contract
 
 - Paths touched: `scripts/backend-atom-contract-test.sh` (+5).

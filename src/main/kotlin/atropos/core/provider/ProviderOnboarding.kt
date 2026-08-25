@@ -326,4 +326,21 @@ class ProviderPolicyGate(
     fun requirePaidApproval(providerId: String) {
         check(paidGate.isProviderUnlocked(providerId)) { "paid provider blocked until explicit approval: $providerId" }
     }
+
+    /**
+     * The single eligibility predicate for callers that dispatch work rather
+     * than ordinary chat. A worker must not recreate free/local/paid rules
+     * beside RoutePolicy: it asks this gate whether the capability is allowed,
+     * including localOnly and an explicit paid unlock.
+     */
+    fun isEligible(providerId: String, capability: ApiCapability): Boolean {
+        val descriptor = registry.getById(providerId) ?: return false
+        if (providerId !in healthy()) return false
+        if (localOnly && !descriptor.isLocal) return false
+        return if (descriptor.isPaid()) {
+            paidGate.isProviderUnlocked(providerId)
+        } else {
+            freeCascade(capability).any { it.id == providerId }
+        }
+    }
 }

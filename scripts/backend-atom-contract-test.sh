@@ -29,6 +29,9 @@ file src/main/kotlin/atropos/core/provider/SourceBindingFetcher.kt
 file src/main/kotlin/atropos/cli/ProviderCommandHandler.kt
 file src/main/kotlin/atropos/core/autonomous/ProviderWorkerDirector.kt
 text src/main/kotlin/atropos/core/autonomous/AutonomousOrchestrator.kt "ProviderWorkerDirector"
+text src/main/kotlin/atropos/core/autonomous/ProviderWorkerDirector.kt 'policyGate.isEligible(task.providerId, capability)'
+text src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt 'fun isEligible(providerId: String, capability: ApiCapability)'
+text src/test/kotlin/atropos/core/autonomous/ProviderWorkerDirectorTest.kt 'local_only_policy_refuses_remote_free_worker_before_hierarchy_dispatch'
 text src/main/kotlin/atropos/cli/CommandRouter.kt '"/providers"'
 text src/main/kotlin/atropos/cli/ProviderCommandHandler.kt '"test" -> renderLiveTest(tokens)'
 text src/main/kotlin/atropos/cli/ProviderCommandHandler.kt 'liveTestHealthReporter'

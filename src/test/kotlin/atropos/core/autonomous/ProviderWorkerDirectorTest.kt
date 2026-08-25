@@ -4,6 +4,7 @@ import atropos.core.agent.AgentVerificationRunResult
 import atropos.core.agent.WorkerCodeProposal
 import atropos.core.hierarchy.HierarchyRegistry
 import atropos.core.provider.ProviderOnboardingService
+import atropos.core.provider.ProviderPolicyGate
 import atropos.core.provider.StaticProviderDescriptorRegistry
 import java.nio.file.Files
 import kotlin.test.Test
@@ -75,6 +76,34 @@ class ProviderWorkerDirectorTest {
 
         assertFalse(report.merged)
         assertTrue(report.refusal.orEmpty().contains("paid provider requires approval"))
+        assertTrue(hierarchy.dispatchHistory().isEmpty())
+    }
+
+    @Test
+    fun local_only_policy_refuses_remote_free_worker_before_hierarchy_dispatch() {
+        val root = Files.createTempDirectory("provider-worker-local-only")
+        val onboarding = ProviderOnboardingService(
+            root = root,
+            environment = mapOf("GROQ_API_KEY" to "fixture")
+        )
+        onboarding.refresh()
+        val hierarchy = HierarchyRegistry()
+        val descriptors = StaticProviderDescriptorRegistry()
+        val director = ProviderWorkerDirector(
+            hierarchy = hierarchy,
+            onboarding = onboarding,
+            descriptors = descriptors,
+            policyGate = ProviderPolicyGate(
+                registry = descriptors,
+                healthy = onboarding::healthyProviderIds,
+                localOnly = true
+            )
+        )
+
+        val report = director.run(listOf(ProviderWorkerTask("worker", "groq", "draft", listOf("src/a"))))
+
+        assertFalse(report.merged)
+        assertTrue(report.refusal.orEmpty().contains("canonical policy"))
         assertTrue(hierarchy.dispatchHistory().isEmpty())
     }
 }

@@ -9,7 +9,9 @@ import atropos.core.hierarchy.HierarchyDispatchContract
 import atropos.core.hierarchy.HierarchyRegistry
 import atropos.core.hierarchy.HierarchyRole
 import atropos.core.provider.ProviderDescriptorRegistry
+import atropos.core.provider.ApiCapability
 import atropos.core.provider.ProviderOnboardingService
+import atropos.core.provider.ProviderPolicyGate
 import atropos.core.provider.StaticProviderDescriptorRegistry
 import atropos.core.verification.ProviderProposalMergeReport
 import atropos.core.verification.VerifiedCompletionGate
@@ -69,6 +71,10 @@ class ProviderWorkerDirector(
     private val completionGate: VerifiedCompletionGate = VerifiedCompletionGate(),
     private val onboarding: ProviderOnboardingService = ProviderOnboardingService(),
     private val descriptors: ProviderDescriptorRegistry = StaticProviderDescriptorRegistry(),
+    private val policyGate: ProviderPolicyGate = ProviderPolicyGate(
+        registry = descriptors,
+        healthy = onboarding::healthyProviderIds
+    ),
     private val proposalRunner: (ProviderWorkerTask) -> WorkerCodeProposal = { task ->
         proposalService.propose(task.workerId, task.providerId, task.task, task.territory)
     }
@@ -187,8 +193,18 @@ class ProviderWorkerDirector(
             if (task.workerId.isBlank() || !seenWorkers.add(task.workerId)) return "worker ids must be unique and non-blank"
             if (task.task.isBlank()) return "worker task is required"
             val descriptor = descriptors.getById(task.providerId) ?: return "unknown provider: ${task.providerId}"
-            if (descriptor.isPaid()) return "paid provider requires approval: ${task.providerId}"
-            if (task.providerId !in healthy) return "provider is not healthy: ${task.providerId}"
+            val capability = when {
+                descriptor.hasCapability(ApiCapability.CODE) -> ApiCapability.CODE
+                descriptor.hasCapability(ApiCapability.REPAIR) -> ApiCapability.REPAIR
+                else -> return "provider has no worker capability: ${task.providerId}"
+            }
+            if (!policyGate.isEligible(task.providerId, capability)) {
+                return when {
+                    descriptor.isPaid() -> "paid provider requires approval: ${task.providerId}"
+                    task.providerId !in healthy -> "provider is not healthy: ${task.providerId}"
+                    else -> "provider is not eligible under the canonical policy: ${task.providerId}"
+                }
+            }
             if (task.territory.isEmpty()) return "worker territory is required: ${task.workerId}"
             task.territory.forEach { territory ->
                 val normalized = territory.trim().trim('/').replace('\\', '/')

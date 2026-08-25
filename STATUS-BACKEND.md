@@ -1349,6 +1349,12 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | --- | --- | --- | --- | --- |
 | B-INST-002 / B-INST-006 bounded npm artifact retrieval | source-wired / partial | `npm/scripts/postinstall.js`, `scripts/npm-installer-contract-test.sh` | `npm install` → existing npm `postinstall` → bounded streaming fetch → checksum verification → local launcher jar | npm artifact and checksum downloads now enforce declared and streamed byte ceilings before buffering; the existing checksum and local-jar paths remain unchanged. `NPM_INSTALLER_CONTRACT_OK`, `node --check`, and `git diff --check` pass. Published npm/release execution remains unverified. |
 
+### 2026-08-25T17:05:00Z · Agent: Codex GPT-5 · Batch: provider-worker-policy-gate
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-PROV-006 / B-LOCAL-ONLY provider worker eligibility | source-wired / partial | `src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt`, `src/main/kotlin/atropos/core/autonomous/ProviderWorkerDirector.kt`, `src/test/kotlin/atropos/core/autonomous/ProviderWorkerDirectorTest.kt`, `scripts/backend-atom-contract-test.sh` | `AutonomousOrchestrator.runProviderWorkers` → existing `ProviderWorkerDirector` → existing `ProviderPolicyGate.isEligible` → hierarchy dispatch | Provider workers now use the canonical free/local/paid eligibility predicate before hierarchy registration; remote FREE workers are refused in localOnly mode and paid workers remain approval-gated. Backend contract, hosted selector contract (440), and `git diff --check` pass. Hosted Kotlin execution remains unverified. |
+
 ### 2026-08-25T12:45:00Z · Agent: Codex GPT-5 · Batch: imported-context-authority-contract
 
 | atom | status | files | caller | tests / notes |
