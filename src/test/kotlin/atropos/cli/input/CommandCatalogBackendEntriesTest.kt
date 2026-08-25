@@ -26,6 +26,7 @@ class CommandCatalogBackendEntriesTest {
         assertTrue("/github pr-files" in commands)
         assertTrue("/github checks" in commands)
         assertTrue("/github branch-protection" in commands)
+        assertTrue("/github blame" in commands)
         assertTrue("/github create-issue" in commands)
         assertTrue("/github comment-issue" in commands)
         assertTrue("/github create-pr" in commands)

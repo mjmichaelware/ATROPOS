@@ -1837,3 +1837,9 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-OAUTH-UX / launch-config policy binding | source-wired / partial | `src/main/kotlin/atropos/cli/AuthCommandHandler.kt`, `src/main/kotlin/atropos/cli/CommandRouter.kt`, `scripts/backend-atom-contract-test.sh` | `Main.main()` → one loaded `AtroposConfig` → `CommandRouter` → `/auth github` → existing `GitHubDeviceAuthClient(localOnly=...)` | `/auth github` now uses the already-loaded launch configuration for the OAuth localOnly gate instead of reloading configuration inside the handler. Backend contract, provider/MCP example contracts, hosted selector (`441 tests`), orphan gate, and `git diff --check` passed; hosted Kotlin, live OAuth, and operator client registration remain unverified. |
+
+### 2026-08-25T18:00:00Z · Agent: Codex GPT-5 · Batch: github-graphql-blame-owner
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-GH-p / GraphQL file blame | source-wired / partial | `src/main/kotlin/atropos/core/github/GitHubApiClient.kt`, `GitHubBinding.kt`, `src/main/kotlin/atropos/cli/GitHubCommandHandler.kt`, `CommandCatalog.kt`, `src/test/kotlin/atropos/core/github/GitHubApiClientTest.kt`, `scripts/backend-atom-contract-test.sh` | `/github blame <owner/repository> <revision> <path>` → existing `GitHubBinding` → one `GitHubApiClient` → gated read-only `/graphql` transport | Added a bounded read-only GraphQL query path with repository/path validation, shared token/redaction/evidence/egress gate, and no write confirmation requirement. Static backend/selector/provider contracts and diff check passed; Kotlin execution, hosted CI, and credentialed GitHub evidence remain unverified. |

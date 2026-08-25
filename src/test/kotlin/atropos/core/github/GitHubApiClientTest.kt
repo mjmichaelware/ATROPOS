@@ -97,6 +97,28 @@ class GitHubApiClientTest {
     }
 
     @Test
+    fun graphql_file_blame_is_read_only_but_uses_the_same_gated_transport() {
+        val requests = mutableListOf<GitHubApiWireRequest>()
+        withNetworkSink {
+            val client = GitHubApiClient(
+                secretSource = MapSecretSource(mapOf("GITHUB_TOKEN" to "token")),
+                gate = ::allowed,
+                transport = GitHubApiTransport { request ->
+                    requests += request
+                    GitHubApiWireResponse(200, "{\"data\":{}}")
+                }
+            )
+
+            client.fileBlame("owner", "repo", "main", "src/Main.kt")
+        }
+
+        assertEquals(listOf("POST"), requests.map { it.method })
+        assertEquals(listOf("https://api.github.com/graphql"), requests.map { it.url })
+        assertTrue(requests.single().body.orEmpty().contains("src/Main.kt"))
+        assertTrue(requests.single().body.orEmpty().contains("main:src/Main.kt"))
+    }
+
+    @Test
     fun network_policy_and_secret_egress_fail_before_transport() {
         var called = false
         val client = GitHubApiClient(

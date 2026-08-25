@@ -36,6 +36,12 @@ class GitHubCommandHandler(
                 "pr-files" -> binding.getPullRequestFiles(owner, name, number(tokens.getOrNull(3)))
                 "checks" -> binding.listCheckRuns(owner, name, tokens.getOrNull(3) ?: error("check ref is required"))
                 "branch-protection" -> binding.getBranchProtection(owner, name, tokens.getOrNull(3) ?: error("branch is required"))
+                "blame" -> binding.fileBlame(
+                    owner,
+                    name,
+                    tokens.getOrNull(3) ?: error("revision is required"),
+                    tokens.getOrNull(4) ?: error("path is required")
+                )
                 "create-issue" -> binding.createIssue(owner, name, body(tokens, 3), authorization(tokens))
                 "comment-issue" -> binding.commentIssue(owner, name, number(tokens.getOrNull(3)), body(tokens, 4), authorization(tokens))
                 "create-pr" -> binding.createPullRequest(owner, name, body(tokens, 3), authorization(tokens))
@@ -44,7 +50,7 @@ class GitHubCommandHandler(
                 "create-check" -> binding.createCheckRun(owner, name, body(tokens, 3), authorization(tokens))
                 "update-check" -> binding.updateCheckRun(owner, name, tokens.getOrNull(3)?.toLongOrNull()?.takeIf { it > 0 }
                     ?: error("positive check-run id is required"), body(tokens, 4), authorization(tokens))
-                else -> error("usage: /github read-command|write-command <owner/repository> ... --confirm <id>")
+                else -> error("usage: /github issues|issue|prs|pr-files|checks|branch-protection|blame <owner/repository> ...")
             }
         }
         response.fold(

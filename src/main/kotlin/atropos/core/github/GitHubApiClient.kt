@@ -26,7 +26,9 @@ data class GitHubApiRequest(
     val path: String,
     val body: String? = null,
     val declaredTerritory: List<String> = listOf("."),
-    val authorization: GitHubWriteAuthorization? = null
+    val authorization: GitHubWriteAuthorization? = null,
+    /** GraphQL queries are POSTs but remain read-only network operations. */
+    val readOnly: Boolean = false
 )
 
 data class GitHubWriteAuthorization(
@@ -75,10 +77,13 @@ class GitHubApiClient(
         IntegrationRegistry.requireRegistered("github")
         val method = request.method.trim().uppercase()
         require(method in METHODS) { "unsupported GitHub API method: $method" }
-        if (method != "GET") requireNotNull(request.authorization) {
+        if (method != "GET" && !request.readOnly) requireNotNull(request.authorization) {
             "GitHub write requires explicit operator confirmation"
         }
         val path = validatePath(request.path)
+        if (request.readOnly) require(method == "POST" && path == "/graphql") {
+            "GitHub read-only POST is limited to /graphql"
+        }
         require(request.body.orEmpty().length <= MAX_BODY_CHARS) {
             "GitHub API request body exceeds $MAX_BODY_CHARS characters"
         }
@@ -94,7 +99,10 @@ class GitHubApiClient(
             actor = ActionActor.HumanOwner,
             targetPaths = territory,
             networkTarget = "api.github.com",
-            metadata = mapOf("integration" to "github", "operation" to method.lowercase())
+            metadata = mapOf(
+                "integration" to "github",
+                "operation" to if (request.readOnly) "graphql_read" else method.lowercase()
+            )
         )
         val decision = gate(proposal)
         when (decision.disposition) {
@@ -167,6 +175,33 @@ class GitHubApiClient(
     fun getBranchProtection(owner: String, repository: String, branch: String): GitHubApiResponse =
         execute(GitHubApiRequest("GET", repoPath(owner, repository, "branches/${refPath(branch)}/protection")))
 
+    /** Read-only GraphQL file blame through the same gated GitHub owner. */
+    fun fileBlame(
+        owner: String,
+        repository: String,
+        revision: String,
+        path: String,
+        declaredTerritory: List<String> = listOf(".")
+    ): GitHubApiResponse {
+        val safeOwner = segment(owner)
+        val safeRepository = segment(repository)
+        val safeRevision = refPath(revision)
+        val safePath = path.trim().also {
+            require(it.isNotBlank() && it.length <= MAX_PATH_CHARS && !it.startsWith("/") &&
+                !it.split('/').contains("..")) { "GitHub blame path is invalid" }
+        }
+        val body = "{\"query\":\"query(${'$'}owner:String!,${'$'}repo:String!,${'$'}expression:String!){repository(owner:${'$'}owner,name:${'$'}repo){object(expression:${'$'}expression){... on Blob{blame{ranges{startingLine endingLine commit{oid}}}}}}}\",\"variables\":{\"owner\":\"${jsonEscape(safeOwner)}\",\"repo\":\"${jsonEscape(safeRepository)}\",\"expression\":\"${jsonEscape("$safeRevision:$safePath")}\"}}"
+        return execute(
+            GitHubApiRequest(
+                method = "POST",
+                path = "/graphql",
+                body = body,
+                declaredTerritory = declaredTerritory,
+                readOnly = true
+            )
+        )
+    }
+
     fun listCheckRuns(owner: String, repository: String, ref: String): GitHubApiResponse =
         execute(GitHubApiRequest("GET", repoPath(owner, repository, "commits/${refPath(ref)}/check-runs")))
 
@@ -182,6 +217,12 @@ class GitHubApiClient(
         return "/repos/$safeOwner/$safeRepository/$suffix"
     }
 
+    private fun jsonEscape(value: String): String = value
+        .replace("\\", "\\\\")
+        .replace("\"", "\\\"")
+        .replace("\n", "\\n")
+        .replace("\r", "\\r")
+
     private fun refPath(raw: String): String = raw.trim().split('/').joinToString("/") { segment(it) }
 
     private fun positive(value: Int): Int {
@@ -196,7 +237,7 @@ class GitHubApiClient(
 
     private fun validatePath(raw: String): String {
         val path = raw.trim()
-        require((path.startsWith("/repos/") || path.startsWith("/search/issues")) &&
+        require((path.startsWith("/repos/") || path.startsWith("/search/issues") || path == "/graphql") &&
             !path.contains("..") && !path.contains('\\')) {
             "GitHub API path must be repository-scoped or the bounded issue-search path"
         }

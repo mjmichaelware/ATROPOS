@@ -97,6 +97,9 @@ class GitHubBinding(
     fun getBranchProtection(owner: String, repository: String, branch: String): GitHubApiResponse =
         apiClient.getBranchProtection(owner, repository, branch)
 
+    fun fileBlame(owner: String, repository: String, revision: String, path: String): GitHubApiResponse =
+        apiClient.fileBlame(owner, repository, revision, path)
+
     fun createRepository(request: GitHubRepositoryRequest): GitHubBindingResult {
         validateRepositoryName(request.repositoryName)
         validateBranch(request.defaultBranch)

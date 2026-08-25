@@ -15068,8 +15068,6 @@ Local verification note for this batch: `timeout 120s ./gradlew test --tests 'at
 - Verification actually run: `ATROPOS_BACKEND_ATOM_CONTRACT_OK`, `ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (441 tests)`, `git diff --check`, and the orphan gate (`4 pre-existing baseline files; exit 0`). The focused local Gradle attempt timed out during setup; no Kotlin pass claim.
 - % delta: unchanged; B-002 remains source-wired/partial pending hosted execution.
 - Fingerprints (sha256, first 12): `STATUS-BACKEND.md=8ed9225309ae`, `AGENTS.md=980b0eda1936`.
-<<<<<<< HEAD
-=======
 
 ### 2026-08-25T17:00:00Z · Agent: Codex GPT-5 · Batch: github-oauth-config-owner
 
@@ -15079,4 +15077,15 @@ Local verification note for this batch: `timeout 120s ./gradlew test --tests 'at
 - Verification actually run: `ATROPOS_BACKEND_ATOM_CONTRACT_OK`, `ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (441 tests)`, provider environment contract, MCP example contract, `git diff --check`, and the orphan gate passed. No Kotlin test pass or GitHub-hosted green claim; hosted/live OAuth remains pending external execution and operator OAuth client registration.
 - % delta: unchanged; B-MCP-OAUTH-UX remains source-wired/partial pending hosted/live evidence.
 - Fingerprints (sha256, first 12): `AuthCommandHandler.kt=7aeba04ebd3a`, `CommandRouter.kt=9fabc00ca665`, `backend-atom-contract-test.sh=cc4011b2c5e0`, `STATUS-BACKEND.md=65346ae70b27`.
->>>>>>> f743c3fd (fix: bind github oauth to launch config)
+<<<<<<< HEAD
+=======
+
+### 2026-08-25T18:00:00Z · Agent: Codex GPT-5 · Batch: github-graphql-blame-owner
+
+- Paths touched: `src/main/kotlin/atropos/core/github/GitHubApiClient.kt` (+47/-1), `src/main/kotlin/atropos/core/github/GitHubBinding.kt` (+3), `src/main/kotlin/atropos/cli/GitHubCommandHandler.kt` (+8/-1), `src/main/kotlin/atropos/cli/input/CommandCatalog.kt` (+1), `src/test/kotlin/atropos/core/github/GitHubApiClientTest.kt` (+22), `src/test/kotlin/atropos/cli/input/CommandCatalogBackendEntriesTest.kt` (+1), `scripts/backend-atom-contract-test.sh` (+3), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-MCP-GH-p GraphQL file blame and B-MCP-GITHUB single-stack caller coverage.
+- Predicate moved: the optional GraphQL/file-blame capability now has a production CLI caller through the existing `GitHubBinding` and `GitHubApiClient`; read-only POST is narrowly limited to `/graphql`, while token, territory, egress, policy, redaction, and evidence remain owned by the existing GitHub path.
+- Verification actually run: `ATROPOS_BACKEND_ATOM_CONTRACT_OK`, `ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (441 tests)`, provider environment contract, `git diff --check`, and shell syntax validation passed. No Kotlin test pass, hosted CI green, live GitHub call, or credentials were claimed.
+- % delta: unchanged; B-MCP-GH-p remains source-wired/partial pending hosted/credentialed execution.
+- Fingerprints (sha256, first 12): `GitHubApiClient.kt=b7c57eff9868`, `GitHubBinding.kt=7c45e29592f0`, `GitHubCommandHandler.kt=3541d9b9c313`, `CommandCatalog.kt=c493fcfff621`, `GitHubApiClientTest.kt=cefc2facad5e`, `backend-atom-contract-test.sh=1e539bd3adec`.
+>>>>>>> 696cbbad (feat: add gated github graphql blame path)

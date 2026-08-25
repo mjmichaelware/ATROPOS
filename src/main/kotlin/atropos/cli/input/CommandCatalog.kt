@@ -14,6 +14,7 @@ object CommandCatalog {
         CommandEntry("/github pr-files", "read pull-request files through the gated GitHub API", "Developer Tools"),
         CommandEntry("/github checks", "list check runs through the gated GitHub API", "Developer Tools"),
         CommandEntry("/github branch-protection", "read branch protection through the gated GitHub API", "Developer Tools"),
+        CommandEntry("/github blame", "read file blame through the gated GitHub GraphQL API", "Developer Tools"),
         CommandEntry("/github create-issue", "create an issue with explicit confirmation", "Developer Tools"),
         CommandEntry("/github comment-issue", "comment on an issue with explicit confirmation", "Developer Tools"),
         CommandEntry("/github create-pr", "create a pull request with explicit confirmation", "Developer Tools"),
