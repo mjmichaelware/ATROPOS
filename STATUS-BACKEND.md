@@ -1674,3 +1674,9 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | F01/B-PROV-002 factory dimension-fill cascade owner | source-wired / partial | `src/main/kotlin/atropos/core/factory/AppFactoryRouter.kt`, `SpecGraphCanonicalAtomProvider.kt`, `scripts/backend-atom-contract-test.sh` | factory router → one `SpecGraphCanonicalAtomProvider` → existing `ProviderCascadeRouter` with shared onboarding health/preference suppliers | Repeated SpecGraph dimension classification now reuses one onboarding owner per factory router instead of constructing a new onboarding service for every atom. Backend contract, hosted selector contract (`440 tests`), and `git diff --check` pass. Hosted Kotlin factory execution remains unverified. |
+
+### 2026-08-25T08:20:00Z · Agent: Codex GPT-5 · Batch: optional-mcp-catalog-coverage
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-GITLAB/BITBUCKET/LINEAR/JIRA/CONFLUENCE/PLAYWRIGHT/PUPPETEER/DOCKER/POSTGRES/SQLITE/REDIS/SNYK/SONAR/DATADOG/NEWRELIC/SUPABASE/FIREBASE/SLACK/DISCORD/TEAMS/ASANA/CLICKUP/NOTION/PAGERDUTY/OPSGENIE/TERRAFORM/PULUMI/K8S/AWS-READ/GCP-READ/AZURE-READ/SEQUENTIAL-THINKING | config-wired / partial | `docs/mcp-examples/optional-catalog.json`, `scripts/mcp-example-contract-test.sh`, `scripts/backend-atom-contract-test.sh` | existing generic `McpHostManager` → configured `servers[]`; `/mcp list|test` remains the sole runtime caller | Added all named non-Tier-0 catalog entries as disabled-by-default community configuration in one fixture; no brand Kotlin adapter farm or second host was introduced. MCP example contract passes (`15 files / 42 servers`), backend contract, hosted selector (`440 tests`), and diff check pass. Actual upstream server execution remains unverified and entries stay disabled. |

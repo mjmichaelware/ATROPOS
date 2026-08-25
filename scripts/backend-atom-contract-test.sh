@@ -443,6 +443,8 @@ text src/main/kotlin/atropos/core/factory/FactoryRepairExecutor.kt 'obligationLo
 text src/main/kotlin/atropos/core/factory/FactoryAcceptanceFreeze.kt 'repair acceptance predicates did not all pass'
 text src/main/kotlin/atropos/core/factory/AppFactoryRouter.kt 'onboarding = onboarding'
 text src/main/kotlin/atropos/core/factory/SpecGraphCanonicalAtomProvider.kt 'preferredProviderIds = { onboarding.preferredProviderIds() }'
+text scripts/mcp-example-contract-test.sh 'optional-catalog.json'
+text docs/mcp-examples/optional-catalog.json '"enabled":false'
 
 # Both hosted entrypoints must run this contract.
 text .github/workflows/compile-gate.yml 'backend-atom-contract-test.sh'

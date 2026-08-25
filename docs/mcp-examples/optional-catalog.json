@@ -1,0 +1,32 @@
+{
+  "servers": [
+    {"name":"gitlab","transport":"stdio","command":"<configure-upstream-mcp>","args":["gitlab"],"enabled":false,"community":true},
+    {"name":"bitbucket","transport":"stdio","command":"<configure-upstream-mcp>","args":["bitbucket"],"enabled":false,"community":true},
+    {"name":"linear","transport":"stdio","command":"<configure-upstream-mcp>","args":["linear"],"enabled":false,"community":true},
+    {"name":"jira","transport":"stdio","command":"<configure-upstream-mcp>","args":["jira"],"enabled":false,"community":true},
+    {"name":"confluence","transport":"stdio","command":"<configure-upstream-mcp>","args":["confluence"],"enabled":false,"community":true},
+    {"name":"puppeteer","transport":"stdio","command":"<configure-upstream-mcp>","args":["puppeteer"],"enabled":false,"community":true},
+    {"name":"redis","transport":"stdio","command":"<configure-upstream-mcp>","args":["redis"],"enabled":false,"community":true},
+    {"name":"snyk","transport":"stdio","command":"<configure-upstream-mcp>","args":["snyk"],"enabled":false,"community":true},
+    {"name":"sonar","transport":"stdio","command":"<configure-upstream-mcp>","args":["sonar"],"enabled":false,"community":true},
+    {"name":"datadog","transport":"stdio","command":"<configure-upstream-mcp>","args":["datadog"],"enabled":false,"community":true},
+    {"name":"newrelic","transport":"stdio","command":"<configure-upstream-mcp>","args":["newrelic"],"enabled":false,"community":true},
+    {"name":"supabase","transport":"stdio","command":"<configure-upstream-mcp>","args":["supabase"],"enabled":false,"community":true},
+    {"name":"firebase","transport":"stdio","command":"<configure-upstream-mcp>","args":["firebase"],"enabled":false,"community":true},
+    {"name":"slack","transport":"stdio","command":"<configure-upstream-mcp>","args":["slack"],"enabled":false,"community":true},
+    {"name":"discord","transport":"stdio","command":"<configure-upstream-mcp>","args":["discord"],"enabled":false,"community":true},
+    {"name":"teams","transport":"stdio","command":"<configure-upstream-mcp>","args":["teams"],"enabled":false,"community":true},
+    {"name":"asana","transport":"stdio","command":"<configure-upstream-mcp>","args":["asana"],"enabled":false,"community":true},
+    {"name":"clickup","transport":"stdio","command":"<configure-upstream-mcp>","args":["clickup"],"enabled":false,"community":true},
+    {"name":"notion","transport":"stdio","command":"<configure-upstream-mcp>","args":["notion"],"enabled":false,"community":true},
+    {"name":"pagerduty","transport":"stdio","command":"<configure-upstream-mcp>","args":["pagerduty"],"enabled":false,"community":true},
+    {"name":"opsgenie","transport":"stdio","command":"<configure-upstream-mcp>","args":["opsgenie"],"enabled":false,"community":true},
+    {"name":"terraform","transport":"stdio","command":"<configure-upstream-mcp>","args":["terraform"],"enabled":false,"community":true},
+    {"name":"pulumi","transport":"stdio","command":"<configure-upstream-mcp>","args":["pulumi"],"enabled":false,"community":true},
+    {"name":"k8s","transport":"stdio","command":"<configure-upstream-mcp>","args":["k8s"],"enabled":false,"community":true},
+    {"name":"aws-read","transport":"stdio","command":"<configure-upstream-mcp>","args":["aws-read"],"enabled":false,"community":true},
+    {"name":"gcp-read","transport":"stdio","command":"<configure-upstream-mcp>","args":["gcp-read"],"enabled":false,"community":true},
+    {"name":"azure-read","transport":"stdio","command":"<configure-upstream-mcp>","args":["azure-read"],"enabled":false,"community":true},
+    {"name":"sequential-thinking","transport":"stdio","command":"<configure-upstream-mcp>","args":["sequential-thinking"],"enabled":false,"community":true}
+  ]
+}

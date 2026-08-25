@@ -8,10 +8,15 @@ import pathlib
 import sys
 
 root = pathlib.Path(sys.argv[1]) / "docs" / "mcp-examples"
+# optional-catalog.json is intentionally a single config fixture, not a brand adapter farm.
 required = {
     "github", "filesystem", "playwright", "markitdown", "chrome-devtools",
     "fetch", "sqlite", "postgres", "docker", "code-intelligence", "npm-intelligence",
-    "cloud-deploy", "browser-use", "n8n",
+    "cloud-deploy", "browser-use", "n8n", "gitlab", "bitbucket", "linear", "jira",
+    "confluence", "puppeteer", "redis", "snyk", "sonar", "datadog", "newrelic",
+    "supabase", "firebase", "slack", "discord", "teams", "asana", "clickup", "notion",
+    "pagerduty", "opsgenie", "terraform", "pulumi", "k8s", "aws-read", "gcp-read",
+    "azure-read", "sequential-thinking",
 }
 seen = set()
 for path in sorted(root.glob("*.json")):

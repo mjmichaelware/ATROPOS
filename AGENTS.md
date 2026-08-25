@@ -13361,6 +13361,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; F01 remains source-wired/partial pending hosted Kotlin/runtime proof.
 - Fingerprints (sha256, full): `AppFactoryRouter.kt=c6ebc7ca5fa7deb3b978da42810eee31ca0accce192014bd06adf115ee235d6e`; `SpecGraphCanonicalAtomProvider.kt=404a8e3a863d8a702e6904ee7d12472828fadd9a3304e2bd0f9b266531f5694e`; `backend-atom-contract-test.sh=69a3e4e91de7c332749387cf42c8fd3c483e6932146b1c26215480527c0b24e4`.
 
+### 2026-08-25T08:20:00Z · Agent: Codex GPT-5 · Batch: optional-mcp-catalog-coverage
+
+- Paths touched: `docs/mcp-examples/optional-catalog.json` (+31), `scripts/mcp-example-contract-test.sh` (+5), `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: named non-Tier-0 MCP catalog atoms from the authority attachment.
+- Predicate moved: every named optional catalog system now has a disabled-by-default, community-marked `servers[]` configuration entry consumed by the existing generic MCP host; no per-brand Kotlin adapter or second host was introduced.
+- Verification actually run: `bash scripts/mcp-example-contract-test.sh` (`MCP_EXAMPLE_CONTRACT_OK files=15 servers=42`), backend atom contract, hosted selector contract (`440 tests`), and `git diff --check` passed. Upstream server installs/network calls remain unverified and disabled.
+- % delta: unchanged for runtime integration; catalog coverage is now explicit and source-wired/partial.
+- Fingerprints (sha256, full): `optional-catalog.json=29dd110da227bef6b228f877dbf1e9e59cc51f2fb3fce59cbe017a385c0cd094`; `mcp-example-contract-test.sh=113d794e16dc6c40307be19dcac3ddb90bf2b3e7e6fe5b22414f5056c3e3c0e8`; `backend-atom-contract-test.sh=a311a95dc31de43fdb8d9b92fd32176ec874a8626979e9fe6876e2cfc012bf09`.
+
 ### 2026-08-25T07:20:00Z · Agent: Codex GPT-5 · Batch: mcp-probe-handshake-test-proof-append
 
 - Paths touched: `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+6), `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+7).
