@@ -423,6 +423,19 @@ class FactoryRunOrchestrator(
             promptFingerprint = lineage.promptFingerprint
         )
 
+        // Persist the generated evidence location before the first outer
+        // wave. A process death here must be resumable without inventing a
+        // project path or re-prompting the operator.
+        FactoryRunHandoff.write(
+            repoRoot = repoRoot,
+            runId = plan.id,
+            dagId = planningDag.id,
+            snapshot = initialObligations,
+            freeze = acceptanceFreeze,
+            lastGoodCommit = generatedProject.commitId,
+            evidencePath = generatedProject.evidencePath
+        )
+
         fun repairAfterVerificationFailure(failure: Throwable): FactoryLoopResult {
             val repairAction = repairVerificationFailure
                 ?: throw failure
@@ -541,7 +554,8 @@ class FactoryRunOrchestrator(
             dagId = planningDag.id,
             snapshot = finalObligations,
             freeze = acceptanceFreeze,
-            lastGoodCommit = generatedProject.commitId
+            lastGoodCommit = generatedProject.commitId,
+            evidencePath = generatedProject.evidencePath
         )
 
         val project = try {

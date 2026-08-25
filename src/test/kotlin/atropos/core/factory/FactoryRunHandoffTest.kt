@@ -24,15 +24,26 @@ class FactoryRunHandoffTest {
             stopReason = null
         )
 
-        val path = FactoryRunHandoff.write(root, "run-1", "dag-1", snapshot, freeze, "commit-1")
+        val evidencePath = root.resolve("generated/.atropos/evidence/app-manifest.txt")
+        val path = FactoryRunHandoff.write(
+            root,
+            "run-1",
+            "dag-1",
+            snapshot,
+            freeze,
+            lastGoodCommit = "commit-1",
+            evidencePath = evidencePath.toString()
+        )
         val body = Files.readString(path)
         assertContains(body, "acceptance_freeze_sha256=${freeze.sha256}")
         assertContains(body, "next_runnable_atoms=atom-1")
         assertContains(body, "last_good_commit=commit-1")
+        assertContains(body, "evidence_path=${evidencePath}")
         assertEquals(root.resolve(".atropos/runs/run-1/factory-handoff.md"), path)
         val restored = FactoryRunHandoff.read(root, "run-1")
         assertEquals("dag-1", restored.dagId)
         assertEquals(listOf("atom-1"), restored.nextRunnableAtomIds)
         assertEquals("commit-1", restored.lastGoodCommit)
+        assertEquals(evidencePath.toAbsolutePath().normalize(), restored.evidencePath)
     }
 }

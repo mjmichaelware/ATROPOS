@@ -14,7 +14,8 @@ data class FactoryRunHandoffState(
     val failedAtomIds: List<String>,
     val doneAtomIds: List<String>,
     val lastGoodCommit: String?,
-    val stopReason: String?
+    val stopReason: String?,
+    val evidencePath: Path? = null
 )
 
 data class FactoryResumeContext(
@@ -35,7 +36,8 @@ object FactoryRunHandoff {
         dagId: String,
         snapshot: FactoryObligationSnapshot,
         freeze: FactoryAcceptanceFreeze,
-        lastGoodCommit: String? = null
+        lastGoodCommit: String? = null,
+        evidencePath: String? = null
     ): Path {
         val path = repoRoot.resolve(".atropos/runs/$runId/factory-handoff.md").normalize()
         require(path.startsWith(repoRoot.toAbsolutePath().normalize())) { "factory handoff escaped repository" }
@@ -50,6 +52,7 @@ object FactoryRunHandoff {
             appendLine("failed_atoms=${snapshot.failedAtomIds.joinToString(",").ifBlank { "none" }}")
             appendLine("done_atoms=${snapshot.doneAtomIds.joinToString(",").ifBlank { "none" }}")
             appendLine("last_good_commit=${lastGoodCommit ?: "none"}")
+            appendLine("evidence_path=${evidencePath ?: "none"}")
             appendLine("stop_reason=${snapshot.stopReason ?: "none"}")
         }
         writeAtomically(path, content)
@@ -67,6 +70,12 @@ object FactoryRunHandoff {
         require(fields["schema"] == "factory-handoff-v1") { "unsupported factory handoff schema" }
         require(fields["run_id"] == runId) { "factory handoff run id mismatch" }
         fun list(name: String): List<String> = fields[name].orEmpty().split(',').map(String::trim).filter { it.isNotBlank() && it != "none" }
+        val normalizedRoot = repoRoot.toAbsolutePath().normalize()
+        val evidencePath = fields["evidence_path"]?.takeUnless { it == "none" || it.isBlank() }?.let {
+            Path.of(it).toAbsolutePath().normalize().also { candidate ->
+                require(candidate.startsWith(normalizedRoot)) { "factory handoff evidence escaped repository" }
+            }
+        }
         return FactoryRunHandoffState(
             runId = runId,
             dagId = requireNotNull(fields["planning_dag"]),
@@ -77,7 +86,8 @@ object FactoryRunHandoff {
             failedAtomIds = list("failed_atoms"),
             doneAtomIds = list("done_atoms"),
             lastGoodCommit = fields["last_good_commit"]?.takeUnless { it == "none" },
-            stopReason = fields["stop_reason"]?.takeUnless { it == "none" }
+            stopReason = fields["stop_reason"]?.takeUnless { it == "none" },
+            evidencePath = evidencePath
         )
     }
 

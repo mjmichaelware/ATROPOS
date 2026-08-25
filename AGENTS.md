@@ -12406,6 +12406,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; FTY-03/FTY-05 remain partial pending hosted execution.
 - Fingerprints: recorded after static verification.
 
+### 2026-08-25T22:00:00Z · Agent: Codex GPT-5 · Batch: factory-resume-execution-owner
+
+- Paths touched: `src/main/kotlin/atropos/core/factory/FactoryRunHandoff.kt` (+14/-2), `src/main/kotlin/atropos/core/factory/FactoryRunOrchestrator.kt` (+14), `src/main/kotlin/atropos/cli/FactoryCommandHandler.kt` (+14/-5), `src/test/kotlin/atropos/core/factory/FactoryRunHandoffTest.kt` (+13), `scripts/backend-atom-contract-test.sh` (+3).
+- Atoms / phases affected: FTY-01/02 process-death resume and handoff context reconstruction.
+- Predicate moved: `/factory resume <runId>` now invokes the existing `AppFactoryRouter.resume(runId, freeze, executeWave)` path and executes attested evidence waves. The handoff persists and validates an in-repository evidence path; if absent, resume fails actionable rather than inventing a project or prompt.
+- Verification actually run: pending in this batch; hosted factory selectors remain required. No Kotlin or hosted-green claim.
+- % delta: unchanged; resume remains partial pending hosted execution.
+- Fingerprints: recorded after static verification.
+
 ### 2026-08-24T15:00:00Z · Agent: Codex GPT-5 · Batch: provider-startup-single-scan
 - Paths touched: `src/main/kotlin/atropos/Main.kt` (+14/-6), `src/main/kotlin/atropos/cli/CommandRouter.kt` (+10/-1), `scripts/backend-atom-contract-test.sh` (+7/-1), `STATUS-BACKEND.md` (+7), `AGENTS.md` (+7).
 - Atoms / phases affected: B-PROV-001/B-PROV-003 startup discovery and cascade print.

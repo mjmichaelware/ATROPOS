@@ -5,6 +5,7 @@ import atropos.cli.ui.AnsiTerminalEngine
 import atropos.cli.ui.AppFactoryPlanRenderer
 import atropos.core.factory.FactoryClarificationRequired
 import atropos.core.factory.FactoryClarificationRequest
+import atropos.core.factory.FactoryEvidenceWaveExecutor
 import atropos.core.AtroposRepoRootLocator
 import atropos.core.security.RedactionFilter
 import atropos.core.factory.AppFactoryRouter
@@ -18,10 +19,17 @@ class FactoryCommandHandler(
     private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
     private val resumeFactory: (String, List<Boolean>) -> String = renderer::renderClarifiedRun,
     private val resumeRun: (String) -> String = { runId ->
-        val context = AppFactoryRouter(repoRoot = repoRoot).resume(runId)
-        "resume attested: run=$runId dag=${context.handoff.dagId} prompt=${context.promptFingerprint} " +
-            "freeze=${context.acceptanceFreeze.sha256} open_work=${context.handoff.openWork} " +
-            "next=${context.handoff.nextRunnableAtomIds.joinToString(",").ifBlank { "none" }}"
+        val router = AppFactoryRouter(repoRoot = repoRoot)
+        val context = router.resume(runId)
+        val evidencePath = requireNotNull(context.handoff.evidencePath) {
+            "factory resume cannot execute: handoff has no attested evidence path; the run stopped before generation completed"
+        }
+        val loop = router.resume(runId, context.acceptanceFreeze) { ready ->
+            FactoryEvidenceWaveExecutor(evidencePath, context.acceptanceFreeze).execute(ready)
+        }
+        "resume executed: run=$runId dag=${context.handoff.dagId} prompt=${context.promptFingerprint} " +
+            "freeze=${context.acceptanceFreeze.sha256} open_work=${loop.snapshot.openWork} " +
+            "termination=${loop.terminationReason} waves=${loop.wavesExecuted}"
     }
 ) {
     fun execute(tokens: List<String>): RouterOutcome {
