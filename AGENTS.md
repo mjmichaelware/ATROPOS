@@ -13335,6 +13335,16 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprints: `.github/workflows/release.yml=b8bae9c90f09`; `scripts/release-installer-contract-test.sh=c9fab5a3a402`; `scripts/backend-atom-contract-test.sh=bc1b586e05cd`.
 
+### 2026-08-25T02:57:11Z · Agent: Codex GPT-5 · Batch: release-mcp-example-gate
+
+- Paths touched: `.github/workflows/release.yml` (+3), `scripts/release-installer-contract-test.sh` (+1), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: ADD-MCP-EX-001..013 release config-catalog coverage.
+- Predicate moved: release publication now validates the existing disabled-by-default MCP example catalog before packaging; no per-server adapter, installer, or second MCP owner was introduced.
+- Verification actually run: `bash scripts/mcp-example-contract-test.sh` (`MCP_EXAMPLE_CONTRACT_OK files=14 servers=14`), release contract, backend atom contract, hosted selector contract (`440 tests`), and `git diff --check` passed. Hosted release execution remains unverified.
+- % delta: unchanged; MCP example atoms remain source-wired/partial pending hosted execution.
+- New overall estimate: unchanged.
+- Fingerprints: `.github/workflows/release.yml=11e536b7fe17`; `scripts/release-installer-contract-test.sh=6da30298bd59`; `scripts/backend-atom-contract-test.sh=9f650f31c7d5`.
+
 ### 2026-08-25T02:16:59Z · Agent: Codex GPT-5 · Batch: install-help-caller-contract
 - Paths touched: `scripts/backend-atom-contract-test.sh` (+16).
 - Atoms / phases affected: B-INST-001..005 and B-HELP-001..002 caller enforcement.

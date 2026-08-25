@@ -1463,6 +1463,12 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | --- | --- | --- | --- | --- |
 | B-PROV-004 / provider connect release boundary | source-wired / partial | `.github/workflows/release.yml`, `scripts/provider-connect-contract-test.sh`, `scripts/release-installer-contract-test.sh`, `scripts/backend-atom-contract-test.sh` | release build/publish job → existing provider-connect secret-input contract → `ProviderCommandHandler`/`TokenIsolationVault` source boundary | Provider-connect contract, release contract, backend atom contract, hosted selector (440), and `git diff --check` pass. No key was entered or logged; hosted release execution remains unverified. |
 
+### 2026-08-25T02:57:11Z · Agent: Codex GPT-5 · Batch: release-mcp-example-gate
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| ADD-MCP-EX-001..013 / release catalog boundary | source-wired / partial | `.github/workflows/release.yml`, `scripts/mcp-example-contract-test.sh`, `scripts/release-installer-contract-test.sh`, `scripts/backend-atom-contract-test.sh`, `docs/mcp-examples/*.json` | release build/publish job → existing MCP example contract → disabled-by-default config catalog | MCP example contract passes (`14` files / `14` servers), release/backend contracts, hosted selector (440), and `git diff --check` pass. No auto-install or adapter was added; hosted release execution remains unverified. |
+
 ### 2026-08-25T03:50:00Z · Agent: Codex GPT-5 · Batch: generated-provider-readme-table
 
 | atom | status | files | caller | tests / notes |

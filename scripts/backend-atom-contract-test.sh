@@ -376,5 +376,6 @@ text .github/workflows/factory-test.yml 'github-actions-clean-runner-test.sh'
 text .github/workflows/release.yml 'backend-atom-contract-test.sh'
 text .github/workflows/release.yml 'github-actions-clean-runner-test.sh'
 text .github/workflows/release.yml 'provider-connect-contract-test.sh'
+text .github/workflows/release.yml 'mcp-example-contract-test.sh'
 
 printf '%s\n' 'ATROPOS_BACKEND_ATOM_CONTRACT_OK'
