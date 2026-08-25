@@ -86,6 +86,7 @@ class McpHostManager(
     private val redactionFilter = RedactionFilter()
 
     fun load(): List<McpServerConfig> {
+        IntegrationRegistry.requireRegistered("mcp")
         if (!Files.isRegularFile(configPath)) return emptyList()
         return McpConfigParser.parse(Files.readString(configPath))
     }

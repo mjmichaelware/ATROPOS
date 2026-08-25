@@ -1855,3 +1855,9 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-GITLOCAL / canonical integration registration | source-wired / partial | `src/main/kotlin/atropos/cli/shell/ShellCommandRunner.kt`, `scripts/backend-atom-contract-test.sh` | `/git status|diff|conflicts|add|commit|rebase-continue` → existing `ShellCommandRunner` → `IntegrationRegistry.requireRegistered("git-local")` → existing `TypedToolExecutor`/`BoundedProcessRunner` | All local Git entrypoints now assert the existing `git-local` descriptor before bounded execution; no second Git owner or raw process path was added. Backend contract, hosted selector (`441 tests`), and diff check passed; Kotlin/hosted execution remains unverified. |
+
+### 2026-08-25T18:45:00Z · Agent: Codex GPT-5 · Batch: mcp-registry-owner
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-CORE / canonical MCP integration registration | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `scripts/backend-atom-contract-test.sh` | `/mcp`, `/doctor`, bridge MCP routes → sole `McpHostManager.load()` → `IntegrationRegistry.requireRegistered("mcp")` → existing config/transport/policy owner | MCP configuration loading now fails closed if the canonical first-party `mcp` integration descriptor is absent; no second host or registry was introduced. Backend contract, hosted selector (`441 tests`), and diff check passed; Kotlin/hosted execution remains unverified. |

@@ -15104,3 +15104,12 @@ Local verification note for this batch: `timeout 120s ./gradlew test --tests 'at
 - Verification actually run: `ATROPOS_BACKEND_ATOM_CONTRACT_OK`, `ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (441 tests)`, and `git diff --check` passed. No Kotlin or hosted-green claim.
 - % delta: unchanged; B-MCP-GITLOCAL remains source-wired/partial pending hosted execution.
 - Fingerprints: `ShellCommandRunner.kt=5eb4a7ec8518`, `backend-atom-contract-test.sh=daf846a1ba2d`.
+
+### 2026-08-25T18:45:00Z · Agent: Codex GPT-5 · Batch: mcp-registry-owner
+
+- Paths touched: `src/main/kotlin/atropos/core/integration/McpHostManager.kt` (+1), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-MCP-BRIDGE-SCHEMA and B-MCP-CORE host ownership.
+- Predicate moved: all MCP config/health/call paths now assert the existing canonical `mcp` integration registration before parsing or transport, preserving one host and one registry.
+- Verification actually run: `ATROPOS_BACKEND_ATOM_CONTRACT_OK`, `ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (441 tests)`, and `git diff --check` passed. No Kotlin or hosted-green claim.
+- % delta: unchanged; MCP host remains source-wired/partial pending hosted execution and live server evidence.
+- Fingerprints: `McpHostManager.kt=1f7cf1ee8c79`, `backend-atom-contract-test.sh=cdaa6b89790b`.
