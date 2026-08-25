@@ -1546,3 +1546,9 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-OC-003 / AGPL procurement note | source-wired / partial | `LEGAL.md`, `README.md`, `docs/OPEN_CORE_BOUNDARY.md`, `scripts/backend-atom-contract-test.sh` | README/install documentation → `LEGAL.md` and existing open-core boundary; license text remains authoritative | Added the specified procurement-facing legal pointer without modifying licensing authority. Backend contract, hosted selector (`440` tests), orphan gate, and `git diff --check` pass. Legal review and hosted CI remain external evidence. |
+
+### 2026-08-25T03:44:00Z · Agent: Codex GPT-5 · Batch: mcp-catalog-boundary-audit
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-BRIDGE-SCHEMA / B-MCP-MEMORY / B-MCP-FETCH / B-MCP-TIME / B-MCP-KEYCHAIN | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpConfigParser.kt`, `McpHostManager.kt`, `src/main/kotlin/atropos/core/security/TokenIsolationVault.kt`, `docs/mcp-examples/*.json`, `CONTRIBUTING.md` | `/mcp list|test|call` and bridge MCP routes → single `McpHostManager`; configured server secrets → existing `TokenIsolationVault`/`SecretSource`; community catalog → disabled-by-default examples | Generic MCP schema, stdio/HTTP host, memory authority refusal, local-only policy, evidence mapping, and keychain-first secret boundary are present. Tier-1/2 brand names remain config/examples-only by policy; no adapter farm or silent auto-install. Existing backend/MCP/example contracts and selector (`440` tests) pass; hosted runtime remains unverified. |

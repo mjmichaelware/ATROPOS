@@ -13327,6 +13327,14 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; B-OC-003 remains source-wired/partial pending external legal/hosted evidence.
 - Fingerprints (sha256, first 12): `LEGAL.md=41d6926c53c1`; `README.md=09b635196cec`; `backend-atom-contract-test.sh=730dc427bb1f`.
 
+### 2026-08-25T03:44:00Z · Agent: Codex GPT-5 · Batch: mcp-catalog-boundary-audit
+- Paths touched: `STATUS-BACKEND.md` (+7); inspected `src/main/kotlin/atropos/core/integration/McpConfigParser.kt`, `McpHostManager.kt`, `TokenIsolationVault.kt`, `docs/mcp-examples/*.json`, and `CONTRIBUTING.md`.
+- Atoms / phases affected: B-MCP-BRIDGE-SCHEMA, B-MCP-MEMORY, B-MCP-FETCH, B-MCP-TIME, B-MCP-KEYCHAIN, and the no-brand-adapter policy boundary.
+- Predicate moved: the backend ledger now explicitly records the generic MCP host/keychain caller path and the intentional config-only treatment of Tier-1/2 brands; absent adapter files are not misreported as completed implementations.
+- Verification actually run: existing backend/MCP/example contracts and hosted selector (`440 tests`) remain passing; no source mutation occurred in this audit batch, so `git diff --check` and the orphan result remain unchanged (4 historical baseline files / 1045 production files / 362 orphan LOC). Hosted runtime remains unverified.
+- % delta: unchanged; generic host atoms remain source-wired/partial and brand-specific adapters remain policy-limited/config-only.
+- Fingerprints (sha256, first 12): `McpConfigParser.kt=281d6d700f19`; `McpHostManager.kt=983632be4344`; `TokenIsolationVault.kt=02430c1fd307`; `markitdown.json=97c70d0f0373`; `CONTRIBUTING.md=b6e7619b11cc`.
+
 ### 2026-08-25T02:44:07Z · Agent: Codex GPT-5 · Batch: release-backend-atom-gate
 
 - Paths touched: `.github/workflows/release.yml` (+3), `scripts/release-installer-contract-test.sh` (+1), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7).
