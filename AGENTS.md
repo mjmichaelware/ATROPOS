@@ -15184,3 +15184,11 @@ Local verification note for this batch: `timeout 120s ./gradlew test --tests 'at
 - Verification actually run: `ATROPOS_BACKEND_ATOM_CONTRACT_OK`, `ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (441 tests)`, and `git diff --check` passed. Kotlin execution remains unverified.
 - % delta: unchanged; provider connect remains source-wired/partial pending hosted/runtime execution.
 - Fingerprints: recorded after commit.
+
+### 2026-08-25T21:30:00Z · Agent: Codex GPT-5 · Batch: shared-owner-regression-contract
+- Paths touched: `scripts/backend-atom-contract-test.sh` (+3), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-PROV-002 and B-MCP-CORE launch ownership.
+- Predicate moved: the backend source gate now explicitly protects the `Main.main()` → shared provider/MCP owner → CLI/bridge composition and the injected-provider no-rescan branch. This is a regression guard over the existing production seam, not a second owner.
+- Verification actually run: backend atom contract, provider environment, provider connect, MCP example, reusable GHA action/path contracts, hosted selector (`441 tests`), orphan gate (4 historical baseline orphans only), and `git diff --check` passed. No Kotlin/hosted-green claim.
+- % delta: unchanged; source-wired/partial pending hosted execution.
+- Fingerprints: recorded after commit.

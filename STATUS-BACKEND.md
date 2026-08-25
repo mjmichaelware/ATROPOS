@@ -1886,3 +1886,9 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-PROV-002 / B-MCP-CORE single launch owner composition | source-wired / partial | `src/main/kotlin/atropos/Main.kt`, `src/main/kotlin/atropos/bridge/AtroposBridge.kt`, `scripts/backend-atom-contract-test.sh` | `Main.main()` → one `ProviderOnboardingService` and one `McpHostManager` → `CommandRouter` plus `LocalEngineBridge` → bridge routes/command runner | Removed the real launch-path duplication: bridge construction now accepts the already-refreshed provider owner and shared MCP host, while standalone bridge callers retain safe defaults. Backend contract, hosted selector (`441 tests`), orphan gate (4 historical baseline orphans only), and `git diff --check` passed. Kotlin/hosted execution and live provider/MCP evidence remain unverified. |
+
+### 2026-08-25T21:30:00Z · Agent: Codex GPT-5 · Batch: shared-owner-regression-contract
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-PROV-002 / B-MCP-CORE shared-owner regression guard | source-wired / partial | `scripts/backend-atom-contract-test.sh` | backend source contract → `Main.main()` shared onboarding/MCP arguments → `LocalEngineBridge` injected-owner path | Added source assertions for the shared MCP argument, shared onboarding argument, and no-refresh-on-injection branch. Backend contract, provider/connect/MCP/GHA contracts, hosted selector (`441 tests`), orphan gate, and diff check pass; hosted Kotlin and live integration evidence remain unverified. |
