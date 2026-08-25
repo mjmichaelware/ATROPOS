@@ -38,6 +38,15 @@ class ProviderOnboardingTest {
     }
 
     @Test
+    fun launch_summary_refreshes_environment_even_when_metadata_already_exists() {
+        val root = Files.createTempDirectory("provider-onboarding-launch-refresh")
+        val first = ProviderOnboardingService(root = root, environment = emptyMap())
+        first.refresh()
+        val second = ProviderOnboardingService(root = root, environment = mapOf("GROQ_API_KEY" to "secret"))
+        assertTrue(second.renderLaunchSummary(refresh = true).contains("cascade_candidates=groq"))
+    }
+
+    @Test
     fun launch_summary_uses_free_cascade_and_labels_paid_candidates() {
         val service = ProviderOnboardingService(
             root = Files.createTempDirectory("provider-onboarding-launch-order"),

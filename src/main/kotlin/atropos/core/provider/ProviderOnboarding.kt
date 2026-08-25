@@ -176,8 +176,8 @@ class ProviderOnboardingService(
      * healthy, enabled identifiers so launch never prints a provider wall or
      * any credential material.
      */
-    fun renderLaunchSummary(): String {
-        val rows = list()
+    fun renderLaunchSummary(refresh: Boolean = false): String {
+        val rows = if (refresh) refresh() else list()
         // `local` is the built-in tooling descriptor, not a model endpoint;
         // keep it available to route policy while excluding it from the
         // launch provider-health count and cascade candidate line.

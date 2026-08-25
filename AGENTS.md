@@ -13397,6 +13397,16 @@ Local verification note for this batch: `timeout 120s ./gradlew test --tests 'at
 - New overall estimate: unchanged.
 - Fingerprints (sha256, first 12): `QuotaLedger.kt=f151c6c48e2f`; `backend-atom-contract-test.sh=3e62036b32e4`; commit `7ad013f8`. Unrelated `docs/completion/*` remains unstaged and untouched.
 
+### 2026-08-25T19:45:00Z · Agent: Codex GPT-5 · Batch: startup-provider-refresh-truth
+
+- Paths touched: `src/main/kotlin/atropos/Main.kt` (+1/-1), `src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt` (+2/-1), `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` (+9), `scripts/backend-atom-contract-test.sh` (+1/-1), `AGENTS.md` (+7), `STATUS-BACKEND.md` (+1).
+- Atoms / phases affected: B-PROV-002 discovery refresh, B-PROV-003 launch cascade, B-PROV-005 zero-provider behavior.
+- Predicate moved: startup now explicitly performs the one required environment scan before rendering the compact cascade, even when persisted metadata already exists; an environment change can no longer remain invisible until a manual refresh.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh`, `bash scripts/provider-env-contract-test.sh`, `bash scripts/hosted-test-selector-contract.sh` (`440 tests`), and `git diff --check` passed. Root/hosted Kotlin execution remains unverified; no green claim.
+- % delta: unchanged; provider discovery remains source-wired / partial pending hosted execution.
+- New overall estimate: unchanged.
+- Fingerprints (sha256, first 12): pending until scoped commit; unrelated `docs/completion/*` remains unstaged and untouched.
+
 ### 2026-08-25T12:45:00Z · Agent: Codex GPT-5 · Batch: imported-context-authority-contract
 
 - Paths touched: `scripts/backend-atom-contract-test.sh` (+5).

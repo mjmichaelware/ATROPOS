@@ -83,7 +83,7 @@ fun main(args: Array<String>) {
         // Discovery is cheap and metadata-only. Print its compact candidate
         // line once at launch; the canonical route owner still decides the
         // actual cascade when work is requested.
-        ui.renderNotice(atropos.core.provider.ProviderOnboardingService().renderLaunchSummary())
+        ui.renderNotice(atropos.core.provider.ProviderOnboardingService().renderLaunchSummary(refresh = true))
 
         if (args.firstOrNull() == "--doctor") {
             atropos.cli.FirstRunDoctorRenderer(
