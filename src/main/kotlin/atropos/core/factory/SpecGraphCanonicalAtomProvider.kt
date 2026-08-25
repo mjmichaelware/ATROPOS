@@ -5,6 +5,7 @@ import atropos.core.AtroposRepoRootLocator
 import atropos.core.AtroposConfig
 import atropos.core.ProviderCascadeRouter
 import atropos.core.ProviderFactory
+import atropos.core.provider.ProviderOnboardingService
 import atropos.core.planning.CanonicalAtomProvider
 import atropos.core.planning.CanonicalAtomSet
 import atropos.core.planning.AtomDimension
@@ -26,6 +27,7 @@ import java.nio.file.Path
 class SpecGraphCanonicalAtomProvider(
     private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
     private val atomizer: SpecGraphAtomizer = SpecGraphAtomizer(),
+    private val onboarding: ProviderOnboardingService = ProviderOnboardingService(),
     /**
      * Where the provenance line is recorded.
      *
@@ -181,7 +183,8 @@ class SpecGraphCanonicalAtomProvider(
         val config = AtroposConfig.load()
         val result = ProviderCascadeRouter(
             ProviderFactory(config),
-            healthyProviderIds = { ProviderOnboardingService().healthyProviderIds() },
+            healthyProviderIds = { onboarding.healthyProviderIds() },
+            preferredProviderIds = { onboarding.preferredProviderIds() },
             localOnly = { config.runtime.localOnly }
         ).completeWithCascade(
             requestedProvider = config.runtime.defaultProvider,

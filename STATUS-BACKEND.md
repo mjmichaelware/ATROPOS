@@ -1668,3 +1668,9 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-PROV-002/003 doctor health projection | source-wired / partial | `src/main/kotlin/atropos/Main.kt`, `src/main/kotlin/atropos/cli/CommandRouter.kt`, `scripts/backend-atom-contract-test.sh` | startup refresh → injected `ProviderOnboardingService` → `BackendDoctor` for `doctor` and in-session doctor | Both doctor entrypoints now consume the already-refreshed launch provider owner; they no longer construct an independent onboarding inventory on production paths. Backend contract, hosted selector contract (`440 tests`), and `git diff --check` pass. Hosted Kotlin execution remains unverified. |
+
+### 2026-08-25T08:00:00Z · Agent: Codex GPT-5 · Batch: factory-dimension-owner
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| F01/B-PROV-002 factory dimension-fill cascade owner | source-wired / partial | `src/main/kotlin/atropos/core/factory/AppFactoryRouter.kt`, `SpecGraphCanonicalAtomProvider.kt`, `scripts/backend-atom-contract-test.sh` | factory router → one `SpecGraphCanonicalAtomProvider` → existing `ProviderCascadeRouter` with shared onboarding health/preference suppliers | Repeated SpecGraph dimension classification now reuses one onboarding owner per factory router instead of constructing a new onboarding service for every atom. Backend contract, hosted selector contract (`440 tests`), and `git diff --check` pass. Hosted Kotlin factory execution remains unverified. |

@@ -13352,6 +13352,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; B-PROV-002/003 remains source-wired/partial pending hosted Kotlin execution and live health evidence.
 - Fingerprints (sha256, full): `Main.kt=81a4e8513e1a91f565f2af0f9487678076fdc7f720d9fc21381d89c020f783e3`; `CommandRouter.kt=96bb1b13b576c206d1e2867bed941bd01db1b5d9e24041536cecd44da401b08d`; `backend-atom-contract-test.sh=fd47ce572261ac38fb0b463295eb439615910668181576b013e6a3b02097541b`.
 
+### 2026-08-25T08:00:00Z · Agent: Codex GPT-5 · Batch: factory-dimension-owner
+
+- Paths touched: `src/main/kotlin/atropos/core/factory/AppFactoryRouter.kt` (+7/-1), `SpecGraphCanonicalAtomProvider.kt` (+4/-1), `scripts/backend-atom-contract-test.sh` (+2).
+- Atoms / phases affected: F01 SpecGraph dimension fill cascade and B-PROV-002 shared route truth.
+- Predicate moved: the factory router now owns one onboarding instance and passes it to the canonical SpecGraph provider; dimension-fill cascades reuse its healthy/preferred set instead of allocating a fresh onboarding service for each classification call.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh` (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (440 tests)`), and `git diff --check` passed. Root/hosted Kotlin execution remains unverified; no factory runtime claim.
+- % delta: unchanged; F01 remains source-wired/partial pending hosted Kotlin/runtime proof.
+- Fingerprints (sha256, full): `AppFactoryRouter.kt=c6ebc7ca5fa7deb3b978da42810eee31ca0accce192014bd06adf115ee235d6e`; `SpecGraphCanonicalAtomProvider.kt=404a8e3a863d8a702e6904ee7d12472828fadd9a3304e2bd0f9b266531f5694e`; `backend-atom-contract-test.sh=69a3e4e91de7c332749387cf42c8fd3c483e6932146b1c26215480527c0b24e4`.
+
 ### 2026-08-25T07:20:00Z · Agent: Codex GPT-5 · Batch: mcp-probe-handshake-test-proof-append
 
 - Paths touched: `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+6), `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+7).

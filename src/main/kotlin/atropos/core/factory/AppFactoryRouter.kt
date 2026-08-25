@@ -3,6 +3,7 @@ package atropos.core.factory
 import atropos.core.assets.LocalAssetGenerator
 import atropos.core.AtroposRepoRootLocator
 import atropos.core.AtroposConfig
+import atropos.core.provider.ProviderOnboardingService
 import atropos.core.memory.LocalMemoryStore
 import atropos.core.paid.EmergencyPaidGate
 import atropos.core.project.ProjectRegistry
@@ -13,6 +14,7 @@ import java.nio.file.Path
 
 class AppFactoryRouter(
     private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
+    private val onboarding: ProviderOnboardingService = ProviderOnboardingService(),
     private val memory: LocalMemoryStore? = runCatching {
         LocalMemoryStore(repoRoot.resolve(".atropos/memory").toFile())
     }.getOrNull(),
@@ -35,7 +37,10 @@ class AppFactoryRouter(
         executionDagSynthesizer = atropos.core.planning.InternalExecutionDagSynthesizer(
             atomContext = atropos.data.lakehouse.LakehouseAtomContextProvider()
         ),
-        canonicalAtoms = SpecGraphCanonicalAtomProvider(repoRoot = repoRoot)
+        canonicalAtoms = SpecGraphCanonicalAtomProvider(
+            repoRoot = repoRoot,
+            onboarding = onboarding
+        )
     ),
     private val journal: EventJournalService = EventJournalService(repoRoot),
     private val liveRepairAction: FactoryLiveRepairAction = FactoryLiveRepairAction(repoRoot)

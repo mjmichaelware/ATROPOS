@@ -441,6 +441,8 @@ text src/main/kotlin/atropos/core/factory/FactoryRunOrchestrator.kt 'FactoryRepa
 text src/main/kotlin/atropos/core/factory/FactoryRunOrchestrator.kt 'state = if (repairWasExecuted) "REENTERED_OBLIGATION_LOOP" else "NOT_NEEDED"'
 text src/main/kotlin/atropos/core/factory/FactoryRepairExecutor.kt 'obligationLoop.recordRepairEvidence'
 text src/main/kotlin/atropos/core/factory/FactoryAcceptanceFreeze.kt 'repair acceptance predicates did not all pass'
+text src/main/kotlin/atropos/core/factory/AppFactoryRouter.kt 'onboarding = onboarding'
+text src/main/kotlin/atropos/core/factory/SpecGraphCanonicalAtomProvider.kt 'preferredProviderIds = { onboarding.preferredProviderIds() }'
 
 # Both hosted entrypoints must run this contract.
 text .github/workflows/compile-gate.yml 'backend-atom-contract-test.sh'
