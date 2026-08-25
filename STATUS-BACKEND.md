@@ -1334,3 +1334,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-014 / O01 imported cursor-rules/copilot-instructions context | source-wired / partial | `src/main/kotlin/atropos/cli/commands/AgentCommand.kt`, `src/main/kotlin/atropos/core/agent/ImportedInstructionPackStore.kt`, `scripts/backend-atom-contract-test.sh` | `/agent context import <path>` → existing `AgentCommand.importContext()` → `ImportedInstructionPackStore.import()` → redacted, territory-bounded, hash-attested context pack | Backend source gate now protects the real CLI caller, repository boundary, content hash self-check, redaction, and non-authority override policy. Hosted selector contract remains 440 tests; backend contract and `git diff --check` pass. Hosted Kotlin execution remains unverified. |
+
+### 2026-08-25T13:10:00Z · Agent: Codex GPT-5 · Batch: zero-retention-boundary-contract
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-015 / B-OC-004 zero-retention research boundary | source-wired / partial | `src/main/kotlin/atropos/core/Config.kt`, `src/main/kotlin/atropos/core/factory/FactoryResearchService.kt`, `src/main/kotlin/atropos/cli/BackendDoctor.kt`, `docs/OPEN_CORE_BOUNDARY.md`, `scripts/backend-atom-contract-test.sh` | runtime config → `FactoryResearchService` lakehouse/bounded-fetch branches → explicit `SKIPPED_ZERO_RETENTION` outcomes; `/doctor` reports the active mode | Central backend source contract now protects the zero-retention flag, both remote-research refusal branches, doctor visibility, and open-core/local-only documentation. Backend contract, hosted selector contract (440), shell syntax, and `git diff --check` pass; hosted Kotlin and remote-plane execution remain unverified. |

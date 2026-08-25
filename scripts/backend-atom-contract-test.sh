@@ -66,6 +66,15 @@ text src/main/kotlin/atropos/core/agent/ImportedInstructionPackStore.kt 'OVERRID
 text src/main/kotlin/atropos/core/agent/ImportedInstructionPackStore.kt 'redactionFilter.redact(Files.readString(source'
 text src/main/kotlin/atropos/core/agent/ImportedInstructionPackStore.kt 'require(source.startsWith(repoRoot))'
 text src/main/kotlin/atropos/core/agent/ImportedInstructionPackStore.kt 'pack.hasValidContentHash()'
+file src/main/kotlin/atropos/core/factory/FactoryResearchService.kt
+file src/main/kotlin/atropos/cli/BackendDoctor.kt
+file docs/OPEN_CORE_BOUNDARY.md
+text src/main/kotlin/atropos/core/Config.kt 'zero_retention_research'
+text src/main/kotlin/atropos/core/factory/FactoryResearchService.kt 'zeroRetentionResearch'
+text src/main/kotlin/atropos/core/factory/FactoryResearchService.kt 'lakehouse_route=SKIPPED_ZERO_RETENTION:remote_research_disabled'
+text src/main/kotlin/atropos/core/factory/FactoryResearchService.kt 'bounded_fetch=SKIPPED_ZERO_RETENTION'
+text src/main/kotlin/atropos/cli/BackendDoctor.kt 'zero_retention_research=${config.runtime.zeroRetentionResearch}'
+text docs/OPEN_CORE_BOUNDARY.md 'local-only mode'
 text scripts/atropos-verify-worktree.sh "atropos.core.provider.ProviderConfigurationResolverTest"
 text .github/workflows/compile-gate.yml "atropos.core.provider.ProviderConfigurationResolverTest"
 text scripts/atropos-verify-worktree.sh "atropos.ast.AstSymbolGraphTest"

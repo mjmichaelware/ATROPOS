@@ -13305,6 +13305,16 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprint: `backend-atom-contract-test.sh=a552f5677832`.
 
+### 2026-08-25T13:10:00Z · Agent: Codex GPT-5 · Batch: zero-retention-boundary-contract
+
+- Paths touched: `scripts/backend-atom-contract-test.sh` (+7).
+- Atoms / phases affected: B-015 / B-OC-004 zero-retention research plane and open-core boundary.
+- Predicate moved: the CI-owned backend source gate now protects the shared zero-retention runtime flag, both `FactoryResearchService` remote-research refusal branches, `/doctor` visibility, and the documented local-only/open-core boundary. No parallel research or policy owner was introduced.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh` (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (440 tests)`), `bash -n scripts/backend-atom-contract-test.sh`, and `git diff --check` passed. Hosted Kotlin and remote-plane execution remain unverified.
+- % delta: unchanged; B-015 / B-OC-004 remains source-wired / partial pending hosted execution.
+- New overall estimate: unchanged.
+- Fingerprint: `backend-atom-contract-test.sh=48cd87856e18`.
+
 ### 2026-08-25T12:20:00Z · Agent: Codex GPT-5 · Batch: github-oauth-contract-hardening
 
 - Paths touched: `scripts/backend-atom-contract-test.sh` (+4), `docs/PROVIDER_ENVIRONMENT.md` (+1), `STATUS-BACKEND.md` (+7).
