@@ -379,7 +379,14 @@ class McpHostManagerTest {
             root,
             localOnly = false,
             probe = { McpHealth.HEALTHY },
-            remoteRequest = { _, body -> requests += body; "{\"jsonrpc\":\"2.0\",\"id\":3,\"result\":{\"content\":[{\"text\":\"ok\"}]}}" }
+            remoteRequest = { _, body ->
+                requests += body
+                when {
+                    body.contains("\"method\":\"initialize\"") -> "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{}}"
+                    body.contains("\"method\":\"tools/list\"") -> "{\"jsonrpc\":\"2.0\",\"id\":2,\"result\":{\"tools\":[{\"name\":\"inspect\"}]}}"
+                    else -> "{\"jsonrpc\":\"2.0\",\"id\":3,\"result\":{\"content\":[{\"text\":\"ok\"}]}}"
+                }
+            }
         ).callTool("remote", "inspect")
 
         assertEquals(4, requests.size)

@@ -13327,6 +13327,14 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; remote MCP runtime remains source-wired / partial pending hosted execution.
 - Fingerprints (sha256, first 12): `McpHostManager.kt=6841ce173abf`; `McpHostManagerTest.kt=a9bd2e043be2`; `backend-atom-contract-test.sh=ec17c6761246`.
 
+### 2026-08-25T10:00:00Z · Agent: Codex GPT-5 · Batch: mcp-remote-fixture-response-proof
+- Paths touched: `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+8), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-MCP-CORE-c/d/e remote fixture fidelity.
+- Predicate moved: the hosted remote MCP fixture now supplies protocol-correct initialize/tools-list/tools-call responses, so the existing production handshake and evidence path are tested against valid JSON-RPC ids instead of a permissive invalid response.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh`, `bash scripts/hosted-test-selector-contract.sh` (`421 tests`), and `git diff --check` passed. Root/hosted Kotlin execution remains unverified; no root-green claim.
+- % delta: unchanged; remote MCP runtime remains source-wired / partial pending hosted execution.
+- Fingerprints (sha256, first 12): `McpHostManagerTest.kt=5f10aea7a072`.
+
 ### 2026-08-25T08:00:00Z · Agent: Codex GPT-5 · Batch: provider-namespace-adapter-alias
 - Paths touched: `src/main/kotlin/atropos/core/provider/adapter/AdapterRegistry.kt` (+5), `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` (+12), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7).
 - Atoms / phases affected: B-PROV-001t provider namespace scan reaching live adapter configuration.

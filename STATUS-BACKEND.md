@@ -1298,3 +1298,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-CORE-c/d/e remote call sequence | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt`, `scripts/backend-atom-contract-test.sh` | `/mcp call`/bridge → `McpHostManager.remoteCall()` → initialize → one initialized notification → tools/list → tools/call | The existing remote owner is now guarded by a four-request fixture and a CI assertion preventing duplicate initialized notifications. Backend contract, hosted-selector contract (421), and diff check pass; hosted Kotlin execution remains pending. |
+
+### 2026-08-25T10:00:00Z · Agent: Codex GPT-5 · Batch: mcp-remote-fixture-response-proof
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-CORE-c/d/e remote fixture fidelity | source-wired / partial | `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` | hosted `McpHostManagerTest.allowlisted_http_server_uses_the_same_evidence_and_call_gate` → injected remote transport → method-specific JSON-RPC responses | The remote fixture now returns matching ids/tools for initialize, tools/list, and tools/call, proving the production handshake/evidence path rather than accepting an invalid all-id-3 response. Backend contract, hosted-selector contract (421), and diff check pass; hosted Kotlin execution remains pending. |
