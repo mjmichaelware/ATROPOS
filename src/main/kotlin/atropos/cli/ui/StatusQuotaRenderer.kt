@@ -4,13 +4,13 @@ import atropos.core.provider.AtroposCostPolicy
 import atropos.core.provider.CostMode
 import atropos.core.provider.FileQuotaLedger
 import atropos.core.provider.FreeModeGuard
-import atropos.core.provider.InMemoryQuotaLedger
 import atropos.core.provider.LocalToolchainProbe
 import atropos.core.provider.ProviderAvailabilityState
 import atropos.core.provider.ProviderDescriptor
 import atropos.core.provider.ProviderDescriptorRegistry
 import atropos.core.provider.ProviderEligibility
 import atropos.core.provider.ProviderQuotaRecord
+import atropos.core.provider.ProviderQuotaPaths
 import atropos.core.provider.ProviderTaskClassifier
 import atropos.core.provider.QuotaLedger
 import atropos.core.provider.RoutePolicy
@@ -24,7 +24,8 @@ import java.time.format.DateTimeFormatter
 
 class StatusQuotaRenderer(
     private val registry: ProviderDescriptorRegistry = StaticProviderDescriptorRegistry(),
-    private val ledger: QuotaLedger = InMemoryQuotaLedger(
+    private val ledger: QuotaLedger = FileQuotaLedger(
+        ProviderQuotaPaths.defaultLedger(),
         FileQuotaLedger.seedFromDescriptors(StaticProviderDescriptorRegistry())
     ),
     private val workspace: File = File("."),

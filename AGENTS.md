@@ -13377,6 +13377,16 @@ Local verification note for this batch: `timeout 120s ./gradlew test --tests 'at
 - New overall estimate: unchanged.
 - Fingerprints (sha256, first 12): `AdapterRouteFacade.kt=d4d110b4a8c6`; `backend-atom-contract-test.sh=99a257c9cb8b`; commit `823737a3`. Unrelated `docs/completion/*` remains unstaged and untouched.
 
+### 2026-08-25T19:00:00Z · Agent: Codex GPT-5 · Batch: cli-status-ledger-convergence
+
+- Paths touched: `src/main/kotlin/atropos/cli/ui/StatusQuotaRenderer.kt` (+5/-2), `scripts/backend-atom-contract-test.sh` (+1), `AGENTS.md` (+7), `STATUS-BACKEND.md` (+1).
+- Atoms / phases affected: P15 quota/status projection and route truth.
+- Predicate moved: the default CLI status quota renderer now reads the durable shared quota ledger rather than a fresh in-memory seed, aligning CLI, route, activation, and bridge projections across process death.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh` (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`) and `git diff --check` passed. Root/hosted Kotlin execution remains unverified; no green claim.
+- % delta: unchanged; P15 remains source-wired / partial pending hosted focused execution.
+- New overall estimate: unchanged.
+- Fingerprints (sha256, first 12): pending until scoped commit; unrelated `docs/completion/*` remains unstaged and untouched.
+
 ### 2026-08-25T12:45:00Z · Agent: Codex GPT-5 · Batch: imported-context-authority-contract
 
 - Paths touched: `scripts/backend-atom-contract-test.sh` (+5).
