@@ -1457,6 +1457,12 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | --- | --- | --- | --- | --- |
 | B-MCP-GHA / hosted backend test selector completeness | source-wired / partial | `scripts/hosted-test-selector-contract.sh`, `scripts/backend-atom-contract-test.sh` | compile-gate focused job → hosted selector contract → every non-UI `core`, `bridge`, and `cli` `*Test.kt` source is required to appear in `atropos-verify-worktree.sh` | Selector contract passes with 440 tests; backend atom contract, shell syntax, and `git diff --check` pass. The check is now Termux-compatible after replacing `/dev/fd` process substitution. GitHub-hosted execution remains unverified. |
 
+### 2026-08-25T02:55:47Z · Agent: Codex GPT-5 · Batch: release-provider-connect-gate
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-PROV-004 / provider connect release boundary | source-wired / partial | `.github/workflows/release.yml`, `scripts/provider-connect-contract-test.sh`, `scripts/release-installer-contract-test.sh`, `scripts/backend-atom-contract-test.sh` | release build/publish job → existing provider-connect secret-input contract → `ProviderCommandHandler`/`TokenIsolationVault` source boundary | Provider-connect contract, release contract, backend atom contract, hosted selector (440), and `git diff --check` pass. No key was entered or logged; hosted release execution remains unverified. |
+
 ### 2026-08-25T03:50:00Z · Agent: Codex GPT-5 · Batch: generated-provider-readme-table
 
 | atom | status | files | caller | tests / notes |

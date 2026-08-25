@@ -13325,6 +13325,16 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprints: `scripts/hosted-test-selector-contract.sh=e2569f9d538e`; `scripts/backend-atom-contract-test.sh=24bd58df13e3`.
 
+### 2026-08-25T02:55:47Z · Agent: Codex GPT-5 · Batch: release-provider-connect-gate
+
+- Paths touched: `.github/workflows/release.yml` (+3), `scripts/release-installer-contract-test.sh` (+1), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-PROV-004 provider connect and secret-boundary release coverage.
+- Predicate moved: release publication now exercises the existing provider-connect secret-input contract before packaging; it does not add a second onboarding or secret store.
+- Verification actually run: `bash scripts/provider-connect-contract-test.sh` (`ATROPOS_PROVIDER_CONNECT_CONTRACT_OK`), `bash scripts/release-installer-contract-test.sh` (`ATROPOS_RELEASE_INSTALLER_CONTRACT_OK`), `bash scripts/backend-atom-contract-test.sh` (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), `bash scripts/hosted-test-selector-contract.sh` (`440 tests`), and `git diff --check` passed. No key was entered or logged; hosted release execution remains unverified.
+- % delta: unchanged; B-PROV-004 remains source-wired/partial pending hosted execution.
+- New overall estimate: unchanged.
+- Fingerprints: `.github/workflows/release.yml=b8bae9c90f09`; `scripts/release-installer-contract-test.sh=c9fab5a3a402`; `scripts/backend-atom-contract-test.sh=bc1b586e05cd`.
+
 ### 2026-08-25T02:16:59Z · Agent: Codex GPT-5 · Batch: install-help-caller-contract
 - Paths touched: `scripts/backend-atom-contract-test.sh` (+16).
 - Atoms / phases affected: B-INST-001..005 and B-HELP-001..002 caller enforcement.

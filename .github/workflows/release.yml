@@ -100,6 +100,9 @@ jobs:
       - name: Exercise provider environment contract
         run: bash scripts/provider-env-contract-test.sh
 
+      - name: Exercise provider connect secret-input contract
+        run: bash scripts/provider-connect-contract-test.sh
+
       - name: Exercise backend atom source contract
         run: bash scripts/backend-atom-contract-test.sh
 
