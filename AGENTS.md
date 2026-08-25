@@ -13295,6 +13295,16 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprints: `McpHostManagerTest.kt=9fdff3a705fe`; `backend-atom-contract-test.sh=82cb37547703`.
 
+### 2026-08-25T12:45:00Z · Agent: Codex GPT-5 · Batch: imported-context-authority-contract
+
+- Paths touched: `scripts/backend-atom-contract-test.sh` (+5).
+- Atoms / phases affected: B-014 / O01 cursor-rules and copilot-instructions import boundary.
+- Predicate moved: the CI-owned backend source gate now protects `/agent context import <path>` through `ImportedInstructionPackStore`, including repository containment, redaction before persistence, content-hash self-validation, and the explicit rule that imported context cannot override Source Authority or ATROPOS policy.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh` (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (440 tests)`), `bash -n scripts/backend-atom-contract-test.sh`, and `git diff --check` passed. Hosted Kotlin execution remains unverified.
+- % delta: unchanged; B-014 / O01 remains source-wired / partial pending hosted execution.
+- New overall estimate: unchanged.
+- Fingerprint: `backend-atom-contract-test.sh=a552f5677832`.
+
 ### 2026-08-25T12:20:00Z · Agent: Codex GPT-5 · Batch: github-oauth-contract-hardening
 
 - Paths touched: `scripts/backend-atom-contract-test.sh` (+4), `docs/PROVIDER_ENVIRONMENT.md` (+1), `STATUS-BACKEND.md` (+7).

@@ -60,6 +60,12 @@ text src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt 'genericProvide
 text src/main/kotlin/atropos/core/provider/ProviderEnvironmentAliases.kt 'ATROPOS_PROVIDER_$canonical'
 text src/main/kotlin/atropos/core/provider/ProviderActivationService.kt 'ProviderEnvironmentAliases.names(required)'
 text src/main/kotlin/atropos/core/provider/ProviderConfigurationResolver.kt 'ProviderEnvironmentAliases.names(name)'
+file src/main/kotlin/atropos/core/agent/ImportedInstructionPackStore.kt
+text src/main/kotlin/atropos/cli/commands/AgentCommand.kt 'importedInstructionPacks.import(arguments[1])'
+text src/main/kotlin/atropos/core/agent/ImportedInstructionPackStore.kt 'OVERRIDE_POLICY=Source Docs and ATROPOS policy remain authoritative'
+text src/main/kotlin/atropos/core/agent/ImportedInstructionPackStore.kt 'redactionFilter.redact(Files.readString(source'
+text src/main/kotlin/atropos/core/agent/ImportedInstructionPackStore.kt 'require(source.startsWith(repoRoot))'
+text src/main/kotlin/atropos/core/agent/ImportedInstructionPackStore.kt 'pack.hasValidContentHash()'
 text scripts/atropos-verify-worktree.sh "atropos.core.provider.ProviderConfigurationResolverTest"
 text .github/workflows/compile-gate.yml "atropos.core.provider.ProviderConfigurationResolverTest"
 text scripts/atropos-verify-worktree.sh "atropos.ast.AstSymbolGraphTest"
