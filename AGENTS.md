@@ -13295,6 +13295,22 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprints: `McpHostManagerTest.kt=9fdff3a705fe`; `backend-atom-contract-test.sh=82cb37547703`.
 
+### 2026-08-25T08:00:00Z · Agent: Codex GPT-5 · Batch: provider-namespace-adapter-alias-append
+- Paths touched: `src/main/kotlin/atropos/core/provider/adapter/AdapterRegistry.kt` (+5), `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` (+12), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-PROV-001t provider namespace scan reaching live adapter configuration.
+- Predicate moved: a key discovered as `ATROPOS_PROVIDER_OPENROUTER_API_KEY` now reaches the canonical `OPENROUTER_API_KEY` slot before the existing adapter is built; connect/discovery and adapter execution no longer disagree about the credential namespace. No secret value is logged or persisted.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh`, `bash scripts/hosted-test-selector-contract.sh` (`421 tests`), and `git diff --check` passed. Root/hosted Kotlin execution and live provider calls remain unverified; no root-green claim.
+- % delta: unchanged; provider catalog remains source-wired / partial pending hosted execution.
+- Fingerprints (sha256, first 12): `AdapterRegistry.kt=6c3adb6af6bd`; `ProviderOnboardingTest.kt=b0b3eb9d7b17`; `backend-atom-contract-test.sh=3c6ed297aeff`.
+
+### 2026-08-25T08:00:00Z · Agent: Codex GPT-5 · Batch: provider-namespace-adapter-alias
+- Paths touched: `src/main/kotlin/atropos/core/provider/adapter/AdapterRegistry.kt` (+5), `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` (+12), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-PROV-001t provider namespace scan reaching live adapter configuration.
+- Predicate moved: a key discovered as `ATROPOS_PROVIDER_OPENROUTER_API_KEY` now reaches the canonical `OPENROUTER_API_KEY` slot before the existing adapter is built; connect/discovery and adapter execution no longer disagree about the credential namespace. No secret value is logged or persisted.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh`, `bash scripts/hosted-test-selector-contract.sh` (`421 tests`), and `git diff --check` passed. Root/hosted Kotlin execution and live provider calls remain unverified; no root-green claim.
+- % delta: unchanged; provider catalog remains source-wired / partial pending hosted execution.
+- Fingerprints (sha256, first 12): `AdapterRegistry.kt=6c3adb6af6bd`; `ProviderOnboardingTest.kt=b0b3eb9d7b17`; `backend-atom-contract-test.sh=3c6ed297aeff`.
+
 ### 2026-08-25T07:20:00Z · Agent: Codex GPT-5 · Batch: mcp-probe-handshake-test-proof-append
 
 - Paths touched: `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+6), `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+7).

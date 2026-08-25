@@ -318,6 +318,17 @@ class ProviderOnboardingTest {
     }
 
     @Test
+    fun adapter_registry_resolves_atropos_provider_namespace_without_logging_or_network() {
+        val registry = StaticProviderDescriptorRegistry()
+        val adapter = atropos.core.provider.adapter.StaticProviderAdapterRegistry(
+            registry,
+            mapOf("ATROPOS_PROVIDER_OPENROUTER_API_KEY" to "namespace-secret")
+        ).getByProviderId("openrouter")!!
+        assertTrue(adapter.status().configured)
+        assertTrue(adapter.status().implemented)
+    }
+
+    @Test
     fun live_test_health_is_persisted_for_route_policy_without_secret_material() {
         val root = Files.createTempDirectory("provider-live-health")
         val service = ProviderOnboardingService(

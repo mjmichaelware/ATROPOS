@@ -1274,3 +1274,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | ADD-MCP-001 probe sequence regression test | source-wired / partial | `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt`, `scripts/backend-atom-contract-test.sh` | hosted `McpHostManagerTest` HTTP/SSE probe fixtures → request capture → initialize/initialized/tools-list assertions | Focused remote and SSE probe fixtures now assert three requests and the initialized notification before tool discovery. Backend contract and diff check pass; hosted Gradle execution remains pending. |
+
+### 2026-08-25T08:00:00Z · Agent: Codex GPT-5 · Batch: provider-namespace-adapter-alias
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-PROV-001t / provider connect runtime alias | source-wired / partial | `src/main/kotlin/atropos/core/provider/adapter/AdapterRegistry.kt`, `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt`, `scripts/backend-atom-contract-test.sh` | provider onboarding discovery → `StaticProviderAdapterRegistry.resolveAliases()` → canonical adapter environment consumed by the existing OpenAI-compatible adapter | `ATROPOS_PROVIDER_OPENROUTER_API_KEY` is translated to `OPENROUTER_API_KEY` before adapter construction; focused alias test is included in the hosted selector (421 tests). Backend contract, hosted-selector contract, and `git diff --check` pass. Hosted Kotlin execution remains pending; no secret is persisted or rendered. |

@@ -38,7 +38,11 @@ class StaticProviderAdapterRegistry(
         val resolved = source.toMutableMap()
         ALIASES.forEach { (canonical, aliases) ->
             if (resolved[canonical].isNullOrBlank()) {
-                val value = (listOf(canonical) + aliases).asSequence()
+                val namespaceAliases = listOf(
+                    "ATROPOS_PROVIDER_$canonical",
+                    "ATROPOS_PROVIDER_${canonical.substringBefore("_API_KEY")}_API_KEY"
+                ).distinct()
+                val value = (listOf(canonical) + aliases + namespaceAliases).asSequence()
                     .mapNotNull { name ->
                         resolved[name]?.takeIf(String::isNotBlank)
                             ?: secretSource.lookup(name).value?.takeIf(String::isNotBlank)
