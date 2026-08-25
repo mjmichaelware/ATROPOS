@@ -12415,6 +12415,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; provider truth remains source-wired/partial pending hosted execution.
 - Fingerprints: `ProviderCommandHandler.kt=62c7274793ba`, `backend-atom-contract-test.sh=7b1e5b9482d1`.
 
+### 2026-08-25T13:16:00Z · Agent: Codex GPT-5 · Batch: auto-route-truth-owner
+
+- Paths touched: `src/main/kotlin/atropos/core/Routing.kt` (+8/-5), `src/main/kotlin/atropos/cli/ProviderChatDispatcher.kt` (+1/-1), `scripts/backend-atom-contract-test.sh` (+2).
+- Atoms / phases affected: B-PROV-002 automatic chat route health/disable enforcement.
+- Predicate moved: the `auto` chat route now passes the existing launch onboarding inventory into `ProviderDecisionEngine` and `ProviderTruthService`; persisted disabled/live-failed providers are excluded before selection. No parallel router or provider registry was added.
+- Verification actually run: `ATROPOS_BACKEND_ATOM_CONTRACT_OK` and `git diff --check` passed. Kotlin execution and GitHub-hosted CI remain unverified; no green claim.
+- % delta: unchanged; provider truth remains source-wired/partial pending hosted execution.
+- Fingerprints: `Routing.kt=f43f2bdadfb3`, `ProviderChatDispatcher.kt=e1a3b44af03d`, `backend-atom-contract-test.sh=64a8c78a20d9`.
+
 ### 2026-08-25T22:30:00Z · Agent: Codex GPT-5 · Batch: provider-metadata-alias-separation
 - Paths touched: `src/main/kotlin/atropos/core/provider/ProviderEnvironmentAliases.kt` (+4/-2), `src/test/kotlin/atropos/core/provider/ProviderFixtureMatrixServiceTest.kt` (+8), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7).
 - Atoms / phases affected: B-PROV-001b/r/s and B-PROV-002 credential-health truth.

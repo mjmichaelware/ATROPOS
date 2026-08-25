@@ -1916,3 +1916,9 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-PROV-002 `/providers inventory` truth owner | source-wired / partial | `src/main/kotlin/atropos/cli/ProviderCommandHandler.kt`, `scripts/backend-atom-contract-test.sh` | `/providers inventory` and default provider fallback → injected onboarding → `ProviderTruthService` healthy-set projection | Provider command inventory now consumes the same launch onboarding owner as `/providers list|refresh|prefer|disable`; disabled/live-failed providers cannot reappear in its ask/patch projection. Backend atom contract and `git diff --check` pass; Kotlin/hosted execution remains unverified. |
+
+### 2026-08-25T13:16:00Z · Agent: Codex GPT-5 · Batch: auto-route-truth-owner
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-PROV-002 automatic chat route health/disable enforcement | source-wired / partial | `src/main/kotlin/atropos/core/Routing.kt`, `src/main/kotlin/atropos/cli/ProviderChatDispatcher.kt`, `scripts/backend-atom-contract-test.sh` | automatic chat dispatch → `ProviderDecisionEngine(onboarding)` → `ProviderTruthService` healthy-set projection | The `auto` chat path now consumes the launch onboarding owner, so persisted disable/live-test failures apply to automatic selection as well as explicit cascade execution. Backend atom contract and `git diff --check` pass; Kotlin/hosted execution remains unverified. |
