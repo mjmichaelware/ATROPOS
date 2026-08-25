@@ -13325,7 +13325,7 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Predicate moved: the CI-owned backend gate now protects README links to the open-core/provider contracts, CONTRIBUTING’s no-per-brand-adapter rule, the AGPL section-13 boundary note, and the existing local-only/zero-retention owners; the MCP example contract confirms disabled community examples remain configuration-only.
 - Verification actually run: backend atom contract, MCP example contract (14 files/14 servers), provider-env contract, hosted selector contract (440), and `git diff --check` passed. Hosted/runtime execution remains unverified.
 - % delta: unchanged; open-core and example atoms remain source-wired/partial pending hosted/runtime evidence.
-- Fingerprints: pending scoped commit.
+- Fingerprints: commit `80664bee`.
 
 ### 2026-08-25T02:30:00Z · Agent: Codex GPT-5 · Batch: hosted-verifier-gradle-lane
 - Paths touched: `scripts/atropos-verify-worktree.sh` (+11/-7), `scripts/atropos-verify-action-contract-test.sh` (+5).
