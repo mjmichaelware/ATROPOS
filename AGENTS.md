@@ -12397,6 +12397,14 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; source-wired but partial pending hosted execution evidence.
 - Fingerprints: recorded after commit.
 
+### 2026-08-24T13:30:00Z · Agent: Codex GPT-5 · Batch: backend-microatom-owner-crosswalk
+- Paths touched: `STATUS-BACKEND.md` (+14), `AGENTS.md` (+7).
+- Atoms / phases affected: installer/help/provider micro-atom crosswalk from the authority attachment.
+- Predicate moved: every in-scope installer, help, provider discovery/health/cascade/paid-policy, and worker micro-atom now has an explicit canonical owner/caller mapping in the backend ledger; no second owner was introduced.
+- Verification actually run: prior backend/provider contracts, hosted-selector contract (440 tests), orphan gate, and `git diff --check` remain passing; hosted Kotlin/release execution remains unverified.
+- % delta: unchanged; this closes ledger ambiguity, not hosted runtime evidence.
+- Fingerprints: recorded after commit.
+
 ### 2026-08-24T13:00:00Z · Agent: Codex GPT-5 · Batch: mcp-everything-reference-fixture
 - Paths touched: `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+16), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7), `AGENTS.md` (+7).
 - Atoms / phases affected: B-MCP-EVERYTHING-REF test-only reference fixture.

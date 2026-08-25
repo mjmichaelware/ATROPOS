@@ -1582,3 +1582,10 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-EVERYTHING-REF | source-wired / partial | `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt`, `scripts/backend-atom-contract-test.sh` | hosted MCP test selector → existing `McpHostManager.statuses()` → disabled/community reference fixture | Added the authority’s test-only reference fixture: it is visible as `UNTESTED` with an explicit disabled reason and never spawns a process. Backend contract, hosted selector (440), orphan gate, and `git diff --check` pass; hosted Kotlin execution remains unverified. |
+
+### 2026-08-24T13:30:00Z · Agent: Codex GPT-5 · Batch: backend-microatom-owner-crosswalk
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-INST-001a..005c / B-HELP-001a..002b | source-wired / partial | `install.sh`, `scripts/install-contract-test.sh`, `scripts/package-installers.sh`, `src/main/kotlin/atropos/Main.kt`, `src/main/kotlin/atropos/cli/help/HelpGenerator.kt`, `src/main/kotlin/atropos/cli/input/CommandRegistry.kt` | installer → platform/config/bootstrap/doctor owners; CLI `-h`/`/help` → registry-derived help owner | Existing installer/help contracts and source caller checks cover each platform, hash/PATH/config/doctor, CLI render, JSON bridge projection, and generated provider environment table. Hosted release/Kotlin execution remains unverified. |
+| B-PROV-001a..006g / B-PROV-002a..002h / B-PROV-003a..005b | source-wired / partial | `ProviderEnvironmentAliases.kt`, `ProviderOnboarding.kt`, `ProviderActivationService.kt`, `ProviderCascadeRouter.kt`, `ProviderWorkerDirector.kt`, provider tests/contracts | startup/CLI → canonical onboarding/activation/route/director owners | Alias, health, metadata-only persistence, cascade, zero-healthy, paid gate, and worker territory/evidence edges are protected by existing provider/backend contracts and hosted selector (440). Hosted Kotlin execution remains unverified. |
