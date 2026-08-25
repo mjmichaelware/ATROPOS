@@ -13,9 +13,11 @@ import atropos.core.provider.adapter.DataInfraResearchProviderCatalog
 import atropos.core.provider.adapter.NonOpenAiFreeProviderCatalog
 import atropos.core.provider.adapter.NonOpenAiKernelFixtures
 import atropos.core.provider.adapter.OpenAiCompatibleProviderCatalog
+import atropos.core.provider.ProviderOnboardingService
 
 class StatusAdapterRenderer(
-    private val facade: AdapterRouteFacade = AdapterRouteFacade(),
+    private val onboarding: ProviderOnboardingService = ProviderOnboardingService(),
+    private val facade: AdapterRouteFacade = AdapterRouteFacade(onboarding = onboarding),
     private val theme: TerminalTheme = TerminalTheme(ConfigurationManager())
 ) {
     private val surface get() = theme.surface

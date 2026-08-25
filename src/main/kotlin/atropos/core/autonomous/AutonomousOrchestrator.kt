@@ -20,6 +20,7 @@ import atropos.core.memory.LocalMemoryStore
 import atropos.core.multimodal.InspectionService
 import atropos.core.platform.Platform
 import atropos.core.provider.ProviderTruthService
+import atropos.core.provider.ProviderOnboardingService
 import atropos.core.territory.TerritoryService
 import java.time.Instant
 
@@ -43,11 +44,12 @@ class AutonomousOrchestrator(
     private val inspectionService: InspectionService = InspectionService(),
     private val memory: LocalMemoryStore = LocalMemoryStore(),
     private val learningAdvisor: AutonomousLearningAdvisor = AutonomousLearningAdvisor(),
-    private val providerTruth: ProviderTruthService = ProviderTruthService()
+    private val providerTruth: ProviderTruthService = ProviderTruthService(),
+    private val onboarding: ProviderOnboardingService = ProviderOnboardingService()
 ) {
     private var session = AutonomousSession()
     private val stopConditions = mutableListOf<StopCondition>()
-    private val providerWorkers = ProviderWorkerDirector()
+    private val providerWorkers = ProviderWorkerDirector(onboarding = onboarding)
 
     fun runProviderWorkers(tasks: List<ProviderWorkerTask>): ProviderWorkerBatchReport =
         providerWorkers.run(tasks)

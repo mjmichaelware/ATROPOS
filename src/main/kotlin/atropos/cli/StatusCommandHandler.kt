@@ -71,7 +71,9 @@ class StatusCommandHandler(
             "quota" -> uiEngine.renderNotice(statusRenderer.renderQuota())
             "route" -> renderRoute(tokens, statusRenderer)
             "failures" -> uiEngine.renderNotice(statusRenderer.renderFailures())
-            "adapters" -> uiEngine.renderBlock(StatusAdapterRenderer().renderList(uiEngine.viewportWidth))
+            "adapters" -> uiEngine.renderBlock(
+                StatusAdapterRenderer(onboarding = providerOnboarding).renderList(uiEngine.viewportWidth)
+            )
             "memory" -> uiEngine.renderBlock(StatusMemoryRenderer().render(uiEngine.viewportWidth))
             "ci", "queue" -> uiEngine.renderBlock(StatusCiRenderer().render(uiEngine.viewportWidth))
             "assets" -> uiEngine.renderBlock(StatusAssetsRenderer().render(uiEngine.viewportWidth))
