@@ -13335,6 +13335,14 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; generic host atoms remain source-wired/partial and brand-specific adapters remain policy-limited/config-only.
 - Fingerprints (sha256, first 12): `McpConfigParser.kt=281d6d700f19`; `McpHostManager.kt=983632be4344`; `TokenIsolationVault.kt=02430c1fd307`; `markitdown.json=97c70d0f0373`; `CONTRIBUTING.md=b6e7619b11cc`.
 
+### 2026-08-25T03:47:06Z · Agent: Codex GPT-5 · Batch: github-method-matrix-test
+- Paths touched: `src/test/kotlin/atropos/core/github/GitHubApiClientTest.kt` (+37), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-MCP-GH-c..n / GitHub issue, pull-request, review, and check-run method coverage.
+- Predicate moved: a focused deterministic fixture now exercises every typed GitHub issue/PR/review/check-run method through the single injected transport and asserts the bearer token never enters request bodies.
+- Verification actually run: backend atom contract passed; hosted selector passed (`440 tests`); orphan gate passed with only 4 historical baseline files (1045 production files / 362 orphan LOC); `git diff --check` passed. Root/hosted Kotlin execution remains unverified.
+- % delta: unchanged; GitHub method behavior remains source-wired/partial pending hosted execution.
+- Fingerprints (sha256, first 12): `GitHubApiClientTest.kt=51d0ca81b1c8`; `backend-atom-contract-test.sh=40a11e41502b`.
+
 ### 2026-08-25T02:44:07Z · Agent: Codex GPT-5 · Batch: release-backend-atom-gate
 
 - Paths touched: `.github/workflows/release.yml` (+3), `scripts/release-installer-contract-test.sh` (+1), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7).

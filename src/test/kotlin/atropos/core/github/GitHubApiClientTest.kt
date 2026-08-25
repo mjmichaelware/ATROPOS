@@ -64,6 +64,39 @@ class GitHubApiClientTest {
     }
 
     @Test
+    fun typed_issue_pr_review_and_check_endpoints_share_the_same_transport() {
+        val requests = mutableListOf<GitHubApiWireRequest>()
+        val auth = GitHubWriteAuthorization("operator", "confirm-matrix")
+        withNetworkSink {
+            val client = GitHubApiClient(
+                secretSource = MapSecretSource(mapOf("GITHUB_TOKEN" to "token")),
+                gate = ::allowed,
+                transport = GitHubApiTransport { request ->
+                    requests += request
+                    GitHubApiWireResponse(200, "{}")
+                }
+            )
+            client.createIssue("owner", "repo", "{}", auth)
+            client.commentIssue("owner", "repo", 1, "{}", auth)
+            client.listPullRequests("owner", "repo")
+            client.getPullRequestFiles("owner", "repo", 2)
+            client.createPullRequest("owner", "repo", "{}", auth)
+            client.commentPullRequest("owner", "repo", 2, "{}", auth)
+            client.requestPullReview("owner", "repo", 2, "{}", auth)
+            client.listCheckRuns("owner", "repo", "main")
+            client.createCheckRun("owner", "repo", "{}", auth)
+            client.updateCheckRun("owner", "repo", 3, "{}", auth)
+        }
+
+        assertEquals(
+            listOf("POST", "POST", "GET", "GET", "POST", "POST", "POST", "GET", "POST", "PATCH"),
+            requests.map { it.method }
+        )
+        assertTrue(requests.all { it.url.startsWith("https://api.github.com/repos/owner/repo/") })
+        assertTrue(requests.all { it.token == "token" })
+    }
+
+    @Test
     fun network_policy_and_secret_egress_fail_before_transport() {
         var called = false
         val client = GitHubApiClient(

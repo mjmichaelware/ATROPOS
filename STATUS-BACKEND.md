@@ -1552,3 +1552,9 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-BRIDGE-SCHEMA / B-MCP-MEMORY / B-MCP-FETCH / B-MCP-TIME / B-MCP-KEYCHAIN | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpConfigParser.kt`, `McpHostManager.kt`, `src/main/kotlin/atropos/core/security/TokenIsolationVault.kt`, `docs/mcp-examples/*.json`, `CONTRIBUTING.md` | `/mcp list|test|call` and bridge MCP routes → single `McpHostManager`; configured server secrets → existing `TokenIsolationVault`/`SecretSource`; community catalog → disabled-by-default examples | Generic MCP schema, stdio/HTTP host, memory authority refusal, local-only policy, evidence mapping, and keychain-first secret boundary are present. Tier-1/2 brand names remain config/examples-only by policy; no adapter farm or silent auto-install. Existing backend/MCP/example contracts and selector (`440` tests) pass; hosted runtime remains unverified. |
+
+### 2026-08-25T03:47:06Z · Agent: Codex GPT-5 · Batch: github-method-matrix-test
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-GH-c..n / typed GitHub method matrix | source-wired / partial | `src/test/kotlin/atropos/core/github/GitHubApiClientTest.kt`, `src/main/kotlin/atropos/core/github/GitHubApiClient.kt`, `scripts/backend-atom-contract-test.sh` | focused GitHub test → injected `GitHubApiTransport` → all issue/PR/review/check-run methods on the canonical client | Added a deterministic matrix test covering issue create/comment, PR list/files/create/comment/review, and check-run list/create/update through one transport, with token non-disclosure assertions. Backend contract, hosted selector (`440` tests), orphan gate, and `git diff --check` pass; Kotlin execution remains hosted-only/unverified. |

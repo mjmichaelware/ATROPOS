@@ -298,6 +298,7 @@ done
 text src/main/kotlin/atropos/core/github/GitHubApiClient.kt 'GitHubWriteAuthorization'
 text src/main/kotlin/atropos/core/github/GitHubApiClient.kt 'declaredTerritory'
 text src/main/kotlin/atropos/core/github/GitHubApiClient.kt 'SecretSinkKind.EGRESS_URL'
+text src/test/kotlin/atropos/core/github/GitHubApiClientTest.kt 'typed_issue_pr_review_and_check_endpoints_share_the_same_transport'
 text src/main/kotlin/atropos/cli/CommandRouter.kt 'GitHubCommandHandler(config, uiEngine)'
 text src/main/kotlin/atropos/cli/CommandRouter.kt '"/github" ->'
 text src/main/kotlin/atropos/core/ProviderHttpClient.kt 'MAX_RESPONSE_BYTES'
