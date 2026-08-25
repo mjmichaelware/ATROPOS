@@ -3,6 +3,7 @@ package atropos.core
 
 import atropos.core.provider.ProviderTruthService
 import atropos.core.provider.ApiCapability
+import atropos.core.provider.ProviderOnboardingService
 import atropos.core.provider.StaticProviderDescriptorRegistry
 
 enum class TaskClass {
@@ -27,11 +28,13 @@ data class ProviderInventory(
     val ollama: OllamaStatus
 )
 
-class ProviderDecisionEngine {
+class ProviderDecisionEngine(
+    private val onboarding: ProviderOnboardingService? = null
+) {
     private val registry = StaticProviderDescriptorRegistry()
 
     fun inventory(config: AtroposConfig): ProviderInventory {
-        val truth = ProviderTruthService(config).snapshot()
+        val truth = ProviderTruthService(config, onboarding = onboarding).snapshot()
         return ProviderInventory(
             configured = truth.records.associate { it.id to it.keyPresent },
             ollama = OllamaHealthProbe().probe()
@@ -54,7 +57,7 @@ class ProviderDecisionEngine {
 
     fun decide(prompt: String, config: AtroposConfig, unavailable: Set<String> = emptySet()): RouteDecision {
         val task = classify(prompt)
-        val truth = ProviderTruthService(config).snapshot()
+        val truth = ProviderTruthService(config, onboarding = onboarding).snapshot()
         val capability = capabilityFor(task)
         val capabilityIds = registry.getByCapability(capability).map { it.id }.toSet()
         val preferred = when (task) {
@@ -70,7 +73,7 @@ class ProviderDecisionEngine {
     }
 
     fun providersReport(config: AtroposConfig): String {
-        return ProviderTruthService(config).snapshot().renderInventory()
+        return ProviderTruthService(config, onboarding = onboarding).snapshot().renderInventory()
     }
 
     private fun capabilityFor(task: TaskClass): ApiCapability = when (task) {

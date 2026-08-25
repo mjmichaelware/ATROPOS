@@ -181,7 +181,7 @@ class ProviderChatDispatcher(
 
     private fun routeProvider(prompt: String, currentProviderName: String): String =
         if (currentProviderName.lowercase() == "auto") {
-            val decision = ProviderDecisionEngine().decide(prompt, config)
+            val decision = ProviderDecisionEngine(onboarding).decide(prompt, config)
             uiEngine.renderNotice("route: ${decision.taskClass.name.lowercase()} -> ${decision.provider} (${decision.reason})")
             decision.provider
         } else {
