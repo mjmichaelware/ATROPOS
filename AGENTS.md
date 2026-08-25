@@ -12397,6 +12397,14 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; source-wired but partial pending hosted execution evidence.
 - Fingerprints: recorded after commit.
 
+### 2026-08-24T14:30:00Z · Agent: Codex GPT-5 · Batch: tier0-microatom-owner-crosswalk
+- Paths touched: `STATUS-BACKEND.md` (+8), `AGENTS.md` (+7).
+- Atoms / phases affected: B-MCP-CORE-a..k and Tier-0 Sentry/GitHub/GHA/local-Git micro-atoms.
+- Predicate moved: every Tier-0 micro-atom now has an explicit existing owner and production caller crosswalk; no brand adapter farm, second process owner, or second gate was added.
+- Verification actually run: existing backend/provider contracts, hosted-selector contract (440 tests), orphan gate, and `git diff --check` remain passing; hosted/runtime execution remains unverified.
+- % delta: unchanged; traceability strengthened.
+- Fingerprints: recorded after commit.
+
 ### 2026-08-24T14:00:00Z · Agent: Codex GPT-5 · Batch: backend-status-ledger-gate
 - Paths touched: `scripts/backend-atom-contract-test.sh` (+18), `STATUS-BACKEND.md` (+7), `AGENTS.md` (+7).
 - Atoms / phases affected: in-scope backend atom evidence visibility.
