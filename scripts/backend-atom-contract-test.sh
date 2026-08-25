@@ -72,6 +72,8 @@ text src/main/kotlin/atropos/Main.kt 'providerOnboarding.renderLaunchSummary(ref
 text src/main/kotlin/atropos/Main.kt 'providerDiscoveryAlreadyRefreshed = true'
 text src/main/kotlin/atropos/cli/CommandRouter.kt 'if (providerDiscoveryAlreadyRefreshed)'
 text src/main/kotlin/atropos/cli/CommandRouter.kt 'providerOnboarding.list()'
+text src/main/kotlin/atropos/cli/CommandRouter.kt 'BackendDoctor(config, providerOnboarding)'
+text src/main/kotlin/atropos/Main.kt 'BackendDoctor(config, providerOnboarding)'
 text src/main/kotlin/atropos/cli/CommandRouter.kt 'ProviderCommandHandler(config, uiEngine, onboarding = providerOnboarding)'
 text src/main/kotlin/atropos/cli/ProviderCommandHandler.kt 'private val onboarding: ProviderOnboardingService'
 text src/main/kotlin/atropos/cli/ProviderChatDispatcher.kt 'healthyProviderIds = { onboarding.healthyProviderIds() }'

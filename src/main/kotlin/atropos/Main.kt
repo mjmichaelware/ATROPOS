@@ -99,7 +99,7 @@ fun main(args: Array<String>) {
 
         if (args.firstOrNull() == "--doctor" || args.firstOrNull() == "doctor") {
             atropos.cli.FirstRunDoctorRenderer(
-                backendDoctor = atropos.cli.BackendDoctor(config),
+                backendDoctor = atropos.cli.BackendDoctor(config, providerOnboarding),
                 homeState = HomeStateProvider()
             ).render(config.runtime.defaultProvider).forEach(::println)
             return

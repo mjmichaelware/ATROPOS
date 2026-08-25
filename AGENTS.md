@@ -13343,6 +13343,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; bridge upload/evidence remains source-wired/partial pending hosted/runtime proof.
 - Fingerprints (sha256, full): `BridgeRoutes.kt=09dfc45deb9c5a60bb64af4c15d619565f7e32dab715a1110658a7274eee6431`; `AtroposBridge.kt=6cb72ecd3865cb1e525b0c15b51705005d09b4c420836aedea4ce2aa98eba951`; `backend-atom-contract-test.sh=e1e8dd6b16875e04ed330f74f20adb7c9428a499b109cb396c537b18e903150a`.
 
+### 2026-08-25T07:40:00Z · Agent: Codex GPT-5 · Batch: doctor-provider-owner
+
+- Paths touched: `src/main/kotlin/atropos/Main.kt` (+1/-1), `src/main/kotlin/atropos/cli/CommandRouter.kt` (+1/-1), `scripts/backend-atom-contract-test.sh` (+2).
+- Atoms / phases affected: B-PROV-002/003 provider health projection and launch doctor truth.
+- Predicate moved: both startup `doctor` and the interactive doctor command now receive the single provider onboarding owner refreshed by `Main`, so provider health/cascade metadata cannot diverge because the doctor allocated a separate inventory.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh` (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (440 tests)`), and `git diff --check` passed. Root/hosted Kotlin execution remains unverified; no compile-green claim.
+- % delta: unchanged; B-PROV-002/003 remains source-wired/partial pending hosted Kotlin execution and live health evidence.
+- Fingerprints (sha256, full): `Main.kt=81a4e8513e1a91f565f2af0f9487678076fdc7f720d9fc21381d89c020f783e3`; `CommandRouter.kt=96bb1b13b576c206d1e2867bed941bd01db1b5d9e24041536cecd44da401b08d`; `backend-atom-contract-test.sh=fd47ce572261ac38fb0b463295eb439615910668181576b013e6a3b02097541b`.
+
 ### 2026-08-25T07:20:00Z · Agent: Codex GPT-5 · Batch: mcp-probe-handshake-test-proof-append
 
 - Paths touched: `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+6), `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+7).

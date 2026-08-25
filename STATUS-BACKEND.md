@@ -1662,3 +1662,9 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B01/B06 bridge evidence and attested upload root binding | source-wired / partial | `src/main/kotlin/atropos/bridge/BridgeRoutes.kt`, `src/main/kotlin/atropos/bridge/AtroposBridge.kt`, `scripts/backend-atom-contract-test.sh` | `LocalEngineBridge.server()` → `BridgeRoutes(repoRoot=authoritative root)` → existing `BridgeFilesHandler` and `BridgeEvidenceHandler` | Production bridge file uploads and evidence reads now use the same repository root as restart/MCP/queue services instead of the process working directory. Backend contract, hosted selector contract (`440 tests`), and `git diff --check` pass. Hosted Kotlin/runtime upload proof remains unverified. |
+
+### 2026-08-25T07:40:00Z · Agent: Codex GPT-5 · Batch: doctor-provider-owner
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-PROV-002/003 doctor health projection | source-wired / partial | `src/main/kotlin/atropos/Main.kt`, `src/main/kotlin/atropos/cli/CommandRouter.kt`, `scripts/backend-atom-contract-test.sh` | startup refresh → injected `ProviderOnboardingService` → `BackendDoctor` for `doctor` and in-session doctor | Both doctor entrypoints now consume the already-refreshed launch provider owner; they no longer construct an independent onboarding inventory on production paths. Backend contract, hosted selector contract (`440 tests`), and `git diff --check` pass. Hosted Kotlin execution remains unverified. |

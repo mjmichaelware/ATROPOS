@@ -44,7 +44,7 @@ class CommandRouter(
 ) {
     /** A failing command renders an error; it must not end the session. */
     private val failureBoundary = CommandFailureBoundary(uiEngine)
-    private val backendDoctor = BackendDoctor(config)
+    private val backendDoctor = BackendDoctor(config, providerOnboarding)
 
     private var activeProvider = providerResolver(config.runtime.defaultProvider)
 
