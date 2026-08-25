@@ -1414,3 +1414,9 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-INST-001..005 / B-HELP-001..002 | source-wired / partial | `install.sh`, `scripts/install-contract-test.sh`, `src/main/kotlin/atropos/cli/help/HelpGenerator.kt`, `src/main/kotlin/atropos/cli/input/CommandRegistry.kt`, `src/main/kotlin/atropos/cli/CommandRouter.kt`, `scripts/backend-atom-contract-test.sh` | installer platform/config path remains owned by `install.sh`; `/help` remains `CommandRouter` → `HelpGenerator` → `CommandRegistry`/`CommandCatalog` | Backend source contract now protects the existing installer and registry-derived help caller edges. Backend/provider-env/hosted-selector (440)/install/reusable-action contracts and `git diff --check` pass. Hosted Gradle/release/device execution remains unverified; statuses remain partial. |
+
+### 2026-08-25T02:30:00Z · Agent: Codex GPT-5 · Batch: hosted-verifier-gradle-lane
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-GHA / hosted verification lane | source-wired / partial | `scripts/atropos-verify-worktree.sh`, `scripts/atropos-verify-action-contract-test.sh` | reusable GitHub composite action → `atropos-verify-worktree.sh`; hosted branch now skips standalone local `kotlinc` and reaches the existing Gradle compile/focused-test lane | Shell syntax, reusable-action/path contracts, backend atom contract, hosted selector contract (440), and `git diff --check` pass. GitHub-hosted execution remains unverified; no green claim. |

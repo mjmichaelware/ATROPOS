@@ -13303,6 +13303,14 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; these atoms remain source-wired/partial pending hosted/runtime evidence.
 - Fingerprints: pending scoped commit.
 
+### 2026-08-25T02:30:00Z · Agent: Codex GPT-5 · Batch: hosted-verifier-gradle-lane
+- Paths touched: `scripts/atropos-verify-worktree.sh` (+11/-7), `scripts/atropos-verify-action-contract-test.sh` (+5).
+- Atoms / phases affected: B-MCP-GHA hosted verification lane.
+- Predicate moved: GitHub Actions no longer depends on the device-only standalone `kotlinc` fast gate before hosted evidence; the existing Gradle compile and focused-test commands are now the first executable lane when `GITHUB_ACTIONS=true`, while local/device fast smoke remains unchanged.
+- Verification actually run: shell syntax, reusable action/path contracts, backend atom contract, hosted selector contract (440), and `git diff --check` passed. GitHub-hosted execution remains unverified.
+- % delta: unchanged; B-MCP-GHA remains source-wired/partial pending hosted run evidence.
+- Fingerprints: pending scoped commit.
+
 ### 2026-08-25T15:45:00Z · Agent: Codex GPT-5 · Batch: provider-connect-truth-resolver
 
 - Paths touched: `src/main/kotlin/atropos/core/provider/ProviderConfigurationResolver.kt` (+9/-2), `src/test/kotlin/atropos/core/provider/ProviderConfigurationResolverTest.kt` (+17), `scripts/backend-atom-contract-test.sh` (+3), `STATUS-BACKEND.md` (+7).

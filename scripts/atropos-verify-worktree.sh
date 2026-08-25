@@ -1,11 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "=== FAST CLASSES ==="
-scripts/atropos-fast-gate.sh classes
+if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
+  # GitHub is the authoritative Gradle lane. The local fast gate depends on a
+  # standalone kotlinc binary that is not part of the hosted Java setup and
+  # would fail before the real compile/test evidence can be produced.
+  echo "=== HOSTED LANE: SKIP LOCAL KOTLINC FAST GATE ==="
+else
+  echo "=== FAST CLASSES ==="
+  scripts/atropos-fast-gate.sh classes
 
-echo "=== FULL SMOKE ==="
-scripts/atropos-fast-gate.sh smoke
+  echo "=== FULL SMOKE ==="
+  scripts/atropos-fast-gate.sh smoke
+fi
 
 if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
   echo "=== HOSTED ORPHAN GATE ==="
