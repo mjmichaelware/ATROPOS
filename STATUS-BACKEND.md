@@ -1505,6 +1505,12 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | --- | --- | --- | --- | --- |
 | backend Tier-0 contract suite / orphan gate | source-wired / partial | `scripts/backend-atom-contract-test.sh`, `scripts/provider-env-contract-test.sh`, `scripts/provider-connect-contract-test.sh`, `scripts/mcp-example-contract-test.sh`, `scripts/npm-installer-contract-test.sh`, `scripts/install-contract-test.sh`, `scripts/package-installers-test.sh`, `scripts/release-installer-contract-test.sh`, `scripts/hosted-test-selector-contract.sh`, reusable-action contracts, `scripts/find-orphans.py` | GitHub compile/release lanes → canonical static contracts and orphan census | All 13 available contracts passed; hosted selector reports 440 tests; orphan gate exits 0 with only 4 historical baseline files (1045 production files / 362 orphan LOC). No new orphan or source-contract regression found. Hosted Gradle/runtime execution remains unverified. |
 
+### 2026-08-25T03:19:15Z · Agent: Codex GPT-5 · Batch: doctor-version-identity-entrypoint
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-INST-002 / B-INST-005 `doctor --version` identity | source-wired / partial | `src/main/kotlin/atropos/Main.kt`, `src/main/kotlin/atropos/core/BuildStamp.kt`, `scripts/backend-atom-contract-test.sh` | top-level `doctor --version` → existing `BuildStamp.line()` → version/commit/JAR SHA-256 | Backend, install, release, provider, hosted selector (440), shell syntax, and `git diff --check` pass. Root/hosted Kotlin and device execution remain unverified. |
+
 ### 2026-08-25T03:50:00Z · Agent: Codex GPT-5 · Batch: generated-provider-readme-table
 
 | atom | status | files | caller | tests / notes |

@@ -13405,6 +13405,16 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprints: `backend-atom-contract-test.sh=5ed530765d04`; `STATUS-BACKEND.md=2cd14abe1754`; `AGENTS.md=4e0195138c82`.
 
+### 2026-08-25T03:19:15Z · Agent: Codex GPT-5 · Batch: doctor-version-identity-entrypoint
+
+- Paths touched: `src/main/kotlin/atropos/Main.kt` (+5), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-INST-002/B-INST-005 artifact identity and doctor entrypoint.
+- Predicate moved: `atropos doctor --version` now reports the same version/commit/artifact hash as `atropos --version`, through the existing `BuildStamp` owner; no second identity or installer path was introduced.
+- Verification actually run: backend/install/release/provider contracts, hosted selector (`440 tests`), shell syntax, and `git diff --check` passed. Root/hosted Kotlin and device execution remain unverified.
+- % delta: unchanged; artifact identity remains source-wired/partial pending hosted/device evidence.
+- New overall estimate: unchanged.
+- Fingerprints: `Main.kt=79e9c283e98f`; `backend-atom-contract-test.sh=47a037183de3`.
+
 ### 2026-08-25T02:16:59Z · Agent: Codex GPT-5 · Batch: install-help-caller-contract
 - Paths touched: `scripts/backend-atom-contract-test.sh` (+16).
 - Atoms / phases affected: B-INST-001..005 and B-HELP-001..002 caller enforcement.

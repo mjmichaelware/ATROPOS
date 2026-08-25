@@ -393,5 +393,6 @@ text src/main/kotlin/atropos/Main.kt 'BuildStamp.line()'
 text src/main/kotlin/atropos/Main.kt 'args.firstOrNull() == "doctor"'
 text src/main/kotlin/atropos/Main.kt 'args.firstOrNull() == "-h"'
 text src/main/kotlin/atropos/Main.kt 'HelpGenerator().render'
+text src/main/kotlin/atropos/Main.kt 'args.firstOrNull() == "doctor" && args.drop(1).any'
 
 printf '%s\n' 'ATROPOS_BACKEND_ATOM_CONTRACT_OK'

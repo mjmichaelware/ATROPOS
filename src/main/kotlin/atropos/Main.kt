@@ -55,6 +55,11 @@ fun main(args: Array<String>) {
         return
     }
 
+    if (args.firstOrNull() == "doctor" && args.drop(1).any { it == "--version" || it == "-v" }) {
+        println(atropos.core.BuildStamp.line())
+        return
+    }
+
     // Answered before the config boots, like --version.
     //
     // An install too broken to start is exactly the install that needs
