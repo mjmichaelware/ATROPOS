@@ -1,6 +1,10 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core
 
+import java.nio.file.Files
+import java.nio.file.Path
+import java.security.MessageDigest
+
 /**
  * What this binary is, read from the jar it was built into.
  *
@@ -33,8 +37,28 @@ object BuildStamp {
     val version: String get() = properties["version"] ?: UNKNOWN
     val commit: String get() = properties["commit"] ?: UNKNOWN
 
+    /** SHA-256 of the running release jar, or unknown while running from classes. */
+    val artifactSha256: String
+        get() {
+            val location = BuildStamp::class.java.protectionDomain?.codeSource?.location ?: return UNKNOWN
+            val path = runCatching { Path.of(location.toURI()) }.getOrNull() ?: return UNKNOWN
+            if (!Files.isRegularFile(path) || !path.fileName.toString().endsWith(".jar")) return UNKNOWN
+            return runCatching {
+                val digest = MessageDigest.getInstance("SHA-256")
+                Files.newInputStream(path).use { input ->
+                    val buffer = ByteArray(64 * 1024)
+                    while (true) {
+                        val count = input.read(buffer)
+                        if (count < 0) break
+                        if (count > 0) digest.update(buffer, 0, count)
+                    }
+                }
+                digest.digest().joinToString("") { "%02x".format(it) }
+            }.getOrElse { UNKNOWN }
+        }
+
     /** One line, for `--version` and for anywhere a build has to identify itself. */
-    fun line(): String = "ATROPOS $version ($commit)"
+    fun line(): String = "ATROPOS $version ($commit) sha256=$artifactSha256"
 
     const val UNKNOWN = "unknown"
     private const val RESOURCE = "atropos-build.properties"

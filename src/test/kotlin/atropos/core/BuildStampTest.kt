@@ -41,4 +41,10 @@ class BuildStampTest {
             "commit '${BuildStamp.commit}' is too long to compare at a glance"
         )
     }
+
+    @Test
+    fun the_line_exposes_artifact_hash_or_explicit_unknown_for_classes() {
+        assertTrue(BuildStamp.line().contains("sha256=${BuildStamp.artifactSha256}"))
+        assertTrue(BuildStamp.artifactSha256 == BuildStamp.UNKNOWN || BuildStamp.artifactSha256.matches(Regex("[0-9a-f]{64}")))
+    }
 }

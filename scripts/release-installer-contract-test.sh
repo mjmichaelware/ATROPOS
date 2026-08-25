@@ -17,5 +17,6 @@ grep -Fq 'backend-atom-contract-test.sh' "$WORKFLOW"
 grep -Fq 'github-actions-clean-runner-test.sh' "$WORKFLOW"
 grep -Fq 'provider-connect-contract-test.sh' "$WORKFLOW"
 grep -Fq 'mcp-example-contract-test.sh' "$WORKFLOW"
+grep -Fq 'Prove version reports the published hash' "$WORKFLOW"
 
 printf '%s\n' 'ATROPOS_RELEASE_INSTALLER_CONTRACT_OK'

@@ -1481,6 +1481,12 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | --- | --- | --- | --- | --- |
 | P01..P07 / P10..P11 provider descriptor and adapter dispatch | source-wired / partial | `scripts/backend-atom-contract-test.sh`, `src/main/kotlin/atropos/core/provider/StaticProviderDescriptorRegistry.kt`, `src/main/kotlin/atropos/core/provider/adapter/BuildKernelAdapter.kt`, provider adapter catalogs | provider catalog contract → descriptor IDs and the single `BuildKernelAdapter` dispatch seam for compatible, native Anthropic, local Ollama, Azure, and Bedrock providers | Backend contract, provider-env contract, hosted selector (440), shell syntax, and `git diff --check` pass. No second adapter registry was introduced; hosted Kotlin/live provider execution remains unverified. |
 
+### 2026-08-25T03:08:06Z · Agent: Codex GPT-5 · Batch: release-artifact-hash-reporting
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-INST-002 / B-INST-005 artifact hash visibility | source-wired / partial | `src/main/kotlin/atropos/core/BuildStamp.kt`, `src/main/kotlin/atropos/Main.kt`, `src/test/kotlin/atropos/core/BuildStampTest.kt`, `install.sh`, `.github/workflows/release.yml`, related contracts | `atropos --version` → existing `BuildStamp.line()` → running JAR SHA-256; installer captures the version line; release job compares it with the published `.sha256` asset | Narrow `kotlinc` compile of `BuildStamp.kt` passed; install, release, backend/provider contracts, hosted selector (440), shell syntax, and `git diff --check` pass. Root Gradle, hosted release, and device execution remain unverified. |
+
 ### 2026-08-25T03:50:00Z · Agent: Codex GPT-5 · Batch: generated-provider-readme-table
 
 | atom | status | files | caller | tests / notes |

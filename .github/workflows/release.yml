@@ -120,6 +120,12 @@ jobs:
           echo "sha256=$(cat build/libs/ATROPOS.jar.sha256)" >> "$GITHUB_OUTPUT"
           echo "commit=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
 
+      - name: Prove version reports the published hash
+        run: |
+          set -euo pipefail
+          java -jar build/libs/ATROPOS.jar --version | tee /tmp/version.txt
+          grep -Fq "sha256=${{ steps.hash.outputs.sha256 }}" /tmp/version.txt
+
       # A jar that cannot start is not a release. This is the same check the
       # engine answers for its own health, so a broken build is caught here
       # rather than on the operator's phone.

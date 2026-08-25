@@ -13365,6 +13365,16 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprint: `scripts/backend-atom-contract-test.sh=0e510e76d3fb`.
 
+### 2026-08-25T03:08:06Z · Agent: Codex GPT-5 · Batch: release-artifact-hash-reporting
+
+- Paths touched: `src/main/kotlin/atropos/core/BuildStamp.kt` (+27), `src/test/kotlin/atropos/core/BuildStampTest.kt` (+7), `src/main/kotlin/atropos/Main.kt` (existing caller), `install.sh` (+1), `scripts/install-contract-test.sh` (+1), `.github/workflows/release.yml` (+7), `scripts/release-installer-contract-test.sh` (+1), `scripts/backend-atom-contract-test.sh` (+3), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-INST-002 artifact hash verification and B-INST-005 operator-visible release identity.
+- Predicate moved: `atropos --version` now computes the running JAR’s SHA-256 when launched from a release artifact and explicitly reports `unknown` for classpath development runs; installer captures the line and release CI compares it to the published checksum. This avoids embedding a self-referential hash in the JAR.
+- Verification actually run: narrow `kotlinc` compilation of `BuildStamp.kt` passed; install/release/backend/provider contracts, hosted selector (`440 tests`), shell syntax, and `git diff --check` passed. Root Gradle, hosted release, and device execution remain unverified.
+- % delta: B-INST-002/B-INST-005 source-wired → stronger source-wired/partial; no hosted completion claim.
+- New overall estimate: unchanged.
+- Fingerprints: `BuildStamp.kt=833cbe6d1680`; `BuildStampTest.kt=91f47f42f1e4`; `install.sh=c3c4875e4c21`; `.github/workflows/release.yml=cc488f2c2aed`; `backend-atom-contract-test.sh=1b5a86c47ac1`.
+
 ### 2026-08-25T02:16:59Z · Agent: Codex GPT-5 · Batch: install-help-caller-contract
 - Paths touched: `scripts/backend-atom-contract-test.sh` (+16).
 - Atoms / phases affected: B-INST-001..005 and B-HELP-001..002 caller enforcement.
