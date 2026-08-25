@@ -83,7 +83,14 @@ class ProviderActivationService(
 
         val adapter = adapterRegistry.getByProviderId(providerId)
         val adapterStatus = adapter?.status()
-        val keyLookups = descriptor.requiredEnv.map(secretSource::lookup)
+        val keyLookups = descriptor.requiredEnv.map { required ->
+            ProviderEnvironmentAliases.names(required)
+                .asSequence()
+                .map(secretSource::lookup)
+                .firstOrNull { it.configured }
+                ?.copy(name = required)
+                ?: secretSource.lookup(required)
+        }
         val fixture = fixtureMatrix.runProvider(providerId)
         val executableSupport = adapterStatus?.implemented == true && !adapterStatus.dryRunOnly
         val impact = descriptor.capabilities.map { it.name.lowercase() }.sorted()

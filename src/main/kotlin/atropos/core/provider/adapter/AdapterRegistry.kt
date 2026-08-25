@@ -1,6 +1,7 @@
 package atropos.core.provider.adapter
 
 import atropos.core.provider.ApiCapability
+import atropos.core.provider.ProviderEnvironmentAliases
 import atropos.core.provider.ProviderDescriptorRegistry
 import atropos.core.provider.StaticProviderDescriptorRegistry
 import atropos.core.security.DefaultSecretSource
@@ -36,13 +37,9 @@ class StaticProviderAdapterRegistry(
 
     private fun resolveAliases(source: Map<String, String>): Map<String, String> {
         val resolved = source.toMutableMap()
-        ALIASES.forEach { (canonical, aliases) ->
+        CANONICAL_KEYS.forEach { canonical ->
             if (resolved[canonical].isNullOrBlank()) {
-                val namespaceAliases = listOf(
-                    "ATROPOS_PROVIDER_$canonical",
-                    "ATROPOS_PROVIDER_${canonical.substringBefore("_API_KEY")}_API_KEY"
-                ).distinct()
-                val value = (listOf(canonical) + aliases + namespaceAliases).asSequence()
+                val value = ProviderEnvironmentAliases.names(canonical).asSequence()
                     .mapNotNull { name ->
                         resolved[name]?.takeIf(String::isNotBlank)
                             ?: secretSource.lookup(name).value?.takeIf(String::isNotBlank)
@@ -55,18 +52,12 @@ class StaticProviderAdapterRegistry(
     }
 
     private companion object {
-        val ALIASES = mapOf(
-            "OPENAI_API_KEY" to listOf("OPENAI_KEY", "OPENAI_TOKEN"),
-            "ANTHROPIC_API_KEY" to listOf("ANTHROPIC_KEY", "CLAUDE_API_KEY", "CLAUDE_TOKEN"),
-            "GROQ_API_KEY" to listOf("GROQ_KEY", "GROQ_TOKEN"),
-            "XAI_API_KEY" to listOf("XAI_KEY", "GROK_API_KEY", "GROK_TOKEN"),
-            "GEMINI_API_KEY" to listOf("GOOGLE_API_KEY", "GOOGLE_GEMINI_API_KEY"),
-            "OPENROUTER_API_KEY" to listOf("OPENROUTER_KEY"),
-            "DEEPSEEK_API_KEY" to listOf("DEEPSEEK_KEY"),
-            "MISTRAL_API_KEY" to listOf("MISTRAL_TOKEN"),
-            "FIREWORKS_API_KEY" to listOf("FIREWORKS_AI_API_KEY"),
-            "TOGETHER_API_KEY" to listOf("TOGETHERAI_API_KEY"),
-            "AZURE_OPENAI_API_KEY" to listOf("AZURE_API_KEY")
-        )
+        val CANONICAL_KEYS = ProviderEnvironmentAliases.names("OPENAI_API_KEY").let {
+            listOf(
+                "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "GROQ_API_KEY", "XAI_API_KEY",
+                "GEMINI_API_KEY", "OPENROUTER_API_KEY", "DEEPSEEK_API_KEY", "MISTRAL_API_KEY",
+                "FIREWORKS_API_KEY", "TOGETHER_API_KEY", "AZURE_OPENAI_API_KEY"
+            )
+        }
     }
 }

@@ -13303,6 +13303,14 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; provider catalog remains source-wired / partial pending hosted execution.
 - Fingerprints (sha256, first 12): `AdapterRegistry.kt=6c3adb6af6bd`; `ProviderOnboardingTest.kt=b0b3eb9d7b17`; `backend-atom-contract-test.sh=3c6ed297aeff`.
 
+### 2026-08-25T08:30:00Z · Agent: Codex GPT-5 · Batch: provider-namespace-activation-alias
+- Paths touched: `src/main/kotlin/atropos/core/provider/ProviderEnvironmentAliases.kt` (+27), `src/main/kotlin/atropos/core/provider/ProviderActivationService.kt` (+5), `src/main/kotlin/atropos/core/provider/adapter/AdapterRegistry.kt` (+7/-19), `src/test/kotlin/atropos/core/provider/ProviderActivationServiceTest.kt` (+25), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-PROV-001t provider namespace activation parity.
+- Predicate moved: provider verification now resolves the same canonical aliases as adapter construction, including `ATROPOS_PROVIDER_*`; onboarding, activation, and live adapter readiness cannot disagree about whether a configured key exists. No secret value is logged or persisted.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh`, `bash scripts/hosted-test-selector-contract.sh` (`421 tests`), `bash scripts/provider-env-contract-test.sh`, `bash scripts/provider-connect-contract-test.sh`, and `git diff --check` passed. Root/hosted Kotlin execution and live provider calls remain unverified; no root-green claim.
+- % delta: unchanged; provider catalog remains source-wired / partial pending hosted execution.
+- Fingerprints (sha256, first 12): `ProviderEnvironmentAliases.kt=8c03ae463058`; `ProviderActivationService.kt=b33c88f662ff`; `AdapterRegistry.kt=d3f9b9a07b06`; `ProviderActivationServiceTest.kt=d57fa494917f`; `backend-atom-contract-test.sh=6ee741349ad9`.
+
 ### 2026-08-25T08:00:00Z · Agent: Codex GPT-5 · Batch: provider-namespace-adapter-alias
 - Paths touched: `src/main/kotlin/atropos/core/provider/adapter/AdapterRegistry.kt` (+5), `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` (+12), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7).
 - Atoms / phases affected: B-PROV-001t provider namespace scan reaching live adapter configuration.

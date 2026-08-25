@@ -1280,3 +1280,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-PROV-001t / provider connect runtime alias | source-wired / partial | `src/main/kotlin/atropos/core/provider/adapter/AdapterRegistry.kt`, `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt`, `scripts/backend-atom-contract-test.sh` | provider onboarding discovery → `StaticProviderAdapterRegistry.resolveAliases()` → canonical adapter environment consumed by the existing OpenAI-compatible adapter | `ATROPOS_PROVIDER_OPENROUTER_API_KEY` is translated to `OPENROUTER_API_KEY` before adapter construction; focused alias test is included in the hosted selector (421 tests). Backend contract, hosted-selector contract, and `git diff --check` pass. Hosted Kotlin execution remains pending; no secret is persisted or rendered. |
+
+### 2026-08-25T08:30:00Z · Agent: Codex GPT-5 · Batch: provider-namespace-activation-alias
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-PROV-001t provider namespace activation parity | source-wired / partial | `src/main/kotlin/atropos/core/provider/ProviderEnvironmentAliases.kt`, `src/main/kotlin/atropos/core/provider/ProviderActivationService.kt`, `src/main/kotlin/atropos/core/provider/adapter/AdapterRegistry.kt`, `src/test/kotlin/atropos/core/provider/ProviderActivationServiceTest.kt`, `scripts/backend-atom-contract-test.sh` | provider verification → shared alias contract → `SecretSource` lookup and adapter canonical environment | Activation and adapter construction now agree on canonical aliases and `ATROPOS_PROVIDER_*`; contracts for backend ownership, provider env/connect, hosted selectors (421), and diff check pass. Root/hosted Kotlin and live provider execution remain unverified. |

@@ -45,6 +45,29 @@ class ProviderActivationServiceTest {
     }
 
     @Test
+    fun verify_accepts_atropos_provider_namespace_for_canonical_key() {
+        val temp = Files.createTempDirectory("atropos-provider-namespace-verify")
+        val registry = StaticProviderDescriptorRegistry()
+        val env = mapOf("ATROPOS_PROVIDER_GROQ_API_KEY" to "namespace-secret")
+        val adapterRegistry = StaticProviderAdapterRegistry(registry, env)
+        val service = ProviderActivationService(
+            registry = registry,
+            adapterRegistry = adapterRegistry,
+            secretSource = MapSecretSource(env),
+            quotaLedger = FileQuotaLedger(temp.resolve("quota.tsv").toFile(), FileQuotaLedger.seedFromDescriptors(registry)),
+            fixtureMatrix = ProviderFixtureMatrixService(registry, adapterRegistry),
+            store = ProviderActivationStore(temp.resolve("activation")),
+            paidGate = EmergencyPaidGate(temp.resolve("paid").toFile()),
+            ollamaProbe = { false }
+        )
+
+        val record = service.verify("groq")
+
+        assertEquals(ProviderActivationState.VERIFIED, record.state)
+        assertTrue(record.keySources.any { it.startsWith("GROQ_API_KEY:") })
+    }
+
+    @Test
     fun live_test_refuses_paid_locked_provider_without_network_call() {
         val temp = Files.createTempDirectory("atropos-provider-live")
         val registry = StaticProviderDescriptorRegistry()
