@@ -14907,7 +14907,6 @@ Local verification note for this batch: `timeout 120s ./gradlew test --tests 'at
 - New overall estimate: unchanged.
 - Fingerprints: `McpHostManagerTest.kt=9fdff3a705fe`; `backend-atom-contract-test.sh=82cb37547703`.
 
-<<<<<<< HEAD
 ### 2026-08-25T18:45:00Z · Agent: Codex GPT-5 · Batch: frontend-wave-w1-residual-001
 - Paths touched:
   - `apps/web/src/components/streaming/message-stream.tsx` (+90: ActionProposalCard for MCP judged events; ComputerUseCard only when event present)
@@ -15041,7 +15040,6 @@ Local verification note for this batch: `timeout 120s ./gradlew test --tests 'at
 - Fingerprints: `export-button.tsx` (new), `evidence-ledger-browser.tsx` (new), `developer/page.tsx` (new), `settings/page.tsx` (updated).
 - New overall estimate: unchanged; ADD-W-015, ADD-W-020 DONE; ADD-W-009 PARTIAL.
 
-=======
 ### 2026-08-25T14:00:00Z · Agent: Codex GPT-5 · Batch: route-degraded-queue-owner
 - Paths touched: `src/main/kotlin/atropos/core/provider/adapter/AdapterRouteFacade.kt` (+4), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7).
 - Atoms / phases affected: B-PROV-002 shared provider onboarding through degraded/queued route execution.
@@ -15056,4 +15054,20 @@ Local verification note for this batch: `timeout 120s ./gradlew test --tests 'at
 - Verification actually run: source audit matched the numbered owner paths; no production implementation changed in this documentation batch. Existing static contract evidence remains authoritative; hosted Gradle/live integration proof remains unclaimed.
 - % delta: unchanged; this closes ledger traceability, not runtime implementation or hosted verification.
 - Fingerprints (sha256, first 12): `STATUS-BACKEND.md=da4c7d5a8ec4`, `AGENTS.md=1c7f4be8533f`.
->>>>>>> f6087b14 (docs: map canonical backend atom callers)
+<<<<<<< HEAD
+=======
+### 2026-08-25T16:00:00Z · Agent: Codex GPT-5 · Batch: first-run-onboarding-owner
+- Paths touched: `src/main/kotlin/atropos/cli/FirstRunProbe.kt` (+8), `src/main/kotlin/atropos/cli/CommandRouter.kt` (+1), `src/test/kotlin/atropos/cli/FirstRunProbeTest.kt` (+36), `.github/workflows/compile-gate.yml` (+1), `scripts/atropos-verify-worktree.sh` (+1), `scripts/backend-atom-contract-test.sh` (+3), `STATUS-BACKEND.md` (+1).
+- Atoms / phases affected: B-002 provider discovery truth in first-run UX and hosted backend test coverage.
+- Predicate moved: `/start` now reads provider readiness from the launch-owned onboarding inventory, so aliases and local-vault discovery use the same healthy set as routing; a production caller and focused regression test are wired.
+- Verification actually run: backend atom contract passed, hosted selector contract passed with 441 tests, and `git diff --check` passed. `timeout 90s ./gradlew --no-daemon :test --rerun --max-workers=1 --console=plain --tests 'atropos.cli.FirstRunProbeTest'` timed out during Gradle setup after `:buildStamp UP-TO-DATE`; no local Kotlin test pass or root-green claim.
+- % delta: unchanged; B-002 remains source-wired/partial pending hosted execution.
+- Fingerprints (sha256, first 12): `FirstRunProbe.kt=e9e44ba35fae`, `CommandRouter.kt=6df63d381f2b`, `FirstRunProbeTest.kt=db0430e50814`, `compile-gate.yml=4588ba1f6bf5`, `atropos-verify-worktree.sh=064eba08af84`, `backend-atom-contract-test.sh=62e4908b08a6`, `STATUS-BACKEND.md=2efe7b852a98`, `AGENTS.md=a3954e15539b`.
+### 2026-08-25T16:30:00Z · Agent: Codex GPT-5 · Batch: first-run-probe-focused-selector
+- Paths touched: `STATUS-BACKEND.md` (+7), append-only evidence ledger.
+- Atoms / phases affected: B-002 first-run onboarding regression coverage.
+- Predicate moved: the production first-run provider truth path and its focused regression test are now explicitly selected by both canonical GitHub test lanes; no test is treated as passed locally after timeout.
+- Verification actually run: `ATROPOS_BACKEND_ATOM_CONTRACT_OK`, `ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (441 tests)`, `git diff --check`, and the orphan gate (`4 pre-existing baseline files; exit 0`). The focused local Gradle attempt timed out during setup; no Kotlin pass claim.
+- % delta: unchanged; B-002 remains source-wired/partial pending hosted execution.
+- Fingerprints (sha256, first 12): `STATUS-BACKEND.md=8ed9225309ae`, `AGENTS.md=980b0eda1936`.
+>>>>>>> 0e34c825 (test: cover shared first-run provider discovery)

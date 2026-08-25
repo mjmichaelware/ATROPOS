@@ -421,7 +421,7 @@ jobs:
           --tests 'atropos.core.worktree.IsolatedWorktreeServiceTest'
           --tests 'atropos.core.worktree.WorktreePatchPathsTest'
           --tests 'atropos.core.worktree.WorktreeRecordCodecTest'
-+          --tests 'atropos.core.AtroposRepoRootLocatorTest'
+          --tests 'atropos.core.AtroposRepoRootLocatorTest'
           --tests 'atropos.core.GenerationParametersTest'
           --tests 'atropos.core.autonomy.RewardPenaltyStoreTest'
           --tests 'atropos.core.contract.SurfaceContractsTest'

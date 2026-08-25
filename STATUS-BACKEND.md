@@ -43,6 +43,12 @@ These rows map the numbered backend atoms in the source DAG to the existing prod
 | B-016 artifact identity | source-wired / partial | release producer/checksum → `BuildStamp` → `Main --version`/installer checks | hosted release artifact evidence |
 | B-002 first-run provider truth | source-wired / partial | `/start` → `CommandRouter` → shared `ProviderOnboardingService` → `FirstRunProbe` | local focused Gradle attempt timed out during task graph after `:buildStamp UP-TO-DATE`; static contracts pass; hosted Kotlin execution remains required |
 
+### 2026-08-25T16:30:00Z · Agent: Codex GPT-5 · Batch: first-run-probe-focused-selector
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-002 first-run onboarding regression | source-wired / partial | `src/main/kotlin/atropos/cli/FirstRunProbe.kt`, `src/main/kotlin/atropos/cli/CommandRouter.kt`, `src/test/kotlin/atropos/cli/FirstRunProbeTest.kt`, `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh` | `/start` → shared launch onboarding → `FirstRunProbe` | Focused test is selected in both GitHub lanes; backend contract, selector contract (`441 tests`), and diff check pass. Local Gradle timed out during setup; hosted Kotlin execution remains required. |
+
 ### 2026-08-25T14:00:00Z · Agent: Codex GPT-5 · Batch: route-degraded-queue-owner
 
 | atom | status | files | caller | tests / notes |
