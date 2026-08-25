@@ -1444,3 +1444,9 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-HELP-002a / B-HELP-002b provider environment one-pager | source-wired / partial | `src/main/kotlin/atropos/core/provider/StaticProviderDescriptorRegistry.kt`, `scripts/provider-env-readme-generator.py`, `scripts/provider-env-contract-test.sh`, `README.md`, `scripts/backend-atom-contract-test.sh` | descriptor registry → generator `--check` → README generated table; existing compile/release workflows → provider environment contract | README’s canonical required-env table is now generated from the runtime descriptor registry and fails CI on drift. Generator, provider-env, backend atom, hosted selector (440), and `git diff --check` pass; hosted compile/release execution remains unverified. |
+
+### 2026-08-25T04:10:00Z · Agent: Codex GPT-5 · Batch: factory-workflow-contract-caller
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-GHA / factory hosted build contract | source-wired / partial | `.github/workflows/factory-test.yml`, `scripts/github-actions-clean-runner.sh`, `scripts/github-actions-clean-runner-test.sh`, `scripts/backend-atom-contract-test.sh` | Factory CI → clean-runner contract test → clean-runner implementation → Gradle factory build | Factory workflow now uses v4 checkout/JDK actions, Gradle setup, and executes its own contract test before building. Clean-runner test/implementation, backend atom, hosted selector (440), and `git diff --check` pass; hosted workflow execution remains unverified. |

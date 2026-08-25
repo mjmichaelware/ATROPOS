@@ -368,5 +368,9 @@ text src/main/kotlin/atropos/core/factory/FactoryObligationLoop.kt 'executeUntil
 # Both hosted entrypoints must run this contract.
 text .github/workflows/compile-gate.yml 'backend-atom-contract-test.sh'
 text scripts/atropos-verify-worktree.sh 'backend-atom-contract-test.sh'
+text .github/workflows/factory-test.yml 'actions/checkout@v4'
+text .github/workflows/factory-test.yml 'actions/setup-java@v4'
+text .github/workflows/factory-test.yml 'gradle/actions/setup-gradle@v4'
+text .github/workflows/factory-test.yml 'github-actions-clean-runner-test.sh'
 
 printf '%s\n' 'ATROPOS_BACKEND_ATOM_CONTRACT_OK'

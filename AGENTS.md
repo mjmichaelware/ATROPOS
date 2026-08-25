@@ -13335,6 +13335,14 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; provider help remains source-wired/partial pending hosted evidence.
 - Fingerprints: commit `f7dce2a9`.
 
+### 2026-08-25T04:10:00Z · Agent: Codex GPT-5 · Batch: factory-workflow-contract-caller
+- Paths touched: `.github/workflows/factory-test.yml` (+5/-2), `scripts/backend-atom-contract-test.sh` (+4).
+- Atoms / phases affected: B-MCP-GHA factory hosted build and clean-runner caller enforcement.
+- Predicate moved: Factory CI now executes its own clean-runner contract before the Gradle build, uses current checkout/JDK actions, and initializes Gradle caching through the standard hosted action; the existing clean-runner remains the sole owner.
+- Verification actually run: clean-runner test, clean-runner implementation, backend atom contract, hosted selector contract (440), and `git diff --check` passed. Hosted workflow execution remains unverified.
+- % delta: unchanged; hosted factory/GHA remains source-wired/partial pending GitHub execution.
+- Fingerprints: pending scoped commit.
+
 ### 2026-08-25T02:30:00Z · Agent: Codex GPT-5 · Batch: hosted-verifier-gradle-lane
 - Paths touched: `scripts/atropos-verify-worktree.sh` (+11/-7), `scripts/atropos-verify-action-contract-test.sh` (+5).
 - Atoms / phases affected: B-MCP-GHA hosted verification lane.
