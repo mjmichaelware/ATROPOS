@@ -57,7 +57,7 @@ class AgentCommand(
     private val providerOnboarding: ProviderOnboardingService = ProviderOnboardingService(),
     private val service: AgentService = AgentService(config, providerOnboarding = providerOnboarding),
     private val runService: AgentRunService = AgentRunService(config, onboarding = providerOnboarding),
-    private val queueService: AgentQueueService = AgentQueueService(config),
+    private val queueService: AgentQueueService = AgentQueueService(config, onboarding = providerOnboarding),
     private val daemonService: AgentDaemonService = AgentDaemonService(config),
     private val sessionSupervisor: ProviderSessionSupervisor = ProviderSessionSupervisor(),
     private val sessionStore: SupervisedSessionStore = SupervisedSessionStore(),

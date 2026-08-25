@@ -37,7 +37,7 @@ class AgentService(
         verificationStore = verificationStore,
         patchExtractor = patchExtractor
     ),
-    private val queueService: AgentQueueService = AgentQueueService(config, collector),
+    private val queueService: AgentQueueService = AgentQueueService(config, collector, onboarding = onboarding),
     private val agencyGate: BoundedAgencyGate = BoundedAgencyGate(
         ExecutionPolicyEngine(collector.repoRoot, localOnly = config.runtime.localOnly)
     ),

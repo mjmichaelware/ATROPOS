@@ -1688,3 +1688,9 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-PROV-002/004 adapter status and autonomous worker owner | source-wired / partial | `src/main/kotlin/atropos/cli/ui/StatusAdapterRenderer.kt`, `src/main/kotlin/atropos/cli/StatusCommandHandler.kt`, `src/main/kotlin/atropos/core/autonomous/AutonomousOrchestrator.kt`, `scripts/backend-atom-contract-test.sh` | `/status adapters` and `AutonomousOrchestrator.runProviderWorkers()` → injected onboarding owner → existing `AdapterRouteFacade`/`ProviderWorkerDirector` policy paths | Adapter status and autonomous provider workers now share an injected provider inventory instead of allocating independent onboarding services. Backend contract, hosted selector (`440 tests`), and diff check pass; hosted Kotlin/runtime execution remains unverified. |
+
+### 2026-08-25T10:00:00Z · Agent: Codex GPT-5 · Batch: bridge-queue-provider-owner
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-005 bridge queue / B-PROV-002 queued cascade owner | source-wired / partial | `src/main/kotlin/atropos/bridge/AtroposBridge.kt`, `src/main/kotlin/atropos/core/agent/AgentQueueService.kt`, `AgentQueueProcessor.kt`, `AgentQueueExecutor.kt`, `AgentService.kt`, `src/main/kotlin/atropos/cli/commands/AgentCommand.kt`, `scripts/backend-atom-contract-test.sh` | `LocalEngineBridge.server()` → one `ProviderOnboardingService` → `AgentQueueService` → processor/executor → `AgentRunService`/cascade | Queued HTTP work now shares the bridge onboarding inventory through the entire queue execution chain; CLI agent queue execution shares its injected owner too. Backend contract, hosted selector (`440 tests`), and diff check pass. Hosted Kotlin/bridge runtime execution remains unverified. |

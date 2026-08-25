@@ -2,6 +2,7 @@ package atropos.core.agent
 
 import atropos.core.AtroposConfig
 import atropos.core.memory.LocalMemoryStore
+import atropos.core.provider.ProviderOnboardingService
 import java.time.Instant
 
 /**
@@ -12,6 +13,7 @@ import java.time.Instant
 internal class AgentQueueExecutor(
     private val config: AtroposConfig,
     private val collector: AgentContextCollector,
+    private val onboarding: ProviderOnboardingService = ProviderOnboardingService(),
     private val runService: AgentRunService? = null,
     private val store: AgentQueueStore = AgentQueueStore(collector.repoRoot),
     private val clock: () -> Instant = { Instant.now() },
@@ -66,7 +68,7 @@ internal class AgentQueueExecutor(
         )
 
         return try {
-            val job = (runService ?: AgentRunService(config, collector))
+            val job = (runService ?: AgentRunService(config, collector, onboarding))
                 .run(activeProviderName, queueRecord.task, queueRecord.smokeCommand, hooks)
             val terminal = finalizeFromJob(queueRecord, job)
             rememberQueue(terminal, "finalized")

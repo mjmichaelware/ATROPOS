@@ -5,6 +5,7 @@ import atropos.core.policy.LifecycleActionProposals
 import atropos.core.policy.AgencyDisposition
 import atropos.core.policy.BoundedAgencyGate
 import atropos.core.policy.ExecutionPolicyEngine
+import atropos.core.provider.ProviderOnboardingService
 import java.time.Instant
 
 /**
@@ -18,9 +19,10 @@ internal class AgentQueueProcessor(
     private val store: AgentQueueStore = AgentQueueStore(collector.repoRoot),
     private val recovery: AgentQueueRecovery = AgentQueueRecovery(store),
     private val clock: () -> Instant = { Instant.now() },
-    private val agencyGate: BoundedAgencyGate = BoundedAgencyGate(ExecutionPolicyEngine(collector.repoRoot))
+    private val agencyGate: BoundedAgencyGate = BoundedAgencyGate(ExecutionPolicyEngine(collector.repoRoot)),
+    private val onboarding: ProviderOnboardingService = ProviderOnboardingService()
 ) {
-    private val executor = AgentQueueExecutor(config, collector, store = store)
+    private val executor = AgentQueueExecutor(config, collector, onboarding = onboarding, store = store)
 
     fun runNext(activeProviderName: String): AgentQueueRunResult {
         enforceQueuePolicy("run_next")

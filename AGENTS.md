@@ -13388,6 +13388,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; this closes ledger-evidence coverage only, not upstream runtime execution.
 - Fingerprints (sha256, full): `backend-atom-contract-test.sh=150409abed2f86453c9624d30c4e04e4288dd477cb7b5ac1c461bd096128e638`; `STATUS-BACKEND.md=8606030b9f26ece200623d165562a52bdd5b953892c5d56459bc1893e067eed0`.
 
+### 2026-08-25T10:00:00Z · Agent: Codex GPT-5 · Batch: bridge-queue-provider-owner
+
+- Paths touched: `src/main/kotlin/atropos/bridge/AtroposBridge.kt` (+4/-1), `src/main/kotlin/atropos/core/agent/AgentQueueService.kt` (+4/-2), `AgentQueueProcessor.kt` (+4/-2), `AgentQueueExecutor.kt` (+3/-1), `AgentService.kt` (+1/-1), `src/main/kotlin/atropos/cli/commands/AgentCommand.kt` (+1/-1), `scripts/backend-atom-contract-test.sh` (+4).
+- Atoms / phases affected: B-005 bridge queue execution and B-PROV-002 queued free-first routing.
+- Predicate moved: queued bridge work now receives one refreshed onboarding owner from `AtroposBridge.server()` through queue service, processor, executor, and `AgentRunService`; CLI agent queue execution uses the same owner injected by `AgentCommand`.
+- Verification actually run: backend atom contract, hosted selector contract (`440 tests`), and `git diff --check` passed. Root/hosted Kotlin and bridge runtime execution remain unverified; no runtime-green claim.
+- % delta: unchanged; B-005/B-PROV-002 remains source-wired/partial pending hosted runtime proof.
+- Fingerprints (sha256, full): `AgentQueueService.kt=2b38296acc3a2c9bfefb0722b31e65139bf8da3575cadd257c823ebdc463cf6a`; `AgentQueueProcessor.kt=cce6f378cb8739023b73461bbcd408709f7663e8c1197551d7a237c18ea3c4d6`; `AgentQueueExecutor.kt=6f8d6c42b0e218a07e6a85a71f937d5f7b3b4cc81b4646c4a0f1c3b9e1257101`; `AtroposBridge.kt=dd5d46a4ba3e94bb5bb064772ceed57df70b80ae2f7abd2e9720ce648cc51953`; `backend-atom-contract-test.sh=5289010c56b905f766ef6d59006d2e90f29721cda1ce32011c319976473b5686`.
+
 ### 2026-08-25T07:20:00Z · Agent: Codex GPT-5 · Batch: mcp-probe-handshake-test-proof-append
 
 - Paths touched: `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+6), `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+7).

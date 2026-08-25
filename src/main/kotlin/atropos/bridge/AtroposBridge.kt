@@ -13,6 +13,7 @@ import atropos.core.checkpoint.CheckpointSummary
 import atropos.core.phase20.GovernanceLedger
 import atropos.core.provider.FileQuotaLedger
 import atropos.core.provider.StaticProviderDescriptorRegistry
+import atropos.core.provider.ProviderOnboardingService
 import atropos.core.recovery.RestartCoordinator
 import atropos.bridge.projection.QuotaProjection
 import java.time.Instant
@@ -66,7 +67,9 @@ object LocalEngineBridge {
         val exportResolver = atropos.core.artifact.export.ArtifactLandingResolver(repoRoot, null)
         // One queue instance serves both enqueueing and running, so a client
         // runs the very entries it created.
-        val queueService = AgentQueueService()
+        val providerOnboarding = ProviderOnboardingService()
+        providerOnboarding.refresh()
+        val queueService = AgentQueueService(onboarding = providerOnboarding)
         val quotaRegistry = StaticProviderDescriptorRegistry()
         val quotaLedger = FileQuotaLedger(
             AtroposConfig.configRoot().resolve("provider/quota-ledger.tsv").toFile(),

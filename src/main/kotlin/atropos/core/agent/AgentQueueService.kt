@@ -6,6 +6,7 @@ import atropos.core.policy.BoundedAgencyGate
 import atropos.core.policy.ExecutionPolicyEngine
 import atropos.core.policy.LifecycleActionProposals
 import atropos.core.policy.AgencyDisposition
+import atropos.core.provider.ProviderOnboardingService
 import java.time.Instant
 
 data class AgentQueueRunResult(
@@ -36,10 +37,11 @@ class AgentQueueService(
     private val collector: AgentContextCollector = AgentContextCollector(),
     private val store: AgentQueueStore = AgentQueueStore(collector.repoRoot),
     private val agencyGate: BoundedAgencyGate = BoundedAgencyGate(ExecutionPolicyEngine(collector.repoRoot)),
-    private val memoryStore: LocalMemoryStore = LocalMemoryStore(collector.repoRoot.resolve(".atropos/memory").toFile())
+    private val memoryStore: LocalMemoryStore = LocalMemoryStore(collector.repoRoot.resolve(".atropos/memory").toFile()),
+    private val onboarding: ProviderOnboardingService = ProviderOnboardingService()
 ) {
     private val manager = AgentQueueManager(config, collector)
-    private val processor = AgentQueueProcessor(config, collector)
+    private val processor = AgentQueueProcessor(config, collector, onboarding = onboarding)
     private val backpressure = AgentQueueBackpressure(store, AgentQueueRecovery(store))
 
     fun enqueue(task: String, smokeCommand: String? = null): AgentQueueRecord =
