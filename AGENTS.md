@@ -13379,6 +13379,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; B-PROV-002/004/006 remains source-wired/partial pending hosted Kotlin/runtime evidence.
 - Fingerprints (sha256, full): `StatusAdapterRenderer.kt=8b14c8fcf6a9a5fdcb5a2c5a85623f17b9c584a6b39adab377624356ae44faee`; `StatusCommandHandler.kt=3e87540b5db1122d5803decf28011bc70860c821ba0ae6967bdc5a75079030a9`; `AutonomousOrchestrator.kt=5ddcb131524df96e27ec9ff852bbe95c57b0d99d46d62e5bff4e3e4f90e04d13`; `backend-atom-contract-test.sh=16d2d70f2420909b8ac0d48906b14360ef4599ea57c7cbcadd3b8ac9cd47f1b4`.
 
+### 2026-08-25T09:30:00Z · Agent: Codex GPT-5 · Batch: complete-backend-ledger-gate
+
+- Paths touched: `scripts/backend-atom-contract-test.sh` (+7), `STATUS-BACKEND.md` (+2).
+- Atoms / phases affected: complete authority backend top-level ledger coverage, especially optional MCP catalog IDs.
+- Predicate moved: the hosted backend source contract now fails if any named optional MCP backend atom is absent from `STATUS-BACKEND.md`; all listed IDs are explicitly present and map to the existing generic host/config caller rather than an adapter farm.
+- Verification actually run: backend atom contract, MCP example contract (`15 files / 42 servers`), hosted selector contract (`440 tests`), and `git diff --check` passed. No Kotlin or GitHub Actions runtime claim.
+- % delta: unchanged; this closes ledger-evidence coverage only, not upstream runtime execution.
+- Fingerprints (sha256, full): `backend-atom-contract-test.sh=150409abed2f86453c9624d30c4e04e4288dd477cb7b5ac1c461bd096128e638`; `STATUS-BACKEND.md=8606030b9f26ece200623d165562a52bdd5b953892c5d56459bc1893e067eed0`.
+
 ### 2026-08-25T07:20:00Z · Agent: Codex GPT-5 · Batch: mcp-probe-handshake-test-proof-append
 
 - Paths touched: `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+6), `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+7).
