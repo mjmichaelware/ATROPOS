@@ -19,6 +19,29 @@ This file records backend implementation status for the current engine wave. A r
 | B-MCP-GHA / Tier-0 | partial | `.github/actions/atropos-verify/action.yml`, `.github/workflows/atropos-verify-example.yml`, `CONTRIBUTING.md`, existing `core/github/GitHubBinding.kt` | YAML/static checks only | local GitHub binding already requires explicit authorization and territory; reusable verify action/check example and no-brand-adapter contribution rule added; no remote OAuth/PAT or live check-run proof |
 | B-INST-001..005 / AUD036 | partial | `install.sh`, `scripts/install-contract-test.sh`, `scripts/package-installers.sh`, `scripts/package-installers-test.sh`, `.github/workflows/release.yml`, `src/main/kotlin/atropos/cli/BackendDoctor.kt` | package contract passed previously; first-run and doctor tests are wired but hosted release workflow not executed | installer now bootstraps missing config/provider metadata skeletons, preserves existing config, verifies the installed JAR with `--health`, and the user-facing `/doctor` composes provider/MCP diagnostics without secrets; public release URL and device install remain external |
 
+## Canonical backend atom matrix
+
+These rows map the numbered backend atoms in the source DAG to the existing production owner. They do not create parallel subsystems or claim hosted/live proof.
+
+| atom | status | production caller / owner | evidence gap |
+| --- | --- | --- | --- |
+| B-001 installer | source-wired / partial | `install.sh` → release assets → `BackendDoctor` | hosted release, public URL, and device install |
+| B-002 provider discovery | source-wired / partial | `Main` → `ProviderOnboardingService` → `RoutePolicy`/cascade | hosted provider tests |
+| B-003 provider controls | source-wired / partial | `CommandRouter` → `ProviderCommandHandler` → onboarding metadata | hosted CLI route tests |
+| B-004 provider workers | source-wired / partial | `AutonomousOrchestrator` → `ProviderWorkerDirector` → `VerifiedCompletionGate` | hosted worker execution |
+| B-005 bridge | source-wired / partial | `LocalEngineBridge.server()` → `BridgeRoutes` and existing projections | hosted bridge runtime |
+| B-006 evidence substrate | source-wired / partial | existing `DloiService`/evidence-store callers → local authoritative artifacts | hosted evidence/runtime proof |
+| B-007 local-only policy | source-wired / partial | `RuntimeConfig.localOnly` → `ExecutionPolicyEngine`/`RoutePolicy`/research and MCP callers | hosted policy tests |
+| B-008 Sentry | source-wired / partial | `/sentry` → `SentryCommandHandler`/client → bounded repair/evidence path | hosted/live credentials |
+| B-009 GitHub Actions | source-wired / partial | composite verify action → `atropos-verify-worktree.sh` → example check publisher | hosted workflow execution |
+| B-010 GitHub/local git | source-wired / partial | `GitHubBinding` and bounded `ShellCommandRunner` git commands → `TypedToolExecutor` | hosted integration/live credentials |
+| B-011 MCP host | source-wired / partial | `CommandRouter`/bridge → single `McpHostManager` → bounded tool executor | hosted MCP runtime |
+| B-012 quota ledger | source-wired / partial | provider result owners → `QuotaLedger` → `/v1/quota`/status projections | hosted restart/quota tests |
+| B-013 editor extension host | source-wired / partial | `/v1/editor/context` and `/v1/editor/selection` → existing bridge message owner | hosted bridge test |
+| B-014 instruction import | source-wired / partial | `/agent context import` → `ImportedInstructionPackStore` → Director context reads | hosted import test |
+| B-015 zero-retention research | source-wired / partial | config flag → `FactoryResearchService` research-plane branches → doctor summary | hosted policy/research test |
+| B-016 artifact identity | source-wired / partial | release producer/checksum → `BuildStamp` → `Main --version`/installer checks | hosted release artifact evidence |
+
 ### 2026-08-25T14:00:00Z · Agent: Codex GPT-5 · Batch: route-degraded-queue-owner
 
 | atom | status | files | caller | tests / notes |

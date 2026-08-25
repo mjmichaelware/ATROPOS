@@ -14907,6 +14907,7 @@ Local verification note for this batch: `timeout 120s ./gradlew test --tests 'at
 - New overall estimate: unchanged.
 - Fingerprints: `McpHostManagerTest.kt=9fdff3a705fe`; `backend-atom-contract-test.sh=82cb37547703`.
 
+<<<<<<< HEAD
 ### 2026-08-25T18:45:00Z · Agent: Codex GPT-5 · Batch: frontend-wave-w1-residual-001
 - Paths touched:
   - `apps/web/src/components/streaming/message-stream.tsx` (+90: ActionProposalCard for MCP judged events; ComputerUseCard only when event present)
@@ -15040,3 +15041,19 @@ Local verification note for this batch: `timeout 120s ./gradlew test --tests 'at
 - Fingerprints: `export-button.tsx` (new), `evidence-ledger-browser.tsx` (new), `developer/page.tsx` (new), `settings/page.tsx` (updated).
 - New overall estimate: unchanged; ADD-W-015, ADD-W-020 DONE; ADD-W-009 PARTIAL.
 
+=======
+### 2026-08-25T14:00:00Z · Agent: Codex GPT-5 · Batch: route-degraded-queue-owner
+- Paths touched: `src/main/kotlin/atropos/core/provider/adapter/AdapterRouteFacade.kt` (+4), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-PROV-002 shared provider onboarding through degraded/queued route execution.
+- Predicate moved: the unavailable-adapter fallback now reuses the injected onboarding owner when it creates the existing queue service; no route branch can create a second provider inventory during queue fallback.
+- Verification actually run: source contract assertion added; `git diff --check` passed. Hosted Kotlin route/queue execution remains unverified and is not reported green.
+- % delta: unchanged; source-wired/partial pending hosted runtime evidence.
+- Fingerprints (sha256, first 12): `AdapterRouteFacade.kt=e03b47353604`, `backend-atom-contract-test.sh=9511e43a4b45`, `STATUS-BACKEND.md=cb7b793d1582`, `AGENTS.md=680a0bc554c0`.
+### 2026-08-25T15:00:00Z · Agent: Codex GPT-5 · Batch: canonical-backend-atom-matrix
+- Paths touched: `STATUS-BACKEND.md` (+21), append-only canonical B-001..B-016 production-caller matrix.
+- Atoms / phases affected: numbered backend DAG inventory B-001..B-016.
+- Predicate moved: every numbered backend atom now has an explicit ledger row naming its existing production owner/caller and its real remaining evidence gap; no status was promoted to VERIFIED without hosted/live evidence.
+- Verification actually run: source audit matched the numbered owner paths; no production implementation changed in this documentation batch. Existing static contract evidence remains authoritative; hosted Gradle/live integration proof remains unclaimed.
+- % delta: unchanged; this closes ledger traceability, not runtime implementation or hosted verification.
+- Fingerprints (sha256, first 12): `STATUS-BACKEND.md=da4c7d5a8ec4`, `AGENTS.md=1c7f4be8533f`.
+>>>>>>> f6087b14 (docs: map canonical backend atom callers)
