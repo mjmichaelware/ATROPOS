@@ -1626,3 +1626,9 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-PROV-002/004 status route health and preference truth | source-wired / partial | `src/main/kotlin/atropos/cli/StatusCommandHandler.kt`, `src/main/kotlin/atropos/cli/ui/StatusQuotaRenderer.kt`, `src/main/kotlin/atropos/core/provider/adapter/AdapterRouteFacade.kt`, `src/main/kotlin/atropos/cli/CommandRouter.kt`, `scripts/backend-atom-contract-test.sh` | `/status quota|route` → shared `ProviderOnboardingService` → `StatusQuotaRenderer`/canonical `AdapterRouteFacade` → sole `RoutePolicy` | Status display and the actual `/status route` decision now share the injected onboarding owner for healthy/preferred provider sets; no route-local onboarding allocation remains on this production path. Backend atom contract and `git diff --check` pass. Root/hosted Kotlin execution remains unverified. |
+
+### 2026-08-25T05:40:00Z · Agent: Codex GPT-5 · Batch: provider-route-command-owner
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-PROV-002/004 `/route` health and preference truth | source-wired / partial | `src/main/kotlin/atropos/cli/RouteCommandHandler.kt`, `src/main/kotlin/atropos/cli/CommandRouter.kt`, `src/main/kotlin/atropos/core/provider/adapter/AdapterRouteFacade.kt`, `scripts/backend-atom-contract-test.sh` | `/route <prompt>` → injected `ProviderOnboardingService` → canonical `AdapterRouteFacade` → sole `RoutePolicy` | The standalone route command now shares the launch/CLI provider inventory for health and preference filtering. Backend atom contract and `git diff --check` pass. Root/hosted Kotlin execution remains unverified. |

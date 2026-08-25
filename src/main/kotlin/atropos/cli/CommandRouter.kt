@@ -128,7 +128,7 @@ class CommandRouter(
     private val themeCommand = ThemeCommandHandler(uiEngine)
     private val testsCommand = TestsCommandHandler(uiEngine)
     private val opsCommand = OpsCommandHandler(uiEngine)
-    private val routeCommand = RouteCommandHandler(uiEngine)
+    private val routeCommand = RouteCommandHandler(uiEngine, providerOnboarding)
     private val astCommand = AstCommandHandler(uiEngine)
     private val diffCommand = DiffCommandHandler(uiEngine)
     private val historyCommand = HistoryCommandHandler(uiEngine)

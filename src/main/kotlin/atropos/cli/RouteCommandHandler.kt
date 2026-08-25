@@ -8,7 +8,9 @@ import atropos.core.provider.adapter.AdapterRouteFacade
 import java.io.File
 
 class RouteCommandHandler(
-    private val uiEngine: AnsiTerminalEngine
+    private val uiEngine: AnsiTerminalEngine,
+    private val onboarding: atropos.core.provider.ProviderOnboardingService =
+        atropos.core.provider.ProviderOnboardingService()
 ) {
     private val renderer = atropos.cli.ui.StatusRouteRenderer()
 
@@ -22,7 +24,11 @@ class RouteCommandHandler(
                 atropos.core.provider.ProviderQuotaPaths.defaultLedger(),
                 FileQuotaLedger.seedFromDescriptors(registry)
             )
-            val facade = AdapterRouteFacade(descriptorRegistry = registry, ledger = ledger)
+            val facade = AdapterRouteFacade(
+                descriptorRegistry = registry,
+                ledger = ledger,
+                onboarding = onboarding
+            )
             val result = facade.decide(prompt, dryRun = true)
             uiEngine.renderBlock(renderer.renderRoute(result, uiEngine.viewportWidth))
         }
