@@ -44,8 +44,8 @@ class AutonomousOrchestrator(
     private val inspectionService: InspectionService = InspectionService(),
     private val memory: LocalMemoryStore = LocalMemoryStore(),
     private val learningAdvisor: AutonomousLearningAdvisor = AutonomousLearningAdvisor(),
-    private val providerTruth: ProviderTruthService = ProviderTruthService(),
-    private val onboarding: ProviderOnboardingService = ProviderOnboardingService()
+    private val onboarding: ProviderOnboardingService = ProviderOnboardingService(),
+    private val providerTruth: ProviderTruthService = ProviderTruthService(onboarding = onboarding)
 ) {
     private var session = AutonomousSession()
     private val stopConditions = mutableListOf<StopCondition>()

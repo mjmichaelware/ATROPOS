@@ -66,7 +66,7 @@ class StatusCommandHandler(
         )
         when (tokens.getOrNull(1)?.lowercase()) {
             "endpoints" -> uiEngine.renderNotice(
-                StatusEndpointRenderer(ProviderTruthService(config).endpointRegistry()).render()
+                StatusEndpointRenderer(ProviderTruthService(config, onboarding = providerOnboarding).endpointRegistry()).render()
             )
             "quota" -> uiEngine.renderNotice(statusRenderer.renderQuota())
             "route" -> renderRoute(tokens, statusRenderer)

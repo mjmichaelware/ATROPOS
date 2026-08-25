@@ -3,6 +3,11 @@ package atropos.core.provider
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import atropos.core.ApiKeys
+import atropos.core.AtroposConfig
+import atropos.core.LakehouseConfig
+import atropos.core.RuntimeConfig
+import java.nio.file.Files
 
 class ProviderTruthModelsTest {
     private fun snapshot() = ProviderTruthSnapshot(
@@ -62,5 +67,30 @@ class ProviderTruthModelsTest {
         assertTrue(rendered.contains("caps:"))
         assertTrue(rendered.contains("requirements: OPENAI_API_KEY"))
         assertTrue(rendered.contains("end of provider inventory"))
+    }
+
+    @Test
+    fun truth_projection_excludes_provider_disabled_in_launch_inventory() {
+        val root = Files.createTempDirectory("provider-truth-disabled")
+        val onboarding = ProviderOnboardingService(
+            root = root,
+            environment = mapOf("GROQ_API_KEY" to "fixture-secret")
+        )
+        onboarding.refresh()
+        onboarding.disable("groq")
+
+        val config = AtroposConfig(
+            ApiKeys("fixture-secret", "", "", ""),
+            LakehouseConfig("/tmp/atropos-test", "/tmp/atropos-test/vector.db"),
+            RuntimeConfig("groq", 0.2)
+        )
+        val truth = ProviderTruthService(
+            config = config,
+            onboarding = onboarding,
+            ollamaProbe = { false }
+        ).snapshot()
+
+        assertFalse(truth.askOrder.contains("groq"))
+        assertFalse(truth.patchOrder.contains("groq"))
     }
 }

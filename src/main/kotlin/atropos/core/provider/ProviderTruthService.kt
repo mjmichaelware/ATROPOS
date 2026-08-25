@@ -14,7 +14,9 @@ class ProviderTruthService(
     private val registry: ProviderDescriptorRegistry = StaticProviderDescriptorRegistry(),
     private val adapterIntrospection: ProviderAdapterIntrospection = ProviderAdapterIntrospection(config),
     private val selector: AgentProviderSelector = AgentProviderSelector(config),
-    private val ollamaProbe: () -> Boolean = { OllamaHealthProbe().probe().online }
+    private val ollamaProbe: () -> Boolean = { OllamaHealthProbe().probe().online },
+    /** The launch inventory is the source of persisted healthy/disabled truth. */
+    private val onboarding: ProviderOnboardingService? = null
 ) {
     private val configuration = ProviderConfigurationResolver(config)
 
@@ -44,15 +46,23 @@ class ProviderTruthService(
                 missingRequirements = missing
             )
         }
+        val healthySet = onboarding?.healthyProviderIds()
         return ProviderTruthSnapshot(
             selectedProvider = selectedProvider,
             records = records,
-            askOrder = selection.askOrder,
-            patchOrder = selection.patchOrder,
+            // AgentProviderSelector answers which descriptors are configured;
+            // onboarding answers which of those are currently healthy and
+            // enabled.  The public truth projection must not re-admit a
+            // provider disabled or failed by the launch inventory.
+            askOrder = filterToHealthy(selection.askOrder, healthySet),
+            patchOrder = filterToHealthy(selection.patchOrder, healthySet),
             lastActualProvider = lastActualProvider,
             paidAutomaticModeLocked = selection.paidAutomaticModeLocked
         )
     }
+
+    private fun filterToHealthy(order: List<String>, healthy: Set<String>?): List<String> =
+        healthy?.let { allowed -> order.filter(allowed::contains) } ?: order
 
     fun endpointRegistry(): OperationRegistry =
         ProviderTruthOperationRegistry(snapshot(), descriptorRegistry = registry)

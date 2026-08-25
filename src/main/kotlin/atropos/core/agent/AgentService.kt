@@ -24,7 +24,7 @@ class AgentService(
     private val patchExtractor: AgentPatchExtractor = AgentPatchExtractor(),
     private val patchStore: AgentPatchStore = AgentPatchStore(collector.repoRoot),
     private val jobStore: AgentJobStore = AgentJobStore(collector.repoRoot),
-    private val providerTruthService: ProviderTruthService = ProviderTruthService(config),
+    private val providerTruthService: ProviderTruthService = ProviderTruthService(config, onboarding = onboarding),
     private val verificationStore: AgentVerificationStore = AgentVerificationStore(collector.repoRoot),
     private val verifier: AgentVerifier = AgentVerifier(config, collector, patchStore, verificationStore),
     private val repairService: AgentRepairService = AgentRepairService(

@@ -49,7 +49,7 @@ class DagExecutionService(
     ).resolve().plugin,
     private val clock: () -> Instant = { Instant.now() }
 ) {
-    private val providerTruth = ProviderTruthService(config)
+    private val providerTruth = ProviderTruthService(config, onboarding = onboarding)
     private val graphClaimService = GraphClaimService(planningGraph)
     private val finisher = DagNodeFinisher(planningGraph)
     private val shellExecutor = DagNodeShellExecutor(repoRoot, store, finisher, ::territoryViolation, ::extractCandidatePaths)

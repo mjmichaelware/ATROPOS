@@ -12397,6 +12397,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; source-wired but partial pending hosted execution evidence.
 - Fingerprints: recorded after commit.
 
+### 2026-08-25T13:08:02Z · Agent: Codex GPT-5 · Batch: provider-truth-healthy-set-owner
+
+- Paths touched: `src/main/kotlin/atropos/core/provider/ProviderTruthService.kt` (+11), `src/main/kotlin/atropos/cli/StatusCommandHandler.kt` (+1/-1), `src/main/kotlin/atropos/core/agent/AgentService.kt` (+1/-1), `src/main/kotlin/atropos/core/dag/DagExecutionService.kt` (+1/-1), `src/main/kotlin/atropos/core/autonomous/AutonomousOrchestrator.kt` (+2/-2), `src/test/kotlin/atropos/core/provider/ProviderTruthModelsTest.kt` (+29), `scripts/backend-atom-contract-test.sh` (+6), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-PROV-002 status/execution truth projection and healthy/disabled route consistency.
+- Predicate moved: existing onboarding health and disable metadata now flows into `ProviderTruthService` projections used by `/status endpoints`, AgentService, DAG execution, and autonomous orchestration; disabled or failed providers are not re-admitted to ask/patch order. No second provider registry or policy was added.
+- Verification actually run: `ATROPOS_BACKEND_ATOM_CONTRACT_OK`, provider environment/connect contracts, MCP example contract, reusable GHA action/path contracts, hosted selector (`441 tests`), orphan gate (4 historical baseline orphans only), and `git diff --check` passed. Local Gradle/Kotlin execution and GitHub-hosted CI remain unverified; no green claim.
+- % delta: unchanged; provider truth remains source-wired/partial pending hosted execution.
+- Fingerprints: `ProviderTruthService.kt=1079af040c47`, `StatusCommandHandler.kt=1c213e9f9477`, `AgentService.kt=193c2d8bc314`, `DagExecutionService.kt=2af2f97da52d`, `AutonomousOrchestrator.kt=2ebf80981089`, `ProviderTruthModelsTest.kt=f58d30760a91`, `backend-atom-contract-test.sh=d7014c9d499f`.
+
 ### 2026-08-25T22:30:00Z · Agent: Codex GPT-5 · Batch: provider-metadata-alias-separation
 - Paths touched: `src/main/kotlin/atropos/core/provider/ProviderEnvironmentAliases.kt` (+4/-2), `src/test/kotlin/atropos/core/provider/ProviderFixtureMatrixServiceTest.kt` (+8), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7).
 - Atoms / phases affected: B-PROV-001b/r/s and B-PROV-002 credential-health truth.
