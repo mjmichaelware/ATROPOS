@@ -13341,7 +13341,7 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Predicate moved: Factory CI now executes its own clean-runner contract before the Gradle build, uses current checkout/JDK actions, and initializes Gradle caching through the standard hosted action; the existing clean-runner remains the sole owner.
 - Verification actually run: clean-runner test, clean-runner implementation, backend atom contract, hosted selector contract (440), and `git diff --check` passed. Hosted workflow execution remains unverified.
 - % delta: unchanged; hosted factory/GHA remains source-wired/partial pending GitHub execution.
-- Fingerprints: pending scoped commit.
+- Fingerprints: commit `aa94c639`.
 
 ### 2026-08-25T02:30:00Z · Agent: Codex GPT-5 · Batch: hosted-verifier-gradle-lane
 - Paths touched: `scripts/atropos-verify-worktree.sh` (+11/-7), `scripts/atropos-verify-action-contract-test.sh` (+5).
