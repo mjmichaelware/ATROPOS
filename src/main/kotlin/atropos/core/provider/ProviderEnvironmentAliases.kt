@@ -3,7 +3,10 @@ package atropos.core.provider
 /** One credential-name contract shared by discovery, activation, and adapters. */
 object ProviderEnvironmentAliases {
     private val aliases = mapOf(
-        "OPENAI_API_KEY" to listOf("OPENAI_KEY", "OPENAI_TOKEN", "OPENAI_API_BASE"),
+        // The base URL is routing metadata, never a credential alias. Keeping
+        // it out of this list prevents endpoint-only environments from being
+        // classified as configured or entering the provider cascade.
+        "OPENAI_API_KEY" to listOf("OPENAI_KEY", "OPENAI_TOKEN"),
         "ANTHROPIC_API_KEY" to listOf("ANTHROPIC_KEY", "CLAUDE_API_KEY", "CLAUDE_TOKEN"),
         "GROQ_API_KEY" to listOf("GROQ_KEY", "GROQ_TOKEN"),
         "XAI_API_KEY" to listOf("XAI_KEY", "GROK_API_KEY", "GROK_TOKEN"),

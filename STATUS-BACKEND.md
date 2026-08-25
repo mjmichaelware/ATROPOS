@@ -1892,3 +1892,9 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-PROV-002 / B-MCP-CORE shared-owner regression guard | source-wired / partial | `scripts/backend-atom-contract-test.sh` | backend source contract → `Main.main()` shared onboarding/MCP arguments → `LocalEngineBridge` injected-owner path | Added source assertions for the shared MCP argument, shared onboarding argument, and no-refresh-on-injection branch. Backend contract, provider/connect/MCP/GHA contracts, hosted selector (`441 tests`), orphan gate, and diff check pass; hosted Kotlin and live integration evidence remain unverified. |
+
+### 2026-08-25T22:00:00Z · Agent: Codex GPT-5 · Batch: openai-endpoint-credential-separation
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-PROV-001b endpoint metadata vs credential separation | source-wired / partial | `src/main/kotlin/atropos/core/provider/ProviderEnvironmentAliases.kt`, `src/test/kotlin/atropos/core/provider/ProviderFixtureMatrixServiceTest.kt`, `scripts/backend-atom-contract-test.sh` | provider alias resolver → existing OpenAI-compatible adapter status/cascade | Removed `OPENAI_API_BASE` from credential aliases; endpoint-only discovery remains metadata-only and cannot become configured/routable. Backend/provider/connect contracts, hosted selector (`441 tests`), and diff check passed; Kotlin/hosted execution remains unverified. |

@@ -12397,6 +12397,14 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; source-wired but partial pending hosted execution evidence.
 - Fingerprints: recorded after commit.
 
+### 2026-08-25T22:00:00Z · Agent: Codex GPT-5 · Batch: openai-endpoint-credential-separation
+- Paths touched: `src/main/kotlin/atropos/core/provider/ProviderEnvironmentAliases.kt` (+5/-1), `src/test/kotlin/atropos/core/provider/ProviderFixtureMatrixServiceTest.kt` (+10), `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-PROV-001b endpoint metadata and B-PROV-002 credential health truth.
+- Predicate moved: `OPENAI_API_BASE` is now treated only as an endpoint override; it cannot satisfy `OPENAI_API_KEY` discovery or adapter configuration. A focused fixture asserts endpoint-only environments remain unconfigured.
+- Verification actually run: backend atom, provider environment, provider connect, hosted selector (`441 tests`), and `git diff --check` passed. Kotlin/hosted runtime execution remains unverified; no green claim.
+- % delta: unchanged; provider catalog remains source-wired/partial pending hosted execution.
+- Fingerprints: recorded after commit.
+
 ### 2026-08-25T21:00:00Z · Agent: Codex GPT-5 · Batch: launch-shared-provider-mcp-owners
 - Paths touched: `src/main/kotlin/atropos/Main.kt` (+10/-5), `src/main/kotlin/atropos/bridge/AtroposBridge.kt` (+45/-20), `scripts/backend-atom-contract-test.sh` (+2/-2), `STATUS-BACKEND.md` (+7).
 - Atoms / phases affected: B-PROV-002 startup ownership and B-MCP-CORE canonical host composition.

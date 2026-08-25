@@ -27,6 +27,16 @@ class ProviderFixtureMatrixServiceTest {
     }
 
     @Test
+    fun openai_base_endpoint_alone_is_not_a_credential() {
+        val adapter = StaticProviderAdapterRegistry(
+            StaticProviderDescriptorRegistry(),
+            env = mapOf("OPENAI_API_BASE" to "https://example.invalid/v1")
+        ).getByProviderId("openai")
+
+        assertTrue(adapter?.status()?.configured == false)
+    }
+
+    @Test
     fun gemini_native_adapter_accepts_google_api_key_alias() {
         val registry = StaticProviderDescriptorRegistry()
         val adapter = StaticProviderAdapterRegistry(

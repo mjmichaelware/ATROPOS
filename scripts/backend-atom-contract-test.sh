@@ -45,6 +45,8 @@ text src/main/kotlin/atropos/core/provider/adapter/BedrockKernelAdapter.kt 'AwsS
 text src/main/kotlin/atropos/core/provider/adapter/OpenAiCompatibleProviderCatalog.kt 'providerId = "deepseek_direct"'
 text src/main/kotlin/atropos/core/provider/adapter/OpenAiCompatibleProviderCatalog.kt 'providerId = "mistral"'
 text src/main/kotlin/atropos/core/provider/adapter/OpenAiCompatibleProviderCatalog.kt 'endpointEnv = "OPENAI_API_BASE"'
+text src/main/kotlin/atropos/core/provider/ProviderEnvironmentAliases.kt 'base URL is routing metadata, never a credential alias'
+text src/test/kotlin/atropos/core/provider/ProviderFixtureMatrixServiceTest.kt 'openai_base_endpoint_alone_is_not_a_credential'
 for provider_id in \
   openai anthropic groq xai gemini openrouter together fireworks \
   deepseek_direct mistral cohere ollama aws_bedrock azure_openai; do
