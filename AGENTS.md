@@ -13343,6 +13343,14 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; GitHub method behavior remains source-wired/partial pending hosted execution.
 - Fingerprints (sha256, first 12): `GitHubApiClientTest.kt=51d0ca81b1c8`; `backend-atom-contract-test.sh=40a11e41502b`.
 
+### 2026-08-25T03:51:30Z · Agent: Codex GPT-5 · Batch: bridge-production-binding-contract
+- Paths touched: `scripts/backend-atom-contract-test.sh` (+5), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-005 bridge production wiring; MCP, quota, queue, and recovery bindings.
+- Predicate moved: the backend source gate now protects `AtroposBridge.server()` from silently falling back to test-only null/default handlers; the real MCP host, quota projection, queued responder/work runner, and restart snapshot must remain bound.
+- Verification actually run: backend atom contract passed; hosted selector passed (`440 tests`); orphan gate passed with only 4 historical baseline files (1045 production files / 362 orphan LOC); `git diff --check` passed. Root/hosted bridge execution remains unverified.
+- % delta: unchanged; B-005 remains source-wired/partial pending hosted bridge tests and runtime proof.
+- Fingerprint (sha256, first 12): `backend-atom-contract-test.sh=1d844d9d8cea`.
+
 ### 2026-08-25T02:44:07Z · Agent: Codex GPT-5 · Batch: release-backend-atom-gate
 
 - Paths touched: `.github/workflows/release.yml` (+3), `scripts/release-installer-contract-test.sh` (+1), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7).

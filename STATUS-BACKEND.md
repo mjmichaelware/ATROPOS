@@ -1553,6 +1553,12 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | --- | --- | --- | --- | --- |
 | B-MCP-BRIDGE-SCHEMA / B-MCP-MEMORY / B-MCP-FETCH / B-MCP-TIME / B-MCP-KEYCHAIN | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpConfigParser.kt`, `McpHostManager.kt`, `src/main/kotlin/atropos/core/security/TokenIsolationVault.kt`, `docs/mcp-examples/*.json`, `CONTRIBUTING.md` | `/mcp list|test|call` and bridge MCP routes → single `McpHostManager`; configured server secrets → existing `TokenIsolationVault`/`SecretSource`; community catalog → disabled-by-default examples | Generic MCP schema, stdio/HTTP host, memory authority refusal, local-only policy, evidence mapping, and keychain-first secret boundary are present. Tier-1/2 brand names remain config/examples-only by policy; no adapter farm or silent auto-install. Existing backend/MCP/example contracts and selector (`440` tests) pass; hosted runtime remains unverified. |
 
+### 2026-08-25T03:51:30Z · Agent: Codex GPT-5 · Batch: bridge-production-binding-contract
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-005 / production bridge binding | source-wired / partial | `src/main/kotlin/atropos/bridge/AtroposBridge.kt`, `scripts/backend-atom-contract-test.sh` | `AtroposBridge.server()` → `BridgeRoutes` with real `McpHostManager`, `QuotaProjection`, queue/responder, and `RestartCoordinator` | Added CI protection for production bindings that differ from safe test defaults; bridge source contract, hosted selector (`440` tests), orphan gate, and `git diff --check` pass. Hosted bridge/runtime execution remains unverified. |
+
 ### 2026-08-25T03:47:06Z · Agent: Codex GPT-5 · Batch: github-method-matrix-test
 
 | atom | status | files | caller | tests / notes |
