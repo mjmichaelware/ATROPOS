@@ -13317,7 +13317,7 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Predicate moved: the JAR release is now the sole prerequisite for the optional APK asset publisher; both no longer mutate the same GitHub Release tag concurrently. The installer’s exact rolling/tagged asset consumer remains coupled to the JAR/checksum producer.
 - Verification actually run: release installer contract, installer contract, package installer contract, backend atom contract, and `git diff --check` passed. Hosted release publication/device installation remain unverified.
 - % delta: unchanged; release/install atoms remain source-wired/partial pending hosted release evidence.
-- Fingerprints: pending scoped commit.
+- Fingerprints: commit `bf89ec87`.
 
 ### 2026-08-25T02:30:00Z · Agent: Codex GPT-5 · Batch: hosted-verifier-gradle-lane
 - Paths touched: `scripts/atropos-verify-worktree.sh` (+11/-7), `scripts/atropos-verify-action-contract-test.sh` (+5).
