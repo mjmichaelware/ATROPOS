@@ -102,7 +102,7 @@ class CommandRouter(
     private val projectCommand = ProjectCommandHandler(uiEngine)
 
     private val selfHostNaturalLanguageRouter = SelfHostNaturalLanguageRouter()
-    private val statusCommand = StatusCommandHandler(config, uiEngine, sessionTracker)
+    private val statusCommand = StatusCommandHandler(config, uiEngine, sessionTracker, providerOnboarding = providerOnboarding)
     private val providerCommand = ProviderCommandHandler(config, uiEngine, onboarding = providerOnboarding)
     private val githubCommand = GitHubCommandHandler(config, uiEngine)
     private val sentryCommand = SentryCommandHandler(uiEngine)

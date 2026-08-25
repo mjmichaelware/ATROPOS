@@ -32,7 +32,9 @@ class StatusCommandHandler(
      * Where the session's token ceiling comes from, if the operator declared
      * one. Injected so a test does not depend on the ambient environment.
      */
-    private val budgetSource: () -> String? = { System.getenv(TOKEN_BUDGET_ENV) }
+    private val budgetSource: () -> String? = { System.getenv(TOKEN_BUDGET_ENV) },
+    private val providerOnboarding: atropos.core.provider.ProviderOnboardingService =
+        atropos.core.provider.ProviderOnboardingService()
 ) {
 
     /**
@@ -58,7 +60,9 @@ class StatusCommandHandler(
             ledger = FileQuotaLedger(
                 ProviderQuotaPaths.defaultLedger(),
                 FileQuotaLedger.seedFromDescriptors(quotaRegistry)
-            )
+            ),
+            healthyProviderIds = providerOnboarding::healthyProviderIds,
+            onboarding = providerOnboarding
         )
         when (tokens.getOrNull(1)?.lowercase()) {
             "endpoints" -> uiEngine.renderNotice(
@@ -98,7 +102,11 @@ class StatusCommandHandler(
                 ProviderQuotaPaths.defaultLedger(),
                 FileQuotaLedger.seedFromDescriptors(registry)
             )
-            val facade = atropos.core.provider.adapter.AdapterRouteFacade(descriptorRegistry = registry, ledger = ledger)
+            val facade = atropos.core.provider.adapter.AdapterRouteFacade(
+                descriptorRegistry = registry,
+                ledger = ledger,
+                onboarding = providerOnboarding
+            )
             val result = facade.decide(task, dryRun = true)
             val routeRenderer = atropos.cli.ui.StatusRouteRenderer()
             uiEngine.renderBlock(routeRenderer.renderRoute(result, uiEngine.viewportWidth))

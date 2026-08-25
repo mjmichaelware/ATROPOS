@@ -76,6 +76,9 @@ text src/main/kotlin/atropos/cli/CommandRouter.kt 'ProviderCommandHandler(config
 text src/main/kotlin/atropos/cli/ProviderCommandHandler.kt 'private val onboarding: ProviderOnboardingService'
 text src/main/kotlin/atropos/cli/ProviderChatDispatcher.kt 'healthyProviderIds = { onboarding.healthyProviderIds() }'
 text src/main/kotlin/atropos/cli/CommandRouter.kt 'onboarding = providerOnboarding'
+text src/main/kotlin/atropos/cli/StatusCommandHandler.kt 'onboarding = providerOnboarding'
+text src/main/kotlin/atropos/cli/StatusCommandHandler.kt 'healthyProviderIds = providerOnboarding::healthyProviderIds'
+text src/main/kotlin/atropos/cli/ui/StatusQuotaRenderer.kt 'preferredProviderIds = { onboarding.preferredProviderIds() }'
 text src/main/kotlin/atropos/core/provider/SourceBindingFetcher.kt 'localOnly'
 text src/main/kotlin/atropos/core/provider/SourceBindingFetcher.kt 'disabled by localOnly'
 text src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt 'genericProviderIds'
@@ -124,7 +127,8 @@ text scripts/hosted-test-selector-contract.sh "Tests?"
 text scripts/hosted-test-selector-contract.sh 'backend test source is outside hosted selector'
 text src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt 'fun preferredProviderIds()'
 text src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt 'fun disable(providerId: String)'
-text src/main/kotlin/atropos/core/provider/adapter/AdapterRouteFacade.kt 'preferredProviderIds = { atropos.core.provider.ProviderOnboardingService().preferredProviderIds() }'
+text src/main/kotlin/atropos/core/provider/adapter/AdapterRouteFacade.kt 'healthyProviderIds = { onboarding.healthyProviderIds() }'
+text src/main/kotlin/atropos/core/provider/adapter/AdapterRouteFacade.kt 'preferredProviderIds = { onboarding.preferredProviderIds() }'
 text src/main/kotlin/atropos/core/provider/RoutePolicy.kt 'preferredProviderIds?.invoke()?.indexOf(providerId)'
 
 # Help and installer callers. These atoms are deliberately guarded here rather

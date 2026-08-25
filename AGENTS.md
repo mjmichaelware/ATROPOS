@@ -13345,6 +13345,16 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprints: `ProviderChatDispatcher.kt=e821d3608695`; `CommandRouter.kt=f021a3c93402`; `backend-atom-contract-test.sh=801d6b06b7ac`.
 
+### 2026-08-25T05:25:00Z · Agent: Codex GPT-5 · Batch: provider-status-route-owner
+
+- Paths touched: `src/main/kotlin/atropos/cli/CommandRouter.kt` (+1), `src/main/kotlin/atropos/cli/StatusCommandHandler.kt` (+8/-2), `src/main/kotlin/atropos/cli/ui/StatusQuotaRenderer.kt` (+6/-2), `src/main/kotlin/atropos/core/provider/adapter/AdapterRouteFacade.kt` (+5/-4), `scripts/backend-atom-contract-test.sh` (+3).
+- Atoms / phases affected: B-PROV-002 health truth and B-PROV-004 preference/disable route truth.
+- Predicate moved: `/status quota` and the actual `/status route` execution now consume the same injected onboarding owner for health and preference filtering; route decisions can no longer silently consult a fresh provider inventory separate from launch and `/providers`.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh` (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`) and `git diff --check` passed. Root/hosted Kotlin execution remains unverified.
+- % delta: unchanged; provider route atoms remain source-wired/partial pending hosted execution.
+- New overall estimate: unchanged.
+- Fingerprints: `StatusCommandHandler.kt=bc2b0ff6a347`; `StatusQuotaRenderer.kt=bd97befe8777`; `AdapterRouteFacade.kt=cd27f7ffdee3`; `backend-atom-contract-test.sh=132ad44cc142`.
+
 ### 2026-08-25T05:11:34Z · Agent: Codex GPT-5 · Batch: provider-command-owner-injection
 
 - Paths touched: `src/main/kotlin/atropos/cli/CommandRouter.kt` (+1), `src/main/kotlin/atropos/cli/ProviderCommandHandler.kt` (+2/-2), `scripts/backend-atom-contract-test.sh` (+2).

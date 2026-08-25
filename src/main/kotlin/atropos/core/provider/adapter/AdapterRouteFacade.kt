@@ -45,7 +45,9 @@ class AdapterRouteFacade(
         FileQuotaLedger.seedFromDescriptors(descriptorRegistry)
     ),
     private val costPolicy: AtroposCostPolicy = AtroposCostPolicy.FREE_ONLY,
-    private val paidGate: EmergencyPaidGate = EmergencyPaidGate()
+    private val paidGate: EmergencyPaidGate = EmergencyPaidGate(),
+    private val onboarding: atropos.core.provider.ProviderOnboardingService =
+        atropos.core.provider.ProviderOnboardingService()
 ) {
     private val classifier = ProviderTaskClassifier()
     private val agencyGate = BoundedAgencyGate()
@@ -67,8 +69,8 @@ class AdapterRouteFacade(
             ledger = ledger,
             costPolicy = costPolicy,
             paidGate = paidGate,
-            healthyProviderIds = { atropos.core.provider.ProviderOnboardingService().healthyProviderIds() },
-            preferredProviderIds = { atropos.core.provider.ProviderOnboardingService().preferredProviderIds() }
+            healthyProviderIds = { onboarding.healthyProviderIds() },
+            preferredProviderIds = { onboarding.preferredProviderIds() }
         ).decide(task)
 
         val adapter = policyDecision.selectedProviderId?.let {
