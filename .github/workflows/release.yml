@@ -97,6 +97,9 @@ jobs:
       - name: Exercise provider environment contract
         run: bash scripts/provider-env-contract-test.sh
 
+      - name: Exercise backend atom source contract
+        run: bash scripts/backend-atom-contract-test.sh
+
       - name: Package install artifacts
         run: bash scripts/package-installers.sh build/libs/ATROPOS.jar build/installers
 

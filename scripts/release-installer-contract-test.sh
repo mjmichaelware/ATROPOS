@@ -13,5 +13,6 @@ grep -Fq 'sha256sum build/libs/ATROPOS.jar' "$WORKFLOW"
 grep -Fq 'tag_name: latest' "$WORKFLOW"
 grep -Fq 'files: |' "$WORKFLOW"
 grep -Fq 'needs: publish' "$WORKFLOW"
+grep -Fq 'backend-atom-contract-test.sh' "$WORKFLOW"
 
 printf '%s\n' 'ATROPOS_RELEASE_INSTALLER_CONTRACT_OK'

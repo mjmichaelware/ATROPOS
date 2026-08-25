@@ -1439,6 +1439,12 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | --- | --- | --- | --- | --- |
 | B-OC-001 / B-OC-002 / B-OC-004 and MCP example policy | source-wired / partial | `README.md`, `CONTRIBUTING.md`, `docs/OPEN_CORE_BOUNDARY.md`, `docs/mcp-examples/*.json`, `scripts/backend-atom-contract-test.sh`, `scripts/mcp-example-contract-test.sh` | README → open-core/provider one-pagers; CONTRIBUTING → no per-brand adapter policy; backend config/research owners → local-only/zero-retention behavior; MCP example catalog → disabled community servers | Backend source contract, MCP example contract (14 files/14 servers), provider-env contract, hosted selector (440), and `git diff --check` pass. Hosted/runtime behavior remains unverified; no Tier-1/2 adapter farm added. |
 
+### 2026-08-25T02:44:07Z · Agent: Codex GPT-5 · Batch: release-backend-atom-gate
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-GHA / release backend source gate | source-wired / partial | `.github/workflows/release.yml`, `scripts/release-installer-contract-test.sh`, `scripts/backend-atom-contract-test.sh` | release build/publish job → `scripts/backend-atom-contract-test.sh`; release contract protects the workflow caller before artifact packaging | `bash scripts/backend-atom-contract-test.sh`, `bash scripts/release-installer-contract-test.sh`, `bash scripts/hosted-test-selector-contract.sh` (440), and `git diff --check` pass. GitHub-hosted release execution, published assets, and device installation remain unverified; no hosted-green claim. |
+
 ### 2026-08-25T03:50:00Z · Agent: Codex GPT-5 · Batch: generated-provider-readme-table
 
 | atom | status | files | caller | tests / notes |
