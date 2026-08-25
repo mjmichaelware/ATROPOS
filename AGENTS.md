@@ -13406,6 +13406,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; B-PROV-002 remains source-wired/partial pending hosted runtime evidence.
 - Fingerprints (sha256, full): `DagExecutionService.kt=af9f64fa80cfd5f5ff266e7c355758037c9c5c6d1578e73d77e5d1c76f124ba0`; `AgentCommand.kt=028248d470c0c7b36085b0bbf8ae4371073de6b498849e6047aa340e95d5b5da`; `backend-atom-contract-test.sh=ca722d570e1da5c2784dda8855f883bd6a51599e9d3cd3e82f32b7ebf079e73d`.
 
+### 2026-08-25T11:00:00Z · Agent: Codex GPT-5 · Batch: bridge-command-provider-owner
+
+- Paths touched: `src/main/kotlin/atropos/bridge/BridgeCommandRunner.kt` (+7/-2), `AtroposBridge.kt` (+5/-1), `scripts/backend-atom-contract-test.sh` (+2).
+- Atoms / phases affected: B-005 bridge CLI endpoint and B-PROV-001/002 startup discovery ownership.
+- Predicate moved: per-request bridge command routers now receive the single refreshed provider onboarding owner created by `LocalEngineBridge.server()`; router isolation remains intact while provider discovery/health/preference metadata is shared.
+- Verification actually run: backend atom contract, hosted selector contract (`440 tests`), and `git diff --check` passed. Root/hosted Kotlin bridge execution remains unverified; no runtime-green claim.
+- % delta: unchanged; B-005/B-PROV-001/002 remains source-wired/partial pending hosted runtime evidence.
+- Fingerprints (sha256, full): `BridgeCommandRunner.kt=7f46ca2c43d292b82cc3805e20e2ca4614ac7a842e3cbfc12bd8656f9b61167e`; `AtroposBridge.kt=e5192137708d9f7f294c95ba060b8c980937ed5d960f80bf232bb9a51e78a2cc`; `backend-atom-contract-test.sh=72dd4453ec9e83b4ce2845a5a675be9a33453ecd1a705cc4c8238dceb6406f95`.
+
 ### 2026-08-25T07:20:00Z · Agent: Codex GPT-5 · Batch: mcp-probe-handshake-test-proof-append
 
 - Paths touched: `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+6), `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+7).

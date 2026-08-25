@@ -1700,3 +1700,9 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-PROV-002 DAG execution cascade owner | source-wired / partial | `src/main/kotlin/atropos/core/dag/DagExecutionService.kt`, `src/main/kotlin/atropos/cli/commands/AgentCommand.kt`, `scripts/backend-atom-contract-test.sh` | `/agent` and DAG execution → injected onboarding → existing `AgentQueueService`/`AgentService` → existing cascade/policy owners | DAG queue and provider-node execution now share the agent command's onboarding owner; no DAG-specific provider registry or route policy was added. Backend contract, hosted selector (`440 tests`), and diff check pass; hosted Kotlin DAG runtime remains unverified. |
+
+### 2026-08-25T11:00:00Z · Agent: Codex GPT-5 · Batch: bridge-command-provider-owner
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-005 `/v1/cli` provider inventory owner | source-wired / partial | `src/main/kotlin/atropos/bridge/BridgeCommandRunner.kt`, `src/main/kotlin/atropos/bridge/AtroposBridge.kt`, `scripts/backend-atom-contract-test.sh` | `LocalEngineBridge.server()` → shared refreshed onboarding → per-request `BridgeCommandRunner` → isolated `CommandRouter(providerOnboarding=...)` | Bridge command requests retain per-request router/session isolation while sharing the bridge provider owner; duplicate command-path discovery is removed. Backend contract, hosted selector (`440 tests`), and diff check pass; hosted bridge runtime remains unverified. |

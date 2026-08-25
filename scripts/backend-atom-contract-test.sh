@@ -91,6 +91,8 @@ text src/main/kotlin/atropos/bridge/AtroposBridge.kt 'AgentQueueService(onboardi
 text src/main/kotlin/atropos/core/dag/DagExecutionService.kt 'AgentQueueService(config, onboarding = onboarding)'
 text src/main/kotlin/atropos/core/dag/DagExecutionService.kt 'onboarding = onboarding'
 text src/main/kotlin/atropos/cli/commands/AgentCommand.kt 'DagExecutionService(config, onboarding = providerOnboarding)'
+text src/main/kotlin/atropos/bridge/BridgeCommandRunner.kt 'providerOnboarding = onboarding'
+text src/main/kotlin/atropos/bridge/AtroposBridge.kt 'BridgeCommandRunner('
 text src/main/kotlin/atropos/cli/StatusCommandHandler.kt 'healthyProviderIds = providerOnboarding::healthyProviderIds'
 text src/main/kotlin/atropos/cli/ui/StatusQuotaRenderer.kt 'preferredProviderIds = { onboarding.preferredProviderIds() }'
 text src/main/kotlin/atropos/core/agent/AgentService.kt 'healthyProviderIds = { onboarding.healthyProviderIds() }'

@@ -8,6 +8,7 @@ import atropos.cli.session.QuotaSessionTracker
 import atropos.cli.ui.AnsiTerminalEngine
 import atropos.cli.ui.PlainTerminalOutput
 import atropos.core.AtroposConfig
+import atropos.core.provider.ProviderOnboardingService
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 import java.nio.charset.StandardCharsets
@@ -37,7 +38,9 @@ import java.nio.charset.StandardCharsets
  */
 internal class BridgeCommandRunner(
     private val config: () -> AtroposConfig = { AtroposConfig.load() },
-    private val capabilities: () -> ConfigurationManager = { ConfigurationManager() }
+    private val capabilities: () -> ConfigurationManager = { ConfigurationManager() },
+    private val onboarding: ProviderOnboardingService = ProviderOnboardingService(),
+    private val providerDiscoveryAlreadyRefreshed: Boolean = false
 ) {
 
     fun run(command: String): BridgeCommandOutput {
@@ -55,7 +58,9 @@ internal class BridgeCommandRunner(
         val router = CommandRouter(
             config = config(),
             uiEngine = engine,
-            sessionTracker = QuotaSessionTracker()
+            sessionTracker = QuotaSessionTracker(),
+            providerOnboarding = onboarding,
+            providerDiscoveryAlreadyRefreshed = providerDiscoveryAlreadyRefreshed
         )
 
         val outcome = try {

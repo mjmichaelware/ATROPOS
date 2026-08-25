@@ -120,7 +120,10 @@ object LocalEngineBridge {
             // buffer. This is what makes the phone and the browser equal to the
             // CLI: not a reimplementation of each command, the command itself.
             // PortCommandPolicy decides what may reach it.
-            commandRunner = BridgeCommandRunner()::run,
+            commandRunner = BridgeCommandRunner(
+                onboarding = providerOnboarding,
+                providerDiscoveryAlreadyRefreshed = true
+            )::run,
             mcpHost = atropos.core.integration.McpHostManager(
                 repoRoot,
                 localOnly = AtroposConfig.load().runtime.localOnly
