@@ -13315,6 +13315,16 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprint: `backend-atom-contract-test.sh=48cd87856e18`.
 
+### 2026-08-25T13:35:00Z · Agent: Codex GPT-5 · Batch: gha-evidence-fail-closed-contract
+
+- Paths touched: `scripts/backend-atom-contract-test.sh` (+5).
+- Atoms / phases affected: B-MCP-GHA-e/f/h reusable verification evidence extraction, check publication, and fail-on-red behavior.
+- Predicate moved: the central backend source gate now protects the composite GitHub Action’s 64-hex evidence extraction and nonzero exit propagation, plus the example workflow’s check-run publication and success/failure conclusion mapping.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh` (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (440 tests)`), `bash -n scripts/backend-atom-contract-test.sh`, and `git diff --check` passed. Hosted GitHub execution remains unverified.
+- % delta: unchanged; B-MCP-GHA remains source-wired / partial pending hosted execution.
+- New overall estimate: unchanged.
+- Fingerprint: `backend-atom-contract-test.sh=d34f7e06de73`.
+
 ### 2026-08-25T12:20:00Z · Agent: Codex GPT-5 · Batch: github-oauth-contract-hardening
 
 - Paths touched: `scripts/backend-atom-contract-test.sh` (+4), `docs/PROVIDER_ENVIRONMENT.md` (+1), `STATUS-BACKEND.md` (+7).

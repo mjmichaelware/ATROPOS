@@ -1340,3 +1340,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-015 / B-OC-004 zero-retention research boundary | source-wired / partial | `src/main/kotlin/atropos/core/Config.kt`, `src/main/kotlin/atropos/core/factory/FactoryResearchService.kt`, `src/main/kotlin/atropos/cli/BackendDoctor.kt`, `docs/OPEN_CORE_BOUNDARY.md`, `scripts/backend-atom-contract-test.sh` | runtime config → `FactoryResearchService` lakehouse/bounded-fetch branches → explicit `SKIPPED_ZERO_RETENTION` outcomes; `/doctor` reports the active mode | Central backend source contract now protects the zero-retention flag, both remote-research refusal branches, doctor visibility, and open-core/local-only documentation. Backend contract, hosted selector contract (440), shell syntax, and `git diff --check` pass; hosted Kotlin and remote-plane execution remain unverified. |
+
+### 2026-08-25T13:35:00Z · Agent: Codex GPT-5 · Batch: gha-evidence-fail-closed-contract
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-GHA-e/f/h reusable verify evidence/check failure boundary | source-wired / partial | `.github/actions/atropos-verify/action.yml`, `.github/workflows/atropos-verify-example.yml`, `scripts/backend-atom-contract-test.sh` | GitHub composite action → existing `atropos-verify-worktree.sh` → bounded evidence-hash output and exit propagation → example workflow `checks.create` | The central backend gate now protects 64-hex evidence extraction, nonzero verifier propagation, and check-run publication/conclusion mapping. Backend contract, hosted selector contract (440), shell syntax, and `git diff --check` pass; hosted GitHub execution remains unverified. |

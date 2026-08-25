@@ -97,6 +97,11 @@ text src/main/kotlin/atropos/cli/AuthCommandHandler.kt 'redactionFilter.compact(
 text src/main/kotlin/atropos/cli/input/CommandCatalog.kt '"/auth github"'
 text .github/actions/atropos-verify/action.yml 'verify-script must stay inside working-directory'
 text .github/actions/atropos-verify/action.yml 'test -f "$VERIFY_SCRIPT"'
+text .github/actions/atropos-verify/action.yml 'grep -Eo '\''[0-9a-fA-F]{64}'\'' "$log_file"'
+text .github/actions/atropos-verify/action.yml 'exit "$verify_exit"'
+text .github/workflows/atropos-verify-example.yml 'uses: actions/github-script@v7'
+text .github/workflows/atropos-verify-example.yml 'checks.create'
+text .github/workflows/atropos-verify-example.yml 'conclusion = outcome === '\''success'\'' ? '\''success'\'''
 
 # One bridge owner for the declared local HTTP/SSE surface.
 file src/main/kotlin/atropos/bridge/http/EngineHttpServer.kt
