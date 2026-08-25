@@ -40,6 +40,12 @@ class AtroposTestMatrix(
         runRoot.mkdirs()
         val registry = StaticProviderDescriptorRegistry()
         val seed = FileQuotaLedger.seedFromDescriptors(registry)
+        val fixtureHealthy = setOf("groq", "openrouter", "local")
+        val fixtureSeed = seed.map { record ->
+            if (record.providerId in fixtureHealthy && !record.providerId.equals("local")) {
+                record.copy(configured = true, verified = true, state = ProviderAvailabilityState.READY)
+            } else record
+        }
         val rows = mutableListOf<TestMatrixRow>()
 
         fun row(id: String, passed: Boolean, detail: String) {
@@ -52,13 +58,23 @@ class AtroposTestMatrix(
         val task = ProviderTaskClassifier().classify("fix kotlin compile error in command router")
         row("task_classification", task.kind == ProviderTaskKind.COMPILE_REPAIR, "kind=${task.kind}")
 
-        val route = RoutePolicy(registry, InMemoryQuotaLedger(seed), AtroposCostPolicy.FREE_ONLY).decide(task)
+        val route = RoutePolicy(
+            registry,
+            InMemoryQuotaLedger(fixtureSeed),
+            AtroposCostPolicy.FREE_ONLY,
+            healthyProviderIds = { fixtureHealthy }
+        ).decide(task)
         row("route_selection", route.selectedProviderId == "groq", "selected=${route.selectedProviderId}")
 
-        val cooldownSeed = seed.map {
+        val cooldownSeed = fixtureSeed.map {
             if (it.providerId == "groq") it.copy(state = ProviderAvailabilityState.COOLDOWN, cooldownUntilEpochMs = now() + 60_000L) else it
         }
-        val fallback = RoutePolicy(registry, InMemoryQuotaLedger(cooldownSeed), AtroposCostPolicy.FREE_ONLY).decide(task)
+        val fallback = RoutePolicy(
+            registry,
+            InMemoryQuotaLedger(cooldownSeed),
+            AtroposCostPolicy.FREE_ONLY,
+            healthyProviderIds = { fixtureHealthy }
+        ).decide(task)
         row("cooldown_fallback", fallback.selectedProviderId == "openrouter", "selected=${fallback.selectedProviderId}")
 
         val resetRecord = ProviderQuotaRecord(
