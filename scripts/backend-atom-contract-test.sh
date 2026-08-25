@@ -382,6 +382,7 @@ text src/test/kotlin/atropos/core/github/GitHubApiClientTest.kt 'graphql_file_bl
 text src/main/kotlin/atropos/core/github/GitHubApiClient.kt 'fun fileBlame('
 text src/main/kotlin/atropos/core/github/GitHubBinding.kt 'fun fileBlame('
 text src/main/kotlin/atropos/cli/GitHubCommandHandler.kt '"blame" -> binding.fileBlame('
+text src/main/kotlin/atropos/cli/shell/ShellCommandRunner.kt 'IntegrationRegistry.requireRegistered("git-local")'
 text src/main/kotlin/atropos/cli/CommandRouter.kt 'GitHubCommandHandler(config, uiEngine)'
 text src/main/kotlin/atropos/cli/CommandRouter.kt '"/github" ->'
 text src/main/kotlin/atropos/core/ProviderHttpClient.kt 'MAX_RESPONSE_BYTES'

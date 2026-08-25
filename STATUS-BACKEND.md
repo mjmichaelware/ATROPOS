@@ -1849,3 +1849,9 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-GH-p CLI discoverability correction | source-wired / partial | `src/main/kotlin/atropos/cli/GitHubCommandHandler.kt` | `/github` invalid-usage renderer → existing command catalog and `blame` caller | Corrected the top-level usage message so the newly wired blame command is discoverable on malformed input. `git diff --check` passed; hosted/Kotlin execution remains unverified. |
+
+### 2026-08-25T18:30:00Z · Agent: Codex GPT-5 · Batch: git-local-registry-owner
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-GITLOCAL / canonical integration registration | source-wired / partial | `src/main/kotlin/atropos/cli/shell/ShellCommandRunner.kt`, `scripts/backend-atom-contract-test.sh` | `/git status|diff|conflicts|add|commit|rebase-continue` → existing `ShellCommandRunner` → `IntegrationRegistry.requireRegistered("git-local")` → existing `TypedToolExecutor`/`BoundedProcessRunner` | All local Git entrypoints now assert the existing `git-local` descriptor before bounded execution; no second Git owner or raw process path was added. Backend contract, hosted selector (`441 tests`), and diff check passed; Kotlin/hosted execution remains unverified. |

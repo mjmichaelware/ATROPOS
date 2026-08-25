@@ -11,6 +11,7 @@ import atropos.core.policy.ShellActionProposals
 import atropos.core.policy.ToolExecutionResult
 import atropos.core.policy.TypedToolExecutor
 import atropos.core.security.RedactionFilter
+import atropos.core.integration.IntegrationRegistry
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.nio.charset.Charset
@@ -97,18 +98,25 @@ class ShellCommandRunner(
     fun list(args: List<String>): ShellCommandResult =
         run(listOf("ls") + args)
 
-    fun gitStatus(): ShellCommandResult =
-        run(listOf("git", "status", "--short"))
+    fun gitStatus(): ShellCommandResult {
+        requireGitLocalIntegration()
+        return run(listOf("git", "status", "--short"))
+    }
 
-    fun gitDiff(): ShellCommandResult =
-        run(listOf("git", "diff", "--"))
+    fun gitDiff(): ShellCommandResult {
+        requireGitLocalIntegration()
+        return run(listOf("git", "diff", "--"))
+    }
 
     /** Lists only paths currently marked unmerged; read-only and bounded by the same gate. */
-    fun gitConflicts(): ShellCommandResult =
-        run(listOf("git", "diff", "--name-only", "--diff-filter=U"))
+    fun gitConflicts(): ShellCommandResult {
+        requireGitLocalIntegration()
+        return run(listOf("git", "diff", "--name-only", "--diff-filter=U"))
+    }
 
     /** Runs a parsed, explicitly confirmed repository mutation. */
     fun runGitMutation(command: List<String>, targetPaths: List<String>): ShellCommandResult {
+        requireGitLocalIntegration()
         require(command.firstOrNull() == "git") { "Git mutation command must start with git" }
         require(targetPaths.isNotEmpty()) { "Git mutation requires a territory" }
         val proposal = ShellActionProposals.forCommand(command, cwd.toPath()).copy(
@@ -117,6 +125,10 @@ class ShellCommandRunner(
             metadata = mapOf("git_mutation" to "explicit_confirmation")
         )
         return execute(command, proposal)
+    }
+
+    private fun requireGitLocalIntegration() {
+        IntegrationRegistry.requireRegistered("git-local")
     }
 
     fun run(command: List<String>): ShellCommandResult {

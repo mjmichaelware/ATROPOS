@@ -15095,3 +15095,12 @@ Local verification note for this batch: `timeout 120s ./gradlew test --tests 'at
 - Verification actually run: `git diff --check` passed. No Kotlin or hosted execution was claimed.
 - % delta: unchanged; B-MCP-GH-p remains source-wired/partial pending hosted/credentialed execution.
 - Fingerprint: `GitHubCommandHandler.kt=574b4dc007d4`.
+
+### 2026-08-25T18:30:00Z · Agent: Codex GPT-5 · Batch: git-local-registry-owner
+
+- Paths touched: `src/main/kotlin/atropos/cli/shell/ShellCommandRunner.kt` (+14/-6), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-MCP-GITLOCAL-a/b/c/d/e/f/g integration ownership.
+- Predicate moved: every `/git` status, diff, conflict, and confirmed mutation path now crosses the existing `git-local` integration descriptor before reaching the single bounded tool executor/process owner.
+- Verification actually run: `ATROPOS_BACKEND_ATOM_CONTRACT_OK`, `ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (441 tests)`, and `git diff --check` passed. No Kotlin or hosted-green claim.
+- % delta: unchanged; B-MCP-GITLOCAL remains source-wired/partial pending hosted execution.
+- Fingerprints: `ShellCommandRunner.kt=5eb4a7ec8518`, `backend-atom-contract-test.sh=daf846a1ba2d`.
