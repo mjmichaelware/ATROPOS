@@ -13335,6 +13335,16 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprints: `McpHostManagerTest.kt=9fdff3a705fe`; `backend-atom-contract-test.sh=82cb37547703`.
 
+### 2026-08-25T05:11:34Z · Agent: Codex GPT-5 · Batch: provider-command-owner-injection
+
+- Paths touched: `src/main/kotlin/atropos/cli/CommandRouter.kt` (+1), `src/main/kotlin/atropos/cli/ProviderCommandHandler.kt` (+2/-2), `scripts/backend-atom-contract-test.sh` (+2).
+- Atoms / phases affected: B-PROV-004 provider command ownership and startup discovery single-owner rule.
+- Predicate moved: `/providers` now receives the same `ProviderOnboardingService` already refreshed by `Main` and passed through `CommandRouter`; the command handler no longer constructs a separate onboarding service for list/refresh/prefer/disable/connect or live-test reporting. Existing positional constructor compatibility is preserved by adding the optional owner last.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh` (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`) and `git diff --check` passed. Root/hosted Kotlin execution remains unverified.
+- % delta: unchanged; B-PROV-004 remains source-wired/partial pending hosted route execution.
+- New overall estimate: unchanged.
+- Fingerprints: `ProviderCommandHandler.kt=102ed4bf5e61`; `CommandRouter.kt=2dcba6e9d8f8`; `backend-atom-contract-test.sh=bcbed166fc7c`.
+
 ### 2026-08-24T12:30:00Z · Agent: Codex GPT-5 · Batch: prefixed-provider-alias-resolution
 - Paths touched: `src/main/kotlin/atropos/core/provider/ProviderEnvironmentAliases.kt` (+1), `ProviderOnboarding.kt` (+6), `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` (+23), `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+7).
 - Atoms / phases affected: B-PROV-001 alias discovery and B-PROV-002 generic namespace classification.

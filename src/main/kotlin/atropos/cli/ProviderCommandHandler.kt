@@ -18,10 +18,10 @@ class ProviderCommandHandler(
     private val config: AtroposConfig,
     private val uiEngine: AnsiTerminalEngine,
     private val secretReader: (String) -> CharArray? = ::readSecretFromTerminal,
-    private val redactionFilter: RedactionFilter = RedactionFilter()
+    private val redactionFilter: RedactionFilter = RedactionFilter(),
+    private val onboarding: ProviderOnboardingService = ProviderOnboardingService()
 ) {
     fun execute(tokens: List<String>, currentProviderName: String) {
-        val onboarding = ProviderOnboardingService()
         val expanded = tokens.any { it.equals("--full", ignoreCase = true) }
         when (tokens.getOrNull(1)?.lowercase()) {
             "list" -> uiEngine.renderBlock(onboarding.render().lines())
@@ -146,7 +146,6 @@ class ProviderCommandHandler(
         if (providerId == null) {
             uiEngine.renderError("usage: /providers live-test <id>")
         } else {
-            val onboarding = ProviderOnboardingService()
             val service = ProviderActivationService(
                 config = config,
                 liveTestHealthReporter = { testedId, healthy ->

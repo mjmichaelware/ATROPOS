@@ -1608,3 +1608,9 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-PROV-001 / startup discovery once | source-wired / partial | `src/main/kotlin/atropos/Main.kt`, `src/main/kotlin/atropos/cli/CommandRouter.kt`, `scripts/backend-atom-contract-test.sh` | `Main.main()` → one `ProviderOnboardingService.refresh()` → injected `CommandRouter` uses `list()`; explicit `/providers refresh` remains the deliberate rescan command | Removed the duplicate Main/CommandRouter launch refresh while preserving default router construction for bridge/tests. Backend/provider contracts and hosted selector (440) pass; hosted Kotlin execution remains unverified. |
+
+### 2026-08-25T05:11:34Z · Agent: Codex GPT-5 · Batch: provider-command-owner-injection
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-PROV-004 / single CLI onboarding owner | source-wired / partial | `src/main/kotlin/atropos/cli/CommandRouter.kt`, `src/main/kotlin/atropos/cli/ProviderCommandHandler.kt`, `scripts/backend-atom-contract-test.sh` | `Main.main()` → injected `ProviderOnboardingService` → `CommandRouter` → `/providers list|refresh|test|prefer|disable|connect` handler; explicit live-test result still reports through the same service | `/providers` no longer constructs a second onboarding service per command; existing positional constructor compatibility is preserved by adding the injected owner last. `bash scripts/backend-atom-contract-test.sh` and `git diff --check` pass. Root/hosted Kotlin execution remains unverified. |
