@@ -13479,6 +13479,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; B-PROV-002 remains source-wired/partial pending hosted execution and live provider evidence.
 - Fingerprint: `StatusQuotaRenderer.kt=d219234093bf`.
 
+### 2026-08-25T06:48:24Z · Agent: Codex GPT-5 · Batch: cli-mcp-single-owner
+
+- Paths touched: `src/main/kotlin/atropos/cli/CommandRouter.kt` (+10), `src/main/kotlin/atropos/cli/BackendDoctor.kt` (constructor seam retained), `src/main/kotlin/atropos/cli/McpCommandHandler.kt` (shared caller), `scripts/backend-atom-contract-test.sh` (+8), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-011 / ADD-MCP-001..008 single MCP host ownership.
+- Predicate moved: one `CommandRouter`-owned `McpHostManager` now serves both `/doctor` and `/mcp`; the CLI no longer creates separate host/probe/config owners for those commands in one session.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh` (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (440 tests)`), and `git diff --check` passed. Root/hosted Kotlin CLI execution remains unverified.
+- % delta: unchanged; B-011 remains source-wired/partial pending hosted MCP/CLI execution and live deployment evidence.
+- Fingerprints (sha256, first 12): `CommandRouter.kt=2d141960c9db`; `BackendDoctor.kt=3da6cf79344c`; `McpCommandHandler.kt=3ce77b388fe8`; `backend-atom-contract-test.sh=be3d06fb82f7`.
+
 ### 2026-08-25T05:18:00Z · Agent: Codex GPT-5 · Batch: provider-chat-owner-injection
 
 - Paths touched: `src/main/kotlin/atropos/cli/CommandRouter.kt` (+2), `src/main/kotlin/atropos/cli/ProviderChatDispatcher.kt` (+4/-2), `scripts/backend-atom-contract-test.sh` (+2).

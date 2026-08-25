@@ -1742,3 +1742,9 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-PROV-002 status route fallback owner | source-wired / partial | `src/main/kotlin/atropos/cli/ui/StatusQuotaRenderer.kt` | `/status route` → `StatusCommandHandler` → one injected onboarding owner → `StatusQuotaRenderer` health/preference suppliers | The renderer's default health supplier now closes over its own injected onboarding service instead of constructing a second onboarding service on each route render; the production status command continues to pass the launch owner and explicit fixture suppliers remain available to tests. Backend contract (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), hosted selector (`440 tests`), and diff check pass; Kotlin execution remains unverified. |
+
+### 2026-08-25T06:48:24Z · Agent: Codex GPT-5 · Batch: cli-mcp-single-owner
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-011 / ADD-MCP-001..008 CLI host ownership | source-wired / partial | `src/main/kotlin/atropos/cli/CommandRouter.kt`, `BackendDoctor.kt`, `McpCommandHandler.kt`, `scripts/backend-atom-contract-test.sh` | one `CommandRouter`-owned `McpHostManager` → `/doctor` `BackendDoctor` and `/mcp` `McpCommandHandler` | CLI diagnostics and MCP commands now share one configured MCP host, eliminating the remaining same-process duplicate host/probe owner. Backend atom contract, hosted selector (`440 tests`), and diff check pass; hosted Kotlin CLI runtime remains unverified. |

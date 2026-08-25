@@ -72,7 +72,7 @@ text src/main/kotlin/atropos/Main.kt 'providerOnboarding.renderLaunchSummary(ref
 text src/main/kotlin/atropos/Main.kt 'providerDiscoveryAlreadyRefreshed = true'
 text src/main/kotlin/atropos/cli/CommandRouter.kt 'if (providerDiscoveryAlreadyRefreshed)'
 text src/main/kotlin/atropos/cli/CommandRouter.kt 'providerOnboarding.list()'
-text src/main/kotlin/atropos/cli/CommandRouter.kt 'BackendDoctor(config, providerOnboarding)'
+text src/main/kotlin/atropos/cli/CommandRouter.kt 'BackendDoctor(config, providerOnboarding, mcpHostManager)'
 text src/main/kotlin/atropos/Main.kt 'BackendDoctor(config, providerOnboarding)'
 text src/main/kotlin/atropos/cli/CommandRouter.kt 'ProviderCommandHandler(config, uiEngine, onboarding = providerOnboarding)'
 text src/main/kotlin/atropos/cli/ProviderCommandHandler.kt 'private val onboarding: ProviderOnboardingService'
@@ -254,6 +254,14 @@ text src/main/kotlin/atropos/core/integration/McpConfigParser.kt 'MAX_ENV_ENTRIE
 text src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt 'stdio_server_receives_declared_environment_through_bounded_runner'
 text src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt 'secret_named_environment_must_reference_existing_secret_source'
 text src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt 'secret_named_remote_header_must_reference_existing_secret_source'
+# CLI diagnostics and MCP commands must share the same host instance. This is
+# the production caller edge that prevents `/doctor` and `/mcp` from becoming
+# parallel MCP registries/probe owners inside one command session.
+text src/main/kotlin/atropos/cli/CommandRouter.kt 'private val mcpHostManager = McpHostManager('
+text src/main/kotlin/atropos/cli/CommandRouter.kt 'BackendDoctor(config, providerOnboarding, mcpHostManager)'
+text src/main/kotlin/atropos/cli/CommandRouter.kt 'McpCommandHandler(uiEngine, mcpHostManager)'
+text src/main/kotlin/atropos/cli/BackendDoctor.kt 'private val mcp: McpHostManager'
+text src/main/kotlin/atropos/cli/McpCommandHandler.kt 'private val manager: McpHostManager'
 text src/main/kotlin/atropos/bridge/projection/QuotaProjection.kt '"latencyMsAvg"'
 text src/main/kotlin/atropos/bridge/projection/QuotaProjection.kt '"successScore"'
 text src/main/kotlin/atropos/bridge/projection/QuotaProjection.kt '"costPerVerifiedPredicateTokens"'

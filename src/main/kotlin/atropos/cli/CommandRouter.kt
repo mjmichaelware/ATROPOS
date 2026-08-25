@@ -25,6 +25,7 @@ import atropos.core.AtroposRepoRootLocator
 import atropos.core.nl.NlEntryPipeline
 import atropos.core.nl.NlSource
 import atropos.core.provider.ProviderOnboardingService
+import atropos.core.integration.McpHostManager
 
 enum class RouterOutcome { CONTINUE, EXIT }
 
@@ -44,7 +45,12 @@ class CommandRouter(
 ) {
     /** A failing command renders an error; it must not end the session. */
     private val failureBoundary = CommandFailureBoundary(uiEngine)
-    private val backendDoctor = BackendDoctor(config, providerOnboarding)
+    /** One MCP host serves both diagnostics and interactive MCP commands. */
+    private val mcpHostManager = McpHostManager(
+        AtroposRepoRootLocator.resolve(),
+        localOnly = config.runtime.localOnly
+    )
+    private val backendDoctor = BackendDoctor(config, providerOnboarding, mcpHostManager)
 
     private var activeProvider = providerResolver(config.runtime.defaultProvider)
 
@@ -107,7 +113,7 @@ class CommandRouter(
     private val providerCommand = ProviderCommandHandler(config, uiEngine, onboarding = providerOnboarding)
     private val githubCommand = GitHubCommandHandler(config, uiEngine)
     private val sentryCommand = SentryCommandHandler(uiEngine)
-    private val mcpCommand = McpCommandHandler(uiEngine)
+    private val mcpCommand = McpCommandHandler(uiEngine, mcpHostManager)
     private val dloiCommand = DloiCommandHandler(uiEngine, higZeroGuard)
     private val shellCommand = ShellCommandHandler(uiEngine, shellRunner)
     private val pipedStreamRouter = PipedStreamRouter(shellRunner)
