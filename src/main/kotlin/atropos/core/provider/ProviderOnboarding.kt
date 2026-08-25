@@ -96,7 +96,11 @@ class ProviderOnboardingService(
 
     fun prefer(providerId: String): List<DiscoveredProvider> {
         val current = list()
-        require(providerId in current.map { it.providerId }) { "unknown provider: $providerId" }
+        val target = current.firstOrNull { it.providerId == providerId }
+            ?: error("unknown provider: $providerId")
+        require(target.health == CheapProviderHealth.HEALTHY && !target.disabled) {
+            "provider must be healthy and enabled before it can be preferred: $providerId"
+        }
         val priorPreferred = current
             .filter { it.preferred && it.providerId != providerId }
             .sortedWith(compareBy<DiscoveredProvider> { preferenceKey(it) }.thenBy { it.providerId })

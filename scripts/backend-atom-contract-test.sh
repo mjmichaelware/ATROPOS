@@ -176,6 +176,7 @@ text src/main/kotlin/atropos/core/provider/adapter/AdapterRouteFacade.kt 'Provid
 text src/main/kotlin/atropos/cli/ui/StatusQuotaRenderer.kt 'ProviderQuotaPaths.defaultLedger()'
 text src/main/kotlin/atropos/cli/ui/StatusQuotaRenderer.kt 'healthyProviderIds = healthyProviderIds'
 text src/main/kotlin/atropos/core/testing/AtroposTestMatrix.kt 'healthyProviderIds = { fixtureHealthy }'
+text src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt 'healthy and enabled before it can be preferred'
 text src/main/kotlin/atropos/core/provider/QuotaLedger.kt 'mergeSeed(load(file), seed)'
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'if (server.remote)'
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'private fun postRemote'

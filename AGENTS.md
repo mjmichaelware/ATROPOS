@@ -13437,6 +13437,16 @@ Local verification note for this batch: `timeout 120s ./gradlew test --tests 'at
 - New overall estimate: unchanged.
 - Fingerprints (sha256, first 12): `AtroposTestMatrix.kt=8687805f308c`; commit `83bd6fc9`. Unrelated `docs/completion/*` remains unstaged and untouched.
 
+### 2026-08-25T21:15:00Z · Agent: Codex GPT-5 · Batch: provider-preference-health-guard
+
+- Paths touched: `src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt` (+5), `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` (+15), `scripts/backend-atom-contract-test.sh` (+1), `AGENTS.md` (+7), `STATUS-BACKEND.md` (+1).
+- Atoms / phases affected: B-PROV-004d provider preference mutation and healthy-set truth.
+- Predicate moved: `/providers prefer` now fails closed for unhealthy or disabled providers and cannot persist a misleading preference; only healthy, enabled providers can enter the preferred cascade order.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh`, `bash scripts/provider-env-contract-test.sh`, `bash scripts/hosted-test-selector-contract.sh` (`440 tests`), and `git diff --check` passed. Root/hosted Kotlin execution remains unverified; no green claim.
+- % delta: unchanged; provider onboarding remains source-wired / partial pending hosted execution.
+- New overall estimate: unchanged.
+- Fingerprints (sha256, first 12): pending until scoped commit; unrelated `docs/completion/*` remains unstaged and untouched.
+
 ### 2026-08-25T12:45:00Z · Agent: Codex GPT-5 · Batch: imported-context-authority-contract
 
 - Paths touched: `scripts/backend-atom-contract-test.sh` (+5).

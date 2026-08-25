@@ -366,6 +366,21 @@ class ProviderOnboardingTest {
     }
 
     @Test
+    fun prefer_refuses_unhealthy_provider_without_mutating_preferences() {
+        val root = Files.createTempDirectory("provider-preference-health")
+        val service = ProviderOnboardingService(
+            root = root,
+            environment = mapOf("GROQ_API_KEY" to "secret")
+        )
+        service.refresh()
+        service.recordLiveTest("groq", healthy = false)
+
+        val failure = runCatching { service.prefer("groq") }.exceptionOrNull()
+        assertTrue(failure?.message?.contains("healthy and enabled") == true)
+        assertTrue(service.preferredProviderIds().isEmpty())
+    }
+
+    @Test
     fun preferred_provider_is_exposed_in_route_order_without_overriding_cost_policy() {
         val root = Files.createTempDirectory("provider-preference-route")
         val service = ProviderOnboardingService(
