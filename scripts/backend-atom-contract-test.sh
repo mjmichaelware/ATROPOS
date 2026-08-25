@@ -276,6 +276,16 @@ text src/main/kotlin/atropos/core/github/GitHubApiClient.kt 'MAX_RESPONSE_CHARS'
 text src/main/kotlin/atropos/cli/GitHubCommandHandler.kt 'GitHubBinding'
 text src/main/kotlin/atropos/cli/GitHubCommandHandler.kt 'create-issue'
 text src/main/kotlin/atropos/cli/GitHubCommandHandler.kt '"issues" -> binding.listIssues'
+for github_method in \
+  listIssues getIssue createIssue commentIssue listPullRequests getPullRequestFiles \
+  createPullRequest commentPullRequest requestPullReview listCheckRuns \
+  createCheckRun updateCheckRun getBranchProtection; do
+  text src/main/kotlin/atropos/core/github/GitHubApiClient.kt "fun $github_method"
+  text src/main/kotlin/atropos/core/github/GitHubBinding.kt "fun $github_method"
+done
+text src/main/kotlin/atropos/core/github/GitHubApiClient.kt 'GitHubWriteAuthorization'
+text src/main/kotlin/atropos/core/github/GitHubApiClient.kt 'declaredTerritory'
+text src/main/kotlin/atropos/core/github/GitHubApiClient.kt 'SecretSinkKind.EGRESS_URL'
 text src/main/kotlin/atropos/cli/CommandRouter.kt 'GitHubCommandHandler(config, uiEngine)'
 text src/main/kotlin/atropos/cli/CommandRouter.kt '"/github" ->'
 text src/main/kotlin/atropos/core/ProviderHttpClient.kt 'MAX_RESPONSE_BYTES'

@@ -1528,3 +1528,9 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | FTY-03 / repair evidence truth | source-wired / partial | `src/main/kotlin/atropos/core/factory/FactoryRunOrchestrator.kt`, `scripts/backend-atom-contract-test.sh` | verification-failure callback → `FactoryRepairExecutor.repairAndResume` → obligation loop; final recorder state preserves `REENTERED_OBLIGATION_LOOP` when repair ran | Backend atom contract, hosted selector (`440` tests), orphan gate, and `git diff --check` pass. Root/hosted factory execution remains unverified; no VERIFIED claim. |
+
+### 2026-08-25T03:32:37Z · Agent: Codex GPT-5 · Batch: github-tier0-edge-contract
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-GH-a..r / GitHub REST caller completeness | source-wired / partial | `scripts/backend-atom-contract-test.sh`, `src/main/kotlin/atropos/core/github/GitHubApiClient.kt`, `src/main/kotlin/atropos/core/github/GitHubBinding.kt`, `src/main/kotlin/atropos/cli/GitHubCommandHandler.kt` | `/github` command → `GitHubCommandHandler` → `GitHubBinding` → single gated `GitHubApiClient` method surface | Contract now checks all issue, PR, review, check-run, branch-protection, write-authorization, territory, and egress edges. Backend contract, hosted selector (`440` tests), orphan gate, and `git diff --check` pass; hosted/credentialed GitHub execution remains unverified. |

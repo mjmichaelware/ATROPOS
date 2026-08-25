@@ -13303,6 +13303,14 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; FTY-03 remains source-wired/partial pending hosted focused factory tests and runtime repair evidence.
 - Fingerprints (sha256, first 12): `FactoryRunOrchestrator.kt=15ce8f28aff5`; `backend-atom-contract-test.sh=6e6175ae2f7c`.
 
+### 2026-08-25T03:32:37Z · Agent: Codex GPT-5 · Batch: github-tier0-edge-contract
+- Paths touched: `scripts/backend-atom-contract-test.sh` (+11), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-MCP-GH-a..r / Tier-0 GitHub REST and OAuth caller completeness.
+- Predicate moved: the CI-owned backend source gate now proves every production GitHub API operation is reachable through the single `GitHubCommandHandler → GitHubBinding → GitHubApiClient` owner, with explicit write confirmation, territory validation, and `SecretSinkMatrix` egress protection.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh` passed; `bash scripts/hosted-test-selector-contract.sh` passed (`440 tests`); `timeout 90s python3 scripts/find-orphans.py --fail-on-new` passed with only 4 historical baseline files (1045 production files / 362 orphan LOC); `git diff --check` passed. Root/hosted Gradle and credentialed GitHub execution remain unverified.
+- % delta: unchanged; B-MCP-GITHUB remains source-wired/partial pending hosted/live evidence.
+- Fingerprint (sha256, first 12): `backend-atom-contract-test.sh=c62fadd028bd`.
+
 ### 2026-08-25T02:44:07Z · Agent: Codex GPT-5 · Batch: release-backend-atom-gate
 
 - Paths touched: `.github/workflows/release.yml` (+3), `scripts/release-installer-contract-test.sh` (+1), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7).
