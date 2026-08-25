@@ -13295,6 +13295,14 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprints: `McpHostManagerTest.kt=9fdff3a705fe`; `backend-atom-contract-test.sh=82cb37547703`.
 
+### 2026-08-24T12:30:00Z · Agent: Codex GPT-5 · Batch: prefixed-provider-alias-resolution
+- Paths touched: `src/main/kotlin/atropos/core/provider/ProviderEnvironmentAliases.kt` (+1), `ProviderOnboarding.kt` (+6), `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` (+23), `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-PROV-001 alias discovery and B-PROV-002 generic namespace classification.
+- Predicate moved: prefixed common aliases now resolve through the canonical provider owner; they no longer create separate `grok`, `google`, or `claude` generic records.
+- Verification actually run: backend atom, provider README/environment, hosted-selector (440 tests), orphan gate (4 historical baseline files), and `git diff --check` passed. Root/hosted Kotlin execution remains unverified.
+- % delta: unchanged; source wiring improved, but hosted runtime evidence is still required.
+- Fingerprints: recorded after commit.
+
 ### 2026-08-24T12:00:00Z · Agent: Codex GPT-5 · Batch: backend-production-marker-audit
 - Paths touched: `STATUS-BACKEND.md` (+7), `AGENTS.md` (+7).
 - Atoms / phases affected: backend caller/orphan audit across bridge, provider, MCP, factory, GitHub, Sentry, and installer owners.

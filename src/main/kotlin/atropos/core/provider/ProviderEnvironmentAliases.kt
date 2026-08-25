@@ -36,6 +36,7 @@ object ProviderEnvironmentAliases {
 
     fun names(canonical: String): List<String> =
         (listOf(canonical) + aliases[canonical].orEmpty() +
+            aliases[canonical].orEmpty().map { "ATROPOS_PROVIDER_$it" } +
             listOf(
                 "ATROPOS_PROVIDER_$canonical",
                 "ATROPOS_PROVIDER_${canonical.substringBefore("_API_KEY")}_API_KEY"

@@ -89,6 +89,29 @@ class ProviderOnboardingTest {
     }
 
     @Test
+    fun atropos_namespace_aliases_resolve_to_canonical_providers_without_generic_duplicates() {
+        val root = Files.createTempDirectory("provider-onboarding-prefixed-aliases")
+        val records = ProviderOnboardingService(
+            root = root,
+            environment = mapOf(
+                "ATROPOS_PROVIDER_GROK_API_KEY" to "xai-secret",
+                "ATROPOS_PROVIDER_GOOGLE_API_KEY" to "gemini-secret",
+                "ATROPOS_PROVIDER_CLAUDE_API_KEY" to "anthropic-secret"
+            )
+        ).refresh().associateBy { it.providerId }
+
+        assertEquals(CheapProviderHealth.HEALTHY, records.getValue("xai").health)
+        assertEquals(CheapProviderHealth.HEALTHY, records.getValue("gemini").health)
+        assertEquals(CheapProviderHealth.HEALTHY, records.getValue("anthropic").health)
+        assertTrue(records.getValue("xai").matchedEnvNames.contains("ATROPOS_PROVIDER_GROK_API_KEY"))
+        assertTrue(records.getValue("gemini").matchedEnvNames.contains("ATROPOS_PROVIDER_GOOGLE_API_KEY"))
+        assertTrue(records.getValue("anthropic").matchedEnvNames.contains("ATROPOS_PROVIDER_CLAUDE_API_KEY"))
+        assertTrue("grok" !in records)
+        assertTrue("google" !in records)
+        assertTrue("claude" !in records)
+    }
+
+    @Test
     fun unknown_atropos_provider_namespace_is_visible_but_not_route_eligible() {
         val root = Files.createTempDirectory("provider-onboarding-generic-unknown")
         val service = ProviderOnboardingService(

@@ -264,6 +264,12 @@ class ProviderOnboardingService(
     private fun genericProviderIds(): List<String> = environment.keys
         .asSequence()
         .filter { it.startsWith("ATROPOS_PROVIDER_", ignoreCase = true) }
+        .filterNot { key ->
+            registry.getAll().any { descriptor ->
+                ProviderEnvironmentAliases.forProvider(descriptor.id, descriptor.requiredEnv)
+                    .any { it.equals(key, ignoreCase = true) }
+            }
+        }
         .map { it.substring("ATROPOS_PROVIDER_".length).substringBefore('_') }
         .map(String::lowercase)
         .filter { it.matches(Regex("[a-z0-9][a-z0-9-]{0,63}")) }
