@@ -13305,6 +13305,16 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprints: `.github/workflows/release.yml=4fdda002611a`; `scripts/release-installer-contract-test.sh=35e893489f34`; `scripts/backend-atom-contract-test.sh=22785c6ca5bf`.
 
+### 2026-08-25T02:48:03Z · Agent: Codex GPT-5 · Batch: release-clean-runner-test-gate
+
+- Paths touched: `.github/workflows/release.yml` (+3), `scripts/release-installer-contract-test.sh` (+1), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-MCP-GHA release clean-runner contract.
+- Predicate moved: the release job now executes the existing clean-runner contract test in addition to the implementation, before compiling or publishing artifacts; the release and backend source contracts protect that caller edge.
+- Verification actually run: `bash scripts/github-actions-clean-runner-test.sh` (`GITHUB_ACTIONS_CLEAN_RUNNER_TEST_OK`), `bash scripts/release-installer-contract-test.sh` (`ATROPOS_RELEASE_INSTALLER_CONTRACT_OK`), `bash scripts/backend-atom-contract-test.sh` (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), and `git diff --check` passed. Hosted release execution and artifact publication remain unverified; no green claim.
+- % delta: unchanged; B-MCP-GHA remains source-wired/partial pending hosted execution.
+- New overall estimate: unchanged.
+- Fingerprints: `.github/workflows/release.yml=66ff295a6562`; `scripts/release-installer-contract-test.sh=6ba14d81be13`; `scripts/backend-atom-contract-test.sh=f2c8b5ab16fc`.
+
 ### 2026-08-25T02:16:59Z · Agent: Codex GPT-5 · Batch: install-help-caller-contract
 - Paths touched: `scripts/backend-atom-contract-test.sh` (+16).
 - Atoms / phases affected: B-INST-001..005 and B-HELP-001..002 caller enforcement.

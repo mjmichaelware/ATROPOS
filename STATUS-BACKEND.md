@@ -1445,6 +1445,12 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | --- | --- | --- | --- | --- |
 | B-MCP-GHA / release backend source gate | source-wired / partial | `.github/workflows/release.yml`, `scripts/release-installer-contract-test.sh`, `scripts/backend-atom-contract-test.sh` | release build/publish job → `scripts/backend-atom-contract-test.sh`; release contract protects the workflow caller before artifact packaging | `bash scripts/backend-atom-contract-test.sh`, `bash scripts/release-installer-contract-test.sh`, `bash scripts/hosted-test-selector-contract.sh` (440), and `git diff --check` pass. GitHub-hosted release execution, published assets, and device installation remain unverified; no hosted-green claim. |
 
+### 2026-08-25T02:48:03Z · Agent: Codex GPT-5 · Batch: release-clean-runner-test-gate
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-GHA / release clean-runner contract | source-wired / partial | `.github/workflows/release.yml`, `scripts/github-actions-clean-runner-test.sh`, `scripts/release-installer-contract-test.sh`, `scripts/backend-atom-contract-test.sh` | release job → `github-actions-clean-runner-test.sh` → canonical `github-actions-clean-runner.sh`; release/backend contracts protect the caller | `bash scripts/github-actions-clean-runner-test.sh` (`GITHUB_ACTIONS_CLEAN_RUNNER_TEST_OK`), release contract, backend atom contract, and `git diff --check` pass. Hosted release execution and artifact publication remain unverified. |
+
 ### 2026-08-25T03:50:00Z · Agent: Codex GPT-5 · Batch: generated-provider-readme-table
 
 | atom | status | files | caller | tests / notes |

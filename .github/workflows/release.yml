@@ -59,6 +59,9 @@ jobs:
       - name: Verify clean runner contract
         run: bash scripts/github-actions-clean-runner.sh
 
+      - name: Exercise clean runner contract test
+        run: bash scripts/github-actions-clean-runner-test.sh
+
       # Retried only for transient network failures, and only those.
       #
       # A blanket retry would also re-run a genuine compile error three times

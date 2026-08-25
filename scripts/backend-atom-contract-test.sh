@@ -373,5 +373,6 @@ text .github/workflows/factory-test.yml 'actions/setup-java@v4'
 text .github/workflows/factory-test.yml 'gradle/actions/setup-gradle@v4'
 text .github/workflows/factory-test.yml 'github-actions-clean-runner-test.sh'
 text .github/workflows/release.yml 'backend-atom-contract-test.sh'
+text .github/workflows/release.yml 'github-actions-clean-runner-test.sh'
 
 printf '%s\n' 'ATROPOS_BACKEND_ATOM_CONTRACT_OK'

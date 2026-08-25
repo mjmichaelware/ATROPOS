@@ -14,5 +14,6 @@ grep -Fq 'tag_name: latest' "$WORKFLOW"
 grep -Fq 'files: |' "$WORKFLOW"
 grep -Fq 'needs: publish' "$WORKFLOW"
 grep -Fq 'backend-atom-contract-test.sh' "$WORKFLOW"
+grep -Fq 'github-actions-clean-runner-test.sh' "$WORKFLOW"
 
 printf '%s\n' 'ATROPOS_RELEASE_INSTALLER_CONTRACT_OK'
