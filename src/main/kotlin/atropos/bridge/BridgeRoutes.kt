@@ -44,6 +44,7 @@ import atropos.core.thinking.ThinkingRecord
 import atropos.core.welcome.WelcomeArtifact
 import atropos.core.parity.SurfaceParityProbe
 import atropos.core.recovery.StateSnapshot
+import java.nio.file.Path
 import java.time.Instant
 
 /**
@@ -187,7 +188,9 @@ class BridgeRoutes(
     private val commandRunner: ((String) -> BridgeCommandOutput)? = null,
     private val mcpHost: atropos.core.integration.McpHostManager? = null,
     private val recoverySnapshot: () -> StateSnapshot? = { null },
-    private val recoveryView: RecoveryProjection = RecoveryProjection()
+    private val recoveryView: RecoveryProjection = RecoveryProjection(),
+    /** Authoritative workspace root for upload and evidence territory checks. */
+    private val repoRoot: Path = Path.of("").toAbsolutePath().normalize()
 ) {
     private val approvalHandler = BridgeApprovalHandler(approvals)
     private val thinkingHandler = BridgeThinkingHandler(thinkingView, thinking)
@@ -195,9 +198,9 @@ class BridgeRoutes(
     private val queueHandler = work?.let { BridgeQueueHandler(it) }
     private val sessionHandler = BridgeSessionHandler(sessions)
     private val statusHandler = BridgeStatusHandler(homeState, activeProvider, sixAnswers, checkpoint, checkpointView, work, quotaSummary = quotaSummary, clock = clock)
-    private val evidenceHandler = BridgeEvidenceHandler(work)
+    private val evidenceHandler = BridgeEvidenceHandler(work, repoRoot)
     private val eventsHandler = BridgeEventsHandler(work, approvals, sessions, conversation)
-    private val filesHandler = BridgeFilesHandler()
+    private val filesHandler = BridgeFilesHandler(repoRoot)
     private val mcpHandler = BridgeMcpHandler(mcpBridge, mcpHost)
     private val computerUseHandler = BridgeComputerUseHandler()
     private val selfHostHandler = selfHost?.let { BridgeSelfHostHandler(it) }

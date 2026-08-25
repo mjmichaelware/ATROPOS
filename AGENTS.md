@@ -13334,6 +13334,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; B-PROV-002/004 remains source-wired/partial pending hosted Kotlin execution and live provider evidence.
 - Fingerprints (sha256, full): `AgentService.kt=e096686ab2ab00001a4ccaeebf086509949f50e93b7789a1d239a723e7498dd8`; `AgentRepairService.kt=23f466e3ae8924041b13b2865f6e1f9dece038778b11c9544f3b4f4d30bc51ee`; `AgentRunService.kt=0fdfd10a472eff97cc0128b2513f25f8584817868588e8fa0496acef2b52da53`; `AgentCommand.kt=6b212914486effcc0bfb13e10f11caea6b12064d5bd55395064fc602925d3281`; `CommandRouter.kt=909f4d96c816773c10b5ff8058464bfeb4041186cb8e75577ca484ce1fa24495`; `backend-atom-contract-test.sh=2a9312e3244e6f4d558a244371fbe66dc79c8a270ae3f23521db20fd4e3d8a0e`.
 
+### 2026-08-25T07:20:00Z · Agent: Codex GPT-5 · Batch: bridge-root-territory-binding
+
+- Paths touched: `src/main/kotlin/atropos/bridge/BridgeRoutes.kt` (+6/-2), `src/main/kotlin/atropos/bridge/AtroposBridge.kt` (+2/-1), `scripts/backend-atom-contract-test.sh` (+3).
+- Atoms / phases affected: B01/B06 bridge status/evidence and attested upload envelope territory.
+- Predicate moved: the production bridge now passes its authoritative repository root to the existing file-upload and evidence handlers; uploads and evidence resolution no longer silently depend on the process working directory.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh` (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (440 tests)`), and `git diff --check` passed. Root/hosted Kotlin execution remains unverified; no runtime upload claim.
+- % delta: unchanged; bridge upload/evidence remains source-wired/partial pending hosted/runtime proof.
+- Fingerprints (sha256, full): `BridgeRoutes.kt=09dfc45deb9c5a60bb64af4c15d619565f7e32dab715a1110658a7274eee6431`; `AtroposBridge.kt=6cb72ecd3865cb1e525b0c15b51705005d09b4c420836aedea4ce2aa98eba951`; `backend-atom-contract-test.sh=e1e8dd6b16875e04ed330f74f20adb7c9428a499b109cb396c537b18e903150a`.
+
 ### 2026-08-25T07:20:00Z · Agent: Codex GPT-5 · Batch: mcp-probe-handshake-test-proof-append
 
 - Paths touched: `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+6), `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+7).

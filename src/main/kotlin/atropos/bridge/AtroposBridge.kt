@@ -123,7 +123,8 @@ object LocalEngineBridge {
                 localOnly = AtroposConfig.load().runtime.localOnly
             ),
             quotaSummary = { QuotaProjection(quotaRegistry, quotaLedger).render() },
-            recoverySnapshot = { restartCoordinator.snapshot() }
+            recoverySnapshot = { restartCoordinator.snapshot() },
+            repoRoot = repoRoot
         ).let { routes ->
             EngineHttpServer(
                 routeTable = routes.table(),
