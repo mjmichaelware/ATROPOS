@@ -13345,6 +13345,16 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprints: `.github/workflows/release.yml=11e536b7fe17`; `scripts/release-installer-contract-test.sh=6da30298bd59`; `scripts/backend-atom-contract-test.sh=9f650f31c7d5`.
 
+### 2026-08-25T02:59:47Z · Agent: Codex GPT-5 · Batch: provider-env-microatom-contract
+
+- Paths touched: `scripts/provider-env-contract-test.sh` (+8), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-PROV-001a..001u provider environment discovery aliases.
+- Predicate moved: the existing provider environment contract now explicitly protects the complete authority alias set instead of checking only a small subset; the runtime alias owner and generated documentation remain the sole sources.
+- Verification actually run: `bash scripts/provider-env-contract-test.sh` (`ATROPOS_PROVIDER_README_TABLE_OK`, `ATROPOS_PROVIDER_ENV_CONTRACT_OK`), `bash scripts/backend-atom-contract-test.sh`, `bash scripts/hosted-test-selector-contract.sh` (`440 tests`), `bash -n`, and `git diff --check` passed. Hosted Kotlin execution remains unverified.
+- % delta: unchanged; provider discovery remains source-wired/partial pending hosted execution.
+- New overall estimate: unchanged.
+- Fingerprint: `scripts/provider-env-contract-test.sh=ebe9b91503ce`.
+
 ### 2026-08-25T02:16:59Z · Agent: Codex GPT-5 · Batch: install-help-caller-contract
 - Paths touched: `scripts/backend-atom-contract-test.sh` (+16).
 - Atoms / phases affected: B-INST-001..005 and B-HELP-001..002 caller enforcement.

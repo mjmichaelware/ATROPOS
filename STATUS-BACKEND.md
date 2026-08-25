@@ -1469,6 +1469,12 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | --- | --- | --- | --- | --- |
 | ADD-MCP-EX-001..013 / release catalog boundary | source-wired / partial | `.github/workflows/release.yml`, `scripts/mcp-example-contract-test.sh`, `scripts/release-installer-contract-test.sh`, `scripts/backend-atom-contract-test.sh`, `docs/mcp-examples/*.json` | release build/publish job → existing MCP example contract → disabled-by-default config catalog | MCP example contract passes (`14` files / `14` servers), release/backend contracts, hosted selector (440), and `git diff --check` pass. No auto-install or adapter was added; hosted release execution remains unverified. |
 
+### 2026-08-25T02:59:47Z · Agent: Codex GPT-5 · Batch: provider-env-microatom-contract
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-PROV-001a..001u / complete environment alias contract | source-wired / partial | `scripts/provider-env-contract-test.sh`, `src/main/kotlin/atropos/core/provider/ProviderEnvironmentAliases.kt`, `docs/PROVIDER_ENVIRONMENT.md` | provider environment contract → descriptor-derived table plus explicit authority alias list | Contract now explicitly checks OpenAI/base, Anthropic, Groq, xAI/Grok, Google/Gemini, Together, Fireworks, DeepSeek, Mistral, OpenRouter, Azure, AWS, Ollama, Claude, and `ATROPOS_PROVIDER_*` names. Provider README generator, provider-env contract, backend contract, hosted selector (440), shell syntax, and `git diff --check` pass. Hosted Kotlin execution remains unverified. |
+
 ### 2026-08-25T03:50:00Z · Agent: Codex GPT-5 · Batch: generated-provider-readme-table
 
 | atom | status | files | caller | tests / notes |
