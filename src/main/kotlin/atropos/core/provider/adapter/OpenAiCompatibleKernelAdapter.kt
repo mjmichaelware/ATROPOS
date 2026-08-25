@@ -3,6 +3,7 @@ package atropos.core.provider.adapter
 import atropos.core.provider.ApiCapability
 import atropos.core.provider.NormalizedProviderFailureType
 import atropos.core.provider.ProviderCallResult
+import atropos.core.provider.ProviderEnvironmentAliases
 import atropos.core.provider.ProviderDescriptor
 import atropos.core.provider.ProviderFailure
 import atropos.core.provider.ProviderUsage
@@ -35,7 +36,7 @@ internal class OpenAiCompatibleKernelAdapter(
             )
 
     override fun status(): AdapterStatus {
-        val key = env[spec.apiKeyEnv]?.takeIf { it.isNotBlank() }
+        val key = configuredKey()
         return AdapterStatus(
             providerId = descriptor.id,
             implemented = true,
@@ -51,7 +52,7 @@ internal class OpenAiCompatibleKernelAdapter(
         "provider=${descriptor.id} api=openai-compatible mode=dry_run model=${spec.defaultModel} prompt_chars=${request.prompt.length} deadline=${request.deadlineEpochMs}"
 
     override fun liveComplete(request: AdapterRequest): ProviderCallResult {
-        val key = env[spec.apiKeyEnv]?.takeIf { it.isNotBlank() }
+        val key = configuredKey()
             ?: return ProviderCallResult.Failure(
                 ProviderFailure(
                     providerId = descriptor.id,
@@ -104,6 +105,11 @@ internal class OpenAiCompatibleKernelAdapter(
 
     private fun remainingMs(request: AdapterRequest): Long =
         request.deadlineEpochMs - System.currentTimeMillis()
+
+    private fun configuredKey(): String? = ProviderEnvironmentAliases.names(spec.apiKeyEnv)
+        .asSequence()
+        .mapNotNull { env[it]?.takeIf(String::isNotBlank) }
+        .firstOrNull()
 
     private companion object {
         const val MAX_RESPONSE_BYTES = 8 * 1024 * 1024

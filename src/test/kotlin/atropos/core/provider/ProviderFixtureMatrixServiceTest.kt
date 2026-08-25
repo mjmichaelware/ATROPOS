@@ -37,6 +37,18 @@ class ProviderFixtureMatrixServiceTest {
     }
 
     @Test
+    fun compatible_and_anthropic_adapters_accept_documented_key_aliases() {
+        val registry = StaticProviderDescriptorRegistry()
+        val adapters = StaticProviderAdapterRegistry(
+            registry,
+            env = mapOf("GROK_API_KEY" to "xai-secret", "CLAUDE_API_KEY" to "anthropic-secret")
+        )
+
+        assertTrue(adapters.getByProviderId("xai")?.status()?.configured == true)
+        assertTrue(adapters.getByProviderId("anthropic")?.status()?.configured == true)
+    }
+
+    @Test
     fun fixture_matrix_passes_offline_for_all_registered_providers() {
         val registry = StaticProviderDescriptorRegistry()
         val service = ProviderFixtureMatrixService(

@@ -15123,6 +15123,15 @@ Local verification note for this batch: `timeout 120s ./gradlew test --tests 'at
 - % delta: unchanged; provider catalog remains source-wired/partial pending hosted execution.
 - Fingerprints: recorded after static verification.
 
+### 2026-08-25T19:40:00Z · Agent: Codex GPT-5 · Batch: provider-alias-transport-parity
+
+- Paths touched: `src/main/kotlin/atropos/core/provider/adapter/AnthropicKernelAdapter.kt` (+6/-1), `src/main/kotlin/atropos/core/provider/adapter/OpenAiCompatibleKernelAdapter.kt` (+9/-3), `src/test/kotlin/atropos/core/provider/ProviderFixtureMatrixServiceTest.kt` (+13), `scripts/backend-atom-contract-test.sh` (+2).
+- Atoms / phases affected: B-PROV-001c/f/g/h/m/u alias transport parity.
+- Predicate moved: documented aliases (`CLAUDE_API_KEY`, `GROK_API_KEY`, and provider namespace aliases) now configure the existing native/OpenAI-compatible adapters and status projections, so discovery and execution use the same canonical alias owner.
+- Verification actually run: pending in this batch; no Kotlin or hosted-green claim.
+- % delta: unchanged; provider catalog remains source-wired/partial pending hosted execution.
+- Fingerprints: recorded after static verification.
+
 ### 2026-08-25T19:20:00Z · Agent: Codex GPT-5 · Batch: gemini-alias-transport-owner
 
 - Paths touched: `src/main/kotlin/atropos/core/provider/adapter/GeminiKernelAdapter.kt` (+6/-1), `src/main/kotlin/atropos/core/provider/adapter/NonOpenAiFreeKernelAdapter.kt` (+4/-1), `src/test/kotlin/atropos/core/provider/ProviderFixtureMatrixServiceTest.kt` (+12), `scripts/backend-atom-contract-test.sh` (+1).
