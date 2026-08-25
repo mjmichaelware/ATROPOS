@@ -67,6 +67,7 @@ internal object McpConfigParser {
                 ?.takeIf { it.isNotEmpty() }
                 ?: error("mcp.json server name is required")
             val args = rawMember(objectText, "args")?.let(::stringValues).orEmpty()
+            val environment = rawMember(objectText, "env")?.let(::stringMap).orEmpty()
             McpServerConfig(
                 name = name,
                 transport = stringMember(objectText, "transport")
@@ -78,7 +79,8 @@ internal object McpConfigParser {
                 args = args,
                 enabled = booleanMember(objectText, "enabled") ?: false,
                 community = booleanMember(objectText, "community") ?: true,
-                url = stringMember(objectText, "url")
+                url = stringMember(objectText, "url"),
+                environment = environment
             )
         }
         require(servers.map { it.name }.toSet().size == servers.size) {
@@ -132,6 +134,42 @@ internal object McpConfigParser {
             require(index > before) { "mcp.json args parser made no progress" }
         }
         return values
+    }
+
+    private fun stringMap(objectText: String): Map<String, String> {
+        val raw = objectText.trim()
+        require(raw.startsWith("{") && raw.endsWith("}")) { "mcp.json env must be an object" }
+        val members = linkedMapOf<String, String>()
+        var index = 1
+        while (index < raw.length - 1) {
+            index = skipWhitespace(raw, index)
+            if (index >= raw.length - 1) break
+            require(raw[index] == '"') { "mcp.json env keys must be strings" }
+            val keyEnd = stringEnd(raw, index)
+            val key = decode(raw.substring(index, keyEnd + 1))
+            require(key.matches(Regex("[A-Za-z_][A-Za-z0-9_]*"))) {
+                "mcp.json env key is not a valid environment name: $key"
+            }
+            require(key !in members) { "mcp.json env keys must be unique: $key" }
+            val colon = skipWhitespace(raw, keyEnd + 1)
+            require(colon < raw.length && raw[colon] == ':') { "mcp.json env member '$key' is missing ':'" }
+            val valueStart = skipWhitespace(raw, colon + 1)
+            require(valueStart < raw.length && raw[valueStart] == '"') { "mcp.json env values must be strings" }
+            val valueEnd = stringEnd(raw, valueStart)
+            val value = decode(raw.substring(valueStart, valueEnd + 1))
+            require(value.length <= MAX_ENV_VALUE_CHARS) { "mcp.json env value exceeds $MAX_ENV_VALUE_CHARS characters" }
+            members[key] = value
+            index = skipWhitespace(raw, valueEnd + 1)
+            if (index < raw.length - 1) {
+                require(raw[index] == ',') { "mcp.json env members must be comma separated" }
+                index++
+                val next = skipWhitespace(raw, index)
+                require(next < raw.length - 1) { "mcp.json env cannot have a trailing comma" }
+                index = next
+            }
+        }
+        require(members.size <= MAX_ENV_ENTRIES) { "mcp.json env has too many entries" }
+        return members
     }
 
     private fun stringMember(text: String, name: String): String? =
@@ -312,4 +350,7 @@ internal object McpConfigParser {
         while (index < text.length && (text[index].isWhitespace() || text[index] == ',')) index++
         return index
     }
+
+    private const val MAX_ENV_ENTRIES = 32
+    private const val MAX_ENV_VALUE_CHARS = 8_192
 }

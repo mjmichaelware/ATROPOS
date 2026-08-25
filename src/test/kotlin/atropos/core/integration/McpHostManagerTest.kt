@@ -20,7 +20,7 @@ class McpHostManagerTest {
         Files.writeString(root.resolve("mcp.json"), """
             {"servers":[
               {"name":"local","transport":"stdio","command":"tool-{local}",
-               "args":["--label","a\"b", "{nested}"],"enabled":true,"community":false}
+               "args":["--label","a\"b", "{nested}"],"env":{"MCP_LABEL":"fixture"},"enabled":true,"community":false}
             ],"metadata":{"description":"braces { stay nested }"}}
         """.trimIndent())
 
@@ -28,6 +28,7 @@ class McpHostManagerTest {
         assertEquals("local", server.name)
         assertEquals("tool-{local}", server.command)
         assertEquals(listOf("--label", "a\"b", "{nested}"), server.args)
+        assertEquals(mapOf("MCP_LABEL" to "fixture"), server.environment)
         assertTrue(server.enabled)
         assertFalse(server.community)
     }
@@ -143,6 +144,33 @@ class McpHostManagerTest {
         assertNotNull(result.evidence.sha256)
         assertTrue(Files.isRegularFile(result.evidence.path))
         assertEquals(1, Files.readAllLines(calls).size)
+    }
+
+    @Test
+    fun stdio_server_receives_declared_environment_through_bounded_runner() {
+        val root = Files.createTempDirectory("mcp-env")
+        val marker = root.resolve("env-value")
+        val script = root.resolve("mcp-env.sh")
+        Files.writeString(script, """
+            #!/bin/sh
+            printf '%s' "$MCP_FIXTURE_VALUE" > '${marker.fileName}'
+            while IFS= read -r line; do
+              case "$line" in
+                *'\"id\":1'*) printf '%s\\n' '{"id":1}' ;;
+                *'\"id\":2'*) printf '%s\\n' '{"id":2,"result":{"tools":[{"name":"inspect"}]}}' ;;
+                *'\"id\":3'*) printf '%s\\n' '{"id":3,"result":{"content":[{"text":"ok"}]}}' ;;
+              esac
+            done
+        """.trimIndent())
+        script.toFile().setExecutable(true)
+        Files.writeString(root.resolve("mcp.json"), """
+            {"servers":[{"name":"local","transport":"stdio","command":"./mcp-env.sh",
+              "env":{"MCP_FIXTURE_VALUE":"bounded-value"},"enabled":true,"community":false}]}
+        """.trimIndent())
+
+        McpHostManager(root).callTool("local", "inspect")
+
+        assertEquals("bounded-value", Files.readString(marker))
     }
 
     @Test

@@ -13325,6 +13325,16 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprint: `backend-atom-contract-test.sh=d34f7e06de73`.
 
+### 2026-08-25T14:00:00Z · Agent: Codex GPT-5 · Batch: mcp-stdio-environment-contract
+
+- Paths touched: `src/main/kotlin/atropos/core/integration/McpConfigParser.kt` (+40), `src/main/kotlin/atropos/core/integration/McpHostManager.kt` (+12), `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+31), `scripts/backend-atom-contract-test.sh` (+4), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-MCP-CORE-a/b generic MCP config and bounded stdio transport.
+- Predicate moved: `mcp.json` can now declare a bounded environment map for a stdio server; the sole MCP host validates names/values and forwards it through `BoundedProcessRunner` for both probe and call paths. No second process owner was introduced, and environment values are not rendered or persisted as evidence.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh` (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (440 tests)`), `bash -n scripts/backend-atom-contract-test.sh`, and `git diff --check` passed. Hosted Kotlin execution remains unverified.
+- % delta: unchanged; generic MCP transport remains source-wired / partial pending hosted execution.
+- New overall estimate: unchanged.
+- Fingerprints (sha256, first 12): `McpConfigParser.kt=7a3d67489903`; `McpHostManager.kt=11f40b28b59d`; `McpHostManagerTest.kt=da7644ae70ec`; `backend-atom-contract-test.sh=7991b4eda8a`.
+
 ### 2026-08-25T12:20:00Z · Agent: Codex GPT-5 · Batch: github-oauth-contract-hardening
 
 - Paths touched: `scripts/backend-atom-contract-test.sh` (+4), `docs/PROVIDER_ENVIRONMENT.md` (+1), `STATUS-BACKEND.md` (+7).

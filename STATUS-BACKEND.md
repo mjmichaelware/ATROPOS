@@ -1346,3 +1346,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-GHA-e/f/h reusable verify evidence/check failure boundary | source-wired / partial | `.github/actions/atropos-verify/action.yml`, `.github/workflows/atropos-verify-example.yml`, `scripts/backend-atom-contract-test.sh` | GitHub composite action → existing `atropos-verify-worktree.sh` → bounded evidence-hash output and exit propagation → example workflow `checks.create` | The central backend gate now protects 64-hex evidence extraction, nonzero verifier propagation, and check-run publication/conclusion mapping. Backend contract, hosted selector contract (440), shell syntax, and `git diff --check` pass; hosted GitHub execution remains unverified. |
+
+### 2026-08-25T14:00:00Z · Agent: Codex GPT-5 · Batch: mcp-stdio-environment-contract
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-CORE-a/b generic stdio env configuration | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpConfigParser.kt`, `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt`, `scripts/backend-atom-contract-test.sh` | `mcp.json servers[].env` → sole `McpConfigParser` → `McpServerConfig.environment` → existing `BoundedProcessRunner.start(environment=…)` for probe and tool call | Generic MCP stdio configuration now accepts bounded, validated environment maps (32 names, 8192 chars/value) and passes them only through the existing bounded process owner; command/evidence render paths never include env values. Parser and runtime fixture coverage are hosted-selected; backend contract, hosted selector contract (440), shell syntax, and `git diff --check` pass. Hosted Kotlin execution remains unverified. |

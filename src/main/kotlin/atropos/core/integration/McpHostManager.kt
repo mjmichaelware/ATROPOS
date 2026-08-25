@@ -30,7 +30,8 @@ data class McpServerConfig(
     val args: List<String>,
     val enabled: Boolean,
     val community: Boolean,
-    val url: String? = null
+    val url: String? = null,
+    val environment: Map<String, String> = emptyMap()
 ) {
     val remote: Boolean get() = transport.lowercase() in setOf("http", "sse", "streamable-http")
 }
@@ -210,7 +211,11 @@ class McpHostManager(
                 remoteCall(server, toolName, boundedArguments, maxResponseBytes, toolBudget)
             } else {
                 val command = server.command ?: error("MCP server has no stdio command: $serverName")
-                val process = processRunner.start(listOf(command) + server.args, root)
+                val process = processRunner.start(
+                    listOf(command) + server.args,
+                    root,
+                    environment = server.environment
+                )
                 val worker = Executors.newSingleThreadExecutor()
                 try {
                     val response = worker.submit<String> {
@@ -439,7 +444,11 @@ class McpHostManager(
             processRunner: BoundedProcessRunner
         ): McpHealth {
             val command = server.command ?: return McpHealth.UNHEALTHY
-            val process = processRunner.start(listOf(command) + server.args, root)
+            val process = processRunner.start(
+                listOf(command) + server.args,
+                root,
+                environment = server.environment
+            )
             process.outputStream.bufferedWriter().use { writer ->
                 writer.write("{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{}}\n")
                 writer.write("{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}\n")
