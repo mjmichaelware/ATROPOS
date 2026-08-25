@@ -13385,7 +13385,7 @@ Local verification note for this batch: `timeout 120s ./gradlew test --tests 'at
 - Verification actually run: `bash scripts/backend-atom-contract-test.sh` (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`) and `git diff --check` passed. Root/hosted Kotlin execution remains unverified; no green claim.
 - % delta: unchanged; P15 remains source-wired / partial pending hosted focused execution.
 - New overall estimate: unchanged.
-- Fingerprints (sha256, first 12): pending until scoped commit; unrelated `docs/completion/*` remains unstaged and untouched.
+- Fingerprints (sha256, first 12): `StatusQuotaRenderer.kt=669fe84a3f56`; `backend-atom-contract-test.sh=80493e103c4b`; commit `ca19180e`. Unrelated `docs/completion/*` remains unstaged and untouched.
 
 ### 2026-08-25T12:45:00Z · Agent: Codex GPT-5 · Batch: imported-context-authority-contract
 
