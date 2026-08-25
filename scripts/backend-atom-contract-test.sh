@@ -60,6 +60,8 @@ text src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt 'genericProvide
 text src/main/kotlin/atropos/core/provider/ProviderEnvironmentAliases.kt 'ATROPOS_PROVIDER_$canonical'
 text src/main/kotlin/atropos/core/provider/ProviderActivationService.kt 'ProviderEnvironmentAliases.names(required)'
 text src/main/kotlin/atropos/core/provider/ProviderConfigurationResolver.kt 'ProviderEnvironmentAliases.names(name)'
+text scripts/atropos-verify-worktree.sh "atropos.core.provider.ProviderConfigurationResolverTest"
+text .github/workflows/compile-gate.yml "atropos.core.provider.ProviderConfigurationResolverTest"
 text src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt 'fun preferredProviderIds()'
 text src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt 'fun disable(providerId: String)'
 text src/main/kotlin/atropos/core/provider/adapter/AdapterRouteFacade.kt 'preferredProviderIds = { atropos.core.provider.ProviderOnboardingService().preferredProviderIds() }'

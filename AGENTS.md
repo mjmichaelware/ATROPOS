@@ -13343,6 +13343,14 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; P15 remains source-wired / partial because hosted execution and an authoritative cost-per-verified-predicate ledger are still absent.
 - Fingerprints (sha256, first 12): `QuotaProjection.kt=d5d4c3d25c1c`; `QuotaProjectionTest.kt=8cdf8925858e`; `backend-atom-contract-test.sh=e4887fbd2754`.
 
+### 2026-08-25T11:00:00Z · Agent: Codex GPT-5 · Batch: hosted-provider-truth-selector
+- Paths touched: `.github/workflows/compile-gate.yml` (+1), `scripts/atropos-verify-worktree.sh` (+1), `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: hosted proof wiring for B-PROV-001t provider truth aliases.
+- Predicate moved: the provider-truth alias regression test is now selected by both canonical GitHub focused-test lanes; hosted selector parity increased from 421 to 422 tests, and the source contract prevents either lane from dropping it.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh`, `bash scripts/hosted-test-selector-contract.sh` (`422 tests`), `bash -n scripts/atropos-verify-worktree.sh`, and `git diff --check` passed. GitHub Actions execution remains unverified; no hosted-green claim.
+- % delta: unchanged; provider catalog remains source-wired / partial pending hosted execution.
+- Fingerprints (sha256, first 12): `compile-gate.yml=89125b3f26e2`; `atropos-verify-worktree.sh=0fbbda1ecf1d`; `backend-atom-contract-test.sh=5579c7479a1f`.
+
 ### 2026-08-25T08:00:00Z · Agent: Codex GPT-5 · Batch: provider-namespace-adapter-alias
 - Paths touched: `src/main/kotlin/atropos/core/provider/adapter/AdapterRegistry.kt` (+5), `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` (+12), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7).
 - Atoms / phases affected: B-PROV-001t provider namespace scan reaching live adapter configuration.

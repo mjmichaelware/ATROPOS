@@ -52,6 +52,7 @@ if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
     --tests 'atropos.core.factory.RepositoryVerificationPlannerTest' \
     --tests 'atropos.core.factory.ReservedPackageNameTest' \
     --tests 'atropos.core.provider.ProviderOnboardingTest' \
+    --tests 'atropos.core.provider.ProviderConfigurationResolverTest' \
     --tests 'atropos.core.provider.ProviderActivationServiceTest' \
     --tests 'atropos.core.ConfigTest' \
     --tests 'atropos.core.provider.ProviderCascadeRouterTest' \

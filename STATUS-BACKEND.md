@@ -1310,3 +1310,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | P15 quota metrics projection | source-wired / partial | `src/main/kotlin/atropos/bridge/projection/QuotaProjection.kt`, `src/test/kotlin/atropos/bridge/QuotaProjectionTest.kt`, `scripts/backend-atom-contract-test.sh` | provider ledger → existing `QuotaProjection` → `/v1/quota` and `/v1/status` | The existing quota API now exposes persisted quota weight, average latency, success score, and redacted last-error class alongside balances and billing state. Backend contract, hosted-selector contract (421), and diff check pass; hosted Kotlin execution remains pending. Cost-per-verified-predicate is still absent because no authoritative predicate-cost ledger exists. |
+
+### 2026-08-25T11:00:00Z · Agent: Codex GPT-5 · Batch: hosted-provider-truth-selector
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| hosted proof wiring for provider truth aliases | source-wired / partial | `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh`, `scripts/backend-atom-contract-test.sh` | GitHub compile/focused lanes → `ProviderConfigurationResolverTest` → shared provider alias contract | Added the new provider-truth regression test to both canonical GitHub selectors; selector parity now reports 422 tests. Backend contract, shell syntax, and diff check pass; GitHub Actions execution remains pending. |
