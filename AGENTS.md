@@ -13307,6 +13307,16 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 
 Local verification note for this batch: `timeout 120s ./gradlew test --tests 'atropos.core.provider.ProviderConfigurationResolverTest' --no-daemon --max-workers=1` did not execute the test because this build’s `:core:test` task rejected `--tests` as an unknown option after configuration. GitHub Actions remains the authoritative executable test gate; no root-green claim.
 
+### 2026-08-25T16:05:00Z · Agent: Codex GPT-5 · Batch: provider-connect-vault-chain-proof
+
+- Paths touched: `src/test/kotlin/atropos/core/provider/ProviderConfigurationResolverTest.kt` (+22), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-PROV interactive connect end-to-end acceptance.
+- Predicate moved: the focused fixture now exercises the real onboarding connect call and encrypted local-vault read before asserting canonical provider truth, rather than proving only an injected secret source.
+- Verification actually run: backend atom contract, hosted selector contract (`440 tests`), and `git diff --check` passed. The local filtered Gradle attempt remains non-executable because `:core:test` rejects `--tests`; no Kotlin or hosted green claim.
+- % delta: unchanged; source-wired / partial remains honest pending hosted execution and live provider evidence.
+- New overall estimate: unchanged.
+- Fingerprints (sha256, first 12): `ProviderConfigurationResolverTest.kt=402b76306991`; `backend-atom-contract-test.sh=f1c22e857a34`.
+
 ### 2026-08-25T12:45:00Z · Agent: Codex GPT-5 · Batch: imported-context-authority-contract
 
 - Paths touched: `scripts/backend-atom-contract-test.sh` (+5).

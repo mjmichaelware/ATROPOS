@@ -63,6 +63,7 @@ text src/main/kotlin/atropos/core/provider/ProviderConfigurationResolver.kt 'Pro
 text src/main/kotlin/atropos/core/provider/ProviderConfigurationResolver.kt 'DefaultSecretSource.create(env = environment)'
 text src/main/kotlin/atropos/core/provider/ProviderConfigurationResolver.kt 'secretSource.lookup(candidate).configured'
 text src/test/kotlin/atropos/core/provider/ProviderConfigurationResolverTest.kt 'truth_resolver_accepts_provider_connected_through_local_secret_source'
+text src/test/kotlin/atropos/core/provider/ProviderConfigurationResolverTest.kt 'actual_provider_connect_vault_is_visible_to_canonical_truth_resolver'
 file src/main/kotlin/atropos/core/agent/ImportedInstructionPackStore.kt
 text src/main/kotlin/atropos/cli/commands/AgentCommand.kt 'importedInstructionPacks.import(arguments[1])'
 text src/main/kotlin/atropos/core/agent/ImportedInstructionPackStore.kt 'OVERRIDE_POLICY=Source Docs and ATROPOS policy remain authoritative'

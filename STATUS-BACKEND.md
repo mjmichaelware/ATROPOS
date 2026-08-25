@@ -1337,6 +1337,12 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 
 Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.provider.ProviderConfigurationResolverTest' --no-daemon --max-workers=1` did not execute the test; this build’s `:core:test` task rejected `--tests` as an unknown option after configuration. GitHub Actions remains the required executable test gate.
 
+### 2026-08-25T16:05:00Z · Agent: Codex GPT-5 · Batch: provider-connect-vault-chain-proof
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-PROV connect vault end-to-end fixture | source-wired / partial | `src/test/kotlin/atropos/core/provider/ProviderConfigurationResolverTest.kt`, `scripts/backend-atom-contract-test.sh` | `ProviderOnboardingService.connectToVault` → existing `TokenIsolationVault` → `DefaultSecretSource` with injected local root → canonical `ProviderConfigurationResolver` | Added a focused fixture using the real connect/vault path and a custom isolated vault root; backend contract, hosted selector contract (440), and `git diff --check` pass. Local Gradle did not execute the filtered test because `:core:test` rejects `--tests`; hosted Kotlin execution remains authoritative and unverified. |
+
 ### 2026-08-25T12:45:00Z · Agent: Codex GPT-5 · Batch: imported-context-authority-contract
 
 | atom | status | files | caller | tests / notes |
