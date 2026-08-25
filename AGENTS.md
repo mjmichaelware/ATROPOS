@@ -12397,6 +12397,14 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; source-wired but partial pending hosted execution evidence.
 - Fingerprints: recorded after commit.
 
+### 2026-08-24T14:00:00Z · Agent: Codex GPT-5 · Batch: backend-status-ledger-gate
+- Paths touched: `scripts/backend-atom-contract-test.sh` (+18), `STATUS-BACKEND.md` (+7), `AGENTS.md` (+7).
+- Atoms / phases affected: in-scope backend atom evidence visibility.
+- Predicate moved: the existing CI contract now rejects removal of any in-scope top-level backend atom from the append-only status ledger; it does not create a second implementation or registry.
+- Verification actually run: backend atom contract, hosted-selector contract (440 tests), and `git diff --check` passed. Hosted Kotlin/runtime execution remains unverified.
+- % delta: unchanged; evidence traceability strengthened.
+- Fingerprints: recorded after commit.
+
 ### 2026-08-24T13:30:00Z · Agent: Codex GPT-5 · Batch: backend-microatom-owner-crosswalk
 - Paths touched: `STATUS-BACKEND.md` (+14), `AGENTS.md` (+7).
 - Atoms / phases affected: installer/help/provider micro-atom crosswalk from the authority attachment.

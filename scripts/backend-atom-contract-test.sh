@@ -431,4 +431,20 @@ text src/main/kotlin/atropos/Main.kt 'args.firstOrNull() == "-h"'
 text src/main/kotlin/atropos/Main.kt 'HelpGenerator().render'
 text src/main/kotlin/atropos/Main.kt 'args.firstOrNull() == "doctor" && args.drop(1).any'
 
+# The status ledger is append-only evidence, not a second implementation. Keep
+# the authority's in-scope backend atoms visible so a source-only change cannot
+# silently erase the caller/evidence trail.
+for atom_id in \
+  B-INST-001 B-INST-002 B-INST-003 B-INST-004 B-INST-005 B-INST-006 \
+  B-PROV-001 B-PROV-002 B-PROV-003 B-PROV-004 B-PROV-005 B-PROV-006 \
+  B-HELP-001 B-HELP-002 \
+  B-MCP-SENTRY B-MCP-GHA B-MCP-GITHUB B-MCP-GITLOCAL B-MCP-FS \
+  B-MCP-BRIDGE-SCHEMA B-MCP-MEMORY B-MCP-FETCH B-MCP-TIME B-MCP-EVERYTHING-REF \
+  B-MCP-OAUTH-UX B-MCP-KEYCHAIN B-OC-001 B-OC-002 B-OC-003 B-OC-004; do
+  rg -Fq -- "$atom_id" "$ROOT/STATUS-BACKEND.md" || {
+    echo "BACKEND_ATOM_CONTRACT_FAIL missing status ledger atom $atom_id" >&2
+    exit 1
+  }
+done
+
 printf '%s\n' 'ATROPOS_BACKEND_ATOM_CONTRACT_OK'
