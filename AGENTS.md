@@ -13415,6 +13415,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; B-005/B-PROV-001/002 remains source-wired/partial pending hosted runtime evidence.
 - Fingerprints (sha256, full): `BridgeCommandRunner.kt=7f46ca2c43d292b82cc3805e20e2ca4614ac7a842e3cbfc12bd8656f9b61167e`; `AtroposBridge.kt=e5192137708d9f7f294c95ba060b8c980937ed5d960f80bf232bb9a51e78a2cc`; `backend-atom-contract-test.sh=72dd4453ec9e83b4ce2845a5a675be9a33453ecd1a705cc4c8238dceb6406f95`.
 
+### 2026-08-25T11:30:00Z · Agent: Codex GPT-5 · Batch: bridge-selfhost-provider-owner
+
+- Paths touched: `src/main/kotlin/atropos/bridge/AtroposBridge.kt` (+4/-1), `src/main/kotlin/atropos/core/agent/SelfHostGoalService.kt` (+6/-2), `scripts/backend-atom-contract-test.sh` (+2).
+- Atoms / phases affected: B-005 bridge self-host/resume path and B-PROV-002 DAG cascade ownership.
+- Predicate moved: bridge self-host goals now receive the bridge's single refreshed onboarding service and pass it into their DAG execution service; self-host work no longer creates an independent provider inventory.
+- Verification actually run: backend atom contract, hosted selector contract (`440 tests`), and `git diff --check` passed. Root/hosted Kotlin self-host execution remains unverified; no runtime-green claim.
+- % delta: unchanged; B-005/B-PROV-002 remains source-wired/partial pending hosted runtime evidence.
+- Fingerprints (sha256, full): `SelfHostGoalService.kt=1c204607840784b0693f22d828c42252aad3d7171991f935fdee09fef9347a5e`; `AtroposBridge.kt=ed0ff354c365410427889e2e1f02e8c41daaf7d5f08cac9398650720c8cc7d2f`; `backend-atom-contract-test.sh=7c9aabc1fac018de054aa751a3239203776d1ebf06d06ecc72e19b66072630dc`.
+
 ### 2026-08-25T07:20:00Z · Agent: Codex GPT-5 · Batch: mcp-probe-handshake-test-proof-append
 
 - Paths touched: `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt` (+6), `scripts/backend-atom-contract-test.sh` (+2), `STATUS-BACKEND.md` (+7).

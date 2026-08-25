@@ -6,6 +6,7 @@ import atropos.core.dag.DagNodeState
 import atropos.core.memory.LocalMemoryStore
 import atropos.core.memory.MemoryKind
 import atropos.core.provider.ContextEnvelope
+import atropos.core.provider.ProviderOnboardingService
 import atropos.core.recovery.RestartCoordinator
 import atropos.core.verification.VerifiedCompletionGate
 import java.nio.file.Path
@@ -13,9 +14,13 @@ import java.time.Instant
 
 class SelfHostGoalService(
     private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
+    private val onboarding: ProviderOnboardingService = ProviderOnboardingService(),
     private val store: GoalRunStore = GoalRunStore(repoRoot),
     private val continuationService: GoalContinuationService = GoalContinuationService(repoRoot),
-    private val dagService: DagExecutionService = DagExecutionService(repoRoot = repoRoot),
+    private val dagService: DagExecutionService = DagExecutionService(
+        repoRoot = repoRoot,
+        onboarding = onboarding
+    ),
     private val memoryStore: LocalMemoryStore = LocalMemoryStore(repoRoot.resolve(".atropos/memory").toFile()),
     private val cradleVerificationGate: SelfHostCradleVerificationGate = SelfHostCradleVerificationGate(),
     private val completionGate: VerifiedCompletionGate = VerifiedCompletionGate(repoRoot = repoRoot),

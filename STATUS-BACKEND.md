@@ -1706,3 +1706,9 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-005 `/v1/cli` provider inventory owner | source-wired / partial | `src/main/kotlin/atropos/bridge/BridgeCommandRunner.kt`, `src/main/kotlin/atropos/bridge/AtroposBridge.kt`, `scripts/backend-atom-contract-test.sh` | `LocalEngineBridge.server()` → shared refreshed onboarding → per-request `BridgeCommandRunner` → isolated `CommandRouter(providerOnboarding=...)` | Bridge command requests retain per-request router/session isolation while sharing the bridge provider owner; duplicate command-path discovery is removed. Backend contract, hosted selector (`440 tests`), and diff check pass; hosted bridge runtime remains unverified. |
+
+### 2026-08-25T11:30:00Z · Agent: Codex GPT-5 · Batch: bridge-selfhost-provider-owner
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-005 bridge self-host/DAG provider owner | source-wired / partial | `src/main/kotlin/atropos/bridge/AtroposBridge.kt`, `src/main/kotlin/atropos/core/agent/SelfHostGoalService.kt`, `scripts/backend-atom-contract-test.sh` | bridge server → shared onboarding → `SelfHostGoalService` → `DagExecutionService`/existing self-host gates | Bridge self-host/resume execution now shares the same onboarding owner as queue and command routes. Backend contract, hosted selector (`440 tests`), and diff check pass; hosted self-host runtime remains unverified. |

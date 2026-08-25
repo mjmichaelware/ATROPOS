@@ -122,7 +122,10 @@ object LocalEngineBridge {
             // reason the queue is: a test checking one projection must not have
             // to own a goal store on disk. This is what lets a phone ask the
             // engine to build something rather than only watch it.
-            selfHost = atropos.core.agent.SelfHostGoalService(repoRoot),
+            selfHost = atropos.core.agent.SelfHostGoalService(
+                repoRoot = repoRoot,
+                onboarding = providerOnboarding
+            ),
             // The same CommandRouter the terminal builds, rendering into a
             // buffer. This is what makes the phone and the browser equal to the
             // CLI: not a reimplementation of each command, the command itself.
