@@ -1,11 +1,14 @@
 package atropos.core.provider
 
 import atropos.core.AtroposConfig
+import atropos.core.security.DefaultSecretSource
+import atropos.core.security.SecretSource
 
 /** Resolves provider requirements from the canonical descriptor metadata. */
 class ProviderConfigurationResolver(
     private val config: AtroposConfig = AtroposConfig.load(),
-    private val environment: Map<String, String> = System.getenv()
+    private val environment: Map<String, String> = System.getenv(),
+    private val secretSource: SecretSource = DefaultSecretSource.create(env = environment)
 ) {
     fun missingRequirements(descriptor: ProviderDescriptor): List<String> =
         descriptor.requiredEnv.filterNot(::isPresent)
@@ -22,7 +25,9 @@ class ProviderConfigurationResolver(
             "XAI_API_KEY" -> config.keys.xai.isNotBlank()
             else -> false
         }
-        return configPresent || ProviderEnvironmentAliases.names(name).any(::environmentPresent)
+        return configPresent || ProviderEnvironmentAliases.names(name).any { candidate ->
+            environmentPresent(candidate) || secretSource.lookup(candidate).configured
+        }
     }
 
     private fun environmentPresent(name: String): Boolean =

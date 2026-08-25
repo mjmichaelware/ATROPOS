@@ -60,6 +60,9 @@ text src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt 'genericProvide
 text src/main/kotlin/atropos/core/provider/ProviderEnvironmentAliases.kt 'ATROPOS_PROVIDER_$canonical'
 text src/main/kotlin/atropos/core/provider/ProviderActivationService.kt 'ProviderEnvironmentAliases.names(required)'
 text src/main/kotlin/atropos/core/provider/ProviderConfigurationResolver.kt 'ProviderEnvironmentAliases.names(name)'
+text src/main/kotlin/atropos/core/provider/ProviderConfigurationResolver.kt 'DefaultSecretSource.create(env = environment)'
+text src/main/kotlin/atropos/core/provider/ProviderConfigurationResolver.kt 'secretSource.lookup(candidate).configured'
+text src/test/kotlin/atropos/core/provider/ProviderConfigurationResolverTest.kt 'truth_resolver_accepts_provider_connected_through_local_secret_source'
 file src/main/kotlin/atropos/core/agent/ImportedInstructionPackStore.kt
 text src/main/kotlin/atropos/cli/commands/AgentCommand.kt 'importedInstructionPacks.import(arguments[1])'
 text src/main/kotlin/atropos/core/agent/ImportedInstructionPackStore.kt 'OVERRIDE_POLICY=Source Docs and ATROPOS policy remain authoritative'

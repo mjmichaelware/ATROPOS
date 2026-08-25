@@ -1329,6 +1329,14 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | --- | --- | --- | --- | --- |
 | B-MCP-OAUTH-UX GitHub device connect contract | source-wired / partial | `src/main/kotlin/atropos/core/github/GitHubDeviceAuthClient.kt`, `src/main/kotlin/atropos/cli/AuthCommandHandler.kt`, `src/main/kotlin/atropos/cli/input/CommandCatalog.kt`, `docs/PROVIDER_ENVIRONMENT.md`, `scripts/backend-atom-contract-test.sh` | `/auth github` → `AuthCommandHandler.renderGitHub()` → `GitHubDeviceAuthClient` → existing `TokenIsolationVault.writeSecret("GITHUB_TOKEN", …)` | Backend source gate now protects the production CLI caller, local-vault write, redacted failure rendering, and command registration. Documentation identifies `ATROPOS_GITHUB_OAUTH_CLIENT_ID` as public configuration; tokens remain vault-only. `backend-atom-contract-test.sh`, provider-env contract, hosted selector contract (440), shell syntax, and `git diff --check` pass. Hosted Kotlin/live OAuth and operator client registration remain unverified. |
 
+### 2026-08-25T15:45:00Z · Agent: Codex GPT-5 · Batch: provider-connect-truth-resolver
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-PROV connect → agent/provider truth | source-wired / partial | `src/main/kotlin/atropos/core/provider/ProviderConfigurationResolver.kt`, `src/test/kotlin/atropos/core/provider/ProviderConfigurationResolverTest.kt`, `scripts/backend-atom-contract-test.sh` | `/providers connect` → existing `TokenIsolationVault` → `DefaultSecretSource` → `ProviderConfigurationResolver` → `AgentProviderSelector` / `ProviderTruthService` | Provider truth now accepts vault-backed credentials through the existing secret boundary, so interactive connect is visible to agent selection as well as adapter construction. Backend contract, hosted selector contract (440), bash syntax, and `git diff --check` pass. Hosted Kotlin execution and live provider calls remain unverified; no secret is persisted in metadata or logged. |
+
+Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.provider.ProviderConfigurationResolverTest' --no-daemon --max-workers=1` did not execute the test; this build’s `:core:test` task rejected `--tests` as an unknown option after configuration. GitHub Actions remains the required executable test gate.
+
 ### 2026-08-25T12:45:00Z · Agent: Codex GPT-5 · Batch: imported-context-authority-contract
 
 | atom | status | files | caller | tests / notes |

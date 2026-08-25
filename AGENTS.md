@@ -13295,6 +13295,18 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprints: `McpHostManagerTest.kt=9fdff3a705fe`; `backend-atom-contract-test.sh=82cb37547703`.
 
+### 2026-08-25T15:45:00Z · Agent: Codex GPT-5 · Batch: provider-connect-truth-resolver
+
+- Paths touched: `src/main/kotlin/atropos/core/provider/ProviderConfigurationResolver.kt` (+9/-2), `src/test/kotlin/atropos/core/provider/ProviderConfigurationResolverTest.kt` (+17), `scripts/backend-atom-contract-test.sh` (+3), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-PROV interactive connect and canonical provider truth.
+- Predicate moved: a provider connected through the existing local vault is now recognized by the existing `ProviderConfigurationResolver`, which feeds `AgentProviderSelector` and `ProviderTruthService`; this closes the prior metadata/adapter-versus-agent truth split without adding a vault or provider registry.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh` (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (440 tests)`), `bash -n scripts/backend-atom-contract-test.sh`, and `git diff --check` passed. Hosted/root Kotlin execution and live provider calls remain unverified; no root-green claim.
+- % delta: unchanged; provider onboarding remains source-wired / partial pending hosted execution and live credentialed evidence.
+- New overall estimate: unchanged.
+- Fingerprints (sha256, first 12): `ProviderConfigurationResolver.kt=4e1ae7919f86`; `ProviderConfigurationResolverTest.kt=78a186369ca8`; `backend-atom-contract-test.sh=bb166b9452def`.
+
+Local verification note for this batch: `timeout 120s ./gradlew test --tests 'atropos.core.provider.ProviderConfigurationResolverTest' --no-daemon --max-workers=1` did not execute the test because this build’s `:core:test` task rejected `--tests` as an unknown option after configuration. GitHub Actions remains the authoritative executable test gate; no root-green claim.
+
 ### 2026-08-25T12:45:00Z · Agent: Codex GPT-5 · Batch: imported-context-authority-contract
 
 - Paths touched: `scripts/backend-atom-contract-test.sh` (+5).
