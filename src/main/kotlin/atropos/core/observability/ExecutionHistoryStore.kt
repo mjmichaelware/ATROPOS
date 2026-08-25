@@ -28,7 +28,7 @@ import java.nio.file.Path
  * teaches an operator to distrust the filter.
  */
 class ExecutionHistoryStore(
-    repoRoot: Path = AtroposRepoRootLocator.resolve(),
+    private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
     private val index: HistoryIndex = HistoryIndex(repoRoot.resolve(".atropos/runs").normalize())
 ) {
 
@@ -135,8 +135,22 @@ data class HistorySearchResult(
 }
 
 fun ExecutionHistoryStore.record(event: ExecutionEvent) {
-    // In a real implementation, this would append to the journal and index.
-    // For now, this is a shim to satisfy the Phase 20 law requirements.
+    val runId = event.runId?.trim().orEmpty()
+    require(runId.isNotBlank()) { "execution history event requires a run id" }
+    EventJournalService(repoRoot).record(
+        runId = runId,
+        category = event.category,
+        payload = ExecutionEventCodec.encodePayload(event),
+        goalId = event.goalId,
+        projectId = event.projectId,
+        dagId = event.dagId,
+        atomId = event.atomId,
+        jobId = event.jobId,
+        attemptId = event.attemptId,
+        parentRunId = event.parentRunId,
+        providerId = event.provider
+    )
+    reindex(runId)
 }
 
 fun ExecutionHistoryStore.query(filter: HistoryQuery): HistorySearchResult {

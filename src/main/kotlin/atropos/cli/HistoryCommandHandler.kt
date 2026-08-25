@@ -68,9 +68,8 @@ class HistoryCommandHandler(
     /**
      * Reads history entries from the execution history store.
      *
-     * Falls back to reading `.atropos/runs/events.jsonl` directly if
-     * the store is not wired, and produces entries from git log as a
-     * last resort.
+     * Falls back to the legacy flat journal format only for pre-index
+     * installations, and produces entries from git log as a last resort.
      */
     private fun readHistoryEntries(limit: Int): List<HistoryEntry> {
         val durableEntries = runCatching {

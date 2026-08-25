@@ -132,6 +132,8 @@ text src/main/kotlin/atropos/core/provider/adapter/AdapterRouteFacade.kt 'prefer
 text src/main/kotlin/atropos/cli/RouteCommandHandler.kt 'onboarding = onboarding'
 text src/main/kotlin/atropos/cli/HistoryCommandHandler.kt 'historyStore.searchAll(HistoryQuery(limit = limit))'
 text src/main/kotlin/atropos/cli/HistoryCommandHandler.kt 'private fun toHistoryEntry(event: ExecutionEvent)'
+text src/main/kotlin/atropos/core/observability/ExecutionHistoryStore.kt 'EventJournalService(repoRoot).record('
+text src/main/kotlin/atropos/core/observability/ExecutionHistoryStore.kt 'reindex(runId)'
 text src/main/kotlin/atropos/core/provider/RoutePolicy.kt 'preferredProviderIds?.invoke()?.indexOf(providerId)'
 
 # Help and installer callers. These atoms are deliberately guarded here rather

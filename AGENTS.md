@@ -13373,7 +13373,17 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Verification actually run: `bash scripts/backend-atom-contract-test.sh` (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`) and `git diff --check` passed. Root/hosted Kotlin execution remains unverified.
 - % delta: unchanged; observability remains source-wired/partial pending hosted execution.
 - New overall estimate: unchanged.
-- Fingerprints: `HistoryCommandHandler.kt=88fc7640394e`; `backend-atom-contract-test.sh=e8b9f7782f88`.
+- Fingerprints: `HistoryCommandHandler.kt=43281e11043d`; `ExecutionHistoryStore.kt=7549fae6c7db`; `ExecutionHistoryStoreTest.kt=0e07675446e3`; `backend-atom-contract-test.sh=51ed5cbb941f`.
+
+### 2026-08-25T06:20:00Z · Agent: Codex GPT-5 · Batch: history-record-journal-owner
+
+- Paths touched: `src/main/kotlin/atropos/core/observability/ExecutionHistoryStore.kt` (+17/-3), `src/test/kotlin/atropos/core/observability/ExecutionHistoryStoreTest.kt` (+24), `scripts/backend-atom-contract-test.sh` (+2).
+- Atoms / phases affected: backend observability/history persistence.
+- Predicate moved: `ExecutionHistoryStore.record(event)` no longer silently discards events; it appends through the existing journal owner, rebuilds the existing derived index, and is proven restart-queryable by a focused fixture.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh` (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), `bash scripts/hosted-test-selector-contract.sh` (`440 tests`), and `git diff --check` passed. Hosted Kotlin execution remains unverified.
+- % delta: unchanged; observability remains source-wired/partial pending hosted execution.
+- New overall estimate: unchanged.
+- Fingerprints: `ExecutionHistoryStore.kt=7549fae6c7db`; `ExecutionHistoryStoreTest.kt=0e07675446e3`; `backend-atom-contract-test.sh=51ed5cbb941f`.
 
 ### 2026-08-25T05:11:34Z · Agent: Codex GPT-5 · Batch: provider-command-owner-injection
 

@@ -1638,3 +1638,9 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | backend observability history caller | source-wired / partial | `src/main/kotlin/atropos/cli/HistoryCommandHandler.kt`, `src/main/kotlin/atropos/core/observability/ExecutionHistoryStore.kt`, `src/main/kotlin/atropos/core/observability/HistoryIndex.kt`, `scripts/backend-atom-contract-test.sh` | `/history` → existing `ExecutionHistoryStore.searchAll(HistoryQuery)` → `HistoryIndex`/per-run `events.journal` → existing CLI timeline renderer | `/history` now reads the authoritative indexed execution store instead of the nonexistent flat `events.jsonl`; legacy JSONL and bounded git history remain fallback-only when no durable events exist. Backend atom contract and `git diff --check` pass. Root/hosted Kotlin execution remains unverified. |
+
+### 2026-08-25T06:20:00Z · Agent: Codex GPT-5 · Batch: history-record-journal-owner
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| backend observability history persistence | source-wired / partial | `src/main/kotlin/atropos/core/observability/ExecutionHistoryStore.kt`, `src/main/kotlin/atropos/core/journal/EventJournalService.kt`, `src/test/kotlin/atropos/core/observability/ExecutionHistoryStoreTest.kt`, `scripts/backend-atom-contract-test.sh` | `ExecutionHistoryStore.record(event)` → existing `EventJournalService.record()` → existing `HistoryIndex.rebuild()` | Replaced the no-op history extension with journal append plus index rebuild; restart fixture proves the recorded event is queryable. Backend atom contract, hosted selector (440 tests), and `git diff --check` pass. Hosted Kotlin execution remains unverified. |

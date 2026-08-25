@@ -62,6 +62,29 @@ class ExecutionHistoryStoreTest {
     }
 
     @Test
+    fun `record extension appends through the journal and rebuilds the index`() {
+        val root = Files.createTempDirectory("atropos-history-record-")
+        val store = ExecutionHistoryStore(repoRoot = root)
+        store.record(
+            ExecutionEvent(
+                sequence = 999L,
+                timestamp = Instant.now(),
+                role = ExecutionRole.WORKER,
+                category = EventCategory.COMMAND,
+                state = RunState.COMPLETE,
+                payload = "recorded command",
+                provider = "local",
+                task = "record",
+                source = "ExecutionHistoryStoreTest.kt",
+                runId = "record-run"
+            )
+        )
+
+        val restarted = ExecutionHistoryStore(repoRoot = root)
+        assertEquals("recorded command", restarted.search("record-run", HistoryQuery()).events.single().payload)
+    }
+
+    @Test
     fun `history index is the explicit seekable index owner`() {
         val (root, publisher, _) = fixture()
         seed(publisher)
