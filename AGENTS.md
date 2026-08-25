@@ -13497,6 +13497,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; B-MCP-CORE-f remains source-wired/partial pending hosted execution.
 - Fingerprints (sha256, first 12): `McpCommandHandler.kt=91225d505f8b`; `backend-atom-contract-test.sh=92e71ae1b53a`.
 
+### 2026-08-25T06:58:00Z · Agent: Codex GPT-5 · Batch: mcp-bridge-render-redaction
+
+- Paths touched: `src/main/kotlin/atropos/bridge/BridgeMcpHandler.kt` (+1/-1), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-005 / B-MCP-CORE-f secret-safe bridge render.
+- Predicate moved: `/v1/mcp/call` now applies `RedactionFilter` immediately before serializing the MCP response body; host-side redaction/evidence remains the single execution owner.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh` (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (440 tests)`), and `git diff --check` passed. Root/hosted bridge and secret-fixture execution remain unverified.
+- % delta: unchanged; B-005/B-MCP-CORE-f remains source-wired/partial pending hosted execution.
+- Fingerprints (sha256, first 12): `BridgeMcpHandler.kt=5cbf8df5fb08`; `backend-atom-contract-test.sh=4c4eb4d791ba`.
+
 ### 2026-08-25T05:18:00Z · Agent: Codex GPT-5 · Batch: provider-chat-owner-injection
 
 - Paths touched: `src/main/kotlin/atropos/cli/CommandRouter.kt` (+2), `src/main/kotlin/atropos/cli/ProviderChatDispatcher.kt` (+4/-2), `scripts/backend-atom-contract-test.sh` (+2).

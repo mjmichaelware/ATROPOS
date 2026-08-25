@@ -1754,3 +1754,9 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-CORE-f / secret-safe CLI render | source-wired / partial | `src/main/kotlin/atropos/cli/McpCommandHandler.kt`, `scripts/backend-atom-contract-test.sh` | `/mcp call` → existing `McpHostManager.callTool()` → `McpCommandHandler` → `RedactionFilter` → terminal output | Successful MCP responses now pass through the terminal redaction boundary immediately before rendering, in addition to host-side evidence redaction. Backend atom contract, hosted selector (`440 tests`), and diff check pass; hosted Kotlin/secret fixture execution remains unverified. |
+
+### 2026-08-25T06:58:00Z · Agent: Codex GPT-5 · Batch: mcp-bridge-render-redaction
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-005 / B-MCP-CORE-f secret-safe bridge render | source-wired / partial | `src/main/kotlin/atropos/bridge/BridgeMcpHandler.kt`, `scripts/backend-atom-contract-test.sh` | `POST /v1/mcp/call` → existing `BridgeMcpHandler` → `RedactionFilter` → JSON response | Bridge MCP response bodies now pass through the canonical redaction filter immediately before JSON rendering, while evidence hashes and host execution remain unchanged. Backend atom contract, hosted selector (`440 tests`), and diff check pass; hosted bridge/secret fixture execution remains unverified. |

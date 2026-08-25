@@ -263,6 +263,7 @@ text src/main/kotlin/atropos/cli/CommandRouter.kt 'McpCommandHandler(uiEngine, m
 text src/main/kotlin/atropos/cli/BackendDoctor.kt 'private val mcp: McpHostManager'
 text src/main/kotlin/atropos/cli/McpCommandHandler.kt 'private val manager: McpHostManager'
 text src/main/kotlin/atropos/cli/McpCommandHandler.kt 'redactionFilter.redact(result.response.take(8_000))'
+text src/main/kotlin/atropos/bridge/BridgeMcpHandler.kt 'JsonWriter.str(redactionFilter.redact(result.response))'
 text src/main/kotlin/atropos/bridge/projection/QuotaProjection.kt '"latencyMsAvg"'
 text src/main/kotlin/atropos/bridge/projection/QuotaProjection.kt '"successScore"'
 text src/main/kotlin/atropos/bridge/projection/QuotaProjection.kt '"costPerVerifiedPredicateTokens"'
