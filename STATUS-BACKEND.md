@@ -1343,6 +1343,12 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | --- | --- | --- | --- | --- |
 | B-PROV connect vault end-to-end fixture | source-wired / partial | `src/test/kotlin/atropos/core/provider/ProviderConfigurationResolverTest.kt`, `scripts/backend-atom-contract-test.sh` | `ProviderOnboardingService.connectToVault` → existing `TokenIsolationVault` → `DefaultSecretSource` with injected local root → canonical `ProviderConfigurationResolver` | Added a focused fixture using the real connect/vault path and a custom isolated vault root; backend contract, hosted selector contract (440), and `git diff --check` pass. Local Gradle did not execute the filtered test because `:core:test` rejects `--tests`; hosted Kotlin execution remains authoritative and unverified. |
 
+### 2026-08-25T16:35:00Z · Agent: Codex GPT-5 · Batch: npm-artifact-download-bound
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-INST-002 / B-INST-006 bounded npm artifact retrieval | source-wired / partial | `npm/scripts/postinstall.js`, `scripts/npm-installer-contract-test.sh` | `npm install` → existing npm `postinstall` → bounded streaming fetch → checksum verification → local launcher jar | npm artifact and checksum downloads now enforce declared and streamed byte ceilings before buffering; the existing checksum and local-jar paths remain unchanged. `NPM_INSTALLER_CONTRACT_OK`, `node --check`, and `git diff --check` pass. Published npm/release execution remains unverified. |
+
 ### 2026-08-25T12:45:00Z · Agent: Codex GPT-5 · Batch: imported-context-authority-contract
 
 | atom | status | files | caller | tests / notes |

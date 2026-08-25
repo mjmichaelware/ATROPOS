@@ -32,12 +32,26 @@ function installLocalJar(source) {
   console.log(`ATROPOS: installed local jar ${DEST}`);
 }
 
-async function get(url) {
+async function get(url, maxBytes) {
   const response = await fetch(url, { redirect: "follow" });
   if (!response.ok) {
     throw new Error(`${response.status} ${response.statusText} for ${url}`);
   }
-  return Buffer.from(await response.arrayBuffer());
+  const declaredLength = Number(response.headers.get("content-length"));
+  if (Number.isFinite(declaredLength) && declaredLength > maxBytes) {
+    throw new Error(`download exceeds bounded size of ${maxBytes} bytes`);
+  }
+  if (!response.body) throw new Error(`empty response body for ${url}`);
+  const chunks = [];
+  let total = 0;
+  for await (const chunk of response.body) {
+    total += chunk.length;
+    if (total > maxBytes) {
+      throw new Error(`download exceeds bounded size of ${maxBytes} bytes`);
+    }
+    chunks.push(chunk);
+  }
+  return Buffer.concat(chunks, total);
 }
 
 async function main() {
@@ -56,11 +70,11 @@ async function main() {
   }
 
   console.log(`ATROPOS: fetching jar (${VERSION}) ...`);
-  const jar = await get(`${BASE}/ATROPOS.jar`);
+  const jar = await get(`${BASE}/ATROPOS.jar`, MAX_ARTIFACT_BYTES);
 
   // Verified against the hash the build published. A jar is executable code,
   // and "it downloaded" is not the same as "it is what was built".
-  const expectedDocument = await get(`${BASE}/ATROPOS.jar.sha256`);
+  const expectedDocument = await get(`${BASE}/ATROPOS.jar.sha256`, MAX_CHECKSUM_BYTES);
   const expected = expectedDocument.toString().trim().split(/\s+/)[0].toLowerCase();
   if (!/^[0-9a-f]{64}$/.test(expected)) {
     throw new Error("published checksum is missing or malformed; nothing was installed.");
@@ -77,6 +91,9 @@ async function main() {
   fs.writeFileSync(DEST, jar);
   console.log(`ATROPOS: installed ${DEST}`);
 }
+
+const MAX_ARTIFACT_BYTES = 64 * 1024 * 1024;
+const MAX_CHECKSUM_BYTES = 4 * 1024;
 
 main().catch((error) => {
   console.error(`ATROPOS: ${error.message}`);

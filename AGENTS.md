@@ -13317,6 +13317,16 @@ Local verification note for this batch: `timeout 120s ./gradlew test --tests 'at
 - New overall estimate: unchanged.
 - Fingerprints (sha256, first 12): `ProviderConfigurationResolverTest.kt=402b76306991`; `backend-atom-contract-test.sh=f1c22e857a34`.
 
+### 2026-08-25T16:35:00Z · Agent: Codex GPT-5 · Batch: npm-artifact-download-bound
+
+- Paths touched: `npm/scripts/postinstall.js` (+20/-3), `scripts/npm-installer-contract-test.sh` (+3), `AGENTS.md` (+7), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-INST-002 artifact retrieval and B-INST-006 npm fallback package.
+- Predicate moved: npm installation now bounds both declared and streamed artifact/checksum bytes before buffering, while retaining the existing checksum fail-closed and local-jar fallback owners.
+- Verification actually run: `bash scripts/npm-installer-contract-test.sh` (`NPM_INSTALLER_CONTRACT_OK`), `node --check npm/scripts/postinstall.js`, and `git diff --check` passed. Networked npm publication/release execution remains unverified.
+- % delta: unchanged; installer atoms remain source-wired / partial pending hosted release and published-package evidence.
+- New overall estimate: unchanged.
+- Fingerprints (sha256, first 12): `postinstall.js=f1701eb88e12`; `npm-installer-contract-test.sh=53e7f279d218`.
+
 ### 2026-08-25T12:45:00Z · Agent: Codex GPT-5 · Batch: imported-context-authority-contract
 
 - Paths touched: `scripts/backend-atom-contract-test.sh` (+5).
