@@ -32,7 +32,7 @@ class ProviderCommandHandler(
             "enable" -> renderEnable(onboarding, tokens)
             "connect" -> renderConnect(onboarding, tokens)
             "inventory" -> uiEngine.renderNotice(
-                ProviderTruthService(config).snapshot(currentProviderName).renderInventory(expanded)
+                ProviderTruthService(config, onboarding = onboarding).snapshot(currentProviderName).renderInventory(expanded)
             )
             "descriptors" -> {
                 val registry = StaticProviderDescriptorRegistry()
@@ -46,7 +46,7 @@ class ProviderCommandHandler(
             "verify" -> renderVerify(tokens)
             "live-test" -> renderLiveTest(tokens)
             else -> uiEngine.renderNotice(
-                ProviderTruthService(config).snapshot(currentProviderName).renderInventory(expanded)
+                ProviderTruthService(config, onboarding = onboarding).snapshot(currentProviderName).renderInventory(expanded)
             )
         }
     }

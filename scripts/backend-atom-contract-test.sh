@@ -92,6 +92,7 @@ text src/main/kotlin/atropos/cli/StatusCommandHandler.kt 'onboarding = providerO
 text src/main/kotlin/atropos/cli/StatusCommandHandler.kt 'StatusAdapterRenderer(onboarding = providerOnboarding)'
 text src/main/kotlin/atropos/core/provider/ProviderTruthService.kt 'filterToHealthy(selection.askOrder, healthySet)'
 text src/main/kotlin/atropos/core/provider/ProviderTruthService.kt 'private val onboarding: ProviderOnboardingService? = null'
+text src/main/kotlin/atropos/cli/ProviderCommandHandler.kt 'ProviderTruthService(config, onboarding = onboarding)'
 text src/main/kotlin/atropos/core/agent/AgentService.kt 'ProviderTruthService(config, onboarding = onboarding)'
 text src/main/kotlin/atropos/core/dag/DagExecutionService.kt 'ProviderTruthService(config, onboarding = onboarding)'
 text src/main/kotlin/atropos/core/autonomous/AutonomousOrchestrator.kt 'ProviderTruthService(onboarding = onboarding)'
