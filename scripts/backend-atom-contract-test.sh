@@ -44,6 +44,16 @@ text src/main/kotlin/atropos/core/provider/adapter/AnthropicKernelAdapter.kt 'x-
 text src/main/kotlin/atropos/core/provider/adapter/BedrockKernelAdapter.kt 'AwsSigV4'
 text src/main/kotlin/atropos/core/provider/adapter/OpenAiCompatibleProviderCatalog.kt 'providerId = "deepseek_direct"'
 text src/main/kotlin/atropos/core/provider/adapter/OpenAiCompatibleProviderCatalog.kt 'providerId = "mistral"'
+for provider_id in \
+  openai anthropic groq xai gemini openrouter together fireworks \
+  deepseek_direct mistral cohere ollama aws_bedrock azure_openai; do
+  text src/main/kotlin/atropos/core/provider/StaticProviderDescriptorRegistry.kt "d(\"$provider_id\""
+done
+text src/main/kotlin/atropos/core/provider/adapter/BuildKernelAdapter.kt 'AnthropicKernelAdapter(descriptor'
+text src/main/kotlin/atropos/core/provider/adapter/BuildKernelAdapter.kt 'BedrockKernelAdapter(descriptor, env)'
+for provider_id in openai groq xai openrouter together fireworks deepseek_direct mistral cohere; do
+  text src/main/kotlin/atropos/core/provider/adapter/OpenAiCompatibleProviderCatalog.kt "providerId = \"$provider_id\""
+done
 text src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt 'renderLaunchSummary'
 text src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt 'ProviderCascadeOrder.order(candidateIds, registry)'
 text src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt 'no healthy providers; set one key'

@@ -13355,6 +13355,16 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprint: `scripts/provider-env-contract-test.sh=ebe9b91503ce`.
 
+### 2026-08-25T03:02:22Z · Agent: Codex GPT-5 · Batch: provider-catalog-dispatch-contract
+
+- Paths touched: `scripts/backend-atom-contract-test.sh` (+11), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: P01..P07 and P10..P11 provider catalog/transport dispatch.
+- Predicate moved: the existing backend source contract now protects every requested provider descriptor ID and the real shared `BuildKernelAdapter` dispatch edges for compatible, native Anthropic, local, Azure, and Bedrock paths. The failed initial assertion was corrected to match the actual owner; no duplicate registry or adapter was introduced.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh` (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), provider-env contract, hosted selector contract (`440 tests`), `bash -n`, and `git diff --check` passed. Hosted Kotlin/live provider execution remains unverified.
+- % delta: unchanged; provider transport remains source-wired/partial pending hosted/live evidence.
+- New overall estimate: unchanged.
+- Fingerprint: `scripts/backend-atom-contract-test.sh=0e510e76d3fb`.
+
 ### 2026-08-25T02:16:59Z · Agent: Codex GPT-5 · Batch: install-help-caller-contract
 - Paths touched: `scripts/backend-atom-contract-test.sh` (+16).
 - Atoms / phases affected: B-INST-001..005 and B-HELP-001..002 caller enforcement.

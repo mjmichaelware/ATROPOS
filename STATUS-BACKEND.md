@@ -1475,6 +1475,12 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | --- | --- | --- | --- | --- |
 | B-PROV-001a..001u / complete environment alias contract | source-wired / partial | `scripts/provider-env-contract-test.sh`, `src/main/kotlin/atropos/core/provider/ProviderEnvironmentAliases.kt`, `docs/PROVIDER_ENVIRONMENT.md` | provider environment contract → descriptor-derived table plus explicit authority alias list | Contract now explicitly checks OpenAI/base, Anthropic, Groq, xAI/Grok, Google/Gemini, Together, Fireworks, DeepSeek, Mistral, OpenRouter, Azure, AWS, Ollama, Claude, and `ATROPOS_PROVIDER_*` names. Provider README generator, provider-env contract, backend contract, hosted selector (440), shell syntax, and `git diff --check` pass. Hosted Kotlin execution remains unverified. |
 
+### 2026-08-25T03:02:22Z · Agent: Codex GPT-5 · Batch: provider-catalog-dispatch-contract
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| P01..P07 / P10..P11 provider descriptor and adapter dispatch | source-wired / partial | `scripts/backend-atom-contract-test.sh`, `src/main/kotlin/atropos/core/provider/StaticProviderDescriptorRegistry.kt`, `src/main/kotlin/atropos/core/provider/adapter/BuildKernelAdapter.kt`, provider adapter catalogs | provider catalog contract → descriptor IDs and the single `BuildKernelAdapter` dispatch seam for compatible, native Anthropic, local Ollama, Azure, and Bedrock providers | Backend contract, provider-env contract, hosted selector (440), shell syntax, and `git diff --check` pass. No second adapter registry was introduced; hosted Kotlin/live provider execution remains unverified. |
+
 ### 2026-08-25T03:50:00Z · Agent: Codex GPT-5 · Batch: generated-provider-readme-table
 
 | atom | status | files | caller | tests / notes |
