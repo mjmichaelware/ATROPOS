@@ -13470,6 +13470,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; B-PROV-002 remains source-wired/partial pending hosted execution and live provider evidence.
 - Fingerprints (sha256, first 12): `AgentDaemonService.kt=92279b855393`; `CrashRecoveryService.kt=33bb6de68f8a`; `AgentCommand.kt=a2a8a942810a`; `Main.kt=143da17cba455`.
 
+### 2026-08-25T06:45:00Z · Agent: Codex GPT-5 · Batch: status-renderer-provider-owner
+
+- Paths touched: `src/main/kotlin/atropos/cli/ui/StatusQuotaRenderer.kt` (+4/-4), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-PROV-002 status route fallback owner.
+- Predicate moved: the status renderer's default health supplier now uses its injected onboarding service rather than allocating a fresh onboarding service during each route render; the production `/status route` path still receives the launch-shared owner.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh` (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (440 tests)`), and `git diff --check` passed. Root/hosted Kotlin execution remains unverified.
+- % delta: unchanged; B-PROV-002 remains source-wired/partial pending hosted execution and live provider evidence.
+- Fingerprint: `StatusQuotaRenderer.kt=d219234093bf`.
+
 ### 2026-08-25T05:18:00Z · Agent: Codex GPT-5 · Batch: provider-chat-owner-injection
 
 - Paths touched: `src/main/kotlin/atropos/cli/CommandRouter.kt` (+2), `src/main/kotlin/atropos/cli/ProviderChatDispatcher.kt` (+4/-2), `scripts/backend-atom-contract-test.sh` (+2).

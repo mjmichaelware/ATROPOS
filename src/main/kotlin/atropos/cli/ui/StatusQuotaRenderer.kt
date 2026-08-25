@@ -31,10 +31,10 @@ class StatusQuotaRenderer(
     private val workspace: File = File("."),
     private val nowEpochMs: () -> Long = { System.currentTimeMillis() },
     private val costPolicy: AtroposCostPolicy = AtroposCostPolicy.FREE_ONLY,
-    private val healthyProviderIds: () -> Set<String> = { atropos.core.provider.ProviderOnboardingService().healthyProviderIds() },
-    private val redactionFilter: RedactionFilter = RedactionFilter(),
     private val onboarding: atropos.core.provider.ProviderOnboardingService =
-        atropos.core.provider.ProviderOnboardingService()
+        atropos.core.provider.ProviderOnboardingService(),
+    private val healthyProviderIds: () -> Set<String> = { onboarding.healthyProviderIds() },
+    private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     private val classifier = ProviderTaskClassifier()
 
