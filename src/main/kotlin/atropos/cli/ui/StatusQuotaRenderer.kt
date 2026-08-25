@@ -31,6 +31,7 @@ class StatusQuotaRenderer(
     private val workspace: File = File("."),
     private val nowEpochMs: () -> Long = { System.currentTimeMillis() },
     private val costPolicy: AtroposCostPolicy = AtroposCostPolicy.FREE_ONLY,
+    private val healthyProviderIds: () -> Set<String> = { atropos.core.provider.ProviderOnboardingService().healthyProviderIds() },
     private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     private val classifier = ProviderTaskClassifier()
@@ -65,6 +66,7 @@ class StatusQuotaRenderer(
             ledger = ledger,
             costPolicy = costPolicy,
             nowEpochMs = nowEpochMs,
+            healthyProviderIds = healthyProviderIds,
             preferredProviderIds = { atropos.core.provider.ProviderOnboardingService().preferredProviderIds() }
         ).decide(task.copy(localFirst = false))
 

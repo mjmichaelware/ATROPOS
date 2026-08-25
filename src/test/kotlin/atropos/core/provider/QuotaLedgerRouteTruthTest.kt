@@ -115,7 +115,8 @@ class QuotaLedgerRouteTruthTest {
             registry = registry,
             ledger = ledger,
             nowEpochMs = { 2_000L },
-            costPolicy = AtroposCostPolicy.FREE_ONLY
+            costPolicy = AtroposCostPolicy.FREE_ONLY,
+            healthyProviderIds = { setOf("groq", "openrouter") }
         ).renderRoute("fix compile error")
 
         assertTrue(report.contains("selected: openrouter"), report)
