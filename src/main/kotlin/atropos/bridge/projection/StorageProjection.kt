@@ -2,6 +2,7 @@
 package atropos.bridge.projection
 
 import atropos.bridge.http.JsonWriter
+import atropos.core.storage.RetentionTier
 import atropos.core.storage.StorageConstitution
 
 /**
@@ -29,6 +30,21 @@ class StorageProjection {
                     // Emitted so a surface never offers to reclaim the active
                     // run's evidence.
                     "reclaimable" to JsonWriter.bool(storageClass.tier.reclaimable)
+                )
+            }
+        ),
+        // B0-3: the retention *policy*, not just the current bytes. A surface
+        // can now render why HOT is never offered for reclaim and what WARM
+        // means, instead of inferring policy from tier names.
+        "tiers" to JsonWriter.arr(
+            RetentionTier.values().map { tier ->
+                val inTier = constitution.classes.filter { it.tier == tier }
+                JsonWriter.obj(
+                    "tier" to JsonWriter.str(tier.canonical),
+                    "policy" to JsonWriter.str(tier.description),
+                    "reclaimable" to JsonWriter.bool(tier.reclaimable),
+                    "classCount" to JsonWriter.num(inTier.size.toLong()),
+                    "bytes" to JsonWriter.num(inTier.sumOf { it.bytes })
                 )
             }
         )

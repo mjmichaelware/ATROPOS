@@ -28,6 +28,8 @@ export function ExportPanel() {
   const [failure, setFailure] = useState<{ detail: string; remedy: string } | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState<string | null>(null);
+  const [exportResult, setExportResult] = useState<{ ok: boolean; detail: string; remedy?: string } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -46,6 +48,43 @@ export function ExportPanel() {
       cancelled = true;
     };
   }, []);
+
+  const handleExport = async () => {
+    if (!payload || !canExport(payload) || selected === null) return;
+    setExporting(selected);
+    setExportResult(null);
+
+    try {
+      const result = await exportsClient.write(selected!);
+      if (!result.ok) {
+        setExportResult({
+          ok: false,
+          detail: result.detail ?? 'Export rejected',
+          remedy: result.remedy ?? 'Check that the landing zone is writable.',
+        });
+      } else if (result.data) {
+        setExportResult({
+          ok: true,
+          detail: result.data.path ? `Written to ${result.data.path} (${result.data.bytes}B, ${result.data.zone})` : 'Export completed',
+          remedy: undefined,
+        });
+      } else {
+        setExportResult({
+          ok: false,
+          detail: 'Export rejected',
+          remedy: 'Check engine logs',
+        });
+      }
+    } catch (error) {
+      setExportResult({
+        ok: false,
+        detail: error instanceof Error ? error.message : 'Network error',
+        remedy: 'Check that the bridge is running and reachable.',
+      });
+    } finally {
+      setExporting(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -127,13 +166,23 @@ export function ExportPanel() {
         </ul>
       )}
 
-      <button
-        type="button"
-        disabled={!canExport(payload) || selected === null}
-        className="rounded-lg bg-sg-neutral-900 px-4 py-2 font-medium text-white disabled:opacity-50 dark:bg-sg-neutral-50 dark:text-sg-neutral-900"
-      >
-        Export to {usable.find((z) => z.id === selected)?.zone ?? 'nowhere available'}
-      </button>
+      <div className="space-y-2">
+        <button
+          type="button"
+          disabled={!canExport(payload) || selected === null || exporting !== null}
+          onClick={handleExport}
+          className="rounded-lg bg-sg-neutral-900 px-4 py-2 font-medium text-white disabled:opacity-50 dark:bg-sg-neutral-50 dark:text-sg-neutral-900"
+        >
+          {exporting ? `Exporting to ${exporting}…` : `Export to ${usable.find((z) => z.id === selected)?.zone ?? 'nowhere available'}`}
+        </button>
+
+        {exportResult && (
+          <p role="status" className={`text-sm ${exportResult.ok ? 'text-sg-green-700' : 'text-sg-red-700'} dark:${exportResult.ok ? 'text-sg-green-300' : 'text-sg-red-300'}`}>
+            {exportResult.ok ? '✓ ' : '✗ '}{exportResult.detail}
+            {exportResult.remedy && <span className="ml-2 text-sg-neutral-500">{exportResult.remedy}</span>}
+          </p>
+        )}
+      </div>
     </section>
   );
 }

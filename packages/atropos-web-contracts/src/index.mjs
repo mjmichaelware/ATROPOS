@@ -91,10 +91,160 @@ export const ENGINE_ROUTES = Object.freeze({
   health: '/v1/health',
   routes: '/v1/routes',
   answers: '/v1/answers',
+  answersStream: '/v1/answers/stream',
   projects: '/v1/projects',
   commands: '/v1/commands',
+  commandRun: '/v1/command',
+  commandAllowed: '/v1/command/allowed',
   vocabulary: '/v1/vocabulary',
+  checkpoint: '/v1/checkpoint',
+  approvals: '/v1/approvals',
+  approvalsDecide: '/v1/approvals/decide',
+  activity: '/v1/activity',
+  events: '/v1/events',
+  sessions: '/v1/sessions',
+  files: '/v1/files',
 });
+
+/**
+ * Routes the web surface has a client seam for but no bridge build serves yet.
+ *
+ * ADD-W-001: this list is the honest gap, kept in the contract so a surface
+ * rendering one of these states can name what is missing instead of inventing
+ * data. Every entry must disappear from here (and appear above) on the commit
+ * the B-track lands it — a stale "missing" entry is as false as a fabricated
+ * stream.
+ */
+export const MISSING_ENGINE_ROUTES = Object.freeze([
+  { path: '/v1/workspace/file', servesTo: 'F-WEB-005 editor buffer contents' },
+  { path: '/v1/workspace/tree', servesTo: 'F-WEB-004 project file explorer' },
+]);
+
+/**
+ * S-005: one evidence reference, the shape every completion claim carries.
+ *
+ * `casHash` is the content address of the evidence bytes — proof, not prose.
+ * `claimId` names what is being evidenced so a surface can link claim to
+ * support without guessing. `gateIds` lists which verification gates stood
+ * behind the claim, because "verified" means nothing without naming who did
+ * the verifying.
+ *
+ * This is deliberately narrower than SpecGraph's research-citation evidence:
+ * that describes where a *statement* came from, this describes what *backed a
+ * completion claim*. Merging them would let research citations masquerade as
+ * gate evidence.
+ */
+export function isEvidenceRef(value) {
+  if (!value || typeof value !== 'object') return false;
+  return (
+    typeof value.casHash === 'string' &&
+    /^[0-9a-f]{64}$/.test(value.casHash) &&
+    typeof value.claimId === 'string' &&
+    value.claimId.length > 0 &&
+    Array.isArray(value.gateIds) &&
+    value.gateIds.every((id) => typeof id === 'string' && id.length > 0)
+  );
+}
+
+/**
+ * S-008 mirror of the engine's resume-checkpoint payload.
+ *
+ * Mirrors `CheckpointProjection`, not the web client's convenience types: the
+ * contract describes the wire, and each surface derives its own view from it.
+ * `present: false` is first-class here for the same reason it is on the
+ * engine — no checkpoint is not a checkpoint at age zero.
+ */
+export function isCheckpointPayload(value) {
+  if (!value || typeof value !== 'object') return false;
+  if (value.present === false) {
+    return typeof value.detail === 'string' && typeof value.remedy === 'string';
+  }
+  if (value.present !== true) return false;
+  const core =
+    typeof value.goalId === 'string' &&
+    typeof value.recordedAt === 'string' &&
+    Number.isFinite(value.ageMinutes) &&
+    typeof value.resumable === 'boolean' &&
+    Number.isInteger(value.evidenceCount) &&
+    Array.isArray(value.actions);
+  if (!core) return false;
+  return value.actions.every(
+    (action) =>
+      action &&
+      typeof action.id === 'string' &&
+      typeof action.label === 'string' &&
+      typeof action.primary === 'boolean',
+  );
+}
+
+/**
+ * S-008 mirror of the bridge approval card (`ApprovalProjection`).
+ *
+ * The event kind matches what BridgeEventHub emits, so a surface can filter
+ * `/v1/events` for cards and validate `/v1/approvals` rows with one guard.
+ * Empty territory means the action declared none — never "all paths" — which
+ * is why absence and emptiness both pass rather than being rejected.
+ */
+export const APPROVAL_EVENT_KIND = 'approval_raised';
+
+export function isApprovalCard(value) {
+  if (!value || typeof value !== 'object') return false;
+  return (
+    typeof value.id === 'string' &&
+    value.id.length > 0 &&
+    typeof value.proposalId === 'string' &&
+    typeof value.actor === 'string' &&
+    typeof value.operation === 'string' &&
+    Array.isArray(value.territory) &&
+    value.territory.every((path) => typeof path === 'string') &&
+    typeof value.reason === 'string' &&
+    typeof value.requestedAt === 'string' &&
+    typeof value.pending === 'boolean'
+  );
+}
+
+/**
+ * S-008 mirror of the bridge cascade snapshot (`CascadeProjection`).
+ */
+export function isCascadePayload(value) {
+  if (!value || typeof value !== 'object') return false;
+  if (!Array.isArray(value.keys)) return false;
+  return value.keys.every((k) =>
+    typeof k.key === 'string' &&
+    typeof k.value === 'string' &&
+    typeof k.heldBy === 'string' &&
+    typeof k.final === 'boolean' &&
+    typeof k.state === 'string' &&
+    ['resolved', 'violation', 'undefined'].includes(k.state)
+  );
+}
+
+/**
+ * S-008 mirror of the bridge quarantine projection.
+ */
+export function isQuarantinePayload(value) {
+  if (!value || typeof value !== 'object') return false;
+  return (
+    typeof value.ok === 'boolean' &&
+    value.ok === true &&
+    typeof value.count === 'number' &&
+    typeof value.observationCount === 'number' &&
+    Array.isArray(value.items) &&
+    value.items.every((item) =>
+      typeof item.id === 'string' &&
+      typeof item.title === 'string' &&
+      typeof item.summary === 'string' &&
+      typeof item.state === 'string' &&
+      typeof item.createdAt === 'string'
+    ) &&
+    Array.isArray(value.observation) &&
+    value.observation.every((obs) =>
+      typeof obs.subsystem === 'string' &&
+      typeof obs.startedAt === 'string' &&
+      typeof obs.durationSeconds === 'number'
+    )
+  );
+}
 
 /**
  * True when a payload is a well-formed six-answers response.

@@ -48,6 +48,13 @@ export interface Project {
   six_answers?: SixAnswers;
   evidence?: Evidence[];
   checksum?: string;
+  /**
+   * ADD-W-002: present when the record carries an engine-projected
+   * verifiable-completion flag. Absent is meaningful and renders as an
+   * *unverified claim* — never as done — so a row that simply has not been
+   * proven cannot borrow the verified chip.
+   */
+  completionIsVerifiable?: boolean;
 }
 
 export interface WorkItem {

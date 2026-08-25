@@ -79,6 +79,10 @@ object LocalEngineBridge {
 
         return BridgeRoutes(
             activeProvider = activeProvider,
+            workspaceRoot = { repoRoot },
+            quotaLedger = atropos.core.provider.FileQuotaLedger(
+                repoRoot.resolve(".atropos/provider/quota.tsv").toFile()
+            ),
             proposals = governance::proposals,
             amendments = governance::amendments,
             observationPeriods = governance::observationPeriods,
@@ -110,7 +114,10 @@ object LocalEngineBridge {
             responder = QueuedWorkConversationResponder(
                 queue = { task -> queueService.enqueue(task).id }
             ),
-            work = AgentQueueWorkRunner(queueService, activeProvider),
+            work = AgentQueueWorkRunner(
+                queueService, activeProvider,
+                queueDirectoryOverride = repoRoot.resolve(".atropos/agent/queue")
+            ),
             // Bound here, not defaulted inside BridgeRoutes, for the same
             // reason the queue is: a test checking one projection must not have
             // to own a goal store on disk. This is what lets a phone ask the

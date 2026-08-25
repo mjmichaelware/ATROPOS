@@ -10,6 +10,8 @@ import {
   type CheckpointPayload,
 } from '@/lib/checkpoint/client';
 import { ThinkingDrawer } from '@/components/thinking/thinking-drawer';
+import { EvidenceChips } from '@/components/checkpoint/evidence-chips';
+import { evidenceRefsOf } from '@/lib/checkpoint/client';
 
 /**
  * The resume rail.
@@ -113,6 +115,9 @@ export function CheckpointRail({
         Node <span className="font-mono">{payload.nodeId ?? 'none'}</span> ·{' '}
         {payload.evidenceCount} piece(s) of evidence
       </p>
+
+      {/* S-005: render the refs behind the count when the engine sends them. */}
+      <EvidenceChips {...evidenceRefsOf(payload)} />
 
       {!payload.resumable && (
         <p className="text-sm font-medium text-sg-amber-800 dark:text-sg-amber-200">

@@ -43,3 +43,82 @@ describe('HOE-B04 the primary action is the engine’s decision', () => {
     expect(actions.some((a) => /new|restart|start over/i.test(a.id + a.label))).toBe(false);
   });
 });
+
+import { evidenceRefsOf } from './client';
+
+const HASH = 'a'.repeat(64);
+
+describe('S-005 evidenceRefsOf', () => {
+  it('returns nothing for an absent checkpoint', () => {
+    const payload = { ok: true, present: false, detail: 'none', remedy: 'run' } as const;
+    expect(evidenceRefsOf(payload)).toEqual({ refs: [], dropped: 0 });
+  });
+
+  it('parses well-formed refs the engine sends', () => {
+    const payload = {
+      ok: true as const,
+      present: true as const,
+      goalId: 'g',
+      nodeId: null,
+      phase: null,
+      recordedAt: 't',
+      ageMinutes: 0,
+      resumable: true,
+      evidenceCount: 2,
+      nextAction: null,
+      primaryAction: { id: 'resume', label: 'Resume' },
+      actions: [],
+      evidence: [
+        { casHash: HASH, claimId: 'c1', gateIds: ['compile'] },
+        { casHash: 'b'.repeat(64), claimId: 'c2', gateIds: [] },
+      ],
+    };
+    const { refs, dropped } = evidenceRefsOf(payload);
+    expect(refs).toHaveLength(2);
+    expect(refs[0].claimId).toBe('c1');
+    expect(dropped).toBe(0);
+  });
+
+  it('drops malformed refs and counts them instead of rendering them', () => {
+    const payload = {
+      ok: true as const,
+      present: true as const,
+      goalId: 'g',
+      nodeId: null,
+      phase: null,
+      recordedAt: 't',
+      ageMinutes: 0,
+      resumable: true,
+      evidenceCount: 3,
+      nextAction: null,
+      primaryAction: { id: 'resume', label: 'Resume' },
+      actions: [],
+      evidence: [
+        { casHash: 'not-a-hash', claimId: 'bad', gateIds: [] },
+        { casHash: HASH, claimId: '', gateIds: [] },
+        { casHash: HASH, claimId: 'good', gateIds: ['test'] },
+      ],
+    };
+    const { refs, dropped } = evidenceRefsOf(payload);
+    expect(refs).toHaveLength(1);
+    expect(dropped).toBe(2);
+  });
+
+  it('treats a missing evidence array as no refs, not an error', () => {
+    const payload = {
+      ok: true as const,
+      present: true as const,
+      goalId: 'g',
+      nodeId: null,
+      phase: null,
+      recordedAt: 't',
+      ageMinutes: 0,
+      resumable: true,
+      evidenceCount: 1,
+      nextAction: null,
+      primaryAction: { id: 'resume', label: 'Resume' },
+      actions: [],
+    };
+    expect(evidenceRefsOf(payload)).toEqual({ refs: [], dropped: 0 });
+  });
+});

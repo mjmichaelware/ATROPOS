@@ -15,7 +15,9 @@ import atropos.core.agent.AgentQueueService
  */
 class AgentQueueWorkRunner(
     private val service: AgentQueueService = AgentQueueService(),
-    private val activeProvider: () -> String
+    private val activeProvider: () -> String,
+    /** The durable queue directory, supplied by whoever bound the repo root. */
+    private val queueDirectoryOverride: java.nio.file.Path? = null
 ) : ConversationWorkRunner {
 
     override fun list(limit: Int): List<QueueEntryView> =
@@ -58,6 +60,13 @@ class AgentQueueWorkRunner(
         service.cancel(id, reason)?.let(::view)
 
     override fun throttled(): Boolean = runCatching { service.shouldThrottle() }.getOrDefault(false)
+
+    /**
+     * The queue's durable root, where the bridge's freeze flag lives. The
+     * service owns the path; this only surfaces it so the freeze flag is
+     * beside the entries rather than in a second location nobody GCs.
+     */
+    override fun queueDirectory(): java.nio.file.Path? = queueDirectoryOverride
 
     private fun translate(result: AgentQueueRunResult, requestedId: String?): QueueRunOutcome {
         val entry = result.queueRecord?.let(::view)

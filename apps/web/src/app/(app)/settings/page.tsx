@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { SixAnswersPanel, SixAnswer } from '@/components/ui/six-answers-panel';
 import { InformationLevels, InformationLevel } from '@/components/ui/information-levels';
 import { ThemeCustomizer } from '@/components/settings/theme-customizer';
+import { SystemPanel } from '@/components/settings/system-panel';
 import { useSessionState } from '@/lib/contexts/session-state-context';
 
 export default function SettingsPage() {
@@ -37,6 +38,7 @@ export default function SettingsPage() {
             Theme & Appearance
           </h2>
         </div>
+        <SystemPanel />
         <ThemeCustomizer />
       </section>
 

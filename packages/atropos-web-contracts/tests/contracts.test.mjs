@@ -82,3 +82,161 @@ test('drift between engine and contracts throws rather than degrading', () => {
     /vocabulary drift/,
   );
 });
+
+// ─── S-005 EvidenceRef ────────────────────────────────────────────────────
+import { isEvidenceRef, isCheckpointPayload, isApprovalCard, APPROVAL_EVENT_KIND } from '../src/index.mjs';
+
+test('isEvidenceRef accepts a well-formed reference', () => {
+  const ref = {
+    casHash: 'a'.repeat(64),
+    claimId: 'claim-1',
+    gateIds: ['compile', 'test'],
+  };
+  assert.equal(isEvidenceRef(ref), true);
+});
+
+test('isEvidenceRef rejects malformed hashes, claims and gates', () => {
+  const good = { casHash: 'a'.repeat(64), claimId: 'c', gateIds: [] };
+  assert.equal(isEvidenceRef({ ...good, casHash: 'nothex' }), false);
+  assert.equal(isEvidenceRef({ ...good, casHash: 'b'.repeat(63) }), false);
+  assert.equal(isEvidenceRef({ ...good, claimId: '' }), false);
+  assert.equal(isEvidenceRef({ ...good, claimId: 7 }), false);
+  assert.equal(isEvidenceRef({ ...good, gateIds: ['ok', 3] }), false);
+  assert.equal(isEvidenceRef(null), false);
+  assert.equal(isEvidenceRef('evidence'), false);
+});
+
+// ─── S-008 checkpoint mirror ─────────────────────────────────────────────
+test('isCheckpointPayload accepts present and absent forms', () => {
+  assert.equal(
+    isCheckpointPayload({
+      present: true,
+      goalId: 'g1',
+      recordedAt: '2026-01-01T00:00:00Z',
+      ageMinutes: 5,
+      resumable: true,
+      evidenceCount: 2,
+      actions: [{ id: 'resume', label: 'Resume', primary: true }],
+    }),
+    true,
+  );
+  assert.equal(
+    isCheckpointPayload({ present: false, detail: 'none', remedy: 'run' }),
+    true,
+  );
+});
+
+test('isCheckpointPayload rejects payloads that collapse absence into age zero', () => {
+  assert.equal(isCheckpointPayload({ present: true, goalId: 'g1' }), false);
+  assert.equal(isCheckpointPayload({ present: true }), false);
+  // An action without the primary flag cannot drive HOE-B04's primary rule.
+  assert.equal(
+    isCheckpointPayload({
+      present: true,
+      goalId: 'g',
+      recordedAt: 't',
+      ageMinutes: 0,
+      resumable: false,
+      evidenceCount: 0,
+      actions: [{ id: 'x', label: 'X' }],
+    }),
+    false,
+  );
+});
+
+// ─── S-008 approval mirror ───────────────────────────────────────────────
+test('isApprovalCard accepts the projection shape including empty territory', () => {
+  const card = {
+    id: 'ap-1',
+    proposalId: 'p-1',
+    actor: 'patch:x',
+    operation: 'WRITE_FILE',
+    territory: [],
+    reason: 'outside grant',
+    requestedAt: '2026-01-01T00:00:00Z',
+    pending: true,
+  };
+  assert.equal(isApprovalCard(card), true);
+  assert.equal(APPROVAL_EVENT_KIND, 'approval_raised');
+});
+
+test('isApprovalCard rejects rows missing decision-required fields', () => {
+  const card = {
+    id: 'ap-1',
+    proposalId: 'p',
+    actor: 'a',
+    operation: 'o',
+    territory: [],
+    reason: 'r',
+    requestedAt: 't',
+  };
+  assert.equal(isApprovalCard(card), false); // pending missing — cannot render a card for an unknown state.
+});
+
+import { MISSING_ENGINE_ROUTES } from '../src/index.mjs';
+
+test('ADD-W-001: documented missing routes stay a small, named honest gap', () => {
+  // Every entry must name the surface waiting on it — an unnamed gap is a
+  // guess, and a guessed gap cannot be closed on purpose.
+  for (const missing of MISSING_ENGINE_ROUTES) {
+    assert.match(missing.path, /^\/v1\//);
+    assert.ok(missing.servesTo.length > 0);
+  }
+  assert.ok(MISSING_ENGINE_ROUTES.length <= 4);
+});
+
+// ─── S-008 cascade mirror ──────────────────────────────────────────────────
+import { isCascadePayload } from '../src/index.mjs';
+
+test('isCascadePayload accepts well-formed cascade', () => {
+  const cascade = {
+    ok: true,
+    count: 2,
+    resolvedCount: 1,
+    violationCount: 1,
+    undefinedCount: 0,
+    keys: [
+      { key: 'authority.rank', value: '0', heldBy: 'source-authority', final: true, state: 'resolved' },
+      { key: 'secret.policy', value: 'hidden', heldBy: 'rank-0', final: false, state: 'violation' },
+    ],
+    violations: [
+      { key: 'secret.policy', heldBy: 'rank-0', attemptedBy: ['env', 'flag'], reason: 'core keys non-overridable' },
+    ],
+    undefined: [],
+  };
+  assert.equal(isCascadePayload(cascade), true);
+});
+
+test('isCascadePayload rejects malformed keys', () => {
+  const bad = {
+    ok: true,
+    count: 1,
+    resolvedCount: 0,
+    violationCount: 0,
+    undefinedCount: 0,
+    keys: [{ key: 'x', value: 1, heldBy: 'x', final: true, state: 'resolved' }], // value not string
+    violations: [],
+    undefined: [],
+  };
+  assert.equal(isCascadePayload(bad), false);
+});
+
+// ─── S-008 quarantine mirror ───────────────────────────────────────────────
+import { isQuarantinePayload } from '../src/index.mjs';
+
+test('isQuarantinePayload accepts well-formed quarantine', () => {
+  const q = {
+    ok: true,
+    count: 1,
+    observationCount: 1,
+    items: [{ id: 'p-1', title: 't', summary: 's', state: 'quarantined', createdAt: '2026-01-01T00:00:00Z' }],
+    observation: [{ subsystem: 's1', startedAt: '2026-01-01T00:00:00Z', durationSeconds: 3600 }],
+  };
+  assert.equal(isQuarantinePayload(q), true);
+});
+
+test('isQuarantinePayload rejects malformed', () => {
+  const bad = { ok: true, count: 1, observationCount: 0, items: [{}], observation: [] };
+  assert.equal(isQuarantinePayload(bad), false);
+});
+

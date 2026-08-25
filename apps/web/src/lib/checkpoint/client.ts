@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 
 import { readEngine, type EngineFailure } from '@/lib/engine/client';
+import { isEvidenceRef, type EvidenceRef } from '@atropos/web-contracts';
 
 /**
  * Reads the resume checkpoint.
@@ -52,6 +53,30 @@ export type CheckpointResult =
 export const checkpoint = {
   read: (): Promise<CheckpointResult> => readEngine<CheckpointPayload>('/v1/checkpoint'),
 };
+
+/**
+ * S-005: the evidence references a checkpoint carries, if any.
+ *
+ * The engine's count (`evidenceCount`) is authoritative for *how many*; this
+ * parses the optional `evidence` array into validated `EvidenceRef`s so a
+ * surface can render what backs the claim rather than only how many things
+ * back it. Rows failing the contract guard are dropped and counted — a
+ * malformed ref renders as nothing, never as a fabricated chip.
+ */
+export function evidenceRefsOf(
+  payload: CheckpointPayload,
+): { refs: EvidenceRef[]; dropped: number } {
+  if (!payload.present) return { refs: [], dropped: 0 };
+  const raw = (payload as { evidence?: unknown }).evidence;
+  if (!Array.isArray(raw)) return { refs: [], dropped: 0 };
+  const refs: EvidenceRef[] = [];
+  let dropped = 0;
+  for (const candidate of raw) {
+    if (isEvidenceRef(candidate)) refs.push(candidate);
+    else dropped += 1;
+  }
+  return { refs, dropped };
+}
 
 /**
  * How old the checkpoint is, in words.

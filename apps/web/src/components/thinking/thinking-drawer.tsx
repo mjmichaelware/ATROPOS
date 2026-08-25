@@ -10,6 +10,7 @@ import {
   type ThinkingDepth,
   type ThinkingPayload,
 } from '@/lib/thinking/client';
+import { useOptionalWebDisclosure } from '@/lib/contexts/web-disclosure-context';
 
 /**
  * The multi-level thinking drawer.
@@ -29,7 +30,12 @@ import {
  * the Web is the one nobody would check.
  */
 export function ThinkingDrawer({ nodeId }: { nodeId: string }) {
-  const [depth, setDepth] = useState<ThinkingDepth>(DEFAULT_THINKING_DEPTH);
+  // ADD-W-004: the drawer opens at this browser's chosen level when the web
+  // disclosure channel is mounted; its own local default otherwise.
+  const webChannel = useOptionalWebDisclosure();
+  const [depth, setDepth] = useState<ThinkingDepth>(
+    (webChannel?.level as ThinkingDepth | undefined) ?? DEFAULT_THINKING_DEPTH,
+  );
   const [payload, setPayload] = useState<ThinkingPayload | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
   const [open, setOpen] = useState(false);

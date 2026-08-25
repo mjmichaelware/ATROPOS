@@ -2,13 +2,21 @@
 
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { NavLinks } from "@/components/navigation/nav-links";
 import { globalRoutes } from "@/components/navigation/routes";
 import { useNavItems } from "@/components/navigation/use-nav-items";
 import { CommandPalette } from "@/components/ui/command-palette";
 
-export function AppHeader({ userEmail }: { userEmail?: string }) {
+export function AppHeader({
+  userEmail,
+  actions,
+}: {
+  userEmail?: string;
+  /** Optional chrome between the palette and the account area. */
+  actions?: ReactNode;
+}) {
   const { global } = useNavItems();
   const items = userEmail ? global : global.filter((item) => item.id === "projects");
   return (
@@ -21,6 +29,7 @@ export function AppHeader({ userEmail }: { userEmail?: string }) {
         <NavLinks items={items} />
       </nav>
       <CommandPalette />
+      {actions}
       {userEmail ? (
         <div className="sg-account">
           <span className="sg-account-email">{userEmail}</span>

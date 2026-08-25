@@ -93,6 +93,36 @@ class AppFactoryRouter(
         return runLocalInternal(FactoryClarificationRequest.loadPrompt(runRoot), projectId, answers)
     }
 
+    /**
+     * Wave 1: resume a prior factory run from its durable lineage.
+     *
+     * The run root under `.atropos/research/factory/<id>` *is* the handoff:
+     * the prompt artifact carries the redacted prompt and its hash chain, so
+     * re-reading it reconstructs exactly what the first attempt planned from.
+     * Insufficient lineage fails actionable — the operator is told which
+     * artifact is missing, not given a fresh run wearing the old id.
+     */
+    fun resume(runId: String): FactoryPlan {
+        require(runId.matches(Regex("[A-Za-z0-9][A-Za-z0-9._-]{0,127}"))) {
+            "factory project id is invalid"
+        }
+        val runRoot = repoRoot.resolve(".atropos/research/factory").resolve(runId).normalize()
+        require(runRoot.startsWith(repoRoot.toAbsolutePath().normalize())) {
+            "factory resume path escaped repository root"
+        }
+        val promptPath = runRoot.resolve("user-prompt.md")
+        if (!java.nio.file.Files.isRegularFile(promptPath) || java.nio.file.Files.isSymbolicLink(promptPath)) {
+            throw IllegalArgumentException(
+                "no resumable factory run '$runId' under .atropos/research/factory (missing user-prompt.md); " +
+                    "start one with /factory run <prompt>"
+            )
+        }
+        // loadPrompt verifies the artifact's own hash chain; a tampered or
+        // truncated prompt refuses here rather than planning from lies.
+        val prompt = FactoryClarificationRequest.loadPrompt(runRoot)
+        return runLocalInternal(prompt, projectIdOverride = runId)
+    }
+
     private fun runLocalInternal(
         prompt: String,
         projectIdOverride: String? = null,

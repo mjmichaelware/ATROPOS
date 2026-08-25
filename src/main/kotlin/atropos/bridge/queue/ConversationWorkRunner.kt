@@ -52,4 +52,11 @@ interface ConversationWorkRunner {
 
     fun cancel(id: String, reason: String): QueueEntryView?
     fun throttled(): Boolean
+
+    /**
+     * The durable directory this queue keeps its state in — where a freeze
+     * flag belongs. Defaulted to null so existing implementations keep
+     * compiling; the bridge treats null as "cannot freeze" and refuses 503.
+     */
+    fun queueDirectory(): java.nio.file.Path? = null
 }

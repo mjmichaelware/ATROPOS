@@ -2,12 +2,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import {
-  activity as activityClient,
-  byStage,
-  hasBlockedStage,
-  type ActivityPayload,
-} from '@/lib/activity/client';
+import { subscribeActivity, type ActivityEvent as EventActivityEvent } from '@/lib/events/client';
 
 /**
  * The activity monitor.
@@ -20,6 +15,9 @@ import {
  *
  * Full coverage is never rendered as success. The summary line says how many
  * stages reported and, separately, whether anything is blocked.
+ *
+ * Now derives from /v1/events/stream (queue_state_changed, approval_raised,
+ * turn_appended, mcp_judged, computer_use) instead of requiring /v1/activity/stream.
  */
 export function ActivityMonitor() {
   const [payload, setPayload] = useState<ActivityPayload | null>(null);
@@ -29,11 +27,22 @@ export function ActivityMonitor() {
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      const result = await activityClient.read();
-      if (cancelled) return;
-      if (result.ok) setPayload(result.data);
-      else setFailure({ detail: result.detail, remedy: result.remedy });
-      setLoading(false);
+      try {
+        // Use the SSE stream to build up the activity payload incrementally
+        for await (const events of subscribeActivity()) {
+          if (cancelled) return;
+          setPayload((prev) => mergeEvents(prev, events));
+          setLoading(false);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setFailure({
+            detail: 'Event stream unavailable',
+            remedy: 'The engine did not answer at /v1/events/stream. Check engine status.',
+          });
+          setLoading(false);
+        }
+      }
     })();
     return () => {
       cancelled = true;
@@ -113,4 +122,65 @@ export function ActivityMonitor() {
       </ol>
     </div>
   );
+}
+
+interface ActivityPayload {
+  stages: string[];
+  missingStages: string[];
+  events: ActivityEvent[];
+}
+
+type ActivityEvent = EventActivityEvent;
+
+const MONITOR_STAGES = [
+  'plan',
+  'provider',
+  'tool',
+  'diff',
+  'test',
+  'verifier',
+  'artifact',
+  'deploy',
+  'queue',
+  'approval',
+  'conversation',
+] as const;
+
+function mergeEvents(
+  prev: ActivityPayload | null,
+  events: EventActivityEvent[]
+): ActivityPayload {
+  const existing = prev ?? { stages: [], missingStages: [], events: [] };
+  const seenStages = new Set(existing.stages);
+  const newEvents = events.filter((e) => {
+    if (!seenStages.has(e.stage)) {
+      seenStages.add(e.stage);
+      return true;
+    }
+    return true;
+  });
+
+  return {
+    stages: [...existing.stages, ...Array.from(seenStages).filter((s) => !existing.stages.includes(s))],
+    missingStages: MONITOR_STAGES.filter((s) => !seenStages.has(s)),
+    events: [...existing.events, ...newEvents].slice(-500),
+  };
+}
+
+function byStage(payload: ActivityPayload): StageRow[] {
+  return MONITOR_STAGES.map((stage) => ({
+    stage,
+    events: payload.events.filter((event) => event.stage === stage),
+    missing: payload.missingStages.includes(stage),
+  }));
+}
+
+function hasBlockedStage(payload: ActivityPayload): boolean {
+  return payload.events.some((event) => event.outcome === 'blocked');
+}
+
+interface StageRow {
+  stage: string;
+  events: EventActivityEvent[];
+  missing: boolean;
 }

@@ -15,6 +15,45 @@ internal class BridgeEvidenceHandler(
     private val repoRoot: Path = Path.of("").toAbsolutePath().normalize(),
     private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
+    /**
+     * B0-5: the evidence index, for a ledger browser.
+     *
+     * One entry per queue item that produced evidence, carrying the same
+     * address the per-id read serves. Entries without evidence are omitted —
+     * "no evidence" is their ordinary state, not an error — and the count says
+     * how many were surveyed so absence of rows cannot masquerade as absence
+     * of work.
+     */
+    fun listEvidence(limit: Int): HttpResponse {
+        val runner = work ?: return HttpResponse.refusal(
+            503,
+            "queue-unwired",
+            "No work queue is wired to this bridge.",
+            "Start the engine with a queue to survey evidence."
+        )
+        val entries = runCatching { runner.list(limit.coerceIn(1, 100)) }
+            .getOrElse { emptyList() }
+        val withEvidence = entries.filter { !it.evidence.isNullOrBlank() }
+        return HttpResponse.json(
+            JsonWriter.obj(
+                "ok" to JsonWriter.bool(true),
+                "surveyed" to JsonWriter.num(entries.size.toLong()),
+                "count" to JsonWriter.num(withEvidence.size.toLong()),
+                "items" to JsonWriter.arr(
+                    withEvidence.map { entry ->
+                        JsonWriter.obj(
+                            "id" to JsonWriter.str(entry.id),
+                            "task" to JsonWriter.str(entry.task),
+                            "evidence" to JsonWriter.str(entry.evidence.orEmpty()),
+                            "state" to JsonWriter.str(entry.state),
+                            "updatedAt" to JsonWriter.str(entry.updatedAt)
+                        )
+                    }
+                )
+            )
+        )
+    }
+
     fun getEvidence(request: HttpRequest): HttpResponse {
         if (work == null) {
             return HttpResponse.refusal(

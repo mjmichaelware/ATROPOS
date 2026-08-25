@@ -4,7 +4,10 @@ import { useRouter } from 'next/navigation';
 import { Plus, Zap, AlertTriangle, CheckCircle2, Clock, Eye } from 'lucide-react';
 import { useProjects, useApprovals } from '@/lib/api-atropos/hooks';
 import { EngineSixAnswers } from '@/components/answers/engine-six-answers';
+import { SessionList } from '@/components/sessions/session-list';
+import { QuotaChips } from '@/components/quota/quota-chips';
 import { StatusBadge } from '@/components/ui/status-badge';
+import { CompletionChip, UnverifiedClaim } from '@/components/ui/completion-chip';
 import { useAppContext } from '@/lib/contexts/app-context';
 import { useEffect } from 'react';
 
@@ -48,12 +51,23 @@ export default function Home() {
         </p>
       </div>
 
-      {/* System Status - Six Continuous Answers */}
+      {/* System Status - Six Continuous Answers + Quota Chips */}
       <section className="space-y-3">
         <h2 className="text-xl font-semibold text-sg-neutral-900 dark:text-sg-neutral-50">
           System Status
         </h2>
         <EngineSixAnswers />
+        <QuotaChips />
+      </section>
+
+      {/* F-WEB-002: the session list — the engine's own conversations,
+          not a local invention. Sits directly under the six answers because
+          session-first means conversations are the second thing read. */}
+      <section className="space-y-3">
+        <h2 className="text-xl font-semibold text-sg-neutral-900 dark:text-sg-neutral-50">
+          Conversations
+        </h2>
+        <SessionList />
       </section>
 
       {/* Quick Actions */}
@@ -107,13 +121,23 @@ export default function Home() {
               <button
                 key={project.id}
                 onClick={() => router.push(`/projects/${project.id}/work`)}
+                data-run-state={project.status}
                 className="text-left p-4 border border-sg-neutral-200 dark:border-sg-neutral-800 rounded-lg hover:bg-sg-neutral-50 dark:hover:bg-sg-neutral-900 transition-colors space-y-2"
               >
                 <div className="flex items-center justify-between">
                   <p className="font-semibold text-sg-neutral-900 dark:text-sg-neutral-50">
                     {project.name}
                   </p>
-                  <StatusBadge status={project.status} size="sm" />
+                  {/* ADD-W-002: run state and completion claim are different
+                      vocabularies; both render, neither collapses. */}
+                  <span className="flex items-center gap-2">
+                    <StatusBadge status={project.status} size="sm" />
+                    {project.completionIsVerifiable ? (
+                      <CompletionChip term="verified" />
+                    ) : (
+                      <UnverifiedClaim />
+                    )}
+                  </span>
                 </div>
                 {project.description && (
                   <p className="text-sm text-sg-neutral-600 dark:text-sg-neutral-400">
@@ -137,13 +161,21 @@ export default function Home() {
               <button
                 key={project.id}
                 onClick={() => router.push(`/projects/${project.id}/work`)}
+                data-run-state={project.status}
                 className="text-left p-4 border border-sg-neutral-200 dark:border-sg-neutral-800 rounded-lg hover:bg-sg-neutral-50 dark:hover:bg-sg-neutral-900 transition-colors space-y-2"
               >
                 <div className="flex items-center justify-between">
                   <p className="font-semibold text-sg-neutral-900 dark:text-sg-neutral-50">
                     {project.name}
                   </p>
-                  <StatusBadge status={project.status} size="sm" />
+                  <span className="flex items-center gap-2">
+                    <StatusBadge status={project.status} size="sm" />
+                    {project.completionIsVerifiable ? (
+                      <CompletionChip term="verified" />
+                    ) : (
+                      <UnverifiedClaim />
+                    )}
+                  </span>
                 </div>
               </button>
             ))}

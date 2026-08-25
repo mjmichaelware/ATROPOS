@@ -101,12 +101,84 @@ export interface AuthorityReport {
   violations: { key: string; heldBy: string; attemptedBy: string[]; detail: string }[];
 }
 
+/** Cascade snapshot from the bridge (GET /v1/cascade). */
+export interface CascadePayload {
+  readonly ok: true;
+  readonly keys: ReadonlyArray<{
+    readonly key: string;
+    readonly value: string;
+    readonly heldBy: string;
+    readonly final: boolean;
+    readonly state: 'resolved' | 'violation' | 'undefined';
+  }>;
+}
+
+/** Quarantine projection from the bridge (GET /v1/quarantine). */
+export interface QuarantinePayload {
+  readonly ok: true;
+  readonly count: number;
+  readonly observationCount: number;
+  readonly items: ReadonlyArray<{
+    readonly id: string;
+    readonly title: string;
+    readonly summary: string;
+    readonly state: string;
+    readonly createdAt: string;
+  }>;
+  readonly observation: ReadonlyArray<{
+    readonly subsystem: string;
+    readonly startedAt: string;
+    readonly durationSeconds: number;
+  }>;
+}
+
+/** Evidence list from the bridge (GET /v1/evidence/list). */
+export interface EvidenceListPayload {
+  readonly ok: true;
+  readonly items: ReadonlyArray<{
+    readonly id: string;
+    readonly kind: string;
+    readonly path: string;
+    readonly sha256: string;
+    readonly bytes: number;
+    readonly createdAt: string;
+  }>;
+}
+
+/** Delta register from the bridge (GET /v1/delta-register). */
+export interface DeltaRegisterPayload {
+  readonly ok: true;
+  readonly entries: ReadonlyArray<{
+    readonly id: string;
+    readonly path: string;
+    readonly kind: string;
+    readonly sha256: string;
+    readonly bytes: number;
+    readonly createdAt: string;
+  }>;
+}
+
+/** Quota projection from the bridge (GET /v1/quota). */
+export interface QuotaPayload {
+  readonly ok: true;
+  readonly used: number;
+  readonly limit: number;
+  readonly remaining: number;
+  readonly fractionUsed: number;
+  readonly resetAt: string | null;
+}
+
 export const governance = {
   proposals: () => readEngine<{ proposals: Proposal[]; cooldowns: Cooldown[] }>('/v1/proposals'),
   amendments: () => readEngine<{ amendments: Amendment[] }>('/v1/amendments'),
   metrics: () => readEngine<GovernanceMetrics>('/v1/metrics'),
   storage: () => readEngine<StorageReport>('/v1/storage'),
   authority: () => readEngine<AuthorityReport>('/v1/authority'),
+  cascade: () => readEngine<CascadePayload>('/v1/cascade'),
+  quarantine: () => readEngine<QuarantinePayload>('/v1/quarantine'),
+  evidenceList: () => readEngine<EvidenceListPayload>('/v1/evidence/list'),
+  deltaRegister: () => readEngine<DeltaRegisterPayload>('/v1/delta-register'),
+  quota: () => readEngine<QuotaPayload>('/v1/quota'),
 };
 
 /**

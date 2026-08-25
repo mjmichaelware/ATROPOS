@@ -1973,3 +1973,552 @@ a:focus-visible {
     transform: none;
   }
 }
+
+/* ============================================================
+   Workbench layout theme (F-WEB-003) — VS Code spatial grammar:
+   left explorer · center editor/tabs · bottom output · right AI rail.
+   Applied via html[data-layout="workbench"] from LayoutThemeProvider.
+   Session layout is untouched: these rules only exist under the
+   data attribute, so removing the attribute restores session-first.
+   ============================================================ */
+
+.wb-layout-toggle {
+  display: inline-flex;
+  gap: var(--sg-space-1);
+  margin-inline-start: var(--sg-space-3);
+}
+
+.wb-toggle {
+  padding: var(--sg-space-1) var(--sg-space-2);
+  border: 1px solid transparent;
+  border-radius: var(--sg-radius-sm);
+  background: none;
+  color: var(--sg-text-muted);
+  font-size: var(--sg-type-xs);
+  cursor: pointer;
+}
+
+.wb-toggle:hover {
+  color: inherit;
+}
+
+.wb-toggle-active {
+  border-color: var(--sg-border);
+  background: var(--sg-surface-raised, rgba(127, 127, 127, 0.08));
+  color: inherit;
+}
+
+/* Four-pane grid. Panes collapse by viewport, not per-component media
+   queries: on a phone this is not four panes and must not pretend. */
+[data-layout='workbench'] .wb-root {
+  display: grid;
+  grid-template-columns: minmax(180px, 240px) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'explorer editor'
+    'logs logs';
+  gap: var(--sg-space-2);
+  min-height: 60vh;
+}
+
+.wb-explorer { grid-area: explorer; }
+.wb-editor { grid-area: editor; min-width: 0; }
+.wb-logs { grid-area: logs; }
+.wb-airail { grid-area: airail; }
+
+@media (min-width: 1280px) {
+  [data-layout='workbench'] .wb-root {
+    grid-template-columns: minmax(180px, 240px) minmax(0, 1fr) minmax(260px, 320px);
+    grid-template-areas:
+      'explorer editor airail'
+      'logs logs airail';
+  }
+}
+
+.wb-explorer,
+.wb-airail {
+  border: 1px solid var(--sg-border);
+  border-radius: var(--sg-radius-md);
+  padding: var(--sg-space-3);
+  overflow: auto;
+  max-height: 70vh;
+}
+
+.wb-airail-inner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sg-space-3);
+}
+
+.wb-pane-title {
+  margin: 0 0 var(--sg-space-2);
+  font-size: var(--sg-type-xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--sg-text-muted);
+}
+
+.wb-pane-note {
+  margin: var(--sg-space-1) 0;
+  font-size: var(--sg-type-xs);
+  color: var(--sg-text-muted);
+}
+
+.wb-scope-note {
+  margin-block-start: var(--sg-space-3);
+  border-top: 1px solid var(--sg-border);
+  padding-block-start: var(--sg-space-2);
+}
+
+.wb-fault {
+  margin: var(--sg-space-1) 0;
+  font-size: var(--sg-type-sm);
+  color: var(--sg-danger, #dc2626);
+}
+
+.wb-filelist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.wb-file {
+  width: 100%;
+  text-align: start;
+  padding: var(--sg-space-1) var(--sg-space-2);
+  border: none;
+  border-radius: var(--sg-radius-sm);
+  background: none;
+  color: inherit;
+  font-size: var(--sg-type-sm);
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.wb-file:hover {
+  background: rgba(127, 127, 127, 0.12);
+}
+
+/* Center pane: tabs + buffer. */
+
+.wb-tabs {
+  display: flex;
+  flex-direction: column;
+  min-height: 40vh;
+  border: 1px solid var(--sg-border);
+  border-radius: var(--sg-radius-md);
+  overflow: hidden;
+}
+
+.wb-tabstrip {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  border-block-end: 1px solid var(--sg-border);
+  background: rgba(127, 127, 127, 0.05);
+  padding: var(--sg-space-1);
+  overflow-x: auto;
+}
+
+.wb-tabstrip-empty {
+  padding: var(--sg-space-1) var(--sg-space-2);
+  font-size: var(--sg-type-xs);
+  color: var(--sg-text-muted);
+}
+
+.wb-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sg-space-1);
+  padding: var(--sg-space-1) var(--sg-space-2);
+  border-radius: var(--sg-radius-sm);
+  font-size: var(--sg-type-xs);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.wb-tab-active {
+  background: var(--sg-surface-raised, rgba(127, 127, 127, 0.12));
+  outline: 1px solid var(--sg-border);
+}
+
+.wb-dirty {
+  /* Text marker, not color-only (§E). */
+  font-weight: 700;
+}
+
+.wb-tab-close {
+  border: none;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 0 var(--sg-space-1);
+  line-height: 1;
+}
+
+.wb-buffer {
+  flex: 1;
+  width: 100%;
+  min-height: 30vh;
+  padding: var(--sg-space-3);
+  border: none;
+  resize: vertical;
+  background: transparent;
+  color: inherit;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: var(--sg-type-xs);
+  line-height: 1.5;
+}
+
+.wb-buffer:focus-visible {
+  outline: 2px solid var(--sg-focus, currentColor);
+  outline-offset: -2px;
+}
+
+.wb-buffer-empty,
+.wb-buffer-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sg-text-muted);
+  font-family: inherit;
+}
+
+.wb-page {
+  min-height: 40vh;
+}
+
+/* Bottom output panel (F-WEB-006): v1 is logs only — no PTY here. */
+
+.wb-logpanel {
+  border: 1px solid var(--sg-border);
+  border-radius: var(--sg-radius-md);
+  overflow: hidden;
+}
+
+.wb-logpanel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sg-space-1) var(--sg-space-3);
+  border-block-end: 1px solid var(--sg-border);
+  background: rgba(127, 127, 127, 0.05);
+}
+
+.wb-logpanel-title {
+  font-size: var(--sg-type-xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--sg-text-muted);
+}
+
+.wb-logpanel-toggle {
+  border: none;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.wb-logpanel-body {
+  max-height: 24vh;
+  overflow-y: auto;
+  padding: var(--sg-space-2) var(--sg-space-3);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: var(--sg-type-xs);
+  line-height: 1.6;
+}
+
+.wb-log-line {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.wb-log-time {
+  color: var(--sg-text-muted);
+}
+
+.wb-log-stage {
+  font-weight: 600;
+}
+
+.wb-log-outcome::before {
+  content: '[';
+}
+
+.wb-log-outcome::after {
+  content: ']';
+}
+
+.wb-log-empty,
+.wb-log-fault {
+  margin: 0;
+  color: var(--sg-text-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wb-tab,
+  .wb-toggle,
+  .wb-file {
+    transition: none;
+  }
+}
+
+/* S-005 evidence chips: claim + gates visible, CAS hash as tooltip. */
+.wb-evidence-chips {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sg-space-1);
+}
+
+.wb-evidence-chip {
+  border: 1px solid var(--sg-border);
+  border-radius: var(--sg-radius-sm);
+  padding: 0 var(--sg-space-2);
+  font-size: var(--sg-type-xs);
+}
+
+.wb-evidence-gates {
+  color: var(--sg-text-muted);
+}
+
+.wb-evidence-dropped {
+  font-size: var(--sg-type-xs);
+  color: var(--sg-text-muted);
+}
+
+/* F-WEB-008 bridge approval cards. */
+.wb-approval-card {
+  border: 1px solid var(--sg-border);
+  border-radius: var(--sg-radius-md);
+  padding: var(--sg-space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sg-space-2);
+}
+
+.wb-approval-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sg-space-2);
+}
+
+.wb-approval-op {
+  font-weight: 600;
+  font-size: var(--sg-type-sm);
+}
+
+.wb-approval-id {
+  font-size: var(--sg-type-xs);
+  color: var(--sg-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wb-approval-reason {
+  margin: 0;
+  font-size: var(--sg-type-xs);
+}
+
+.wb-approval-territory {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: var(--sg-type-xs);
+}
+
+.wb-approval-actions {
+  display: flex;
+  gap: var(--sg-space-2);
+}
+
+.wb-approval-actions button {
+  padding: var(--sg-space-1) var(--sg-space-3);
+  border-radius: var(--sg-radius-sm);
+  border: 1px solid var(--sg-border);
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: var(--sg-type-xs);
+}
+
+.wb-approval-actions button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* F-WEB-002 session list on the session-first home. */
+.wb-session-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sg-space-2);
+}
+
+.wb-session-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border: 1px solid var(--sg-border);
+  border-radius: var(--sg-radius-md);
+  padding: var(--sg-space-3);
+}
+
+.wb-session-title {
+  font-weight: 500;
+  font-size: var(--sg-type-sm);
+}
+
+.wb-session-meta {
+  font-size: var(--sg-type-xs);
+  color: var(--sg-text-muted);
+}
+
+.wb-fault-block {
+  border: 1px solid var(--sg-border);
+  border-radius: var(--sg-radius-md);
+  padding: var(--sg-space-3);
+}
+
+/* ── ADD-W-002 completion chips ─────────────────────────────────────── */
+.wb-completion-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid var(--sg-border);
+  border-radius: var(--sg-radius-sm);
+  padding: 0 var(--sg-space-2);
+  font-size: var(--sg-type-xs);
+}
+
+.wb-completion-chip[data-completion='verified'] {
+  border-color: currentColor;
+  font-weight: 600;
+}
+
+.wb-completion-unverified {
+  color: var(--sg-text-muted);
+  border-style: dashed;
+}
+
+/* ── ADD-W-007 status retheme — selectors enumerated from STATUS_TERMS only.
+   No decorative theme switching: the run vocabulary is the only key. ── */
+[data-run-state='idle']          { --sg-state-accent: var(--sg-text-muted); }
+[data-run-state='planning']     { --sg-state-accent: #3b82f6; }
+[data-run-state='waiting']      { --sg-state-accent: #d97706; }
+[data-run-state='working']      { --sg-state-accent: #2563eb; }
+[data-run-state='review-required'] { --sg-state-accent: #d97706; }
+[data-run-state='blocked']      { --sg-state-accent: #dc2626; }
+[data-run-state='completed']    { --sg-state-accent: #16a34a; }
+[data-run-state='failed']       { --sg-state-accent: #dc2626; }
+[data-run-state='cancelled']    { --sg-state-accent: var(--sg-text-muted); }
+
+[data-run-state] {
+  border-inline-start: 3px solid var(--sg-state-accent, transparent);
+  padding-inline-start: var(--sg-space-2);
+}
+
+/* ── ADD-W-006 optical focus via intensity roles (tokens, not decoration).
+   Attested evidence sharpens; softened regions desaturate. ── */
+.wb-evidence-chip { filter: none; }
+.wb-focus-soft {
+  filter: saturate(0.55) opacity(0.85);
+}
+[data-focus-strength='sharp'] .wb-evidence-chip {
+  font-weight: 500;
+}
+
+/* ── ADD-W-003 interrupt rows / ADD-W-004 verbosity control ─────────── */
+.wb-interrupt-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sg-space-2);
+}
+
+.wb-interrupt-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sg-space-2);
+}
+
+.wb-interrupt-row button {
+  padding: 2px var(--sg-space-2);
+  border: 1px solid var(--sg-border);
+  border-radius: var(--sg-radius-sm);
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: var(--sg-type-xs);
+}
+
+.wb-interrupt-row button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.wb-verbosity-row {
+  display: flex;
+  gap: var(--sg-space-1);
+  margin-block-end: var(--sg-space-1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* ADD-W-005: no motion without real progress; reduced-motion kills the
+     live pulse everywhere in the workbench chrome. */
+  .wb-stream-live,
+  .wb-root [class*='animate-pulse'] {
+    animation: none;
+  }
+}
+
+/* ADD-W-013 authority rows: state word carries meaning; hash is proof. */
+.wb-auth-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sg-space-2);
+}
+
+.wb-auth-row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sg-space-2);
+  font-size: var(--sg-type-xs);
+}
+
+.wb-auth-state {
+  min-width: 64px;
+  font-weight: 600;
+}
+
+.wb-auth-state[data-auth='attested'] { color: #16a34a; }
+.wb-auth-state[data-auth='mismatch'] { color: #dc2626; }
+.wb-auth-state[data-auth='missing'] { color: var(--sg-text-muted); }
+
+.wb-auth-path {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wb-auth-hash {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--sg-text-muted);
+}

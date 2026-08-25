@@ -2,17 +2,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import {
-  governance,
-  formatRate,
-  type Amendment,
-  type Cooldown,
-  type GovernanceMetrics,
-  type Proposal,
-} from '@/lib/governance/client';
+import { governance, formatRate, type Amendment, type Cooldown, type GovernanceMetrics, type Proposal } from '@/lib/governance/client';
+import { QuarantineSnapshot } from './quarantine-snapshot';
 
 /**
- * The Phase 20 governance surface: proposals, amendments, cooldowns, metrics.
+ * The Phase 20 governance surface: proposals, amendments, cooldowns, metrics, quarantine.
  *
  * `C4-IF-02..05` and `P20-S04`. §20.20 sets the standard this has to meet —
  * "the system must explain why, where, how it changed and why the result is
@@ -119,6 +113,13 @@ export function GovernancePanel() {
           </ul>
         </section>
       )}
+
+      <section className="space-y-3">
+        <h2 className="text-xl font-semibold text-sg-neutral-900 dark:text-sg-neutral-50">
+          Quarantine
+        </h2>
+        <QuarantineSnapshot />
+      </section>
 
       <section className="space-y-3">
         <h2 className="text-xl font-semibold text-sg-neutral-900 dark:text-sg-neutral-50">

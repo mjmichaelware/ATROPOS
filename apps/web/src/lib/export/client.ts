@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 
-import { readEngine, type EngineFailure } from '@/lib/engine/client';
+import { readEngine, writeEngine, type EngineFailure } from '@/lib/engine/client';
 
 /**
  * Reads the landing zones an export may actually use.
@@ -38,12 +38,25 @@ export interface ExportPayload {
   zones: LandingZone[];
 }
 
+export interface ExportWriteResult {
+  ok: true;
+  path?: string;
+  bytes?: number;
+  zone?: string;
+}
+
 export type ExportResult =
   | { ok: true; data: ExportPayload }
   | ({ ok: false } & Omit<EngineFailure, 'ok'>);
 
+export type ExportWriteResultResult =
+  | { ok: true; data: ExportWriteResult }
+  | ({ ok: false } & Omit<EngineFailure, 'ok'>);
+
 export const exports = {
   zones: (): Promise<ExportResult> => readEngine<ExportPayload>('/v1/exports'),
+  write: (zoneId: string): Promise<ExportWriteResultResult> =>
+    writeEngine<ExportWriteResult>('/v1/exports', { zoneId }),
 };
 
 export function availableZones(payload: ExportPayload): AvailableZone[] {
