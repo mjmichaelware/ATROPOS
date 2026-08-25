@@ -148,6 +148,7 @@ text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'must use an env
 text src/main/kotlin/atropos/core/integration/McpConfigParser.kt 'rawMember(objectText, "env")?.let(::stringMap)'
 text src/main/kotlin/atropos/core/integration/McpConfigParser.kt 'rawMember(objectText, "headers")?.let(::stringMap)'
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'runtimeHeaders(server)'
+text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'before either the real HTTP owner'
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'MCP header cannot override transport framing'
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'header(name, value)'
 text src/main/kotlin/atropos/core/integration/McpConfigParser.kt 'MAX_ENV_ENTRIES = 32'

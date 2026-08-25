@@ -383,6 +383,9 @@ class McpHostManager(
         }
 
     private fun remoteExchange(server: McpServerConfig, body: String, maxResponseBytes: Int): String {
+        // Validate/resolve headers before either the real HTTP owner or an
+        // injected deterministic transport is allowed to observe a request.
+        runtimeHeaders(server)
         val raw = remoteRequest?.invoke(server, body) ?: postRemote(server, body)
         require(raw.toByteArray(StandardCharsets.UTF_8).size <= maxResponseBytes) {
             "MCP HTTP response exceeds the bounded response size"

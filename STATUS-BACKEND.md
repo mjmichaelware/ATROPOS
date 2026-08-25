@@ -1364,3 +1364,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-CORE-b generic remote headers and auth references | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpConfigParser.kt`, `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt`, `scripts/backend-atom-contract-test.sh` | `mcp.json servers[].headers` → sole parser/host → secret-safe env/vault reference resolution → bounded `HttpRequest` owner | Generic HTTP/SSE MCP config now supports validated custom headers; secret-like headers require `${NAME}` references, and Host/content-length/transfer-encoding overrides are refused. Parser and refusal fixtures are hosted-selected; backend contract, hosted selector contract (440), shell syntax, and `git diff --check` pass. Hosted/live remote execution remains unverified. |
+
+### 2026-08-25T15:20:00Z · Agent: Codex GPT-5 · Batch: mcp-header-injected-transport-parity
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-CORE-b header policy across transport seams | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `scripts/backend-atom-contract-test.sh` | shared `remoteExchange()` → header reference validation → real HTTP or injected deterministic transport | Header secret/reference validation now runs before both production HTTP dispatch and injected test transport, preventing a fixture seam from bypassing the policy. Backend contract, hosted selector contract (440), shell syntax, and `git diff --check` pass; hosted/live remote execution remains unverified. |

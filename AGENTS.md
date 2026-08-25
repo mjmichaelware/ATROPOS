@@ -13355,6 +13355,16 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprints (sha256, first 12): `McpConfigParser.kt=281d6d700f19`; `McpHostManager.kt=6149ae7e5af3`; `McpHostManagerTest.kt=a856ca4f3923`; `backend-atom-contract-test.sh=0c47ac105ef4`.
 
+### 2026-08-25T15:20:00Z · Agent: Codex GPT-5 · Batch: mcp-header-injected-transport-parity
+
+- Paths touched: `src/main/kotlin/atropos/core/integration/McpHostManager.kt` (+4), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-MCP-CORE-b remote header policy parity across production and injected transports.
+- Predicate moved: `remoteExchange()` now validates/resolves configured headers before either the real HTTP implementation or the injected deterministic fixture, closing a seam that could otherwise bypass secret-header policy.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh` (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (440 tests)`), `bash -n scripts/backend-atom-contract-test.sh`, and `git diff --check` passed. Hosted/live remote execution remains unverified.
+- % delta: unchanged; generic MCP transport remains source-wired / partial pending hosted execution.
+- New overall estimate: unchanged.
+- Fingerprints (sha256, first 12): `McpHostManager.kt=983632be4344`; `backend-atom-contract-test.sh=0d39f7dfb37e`.
+
 ### 2026-08-25T12:20:00Z · Agent: Codex GPT-5 · Batch: github-oauth-contract-hardening
 
 - Paths touched: `scripts/backend-atom-contract-test.sh` (+4), `docs/PROVIDER_ENVIRONMENT.md` (+1), `STATUS-BACKEND.md` (+7).
