@@ -13445,7 +13445,7 @@ Local verification note for this batch: `timeout 120s ./gradlew test --tests 'at
 - Verification actually run: `bash scripts/backend-atom-contract-test.sh`, `bash scripts/provider-env-contract-test.sh`, `bash scripts/hosted-test-selector-contract.sh` (`440 tests`), and `git diff --check` passed. Root/hosted Kotlin execution remains unverified; no green claim.
 - % delta: unchanged; provider onboarding remains source-wired / partial pending hosted execution.
 - New overall estimate: unchanged.
-- Fingerprints (sha256, first 12): pending until scoped commit; unrelated `docs/completion/*` remains unstaged and untouched.
+- Fingerprints (sha256, first 12): `ProviderOnboarding.kt=7325f76c5cd6`; `backend-atom-contract-test.sh=de2e48ea6c3c`; commit `07feffd9`. Unrelated `docs/completion/*` remains unstaged and untouched.
 
 ### 2026-08-25T12:45:00Z · Agent: Codex GPT-5 · Batch: imported-context-authority-contract
 
