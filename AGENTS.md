@@ -15077,8 +15077,6 @@ Local verification note for this batch: `timeout 120s ./gradlew test --tests 'at
 - Verification actually run: `ATROPOS_BACKEND_ATOM_CONTRACT_OK`, `ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (441 tests)`, provider environment contract, MCP example contract, `git diff --check`, and the orphan gate passed. No Kotlin test pass or GitHub-hosted green claim; hosted/live OAuth remains pending external execution and operator OAuth client registration.
 - % delta: unchanged; B-MCP-OAUTH-UX remains source-wired/partial pending hosted/live evidence.
 - Fingerprints (sha256, first 12): `AuthCommandHandler.kt=7aeba04ebd3a`, `CommandRouter.kt=9fabc00ca665`, `backend-atom-contract-test.sh=cc4011b2c5e0`, `STATUS-BACKEND.md=65346ae70b27`.
-<<<<<<< HEAD
-=======
 
 ### 2026-08-25T18:00:00Z · Agent: Codex GPT-5 · Batch: github-graphql-blame-owner
 
@@ -15088,4 +15086,12 @@ Local verification note for this batch: `timeout 120s ./gradlew test --tests 'at
 - Verification actually run: `ATROPOS_BACKEND_ATOM_CONTRACT_OK`, `ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (441 tests)`, provider environment contract, `git diff --check`, and shell syntax validation passed. No Kotlin test pass, hosted CI green, live GitHub call, or credentials were claimed.
 - % delta: unchanged; B-MCP-GH-p remains source-wired/partial pending hosted/credentialed execution.
 - Fingerprints (sha256, first 12): `GitHubApiClient.kt=b7c57eff9868`, `GitHubBinding.kt=7c45e29592f0`, `GitHubCommandHandler.kt=3541d9b9c313`, `CommandCatalog.kt=c493fcfff621`, `GitHubApiClientTest.kt=cefc2facad5e`, `backend-atom-contract-test.sh=1e539bd3adec`.
->>>>>>> 696cbbad (feat: add gated github graphql blame path)
+
+### 2026-08-25T18:15:00Z · Agent: Codex GPT-5 · Batch: github-blame-usage-correction
+
+- Paths touched: `src/main/kotlin/atropos/cli/GitHubCommandHandler.kt` (+1/-1), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-MCP-GH-p CLI discoverability.
+- Predicate moved: malformed `/github` input now lists the production-wired `blame` operation, so the new capability is discoverable through the same command owner rather than hidden behind an incomplete usage contract.
+- Verification actually run: `git diff --check` passed. No Kotlin or hosted execution was claimed.
+- % delta: unchanged; B-MCP-GH-p remains source-wired/partial pending hosted/credentialed execution.
+- Fingerprint: `GitHubCommandHandler.kt=574b4dc007d4`.

@@ -23,7 +23,7 @@ class GitHubCommandHandler(
         val operation = tokens.getOrNull(1)?.lowercase()
         val repository = tokens.getOrNull(2)?.split('/')
         if (repository == null || repository.size != 2 || repository.any(String::isBlank)) {
-            uiEngine.renderError("usage: /github issues|issue|prs|pr-files|checks|branch-protection <owner/repository> <arg>")
+            uiEngine.renderError("usage: /github issues|issue|prs|pr-files|checks|branch-protection|blame <owner/repository> <arg>")
             return
         }
         val owner = repository[0]

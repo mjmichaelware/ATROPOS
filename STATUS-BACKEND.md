@@ -1843,3 +1843,9 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-GH-p / GraphQL file blame | source-wired / partial | `src/main/kotlin/atropos/core/github/GitHubApiClient.kt`, `GitHubBinding.kt`, `src/main/kotlin/atropos/cli/GitHubCommandHandler.kt`, `CommandCatalog.kt`, `src/test/kotlin/atropos/core/github/GitHubApiClientTest.kt`, `scripts/backend-atom-contract-test.sh` | `/github blame <owner/repository> <revision> <path>` → existing `GitHubBinding` → one `GitHubApiClient` → gated read-only `/graphql` transport | Added a bounded read-only GraphQL query path with repository/path validation, shared token/redaction/evidence/egress gate, and no write confirmation requirement. Static backend/selector/provider contracts and diff check passed; Kotlin execution, hosted CI, and credentialed GitHub evidence remain unverified. |
+
+### 2026-08-25T18:15:00Z · Agent: Codex GPT-5 · Batch: github-blame-usage-correction
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-GH-p CLI discoverability correction | source-wired / partial | `src/main/kotlin/atropos/cli/GitHubCommandHandler.kt` | `/github` invalid-usage renderer → existing command catalog and `blame` caller | Corrected the top-level usage message so the newly wired blame command is discoverable on malformed input. `git diff --check` passed; hosted/Kotlin execution remains unverified. |
