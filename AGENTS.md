@@ -13533,6 +13533,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; B-MCP-SENTRY remains source-wired/partial pending hosted/live evidence.
 - Fingerprints (sha256, first 12): `SentryCommandHandler.kt=aa97405f6a15`; `backend-atom-contract-test.sh=f2a2bb1f9462`.
 
+### 2026-08-25T07:25:00Z · Agent: Codex GPT-5 · Batch: bridge-command-redaction-fixture
+
+- Paths touched: `src/test/kotlin/atropos/bridge/BridgeCommandHandlerTest.kt` (+20), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: B-005 secret-safe command output fixture.
+- Predicate moved: a focused success-path test now proves `/v1/cli` JSON output does not expose a provider-shaped secret and emits the canonical redaction marker.
+- Verification actually run: `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (440 tests)`) and `git diff --check` passed. Hosted Kotlin execution remains unverified.
+- % delta: unchanged; B-005 remains source-wired/partial pending hosted execution.
+- Fingerprint: `BridgeCommandHandlerTest.kt=6b1a9ecb4744`.
+
 ### 2026-08-25T05:18:00Z · Agent: Codex GPT-5 · Batch: provider-chat-owner-injection
 
 - Paths touched: `src/main/kotlin/atropos/cli/CommandRouter.kt` (+2), `src/main/kotlin/atropos/cli/ProviderChatDispatcher.kt` (+4/-2), `scripts/backend-atom-contract-test.sh` (+2).

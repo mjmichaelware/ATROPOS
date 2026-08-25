@@ -1778,3 +1778,9 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-SENTRY / secret-safe issue listing render | source-wired / partial | `src/main/kotlin/atropos/cli/SentryCommandHandler.kt`, `scripts/backend-atom-contract-test.sh` | `/sentry list` → existing `SentryApiClient`/handler → `RedactionFilter` → terminal output | Sentry issue-list response bodies now pass through the handler redaction boundary immediately before rendering, in addition to API-client redaction. Backend atom contract, hosted selector (`440 tests`), and diff check pass; hosted/live Sentry secret-fixture execution remains unverified. |
+
+### 2026-08-25T07:25:00Z · Agent: Codex GPT-5 · Batch: bridge-command-redaction-fixture
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-005 secret-safe command output fixture | source-wired / partial | `src/test/kotlin/atropos/bridge/BridgeCommandHandlerTest.kt` | existing `/v1/cli` command handler → success renderer → redaction boundary | Added a focused success-path fixture proving a provider-shaped secret is absent from successful bridge command JSON and replaced with the canonical redaction marker. Hosted selector (`440 tests`) and diff check pass; hosted Kotlin execution remains unverified. |
