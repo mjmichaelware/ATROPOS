@@ -1358,3 +1358,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-CORE-a/b secret-safe stdio env resolution | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt`, `scripts/backend-atom-contract-test.sh` | MCP config → existing `McpHostManager.runtimeEnvironment()` → `DefaultSecretSource` env/vault precedence → bounded process environment | Secret-looking env names now reject literal config secrets and require `${NAME}` references resolved through the existing secret boundary; a focused refusal fixture covers the rule. Backend contract, hosted selector contract (440), shell syntax, and `git diff --check` pass. Hosted Kotlin execution remains unverified. |
+
+### 2026-08-25T15:00:00Z · Agent: Codex GPT-5 · Batch: mcp-remote-header-boundary
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-MCP-CORE-b generic remote headers and auth references | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpConfigParser.kt`, `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt`, `scripts/backend-atom-contract-test.sh` | `mcp.json servers[].headers` → sole parser/host → secret-safe env/vault reference resolution → bounded `HttpRequest` owner | Generic HTTP/SSE MCP config now supports validated custom headers; secret-like headers require `${NAME}` references, and Host/content-length/transfer-encoding overrides are refused. Parser and refusal fixtures are hosted-selected; backend contract, hosted selector contract (440), shell syntax, and `git diff --check` pass. Hosted/live remote execution remains unverified. |

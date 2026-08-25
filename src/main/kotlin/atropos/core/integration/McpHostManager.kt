@@ -33,7 +33,8 @@ data class McpServerConfig(
     val enabled: Boolean,
     val community: Boolean,
     val url: String? = null,
-    val environment: Map<String, String> = emptyMap()
+    val environment: Map<String, String> = emptyMap(),
+    val headers: Map<String, String> = emptyMap()
 ) {
     val remote: Boolean get() = transport.lowercase() in setOf("http", "sse", "streamable-http")
 }
@@ -352,7 +353,13 @@ class McpHostManager(
         transport.lowercase() in setOf("stdio", "http", "sse", "streamable-http")
 
     private fun runtimeEnvironment(server: McpServerConfig): Map<String, String> =
-        server.environment.mapValues { (name, value) ->
+        resolveSecretSafeMap(server.environment)
+
+    private fun runtimeHeaders(server: McpServerConfig): Map<String, String> =
+        resolveSecretSafeMap(server.headers)
+
+    private fun resolveSecretSafeMap(values: Map<String, String>): Map<String, String> =
+        values.mapValues { (name, value) ->
             val reference = ENV_REFERENCE.matchEntire(value)?.groupValues?.getOrNull(1)
             if (reference != null) {
                 secretSource.lookup(reference).value
@@ -426,6 +433,15 @@ class McpHostManager(
             .timeout(Duration.ofSeconds(5))
             .header("Content-Type", "application/json")
             .header("Accept", "application/json, text/event-stream")
+            .apply {
+                runtimeHeaders(server).forEach { (name, value) ->
+                    require(name.matches(HEADER_NAME)) { "MCP header name is invalid: $name" }
+                    require(name.lowercase() !in FORBIDDEN_HEADERS) {
+                        "MCP header cannot override transport framing: $name"
+                    }
+                    header(name, value)
+                }
+            }
             .POST(HttpRequest.BodyPublishers.ofString(body))
             .build()
         val response = HttpClient.newBuilder()
@@ -456,6 +472,8 @@ class McpHostManager(
         const val DEFAULT_REMOTE_RESPONSE_BYTES = 256 * 1024
         val ENV_REFERENCE = Regex("\\$\\{([A-Za-z_][A-Za-z0-9_]*)}")
         val SECRET_ENV_NAME = Regex("(?i)(key|token|secret|password|credential|authorization)")
+        val HEADER_NAME = Regex("[!#$%&'*+.^_`|~0-9A-Za-z-]+")
+        val FORBIDDEN_HEADERS = setOf("host", "content-length", "transfer-encoding")
 
         fun probeProcess(
             server: McpServerConfig,

@@ -21,7 +21,7 @@ class McpHostManagerTest {
         Files.writeString(root.resolve("mcp.json"), """
             {"servers":[
               {"name":"local","transport":"stdio","command":"tool-{local}",
-               "args":["--label","a\"b", "{nested}"],"env":{"MCP_LABEL":"fixture"},"enabled":true,"community":false}
+               "args":["--label","a\"b", "{nested}"],"env":{"MCP_LABEL":"fixture"},"headers":{"X-Fixture":"value"},"enabled":true,"community":false}
             ],"metadata":{"description":"braces { stay nested }"}}
         """.trimIndent())
 
@@ -30,6 +30,7 @@ class McpHostManagerTest {
         assertEquals("tool-{local}", server.command)
         assertEquals(listOf("--label", "a\"b", "{nested}"), server.args)
         assertEquals(mapOf("MCP_LABEL" to "fixture"), server.environment)
+        assertEquals(mapOf("X-Fixture" to "value"), server.headers)
         assertTrue(server.enabled)
         assertFalse(server.community)
     }
@@ -187,6 +188,27 @@ class McpHostManagerTest {
 
         val failure = runCatching {
             McpHostManager(root, secretSource = MapSecretSource(emptyMap())).callTool("local", "inspect")
+        }.exceptionOrNull()
+
+        assertTrue(failure?.message.orEmpty().contains("must use an environment or vault reference"))
+    }
+
+    @Test
+    fun secret_named_remote_header_must_reference_existing_secret_source() {
+        val root = Files.createTempDirectory("mcp-secret-header")
+        Files.writeString(root.resolve("mcp.json"), """
+            {"servers":[{"name":"remote","transport":"http","url":"https://mcp.example.test/rpc",
+              "headers":{"Authorization":"Bearer literal-secret"},"enabled":true,"community":false}]}
+        """.trimIndent())
+
+        val failure = runCatching {
+            McpHostManager(
+                root,
+                localOnly = false,
+                probe = { McpHealth.HEALTHY },
+                remoteRequest = { _, _ -> error("remote transport must not run") },
+                secretSource = MapSecretSource(emptyMap())
+            ).callTool("remote", "inspect")
         }.exceptionOrNull()
 
         assertTrue(failure?.message.orEmpty().contains("must use an environment or vault reference"))

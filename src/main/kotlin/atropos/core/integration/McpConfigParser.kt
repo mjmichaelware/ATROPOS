@@ -68,6 +68,7 @@ internal object McpConfigParser {
                 ?: error("mcp.json server name is required")
             val args = rawMember(objectText, "args")?.let(::stringValues).orEmpty()
             val environment = rawMember(objectText, "env")?.let(::stringMap).orEmpty()
+            val headers = rawMember(objectText, "headers")?.let(::stringMap).orEmpty()
             McpServerConfig(
                 name = name,
                 transport = stringMember(objectText, "transport")
@@ -80,7 +81,8 @@ internal object McpConfigParser {
                 enabled = booleanMember(objectText, "enabled") ?: false,
                 community = booleanMember(objectText, "community") ?: true,
                 url = stringMember(objectText, "url"),
-                environment = environment
+                environment = environment,
+                headers = headers
             )
         }
         require(servers.map { it.name }.toSet().size == servers.size) {
