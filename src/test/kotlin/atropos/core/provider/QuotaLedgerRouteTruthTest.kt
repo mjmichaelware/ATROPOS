@@ -74,6 +74,27 @@ class QuotaLedgerRouteTruthTest {
     }
 
     @Test
+    fun persisted_ledger_merges_new_descriptor_seeds_without_replacing_live_rows() {
+        val root = Files.createTempDirectory("atropos-quota-seed-merge")
+        val registry = StaticProviderDescriptorRegistry()
+        val allSeeds = FileQuotaLedger.seedFromDescriptors(registry)
+        val file = root.resolve("quota.tsv").toFile()
+        val initial = FileQuotaLedger(file, allSeeds)
+        initial.put(readyRemote(allSeeds, "groq"))
+        initial.recordFailure(
+            "groq",
+            ProviderFailure("groq", NormalizedProviderFailureType.RATE_LIMITED, "rate limited", retryAfterMs = 60_000),
+            1_000L
+        )
+
+        val persistedOnly = FileQuotaLedger(file, listOf(initial.get("groq")!!))
+        val reopened = FileQuotaLedger(file, allSeeds)
+        assertEquals(ProviderAvailabilityState.COOLDOWN, reopened.get("groq")?.state)
+        assertTrue(reopened.get("openai") != null)
+        assertEquals(persistedOnly.get("groq")?.cooldownUntilEpochMs, reopened.get("groq")?.cooldownUntilEpochMs)
+    }
+
+    @Test
     fun route_explanation_reports_selected_skipped_fallback_cooldown_reset_paid_lock_and_outcome() {
         val registry = StaticProviderDescriptorRegistry()
         val seed = FileQuotaLedger.seedFromDescriptors(registry)

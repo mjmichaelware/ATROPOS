@@ -129,7 +129,7 @@ class InMemoryQuotaLedger(seed: List<ProviderQuotaRecord> = emptyList()) : Quota
 }
 
 class FileQuotaLedger(private val file: File, seed: List<ProviderQuotaRecord> = emptyList()) : QuotaLedger {
-    private val memory = InMemoryQuotaLedger(load(file).ifEmpty { seed })
+    private val memory = InMemoryQuotaLedger(mergeSeed(load(file), seed))
     init { persist() }
     override fun get(providerId: String) = memory.get(providerId)
     override fun put(record: ProviderQuotaRecord) { memory.put(record); persist() }
@@ -167,6 +167,14 @@ class FileQuotaLedger(private val file: File, seed: List<ProviderQuotaRecord> = 
         atomicWrite(file, content)
     }
     companion object {
+        private fun mergeSeed(
+            persisted: List<ProviderQuotaRecord>,
+            seed: List<ProviderQuotaRecord>
+        ): List<ProviderQuotaRecord> {
+            val persistedIds = persisted.mapTo(mutableSetOf()) { it.providerId }
+            return persisted + seed.filterNot { it.providerId in persistedIds }
+        }
+
         fun seedFromDescriptors(registry: ProviderDescriptorRegistry) =
             registry.getAll().map { d ->
                 ProviderQuotaRecord(

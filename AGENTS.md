@@ -13387,6 +13387,16 @@ Local verification note for this batch: `timeout 120s ./gradlew test --tests 'at
 - New overall estimate: unchanged.
 - Fingerprints (sha256, first 12): `StatusQuotaRenderer.kt=669fe84a3f56`; `backend-atom-contract-test.sh=80493e103c4b`; commit `ca19180e`. Unrelated `docs/completion/*` remains unstaged and untouched.
 
+### 2026-08-25T19:20:00Z · Agent: Codex GPT-5 · Batch: quota-seed-merge
+
+- Paths touched: `src/main/kotlin/atropos/core/provider/QuotaLedger.kt` (+10), `src/test/kotlin/atropos/core/provider/QuotaLedgerRouteTruthTest.kt` (+21), `scripts/backend-atom-contract-test.sh` (+1), `AGENTS.md` (+7), `STATUS-BACKEND.md` (+1).
+- Atoms / phases affected: P15 quota persistence and provider catalog expansion safety.
+- Predicate moved: persisted quota rows now merge with missing descriptor seeds instead of replacing the entire seed set; existing cooldown/usage state remains authoritative while newly registered providers become routable candidates.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh`, `bash scripts/hosted-test-selector-contract.sh` (`440 tests`), and `git diff --check` passed. Root/hosted Kotlin execution remains unverified; no green claim.
+- % delta: unchanged; P15 remains source-wired / partial pending hosted focused execution.
+- New overall estimate: unchanged.
+- Fingerprints (sha256, first 12): pending until scoped commit; unrelated `docs/completion/*` remains unstaged and untouched.
+
 ### 2026-08-25T12:45:00Z · Agent: Codex GPT-5 · Batch: imported-context-authority-contract
 
 - Paths touched: `scripts/backend-atom-contract-test.sh` (+5).
