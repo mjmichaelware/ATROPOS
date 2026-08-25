@@ -443,7 +443,25 @@ if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
     --tests 'atropos.core.github.GitHubApiClientTest' \
     --tests 'atropos.core.github.GitHubDeviceAuthClientTest' \
     --tests 'atropos.core.github.GitHubBindingTest' \
-    --tests 'atropos.core.scavenge.GitHubScavengerTest'
+    --tests 'atropos.core.scavenge.GitHubScavengerTest' \
+    --tests 'atropos.RuntimeHealthTest' \
+    --tests 'atropos.ast.AstSymbolGraphTest' \
+    --tests 'atropos.ast.Phase7AcceptanceGateTest' \
+    --tests 'atropos.dloi.DloiServiceTest' \
+    --tests 'atropos.dloi.DloiTaskResolverTest' \
+    --tests 'atropos.dloi.HigZeroGuardContractTest' \
+    --tests 'atropos.dloi.HigZeroGuardTest' \
+    --tests 'atropos.dloi.DloiIndexedDocumentLoaderTest' \
+    --tests 'atropos.dloi.SourceAuthorityIndexerTest' \
+    --tests 'atropos.dloi.SourceAuthorityLawTest' \
+    --tests 'atropos.dloi.SourceDocumentRegistryTest' \
+    --tests 'atropos.dloi.TermuxPathResolverTest' \
+    --tests 'atropos.data.storage.CloudLakehouseSyncEngineTest' \
+    --tests 'atropos.data.lakehouse.AtomLakehouseContextTest' \
+    --tests 'atropos.data.lakehouse.AtomKeywordExtractorTest' \
+    --tests 'atropos.data.lakehouse.LakehousePathRetrieveTest' \
+    --tests 'atropos.data.indexer.LatentOntologicalIndexerTest' \
+    --tests 'atropos.core.acceptance.CanonicalAcceptanceTests'
 fi
 
 echo "=== DIFF CHECK ==="

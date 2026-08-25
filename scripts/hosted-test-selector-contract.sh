@@ -6,7 +6,7 @@ WORKFLOW="$ROOT/.github/workflows/compile-gate.yml"
 VERIFY="$ROOT/scripts/atropos-verify-worktree.sh"
 
 extract() {
-  grep -oE 'atropos\.[A-Za-z0-9_.]*Test' "$1" | sort -u
+  grep -oE 'atropos\.[A-Za-z0-9_.]*Tests?' "$1" | sort -u
 }
 
 workflow_tests="$(extract "$WORKFLOW")"

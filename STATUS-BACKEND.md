@@ -1316,3 +1316,9 @@ Provider connect stores secrets through `TokenIsolationVault` under the user-loc
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | hosted proof wiring for provider truth aliases | source-wired / partial | `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh`, `scripts/backend-atom-contract-test.sh` | GitHub compile/focused lanes → `ProviderConfigurationResolverTest` → shared provider alias contract | Added the new provider-truth regression test to both canonical GitHub selectors; selector parity now reports 422 tests. Backend contract, shell syntax, and diff check pass; GitHub Actions execution remains pending. |
+
+### 2026-08-25T12:00:00Z · Agent: Codex GPT-5 · Batch: hosted-backend-coverage-expansion
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| backend hosted selector completeness | source-wired / partial | `.github/workflows/compile-gate.yml`, `scripts/atropos-verify-worktree.sh`, `scripts/hosted-test-selector-contract.sh`, `scripts/backend-atom-contract-test.sh` | GitHub compile/focused lanes → AST, DLOI/source-authority, lakehouse, runtime-health, and canonical-acceptance test classes | Added 18 previously unselected non-UI backend classes to both canonical lanes; selector parity now reports 440 tests. The selector parser now recognizes class names ending in `Test` and `Tests`. Contracts, shell syntax, and diff check pass; GitHub Actions execution remains pending. |

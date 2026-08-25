@@ -13351,6 +13351,14 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; provider catalog remains source-wired / partial pending hosted execution.
 - Fingerprints (sha256, first 12): `compile-gate.yml=89125b3f26e2`; `atropos-verify-worktree.sh=0fbbda1ecf1d`; `backend-atom-contract-test.sh=5579c7479a1f`.
 
+### 2026-08-25T12:00:00Z · Agent: Codex GPT-5 · Batch: hosted-backend-coverage-expansion
+- Paths touched: `.github/workflows/compile-gate.yml` (+18), `scripts/atropos-verify-worktree.sh` (+18), `scripts/hosted-test-selector-contract.sh` (+1/-1), `scripts/backend-atom-contract-test.sh` (+4), `STATUS-BACKEND.md` (+7).
+- Atoms / phases affected: hosted backend verification coverage for AST, DLOI/source authority, lakehouse, runtime health, and canonical acceptance owners.
+- Predicate moved: 18 previously unselected non-UI backend test classes are now executed by both canonical GitHub lanes; selector parity increased from 422 to 440, and class-name extraction now handles both `Test` and `Tests` declarations.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh`, `bash scripts/hosted-test-selector-contract.sh` (`440 tests`), `bash -n scripts/atropos-verify-worktree.sh scripts/hosted-test-selector-contract.sh`, and `git diff --check` passed. GitHub Actions execution remains unverified; no hosted-green claim.
+- % delta: unchanged; backend atoms remain source-wired / partial pending hosted execution.
+- Fingerprints (sha256, first 12): `compile-gate.yml=4ac8ea4e11b0`; `atropos-verify-worktree.sh=7a6a9425863f`; `hosted-test-selector-contract.sh=ac002a54c15b`; `backend-atom-contract-test.sh=42c1fbe1b3a`.
+
 ### 2026-08-25T08:00:00Z · Agent: Codex GPT-5 · Batch: provider-namespace-adapter-alias
 - Paths touched: `src/main/kotlin/atropos/core/provider/adapter/AdapterRegistry.kt` (+5), `src/test/kotlin/atropos/core/provider/ProviderOnboardingTest.kt` (+12), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7).
 - Atoms / phases affected: B-PROV-001t provider namespace scan reaching live adapter configuration.
