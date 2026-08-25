@@ -3,6 +3,7 @@ package atropos.cli
 
 import atropos.core.AtroposConfig
 import atropos.cli.ui.FirstRunGuide
+import atropos.core.provider.ProviderOnboardingService
 import atropos.core.provider.StaticProviderDescriptorRegistry
 import java.nio.file.Files
 import java.nio.file.Path
@@ -20,7 +21,8 @@ import java.nio.file.Paths
 class FirstRunProbe(
     private val config: AtroposConfig,
     private val workspace: Path = Paths.get("").toAbsolutePath(),
-    private val environment: (String) -> String? = System::getenv
+    private val environment: (String) -> String? = System::getenv,
+    private val onboarding: ProviderOnboardingService? = null
 ) {
 
     fun progress(): FirstRunGuide.Progress = FirstRunGuide.Progress(
@@ -36,8 +38,8 @@ class FirstRunProbe(
      * config happens to name, so a provider added to the registry counts
      * without this having to be edited to know about it.
      */
-    private fun providerConfigured(): Boolean =
-        StaticProviderDescriptorRegistry().getAll().any { descriptor ->
+    private fun providerConfigured(): Boolean = onboarding?.healthyProviderIds()?.isNotEmpty()
+        ?: StaticProviderDescriptorRegistry().getAll().any { descriptor ->
             descriptor.isLocal || descriptor.requiredEnv.any { key ->
                 !environment(key).isNullOrBlank()
             }

@@ -432,7 +432,7 @@ class CommandRouter(
             "/start", "/first-run" -> {
                 uiEngine.renderBlock(
                     firstRunGuide.render(
-                        atropos.cli.FirstRunProbe(config).progress(),
+                        atropos.cli.FirstRunProbe(config, onboarding = providerOnboarding).progress(),
                         uiEngine.viewportWidth
                     )
                 )

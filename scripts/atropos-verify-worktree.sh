@@ -144,6 +144,7 @@ if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
     --tests 'atropos.cli.CommandRouterIdentityTest' \
     --tests 'atropos.cli.help.HelpGeneratorTest' \
     --tests 'atropos.cli.FirstRunDoctorRendererTest' \
+    --tests 'atropos.cli.FirstRunProbeTest' \
     --tests 'atropos.cli.input.CommandCatalogBackendEntriesTest' \
     --tests 'atropos.cli.SelfHostInsideOutSandboxProofTest' \
     --tests 'atropos.cli.SelfHostAliasTranslatorTest' \

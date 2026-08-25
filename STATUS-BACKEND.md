@@ -41,6 +41,7 @@ These rows map the numbered backend atoms in the source DAG to the existing prod
 | B-014 instruction import | source-wired / partial | `/agent context import` → `ImportedInstructionPackStore` → Director context reads | hosted import test |
 | B-015 zero-retention research | source-wired / partial | config flag → `FactoryResearchService` research-plane branches → doctor summary | hosted policy/research test |
 | B-016 artifact identity | source-wired / partial | release producer/checksum → `BuildStamp` → `Main --version`/installer checks | hosted release artifact evidence |
+| B-002 first-run provider truth | source-wired / partial | `/start` → `CommandRouter` → shared `ProviderOnboardingService` → `FirstRunProbe` | local focused Gradle attempt timed out during task graph after `:buildStamp UP-TO-DATE`; static contracts pass; hosted Kotlin execution remains required |
 
 ### 2026-08-25T14:00:00Z · Agent: Codex GPT-5 · Batch: route-degraded-queue-owner
 
