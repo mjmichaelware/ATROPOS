@@ -13295,6 +13295,14 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - New overall estimate: unchanged.
 - Fingerprints: `McpHostManagerTest.kt=9fdff3a705fe`; `backend-atom-contract-test.sh=82cb37547703`.
 
+### 2026-08-25T02:16:59Z · Agent: Codex GPT-5 · Batch: install-help-caller-contract
+- Paths touched: `scripts/backend-atom-contract-test.sh` (+16).
+- Atoms / phases affected: B-INST-001..005 and B-HELP-001..002 caller enforcement.
+- Predicate moved: the CI-owned backend source gate now verifies the existing installer platform/config path and registry-derived `/help` production chain (`CommandRouter` → `HelpGenerator` → `CommandRegistry`/`CommandCatalog`); no second installer or help catalog was introduced.
+- Verification actually run: backend/provider-env/hosted-selector (440)/install/reusable-action contracts and `git diff --check` passed. Hosted Gradle/GitHub Actions execution, release publication, and device installation remain unverified.
+- % delta: unchanged; these atoms remain source-wired/partial pending hosted/runtime evidence.
+- Fingerprints: pending scoped commit.
+
 ### 2026-08-25T15:45:00Z · Agent: Codex GPT-5 · Batch: provider-connect-truth-resolver
 
 - Paths touched: `src/main/kotlin/atropos/core/provider/ProviderConfigurationResolver.kt` (+9/-2), `src/test/kotlin/atropos/core/provider/ProviderConfigurationResolverTest.kt` (+17), `scripts/backend-atom-contract-test.sh` (+3), `STATUS-BACKEND.md` (+7).

@@ -1408,3 +1408,9 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-CORE-b header policy across transport seams | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `scripts/backend-atom-contract-test.sh` | shared `remoteExchange()` → header reference validation → real HTTP or injected deterministic transport | Header secret/reference validation now runs before both production HTTP dispatch and injected test transport, preventing a fixture seam from bypassing the policy. Backend contract, hosted selector contract (440), shell syntax, and `git diff --check` pass; hosted/live remote execution remains unverified. |
+
+### 2026-08-25T02:16:59Z · Agent: Codex GPT-5 · Batch: install-help-caller-contract
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-INST-001..005 / B-HELP-001..002 | source-wired / partial | `install.sh`, `scripts/install-contract-test.sh`, `src/main/kotlin/atropos/cli/help/HelpGenerator.kt`, `src/main/kotlin/atropos/cli/input/CommandRegistry.kt`, `src/main/kotlin/atropos/cli/CommandRouter.kt`, `scripts/backend-atom-contract-test.sh` | installer platform/config path remains owned by `install.sh`; `/help` remains `CommandRouter` → `HelpGenerator` → `CommandRegistry`/`CommandCatalog` | Backend source contract now protects the existing installer and registry-derived help caller edges. Backend/provider-env/hosted-selector (440)/install/reusable-action contracts and `git diff --check` pass. Hosted Gradle/release/device execution remains unverified; statuses remain partial. |

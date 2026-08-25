@@ -93,6 +93,22 @@ text src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt 'fun preferredP
 text src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt 'fun disable(providerId: String)'
 text src/main/kotlin/atropos/core/provider/adapter/AdapterRouteFacade.kt 'preferredProviderIds = { atropos.core.provider.ProviderOnboardingService().preferredProviderIds() }'
 text src/main/kotlin/atropos/core/provider/RoutePolicy.kt 'preferredProviderIds?.invoke()?.indexOf(providerId)'
+
+# Help and installer callers. These atoms are deliberately guarded here rather
+# than by a second catalog: the CLI help owner is CommandRouter -> HelpGenerator
+# -> CommandRegistry, and the installer owner is the single install.sh path.
+file src/main/kotlin/atropos/cli/help/HelpGenerator.kt
+file src/main/kotlin/atropos/cli/input/CommandRegistry.kt
+text src/main/kotlin/atropos/cli/CommandRouter.kt 'renderHelpPage(routedTokens.drop(1).joinToString(" "))'
+text src/main/kotlin/atropos/cli/CommandRouter.kt 'HelpGenerator().render(level)'
+text src/main/kotlin/atropos/cli/help/HelpGenerator.kt 'RegistryHelpSource'
+text src/main/kotlin/atropos/cli/input/CommandCatalog.kt 'CommandEntry("/help"'
+text install.sh 'OS_NAME=$(uname -s'
+text install.sh 'aarch64|arm64) CPU_ARCH=aarch64'
+text install.sh 'x86_64|amd64) CPU_ARCH=x86_64'
+text install.sh 'Darwin) PLATFORM="darwin-$CPU_ARCH"'
+text install.sh 'export ATROPOS_PLATFORM='
+text scripts/install-contract-test.sh 'ATROPOS_INSTALL_CONTRACT_OK'
 text src/main/kotlin/atropos/core/provider/SourceBindingFetcher.kt 'connectTimeout(java.time.Duration.ofSeconds(5))'
 text src/main/kotlin/atropos/core/provider/SourceBindingFetcher.kt 'SecretSinkMatrix.isEgressPermitted'
 text src/main/kotlin/atropos/core/provider/SourceBindingFetcher.kt 'HttpClient.Redirect.NEVER'
