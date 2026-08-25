@@ -13347,6 +13347,16 @@ Local verification note for this batch: `timeout 120s ./gradlew test --tests 'at
 - New overall estimate: unchanged.
 - Fingerprints (sha256, first 12): pending until scoped commit; unrelated `docs/completion/*` remains unstaged and untouched.
 
+### 2026-08-25T17:50:00Z · Agent: Codex GPT-5 · Batch: route-quota-usage-accounting
+
+- Paths touched: `src/main/kotlin/atropos/core/provider/adapter/AdapterRouteFacade.kt` (+15/-1), `src/test/kotlin/atropos/core/provider/adapter/AdapterRouteFacadePolicyTest.kt` (import cleanup), `scripts/backend-atom-contract-test.sh` (+2), `AGENTS.md` (+7), `STATUS-BACKEND.md` (+1).
+- Atoms / phases affected: P15 quota ledger route truth.
+- Predicate moved: the canonical adapter route now records successful provider usage and normalized provider failures in the existing quota ledger after agency admission; queued and local-only results remain non-provider outcomes.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh` (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), `bash scripts/hosted-test-selector-contract.sh` (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (440 tests)`), and `git diff --check` passed. Root/hosted Kotlin execution remains unverified; no green claim.
+- % delta: unchanged; P15 remains source-wired / partial pending hosted focused execution.
+- New overall estimate: unchanged.
+- Fingerprints (sha256, first 12): pending until scoped commit; unrelated `docs/completion/*` remains unstaged and untouched.
+
 ### 2026-08-25T12:45:00Z · Agent: Codex GPT-5 · Batch: imported-context-authority-contract
 
 - Paths touched: `scripts/backend-atom-contract-test.sh` (+5).

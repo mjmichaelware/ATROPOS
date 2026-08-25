@@ -121,7 +121,20 @@ class AdapterRouteFacade(
                 )
             )
         }
-        return adapter.complete(AdapterRequest(task = task, prompt = prompt, dryRun = dryRun))
+        val result = adapter.complete(AdapterRequest(task = task, prompt = prompt, dryRun = dryRun))
+        when (result) {
+            is ProviderCallResult.Success -> ledger.recordSuccess(
+                providerId = adapter.providerId,
+                usage = result.usage
+            )
+            is ProviderCallResult.Failure -> ledger.recordFailure(
+                providerId = adapter.providerId,
+                failure = result.failure
+            )
+            is ProviderCallResult.Queued,
+            is ProviderCallResult.LocalOnly -> Unit
+        }
+        return result
     }
 
     private fun queuedResult(
