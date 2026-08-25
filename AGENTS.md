@@ -13301,7 +13301,7 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Predicate moved: the CI-owned backend source gate now verifies the existing installer platform/config path and registry-derived `/help` production chain (`CommandRouter` → `HelpGenerator` → `CommandRegistry`/`CommandCatalog`); no second installer or help catalog was introduced.
 - Verification actually run: backend/provider-env/hosted-selector (440)/install/reusable-action contracts and `git diff --check` passed. Hosted Gradle/GitHub Actions execution, release publication, and device installation remain unverified.
 - % delta: unchanged; these atoms remain source-wired/partial pending hosted/runtime evidence.
-- Fingerprints: pending scoped commit.
+- Fingerprints: commit `d877cdab` (source gate), current script hash superseded by later contract batches.
 
 ### 2026-08-25T02:45:00Z · Agent: Codex GPT-5 · Batch: tier0-filesystem-git-caller-contract
 - Paths touched: `scripts/backend-atom-contract-test.sh` (+7).
@@ -13309,7 +13309,7 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Predicate moved: the CI-owned source gate now proves configured filesystem MCP execution crosses the sole `McpHostManager`/`TypedToolExecutor` seam and local git reads cross the existing bounded shell owner; no parallel filesystem, git, or tool-executor subsystem was introduced.
 - Verification actually run: backend atom contract, hosted selector contract (440), reusable action contracts, and `git diff --check` passed. Hosted Kotlin/runtime MCP execution remains unverified.
 - % delta: unchanged; Tier-0 integrations remain source-wired/partial pending hosted/runtime evidence.
-- Fingerprints: pending scoped commit.
+- Fingerprints: commit `5bbac4fd`, `backend-atom-contract-test.sh` current hash `3a33f7d9d8da`.
 
 ### 2026-08-25T02:30:00Z · Agent: Codex GPT-5 · Batch: hosted-verifier-gradle-lane
 - Paths touched: `scripts/atropos-verify-worktree.sh` (+11/-7), `scripts/atropos-verify-action-contract-test.sh` (+5).
@@ -13317,7 +13317,7 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - Predicate moved: GitHub Actions no longer depends on the device-only standalone `kotlinc` fast gate before hosted evidence; the existing Gradle compile and focused-test commands are now the first executable lane when `GITHUB_ACTIONS=true`, while local/device fast smoke remains unchanged.
 - Verification actually run: shell syntax, reusable action/path contracts, backend atom contract, hosted selector contract (440), and `git diff --check` passed. GitHub-hosted execution remains unverified.
 - % delta: unchanged; B-MCP-GHA remains source-wired/partial pending hosted run evidence.
-- Fingerprints: pending scoped commit.
+- Fingerprints: commit `62d3d858`; verifier/action contract hashes are recorded by that commit.
 
 ### 2026-08-25T15:45:00Z · Agent: Codex GPT-5 · Batch: provider-connect-truth-resolver
 
