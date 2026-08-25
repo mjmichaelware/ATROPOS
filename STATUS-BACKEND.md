@@ -1858,6 +1858,12 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 
 ### 2026-08-25T18:45:00Z · Agent: Codex GPT-5 · Batch: mcp-registry-owner
 
+### 2026-08-25T19:00:00Z · Agent: Codex GPT-5 · Batch: openai-endpoint-owner
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-PROV-001b OpenAI base endpoint consumption | source-wired / partial | `src/main/kotlin/atropos/core/provider/adapter/OpenAiCompatibleProviderCatalog.kt`, `src/main/kotlin/atropos/core/provider/adapter/OpenAiCompatibleKernelAdapter.kt`, `src/test/kotlin/atropos/core/provider/ProviderFixtureMatrixServiceTest.kt`, `scripts/backend-atom-contract-test.sh` | provider discovery → canonical OpenAI-compatible catalog → existing `OpenAiCompatibleKernelAdapter.liveComplete()` endpoint selection | `OPENAI_API_BASE` is now consumed by the existing OpenAI adapter transport when `OPENAI_API_KEY` is present; endpoint-only discovery remains `UNTESTED` and never becomes routable. Static backend contract and `git diff --check` are required; hosted Kotlin execution remains unverified. |
+
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-MCP-CORE / canonical MCP integration registration | source-wired / partial | `src/main/kotlin/atropos/core/integration/McpHostManager.kt`, `scripts/backend-atom-contract-test.sh` | `/mcp`, `/doctor`, bridge MCP routes → sole `McpHostManager.load()` → `IntegrationRegistry.requireRegistered("mcp")` → existing config/transport/policy owner | MCP configuration loading now fails closed if the canonical first-party `mcp` integration descriptor is absent; no second host or registry was introduced. Backend contract, hosted selector (`441 tests`), and diff check passed; Kotlin/hosted execution remains unverified. |

@@ -18,6 +18,13 @@ import kotlin.test.assertTrue
 
 class ProviderFixtureMatrixServiceTest {
     @Test
+    fun openai_descriptor_consumes_the_discovered_base_endpoint_override() {
+        val spec = OpenAiCompatibleProviderCatalog.get("openai")
+
+        assertEquals("OPENAI_API_BASE", spec?.endpointEnv)
+    }
+
+    @Test
     fun fixture_matrix_passes_offline_for_all_registered_providers() {
         val registry = StaticProviderDescriptorRegistry()
         val service = ProviderFixtureMatrixService(

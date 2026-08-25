@@ -79,7 +79,8 @@ object OpenAiCompatibleProviderCatalog {
             defaultModel = "gpt-4o-mini",
             fallbackModels = listOf("gpt-4o"),
             apiKeyEnv = "OPENAI_API_KEY",
-            freeTier = false
+            freeTier = false,
+            endpointEnv = "OPENAI_API_BASE"
         ),
         OpenAiCompatibleProviderSpec(
             providerId = "mistral",

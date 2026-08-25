@@ -44,6 +44,7 @@ text src/main/kotlin/atropos/core/provider/adapter/AnthropicKernelAdapter.kt 'x-
 text src/main/kotlin/atropos/core/provider/adapter/BedrockKernelAdapter.kt 'AwsSigV4'
 text src/main/kotlin/atropos/core/provider/adapter/OpenAiCompatibleProviderCatalog.kt 'providerId = "deepseek_direct"'
 text src/main/kotlin/atropos/core/provider/adapter/OpenAiCompatibleProviderCatalog.kt 'providerId = "mistral"'
+text src/main/kotlin/atropos/core/provider/adapter/OpenAiCompatibleProviderCatalog.kt 'endpointEnv = "OPENAI_API_BASE"'
 for provider_id in \
   openai anthropic groq xai gemini openrouter together fireworks \
   deepseek_direct mistral cohere ollama aws_bedrock azure_openai; do
