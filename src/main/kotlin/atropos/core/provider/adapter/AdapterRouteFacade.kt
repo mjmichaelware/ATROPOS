@@ -4,7 +4,6 @@ import atropos.core.agent.AgentQueueService
 import atropos.core.provider.ApiCapability
 import atropos.core.provider.AtroposCostPolicy
 import atropos.core.provider.FileQuotaLedger
-import atropos.core.provider.InMemoryQuotaLedger
 import atropos.core.provider.ProviderAvailabilityState
 import atropos.core.provider.ProviderCallResult
 import atropos.core.provider.ProviderDescriptor
@@ -14,6 +13,7 @@ import atropos.core.provider.ProviderTask
 import atropos.core.provider.ProviderTaskClassifier
 import atropos.core.provider.ProviderTaskKind
 import atropos.core.provider.QuotaLedger
+import atropos.core.provider.ProviderQuotaPaths
 import atropos.core.provider.RoutePolicy
 import atropos.core.provider.RoutePolicyDecision
 import atropos.core.provider.StaticProviderDescriptorRegistry
@@ -40,7 +40,8 @@ data class AdapterRouteResult(
 class AdapterRouteFacade(
     private val descriptorRegistry: ProviderDescriptorRegistry = StaticProviderDescriptorRegistry(),
     private val adapterRegistry: ProviderAdapterRegistry = StaticProviderAdapterRegistry(descriptorRegistry),
-    private val ledger: QuotaLedger = InMemoryQuotaLedger(
+    private val ledger: QuotaLedger = FileQuotaLedger(
+        ProviderQuotaPaths.defaultLedger(),
         FileQuotaLedger.seedFromDescriptors(descriptorRegistry)
     ),
     private val costPolicy: AtroposCostPolicy = AtroposCostPolicy.FREE_ONLY,

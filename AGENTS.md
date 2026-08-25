@@ -13367,6 +13367,16 @@ Local verification note for this batch: `timeout 120s ./gradlew test --tests 'at
 - New overall estimate: unchanged.
 - Fingerprints (sha256, first 12): `ProviderEnvironmentAliases.kt=bb4e0fabe647`; `ProviderOnboarding.kt=4ad33961e6b9`; `backend-atom-contract-test.sh=3dd8d01eb0b3`; commit `f240b688`. Unrelated `docs/completion/*` remains unstaged and untouched.
 
+### 2026-08-25T18:40:00Z · Agent: Codex GPT-5 · Batch: route-ledger-durable-owner
+
+- Paths touched: `src/main/kotlin/atropos/core/provider/adapter/AdapterRouteFacade.kt` (+3/-2), `scripts/backend-atom-contract-test.sh` (+1), `AGENTS.md` (+7), `STATUS-BACKEND.md` (+1).
+- Atoms / phases affected: P15 quota persistence and route/status truth convergence.
+- Predicate moved: the default route facade now uses the existing durable `ProviderQuotaPaths.defaultLedger()`/`FileQuotaLedger` path, so normal routed usage and failures survive process death and are visible to the bridge quota projection; no second ledger owner was introduced.
+- Verification actually run: `bash scripts/backend-atom-contract-test.sh` (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`) and `git diff --check` passed. Root/hosted Kotlin execution remains unverified; no green claim.
+- % delta: unchanged; P15 remains source-wired / partial pending hosted focused execution.
+- New overall estimate: unchanged.
+- Fingerprints (sha256, first 12): pending until scoped commit; unrelated `docs/completion/*` remains unstaged and untouched.
+
 ### 2026-08-25T12:45:00Z · Agent: Codex GPT-5 · Batch: imported-context-authority-contract
 
 - Paths touched: `scripts/backend-atom-contract-test.sh` (+5).

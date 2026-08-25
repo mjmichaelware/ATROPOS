@@ -171,6 +171,7 @@ text src/main/kotlin/atropos/core/provider/ProviderEnvironmentAliases.kt 'fun fo
 text src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt 'ProviderEnvironmentAliases.forProvider'
 text src/main/kotlin/atropos/core/provider/adapter/AdapterRouteFacade.kt 'ledger.recordSuccess'
 text src/main/kotlin/atropos/core/provider/adapter/AdapterRouteFacade.kt 'ledger.recordFailure'
+text src/main/kotlin/atropos/core/provider/adapter/AdapterRouteFacade.kt 'ProviderQuotaPaths.defaultLedger()'
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'if (server.remote)'
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'private fun postRemote'
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'HttpClient.Redirect.NEVER'
