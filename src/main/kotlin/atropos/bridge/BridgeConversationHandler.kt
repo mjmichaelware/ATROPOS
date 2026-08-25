@@ -107,7 +107,7 @@ internal class BridgeConversationHandler(
     private fun turnJson(turn: BridgeConversationTurn): String = JsonWriter.obj(
         "id" to JsonWriter.str(turn.id),
         "author" to JsonWriter.str(turn.author.name.lowercase()),
-        "text" to JsonWriter.str(turn.text),
+        "text" to JsonWriter.str(redactionFilter.redact(turn.text)),
         "at" to JsonWriter.str(turn.at.toString())
     )
 

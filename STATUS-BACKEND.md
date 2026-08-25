@@ -1766,3 +1766,9 @@ Local verification note: `timeout 120s ./gradlew test --tests 'atropos.core.prov
 | atom | status | files | caller | tests / notes |
 | --- | --- | --- | --- | --- |
 | B-005 / secret-safe command and CI output | source-wired / partial | `src/main/kotlin/atropos/bridge/BridgeCommandHandler.kt`, `src/main/kotlin/atropos/cli/CiCommandHandler.kt`, `scripts/backend-atom-contract-test.sh` | `/v1/command` and `/ci run next` → existing command/queue owners → `RedactionFilter` → JSON/terminal output | Bridge command output and local CI job tails now pass through the existing redaction boundary immediately before rendering. Backend atom contract, hosted selector (`440 tests`), and diff check pass; hosted secret-fixture execution remains unverified. |
+
+### 2026-08-25T07:12:00Z · Agent: Codex GPT-5 · Batch: conversation-factory-render-redaction
+
+| atom | status | files | caller | tests / notes |
+| --- | --- | --- | --- | --- |
+| B-005 / secret-safe conversation and factory render | source-wired / partial | `src/main/kotlin/atropos/bridge/BridgeConversationHandler.kt`, `src/main/kotlin/atropos/cli/FactoryCommandHandler.kt`, `scripts/backend-atom-contract-test.sh` | bridge conversation projection and `/factory` output → existing `RedactionFilter` → JSON/terminal paint | Conversation turn text and factory result text now pass through their existing redaction filters immediately before rendering. Backend atom contract, hosted selector (`440 tests`), and diff check pass; hosted secret-fixture execution remains unverified. |

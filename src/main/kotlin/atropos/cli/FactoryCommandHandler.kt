@@ -80,7 +80,7 @@ class FactoryCommandHandler(
             }
             live.stop()
             uiEngine.renderNotice("factory run verified repository output:")
-            uiEngine.renderNotice(result)
+            uiEngine.renderNotice(redactionFilter.redact(result))
         }
     }
 
