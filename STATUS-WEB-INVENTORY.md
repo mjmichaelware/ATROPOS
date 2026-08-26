@@ -1,6 +1,37 @@
-# F-WEB / ADD-W Inventory (2026-08-25)
+# F-WEB / ADD-W Inventory (2026-08-26)
 
 Legend: DONE = production caller exists outside tests | PARTIAL = file exists, weak/missing caller | BLOCKED = needs missing bridge route (path listed) | ABSENT = no file
+
+---
+
+## PROBE — Route → Client File → Usable? (from apps/web/src/lib/** scan)
+
+| Path | Client File | Usable? | Notes |
+|------|-------------|---------|-------|
+| `/v1/export` / `/v1/handoff` | — | **no** | No export/handoff client in lib/** |
+| `/v1/evidence/list` | `lib/governance/client.ts:evidenceList()` | **yes** | Reads `/v1/evidence/list` via `readEngine` |
+| `/v1/evidence/ledger` | — | **no** | No ledger-specific client; evidence list exists but no ledger browser |
+| `/v1/quota` | `lib/governance/client.ts:quota()` / `lib/quota/client.ts` | **yes** | Both clients read `/v1/quota` |
+| `/v1/cascade` | `lib/governance/client.ts:cascade()` | **yes** | Reads `/v1/cascade` |
+| `/v1/authority` | `lib/governance/client.ts:authority()` | **yes** | Reads `/v1/authority` |
+| `/v1/storage` | `lib/governance/client.ts:storage()` | **yes** | Reads `/v1/storage` |
+| `/v1/files` | `lib/files/client.ts` | **yes** | Upload/list via `writeEngine`/`readEngine` |
+| `/v1/status` | — | **no** | No dedicated status client; six answers via `/v1/answers` |
+| `/v1/answers` | `lib/checkpoint/client.ts` (via six-answers) | **yes** | Six answers from `/v1/answers` |
+| `/v1/metrics` | `lib/governance/client.ts:metrics()` | **yes** | Reads `/v1/metrics` via `GovernanceMetrics` |
+| `/v1/delta-register` | `lib/governance/client.ts:deltaRegister()` | **yes** | Reads `/v1/delta-register` |
+| `/v1/quarantine` | `lib/governance/client.ts:quarantine()` | **yes** | Reads `/v1/quarantine` |
+| `/v1/amendments` | `lib/governance/client.ts:amendments()` | **yes** | Reads `/v1/amendments` |
+| `/v1/evidence/ledger` | — | **no** | No ledger-specific client; evidence list exists but no ledger browser |
+| `/v1/reproducibility` | — | **no** | No reproducibility client in lib/** |
+| `/v1/visual/compare` | — | **no** | No visual compare client |
+| `/v1/workspace/tree` | — | **no** | No project tree endpoint |
+| `/v1/workspace/file` | — | **no** | No file read/write for project files |
+| `/v1/preview` / `/v1/factory/preview` | — | **no** | No preview client |
+
+---
+
+# F-WEB / ADD-W Inventory (2026-08-25)
 
 ---
 
@@ -48,7 +79,7 @@ Legend: DONE = production caller exists outside tests | PARTIAL = file exists, w
 | ADD-W-013 Authority status → /v1/authority | **DONE** | `SystemPanel` reads `governance.authority()` → `/v1/authority` | Shows resolved/source/documents/violations |
 | ADD-W-014 Cascade snapshot → /v1/cascade | **DONE** | `SystemPanel` → `CascadeView` reads `governance.cascade()` → `/v1/cascade` | Final keys marked |
 | ADD-W-015 Handoff export → existing export client; redaction mandatory | **ABSENT** | No export client exists | **Needs `/v1/export` or `/v1/handoff` bridge route** |
-| ADD-W-016 Export landing-zone pref in settings | **ABSENT** | No pref in settings page | **Needs storage preference API** |
+| ADD-W-016 Export landing-zone pref in settings | **DONE** | `SettingsPage` adds "Export & Handoff" section with landing zone input; reads/writes `atropos.export.landingZone` from localStorage; export client reads pref if present | Pure UI; no backend; localStorage key `atropos.export.landingZone` |
 
 ---
 

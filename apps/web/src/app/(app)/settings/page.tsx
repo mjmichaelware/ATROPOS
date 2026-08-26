@@ -114,6 +114,40 @@ export default function SettingsPage() {
         </div>
       </section>
 
+      {/* Export & Handoff */}
+      <section className="space-y-4">
+        <div className="border-b border-sg-neutral-200 dark:border-sg-neutral-800 pb-3">
+          <h2 className="text-2xl font-semibold text-sg-neutral-900 dark:text-sg-neutral-50">
+            Export & Handoff
+          </h2>
+        </div>
+        <div className="bg-sg-neutral-50 dark:bg-sg-neutral-900 border border-sg-neutral-200 dark:border-sg-neutral-800 rounded-lg p-6 space-y-4">
+          <div>
+            <label htmlFor="export-landing-zone" className="block text-sm font-semibold text-sg-neutral-900 dark:text-sg-neutral-50 mb-2">
+              Export landing zone
+            </label>
+            <p className="text-sm text-sg-neutral-600 dark:text-sg-neutral-400 mb-2">
+              Default directory for exported artifacts and handoff bundles. Uses a safe default if empty.
+            </p>
+            <input
+              id="export-landing-zone"
+              type="text"
+              className="w-full px-3 py-2 border border-sg-neutral-300 dark:border-sg-neutral-600 rounded-lg bg-white dark:bg-sg-neutral-800 text-sg-neutral-900 dark:text-sg-neutral-100 placeholder-sg-neutral-500"
+              placeholder="e.g. ~/Downloads/atropos-exports"
+              defaultValue={typeof window !== 'undefined' ? localStorage.getItem('atropos.export.landingZone') ?? '' : ''}
+              onChange={(e) => {
+                if (typeof window !== 'undefined') {
+                  localStorage.setItem('atropos.export.landingZone', e.target.value);
+                }
+              }}
+            />
+          </div>
+          <p className="text-xs text-sg-neutral-500">
+            The export client reads this preference if present. Leave empty to use the engine default.
+          </p>
+        </div>
+      </section>
+
       {/* Developer Options */}
       <section className="space-y-4">
         <div className="border-b border-sg-neutral-200 dark:border-sg-neutral-800 pb-3">
