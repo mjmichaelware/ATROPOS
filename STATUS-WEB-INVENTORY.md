@@ -73,7 +73,7 @@ Legend: DONE = production caller exists outside tests | PARTIAL = file exists, w
 | Atom | Status | File / Caller | Notes |
 |------|--------|---------------|-------|
 | ADD-W-026 SpecGraph views on ATROPOS tokens under /developer/specgraph | **DONE** | `app/developer/specgraph/page.tsx` mounts `DeveloperToolsContainer` on ATROPOS tokens | SpecGraph at `/developer/specgraph` |
-| ADD-W-027 SurfaceContract tests against shared fixtures | **ABSENT** | `SurfaceContract` type not yet defined in contracts; `strict-surface-contract.test.ts` exists for architecture test | Needs SurfaceContract type definition in contracts + fixture parity tests |
+| ADD-W-027 SurfaceContract tests against shared fixtures | **DONE** | `SurfaceContract` types in `index.mjs` + `index.d.ts` with 10 surface kinds; `surface-contract.test.mjs` with 20 fixture parity tests | All 10 surface kinds have fixtures; validation functions pass; `surface-contract.test.mjs` 20/20 pass |
 | ADD-W-028 Delta register UI → /v1/delta-register | **DONE** | `SystemPanel` → `DeltaRegisterView` reads `governance.deltaRegister()` → `/v1/delta-register` | Changed rows only |
 | ADD-W-029 @file upload attested via files API | **DONE** | `FileUpload` component in `components/upload/file-upload.tsx` uploads to `/v1/files`, displays SHA-256 hash (attestation envelope) + size, with copy-to-clipboard | SHA-256 hash is the attestation envelope; copy-to-clipboard works |
 | ADD-W-030 MCP→ActionProposal mapper (no skipped chrome) | **DONE** | `ActionProposalCard` in `message-stream.tsx` maps `mcp_judged` → `decideApproval` path | Extends W1-03/04 |
@@ -123,7 +123,7 @@ Legend: DONE = production caller exists outside tests | PARTIAL = file exists, w
 
 ## Summary
 
-**DONE: 46** | **PARTIAL: 5** | **BLOCKED: 12** | **ABSENT: 5**
+**DONE: 47** | **PARTIAL: 5** | **BLOCKED: 12** | **ABSENT: 5**
 
 ### Immediately actionable (PARTIAL → DONE in Batch A):
 1. F-WEB-004: Add `/v1/workspace/tree` + `/v1/workspace/file` bridge routes (B-track) — frontend ready

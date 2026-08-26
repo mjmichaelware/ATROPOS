@@ -275,3 +275,61 @@ export function isSixAnswersPayload(value: unknown): boolean;
 
 /** Throws when the engine's served vocabulary differs from this package's copy. */
 export function assertVocabularyMatches(served: unknown): true;
+
+/**
+ * ADD-W-027: SurfaceContract — the contract a web surface must satisfy.
+ */
+export type SurfaceContractKind =
+  | 'home'
+  | 'project-work'
+  | 'project-files'
+  | 'project-activity'
+  | 'project-agents'
+  | 'models'
+  | 'automation'
+  | 'history'
+  | 'settings'
+  | 'developer-specgraph';
+
+export const SURFACE_CONTRACT_KINDS: readonly SurfaceContractKind[];
+
+export interface SurfaceComponentContract {
+  componentId: string;
+  requiredData: Record<string, unknown>;
+}
+
+export interface SurfaceContract {
+  surfaceId: SurfaceContractKind;
+  requiredRoutes: string[];
+  components: SurfaceComponentContract[];
+  requiredState?: Record<string, unknown>;
+}
+
+export function isSurfaceContract(value: unknown): value is SurfaceContract;
+
+export interface SurfaceContractValidationResultSuccess {
+  ok: true;
+}
+
+export interface SurfaceContractValidationResultFailure {
+  ok: false;
+  reason: string;
+  detail: string;
+  remedy: string;
+  [key: string]: unknown;
+}
+
+export type SurfaceContractValidationResult = SurfaceContractValidationResultSuccess | SurfaceContractValidationResultFailure;
+
+export function validateSurfaceContract(contract: SurfaceContract, instance: unknown): SurfaceContractValidationResult;
+
+export interface SurfaceContractFixture {
+  surfaceId: SurfaceContractKind;
+  requiredRoutes: string[];
+  components: SurfaceComponentContract[];
+  requiredState?: Record<string, unknown>;
+}
+
+export const SURFACE_CONTRACT_FIXTURES: Record<SurfaceContractKind, SurfaceContractFixture>;
+
+export function validateSurfaceFixture(surfaceId: SurfaceContractKind, instance: unknown): SurfaceContractValidationResult;

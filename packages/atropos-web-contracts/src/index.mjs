@@ -304,3 +304,189 @@ export function assertVocabularyMatches(served) {
   }
   return true;
 }
+
+/**
+ * ADD-W-027: SurfaceContract — the contract a web surface must satisfy.
+ *
+ * A SurfaceContract defines the shape of a surface's data requirements and
+ * the components it renders. It is a pure data contract that can be validated
+ * at runtime and tested against shared fixtures.
+ *
+ * A surface contract defines:
+ * - surfaceId: unique identifier for the surface
+ * - requiredRoutes: engine routes the surface reads
+ * - components: list of component contracts the surface renders
+ * - requiredState: state shape the surface requires
+ * - validation: function to validate a surface instance against this contract
+ */
+export const SURFACE_CONTRACT_KINDS = Object.freeze([
+  'home',
+  'project-work',
+  'project-files',
+  'project-activity',
+  'project-agents',
+  'models',
+  'automation',
+  'history',
+  'settings',
+  'developer-specgraph',
+]);
+
+export function isSurfaceContract(value) {
+  if (!value || typeof value !== 'object') return false;
+  return (
+    typeof value.surfaceId === 'string' &&
+    value.surfaceId.length > 0 &&
+    SURFACE_CONTRACT_KINDS.includes(value.surfaceId) &&
+    Array.isArray(value.requiredRoutes) &&
+    value.requiredRoutes.every((r) => typeof r === 'string' && r.startsWith('/v1/')) &&
+    Array.isArray(value.components) &&
+    value.components.every(
+      (c) =>
+        typeof c === 'object' &&
+        c !== null &&
+        typeof c.componentId === 'string' &&
+        c.componentId.length > 0 &&
+        typeof c.requiredData === 'object' &&
+        c.requiredData !== null
+    ) &&
+    (value.requiredState === undefined ||
+      (typeof value.requiredState === 'object' && value.requiredState !== null))
+  );
+}
+
+/**
+ * Validates a surface instance against its contract.
+ * Returns { ok: true } or { ok: false, detail, remedy }.
+ */
+export function validateSurfaceContract(contract, instance) {
+  if (!isSurfaceContract(contract)) {
+    return { ok: false, reason: 'invalid-contract', detail: 'Contract failed isSurfaceContract check', remedy: 'Fix the contract definition' };
+  }
+  if (!instance || typeof instance !== 'object') {
+    return { ok: false, reason: 'invalid-instance', detail: 'Instance must be an object', remedy: 'Provide a valid surface instance' };
+  }
+  if (instance.surfaceId !== contract.surfaceId) {
+    return { ok: false, reason: 'surface-id-mismatch', detail: `Instance surfaceId ${instance.surfaceId} does not match contract ${contract.surfaceId}`, remedy: 'Ensure instance matches contract surfaceId' };
+  }
+  for (const route of contract.requiredRoutes) {
+    if (!(route in instance)) {
+      return { ok: false, reason: 'missing-route-data', detail: `Instance missing required route data: ${route}`, remedy: `Provide data for ${route}` };
+    }
+  }
+  for (const component of contract.components) {
+    if (!(component.componentId in instance)) {
+      return { ok: false, reason: 'missing-component', detail: `Instance missing required component: ${component.componentId}`, remedy: `Provide data for component ${component.componentId}` };
+    }
+  }
+  return { ok: true };
+}
+
+/**
+ * Surface contract fixtures for testing.
+ * These are shared between surfaces and tests.
+ */
+export const SURFACE_CONTRACT_FIXTURES = Object.freeze({
+  home: {
+    surfaceId: 'home',
+    requiredRoutes: ['/v1/answers', '/v1/projects', '/v1/approvals', '/v1/quota'],
+    components: [
+      { componentId: 'EngineSixAnswers', requiredData: { answers: 'object', queue: 'object' } },
+      { componentId: 'SessionList', requiredData: { sessions: 'array' } },
+      { componentId: 'QuotaChips', requiredData: { used: 'number', limit: 'number' } },
+      { componentId: 'ProjectCard', requiredData: { name: 'string', status: 'string' } },
+    ],
+    requiredState: { projects: 'array', approvals: 'array' },
+  },
+  'project-work': {
+    surfaceId: 'project-work',
+    requiredRoutes: ['/v1/answers', '/v1/events/stream', '/v1/checkpoint', '/v1/approvals'],
+    components: [
+      { componentId: 'WorkbenchShell', requiredData: {} },
+      { componentId: 'FileExplorer', requiredData: { files: 'array' } },
+      { componentId: 'EditorTabs', requiredData: { tabs: 'array' } },
+      { componentId: 'LogPanel', requiredData: { events: 'array' } },
+      { componentId: 'CheckpointRail', requiredData: { goalId: 'string', resumable: 'boolean' } },
+      { componentId: 'BridgeApprovalList', requiredData: { pending: 'array' } },
+    ],
+    requiredState: { layout: 'string', activeProjectId: 'string' },
+  },
+  'project-files': {
+    surfaceId: 'project-files',
+    requiredRoutes: ['/v1/files', '/v1/evidence/list'],
+    components: [
+      { componentId: 'FileExplorer', requiredData: { files: 'array' } },
+      { componentId: 'EvidenceList', requiredData: { items: 'array' } },
+    ],
+    requiredState: { activeProjectId: 'string' },
+  },
+  'project-activity': {
+    surfaceId: 'project-activity',
+    requiredRoutes: ['/v1/events/stream', '/v1/activity'],
+    components: [
+      { componentId: 'ActivityMonitor', requiredData: { stages: 'array', events: 'array' } },
+    ],
+    requiredState: { activeProjectId: 'string' },
+  },
+  'project-agents': {
+    surfaceId: 'project-agents',
+    requiredRoutes: ['/v1/agents', '/v1/approvals'],
+    components: [
+      { componentId: 'AgentList', requiredData: { agents: 'array' } },
+      { componentId: 'BridgeApprovalList', requiredData: { pending: 'array' } },
+    ],
+    requiredState: { activeProjectId: 'string' },
+  },
+  models: {
+    surfaceId: 'models',
+    requiredRoutes: ['/v1/models', '/v1/providers'],
+    components: [
+      { componentId: 'ModelSelector', requiredData: { models: 'array' } },
+      { componentId: 'ProviderStatus', requiredData: { providers: 'array' } },
+    ],
+  },
+  automation: {
+    surfaceId: 'automation',
+    requiredRoutes: ['/v1/automation', '/v1/queue'],
+    components: [
+      { componentId: 'AutomationList', requiredData: { rules: 'array' } },
+      { componentId: 'QueueMonitor', requiredData: { queue: 'object' } },
+    ],
+  },
+  history: {
+    surfaceId: 'history',
+    requiredRoutes: ['/v1/history', '/v1/evidence/list'],
+    components: [
+      { componentId: 'HistoryTimeline', requiredData: { entries: 'array' } },
+      { componentId: 'EvidenceBrowser', requiredData: { items: 'array' } },
+    ],
+  },
+  settings: {
+    surfaceId: 'settings',
+    requiredRoutes: ['/v1/storage', '/v1/authority', '/v1/cascade', '/v1/quarantine', '/v1/quota', '/v1/delta-register'],
+    components: [
+      { componentId: 'SystemPanel', requiredData: {} },
+      { componentId: 'ThemeCustomizer', requiredData: {} },
+    ],
+  },
+  'developer-specgraph': {
+    surfaceId: 'developer-specgraph',
+    requiredRoutes: ['/v1/specgraph', '/v1/vocabulary'],
+    components: [
+      { componentId: 'SpecGraphProjectList', requiredData: { projects: 'array' } },
+      { componentId: 'SpecGraphProjectView', requiredData: { atoms: 'array', edges: 'array' } },
+    ],
+  },
+});
+
+/**
+ * Validates a surface instance against a known fixture by surfaceId.
+ * Returns { ok: true } or { ok: false, detail, remedy }.
+ */
+export function validateSurfaceFixture(surfaceId, instance) {
+  const fixture = SURFACE_CONTRACT_FIXTURES[surfaceId];
+  if (!fixture) {
+    return { ok: false, reason: 'unknown-fixture', detail: `No fixture for surfaceId: ${surfaceId}`, remedy: 'Add fixture or fix surfaceId' };
+  }
+  return validateSurfaceContract(fixture, instance);
+}
