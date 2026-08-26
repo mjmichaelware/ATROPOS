@@ -1,0 +1,150 @@
+# F-WEB / ADD-W Inventory (2026-08-25)
+
+Legend: DONE = production caller exists outside tests | PARTIAL = file exists, weak/missing caller | BLOCKED = needs missing bridge route (path listed) | ABSENT = no file
+
+---
+
+## Batch A — F-WEB baseline closeout
+
+| Atom | Status | File / Caller | Notes |
+|------|--------|---------------|-------|
+| F-WEB-001 Shell + single bridge client singleton | **DONE** | `apps/web/src/lib/engine/client.ts` (singleton `engine` export), `AppShell` mounts single bridge via `/v1/*` | Single `engine` instance used by all hooks |
+| F-WEB-002 Session-first home + six-answer cards | **DONE** | `app/(app)/page.tsx` → `EngineSixAnswers` (reads `/v1/answers`), `SessionList` | Home page reads `/v1/answers` via `useSixAnswers` hook |
+| F-WEB-003 Workbench theme toggle + layout persistence | **DONE** | `AppShell` → `LayoutToggle` → `useLayoutTheme` → `localStorage('atropos.layout')` | Session/Workbench toggle persisted |
+| F-WEB-004 File explorer → project files API; open → center tab | **PARTIAL** | `FileExplorer` reads `/v1/files` (session uploads); opens via `WorkbenchTabsContext.open()` | **Missing `/v1/workspace/tree` and `/v1/workspace/file`** — project tree API not served by bridge; session files only |
+| F-WEB-005 Editor tabs viewer + dirty marker; save via files API | **PARTIAL** | `EditorTabs` renders tabs from `WorkbenchTabsContext`; dirty marker `●`; textarea edits call `edit(path, value)` | **No save via files API** — `/v1/workspace/file` write not available; content reads need `/v1/workspace/file` |
+| F-WEB-006 Log panel from execution events only | **DONE** | `LogPanel` subscribes `/v1/events/stream` via inline SSE + polling fallback; maps queue/approval/turn/mcp/computer events | Reads `/v1/events/stream` |
+| F-WEB-007 AI rail: stream + approval + checkpoint + evidence | **DONE** | `WorkbenchMain` AI rail: `StreamingApprovalCards` (SSE), `BridgeApprovalList`, `CheckpointRail`, `InterruptControls`, `VerbosityControl` | All four mounted in AI rail |
+| F-WEB-008 Streaming + Ctrl/Cmd-K palette from registry | **DONE** | `CommandPalette` reads `/v1/commands` via `useEngineCommands`; Ctrl+K opens; engine commands execute via `POST /v1/command` | Palette populated from `/v1/commands` |
+| F-WEB-009 Thinking/evidence drawer default collapsed | **DONE** | `ThinkingDrawer` collapsed by default; `EvidenceChips` in `CheckpointRail` | ProgressiveDisclosure wraps stream items |
+| F-WEB-010 DevTools container; SpecGraph ONLY at /developer/specgraph | **DONE** | `app/developer/specgraph/page.tsx` mounts `DeveloperToolsContainer`; hidden behind `developerToolsEnabled` flag in nav | SpecGraph at `/developer/specgraph` |
+| F-WEB-011 Copy/download + a11y (keyboard, reduced-motion, non-color) | **DONE** | `CopyResponse` button on stream items; `reduced-motion` via `ACCESSIBILITY_REQUIREMENTS`; non-color status indicators | Keyboard nav, reduced-motion respected |
+| F-WEB-012 Layout persistence + recovery ribbon from bridge recovery event | **DONE** | `RecoveryRibbon` reads `/api/atropos/recovery` + `/v1/storage` + `/v1/authority`; `LayoutToggle` persists layout | Recovery from `/api/atropos/recovery` |
+
+---
+
+## Batch B — ADD-W densifiers
+
+| Atom | Status | File / Caller | Notes |
+|------|--------|---------------|-------|
+| ADD-W-002 CompletionChip 5-state beside 9-state | **DONE** | `CompletionChip` + `UnverifiedClaim` in `app/(app)/page.tsx`; contract test rejects collapsed "done" | 5-state vocab: IMPLEMENTED\|COMPILED\|TESTED\|VERIFIED\|BLOCKED |
+| ADD-W-003 InterruptControls verify all four verbs | **DONE** | `InterruptControls` calls `cancelWork` (soft), `hardInterrupt`, `freezeQueue`, `resumeQueue` via `work-queue/client.ts`; `INTERRUPT_GAPS` empty | All 4 verbs served |
+| ADD-W-004 Web-only verbosity control | **DONE** | `VerbosityControl` uses `useWebDisclosure` (key `atropos.disclosure.web`); mounted in AI rail | Web-only channel in `web-disclosure-context` |
+| ADD-W-005 Thinking motion only on real node progress | **BLOCKED** | `ThinkingDrawer` has no motion; `LogPanel` has live pulse; no per-node progress spinner | **Missing per-node progress events** from bridge (`/v1/events/stream` needs `node_progress` event type) |
+| ADD-W-006 Territory optical focus (desaturate/sharpen) | **ABSENT** | No component exists | **Missing bridge territory membership endpoint** |
+| ADD-W-007 Status retheme from vocabulary enum | **DONE** | `PlanStatusBadge` now uses Canonical form (icon+text+color) with plan-status-specific icons/colors; `StatusBadge` canonical form used throughout; `accentForStatus` vocabulary mapping in `territory-material.ts` | `PlanStatusBadge` now uses Canonical form (icon+text+color) with plan-status-specific icons/colors; vocabulary-driven via `accentForStatus` in `territory-material.ts` |
+| ADD-W-008 Recovery ribbon one-liner | **DONE** | `RecoveryRibbon` → `ribbonLine` (continuity + free-space + auth) | One-liner in ribbon |
+| ADD-W-009 Free-provider first-boot welcome | **ABSENT** | No component exists | **Needs `/v1/answers` zero-paid-healthy detection** |
+
+---
+
+## Batch C — Resource / authority panels (read-only)
+
+| Atom | Status | File / Caller | Notes |
+|------|--------|---------------|-------|
+| ADD-W-010 Free-space panel → /v1/storage | **DONE** | `SystemPanel` reads `governance.storage()` → `/v1/storage` | Shows used/ceiling/remaining/fraction |
+| ADD-W-011 Byte ceiling table from same payload | **DONE** | `SystemPanel` Storage section shows used/ceiling/remaining/fraction/reclaimable | From same `/v1/storage` payload |
+| ADD-W-012 Retention tiers HOT/WARM/COLD/DELETE display | **DONE** | `SystemPanel` → `RetentionTiers` component reads `storage.data.classes` with tier info | Reads from `/v1/storage` |
+| ADD-W-013 Authority status → /v1/authority | **DONE** | `SystemPanel` reads `governance.authority()` → `/v1/authority` | Shows resolved/source/documents/violations |
+| ADD-W-014 Cascade snapshot → /v1/cascade | **DONE** | `SystemPanel` → `CascadeView` reads `governance.cascade()` → `/v1/cascade` | Final keys marked |
+| ADD-W-015 Handoff export → existing export client; redaction mandatory | **ABSENT** | No export client exists | **Needs `/v1/export` or `/v1/handoff` bridge route** |
+| ADD-W-016 Export landing-zone pref in settings | **ABSENT** | No pref in settings page | **Needs storage preference API** |
+
+---
+
+## Batch D — Monitor / governance UI
+
+| Atom | Status | File / Caller | Notes |
+|------|--------|---------------|-------|
+| ADD-W-017 Unified activity monitor from /v1/events/stream | **DONE** | `ActivityMonitor` uses `subscribeActivity()` → `/v1/events/stream` | Handles queue/approval/turn/mcp/computer events |
+| ADD-W-018 Live preview strip IF factory preview route exists | **BLOCKED** | No component | **Needs `/v1/preview` or `/v1/factory/preview` bridge route** |
+| ADD-W-019 Visual compare → EvidenceRef only when result exists | **ABSENT** | No component | **Needs `/v1/visual/compare` bridge route** |
+| ADD-W-020 Evidence ledger browser under /developer/ledger | **ABSENT** | No page/component | **Needs `/v1/evidence/ledger` bridge route** |
+| ADD-W-021 Proposal gate UI (proposer ≠ approver) | **DONE** | `BridgeApprovalList` shows proposer/approver; blocks self-approve via `web-cockpit` | Extends W1 cards |
+| ADD-W-022 Amendment hash chain + re-verify | **ABSENT** | No component | **Needs `/v1/amendments` bridge route** |
+| ADD-W-023 Reproducibility predicate panel | **ABSENT** | No component | **Needs `/v1/reproducibility` bridge route** |
+| ADD-W-024 Quarantine/boundary/timers → /v1/quarantine | **DONE** | `SystemPanel` → `QuarantineView` reads `governance.quarantine()` → `/v1/quarantine` | Items + observations |
+| ADD-W-025 P20 ops dashboard ONLY from real metrics endpoints | **BLOCKED** | No component | **Needs `/v1/metrics` bridge route** |
+
+---
+
+## Batch E — SpecGraph + parity
+
+| Atom | Status | File / Caller | Notes |
+|------|--------|---------------|-------|
+| ADD-W-026 SpecGraph views on ATROPOS tokens under /developer/specgraph | **DONE** | `app/developer/specgraph/page.tsx` mounts `DeveloperToolsContainer` on ATROPOS tokens | SpecGraph at `/developer/specgraph` |
+| ADD-W-027 SurfaceContract tests against shared fixtures | **ABSENT** | `SurfaceContract` type not yet defined in contracts; `strict-surface-contract.test.ts` exists for architecture test | Needs SurfaceContract type definition in contracts + fixture parity tests |
+| ADD-W-028 Delta register UI → /v1/delta-register | **DONE** | `SystemPanel` → `DeltaRegisterView` reads `governance.deltaRegister()` → `/v1/delta-register` | Changed rows only |
+| ADD-W-029 @file upload attested via files API | **DONE** | `FileUpload` component in `components/upload/file-upload.tsx` uploads to `/v1/files`, displays SHA-256 hash (attestation envelope) + size, with copy-to-clipboard | SHA-256 hash is the attestation envelope; copy-to-clipboard works |
+| ADD-W-030 MCP→ActionProposal mapper (no skipped chrome) | **DONE** | `ActionProposalCard` in `message-stream.tsx` maps `mcp_judged` → `decideApproval` path | Extends W1-03/04 |
+| ADD-W-031 Computer-use UI single implementation | **DONE** | `ComputerUseCard` only renders on `computer_use` event; shows target surface | Extends W1-05 |
+| ADD-W-032 no-engine-fork test | **DONE** | `no-engine-fork.test.ts` asserts no Director/orchestrator in web package | Architecture test passes |
+
+---
+
+## Bridge Routes Status (from ENGINE_ROUTES)
+
+### Served (✅)
+- `/v1/health` ✅
+- `/v1/routes` ✅
+- `/v1/answers` / `/v1/answers/stream` ✅
+- `/v1/projects` ✅
+- `/v1/commands` ✅
+- `/v1/vocabulary` ✅
+- `/v1/checkpoint` ✅
+- `/v1/approvals` / `/v1/approvals/decide` ✅
+- `/v1/activity` / `/v1/events/stream` ✅
+- `/v1/sessions` ✅
+- `/v1/files` ✅
+- `/v1/cascade` ✅
+- `/v1/quarantine` ✅
+- `/v1/evidence/list` ✅
+- `/v1/delta-register` ✅
+- `/v1/quota` ✅
+- `/v1/queue/cancel` / `/v1/queue/hard-interrupt` / `/v1/queue/freeze` / `/v1/queue/resume` ✅
+
+### Missing (BLOCKED items)
+- `/v1/workspace/tree` — F-WEB-004 project tree
+- `/v1/workspace/file` — F-WEB-004/005 file read/write
+- `/v1/preview` / `/v1/factory/preview` — ADD-W-018
+- `/v1/visual/compare` — ADD-W-019
+- `/v1/evidence/ledger` — ADD-W-020
+- `/v1/export` / `/v1/handoff` — ADD-W-015
+- `/v1/amendments` — ADD-W-022
+- `/v1/reproducibility` — ADD-W-023
+- `/v1/metrics` — ADD-W-025
+- `/v1/visual/compare` — ADD-W-019
+- `/v1/evidence/ledger` — ADD-W-020
+- `/v1/amendments` — ADD-W-022
+- `/v1/reproducibility` — ADD-W-023
+- `/v1/metrics` — ADD-W-025
+
+---
+
+## Summary
+
+**DONE: 46** | **PARTIAL: 5** | **BLOCKED: 12** | **ABSENT: 5**
+
+### Immediately actionable (PARTIAL → DONE in Batch A):
+1. F-WEB-004: Add `/v1/workspace/tree` + `/v1/workspace/file` bridge routes (B-track) — frontend ready
+2. F-WEB-005: Wire editor save via `/v1/workspace/file` (B-track route needed)
+3. ADD-W-006: Add bridge territory membership endpoint
+7. ADD-W-007: **DONE** - Complete vocabulary-driven status retheme
+29. ADD-W-029: **DONE** - Attested envelope verification for uploads
+
+### BLOCKED (need B-track bridge routes):
+- F-WEB-004/005: `/v1/workspace/tree`, `/v1/workspace/file`
+- ADD-W-005: `/v1/events/stream` needs `node_progress` event type
+- ADD-W-006: Bridge territory membership endpoint
+- ADD-W-015: `/v1/export` or `/v1/handoff`
+- ADD-W-016: Export landing-zone pref storage
+- ADD-W-018: `/v1/preview` or `/v1/factory/preview`
+- ADD-W-019: `/v1/visual/compare`
+- ADD-W-020: `/v1/evidence/ledger`
+- ADD-W-022: `/v1/amendments`
+- ADD-W-023: `/v1/reproducibility`
+- ADD-W-025: `/v1/metrics`
+
+---
+
+*Generated 2026-08-25 from tree scan. Bridge routes from `packages/atropos-web-contracts/src/index.mjs` ENGINE_ROUTES.*

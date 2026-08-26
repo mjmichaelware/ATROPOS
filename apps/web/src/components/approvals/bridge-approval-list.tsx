@@ -19,19 +19,21 @@ import {
   readPendingApprovals,
   sortForDecision,
 } from '@/lib/approvals/client';
-import type { ApprovalCard, ApprovalDecision } from '@atropos/web-contracts';
+import type { ApprovalCard } from '@atropos/web-contracts';
 
 type LoadState =
   | { kind: 'loading' }
   | { kind: 'fault'; detail: string; remedy: string }
   | { kind: 'ready'; cards: ApprovalCard[] };
 
+/** Current surface identity for self-approval blocking (W1-02). */
+const WEB_SURFACE_IDENTITY = 'web-cockpit';
+
 function isSelfApprove(card: ApprovalCard): boolean {
-  // The actor is the proposer (e.g., "patch:patch-123")
-  // The decider would be the operator's identity (e.g., "web-cockpit")
-  // For now, we check if the actor contains the current surface identity
-  // In a real implementation, this would compare against the current user's identity
-  return false; // Placeholder - would need actual user identity from context
+  // W1-02: Block self-approval when the current surface identity matches the proposer.
+  // The proposer is the identity that originated the request (e.g., "patch:patch-123").
+  // The current surface identity is "web-cockpit" for the web surface.
+  return card.proposer === WEB_SURFACE_IDENTITY;
 }
 
 function isDecided(card: ApprovalCard): boolean {
@@ -43,8 +45,8 @@ function getDecisionStatus(card: ApprovalCard): 'approved' | 'rejected' | 'pendi
   return card.decision.approved ? 'approved' : 'rejected';
 }
 
-function getDecider(card: ApprovalCard): string | null {
-  return card.decision?.decidedBy ?? null;
+function getApprover(card: ApprovalCard): string | null {
+  return card.decision?.approver ?? null;
 }
 
 function getDecidedAt(card: ApprovalCard): string | null {
@@ -125,7 +127,7 @@ export function BridgeApprovalList({ onChanged }: { onChanged?: () => void }) {
         sortForDecision(state.cards).map((card) => {
           const decided = isDecided(card);
           const status = getDecisionStatus(card);
-          const decider = getDecider(card);
+          const approver = getApprover(card);
           const decidedAt = getDecidedAt(card);
           const surface = getDecisionSurface(card);
 
@@ -136,6 +138,11 @@ export function BridgeApprovalList({ onChanged }: { onChanged?: () => void }) {
                 <span className="wb-approval-id" title={card.id}>
                   {card.actor}
                 </span>
+                {card.proposer && (
+                  <span className="wb-approval-proposer" title="Proposer">
+                    proposed by {card.proposer}
+                  </span>
+                )}
               </header>
               <p className="wb-approval-reason">{card.reason}</p>
               {card.territory.length > 0 ? (
@@ -154,8 +161,8 @@ export function BridgeApprovalList({ onChanged }: { onChanged?: () => void }) {
                       {status.charAt(0).toUpperCase() + status.slice(1)}
                     </span>
                     <span className="wb-decision-meta">
-                      by {getDecider(card) ?? 'unknown'} · {getDecisionSurface(card) ?? 'unknown'}
-                      {getDecidedAt(card) && ` · ${new Date(getDecidedAt(card)!).toLocaleString()}`}
+                      approved by {approver ?? 'unknown'} · {getDecisionSurface(card) ?? 'unknown'}
+                      {decidedAt && ` · ${new Date(decidedAt).toLocaleString()}`}
                     </span>
                   </p>
                 </div>

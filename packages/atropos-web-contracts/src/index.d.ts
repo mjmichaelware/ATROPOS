@@ -1,174 +1,277 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 
 /**
- * Types for the shared presentation contracts.
+ * TypeScript type definitions for @atropos/web-contracts
  *
- * Hand-written against `index.mjs` rather than generated, because the runtime
- * module is the contract — a build step between the two would let the types
- * and the values they describe drift while both looked current.
+ * These types mirror the runtime validation functions in index.mjs.
+ * They exist for compile-time type checking only; the runtime validation
+ * in index.mjs remains the source of truth.
  */
 
-export type StatusTerm =
-  | 'idle'
-  | 'planning'
-  | 'waiting'
-  | 'working'
-  | 'review-required'
-  | 'blocked'
-  | 'completed'
-  | 'failed'
-  | 'cancelled';
+/** Source Doc 4 §A status terms, in doc order. What the work is doing. */
+export const STATUS_TERMS = [
+  'idle',
+  'planning',
+  'waiting',
+  'working',
+  'review-required',
+  'blocked',
+  'completed',
+  'failed',
+  'cancelled',
+] as const;
 
-export type CompletionTerm = 'implemented' | 'compiled' | 'tested' | 'verified' | 'blocked';
+export type StatusTerm = typeof STATUS_TERMS[number];
 
-export type SixAnswerKey = 'objective' | 'doing' | 'why' | 'progress' | 'next' | 'evidence';
+/** P20-G09 completion terms, weakest claim first. */
+export const COMPLETION_TERMS = [
+  'implemented',
+  'compiled',
+  'tested',
+  'verified',
+  'blocked',
+] as const;
 
+export type CompletionTerm = typeof COMPLETION_TERMS[number];
+
+export const POSITIVE_COMPLETION_TERM = 'verified';
+
+/** The six continuous answers of Source Doc 4 §0.1, in order. */
+export const SIX_ANSWER_KEYS = [
+  'objective',
+  'doing',
+  'why',
+  'progress',
+  'next',
+  'evidence',
+] as const;
+
+export type SixAnswerKey = typeof SIX_ANSWER_KEYS[number];
+
+/** Health values an answer may carry. */
 export type HealthValue = 'verified' | 'pending' | 'error' | 'unknown';
 
-export interface NavItem {
-  readonly id: string;
-  readonly label: string;
-  readonly path: string;
+/** HOE-A02 primary navigation spine. */
+export interface NavSpineEntry {
+  id: string;
+  label: string;
+  path: string;
 }
+
+export const NAV_SPINE: readonly NavSpineEntry[];
 
 export interface DeveloperTools {
-  readonly id: string;
-  readonly label: string;
-  readonly path: string;
-  readonly hiddenByDefault: boolean;
-  readonly tenants: readonly NavItem[];
+  id: 'developer';
+  label: 'Developer Tools';
+  path: '/developer';
+  hiddenByDefault: true;
+  tenants: readonly { id: string; label: string; path: string }[];
 }
 
-export const STATUS_TERMS: readonly StatusTerm[];
-export const COMPLETION_TERMS: readonly CompletionTerm[];
-export const POSITIVE_COMPLETION_TERM: 'verified';
-export const SIX_ANSWER_KEYS: readonly SixAnswerKey[];
-export const HEALTH_VALUES: readonly HealthValue[];
-export const NAV_SPINE: readonly NavItem[];
 export const DEVELOPER_TOOLS: DeveloperTools;
-export const ENGINE_ROUTES: Readonly<Record<string, string>>;
 
-/** ADD-W-001: client seams whose bridge routes do not exist yet. */
-export interface MissingEngineRoute {
-  readonly path: string;
-  readonly servesTo: string;
+/** Engine routes this contract version knows how to read. */
+export interface EngineRoutes {
+  health: '/v1/health';
+  routes: '/v1/routes';
+  answers: '/v1/answers';
+  answersStream: '/v1/answers/stream';
+  projects: '/v1/projects';
+  commands: '/v1/commands';
+  commandRun: '/v1/command';
+  commandAllowed: '/v1/command/allowed';
+  vocabulary: '/v1/vocabulary';
+  checkpoint: '/v1/checkpoint';
+  approvals: '/v1/approvals';
+  approvalsDecide: '/v1/approvals/decide';
+  activity: '/v1/activity';
+  events: '/v1/events';
+  eventsStream: '/v1/events/stream';
+  sessions: '/v1/sessions';
+  files: '/v1/files';
+  cascade: '/v1/cascade';
+  quarantine: '/v1/quarantine';
+  evidenceList: '/v1/evidence/list';
+  deltaRegister: '/v1/delta-register';
+  quota: '/v1/quota';
+  queueCancel: '/v1/queue/cancel';
+  queueHardInterrupt: '/v1/queue/hard-interrupt';
+  queueFreeze: '/v1/queue/freeze';
+  queueResume: '/v1/queue/resume';
+  queueFreezeStatus: '/v1/queue/freeze';
 }
+
+export const ENGINE_ROUTES: EngineRoutes;
+
+/** Routes the web surface has a client seam for but no bridge build serves yet. */
+export interface MissingEngineRoute {
+  path: string;
+  servesTo: string;
+}
+
 export const MISSING_ENGINE_ROUTES: readonly MissingEngineRoute[];
 
-export function isSixAnswersPayload(value: unknown): boolean;
-
-/** S-005: what backs a completion claim — CAS bytes, a claim, and its gates. */
+/** S-005: one evidence reference, the shape every completion claim carries. */
 export interface EvidenceRef {
-  readonly casHash: string;
-  readonly claimId: string;
-  readonly gateIds: readonly string[];
+  casHash: string;
+  claimId: string;
+  gateIds: string[];
 }
 
 export function isEvidenceRef(value: unknown): value is EvidenceRef;
 
 /** S-008 mirror of the engine's resume-checkpoint payload. */
 export interface CheckpointAction {
-  readonly id: string;
-  readonly label: string;
-  readonly primary: boolean;
+  id: string;
+  label: string;
+  primary: boolean;
 }
 
-export type CheckpointPayloadMirror =
+export type CheckpointPayload =
   | {
-      readonly present: false;
-      readonly detail: string;
-      readonly remedy: string;
+      present: true;
+      goalId: string;
+      recordedAt: string;
+      ageMinutes: number;
+      resumable: boolean;
+      evidenceCount: number;
+      actions: CheckpointAction[];
     }
   | {
-      readonly present: true;
-      readonly goalId: string;
-      readonly nodeId?: string | null;
-      readonly phase?: string | null;
-      readonly recordedAt: string;
-      readonly ageMinutes: number;
-      readonly resumable: boolean;
-      readonly evidenceCount: number;
-      readonly nextAction?: string | null;
-      readonly primaryAction?: CheckpointAction;
-      readonly actions: readonly CheckpointAction[];
+      present: false;
+      detail: string;
+      remedy: string;
     };
 
-export function isCheckpointPayload(value: unknown): value is CheckpointPayloadMirror;
+export function isCheckpointPayload(value: unknown): value is CheckpointPayload;
 
 /** S-008 mirror of the bridge approval card (`ApprovalProjection`). */
-export const APPROVAL_EVENT_KIND: 'approval_raised';
+export const APPROVAL_EVENT_KIND = 'approval_raised';
+
+export interface ApprovalDecision {
+  approved: boolean;
+  approver: string;
+  decidedAt: string;
+  surface: string;
+}
 
 export interface ApprovalCard {
-  readonly id: string;
-  readonly proposalId: string;
-  readonly actor: string;
-  readonly operation: string;
-  /** Empty means the action declared no territory — never "all paths". */
-  readonly territory: readonly string[];
-  readonly reason: string;
-  readonly requestedAt: string;
-  readonly pending: boolean;
+  id: string;
+  proposalId: string;
+  actor: string;
+  operation: string;
+  territory: string[];
+  reason: string;
+  requestedAt: string;
+  pending: boolean;
+  proposer?: string;
+  approver?: string;
+  decision?: ApprovalDecision | null;
 }
 
 export function isApprovalCard(value: unknown): value is ApprovalCard;
 
+export interface ApprovalEvent {
+  type: typeof APPROVAL_EVENT_KIND;
+  data: ApprovalCard;
+  timestamp: number;
+}
+
 /** S-008 mirror of the bridge cascade snapshot (`CascadeProjection`). */
 export interface CascadeKey {
-  readonly key: string;
-  readonly value: string;
-  readonly heldBy: string;
-  readonly final: boolean;
-  readonly state: 'resolved' | 'violation' | 'undefined';
+  key: string;
+  value: string;
+  heldBy: string;
+  final: boolean;
+  state: 'resolved' | 'violation' | 'undefined';
 }
 
 export interface CascadePayload {
-  readonly ok: true;
-  readonly count: number;
-  readonly resolvedCount: number;
-  readonly violationCount: number;
-  readonly undefinedCount: number;
-  readonly keys: readonly {
-    readonly key: string;
-    readonly value: string;
-    readonly heldBy: string;
-    readonly final: boolean;
-    readonly state: 'resolved' | 'violation' | 'undefined';
-  }[];
-  readonly violations: readonly {
-    readonly key: string;
-    readonly heldBy: string;
-    readonly attemptedBy: readonly string[];
-    readonly reason: string;
-  }[];
-  readonly undefined: readonly {
-    readonly key: string;
-  }[];
+  ok: true;
+  keys: readonly CascadeKey[];
 }
 
 export function isCascadePayload(value: unknown): value is CascadePayload;
 
-/** S-008 mirror of the bridge quarantine projection (`QuarantineProjection`). */
+/** S-008 mirror of the bridge quarantine projection. */
 export interface QuarantineItem {
-  readonly id: string;
-  readonly title: string;
-  readonly summary: string;
-  readonly state: string;
-  readonly createdAt: string;
+  id: string;
+  title: string;
+  summary: string;
+  state: string;
+  createdAt: string;
+}
+
+export interface QuarantineObservation {
+  subsystem: string;
+  startedAt: string;
+  durationSeconds: number;
 }
 
 export interface QuarantinePayload {
-  readonly ok: true;
-  readonly count: number;
-  readonly observationCount: number;
-  readonly items: readonly QuarantineItem[];
-  readonly observation: readonly {
-    readonly subsystem: string;
-    readonly startedAt: string;
-    readonly durationSeconds: number;
-  }[];
+  ok: true;
+  count: number;
+  observationCount: number;
+  items: readonly QuarantineItem[];
+  observation: readonly QuarantineObservation[];
 }
 
 export function isQuarantinePayload(value: unknown): value is QuarantinePayload;
+
+/** S-008 mirror of the bridge evidence list projection. */
+export interface EvidenceItem {
+  id: string;
+  kind: string;
+  path: string;
+  sha256: string;
+  bytes: number;
+  createdAt: string;
+}
+
+export interface EvidenceListPayload {
+  ok: true;
+  items: readonly EvidenceItem[];
+}
+
+/** S-008 mirror of the bridge delta register projection. */
+export interface DeltaRegisterEntry {
+  id: string;
+  path: string;
+  kind: string;
+  sha256: string;
+  bytes: number;
+  createdAt: string;
+}
+
+export interface DeltaRegisterPayload {
+  ok: true;
+  entries: readonly DeltaRegisterEntry[];
+}
+
+/** S-008 mirror of the bridge quota projection. */
+export interface QuotaPayload {
+  ok: true;
+  used: number;
+  limit: number;
+  remaining: number;
+  fractionUsed: number;
+  resetAt: string | null;
+}
+
+/** Health values an answer may carry. */
+export const HEALTH_VALUES = ['verified', 'pending', 'error', 'unknown'] as const;
+
+/** Six answer keys. */
+export const SIX_ANSWER_KEYS = [
+  'objective',
+  'doing',
+  'why',
+  'progress',
+  'next',
+  'evidence',
+] as const;
+
+export function isSixAnswersPayload(value: unknown): boolean;
 
 /** Throws when the engine's served vocabulary differs from this package's copy. */
 export function assertVocabularyMatches(served: unknown): true;

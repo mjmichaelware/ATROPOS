@@ -3,6 +3,7 @@
 
 import React, { useEffect, useRef, useState } from 'react'
 import { ProgressiveDisclosure } from '@/components/ui/progressive-disclosure'
+import { decideApproval, type ApprovalCard } from '@/lib/approvals/client'
 
 /**
  * F-WEB-011: copy affordance for one streamed response.
@@ -142,7 +143,7 @@ export function StreamingApprovalCards({ eventSourceUrl, onApproval }: MessageSt
           key={idx}
           title={
             msg.type === 'approval' ? 'Approval required' :
-            msg.type === 'mcp_judged' ? 'MCP Judgment' :
+            msg.type === 'mcp_judged' ? 'Action Proposal' :
             msg.type === 'computer_use' ? 'Computer Use' :
             `Stream item ${idx + 1}`
           }
@@ -165,7 +166,11 @@ export function StreamingApprovalCards({ eventSourceUrl, onApproval }: MessageSt
             />
           )}
           {msg.type === 'mcp_judged' && (
-            <MCPJudgedCard data={msg.data as ActionProposalData} />
+            <ActionProposalCard
+              data={msg.data as ActionProposalData}
+              onApprove={(id) => onApproval?.(id, true)}
+              onReject={(id) => onApproval?.(id, false)}
+            />
           )}
           {msg.type === 'computer_use' && (
             <ComputerUseCard data={msg.data as ComputerUseData} />
@@ -225,6 +230,78 @@ function MCPJudgedCard({ data }: MCPJudgedCardProps) {
   )
 }
 
+/**
+ * W1-03: ActionProposalCard for MCP judged events requiring actuation.
+ * W1-04: Uses the same /v1/approvals/decide path as human approvals.
+ * The engine records who decided and through which surface.
+ */
+interface ActionProposalCardProps {
+  data: ActionProposalData
+  onApprove: (id: string) => void
+  onReject: (id: string) => void
+}
+
+function ActionProposalCard({ data, onApprove, onReject }: ActionProposalCardProps) {
+  const [busy, setBusy] = useState(false)
+
+  async function handleApprove() {
+    setBusy(true)
+    try {
+      await onApprove(data.id)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function handleReject() {
+    setBusy(true)
+    try {
+      await onReject(data.id)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="border-l-4 border-blue-400 bg-blue-50 p-4 rounded">
+      <div className="flex items-center justify-between">
+        <div className="text-sm font-medium text-blue-800">
+          Action Proposal: {data.proposal}
+        </div>
+        <div className="flex gap-2">
+          <span className="px-2 py-1 text-xs bg-gray-200 rounded">
+            {data.outcome}
+          </span>
+        </div>
+      </div>
+      <p className="mt-2 text-sm text-blue-700">{data.reason}</p>
+      <p className="mt-1 text-xs text-gray-500">Judged by: {data.judge}</p>
+      <div className="mt-3 flex gap-2">
+        <button
+          type="button"
+          disabled={busy}
+          onClick={handleApprove}
+          className="px-3 py-1 text-sm bg-blue-400 text-white rounded hover:bg-blue-500"
+        >
+          Approve
+        </button>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={handleReject}
+          className="px-3 py-1 text-sm bg-white border border-blue-300 rounded hover:bg-blue-100"
+        >
+          Reject
+        </button>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * W1-05: ComputerUseCard ONLY if event present; deny default; show surface target.
+ * Only rendered when the stream emits a computer_use event.
+ */
 interface ComputerUseCardProps {
   data: ComputerUseData
 }

@@ -3,6 +3,8 @@
 import { readEngine, writeEngine, WEB_ACTOR, type EngineFailure } from '@/lib/engine/client';
 import { isApprovalCard, type ApprovalCard } from '@atropos/web-contracts';
 
+export type { ApprovalCard } from '@atropos/web-contracts';
+
 /**
  * The bridge approvals surface (F-WEB-008).
  *

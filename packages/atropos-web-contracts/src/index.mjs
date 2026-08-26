@@ -199,7 +199,19 @@ export function isApprovalCard(value) {
     value.territory.every((path) => typeof path === 'string') &&
     typeof value.reason === 'string' &&
     typeof value.requestedAt === 'string' &&
-    typeof value.pending === 'boolean'
+    typeof value.pending === 'boolean' &&
+    // W1-01: proposer identity from the original request
+    (value.proposer === undefined || typeof value.proposer === 'string') &&
+    // W1-01: approver identity (set when decision is made)
+    (value.approver === undefined || typeof value.approver === 'string') &&
+    // W1-02: decision object with approver identity
+    (value.decision === undefined || value.decision === null || (
+      typeof value.decision === 'object' &&
+      typeof value.decision.approved === 'boolean' &&
+      typeof value.decision.approver === 'string' &&
+      typeof value.decision.decidedAt === 'string' &&
+      typeof value.decision.surface === 'string'
+    ))
   );
 }
 

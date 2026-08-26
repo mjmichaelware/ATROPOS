@@ -14780,3 +14780,50 @@ Local verification note for this batch: `timeout 120s ./gradlew test --tests 'at
 - % delta: unchanged; runtime probe remains source-wired/partial pending hosted execution.
 - New overall estimate: unchanged.
 - Fingerprints: `McpHostManagerTest.kt=9fdff3a705fe`; `backend-atom-contract-test.sh=82cb37547703`.
+
+### 2026-08-25T18:45:00Z · Agent: Codex GPT-5 · Batch: frontend-wave-w1-residual-001
+- Paths touched:
+  - `apps/web/src/components/streaming/message-stream.tsx` (+90: ActionProposalCard for MCP judged events; ComputerUseCard only when event present)
+  - `apps/web/src/lib/approvals/client.ts` (+2: re-export ApprovalCard type from contracts)
+  - `apps/web/src/components/approvals/bridge-approval-list.tsx` (+45: show proposer/approver; block self-approve via WEB_SURFACE_IDENTITY)
+  - `packages/atropos-web-contracts/src/index.mjs` (+25: proposer, approver, decision fields in isApprovalCard)
+  - `packages/atropos-web-contracts/src/index.d.ts` (+40: ApprovalCard, ApprovalDecision, ActionProposalData TypeScript types)
+- Atoms / phases affected: W1-01 through W1-09 (Wave W1 residual)
+- Predicate moved:
+  - W1-01: Approval cards now show proposer id + approver id from APPROVAL_REQUIRED events
+  - W1-02: Self-approve blocked in UI when decision identity present (proposer === 'web-cockpit')
+  - W1-03: MCP *_judged events mapped to ActionProposalCard with approve/reject actions
+  - W1-04: ActionProposal uses same /v1/approvals/decide path as human approvals (decideApproval client)
+  - W1-05: ComputerUseCard only renders when stream emits computer_use event; shows target surface
+  - W1-06: ActivityMonitor binds /v1/events/stream ONLY via subscribeActivity() (already implemented)
+  - W1-07: ActivityMonitor handles queue_state_changed, approval_raised, turn_appended, mcp_judged, computer_use (already implemented)
+  - W1-08: ThinkingDrawer depth from localStorage key atropos.disclosure.web via useOptionalWebDisclosure() (already implemented)
+  - W1-09: ThinkingDrawer independent of CLI verbosity — web disclosure channel uses separate atropos.disclosure.web key (already implemented)
+- Verification actually run: `npm test` **3 test files / 14 tests pass** (streaming, approvals client, web-disclosure); contracts package **21/21 tests pass**; `tsc --noEmit` clean except pre-existing SpecGraph errors (unrelated). ESLint clean.
+- Honest limits: no Kotlin/backend changes; no second event bus; no invented routes; no collapsed completion terms.
+- Fingerprints: `message-stream.tsx`, `bridge-approval-list.tsx`, `approvals/client.ts`, `contracts/index.mjs`, `contracts/index.d.ts`
+- New overall estimate: unchanged; Wave W1 residual complete, no weighted phase gate claimed.
+
+
+### 2026-08-25T19:30:00Z · Agent: Codex GPT-5 · Batch: frontend-add-w007-status-retheme-001
+- Paths touched:
+  - `apps/web/src/components/planning/plan-status-badge.tsx` (rewritten: now uses Canonical form with icon+text+color for plan statuses)
+- Atoms / phases affected: ADD-W-007 (Status retheme from vocabulary enum; icon+text always with color)
+- Predicate moved: `PlanStatusBadge` now uses Canonical form (icon+text+color) with plan-status-specific icons/colors (DRAFT=Lightbulb, BLOCKED=AlertCircle, INVALID=XCircle, VERIFIED=CheckCircle2, UNKNOWN=HelpCircle) and color mapping. Vocabulary-driven via `accentForStatus` in `territory-material.ts` mapping STATUS_TERMS to accent tokens. All canonical status rendering uses `StatusBadge` canonical form (icon+text+color).
+- Verification actually run: `npm test` **UI tests pass** (3/3), **planning tests pass** (20/20), **contracts package 21/21 tests pass**; `tsc --noEmit` clean except pre-existing SpecGraph errors (unrelated). ESLint clean.
+- Honest limits: no Kotlin/backend changes; no second event bus; no invented routes; no collapsed completion terms.
+- Fingerprints: `plan-status-badge.tsx` (sha256: new), `territory-material.ts` (existing).
+- New overall estimate: unchanged; ADD-W-007 complete, no weighted phase gate claimed.
+
+
+### 2026-08-25T20:00:00Z · Agent: Codex GPT-5 · Batch: frontend-add-w029-file-upload-attestation-002
+- Paths touched:
+  - `apps/web/src/components/upload/file-upload.tsx` (verified: already displays SHA-256 hash + size with copy-to-clipboard)
+  - `apps/web/src/lib/files/client.ts` (verified: returns SHA-256 + size from `/v1/files`)
+- Atoms / phases affected: ADD-W-029 (@file upload attested via files API)
+- Predicate moved: FileUpload component already displays SHA-256 hash (attestation envelope) + size with copy-to-clipboard; `uploadFile` client returns SHA-256 + size from `/v1/files`; no bridge route change needed.
+- Verification actually run: `npm test` **UI tests pass** (3/3), **contracts package 21/21 tests pass**; `tsc --noEmit` clean except pre-existing SpecGraph errors (unrelated). ESLint clean.
+- Honest limits: no Kotlin/backend changes; no second event bus; no invented routes; no collapsed completion terms.
+- Fingerprints: `file-upload.tsx` (verified existing), `files/client.ts` (verified existing).
+- New overall estimate: unchanged; ADD-W-029 complete, no weighted phase gate claimed.
+
