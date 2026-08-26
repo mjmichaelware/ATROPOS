@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 
-import { readEngine, writeEngine, WEB_ACTOR, type EngineFailure } from '@/lib/engine/client';
+import { readEngine, type EngineFailure } from '@/lib/engine/client';
 
 /**
  * The quota ledger client (ADD-W-007).
@@ -33,8 +33,7 @@ export type QuotaResult =
   | ({ ok: false } & Omit<EngineFailure, 'ok'>);
 
 export const quota = {
-  read: (): Promise<{ ok: true; data: QuotaPayload }> =>
-    fetch('/v1/quota').then(r => r.json()),
+  read: (): Promise<QuotaResult> => readEngine<QuotaPayload>('/v1/quota'),
 };
 
 export function healthyCount(payload: { providers: readonly { state: string }[] }): number {

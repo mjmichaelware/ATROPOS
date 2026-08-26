@@ -10,6 +10,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { CompletionChip, UnverifiedClaim } from '@/components/ui/completion-chip';
 import { useAppContext } from '@/lib/contexts/app-context';
 import { useEffect } from 'react';
+import { FreeProviderWelcome } from '@/components/welcome/free-provider-welcome';
 
 export default function Home() {
   const router = useRouter();
@@ -59,6 +60,9 @@ export default function Home() {
         <EngineSixAnswers />
         <QuotaChips />
       </section>
+
+      {/* ADD-W-009: Free-provider first-boot welcome */}
+      <FreeProviderWelcome />
 
       {/* F-WEB-002: the session list — the engine's own conversations,
           not a local invention. Sits directly under the six answers because
