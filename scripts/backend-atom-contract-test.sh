@@ -7,7 +7,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 file() { test -s "$ROOT/$1" || { echo "BACKEND_ATOM_CONTRACT_FAIL missing $1" >&2; exit 1; }; }
-text() { rg -Fq -- "$2" "$ROOT/$1" || { echo "BACKEND_ATOM_CONTRACT_FAIL missing '$2' in $1" >&2; exit 1; }; }
+text() { grep -Fq -- "$2" "$ROOT/$1" || { echo "BACKEND_ATOM_CONTRACT_FAIL missing '$2' in $1" >&2; exit 1; }; }
 
 # Install, onboarding, routing, and the single autonomous hierarchy owner.
 file install.sh
@@ -143,7 +143,7 @@ text src/main/kotlin/atropos/core/agent/AgentService.kt 'preferredProviderIds = 
 text src/main/kotlin/atropos/core/agent/AgentRepairService.kt 'healthyProviderIds = { onboarding.healthyProviderIds() }'
 text src/main/kotlin/atropos/core/agent/AgentRepairService.kt 'preferredProviderIds = { onboarding.preferredProviderIds() }'
 text src/main/kotlin/atropos/core/agent/AgentRunService.kt 'AgentService(config, collector, onboarding)'
-text src/main/kotlin/atropos/cli/commands/AgentCommand.kt 'providerOnboarding = providerOnboarding'
+text src/main/kotlin/atropos/cli/commands/AgentCommand.kt 'onboarding = providerOnboarding'
 text src/main/kotlin/atropos/core/provider/SourceBindingFetcher.kt 'localOnly'
 text src/main/kotlin/atropos/core/provider/SourceBindingFetcher.kt 'disabled by localOnly'
 text src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt 'genericProviderIds'
@@ -360,7 +360,7 @@ text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'val execution =
 text src/main/kotlin/atropos/bridge/BridgeMcpHandler.kt 'manager.callTool('
 text src/main/kotlin/atropos/bridge/AtroposBridge.kt 'mcpHost = effectiveMcpHostManager'
 text src/main/kotlin/atropos/bridge/AtroposBridge.kt 'quotaSummary = { QuotaProjection(quotaRegistry, quotaLedger).render() }'
-text src/main/kotlin/atropos/bridge/AtroposBridge.kt 'work = AgentQueueWorkRunner(queueService, activeProvider)'
+text src/main/kotlin/atropos/bridge/AtroposBridge.kt 'work = AgentQueueWorkRunner('
 text src/main/kotlin/atropos/bridge/AtroposBridge.kt 'responder = QueuedWorkConversationResponder('
 text src/main/kotlin/atropos/bridge/AtroposBridge.kt 'recoverySnapshot = { restartCoordinator.snapshot() }'
 text src/main/kotlin/atropos/cli/ShellCommandHandler.kt 'shellRunner.gitStatus()'
@@ -487,7 +487,7 @@ text src/main/kotlin/atropos/bridge/projection/ThinkingProjection.kt 'redactionF
 text src/main/kotlin/atropos/bridge/BridgeSessionHandler.kt 'redactionFilter.redact(session.title)'
 text src/main/kotlin/atropos/bridge/projection/CheckpointProjection.kt 'redactionFilter.redact(summary.goalId)'
 text src/main/kotlin/atropos/bridge/BridgeEventsHandler.kt 'redactionFilter.redact(event.detail)'
-text src/main/kotlin/atropos/bridge/BridgeEditorHandler.kt 'HttpResponse.json(redactionFilter.redact(context()))'
+text src/main/kotlin/atropos/bridge/BridgeEditorHandler.kt 'HttpResponse.json(redactionFilter.redact(contextProvider()))'
 text src/main/kotlin/atropos/bridge/BridgeSelfHostHandler.kt 'redactionFilter.compact(result.message)'
 text src/main/kotlin/atropos/bridge/BridgeSelfHostHandler.kt 'redactionFilter.compact(advanced.message)'
 text src/main/kotlin/atropos/bridge/BridgeSelfHostHandler.kt 'redactionFilter.redact("bridge_start'
