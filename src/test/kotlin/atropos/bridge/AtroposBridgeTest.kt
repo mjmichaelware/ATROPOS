@@ -25,7 +25,7 @@ class AtroposBridgeTest {
     }
 
     private fun startOnEphemeralPort(): Int {
-        val started = AtroposBridge.server(0) { "test-provider" }
+        val started = AtroposBridge.server(0, activeProvider = { "test-provider" })
         server = started
         assertTrue(started.start(), "bridge failed to bind: ${started.lastError()}")
         return assertNotNull(started.boundPort())
@@ -45,15 +45,15 @@ class AtroposBridgeTest {
 
     @Test
     fun `the bridge is off unless the operator sets the port variable`() {
-        assertNull(AtroposBridge.fromEnvironment({ null }) { "p" }, "a listener must never open by default")
-        assertNull(AtroposBridge.fromEnvironment({ "" }) { "p" })
-        assertNull(AtroposBridge.fromEnvironment({ "not-a-port" }) { "p" })
-        assertNull(AtroposBridge.fromEnvironment({ "70000" }) { "p" })
+        assertNull(AtroposBridge.fromEnvironment(environment = { null }, activeProvider = { "p" }), "a listener must never open by default")
+        assertNull(AtroposBridge.fromEnvironment(environment = { "" }, activeProvider = { "p" }))
+        assertNull(AtroposBridge.fromEnvironment(environment = { "not-a-port" }, activeProvider = { "p" }))
+        assertNull(AtroposBridge.fromEnvironment(environment = { "70000" }, activeProvider = { "p" }))
     }
 
     @Test
     fun `an explicit port variable constructs a server`() {
-        assertNotNull(AtroposBridge.fromEnvironment({ "0" }) { "p" })
+        assertNotNull(AtroposBridge.fromEnvironment(environment = { "0" }, activeProvider = { "p" }))
     }
 
     @Test

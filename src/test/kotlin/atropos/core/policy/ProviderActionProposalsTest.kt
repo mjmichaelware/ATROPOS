@@ -82,11 +82,11 @@ class ProviderActionProposalsTest {
             repoRoot = Files.createTempDirectory("atropos-local-only"),
             localOnly = true
         )
-        val remote = engine.evaluate(ProviderActionProposals.forCall("groq", "chat", 8, ActionActor.HumanOwner))
+        val remote = engine.evaluate(ProviderActionProposals.forCall("groq", "chat", 8, ActionActor.HumanOwner).toRequest())
         assertEquals(PolicyDecisionType.DENY, remote.decision)
         assertTrue(remote.reason.contains("local-only"))
 
-        val local = engine.evaluate(ProviderActionProposals.forCall("ollama", "chat", 8, ActionActor.HumanOwner))
+        val local = engine.evaluate(ProviderActionProposals.forCall("ollama", "chat", 8, ActionActor.HumanOwner).toRequest())
         assertEquals(PolicyDecisionType.ALLOW, local.decision)
 
         val network = engine.evaluate(
@@ -105,7 +105,7 @@ class ProviderActionProposalsTest {
         paidGate.unlock("openai", "1m", "operator approved")
         val engine = ExecutionPolicyEngine(root, paidGate = paidGate)
         val decision = engine.evaluate(
-            ProviderActionProposals.forCall("openai", "chat", 8, ActionActor.HumanOwner)
+            ProviderActionProposals.forCall("openai", "chat", 8, ActionActor.HumanOwner).toRequest()
         )
         assertEquals(PolicyDecisionType.ALLOW, decision.decision)
     }

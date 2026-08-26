@@ -8,14 +8,14 @@ import atropos.core.policy.PolicyDecisionType
 import atropos.core.security.MapSecretSource
 import atropos.core.security.SecretSinkKind
 import atropos.core.security.SecretSinkMatrix
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertThrows
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Test
+import kotlin.test.AfterTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
 
 class SentryApiClientTest {
-    @AfterEach
+    @AfterTest
     fun resetSinks() = SecretSinkMatrix.resetDefaults()
 
     @Test
@@ -25,7 +25,7 @@ class SentryApiClientTest {
         val client = SentryApiClient(
             secretSource = MapSecretSource(mapOf("SENTRY_AUTH_TOKEN" to "sentry-secret-token")),
             gate = ::allow,
-            transport = { request ->
+            transport = SentryApiTransport { request ->
                 capturedToken = request.token
                 SentryApiWireResponse(
                     200,
@@ -60,10 +60,10 @@ class SentryApiClientTest {
 
     @Test
     fun `parser refuses truncated or non-object wire responses`() {
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith<IllegalArgumentException> {
             SentryIssueParser.parse("issue", "{\"title\":\"Broken\"")
         }
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith<IllegalArgumentException> {
             SentryIssueParser.parse("issue", "upstream unavailable")
         }
     }

@@ -127,6 +127,7 @@ class GitHubApiClientTest {
             transport = GitHubApiTransport {
                 called = true
                 GitHubApiWireResponse(200, "{}")
+            }
         )
 
         withNetworkSink {

@@ -59,9 +59,9 @@ class CommandRegistryTest {
 
         assertTrue(state.isGroupLevel("/commands"))
         state.moveSelectionDown("/commands")
-        assertTrue(state.paletteLevel("/commands") == CommandPaletteLevel.GROUPS)
+        assertTrue(state.level("/commands") == CommandPaletteLevel.GROUPS)
         assertTrue(state.expand("/commands"))
-        assertTrue(state.paletteLevel("/commands") == CommandPaletteLevel.COMMANDS)
+        assertTrue(state.level("/commands") == CommandPaletteLevel.COMMANDS)
         assertTrue(state.selectedCommand("/commands") != null)
     }
 

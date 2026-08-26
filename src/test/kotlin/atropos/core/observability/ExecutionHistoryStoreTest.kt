@@ -6,6 +6,7 @@ import atropos.core.journal.EventCategory
 import atropos.core.journal.EventJournalService
 import java.nio.file.Files
 import java.nio.file.Path
+import java.time.Instant
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

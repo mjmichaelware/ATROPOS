@@ -49,7 +49,7 @@ class QuotaProjectionTest {
     fun remaining_quota_survives_ledger_restart_and_is_projected() {
         val root = Files.createTempDirectory("quota-remaining")
         val registry = StaticProviderDescriptorRegistry()
-        val seed = InMemoryQuotaLedger.seedFromDescriptors(registry)
+        val seed = atropos.core.provider.FileQuotaLedger.seedFromDescriptors(registry)
         val file = root.resolve("quota.tsv").toFile()
         val ledger = atropos.core.provider.FileQuotaLedger(file, seed)
         ledger.put(

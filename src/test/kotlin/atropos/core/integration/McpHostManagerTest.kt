@@ -145,7 +145,7 @@ class McpHostManagerTest {
         Files.writeString(script, """
             #!/bin/sh
             while IFS= read -r line; do
-              case "$line" in
+              case "${'$'}line" in
                 *'"id":1'*) printf '%s\n' '{"id":1}' ;;
                 *'"id":2'*) printf '%s\n' '{"id":2,"result":{"tools":[{"name":"inspect"}]}}' ;;
                 *'"id":3'*) printf '%s\n' x >> '${calls.fileName}'; printf '%s\n' '{"id":3,"result":{"content":[{"text":"ok"}]}}' ;;
@@ -170,9 +170,9 @@ class McpHostManagerTest {
         val script = root.resolve("mcp-env.sh")
         Files.writeString(script, """
             #!/bin/sh
-            printf '%s' "$MCP_FIXTURE_VALUE" > '${marker.fileName}'
+            printf '%s' "${'$'}MCP_FIXTURE_VALUE" > '${marker.fileName}'
             while IFS= read -r line; do
-              case "$line" in
+              case "${'$'}line" in
                 *'\"id\":1'*) printf '%s\\n' '{"id":1}' ;;
                 *'\"id\":2'*) printf '%s\\n' '{"id":2,"result":{"tools":[{"name":"inspect"}]}}' ;;
                 *'\"id\":3'*) printf '%s\\n' '{"id":3,"result":{"content":[{"text":"ok"}]}}' ;;
@@ -238,7 +238,7 @@ class McpHostManagerTest {
             #!/bin/sh
             printf '%s' "$$" > '${pidFile.fileName}'
             while IFS= read -r line; do
-              case "$line" in
+              case "${'$'}line" in
                 *'\"id\":1'*) printf '%s\n' '{"id":1}' ;;
                 *'\"id\":2'*) printf '%s\n' '{"id":2,"result":{"tools":[{"name":"inspect"}]}}' ;;
                 *'\"id\":3'*) printf '%s\n' '{"id":3,"result":{"content":[{"text":"ok"}]}}' ;;
@@ -263,7 +263,7 @@ class McpHostManagerTest {
         Files.writeString(script, """
             #!/bin/sh
             while IFS= read -r line; do
-              case "$line" in
+              case "${'$'}line" in
                 *'\"id\":1'*) printf '%s\n' '{"id":1}' ;;
                 *'\"id\":2'*) printf '%s\n' '{"id":2,"result":{"tools":[{"name":"first"},{"name":"second"}]}}' ;;
                 *'\"id\":3'*) touch '${marker.fileName}'; printf '%s\n' '{"id":3}' ;;
@@ -334,7 +334,7 @@ class McpHostManagerTest {
         Files.writeString(script, """
             #!/bin/sh
             while IFS= read -r line; do
-              case "$line" in
+              case "${'$'}line" in
                 *'\"id\":1'*) printf '%s\n' '{"id":1}' ;;
                 *'\"id\":2'*) printf '%s\n' '{"id":2,"result":{"tools":[{"name":"convert_to_markdown"}]}}' ;;
                 *'\"id\":3'*) printf '%s\n' '{"id":3,"result":{"content":[{"text":"# ok"}]}}' ;;

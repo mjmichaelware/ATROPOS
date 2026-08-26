@@ -9,9 +9,9 @@ import kotlin.test.assertTrue
 class BridgeCommandHandlerTest {
     @Test
     fun command_success_payload_redacts_renderer_output() {
-        val handler = BridgeCommandHandler {
+        val handler = BridgeCommandHandler(run = {
             BridgeCommandOutput("api_key=sk-live-success-secret-123456789", exited = true)
-        }
+        })
         val response = handler.execute(
             HttpRequest(
                 "POST",
@@ -29,9 +29,9 @@ class BridgeCommandHandlerTest {
 
     @Test
     fun command_failure_payload_redacts_provider_secret() {
-        val handler = BridgeCommandHandler {
+        val handler = BridgeCommandHandler(run = {
             error("provider rejected api_key=sk-live-secret-123456789")
-        }
+        })
         val response = handler.execute(
             HttpRequest(
                 "POST",

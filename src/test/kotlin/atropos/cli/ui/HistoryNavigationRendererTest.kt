@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.cli.ui
 
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.Assertions.*
+import kotlin.test.Test
+import kotlin.test.*
 
 class HistoryNavigationRendererTest {
 

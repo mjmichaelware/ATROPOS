@@ -2,9 +2,9 @@ package atropos.core.provider.adapter
 
 import java.net.URI
 import java.time.Instant
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Test
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class AwsSigV4Test {
     @Test

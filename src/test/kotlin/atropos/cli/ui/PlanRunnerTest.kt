@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.cli.ui
 
-import org.junit.jupiter.api.Test
+import kotlin.test.Test
 
 class PlanRunnerTest {
     @Test

@@ -32,6 +32,6 @@ class InternalPlanningGraphServiceTest {
 
         assertFalse(dag.nodes.isEmpty())
         assertTrue(Files.isRegularFile(dag.metaFile))
-        assertTrue(dag.nodes.any { it.dimension == AtomDimension.DATA_LIFECYCLE })
+        assertTrue(dag.nodes.any { it.label.contains("data_lifecycle") })
     }
 }

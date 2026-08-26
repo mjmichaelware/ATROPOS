@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.cli.ui
 
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.Assertions.*
+import kotlin.test.Test
+import kotlin.test.*
 
 class StatusRenderersTest {
 
@@ -79,7 +79,7 @@ class StatusRenderersTest {
     @Test
     fun `StatusStorageRenderer renders correctly at different widths`() {
         val renderer = StatusStorageRenderer(theme = theme)
-        val constitution = atropos.core.storage.StorageConstitution(10, 100, 90, emptyList())
+        val constitution = atropos.core.storage.StorageConstitution(ceilingBytes = 10, classes = emptyList())
         val supervisor = atropos.core.storage.StorageSupervisor()
         val policy = atropos.core.storage.RetentionPolicy()
         val list40 = renderer.renderStatus(constitution, supervisor, 40)
@@ -115,8 +115,8 @@ class StatusRenderersTest {
     @Test
     fun `StatusRouteRenderer renders correctly at different widths`() {
         val renderer = StatusRouteRenderer(theme = theme)
-        val task = atropos.core.provider.ProviderTask(atropos.core.provider.ProviderTaskKind.RESEARCH, atropos.core.provider.ApiCapability.COMPLETION)
-        val decision = atropos.core.provider.RoutePolicyDecision(task, null, emptyList(), emptyList())
+        val task = atropos.core.provider.ProviderTask(atropos.core.provider.ProviderTaskKind.CHAT_PROMPT, atropos.core.provider.ApiCapability.CHAT, "prompt")
+        val decision = atropos.core.provider.RoutePolicyDecision(task, null, null, emptyList(), emptyList())
         val result = atropos.core.provider.adapter.AdapterRouteResult("prompt", decision, null, null, "note")
         val list40 = renderer.renderRoute(result, 40)
 
@@ -127,10 +127,11 @@ class StatusRenderersTest {
     fun `StatusRouteRenderer redacts provider secrets before painting`() {
         val renderer = StatusRouteRenderer(theme = theme)
         val task = atropos.core.provider.ProviderTask(
-            atropos.core.provider.ProviderTaskKind.RESEARCH,
-            atropos.core.provider.ApiCapability.COMPLETION
+            atropos.core.provider.ProviderTaskKind.CHAT_PROMPT,
+            atropos.core.provider.ApiCapability.CHAT,
+            "prompt"
         )
-        val decision = atropos.core.provider.RoutePolicyDecision(task, null, emptyList(), emptyList())
+        val decision = atropos.core.provider.RoutePolicyDecision(task, null, null, emptyList(), emptyList())
         val result = atropos.core.provider.adapter.AdapterRouteResult(
             "prompt",
             decision,

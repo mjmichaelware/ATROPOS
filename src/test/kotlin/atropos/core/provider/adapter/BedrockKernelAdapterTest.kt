@@ -1,9 +1,9 @@
 package atropos.core.provider.adapter
 
 import atropos.core.provider.StaticProviderDescriptorRegistry
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Test
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class BedrockKernelAdapterTest {
     @Test
@@ -16,10 +16,10 @@ class BedrockKernelAdapterTest {
                 "AWS_SECRET_ACCESS_KEY" to "secret",
                 "AWS_REGION" to "us-east-1"
             ),
-            transport = { error("live transport must not run in status test") }
+            transport = BedrockTransport { error("live transport must not run in status test") }
         )
 
-        assertTrue(adapter.implemented())
+        assertTrue(adapter.status().implemented)
         assertTrue(adapter.status().configured)
         assertEquals("aws_bedrock", adapter.providerId)
     }

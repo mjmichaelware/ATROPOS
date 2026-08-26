@@ -24,7 +24,7 @@ class BridgeEditorHandlerTest {
     fun selection_requires_attribution_and_reuses_conversation_owner() {
         var forwarded: HttpRequest? = null
         val handler = BridgeEditorHandler(
-            context = { "{}" },
+            contextProvider = { "{}" },
             sendMessage = {
                 forwarded = it
                 HttpResponse.json("{\"ok\":true}")

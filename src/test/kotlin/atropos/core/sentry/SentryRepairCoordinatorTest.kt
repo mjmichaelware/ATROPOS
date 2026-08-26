@@ -2,9 +2,9 @@ package atropos.core.sentry
 
 import atropos.core.evaluation.EvidenceStore
 import java.nio.file.Files
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertThrows
-import org.junit.jupiter.api.Test
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 class SentryRepairCoordinatorTest {
     @Test
@@ -31,7 +31,7 @@ class SentryRepairCoordinatorTest {
         val root = Files.createTempDirectory("atropos-sentry-")
         val coordinator = SentryRepairCoordinator(repoRoot = root, evidenceStore = EvidenceStore(root))
 
-        assertThrows(IllegalArgumentException::class.java) {
+        assertFailsWith<IllegalArgumentException> {
             coordinator.prepare(
                 SentryIssue("42", "Crash", "", listOf(SentryStackFrame("${root.toAbsolutePath()}/test/App.kt", 1)), "raw"),
                 listOf("src")
