@@ -14852,3 +14852,17 @@ Local verification note for this batch: `timeout 120s ./gradlew test --tests 'at
 - Fingerprints: `settings/page.tsx` (sha256: new).
 - New overall estimate: unchanged; ADD-W-016 complete.
 
+
+### 2026-08-26T03:00:00Z · Agent: Codex GPT-5 · Batch: frontend-add-w009-free-provider-welcome-001
+- Paths touched:
+  - `apps/web/src/components/welcome/free-provider-welcome.tsx` (new, +142)
+  - `apps/web/src/app/(app)/page.tsx` (+import + render)
+  - `apps/web/src/lib/quota/client.ts` (fixed to use readEngine)
+  - `STATUS-WEB-INVENTORY.md` (ADD-W-009 marked PARTIAL)
+- Atoms / phases affected: ADD-W-009 (Free-provider first-boot welcome)
+- Predicate moved: FreeProviderWelcome component shows hash-stable welcome when zero paid providers are healthy; uses existing quota client to detect zero paid healthy providers; hash-stable content with localStorage seen tracking; fixed quota client to use readEngine for proper error handling.
+- Verification actually run: `npm test` **UI tests pass** (2/2 home page), **planning tests pass** (20/20), **approvals pass** (5/5), **streaming pass** (6/6); `tsc --noEmit` clean except pre-existing SpecGraph errors (unrelated). ESLint clean.
+- Honest limits: no Kotlin/backend changes; no invented routes; no second event bus; no collapsed completion terms.
+- Fingerprints: `free-provider-welcome.tsx` (new), `quota/client.ts` (fixed), `page.tsx` (updated).
+- New overall estimate: unchanged; ADD-W-009 PARTIAL pending /v1/answers zero-paid detection.
+
