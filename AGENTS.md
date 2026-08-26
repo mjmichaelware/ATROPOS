@@ -14893,3 +14893,24 @@ Local verification note for this batch: `timeout 120s ./gradlew test --tests 'at
 - Fingerprints: `ops-dashboard.tsx` (new), `governance/page.tsx` (updated).
 - New overall estimate: unchanged; ADD-W-025 DONE.
 
+
+### 2026-08-26T05:00:00Z · Agent: Codex GPT-5 · Batch: frontend-add-w015-020-export-ledger-001
+- Paths touched:
+  - `apps/web/src/components/export/export-button.tsx` (new, +183)
+  - `apps/web/src/components/evidence/evidence-ledger-browser.tsx` (new, +95)
+  - `apps/web/src/app/(app)/developer/page.tsx` (new, +45)
+  - `apps/web/src/app/(app)/settings/page.tsx` (+import + render)
+  - `apps/web/src/lib/export/client.ts` (unchanged, used existing)
+  - `apps/web/src/lib/governance/client.ts` (used existing)
+  - `apps/web/src/lib/quota/client.ts` (fixed to use readEngine)
+  - `STATUS-WEB-INVENTORY.md` (ADD-W-015, ADD-W-020 marked DONE)
+- Atoms / phases affected: ADD-W-015 (Export button), ADD-W-020 (Evidence ledger browser), ADD-W-016 (Export landing-zone pref - already done)
+- Predicate moved:
+  - ADD-W-015: ExportButton component uses existing `/v1/exports` client via `lib/export/client.ts`; reads zones, validates `canExport`, exports to selected zone with redaction note in UI.
+  - ADD-W-020: EvidenceLedgerBrowser component reads `/v1/evidence/list` via `governance.evidenceList()`; mounted at `/developer/ledger` page under new `/developer` page alongside SpecGraph.
+  - ADD-W-016: Already done - SettingsPage has "Export & Handoff" section with landing zone input.
+- Verification actually run: `npm test` **governance/client.test.ts 5/5**, **home page test 2/2**, **contracts 21/21**, **surface-contract 20/20**; `tsc --noEmit` clean except pre-existing SpecGraph errors (unrelated). ESLint clean.
+- Honest limits: no Kotlin/backend changes; no invented routes; no second event bus; no collapsed completion terms.
+- Fingerprints: `export-button.tsx` (new), `evidence-ledger-browser.tsx` (new), `developer/page.tsx` (new), `settings/page.tsx` (updated).
+- New overall estimate: unchanged; ADD-W-015, ADD-W-020 DONE; ADD-W-009 PARTIAL.
+
