@@ -14827,3 +14827,16 @@ Local verification note for this batch: `timeout 120s ./gradlew test --tests 'at
 - Fingerprints: `file-upload.tsx` (verified existing), `files/client.ts` (verified existing).
 - New overall estimate: unchanged; ADD-W-029 complete, no weighted phase gate claimed.
 
+
+### 2026-08-26T01:20:00Z · Agent: Codex GPT-5 · Batch: frontend-add-w027-surface-contract-001
+- Paths touched:
+  - `packages/atropos-web-contracts/src/index.mjs` (+120: SurfaceContract types, validation, 10 fixtures)
+  - `packages/atropos-web-contracts/src/index.d.ts` (+45: TypeScript definitions)
+  - `packages/atropos-web-contracts/tests/surface-contract.test.mjs` (new, +230: 20 fixture parity tests)
+- Atoms / phases affected: ADD-W-027 (SurfaceContract types + fixture parity tests)
+- Predicate moved: SurfaceContract types now defined in contracts package with 10 surface kinds (home, project-work, project-files, project-activity, project-agents, models, automation, history, settings, developer-specgraph), each with requiredRoutes, components, and requiredState. Validation functions (isSurfaceContract, validateSurfaceContract, validateSurfaceFixture) work correctly. 20 fixture parity tests pass.
+- Verification actually run: `npm test` **21/21 original contracts tests pass**, **20/20 surface-contract tests pass**; `tsc --noEmit` clean except pre-existing SpecGraph errors (unrelated). ESLint clean.
+- Honest limits: no Kotlin/backend changes; no invented routes; no second design system.
+- Fingerprints: `index.mjs`, `index.d.ts`, `surface-contract.test.mjs`
+- New overall estimate: unchanged; ADD-W-027 complete, no weighted phase gate claimed.
+
