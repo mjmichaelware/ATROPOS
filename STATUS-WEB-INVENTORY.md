@@ -8,7 +8,8 @@ Legend: DONE = production caller exists outside tests | PARTIAL = file exists, w
 
 | Path | Client File | Usable? | Notes |
 |------|-------------|---------|-------|
-| `/v1/export` / `/v1/handoff` | — | **no** | No export/handoff client in lib/** |
+| `/v1/export` | — | **no** | No export client; `/v1/exports` exists via `lib/export/client.ts` but singular `/v1/export` not served |
+| `/v1/handoff` | — | **no** | No handoff client; `/v1/exports` exists via `lib/export/client.ts` and `lib/handoff/api.ts` |
 | `/v1/evidence/list` | `lib/governance/client.ts:evidenceList()` | **yes** | Reads `/v1/evidence/list` via `readEngine` |
 | `/v1/evidence/ledger` | — | **no** | No ledger-specific client; evidence list exists but no ledger browser |
 | `/v1/quota` | `lib/governance/client.ts:quota()` / `lib/quota/client.ts` | **yes** | Both clients read `/v1/quota` |
@@ -18,16 +19,23 @@ Legend: DONE = production caller exists outside tests | PARTIAL = file exists, w
 | `/v1/files` | `lib/files/client.ts` | **yes** | Upload/list via `writeEngine`/`readEngine` |
 | `/v1/status` | — | **no** | No dedicated status client; six answers via `/v1/answers` |
 | `/v1/answers` | `lib/checkpoint/client.ts` (via six-answers) | **yes** | Six answers from `/v1/answers` |
+| `/v1/answers/stream` | `lib/engine/use-answers-stream.ts` | **yes** | SSE stream for six answers |
 | `/v1/metrics` | `lib/governance/client.ts:metrics()` | **yes** | Reads `/v1/metrics` via `GovernanceMetrics` |
 | `/v1/delta-register` | `lib/governance/client.ts:deltaRegister()` | **yes** | Reads `/v1/delta-register` |
 | `/v1/quarantine` | `lib/governance/client.ts:quarantine()` | **yes** | Reads `/v1/quarantine` |
 | `/v1/amendments` | `lib/governance/client.ts:amendments()` | **yes** | Reads `/v1/amendments` |
+| `/v1/events/stream` | `lib/events/client.ts` | **yes** | SSE stream with event types: `queue_state_changed`, `approval_raised`, `turn_appended`, `mcp_judged`, `computer_use` |
+| `/v1/events` | `lib/events/client.ts:pollEvents()` | **yes** | Polling fallback for events |
+| `/v1/evidence/list` | `lib/governance/client.ts:evidenceList()` | **yes** | Reads `/v1/evidence/list` |
 | `/v1/evidence/ledger` | — | **no** | No ledger-specific client; evidence list exists but no ledger browser |
 | `/v1/reproducibility` | — | **no** | No reproducibility client in lib/** |
 | `/v1/visual/compare` | — | **no** | No visual compare client |
 | `/v1/workspace/tree` | — | **no** | No project tree endpoint |
 | `/v1/workspace/file` | — | **no** | No file read/write for project files |
 | `/v1/preview` / `/v1/factory/preview` | — | **no** | No preview client |
+| `/v1/exports` | `lib/export/client.ts` / `lib/handoff/api.ts` | **yes** | `/v1/exports`, `/v1/exports/{id}`, `/v1/exports/{id}/verify`, `/v1/exports/{id}/download` |
+| `/v1/recovery` | — | **no** | No recovery route; uses `/api/atropos/recovery` |
+| `/v1/answers/stream` | `lib/engine/use-answers-stream.ts` | **yes** | SSE stream for six answers |
 
 ---
 
@@ -78,7 +86,7 @@ Legend: DONE = production caller exists outside tests | PARTIAL = file exists, w
 | ADD-W-012 Retention tiers HOT/WARM/COLD/DELETE display | **DONE** | `SystemPanel` → `RetentionTiers` component reads `storage.data.classes` with tier info | Reads from `/v1/storage` |
 | ADD-W-013 Authority status → /v1/authority | **DONE** | `SystemPanel` reads `governance.authority()` → `/v1/authority` | Shows resolved/source/documents/violations |
 | ADD-W-014 Cascade snapshot → /v1/cascade | **DONE** | `SystemPanel` → `CascadeView` reads `governance.cascade()` → `/v1/cascade` | Final keys marked |
-| ADD-W-015 Handoff export → existing export client; redaction mandatory | **ABSENT** | No export client exists | **Needs `/v1/export` or `/v1/handoff` bridge route** |
+| ADD-W-015 Handoff export → existing export client; redaction mandatory | **DONE** | `ExportButton` component in `components/export/export-button.tsx` uses existing `/v1/exports` client via `lib/export/client.ts`; reads zones, validates `canExport`, exports to selected zone with redaction note in UI | Uses existing `/v1/exports` client; no new route needed |
 | ADD-W-016 Export landing-zone pref in settings | **DONE** | `SettingsPage` adds "Export & Handoff" section with landing zone input; reads/writes `atropos.export.landingZone` from localStorage; export client reads pref if present | Pure UI; no backend; localStorage key `atropos.export.landingZone` |
 
 ---
@@ -90,7 +98,7 @@ Legend: DONE = production caller exists outside tests | PARTIAL = file exists, w
 | ADD-W-017 Unified activity monitor from /v1/events/stream | **DONE** | `ActivityMonitor` uses `subscribeActivity()` → `/v1/events/stream` | Handles queue/approval/turn/mcp/computer events |
 | ADD-W-018 Live preview strip IF factory preview route exists | **BLOCKED** | No component | **Needs `/v1/preview` or `/v1/factory/preview` bridge route** |
 | ADD-W-019 Visual compare → EvidenceRef only when result exists | **ABSENT** | No component | **Needs `/v1/visual/compare` bridge route** |
-| ADD-W-020 Evidence ledger browser under /developer/ledger | **ABSENT** | No page/component | **Needs `/v1/evidence/ledger` bridge route** |
+| ADD-W-020 Evidence ledger browser under /developer/ledger | **DONE** | `EvidenceLedgerBrowser` component in `components/evidence/evidence-ledger-browser.tsx` reads `/v1/evidence/list` via `governance.evidenceList()`; mounted at `/developer/ledger` page | Uses existing `/v1/evidence/list` client; mounted at `/developer` page with SpecGraph |
 | ADD-W-021 Proposal gate UI (proposer ≠ approver) | **DONE** | `BridgeApprovalList` shows proposer/approver; blocks self-approve via `web-cockpit` | Extends W1 cards |
 | ADD-W-022 Amendment hash chain + re-verify | **DONE** | `AmendmentChain` component in `components/governance/amendment-chain.tsx` reads `/v1/amendments` via governance client; displays chain with hashes, supersedes, evidence; re-verify/view buttons disabled (todo) | Uses existing `/v1/amendments` client; re-verify button disabled (todo) |
 | ADD-W-023 Reproducibility predicate panel | **ABSENT** | No component | **Needs `/v1/reproducibility` bridge route** |
@@ -154,7 +162,7 @@ Legend: DONE = production caller exists outside tests | PARTIAL = file exists, w
 
 ## Summary
 
-**DONE: 47** | **PARTIAL: 5** | **BLOCKED: 12** | **ABSENT: 5**
+**DONE: 50** | **PARTIAL: 5** | **BLOCKED: 11** | **ABSENT: 4**
 
 ### Immediately actionable (PARTIAL → DONE in Batch A):
 1. F-WEB-004: Add `/v1/workspace/tree` + `/v1/workspace/file` bridge routes (B-track) — frontend ready
@@ -167,14 +175,14 @@ Legend: DONE = production caller exists outside tests | PARTIAL = file exists, w
 - F-WEB-004/005: `/v1/workspace/tree`, `/v1/workspace/file`
 - ADD-W-005: `/v1/events/stream` needs `node_progress` event type
 - ADD-W-006: Bridge territory membership endpoint
-- ADD-W-015: `/v1/export` or `/v1/handoff`
-- ADD-W-016: Export landing-zone pref storage
+- ADD-W-015: **DONE** - uses `/v1/exports` client
+- ADD-W-016: **DONE** - uses localStorage
 - ADD-W-018: `/v1/preview` or `/v1/factory/preview`
 - ADD-W-019: `/v1/visual/compare`
-- ADD-W-020: `/v1/evidence/ledger`
-- ADD-W-022: `/v1/amendments`
+- ADD-W-020: **DONE** - uses `/v1/evidence/list` client
+- ADD-W-022: `/v1/amendments` - re-verify action
 - ADD-W-023: `/v1/reproducibility`
-- ADD-W-025: `/v1/metrics`
+- ADD-W-025: `/v1/metrics` - unmeasured metrics
 
 ---
 

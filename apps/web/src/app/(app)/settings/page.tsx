@@ -5,6 +5,7 @@ import { SixAnswersPanel, SixAnswer } from '@/components/ui/six-answers-panel';
 import { InformationLevels, InformationLevel } from '@/components/ui/information-levels';
 import { ThemeCustomizer } from '@/components/settings/theme-customizer';
 import { SystemPanel } from '@/components/settings/system-panel';
+import { ExportButton } from '@/components/export/export-button';
 import { useSessionState } from '@/lib/contexts/session-state-context';
 
 export default function SettingsPage() {
@@ -146,9 +147,9 @@ export default function SettingsPage() {
             The export client reads this preference if present. Leave empty to use the engine default.
           </p>
         </div>
+        {/* Export button using /v1/exports client */}
+        <ExportButton />
       </section>
-
-      {/* Developer Options */}
       <section className="space-y-4">
         <div className="border-b border-sg-neutral-200 dark:border-sg-neutral-800 pb-3">
           <h2 className="text-2xl font-semibold text-sg-neutral-900 dark:text-sg-neutral-50">
