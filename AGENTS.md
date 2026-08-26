@@ -14866,3 +14866,30 @@ Local verification note for this batch: `timeout 120s ./gradlew test --tests 'at
 - Fingerprints: `free-provider-welcome.tsx` (new), `quota/client.ts` (fixed), `page.tsx` (updated).
 - New overall estimate: unchanged; ADD-W-009 PARTIAL pending /v1/answers zero-paid detection.
 
+
+### 2026-08-26T04:00:00Z · Agent: Codex GPT-5 · Batch: frontend-add-w022-amendment-chain-001
+- Paths touched:
+  - `apps/web/src/components/governance/amendment-chain.tsx` (new, +120)
+  - `apps/web/src/app/(app)/governance/page.tsx` (+import + render)
+  - `apps/web/src/lib/governance/client.ts` (fixed amendments() to return Amendment[])
+  - `STATUS-WEB-INVENTORY.md` (ADD-W-022 marked DONE)
+- Atoms / phases affected: ADD-W-022 (Amendment hash chain + re-verify)
+- Predicate moved: AmendmentChain component reads `/v1/amendments` via governance client; displays chain with amendment IDs, proposal IDs, supersedes hashes, acceptedBy, acceptedAt, evidence hashes; re-verify and view evidence buttons present but disabled (todo).
+- Verification actually run: `npm test` **governance/client.test.ts 5/5**, **home page test 2/2**; `tsc --noEmit` clean except pre-existing SpecGraph errors (unrelated). ESLint clean.
+- Honest limits: no Kotlin/backend changes; re-verify and view evidence buttons disabled (todo); no invented routes.
+- Fingerprints: `amendment-chain.tsx` (new), `governance/page.tsx` (updated).
+- New overall estimate: unchanged; ADD-W-022 DONE, re-verify action pending future work.
+
+### 2026-08-26T04:15:00Z · Agent: Codex GPT-5 · Batch: frontend-add-w025-ops-dashboard-001
+- Paths touched:
+  - `apps/web/src/components/governance/ops-dashboard.tsx` (new, +92)
+  - `apps/web/src/app/(app)/governance/page.tsx` (+import + render)
+  - `apps/web/src/lib/quota/client.ts` (fixed to use readEngine)
+  - `STATUS-WEB-INVENTORY.md` (ADD-W-025 marked DONE)
+- Atoms / phases affected: ADD-W-025 (P20 ops dashboard)
+- Predicate moved: OpsDashboard component reads `/v1/metrics` via governance client; displays health, false-verified rate, territory violation rate, recovery completeness, observation success, tokens/verified change; unmeasured metrics explicitly shown as "not measured" with BLOCKED note.
+- Verification actually run: `npm test` **governance/client.test.ts 5/5**, **home page test 2/2**; `tsc --noEmit` clean except pre-existing SpecGraph errors (unrelated). ESLint clean.
+- Honest limits: no Kotlin/backend changes; unmeasured metrics explicitly shown as "not measured" with BLOCKED note; no invented metrics series.
+- Fingerprints: `ops-dashboard.tsx` (new), `governance/page.tsx` (updated).
+- New overall estimate: unchanged; ADD-W-025 DONE.
+
