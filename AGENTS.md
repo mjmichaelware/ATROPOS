@@ -14840,3 +14840,15 @@ Local verification note for this batch: `timeout 120s ./gradlew test --tests 'at
 - Fingerprints: `index.mjs`, `index.d.ts`, `surface-contract.test.mjs`
 - New overall estimate: unchanged; ADD-W-027 complete, no weighted phase gate claimed.
 
+
+### 2026-08-26T02:00:00Z · Agent: Codex GPT-5 · Batch: frontend-add-w016-export-landing-zone-001
+- Paths touched:
+  - `apps/web/src/app/(app)/settings/page.tsx` (+31: "Export & Handoff" section with landing zone input)
+  - `STATUS-WEB-INVENTORY.md` (ADD-W-016 marked DONE)
+- Atoms / phases affected: ADD-W-016 (Export landing-zone pref in settings)
+- Predicate moved: SettingsPage now has "Export & Handoff" section with landing zone input; reads/writes `atropos.export.landingZone` from localStorage; export client reads pref if present.
+- Verification actually run: `npm test` passes; `tsc --noEmit` clean except pre-existing SpecGraph errors (unrelated). ESLint clean.
+- Honest limits: Pure UI; no backend; localStorage key `atropos.export.landingZone`.
+- Fingerprints: `settings/page.tsx` (sha256: new).
+- New overall estimate: unchanged; ADD-W-016 complete.
+
