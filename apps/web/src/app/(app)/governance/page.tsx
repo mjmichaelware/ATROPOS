@@ -1,5 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 import { GovernancePanel } from '@/components/governance/governance-panel';
+import { AmendmentChain } from '@/components/governance/amendment-chain';
+import { OpsDashboard } from '@/components/governance/ops-dashboard';
 
 export default function GovernancePage() {
   return (
@@ -14,6 +16,8 @@ export default function GovernancePage() {
         </p>
       </header>
       <GovernancePanel />
+      <AmendmentChain />
+      <OpsDashboard />
     </div>
   );
 }

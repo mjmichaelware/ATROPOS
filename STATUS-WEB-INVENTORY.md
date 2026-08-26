@@ -65,7 +65,7 @@ Legend: DONE = production caller exists outside tests | PARTIAL = file exists, w
 | ADD-W-006 Territory optical focus (desaturate/sharpen) | **ABSENT** | No component exists | **Missing bridge territory membership endpoint** |
 | ADD-W-007 Status retheme from vocabulary enum | **DONE** | `PlanStatusBadge` now uses Canonical form (icon+text+color) with plan-status-specific icons/colors; `StatusBadge` canonical form used throughout; `accentForStatus` vocabulary mapping in `territory-material.ts` | `PlanStatusBadge` now uses Canonical form (icon+text+color) with plan-status-specific icons/colors; vocabulary-driven via `accentForStatus` in `territory-material.ts` |
 | ADD-W-008 Recovery ribbon one-liner | **DONE** | `RecoveryRibbon` → `ribbonLine` (continuity + free-space + auth) | One-liner in ribbon |
-| ADD-W-009 Free-provider first-boot welcome | **ABSENT** | No component exists | **Needs `/v1/answers` zero-paid-healthy detection** |
+| ADD-W-009 Free-provider first-boot welcome | **PARTIAL** | `FreeProviderWelcome` component uses `quota.read()` to detect zero paid healthy providers; shows hash-stable welcome when zero paid healthy; `quota.read()` uses `readEngine` | **Missing `/v1/answers` zero-paid-healthy detection** — currently uses quota payload; inventory PARTIAL pending exact `/v1/answers` field |
 
 ---
 
@@ -92,10 +92,10 @@ Legend: DONE = production caller exists outside tests | PARTIAL = file exists, w
 | ADD-W-019 Visual compare → EvidenceRef only when result exists | **ABSENT** | No component | **Needs `/v1/visual/compare` bridge route** |
 | ADD-W-020 Evidence ledger browser under /developer/ledger | **ABSENT** | No page/component | **Needs `/v1/evidence/ledger` bridge route** |
 | ADD-W-021 Proposal gate UI (proposer ≠ approver) | **DONE** | `BridgeApprovalList` shows proposer/approver; blocks self-approve via `web-cockpit` | Extends W1 cards |
-| ADD-W-022 Amendment hash chain + re-verify | **ABSENT** | No component | **Needs `/v1/amendments` bridge route** |
+| ADD-W-022 Amendment hash chain + re-verify | **DONE** | `AmendmentChain` component in `components/governance/amendment-chain.tsx` reads `/v1/amendments` via governance client; displays chain with hashes, supersedes, evidence; re-verify/view buttons disabled (todo) | Uses existing `/v1/amendments` client; re-verify button disabled (todo) |
 | ADD-W-023 Reproducibility predicate panel | **ABSENT** | No component | **Needs `/v1/reproducibility` bridge route** |
 | ADD-W-024 Quarantine/boundary/timers → /v1/quarantine | **DONE** | `SystemPanel` → `QuarantineView` reads `governance.quarantine()` → `/v1/quarantine` | Items + observations |
-| ADD-W-025 P20 ops dashboard ONLY from real metrics endpoints | **BLOCKED** | No component | **Needs `/v1/metrics` bridge route** |
+| ADD-W-025 P20 ops dashboard ONLY from real metrics endpoints | **DONE** | `OpsDashboard` component in `components/governance/ops-dashboard.tsx` reads `/v1/metrics` via governance client; displays health, false-verified rate, territory violation rate, recovery completeness, observation success, tokens/verified change; unmeasured noted | Uses existing `/v1/metrics` client; unmeasured metrics explicitly shown as "not measured" |
 
 ---
 
