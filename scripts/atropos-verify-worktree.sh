@@ -135,6 +135,7 @@ if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
     --tests 'atropos.bridge.projection.WelcomeProjectionTest' \
     --tests 'atropos.bridge.RecoveryProjectionTest' \
     --tests 'atropos.bridge.BridgeFilesHandlerTest' \
+    --tests 'atropos.bridge.BridgeWorkspaceRoutesTest' \
     --tests 'atropos.bridge.AtroposBridgeTest' \
     --tests 'atropos.bridge.menu.HelpRegistryTest' \
     --tests 'atropos.cli.input.CommandRegistryParityTest' \

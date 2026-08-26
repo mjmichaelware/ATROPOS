@@ -12424,6 +12424,15 @@ Remaining known gap at this boundary, not fixed here: SpecGraph's atoms carry it
 - % delta: unchanged; provider truth remains source-wired/partial pending hosted execution.
 - Fingerprints: `Routing.kt=f43f2bdadfb3`, `ProviderChatDispatcher.kt=e1a3b44af03d`, `backend-atom-contract-test.sh=64a8c78a20d9`.
 
+### 2026-08-26T01:09:59Z · Agent: Codex GPT-5 · Batch: bridge-workspace-wiring
+
+- Paths touched: `src/main/kotlin/atropos/bridge/BridgeWorkspaceHandler.kt` (+220), `src/main/kotlin/atropos/bridge/BridgeRoutes.kt` (+17/-1), `src/main/kotlin/atropos/bridge/BridgeEventHub.kt` (+5/-1), `src/test/kotlin/atropos/bridge/BridgeWorkspaceRoutesTest.kt` (+69), `src/test/kotlin/atropos/bridge/BridgeStreamTest.kt` (+14), `.github/workflows/compile-gate.yml` (+1), `scripts/atropos-verify-worktree.sh` (+1), `scripts/backend-atom-contract-test.sh` (+12), `STATUS-BACKEND.md` (+10).
+- Atoms / phases affected: F-WEB-004/F-WEB-005 backend WIRE, ADD-W-005 node-progress stream, ADD-W-006 territory membership.
+- Predicate moved: production `AtroposBridge.server()` now exposes one existing bridge route table with bounded tree/read/write and territory membership routes; workspace writes are path/size/symlink/territory/policy bounded. Existing `BridgeEventHub` now emits `node_progress` for durable queue transitions, and the existing request-reading SSE stream delivers it. No web code or second event bus was added.
+- Verification actually run: backend atom contract passed, hosted selector passed (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (442 tests)`), and `git diff --check` passed. Focused Gradle command `:test --tests atropos.bridge.BridgeWorkspaceRoutesTest --tests atropos.bridge.BridgeStreamTest` exited 124 during task-graph calculation without test output; no Kotlin/hosted-green claim.
+- % delta: unchanged; bridge atoms remain source-wired/partial pending hosted Kotlin execution.
+- Fingerprints: `BridgeWorkspaceHandler.kt=e7c92b67e977`, `BridgeRoutes.kt=d3bce67c1246`, `BridgeEventHub.kt=bd81dcb632c3`, `BridgeWorkspaceRoutesTest.kt=23946dd9749`, `BridgeStreamTest.kt=8415b2d8952`, `atropos-verify-worktree.sh=d0e138cd2e5`, `compile-gate.yml=368116442440`, `backend-atom-contract-test.sh=f1f731b19678`.
+
 ### 2026-08-25T22:30:00Z · Agent: Codex GPT-5 · Batch: provider-metadata-alias-separation
 - Paths touched: `src/main/kotlin/atropos/core/provider/ProviderEnvironmentAliases.kt` (+4/-2), `src/test/kotlin/atropos/core/provider/ProviderFixtureMatrixServiceTest.kt` (+8), `scripts/backend-atom-contract-test.sh` (+1), `STATUS-BACKEND.md` (+7).
 - Atoms / phases affected: B-PROV-001b/r/s and B-PROV-002 credential-health truth.

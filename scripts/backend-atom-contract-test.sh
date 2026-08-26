@@ -23,6 +23,18 @@ text src/main/kotlin/atropos/core/Config.kt 'ATROPOS_CONFIG_DIR'
 text install.sh 'export ATROPOS_CONFIG_DIR='
 text install.sh 'CONFIG_DIR="${ATROPOS_CONFIG_DIR:-${ATROPOS_PREFIX:-$HOME/.atropos}}"'
 file src/main/kotlin/atropos/core/provider/ProviderOnboarding.kt
+file src/main/kotlin/atropos/bridge/BridgeWorkspaceHandler.kt
+text src/main/kotlin/atropos/bridge/BridgeRoutes.kt '"/v1/workspace/tree"'
+text src/main/kotlin/atropos/bridge/BridgeRoutes.kt '"/v1/workspace/file"'
+text src/main/kotlin/atropos/bridge/BridgeRoutes.kt '"/v1/workspace/territory"'
+text src/main/kotlin/atropos/bridge/BridgeWorkspaceHandler.kt 'MAX_FILE_BYTES = 512 * 1024'
+text src/main/kotlin/atropos/bridge/BridgeWorkspaceHandler.kt 'PolicyActionClass.FILE_MUTATION'
+text src/main/kotlin/atropos/bridge/BridgeWorkspaceHandler.kt 'matching.none { !it.readOnly }'
+text src/main/kotlin/atropos/bridge/BridgeWorkspaceHandler.kt 'hasSymlinkAncestor'
+text src/main/kotlin/atropos/bridge/BridgeEventHub.kt 'emit("node_progress"'
+text src/test/kotlin/atropos/bridge/BridgeWorkspaceRoutesTest.kt 'workspace_tree_and_file_routes_read_write_through_one_bridge_table'
+text src/test/kotlin/atropos/bridge/BridgeWorkspaceRoutesTest.kt 'workspace_write_denies_traversal_and_explicit_read_only_territory'
+text src/test/kotlin/atropos/bridge/BridgeStreamTest.kt 'event stream exposes node progress from the existing event hub'
 file src/main/kotlin/atropos/core/provider/ProviderDescriptor.kt
 file src/main/kotlin/atropos/core/provider/RoutePolicy.kt
 file src/main/kotlin/atropos/core/provider/SourceBindingFetcher.kt

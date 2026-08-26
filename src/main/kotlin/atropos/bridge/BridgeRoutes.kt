@@ -190,7 +190,9 @@ class BridgeRoutes(
     private val recoverySnapshot: () -> StateSnapshot? = { null },
     private val recoveryView: RecoveryProjection = RecoveryProjection(),
     /** Authoritative workspace root for upload and evidence territory checks. */
-    private val repoRoot: Path = Path.of("").toAbsolutePath().normalize()
+    private val repoRoot: Path = Path.of("").toAbsolutePath().normalize(),
+    private val workspaceTerritory: atropos.core.territory.TerritoryService =
+        atropos.core.territory.TerritoryService(atropos.core.territory.TerritoryStore(repoRoot))
 ) {
     private val approvalHandler = BridgeApprovalHandler(approvals)
     private val thinkingHandler = BridgeThinkingHandler(thinkingView, thinking)
@@ -201,6 +203,7 @@ class BridgeRoutes(
     private val evidenceHandler = BridgeEvidenceHandler(work, repoRoot)
     private val eventsHandler = BridgeEventsHandler(work, approvals, sessions, conversation)
     private val filesHandler = BridgeFilesHandler(repoRoot)
+    private val workspaceHandler = BridgeWorkspaceHandler(repoRoot, workspaceTerritory)
     private val mcpHandler = BridgeMcpHandler(mcpBridge, mcpHost)
     private val computerUseHandler = BridgeComputerUseHandler()
     private val selfHostHandler = selfHost?.let { BridgeSelfHostHandler(it) }
@@ -409,6 +412,18 @@ class BridgeRoutes(
                 },
                 HttpRoute("GET", "/v1/evidence", "durable evidence contents") { request ->
                     evidenceHandler.getEvidence(request)
+                },
+                HttpRoute("GET", "/v1/workspace/tree", "bounded project file tree") { request ->
+                    workspaceHandler.tree(request)
+                },
+                HttpRoute("GET", "/v1/workspace/file", "read one bounded workspace file") { request ->
+                    workspaceHandler.file(request)
+                },
+                HttpRoute("PUT", "/v1/workspace/file", "write one bounded workspace file") { request ->
+                    workspaceHandler.file(request)
+                },
+                HttpRoute("GET", "/v1/workspace/territory", "workspace path and surface territory membership") { request ->
+                    workspaceHandler.territory(request)
                 },
                 HttpRoute("GET", "/v1/events", "cursor-based poll for event hub notifications") { request ->
                     eventsHandler.getEvents(request)

@@ -141,4 +141,17 @@ class BridgeStreamTest {
         assertTrue(data.contains(wanted.id), data)
         assertTrue(!data.contains(other.id), data)
     }
+
+    @Test
+    fun `event stream exposes node progress from the existing event hub`() {
+        BridgeEventHub.clear()
+        BridgeEventHub.emit("node_progress", "id=node-1 previous=READY current=RUNNING")
+        val port = start(maxFrames = 1)
+
+        val received = readStream(port, "/v1/events/stream?after=0", 80)
+        assertTrue(received.any { it == "event: event" }, received.toString())
+        val data = received.firstOrNull { it.startsWith("data: ") }
+        assertNotNull(data, "no node progress frame arrived: $received")
+        assertTrue(data.contains("node_progress"), data)
+    }
 }

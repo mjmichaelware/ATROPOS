@@ -43,7 +43,10 @@ object BridgeEventHub {
             for (entry in currentQueue) {
                 val previousState = lastQueueStates[entry.id]
                 if (previousState != null && previousState != entry.state) {
-                    emit("queue_state_changed", "id=${entry.id} previous=$previousState current=${entry.state}")
+                    // `node_progress` is the bridge's canonical progress
+                    // event. Queue state is the existing durable source; the
+                    // SSE route only projects it and does not create a bus.
+                    emit("node_progress", "id=${entry.id} previous=$previousState current=${entry.state}")
                 }
                 lastQueueStates[entry.id] = entry.state
             }
