@@ -71,7 +71,7 @@ internal class BridgeFilesHandler(
             current = current.parent
         }
 
-        val relativeTarget = targetPath.relativeTo(repoRoot).toString()
+        val relativeTarget = repoRoot.relativize(targetPath).toString()
         val execution = agency.execute(
             ActionProposal(
                 id = "bridge-upload-${session}-${filename}",

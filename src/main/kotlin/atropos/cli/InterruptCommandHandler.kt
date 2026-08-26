@@ -55,15 +55,16 @@ class InterruptCommandHandler(private val uiEngine: AnsiTerminalEngine) {
 
     private fun renderStatus() {
         val width = uiEngine.viewportWidth
-        val state = InterruptRegistry.status()
+        val state = InterruptRegistry.controller.state()
+        val frozen = InterruptRegistry.frozen()
         val body = buildList {
             val req = state.requested
             add(surface.statusRow("requested level", req?.level?.canonical ?: "none", if (req != null) atropos.cli.ui.design.Health.PENDING else atropos.cli.ui.design.Health.VERIFIED, width))
-            add(surface.row("source", req?.source ?: "none", width))
-            add(surface.row("active", if (state.active) "yes" else "no", width))
-            if (state.frozen != null) {
-                add(surface.statusRow("frozen run", state.frozen.runId, atropos.cli.ui.design.Health.PENDING, width))
-                add(surface.row("frozen point", state.frozen.resumePoint, width))
+            add(surface.row("source", req?.requestedBy ?: "none", width))
+            add(surface.row("active", if (state.isPending) "yes" else "no", width))
+            if (frozen != null) {
+                add(surface.statusRow("frozen run", frozen.runId, atropos.cli.ui.design.Health.PENDING, width))
+                add(surface.row("frozen point", frozen.resumePoint, width))
             }
         }
         uiEngine.renderBlock(surface.block("INTERRUPT STATUS", body, width, atropos.cli.ui.design.Role.BRAND))

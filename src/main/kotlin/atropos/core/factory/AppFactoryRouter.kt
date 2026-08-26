@@ -102,7 +102,7 @@ class AppFactoryRouter(
      * Insufficient lineage fails actionable — the operator is told which
      * artifact is missing, not given a fresh run wearing the old id.
      */
-    fun resume(runId: String): FactoryPlan {
+    fun resumePlan(runId: String): FactoryPlan {
         require(runId.matches(Regex("[A-Za-z0-9][A-Za-z0-9._-]{0,127}"))) {
             "factory project id is invalid"
         }
@@ -146,7 +146,7 @@ class AppFactoryRouter(
             projectRegistry = projectRegistry,
             planningGraph = planningGraph,
             journal = journal,
-            repairVerificationFailure = liveRepairAction
+            repairVerificationFailure = liveRepairAction::invoke
         )
         return orchestrator.orchestrateRun(base, lineage)
     }

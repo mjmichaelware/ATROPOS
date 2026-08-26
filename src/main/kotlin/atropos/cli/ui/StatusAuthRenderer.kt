@@ -5,7 +5,7 @@ import atropos.cli.config.ConfigurationManager
 import atropos.cli.ui.design.Health
 import atropos.cli.ui.design.Role
 import atropos.core.auth.CascadeResolution
-import atropos.core.auth.AuthVerifyResult
+import atropos.core.auth.AuthorityStatus
 import atropos.core.security.RedactionFilter
 
 class StatusAuthRenderer(
@@ -14,7 +14,7 @@ class StatusAuthRenderer(
 ) {
     private val surface get() = theme.surface
 
-    fun renderVerify(statuses: List<AuthVerifyResult>, width: Int): List<String> {
+    fun renderVerify(statuses: List<AuthorityStatus>, width: Int): List<String> {
         if (statuses.isEmpty()) {
             return listOf(
                 surface.hint("No authority documents found. Declare AGENTS.md in repo root.", width)
@@ -47,7 +47,12 @@ class StatusAuthRenderer(
                 is CascadeResolution.Violation -> "REFUSED: ${redactionFilter.redact(resolution.reason)}"
                 is CascadeResolution.Undefined -> "undefined"
             }
-            surface.statusRow(resolution.key, text, health, width)
+            val key = when (resolution) {
+                is CascadeResolution.Resolved -> resolution.key
+                is CascadeResolution.Violation -> resolution.key
+                is CascadeResolution.Undefined -> resolution.key
+            }
+            surface.statusRow(key, text, health, width)
         }
         return surface.block("AUTHORITY CASCADE", body, width, Role.BRAND)
     }

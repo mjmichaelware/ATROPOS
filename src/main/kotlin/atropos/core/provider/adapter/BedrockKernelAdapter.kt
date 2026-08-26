@@ -16,7 +16,7 @@ fun interface BedrockTransport {
 internal class BedrockKernelAdapter(
     descriptor: ProviderDescriptor,
     env: Map<String, String> = System.getenv(),
-    private val transport: BedrockTransport = ::sendOverHttps
+    private val transport: BedrockTransport = BedrockTransport(::sendOverHttps)
 ) : BaseKernelAdapter(
     descriptor = descriptor,
     env = env,

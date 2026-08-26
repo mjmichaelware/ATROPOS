@@ -11,6 +11,7 @@ class PaidCommandHandler(
     private val gate: EmergencyPaidGate = EmergencyPaidGate(),
     private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
+    private val renderer = StatusPaidEmergencyRenderer(gate)
     fun execute(tokens: List<String>): RouterOutcome {
         when (tokens.getOrNull(1)?.lowercase()) {
             null, "status" -> uiEngine.renderBlock(renderer.render(uiEngine.viewportWidth))

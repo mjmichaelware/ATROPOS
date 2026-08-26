@@ -161,9 +161,9 @@ class AgentEditMaterializer(private val repoRoot: Path) {
         val oldCount = contextEndOld - contextStart
         val newCount = contextEndNew - contextStart
         return buildString {
-            appendLine("--- ${if (before == null) \"/dev/null\" else \"a/$path\"}")
+            appendLine("--- ${if (before == null) "/dev/null" else "a/$path"}")
             appendLine("+++ b/$path")
-            appendLine("@@ -${if (before == null) \"0,0\" else \"$hunkStart,$oldCount\"} +$hunkStart,$newCount @@")
+            appendLine("@@ -${if (before == null) "0,0" else "$hunkStart,$oldCount"} +$hunkStart,$newCount @@")
             oldLines.subList(contextStart, prefix).forEach { appendLine(" $it") }
             oldLines.subList(prefix, oldEnd).forEach { appendLine("-$it") }
             newLines.subList(prefix, newEnd).forEach { appendLine("+$it") }

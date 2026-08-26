@@ -49,7 +49,7 @@ data class SentryStackFrame(val filename: String, val lineNumber: Int?)
 class SentryApiClient(
     private val secretSource: SecretSource = DefaultSecretSource.create(),
     private val gate: (ActionProposal) -> AgencyDecision = BoundedAgencyGate()::evaluate,
-    private val transport: SentryApiTransport = ::sendOverHttps,
+    private val transport: SentryApiTransport = SentryApiTransport(::sendOverHttps),
     private val redactionFilter: RedactionFilter = RedactionFilter(),
     private val baseUrl: String = "https://sentry.io"
 ) {

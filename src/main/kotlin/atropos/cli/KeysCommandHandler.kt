@@ -2,6 +2,7 @@
 package atropos.cli
 
 import atropos.cli.ui.AnsiTerminalEngine
+import atropos.cli.ui.StatusSecurityRenderer
 import atropos.core.security.KeyDoctorService
 
 class KeysCommandHandler(

@@ -11,7 +11,8 @@ class AppFactoryPlanRenderer(
         router.render(router.runClarified(projectId, answers))
 
     /** Wave 1: resume a prior run from its durable lineage. */
-    fun renderResume(runId: String): String = router.render(router.resume(runId))
+    fun renderResume(runId: String): String = router.render(router.resumePlan(runId))
+    fun renderStatusList(width: Int): List<String> = renderStatus().lines()
     fun renderStatus(): String {
         return buildString {
             appendLine("factory:")

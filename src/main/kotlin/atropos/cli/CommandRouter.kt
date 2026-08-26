@@ -178,7 +178,7 @@ class CommandRouter(
         // actionably, while the operator gets one safe environment example.
         uiEngine.renderBlock(
             providerOnboarding.render().lines().plus(
-                "cascade=${discovered.filter { it.health == atropos.core.provider.CheapProviderHealth.HEALTHY && !it.disabled }"
+                "cascade=${discovered.filter { it.health == atropos.core.provider.CheapProviderHealth.HEALTHY && !it.disabled }
                     .joinToString(" -> ") { it.providerId }.ifBlank { "none" }}"
             )
         )

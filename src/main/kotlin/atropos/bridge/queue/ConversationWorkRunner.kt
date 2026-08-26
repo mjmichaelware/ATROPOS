@@ -40,7 +40,7 @@ interface ConversationWorkRunner {
      * may override this to avoid materialising earlier pages; the default
      * keeps existing test seams source-compatible.
      */
-    fun list(limit: Int, offset: Int): List =
+    fun list(limit: Int, offset: Int): List<QueueEntryView> =
         list((limit.coerceAtLeast(0) + offset.coerceAtLeast(0)).coerceAtMost(1_000))
             .drop(offset.coerceAtLeast(0))
             .take(limit.coerceAtLeast(0))

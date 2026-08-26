@@ -27,10 +27,10 @@ class RepositoryImpactPlanner(
         val contentByFile = files.associateWith { path ->
             runCatching { Files.readString(path, StandardCharsets.UTF_8) }.getOrDefault("")
         }
-        val impacted = linkedSetOf<Path>()
+        val impacted = LinkedHashSet<Path>()
         changed.forEach { relative ->
             val target = root.resolve(relative).normalize()
-            if (Files.isRegularFile(target, LinkOption.NOFOLLOW_LINKS)) impacted += target
+            if (Files.isRegularFile(target, LinkOption.NOFOLLOW_LINKS)) impacted.add(target)
         }
 
         // Existing Kotlin symbol/caller owner, used only when the bounded
@@ -54,7 +54,7 @@ class RepositoryImpactPlanner(
                 IMPORT_REFERENCE.containsMatchIn(content.replace("-", "_")) &&
                     Regex("\\b${Regex.escape(name)}\\b").containsMatchIn(content)
             }
-            if (referencesChangedImport) impacted += file
+            if (referencesChangedImport) impacted.add(file)
         }
         return RepositoryImpactPlan(
             changedPaths = changed,
@@ -80,7 +80,7 @@ class RepositoryImpactPlanner(
                 if (result.size >= maxFiles || bytes >= maxBytes) return@forEach
                 val size = runCatching { Files.size(path) }.getOrDefault(0L)
                 if (bytes + size <= maxBytes) {
-                    result += path
+                    result.add(path)
                     bytes += size
                 }
             }

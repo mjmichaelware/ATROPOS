@@ -14,11 +14,11 @@ import atropos.core.security.RedactionFilter
  * handler owns no provider, queue, status, or orchestration state.
  */
 internal class BridgeEditorHandler(
-    private val context: () -> String,
+    private val contextProvider: () -> String,
     private val sendMessage: (HttpRequest) -> HttpResponse,
     private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
-    fun context(): HttpResponse = HttpResponse.json(redactionFilter.redact(context()))
+    fun context(): HttpResponse = HttpResponse.json(redactionFilter.redact(contextProvider()))
 
     fun sendSelection(request: HttpRequest): HttpResponse {
         val issuedBy = value(request, "issuedBy")

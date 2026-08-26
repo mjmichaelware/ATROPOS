@@ -2,6 +2,7 @@
 package atropos.core.observability
 
 import atropos.core.AtroposRepoRootLocator
+import atropos.core.journal.EventJournalService
 import atropos.core.journal.EventJournalRecord
 import java.nio.file.Path
 
@@ -94,6 +95,25 @@ class ExecutionHistoryStore(
     /** Forces an index rebuild, for a journal edited or repaired out of band. */
     fun reindex(runId: String): Int = index.rebuild(runId).size
 
+    fun record(event: ExecutionEvent) {
+        val runId = event.runId?.trim().orEmpty()
+        require(runId.isNotBlank()) { "execution history event requires a run id" }
+        EventJournalService(repoRoot).record(
+            runId = runId,
+            category = event.category,
+            payload = ExecutionEventCodec.encodePayload(event),
+            goalId = event.goalId,
+            projectId = event.projectId,
+            dagId = event.dagId,
+            atomId = event.atomId,
+            jobId = event.jobId,
+            attemptId = event.attemptId,
+            parentRunId = event.parentRunId,
+            providerId = event.provider
+        )
+        reindex(runId)
+    }
+
     private fun hydrate(runId: String, entries: List<HistoryIndexEntry>): List<ExecutionEvent> =
         index.readAt(runId, entries)
             .mapNotNull(EventJournalRecord::fromJournalLine)
@@ -132,25 +152,6 @@ data class HistorySearchResult(
         append(" · read ").append(events.size)
         if (truncated) append(" · truncated at limit ").append(query.limit)
     }
-}
-
-fun ExecutionHistoryStore.record(event: ExecutionEvent) {
-    val runId = event.runId?.trim().orEmpty()
-    require(runId.isNotBlank()) { "execution history event requires a run id" }
-    EventJournalService(repoRoot).record(
-        runId = runId,
-        category = event.category,
-        payload = ExecutionEventCodec.encodePayload(event),
-        goalId = event.goalId,
-        projectId = event.projectId,
-        dagId = event.dagId,
-        atomId = event.atomId,
-        jobId = event.jobId,
-        attemptId = event.attemptId,
-        parentRunId = event.parentRunId,
-        providerId = event.provider
-    )
-    reindex(runId)
 }
 
 fun ExecutionHistoryStore.query(filter: HistoryQuery): HistorySearchResult {

@@ -40,7 +40,7 @@ fun interface GitHubOAuthTransport {
  */
 class GitHubDeviceAuthClient(
     private val clientId: String? = System.getenv("ATROPOS_GITHUB_OAUTH_CLIENT_ID"),
-    private val transport: GitHubOAuthTransport = ::sendOverHttps,
+    private val transport: GitHubOAuthTransport = GitHubOAuthTransport(::sendOverHttps),
     private val vault: TokenIsolationVault = TokenIsolationVault(
         AtroposConfig.configRoot().resolve("secrets")
     ),

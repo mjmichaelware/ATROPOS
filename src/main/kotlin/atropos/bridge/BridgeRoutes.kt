@@ -209,7 +209,7 @@ class BridgeRoutes(
     private val selfHostHandler = selfHost?.let { BridgeSelfHostHandler(it) }
     private val commandHandler = commandRunner?.let { BridgeCommandHandler(it) }
     private val editorHandler = BridgeEditorHandler(
-        context = {
+        contextProvider = {
             JsonWriter.obj(
                 "ok" to JsonWriter.bool(true),
                 "transport" to JsonWriter.str("local-bridge"),

@@ -344,7 +344,7 @@ data class LanguageScaffold(
         )
 
         private fun dart(packageName: String, title: String) = LanguageScaffold(
-            ProjectLanguage.DART, "lib/$packageName.dart", "test/$packageName_test.dart",
+            ProjectLanguage.DART, "lib/$packageName.dart", "test/${packageName}_test.dart",
             "String describe() => '$title';\n",
             "import 'package:test/test.dart';\nimport 'package:$packageName/$packageName.dart';\nvoid main() { test('describes itself', () { expect(describe(), '$title'); }); }\n",
             mapOf("pubspec.yaml" to "name: $packageName\nenvironment:\n  sdk: '>=3.0.0 <4.0.0'\ndev_dependencies:\n  test: any\n"),
@@ -368,11 +368,11 @@ data class LanguageScaffold(
         )
 
         private fun lua(packageName: String, title: String) = LanguageScaffold(
-            ProjectLanguage.LUA, "$packageName.lua", "test/$packageName_test.lua",
+            ProjectLanguage.LUA, "$packageName.lua", "test/${packageName}_test.lua",
             "local M = {}\nfunction M.describe() return '$title' end\nreturn M\n",
             "local app = require('$packageName')\nassert(app.describe() == '$title')\nprint('ok')\n",
             mapOf("$packageName-1.0-1.rockspec" to "package = '$packageName'\nversion = '1.0-1'\nsource = { url = 'local' }\ndescription = { summary = '$title' }\nbuild = { type = 'builtin', modules = { ['$packageName'] = '$packageName.lua' } }\n"),
-            verifyScript("lua", "LUA_PATH='./?.lua;./?/init.lua' lua test/$packageName_test.lua"), ".luarocks/\n", "--"
+            verifyScript("lua", "LUA_PATH='./?.lua;./?/init.lua' lua test/${packageName}_test.lua"), ".luarocks/\n", "--"
         )
 
         private fun r(packageName: String, title: String) = LanguageScaffold(

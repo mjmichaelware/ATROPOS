@@ -108,10 +108,6 @@ object LocalEngineBridge {
 
         return BridgeRoutes(
             activeProvider = activeProvider,
-            workspaceRoot = { repoRoot },
-            quotaLedger = atropos.core.provider.FileQuotaLedger(
-                repoRoot.resolve(".atropos/provider/quota.tsv").toFile()
-            ),
             proposals = governance::proposals,
             amendments = governance::amendments,
             observationPeriods = governance::observationPeriods,

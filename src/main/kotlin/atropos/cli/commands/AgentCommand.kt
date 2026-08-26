@@ -14,6 +14,7 @@ import atropos.core.agent.GoalContinuationService
 import atropos.core.agent.ProviderSessionSupervisor
 import atropos.core.agent.SupervisedSessionStore
 import atropos.core.agent.WorkerCodeProposalService
+import atropos.core.agent.ImportedInstructionPackStore
 import atropos.core.dag.DagExecutionService
 import atropos.core.dag.DagStore
 import atropos.core.journal.EventJournalService
@@ -55,7 +56,7 @@ class AgentCommand(
     private val config: AtroposConfig = AtroposConfig.load(),
     private val activeProviderName: () -> String,
     private val providerOnboarding: ProviderOnboardingService = ProviderOnboardingService(),
-    private val service: AgentService = AgentService(config, providerOnboarding = providerOnboarding),
+    private val service: AgentService = AgentService(config, onboarding = providerOnboarding),
     private val runService: AgentRunService = AgentRunService(config, onboarding = providerOnboarding),
     private val queueService: AgentQueueService = AgentQueueService(config, onboarding = providerOnboarding),
     private val daemonService: AgentDaemonService = AgentDaemonService(config, onboarding = providerOnboarding),

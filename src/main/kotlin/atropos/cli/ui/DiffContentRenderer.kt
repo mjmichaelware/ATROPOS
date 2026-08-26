@@ -79,7 +79,7 @@ class DiffContentRenderer(
         showLineNumbers: Boolean = true
     ): List<String> {
         val safeWidth = width.coerceAtLeast(20)
-        return fileHeader(file, safeWidth, 1, 1) + fileBody(file, safeWidth, showLineNumbers)
+        return listOf(fileHeader(file, safeWidth, 1, 1)) + fileBody(file, safeWidth, showLineNumbers)
     }
 
     /**

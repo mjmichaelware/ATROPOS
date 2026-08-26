@@ -70,7 +70,7 @@ data class GitHubApiWireResponse(val status: Int, val body: String)
 class GitHubApiClient(
     private val secretSource: SecretSource = DefaultSecretSource.create(),
     private val gate: (ActionProposal) -> AgencyDecision = BoundedAgencyGate()::evaluate,
-    private val transport: GitHubApiTransport = ::sendOverHttps,
+    private val transport: GitHubApiTransport = GitHubApiTransport(::sendOverHttps),
     private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
     fun execute(request: GitHubApiRequest): GitHubApiResponse {
@@ -278,12 +278,12 @@ class GitHubApiClient(
                 .header("Accept", "application/vnd.github+json")
                 .header("Authorization", "Bearer ${request.token}")
                 .header("X-GitHub-Api-Version", "2022-11-28")
-            val body = request.body?.let(HttpRequest.BodyPublishers::ofString)
+            val bodyPublisher = request.body?.let(HttpRequest.BodyPublishers::ofString)
                 ?: HttpRequest.BodyPublishers.noBody()
             val httpRequest = when (request.method) {
                 "GET" -> builder.GET().build()
-                "POST" -> builder.POST(body).header("Content-Type", "application/json").build()
-                "PATCH" -> builder.method("PATCH", body).header("Content-Type", "application/json").build()
+                "POST" -> builder.POST(bodyPublisher).header("Content-Type", "application/json").build()
+                "PATCH" -> builder.method("PATCH", bodyPublisher).header("Content-Type", "application/json").build()
                 else -> error("unsupported GitHub API method: ${request.method}")
             }
             val response = HttpClient.newBuilder()
@@ -291,12 +291,12 @@ class GitHubApiClient(
                 .followRedirects(HttpClient.Redirect.NEVER)
                 .build()
                 .send(httpRequest, HttpResponse.BodyHandlers.ofInputStream())
-            val body = response.body().use { input ->
+            val responseBody = response.body().use { input ->
                 input.readNBytes(MAX_RESPONSE_CHARS + 1).also {
                     require(it.size <= MAX_RESPONSE_CHARS) { "GitHub API response exceeds $MAX_RESPONSE_CHARS characters" }
                 }.toString(Charsets.UTF_8)
             }
-            return GitHubApiWireResponse(response.statusCode(), body)
+            return GitHubApiWireResponse(response.statusCode(), responseBody)
         }
     }
 }

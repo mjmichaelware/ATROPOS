@@ -8,7 +8,7 @@ import atropos.core.storage.GcOutcome
 import atropos.core.storage.RetentionPolicy
 import atropos.core.storage.StorageConstitution
 import atropos.core.storage.StorageSupervisor
-import atropos.core.storage.IntegrityReport
+import atropos.core.storage.BlobStoreGc.IntegrityReport
 
 class StatusStorageRenderer(
     private val theme: TerminalTheme = TerminalTheme(ConfigurationManager())

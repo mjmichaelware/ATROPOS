@@ -41,8 +41,9 @@ class StorageCommandHandler(
      */
     private val blobGc: () -> BlobStoreGc = {
         BlobStoreGc(BlobStoreGc.defaultDriver(repoRoot), policy)
-    }
-    private val renderer = atropos.cli.ui.StatusStorageRenderer()
+    },
+    private val renderer: atropos.cli.ui.StatusStorageRenderer = atropos.cli.ui.StatusStorageRenderer()
+) {
 
     fun execute(tokens: List<String>): RouterOutcome {
         when (tokens.getOrNull(1)?.lowercase()) {

@@ -7,6 +7,8 @@ import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.time.Duration
 
+private const val MAX_RESPONSE_BYTES = 1 * 1024 * 1024
+
 data class ProviderRuntimeState(
     var requestedProvider: String,
     var activeProvider: String,
@@ -94,6 +96,5 @@ class OllamaHealthProbe(
             )
         }
 
-        private const val MAX_RESPONSE_BYTES = 1 * 1024 * 1024
     }
 }

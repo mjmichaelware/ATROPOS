@@ -18,7 +18,9 @@ import atropos.cli.session.QuotaSessionTracker
 import atropos.cli.session.ScreenId
 import atropos.cli.ui.AnsiTerminalEngine
 import atropos.cli.ui.ViewportLayout
+import atropos.cli.ui.HomeStateProvider
 import atropos.core.AtroposConfig
+import atropos.core.AtroposRepoRootLocator
 import atropos.core.agent.SelfHostStartupContinuationService
 import atropos.core.agent.AgentDaemonService
 import atropos.core.auth.AuthorityBootGate
