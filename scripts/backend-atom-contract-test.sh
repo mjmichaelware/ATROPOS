@@ -570,7 +570,7 @@ for atom_id in \
   B-MCP-AZURE-READ B-MCP-SEQUENTIAL-THINKING \
   B-MCP-BRIDGE-SCHEMA B-MCP-MEMORY B-MCP-FETCH B-MCP-TIME B-MCP-EVERYTHING-REF \
   B-MCP-OAUTH-UX B-MCP-KEYCHAIN B-OC-001 B-OC-002 B-OC-003 B-OC-004; do
-  rg -Fq -- "$atom_id" "$ROOT/STATUS-BACKEND.md" || {
+  grep -Fq -- "$atom_id" "$ROOT/STATUS-BACKEND.md" || {
     echo "BACKEND_ATOM_CONTRACT_FAIL missing status ledger atom $atom_id" >&2
     exit 1
   }
