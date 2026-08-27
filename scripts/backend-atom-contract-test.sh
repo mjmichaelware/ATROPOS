@@ -271,7 +271,7 @@ text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'method\":\"init
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'method\":\"tools/list\"'
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'notifications/initialized'
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'remoteExchange(server, "{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}'
-test "$(rg -F 'remoteExchange(server, "{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}", maxResponseBytes)' "$ROOT/src/main/kotlin/atropos/core/integration/McpHostManager.kt" | wc -l | tr -d ' ')" = 1 || { echo "BACKEND_ATOM_CONTRACT_FAIL duplicate remote initialized notification" >&2; exit 1; }
+test "$(grep -F 'remoteExchange(server, "{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}", maxResponseBytes)' "$ROOT/src/main/kotlin/atropos/core/integration/McpHostManager.kt" | wc -l | tr -d ' ')" = 1 || { echo "BACKEND_ATOM_CONTRACT_FAIL duplicate remote initialized notification" >&2; exit 1; }
 text src/main/kotlin/atropos/core/integration/McpHostManager.kt 'writer.write("{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}'
 text src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt 'assertEquals(3, requests.size)'
 text src/test/kotlin/atropos/core/integration/McpHostManagerTest.kt 'everything_ref_test_fixture_is_disabled_by_default_and_visible_to_status'
