@@ -7,17 +7,21 @@ import atropos.cli.commands.AgentCommand
 import atropos.cli.commands.HierarchyCommand
 import atropos.cli.commands.ProjectCommandHandler
 import atropos.cli.commands.SelfHostNaturalLanguageRouter
+import atropos.cli.commands.CheckpointCommandHandler
 import atropos.cli.session.QuotaSessionTracker
 import atropos.cli.session.SessionTabs
 import atropos.cli.shell.ShellCommandRunner
 import atropos.core.integration.ShellCommandIntercept
 import atropos.core.integration.PipedStreamRouter
 import atropos.cli.ui.AnsiTerminalEngine
+import atropos.cli.ui.ClipboardService
 import atropos.cli.ui.CommandRegistryRenderer
 import atropos.cli.ui.DialogOption
 import atropos.cli.ui.DialogRenderer
+import atropos.cli.ui.CopyDownloadResponse
 import atropos.cli.input.CommandRisk
 import atropos.cli.input.CommandRiskCatalog
+import atropos.cli.input.TranscriptEntry
 import atropos.core.AIProvider
 import atropos.core.AtroposConfig
 import atropos.core.ProviderFactory
@@ -126,6 +130,8 @@ class CommandRouter(
     private val interruptCommand = InterruptCommandHandler(uiEngine)
     private val exportCommand = ExportCommandHandler(uiEngine)
     private val thinkingCommand = ThinkingCommandHandler(uiEngine)
+    private val checkpointCommand = CheckpointCommandHandler(uiEngine)
+    private val clipboardService = ClipboardService()
     private val themeCommand = ThemeCommandHandler(uiEngine)
     private val testsCommand = TestsCommandHandler(uiEngine)
     private val opsCommand = OpsCommandHandler(uiEngine)
@@ -534,6 +540,16 @@ class CommandRouter(
 
             "/thinking" -> thinkingCommand.execute(tokens)
 
+            "/checkpoint" -> {
+                checkpointCommand.execute(tokens)
+                RouterOutcome.CONTINUE
+            }
+
+            "/copy" -> {
+                uiEngine.renderNotice(copyLastResponse())
+                RouterOutcome.CONTINUE
+            }
+
             "/theme" -> themeCommand.execute(tokens)
 
             "/tests" -> testsCommand.execute(tokens)
@@ -787,5 +803,23 @@ class CommandRouter(
         pendingRiskyNaturalLanguage = resolved
         renderRiskConfirmation("fuzzy command", resolved)
         return false
+    }
+
+    /**
+     * Copies the last response from the transcript to the clipboard.
+     */
+    private fun copyLastResponse(): String {
+        val lastResponse = transcriptBuffer.entries()
+            .filterIsInstance<TranscriptEntry.Text>()
+            .lastOrNull()
+            ?.value
+        if (lastResponse == null || lastResponse.isBlank()) {
+            return "no response to copy"
+        }
+        val artifact = CopyDownloadResponse().copy(lastResponse)
+        if (clipboardService.copy(artifact.text)) {
+            return "copied to clipboard (${artifact.bytes} bytes, redacted)"
+        }
+        return "clipboard unavailable; copied text: ${artifact.text}"
     }
 }

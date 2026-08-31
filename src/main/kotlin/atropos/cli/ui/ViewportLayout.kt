@@ -3,7 +3,9 @@ package atropos.cli.ui
 
 import atropos.cli.input.CommandRegistry
 import atropos.cli.session.QuotaSessionTracker
+import atropos.cli.ui.chrome.CheckpointAge
 import atropos.cli.ui.chrome.StickyRegionSolver
+import atropos.core.recovery.RestartCoordinator
 
 /**
  * HOE-B01: Sticky chrome persists project/status bar during resize.
@@ -21,6 +23,8 @@ class ViewportLayout(
     private val responsiveGrammar = ResponsiveNativeGrammar()
     private val palette = CommandPaletteRenderer(theme)
     private val mentionPalette = MentionPaletteRenderer(theme)
+    private val transcriptRenderer = TranscriptRenderer(theme)
+    private val restartCoordinator = RestartCoordinator()
 
     data class TabState(val id: String, val name: String, val isActive: Boolean, val trustLevel: TrustIndicator)
     enum class TrustIndicator { ATTESTED, UNATTESTED, UNKNOWN }
@@ -182,7 +186,8 @@ class ViewportLayout(
         } else {
             val hasNewOutput = !transcript.isFollowingTail && transcript.newOutputCount > 0
             val reserve = (if (activity == null) 0 else 1) + (if (hasNewOutput) 1 else 0)
-            val visible = transcript.visibleLines(
+            val visible = transcriptRenderer.renderTranscript(
+                transcript,
                 safeWidth,
                 (solvedTranscriptHeight - reserve).coerceAtLeast(1)
             ).toMutableList()
@@ -207,7 +212,8 @@ class ViewportLayout(
             place(solvedComposerStart + composerSnapshot.lines.size + index, line)
         }
 
-        place(safeHeight - 1, statusBar.footer(state, safeWidth))
+        val checkpointAge = restartCoordinator.latestSnapshot()?.let { CheckpointAge.ofEpochMillis(it.capturedAt.toEpochMilli(), java.time.Clock.systemUTC()) } ?: CheckpointAge.Unknown
+        place(safeHeight - 1, statusBar.footer(state, safeWidth, checkpointAge))
         // The caret is placed in screen coordinates, so it carries the inset
         // that every rendered line carries.
         frame.cursorX = composerSnapshot.cursorColumn + gutter

@@ -3,6 +3,7 @@ package atropos.cli
 
 import atropos.cli.ui.AnsiTerminalEngine
 import atropos.cli.ui.StatusProviderDescriptorRenderer
+import atropos.cli.ui.StatusProviderSummaryRenderer
 import atropos.cli.input.TerminalModeManager
 import atropos.core.AtroposConfig
 import atropos.core.provider.ProviderActivationService
@@ -31,6 +32,7 @@ class ProviderCommandHandler(
             "disable" -> renderDisable(onboarding, tokens)
             "enable" -> renderEnable(onboarding, tokens)
             "connect" -> renderConnect(onboarding, tokens)
+            "summary" -> uiEngine.renderNotice(onboarding.renderLaunchSummary())
             "inventory" -> uiEngine.renderNotice(
                 ProviderTruthService(config).snapshot(currentProviderName).renderInventory(expanded)
             )

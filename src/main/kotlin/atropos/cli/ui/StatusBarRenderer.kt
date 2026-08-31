@@ -2,12 +2,14 @@
 package atropos.cli.ui
 
 import atropos.cli.session.QuotaSessionTracker
+import atropos.cli.ui.chrome.CheckpointAge
 
 class StatusBarRenderer(
     private val theme: TerminalTheme
 ) {
     private val headerRenderer = HeaderRenderer(theme)
     private val recoveryRibbon = RecoveryTectonicRibbon()
+    private val checkpointChip = CheckpointChipRenderer(theme)
 
     fun header(width: Int): String = headerRenderer.render(
         SessionPresentationState(
@@ -31,7 +33,8 @@ class StatusBarRenderer(
         workspace: String,
         tracker: QuotaSessionTracker,
         verificationState: String?,
-        width: Int
+        width: Int,
+        checkpointAge: CheckpointAge = CheckpointAge.Unknown
     ): String = footer(
         SessionPresentationState(
             provider = provider,
@@ -43,9 +46,10 @@ class StatusBarRenderer(
             cost = tracker.estimatedCostUsd().takeIf { it > 0.0 }
                 ?.let { MetricValue.Known("$" + String.format("%.4f", it)) }
                 ?: MetricValue.Unknown,
-            activeOperation = verificationState
+            activeOperation = null
         ),
-        width
+        width,
+        checkpointAge
     )
 
     /**
@@ -59,7 +63,7 @@ class StatusBarRenderer(
      * affordance. Pills drop right-to-left as width shrinks so the directory is
      * never the first thing lost.
      */
-    fun footer(state: SessionPresentationState, width: Int): String {
+    fun footer(state: SessionPresentationState, width: Int, checkpointAge: CheckpointAge = CheckpointAge.Unknown): String {
         val safeWidth = width.coerceAtLeast(1)
 
         val directory = TerminalText.compactPath(state.workspace)
@@ -93,7 +97,7 @@ class StatusBarRenderer(
             state.activePatchId?.takeIf { it.isNotBlank() }?.let {
                 add(theme.metadata("⊙ ") + theme.strong(TerminalText.ellipsize(it, 18)))
             }
-            state.activeOperation
+state.activeOperation
                 ?.let(TerminalText::sanitize)
                 ?.takeIf(String::isNotBlank)
                 ?.let {
@@ -105,6 +109,13 @@ class StatusBarRenderer(
                         add(theme.warning("△ ") + theme.strong(it))
                     }
                 }
+            // Checkpoint chip - primary Continue action
+            add(checkpointChip.renderChip(checkpointAge, safeWidth))
+            add(theme.subdued("/help"))
+        }
+                }
+            // Checkpoint chip - primary Continue action
+            add(checkpointChip.renderChip(checkpointAge, safeWidth))
             add(theme.subdued("/help"))
         }
 

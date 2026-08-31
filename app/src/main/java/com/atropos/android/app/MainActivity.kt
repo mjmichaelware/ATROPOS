@@ -14,6 +14,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import androidx.navigation.NavType
 import com.atropos.android.app.bridge.AndroidEngineBridge
 import com.atropos.android.app.bridge.SendOutcome
 import com.atropos.android.app.ui.ConversationScreen
@@ -30,6 +35,12 @@ import com.atropos.android.app.bridge.CommandOutcome
 import com.atropos.android.app.bridge.SelfHostOutcome
 import com.atropos.android.app.bridge.MobileThinking
 import com.atropos.android.app.ui.MobileMessage
+import com.atropos.android.app.ui.ChatListScreen
+import com.atropos.android.app.ui.OfflineScreen
+import com.atropos.android.app.ui.SettingsScreen
+import com.atropos.android.app.ui.FileTreeScreen
+import com.atropos.android.app.ui.ComposerScreen
+import com.atropos.android.app.ui.ConversationListScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch

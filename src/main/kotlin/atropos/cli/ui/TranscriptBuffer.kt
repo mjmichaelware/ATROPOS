@@ -1,10 +1,15 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.cli.ui
 
+sealed interface TranscriptEntry {
+    data class Text(val value: String) : TranscriptEntry
+    data class Disclosure(val row: DisclosureRow) : TranscriptEntry
+}
+
 class TranscriptBuffer(
     private val maximumBlocks: Int = 600
 ) {
-    private val blocks = ArrayDeque<String>()
+    private val blocks = ArrayDeque<TranscriptEntry>()
     private var scrollOffset = 0
     private var pendingNewOutput = 0
     private var lastRenderedWidth = 0
@@ -22,14 +27,22 @@ class TranscriptBuffer(
     val newOutputCount: Int
         get() = pendingNewOutput
 
+    val currentScrollOffset: Int
+        get() = scrollOffset
+
     fun append(value: String) {
+        append(TranscriptEntry.Text(value))
+    }
+
+    fun append(entry: TranscriptEntry) {
         val wasAwayFromTail = scrollOffset > 0
-        val appendedLines = if (lastRenderedWidth > 0) {
-            AnsiLineWrapper.wrap(value, lastRenderedWidth).size
-        } else {
-            0
+        val appendedLines = when (entry) {
+            is TranscriptEntry.Text -> if (lastRenderedWidth > 0) {
+                AnsiLineWrapper.wrap(entry.value, lastRenderedWidth).size
+            } else 0
+            is TranscriptEntry.Disclosure -> 1 // Summary line only when collapsed
         }
-        blocks.addLast(value)
+        blocks.addLast(entry)
         while (blocks.size > maximumBlocks) blocks.removeFirst()
         if (wasAwayFromTail) {
             scrollOffset = (scrollOffset.toLong() + appendedLines.toLong())
@@ -39,6 +52,20 @@ class TranscriptBuffer(
         } else {
             scrollOffset = 0
             pendingNewOutput = 0
+        }
+    }
+
+    fun appendDisclosure(kind: DisclosureKind, summary: String, detail: String) {
+        append(TranscriptEntry.Disclosure(DisclosureRow(kind, summary, detail)))
+    }
+
+    fun toggleDisclosure(index: Int) {
+        val entries = blocks.toList()
+        if (index in blocks.indices) {
+            val entry = entries[index]
+            if (entry is TranscriptEntry.Disclosure) {
+                blocks[index] = TranscriptEntry.Disclosure(entry.row.toggle())
+            }
         }
     }
 
@@ -64,14 +91,12 @@ class TranscriptBuffer(
         if (scrollOffset == 0) pendingNewOutput = 0
     }
 
-    fun visibleLines(width: Int, height: Int): List<String> {
-        if (width <= 0 || height <= 0 || blocks.isEmpty()) return emptyList()
-        lastRenderedWidth = width
-        val lines = blocks.flatMap { AnsiLineWrapper.wrap(it, width) }
-        val maximumOffset = (lines.size - height).coerceAtLeast(0)
-        scrollOffset = scrollOffset.coerceIn(0, maximumOffset)
-        val end = (lines.size - scrollOffset).coerceAtLeast(0)
-        val start = (end - height).coerceAtLeast(0)
-        return lines.subList(start, end)
-    }
+    /**
+     * Returns the entries for rendering by [TranscriptRenderer].
+     */
+    fun entries(): List<TranscriptEntry> = blocks.toList()
+
+    fun getEntry(index: Int): TranscriptEntry? = blocks.getOrNull(index)
+
+    fun size(): Int = blocks.size
 }

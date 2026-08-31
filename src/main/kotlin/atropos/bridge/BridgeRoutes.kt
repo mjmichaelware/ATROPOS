@@ -18,15 +18,21 @@ import atropos.bridge.projection.ApprovalProjection
 import atropos.bridge.projection.AuthorityProjection
 import atropos.bridge.projection.CheckpointProjection
 import atropos.bridge.projection.CommandProjection
+import atropos.bridge.projection.EvidenceLedgerProjection
 import atropos.bridge.projection.ExportProjection
+import atropos.bridge.projection.FactoryPreviewProjection
 import atropos.bridge.projection.GovernanceProjection
+import atropos.bridge.projection.ReproducibilityProjection
 import atropos.bridge.projection.StorageProjection
+import atropos.bridge.projection.TerritoryProjection
 import atropos.bridge.projection.ThinkingProjection
 import atropos.bridge.projection.ProjectProjection
 import atropos.bridge.projection.SixAnswersProjection
 import atropos.bridge.projection.VocabularyProjection
+import atropos.bridge.projection.VisualComparisonProjection
 import atropos.bridge.projection.WelcomeProjection
 import atropos.bridge.projection.RecoveryProjection
+import atropos.bridge.projection.WorkspaceProjection
 import atropos.cli.ui.HomeStateProvider
 import atropos.core.approval.PendingApprovalStore
 import atropos.core.artifact.export.ArtifactLandingResolver
@@ -86,6 +92,12 @@ class BridgeRoutes(
     private val welcomeView: WelcomeProjection = WelcomeProjection(),
     private val thinkingView: ThinkingProjection = ThinkingProjection(),
     private val authorityView: AuthorityProjection = AuthorityProjection(),
+    private val workspaceView: WorkspaceProjection = WorkspaceProjection(),
+    private val visualComparisonView: VisualComparisonProjection = VisualComparisonProjection(),
+    private val factoryPreviewView: FactoryPreviewProjection = FactoryPreviewProjection(),
+    private val evidenceLedgerView: EvidenceLedgerProjection = EvidenceLedgerProjection(),
+    private val reproducibilityView: ReproducibilityProjection = ReproducibilityProjection(),
+    private val territoryView: TerritoryProjection = TerritoryProjection(),
     /**
      * Governance state sources.
      *
@@ -388,6 +400,84 @@ class BridgeRoutes(
                             WelcomeArtifact(freeProviders(), storage()?.ceilingBytes)
                         )
                     )
+                },
+                HttpRoute("GET", "/v1/workspace/tree", "project file tree") { request ->
+                    val binding = capture()
+                    HttpResponse.json(workspaceView.renderTree(binding))
+                },
+                HttpRoute("GET", "/v1/workspace/file", "read a file from the project") { request ->
+                    val path = request.query("path") ?: ""
+                    val binding = capture()
+                    if (path.isBlank()) {
+                        HttpResponse.refusal(400, "missing-path", "Query parameter 'path' is required")
+                    } else {
+                        HttpResponse.json(workspaceView.readFile(binding, path))
+                    }
+                },
+                HttpRoute("POST", "/v1/workspace/file", "write a file to the project") { request ->
+                    val body = request.bodyJson()
+                    val path = body?.getString("path") ?: ""
+                    val content = body?.getString("content") ?: ""
+                    val binding = capture()
+                    if (path.isBlank()) {
+                        HttpResponse.refusal(400, "missing-path", "Request body must contain 'path'")
+                    } else {
+                        HttpResponse.json(workspaceView.writeFile(binding, path, content))
+                    }
+                },
+                HttpRoute("POST", "/v1/visual/compare", "compare two screenshots") { request ->
+                    val body = request.bodyJson()
+                    val baseline = body?.getString("baseline") ?: ""
+                    val current = body?.getString("current") ?: ""
+                    if (baseline.isBlank() || current.isBlank()) {
+                        HttpResponse.refusal(400, "missing-path", "Request body must contain 'baseline' and 'current' paths")
+                    } else {
+                        HttpResponse.json(visualComparisonView.compare(baseline, current))
+                    }
+                },
+                HttpRoute("GET", "/v1/preview", "factory live preview state") { request ->
+                    val projectId = request.query("projectId") ?: ""
+                    val preview = if (projectId.isNotBlank()) {
+                        // TODO: Look up the factory plan by projectId
+                        factoryPreviewView.render(null)
+                    } else {
+                        factoryPreviewView.render(null)
+                    }
+                    HttpResponse.json(preview)
+                },
+                HttpRoute("GET", "/v1/evidence/ledger", "evidence ledger browser") { request ->
+                    HttpResponse.json(evidenceLedgerView.render(
+                        atropos.core.evaluation.EvidenceStore(),
+                        atropos.core.phase20.EvidenceLedger()
+                    ))
+                },
+                HttpRoute("POST", "/v1/reproducibility", "evaluate or snapshot reproducibility") { request ->
+                    val body = request.bodyJson()
+                    val action = body?.getString("action") ?: "evaluate"
+                    if (action == "snapshot") {
+                        val files = body?.getJsonArray("files")?.mapNotNull { it?.string } ?: emptyList()
+                        HttpResponse.json(reproducibilityView.snapshot(files))
+                    } else {
+                        val files = body?.getJsonObject("files")?.keys().mapNotNull { k ->
+                            val v = body?.getJsonObject("files")?.getString(k)
+                            if (v != null) k to v else null
+                        } ?: emptyMap()
+                        HttpResponse.json(reproducibilityView.evaluate(files.toMap()))
+                    }
+                },
+                HttpRoute("GET", "/v1/territory", "list all territory assignments") { request ->
+                    HttpResponse.json(territoryView.renderAssignments(atropos.core.territory.TerritoryService()))
+                },
+                HttpRoute("GET", "/v1/territory/check", "check if a path is within territory") { request ->
+                    val path = request.query("path") ?: ""
+                    if (path.isBlank()) {
+                        HttpResponse.refusal(400, "missing-path", "Query parameter 'path' is required")
+                    } else {
+                        HttpResponse.json(territoryView.checkMembership(atropos.core.territory.TerritoryService(), path))
+                    }
+                },
+                HttpRoute("GET", "/v1/territory/violations", "list territory violations") { request ->
+                    HttpResponse.json(territoryView.renderViolations(atropos.core.territory.TerritoryService()))
                 },
                 HttpRoute("GET", "/v1/authority", "which authority is in force and whether it is intact") {
                     HttpResponse.json(authorityView.render(attestations(), cascade()))

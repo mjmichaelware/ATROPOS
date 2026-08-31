@@ -13,6 +13,7 @@ import atropos.cli.ui.design.AgentInspector
 import atropos.core.observability.BackgroundProcessPanel
 import atropos.core.observability.BoundedRenderingController
 import atropos.core.security.RedactionFilter
+import atropos.core.recovery.RestartCoordinator
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
@@ -48,6 +49,7 @@ class AnsiTerminalEngine(
     private val rendering = TerminalRenderingFacade(
         plainOutput, canvas, theme, transcript, markdown, welcome, statusBar, verification, help, transcriptBuffer
     )
+    private val restartCoordinator = RestartCoordinator()
     /**
      * Whether the engine behind the spinner is actually producing anything.
      *
@@ -339,7 +341,8 @@ class AnsiTerminalEngine(
     fun renderStatusMatrix(config: AtroposConfig, activeProvider: String) {
         state.provider = activeProvider
         if (state.reactive) {
-            transcriptBuffer.append(statusBar.footer(state.provider, state.mode, state.workspace, state.tracker, state.verificationState, canvas.width))
+            val checkpointAge = restartCoordinator.latestSnapshot()?.let { CheckpointAge.ofEpochMillis(it.capturedAt.toEpochMilli(), java.time.Clock.systemUTC()) } ?: CheckpointAge.Unknown
+            transcriptBuffer.append(statusBar.footer(state.provider, state.mode, state.workspace, state.tracker, state.verificationState, canvas.width, checkpointAge))
             requestFrameLocked()
         } else {
             rendering.renderStatusPlain(state.provider, state.workspace, state.mode, state.tracker)
@@ -350,8 +353,9 @@ class AnsiTerminalEngine(
     fun renderStatus(activeProvider: String, tracker: QuotaSessionTracker?) {
         state.provider = activeProvider
         tracker?.let { state.tracker = it }
-        transcriptBuffer.append(statusBar.footer(state.provider, state.mode, state.workspace, state.tracker, state.verificationState, canvas.width))
-        transcriptBuffer.append(theme.subdued("checkpoint ${CheckpointAge.Unknown.label()} · ${quotaFuelCellRenderer.render(QuotaFuelCellRenderer.QuotaState(0.0, 0.0), canvas.width.coerceAtMost(24))}"))
+        val checkpointAge = restartCoordinator.latestSnapshot()?.let { CheckpointAge.ofEpochMillis(it.capturedAt.toEpochMilli(), java.time.Clock.systemUTC()) } ?: CheckpointAge.Unknown
+        transcriptBuffer.append(statusBar.footer(state.provider, state.mode, state.workspace, state.tracker, state.verificationState, canvas.width, checkpointAge))
+        transcriptBuffer.append(theme.subdued("checkpoint ${checkpointAge.label()} · ${quotaFuelCellRenderer.render(QuotaFuelCellRenderer.QuotaState(0.0, 0.0), canvas.width.coerceAtMost(24))}"))
         requestFrameLocked()
     }
 

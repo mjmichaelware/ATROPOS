@@ -70,5 +70,77 @@ class TranscriptRenderer(
     fun activity(frame: String): String =
         theme.paint(Role.STATUS_RUNNING, railGlyph) + pad + theme.warning(frame)
 
+    /**
+     * Renders a disclosure row summary (collapsed state).
+     */
+    fun disclosureSummary(row: DisclosureRow): String {
+        val icon = if (row.isExpanded) "▾" else "▸"
+        val rail = theme.paint(Role.STATUS_RUNNING, icon)
+        val label = theme.paint(Role.BRAND, row.kind.label)
+        val summaryText = TerminalText.sanitize(row.summary)
+        return "$rail $label $summaryText"
+    }
+
+    /**
+     * Renders disclosure detail lines (expanded state).
+     */
+    fun disclosureDetail(row: DisclosureRow): List<String> {
+        if (!row.isExpanded) return emptyList()
+        return AnsiLineWrapper.wrap(row.detail, 80).map { "  $it" }
+    }
+
+    /**
+     * Renders the full transcript for display in the viewport.
+     */
+    fun renderTranscript(
+        buffer: TranscriptBuffer,
+        width: Int,
+        height: Int
+    ): List<String> {
+        if (buffer.isEmpty) return emptyList()
+        val lines = mutableListOf<String>()
+        for (entry in buffer.entries()) {
+            when (entry) {
+                is TranscriptEntry.Text -> lines.addAll(AnsiLineWrapper.wrap(entry.value, width))
+                is TranscriptEntry.Disclosure -> {
+                    lines.add(disclosureSummary(entry.row))
+                    lines.addAll(disclosureDetail(entry.row))
+                }
+            }
+            val scrollOffset = buffer.currentScrollOffset
+            val maximumOffset = (lines.size - height).coerceAtLeast(0)
+            val start = scrollOffset.coerceIn(0, maximumOffset)
+            val end = (start + height).coerceAtMost(lines.size)
+            return lines.subList(start, end)
+        }
+    }
+
+    fun user(mode: String, prompt: String): String =
+        theme.paint(Role.ACCENT_FOCUS, railGlyph) + pad +
+            theme.metadata("${mode.lowercase()} ") +
+            TerminalText.sanitize(prompt)
+
+    fun assistantHeader(provider: String): String =
+        theme.paint(Role.BRAND, railGlyph) + pad + theme.brand(provider.lowercase())
+
+    fun assistantBody(renderedMarkdown: String): List<String> =
+        renderedMarkdown.lines().map { line ->
+            theme.paint(Role.BRAND, railGlyph) + pad + TerminalText.sanitize(line)
+        }
+
+    /** Reference blocks close with spacing, not a drawn footer rule. */
+    fun assistantFooter(): String = ""
+
+    fun notice(message: String): String = rail(Role.TEXT_MUTED, message)
+
+    fun success(message: String): String = rail(Role.STATUS_COMPLETE, message)
+
+    fun error(message: String): String =
+        theme.paint(Role.STATUS_FAILED, railGlyph) + pad +
+            theme.paint(Role.STATUS_FAILED, TerminalText.sanitize(redactionFilter.redact(message)))
+
+    fun activity(frame: String): String =
+        theme.paint(Role.STATUS_RUNNING, railGlyph) + pad + theme.warning(frame)
+
     private fun asciiOnly(): Boolean = !System.getenv("ATROPOS_ASCII").isNullOrBlank()
 }
