@@ -1,73 +1,82 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 /**
- * MCP Integration Registry
+ * MCP Integration Registry - Main entry point
  *
- * Central registry for all MCP integrations.
- * Manages registration, discovery, and routing.
+ * Registers all available MCP integrations.
  */
 package atropos.core.mcp
 
 import java.nio.file.Files
 import java.nio.file.Path
-import java.util.concurrent.ConcurrentHashMap
 
 class McpIntegrationRegistry(configDir: Path) {
 
-    private val integrations = ConcurrentHashMap<String, McpIntegration>()
+    private val integrations = mutableMapOf<String, McpIntegration>()
     private val configDir = configDir.resolve("mcp").apply { Files.createDirectories(this) }
 
-    /**
-     * Registers an MCP integration.
-     */
     fun register(integration: McpIntegration): Boolean {
         return integrations.putIfAbsent(integration.systemId, integration) == null
     }
 
-    /**
-     * Gets an integration by system ID.
-     */
     fun get(systemId: String): McpIntegration? = integrations[systemId]
 
-    /**
-     * Gets all registered integrations.
-     */
     fun getAll(): List<McpIntegration> = integrations.values.toList()
 
-    /**
-     * Removes an integration.
-     */
     fun unregister(systemId: String): Boolean = integrations.remove(systemId) != null
 
-    /**
-     * Initializes built-in integrations.
-     */
-    fun initializeBuiltins() {
-        // These would be instantiated with actual config
+    fun initializeAll() {
+        // Register all available integrations
         // register(GitLabMcpIntegration(configDir.resolve("gitlab")))
         // register(GitHubMcpIntegration(configDir.resolve("github")))
         // register(JiraMcpIntegration(configDir.resolve("jira")))
         // register(LinearMcpIntegration(configDir.resolve("linear")))
         // register(DockerMcpIntegration(configDir.resolve("docker")))
         // register(PostgresMcpIntegration(configDir.resolve("postgres")))
+        // register(BitbucketMcpIntegration(configDir.resolve("bitbucket")))
+        // register(ConfluenceMcpIntegration(configDir.resolve("confluence")))
+        // register(RedisMcpIntegration(configDir.resolve("redis")))
+        // register(SlackMcpIntegration(configDir.resolve("slack")))
+        // register(AwsMcpIntegration(configDir.resolve("aws")))
+        // register(GcpMcpIntegration(configDir.resolve("gcp")))
+        // register(AzureMcpIntegration(configDir.resolve("azure")))
+        // register(AzureDevOpsMcpIntegration(configDir.resolve("azuredevops")))
+        // register(BitbucketMcpIntegration(configDir.resolve("bitbucket")))
+        // register(ConfluenceMcpIntegration(configDir.resolve("confluence")))
+        // register(RedisMcpIntegration(configDir.resolve("redis")))
+        // register(SlackMcpIntegration(configDir.resolve("slack")))
+        // register(AwsMcpIntegration(configDir.resolve("aws")))
+        // register(GcpMcpIntegration(configDir.resolve("gcp")))
+        // register(AzureMcpIntegration(configDir.resolve("azure")))
+        // register(AzureDevOpsMcpIntegration(configDir.resolve("azuredevops")))
+        // register(DatadogMcpIntegration(configDir.resolve("datadog")))
+        // register(NewRelicMcpIntegration(configDir.resolve("newrelic")))
+        // register(SonarQubeMcpIntegration(configDir.resolve("sonarqube")))
+        // register(SnykMcpIntegration(configDir.resolve("snyk")))
+        // register(TerraformMcpIntegration(configDir.resolve("terraform")))
+        // register(PulumiMcpIntegration(configDir.resolve("pulumi")))
+        // register(KubernetesMcpIntegration(configDir.resolve("kubernetes")))
+        // register(SupabaseMcpIntegration(configDir.resolve("supabase")))
+        // register(FirebaseMcpIntegration(configDir.resolve("firebase")))
+        // register(PagerDutyMcpIntegration(configDir.resolve("pagerduty")))
+        // register(OpsgenieMcpIntegration(configDir.resolve("opsgenie")))
+        // register(AsanaMcpIntegration(configDir.resolve("asana")))
+        // register(ClickUpMcpIntegration(configDir.resolve("clickup")))
+        // register(NotionMcpIntegration(configDir.resolve("notion")))
+        // register(DiscordMcpIntegration(configDir.resolve("discord")))
+        // register(TeamsMcpIntegration(configDir.resolve("teams")))
+        // register(PlaywrightMcpIntegration(configDir.resolve("playwright")))
+        // register(PuppeteerMcpIntegration(configDir.resolve("puppeteer")))
+        // register(SentryMcpIntegration(configDir.resolve("sentry")))
     }
 
-    /**
-     * Gets all registration info for discovery.
-     */
     fun discoverAll(): List<RegistrationInfo> {
         return integrations.values.map { it.register() }
     }
 
-    /**
-     * Gets an integration that supports a capability.
-     */
     fun findByCapability(capability: String): List<McpIntegration> {
         return integrations.values.filter { capability in it.register().capabilities }
     }
 
-    /**
-     * Persists registry state to CAS.
-     */
     fun persistRegistry(casDir: Path): Path {
         Files.createDirectories(casDir)
         val file = casDir.resolve("mcp-registry.json")
@@ -87,9 +96,6 @@ class McpIntegrationRegistry(configDir: Path) {
         return file
     }
 
-    /**
-     * CLI command to list integrations.
-     */
     fun listIntegrations(): String {
         return integrations.values.map { i ->
             val reg = i.register()
