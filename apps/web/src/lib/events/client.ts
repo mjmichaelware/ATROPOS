@@ -117,6 +117,28 @@ function mapEventToActivity(event: EventStreamEvent): ActivityEvent | null {
         return null;
       }
     }
+    case 'node_progress': {
+      // detail: JSON string with nodeId, nodeTitle, stage, progress, message
+      try {
+        const parsed = JSON.parse(detail);
+        return {
+          id: `node-${cursor}`,
+          at: timestamp,
+          stage: 'node_progress',
+          subject: parsed.nodeId ?? 'node',
+          outcome: parsed.stage ?? 'running',
+          detail: JSON.stringify({
+            nodeId: parsed.nodeId,
+            nodeTitle: parsed.nodeTitle,
+            stage: parsed.stage,
+            progress: parsed.progress,
+            message: parsed.message,
+          }),
+        };
+      } catch {
+        return null;
+      }
+    }
     default:
       return null;
   }
