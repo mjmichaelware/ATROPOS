@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.bridge.http
 
+import org.json.JSONObject
+
 /**
  * One parsed HTTP request.
  *
@@ -27,8 +29,8 @@ data class HttpRequest(
         header("accept")?.contains("text/event-stream", ignoreCase = true) == true
 
     /** Parses the body as JSON, or returns null if parsing fails or body is empty. */
-    fun bodyJsonOrNull(): org.json.JSONObject? = runCatching {
+    fun bodyJsonOrNull(): JSONObject? = runCatching {
         if (body.isBlank()) return@runCatching null
-        org.json.JSONObject(body)
+        JSONObject(body)
     }.getOrNull()
 }
