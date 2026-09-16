@@ -28,6 +28,7 @@ import { CheckpointRail } from '@/components/checkpoint/checkpoint-rail';
 import { BridgeApprovalList } from '@/components/approvals/bridge-approval-list';
 import { InterruptControls } from '@/components/work-queue/interrupt-controls';
 import { VerbosityControl } from '@/components/disclosure/verbosity-control';
+import { TerminalComponent } from '@/components/workbench/terminal';
 
 export function WorkbenchMain({ children }: { children: ReactNode }) {
   const { layout } = useLayoutTheme();
@@ -46,6 +47,7 @@ export function WorkbenchMain({ children }: { children: ReactNode }) {
 function WorkbenchBody({ children }: { children: ReactNode }) {
   const { store, open } = useWorkbenchTabs();
   const hasOpenTabs = store.tabs.length > 0;
+  const projectId = store.tabs[0]?.projectId;
 
   return (
     <WorkbenchShell
@@ -58,6 +60,7 @@ function WorkbenchBody({ children }: { children: ReactNode }) {
         )
       }
       logs={<LogPanel />}
+      terminal={<TerminalComponent projectId={projectId} />}
       aiRail={
         <div className="wb-airail-inner">
           {/* F-WEB-007: checkpoint (resume) · approvals (decide) — the proof

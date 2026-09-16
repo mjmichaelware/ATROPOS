@@ -425,6 +425,15 @@ class BridgeRoutes(
                         HttpResponse.json(workspaceView.writeFile(binding, path, content))
                     }
                 },
+                HttpRoute("GET", "/v1/terminal", "terminal WebSocket (PTY)") { request ->
+                    // Terminal WebSocket upgrade handled by EngineHttpServer
+                    HttpResponse.refusal(
+                        426,
+                        "upgrade-required",
+                        "This endpoint requires a WebSocket upgrade",
+                        "Connect via WebSocket to /v1/terminal"
+                    )
+                },
                 HttpRoute("POST", "/v1/visual/compare", "compare two screenshots") { request ->
                     val body = request.bodyJson()
                     val baseline = body?.getString("baseline") ?: ""

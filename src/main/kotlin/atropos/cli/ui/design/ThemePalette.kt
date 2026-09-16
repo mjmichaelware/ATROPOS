@@ -74,6 +74,29 @@ class ThemePalette(
 
     fun style(role: Role, tier: ColorTier): String =
         styles.getValue(role).forTier(tier)
+
+    /** Paints text with a semantic role. The single styling entry point. */
+    fun paint(role: Role, text: String, tier: ColorTier = ColorTier.INDEXED): String {
+        if (text.isEmpty()) return text
+        val sgr = style(role, tier)
+        return if (sgr.isEmpty()) text else "\u001B[${sgr}m$text\u001B[0m"
+    }
+
+    // ---- rendering aliases over roles (mirrors TerminalTheme) ----
+    fun brand(text: String): String = paint(Role.BRAND, text)
+    fun success(text: String): String = paint(Role.STATUS_VERIFIED, text)
+    fun error(text: String): String = paint(Role.STATUS_ERROR, text)
+    fun warning(text: String): String = paint(Role.STATUS_PENDING, text)
+    fun metadata(text: String): String = paint(Role.TEXT_SECONDARY, text)
+    fun subdued(text: String): String = paint(Role.TEXT_MUTED, text)
+    fun strong(text: String): String = paint(Role.TEXT_PRIMARY, text)
+    fun path(text: String): String = paint(Role.PATH, text)
+    fun code(text: String): String = paint(Role.CODE, text)
+    fun headerBrand(text: String): String = paint(Role.BRAND, text)
+    fun headerText(text: String): String = paint(Role.SURFACE_HEADER, text)
+    fun footer(text: String): String = paint(Role.SURFACE_FOOTER, text)
+    fun selection(text: String): String = paint(Role.ACCENT_SELECTION, text)
+    fun reset(): String = ""
 }
 
 /**

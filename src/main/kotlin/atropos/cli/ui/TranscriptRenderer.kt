@@ -16,12 +16,24 @@ import atropos.core.security.RedactionFilter
  */
 class TranscriptRenderer(
     private val theme: TerminalTheme,
-    private val redactionFilter: RedactionFilter = RedactionFilter()
+    private val redactionFilter: RedactionFilter = RedactionFilter(),
+    private val thinkingFilter: ThinkingFilter = ThinkingFilter()
 ) {
     private val railGlyph: String
         get() = if (asciiOnly()) Glyphs.Ascii.RAIL else Glyphs.RAIL
 
     private val pad = " ".repeat(Glyphs.RAIL_PADDING)
+
+    /** Returns the current thinking filter level. */
+    fun currentThinkingLevel(): ThinkingLevel = thinkingFilter.current
+
+    /** Cycles the thinking filter to the next level (L1→L2→L3→L1). */
+    fun cycleThinkingLevel(): ThinkingLevel = thinkingFilter.cycle()
+
+    /** Sets the thinking filter to a specific level. */
+    fun setThinkingLevel(level: ThinkingLevel) {
+        thinkingFilter.setLevel(level)
+    }
 
     /**
      * Prefixes a line with a rail tinted for its block kind.
@@ -99,12 +111,39 @@ class TranscriptRenderer(
     ): List<String> {
         if (buffer.isEmpty) return emptyList()
         val lines = mutableListOf<String>()
+        var currentDepth = 1
         for (entry in buffer.entries()) {
             when (entry) {
-                is TranscriptEntry.Text -> lines.addAll(AnsiLineWrapper.wrap(entry.value, width))
+                is TranscriptEntry.Text -> {
+                    val wrapped = AnsiLineWrapper.wrap(entry.value, width)
+                    lines.addAll(wrapped)
+                    // Track depth markers for thinking content
+                    currentDepth = 1
+                }
                 is TranscriptEntry.Disclosure -> {
-                    lines.add(disclosureSummary(entry.row))
-                    lines.addAll(disclosureDetail(entry.row))
+                    val row = entry.row
+                    // Filter thinking disclosures based on current thinking level
+                    if (row.kind == DisclosureKind.THINKING) {
+                        val allowedDepth = thinkingFilter.current.depth
+                        // For thinking content, we use a simple heuristic:
+                        // If not expanded, show summary only (L1)
+                        // If expanded, show detail up to current level
+                        if (!row.isExpanded) {
+                            // L1: Always show summary
+                            lines.add(disclosureSummary(row))
+                        } else if (allowedDepth >= 2) {
+                            // L2/L3: Show summary + detail
+                            lines.add(disclosureSummary(row))
+                            lines.addAll(disclosureDetail(row))
+                        } else {
+                            // L1 but expanded - just show summary
+                            lines.add(disclosureSummary(row))
+                        }
+                    } else {
+                        // Non-thinking disclosures always render normally
+                        lines.add(disclosureSummary(row))
+                        lines.addAll(disclosureDetail(row))
+                    }
                 }
             }
             val scrollOffset = buffer.currentScrollOffset
