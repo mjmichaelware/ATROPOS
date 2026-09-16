@@ -143,21 +143,4 @@ class PuppeteerMcpIntegration(configDir: Path) : BaseMcpIntegration("puppeteer",
     private fun deleteScript(id: String): Boolean = true
     private fun deleteScreenshot(id: String): Boolean = true
     private fun deletePDF(id: String): Boolean = true
-
-    override fun register(): RegistrationInfo = RegistrationInfo(
-        systemId = "puppeteer", displayName = "Puppeteer",
-        capabilities = listOf("browsers", "pages", "scripts", "screenshots", "pdfs", "cookies", "coverage"),
-        authRequired = listOf("profile_id", "headless", "executable_path", "args"), version = "1.0"
-    )
-    override fun discover(): List<RegistrationInfo> = listOf(register())
-    override fun unregister(): Boolean { return true }
-
-    override fun checkTerritory(resource: McpResource): TerritoryResult {
-        val domain = resource.properties["domain"] as String? ?: resource.properties["url"] as String? ?: ""
-        return TerritoryResult(allowed = domain.isNotEmpty(), boundaries = listOf(domain))
-    }
-    override fun getTerritoryBoundaries(): List<String> = emptyList()
-    override fun sanitizeInput(input: String): String = super.sanitizeInput(input)
-    override fun encryptSecret(secret: String): String = "enc:$secret"
-    override fun decryptSecret(encrypted: String): String = encrypted.removePrefix("enc:")
 }
