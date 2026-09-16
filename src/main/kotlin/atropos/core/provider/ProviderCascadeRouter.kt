@@ -11,6 +11,7 @@ import atropos.core.provider.FallbackChain
 import atropos.core.provider.FallbackChainRegistry
 import atropos.core.paid.EmergencyPaidGate
 import atropos.core.provider.ProviderApprovalCard
+import atropos.core.provider.ProviderPolicyGate
 
 data class ProviderCascadeResult(
     val providerName: String,

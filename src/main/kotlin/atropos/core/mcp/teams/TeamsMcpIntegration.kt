@@ -22,13 +22,14 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
 import java.time.Duration
-import com.microsoft.graph.authentication.TokenCredentialAuthProvider
-import com.microsoft.graph.models.*
-import com.microsoft.graph.requests.GraphServiceClient
 
 class TeamsMcpIntegration(configDir: Path) : BaseMcpIntegration("teams", "Microsoft Teams", configDir) {
 
-    private var graphClient: GraphServiceClient? = null
+    private val httpClient = HttpClient.newBuilder()
+        .connectTimeout(Duration.ofSeconds(30))
+        .build()
+
+    private val graphUrl = "https://graph.microsoft.com/v1.0"
     private var accessToken: String? = null
     private var resourceType: String? = null
 
@@ -36,10 +37,18 @@ class TeamsMcpIntegration(configDir: Path) : BaseMcpIntegration("teams", "Micros
         val token = credentials["access_token"] ?: credentials["bot_token"]
             ?: return AuthResult(false, error = "Teams access token required")
 
-        val authProvider = TokenCredentialAuthProvider(token)
-        graphClient = GraphServiceClient.builder()
-            .authenticationProvider(authProvider)
-            .buildClient()
+        // Validate token with a simple Graph API call
+        val request = HttpRequest.newBuilder()
+            .uri(URI.create("$graphUrl/me"))
+            .header("Authorization", "Bearer $token")
+            .header("Accept", "application/json")
+            .GET()
+            .build()
+
+        val response = httpClient.send(request, HttpResponse.BodyHandlers.ofString())
+        if (response.statusCode() != 200) {
+            return AuthResult(false, error = "Teams token validation failed: ${response.statusCode()}")
+        }
 
         accessToken = token
         saveAuth(token)
@@ -47,10 +56,10 @@ class TeamsMcpIntegration(configDir: Path) : BaseMcpIntegration("teams", "Micros
     }
 
     override fun refreshToken(): AuthResult = AuthResult(false, error = "Tokens don't auto-refresh")
-    override fun revokeAccess(): Boolean { graphClient = null; accessToken = null; Files.deleteIfExists(authFile); return true }
+    override fun revokeAccess(): Boolean { accessToken = null; Files.deleteIfExists(authFile); return true }
 
     override fun listResources(params: Map<String, String>): List<McpResource> {
-        val client = graphClient ?: return emptyList()
+        val token = accessToken ?: return emptyList()
         resourceType = params["type"] ?: "teams"
 
         return when (resourceType) {
@@ -115,7 +124,7 @@ class TeamsMcpIntegration(configDir: Path) : BaseMcpIntegration("teams", "Micros
 
     override fun discover(): List<RegistrationInfo> = listOf(register())
 
-    override fun unregister(): Boolean { graphClient = null; Files.deleteIfExists(authFile); return true }
+    override fun unregister(): Boolean { Files.deleteIfExists(authFile); return true }
 
     override fun checkTerritory(resource: McpResource): TerritoryResult {
         val team = resource.properties["team_id"] as String? ?: ""
