@@ -79,10 +79,6 @@ object LocalEngineBridge {
 
         return BridgeRoutes(
             activeProvider = activeProvider,
-            workspaceRoot = { repoRoot },
-            quotaLedger = atropos.core.provider.FileQuotaLedger(
-                repoRoot.resolve(".atropos/provider/quota.tsv").toFile()
-            ),
             proposals = governance::proposals,
             amendments = governance::amendments,
             observationPeriods = governance::observationPeriods,
@@ -101,7 +97,6 @@ object LocalEngineBridge {
                 }
             },
             exportResolver = { exportResolver },
-            exportTerritory = { listOf(repoRoot) },
             // This is where a phone message becomes real work. Constructed here
             // rather than defaulted inside BridgeRoutes so the routes stay
             // buildable without a repository: a test checking one projection
