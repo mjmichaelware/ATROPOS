@@ -18,7 +18,7 @@ internal class BridgeEditorHandler(
     private val sendMessage: (HttpRequest) -> HttpResponse,
     private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
-    fun context(): HttpResponse = HttpResponse.json(redactionFilter.redact(contextProvider()))
+    fun getContext(): HttpResponse = HttpResponse.json(redactionFilter.redact(contextProvider()))
 
     fun sendSelection(request: HttpRequest): HttpResponse {
         val issuedBy = value(request, "issuedBy")
@@ -79,9 +79,6 @@ internal class BridgeEditorHandler(
         return sendMessage(forwarded)
     }
 
-    private fun context(): String = contextProvider()
-    }
-
     private fun value(request: HttpRequest, key: String): String =
         request.query[key].orEmpty().ifBlank { field(request.body, key) }.trim()
 
@@ -98,7 +95,7 @@ internal class BridgeEditorHandler(
         path.isNotBlank() && !path.startsWith('/') && !path.startsWith('\\') &&
             !path.split('/', '\\').contains("..")
 
-    private companion object {
+    companion object {
         const val MAX_SELECTION_CHARS = 8_000
     }
 }

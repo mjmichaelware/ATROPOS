@@ -5,9 +5,10 @@ import atropos.bridge.http.HttpRequest
 import atropos.bridge.http.HttpResponse
 import atropos.bridge.http.JsonWriter
 import atropos.bridge.queue.ConversationWorkRunner
+import atropos.bridge.queue.QueueEntryView
 import atropos.core.artifact.ArtifactHasher
 import atropos.core.security.RedactionFilter
-import java.nio.charset.Charsets
+import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 
@@ -121,15 +122,15 @@ internal class BridgeEvidenceHandler(
         val limit = 100_000
         val isTruncated = bytes.size > limit
         val rawContent = if (isTruncated) {
-            val truncatedStr = String(bytes, 0, limit, Charsets.UTF_8)
+            val truncatedStr = String(bytes, 0, limit, StandardCharsets.UTF_8)
             "$truncatedStr\n\n[TRUNCATED: evidence file is larger than $limit bytes]"
         } else {
-            String(bytes, Charsets.UTF_8)
+            String(bytes, StandardCharsets.UTF_8)
         }
 
         val truncationMarker = "[TRUNCATED: evidence file is larger than $limit bytes]"
         val redacted = if (isTruncated) {
-            val bounded = redactionFilter.redact(String(bytes, 0, limit, Charsets.UTF_8))
+            val bounded = redactionFilter.redact(String(bytes, 0, limit, StandardCharsets.UTF_8))
                 .replace(Regex("<redacted:[^>]+>"), "[REDACTED]")
             "$bounded\n\n$truncationMarker"
         } else {
@@ -140,7 +141,7 @@ internal class BridgeEvidenceHandler(
         // A bridge client receives a stable evidence address and digest, not a
         // terminal handle. This keeps terminals first-class and evidence-linkable
         // while preserving the no-PTY-over-the-bridge boundary.
-        val contentHash = ArtifactHasher.sha256Bytes(redacted.toByteArray(Charsets.UTF_8))
+        val contentHash = ArtifactHasher.sha256Bytes(redacted.toByteArray(StandardCharsets.UTF_8))
 
         return HttpResponse.json(
             JsonWriter.obj(
@@ -167,7 +168,7 @@ internal class BridgeEvidenceHandler(
                 "offset" to JsonWriter.num(offset.toLong()),
                 "count" to JsonWriter.num(entries.size.toLong()),
                 "entries" to JsonWriter.arr(
-                    entries.map { (entry: ConversationWorkRunner.Entry) ->
+                    entries.map { (entry: QueueEntryView) ->
                         JsonWriter.obj(
                             "id" to JsonWriter.str(entry.id),
                             "state" to JsonWriter.str(entry.state),

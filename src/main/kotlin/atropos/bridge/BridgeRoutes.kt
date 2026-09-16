@@ -218,7 +218,7 @@ class BridgeRoutes(
     private val selfHostHandler = selfHost?.let { BridgeSelfHostHandler(it) }
     private val commandHandler = commandRunner?.let { BridgeCommandHandler(it) }
     private val editorHandler = BridgeEditorHandler(
-        context = {
+        contextProvider = {
             JsonWriter.obj(
                 "ok" to JsonWriter.bool(true),
                 "transport" to JsonWriter.str("local-bridge"),
@@ -406,21 +406,21 @@ class BridgeRoutes(
                     HttpResponse.json(workspaceView.renderTree(binding))
                 },
                 HttpRoute("GET", "/v1/workspace/file", "read a file from the project") { request ->
-                    val path = request.query("path") ?: ""
+                    val path = request.query["path"] ?: ""
                     val binding = repositoryBinding()
                     if (path.isBlank()) {
-                        HttpResponse.refusal(400, "missing-path", "Query parameter 'path' is required")
+                        HttpResponse.refusal(400, "missing-path", "Query parameter 'path' is required", "Provide a 'path' query parameter")
                     } else {
                         HttpResponse.json(workspaceView.readFile(binding, path))
                     }
                 },
                 HttpRoute("POST", "/v1/workspace/file", "write a file to the project") { request ->
-                    val body = request.bodyJson()
+                    val body = request.bodyJsonOrNull()
                     val path = body?.getString("path") ?: ""
                     val content = body?.getString("content") ?: ""
                     val binding = repositoryBinding()
                     if (path.isBlank()) {
-                        HttpResponse.refusal(400, "missing-path", "Request body must contain 'path'")
+                        HttpResponse.refusal(400, "missing-path", "Request body must contain 'path'", "Include 'path' in request body")
                     } else {
                         HttpResponse.json(workspaceView.writeFile(binding, path, content))
                     }
@@ -435,17 +435,17 @@ class BridgeRoutes(
                     )
                 },
                 HttpRoute("POST", "/v1/visual/compare", "compare two screenshots") { request ->
-                    val body = request.bodyJson()
+                    val body = request.bodyJsonOrNull()
                     val baseline = body?.getString("baseline") ?: ""
                     val current = body?.getString("current") ?: ""
                     if (baseline.isBlank() || current.isBlank()) {
-                        HttpResponse.refusal(400, "missing-path", "Request body must contain 'baseline' and 'current' paths")
+                        HttpResponse.refusal(400, "missing-path", "Request body must contain 'baseline' and 'current' paths", "Provide 'baseline' and 'current' paths in request body")
                     } else {
                         HttpResponse.json(visualComparisonView.compare(baseline, current))
                     }
                 },
                 HttpRoute("GET", "/v1/preview", "factory live preview state") { request ->
-                    val projectId = request.query("projectId") ?: ""
+                    val projectId = request.query["projectId"] ?: ""
                     val preview = if (projectId.isNotBlank()) {
                         // TODO: Look up the factory plan by projectId
                         factoryPreviewView.render(null)
@@ -461,7 +461,7 @@ class BridgeRoutes(
                     ))
                 },
                 HttpRoute("POST", "/v1/reproducibility", "evaluate or snapshot reproducibility") { request ->
-                    val body = request.bodyJson()
+                    val body = request.bodyJsonOrNull()
                     val action = body?.getString("action") ?: "evaluate"
                     if (action == "snapshot") {
                         val files = body?.getJsonArray("files")?.mapNotNull { it?.string } ?: emptyList()
@@ -478,9 +478,9 @@ class BridgeRoutes(
                     HttpResponse.json(territoryView.renderAssignments(atropos.core.territory.TerritoryService()))
                 },
                 HttpRoute("GET", "/v1/territory/check", "check if a path is within territory") { request ->
-                    val path = request.query("path") ?: ""
+                    val path = request.query["path"] ?: ""
                     if (path.isBlank()) {
-                        HttpResponse.refusal(400, "missing-path", "Query parameter 'path' is required")
+                        HttpResponse.refusal(400, "missing-path", "Query parameter 'path' is required", "Provide a 'path' query parameter")
                     } else {
                         HttpResponse.json(territoryView.checkMembership(atropos.core.territory.TerritoryService(), path))
                     }
