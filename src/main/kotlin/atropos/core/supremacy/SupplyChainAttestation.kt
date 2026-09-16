@@ -87,7 +87,7 @@ object SupplyChainAttestation {
                     "algorithm": "${a.algorithm}",
                     "signer": "${a.signer}",
                     "timestamp": "${a.timestamp}",
-                    "metadata": ${a.metadata.joinToString(",") { "\"$it.key\": \"$it.value\"" }}
+                    "metadata": ${a.metadata.joinToString(",") { (key, value) -> "\"$key\": \"$value\"" }}
                 }
             """.trimIndent()
         }.joinToString(",\n", "[\n", "\n]")

@@ -35,7 +35,12 @@ object ShadowMode {
         judge: (String, String, String) -> Comparison.Winner
     ): Comparison {
         val winner = judge(input, atroposOutput, competitorOutput)
-        val comparison = Comparison(input, atroposOutput, competitorOutput, winner)
+        val comparison = Comparison(
+            input = input,
+            atroposOutput = atroposOutput,
+            competitorOutput = competitorOutput,
+            winner = winner
+        )
         comparisons.add(comparison)
         return comparison
     }

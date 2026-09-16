@@ -16,14 +16,18 @@ object ResourceAuction {
         object CONTEXT : ResourceType()
         object QUOTA : ResourceType()
         object DISK : ResourceType()
+
+        companion object {
+            val values: List<ResourceType> = listOf(CONTEXT, QUOTA, DISK)
+        }
     }
 
     data class Bid(
         val id: String = java.util.UUID.randomUUID().toString(),
         val bidder: String,
         val resource: ResourceType,
-        val amount: Double,      // For disk: bytes, for context: tokens, for quota: requests
-        val maxPrice: Double,    // Maximum willing to pay
+        val amount: Double,
+        val maxPrice: Double,
         val timestamp: Instant = Instant.now()
     )
 
@@ -35,7 +39,7 @@ object ResourceAuction {
         val allBids: List<Bid>
     )
 
-    private val auctions = mutableMapOf<ResourceType, mutableList<Bid>>()
+    private val auctions = mutableMapOf<ResourceType, MutableList<Bid>>()
 
     /**
      * Places a bid for a resource.
@@ -50,7 +54,7 @@ object ResourceAuction {
      * Runs an auction for a resource (second-price sealed bid).
      */
     fun runAuction(resource: ResourceType): AuctionResult {
-        val bids = auctions[resource]?.toList() ?: emptyList()
+        val bids: List<Bid> = auctions[resource]?.toList() ?: emptyList()
         val validBids = bids.filter { it.maxPrice > 0 }.sortedByDescending { it.maxPrice }
 
         val winner = validBids.firstOrNull()
@@ -100,7 +104,7 @@ object ResourceAuction {
      * CLI command to show auction status.
      */
     fun showStatus(): String {
-        return ResourceType.values().joinToString("\n") { resource ->
+        return ResourceType.values.joinToString("\n") { resource ->
             val bids = getBids(resource)
             "$resource: ${bids.size} bids${if (bids.isNotEmpty()) " (top: ${bids.maxByOrNull { it.maxPrice }?.bidder})" else ""}"
         }

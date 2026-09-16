@@ -31,6 +31,7 @@ object VectorClocks {
         }
 
         fun happensBefore(other: VectorClock): Boolean {
+            val allKeys = (clocks.keys + other.clocks.keys).distinct()
             var atLeastOneLess = false
             allKeys.forEach { key ->
                 val thisVal = clocks[key] ?: 0
@@ -44,8 +45,6 @@ object VectorClocks {
         fun concurrentWith(other: VectorClock): Boolean {
             return !happensBefore(other) && !other.happensBefore(this)
         }
-
-        private val allKeys: Set<String> get() = (clocks.keys + other.clocks.keys).toSet()
     }
 
     data class TimestampedClaim(
@@ -106,7 +105,7 @@ object VectorClocks {
             """
                 {
                     "node": "$node",
-                    "clock": ${clock.clocks.joinToString(",") { "\"$it\": ${clock.clocks[it]}" }}
+                    "clock": ${clock.clocks.joinToString(",") { key -> "\"$key\": ${clock.clocks[key]}" }}
                 }
             """.trimIndent()
         }.joinToString(",\n", "{\n", "\n}")
@@ -119,7 +118,7 @@ object VectorClocks {
      */
     fun showClocks(): String {
         return nodeClocks.map { (node, clock) ->
-            "$node: ${clock.clocks.joinToString(", ") { "${it.key}=${it.value}" }}"
+            "$node: ${clock.clocks.joinToString(", ") { (key, value) -> "$key=$value" }}"
         }.joinToString("\n")
     }
 }

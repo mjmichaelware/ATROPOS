@@ -19,8 +19,8 @@ object SecretNonInterference {
         val value: T,
         val label: Label = Label.PUBLIC
     ) {
-        fun map<R>(f: (T) -> R): LabeledValue<R> = copy(value = f(value))
-        fun flatMap<R>(f: (T) -> LabeledValue<R>): LabeledValue<R> = f(value).copy(label = maxLabel(label, f(value).label))
+        fun <R> map(f: (T) -> R): LabeledValue<R> = copy(value = f(value))
+        fun <R> flatMap(f: (T) -> LabeledValue<R>): LabeledValue<R> = f(value).copy(label = maxLabel(label, f(value).label))
     }
 
     private fun maxLabel(a: Label, b: Label): Label = when {
@@ -43,7 +43,7 @@ object SecretNonInterference {
     /**
      * Enforces non-interference: secret inputs must not affect public outputs.
      */
-    fun enforceNonInterference<Input, Output>(
+    fun <Input, Output> enforceNonInterference(
         secretInput: LabeledValue<Input>,
         publicOutput: LabeledValue<Output>,
         computation: (Input) -> Output

@@ -39,8 +39,8 @@ object SuperiorityInvariants {
      */
     fun checkAll(): List<InvariantCheck> {
         return invariants.map { inv ->
-            val passed = try { inv.check() } catch (e: Exception) { false }
-            InvariantCheck(inv.id, passed, if (passed) null else "Check failed: ${e.message}")
+            val passed = try { inv.check() } catch (ex: Exception) { false }
+            InvariantCheck(inv.id, passed, if (passed) null else "Check failed: ${ex.message}")
         }
     }
 

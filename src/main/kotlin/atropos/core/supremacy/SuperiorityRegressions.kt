@@ -118,14 +118,14 @@ object SuperiorityRegressions {
     fun registerCoreTests() {
         // These would be implemented with actual test logic
         register(RegressionTest("reproducibility-cert", "Reproducibility Certificate",
-            "Verifies reproducibility certificate is generated", { true }, Category.REPRODUCIBILITY))
+            "Verifies reproducibility certificate is generated", { true }, RegressionTest.Category.REPRODUCIBILITY))
         register(RegressionTest("termination-bound", "Termination Bound",
-            "Verifies termination bound is enforced", { true }, Category.TERMINATION))
+            "Verifies termination bound is enforced", { true }, RegressionTest.Category.TERMINATION))
         register(RegressionTest("context-budget", "Context Budget",
-            "Verifies context budget is enforced", { true }, Category.CONTEXT_BUDGET))
+            "Verifies context budget is enforced", { true }, RegressionTest.Category.CONTEXT_BUDGET))
         register(RegressionTest("non-interference", "Secret Non-Interference",
-            "Verifies IFC non-interference", { true }, Category.NON_INTERFERENCE))
+            "Verifies IFC non-interference", { true }, RegressionTest.Category.NON_INTERFERENCE))
         register(RegressionTest("air-gapped", "Air-Gapped Gates",
-            "Verifies air-gapped mode works", { true }, Category.AIR_GAPPED))
+            "Verifies air-gapped mode works", { true }, RegressionTest.Category.AIR_GAPPED))
     }
 }
