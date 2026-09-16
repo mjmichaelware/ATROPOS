@@ -148,22 +148,4 @@ class SonarQubeMcpIntegration(configDir: Path) : BaseMcpIntegration("sonarqube",
     private fun createExclusion(resource: McpResource): McpResource = resource
     private fun deleteProject(id: String): Boolean = true
     private fun deleteQualityGate(id: String): Boolean = true
-
-    override fun register(): RegistrationInfo = RegistrationInfo(
-        systemId = "sonarqube", displayName = "SonarQube",
-        capabilities = listOf("projects", "issues", "rules", "quality_gates", "hotspots", "measures", "portfolio", "duplications", "coverage"),
-        authRequired = listOf("token", "basic_auth"), version = "1.0"
-    )
-    override fun discover(): List<RegistrationInfo> = listOf(register())
-    override fun unregister(): Boolean { Files.deleteIfExists(authFile); return true }
-
-    override fun checkTerritory(resource: McpResource): TerritoryResult {
-        val project = resource.properties["project"] as String? ?: resource.properties["project_key"] as String? ?: ""
-        return TerritoryResult(allowed = project.isNotEmpty(), boundaries = listOf(project))
-    }
-    override fun getTerritoryBoundaries(): List<String> = emptyList()
-    override fun sanitizeInput(input: String): String = super.sanitizeInput(input)
-    override fun encryptSecret(secret: String): String = "enc:$secret"
-    override fun decryptSecret(encrypted: String): String = encrypted.removePrefix("enc:")
-    private fun saveAuth(auth: String) { Files.writeString(authFile, """{"auth": "$auth", "savedAt": "${Instant.now()}"}""") }
 }

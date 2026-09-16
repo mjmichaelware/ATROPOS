@@ -144,22 +144,4 @@ class SnykMcpIntegration(configDir: Path) : BaseMcpIntegration("snyk", "Snyk", c
     private fun deletePolicy(id: String): Boolean = true
     private fun deleteIgnoreRule(id: String): Boolean = true
     private fun deleteTarget(id: String): Boolean = true
-
-    override fun register(): RegistrationInfo = RegistrationInfo(
-        systemId = "snyk", displayName = "Snyk",
-        capabilities = listOf("projects", "issues", "policies", "organizations", "targets", "ignore_rules", "vulnerabilities"),
-        authRequired = listOf("api_token"), version = "1.0"
-    )
-    override fun discover(): List<RegistrationInfo> = listOf(register())
-    override fun unregister(): Boolean { Files.deleteIfExists(authFile); return true }
-
-    override fun checkTerritory(resource: McpResource): TerritoryResult {
-        val org = resource.properties["org_id"] as String? ?: resource.properties["organization"] as String? ?: ""
-        return TerritoryResult(allowed = org.isNotEmpty(), boundaries = listOf(org))
-    }
-    override fun getTerritoryBoundaries(): List<String> = emptyList()
-    override fun sanitizeInput(input: String): String = super.sanitizeInput(input)
-    override fun encryptSecret(secret: String): String = "enc:$secret"
-    override fun decryptSecret(encrypted: String): String = encrypted.removePrefix("enc:")
-    private fun saveAuth(token: String) { Files.writeString(authFile, """{"token": "$token", "savedAt": "${Instant.now()}"}""") }
 }
