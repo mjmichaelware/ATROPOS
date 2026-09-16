@@ -28,6 +28,8 @@ import atropos.bridge.projection.TerritoryProjection
 import atropos.bridge.projection.ThinkingProjection
 import atropos.bridge.projection.ProjectProjection
 import atropos.bridge.projection.SixAnswersProjection
+import atropos.cli.ui.DashboardRenderer
+import atropos.core.project.RepositoryBinding
 import atropos.bridge.projection.VocabularyProjection
 import atropos.bridge.projection.VisualComparisonProjection
 import atropos.bridge.projection.WelcomeProjection
