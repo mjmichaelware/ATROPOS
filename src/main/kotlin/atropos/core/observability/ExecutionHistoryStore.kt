@@ -3,6 +3,7 @@ package atropos.core.observability
 
 import atropos.core.AtroposRepoRootLocator
 import atropos.core.journal.EventJournalRecord
+import atropos.core.journal.EventJournalService
 import java.nio.file.Path
 
 /**
@@ -28,9 +29,10 @@ import java.nio.file.Path
  * teaches an operator to distrust the filter.
  */
 class ExecutionHistoryStore(
-    private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
-    private val index: HistoryIndex = HistoryIndex(repoRoot.resolve(".atropos/runs").normalize())
+    private val _repoRoot: Path = AtroposRepoRootLocator.resolve(),
+    private val index: HistoryIndex = HistoryIndex(_repoRoot.resolve(".atropos/runs").normalize())
 ) {
+    val repoRoot: Path get() = _repoRoot
 
     /**
      * Searches one run.

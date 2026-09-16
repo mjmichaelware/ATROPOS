@@ -95,18 +95,26 @@ class TerraformMcpIntegration(configDir: Path) : BaseMcpIntegration("terraform",
     override fun createResource(resource: McpResource): McpResource = when (resource.type) {
         "workspace" -> createWorkspace(resource)
         "run" -> createRun(resource)
-        "module" -> publishModule(resource)
+        "module" -> createModule(resource)
         "variable" -> createVariable(resource)
         "team" -> createTeam(resource)
         else -> resource
     }
+
     override fun updateResource(id: String, updates: Map<String, Any>): McpResource = McpResource(id, "", "")
-    override fun deleteResource(id: String): Boolean = when (params["type"] ?: "workspaces") {
-        "workspaces" -> deleteWorkspace(id)
-        "runs" -> discardRun(id)
-        "modules" -> false
-        "variables" -> deleteVariable(params["workspace_id"] ?: "", id)
-        else -> false
+
+    override fun deleteResource(id: String): Boolean {
+        val resourceType = resourceType ?: "workspaces"
+        return when (resourceType) {
+            "workspaces" -> deleteWorkspace(id)
+            "runs" -> discardRun(id)
+            "modules" -> false
+            "variables" -> {
+                val workspaceId = resourceType ?: ""
+                deleteVariable(workspaceId, id)
+            }
+            else -> false
+        }
     }
 
     override fun register(): RegistrationInfo = RegistrationInfo(
@@ -114,7 +122,9 @@ class TerraformMcpIntegration(configDir: Path) : BaseMcpIntegration("terraform",
         capabilities = listOf("workspaces", "runs", "plans", "applies", "state_versions", "modules", "providers", "variables", "teams", "sentinel_policies"),
         authRequired = listOf("api_token"), version = "1.0"
     )
+
     override fun discover(): List<RegistrationInfo> = listOf(register())
+
     override fun unregister(): Boolean { Files.deleteIfExists(authFile); return true }
 
     override fun checkTerritory(resource: McpResource): TerritoryResult {
@@ -122,10 +132,13 @@ class TerraformMcpIntegration(configDir: Path) : BaseMcpIntegration("terraform",
         val workspace = resource.properties["workspace"] as String? ?: ""
         return TerritoryResult(allowed = organization.isNotEmpty() || workspace.isNotEmpty(), boundaries = listOf(organization, workspace).filter { it.isNotEmpty() })
     }
+
     override fun getTerritoryBoundaries(): List<String> = emptyList()
 
     override fun sanitizeInput(input: String): String = super.sanitizeInput(input)
+
     override fun encryptSecret(secret: String): String = "enc:$secret"
+
     override fun decryptSecret(encrypted: String): String = encrypted.removePrefix("enc:")
 
     private fun saveAuth(token: String) { Files.writeString(authFile, """{"token": "$token", "savedAt": "${Instant.now()}"}""") }
@@ -148,28 +161,12 @@ class TerraformMcpIntegration(configDir: Path) : BaseMcpIntegration("terraform",
     private fun getModule(token: String, id: String): McpResource? = null
     private fun createWorkspace(resource: McpResource): McpResource = resource
     private fun createRun(resource: McpResource): McpResource = resource
+    private fun createModule(resource: McpResource): McpResource = resource
     private fun createVariable(resource: McpResource): McpResource = resource
     private fun createTeam(resource: McpResource): McpResource = resource
     private fun discardRun(id: String): Boolean = true
     private fun deleteWorkspace(id: String): Boolean = true
     private fun deleteVariable(workspaceId: String, id: String): Boolean = true
 
-    override fun register(): RegistrationInfo = RegistrationInfo(
-        systemId = "terraform", displayName = "Terraform Cloud/Enterprise",
-        capabilities = listOf("workspaces", "runs", "plans", "applies", "state_versions", "modules", "providers", "variables", "teams", "sentinel_policies"),
-        authRequired = listOf("api_token"), version = "1.0"
-    )
-    override fun discover(): List<RegistrationInfo> = listOf(register())
-    override fun unregister(): Boolean { Files.deleteIfExists(authFile); return true }
-
-    override fun checkTerritory(resource: McpResource): TerritoryResult {
-        val organization = resource.properties["organization"] as String? ?: ""
-        val workspace = resource.properties["workspace"] as String? ?: ""
-        return TerritoryResult(allowed = organization.isNotEmpty() || workspace.isNotEmpty(), boundaries = listOf(organization, workspace).filter { it.isNotEmpty() })
-    }
-    override fun getTerritoryBoundaries(): List<String> = emptyList()
-    override fun sanitizeInput(input: String): String = super.sanitizeInput(input)
-    override fun encryptSecret(secret: String): String = "enc:$secret"
-    override fun decryptSecret(encrypted: String): String = encrypted.removePrefix("enc:")
-    private fun saveAuth(token: String) { Files.writeString(authFile, """{"token": "$token", "savedAt": "${Instant.now()}"}""") }
+    private var resourceType: String? = null
 }
