@@ -92,7 +92,6 @@ class PulumiMcpIntegration(configDir: Path) : BaseMcpIntegration("pulumi", "Pulu
     override fun createResource(resource: McpResource): McpResource = when (resource.type) {
         "stack" -> createStack(resource)
         "deployment" -> createDeployment(resource)
-        "resource" -> createResource(resource)
         "config" -> setConfig(resource)
         "policy" -> createPolicy(resource)
         else -> resource
@@ -146,34 +145,10 @@ class PulumiMcpIntegration(configDir: Path) : BaseMcpIntegration("pulumi", "Pulu
     private fun getPolicy(token: String, id: String): McpResource? = null
     private fun createStack(resource: McpResource): McpResource = resource
     private fun createDeployment(resource: McpResource): McpResource = resource
-    private fun createResource(resource: McpResource): McpResource = resource
     private fun setConfig(resource: McpResource): McpResource = resource
     private fun createPolicy(resource: McpResource): McpResource = resource
     private fun deleteStack(id: String): Boolean = true
     private fun cancelDeployment(id: String): Boolean = true
     private fun removeConfig(stack: String, id: String): Boolean = true
     private fun deletePolicy(id: String): Boolean = true
-
-    override fun register(): RegistrationInfo = RegistrationInfo(
-        systemId = "pulumi", displayName = "Pulumi",
-        capabilities = listOf("stacks", "deployments", "resources", "configs", "policies", "insights", "organizations", "projects"),
-        authRequired = listOf("access_token"), version = "1.0"
-    )
-    override fun discover(): List<RegistrationInfo> = listOf(register())
-    override fun unregister(): Boolean { Files.deleteIfExists(authFile); return true }
-
-    override fun checkTerritory(resource: McpResource): TerritoryResult {
-        val organization = resource.properties["organization"] as String? ?: ""
-        val project = resource.properties["project"] as String? ?: ""
-        val stack = resource.properties["stack"] as String? ?: ""
-        return TerritoryResult(
-            allowed = organization.isNotEmpty() || project.isNotEmpty() || stack.isNotEmpty(),
-            boundaries = listOf(organization, project, stack).filter { it.isNotEmpty() }
-        )
-    }
-    override fun getTerritoryBoundaries(): List<String> = emptyList()
-    override fun sanitizeInput(input: String): String = super.sanitizeInput(input)
-    override fun encryptSecret(secret: String): String = "enc:$secret"
-    override fun decryptSecret(encrypted: String): String = encrypted.removePrefix("enc:")
-    private fun saveAuth(token: String) { Files.writeString(authFile, """{"token": "$token", "savedAt": "${Instant.now()}"}""") }
 }
