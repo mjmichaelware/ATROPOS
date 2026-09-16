@@ -44,7 +44,6 @@ import com.atropos.android.app.bridge.CommandOutcome
 import com.atropos.android.app.bridge.SelfHostOutcome
 import com.atropos.android.app.bridge.MobileThinking
 import com.atropos.android.app.ui.MobileMessage
-import com.atropos.android.app.ui.ChatListScreen
 import com.atropos.android.app.ui.OfflineScreen
 import com.atropos.android.app.ui.SettingsScreen
 import com.atropos.android.app.ui.FileTreeScreen
