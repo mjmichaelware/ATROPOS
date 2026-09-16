@@ -497,8 +497,8 @@ class BridgeRoutes(
                 HttpRoute("GET", "/v1/status", "composite engine liveness and cockpit status") {
                     statusHandler.getStatus()
                 },
-                HttpRoute("GET", "/v1/editor/context", "editor extension status, answers, and checkpoint") {
-                    editorHandler.context()
+                HttpRoute("GET", "/v1/editor/context", "editor extension status, answers, and checkpoint") { _ ->
+                    editorHandler.getContext()
                 },
                 HttpRoute("POST", "/v1/editor/selection", "send a bounded editor selection to the engine") { request ->
                     editorHandler.sendSelection(request)
