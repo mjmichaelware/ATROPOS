@@ -105,7 +105,7 @@ object VectorClocks {
             """
                 {
                     "node": "$node",
-                    "clock": ${clock.clocks.joinToString(",") { key -> "\"$key\": ${clock.clocks[key]}" }}
+                    "clock": ${clock.clocks.joinToString(",") { (entry: Map.Entry<String, Long>) -> "\"${entry.key}\": ${entry.value}" }}
                 }
             """.trimIndent()
         }.joinToString(",\n", "{\n", "\n}")
