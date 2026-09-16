@@ -118,7 +118,7 @@ object VectorClocks {
      */
     fun showClocks(): String {
         return nodeClocks.map { (node, clock) ->
-            "$node: ${clock.clocks.joinToString(", ") { (key, value) -> "$key=$value" }}"
+            "$node: ${clock.clocks.joinToString(", ") { (entry: Map.Entry<String, Long>) -> "${entry.key}=${entry.value}" }}"
         }.joinToString("\n")
     }
 }
