@@ -34,6 +34,7 @@ version = "2.0.0"
 dependencies {
     implementation(kotlin("stdlib"))
     implementation(project(":core"))
+    implementation("org.json:json:20231013")
     testImplementation(kotlin("test-junit"))
 }
 
