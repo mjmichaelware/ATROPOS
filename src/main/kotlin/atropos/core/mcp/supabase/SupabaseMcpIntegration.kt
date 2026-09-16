@@ -114,7 +114,9 @@ class SupabaseMcpIntegration(configDir: Path) : BaseMcpIntegration("supabase", "
         "secret" -> createSecret(resource)
         else -> resource
     }
+
     override fun updateResource(id: String, updates: Map<String, Any>): McpResource = McpResource(id, "", "")
+
     override fun deleteResource(id: String): Boolean = when (params["type"] ?: "tables") {
         "tables" -> dropTable(params["schema"] ?: "public", id)
         "functions" -> dropFunction(id)
@@ -134,17 +136,22 @@ class SupabaseMcpIntegration(configDir: Path) : BaseMcpIntegration("supabase", "
         capabilities = listOf("tables", "functions", "policies", "triggers", "views", "auth", "storage", "realtime", "edge_functions", "secrets"),
         authRequired = listOf("service_role_key", "anon_key", "access_token"), version = "1.0"
     )
+
     override fun discover(): List<RegistrationInfo> = listOf(register())
+
     override fun unregister(): Boolean { Files.deleteIfExists(authFile); return true }
 
     override fun checkTerritory(resource: McpResource): TerritoryResult {
         val schema = resource.properties["schema"] as String? ?: "public"
         return TerritoryResult(allowed = true, boundaries = listOf(schema))
     }
+
     override fun getTerritoryBoundaries(): List<String> = emptyList()
 
     override fun sanitizeInput(input: String): String = input.replace("'", "''").replace(";", "")
+
     override fun encryptSecret(secret: String): String = "enc:$secret"
+
     override fun decryptSecret(encrypted: String): String = encrypted.removePrefix("enc:")
 
     private fun saveAuth(projectUrl: String, key: String) {
@@ -193,21 +200,4 @@ class SupabaseMcpIntegration(configDir: Path) : BaseMcpIntegration("supabase", "
     private fun deleteStorageObject(bucket: String, id: String): Boolean = true
     private fun deleteEdgeFunction(id: String): Boolean = true
     private fun deleteSecret(id: String): Boolean = true
-
-    override fun register(): RegistrationInfo = RegistrationInfo(
-        systemId = "supabase", displayName = "Supabase",
-        capabilities = listOf("tables", "functions", "policies", "triggers", "views", "auth", "storage", "realtime", "edge_functions", "secrets"),
-        authRequired = listOf("service_role_key", "anon_key", "access_token"), version = "1.0"
-    )
-    override fun discover(): List<RegistrationInfo> = listOf(register())
-    override fun unregister(): Boolean { Files.deleteIfExists(authFile); return true }
-
-    override fun checkTerritory(resource: McpResource): TerritoryResult {
-        val schema = resource.properties["schema"] as String? ?: "public"
-        return TerritoryResult(allowed = true, boundaries = listOf(schema))
-    }
-    override fun getTerritoryBoundaries(): List<String> = emptyList()
-    override fun sanitizeInput(input: String): String = input.replace("'", "''").replace(";", "")
-    override fun encryptSecret(secret: String): String = "enc:$secret"
-    override fun decryptSecret(encrypted: String): String = encrypted.removePrefix("enc:")
 }
