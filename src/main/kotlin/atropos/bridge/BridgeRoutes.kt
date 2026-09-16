@@ -402,12 +402,12 @@ class BridgeRoutes(
                     )
                 },
                 HttpRoute("GET", "/v1/workspace/tree", "project file tree") { request ->
-                    val binding = capture()
+                    val binding = repositoryBinding()
                     HttpResponse.json(workspaceView.renderTree(binding))
                 },
                 HttpRoute("GET", "/v1/workspace/file", "read a file from the project") { request ->
                     val path = request.query("path") ?: ""
-                    val binding = capture()
+                    val binding = repositoryBinding()
                     if (path.isBlank()) {
                         HttpResponse.refusal(400, "missing-path", "Query parameter 'path' is required")
                     } else {
@@ -418,7 +418,7 @@ class BridgeRoutes(
                     val body = request.bodyJson()
                     val path = body?.getString("path") ?: ""
                     val content = body?.getString("content") ?: ""
-                    val binding = capture()
+                    val binding = repositoryBinding()
                     if (path.isBlank()) {
                         HttpResponse.refusal(400, "missing-path", "Request body must contain 'path'")
                     } else {
@@ -597,4 +597,20 @@ class BridgeRoutes(
      * answer presented as current as a fault rather than an optimisation.
      */
     private fun capture() = homeState.capture(activeProvider())
+
+    /**
+     * Creates a RepositoryBinding from the captured state and repository root.
+     * This is needed for workspace operations that require a RepositoryBinding.
+     */
+    private fun repositoryBinding(state: DashboardRenderer.DashboardState = capture()): RepositoryBinding {
+        val repo = state.repository
+        val branch = repo.branch
+        val dirty = repo.changedFiles?.let { it > 0 } ?: false
+        val dirtyFingerprint = if (dirty) "dirty" else ""
+        return RepositoryBinding(
+            repoRoot = repoRoot.toString(),
+            branch = branch.orEmpty(),
+            dirtyFingerprint = dirtyFingerprint
+        )
+    }
 }

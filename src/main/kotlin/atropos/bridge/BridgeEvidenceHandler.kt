@@ -7,6 +7,7 @@ import atropos.bridge.http.JsonWriter
 import atropos.bridge.queue.ConversationWorkRunner
 import atropos.core.artifact.ArtifactHasher
 import atropos.core.security.RedactionFilter
+import java.nio.charset.Charsets
 import java.nio.file.Files
 import java.nio.file.Path
 
@@ -158,22 +159,24 @@ internal class BridgeEvidenceHandler(
     private fun listEvidence(request: HttpRequest): HttpResponse {
         val limit = request.query["limit"]?.toIntOrNull()?.coerceIn(1, 100) ?: 20
         val offset = request.query["offset"]?.toIntOrNull()?.coerceIn(0, 1_000) ?: 0
-        val entries = work?.list(limit, offset).orEmpty().filter { !it.evidence.isNullOrBlank() }
+        val entries = work?.list(limit, offset).orEmpty().filter { it.evidence.isNotBlank() }
         return HttpResponse.json(
             JsonWriter.obj(
                 "ok" to JsonWriter.bool(true),
                 "limit" to JsonWriter.num(limit.toLong()),
                 "offset" to JsonWriter.num(offset.toLong()),
                 "count" to JsonWriter.num(entries.size.toLong()),
-                "entries" to JsonWriter.arr(entries.map { entry ->
-                    JsonWriter.obj(
-                        "id" to JsonWriter.str(entry.id),
-                        "state" to JsonWriter.str(entry.state),
-                        "evidence" to JsonWriter.str(redactionFilter.redact(entry.evidence.orEmpty())),
-                        "updatedAt" to JsonWriter.str(entry.updatedAt),
-                        "evidenceLink" to JsonWriter.str("/v1/evidence?id=${entry.id}")
-                    )
-                })
+                "entries" to JsonWriter.arr(
+                    entries.map { (entry: ConversationWorkRunner.Entry) ->
+                        JsonWriter.obj(
+                            "id" to JsonWriter.str(entry.id),
+                            "state" to JsonWriter.str(entry.state),
+                            "evidence" to JsonWriter.str(redactionFilter.redact(entry.evidence.orEmpty())),
+                            "updatedAt" to JsonWriter.str(entry.updatedAt),
+                            "evidenceLink" to JsonWriter.str("/v1/evidence?id=${entry.id}")
+                        )
+                    }
+                )
             )
         )
     }
