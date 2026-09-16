@@ -160,8 +160,8 @@ internal class BridgeEvidenceHandler(
     private fun listEvidence(request: HttpRequest): HttpResponse {
         val limit = request.query["limit"]?.toIntOrNull()?.coerceIn(1, 100) ?: 20
         val offset = request.query["offset"]?.toIntOrNull()?.coerceIn(0, 1_000) ?: 0
-        val allEntries = work?.list(limit, offset).orEmpty()
-        val entries = allEntries.filter { (e: QueueEntryView) -> e.evidence.isNotBlank() }
+        val allEntries: List<QueueEntryView> = work?.list(limit, offset).orEmpty()
+        val entries = allEntries.filter { it.evidence.isNotBlank() }
         return HttpResponse.json(
             JsonWriter.obj(
                 "ok" to JsonWriter.bool(true),
@@ -169,7 +169,7 @@ internal class BridgeEvidenceHandler(
                 "offset" to JsonWriter.num(offset.toLong()),
                 "count" to JsonWriter.num(entries.size.toLong()),
                 "entries" to JsonWriter.arr(
-                    entries.map { (entry: QueueEntryView) ->
+                    entries.map { entry ->
                         JsonWriter.obj(
                             "id" to JsonWriter.str(entry.id),
                             "state" to JsonWriter.str(entry.state),
