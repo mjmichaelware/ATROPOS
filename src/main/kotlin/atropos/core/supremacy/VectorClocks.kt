@@ -102,10 +102,11 @@ object VectorClocks {
         val file = casDir.resolve("vector-clocks.json")
         // Simplified serialization
         val json = nodeClocks.map { (node, clock) ->
+            val clockJson = clock.clocks.map { (k, v) -> "\"$k\": $v" }.joinToString(",")
             """
                 {
                     "node": "$node",
-                    "clock": ${clock.clocks.joinToString(",") { key, value -> "\"$key\": $value" }}
+                    "clock": $clockJson
                 }
             """.trimIndent()
         }.joinToString(",\n", "{\n", "\n}")
@@ -118,7 +119,8 @@ object VectorClocks {
      */
     fun showClocks(): String {
         return nodeClocks.map { (node, clock) ->
-            "$node: ${clock.clocks.joinToString(", ") { key, value -> "$key=$value" }}"
+            val clockStr = clock.clocks.map { (k, v) -> "$k=$v" }.joinToString(", ")
+            "$node: $clockStr"
         }.joinToString("\n")
     }
 }
