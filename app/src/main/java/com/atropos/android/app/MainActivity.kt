@@ -4,8 +4,20 @@ package com.atropos.android.app
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.BottomNavigation
+import androidx.compose.material3.BottomNavigationItem
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -14,11 +26,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.navigation.NavType
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.atropos.android.app.bridge.AndroidEngineBridge
 import com.atropos.android.app.bridge.SendOutcome
 import com.atropos.android.app.ui.ConversationScreen
@@ -41,10 +52,38 @@ import com.atropos.android.app.ui.ComposerScreen
 import com.atropos.android.app.ui.ConversationListScreen
 import com.atropos.android.app.ui.ToolsTimelineSheet
 import com.atropos.android.app.ui.ThinkingSheet
+import com.atropos.android.app.bridge.AndroidEngineBridge
+import com.atropos.android.app.ui.MobileAppState
+import com.atropos.android.app.ui.MobileAppMviStore
+import com.atropos.android.app.bridge.ApprovalOutcome
+import com.atropos.android.app.bridge.MobileApproval
+import com.atropos.android.app.bridge.MobileCheckpoint
+import com.atropos.android.app.bridge.MobileSelfHostRun
+import com.atropos.android.app.bridge.MobileSixAnswers
+import com.atropos.android.app.bridge.CommandOutcome
+import com.atropos.android.app.bridge.SelfHostOutcome
+import com.atropos.android.app.bridge.MobileThinking
+import com.atropos.android.app.ui.MobileMessage
+import com.atropos.android.app.ui.ChatListScreen
+import com.atropos.android.app.ui.OfflineScreen
+import com.atropos.android.app.ui.SettingsScreen
+import com.atropos.android.app.ui.FileTreeScreen
+import com.atropos.android.app.ui.ComposerScreen
+import com.atropos.android.app.ui.ConversationListScreen
+import com.atropos.android.app.ui.ToolsTimelineSheet
+import com.atropos.android.app.ui.ThinkingSheet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.compose.material3.icons.Icons
+import androidx.compose.material3.icons.filled.Chat
+import androidx.compose.material3.icons.filled.Folder
+import androidx.compose.material3.icons.filled.Settings
+import androidx.compose.material3.icons.filled.Build
+import androidx.compose.material3.icons.filled.Code
+import androidx.compose.material3.icons.filled.CloudOff
+import androidx.compose.material3.icons.filled.Psychology
 
 /**
  * HOE-D01: the app shell.
@@ -69,7 +108,6 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun ComposeAppShell(repository: AndroidEngineBridge) {
-    val navController = rememberNavController()
     val mvi = remember { MobileAppMviStore() }
     val state by mvi.state.collectAsState()
 
@@ -82,72 +120,106 @@ private fun ComposeAppShell(repository: AndroidEngineBridge) {
     val oneHandDensity = remember { com.atropos.android.app.ui.OneHandDensity() }
     val scope = rememberCoroutineScope()
 
-    NavHost(navController, startDestination = "conversation_list") {
-        composable("conversation_list") {
-            ConversationListScreen(
-                repository = repository,
-                onConversationSelected = { sessionId ->
-                    navController.navigate("conversation/$sessionId")
-                },
-                onNewConversation = {
-                    navController.navigate("conversation/new")
-                }
-            )
+    // Current tab state
+    var currentTab by remember { mutableStateOf(0) }
+    val tabs = listOf(
+        TabItem(0, "Conversation", Icons.Filled.Chat),
+        TabItem(1, "Files", Icons.Filled.Folder),
+        TabItem(2, "Composer", Icons.Filled.Build),
+        TabItem(2, "Tools", Icons.Filled.Code),
+        TabItem(3, "Settings", Icons.Filled.Settings),
+        TabItem(4, "Offline", Icons.Filled.CloudOff),
+    )
+
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(0.dp)
+    ) {
+        // Main content area
+        Box(modifier = Modifier
+            .fillMaxSize()
+            .weight(1f)
+        ) {
+            when (currentTab) {
+                0 -> ConversationScreen(
+                    messages = state.messages,
+                    isOnline = state.isOnline,
+                    onSendMessage = { text -> mvi.dispatch(MobileAppIntent.SendMessage(text)) },
+                    sessions = state.sessions,
+                    onSessionSelected = {},
+                    checkpoint = state.checkpoint,
+                    onCheckpointAction = {},
+                    thinking = state.thinking,
+                    onThinkingDepthRequested = {},
+                    answers = state.sixAnswers,
+                    approvals = state.approvals,
+                    onApprovalDecided = { id, approve -> mvi.dispatch(MobileAppIntent.ApprovalDecided(id, approve)) },
+                    activeProvider = state.activeProvider,
+                    queuedNotice = state.queuedNotice,
+                    selfHostRun = selfHostRun,
+                    selfHostBusy = selfHostBusy,
+                    onBuildRequested = { prompt -> mvi.dispatch(MobileAppIntent.BuildRequested(prompt)) },
+                    onAdvanceBuild = { goalId -> mvi.dispatch(MobileAppIntent.AdvanceBuild(goalId)) },
+                    onDismissBuild = { mvi.dispatch(MobileAppIntent.DismissBuild) },
+                    onCommand = { cmd -> mvi.dispatch(MobileAppIntent.Command(cmd)) }
+                )
+                1 -> FileTreeScreen(
+                    repository = repository,
+                    state = state,
+                    mvi = mvi,
+                    scope = rememberCoroutineScope(),
+                    repository2 = repository,
+                    onNavigateBack = {}
+                )
+                2 -> ComposerScreen(
+                    value = "",
+                    onValueChange = {},
+                    onSend = {},
+                    isOnline = state.isOnline
+                )
+                3 -> ToolsTimelineSheet(
+                    onDismiss = {}
+                )
+                4 -> SettingsScreen(
+                    onNavigateBack = {}
+                )
+                5 -> OfflineScreen(
+                    onGoOnline = {}
+                )
+            }
         }
-        composable(
-            route = "conversation/{sessionId}",
-            arguments = listOf(navArgument("sessionId") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val sessionId = backStackEntry.getString() ?: ""
-            ConversationScreen(
-                sessionId = sessionId,
-                onBack = { navController.popBackStack() }
-            )
-        }
-        composable("conversation/new") {
-            ConversationScreen(
-                sessionId = "",
-                onBack = { navController.popBackStack() }
-            )
-        }
-        composable("files") {
-            FileTreeScreen(repository = repository)
-        }
-        composable("composer") {
-            ComposerScreen(
-                onBack = { navController.popBackStack() }
-            )
-        }
-        composable("tools") {
-            ToolsTimelineSheet(
-                onDismiss = { navController.popBackStack() }
-            )
-        }
-        composable("thinking") {
-            ThinkingSheet(
-                onDismiss = { navController.popBackStack() }
-            )
-        }
-        composable("settings") {
-            SettingsScreen(
-                onNavigateBack = { navController.popBackStack() }
-            )
-        }
-        composable("offline") {
-            OfflineScreen(
-                onGoOnline = { navController.popBackStack() }
-            )
+
+        // Bottom navigation bar
+        BottomNavigation(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+        ) {
+            tabs.forEachIndexed { index, tab ->
+                BottomNavigationItem(
+                    selected = currentTab == index,
+                    onClick = { currentTab = index },
+                    icon = {
+                        Icon(
+                            imageVector = tab.icon,
+                            contentDescription = tab.label,
+                            modifier = Modifier.size(24.dp),
+                            tint = if (currentTab == index) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
+                    label = {
+                        Text(
+                            text = tab.label,
+                            fontSize = 12.sp,
+                            color = if (currentTab == index) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
+                    selected = currentTab == index,
+                    onClick = { currentTab = index }
+                )
+            }
         }
     }
-
-    // The build panel's state is held here rather than in [MobileAppState]
-    // because it is not a projection of the engine's conversation: `selfHostBusy`
-    // is true only while this screen has a request in flight, which no reducer
-    // can know. `selfHostRun` sits beside it so the two move together.
-    var selfHostRun by remember { mutableStateOf<MobileSelfHostRun?>(null) }
-    var selfHostBusy by remember { mutableStateOf(false) }
-    val oneHandDensity = remember { com.atropos.android.app.ui.OneHandDensity() }
-    val scope = rememberCoroutineScope()
 
     // Reachability is polled rather than assumed. The engine is a separate
     // process the operator starts and stops in Termux, so it can appear or
@@ -231,6 +303,12 @@ private fun ComposeAppShell(repository: AndroidEngineBridge) {
         }
     }
 }
+
+private data class TabItem(
+    val index: Int,
+    val label: String,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector
+)
 
 /**
  * A turn the client produced itself. Marked as engine-side so it renders in the
