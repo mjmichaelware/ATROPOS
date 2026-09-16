@@ -155,22 +155,4 @@ class SentryMcpIntegration(configDir: Path) : BaseMcpIntegration("sentry", "Sent
     private fun deleteProject(id: String): Boolean = true
     private fun deleteTeam(id: String): Boolean = true
     private fun deleteAlert(id: String): Boolean = true
-
-    override fun register(): RegistrationInfo = RegistrationInfo(
-        systemId = "sentry", displayName = "Sentry",
-        capabilities = listOf("issues", "events", "releases", "projects", "organizations", "teams", "alerts", "metrics", "spikes", "user_feedback"),
-        authRequired = listOf("auth_token", "dsn"), version = "1.0"
-    )
-    override fun discover(): List<RegistrationInfo> = listOf(register())
-    override fun unregister(): Boolean { Files.deleteIfExists(authFile); return true }
-
-    override fun checkTerritory(resource: McpResource): TerritoryResult {
-        val project = resource.properties["project"] as String? ?: resource.properties["project_slug"] as String? ?: ""
-        return TerritoryResult(allowed = project.isNotEmpty(), boundaries = listOf(project))
-    }
-    override fun getTerritoryBoundaries(): List<String> = emptyList()
-    override fun sanitizeInput(input: String): String = super.sanitizeInput(input)
-    override fun encryptSecret(secret: String): String = "enc:$secret"
-    override fun decryptSecret(encrypted: String): String = encrypted.removePrefix("enc:")
-    private fun saveAuth(token: String) { Files.writeString(authFile, """{"token": "$token", "savedAt": "${Instant.now()}"}""") }
 }

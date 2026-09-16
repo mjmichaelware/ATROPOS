@@ -24,6 +24,7 @@ import java.time.Instant
 import java.time.Duration
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
+import java.security.MessageDigest
 
 class SlackMcpIntegration(configDir: Path) : BaseMcpIntegration("slack", "Slack", configDir) {
 
@@ -34,6 +35,7 @@ class SlackMcpIntegration(configDir: Path) : BaseMcpIntegration("slack", "Slack"
     private val baseUrl = "https://slack.com/api"
     private var botToken: String? = null
     private var signingSecret: String? = null
+    private var resourceType: String? = null
 
     override fun authenticate(credentials: Map<String, String>): AuthResult {
         val token = credentials["bot_token"] ?: credentials["user_token"] ?: credentials["app_token"]
@@ -67,16 +69,16 @@ class SlackMcpIntegration(configDir: Path) : BaseMcpIntegration("slack", "Slack"
 
     override fun listResources(params: Map<String, String>): List<McpResource> {
         val token = botToken ?: return emptyList()
-        val resourceType = params["type"] ?: "channels"
+        resourceType = params["type"] ?: "channels"
 
         return when (resourceType) {
-            "channels" -> listChannels(token)
-            "users" -> listUsers(token)
-            "messages" -> listMessages(token, params["channel"] ?: "", params["latest"] ?: "", params["oldest"] ?: "")
-            "files" -> listFiles(token, params["channel"] ?: "", params["user"] ?: "")
-            "workflows" -> listWorkflows(token)
-            "apps" -> listApps(token)
-            "emoji" -> listEmoji(token)
+            "channels" -> listChannels()
+            "users" -> listUsers()
+            "messages" -> listMessages(params["channel"] ?: "", params["latest"] ?: "", params["oldest"] ?: "")
+            "files" -> listFiles(params["channel"] ?: "", params["user"] ?: "")
+            "workflows" -> listWorkflows()
+            "apps" -> listApps()
+            "emoji" -> listEmoji()
             else -> emptyList()
         }
     }
@@ -84,11 +86,11 @@ class SlackMcpIntegration(configDir: Path) : BaseMcpIntegration("slack", "Slack"
     override fun getResource(id: String, params: Map<String, String>): McpResource? {
         val token = botToken ?: return null
         return when (params["type"] ?: "channels") {
-            "channels" -> getChannel(token, id)
-            "users" -> getUser(token, id)
-            "messages" -> getMessage(token, params["channel"] ?: "", id)
-            "files" -> getFile(token, id)
-            "workflows" -> getWorkflow(token, id)
+            "channels" -> getChannel(id)
+            "users" -> getUser(id)
+            "messages" -> getMessage(params["channel"] ?: "", id)
+            "files" -> getFile(id)
+            "workflows" -> getWorkflow(id)
             else -> null
         }
     }
@@ -103,12 +105,15 @@ class SlackMcpIntegration(configDir: Path) : BaseMcpIntegration("slack", "Slack"
         else -> resource
     }
     override fun updateResource(id: String, updates: Map<String, Any>): McpResource = McpResource(id, "", "")
-    override fun deleteResource(id: String): Boolean = when (params["type"] ?: "channels") {
-        "messages" -> deleteMessage(params["channel"] ?: "", id)
-        "channels" -> archiveChannel(id)
-        "files" -> deleteFile(id)
-        "reactions" -> removeReaction(params["channel"] ?: "", params["timestamp"] ?: "", id)
-        else -> false
+    override fun deleteResource(id: String): Boolean {
+        val type = resourceType ?: "channels"
+        return when (type) {
+            "messages" -> deleteMessage(params["channel"] ?: "", id)
+            "channels" -> archiveChannel(id)
+            "files" -> deleteFile(id)
+            "reactions" -> removeReaction(params["channel"] ?: "", params["timestamp"] ?: "", id)
+            else -> false
+        }
     }
 
     override fun register(): RegistrationInfo = RegistrationInfo(
@@ -133,13 +138,13 @@ class SlackMcpIntegration(configDir: Path) : BaseMcpIntegration("slack", "Slack"
         Files.writeString(authFile, """{"token": "$token", "savedAt": "${Instant.now()}"}""")
     }
 
-    private fun listChannels(token: String): List<McpResource> = emptyList()
-    private fun listUsers(token: String): List<McpResource> = emptyList()
-    private fun listMessages(token: String, channel: String, latest: String, oldest: String): List<McpResource> = emptyList()
-    private fun listFiles(token: String, channel: String, user: String): List<McpResource> = emptyList()
-    private fun listWorkflows(token: String): List<McpResource> = emptyList()
-    private fun listApps(token: String): List<McpResource> = emptyList()
-    private fun listEmoji(token: String): List<McpResource> = emptyList()
+    private fun listChannels(): List<McpResource> = emptyList()
+    private fun listUsers(): List<McpResource> = emptyList()
+    private fun listMessages(channel: String, latest: String, oldest: String): List<McpResource> = emptyList()
+    private fun listFiles(channel: String, user: String): List<McpResource> = emptyList()
+    private fun listWorkflows(): List<McpResource> = emptyList()
+    private fun listApps(): List<McpResource> = emptyList()
+    private fun listEmoji(): List<McpResource> = emptyList()
     private fun getChannel(token: String, id: String): McpResource? = null
     private fun getUser(token: String, id: String): McpResource? = null
     private fun getMessage(token: String, channel: String, id: String): McpResource? = null
@@ -155,27 +160,6 @@ class SlackMcpIntegration(configDir: Path) : BaseMcpIntegration("slack", "Slack"
     private fun archiveChannel(id: String): Boolean = true
     private fun deleteFile(id: String): Boolean = true
     private fun removeReaction(channel: String, timestamp: String, name: String): Boolean = true
-
-    override fun register(): RegistrationInfo = RegistrationInfo(
-        systemId = "slack", displayName = "Slack",
-        capabilities = listOf("channels", "users", "messages", "files", "workflows", "apps", "emoji", "reactions", "reminders", "canvas"),
-        authRequired = listOf("bot_token", "user_token", "app_token", "signing_secret", "oauth"), version = "1.0"
-    )
-    override fun discover(): List<RegistrationInfo> = listOf(register())
-    override fun unregister(): Boolean { Files.deleteIfExists(authFile); return true }
-
-    override fun checkTerritory(resource: McpResource): TerritoryResult {
-        val channel = resource.properties["channel"] as String? ?: resource.properties["channel_id"] as String? ?: ""
-        return TerritoryResult(allowed = channel.isNotEmpty(), boundaries = listOf(channel))
-    }
-    override fun getTerritoryBoundaries(): List<String> = emptyList()
-    override fun sanitizeInput(input: String): String = input.replace("&", "&").replace("<", "<").replace(">", ">")
-    override fun encryptSecret(secret: String): String = "enc:$secret"
-    override fun decryptSecret(encrypted: String): String = encrypted.removePrefix("enc:")
-
-    private fun saveAuth(token: String) {
-        Files.writeString(authFile, """{"token": "$token", "savedAt": "${Instant.now()}"}""")
-    }
 
     /**
      * Verifies Slack request signature.
