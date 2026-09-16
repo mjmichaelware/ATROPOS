@@ -105,7 +105,7 @@ object VectorClocks {
             """
                 {
                     "node": "$node",
-                    "clock": ${clock.clocks.joinToString(",") { (entry: Map.Entry<String, Long>) -> "\"${entry.key}\": ${entry.value}" }}
+                    "clock": ${clock.clocks.joinToString(",") { key, value -> "\"$key\": $value" }}
                 }
             """.trimIndent()
         }.joinToString(",\n", "{\n", "\n}")
@@ -118,7 +118,7 @@ object VectorClocks {
      */
     fun showClocks(): String {
         return nodeClocks.map { (node, clock) ->
-            "$node: ${clock.clocks.joinToString(", ") { (entry: Map.Entry<String, Long>) -> "${entry.key}=${entry.value}" }}"
+            "$node: ${clock.clocks.joinToString(", ") { key, value -> "$key=$value" }}"
         }.joinToString("\n")
     }
 }
