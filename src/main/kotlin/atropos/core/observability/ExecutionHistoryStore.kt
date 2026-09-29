@@ -4,7 +4,6 @@ package atropos.core.observability
 import atropos.core.AtroposRepoRootLocator
 import atropos.core.journal.EventJournalService
 import atropos.core.journal.EventJournalRecord
-import atropos.core.journal.EventJournalService
 import java.nio.file.Path
 
 /**

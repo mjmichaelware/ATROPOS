@@ -118,7 +118,7 @@ abstract class BaseMcpIntegration(
 
     override fun updateResource(id: String, updates: Map<String, Any>): McpResource = McpResource(id, "", "")
 
-    override fun deleteResource(id: String): Boolean = false
+    fun deleteResource(id: String): Boolean = false
 
     override fun register(): RegistrationInfo = RegistrationInfo(systemId, systemName, emptyList(), emptyList(), "1.0")
 
