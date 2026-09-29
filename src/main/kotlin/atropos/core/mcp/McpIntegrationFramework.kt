@@ -39,7 +39,7 @@ interface McpIntegration {
     // -mutate: Create/update/delete
     fun createResource(resource: McpResource): McpResource
     fun updateResource(id: String, updates: Map<String, Any>): McpResource
-    fun deleteResource(id: String): Boolean
+fun deleteResource(id: String, params: Map<String, String> = emptyMap()): Boolean
 
     // -reg: Registration
     fun register(): RegistrationInfo

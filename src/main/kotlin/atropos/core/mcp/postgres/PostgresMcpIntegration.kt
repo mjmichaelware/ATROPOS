@@ -39,9 +39,10 @@ class PostgresMcpIntegration(configDir: Path) : BaseMcpIntegration("postgres", "
         }
 
         return try {
-            connection = DriverManager.getConnection(url, props)
-            val stmt = connection.createStatement()
+            val conn = DriverManager.getConnection(url, props)
+            val stmt = conn.createStatement()
             stmt.execute("SELECT version()")
+            connection = conn
             AuthResult(true, expiresAt = Instant.now().plusSeconds(3600))
         } catch (e: Exception) {
             AuthResult(false, error = e.message)
@@ -49,7 +50,12 @@ class PostgresMcpIntegration(configDir: Path) : BaseMcpIntegration("postgres", "
     }
 
     override fun refreshToken(): AuthResult = AuthResult(true)
-    override fun revokeAccess(): Boolean { connection?.close(); connection = null; return true }
+    override fun revokeAccess(): Boolean { 
+        val conn = connection
+        connection = null
+        conn?.close()
+        return true 
+    }
 
     override fun listResources(params: Map<String, String>): List<McpResource> {
         val resourceType = params["type"] ?: "tables"
@@ -103,7 +109,12 @@ class PostgresMcpIntegration(configDir: Path) : BaseMcpIntegration("postgres", "
         authRequired = listOf("jdbc_url", "username", "password", "ssl_cert"), version = "1.0"
     )
     override fun discover(): List<RegistrationInfo> = listOf(register())
-    override fun unregister(): Boolean { revokeAccess(); return true }
+    override fun unregister(): Boolean { 
+        val conn = connection
+        connection = null
+        conn?.close()
+        return true 
+    }
 
     override fun checkTerritory(resource: McpResource): TerritoryResult {
         val database = resource.properties["database"] as String? ?: resource.properties["schema"] as String? ?: ""
@@ -136,22 +147,4 @@ class PostgresMcpIntegration(configDir: Path) : BaseMcpIntegration("postgres", "
     private fun dropTable(schema: String, id: String): Boolean = true
     private fun dropSchema(id: String): Boolean = true
     private fun dropRole(id: String): Boolean = true
-
-    override fun register(): RegistrationInfo = RegistrationInfo(
-        systemId = "postgres", displayName = "PostgreSQL",
-        capabilities = listOf("databases", "tables", "schemas", "roles", "extensions", "functions", "indexes", "views", "triggers"),
-        authRequired = listOf("jdbc_url", "username", "password", "ssl_cert"), version = "1.0"
-    )
-    override fun discover(): List<RegistrationInfo> = listOf(register())
-    override fun unregister(): Boolean { try { connection?.close() } catch (e: Exception) {}; return true }
-
-    override fun checkTerritory(resource: McpResource): TerritoryResult {
-        val db = resource.properties["database"] as String? ?: resource.properties["schema"] as String? ?: ""
-        return TerritoryResult(allowed = db.isNotEmpty(), boundaries = listOf(db))
-    }
-    override fun getTerritoryBoundaries(): List<String> = emptyList()
-
-    override fun sanitizeInput(input: String): String = input.replace("'", "''").replace(";", "")
-    override fun encryptSecret(secret: String): String = "enc:$secret"
-    override fun decryptSecret(encrypted: String): String = encrypted.removePrefix("enc:")
 }

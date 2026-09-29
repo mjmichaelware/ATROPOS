@@ -111,7 +111,7 @@ class GcpMcpIntegration(configDir: Path) : BaseMcpIntegration("gcp", "Google Clo
         else -> resource
     }
     override fun updateResource(id: String, updates: Map<String, Any>): McpResource = McpResource(id, "", "")
-    override fun deleteResource(id: String): Boolean = when (params["type"] ?: "compute_instances") {
+    override fun deleteResource(id: String, params: Map<String, String>): Boolean = when (params["type"] ?: "compute_instances") {
         "compute_instances" -> deleteComputeInstance(id)
         "storage_buckets" -> deleteStorageBucket(id)
         "cloud_functions" -> deleteCloudFunction(id)

@@ -106,7 +106,7 @@ class GitLabMcpIntegration(configDir: Path) : BaseMcpIntegration("gitlab", "GitL
         return McpResource(id, "", "")
     }
 
-    override fun deleteResource(id: String): Boolean = true
+    override fun deleteResource(id: String, params: Map<String, String>): Boolean = true
 
     override fun register(): RegistrationInfo {
         return RegistrationInfo(

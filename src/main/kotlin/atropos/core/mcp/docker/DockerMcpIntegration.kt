@@ -82,7 +82,7 @@ class DockerMcpIntegration(configDir: Path) : BaseMcpIntegration("docker", "Dock
         else -> resource
     }
     override fun updateResource(id: String, updates: Map<String, Any>): McpResource = McpResource(id, "", "")
-    override fun deleteResource(id: String): Boolean = when (params["type"] ?: "containers") {
+    override fun deleteResource(id: String, params: Map<String, String>): Boolean = when (params["type"] ?: "containers") {
         "containers" -> removeContainer(id)
         "images" -> removeImage(id)
         "networks" -> removeNetwork(id)

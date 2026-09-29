@@ -105,7 +105,7 @@ class GitHubMcpIntegration(configDir: Path) : BaseMcpIntegration("github", "GitH
     }
 
     override fun updateResource(id: String, updates: Map<String, Any>): McpResource = McpResource(id, "", "")
-    override fun deleteResource(id: String): Boolean = true
+    override fun deleteResource(id: String, params: Map<String, String>): Boolean = true
 
     override fun register(): RegistrationInfo {
         return RegistrationInfo(

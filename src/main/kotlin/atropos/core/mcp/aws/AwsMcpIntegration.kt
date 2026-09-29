@@ -108,7 +108,7 @@ class AwsMcpIntegration(configDir: Path) : BaseMcpIntegration("aws", "AWS", conf
         else -> resource
     }
     override fun updateResource(id: String, updates: Map<String, Any>): McpResource = McpResource(id, "", "")
-    override fun deleteResource(id: String): Boolean = when (params["type"] ?: "ec2_instances") {
+    override fun deleteResource(id: String, params: Map<String, String>): Boolean = when (params["type"] ?: "ec2_instances") {
         "ec2_instances" -> terminateEc2Instance(id)
         "s3_buckets" -> deleteS3Bucket(id)
         "lambda_functions" -> deleteLambdaFunction(id)

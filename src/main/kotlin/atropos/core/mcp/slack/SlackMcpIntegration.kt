@@ -105,8 +105,8 @@ class SlackMcpIntegration(configDir: Path) : BaseMcpIntegration("slack", "Slack"
         else -> resource
     }
     override fun updateResource(id: String, updates: Map<String, Any>): McpResource = McpResource(id, "", "")
-    override fun deleteResource(id: String): Boolean {
-        val type = resourceType ?: "channels"
+    override fun deleteResource(id: String, params: Map<String, String>): Boolean {
+        val type = resourceType ?: params["type"] ?: "channels"
         return when (type) {
             "messages" -> deleteMessage(params["channel"] ?: "", id)
             "channels" -> archiveChannel(id)

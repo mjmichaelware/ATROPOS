@@ -75,7 +75,7 @@ class RedisMcpIntegration(configDir: Path) : BaseMcpIntegration("redis", "Redis"
         else -> resource
     }
     override fun updateResource(id: String, updates: Map<String, Any>): McpResource = McpResource(id, "", "")
-    override fun deleteResource(id: String): Boolean = when (params["type"] ?: "keys") {
+    override fun deleteResource(id: String, params: Map<String, String>): Boolean = when (params["type"] ?: "keys") {
         "keys" -> true
         else -> false
     }

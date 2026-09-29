@@ -96,7 +96,7 @@ class JiraMcpIntegration(configDir: Path) : BaseMcpIntegration("jira", "Jira", c
         else -> resource
     }
     override fun updateResource(id: String, updates: Map<String, Any>): McpResource = McpResource(id, "", "")
-    override fun deleteResource(id: String): Boolean = true
+    override fun deleteResource(id: String, params: Map<String, String>): Boolean = true
 
     override fun register(): RegistrationInfo = RegistrationInfo(
         systemId = "jira", displayName = "Jira",
