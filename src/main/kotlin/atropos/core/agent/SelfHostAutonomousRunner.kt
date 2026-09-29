@@ -143,7 +143,7 @@ class SelfHostAutonomousRunner(
             )
             steps += advanced.message
             latest = advanced
-            val record = advanced.goal?.record
+            var nodeRecord = advanced.goal?.record
             if (!advanced.ok) {
                 // Repair loop: attempt to repair the failed node before giving up
                 var repairAttempts = 0
@@ -181,15 +181,15 @@ class SelfHostAutonomousRunner(
                         )
                         steps += "automatic recovery #$automaticRecoveries: ${recovery.message}"
                         latest = recovery
-                        if (!recovery.ok || recovery.goal?.record?.isTerminal() == true) break
+                        if (!recovery.ok || recovery.goal?.nodeRecord?.isTerminal() == true) break
                         continue
                     }
                     break
                 }
-            if (record?.isTerminal() == true) break
+            if (nodeRecord?.isTerminal() == true) break
         }
 
-        val record = service.resolveStatusGoal(goalId).goal?.record ?: latest.goal?.record
+        val finalRecord = service.resolveStatusGoal(goalId).goal?.record ?: latest.goal?.record
         if (record == null) {
             return stopped(SelfHostResult(false, "self-host goal disappeared: $goalId"), null, null, steps)
         }
@@ -197,14 +197,14 @@ class SelfHostAutonomousRunner(
             service.addEvidence(goalId, statusLine)
             steps += statusLine
         }
-        if (record.terminalCondition != GoalTerminalCondition.VERIFIED_COMPLETE) {
+        if (finalRecord.terminalCondition != GoalTerminalCondition.VERIFIED_COMPLETE) {
             service.addEvidence(goalId, service.planNextAction(goalId).evidenceLine())
             val bundle = service.exportEvidenceBundle(goalId)
             val refreshed = service.resolveStatusGoal(goalId).goal ?: SelfHostGoal(record, latest.goal?.dag)
             steps += bundle.message
             return SelfHostAutonomousRunResult(
                 ok = false,
-                message = "self-host stopped before promotion: ${record.terminalCondition ?: record.status}",
+                message = "self-host stopped before promotion: ${finalRecord.terminalCondition ?: finalRecord.status}",
                 goal = refreshed,
                 promotion = null,
                 evidenceBundle = bundle,
