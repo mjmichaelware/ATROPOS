@@ -122,45 +122,34 @@ class TranscriptRenderer(
         val lines = mutableListOf<String>()
         var currentDepth = 1
         for (entry in buffer.entries()) {
-            when (entry) {
+            val addedLines = when (entry) {
                 is TranscriptEntry.Text -> {
                     val wrapped = AnsiLineWrapper.wrap(entry.value, width)
-                    lines.addAll(wrapped)
-                    // Track depth markers for thinking content
                     currentDepth = 1
+                    wrapped
                 }
                 is TranscriptEntry.Disclosure -> {
                     val row = entry.row
-                    // Filter thinking disclosures based on current thinking level
                     if (row.kind == DisclosureKind.THINKING) {
-                        val allowedDepth = thinkingFilter.current.depth
-                        // For thinking content, we use a simple heuristic:
-                        // If not expanded, show summary only (L1)
-                        // If expanded, show detail up to current level
                         if (!row.isExpanded) {
-                            // L1: Always show summary
-                            lines.add(disclosureSummary(row))
-                        } else if (allowedDepth >= 2) {
-                            // L2/L3: Show summary + detail
-                            lines.add(disclosureSummary(row))
-                            lines.addAll(disclosureDetail(row))
+                            listOf(disclosureSummary(row))
+                        } else if (thinkingFilter.current.depth >= 2) {
+                            listOf(disclosureSummary(row)) + disclosureDetail(row)
                         } else {
-                            // L1 but expanded - just show summary
-                            lines.add(disclosureSummary(row))
+                            listOf(disclosureSummary(row))
                         }
                     } else {
-                        // Non-thinking disclosures always render normally
-                        lines.add(disclosureSummary(row))
-                        lines.addAll(disclosureDetail(row))
+                        listOf(disclosureSummary(row)) + disclosureDetail(row)
                     }
-                    }
+                }
             }
-            val scrollOffset = buffer.currentScrollOffset
-            val maximumOffset = (lines.size - height).coerceAtLeast(0)
-            val start = scrollOffset.coerceIn(0, maximumOffset)
-            val end = (start + height).coerceAtMost(lines.size)
-            return lines.subList(start, end)
+            lines.addAll(addedLines)
         }
+        val scrollOffset = buffer.currentScrollOffset
+        val maximumOffset = (lines.size - height).coerceAtLeast(0)
+        val start = scrollOffset.coerceIn(0, maximumOffset)
+        val end = (start + height).coerceAtMost(lines.size)
+        return lines.subList(start, end)
     }
 }
 
