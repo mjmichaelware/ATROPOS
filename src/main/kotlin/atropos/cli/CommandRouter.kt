@@ -21,7 +21,6 @@ import atropos.cli.ui.DialogRenderer
 import atropos.cli.ui.CopyDownloadResponse
 import atropos.cli.input.CommandRisk
 import atropos.cli.input.CommandRiskCatalog
-import atropos.cli.input.TranscriptEntry
 import atropos.core.AIProvider
 import atropos.core.AtroposConfig
 import atropos.core.ProviderFactory
