@@ -1,5 +1,8 @@
 package atropos.core.agent
 
+import atropos.core.dag.DagExecutionService
+import atropos.core.planning.InternalBatchDefiner
+import atropos.core.planning.InternalReadinessCalculator
 import atropos.core.verification.GovernedCompileGate
 import atropos.core.verification.GovernedCompileGateResult
 
@@ -14,7 +17,12 @@ class SelfHostAutonomousRunner(
      */
     private val compileGate: GovernedCompileGate? = null,
     private val proofBuilder: SelfHostRunProofBuilder? = null,
-    private val gitStatusEvidence: SelfHostGitStatusEvidence? = null
+    private val gitStatusEvidence: SelfHostGitStatusEvidence? = null,
+    private val dagService: DagExecutionService = DagExecutionService(),
+    private val batchDefiner: InternalBatchDefiner = InternalBatchDefiner(),
+    private val readinessCalculator: InternalReadinessCalculator = InternalReadinessCalculator(),
+    private val repairExecutor: SelfHostRepairExecutor = SelfHostRepairExecutor(),
+    private val maxRepairAttempts: Int = 3
 ) {
     /**
      * Runs the chain, then attaches the operator-facing proof.
@@ -84,11 +92,39 @@ class SelfHostAutonomousRunner(
                 (if (nodeCount == 1) "node" else "nodes")
         )
 
+        // Batch planning: plan all batches upfront for breadth.
+        // This gives the self-host chain visibility into the full execution plan.
+        val dag = started.goal?.dag ?: run {
+            steps += "no DAG attached to started goal"
+            return stopped(started.copy(message = "no DAG"), null, null, steps)
+        }
+        val allBatches = planAllBatches(dag)
+        val totalBatches = allBatches.size
+        val totalNodesInBatches = allBatches.sumOf { it.size }
+        steps.outline("batch planning: $totalBatches batches, $totalNodesInBatches nodes")
+        for ((index, batch) in allBatches.withIndex()) {
+            steps.outline("  batch ${index + 1}: ${batch.joinToString(", ")}")
+        }
+
         var latest = started
         var advances = 0
         var automaticRecoveries = 0
         val recoveryBudget = 2
-        while (advances < budget.coerceAtLeast(1)) {
+        var currentBatchIndex = 0
+        var currentBatchNodes = allBatches.getOrNull(currentBatchIndex) ?: emptyList()
+        var currentNodeIndex = 0
+        while (advances < budget.coerceAtLeast(1) && currentBatchIndex < allBatches.size) {
+            // If we've exhausted the current batch, move to the next batch
+            if (currentNodeIndex >= currentBatchNodes.size) {
+                currentBatchIndex++
+                currentBatchNodes = allBatches.getOrNull(currentBatchIndex) ?: emptyList()
+                currentNodeIndex = 0
+                if (currentBatchNodes.isEmpty()) continue
+                steps.outline("starting batch ${currentBatchIndex + 1} of $totalBatches: ${currentBatchNodes.joinToString(", ")}")
+            }
+
+            val nodeId = currentBatchNodes[currentNodeIndex]
+            currentNodeIndex++
             advances += 1
             // The one line that tells a watching operator the run is alive and
             // where it is. Without it, a long advance is indistinguishable from
@@ -98,29 +134,56 @@ class SelfHostAutonomousRunner(
             // reasonably concluded the atomizer had found 25 of them. It is the
             // continuation budget: how many times this loop may iterate before
             // it stops on its own.
-            steps.outline("advance $advances of at most $budget (continuation budget, not node count)")
+            steps.outline("advance $advances of at most $budget (continuation budget, not node count) [node: $nodeId]")
             val advanced = service.advanceNextResumableGoal(
                 goalId = goalId,
-                compactState = "self-host natural-language continuation"
+                compactState = "self-host natural-language continuation: $nodeId"
             )
             steps += advanced.message
             latest = advanced
             val record = advanced.goal?.record
             if (!advanced.ok) {
-                val persisted = service.resolveStatusGoal(goalId).goal?.record
-                if (persisted?.status == GoalRunStatus.RECOVERY_REQUIRED && automaticRecoveries < recoveryBudget) {
-                    automaticRecoveries += 1
-                    val recovery = service.recoverAndContinue(
-                        goalId,
-                        compactState = "self-host automatic recovery #$automaticRecoveries"
-                    )
-                    steps += "automatic recovery #$automaticRecoveries: ${recovery.message}"
-                    latest = recovery
-                    if (!recovery.ok || recovery.goal?.record?.isTerminal() == true) break
-                    continue
+                // Repair loop: attempt to repair the failed node before giving up
+                var repairAttempts = 0
+                var repairSuccess = false
+                while (repairAttempts < maxRepairAttempts && !repairSuccess) {
+                    repairAttempts++
+                    steps += "repair attempt #$repairAttempts for node $nodeId"
+                    val repairResult = repairExecutor.repair(nodeId, goalId, service)
+                    if (repairResult.ok) {
+                        steps += "repair succeeded: ${repairResult.message}"
+                        repairSuccess = true
+                        // Re-advance the same node after repair
+                        val reAdvanced = service.advanceNextResumableGoal(
+                            goalId = goalId,
+                            compactState = "self-host repair continuation: $nodeId"
+                        )
+                        steps += "re-advance after repair: ${reAdvanced.message}"
+                        latest = reAdvanced
+                        record = reAdvanced.goal?.record
+                        if (reAdvanced.ok) {
+                            break // Repair succeeded, continue with next node
+                        }
+                    } else {
+                        steps += "repair attempt #$repairAttempts failed: ${repairResult.message}"
+                    }
                 }
-                break
-            }
+                if (!repairSuccess) {
+                    steps += "all $maxRepairAttempts repair attempts failed for node $nodeId"
+                    val persisted = service.resolveStatusGoal(goalId).goal?.record
+                    if (persisted?.status == GoalRunStatus.RECOVERY_REQUIRED && automaticRecoveries < recoveryBudget) {
+                        automaticRecoveries += 1
+                        val recovery = service.recoverAndContinue(
+                            goalId,
+                            compactState = "self-host automatic recovery #$automaticRecoveries"
+                        )
+                        steps += "automatic recovery #$automaticRecoveries: ${recovery.message}"
+                        latest = recovery
+                        if (!recovery.ok || recovery.goal?.record?.isTerminal() == true) break
+                        continue
+                    }
+                    break
+                }
             if (record?.isTerminal() == true) break
         }
 
@@ -282,7 +345,25 @@ class SelfHostAutonomousRunner(
             evidenceBundle = bundle,
             steps = steps,
             compileGate = compileResult
+        return SelfHostAutonomousRunResult(
+            ok = promotion.promoted,
+            message = if (promotion.promoted) "self-host run promoted verified jar" else "self-host promotion refused: ${promotion.message}",
+            goal = refreshed ?: stopped?.goal ?: promotion.goal,
+            promotion = promotion,
+            evidenceBundle = bundle,
+            steps = steps,
+            compileGate = compileResult
         )
+    }
+
+    /**
+     * Plans all batches for the given DAG using the internal batch definer.
+     * Returns a list of batches, where each batch is a list of node IDs that can
+     * execute in parallel (non-overlapping territories).
+     */
+    private fun planAllBatches(dag: DagDefinition): List<List<String>> {
+        val batches = batchDefiner.define(dag)
+        return batches.map { it.map { it.id } }
     }
 
     private fun stopped(

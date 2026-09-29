@@ -31,11 +31,13 @@ export interface WorkbenchSlots {
   logs?: ReactNode;
   /** Right pane: conversation/checkpoint/evidence. Hidden under `xl`. */
   aiRail?: ReactNode;
+  /** Terminal pane: first-class terminal (ADD-W-014). Collapsible, below editor. */
+  terminal?: ReactNode;
 }
 
 const EMPTY = <></>;
 
-export function WorkbenchShell({ explorer, editor, logs, aiRail }: WorkbenchSlots) {
+export function WorkbenchShell({ explorer, editor, logs, aiRail, terminal }: WorkbenchSlots) {
   return (
     <div className="wb-root" data-testid="workbench-shell">
       <div className="wb-explorer" aria-label="File explorer">
@@ -44,6 +46,11 @@ export function WorkbenchShell({ explorer, editor, logs, aiRail }: WorkbenchSlot
       <div className="wb-editor" aria-label="Editor">
         {editor}
       </div>
+      {terminal != null && (
+        <div className="wb-terminal-pane" aria-label="Terminal">
+          {terminal}
+        </div>
+      )}
       {logs != null && (
         <div className="wb-logs" aria-label="Output panel">
           {logs}

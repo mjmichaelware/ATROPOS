@@ -126,7 +126,6 @@ object LocalEngineBridge {
                 }
             },
             exportResolver = { exportResolver },
-            exportTerritory = { listOf(repoRoot) },
             // This is where a phone message becomes real work. Constructed here
             // rather than defaulted inside BridgeRoutes so the routes stay
             // buildable without a repository: a test checking one projection

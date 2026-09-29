@@ -4,8 +4,20 @@ package com.atropos.android.app
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.BottomNavigation
+import androidx.compose.material3.BottomNavigationItem
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -14,11 +26,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.atropos.android.app.bridge.AndroidEngineBridge
 import com.atropos.android.app.bridge.SendOutcome
 import com.atropos.android.app.ui.ConversationScreen
-import com.atropos.android.app.ui.ChatListEntry
-import com.atropos.android.app.ui.ComposerOutbox
 import com.atropos.android.app.ui.MobileAppIntent
 import com.atropos.android.app.ui.MobileAppMviStore
 import com.atropos.android.app.bridge.ApprovalOutcome
@@ -30,10 +44,26 @@ import com.atropos.android.app.bridge.CommandOutcome
 import com.atropos.android.app.bridge.SelfHostOutcome
 import com.atropos.android.app.bridge.MobileThinking
 import com.atropos.android.app.ui.MobileMessage
+import com.atropos.android.app.ui.OfflineScreen
+import com.atropos.android.app.ui.SettingsScreen
+import com.atropos.android.app.ui.FileTreeScreen
+import com.atropos.android.app.ui.ComposerScreen
+import com.atropos.android.app.ui.ConversationListScreen
+import com.atropos.android.app.ui.ToolsTimelineSheet
+import com.atropos.android.app.ui.ThinkingSheet
+import com.atropos.android.app.ui.MobileAppState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.compose.material3.icons.Icons
+import androidx.compose.material3.icons.filled.Chat
+import androidx.compose.material3.icons.filled.Folder
+import androidx.compose.material3.icons.filled.Settings
+import androidx.compose.material3.icons.filled.Build
+import androidx.compose.material3.icons.filled.Code
+import androidx.compose.material3.icons.filled.CloudOff
+import androidx.compose.material3.icons.filled.Psychology
 
 /**
  * HOE-D01: the app shell.
@@ -69,6 +99,107 @@ private fun ComposeAppShell(repository: AndroidEngineBridge) {
     var selfHostBusy by remember { mutableStateOf(false) }
     val oneHandDensity = remember { com.atropos.android.app.ui.OneHandDensity() }
     val scope = rememberCoroutineScope()
+
+    // Current tab state
+    var currentTab by remember { mutableStateOf(0) }
+    val tabs = listOf(
+        TabItem(0, "Conversation", Icons.Filled.Chat),
+        TabItem(1, "Files", Icons.Filled.Folder),
+        TabItem(2, "Composer", Icons.Filled.Build),
+        TabItem(2, "Tools", Icons.Filled.Code),
+        TabItem(3, "Settings", Icons.Filled.Settings),
+        TabItem(4, "Offline", Icons.Filled.CloudOff),
+    )
+
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(0.dp)
+    ) {
+        // Main content area
+        Box(modifier = Modifier
+            .fillMaxSize()
+            .weight(1f)
+        ) {
+            when (currentTab) {
+                0 -> ConversationScreen(
+                    messages = state.messages,
+                    isOnline = state.isOnline,
+                    onSendMessage = { text -> mvi.dispatch(MobileAppIntent.SendMessage(text)) },
+                    sessions = state.sessions,
+                    onSessionSelected = {},
+                    checkpoint = state.checkpoint,
+                    onCheckpointAction = {},
+                    thinking = state.thinking,
+                    onThinkingDepthRequested = {},
+                    answers = state.sixAnswers,
+                    approvals = state.approvals,
+                    onApprovalDecided = { id, approve -> mvi.dispatch(MobileAppIntent.ApprovalDecided(id, approve)) },
+                    activeProvider = state.activeProvider,
+                    queuedNotice = state.queuedNotice,
+                    selfHostRun = selfHostRun,
+                    selfHostBusy = selfHostBusy,
+                    onBuildRequested = { prompt -> mvi.dispatch(MobileAppIntent.BuildRequested(prompt)) },
+                    onAdvanceBuild = { goalId -> mvi.dispatch(MobileAppIntent.AdvanceBuild(goalId)) },
+                    onDismissBuild = { mvi.dispatch(MobileAppIntent.DismissBuild) },
+                    onCommand = { cmd -> mvi.dispatch(MobileAppIntent.Command(cmd)) }
+                )
+                1 -> FileTreeScreen(
+                    repository = repository,
+                    state = state,
+                    mvi = mvi,
+                    scope = rememberCoroutineScope(),
+                    repository2 = repository,
+                    onNavigateBack = {}
+                )
+                2 -> ComposerScreen(
+                    value = "",
+                    onValueChange = {},
+                    onSend = {},
+                    isOnline = state.isOnline
+                )
+                3 -> ToolsTimelineSheet(
+                    onDismiss = {}
+                )
+                4 -> SettingsScreen(
+                    onNavigateBack = {}
+                )
+                5 -> OfflineScreen(
+                    onGoOnline = {}
+                )
+            }
+        }
+
+        // Bottom navigation bar
+        BottomNavigation(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+        ) {
+            tabs.forEachIndexed { index, tab ->
+                BottomNavigationItem(
+                    selected = currentTab == index,
+                    onClick = { currentTab = index },
+                    icon = {
+                        Icon(
+                            imageVector = tab.icon,
+                            contentDescription = tab.label,
+                            modifier = Modifier.size(24.dp),
+                            tint = if (currentTab == index) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
+                    label = {
+                        Text(
+                            text = tab.label,
+                            fontSize = 12.sp,
+                            color = if (currentTab == index) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
+                    selected = currentTab == index,
+                    onClick = { currentTab = index }
+                )
+            }
+        }
+    }
 
     // Reachability is polled rather than assumed. The engine is a separate
     // process the operator starts and stops in Termux, so it can appear or
@@ -151,163 +282,13 @@ private fun ComposeAppShell(repository: AndroidEngineBridge) {
             delay(POLL_INTERVAL_MS)
         }
     }
-
-    ConversationScreen(
-        messages = state.messages,
-        isOnline = state.isOnline,
-        onSendMessage = { text ->
-            scope.launch {
-                when (val outcome = withContext(Dispatchers.IO) { repository.send(text) }) {
-                    is SendOutcome.Delivered -> {
-                        mvi.dispatch(MobileAppIntent.TranscriptLoaded(mvi.state.value.messages + outcome.turns))
-                        mvi.dispatch(MobileAppIntent.ReachabilityChanged(true))
-                    }
-                    is SendOutcome.Refused -> mvi.dispatch(MobileAppIntent.Notice(localNotice("Refused: ${outcome.detail}")))
-                    SendOutcome.EngineUnreachable -> {
-                        // Queued, not lost. The composer has always said a
-                        // message would queue while the engine was down; this
-                        // is the code that makes that true.
-                        mvi.dispatch(MobileAppIntent.ReachabilityChanged(false))
-                        mvi.dispatch(MobileAppIntent.MessageQueued(text))
-                        mvi.dispatch(MobileAppIntent.Notice(localNotice("Engine not reachable — message queued and will send on reconnect.")))
-                    }
-                }
-            }
-        },
-        sessions = state.sessionTabs.tabs,
-        onSessionSelected = { id -> mvi.dispatch(MobileAppIntent.SessionSelected(id)) },
-        checkpoint = state.checkpoint,
-        thinking = state.thinking,
-        onThinkingDepthRequested = { depth ->
-            scope.launch {
-                val nodeId = mvi.state.value.checkpoint?.nodeId.orEmpty()
-                mvi.dispatch(MobileAppIntent.ThinkingLoaded(withContext(Dispatchers.IO) { repository.thinking(nodeId, depth) }))
-            }
-        },
-        answers = state.answers,
-        approvals = state.approvals,
-        onApprovalDecided = { id, approved ->
-            scope.launch {
-                val outcome = withContext(Dispatchers.IO) {
-                    repository.decideApproval(id, approved, DECIDED_BY)
-                }
-                when (outcome) {
-                    is ApprovalOutcome.Recorded -> {
-                        // Removed locally so the card cannot be pressed twice
-                        // while the next poll is in flight; the poll is still
-                        // what re-establishes the truth.
-                        mvi.dispatch(MobileAppIntent.ApprovalRemoved(
-                            outcome.id,
-                            localNotice(
-                                "Approval ${outcome.id}: " +
-                                    if (outcome.approved) "approved." else "rejected."
-                            )
-                        ))
-                    }
-                    is ApprovalOutcome.Refused ->
-                        mvi.dispatch(MobileAppIntent.Notice(localNotice("Approval not recorded: ${outcome.detail}")))
-                    ApprovalOutcome.EngineUnreachable -> {
-                        mvi.dispatch(MobileAppIntent.ReachabilityChanged(false))
-                        mvi.dispatch(MobileAppIntent.Notice(localNotice("Engine not reachable — the approval decision was not recorded.")))
-                    }
-                }
-            }
-        },
-        activeProvider = state.activeProvider,
-        queuedNotice = state.outbox.describe(),
-        selfHostRun = selfHostRun,
-        selfHostBusy = selfHostBusy,
-        onBuildRequested = { prompt ->
-            scope.launch {
-                selfHostBusy = true
-                val outcome = withContext(Dispatchers.IO) {
-                    repository.startSelfHost(prompt, DECIDED_BY)
-                }
-                selfHostBusy = false
-                when (outcome) {
-                    is SelfHostOutcome.Started -> {
-                        selfHostRun = outcome.run
-                        mvi.dispatch(
-                            MobileAppIntent.Notice(
-                                localNotice(
-                                    "Build opened: ${outcome.run.goalId}. " +
-                                        "Nothing is written until you take the next step."
-                                )
-                            )
-                        )
-                    }
-                    is SelfHostOutcome.Advanced -> selfHostRun = outcome.run
-                    is SelfHostOutcome.Refused ->
-                        mvi.dispatch(MobileAppIntent.Notice(localNotice("Build refused: ${outcome.detail}")))
-                    SelfHostOutcome.EngineUnreachable -> {
-                        mvi.dispatch(MobileAppIntent.ReachabilityChanged(false))
-                        mvi.dispatch(MobileAppIntent.Notice(localNotice("Engine not reachable — no build was started.")))
-                    }
-                }
-            }
-        },
-        onAdvanceBuild = { goalId ->
-            scope.launch {
-                selfHostBusy = true
-                val outcome = withContext(Dispatchers.IO) { repository.advanceSelfHost(goalId) }
-                selfHostBusy = false
-                when (outcome) {
-                    is SelfHostOutcome.Advanced -> selfHostRun = outcome.run
-                    is SelfHostOutcome.Started -> selfHostRun = outcome.run
-                    is SelfHostOutcome.Refused -> {
-                        // The refusal is shown and the run is re-read: the goal
-                        // may have completed or hit a gate, and the panel must
-                        // reflect which rather than freezing on the last step.
-                        mvi.dispatch(MobileAppIntent.Notice(localNotice("Build step refused: ${outcome.detail}")))
-                        withContext(Dispatchers.IO) { repository.selfHostStatus(goalId) }
-                            ?.let { selfHostRun = it }
-                    }
-                    SelfHostOutcome.EngineUnreachable -> {
-                        mvi.dispatch(MobileAppIntent.ReachabilityChanged(false))
-                        mvi.dispatch(MobileAppIntent.Notice(localNotice("Engine not reachable — the build did not advance.")))
-                    }
-                }
-            }
-        },
-        onDismissBuild = { selfHostRun = null },
-        onCommand = { command ->
-            scope.launch {
-                // Echoed as the operator's own turn first, so the transcript
-                // reads the way the terminal does: what was typed, then what
-                // came back.
-                mvi.dispatch(
-                    MobileAppIntent.TranscriptLoaded(
-                        mvi.state.value.messages + MobileMessage(
-                            id = "cmd-${System.nanoTime()}",
-                            text = command,
-                            isUser = true,
-                            timestamp = System.currentTimeMillis()
-                        )
-                    )
-                )
-                when (val outcome = withContext(Dispatchers.IO) { repository.runCommand(command, DECIDED_BY) }) {
-                    is CommandOutcome.Ran ->
-                        mvi.dispatch(
-                            MobileAppIntent.Notice(
-                                localNotice(outcome.output.ifBlank { "(the command produced no output)" })
-                            )
-                        )
-                    is CommandOutcome.Refused ->
-                        mvi.dispatch(MobileAppIntent.Notice(localNotice("Refused: ${outcome.detail}")))
-                    CommandOutcome.EngineUnreachable -> {
-                        mvi.dispatch(MobileAppIntent.ReachabilityChanged(false))
-                        mvi.dispatch(MobileAppIntent.MessageQueued(command))
-                        mvi.dispatch(
-                            MobileAppIntent.Notice(
-                                localNotice("Engine not reachable — command queued and will send on reconnect.")
-                            )
-                        )
-                    }
-                }
-            }
-        }
-    )
 }
+
+private data class TabItem(
+    val index: Int,
+    val label: String,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector
+)
 
 /**
  * A turn the client produced itself. Marked as engine-side so it renders in the

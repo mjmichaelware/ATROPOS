@@ -44,7 +44,8 @@ enum class ActivityStage(val canonical: String) {
     TEST("test"),
     VERIFIER("verifier"),
     ARTIFACT("artifact"),
-    DEPLOY("deploy");
+    DEPLOY("deploy"),
+    NODE_PROGRESS("node_progress");
 
     companion object {
         fun fromCanonical(term: String): ActivityStage? =

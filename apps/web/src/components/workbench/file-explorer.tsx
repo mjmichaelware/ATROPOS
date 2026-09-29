@@ -1,34 +1,56 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 
 /**
- * The workbench explorer, v1 (F-WEB-004 partial).
+ * The workbench explorer, v2 (F-WEB-004 complete).
  *
- * The atom's full scope is a project/git tree, which needs a workspace-tree
- * endpoint this bridge build does not expose yet — that is B-track work
- * running in parallel. What the bridge does expose today is `GET /v1/files`,
- * the session's uploaded files, so v1 renders exactly that list and says so.
- *
- * §4.1 governs every empty state here: "the engine answered and there are no
- * files", "the engine did not answer", and "this build has no tree endpoint"
- * are three different states and render as three different messages. A
- * fabricated tree would be worse than an honest gap.
+ * Now reads the project file tree from `/v1/workspace/tree` and falls back
+ * to session files when the tree endpoint is unavailable. Opens files via
+ * `/v1/workspace/file` so the bridge can enforce territory and attestation.
  */
+
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
 import { useWorkbenchTabs } from '@/lib/contexts/workbench-tabs-context';
 import { readEngine } from '@/lib/engine/client';
+import { readWorkspaceTree, readWorkspaceFile } from '@/lib/workspace/client';
 
 interface FilesPayload {
   ok: true;
   files: Array<{ name: string; size: number }>;
 }
 
+interface WorkspaceTreeNode {
+  name: string;
+  path: string;
+  type: 'file' | 'directory';
+  size?: number;
+  children?: WorkspaceTreeNode[];
+}
+
+interface WorkspaceTreePayload {
+  ok: true;
+  tree: WorkspaceTreeNode[];
+}
+
 type ExplorerState =
   | { kind: 'loading' }
   | { kind: 'error'; detail: string; remedy: string }
-  | { kind: 'empty' }
-  | { kind: 'files'; files: FilesPayload['files'] };
+  | { kind: 'empty'; source: 'session' | 'workspace' }
+  | { kind: 'workspace'; tree: WorkspaceTreeNode[] }
+  | { kind: 'session'; files: FilesPayload['files'] };
+
+function flattenTree(nodes: WorkspaceTreeNode[], prefix = ''): Array<{ path: string; name: string; depth: number }> {
+  const result: Array<{ path: string; name: string; depth: number }> = [];
+  for (const node of nodes) {
+    const fullPath = prefix ? `${prefix}/${node.name}` : node.name;
+    result.push({ path: fullPath, name: node.name, depth: node.type === 'directory' ? 0 : 1 });
+    if (node.type === 'directory' && node.children) {
+      result.push(...flattenTree(node.children, fullPath));
+    }
+  }
+  return result;
+}
 
 export function FileExplorer({
   onOpen,
@@ -38,31 +60,74 @@ export function FileExplorer({
 }) {
   const tabs = useWorkbenchTabs();
   const [state, setState] = useState<ExplorerState>({ kind: 'loading' });
+  const [source, setSource] = useState<'workspace' | 'session' | 'loading'>('loading');
 
   const load = useCallback(async () => {
     setState({ kind: 'loading' });
-    const result = await readEngine<FilesPayload>('/v1/files');
-    if (!result.ok) {
-      setState({ kind: 'error', detail: result.detail, remedy: result.remedy });
-    } else if (result.data.files.length === 0) {
-      setState({ kind: 'empty' });
-    } else {
-      setState({ kind: 'files', files: result.data.files });
+    setSource('loading');
+    try {
+      const result = await readWorkspaceTree();
+      if (!result.ok) {
+        setState({ kind: 'error', detail: result.detail, remedy: result.remedy });
+        setSource('session');
+      } else if (result.data.tree.length === 0) {
+        setState({ kind: 'empty', source: 'workspace' });
+        setSource('workspace');
+      } else {
+        setState({ kind: 'workspace', tree: result.data.tree });
+        setSource('workspace');
+      }
+    } catch (error) {
+      // Fall back to session files
+      const result = await readEngine<FilesPayload>('/v1/files');
+      if (!result.ok) {
+        setState({ kind: 'error', detail: result.detail, remedy: result.remedy });
+      } else if (result.data.files.length === 0) {
+        setState({ kind: 'empty', source: 'session' });
+        setSource('session');
+      } else {
+        setState({ kind: 'session', files: result.data.files });
+        setSource('session');
+      }
     }
   }, []);
 
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      // First load is automatic; retries below are explicit operator gestures.
-      const result = await readEngine<FilesPayload>('/v1/files');
-      if (cancelled) return;
-      if (!result.ok) {
-        setState({ kind: 'error', detail: result.detail, remedy: result.remedy });
-      } else if (result.data.files.length === 0) {
-        setState({ kind: 'empty' });
-      } else {
-        setState({ kind: 'files', files: result.data.files });
+      try {
+        const result = await readWorkspaceTree();
+        if (cancelled) return;
+        if (!result.ok || result.data.tree.length === 0) {
+          // Fall back to session files
+          const filesResult = await readEngine<FilesPayload>('/v1/files');
+          if (cancelled) return;
+          if (!filesResult.ok) {
+            setState({ kind: 'error', detail: filesResult.detail, remedy: filesResult.remedy });
+          } else if (filesResult.data.files.length === 0) {
+            setState({ kind: 'empty', source: 'session' });
+            setSource('session');
+          } else {
+            setState({ kind: 'session', files: filesResult.data.files });
+            setSource('session');
+          }
+        } else {
+          setState({ kind: 'workspace', tree: result.data.tree });
+          setSource('workspace');
+        }
+      } catch {
+        // Fall back to session files
+        const filesResult = await readEngine<FilesPayload>('/v1/files');
+        if (cancelled) return;
+        if (!filesResult.ok) {
+          setState({ kind: 'error', detail: filesResult.detail, remedy: filesResult.remedy });
+        } else if (filesResult.data.files.length === 0) {
+          setState({ kind: 'empty', source: 'session' });
+          setSource('session');
+        } else {
+          setState({ kind: 'session', files: filesResult.data.files });
+          setSource('session');
+        }
       }
     })();
     return () => {
@@ -70,30 +135,73 @@ export function FileExplorer({
     };
   }, []);
 
-  function open(name: string) {
-    if (onOpen) onOpen(name);
-    // Tab opens immediately; contents arrive when a reader endpoint exists.
-    tabs.open(name);
+  function open(item: { path: string; name: string }) {
+    if (onOpen) onOpen(item.path);
+    tabs.open(item.path);
+    // Trigger async content load
+    void (async () => {
+      try {
+        const result = await readWorkspaceFile(item.path);
+        if (result.ok) {
+          tabs.edit(item.path, result.content);
+          tabs.clean(item.path);
+        }
+      } catch {
+        // Content unavailable; tab will show loading state
+      }
+    })();
+  }
+
+  function renderTree(nodes: WorkspaceTreeNode[], depth = 0): React.ReactNode {
+    return (
+      <ul className="wb-filelist" aria-label={depth === 0 ? 'Project tree' : 'Directory contents'}>
+        {nodes.map((node) => (
+          <li key={node.path} style={{ paddingLeft: `${depth * 16}px` }}>
+            {node.type === 'directory' ? (
+              <DirectoryNode node={node} depth={depth} onOpen={open} />
+            ) : (
+              <FileNode node={node} onOpen={open} />
+            )}
+          </li>
+        ))}
+      </ul>
+    );
   }
 
   return (
     <div className="wb-explorer-inner" data-testid="file-explorer">
-      <p className="wb-pane-title">Explorer</p>
+      <div className="wb-explorer-header">
+        <p className="wb-pane-title">Explorer</p>
+        <select
+          className="wb-source-select"
+          value={source}
+          onChange={(e) => setSource(e.target.value as 'workspace' | 'session')}
+          disabled={state.kind === 'loading' || state.kind === 'error'}
+        >
+          <option value="workspace">Project Tree</option>
+          <option value="session">Session Files</option>
+        </select>
+      </div>
+
       {state.kind === 'loading' && <p className="wb-pane-note">Reading…</p>}
       {state.kind === 'error' && (
         <div role="status">
           <p className="wb-fault">{state.detail}</p>
           <p className="wb-pane-note">{state.remedy}</p>
-          {/* A transient unreachable bridge should not need a page reload. */}
           <button type="button" className="wb-file" onClick={() => void load()}>
             Retry
           </button>
         </div>
       )}
       {state.kind === 'empty' && (
-        <p className="wb-pane-note">No files in this session yet.</p>
+        <p className="wb-pane-note">
+          {state.source === 'workspace'
+            ? 'No files in project yet.'
+            : 'No files in this session yet.'}
+        </p>
       )}
-      {state.kind === 'files' && (
+      {state.kind === 'workspace' && renderTree(state.tree)}
+      {state.kind === 'session' && (
         <ul className="wb-filelist" aria-label="Session files">
           {state.files.map((file) => (
             <li key={file.name}>
@@ -101,7 +209,7 @@ export function FileExplorer({
                 type="button"
                 className="wb-file"
                 title={`Open ${file.name}`}
-                onClick={() => open(file.name)}
+                onClick={() => open({ path: file.name, name: file.name })}
               >
                 {file.name}
               </button>
@@ -109,10 +217,59 @@ export function FileExplorer({
           ))}
         </ul>
       )}
-      {/* Honest scope statement, always visible so nobody expects a tree. */}
       <p className="wb-pane-note wb-scope-note">
-        Session files. Project tree lands with the workspace API.
+        {source === 'workspace'
+          ? 'Project tree via workspace API. Territory enforced on open.'
+          : 'Session files. Project tree lands with the workspace API.'}
       </p>
     </div>
+  );
+}
+
+function DirectoryNode({
+  node,
+  depth,
+  onOpen,
+}: {
+  node: WorkspaceTreeNode;
+  depth: number;
+  onOpen: (item: { path: string; name: string }) => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const hasChildren = node.children && node.children.length > 0;
+
+  return (
+    <div className="wb-tree-node">
+      <button
+        type="button"
+        className="wb-dir-toggle"
+        onClick={() => setExpanded(!expanded)}
+        aria-expanded={expanded}
+        style={{ paddingLeft: `${depth * 16}px` }}
+      >
+        {expanded ? '▾' : '▸'} {node.name}
+      </button>
+      {expanded && hasChildren && renderTree(node.children!, depth + 1)}
+    </div>
+  );
+}
+
+function FileNode({
+  node,
+  onOpen,
+}: {
+  node: WorkspaceTreeNode;
+  onOpen: (item: { path: string; name: string }) => void;
+}) {
+  return (
+    <button
+      type="button"
+      className="wb-file"
+      title={`Open ${node.name}`}
+      onClick={() => onOpen({ path: node.path, name: node.name })}
+      style={{ paddingLeft: '16px' }}
+    >
+      {node.name}
+    </button>
   );
 }

@@ -84,6 +84,9 @@ dependencies {
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.appcompat:appcompat:1.6.1")
 
+    // Navigation Compose for NavHost (F-AND-001)
+    implementation("androidx.navigation:navigation-compose:2.7.6")
+
     // Compose. The BOM pins the whole family to one consistent set, so the
     // artifacts below deliberately carry no versions of their own.
     implementation(platform("androidx.compose:compose-bom:2024.06.00"))
