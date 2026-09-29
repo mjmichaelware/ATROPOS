@@ -94,7 +94,7 @@ class EngineHttpServer(
     }
 
     private fun acceptLoop(socket: ServerSocket) {
-        while (localRunning && !socket.isClosed) {
+        while (running.get() && !socket.isClosed) {
             val client = try {
                 socket.accept()
             } catch (e: Exception) {
