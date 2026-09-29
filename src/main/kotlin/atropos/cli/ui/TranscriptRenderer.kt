@@ -154,6 +154,7 @@ class TranscriptRenderer(
                         lines.addAll(disclosureDetail(row))
                     }
                 }
+                else -> throw IllegalStateException("Unknown TranscriptEntry type: ${entry::class}")
             }
             val scrollOffset = buffer.currentScrollOffset
             val maximumOffset = (lines.size - height).coerceAtLeast(0)
