@@ -341,7 +341,7 @@ class SelfHostAutonomousRunner(
         return SelfHostAutonomousRunResult(
             ok = promotion.promoted,
             message = if (promotion.promoted) "self-host run promoted verified jar" else "self-host promotion refused: ${promotion.message}",
-            goal = refreshed ?: stopped?.goal ?: promotion.goal,
+            goal = refreshed ?: promotion.goal,
             promotion = promotion,
             evidenceBundle = bundle,
             steps = steps,
@@ -349,7 +349,7 @@ class SelfHostAutonomousRunner(
         return SelfHostAutonomousRunResult(
             ok = promotion.promoted,
             message = if (promotion.promoted) "self-host run promoted verified jar" else "self-host promotion refused: ${promotion.message}",
-            goal = refreshed ?: stopped?.goal ?: promotion.goal,
+            goal = refreshed ?: promotion.goal,
             promotion = promotion,
             evidenceBundle = bundle,
             steps = steps,
