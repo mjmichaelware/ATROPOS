@@ -101,7 +101,7 @@ class ConfluenceMcpIntegration(configDir: Path) : BaseMcpIntegration("confluence
         else -> resource
     }
     override fun updateResource(id: String, updates: Map<String, Any>): McpResource = McpResource(id, "", "")
-    override fun deleteResource(id: String, params: Map<String, String>): Boolean = true
+    override fun deleteResource(id: String): Boolean = true
 
     override fun register(): RegistrationInfo = RegistrationInfo(
         systemId = "confluence", displayName = "Confluence",
@@ -143,6 +143,8 @@ class ConfluenceMcpIntegration(configDir: Path) : BaseMcpIntegration("confluence
     private fun addLabel(resource: McpResource): McpResource = resource
     private fun addAttachment(resource: McpResource): McpResource = resource
 
+    override fun register(): RegistrationInfo = RegistrationInfo(
+        systemId = "confluence", displayName = "Confluence",
         capabilities = listOf("spaces", "pages", "blogs", "labels", "users", "templates", "versions", "attachments", "comments"),
         authRequired = listOf("api_token", "basic_auth", "oauth"), version = "1.0"
     )

@@ -101,7 +101,7 @@ class NewRelicMcpIntegration(configDir: Path) : BaseMcpIntegration("newrelic", "
         else -> resource
     }
     override fun updateResource(id: String, updates: Map<String, Any>): McpResource = McpResource(id, "", "")
-    override fun deleteResource(id: String, params: Map<String, String>): Boolean = when (params["type"] ?: "entities") {
+    override fun deleteResource(id: String): Boolean = when (params["type"] ?: "entities") {
         "dashboards" -> deleteDashboard(id)
         "alerts" -> deleteAlert(id)
         "alert_policies" -> deleteAlertPolicy(id)
@@ -172,6 +172,8 @@ class NewRelicMcpIntegration(configDir: Path) : BaseMcpIntegration("newrelic", "
     private fun deleteWorkload(id: String): Boolean = true
     private fun deleteSynthetic(id: String): Boolean = true
 
+    override fun register(): RegistrationInfo = RegistrationInfo(
+        systemId = "newrelic", displayName = "New Relic",
         capabilities = listOf("entities", "alerts", "dashboards", "nrql", "alert_policies", "notification_channels", "workloads", "synthetics", "logs"),
         authRequired = listOf("api_key", "user_key", "license_key"), version = "1.0"
     )

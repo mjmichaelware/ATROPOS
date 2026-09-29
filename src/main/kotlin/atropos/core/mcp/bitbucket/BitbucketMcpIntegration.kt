@@ -93,7 +93,7 @@ class BitbucketMcpIntegration(configDir: Path) : BaseMcpIntegration("bitbucket",
         else -> resource
     }
     override fun updateResource(id: String, updates: Map<String, Any>): McpResource = McpResource(id, "", "")
-    override fun deleteResource(id: String, params: Map<String, String>): Boolean = true
+    override fun deleteResource(id: String): Boolean = true
 
     override fun register(): RegistrationInfo = RegistrationInfo(
         systemId = "bitbucket", displayName = "Bitbucket",
@@ -130,6 +130,8 @@ class BitbucketMcpIntegration(configDir: Path) : BaseMcpIntegration("bitbucket",
     private fun triggerPipeline(resource: McpResource): McpResource = resource
     private fun triggerDeployment(resource: McpResource): McpResource = resource
 
+    override fun register(): RegistrationInfo = RegistrationInfo(
+        systemId = "bitbucket", displayName = "Bitbucket",
         capabilities = listOf("repositories", "pullrequests", "pipelines", "branches", "commits", "deployments", "snippets"),
         authRequired = listOf("username", "app_password", "oauth"), version = "1.0"
     )

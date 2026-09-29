@@ -106,7 +106,7 @@ class OpsgenieMcpIntegration(configDir: Path) : BaseMcpIntegration("opsgenie", "
         else -> resource
     }
     override fun updateResource(id: String, updates: Map<String, Any>): McpResource = McpResource(id, "", "")
-    override fun deleteResource(id: String, params: Map<String, String>): Boolean = when (params["type"] ?: "alerts") {
+    override fun deleteResource(id: String): Boolean = when (params["type"] ?: "alerts") {
         "alerts" -> closeAlert(id)
         "schedules" -> deleteSchedule(id)
         "teams" -> deleteTeam(id)
@@ -164,6 +164,8 @@ class OpsgenieMcpIntegration(configDir: Path) : BaseMcpIntegration("opsgenie", "
     private fun deleteUser(id: String): Boolean = true
     private fun deleteIntegration(id: String): Boolean = true
 
+    override fun register(): RegistrationInfo = RegistrationInfo(
+        systemId = "opsgenie", displayName = "Opsgenie",
         capabilities = listOf("alerts", "schedules", "teams", "users", "integrations", "policies", "heartbeats", "notification_rules", "escalations"),
         authRequired = listOf("api_key"), version = "1.0"
     )

@@ -104,7 +104,7 @@ class DatadogMcpIntegration(configDir: Path) : BaseMcpIntegration("datadog", "Da
         else -> resource
     }
     override fun updateResource(id: String, updates: Map<String, Any>): McpResource = McpResource(id, "", "")
-    override fun deleteResource(id: String, params: Map<String, String>): Boolean = when (params["type"] ?: "hosts") {
+    override fun deleteResource(id: String): Boolean = when (params["type"] ?: "hosts") {
         "monitors" -> deleteMonitor(id)
         "dashboards" -> deleteDashboard(id)
         "downtimes" -> cancelDowntime(id)
@@ -162,6 +162,8 @@ class DatadogMcpIntegration(configDir: Path) : BaseMcpIntegration("datadog", "Da
     private fun deleteSynthetic(id: String): Boolean = true
     private fun deleteSLO(id: String): Boolean = true
 
+    override fun register(): RegistrationInfo = RegistrationInfo(
+        systemId = "datadog", displayName = "Datadog",
         capabilities = listOf("hosts", "metrics", "monitors", "dashboards", "logs", "traces", "synthetics", "incidents", "downtimes", "slo"),
         authRequired = listOf("api_key", "app_key"), version = "1.0"
     )

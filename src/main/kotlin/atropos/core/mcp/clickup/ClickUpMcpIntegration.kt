@@ -108,7 +108,7 @@ class ClickUpMcpIntegration(configDir: Path) : BaseMcpIntegration("clickup", "Cl
         else -> resource
     }
     override fun updateResource(id: String, updates: Map<String, Any>): McpResource = McpResource(id, "", "")
-    override fun deleteResource(id: String, params: Map<String, String>): Boolean = when (params["type"] ?: "tasks") {
+    override fun deleteResource(id: String): Boolean = when (params["type"] ?: "tasks") {
         "tasks" -> deleteTask(id)
         "lists" -> deleteList(id)
         "folders" -> deleteFolder(id)
@@ -180,6 +180,8 @@ class ClickUpMcpIntegration(configDir: Path) : BaseMcpIntegration("clickup", "Cl
     private fun deleteTemplate(id: String): Boolean = true
     private fun deleteCustomField(id: String): Boolean = true
 
+    override fun register(): RegistrationInfo = RegistrationInfo(
+        systemId = "clickup", displayName = "ClickUp",
         capabilities = listOf("spaces", "folders", "lists", "tasks", "views", "goals", "docs", "templates", "custom_fields", "tags", "time_entries"),
         authRequired = listOf("api_token", "oauth"), version = "1.0"
     )

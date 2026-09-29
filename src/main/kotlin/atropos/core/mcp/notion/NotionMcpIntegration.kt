@@ -141,6 +141,8 @@ class NotionMcpIntegration(configDir: Path) : BaseMcpIntegration("notion", "Noti
     private fun deleteBlock(id: String): Boolean = true
     private fun deleteComment(id: String): Boolean = true
 
+    override fun register(): RegistrationInfo = RegistrationInfo(
+        systemId = "notion", displayName = "Notion",
         capabilities = listOf("databases", "pages", "blocks", "users", "comments", "search"),
         authRequired = listOf("integration_token", "oauth"), version = "1.0"
     )

@@ -104,7 +104,7 @@ class AsanaMcpIntegration(configDir: Path) : BaseMcpIntegration("asana", "Asana"
         else -> resource
     }
     override fun updateResource(id: String, updates: Map<String, Any>): McpResource = McpResource(id, "", "")
-    override fun deleteResource(id: String, params: Map<String, String>): Boolean = when (params["type"] ?: "tasks") {
+    override fun deleteResource(id: String): Boolean = when (params["type"] ?: "tasks") {
         "tasks" -> deleteTask(id)
         "projects" -> deleteProject(id)
         "sections" -> deleteSection(id)
@@ -165,6 +165,8 @@ class AsanaMcpIntegration(configDir: Path) : BaseMcpIntegration("asana", "Asana"
     private fun deleteCustomField(id: String): Boolean = true
     private fun deleteTag(id: String): Boolean = true
 
+    override fun register(): RegistrationInfo = RegistrationInfo(
+        systemId = "asana", displayName = "Asana",
         capabilities = listOf("projects", "tasks", "sections", "users", "teams", "portfolios", "goals", "custom_fields", "tags", "events"),
         authRequired = listOf("pat", "oauth"), version = "1.0"
     )

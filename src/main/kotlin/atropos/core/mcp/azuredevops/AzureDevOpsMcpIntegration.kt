@@ -108,7 +108,7 @@ class AzureDevOpsMcpIntegration(configDir: Path) : BaseMcpIntegration("azuredevo
         else -> resource
     }
     override fun updateResource(id: String, updates: Map<String, Any>): McpResource = McpResource(id, "", "")
-    override fun deleteResource(id: String, params: Map<String, String>): Boolean = when (params["type"] ?: "projects") {
+    override fun deleteResource(id: String): Boolean = when (params["type"] ?: "projects") {
         "repositories" -> deleteRepository(params["project"] ?: "", id)
         "pipelines" -> deletePipeline(params["project"] ?: "", id)
         "work_items" -> deleteWorkItem(id)
@@ -162,6 +162,8 @@ class AzureDevOpsMcpIntegration(configDir: Path) : BaseMcpIntegration("azuredevo
     private fun deletePipeline(project: String, id: String): Boolean = true
     private fun deleteWorkItem(id: String): Boolean = true
 
+    override fun register(): RegistrationInfo = RegistrationInfo(
+        systemId = "azuredevops", displayName = "Azure DevOps",
         capabilities = listOf("projects", "repositories", "pipelines", "builds", "releases", "work_items", "pull_requests", "artifacts", "service_connections", "variable_groups"),
         authRequired = listOf("pat", "oauth"), version = "1.0"
     )

@@ -103,7 +103,7 @@ class PagerDutyMcpIntegration(configDir: Path) : BaseMcpIntegration("pagerduty",
         else -> resource
     }
     override fun updateResource(id: String, updates: Map<String, Any>): McpResource = McpResource(id, "", "")
-    override fun deleteResource(id: String, params: Map<String, String>): Boolean = when (params["type"] ?: "incidents") {
+    override fun deleteResource(id: String): Boolean = when (params["type"] ?: "incidents") {
         "incidents" -> resolveIncident(id)
         "services" -> deleteService(id)
         "schedules" -> deleteSchedule(id)
@@ -165,6 +165,8 @@ class PagerDutyMcpIntegration(configDir: Path) : BaseMcpIntegration("pagerduty",
     private fun deleteTeam(id: String): Boolean = true
     private fun deleteUser(id: String): Boolean = true
 
+    override fun register(): RegistrationInfo = RegistrationInfo(
+        systemId = "pagerduty", displayName = "PagerDuty",
         capabilities = listOf("incidents", "services", "schedules", "escalation_policies", "teams", "users", "notifications", "on_calls", "business_services", "extensions"),
         authRequired = listOf("api_token"), version = "1.0"
     )
