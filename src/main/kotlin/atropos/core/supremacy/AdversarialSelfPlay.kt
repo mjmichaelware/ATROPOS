@@ -39,7 +39,7 @@ object AdversarialSelfPlay {
     /**
      * Runs self-play verification against an agent.
      */
-    fun verify<AgentOutput>(
+    fun <AgentOutput> verify(
         agent: (String) -> AgentOutput,
         baseInput: String,
         adversarialCount: Int = 10,
