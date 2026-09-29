@@ -346,14 +346,6 @@ class SelfHostAutonomousRunner(
             evidenceBundle = bundle,
             steps = steps,
             compileGate = compileResult
-        return SelfHostAutonomousRunResult(
-            ok = promotion.promoted,
-            message = if (promotion.promoted) "self-host run promoted verified jar" else "self-host promotion refused: ${promotion.message}",
-            goal = refreshed ?: promotion.goal,
-            promotion = promotion,
-            evidenceBundle = bundle,
-            steps = steps,
-            compileGate = compileResult
         )
     }
 
