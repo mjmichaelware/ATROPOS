@@ -15590,3 +15590,31 @@ End of AGENTS.md
 - Fingerprints: `TerritoryGrantService.kt=sha256:verified`, `AuditorService.kt=sha256:verified`, `SelfHostPromotionService.kt=sha256:verified`, `SelfHostWorktreeNodeExecutor.kt=sha256:verified`
 - New overall estimate: Phases 13 and 15 wiring complete for self-host chain. Phase 20 lakehouse ledgers, governance candidates, and superiority primitives remain.
 
+
+### 2026-09-29T13:00:00Z · Agent: OpenCode · Batch: compile-gate-fix-001
+- Paths touched: 
+  `src/main/kotlin/atropos/core/agent/SelfHostAutonomousRunner.kt` (fixed missing `}` closing brace, duplicate return statement, conflicting `record` declarations, unresolved `stopped`/`planAllBatches`/`DagDefinition`, type inference),
+  `src/main/kotlin/atropos/core/agent/SelfHostRepairExecutor.kt` (removed duplicate `redactionFilter` and `dagService` parameter/field declarations, fixed overload ambiguity),
+  `src/main/kotlin/atropos/core/agent/SelfHostBatchPlanner.kt` (removed shadowing `goalId` parameter, added `DagExecutionService` import),
+  `src/main/kotlin/atropos/cli/ui/UncertaintyCalibratedRecommendation.kt` (fixed `Band` enum `displayName` override, added `ThemePalette` import, fixed `displayName()` call sites),
+  `src/main/kotlin/atropos/bridge/http/EngineHttpServer.kt` (fixed `ByteArrayOutputStream.write(Byte)` → `write(Int.toByte())`, `request.query.get` → `getOrNull`),
+  `src/main/kotlin/atropos/cli/ui/TranscriptRenderer.kt` (added missing `TranscriptEntry`, `TerminalTheme` imports, fixed `asciiOnly()` → `theme.surface.asciiOnly`, added missing closing `}`),
+  `src/main/kotlin/atropos/cli/CommandRouter.kt` (added missing `TranscriptEntry` and `TranscriptBuffer` imports),
+  `src/main/kotlin/atropos/bridge/BridgeRoutes.kt` (fixed JSON type inference on `getJSONArray`/`getJSONObject`),
+  `src/main/kotlin/atropos/bridge/projection/WorkspaceProjection.kt` (fixed `sortedBy { it.name }` → `sortedBy { it.name.toString() }`),
+  `src/main/kotlin/atropos/cli/ui/IntentConflictBanner.kt` (fixed `theme.error/warning/metadata` calls to pass string args, added `ThemePalette` import),
+  `src/main/kotlin/atropos/cli/ui/ThinkingFilter.kt` (changed `data class` → `class` with constructor param),
+  `src/main/kotlin/atropos/cli/ui/ClipboardService.kt` (fixed `.exitValue()` → `.waitFor().exitValue()`),
+  `src/main/kotlin/atropos/cli/ui/vis/CliOpenFrame.kt` (fixed `TerminalTheme` import path),
+  `src/main/kotlin/atropos/bridge/terminal/TerminalSession.kt` (fixed bash string escaping in socat command),
+  `src/main/kotlin/atropos/cli/ui/CompetitiveErrorLedger.kt` (fixed `isSecretLikely` call to use standalone function),
+  `src/main/kotlin/atropos/core/supremacy/*` (reviewed - not modified, pre-existing type errors remain)
+- New decoupled files: none
+- Atoms / phases affected: Phase 11 Self-Build Loop (Checkpoint 1), Phase 20 Autonomy primitives, HOE CLI foundation
+- Predicate moved: Fixed 73 non-MCP compilation errors across 12 core files. Missing closing braces added, duplicate method/field declarations removed, missing imports added, type mismatches corrected, API usage fixed. MCP integration files (25 files, 560 errors) were NOT modified in this batch — they remain blocked on duplicate method definitions and missing SDK dependencies.
+- % delta: unchanged (no new feature completion; this batch fixes compilation blockers only)
+- Why justified: All fixes are minimal, targeted corrections to existing code. No new features, no duplicate owners created. Each fix addresses a specific compiler error with evidence from GitHub Actions compile gate logs. The MCP integration files (25 files, 560 errors) are boilerplate with duplicate method definitions (`saveAuth`, `register`, `discover`, `unregister`, `checkTerritory`, `getTerritoryBoundaries`, `sanitizeInput`, `encryptSecret`, `decryptSecret` all defined twice per file) and missing SDK dependencies (Azure, AWS, Firebase). These require a separate batch to delete/stub.
+- HR interrupts: none
+- Fingerprints: `SelfHostAutonomousRunner.kt=fixed`, `SelfHostRepairExecutor.kt=fixed`, `SelfHostBatchPlanner.kt=fixed`, `UncertaintyCalibratedRecommendation.kt=fixed`, `EngineHttpServer.kt=fixed`, `TranscriptRenderer.kt=fixed`, `CommandRouter.kt=fixed`, `BridgeRoutes.kt=fixed`, `WorkspaceProjection.kt=fixed`, `IntentConflictBanner.kt=fixed`, `ThinkingFilter.kt=fixed`, `ClipboardService.kt=fixed`, `CliOpenFrame.kt=fixed`, `TerminalSession.kt=fixed`, `CompetitiveErrorLedger.kt=fixed`
+- New overall estimate: 73 non-MCP errors fixed. 560 MCP errors remain in 25 integration files. Next batch: delete 25 broken MCP files + stub `McpIntegrationRegistry.kt` to achieve clean compile.
+
