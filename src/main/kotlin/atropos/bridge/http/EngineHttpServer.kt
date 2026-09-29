@@ -354,7 +354,7 @@ class EngineHttpServer(
         writer.writeEventStreamHeader(out)
         val sink = object : StreamSink {
             private var open = true
-            override fun isOpen(): Boolean = open && running && !socket.isClosed
+            override fun isOpen(): Boolean = open && running.get() && !socket.isClosed
             override fun emit(event: String, data: String): Boolean {
                 if (!isOpen()) return false
                 return try {
