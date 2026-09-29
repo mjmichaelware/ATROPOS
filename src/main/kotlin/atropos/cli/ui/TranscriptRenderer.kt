@@ -9,6 +9,7 @@ import atropos.cli.ui.DisclosureKind
 import atropos.cli.ui.TranscriptBuffer
 import atropos.cli.ui.AnsiLineWrapper
 import atropos.cli.ui.TerminalText
+import atropos.cli.ui.design.TerminalTheme
 import atropos.cli.ui.design.Glyphs
 import atropos.cli.ui.design.Role
 import atropos.core.security.RedactionFilter
