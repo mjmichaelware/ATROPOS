@@ -7,6 +7,12 @@ import atropos.core.planning.InternalReadinessCalculator
 import atropos.core.verification.GovernedCompileGate
 import atropos.core.verification.GovernedCompileGateResult
 import atropos.core.agent.GoalRunRecord
+import atropos.core.agent.GoalRunStatus
+import atropos.core.agent.GoalTerminalCondition
+import atropos.core.agent.SelfHostGoal
+import atropos.core.agent.SelfHostResult
+import atropos.core.agent.SelfHostAutonomousRunResult
+import atropos.core.thinking.NarratedSteps
 
 class SelfHostAutonomousRunner(
     private val service: SelfHostGoalService,
@@ -69,7 +75,7 @@ class SelfHostAutonomousRunner(
         // Narrated rather than merely collected. Every `steps +=` below now
         // reaches a watching operator as it happens instead of arriving as a
         // block after the run has already decided everything.
-        val steps = atropos.core.thinking.NarratedSteps()
+        val steps = NarratedSteps()
         steps.outline("starting self-host phase $phase")
         val started = service.startGoal(prompt, phase)
         steps += started.message
@@ -100,7 +106,7 @@ class SelfHostAutonomousRunner(
             steps += "no DAG attached to started goal"
             return stopped(started.copy(message = "no DAG"), null, null, steps)
         }
-        val allBatches = planAllBatches(dag)
+        val allBatches = this.planAllBatches(dag)
         val totalBatches = allBatches.size
         val totalNodesInBatches = allBatches.sumOf { it.size }
         steps.outline("batch planning: $totalBatches batches, $totalNodesInBatches nodes")
@@ -162,7 +168,7 @@ class SelfHostAutonomousRunner(
                         )
                         steps += "re-advance after repair: ${reAdvanced.message}"
                         latest = reAdvanced
-                        record = reAdvanced.goal?.record
+                        nodeRecord = reAdvanced.goal?.record
                         if (reAdvanced.ok) {
                             break // Repair succeeded, continue with next node
                         }
@@ -181,16 +187,17 @@ class SelfHostAutonomousRunner(
                         )
                         steps += "automatic recovery #$automaticRecoveries: ${recovery.message}"
                         latest = recovery
-                        if (!recovery.ok || recovery.goal?.nodeRecord?.isTerminal() == true) break
+                        if (!recovery.ok || recovery.goal?.record?.isTerminal() == true) break
                         continue
                     }
                     break
                 }
+            }
             if (nodeRecord?.isTerminal() == true) break
         }
 
         val finalRecord = service.resolveStatusGoal(goalId).goal?.record ?: latest.goal?.record
-        if (record == null) {
+        if (finalRecord == null) {
             return stopped(SelfHostResult(false, "self-host goal disappeared: $goalId"), null, null, steps)
         }
         gitStatusEvidence?.capture()?.let { statusLine ->
@@ -200,7 +207,7 @@ class SelfHostAutonomousRunner(
         if (finalRecord.terminalCondition != GoalTerminalCondition.VERIFIED_COMPLETE) {
             service.addEvidence(goalId, service.planNextAction(goalId).evidenceLine())
             val bundle = service.exportEvidenceBundle(goalId)
-            val refreshed = service.resolveStatusGoal(goalId).goal ?: SelfHostGoal(record, latest.goal?.dag)
+            val refreshed = service.resolveStatusGoal(goalId).goal ?: SelfHostGoal(finalRecord, latest.goal?.dag)
             steps += bundle.message
             return SelfHostAutonomousRunResult(
                 ok = false,
@@ -222,15 +229,15 @@ class SelfHostAutonomousRunner(
             service.addEvidence(goalId, compiled.evidenceLine())
             steps += "compile gate: passed=${compiled.passed} exit=${compiled.exitCode ?: "none"} command=${compiled.commandLine()}"
             if (!compiled.passed) {
-                val stopped = service.stopForExternalInput(goalId, compiled.message)
+                val stoppedResult = service.stopForExternalInput(goalId, compiled.message)
                 service.addEvidence(goalId, service.planNextAction(goalId).evidenceLine())
                 val bundle = service.exportEvidenceBundle(goalId)
-                steps += stopped.message
+                steps += stoppedResult.message
                 steps += bundle.message
                 return SelfHostAutonomousRunResult(
                     ok = false,
                     message = "self-host mutated source but the compile gate refused promotion: ${compiled.message}",
-                    goal = service.resolveStatusGoal(goalId).goal ?: stopped.goal,
+                    goal = service.resolveStatusGoal(goalId).goal ?: stoppedResult.goal,
                     promotion = null,
                     evidenceBundle = bundle,
                     steps = steps,
@@ -245,15 +252,15 @@ class SelfHostAutonomousRunner(
             service.addEvidence(goalId, built.evidenceLine())
             steps += built.message
             if (!built.ok) {
-                val stopped = service.stopForExternalInput(goalId, built.message)
+                val stoppedResult = service.stopForExternalInput(goalId, built.message)
                 service.addEvidence(goalId, service.planNextAction(goalId).evidenceLine())
                 val bundle = service.exportEvidenceBundle(goalId)
-                steps += stopped.message
+                steps += stoppedResult.message
                 steps += bundle.message
                 return SelfHostAutonomousRunResult(
                     ok = false,
                     message = "self-host verified source changes but stopped before jar promotion: ${built.message}",
-                    goal = service.resolveStatusGoal(goalId).goal ?: stopped.goal,
+                    goal = service.resolveStatusGoal(goalId).goal ?: stoppedResult.goal,
                     promotion = null,
                     evidenceBundle = bundle,
                     steps = steps,
@@ -266,11 +273,10 @@ class SelfHostAutonomousRunner(
         val jarPaths = jarLocator.resolve()
         if (!jarPaths.ok || jarPaths.paths == null) {
             service.addEvidence(goalId, "jar_promotion_stop reason=${jarPaths.message}")
-            val stopped = service.stopForExternalInput(goalId, jarPaths.message)
+            val stoppedResult = service.stopForExternalInput(goalId, jarPaths.message)
             service.addEvidence(goalId, service.planNextAction(goalId).evidenceLine())
-            steps += stopped.message
             val bundle = service.exportEvidenceBundle(goalId)
-            val refreshed = service.resolveStatusGoal(goalId).goal ?: stopped.goal
+            val refreshed = service.resolveStatusGoal(goalId).goal ?: stoppedResult.goal
             steps += jarPaths.message
             steps += bundle.message
             return SelfHostAutonomousRunResult(
@@ -284,15 +290,15 @@ class SelfHostAutonomousRunner(
             )
         }
         val paths = jarPaths.paths ?: run {
-            val stopped = service.stopForExternalInput(goalId, "jar paths missing after resolution")
+            val stoppedResult = service.stopForExternalInput(goalId, "jar paths missing after resolution")
             val bundle = service.exportEvidenceBundle(goalId)
             return SelfHostAutonomousRunResult(
                 ok = false,
                 message = "self-host stopped before jar promotion: jar paths missing after resolution",
-                goal = stopped.goal ?: service.resolveStatusGoal(goalId).goal,
+                goal = stoppedResult.goal ?: service.resolveStatusGoal(goalId).goal,
                 promotion = null,
                 evidenceBundle = bundle,
-                steps = steps + stopped.message + bundle.message,
+                steps = steps + stoppedResult.message + bundle.message,
                 compileGate = compileResult
             )
         }
@@ -301,12 +307,12 @@ class SelfHostAutonomousRunner(
         val prePromotionBundle = service.exportEvidenceBundle(goalId)
         steps += prePromotionBundle.message
         if (!prePromotionBundle.ok) {
-            val stopped = service.stopForExternalInput(goalId, prePromotionBundle.message)
-            steps += stopped.message
+            val stoppedResult = service.stopForExternalInput(goalId, prePromotionBundle.message)
+            steps += stoppedResult.message
             return SelfHostAutonomousRunResult(
                 ok = false,
                 message = "self-host stopped before jar promotion: ${prePromotionBundle.message}",
-                goal = stopped.goal ?: service.resolveStatusGoal(goalId).goal,
+                goal = stoppedResult.goal ?: service.resolveStatusGoal(goalId).goal,
                 promotion = null,
                 evidenceBundle = prePromotionBundle,
                 steps = steps,
@@ -319,7 +325,7 @@ class SelfHostAutonomousRunner(
             targetJar = paths.targetJar
         )
         steps += promotion.message
-        val stopped = if (!promotion.promoted) {
+        val stoppedResult = if (!promotion.promoted) {
             service.addEvidence(goalId, "jar_promotion_stop reason=${promotion.message}")
             service.stopForExternalInput(goalId, promotion.message).also { steps += it.message }
         } else {
