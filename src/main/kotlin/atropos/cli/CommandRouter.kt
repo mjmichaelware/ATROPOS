@@ -29,6 +29,8 @@ import atropos.core.nl.NlEntryPipeline
 import atropos.core.nl.NlSource
 import atropos.core.provider.ProviderOnboardingService
 import atropos.core.integration.McpHostManager
+import atropos.cli.ui.TranscriptEntry
+import atropos.cli.ui.TranscriptBuffer
 
 enum class RouterOutcome { CONTINUE, EXIT }
 

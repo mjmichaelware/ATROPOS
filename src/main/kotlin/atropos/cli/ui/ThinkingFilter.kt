@@ -48,6 +48,6 @@ class ThinkingFilter(
 
 sealed class ThinkingEvent {
     data class Enter(val content: String, val depth: Int = 1) : ThinkingEvent()
-    data class Exit : ThinkingEvent()
+    object Exit : ThinkingEvent()
     data class Thought(val content: String, val depth: Int) : ThinkingEvent()
 }

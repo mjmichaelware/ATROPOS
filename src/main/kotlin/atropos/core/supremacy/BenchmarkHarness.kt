@@ -84,7 +84,7 @@ object BenchmarkHarness {
                     "benchmarkId": "${r.benchmarkId}",
                     "agent": "${r.agent}",
                     "score": ${r.result.score},
-                    "metrics": ${r.result.metrics.joinToString(",") { "\"$it.key\": $it.value" }},
+                    "metrics": ${r.result.metrics.entries.joinToString(",") { it -> "\"${it.key}\": ${it.value}" }},
                     "completedAt": "${r.result.completedAt}",
                     "error": "${r.error ?: ""}"
                 }
