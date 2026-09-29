@@ -474,12 +474,14 @@ HttpRoute("POST", "/v1/reproducibility", "evaluate or snapshot reproducibility")
                     } else {
                         val filesObj = body?.getJSONObject("files")
                         val files = if (filesObj != null) {
+                            val list = mutableListOf<String>()
                             val iterator = filesObj.keys()
-                            val list = java.util.Collections.list(iterator)
-                            list.mapNotNull { k: Any ->
-                                val key = k.toString()
-                                val v = filesObj.getString(key)
-                                if (v != null) key to v else null
+                            while (iterator.hasNext()) {
+                                list.add(iterator.next())
+                            }
+                            list.mapNotNull { k ->
+                                val v = filesObj.getString(k)
+                                if (v != null) k to v else null
                             }.toMap()
                         } else emptyMap()
                         HttpResponse.json(reproducibilityView.evaluate(files))
