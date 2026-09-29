@@ -45,8 +45,6 @@ class SelfHostRepairExecutor(
         AgentContextCollector(repoRoot = AtroposRepoRootLocator.resolve()),
         ProviderOnboardingService()
     ),
-    private val providerTruth: ProviderTruthService = ProviderTruthService(AtroposConfig.load()),
-    private val dagService: DagExecutionService = DagExecutionService(),
     private val redactionFilter: RedactionFilter = RedactionFilter(),
     private val clock: () -> Instant = { Instant.now() }
 ) {

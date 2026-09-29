@@ -38,7 +38,7 @@ class ClipboardService {
             pb.redirectErrorStream(true)
             val process = pb.start()
             process.waitFor()
-            process.exitValue == 0
+            process.waitFor() == 0
         }.getOrDefault(false)
     }
 

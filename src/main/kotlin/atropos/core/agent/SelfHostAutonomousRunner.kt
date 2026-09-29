@@ -6,6 +6,7 @@ import atropos.core.planning.InternalBatchDefiner
 import atropos.core.planning.InternalReadinessCalculator
 import atropos.core.verification.GovernedCompileGate
 import atropos.core.verification.GovernedCompileGateResult
+import atropos.core.agent.GoalRunRecord
 
 class SelfHostAutonomousRunner(
     private val service: SelfHostGoalService,
