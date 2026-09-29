@@ -60,7 +60,7 @@ class EngineHttpServer(
         Thread(task, "atropos-bridge").apply { isDaemon = true }
     }
 
-    fun isRunning(): Boolean = running
+    fun isRunning(): Boolean = running.get()
 
     fun lastError(): String? = lastErrorRef.get()
 
@@ -94,11 +94,11 @@ class EngineHttpServer(
     }
 
     private fun acceptLoop(socket: ServerSocket) {
-        while (running && !socket.isClosed) {
+        while (localRunning && !socket.isClosed) {
             val client = try {
                 socket.accept()
             } catch (e: Exception) {
-                if (running) lastErrorRef.set(redactionFilter.compact(e.message ?: "accept failed"))
+                if (running.get()) lastErrorRef.set(redactionFilter.compact(e.message ?: "accept failed"))
                 return
             }
             // A rejected connection is reported, never silently dropped: a
@@ -214,16 +214,16 @@ class EngineHttpServer(
         val inStream = socket.getInputStream()
 
         // Extract projectId from query
-        val projectId = request.query.getOrNull("projectId")
+        val projectId = request.query["projectId"]
 
         // Spawn PTY terminal session
         val terminal = TerminalSession.spawn(projectId)
-        var running = true
+        var localRunning = true
 
         // Thread to read from PTY and send to WebSocket
         val ptyReaderThread = Thread({
             val buffer = ByteArray(4096)
-            while (running && !socket.isClosed) {
+            while (localRunning && !socket.isClosed) {
                 try {
                     val n = terminal.read(buffer)
                     if (n > 0) {
@@ -241,7 +241,7 @@ class EngineHttpServer(
 
         // Main loop: read WebSocket frames from client and write to PTY
         val buffer = ByteBuffer.allocate(4096)
-        while (running && !socket.isClosed) {
+        while (localRunning && !socket.isClosed) {
             try {
                 // Read WebSocket frame
                 val opcodeAndFin = inStream.read()

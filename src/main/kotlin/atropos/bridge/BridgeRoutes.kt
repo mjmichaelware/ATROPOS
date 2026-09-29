@@ -474,7 +474,7 @@ HttpRoute("POST", "/v1/reproducibility", "evaluate or snapshot reproducibility")
                     } else {
                         val filesObj = body?.getJSONObject("files")
                         val files = if (filesObj != null) {
-                            filesObj.keys().mapNotNull { (k: String) ->
+                            filesObj.keys().toList().mapNotNull { (k: String) ->
                                 val v = filesObj.getString(k)
                                 if (v != null) k to v else null
                             }.toMap()
