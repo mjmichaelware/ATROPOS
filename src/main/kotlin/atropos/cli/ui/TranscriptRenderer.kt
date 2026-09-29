@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.cli.ui
 
-import atropos.cli.session.TranscriptEntry
+import atropos.cli.ui.TranscriptEntry
 import atropos.cli.ui.ThinkingFilter
 import atropos.cli.ui.ThinkingLevel
 import atropos.cli.ui.DisclosureRow
@@ -9,9 +9,9 @@ import atropos.cli.ui.DisclosureKind
 import atropos.cli.ui.TranscriptBuffer
 import atropos.cli.ui.AnsiLineWrapper
 import atropos.cli.ui.TerminalText
-import atropos.cli.ui.design.TerminalTheme
-import atropos.cli.ui.design.Glyphs
-import atropos.cli.ui.design.Role
+import atropos.cli.ui.TerminalTheme
+import atropos.cli.ui.Glyphs
+import atropos.cli.ui.Role
 import atropos.core.security.RedactionFilter
 
 /**
