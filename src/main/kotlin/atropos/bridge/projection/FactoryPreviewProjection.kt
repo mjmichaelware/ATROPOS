@@ -84,8 +84,8 @@ class FactoryPreviewProjection(
             )
         }
 
-        val projectRecord = projectRegistry?.records.firstOrNull { it.value.binding.repoRoot == project.path }
-        val status = projectRecord?.value?.status ?: ProjectStatus.WORKING
+        val projectRecord = projectRegistry?.list()?.firstOrNull { it.binding.repoRoot == project.path }
+        val status = projectRecord?.status ?: ProjectStatus.WORKING
 
         return JsonWriter.obj(
             "ok" to JsonWriter.bool(true),

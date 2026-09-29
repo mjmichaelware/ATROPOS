@@ -64,7 +64,7 @@ class VisualComparisonProjection(
             "evidenceRef" to JsonWriter.obj(
                 "casHash" to JsonWriter.str(currentHash),
                 "claimId" to JsonWriter.str("visual-compare-${System.currentTimeMillis()}"),
-                "gateIds" to JsonWriter.arr("visual-compare")
+                "gateIds" to JsonWriter.arr(listOf(JsonWriter.str("visual-compare")))
             )
         )
     }

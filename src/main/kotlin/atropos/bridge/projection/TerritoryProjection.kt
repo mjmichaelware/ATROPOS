@@ -33,7 +33,7 @@ class TerritoryProjection(
         val assignments = service.getAll()
         val results = assignments.map { assignment ->
             val allowed = assignment.allows(path)
-            JsonWriter.obj(
+            allowed to JsonWriter.obj(
                 "assignmentId" to JsonWriter.str(assignment.id),
                 "ownerId" to JsonWriter.str(assignment.ownerId),
                 "ownerRole" to JsonWriter.str(assignment.ownerRole),
@@ -43,12 +43,12 @@ class TerritoryProjection(
             )
         }
 
-        val anyAllowed = results.any { it.getBoolean("allowed") }
+        val anyAllowed = results.any { it.first }
         return JsonWriter.obj(
             "ok" to JsonWriter.bool(true),
             "path" to JsonWriter.str(path),
             "anyAllowed" to JsonWriter.bool(anyAllowed),
-            "assignments" to JsonWriter.arr(results)
+            "assignments" to JsonWriter.arr(results.map { it.second })
         )
     }
 

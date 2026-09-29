@@ -30,7 +30,7 @@ class WorkspaceProjection(
             return JsonWriter.obj(
                 "ok" to JsonWriter.bool(false),
                 "error" to JsonWriter.str("Repository root not found: $repoRoot"),
-                "tree" to JsonWriter.arr()
+                "tree" to JsonWriter.arr(emptyList())
             )
         }
 
@@ -99,7 +99,7 @@ class WorkspaceProjection(
         return Files.list(current)
             .filter { Files.isRegularFile(it) || Files.isDirectory(it) }
             .map { path ->
-                val relative = root.relativize(path).toString
+                val relative = root.relativize(path).toString()
                 val isDir = Files.isDirectory(path)
                 val children = if (isDir) buildTree(root, path, maxDepth - 1) else emptyList()
                 val size = if (isDir) 0L else runCatching { Files.size(path) }.getOrDefault(0L)
