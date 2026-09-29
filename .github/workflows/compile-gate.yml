@@ -45,7 +45,7 @@ jobs:
       # phone lane remains allowed to use the same command through its remote
       # compile gate when the device cannot finish Gradle in its heap budget.
       - name: compileKotlin
-        run: ./gradlew --no-daemon compileJava compileTestJava compileKotlin compileTestKotlin -Pkotlin.compiler.maxErrors=10000 -Pkotlin.compiler.args="-Xmax-errors=10000"
+        run: ./gradlew --no-daemon compileJava compileTestJava compileKotlin compileTestKotlin -Pkotlin.compiler.maxErrors=10000 -Dorg.jetbrains.kotlin.compiler.maxErrors=10000
 
   focused-backend-tests:
     needs: compile
