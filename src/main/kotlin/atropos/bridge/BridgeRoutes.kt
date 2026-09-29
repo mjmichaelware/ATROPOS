@@ -465,18 +465,21 @@ class BridgeRoutes(
                         atropos.core.phase20.EvidenceLedger()
                     ))
                 },
-                HttpRoute("POST", "/v1/reproducibility", "evaluate or snapshot reproducibility") { request ->
+HttpRoute("POST", "/v1/reproducibility", "evaluate or snapshot reproducibility") { request ->
                     val body = request.bodyJsonOrNull()
                     val action = body?.getString("action") ?: "evaluate"
                     if (action == "snapshot") {
                         val files: List<String> = body?.getJSONArray("files")?.mapNotNull { (it: Any?) -> it?.toString() } ?: emptyList()
                         HttpResponse.json(reproducibilityView.snapshot(files))
                     } else {
-val files = body?.getJSONObject("files")?.keys().mapNotNull { (k: String) ->
-    val v = body?.getJSONObject("files")?.getString(k)
-    if (v != null) k to v else null
-} ?: emptyMap()
-                        HttpResponse.json(reproducibilityView.evaluate(files.toMap()))
+                        val filesObj = body?.getJSONObject("files")
+                        val files = if (filesObj != null) {
+                            filesObj.keys().mapNotNull { (k: String) ->
+                                val v = filesObj.getString(k)
+                                if (v != null) k to v else null
+                            }.toMap()
+                        } else emptyMap()
+                        HttpResponse.json(reproducibilityView.evaluate(files))
                     }
                 },
                 HttpRoute("GET", "/v1/territory", "list all territory assignments") { request ->

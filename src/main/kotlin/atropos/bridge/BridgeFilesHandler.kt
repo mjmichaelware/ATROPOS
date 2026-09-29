@@ -72,8 +72,8 @@ internal class BridgeFilesHandler(
             current = current.parent
         }
 
-        val repoRootStr = repoRoot.path.toString()
-val targetStr = targetPath.path.toString()
+        val repoRootStr = repoRoot.toAbsolutePath().toString()
+val targetStr = targetPath.toAbsolutePath().toString()
 val relativeTarget = targetStr.substringAfter(repoRootStr).takeIf { it.startsWith("/") }!!.removePrefix("/")
         val execution = agency.execute(
             ActionProposal(

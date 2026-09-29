@@ -175,13 +175,13 @@ class EngineHttpServer(
         val acceptKey = computeWebSocketAccept(webSocketKey)
         val response = HttpResponse(
             101,
-            "Switching Protocols",
+            "",
+            "text/plain",
             mapOf(
                 "Upgrade" to "websocket",
                 "Connection" to "Upgrade",
                 "Sec-WebSocket-Accept" to acceptKey
-            ),
-            ""
+            )
         )
         writer.write(socket.getOutputStream(), response)
 
@@ -217,7 +217,7 @@ class EngineHttpServer(
         val projectId = request.query.get("projectId")
 
         // Spawn PTY terminal session
-        val terminal = TerminalSession.spawn(projectId)
+        val terminal = TerminalSession.spawn()
         var running = true
 
         // Thread to read from PTY and send to WebSocket
@@ -227,7 +227,7 @@ class EngineHttpServer(
                 try {
                     val n = terminal.read(buffer)
                     if (n > 0) {
-                        val frame = encodeWebSocketFrame(buffer, 0, n)
+                        val frame = encodeWebSocketFrame(buffer.copyOfRange(0, n))
                         outStream.write(frame)
                         outStream.flush()
                     } else {
@@ -252,7 +252,7 @@ class EngineHttpServer(
                 val maskAndLen = inStream.read()
                 if (maskAndLen == -1) break
                 val masked = (maskAndLen and 0x80) != 0
-                var payloadLen = maskAndLen and 0x7F
+                var payloadLen: Long = (maskAndLen and 0x7F).toLong()
 
                 if (payloadLen == 126) {
                     payloadLen = (inStream.read() shl 8) or inStream.read()
@@ -268,17 +268,17 @@ class EngineHttpServer(
                     inStream.read(mask)
                 }
 
-                val payload = ByteArray(payloadLen)
+                val payload = ByteArray(payloadLen.toInt())
                 var read = 0
                 while (read < payloadLen) {
-                    val n = inStream.read(payload, read, payloadLen - read)
+                    val n = inStream.read(payload, read, (payloadLen - read).toInt())
                     if (n <= 0) break
                     read += n
                 }
 
                 if (masked) {
-                    for (i in 0 until payloadLen) {
-                        payload[i] = (payload[i] xor mask[i % 4]).toByte()
+                    for (i in 0 until payloadLen.toInt()) {
+                        payload[i] = (payload[i].toInt() xor mask[i % 4].toInt()).toByte()
                     }
                 }
 
@@ -332,7 +332,7 @@ class EngineHttpServer(
             header.write(127.toByte())
             // 64-bit length (simplified for our use case)
             for (i in 7 downTo 0) {
-                header.write((payload.size.toLong() shr (i * 8) and 0xFF).toByte())
+                header.write(((payload.size.toLong() shr (i * 8)) and 0xFFL).toInt().toByte())
             }
         }
         header.write(payload)
