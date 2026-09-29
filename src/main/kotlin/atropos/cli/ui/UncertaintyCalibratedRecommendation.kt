@@ -154,12 +154,12 @@ class UncertaintyCalibratedRenderer(
 
         val (prefix, color) = when (confidence) {
             is UncertaintyCalibratedRecommendation.Confidence.Measured -> when (confidence.band) {
-                UncertaintyCalibratedRecommendation.Confidence.Band.HIGH -> "✓ " to theme.success
-                UncertaintyCalibratedRecommendation.Confidence.Band.MEDIUM -> "~ " to theme.warning
-                UncertaintyCalibratedRecommendation.Confidence.Band.LOW -> "⚠ " to theme.error
+                UncertaintyCalibratedRecommendation.Confidence.Band.HIGH -> "✓ " to { it -> theme.success(it) }
+                UncertaintyCalibratedRecommendation.Confidence.Band.MEDIUM -> "~ " to { it -> theme.warning(it) }
+                UncertaintyCalibratedRecommendation.Confidence.Band.LOW -> "⚠ " to { it -> theme.error(it) }
             }
-            is UncertaintyCalibratedRecommendation.Confidence.NotMeasured -> "?" to theme.metadata
-            is UncertaintyCalibratedRecommendation.Confidence.Unavailable -> "×" to theme.metadata
+            is UncertaintyCalibratedRecommendation.Confidence.NotMeasured -> "?" to { it -> theme.metadata(it) }
+            is UncertaintyCalibratedRecommendation.Confidence.Unavailable -> "×" to { it -> theme.metadata(it) }
         }
 
         sb.append(color("$prefix"))
@@ -167,19 +167,19 @@ class UncertaintyCalibratedRenderer(
 
         // Confidence display
         sb.append(" ")
-        sb.append(theme.metadata("["))
+        sb.append({ it -> theme.metadata(it) }("["))
         sb.append(color(confidenceDisplay(confidence)))
-        sb.append(theme.metadata("]"))
+        sb.append({ it -> theme.metadata(it) }("]"))
 
         // Evidence IDs
         if (rec.evidenceIds.isNotEmpty()) {
             sb.append(" ")
-            sb.append(theme.metadata("["))
-            sb.append(theme.metadata("evidence: ${rec.evidenceIds.joinToString(",")}"))
-            sb.append(theme.metadata("]"))
+            sb.append({ it -> theme.metadata(it) }("["))
+            sb.append({ it -> theme.metadata(it) }("evidence: ${rec.evidenceIds.joinToString(",")}"))
+            sb.append({ it -> theme.metadata(it) }("]"))
         } else {
             sb.append(" ")
-            sb.append(theme.metadata("[no evidence]"))
+            sb.append({ it -> theme.metadata(it) }("[no evidence]"))
         }
 
         return sb.toString()
@@ -192,7 +192,7 @@ class UncertaintyCalibratedRenderer(
     }
 
     fun renderAll(recommendations: List<UncertaintyCalibratedRecommendation.Recommendation>): String {
-        if (recommendations.isEmpty()) return theme.metadata("No recommendations.")
+        if (recommendations.isEmpty()) return { it -> theme.metadata(it) }("No recommendations.")
         return recommendations.map { render(it) }.joinToString("\n")
     }
 }
