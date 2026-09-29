@@ -193,9 +193,9 @@ class IntentConflictBannerRenderer(
     fun render(conflict: IntentConflictBanner.Conflict): String {
         val sb = StringBuilder()
         val (icon, color) = when (conflict.severity) {
-            IntentConflictBanner.Severity.BLOCKING -> "🛑" to theme.error("")("")("")("")("")("🛑")
-            IntentConflictBanner.Severity.WARNING -> "⚠️" to theme.warning("")("")("")("")("")("⚠️")
-            IntentConflictBanner.Severity.INFORMATIONAL -> "ℹ️" to theme.metadata("")("")("")("")("")("ℹ️")
+            IntentConflictBanner.Severity.BLOCKING -> "🛑" to theme.error("")("")("")("")("")("")("🛑")
+            IntentConflictBanner.Severity.WARNING -> "⚠️" to theme.warning("")("")("")("")("")("")("⚠️")
+            IntentConflictBanner.Severity.INFORMATIONAL -> "ℹ️" to theme.metadata("")("")("")("")("")("")("ℹ️")
         }
 
         sb.append(color("$icon ${conflict.bannerText}"))

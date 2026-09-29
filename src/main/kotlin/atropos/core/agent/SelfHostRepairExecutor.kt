@@ -44,6 +44,7 @@ class SelfHostRepairExecutor(
         AtroposConfig.load(),
         AgentContextCollector(repoRoot = AtroposRepoRootLocator.resolve()),
         ProviderOnboardingService()
+    ),
     private val clock: () -> Instant = { Instant.now() }
 ) {
 
