@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.cli.ui
 
+import atropos.cli.session.TranscriptEntry
 import atropos.cli.ui.design.Glyphs
 import atropos.cli.ui.design.Role
 import atropos.core.security.RedactionFilter

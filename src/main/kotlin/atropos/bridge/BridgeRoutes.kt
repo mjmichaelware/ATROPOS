@@ -469,7 +469,7 @@ HttpRoute("POST", "/v1/reproducibility", "evaluate or snapshot reproducibility")
                     val body = request.bodyJsonOrNull()
                     val action = body?.getString("action") ?: "evaluate"
                     if (action == "snapshot") {
-                        val files: List<String> = body?.getJSONArray("files")?.mapNotNull { (it: Any?) -> it?.toString() } ?: emptyList()
+                        val files: List<String> = (body?.getJSONArray("files")?.toList() as? List<Any>)?.mapNotNull { it?.toString() } ?: emptyList()
                         HttpResponse.json(reproducibilityView.snapshot(files))
                     } else {
                         val filesObj = body?.getJSONObject("files")

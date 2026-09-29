@@ -113,11 +113,6 @@ state.activeOperation
             add(checkpointChip.renderChip(checkpointAge, safeWidth))
             add(theme.subdued("/help"))
         }
-                }
-            // Checkpoint chip - primary Continue action
-            add(checkpointChip.renderChip(checkpointAge, safeWidth))
-            add(theme.subdued("/help"))
-        }
 
         // Shed pills from the left of the right-hand group until it fits.
         var kept = pills
