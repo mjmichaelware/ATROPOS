@@ -135,16 +135,3 @@ class DockerMcpIntegration(configDir: Path) : BaseMcpIntegration("docker", "Dock
 
     data class HttpResponse(val statusCode: Int, val body: String)
 
-    override fun register(): RegistrationInfo = RegistrationInfo(
-        systemId = "docker", displayName = "Docker",
-        capabilities = listOf("containers", "images", "networks", "volumes", "services", "builds", "nodes", "secrets", "configs"),
-        authRequired = listOf("docker_socket", "tls_certs"), version = "1.0"
-    )
-    override fun discover(): List<RegistrationInfo> = listOf(register())
-    override fun unregister(): Boolean = true
-    override fun checkTerritory(resource: McpResource): TerritoryResult = TerritoryResult(true)
-    override fun getTerritoryBoundaries(): List<String> = emptyList()
-    override fun sanitizeInput(input: String): String = super.sanitizeInput(input)
-    override fun encryptSecret(secret: String): String = "enc:$secret"
-    override fun decryptSecret(encrypted: String): String = encrypted.removePrefix("enc:")
-}

@@ -108,7 +108,7 @@ class AwsMcpIntegration(configDir: Path) : BaseMcpIntegration("aws", "AWS", conf
         else -> resource
     }
     override fun updateResource(id: String, updates: Map<String, Any>): McpResource = McpResource(id, "", "")
-    override fun deleteResource(id: String, params: Map<String, String>): Boolean = when (params["type"] ?: "ec2_instances") {
+    override fun deleteResource(id: String): Boolean = when (params["type"] ?: "ec2_instances") {
         "ec2_instances" -> terminateEc2Instance(id)
         "s3_buckets" -> deleteS3Bucket(id)
         "lambda_functions" -> deleteLambdaFunction(id)
@@ -233,25 +233,4 @@ class AwsMcpIntegration(configDir: Path) : BaseMcpIntegration("aws", "AWS", conf
     private fun deleteIamRole(id: String): Boolean = true
     private fun deleteSecret(id: String): Boolean = true
 
-    override fun register(): RegistrationInfo = RegistrationInfo(
-        systemId = "aws", displayName = "AWS",
-        capabilities = listOf("ec2", "s3", "lambda", "rds", "dynamodb", "ecs", "cloudformation", "iam", "secretsmanager", "ssm", "sns", "sqs", "eventbridge", "stepfunctions"),
-        authRequired = listOf("access_key_id", "secret_access_key", "profile", "role_arn", "container_credentials"), version = "1.0"
-    )
-    override fun discover(): List<RegistrationInfo> = listOf(register())
-    override fun unregister(): Boolean { clients.clear(); return true }
-
-    override fun checkTerritory(resource: McpResource): TerritoryResult {
-        val accountId = resource.properties["account_id"] as String? ?: ""
-        val region = resource.properties["region"] as String? ?: ""
-        val vpc = resource.properties["vpc_id"] as String? ?: ""
-        return TerritoryResult(
-            allowed = accountId.isNotEmpty() || region.isNotEmpty() || vpc.isNotEmpty(),
-            boundaries = listOf(accountId, region, vpc).filter { it.isNotEmpty() }
-        )
-    }
-    override fun getTerritoryBoundaries(): List<String> = emptyList()
-    override fun sanitizeInput(input: String): String = input.replace("'", "").replace("\"", "")
-    override fun encryptSecret(secret: String): String = "enc:$secret"
-    override fun decryptSecret(encrypted: String): String = encrypted.removePrefix("enc:")
 }

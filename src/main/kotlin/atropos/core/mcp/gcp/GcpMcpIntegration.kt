@@ -182,25 +182,3 @@ class GcpMcpIntegration(configDir: Path) : BaseMcpIntegration("gcp", "Google Clo
     private fun deleteCloudSqlInstance(id: String): Boolean = true
     private fun deleteBigQueryDataset(id: String): Boolean = true
 
-    override fun register(): RegistrationInfo = RegistrationInfo(
-        systemId = "gcp", displayName = "Google Cloud Platform",
-        capabilities = listOf("compute", "storage", "functions", "run", "sql", "bigquery", "pubsub", "firestore", "spanner", "gke", "build", "artifact_registry"),
-        authRequired = listOf("service_account_key", "adc", "impersonation", "workload_identity"), version = "1.0"
-    )
-    override fun discover(): List<RegistrationInfo> = listOf(register())
-    override fun unregister(): Boolean { return true }
-
-    override fun checkTerritory(resource: McpResource): TerritoryResult {
-        val project = resource.properties["project_id"] as String? ?: projectId ?: ""
-        val region = resource.properties["region"] as String? ?: ""
-        val zone = resource.properties["zone"] as String? ?: ""
-        return TerritoryResult(
-            allowed = project.isNotEmpty() || region.isNotEmpty() || zone.isNotEmpty(),
-            boundaries = listOf(project, region, zone).filter { it.isNotEmpty() }
-        )
-    }
-    override fun getTerritoryBoundaries(): List<String> = emptyList()
-    override fun sanitizeInput(input: String): String = input.replace("'", "").replace("\"", "")
-    override fun encryptSecret(secret: String): String = "enc:$secret"
-    override fun decryptSecret(encrypted: String): String = encrypted.removePrefix("enc:")
-}
