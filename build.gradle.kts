@@ -18,8 +18,8 @@
 // against. `apply false` puts the multiplatform variant on the classpath for
 // :core without applying it to the engine, which is a JVM project.
 plugins {
-    id("org.jetbrains.kotlin.jvm") version "1.9.24"
-    id("org.jetbrains.kotlin.multiplatform") version "1.9.24" apply false
+    id("org.jetbrains.kotlin.jvm") version "2.1.0"
+    id("org.jetbrains.kotlin.multiplatform") version "2.1.0" apply false
     application
 }
 
