@@ -5,6 +5,7 @@ import atropos.core.dag.DagDefinition
 import atropos.core.dag.DagNode
 import atropos.core.planning.InternalBatchDefiner
 import atropos.core.planning.InternalReadinessCalculator
+import atropos.core.dag.DagExecutionService
 import atropos.core.planning.InternalExecutionDagSynthesizer
 
 /**
@@ -26,7 +27,7 @@ class SelfHostBatchPlanner(
      * Plans a batch of ready, non-overlapping nodes for the given goal.
      * Returns the planned batch as a list of node IDs, or empty if no ready nodes.
      */
-    fun planBatch(goalId: String, dagService: DagExecutionService, goalId: String): List<String> {
+    fun planBatch(goalId: String, dagService: DagExecutionService): List<String> {
         val dag = dagService.readDag(goalId) ?: return emptyList()
         val readyNodes = InternalReadinessCalculator().readyNodes(dag)
         
