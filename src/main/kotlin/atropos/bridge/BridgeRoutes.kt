@@ -469,13 +469,13 @@ class BridgeRoutes(
                     val body = request.bodyJsonOrNull()
                     val action = body?.getString("action") ?: "evaluate"
                     if (action == "snapshot") {
-                        val files: List<String> = body?.getJsonArray("files")?.mapNotNull { (it: Any?) -> it?.toString() } ?: emptyList()
+                        val files: List<String> = body?.getJSONArray("files")?.mapNotNull { (it: Any?) -> it?.toString() } ?: emptyList()
                         HttpResponse.json(reproducibilityView.snapshot(files))
                     } else {
-                        val files = body?.getJsonObject("files")?.keys().mapNotNull { (k: String) ->
-                            val v = body?.getJsonObject("files")?.getString(k)
-                            if (v != null) k to v else null
-                        } ?: emptyMap()
+val files = body?.getJSONObject("files")?.keys().mapNotNull { (k: String) ->
+    val v = body?.getJSONObject("files")?.getString(k)
+    if (v != null) k to v else null
+} ?: emptyMap()
                         HttpResponse.json(reproducibilityView.evaluate(files.toMap()))
                     }
                 },

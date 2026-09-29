@@ -210,8 +210,8 @@ class EngineHttpServer(
         }
 
         socket.soTimeout = 0
-        val out = socket.getOutputStream()
-        val in = socket.getInputStream()
+        val outStream = socket.getOutputStream()
+        val inStream = socket.getInputStream()
 
         // Extract projectId from query
         val projectId = request.query.get("projectId")
@@ -228,8 +228,8 @@ class EngineHttpServer(
                     val n = terminal.read(buffer)
                     if (n > 0) {
                         val frame = encodeWebSocketFrame(buffer, 0, n)
-                        out.write(frame)
-                        out.flush()
+                        outStream.write(frame)
+                        outStream.flush()
                     } else {
                         break
                     }
@@ -244,34 +244,34 @@ class EngineHttpServer(
         while (running.get() && !socket.isClosed) {
             try {
                 // Read WebSocket frame
-                val opcodeAndFin = in.read()
+                val opcodeAndFin = inStream.read()
                 if (opcodeAndFin == -1) break
                 val fin = (opcodeAndFin and 0x80) != 0
                 val opcode = opcodeAndFin and 0x0F
 
-                val maskAndLen = in.read()
+                val maskAndLen = inStream.read()
                 if (maskAndLen == -1) break
                 val masked = (maskAndLen and 0x80) != 0
                 var payloadLen = maskAndLen and 0x7F
 
                 if (payloadLen == 126) {
-                    payloadLen = (in.read() shl 8) or in.read()
+                    payloadLen = (inStream.read() shl 8) or inStream.read()
                 } else if (payloadLen == 127) {
                     // 64-bit length (not fully supported, cap at Int.MAX_VALUE)
                     var len = 0L
-                    repeat(8) { len = (len shl 8) or (in.read().toLong() and 0xFF) }
+                    repeat(8) { len = (len shl 8) or (inStream.read().toLong() and 0xFF) }
                     payloadLen = len.coerceAtMost(Int.MAX_VALUE).toInt()
                 }
 
                 var mask = ByteArray(4)
                 if (masked) {
-                    in.read(mask)
+                    inStream.read(mask)
                 }
 
                 val payload = ByteArray(payloadLen)
                 var read = 0
                 while (read < payloadLen) {
-                    val n = in.read(payload, read, payloadLen - read)
+                    val n = inStream.read(payload, read, payloadLen - read)
                     if (n <= 0) break
                     read += n
                 }
@@ -286,15 +286,15 @@ class EngineHttpServer(
                     0x8 -> { // Close frame
                         // Send close frame back
                         val closeFrame = encodeWebSocketFrame(ByteArray(0), 0x8)
-                        out.write(closeFrame)
-                        out.flush()
+                        outStream.write(closeFrame)
+                        outStream.flush()
                         break
                     }
                     0x9 -> { // Ping frame
                         // Respond with Pong
                         val pongFrame = encodeWebSocketFrame(ByteArray(0), 0xA)
-                        out.write(pongFrame)
-                        out.flush()
+                        outStream.write(pongFrame)
+                        outStream.flush()
                     }
                     0xA -> { // Pong frame - ignore
                     }
