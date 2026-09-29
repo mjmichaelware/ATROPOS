@@ -36,7 +36,7 @@ class ClipboardService {
         return runCatching {
             val pb = ProcessBuilder("termux-clipboard-set", text)
             pb.redirectErrorStream(true)
-            val process = pb.start()
+            val process: java.lang.Process = pb.start()
             process.waitFor()
             process.waitFor() == 0
         }.getOrDefault(false)
@@ -56,7 +56,7 @@ class ClipboardService {
         return runCatching {
             val pb = ProcessBuilder("pbcopy")
             pb.redirectInput(ProcessBuilder.Redirect.PIPE)
-            val process = pb.start()
+            val process: java.lang.Process = pb.start()
             val writer = OutputStreamWriter(process.outputStream, StandardCharsets.UTF_8)
             writer.write(text)
             writer.flush()

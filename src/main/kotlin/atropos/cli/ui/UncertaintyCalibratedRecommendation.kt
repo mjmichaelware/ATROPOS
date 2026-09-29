@@ -32,7 +32,7 @@ class UncertaintyCalibratedRecommendation(
         /** Renderable confidence display. */
         val confidenceDisplay: String
             get() = when (confidence) {
-                is Confidence.Measured -> "${confidence.percent}% (${confidence.band.displayName()()()()()()()()()()()})"
+                is Confidence.Measured -> "${confidence.percent}% (${confidence.band.displayName()})"
                 is Confidence.NotMeasured -> "Not measured — treat as guess"
                 is Confidence.Unavailable -> "Unavailable — no evidence"
             }
@@ -154,12 +154,12 @@ class UncertaintyCalibratedRenderer(
 
         val (prefix, color) = when (confidence) {
             is UncertaintyCalibratedRecommendation.Confidence.Measured -> when (confidence.band) {
-                UncertaintyCalibratedRecommendation.Confidence.Band.HIGH -> "✓ " to theme.success("")("")("")("")("")("")
-                UncertaintyCalibratedRecommendation.Confidence.Band.MEDIUM -> "~ " to theme.warning("")("")("")("")("")("")
-                UncertaintyCalibratedRecommendation.Confidence.Band.LOW -> "⚠ " to theme.error("")("")("")("")("")("")
+                UncertaintyCalibratedRecommendation.Confidence.Band.HIGH -> "✓ " to theme.success("")
+                UncertaintyCalibratedRecommendation.Confidence.Band.MEDIUM -> "~ " to theme.warning("")
+                UncertaintyCalibratedRecommendation.Confidence.Band.LOW -> "⚠ " to theme.error("")
             }
-            is UncertaintyCalibratedRecommendation.Confidence.NotMeasured -> "?" to theme.metadata("")("")("")("")("")("")
-            is UncertaintyCalibratedRecommendation.Confidence.Unavailable -> "×" to theme.metadata("")("")("")("")("")("")
+            is UncertaintyCalibratedRecommendation.Confidence.NotMeasured -> "?" to theme.metadata("")
+            is UncertaintyCalibratedRecommendation.Confidence.Unavailable -> "×" to theme.metadata("")
         }
 
         sb.append(color("$prefix"))
@@ -186,7 +186,7 @@ class UncertaintyCalibratedRenderer(
     }
 
     private fun confidenceDisplay(confidence: UncertaintyCalibratedRecommendation.Confidence): String = when (confidence) {
-        is UncertaintyCalibratedRecommendation.Confidence.Measured -> "${confidence.percent}% (${confidence.band.displayName()()()()()()()()()()()})"
+        is UncertaintyCalibratedRecommendation.Confidence.Measured -> "${confidence.percent}% (${confidence.band.displayName()})"
         is UncertaintyCalibratedRecommendation.Confidence.NotMeasured -> "Not measured"
         is UncertaintyCalibratedRecommendation.Confidence.Unavailable -> "Unavailable"
     }
