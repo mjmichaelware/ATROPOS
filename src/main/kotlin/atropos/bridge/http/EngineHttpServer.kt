@@ -214,7 +214,7 @@ class EngineHttpServer(
         val inStream = socket.getInputStream()
 
         // Extract projectId from query
-        val projectId = request.query.get("projectId")
+        val projectId = request.query.getOrNull("projectId")
 
         // Spawn PTY terminal session
         val terminal = TerminalSession.spawn(projectId)

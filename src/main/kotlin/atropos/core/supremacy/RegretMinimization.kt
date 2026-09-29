@@ -57,7 +57,7 @@ object RegretMinimization {
      */
     fun averageRegret(): Double {
         val regrets = decisions.mapNotNull { it.regret }
-        return if (regrets.isEmpty()) 0.0 else regrets.average()
+        return if (regrets.isEmpty()) 0.0 else regrets.toList().average()
     }
 
     /**
@@ -67,7 +67,7 @@ object RegretMinimization {
         return decisions
             .filter { it.actualUtility != null }
             .groupBy { it.action }
-            .mapValues { (_, ds) -> ds.mapNotNull { it.regret }.average() }
+            .mapValues { (_, ds) -> ds.mapNotNull { it.regret }.toList().average() }
     }
 
     /**

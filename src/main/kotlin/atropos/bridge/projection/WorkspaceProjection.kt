@@ -105,7 +105,7 @@ class WorkspaceProjection(
                 val size = if (isDir) 0L else runCatching { Files.size(path) }.getOrDefault(0L)
                 TreeNode(relative, isDir, size, children)
             }
-            .sortedBy { it.name }
+            .sortedBy { it.name.toString() }
             .toList()
     }
 

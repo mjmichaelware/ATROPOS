@@ -5,6 +5,7 @@ import atropos.cli.ui.HeaderRenderer
 import atropos.cli.ui.StatusBarRenderer
 import atropos.cli.ui.SessionPresentationState
 import atropos.cli.ui.chrome.CheckpointAge
+import atropos.cli.ui.design.TerminalTheme
 import atropos.cli.ui.design.Role
 
 /**

@@ -100,7 +100,7 @@ class TerminalSession(
             // Try `script` command first (BSD/Linux), then `socat`, then fallback
             val commands = listOf(
                 listOf("script", "-q", "-f", "-e", "/dev/null", "-c", getShell()),
-                listOf("socat", "pty,raw,echo=0", "exec:'${SHELL:-bash}',pty,setsid,sigint,sane"),
+                listOf("socat", "pty,raw,echo=0", "exec:'"bash"',pty,setsid,sigint,sane"),
                 listOf(getShell())
             )
 
