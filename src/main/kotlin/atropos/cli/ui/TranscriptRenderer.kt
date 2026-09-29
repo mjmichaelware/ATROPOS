@@ -155,8 +155,6 @@ class TranscriptRenderer(
                     }
                 }
             }
-            // Exhaustive when - TranscriptEntry is sealed with Text and Disclosure
-            is TranscriptEntry -> {}
             val scrollOffset = buffer.currentScrollOffset
             val maximumOffset = (lines.size - height).coerceAtLeast(0)
             val start = scrollOffset.coerceIn(0, maximumOffset)
