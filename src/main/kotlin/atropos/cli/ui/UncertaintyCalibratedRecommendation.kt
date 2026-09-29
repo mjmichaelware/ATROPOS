@@ -2,6 +2,7 @@
 package atropos.cli.ui
 
 import atropos.core.security.RedactionFilter
+import atropos.cli.ui.design.ThemePalette
 import java.time.Instant
 
 /**

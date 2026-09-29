@@ -362,12 +362,12 @@ class SelfHostAutonomousRunner(
      * Returns a list of batches, where each batch is a list of node IDs that can
      * execute in parallel (non-overlapping territories).
      */
-    private fun planAllBatches(dag: DagDefinition): List<List<String>> {
+    fun planAllBatches(dag: DagDefinition): List<List<String>> {
         val batches = batchDefiner.define(dag)
         return batches.map { it.map { it.id } }
     }
 
-    private fun stopped(
+    fun stopped(
         result: SelfHostResult,
         promotion: SelfHostPromotionResult?,
         bundle: SelfHostEvidenceBundleResult?,
