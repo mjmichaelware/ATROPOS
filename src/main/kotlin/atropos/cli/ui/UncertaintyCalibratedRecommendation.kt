@@ -49,11 +49,11 @@ class UncertaintyCalibratedRecommendation(
         object Unavailable : Confidence()
 
         enum class Band {
-            HIGH { override fun displayName() = "High (≥80%)" },
-            MEDIUM { override fun displayName() = "Medium (50-79%)" },
-            LOW { override fun displayName() = "Low (<50%)" };
+            HIGH { override fun displayName(): String = "High (≥80%)" },
+            MEDIUM { override fun displayName(): String = "Medium (50-79%)" },
+            LOW { override fun displayName(): String = "Low (<50%)" };
 
-            fun displayName(): String = name
+            abstract fun displayName(): String
         }
 
         companion object {
