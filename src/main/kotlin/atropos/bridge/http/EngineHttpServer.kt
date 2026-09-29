@@ -217,7 +217,7 @@ class EngineHttpServer(
         val projectId = request.query.get("projectId")
 
         // Spawn PTY terminal session
-        val terminal = TerminalSession.spawn()
+        val terminal = TerminalSession.spawn(projectId)
         var running = true
 
         // Thread to read from PTY and send to WebSocket
@@ -254,13 +254,13 @@ class EngineHttpServer(
                 val masked = (maskAndLen and 0x80) != 0
                 var payloadLen: Long = (maskAndLen and 0x7F).toLong()
 
-                if (payloadLen == 126) {
-                    payloadLen = (inStream.read() shl 8) or inStream.read()
-                } else if (payloadLen == 127) {
+                if (payloadLen == 126L) {
+                    payloadLen = ((inStream.read() shl 8) or inStream.read()).toLong()
+                } else if (payloadLen == 127L) {
                     // 64-bit length (not fully supported, cap at Int.MAX_VALUE)
                     var len = 0L
-                    repeat(8) { len = (len shl 8) or (inStream.read().toLong() and 0xFF) }
-                    payloadLen = len.coerceAtMost(Int.MAX_VALUE).toInt()
+                    repeat(8) { len = (len shl 8) or (inStream.read().toLong() and 0xFFL) }
+                    payloadLen = len.coerceAtMost(Int.MAX_VALUE.toLong())
                 }
 
                 var mask = ByteArray(4)
