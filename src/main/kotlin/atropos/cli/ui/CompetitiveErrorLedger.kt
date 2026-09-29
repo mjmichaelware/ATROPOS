@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.cli.ui
 
+fun isSecretLikely(text: String): Boolean = text.contains("secret", ignoreCase = true) || text.contains("password", ignoreCase = true) || text.contains("token", ignoreCase = true) || text.contains("key", ignoreCase = true)
+
 import atropos.core.security.RedactionFilter
 import atropos.core.verification.VerifiedCompletionGate
 import atropos.core.verification.DeterministicVerifier
