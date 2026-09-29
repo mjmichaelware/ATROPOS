@@ -162,4 +162,5 @@ class TranscriptRenderer(
             return lines.subList(start, end)
         }
     }
+}
 

@@ -60,7 +60,7 @@ class EngineHttpServer(
         Thread(task, "atropos-bridge").apply { isDaemon = true }
     }
 
-    fun isRunning(): Boolean = running.get()
+    fun isRunning(): Boolean = running
 
     fun lastError(): String? = lastErrorRef.get()
 
@@ -94,11 +94,11 @@ class EngineHttpServer(
     }
 
     private fun acceptLoop(socket: ServerSocket) {
-        while (running.get() && !socket.isClosed) {
+        while (running && !socket.isClosed) {
             val client = try {
                 socket.accept()
             } catch (e: Exception) {
-                if (running.get()) lastErrorRef.set(redactionFilter.compact(e.message ?: "accept failed"))
+                if (running) lastErrorRef.set(redactionFilter.compact(e.message ?: "accept failed"))
                 return
             }
             // A rejected connection is reported, never silently dropped: a
@@ -223,7 +223,7 @@ class EngineHttpServer(
         // Thread to read from PTY and send to WebSocket
         val ptyReaderThread = Thread({
             val buffer = ByteArray(4096)
-            while (running.get() && !socket.isClosed) {
+            while (running && !socket.isClosed) {
                 try {
                     val n = terminal.read(buffer)
                     if (n > 0) {
@@ -241,7 +241,7 @@ class EngineHttpServer(
 
         // Main loop: read WebSocket frames from client and write to PTY
         val buffer = ByteBuffer.allocate(4096)
-        while (running.get() && !socket.isClosed) {
+        while (running && !socket.isClosed) {
             try {
                 // Read WebSocket frame
                 val opcodeAndFin = inStream.read()
@@ -320,19 +320,19 @@ class EngineHttpServer(
         val len = payload.size
 
         val header = ByteArrayOutputStream()
-        header.write((fin or opcode).toByte())
+        header.write((fin or opcode).toInt())
 
         if (len < 126) {
-            header.write((len or 0).toByte())
+            header.write((len or 0).toInt())
         } else if (len <= 0xFFFF) {
-            header.write(126.toByte())
-            header.write((len shr 8).toByte())
-            header.write((len and 0xFF).toByte())
+            header.write(126.toInt())
+            header.write((len shr 8).toInt())
+            header.write((len and 0xFF).toInt())
         } else {
-            header.write(127.toByte())
+            header.write(127.toInt())
             // 64-bit length (simplified for our use case)
             for (i in 7 downTo 0) {
-                header.write(((payload.size.toLong() shr (i * 8)) and 0xFFL).toInt().toByte())
+                header.write(((payload.size.toLong() shr (i * 8)) and 0xFFL).toInt())
             }
         }
         header.write(payload)
@@ -354,7 +354,7 @@ class EngineHttpServer(
         writer.writeEventStreamHeader(out)
         val sink = object : StreamSink {
             private var open = true
-            override fun isOpen(): Boolean = open && running.get() && !socket.isClosed
+            override fun isOpen(): Boolean = open && running && !socket.isClosed
             override fun emit(event: String, data: String): Boolean {
                 if (!isOpen()) return false
                 return try {

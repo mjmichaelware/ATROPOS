@@ -44,7 +44,7 @@ class UncertaintyCalibratedRecommendation(
 
     sealed class Confidence {
         data class Measured(val percent: Int, val band: Band) : Confidence() {
-            require(percent in 0..100) { "Percent must be 0-100" }
+            init { require(percent in 0..100) { "Percent must be 0-100" } }
         }
         object NotMeasured : Confidence()
         object Unavailable : Confidence()
