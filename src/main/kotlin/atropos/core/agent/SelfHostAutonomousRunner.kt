@@ -1,6 +1,7 @@
 package atropos.core.agent
 
 import atropos.core.dag.DagExecutionService
+import atropos.core.dag.DagDefinition
 import atropos.core.planning.InternalBatchDefiner
 import atropos.core.planning.InternalReadinessCalculator
 import atropos.core.verification.GovernedCompileGate
