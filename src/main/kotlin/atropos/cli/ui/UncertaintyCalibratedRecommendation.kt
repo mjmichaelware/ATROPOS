@@ -152,34 +152,44 @@ class UncertaintyCalibratedRenderer(
         val sb = StringBuilder()
         val confidence = rec.confidence
 
-        val (prefix, color) = when (confidence) {
+        val prefix = when (confidence) {
             is UncertaintyCalibratedRecommendation.Confidence.Measured -> when (confidence.band) {
-                UncertaintyCalibratedRecommendation.Confidence.Band.HIGH -> "✓ " to theme::success
-                UncertaintyCalibratedRecommendation.Confidence.Band.MEDIUM -> "~ " to theme::warning
-                UncertaintyCalibratedRecommendation.Confidence.Band.LOW -> "⚠ " to theme::error
+                UncertaintyCalibratedRecommendation.Confidence.Band.HIGH -> "✓ "
+                UncertaintyCalibratedRecommendation.Confidence.Band.MEDIUM -> "~ "
+                UncertaintyCalibratedRecommendation.Confidence.Band.LOW -> "⚠ "
             }
-            is UncertaintyCalibratedRecommendation.Confidence.NotMeasured -> "?" to theme::metadata
-            is UncertaintyCalibratedRecommendation.Confidence.Unavailable -> "×" to theme::metadata
+            is UncertaintyCalibratedRecommendation.Confidence.NotMeasured -> "?"
+            is UncertaintyCalibratedRecommendation.Confidence.Unavailable -> "×"
         }
 
-        sb.append(color("$prefix"))
+        // Prefix with appropriate color
+        val prefixColored = when (confidence) {
+            is UncertaintyCalibratedRecommendation.Confidence.Measured -> when (confidence.band) {
+                UncertaintyCalibratedRecommendation.Confidence.Band.HIGH -> theme.success(prefix)
+                UncertaintyCalibratedRecommendation.Confidence.Band.MEDIUM -> theme.warning(prefix)
+                UncertaintyCalibratedRecommendation.Confidence.Band.LOW -> theme.error(prefix)
+            }
+            is UncertaintyCalibratedRecommendation.Confidence.NotMeasured -> theme.metadata(prefix)
+            is UncertaintyCalibratedRecommendation.Confidence.Unavailable -> theme.metadata(prefix)
+        }
+        sb.append(prefixColored)
         sb.append(rec.text)
 
         // Confidence display
         sb.append(" ")
-        sb.append(theme::metadata("["))
-        sb.append(color(confidenceDisplay(confidence)))
-        sb.append(theme::metadata("]"))
+        sb.append(theme.metadata("["))
+        sb.append(theme.metadata(confidenceDisplay(confidence)))
+        sb.append(theme.metadata("]"))
 
         // Evidence IDs
         if (rec.evidenceIds.isNotEmpty()) {
             sb.append(" ")
-            sb.append(theme::metadata("["))
-            sb.append(theme::metadata("evidence: ${rec.evidenceIds.joinToString(",")}"))
-            sb.append(theme::metadata("]"))
+            sb.append(theme.metadata("["))
+            sb.append(theme.metadata("evidence: ${rec.evidenceIds.joinToString(",")}"))
+            sb.append(theme.metadata("]"))
         } else {
             sb.append(" ")
-            sb.append(theme::metadata("[no evidence]"))
+            sb.append(theme.metadata("[no evidence]"))
         }
 
         return sb.toString()
@@ -192,7 +202,7 @@ class UncertaintyCalibratedRenderer(
     }
 
     fun renderAll(recommendations: List<UncertaintyCalibratedRecommendation.Recommendation>): String {
-        if (recommendations.isEmpty()) return theme::metadata("No recommendations.")
+        if (recommendations.isEmpty()) return theme.metadata("No recommendations.")
         return recommendations.map { render(it) }.joinToString("\n")
     }
 }
