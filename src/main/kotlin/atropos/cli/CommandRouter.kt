@@ -82,6 +82,8 @@ class CommandRouter(
 
     private val shortcutsRenderer = atropos.cli.ui.ShortcutsRenderer(theme)
 
+    private val transcriptBuffer = atropos.cli.session.TranscriptBuffer()
+
     private val pipelineHelpRenderer = atropos.cli.ui.PipelineHelpRenderer(theme)
     private val scavengeRenderer = atropos.cli.ui.ScavengeRenderer(theme)
     private val firstRunGuide = atropos.cli.ui.FirstRunGuide(theme)

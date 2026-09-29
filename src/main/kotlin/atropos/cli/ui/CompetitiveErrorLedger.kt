@@ -152,7 +152,7 @@ object CompetitiveErrorLedgerTestUtils {
         val leaked = ledger.all().filter { entry ->
             val original = entry.message // Already redacted
             // Check for common secret patterns that should have been caught
-            redactionFilter.isSecretLikely(original) // Would be false if properly redacted
+            isSecretLikely(original) // Would be false if properly redacted
         }
         require(leaked.isEmpty()) {
             "Found ${leaked.size} potentially unredacted secrets in error messages"

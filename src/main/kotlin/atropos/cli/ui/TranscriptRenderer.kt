@@ -29,7 +29,7 @@ class TranscriptRenderer(
     private val thinkingFilter: ThinkingFilter = ThinkingFilter()
 ) {
     private val railGlyph: String
-        get() = if (asciiOnly()) Glyphs.Ascii.RAIL else Glyphs.RAIL
+        get() = if (theme.surface.asciiOnly) Glyphs.Ascii.RAIL else Glyphs.RAIL
 
     private val pad = " ".repeat(Glyphs.RAIL_PADDING)
 
