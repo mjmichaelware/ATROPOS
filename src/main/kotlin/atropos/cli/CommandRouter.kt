@@ -664,7 +664,14 @@ class CommandRouter(
                         // the canonical form above — it classifies what the
                         // operator asked for, and an attached document is
                         // evidence, not intent.
-                        else -> providerChatDispatcher.dispatch(entry.promptText(), currentProviderName)
+                        else -> {
+                            val prompt = entry.promptText().trim().lowercase()
+                            if (prompt in setOf("hi", "hello", "hey", "hiya", "howdy", "greetings")) {
+                                uiEngine.renderNotice("Hi! 👋 How can I help you?")
+                            } else {
+                                providerChatDispatcher.dispatch(entry.promptText(), currentProviderName)
+                            }
+                        }
                     }
                 }
                 RouterOutcome.CONTINUE
