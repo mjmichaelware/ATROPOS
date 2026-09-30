@@ -273,14 +273,14 @@ sourceSets.named("main") {
 // run rather than after means a crashed or killed run still gets cleaned up on
 // the next one, which is exactly the case that produced the pile.
 //
-// Bounded to this project's own prefix and to directories older than a day, so
-// it cannot touch another run's live scratch.
-tasks.withType<Test>().configureEach {
-    doFirst {
-        val cutoff = System.currentTimeMillis() - 24 * 60 * 60 * 1000L
-        val temp = File(System.getProperty("java.io.tmpdir"))
-        temp.listFiles { file -> file.isDirectory && file.name.startsWith("atropos-") }
-            ?.filter { it.lastModified() < cutoff }
-            ?.forEach { it.deleteRecursively() }
+    // Bounded to this project's own prefix and to directories older than a day, so
+    // it cannot touch another run's live scratch.
+    tasks.withType<Test>().configureEach {
+        doFirst {
+            val cutoff = System.currentTimeMillis() - 24 * 60 * 60 * 1000L
+            val temp = File(System.getProperty("java.io.tmpdir"))
+            val files = temp.listFiles { file -> file.isDirectory && file.name.startsWith("atropos-") }
+            files?.filter { it.lastModified() < cutoff }
+                ?.forEach { it.deleteRecursively() }
+        }
     }
-}
