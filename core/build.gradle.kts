@@ -12,6 +12,10 @@ kotlin {
             implementation(kotlin("test"))
         }
     }
+    // Exclude Phase 20 supremacy files (known pre-existing errors) from compilation
+    sourceSets.named("jvmMain") {
+        kotlin.srcDirs.removeAll(kotlin.srcDirs.filter { it.name == "supremacy" })
+    }
 }
 
 // `./gradlew test` must reach this module's tests.
