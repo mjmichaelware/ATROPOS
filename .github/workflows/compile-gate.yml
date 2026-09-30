@@ -53,7 +53,9 @@ jobs:
       # phone lane remains allowed to use the same command through its remote
       # compile gate when the device cannot finish Gradle in its heap budget.
       - name: compileKotlin
-        run: ./gradlew --no-daemon compileJava compileKotlin -Pkotlin.compiler.maxErrors=10000 -Dorg.jetbrains.kotlin.compiler.maxErrors=10000 --info --stacktrace
+        env:
+          GRADLE_OPTS: -Xmx4g
+        run: ./gradlew --no-daemon compileJava compileKotlin -Pkotlin.compiler.maxErrors=10000 -Dorg.jetbrains.kotlin.compiler.maxErrors=10000 --info --stacktrace --console=plain
         timeout-minutes: 25
 
   focused-backend-tests:
