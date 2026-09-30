@@ -32,14 +32,13 @@ data class RoutePolicyDecision(
 }
 
 class FreeModeGuard(private val policy: AtroposCostPolicy = AtroposCostPolicy.FREE_ONLY) {
-fun allows(descriptor: ProviderDescriptor): Boolean =
+    fun allows(descriptor: ProviderDescriptor): Boolean =
         when (policy) {
             AtroposCostPolicy.LOCAL_ONLY -> descriptor.requiredEnv.any { it == "OLLAMA_HOST" || it == "OLLAMA_MODEL" }
             AtroposCostPolicy.FREE_ONLY -> descriptor.costMode in setOf(CostMode.FREE, CostMode.COOLDOWN_OK, CostMode.OPTIONAL_FREE)
             AtroposCostPolicy.FREE_AND_CREDIT -> descriptor.costMode in setOf(CostMode.FREE, CostMode.COOLDOWN_OK, CostMode.CREDIT_POOL, CostMode.OPTIONAL_FREE)
             AtroposCostPolicy.PAID_EMERGENCY_UNLOCKED -> true
         }
-}
 }
 
 class ProviderEligibilityFilter(

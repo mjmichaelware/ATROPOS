@@ -95,7 +95,6 @@ class AgentService(
             contextCapBytes = collector.contextCapBytes,
             ownsRepoReadWrite = true,
             paidAutomaticModeLocked = selection.paidAutomaticModeLocked,
-            localFallbackEnabled = selection.localFallbackEnabled,
             doctorTruthSource = selection.doctorTruthSource,
             knownActiveProviders = selection.knownActiveProviders,
             providerTruthReport = truth.renderInventory()
