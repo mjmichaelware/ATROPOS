@@ -140,3 +140,4 @@ Providers need network unless you configure a local model (e.g. Ollama).
 
 [AGPL-3.0](LICENSE)
 # force rebuild
+# force clean build
