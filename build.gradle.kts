@@ -102,6 +102,8 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
         freeCompilerArgs.add("-Xexclude-packages=atropos.core.factory")
         freeCompilerArgs.add("-Xexclude-packages=atropos.core.provider")
         freeCompilerArgs.add("-Xexclude-packages=atropos.core.bridge")
+        freeCompilerArgs.add("-Xexclude-packages=atropos.core.integration")
+        freeCompilerArgs.add("-Xexclude-packages=atropos.core.intent")
     }
 }
 
