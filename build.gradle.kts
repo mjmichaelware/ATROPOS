@@ -65,7 +65,7 @@ tasks.register("buildStamp") {
     doLast {
         val stampFile = layout.buildDirectory.file("generated/atropos-build.properties")
         val declaredVersion = project.version.toString()
-        val head = "unknown"
+        var head = "unknown"
         try {
             val process = Runtime.getRuntime().exec(arrayOf("git", "rev-parse", "--short", "HEAD"))
             process.waitFor()
@@ -76,8 +76,9 @@ tasks.register("buildStamp") {
         } catch (e: Exception) {
             // ignore
         }
-        stampFile.get().asFile().parentFile.mkdirs()
-        stampFile.get().asFile().writeText("version=$declaredVersion\ncommit=$head\n")
+        val stampFileObj = stampFile.get().asFile
+        stampFileObj.parentFile.mkdirs()
+        stampFileObj.writeText("version=$declaredVersion\ncommit=$head\n")
     }
 }
 
@@ -99,8 +100,9 @@ val buildStamp by tasks.registering {
 
     outputs.file(stampFile)
     doLast {
-        stampFile.get().asFile().parentFile.mkdirs()
-        stampFile.get().asFile().writeText("version=$declaredVersion\ncommit=$head\n")
+        val stampFileObj = stampFile.get().asFile
+        stampFileObj.parentFile.mkdirs()
+        stampFileObj.writeText("version=$declaredVersion\ncommit=$head\n")
     }
 }
 
