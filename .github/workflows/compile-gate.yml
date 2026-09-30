@@ -55,8 +55,17 @@ jobs:
       - name: compileKotlin
         env:
           GRADLE_OPTS: -Xmx4g
-        run: ./gradlew --no-daemon compileJava compileKotlin -Pkotlin.compiler.maxErrors=10000 -Dorg.jetbrains.kotlin.compiler.maxErrors=10000 --info --stacktrace --console=plain
+        run: |
+          ./gradlew --no-daemon compileJava compileKotlin -Pkotlin.compiler.maxErrors=10000 -Dorg.jetbrains.kotlin.compiler.maxErrors=10000 --info --stacktrace --console=plain 2>&1 | tee compile.log
         timeout-minutes: 25
+
+      - name: Upload compilation log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: compilation-log
+          path: compile.log
+          retention-days: 7
 
   focused-backend-tests:
     needs: compile
