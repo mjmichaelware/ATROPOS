@@ -18,9 +18,8 @@ internal abstract class BaseKernelAdapter(
     protected val normalizer = ProviderErrorNormalizer()
 
     override fun status(): AdapterStatus {
-        val configured = descriptor.isLocal || descriptor.requiredEnv.all { env[it].isNullOrBlank().not() }
+        val configured = descriptor.requiredEnv.all { env[it].isNullOrBlank().not() }
         val health = when {
-            descriptor.isLocal -> "ready"
             !implemented() -> "contract_only"
             configured && transportImplemented -> "live_ready"
             configured -> "kernel_ready"
@@ -36,7 +35,6 @@ internal abstract class BaseKernelAdapter(
             modelCount = modelIds.size,
             health = health,
             detail = when {
-                descriptor.isLocal -> "local adapter"
                 transportImplemented -> "openai-compatible transport implemented; live tests opt-in"
                 implemented() -> "fixture-backed adapter kernel"
                 else -> "descriptor registered; provider schema pending"

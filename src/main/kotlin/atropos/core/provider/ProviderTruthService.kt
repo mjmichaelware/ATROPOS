@@ -69,7 +69,7 @@ class ProviderTruthService(
 
     private fun health(descriptor: ProviderDescriptor, configured: Boolean): ProviderAvailabilityState =
         when {
-            descriptor.isLocal && descriptor.hasCapability(ApiCapability.CHAT) ->
+            descriptor.requiredEnv.any { it == "OLLAMA_HOST" || it == "OLLAMA_MODEL" } ->
                 if (ollamaProbe()) ProviderAvailabilityState.READY else ProviderAvailabilityState.OFFLINE
             descriptor.isPaid() -> ProviderAvailabilityState.DISABLED
             !configured -> ProviderAvailabilityState.AUTH_FAILED
@@ -79,7 +79,7 @@ class ProviderTruthService(
 
     private fun category(descriptor: ProviderDescriptor): String =
         when {
-            descriptor.isLocal -> "local"
+            descriptor.requiredEnv.any { it == "OLLAMA_HOST" || it == "OLLAMA_MODEL" } -> "local"
             descriptor.hasCapability(ApiCapability.CHAT) || descriptor.hasCapability(ApiCapability.CODE) -> "llm"
             descriptor.hasCapability(ApiCapability.ASSET) || descriptor.hasCapability(ApiCapability.VISION) -> "asset"
             descriptor.hasCapability(ApiCapability.STORAGE) || descriptor.hasCapability(ApiCapability.DATABASE) -> "storage"

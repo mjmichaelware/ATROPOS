@@ -181,9 +181,9 @@ class FileQuotaLedger(private val file: File, seed: List<ProviderQuotaRecord> = 
                     providerId = d.id,
                     costMode = d.costMode,
                     quotaWeight = d.quotaTier,
-                    configured = d.isLocal,
-                    verified = d.isLocal,
-                    state = if (d.isLocal) ProviderAvailabilityState.READY else ProviderAvailabilityState.UNKNOWN,
+                    configured = d.requiredEnv.all { System.getenv(it).isNotBlank() },
+                    verified = d.requiredEnv.all { System.getenv(it).isNotBlank() },
+                    state = if (d.requiredEnv.all { System.getenv(it).isNotBlank() }) ProviderAvailabilityState.READY else ProviderAvailabilityState.UNKNOWN,
                     paidLocked = d.isPaid()
                 )
             }

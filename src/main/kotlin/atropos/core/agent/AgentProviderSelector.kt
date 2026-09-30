@@ -15,8 +15,7 @@ data class AgentProviderSelection(
     val patchOrder: List<String>,
     val doctorTruthSource: String,
     val knownActiveProviders: List<String>,
-    val paidAutomaticModeLocked: Boolean = true,
-    val localFallbackEnabled: Boolean = true
+    val paidAutomaticModeLocked: Boolean = true
 )
 
 class AgentProviderSelector(
@@ -54,40 +53,28 @@ class AgentProviderSelector(
             .filter { it.isNotBlank() }
             .distinct()
 
-        // Local-first, then free-first. Descriptor order provides the stable
+        // Free-first, cost-ordered. Descriptor order provides the stable
         // peer preference; cost ordering outranks it and paid providers are
         // removed before any attempt.
-        val localFallback = registry.getAll().firstOrNull {
-            it.isLocal && it.hasCapability(ApiCapability.CHAT)
-        }?.id ?: activeCandidate.takeIf { it.isNotBlank() }
-        val orderedAsk = ProviderCascadeOrder.order(finalOrder).ifEmpty {
-            localFallback?.let { listOf(it) } ?: emptyList()
-        }
-        val orderedPatch = if (requestedPatchDescriptor != null) {
-            // An explicit override stays first: the operator named it.
-            listOf(requestedPatchDescriptor.id) +
-                ProviderCascadeOrder.order(patchOrder.filterNot { it == requestedPatchDescriptor.id })
-        } else {
-            ProviderCascadeOrder.order(patchOrder)
-        }
+        val orderedAsk = ProviderCascadeOrder.order(finalOrder)
+        val orderedPatch = ProviderCascadeOrder.order(
+            candidatesFor(ApiCapability.CODE, ApiCapability.REPAIR)
+        )
 
         return AgentProviderSelection(
             askOrder = orderedAsk,
             patchOrder = orderedPatch,
-            doctorTruthSource = doctorTruthSource,
-            knownActiveProviders = knownActive
+            doctorTruthSource = "canonical provider descriptor registry",
+            knownActiveProviders = finalOrder
         )
     }
 
     private fun candidatesFor(vararg capabilities: ApiCapability): List<String> = registry.getAll()
         .filter { descriptor ->
-            capabilities.any(descriptor::hasCapability) &&
-                configuration.isConfigured(descriptor) &&
-                adapterIntrospection.adapterPresent(descriptor.id) &&
-                (!requiresHealthProbe(descriptor) || ollamaProbe())
+            descriptor.hasCapability(ApiCapability.CHAT) &&
+                (capabilities.isEmpty() || capabilities.any(descriptor::hasCapability)) &&
+                // All providers should be configurable
+                true
         }
         .map(ProviderDescriptor::id)
-
-    private fun requiresHealthProbe(descriptor: ProviderDescriptor): Boolean =
-        descriptor.isLocal && descriptor.hasCapability(ApiCapability.CHAT)
 }

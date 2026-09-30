@@ -48,11 +48,11 @@ class ProviderEligibilityFilter(
 ) {
     fun evaluate(descriptor: ProviderDescriptor, quota: ProviderQuotaRecord?): ProviderEligibility {
         if (!guard.allows(descriptor)) return ProviderEligibility(descriptor, quota, false, "blocked_by_cost_policy")
-        if (!descriptor.isLocal && descriptor.requiredEnv.isEmpty()) return ProviderEligibility(descriptor, quota, false, "missing_secret_contract")
-        if (descriptor.isLocal && quota == null) return ProviderEligibility(descriptor, quota, true, "local_ready")
+        if (descriptor.requiredEnv.isNotEmpty() && descriptor.requiredEnv.all { System.getenv(it).isBlank() }) return ProviderEligibility(descriptor, quota, false, "missing_secret_contract")
+        if (descriptor.requiredEnv.any { it == "OLLAMA_HOST" || it == "OLLAMA_MODEL" } && quota == null) return ProviderEligibility(descriptor, quota, true, "local_ready")
         if (quota == null) return ProviderEligibility(descriptor, quota, false, "missing_quota_record")
-        if (!descriptor.isLocal && !quota.configured) return ProviderEligibility(descriptor, quota, false, "not_configured")
-        if (!descriptor.isLocal && !quota.verified) return ProviderEligibility(descriptor, quota, false, "not_verified")
+        if (descriptor.requiredEnv.none { it == "OLLAMA_HOST" || it == "OLLAMA_MODEL" } && !quota.configured) return ProviderEligibility(descriptor, quota, false, "not_configured")
+        if (descriptor.requiredEnv.none { it == "OLLAMA_HOST" || it == "OLLAMA_MODEL" } && !quota.verified) return ProviderEligibility(descriptor, quota, false, "not_verified")
         val isUnlocked = paidGate.isProviderUnlocked(descriptor.id)
         if (descriptor.billingClass() == BillingClass.PAID && !isUnlocked) {
             return ProviderEligibility(descriptor, quota, false, "paid_approval_required")
@@ -94,7 +94,7 @@ class RoutePolicy(
         val candidates = registry.getByCapability(task.capability).ifEmpty { registry.getByCapability(ApiCapability.CHAT) }
         val evaluated = candidates.map { candidate ->
             val base = filter.evaluate(candidate, ledger.get(candidate.id))
-            if (localOnly && !candidate.isLocal) {
+            if (localOnly && !candidate.provider.requiredEnv.any { it == "OLLAMA_HOST" || it == "OLLAMA_MODEL" }) {
                 base.copy(eligible = false, reason = "blocked_by_local_only")
             } else if (healthyProviderIds != null && candidate.id !in healthyProviderIds.invoke()) {
                 base.copy(eligible = false, reason = "not_in_healthy_set")
@@ -118,7 +118,7 @@ class RoutePolicy(
                 ProviderHealth(
                     providerId = candidate.provider.id,
                     state = candidate.quota?.state ?: ProviderAvailabilityState.READY,
-                    verified = candidate.quota?.verified ?: candidate.provider.isLocal,
+                    verified = candidate.quota?.verified ?: candidate.provider.requiredEnv.any { it == "OLLAMA_HOST" || it == "OLLAMA_MODEL" },
                     activeModel = candidate.provider.endpointId ?: candidate.provider.id,
                     latencyMsAvg = candidate.quota?.latencyMsAvg,
                     successScore = candidate.quota?.successScore ?: 0.0
@@ -165,7 +165,7 @@ class RoutePolicy(
      * the thing that cannot provide it.
      */
     private fun localTier(task: ProviderTask, candidate: ProviderEligibility): Int =
-        if (!task.localFirst && candidate.provider.isLocal) 1 else 0
+        if (!task.localFirst && candidate.provider.requiredEnv.any { it == "OLLAMA_HOST" || it == "OLLAMA_MODEL" }) 1 else 0
 
     /**
      * Where the cost policy places this provider, lowest first.
@@ -187,7 +187,7 @@ class RoutePolicy(
 
     private fun taskPriority(task: ProviderTask, descriptor: ProviderDescriptor): Int {
         val capabilityPenalty = if (descriptor.hasCapability(task.capability)) 0 else 20
-        val localityPenalty = if (task.localFirst && descriptor.isLocal) 0 else 1
+        val localityPenalty = if (task.localFirst && descriptor.requiredEnv.any { it == "OLLAMA_HOST" || it == "OLLAMA_MODEL" }) 0 else 1
         return capabilityPenalty + localityPenalty + descriptor.quotaTier
     }
 

@@ -197,7 +197,7 @@ class AnsiTerminalEngine(
         return atropos.core.provider.StaticProviderDescriptorRegistry().getAll().count { descriptor ->
             when {
                 descriptor.id in legacy -> true
-                descriptor.isLocal -> false
+                descriptor.requiredEnv.any { it == "OLLAMA_HOST" || it == "OLLAMA_MODEL" } -> true
                 descriptor.requiredEnv.isEmpty() -> false
                 else -> descriptor.requiredEnv.all { !System.getenv(it).isNullOrBlank() }
             }

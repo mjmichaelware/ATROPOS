@@ -97,8 +97,7 @@ class ProviderActivationService(
         val quotaRecord = quotaLedger.get(providerId)
         val quotaCooldownUntil = quotaRecord?.cooldownUntilEpochMs?.let { java.time.Instant.ofEpochMilli(it) }
         val routeEligibility = listOfNotNull(
-            if (descriptor.isLocal) "local" else null,
-            if (!descriptor.isPaid()) "free-tier" else null,
+            if (descriptor.billingClass() == BillingClass.FREE) "free-tier" else null,
             if (keyLookups.all { it.configured }) "live-key-ready" else null,
             if (quotaRecord?.state?.name?.lowercase() != "unavailable") quotaRecord?.state?.name?.lowercase() else null
         ).distinctBy { it }
@@ -106,7 +105,7 @@ class ProviderActivationService(
         val record = if (live) {
             liveRecord(descriptor, adapter, adapterStatus, keyLookups, fixture, impact, executableSupport, mode, quotaCooldownUntil, routeEligibility)
         } else {
-            val configuredForExecution = descriptor.isLocal || keyLookups.all { it.configured }
+            val configuredForExecution = keyLookups.all { it.configured }
             val storedRecord = store.read(providerId)
             val state = when {
                 mode == ProviderVerificationMode.VERIFY && descriptor.isPaid() && !paidGate.isProviderUnlocked(providerId) -> ProviderActivationState.LOCKED
@@ -283,10 +282,12 @@ class ProviderActivationService(
         fixture: ProviderFixtureMatrixRecord
     ): ProviderActivationState {
         if (descriptor.isPaid() && !paidGate.isProviderUnlocked(descriptor.id)) return ProviderActivationState.LOCKED
-        if (descriptor.isLocal && descriptor.hasCapability(ApiCapability.CHAT) && !ollamaProbe()) {
+        // Free-tier providers without configured keys but with local fallback (like ollama)
+        val hasLocalFallback = descriptor.billingClass() == BillingClass.FREE && descriptor.requiredEnv.any { it == "OLLAMA_HOST" || it == "OLLAMA_MODEL" }
+        if (hasLocalFallback && descriptor.hasCapability(ApiCapability.CHAT) && !ollamaProbe()) {
             return ProviderActivationState.OFFLINE
         }
-        if (descriptor.isLocal) return ProviderActivationState.READY
+        if (hasLocalFallback) return ProviderActivationState.READY
         if (adapterStatus == null) return ProviderActivationState.MISSING
         if (adapterStatus.implemented && fixture.passed) return ProviderActivationState.FIXTURE_BACKED
         if (keyLookups.any { it.configured }) return ProviderActivationState.CONFIGURED

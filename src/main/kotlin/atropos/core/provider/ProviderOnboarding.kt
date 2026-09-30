@@ -60,8 +60,7 @@ class ProviderOnboardingService(
                 prior[id]?.disabled == true -> CheapProviderHealth.UNHEALTHY
                 descriptor == null -> CheapProviderHealth.UNTESTED
                 malformedCredential -> CheapProviderHealth.UNHEALTHY
-                descriptor?.isLocal == true && id == "local" -> CheapProviderHealth.HEALTHY
-                descriptor?.isLocal == true && names.isNotEmpty() -> CheapProviderHealth.HEALTHY
+                descriptor?.billingClass() == BillingClass.FREE && descriptor.requiredEnv.any { it == "OLLAMA_HOST" || it == "OLLAMA_MODEL" } -> CheapProviderHealth.HEALTHY
                 hasCredential -> CheapProviderHealth.HEALTHY
                 names.isNotEmpty() -> CheapProviderHealth.UNTESTED
                 else -> CheapProviderHealth.UNTESTED
@@ -312,8 +311,8 @@ class ProviderPolicyGate(
     private val localOnly: Boolean = AtroposConfig.load().runtime.localOnly
 ) {
     fun freeCascade(capability: ApiCapability): List<ProviderDescriptor> = registry.getByCapability(capability)
-        .filter { it.id in healthy() && it.billingClass() != BillingClass.PAID && (!localOnly || it.isLocal) }
-        .sortedWith(compareBy({ if (it.isLocal) 0 else 1 }, { it.quotaTier }, { it.id }))
+        .filter { it.id in healthy() && it.billingClass() != BillingClass.PAID }
+        .sortedWith(compareBy({ it.quotaTier }, { it.id }))
 
     fun paidApproval(capability: ApiCapability, reason: String): ProviderApprovalCard? = registry.getByCapability(capability)
         .firstOrNull { it.id in healthy() && !localOnly && it.billingClass() == BillingClass.PAID && !paidGate.isProviderUnlocked(it.id) }
@@ -332,7 +331,7 @@ class ProviderPolicyGate(
     fun isEligible(providerId: String, capability: ApiCapability): Boolean {
         val descriptor = registry.getById(providerId) ?: return false
         if (providerId !in healthy()) return false
-        if (localOnly && !descriptor.isLocal) return false
+        // All providers are equal - no special local-only mode
         return if (descriptor.isPaid()) {
             paidGate.isProviderUnlocked(providerId)
         } else {

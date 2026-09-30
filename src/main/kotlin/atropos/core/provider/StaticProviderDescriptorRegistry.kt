@@ -2,7 +2,7 @@ package atropos.core.provider
 
 class StaticProviderDescriptorRegistry : ProviderDescriptorRegistry {
     private val descriptors = listOf(
-        d("ollama","Ollama",CostMode.LOCAL,0,c(ApiCapability.CHAT,ApiCapability.CODE,ApiCapability.REPAIR,ApiCapability.PLAN,ApiCapability.LOCAL_TOOL),e("OLLAMA_HOST","OLLAMA_MODEL"),f("groq","gemini")),
+        d("ollama","Ollama",CostMode.FREE,0,c(ApiCapability.CHAT,ApiCapability.CODE,ApiCapability.REPAIR,ApiCapability.PLAN,ApiCapability.LOCAL_TOOL),e("OLLAMA_HOST","OLLAMA_MODEL"),f("groq","gemini")),
         d("groq","Groq",CostMode.FREE,1,c(ApiCapability.CHAT,ApiCapability.CODE,ApiCapability.REPAIR,ApiCapability.PLAN),e("GROQ_API_KEY"),f("gemini","openrouter","github_models")),
         d("gemini","Google Gemini",CostMode.COOLDOWN_OK,1,c(ApiCapability.CHAT,ApiCapability.CODE,ApiCapability.REPAIR,ApiCapability.PLAN,ApiCapability.LARGE_CONTEXT,ApiCapability.VISION),e("GEMINI_API_KEY"),f("groq","openrouter","github_models")),
         d("github_models","GitHub Models",CostMode.COOLDOWN_OK,1,c(ApiCapability.CHAT,ApiCapability.CODE,ApiCapability.REPAIR,ApiCapability.PLAN,ApiCapability.CI),e("GITHUB_MODELS_TOKEN"),f("openrouter","groq","cloudflare_ai")),

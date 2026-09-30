@@ -40,7 +40,7 @@ class FirstRunProbe(
      */
     private fun providerConfigured(): Boolean = onboarding?.healthyProviderIds()?.isNotEmpty()
         ?: StaticProviderDescriptorRegistry().getAll().any { descriptor ->
-            descriptor.isLocal || descriptor.requiredEnv.any { key ->
+            descriptor.requiredEnv.any { key ->
                 !environment(key).isNullOrBlank()
             }
         }

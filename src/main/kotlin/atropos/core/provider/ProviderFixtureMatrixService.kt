@@ -198,7 +198,7 @@ class ProviderFixtureMatrixService(
         task: ProviderTask,
         content: String
     ): ProviderCallResult? =
-        if (descriptor.isLocal) ProviderCallResult.LocalOnly(task, content) else null
+        if (descriptor.requiredEnv.any { it == "OLLAMA_HOST" || it == "OLLAMA_MODEL" }) ProviderCallResult.LocalOnly(task, content) else null
 
     private fun runRedactionFixture(providerId: String): Boolean {
         val raw = "Authorization: Bearer " + "A".repeat(24) + " sk-" + "B".repeat(24) + " api_key=sk-" + "C".repeat(24)

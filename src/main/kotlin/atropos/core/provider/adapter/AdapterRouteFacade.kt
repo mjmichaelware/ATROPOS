@@ -212,9 +212,9 @@ class AdapterRouteFacade(
             providerId = id,
             costMode = costMode,
             quotaWeight = quotaTier,
-            configured = isLocal,
-            verified = isLocal,
-            state = if (isLocal) ProviderAvailabilityState.READY else ProviderAvailabilityState.UNKNOWN,
+            configured = requiredEnv.all { System.getenv(it).isNotBlank() },
+            verified = requiredEnv.all { System.getenv(it).isNotBlank() },
+            state = if (requiredEnv.all { System.getenv(it).isNotBlank() }) ProviderAvailabilityState.READY else ProviderAvailabilityState.UNKNOWN,
             paidLocked = isPaid()
         )
 }

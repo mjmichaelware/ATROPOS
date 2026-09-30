@@ -11,7 +11,7 @@ class ProviderDescriptorValidator(private val registry: ProviderDescriptorRegist
             if (d.id.isBlank()) out += ValidationViolation(d.id, "blank id")
             if (d.quotaTier !in 0..10) out += ValidationViolation(d.id, "invalid quota tier")
             if (d.capabilities.isEmpty()) out += ValidationViolation(d.id, "missing capabilities")
-            if (!d.isLocal && d.requiredEnv.isEmpty()) out += ValidationViolation(d.id, "missing env vars")
+            if (d.billingClass() != BillingClass.FREE && d.requiredEnv.isEmpty()) out += ValidationViolation(d.id, "missing env vars")
             d.fallbackChain.forEach { fb ->
                 if (fb !in ids) out += ValidationViolation(d.id, "missing fallback $fb")
                 if (fb == d.id) out += ValidationViolation(d.id, "self fallback")

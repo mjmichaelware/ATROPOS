@@ -4,11 +4,11 @@ package atropos.core.provider
 import atropos.core.paid.EmergencyPaidGate
 
 /**
- * Orders cascade candidates local-first, then free-first.
+ * Orders cascade candidates free-first, then cooldown, then credit pool.
  *
  * The order used to be a hand-written list with `ollama` at the **end**, which
- * is local-*last* — the inverse of the policy — and the patch order named no
- * local provider at all. Ordering is where "local-first, free-first" actually
+ * was free-*last* - the inverse of the policy - and the patch order named no
+ * free provider at all. Ordering is where "free-first" actually
  * lives: once the cascade starts walking a list, whichever provider sits first
  * is the one that gets the work.
  *
@@ -25,18 +25,17 @@ object ProviderCascadeOrder {
      * has no rank because it is removed entirely.
      */
     private fun rank(costMode: CostMode?): Int = when (costMode) {
-        CostMode.LOCAL -> 0
-        CostMode.FREE -> 1
+        CostMode.FREE -> 0
+        CostMode.COOLDOWN_OK -> 1
         CostMode.OPTIONAL_FREE -> 2
-        CostMode.COOLDOWN_OK -> 3
-        CostMode.CREDIT_POOL -> 4
+        CostMode.CREDIT_POOL -> 3
         CostMode.PAID_LOCKED -> Int.MAX_VALUE
         null -> Int.MAX_VALUE - 1
     }
 
     /**
      * @param candidates provider ids the caller has confirmed are configured.
-     * @return the same ids, local-first then free-first, with paid-locked
+     * @return the same ids, free-first, with paid-locked
      *   providers removed. Order within a tier follows the caller's order, so a
      *   deliberate preference between two free providers is preserved.
      */
@@ -61,9 +60,9 @@ object ProviderCascadeOrder {
             .map { it.value }
     }
 
-    /** True when [providerId] runs on this machine and costs nothing to call. */
-    fun isLocal(
+    /** True when [providerId] is free or cooldown-ok tier. */
+    fun isFreeTier(
         providerId: String,
         registry: ProviderDescriptorRegistry = StaticProviderDescriptorRegistry()
-    ): Boolean = registry.getById(providerId)?.costMode == CostMode.LOCAL
+    ): Boolean = registry.getById(providerId)?.costMode in setOf(CostMode.FREE, CostMode.COOLDOWN_OK)
 }

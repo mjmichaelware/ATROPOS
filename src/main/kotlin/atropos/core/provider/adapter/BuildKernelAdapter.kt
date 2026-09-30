@@ -7,7 +7,7 @@ fun buildKernelAdapter(
     env: Map<String, String> = System.getenv()
 ): ProviderAdapter =
     when {
-        descriptor.isLocal ->
+        descriptor.id == "ollama" ->
             LocalKernelAdapter(descriptor)
         descriptor.id == "aws_bedrock" ->
             BedrockKernelAdapter(descriptor, env)

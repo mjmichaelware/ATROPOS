@@ -50,7 +50,7 @@ object ProviderActionProposals {
             metadata = mapOf(
                 "operation" to operation,
                 "prompt_length" to promptLength.toString(),
-                "provider_local" to (StaticProviderDescriptorRegistry().getById(provider)?.isLocal == true).toString()
+                "provider_free_tier" to (StaticProviderDescriptorRegistry().getById(provider)?.costMode in setOf(atropos.core.provider.CostMode.FREE, atropos.core.provider.CostMode.COOLDOWN_OK)).toString()
             )
         )
 

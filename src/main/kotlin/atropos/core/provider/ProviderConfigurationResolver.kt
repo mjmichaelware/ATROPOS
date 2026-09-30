@@ -14,7 +14,7 @@ class ProviderConfigurationResolver(
         descriptor.requiredEnv.filterNot(::isPresent)
 
     fun isConfigured(descriptor: ProviderDescriptor): Boolean =
-        descriptor.isLocal || missingRequirements(descriptor).isEmpty()
+        descriptor.requiredEnv.any { it == "OLLAMA_HOST" || it == "OLLAMA_MODEL" } || missingRequirements(descriptor).isEmpty()
 
     private fun isPresent(name: String): Boolean {
         if (name == "OLLAMA_HOST" || name == "OLLAMA_MODEL") return true
