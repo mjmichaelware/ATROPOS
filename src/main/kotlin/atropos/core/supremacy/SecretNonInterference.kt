@@ -19,7 +19,7 @@ object SecretNonInterference {
         val value: T,
         val label: Label = Label.PUBLIC
     ) {
-        fun <R> map(f: (T) -> R): LabeledValue<R> = copy(value = f(value))
+        fun <R> map(f: (T) -> R): LabeledValue<R> = LabeledValue(f(value), label)
         fun <R> flatMap(f: (T) -> LabeledValue<R>): LabeledValue<R> = f(value).copy(label = maxLabel(label, f(value).label))
     }
 

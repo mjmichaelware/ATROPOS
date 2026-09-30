@@ -45,7 +45,8 @@ object CausalImpactGraph {
         var graph = Graph()
         var prevId: String? = null
 
-        for ((index, (action, outcome)) in actions.withIndex()) {
+        for (index in actions.indices) {
+            val (action, outcome) = actions[index]
             val nodeId = "action_$index"
             val node = Node(
                 id = nodeId,
