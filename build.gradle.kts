@@ -60,28 +60,6 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
     }
 }
 
-// Build stamp task - simplified for Gradle Kotlin DSL compatibility
-tasks.register("buildStamp") {
-    doLast {
-        val stampFile = layout.buildDirectory.file("generated/atropos-build.properties")
-        val declaredVersion = project.version.toString()
-        var head = "unknown"
-        try {
-            val process = Runtime.getRuntime().exec(arrayOf("git", "rev-parse", "--short", "HEAD"))
-            process.waitFor()
-            val output = process.inputStream.bufferedReader().readText().trim()
-            if (output.isNotBlank()) {
-                head = output
-            }
-        } catch (e: Exception) {
-            // ignore
-        }
-        val stampFileObj = stampFile.get().asFile
-        stampFileObj.parentFile.mkdirs()
-        stampFileObj.writeText("version=$declaredVersion\ncommit=$head\n")
-    }
-}
-
 // The build stamp the running jar can report.
 //
 // `atropos --version` had nothing to read. An operator on a phone cannot
