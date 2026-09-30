@@ -45,6 +45,10 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      # Install ripgrep for hosted-test-selector-contract.sh
+      - name: Install ripgrep
+        run: sudo apt-get update && sudo apt-get install -y ripgrep
+
       # Dependency caching, which this job did not have.
       #
       # `clean` removes build outputs, not the Gradle dependency cache, so this
