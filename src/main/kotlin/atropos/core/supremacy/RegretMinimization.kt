@@ -28,8 +28,8 @@ object RegretMinimization {
     /**
      * Records a decision.
      */
-    fun record(action: String, expectedUtility: Double, context: Map<String, String> = emptyMap()): Decision {
-        val decision = Decision(action = action, expectedUtility = expectedUtility, context = context)
+    fun record(action: String, expectedUtility: Double, actualUtility: Double? = null, context: Map<String, String> = emptyMap()): Decision {
+        val decision = Decision(action = action, expectedUtility = expectedUtility, actualUtility = actualUtility, context = context)
         decisions.add(decision)
         return decision
     }
@@ -57,7 +57,7 @@ object RegretMinimization {
      */
     fun averageRegret(): Double {
         val regrets = decisions.mapNotNull { it.regret }
-        return if (regrets.isEmpty()) 0.0 else regrets.toList().average()
+        return if (regrets.isEmpty()) 0.0 else regrets.average()
     }
 
     /**
@@ -67,7 +67,7 @@ object RegretMinimization {
         return decisions
             .filter { it.actualUtility != null }
             .groupBy { it.action }
-            .mapValues { (_, ds) -> ds.mapNotNull { it.regret }.toList().average() }
+            .mapValues { (_, ds) -> ds.mapNotNull { it.regret }.average() }
     }
 
     /**

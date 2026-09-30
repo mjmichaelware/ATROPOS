@@ -47,7 +47,7 @@ object MDLPatchPreference {
     fun selectBestPatch(patches: List<Patch>): Patch? {
         return patches
             .map { it to computeScore(it) }
-            .minByOrNull { it.second }
+            .minByOrNull { it.second.totalLength }
             ?.first
     }
 

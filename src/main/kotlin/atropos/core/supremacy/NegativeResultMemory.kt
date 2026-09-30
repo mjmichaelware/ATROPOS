@@ -79,7 +79,7 @@ object NegativeResultMemory {
                     "experiment": "${r.experiment}",
                     "hypothesis": "${r.hypothesis}",
                     "reason": "${r.reason}",
-                    "context": ${r.context.joinToString(",") { "\"$it.key\": \"$it.value\"" }},
+                    "context": ${r.context.entries.joinToString(",") { it -> "\"${it.key}\": \"${it.value}\"" }},
                     "recordedBy": "${r.recordedBy}",
                     "recordedAt": "${r.recordedAt}"
                 }

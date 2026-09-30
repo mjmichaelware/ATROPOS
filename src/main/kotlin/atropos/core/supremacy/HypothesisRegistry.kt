@@ -67,7 +67,7 @@ object HypothesisRegistry {
             status = when (outcome) {
                 TestResult.Outcome.SUPPORTED -> Hypothesis.Status.CONFIRMED
                 TestResult.Outcome.REJECTED -> Hypothesis.Status.REJECTED
-                else -> Hypothesis.Status.INCONCLUSIVE
+                TestResult.Outcome.INCONCLUSIVE -> Hypothesis.Status.WITHDRAWN
             }
         )
         testResults.add(TestResult(hypothesisId, outcome, "evidence"))

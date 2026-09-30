@@ -36,7 +36,7 @@ object JouleDollarCostLedger {
      * Computes the average Joules/$ across all entries.
      */
     fun averageJoulesPerDollar(): Double {
-        return if (entries.isEmpty()) 0.0 else entries.average { it.joulesPerDollar }
+        return if (entries.isEmpty()) 0.0 else entries.map { it.joulesPerDollar }.average()
     }
 
     /**
@@ -45,7 +45,7 @@ object JouleDollarCostLedger {
     fun bestProvider(): String? {
         return entries
             .groupBy { it.provider }
-            .mapValues { (_, entries) -> entries.average { it.joulesPerDollar } }
+            .mapValues { (_, entries) -> entries.map { it.joulesPerDollar }.average() }
             .minByOrNull { it.value }
             ?.key
     }

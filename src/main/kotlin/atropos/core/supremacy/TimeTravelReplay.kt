@@ -70,7 +70,7 @@ object TimeTravelReplay {
                     "id": "${cp.id}",
                     "stateSnapshot": "${cp.stateSnapshot.replace("\"", "\\\"")}",
                     "timestamp": "${cp.timestamp}",
-                    "metadata": ${cp.metadata.joinToString(",") { (key, value) -> "\"$key\": \"$value\"" }}
+                    "metadata": ${cp.metadata.entries.joinToString(",") { it -> "\"${it.key}\": \"${it.value}\"" }}
                 }
             """.trimIndent()
         }.joinToString(",\n", "[\n", "\n]")

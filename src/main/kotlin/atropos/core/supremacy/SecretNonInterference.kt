@@ -65,7 +65,7 @@ object SecretNonInterference {
     /**
      * Verifies that a function satisfies non-interference.
      */
-    fun verifyNonInterference<Input, Output>(
+    fun <Input, Output> verifyNonInterference(
         f: (Input) -> Output,
         testInputs: List<Pair<Input, Input>>
     ): Boolean {
