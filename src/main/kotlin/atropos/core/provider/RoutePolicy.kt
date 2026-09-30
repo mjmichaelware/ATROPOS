@@ -28,10 +28,7 @@ data class RoutePolicyDecision(
             "selected=${selectedProviderId ?: "none"} skipped=" +
             skipped.joinToString("; ") { "${it.provider.id}:${it.reason}" } +
             (queueReason?.let { " queue_reason=$it" } ?: "")
-    }
-}
-
-class FreeModeGuard(private val policy: AtroposCostPolicy = AtroposCostPolicy.FREE_ONLY) {
+    class FreeModeGuard(private val policy: AtroposCostPolicy = AtroposCostPolicy.FREE_ONLY) {
     fun allows(descriptor: ProviderDescriptor): Boolean =
         when (policy) {
             AtroposCostPolicy.LOCAL_ONLY -> descriptor.requiredEnv.any { it == "OLLAMA_HOST" || it == "OLLAMA_MODEL" }
