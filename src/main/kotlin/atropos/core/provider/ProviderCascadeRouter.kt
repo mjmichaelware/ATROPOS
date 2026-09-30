@@ -6,6 +6,7 @@ import atropos.core.provider.ProviderDescriptorRegistry
 import atropos.core.provider.StaticProviderDescriptorRegistry
 import atropos.core.provider.ApiCapability
 import atropos.core.provider.ProviderCascadeOrder
+import atropos.core.provider.ProviderDescriptor
 import atropos.core.AtroposConfig
 import atropos.core.provider.FallbackChain
 import atropos.core.provider.FallbackChainRegistry
@@ -39,6 +40,13 @@ class ProviderCascadeRouter(
     fun declaredFallbackChain(capability: ApiCapability): FallbackChain? =
         FallbackChainRegistry.canonicalChain(capability)
 
+    private fun hasValidApiKeys(descriptor: ProviderDescriptor): Boolean {
+        return descriptor.requiredEnv.all { envVar ->
+            val value = System.getenv(envVar)
+            value != null && value.isNotBlank() && value != "your-api-key" && value != "test"
+        }
+    }
+
     fun completeWithCascade(
         requestedProvider: String,
         prompt: String,
@@ -68,14 +76,18 @@ class ProviderCascadeRouter(
 
             atropos.core.thinking.Thinking.step("provider", "asking $provider")
 
-            // All providers are equal - no special "local" provider
-            // Check health for all providers
+            // Check health per provider: local (ollama) needs ollama running,
+            // remote providers need valid API keys configured
             val descriptor = registry.getById(provider)
-            if (!localHealth()) {
+            val providerHealthy = when (provider) {
+                "ollama" -> localHealth()
+                else -> hasValidApiKeys(descriptor)
+            }
+            if (!providerHealthy) {
                 val error = ProviderError(
                     provider = provider,
                     type = FailureType.CONNECTION_REFUSED,
-                    cleanMessage = "$provider unavailable"
+                    cleanMessage = "$provider unavailable (health check failed)"
                 )
                 errors += error
                 onFailure(error)
