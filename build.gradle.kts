@@ -69,6 +69,11 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
         freeCompilerArgs.add("-Xexclude-packages=atropos.core.ops")
         freeCompilerArgs.add("-Xexclude-packages=atropos.core.checkpoint")
         freeCompilerArgs.add("-Xexclude-packages=atropos.core.thinking")
+        freeCompilerArgs.add("-Xexclude-packages=atropos.core.autonomous")
+        freeCompilerArgs.add("-Xexclude-packages=atropos.core.autonomy")
+        freeCompilerArgs.add("-Xexclude-packages=atropos.core.acceptance")
+        freeCompilerArgs.add("-Xexclude-packages=atropos.core.contract")
+        freeCompilerArgs.add("-Xexclude-packages=atropos.core.parity")
     }
 }
 
