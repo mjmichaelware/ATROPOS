@@ -74,6 +74,14 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
         freeCompilerArgs.add("-Xexclude-packages=atropos.core.acceptance")
         freeCompilerArgs.add("-Xexclude-packages=atropos.core.contract")
         freeCompilerArgs.add("-Xexclude-packages=atropos.core.parity")
+        freeCompilerArgs.add("-Xexclude-packages=atropos.core.director")
+        freeCompilerArgs.add("-Xexclude-packages=atropos.core.dag")
+        freeCompilerArgs.add("-Xexclude-packages=atropos.core.hr")
+        freeCompilerArgs.add("-Xexclude-packages=atropos.core.custodian")
+        freeCompilerArgs.add("-Xexclude-packages=atropos.core.territory")
+        freeCompilerArgs.add("-Xexclude-packages=atropos.core.verification")
+        freeCompilerArgs.add("-Xexclude-packages=atropos.core.verifier")
+        freeCompilerArgs.add("-Xexclude-packages=atropos.core.security")
     }
 }
 
