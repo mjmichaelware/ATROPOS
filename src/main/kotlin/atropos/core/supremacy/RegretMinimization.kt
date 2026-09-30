@@ -102,7 +102,7 @@ object RegretMinimization {
               Cumulative Regret: ${"%.4f".format(cumulativeRegret())}
               Average Regret: ${"%.4f".format(averageRegret())}
               By Action:
-        ${regretByAction().joinToString("\n") { (key, value) -> "  $key: ${"%.4f".format(value)}" }}
+        ${regretByAction().entries.joinToString("\n") { (key, value) -> "  $key: ${"%.4f".format(value)}" }}
         """.trimIndent()
     }
 }
