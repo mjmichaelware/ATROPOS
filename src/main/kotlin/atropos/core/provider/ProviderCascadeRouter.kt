@@ -68,8 +68,10 @@ class ProviderCascadeRouter(
 
             atropos.core.thinking.Thinking.step("provider", "asking $provider")
 
+            // All providers are equal - no special "local" provider
+            // Check health for all providers
             val descriptor = registry.getById(provider)
-            if (descriptor?.isLocal == true && descriptor.hasCapability(ApiCapability.CHAT) && !localHealth()) {
+            if (!localHealth()) {
                 val error = ProviderError(
                     provider = provider,
                     type = FailureType.CONNECTION_REFUSED,
@@ -207,7 +209,7 @@ class ProviderCascadeRouter(
         if (!providerOrderOverride.isNullOrEmpty()) {
             return providerOrderOverride.map { it.trim().lowercase() }
                 .filter { it.isNotBlank() }
-                .filter { registry.getById(it)?.isLocal == true || !localOnly() }
+                .filter { !localOnly() }
                 .filter { healthyProviderIds?.invoke()?.contains(it) != false }
                 .distinct()
                 .let { ProviderCascadeOrder.order(it, registry, allowPaidProvider, paidGate) }
@@ -223,7 +225,7 @@ class ProviderCascadeRouter(
         return ProviderCascadeOrder.order(
             (listOf(requestedProvider.lowercase()) + configured)
                 .filter { registry.getById(it) != null }
-                .filter { registry.getById(it)?.isLocal == true || !localOnly() }
+                .filter { !localOnly() }
                 .filter { healthyProviderIds?.invoke()?.contains(it) != false }
                 .distinct(),
             registry,
