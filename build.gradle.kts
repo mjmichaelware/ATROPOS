@@ -63,7 +63,7 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
 // Exclude Phase 20 supremacy files (known pre-existing errors) from main compilation
 sourceSets.named("main") {
     kotlin {
-        srcDirs = srcDirs.filter { it.name != "supremacy" }
+        srcDirs.removeAll(srcDirs.filter { it.name == "supremacy" })
     }
 }
 
