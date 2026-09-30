@@ -246,7 +246,7 @@ tasks.jar {
 // to work. The version and the commit are written at build time and read back
 // at runtime.
 val buildStamp by tasks.registering {
-    val stampFile = layout.buildDirectory.file("generated/atropos-build.properties").get().asFile
+    val stampFile = layout.buildDirectory.file("generated/atropos-build.properties")
     val declaredVersion = project.version.toString()
     val head = providers.exec {
         commandLine("git", "rev-parse", "--short", "HEAD")
@@ -254,8 +254,8 @@ val buildStamp by tasks.registering {
 
     outputs.file(stampFile)
     doLast {
-        stampFile.parentFile.mkdirs()
-        stampFile.writeText(
+        stampFile.get().asFile().parentFile.mkdirs()
+        stampFile.get().asFile().writeText(
             "version=$declaredVersion\ncommit=${head.getOrElse("unknown")}\n"
         )
     }
