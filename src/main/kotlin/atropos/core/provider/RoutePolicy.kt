@@ -94,7 +94,7 @@ class RoutePolicy(
         val candidates = registry.getByCapability(task.capability).ifEmpty { registry.getByCapability(ApiCapability.CHAT) }
         val evaluated = candidates.map { candidate ->
             val base = filter.evaluate(candidate, ledger.get(candidate.id))
-            if (localOnly && !candidate.provider.requiredEnv.any { it == "OLLAMA_HOST" || it == "OLLAMA_MODEL" }) {
+            if (localOnly && !candidate.requiredEnv.any { it == "OLLAMA_HOST" || it == "OLLAMA_MODEL" }) {
                 base.copy(eligible = false, reason = "blocked_by_local_only")
             } else if (healthyProviderIds != null && candidate.id !in healthyProviderIds.invoke()) {
                 base.copy(eligible = false, reason = "not_in_healthy_set")
