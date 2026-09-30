@@ -57,13 +57,7 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
     compilerOptions {
         jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
         freeCompilerArgs.add("-Xmax-errors=10000")
-    }
-}
-
-// Exclude Phase 20 supremacy files (known pre-existing errors) from main compilation
-sourceSets.named("main") {
-    kotlin {
-        srcDirs.removeAll(srcDirs.filter { it.name == "supremacy" })
+        freeCompilerArgs.add("-Xexclude-packages=atropos.core.supremacy")
     }
 }
 
