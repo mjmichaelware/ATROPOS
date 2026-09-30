@@ -29,6 +29,7 @@ permissions:
 jobs:
   compile:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
@@ -52,7 +53,8 @@ jobs:
       # phone lane remains allowed to use the same command through its remote
       # compile gate when the device cannot finish Gradle in its heap budget.
       - name: compileKotlin
-        run: ./gradlew --no-daemon compileJava compileKotlin -Pkotlin.compiler.maxErrors=10000 -Dorg.jetbrains.kotlin.compiler.maxErrors=10000
+        run: ./gradlew --no-daemon compileJava compileKotlin -Pkotlin.compiler.maxErrors=10000 -Dorg.jetbrains.kotlin.compiler.maxErrors=10000 --info --stacktrace
+        timeout-minutes: 25
 
   focused-backend-tests:
     needs: compile
