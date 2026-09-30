@@ -104,6 +104,17 @@ See [provider onboarding](docs/PROVIDER_ENVIRONMENT.md) for the supported enviro
 | Fal.ai | `FAL_AI_API_KEY` |
 | Replicate | `REPLICATE_API_TOKEN` |
 | SerpAPI | `SERPAPI_API_KEY` |
+| SerpAPI | `SERPAPI_API_KEY` |
+| DeepSeek Direct | `DEEPSEEK_API_KEY` |
+| Cohere | `COHERE_API_KEY` |
+| Mistral | `MISTRAL_API_KEY` |
+| Anthropic | `ANTHROPIC_API_KEY` |
+| OpenAI | `OPENAI_API_KEY` |
+| xAI | `XAI_API_KEY` |
+| AWS Bedrock | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION` |
+| Fal.ai | `FAL_AI_API_KEY` |
+| Replicate | `REPLICATE_API_TOKEN` |
+| SerpAPI | `SERPAPI_API_KEY` |
 <!-- END GENERATED PROVIDER ENVIRONMENT TABLE -->
 
 See the [open-core boundary](docs/OPEN_CORE_BOUNDARY.md) for the local-authority and optional-hosted-service contract.
