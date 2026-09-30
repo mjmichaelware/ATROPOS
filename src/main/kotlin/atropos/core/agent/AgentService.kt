@@ -94,6 +94,7 @@ class AgentService(
             lastPatchId = patchStore.latestPatchId(),
             contextCapBytes = collector.contextCapBytes,
             ownsRepoReadWrite = true,
+            localFallbackEnabled = false,
             paidAutomaticModeLocked = selection.paidAutomaticModeLocked,
             doctorTruthSource = selection.doctorTruthSource,
             knownActiveProviders = selection.knownActiveProviders,
