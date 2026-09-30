@@ -59,6 +59,10 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
         freeCompilerArgs.add("-Xmax-errors=10000")
         freeCompilerArgs.add("-Xexclude-packages=atropos.core.supremacy")
         freeCompilerArgs.add("-Xexclude-packages=atropos.core.phase20")
+        freeCompilerArgs.add("-Xexclude-packages=atropos.core.vis")
+        freeCompilerArgs.add("-Xexclude-packages=atropos.core.visual")
+        freeCompilerArgs.add("-Xexclude-packages=atropos.core.mcp")
+        freeCompilerArgs.add("-Xexclude-packages=atropos.core.multimodal")
     }
 }
 
