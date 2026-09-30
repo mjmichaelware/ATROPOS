@@ -249,7 +249,12 @@ class ProviderChatDispatcher(
         } else {
             uiEngine.renderNotice(attestationRenderer.renderAdvisory(verified.failure, ATTESTATION_WIDTH))
             val shown = ProviderResponseContextParser.parse(retry ?: response, envelope).cleanedResponse
-            uiEngine.renderNotice(markdownRenderer.render(shown))
+            if (shown.isNotBlank()) {
+                uiEngine.renderNotice(markdownRenderer.render(shown))
+            } else if (response.isNotBlank()) {
+                // Fallback: show raw response with unverified marker for local providers
+                uiEngine.renderNotice(markdownRenderer.render(response) + "\n\n⚠️ *unverified*")
+            }
         }
     }
 
