@@ -1,0 +1,7 @@
+Package: atropos
+Version: 0.1.0
+Section: utils
+Priority: optional
+Architecture: all
+Maintainer: ATROPOS maintainers
+Description: ATROPOS deterministic software engineering engine

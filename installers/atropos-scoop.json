@@ -1,0 +1,9 @@
+{
+  "version": "0.1.0",
+  "description": "Deterministic software engineering engine",
+  "homepage": "https://github.com/mjmichaelware/ATROPOS",
+  "license": "AGPL-3.0-only",
+  "url": "file://build/libs/ATROPOS.jar",
+  "bin": [["ATROPOS.jar", "atropos"]],
+  "checkver": { "url": "https://github.com/mjmichaelware/ATROPOS/releases" }
+}
