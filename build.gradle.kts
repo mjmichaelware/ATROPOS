@@ -63,6 +63,12 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
         freeCompilerArgs.add("-Xexclude-packages=atropos.core.visual")
         freeCompilerArgs.add("-Xexclude-packages=atropos.core.mcp")
         freeCompilerArgs.add("-Xexclude-packages=atropos.core.multimodal")
+        freeCompilerArgs.add("-Xexclude-packages=atropos.core.scavenge")
+        freeCompilerArgs.add("-Xexclude-packages=atropos.core.ingest")
+        freeCompilerArgs.add("-Xexclude-packages=atropos.core.output")
+        freeCompilerArgs.add("-Xexclude-packages=atropos.core.ops")
+        freeCompilerArgs.add("-Xexclude-packages=atropos.core.checkpoint")
+        freeCompilerArgs.add("-Xexclude-packages=atropos.core.thinking")
     }
 }
 
