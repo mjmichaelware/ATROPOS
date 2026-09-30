@@ -32,7 +32,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0
 
       - uses: actions/setup-java@v4
         with:
@@ -44,6 +44,9 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y ripgrep
 
       - uses: gradle/actions/setup-gradle@v4
+
+      - name: Clean Gradle cache
+        run: ./gradlew --no-daemon clean
 
       # Keep production and test compilation in the hosted lane. The local
       # phone lane remains allowed to use the same command through its remote
