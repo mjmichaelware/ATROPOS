@@ -126,8 +126,8 @@ class WorkbenchTruthProbe {
     private fun toUiTruth(record: ProviderTruthRecord): ProviderUiTruth {
         val local = record.category == "local"
         val cost = when (record.costMode) {
-            atropos.core.provider.CostMode.LOCAL -> "free"
-            atropos.core.provider.CostMode.FREE -> "low"
+            atropos.core.provider.CostMode.FREE -> "free"
+            atropos.core.provider.CostMode.COOLDOWN_OK -> "low"
             atropos.core.provider.CostMode.PAID_LOCKED -> "paid-locked"
             else -> record.costMode.name.lowercase().replace('_', '-')
         }
