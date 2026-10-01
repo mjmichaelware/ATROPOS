@@ -36,7 +36,7 @@ jobs:
         \ clean jar --max-workers=1 2>&1 | tee /tmp/build.log; then\n    exit 0\n  fi\n  if ! grep -qiE \"429|Too Many Requests|Connection\
         \ reset|Read timed out|timeout\" /tmp/build.log; then\n    echo \"build failed for a reason that will not fix itself;\
         \ not retrying\"\n    exit 1\n  fi\n  echo \"transient network failure on attempt $attempt; retrying in $((attempt\
-        \ * 30))s\"\n  sleep $((attempt * 30))\ndone\n  echo \"the dependency host stayed unreachable across three attempts\"\
+        \ * 30))s\"\n  sleep $((attempt * 30))\ndone\necho \"the dependency host stayed unreachable across three attempts\"\
         \n  exit 1"
     - name: Exercise installer packaging contract
       run: bash scripts/package-installers-test.sh
@@ -73,10 +73,18 @@ jobs:
 
         commit="${{ steps.hash.outputs.commit }}"
 
-        gh release create "$tag" --title "ATROPOS $tag" --notes "Built from \`${commit}`.
+        notes=$(cat <<EOF
+
+        Built from `${commit}`.
 
 
-        sha256: \`${sha256}\`" "$jar" "$jar.sha256" --prerelease=false'
+        sha256: `${sha256}`
+
+        EOF
+
+        )
+
+        gh release create "$tag" --title "ATROPOS $tag" --notes "$notes" "$jar" "$jar.sha256" --prerelease=false'
     - name: Publish rolling latest (main branch only)
       if: github.ref == 'refs/heads/main'
       env:
@@ -89,12 +97,20 @@ jobs:
 
         commit="${{ steps.hash.outputs.commit }}"
 
+        notes=$(cat <<EOF
+
+        Rolling build from `${commit}`.
+
+
+        sha256: `${sha256}`
+
+        EOF
+
+        )
+
         gh release delete latest --yes --cleanup-tag || true
 
-        gh release create latest --title "ATROPOS latest (rolling)" --notes "Rolling build from \`${commit}`.
-
-
-        sha256: \`${{ steps.hash.outputs.sha256 }}\`" "$jar" "$jar.sha256" --prerelease=true'
+        gh release create latest --title "ATROPOS latest (rolling)" --notes "$notes" "$jar" "$jar.sha256" --prerelease=true'
   publish-npm:
     if: startsWith(github.ref, 'refs/tags/v')
     needs: publish
