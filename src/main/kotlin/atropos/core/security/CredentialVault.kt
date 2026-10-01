@@ -1,7 +1,8 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.security
 
-import java.io.File
+import atropos.core.AtroposConfig
+import org.json.JSONObject
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
@@ -59,10 +60,7 @@ class CredentialVault(
 
         // 2. Environment variables override (highest priority)
         val env = System.getenv()
-        val envKeys = env.keys
-        while (envKeys.hasMoreElements()) {
-            val key = envKeys.nextElement()
-            val value = env[key]
+        for ((key, value) in env) {
             if (key.startsWith("ATROPOS_") || key.endsWith("_API_KEY") || key.endsWith("_KEY") || key.endsWith("_TOKEN")) {
                 if (value != null && value.isNotBlank()) {
                     credentials[key.uppercase()] = value

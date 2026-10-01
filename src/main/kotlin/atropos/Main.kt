@@ -43,7 +43,6 @@ const val ATROPOS_HEALTH_MARKER = "ATROPOS_HEALTHY"
 fun main(args: Array<String>) {
     // ALPHA-OMEGA BOOTSTRAP: Immutable credential injection BEFORE anything else
     val credentialVault = CredentialBootstrap.initialize()
-    val credentialBootstrap = CredentialBootstrap.get()
 
     val enrollment = SecretEnrollment(listOf(EnvironmentSecretSource(), LocalVaultSecretSource()))
         .enrollInto(RedactionFilter.defaultRegistry)

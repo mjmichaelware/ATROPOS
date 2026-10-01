@@ -2,8 +2,8 @@
 package atropos.core.provider
 
 import atropos.core.AtroposConfig
+import atropos.core.paid.EmergencyPaidGate
 import atropos.core.security.CredentialVault
-import java.time.Duration
 import java.time.Instant
 
 /**
@@ -29,7 +29,6 @@ class ProviderDaemon(
         val report = mutableMapOf<String, ProviderHealth>()
 
         // Get all providers that have credentials in vault
-        val vaultCredentials = credentialVault.getAll()
         val providersWithCreds = registry.getAll().filter { descriptor ->
             val requiredEnv = descriptor.requiredEnv
             requiredEnv.any { envVar ->
@@ -60,9 +59,9 @@ class ProviderDaemon(
             }
         }
 
-        val overallHealthy = report.values.any { it == ProviderHealth.HEALTHY }
+        val overallHealthy = report.values.any { it.state == ProviderAvailabilityState.HEALTHY }
         val message = if (overallHealthy) {
-            "Providers validated: ${report.filter { (_, h) -> h == ProviderHealth.HEALTHY }.keys.joinToString(", ")}"
+            "Providers validated: ${report.filter { (_, h) -> h.state == ProviderAvailabilityState.HEALTHY }.keys.joinToString(", ")}"
         } else {
             "No healthy providers. Check credentials and network."
         }
@@ -89,20 +88,32 @@ class ProviderDaemon(
         }
 
         if (!hasValidCreds) {
-            return ProviderHealth.UNHEALTHY
+            return ProviderHealth(
+                providerId = descriptor.id,
+                state = ProviderAvailabilityState.UNHEALTHY
+            )
         }
 
         // For free providers, we can assume healthy if creds exist
         // (actual network validation would require async call, which we avoid at boot)
         if (descriptor.billingClass() != BillingClass.PAID) {
-            return ProviderHealth.HEALTHY
+            return ProviderHealth(
+                providerId = descriptor.id,
+                state = ProviderAvailabilityState.HEALTHY
+            )
         }
 
         // Paid providers need explicit approval
         return if (EmergencyPaidGate().isProviderUnlocked(descriptor.id)) {
-            ProviderHealth.HEALTHY
+            ProviderHealth(
+                providerId = descriptor.id,
+                state = ProviderAvailabilityState.HEALTHY
+            )
         } else {
-            ProviderHealth.UNHEALTHY
+            ProviderHealth(
+                providerId = descriptor.id,
+                state = ProviderAvailabilityState.UNHEALTHY
+            )
         }
     }
 
@@ -113,19 +124,19 @@ class ProviderDaemon(
                 .start()
             val finished = process.waitFor(2, java.util.concurrent.TimeUnit.SECONDS)
             if (finished && process.exitValue() == 0) {
-                return ProviderHealth.HEALTHY
+                return ProviderHealth(
+                    providerId = "ollama",
+                    state = ProviderAvailabilityState.HEALTHY
+                )
             }
         } catch (_: Exception) {
             // Ollama not available
         }
-        return ProviderHealth.UNHEALTHY
+        return ProviderHealth(
+            providerId = "ollama",
+            state = ProviderAvailabilityState.UNHEALTHY
+        )
     }
-}
-
-enum class ProviderHealth {
-    HEALTHY,
-    UNHEALTHY,
-    UNTESTED
 }
 
 data class ProviderHealthReport(
@@ -137,5 +148,5 @@ data class ProviderHealthReport(
 
 /** Extension for easy access. */
 fun ProviderDaemon.healthyProviderIds(): Set<String> = validateAndSync().providers
-    .filter { (_, health) -> health == ProviderHealth.HEALTHY }
+    .filter { (_, health) -> health.state == ProviderAvailabilityState.HEALTHY }
     .keys
