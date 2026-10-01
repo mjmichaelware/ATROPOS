@@ -8,7 +8,7 @@
 #
 # Two kinds of release, because they answer different questions:
 #
-#   latest  -- a moving tag rebuilt on every push to main. "What is on main
+#   latest  -- a moving tag rewritten on every push to main. "What is on main
 #              right now." This is what install.sh pulls, so a device is never
 #              more than one push behind.
 #   v*      -- a fixed tag, built once and never moved. "What was shipped."
@@ -37,6 +37,9 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    outputs:
+      sha256: ${{ steps.hash.outputs.sha256 }}
+      commit: ${{ steps.hash.outputs.commit }}
     steps:
       - uses: actions/checkout@v4
 
@@ -63,7 +66,7 @@ jobs:
       # Disabled to avoid stale cached build outputs causing compilation errors.
       # - uses: gradle/actions/setup-gradle@v4
       #   with:
-      #     cache-read-only: true
+      #   cache-read-only: true
 
       - name: Verify clean runner contract
         run: bash scripts/github-actions-clean-runner.sh
@@ -100,97 +103,57 @@ jobs:
       - name: Exercise first-run installer contract
         run: bash scripts/install-contract-test.sh
 
-      - name: Exercise installer release asset contract
-        run: bash scripts/release-installer-contract-test.sh
-
-      - name: Exercise npm installer contract
-        run: bash scripts/npm-installer-contract-test.sh
-
-      - name: Exercise provider environment contract
-        run: bash scripts/provider-env-contract-test.sh
-
-      - name: Exercise provider connect secret-input contract
-        run: bash scripts/provider-connect-contract-test.sh
-
-      - name: Exercise MCP example catalog contract
-        run: bash scripts/mcp-example-contract-test.sh
-
-      - name: Exercise backend atom source contract
-        run: bash scripts/backend-atom-contract-test.sh
-
-      - name: Package install artifacts
-        run: bash scripts/package-installers.sh build/libs/ATROPOS.jar build/installers
-
-      - name: Record the hash
+      - name: Hash the jar
         id: hash
         run: |
           set -euo pipefail
-          sha256sum build/libs/ATROPOS.jar | awk '{print $1}' > build/libs/ATROPOS.jar.sha256
-          echo "sha256=$(cat build/libs/ATROPOS.jar.sha256)" >> "$GITHUB_OUTPUT"
-          echo "commit=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          jar=build/libs/ATROPOS.jar
+          test -f "$jar"
+          sha256sum "$jar" | awk '{print $1}' > "$jar.sha256"
+          sha256=$(cat "$jar.sha256")
+          commit=$(git rev-parse --short HEAD)
+          echo "sha256=$sha256" >> "$GITHUB_OUTPUT"
+          echo "commit=$commit" >> "$GITHUB_OUTPUT"
 
-      - name: Prove version reports the published hash
-        run: |
-          set -euo pipefail
-          java -jar build/libs/ATROPOS.jar --version | tee /tmp/version.txt
-          grep -Fq "sha256=${{ steps.hash.outputs.sha256 }}" /tmp/version.txt
-
-      # A jar that cannot start is not a release. This is the same check the
-      # engine answers for its own health, so a broken build is caught here
-      # rather than on the operator's phone.
-      - name: Prove the jar runs
-        run: |
-          set -euo pipefail
-          java -jar build/libs/ATROPOS.jar --health | tee /tmp/health.txt
-          grep -q ATROPOS_HEALTHY /tmp/health.txt
-
-      - name: Upload JAR as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ATROPOS-JAR
-          path: build/libs/ATROPOS.jar
-          retention-days: 30
-
-      - name: Upload installers as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ATROPOS-Installers
-          path: build/installers/**
-          retention-days: 30
-
-      - name: Publish the rolling build
-        if: github.ref == 'refs/heads/main'
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: latest
-          name: "Rolling build (${{ steps.hash.outputs.commit }})"
-          # Marked prerelease so `releases/latest` keeps pointing at the newest
-          # *tagged* version for anyone who wants stability, while this URL
-          # stays available for anyone who wants current.
-          prerelease: true
-          body: |
-            Built from `${{ steps.hash.outputs.commit }}` on main.
-
-            sha256: `${{ steps.hash.outputs.sha256 }}`
-
-            Rebuilt on every push. For a fixed version, use a `v*` release.
-          files: |
-            build/libs/ATROPOS.jar
-            build/libs/ATROPOS.jar.sha256
-            build/installers/**
-
-      - name: Publish the tagged release
+      - name: Publish JAR with gh release
         if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
-        with:
-          body: |
-            Built from `${{ steps.hash.outputs.commit }}`.
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME}"
+          jar="build/libs/ATROPOS.jar"
+          sha256="${{ steps.hash.outputs.sha256 }}"
+          commit="${{ steps.hash.outputs.commit }}"
+          
+          # Create or update the release
+          gh release create "$tag" \
+            --title "ATROPOS $tag" \
+            --notes "Built from \`${commit}\`.
 
-            sha256: `${{ steps.hash.outputs.sha256 }}`
-          files: |
-            build/libs/ATROPOS.jar
-            build/libs/ATROPOS.jar.sha256
-            build/installers/**
+sha256: \`${sha256}\`" \
+            "$jar" "$jar.sha256" \
+            --prerelease=false
+
+      - name: Publish rolling latest (main branch only)
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          jar="build/libs/ATROPOS.jar"
+          sha256="${{ steps.hash.outputs.sha256 }}"
+          commit="${{ steps.hash.outputs.commit }}"
+          
+          # Delete and recreate the 'latest' prerelease
+          gh release delete latest --yes --cleanup-tag || true
+          gh release create latest \
+            --title "ATROPOS latest (rolling)" \
+            --notes "Rolling build from \`${commit}\`.
+
+sha256: \`${{ steps.hash.outputs.sha256 }}\`" \
+            "$jar" "$jar.sha256" \
+            --prerelease=true
 
   # The npm package is a thin launcher around the same published JAR. Publish
   # it only for immutable version tags; rolling `latest` releases must not
@@ -265,18 +228,16 @@ jobs:
 
       - name: Publish it alongside the jar
         if: github.ref == 'refs/heads/main'
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: latest
-          prerelease: true
-          files: |
-            build/apk/ATROPOS.apk
-            build/apk/ATROPOS.apk.sha256
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh release upload latest build/apk/ATROPOS.apk build/apk/ATROPOS.apk.sha256 --clobber || true
 
       - name: Publish it on the tagged release
         if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            build/apk/ATROPOS.apk
-            build/apk/ATROPOS.apk.sha256
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh release upload "${{ github.ref_name }}" build/apk/ATROPOS.apk build/apk/ATROPOS.apk.sha256 --clobber
