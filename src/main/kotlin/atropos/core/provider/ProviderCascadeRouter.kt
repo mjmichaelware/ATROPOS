@@ -46,10 +46,16 @@ class ProviderCascadeRouter(
     private fun hasValidApiKeys(descriptor: ProviderDescriptor): Boolean {
         return descriptor.requiredEnv.all { envVar ->
             val value = secretReader?.invoke(envVar) ?: System.getenv(envVar)
-                ?: AtroposConfig.load().keys.get(envVar.lowercase()
+                ?: when (envVar.lowercase()
                     .replace("_api_key", "")
                     .replace("_key", "")
-                    .replace("_token", ""))
+                    .replace("_token", "")) {
+                    "groq" -> AtroposConfig.load().keys.groq
+                    "openai" -> AtroposConfig.load().keys.openai
+                    "anthropic" -> AtroposConfig.load().keys.anthropic
+                    "xai" -> AtroposConfig.load().keys.xai
+                    else -> null
+                }
             value != null && value.isNotBlank() && value != "your-api-key" && value != "test"
         }
     }
