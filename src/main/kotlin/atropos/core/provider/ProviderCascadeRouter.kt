@@ -211,9 +211,11 @@ class ProviderCascadeRouter(
         val paidApproval: ProviderApprovalCard? = paidApprovalAfterFreeExhaustion(cleanAggregate)
         val providerNameResult: String = if (paidApproval == null) "local_queue" else "paid_approval_required"
         val queueReasonResult: String = paidApproval?.render() ?: cleanAggregate
+        // Return a meaningful error response instead of empty string so the operator sees what happened
+        val errorResponse = "No provider answered. All configured providers failed:\n$cleanAggregate\n\nIf you need a paid provider, approve it first. Otherwise check your API keys and network."
         return ProviderCascadeResult(
             providerName = providerNameResult,
-            response = "",
+            response = errorResponse,
             errors = errors,
             contextEnvelope = contextEnvelope,
             queued = paidApproval == null,
