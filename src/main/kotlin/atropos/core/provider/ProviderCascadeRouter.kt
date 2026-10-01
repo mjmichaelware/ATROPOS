@@ -44,22 +44,40 @@ class ProviderCascadeRouter(
     fun declaredFallbackChain(capability: ApiCapability): FallbackChain? =
         FallbackChainRegistry.canonicalChain(capability)
 
+    import atropos.core.AtroposConfig
+
     private fun hasValidApiKeys(descriptor: ProviderDescriptor): Boolean {
         return descriptor.requiredEnv.all { envVar ->
             val value = secretReader?.invoke(envVar) ?: System.getenv(envVar)
+                ?: atropos.core.AtroposConfig.load().keys.get(envVar.lowercase().replace("_api_key", "").replace("_key", ""))
             value != null && value.isNotBlank() && value != "your-api-key" && value != "test"
         }
     }
 
-    /** Creates a secret reader that checks environment variables AND the vault. */
+    /** Creates a secret reader that checks environment variables, config, AND the vault. */
     companion object {
         fun createSecretReader(vault: TokenIsolationVault? = null): (String) -> String? {
+            val config = atropos.core.AtroposConfig.load()
             return { envVar ->
-                // First check environment variables
+                // 1. Environment variables (highest priority)
                 val envValue = System.getenv(envVar)
                 if (envValue != null && envValue.isNotBlank()) return envValue
                 
-                // Then check the vault if available
+                // 2. AtroposConfig keys (from ~/.atropos/config.json)
+                val configKeyName = envVar.lowercase()
+                    .replace("_api_key", "")
+                    .replace("_key", "")
+                    .replace("_token", "")
+                val configValue = when (configKeyName) {
+                    "groq" -> config.keys.groq
+                    "openai" -> config.keys.openai
+                    "anthropic" -> config.keys.anthropic
+                    "xai" -> config.keys.xai
+                    else -> null
+                }
+                if (configValue != null && configValue.isNotBlank()) return configValue
+                
+                // 3. Vault (encrypted files)
                 if (vault != null) {
                     return vault.readSecret(envVar)
                 }

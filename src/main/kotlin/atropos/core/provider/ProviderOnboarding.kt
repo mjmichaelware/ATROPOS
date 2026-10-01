@@ -6,6 +6,8 @@ import atropos.core.security.TokenIsolationVault
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
+import java.nio.file.StandardOpenOption
+import org.json.JSONObject
 
 enum class CheapProviderHealth { HEALTHY, UNHEALTHY, UNTESTED }
 
@@ -150,8 +152,27 @@ class ProviderOnboardingService(
         require(registry.getById(providerId) != null) { "unknown provider: $providerId" }
         require(secret.isNotBlank()) { "provider secret must not be blank" }
         val path = localVault.writeSecret(envName, secret)
+        // Also persist to config.json for AtroposConfig.load() to pick up
+        updateConfigJson(providerId, secret)
         refresh()
         return path
+    }
+
+    private fun updateConfigJson(providerId: String, secret: String) {
+        val configPath = AtroposConfig.configRoot().resolve("config.json").toFile()
+        val json = if (configPath.exists()) configPath.readText() else "{}"
+        val jsonObject = JSONObject(json)
+        val keyName = when (providerId.lowercase()) {
+            "groq" -> "groq_api_key"
+            "openai" -> "openai_api_key"
+            "anthropic" -> "anthropic_api_key"
+            "xai" -> "xai_api_key"
+            else -> "${providerId.lowercase()}_api_key"
+        }
+        jsonObject.put(keyName, secret)
+        val parent = configPath.toPath().parent
+        Files.createDirectories(parent)
+        Files.writeString(configPath.toPath(), jsonObject.toString(2), StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE)
     }
 
     fun defaultEnvName(providerId: String): String =
