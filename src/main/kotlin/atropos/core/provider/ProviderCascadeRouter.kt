@@ -223,7 +223,6 @@ class ProviderCascadeRouter(
             return providerOrderOverride.map { it.trim().lowercase() }
                 .filter { it.isNotBlank() }
                 .filter { !localOnly() }
-                .filter { healthyProviderIds?.invoke()?.contains(it) != false }
                 .distinct()
                 .let { ProviderCascadeOrder.order(it, registry, allowPaidProvider, paidGate) }
         }
@@ -239,7 +238,6 @@ class ProviderCascadeRouter(
             (listOf(requestedProvider.lowercase()) + configured)
                 .filter { registry.getById(it) != null }
                 .filter { !localOnly() }
-                .filter { healthyProviderIds?.invoke()?.contains(it) != false }
                 .distinct(),
             registry,
             allowPaidProvider,
