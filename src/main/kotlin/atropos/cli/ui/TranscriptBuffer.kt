@@ -99,4 +99,19 @@ class TranscriptBuffer(
     fun getEntry(index: Int): TranscriptEntry? = blocks.getOrNull(index)
 
     fun size(): Int = blocks.size
+
+    fun visibleLines(width: Int, height: Int): List<String> {
+        val allLines = blocks.map { entry ->
+            when (entry) {
+                is TranscriptEntry.Text -> {
+                    val wrapped = AnsiLineWrapper.wrap(entry.value, width)
+                    if (wrapped.isEmpty()) listOf("") else wrapped
+                }
+                is TranscriptEntry.Disclosure -> listOf(entry.row.summary)
+            }
+        }.flatten()
+
+        val start = (size() - scrollOffset - height).coerceAtLeast(0)
+        return allLines.subList(start, (start + height).coerceAtMost(allLines.size))
+    }
 }

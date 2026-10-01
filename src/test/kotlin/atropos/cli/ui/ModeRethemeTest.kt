@@ -9,7 +9,7 @@ import kotlin.test.assertTrue
 class ModeRethemeTest {
     @Test
     fun maps_modes_to_stable_semantic_roles() {
-        val retheme = ModeRetheme()
+        val retheme: ModeRetheme = ModeRetheme()
         assertEquals(ModeRetheme.ModeStyle("plan", Role.INFO), retheme.style("PLAN"))
         assertEquals(ModeRetheme.ModeStyle("build", Role.STATUS_PENDING), retheme.style("factory"))
         assertEquals(ModeRetheme.ModeStyle("build", Role.STATUS_PENDING), retheme.style("BUILD"))

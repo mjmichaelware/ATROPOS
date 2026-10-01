@@ -9,7 +9,7 @@ import kotlin.test.assertFalse
 class EvidenceMorphTest {
     @Test
     fun evidence_expands_in_place_only_when_present() {
-        val morph = EvidenceMorph()
+        val morph: EvidenceMorph = EvidenceMorph()
         val collapsed = morph.morph("answer", null, expanded = true, width = 80)
         assertEquals(EvidenceMorph.Surface.CARD, collapsed.surface)
         assertTrue(!collapsed.expanded)

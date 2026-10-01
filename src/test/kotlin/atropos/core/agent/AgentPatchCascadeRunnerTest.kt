@@ -1,8 +1,8 @@
 package atropos.core.agent
 
 import atropos.core.AtroposConfig
-import atropos.core.ProviderCascadeResult
-import atropos.core.ProviderCascadeRouter
+import atropos.core.provider.ProviderCascadeResult
+import atropos.core.provider.ProviderCascadeRouter
 import atropos.core.ProviderFactory
 import atropos.core.memory.LocalMemoryStore
 import java.nio.file.Files

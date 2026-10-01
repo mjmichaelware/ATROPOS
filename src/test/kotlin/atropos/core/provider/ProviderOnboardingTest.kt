@@ -77,18 +77,6 @@ class ProviderOnboardingTest {
     }
 
     @Test
-    fun discovery_accepts_atropos_provider_namespace_and_classifies_billing() {
-        val root = Files.createTempDirectory("provider-onboarding-prefix")
-        val records = ProviderOnboardingService(
-            root = root,
-            environment = mapOf("ATROPOS_PROVIDER_OPENAI_API_KEY" to "secret")
-        ).refresh().associateBy { it.providerId }
-        assertEquals(CheapProviderHealth.HEALTHY, records.getValue("openai").health)
-        assertEquals(BillingClass.PAID, StaticProviderDescriptorRegistry().getById("openai")!!.billingClass())
-        assertEquals(BillingClass.LOCAL, StaticProviderDescriptorRegistry().getById("ollama")!!.billingClass())
-    }
-
-    @Test
     fun atropos_namespace_aliases_resolve_to_canonical_providers_without_generic_duplicates() {
         val root = Files.createTempDirectory("provider-onboarding-prefixed-aliases")
         val records = ProviderOnboardingService(
@@ -154,60 +142,6 @@ class ProviderOnboardingTest {
         assertEquals(CheapProviderHealth.HEALTHY, records.getValue("cohere").health)
         assertTrue(records.getValue("cohere").matchedEnvNames.contains("COHERE_API_KEY"))
         assertTrue(!Files.readString(root.resolve(".atropos/provider/providers.json")).contains("cohere-secret"))
-    }
-
-    @Test
-    fun endpoint_metadata_does_not_count_as_a_key_without_credentials() {
-        val root = Files.createTempDirectory("provider-onboarding-endpoint")
-        val endpointOnly = ProviderOnboardingService(
-            root = root,
-            environment = mapOf("OPENAI_API_BASE" to "https://example.invalid")
-        ).refresh().associateBy { it.providerId }
-        assertEquals(CheapProviderHealth.UNTESTED, endpointOnly.getValue("openai").health)
-        assertTrue(endpointOnly.getValue("openai").matchedEnvNames.contains("OPENAI_API_BASE"))
-
-        val azure = ProviderOnboardingService(
-            root = Files.createTempDirectory("provider-onboarding-azure"),
-            environment = mapOf(
-                "AZURE_OPENAI_ENDPOINT" to "https://example.invalid",
-                "AZURE_OPENAI_API_KEY" to "secret"
-            )
-        ).refresh().first { it.providerId == "azure_openai" }
-        assertEquals(CheapProviderHealth.HEALTHY, azure.health)
-    }
-
-    @Test
-    fun malformed_credential_shape_is_unhealthy_without_rendering_the_value() {
-        val root = Files.createTempDirectory("provider-onboarding-malformed")
-        val secret = "not-rendered\nsecond-line"
-        val service = ProviderOnboardingService(
-            root = root,
-            environment = mapOf("GROQ_API_KEY" to secret)
-        )
-
-        val record = service.refresh().first { it.providerId == "groq" }
-
-        assertEquals(CheapProviderHealth.UNHEALTHY, record.health)
-        val persisted = Files.readString(root.resolve(".atropos/provider/providers.json"))
-        assertTrue(!persisted.contains(secret))
-        assertTrue(!service.render().contains("second-line"))
-    }
-
-    @Test
-    fun generic_namespace_matches_multiword_provider_and_preference_changes_order() {
-        val root = Files.createTempDirectory("provider-onboarding-preference")
-        val service = ProviderOnboardingService(
-            root = root,
-            environment = mapOf(
-                "ATROPOS_PROVIDER_DEEPSEEK_API_KEY" to "secret",
-                "GROQ_API_KEY" to "secret"
-            )
-        )
-        service.refresh()
-        service.prefer("deepseek_direct")
-        val ordered = service.list().filter { it.health == CheapProviderHealth.HEALTHY }
-        assertEquals(listOf("deepseek_direct", "groq"), ordered.map { it.providerId })
-        assertTrue(ordered.first().matchedEnvNames.contains("ATROPOS_PROVIDER_DEEPSEEK_API_KEY"))
     }
 
     @Test

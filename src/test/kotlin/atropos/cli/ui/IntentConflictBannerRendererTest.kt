@@ -1,13 +1,13 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.cli.ui
 
-import atropos.cli.ui.design.ThemePalette
+import atropos.cli.ui.design.ThemeCatalog
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class IntentConflictBannerRendererTest {
-    private val theme = ThemePalette()
+    private val theme = ThemeCatalog.all.first()
 
     @Test
     fun `renders blocking conflict with stop icon`() {

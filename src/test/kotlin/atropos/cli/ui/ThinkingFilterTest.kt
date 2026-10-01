@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.cli.ui
 
+import atropos.cli.ui.ThinkingLevel
+import atropos.cli.ui.ThinkingFilter
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -9,7 +11,7 @@ import kotlin.test.assertFalse
 class ThinkingFilterTest {
 
     @Test
-    fun `thinking level cycles L1 -> L2 -> L3 -> L1`() {
+    fun `thinking level cycles L1 to L2 to L3 to L1`() {
         val filter = ThinkingFilter()
 
         assertEquals(ThinkingLevel.L1, filter.current)

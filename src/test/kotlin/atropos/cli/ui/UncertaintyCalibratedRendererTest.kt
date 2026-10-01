@@ -1,21 +1,22 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.cli.ui
 
-import atropos.cli.ui.design.ThemePalette
+import atropos.cli.ui.UncertaintyCalibratedRecommendation.Recommendation
+import atropos.cli.ui.design.ThemeCatalog
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class UncertaintyCalibratedRendererTest {
-    private val theme = ThemePalette()
+    private val theme = ThemeCatalog.all.first()
 
     @Test
     fun `renders measured confidence with badge`() {
         val renderer = UncertaintyCalibratedRenderer(theme)
-        val rec = UncertaintyCalibratedRecommendation()
+        val rec: UncertaintyCalibratedRecommendation = UncertaintyCalibratedRecommendation()
             .addMeasured("Use provider X", 85, listOf("evidence-1"))
 
-        val output = renderer.render(rec.all()[0])
+        val output = renderer.render(rec.all().first() as Recommendation)
 
         assertTrue(output.contains("HIGH"))
         assertTrue(output.contains("evidence: evidence-1"))
@@ -25,10 +26,10 @@ class UncertaintyCalibratedRendererTest {
     @Test
     fun `renders not measured with question mark`() {
         val renderer = UncertaintyCalibratedRenderer(theme)
-        val rec = UncertaintyCalibratedRecommendation()
+        val rec: UncertaintyCalibratedRecommendation = UncertaintyCalibratedRecommendation()
             .addNotMeasured("Try this")
 
-        val output = renderer.render(rec.all()[0])
+        val output = renderer.render(rec.all().first() as Recommendation)
 
         assertTrue(output.contains("?"))
         assertTrue(output.contains("Not measured"))
@@ -38,10 +39,10 @@ class UncertaintyCalibratedRendererTest {
     @Test
     fun `renders unavailable with X`() {
         val renderer = UncertaintyCalibratedRenderer(theme)
-        val rec = UncertaintyCalibratedRecommendation()
+        val rec: UncertaintyCalibratedRecommendation = UncertaintyCalibratedRecommendation()
             .addUnavailable("Unavailable")
 
-        val output = renderer.render(rec.all()[0])
+        val output = renderer.render(rec.all().first() as Recommendation)
 
         assertTrue(output.contains("×"))
         assertTrue(output.contains("Unavailable"))
@@ -50,7 +51,7 @@ class UncertaintyCalibratedRendererTest {
     @Test
     fun `renders all recommendations`() {
         val renderer = UncertaintyCalibratedRenderer(theme)
-        val recs = UncertaintyCalibratedRecommendation()
+        val recs: UncertaintyCalibratedRecommendation = UncertaintyCalibratedRecommendation()
         recs.addMeasured("High", 90, listOf("e1"))
         recs.addMeasured("Medium", 65, listOf("e2"))
         recs.addNotMeasured("Not measured")
@@ -65,7 +66,7 @@ class UncertaintyCalibratedRendererTest {
     @Test
     fun `empty list renders empty message`() {
         val renderer = UncertaintyCalibratedRenderer(theme)
-        val output = renderer.renderAll(emptyList())
+        val output = renderer.renderAll(emptyList<UncertaintyCalibratedRecommendation.Recommendation>())
 
         assertTrue(output.contains("No recommendations"))
     }

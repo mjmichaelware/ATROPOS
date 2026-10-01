@@ -4,6 +4,9 @@ package atropos.cli
 import atropos.cli.config.ConfigurationManager
 import atropos.cli.ui.AnsiTerminalEngine
 import atropos.cli.ui.PlainTerminalOutput
+import atropos.core.provider.ProviderCascadeRouter
+import atropos.core.ProviderFactory
+import atropos.core.AtroposConfig
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 import kotlin.test.Test
@@ -27,8 +30,8 @@ class SideConversationServiceTest {
     private fun service(out: ByteArrayOutputStream, busy: String? = null) =
         SideConversationService(
             uiEngine = engine(out),
-            cascade = atropos.core.ProviderCascadeRouter(
-                atropos.core.ProviderFactory(atropos.core.AtroposConfig.load())
+            cascade = ProviderCascadeRouter(
+                ProviderFactory(AtroposConfig.load())
             ),
             activeProvider = { "groq" },
             busyProvider = { busy }

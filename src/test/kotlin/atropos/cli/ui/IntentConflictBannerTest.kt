@@ -130,7 +130,7 @@ class IntentConflictBannerTest {
         val banner = IntentConflictBanner()
         banner.recordPriorDecision("paid_providers", "none")
 
-        val detector = IntentConflictDetector()
+        val detector = IntentConflictDetector(banner)
 
         val conflict = detector.detect("use openrouter for this task")
 
@@ -143,7 +143,7 @@ class IntentConflictBannerTest {
         val banner = IntentConflictBanner()
         banner.recordPriorDecision("local_only", "true")
 
-        val detector = IntentConflictDetector()
+        val detector = IntentConflictDetector(banner)
 
         val conflict = detector.detect("curl https://example.com")
 
@@ -154,17 +154,14 @@ class IntentConflictBannerTest {
     @Test
     fun `loadPriorDecisions loads from config`() {
         val banner = IntentConflictBanner()
+        val detector = IntentConflictDetector(banner)
 
-        IntentConflictDetector().loadPriorDecisions(mapOf(
+        detector.loadPriorDecisions(mapOf(
             "paid_providers" to "none",
             "local_only" to "true"
         ))
 
-        // The detector uses its own internal banner, so we test through the banner directly
-        val testBanner = IntentConflictBanner()
-        testBanner.recordPriorDecision("paid_providers", "none")
-
-        val conflict = testBanner.checkPaidProviderConflict("use openrouter")
+        val conflict = banner.checkPaidProviderConflict("use openrouter")
         assertNotNull(conflict)
     }
 }

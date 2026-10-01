@@ -7,7 +7,7 @@ import kotlin.test.assertTrue
 class AttestationOpticalFocusTest {
     @Test
     fun focus_is_visible_without_stealing_input() {
-        val focus = AttestationOpticalFocus()
+        val focus: AttestationOpticalFocus = AttestationOpticalFocus()
         val cue = focus.cue(attested = true)
         assertEquals("◎", cue.glyph)
         assertEquals("attested", cue.state)

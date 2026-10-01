@@ -3,7 +3,7 @@ package atropos.core.agent
 
 import atropos.core.provider.ContextAttestationService
 import atropos.core.provider.ContextEnvelopeFactory
-import atropos.core.ProviderCascadeResult
+import atropos.core.provider.ProviderCascadeResult
 import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertNull

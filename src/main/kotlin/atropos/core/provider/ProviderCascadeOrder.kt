@@ -65,4 +65,10 @@ object ProviderCascadeOrder {
         providerId: String,
         registry: ProviderDescriptorRegistry = StaticProviderDescriptorRegistry()
     ): Boolean = registry.getById(providerId)?.costMode in setOf(CostMode.FREE, CostMode.COOLDOWN_OK)
+
+    /** True when [providerId] is a local provider (runs locally, e.g., ollama). */
+    fun isLocal(
+        providerId: String,
+        registry: ProviderDescriptorRegistry = StaticProviderDescriptorRegistry()
+    ): Boolean = registry.getById(providerId)?.id == "ollama"
 }

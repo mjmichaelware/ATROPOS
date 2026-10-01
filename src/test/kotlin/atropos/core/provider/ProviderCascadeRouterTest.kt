@@ -1,6 +1,6 @@
 package atropos.core.provider
 
-import atropos.core.ProviderCascadeRouter
+import atropos.core.provider.ProviderCascadeRouter
 import atropos.core.ProviderFactory
 import atropos.core.AIProvider
 import kotlin.test.Test

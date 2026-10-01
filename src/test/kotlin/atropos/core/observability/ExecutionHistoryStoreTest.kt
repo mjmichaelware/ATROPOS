@@ -23,9 +23,9 @@ class ExecutionHistoryStoreTest {
 
     private fun fixture(): Triple<Path, EventPublisher, ExecutionHistoryStore> {
         val root = Files.createTempDirectory("atropos-history-")
-        val journal = EventJournalService(repoRoot = root)
+        val journal = EventJournalService(root)
         val publisher = EventPublisher(journal = journal, stream = ProvenanceStream())
-        return Triple(root, publisher, ExecutionHistoryStore(repoRoot = root))
+        return Triple(root, publisher, ExecutionHistoryStore(root))
     }
 
     private fun seed(publisher: EventPublisher, runId: String = "run-1") {
@@ -57,7 +57,7 @@ class ExecutionHistoryStoreTest {
         seed(publisher)
 
         // A brand-new store, as a restarted process would build.
-        val restarted = ExecutionHistoryStore(repoRoot = root)
+        val restarted = ExecutionHistoryStore(root)
 
         assertEquals(4, restarted.search("run-1", HistoryQuery()).events.size)
     }
@@ -65,7 +65,7 @@ class ExecutionHistoryStoreTest {
     @Test
     fun `record extension appends through the journal and rebuilds the index`() {
         val root = Files.createTempDirectory("atropos-history-record-")
-        val store = ExecutionHistoryStore(repoRoot = root)
+        val store = ExecutionHistoryStore(root)
         store.record(
             ExecutionEvent(
                 sequence = 999L,
@@ -81,7 +81,7 @@ class ExecutionHistoryStoreTest {
             )
         )
 
-        val restarted = ExecutionHistoryStore(repoRoot = root)
+        val restarted = ExecutionHistoryStore(root)
         assertEquals("recorded command", restarted.search("record-run", HistoryQuery()).events.single().payload)
     }
 

@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.cli.ui
 
+import atropos.core.security.RedactionFilter
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -87,7 +88,8 @@ class CompetitiveErrorLedgerTest {
 
         assertEquals(3, benchmark["total_errors"])
         assertEquals(mapOf("CRITICAL" to 0, "HIGH" to 2, "MEDIUM" to 1, "LOW" to 0), benchmark["severity_distribution"])
-        assertEquals(0, benchmark["vs_baseline"]?.get(CompetitiveErrorLedger.Category.PARSE))
-        assertEquals(0, benchmark["vs_baseline"]?.get(CompetitiveErrorLedger.Category.EXECUTION))
+        val vsBaseline = benchmark["vs_baseline"] as Map<CompetitiveErrorLedger.Category, Int>
+        assertEquals(0, vsBaseline[CompetitiveErrorLedger.Category.PARSE])
+        assertEquals(0, vsBaseline[CompetitiveErrorLedger.Category.EXECUTION])
     }
 }
