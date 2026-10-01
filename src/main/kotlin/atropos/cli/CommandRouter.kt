@@ -649,10 +649,6 @@ class CommandRouter(
                                 uiEngine.updateAgentPatchState(agentCommand.lastKnownPatchId)
                             }
                         }
-                        tokens.size == 1 && tokens.first().equals("ATROPOS", ignoreCase = true) -> {
-                            announce(agentCommand.execute(listOf("/agent", "ask", "ATROPOS")))
-                            uiEngine.updateAgentPatchState(agentCommand.lastKnownPatchId)
-                        }
                         // The canonical form travels onward, not the raw
                         // input: SUP.NL.ENVELOPE-WRAP requires it, and sending
                         // the raw bytes here would mean the text the guard
