@@ -1,4 +1,5 @@
 package atropos.core.agent
+import atropos.core.provider.ProviderCascadeResult
 
 import atropos.core.provider.ProviderCascadeRouter
 import atropos.core.memory.LocalMemoryStore
