@@ -14,7 +14,6 @@ import atropos.core.paid.EmergencyPaidGate
 import atropos.core.provider.ProviderApprovalCard
 import atropos.core.provider.ProviderPolicyGate
 import atropos.core.security.TokenIsolationVault
-import atropos.core.AtroposConfig
 
 data class ProviderCascadeResult(
     val providerName: String,
@@ -37,52 +36,21 @@ class ProviderCascadeRouter(
     private val preferredProviderIds: (() -> List<String>)? = null,
     private val localOnly: () -> Boolean = { AtroposConfig.load().runtime.localOnly },
     private val paidGate: EmergencyPaidGate = EmergencyPaidGate(),
-    /** Reads secrets from environment AND vault. Null defaults to env-only. */
+    /** Reads secrets from environment, config, AND vault. Null defaults to env-only. */
     private val secretReader: ((String) -> String?)? = null
 ) {
     /** Returns the documented chain through the canonical route owner. */
     fun declaredFallbackChain(capability: ApiCapability): FallbackChain? =
         FallbackChainRegistry.canonicalChain(capability)
 
-    import atropos.core.AtroposConfig
-
     private fun hasValidApiKeys(descriptor: ProviderDescriptor): Boolean {
         return descriptor.requiredEnv.all { envVar ->
             val value = secretReader?.invoke(envVar) ?: System.getenv(envVar)
-                ?: atropos.core.AtroposConfig.load().keys.get(envVar.lowercase().replace("_api_key", "").replace("_key", ""))
-            value != null && value.isNotBlank() && value != "your-api-key" && value != "test"
-        }
-    }
-
-    /** Creates a secret reader that checks environment variables, config, AND the vault. */
-    companion object {
-        fun createSecretReader(vault: TokenIsolationVault? = null): (String) -> String? {
-            val config = atropos.core.AtroposConfig.load()
-            return { envVar ->
-                // 1. Environment variables (highest priority)
-                val envValue = System.getenv(envVar)
-                if (envValue != null && envValue.isNotBlank()) return envValue
-                
-                // 2. AtroposConfig keys (from ~/.atropos/config.json)
-                val configKeyName = envVar.lowercase()
+                ?: AtroposConfig.load().keys.get(envVar.lowercase()
                     .replace("_api_key", "")
                     .replace("_key", "")
-                    .replace("_token", "")
-                val configValue = when (configKeyName) {
-                    "groq" -> config.keys.groq
-                    "openai" -> config.keys.openai
-                    "anthropic" -> config.keys.anthropic
-                    "xai" -> config.keys.xai
-                    else -> null
-                }
-                if (configValue != null && configValue.isNotBlank()) return configValue
-                
-                // 3. Vault (encrypted files)
-                if (vault != null) {
-                    return vault.readSecret(envVar)
-                }
-                return null
-            }
+                    .replace("_token", ""))
+            value != null && value.isNotBlank() && value != "your-api-key" && value != "test"
         }
     }
 
@@ -294,8 +262,35 @@ class ProviderCascadeRouter(
         ).paidApproval(ApiCapability.CHAT, "FREE/LOCAL cascade exhausted: $reason")
     }
 
-    private companion object {
+    companion object {
         /** How much of a prompt or an answer one narrated line carries. */
         const val GIST_CELLS = 100
+
+        /** Creates a secret reader that checks environment variables, config, AND the vault. */
+        fun createSecretReader(vault: TokenIsolationVault? = null): (String) -> String? {
+            val config = AtroposConfig.load()
+            return { envVar ->
+                // 1. Environment variables (highest priority)
+                val envValue = System.getenv(envVar)
+                if (envValue != null && envValue.isNotBlank()) return envValue
+
+                // 2. AtroposConfig keys (from ~/.atropos/config.json)
+                val configKeyName = envVar.lowercase()
+                    .replace("_api_key", "")
+                    .replace("_key", "")
+                    .replace("_token", "")
+                val configValue = when (configKeyName) {
+                    "groq" -> AtroposConfig.load().keys.groq
+                    "openai" -> AtroposConfig.load().keys.openai
+                    "anthropic" -> AtroposConfig.load().keys.anthropic
+                    "xai" -> AtroposConfig.load().keys.xai
+                    else -> null
+                }
+                if (configValue != null && configValue.isNotBlank()) return configValue
+
+                // 3. Vault (encrypted files) - not implemented in this reader
+                return null
+            }
+        }
     }
 }
