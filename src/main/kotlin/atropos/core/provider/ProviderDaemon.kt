@@ -11,7 +11,7 @@ import java.time.Instant
  *
  * Replaces asynchronous fire-and-forget health checks with synchronous,
  * blocking validation during bootstrap. If an API key is present in the
- * vault, its health state MUST initialize as HEALTHY immediately upon
+ * vault, its health state MUST initialize as READY immediately upon
  * successful signature validation.
  */
 class ProviderDaemon(
@@ -59,9 +59,9 @@ class ProviderDaemon(
             }
         }
 
-        val overallHealthy = report.values.any { it.state == ProviderAvailabilityState.HEALTHY }
+        val overallHealthy = report.values.any { it.state == ProviderAvailabilityState.READY }
         val message = if (overallHealthy) {
-            "Providers validated: ${report.filter { (_, h) -> h.state == ProviderAvailabilityState.HEALTHY }.keys.joinToString(", ")}"
+            "Providers validated: ${report.filter { (_, h) -> h.state == ProviderAvailabilityState.READY }.keys.joinToString(", ")}"
         } else {
             "No healthy providers. Check credentials and network."
         }
@@ -90,7 +90,7 @@ class ProviderDaemon(
         if (!hasValidCreds) {
             return ProviderHealth(
                 providerId = descriptor.id,
-                state = ProviderAvailabilityState.UNHEALTHY
+                state = ProviderAvailabilityState.OFFLINE
             )
         }
 
@@ -99,7 +99,7 @@ class ProviderDaemon(
         if (descriptor.billingClass() != BillingClass.PAID) {
             return ProviderHealth(
                 providerId = descriptor.id,
-                state = ProviderAvailabilityState.HEALTHY
+                state = ProviderAvailabilityState.READY
             )
         }
 
@@ -107,12 +107,12 @@ class ProviderDaemon(
         return if (EmergencyPaidGate().isProviderUnlocked(descriptor.id)) {
             ProviderHealth(
                 providerId = descriptor.id,
-                state = ProviderAvailabilityState.HEALTHY
+                state = ProviderAvailabilityState.READY
             )
         } else {
             ProviderHealth(
                 providerId = descriptor.id,
-                state = ProviderAvailabilityState.UNHEALTHY
+                state = ProviderAvailabilityState.OFFLINE
             )
         }
     }
@@ -126,7 +126,7 @@ class ProviderDaemon(
             if (finished && process.exitValue() == 0) {
                 return ProviderHealth(
                     providerId = "ollama",
-                    state = ProviderAvailabilityState.HEALTHY
+                    state = ProviderAvailabilityState.READY
                 )
             }
         } catch (_: Exception) {
@@ -134,7 +134,7 @@ class ProviderDaemon(
         }
         return ProviderHealth(
             providerId = "ollama",
-            state = ProviderAvailabilityState.UNHEALTHY
+            state = ProviderAvailabilityState.OFFLINE
         )
     }
 }
@@ -148,5 +148,5 @@ data class ProviderHealthReport(
 
 /** Extension for easy access. */
 fun ProviderDaemon.healthyProviderIds(): Set<String> = validateAndSync().providers
-    .filter { (_, health) -> health.state == ProviderAvailabilityState.HEALTHY }
+    .filter { (_, health) -> health.state == ProviderAvailabilityState.READY }
     .keys
