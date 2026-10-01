@@ -42,6 +42,8 @@ jobs:
       run: bash scripts/package-installers-test.sh
     - name: Exercise first-run installer contract
       run: bash scripts/install-contract-test.sh
+    - name: Exercise backend atom contract
+      run: bash scripts/backend-atom-contract-test.sh
     - name: Hash the jar
       id: hash
       run: 'set -euo pipefail
