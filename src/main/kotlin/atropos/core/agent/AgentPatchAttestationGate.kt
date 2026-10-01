@@ -1,7 +1,7 @@
 package atropos.core.agent
 import atropos.core.provider.ProviderCascadeResult
 
-import atropos.core.ProviderCascadeResult
+import atropos.core.provider.ProviderCascadeResult
 import atropos.core.provider.ContextAttestationService
 
 /**
