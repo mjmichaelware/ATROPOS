@@ -18,6 +18,7 @@ import atropos.core.provider.ImmutablePrompt
 import atropos.core.provider.PromptRole
 import atropos.core.dopamine.AlignmentTuner
 import atropos.core.dopamine.RewardLogEntry
+import atropos.core.security.TokenIsolationVault
 import java.nio.file.Path
 
 class ProviderChatDispatcher(
@@ -48,7 +49,8 @@ class ProviderChatDispatcher(
             atropos.core.ProviderFactory(config),
             healthyProviderIds = { onboarding.healthyProviderIds() },
             preferredProviderIds = { onboarding.preferredProviderIds() },
-            localOnly = { config.runtime.localOnly }
+            localOnly = { config.runtime.localOnly },
+            secretReader = atropos.core.provider.ProviderCascadeRouter.createSecretReader(TokenIsolationVault())
         )
 ) {
 

@@ -8,6 +8,7 @@ import atropos.core.policy.BoundedAgencyGate
 import atropos.core.policy.ExecutionPolicyEngine
 import atropos.core.security.RedactionFilter
 import atropos.core.provider.ProviderOnboardingService
+import atropos.core.security.TokenIsolationVault
 
 /**
  * Asks a provider to fix the change that failed its own verification.
@@ -25,7 +26,8 @@ class AgentRepairService(
         ProviderFactory(config),
         healthyProviderIds = { onboarding.healthyProviderIds() },
         preferredProviderIds = { onboarding.preferredProviderIds() },
-        localOnly = { config.runtime.localOnly }
+        localOnly = { config.runtime.localOnly },
+        secretReader = atropos.core.provider.ProviderCascadeRouter.createSecretReader(TokenIsolationVault())
     ),
     private val selector: AgentProviderSelector = AgentProviderSelector(config),
     private val patchStore: AgentPatchStore = AgentPatchStore(collector.repoRoot),

@@ -10,6 +10,7 @@ import atropos.core.planning.CanonicalAtomProvider
 import atropos.core.planning.CanonicalAtomSet
 import atropos.core.planning.AtomDimension
 import atropos.core.specgraph.ExportBundleReader
+import atropos.core.security.TokenIsolationVault
 import java.nio.file.Files
 import java.nio.file.Path
 
@@ -185,7 +186,8 @@ class SpecGraphCanonicalAtomProvider(
             ProviderFactory(config),
             healthyProviderIds = { onboarding.healthyProviderIds() },
             preferredProviderIds = { onboarding.preferredProviderIds() },
-            localOnly = { config.runtime.localOnly }
+            localOnly = { config.runtime.localOnly },
+            secretReader = atropos.core.provider.ProviderCascadeRouter.createSecretReader(TokenIsolationVault())
         ).completeWithCascade(
             requestedProvider = config.runtime.defaultProvider,
             prompt = prompt,

@@ -29,6 +29,7 @@ import atropos.core.nl.NlEntryPipeline
 import atropos.core.nl.NlSource
 import atropos.core.provider.ProviderOnboardingService
 import atropos.core.integration.McpHostManager
+import atropos.core.security.TokenIsolationVault
 import atropos.cli.ui.TranscriptEntry
 import atropos.cli.ui.TranscriptBuffer
 
@@ -211,7 +212,8 @@ class CommandRouter(
             ProviderFactory(config),
             healthyProviderIds = { providerOnboarding.healthyProviderIds() },
             preferredProviderIds = { providerOnboarding.preferredProviderIds() },
-            localOnly = { config.runtime.localOnly }
+            localOnly = { config.runtime.localOnly },
+            secretReader = atropos.core.provider.ProviderCascadeRouter.createSecretReader(TokenIsolationVault())
         ),
         activeProvider = { currentProviderName }
     )

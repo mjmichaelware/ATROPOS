@@ -9,6 +9,7 @@ import atropos.core.policy.ExecutionPolicyEngine
 import atropos.core.provider.ProviderTruthService
 import atropos.core.security.RedactionFilter
 import atropos.core.provider.ProviderOnboardingService
+import atropos.core.security.TokenIsolationVault
 
 class AgentService(
     private val config: AtroposConfig = AtroposConfig.load(),
@@ -18,7 +19,8 @@ class AgentService(
         ProviderFactory(config),
         healthyProviderIds = { onboarding.healthyProviderIds() },
         preferredProviderIds = { onboarding.preferredProviderIds() },
-        localOnly = { config.runtime.localOnly }
+        localOnly = { config.runtime.localOnly },
+        secretReader = atropos.core.provider.ProviderCascadeRouter.createSecretReader(TokenIsolationVault())
     ),
     private val selector: AgentProviderSelector = AgentProviderSelector(config),
     private val patchExtractor: AgentPatchExtractor = AgentPatchExtractor(),

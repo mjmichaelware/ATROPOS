@@ -13,6 +13,8 @@ import atropos.core.provider.FallbackChainRegistry
 import atropos.core.paid.EmergencyPaidGate
 import atropos.core.provider.ProviderApprovalCard
 import atropos.core.provider.ProviderPolicyGate
+import atropos.core.security.TokenIsolationVault
+import atropos.core.AtroposConfig
 
 data class ProviderCascadeResult(
     val providerName: String,
@@ -34,7 +36,9 @@ class ProviderCascadeRouter(
     private val healthyProviderIds: (() -> Set<String>)? = null,
     private val preferredProviderIds: (() -> List<String>)? = null,
     private val localOnly: () -> Boolean = { AtroposConfig.load().runtime.localOnly },
-    private val paidGate: EmergencyPaidGate = EmergencyPaidGate()
+    private val paidGate: EmergencyPaidGate = EmergencyPaidGate(),
+    /** Reads secrets from environment AND vault. Null defaults to env-only. */
+    private val secretReader: ((String) -> String?)? = null
 ) {
     /** Returns the documented chain through the canonical route owner. */
     fun declaredFallbackChain(capability: ApiCapability): FallbackChain? =
@@ -42,8 +46,25 @@ class ProviderCascadeRouter(
 
     private fun hasValidApiKeys(descriptor: ProviderDescriptor): Boolean {
         return descriptor.requiredEnv.all { envVar ->
-            val value = System.getenv(envVar)
+            val value = secretReader?.invoke(envVar) ?: System.getenv(envVar)
             value != null && value.isNotBlank() && value != "your-api-key" && value != "test"
+        }
+    }
+
+    /** Creates a secret reader that checks environment variables AND the vault. */
+    companion object {
+        fun createSecretReader(vault: TokenIsolationVault? = null): (String) -> String? {
+            return { envVar ->
+                // First check environment variables
+                val envValue = System.getenv(envVar)
+                if (envValue != null && envValue.isNotBlank()) return envValue
+                
+                // Then check the vault if available
+                if (vault != null) {
+                    return vault.readSecret(envVar)
+                }
+                return null
+            }
         }
     }
 
