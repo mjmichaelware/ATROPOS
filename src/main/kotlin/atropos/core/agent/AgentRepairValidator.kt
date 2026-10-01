@@ -1,6 +1,8 @@
 package atropos.core.agent
 import atropos.core.provider.ProviderCascadeResult
 
+import atropos.core.memory.LocalMemoryStore
+
 /**
  * Validates repair responses and checks attestation.
  *
@@ -28,6 +30,7 @@ internal class AgentRepairValidator(
         val extraction = validator.usableDiff(result.response) ?: return null
         return AgentPatchAttempt(result, extraction, retryAttempted)
     }
+
     private fun attested(result: ProviderCascadeResult): Boolean =
         when (val verdict = attestation.evaluate(result)) {
             is AgentAttestationVerdict.Accepted -> true

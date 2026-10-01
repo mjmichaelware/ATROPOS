@@ -1,5 +1,7 @@
 package atropos.core.agent
 import atropos.core.provider.ProviderCascadeResult
+
+
 /**
  * One provider's answer to a patch request, and what became of it.
  *
@@ -8,6 +10,7 @@ import atropos.core.provider.ProviderCascadeResult
  * diff, judge the response the same way, and report the same failure vocabulary;
  * they had two private copies of this type, which meant a change to one path's
  * failure reporting silently did not reach the other.
+ *
  * @param rejectionReason null when the attempt was accepted. Non-null values are
  *   operator-facing text explaining why a response was not usable as a patch.
  * @param responsePreview a redacted excerpt kept for diagnosis. Never the raw
@@ -31,11 +34,14 @@ internal data class AgentPatchAttempt(
     fun withRetryAttempted(value: Boolean): AgentPatchAttempt = copy(retryAttempted = value)
 }
 
+/**
  * The outcome of walking the provider order.
+ *
  * Exactly one side is populated: [success] when some provider produced a usable
  * diff, [failure] with the last failure otherwise. Both null means the provider
  * order was empty — there was nothing to try, which is distinct from having
  * tried and been refused.
+ */
 internal data class AgentPatchCascadeResult(
     val success: AgentPatchAttempt? = null,
     val failure: AgentPatchAttempt? = null
