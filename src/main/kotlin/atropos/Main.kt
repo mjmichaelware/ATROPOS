@@ -24,19 +24,27 @@ import atropos.core.AtroposRepoRootLocator
 import atropos.core.agent.SelfHostStartupContinuationService
 import atropos.core.agent.AgentDaemonService
 import atropos.core.auth.AuthorityBootGate
+import atropos.core.provider.ProviderDaemon
+import atropos.core.provider.ProviderHealthReport
 import atropos.core.recovery.RuntimeContinuitySupervisor
 import atropos.core.recovery.CrashRecoveryService
 import atropos.core.recovery.StartupContinuationDecider
 import atropos.core.recovery.ContinuityOutcome
+import atropos.core.security.CredentialBootstrap
+import atropos.core.security.CredentialVault
+import atropos.core.security.RedactionFilter
 import atropos.core.security.SecretEnrollment
 import atropos.core.security.EnvironmentSecretSource
 import atropos.core.security.LocalVaultSecretSource
-import atropos.core.security.RedactionFilter
 import java.io.FileInputStream
 
 const val ATROPOS_HEALTH_MARKER = "ATROPOS_HEALTHY"
 
 fun main(args: Array<String>) {
+    // ALPHA-OMEGA BOOTSTRAP: Immutable credential injection BEFORE anything else
+    val credentialVault = CredentialBootstrap.initialize()
+    val credentialBootstrap = CredentialBootstrap.get()
+
     val enrollment = SecretEnrollment(listOf(EnvironmentSecretSource(), LocalVaultSecretSource()))
         .enrollInto(RedactionFilter.defaultRegistry)
     if (enrollment.failures.isNotEmpty()) {
@@ -79,9 +87,15 @@ fun main(args: Array<String>) {
         return
     }
 
+    // ALPHA-OMEGA: ProviderDaemon - synchronous blocking health validation at boot time
+    val config = AtroposConfig.load()
+    val credentialVault = CredentialBootstrap.get()
+    val providerOnboarding = atropos.core.provider.ProviderOnboardingService()
+    val providerDaemon = ProviderDaemon(credentialVault, onboarding = providerOnboarding, config = config)
+    val healthReport = providerDaemon.validateAndSync()
+
     // Discovery is cheap and metadata-only. Construct one owner for every
     // launch mode, including the daemon foreground entrypoint.
-    val providerOnboarding = atropos.core.provider.ProviderOnboardingService()
     providerOnboarding.refresh()
 
     if (args.firstOrNull() == "--agent-daemon-foreground") {
@@ -97,11 +111,12 @@ fun main(args: Array<String>) {
     val tracker = QuotaSessionTracker()
 
     try {
-        val config = AtroposConfig.load()
-
         // Pass the one launch owner to every downstream router/service; no
         // second environment scan is permitted during this process.
-        ui.renderNotice(providerOnboarding.renderLaunchSummary(refresh = false))
+        ui.renderNotice(healthReport.message)
+        if (!healthReport.overallHealthy) {
+            ui.renderNotice("No healthy providers. Run '/provider connect' to configure API keys.")
+        }
 
         if (args.firstOrNull() == "--doctor" || args.firstOrNull() == "doctor") {
             atropos.cli.FirstRunDoctorRenderer(
