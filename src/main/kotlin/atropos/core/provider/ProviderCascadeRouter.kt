@@ -170,47 +170,51 @@ class ProviderCascadeRouter(
                     contextEnvelope = contextEnvelope
                 )
             } catch (failure: Exception) {
-                val error = classifier.classify(provider, failure)
-                errors += error
-                onFailure(error)
+                val classifiedError: ProviderError = classifier.classify(provider, failure)
+                errors.add(classifiedError)
+                onFailure(classifiedError)
                 // Named at L2, not L3. A provider dropping out changes which
                 // model answered, which is a fact about the result and not a
                 // detail of how it was obtained.
+                val errorType: FailureType = classifiedError.type
+                val errorCleanMessage: String = classifiedError.cleanMessage
                 atropos.core.thinking.Thinking.step(
                     "provider",
-                    "$provider did not answer (${error.type}): ${error.cleanMessage}"
+                    "$provider did not answer ($errorType): $errorCleanMessage"
                 )
 
                 if (
-                    error.type == FailureType.AUTH_INVALID ||
-                    error.type == FailureType.MISSING_KEY
+                    classifiedError.type == FailureType.AUTH_INVALID ||
+                    classifiedError.type == FailureType.MISSING_KEY
                 ) {
-                    blocked += provider
+                    blocked.add(provider)
                 }
             }
         }
 
-        val cleanAggregate =
+        val cleanAggregate: String =
             if (errors.isEmpty()) {
                 "no provider completed the request"
             } else {
-                errors.joinToString(" | ") { it.cleanMessage }
+                errors.joinToString(" | ") { (it: ProviderError) -> it.cleanMessage }
             }
 
         atropos.core.thinking.Thinking.step(
             "provider",
             "no provider answered; queuing for retry — $cleanAggregate"
         )
-        val retryAt = System.currentTimeMillis() + 60_000L
-        val paidApproval = paidApprovalAfterFreeExhaustion(cleanAggregate)
+        val retryAt: Long = System.currentTimeMillis() + 60_000L
+        val paidApproval: ProviderApprovalCard? = paidApprovalAfterFreeExhaustion(cleanAggregate)
+        val providerNameResult: String = if (paidApproval == null) "local_queue" else "paid_approval_required"
+        val queueReasonResult: String = paidApproval?.render() ?: cleanAggregate
         return ProviderCascadeResult(
-            providerName = if (paidApproval == null) "local_queue" else "paid_approval_required",
+            providerName = providerNameResult,
             response = "",
             errors = errors,
             contextEnvelope = contextEnvelope,
             queued = paidApproval == null,
             earliestRetryEpochMs = retryAt,
-            queueReason = paidApproval?.render() ?: cleanAggregate,
+            queueReason = queueReasonResult,
             paidApproval = paidApproval
         )
     }
