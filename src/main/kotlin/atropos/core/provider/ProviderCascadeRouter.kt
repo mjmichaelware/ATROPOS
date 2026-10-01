@@ -7,7 +7,6 @@ import atropos.core.provider.StaticProviderDescriptorRegistry
 import atropos.core.provider.ApiCapability
 import atropos.core.provider.ProviderCascadeOrder
 import atropos.core.provider.ProviderDescriptor
-import atropos.core.provider.ProviderFailureClassifier
 import atropos.core.AtroposConfig
 import atropos.core.OllamaHealthProbe
 import atropos.core.provider.FallbackChain
@@ -20,6 +19,7 @@ import atropos.core.ProviderError
 import atropos.core.ProviderFactory
 import atropos.core.AIProvider
 import atropos.core.FailureType
+import atropos.core.ProviderFailureClassifier
 
 data class ProviderCascadeResult(
     val providerName: String,
