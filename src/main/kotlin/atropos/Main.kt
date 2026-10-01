@@ -112,6 +112,7 @@ fun main(args: Array<String>) {
         // Pass the one launch owner to every downstream router/service; no
         // second environment scan is permitted during this process.
         ui.renderNotice(healthReport.message)
+        ui.renderNotice(providerOnboarding.renderLaunchSummary(refresh = false))
         if (!healthReport.overallHealthy) {
             ui.renderNotice("No healthy providers. Run '/provider connect' to configure API keys.")
         }
