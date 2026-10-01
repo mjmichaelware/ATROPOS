@@ -196,7 +196,10 @@ class ProviderCascadeRouter(
             if (errors.isEmpty()) {
                 "no provider completed the request"
             } else {
-                val errorMessages = errors.map { (e: ProviderError) -> e.cleanMessage }
+                val errorMessages = mutableListOf<String>()
+                for (e in errors) {
+                    errorMessages.add(e.cleanMessage)
+                }
                 errorMessages.joinToString(" | ")
             }
 
