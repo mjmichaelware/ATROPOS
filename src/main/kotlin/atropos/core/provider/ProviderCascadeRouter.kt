@@ -272,24 +272,24 @@ class ProviderCascadeRouter(
             return { envVar ->
                 // 1. Environment variables (highest priority)
                 val envValue = System.getenv(envVar)
-                if (envValue != null && envValue.isNotBlank()) return envValue
-
-                // 2. AtroposConfig keys (from ~/.atropos/config.json)
-                val configKeyName = envVar.lowercase()
-                    .replace("_api_key", "")
-                    .replace("_key", "")
-                    .replace("_token", "")
-                val configValue = when (configKeyName) {
-                    "groq" -> AtroposConfig.load().keys.groq
-                    "openai" -> AtroposConfig.load().keys.openai
-                    "anthropic" -> AtroposConfig.load().keys.anthropic
-                    "xai" -> AtroposConfig.load().keys.xai
-                    else -> null
+                if (envValue != null && envValue.isNotBlank()) envValue else {
+                    // 2. AtroposConfig keys (from ~/.atropos/config.json)
+                    val configKeyName = envVar.lowercase()
+                        .replace("_api_key", "")
+                        .replace("_key", "")
+                        .replace("_token", "")
+                    val configValue = when (configKeyName) {
+                        "groq" -> AtroposConfig.load().keys.groq
+                        "openai" -> AtroposConfig.load().keys.openai
+                        "anthropic" -> AtroposConfig.load().keys.anthropic
+                        "xai" -> AtroposConfig.load().keys.xai
+                        else -> null
+                    }
+                    if (configValue != null && configValue.isNotBlank()) configValue else {
+                        // 3. Vault (encrypted files) - not implemented in this reader
+                        null
+                    }
                 }
-                if (configValue != null && configValue.isNotBlank()) return configValue
-
-                // 3. Vault (encrypted files) - not implemented in this reader
-                return null
             }
         }
     }
