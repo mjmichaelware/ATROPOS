@@ -48,6 +48,10 @@ jobs:
       run: bash scripts/provider-connect-contract-test.sh
     - name: Exercise mcp example contract
       run: bash scripts/mcp-example-contract-test.sh
+    - name: Prove version reports the published hash
+      run: bash -c 'version_output=$(java -jar build/libs/ATROPOS.jar --version 2>&1 || true); echo "$version_output"; echo
+        "$version_output" | grep -q "$(cat build/libs/ATROPOS.jar.sha256)" && echo "VERSION_HASH_MATCH" || (echo "VERSION_HASH_MISMATCH"
+        && exit 1)'
     - name: Hash the jar
       id: hash
       run: 'set -euo pipefail
