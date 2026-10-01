@@ -48,6 +48,8 @@ jobs:
       # Install ripgrep for hosted-test-selector-contract.sh
       - name: Install ripgrep
         run: sudo apt-get update && sudo apt-get install -y ripgrep
+      - name: Clear Gradle cache
+        run: rm -rf ~/.gradle/caches ~/.gradle/wrapper/dists/gradle-8.4-bin
 
       # Dependency caching, which this job did not have.
       #
