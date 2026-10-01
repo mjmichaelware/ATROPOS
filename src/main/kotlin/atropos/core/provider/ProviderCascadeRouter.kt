@@ -7,7 +7,13 @@ import atropos.core.provider.StaticProviderDescriptorRegistry
 import atropos.core.provider.ApiCapability
 import atropos.core.provider.ProviderCascadeOrder
 import atropos.core.provider.ProviderDescriptor
+import atropos.core.provider.ProviderError
+import atropos.core.provider.ProviderFactory
+import atropos.core.provider.ProviderFailureClassifier
+import atropos.core.provider.FailureType
+import atropos.core.provider.AIProvider
 import atropos.core.AtroposConfig
+import atropos.core.OllamaHealthProbe
 import atropos.core.provider.FallbackChain
 import atropos.core.provider.FallbackChainRegistry
 import atropos.core.paid.EmergencyPaidGate
