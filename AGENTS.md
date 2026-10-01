@@ -15618,3 +15618,4 @@ End of AGENTS.md
 - Fingerprints: `SelfHostAutonomousRunner.kt=fixed`, `SelfHostRepairExecutor.kt=fixed`, `SelfHostBatchPlanner.kt=fixed`, `UncertaintyCalibratedRecommendation.kt=fixed`, `EngineHttpServer.kt=fixed`, `TranscriptRenderer.kt=fixed`, `CommandRouter.kt=fixed`, `BridgeRoutes.kt=fixed`, `WorkspaceProjection.kt=fixed`, `IntentConflictBanner.kt=fixed`, `ThinkingFilter.kt=fixed`, `ClipboardService.kt=fixed`, `CliOpenFrame.kt=fixed`, `TerminalSession.kt=fixed`, `CompetitiveErrorLedger.kt=fixed`
 - New overall estimate: 73 non-MCP errors fixed. 560 MCP errors remain in 25 integration files. Next batch: delete 25 broken MCP files + stub `McpIntegrationRegistry.kt` to achieve clean compile.
 
+# CI rebuild trigger
