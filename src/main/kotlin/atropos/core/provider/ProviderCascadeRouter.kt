@@ -196,7 +196,8 @@ class ProviderCascadeRouter(
             if (errors.isEmpty()) {
                 "no provider completed the request"
             } else {
-                errors.joinToString(" | ") { (it: ProviderError) -> it.cleanMessage }
+                val errorMessages = errors.map { (e: ProviderError) -> e.cleanMessage }
+                errorMessages.joinToString(" | ")
             }
 
         atropos.core.thinking.Thinking.step(
