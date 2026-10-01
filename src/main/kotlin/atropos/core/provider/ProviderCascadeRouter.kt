@@ -289,6 +289,7 @@ class ProviderCascadeRouter(
         /** Creates a secret reader that checks environment variables, config, AND the vault. */
         fun createSecretReader(vault: TokenIsolationVault? = null): (String) -> String? {
             val config = AtroposConfig.load()
+            val vaultInstance = vault ?: TokenIsolationVault()
             return { envVar ->
                 // 1. Environment variables (highest priority)
                 val envValue = System.getenv(envVar)
@@ -306,8 +307,8 @@ class ProviderCascadeRouter(
                         else -> null
                     }
                     if (configValue != null && configValue.isNotBlank()) configValue else {
-                        // 3. Vault (encrypted files) - not implemented in this reader
-                        null
+                        // 3. Vault (encrypted files)
+                        runCatching { vaultInstance.readSecret(envVar) }.getOrNull()
                     }
                 }
             }
