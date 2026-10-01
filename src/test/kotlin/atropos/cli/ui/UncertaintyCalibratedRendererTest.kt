@@ -13,10 +13,10 @@ class UncertaintyCalibratedRendererTest {
     @Test
     fun `renders measured confidence with badge`() {
         val renderer = UncertaintyCalibratedRenderer(theme)
-        val rec = UncertaintyCalibratedRecommendation()
+        val recInstance = UncertaintyCalibratedRecommendation()
             .addMeasured("Use provider X", 85, listOf("evidence-1"))
 
-        val output = renderer.render(rec.all().first())
+        val output = renderer.render(recInstance.all().first())
 
         assertTrue(output.contains("HIGH"))
         assertTrue(output.contains("evidence: evidence-1"))
@@ -26,10 +26,10 @@ class UncertaintyCalibratedRendererTest {
     @Test
     fun `renders not measured with question mark`() {
         val renderer = UncertaintyCalibratedRenderer(theme)
-        val rec = UncertaintyCalibratedRecommendation()
+        val recInstance = UncertaintyCalibratedRecommendation()
             .addNotMeasured("Try this")
 
-        val output = renderer.render(rec.all().first())
+        val output = renderer.render(recInstance.all().first())
 
         assertTrue(output.contains("?"))
         assertTrue(output.contains("Not measured"))
@@ -39,10 +39,10 @@ class UncertaintyCalibratedRendererTest {
     @Test
     fun `renders unavailable with X`() {
         val renderer = UncertaintyCalibratedRenderer(theme)
-        val rec = UncertaintyCalibratedRecommendation()
+        val recInstance = UncertaintyCalibratedRecommendation()
             .addUnavailable("Unavailable")
 
-        val output = renderer.render(rec.all().first())
+        val output = renderer.render(recInstance.all().first())
 
         assertTrue(output.contains("×"))
         assertTrue(output.contains("Unavailable"))
