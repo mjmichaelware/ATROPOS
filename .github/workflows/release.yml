@@ -58,9 +58,10 @@ jobs:
       # from server: Too Many Requests` while resolving the Kotlin plugin BOM,
       # which published no jar for that commit and left `latest` pointing at an
       # older build with no indication anything was wrong.
-      - uses: gradle/actions/setup-gradle@v4
-        with:
-          cache-read-only: true
+      # Disabled to avoid stale cached build outputs causing compilation errors.
+      # - uses: gradle/actions/setup-gradle@v4
+      #   with:
+      #     cache-read-only: true
 
       - name: Verify clean runner contract
         run: bash scripts/github-actions-clean-runner.sh
