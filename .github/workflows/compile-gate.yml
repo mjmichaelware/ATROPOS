@@ -112,7 +112,7 @@ jobs:
 
       - name: focused factory provider bridge MCP tests
         run: >-
-          ./gradlew --no-daemon :test --rerun
+          ./gradlew --no-daemon :test --rerun --no-build-cache
           --tests 'atropos.core.factory.FactoryResumeAndRepairTest'
           --tests 'atropos.core.factory.FactoryLiveRepairActionTest'
           --tests 'atropos.core.factory.FactoryProgressGuardTest'
