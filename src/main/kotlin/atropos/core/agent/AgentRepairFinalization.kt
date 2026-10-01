@@ -1,9 +1,6 @@
 package atropos.core.agent
 import atropos.core.provider.ProviderCascadeResult
 
-import atropos.core.provider.ProviderCascadeResult
-import atropos.core.memory.LocalMemoryStore
-
 /**
  * Finalizes repair results and stores accepted repairs.
  *
@@ -49,15 +46,9 @@ internal class AgentRepairFinalization(
                 title = "agent repair queued after provider exhaustion",
                 body = "verification=$sourceVerificationId\nreason=$reason\n$queueMessage",
                 tags = listOf("agent", "repair", "queue", "degraded")
-            )
-            return AgentPatchRunResultFactory.localFailure(
                 providerName = "local_queue",
-                contextByteCount = contextByteCount,
-                retryAttempted = false,
                 failureSummary = reason,
                 rejectionReason = queueMessage
-            )
-        }
         val acceptance = cascadeResult.success ?: return AgentPatchRunResultFactory.localFailure(
             providerName = cascadeResult.failure?.result?.providerName
                 ?: "local_fallback",
@@ -68,13 +59,11 @@ internal class AgentRepairFinalization(
             rejectionReason = cascadeResult.failure?.rejectionReason,
             responsePreview = cascadeResult.failure?.responsePreview
         )
-
         val record = patchStore.createRecord(
             provider = acceptance.result.providerName,
             task = "repair from verification $sourceVerificationId",
             contextBytes = contextByteCount,
             diff = acceptance.extraction.diff
-        )
         val check = patchStore.runGitApplyCheck(record.diffFile)
         patchStore.writeMeta(record, check)
         memoryStore.rememberRepair(
@@ -89,11 +78,8 @@ internal class AgentRepairFinalization(
                 append("fetchReceipt=${fetchReceiptId ?: "none"}")
             },
             tags = listOf("agent", "repair", "route")
-        )
-
         return AgentPatchRunResult(
             providerName = acceptance.result.providerName,
-            contextByteCount = contextByteCount,
             diffByteCount = record.diffBytes,
             patchId = record.id,
             patchPath = record.diffFile,
@@ -102,6 +88,5 @@ internal class AgentRepairFinalization(
             sourceVerificationId = sourceVerificationId,
             sourcePackId = sourcePackId,
             fetchReceiptId = fetchReceiptId
-        )
     }
 }

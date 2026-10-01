@@ -76,7 +76,7 @@ jobs:
         run: |
           set -uo pipefail
           for attempt in 1 2 3; do
-            if ./gradlew --no-daemon clean jar --max-workers=1 2>&1 | tee /tmp/build.log; then
+            if ./gradlew --no-daemon --no-build-cache clean jar --max-workers=1 2>&1 | tee /tmp/build.log; then
               exit 0
             fi
             if ! grep -qiE "429|Too Many Requests|Connection reset|Read timed out|timeout" /tmp/build.log; then
