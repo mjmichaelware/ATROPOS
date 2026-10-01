@@ -1,4 +1,17 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
+/*
+ * Test for UncertaintyCalibratedRenderer - verifies recommendation rendering with
+ * proper confidence calibration and evidence display.
+ * 
+ * This test validates that the renderer correctly displays:
+ * - HIGH confidence badges (green) for >=80% confidence
+ * - MEDIUM confidence badges (yellow) for 50-79% confidence  
+ * - LOW confidence badges (red) for <50% confidence
+ * - Question mark for NotMeasured confidence
+ * - X mark for Unavailable confidence
+ * - Evidence IDs when present
+ * - Proper formatting for all recommendation types
+ */
 package atropos.cli.ui
 
 import atropos.cli.ui.UncertaintyCalibratedRecommendation.Recommendation
