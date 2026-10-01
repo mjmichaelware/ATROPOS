@@ -88,9 +88,8 @@ fun main(args: Array<String>) {
 
     // ALPHA-OMEGA: ProviderDaemon - synchronous blocking health validation at boot time
     val config = AtroposConfig.load()
-    val credentialVault = CredentialBootstrap.get()
     val providerOnboarding = atropos.core.provider.ProviderOnboardingService()
-    val providerDaemon = ProviderDaemon(credentialVault, onboarding = providerOnboarding, config = config)
+    val providerDaemon = ProviderDaemon(CredentialBootstrap.get(), onboarding = providerOnboarding, config = config)
     val healthReport = providerDaemon.validateAndSync()
 
     // Discovery is cheap and metadata-only. Construct one owner for every

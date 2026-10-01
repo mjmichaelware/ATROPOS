@@ -8,7 +8,6 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.nio.file.StandardOpenOption
-import org.json.JSONObject
 
 /**
  * Immutable Byte-Level Credential Vault (Alpha-Omega Override).
