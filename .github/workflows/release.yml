@@ -1,39 +1,16 @@
-# Publishes the jar so a device that cannot build it can still run it.
-#
-# The engine is a 967-file Kotlin tree. Compiling it needs more heap than an
-# aarch64 phone has spare -- the target device this is built for reports 876 MiB
-# available against a 512 MiB default heap, and the compile dies in frontend
-# analysis. A runner has ~16 GB and no such problem, so the jar is built here
-# once and downloaded there.
-#
-# Two kinds of release, because they answer different questions:
-#
-#   latest  -- a moving tag rewritten on every push to main. "What is on main
-#              right now." This is what install.sh pulls, so a device is never
-#              more than one push behind.
-#   v*      -- a fixed tag, built once and never moved. "What was shipped."
-#              This is what a README pins to and what a bug report cites.
-#
-# Factory CI already builds the jar on every push; it does not publish one.
-# This does not duplicate that check -- it produces the artifact.
 name: Release JAR
-
-on:
+'on':
   push:
-    branches: [main]
-    tags: ['v*']
-  workflow_dispatch:
-
-# The moving `latest` tag is rewritten on every push to main, so two runs
-# racing would leave the release pointing at whichever finished last rather
-# than whichever is newest. One at a time, newest wins.
+    branches:
+    - main
+    tags:
+    - v*
+  workflow_dispatch: {}
 concurrency:
   group: release-jar
   cancel-in-progress: true
-
 permissions:
   contents: write
-
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -41,124 +18,83 @@ jobs:
       sha256: ${{ steps.hash.outputs.sha256 }}
       commit: ${{ steps.hash.outputs.commit }}
     steps:
-      - uses: actions/checkout@v4
+    - uses: actions/checkout@v4
+    - uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: '17'
+    - name: Install ripgrep
+      run: sudo apt-get update && sudo apt-get install -y ripgrep
+    - name: Clear Gradle cache
+      run: rm -rf ~/.gradle/caches ~/.gradle/wrapper/dists/gradle-8.4-bin
+    - name: Verify clean runner contract
+      run: bash scripts/github-actions-clean-runner.sh
+    - name: Exercise clean runner contract test
+      run: bash scripts/github-actions-clean-runner-test.sh
+    - name: Build the jar
+      run: "set -uo pipefail\nfor attempt in 1 2 3; do\n  if ./gradlew --no-daemon --no-build-cache --no-configuration-cache\
+        \ clean jar --max-workers=1 2>&1 | tee /tmp/build.log; then\n    exit 0\n  fi\n  if ! grep -qiE \"429|Too Many Requests|Connection\
+        \ reset|Read timed out|timeout\" /tmp/build.log; then\n    echo \"build failed for a reason that will not fix itself;\
+        \ not retrying\"\n    exit 1\n  fi\n  echo \"transient network failure on attempt $attempt; retrying in $((attempt\
+        \ * 30))s\"\n  sleep $((attempt * 30))\ndone\n  echo \"the dependency host stayed unreachable across three attempts\"\
+        \n  exit 1"
+    - name: Exercise installer packaging contract
+      run: bash scripts/package-installers-test.sh
+    - name: Exercise first-run installer contract
+      run: bash scripts/install-contract-test.sh
+    - name: Hash the jar
+      id: hash
+      run: 'set -euo pipefail
 
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
+        jar=build/libs/ATROPOS.jar
 
-      # Install ripgrep for hosted-test-selector-contract.sh
-      - name: Install ripgrep
-        run: sudo apt-get update && sudo apt-get install -y ripgrep
-      - name: Clear Gradle cache
-        run: rm -rf ~/.gradle/caches ~/.gradle/wrapper/dists/gradle-8.4-bin
+        test -f "$jar"
 
-      # Dependency caching, which this job did not have.
-      #
-      # `clean` removes build outputs, not the Gradle dependency cache, so this
-      # takes nothing away from the reproducibility contract below -- it stops
-      # every release re-downloading the whole dependency graph from Maven
-      # Central. A release build failed outright on `Received status code 429
-      # from server: Too Many Requests` while resolving the Kotlin plugin BOM,
-      # which published no jar for that commit and left `latest` pointing at an
-      # older build with no indication anything was wrong.
-      # Disabled to avoid stale cached build outputs causing compilation errors.
-      # - uses: gradle/actions/setup-gradle@v4
-      #   with:
-      #   cache-read-only: true
+        sha256sum "$jar" | awk ''{print $1}'' > "$jar.sha256"
 
-      - name: Verify clean runner contract
-        run: bash scripts/github-actions-clean-runner.sh
+        sha256=$(cat "$jar.sha256")
 
-      - name: Exercise clean runner contract test
-        run: bash scripts/github-actions-clean-runner-test.sh
+        commit=$(git rev-parse --short HEAD)
 
-      # Retried only for transient network failures, and only those.
-      #
-      # A blanket retry would also re-run a genuine compile error three times
-      # and take three times as long to tell the truth, so the loop inspects
-      # the log and gives up immediately on anything that is not a rate limit,
-      # a timeout, or a reset connection.
-      - name: Build the jar
-        run: |
-          set -uo pipefail
-          for attempt in 1 2 3; do
-            if ./gradlew --no-daemon --no-build-cache --no-configuration-cache clean jar --max-workers=1 2>&1 | tee /tmp/build.log; then
-              exit 0
-            fi
-            if ! grep -qiE "429|Too Many Requests|Connection reset|Read timed out|timeout" /tmp/build.log; then
-              echo "build failed for a reason that will not fix itself; not retrying"
-              exit 1
-            fi
-            echo "transient network failure on attempt $attempt; retrying in $((attempt * 30))s"
-            sleep $((attempt * 30))
-          done
-          echo "the dependency host stayed unreachable across three attempts"
-          exit 1
+        echo "sha256=$sha256" >> "$GITHUB_OUTPUT"
 
-      - name: Exercise installer packaging contract
-        run: bash scripts/package-installers-test.sh
+        echo "commit=$commit" >> "$GITHUB_OUTPUT"'
+    - name: Publish JAR with gh release
+      if: startsWith(github.ref, 'refs/tags/v')
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: 'set -euo pipefail
 
-      - name: Exercise first-run installer contract
-        run: bash scripts/install-contract-test.sh
+        tag="${GITHUB_REF_NAME}"
 
-      - name: Hash the jar
-        id: hash
-        run: |
-          set -euo pipefail
-          jar=build/libs/ATROPOS.jar
-          test -f "$jar"
-          sha256sum "$jar" | awk '{print $1}' > "$jar.sha256"
-          sha256=$(cat "$jar.sha256")
-          commit=$(git rev-parse --short HEAD)
-          echo "sha256=$sha256" >> "$GITHUB_OUTPUT"
-          echo "commit=$commit" >> "$GITHUB_OUTPUT"
+        jar="build/libs/ATROPOS.jar"
 
-      - name: Publish JAR with gh release
-        if: startsWith(github.ref, 'refs/tags/v')
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-          tag="${GITHUB_REF_NAME}"
-          jar="build/libs/ATROPOS.jar"
-          sha256="${{ steps.hash.outputs.sha256 }}"
-          commit="${{ steps.hash.outputs.commit }}"
-          
-          # Create or update the release
-          gh release create "$tag" \
-            --title "ATROPOS $tag" \
-            --notes "Built from \`${commit}\`.
+        sha256="${{ steps.hash.outputs.sha256 }}"
 
-sha256: \`${sha256}\`" \
-            "$jar" "$jar.sha256" \
-            --prerelease=false
+        commit="${{ steps.hash.outputs.commit }}"
 
-      - name: Publish rolling latest (main branch only)
-        if: github.ref == 'refs/heads/main'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-          jar="build/libs/ATROPOS.jar"
-          sha256="${{ steps.hash.outputs.sha256 }}"
-          commit="${{ steps.hash.outputs.commit }}"
-          
-          # Delete and recreate the 'latest' prerelease
-          gh release delete latest --yes --cleanup-tag || true
-          gh release create latest \
-            --title "ATROPOS latest (rolling)" \
-            --notes "Rolling build from \`${commit}\`.
+        gh release create "$tag" --title "ATROPOS $tag" --notes "Built from \`${commit}`.
 
-sha256: \`${{ steps.hash.outputs.sha256 }}\`" \
-            "$jar" "$jar.sha256" \
-            --prerelease=true
 
-  # The npm package is a thin launcher around the same published JAR. Publish
-  # it only for immutable version tags; rolling `latest` releases must not
-  # republish the same npm version. A missing NPM_TOKEN skips this optional
-  # channel rather than changing the JAR release result.
+        sha256: \`${sha256}\`" "$jar" "$jar.sha256" --prerelease=false'
+    - name: Publish rolling latest (main branch only)
+      if: github.ref == 'refs/heads/main'
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: 'set -euo pipefail
+
+        jar="build/libs/ATROPOS.jar"
+
+        sha256="${{ steps.hash.outputs.sha256 }}"
+
+        commit="${{ steps.hash.outputs.commit }}"
+
+        gh release delete latest --yes --cleanup-tag || true
+
+        gh release create latest --title "ATROPOS latest (rolling)" --notes "Rolling build from \`${commit}`.
+
+
+        sha256: \`${{ steps.hash.outputs.sha256 }}\`" "$jar" "$jar.sha256" --prerelease=true'
   publish-npm:
     if: startsWith(github.ref, 'refs/tags/v')
     needs: publish
@@ -169,75 +105,56 @@ sha256: \`${{ steps.hash.outputs.sha256 }}\`" \
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          registry-url: https://registry.npmjs.org
-      - name: Align npm version with release tag
-        working-directory: npm
-        run: npm pkg set version="${GITHUB_REF_NAME#v}"
-      - name: Publish npm launcher
-        if: env.NODE_AUTH_TOKEN != ''
-        working-directory: npm
-        run: npm publish --access public --provenance
-
-  # The Android client, as an installable APK.
-  #
-  # A separate job on purpose: app/ is a standalone Gradle build that resolves
-  # the Android Gradle Plugin, and the jar release must not wait on -- or be
-  # blocked by -- Android tooling. `continue-on-error` keeps a broken APK from
-  # holding back a good engine build; the jar is the product, the APK is a
-  # client of it.
-  #
-  # `assembleDebug`, not `assembleRelease`. The release build type sets
-  # `signingConfig = null`, so it produces an unsigned APK that Android refuses
-  # to install -- publishing one would be shipping a file that cannot be used.
-  # The debug build is signed with the standard debug key and installs on any
-  # device with "install unknown apps" enabled. A signed release APK needs the
-  # operator's keystore, which is a secret this workflow deliberately does not
-  # hold.
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        registry-url: https://registry.npmjs.org
+    - name: Align npm version with release tag
+      working-directory: npm
+      run: npm pkg set version="${GITHUB_REF_NAME#v}"
+    - name: Publish npm launcher
+      if: env.NODE_AUTH_TOKEN != ''
+      working-directory: npm
+      run: npm publish --access public --provenance
   apk:
-    # Both jobs publish assets to the same release tag. Serialize this
-    # optional client publication behind the canonical JAR release so two
-    # release writers cannot race while creating or updating the tag.
     needs: publish
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
-      - uses: actions/checkout@v4
+    - uses: actions/checkout@v4
+    - uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: '17'
+    - name: Build the APK
+      run: ./gradlew --no-daemon -p app assembleDebug --max-workers=1
+    - name: Name it, and record the hash
+      id: apk
+      run: 'set -euo pipefail
 
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
+        built=$(find app/build/outputs/apk -name ''*.apk'' | head -1)
 
-      - name: Build the APK
-        run: ./gradlew --no-daemon -p app assembleDebug --max-workers=1
+        test -n "$built"
 
-      - name: Name it, and record the hash
-        id: apk
-        run: |
-          set -euo pipefail
-          built=$(find app/build/outputs/apk -name '*.apk' | head -1)
-          test -n "$built"
-          mkdir -p build/apk
-          cp "$built" build/apk/ATROPOS.apk
-          sha256sum build/apk/ATROPOS.apk | awk '{print $1}' > build/apk/ATROPOS.apk.sha256
-          echo "sha256=$(cat build/apk/ATROPOS.apk.sha256)" >> "$GITHUB_OUTPUT"
+        mkdir -p build/apk
 
-      - name: Publish it alongside the jar
-        if: github.ref == 'refs/heads/main'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-          gh release upload latest build/apk/ATROPOS.apk build/apk/ATROPOS.apk.sha256 --clobber || true
+        cp "$built" build/apk/ATROPOS.apk
 
-      - name: Publish it on the tagged release
-        if: startsWith(github.ref, 'refs/tags/v')
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-          gh release upload "${{ github.ref_name }}" build/apk/ATROPOS.apk build/apk/ATROPOS.apk.sha256 --clobber
+        sha256sum build/apk/ATROPOS.apk | awk ''{print $1}'' > build/apk/ATROPOS.apk.sha256
+
+        echo "sha256=$(cat build/apk/ATROPOS.apk.sha256)" >> "$GITHUB_OUTPUT"'
+    - name: Publish it alongside the jar
+      if: github.ref == 'refs/heads/main'
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: 'set -euo pipefail
+
+        gh release upload latest build/apk/ATROPOS.apk build/apk/ATROPOS.apk.sha256 --clobber || true'
+    - name: Publish it on the tagged release
+      if: startsWith(github.ref, 'refs/tags/v')
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: 'set -euo pipefail
+
+        gh release upload "${{ github.ref_name }}" build/apk/ATROPOS.apk build/apk/ATROPOS.apk.sha256 --clobber'
