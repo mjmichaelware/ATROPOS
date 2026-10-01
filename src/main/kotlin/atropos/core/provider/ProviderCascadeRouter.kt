@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
-package atropos.core
+package atropos.core.provider
 
 import atropos.core.provider.ContextEnvelope
 import atropos.core.provider.ProviderDescriptorRegistry
