@@ -44,8 +44,8 @@ class ProviderChatDispatcher(
      * network, and shared with AgentService rather than reimplemented -- there
      * is one answer to "which provider next" and this is not a second one.
      */
-    private val cascadeRouter: atropos.core.ProviderCascadeRouter =
-        atropos.core.ProviderCascadeRouter(
+    private val cascadeRouter: atropos.core.provider.ProviderCascadeRouter =
+        atropos.core.provider.ProviderCascadeRouter(
             atropos.core.ProviderFactory(config),
             healthyProviderIds = { onboarding.healthyProviderIds() },
             preferredProviderIds = { onboarding.preferredProviderIds() },

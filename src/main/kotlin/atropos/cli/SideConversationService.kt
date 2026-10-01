@@ -2,7 +2,7 @@
 package atropos.cli
 
 import atropos.cli.ui.AnsiTerminalEngine
-import atropos.core.ProviderCascadeRouter
+import atropos.core.provider.ProviderCascadeRouter
 import atropos.core.thinking.Thinking
 import atropos.core.security.RedactionFilter
 import java.util.concurrent.Executors

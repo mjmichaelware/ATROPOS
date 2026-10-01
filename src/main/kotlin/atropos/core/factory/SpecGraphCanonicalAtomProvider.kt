@@ -3,7 +3,7 @@ package atropos.core.factory
 
 import atropos.core.AtroposRepoRootLocator
 import atropos.core.AtroposConfig
-import atropos.core.ProviderCascadeRouter
+import atropos.core.provider.ProviderCascadeRouter
 import atropos.core.ProviderFactory
 import atropos.core.provider.ProviderOnboardingService
 import atropos.core.planning.CanonicalAtomProvider

@@ -208,7 +208,7 @@ class CommandRouter(
      */
     private val sideConversation = SideConversationService(
         uiEngine = uiEngine,
-        cascade = atropos.core.ProviderCascadeRouter(
+        cascade = atropos.core.provider.ProviderCascadeRouter(
             ProviderFactory(config),
             healthyProviderIds = { providerOnboarding.healthyProviderIds() },
             preferredProviderIds = { providerOnboarding.preferredProviderIds() },

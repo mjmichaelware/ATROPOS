@@ -1,7 +1,7 @@
 package atropos.core.agent
 
 import atropos.core.ProviderCascadeResult
-import atropos.core.ProviderCascadeRouter
+import atropos.core.provider.ProviderCascadeRouter
 import atropos.core.memory.LocalMemoryStore
 import atropos.core.memory.MemoryKind
 import atropos.core.provider.ContextEnvelope

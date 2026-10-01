@@ -1,7 +1,7 @@
 package atropos.core.agent
 
 import atropos.core.ProviderCascadeResult
-import atropos.core.ProviderCascadeRouter
+import atropos.core.provider.ProviderCascadeRouter
 import atropos.core.policy.ActionActor
 import atropos.core.policy.AgencyDisposition
 import atropos.core.policy.BoundedAgencyGate
