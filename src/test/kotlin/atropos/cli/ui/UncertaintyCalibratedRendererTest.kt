@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.cli.ui
 
+import atropos.cli.ui.UncertaintyCalibratedRecommendation.Recommendation
 import atropos.cli.ui.design.ThemeCatalog
 import kotlin.test.Test
 import kotlin.test.assertEquals
