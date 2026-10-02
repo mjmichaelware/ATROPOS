@@ -57,7 +57,26 @@ class CredentialVault(
             }
         }
 
-        // 2. Environment variables override (highest priority)
+        // 2. Load from config.json (where ProviderOnboardingService writes keys)
+        val configPath = AtroposConfig.configRoot().resolve("config.json")
+        if (Files.exists(configPath)) {
+            try {
+                val content = Files.readString(configPath)
+                val json = JSONObject(content)
+                val keys = json.keys()
+                while (keys.hasNext()) {
+                    val key = keys.next()
+                    val value = json.getString(key)
+                    if (value.isNotBlank()) {
+                        credentials[key.uppercase()] = value
+                    }
+                }
+            } catch (e: Exception) {
+                // Corrupted file - ignore
+            }
+        }
+
+        // 3. Environment variables override (highest priority)
         val env = System.getenv()
         for ((key, value) in env) {
             if (key.startsWith("ATROPOS_") || key.endsWith("_API_KEY") || key.endsWith("_KEY") || key.endsWith("_TOKEN")) {
