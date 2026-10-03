@@ -2,6 +2,7 @@ package atropos.core.provider
 
 import atropos.core.AtroposConfig
 import atropos.core.paid.EmergencyPaidGate
+import atropos.core.security.CredentialVault
 import atropos.core.security.TokenIsolationVault
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
@@ -32,6 +33,7 @@ class ProviderOnboardingService(
     private val configDir = configRoot.resolve("provider").normalize()
     private val configFile = configDir.resolve("providers.json")
     private val localVault = TokenIsolationVault(configRoot.resolve("secrets"))
+    private val credentialVault = CredentialVault()
     private val aliasPrefixes = mapOf(
         "anthropic" to listOf("CLAUDE_"),
         "xai" to listOf("GROK_"),
@@ -298,7 +300,7 @@ class ProviderOnboardingService(
         .toList()
 
     private fun localSecretPresent(name: String): Boolean =
-        runCatching { localVault.readSecretResult(name) is atropos.core.security.VaultReadResult.Available }.getOrDefault(false)
+        credentialVault.has(name)
 
     private fun looksLikeCredentialName(name: String): Boolean {
         val normalized = name.uppercase()
