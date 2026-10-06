@@ -54,6 +54,9 @@ class ProviderFactory(private val config: AtroposConfig = AtroposConfig.load()) 
         config.keys.openai.takeIf { it.isNotBlank() }?.let { put("OPENAI_API_KEY", it) }
         config.keys.anthropic.takeIf { it.isNotBlank() }?.let { put("ANTHROPIC_API_KEY", it) }
         config.keys.xai.takeIf { it.isNotBlank() }?.let { put("XAI_API_KEY", it) }
+        runCatching { atropos.core.security.CredentialBootstrap.get().getAll() }
+            .getOrDefault(emptyMap())
+            .forEach { (name, value) -> if (value.isNotBlank()) putIfAbsent(name, value) }
     }
 }
 

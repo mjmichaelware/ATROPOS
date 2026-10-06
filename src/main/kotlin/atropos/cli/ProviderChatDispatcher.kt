@@ -81,8 +81,16 @@ class ProviderChatDispatcher(
                     )
                 }
             )
-            cascade.paidApproval?.let { approval ->
-                uiEngine.renderNotice(approval.render())
+            if (cascade.paidApproval != null) {
+                val tried = cascade.errors.map { it.provider }.distinct()
+                uiEngine.renderError(
+                    "no free or local provider answered" +
+                        (if (tried.isEmpty()) "" else " (tried ${tried.joinToString(", ")})") +
+                        "; paid providers stay locked for conversation. " +
+                        "Run /providers to inspect health, /providers connect <provider> to add a key, " +
+                        "or /paid unlock <provider> <duration> to approve paid explicitly."
+                )
+                alignmentSignal(false)
                 return
             }
             if (cascade.providerName != routedProvider) {
