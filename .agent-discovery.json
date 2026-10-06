@@ -1,0 +1,9 @@
+{
+  "mandatory_root_files": {
+    "master_blueprint": "ATROPOS_Source_Doc_7_MASTER_OBLIGATION_DAG.txt",
+    "source_directory": "doc7_obligation_dag/",
+    "configuration": "opencode.json",
+    "authentication": "auth.json",
+    "directives": "AGENTS.md"
+  }
+}
