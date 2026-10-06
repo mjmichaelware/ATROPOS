@@ -1,0 +1,540 @@
+ATROPOS Residual Obligation DAG — Final Missed-Atom Inventory · Continues from Tier-1 + Multi-Tier DAGs · 2026-10-06
+
+                                           ATROPOS RESIDUAL OBLIGATION DAG
+                                                  Final Missed-Atom Inventory — Byte / Token / Parameter / File Level
+                                                            Continues directly from Tier-1 Hybrid DAG + Full Multi-Tier DAG
+                                           Maximum atomization of every omitted item · Outside-the-box mathematical & systems advances · 2026-10-06
+
+This document is the third and final Obligation DAG in the Source Document 7 series. It atomizes every residual item identified by byte-level audit against SD7,
+SD6 Addenda Parts I & II, the 2050 Scale-Gap Assessment, and the concrete Kotlin/Python reference implementations. It leaves off exactly where the previous two
+DAGs ended.
+Extraction rules locked: maximum atomization, hybrid Residual RESEARCH+IMPL + HOE Track/dependsOn/WIRE, research forces external discovery, impl notes
+name foreseeable failures and cheapest correct paths.
+
+
+1. Runtime Byte Ceilings & Throttle Removals (SD7 Diagnostic Core)
+SD7-R-001+lift-contextCapBytes [RESIDUAL]
+Track: S
+dependsOn: []
+R: Research dynamic context-window governance used by long-context agent runtimes (Claude Code, Aider, Cursor, Continue.dev) that raise or remove hard byte ceilings
+without risking OOM on constrained hosts.
+I: Mutate AgentContextCollector.kt: replace hardcoded contextCapBytes (4 KB–64 KB) with a profile-driven configurable ceiling that defaults to partition footprint (≤12 000
+tokens) and can be lifted for factory runs. Foreseeable error: unbounded growth on Termux; keep a hard device-profile ceiling and refuse synthesis if free RAM is below
+threshold.
+WIRE: AgentContextCollector.kt, HostHealthMonitor, PartitionClusterManager
+
+SD7-R-002+lift-maxAdvances [RESIDUAL]
+Track: S
+dependsOn: [SD7-R-001]
+R: Research loop-limit designs that prevent infinite agent cycles while still permitting multi-thousand-step autonomous factory runs.
+I: Mutate SelfHostRuntimeRunLimits.kt: replace hardcoded maxAdvances = 15 with a wave-aware limit derived from remaining Φ potential and partition count. Factory mode
+must allow ≥10 000 advances. Foreseeable error: silent infinite loop; couple to Φ(t+1)<Φ(t) and oscillation prune.
+WIRE: SelfHostRuntimeRunLimits.kt, AutonomousWaveOrchestrator, DirectorAgent
+
+SD7-R-003+lift-GlobalByteCeiling [RESIDUAL]
+Track: S
+dependsOn: [SD7-R-001]
+R: Research global memory/context ceilings that scale with available host resources while preserving the clean-room token bound O(|I|+|a_i|).
+I: Introduce a GlobalByteCeiling policy atom that is raised for factory mode to permit 50 k–100 k+ LOC ASTs. Still enforce per-worker context convexity. Foreseeable error:
+single worker saturating host RAM; keep per-partition bound absolute.
+WIRE: ExecutionPolicyEngine, AgentContextCollector, HostHealthMonitor
+
+SD7-R-004+deprecate-atoms-md-dump [RESIDUAL]
+Track: S
+dependsOn: [SD7-T1-003]
+R: Research the separation of audit logging from synthesis authority so that atoms written to .atropos/research/atoms.md never become the source of truth for file generation.
+I: Refactor or deprecate the path that dumps SpecGraph atoms into .atropos/research/atoms.md while templates still emit files. After Tier-1 template purge, the dump becomes
+pure audit; synthesis authority is the Wave orchestrator. Foreseeable error: dual sources of truth; ArchitectureComplianceChecker must reject any generation path that reads the
+dump.
+WIRE: AppFactoryRouter, SpecGraphCompiler, ArchitectureComplianceChecker
+
+
+2. Missing Structural Files & Explicit Code Subsystems
+SD7-R-010+ToolchainExecutionDriver [RESIDUAL]
+Track: S
+dependsOn: [SD7-T1-010]
+R: Research sandboxed process harnesses that capture exact stdout/stderr/binary artifacts under timeout, byte and line limits (Bazel sandbox, Bubblewrap, Firejail patterns).
+I: Create src/main/kotlin/atropos/core/toolchain/ToolchainExecutionDriver.kt as the dedicated execution harness. Responsibilities: process sandboxing, raw stdout/stderr
+capture, timeouts, byte limits, clean env. ATOM-SYS-TC-001. Foreseeable error: leaking host env; always start with empty environment and inject only required vars.
+WIRE: NativeToolchainRegistry, BoundedProcessRunner, all LanguageToolchainDrivers
+
+SD7-R-011+BehavioralTestSynthesizer [RESIDUAL]
+Track: S
+dependsOn: [SD7-T1-020, SD7-T1-030]
+R: Research dedicated mock-and-invariant test generators that produce suites guaranteed to fail against empty stubs and compile against Wave-0 contracts only.
+I: Create src/main/kotlin/atropos/core/factory/BehavioralTestSynthesizer.kt (ATOM-L2-001). Responsibility: mock synthesis + invariant test generation for Wave-1. Must not
+be collapsed into a generic wave generator. Foreseeable error: tests that pass vacuously; require at least one failing assertion on a stub.
+WIRE: ContractLatticeSynthesizer, VerifiedCompletionGate, Wave-1 pipeline
+
+SD7-R-012+mutate-AppProjectSpecParser [RESIDUAL]
+Track: S
+dependsOn: [SD7-T1-003]
+R: Research intent parsers that never short-circuit atom graphs into high-level AppIntent objects that bypass SpecGraph.
+I: Mutate or replace AppProjectSpecParser.kt so that parsed intent always flows into SpecGraph atomization; never into a template path. Foreseeable error: residual
+AppIntent-only branch; delete it.
+WIRE: AppFactoryRouter, SpecGraphCompiler, AutonomousWaveOrchestrator
+
+SD7-R-013+DeterministicChecks [RESIDUAL]
+Track: S
+dependsOn: [SD7-T1-061]
+R: Research deterministic AST symbol resolution and package-to-directory alignment checkers used by production monorepos.
+
+                                                            | Byte-level residual atoms | Hybrid Residual+HOE | Outside-the-box expansions
+ATROPOS Residual Obligation DAG — Final Missed-Atom Inventory · Continues from Tier-1 + Multi-Tier DAGs · 2026-10-06
+I: Ensure DeterministicChecks.kt is wired as a mandatory gate inside VerifiedCompletionGate: AST symbols resolve, packages match directory structures. Foreseeable error:
+optional check; make it blocking.
+WIRE: VerifiedCompletionGate, ArchitectureComplianceChecker, AstSymbolGraph
+
+SD7-R-014+semantic-types-py [RESIDUAL]
+Track: B
+dependsOn: [SD7-SG-001]
+R: Research orthogonal semantic-type taxonomies used by formal requirement engines that prevent dimension collapse.
+I: Mutate apps/specgraph-foundry/.../semantic_types.py so that every atom carries a stable semantic type used by Wave-0 dimension filters (INTERFACE, PROTOCOL,
+SCHEMA, DATA_MODEL). Foreseeable error: free-text dimensions; constrain to closed enum.
+WIRE: SpecGraphCompiler, ContractLatticeSynthesizer
+
+SD7-R-015+requirement-quality-py [RESIDUAL]
+Track: B
+dependsOn: [SD7-SG-001]
+R: Research lexical vagueness detectors (VAGUE_TERMS) and requirement quality scoring used by aerospace/medical requirements tools.
+I: Mutate requirement_quality.py to flag VAGUE_TERMS and reject or escalate under-specified atoms before Wave-0. Foreseeable error: silent acceptance of vague goals;
+route to ILSS epistemic bounding.
+WIRE: SpecGraphCompiler, ILSS pipeline, FactoryClarificationRequest
+
+SD7-R-016+unresolved-tracker-py [RESIDUAL]
+Track: B
+dependsOn: [SD7-SG-001]
+R: Research ungrounded-requirement trackers that keep a durable ledger of atoms lacking provenance.
+I: Mutate unresolved_tracker.py so that every ungrounded candidate is recorded and blocks Phase-100 until resolved or explicitly waived. Foreseeable error: lost unresolved set
+across restarts; store in CAS.
+WIRE: SpecGraphCompiler, ResidualObligationLedger, CAS
+
+SD7-R-017+Sd5HumanIntentInvariants-ILSS-bridge [RESIDUAL]
+Track: S
+dependsOn: [SD7-2050-ILSS-01, SD7-2050-ILSS-03]
+R: Research authority lattices that keep human prompt primacy (HIA-001–HIA-008) while still permitting adversarial goal expansion.
+I: Bridge Sd5HumanIntentInvariants.kt into the ILSS pipeline so that rank(research) < rank(human_intent) is enforced even when ¬S is generated. Foreseeable error: ILSS
+silently redefining objectives; SourceAuthorityLaw must reject.
+WIRE: Sd5HumanIntentInvariants.kt, ILSS, SourceAuthorityLaw, FactoryClarificationRequest
+
+SD7-R-018+TreeSitterGrammarBridge [RESIDUAL]
+Track: S
+dependsOn: [SD7-T1-071]
+R: Research production Tree-sitter grammar bridges that expose a uniform AST walk API across Kotlin, TypeScript, Python, Rust, Go.
+I: Create the concrete TreeSitterGrammarBridge class mandated by SD6 EXTIRPATION_01. All AST stub/hollow scans and call-graph walks must go through this bridge.
+Foreseeable error: language-specific ad-hoc parsers; single bridge only.
+WIRE: ArchitectureComplianceChecker, call-graph reachability, AST-stub scanner
+
+
+3. Low-Level OS Sandboxing & Process Jailing
+SD7-R-020+chroot-unshare-jail [RESIDUAL]
+Track: B
+dependsOn: [SD7-R-010, SD7-T3-001]
+R: Research Linux namespace isolation (unshare, chroot, bubblewrap, Firejail, landlock) that provides READ_ONLY_ROOT + WRITEABLE_WORKTREE with minimal
+environment.
+I: Execute every compiler/toolchain inside chroot/unshare or container sandbox. Filesystem policy: READ_ONLY_ROOT_DIRECTORY (/) + only the isolated worktree
+directory mounted writeable. Secrets stripped. Foreseeable error: host filesystem escape; fail closed on any path outside the worktree.
+WIRE: ToolchainExecutionDriver, BoundedProcessRunner, IsolatedWorktreeService
+
+
+4. Delivery Platforms — CONTAINER & LOCAL_DIST
+SD7-R-030+TargetPlatform-CONTAINER [RESIDUAL]
+Track: B
+dependsOn: [SD7-T4-010]
+R: Research deterministic OCI/container image assembly from verified build artifacts (Buildah, kaniko, Docker BuildKit rootless).
+I: Add TargetPlatform.CONTAINER. Produce bit-verified OCI image with SHA-256 manifest. Foreseeable error: non-reproducible layers; pin base images by digest.
+WIRE: CloudDeploymentAdapter, AutonomousDeliveryEngine, TargetPlatform enum
+
+SD7-R-031+TargetPlatform-LOCAL_DIST [RESIDUAL]
+Track: B
+dependsOn: [SD7-T4-010]
+R: Research local distribution packaging that emits ELF/APK/JAR + SHA-256 proof manifests to a dist/ directory.
+I: Add TargetPlatform.LOCAL_DIST (or LOCAL_BINARY). Package to disk with bit-level SHA-256 proof manifests. Acceptance = valid signed/bit-verified binary on disk.
+Foreseeable error: missing proof file; VerifiedCompletionGate refuses.
+WIRE: CloudDeploymentAdapter, AutonomousDeliveryEngine, TargetPlatform enum, IntegrityProofs
+
+SD7-R-032+Google-Drive-CAS-cold-tier [RESIDUAL]
+Track: B
+dependsOn: [SD7-T2-020]
+R: Research Google Drive as an additional content-addressed cold-tier backend alongside R2.
+I: Storage Constitution COLD tier: REMOTE_R2_OR_DRIVE_CAS_BLOBS. Implement Drive CAS adapter for cold evidence and build products. Foreseeable error: Drive
+API rate limits; treat as best-effort with R2 primary.
+WIRE: CAS, Custodian, Storage Constitution
+
+                                                            | Byte-level residual atoms | Hybrid Residual+HOE | Outside-the-box expansions
+ATROPOS Residual Obligation DAG — Final Missed-Atom Inventory · Continues from Tier-1 + Multi-Tier DAGs · 2026-10-06
+SD7-R-033+COMPILER_TEMP_JARS-eviction [RESIDUAL]
+Track: B
+dependsOn: [SD7-T2-020]
+R: Research automatic eviction of compiler temporary JARs and intermediate build products.
+I: EXPIRE retention tier must explicitly include COMPILER_TEMP_JARS. Custodian sweeps them after every wave. Foreseeable error: leftover temp JARs filling flash;
+include in mark-and-sweep.
+WIRE: Custodian, Storage Constitution, IsolatedWorktreeService
+
+
+5. Schema-Driven Type Serialization Integrity (INVARIANT_04)
+SD7-R-040+runtime-codec-synthesis [RESIDUAL]
+Track: S
+dependsOn: [SD7-T1-020, SD7-T4-001]
+R: Research mandatory round-trip serializer generation (Zod, Pydantic, Serde, kotlinx.serialization) that enforces ingress/egress validation, unknown-field rejection and
+fail-closed overflow.
+I: Wave-0 or Wave-3 must synthesize bidirectional runtime codecs for every boundary type. Rules: all ingress/egress validated at runtime boundary; unknown fields rejected;
+payload overflow fails closed at parser entry. Foreseeable error: optional codecs; make them mandatory for any public boundary.
+WIRE: ContractLatticeSynthesizer, DependencyInjectionAssembler, ArchitectureComplianceChecker
+
+
+6. Mathematical & Information-Theoretic Operators (AACS-2036 Part 0)
+SD7-R-050+memory-fold-operator [RESIDUAL]
+Track: S
+dependsOn: [SD7-T1-040, SD7-T1-018]
+R: Research internal state-transition operators for isolated agents that fold successive atoms without reloading the full codebase (memory-fold, recurrent state machines, linear
+attention folds).
+I: Implement σ_{t+1} = δ(σ_t, a_{r,t}, I) inside each partition worker so that topological atom sequence is processed with constant context. Foreseeable error: context growth;
+enforce that |σ| stays bounded by partition footprint.
+WIRE: DecoupledWorkerSynthesizer, PartitionClusterManager
+
+SD7-R-051+context-convexity-bound [RESIDUAL]
+Track: S
+dependsOn: [SD7-R-050]
+R: Research formal proofs that context remains O(|I| + |a_i|) under ancestral interface inclusion.
+I: Enforce X(τ_i) = I ∪ {a_i} ∪ Ancestors(a_i, I). Any prompt that exceeds this bound is rejected before provider dispatch. Foreseeable error: accidental inclusion of sibling
+code; scrub and assert.
+WIRE: AgentPromptContract, DecoupledWorkerSynthesizer, ArchitectureComplianceChecker
+
+SD7-R-052+zero-entropy-constraint [RESIDUAL]
+Track: S
+dependsOn: [SD7-T1-060]
+R: Research operational definitions of Entropy(C | S, I) = 0 that can be approximated by the conjunction of all verification oracles.
+I: The synthesis operator Φ must satisfy Entropy(C | S, I) = 0 as the formal objective. Approximated by the product of all verifiers = 1 and the Zero-Entropy Proof Certificate.
+Foreseeable error: treating it as rhetoric; wire it as a blocking predicate in Phase-100.
+WIRE: VerifiedCompletionGate, Zero-Entropy Proof Certificate
+
+SD7-R-053+edge-qualified-decoupling [RESIDUAL]
+Track: S
+dependsOn: [SD7-T1-021]
+R: Research mutual-information nullification conditioned on the absence of a dependency edge.
+I: I(f_j; f_k | I) = 0 ∀ j ≠ k such that (v_j, v_k) ∉ E_A. The edge condition must be checked by the partitioner; workers that share an edge may see ancestral contracts only.
+Foreseeable error: ignoring the edge qualifier; enforce it in Ψ.
+WIRE: PartitionClusterManager, AgentPromptContract
+
+SD7-R-054+verifier-ensemble-product [RESIDUAL]
+Track: S
+dependsOn: [SD7-T1-061]
+R: Research product calculi over deterministic verifier ensembles that refuse partial success.
+I: ∏_{v ∈ V} v(Φ(P_r, I)) = 1 where V = {v_syntax, v_type, v_property, v_boundary}. Any single 0 fails the partition. Foreseeable error: soft-AND; implement hard product.
+WIRE: VerifiedCompletionGate, GovernedCompileGate
+
+SD7-R-055+error-gradient-diff-subspace [RESIDUAL]
+Track: S
+dependsOn: [SD7-T1-041]
+R: Research repair loops that restrict mutations to the territory of the failing partition (diff-subspace restriction).
+I: ∇E = Diagnostics(v) and Δf ⊆ Territory(P_r). Repair must never touch files outside the partition territory. Foreseeable error: global search-and-replace; enforce territory
+lock.
+WIRE: CompilerDiagnosticRepairLoop, TerritoryGrant, IsolatedWorktreeService
+
+SD7-R-056+swarm-acceptance-volume [RESIDUAL]
+Track: S
+dependsOn: [SD7-T2-012]
+R: Research four-variable acceptance volume operators used by large agent systems.
+I: V_accepted = min(V_generated, V_integrated, V_verified, V_evidenced). Wire into Director metrics. Foreseeable error: counting generated lines as accepted; always take the
+min.
+WIRE: DirectorAgent, EvidenceCollector, VerifiedCompletionGate
+
+SD7-R-057+phase100-acceptance-velocity [RESIDUAL]
+Track: S
+dependsOn: [SD7-R-056, SD7-T2-023]
+                                                            | Byte-level residual atoms | Hybrid Residual+HOE | Outside-the-box expansions
+ATROPOS Residual Obligation DAG — Final Missed-Atom Inventory · Continues from Tier-1 + Multi-Tier DAGs · 2026-10-06
+R: Research Phase-100 predicates and acceptance-velocity metrics that declare a multi-week run complete.
+I: Phase 100 = ∧(MandatoryPredicates) ∧ RuntimeAcceptance ∧ NegativePathTests ∧ EvidenceComplete ∧ ¬FakeSuccess ∧ ¬CriticalOrphan. AcceptanceVelocity =
+ΔVerifiedAcceptancePredicates / ΔDays. Both must be computed and stored in the governance ledger. Foreseeable error: declaring success on compile alone; require full
+conjunction.
+WIRE: VerifiedCompletionGate, DirectorAgent, GovernanceLedger, EvidenceCollector
+
+SD7-R-058+partition-scaling-complexity [RESIDUAL]
+Track: S
+dependsOn: [SD7-T1-018]
+R: Research complexity proofs that synthesized partitions scale O(N/K) independent of total system lines.
+I: Document and assert that partition work is O(N/K). Instrument and fail CI if measured complexity exceeds the bound by a constant factor. Foreseeable error: quadratic hidden
+costs; measure end-to-end.
+WIRE: PartitionClusterManager, DirectorAgent
+
+
+7. Concrete Kotlin Data Contracts, Enums & HTTP Wire Specs
+SD7-R-060+ExtractionAtom-model [RESIDUAL]
+Track: S
+dependsOn: []
+R: Research minimal complete atom models that carry id, statement, dimension, dependencies, estimatedTokens, targetPath.
+I: Define data class ExtractionAtom(id, statement, dimension, dependencies, estimatedTokens, targetPath) as the canonical atom type used by every downstream component.
+Foreseeable error: ad-hoc maps; single sealed model only.
+WIRE: SpecGraphCompiler, PartitionClusterManager, DecoupledWorkerSynthesizer
+
+SD7-R-061+SynthesisPartition-model [RESIDUAL]
+Track: S
+dependsOn: [SD7-R-060]
+R: Research partition models that carry partitionId, atoms, targetFiles, requiredContracts, dependencies, totalEstimatedTokens.
+I: Define data class SynthesisPartition(...) exactly. All Ψ output must be this type. Foreseeable error: lossy intermediate representations; preserve full fidelity.
+WIRE: PartitionClusterManager, DecoupledWorkerSynthesizer, AutonomousWaveOrchestrator
+
+SD7-R-062+RepairLoopResult-ToolchainResult [RESIDUAL]
+Track: S
+dependsOn: [SD7-T1-041]
+R: Research structured result types that carry success, attempts, diagnostics, exitCode, and full diagnostic maps (file, line, column, error_code, trace).
+I: Define RepairLoopResult(success, attempts, diagnostics) and ToolchainResult(passed, exitCode, diagnostics). Diagnostic map must include error_code and trace. Return
+status CONVERGED on success. Foreseeable error: stringly diagnostics; structured only.
+WIRE: CompilerDiagnosticRepairLoop, ToolchainExecutionDriver, VerifiedCompletionGate
+
+SD7-R-063+TargetPlatform-enum-complete [RESIDUAL]
+Track: S
+dependsOn: [SD7-R-030, SD7-R-031]
+R: Research exhaustive target-platform enums that include LOCAL_BINARY, ANDROID_APK, VERCEL, NETLIFY, CONTAINER, and any future LOCAL_DIST alias.
+I: enum class TargetPlatform { LOCAL_BINARY, ANDROID_APK, VERCEL, NETLIFY, CONTAINER }. All delivery drivers must pattern-match exhaustively. Foreseeable
+error: silent fall-through; use sealed when.
+WIRE: AutonomousWaveOrchestrator, CloudDeploymentAdapter, AutonomousDeliveryEngine
+
+SD7-R-064+BuildExecutionReport-sealed [RESIDUAL]
+Track: S
+dependsOn: [SD7-T1-060]
+R: Research sealed report hierarchies with explicit typed phase failure constants.
+I: BuildExecutionReport = Success(totalFilesGenerated, artifactOnDisk, deploymentUrl) | Halted(phase, diagnostics). Phase strings must be the closed set:
+WAVE_0_FAILURE, WAVE_3_SYNTHESIS_FAILURE, WAVE_4_ASSEMBLY_FAILURE, GLOBAL_COMPILE_FAILED, GLOBAL_TEST_FAILED,
+PACKAGING_FAILED. Foreseeable error: free-text phases; constrain.
+WIRE: AutonomousWaveOrchestrator, VerifiedCompletionGate
+
+SD7-R-065+Wave0-dimension-filter [RESIDUAL]
+Track: S
+dependsOn: [SD7-R-014, SD7-T1-020]
+R: Research dimension filters that select only INTERFACE/PROTOCOL/SCHEMA/DATA_MODEL atoms for Wave-0.
+I: Wave-0 contracts = atoms.filter { it.dimension in setOf("INTERFACE", "PROTOCOL", "SCHEMA", "DATA_MODEL") }. Enforce closed set. Foreseeable error: leaking
+implementation atoms into Wave-0; filter strictly.
+WIRE: ContractLatticeSynthesizer, SpecGraphCompiler
+
+SD7-R-066+directed-RepairNode-on-edge [RESIDUAL]
+Track: S
+dependsOn: [SD7-T1-060, SD7-R-055]
+R: Research directed repair nodes that target a single failing integration edge instead of aborting the entire build.
+I: If an integration edge breaks in Wave-4, create a directed RepairNode in the DAG targeted specifically at the failing edge; do not abort the whole build. Foreseeable error:
+global abort; schedule edge-local repair.
+WIRE: AutonomousWaveOrchestrator, CompilerDiagnosticRepairLoop, DirectorAgent
+
+SD7-R-067+Vercel-REST-wire-contract [RESIDUAL]
+Track: B
+dependsOn: [SD7-T4-011]
+R: Research the exact Vercel Deployments API contract used by production deployers.
+I: File upload: POST https://api.vercel.com/v2/files?teamId=... with header x-vercel-digest: <sha1>. Deployment manifest: POST
+https://api.vercel.com/v13/deployments?teamId=... with projectSettings.framework = null. HTTP client timeout Duration.ofSeconds(30). Foreseeable error: wrong endpoint
+version; pin the documented paths.
+WIRE: VercelDeploymentDriver, SecretSinkMatrix
+
+
+                                                            | Byte-level residual atoms | Hybrid Residual+HOE | Outside-the-box expansions
+ATROPOS Residual Obligation DAG — Final Missed-Atom Inventory · Continues from Tier-1 + Multi-Tier DAGs · 2026-10-06
+
+8. Hardcoded Numerical Limits, Timeouts & Benchmark Criteria
+SD7-R-070+AndroidSdkDriver-concrete-thresholds [RESIDUAL]
+Track: B
+dependsOn: [SD7-T1-017]
+R: Research production Android build timeouts and buffer ceilings used by CI systems.
+I: AndroidSdkDriver: compile/test timeoutMillis = 600_000 (10 min), assemble timeoutMillis = 900_000 (15 min), maxOutputBytes = 4*1024*1024 (4 MB), maxOutputLines
+= 5000. Tasks: compileDebugSources --no-daemon --stacktrace, testDebugUnitTest --no-daemon, assembleDebug --no-daemon. APK path: app/build/outputs/apk/debug.
+Foreseeable error: silent truncation; enforce the ceilings.
+WIRE: AndroidSdkDriver, ToolchainExecutionDriver, BoundedProcessRunner
+
+SD7-R-071+Kahn-token-floor [RESIDUAL]
+Track: S
+dependsOn: [SD7-T1-018]
+R: Research minimum token-weight floors that prevent zero-cost atoms from collapsing partitions.
+I: atom.estimatedTokens.coerceAtLeast(250). Apply inside Ψ. Foreseeable error: zero-weight atoms; clamp.
+WIRE: PartitionClusterManager
+
+SD7-R-072+chaos-error-rate-ceiling [RESIDUAL]
+Track: B
+dependsOn: [SD7-2050-FMC-02]
+R: Research quantitative chaos acceptance thresholds used by production resilience systems.
+I: During Digital Twin chaos: error rate must remain < 10^{-6}; zero unhandled promise or background thread rejections. Foreseeable error: qualitative 'survived'; require the
+numeric bound.
+WIRE: Chaos Digital Twin, VerifiedCompletionGate, EvidenceCollector
+
+SD7-R-073+partition-10k-node-benchmark [RESIDUAL]
+Track: B
+dependsOn: [SD7-T1-018]
+R: Research synthetic DAG generators that produce 10 000-node acyclic graphs for partitioner validation.
+I: ATOM-SYS-PL-001 verification: partitioner must pass against a synthetic 10 000-node dependency DAG with zero cycles. Foreseeable error: only testing small graphs; make
+the 10 k-node case a CI gate.
+WIRE: PartitionClusterManager, CI job
+
+SD7-R-074+ingestion-5k-page-512MB [RESIDUAL]
+Track: B
+dependsOn: [SD7-SG-001]
+R: Research streaming ingestion under hard RAM ceilings.
+I: ATOM-ING-001 verification: process a 5 000-page specification stream under a strict 512 MB RAM ceiling. Foreseeable error: materializing the whole stream; stream only.
+WIRE: SpecGraphCompiler, CI job
+
+SD7-R-075+schema-ephemeral-sqlite [RESIDUAL]
+Track: B
+dependsOn: [SD7-T4-001]
+R: Research ephemeral in-memory SQLite validation of generated DDL and RLS before migration emission.
+I: ATOM-L1-003 verification: run generated DDL/RLS against an ephemeral in-memory SQLite parser before emitting migrations. Foreseeable error: emitting unvalidated
+SQL; always validate first.
+WIRE: StorageSchemaCompiler, SupabaseSchemaDriver, VerifiedCompletionGate
+
+
+9. Additional Verification Domains, Governance & Formal Engines
+SD7-R-080+WCAG-STRIDE-ILSS [RESIDUAL]
+Track: S
+dependsOn: [SD7-2050-ILSS-02]
+R: Research automatic grafting of WCAG 2.2 AA accessibility contracts and STRIDE threat models from domain corpora.
+I: ILSS DLOI extrapolation must include WCAG 2.2 AA and STRIDE as mandatory non-functional lattices when the domain implies UI or networked attack surface.
+Foreseeable error: optional; make them first-class Wave-0 atoms for relevant domains.
+WIRE: ILSS, DloiService, ContractLatticeSynthesizer
+
+SD7-R-081+Dafny-JavaPathfinder [RESIDUAL]
+Track: B
+dependsOn: [SD7-2050-NSV-01, SD7-2050-NSV-02]
+R: Research integration of Dafny and Java Pathfinder as additional formal verification oracles alongside Kani/Creusot/icontract.
+I: Neuro-symbolic SMT path must support Dafny and Java Pathfinder for languages/toolchains where they are the strongest available. Foreseeable error: single-oracle lock-in;
+keep the ensemble open.
+WIRE: LanguageToolchainDriver, SMT verification path, VerifiedCompletionGate
+
+SD7-R-082+sequential-Director-merge-arbitration [RESIDUAL]
+Track: S
+dependsOn: [SD7-T2-010, SD7-T1-040]
+R: Research sequential merge arbitration locks that prevent concurrent worktree merges.
+I: SUBAGENTS_NEVER_MERGE_DIRECTLY; ALL_MERGES_ARBITRATED_SEQUENTIALLY_BY_DIRECTOR_UNDER_VerifiedCompletionGate. Implement a
+Director-held merge lock. Foreseeable error: parallel merges; serialize.
+WIRE: DirectorAgent, IsolatedWorktreeService, VerifiedCompletionGate
+
+SD7-R-083+UTF8-key-decoder-ring-buffer [RESIDUAL]
+Track: B
+dependsOn: [SD7-T3-005]
+R: Research searchable ring buffers and raw UTF-8 key decoders for terminal input.
+
+
+                                                            | Byte-level residual atoms | Hybrid Residual+HOE | Outside-the-box expansions
+ATROPOS Residual Obligation DAG — Final Missed-Atom Inventory · Continues from Tier-1 + Multi-Tier DAGs · 2026-10-06
+I: CURSOR_KEYBOARD = VT100_ESCAPES + UTF8_RAW_KEY_DECODER + SEARCHABLE_RING_BUFFER. Complete the terminal input substrate. Foreseeable
+error: incomplete key handling; implement the full triple.
+WIRE: CLI input loop, Terminal Input Defense
+
+SD7-R-084+termux-clipboard-set [RESIDUAL]
+Track: B
+dependsOn: [SD7-T3-006]
+R: Research Termux native clipboard binary binding.
+I: OSC-52 fallback cascade must explicitly include termux-clipboard-set as the first Android/Termux target. Foreseeable error: missing Termux path; place it first in the
+cascade.
+WIRE: OSC-52 clipboard bridge, SecretSinkMatrix
+
+SD7-R-085+zero-reward-fraud-penalty-ledger [RESIDUAL]
+Track: S
+dependsOn: [SD7-T1-071]
+R: Research zero-reward penalty ledgers that permanently record fraudulent synthesis attempts.
+I: When AST stub scanner rejects code as fraudulent, log a ZERO_REWARD_PENALTY entry into the governance ledger. Future routing may down-rank the responsible
+provider. Foreseeable error: silent reject; always ledger.
+WIRE: ArchitectureComplianceChecker, GovernanceLedger, RoutePolicy
+
+SD7-R-086+true-moat-governance-ledger-amendment-chain [RESIDUAL]
+Track: S
+dependsOn: [SD7-T2-001, SD7-T2-025]
+R: Research the true moat components: stateful evidence substrate, CAS-addressable records, restart continuity hashes, governance ledger, amendment chain.
+I: TRUE_MOAT = STATEFUL_EVIDENCE_SUBSTRATE + CAS_ADDRESSABLE_RECORDS + RESTART_CONTINUITY_HASHES + GOVERNANCE_LEDGER +
+AMENDMENT_CHAIN. Implement GovernanceLedger and AmendmentChain as first-class durable stores. Foreseeable error: treating moat as rhetoric; wire every component.
+WIRE: GovernanceLedger (new), AmendmentChain (new), CAS, EvidenceCollector, RestartCoordinator
+
+
+10. Outside-the-Box Mathematical & Systems Advances
+Atoms that push beyond Source Document 7 using techniques from formal methods, distributed systems, baseball/football analytics-style measurement, and CLI
+design that the original documents have not yet incorporated.
+SD7-R-090+information-bottleneck-partitioning [AMENDMENT-CANDIDATE]
+Track: S
+dependsOn: [SD7-T1-018, SD7-R-051]
+R: Research the Information Bottleneck method (Tishby) applied to graph partitioning so that each partition maximizes relevant mutual information with its contracts while
+minimizing leakage to sibling partitions.
+I: Replace pure greedy domain-path clustering with an IB-inspired objective that explicitly minimizes I(P_r; P_s) while preserving predictive power for the contracts.
+Foreseeable error: intractable optimization; use variational approximation with hard territory constraints.
+WIRE: PartitionClusterManager
+
+SD7-R-091+differential-privacy-for-prompts [AMENDMENT-CANDIDATE]
+Track: S
+dependsOn: [SD7-T1-021]
+R: Research differential-privacy noise injection into prompts that still preserve exact interface contracts (useful when multiple untrusted providers see the same Wave-0 lattice).
+I: When a contract lattice is sent to more than one provider family, apply calibrated noise to non-semantic fields while keeping type signatures bit-identical. Foreseeable error:
+breaking typecheck; never noise the actual signatures.
+WIRE: AgentPromptContract, ProviderCascadeRouter
+
+SD7-R-092+sabermetrics-acceptance-velocity [AMENDMENT-CANDIDATE]
+Track: S
+dependsOn: [SD7-R-057]
+R: Research sabermetrics-style rate statistics (OPS, WAR analogues) for autonomous software factories that normalize AcceptanceVelocity by partition difficulty and provider
+cost.
+I: Define FactoryWAR = (ΔVerifiedPredicates − expected) / cost-normalized replacement level. Track per-provider and per-domain. Foreseeable error: vanity metrics; keep the
+definition anchored to Phase-100 predicates.
+WIRE: DirectorAgent, GovernanceLedger, QuotaLedger
+
+SD7-R-093+cli-progress-as-pure-stderr-protocol [AMENDMENT-CANDIDATE]
+Track: B
+dependsOn: [SD7-T3-004]
+R: Research pure-stderr progress protocols used by modern CLIs (cargo, npm, docker) that never contaminate stdout machine output.
+I: All progress, spinners, and human telemetry must be pure stderr with an explicit --json-progress alternative that emits NDJSON on stderr only. Stdout remains pure artifacts
+or machine JSON. Foreseeable error: progress on stdout; forbid by architecture test.
+WIRE: CLI TTY discipline, all diagnostic emitters
+
+SD7-R-094+formal-proof-carrying-code-bundle [AMENDMENT-CANDIDATE]
+Track: S
+dependsOn: [SD7-R-052, SD7-2050-LHD-04]
+R: Research proof-carrying code (Necula) and modern PCC variants that ship machine-checkable proofs alongside binaries so that a third party can validate without re-running
+the LLM.
+I: Extend the Zero-Entropy Proof Certificate into a full proof-carrying bundle: SpecHash + NegativeSpecHash + SMT proofs + TLA receipts + mutation-kill score + chaos
+receipt + toolchain binary hash + optional PCC certificate. Foreseeable error: missing fields; VerifiedCompletionGate refuses promotion until complete.
+WIRE: Zero-Entropy Proof Certificate, IntegrityProofs, VerifiedCompletionGate
+
+SD7-R-095+online-convex-optimization-for-routing [AMENDMENT-CANDIDATE]
+Track: S
+dependsOn: [SD7-T2-024, SD7-ADV-004]
+R: Research online convex optimization / multi-armed bandit algorithms that continuously re-rank providers under non-stationary quality and cost.
+I: Replace static RoutePolicy rankings with an OCO/bandit update after every verified atom. Regret bounds must be logged. Foreseeable error: catastrophic forgetting; keep a
+slow-moving prior.
+                                                            | Byte-level residual atoms | Hybrid Residual+HOE | Outside-the-box expansions
+ATROPOS Residual Obligation DAG — Final Missed-Atom Inventory · Continues from Tier-1 + Multi-Tier DAGs · 2026-10-06
+WIRE: RoutePolicy, QuotaLedger, ProviderCascadeRouter
+
+
+11. Final Residual Completeness Gate
+SD7-R-099+residual-completeness-gate [RESIDUAL]
+Track: S
+dependsOn: [ALL residual atoms above]
+R: Research orphan and residual-atom detection that proves every file, constant, equation and invariant named in Source Document 7 and the SD6 addenda now has a
+corresponding atom.
+I: atropos doctor --residual-completeness must pass. It cross-checks the three DAG documents against the full SD7 + SD6 inventory and fails on any remaining omission.
+Foreseeable error: false green from partial matches; require exact file-path and equation coverage.
+WIRE: CI job, atropos doctor, ArchitectureComplianceChecker
+
+
+12. Ordering Relative to Prior DAGs
+Tier-1 Hybrid DAG (template purge + Wave factory + 2050 neuro-symbolic) must be green first.
+Full Multi-Tier DAG (Tiers 2/3/4 + SpecGraph expansions + advanced research) must be green second.
+This Residual DAG is the third and final layer. SD7-R-099 is the absolute last gate before the system is declared complete with respect to Source Document 7 and its
+addenda.
+
+
+13. Non-Negotiable Invariants (Restated for Residual Layer)
+Entropy(C | S, I) = 0
+I(f_j; f_k | I) = 0 ∀ (v_j, v_k) ∉ E_A
+X(τ_i) = I ∪ {a_i} ∪ Ancestors(a_i, I)
+σ_{t+1} = δ(σ_t, a_{r,t}, I)
+∏ v(Φ(P_r, I)) = 1
+Δf ⊆ Territory(P_r)
+V_accepted = min(V_generated, V_integrated, V_verified, V_evidenced)
+Phase 100 full conjunction
+False-Green Tolerance = 0.0000 %
+Air-Gap for pure synthesis
+Exact-hash restart continuity
+
+
+END OF RESIDUAL OBLIGATION DAG — Final Missed-Atom Inventory
+Third and final document in the Source Doc 7 series · Leaves off from Tier-1 + Multi-Tier DAGs · Byte-level completeness · Outside-the-box advances included · 2026-10-06
+
+
+
+
+                                                                 | Byte-level residual atoms | Hybrid Residual+HOE | Outside-the-box expansions
+

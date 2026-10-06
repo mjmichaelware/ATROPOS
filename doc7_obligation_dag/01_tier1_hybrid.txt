@@ -1,0 +1,476 @@
+ATROPOS Obligation DAG — Source Doc 7 Hybrid · Tier-1 Factory Substrate + 2050 Neuro-Symbolic · 2026-10-06
+
+                                          ATROPOS OBLIGATION DAG
+                                   Source Document 7 → Hybrid RESEARCH+IMPL + Track/WIRE
+                                Tier-1 Priority: Complete Extirpation of AppSourceTemplate.kt & LanguageScaffold.kt
+                             Maximum atomization · Zero artificial templates · Every atom independently verifiable · 2026-10-06
+
+
+1. Extraction Rules (Locked)
+Maximum atomization. Blueprint phases do not consume concrete atoms. Every feature, function, utility, invariant, gate, driver, and
+mathematical claim is decomposed until it cannot be divided further.
+Hybrid format: Residual Obligation DAG v3 RESEARCH (R:) + IMPL (I:) density combined with HOE Track / dependsOn / WIRE discipline.
+Research prompts force external discovery of superior implementations; they never restate Source Doc 7 sketches.
+Impl notes name foreseeable failure modes and the cheapest correct path that preserves existing ATROPOS substrate (IsolatedWorktreeService,
+VerifiedCompletionGate, BoundedProcessRunner, TerritoryGrant, ArchitectureComplianceChecker, SpecGraphCompiler, DLOI).
+Status tags: RESIDUAL | AMENDMENT-CANDIDATE | NEW-SUBSTRATE | 2050-NEURO-SYMBOLIC | SUPERSEDED-CAPABILITY.
+WIRE may name classes newly introduced by Source Doc 7. Final section of this document is a mandatory Caller-Completeness Gate that must
+pass before any promotion.
+Tier discipline: Tier-1 (this document) must reach verified completion before any subsequent tier is scheduled. Tier-1 = total purge of static
+templates + live Interface-First Wave factory that produces real applications.
+
+
+2. Tier Structure
+Tier-1 (this DAG): Extirpation of AppSourceTemplate.kt / LanguageScaffold.kt + full Wave 0–4 factory substrate + native toolchains + 2050
+neuro-symbolic gates. Acceptance = real applications compile and pass VerifiedCompletionGate with zero template bytes.
+Tier-2 (future): Long-horizon storage constitution, swarm hierarchy, thermal/battery pacing, exact-hash restart continuity, quota ledger.
+Tier-3 (future): Full CLI/Unix sovereignty, PTY process hosting, shell completion engine, OSC-52 clipboard, anti-fake-green oracles at
+production scale.
+Tier-4 (future): Cloud delivery drivers (Vercel/Netlify/Supabase) + packaging to bit-verified ELF/APK/Web.
+
+
+3. Tier-1 Atoms — Template Extirpation & Core Factory Substrate
+3.1 Deprecation & Routing Severance
+SD7-T1-001+extirpate-AppSourceTemplate [NEW-SUBSTRATE]
+Track: S (Shared Core)
+dependsOn: []
+R: Research the complete call graph of AppSourceTemplate.kt and every consumer that imports mainSource(), testSource(), genericMain() or any other
+string-literal emitter. Identify the minimal set of deletion points that leave zero residual template paths.
+I: Hard-delete the file from the critical path. Remove every import and call site. Replace with a single compile-time assertion that fails if any template
+string literal matching the old signatures is present in the factory package. Foreseeable error: residual string constants surviving in test fixtures or
+comments; scan with ArchitectureComplianceChecker.
+WIRE: AppFactoryRouter.kt (mutate plan() and runLocal()), ArchitectureComplianceChecker (new ban rule), DagExecutionService.kt
+
+SD7-T1-002+extirpate-LanguageScaffold [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-T1-001]
+R: Research every LanguageScaffold entry point and language-specific string templates. Locate any dynamic dispatch that still routes to scaffold
+methods.
+I: Hard-delete. All language-specific scaffolding is replaced by Wave-0 ContractLatticeSynthesizer output. Foreseeable error: language-kind switch
+statements that still call scaffold; convert them to throw UnsupportedOperationException until Wave-0 contracts exist.
+WIRE: AppProjectGenerator.kt, AppFactoryRouter.kt
+
+SD7-T1-003+sever-AppFactoryRouter [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-T1-001, SD7-T1-002]
+R: Research clean router patterns that completely detach intent parsing from code emission. Examine how modern agent factories (Aider, Codex,
+OpenCode) keep planning and synthesis orthogonal.
+I: Mutate AppFactoryRouter so plan() and runLocal() emit only a typed WaveExecutionRequest and hand control to AutonomousWaveOrchestrator. No
+template path may remain reachable. Foreseeable error: fallback branch that still calls generateApp() with templates; delete the fallback.
+WIRE: AutonomousWaveOrchestrator (new), AppFactoryRouter.kt
+
+SD7-T1-004+mutate-DagExecutionService [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-T1-003]
+
+                                                   | Maximum atomization | Zero boilerplate | Hybrid Residual+HOE
+ATROPOS Obligation DAG — Source Doc 7 Hybrid · Tier-1 Factory Substrate + 2050 Neuro-Symbolic · 2026-10-06
+R: Research batched topological wave processors that respect territory isolation and worktree lifecycle. Prefer designs that never hold the entire atom set
+in a single context window.
+I: Replace synchronous execution stubs with wave-batch processing. Every PROVIDER_CALL node must execute inside an IsolatedWorktreeService
+worktree. Foreseeable error: shared mutable state across partitions; enforce territory disjointness before dispatch.
+WIRE: DagExecutionService.kt, IsolatedWorktreeService, PartitionClusterManager
+
+3.2 Wave-0 Substrate & Toolchains
+SD7-T1-010+NativeToolchainRegistry [NEW-SUBSTRATE]
+Track: S
+dependsOn: []
+R: Research deterministic toolchain discovery patterns used by Bazel, Pants, and Nix that locate compilers without hard-coded absolute paths and
+survive Termux / Linux / macOS differences.
+I: Implement NativeToolchainRegistry that probes PATH and known locations, returns typed LanguageToolchainDriver instances, and never swallows
+non-zero exit codes. Foreseeable error: silent fallback to mock drivers; ban any driver that does not invoke a real binary.
+WIRE: ToolchainExecutionDriver, BoundedProcessRunner, VerifiedCompletionGate
+
+SD7-T1-011+LanguageToolchainDriver-interface [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-T1-010]
+R: Research minimal interface contracts that cover compile, test, lint, package for heterogeneous languages while remaining extensible to new drivers.
+I: Define LanguageToolchainDriver with compile(worktree), test(worktree), lint(worktree), package(worktree). All methods return structured Diagnostic
+maps (file, line, column, code, message). Foreseeable error: drivers that return success on empty worktrees; require at least one source file.
+WIRE: NativeToolchainRegistry, all concrete drivers
+
+SD7-T1-012+RustCargoDriver [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-T1-011]
+R: Research cargo check / cargo test / cargo build --release exit-code and diagnostic capture under bounded process runners.
+I: Implement via BoundedProcessRunner. Capture stdout/stderr, map to Diagnostic. Non-zero exit = terminal failure. Foreseeable error: interactive
+prompts hanging the process; always supply --color=never and non-interactive flags.
+WIRE: NativeToolchainRegistry, ToolchainExecutionDriver
+
+SD7-T1-013+TypescriptNodeDriver [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-T1-011]
+R: Research pnpm/npm + tsc --noEmit + vite build diagnostic patterns and lockfile isolation.
+I: Run inside isolated worktree. Use --frozen-lockfile when possible. Non-zero tsc or build exit fails the gate. Foreseeable error: node_modules leakage
+across worktrees; always install into the worktree only.
+WIRE: NativeToolchainRegistry
+
+SD7-T1-014+GoToolchainDriver [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-T1-011]
+R: Research go build / go vet / go test -race under resource limits.
+I: BoundedProcessRunner with explicit GOMAXPROCS and timeout. Race detector enabled for test. Foreseeable error: module cache pollution; set
+GOPATH/GOCACHE inside worktree.
+WIRE: NativeToolchainRegistry
+
+SD7-T1-015+PythonFastApiDriver [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-T1-011]
+R: Research mypy --strict + ruff + pytest isolation patterns for FastAPI projects.
+I: Create ephemeral venv inside worktree if needed. mypy --strict must pass before pytest. Foreseeable error: system site-packages contamination; always
+--isolated.
+WIRE: NativeToolchainRegistry
+
+SD7-T1-016+KotlinGradleDriver [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-T1-011]
+R: Research ./gradlew compileKotlin test assemble under daemon control and offline mode.
+I: Prefer --offline when caches are present. Capture Gradle diagnostic XML if available. Non-zero exit fails. Foreseeable error: Gradle daemon leaking
+across worktrees; use --no-daemon or unique project cache.
+WIRE: NativeToolchainRegistry, GovernedCompileGate
+
+SD7-T1-017+AndroidSdkDriver [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-T1-011, SD7-T1-016]
+                                                   | Maximum atomization | Zero boilerplate | Hybrid Residual+HOE
+ATROPOS Obligation DAG — Source Doc 7 Hybrid · Tier-1 Factory Substrate + 2050 Neuro-Symbolic · 2026-10-06
+R: Research AAPT2 + D8/R8 + gradlew assembleDebug production of unsigned APK with bit-level verification.
+I: Produce real APK artifact. Verify APK exists and has non-zero size. Foreseeable error: missing ANDROID_HOME; fail closed with clear diagnostic
+rather than mock APK.
+WIRE: NativeToolchainRegistry, CloudDeploymentAdapter (later tier)
+
+SD7-T1-018+PartitionClusterManager [NEW-SUBSTRATE]
+Track: S
+dependsOn: []
+R: Research Kahn topological sort + greedy domain-path proximity clustering under token budgets. Examine how modern build systems (Bazel, Pants)
+partition for parallel execution while preserving acyclicity.
+I: Implement Ψ operator. Constraints: quotient graph remains DAG, sum of tokens + interface context ≤ B_token (default 12 000), territories pairwise
+disjoint. Foreseeable error: cycles introduced by greedy merge; re-run topological check after every cluster formation.
+WIRE: InternalExecutionDagSynthesizer, AutonomousWaveOrchestrator, TerritoryGrant
+
+3.3 Wave-0 Contract Lattice
+SD7-T1-020+ContractLatticeSynthesizer [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-T1-010, SD7-T1-018]
+R: Research pure interface / trait / schema synthesis that emits zero executable statements. Examine OpenAPI 3.1, Protobuf, SQL DDL, TypeScript .d.ts,
+Rust traits, Kotlin interfaces for minimal complete contracts.
+I: Wave-0 output contains only type signatures, schemas, and protocol definitions. Compilation gate is typecheck/lint only. Repair until clean.
+Foreseeable error: accidental inclusion of function bodies; AST walk rejects any executable node.
+WIRE: AutonomousWaveOrchestrator, DecoupledWorkerSynthesizer, ArchitectureComplianceChecker
+
+SD7-T1-021+clean-room-prompt-contract [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-T1-020]
+R: Research prompt formats that mathematically enforce I(fj;fk | I) = 0 by construction. Examine context isolation techniques used in secure multi-party
+computation and clean-room design reviews.
+I: AgentPromptContract must inject the Wave Contract format. Worker receives only atom payload + Wave-0 interfaces. Sibling implementation text is
+never present. Foreseeable error: accidental inclusion of previous worker diffs; scrub context before every dispatch.
+WIRE: AgentPromptContract.kt, DecoupledWorkerSynthesizer
+
+3.4 Wave-1 Behavioral Verification Suites
+SD7-T1-030+Wave1-test-suite-generator [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-T1-020, SD7-T1-021]
+R: Research property-based and interface-mock test generation that must fail against empty stubs and compile against Wave-0 contracts only.
+I: Generate isolated unit + property tests. Gate: tests compile against contracts and fail on empty implementations. Foreseeable error: tests that pass
+vacuously; require at least one failing assertion on a stub.
+WIRE: ContractLatticeSynthesizer, VerifiedCompletionGate
+
+3.5 Wave-2 Parallel Partition Implementation
+SD7-T1-040+DecoupledWorkerSynthesizer [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-T1-018, SD7-T1-021, SD7-T1-030]
+R: Research isolated worktree synthesis loops with bounded repair (max 3) that feed compiler diagnostics back without expanding context beyond the
+partition footprint.
+I: Each partition runs in its own IsolatedWorktreeService worktree. Worker sees only its atoms + Wave-0 contracts. On failure, repairNode feeds stderr
+back. Merge only after clean verification. Foreseeable error: territory collision; fail closed and revert worktree.
+WIRE: IsolatedWorktreeService, GovernedCompileGate, ProviderCascadeRouter, PartitionClusterManager
+
+SD7-T1-041+CompilerDiagnosticRepairLoop [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-T1-040]
+R: Research diagnostic-to-prompt feedback loops that preserve the original atom and interface set while only mutating the failing file.
+I: Max 3 attempts. Each attempt receives the exact compiler diagnostic map. No expansion of context. Foreseeable error: infinite repair oscillation; after
+3 failures create a directed RepairNode and halt the partition.
+WIRE: DecoupledWorkerSynthesizer, GovernedCompileGate
+
+3.6 Wave-3 DI & Composition
+SD7-T1-050+DependencyInjectionAssembler [NEW-SUBSTRATE]
+Track: S
+
+                                                   | Maximum atomization | Zero boilerplate | Hybrid Residual+HOE
+ATROPOS Obligation DAG — Source Doc 7 Hybrid · Tier-1 Factory Substrate + 2050 Neuro-Symbolic · 2026-10-06
+dependsOn: [SD7-T1-040]
+R: Research pure DI registry synthesis (Koin, Dagger, NestJS modules, FastAPI Depends, Go wire) that never hard-codes sibling constructors.
+I: Wire concrete implementations to Wave-0 interfaces only. Ban static singletons and service locators. Foreseeable error: direct new of sibling classes;
+ArchitectureComplianceChecker must reject.
+WIRE: AutonomousWaveOrchestrator, ArchitectureComplianceChecker
+
+3.7 Wave-4 Global Verification & Orchestration
+SD7-T1-060+AutonomousWaveOrchestrator [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-T1-003, SD7-T1-018, SD7-T1-020, SD7-T1-040, SD7-T1-050]
+R: Research five-wave execution engines that treat each wave as a hard gate and never proceed on partial success.
+I: Execute Wave 0 → 1 → 2 → 3 → 4. Any Halted report aborts the build with diagnostics. Success produces artifact path + optional deployment URL.
+Foreseeable error: soft failures that continue; every non-zero gate is terminal.
+WIRE: AppFactoryRouter, PartitionClusterManager, ContractLatticeSynthesizer, DecoupledWorkerSynthesizer, DependencyInjectionAssembler,
+NativeToolchainRegistry
+
+SD7-T1-061+VerifiedCompletionGate-toolchain-binding [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-T1-010, SD7-T1-060]
+R: Research binding of language-specific native exit codes directly into completion calculus so that fake success is impossible.
+I: Mutate VerifiedCompletionGate to invoke the concrete LanguageToolchainDriver and treat any non-zero exit as terminal rejection. Foreseeable error:
+shell scripts that echo PASS; ban any verification that does not execute a real compiler binary.
+WIRE: VerifiedCompletionGate.kt, NativeToolchainRegistry, BoundedProcessRunner
+
+SD7-T1-062+mutate-ExecutionPolicyEngine [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-T1-010]
+R: Research policy engines that allow automated toolchain invocation inside verified sandboxes without human tokens while still enforcing territory and
+secret boundaries.
+I: Permit cargo, go, pnpm, clang, zig, gradlew inside BoundedProcessRunner sandboxes. Secrets stripped from env. Foreseeable error: secret leakage into
+subprocess; always clean env.
+WIRE: ExecutionPolicyEngine.kt, BoundedProcessRunner, TerritoryGrant
+
+SD7-T1-063+mutate-InternalExecutionDagSynthesizer [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-T1-018]
+R: Research partition mapping that groups unbounded atoms into territorial clusters while emitting formal input/output interface ports and boundary
+hashes.
+I: Implement Ψ. Emit partition metrics and handoff manifests. Foreseeable error: token budget overflow; reject partitions that exceed B_token.
+WIRE: InternalExecutionDagSynthesizer.kt, PartitionClusterManager
+
+SD7-T1-064+mutate-AgentPromptContract [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-T1-021]
+R: Research formal Wave Contract prompt formats that block implementation leakage by construction.
+I: Inject the clean-room prompt. Block any sibling code. Foreseeable error: provider context windows that drop the interface lattice; place interfaces in
+high-order immutable slot.
+WIRE: AgentPromptContract.kt, DecoupledWorkerSynthesizer
+
+SD7-T1-065+mutate-SpecGraph-throughput [NEW-SUBSTRATE]
+Track: B
+dependsOn: []
+R: Research streaming atom extraction that removes arbitrary token collection caps for large specifications.
+I: Mutate apps/specgraph-foundry compiler __init__.py and execution_dag.py to increase throughput and emit partition metrics + boundary hashes.
+Foreseeable error: memory exhaustion on huge specs; stream rather than materialize.
+WIRE: SpecGraphCompiler, InternalExecutionDagSynthesizer
+
+
+4. 2050 Neuro-Symbolic & Scale-Gap Atoms (Tier-1 Inclusion)
+4.1 Inverse Latent Specification Synthesis (ILSS)
+SD7-2050-ILSS-01+adversarial-goal-expansion [2050-NEURO-SYMBOLIC]
+Track: S
+dependsOn: [SD7-T1-020]
+R: Research adversarial counter-specification mining used in security threat modeling and formal methods (STRIDE, attack trees, TLA+ negative
+properties). Prefer techniques that produce machine-checkable ¬S without requiring a second full LLM call per atom.
+                                                   | Maximum atomization | Zero boilerplate | Hybrid Residual+HOE
+ATROPOS Obligation DAG — Source Doc 7 Hybrid · Tier-1 Factory Substrate + 2050 Neuro-Symbolic · 2026-10-06
+I: Before Wave-0, a critic produces Negative Specification ¬S covering Byzantine faults, network partitions, malicious ingress, memory exhaustion,
+tail-latency SLAs. Every user goal G is paired with anti-goal ¬G that must provably never occur. Foreseeable error: open-ended questions; instead
+compute Pareto frontier and request single-bit human selection.
+WIRE: ContractLatticeSynthesizer, DloiService, FactoryClarificationRequest
+
+SD7-2050-ILSS-02+DLOI-domain-contract-extrapolation [2050-NEURO-SYMBOLIC]
+Track: S
+dependsOn: [SD7-2050-ILSS-01]
+R: Research automatic grafting of canonical non-functional contracts from knowledge corpora (OWASP, ACID isolation proofs, connection-pool bounds,
+GC pressure invariants).
+I: Query DLOI address map (006 Security, 410 Data Plane, 620 Runtime) and inject mandatory Wave-0 atoms regardless of user prompt brevity.
+Foreseeable error: over-injection that violates territory; keep injected contracts inside the same partition territory.
+WIRE: DloiService, ContractLatticeSynthesizer, SourceAuthorityIndexer
+
+SD7-2050-ILSS-03+epistemic-uncertainty-bounding [2050-NEURO-SYMBOLIC]
+Track: S
+dependsOn: [SD7-2050-ILSS-01]
+R: Research entropy measures H(Intent|Prompt,DLOI) and Pareto-optimal decision matrices for under-determined goals.
+I: If entropy > ε, compute Pareto frontier (latency vs memory, consistency vs availability, throughput vs complexity) and await single-bit human selection
+before DAG freeze. Foreseeable error: silent default choices; always surface the matrix.
+WIRE: FactoryConfidence, FactoryClarificationRequest, AutonomousWaveOrchestrator
+
+4.2 Formal Concurrency Model Checking
+SD7-2050-FMC-01+TLA-Alloy-state-machine [2050-NEURO-SYMBOLIC]
+Track: S
+dependsOn: [SD7-T1-020]
+R: Research extraction of TLA+ / Alloy specifications from interface contracts and exhaustive checking with TLC or Z3 before any implementation code
+is written.
+I: Every stateful or concurrent atom must emit formal state variables, transition relations, safety and liveness properties. Gate: exhaustive exploration
+proves zero deadlocks and zero race conditions. Foreseeable error: state-space explosion; bound the model and fail closed if incomplete.
+WIRE: ContractLatticeSynthesizer, VerifiedCompletionGate
+
+SD7-2050-FMC-02+chaos-digital-twin [2050-NEURO-SYMBOLIC]
+Track: B
+dependsOn: [SD7-T1-060, SD7-T1-061]
+R: Research ephemeral containerized chaos runners that inject kernel preemption, socket latency, clock skew, and 95 % memory ceilings while
+measuring residual memory and error rates.
+I: Wave-4 instantiates Digital Twin. Acceptance requires survival of 10 000 chaos transactions with zero thread leaks and residual memory returning to
+baseline post-GC. Foreseeable error: non-deterministic chaos; seed all PRNGs and record the seed in the evidence bundle.
+WIRE: AutonomousWaveOrchestrator, NativeToolchainRegistry, EvidenceCollector
+
+SD7-2050-FMC-03+actor-territory-message-formalism [2050-NEURO-SYMBOLIC]
+Track: S
+dependsOn: [SD7-T1-018, SD7-T1-021]
+R: Research affine / ownership type systems and disjoint mailbox formalisms that make shared mutable memory across territory boundaries a
+compile-time error.
+I: All inter-actor communication typed as disjoint mailboxes. Violations caught at compile time. Foreseeable error: hidden shared state via statics;
+ArchitectureComplianceChecker bans static mutable state.
+WIRE: ArchitectureComplianceChecker, TerritoryGrant, DecoupledWorkerSynthesizer
+
+4.3 Neuro-Symbolic SMT Verification
+SD7-2050-NSV-01+Hoare-logic-annotations [2050-NEURO-SYMBOLIC]
+Track: S
+dependsOn: [SD7-T1-040]
+R: Research machine-checkable pre/post/invariant annotations across Rust (Kani/Creusot), Kotlin, TypeScript, Python (icontract).
+I: Every synthesized function must emit requires / ensures / invariant. Functions lacking provable contracts are rejected as unverified. Foreseeable error:
+annotations that are comments only; require toolchain that discharges them.
+WIRE: DecoupledWorkerSynthesizer, LanguageToolchainDriver
+
+SD7-2050-NSV-02+SMT-equivalence-proofs [2050-NEURO-SYMBOLIC]
+Track: B
+dependsOn: [SD7-2050-NSV-01]
+R: Research Z3 / SMT-LIB equivalence proofs on bytecode or AST that discharge arithmetic overflow freedom, array bounds, null dereference
+impossibility, state-machine validity.
+I: ∀x ∈ Domain(requires): Implementation(x) ⇒ ensures(x). Failure to discharge triggers repair loop before test suite. Foreseeable error: solver
+timeouts; set strict resource bounds and fail closed.
+                                                   | Maximum atomization | Zero boilerplate | Hybrid Residual+HOE
+ATROPOS Obligation DAG — Source Doc 7 Hybrid · Tier-1 Factory Substrate + 2050 Neuro-Symbolic · 2026-10-06
+WIRE: GovernedCompileGate, CompilerDiagnosticRepairLoop
+
+SD7-2050-NSV-03+tri-model-disputation [2050-NEURO-SYMBOLIC]
+Track: S
+dependsOn: [SD7-T1-040]
+R: Research heterogeneous multi-model synthesis with structural AST edit-distance comparison and adversarial arbitration for high-risk logic.
+I: High-risk state-mutating algorithms synthesized by three independent families. If AST semantics diverge, arbitrator extracts discrepancy and uses
+SMT oracle to select the superior branch. Foreseeable error: majority vote without proof; always require SMT discharge.
+WIRE: ProviderCascadeRouter, DecoupledWorkerSynthesizer, VerifiedCompletionGate
+
+4.4 Long-Horizon Residual Defect Elimination
+SD7-2050-LHD-01+concolic-test-generator [2050-NEURO-SYMBOLIC]
+Track: B
+dependsOn: [SD7-T1-030, SD7-2050-NSV-02]
+R: Research concolic (concrete + symbolic) test generation that forces exploration of unreached branches via SMT path-condition inversion.
+I: Target 100 % branch and condition coverage (MC/DC for critical lanes). Foreseeable error: path explosion; bound depth and record uncovered residual
+as Residual Obligation.
+WIRE: Wave1 test generator, VerifiedCompletionGate
+
+SD7-2050-LHD-02+transactional-memory-leak-detector [2050-NEURO-SYMBOLIC]
+Track: B
+dependsOn: [SD7-2050-FMC-02]
+R: Research byte-accurate heap and descriptor profiling that proves allocations − deallocations = 0 per transaction after warmup.
+I: Any non-zero growth of unreferenced bytes rejects the build as resource-unsound. Foreseeable error: false positives from caches; exclude known warm
+caches from the calculation.
+WIRE: Digital Twin runner, EvidenceCollector
+
+SD7-2050-LHD-03+residual-obligation-ledger [2050-NEURO-SYMBOLIC]
+Track: S
+dependsOn: []
+R: Research immutable CAS-chained ledgers of human vetoes that future synthesis engines treat as hard boundaries.
+I: Every human rejection creates a durable formal prohibition clause. Future DAG synthesis reads Residual Obligations as hard constraints. Foreseeable
+error: loss of vetoes across restarts; store only as CAS-addressed records with exact hashes.
+WIRE: LocalMemoryStore, CAS, RestartCoordinator
+
+SD7-2050-LHD-04+zero-entropy-proof-certificate [2050-NEURO-SYMBOLIC]
+Track: S
+dependsOn: [SD7-T1-060, SD7-2050-NSV-02, SD7-2050-FMC-01, SD7-2050-FMC-02]
+R: Research machine-checkable cryptographic proof bundles that third parties can validate in seconds without trusting the LLM.
+I: Final deliverable is a certificate vector: SpecHash, ExpandedNegativeSpecHash, SMTVerificationProofsHash, TLAModelCheckReceiptHash,
+MutationKillScoreHash, DigitalTwinChaosReceiptHash, ToolchainBinaryHash. Foreseeable error: missing fields; VerifiedCompletionGate refuses
+promotion until all hashes are present.
+WIRE: VerifiedCompletionGate, EvidenceCollector, IntegrityProofs
+
+
+5. File Constitution & Anti-Boilerplate Atoms (Tier-1)
+SD7-T1-070+file-atomicity-constitution [NEW-SUBSTRATE]
+Track: S
+dependsOn: []
+R: Research single-responsibility file limits and composition-over-inheritance enforcement used in large codebases that survive multi-year autonomous
+evolution.
+I: Soft 350 LOC / hard 500 LOC. One file = one atomic responsibility. No mixing presentation with decision or execution logic. Enforced by
+ArchitectureComplianceChecker as deterministic gate. Ban TODO, NotImplemented, fake returns. Foreseeable error: generated files that exceed cap;
+reject before merge.
+WIRE: ArchitectureComplianceChecker, DecoupledWorkerSynthesizer
+
+SD7-T1-071+AST-stub-hollow-scanner [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-T1-070]
+R: Research static AST walks (Tree-sitter or language-specific) that reject hollow implementations with zero false negatives on the listed patterns.
+I: Hard rejection of TODO(), NotImplementedError, empty function bodies, empty catch blocks, constant returns, unused parameters in business logic,
+throw-fake-exception, MockClass in production path. Synthesis rejected immediately, zero reward. Foreseeable error: language-specific AST gaps; start
+with Kotlin + TypeScript + Python + Rust.
+WIRE: ArchitectureComplianceChecker, DecoupledWorkerSynthesizer
+
+SD7-T1-072+mutation-testing-oracle [NEW-SUBSTRATE]
+Track: B
+                                                   | Maximum atomization | Zero boilerplate | Hybrid Residual+HOE
+ATROPOS Obligation DAG — Source Doc 7 Hybrid · Tier-1 Factory Substrate + 2050 Neuro-Symbolic · 2026-10-06
+dependsOn: [SD7-T1-030]
+R: Research systemic defect injection (negate conditionals, swap operators, invert boundaries, erase calls) and the 85 % kill-rate threshold.
+I: Before atom acceptance inject ≥10 mutations. Wave-1 suite must fail on ≥85 %. Passing mutated code proves the test is fake and rejects both module
+and test. Foreseeable error: equivalent mutants; record and quarantine them.
+WIRE: Wave1 test generator, VerifiedCompletionGate
+
+
+6. Mandatory Caller-Completeness Gate
+After all Tier-1 atoms are implemented, execute the following audit before any promotion:
+1. Every new class introduced by this DAG (AutonomousWaveOrchestrator, PartitionClusterManager, ContractLatticeSynthesizer,
+DecoupledWorkerSynthesizer, DependencyInjectionAssembler, NativeToolchainRegistry, all LanguageToolchainDriver implementations,
+CompilerDiagnosticRepairLoop, and every 2050 atom owner) must appear in at least one production WIRE outside tests.
+2. AppSourceTemplate.kt and LanguageScaffold.kt must have zero remaining references in production source.
+3. ArchitectureComplianceChecker must report zero violations of the file-atomicity constitution and the AST-stub scanner.
+4. A real application (CLI or web) must be synthesized end-to-end through AutonomousWaveOrchestrator and pass VerifiedCompletionGate
+with a non-empty artifact.
+5. The Zero-Entropy Proof Certificate must be present and all hashes non-null.
+Failure of any item blocks promotion. This gate is itself an atom:
+
+SD7-T1-099+caller-completeness-gate [NEW-SUBSTRATE]
+Track: S
+dependsOn: [ALL Tier-1 atoms]
+R: Research orphan-detection and caller-graph completeness checks used in large monorepos (Google, Meta, Microsoft) that prevent dead code and
+unwired new modules.
+I: Implement as an atropos doctor --factory-completeness command that fails CI if any of the five conditions above is false. Foreseeable error: test-only
+callers counted as production; require callers outside src/test.
+WIRE: CI job, atropos doctor, ArchitectureComplianceChecker
+
+
+7. Critical Path (Tier-1)
+SD7-T1-001 → 002 → 003 → 004
+SD7-T1-010 → 011 → (012|013|014|015|016|017) [drivers may proceed in parallel]
+SD7-T1-018 (PartitionClusterManager)
+SD7-T1-020 → 021 → 030 → 040 → 041 → 050 → 060
+SD7-T1-061, 062, 063, 064, 065 may proceed once their direct dependsOn are green.
+2050 atoms that depend only on Wave-0 may run in parallel with Wave-2/3 once contracts exist.
+SD7-T1-099 is the final gate.
+
+
+8. Non-Negotiable Mathematical Invariants
+I(Module_A; Module_B | Interface_Lattice) = 0.000 bits
+Territory(P_r) ∩ Territory(P_s) = ∅
+Non-zero native exit code = terminal rejection (zero false positives)
+Worker context ≤ partition footprint (default ≤ 12 000 tokens)
+C_real = min(C_impl, C_int, C_ver, C_ev)
+False-Green Tolerance = 0.0000 %
+Every code byte originates from atomic LLM synthesis against formal interfaces verified by genuine native compilers.
+
+
+9. Acceptance Criteria for Tier-1 Completion
+• AppSourceTemplate.kt and LanguageScaffold.kt are deleted and have zero production references.
+• AutonomousWaveOrchestrator can synthesize a non-trivial multi-file application from SpecGraph atoms.
+• All generated files pass ArchitectureComplianceChecker (atomicity + stub scanner).
+• Real toolchain drivers are invoked; no mock verify.sh remains.
+• At least one 2050 neuro-symbolic gate (ILSS or FMC or NSV) is live and blocking.
+• Caller-Completeness Gate (SD7-T1-099) is green.
+• A Zero-Entropy Proof Certificate is emitted for the synthesized application.
+Only after the above is true may Tier-2 atoms be scheduled.
+
+
+END OF TIER-1 OBLIGATION DAG — Source Document 7 Hybrid
+                                                   | Maximum atomization | Zero boilerplate | Hybrid Residual+HOE
+ATROPOS Obligation DAG — Source Doc 7 Hybrid · Tier-1 Factory Substrate + 2050 Neuro-Symbolic · 2026-10-06
+Generated under Document Planner Creation Mode · Maximum atomization · Zero boilerplate · All context preserved
+
+
+
+
+                                                      | Maximum atomization | Zero boilerplate | Hybrid Residual+HOE
+

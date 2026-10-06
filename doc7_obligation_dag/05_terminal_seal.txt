@@ -1,0 +1,606 @@
+ATROPOS OBLIGATION DAG — TERMINAL COMPLETION & SYSTEMIC SEAL ADDENDUM (Document 5) · 2026-10-06
+
+                                                                      ATROPOS OBLIGATION DAG
+                                                        TERMINAL COMPLETION & SYSTEMIC SEAL ADDENDUM
+                                                                  Document 5 / Final Canonical Closure of the Source Document 7 Series
+                                                               Atoms topologically interleave throughout Waves 0–5 and Tiers 1–4 · Zero cycles · 2026-10-06
+
+PREAMBLE — TOPOLOGICAL INVARIANT: Although this document is physically Document 5, every atom interleaves into earlier waves and tiers. dependsOn fields reference upstream
+atoms from Documents 1–4 (SD7-T1-*, SD7-T2-*, SD7-T3-*, SD7-T4-*, SD7-R-*, SD7-F-*, SD7-SG-*, SD7-2050-*) or intra-document atoms, forming a single verified DAG with zero
+cycles. Maximum atomization. Zero boilerplate. Hybrid Residual+HOE schema. Status tags: NEW-SUBSTRATE | 2050-NEURO-SYMBOLIC | AMENDMENT-CANDIDATE.
+
+
+1. Concrete Data Models & Sealed Hierarchies
+SD7-T-001+PartitionSynthesisResult [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-T1-040, SD7-R-061]
+R: Research sealed result hierarchies used by production parallel synthesizers that distinguish partition success from partition-local failure without aborting the global build.
+I: Create src/main/kotlin/atropos/core/factory/PartitionSynthesisResult.kt: sealed class PartitionSynthesisResult { data class Success(val partitionId: String, val files: Set<String>) : PartitionSynthesisResult();
+data class Failure(val partitionId: String, val reason: String) : PartitionSynthesisResult() }. Foreseeable error: stringly status; sealed only.
+WIRE: DecoupledWorkerSynthesizer, AutonomousWaveOrchestrator, DirectorAgent
+
+SD7-T-002+DeploymentResult [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-T4-010]
+R: Research sealed deployment result types that force callers to handle Success(url) vs Failed(error).
+I: Create src/main/kotlin/atropos/core/cloud/DeploymentResult.kt: sealed class DeploymentResult { data class Success(val url: String) : DeploymentResult(); data class Failed(val error: String) :
+DeploymentResult() }. Foreseeable error: nullable URL; sealed only.
+WIRE: CloudDeploymentAdapter, AutonomousDeliveryEngine, all concrete drivers
+
+SD7-T-003+ActionProposal-hierarchy [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-F-006]
+R: Research unforgeable action-proposal sealed hierarchies carrying cryptographic capability tokens.
+I: Expand ActionProposal.kt: sealed class ActionProposal { data class CreateFile(val path: String, val content: String, val sha256: String); data class ModifyFile(val path: String, val diff: String, val
+baseSha256: String); data class DeleteFile(val path: String); data class ExecuteToolchain(val command: List<String>, val worktreeId: String); data class MergeWorktree(val worktreeId: String, val
+targetBranch: String) }. Every variant carries capability proof. Foreseeable error: ambient authority; CapabilityEnforcer rejects missing rights.
+WIRE: BoundedAgencyGate, CapabilityEnforcer, TerritoryEnforcer
+
+SD7-T-004+ObservationRecord [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-F-084, SD7-F-010]
+R: Research bounded observation record schemas that replace raw transcripts under Storage Constitution Law 06.
+I: Create src/main/kotlin/atropos/core/memory/ObservationRecord.kt: data class ObservationRecord(val observationId: String, val timestamp: Long, val waveIndex: Int, val atomId: String, val
+predicateOutcomes: Map<String, Boolean>, val tokenCost: Int, val contextSnapshotHash: String). Immutable. Foreseeable error: retaining transcripts; discard after compaction.
+WIRE: ObservationCompactor, LocalMemoryStore, Custodian
+
+SD7-T-005+ParetoDecisionEnvelope [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-2050-ILSS-03]
+R: Research single-bit human clarification envelopes used by formal decision systems.
+I: Create ParetoDecisionEnvelope(val intentEntropy: Double, val tradeOffOptions: List<TradeOffVector>, val selectedOptionIndex: Int?, val singleBitReceipt: String?) and TradeOffVector(val
+latencyMsP99: Long, val memoryMbCeiling: Int, val consistencyModel: String, val costEstCents: Double, val complexityLocScore: Int). Foreseeable error: open-ended questions; single-bit only.
+WIRE: ILSS, FactoryClarificationRequest, L1-HumanOwnerCEO
+
+SD7-T-006+ProhibitionClause [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-F-019, SD7-2050-LHD-03]
+R: Research CAS-addressable prohibition clauses that permanently record human vetoes.
+I: Create ProhibitionClause(val vetoId: String, val promptHash: String, val forbiddenAstPattern: String, val targetTerritory: String, val authorSignature: String, val casHash: String). Append-only. Foreseeable
+error: mutable vetoes; CAS only.
+WIRE: GovernanceLedger, ResidualObligationLedger, ArchitectureComplianceChecker
+
+SD7-T-007+ApprovalEnvelope [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-F-030]
+R: Research Ed25519-signed approval envelopes for irreversible L1 actions.
+I: Create ApprovalEnvelope(val proposalId: String, val timestamp: Long, val nonce: Long, val ed25519Signature: String, val explicitOverrides: Set<String>). Verify signature before any governance
+mutation. Foreseeable error: unsigned approvals; reject.
+WIRE: L1-HumanOwnerCEO, AmendmentChain, SourceAuthorityLaw
+
+SD7-T-008+UnifiedRestoreVector [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-T2-025, SD7-F-009]
+R: Research unified checkpoint vectors that fuse the 6-element and 10-element SD6 restore vectors into a single unforgeable 13-element record.
+I: Create UnifiedRestoreVector(rootHumanAuthorityHash, activeSourceSpecHash, goalInvariantFingerprint, derivationGraphVersion, activeWaveIndex, currentAtomId, activeTerritory, completedPartitions,
+casEvidenceMapHash, activeContextManifestHash, remainingBudgetTokens, acceptedFindings, lastVerifiedGate). All 13 fields mandatory. Divergence = blocking halt. Foreseeable error: partial vector;
+require full.
+WIRE: RestartCoordinator, CAS, LocalMemoryStore, AutonomousWaveOrchestrator
+
+
+2. Core Utilities & Surgical Code Subsystems
+SD7-T-010+CodeFenceExtractor [NEW-SUBSTRATE]
+Track: S
+dependsOn: []
+R: Research robust code-fence extractors that handle missing language tags, indented blocks, nested fences and trailing backticks.
+I: Create src/main/kotlin/atropos/core/util/CodeFenceExtractor.kt with cleanCodeFences(raw: String): String and extractSourceCode(raw: String): String. Regex must cover ```(?:[a-zA-Z0-9]+)?\n([\s\S]*?)```
+and edge cases. Single shared utility. Foreseeable error: duplicated regex; one implementation only.
+WIRE: AtomSynthesisWorker, DecoupledWorkerSynthesizer, CompilerDiagnosticRepairLoop
+
+SD7-T-011+AtomSynthesisWorker-repairNode [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-F-002, SD7-T-010, SD7-F-070]
+R: Research single-node bounded repair loops with exponential backoff that remain inside the AtomSynthesisWorker path.
+I: Implement private repairNode(node: DagNode, worktree: Worktree, message: String): NodeSynthesisResult inside AtomSynthesisWorker. Max 3 attempts, DiagnosticLocationExtractor scoped,
+CodeFenceExtractor cleaned. Foreseeable error: unbounded retry; hard 3 + HypothesisDisputationEngine.
+WIRE: AtomSynthesisWorker, DagExecutionService, GovernedCompileGate
+                                                                      | Terminal Closure | Maximum atomization | Topologically interleaves all prior waves/tiers
+ATROPOS OBLIGATION DAG — TERMINAL COMPLETION & SYSTEMIC SEAL ADDENDUM (Document 5) · 2026-10-06
+SD7-T-012+AstSurgicalPatcher [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-F-070, SD7-R-018]
+R: Research AST surgical patchers (Tree-sitter node bounds, libCST, kotlin-compiler PSI) that replace only the failing statement/scope.
+I: Create AstSurgicalPatcher. Given DiagnosticLocationExtractor output, extract enclosing AST node, constrain repair prompt to that scope, splice the returned node back. Full-file rewrites banned during
+Wave-3 repair. Foreseeable error: whole-file write; enforce node-bound patch.
+WIRE: CompilerDiagnosticRepairLoop, TreeSitterGrammarBridge, AtomSynthesisWorker
+
+SD7-T-013+CompletionCalculus-mutation [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-T1-061, SD7-F-014]
+R: Research dedicated completion-calculus modules that compute the four independent scalars before the min.
+I: Mutate/implement src/main/kotlin/atropos/core/verification/CompletionCalculus.kt. C_real = min(C_impl, C_int, C_ver, C_ev). Each scalar evaluated by its own engine (see SD7-T-050..053). Foreseeable
+error: inlining into VerifiedCompletionGate; keep separate.
+WIRE: VerifiedCompletionGate, EvidenceCollector, AutonomousWaveOrchestrator
+
+SD7-T-014+extirpate-AppProjectGenerator [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-T1-001, SD7-T1-002, SD7-T1-003]
+R: Research hard-deletion patterns that leave zero residual call sites for deprecated generators.
+I: Hard-delete or gut AppProjectGenerator.kt so generateApp() cannot be invoked. ArchitectureComplianceChecker must fail CI if any remaining reference exists. Foreseeable error: residual import; scan and
+ban.
+WIRE: AppFactoryRouter, ArchitectureComplianceChecker, CI
+
+
+3. REST Wire Protocols, Cloud Drivers & Persistence
+SD7-T-020+Netlify-REST-wire-spec [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-T4-012]
+R: Research exact Netlify Deploy API contracts used by production deployers.
+I: Endpoint POST https://api.netlify.com/api/v1/sites/{site_id}/deploys; Headers Authorization: Bearer {token}, Content-Type: application/zip; Body = raw streaming ZIP bytes; Timeout 60 s; Poll GET
+.../deploys/{deploy_id} every 2 s, max 300 s; Success state = ready; Extract deploy_url. Foreseeable error: missing poll; always poll to ready.
+WIRE: NetlifyDeploymentDriver, SecretSinkMatrix, AutonomousDeliveryEngine
+
+SD7-T-021+Supabase-REST-pgwire-spec [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-T4-013]
+R: Research Supabase Management API query endpoint, PgBouncer vs direct ports, and atomic DDL transaction wrappers.
+I: REST POST https://api.supabase.com/v1/projects/{ref}/database/query with service_role_key; Payload {"query":"BEGIN; {DDL}; COMMIT;"}; PgBouncer 6543 / direct 5432; every migration atomic
+with automatic ROLLBACK on error; mandatory ENABLE ROW LEVEL SECURITY + default-deny policy on every table. Foreseeable error: open RLS; default deny.
+WIRE: SupabaseSchemaDriver, StorageSchemaCompiler, SecretSinkMatrix
+
+SD7-T-022+cloud-deploy-artifact-sanitizer [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-F-013, SD7-T4-011, SD7-T4-012]
+R: Research ignore-spec parsers (.gitignore, .vercelignore) and secret scanners that run before any cloud upload.
+I: All cloud uploaders must parse .gitignore + .vercelignore and run SecretSinkMatrix before streaming bytes. Upload of any matched secret aborts build and logs ZERO_REWARD_PENALTY. Foreseeable
+error: unbounded Files.walk; filter first.
+WIRE: VercelDeploymentDriver, NetlifyDeploymentDriver, SecretSinkMatrix, GovernanceLedger
+
+
+4. DLOI Non-Functional Contract Lattices
+SD7-T-030+DLOI-006-SECURITY-lattice [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-F-016, SD7-2050-ILSS-02]
+R: Research automatic injection of constant-time crypto and OWASP Top-10 prepared-statement constraints.
+I: Every security/auth module receives: (1) constant-time comparison via MessageDigest.isEqual / SubtleCrypto, (2) all SQL as prepared statements or parameterized tagged templates, (3) strict
+type-boundary parsing before business logic. Foreseeable error: optional; mandatory for domain 006.
+WIRE: DloiService, ContractLatticeSynthesizer, ArchitectureComplianceChecker
+
+SD7-T-031+DLOI-410-DATA-lattice [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-F-016, SD7-2050-ILSS-02]
+R: Research automatic ACID transaction proofs, index affinity and connection-pool ceilings.
+I: Every database/storage module receives: (1) multi-table mutations accept explicit transaction context, (2) max pool size hard-coded 5–20 with connection-timeout ceilings, (3) foreign keys and query filters
+synthesize matching CREATE INDEX DDL. Foreseeable error: unbounded pools; clamp.
+WIRE: DloiService, ContractLatticeSynthesizer, StorageSchemaCompiler
+
+SD7-T-032+DLOI-620-RUNTIME-lattice [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-F-016, SD7-2050-ILSS-02]
+R: Research GC-pressure invariants, graceful-shutdown drain contracts and backpressure handlers.
+I: Every daemon/service module receives: (1) no unbounded in-memory collections—all caches LRU with size caps, (2) Closeable/AsyncDisposable with socket-drain timeouts, (3) streaming pipes honor
+consumer drain events. Foreseeable error: unbounded collections; reject.
+WIRE: DloiService, ContractLatticeSynthesizer, ArchitectureComplianceChecker
+
+
+5. Concrete Mathematical & Sensing Algorithms
+SD7-T-040+Amdahl-variable-accumulators [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-F-051]
+R: Research live accumulators for coordination, rework and verification-debt fractions.
+I: coordinationOverhead = (T_routing + T_serialization + T_lockWait) / T_total; reworkConflict = sumRepairAttempts / TotalCompletedAtoms; verificationDebt = (OpenDiagnostics + UncheckedProperties)
+/ TotalSynthesizedProperties. All clamped [0.0,1.0]. N_effective drives SetConcurrentWorkers(coerceIn(1,64)). Foreseeable error: static constants; measure live.
+WIRE: DirectorAgent, GovernanceLedger, PartitionClusterManager
+
+SD7-T-041+Shannon-epistemic-entropy [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-2050-ILSS-03, SD7-T-005]
+R: Research Shannon entropy estimators over DLOI embedding centroids.
+I: H(Intent|Prompt,DLOI) = -Σ P(Domain_k|Prompt) log₂ P(Domain_k|Prompt) where P is softmax of cosine distance to DLOI_006/410/620 centroids. If H > ε emit ParetoDecisionEnvelope and await
+single-bit selection. Foreseeable error: undefined estimator; implement this formula.
+WIRE: ILSS, DloiService, FactoryClarificationRequest
+
+                                                                    | Terminal Closure | Maximum atomization | Topologically interleaves all prior waves/tiers
+ATROPOS OBLIGATION DAG — TERMINAL COMPLETION & SYSTEMIC SEAL ADDENDUM (Document 5) · 2026-10-06
+SD7-T-050+C-impl-scalar-engine [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-T-013]
+R: Research deterministic C_impl evaluators that prove required implementation exists and contains no stub AST nodes.
+I: C_impl = 1.0 iff all target files exist on disk with non-zero bytes AND Tree-sitter SCM queries report zero hollow stubs; else 0.0. Foreseeable error: existence-only; also scan AST.
+WIRE: CompletionCalculus, ArchitectureComplianceChecker, TreeSitterGrammarBridge
+
+SD7-T-051+C-int-scalar-engine [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-T-013]
+R: Research C_int evaluators that prove the runtime DI container resolves every binding.
+I: C_int = 1.0 iff runtime DI container resolves all bindings with zero missing dependencies; else 0.0. Foreseeable error: compile-only; require runtime resolution.
+WIRE: CompletionCalculus, DependencyInjectionAssembler
+
+SD7-T-052+C-ver-scalar-engine [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-T-013, SD7-T1-072]
+R: Research C_ver evaluators that require compiler exit 0, test exit 0 and mutation-kill ≥ 0.85.
+I: C_ver = 1.0 iff compiler exit 0 AND test suite exit 0 AND mutationKillRate ≥ 0.85; else 0.0. Foreseeable error: soft thresholds; hard 0.85.
+WIRE: CompletionCalculus, GovernedCompileGate, mutation-testing oracle
+
+SD7-T-053+C-ev-scalar-engine [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-T-013, SD7-F-014]
+R: Research C_ev evaluators that require every mandatory Merkle receipt hash present.
+I: C_ev = 1.0 iff all required Merkle receipt hashes are present in EvidenceCollector; else 0.0. Foreseeable error: partial evidence; full set required.
+WIRE: CompletionCalculus, EvidenceCollector, IntegrityProofs
+
+SD7-T-054+QueuedRepairState-transition [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-F-083, SD7-T2-024]
+R: Research durable queued-repair state machines that preserve partition context across total provider exhaustion.
+I: When all free/fallback providers return 429 or quota exhausted: serialize partition state to LocalMemoryStore, set status = QUEUED_REPAIR, halt worker without build abort, listen to CooldownQueue
+Retry-After events, resume on unfreeze. Foreseeable error: abort on exhaustion; queue instead.
+WIRE: ProviderCascadeRouter, CooldownQueue, LocalMemoryStore, DirectorAgent
+
+SD7-T-055+formal-M-provider-set [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-T2-011]
+R: Research formal model-provider set structures that parameterize the synthesis operator Φ.
+I: Define mathematical model M as the set of heterogeneous providers with context limits and token budgets. Φ: S × M → C. RoutePolicy is a pure function over M, not ad-hoc strings. Foreseeable error:
+stringly providers; typed M only.
+WIRE: ProviderCascadeRouter, RoutePolicy, FreeModeGuard
+
+
+6. Multi-Language Contract Emitters & DI Assemblers
+SD7-T-060+KotlinInterfaceEmitter [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-T1-020]
+R: Research pure Kotlin interface emitters that produce zero executable statements.
+I: Create KotlinInterfaceEmitter. Output only interface / data-class signatures. AST walk rejects any function body. Foreseeable error: accidental bodies; reject.
+WIRE: ContractLatticeSynthesizer
+
+SD7-T-061+RustTraitEmitter [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-T1-020]
+R: Research pure Rust trait emitters.
+I: Create RustTraitEmitter. Traits only, no impl blocks in Wave-0. Foreseeable error: impl leakage; reject.
+WIRE: ContractLatticeSynthesizer
+
+SD7-T-062+TypeScriptDtsEmitter [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-T1-020]
+R: Research pure .d.ts emitters.
+I: Create TypeScriptDtsEmitter. Declarations only. Foreseeable error: value exports; reject.
+WIRE: ContractLatticeSynthesizer
+
+SD7-T-063+GoInterfaceEmitter [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-T1-020]
+R: Research pure Go interface emitters.
+I: Create GoInterfaceEmitter. Interfaces only. Foreseeable error: concrete types; reject.
+WIRE: ContractLatticeSynthesizer
+
+SD7-T-064+SqlDdlEmitter [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-T1-020, SD7-T4-001]
+R: Research pure SQL DDL emitters that include indexes and RLS stubs.
+I: Create SqlDdlEmitter. DDL + CREATE INDEX + ENABLE ROW LEVEL SECURITY stubs. Foreseeable error: DML; reject.
+WIRE: ContractLatticeSynthesizer, StorageSchemaCompiler
+
+SD7-T-065+ProtobufOpenApiEmitter [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-T1-020]
+R: Research pure Protobuf / OpenAPI 3.1 emitters.
+I: Create ProtobufOpenApiEmitter. Schema-only. Foreseeable error: implementation stubs; reject.
+WIRE: ContractLatticeSynthesizer
+
+SD7-T-070+KoinModuleAssembler [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-T1-050]
+R: Research pure Koin module synthesizers.
+I: Create KoinModuleAssembler. Wires implementations to Wave-0 interfaces only. Foreseeable error: direct constructors; ban.
+WIRE: DependencyInjectionAssembler
+
+                                                                      | Terminal Closure | Maximum atomization | Topologically interleaves all prior waves/tiers
+ATROPOS OBLIGATION DAG — TERMINAL COMPLETION & SYSTEMIC SEAL ADDENDUM (Document 5) · 2026-10-06
+SD7-T-071+DaggerComponentAssembler [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-T1-050]
+R: Research pure Dagger component synthesizers for Android.
+I: Create DaggerComponentAssembler. Foreseeable error: static singletons; ban.
+WIRE: DependencyInjectionAssembler
+
+SD7-T-072+FastApiDependsAssembler [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-T1-050]
+R: Research pure FastAPI Depends synthesizers.
+I: Create FastApiDependsAssembler. Foreseeable error: global state; ban.
+WIRE: DependencyInjectionAssembler
+
+SD7-T-073+NestJsModuleAssembler [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-T1-050]
+R: Research pure NestJS module synthesizers.
+I: Create NestJsModuleAssembler. Foreseeable error: ambient providers; ban.
+WIRE: DependencyInjectionAssembler
+
+SD7-T-074+GoWireAssembler [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-T1-050]
+R: Research pure Go wire synthesizers.
+I: Create GoWireAssembler. Foreseeable error: init() side effects; ban.
+WIRE: DependencyInjectionAssembler
+
+
+7. Low-Level OS Sandboxing & Platform Shims
+SD7-T-080+Termux-proot-shim [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-R-020, SD7-F-046]
+R: Research proot fallbacks for Android/Termux where unshare requires root.
+I: When HostArch==ARM64 and Termux detected: proot -0 -b /data -b /dev -b /proc -r {isolated_worktree_chroot} {toolchain_command}. READ_ONLY_ROOT + WRITEABLE_WORKTREE only.
+Foreseeable error: host escape; fail closed.
+WIRE: ToolchainExecutionDriver, BoundedProcessRunner
+
+SD7-T-081+macOS-seatbelt-shim [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-R-020]
+R: Research dynamic Seatbelt profile generation for macOS sandbox-exec.
+I: When HostOS==DARWIN: generate .sb profile (allow default; deny file-write* except {worktree_path}); execute /usr/bin/sandbox-exec -f {profile} {command}. Foreseeable error: write outside worktree;
+deny.
+WIRE: ToolchainExecutionDriver, BoundedProcessRunner
+
+SD7-T-082+libpty-cross-compile [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-F-046]
+R: Research cross-compilation of openpty/forkpty bindings for x86_64-linux, aarch64-linux, x86_64-darwin, aarch64-darwin.
+I: Ship C sources + JNI/JNA bindings for libpty covering the four target triples. Required because ProcessBuilder cannot spawn a true PTY. Foreseeable error: fake PTY; require real openpty.
+WIRE: PtyNativeBridge, BoundedProcessRunner, all drivers
+
+
+8. UI Client Surfaces (No VS Code Fork)
+SD7-T-090+Compose-Desktop-target [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-F-086, SD7-T2-002]
+R: Research Jetpack Compose Desktop control planes that talk to a headless daemon via SSE.
+I: apps/atropos-desktop: Compose Desktop (KMP) communicating with atropos.jar via SSEBridgeProtocol. Daemon lifecycle independent of UI; UI crash leaves builds running. Foreseeable error:
+embedding agent in UI process; keep separate.
+WIRE: atropos.jar, SSEBridgeProtocol, BridgeHttp
+
+SD7-T-091+Thin-Editor-window [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-F-086, SD7-T2-002]
+R: Research zero-dependency thin editor windows that render diffs and DAG state from localhost SSE.
+I: apps/atropos-editor: thin window binding to localhost:7411/events/sse. Renders diffs and topological execution state. No VS Code fork. Foreseeable error: full IDE; keep thin.
+WIRE: atropos.jar, SSEBridgeProtocol
+
+
+9. Reference-Code Bug Fixes & Hardening
+SD7-T-100+decouple-worker-provider-dispatch [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-T2-011, SD7-F-002, SD7-T1-040]
+R: Research dynamic provider dispatch that eliminates hardcoded provider strings.
+I: Remove requestedProvider = "anthropic" from AtomSynthesisWorker, DecoupledWorkerSynthesizer and CompilerDiagnosticRepairLoop. All dispatch goes through ProviderCascadeRouter + RoutePolicy.
+ArchitectureComplianceChecker flags any remaining literal provider string. Foreseeable error: residual hardcode; scan and ban.
+WIRE: AtomSynthesisWorker, DecoupledWorkerSynthesizer, CompilerDiagnosticRepairLoop, ArchitectureComplianceChecker
+
+SD7-T-101+enforce-platform-token-fail-closed [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-T1-060, SD7-F-075]
+R: Research fail-closed credential checks for cloud platforms.
+I: If required platform token (VERCEL_TOKEN, NETLIFY_TOKEN, etc.) is null/empty, abort with terminal error code 78. Never return Success with deploymentUrl = null. Foreseeable error: silent skip;
+fail closed.
+WIRE: AutonomousWaveOrchestrator, all cloud drivers
+
+SD7-T-102+android-driver-filesystem-robustness [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-F-073]
+R: Research robust filesystem checks for gradlew executability and dynamic APK discovery.
+
+
+                                                                    | Terminal Closure | Maximum atomization | Topologically interleaves all prior waves/tiers
+ATROPOS OBLIGATION DAG — TERMINAL COMPLETION & SYSTEMIC SEAL ADDENDUM (Document 5) · 2026-10-06
+I: Always Files.setPosixFilePermissions(gradlew, OWNER_READ|OWNER_EXECUTE|...). Dynamic APK/AAB resolution by walking build/outputs filtering by extension and non-zero size. Never
+hardcode app/build/outputs/apk/debug. Foreseeable error: Permission denied or missing path; harden.
+WIRE: AndroidSdkDriver, ToolchainExecutionDriver
+
+SD7-T-103+worktree-read-only-contract-mount [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-F-008, SD7-T1-040]
+R: Research read-only mounts of Wave-0 contracts into isolated worktrees that do not trigger TerritoryEnforcer.
+I: Mount contractInterfaces into the worktree as immutable/read-only projections (or copy with read-only FS flags). TerritoryEnforcer permits the mount because it is not a write of implementation code.
+Foreseeable error: false cross-territory flag; distinguish contract mount from implementation write.
+WIRE: IsolatedWorktreeService, TerritoryEnforcer, DecoupledWorkerSynthesizer
+
+
+10. Swarm Fabric, Storage & Verification Oracles
+SD7-T-110+SwarmMessageBus [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-F-031, SD7-F-036]
+R: Research O(N) tree-routed message buses that hard-block O(N²) flat peer messaging.
+I: Create SwarmMessageBus. All cross-role communication travels through Director or HR Information Router. Flat peer messaging rejected at compile time / runtime. Foreseeable error: direct L6↔L6; ban.
+WIRE: DirectorAgent, HR-InformationRouter, all swarm roles
+
+SD7-T-111+topological-bottleneck-scheduler [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-F-031, SD7-T1-018]
+R: Research critical-path schedulers that prioritize high betweenness-centrality and longest downstream weight.
+I: Director schedules atoms by betweenness centrality × downstream path weight. Bottlenecks first. Foreseeable error: FIFO only; critical-path first.
+WIRE: DirectorAgent, PartitionClusterManager
+
+SD7-T-112+worktree-rollback-eviction [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-F-082, SD7-F-008]
+R: Research immediate worktree rollback and subagent eviction on territory violation.
+I: On cross-territory write: git worktree remove --force, subagent terminated, ZERO_REWARD_PENALTY logged. Foreseeable error: delayed cleanup; immediate.
+WIRE: IsolatedWorktreeService, TerritoryEnforcer, DirectorAgent, GovernanceLedger
+
+SD7-T-113+AST-mutation-injection-engine [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-T1-072]
+R: Research systematic AST mutation injectors for the four mandated defect classes.
+I: Inject ≥10 mutations: negate conditionals, swap arithmetic operators, invert boundaries, erase method calls. Wave-1 suite must kill ≥85 %. Foreseeable error: equivalent mutants; quarantine.
+WIRE: mutation-testing oracle, VerifiedCompletionGate
+
+SD7-T-114+property-fuzz-domain-generators [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-T3-010]
+R: Research type-domain generators for extreme integers, Unicode stress, deep JSON, null injection, concurrency races.
+I: Create ExtremeIntegerDomainGenerator, UnicodeStressCorpus, DeepJsonGenerator. 1000 deterministic PRNG iterations; seed recorded in evidence. Foreseeable error: non-deterministic; seed everything.
+WIRE: property-based fuzzing oracle, EvidenceCollector
+
+SD7-T-115+strict-serialization-configs [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-R-040]
+R: Research fail-closed serializer configurations across Zod, Pydantic, Serde, kotlinx.serialization.
+I: Zod .strict(); Pydantic extra='forbid'; Serde deny_unknown_fields; kotlinx ignoreUnknownKeys=false. Unknown fields at any boundary trigger parse failure. Foreseeable error: permissive defaults; force
+strict.
+WIRE: runtime-codec-synthesis, ArchitectureComplianceChecker
+
+SD7-T-116+presentation-execution-linter [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-T1-070]
+R: Research AST linters that flag UI primitives inside data/execution files.
+I: ArchitectureComplianceChecker rule: no Compose/React/UI primitives inside data or execution packages. Soft 350 / hard 500 LOC still enforced. Foreseeable error: mixed concerns; reject.
+WIRE: ArchitectureComplianceChecker
+
+SD7-T-117+CAS-hybrid-replication [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-T2-020, SD7-R-032]
+R: Research hybrid CAS replication that keeps pure synthesis air-gapped while pushing WARM/COLD to R2/Drive.
+I: Local synthesis remains air-gapped. WARM/COLD objects asynchronously replicated to remote R2 (primary) and Google Drive CAS (secondary). Foreseeable error: network call inside Wave-0/2; forbid.
+WIRE: CAS, Custodian, Storage Constitution
+
+SD7-T-118+Merkle-binary-artifact-store [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-T2-021]
+R: Research content-addressed binary artifact caches for .o, .class, .rlib, .jar.
+I: Merkle store of compiled artifacts keyed by ModuleHash. Cache hit skips recompilation. Foreseeable error: hash collision; verify full content after hit.
+WIRE: NativeToolchainRegistry, CAS, GovernedCompileGate
+
+SD7-T-119+candidate-JAR-lifecycle-LRU [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-T2-020, SD7-F-093]
+R: Research candidate JAR lifecycle trackers and diagnostic-hash LRU caches that block oscillation.
+I: Track candidate JARs; GC after promote/reject. LRU of diagnostic hashes; same hash twice → HypothesisDisputationEngine. Foreseeable error: unbounded candidates; enforce lifecycle.
+WIRE: Custodian, HypothesisDisputationEngine, CompilerDiagnosticRepairLoop
+
+SD7-T-120+dynamic-host-telemetry-scaler [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-F-003, SD7-T2-022]
+R: Research real-time concurrency scalers driven by battery and temperature.
+I: HostHealthMonitor feeds scaler; parallel workers coerced to [1,64] based on battery <20 % or temp >42 °C. Foreseeable error: ignoring telemetry; hard throttle.
+WIRE: HostHealthMonitor, DirectorAgent, PartitionClusterManager
+
+SD7-T-130+KotlinAstToSmtTranslator [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-F-091]
+R: Research Kotlin AST → SMT-LIB v2 front-ends for the four proof categories.
+                                                                     | Terminal Closure | Maximum atomization | Topologically interleaves all prior waves/tiers
+ATROPOS OBLIGATION DAG — TERMINAL COMPLETION & SYSTEMIC SEAL ADDENDUM (Document 5) · 2026-10-06
+I: Create KotlinAstToSmtTranslator covering overflow, bounds, null, state-machine. Foreseeable error: partial; all four required.
+WIRE: SMT verification path, GovernedCompileGate
+
+SD7-T-131+TypeScriptAstToSmtTranslator [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-F-091]
+R: Research TypeScript AST → SMT-LIB front-ends.
+I: Create TypeScriptAstToSmtTranslator. Foreseeable error: missing categories; all four.
+WIRE: SMT verification path
+
+SD7-T-132+PythonAstToSmtTranslator [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-F-091]
+R: Research Python AST → SMT-LIB front-ends.
+I: Create PythonAstToSmtTranslator. Foreseeable error: missing categories; all four.
+WIRE: SMT verification path
+
+SD7-T-133+RustMirToSmtTranslator [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-F-091]
+R: Research Rust MIR → SMT-LIB front-ends.
+I: Create RustMirToSmtTranslator. Foreseeable error: missing categories; all four.
+WIRE: SMT verification path
+
+SD7-T-140+TlaAlloyGenerator [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-2050-FMC-01]
+R: Research compilers that translate Wave-0 interfaces into TLA+ / Alloy specifications.
+I: Create TlaAlloyGenerator. Emits state variables, transition relations, safety and liveness properties from type signatures. Foreseeable error: incomplete models; require safety+liveness.
+WIRE: ContractLatticeSynthesizer, TlcModelCheckerHarness
+
+SD7-T-141+TlcModelCheckerHarness [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-T-140]
+R: Research headless TLC harnesses that configure bounds and assert zero deadlock / zero race.
+I: Create TlcModelCheckerHarness. Spawns tlc2.TLC, sets depth/workers/symmetry, parses output, fails closed on deadlock or race. Foreseeable error: unbounded exploration; hard bounds.
+WIRE: VerifiedCompletionGate, EvidenceCollector
+
+SD7-T-142+AstEditDistanceCalculator [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-2050-NSV-03]
+R: Research Zhang-Shasha / RTED tree-edit-distance algorithms for tri-model disputation.
+I: Create AstEditDistanceCalculator. Computes structural distance across three model outputs; feeds arbitrator. Foreseeable error: textual diff only; structural required.
+WIRE: tri-model disputation, ProviderCascadeRouter
+
+SD7-T-143+concolic-path-inversion [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-2050-LHD-01]
+R: Research concolic path-condition collectors and SMT inversion engines.
+I: Create path-condition collector + inversion engine that forces unreached branches. Target MC/DC for critical lanes. Foreseeable error: path explosion; bound depth.
+WIRE: concolic test generator, SMT path, VerifiedCompletionGate
+
+SD7-T-150+ChaosWorkloadDriver [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-2050-FMC-02]
+R: Research synthetic concurrent traffic generators for digital-twin chaos.
+I: Create ChaosWorkloadDriver. 10 000 deterministic transactions. Foreseeable error: non-deterministic; seed everything.
+WIRE: Digital Twin, EvidenceCollector
+
+SD7-T-151+ClockLatencyChaosInjector [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-2050-FMC-02]
+R: Research clock-drift and socket-latency injectors.
+I: Create ClockLatencyChaosInjector. Injects controlled latency and clock skew. Foreseeable error: unbounded skew; clamp.
+WIRE: Digital Twin, ChaosWorkloadDriver
+
+SD7-T-152+HeapResidualEvaluator [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-2050-FMC-02, SD7-2050-LHD-02]
+R: Research byte-accurate heap residual evaluators that prove post-GC memory returns to baseline.
+I: Create HeapResidualEvaluator. Pre/post GC dumps; residual unreferenced bytes must be 0 after warmup. Error rate < 10^{-6}. Foreseeable error: qualitative survival; numeric proof required.
+WIRE: Digital Twin, EvidenceCollector, VerifiedCompletionGate
+
+
+11. Canonical Prompt Contract Lattices
+SD7-T-160+clean-room-prompt-fixture [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-T1-064, SD7-T1-021]
+R: Research frozen, testable prompt fixtures that encode the clean-room invariant.
+I: Formalize the exact Clean-Room Decoupled Synthesis prompt (ROLE, INVARIANT I(A;B|Contracts)=0, ATOM, TARGET, INTERFACES, CONSTRAINTS 1–4) as an immutable test fixture and
+production template. Foreseeable error: drift; freeze and hash.
+WIRE: AgentPromptContract, DecoupledWorkerSynthesizer, AtomSynthesisWorker
+
+SD7-T-161+repair-prompt-fixture [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-T1-041, SD7-T-012]
+R: Research frozen surgical-repair prompt fixtures constrained to AST scope.
+I: Formalize the Compiler Diagnostic Surgical Repair prompt (ROLE, OBJECTIVE, DIAGNOSTIC MAP, ENCLOSING AST SCOPE, INTERFACES, CONSTRAINTS 1–3) as immutable fixture.
+Foreseeable error: full-file repair; scope only.
+WIRE: CompilerDiagnosticRepairLoop, AstSurgicalPatcher
+
+
+12. Terminal Acceptance Gate
+SD7-FINAL-999+systemic-seal-audit-gate [NEW-SUBSTRATE]
+Track: S
+                                                                     | Terminal Closure | Maximum atomization | Topologically interleaves all prior waves/tiers
+ATROPOS OBLIGATION DAG — TERMINAL COMPLETION & SYSTEMIC SEAL ADDENDUM (Document 5) · 2026-10-06
+dependsOn: [ALL atoms in Documents 1–5]
+R: Research exhaustive systemic-seal auditors that perform byte-level AST and inventory cross-checks across an entire multi-document obligation series.
+I: atropos doctor --systemic-seal performs byte-level AST cross-checks across all five DAG documents, verifying every class, method, constant, formula, wire endpoint, numeric ceiling and invariant is
+present, non-empty and wired into production. Zero residual omissions permitted. This is the absolute terminal gate. SEAL_STATUS =
+THE_ARCHITECTURE_IS_DEFINITIVELY_COMPLETE_AND_CLOSED only when this gate is green. Foreseeable error: false green; require exact symbol and equation coverage.
+WIRE: CI job, atropos doctor, ArchitectureComplianceChecker, GovernanceLedger, all production entry points
+
+
+13. Series Ordering & Seal Declaration
+Document 1 — Tier-1 Hybrid DAG
+Document 2 — Full Multi-Tier DAG
+Document 3 — Residual Obligation DAG
+Document 4 — Final Exhaustive Addendum DAG
+Document 5 — This Terminal Completion & Systemic Seal Addendum
+SD7-FINAL-999 is the last atom. When it is green, Source Document 7 and every addendum are fully atomized. The specification is sealed.
+
+END OF TERMINAL COMPLETION & SYSTEMIC SEAL ADDENDUM
+Document 5 of 5 · Architecture definitively complete and closed · 2026-10-06
+
+
+
+
+                                                                               | Terminal Closure | Maximum atomization | Topologically interleaves all prior waves/tiers
+

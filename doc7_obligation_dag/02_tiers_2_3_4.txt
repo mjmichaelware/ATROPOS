@@ -1,0 +1,438 @@
+ATROPOS Obligation DAG — Full Multi-Tier (2/3/4) Continuation of Source Doc 7 · 2026-10-06
+
+                       ATROPOS OBLIGATION DAG — FULL MULTI-TIER
+                                    Continuation & Completion of Source Document 7 + SD6 Canonical Addenda
+                                             Tiers 2 · 3 · 4 + All Deferred Subsystems + Advanced Research Expansions
+                                   Maximum atomization · Zero boilerplate · Hybrid Residual RESEARCH+IMPL + HOE Track/WIRE · 2026-10-06
+
+This document is the canonical continuation of the Tier-1 Obligation DAG. It atomizes every deferred domain from Source Document 7 and the SD6
+Superiority Addenda (Parts I & II). It is designed to be appended directly beneath Source Document 7.
+Extraction rules remain locked: maximum atomization, hybrid format, research prompts force external discovery, impl notes name foreseeable failures and
+cheapest correct paths that preserve the existing ATROPOS substrate.
+
+
+TIER-2 — Long-Horizon Governance, Swarm, Storage & Resource Control
+Prerequisite: Tier-1 Caller-Completeness Gate (SD7-T1-099) green and a real application has been synthesized end-to-end.
+
+
+2.1 Strategic Overrules & Architectural Foundations
+SD7-T2-001+open-core-airgap-invariant [NEW-SUBSTRATE]
+Track: S
+dependsOn: []
+R: Research sovereign local-first architectures (Termux, PureOS, GrapheneOS, NixOS offline modes) that keep planning, DAG synthesis and context indexes fully
+air-gapped while permitting only stateless zero-retention remote inference or CAS storage.
+I: Enforce Open-Core Split: core planner, DAG synthesizer, context index and generator remain 100 % open-source local. Hosted plane restricted to optional
+stateless API or replicated CAS. Air-Gap Invariant: full synthesis and verification operate without network. Foreseeable error: accidental network call inside
+Wave-0/2; BoundedAgencyGate must refuse any network capability during pure synthesis.
+WIRE: BoundedAgencyGate, SourceAuthorityLaw, LocalMemoryStore, CAS
+
+SD7-T2-002+vscode-fork-prohibition [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-T2-001]
+R: Research headless daemon + thin surface patterns (LSP servers, Language Server Protocol, headless Claude Code / Aider / Codex) that avoid unmaintainable
+editor forks.
+I: Formal rule: do not fork VS Code. Architecture = local headless daemon (atropos.jar) + thin command surfaces (CLI/TUI + local Bridge HTTP/SSE + Compose
+Desktop + Android APK + optional thin editor window). Agent process lives outside editor process so it survives crashes, runs in CI and executes headless.
+Foreseeable error: embedding heavy editor process; keep daemon independent.
+WIRE: MainActivity (Android), BridgeHttp, CLI entrypoints, atropos.jar packaging
+
+SD7-T2-003+integration-resequencing [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-T2-001]
+R: Research phased integration ladders used by production agent systems that keep local toolchains as Tier-0 and treat chat/issue trackers as distribution, not core.
+I: Resequenced tiers: Tier-0 = Filesystem sandbox + local Git + local toolchains (kotlinc, cargo, tsc, go, gradlew). Tier-1 = Sentry (stack→file:line→territory
+patch→evidence) + GitHub Actions CI (headless clean-machine reproducibility). Tier-2 = Linear/Jira/Confluence/Datadog/Puppeteer. Tier-3 =
+Slack/Discord/Community MCP. All integrations under BoundedAgencyGate + SecretSinkMatrix + Territory. Raw tokens never enter prompts. Foreseeable error:
+elevating chat into production core; refuse.
+WIRE: BoundedAgencyGate, SecretSinkMatrix, TerritoryGrant, CI configuration
+
+
+2.2 Swarm Hierarchy, Coordination & Model Routing
+SD7-T2-010+six-level-swarm-topology [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-T1-060]
+R: Research hierarchical multi-agent topologies (AutoGen, CrewAI, MetaGPT, military command nets) that keep communication O(N) rather than O(N²) and
+enforce territory disjointness.
+I: Implement 6-level hierarchy: L1 Human Owner/CEO (goal, irreversible approvals, governance mutation); L2 Director Agent (topological decomposition,
+territory assignment, worktree monitoring, drift detection); L3 Division VP (domain coordination synthesis/verification/storage/delivery); L4 Supervisor Manager
+(team territory tracking, conflict resolution); L5 Specialist Agent (narrow domain); L6 Worker Agent (isolated atom, zero sibling visibility). Cross-cutting: HR
+Information Router (audited filtered chokepoint), Auditor (read-only, no execution capture), Custodian (state hygiene, GC, zero LLM overhead). Foreseeable error:
+flat peer communication; ban and force hierarchical routing.
+WIRE: AutonomousWaveOrchestrator, DirectorAgent (new), TerritoryGrant, IsolatedWorktreeService
+
+SD7-T2-011+heterogeneous-provider-matrix [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-T2-010]
+R: Research specialized model routing matrices that assign high-velocity drafting, large-context planning, architectural audit, algorithmic cores and zero-cost local
+validation to distinct providers while surviving 429/offline.
+I: Dispatch matrix: Groq Llama-3.3-70B = high-velocity code workers & AST chunk drafting; Gemini 2.5 Pro = large-context spec & DLOI topological planning;
+Anthropic Claude 3.7 Sonnet = architectural audit, Wave-0 contracts, complex reflexive repair; DeepSeek-V3 = algorithmic routines, heuristic optimization, data
+structures; Ollama local ARM64 = zero-cost on-device AST validator & security gatekeeper. Fallback: 429 or offline → next provider or local Ollama without
+pipeline interrupt. Foreseeable error: hard-coding a single provider; RoutePolicy must remain pure data.
+WIRE: ProviderCascadeRouter, RoutePolicy, FreeModeGuard
+
+SD7-T2-012+swarm-parallelism-math [NEW-SUBSTRATE]
+Track: S
+                                                           | Maximum atomization | Hybrid Residual+HOE | All tiers complete
+ATROPOS Obligation DAG — Full Multi-Tier (2/3/4) Continuation of Source Doc 7 · 2026-10-06
+dependsOn: [SD7-T2-010]
+R: Research Amdahl-derived effective parallelism formulas that subtract coordination overhead, rework conflict and verification debt. Examine real measurements
+from large agent swarms.
+I: Speedup(N) = 1 / ((1-p) + p/N). N_effective = N × (1-coordinationOverhead) × (1-reworkConflict) × (1-verificationDebt). Max parallel lanes = 64 concurrent
+sub-agents across disjoint worktrees. Critical-path scheduling prioritizes topological bottleneck atoms. ConflictRisk ∝ Σ(|Ti ∩ Tj| / |Ti ∪ Tj|) must remain 0 by
+territory disjointness. Foreseeable error: optimistic N without measuring overhead; instrument and feed back into N_effective.
+WIRE: DirectorAgent, PartitionClusterManager, TerritoryGrant
+
+SD7-T2-013+bounded-agency-proposal-gate [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-T2-001, SD7-T2-010]
+R: Research strongly-typed action proposal pipelines that never execute raw LLM prose or shell commands ambiently (capability systems, object-capability
+security, seL4-style enforcement).
+I: Flow: Model output → untrusted text → deterministic parser → ActionProposal → BoundedAgencyGate → CapabilityEnforcer → TerritoryEnforcer → sandbox
+execution. No raw LLM prose or shell commands execute ambiently. All actions strongly typed. Foreseeable error: stringly-typed commands; reject any proposal
+that is not a sealed data class.
+WIRE: BoundedAgencyGate, CapabilityEnforcer, TerritoryEnforcer, ActionProposal
+
+
+2.3 Storage Constitution, Resource Governance & Hardware Health
+SD7-T2-020+storage-constitution-laws [NEW-SUBSTRATE]
+Track: S
+dependsOn: []
+R: Research local-first retention hierarchies and mark-and-sweep GC used by CAS systems (IPFS, Perkeep, Content Addressable Storage in Bazel) that keep phone
+flash from filling during multi-week autonomous runs.
+I: Laws: (01) Global device ceiling ATROPOS_TOTAL_LOCAL_BYTES ≤ N (per-device profile). (02) Retention tiers HOT=current checkpoint+active proposal,
+WARM=last K successful promotions, COLD=remote R2 CAS only, EXPIRE=failed candidates+rejected proposals+old worktrees. (03) Artifact GC atoms: GC
+worktrees after promote/reject, GC candidate JARs not in active promotion, cap evidence bundle size (hashes local, bulk on R2). (04) App-factory offload:
+source+tiny evidence local, full git history and build products to GitHub/R2, local build dirs ephemeral. (05) Pre-flight free-space gate = blocking gate equal to
+VerifiedCompletionGate. (06) Memory compression: observations become structured bounded records, raw transcripts ephemeral. Foreseeable error: unbounded
+evidence growth; Custodian must enforce after every wave.
+WIRE: Custodian, LocalMemoryStore, CAS, IsolatedWorktreeService, EvidenceCollector
+
+SD7-T2-021+merkle-incremental-build-cache [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-T2-020]
+R: Research Merkle digest trees for incremental builds (Bazel remote cache, Nix store, content-addressed compilation) that keep rebuild cost O(log N) at 1 M LOC.
+I: Every file has SHA-256. ModuleHash = H(Dependencies) ∪ H(Contracts) ∪ H(SourceFiles). If ModuleHash unchanged, reuse existing verified binary and skip
+recompilation. Foreseeable error: hash collisions or partial writes; always verify full content after cache hit.
+WIRE: NativeToolchainRegistry, GovernedCompileGate, CAS
+
+SD7-T2-022+thermal-hardware-pacing [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-T2-020]
+R: Research host-aware throttling for battery, temperature and free RAM used by mobile build systems and long-running Termux agents.
+I: Monitor battery level, battery temperature, CPU throttling, free RAM. Throttle law: if temp > 42 °C or battery < 20 % reduce parallel workers and pause heavy
+builds. Ensures safe multi-week execution on pocket hardware. Foreseeable error: ignoring thermal signals; treat as hard gate equal to free-space gate.
+WIRE: DirectorAgent, PartitionClusterManager, HostHealthMonitor (new)
+
+SD7-T2-023+mathematical-termination-potential [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-T1-060]
+R: Research potential functions and oscillation pruning used in formal verification and search algorithms that guarantee termination of autonomous loops.
+I: Φ(Goal) = RemainingUnimplementedAtoms + OpenVerificationGaps + UnresolvedDiagnostics. Transition accepted iff Φ(t+1) < Φ(t). If same error seen twice,
+trigger hypothesis disputation and prune search branch. Prevents infinite autonomous loops by construction. Foreseeable error: non-monotonic progress; log Φ and
+halt on non-descent.
+WIRE: AutonomousWaveOrchestrator, DirectorAgent, VerifiedCompletionGate
+
+SD7-T2-024+quota-economic-governance [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-T2-011]
+R: Research inference cost ledgers, free-mode guards and emergency paid gates that prevent quota collapse while preserving local-first preference.
+I: Integrate QuotaLedger + FreeModeGuard + EmergencyPaidGate + RoutePolicy. Cascade: local-first → free-ready provider → free-fallback provider →
+cooldown queue → offline degraded mode → paid emergency only by explicit unlock. 429 causes cooldown not abort. Continuous quality-per-dollar arbitrage.
+Foreseeable error: silent paid spend; EmergencyPaidGate requires explicit human unlock.
+WIRE: ProviderCascadeRouter, RoutePolicy, QuotaLedger (new), FreeModeGuard
+
+SD7-T2-025+exact-hash-restart-continuity [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-T2-020]
+R: Research exact-hash restart vectors used by reproducible builds and long-running agent systems that never rebuild goals from model intuition.
+I: Restore vector = [RootHumanAuthorityHash, ActiveSourceSpecHash, GoalInvariantFingerprint, DerivationGraphVersion, CurrentAtomId, ActiveTerritory,
+ActiveContextManifestHash, RemainingBudget, AcceptedFindings, LastVerifiedGate]. Prohibition: never summarize old goal from memory or rebuild from current
+model intuition. Divergence = blocking halt. Foreseeable error: partial restore; require full vector or refuse.
+WIRE: RestartCoordinator, LocalMemoryStore, CAS, SourceAuthorityLaw
+
+                                                           | Maximum atomization | Hybrid Residual+HOE | All tiers complete
+ATROPOS Obligation DAG — Full Multi-Tier (2/3/4) Continuation of Source Doc 7 · 2026-10-06
+
+TIER-3 — CLI / UNIX Sovereignty + Advanced Anti-Fake-Green Oracles
+Prerequisite: Tier-2 storage constitution and swarm topology green.
+
+
+3.1 Full CLI / UNIX Sovereignty Substrate
+SD7-T3-001+pty-process-hosting [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-T1-010]
+R: Research isolated POSIX pseudo-terminal (openpty/forkpty) patterns used by tmux, screen, and modern agent CLIs that prevent interactive hangs on
+npm/cargo/gradle prompts.
+I: All external toolchains spawned via isolated PTY. Features: raw termios control, non-blocking I/O poll, max drain timeout 600 000 ms, isolated process group
+detachment. Foreseeable error: interactive hang; always supply non-interactive flags and kill process group on timeout.
+WIRE: BoundedProcessRunner, ToolchainExecutionDriver, all LanguageToolchainDrivers
+
+SD7-T3-002+posix-signal-lifecycle [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-T3-001]
+R: Research typed signal handlers that preserve CAS index and Git HEAD integrity under SIGINT/SIGTERM/SIGWINCH/SIGHUP.
+I: Handlers: SIGINT → clean worktree restore + record abort evidence; SIGTERM → emit checkpoint CAS snapshot + halt workers; SIGWINCH → dynamic
+viewport recalculation, no state loss; SIGHUP → background daemon detach. Invariant: signals never corrupt CAS index or Git HEAD. Foreseeable error: unclean
+shutdown; always write evidence before exit.
+WIRE: IsolatedWorktreeService, CAS, RestartCoordinator, Custodian
+
+SD7-T3-003+universal-shell-completion [NEW-SUBSTRATE]
+Track: B
+dependsOn: []
+R: Research static generation of shell completion from canonical command registries and AST symbol graphs (Click, Cobra, Clap, complete-alias patterns).
+I: Generate dynamic flag/argument/file-path/atom autocomplete for Bash, Zsh, Fish, PowerShell directly from CommandRegistry + AstSymbolGraph. No
+third-party tools. Foreseeable error: stale completions; regenerate on every CommandRegistry change.
+WIRE: CommandRegistry, AstSymbolGraph, CLI packaging
+
+SD7-T3-004+cli-tty-discipline [NEW-SUBSTRATE]
+Track: B
+dependsOn: []
+R: Research strict TTY discipline standards (NO_COLOR, CLICOLOR_FORCE, TERM=dumb, isatty detection) and POSIX exit-code conventions used by
+professional CLIs.
+I: Conformance: NO_COLOR, CLICOLOR_FORCE, TERM=dumb fallback, isatty detection. Output separation: stdout = pure machine JSON/NDJSON or diffs;
+stderr = telemetry/logs/spinners/diagnostics. POSIX exit codes: 0=verified success, 64=usage/syntax, 65=contract verification failure, 69=unavailable service,
+70=internal core fault, 74=IO/storage failure, 77=permission/territory refusal, 78=configuration/policy violation. Foreseeable error: color or progress on stdout;
+never.
+WIRE: CLI entrypoints, all diagnostic emitters
+
+SD7-T3-005+terminal-input-defense [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-T3-004]
+R: Research bracketed-paste mode and paste-size collapsing used by modern terminals to prevent carriage-return injection and terminal hijacking.
+I: Enable ESC[?2004h. Collapse pastes >20 lines into bounded CAS handles. Prevents CR injection and terminal hijacking. Cursor/keyboard: VT100 escapes +
+UTF-8 raw key decoder + searchable ring buffer. Foreseeable error: accepting multi-line paste as commands; always collapse.
+WIRE: CLI input loop, CAS
+
+SD7-T3-006+osc52-clipboard-bridge [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-T3-004]
+R: Research OSC-52 ANSI clipboard streaming and native fallbacks (wl-copy, xclip, pbcopy, Termux) with secret scrubbing.
+I: Protocol: OSC-52 emission. Fallback cascade: Termux clipboard → wl-copy → xclip → pbcopy. Invariant: raw secrets and auth tokens filtered before clipboard
+write. Foreseeable error: secret leakage; always run SecretSinkMatrix before write.
+WIRE: SecretSinkMatrix, CLI surfaces
+
+SD7-T3-007+standalone-virtual-pager [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-T3-004]
+R: Research zero-dependency terminal pagers with half-page scroll, regex search and unified-diff syntax highlighting.
+I: Internal zero-dependency pager: forward/backward half-page scroll, regex search, unified-diff syntax highlighting, non-blocking escape. Foreseeable error:
+external less/more dependency; keep pure internal.
+WIRE: CLI surfaces, diagnostic viewers
+
+
+3.2 Advanced Anti-Fake-Green & Anti-Boilerplate Oracles
+SD7-T3-010+property-based-fuzzing-oracle [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-T1-030, SD7-T1-072]
+R: Research property-based fuzzing across extreme integers, Unicode stress strings, recursive JSON structures, null-pointer injections and race-condition
+concurrency (Hypothesis, QuickCheck, cargo-fuzz patterns).
+                                                           | Maximum atomization | Hybrid Residual+HOE | All tiers complete
+ATROPOS Obligation DAG — Full Multi-Tier (2/3/4) Continuation of Source Doc 7 · 2026-10-06
+I: Automated fuzz test cases across type domains. Predicate: module must satisfy formal invariants across 1 000 deterministic PRNG iterations. Foreseeable error:
+non-deterministic seeds; record seed in evidence bundle.
+WIRE: Wave-1 test generator, VerifiedCompletionGate, EvidenceCollector
+
+SD7-T3-011+callgraph-reachability-proof [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-T1-071]
+R: Research directed AST call-graph traversal that proves every synthesized symbol has an unbroken path from application entry point (main() or public
+RPC/HTTP router).
+I: Every synthesized class/function/port must have unbroken path from entry point. Isolated orphan symbols without invocation edges trigger immediate build
+rejection. Zero dead-code tolerance. Foreseeable error: reflection/dynamic dispatch hiding edges; require explicit registration or fail.
+WIRE: ArchitectureComplianceChecker, VerifiedCompletionGate, AstSymbolGraph
+
+SD7-T3-012+dual-oracle-differential-compilation [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-T1-010, SD7-T1-061]
+R: Research dual-toolchain differential compilation (kotlinc JVM vs GraalVM Native, tsc vs OXC/SWC, go vs go vet -race) that eliminates runtime-specific false
+greens.
+I: Compile and execute suite under two distinct toolchains/modes. Divergent behavior or compiler-specific green fails closed. Foreseeable error: accepting
+single-toolchain success; always require both oracles.
+WIRE: NativeToolchainRegistry, VerifiedCompletionGate, GovernedCompileGate
+
+
+TIER-4 — Cloud Delivery, Schema Compilation & Autonomous Deployment
+Prerequisite: Tier-3 CLI sovereignty and anti-fake-green oracles green.
+
+
+4.1 Storage Schema Compilation
+SD7-T4-001+StorageSchemaCompiler [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-T1-020]
+R: Research generation of relational/NoSQL DDL, indexes and typed ORM/client mappings that stay bit-identical to Wave-0 contracts (SQLAlchemy, Prisma,
+Room, Exposed, SQLx patterns).
+I: Generate relational/NoSQL DDL, database indexes, typed ORM/client query mappings matching Wave-0 contracts. ATOM-L1-003. Foreseeable error: schema
+drift from contracts; regenerate from contracts only, never hand-edit.
+WIRE: ContractLatticeSynthesizer, SupabaseSchemaDriver, VerifiedCompletionGate
+
+
+4.2 Cloud Deployment Drivers
+SD7-T4-010+CloudDeploymentAdapter [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-T1-060]
+R: Research uniform non-mock delivery seams that abstract Vercel/Netlify/Supabase/local-dist behind a single contract.
+I: Uniform contract for non-mock deployment to hosting providers. No shell scripts that echo success. Foreseeable error: mock deploy that returns fake URL;
+require real HTTP 200 health-check.
+WIRE: AutonomousWaveOrchestrator, all concrete drivers
+
+SD7-T4-011+VercelDeploymentDriver [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-T4-010]
+R: Research direct REST SHA-1 content-addressed upload to Vercel Deployments API with manifest synthesis and production URL extraction.
+I: Direct API deployer packaging build outputs to Vercel production endpoints. SHA-1 content-addressed streaming. Extract live production URL. Foreseeable
+error: accepting non-200; fail closed until health-check passes.
+WIRE: CloudDeploymentAdapter, SecretSinkMatrix
+
+SD7-T4-012+NetlifyDeploymentDriver [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-T4-010]
+R: Research ZIP REST deployment to Netlify API with production URL extraction.
+I: Direct ZIP REST deployer. Same health-check invariant. Foreseeable error: missing site ID or token; fail closed with clear diagnostic.
+WIRE: CloudDeploymentAdapter, SecretSinkMatrix
+
+SD7-T4-013+SupabaseSchemaDriver [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-T4-001, SD7-T4-010]
+R: Research automated PostgreSQL migration runners with Row-Level Security policy synthesis and connection-pool bounds.
+I: Applies SQL migrations, generates RLS policies, registers DB configurations. Enforce connection-pool bounds from Wave-0 contracts. Foreseeable error: open
+RLS; default deny and require explicit policies.
+WIRE: StorageSchemaCompiler, CloudDeploymentAdapter, SecretSinkMatrix
+
+SD7-T4-014+AutonomousDeliveryEngine [NEW-SUBSTRATE]
+Track: S
+dependsOn: [SD7-T4-010, SD7-T4-011, SD7-T4-012, SD7-T4-013]
+
+                                                           | Maximum atomization | Hybrid Residual+HOE | All tiers complete
+ATROPOS Obligation DAG — Full Multi-Tier (2/3/4) Continuation of Source Doc 7 · 2026-10-06
+R: Research autonomous deployment pipelines that assert HTTP 200 health checks at production domains or bit-verified binary on disk before declaring success.
+I: ATOM-L4-003. Autonomous deployment pipeline. Acceptance = HTTP 200 live health-check at target production URL or bit-verified ELF/APK on disk.
+Foreseeable error: declaring success on upload alone; always require health-check or binary proof.
+WIRE: AutonomousWaveOrchestrator, CloudDeploymentAdapter, VerifiedCompletionGate, EvidenceCollector
+
+
+SPECGRAPH FOUNDRY — Expanded Ingestion Atoms
+These expand the over-condensed SD7-T1-065 into full maximum atomization.
+
+SD7-SG-001+unbounded-ingestion-pipeline [NEW-SUBSTRATE]
+Track: B
+dependsOn: []
+R: Research multi-gigabyte streaming parsers that avoid stack recursion crashes (iterative tokenization, chunked SHACL validation, memory-mapped reading).
+I: Concrete mutations to statement_segmentation.py and atomic_decomposition.py for multi-gigabyte spec parsing without stack recursion. Stream rather than
+materialize. Foreseeable error: recursion depth; convert all recursive descent to iterative.
+WIRE: SpecGraphCompiler, atomic_decomposition.py, statement_segmentation.py
+
+SD7-SG-002+SHACL-validation-proof-bundles [NEW-SUBSTRATE]
+Track: B
+dependsOn: [SD7-SG-001]
+R: Research RDF/SHACL shape conformance and feedback-arc-set reduction for formal dependency graphs.
+I: Mutations to dependency_compiler.py and shacl_validation.py for RDF/SHACL shape conformance and feedback arc set reduction. Emit formal proof bundles.
+Foreseeable error: cycles surviving; fail closed on any remaining arc.
+WIRE: SpecGraphCompiler, dependency_compiler.py, shacl_validation.py, InternalExecutionDagSynthesizer
+
+
+ADVANCED RESEARCH EXPANSIONS (Beyond Source Doc 7)
+These atoms advance the architecture with 2026-era techniques discovered by external research pressure.
+
+SD7-ADV-001+capability-based-security-model [AMENDMENT-CANDIDATE]
+Track: S
+dependsOn: [SD7-T2-013]
+R: Research object-capability (ocap) and seL4-style capability systems that can be applied to LLM action proposals so that possession of a capability is the only
+authority.
+I: Elevate BoundedAgencyGate to a pure capability system. Every ActionProposal must carry the exact set of capabilities required; missing capability = hard reject.
+Foreseeable error: ambient authority; purge any ambient capability.
+WIRE: BoundedAgencyGate, CapabilityEnforcer, ActionProposal
+
+SD7-ADV-002+content-addressed-evidence-merkle [AMENDMENT-CANDIDATE]
+Track: S
+dependsOn: [SD7-T2-020, SD7-T2-021]
+R: Research pure content-addressed evidence ledgers that make every verification receipt independently verifiable by third parties without trusting ATROPOS.
+I: Every evidence bundle is a Merkle tree of hashes. Third-party verifier can validate the Zero-Entropy Proof Certificate in seconds. Foreseeable error: mutable
+evidence; all evidence must be append-only CAS.
+WIRE: EvidenceCollector, CAS, IntegrityProofs, VerifiedCompletionGate
+
+SD7-ADV-003+formal-wave-invariant-checker [AMENDMENT-CANDIDATE]
+Track: S
+dependsOn: [SD7-T1-060, SD7-2050-FMC-01]
+R: Research static checkers that prove each wave respects the clean-room mutual-information invariant and territory disjointness before any LLM call is issued.
+I: Before Wave-2 dispatch, a formal checker proves I(fj;fk|I)=0 and Territory disjointness. Failure aborts the wave. Foreseeable error: runtime-only checks; move to
+pre-dispatch static proof.
+WIRE: AutonomousWaveOrchestrator, PartitionClusterManager, ArchitectureComplianceChecker
+
+SD7-ADV-004+provider-quality-arbitrage-ledger [AMENDMENT-CANDIDATE]
+Track: S
+dependsOn: [SD7-T2-024]
+R: Research continuous quality-per-dollar measurement and Pareto routing across heterogeneous providers that updates after every verified atom.
+I: After every successful VerifiedCompletionGate, record (provider, token cost, mutation-kill score, SMT discharge time). RoutePolicy continuously re-ranks.
+Foreseeable error: stale rankings; decay half-life of 48 h.
+WIRE: RoutePolicy, QuotaLedger, ProviderCascadeRouter, EvidenceCollector
+
+SD7-ADV-005+deterministic-replay-harness [AMENDMENT-CANDIDATE]
+Track: B
+dependsOn: [SD7-T2-025, SD7-T3-010]
+R: Research deterministic replay of entire multi-week autonomous runs from exact-hash vectors and recorded PRNG seeds so that any failure can be reproduced
+bit-identically.
+I: Every run records the full restore vector + all PRNG seeds + provider response hashes. Replay harness can re-execute any partition offline. Foreseeable error:
+non-deterministic external services; pin all responses via CAS.
+WIRE: RestartCoordinator, EvidenceCollector, CAS, IsolatedWorktreeService
+
+
+CROSS-TIER ACCEPTANCE GATES
+SD7-GATE-T2+tier2-completion [NEW-SUBSTRATE]
+                                                           | Maximum atomization | Hybrid Residual+HOE | All tiers complete
+ATROPOS Obligation DAG — Full Multi-Tier (2/3/4) Continuation of Source Doc 7 · 2026-10-06
+Track: S
+dependsOn: [ALL Tier-2 atoms]
+R: Research completeness criteria for long-horizon governance layers that must be live before CLI sovereignty is activated.
+I: Tier-2 complete when: (1) Open-Core + Air-Gap invariants enforced, (2) 6-level swarm topology live with territory disjointness, (3) Storage Constitution Laws
+01–06 enforced by Custodian, (4) Thermal pacing and Φ potential active, (5) Exact-hash restart continuity proven by forced restart test, (6) QuotaLedger prevents
+silent paid spend. Foreseeable error: partial governance; all six must be green.
+WIRE: CI job, atropos doctor --tier2-completeness
+
+SD7-GATE-T3+tier3-completion [NEW-SUBSTRATE]
+Track: S
+dependsOn: [ALL Tier-3 atoms, SD7-GATE-T2]
+R: Research completeness criteria for sovereign terminal + anti-fake-green layers.
+I: Tier-3 complete when: (1) All external toolchains run under PTY with signal lifecycle, (2) Shell completion generated for four shells, (3) TTY discipline and exit
+codes enforced, (4) Property-based fuzzing, call-graph reachability and dual-oracle differential all blocking, (5) Zero orphan symbols in a synthesized application.
+Foreseeable error: accepting single-toolchain success; dual oracle mandatory.
+WIRE: CI job, atropos doctor --tier3-completeness
+
+SD7-GATE-T4+tier4-completion [NEW-SUBSTRATE]
+Track: S
+dependsOn: [ALL Tier-4 atoms, SD7-GATE-T3]
+R: Research end-to-end delivery acceptance that requires live production health-check or bit-verified binary.
+I: Tier-4 complete when: (1) StorageSchemaCompiler emits DDL matching Wave-0, (2) At least one cloud driver (Vercel or Netlify) deploys a real application and
+receives HTTP 200, (3) SupabaseSchemaDriver applies RLS policies, (4) AutonomousDeliveryEngine emits Zero-Entropy Proof Certificate containing deployment
+URL or binary hash. Foreseeable error: upload-only success; health-check mandatory.
+WIRE: CI job, atropos doctor --tier4-completeness, AutonomousDeliveryEngine
+
+
+CRITICAL PATH ACROSS TIERS
+Tier-1 (already delivered) → SD7-GATE-T1 (Caller-Completeness) →
+Tier-2 governance + swarm + storage → SD7-GATE-T2 →
+Tier-3 CLI sovereignty + advanced oracles → SD7-GATE-T3 →
+Tier-4 cloud delivery + schema → SD7-GATE-T4 →
+Full system accepted only when all four gates are green and a multi-week autonomous run has produced a Zero-Entropy Proof Certificate.
+
+
+NON-NEGOTIABLE INVARIANTS (ALL TIERS)
+I(Module_A; Module_B | Interface_Lattice) = 0.000 bits
+Territory(P_r) ∩ Territory(P_s) = ∅
+Non-zero native exit code = terminal rejection
+False-Green Tolerance = 0.0000 %
+Air-Gap Invariant for pure synthesis and verification
+Exact-hash restart continuity; never rebuild goal from model intuition
+Every code byte originates from atomic LLM synthesis against formal interfaces verified by genuine native compilers
+C_real = min(C_impl, C_int, C_ver, C_ev)
+Φ(t+1) < Φ(t) monotonic descent or halt
+
+
+END OF FULL MULTI-TIER OBLIGATION DAG
+Designed for direct append beneath Source Document 7 · Maximum atomization of every deferred domain · Advanced research expansions included · 2026-10-06
+
+
+
+
+                                                             | Maximum atomization | Hybrid Residual+HOE | All tiers complete
+
