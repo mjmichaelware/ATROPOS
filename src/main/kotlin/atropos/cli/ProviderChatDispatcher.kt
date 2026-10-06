@@ -3,39 +3,22 @@ package atropos.cli
 
 import atropos.cli.session.QuotaSessionTracker
 import atropos.cli.ui.AnsiTerminalEngine
-import atropos.cli.ui.ContextAttestationRenderer
-import atropos.cli.ui.MarkdownRenderer
-import atropos.cli.ui.TerminalTheme
-import atropos.core.AIProvider
 import atropos.core.AtroposConfig
 import atropos.core.ProviderDecisionEngine
-import atropos.core.agent.AgentPromptContract
-import atropos.core.provider.ContextAttestationService
-import atropos.core.security.SecretEgressGate
-import atropos.core.provider.ContextEnvelopeFactory
-import atropos.core.provider.ProviderResponseContextParser
 import atropos.core.provider.ImmutablePrompt
 import atropos.core.provider.PromptRole
-import atropos.core.dopamine.AlignmentTuner
-import atropos.core.dopamine.RewardLogEntry
+import atropos.core.security.SecretEgressGate
 import atropos.core.security.TokenIsolationVault
-import java.nio.file.Path
 
 class ProviderChatDispatcher(
     private val config: AtroposConfig,
     private val uiEngine: AnsiTerminalEngine,
     private val sessionTracker: QuotaSessionTracker,
-    private val providerResolver: (String) -> AIProvider,
     private val rateResolver: (String) -> Double,
-    private val cwd: () -> String,
-    private val markdownRenderer: MarkdownRenderer = MarkdownRenderer(),
-    private val attestationRenderer: ContextAttestationRenderer =
-        ContextAttestationRenderer(TerminalTheme(atropos.cli.config.ConfigurationManager())),
     private val redactionFilter: atropos.core.security.RedactionFilter =
         atropos.core.security.RedactionFilter(),
     private val providerRelay: atropos.cli.ui.ProviderRelay =
-        atropos.cli.ui.ProviderRelay(TerminalTheme(atropos.cli.config.ConfigurationManager())),
-    private val alignmentHistory: () -> List<RewardLogEntry> = { emptyList() },
+        atropos.cli.ui.ProviderRelay(atropos.cli.ui.TerminalTheme(atropos.cli.config.ConfigurationManager())),
     private val alignmentSignal: (Boolean) -> Unit = {},
     private val onboarding: atropos.core.provider.ProviderOnboardingService =
         atropos.core.provider.ProviderOnboardingService(),
@@ -66,26 +49,6 @@ class ProviderChatDispatcher(
         try {
             val routedProvider = routeProvider(prompt, currentProviderName)
             uiEngine.renderExecutionEvent("provider", "selected=$routedProvider")
-            val provider = providerResolver(routedProvider)
-            val repoRoot = Path.of(cwd()).toAbsolutePath().normalize()
-            val mythologyRequested = isExplicitMythologyRequest(prompt)
-            val envelope = ContextEnvelopeFactory.createSimple(
-                providerId = routedProvider,
-                modelId = "",
-                task = prompt,
-                repoRoot = repoRoot
-            )
-            val context = AgentPromptContract.build(
-                context = "",
-                providerId = routedProvider,
-                task = prompt,
-                repoRoot = repoRoot,
-                explicitMythologyRequest = mythologyRequested
-            )
-
-            val tuning = AlignmentTuner.tune(alignmentHistory())
-            val tunedPrompt = AlignmentTuner.apply(immutablePrompt.text, tuning)
-            uiEngine.renderExecutionEvent("alignment", "prefix=${tuning.promptPrefix} examples=${tuning.fewShotExamples.size}")
             // Through the cascade, not one provider.
             //
             // This called `provider.complete` directly and let the catch below
@@ -100,8 +63,8 @@ class ProviderChatDispatcher(
             // somewhere other than the provider in the status bar.
             val cascade = cascadeRouter.completeWithCascade(
                 requestedProvider = routedProvider,
-                prompt = tunedPrompt,
-                context = context,
+                prompt = immutablePrompt.text,
+                context = "",
                 beforeAttempt = { candidate ->
                     if (candidate != routedProvider) {
                         uiEngine.renderExecutionEvent("provider", "falling back to $candidate")
@@ -130,24 +93,28 @@ class ProviderChatDispatcher(
                 // why each dropped out, and therefore whether the answer they
                 // are reading came from the model they chose or from a
                 // fallback whose output they might weigh differently. The
-                // cascade is the most distinctive thing this engine does and
-                // it was reaching them as a number.
+                // cascade is the most distinctive thing this engine does and it
+                // was reaching them as a number.
                 val legs = cascade.errors.map {
                     atropos.cli.ui.ProviderRelay.Leg(it.provider, redactionFilter.compact(it.cleanMessage, 60))
                 } + atropos.cli.ui.ProviderRelay.Leg(cascade.providerName)
                 uiEngine.renderBlock(providerRelay.render(legs, uiEngine.viewportWidth))
             }
             val response = cascade.response
+            if (cascade.queued || response.isBlank()) {
+                uiEngine.renderError(cascade.queueReason ?: "no provider returned a response")
+                alignmentSignal(false)
+                return
+            }
             uiEngine.renderExecutionEvent("response", "provider returned output")
-            renderVerifiedResponse(
-                prompt = prompt,
-                context = context,
-                response = response,
-                provider = provider,
-                envelope = envelope,
-                mythologyRequested = mythologyRequested
-            )
-            alignmentSignal(true)
+            val egress = SecretEgressGate.scan(response)
+            if (egress.isNotEmpty()) {
+                uiEngine.renderError("provider response refused by secret egress gate")
+                alignmentSignal(false)
+            } else {
+                uiEngine.renderAssistant(cascade.providerName, response)
+                alignmentSignal(true)
+            }
         } catch (failure: Exception) {
             // A provider exception is the most secret-dense string the CLI ever
             // renders: HTTP clients put the request URL and the Authorization
@@ -190,82 +157,7 @@ class ProviderChatDispatcher(
             currentProviderName
         }
 
-    private fun renderVerifiedResponse(
-        prompt: String,
-        context: String,
-        response: String,
-        provider: AIProvider,
-        envelope: atropos.core.provider.ContextEnvelope,
-        mythologyRequested: Boolean
-    ) {
-        when (val verified = ContextAttestationService.verify(envelope, response)) {
-            is ContextAttestationService.VerifiedResult.Accepted -> {
-                val egress = SecretEgressGate.scan(verified.cleanedResponse)
-                if (egress.isNotEmpty()) {
-                    uiEngine.renderError("provider response refused by secret egress gate")
-                } else {
-                    uiEngine.renderNotice(markdownRenderer.render(verified.cleanedResponse))
-                }
-            }
-
-            is ContextAttestationService.VerifiedResult.Rejected ->
-                renderRejected(prompt, context, response, provider, envelope, mythologyRequested, verified)
-        }
-    }
-
-    private fun renderRejected(
-        prompt: String,
-        context: String,
-        response: String,
-        provider: AIProvider,
-        envelope: atropos.core.provider.ContextEnvelope,
-        mythologyRequested: Boolean,
-        verified: ContextAttestationService.VerifiedResult.Rejected
-    ) {
-        if (mythologyRequested) {
-            val shownMyth = ProviderResponseContextParser.parse(response, envelope).cleanedResponse
-            uiEngine.renderNotice(markdownRenderer.render(shownMyth))
-            return
-        }
-
-        val corrective = buildString {
-            appendLine(context)
-            appendLine()
-            appendLine(
-                "Your previous reply did not satisfy the ATROPOS context contract. " +
-                    "ATROPOS is this software repository and runtime, not the Greek " +
-                    "mythological figure. Answer the task in that context and include " +
-                    "the attestation block exactly as specified."
-            )
-        }
-        val retry = runCatching { provider.complete(prompt, corrective) }.getOrNull()
-        val retryVerified = retry?.let { ContextAttestationService.verify(envelope, it) }
-
-        if (retryVerified is ContextAttestationService.VerifiedResult.Accepted) {
-            val egress = SecretEgressGate.scan(retryVerified.cleanedResponse)
-            if (egress.isNotEmpty()) {
-                uiEngine.renderError("provider retry refused by secret egress gate")
-            } else {
-                uiEngine.renderNotice(markdownRenderer.render(retryVerified.cleanedResponse))
-            }
-        } else {
-            uiEngine.renderNotice(attestationRenderer.renderAdvisory(verified.failure, ATTESTATION_WIDTH))
-            val shown = ProviderResponseContextParser.parse(retry ?: response, envelope).cleanedResponse
-            val fallbackText = shown.takeIf { it.isNotBlank() } ?: response.takeIf { it.isNotBlank() } ?: "local provider responded but returned empty content"
-            uiEngine.renderNotice(markdownRenderer.render(fallbackText) + "\n\n⚠️ *unverified*")
-        }
-    }
-
-    private fun isExplicitMythologyRequest(prompt: String): Boolean {
-        val lower = prompt.lowercase()
-        return (lower.contains("greek") || lower.contains("mythology") ||
-            lower.contains("myth") || lower.contains("moirai") || lower.contains("fates")) &&
-            lower.contains("atropos")
-    }
-
     private companion object {
-        const val ATTESTATION_WIDTH = 80
-
         /** Bounds a provider failure line so a huge error body cannot fill the screen. */
         const val MAX_FAILURE_CHARS = 400
     }

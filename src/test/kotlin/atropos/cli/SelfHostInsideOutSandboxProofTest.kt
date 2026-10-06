@@ -26,7 +26,7 @@ import kotlin.test.assertTrue
 
 class SelfHostInsideOutSandboxProofTest {
     @Test
-    fun natural_language_prompt_builds_atropos_itself_in_sandbox_and_records_evidence() {
+    fun self_host_slash_command_builds_atropos_itself_in_sandbox_and_records_evidence() {
         val operatorRoot = AtroposRepoRootLocator.resolve()
         val sandboxRoot = Files.createTempDirectory("atropos-inside-out-proof-")
         val prompt = "ATROPOS, build yourself from the inside out and run self-host Phase 11"
@@ -67,7 +67,7 @@ class SelfHostInsideOutSandboxProofTest {
                 }
             )
 
-            val outcome = router.handleInput(prompt)
+            val outcome = router.handleInput("/agent self-host run $prompt")
 
             assertEquals(RouterOutcome.CONTINUE, outcome)
             assertEquals(0, providerCalls)

@@ -74,7 +74,7 @@ class ProviderCascadeRouter(
         beforeAttempt: (String) -> Unit = {},
         onFailure: (ProviderError) -> Unit = {},
         contextEnvelope: ContextEnvelope? = null,
-        acceptResponse: (String) -> Boolean = { true },
+        acceptResponse: (String) -> Boolean = { it.isNotBlank() },
         allowPaidProvider: Boolean = paidGate.status().active != null
     ): ProviderCascadeResult {
         val order = providerOrder(requestedProvider, providerOrderOverride, allowPaidProvider)

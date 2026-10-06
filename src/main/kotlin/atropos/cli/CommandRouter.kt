@@ -6,7 +6,6 @@ import atropos.cli.commands.VerifyCommandHandler
 import atropos.cli.commands.AgentCommand
 import atropos.cli.commands.HierarchyCommand
 import atropos.cli.commands.ProjectCommandHandler
-import atropos.cli.commands.SelfHostNaturalLanguageRouter
 import atropos.cli.commands.CheckpointCommandHandler
 import atropos.cli.session.QuotaSessionTracker
 import atropos.cli.session.SessionTabs
@@ -117,7 +116,6 @@ class CommandRouter(
 
     private val projectCommand = ProjectCommandHandler(uiEngine)
 
-    private val selfHostNaturalLanguageRouter = SelfHostNaturalLanguageRouter()
     private val statusCommand = StatusCommandHandler(config, uiEngine, sessionTracker, providerOnboarding = providerOnboarding)
     private val providerCommand = ProviderCommandHandler(config, uiEngine, onboarding = providerOnboarding)
     private val githubCommand = GitHubCommandHandler(config, uiEngine)
@@ -154,15 +152,7 @@ class CommandRouter(
         config = config,
         uiEngine = uiEngine,
         sessionTracker = sessionTracker,
-        providerResolver = providerResolver,
         rateResolver = rateResolver,
-        cwd = shellCommand::currentDirectory,
-        alignmentHistory = {
-            val store = atropos.core.autonomy.RewardPenaltyStore(
-                storageDir = java.io.File(shellCommand.currentDirectory(), ".atropos/autonomy")
-            )
-            atropos.core.dopamine.AlignmentTuner.historyFrom(store)
-        },
         alignmentSignal = { successful ->
             val store = atropos.core.autonomy.RewardPenaltyStore(
                 storageDir = java.io.File(shellCommand.currentDirectory(), ".atropos/autonomy")
@@ -639,21 +629,10 @@ class CommandRouter(
                         renderRiskConfirmation(risk.name.lowercase(), canonical)
                         return RouterOutcome.CONTINUE
                     }
-                    val selfHostTokens = selfHostNaturalLanguageRouter.route(tokens)
-                    when {
-                        selfHostTokens != null -> {
-                            if (selfHostTokens.firstOrNull() == "/factory") {
-                                factoryCommand.execute(selfHostTokens)
-                            } else {
-                                announce(agentCommand.execute(selfHostTokens))
-                                uiEngine.updateAgentPatchState(agentCommand.lastKnownPatchId)
-                            }
-                        }
-                        // The canonical form travels onward, not the raw
-                        // input: SUP.NL.ENVELOPE-WRAP requires it, and sending
-                        // the raw bytes here would mean the text the guard
-                        // cleared and the text the provider sees are different.
-                        //
+                    if (tokens.size == 1 && tokens.first().equals("ATROPOS", ignoreCase = true)) {
+                        announce(agentCommand.execute(listOf("/agent", "ask", "ATROPOS")))
+                        uiEngine.updateAgentPatchState(agentCommand.lastKnownPatchId)
+                    } else {
                         // promptText(), not envelope.canonical: the canonical
                         // form is the operator's own words and nothing else, so
                         // sending it alone asked the provider a question about a
@@ -662,7 +641,7 @@ class CommandRouter(
                         // the canonical form above — it classifies what the
                         // operator asked for, and an attached document is
                         // evidence, not intent.
-                        else -> providerChatDispatcher.dispatch(entry.promptText(), currentProviderName)
+                        providerChatDispatcher.dispatch(entry.promptText(), currentProviderName)
                     }
                 }
                 RouterOutcome.CONTINUE

@@ -46,6 +46,38 @@ class ProviderCascadeRouterTest {
     }
 
     @Test
+    fun blank_response_falls_back_to_the_next_provider_by_default() {
+        val attempts = mutableListOf<String>()
+        val router = ProviderCascadeRouter(
+            factory = ProviderFactory(),
+            providerResolver = { provider ->
+                attempts += provider
+                object : AIProvider {
+                    override val name: String = provider
+                    override fun complete(prompt: String, context: String): String =
+                        if (provider == "provider-one") "" else "hello from provider two"
+                }
+            }
+        )
+
+        val result = router.completeWithCascade(
+            requestedProvider = "provider-one",
+            prompt = "hi",
+            context = "",
+            providerOrderOverride = listOf("provider-one", "provider-two")
+        )
+
+        assertEquals("provider-two", result.providerName)
+        assertEquals("hello from provider two", result.response)
+        assertEquals(listOf("provider-one", "provider-two"), attempts)
+        assertTrue(
+            result.errors.any {
+                it.provider == "provider-one" && it.type == atropos.core.FailureType.INVALID_RESPONSE
+            }
+        )
+    }
+
+    @Test
     fun exhausted_dimension_cascade_reports_every_attempt_and_queues() {
         val router = ProviderCascadeRouter(
             factory = ProviderFactory(),

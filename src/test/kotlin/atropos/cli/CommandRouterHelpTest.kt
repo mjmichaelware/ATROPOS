@@ -56,7 +56,7 @@ class CommandRouterHelpTest {
     }
 
     @Test
-    fun plain_nl_app_request_uses_factory_command_and_not_provider_chat() {
+    fun slash_factory_request_uses_factory_command_and_not_provider_chat() {
         val root = Files.createTempDirectory("atropos-router-factory-")
         val out = ByteArrayOutputStream()
         var providerCalls = 0
@@ -92,11 +92,55 @@ class CommandRouterHelpTest {
             }
         )
 
-        router.handleInput("build a simple notes CLI with tests and README")
+        router.handleInput("/factory run build a simple notes CLI with tests and README")
 
         assertEquals("build a simple notes CLI with tests and README", factoryPrompt)
         assertEquals(0, providerCalls)
         assertTrue(out.toString().contains("generated_project"), out.toString())
+    }
+
+    @Test
+    fun plain_natural_language_stays_on_active_tab_and_never_runs_factory() {
+        val root = Files.createTempDirectory("atropos-router-conversation-")
+        val out = ByteArrayOutputStream()
+        var factoryRuns = 0
+        val engine = AnsiTerminalEngine(
+            capabilities = ConfigurationManager(),
+            plainOutput = PlainTerminalOutput(
+                out = PrintStream(out),
+                errors = PrintStream(ByteArrayOutputStream())
+            )
+        )
+        val factory = FactoryCommandHandler(engine, runFactory = {
+            factoryRuns += 1
+            "generated_project=unexpected"
+        })
+        val router = CommandRouter(
+            config = AtroposConfig(
+                ApiKeys("", "", "", ""),
+                LakehouseConfig(root.resolve("lakehouse").toString(), root.resolve("lakehouse/vector.db").toString()),
+                RuntimeConfig("fake", 0.2)
+            ),
+            uiEngine = engine,
+            sessionTracker = QuotaSessionTracker(),
+            factoryCommandOverride = factory,
+            providerResolver = {
+                object : AIProvider {
+                    override val name: String = "fake"
+                    override fun complete(prompt: String, context: String): String = "Hello! How can I help?"
+                }
+            }
+        )
+        val activeBefore = router.tabs.active
+
+        listOf("hi", "build a simple notes CLI with tests and README").forEach { input ->
+            router.handleInput(input)
+
+            assertEquals(activeBefore, router.tabs.active, input)
+            assertEquals(1, router.tabs.snapshot().tabs.size, input)
+        }
+        assertEquals(0, factoryRuns, "natural language must not reach the factory")
+        assertTrue(!out.toString().contains("no unified diff found", ignoreCase = true), out.toString())
     }
 
     @Test
