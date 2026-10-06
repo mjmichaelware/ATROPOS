@@ -47,7 +47,7 @@ class CredentialVault(
                 val keys = json.keys()
                 while (keys.hasNext()) {
                     val key = keys.next()
-                    val value = json.getString(key)
+                    val value = json.optString(key, "")
                     if (value.isNotBlank()) {
                         credentials[key.uppercase()] = value
                     }
@@ -66,7 +66,7 @@ class CredentialVault(
                 val keys = json.keys()
                 while (keys.hasNext()) {
                     val key = keys.next()
-                    val value = json.getString(key)
+                    val value = json.optString(key, "")
                     if (value.isNotBlank()) {
                         credentials[key.uppercase()] = value
                     }
