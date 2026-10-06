@@ -6,7 +6,6 @@ import atropos.core.provider.ProviderDescriptorRegistry
 import atropos.core.provider.StaticProviderDescriptorRegistry
 import atropos.core.provider.ApiCapability
 import atropos.core.provider.ProviderCascadeOrder
-import atropos.core.provider.ProviderDescriptor
 import atropos.core.AtroposConfig
 import atropos.core.OllamaHealthProbe
 import atropos.core.provider.FallbackChain
@@ -49,23 +48,6 @@ class ProviderCascadeRouter(
     fun declaredFallbackChain(capability: ApiCapability): FallbackChain? =
         FallbackChainRegistry.canonicalChain(capability)
 
-    private fun hasValidApiKeys(descriptor: ProviderDescriptor): Boolean {
-        return descriptor.requiredEnv.all { envVar ->
-            val value = secretReader?.invoke(envVar) ?: System.getenv(envVar)
-                ?: when (envVar.lowercase()
-                    .replace("_api_key", "")
-                    .replace("_key", "")
-                    .replace("_token", "")) {
-                    "groq" -> AtroposConfig.load().keys.groq
-                    "openai" -> AtroposConfig.load().keys.openai
-                    "anthropic" -> AtroposConfig.load().keys.anthropic
-                    "xai" -> AtroposConfig.load().keys.xai
-                    else -> null
-                }
-            value != null && value.isNotBlank() && value != "your-api-key" && value != "test"
-        }
-    }
-
     fun completeWithCascade(
         requestedProvider: String,
         prompt: String,
@@ -95,20 +77,12 @@ class ProviderCascadeRouter(
 
             atropos.core.thinking.Thinking.step("provider", "asking $provider")
 
-            // Check health per provider: local (ollama) needs ollama running,
-            // remote providers need valid API keys configured
             val descriptor = registry.getById(provider)
-            val providerHealthy = when {
-                providerResolver != null -> true
-                provider == "ollama" -> localHealth()
-                descriptor == null -> false
-                else -> hasValidApiKeys(descriptor)
-            }
-            if (!providerHealthy) {
+            if (descriptor?.isLocal == true && descriptor.hasCapability(ApiCapability.CHAT) && !localHealth()) {
                 val error = ProviderError(
                     provider = provider,
                     type = FailureType.CONNECTION_REFUSED,
-                    cleanMessage = "$provider unavailable (health check failed)"
+                    cleanMessage = "$provider unavailable"
                 )
                 errors += error
                 onFailure(error)
