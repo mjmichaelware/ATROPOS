@@ -109,19 +109,21 @@ class ProviderChatDispatcher(
                 uiEngine.renderBlock(providerRelay.render(legs, uiEngine.viewportWidth))
             }
             val response = cascade.response
-            if (cascade.queued || response.isBlank()) {
-                uiEngine.renderError(cascade.queueReason ?: "no provider returned a response")
-                alignmentSignal(false)
-                return
-            }
-            uiEngine.renderExecutionEvent("response", "provider returned output")
-            val egress = SecretEgressGate.scan(response)
-            if (egress.isNotEmpty()) {
-                uiEngine.renderError("provider response refused by secret egress gate")
+            // Always render the cascade response (success or error) as an assistant message
+            // so the user sees what happened persistently in the conversation.
+            if (response.isBlank()) {
+                uiEngine.renderError("provider returned empty response")
                 alignmentSignal(false)
             } else {
-                uiEngine.renderAssistant(cascade.providerName, response)
-                alignmentSignal(true)
+                uiEngine.renderExecutionEvent("response", "provider returned output")
+                val egress = SecretEgressGate.scan(response)
+                if (egress.isNotEmpty()) {
+                    uiEngine.renderError("provider response refused by secret egress gate")
+                    alignmentSignal(false)
+                } else {
+                    uiEngine.renderAssistant(cascade.providerName, response)
+                    alignmentSignal(true)
+                }
             }
         } catch (failure: Exception) {
             // A provider exception is the most secret-dense string the CLI ever

@@ -89,12 +89,21 @@ class TerminalRenderingFacade(
     fun renderAssistantPlain(provider: String, rendered: String) {
         plainOutput.emitPlain("", canvas.width)
         plainOutput.emitPlain("${provider.lowercase()}:", canvas.width)
-        plainOutput.emitPlain(rendered, canvas.width)
+        if (rendered.isBlank()) {
+            plainOutput.emitPlain(theme.paint(atropos.cli.ui.design.Role.STATUS_FAILED, "[empty response]"), canvas.width)
+        } else {
+            plainOutput.emitPlain(rendered, canvas.width)
+        }
     }
 
     fun renderAssistantReactive(provider: String, rendered: String) {
         transcriptBuffer.append(transcript.assistantHeader(provider))
-        transcript.assistantBody(rendered).forEach(transcriptBuffer::append)
+        val bodyLines = transcript.assistantBody(rendered)
+        if (bodyLines.isEmpty()) {
+            transcriptBuffer.append(transcript.notice(theme.paint(atropos.cli.ui.design.Role.STATUS_FAILED, "[empty response]")))
+        } else {
+            bodyLines.forEach(transcriptBuffer::append)
+        }
         transcriptBuffer.append(transcript.assistantFooter())
     }
 

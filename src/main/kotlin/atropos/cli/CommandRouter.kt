@@ -602,50 +602,53 @@ class CommandRouter(
                 RouterOutcome.CONTINUE
             }
 
-            else -> {
-                if (tokens.first().startsWith("/")) {
-                    val guidance = atropos.core.intent.ArgumentGuidance.getGuidance(tokens.first())
-                    uiEngine.renderError(
-                        buildString {
-                            append("unknown command: ${tokens.first()}")
-                            guidance?.let { append("\n").append(it) }
-                        }
-                    )
-                }
-                else {
-                    // SUP.NL.BYTE-CANONICAL-FORM asks for canonicalization "as
-                    // first stage of any NL entry point", and this is the CLI's.
-                    // It runs before the risk guard on purpose: the guard
-                    // matches on text, and text that has not been canonicalized
-                    // can be split by a zero-width character so that it matches
-                    // nothing — which is precisely how a risky request gets past
-                    // a classifier that reads the raw bytes.
-                    val entry = nlEntryPipeline.accept(original, atropos.core.nl.NlSource.CLI_PROMPT)
-                    entry.notice()?.let(uiEngine::renderNotice)
-                    val canonical = entry.envelope.canonical
-
-                    naturalLanguageRiskGuard.classify(canonical)?.let { risk ->
-                        pendingRiskyNaturalLanguage = canonical
-                        renderRiskConfirmation(risk.name.lowercase(), canonical)
-                        return RouterOutcome.CONTINUE
+else -> {
+                    if (tokens.first().startsWith("/")) {
+                        val guidance = atropos.core.intent.ArgumentGuidance.getGuidance(tokens.first())
+                        uiEngine.renderError(
+                            buildString {
+                                append("unknown command: ${tokens.first()}")
+                                guidance?.let { append("\n").append(it) }
+                            }
+                        )
                     }
-                    if (tokens.size == 1 && tokens.first().equals("ATROPOS", ignoreCase = true)) {
-                        announce(agentCommand.execute(listOf("/agent", "ask", "ATROPOS")))
-                        uiEngine.updateAgentPatchState(agentCommand.lastKnownPatchId)
-                    } else {
-                        // promptText(), not envelope.canonical: the canonical
-                        // form is the operator's own words and nothing else, so
-                        // sending it alone asked the provider a question about a
-                        // document it had never been given, right after the CLI
-                        // said "attached: spec.txt". The risk guard still reads
-                        // the canonical form above — it classifies what the
-                        // operator asked for, and an attached document is
-                        // evidence, not intent.
+                    else {
+                        val trimmed = original.trimStart()
+                        // Plain text (not starting with / or @) bypasses NL pipeline entirely
+                        // and passes straight to the conversation payload as natural language.
+                        // Only @-prefixed input triggers mention/context resolution.
+                        val isMentionContext = trimmed.startsWith("@")
+                        if (!isMentionContext) {
+                            // Direct pass-through: no canonicalization, mention scanning, or local resolution.
+                            // Risk guard still runs on raw text for safety.
+                            naturalLanguageRiskGuard.classify(trimmed)?.let { risk ->
+                                pendingRiskyNaturalLanguage = trimmed
+                                renderRiskConfirmation(risk.name.lowercase(), trimmed)
+                                return RouterOutcome.CONTINUE
+                            }
+                            // Special case: bare "ATROPOS" triggers self-host ask.
+                            if (tokens.size == 1 && tokens.first().equals("ATROPOS", ignoreCase = true)) {
+                                announce(agentCommand.execute(listOf("/agent", "ask", "ATROPOS")))
+                                uiEngine.updateAgentPatchState(agentCommand.lastKnownPatchId)
+                            } else {
+                                providerChatDispatcher.dispatch(trimmed, currentProviderName)
+                            }
+                            return RouterOutcome.CONTINUE
+                        }
+                        // @-prefixed input: process through NL pipeline for mention/context resolution.
+                        val entry = nlEntryPipeline.accept(original, atropos.core.nl.NlSource.CLI_PROMPT)
+                        entry.notice()?.let(uiEngine::renderNotice)
+                        val canonical = entry.envelope.canonical
+
+                        naturalLanguageRiskGuard.classify(canonical)?.let { risk ->
+                            pendingRiskyNaturalLanguage = canonical
+                            renderRiskConfirmation(risk.name.lowercase(), canonical)
+                            return RouterOutcome.CONTINUE
+                        }
                         providerChatDispatcher.dispatch(entry.promptText(), currentProviderName)
                     }
+                    RouterOutcome.CONTINUE
                 }
-                RouterOutcome.CONTINUE
-            }
         }
     }
 
