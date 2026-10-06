@@ -1,0 +1,18 @@
+{
+  "$schema": "https://opencode.ai/schema/config.json",
+  "project": {
+    "name": "ATROPOS",
+    "root": "/root/ATROPOS",
+    "description": "ATROPOS 100% Completion Blueprint & Autonomous Swarm Workspace"
+  },
+  "context": {
+    "control_document": "AGENTS.md",
+    "blueprint_master": "docs/source/ATROPOS_Source_Doc_7_MASTER_OBLIGATION_DAG.txt",
+    "source_documents_dir": "docs/source/doc7_obligation_dag"
+  },
+  "permissions": {
+    "allow_danger": true,
+    "file_system": "full",
+    "bash": "full"
+  }
+}
