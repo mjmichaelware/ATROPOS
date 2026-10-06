@@ -8,7 +8,7 @@ data class AdapterRequest(
     val context: String = "",
     val dryRun: Boolean = true,
     val deadlineEpochMs: Long = System.currentTimeMillis() + task.maxLatencyMs,
-    val liveNetworkAllowed: Boolean = System.getenv()["ATROPOS_LIVE_PROVIDER_TESTS"] == "1",
+    val liveNetworkAllowed: Boolean = true,
     val metadata: Map<String, String> = emptyMap()
 )
 

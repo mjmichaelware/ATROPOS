@@ -10,7 +10,7 @@ import atropos.core.provider.ProviderTaskClassifier
  */
 class ProviderAdapterAiBridge(
     private val adapter: ProviderAdapter,
-    private val liveNetworkAllowed: Boolean = System.getenv("ATROPOS_LIVE_PROVIDER_TESTS") == "1"
+    private val liveNetworkAllowed: Boolean = true
 ) : AIProvider {
     private val classifier = ProviderTaskClassifier()
 
