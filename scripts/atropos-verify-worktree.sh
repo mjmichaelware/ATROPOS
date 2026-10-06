@@ -142,6 +142,7 @@ if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
     --tests 'atropos.cli.BackendDoctorTest' \
     --tests 'atropos.cli.FactoryCommandHandlerTest' \
     --tests 'atropos.cli.CommandRouterHelpTest' \
+    --tests 'atropos.cli.ProviderChatDispatcherTest' \
     --tests 'atropos.cli.CommandRouterIdentityTest' \
     --tests 'atropos.cli.help.HelpGeneratorTest' \
     --tests 'atropos.cli.FirstRunDoctorRendererTest' \
