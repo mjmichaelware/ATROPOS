@@ -78,7 +78,7 @@ class ProviderCascadeRouter(
             atropos.core.thinking.Thinking.step("provider", "asking $provider")
 
             val descriptor = registry.getById(provider)
-            if (descriptor?.isLocal == true && descriptor.hasCapability(ApiCapability.CHAT) && !localHealth()) {
+            if (descriptor != null && descriptor.hasCapability(ApiCapability.LOCAL_TOOL) && descriptor.hasCapability(ApiCapability.CHAT) && !localHealth()) {
                 val error = ProviderError(
                     provider = provider,
                     type = FailureType.CONNECTION_REFUSED,
