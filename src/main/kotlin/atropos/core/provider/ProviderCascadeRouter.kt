@@ -99,6 +99,7 @@ class ProviderCascadeRouter(
             // remote providers need valid API keys configured
             val descriptor = registry.getById(provider)
             val providerHealthy = when {
+                providerResolver != null -> true
                 provider == "ollama" -> localHealth()
                 descriptor == null -> false
                 else -> hasValidApiKeys(descriptor)

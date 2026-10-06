@@ -8,8 +8,8 @@ import atropos.core.AIProvider
 import atropos.core.ApiKeys
 import atropos.core.AtroposConfig
 import atropos.core.LakehouseConfig
-import atropos.core.ProviderCascadeRouter
 import atropos.core.ProviderFactory
+import atropos.core.provider.ProviderCascadeRouter
 import atropos.core.RuntimeConfig
 import atropos.core.paid.EmergencyPaidGate
 import atropos.core.provider.ApiCapability
