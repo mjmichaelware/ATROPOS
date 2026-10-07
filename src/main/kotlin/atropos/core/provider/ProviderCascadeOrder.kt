@@ -30,7 +30,7 @@ object ProviderCascadeOrder {
         CostMode.OPTIONAL_FREE -> 2
         CostMode.CREDIT_POOL -> 3
         CostMode.PAID_LOCKED -> Int.MAX_VALUE
-        null -> Int.MAX_VALUE - 1
+        null -> 100
     }
 
     /**
