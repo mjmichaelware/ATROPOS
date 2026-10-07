@@ -57,10 +57,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.icons.Icons
-import androidx.compose.material3.icons.filled.Image
-import androidx.compose.material3.icons.filled.PhotoSizeSelectActual
-import androidx.compose.material3.icons.filled.RemoveRedEye
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.PhotoSizeSelectActual
+import androidx.compose.material.icons.filled.RemoveRedEye
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -352,7 +352,7 @@ fun FooterComposer(
                     imeAction = androidx.compose.ui.text.input.ImeAction.Send,
                     capitalization = androidx.compose.foundation.text.KeyboardCapitalization.Sentences,
                 ),
-                keyboardActions = androidx.compose.material3.TextFieldKeyboardActions(
+                keyboardActions = androidx.compose.foundation.text.KeyboardActions(
                     onDone = { if (text.isNotBlank()) onTextSend(text) },
                 ),
             )

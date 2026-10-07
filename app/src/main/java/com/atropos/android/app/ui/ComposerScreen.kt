@@ -6,8 +6,6 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.view.inputmethod.InputMethodManager
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.gestures.dragAndDropModifier
-import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,35 +29,20 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.icons.Icons
-import androidx.compose.material3.icons.filled.ContentCopy
-import androidx.compose.material3.icons.filled.Send
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Send
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.FocusRequester
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.PlatformUtils
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.KeyEvent
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.IntrinsicSize
-import androidx.compose.ui.layout.Layout
-import androidx.compose.ui.layout.LayoutCoordinates
-import androidx.compose.ui.layout.Measurable
-import androidx.compose.ui.layout.MeasurePolicy
-import androidx.compose.ui.layout.MeasureScope
-import androidx.compose.ui.layout.Placeable
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -79,13 +62,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.KeyboardOptionsProvider
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 
 /**
  * The composer: thumb-zone anchored, 44dp targets, IME aware.
@@ -141,7 +117,7 @@ fun ComposerScreen(
 
     // Ensure IME doesn't cause layout jumps - use windowSoftInputMode
     DisposableEffect(keyboardController) {
-        if (PlatformUtils.isAndroid) {
+        if (context is android.app.Activity) {
             val activity = (context as android.app.Activity)
             val originalMode = activity.window.attributes.softInputMode
             activity.window.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
@@ -197,7 +173,7 @@ fun ComposerScreen(
                         .padding(horizontal = 8.dp)
                         .semantics { contentDescription = "Message input" },
                     keyboardOptions = keyboardOptions,
-                    keyboardActions = androidx.compose.material3.TextFieldKeyboardActions(
+                    keyboardActions = androidx.compose.foundation.text.KeyboardActions(
                         onDone = { onSend() },
                         onNext = { keyboardController?.hide() },
                         onPrevious = { keyboardController?.hide() },
@@ -305,4 +281,3 @@ fun ComposerScreen(
             )
         }
     }
-}

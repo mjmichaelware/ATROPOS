@@ -21,15 +21,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.icons.Icons
-import androidx.compose.material3.icons.filled.Build
-import androidx.compose.material3.icons.filled.Checklist
-import androidx.compose.material3.icons.filled.History
-import androidx.compose.material3.icons.filled.Info
-import androidx.compose.material3.icons.filled.MoreVert
-import androidx.compose.material3.icons.filled.PlayArrow
-import androidx.compose.material3.icons.filled.Schedule
-import androidx.compose.material3.icons.filled.Speed
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.Checklist
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Speed
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -182,18 +182,18 @@ private fun ToolsSection(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 ToolButton(
-                    icon = androidx.compose.material3.icons.filled.PlayArrow,
+                    icon = androidx.compose.material.icons.filled.PlayArrow,
                     label = "Build",
                     onClick = onBuildRequested,
                     primary = true,
                 )
                 ToolButton(
-                    icon = androidx.compose.material3.icons.filled.Speed,
+                    icon = androidx.compose.material.icons.filled.Speed,
                     label = "Advance",
                     onClick = onAdvanceBuild,
                 )
                 ToolButton(
-                    icon = androidx.compose.material3.icons.filled.Checklist,
+                    icon = androidx.compose.material.icons.filled.Checklist,
                     label = "Test",
                     onClick = null,
                 )
@@ -298,7 +298,7 @@ private fun ThinkingSection() {
 
 @Composable
 private fun ToolButton(
-    icon: androidx.compose.material3.icons.filled.Icon,
+    icon: androidx.compose.material.icons.filled.Icon,
     label: String,
     onClick: (() -> Unit)?,
     primary: Boolean = false,
