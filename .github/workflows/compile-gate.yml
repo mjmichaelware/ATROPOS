@@ -555,7 +555,7 @@ jobs:
           --tests 'atropos.data.lakehouse.AtomKeywordExtractorTest'
           --tests 'atropos.data.lakehouse.LakehousePathRetrieveTest'
           --tests 'atropos.data.indexer.LatentOntologicalIndexerTest'
-          --tests 'atropos.core.acceptance.CanonicalAcceptanceTests'
+          --tests 'atropos.core.acceptance.CanonicalAcceptanceTests atropos.cli.input.CommandPrefixTest'
 
       - name: validate MCP example catalog
         run: bash scripts/mcp-example-contract-test.sh
