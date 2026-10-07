@@ -100,7 +100,7 @@ class AuthorityAttestationTest {
         // Hash gate removed
         assertTrue(refused.cause.remedy.contains("atropos auth accept"))
 
-        val announcement = AuthorityBootGate(bootstrap).evaluate()
+        val announcement = bootstrap.boot()
         assertFalse(announcement.dispatchPermitted)
         assertTrue(announcement.error!!.contains("dispatch is held"))
     }

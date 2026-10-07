@@ -23,7 +23,7 @@ import atropos.core.AtroposConfig
 import atropos.core.AtroposRepoRootLocator
 import atropos.core.agent.SelfHostStartupContinuationService
 import atropos.core.agent.AgentDaemonService
-import atropos.core.auth.AuthorityBootGate
+import atropos.core.auth.AuthBootstrap
 import atropos.core.provider.ProviderDaemon
 import atropos.core.provider.ProviderHealthReport
 import atropos.core.recovery.RuntimeContinuitySupervisor
@@ -139,9 +139,7 @@ fun main(args: Array<String>) {
         // A tampered AGENTS.md is an instruction set nobody authorised, and it
         // has to be caught here rather than noticed later in output that looks
         // subtly wrong.
-        val authority = AuthorityBootGate().evaluate()
-        authority.notice?.let(ui::renderNotice)
-        authority.error?.let(ui::renderError)
+        val authority = AuthBootstrap().boot()
 
         val continuity = RuntimeContinuitySupervisor {
             CrashRecoveryService(config = config, onboarding = providerOnboarding).recover()
