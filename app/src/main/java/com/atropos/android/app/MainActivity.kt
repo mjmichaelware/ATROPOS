@@ -2,8 +2,6 @@
 package com.atropos.android.app
 
 import com.atropos.android.app.ui.*
-import com.atropos.android.app.model.*
-import com.atropos.android.app.state.*
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -16,8 +14,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.BottomNavigation
-import androidx.compose.material3.BottomNavigationItem
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -60,14 +58,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import androidx.compose.material3.icons.Icons
-import androidx.compose.material3.icons.filled.Chat
-import androidx.compose.material3.icons.filled.Folder
-import androidx.compose.material3.icons.filled.Settings
-import androidx.compose.material3.icons.filled.Build
-import androidx.compose.material3.icons.filled.Code
-import androidx.compose.material3.icons.filled.CloudOff
-import androidx.compose.material3.icons.filled.Psychology
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.CloudOff
+import androidx.compose.material.icons.filled.Psychology
 
 /**
  * HOE-D01: the app shell.
@@ -110,9 +108,9 @@ private fun ComposeAppShell(repository: AndroidEngineBridge) {
         TabItem(0, "Conversation", Icons.Filled.Chat),
         TabItem(1, "Files", Icons.Filled.Folder),
         TabItem(2, "Composer", Icons.Filled.Build),
-        TabItem(2, "Tools", Icons.Filled.Code),
-        TabItem(3, "Settings", Icons.Filled.Settings),
-        TabItem(4, "Offline", Icons.Filled.CloudOff),
+        TabItem(3, "Tools", Icons.Filled.Code),
+        TabItem(4, "Settings", Icons.Filled.Settings),
+        TabItem(5, "Offline", Icons.Filled.CloudOff),
     )
 
     Column(
@@ -128,24 +126,57 @@ private fun ComposeAppShell(repository: AndroidEngineBridge) {
                 0 -> ConversationScreen(
                     messages = state.messages,
                     isOnline = state.isOnline,
-                    onSendMessage = { text -> mvi.dispatch(MobileAppIntent.SendMessage(text)) },
+                    onSendMessage = { text -> scope.launch(Dispatchers.IO) {
+                        when (val outcome = repository.send(text)) {
+                            is SendOutcome.Delivered -> {
+                                mvi.dispatch(MobileAppIntent.TranscriptLoaded(mvi.state.value.messages + outcome.turns))
+                                mvi.dispatch(MobileAppIntent.QueueHeadDelivered)
+                            }
+                            is SendOutcome.Refused -> mvi.dispatch(MobileAppIntent.Notice(localNotice("Message refused: ${outcome.detail}")))
+                            SendOutcome.EngineUnreachable -> mvi.dispatch(MobileAppIntent.Notice(localNotice("Engine unreachable")))
+                        }
+                    } },
                     sessions = state.sessions,
                     onSessionSelected = {},
                     checkpoint = state.checkpoint,
                     onCheckpointAction = {},
                     thinking = state.thinking,
                     onThinkingDepthRequested = {},
-                    answers = state.sixAnswers,
+                    answers = state.answers,
                     approvals = state.approvals,
-                    onApprovalDecided = { id, approve -> mvi.dispatch(MobileAppIntent.ApprovalDecided(id, approve)) },
+                    onApprovalDecided = { id, approve -> scope.launch(Dispatchers.IO) {
+                        when (val outcome = repository.decideApproval(id, approve, DECIDED_BY)) {
+                            is ApprovalOutcome.Recorded -> mvi.dispatch(MobileAppIntent.ApprovalRemoved(id, localNotice("Approval ${if (approve) "approved" else "denied"}")))
+                            is ApprovalOutcome.Refused -> mvi.dispatch(MobileAppIntent.Notice(localNotice("Approval refused: ${outcome.detail}")))
+                            ApprovalOutcome.EngineUnreachable -> mvi.dispatch(MobileAppIntent.Notice(localNotice("Engine unreachable")))
+                        }
+                    } },
                     activeProvider = state.activeProvider,
-                    queuedNotice = state.queuedNotice,
+                    queuedNotice = null,
                     selfHostRun = selfHostRun,
                     selfHostBusy = selfHostBusy,
-                    onBuildRequested = { prompt -> mvi.dispatch(MobileAppIntent.BuildRequested(prompt)) },
-                    onAdvanceBuild = { goalId -> mvi.dispatch(MobileAppIntent.AdvanceBuild(goalId)) },
-                    onDismissBuild = { mvi.dispatch(MobileAppIntent.DismissBuild) },
-                    onCommand = { cmd -> mvi.dispatch(MobileAppIntent.Command(cmd)) }
+                    onBuildRequested = { prompt -> scope.launch(Dispatchers.IO) {
+                        when (val outcome = repository.startSelfHost(prompt, DECIDED_BY)) {
+                            is SelfHostOutcome.Started -> selfHostRun = outcome.run
+                            is SelfHostOutcome.Refused -> mvi.dispatch(MobileAppIntent.Notice(localNotice("Build refused: ${outcome.detail}")))
+                            SelfHostOutcome.EngineUnreachable -> mvi.dispatch(MobileAppIntent.Notice(localNotice("Engine unreachable")))
+                        }
+                    } },
+                    onAdvanceBuild = { goalId -> scope.launch(Dispatchers.IO) {
+                        when (val outcome = repository.advanceSelfHost(goalId)) {
+                            is SelfHostOutcome.Advanced -> selfHostRun = outcome.run
+                            is SelfHostOutcome.Refused -> mvi.dispatch(MobileAppIntent.Notice(localNotice("Build advance refused: ${outcome.detail}")))
+                            SelfHostOutcome.EngineUnreachable -> mvi.dispatch(MobileAppIntent.Notice(localNotice("Engine unreachable")))
+                        }
+                    } },
+                    onDismissBuild = { selfHostRun = null },
+                    onCommand = { cmd -> scope.launch(Dispatchers.IO) {
+                        when (val outcome = repository.runCommand(cmd, DECIDED_BY)) {
+                            is CommandOutcome.Ran -> mvi.dispatch(MobileAppIntent.Notice(localNotice(outcome.output)))
+                            is CommandOutcome.Refused -> mvi.dispatch(MobileAppIntent.Notice(localNotice("Command refused: ${outcome.detail}")))
+                            CommandOutcome.EngineUnreachable -> mvi.dispatch(MobileAppIntent.Notice(localNotice("Engine unreachable")))
+                        }
+                    } }
                 )
                 1 -> FileTreeScreen(
                     repository = repository,
@@ -174,13 +205,13 @@ private fun ComposeAppShell(repository: AndroidEngineBridge) {
         }
 
         // Bottom navigation bar
-        BottomNavigation(
+        NavigationBar(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp)
         ) {
             tabs.forEachIndexed { index, tab ->
-                BottomNavigationItem(
+                NavigationBarItem(
                     selected = currentTab == index,
                     onClick = { currentTab = index },
                     icon = {
