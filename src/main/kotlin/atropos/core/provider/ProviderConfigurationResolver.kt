@@ -1,6 +1,7 @@
 package atropos.core.provider
 
 import atropos.core.AtroposConfig
+import atropos.core.security.CredentialBootstrap
 import atropos.core.security.DefaultSecretSource
 import atropos.core.security.SecretSource
 
@@ -26,7 +27,9 @@ class ProviderConfigurationResolver(
             else -> false
         }
         return configPresent || ProviderEnvironmentAliases.names(name).any { candidate ->
-            environmentPresent(candidate) || secretSource.lookup(candidate).configured
+            CredentialBootstrap.get().has(candidate) ||
+                environmentPresent(candidate) ||
+                secretSource.lookup(candidate).configured
         }
     }
 
