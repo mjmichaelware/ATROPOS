@@ -1,6 +1,17 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package com.atropos.android.app.ui
 
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.foundation.text.KeyboardActions
+
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
