@@ -92,3 +92,5 @@ atropos.jar.backup-*
 /server/.gradle/
 /desktop/.gradle/
 npm/vendor/
+auth.json
+.opencode/

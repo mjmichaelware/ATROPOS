@@ -37,11 +37,16 @@ class PromptSuggestionState(
      *
      * The text is trimmed at the start so a leading space does not suppress the
      * palette, but interior whitespace does — that marks the end of the token.
+     *
+     * Hard command prefix gate: the palette is ONLY active for explicitly prefixed input.
+     * Natural language input never triggers the command palette.
      */
     fun isActive(textBeforeCursor: String): Boolean {
         if (dismissed) return false
         val token = textBeforeCursor.trimStart()
         if (token.isEmpty()) return false
+        // Hard command prefix gate (Σ_cmd): only show palette for explicitly prefixed commands
+        if (!CommandPrefix.isCommandPrefixed(token)) return false
         if (token.any(Char::isWhitespace) || token.contains('\n')) return false
         return matcher(token)
     }
@@ -138,6 +143,6 @@ class PromptSuggestionState(
 
     private fun isHelpPalette(textBeforeCursor: String): Boolean =
         textBeforeCursor.trim().lowercase() in setOf(
-            "?", "/?", "/help", "/usage", "/commands", "help", "usage", "commands"
+            "?", "/?", "/help", "/usage", "/commands"
         )
 }

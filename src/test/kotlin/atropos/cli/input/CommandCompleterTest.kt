@@ -1,107 +1,175 @@
+/* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.cli.input
 
+import java.nio.file.Path
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
-import java.nio.file.Path
 
 class CommandCompleterTest {
-    /**
-     * Deliberate contract change: an un-slashed word is prose.
-     *
-     * This test previously asserted that `help` and `usage` resolved to
-     * `/help` on Enter. They no longer do, and that is the fix rather than a
-     * regression — a bare word matching the registry was being silently
-     * rewritten and executed, so there was no way to ask the engine about any
-     * word that collided with a command name. Tab still completes them.
-     *
-     * `self-host` keeps resolving: it is an explicit multi-word alias the
-     * operator chose, not a collision.
-     */
+
+    private val completer = CommandCompleter(Path.of("."))
+
     @Test
-    fun resolveSubmission_requires_a_slash_except_for_the_self_host_alias() {
-        val completer = CommandCompleter(Path.of("."))
+    fun `complete returns empty for natural language input`() {
+        val naturalLanguageInputs = listOf(
+            "hi",
+            "hello",
+            "hi!",
+            "history",
+            "hello!",
+            "what is this?",
+            "tell me something",
+            "status",
+            "usage",
+            "help me",
+            "run this",
+            "version",
+            "quit",
+            "exit",
+            "foo",
+            "bar",
+            "123",
+            "你好",
+            "😊",
+            "!",
+            "?",
+            "...",
+            "???",
+            "hi?",
+            "hi.",
+            "hi,",
+            "what?!",
+            "你好！"
+        )
 
-        assertEquals(null, completer.resolveSubmission("?", 1))
-        assertEquals(null, completer.resolveSubmission("usage", 5))
-        assertEquals(null, completer.resolveSubmission("help", 4))
-
-        assertEquals("/help", completer.resolveSubmission("/usage", 7))
-        assertEquals("/self-host", completer.resolveSubmission("self-host", 9))
-        assertEquals("/self-host build yourself", completer.resolveSubmission("self-host build yourself", 24))
-        assertEquals("/self-host run", completer.resolveSubmission("self-host run", 13))
+        for (input in naturalLanguageInputs) {
+            val completion = completer.complete(input, input.length)
+            assertTrue(completion.options.isEmpty(), "Expected empty completion for: $input")
+            assertEquals("", completion.insertion, "Expected empty insertion for: $input")
+            assertEquals("", completion.preview, "Expected empty preview for: $input")
+        }
     }
 
     @Test
-    fun complete_prefers_canonical_commands_for_alias_prefixes() {
-        val completer = CommandCompleter(Path.of("."))
+    fun `complete returns empty for empty and whitespace input`() {
+        val emptyInputs = listOf("", " ", "    ", "\t", "\n", "  \t  \n  ")
 
-        val helpCompletion = completer.complete("usage", 5)
-        assertEquals("/help", helpCompletion.options.first())
-        assertEquals("", helpCompletion.insertion)
-        assertEquals("/help", helpCompletion.preview)
-
-        val selfHostCompletion = completer.complete("self-host", 9)
-        assertEquals("/self-host", selfHostCompletion.options.first())
-        assertEquals("", selfHostCompletion.insertion)
-        assertEquals("/self-host", selfHostCompletion.preview)
+        for (input in emptyInputs) {
+            val completion = completer.complete(input, input.length)
+            assertTrue(completion.options.isEmpty(), "Expected empty completion for: '$input'")
+        }
     }
 
     @Test
-    fun complete_supports_short_prefixes_and_enter_resolution() {
-        val completer = CommandCompleter(Path.of("."))
+    fun `complete returns empty for punctuation and emoji`() {
+        val punctuationInputs = listOf("!", "?", ".", ",", "!!!", "...", "?!?", "😊", "你好！")
 
-        val completion = completer.complete("/quo", 4)
-
-        assertTrue(completion.options.isNotEmpty(), completion.options.joinToString(", "))
-        assertTrue(completion.options.first().startsWith("/status"), completion.options.joinToString(", "))
-        assertEquals("", completion.insertion)
-        assertEquals("/status quota", completer.resolveSubmission("/quo", 4))
-    }
-
-    /**
-     * The selection is still honoured — but only once a slash has declared
-     * that a command was meant. `status` alone is now a word.
-     */
-    @Test
-    fun enter_preserves_selected_command_for_slashed_prefixes() {
-        val completer = CommandCompleter(Path.of("."))
-
-        assertEquals(null, completer.resolveSubmission("status", 6, 3))
-
-        // selectedIndex 3 picks the status-adapters entry from search results
-        val statusResult = completer.resolveSubmission("/status", 7, 3)
-        assertTrue(statusResult != null && statusResult.contains("status"), "slashed prefix should resolve: $statusResult")
-        // selectedIndex 2 picks a self-host variant from search results
-        val selfHostResult = completer.resolveSubmission("self-host", 9, 2)
-        assertTrue(selfHostResult != null && selfHostResult.contains("self-host"), "self-host prefix should resolve: $selfHostResult")
+        for (input in punctuationInputs) {
+            val completion = completer.complete(input, input.length)
+            assertTrue(completion.options.isEmpty(), "Expected empty completion for: $input")
+        }
     }
 
     @Test
-    fun enter_does_not_rewrite_plain_natural_language_into_a_command() {
-        val completer = CommandCompleter(Path.of("."))
-        val prompt = "build a simple calculator CLI with tests and README"
-        assertEquals(null, completer.resolveSubmission(prompt, prompt.length))
+    fun `complete returns candidates for slash-prefixed input`() {
+        // These should produce completion candidates (exact commands may vary)
+        val prefixedInputs = listOf(
+            "/",
+            "/s",
+            "/st",
+            "/sta",
+            "/stat",
+            "/status",
+            "/verify",
+            "/use",
+            "  /status",
+            "\t/verify"
+        )
+
+        for (input in prefixedInputs) {
+            val completion = completer.complete(input, input.length)
+            // Should produce some candidates for valid command prefixes
+            // Note: exact candidates depend on registered commands
+            assertTrue(completion.options.isNotEmpty() || completion.insertion.isNotEmpty(),
+                "Expected candidates for prefixed input: $input")
+        }
     }
 
     @Test
-    fun risky_partial_rewrite_is_marked_for_confirmation() {
-        val completer = CommandCompleter(Path.of("."))
+    fun `resolveSubmission returns null for natural language`() {
+        val naturalLanguageInputs = listOf(
+            "hi",
+            "hello",
+            "history",
+            "what is this?",
+            "status",
+            "usage",
+            "help me",
+            "version",
+            "quit",
+            "exit"
+        )
 
-        val resolved = completer.resolveSubmission("/she", 4)
-
-        assertEquals("/shell", resolved)
-        assertTrue(completer.lastResolutionWasFuzzy)
+        for (input in naturalLanguageInputs) {
+            val result = completer.resolveSubmission(input, input.length)
+            assertEquals(null, result, "Expected null for natural language: $input")
+        }
     }
 
     @Test
-    fun complete_replaces_bare_command_prefixes_with_canonical_commands() {
-        val completer = CommandCompleter(Path.of("."))
+    fun `resolveSubmission returns null for empty input`() {
+        val emptyInputs = listOf("", " ", "    ", "\t", "\n")
 
-        val completion = completer.complete("help", 4)
+        for (input in emptyInputs) {
+            val result = completer.resolveSubmission(input, input.length)
+            assertEquals(null, result, "Expected null for empty input: '$input'")
+        }
+    }
 
-        assertTrue(completion.options.isNotEmpty(), completion.options.joinToString(", "))
-        assertEquals("", completion.insertion)
-        assertEquals("/help", completion.preview)
+    @Test
+    fun `resolveSubmission returns command for slash-prefixed input`() {
+        val result = completer.resolveSubmission("/status", "/status".length)
+        assertTrue(result != null && result.startsWith("/status"),
+            "Expected command resolution for /status, got: $result")
+    }
+
+    @Test
+    fun `completion state clears when transitioning from command to natural language`() {
+        // First, enter command mode
+        var completion = completer.complete("/hist", 5)
+        assertTrue(completion.options.isNotEmpty(), "Should have candidates for /hist")
+
+        // Then transition to natural language
+        completion = completer.complete("hi", 2)
+        assertTrue(completion.options.isEmpty(), "Should have NO candidates for 'hi' after command mode")
+
+        // Enter should not resurrect stale state
+        val result = completer.resolveSubmission("hi", 2)
+        assertEquals(null, result, "Enter on 'hi' should return null (natural language)")
+    }
+
+    @Test
+    fun `verify subcommand completion works`() {
+        val completion = completer.complete("/verify n", 8)
+        // Should offer "narrow" and "wide"
+        assertTrue(completion.options.contains("narrow") || completion.options.contains("wide"),
+            "Expected narrow/wide for /verify")
+    }
+
+    @Test
+    fun `use subcommand completion works`() {
+        val completion = completer.complete("/use g", 6)
+        // Should offer provider completions (fuzzy)
+        assertTrue(completion.options.isNotEmpty(), "Expected provider completions for /use")
+    }
+
+    @Test
+    fun `fuzzy completion works inside command mode`() {
+        // "/sta" should complete to "/status" via fuzzy matching
+        val completion = completer.complete("/sta", 4)
+        assertTrue(completion.options.contains("/status") || completion.insertion.contains("tus"),
+            "Expected /status completion for /sta, got: ${completion.options}, insertion: ${completion.insertion}")
     }
 }

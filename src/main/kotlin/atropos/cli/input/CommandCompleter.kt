@@ -53,21 +53,18 @@ class CommandCompleter(
             position
         )
 
-        val commandPrefix = prefix.takeIf {
-            it.none(Char::isWhitespace) &&
-                (it.startsWith("/") || suggestionEngine.hasSuggestions(it))
-        }
-        if (commandPrefix != null) {
-            return completeCommandPrefix(
-                commandPrefix,
-                selectedIndex
-            )
+        // Hard command prefix gate (Σ_cmd): completion ONLY executes for explicitly prefixed input
+        if (!CommandPrefix.isCommandPrefixed(prefix)) {
+            return Completion()
         }
 
-        if (prefix.startsWith("/verify ")) {
-            val scopePrefix =
-                prefix.removePrefix("/verify ")
+        // At this point, prefix starts with a command prefix character
+        // Use the full prefixed input for command-specific parsing
+        val commandInput = prefix.trimStart()
 
+        // Handle multi-token commands that need their arguments
+        if (commandInput.startsWith("/verify ")) {
+            val scopePrefix = commandInput.removePrefix("/verify ")
             if (scopePrefix.none(Char::isWhitespace)) {
                 return select(
                     scopePrefix,
@@ -77,10 +74,8 @@ class CommandCompleter(
             }
         }
 
-        if (prefix.startsWith("/use ")) {
-            val providerPrefix =
-                prefix.removePrefix("/use ")
-
+        if (commandInput.startsWith("/use ")) {
+            val providerPrefix = commandInput.removePrefix("/use ")
             if (providerPrefix.none(Char::isWhitespace)) {
                 return select(
                     providerPrefix,
@@ -91,8 +86,10 @@ class CommandCompleter(
             }
         }
 
-        return completePath(
-            prefix,
+        // For general command completion, extract just the command token
+        val commandToken = commandInput.takeWhile { !it.isWhitespace() }
+        return completeCommandPrefix(
+            commandToken,
             selectedIndex
         )
     }
@@ -109,21 +106,8 @@ class CommandCompleter(
         val trimmed = prefix.trim()
         if (trimmed.isBlank()) return null
 
-        // The slash is the operator declaring intent, and Enter honours that
-        // declaration rather than second-guessing it.
-        //
-        // This used to fire on any single word, so typing `status` — a
-        // perfectly ordinary thing to say to an assistant — silently became
-        // `/status` and ran a command. The operator watched their sentence get
-        // rewritten and executed, and there was no way to ask the engine about
-        // a word that happened to be in the registry. Tab still completes an
-        // un-slashed prefix, so the shortcut is a keystroke away; it is only
-        // no longer automatic.
-        //
-        // `self-host` stays because it is an explicit multi-word alias the
-        // operator chose, not a word that collided with a command name.
-        val commandLikeNaturalLanguage = trimmed.startsWith("self-host", ignoreCase = true)
-        if (!trimmed.startsWith("/") && !commandLikeNaturalLanguage) return null
+        // Hard command prefix gate (Σ_cmd): only explicitly prefixed input resolves to a command
+        if (!CommandPrefix.isCommandPrefixed(trimmed)) return null
 
         val parts = trimmed.split(" ", limit = 2)
         val head = parts.first()
@@ -242,7 +226,7 @@ class CommandCompleter(
                             prefix,
                             ignoreCase = true
                         )
-                    )
+                )
         }
 
         if (matches.isEmpty()) return Completion()
