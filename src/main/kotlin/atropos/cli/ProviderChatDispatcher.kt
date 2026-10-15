@@ -49,22 +49,16 @@ class ProviderChatDispatcher(
         try {
             val routedProvider = routeProvider(prompt, currentProviderName)
             uiEngine.renderExecutionEvent("provider", "selected=$routedProvider")
-            // Through the cascade, not one provider.
-            //
-            // This called `provider.complete` directly and let the catch below
-            // end the turn, so a single refusal was fatal: an operator with
-            // twenty-three configured providers lost the turn because Groq had
-            // retired one model. ProviderCascadeRouter already knew how to walk
-            // the declared chain -- AgentService and AgentRepairService have
-            // used it all along -- so chat was the one path that gave up.
-            //
-            // Each attempt is announced, so the operator can see the fallback
-            // happening rather than wondering why the answer came from
-            // somewhere other than the provider in the status bar.
+
+            val isExplicitPaid = currentProviderName.lowercase() != "auto" &&
+                atropos.core.provider.StaticProviderDescriptorRegistry().getById(routedProvider)?.isPaid() == true
+            val isUnlocked = atropos.core.paid.EmergencyPaidGate().isProviderUnlocked(routedProvider)
+
             val cascade = cascadeRouter.completeWithCascade(
                 requestedProvider = routedProvider,
                 prompt = immutablePrompt.text,
                 context = "",
+                allowPaidProvider = isUnlocked || (isExplicitPaid && isUnlocked),
                 beforeAttempt = { candidate ->
                     if (candidate != routedProvider) {
                         uiEngine.renderExecutionEvent("provider", "falling back to $candidate")

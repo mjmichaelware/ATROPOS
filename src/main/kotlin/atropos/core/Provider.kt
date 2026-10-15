@@ -24,24 +24,28 @@ data class GenerationParameters(
     val fewShotExamples: List<String> = emptyList()
 )
 
-class ProviderFactory(private val config: AtroposConfig = AtroposConfig.load()) {
+class ProviderFactory(private val configProvider: () -> AtroposConfig = { AtroposConfig.load() }) {
+    private val config: AtroposConfig get() = configProvider()
+
     private val canonicalAdapters by lazy {
         StaticProviderAdapterRegistry(env = providerEnvironment(config))
     }
 
     fun getProvider(name: String = config.runtime.defaultProvider): AIProvider {
+        val currentConfig = config
         val providerId = name.trim().lowercase()
         return when (providerId) {
-            "groq" -> GroqProvider(config.keys.groq)
-            "openai" -> OpenAiProvider(config.keys.openai)
-            "anthropic" -> AnthropicProvider(config.keys.anthropic)
-            "xai" -> XAiProvider(config.keys.xai)
+            "groq" -> GroqProvider(currentConfig.keys.groq)
+            "openai" -> OpenAiProvider(currentConfig.keys.openai)
+            "anthropic" -> AnthropicProvider(currentConfig.keys.anthropic)
+            "xai" -> XAiProvider(currentConfig.keys.xai)
             "github_models" -> GitHubModelsProvider()
             "cloudflare_ai" -> CloudflareAiProvider()
             "sambanova" -> SambaNovaProvider()
             "deepseek_direct" -> DeepSeekDirectProvider()
             "ollama" -> OllamaProvider()
-            else -> canonicalAdapters.getByProviderId(providerId)
+            else -> StaticProviderAdapterRegistry(env = providerEnvironment(currentConfig))
+                .getByProviderId(providerId)
                 ?.takeIf { it.status().implemented }
                 ?.let(::ProviderAdapterAiBridge)
                 ?: throw IllegalArgumentException("Unsupported provider: $name")
@@ -232,7 +236,7 @@ abstract class BaseHttpProvider : AIProvider {
                             val code = hex.toIntOrNull(16)
                             if (code != null) {
                                 out.append(code.toChar())
-                                index += 5
+                                index += 4
                                 escaped = false
                                 continue
                             }

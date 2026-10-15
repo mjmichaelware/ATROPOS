@@ -53,7 +53,7 @@ object ProviderCascadeOrder {
             // the cascade spends attempts discovering that.
             .filterNot {
                 descriptors[it]?.billingClass() == BillingClass.PAID &&
-                    !(allowUnlockedPaid && paidGate.isProviderUnlocked(it))
+                    !(allowUnlockedPaid || paidGate.isProviderUnlocked(it))
             }
             .withIndex()
             .sortedWith(compareBy({ rank(descriptors[it.value]?.costMode) }, { it.index }))

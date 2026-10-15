@@ -2,7 +2,9 @@ package atropos.core
 
 import atropos.core.provider.ProviderModelResolver
 
-class GroqProvider(private val apiKey: String?) : BaseHttpProvider() {
+class GroqProvider(
+    private val apiKey: String? = System.getenv("GROQ_API_KEY")
+) : BaseHttpProvider() {
     override val name = "groq"
     override fun complete(prompt: String, context: String): String {
         val token = requireKey(apiKey, name)
@@ -16,7 +18,9 @@ class GroqProvider(private val apiKey: String?) : BaseHttpProvider() {
     }
 }
 
-class OpenAiProvider(private val apiKey: String?) : BaseHttpProvider() {
+class OpenAiProvider(
+    private val apiKey: String? = System.getenv("OPENAI_API_KEY")
+) : BaseHttpProvider() {
     override val name = "openai"
     override fun complete(prompt: String, context: String): String {
         val token = requireKey(apiKey, name)
@@ -30,7 +34,9 @@ class OpenAiProvider(private val apiKey: String?) : BaseHttpProvider() {
     }
 }
 
-class AnthropicProvider(private val apiKey: String?) : BaseHttpProvider() {
+class AnthropicProvider(
+    private val apiKey: String? = System.getenv("ANTHROPIC_API_KEY")
+) : BaseHttpProvider() {
     override val name = "anthropic"
     override fun complete(prompt: String, context: String): String {
         val token = requireKey(apiKey, name)
@@ -61,7 +67,9 @@ class AnthropicProvider(private val apiKey: String?) : BaseHttpProvider() {
     }
 }
 
-class XAiProvider(private val apiKey: String?) : BaseHttpProvider() {
+class XAiProvider(
+    private val apiKey: String? = System.getenv("XAI_API_KEY")
+) : BaseHttpProvider() {
     override val name = "xai"
     override fun complete(prompt: String, context: String): String {
         val token = requireKey(apiKey, name)
@@ -133,7 +141,7 @@ class DeepSeekDirectProvider(
         val token = requireKey(apiKey, name)
         return postOpenAiCompatibleChat(
             uri = "https://api.deepseek.com/chat/completions",
-            model = "deepseek-v4-flash",
+            model = "deepseek-chat",
             prompt = redactionFilter.redact(prompt),
             context = redactionFilter.redact(context),
             bearerToken = token

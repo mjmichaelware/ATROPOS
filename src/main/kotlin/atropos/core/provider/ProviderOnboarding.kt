@@ -300,7 +300,8 @@ class ProviderOnboardingService(
         .toList()
 
     private fun localSecretPresent(name: String): Boolean =
-        credentialVault.has(name)
+        credentialVault.has(name) ||
+            runCatching { !localVault.readSecret(name).isNullOrBlank() }.getOrDefault(false)
 
     private fun looksLikeCredentialName(name: String): Boolean {
         val normalized = name.uppercase()

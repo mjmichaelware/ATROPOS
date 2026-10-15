@@ -4,6 +4,7 @@ package atropos.core.provider
 import atropos.core.AtroposConfig
 import atropos.core.paid.EmergencyPaidGate
 import atropos.core.security.CredentialVault
+import atropos.core.security.TokenIsolationVault
 import java.time.Instant
 
 /**
@@ -31,9 +32,7 @@ class ProviderDaemon(
         // Get all providers that have credentials in vault
         val providersWithCreds = registry.getAll().filter { descriptor ->
             val requiredEnv = descriptor.requiredEnv
-            requiredEnv.any { envVar ->
-                credentialVault.has(envVar)
-            } || (descriptor.requiredEnv.isEmpty() && descriptor.id == "ollama")
+            hasCredentials(descriptor) || (descriptor.requiredEnv.isEmpty() && descriptor.id == "ollama")
         }
 
         if (providersWithCreds.isEmpty()) {
@@ -55,7 +54,10 @@ class ProviderDaemon(
         onboarding.refresh().forEach { provider ->
             val health = report[provider.providerId]
             if (health != null) {
-                // Health is already validated, just ensure consistency
+                onboarding.recordLiveTest(
+                    provider.providerId,
+                    health.state == ProviderAvailabilityState.READY
+                )
             }
         }
 
@@ -83,9 +85,7 @@ class ProviderDaemon(
 
         // For remote providers, check if we have valid credentials
         val requiredEnv = descriptor.requiredEnv
-        val hasValidCreds = requiredEnv.any { envVar ->
-            credentialVault.has(envVar)
-        }
+        val hasValidCreds = hasCredentials(descriptor)
 
         if (!hasValidCreds) {
             return ProviderHealth(
@@ -115,6 +115,30 @@ class ProviderDaemon(
                 state = ProviderAvailabilityState.OFFLINE
             )
         }
+    }
+
+    private fun hasCredentials(descriptor: ProviderDescriptor): Boolean {
+        if (descriptor.id == "ollama") return true
+        val required = descriptor.requiredEnv
+        if (required.isEmpty()) return true
+
+        return required.any { envVar ->
+            // 1. Vault check
+            credentialVault.has(envVar) ||
+                runCatching { !TokenIsolationVault(config.configRoot().resolve("secrets")).readSecret(envVar).isNullOrBlank() }.getOrDefault(false) ||
+                // 2. Process environment
+                !System.getenv(envVar).isNullOrBlank() ||
+                // 3. In-memory config keys
+                configHasKey(envVar)
+        }
+    }
+
+    private fun configHasKey(envVar: String): Boolean = when (envVar.uppercase()) {
+        "GROQ_API_KEY" -> config.keys.groq.isNotBlank()
+        "OPENAI_API_KEY" -> config.keys.openai.isNotBlank()
+        "ANTHROPIC_API_KEY" -> config.keys.anthropic.isNotBlank()
+        "XAI_API_KEY" -> config.keys.xai.isNotBlank()
+        else -> false
     }
 
     private fun checkOllamaHealth(): ProviderHealth {
