@@ -1,20 +1,31 @@
+/* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.factory
 
 import atropos.core.assets.LocalAssetGenerator
 import atropos.core.AtroposRepoRootLocator
 import atropos.core.AtroposConfig
-import atropos.core.provider.ProviderOnboardingService
 import atropos.core.memory.LocalMemoryStore
+import atropos.core.orchestration.AutonomousWaveOrchestrator
+import atropos.core.orchestration.WaveExecutionRequest
+import atropos.core.orchestration.WaveExecutionResult
 import atropos.core.paid.EmergencyPaidGate
 import atropos.core.project.ProjectRegistry
 import atropos.core.planning.InternalPlanningGraphService
 import atropos.core.dag.DagStore
 import atropos.core.journal.EventJournalService
+import atropos.core.factory.FactoryLiveRepairAction
 import java.nio.file.Path
+import java.time.Instant
 
+/**
+ * AppFactoryRouter rewritten for autonomous wave execution.
+ *
+ * plan() converts a prompt into a typed WaveExecutionRequest.
+ * runLocal() delegates synchronously to AutonomousWaveOrchestrator.execute().
+ * Zero template paths remain reachable.
+ */
 class AppFactoryRouter(
     private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
-    private val onboarding: ProviderOnboardingService = ProviderOnboardingService(),
     private val memory: LocalMemoryStore? = runCatching {
         LocalMemoryStore(repoRoot.resolve(".atropos/memory").toFile())
     }.getOrNull(),
@@ -22,16 +33,6 @@ class AppFactoryRouter(
     private val paidGate: EmergencyPaidGate = EmergencyPaidGate(),
     private val projectRegistry: ProjectRegistry = ProjectRegistry(repoRoot),
     private val projectSpecParser: AppProjectSpecParser = AppProjectSpecParser(),
-    /**
-     * The planner, wired to the canonical atomizer and the lakehouse.
-     *
-     * Both seams default to NONE at their own declaration sites, which is
-     * correct for a planner used standalone and was wrong here: nothing passed
-     * them, so a factory run planned from the internal extractor with no atom
-     * context and both integrations were unreachable from any real command.
-     * This is the composition point where the engine's actual configuration is
-     * stated.
-     */
     private val planningGraph: InternalPlanningGraphService = InternalPlanningGraphService(
         repoRoot = repoRoot,
         executionDagSynthesizer = atropos.core.planning.InternalExecutionDagSynthesizer(
@@ -39,19 +40,25 @@ class AppFactoryRouter(
         ),
         canonicalAtoms = SpecGraphCanonicalAtomProvider(
             repoRoot = repoRoot,
-            onboarding = onboarding
+            onboarding = ProviderOnboardingService()
         )
     ),
     private val journal: EventJournalService = EventJournalService(repoRoot),
-    private val liveRepairAction: FactoryLiveRepairAction = FactoryLiveRepairAction(repoRoot)
+    private val liveRepairAction: FactoryLiveRepairAction = FactoryLiveRepairAction(repoRoot),
+    private val orchestrator: AutonomousWaveOrchestrator = AutonomousWaveOrchestrator.createDefault(repoRoot)
 ) {
     private val runtimeConfig: AtroposConfig = AtroposConfig.load()
-    fun plan(prompt: String): FactoryPlan {
+
+    /**
+     * Convert a prompt into a typed WaveExecutionRequest.
+     * No template generation, no scaffold emission.
+     */
+    fun plan(prompt: String): WaveExecutionRequest {
         val clean = prompt.trim().ifBlank { "build local app" }
         val projectSpec = projectSpecParser.parse(clean)
         val intent = FactoryPlanHelper.classify(projectSpecParser, clean)
         val steps = FactoryPlanHelper.stepsFor(intent)
-        return FactoryPlan(
+        val factoryPlan = FactoryPlan(
             id = "factory-${FactoryLineage.sha256(clean).take(16)}",
             prompt = clean,
             intent = intent,
@@ -62,14 +69,46 @@ class AppFactoryRouter(
             assetFiles = emptyList(),
             memoryRecordId = null
         )
+
+        val lineage = FactoryLineageFactory.prepare(
+            repoRoot,
+            factoryPlan.id,
+            factoryPlan.prompt,
+            factoryPlan.projectSpec,
+            runMemory = memory,
+            clarificationAnswers = emptyList(),
+            localOnly = runtimeConfig.runtime.localOnly
+        )
+
+        val targetDir = repoRoot.resolve(".atropos/generated-projects")
+            .resolve("${AppProjectGenerator.safeName(projectSpec.intent.name)}-${factoryPlan.id}")
+
+        return WaveExecutionRequest.fromFactoryPlan(factoryPlan, lineage, targetDir)
     }
 
-    fun runLocal(prompt: String): FactoryPlan = runLocalInternal(prompt)
+    /**
+     * Execute a wave request synchronously through the autonomous orchestrator.
+     * Throws if the orchestrator fails — no local fallback.
+     */
+    fun runLocal(prompt: String): Path {
+        val request = plan(prompt)
+        val result = orchestrator.execute(request)
+
+        if (!result.success) {
+            throw IllegalStateException(
+                "Wave execution failed: ${result.message}. " +
+                "Completed: ${result.completedAtoms.joinToString(", ")}. " +
+                "Failed: ${result.failedAtoms.joinToString(", ")}. " +
+                "Blocked: ${result.blockedAtoms.joinToString(", ")}"
+            )
+        }
+
+        return request.targetDirectory
+    }
 
     fun resume(runId: String): FactoryResumeContext =
         FactoryRunHandoff.readContext(repoRoot, runId)
 
-    /** Resumes the persisted DAG; it never creates a new prompt or project hash. */
     fun resume(
         runId: String,
         freeze: FactoryAcceptanceFreeze,
@@ -93,15 +132,6 @@ class AppFactoryRouter(
         return runLocalInternal(FactoryClarificationRequest.loadPrompt(runRoot), projectId, answers)
     }
 
-    /**
-     * Wave 1: resume a prior factory run from its durable lineage.
-     *
-     * The run root under `.atropos/research/factory/<id>` *is* the handoff:
-     * the prompt artifact carries the redacted prompt and its hash chain, so
-     * re-reading it reconstructs exactly what the first attempt planned from.
-     * Insufficient lineage fails actionable — the operator is told which
-     * artifact is missing, not given a fresh run wearing the old id.
-     */
     fun resumePlan(runId: String): FactoryPlan {
         require(runId.matches(Regex("[A-Za-z0-9][A-Za-z0-9._-]{0,127}"))) {
             "factory project id is invalid"
@@ -117,8 +147,6 @@ class AppFactoryRouter(
                     "start one with /factory run <prompt>"
             )
         }
-        // loadPrompt verifies the artifact's own hash chain; a tampered or
-        // truncated prompt refuses here rather than planning from lies.
         val prompt = FactoryClarificationRequest.loadPrompt(runRoot)
         return runLocalInternal(prompt, projectIdOverride = runId)
     }
@@ -129,16 +157,17 @@ class AppFactoryRouter(
         clarificationAnswers: List<Boolean> = emptyList()
     ): FactoryPlan {
         val planned = plan(prompt)
-        val base = projectIdOverride?.let { planned.copy(id = it) } ?: planned
+        val base = projectIdOverride?.let { planned.copy(requestId = it) } ?: planned
         val lineage = FactoryLineageFactory.prepare(
             repoRoot,
-            base.id,
+            base.requestId,
             base.prompt,
             base.projectSpec,
             runMemory = memory,
             clarificationAnswers = clarificationAnswers,
             localOnly = runtimeConfig.runtime.localOnly
         )
+
         val orchestrator = FactoryRunOrchestrator(
             repoRoot = repoRoot,
             memory = memory,

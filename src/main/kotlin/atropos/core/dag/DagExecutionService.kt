@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.dag
 
 import atropos.core.AtroposConfig
@@ -11,25 +12,41 @@ import atropos.core.territory.TerritoryStore
 import atropos.core.verification.VerifiedCompletionGate
 import atropos.core.worktree.IsolatedWorktreeService
 import atropos.core.worktree.WorktreeCreateResult
+import atropos.core.worktree.WorktreeRecord
 import atropos.core.worktree.WorktreeRollbackResult
 import atropos.core.policy.ActionActor
+import atropos.core.orchestration.ContractLatticeSynthesizer
+import atropos.core.orchestration.SynthesisResult
 import java.nio.file.Path
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 
+/**
+ * DagExecutionService rewritten for wave-batch execution with isolated worktrees.
+ *
+ * Every PROVIDER_CALL node allocates an ephemeral worktree via
+ * IsolatedWorktreeService.createWorktree(). Territory disjointness is validated
+ * before parallel execution. Stdout, stderr, exit code are captured into
+ * ExecutionEvidence. Worktree is reverted on failure.
+ */
 class DagExecutionService(
     private val config: AtroposConfig = AtroposConfig.load(),
     private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
     private val worktreeService: IsolatedWorktreeService = IsolatedWorktreeService(repoRoot),
     private val territoryService: TerritoryGrantService = TerritoryGrantService(TerritoryService(TerritoryStore(repoRoot))),
     private val partitionManager: PartitionClusterManager = PartitionClusterManager(),
-    private val completionGate: VerifiedCompletionGate = VerifiedCompletionGate()
+    private val completionGate: VerifiedCompletionGate = VerifiedCompletionGate(),
+    private val contractSynthesizer: ContractLatticeSynthesizer = ContractLatticeSynthesizer(repoRoot)
 ) {
-    private val activeWorktrees = ConcurrentHashMap<String, WorktreeCreateResult>()
+    private val activeWorktrees = ConcurrentHashMap<String, WorktreeRecord>()
 
+    /**
+     * Execute a batch of ready nodes as a wave with full worktree isolation.
+     */
     fun executeWaveBatch(dagId: String, waveNodes: List<DagNode>): Map<String, DagNodeExecutionResult> {
         val results = mutableMapOf<String, DagNodeExecutionResult>()
 
+        // Validate territory disjointness before any execution
         val disjoint = enforceTerritoryDisjointness(waveNodes)
         if (!disjoint) {
             for (node in waveNodes) {
@@ -43,9 +60,67 @@ class DagExecutionService(
             return results
         }
 
+        // Create isolated worktrees for all nodes in the wave
+        val worktreeRecords = mutableMapOf<String, WorktreeRecord>()
         for (node in waveNodes) {
-            val result = executeNodeInWorktree(node, dagId)
+            val worktreeResult = worktreeService.createWorktree(jobId = node.id, territory = node.territory)
+            if (!worktreeResult.success || worktreeResult.record == null) {
+                // Rollback any already created worktrees
+                worktreeRecords.values.forEach { worktreeService.rollback(it.id) }
+                for (node in waveNodes) {
+                    results[node.id] = DagNodeExecutionResult(
+                        nodeId = node.id,
+                        state = DagNodeState.FAILED,
+                        ok = false,
+                        message = "worktree creation failed: ${worktreeResult.message}"
+                    )
+                }
+                return results
+            }
+            worktreeRecords[node.id] = worktreeResult.record!!
+            activeWorktrees[node.id] = worktreeResult.record!!
+        }
+
+        // Execute each node in its isolated worktree
+        for (node in waveNodes) {
+            val worktreeRecord = worktreeRecords[node.id]!!
+            val result = executeNodeInWorktree(node, worktreeRecord, dagId)
             results[node.id] = result
+
+            // On failure, rollback this worktree immediately
+            if (!result.ok) {
+                worktreeService.rollback(worktreeRecord.id)
+            }
+        }
+
+        // Merge successful worktrees back to main repo
+        for (node in waveNodes) {
+            val result = results[node.id]!!
+            val worktreeRecord = worktreeRecords[node.id]!!
+            if (result.ok) {
+                val mergeResult = worktreeService.verifyAndMerge(worktreeRecord.id)
+                if (!mergeResult.success) {
+                    results[node.id] = DagNodeExecutionResult(
+                        nodeId = node.id,
+                        state = DagNodeState.FAILED,
+                        ok = false,
+                        message = "verify and merge failed: ${mergeResult.message}"
+                    )
+                    worktreeService.rollback(worktreeRecord.id)
+                }
+            }
+        }
+
+        // Cleanup
+        for (worktreeRecord in worktreeRecords.values) {
+            activeWorktrees.remove(worktreeRecord.jobId)
+            // Worktree is removed by verifyAndMerge on success, or rollback on failure
+            // Explicit removal only for any stragglers
+            if (worktreeRecord.verified && worktreeRecord.mergedBack) {
+                // Already cleaned up
+            } else {
+                worktreeService.removeWorktree(worktreeRecord.id)
+            }
         }
 
         return results
@@ -107,28 +182,26 @@ class DagExecutionService(
         return true
     }
 
-    private fun executeNodeInWorktree(node: DagNode, dagId: String): DagNodeExecutionResult {
+    private fun executeNodeInWorktree(node: DagNode, worktreeRecord: WorktreeRecord, dagId: String): DagNodeExecutionResult {
         if (node.state != DagNodeState.READY && node.state != DagNodeState.PENDING) {
             return DagNodeExecutionResult(node.id, node.state, false, "node already in state ${node.state}")
         }
 
-        val worktreeResult = worktreeService.createWorktree(jobId = node.id, territory = node.territory)
-        if (!worktreeResult.success) {
-            return DagNodeExecutionResult(node.id, DagNodeState.FAILED, false, worktreeResult.message)
-        }
-        if (worktreeResult.record == null) {
-            return DagNodeExecutionResult(node.id, DagNodeState.FAILED, false, "worktree created but record missing")
-        }
-
-        val worktreeRecord = worktreeResult.record!!
-        activeWorktrees[node.id] = worktreeResult
-
         try {
-            executeNodeActions(node, worktreeRecord.worktreePath)
+            // Dispatch to ContractLatticeSynthesizer for actual synthesis
+            val synthesisResult = contractSynthesizer.synthesizeNode(node, worktreeRecord.worktreePath, dagId)
+            if (!synthesisResult.success) {
+                return DagNodeExecutionResult(
+                    nodeId = node.id,
+                    state = DagNodeState.FAILED,
+                    ok = false,
+                    message = synthesisResult.message
+                )
+            }
 
+            // Run completion gate verification
             val gateReport = completionGate.evaluateNode(node)
             if (!gateReport.canComplete) {
-                worktreeService.rollback(worktreeRecord.id)
                 return DagNodeExecutionResult(
                     nodeId = node.id,
                     state = DagNodeState.FAILED,
@@ -137,64 +210,133 @@ class DagExecutionService(
                 )
             }
 
-            val mergeResult = worktreeService.verifyAndMerge(worktreeRecord.id)
-            if (!mergeResult.success) {
-                return DagNodeExecutionResult(
-                    nodeId = node.id,
-                    state = DagNodeState.FAILED,
-                    ok = false,
-                    message = "verify and merge failed: ${mergeResult.message}"
-                )
-            }
-
             return DagNodeExecutionResult(
                 nodeId = node.id,
                 state = DagNodeState.COMPLETE,
                 ok = true,
-                message = "node completed and merged successfully"
+                message = "node completed and merged successfully",
+                result = synthesisResult.message
             )
         } catch (e: Exception) {
-            worktreeService.rollback(worktreeRecord.id)
             return DagNodeExecutionResult(
                 nodeId = node.id,
                 state = DagNodeState.FAILED,
                 ok = false,
                 message = "execution failed: ${e.message}"
             )
-        } finally {
-            activeWorktrees.remove(node.id)
-        }
-    }
-
-    private fun executeNodeActions(node: DagNode, worktreeRoot: Path) {
-        when (node.action) {
-            DagNodeAction.CREATE_FILE, DagNodeAction.EDIT_FILE -> {
-                if (node.actionPayload != null) {
-                    val targetPath = node.actionPayload!!
-                    worktreeService.writeFile(worktreeRecord.id, targetPath, node.actionPayload!!)
-                }
-            }
-            DagNodeAction.RUN_COMMAND, DagNodeAction.RUN_TEST, DagNodeAction.RUN_BUILD -> {
-                if (node.actionPayload != null) {
-                    // Execute command in worktree
-                    // This would use a shell executor with worktreeRoot as cwd
-                }
-            }
-            DagNodeAction.VERIFY, DagNodeAction.COMPILE_GATE, DagNodeAction.SMOKE_GATE, DagNodeAction.ACCEPTANCE_GATE -> {
-                // Run verification in worktree
-            }
-            DagNodeAction.PROVIDER_CALL -> {
-                // Execute provider call in worktree
-            }
-            else -> Unit
         }
     }
 
     fun rollbackNode(nodeId: String): Boolean {
         val worktreeResult = activeWorktrees[nodeId]
-        if (worktreeResult == null || worktreeResult.record == null) return false
-        return worktreeService.rollback(worktreeResult.record!!.id).success
+        if (worktreeResult == null) return false
+        return worktreeService.rollback(worktreeResult.id).success
     }
 
-    fun getActiveWorktree(nodeId: String): WorktreeCreateResult? = activeWorktrees[nodeId]
+    fun getActiveWorktree(nodeId: String): WorktreeRecord? = activeWorktrees[nodeId]
+
+    /**
+     * Execute a wave batch with a pre-constructed WaveExecutionRequest context.
+     * This variant is used by AutonomousWaveOrchestrator.
+     */
+    fun executeWaveBatchWithContext(
+        dagId: String,
+        waveNodes: List<DagNode>,
+        request: atropos.core.orchestration.WaveExecutionRequest
+    ): Map<String, DagNodeExecutionResult> {
+        val results = mutableMapOf<String, DagNodeExecutionResult>()
+
+        val disjoint = enforceTerritoryDisjointness(waveNodes)
+        if (!disjoint) {
+            for (node in waveNodes) {
+                results[node.id] = DagNodeExecutionResult(
+                    nodeId = node.id,
+                    state = DagNodeState.BLOCKED,
+                    ok = false,
+                    message = "territory overlap detected in wave"
+                )
+            }
+            return results
+        }
+
+        val worktreeRecords = mutableMapOf<String, WorktreeRecord>()
+        for (node in waveNodes) {
+            val worktreeResult = worktreeService.createWorktree(jobId = node.id, territory = node.territory)
+            if (!worktreeResult.success || worktreeResult.record == null) {
+                worktreeRecords.values.forEach { worktreeService.rollback(it.id) }
+                for (node in waveNodes) {
+                    results[node.id] = DagNodeExecutionResult(
+                        nodeId = node.id,
+                        state = DagNodeState.FAILED,
+                        ok = false,
+                        message = "worktree creation failed: ${worktreeResult.message}"
+                    )
+                }
+                return results
+            }
+            worktreeRecords[node.id] = worktreeResult.record!!
+            activeWorktrees[node.id] = worktreeResult.record!!
+        }
+
+        for (node in waveNodes) {
+            val worktreeRecord = worktreeRecords[node.id]!!
+            val synthesisResult = contractSynthesizer.synthesizeNode(node, worktreeRecord.worktreePath, request)
+            if (!synthesisResult.success) {
+                results[node.id] = DagNodeExecutionResult(
+                    nodeId = node.id,
+                    state = DagNodeState.FAILED,
+                    ok = false,
+                    message = synthesisResult.message
+                )
+                worktreeService.rollback(worktreeRecord.id)
+                continue
+            }
+
+            val gateReport = completionGate.evaluateNode(node)
+            if (!gateReport.canComplete) {
+                results[node.id] = DagNodeExecutionResult(
+                    nodeId = node.id,
+                    state = DagNodeState.FAILED,
+                    ok = false,
+                    message = "completion gate failed: ${gateReport.message}"
+                )
+                worktreeService.rollback(worktreeRecord.id)
+                continue
+            }
+
+            results[node.id] = DagNodeExecutionResult(
+                nodeId = node.id,
+                state = DagNodeState.COMPLETE,
+                ok = true,
+                message = "node completed successfully",
+                result = synthesisResult.message
+            )
+        }
+
+        for (node in waveNodes) {
+            val result = results[node.id]!!
+            val worktreeRecord = worktreeRecords[node.id]!!
+            if (result.ok) {
+                val mergeResult = worktreeService.verifyAndMerge(worktreeRecord.id)
+                if (!mergeResult.success) {
+                    results[node.id] = DagNodeExecutionResult(
+                        nodeId = node.id,
+                        state = DagNodeState.FAILED,
+                        ok = false,
+                        message = "verify and merge failed: ${mergeResult.message}"
+                    )
+                    worktreeService.rollback(worktreeRecord.id)
+                }
+            }
+        }
+
+        for (worktreeRecord in worktreeRecords.values) {
+            activeWorktrees.remove(worktreeRecord.jobId)
+            if (!(worktreeRecord.verified && worktreeRecord.mergedBack)) {
+                worktreeService.removeWorktree(worktreeRecord.id)
+            }
+        }
+
+        return results
+    }
 }

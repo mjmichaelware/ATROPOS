@@ -1,11 +1,12 @@
+/* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.factory
 
 import atropos.ast.AstSymbolGraph
 import atropos.ast.AstSymbolKind
-import java.nio.charset.StandardCharsets
-import java.nio.file.Files
-import java.nio.file.LinkOption
-import java.nio.file.Path
+import atropos.core.orchestration.AutonomousWaveOrchestrator
+import atropos.core.orchestration.WaveExecutionRequest
+import atropos.core.AtroposRepoRootLocator
+import atropos.core.AtroposConfig
 import atropos.core.auditor.AuditorService
 import atropos.core.director.DirectorService
 import atropos.core.director.DirectorStore
@@ -29,7 +30,18 @@ import atropos.core.verification.VerifiedCompletionGate
 import atropos.core.worktree.BoundedGitWorktreeCommandRunner
 import atropos.core.worktree.GitWorktreeOperation
 import atropos.core.dag.DagStore
+import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+import java.nio.file.LinkOption
+import java.nio.file.Path
 
+/**
+ * AppProjectGenerator rewritten for zero-template architecture.
+ *
+ * Code synthesis is delegated to AutonomousWaveOrchestrator which uses
+ * ContractLatticeSynthesizer. RepoScaffold provides only non-code infrastructure.
+ * Zero references to AppSourceTemplate or LanguageScaffold remain.
+ */
 class AppProjectGenerator(
     private val repoRoot: Path,
     private val parser: AppProjectSpecParser = AppProjectSpecParser(),
@@ -43,7 +55,8 @@ class AppProjectGenerator(
     private val progressGuard: FactoryProgressGuard = FactoryProgressGuard(DagStore(repoRoot)),
     private val hierarchyGate: FactoryHierarchyGate = FactoryHierarchyGate(
         hrRouter = HrRouterService(auditStore = HrRouterAuditStore(repoRoot))
-    )
+    ),
+    private val waveOrchestrator: AutonomousWaveOrchestrator = AutonomousWaveOrchestrator.createDefault(repoRoot)
 ) {
     private val gitHelper = AppGitHelper(gitRunner)
     private val verificationHelper = AppVerificationHelper(repoRoot, agencyGate, processRunner, redactionFilter)
@@ -81,6 +94,7 @@ class AppProjectGenerator(
                 prepared
             }
         }.withAcceptanceFreeze(plannedAtomIds)
+
         val root = repoRoot.toAbsolutePath().normalize()
         val target = freeTargetPath(root, spec, projectId).toAbsolutePath().normalize()
         require(target.startsWith(root)) { "app target escaped repository root" }
@@ -89,6 +103,7 @@ class AppProjectGenerator(
         require(!targetExisted || Files.isDirectory(target, LinkOption.NOFOLLOW_LINKS) && AppFileHelper.isEmptyDirectory(target)) {
             "app target already contains files: $target"
         }
+
         val director = DirectorService(DirectorStore(repoRoot), repoRoot)
         val relativeTarget = repoRoot.toAbsolutePath().normalize()
             .relativize(target.toAbsolutePath().normalize())
@@ -107,47 +122,79 @@ class AppProjectGenerator(
             worktreePath = target.toString(),
             sourceCoordinates = listOf(lineageCoordinate)
         )
+
         val hierarchyLease = hierarchyGate.dispatch(
             projectId = projectId,
             territory = relativeTarget,
             sourceCoordinate = lineageCoordinate,
             capabilities = listOf("app-factory", "code-generation")
         )
+
         try {
             mutationGate.requireAllowed(repoRoot, target)
             Files.createDirectories(target)
             require(!Files.isSymbolicLink(target) && target.toRealPath().startsWith(root.toRealPath())) {
                 "app target escaped repository root during creation"
             }
-            val files = scaffold.files(spec, effectiveLineage)
+
+            // Phase 1: Write non-code infrastructure via RepoScaffold (README, LICENSE, manifests, etc.)
+            val infraFiles = scaffold.files(spec, effectiveLineage)
             val lineageFiles = effectiveLineage.projectFiles(planningDagId ?: "factory-$projectId", plannedAtomIds)
             val allFiles = LinkedHashMap<String, String>()
             allFiles.putAll(lineageFiles)
-            allFiles.putAll(files)
+            allFiles.putAll(infraFiles)
+
+            // Phase 2: Execute wave orchestration for code synthesis
+            val waveRequest = WaveExecutionRequest(
+                requestId = planningDagId ?: "factory-$projectId",
+                prompt = spec.prompt,
+                projectSpec = spec,
+                lineage = effectiveLineage,
+                targetDirectory = target,
+                plannedAtomIds = plannedAtomIds,
+                acceptanceFreezeSha256 = effectiveLineage.acceptanceFreeze?.sha256,
+                contextHash = effectiveLineage.contextHash
+            )
+
+            val waveResult = waveOrchestrator.execute(waveRequest)
+
+            if (!waveResult.success) {
+                throw IllegalStateException(
+                    "Wave orchestration failed: ${waveResult.message}. " +
+                    "Completed: ${waveResult.completedAtoms.joinToString(", ")}. " +
+                    "Failed: ${waveResult.failedAtoms.joinToString(", ")}. " +
+                    "Blocked: ${waveResult.blockedAtoms.joinToString(", ")}"
+                )
+            }
+
+            // Phase 3: Verify the generated code passes behavior guard
+            // The wave orchestrator writes files directly to target, so we read them back
+            val generatedFiles = readGeneratedFiles(target)
+            allFiles.putAll(generatedFiles)
+
             val proposalSha256 = AppFileHelper.proposalDigest(allFiles)
             behaviorGuard.requireRealBehavior(spec, allFiles)
+
+            // Write any additional files from lineage that weren't covered
             allFiles.forEach { (relative, content) ->
                 val file = target.resolve(relative).normalize()
                 require(file.startsWith(target)) { "app file escaped target" }
                 Files.createDirectories(file.parent)
                 AppFileHelper.writeAtomic(file, content)
             }
+
             if (plannedAtomIds.isNotEmpty()) {
                 val writtenHashes = allFiles.keys.map { relative -> AppFileHelper.sha256(target.resolve(relative)) }
                 plannedAtomIds.forEach { atomId -> progressGuard.observeWriteOrThrow(atomId, writtenHashes) }
             }
+
             target.resolve("verify.sh").toFile().setExecutable(true)
             val verificationOutput = verificationHelper.runVerify(target)
             val deterministicReport = DeterministicVerifier(repoRoot = target).verify(AppFileHelper.absolutePathsFor(target, allFiles.keys))
             check(deterministicReport.passed) {
                 "generated deterministic verification failed: ${deterministicReport.render().take(800)}"
             }
-            // build(), not buildAndPersist(). The check below only needs the
-            // symbols; persisting writes .atropos/ast/ast_symbol_graph.tsv into
-            // the generated project, and the completion gate audits that
-            // project's file surface against exactly what was declared — so the
-            // engine's own scratch output made every generated project fail as
-            // "undeclared or redirected files".
+
             val astSymbols = AstSymbolGraph(repoRoot = target).build()
             check(astSymbols.any { it.kind != AstSymbolKind.FILE }) {
                 "generated AST symbol graph found no source declarations"
@@ -158,6 +205,7 @@ class AppProjectGenerator(
                 appendLine(deterministicReport.render())
                 appendLine(astVerification)
             }.trimEnd()
+
             val expectedBranch = branchName(spec, projectId)
             gitHelper.runGit(target, GitWorktreeOperation.INIT)
             gitHelper.runGit(target, GitWorktreeOperation.CHECKOUT_BRANCH, expectedBranch)
@@ -166,6 +214,7 @@ class AppProjectGenerator(
             val initialCommit = gitHelper.runGit(target, GitWorktreeOperation.REV_PARSE_HEAD).trim()
             val branch = gitHelper.runGit(target, GitWorktreeOperation.REV_PARSE_BRANCH).trim().ifBlank { "HEAD" }
             check(branch == expectedBranch) { "generated branch isolation failed: expected $expectedBranch, got $branch" }
+
             val relativePaths = allFiles.keys.toList()
             val auditor = AuditorService(target)
             auditor.auditSecrets(relativePaths.map { target.resolve(it).toAbsolutePath().toString() })
@@ -177,6 +226,7 @@ class AppProjectGenerator(
                 }
                 "factory audit blocked promotion: ${auditDecision.message}; findings=$findings"
             }
+
             director.observe(
                 kind = ObservationKind.MEMORY_WATERMARK,
                 severity = DriftSeverity.INFO,
@@ -190,6 +240,7 @@ class AppProjectGenerator(
                 sourceCoordinates = listOf(lineageCoordinate),
                 evidencePaths = listOf(target.resolve(".atropos/evidence/app-manifest.txt").toString())
             )
+
             val hashes = relativePaths.associateWith { AppFileHelper.sha256(target.resolve(it)) }
             val treeSha256 = AppFileHelper.treeDigest(hashes)
             val directorAdvisory = director.advisoryBeforePromotion(
@@ -200,6 +251,7 @@ class AppProjectGenerator(
             check(directorAdvisory.allowed) {
                 "factory director blocked promotion: ${directorAdvisory.message}"
             }
+
             val gate = VerifiedCompletionGate(repoRoot = repoRoot).evaluateFactory(
                 FactoryCompletionInput(
                     nodeId = planningDagId ?: "factory-$projectId",
@@ -223,11 +275,24 @@ class AppProjectGenerator(
                     directorDecision = directorAdvisory.message,
                     auditorDecision = auditDecision.message,
                     auditorReportSha256 = auditDecision.reportEvidenceSha256,
-                    projectLanguage = ProjectLanguage.layoutFor(ProjectLanguage.detect(spec.prompt)),
+                    completionGate = gate.message,
+                    promptSpans = effectiveLineage.promptSpans,
+                    researchChannels = effectiveLineage.researchChannels,
+                    contextHash = effectiveLineage.contextHash,
+                    atomResearch = effectiveLineage.atomResearch,
+                    memoryPointers = effectiveLineage.memoryPointers,
+                    atomizerStatus = effectiveLineage.atomizerStatus,
+                    journalRunId = projectId,
+                    hrRouterRequestId = hierarchyLease.hrRequestId,
+                    hrRouterAction = hierarchyLease.hrAction,
+                    proposalSha256 = proposalSha256,
+                    clarificationAnswersSha256 = effectiveLineage.clarificationAnswersSha256,
+                    clarificationLineageSha256 = effectiveLineage.clarificationLineageSha256,
                     acceptanceFreezeSha256 = effectiveLineage.acceptanceFreeze?.sha256.orEmpty()
                 )
             )
             check(gate.canComplete) { gate.message }
+
             val evidence = target.resolve(".atropos/evidence/app-manifest.txt")
             Files.createDirectories(evidence.parent)
             val export = target.parent.resolve("${safeName(spec.intent.name)}-${safeProjectId(projectId)}.tar")
@@ -303,21 +368,26 @@ class AppProjectGenerator(
     }
 
     /**
-     * The first unused generation directory for this prompt.
-     *
-     * [targetPath] is derived from the prompt fingerprint, so the same prompt
-     * always names the same directory — which is correct, because the
-     * fingerprint identifies the prompt. It is not correct as a *run*
-     * identity: a second run of one prompt found the first run's output and
-     * refused, so a prompt could be generated exactly once and re-running
-     * after a fix was impossible. Iterating on a failure is the ordinary case,
-     * not an exceptional one.
-     *
-     * Later runs take a numeric suffix rather than overwriting. Overwriting
-     * would destroy the evidence bundle, the commit and the export of the run
-     * before it, which are the things you go back to when comparing what
-     * changed between attempts.
+     * Read files generated by the wave orchestrator from the target directory.
      */
+    private fun readGeneratedFiles(target: Path): Map<String, String> {
+        val files = mutableMapOf<String, String>()
+        val sourceDirs = listOf("src/main", "src/test")
+        for (sourceDir in sourceDirs) {
+            val dir = target.resolve(sourceDir)
+            if (Files.exists(dir)) {
+                Files.walk(dir)
+                    .filter { Files.isRegularFile(it) }
+                    .forEach { file ->
+                        val relative = target.relativize(file).toString()
+                        val content = Files.readString(file)
+                        files[relative] = content
+                    }
+            }
+        }
+        return files
+    }
+
     private fun freeTargetPath(repoRoot: Path, spec: AppProjectSpec, projectId: String): Path {
         val first = targetPath(repoRoot, spec, projectId)
         if (isFree(first)) return first
@@ -325,9 +395,6 @@ class AppProjectGenerator(
             val candidate = first.resolveSibling("${first.fileName}-$attempt")
             if (isFree(candidate)) return candidate
         }
-        // Falling back to the first path lets the existing require() produce
-        // the original refusal, which names the directory. A new message here
-        // would say the same thing less clearly.
         return first
     }
 
@@ -336,11 +403,6 @@ class AppProjectGenerator(
             (Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS) && AppFileHelper.isEmptyDirectory(path))
 
     companion object {
-        /**
-         * How many times one prompt may be generated before the directory is
-         * treated as contested. High enough for real iteration, low enough
-         * that a runaway loop does not fill the device.
-         */
         const val MAX_GENERATION_ATTEMPTS = 50
 
         fun targetPath(repoRoot: Path, spec: AppProjectSpec, projectId: String): Path =
@@ -366,22 +428,6 @@ class AppProjectGenerator(
             return if (normalized.isBlank()) "project" else normalized
         }
 
-        /**
-         * Package roots the toolchain owns, which are not keywords.
-         *
-         * A prompt beginning "Build a Kotlin HTTP client" derives the app name
-         * from its first meaningful word, so the generated file declared
-         * `package kotlin` and kotlinc refused it: "only the Kotlin standard
-         * library is allowed to use the kotlin package". The keyword list did
-         * not catch it because `kotlin` is a perfectly ordinary identifier --
-         * it is reserved by the *toolchain*, not by the grammar, and those are
-         * two different lists.
-         *
-         * `java` and `javax` fail the same way on the JVM, and `kotlinx` is
-         * owned by the Kotlin libraries even though nothing rejects it today;
-         * generating into someone else's namespace is wrong before it is an
-         * error.
-         */
         private val RESERVED_PACKAGE_ROOTS = setOf(
             "kotlin", "kotlinx", "java", "javax", "jdk", "sun", "android", "androidx"
         )

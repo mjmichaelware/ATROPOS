@@ -1,28 +1,32 @@
+/* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.factory
 
 /**
  * Rejects scaffold-shaped output before it enters the generated repository.
  * The guard checks the generic source contract and capability-specific behavior
  * markers; it does not execute or verify the generated program.
+ *
+ * Updated to use ProjectLanguageLayout instead of eradicated LanguageScaffold.
  */
 class AppGeneratedBehaviorGuard {
     fun requireRealBehavior(spec: AppProjectSpec, files: Map<String, String>) {
         val packageName = AppProjectGenerator.safeName(spec.intent.name)
         val detection = ProjectLanguage.detect(spec.prompt)
         val language = ProjectLanguage.layoutFor(detection)
+        val layout = ProjectLanguageLayout.forLanguage(language)
 
         // If the language is unsupported or generic, layout has no source/test path.
         // We skip behavior checks in this case as there is no code to guard.
-        val layout = when (detection) {
-            is ProjectLanguage.Detection.Unsupported -> LanguageScaffold.generic(detection.displayName)
-            else -> LanguageScaffold.forLanguage(language, packageName, spec.intent.name)
-        }
-        if (layout.sourcePath.isBlank() || layout.testPath.isBlank()) {
+        if (layout.sourcePathPrefix.isBlank() || layout.testPathPrefix.isBlank()) {
             return
         }
 
-        val main = files[layout.sourcePath] ?: throw IllegalArgumentException("generated application source is missing")
-        val tests = files[layout.testPath] ?: throw IllegalArgumentException("generated application tests are missing")
+        // Determine expected source and test paths from the lattice synthesis
+        val sourcePath = "src/main/${layout.sourcePathPrefix}/$packageName/Main.kt"
+        val testPath = "src/test/${layout.testPathPrefix}/$packageName/MainTest.kt"
+
+        val main = files[sourcePath] ?: throw IllegalArgumentException("generated application source is missing at $sourcePath")
+        val tests = files[testPath] ?: throw IllegalArgumentException("generated application tests are missing at $testPath")
 
         require(hasLineage(main, layout.commentPrefix) && hasLineage(tests, layout.commentPrefix)) {
             "generated source and tests must retain prompt lineage"
@@ -80,18 +84,16 @@ class AppGeneratedBehaviorGuard {
                     }
             }
         } else {
-            requireLanguageBehavior(language, main, tests)
+            requireLanguageBehavior(language, layout, main, tests)
         }
     }
 
     private fun requireLanguageBehavior(
         language: ProjectLanguage,
+        layout: ProjectLanguageLayout,
         main: String,
         tests: String
     ) {
-        // These predicates mirror LanguageScaffold's native function and test
-        // forms. Checking only for the English word "describe" let an empty
-        // or unrelated file pass for every non-Kotlin project.
         val sourceMarkers: List<String>
         val testMarkers: List<String>
         when (language) {
