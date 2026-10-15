@@ -1,0 +1,55 @@
+package atropos.core.toolchain
+
+import atropos.core.policy.BoundedProcessRunner
+import atropos.core.security.RedactionFilter
+import java.nio.file.Path
+
+class ToolchainExecutionDriver(
+    private val registry: NativeToolchainRegistry = NativeToolchainRegistry(),
+    private val redactionFilter: RedactionFilter = RedactionFilter()
+) {
+    private val processRunner = BoundedProcessRunner()
+
+    fun executeCompile(lang: ToolchainLanguage, worktreeRoot: Path): ToolchainResult {
+        val sanitizedEnv = sanitizeEnvironment()
+        val driver = registry.discover(lang)
+        val result = driver.compile(worktreeRoot)
+        return redactResult(result)
+    }
+
+    fun executeTest(lang: ToolchainLanguage, worktreeRoot: Path): ToolchainResult {
+        val sanitizedEnv = sanitizeEnvironment()
+        val driver = registry.discover(lang)
+        val result = driver.test(worktreeRoot)
+        return redactResult(result)
+    }
+
+    fun executePackage(lang: ToolchainLanguage, worktreeRoot: Path, destDir: Path): ToolchainResult {
+        val sanitizedEnv = sanitizeEnvironment()
+        val driver = registry.discover(lang)
+        val result = driver.packageArtifact(worktreeRoot, destDir)
+        return redactResult(result)
+    }
+
+    private fun sanitizeEnvironment(): Map<String, String> {
+        val allowedKeys = setOf("PATH", "HOME", "USER", "LANG", "LC_ALL", "TERM",
+            "JAVA_HOME", "ANDROID_HOME", "ANDROID_SDK_ROOT", "CARGO_HOME", "GOROOT", "GOPATH",
+            "GRADLE_HOME", "GRADLE_USER_HOME", "NODE_PATH", "NPM_CONFIG_PREFIX", "PYTHONPATH")
+        val env = System.getenv().toMutableMap()
+        val redactedKeys = env.keys.filterNot { it in allowedKeys }.toSet()
+        for (key in redactedKeys) {
+            env[key] = "[REDACTED]"
+        }
+        return env
+    }
+
+    private fun redactResult(result: ToolchainResult): ToolchainResult {
+        return ToolchainResult(
+            exitCode = result.exitCode,
+            stdout = redactionFilter.filter(result.stdout),
+            stderr = redactionFilter.filter(result.stderr),
+            diagnostics = result.diagnostics,
+            durationMs = result.durationMs
+        )
+    }
+}

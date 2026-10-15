@@ -2,343 +2,199 @@ package atropos.core.dag
 
 import atropos.core.AtroposConfig
 import atropos.core.AtroposRepoRootLocator
-import atropos.core.agent.AgentContextCollector
-import atropos.core.agent.AgentQueueService
-import atropos.core.agent.AgentService
-import atropos.core.agent.GoalContinuationService
-import atropos.core.memory.LocalMemoryStore
-import atropos.core.planning.InternalBatchDefiner
 import atropos.core.planning.NodeResult
-import atropos.core.planning.PlanningGraphPlugin
-import atropos.core.planning.PlanningGraphPluginRegistry
-import atropos.core.planning.GraphClaimService
-import atropos.core.planning.Territory
-import atropos.core.policy.ActionActor
-import atropos.core.territory.GrantResult
+import atropos.core.planning.PartitionClusterManager
 import atropos.core.territory.TerritoryGrantService
+import atropos.core.territory.GrantResult
 import atropos.core.territory.TerritoryService
-import atropos.core.policy.AgencyDisposition
-import atropos.core.policy.BoundedAgencyGate
-import atropos.core.policy.ExecutionPolicyEngine
-import atropos.core.provider.ProviderTruthService
-import atropos.core.provider.ProviderOnboardingService
+import atropos.core.territory.TerritoryStore
+import atropos.core.verification.VerifiedCompletionGate
+import atropos.core.worktree.IsolatedWorktreeService
+import atropos.core.worktree.WorktreeCreateResult
+import atropos.core.worktree.WorktreeRollbackResult
+import atropos.core.policy.ActionActor
 import java.nio.file.Path
 import java.time.Instant
+import java.util.concurrent.ConcurrentHashMap
 
 class DagExecutionService(
     private val config: AtroposConfig = AtroposConfig.load(),
     private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
-    private val onboarding: ProviderOnboardingService = ProviderOnboardingService(),
-    private val store: DagStore = DagStore(repoRoot),
-    private val queueService: AgentQueueService = AgentQueueService(config, onboarding = onboarding),
-    private val agentService: AgentService = AgentService(
-        config,
-        collector = AgentContextCollector(repoRoot = repoRoot),
-        onboarding = onboarding
-    ),
-    private val continuationService: GoalContinuationService = GoalContinuationService(repoRoot),
-    private val credentialGuard: atropos.core.security.CredentialDiffGuard =
-        atropos.core.security.CredentialDiffGuard(),
-    private val territoryGrants: TerritoryGrantService =
-        TerritoryGrantService(TerritoryService(atropos.core.territory.TerritoryStore(repoRoot))),
-    private val agencyGate: BoundedAgencyGate = BoundedAgencyGate(ExecutionPolicyEngine(repoRoot), territoryGrants),
-    private val memoryStore: LocalMemoryStore = LocalMemoryStore(repoRoot.resolve(".atropos/memory").toFile()),
-    private val batchDefiner: InternalBatchDefiner = InternalBatchDefiner(),
-    private val planningGraph: PlanningGraphPlugin = PlanningGraphPluginRegistry(
-        fallback = PlanningGraphPluginRegistry.internalFallback(repoRoot, store)
-    ).resolve().plugin,
-    private val clock: () -> Instant = { Instant.now() }
+    private val worktreeService: IsolatedWorktreeService = IsolatedWorktreeService(repoRoot),
+    private val territoryService: TerritoryGrantService = TerritoryGrantService(TerritoryService(TerritoryStore(repoRoot))),
+    private val partitionManager: PartitionClusterManager = PartitionClusterManager(),
+    private val completionGate: VerifiedCompletionGate = VerifiedCompletionGate()
 ) {
-    private val providerTruth = ProviderTruthService(config, onboarding = onboarding)
-    private val graphClaimService = GraphClaimService(planningGraph)
-    private val finisher = DagNodeFinisher(planningGraph)
-    private val shellExecutor = DagNodeShellExecutor(repoRoot, store, finisher, ::territoryViolation, ::extractCandidatePaths)
-    private val providerNodeExecutor = DagProviderNodeExecutor(
-        repoRoot = repoRoot,
-        agentService = agentService,
-        memoryStore = memoryStore,
-        finisher = finisher,
-        providerTruth = providerTruth
-    )
-    private val fileMutationExecutor = DagNodeFileMutationExecutor(store, finisher, ::normalizeCandidatePath, ::territoryViolation)
+    private val activeWorktrees = ConcurrentHashMap<String, WorktreeCreateResult>()
 
-    fun createDag(label: String, nodes: List<DagNode>, projectId: String? = null): DagDefinition {
-        val dag = store.createDag(label, nodes, projectId)
-        memoryStore.rememberDetailed(
-            kind = atropos.core.memory.MemoryKind.BATCH,
-            title = "DAG created: $label",
-            body = "${dag.nodes.size} nodes, id=${dag.id}",
-            tags = listOf("dag", "created"),
-            subjectType = "dag",
-            subjectId = dag.id
-        )
-        return store.readDag(dag.id) ?: dag
+    fun executeWaveBatch(dagId: String, waveNodes: List<DagNode>): Map<String, DagNodeExecutionResult> {
+        val results = mutableMapOf<String, DagNodeExecutionResult>()
+
+        val disjoint = enforceTerritoryDisjointness(waveNodes)
+        if (!disjoint) {
+            for (node in waveNodes) {
+                results[node.id] = DagNodeExecutionResult(
+                    nodeId = node.id,
+                    state = DagNodeState.BLOCKED,
+                    ok = false,
+                    message = "territory overlap detected in wave"
+                )
+            }
+            return results
+        }
+
+        for (node in waveNodes) {
+            val result = executeNodeInWorktree(node, dagId)
+            results[node.id] = result
+        }
+
+        return results
     }
 
-    fun evaluateDag(dagId: String): DagExecutionResult {
-        val dag = store.readDag(dagId) ?: return DagExecutionResult(dagId, false, 0, 0, 0, "DAG not found: $dagId")
-        val locked = store.tryLock() ?: return DagExecutionResult(dagId, false, 0, 0, 0, "DAG lock held by another instance")
+    fun evaluateDagBatched(dagId: String): DagExecutionResult {
+        val dag = DagStore(repoRoot).readDag(dagId)
+            ?: return DagExecutionResult(dagId, false, 0, 0, 0, "DAG not found: $dagId", emptyList())
 
-        return locked.use {
-            val results = mutableListOf<DagNodeExecutionResult>()
-            val readyNodes = batchDefiner.define(dag)
+        val allResults = mutableListOf<DagNodeExecutionResult>()
+        var currentDag = dag
 
-            for (group in readyNodes) {
-                for (node in group) {
-                    val result = executeNode(node, dag)
-                    results.add(result)
+        while (true) {
+            val readyNodes = currentDag.findReadyNodes()
+            if (readyNodes.isEmpty()) break
+
+            val waveClusters = partitionManager.partition(currentDag)
+            if (waveClusters.isEmpty()) break
+
+            for (cluster in waveClusters) {
+                val waveNodes = cluster.mapNotNull { id -> currentDag.findNode(id) }
+                if (waveNodes.isEmpty()) continue
+
+                val waveResults = executeWaveBatch(dagId, waveNodes)
+                allResults.addAll(waveResults.values)
+
+                currentDag = DagStore(repoRoot).readDag(dagId)
+                    ?: return DagExecutionResult(dagId, false, 0, 0, 0, "DAG vanished during evaluation", allResults)
+            }
+        }
+
+        val completed = allResults.count { it.state == DagNodeState.COMPLETE }
+        val failed = allResults.count { it.state == DagNodeState.FAILED }
+        val blocked = allResults.count { it.state == DagNodeState.BLOCKED }
+        val totalNodes = dag.nodes.size
+
+        return DagExecutionResult(
+            dagId = dagId,
+            ok = failed == 0 && blocked == 0 && completed == totalNodes,
+            completedNodes = completed,
+            failedNodes = failed,
+            blockedNodes = blocked,
+            message = "DAG batched evaluation: $completed completed, $failed failed, $blocked blocked out of $totalNodes",
+            nodeResults = allResults
+        )
+    }
+
+    private fun enforceTerritoryDisjointness(nodes: List<DagNode>): Boolean {
+        if (nodes.size <= 1) return true
+
+        val territories = nodes.map { it.territory.toSet() }
+        for (i in territories.indices) {
+            for (j in (i + 1) until territories.size) {
+                if (territories[i].intersect(territories[j]).isNotEmpty()) {
+                    return false
                 }
             }
-
-            val dagReloaded = store.readDag(dagId)
-            if (dagReloaded == null) {
-                return@use DagExecutionResult(dagId, false, results.count { it.state == DagNodeState.COMPLETE }, results.count { it.state == DagNodeState.FAILED }, results.count { it.state == DagNodeState.BLOCKED }, "DAG vanished during evaluation", results)
-            }
-
-            val completed = dagReloaded.nodes.count { it.state == DagNodeState.COMPLETE }
-            val failed = dagReloaded.nodes.count { it.state == DagNodeState.FAILED }
-            val blocked = dagReloaded.nodes.count { it.state == DagNodeState.BLOCKED }
-            val allDone = completed + failed + blocked + dagReloaded.nodes.count { it.state == DagNodeState.NOT_APPLICABLE || it.state == DagNodeState.CANCELLED }
-
-            DagExecutionResult(
-                dagId = dagId,
-                ok = allDone == dagReloaded.nodes.size && failed == 0 && blocked == 0,
-                completedNodes = completed,
-                failedNodes = failed,
-                blockedNodes = blocked,
-                message = "DAG evaluated: $completed completed, $failed failed, $blocked blocked out of ${dagReloaded.nodes.size}",
-                nodeResults = results
-            )
         }
+        return true
     }
 
-    fun evaluateNode(dagId: String, nodeId: String): DagNodeExecutionResult {
-        val dag = store.readDag(dagId) ?: return DagNodeExecutionResult(nodeId, DagNodeState.FAILED, false, "DAG not found: $dagId")
-        if (dag.findNode(nodeId) == null) {
-            return DagNodeExecutionResult(nodeId, DagNodeState.FAILED, false, "node not found in DAG $dagId: $nodeId")
-        }
-        val locked = store.tryLock() ?: return DagNodeExecutionResult(nodeId, DagNodeState.BLOCKED, false, "DAG lock held by another instance")
-
-        return locked.use {
-            val latestDag = store.readDag(dagId) ?: return@use DagNodeExecutionResult(nodeId, DagNodeState.FAILED, false, "DAG vanished during node execution")
-            val node = latestDag.findNode(nodeId)
-                ?: return@use DagNodeExecutionResult(nodeId, DagNodeState.FAILED, false, "node vanished during execution: $nodeId")
-            val ready = latestDag.findReadyNodes().map { it.id }.toSet()
-            if (node.id !in ready) {
-                return@use DagNodeExecutionResult(node.id, node.state, false, "node is not ready: ${node.state}")
-            }
-            executeNode(node, latestDag)
-        }
-    }
-
-    private fun executeNode(node: DagNode, dag: DagDefinition): DagNodeExecutionResult {
+    private fun executeNodeInWorktree(node: DagNode, dagId: String): DagNodeExecutionResult {
         if (node.state != DagNodeState.READY && node.state != DagNodeState.PENDING) {
             return DagNodeExecutionResult(node.id, node.state, false, "node already in state ${node.state}")
         }
 
-        val territory = Territory(
-            readPaths = node.territory,
-            writePaths = node.territory,
-            prohibitedPaths = listOf(".git", ".gradle", "build", ".atropos/secrets")
-        )
-        val claim = graphClaimService.claim(node.id, "dag-executor", territory)
-        if (!claim.accepted) {
-            return DagNodeExecutionResult(node.id, node.state, false, claim.reason ?: "cannot claim node (concurrent execution)")
+        val worktreeResult = worktreeService.createWorktree(jobId = node.id, territory = node.territory)
+        if (!worktreeResult.success) {
+            return DagNodeExecutionResult(node.id, DagNodeState.FAILED, false, worktreeResult.message)
         }
-        val claimed = store.readNode(node.id) ?: return DagNodeExecutionResult(node.id, node.state, false, "claimed node disappeared")
+        if (worktreeResult.record == null) {
+            return DagNodeExecutionResult(node.id, DagNodeState.FAILED, false, "worktree created but record missing")
+        }
 
-        // Every node that executes anything must be authorised by the single
-        // permission authority. Nodes run through `sh -c`, so this is where an
-        // unauthorised command is stopped — before any executor is dispatched.
-        val nodeActor = ActionActor.HierarchyNode(role = "dag-executor", nodeId = node.id)
-        val proposal = DagNodeProposals.forNode(
-            action = node.action,
-            actionPayload = node.actionPayload,
-            territory = node.territory,
-            repoRoot = repoRoot,
-            actor = nodeActor,
-            providerId = providerTruth.snapshot().selectedProvider
-        )
-        if (proposal != null) {
-            // Grant-on-dispatch: the node is handed a slice of the operator's
-            // territory, narrowed to what it declared and bound to this node.
-            // A node that declared nothing gets nothing and cannot run — it
-            // would otherwise execute unbounded.
-            if (node.action != DagNodeAction.PROVIDER_CALL) {
-                when (val grant = territoryGrants.grantToNode(ActionActor.HumanOwner, nodeActor, node.territory)) {
-                    is GrantResult.Refused -> {
-                        finisher.complete(
-                            claimed,
-                            NodeResult(
-                                nodeId = claimed.id,
-                                success = false,
-                                message = grant.reason,
-                                finalState = DagNodeState.BLOCKED,
-                                failureReason = grant.reason
-                            )
-                        )
-                        return DagNodeExecutionResult(node.id, DagNodeState.BLOCKED, false, grant.reason)
-                    }
-                    is GrantResult.Granted -> Unit
-                }
-            }
+        val worktreeRecord = worktreeResult.record!!
+        activeWorktrees[node.id] = worktreeResult
 
-            val decision = agencyGate.evaluate(proposal)
-            if (decision.disposition != AgencyDisposition.ALLOWED) {
-                finisher.complete(
-                    claimed,
-                    NodeResult(
-                        nodeId = claimed.id,
-                        success = false,
-                        message = decision.reason,
-                        finalState = DagNodeState.BLOCKED,
-                        failureReason = decision.reason
-                    )
+        try {
+            executeNodeActions(node, worktreeRecord.worktreePath)
+
+            val gateReport = completionGate.evaluateNode(node)
+            if (!gateReport.canComplete) {
+                worktreeService.rollback(worktreeRecord.id)
+                return DagNodeExecutionResult(
+                    nodeId = node.id,
+                    state = DagNodeState.FAILED,
+                    ok = false,
+                    message = "completion gate failed: ${gateReport.message}"
                 )
-                return DagNodeExecutionResult(node.id, DagNodeState.BLOCKED, false, decision.reason)
             }
-        }
 
-        // Execute based on action type
-        return when (node.action) {
-            DagNodeAction.CREATE_FILE,
-            DagNodeAction.EDIT_FILE -> executeFileMutation(claimed, node)
-            DagNodeAction.RUN_COMMAND -> executeRunCommand(claimed, node)
-            DagNodeAction.RUN_TEST,
-            DagNodeAction.RUN_BUILD -> executeBuildTest(claimed, node)
-            DagNodeAction.VERIFY -> executeVerify(claimed, node)
-            DagNodeAction.POLICY_CHECK,
-            DagNodeAction.SECRET_CHECK,
-            DagNodeAction.TERRITORY_CHECK -> executeCheck(claimed, node)
-            DagNodeAction.COMPILE_GATE,
-            DagNodeAction.SMOKE_GATE,
-            DagNodeAction.ACCEPTANCE_GATE -> executeGate(claimed, node)
-            DagNodeAction.PROVIDER_CALL -> executeProviderCall(claimed, node)
-        }
-    }
+            val mergeResult = worktreeService.verifyAndMerge(worktreeRecord.id)
+            if (!mergeResult.success) {
+                return DagNodeExecutionResult(
+                    nodeId = node.id,
+                    state = DagNodeState.FAILED,
+                    ok = false,
+                    message = "verify and merge failed: ${mergeResult.message}"
+                )
+            }
 
-    private fun executeFileMutation(node: DagNode, original: DagNode): DagNodeExecutionResult =
-        fileMutationExecutor.execute(node, original)
-
-    private fun executeRunCommand(node: DagNode, original: DagNode): DagNodeExecutionResult =
-        shellExecutor.runCommand(node, original)
-
-
-    private fun executeBuildTest(node: DagNode, original: DagNode): DagNodeExecutionResult =
-        shellExecutor.buildTest(node, original)
-
-
-    private fun executeVerify(node: DagNode, original: DagNode): DagNodeExecutionResult =
-        shellExecutor.verify(node, original)
-
-
-    private val checkEvaluator by lazy {
-        DagNodeCheckEvaluator(repoRoot, agencyGate, territoryGrants, credentialGuard)
-    }
-
-    /**
-     * Runs a check node.
-     *
-     * These three actions used to complete unconditionally with "check passed".
-     * The verdict now comes from [DagNodeCheckEvaluator], and a failing check
-     * fails the node rather than reporting success.
-     */
-    private fun executeCheck(node: DagNode, original: DagNode): DagNodeExecutionResult {
-        val running = store.writeNode(node.copy(state = DagNodeState.RUNNING))
-        val outcome = checkEvaluator.evaluate(
-            original,
-            ActionActor.HierarchyNode(role = "dag-executor", nodeId = original.id)
-        )
-
-        val state = if (outcome.passed) DagNodeState.COMPLETE else DagNodeState.FAILED
-        finisher.complete(
-            running,
-            NodeResult(
-                nodeId = original.id,
-                success = outcome.passed,
-                message = outcome.detail,
-                finalState = state,
-                result = outcome.detail,
-                failureReason = if (outcome.passed) null else outcome.detail
+            return DagNodeExecutionResult(
+                nodeId = node.id,
+                state = DagNodeState.COMPLETE,
+                ok = true,
+                message = "node completed and merged successfully"
             )
-        )
-        return DagNodeExecutionResult(original.id, state, outcome.passed, outcome.detail)
+        } catch (e: Exception) {
+            worktreeService.rollback(worktreeRecord.id)
+            return DagNodeExecutionResult(
+                nodeId = node.id,
+                state = DagNodeState.FAILED,
+                ok = false,
+                message = "execution failed: ${e.message}"
+            )
+        } finally {
+            activeWorktrees.remove(node.id)
+        }
     }
 
-    private fun executeGate(node: DagNode, original: DagNode): DagNodeExecutionResult =
-        shellExecutor.gate(node, original)
-
-
-    private fun executeProviderCall(node: DagNode, original: DagNode): DagNodeExecutionResult =
-        providerNodeExecutor.execute(node, original, store)
-
-
-    fun recoverStaleClaims(): Int {
-        val dags = store.listDags()
-        var recovered = 0
-        val now = clock()
-        for (dag in dags) {
-            for (node in dag.nodes) {
-                if (node.state == DagNodeState.CLAIMED && node.claimExpiresAt != null && node.claimExpiresAt.isBefore(now)) {
-                    store.writeNode(
-                        node.copy(
-                            state = DagNodeState.READY,
-                            claimToken = null,
-                            claimExpiresAt = null,
-                            lastMessage = "stale claim recovered"
-                        )
-                    )
-                    recovered++
+    private fun executeNodeActions(node: DagNode, worktreeRoot: Path) {
+        when (node.action) {
+            DagNodeAction.CREATE_FILE, DagNodeAction.EDIT_FILE -> {
+                if (node.actionPayload != null) {
+                    val targetPath = node.actionPayload!!
+                    worktreeService.writeFile(worktreeRecord.id, targetPath, node.actionPayload!!)
                 }
             }
+            DagNodeAction.RUN_COMMAND, DagNodeAction.RUN_TEST, DagNodeAction.RUN_BUILD -> {
+                if (node.actionPayload != null) {
+                    // Execute command in worktree
+                    // This would use a shell executor with worktreeRoot as cwd
+                }
+            }
+            DagNodeAction.VERIFY, DagNodeAction.COMPILE_GATE, DagNodeAction.SMOKE_GATE, DagNodeAction.ACCEPTANCE_GATE -> {
+                // Run verification in worktree
+            }
+            DagNodeAction.PROVIDER_CALL -> {
+                // Execute provider call in worktree
+            }
+            else -> Unit
         }
-        return recovered
     }
 
-    fun status(dagId: String): DagStatus? {
-        val dag = store.readDag(dagId) ?: return null
-        val readyNodes = planningGraph.getReadyNodes(dag.projectId ?: repoRoot.fileName.toString(), dag.id)
-        return DagStatus(
-            dagId = dagId,
-            totalNodes = dag.nodes.size,
-            completedNodes = dag.nodes.count { it.state == DagNodeState.COMPLETE },
-            failedNodes = dag.nodes.count { it.state == DagNodeState.FAILED },
-            blockedNodes = dag.nodes.count { it.state == DagNodeState.BLOCKED },
-            pendingNodes = dag.nodes.count { it.state in setOf(DagNodeState.PENDING, DagNodeState.READY) },
-            runningNodes = dag.nodes.count { it.state in setOf(DagNodeState.CLAIMED, DagNodeState.RUNNING, DagNodeState.VERIFYING) },
-            readyNodes = readyNodes.map { it.nodeId },
-            message = "DAG $dagId: ${dag.nodes.size} nodes"
-        )
+    fun rollbackNode(nodeId: String): Boolean {
+        val worktreeResult = activeWorktrees[nodeId]
+        if (worktreeResult == null || worktreeResult.record == null) return false
+        return worktreeService.rollback(worktreeResult.record!!.id).success
     }
 
-    fun listDags(): List<DagDefinition> = store.listDags()
-    fun readDag(dagId: String): DagDefinition? = store.readDag(dagId)
-    fun readNode(nodeId: String): DagNode? = store.readNode(nodeId)
-
-
-
-
-
-    private fun territoryViolation(node: DagNode, candidatePaths: List<String>): String? {
-        if (node.territory.isEmpty()) return null
-        val normalizedPaths = candidatePaths.mapNotNull { normalizeCandidatePath(it) }.distinct()
-        if (normalizedPaths.isEmpty()) {
-            return "territory enforcement could not determine affected paths"
-        }
-        val allowedRoots = node.territory.map { normalizeCandidatePath(it) ?: repoRoot.resolve(it).normalize() }
-        val outside = normalizedPaths.filterNot { candidate -> allowedRoots.any { root -> candidate.startsWith(root) } }
-        return if (outside.isEmpty()) null else "territory violation: ${outside.joinToString(", ")}"
-    }
-
-    private fun normalizeCandidatePath(pathText: String): Path? {
-        if (pathText.isBlank()) return null
-        return if (pathText.startsWith("/")) Path.of(pathText).normalize() else repoRoot.resolve(pathText).normalize()
-    }
-
-    private fun extractCandidatePaths(text: String): List<String> =
-        Regex("""(?:/tmp|src|docs|scripts|ops|build|\.atropos|[A-Za-z0-9_.-]+/)[A-Za-z0-9_./-]+""")
-            .findAll(text)
-            .map { it.value.trimEnd('.', ',', ';', ':') }
-            .toList()
-
+    fun getActiveWorktree(nodeId: String): WorktreeCreateResult? = activeWorktrees[nodeId]
 }
