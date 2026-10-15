@@ -2,6 +2,7 @@ package atropos.core.verification
 
 import atropos.core.parser.TreeSitterGrammarBridge
 import java.nio.file.Path
+import java.nio.file.Files
 
 class CIntScalarEngine(
     private val astBridge: TreeSitterGrammarBridge = TreeSitterGrammarBridge()
