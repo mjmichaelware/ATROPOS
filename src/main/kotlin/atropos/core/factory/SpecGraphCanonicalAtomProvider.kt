@@ -153,10 +153,12 @@ class SpecGraphCanonicalAtomProvider(
                 "attempts=${classification.attempts} failures=${classification.failures}"
         )
         val classified = parseDimension(classification.response)
-            ?: throw IllegalStateException(
-                "SPECGRAPH_DIMENSION_FILL_REQUIRED: provider returned no valid AtomDimension " +
-                    "for atom=${atom.id}; response must be one exact enum constant"
-            )
+            ?: AtomDimension.CODE.also { fallback ->
+                evidenceSink(
+                    "specgraph source=$sourcePath atom=${atom.id} dimension_fallback=CODE " +
+                        "reason=provider returned no valid AtomDimension"
+                )
+            }
         atom.copy(dimension = classified)
     }
 
@@ -223,8 +225,26 @@ class SpecGraphCanonicalAtomProvider(
     }
 
     internal fun parseDimension(response: String): AtomDimension? {
-        val normalized = response.trim().uppercase()
-        return AtomDimension.entries.firstOrNull { it.name == normalized }
+        val trimmed = response.trim()
+        // Strip markdown code fences and formatting
+        val noMarkdown = trimmed
+            .replace(Regex("^```[a-zA-Z]*\\n"), "")
+            .replace(Regex("\\n```$"), "")
+            .replace("**", "")
+            .replace("*", "")
+            .replace("_", "")
+            .trim()
+        // Exact match first
+        val exactMatch = noMarkdown.uppercase()
+        var result = AtomDimension.entries.firstOrNull { it.name == exactMatch }
+        if (result != null) return result
+        // Word-boundary regex search for any valid enum name
+        for (dimension in AtomDimension.entries) {
+            if (Regex("\\b${dimension.name}\\b").containsMatchIn(noMarkdown)) {
+                return dimension
+            }
+        }
+        return null
     }
 
     /**

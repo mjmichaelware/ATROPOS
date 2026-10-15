@@ -3,11 +3,12 @@ package atropos.core
 import atropos.core.provider.ProviderModelResolver
 
 class GroqProvider(
-    private val apiKey: String? = System.getenv("GROQ_API_KEY")
+    private val apiKey: String? = null
 ) : BaseHttpProvider() {
     override val name = "groq"
     override fun complete(prompt: String, context: String): String {
-        val token = requireKey(apiKey, name)
+        val key = apiKey?.takeIf { it.isNotBlank() } ?: System.getenv("GROQ_API_KEY")
+        val token = requireKey(key, name)
         return postOpenAiCompatibleChat(
             uri = "https://api.groq.com/openai/v1/chat/completions",
             model = ProviderModelResolver.DEFAULT.resolve(name, "llama-3.1-8b-instant"),
@@ -19,11 +20,12 @@ class GroqProvider(
 }
 
 class OpenAiProvider(
-    private val apiKey: String? = System.getenv("OPENAI_API_KEY")
+    private val apiKey: String? = null
 ) : BaseHttpProvider() {
     override val name = "openai"
     override fun complete(prompt: String, context: String): String {
-        val token = requireKey(apiKey, name)
+        val key = apiKey?.takeIf { it.isNotBlank() } ?: System.getenv("OPENAI_API_KEY")
+        val token = requireKey(key, name)
         return postOpenAiCompatibleChat(
             uri = "https://api.openai.com/v1/chat/completions",
             model = ProviderModelResolver.DEFAULT.resolve(name, "gpt-4o-mini"),
@@ -35,11 +37,12 @@ class OpenAiProvider(
 }
 
 class AnthropicProvider(
-    private val apiKey: String? = System.getenv("ANTHROPIC_API_KEY")
+    private val apiKey: String? = null
 ) : BaseHttpProvider() {
     override val name = "anthropic"
     override fun complete(prompt: String, context: String): String {
-        val token = requireKey(apiKey, name)
+        val key = apiKey?.takeIf { it.isNotBlank() } ?: System.getenv("ANTHROPIC_API_KEY")
+        val token = requireKey(key, name)
         val redactedPrompt = redactionFilter.redact(prompt)
         val redactedContext = redactionFilter.redact(context)
         val payload = buildString {
@@ -68,11 +71,12 @@ class AnthropicProvider(
 }
 
 class XAiProvider(
-    private val apiKey: String? = System.getenv("XAI_API_KEY")
+    private val apiKey: String? = null
 ) : BaseHttpProvider() {
     override val name = "xai"
     override fun complete(prompt: String, context: String): String {
-        val token = requireKey(apiKey, name)
+        val key = apiKey?.takeIf { it.isNotBlank() } ?: System.getenv("XAI_API_KEY")
+        val token = requireKey(key, name)
         return postOpenAiCompatibleChat(
             uri = "https://api.x.ai/v1/chat/completions",
             model = "grok-2-latest",

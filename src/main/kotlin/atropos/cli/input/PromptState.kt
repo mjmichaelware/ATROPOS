@@ -118,22 +118,30 @@ class PromptState(
         }
 
         KeyEvent.ArrowLeft -> {
-            if (!suggestions.collapse(line.textBeforeCursor())) moveLeft()
+            if (isPaletteActive()) {
+                if (!suggestions.collapse(line.textBeforeCursor())) moveLeft()
+            } else {
+                moveLeft()
+            }
             PromptEffect.Redraw
         }
 
         KeyEvent.ArrowRight -> {
-            if (!suggestions.expand(line.textBeforeCursor())) moveRight()
+            if (isPaletteActive()) {
+                if (!suggestions.expand(line.textBeforeCursor())) moveRight()
+            } else {
+                moveRight()
+            }
             PromptEffect.Redraw
         }
 
         KeyEvent.ArrowUp -> {
-            if (isCommandSuggestionActive()) suggestions.moveSelectionUp(line.textBeforeCursor()) else historyUp()
+            if (isPaletteActive()) suggestions.moveSelectionUp(line.textBeforeCursor()) else historyUp()
             PromptEffect.Redraw
         }
 
         KeyEvent.ArrowDown -> {
-            if (isCommandSuggestionActive()) suggestions.moveSelectionDown(line.textBeforeCursor()) else historyDown()
+            if (isPaletteActive()) suggestions.moveSelectionDown(line.textBeforeCursor()) else historyDown()
             PromptEffect.Redraw
         }
 
@@ -305,7 +313,7 @@ class PromptState(
     private fun currentLane(): PromptHistoryLane =
         if (line.isEmpty()) lastCommittedLane else PromptHistoryLane.classify(line.text)
 
-    private fun isCommandSuggestionActive(): Boolean = suggestions.isActive(line.textBeforeCursor())
+    private fun isPaletteActive(): Boolean = suggestions.isActive(line.textBeforeCursor())
 
     private companion object {
         const val DEFAULT_HISTORY_LIMIT = 100
