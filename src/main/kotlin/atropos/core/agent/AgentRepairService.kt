@@ -24,7 +24,7 @@ class AgentRepairService(
     private val collector: AgentContextCollector = AgentContextCollector(),
     private val onboarding: ProviderOnboardingService = ProviderOnboardingService(),
     private val router: ProviderCascadeRouter = ProviderCascadeRouter(
-        ProviderFactory(config),
+        ProviderFactory({ config }),
         healthyProviderIds = { onboarding.healthyProviderIds() },
         preferredProviderIds = { onboarding.preferredProviderIds() },
         localOnly = { config.runtime.localOnly },

@@ -29,7 +29,7 @@ class ProviderChatDispatcher(
      */
     private val cascadeRouter: atropos.core.provider.ProviderCascadeRouter =
         atropos.core.provider.ProviderCascadeRouter(
-            atropos.core.ProviderFactory(config),
+            atropos.core.ProviderFactory({ config }),
             healthyProviderIds = { onboarding.healthyProviderIds() },
             preferredProviderIds = { onboarding.preferredProviderIds() },
             localOnly = { config.runtime.localOnly },

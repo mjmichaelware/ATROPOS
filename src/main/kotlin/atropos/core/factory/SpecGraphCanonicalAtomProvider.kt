@@ -183,7 +183,7 @@ class SpecGraphCanonicalAtomProvider(
     private fun completeThroughProviderCascade(prompt: String): DimensionClassification {
         val config = AtroposConfig.load()
         val result = ProviderCascadeRouter(
-            ProviderFactory(config),
+            ProviderFactory({ config }),
             healthyProviderIds = { onboarding.healthyProviderIds() },
             preferredProviderIds = { onboarding.preferredProviderIds() },
             localOnly = { config.runtime.localOnly },

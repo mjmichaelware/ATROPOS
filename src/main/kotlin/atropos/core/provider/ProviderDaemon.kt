@@ -125,7 +125,7 @@ class ProviderDaemon(
         return required.any { envVar ->
             // 1. Vault check
             credentialVault.has(envVar) ||
-                runCatching { !TokenIsolationVault(config.configRoot().resolve("secrets")).readSecret(envVar).isNullOrBlank() }.getOrDefault(false) ||
+                runCatching { !TokenIsolationVault(AtroposConfig.configRoot().resolve("secrets")).readSecret(envVar).isNullOrBlank() }.getOrDefault(false) ||
                 // 2. Process environment
                 !System.getenv(envVar).isNullOrBlank() ||
                 // 3. In-memory config keys

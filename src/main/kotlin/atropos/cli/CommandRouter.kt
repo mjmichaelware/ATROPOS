@@ -38,7 +38,7 @@ class CommandRouter(
     private val config: AtroposConfig,
     private val uiEngine: AnsiTerminalEngine,
     private val sessionTracker: QuotaSessionTracker,
-    private val providerResolver: (String) -> AIProvider = { ProviderFactory(config).getProvider(it) },
+    private val providerResolver: (String) -> AIProvider = { ProviderFactory({ config }).getProvider(it) },
     private val rateResolver: (String) -> Double = { 0.0 },
     private val verifyCommand: VerifyCommandHandler = VerifyCommand(uiEngine),
     private val shellRunner: ShellCommandRunner = ShellCommandRunner(),
@@ -199,7 +199,7 @@ class CommandRouter(
     private val sideConversation = SideConversationService(
         uiEngine = uiEngine,
         cascade = atropos.core.provider.ProviderCascadeRouter(
-            ProviderFactory(config),
+            ProviderFactory({ config }),
             healthyProviderIds = { providerOnboarding.healthyProviderIds() },
             preferredProviderIds = { providerOnboarding.preferredProviderIds() },
             localOnly = { config.runtime.localOnly },
