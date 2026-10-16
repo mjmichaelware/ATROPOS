@@ -58,7 +58,8 @@ object DagNodeProposals {
         DagNodeAction.VERIFY,
         DagNodeAction.COMPILE_GATE,
         DagNodeAction.SMOKE_GATE,
-        DagNodeAction.ACCEPTANCE_GATE -> ActionProposal(
+        DagNodeAction.ACCEPTANCE_GATE,
+        DagNodeAction.EXECUTE_WAVE -> ActionProposal(
             id = nextId("dag-run"),
             actionClass = PolicyActionClass.SHELL,
             actor = actor,
