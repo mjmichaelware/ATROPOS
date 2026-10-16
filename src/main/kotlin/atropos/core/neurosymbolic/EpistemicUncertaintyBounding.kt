@@ -18,7 +18,7 @@ class EpistemicUncertaintyBounding {
     ): String? {
         val uncertainty = 1.0 - confidence.clarity
         if (uncertainty > epsilon) {
-            return "PARETO_DECISION_PAUSE: Epistemic uncertainty $uncertainty > $epsilon for goal '${prompt.id}'. Trade-off resolution required before synthesis."
+            return "PARETO_DECISION_PAUSE: Epistemic uncertainty $uncertainty > $epsilon for goal '${prompt.projectId}'. Trade-off resolution required before synthesis."
         }
         return null
     }
