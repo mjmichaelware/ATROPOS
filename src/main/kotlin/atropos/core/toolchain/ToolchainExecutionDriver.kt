@@ -49,8 +49,8 @@ class ToolchainExecutionDriver(
         return ToolchainResult(
             exitCode = result.exitCode,
             passed = result.passed,
-            stdout = redactionFilter.filter(result.stdout),
-            stderr = redactionFilter.filter(result.stderr),
+            stdout = redactionFilter.redact(result.stdout),
+            stderr = redactionFilter.redact(result.stderr),
             diagnostics = result.diagnostics,
             durationMs = result.durationMs
         )
