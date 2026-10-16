@@ -29,6 +29,10 @@ import atropos.core.verification.VerifiedCompletionGate
 import atropos.core.worktree.IsolatedWorktreeService
 import atropos.core.worktree.WorktreeRecord
 import atropos.core.worktree.WorktreeRollbackResult
+import atropos.core.AtroposRepoRootLocator
+import atropos.core.ProviderFactory
+import atropos.core.provider.ProviderCascadeRouter
+import atropos.core.planning.PartitionCluster
 import java.nio.file.Path
 import java.security.MessageDigest
 import java.time.Instant
@@ -101,6 +105,102 @@ class AutonomousWaveOrchestrator(
                 contractSynthesizer = contractSynthesizer
             )
         }
+    }
+
+    constructor(
+        researchOrchestrator: atropos.core.research.ResearchOrchestrator,
+        confidenceEngine: atropos.core.confidence.HysteresisConfidenceEngine,
+        partitionManager: atropos.core.planning.PartitionClusterManager,
+        latticeSynthesizer: atropos.core.contract.ContractLatticeSynthesizer,
+        workerSynthesizer: atropos.core.synthesis.DecoupledWorkerSynthesizer,
+        diAssembler: atropos.core.composition.DependencyInjectionAssembler,
+        toolchains: atropos.core.toolchain.NativeToolchainRegistry
+    ) : this(
+        repoRoot = AtroposRepoRootLocator.resolve(),
+        dagStore = DagStore(AtroposRepoRootLocator.resolve()),
+        executionService = DagExecutionService(repoRoot = AtroposRepoRootLocator.resolve()),
+        worktreeService = IsolatedWorktreeService(AtroposRepoRootLocator.resolve()),
+        territoryService = TerritoryGrantService(TerritoryService(TerritoryStore(AtroposRepoRootLocator.resolve()))),
+        completionGate = VerifiedCompletionGate(),
+        progressGuard = FactoryProgressGuard(DagStore(AtroposRepoRootLocator.resolve())),
+        agentQueue = AgentQueueService(),
+        agentJobStore = AgentJobStore(AtroposRepoRootLocator.resolve()),
+        memoryStore = LocalMemoryStore(AtroposRepoRootLocator.resolve().resolve(".atropos/memory").toFile()),
+        onboarding = ProviderOnboardingService(),
+        agencyGate = BoundedAgencyGate(
+            policyEngine = ExecutionPolicyEngine(AtroposRepoRootLocator.resolve()),
+            territory = TerritoryGrantService(TerritoryService(TerritoryStore(AtroposRepoRootLocator.resolve())))
+        ),
+        contractSynthesizer = ContractLatticeSynthesizer(AtroposRepoRootLocator.resolve())
+    )
+
+    fun executeOrchestration(
+        promptText: String,
+        projectId: String,
+        targetDir: Path
+    ): OrchestrationReport {
+        val promptArtifact = atropos.core.research.PromptArtifactStore.persist(
+            prompt = promptText,
+            projectId = projectId,
+            dir = targetDir.resolve(".atropos/prompts")
+        )
+
+        val doc = researchOrchestrator.research(promptArtifact)
+        val action = confidenceEngine.evaluate(doc)
+        if (action == atropos.core.confidence.ConfidenceAction.PARETO_DECISION_PAUSE) {
+            return OrchestrationReport(
+                success = false,
+                artifactPath = null,
+                h0 = promptArtifact.h0,
+                hDoc = doc.hDoc,
+                stageReached = "RESEARCH_PARETO_PAUSE",
+                failureReason = "Confidence score ${doc.confidence.score} triggered PARETO_DECISION_PAUSE"
+            )
+        }
+
+        val dagDef = DagDefinition(
+            id = "dag-$projectId",
+            label = "Wave DAG: $projectId",
+            nodes = listOf(
+                DagNode(id = "node-1", label = "Core", territory = listOf("src/main/kotlin"), state = DagNodeState.READY)
+            ),
+            projectId = projectId
+        )
+        val clusters = partitionClusterManager.partition(dagDef)
+        val cluster = clusters.firstOrNull() ?: PartitionCluster(
+            clusterId = "c0",
+            nodes = emptyList(),
+            tokenCount = 0,
+            assignedTerritory = emptySet()
+        )
+
+        val contractLatticeSynth = atropos.core.contract.ContractLatticeSynthesizer()
+        val lattice = contractLatticeSynth.synthesize(doc, cluster, targetDir)
+
+        val testSuiteGen = atropos.core.verification.Wave1TestSuiteGenerator()
+        testSuiteGen.generate(lattice, targetDir)
+
+        val workerSynth = atropos.core.synthesis.DecoupledWorkerSynthesizer(
+            worktreeService = worktreeService,
+            cascadeRouter = ProviderCascadeRouter(factory = ProviderFactory())
+        )
+        workerSynth.synthesizeCluster(cluster, lattice, promptArtifact.h0)
+
+        val diAssembler = atropos.core.composition.DependencyInjectionAssembler()
+        val diModule = diAssembler.assemble(lattice, mapOf(), targetDir)
+
+        val driver = atropos.core.toolchain.NativeToolchainRegistry.getDriver("kotlin")
+            ?: atropos.core.toolchain.NativeToolchainRegistry.requireDriver("kotlin")
+        val compileResult = driver.compile(targetDir)
+
+        return OrchestrationReport(
+            success = compileResult.passed && compileResult.exitCode == 0,
+            artifactPath = if (compileResult.passed) diModule else null,
+            h0 = promptArtifact.h0,
+            hDoc = doc.hDoc,
+            stageReached = if (compileResult.passed) "WAVE_4_GLOBAL_VERIFIED" else "WAVE_4_COMPILE_ERROR",
+            failureReason = if (compileResult.passed) null else compileResult.stderr
+        )
     }
 
     /**
@@ -356,3 +456,12 @@ class AutonomousWaveOrchestrator(
         return MessageDigest.getInstance("SHA-256").digest(input.toByteArray()).joinToString("") { "%02x".format(it) }
     }
 }
+
+data class OrchestrationReport(
+    val success: Boolean,
+    val artifactPath: Path?,
+    val h0: String,
+    val hDoc: String,
+    val stageReached: String,
+    val failureReason: String?
+)

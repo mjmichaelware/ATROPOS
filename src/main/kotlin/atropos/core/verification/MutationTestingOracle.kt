@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.verification
 
 import atropos.core.toolchain.LanguageToolchainDriver
@@ -9,14 +10,44 @@ import java.util.Random
 data class MutationReport(
     val totalMutants: Int,
     val killedMutants: Int,
-    val killRatio: Double,
-    val survivedMutants: List<String>
-)
+    val killRate: Double,
+    val passed: Boolean,
+    val survivedMutants: List<String> = emptyList()
+) {
+    val killRatio: Double get() = killRate
+}
 
 class MutationTestingOracle(
+    private val minKillRate: Double = 0.850,
     private val astBridge: TreeSitterGrammarBridge = TreeSitterGrammarBridge(),
     private val random: Random = Random()
 ) {
+    fun evaluate(worktree: Path, driver: LanguageToolchainDriver): MutationReport {
+        val sourceFiles = mutableListOf<String>()
+        if (Files.exists(worktree)) {
+            Files.walk(worktree).use { stream ->
+                stream.filter { Files.isRegularFile(it) }
+                    .filter { p ->
+                        val name = p.fileName.toString()
+                        (name.endsWith(".kt") || name.endsWith(".rs") || name.endsWith(".ts") ||
+                            name.endsWith(".go") || name.endsWith(".py")) && !name.contains("Test")
+                    }
+                    .forEach { sourceFiles.add(worktree.relativize(it).toString()) }
+            }
+        }
+
+        if (sourceFiles.isEmpty()) {
+            return MutationReport(
+                totalMutants = 0,
+                killedMutants = 0,
+                killRate = 1.0,
+                passed = true
+            )
+        }
+
+        return evaluateMutationScore(worktree, driver, sourceFiles)
+    }
+
     fun evaluateMutationScore(
         worktreeRoot: Path,
         driver: LanguageToolchainDriver,
@@ -40,7 +71,8 @@ class MutationTestingOracle(
             return MutationReport(
                 totalMutants = allMutations.size,
                 killedMutants = 0,
-                killRatio = 0.0,
+                killRate = 0.0,
+                passed = false,
                 survivedMutants = allMutations
             )
         }
@@ -73,12 +105,14 @@ class MutationTestingOracle(
         }
 
         val total = allMutations.size
-        val ratio = if (total > 0) killed.toDouble() / total else 0.0
+        val ratio = if (total > 0) killed.toDouble() / total else 1.0
+        val passed = ratio >= minKillRate
 
         return MutationReport(
             totalMutants = total,
             killedMutants = killed,
-            killRatio = ratio,
+            killRate = ratio,
+            passed = passed,
             survivedMutants = survived
         )
     }

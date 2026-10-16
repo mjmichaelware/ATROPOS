@@ -20,6 +20,8 @@ import atropos.core.worktree.BoundedGitWorktreeCommandRunner
 import java.nio.file.Path
 import java.time.Instant
 import atropos.core.agent.WorkerCodeProposal
+import atropos.core.toolchain.NativeToolchainRegistry
+import atropos.core.toolchain.ToolchainResult
 
 class VerifiedCompletionGate(
     private val config: AtroposConfig = AtroposConfig.load(),
@@ -52,6 +54,16 @@ class VerifiedCompletionGate(
             )
         )
     )
+
+    private var nativeToolchains: NativeToolchainRegistry = NativeToolchainRegistry
+
+    fun bindNativeToolchains(registry: NativeToolchainRegistry) {
+        this.nativeToolchains = registry
+    }
+
+    fun evaluateNativeExitCode(result: ToolchainResult): Boolean {
+        return result.exitCode == 0 && result.passed
+    }
 
     fun mergeProviderProposals(proposals: List<WorkerCodeProposal>): ProviderProposalMergeReport {
         if (proposals.isEmpty()) return ProviderProposalMergeReport(false, emptyList(), "no provider proposals")

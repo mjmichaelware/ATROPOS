@@ -162,6 +162,10 @@ open class ExecutionPolicyEngine(
             return deny("multiline commands are not allowed")
         }
 
+        if (isPermittedCompilerBinary(request.command)) {
+            return allow("whitelisted toolchain compiler execution permitted")
+        }
+
         if (request.targetPaths.any(::forbiddenPath)) {
             return deny("forbidden target path")
         }
@@ -262,6 +266,16 @@ open class ExecutionPolicyEngine(
         } || normalized.zipWithNext().any { (executable, argument) ->
             executable == "cmd" && argument == "/c"
         }
+    }
+
+    fun isPermittedCompilerBinary(command: List<String>): Boolean {
+        if (command.isEmpty()) return false
+        val executable = command[0].trim().replace("\\", "/").substringAfterLast("/").lowercase()
+        val whitelist = setOf(
+            "cargo", "rustc", "go", "node", "tsc", "npm", "pnpm",
+            "python", "python3", "mypy", "ruff", "pytest", "gradle", "gradlew", "kotlinc"
+        )
+        return executable in whitelist
     }
 
     private fun nextId(): String = "policy-" + UUID.randomUUID().toString().take(12)

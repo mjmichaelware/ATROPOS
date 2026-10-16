@@ -7,10 +7,16 @@ import atropos.core.provider.ContextAttestationService
 import atropos.core.provider.ContextEnvelope
 import atropos.core.provider.ContextEnvelopeFactory
 import atropos.core.security.RedactionFilter
+import atropos.core.contract.ContractLattice
+import atropos.core.dag.DagNode
 import java.nio.file.Path
 
 object AgentPromptContract {
     private val redactionFilter = RedactionFilter()
+
+    fun buildCleanRoomWavePrompt(node: DagNode, lattice: ContractLattice, h0: String): String {
+        return CleanRoomPromptContract.buildPrompt(node, lattice, h0)
+    }
     const val SYSTEM_TEXT =
         "You are an ATROPOS reasoning provider. ATROPOS has read the local repo and supplied bounded context. " +
         "You cannot directly access files. Use the provided context. Do not ask for API keys. Return direct answers, plans, or diffs only."

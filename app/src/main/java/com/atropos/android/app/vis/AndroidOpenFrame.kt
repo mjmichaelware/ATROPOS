@@ -2,24 +2,29 @@
 package com.atropos.android.app.vis
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
-
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -28,6 +33,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.atropos.android.app.bridge.MobileCheckpoint
@@ -146,7 +153,7 @@ fun AndroidOpenFrame(
             checkpoint?.let { cp ->
                 CheckpointChip(
                     checkpoint = cp,
-                    onAction = { _, _ -> }
+                    onAction = { _ -> }
                 )
             }
         }
@@ -216,60 +223,53 @@ fun AndroidFooterComposer(
             modifier = modifier
                 .fillMaxWidth()
                 .padding(16.dp)
-                .background(MaterialTheme.colorScheme.surfaceContainerHigh),
-            shape = com.atropos.android.app.ui.RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+                .background(MaterialTheme.colorScheme.surface),
+            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
         ) {
-            Column(
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
-                verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 // Input field
-                androidx.compose.material3.TextField(
+                TextField(
                     value = value,
                     onValueChange = onValueChange,
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 48.dp, max = 150.dp)
-                        .weight(1f),
-                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                        keyboardType = androidx.compose.foundation.text.KeyboardType.Text,
-                        imeAction = androidx.compose.foundation.text.ImeAction.Send
+                        .weight(1f)
+                        .heightIn(min = 48.dp, max = 150.dp),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Text,
+                        imeAction = ImeAction.Send
                     ),
-                    onImeActionPerformed = { _, action, _ ->
-                        if (action == androidx.compose.foundation.text.ImeAction.Send && value.trim().isNotEmpty()) {
-                            onSend(value)
-                            return true
+                    keyboardActions = KeyboardActions(
+                        onSend = {
+                            if (value.trim().isNotEmpty()) {
+                                onSend(value)
+                            }
                         }
-                        false
-                    },
+                    ),
                     singleLine = false,
                     maxLines = 5,
-                    colors = androidx.compose.material3.TextFieldDefaults.textFieldColors(
-                        containerColor = MaterialTheme.colorScheme.surface,
-                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                        disabledContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                        cursorColor = MaterialTheme.colorScheme.primary
-                    ),
-                    placeholder = { Text(text = if (true) "Message..." else "Engine offline") }
+                    placeholder = { Text(text = if (isOnline) "Message..." else "Engine offline") }
                 )
 
                 // Send button - always visible when focused
-                androidx.compose.material3.Button(
+                Button(
                     onClick = { if (value.trim().isNotEmpty()) onSend(value) },
                     enabled = value.trim().isNotEmpty(),
                     modifier = Modifier
                         .height(48.dp)
-                        .width(48.dp)
-                        .align(Alignment.End),
-                    shape = androidx.compose.material3.RoundedCornerShape(24.dp),
-                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                        .width(48.dp),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary
                     )
                 ) {
-                    androidx.compose.material3.Icon(
-                        imageVector = androidx.compose.material.icons.default.Send,
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.Send,
                         contentDescription = "Send",
                         tint = MaterialTheme.colorScheme.onPrimary
                     )

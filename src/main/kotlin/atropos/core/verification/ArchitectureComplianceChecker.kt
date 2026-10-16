@@ -49,6 +49,14 @@ class ArchitectureComplianceChecker(
     private val policy: ArchitectureCompliancePolicy = ArchitectureCompliancePolicy(defaultLineThreshold = lineThreshold),
     private val concernDetector: ArchitectureConcernDetector = ArchitectureConcernDetector()
 ) {
+    private val atomicityConstitution = FileAtomicityConstitution
+    private val hollowScanner = AstStubHollowScanner()
+
+    fun validateFileConstitution(file: File): FileAtomicityReport =
+        atomicityConstitution.validate(file.toPath())
+
+    fun scanHollowDefects(file: File, content: String): List<HollowDefect> =
+        hollowScanner.scanSource(file.toPath(), content)
     fun check(sourceRoot: File): ArchitectureComplianceReport {
         if (!sourceRoot.isDirectory) {
             return ArchitectureComplianceReport(0, emptyList(), enforcing)

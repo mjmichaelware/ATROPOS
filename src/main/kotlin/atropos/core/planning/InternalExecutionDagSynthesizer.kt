@@ -60,6 +60,40 @@ class InternalExecutionDagSynthesizer(
         )
     }
 
+    fun synthesizePartitionedDag(projectId: String, label: String, dag: DagDefinition): DagDefinition {
+        val partitionManager = PartitionClusterManager()
+        val clusters = partitionManager.partition(dag)
+        val now = Instant.now()
+        val compositeNodes = clusters.map { cluster ->
+            val boundaryHash = cluster.assignedTerritory.sorted().joinToString(",").let {
+                java.security.MessageDigest.getInstance("SHA-256")
+                    .digest(it.toByteArray(Charsets.UTF_8))
+                    .joinToString("") { b -> "%02x".format(b) }
+            }
+            DagNode(
+                id = cluster.clusterId,
+                label = "cluster: ${cluster.clusterId}",
+                dependencies = cluster.nodes.flatMap { it.dependencies }.distinct().filter { depId ->
+                    clusters.none { c -> c.clusterId == cluster.clusterId && c.nodes.any { it.id == depId } }
+                },
+                territory = cluster.assignedTerritory.toList(),
+                action = DagNodeAction.EXECUTE_WAVE,
+                actionPayload = "boundary_hash=$boundaryHash\ntokens=${cluster.tokenCount}",
+                state = DagNodeState.READY,
+                createdAt = now,
+                updatedAt = now
+            )
+        }
+        return DagDefinition(
+            id = "partitioned-${dag.id}",
+            label = label,
+            projectId = projectId,
+            nodes = compositeNodes,
+            createdAt = now,
+            updatedAt = now
+        )
+    }
+
     /**
      * What this node is being asked to do, as opposed to what the section says.
      *
