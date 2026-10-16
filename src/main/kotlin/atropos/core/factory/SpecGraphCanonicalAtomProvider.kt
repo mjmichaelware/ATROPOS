@@ -153,12 +153,10 @@ class SpecGraphCanonicalAtomProvider(
                 "attempts=${classification.attempts} failures=${classification.failures}"
         )
         val classified = parseDimension(classification.response)
-            ?: AtomDimension.CODE.also { fallback ->
-                evidenceSink(
-                    "specgraph source=$sourcePath atom=${atom.id} dimension_fallback=CODE " +
-                        "reason=provider returned no valid AtomDimension"
-                )
-            }
+            ?: throw IllegalStateException(
+                "SPECGRAPH_DIMENSION_FILL_REQUIRED: provider returned no valid AtomDimension " +
+                    "for atom=${atom.id}; response must be one exact enum constant"
+            )
         atom.copy(dimension = classified)
     }
 

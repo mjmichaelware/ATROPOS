@@ -37,7 +37,8 @@ class DagExecutionService(
     private val partitionManager: PartitionClusterManager = PartitionClusterManager(),
     private val completionGate: VerifiedCompletionGate = VerifiedCompletionGate(),
     private val contractSynthesizer: ContractLatticeSynthesizer = ContractLatticeSynthesizer(repoRoot),
-    private val dagStore: DagStore = DagStore(repoRoot)
+    private val dagStore: DagStore = DagStore(repoRoot),
+    private val onboarding: atropos.core.provider.ProviderOnboardingService? = null
 ) {
     private val activeWorktrees = ConcurrentHashMap<String, WorktreeRecord>()
 
@@ -244,6 +245,12 @@ class DagExecutionService(
         return dagStore.createDag(label, nodes, projectId)
     }
 
+    fun readDag(dagId: String): DagDefinition? = dagStore.readDag(dagId)
+
+    fun listDags(): List<DagDefinition> = dagStore.listDags()
+
+    fun evaluateDag(dagId: String): DagExecutionResult = evaluateDagBatched(dagId)
+
     fun recoverStaleClaims(): Int {
         val dags = dagStore.listDags()
         var recovered = 0
@@ -380,7 +387,6 @@ class DagExecutionService(
                 intent = atropos.core.factory.AppIntent(
                     name = "dummy",
                     kind = "generic",
-                    capabilities = emptySet(),
                     features = emptyList()
                 )
             ),
@@ -394,7 +400,7 @@ class DagExecutionService(
                 confidence = atropos.core.factory.FactoryConfidence(
                     score = 0,
                     breakdown = "",
-                    threshold = 0
+                    questions = emptyList()
                 ),
                 promptSpans = "",
                 researchChannels = "",

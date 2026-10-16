@@ -152,11 +152,11 @@ class ContractLatticeSynthesizer(
             context = "Synthesizing node ${node.id}"
         )
 
-        if (cascadeResult.resolvedProvider == null) {
-            return SynthesisResult(false, "no eligible provider resolved for task: ${node.label}")
+        if (cascadeResult.queued || cascadeResult.paidApproval != null) {
+            return SynthesisResult(false, "no eligible provider resolved for task: ${node.label} (${cascadeResult.queueReason ?: cascadeResult.response})")
         }
 
-        return SynthesisResult(true, "provider call dispatched: ${cascadeResult.resolvedProvider}")
+        return SynthesisResult(true, "provider call dispatched: ${cascadeResult.providerName}")
     }
 
     private fun createCascadeRouter(): ProviderCascadeRouter {

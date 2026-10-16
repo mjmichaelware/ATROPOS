@@ -11,9 +11,9 @@ import atropos.core.orchestration.WaveExecutionResult
 import atropos.core.paid.EmergencyPaidGate
 import atropos.core.project.ProjectRegistry
 import atropos.core.planning.InternalPlanningGraphService
-import atropos.core.dag.DagStore
 import atropos.core.journal.EventJournalService
 import atropos.core.factory.FactoryLiveRepairAction
+import atropos.core.provider.ProviderOnboardingService
 import java.nio.file.Path
 import java.time.Instant
 
@@ -50,15 +50,15 @@ class AppFactoryRouter(
     private val runtimeConfig: AtroposConfig = AtroposConfig.load()
 
     /**
-     * Convert a prompt into a typed WaveExecutionRequest.
+     * Convert a prompt into a typed FactoryPlan.
      * No template generation, no scaffold emission.
      */
-    fun plan(prompt: String): WaveExecutionRequest {
+    fun plan(prompt: String): FactoryPlan {
         val clean = prompt.trim().ifBlank { "build local app" }
         val projectSpec = projectSpecParser.parse(clean)
         val intent = FactoryPlanHelper.classify(projectSpecParser, clean)
         val steps = FactoryPlanHelper.stepsFor(intent)
-        val factoryPlan = FactoryPlan(
+        return FactoryPlan(
             id = "factory-${FactoryLineage.sha256(clean).take(16)}",
             prompt = clean,
             intent = intent,
@@ -69,7 +69,10 @@ class AppFactoryRouter(
             assetFiles = emptyList(),
             memoryRecordId = null
         )
+    }
 
+    fun planWave(prompt: String): WaveExecutionRequest {
+        val factoryPlan = plan(prompt)
         val lineage = FactoryLineageFactory.prepare(
             repoRoot,
             factoryPlan.id,
@@ -81,7 +84,7 @@ class AppFactoryRouter(
         )
 
         val targetDir = repoRoot.resolve(".atropos/generated-projects")
-            .resolve("${AppProjectGenerator.safeName(projectSpec.intent.name)}-${factoryPlan.id}")
+            .resolve("${AppProjectGenerator.safeName(factoryPlan.projectSpec.intent.name)}-${factoryPlan.id}")
 
         return WaveExecutionRequest.fromFactoryPlan(factoryPlan, lineage, targetDir)
     }
@@ -91,7 +94,7 @@ class AppFactoryRouter(
      * Throws if the orchestrator fails — no local fallback.
      */
     fun runLocal(prompt: String): Path {
-        val request = plan(prompt)
+        val request = planWave(prompt)
         val result = orchestrator.execute(request)
 
         if (!result.success) {
@@ -157,10 +160,10 @@ class AppFactoryRouter(
         clarificationAnswers: List<Boolean> = emptyList()
     ): FactoryPlan {
         val planned = plan(prompt)
-        val base = projectIdOverride?.let { planned.copy(requestId = it) } ?: planned
+        val base = projectIdOverride?.let { planned.copy(id = it) } ?: planned
         val lineage = FactoryLineageFactory.prepare(
             repoRoot,
-            base.requestId,
+            base.id,
             base.prompt,
             base.projectSpec,
             runMemory = memory,

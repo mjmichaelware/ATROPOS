@@ -45,7 +45,7 @@ class CrashRecoveryService(
     private val sessionSupervisor: ProviderSessionSupervisor = ProviderSessionSupervisor(repoRoot),
     private val continuationService: GoalContinuationService = GoalContinuationService(repoRoot),
     private val goalRunStore: GoalRunStore = GoalRunStore(repoRoot),
-    private val dagService: DagExecutionService = DagExecutionService(config, repoRoot),
+    private val dagService: DagExecutionService = DagExecutionService(config, repoRoot, onboarding = onboarding),
     private val dagStore: DagStore = DagStore(repoRoot),
     private val memoryStore: LocalMemoryStore = LocalMemoryStore(repoRoot.resolve(".atropos/memory").toFile()),
     private val daemonService: AgentDaemonService = AgentDaemonService(config, onboarding = onboarding),

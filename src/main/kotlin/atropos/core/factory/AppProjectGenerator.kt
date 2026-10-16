@@ -275,19 +275,7 @@ class AppProjectGenerator(
                     directorDecision = directorAdvisory.message,
                     auditorDecision = auditDecision.message,
                     auditorReportSha256 = auditDecision.reportEvidenceSha256,
-                    completionGate = gate.message,
-                    promptSpans = effectiveLineage.promptSpans,
-                    researchChannels = effectiveLineage.researchChannels,
-                    contextHash = effectiveLineage.contextHash,
-                    atomResearch = effectiveLineage.atomResearch,
-                    memoryPointers = effectiveLineage.memoryPointers,
-                    atomizerStatus = effectiveLineage.atomizerStatus,
-                    journalRunId = projectId,
-                    hrRouterRequestId = hierarchyLease.hrRequestId,
-                    hrRouterAction = hierarchyLease.hrAction,
-                    proposalSha256 = proposalSha256,
-                    clarificationAnswersSha256 = effectiveLineage.clarificationAnswersSha256,
-                    clarificationLineageSha256 = effectiveLineage.clarificationLineageSha256,
+                    projectLanguage = ProjectLanguage.layoutFor(ProjectLanguage.detect(spec.prompt)),
                     acceptanceFreezeSha256 = effectiveLineage.acceptanceFreeze?.sha256.orEmpty()
                 )
             )

@@ -2,7 +2,6 @@ package atropos.core.mcp
 
 import atropos.core.security.TokenIsolationVault
 import atropos.core.security.VaultReadResult
-import atropos.core.security.SecretSinkKind
 import java.nio.charset.StandardCharsets
 import java.util.Base64
 
@@ -19,7 +18,7 @@ class McpVaultCryptoBinding(
 
     fun resolveIntegrationSecret(systemId: String, key: String): String {
         val secretName = "$secretNamePrefix${systemId}_$key"
-        val result = vault.readSecretForSink(secretName, SecretSinkKind.TOOL_INVOCATION)
+        val result = vault.readSecretResult(secretName)
 
         return when (result) {
             is VaultReadResult.Available -> result.value

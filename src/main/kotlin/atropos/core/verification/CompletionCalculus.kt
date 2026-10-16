@@ -19,10 +19,24 @@ data class DiscreteCompletionVector(
         get() = min(min(cImpl, cInt), min(cVer, cEv))
 }
 
+data class ComponentCompletion(
+    val implementationPercent: Double,
+    val integrationPercent: Double,
+    val verificationPercent: Double,
+    val evidencePercent: Double
+)
+
 object CompletionCalculus {
     fun compute(cImpl: Int, cInt: Int, cVer: Int, cEv: Int): DiscreteCompletionVector {
         return DiscreteCompletionVector(cImpl, cInt, cVer, cEv)
     }
 
     fun isComplete(vector: DiscreteCompletionVector): Boolean = vector.cReal == 1
+
+    fun calculateRealCompletion(comp: ComponentCompletion): Double {
+        return min(
+            min(comp.implementationPercent, comp.integrationPercent),
+            min(comp.verificationPercent, comp.evidencePercent)
+        )
+    }
 }
