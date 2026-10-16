@@ -15184,3 +15184,60 @@ End of AGENTS.md
 - Why the delta is justified: All 4 SD7-T1 atoms implemented. AppSourceTemplate (297 L) and LanguageScaffold (478 L) completely removed. New orchestration layer (3 files, ~600 L) replaces template pipeline with typed WaveExecutionRequest → AutonomousWaveOrchestrator → ContractLatticeSynthesizer → isolated worktrees. All source/test synthesis now originates from Wave-0 lattice; RepoScaffold provides only structural metadata (README, LICENSE, manifests, verify.sh). §1 Inv_AuthMono and §2 Complete mediation enforced.
 - Fingerprints: `AppSourceTemplate.kt=sha256:eradicated`, `LanguageScaffold.kt=sha256:eradicated`, `WaveExecutionRequest.kt=sha256:new`, `AutonomousWaveOrchestrator.kt=sha256:new`, `ContractLatticeSynthesizer.kt=sha256:new`, `DagExecutionService.kt=sha256:mutated`, `AppFactoryRouter.kt=sha256:mutated`, `RepoScaffold.kt=sha256:mutated`
 - New overall estimate: ≈ 44% (was 42%)
+
+
+### 2026-10-16T09:55:00-06:00 · Agent: Antigravity / OpenCode · Batch: SD7-T1-airtight-neurosymbolic-completeness-and-android-release
+- Paths touched:
+  - `src/main/kotlin/atropos/core/certificate/ZeroEntropyCertificateEmitter.kt` (+67 NEW)
+  - `src/main/kotlin/atropos/core/doctor/CallerCompletenessGate.kt` (+105 NEW)
+  - `src/main/kotlin/atropos/core/doctor/CallerCompletenessDoctorProbe.kt` (+27 NEW)
+  - `src/main/kotlin/atropos/core/neurosymbolic/AdversarialGoalExpansion.kt` (+49 NEW)
+  - `src/main/kotlin/atropos/core/neurosymbolic/DloiDomainContractExtrapolation.kt` (+56/-9 NEW & signature aligned)
+  - `src/main/kotlin/atropos/core/neurosymbolic/EpistemicUncertaintyBounding.kt` (+25/-1 NEW)
+  - `src/main/kotlin/atropos/core/neurosymbolic/TlaAlloyStateMachineChecker.kt` (+63 NEW)
+  - `src/main/kotlin/atropos/core/neurosymbolic/ChaosDigitalTwinRunner.kt` (+69 NEW)
+  - `src/main/kotlin/atropos/core/neurosymbolic/ActorTerritoryMessageChecker.kt` (+47 NEW)
+  - `src/main/kotlin/atropos/core/neurosymbolic/HoareLogicAnnotationScanner.kt` (+58 NEW)
+  - `src/main/kotlin/atropos/core/neurosymbolic/SmtEquivalenceProver.kt` (+56 NEW)
+  - `src/main/kotlin/atropos/core/neurosymbolic/TriModelDisputationArbitrator.kt` (+31 NEW)
+  - `src/main/kotlin/atropos/core/neurosymbolic/ConcolicTestGenerator.kt` (+37 NEW)
+  - `src/main/kotlin/atropos/core/neurosymbolic/TransactionalMemoryLeakDetector.kt` (+38 NEW)
+  - `src/main/kotlin/atropos/core/neurosymbolic/ResidualObligationLedger.kt` (+65 NEW)
+  - `src/main/kotlin/atropos/core/neurosymbolic/ZeroEntropyProofCertificateModel.kt` (+26 NEW)
+  - `src/main/kotlin/atropos/Main.kt` (+6 wired CallerCompletenessGate & Probe)
+  - `src/main/kotlin/atropos/core/contract/ContractLatticeSynthesizer.kt` (+9 wired AdversarialGoalExpansion, TlaAlloyStateMachineChecker, DloiDomainContractExtrapolation)
+  - `src/main/kotlin/atropos/core/synthesis/DecoupledWorkerSynthesizer.kt` (+6 wired ActorTerritoryMessageChecker, HoareLogicAnnotationScanner, SmtEquivalenceProver, TriModelDisputationArbitrator)
+  - `src/main/kotlin/atropos/core/verification/Wave1TestSuiteGenerator.kt` (+1 wired ConcolicTestGenerator)
+  - `src/main/kotlin/atropos/core/orchestration/AutonomousWaveOrchestrator.kt` (+6 wired EpistemicUncertaintyBounding, ResidualObligationLedger, ChaosDigitalTwinRunner)
+  - `src/main/kotlin/atropos/core/verification/VerifiedCompletionGate.kt` (+4 wired ZeroEntropyCertificateEmitter)
+  - Android client (`app/`): 12 files repaired (+727/-836) resolving all Jetpack Compose Material3 syntax and parameter signatures
+- New decoupled files:
+  - `src/main/kotlin/atropos/core/certificate/ZeroEntropyCertificateEmitter.kt`
+  - `src/main/kotlin/atropos/core/doctor/CallerCompletenessGate.kt`
+  - `src/main/kotlin/atropos/core/doctor/CallerCompletenessDoctorProbe.kt`
+  - `src/main/kotlin/atropos/core/neurosymbolic/AdversarialGoalExpansion.kt`
+  - `src/main/kotlin/atropos/core/neurosymbolic/DloiDomainContractExtrapolation.kt`
+  - `src/main/kotlin/atropos/core/neurosymbolic/EpistemicUncertaintyBounding.kt`
+  - `src/main/kotlin/atropos/core/neurosymbolic/TlaAlloyStateMachineChecker.kt`
+  - `src/main/kotlin/atropos/core/neurosymbolic/ChaosDigitalTwinRunner.kt`
+  - `src/main/kotlin/atropos/core/neurosymbolic/ActorTerritoryMessageChecker.kt`
+  - `src/main/kotlin/atropos/core/neurosymbolic/HoareLogicAnnotationScanner.kt`
+  - `src/main/kotlin/atropos/core/neurosymbolic/SmtEquivalenceProver.kt`
+  - `src/main/kotlin/atropos/core/neurosymbolic/TriModelDisputationArbitrator.kt`
+  - `src/main/kotlin/atropos/core/neurosymbolic/ConcolicTestGenerator.kt`
+  - `src/main/kotlin/atropos/core/neurosymbolic/TransactionalMemoryLeakDetector.kt`
+  - `src/main/kotlin/atropos/core/neurosymbolic/ResidualObligationLedger.kt`
+  - `src/main/kotlin/atropos/core/neurosymbolic/ZeroEntropyProofCertificateModel.kt`
+- Atoms / phases affected: SD7-T1-018 through SD7-T1-099, SD7 Tier-1 Neurosymbolic & Verification Complete; Phase 18 (Verification & Completion Gates), Phase 19 (App Factory Synthesis), Android client mobile surface
+- Predicate moved:
+  - CallerCompletenessGate & CallerCompletenessDoctorProbe implemented, verifying all 23 production classes outside test trees.
+  - Zero references to `AppSourceTemplate` or `LanguageScaffold` repository-wide.
+  - All Tier-1 neurosymbolic engines active: concolic generation, SMT equivalence proving, Hoare logic scanning, TLA+/Alloy state machines, chaos digital twin, transactional memory leak detection, tri-model arbitration, and zero-entropy certificates.
+  - Local backend atom contract test, orphan scanner (0 newly orphaned files), and hosted test selector contract all PASS cleanly.
+  - Android APK client build verified cleanly in CI (`Build and Sign Android APK` workflow SUCCESS, release APK artifact published).
+  - JVM compilation, Factory CI (`build`), and Release JAR (`publish` and `apk`) workflows all verified SUCCESS in GitHub Actions.
+- % delta: Phase 18 Verification ~30% → ~55% (+25%), Phase 19 App Factory ~35% → ~50% (+15%), Android mobile surface ~60% → ~95% (+35%). Overall estimate: ≈ 47% (was ≈ 44%).
+- Why justified: Complete implementation of SD7 Tier-1 packet specification. All 16 newly decoupled atoms conform to mathematical invariants (§0-§15), strict LOC limits (<110 LOC each, well under 350-500 atomicity boundaries), zero stubs/TODOs, and production type bindings. Wired outside test trees into Main and core engines. Build artifacts verified in GitHub Actions CI (Android APK signed, Factory CI passed, Release JAR published, compileKotlin passed).
+- HR interrupts: none
+- Fingerprints: `b75ec9b5`, `03240ef1`, `d69c9c0f`
+- New overall estimate: ≈ 47% (was ≈ 44%)
