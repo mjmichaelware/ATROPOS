@@ -227,6 +227,8 @@ class AutonomousWaveOrchestrator(
         )
         val researchDoc = researchOrchestrator.research(promptArtifact)
         val confidenceAction = confidenceEngine.evaluate(researchDoc)
+        atropos.core.neurosymbolic.EpistemicUncertaintyBounding().checkBound(researchDoc.confidence)
+        atropos.core.neurosymbolic.ResidualObligationLedger(repoRoot.resolve(".atropos/obligations.jsonl")).activeObligations()
 
         // Phase 1: Synthesize the DAG from the contract lattice
         val dag = contractSynthesizer.synthesize(request)
@@ -266,6 +268,10 @@ class AutonomousWaveOrchestrator(
                 gitCommit = null,
                 treeSha256 = null
             )
+        }
+
+        if (result.success) {
+            atropos.core.neurosymbolic.ChaosDigitalTwinRunner(10).runChaosSimulation(request.targetDirectory)
         }
 
         memoryStore.rememberDetailed(

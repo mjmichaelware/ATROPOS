@@ -56,11 +56,18 @@ class ContractLatticeSynthesizer(
         }
 
         val latticeHash = sha256((interfaces.keys + schemas.keys).sorted().joinToString(";"))
-        return ContractLattice(
+        val lattice = ContractLattice(
             latticeId = "lattice-$latticeHash",
             interfaceFiles = interfaces,
             schemas = schemas
         )
+
+        // Wave-0 formal verifications
+        atropos.core.neurosymbolic.AdversarialGoalExpansion().expand(lattice)
+        atropos.core.neurosymbolic.TlaAlloyStateMachineChecker().checkStateMachine(lattice)
+        atropos.core.neurosymbolic.DloiDomainContractExtrapolation(atropos.dloi.DloiService()).extrapolate(lattice)
+
+        return lattice
     }
 
     private fun toInterfaceName(nodeId: String): String {

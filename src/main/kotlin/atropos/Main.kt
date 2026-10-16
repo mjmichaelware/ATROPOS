@@ -118,6 +118,12 @@ fun main(args: Array<String>) {
         }
 
         if (args.firstOrNull() == "--doctor" || args.firstOrNull() == "doctor") {
+            if (args.any { it == "--factory-completeness" }) {
+                val gate = atropos.core.doctor.CallerCompletenessGate(java.nio.file.Path.of("."))
+                val probe = atropos.core.doctor.CallerCompletenessDoctorProbe(gate)
+                println(probe.check())
+                return
+            }
             atropos.cli.FirstRunDoctorRenderer(
                 backendDoctor = atropos.cli.BackendDoctor(config, providerOnboarding),
                 homeState = HomeStateProvider()

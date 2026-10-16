@@ -71,6 +71,12 @@ class DecoupledWorkerSynthesizer(
             compileResult = repairResult
         }
 
+        // Neurosymbolic verification suite
+        atropos.core.neurosymbolic.ActorTerritoryMessageChecker().verifyNoSharedMemory(worktreePath)
+        atropos.core.neurosymbolic.HoareLogicAnnotationScanner().checkCoverage(worktreePath)
+        atropos.core.neurosymbolic.SmtEquivalenceProver().dischargeContracts(worktreePath)
+        atropos.core.neurosymbolic.TriModelDisputationArbitrator().arbitrate(listOf(h0))
+
         return SynthesisResult(
             clusterId = cluster.clusterId,
             success = compileResult.passed && compileResult.exitCode == 0,

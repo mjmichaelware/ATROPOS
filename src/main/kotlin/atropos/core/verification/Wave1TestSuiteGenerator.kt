@@ -64,6 +64,7 @@ class $testClassName {
         }
 
         val verifiedFailsOnStub = testFiles.isNotEmpty()
+        atropos.core.neurosymbolic.ConcolicTestGenerator().generateCoverageTests(worktree)
 
         return GeneratedTestSuite(
             testFiles = testFiles,

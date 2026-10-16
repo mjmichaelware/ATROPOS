@@ -191,6 +191,10 @@ class VerifiedCompletionGate(
         }
         return falseCompletions
     }
+
+    fun emitZeroEntropyProof(cert: atropos.core.certificate.ZeroEntropyCertificate, outputDir: Path): Path {
+        return atropos.core.certificate.ZeroEntropyCertificateEmitter().emit(cert, outputDir)
+    }
 }
 
 data class ProviderProposalMergeReport(
