@@ -69,30 +69,27 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
 // to work. The version and the commit are written at build time and read back
 // at runtime.
 val buildStamp by tasks.registering {
-    val stampFile = layout.buildDirectory.file("generated/atropos-build.properties")
-    val declaredVersion = project.version.toString()
-    outputs.file(stampFile)
+    val outputFile = layout.buildDirectory.file("generated-resources/buildStamp/atropos-build.properties")
+    val versionStr = project.version.toString()
+    val rootDirPath = rootDir.absolutePath
+    outputs.file(outputFile)
     doLast {
         val head = runCatching {
             val process = ProcessBuilder("git", "rev-parse", "--short", "HEAD")
-                .directory(rootDir)
+                .directory(java.io.File(rootDirPath))
                 .redirectErrorStream(true)
                 .start()
             val text = process.inputStream.bufferedReader().readText().trim()
             if (process.waitFor() == 0 && text.isNotBlank()) text else "unknown"
         }.getOrDefault("unknown")
-        val stampFileObj = stampFile.get().asFile
-        stampFileObj.parentFile.mkdirs()
-        stampFileObj.writeText("version=$declaredVersion\ncommit=$head\n")
+        val file = outputFile.get().asFile
+        file.parentFile.mkdirs()
+        file.writeText("version=$versionStr\ncommit=$head\n")
     }
 }
 
-sourceSets.named("main") {
-    resources.srcDir(layout.buildDirectory.dir("generated"))
-}
-
-tasks.named("processResources") {
-    dependsOn(buildStamp)
+tasks.named<ProcessResources>("processResources") {
+    from(buildStamp)
 }
 
 // Packaging remains an explicit operator action, but the canonical installer
