@@ -1,7 +1,6 @@
+/* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.toolchain
 
-import atropos.core.platform.Platform
-import atropos.core.platform.RuntimePlatform
 import java.nio.file.Files
 import java.nio.file.Path
 
@@ -27,9 +26,8 @@ class ChrootUnshareJail {
     }
 
     fun isJailSupported(): Boolean {
-        return Platform.currentPlatform() == RuntimePlatform.LINUX &&
-               isRoot() &&
-               Files.isExecutable(Path.of("/usr/bin/unshare"))
+        val isLinux = System.getProperty("os.name", "unknown").lowercase().contains("linux")
+        return isLinux && isRoot() && Files.isExecutable(Path.of("/usr/bin/unshare"))
     }
 
     private fun isRoot(): Boolean {
@@ -37,7 +35,7 @@ class ChrootUnshareJail {
             val process = ProcessBuilder("id", "-u").start()
             process.waitFor()
             return process.exitValue() == 0
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             return false
         }
     }
