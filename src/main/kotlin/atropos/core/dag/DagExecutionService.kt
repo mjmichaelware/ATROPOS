@@ -43,7 +43,11 @@ class DagExecutionService(
     /**
      * Execute a batch of ready nodes as a wave with full worktree isolation.
      */
-    fun executeWaveBatch(dagId: String, waveNodes: List<DagNode>): Map<String, DagNodeExecutionResult> {
+    fun executeWaveBatch(
+        dagId: String,
+        waveNodes: List<DagNode>,
+        request: atropos.core.orchestration.WaveExecutionRequest = createDummyRequest(dagId)
+    ): Map<String, DagNodeExecutionResult> {
         val results = mutableMapOf<String, DagNodeExecutionResult>()
 
         // Validate territory disjointness before any execution
@@ -64,7 +68,7 @@ class DagExecutionService(
         val worktreeRecords = mutableMapOf<String, WorktreeRecord>()
         for (node in waveNodes) {
             val worktreeResult = worktreeService.createWorktree(jobId = node.id, territory = node.territory)
-            if (!worktreeResult.success || worktreeResult.record == null) {
+            if (!worktreeResult.ok || worktreeResult.record == null) {
                 // Rollback any already created worktrees
                 worktreeRecords.values.forEach { worktreeService.rollback(it.id) }
                 for (node in waveNodes) {
@@ -84,7 +88,7 @@ class DagExecutionService(
         // Execute each node in its isolated worktree
         for (node in waveNodes) {
             val worktreeRecord = worktreeRecords[node.id]!!
-            val result = executeNodeInWorktree(node, worktreeRecord, dagId)
+            val result = executeNodeInWorktree(node, worktreeRecord, request)
             results[node.id] = result
 
             // On failure, rollback this worktree immediately
@@ -99,7 +103,7 @@ class DagExecutionService(
             val worktreeRecord = worktreeRecords[node.id]!!
             if (result.ok) {
                 val mergeResult = worktreeService.verifyAndMerge(worktreeRecord.id)
-                if (!mergeResult.success) {
+                if (!mergeResult.ok) {
                     results[node.id] = DagNodeExecutionResult(
                         nodeId = node.id,
                         state = DagNodeState.FAILED,
@@ -182,14 +186,14 @@ class DagExecutionService(
         return true
     }
 
-    private fun executeNodeInWorktree(node: DagNode, worktreeRecord: WorktreeRecord, dagId: String): DagNodeExecutionResult {
+    private fun executeNodeInWorktree(node: DagNode, worktreeRecord: WorktreeRecord, request: atropos.core.orchestration.WaveExecutionRequest): DagNodeExecutionResult {
         if (node.state != DagNodeState.READY && node.state != DagNodeState.PENDING) {
             return DagNodeExecutionResult(node.id, node.state, false, "node already in state ${node.state}")
         }
 
         try {
             // Dispatch to ContractLatticeSynthesizer for actual synthesis
-            val synthesisResult = contractSynthesizer.synthesizeNode(node, worktreeRecord.worktreePath, dagId)
+            val synthesisResult = contractSynthesizer.synthesizeNode(node, worktreeRecord.worktreePath, request)
             if (!synthesisResult.success) {
                 return DagNodeExecutionResult(
                     nodeId = node.id,
@@ -230,7 +234,7 @@ class DagExecutionService(
     fun rollbackNode(nodeId: String): Boolean {
         val worktreeResult = activeWorktrees[nodeId]
         if (worktreeResult == null) return false
-        return worktreeService.rollback(worktreeResult.id).success
+        return worktreeService.rollback(worktreeResult.id).ok
     }
 
     fun getActiveWorktree(nodeId: String): WorktreeRecord? = activeWorktrees[nodeId]
@@ -262,7 +266,7 @@ class DagExecutionService(
         val worktreeRecords = mutableMapOf<String, WorktreeRecord>()
         for (node in waveNodes) {
             val worktreeResult = worktreeService.createWorktree(jobId = node.id, territory = node.territory)
-            if (!worktreeResult.success || worktreeResult.record == null) {
+            if (!worktreeResult.ok || worktreeResult.record == null) {
                 worktreeRecords.values.forEach { worktreeService.rollback(it.id) }
                 for (node in waveNodes) {
                     results[node.id] = DagNodeExecutionResult(
@@ -318,7 +322,7 @@ class DagExecutionService(
             val worktreeRecord = worktreeRecords[node.id]!!
             if (result.ok) {
                 val mergeResult = worktreeService.verifyAndMerge(worktreeRecord.id)
-                if (!mergeResult.success) {
+                if (!mergeResult.ok) {
                     results[node.id] = DagNodeExecutionResult(
                         nodeId = node.id,
                         state = DagNodeState.FAILED,
@@ -338,5 +342,30 @@ class DagExecutionService(
         }
 
         return results
+    }
+
+    private fun createDummyRequest(dagId: String): atropos.core.orchestration.WaveExecutionRequest {
+        return atropos.core.orchestration.WaveExecutionRequest(
+            requestId = dagId,
+            prompt = "",
+            projectSpec = atropos.core.factory.AppProjectSpec(
+                prompt = "",
+                intent = atropos.core.factory.AppIntent(
+                    name = "dummy",
+                    kind = "generic",
+                    capabilities = emptySet(),
+                    features = emptyList()
+                )
+            ),
+            lineage = atropos.core.factory.FactoryLineage(
+                projectId = "dummy",
+                promptSha256 = "",
+                promptFingerprint = "",
+                promptSpans = "",
+                researchSha256 = ""
+            ),
+            targetDirectory = repoRoot,
+            plannedAtomIds = emptyList()
+        )
     }
 }
