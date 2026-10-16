@@ -9,14 +9,19 @@ import atropos.core.factory.AppProjectSpec
 import atropos.core.factory.FactoryLineage
 import atropos.core.factory.WaveExecutionRequest
 import atropos.core.provider.ProviderOnboardingService
-import atropos.core.provider.ProviderCascadeRouter
-import atropos.core.provider.ProviderTruthService
+import atropos.core.provider.ProviderFactory
+import atropos.core.provider.ProviderFailureClassifier
+import atropos.core.provider.ProviderDescriptorRegistry
 import atropos.core.provider.StaticProviderDescriptorRegistry
-import atropos.core.security.RedactionFilter
-import atropos.core.specgraph.HandoffDagTranslator
-import atropos.core.specgraph.HandoffDocument
+import atropos.core.provider.ApiCapability
+import atropos.core.provider.ProviderCascadeRouter
+import atropos.core.provider.ProviderCascadeOrder
+import atropos.core.provider.FallbackChainRegistry
 import atropos.core.AtroposRepoRootLocator
 import atropos.core.AtroposConfig
+import atropos.core.OllamaHealthProbe
+import atropos.core.paid.EmergencyPaidGate
+import atropos.core.security.RedactionFilter
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
@@ -35,11 +40,6 @@ import java.util.UUID
 class ContractLatticeSynthesizer(
     private val repoRoot: Path,
     private val onboarding: ProviderOnboardingService = ProviderOnboardingService(),
-    private val cascadeRouter: ProviderCascadeRouter = ProviderCascadeRouter(
-        onboarding = ProviderOnboardingService(),
-        truthService = ProviderTruthService()
-    ),
-    private val truthService: ProviderTruthService = ProviderTruthService(),
     private val config: AtroposConfig = AtroposConfig.load()
 ) {
 
@@ -47,8 +47,6 @@ class ContractLatticeSynthesizer(
      * Synthesize the complete execution DAG for a wave request.
      */
     fun synthesize(request: WaveExecutionRequest): DagDefinition {
-        // Use the existing HandoffDagTranslator to create a DAG from the spec
-        // For now, create a minimal DAG structure based on the request
         val nodes = buildNodesFromSpec(request)
         
         return DagDefinition(
@@ -82,7 +80,6 @@ class ContractLatticeSynthesizer(
         val kind = spec.intent.kind.lowercase()
 
         val nodes = mutableListOf<DagNode>()
-        var nodeIndex = 0
 
         // Main source file node
         nodes.add(DagNode(
@@ -99,7 +96,6 @@ class ContractLatticeSynthesizer(
             updatedAt = Instant.now(),
             metaFile = request.targetDirectory.resolve(".atropos/dag/nodes/main.json")
         ))
-        nodeIndex++
 
         // Test file node
         nodes.add(DagNode(
@@ -116,7 +112,6 @@ class ContractLatticeSynthesizer(
             updatedAt = Instant.now(),
             metaFile = request.targetDirectory.resolve(".atropos/dag/nodes/test.json")
         ))
-        nodeIndex++
 
         // Verification node
         nodes.add(DagNode(
@@ -150,7 +145,7 @@ class ContractLatticeSynthesizer(
     }
 
     private fun synthesizeProviderCall(node: DagNode, worktreeRoot: Path, request: WaveExecutionRequest): SynthesisResult {
-        // Select provider via cascade router
+        val cascadeRouter = createCascadeRouter()
         val selection = cascadeRouter.route(
             taskType = node.label,
             capability = "code-generation",
@@ -161,10 +156,18 @@ class ContractLatticeSynthesizer(
             return SynthesisResult(false, "no eligible provider for task: ${node.label}")
         }
 
-        // Build provider request from lattice contract
-        val providerRequest = buildProviderRequest(node, request)
+        return SynthesisResult(true, "provider call dispatched: ${selection.providerName}")
+    }
 
-        return SynthesisResult(true, "provider call dispatched: ${selection.providerId}")
+    private fun createCascadeRouter(): ProviderCascadeRouter {
+        return ProviderCascadeRouter(
+            factory = atropos.core.ProviderFactory.default(),
+            classifier = ProviderFailureClassifier(),
+            registry = StaticProviderDescriptorRegistry(),
+            localHealth = { OllamaHealthProbe().probe().online },
+            localOnly = { config.runtime.localOnly },
+            paidGate = EmergencyPaidGate()
+        )
     }
 
     private fun synthesizeCommand(node: DagNode, worktreeRoot: Path, request: WaveExecutionRequest): SynthesisResult {
@@ -178,17 +181,11 @@ class ContractLatticeSynthesizer(
     }
 
     private fun synthesizeVerification(node: DagNode, worktreeRoot: Path, request: WaveExecutionRequest): SynthesisResult {
-        // Run verify.sh in the worktree
         val verifyScript = worktreeRoot.resolve("verify.sh")
         if (!Files.exists(verifyScript)) {
             return SynthesisResult(false, "verify.sh not found in worktree")
         }
-
         return SynthesisResult(true, "verification gate synthesized")
-    }
-
-    private fun buildProviderRequest(node: DagNode, request: WaveExecutionRequest): String {
-        return "task=${node.label};territory=${node.territory.joinToString(",")};acceptance=${node.expectedOutputs.joinToString(",")}"
     }
 
     private fun generateSourceForNode(node: DagNode, request: WaveExecutionRequest): String {

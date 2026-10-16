@@ -3,12 +3,10 @@ package atropos.core.orchestration
 
 import atropos.core.agent.AgentQueueService
 import atropos.core.agent.AgentJobStore
-import atropos.core.agent.SelfHostRuntimeRunLimits
 import atropos.core.dag.DagDefinition
 import atropos.core.dag.DagNode
 import atropos.core.dag.DagNodeState
 import atropos.core.dag.DagStore
-import atropos.core.dag.DagExecutionResult
 import atropos.core.dag.DagNodeExecutionResult
 import atropos.core.factory.AppProjectSpec
 import atropos.core.factory.FactoryLineage
@@ -17,16 +15,11 @@ import atropos.core.factory.FactoryObligationLoop
 import atropos.core.factory.FactoryTerminationBudget
 import atropos.core.factory.FactoryObligationSnapshot
 import atropos.core.factory.FactoryLoopResult
-import atropos.core.factory.FactoryRunHandoff
-import atropos.core.factory.FactoryRunHandoffState
 import atropos.core.factory.FactoryProgressGuard
-import atropos.core.integration.DependencyDeduplicator
 import atropos.core.memory.LocalMemoryStore
 import atropos.core.policy.BoundedAgencyGate
 import atropos.core.policy.ExecutionPolicyEngine
 import atropos.core.provider.ProviderOnboardingService
-import atropos.core.provider.ProviderCascadeRouter
-import atropos.core.provider.ProviderTruthService
 import atropos.core.security.RedactionFilter
 import atropos.core.territory.TerritoryGrantService
 import atropos.core.territory.TerritoryService
@@ -35,8 +28,8 @@ import atropos.core.verification.VerifiedCompletionGate
 import atropos.core.worktree.IsolatedWorktreeService
 import atropos.core.worktree.WorktreeRecord
 import java.nio.file.Path
+import java.security.MessageDigest
 import java.time.Instant
-import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -58,7 +51,6 @@ class AutonomousWaveOrchestrator(
     private val memoryStore: LocalMemoryStore,
     private val onboarding: ProviderOnboardingService,
     private val agencyGate: BoundedAgencyGate,
-    private val runtimeLimits: SelfHostRuntimeRunLimits,
     private val contractSynthesizer: ContractLatticeSynthesizer
 ) {
     private val activeWorktrees = ConcurrentHashMap<String, WorktreeRecord>()
@@ -78,7 +70,6 @@ class AutonomousWaveOrchestrator(
                 policyEngine = ExecutionPolicyEngine(repoRoot),
                 territory = territoryService
             )
-            val runtimeLimits = SelfHostRuntimeRunLimits()
             val contractSynthesizer = ContractLatticeSynthesizer(repoRoot)
             val executionService = DagExecutionService(
                 repoRoot = repoRoot,
@@ -99,7 +90,6 @@ class AutonomousWaveOrchestrator(
                 memoryStore = memoryStore,
                 onboarding = onboarding,
                 agencyGate = agencyGate,
-                runtimeLimits = runtimeLimits,
                 contractSynthesizer = contractSynthesizer
             )
         }
@@ -126,11 +116,11 @@ class AutonomousWaveOrchestrator(
         dagStore.writeDag(dag)
 
         // Phase 2: Execute waves until settled
-        val freeze = FactoryAcceptanceFreeze(
-            sha256 = request.acceptanceFreezeSha256 ?: computeAcceptanceFreeze(dag),
+        val freeze = FactoryAcceptanceFreeze.create(
+            promptSha256 = request.lineage.promptSha256 ?: "",
+            researchSha256 = request.lineage.researchSha256 ?: "",
             atomIds = request.plannedAtomIds,
-            promptSha256 = request.lineage.promptSha256,
-            researchSha256 = request.lineage.researchSha256
+            promptSpans = request.lineage.promptSpans ?: ""
         )
 
         val obligationLoop = FactoryObligationLoop(dagStore, FactoryTerminationBudget(
@@ -145,30 +135,27 @@ class AutonomousWaveOrchestrator(
 
         // Phase 3: Verify completion and collect evidence
         val finalDag = dagStore.readDag(dag.id)
-        val (success, completedAtoms, failedAtoms, blockedAtoms, message, evidencePaths, gitCommit, treeSha256) =
-            if (finalDag != null) {
-                collectResults(finalDag, loopResult, request)
-            } else {
-                false to listOf<String>() to listOf(dag.id) to emptyList<String>() to "DAG vanished after execution" to emptyList<String>() to null to null
-            }
-
-        val result = WaveExecutionResult(
-            requestId = requestId,
-            success = success,
-            completedAtoms = completedAtoms,
-            failedAtoms = failedAtoms,
-            blockedAtoms = blockedAtoms,
-            message = message,
-            evidencePaths = evidencePaths,
-            gitCommit = gitCommit,
-            treeSha256 = treeSha256
-        )
+        val result = if (finalDag != null) {
+            collectResults(finalDag, loopResult, request)
+        } else {
+            WaveExecutionResult(
+                requestId = requestId,
+                success = false,
+                completedAtoms = emptyList(),
+                failedAtoms = listOf(dag.id),
+                blockedAtoms = emptyList(),
+                message = "DAG vanished after execution",
+                evidencePaths = emptyList(),
+                gitCommit = null,
+                treeSha256 = null
+            )
+        }
 
         memoryStore.rememberDetailed(
             kind = atropos.core.memory.MemoryKind.NOTE,
             title = "wave execution finished: $requestId",
-            body = "success=$success completed=${completedAtoms.size} failed=${failedAtoms.size} blocked=${blockedAtoms.size} duration=${Instant.now().toEpochMilli() - startTime.toEpochMilli()}ms",
-            tags = listOf("wave", if (success) "success" else "failure", "orchestrator"),
+            body = "success=${result.success} completed=${result.completedAtoms.size} failed=${result.failedAtoms.size} blocked=${result.blockedAtoms.size} duration=${Instant.now().toEpochMilli() - startTime.toEpochMilli()}ms",
+            tags = listOf("wave", if (result.success) "success" else "failure", "orchestrator"),
             subjectType = "wave_execution",
             subjectId = requestId
         )
@@ -199,11 +186,7 @@ class AutonomousWaveOrchestrator(
         for (node in readyNodes) {
             val result = worktreeService.createWorktree(jobId = node.id, territory = node.territory)
             if (!result.success || result.record == null) {
-                // Rollback any already created worktrees
                 worktreeResults.values.forEach { worktreeService.rollback(it.id) }
-                for (node in readyNodes) {
-                    // Mark all as failed
-                }
                 return emptySet()
             }
             worktreeResults[node.id] = result.record!!
@@ -298,7 +281,6 @@ class AutonomousWaveOrchestrator(
 
     private fun enforceTerritoryDisjointness(nodes: List<DagNode>): Boolean {
         if (nodes.size <= 1) return true
-
         val territories = nodes.map { it.territory.toSet() }
         for (i in territories.indices) {
             for (j in (i + 1) until territories.size) {
@@ -310,16 +292,11 @@ class AutonomousWaveOrchestrator(
         return true
     }
 
-    private fun computeAcceptanceFreeze(dag: DagDefinition): String {
-        val content = dag.nodes.joinToString("|") { "${it.id}:${it.label}:${it.territory.joinToString(",")}" }
-        return RedactionFilter().redact(content).let { atropos.core.security.HashUtil.sha256(it) }
-    }
-
     private fun collectResults(
         dag: DagDefinition,
         loopResult: FactoryLoopResult,
         request: WaveExecutionRequest
-    ): Pair<Boolean, Pair<List<String>, Pair<List<String>, Pair<List<String>, Triple<String, List<String>, Pair<String?, String?>>>>> {
+    ): WaveExecutionResult {
         val completed = dag.nodes.filter { it.state == DagNodeState.COMPLETE }.map { it.id }.sorted()
         val failed = dag.nodes.filter { it.state == DagNodeState.FAILED }.map { it.id }.sorted()
         val blocked = dag.nodes.filter { it.state == DagNodeState.BLOCKED }.map { it.id }.sorted()
@@ -345,6 +322,20 @@ class AutonomousWaveOrchestrator(
             )
         }.getOrNull()
 
-        return success to completed to failed to blocked to message to evidencePaths to gitCommit to treeSha256
+        return WaveExecutionResult(
+            requestId = request.requestId,
+            success = success,
+            completedAtoms = completed,
+            failedAtoms = failed,
+            blockedAtoms = blocked,
+            message = message,
+            evidencePaths = evidencePaths,
+            gitCommit = gitCommit,
+            treeSha256 = treeSha256
+        )
+    }
+
+    private fun sha256(input: String): String {
+        return MessageDigest.getInstance("SHA-256").digest(input.toByteArray()).joinToString("") { "%02x".format(it) }
     }
 }
