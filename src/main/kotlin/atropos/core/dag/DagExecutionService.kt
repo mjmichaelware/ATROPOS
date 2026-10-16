@@ -36,7 +36,8 @@ class DagExecutionService(
     private val territoryService: TerritoryGrantService = TerritoryGrantService(TerritoryService(TerritoryStore(repoRoot))),
     private val partitionManager: PartitionClusterManager = PartitionClusterManager(),
     private val completionGate: VerifiedCompletionGate = VerifiedCompletionGate(),
-    private val contractSynthesizer: ContractLatticeSynthesizer = ContractLatticeSynthesizer(repoRoot)
+    private val contractSynthesizer: ContractLatticeSynthesizer = ContractLatticeSynthesizer(repoRoot),
+    private val dagStore: DagStore = DagStore(repoRoot)
 ) {
     private val activeWorktrees = ConcurrentHashMap<String, WorktreeRecord>()
 
@@ -238,6 +239,32 @@ class DagExecutionService(
     }
 
     fun getActiveWorktree(nodeId: String): WorktreeRecord? = activeWorktrees[nodeId]
+
+    fun createDag(label: String, nodes: List<DagNode>, projectId: String? = null): DagDefinition {
+        return dagStore.createDag(label, nodes, projectId)
+    }
+
+    fun recoverStaleClaims(): Int {
+        val dags = dagStore.listDags()
+        var recovered = 0
+        val now = java.time.Instant.now()
+        for (dag in dags) {
+            for (node in dag.nodes) {
+                if (node.state == DagNodeState.CLAIMED && node.claimExpiresAt != null && node.claimExpiresAt.isBefore(now)) {
+                    dagStore.writeNode(
+                        node.copy(
+                            state = DagNodeState.READY,
+                            claimToken = null,
+                            claimExpiresAt = null,
+                            lastMessage = "stale claim recovered"
+                        )
+                    )
+                    recovered++
+                }
+            }
+        }
+        return recovered
+    }
 
     /**
      * Execute a wave batch with a pre-constructed WaveExecutionRequest context.

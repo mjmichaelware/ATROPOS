@@ -4,6 +4,7 @@ package atropos.core.orchestration
 import atropos.core.agent.AgentQueueService
 import atropos.core.agent.AgentJobStore
 import atropos.core.dag.DagDefinition
+import atropos.core.dag.DagExecutionService
 import atropos.core.dag.DagNode
 import atropos.core.dag.DagNodeState
 import atropos.core.dag.DagStore
@@ -63,7 +64,7 @@ class AutonomousWaveOrchestrator(
             val territoryService = TerritoryGrantService(TerritoryService(TerritoryStore(repoRoot)))
             val completionGate = VerifiedCompletionGate()
             val progressGuard = FactoryProgressGuard(dagStore)
-            val agentQueue = AgentQueueService(repoRoot)
+            val agentQueue = AgentQueueService()
             val agentJobStore = AgentJobStore(repoRoot)
             val memoryStore = LocalMemoryStore(repoRoot.resolve(".atropos/memory").toFile())
             val onboarding = ProviderOnboardingService()
@@ -114,7 +115,7 @@ class AutonomousWaveOrchestrator(
 
         // Phase 1: Synthesize the DAG from the contract lattice
         val dag = contractSynthesizer.synthesize(request)
-        dagStore.writeDag(dag)
+        dagStore.createDag(dag.label, dag.nodes, dag.projectId)
 
         // Phase 2: Execute waves until settled
         val freeze = FactoryAcceptanceFreeze.create(
@@ -205,8 +206,8 @@ class AutonomousWaveOrchestrator(
         }
 
         // Merge successful worktrees back
-        for (nodeId in completedNodeIds) {
-            val worktree = worktreeResults[nodeId]
+        for (nodeId in completedNodeIds.toList()) {
+            val worktree = worktreeResults[nodeId] ?: continue
             val mergeResult = worktreeService.verifyAndMerge(worktree.id)
             if (!mergeResult.ok) {
                 memoryStore.rememberFailure(

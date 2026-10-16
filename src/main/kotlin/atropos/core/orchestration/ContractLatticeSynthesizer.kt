@@ -7,10 +7,9 @@ import atropos.core.dag.DagNodeAction
 import atropos.core.dag.DagNodeState
 import atropos.core.factory.AppProjectSpec
 import atropos.core.factory.FactoryLineage
-import atropos.core.factory.WaveExecutionRequest
 import atropos.core.provider.ProviderOnboardingService
-import atropos.core.provider.ProviderFactory
-import atropos.core.provider.ProviderFailureClassifier
+import atropos.core.ProviderFactory
+import atropos.core.ProviderFailureClassifier
 import atropos.core.provider.ProviderDescriptorRegistry
 import atropos.core.provider.StaticProviderDescriptorRegistry
 import atropos.core.provider.ApiCapability
@@ -142,28 +141,28 @@ class ContractLatticeSynthesizer(
         val sourceCode = generateSourceForNode(node, request)
         Files.writeString(targetPath, sourceCode)
 
-        return SynthesisResult(true, "file synthesized at ${targetPath.relativeTo(worktreeRoot)}")
+        return SynthesisResult(true, "file synthesized at ${worktreeRoot.relativize(targetPath)}")
     }
 
     private fun synthesizeProviderCall(node: DagNode, worktreeRoot: Path, request: WaveExecutionRequest): SynthesisResult {
         val cascadeRouter = createCascadeRouter()
-        val selection = cascadeRouter.route(
-            taskType = node.label,
-            capability = "code-generation",
-            localOnly = config.runtime.localOnly
+        val cascadeResult = cascadeRouter.completeWithCascade(
+            requestedProvider = "default",
+            prompt = node.label,
+            context = "Synthesizing node ${node.id}"
         )
 
-        if (!selection.isEligible) {
-            return SynthesisResult(false, "no eligible provider for task: ${node.label}")
+        if (cascadeResult.resolvedProvider == null) {
+            return SynthesisResult(false, "no eligible provider resolved for task: ${node.label}")
         }
 
-        return SynthesisResult(true, "provider call dispatched: ${selection.providerName}")
+        return SynthesisResult(true, "provider call dispatched: ${cascadeResult.resolvedProvider}")
     }
 
     private fun createCascadeRouter(): ProviderCascadeRouter {
         return ProviderCascadeRouter(
-            factory = atropos.core.ProviderFactory.default(),
-            classifier = atropos.core.ProviderFailureClassifier(),
+            factory = ProviderFactory({ config }),
+            classifier = ProviderFailureClassifier(),
             registry = StaticProviderDescriptorRegistry(),
             localHealth = { OllamaHealthProbe().probe().online },
             localOnly = { config.runtime.localOnly },
@@ -178,7 +177,7 @@ class ContractLatticeSynthesizer(
         scriptPath.parent?.let { Files.createDirectories(it) }
         Files.writeString(scriptPath, "#!/usr/bin/env sh\nset -eu\n$command\n")
 
-        return SynthesisResult(true, "command script written: ${scriptPath.relativeTo(worktreeRoot)}")
+        return SynthesisResult(true, "command script written: ${worktreeRoot.relativize(scriptPath)}")
     }
 
     private fun synthesizeVerification(node: DagNode, worktreeRoot: Path, request: WaveExecutionRequest): SynthesisResult {
@@ -196,13 +195,13 @@ class ContractLatticeSynthesizer(
         val kind = spec.intent.kind.lowercase()
 
         return if (node.actionPayload?.contains("MainTest") == true) {
-            generateTestSource(spec, packageName, hasExpression, kind)
+            generateTestSource(spec, packageName, hasExpression, kind, request)
         } else {
-            generateMainSource(spec, packageName, hasExpression, kind)
+            generateMainSource(spec, packageName, hasExpression, kind, request)
         }
     }
 
-    private fun generateMainSource(spec: AppProjectSpec, packageName: String, hasExpression: Boolean, kind: String): String {
+    private fun generateMainSource(spec: AppProjectSpec, packageName: String, hasExpression: Boolean, kind: String, request: WaveExecutionRequest): String {
         return buildString {
             appendLine("package $packageName")
             appendLine()
@@ -271,7 +270,7 @@ class ContractLatticeSynthesizer(
                 appendLine("            if (value.isBlank()) CliResult(2, error = \"usage: ${spec.intent.name} add <value>\")")
                 appendLine("            else { state.items += value; CliResult(0, output = \"added: \" + value) }")
                 appendLine("        }")
-                appendLine("        \"list\" -> CliResult(0, output = state.items.mapIndexed { i, it -> \"${i+1}. \$it\" }.ifEmpty { listOf(\"no items\") }.joinToString(\"\\n\"))")
+                appendLine("        \"list\" -> CliResult(0, output = state.items.mapIndexed { i, it -> \"\${i+1}. \$it\" }.ifEmpty { listOf(\"no items\") }.joinToString(\"\\n\"))")
                 appendLine("        \"feature\" -> {")
                 appendLine("            val value = args.drop(1).joinToString(\" \").trim()")
                 appendLine("            if (value.isBlank()) CliResult(2, error = \"usage: ${spec.intent.name} feature <value>\")")
@@ -302,7 +301,7 @@ class ContractLatticeSynthesizer(
         }
     }
 
-    private fun generateTestSource(spec: AppProjectSpec, packageName: String, hasExpression: Boolean, kind: String): String {
+    private fun generateTestSource(spec: AppProjectSpec, packageName: String, hasExpression: Boolean, kind: String, request: WaveExecutionRequest): String {
         return buildString {
             appendLine("package $packageName")
             appendLine()

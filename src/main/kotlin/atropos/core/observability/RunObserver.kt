@@ -35,7 +35,7 @@ class RunObserver(
     private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
     private val runService: AgentRunService = AgentRunService(config),
     private val continuationService: GoalContinuationService = GoalContinuationService(repoRoot),
-    private val dagService: DagExecutionService = DagExecutionService(config, repoRoot),
+    private val dagStore: atropos.core.dag.DagStore = atropos.core.dag.DagStore(repoRoot),
     private val journal: EventJournalService = EventJournalService(repoRoot),
     private val memoryStore: LocalMemoryStore = LocalMemoryStore(repoRoot.resolve(".atropos/memory").toFile())
 ) {
@@ -211,11 +211,10 @@ class RunObserver(
                 }
             }
         }
-        val dags = dagService.listDags()
+        val dags = dagStore.listDags()
         if (dags.isNotEmpty()) {
             appendLine("DAGs:")
             dags.forEach { dag ->
-                val status = dagService.status(dag.id)
                 appendLine("  ${dag.id}: ${dag.label} nodes=${dag.nodes.size}")
             }
         }
