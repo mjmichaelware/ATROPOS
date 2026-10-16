@@ -26,12 +26,3 @@ object LanguageScaffoldEradicated {
     /** Sentinel for static analysis — ArchitectureComplianceChecker flags any reference. */
     const val ERADICATED: Boolean = true
 }
-
-/**
- * Annotation to mark call sites that must be rewired to ContractLatticeSynthesizer.
- */
-@Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION, AnnotationTarget.PROPERTY_GETTER, AnnotationTarget.PROPERTY_SETTER)
-@Retention(AnnotationRetention.SOURCE)
-annotation class RequiresContractLatticeSynthesizer(
-    val reason: String = "LanguageScaffold eradicated; use Wave-0 lattice synthesis"
-)

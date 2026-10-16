@@ -59,7 +59,15 @@ class RepoScaffold(
         map[".gitignore"] = layout.ignore
 
         // AGENTS.md
-        map["AGENTS.md"] = "# $title Repository\n\n- Owner: the repository operator.\n- Territory: generated source and evidence remain inside this repository.\n- Verification: run \`./verify.sh\` before promoting changes.\n- Evidence: \`.atropos/evidence/app-manifest.txt\` records the source-tree digest and commit.\n- Secrets: never commit credentials; redact operator prompts before persistence.\n\n$lineageText"
+        map["AGENTS.md"] = """# $title Repository
+
+- Owner: the repository operator.
+- Territory: generated source and evidence remain inside this repository.
+- Verification: run `./verify.sh` before promoting changes.
+- Evidence: `.atropos/evidence/app-manifest.txt` records the source-tree digest and commit.
+- Secrets: never commit credentials; redact operator prompts before persistence.
+
+$lineageText""".trimIndent()
 
         // verify.sh
         map["verify.sh"] = layout.verify
@@ -74,7 +82,7 @@ class RepoScaffold(
             is ProjectLanguage.Detection.Unsupported ->
                 "\nLanguage: ${detection.displayName}\n\n" +
                     "ATROPOS has no scaffold for ${detection.displayName}, so this repository has " +
-                    "no source layout, no manifest and no working \`verify.sh\`. Generated code is " +
+                    "no source layout, no manifest and no working `verify.sh`. Generated code is " +
                     "still written and verified through the DAG; the project structure is yours " +
                     "to lay out.\n"
             ProjectLanguage.Detection.Unstated ->

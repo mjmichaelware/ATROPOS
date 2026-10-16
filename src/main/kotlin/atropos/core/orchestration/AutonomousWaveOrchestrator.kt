@@ -8,7 +8,6 @@ import atropos.core.dag.DagDefinition
 import atropos.core.dag.DagNode
 import atropos.core.dag.DagNodeState
 import atropos.core.dag.DagStore
-import atropos.core.dag.DagExecutionService
 import atropos.core.dag.DagExecutionResult
 import atropos.core.dag.DagNodeExecutionResult
 import atropos.core.factory.AppProjectSpec
@@ -26,6 +25,8 @@ import atropos.core.memory.LocalMemoryStore
 import atropos.core.policy.BoundedAgencyGate
 import atropos.core.policy.ExecutionPolicyEngine
 import atropos.core.provider.ProviderOnboardingService
+import atropos.core.provider.ProviderCascadeRouter
+import atropos.core.provider.ProviderTruthService
 import atropos.core.security.RedactionFilter
 import atropos.core.territory.TerritoryGrantService
 import atropos.core.territory.TerritoryService
@@ -198,13 +199,11 @@ class AutonomousWaveOrchestrator(
         for (node in readyNodes) {
             val result = worktreeService.createWorktree(jobId = node.id, territory = node.territory)
             if (!result.success || result.record == null) {
-                memoryStore.rememberFailure(
-                    subjectType = "worktree_failure",
-                    subjectId = request.requestId,
-                    title = "worktree creation failed for node ${node.id}",
-                    body = result.message,
-                    tags = listOf("wave", "worktree", "failed")
-                )
+                // Rollback any already created worktrees
+                worktreeResults.values.forEach { worktreeService.rollback(it.id) }
+                for (node in readyNodes) {
+                    // Mark all as failed
+                }
                 return emptySet()
             }
             worktreeResults[node.id] = result.record!!
@@ -214,7 +213,7 @@ class AutonomousWaveOrchestrator(
         // Execute each node in its isolated worktree
         val completedNodeIds = mutableSetOf<String>()
         for (node in readyNodes) {
-            val worktree = worktreeResults[node.id]
+            val worktree = worktreeResults[node.id]!!
             val nodeResult = executeNodeInWorktree(node, worktree, request, freeze)
             if (nodeResult.ok) {
                 completedNodeIds.add(node.id)
@@ -241,7 +240,9 @@ class AutonomousWaveOrchestrator(
         // Cleanup worktrees
         for (worktree in worktreeResults.values) {
             activeWorktrees.remove(worktree.jobId)
-            worktreeService.removeWorktree(worktree.id)
+            if (!(worktree.verified && worktree.mergedBack)) {
+                worktreeService.removeWorktree(worktree.id)
+            }
         }
 
         return completedNodeIds
@@ -253,7 +254,7 @@ class AutonomousWaveOrchestrator(
         request: WaveExecutionRequest,
         freeze: FactoryAcceptanceFreeze
     ): DagNodeExecutionResult {
-        if (node.state != DagNodeState.PENDING && node.state != DagNodeState.READY) {
+        if (node.state != DagNodeState.READY && node.state != DagNodeState.PENDING) {
             return DagNodeExecutionResult(node.id, node.state, false, "node already in state ${node.state}")
         }
 
@@ -330,7 +331,6 @@ class AutonomousWaveOrchestrator(
             "wave execution incomplete: ${failed.size} failed, ${blocked.size} blocked, ${completed.size} completed"
         }
 
-        // Evidence paths from the generated project
         val evidencePaths = listOf(request.targetDirectory.resolve(".atropos/evidence/app-manifest.txt").toString())
         val gitCommit = runCatching {
             atropos.core.worktree.BoundedGitWorktreeCommandRunner().run(
