@@ -56,6 +56,12 @@ class AutonomousWaveOrchestrator(
     private val contractSynthesizer: ContractLatticeSynthesizer
 ) {
     private val activeWorktrees = ConcurrentHashMap<String, WorktreeRecord>()
+    private val researchOrchestrator: atropos.core.research.ResearchOrchestrator =
+        atropos.core.research.ResearchOrchestrator(atropos.core.research.SoftFailResearchStack(memoryStore))
+    private val confidenceEngine: atropos.core.confidence.HysteresisConfidenceEngine =
+        atropos.core.confidence.HysteresisConfidenceEngine()
+    private val partitionClusterManager: atropos.core.planning.PartitionClusterManager =
+        atropos.core.planning.PartitionClusterManager()
 
     companion object {
         fun createDefault(repoRoot: Path): AutonomousWaveOrchestrator {
@@ -112,6 +118,15 @@ class AutonomousWaveOrchestrator(
             subjectType = "wave_execution",
             subjectId = requestId
         )
+
+        // Phase 0: Persist prompt CAS artifact and evaluate research confidence
+        val promptArtifact = atropos.core.research.PromptArtifactStore.persist(
+            prompt = request.prompt,
+            projectId = request.requestId,
+            dir = repoRoot.resolve(".atropos/prompts")
+        )
+        val researchDoc = researchOrchestrator.research(promptArtifact)
+        val confidenceAction = confidenceEngine.evaluate(researchDoc)
 
         // Phase 1: Synthesize the DAG from the contract lattice
         val dag = contractSynthesizer.synthesize(request)
