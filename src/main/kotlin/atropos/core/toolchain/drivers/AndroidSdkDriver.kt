@@ -21,11 +21,16 @@ class AndroidSdkDriver(
         return resolveAndroidHome() != null
     }
 
+    companion object {
+        const val COMPILE_TIMEOUT_MILLIS: Long = 600_000L // 10 min
+        const val COMPILE_MAX_OUTPUT_BYTES: Int = 4 * 1024 * 1024 // 4MB
+    }
+
     override fun compile(worktree: Path): ToolchainResult {
         validateSdk()
         validateWorktree(worktree)
         val command = buildGradleCommand(worktree, listOf("compileDebugSources"))
-        val result = runner.run(command, worktree, 900_000, 256 * 1024, 4000, buildEnv())
+        val result = runner.run(command, worktree, COMPILE_TIMEOUT_MILLIS, COMPILE_MAX_OUTPUT_BYTES, 10_000, buildEnv())
         return parseResult(result)
     }
 

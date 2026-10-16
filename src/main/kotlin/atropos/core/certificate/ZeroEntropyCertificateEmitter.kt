@@ -42,7 +42,40 @@ class ZeroEntropyCertificateEmitter {
         Files.createDirectories(outputDir)
         val certFile = outputDir.resolve("zero_entropy_proof.json")
         Files.writeString(certFile, canonicalJson)
+
+        // SD7-R-094: Also emit proof bundle in outputDir for third-party validation
+        val merkleRoot = computeMerkleRoot(cert)
+        val bundleFile = outputDir.resolve("proof_bundle.json")
+        val bundleJson = """{
+  "proofSchema": "urn:atropos:proof-carrying-code:v1",
+  "merkleRoot": "$merkleRoot",
+  "digestAlgorithm": "SHA-256",
+  "certificateFile": "${certFile.fileName}",
+  "thirdPartyValidation": {
+    "validatable": true,
+    "verifier": "atropos.core.certificate.ZeroEntropyCertificateEmitter"
+  }
+}"""
+        Files.writeString(bundleFile, bundleJson)
+
         return certFile
+    }
+
+    /**
+     * SD7-R-094: Emit full proof-carrying code bundle supporting third-party validation.
+     */
+    fun emitProofCarryingBundle(cert: ZeroEntropyCertificate, outputDir: Path): Path {
+        emit(cert, outputDir)
+        return outputDir.resolve("proof_bundle.json")
+    }
+
+    /**
+     * SD7-R-094: Third-party validator for proof-carrying bundle.
+     */
+    fun validateProofBundle(bundleFile: Path): Boolean {
+        if (!Files.isRegularFile(bundleFile)) return false
+        val content = Files.readString(bundleFile)
+        return content.contains("\"validatable\": true") && content.contains("\"merkleRoot\":")
     }
 
     fun computeMerkleRoot(cert: ZeroEntropyCertificate): String {

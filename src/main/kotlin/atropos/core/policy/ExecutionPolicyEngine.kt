@@ -162,8 +162,11 @@ open class ExecutionPolicyEngine(
             return deny("multiline commands are not allowed")
         }
 
+        val isFactory = request.metadata["mode"] == "factory" || request.metadata["factory_mode"] == "true"
+        val globalCeiling = GlobalByteCeilingPolicy.resolveByteCeiling(isFactory)
+
         if (isPermittedCompilerBinary(request.command)) {
-            return allow("whitelisted toolchain compiler execution permitted")
+            return allow("whitelisted toolchain compiler execution permitted", maxOutputBytes = globalCeiling)
         }
 
         if (request.targetPaths.any(::forbiddenPath)) {
@@ -280,9 +283,23 @@ open class ExecutionPolicyEngine(
 
     private fun nextId(): String = "policy-" + UUID.randomUUID().toString().take(12)
 
+    fun globalByteCeiling(isFactoryMode: Boolean = false): Int = GlobalByteCeilingPolicy.resolveByteCeiling(isFactoryMode)
+
     private companion object {
         val destructiveTokens = setOf("rm", "mkfs", "shutdown", "reboot", "dd")
         val shellControlOperators = listOf("&&", "||", ";", "|", ">", "<", "`", "\$(")
         val networkTokens = listOf("curl ", "wget ", "ssh ", "scp ", "nc ", "ncat ", "netcat ")
     }
 }
+
+object GlobalByteCeilingPolicy {
+    const val DEFAULT_MAX_OUTPUT_BYTES = 256 * 1024
+    const val FACTORY_MODE_MAX_OUTPUT_BYTES = 64 * 1024 * 1024
+
+    fun resolveByteCeiling(isFactoryMode: Boolean = false): Int {
+        val maxMemory = Runtime.getRuntime().maxMemory()
+        val base = if (isFactoryMode) FACTORY_MODE_MAX_OUTPUT_BYTES else DEFAULT_MAX_OUTPUT_BYTES
+        return base.coerceAtMost((maxMemory / 8).coerceAtLeast(DEFAULT_MAX_OUTPUT_BYTES.toLong()).toInt())
+    }
+}
+

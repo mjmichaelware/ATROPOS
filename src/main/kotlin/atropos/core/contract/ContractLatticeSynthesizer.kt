@@ -58,8 +58,22 @@ object RuntimeBoundaryCodec {
     }
 
     fun deserialize(json: String, allowedKeys: Set<String>): Map<String, String> {
-        // Strict boundary check: reject unknown fields
-        return emptyMap()
+        val clean = json.trim().removeSurrounding("{", "}").trim()
+        if (clean.isBlank()) return emptyMap()
+        val pairs = clean.split(",")
+        val result = mutableMapOf<String, String>()
+        for (pair in pairs) {
+            val parts = pair.split(":")
+            if (parts.size >= 2) {
+                val key = parts[0].trim().removeSurrounding("\"")
+                val value = parts[1].trim().removeSurrounding("\"")
+                if (key !in allowedKeys) {
+                    throw IllegalArgumentException("Unknown field rejected at boundary: ${'$'}key")
+                }
+                result[key] = value
+            }
+        }
+        return result
     }
 }
 """

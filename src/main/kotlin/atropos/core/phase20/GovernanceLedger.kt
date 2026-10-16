@@ -96,11 +96,13 @@ class GovernanceLedger(
     fun storeProposalManifest(content: String, manifest: StructuralManifest): Pair<String, String> =
         proposalStore.storeProposal(content, manifest)
 
+    val amendmentChain = AmendmentChain(evidenceStore)
+
     /** Stores an accepted amendment without creating a second authority store. */
     fun storeAmendmentManifest(
         content: String,
         manifest: StructuralManifest,
-        supersedesHash: String?
+        supersedesHash: String? = null
     ): Pair<String, String> = amendmentRegistry.registerAmendment(content, manifest, supersedesHash)
 
     /** Applies the canonical Phase 20 law checks before self-build promotion. */
@@ -418,4 +420,24 @@ sealed class LedgerOutcome {
 
     /** Every refusal names the law that produced it. */
     data class Refused(val law: String, val reason: String) : LedgerOutcome()
+}
+
+/**
+ * SD7-R-086: CAS-backed stateful amendment chain substrate.
+ */
+class AmendmentChain(private val evidenceStore: EvidenceStore) {
+    fun recordAmendment(
+        content: String,
+        manifest: StructuralManifest,
+        supersedesHash: String? = null
+    ): Pair<String, String> {
+        val contentDigest = MessageDigest.getInstance("SHA-256")
+            .digest(content.toByteArray(StandardCharsets.UTF_8))
+            .joinToString("") { "%02x".format(it) }
+        val manifestDigest = MessageDigest.getInstance("SHA-256")
+            .digest(manifest.documentHash.toByteArray(StandardCharsets.UTF_8))
+            .joinToString("") { "%02x".format(it) }
+        evidenceStore.storeEvidence("amendment-$contentDigest", content.toByteArray(StandardCharsets.UTF_8))
+        return contentDigest to manifestDigest
+    }
 }

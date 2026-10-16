@@ -10,7 +10,9 @@ data class ToolchainDiagnostic(
     val column: Int,
     val code: String?,
     val message: String,
-    val severity: DiagnosticSeverity
+    val severity: DiagnosticSeverity,
+    val errorCode: String? = code,
+    val trace: String? = null
 )
 
 data class ToolchainResult(
@@ -18,9 +20,23 @@ data class ToolchainResult(
     val passed: Boolean,
     val stdout: String,
     val stderr: String,
-    val diagnostics: List<ToolchainDiagnostic>,
-    val durationMs: Long
-)
+    val diagnostics: List<ToolchainDiagnostic> = emptyList(),
+    val durationMs: Long = 0L,
+    val converged: Boolean = passed && exitCode == 0
+) {
+    companion object {
+        fun converged(stdout: String = "", durationMs: Long = 0L): ToolchainResult =
+            ToolchainResult(
+                exitCode = 0,
+                passed = true,
+                stdout = stdout,
+                stderr = "",
+                diagnostics = emptyList(),
+                durationMs = durationMs,
+                converged = true
+            )
+    }
+}
 
 interface LanguageToolchainDriver {
     val languageId: String

@@ -10,8 +10,8 @@ class DloiDomainContractExtrapolation(private val dloiService: DloiService) {
     fun extrapolate(lattice: ContractLattice): List<String> {
         val injectedRules = mutableListOf<String>()
 
-        // Canonical DLOI domain coordinates: 006 Security, 410 Data Plane, 620 Runtime
-        val coordinates = listOf("006", "410", "620")
+        // Canonical DLOI domain coordinates: 006 Security (STRIDE), 410 Data Plane, 620 Runtime, WCAG 2.2 AA
+        val coordinates = listOf("006", "410", "620", "WCAG_2_2_AA", "STRIDE")
 
         for (coord in coordinates) {
             when (val res = dloiService.resolve(coord)) {
@@ -19,7 +19,8 @@ class DloiDomainContractExtrapolation(private val dloiService: DloiService) {
                     injectedRules.add("require(dloi_rule_${coord}): ${res.resolution.document.id}")
                 }
                 is DloiLookupResult.NoMatch -> {
-                    // Coordinate not indexed, continue
+                    // SD7-R-080: Obey Soft-Fail Law: missing DLOI yields RecordSkip(REASON) never halting factory
+                    injectedRules.add("skip(dloi_rule_${coord}): RecordSkip(${res.reason})")
                 }
             }
         }

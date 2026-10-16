@@ -15,7 +15,8 @@ class CompilerDiagnosticRepairLoop(
         worktree: Path,
         driver: LanguageToolchainDriver,
         initialFailure: ToolchainResult,
-        basePrompt: String
+        basePrompt: String,
+        territory: Set<String> = emptySet()
     ): ToolchainResult {
         var currentResult = initialFailure
 
@@ -28,6 +29,11 @@ class CompilerDiagnosticRepairLoop(
             val failingFile = failingDiagnostics.firstOrNull { it.file.isNotBlank() }?.file
                 ?: currentResult.stderr.lines().firstOrNull { it.contains(":") }?.substringBefore(":")
                 ?: break
+
+            // SD7-R-055: ∇E=Diagnostics(v) and Δf ⊆ Territory(P_r). Repair never touches files outside partition territory
+            if (territory.isNotEmpty() && !territory.any { failingFile.startsWith(it) || it.startsWith(failingFile) }) {
+                break
+            }
 
             val targetPath = worktree.resolve(failingFile)
             val currentContent = if (Files.isRegularFile(targetPath)) Files.readString(targetPath) else ""
@@ -79,5 +85,30 @@ Return ONLY the corrected, complete file content for $failingFile. Do not explai
         }
 
         return currentResult
+    }
+
+    /**
+     * SD7-R-066: Directed repair node targeting a single failing integration edge in Wave-4
+     * instead of aborting the entire build.
+     */
+    fun repairIntegrationEdge(
+        worktree: Path,
+        driver: LanguageToolchainDriver,
+        edgeFailure: ToolchainResult,
+        sourceEdge: String,
+        targetEdge: String,
+        edgeContractPrompt: String
+    ): ToolchainResult {
+        val targetedPrompt = """[INTEGRATION EDGE REPAIR: $sourceEdge -> $targetEdge]
+Contract / Interface context:
+$edgeContractPrompt
+Target single failing integration edge instead of aborting entire build."""
+        return repair(
+            worktree = worktree,
+            driver = driver,
+            initialFailure = edgeFailure,
+            basePrompt = targetedPrompt,
+            territory = setOf(sourceEdge, targetEdge)
+        )
     }
 }

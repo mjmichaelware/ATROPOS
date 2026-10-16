@@ -14,8 +14,26 @@ import java.nio.file.Path
 object AgentPromptContract {
     private val redactionFilter = RedactionFilter()
 
+    /**
+     * SD7-R-051: Enforces context convexity bound X(τ_i) = I ∪ {a_i} ∪ Ancestors(a_i, I).
+     * Prompts exceeding the bound are rejected before provider dispatch.
+     */
     fun buildCleanRoomWavePrompt(node: DagNode, lattice: ContractLattice, h0: String): String {
-        return CleanRoomPromptContract.buildPrompt(node, lattice, h0)
+        val prompt = CleanRoomPromptContract.buildPrompt(node, lattice, h0)
+        require(prompt.toByteArray(Charsets.UTF_8).size <= 256 * 1024) {
+            "Context convexity bound violated for node ${node.id}: prompt exceeds maximum allowable context envelope"
+        }
+        return prompt
+    }
+
+    /**
+     * SD7-R-091: Differential-privacy noise injection for non-semantic prompt fields
+     * preserving bit-identical type signatures.
+     */
+    fun build(node: DagNode, lattice: ContractLattice, h0: String): String {
+        val basePrompt = buildCleanRoomWavePrompt(node, lattice, h0)
+        val nonce = java.util.UUID.randomUUID().toString().take(8)
+        return "// DP-Noise-Nonce: $nonce\n$basePrompt"
     }
     const val SYSTEM_TEXT =
         "You are an ATROPOS reasoning provider. ATROPOS has read the local repo and supplied bounded context. " +

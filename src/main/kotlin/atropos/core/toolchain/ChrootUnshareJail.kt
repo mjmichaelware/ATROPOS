@@ -6,8 +6,9 @@ import java.nio.file.Path
 
 class ChrootUnshareJail {
     fun wrapCommand(worktreePath: Path, command: List<String>): List<String> {
+        val sanitizedCommand = command.map { stripSecrets(it) }
         if (!isJailSupported()) {
-            return command
+            return sanitizedCommand
         }
 
         val chrootPath = worktreePath.toAbsolutePath().normalize()
@@ -22,7 +23,16 @@ class ChrootUnshareJail {
             "--mount-proc",
             "chroot",
             chrootPath.toString()
-        ) + command
+        ) + sanitizedCommand
+    }
+
+    fun stripSecrets(text: String): String {
+        return text.replace(Regex("""(?i)(bearer\s+|token\s+|key\s*=\s*)[a-zA-Z0-9_\-\.]{16,}"""), "$1[REDACTED]")
+    }
+
+    fun stripSecretsFromEnvironment(env: Map<String, String>): Map<String, String> {
+        val secretKeys = setOf("API_KEY", "SECRET", "TOKEN", "PASSWORD", "AUTH")
+        return env.filterNot { (k, _) -> secretKeys.any { k.uppercase().contains(it) } }
     }
 
     fun isJailSupported(): Boolean {

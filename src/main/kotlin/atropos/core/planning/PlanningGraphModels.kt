@@ -21,7 +21,23 @@ enum class AtomDimension {
     TESTS_ACCEPTANCE,
     INTEGRATION_CALL_SITES,
     MIGRATION_COMPATIBILITY,
-    ROLLBACK_FAILURE_EVIDENCE
+    ROLLBACK_FAILURE_EVIDENCE,
+
+    // SD7-R-065: Wave-0 dimension filter
+    INTERFACE,
+    PROTOCOL,
+    SCHEMA,
+    DATA_MODEL,
+    IMPLEMENTATION;
+
+    fun isWave0Eligible(): Boolean = this in setOf(
+        INTERFACE,
+        PROTOCOL,
+        SCHEMA,
+        DATA_MODEL,
+        FUNCTIONAL_CONTRACT,
+        DEPENDENCY_CONTRACT
+    )
 }
 
 data class IngestedSection(
@@ -45,18 +61,35 @@ data class IngestedDocument(
 
 data class InternalAtom(
     val id: String = "atom-" + UUID.randomUUID().toString().take(12),
-    val projectId: String,
-    val documentId: String,
-    val sectionId: String,
-    val dimension: AtomDimension,
-    val statement: String,
-    val sourceCoordinates: String,
+    val projectId: String = "",
+    val documentId: String = "",
+    val sectionId: String = "",
+    val dimension: AtomDimension = AtomDimension.FUNCTIONAL_CONTRACT,
+    val statement: String = "",
+    val sourceCoordinates: String = "",
     val dependencies: List<String> = emptyList(),
     val territory: List<String> = emptyList(),
     val promptFingerprint: String = "",
     val promptSpans: String = "",
     val sourceDocumentSha256: String = ""
-)
+) {
+    /**
+     * SD7-R-060: Minimal complete atom model constructor.
+     */
+    constructor(id: String, dimension: AtomDimension, territory: List<String>) : this(
+        id = id,
+        projectId = "",
+        documentId = "",
+        sectionId = "",
+        dimension = dimension,
+        statement = "",
+        sourceCoordinates = "",
+        dependencies = emptyList(),
+        territory = territory
+    )
+}
+
+typealias ExtractionAtom = InternalAtom
 
 data class AuthorityGraph(
     val projectId: String,

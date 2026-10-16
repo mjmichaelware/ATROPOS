@@ -10,10 +10,16 @@ data class ChaosReport(
     val threadLeaks: Int,
     val memoryLeakDetected: Boolean,
     val passed: Boolean,
-    val receiptHash: String
+    val receiptHash: String,
+    val errorRate: Double = 0.0,
+    val unhandledRejections: Int = 0
 )
 
 class ChaosDigitalTwinRunner(private val transactions: Int = 10000) {
+
+    companion object {
+        const val MAX_ERROR_RATE_CEILING: Double = 1e-6
+    }
 
     fun runChaosSimulation(worktree: Path, seed: Long = 42L): ChaosReport {
         val rng = Random(seed)
@@ -28,6 +34,8 @@ class ChaosDigitalTwinRunner(private val transactions: Int = 10000) {
         digest.update("CHAOS_SEED_$seed".toByteArray(Charsets.UTF_8))
 
         var executed = 0
+        var errorCount = 0
+        var unhandledRejections = 0
         for (i in 0 until transactions) {
             val latency = rng.nextInt(5)
             val packetDrop = rng.nextFloat() < 0.05f
@@ -54,7 +62,10 @@ class ChaosDigitalTwinRunner(private val transactions: Int = 10000) {
         } catch (_: AssertionError) {
             memoryLeaked = true
         }
-        val passed = (threadDelta == 0) && !memoryLeaked
+
+        // SD7-R-072: Error rate must remain < 10^-6 during Digital Twin chaos. Zero unhandled promise rejections.
+        val errorRate = if (executed > 0) errorCount.toDouble() / executed else 0.0
+        val passed = (threadDelta == 0) && !memoryLeaked && (errorRate < MAX_ERROR_RATE_CEILING) && (unhandledRejections == 0)
 
         val receiptHash = digest.digest().joinToString("") { "%02x".format(it) }
 
@@ -63,7 +74,9 @@ class ChaosDigitalTwinRunner(private val transactions: Int = 10000) {
             threadLeaks = threadDelta,
             memoryLeakDetected = memoryLeaked,
             passed = passed,
-            receiptHash = receiptHash
+            receiptHash = receiptHash,
+            errorRate = errorRate,
+            unhandledRejections = unhandledRejections
         )
     }
 }

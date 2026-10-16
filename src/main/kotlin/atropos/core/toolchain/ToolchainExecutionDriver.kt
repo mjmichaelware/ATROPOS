@@ -31,18 +31,45 @@ class ToolchainExecutionDriver(
         return redactResult(result)
     }
 
+    fun executeSandboxed(
+        command: List<String>,
+        worktreeRoot: Path,
+        timeoutMillis: Long = 600_000L,
+        maxOutputBytes: Int = 4 * 1024 * 1024
+    ): ToolchainResult {
+        val env = sanitizeEnvironment()
+        val result = processRunner.run(
+            command = command,
+            directory = worktreeRoot,
+            timeoutMillis = timeoutMillis,
+            maxOutputBytes = maxOutputBytes,
+            maxOutputLines = 8_000,
+            environment = env
+        )
+        return ToolchainResult(
+            exitCode = result.exitCode ?: 1,
+            passed = result.exitCode == 0 && !result.timedOut,
+            stdout = redactionFilter.redact(result.stdout),
+            stderr = redactionFilter.redact(result.stderr),
+            diagnostics = emptyList(),
+            durationMs = result.durationMillis
+        )
+    }
+
     private fun sanitizeEnvironment(): Map<String, String> {
         val allowedKeys = setOf(
             "PATH", "HOME", "USER", "LANG", "LC_ALL", "TERM",
             "JAVA_HOME", "ANDROID_HOME", "ANDROID_SDK_ROOT", "CARGO_HOME", "GOROOT", "GOPATH",
             "GRADLE_HOME", "GRADLE_USER_HOME", "NODE_PATH", "NPM_CONFIG_PREFIX", "PYTHONPATH"
         )
-        val env = System.getenv().toMutableMap()
-        val redactedKeys = env.keys.filterNot { it in allowedKeys }.toSet()
-        for (key in redactedKeys) {
-            env[key] = "[REDACTED]"
+        val cleanEnv = mutableMapOf<String, String>()
+        for (key in allowedKeys) {
+            val v = System.getenv(key)
+            if (!v.isNullOrBlank()) {
+                cleanEnv[key] = v
+            }
         }
-        return env
+        return cleanEnv
     }
 
     private fun redactResult(result: ToolchainResult): ToolchainResult {

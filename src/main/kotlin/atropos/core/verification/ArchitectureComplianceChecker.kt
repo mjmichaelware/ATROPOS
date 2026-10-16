@@ -140,12 +140,26 @@ class ArchitectureComplianceChecker(
     fun dumpAuditLog(targetFile: File, report: ArchitectureComplianceReport) {
         targetFile.parentFile?.mkdirs()
         val content = buildString {
-            appendLine("# ATROPOS SpecGraph Audit Log")
+            appendLine("# ATROPOS SpecGraph Audit Log (Non-Authoritative)")
+            appendLine("<!-- Pure audit log: not a file generation source -->")
             appendLine("Scanned Files: ${report.scannedFiles}")
             appendLine("Violations Count: ${report.violations.size}")
             appendLine("Passed: ${report.passed}")
             for (v in report.violations) {
                 appendLine("- ${v.render()}")
+            }
+        }
+        targetFile.writeText(content)
+    }
+
+    fun dumpSpecGraphAtomsAudit(repoRoot: File, atomsSummary: List<String>) {
+        val targetFile = File(repoRoot, ".atropos/research/atoms.md")
+        targetFile.parentFile?.mkdirs()
+        val content = buildString {
+            appendLine("# ATROPOS SpecGraph Atoms Audit Log (Non-Authoritative)")
+            appendLine("<!-- Pure audit log: not a file generation source -->")
+            for (atom in atomsSummary) {
+                appendLine("- $atom")
             }
         }
         targetFile.writeText(content)

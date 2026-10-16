@@ -21,7 +21,12 @@ class RewardPenaltyStore(
         }
     }
 
-    enum class SignalType { REWARD, PENALTY }
+    enum class SignalType { REWARD, PENALTY, ZERO_REWARD_PENALTY }
+
+    companion object {
+        const val ZERO_REWARD_PENALTY_ACTION = "ZERO_REWARD_PENALTY"
+        const val FRAUD_PENALTY_DEFAULT_VALUE = -100.0
+    }
 
     data class Signal(
         val timestamp: Instant,
@@ -37,7 +42,15 @@ class RewardPenaltyStore(
     }
 
     fun recordPenalty(agentId: String, action: String, value: Double, reason: String) {
-        recordSignal(agentId, action, SignalType.PENALTY, value, reason)
+        val signalType = if (action == ZERO_REWARD_PENALTY_ACTION) SignalType.ZERO_REWARD_PENALTY else SignalType.PENALTY
+        recordSignal(agentId, action, signalType, value, reason)
+    }
+
+    /**
+     * SD7-R-085: Log ZERO_REWARD_PENALTY on fraudulent AST synthesis attempts.
+     */
+    fun recordZeroRewardFraudPenalty(agentId: String, reason: String = "fraudulent AST synthesis attempt detected") {
+        recordPenalty(agentId, ZERO_REWARD_PENALTY_ACTION, FRAUD_PENALTY_DEFAULT_VALUE, reason)
     }
 
     private fun recordSignal(agentId: String, action: String, type: SignalType, value: Double, reason: String) {

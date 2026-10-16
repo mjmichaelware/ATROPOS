@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.agent
 
+import atropos.core.dag.DagNode
+
 /**
  * How many times the self-host loop may continue before it stops on its own.
  *
@@ -83,12 +85,21 @@ object SelfHostRuntimeRunLimits {
             .coerceIn(1, MAX_ALLOWED_ADVANCES)
     }
 
-    @Deprecated(
-        "A budget with no DAG to measure cannot be right. Use forNodeCount.",
-        ReplaceWith("forNodeCount(nodeCount, environment, properties)")
-    )
+    /**
+     * SD7-R-002: Wave-aware limit derived from remaining Φ potential and partition count.
+     */
     fun maxAdvances(
+        remainingPhi: Double = 1.0,
+        partitionCount: Int = 1,
         environment: Map<String, String> = System.getenv(),
         properties: (String) -> String? = System::getProperty
-    ): Int = forNodeCount(0, environment, properties)
+    ): Int {
+        override(environment, properties)?.let { return it }
+        val derived = (partitionCount.coerceAtLeast(1) * (remainingPhi.coerceAtLeast(0.1) * 20.0).toInt() + RUN_OVERHEAD_ADVANCES)
+        return derived.coerceIn(FALLBACK_MAX_ADVANCES, MAX_ALLOWED_ADVANCES)
+    }
+
+    fun maxAdvances(): Int = maxAdvances(1.0, 1)
+
+    fun maxAdvancesForNodes(nodes: List<DagNode>): Int = forNodeCount(nodes.size)
 }

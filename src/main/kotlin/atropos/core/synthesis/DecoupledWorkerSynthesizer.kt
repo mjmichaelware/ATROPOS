@@ -43,8 +43,11 @@ class DecoupledWorkerSynthesizer(
             Files.writeString(target, content)
         }
 
+        // SD7-R-050: State-transition operator σ_{t+1}=δ(σ_t,a_{r,t},I) for isolated agents folding successive atoms
+        var sigma = h0
         for (node in cluster.nodes) {
-            val prompt = CleanRoomPromptContract.buildPrompt(node, lattice, h0)
+            sigma = foldMemoryState(sigma, node.id, lattice.latticeId)
+            val prompt = CleanRoomPromptContract.buildPrompt(node, lattice, sigma)
             val cascadeResult = cascadeRouter.completeWithCascade(
                 requestedProvider = "default",
                 prompt = prompt,
@@ -83,5 +86,11 @@ class DecoupledWorkerSynthesizer(
             worktreePath = worktreePath,
             diagnostics = compileResult.diagnostics
         )
+    }
+
+    private fun foldMemoryState(sigmaT: String, atomId: String, interfaceId: String): String {
+        val digest = java.security.MessageDigest.getInstance("SHA-256")
+        digest.update("$sigmaT:$atomId:$interfaceId".toByteArray(Charsets.UTF_8))
+        return digest.digest().joinToString("") { "%02x".format(it) }
     }
 }

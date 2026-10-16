@@ -68,7 +68,44 @@ object SecretSinkMatrix {
      */
     fun bridgeClipboardCascade(payload: String): String {
         val scrubbed = scrubTokens(payload)
+        tryTermuxClipboardSet(scrubbed)
         return emitOsc52(scrubbed)
+    }
+
+    /**
+     * SD7-R-084: Include termux-clipboard-set in OSC-52 fallback cascade.
+     */
+    fun copyToClipboardWithFallback(payload: String): Boolean {
+        val scrubbed = scrubTokens(payload)
+        if (tryTermuxClipboardSet(scrubbed)) {
+            return true
+        }
+        if (tryCommandClipboard(scrubbed, "wl-copy") ||
+            tryCommandClipboard(scrubbed, "pbcopy") ||
+            tryCommandClipboard(scrubbed, "xclip", "-selection", "clipboard")
+        ) {
+            return true
+        }
+        val osc52 = emitOsc52(scrubbed)
+        System.err.print(osc52)
+        System.err.flush()
+        return true
+    }
+
+    private fun tryTermuxClipboardSet(text: String): Boolean {
+        return tryCommandClipboard(text, "termux-clipboard-set")
+    }
+
+    private fun tryCommandClipboard(text: String, vararg command: String): Boolean {
+        return try {
+            val process = ProcessBuilder(*command).start()
+            process.outputStream.bufferedWriter(Charsets.UTF_8).use { writer ->
+                writer.write(text)
+            }
+            process.waitFor(1, java.util.concurrent.TimeUnit.SECONDS) && process.exitValue() == 0
+        } catch (_: Exception) {
+            false
+        }
     }
 
     fun resetDefaults() {

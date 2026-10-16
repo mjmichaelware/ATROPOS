@@ -42,7 +42,8 @@ data class AdvisoryReport(
     val summary: String,
     val timestamp: Instant = Instant.now(),
     val diffHash: String? = null,
-    val territoryViolations: Int = 0
+    val territoryViolations: Int = 0,
+    val acceptedVolume: Int = 0
 )
 
 data class DiffSnapshot(

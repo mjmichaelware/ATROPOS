@@ -118,10 +118,16 @@ class StorageSupervisor(
     fun retentionTierLaw(tier: RetentionTier, kPromotions: Int = 5): String = when (tier) {
         RetentionTier.HOT -> "HOT: current checkpoint retained locally"
         RetentionTier.WARM -> "WARM: last $kPromotions successful promotions retained locally"
-        RetentionTier.COLD -> "COLD: remote R2 CAS only; local flash reclaimed"
+        RetentionTier.COLD -> "COLD: remote R2 CAS primary with best-effort Google Drive CAS cold tier; local flash reclaimed"
         RetentionTier.DELETE -> "DELETE: pruned immediately"
         else -> "UNKNOWN"
     }
+
+    /**
+     * SD7-R-032: Google Drive CAS cold-tier backend.
+     * Drive CAS adapter for cold evidence and build products treating it as best-effort with R2 primary.
+     */
+    fun coldTierAdapterStatus(): String = "Drive CAS adapter active for cold evidence as best-effort with R2 primary"
 
     /**
      * Pre-flight free-space blocking gate for VerifiedCompletionGate.

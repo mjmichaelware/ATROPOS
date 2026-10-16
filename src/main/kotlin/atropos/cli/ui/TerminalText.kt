@@ -30,6 +30,11 @@ object TerminalText {
         System.err.println(message)
     }
 
+    fun emitSpinner(frame: String, message: String) {
+        System.err.print("\r$frame $message")
+        System.err.flush()
+    }
+
     fun emitArtifact(artifact: String) {
         System.out.println(artifact)
     }

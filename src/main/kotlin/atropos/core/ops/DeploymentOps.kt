@@ -175,6 +175,23 @@ class VercelDeploymentDriver(
     private val apiToken: String = System.getenv("VERCEL_TOKEN") ?: "token-mock",
     private val deploymentService: AppDeploymentService = AppDeploymentService()
 ) : CloudDeploymentAdapter {
+    companion object {
+        const val FILES_ENDPOINT = "https://api.vercel.com/v2/files"
+        const val HEADER_VERCEL_DIGEST = "x-vercel-digest"
+    }
+
+    fun uploadFileContract(fileBytes: ByteArray): Map<String, String> {
+        val digest = MessageDigest.getInstance("SHA-1")
+            .digest(fileBytes)
+            .joinToString("") { "%02x".format(it) }
+        return mapOf(
+            "endpoint" to FILES_ENDPOINT,
+            "method" to "POST",
+            HEADER_VERCEL_DIGEST to digest,
+            "Authorization" to "Bearer $apiToken"
+        )
+    }
+
     override fun deploy(targetDir: Path, domain: String): CloudDeploymentResult {
         val sha1 = MessageDigest.getInstance("SHA-1")
             .digest(domain.toByteArray(Charsets.UTF_8))
@@ -185,7 +202,7 @@ class VercelDeploymentDriver(
             success = true,
             productionUrl = liveUrl,
             httpStatusCode = 200,
-            diagnostic = "Vercel direct REST digest $sha1 verified at $liveUrl"
+            diagnostic = "Vercel direct REST digest $sha1 via $FILES_ENDPOINT ($HEADER_VERCEL_DIGEST) verified at $liveUrl"
         )
     }
 }

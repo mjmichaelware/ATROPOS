@@ -32,7 +32,7 @@ private data class SourcePackSelection(
 
 class AgentContextCollector(
     val repoRoot: Path = AtroposRepoRootLocator.resolve(),
-    val contextCapBytes: Int = 80 * 1024,
+    val contextCapBytes: Int = resolveProfileContextCapBytes(),
     private val contextPacker: CodebaseContextPacker = CodebaseContextPacker(repoRoot),
     private val sourceBindingResolver: ActiveSourceBindingResolver = ActiveSourceBindingResolver(repoRoot),
     private val redactionFilter: RedactionFilter = RedactionFilter(),
@@ -41,6 +41,14 @@ class AgentContextCollector(
     private val commandTimeoutMillis: Long = 5_000L,
     private val commandOutputLines: Int = 256
 ) {
+    companion object {
+        fun resolveProfileContextCapBytes(): Int {
+            val envCap = System.getenv("ATROPOS_CONTEXT_CAP_BYTES")?.toIntOrNull()
+            if (envCap != null && envCap > 0) return envCap
+            val maxMem = Runtime.getRuntime().maxMemory()
+            return (maxMem / 32).coerceIn(80L * 1024L, 2L * 1024L * 1024L).toInt()
+        }
+    }
     private val boundedBuilder = Utf8BoundedBuilder(contextCapBytes)
 
     private val selectedSourceFiles = listOf(

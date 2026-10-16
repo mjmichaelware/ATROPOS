@@ -14,6 +14,18 @@ data class FactoryClarificationRequest(
     val path: String
 ) {
     companion object {
+        val VAGUE_TERMS: Set<String> = setOf(
+            "fast", "scalable", "user-friendly", "robust", "modern",
+            "intuitive", "easy", "secure", "optimal", "clean", "simple"
+        )
+
+        fun detectVagueTerms(prompt: String): List<String> {
+            val tokens = prompt.lowercase().split(Regex("[^a-z0-9_-]+"))
+            return tokens.filter { it in VAGUE_TERMS }.distinct()
+        }
+
+        fun shouldEscalateToIlss(prompt: String): Boolean = detectVagueTerms(prompt).isNotEmpty()
+
         fun persist(runRoot: Path, promptFingerprint: String, questions: List<String>): FactoryClarificationRequest {
             require(promptFingerprint.matches(Regex("prompt-[0-9a-f]{16}"))) {
                 "factory clarification prompt lineage is invalid"

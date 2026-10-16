@@ -62,4 +62,11 @@ class ResidualObligationLedger(private val ledgerFile: Path) {
         }
         return list
     }
+
+    /**
+     * SD7-R-016: Ungrounded-requirement tracker blocking Phase-100 until all vetoes and obligations are resolved.
+     */
+    fun hasUngroundedRequirements(): Boolean = activeObligations().isNotEmpty()
+
+    fun isPhase100Blocked(): Boolean = hasUngroundedRequirements()
 }

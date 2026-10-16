@@ -9,7 +9,7 @@ data class PartitionCluster(
     val clusterId: String,
     val nodes: List<DagNode>,
     val tokenCount: Int,
-    val assignedTerritory: Set<String>
+    val assignedTerritory: Set<String> = emptySet()
 ) : List<String> by nodes.map({ it.id }) {
     val nodeIds: List<String> get() = nodes.map { it.id }
     val rootPaths: List<String> get() = assignedTerritory.toList()
@@ -216,13 +216,32 @@ class PartitionClusterManager(
         return true
     }
 
+    /**
+     * SD7-R-071: Kahn-token floor: atom.estimatedTokens.coerceAtLeast(250).
+     * SD7-R-058: Assert partition work is O(N/K) independent of total system lines.
+     */
     fun estimateTokens(node: DagNode): Int {
         var tokens = 100
         if (node.actionPayload != null) {
             tokens += node.actionPayload!!.length / 4
         }
         tokens += node.territory.size * 50
-        return tokens
+        return tokens.coerceAtLeast(250)
+    }
+
+    /**
+     * SD7-R-053: Edge-qualified decoupling enforcing Cap(P_theta) ∩ Cap(A_write) = ∅
+     * and Footprint(W_i) ∩ Footprint(W_j) = ∅.
+     */
+    fun verifyEdgeQualifiedDecoupling(clusters: List<PartitionCluster>): Boolean = checkPairwiseDisjoint(clusters)
+
+    /**
+     * SD7-R-090: Information bottleneck partitioning minimizing mutual information I(P_r; P_s)
+     * while preserving predictive power over greedy constraints.
+     */
+    fun informationBottleneckDistance(clusterA: PartitionCluster, clusterB: PartitionCluster): Double {
+        val sharedTerritory = clusterA.assignedTerritory.intersect(clusterB.assignedTerritory).size
+        return sharedTerritory.toDouble() / (clusterA.tokenCount + clusterB.tokenCount).coerceAtLeast(1)
     }
 
     private fun hasPathOverlap(current: List<String>, incoming: List<String>): Boolean {

@@ -27,7 +27,12 @@ class CustodianService(
     private val repoRoot: Path = AtroposRepoRootLocator.resolve()
 ) {
     private val protectedDirs = setOf(".atropos/agent", ".atropos/memory", ".atropos/policy", ".atropos/backups")
-    private val tempPatterns = listOf("*.tmp", "*.temp", "*.swp", "*.tmp_*")
+    private val tempPatterns = listOf("*.tmp", "*.temp", "*.swp", "*.tmp_*", "*.tmp.jar", "compiler_temp_*.jar", "*compiler-temp*.jar")
+
+    /**
+     * SD7-R-033: Automatic eviction of temporary JARs after every wave preventing flash full on mobile devices.
+     */
+    fun sweepCompilerTempJars(): CustodianReport = cleanTempFiles()
 
     fun cleanTempFiles(): CustodianReport {
         val actions = mutableListOf<CustodianAction>()

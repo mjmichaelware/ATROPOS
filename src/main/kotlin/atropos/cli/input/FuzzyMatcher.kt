@@ -120,6 +120,28 @@ class Utf8RingBufferDecoder(val capacity: Int = 1024) {
     }
 
     @Synchronized
+    fun search(pattern: String): Int {
+        val target = pattern.toByteArray(StandardCharsets.UTF_8)
+        return search(target)
+    }
+
+    @Synchronized
+    fun search(pattern: ByteArray): Int {
+        if (pattern.isEmpty() || count < pattern.size) return -1
+        for (i in 0..(count - pattern.size)) {
+            var matches = true
+            for (j in pattern.indices) {
+                if (buffer[(head + i + j) % capacity] != pattern[j]) {
+                    matches = false
+                    break
+                }
+            }
+            if (matches) return i
+        }
+        return -1
+    }
+
+    @Synchronized
     fun clear() {
         head = 0
         count = 0

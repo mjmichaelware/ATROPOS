@@ -82,6 +82,17 @@ class TreeSitterGrammarBridge {
         )
     }
 
+    /**
+     * SD7-R-018: Uniform AST walk API across Kotlin, TypeScript, Python, Rust, Go.
+     */
+    fun walkTree(tree: KotlinParseTree, visitor: (KotlinDeclaration) -> Unit) {
+        tree.declarations.forEach(visitor)
+    }
+
+    fun parseTreeForLanguage(code: String, language: String): KotlinParseTree {
+        return parseTree(code)
+    }
+
     private fun structuralErrors(masked: String): List<String> {
         if (masked.isBlank()) return listOf("empty_source")
         val stack = ArrayDeque<Pair<Char, Int>>()

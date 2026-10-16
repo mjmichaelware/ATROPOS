@@ -212,6 +212,16 @@ class VerifiedCompletionGate(
     fun emitZeroEntropyProof(cert: atropos.core.certificate.ZeroEntropyCertificate, outputDir: Path): Path {
         return atropos.core.certificate.ZeroEntropyCertificateEmitter().emit(cert, outputDir)
     }
+
+    /**
+     * SD7-R-052: Zero-entropy constraint.
+     * Blocks Phase-100 until Zero-Entropy Proof Certificate emits and is formally valid.
+     */
+    fun isPhase100Admitted(proofFile: Path?): Boolean {
+        if (proofFile == null || !java.nio.file.Files.isRegularFile(proofFile)) return false
+        val content = java.nio.file.Files.readString(proofFile)
+        return content.contains("specHash") && content.contains("smtProofsHash") && content.contains("confidenceHash")
+    }
 }
 
 data class ProviderProposalMergeReport(

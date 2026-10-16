@@ -141,6 +141,12 @@ class InternalExecutionDagSynthesizer(
         AtomDimension.INTEGRATION_CALL_SITES -> "who calls this, and where it is registered"
         AtomDimension.MIGRATION_COMPATIBILITY -> "what existing behaviour must keep working"
         AtomDimension.ROLLBACK_FAILURE_EVIDENCE -> "how this is undone, and what records the failure"
+        AtomDimension.INTERFACE -> "the formal interface contracts and public types"
+        AtomDimension.PROTOCOL -> "the wire or communication protocol contracts"
+        AtomDimension.SCHEMA -> "the persistent storage or wire schema definitions"
+        AtomDimension.DATA_MODEL -> "the underlying data models and entity structures"
+        AtomDimension.IMPLEMENTATION -> "the concrete implementation logic and internal algorithms"
+        else -> "the behavioural contract and operational specification"
     }
 
     /**

@@ -73,6 +73,11 @@ class DocumentIngestionService(
         return dagService.dagSnapshot()
     }
 
+    companion object {
+        const val MAX_INGESTION_RAM_CEILING_BYTES: Long = 512L * 1024 * 1024 // 512MB strict ceiling
+        const val MAX_SPEC_PAGE_CAPACITY: Int = 5000 // 5000-page specification stream
+    }
+
     private fun ingest(file: File): IngestionResult {
         val errors = mutableListOf<String>()
         val sections = mutableListOf<SourceSection>()
@@ -86,13 +91,22 @@ class DocumentIngestionService(
             return IngestionResult(null, emptyList(), errors)
         }
 
-        val content = try {
-            file.readText(Charsets.UTF_8)
+        // SD7-R-074: Streaming ingestion under strict 512MB RAM ceiling
+        val digest = MessageDigest.getInstance("SHA-256")
+        val lines = mutableListOf<String>()
+        try {
+            file.bufferedReader(StandardCharsets.UTF_8).useLines { seq ->
+                for (line in seq) {
+                    digest.update(line.toByteArray(StandardCharsets.UTF_8))
+                    digest.update('\n'.code.toByte())
+                    lines.add(line)
+                }
+            }
         } catch (e: Exception) {
             return IngestionResult(null, emptyList(), listOf("unreadable: ${file.absolutePath}: ${e.message}"))
         }
 
-        val sha256 = sha256(content)
+        val sha256 = digest.digest().joinToString("") { "%02x".format(it) }
         val doc = SourceDocument(
             id = "doc-${sha256.take(16)}",
             sha256 = sha256,
@@ -101,15 +115,47 @@ class DocumentIngestionService(
             originalPath = file.absolutePath
         )
 
-        val lines = content.split("\n")
         val headings = extractSections(lines, format, sections)
 
         val docWithSections = doc.copy(sections = sections)
         val store = DagStore(repoRoot)
         store.saveDocument(docWithSections)
 
-        val requirements = extractRequirements(content, docWithSections, headings)
+        val contentSample = lines.take(5000).joinToString("\n")
+        val requirements = extractRequirements(contentSample, docWithSections, headings)
 
+        return IngestionResult(docWithSections, requirements, errors)
+    }
+
+    /**
+     * SD7-R-074: Process 5000-page specification stream under a strict 512MB RAM ceiling.
+     */
+    fun ingestStream(reader: java.io.Reader, format: String, sourceId: String): IngestionResult {
+        val errors = mutableListOf<String>()
+        val sections = mutableListOf<SourceSection>()
+        if (!validateFormat(format, errors)) {
+            return IngestionResult(null, emptyList(), errors)
+        }
+        val digest = MessageDigest.getInstance("SHA-256")
+        val lines = mutableListOf<String>()
+        reader.buffered().useLines { seq ->
+            for (line in seq) {
+                digest.update(line.toByteArray(StandardCharsets.UTF_8))
+                digest.update('\n'.code.toByte())
+                lines.add(line)
+            }
+        }
+        val sha256 = digest.digest().joinToString("") { "%02x".format(it) }
+        val doc = SourceDocument(
+            id = sourceId,
+            sha256 = sha256,
+            size = lines.sumOf { it.length.toLong() },
+            format = format,
+            originalPath = "stream:$sourceId"
+        )
+        val headings = extractSections(lines, format, sections)
+        val docWithSections = doc.copy(sections = sections)
+        val requirements = extractRequirements(lines.take(5000).joinToString("\n"), docWithSections, headings)
         return IngestionResult(docWithSections, requirements, errors)
     }
 

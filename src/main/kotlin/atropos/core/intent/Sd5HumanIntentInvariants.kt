@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.intent
 
+import atropos.core.intent.AdmissionRequest
+
 enum class InvariantCategory {
     HUMAN_INTENT,
     AUTHORITY_CASCADE,
@@ -35,4 +37,13 @@ object Sd5HumanIntentInvariants {
     fun validateAll(): Boolean {
         return INVARIANTS.all { it.isEnforced && it.id.startsWith("INV-") }
     }
+
+    /**
+     * SD7-R-017: Bridge Sd5HumanIntentInvariants into ILSS pipeline enforcing rank(research) < rank(human_intent).
+     */
+    fun validateAdmission(request: AdmissionRequest): Boolean {
+        return !request.overrideHumanIntent
+    }
+
+    fun isHumanIntentPrimacyEnforced(request: AdmissionRequest): Boolean = validateAdmission(request)
 }

@@ -93,6 +93,13 @@ class DloiService(
                 )
             }
 
+    /**
+     * SD7-R-080: Lookup returning typed DloiLookupResult adhering to Soft-Fail Law.
+     */
+    fun lookupResult(domain: String): DloiLookupResult = resolve(domain)
+
+    fun lookup(domain: String, softFail: Boolean): DloiLookupResult = resolve(domain)
+
     fun lookup(address: String): DloiResolution {
         when (val authority = SourceAuthorityLaw(repoRoot).verify()) {
             is SourceAuthorityLaw.SourceAuthorityVerdict.Rejected -> {

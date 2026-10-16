@@ -51,7 +51,10 @@ enum class AtomStage {
          */
         fun of(dimension: AtomDimension): AtomStage = when (dimension) {
             AtomDimension.FUNCTIONAL_CONTRACT,
-            AtomDimension.DEPENDENCY_CONTRACT -> CONTRACT
+            AtomDimension.DEPENDENCY_CONTRACT,
+            AtomDimension.INTERFACE,
+            AtomDimension.PROTOCOL,
+            AtomDimension.SCHEMA -> CONTRACT
 
             AtomDimension.TESTS_ACCEPTANCE,
             AtomDimension.SECURITY_SECRETS,

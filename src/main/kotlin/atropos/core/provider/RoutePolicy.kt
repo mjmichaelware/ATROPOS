@@ -148,7 +148,7 @@ class RoutePolicy(
             tier = { candidate -> localTier(task, candidate) * COST_TIERS + costTier(candidate) },
             finalTieBreak = { providerId ->
                 preferredProviderIds?.invoke()?.indexOf(providerId)?.takeIf { it >= 0 }?.minus(1)
-                    ?: eligibilityOrder[providerId] ?: Int.MAX_VALUE
+                    ?: ((eligibilityOrder[providerId] ?: 500) - (computeArbitrageScore(providerId, nowEpochMs()) * 10).toInt())
             }
         )
         val selected = eligible.firstOrNull()?.provider

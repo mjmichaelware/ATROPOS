@@ -16,6 +16,34 @@ class DirectorService(
     private val repoRoot: Path = AtroposRepoRootLocator.resolve()
 ) {
     private val processRunner = BoundedProcessRunner()
+    private val mergeLock = java.util.concurrent.locks.ReentrantLock()
+
+    /**
+     * SD7-R-082: Director-held merge lock preventing concurrent worktree merges.
+     */
+    fun <T> withMergeLock(action: () -> T): T {
+        mergeLock.lock()
+        try {
+            return action()
+        } finally {
+            mergeLock.unlock()
+        }
+    }
+
+    fun isMergeLocked(): Boolean = mergeLock.isLocked
+
+    /**
+     * SD7-R-082: 3-argument observe overload.
+     */
+    fun observe(kind: ObservationKind, severity: DriftSeverity, detail: String): DirectorObservation {
+        return observe(
+            kind = kind,
+            severity = severity,
+            source = "director/merge-arbitration",
+            details = detail
+        )
+    }
+
     fun observe(
         kind: ObservationKind,
         severity: DriftSeverity,
@@ -121,13 +149,31 @@ class DirectorService(
         return observations
     }
 
-    fun advisoryReport(): AdvisoryReport {
+    /**
+     * SD7-R-056: Acceptance volume operator: V_accepted = min(generated, integrated, verified, evidenced).
+     */
+    fun calculateAcceptedVolume(generated: Int, integrated: Int, verified: Int, evidenced: Int): Int {
+        return minOf(generated, integrated, minOf(verified, evidenced))
+    }
+
+    fun advisoryReport(
+        generated: Int = 0,
+        integrated: Int = 0,
+        verified: Int = 0,
+        evidenced: Int = 0
+    ): AdvisoryReport {
         val observations = store.unacknowledged()
         val violations = observations.count { it.kind == ObservationKind.TERRITORY_VIOLATION }
+        val vAccepted = if (generated > 0 || integrated > 0 || verified > 0 || evidenced > 0) {
+            calculateAcceptedVolume(generated, integrated, verified, evidenced)
+        } else {
+            0
+        }
         return AdvisoryReport(
             observations = observations,
             summary = "${observations.size} active observations, $violations territory violations",
-            territoryViolations = violations
+            territoryViolations = violations,
+            acceptedVolume = vAccepted
         )
     }
 

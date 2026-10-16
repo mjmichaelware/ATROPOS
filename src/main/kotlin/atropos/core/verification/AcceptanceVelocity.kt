@@ -21,4 +21,21 @@ object AcceptanceVelocity {
         val days = windowHours / 24.0
         return distinctPredicates / days
     }
+
+    /**
+     * SD7-R-092: Sabermetrics-style rate statistics.
+     * FactoryWAR = (ΔVerifiedPredicates - expected) / cost-normalized replacement level.
+     */
+    fun calculateFactoryWar(
+        events: List<VerificationEvent>,
+        expectedPredicates: Double,
+        replacementLevelCost: Double = 1.0,
+        actualCost: Double = 1.0,
+        windowHours: Long = 24
+    ): Double {
+        if (events.isEmpty()) return 0.0
+        val deltaVerified = calculate(events, windowHours)
+        val normalizedReplacement = if (actualCost > 0.0) replacementLevelCost * actualCost else replacementLevelCost.coerceAtLeast(1e-6)
+        return (deltaVerified - expectedPredicates) / normalizedReplacement
+    }
 }
