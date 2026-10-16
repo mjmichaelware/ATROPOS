@@ -225,7 +225,7 @@ class IsolatedWorktreeService(
      */
     fun handleSigInt(worktreeId: String): WorktreeRollbackResult {
         memoryStore.rememberDetailed(
-            kind = atropos.core.memory.MemoryKind.INCIDENT,
+            kind = atropos.core.memory.MemoryKind.RECOVERY,
             title = "SIGINT received for worktree $worktreeId",
             body = "Initiating safe worktree restore and abort evidence recording without CAS corruption",
             tags = listOf("signal", "sigint", "abort", "worktree"),
@@ -241,7 +241,7 @@ class IsolatedWorktreeService(
      */
     fun handleSigTerm(worktreeId: String, reason: String = "SIGTERM received"): WorktreeRollbackResult {
         memoryStore.rememberDetailed(
-            kind = atropos.core.memory.MemoryKind.INCIDENT,
+            kind = atropos.core.memory.MemoryKind.RECOVERY,
             title = "SIGTERM received for worktree $worktreeId: $reason",
             body = "Emitting checkpoint CAS snapshot and halting workers cleanly",
             tags = listOf("signal", "sigterm", "checkpoint", "worktree"),

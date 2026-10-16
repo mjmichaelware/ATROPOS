@@ -42,6 +42,7 @@ class BoundedProcessRunner(
             }
             .start()
     }
+) {
     fun run(command: List<String>, workingDir: Path? = null): BoundedProcessResult =
         run(
             command = command,
