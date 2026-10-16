@@ -251,6 +251,35 @@ class DagExecutionService(
 
     fun evaluateDag(dagId: String): DagExecutionResult = evaluateDagBatched(dagId)
 
+    fun readNode(nodeId: String): DagNode? = dagStore.readNode(nodeId)
+
+    fun status(dagId: String): DagStatus? {
+        val dag = dagStore.readDag(dagId) ?: return null
+        val readyNodes = dag.findReadyNodes()
+        return DagStatus(
+            dagId = dagId,
+            totalNodes = dag.nodes.size,
+            completedNodes = dag.nodes.count { it.state == DagNodeState.COMPLETE },
+            failedNodes = dag.nodes.count { it.state == DagNodeState.FAILED },
+            blockedNodes = dag.nodes.count { it.state == DagNodeState.BLOCKED },
+            pendingNodes = dag.nodes.count { it.state in setOf(DagNodeState.PENDING, DagNodeState.READY) },
+            runningNodes = dag.nodes.count { it.state in setOf(DagNodeState.CLAIMED, DagNodeState.RUNNING, DagNodeState.VERIFYING) },
+            readyNodes = readyNodes.map { it.id },
+            message = "DAG $dagId: ${dag.nodes.size} nodes"
+        )
+    }
+
+    fun evaluateNode(dagId: String, nodeId: String): DagNodeExecutionResult {
+        val dag = dagStore.readDag(dagId)
+            ?: return DagNodeExecutionResult(nodeId, DagNodeState.FAILED, false, "DAG not found: $dagId")
+        val node = dag.findNode(nodeId)
+            ?: return DagNodeExecutionResult(nodeId, DagNodeState.FAILED, false, "Node not found: $nodeId")
+
+        val waveResults = executeWaveBatch(dagId, listOf(node))
+        return waveResults[nodeId]
+            ?: DagNodeExecutionResult(nodeId, DagNodeState.FAILED, false, "Evaluation returned no result for node $nodeId")
+    }
+
     fun recoverStaleClaims(): Int {
         val dags = dagStore.listDags()
         var recovered = 0

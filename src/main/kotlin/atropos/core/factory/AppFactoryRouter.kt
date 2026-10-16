@@ -11,6 +11,7 @@ import atropos.core.orchestration.WaveExecutionResult
 import atropos.core.paid.EmergencyPaidGate
 import atropos.core.project.ProjectRegistry
 import atropos.core.planning.InternalPlanningGraphService
+import atropos.core.dag.DagStore
 import atropos.core.journal.EventJournalService
 import atropos.core.factory.FactoryLiveRepairAction
 import atropos.core.provider.ProviderOnboardingService
@@ -89,11 +90,13 @@ class AppFactoryRouter(
         return WaveExecutionRequest.fromFactoryPlan(factoryPlan, lineage, targetDir)
     }
 
+    fun runLocal(prompt: String): FactoryPlan = runLocalInternal(prompt)
+
     /**
      * Execute a wave request synchronously through the autonomous orchestrator.
      * Throws if the orchestrator fails — no local fallback.
      */
-    fun runLocal(prompt: String): Path {
+    fun runLocalWave(prompt: String): Path {
         val request = planWave(prompt)
         val result = orchestrator.execute(request)
 
