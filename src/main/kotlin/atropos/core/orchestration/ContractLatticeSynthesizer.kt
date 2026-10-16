@@ -17,6 +17,7 @@ import atropos.core.provider.ApiCapability
 import atropos.core.provider.ProviderCascadeRouter
 import atropos.core.provider.ProviderCascadeOrder
 import atropos.core.provider.FallbackChainRegistry
+import atropos.core.provider.ProviderCascadeResult
 import atropos.core.AtroposRepoRootLocator
 import atropos.core.AtroposConfig
 import atropos.core.OllamaHealthProbe
@@ -162,7 +163,7 @@ class ContractLatticeSynthesizer(
     private fun createCascadeRouter(): ProviderCascadeRouter {
         return ProviderCascadeRouter(
             factory = atropos.core.ProviderFactory.default(),
-            classifier = ProviderFailureClassifier(),
+            classifier = atropos.core.ProviderFailureClassifier(),
             registry = StaticProviderDescriptorRegistry(),
             localHealth = { OllamaHealthProbe().probe().online },
             localOnly = { config.runtime.localOnly },

@@ -27,6 +27,7 @@ import atropos.core.territory.TerritoryStore
 import atropos.core.verification.VerifiedCompletionGate
 import atropos.core.worktree.IsolatedWorktreeService
 import atropos.core.worktree.WorktreeRecord
+import atropos.core.worktree.WorktreeRollbackResult
 import java.nio.file.Path
 import java.security.MessageDigest
 import java.time.Instant
@@ -185,7 +186,7 @@ class AutonomousWaveOrchestrator(
         val worktreeResults = mutableMapOf<String, WorktreeRecord>()
         for (node in readyNodes) {
             val result = worktreeService.createWorktree(jobId = node.id, territory = node.territory)
-            if (!result.success || result.record == null) {
+            if (!result.ok || result.record == null) {
                 worktreeResults.values.forEach { worktreeService.rollback(it.id) }
                 return emptySet()
             }
@@ -207,7 +208,7 @@ class AutonomousWaveOrchestrator(
         for (nodeId in completedNodeIds) {
             val worktree = worktreeResults[nodeId]
             val mergeResult = worktreeService.verifyAndMerge(worktree.id)
-            if (!mergeResult.success) {
+            if (!mergeResult.ok) {
                 memoryStore.rememberFailure(
                     subjectType = "merge_failure",
                     subjectId = request.requestId,

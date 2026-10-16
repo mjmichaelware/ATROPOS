@@ -358,11 +358,27 @@ class DagExecutionService(
                 )
             ),
             lineage = atropos.core.factory.FactoryLineage(
-                projectId = "dummy",
-                promptSha256 = "",
                 promptFingerprint = "",
+                promptSha256 = "",
+                researchSha256 = "",
+                researchDocument = "",
+                promptDocument = "",
+                projectId = "dummy",
+                confidence = atropos.core.factory.FactoryConfidence(
+                    score = 0,
+                    breakdown = "",
+                    threshold = 0
+                ),
                 promptSpans = "",
-                researchSha256 = ""
+                researchChannels = "",
+                researchState = "",
+                contextHash = null,
+                memoryPointers = emptyList(),
+                atomResearch = emptyList(),
+                atomizerStatus = "",
+                clarificationAnswersSha256 = null,
+                clarificationLineageSha256 = null,
+                acceptanceFreeze = null
             ),
             targetDirectory = repoRoot,
             plannedAtomIds = emptyList()
