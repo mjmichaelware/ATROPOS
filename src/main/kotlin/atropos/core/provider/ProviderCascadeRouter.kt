@@ -60,14 +60,14 @@ class ProviderCascadeRouter(
      */
     fun completeWithCascade(prompt: String, envelope: ContextEnvelope): ProviderCascadeResult {
         val targetProvider = when {
-            envelope.provider.contains("groq", ignoreCase = true) -> "groq"
-            envelope.provider.contains("gemini", ignoreCase = true) -> "gemini-2.5-pro"
-            else -> envelope.provider.ifBlank { "groq" }
+            envelope.providerId.contains("groq", ignoreCase = true) -> "groq"
+            envelope.providerId.contains("gemini", ignoreCase = true) -> "gemini-2.5-pro"
+            else -> envelope.providerId.ifBlank { "groq" }
         }
         return completeWithCascade(
             requestedProvider = targetProvider,
             prompt = prompt,
-            context = envelope.intent,
+            context = envelope.task,
             contextEnvelope = envelope
         )
     }

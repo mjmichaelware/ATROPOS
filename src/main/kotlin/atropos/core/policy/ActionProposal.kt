@@ -66,7 +66,7 @@ data class ActionProposal(
                         ?.split(",")?.map { it.trim().removeSurrounding("\"") } ?: emptyList()
                     return ActionProposal(
                         id = UUID.randomUUID().toString(),
-                        actionClass = PolicyActionClass.TOOL_EXECUTION,
+                        actionClass = PolicyActionClass.SHELL,
                         actor = actor,
                         command = matchedCmds,
                         schema = TypedProposalSchema.CommandExecutionProposal(matchedCmds, null)

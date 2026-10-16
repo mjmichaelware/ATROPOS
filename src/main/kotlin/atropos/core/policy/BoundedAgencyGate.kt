@@ -58,7 +58,7 @@ class BoundedAgencyGate(
             proposal.metadata["phase"] == "dag_synthesis"
 
         val hasNetwork = proposal.networkTarget != null ||
-            proposal.actionClass == PolicyActionClass.NETWORK_EGRESS ||
+            proposal.actionClass == PolicyActionClass.NETWORK ||
             proposal.metadata["requiresNetwork"] == "true"
 
         if (isPureSynthesis && hasNetwork) {

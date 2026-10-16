@@ -86,7 +86,7 @@ object RuntimeBoundaryCodec {
         return DagDefinition(
             id = "dag-${request.requestId}",
             label = "Wave Contract Lattice DAG for ${request.requestId}",
-            projectId = request.projectSpec.name,
+            projectId = request.requestId,
             nodes = nodes
         )
     }

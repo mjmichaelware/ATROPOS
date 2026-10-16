@@ -119,6 +119,8 @@ class StorageSupervisor(
         RetentionTier.HOT -> "HOT: current checkpoint retained locally"
         RetentionTier.WARM -> "WARM: last $kPromotions successful promotions retained locally"
         RetentionTier.COLD -> "COLD: remote R2 CAS only; local flash reclaimed"
+        RetentionTier.DELETE -> "DELETE: pruned immediately"
+        else -> "UNKNOWN"
     }
 
     /**
