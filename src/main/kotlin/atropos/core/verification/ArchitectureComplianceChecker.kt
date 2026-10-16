@@ -57,6 +57,17 @@ class ArchitectureComplianceChecker(
 
     fun scanHollowDefects(file: File, content: String): List<HollowDefect> =
         hollowScanner.scanSource(file.toPath(), content)
+
+    /**
+     * SD7-R-040: Pre-validates boundary payload against runtime boundary codec.
+     */
+    fun validateBoundaryPayload(payloadJson: String, allowedKeys: Set<String>): Boolean {
+        return runCatching {
+            atropos.core.contract.RuntimeBoundaryCodec.deserialize(payloadJson, allowedKeys)
+            true
+        }.getOrDefault(false)
+    }
+
     fun check(sourceRoot: File): ArchitectureComplianceReport {
         if (!sourceRoot.isDirectory) {
             return ArchitectureComplianceReport(0, emptyList(), enforcing)

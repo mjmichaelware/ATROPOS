@@ -124,6 +124,12 @@ fun main(args: Array<String>) {
                 println(probe.check())
                 return
             }
+            if (args.any { it == "--tier4-completeness" }) {
+                val gate = atropos.core.doctor.CallerCompletenessGate(java.nio.file.Path.of("."))
+                val probe = atropos.core.doctor.CallerCompletenessDoctorProbe(gate)
+                println(probe.checkTier4())
+                return
+            }
             atropos.cli.FirstRunDoctorRenderer(
                 backendDoctor = atropos.cli.BackendDoctor(config, providerOnboarding),
                 homeState = HomeStateProvider()

@@ -2,6 +2,7 @@
 package atropos.core.composition
 
 import atropos.core.contract.ContractLattice
+import atropos.core.contract.RuntimeBoundaryCodec
 import java.nio.file.Files
 import java.nio.file.Path
 
@@ -44,5 +45,12 @@ ${moduleBindings.joinToString("\n")}
         Files.createDirectories(targetPath.parent)
         Files.writeString(targetPath, assemblyContent)
         return targetPath
+    }
+
+    /**
+     * SD7-R-040: Validates boundary payload against runtime boundary codec.
+     */
+    fun validateBoundaryPayload(json: String, allowedKeys: Set<String>): Map<String, String> {
+        return RuntimeBoundaryCodec.deserialize(json, allowedKeys)
     }
 }

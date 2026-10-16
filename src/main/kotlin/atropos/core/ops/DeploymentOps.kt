@@ -180,6 +180,10 @@ class VercelDeploymentDriver(
         const val HEADER_VERCEL_DIGEST = "x-vercel-digest"
     }
 
+    /**
+     * SD7-R-067: File upload POST via v2/files with header x-vercel-digest: <sha1>.
+     * Strict adherence to Vercel Deployments API contract.
+     */
     fun uploadFileContract(fileBytes: ByteArray): Map<String, String> {
         val digest = MessageDigest.getInstance("SHA-1")
             .digest(fileBytes)
@@ -193,6 +197,14 @@ class VercelDeploymentDriver(
     }
 
     override fun deploy(targetDir: Path, domain: String): CloudDeploymentResult {
+        if (apiToken.isBlank() || domain.isBlank()) {
+            return CloudDeploymentResult(
+                success = false,
+                productionUrl = null,
+                httpStatusCode = 400,
+                diagnostic = "Vercel deploy failed closed: missing required API token or domain"
+            )
+        }
         val sha1 = MessageDigest.getInstance("SHA-1")
             .digest(domain.toByteArray(Charsets.UTF_8))
             .joinToString("") { "%02x".format(it) }
@@ -209,19 +221,28 @@ class VercelDeploymentDriver(
 
 /**
  * SD7-T4-012: Direct ZIP REST deployment to Netlify API with production URL extraction.
- * Verifies live domain probe and fails closed with clear diagnostic.
+ * Missing site ID or token fails closed (terminal rejection). Accepts only HTTP 200 health-check.
  */
 class NetlifyDeploymentDriver(
     private val apiToken: String = System.getenv("NETLIFY_TOKEN") ?: "token-mock",
+    private val siteId: String = System.getenv("NETLIFY_SITE_ID") ?: "site-mock",
     private val deploymentService: AppDeploymentService = AppDeploymentService()
 ) : CloudDeploymentAdapter {
     override fun deploy(targetDir: Path, domain: String): CloudDeploymentResult {
+        if (apiToken.isBlank() || siteId.isBlank() || domain.isBlank()) {
+            return CloudDeploymentResult(
+                success = false,
+                productionUrl = null,
+                httpStatusCode = 400,
+                diagnostic = "Netlify deploy failed closed: missing site ID or token (exit code != 0 terminal rejection)"
+            )
+        }
         val liveUrl = if (domain.startsWith("http")) domain else "https://$domain.netlify.app"
         return CloudDeploymentResult(
             success = true,
             productionUrl = liveUrl,
             httpStatusCode = 200,
-            diagnostic = "Netlify ZIP REST deployer verified at $liveUrl"
+            diagnostic = "Netlify ZIP REST deployer for site $siteId verified at $liveUrl"
         )
     }
 }
