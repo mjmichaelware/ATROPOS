@@ -73,11 +73,6 @@ class DocumentIngestionService(
         return dagService.dagSnapshot()
     }
 
-    companion object {
-        const val MAX_INGESTION_RAM_CEILING_BYTES: Long = 512L * 1024 * 1024 // 512MB strict ceiling
-        const val MAX_SPEC_PAGE_CAPACITY: Int = 5000 // 5000-page specification stream
-    }
-
     private fun ingest(file: File): IngestionResult {
         val errors = mutableListOf<String>()
         val sections = mutableListOf<SourceSection>()
@@ -318,6 +313,9 @@ class DocumentIngestionService(
     }
 
     companion object {
+        const val MAX_INGESTION_RAM_CEILING_BYTES: Long = 512L * 1024 * 1024 // 512MB strict ceiling
+        const val MAX_SPEC_PAGE_CAPACITY: Int = 5000 // 5000-page specification stream
+
         fun sha256sum(text: String): String {
             val digest = MessageDigest.getInstance("SHA-256")
             return digest.digest(text.toByteArray(StandardCharsets.UTF_8)).joinToString("") { "%02x".format(it) }

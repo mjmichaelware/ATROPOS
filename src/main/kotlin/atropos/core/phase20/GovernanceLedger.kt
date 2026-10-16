@@ -437,7 +437,7 @@ class AmendmentChain(private val evidenceStore: EvidenceStore) {
         val manifestDigest = MessageDigest.getInstance("SHA-256")
             .digest(manifest.documentHash.toByteArray(StandardCharsets.UTF_8))
             .joinToString("") { "%02x".format(it) }
-        evidenceStore.storeEvidence("amendment-$contentDigest", content.toByteArray(StandardCharsets.UTF_8))
+        evidenceStore.put(content)
         return contentDigest to manifestDigest
     }
 }

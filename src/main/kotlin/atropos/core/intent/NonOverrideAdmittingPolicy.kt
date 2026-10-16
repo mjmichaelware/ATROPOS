@@ -5,7 +5,9 @@ data class AdmissionRequest(
     val atomId: String,
     val operatorOverride: Boolean,
     val payloadSize: Int
-)
+) {
+    val overrideHumanIntent: Boolean get() = operatorOverride
+}
 
 sealed class AdmissionResult {
     object Admitted : AdmissionResult()
