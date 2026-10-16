@@ -243,9 +243,9 @@ class StatusQuotaRenderer(
             providerId = id,
             costMode = costMode,
             quotaWeight = quotaTier,
-            configured = requiredEnv.all { System.getenv(it).isNotBlank() },
-            verified = requiredEnv.all { System.getenv(it).isNotBlank() },
-            state = if (requiredEnv.all { System.getenv(it).isNotBlank() }) ProviderAvailabilityState.READY else ProviderAvailabilityState.UNKNOWN,
+            configured = requiredEnv.all { !System.getenv(it).isNullOrBlank() },
+            verified = requiredEnv.all { !System.getenv(it).isNullOrBlank() },
+            state = if (requiredEnv.all { !System.getenv(it).isNullOrBlank() }) ProviderAvailabilityState.READY else ProviderAvailabilityState.UNKNOWN,
             paidLocked = isPaid()
         )
 

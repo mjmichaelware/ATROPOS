@@ -47,7 +47,14 @@ class AuthorityAttestor(
             modifiedEpochMillis = runCatching { Files.getLastModifiedTime(file).toMillis() }.getOrDefault(0L),
             loaderVersion = AuthorityFingerprint.LOADER_VERSION
         )
-        store.record(observed)
+        val recorded = store.read(relativePath)
+        if (recorded == null) {
+            store.record(observed)
+            return AttestationResult.Attested(AuthorityDocument(relativePath, observed.sha256, precedenceRank))
+        }
+        if (recorded.sha256 != observed.sha256) {
+            return AttestationResult.Mismatch(relativePath, recorded.sha256, observed.sha256)
+        }
         return AttestationResult.Attested(AuthorityDocument(relativePath, observed.sha256, precedenceRank))
     }
     fun reattest(relativePath: String): Boolean {

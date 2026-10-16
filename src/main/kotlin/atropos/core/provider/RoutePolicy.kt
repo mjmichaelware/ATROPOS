@@ -48,7 +48,7 @@ class ProviderEligibilityFilter(
 ) {
     fun evaluate(descriptor: ProviderDescriptor, quota: ProviderQuotaRecord?): ProviderEligibility {
         if (!guard.allows(descriptor)) return ProviderEligibility(descriptor, quota, false, "blocked_by_cost_policy")
-        if (descriptor.requiredEnv.isNotEmpty() && descriptor.requiredEnv.all { System.getenv(it).isBlank() }) return ProviderEligibility(descriptor, quota, false, "missing_secret_contract")
+        if (descriptor.requiredEnv.isNotEmpty() && descriptor.requiredEnv.all { System.getenv(it).isNullOrBlank() }) return ProviderEligibility(descriptor, quota, false, "missing_secret_contract")
         if (descriptor.requiredEnv.any { it == "OLLAMA_HOST" || it == "OLLAMA_MODEL" } && quota == null) return ProviderEligibility(descriptor, quota, true, "local_ready")
         if (quota == null) return ProviderEligibility(descriptor, quota, false, "missing_quota_record")
         if (descriptor.requiredEnv.none { it == "OLLAMA_HOST" || it == "OLLAMA_MODEL" } && !quota.configured) return ProviderEligibility(descriptor, quota, false, "not_configured")
