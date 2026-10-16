@@ -163,7 +163,8 @@ enum class DagNodeAction {
     TERRITORY_CHECK,
     COMPILE_GATE,
     SMOKE_GATE,
-    ACCEPTANCE_GATE
+    ACCEPTANCE_GATE,
+    EXECUTE_WAVE
 }
 
 data class DagNode(
@@ -195,10 +196,10 @@ data class DagNode(
     val failureReason: String? = null,
     val childJobId: String? = null,
     val lastMessage: String? = null,
-    val createdAt: Instant,
-    val updatedAt: Instant,
+    val createdAt: Instant = Instant.now(),
+    val updatedAt: Instant = Instant.now(),
     val finishedAt: Instant? = null,
-    val metaFile: Path
+    val metaFile: Path = Path.of(".meta")
 ) {
     fun isReady(dependencyStates: Map<String, DagNodeState>): Boolean {
         if (state != DagNodeState.PENDING && state != DagNodeState.READY) return false
@@ -236,9 +237,9 @@ data class DagDefinition(
     val label: String,
     val projectId: String? = null,
     val nodes: List<DagNode>,
-    val createdAt: Instant,
-    val updatedAt: Instant,
-    val metaFile: Path
+    val createdAt: Instant = Instant.now(),
+    val updatedAt: Instant = Instant.now(),
+    val metaFile: Path = Path.of(".meta")
 ) {
     fun findNode(nodeId: String): DagNode? = nodes.find { it.id == nodeId }
 
