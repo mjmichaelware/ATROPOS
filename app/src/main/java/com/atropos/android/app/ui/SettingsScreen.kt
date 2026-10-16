@@ -3,15 +3,22 @@ package com.atropos.android.app.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -24,7 +31,7 @@ import androidx.compose.ui.unit.sp
 fun SettingsScreen(
     onNavigateBack: () -> Unit
 ) {
-    androidx.compose.material3.Column(
+    Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -32,19 +39,21 @@ fun SettingsScreen(
         Text(
             text = "Settings",
             fontSize = 24.sp,
-            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+            fontWeight = FontWeight.Bold
         )
 
-        androidx.compose.material3.Card(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            elevation = androidx.compose.material3.CardDefaults.cardElevation(defaultElevation = 2.dp)
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
                     text = "Engine",
                     style = MaterialTheme.typography.titleMedium
                 )
-                androidx.compose.foundation.layout.Spacer(modifier = androidx.compose.foundation.layout.Modifier.padding(top = 8.dp))
+                Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = "Bridge Port: ${System.getenv("ATROPOS_BRIDGE_PORT") ?: "4317"}",
                     style = MaterialTheme.typography.bodyMedium
@@ -56,16 +65,18 @@ fun SettingsScreen(
             }
         }
 
-        androidx.compose.material3.Card(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            elevation = androidx.compose.material3.CardDefaults.cardElevation(defaultElevation = 2.dp)
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
                     text = "Providers",
                     style = MaterialTheme.typography.titleMedium
                 )
-                androidx.compose.foundation.layout.Spacer(modifier = androidx.compose.foundation.layout.Modifier.padding(top = 8.dp))
+                Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = "Configure API keys in Termux environment variables",
                     style = MaterialTheme.typography.bodyMedium,
@@ -74,16 +85,18 @@ fun SettingsScreen(
             }
         }
 
-        androidx.compose.material3.Card(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            elevation = androidx.compose.material3.CardDefaults.cardElevation(defaultElevation = 2.dp)
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
                     text = "Local-only Mode",
                     style = MaterialTheme.typography.titleMedium
                 )
-                androidx.compose.foundation.layout.Spacer(modifier = androidx.compose.foundation.layout.Modifier.padding(top = 8.dp))
+                Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = "Disables all network research planes. Local providers still work.",
                     style = MaterialTheme.typography.bodyMedium,
@@ -93,19 +106,21 @@ fun SettingsScreen(
         }
 
         // Back button
-        androidx.compose.foundation.layout.Spacer(modifier = androidx.compose.foundation.layout.Modifier.padding(top = 16.dp))
+        Spacer(modifier = Modifier.height(16.dp))
         Button(
             onClick = onNavigateBack,
-            modifier = Modifier.fillMaxWidth().padding(32.dp),
-            shape = androidx.compose.material3.RoundedCornerShape(28.dp),
-            colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 32.dp),
+            shape = RoundedCornerShape(28.dp),
+            colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.primary
             )
         ) {
             Text(
                 text = "Back",
                 fontSize = 16.sp,
-                fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
+                fontWeight = FontWeight.Medium,
                 color = MaterialTheme.colorScheme.onPrimary
             )
         }

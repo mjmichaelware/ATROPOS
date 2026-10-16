@@ -17,30 +17,30 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Wifi
+import androidx.compose.material.icons.filled.WifiOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.atropos.android.app.bridge.MobileCheckpoint
+import com.atropos.android.app.bridge.MobileSelfHostRun
+import com.atropos.android.app.bridge.MobileThinking
 import com.atropos.android.app.ui.CheckpointChip
-import com.atropos.android.app.ui.MobileSixAnswers
-import com.atropos.android.app.ui.StatusBadge
+import com.atropos.android.app.ui.ConversationScreen
+import com.atropos.android.app.ui.MobileMessage
 
 /**
  * F-VIS-008: Android Open Frame
@@ -76,7 +76,7 @@ fun AndroidOpenFrame(
                         .fillMaxWidth()
                         .height(56.dp)
                         .background(MaterialTheme.colorScheme.surfaceContainerHigh),
-                    contentAlignment = Alignment.CenterVertically
+                    contentAlignment = Alignment.CenterStart
                 ) {
                     // Left: Navigate Up + Title
                     Row(
@@ -88,9 +88,9 @@ fun AndroidOpenFrame(
                     ) {
                         // Navigate Up / Back
                         onNavigateUp?.let { onBack ->
-                            androidx.compose.material3.IconButton(onClick = onBack) {
+                            IconButton(onClick = onBack) {
                                 Icon(
-                                    imageVector = androidx.compose.material.icons.default.ArrowBack,
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                     contentDescription = "Navigate back"
                                 )
                             }
@@ -111,13 +111,16 @@ fun AndroidOpenFrame(
                         }
 
                         // Right: Connectivity + Provider
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             // Connectivity Indicator
-                            androidx.compose.material3.Icon(
+                            Icon(
                                 imageVector = if (isOnline) {
-                                    androidx.compose.material.icons.default.Wifi
+                                    Icons.Default.Wifi
                                 } else {
-                                    androidx.compose.material.icons.default.WifiOff
+                                    Icons.Default.WifiOff
                                 },
                                 contentDescription = if (isOnline) "Online" else "Offline",
                                 tint = if (isOnline) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
@@ -130,31 +133,36 @@ fun AndroidOpenFrame(
 
                             // Provider Badge
                             activeProvider?.let { provider ->
-                                androidx.compose.material3.Badge(
-                                    box = { Text(text = provider, style = MaterialTheme.typography.labelSmall) },
-                                    badgeContent = { Text(text = "AI", style = MaterialTheme.typography.labelSmall) }
-                                )
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = MaterialTheme.colorScheme.primaryContainer
+                                ) {
+                                    Text(
+                                        text = "$provider (AI)",
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                        style = MaterialTheme.typography.labelSmall
+                                    )
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            // Content area - would be filled by NavHost
-            androidx.compose.foundation.layout.Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp)
-            ) {
-                // NavHost content goes here
-            }
-
-            // Bottom: Checkpoint chip if available
-            checkpoint?.let { cp ->
-                CheckpointChip(
-                    checkpoint = cp,
-                    onAction = { _ -> }
+                // Content area
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .padding(16.dp)
                 )
+
+                // Bottom: Checkpoint chip if available
+                checkpoint?.let { cp ->
+                    CheckpointChip(
+                        checkpoint = cp,
+                        onAction = { _ -> }
+                    )
+                }
             }
         }
     }
@@ -170,20 +178,20 @@ fun AndroidOpenFrame(
 @Composable
 fun AndroidHeroStream(
     modifier: Modifier = Modifier,
-    messages: List<com.atropos.android.app.ui.MobileMessage> = emptyList(),
+    messages: List<MobileMessage> = emptyList(),
     isOnline: Boolean = false,
     onSendMessage: (String) -> Unit = {},
-    checkpoint: com.atropos.android.app.bridge.MobileCheckpoint? = null,
-    thinking: com.atropos.android.app.bridge.MobileThinking? = null,
+    checkpoint: MobileCheckpoint? = null,
+    thinking: MobileThinking? = null,
     onThinkingDepthRequested: (Int) -> Unit = {},
-    selfHostRun: com.atropos.android.app.bridge.MobileSelfHostRun? = null,
+    selfHostRun: MobileSelfHostRun? = null,
     selfHostBusy: Boolean = false,
     onAdvanceBuild: (String) -> Unit = {},
     onDismissBuild: () -> Unit = {},
     onCommand: ((String) -> Unit)? = null
 ) {
     MaterialTheme {
-        com.atropos.android.app.ui.ConversationScreen(
+        ConversationScreen(
             messages = messages,
             isOnline = isOnline,
             onSendMessage = onSendMessage,

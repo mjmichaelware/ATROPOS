@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -158,12 +159,14 @@ private fun ComposeAppShell(repository: AndroidEngineBridge) {
                     onBuildRequested = { prompt -> scope.launch(Dispatchers.IO) {
                         when (val outcome = repository.startSelfHost(prompt, DECIDED_BY)) {
                             is SelfHostOutcome.Started -> selfHostRun = outcome.run
+                            is SelfHostOutcome.Advanced -> selfHostRun = outcome.run
                             is SelfHostOutcome.Refused -> mvi.dispatch(MobileAppIntent.Notice(localNotice("Build refused: ${outcome.detail}")))
                             SelfHostOutcome.EngineUnreachable -> mvi.dispatch(MobileAppIntent.Notice(localNotice("Engine unreachable")))
                         }
                     } },
                     onAdvanceBuild = { goalId -> scope.launch(Dispatchers.IO) {
                         when (val outcome = repository.advanceSelfHost(goalId)) {
+                            is SelfHostOutcome.Started -> selfHostRun = outcome.run
                             is SelfHostOutcome.Advanced -> selfHostRun = outcome.run
                             is SelfHostOutcome.Refused -> mvi.dispatch(MobileAppIntent.Notice(localNotice("Build advance refused: ${outcome.detail}")))
                             SelfHostOutcome.EngineUnreachable -> mvi.dispatch(MobileAppIntent.Notice(localNotice("Engine unreachable")))
@@ -193,7 +196,8 @@ private fun ComposeAppShell(repository: AndroidEngineBridge) {
                     isOnline = state.isOnline
                 )
                 3 -> ToolsTimelineSheet(
-                    onDismiss = {}
+                    isOpen = true,
+                    onClose = {}
                 )
                 4 -> SettingsScreen(
                     onNavigateBack = {}
@@ -228,9 +232,7 @@ private fun ComposeAppShell(repository: AndroidEngineBridge) {
                             fontSize = 12.sp,
                             color = if (currentTab == index) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                    },
-                    selected = currentTab == index,
-                    onClick = { currentTab = index }
+                    }
                 )
             }
         }
