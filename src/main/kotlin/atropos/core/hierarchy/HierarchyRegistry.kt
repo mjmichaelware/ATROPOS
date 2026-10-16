@@ -96,6 +96,19 @@ class HierarchyRegistry {
         val territoryRefusal = parent.territoryRefusal(contract.territory)
         if (territoryRefusal != null) return HierarchyDispatchResult.Refused(territoryRefusal)
 
+        // SD7-T2-010 & Invariant: ∀i≠j, Footprint(W_i) ∩ Footprint(W_j) = ∅
+        val otherActiveAgents = agents.filter { it.id != assignee.id && it.status in setOf(AgentStatus.ASSIGNED, AgentStatus.WORKING) }
+        for (other in otherActiveAgents) {
+            val otherTerritories = other.territoryId?.split(",")?.map { it.trim().trimEnd('/') }?.filter { it.isNotBlank() } ?: emptyList()
+            for (child in contract.territory.map { it.trim().trimEnd('/') }) {
+                for (otherT in otherTerritories) {
+                    if (child == otherT || child.startsWith("$otherT/") || otherT.startsWith("$child/")) {
+                        return HierarchyDispatchResult.Refused("territory disjointness violation: '$child' collides with active agent ${other.id} territory '$otherT'")
+                    }
+                }
+            }
+        }
+
         val assignedTerritory = contract.territory.joinToString(",")
         if (!assignTerritory(assignee.id, assignedTerritory)) {
             return HierarchyDispatchResult.Refused("assignee territory assignment was refused")

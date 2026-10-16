@@ -19,13 +19,35 @@ data class PartitionCluster(
 class PartitionClusterManager(
     private val maxTokenBudget: Int = 12000
 ) {
+    companion object {
+        const val MAX_PARALLEL_LANES: Int = 64
+
+        /**
+         * SD7-T2-012: Amdahl-derived effective parallelism formula subtracting coordination overhead:
+         * S(N) = 1 / ((1 - p) + p/N + c * N)
+         */
+        fun effectiveParallelism(n: Int, parallelFraction: Double = 0.95, coordinationOverhead: Double = 0.002): Double {
+            val clampedN = n.coerceIn(1, MAX_PARALLEL_LANES)
+            val denominator = (1.0 - parallelFraction) + (parallelFraction / clampedN) + (coordinationOverhead * clampedN)
+            return if (denominator > 0.0) 1.0 / denominator else 1.0
+        }
+    }
+
     private val cyclePartitioner: RelationalCycleUnificationPartitioner = RelationalCycleUnificationPartitioner()
 
     fun partition(dag: DagDefinition): List<PartitionCluster> {
         val readyNodes = dag.findReadyNodes()
         if (readyNodes.isEmpty()) return emptyList()
 
-        val orderedNodes = computeTopologicalOrder(readyNodes, dag)
+        // Critical-path scheduling prioritizing topological bottleneck atoms (nodes with most dependents)
+        val orderedNodes = computeTopologicalOrder(
+            readyNodes.sortedWith(
+                compareByDescending<DagNode> { node ->
+                    dag.nodes.count { it.dependencies.contains(node.id) }
+                }.thenByDescending { estimateTokens(it) }
+            ),
+            dag
+        )
         val clusters = mutableListOf<PartitionCluster>()
         var currentClusterNodes = mutableListOf<DagNode>()
         var currentTokens = 0

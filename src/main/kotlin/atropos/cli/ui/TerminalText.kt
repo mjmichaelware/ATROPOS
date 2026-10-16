@@ -1,7 +1,39 @@
-/* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.cli.ui
 
+import atropos.core.output.OutputMode
+import atropos.core.output.OutputModeDetector
+
 object TerminalText {
+    const val EXIT_SUCCESS: Int = 0
+    const val EXIT_CONTRACT_FAILURE: Int = 65
+    const val EXIT_CORE_FAULT: Int = 70
+    const val EXIT_TERRITORY_REFUSAL: Int = 77
+
+    /**
+     * SD7-T3-004 / SD7-R-093: Strict TTY discipline standards.
+     * Evaluates whether stdout is connected to an interactive TTY.
+     */
+    fun isatty(): Boolean {
+        val mode = OutputModeDetector.detect()
+        if (mode == OutputMode.HEADLESS || mode == OutputMode.TERM_DUMB) return false
+        return System.console() != null
+    }
+
+    /**
+     * SD7-R-093: Pure stderr protocol for progress, spinners, and telemetry.
+     */
+    fun emitProgress(message: String) {
+        System.err.println(message)
+    }
+
+    fun emitTelemetry(message: String) {
+        System.err.println(message)
+    }
+
+    fun emitArtifact(artifact: String) {
+        System.out.println(artifact)
+    }
+
     private val ansi = Regex("\u001B\\[[0-?]*[ -/]*[@-~]")
 
     fun stripAnsi(value: String): String = ansi.replace(value, "")

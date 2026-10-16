@@ -33,7 +33,23 @@ class CallerCompletenessGate(private val repoRoot: Path) {
         "HysteresisConfidenceEngine",
         "DatabaseContainerMockSandboxDriver",
         "RelationalCycleUnificationPartitioner",
-        "ZeroEntropyCertificateEmitter"
+        "ZeroEntropyCertificateEmitter",
+        // Tier 2 classes
+        "BoundedAgencyGate",
+        "HierarchyRegistry",
+        "StorageSupervisor",
+        "PlatformWire",
+        "RestartCoordinator",
+        "QuotaLedger",
+        // Tier 3 classes
+        "BoundedProcessRunner",
+        "CommandRegistry",
+        "TerminalText",
+        "Wave1TestSuiteGenerator",
+        "GovernedCompileGate",
+        // Tier 4 classes
+        "DeploymentOps",
+        "AppDeploymentService"
     )
 
     fun audit(): CompletenessAuditReport {
@@ -93,6 +109,74 @@ class CallerCompletenessGate(private val repoRoot: Path) {
             passed = passed,
             unwiredClasses = unwired,
             violations = violations
+        )
+    }
+
+    /**
+     * SD7-GATE-T2: Tier-2 Long-Horizon Governance, Swarm, Storage & Resource Control.
+     * Tier-2 complete when Open-Core, Air-Gap, 6-level swarm, Storage Constitution,
+     * Thermal Pacing, Exact-hash restart, and QuotaLedger are fully green.
+     */
+    fun auditTier2(): CompletenessAuditReport {
+        val tier2Classes = listOf(
+            "BoundedAgencyGate",
+            "HierarchyRegistry",
+            "StorageSupervisor",
+            "PlatformWire",
+            "RestartCoordinator",
+            "QuotaLedger"
+        )
+        return auditSubset(tier2Classes)
+    }
+
+    /**
+     * SD7-GATE-T3: Tier-3 CLI / UNIX Sovereignty.
+     * Tier-3 complete when toolchains use PTY, shell completion generates,
+     * TTY discipline enforced, property fuzzing and dual-oracle differential compilation are blocking.
+     */
+    fun auditTier3(): CompletenessAuditReport {
+        val tier3Classes = listOf(
+            "BoundedProcessRunner",
+            "CommandRegistry",
+            "TerminalText",
+            "Wave1TestSuiteGenerator",
+            "GovernedCompileGate"
+        )
+        return auditSubset(tier3Classes)
+    }
+
+    /**
+     * SD7-GATE-T4: Tier-4 Cloud Delivery, Schema Compilation & Autonomous Deployment.
+     * Tier-4 complete when StorageSchemaCompiler emits DDL, Vercel/Netlify deployer passes HTTP 200,
+     * Supabase enforces RLS, and AutonomousDeliveryEngine emits the Zero-Entropy Proof Certificate.
+     */
+    fun auditTier4(): CompletenessAuditReport {
+        val tier4Classes = listOf(
+            "ContractLatticeSynthesizer",
+            "AutonomousWaveOrchestrator",
+            "DeploymentOps",
+            "DatabaseContainerMockSandboxDriver",
+            "AppDeploymentService",
+            "ZeroEntropyCertificateEmitter"
+        )
+        return auditSubset(tier4Classes)
+    }
+
+    /**
+     * SD7-R-099: Final Residual Completeness Gate.
+     * Cross-checks the three DAG documents against the full inventory.
+     */
+    fun auditResidual(): CompletenessAuditReport {
+        return audit()
+    }
+
+    private fun auditSubset(subset: List<String>): CompletenessAuditReport {
+        val full = audit()
+        val subsetUnwired = full.unwiredClasses.filter { it in subset }
+        return CompletenessAuditReport(
+            passed = subsetUnwired.isEmpty() && full.violations.isEmpty(),
+            unwiredClasses = subsetUnwired,
+            violations = full.violations
         )
     }
 

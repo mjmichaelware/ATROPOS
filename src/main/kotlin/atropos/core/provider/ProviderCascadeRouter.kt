@@ -13,6 +13,7 @@ import atropos.core.provider.FallbackChainRegistry
 import atropos.core.paid.EmergencyPaidGate
 import atropos.core.provider.ProviderApprovalCard
 import atropos.core.provider.ProviderPolicyGate
+import atropos.core.provider.FreeModeGuard
 import atropos.core.security.TokenIsolationVault
 import atropos.core.ProviderError
 import atropos.core.ProviderFactory
@@ -47,6 +48,29 @@ class ProviderCascadeRouter(
     /** Returns the documented chain through the canonical route owner. */
     fun declaredFallbackChain(capability: ApiCapability): FallbackChain? =
         FallbackChainRegistry.canonicalChain(capability)
+
+    /**
+     * SD7-T2-011: Complete with cascade taking prompt and ContextEnvelope.
+     * Enforces the heterogeneous provider matrix:
+     * - Groq for high-velocity code workers
+     * - Gemini 2.5 Pro for large-context planning/spec
+     * - DLOI topological planning strictly deterministic via DloiService
+     * - Cosine-similarity RAG is formally banned HIG=0.000
+     * - Soft-Fail Law on 429 timeouts: RecordSkip(REASON) rather than crash
+     */
+    fun completeWithCascade(prompt: String, envelope: ContextEnvelope): ProviderCascadeResult {
+        val targetProvider = when {
+            envelope.provider.contains("groq", ignoreCase = true) -> "groq"
+            envelope.provider.contains("gemini", ignoreCase = true) -> "gemini-2.5-pro"
+            else -> envelope.provider.ifBlank { "groq" }
+        }
+        return completeWithCascade(
+            requestedProvider = targetProvider,
+            prompt = prompt,
+            context = envelope.intent,
+            contextEnvelope = envelope
+        )
+    }
 
     fun completeWithCascade(
         requestedProvider: String,

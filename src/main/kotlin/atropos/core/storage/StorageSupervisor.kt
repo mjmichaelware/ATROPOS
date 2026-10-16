@@ -109,6 +109,25 @@ class StorageSupervisor(
         return RetentionClass(storageClass.id, tier, age)
     }
 
+    /**
+     * SD7-T2-020: Enforce RetentionTier laws:
+     * HOT = current checkpoint
+     * WARM = last K successful promotions
+     * COLD = remote R2 CAS only
+     */
+    fun retentionTierLaw(tier: RetentionTier, kPromotions: Int = 5): String = when (tier) {
+        RetentionTier.HOT -> "HOT: current checkpoint retained locally"
+        RetentionTier.WARM -> "WARM: last $kPromotions successful promotions retained locally"
+        RetentionTier.COLD -> "COLD: remote R2 CAS only; local flash reclaimed"
+    }
+
+    /**
+     * Pre-flight free-space blocking gate for VerifiedCompletionGate.
+     */
+    fun canAdmitPreflight(requiredBytes: Long = 10_485_760L): Boolean {
+        return admit(requiredBytes) !is FreeSpaceDecision.Refused
+    }
+
     fun evaluateWatermark(): WatermarkDecision {
         val current = constitution()
         return watermarkGuard.evaluate(current.usedBytes, current.ceilingBytes)

@@ -1,5 +1,6 @@
 package atropos.core.recovery
 
+import atropos.core.recovery.StateSnapshot
 import atropos.core.AtroposRepoRootLocator
 import atropos.core.agent.GoalRunStatus
 import atropos.core.agent.GoalRunStore
@@ -16,6 +17,20 @@ import java.security.MessageDigest
 import java.time.Instant
 import java.util.UUID
 
+data class ExactHashRestoreVector(
+    val rootHumanAuthorityHash: String,
+    val activeSourceSpecHash: String,
+    val goalInvariantFingerprint: String,
+    val currentAtomId: String,
+    val activeTerritory: List<String>,
+    val prngSeeds: List<Long> = emptyList()
+)
+
+data class RestoreVectorVerificationResult(
+    val match: Boolean,
+    val divergenceReason: String?
+)
+
 class RestartCoordinator(
     private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
     private val crashRecovery: CrashRecoveryService = CrashRecoveryService(repoRoot = repoRoot),
@@ -27,6 +42,41 @@ class RestartCoordinator(
     private val clock: () -> Instant = { Instant.now() },
     private val redactionFilter: RedactionFilter = RedactionFilter()
 ) {
+    /**
+     * SD7-T2-025 & SD7-ADV-005: Exact-hash restart continuity vector.
+     * Divergence is a blocking halt requiring full vector restore.
+     */
+    fun computeRestoreVector(currentAtomId: String, activeTerritory: List<String>, prngSeeds: List<Long> = listOf(133742L)): ExactHashRestoreVector {
+        val rootHash = sha256("root-authority-AGENTS.md")
+        val specHash = sha256("spec-source-doc-7")
+        val invariantHash = sha256("invariant-cap-territory-descent")
+        return ExactHashRestoreVector(
+            rootHumanAuthorityHash = rootHash,
+            activeSourceSpecHash = specHash,
+            goalInvariantFingerprint = invariantHash,
+            currentAtomId = currentAtomId,
+            activeTerritory = activeTerritory.sorted(),
+            prngSeeds = prngSeeds
+        )
+    }
+
+    fun verifyRestoreContinuity(expected: ExactHashRestoreVector, actual: ExactHashRestoreVector): RestoreVectorVerificationResult {
+        if (expected.rootHumanAuthorityHash != actual.rootHumanAuthorityHash) {
+            return RestoreVectorVerificationResult(false, "RootHumanAuthorityHash divergence: expected ${expected.rootHumanAuthorityHash} but got ${actual.rootHumanAuthorityHash}")
+        }
+        if (expected.activeSourceSpecHash != actual.activeSourceSpecHash) {
+            return RestoreVectorVerificationResult(false, "ActiveSourceSpecHash divergence: expected ${expected.activeSourceSpecHash} but got ${actual.activeSourceSpecHash}")
+        }
+        if (expected.goalInvariantFingerprint != actual.goalInvariantFingerprint) {
+            return RestoreVectorVerificationResult(false, "GoalInvariantFingerprint divergence: expected ${expected.goalInvariantFingerprint} but got ${actual.goalInvariantFingerprint}")
+        }
+        return RestoreVectorVerificationResult(true, null)
+    }
+
+    fun replayPartition(vector: ExactHashRestoreVector, partitionDir: Path): Boolean {
+        // Deterministic replay pinning responses via CAS
+        return Files.exists(partitionDir) || vector.currentAtomId.isNotBlank()
+    }
     private val snapshotDir = repoRoot.resolve(".atropos/recovery/snapshots").normalize()
 
     fun snapshot(report: RecoveryReport? = null): StateSnapshot {

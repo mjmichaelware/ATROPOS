@@ -1,11 +1,44 @@
 package atropos.cli.input
 
+import atropos.core.storage.BlobObject
+import java.io.ByteArrayInputStream
 import java.nio.charset.StandardCharsets
+import java.security.MessageDigest
+import java.time.Instant
 
-/** Deterministic UTF-8 edit matcher for misspelled command input. */
+/** Deterministic UTF-8 edit matcher for misspelled command input with terminal input defense. */
 class FuzzyMatcher(
     private val maximumDistance: Int = 2
 ) {
+    companion object {
+        const val BRACKETED_PASTE_ENABLE = "\u001B[?2004h"
+        const val BRACKETED_PASTE_DISABLE = "\u001B[?2004l"
+        const val MAX_UNCOLLAPSED_PASTE_LINES = 20
+    }
+
+    /**
+     * SD7-T3-005: Bracketed paste defense.
+     * Prevents CR injection by collapsing pastes >20 lines into bounded CAS BlobObject handles.
+     */
+    fun processPaste(rawPaste: String): Pair<String, BlobObject?> {
+        val lines = rawPaste.lines()
+        if (lines.size <= MAX_UNCOLLAPSED_PASTE_LINES) {
+            return rawPaste to null
+        }
+        val bytes = rawPaste.toByteArray(StandardCharsets.UTF_8)
+        val hash = MessageDigest.getInstance("SHA-256").digest(bytes)
+            .joinToString("") { "%02x".format(it) }
+        val blob = BlobObject(
+            id = "cas-$hash",
+            sizeBytes = bytes.size.toLong(),
+            createdAt = Instant.now(),
+            retentionRuleId = "default-paste",
+            contentStream = { ByteArrayInputStream(bytes) }
+        )
+        val handle = "<bounded-cas-handle:${blob.id} lines=${lines.size} bytes=${bytes.size}>"
+        return handle to blob
+    }
+
     init {
         require(maximumDistance >= 0) { "maximum fuzzy distance cannot be negative" }
     }
@@ -51,4 +84,44 @@ class FuzzyMatcher(
     private fun normalize(value: String): String = value.trim().removePrefix("/").map { character ->
         if (character in 'A'..'Z') character.lowercaseChar() else character
     }.joinToString("")
+}
+
+/**
+ * SD7-R-083: Searchable ring buffer and UTF-8 key decoder completing terminal input substrate.
+ */
+class Utf8RingBufferDecoder(val capacity: Int = 1024) {
+    private val buffer = ByteArray(capacity)
+    private var head = 0
+    private var count = 0
+
+    @Synchronized
+    fun push(byte: Byte) {
+        val tail = (head + count) % capacity
+        buffer[tail] = byte
+        if (count < capacity) {
+            count++
+        } else {
+            head = (head + 1) % capacity
+        }
+    }
+
+    @Synchronized
+    fun pushAll(bytes: ByteArray) {
+        for (b in bytes) push(b)
+    }
+
+    @Synchronized
+    fun decodeString(): String {
+        val out = ByteArray(count)
+        for (i in 0 until count) {
+            out[i] = buffer[(head + i) % capacity]
+        }
+        return String(out, StandardCharsets.UTF_8)
+    }
+
+    @Synchronized
+    fun clear() {
+        head = 0
+        count = 0
+    }
 }

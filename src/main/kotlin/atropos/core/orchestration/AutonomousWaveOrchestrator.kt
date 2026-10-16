@@ -461,7 +461,50 @@ class AutonomousWaveOrchestrator(
     private fun sha256(input: String): String {
         return MessageDigest.getInstance("SHA-256").digest(input.toByteArray()).joinToString("") { "%02x".format(it) }
     }
+
+    /**
+     * SD7-T4-010: Uniform non-mock cloud deployment delivery seam.
+     * Requires HTTP 200 health-check verification post-deployment.
+     * Mock deploys returning unverified or fake URLs fail closed.
+     */
+    fun deployCloud(
+        adapter: CloudDeploymentAdapter,
+        targetDir: Path,
+        domain: String
+    ): CloudDeploymentResult {
+        val result = adapter.deploy(targetDir, domain)
+        if (!result.success || result.httpStatusCode != 200 || result.productionUrl.isNullOrBlank()) {
+            memoryStore.rememberFailure(
+                subjectType = "cloud_deployment",
+                subjectId = domain,
+                title = "Cloud deployment health check failed",
+                body = "domain=$domain status=${result.httpStatusCode} diagnostic=${result.diagnostic}",
+                tags = listOf("deployment", "cloud", "failure")
+            )
+            return CloudDeploymentResult(
+                success = false,
+                productionUrl = result.productionUrl,
+                httpStatusCode = result.httpStatusCode,
+                diagnostic = "deployment rejected: post-deployment HTTP 200 assertion failed (${result.httpStatusCode})"
+            )
+        }
+        return result
+    }
 }
+
+/**
+ * SD7-T4-010: Uniform non-mock delivery seam abstracting hosting behind a single contract.
+ */
+interface CloudDeploymentAdapter {
+    fun deploy(targetDir: Path, domain: String): CloudDeploymentResult
+}
+
+data class CloudDeploymentResult(
+    val success: Boolean,
+    val productionUrl: String?,
+    val httpStatusCode: Int?,
+    val diagnostic: String? = null
+)
 
 data class OrchestrationReport(
     val success: Boolean,

@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.cli.input
 
+import atropos.ast.AstSymbolGraph
 import atropos.core.provider.StaticProviderDescriptorRegistry
 
 data class CommandEntry(
@@ -103,8 +104,13 @@ class CommandPaletteNavigator(
     }
 }
 
-object CommandRegistry {
-    private val CATEGORY_ORDER = listOf(
+open class CommandRegistry(
+    private val astSymbolGraph: AstSymbolGraph = AstSymbolGraph()
+) {
+    fun generateCompletions(shell: String): String = Companion.generateCompletions(shell, astSymbolGraph)
+
+    companion object {
+        private val CATEGORY_ORDER = listOf(
         "Orient", "Models", "Build", "Agent", "Self-host", "Authority",
         "Governance", "Shell", "Keys/Paid", "Observe", "Autonomous", "Session"
     )
@@ -310,4 +316,36 @@ object CommandRegistry {
             else -> emptyList()
         }).distinct()
 
+        /**
+         * SD7-T3-003: Dynamic flag/argument autocomplete for Bash/Zsh/Fish
+         * directly from CommandRegistry + AstSymbolGraph.
+         */
+        fun generateCompletions(shell: String, graph: AstSymbolGraph = AstSymbolGraph()): String {
+            val cmds = commands().map { it.removePrefix("/") }
+            val symbols = runCatching { graph.build().map { it.name } }.getOrDefault(emptyList())
+            val allTokens = (cmds + symbols).distinct().joinToString(" ")
+            return when (shell.lowercase().trim()) {
+                "bash" -> """
+                    _atropos_completions() {
+                        local cur="${'$'}{COMP_WORDS[COMP_CWORD]}"
+                        COMPREPLY=(${'$'}(compgen -W "$allTokens" -- "${'$'}cur"))
+                    }
+                    complete -F _atropos_completions atropos
+                """.trimIndent()
+                "zsh" -> """
+                    #compdef atropos
+                    _atropos() {
+                        local -a commands
+                        commands=($allTokens)
+                        _describe 'command' commands
+                    }
+                    compdef _atropos atropos
+                """.trimIndent()
+                "fish" -> """
+                    complete -c atropos -f -a "$allTokens"
+                """.trimIndent()
+                else -> cmds.joinToString("\n")
+            }
+        }
+    }
 }

@@ -1,5 +1,9 @@
 package atropos.core.policy
 
+import atropos.core.memory.LocalMemoryStore
+import atropos.core.storage.BlobObject
+import atropos.core.policy.AgencyDecision
+
 enum class AgencyDisposition {
     ALLOWED,
     POLICY_BLOCKED,
@@ -27,6 +31,8 @@ class BoundedAgencyGate(
         lazy { atropos.core.storage.StorageSupervisor() }
 ) {
     fun evaluate(proposal: ActionProposal): AgencyDecision {
+        airgapRefusal(proposal)?.let { return it }
+        objectCapabilityRefusal(proposal)?.let { return it }
         territoryRefusal(proposal)?.let { return it }
         capabilityRefusal(proposal)?.let { return it }
         storageRefusal(proposal)?.let { return it }
@@ -43,6 +49,57 @@ class BoundedAgencyGate(
             disposition = disposition,
             reason = decision.reason
         )
+    }
+
+    private fun airgapRefusal(proposal: ActionProposal): AgencyDecision? {
+        val isPureSynthesis = proposal.actionClass == PolicyActionClass.FILE_MUTATION ||
+            proposal.metadata["pureSynthesis"] == "true" ||
+            proposal.metadata["phase"] == "synthesis" ||
+            proposal.metadata["phase"] == "dag_synthesis"
+
+        val hasNetwork = proposal.networkTarget != null ||
+            proposal.actionClass == PolicyActionClass.NETWORK_EGRESS ||
+            proposal.metadata["requiresNetwork"] == "true"
+
+        if (isPureSynthesis && hasNetwork) {
+            val reason = "RecordSkip(REASON: Open-Core Air-Gap Invariant refuses network capability during pure synthesis)"
+            return AgencyDecision(
+                proposal = proposal,
+                policyDecision = ExecutionPolicyDecision(
+                    id = "airgap",
+                    decision = PolicyDecisionType.DENY,
+                    actionClass = proposal.actionClass,
+                    destructive = false,
+                    reason = reason
+                ),
+                disposition = AgencyDisposition.POLICY_BLOCKED,
+                reason = reason
+            )
+        }
+        return null
+    }
+
+    private fun objectCapabilityRefusal(proposal: ActionProposal): AgencyDecision? {
+        val declaredCaps = proposal.metadata["grantedCapabilities"]
+            ?.split(",", "|", " ")?.map { it.trim() }?.filter { it.isNotBlank() }?.toSet() ?: emptySet()
+        val hasPromptCap = declaredCaps.contains("Cap(P_theta)") || declaredCaps.contains("prompt_generation")
+        val hasWriteCap = declaredCaps.contains("Cap(A_write)") || declaredCaps.contains("direct_write")
+        if (hasPromptCap && hasWriteCap) {
+            val reason = "capability refusal: invariant Cap(P_theta) ∩ Cap(A_write) = ∅ violated; ambient authority purged"
+            return AgencyDecision(
+                proposal = proposal,
+                policyDecision = ExecutionPolicyDecision(
+                    id = "ambient_authority_purge",
+                    decision = PolicyDecisionType.DENY,
+                    actionClass = proposal.actionClass,
+                    destructive = false,
+                    reason = reason
+                ),
+                disposition = AgencyDisposition.POLICY_BLOCKED,
+                reason = reason
+            )
+        }
+        return null
     }
 
     /**

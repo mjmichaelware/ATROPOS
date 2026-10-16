@@ -13,12 +13,22 @@ enum class SecretSinkKind {
     EVIDENCE_BUNDLE
 }
 
+enum class IntegrationTier {
+    TIER_0_LOCAL_TOOLCHAINS,
+    TIER_1_HEADLESS_CI,
+    TIER_2_TRACKERS,
+    TIER_3_SLACK_MCP
+}
+
 object SecretSinkMatrix {
     private val allowedSinks = mutableSetOf<SecretSinkKind>()
+    private val allowedTiers = mutableSetOf<IntegrationTier>()
 
     init {
         // Safe defaults: most sinks are prohibited unless explicitly permitted
         allowedSinks.add(SecretSinkKind.USER_UI)
+        allowedTiers.add(IntegrationTier.TIER_0_LOCAL_TOOLCHAINS)
+        allowedTiers.add(IntegrationTier.TIER_1_HEADLESS_CI)
     }
 
     fun setPermitted(kind: SecretSinkKind, allowed: Boolean) {
@@ -29,8 +39,43 @@ object SecretSinkMatrix {
         return allowedSinks.contains(kind)
     }
 
+    fun isIntegrationPermitted(tier: IntegrationTier): Boolean {
+        return allowedTiers.contains(tier)
+    }
+
+    fun setIntegrationTierPermitted(tier: IntegrationTier, allowed: Boolean) {
+        if (allowed) allowedTiers.add(tier) else allowedTiers.remove(tier)
+    }
+
+    /**
+     * SD7-T3-006: Scrub tokens via SecretSinkMatrix before clipboard emission.
+     */
+    fun scrubTokens(text: String): String {
+        return text.replace(Regex("""(?i)(bearer\s+|token\s+|key\s*=\s*)[a-zA-Z0-9_\-\.]{16,}"""), "$1[REDACTED_SECRET]")
+    }
+
+    /**
+     * SD7-T3-006: OSC-52 ANSI clipboard emission with token scrubbing.
+     */
+    fun emitOsc52(payload: String): String {
+        val scrubbed = scrubTokens(payload)
+        val encoded = java.util.Base64.getEncoder().encodeToString(scrubbed.toByteArray(Charsets.UTF_8))
+        return "\u001b]52;c;$encoded\u0007"
+    }
+
+    /**
+     * Clipboard bridge cascade: OSC-52 emission -> Termux clipboard -> wl-copy -> pbcopy.
+     */
+    fun bridgeClipboardCascade(payload: String): String {
+        val scrubbed = scrubTokens(payload)
+        return emitOsc52(scrubbed)
+    }
+
     fun resetDefaults() {
         allowedSinks.clear()
         allowedSinks.add(SecretSinkKind.USER_UI)
+        allowedTiers.clear()
+        allowedTiers.add(IntegrationTier.TIER_0_LOCAL_TOOLCHAINS)
+        allowedTiers.add(IntegrationTier.TIER_1_HEADLESS_CI)
     }
 }

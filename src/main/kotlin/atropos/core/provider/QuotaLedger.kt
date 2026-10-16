@@ -55,6 +55,14 @@ data class ProviderQuotaRecord(
         }
 }
 
+enum class CascadeTier {
+    LOCAL_FIRST,
+    FREE_READY,
+    FREE_FALLBACK,
+    OFFLINE,
+    PAID_EMERGENCY
+}
+
 interface QuotaLedger {
     fun get(providerId: String): ProviderQuotaRecord?
     fun put(record: ProviderQuotaRecord)
@@ -67,6 +75,23 @@ interface QuotaLedger {
         nowEpochMs: Long = System.currentTimeMillis()
     )
     fun recordFailure(providerId: String, failure: ProviderFailure, nowEpochMs: Long = System.currentTimeMillis())
+
+    /**
+     * SD7-T2-024: Economic cascade governance:
+     * Cascade: local-first → free-ready → free-fallback → offline → paid emergency via explicit unlock.
+     */
+    fun resolveCascadeTier(providerId: String, isPaidUnlocked: Boolean): CascadeTier {
+        val record = get(providerId)
+        val isLocal = providerId.equals("ollama", ignoreCase = true)
+        val isPaid = record?.costMode == CostMode.PAID_LOCKED || record?.paidLocked == true
+        return when {
+            isLocal -> CascadeTier.LOCAL_FIRST
+            isPaid && isPaidUnlocked -> CascadeTier.PAID_EMERGENCY
+            record?.state == ProviderAvailabilityState.READY -> CascadeTier.FREE_READY
+            record?.state == ProviderAvailabilityState.DEGRADED -> CascadeTier.FREE_FALLBACK
+            else -> CascadeTier.OFFLINE
+        }
+    }
 }
 
 class InMemoryQuotaLedger(seed: List<ProviderQuotaRecord> = emptyList()) : QuotaLedger {

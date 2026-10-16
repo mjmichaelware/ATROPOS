@@ -18,7 +18,14 @@ class BridgeEndpoints {
 
     fun getProject(id: String): Project? = projects[id]
 
+    fun isVsCodeForkPermitted(): Boolean = false
+
     fun executeCli(args: List<String>): String {
+        // Enforce SD7-T2-002: Formal rule: do not fork VS Code. Agent process lives outside editor process.
+        if (args.any { it.contains("vscode-fork", ignoreCase = true) || it.contains("editor-fork", ignoreCase = true) }) {
+            throw UnsupportedOperationException("Prohibited operation: VS Code forking is formally prohibited. Agent must execute headless outside editor process.")
+        }
+
         // RCE fix: validate arguments before executing CLI command over bridge
         val blocked = listOf(";", "&&", "||", "|", "`", "$")
         for (arg in args) {

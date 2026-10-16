@@ -93,6 +93,23 @@ class VerifiedCompletionGate(
         return ProviderProposalMergeReport(true, emptyList(), "${proposals.size} independently verified proposals admitted for merge")
     }
 
+    /**
+     * SD7-T2-023: Mathematical termination potential function:
+     * Φ(Goal) = RemainingUnimplementedAtoms + OpenVerificationGaps + UnresolvedDiagnostics
+     * Transition accepted iff Φ(t+1) < Φ(t).
+     */
+    fun computePotential(
+        remainingUnimplementedAtoms: Int,
+        openVerificationGaps: Int,
+        unresolvedDiagnostics: Int
+    ): Int {
+        return remainingUnimplementedAtoms + openVerificationGaps + unresolvedDiagnostics
+    }
+
+    fun isPotentialMonotonicallyDescending(currentPotential: Int, previousPotential: Int): Boolean {
+        return currentPotential < previousPotential
+    }
+
     fun evaluateNode(node: DagNode): CompletionGateReport {
         return IndependentVerificationGate(config, repoRoot, processRunner).verify(node)
     }

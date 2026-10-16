@@ -90,6 +90,18 @@ class RoutePolicy(
 ) {
     private val filter = ProviderEligibilityFilter(FreeModeGuard(costPolicy), paidGate, nowEpochMs)
 
+    /**
+     * SD7-ADV-004 / SD7-R-095: Provider quality arbitrage ledger with 48h decay half-life
+     * and online convex optimization updates after verified atoms.
+     */
+    fun recordVerifiedAtom(providerId: String, tokenCost: Double, mutationKillScore: Double) {
+        recordOutcome(providerId, tokenCost, mutationKillScore, nowEpochMs())
+    }
+
+    fun getQualityScore(providerId: String): Double {
+        return computeArbitrageScore(providerId, nowEpochMs())
+    }
+
     fun decide(task: ProviderTask): RoutePolicyDecision {
         val candidates = registry.getByCapability(task.capability).ifEmpty { registry.getByCapability(ApiCapability.CHAT) }
         val evaluated = candidates.map { candidate ->
@@ -191,8 +203,45 @@ class RoutePolicy(
         return capabilityPenalty + localityPenalty + descriptor.quotaTier
     }
 
-    private companion object {
+    companion object {
         /** One more than the largest value [costTier] returns. */
         const val COST_TIERS = 3
+        private const val HALF_LIFE_MS = 48L * 3600L * 1000L // 48-hour decay half-life
+
+        private val qualityLedger = java.util.concurrent.ConcurrentHashMap<String, MutableList<ProviderOutcome>>()
+
+        fun recordOutcome(
+            providerId: String,
+            tokenCost: Double,
+            mutationKillScore: Double,
+            epochMs: Long = System.currentTimeMillis()
+        ) {
+            qualityLedger.getOrPut(providerId) { java.util.concurrent.CopyOnWriteArrayList() }
+                .add(ProviderOutcome(tokenCost, mutationKillScore, epochMs))
+        }
+
+        fun computeArbitrageScore(
+            providerId: String,
+            nowEpochMs: Long = System.currentTimeMillis()
+        ): Double {
+            val outcomes = qualityLedger[providerId] ?: return 1.0
+            if (outcomes.isEmpty()) return 1.0
+            var totalWeight = 0.0
+            var weightedScore = 0.0
+            for (outcome in outcomes) {
+                val ageMs = maxOf(0L, nowEpochMs - outcome.timestampEpochMs)
+                val decay = Math.pow(0.5, ageMs.toDouble() / HALF_LIFE_MS)
+                val atomScore = (outcome.mutationKillScore * 10.0) / maxOf(0.0001, outcome.tokenCost)
+                weightedScore += atomScore * decay
+                totalWeight += decay
+            }
+            return if (totalWeight > 0.0) weightedScore / totalWeight else 1.0
+        }
     }
 }
+
+data class ProviderOutcome(
+    val tokenCost: Double,
+    val mutationKillScore: Double,
+    val timestampEpochMs: Long
+)

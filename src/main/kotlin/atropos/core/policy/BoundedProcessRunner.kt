@@ -42,7 +42,15 @@ class BoundedProcessRunner(
             }
             .start()
     }
-) {
+    fun run(command: List<String>, workingDir: Path? = null): BoundedProcessResult =
+        run(
+            command = command,
+            directory = workingDir ?: Path.of(System.getProperty("user.dir")),
+            timeoutMillis = 600_000L,
+            maxOutputBytes = 1_048_576,
+            maxOutputLines = 10_000
+        )
+
     fun run(
         command: List<String>,
         directory: Path,

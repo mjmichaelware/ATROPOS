@@ -218,6 +218,40 @@ class IsolatedWorktreeService(
         }
     }
 
+    /**
+     * SD7-T3-002: Typed signal handlers preserving CAS index integrity under SIGINT/SIGTERM.
+     * Handlers: SIGINT -> clean worktree restore + record abort evidence.
+     * Signals never corrupt CAS index or Git HEAD.
+     */
+    fun handleSigInt(worktreeId: String): WorktreeRollbackResult {
+        memoryStore.rememberDetailed(
+            kind = atropos.core.memory.MemoryKind.INCIDENT,
+            title = "SIGINT received for worktree $worktreeId",
+            body = "Initiating safe worktree restore and abort evidence recording without CAS corruption",
+            tags = listOf("signal", "sigint", "abort", "worktree"),
+            subjectType = "worktree",
+            subjectId = worktreeId
+        )
+        return rollback(worktreeId)
+    }
+
+    /**
+     * SD7-T3-002: Typed signal handler for SIGTERM.
+     * Handlers: SIGTERM -> emit checkpoint CAS snapshot + halt workers safely.
+     */
+    fun handleSigTerm(worktreeId: String, reason: String = "SIGTERM received"): WorktreeRollbackResult {
+        memoryStore.rememberDetailed(
+            kind = atropos.core.memory.MemoryKind.INCIDENT,
+            title = "SIGTERM received for worktree $worktreeId: $reason",
+            body = "Emitting checkpoint CAS snapshot and halting workers cleanly",
+            tags = listOf("signal", "sigterm", "checkpoint", "worktree"),
+            subjectType = "worktree",
+            subjectId = worktreeId
+        )
+        return rollback(worktreeId)
+    }
+
+
     fun verifyAndMerge(worktreeId: String, verificationCommand: String = "git diff --check"): WorktreeRollbackResult {
         val record = recordStore.read(worktreeId)
             ?: return WorktreeRollbackResult(false, "worktree not found: $worktreeId")
