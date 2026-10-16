@@ -1,3 +1,5 @@
+import java.io.File
+
 // Root project: the ATROPOS JVM engine, and nothing else.
 //
 // The Android client is a *separate Gradle build* under app/, not a subproject
@@ -76,7 +78,7 @@ val buildStamp by tasks.registering {
     doLast {
         val head = runCatching {
             val process = ProcessBuilder("git", "rev-parse", "--short", "HEAD")
-                .directory(java.io.File(rootDirPath))
+                .directory(File(rootDirPath))
                 .redirectErrorStream(true)
                 .start()
             val text = process.inputStream.bufferedReader().readText().trim()
