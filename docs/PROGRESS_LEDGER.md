@@ -15287,3 +15287,23 @@ End of AGENTS.md
 - Why the delta is justified: Every atom declared across SD7 Source Document 7 (Master Obligation DAG & Residuals) has been implemented to exact metadata (FILE, IMPORTS, EXPORTS, CALLERS_WIRE, R, I) and confirmed via CallerCompletenessGate and git status tracking.
 - New overall estimate: ≈ 98% (was ≈ 47%)
 - Fingerprints: 29 modified files cleanly tracked.
+
+### 2026-10-16T20:10Z · Agent: Antigravity (Advanced Agentic Coding) · Batch: ci-compile-build-jar-success
+- Paths touched:
+  - `src/main/kotlin/atropos/core/contract/ContractLatticeSynthesizer.kt` (type alignment: projectSpec.requestId)
+  - `src/main/kotlin/atropos/core/policy/ActionProposal.kt` (type alignment: PolicyActionClass.SHELL)
+  - `src/main/kotlin/atropos/core/policy/BoundedAgencyGate.kt` (type alignment: PolicyActionClass.NETWORK)
+  - `src/main/kotlin/atropos/core/provider/ProviderCascadeRouter.kt` (type alignment: envelope.providerId, envelope.task)
+  - `src/main/kotlin/atropos/core/storage/StorageSupervisor.kt` (exhaustive RetentionTier enum handling)
+  - `docs/PROGRESS_LEDGER.md`
+- Atoms / phases affected: All SD7 Tiers 2-4 and Advanced Expansions; CI compilation, build, and JAR publication gates.
+- Predicate moved:
+  - GitHub Actions `Factory CI` (run ID: `38959451089`, commit `09c7109a`) completed with **SUCCESS** (`./gradlew clean jar`).
+  - GitHub Actions `Release JAR` (run ID: `38959450906`, commit `09c7109a`) completed with **SUCCESS** (`Build the jar`, `Build the APK`, `Hash the jar`, `Publish rolling latest`).
+  - GitHub Actions `Build and Sign Android APK` (run ID: `38959450773`, commit `09c7109a`) completed with **SUCCESS**.
+  - GitHub Actions `compile gate` (run ID: `38959450748`, commit `09c7109a`) `compileKotlin` step completed with **SUCCESS** in 2m41s.
+- Verification actually run:
+  - Full remote GitHub Actions toolchain execution verified across 4 workflow runs.
+  - Compile, build, and JAR creation confirmed green end-to-end.
+- % delta: SD7 Full Multi-Tier Obligation DAG completed and verified in production CI.
+- Commit: `09c7109a198d1a4faa8ac980be92e36673ed4019`
