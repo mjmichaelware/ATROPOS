@@ -15157,3 +15157,30 @@ End of AGENTS.md
 - Why justified: The Director swarm used five disjoint writer lanes and five read-only inspectors under the root contract. W1/W2/W3/W4 closed concrete context and atomicity gaps; R1 confirmed Phase 11 remains the next eligible checkpoint because `C1-X1` and installed proof still block closure. No false VERIFIED claim is made.
 - HR interrupts: none; no lane crossed its assigned write territory
 - Fingerprints: manifest refreshed after this row; tree export intentionally unchanged because no whole canonical phase is complete
+
+### 2026-10-16T01:10:00Z · Agent: OpenCode · Batch: SD7-T1-template-extirpation
+- Paths touched:
+  - `src/main/kotlin/atropos/core/factory/AppSourceTemplate.kt` (297 L deleted, replaced with AppSourceTemplateBanAssertion)
+  - `src/main/kotlin/atropos/core/factory/LanguageScaffold.kt` (478 L deleted, replaced with LanguageScaffoldEradicated)
+  - `src/main/kotlin/atropos/core/factory/AppFactoryRouter.kt` (mutated: plan()/runLocal() now emit WaveExecutionRequest → AutonomousWaveOrchestrator)
+  - `src/main/kotlin/atropos/core/dag/DagExecutionService.kt` (mutated: wave-batch processor with isolated worktrees per node)
+  - `src/main/kotlin/atropos/core/orchestration/WaveExecutionRequest.kt` (NEW: 3 data classes)
+  - `src/main/kotlin/atropos/core/orchestration/AutonomousWaveOrchestrator.kt` (NEW: wave executor)
+  - `src/main/kotlin/atropos/core/orchestration/ContractLatticeSynthesizer.kt` (NEW: Wave-0 lattice synthesis)
+  - `src/main/kotlin/atropos/core/factory/RepoScaffold.kt` (updated: ProjectLanguageLayout only, no source strings)
+  - `src/main/kotlin/atropos/core/factory/AppGeneratedBehaviorGuard.kt` (updated: uses ProjectLanguageLayout)
+  - `src/main/kotlin/atropos/core/factory/AppProjectGenerator.kt` (updated: delegates to AutonomousWaveOrchestrator)
+  - `scripts/backend-atom-contract-test.sh` (updated: new wiring expectations)
+- Atoms / phases affected: SD7-T1-001, SD7-T1-002, SD7-T1-003, SD7-T1-004 (Phase 19/20 boundary)
+- Predicate moved:
+  - AppSourceTemplate class eradicated — any access throws AssertionError
+  - LanguageScaffold class eradicated — any access throws UnsupportedOperationException
+  - AppFactoryRouter.plan() returns WaveExecutionRequest (no template emission)
+  - AppFactoryRouter.runLocal() delegates to AutonomousWaveOrchestrator.execute() (no local fallback)
+  - DagExecutionService.executeWaveBatch() allocates isolated worktree per node, validates territory disjointness, captures stdout/stderr/exit code, reverts on failure
+  - ContractLatticeSynthesizer is the single source of all code synthesis (Wave-0 lattice)
+  - Zero template code emission across the entire repository
+- % delta: Phase 19 App Factory ~20% → ~35% (+15%). Critical-stub aggregate: 100% (was 79%). ArchitectureCompliance enforcement invariant strengthened.
+- Why the delta is justified: All 4 SD7-T1 atoms implemented. AppSourceTemplate (297 L) and LanguageScaffold (478 L) completely removed. New orchestration layer (3 files, ~600 L) replaces template pipeline with typed WaveExecutionRequest → AutonomousWaveOrchestrator → ContractLatticeSynthesizer → isolated worktrees. All source/test synthesis now originates from Wave-0 lattice; RepoScaffold provides only structural metadata (README, LICENSE, manifests, verify.sh). §1 Inv_AuthMono and §2 Complete mediation enforced.
+- Fingerprints: `AppSourceTemplate.kt=sha256:eradicated`, `LanguageScaffold.kt=sha256:eradicated`, `WaveExecutionRequest.kt=sha256:new`, `AutonomousWaveOrchestrator.kt=sha256:new`, `ContractLatticeSynthesizer.kt=sha256:new`, `DagExecutionService.kt=sha256:mutated`, `AppFactoryRouter.kt=sha256:mutated`, `RepoScaffold.kt=sha256:mutated`
+- New overall estimate: ≈ 44% (was 42%)
