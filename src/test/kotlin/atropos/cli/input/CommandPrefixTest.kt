@@ -102,7 +102,7 @@ class CommandPrefixTest {
         assertEquals('/', CommandPrefix.firstNonWhitespace("  /status"))
         assertEquals('h', CommandPrefix.firstNonWhitespace("hi"))
         assertEquals('h', CommandPrefix.firstNonWhitespace("  hi"))
-        assertEquals('😊', CommandPrefix.firstNonWhitespace("  😊"))
+        assertEquals("  😊".first { !it.isWhitespace() }, CommandPrefix.firstNonWhitespace("  😊"))
         assertEquals(null, CommandPrefix.firstNonWhitespace(""))
         assertEquals(null, CommandPrefix.firstNonWhitespace("   "))
     }

@@ -25,6 +25,8 @@ data class GenerationParameters(
 )
 
 class ProviderFactory(private val configProvider: () -> AtroposConfig = { AtroposConfig.load() }) {
+    constructor(config: AtroposConfig) : this({ config })
+
     private val config: AtroposConfig get() = configProvider()
 
     private val canonicalAdapters by lazy {

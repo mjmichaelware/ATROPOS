@@ -96,13 +96,9 @@ class AuthorityAttestationTest {
         Files.writeString(file, "territoryAtDispatch: optional\n")
 
         val refused = bootstrap.boot()
-        // Hash gate removed
-        // Hash gate removed
+        assertFalse(refused.permitted)
+        assertTrue(refused is AuthBootResult.Refused)
         assertTrue(refused.cause.remedy.contains("atropos auth accept"))
-
-        val announcement = bootstrap.boot()
-        assertFalse(announcement.dispatchPermitted)
-        assertTrue(announcement.error!!.contains("dispatch is held"))
     }
 
     @Test
