@@ -488,8 +488,8 @@ class AutonomousWaveOrchestrator(
     ): CloudDeploymentResult {
         val agencyAdmission = agencyGate.evaluate(
             ActionProposal(
-                actionClass = PolicyActionClass.NETWORK_ACCESS,
-                actor = ActionActor.ENGINE,
+                actionClass = PolicyActionClass.NETWORK,
+                actor = ActionActor.SystemService("AutonomousWaveOrchestrator"),
                 networkTarget = domain,
                 schema = TypedProposalSchema.NetworkRequestProposal(targetUrl = domain, method = "POST")
             )
