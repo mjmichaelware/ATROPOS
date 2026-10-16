@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.verification
 
 import atropos.core.parser.TreeSitterGrammarBridge
@@ -8,12 +9,13 @@ class CIntScalarEngine(
     private val astBridge: TreeSitterGrammarBridge = TreeSitterGrammarBridge()
 ) {
     fun evaluate(worktreeRoot: Path, entrypointSymbol: String): Int {
-        val astRoot = astBridge.parse(Files.readString(worktreeRoot.resolve(entrypointSymbol)), "kotlin")
-        val callers = astBridge.query(astRoot, "call-graph")
+        val entrypointPath = worktreeRoot.resolve(entrypointSymbol)
+        if (!Files.isRegularFile(entrypointPath)) return 0
+        val tree = astBridge.parseTree(Files.readString(entrypointPath))
+        val declaredNames = tree.declarations.map { it.name }.toSet()
 
-        for (caller in callers) {
-            val symbol = caller.text
-            if (!symbolExistsInWorktree(worktreeRoot, symbol)) {
+        for (symbol in declaredNames) {
+            if (!symbolExistsInWorktree(worktreeRoot, symbol, entrypointPath)) {
                 return 0
             }
         }
@@ -21,9 +23,11 @@ class CIntScalarEngine(
         return 1
     }
 
-    private fun symbolExistsInWorktree(worktreeRoot: Path, symbol: String): Boolean {
+    private fun symbolExistsInWorktree(worktreeRoot: Path, symbol: String, exclude: Path): Boolean {
         val allFiles = mutableListOf<Path>()
-        Files.walk(worktreeRoot).forEach { if (it.toString().endsWith(".kt") || it.toString().endsWith(".java")) allFiles.add(it) }
+        Files.walk(worktreeRoot).use { stream ->
+            stream.forEach { if ((it.toString().endsWith(".kt") || it.toString().endsWith(".java")) && it != exclude) allFiles.add(it) }
+        }
 
         for (file in allFiles) {
             val content = Files.readString(file)

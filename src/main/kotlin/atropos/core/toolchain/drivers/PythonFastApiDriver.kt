@@ -26,7 +26,7 @@ class PythonFastApiDriver(
         validateWorktree(worktree)
         val python = resolvePython(worktree)
         val command = listOf(python, "-m", "mypy", "--strict", "--show-column-numbers", ".")
-        val result = runner.run(command, worktree, 300_000, 20_000_000, 4000, buildEnv(worktree))
+        val result = runner.run(command, worktree, 300_000, 256 * 1024, 4000, buildEnv(worktree))
         return parseMypyResult(result)
     }
 
@@ -34,7 +34,7 @@ class PythonFastApiDriver(
         validateWorktree(worktree)
         val python = resolvePython(worktree)
         val command = listOf(python, "-m", "pytest", "-v", "--tb=short")
-        val result = runner.run(command, worktree, 300_000, 20_000_000, 4000, buildEnv(worktree))
+        val result = runner.run(command, worktree, 300_000, 256 * 1024, 4000, buildEnv(worktree))
         return parseGenericResult(result)
     }
 
@@ -42,7 +42,7 @@ class PythonFastApiDriver(
         validateWorktree(worktree)
         val python = resolvePython(worktree)
         val command = listOf(python, "-m", "ruff", "check", "--output-format=json", ".")
-        val result = runner.run(command, worktree, 180_000, 20_000_000, 4000, buildEnv(worktree))
+        val result = runner.run(command, worktree, 180_000, 256 * 1024, 4000, buildEnv(worktree))
         return parseRuffResult(result)
     }
 
@@ -66,7 +66,7 @@ class PythonFastApiDriver(
         }
         val python = resolvePython(worktree)
         val command = listOf(python, "-m", "build")
-        val result = runner.run(command, worktree, 300_000, 20_000_000, 4000, buildEnv(worktree))
+        val result = runner.run(command, worktree, 300_000, 256 * 1024, 4000, buildEnv(worktree))
         return parseGenericResult(result)
     }
 
@@ -163,15 +163,16 @@ class PythonFastApiDriver(
         try {
             val trimmed = output.trim()
             if (trimmed.isEmpty() || !trimmed.startsWith("[")) return diagnostics
-            val arrayNode = com.google.gson.JsonParser.parseString(trimmed).asJsonArray
-            for (element in arrayNode) {
-                val obj = element.asJsonObject
-                val file = obj.get("filename")?.asString ?: continue
-                val location = obj.get("location")?.asJsonObject
-                val lineNum = location?.get("row")?.asInt ?: 0
-                val colNum = location?.get("column")?.asInt ?: 0
-                val code = obj.get("code")?.asString
-                val message = obj.get("message")?.asString ?: ""
+            val arrayNode = org.json.JSONArray(trimmed)
+            for (i in 0 until arrayNode.length()) {
+                val obj = arrayNode.getJSONObject(i)
+                val file = obj.optString("filename", "")
+                if (file.isEmpty()) continue
+                val location = obj.optJSONObject("location")
+                val lineNum = location?.optInt("row", 0) ?: 0
+                val colNum = location?.optInt("column", 0) ?: 0
+                val code = obj.optString("code", null)
+                val message = obj.optString("message", "")
                 diagnostics.add(ToolchainDiagnostic(file, lineNum, colNum, code, message, DiagnosticSeverity.ERROR))
             }
         } catch (_: Exception) {

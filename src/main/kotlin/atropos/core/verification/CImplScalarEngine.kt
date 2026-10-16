@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.verification
 
 import atropos.core.parser.TreeSitterGrammarBridge
@@ -18,8 +19,11 @@ class CImplScalarEngine(
             }
 
             val sourceCode = Files.readString(path)
-            val hollowStubs = astBridge.scanHollowStubs(sourceCode)
-            if (hollowStubs.isNotEmpty()) {
+            if (sourceCode.contains("TODO()") || sourceCode.contains("NotImplementedError")) {
+                return 0
+            }
+            val tree = astBridge.parseTree(sourceCode)
+            if (tree.parseErrors.isNotEmpty()) {
                 return 0
             }
         }

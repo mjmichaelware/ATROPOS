@@ -1,6 +1,13 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.toolchain
 
+import atropos.core.toolchain.drivers.AndroidSdkDriver
+import atropos.core.toolchain.drivers.DatabaseContainerMockSandboxDriver
+import atropos.core.toolchain.drivers.GoToolchainDriver
+import atropos.core.toolchain.drivers.KotlinGradleDriver
+import atropos.core.toolchain.drivers.PythonFastApiDriver
+import atropos.core.toolchain.drivers.RustCargoDriver
+import atropos.core.toolchain.drivers.TypescriptNodeDriver
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
@@ -9,6 +16,16 @@ import java.util.concurrent.ConcurrentHashMap
 
 object NativeToolchainRegistry {
     private val drivers = ConcurrentHashMap<String, LanguageToolchainDriver>()
+
+    init {
+        register(RustCargoDriver())
+        register(TypescriptNodeDriver())
+        register(GoToolchainDriver())
+        register(PythonFastApiDriver())
+        register(KotlinGradleDriver())
+        register(AndroidSdkDriver())
+        register(DatabaseContainerMockSandboxDriver())
+    }
 
     fun register(driver: LanguageToolchainDriver) {
         drivers[driver.languageId] = driver

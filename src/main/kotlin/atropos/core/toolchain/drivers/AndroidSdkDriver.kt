@@ -25,7 +25,7 @@ class AndroidSdkDriver(
         validateSdk()
         validateWorktree(worktree)
         val command = buildGradleCommand(worktree, listOf("compileDebugSources"))
-        val result = runner.run(command, worktree, 900_000, 20_000_000, 4000, buildEnv())
+        val result = runner.run(command, worktree, 900_000, 256 * 1024, 4000, buildEnv())
         return parseResult(result)
     }
 
@@ -33,7 +33,7 @@ class AndroidSdkDriver(
         validateSdk()
         validateWorktree(worktree)
         val command = buildGradleCommand(worktree, listOf("testDebugUnitTest"))
-        val result = runner.run(command, worktree, 900_000, 20_000_000, 4000, buildEnv())
+        val result = runner.run(command, worktree, 900_000, 256 * 1024, 4000, buildEnv())
         return parseResult(result)
     }
 
@@ -41,7 +41,7 @@ class AndroidSdkDriver(
         validateSdk()
         validateWorktree(worktree)
         val command = buildGradleCommand(worktree, listOf("lintDebug"))
-        val result = runner.run(command, worktree, 600_000, 20_000_000, 4000, buildEnv())
+        val result = runner.run(command, worktree, 600_000, 256 * 1024, 4000, buildEnv())
         return parseResult(result)
     }
 
@@ -49,7 +49,7 @@ class AndroidSdkDriver(
         validateSdk()
         validateWorktree(worktree)
         val command = buildGradleCommand(worktree, listOf("assembleDebug"))
-        val result = runner.run(command, worktree, 900_000, 20_000_000, 4000, buildEnv())
+        val result = runner.run(command, worktree, 900_000, 256 * 1024, 4000, buildEnv())
 
         val apkResult = parseResult(result)
         if (!apkResult.passed) return apkResult

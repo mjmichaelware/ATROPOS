@@ -25,28 +25,28 @@ class KotlinGradleDriver(
     override fun compile(worktree: Path): ToolchainResult {
         validateWorktree(worktree)
         val command = buildGradleCommand(worktree, listOf("compileKotlin"))
-        val result = runner.run(command, worktree, 600_000, 20_000_000, 4000)
+        val result = runner.run(command, worktree, 600_000, 256 * 1024, 4000)
         return parseGradleResult(result)
     }
 
     override fun test(worktree: Path): ToolchainResult {
         validateWorktree(worktree)
         val command = buildGradleCommand(worktree, listOf("test"))
-        val result = runner.run(command, worktree, 600_000, 20_000_000, 4000)
+        val result = runner.run(command, worktree, 600_000, 256 * 1024, 4000)
         return parseGradleResult(result)
     }
 
     override fun lint(worktree: Path): ToolchainResult {
         validateWorktree(worktree)
         val command = buildGradleCommand(worktree, listOf("ktlintCheck"))
-        val result = runner.run(command, worktree, 300_000, 20_000_000, 4000)
+        val result = runner.run(command, worktree, 300_000, 256 * 1024, 4000)
         return parseGradleResult(result)
     }
 
     override fun packageArtifact(worktree: Path): ToolchainResult {
         validateWorktree(worktree)
         val command = buildGradleCommand(worktree, listOf("assemble"))
-        val result = runner.run(command, worktree, 600_000, 20_000_000, 4000)
+        val result = runner.run(command, worktree, 600_000, 256 * 1024, 4000)
         return parseGradleResult(result)
     }
 

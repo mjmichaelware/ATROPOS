@@ -23,21 +23,21 @@ class GoToolchainDriver(
     override fun compile(worktree: Path): ToolchainResult {
         validateWorktree(worktree)
         val command = listOf("go", "build", "./...")
-        val result = runner.run(command, worktree, 300_000, 20_000_000, 4000, buildEnv(worktree))
+        val result = runner.run(command, worktree, 300_000, 256 * 1024, 4000, buildEnv(worktree))
         return parseResult(result)
     }
 
     override fun test(worktree: Path): ToolchainResult {
         validateWorktree(worktree)
         val command = listOf("go", "test", "-v", "-race", "-count=1", "./...")
-        val result = runner.run(command, worktree, 300_000, 20_000_000, 4000, buildEnv(worktree))
+        val result = runner.run(command, worktree, 300_000, 256 * 1024, 4000, buildEnv(worktree))
         return parseResult(result)
     }
 
     override fun lint(worktree: Path): ToolchainResult {
         validateWorktree(worktree)
         val command = listOf("go", "vet", "./...")
-        val result = runner.run(command, worktree, 180_000, 20_000_000, 4000, buildEnv(worktree))
+        val result = runner.run(command, worktree, 180_000, 256 * 1024, 4000, buildEnv(worktree))
         return parseResult(result)
     }
 
@@ -46,7 +46,7 @@ class GoToolchainDriver(
         val distDir = worktree.resolve("dist")
         distDir.toFile().mkdirs()
         val command = listOf("go", "build", "-o", distDir.resolve("app").toString(), "./...")
-        val result = runner.run(command, worktree, 300_000, 20_000_000, 4000, buildEnv(worktree))
+        val result = runner.run(command, worktree, 300_000, 256 * 1024, 4000, buildEnv(worktree))
         return parseResult(result)
     }
 

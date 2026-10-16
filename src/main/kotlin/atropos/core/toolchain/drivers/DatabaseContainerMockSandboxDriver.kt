@@ -56,8 +56,9 @@ class DatabaseContainerMockSandboxDriver : LanguageToolchainDriver {
 
         for (sqlFile in sqlFiles) {
             val sql = sqlFile.readText()
-            rejectLiveCredentials(sql, sqlFile.path)?.let { diagnostic ->
-                diagnostics.add(diagnostic)
+            val credDiagnostic = rejectLiveCredentials(sql, sqlFile.path)
+            if (credDiagnostic != null) {
+                diagnostics.add(credDiagnostic)
                 continue
             }
             val conn = openEphemeralConnection(DatabaseDialect.SQLITE)

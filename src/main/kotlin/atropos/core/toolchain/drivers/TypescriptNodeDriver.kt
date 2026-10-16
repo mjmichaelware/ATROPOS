@@ -38,7 +38,7 @@ class TypescriptNodeDriver(
         val tscBinary = NativeToolchainRegistry.locateBinary("tsc") ?: return ToolchainResult(1, false, "", "tsc not found", listOf(), 0)
         
         val command = listOf(nodeBinary.toString(), tscBinary.toString(), "--noEmit", "--pretty", "false")
-        val result = runner.run(command, worktree, 180_000, 20_000_000, 4000)
+        val result = runner.run(command, worktree, 180_000, 256 * 1024, 4000)
         return parseResult(result)
     }
 
@@ -57,7 +57,7 @@ class TypescriptNodeDriver(
 
         val nodeBinary = NativeToolchainRegistry.locateBinary("node") ?: return ToolchainResult(1, false, "", "node not found", listOf(), 0)
         val command = listOf(nodeBinary.toString(), "pnpm", "test", "--frozen-lockfile")
-        val result = runner.run(command, worktree, 180_000, 20_000_000, 4000)
+        val result = runner.run(command, worktree, 180_000, 256 * 1024, 4000)
         return parseResult(result)
     }
 
@@ -78,7 +78,7 @@ class TypescriptNodeDriver(
         val tscBinary = NativeToolchainRegistry.locateBinary("tsc") ?: return ToolchainResult(1, false, "", "tsc not found", listOf(), 0)
         
         val command = listOf(nodeBinary.toString(), tscBinary.toString(), "--noEmit", "--pretty", "false")
-        val result = runner.run(command, worktree, 180_000, 20_000_000, 4000)
+        val result = runner.run(command, worktree, 180_000, 256 * 1024, 4000)
         return parseResult(result)
     }
 
@@ -97,12 +97,13 @@ class TypescriptNodeDriver(
 
         val nodeBinary = NativeToolchainRegistry.locateBinary("node") ?: return ToolchainResult(1, false, "", "node not found", listOf(), 0)
         val command = listOf(nodeBinary.toString(), "pnpm", "run", "build")
-        val result = runner.run(command, worktree, 180_000, 20_000_000, 4000)
+        val result = runner.run(command, worktree, 180_000, 256 * 1024, 4000)
         return parseResult(result)
     }
 
     private fun validateWorktree(worktree: Path) {
-        if (!worktree.toFile().listFiles()?.any { it.isFile } == true) {
+        val files = worktree.toFile().listFiles()
+        if (files == null || files.none { it.isFile }) {
             throw IllegalArgumentException("Worktree must contain at least one source file")
         }
     }
