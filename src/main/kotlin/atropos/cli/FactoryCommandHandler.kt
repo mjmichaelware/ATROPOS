@@ -9,6 +9,7 @@ import atropos.core.factory.FactoryEvidenceWaveExecutor
 import atropos.core.AtroposRepoRootLocator
 import atropos.core.security.RedactionFilter
 import atropos.core.factory.AppFactoryRouter
+import atropos.core.factory.FactoryRunHandoff
 import java.nio.file.Path
 
 class FactoryCommandHandler(
@@ -105,13 +106,14 @@ class FactoryCommandHandler(
                 runFactory(prompt)
             } catch (failure: FactoryClarificationRequired) {
                 live.stop()
-                val artifact = dumpComprehensiveFailureArtifact(failure.request.runId, prompt, "Clarification Required", failure, null)
+                val clarId = "factory-${atropos.core.factory.FactoryLineage.sha256(prompt.trim()).take(16)}"
+                val artifact = dumpComprehensiveFailureArtifact(clarId, prompt, "Clarification Required", failure, null)
                 val questions = failure.questions.joinToString(" | ") { "YES/NO: $it" }
                 uiEngine.renderError(
                     "factory clarification required: $questions; artifact=${failure.request.path}"
                 )
                 uiEngine.renderNotice("Diagnostic artifact with complete run trace saved: ${artifact ?: failure.request.path}")
-                uiEngine.renderNotice("To answer and resume, run: /factory answer ${failure.request.runId} <YES|NO>")
+                uiEngine.renderNotice("To answer and resume, run: /factory answer $clarId <YES|NO>")
                 return
             } catch (failure: Throwable) {
                 live.stop()
