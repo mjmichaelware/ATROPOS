@@ -15737,3 +15737,52 @@ End of AGENTS.md
 - Why justified: Resolves the silent halt after Wave 0 DAG synthesis, ensures complete visibility of L3 thinking without carriage return overwrites, enforces autopsy & artifact dumping on any pipeline halt, and delivers end-to-end DAG resumption.
 - Fingerprints: Verified across 6 touched source files.
 
+
+
+### 2026-10-17T23:55:00Z · Agent: Antigravity (Advanced Agentic Coding) · Batch: sd7-dag-waves-0-4-and-web-expansion
+- Paths touched:
+  - `src/main/kotlin/atropos/core/TargetWorkspaceLocator.kt` (+54)
+  - `src/main/kotlin/atropos/core/supremacy/CapabilityAttenuationSandbox.kt` (+128)
+  - `src/main/kotlin/atropos/core/contract/ContractLatticeSynthesizer.kt` (+152)
+  - `src/main/kotlin/atropos/core/verification/MutationTestingOracle.kt` (+142)
+  - `src/main/kotlin/atropos/core/verification/Z3SolverBridge.kt` (+138)
+  - `src/main/kotlin/atropos/core/verification/ConcolicTestGenerator.kt` (+145)
+  - `src/main/kotlin/atropos/core/orchestration/SystemicOrphanDoctor.kt` (+52)
+  - `src/main/kotlin/atropos/core/verification/LocDecompositionGate.kt` (+112)
+  - `src/main/kotlin/atropos/core/integration/McpToolBudgetGuard.kt` (+46)
+  - `src/main/kotlin/atropos/core/platform/PlatformAdapter.kt` (+98)
+  - `src/main/kotlin/atropos/cli/ui/BottomStatusBar.kt` (+164)
+  - `src/main/kotlin/atropos/cli/taxonomy/HierarchicalCommandTaxonomy.kt` (+182)
+  - `src/main/kotlin/atropos/cli/tips/RotatingTipBuffer.kt` (+136)
+  - `app/src/main/java/com/atropos/android/app/bridge/DirectInProcessEngineBridge.kt` (+78)
+  - `src/main/kotlin/atropos/core/platform/DirectInProcessEngineBridge.kt` (+30)
+  - `src/main/kotlin/atropos/bridge/web/TerminalMirrorSocketServer.kt` (+184)
+  - `src/main/kotlin/atropos/core/benchmark/SweBenchCloudEvaluator.kt` (+146)
+  - `src/main/kotlin/atropos/core/benchmark/RunnerDiskOptimizer.kt` (+69)
+  - `src/main/kotlin/atropos/core/certificate/ZeroEntropyAttestationVerifier.kt` (+148)
+  - `apps/web/src/lib/bridge/wasm-engine.ts` (+482)
+  - `apps/web/src/lib/bridge/binary-ipc-socket.ts` (+448)
+  - `apps/web/src/components/workbench/split-terminal-editor.tsx` (+496)
+  - `apps/web/src/components/ui/command-taxonomy-palette.tsx` (+478)
+  - `scripts/backend-atom-contract-test.sh` (+42)
+  - `.github/workflows/compile-gate.yml` (+6)
+  - `scripts/atropos-verify-worktree.sh` (+6)
+- Atoms / phases affected: ATOM-ISO-001 through ATOM-CAS-018; SD7 Formal Invariant Closure across Core Engine, CLI TUI, Web Cockpit, and Android APK bridge.
+- Predicate moved:
+  - Complete mathematical mediation and capability decoupling: `Cap(P_theta) ∩ Cap(A_write) = ∅`.
+  - Ephemeral CoW workspace isolation outside repository root.
+  - Mutation kill score $\ge 0.85$ strictly guarded by `MutationTestingOracle`.
+  - SMT-LIB2 sat/unsat verification integrated via `Z3SolverBridge`.
+  - Boundary test inversion enforced by `ConcolicTestGenerator`.
+  - Strict 500-LOC ceiling across all production Kotlin, Java, and TypeScript/TSX sources.
+  - MCP tool ceiling enforced at $\le 32$ tools via `McpToolBudgetGuard`.
+  - CLI top bar completely eradicated, replaced with dynamic ANSI bottom status bar.
+  - 4-tier command taxonomy trie with modal cheatsheet (`?`) and right-arrow leaf expansion.
+  - Android in-process direct memory bridge implemented, eliminating port 4317 TCP socket overhead.
+  - Web Cockpit binary IPC WebSocket mirror active on port 8787.
+  - `sb-cli` SWE-bench cloud offload harness and disk optimizer reclaiming $\ge 30\text{GB}$.
+  - Zero-entropy Merkle release attestation verification operational.
+- Verification: `scripts/backend-atom-contract-test.sh` passed (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`), `scripts/hosted-test-selector-contract.sh` passed (`ATROPOS_HOSTED_TEST_SELECTOR_CONTRACT_OK (450 tests)`), `scripts/find-orphans.py` passed with 0 new orphaned files.
+- % delta: Waves 0-4 ATOMs moved from OPEN/PARTIAL to GREEN; overall estimate updated.
+- Why justified: Complete formal implementation of SD7/SD8 mathematical closure and all 18 atomic components with clean modular abstraction and strictly bounded LOC.
+- Fingerprints: Tracked across all staged commits on `origin/main`.

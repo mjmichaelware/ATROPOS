@@ -19,6 +19,12 @@ class DagNodeFileMutationExecutor(
 
             val parsed = parse(original.actionPayload)
                 ?: return finisher.fail(running, original, "unsupported file mutation payload")
+            val engineRoot = atropos.core.AtroposRepoRootLocator.resolve().toAbsolutePath().normalize()
+            if (parsed.path.toAbsolutePath().normalize().startsWith(engineRoot)) {
+                throw atropos.core.EngineDomainViolationException(
+                    "Mutation denied: target path ${parsed.path} is within engine authority domain"
+                )
+            }
             if (parsed.content.isBlank()) {
                 return finisher.fail(running, original, "file mutation refused: empty content")
             }

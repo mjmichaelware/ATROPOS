@@ -34,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.atropos.android.app.bridge.AndroidEngineBridge
+import com.atropos.android.app.bridge.DirectInProcessEngineBridge
 import com.atropos.android.app.bridge.SendOutcome
 import com.atropos.android.app.ui.ConversationScreen
 import com.atropos.android.app.ui.MobileAppIntent
@@ -78,6 +79,7 @@ import androidx.compose.material.icons.filled.Psychology
 class MainActivity : ComponentActivity() {
 
     private val repository = AndroidEngineBridge()
+    private val inProcessBridge = DirectInProcessEngineBridge()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

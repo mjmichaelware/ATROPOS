@@ -579,5 +579,77 @@ for atom_id in \
     exit 1
   }
 done
+# Waves 0-4 Architecture Atoms (ATOM-ISO-001 through ATOM-CAS-018)
+file src/main/kotlin/atropos/core/TargetWorkspaceLocator.kt
+text src/main/kotlin/atropos/core/TargetWorkspaceLocator.kt 'object TargetWorkspaceLocator'
+text src/main/kotlin/atropos/core/TargetWorkspaceLocator.kt 'fun resolveTargetWorkspace'
+
+file src/main/kotlin/atropos/core/supremacy/CapabilityAttenuationSandbox.kt
+text src/main/kotlin/atropos/core/supremacy/CapabilityAttenuationSandbox.kt 'class CapabilityAttenuationSandbox'
+text src/main/kotlin/atropos/core/supremacy/CapabilityAttenuationSandbox.kt 'fun validateAction'
+
+file src/main/kotlin/atropos/core/contract/ContractLatticeSynthesizer.kt
+text src/main/kotlin/atropos/core/contract/ContractLatticeSynthesizer.kt 'class ContractLatticeSynthesizer'
+text src/main/kotlin/atropos/core/contract/ContractLatticeSynthesizer.kt 'assertZeroExecutableStatements'
+
+file src/main/kotlin/atropos/core/verification/MutationTestingOracle.kt
+text src/main/kotlin/atropos/core/verification/MutationTestingOracle.kt 'class MutationTestingOracle'
+text src/main/kotlin/atropos/core/verification/MutationTestingOracle.kt 'evaluateMutationScore'
+
+file src/main/kotlin/atropos/core/verification/Z3SolverBridge.kt
+text src/main/kotlin/atropos/core/verification/Z3SolverBridge.kt 'class Z3SolverBridge'
+text src/main/kotlin/atropos/core/verification/Z3SolverBridge.kt 'fun checkSat'
+
+file src/main/kotlin/atropos/core/verification/ConcolicTestGenerator.kt
+text src/main/kotlin/atropos/core/verification/ConcolicTestGenerator.kt 'class ConcolicTestGenerator'
+text src/main/kotlin/atropos/core/verification/ConcolicTestGenerator.kt 'generateCoverageTests'
+
+file src/main/kotlin/atropos/core/orchestration/SystemicOrphanDoctor.kt
+text src/main/kotlin/atropos/core/orchestration/SystemicOrphanDoctor.kt 'class SystemicOrphanDoctor'
+text src/main/kotlin/atropos/core/orchestration/SystemicOrphanDoctor.kt 'fun wireAll'
+
+file src/main/kotlin/atropos/core/verification/LocDecompositionGate.kt
+text src/main/kotlin/atropos/core/verification/LocDecompositionGate.kt 'class LocDecompositionGate'
+text src/main/kotlin/atropos/core/verification/LocDecompositionGate.kt 'checkDirectory'
+
+file src/main/kotlin/atropos/core/integration/McpToolBudgetGuard.kt
+text src/main/kotlin/atropos/core/integration/McpToolBudgetGuard.kt 'class McpToolBudgetGuard'
+text src/main/kotlin/atropos/core/integration/McpToolBudgetGuard.kt 'pruneAndEnforce'
+
+file src/main/kotlin/atropos/core/platform/PlatformAdapter.kt
+text src/main/kotlin/atropos/core/platform/PlatformAdapter.kt 'interface PlatformAdapter'
+text src/main/kotlin/atropos/core/platform/PlatformAdapter.kt 'object PlatformAdapterRegistry'
+
+file src/main/kotlin/atropos/cli/ui/BottomStatusBar.kt
+text src/main/kotlin/atropos/cli/ui/BottomStatusBar.kt 'class BottomStatusBar'
+text src/main/kotlin/atropos/cli/ui/BottomStatusBar.kt 'fun render'
+
+file src/main/kotlin/atropos/cli/taxonomy/HierarchicalCommandTaxonomy.kt
+text src/main/kotlin/atropos/cli/taxonomy/HierarchicalCommandTaxonomy.kt 'class HierarchicalCommandTaxonomy'
+text src/main/kotlin/atropos/cli/taxonomy/HierarchicalCommandTaxonomy.kt 'data class TaxonomyNode'
+
+file src/main/kotlin/atropos/cli/tips/RotatingTipBuffer.kt
+text src/main/kotlin/atropos/cli/tips/RotatingTipBuffer.kt 'class RotatingTipBuffer'
+text src/main/kotlin/atropos/cli/tips/RotatingTipBuffer.kt 'fun nextTip'
+
+file app/src/main/java/com/atropos/android/app/bridge/DirectInProcessEngineBridge.kt
+text app/src/main/java/com/atropos/android/app/bridge/DirectInProcessEngineBridge.kt 'class DirectInProcessEngineBridge'
+text app/src/main/java/com/atropos/android/app/bridge/DirectInProcessEngineBridge.kt 'dispatchIntent'
+
+file src/main/kotlin/atropos/bridge/web/TerminalMirrorSocketServer.kt
+text src/main/kotlin/atropos/bridge/web/TerminalMirrorSocketServer.kt 'class TerminalMirrorSocketServer'
+text src/main/kotlin/atropos/bridge/web/TerminalMirrorSocketServer.kt 'broadcastFrame'
+
+file src/main/kotlin/atropos/core/benchmark/SweBenchCloudEvaluator.kt
+text src/main/kotlin/atropos/core/benchmark/SweBenchCloudEvaluator.kt 'class SweBenchCloudEvaluator'
+text src/main/kotlin/atropos/core/benchmark/SweBenchCloudEvaluator.kt 'submitPredictions'
+
+file src/main/kotlin/atropos/core/benchmark/RunnerDiskOptimizer.kt
+text src/main/kotlin/atropos/core/benchmark/RunnerDiskOptimizer.kt 'object RunnerDiskOptimizer'
+text src/main/kotlin/atropos/core/benchmark/RunnerDiskOptimizer.kt 'generateCleansingScript'
+
+file src/main/kotlin/atropos/core/certificate/ZeroEntropyAttestationVerifier.kt
+text src/main/kotlin/atropos/core/certificate/ZeroEntropyAttestationVerifier.kt 'class ZeroEntropyAttestationVerifier'
+text src/main/kotlin/atropos/core/certificate/ZeroEntropyAttestationVerifier.kt 'verifyAndCertify'
 
 printf '%s\n' 'ATROPOS_BACKEND_ATOM_CONTRACT_OK'

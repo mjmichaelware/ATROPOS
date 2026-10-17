@@ -54,6 +54,13 @@ class SafeJarSwapGate(
             localEvidence += JarSwapEvidence(false, "candidate_size", "candidate jar is empty: $normalizedCandidate")
         } else {
             localEvidence += JarSwapEvidence(true, "candidate_exists", "candidate jar exists and is non-empty")
+            val certVerifier = atropos.core.certificate.ZeroEntropyAttestationVerifier()
+            try {
+                val cert = certVerifier.verifyAndCertify(normalizedCandidate, normalizedCandidate.parent ?: normalizedCandidate)
+                localEvidence += JarSwapEvidence(true, "zero_entropy_attestation", "cert root: ${cert.rootCommitHash}")
+            } catch (e: Exception) {
+                localEvidence += JarSwapEvidence(false, "zero_entropy_attestation", "attestation failed: ${e.message}")
+            }
         }
 
         if (Files.exists(normalizedTarget, LinkOption.NOFOLLOW_LINKS) &&

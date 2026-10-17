@@ -49,6 +49,17 @@ class CapabilityAttenuationSandbox(private val masterSecret: ByteArray) {
         return AttenuatedToken(childId, parent.tokenId, operationsSubset, pathSubsets, reducedTtlSeconds, childExpires, sig)
     }
 
+    fun validateAction(token: AttenuatedToken, operation: String, targetPath: java.nio.file.Path): Boolean {
+        val engineRoot = atropos.core.AtroposRepoRootLocator.resolve().toAbsolutePath().normalize()
+        val absTarget = targetPath.toAbsolutePath().normalize()
+        if (absTarget.startsWith(engineRoot)) {
+            throw SecurityException(
+                "Engine domain mutation violation: targetPath $targetPath is within engine repository domain $engineRoot"
+            )
+        }
+        return validateAction(token, operation, targetPath.toString())
+    }
+
     fun validateAction(token: AttenuatedToken, operation: String, targetPath: String): Boolean {
         if (Instant.now().isAfter(token.expiresAt)) return false
         if (operation !in token.allowedOperations) return false

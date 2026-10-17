@@ -50,33 +50,8 @@ object NativeToolchainRegistry {
             if (Files.isExecutable(path)) return path
         }
 
-        val pathEnv = System.getenv("PATH") ?: ""
-        for (dir in pathEnv.split(":")) {
-            val candidate = Paths.get(dir, binary)
-            if (Files.isExecutable(candidate)) return candidate
-        }
-
-        val knownPaths = when {
-            File("/data/data/com.termux/files/usr/bin").exists() -> listOf(
-                "/data/data/com.termux/files/usr/bin",
-                "/usr/bin",
-                "/usr/local/bin"
-            )
-            File("/opt/homebrew/bin").exists() -> listOf(
-                "/opt/homebrew/bin",
-                "/usr/local/bin",
-                "/usr/bin"
-            )
-            else -> listOf(
-                "/usr/bin",
-                "/usr/local/bin"
-            )
-        }
-
-        for (dir in knownPaths) {
-            val candidate = Paths.get(dir, binary)
-            if (Files.isExecutable(candidate)) return candidate
-        }
+        val resolved = atropos.core.platform.PlatformAdapterRegistry.current().resolveToolPath(binary)
+        if (Files.isExecutable(resolved) || Files.exists(resolved)) return resolved
 
         return null
     }

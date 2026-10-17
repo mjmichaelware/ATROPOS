@@ -399,4 +399,14 @@ class AutonomousWaveOrchestrator(
 
     fun verifyVercelWireContract(driver: VercelDeploymentDriver, sampleBytes: ByteArray): Map<String, String> =
         deploymentSeam.verifyVercelWireContract(driver, sampleBytes)
+
+    fun handleStageFailure(crashContext: atropos.core.sentry.SentryCrashContext): atropos.core.sentry.SentryPromptRepairResult {
+        val coordinator = atropos.core.sentry.SentryRepairCoordinator(repoRoot)
+        return coordinator.generateRepairPrompt(crashContext)
+    }
+
+    fun benchmark(predictionsJsonl: java.io.File, runId: String, token: String): Int {
+        val evaluator = atropos.core.benchmark.SweBenchCloudEvaluator()
+        return evaluator.submitPredictions(predictionsJsonl, runId, token)
+    }
 }

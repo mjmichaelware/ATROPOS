@@ -132,9 +132,13 @@ class LiveThinkingRenderer(
      * a wall clock, because the question being asked is always "how long has
      * this been going", never "what time is it".
      */
-    private fun format(thought: StreamedThought): String {
+    private val tipBuffer = atropos.cli.tips.RotatingTipBuffer()
+
+    fun format(thought: StreamedThought): String {
         val body = redactionFilter.redact(thought.text)
-        if (thought.category.isBlank()) return body
+        val hint = tipBuffer.inferContextualHint(body)
+        val fullBody = if (hint != null) "$body\n    ↳ [Tip] $hint" else body
+        if (thought.category.isBlank()) return fullBody
 
         val origin = runStartedAt ?: thought.at.also { runStartedAt = it }
         val seconds = java.time.Duration.between(origin, thought.at).toMillis() / 1000.0
@@ -142,7 +146,12 @@ class LiveThinkingRenderer(
 
         return theme.subdued(elapsed) + "  " +
             theme.paint(categoryRole(thought.category), thought.category.padEnd(CATEGORY_CELLS)) +
-            "  " + body
+            "  " + fullBody
+    }
+
+    fun format(traceMessage: String): String {
+        val hint = tipBuffer.inferContextualHint(traceMessage)
+        return if (hint != null) "$traceMessage\n    ↳ [Tip] $hint" else traceMessage
     }
 
     /** Colour by what spoke, so kinds separate without being read. */

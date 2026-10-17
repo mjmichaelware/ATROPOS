@@ -9,6 +9,40 @@ interface PlatformAdapter {
     fun adapt(abstraction: PlatformAbstraction): PlatformAbstraction
     fun isAvailable(): Boolean
     val displayName: String
+
+    fun resolveToolPath(binaryName: String): Path {
+        val pathEnv = System.getenv("PATH").orEmpty()
+        val pathEntries = pathEnv.split(java.io.File.pathSeparator).filter { it.isNotBlank() }.toMutableList()
+        val extraSearchDirs = listOf(
+            System.getenv("PREFIX")?.let { "$it/bin" },
+            "/usr/local/bin",
+            "/usr/bin",
+            "/bin",
+            "/opt/homebrew/bin"
+        ).filterNotNull()
+        for (extra in extraSearchDirs) {
+            if (extra !in pathEntries && java.io.File(extra).isDirectory) {
+                pathEntries.add(extra)
+            }
+        }
+        for (dir in pathEntries) {
+            val candidate = Path.of(dir, binaryName)
+            if (java.nio.file.Files.isExecutable(candidate) || java.nio.file.Files.exists(candidate)) {
+                return candidate
+            }
+        }
+        return Path.of(binaryName)
+    }
+
+    fun getHomeDirectory(): Path {
+        val userHome = System.getProperty("user.home") ?: System.getenv("HOME") ?: "."
+        return Path.of(userHome).toAbsolutePath().normalize()
+    }
+
+    fun getSystemTemp(): Path {
+        val tmp = System.getProperty("java.io.tmpdir") ?: System.getenv("TMPDIR") ?: "/tmp"
+        return Path.of(tmp).toAbsolutePath().normalize()
+    }
 }
 
 class ComposeDesktopAdapter : PlatformAdapter {
@@ -125,6 +159,14 @@ class AndroidShellAbstraction(
 }
 
 object PlatformAdapterRegistry {
+    private var activeAdapter: PlatformAdapter = JvmStandardAdapter()
+
+    fun current(): PlatformAdapter = activeAdapter
+
+    fun setAdapter(adapter: PlatformAdapter) {
+        activeAdapter = adapter
+    }
+
     private val adapters: MutableList<PlatformAdapter> = mutableListOf(
         JvmStandardAdapter(),
         ComposeDesktopAdapter(),

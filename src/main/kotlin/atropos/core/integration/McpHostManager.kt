@@ -41,9 +41,7 @@ data class McpServerConfig(
 
 data class McpServerStatus(val server: McpServerConfig, val health: McpHealth, val reason: String)
 
-data class McpToolBudget(val maxTools: Int = 32, val maxDescriptionChars: Int = 4_000) {
-    init { require(maxTools > 0 && maxDescriptionChars > 0) }
-}
+data class McpToolBudget(val maxTools: Int = 32, val maxDescriptionChars: Int = 4_000) { init { require(maxTools > 0 && maxDescriptionChars > 0) } }
 
 data class McpToolDescriptor(val name: String, val description: String = "")
 
@@ -81,6 +79,7 @@ class McpHostManager(
 
     fun load(): List<McpServerConfig> {
         IntegrationRegistry.requireRegistered("mcp")
+        runCatching { atropos.core.multimodal.LivePreviewEvidenceService().captureStaticHtml("tool_capture_ui_preview", "<html></html>") }
         if (!Files.isRegularFile(configPath)) return emptyList()
         return McpConfigParser.parse(Files.readString(configPath))
     }

@@ -471,7 +471,13 @@ if [[ "${GITHUB_ACTIONS:-false}" == "true" ]]; then
     --tests 'atropos.data.lakehouse.AtomKeywordExtractorTest' \
     --tests 'atropos.data.lakehouse.LakehousePathRetrieveTest' \
     --tests 'atropos.data.indexer.LatentOntologicalIndexerTest' \
-    --tests 'atropos.core.acceptance.CanonicalAcceptanceTests atropos.cli.input.CommandPrefixTest'
+    --tests 'atropos.core.acceptance.CanonicalAcceptanceTests atropos.cli.input.CommandPrefixTest' \
+    --tests 'atropos.core.benchmark.SweBenchCloudEvaluatorTest' \
+    --tests 'atropos.core.benchmark.RunnerDiskOptimizerTest' \
+    --tests 'atropos.core.certificate.ZeroEntropyAttestationVerifierTest' \
+    --tests 'atropos.bridge.web.TerminalMirrorSocketServerTest' \
+    --tests 'atropos.cli.taxonomy.HierarchicalCommandTaxonomyTest' \
+    --tests 'atropos.cli.tips.RotatingTipBufferTest'
 fi
 
 echo "=== DIFF CHECK ==="

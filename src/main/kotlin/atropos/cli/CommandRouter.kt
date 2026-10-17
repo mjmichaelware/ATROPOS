@@ -264,6 +264,9 @@ class CommandRouter(
 
         val first = routedTokens.first().lowercase()
         if (first in setOf("?", "/?", "help", "/help", "usage", "/usage")) {
+            if (first == "?" || first == "/?") {
+                uiEngine.renderNotice(atropos.cli.taxonomy.HierarchicalCommandTaxonomy().cheatsheet())
+            }
             renderHelpPage(routedTokens.drop(1).joinToString(" "))
             return RouterOutcome.CONTINUE
         }
@@ -453,6 +456,18 @@ class CommandRouter(
         val level = atropos.cli.help.HelpLevel.fromCanonical(words.firstOrNull())
         promptSupport.renderHelpPage(query)
         if (words.isEmpty()) atropos.cli.help.HelpGenerator().render(level)
+    }
+
+    fun run(args: List<String>) {
+        if (args.contains("--web")) {
+            val mirror = atropos.bridge.web.TerminalMirrorSocketServer(8787)
+            mirror.start()
+            uiEngine.renderNotice("terminal mirror socket listening on ws://127.0.0.1:8787")
+        }
+        val line = args.filterNot { it == "--web" }.joinToString(" ")
+        if (line.isNotBlank()) {
+            handleInput(line)
+        }
     }
 
     internal fun allowFuzzyExecution(input: String, resolved: String): Boolean =

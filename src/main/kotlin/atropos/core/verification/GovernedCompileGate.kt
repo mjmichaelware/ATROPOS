@@ -37,6 +37,17 @@ class GovernedCompileGate(
      * names the requester rather than an anonymous build.
      */
     fun verify(actorId: String): GovernedCompileGateResult {
+        val locGate = LocDecompositionGate()
+        val locViolations = locGate.checkDirectory(repoRoot.resolve("src/main/kotlin").toFile())
+        if (locViolations.isNotEmpty()) {
+            return GovernedCompileGateResult(
+                passed = false,
+                command = command,
+                exitCode = 1,
+                message = "500-LOC decomposition violation: ${locViolations.size} file(s) exceed 500 lines: ${locViolations.first().filePath}",
+                proposalId = "loc-gate-violation"
+            )
+        }
         val proposal = VerificationActionProposals.buildTest(
             command = command,
             repoRoot = repoRoot,

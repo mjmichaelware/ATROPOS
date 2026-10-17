@@ -68,11 +68,18 @@ class AgentContextCollector(
     ).map(repoRoot::resolve)
 
     fun collect(taskHint: String? = null): AgentContextSnapshot {
+        val targetWorkspace = runCatching {
+            val hintPath = taskHint?.let { runCatching { Path.of(it) }.getOrNull() }?.takeIf { Files.exists(it) }
+            atropos.core.TargetWorkspaceLocator.resolveTargetWorkspace(hintPath)
+        }.getOrNull()
         val files = (selectedSourceFiles + taskHintFiles(taskHint)).distinct()
         val builder = StringBuilder(contextCapBytes)
         var truncated = false
 
         truncated = appendSection(builder, "# Repo Root\n${repoRoot}\n", truncated)
+        if (targetWorkspace != null && targetWorkspace != repoRoot) {
+            truncated = appendSection(builder, "# Target Workspace\n$targetWorkspace\n", truncated)
+        }
         truncated = appendSection(builder, "# Git Status\n${gitStatus()}\n", truncated)
         truncated = appendSection(builder, "# Shallow Tree\n${shallowTree()}\n", truncated)
         truncated = appendSection(builder, "# Selected Sources\n${selectedSources(files)}\n", truncated)

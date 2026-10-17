@@ -107,7 +107,7 @@ class PropertyBasedFuzzWave1Test {
         Files.writeString(absFuzzPath, fuzzTestSource)
 
         val verifiedFailsOnStub = testFiles.isNotEmpty()
-        atropos.core.neurosymbolic.ConcolicTestGenerator().generateCoverageTests(worktree)
+        ConcolicTestGenerator().generateCoverageTests(worktree)
 
         return GeneratedTestSuite(
             testFiles = testFiles,

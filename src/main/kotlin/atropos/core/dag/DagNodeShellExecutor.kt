@@ -40,7 +40,8 @@ class DagNodeShellExecutor(
                 }
             }
         }
-        return repoRoot
+        val targetHint = candidates.firstOrNull { it.isNotBlank() && !it.startsWith("src/") && !it.startsWith("apps/") }?.let { Path.of(it) }
+        return runCatching { atropos.core.TargetWorkspaceLocator.resolveTargetWorkspace(targetHint) }.getOrDefault(repoRoot)
     }
 
     fun detectLanguage(node: DagNode, workingDir: Path): ProjectLanguage {
@@ -208,6 +209,17 @@ class DagNodeShellExecutor(
             val policyCommand = command.trim().split(Regex("\\s+")).filter { it.isNotBlank() }
             if (policyCommand.isEmpty()) {
                 return finisher.fail(running, original, "DAG command refused: empty command")
+            }
+            val engineRoot = atropos.core.AtroposRepoRootLocator.resolve().toAbsolutePath().normalize()
+            val allTargetPaths = (relatedPaths + original.expectedOutputs).mapNotNull {
+                runCatching { Path.of(it).toAbsolutePath().normalize() }.getOrNull()
+            }
+            for (targetPath in allTargetPaths) {
+                if (targetPath.startsWith(engineRoot) && targetPath != engineRoot) {
+                    throw atropos.core.EngineDomainViolationException(
+                        "Execution denied: target path $targetPath is within engine authority domain"
+                    )
+                }
             }
             val proposal = ShellActionProposals.forCommand(
                 command = policyCommand,

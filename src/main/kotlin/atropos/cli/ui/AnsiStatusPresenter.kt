@@ -33,6 +33,7 @@ class AnsiStatusPresenter(
     private val intentDetector = IntentConflictDetector()
     private val intentBannerRenderer = IntentConflictBannerRenderer(theme.palette)
     private val uncertaintyRenderer = UncertaintyCalibratedRenderer(theme.palette)
+    private val bottomStatusBar = BottomStatusBar(theme)
 
     fun renderDashboard(
         state: TerminalStateSnapshot,
@@ -64,7 +65,16 @@ class AnsiStatusPresenter(
             )
             val openFrame = atropos.cli.ui.vis.CliOpenFrame(theme, HeaderRenderer(theme), statusBar)
             openFrame.render(presentationState, canvas.width, canvas.height)
+            val bar = bottomStatusBar.render(
+                workspacePath = state.workspace,
+                branch = presentationState.repository.branch.orEmpty(),
+                provider = state.provider,
+                progressPercent = 0,
+                costUsd = state.tracker.estimatedCostUsd(),
+                width = canvas.width
+            )
             welcome.render(presentationState, canvas.width, (canvas.height * 2 / 3).coerceAtLeast(14)).forEach(transcriptBuffer::append)
+            transcriptBuffer.append(bar)
             onRequestFrame()
         } else {
             rendering.renderDashboardPlain(
@@ -137,5 +147,14 @@ class AnsiStatusPresenter(
             onBlock(toastRenderer.render(Toast(null, summary), canvas.width))
             if (status == "completed" || status == "failed") onSignalAttention()
         }
+    }
+
+    private val tipBuffer = atropos.cli.tips.RotatingTipBuffer()
+
+    fun renderWelcome(config: AtroposConfig, activeProvider: String): String {
+        val tip = tipBuffer.nextTip()
+        val welcomeNotice = "Welcome to ATROPOS (Active Provider: $activeProvider)\nTip: $tip"
+        transcriptBuffer.append(welcomeNotice)
+        return welcomeNotice
     }
 }

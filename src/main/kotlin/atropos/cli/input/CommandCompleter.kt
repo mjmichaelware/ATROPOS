@@ -36,6 +36,7 @@ class CommandCompleter(
 
     private val providers: List<String> =
         CommandRegistry.providers
+    val taxonomy: atropos.cli.taxonomy.HierarchicalCommandTaxonomy = atropos.cli.taxonomy.HierarchicalCommandTaxonomy()
     private val suggestionEngine = SuggestionEngine()
     private val enterSelector = PartialCommandEnterToSelect(suggestionEngine)
 
@@ -82,6 +83,22 @@ class CommandCompleter(
                     providers,
                     selectedIndex,
                     fuzzy = true
+                )
+            }
+        }
+
+        val tokens = commandInput.removePrefix("/").split("\\s+".toRegex()).filter { it.isNotBlank() }
+        if (tokens.isNotEmpty()) {
+            val taxonomyNodes = taxonomy.stepInto(tokens)
+            if (taxonomyNodes.isNotEmpty()) {
+                val candidateTokens = taxonomyNodes.map { it.token }
+                val leafExplanation = taxonomyNodes.firstOrNull { it.isLeaf }?.leafResolution
+                val previewStr = leafExplanation ?: candidateTokens.firstOrNull().orEmpty()
+                return Completion(
+                    insertion = candidateTokens.getOrNull(selectedIndex.coerceIn(0, candidateTokens.lastIndex)).orEmpty(),
+                    preview = previewStr,
+                    selectedIndex = selectedIndex.coerceIn(0, (candidateTokens.size - 1).coerceAtLeast(0)),
+                    options = candidateTokens
                 )
             }
         }

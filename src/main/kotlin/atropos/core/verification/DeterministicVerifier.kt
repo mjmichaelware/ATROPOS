@@ -117,8 +117,22 @@ class DeterministicVerifier(
      * skipped anyway, and a call that silently does nothing for most of its
      * arguments is worse than one that never took them.
      */
-    fun verifyStructure(): DeterministicVerificationResult =
-        DeterministicVerificationResult(
-            checks.checkStructuralInvariants() + checks.reportSideEffectPaths()
+    fun verifyStructure(): DeterministicVerificationResult {
+        val locGate = LocDecompositionGate()
+        val locViolations = locGate.checkDirectory(repoRoot.resolve("src/main/kotlin").toFile())
+        val locFindings = locViolations.map {
+            DeterministicFinding(
+                invariantId = "LOC-500-CEILING",
+                severity = DiagnosticSeverity.ERROR,
+                file = it.filePath,
+                symbolOrLocation = "${it.observedLoc} lines",
+                evidence = "Observed ${it.observedLoc} lines, max allowed ${it.maxAllowedLoc}",
+                remediation = "Decompose monolithic source file below 500 lines",
+                classification = DeterministicClassification.DETERMINISTIC
+            )
+        }
+        return DeterministicVerificationResult(
+            checks.checkStructuralInvariants() + checks.reportSideEffectPaths() + locFindings
         )
+    }
 }

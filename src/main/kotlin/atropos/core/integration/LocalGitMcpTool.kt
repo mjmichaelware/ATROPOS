@@ -1,13 +1,39 @@
+/* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.integration
 
+import atropos.core.AtroposRepoRootLocator
+import atropos.core.TargetWorkspaceLocator
 import java.io.File
 import java.nio.file.Path
 import java.util.concurrent.TimeUnit
 
 data class GitCommandResult(val exitCode: Int, val stdout: String, val stderr: String)
 
-class LocalGitMcpTool(private val repoRoot: Path) {
+/**
+ * LocalGitMcpTool: Executes git operations strictly bounded to isolated target workspaces.
+ * Pathing is decoupled from engine authority root via TargetWorkspaceLocator.
+ */
+class LocalGitMcpTool(
+    workspacePath: Path? = null
+) {
+    private val repoRoot: Path = if (workspacePath != null) {
+        val engineRoot = AtroposRepoRootLocator.resolve().toAbsolutePath().normalize()
+        val abs = workspacePath.toAbsolutePath().normalize()
+        if (abs == engineRoot) {
+            TargetWorkspaceLocator.resolveTargetWorkspace(null)
+        } else {
+            workspacePath
+        }
+    } else {
+        TargetWorkspaceLocator.resolveTargetWorkspace(null)
+    }
+
     private fun execute(vararg args: String): GitCommandResult {
+        val engineRoot = AtroposRepoRootLocator.resolve().toAbsolutePath().normalize()
+        val currentAbs = repoRoot.toAbsolutePath().normalize()
+        if (currentAbs == engineRoot && args.any { it in setOf("add", "commit", "rebase", "checkout", "rm") }) {
+            throw SecurityException("Engine domain write violation: mutating commands forbidden on engine root")
+        }
         atropos.core.thinking.Thinking.detail("mcp", "Local git cmd: git ${args.joinToString(" ")}")
         val pb = ProcessBuilder("git", *args)
         pb.directory(repoRoot.toFile())
@@ -38,6 +64,13 @@ class LocalGitMcpTool(private val repoRoot: Path) {
         val cmd = mutableListOf("diff", "--no-color", "--")
         cmd.addAll(paths)
         return execute(*cmd.toTypedArray()).stdout
+    }
+
+    fun log(maxCount: Int = 10): List<String> {
+        atropos.core.thinking.Thinking.step("mcp", "Querying local git log")
+        val res = execute("log", "--oneline", "-n", maxCount.coerceIn(1, 100).toString())
+        if (res.exitCode != 0) return emptyList()
+        return res.stdout.lines().filter { it.isNotBlank() }
     }
 
     fun add(paths: List<String>): GitCommandResult {

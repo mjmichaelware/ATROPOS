@@ -1,7 +1,10 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.toolchain
 
+import atropos.core.adapter.HardwareProfileAdapter
+import atropos.core.platform.PlatformAdapterRegistry
 import java.io.File
+import java.nio.file.Files
 
 /**
  * SD7-T-080: PRoot sandbox fallback for Android/Termux environments.
@@ -12,11 +15,16 @@ object TermuxProotShim {
 
     fun isTermux(): Boolean {
         val prefix = System.getenv("PREFIX") ?: ""
-        return prefix.contains("com.termux") || File("/data/data/com.termux").exists()
+        val termuxHome = System.getenv("TERMUX_VERSION") ?: ""
+        return prefix.contains("com.termux") || termuxHome.isNotBlank() ||
+            runCatching {
+                val home = PlatformAdapterRegistry.current().getHomeDirectory()
+                home.toString().contains("com.termux")
+            }.getOrDefault(false)
     }
 
     fun isArm64(): Boolean {
-        val arch = System.getProperty("os.arch") ?: ""
+        val arch = HardwareProfileAdapter().getArch()
         return arch.equals("aarch64", ignoreCase = true) || arch.equals("arm64", ignoreCase = true)
     }
 
@@ -25,8 +33,9 @@ object TermuxProotShim {
             return command
         }
 
-        val prootBin = if (File("/data/data/com.termux/files/usr/bin/proot").exists()) {
-            "/data/data/com.termux/files/usr/bin/proot"
+        val resolved = PlatformAdapterRegistry.current().resolveToolPath("proot")
+        val prootBin = if (Files.isExecutable(resolved)) {
+            resolved.toString()
         } else {
             "proot"
         }

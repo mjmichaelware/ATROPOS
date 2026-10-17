@@ -33,6 +33,7 @@ class AnsiTerminalEngine(
     private val toasts = ToastRenderer(theme)
     private val dialogRenderer = DialogRenderer(theme)
     private val redactionFilter = RedactionFilter()
+    private val bottomStatusBar = BottomStatusBar(theme)
     private val boundedRendering = BoundedRenderingController
     private val startupPlayer = AnsiStartupPlayer(theme, canvas)
     private val competitiveErrorLedger = CompetitiveErrorLedger(redactionFilter)
@@ -224,7 +225,20 @@ class AnsiTerminalEngine(
     }
 
     @Synchronized
-    fun renderPrompt() { requestFrameLocked() }
+    fun renderPrompt() {
+        if (!state.reactive) {
+            val bar = bottomStatusBar.render(
+                workspacePath = state.workspace,
+                branch = "",
+                provider = state.provider,
+                progressPercent = 0,
+                costUsd = state.tracker.estimatedCostUsd(),
+                width = canvas.width
+            )
+            plainOutput.out.println(bar)
+        }
+        requestFrameLocked()
+    }
 
     @Synchronized
     fun renderAssistant(provider: String, response: String) {

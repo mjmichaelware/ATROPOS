@@ -49,6 +49,55 @@ class MutationTestingOracle(
     }
 
     fun evaluateMutationScore(
+        worktree: Path,
+        testRunner: () -> Boolean,
+        sourceFiles: List<Path>
+    ): Double {
+        val originalContents = mutableMapOf<Path, String>()
+        val mutations = mutableListOf<Pair<Path, String>>()
+
+        for (file in sourceFiles) {
+            val targetFile = if (file.isAbsolute) file else worktree.resolve(file)
+            if (!Files.isRegularFile(targetFile)) continue
+            val originalCode = Files.readString(targetFile)
+            originalContents[targetFile] = originalCode
+            val mutatedList = generateMutations(originalCode)
+            for (mutated in mutatedList) {
+                mutations.add(targetFile to mutated)
+            }
+        }
+
+        if (mutations.isEmpty()) {
+            return 1.0
+        }
+
+        val baselinePassed = try { testRunner() } catch (_: Throwable) { false }
+        if (!baselinePassed) {
+            throw VerificationException("Mutation testing baseline test runner failed on original code")
+        }
+
+        var killed = 0
+        for ((targetFile, mutatedCode) in mutations) {
+            val originalCode = originalContents[targetFile] ?: continue
+            try {
+                Files.writeString(targetFile, mutatedCode)
+                val testPassed = try { testRunner() } catch (_: Throwable) { false }
+                if (!testPassed) {
+                    killed++
+                }
+            } finally {
+                Files.writeString(targetFile, originalCode)
+            }
+        }
+
+        val score = killed.toDouble() / mutations.size
+        if (score < minKillRate) {
+            throw VerificationException("Mutation score $score below required threshold $minKillRate")
+        }
+        return score
+    }
+
+    fun evaluateMutationScore(
         worktreeRoot: Path,
         driver: LanguageToolchainDriver,
         sourceFiles: List<String>
@@ -142,6 +191,15 @@ class MutationTestingOracle(
             }
             if (trimmed.contains("!=")) {
                 mutations.add(line.replace("!=", "=="))
+            }
+            if (trimmed.contains(" + ") && !trimmed.contains("++")) {
+                mutations.add(line.replace(" + ", " - "))
+            }
+            if (trimmed.contains(" - ") && !trimmed.contains("--")) {
+                mutations.add(line.replace(" - ", " + "))
+            }
+            if (trimmed.contains(" * ")) {
+                mutations.add(line.replace(" * ", " / "))
             }
             if (trimmed.matches(Regex(".*\\breturn\\s+(true|false|0|1|null)\\b.*"))) {
                 mutations.add(line.replace("true", "false").replace("false", "true").replace("0", "1").replace("1", "0").replace("null", "0"))

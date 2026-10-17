@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 . "$HOME/.atropos/secrets/r2.env"
 exec python3 - "$1" << 'PY'

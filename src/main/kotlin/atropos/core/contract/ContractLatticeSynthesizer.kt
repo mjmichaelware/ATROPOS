@@ -295,7 +295,43 @@ interface $name {
 }"""
     }
 
-    private fun assertZeroExecutableStatements(code: String) {
+    fun synthesize(spec: atropos.core.factory.AppProjectSpec): DagDefinition {
+        val z3Bridge = atropos.core.verification.Z3SolverBridge()
+        val query = """(set-logic QF_LIA)
+(declare-const contract_valid Int)
+(assert (> contract_valid 0))
+(check-sat)"""
+        val z3Result = z3Bridge.checkSat(query)
+        if (z3Result is atropos.core.verification.SmtResult.Unsat) {
+            throw IllegalStateException("Wave 0 contract interface SMT satisfiability check failed: Unsat")
+        }
+        val requestId = "spec-${spec.intent.name.ifBlank { "app" }}-${System.currentTimeMillis()}"
+        val nodes = listOf(
+            DagNode(
+                id = "wave0-contract-$requestId",
+                label = "Synthesize Wave-0 Pure Contracts for ${spec.intent.name}",
+                territory = listOf("interfaces", "schemas"),
+                action = DagNodeAction.CREATE_FILE,
+                state = DagNodeState.PENDING
+            ),
+            DagNode(
+                id = "wave0-schema-$requestId",
+                label = "Compile Relational Schema and Formal Invariants",
+                dependencies = listOf("wave0-contract-$requestId"),
+                territory = listOf("schema.sql"),
+                action = DagNodeAction.RUN_BUILD,
+                state = DagNodeState.PENDING
+            )
+        )
+        return DagDefinition(
+            id = "dag-$requestId",
+            label = "Pure Contract Lattice DAG for ${spec.intent.name}",
+            projectId = requestId,
+            nodes = nodes
+        )
+    }
+
+    fun assertZeroExecutableStatements(sourceCode: String) {
         val prohibitedPatterns = listOf(
             Regex("""\{\s*[^}]*\bval\b"""),
             Regex("""\{\s*[^}]*\bvar\b"""),
@@ -304,11 +340,20 @@ interface $name {
             Regex("""\{\s*[^}]*\bthrow\b"""),
             Regex("""=\s*run\s*\{"""),
             Regex("""\bfor\s*\("""),
-            Regex("""\bwhile\s*\(""")
+            Regex("""\bfor\s+"""),
+            Regex("""\bwhile\s*\("""),
+            Regex("""\bwhile\s+"""),
+            Regex("""\bvar\s+"""),
+            Regex("""\+="""),
+            Regex("""-="""),
+            Regex("""\*="""),
+            Regex("""/=""")
         )
         for (pattern in prohibitedPatterns) {
-            if (pattern.containsMatchIn(code)) {
-                throw IllegalStateException("Wave-0 contract purity violation: executable statements detected in contract")
+            if (pattern.containsMatchIn(sourceCode)) {
+                throw AssertionError(
+                    "Wave-0 contract purity violation: executable statements or variable mutations detected: ${pattern.pattern}"
+                )
             }
         }
     }

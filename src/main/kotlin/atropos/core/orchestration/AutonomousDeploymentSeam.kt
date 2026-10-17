@@ -131,6 +131,8 @@ class AutonomousDeploymentSeam(
                 // Exhaustive pattern matching
             }
         }
+        val verifier = atropos.core.certificate.ZeroEntropyAttestationVerifier()
+        verifier.verifyAndCertify(worktreePath, worktreePath.resolve(".atropos/proofs"))
         deliveryEngine.emitZeroEntropyProof(deployment, worktreePath)
         return deployment
     }
