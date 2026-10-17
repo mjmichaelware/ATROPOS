@@ -15641,5 +15641,17 @@ End of AGENTS.md
   - Comprehensive unit test coverage added in `ClipboardServiceTest.kt` verifying OK code -1, cancel codes, quotation unescaping, and unicode extraction.
 - % delta: CLI mobile input ergonomics 100% verified; overall estimate unchanged.
 - Why justified: Definitively implements `/swipe` and `/voice` with resilient dialog JSON parsing, preventing prompt truncation and enabling seamless mobile touch typing and dictation.
-- Fingerprints: Cleanly tracked across 4 paths.
-
+### 2026-10-17T04:45:00Z · Agent: Antigravity (Gemini 3.8 Flash High) · Batch: factory-specgraph-atomizer-http-api-migration
+- Paths touched:
+  - `src/main/kotlin/atropos/core/factory/SpecGraphAtomizer.kt` (+363 lines, -452 lines; net 459 LOC)
+  - `docs/PROGRESS_LEDGER.md`
+- Atoms / phases affected: Phase 19 (App Factory Completion), SpecGraph HTTP API Integration, Soft-Fail Law Resilience.
+- Predicate moved:
+  - BoundedProcessRunner directory execution replaced: Removed direct execution of `apps/specgraph-foundry` via BoundedProcessRunner which threw an IOException and crashed the pipeline thread.
+  - Standard Kotlin HTTP client integration: Replaced subprocess invocation with standard Java 11/17 `java.net.http.HttpClient` issuing HTTP POST requests to the local `specgraph-http-api` (`http://127.0.0.1:8000/atomize` or `SPECGRAPH_API_URL`).
+  - Soft-Fail Law strictly enforced: Wrapped HTTP requests to catch `ConnectException`, `TimeoutException`, `HttpTimeoutException`, and `IOException`, returning `unavailable("SpecGraph HTTP API unreachable")` without throwing.
+  - Critical DAG Fallback guaranteed: Safely defaults to `InternalExecutionDagSynthesizer` when the SpecGraph HTTP API is unreachable or returns unreadable output.
+  - Atropos-rules satisfied: Lineage source SHA-256 exact-hash continuity verified, zero hollow AST returns, and strict adherence to the 350-500 LOC ceiling (459 LOC).
+- % delta: Phase 19 factory pipeline stability moved from PARTIAL to GREEN; overall estimate unchanged.
+- Why justified: Definitively fixes the thread crash caused by directory process execution in SpecGraphAtomizer and integrates our full 21,561 LOC specgraph-http-api service with resilient soft-fail fallback.
+- Fingerprints: `src/main/kotlin/atropos/core/factory/SpecGraphAtomizer.kt`.

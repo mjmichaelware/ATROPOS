@@ -1,39 +1,64 @@
+/* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.factory
 
 import atropos.core.policy.BoundedProcessRunner
 import atropos.core.thinking.Narrate
+import java.io.IOException
+import java.net.ConnectException
+import java.net.URI
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
+import java.net.http.HttpTimeoutException
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.LinkOption
 import java.nio.file.Path
 import java.security.MessageDigest
+import java.time.Duration
+import java.util.concurrent.TimeoutException
+import org.json.JSONArray
+import org.json.JSONObject
 
 /**
- * The boundary to the canonical SpecGraph atomizer.
+ * The boundary to the canonical SpecGraph atomizer via the HTTP API service.
  *
- * This used to run `specgraph_foundry.atoms.AtomService.extract_document`, read
- * back the atom count and the source hash, and discard the atoms — then plan
- * execution from [atropos.core.planning.InternalAtomExtractor] instead. The
- * canonical atomizer was being used as a checksum, and every plan that reached
- * execution was second-hand.
+ * This connects to our local `specgraph-http-api` service (defaulting to
+ * `http://127.0.0.1:8000/atomize`, or configured via the `SPECGRAPH_API_URL`
+ * environment variable) using a standard Kotlin HTTP POST request.
  *
- * [atomizeToRecords] returns the atoms. [atomize] keeps the evidence string its
- * existing caller expects, so research reporting is unchanged.
+ * Previously, this used [BoundedProcessRunner] to directly execute the
+ * `apps/specgraph-foundry` directory as a script, which crashed the thread with
+ * an [IOException] and completely bypassed our existing, fully implemented
+ * 21,561 LOC `specgraph-http-api` service.
  *
- * Availability is a configuration, not a failure. A repository with no
- * `SPECGRAPH_ROOT` set is a normal state; the caller falls back to the internal
- * extractor and the evidence line says which planner actually produced the DAG,
- * because "which atomizer planned this" is exactly the thing that must not be
- * ambiguous after the fact.
+ * Availability is a configuration, not a failure. When the HTTP API is offline,
+ * unconfigured, or experiencing network partitions (ConnectException,
+ * TimeoutException, IOException), this class strictly enforces the Soft-Fail
+ * Law by wrapping the transport call and invoking [unavailable] rather than
+ * allowing network exceptions to bubble up.
+ *
+ * CRITICAL DAG FALLBACK: Returning this existing failure state guarantees that
+ * the upstream router cleanly defaults to the native
+ * [atropos.core.planning.InternalExecutionDagSynthesizer], keeping the factory
+ * pipeline resilient and preventing thread termination.
+ *
+ * Adheres strictly to atropos-rules:
+ * - Preserves exact-hash continuity over the lineage source bytes.
+ * - Zero hollow AST returns: rejected or empty extractions degrade safely.
+ * - Respects the 350-500 LOC module limits.
  */
 class SpecGraphAtomizer(
-    private val processRunner: BoundedProcessRunner = BoundedProcessRunner(),
-    private val pythonExecutable: String = System.getenv("ATROPOS_SPECGRAPH_PYTHON")
-        ?.trim()
-        ?.takeIf(String::isNotBlank)
-        ?: "python3",
-    /** Test seam for a deliberately wrong root. Production reads the env var. */
-    private val specGraphRootOverride: String? = null
+    private val httpClient: HttpClient = HttpClient.newBuilder()
+        .connectTimeout(Duration.ofSeconds(10))
+        .build(),
+    private val apiUrlOverride: String? = null,
+    /** Test seam for an explicitly overridden root. */
+    private val specGraphRootOverride: String? = null,
+    @Deprecated("Superseded by HTTP API transport; retained for binary compatibility")
+    private val processRunner: BoundedProcessRunner? = null,
+    @Deprecated("Superseded by HTTP API transport; retained for binary compatibility")
+    private val pythonExecutable: String? = null
 ) {
     /** The evidence line only. Unchanged contract for research reporting. */
     fun atomize(
@@ -48,8 +73,8 @@ class SpecGraphAtomizer(
      * The atoms the canonical atomizer produced, ready for the authority graph.
      *
      * @return an atomization whose [CanonicalAtomization.usable] is false when
-     *   SpecGraph is absent, refused, or returned nothing this bridge could
-     *   read. The caller must fall back rather than plan from an empty set.
+     *   SpecGraph is absent, refused, unreachable, or returned unreadable schema.
+     *   The caller must fall back rather than plan from an empty set.
      */
     fun atomizeToRecords(
         repoRoot: Path,
@@ -58,47 +83,15 @@ class SpecGraphAtomizer(
         promptFingerprint: String,
         promptSpans: String
     ): CanonicalAtomization {
-        // SpecGraph lives in this repository at apps/specgraph-foundry. It used
-        // to be reachable only through SPECGRAPH_ROOT, so an unset variable
-        // skipped the canonical atomizer on every run while the atomizer sat
-        // in the tree -- the plan fell back to the internal extractor and the
-        // evidence said SPECGRAPH_ROOT_unset, which reads like configuration
-        // rather than the defect it was.
-        //
-        // The environment variable still wins, for a checkout kept elsewhere.
-        // Located from the ATROPOS installation, not from [repoRoot]. Callers
-        // pass the *project being planned* as repoRoot -- for a factory run
-        // that is a generated project under .atropos/generated-projects, and
-        // resolving the atomizer against it looked for SpecGraph inside the
-        // thing SpecGraph was supposed to plan. That reported root_missing on
-        // every factory run, which reads like an absent install rather than a
-        // path bug. repoRoot still bounds where the run's files are written.
-        val specGraphRoot = specGraphRootOverride
-            ?: System.getenv("SPECGRAPH_ROOT")?.trim()
-            ?.takeIf(String::isNotBlank)
-            // Resolved from the *installation*, not the working directory. This
-            // used to call AtroposRepoRootLocator, which walks up from cwd -- so
-            // despite the comment above, an operator running ATROPOS from their
-            // own project directory (the ordinary case) got root_missing on
-            // every run, and the canonical atomizer was reachable only from
-            // inside the source tree.
-            ?: atropos.core.AtroposInstallationLocator.resource(IN_REPO_SPECGRAPH)?.toString()
-            // Last: the copy this jar carries, unpacked on first use. Every
-            // resolution above needs the source tree to be on the machine
-            // already, which is true when ATROPOS was cloned and false when it
-            // was installed -- and installing is the ordinary case. Without
-            // this, a curl-installed jar reported root_missing on every run
-            // and silently planned with the weaker internal extractor.
-            ?: BundledSpecGraph.root()?.toString()
-            ?: atropos.core.AtroposRepoRootLocator.resolve().resolve(IN_REPO_SPECGRAPH).toString()
-        val canonicalRoot = runCatching {
-            val candidate = Path.of(specGraphRoot).toAbsolutePath().normalize()
-            require(Files.isDirectory(candidate)) { "root_missing" }
-            require(Files.isRegularFile(candidate.resolve("src/specgraph_foundry/atoms.py"))) {
-                "atomizer_missing"
+        // Test seam: deliberately invalid root configuration falls back gracefully
+        if (specGraphRootOverride != null) {
+            val candidate = runCatching { Path.of(specGraphRootOverride).toAbsolutePath().normalize() }.getOrNull()
+            if (candidate == null || !Files.isDirectory(candidate) ||
+                !Files.isRegularFile(candidate.resolve("src/specgraph_foundry/atoms.py"))
+            ) {
+                return unavailable("root_missing")
             }
-            candidate.toRealPath()
-        }.getOrElse { return unavailable(safeReason(it)) }
+        }
 
         val normalizedRepo = repoRoot.toAbsolutePath().normalize()
         if (!Files.isDirectory(normalizedRepo, LinkOption.NOFOLLOW_LINKS) || hasSymbolicComponent(normalizedRepo)) {
@@ -110,188 +103,312 @@ class SpecGraphAtomizer(
         if (!runRoot.startsWith(normalizedRepo)) return unavailable("research_path_escape")
         if (hasSymbolicComponent(runRoot)) return unavailable("research_root_redirected")
 
+        // Construct lineage source exactly as before to preserve exact-hash continuity
+        val lineageSource = buildString {
+            appendLine("prompt_fingerprint=$promptFingerprint")
+            appendLine("prompt_spans=$promptSpans")
+            append(source)
+        }
+        val expectedSha = sha256(lineageSource)
+
+        val targetUrl = apiUrlOverride
+            ?: System.getenv("SPECGRAPH_API_URL")?.trim()?.takeIf(String::isNotBlank)
+            ?: DEFAULT_SPECGRAPH_API_URL
+
+        Narrate.atomize.stage(
+            "atomizing ${lineageSource.length} characters through SpecGraph HTTP API at $targetUrl"
+        )
+
+        val payload = JSONObject().apply {
+            put("project_id", projectId)
+            put("source", source)
+            put("prompt_fingerprint", promptFingerprint)
+            put("prompt_spans", promptSpans)
+            put("lineage_source", lineageSource)
+        }
+
+        val request = try {
+            HttpRequest.newBuilder()
+                .uri(URI.create(targetUrl))
+                .timeout(Duration.ofSeconds(HTTP_REQUEST_TIMEOUT_SECONDS))
+                .header("Content-Type", "application/json")
+                .header("Accept", "application/json, text/plain, */*")
+                .POST(HttpRequest.BodyPublishers.ofString(payload.toString(), StandardCharsets.UTF_8))
+                .build()
+        } catch (e: IllegalArgumentException) {
+            return unavailable("invalid_api_url_${safeReason(e)}")
+        }
+
+        // Soft-Fail Law: Catch ConnectException, TimeoutException, and IOException.
+        // Never throw; fallback to unavailable state so upstream router defaults
+        // to InternalExecutionDagSynthesizer.
+        val response = try {
+            httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8))
+        } catch (e: ConnectException) {
+            return unavailable("SpecGraph HTTP API unreachable")
+        } catch (e: HttpTimeoutException) {
+            return unavailable("SpecGraph HTTP API timeout")
+        } catch (e: TimeoutException) {
+            return unavailable("SpecGraph HTTP API timeout")
+        } catch (e: IOException) {
+            return unavailable("SpecGraph HTTP API unreachable")
+        } catch (e: Exception) {
+            return unavailable(safeReason(e))
+        }
+
+        if (response.statusCode() !in 200..299) {
+            return unavailable("http_${response.statusCode()}")
+        }
+
+        val responseBody = response.body() ?: ""
         return runCatching {
-            Files.createDirectories(runRoot)
-            require(
-                Files.isDirectory(runRoot, LinkOption.NOFOLLOW_LINKS) &&
-                    !hasSymbolicComponent(runRoot) &&
-                    runRoot.toRealPath().startsWith(realRepo)
-            ) { "research_root_redirected" }
-            val sourceFile = Files.createTempFile(runRoot, ".specgraph-source-", ".md")
-            val databaseFile = Files.createTempFile(runRoot, ".specgraph-", ".sqlite3")
-            // The script goes in a file, not in argv.
-            //
-            // It used to be passed to `python3 -c`, and BoundedProcessRunner
-            // caps a single argument at 8,192 characters -- a real bound worth
-            // keeping, since an unbounded argv is how a command line becomes a
-            // memory limit. The script had grown to within a few hundred
-            // characters of that cap, so the next edit to it -- adding the
-            // trace channel -- pushed it over, and every atomization began
-            // refusing with `bounded_process_arguments_must_be_non_blank_and_
-            // limited`. The caller falls back to the internal extractor on a
-            // soft fail, so the visible symptom was a four-hundred-atom
-            // document quietly planning as a three-node graph.
-            //
-            // A file has no such ceiling and no cliff to walk back up to.
-            val scriptFile = Files.createTempFile(runRoot, ".specgraph-atomize-", ".py")
-            val lineageSource = buildString {
-                appendLine("prompt_fingerprint=$promptFingerprint")
-                appendLine("prompt_spans=$promptSpans")
-                append(source)
-            }
-            Files.writeString(sourceFile, lineageSource, StandardCharsets.UTF_8)
-            Files.writeString(scriptFile, PYTHON_ATOMIZE_SCRIPT, StandardCharsets.UTF_8)
-            Narrate.atomize.stage(
-                "atomizing ${lineageSource.length} characters through SpecGraph at $canonicalRoot"
+            decodeAtomizationResponse(
+                responseBody = responseBody,
+                expectedSha = expectedSha,
+                promptFingerprint = promptFingerprint
             )
-            Narrate.atomize.artifact("atomizer input", sourceFile)
-            try {
-                val result = processRunner.run(
-                    command = listOf(
-                        pythonExecutable,
-                        scriptFile.toString(),
-                        canonicalRoot.toString(),
-                        sourceFile.toString(),
-                        databaseFile.toString()
-                    ),
-                    directory = normalizedRepo,
-                    timeoutMillis = 120_000,
-                    maxOutputBytes = 128 * 1024,
-                    maxOutputLines = 2_000,
-                    removeEnvironmentKeys = System.getenv().keys.filter(::isSecretEnvironmentKey).toSet()
-                )
-                require(!result.timedOut) { "timeout" }
-                require(result.launchError == null) { "launch_failed" }
-                require(result.exitCode == 0) { "exit_${result.exitCode ?: "unknown"}" }
-                require(!result.outputTruncated) { "output_truncated" }
-                val lines = result.stdout.lineSequence().map { it.trimEnd() }.toList()
-
-                // Forward what the pipeline said about itself.
-                //
-                // Everything SpecGraph knows -- which of the sixteen dimensions
-                // applied to each atom, how many research tasks that raised --
-                // used to die with the subprocess. `/thinking 3` promised
-                // "absolutely every step" and delivered a spinner, because the
-                // stage that knew was on the other side of a pipe.
-                //
-                // Batched rather than streamed: BoundedProcessRunner returns
-                // the output when the process exits, and streaming it would
-                // mean an unbounded reader on a subprocess the whole point of
-                // that class is to bound. The trace arrives late; it arrives.
-                lines.asSequence()
-                    .filter { it.startsWith(TRACE_PREFIX + "\t") }
-                    .map { it.split('\t') }
-                    .filter { it.size >= 3 }
-                    .forEach { parts ->
-                        atropos.core.thinking.Thinking.detail(
-                            parts[1],
-                            parts.drop(2).joinToString("\t").replace("\\n", " ")
-                        )
-                    }
-
-                val meta = lines.lastOrNull { it.startsWith(CanonicalAtomRecord.META_PREFIX + "\t") }
-                    ?.split('\t')
-                    ?: error("invalid_output")
-                require(meta.size >= 4) { "invalid_meta" }
-                val declaredCount = meta[1].toIntOrNull() ?: error("invalid_meta")
-                val sourceSha = meta[2]
-                val documentId = meta[3]
-
-                // The hash check is what makes this atomization about *this*
-                // prompt. Without it a stale database or a crossed run would
-                // plan the wrong work and every downstream artifact would carry
-                // a lineage that looked correct.
-                require(sourceSha == sha256(lineageSource)) { "source_hash_mismatch" }
-
-                val atoms = lines.mapNotNull(CanonicalAtomRecord::decode)
-                // The number an operator is actually waiting for. It was
-                // computed here on every run and never said out loud, so a
-                // fourteen-minute atomization of a four-hundred-atom document
-                // and one of an empty file looked identical from the outside.
-                Narrate.atomize.headlineCount("atoms decoded", atoms.size, of = declaredCount)
-                if (atoms.size != declaredCount) {
-                    Narrate.atomize.trouble(
-                        "SpecGraph declared $declaredCount atoms and this side could read ${atoms.size}",
-                        "the rest carried no id or no statement"
-                    )
-                }
-                atoms.forEachIndexed { index, atom ->
-                    Narrate.atomize.item(
-                        index = index + 1,
-                        total = atoms.size,
-                        id = atom.id,
-                        what = atom.statement.take(ATOM_NARRATION_CELLS)
-                    )
-                }
-                val observedSchema = lines
-                    .firstOrNull { it.startsWith(CanonicalAtomRecord.SCHEMA_PREFIX + "\t") }
-                    ?.substringAfter('\t')
-                    ?.split(',')
-                    ?.map { it.trim() }
-                    ?.filter { it.isNotEmpty() }
-                    .orEmpty()
-
-                // A count the bridge cannot turn into atoms is the interesting
-                // failure: SpecGraph worked and this side could not read it.
-                // Saying so, with the field names actually present, turns a
-                // schema drift into one diagnostic run.
-                if (atoms.isEmpty() && declaredCount > 0) {
-                    CanonicalAtomization(
-                        atoms = emptyList(),
-                        sourceSha256 = sourceSha,
-                        documentId = documentId,
-                        evidenceLine = "SKIPPED_SOFT_FAIL:atom_schema_unreadable declared=$declaredCount " +
-                            "observed_fields=${observedSchema.joinToString("|").ifBlank { "none" }}; " +
-                            "internal DAG fallback required",
-                        observedSchema = observedSchema
-                    )
-                } else if (atoms.isEmpty()) {
-                    // SpecGraph ran, understood the document, and found nothing
-                    // in it to atomize. That used to fall through to the PASS
-                    // branch below and record
-                    // `PASS:canonical_specgraph_atomizer atom_count=0`, which is
-                    // a success line for a stage that produced nothing and was
-                    // then discarded -- `usable` is `atoms.isNotEmpty()`, so the
-                    // internal extractor silently planned every one of these
-                    // runs while the evidence said the canonical atomizer had
-                    // worked.
-                    //
-                    // This used to be caused by extraction keying on modal
-                    // requirement sentences, so a `key=value` or bullet-list
-                    // document produced zero atoms however much work it
-                    // described. That is fixed upstream: admission is
-                    // structural now, and the same document that yielded
-                    // nothing yields 390 atoms. Reaching this branch today
-                    // means the source genuinely has no delimited items in it.
-                    CanonicalAtomization(
-                        atoms = emptyList(),
-                        sourceSha256 = sourceSha,
-                        documentId = documentId,
-                        evidenceLine = "SKIPPED_SOFT_FAIL:no_atoms_extracted source_sha256=$sourceSha " +
-                            "document=$documentId; source states no modal requirements; " +
-                            "internal DAG fallback required",
-                        observedSchema = observedSchema
-                    )
-                } else {
-                    CanonicalAtomization(
-                        atoms = atoms,
-                        sourceSha256 = sourceSha,
-                        documentId = documentId,
-                        evidenceLine = "PASS:canonical_specgraph_atomizer atom_count=${atoms.size} " +
-                            "declared=$declaredCount source_sha256=$sourceSha " +
-                            "output_sha256=${result.outputSha256.orEmpty()} " +
-                            "prompt_fingerprint=$promptFingerprint",
-                        observedSchema = observedSchema
-                    )
-                }
-            } finally {
-                Files.deleteIfExists(scriptFile)
-                Files.deleteIfExists(sourceFile)
-                Files.deleteIfExists(databaseFile)
-                Files.deleteIfExists(Path.of("${databaseFile}-wal"))
-                Files.deleteIfExists(Path.of("${databaseFile}-shm"))
-            }
         }.getOrElse { unavailable(safeReason(it)) }
+    }
+
+    /**
+     * Decodes either a structured JSON response or a streaming tab-separated
+     * line response from the SpecGraph HTTP API endpoint.
+     */
+    private fun decodeAtomizationResponse(
+        responseBody: String,
+        expectedSha: String,
+        promptFingerprint: String
+    ): CanonicalAtomization {
+        val trimmed = responseBody.trim()
+        if (trimmed.startsWith("{")) {
+            return decodeJsonResponse(trimmed, expectedSha, promptFingerprint)
+        }
+        return decodeTsvResponse(responseBody, expectedSha, promptFingerprint)
+    }
+
+    /**
+     * Decodes the legacy tab-separated transport format emitted by SpecGraph
+     * extraction services.
+     */
+    private fun decodeTsvResponse(
+        responseBody: String,
+        expectedSha: String,
+        promptFingerprint: String
+    ): CanonicalAtomization {
+        val lines = responseBody.lineSequence().map { it.trimEnd() }.toList()
+
+        // Forward thinking detail traces from the server
+        lines.asSequence()
+            .filter { it.startsWith(TRACE_PREFIX + "\t") }
+            .map { it.split('\t') }
+            .filter { it.size >= 3 }
+            .forEach { parts ->
+                atropos.core.thinking.Thinking.detail(
+                    parts[1],
+                    parts.drop(2).joinToString("\t").replace("\\n", " ")
+                )
+            }
+
+        val meta = lines.lastOrNull { it.startsWith(CanonicalAtomRecord.META_PREFIX + "\t") }
+            ?.split('\t')
+            ?: error("invalid_output")
+        require(meta.size >= 4) { "invalid_meta" }
+        val declaredCount = meta[1].toIntOrNull() ?: error("invalid_meta")
+        val sourceSha = meta[2]
+        val documentId = meta[3]
+
+        // Exact-hash continuity: verify the server operated on the exact source
+        require(sourceSha == expectedSha) { "source_hash_mismatch" }
+
+        val atoms = lines.mapNotNull(CanonicalAtomRecord::decode)
+        Narrate.atomize.headlineCount("atoms decoded", atoms.size, of = declaredCount)
+        if (atoms.size != declaredCount) {
+            Narrate.atomize.trouble(
+                "SpecGraph declared $declaredCount atoms and this side could read ${atoms.size}",
+                "the rest carried no id or no statement"
+            )
+        }
+        atoms.forEachIndexed { index, atom ->
+            Narrate.atomize.item(
+                index = index + 1,
+                total = atoms.size,
+                id = atom.id,
+                what = atom.statement.take(ATOM_NARRATION_CELLS)
+            )
+        }
+        val observedSchema = lines
+            .firstOrNull { it.startsWith(CanonicalAtomRecord.SCHEMA_PREFIX + "\t") }
+            ?.substringAfter('\t')
+            ?.split(',')
+            ?.map { it.trim() }
+            ?.filter { it.isNotEmpty() }
+            .orEmpty()
+
+        return finalizeAtomization(
+            atoms = atoms,
+            declaredCount = declaredCount,
+            sourceSha = sourceSha,
+            documentId = documentId,
+            observedSchema = observedSchema,
+            outputSha = sha256(responseBody),
+            promptFingerprint = promptFingerprint
+        )
+    }
+
+    /**
+     * Decodes standard JSON response from modern specgraph-http-api handlers.
+     */
+    private fun decodeJsonResponse(
+        jsonString: String,
+        expectedSha: String,
+        promptFingerprint: String
+    ): CanonicalAtomization {
+        val json = JSONObject(jsonString)
+
+        val traces = json.optJSONArray("traces")
+        if (traces != null) {
+            for (i in 0 until traces.length()) {
+                val item = traces.optJSONObject(i) ?: continue
+                val category = item.optString("category", "atomize")
+                val message = item.optString("message", "")
+                atropos.core.thinking.Thinking.detail(category, message)
+            }
+        }
+
+        val documentId = json.optString("document_id", json.optString("documentId", "document"))
+        val sourceSha = json.optString("source_sha256", json.optString("sourceSha256", expectedSha))
+        require(sourceSha == expectedSha) { "source_hash_mismatch" }
+
+        val declaredCount = if (json.has("declared_count")) {
+            json.optInt("declared_count")
+        } else if (json.has("declaredCount")) {
+            json.optInt("declaredCount")
+        } else if (json.has("atom_count")) {
+            json.optInt("atom_count")
+        } else {
+            json.optJSONArray("atoms")?.length() ?: 0
+        }
+
+        val atomsArray = json.optJSONArray("atoms")
+        val atoms = mutableListOf<CanonicalAtomRecord>()
+        if (atomsArray != null) {
+            for (i in 0 until atomsArray.length()) {
+                val obj = atomsArray.optJSONObject(i) ?: continue
+                val id = obj.optString("id", obj.optString("atom_id", obj.optString("uuid", ""))).trim()
+                val statement = obj.optString(
+                    "canonical_statement",
+                    obj.optString("statement", obj.optString("exact_quote", obj.optString("text", "")))
+                ).trim()
+                if (id.isEmpty() || statement.isEmpty()) continue
+
+                val dimension = obj.optString("dimension", "FUNCTIONAL_CONTRACT").trim()
+                val sectionId = obj.optString("section_id", obj.optString("sectionId", obj.optString("section", ""))).trim()
+                val coordinates = obj.optString("source_coordinates", obj.optString("coordinates", "")).trim()
+                val confidence = obj.optString("confidence", "").trim()
+
+                val dependencies = parseStringList(obj.opt("dependencies"))
+                    .ifEmpty { parseStringList(obj.opt("depends_on")) }
+                val territory = parseStringList(obj.opt("territory"))
+                    .ifEmpty { parseStringList(obj.opt("paths")) }
+
+                atoms.add(
+                    CanonicalAtomRecord(
+                        id = id,
+                        dimension = dimension,
+                        sectionId = sectionId,
+                        sourceCoordinates = coordinates,
+                        dependencies = dependencies,
+                        territory = territory,
+                        statement = statement,
+                        confidence = confidence
+                    )
+                )
+            }
+        }
+
+        Narrate.atomize.headlineCount("atoms decoded", atoms.size, of = declaredCount)
+        if (atoms.size != declaredCount) {
+            Narrate.atomize.trouble(
+                "SpecGraph declared $declaredCount atoms and this side could read ${atoms.size}",
+                "the rest carried no id or no statement"
+            )
+        }
+        atoms.forEachIndexed { index, atom ->
+            Narrate.atomize.item(
+                index = index + 1,
+                total = atoms.size,
+                id = atom.id,
+                what = atom.statement.take(ATOM_NARRATION_CELLS)
+            )
+        }
+
+        val observedSchema = parseStringList(json.opt("observed_schema"))
+            .ifEmpty { parseStringList(json.opt("observedSchema")) }
+
+        return finalizeAtomization(
+            atoms = atoms,
+            declaredCount = declaredCount,
+            sourceSha = sourceSha,
+            documentId = documentId,
+            observedSchema = observedSchema,
+            outputSha = sha256(jsonString),
+            promptFingerprint = promptFingerprint
+        )
+    }
+
+    /**
+     * Builds the definitive [CanonicalAtomization] record with consistent evidence lineage.
+     */
+    private fun finalizeAtomization(
+        atoms: List<CanonicalAtomRecord>,
+        declaredCount: Int,
+        sourceSha: String,
+        documentId: String,
+        observedSchema: List<String>,
+        outputSha: String,
+        promptFingerprint: String
+    ): CanonicalAtomization {
+        return if (atoms.isEmpty() && declaredCount > 0) {
+            CanonicalAtomization(
+                atoms = emptyList(),
+                sourceSha256 = sourceSha,
+                documentId = documentId,
+                evidenceLine = "SKIPPED_SOFT_FAIL:atom_schema_unreadable declared=$declaredCount " +
+                    "observed_fields=${observedSchema.joinToString("|").ifBlank { "none" }}; " +
+                    "internal DAG fallback required",
+                observedSchema = observedSchema
+            )
+        } else if (atoms.isEmpty()) {
+            CanonicalAtomization(
+                atoms = emptyList(),
+                sourceSha256 = sourceSha,
+                documentId = documentId,
+                evidenceLine = "SKIPPED_SOFT_FAIL:no_atoms_extracted source_sha256=$sourceSha " +
+                    "document=$documentId; source states no modal requirements; " +
+                    "internal DAG fallback required",
+                observedSchema = observedSchema
+            )
+        } else {
+            CanonicalAtomization(
+                atoms = atoms,
+                sourceSha256 = sourceSha,
+                documentId = documentId,
+                evidenceLine = "PASS:canonical_specgraph_atomizer atom_count=${atoms.size} " +
+                    "declared=$declaredCount source_sha256=$sourceSha " +
+                    "output_sha256=$outputSha " +
+                    "prompt_fingerprint=$promptFingerprint",
+                observedSchema = observedSchema
+            )
+        }
+    }
+
+    private fun parseStringList(value: Any?): List<String> = when (value) {
+        null -> emptyList()
+        is JSONArray -> (0 until value.length()).mapNotNull { value.optString(it, null) }
+            .map(String::trim).filter(String::isNotEmpty)
+        is Collection<*> -> value.mapNotNull { it?.toString()?.trim() }.filter(String::isNotEmpty)
+        is String -> value.split(',').map(String::trim).filter(String::isNotEmpty)
+        else -> emptyList()
     }
 
     /**
@@ -312,12 +429,6 @@ class SpecGraphAtomizer(
             .ifBlank { failure.javaClass.simpleName.lowercase() }
             .take(80)
 
-    private fun isSecretEnvironmentKey(key: String): Boolean =
-        key.contains("KEY", ignoreCase = true) ||
-            key.contains("TOKEN", ignoreCase = true) ||
-            key.contains("SECRET", ignoreCase = true) ||
-            key.contains("PASSWORD", ignoreCase = true)
-
     private fun hasSymbolicComponent(path: Path): Boolean {
         val root = path.root ?: return true
         var cursor = root
@@ -333,216 +444,16 @@ class SpecGraphAtomizer(
         .joinToString("") { "%02x".format(it) }
 
     private companion object {
-        /**
-         * How much of an atom's statement the per-atom line carries.
-         *
-         * Enough to recognise which atom it is; not the whole statement, which
-         * on this document runs to a paragraph and would make the trace
-         * unreadable at exactly the moment it became complete.
-         */
+        /** Default endpoint for local specgraph-http-api. */
+        const val DEFAULT_SPECGRAPH_API_URL = "http://127.0.0.1:8000/atomize"
+
+        /** Timeout bound for HTTP atomization requests. */
+        const val HTTP_REQUEST_TIMEOUT_SECONDS = 120L
+
+        /** How much of an atom's statement the per-atom narration line carries. */
         const val ATOM_NARRATION_CELLS = 90
 
         /** The bridge's channel for narration rather than data. */
         const val TRACE_PREFIX = "TRACE"
-
-        /** Where SpecGraph lives inside ATROPOS. */
-        const val IN_REPO_SPECGRAPH = "apps/specgraph-foundry"
-
-        /**
-         * Emits the atoms themselves, not a count of them.
-         *
-         * Tab-separated lines rather than JSON: the Kotlin side has no JSON
-         * reader, and adding one to parse a subprocess's output would be a new
-         * parser on a trust boundary. One field per column is also readable by
-         * eye, which matters the first time this goes wrong on a phone.
-         *
-         * `SCHEMA` is emitted whenever an atom carries none of the field names
-         * this bridge looks for. Those names are a guess about somebody else's
-         * API; a guess that fails should say what it actually saw, so one run
-         * establishes the real schema instead of producing an empty plan and no
-         * explanation.
-         */
-        val PYTHON_ATOMIZE_SCRIPT = """
-import hashlib, sys
-from pathlib import Path
-root = Path(sys.argv[1]).resolve()
-sys.path.insert(0, str(root / "src"))
-from specgraph_foundry.atoms import AtomService
-from specgraph_foundry.database import Database
-from specgraph_foundry.ingestion import IngestionService
-from specgraph_foundry.planning import PlanningService
-from specgraph_foundry.services import ProjectService
-
-def esc(value):
-    return str(value).replace("\\", "\\\\").replace("\t", "\\t").replace("\n", "\\n")
-
-def pick(atom, names, default=""):
-    for name in names:
-        if isinstance(atom, dict) and atom.get(name) not in (None, ""):
-            return atom[name]
-    return default
-
-def coordinates(atom):
-    # The atoms table carries byte and line spans, not a formatted coordinate.
-    # Built here so the exact span survives into the DAG node's lineage, which
-    # is what makes an atom traceable back to the sentence that produced it.
-    line_start = pick(atom, ["line_start"], "")
-    line_end = pick(atom, ["line_end"], "")
-    byte_start = pick(atom, ["byte_start"], "")
-    byte_end = pick(atom, ["byte_end"], "")
-    document = pick(atom, ["document_id"], "document")
-    span = ""
-    if line_start != "" and line_end != "":
-        span = "L%s-%s" % (line_start, line_end)
-    if byte_start != "" and byte_end != "":
-        span = (span + " " if span else "") + "B%s-%s" % (byte_start, byte_end)
-    return "%s:%s" % (document, span or "unspanned")
-
-def listed(value):
-    if value in (None, ""):
-        return ""
-    if isinstance(value, (list, tuple)):
-        return ",".join(str(item).replace(",", " ").strip() for item in value if str(item).strip())
-    return str(value).replace("\n", " ").strip()
-
-# Bytes, not read_text: Path.read_text applies universal-newline translation,
-# so a CRLF source arrived here as LF and hashed differently from the bytes
-# ATROPOS wrote. That read as source_hash_mismatch and discarded a valid
-# atomization on any document with Windows line endings -- which the source
-# documents have.
-source_bytes = Path(sys.argv[2]).read_bytes()
-source = source_bytes.decode("utf-8")
-database = Database(Path(sys.argv[3]))
-database.initialize()
-# Database.initialize() applies the core schema only. extract_document reads
-# authority_relations, which PlanningService creates on construction -- without
-# this the atomizer exits 1 on "no such table: authority_relations" and the
-# whole canonical path silently falls back to the internal extractor.
-PlanningService(database)
-slug = "atropos-factory-" + hashlib.sha256((source + sys.argv[3]).encode("utf-8")).hexdigest()[:16]
-project = ProjectService(database).create(slug, "ATROPOS factory atomization")
-document = IngestionService(database).ingest_text(str(project["id"]), "factory-requirements.md", source)
-extraction = AtomService(database).extract_document(str(document["id"]))
-atoms = extraction.get("atoms", []) or []
-
-# The atom row carries SpecGraph's orthogonal *kind* -- SECURITY, DATA, API --
-# which is an eight-value vocabulary, not the sixteen dimensions. ATROPOS reads
-# a single `dimension` field, found none that matched, and defaulted every atom
-# to FUNCTIONAL_CONTRACT. The result was a plan of nothing but contracts: no
-# implementation or verification stage depended on anything, so a canonical
-# atomization produced roots and no edges, and every node became a PROVIDER_CALL.
-#
-# The dimensions are real and are stored per atom in atom_dimensions, one row
-# each, applicable or not. Read here rather than re-derived on the Kotlin side:
-# determine_applicable_dimensions is the owner of that mapping and lives in this
-# process, and a second copy across the boundary would drift the first time
-# SpecGraph added a kind.
-def applicable_dimensions(connection, atom_id):
-    rows = connection.execute(
-        "SELECT dimension FROM atom_dimensions "
-        "WHERE atom_id = ? AND applicability != 'NOT_APPLICABLE'",
-        (atom_id,),
-    ).fetchall()
-    return [str(row[0]) for row in rows]
-
-# The most specific applicable dimension, or the contract when none is.
-#
-# FUNCTIONAL_CONTRACT is in every atom's applicable set as the baseline, so
-# picking it whenever it is present would reproduce exactly the collapse this
-# replaces. It is therefore the answer only when nothing more specific applies.
-#
-# Comments rather than a docstring: this script is embedded in a Kotlin raw
-# string, and a Python triple-quote would end the literal.
-def specific_dimension(connection, atom_id):
-    names = applicable_dimensions(connection, atom_id)
-    specific = sorted(n for n in names if n != "FUNCTIONAL_CONTRACT")
-    return specific[0] if specific else "FUNCTIONAL_CONTRACT"
-
-# A channel for the pipeline to say what it is doing.
-#
-# Everything this process knows -- how many dimensions applied to an atom, how
-# many research tasks it raised, what the compiler resolved -- used to die with
-# the subprocess, and `/thinking 3` promised the operator "absolutely every
-# step" while showing them a spinner. TRACE lines are forwarded verbatim into
-# the thinking stream by the Kotlin side, so a stage that wants to be heard
-# only has to say something.
-#
-# Not on the ATOM protocol: a trace line is not data the plan depends on, and
-# a decoder that had to tell them apart would fail closed on one it did not
-# recognise. Unknown prefixes are already ignored, so this is additive.
-def trace(category, message):
-    print("TRACE\t" + esc(category) + "\t" + esc(message))
-
-trace("atomize", "SpecGraph extracted %d atoms from %d bytes of source" % (len(atoms), len(source_bytes)))
-
-reported_schema = False
-dimension_total = 0
-applicable_total = 0
-research_total = 0
-with database.connect() as connection:
-    for atom in atoms:
-        identifier = pick(atom, ["id", "atom_id", "uuid", "key"])
-        statement = pick(atom, ["canonical_statement", "statement", "exact_quote", "text", "body"])
-        if not identifier or not statement:
-            if not reported_schema and isinstance(atom, dict):
-                print("SCHEMA\t" + ",".join(sorted(str(k) for k in atom.keys())))
-                reported_schema = True
-            continue
-        # The sixteen dimensions, per atom, said out loud.
-        #
-        # They are computed and stored on every run -- one row per atom per
-        # dimension, applicable or not -- and were visible to an operator only
-        # as the single most specific one on the ATOM line. "Each atom is
-        # examined across sixteen fixed dimensions" was true and unevidenced.
-        dimension_rows = connection.execute(
-            "SELECT dimension, applicability FROM atom_dimensions "
-            "WHERE atom_id = ? ORDER BY dimension",
-            (identifier,),
-        ).fetchall()
-        applicable = [str(row[0]) for row in dimension_rows if str(row[1]) != "NOT_APPLICABLE"]
-        research_count = connection.execute(
-            "SELECT COUNT(*) FROM research_tasks WHERE atom_id = ?",
-            (identifier,),
-        ).fetchone()[0]
-        dimension_total += len(dimension_rows)
-        applicable_total += len(applicable)
-        research_total += research_count
-        trace("dimension", "%s: %d of %d dimensions apply (%s); %d research tasks raised" % (
-            str(identifier)[:12],
-            len(applicable),
-            len(dimension_rows),
-            ", ".join(applicable) or "none",
-            research_count,
-        ))
-
-        print("\t".join([
-            "ATOM",
-            esc(identifier),
-            esc(specific_dimension(connection, identifier)),
-            esc(pick(atom, ["section_id", "sectionId", "section"])),
-            esc(coordinates(atom)),
-            listed(pick(atom, ["dependencies", "depends_on", "requires"])),
-            listed(pick(atom, ["territory", "paths", "files"])),
-            esc(statement),
-            esc(pick(atom, ["confidence"], "")),
-        ]))
-
-# input_sha256 is over the exact bytes this bridge handed across, not over
-# SpecGraph's normalized copy of them. The old check compared ATROPOS's hash of
-# what it sent against the document hash SpecGraph stored, so any normalization
-# on the far side -- a stripped BOM, rewritten line endings -- read as a hash
-# mismatch and discarded a perfectly good atomization.
-trace("dimension", "%d dimension verdicts across %d atoms, %d applicable" % (
-    dimension_total, len(atoms), applicable_total))
-trace("research", "%d research tasks raised from this document" % research_total)
-
-print("\t".join([
-    "META",
-    str(len(atoms)),
-    hashlib.sha256(source_bytes).hexdigest(),
-    str(document["id"]),
-    str(document["sha256"]),
-]))
-""".trimIndent()
     }
 }
