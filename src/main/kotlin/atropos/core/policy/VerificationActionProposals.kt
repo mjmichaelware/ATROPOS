@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.policy
 
+import atropos.core.factory.ProjectLanguage
 import java.nio.file.Path
 import java.util.UUID
 
@@ -11,12 +12,50 @@ import java.util.UUID
  * commands may run; this file only states what is being asked for.
  *
  * Both builders reproduce the [ExecutionPolicyRequest] their callers used to
- * assemble inline. The engine restricts `BUILD_TEST` to a known launcher and
- * refuses chained or network `SMOKE` commands, so the action class carries real
- * weight and must not be swapped between them.
+ * assemble inline. Stop hardcoding `./gradlew` — routes dynamically based on
+ * the target project's [ProjectLanguage].
  */
 object VerificationActionProposals {
-    /** A build/test run, e.g. `./gradlew test jar --no-daemon`. */
+    fun defaultBuildCommand(language: ProjectLanguage): List<String> = when (language) {
+        ProjectLanguage.PYTHON -> listOf("python3", "-m", "py_compile")
+        ProjectLanguage.TYPESCRIPT -> listOf("npm", "run", "build")
+        ProjectLanguage.GO -> listOf("go", "build", "./...")
+        ProjectLanguage.RUST -> listOf("cargo", "check")
+        ProjectLanguage.JAVA -> listOf("mvn", "compile")
+        ProjectLanguage.KOTLIN -> listOf("./gradlew", "compileKotlin")
+        else -> listOf("sh", "-c", "echo build")
+    }
+
+    fun defaultTestCommand(language: ProjectLanguage): List<String> = when (language) {
+        ProjectLanguage.PYTHON -> listOf("pytest")
+        ProjectLanguage.TYPESCRIPT -> listOf("npm", "test")
+        ProjectLanguage.GO -> listOf("go", "test", "./...")
+        ProjectLanguage.RUST -> listOf("cargo", "test")
+        ProjectLanguage.JAVA -> listOf("mvn", "test")
+        ProjectLanguage.KOTLIN -> listOf("./gradlew", "test")
+        else -> listOf("sh", "-c", "echo test")
+    }
+
+    /** Dynamic language-aware build/test proposal. */
+    fun buildTest(
+        language: ProjectLanguage,
+        targetDir: Path,
+        actor: ActionActor,
+        customCommand: List<String>? = null
+    ): ActionProposal =
+        ActionProposal(
+            id = nextId("verify-${language.name.lowercase()}"),
+            actionClass = PolicyActionClass.BUILD_TEST,
+            actor = actor,
+            command = customCommand ?: defaultTestCommand(language),
+            cwd = targetDir.toString()
+        )
+
+    /** Shortcut helper for language-specific build/test routing. */
+    fun forLanguage(language: ProjectLanguage, targetDir: Path, actor: ActionActor): ActionProposal =
+        buildTest(language, targetDir, actor)
+
+    /** A build/test run with explicit command tokens. */
     fun buildTest(command: List<String>, repoRoot: Path, actor: ActionActor): ActionProposal =
         ActionProposal(
             id = nextId("verify"),

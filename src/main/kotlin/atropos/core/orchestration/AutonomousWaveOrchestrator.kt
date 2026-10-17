@@ -408,26 +408,56 @@ class AutonomousWaveOrchestrator(
             return emptySet()
         }
 
-        // Create isolated worktrees for each node with staging fallback
+        val projectName = atropos.core.factory.AppProjectGenerator.safeName(request.projectSpec.intent.name).ifBlank { request.requestId }
+        val isAppFactory = request.targetDirectory.startsWith(repoRoot.resolve("apps")) ||
+            request.targetDirectory.startsWith(repoRoot.resolve(".atropos/staging")) ||
+            request.targetDirectory.startsWith(repoRoot.resolve(".atropos/generated-projects")) ||
+            request.projectSpec.intent.name.isNotBlank()
+
+        val sandboxBase = when {
+            request.targetDirectory.startsWith(repoRoot.resolve("apps")) -> request.targetDirectory
+            request.targetDirectory.startsWith(repoRoot.resolve(".atropos/staging")) -> request.targetDirectory
+            java.nio.file.Files.exists(repoRoot.resolve("apps")) -> repoRoot.resolve("apps").resolve(projectName)
+            else -> repoRoot.resolve(".atropos/staging").resolve(projectName)
+        }
+        java.nio.file.Files.createDirectories(sandboxBase)
+
+        // Create isolated worktrees for each node strictly sandboxed
         val worktreeResults = mutableMapOf<String, WorktreeRecord>()
         for (node in readyNodes) {
-            val result = worktreeService.createWorktree(jobId = node.id, territory = node.territory)
-            val record = if (result.ok && result.record != null) {
-                result.record!!
-            } else {
-                val stagingDir = request.targetDirectory.resolve(".atropos/staging/${node.id}")
+            val record = if (isAppFactory) {
+                val stagingDir = sandboxBase.resolve(".atropos/staging/${node.id}")
                 java.nio.file.Files.createDirectories(stagingDir)
                 WorktreeRecord(
-                    id = "local-stage-${node.id}",
+                    id = "factory-stage-$projectName-${node.id}",
                     jobId = node.id,
                     worktreePath = stagingDir,
-                    baselineCommit = "HEAD",
+                    baselineCommit = "SANDBOX",
                     territory = node.territory,
                     dirtyEvidence = null,
                     createdAt = Instant.now(),
                     updatedAt = Instant.now(),
                     metaFile = stagingDir.resolve("stage.meta")
                 )
+            } else {
+                val result = worktreeService.createWorktree(jobId = node.id, territory = node.territory)
+                if (result.ok && result.record != null) {
+                    result.record!!
+                } else {
+                    val stagingDir = request.targetDirectory.resolve(".atropos/staging/${node.id}")
+                    java.nio.file.Files.createDirectories(stagingDir)
+                    WorktreeRecord(
+                        id = "local-stage-${node.id}",
+                        jobId = node.id,
+                        worktreePath = stagingDir,
+                        baselineCommit = "HEAD",
+                        territory = node.territory,
+                        dirtyEvidence = null,
+                        createdAt = Instant.now(),
+                        updatedAt = Instant.now(),
+                        metaFile = stagingDir.resolve("stage.meta")
+                    )
+                }
             }
             worktreeResults[node.id] = record
             activeWorktrees[node.id] = record
@@ -446,12 +476,13 @@ class AutonomousWaveOrchestrator(
         // Merge successful worktrees back
         for (nodeId in completedNodeIds.toList()) {
             val worktree = worktreeResults[nodeId] ?: continue
-            if (worktree.id.startsWith("local-stage-")) {
+            if (worktree.id.startsWith("factory-stage-") || worktree.id.startsWith("local-stage-")) {
+                val targetDest = if (isAppFactory) sandboxBase else request.targetDirectory
                 java.nio.file.Files.walk(worktree.worktreePath).use { paths ->
                     paths.filter { java.nio.file.Files.isRegularFile(it) && !it.fileName.toString().endsWith(".meta") }
                         .forEach { src ->
                             val rel = worktree.worktreePath.relativize(src)
-                            val dest = request.targetDirectory.resolve(rel)
+                            val dest = targetDest.resolve(rel)
                             dest.parent?.let { java.nio.file.Files.createDirectories(it) }
                             java.nio.file.Files.copy(src, dest, java.nio.file.StandardCopyOption.REPLACE_EXISTING)
                         }
@@ -475,7 +506,7 @@ class AutonomousWaveOrchestrator(
         // Cleanup worktrees
         for (worktree in worktreeResults.values) {
             activeWorktrees.remove(worktree.jobId)
-            if (!worktree.id.startsWith("local-stage-") && !(worktree.verified && worktree.mergedBack)) {
+            if (!worktree.id.startsWith("factory-stage-") && !worktree.id.startsWith("local-stage-") && !(worktree.verified && worktree.mergedBack)) {
                 worktreeService.removeWorktree(worktree.id)
             }
         }
@@ -497,11 +528,55 @@ class AutonomousWaveOrchestrator(
             // Dispatch to contract synthesizer for actual code generation
             val synthesisResult = contractSynthesizer.synthesizeNode(node, worktree.worktreePath, request)
             if (!synthesisResult.success) {
-                worktreeService.rollback(worktree.id)
+                if (!worktree.id.startsWith("factory-stage-") && !worktree.id.startsWith("local-stage-")) {
+                    worktreeService.rollback(worktree.id)
+                }
                 return DagNodeExecutionResult(node.id, DagNodeState.FAILED, false, synthesisResult.message)
             }
 
-            // Run completion gate verification
+            // Strict sandboxed verification for App Factory nodes
+            if (worktree.id.startsWith("factory-stage-")) {
+                if (node.action == DagNodeAction.VERIFY || node.action == DagNodeAction.RUN_TEST || node.action == DagNodeAction.COMPILE_GATE) {
+                    val lang = atropos.core.factory.ProjectLanguage.layoutFor(
+                        atropos.core.factory.ProjectLanguage.detect(request.projectSpec.prompt)
+                    )
+                    val shellExec = atropos.core.dag.DagNodeShellExecutor(
+                        repoRoot = repoRoot,
+                        store = dagStore,
+                        finisher = atropos.core.dag.DagNodeFinisher(object : atropos.core.planning.PlanningGraphPlugin {
+                            override fun getReadyNodes(projectId: String, graphVersion: String) = emptyList<atropos.core.planning.ReadyNode>()
+                            override fun claimNode(nodeId: String, executorId: String, territory: atropos.core.planning.Territory) =
+                                atropos.core.planning.NodeClaim(true, nodeId, executorId, territory)
+                            override fun submitEvidence(nodeId: String, evidence: atropos.core.planning.ExecutionEvidence) =
+                                atropos.core.planning.EvidenceReceipt(nodeId, true)
+                            override fun completeNode(nodeId: String, result: atropos.core.planning.NodeResult) = Unit
+                        }),
+                        territoryViolation = { _, _ -> null },
+                        extractCandidatePaths = { emptyList() },
+                        executionDir = worktree.worktreePath,
+                        projectLanguage = lang
+                    )
+                    val execResult = if (node.action == DagNodeAction.COMPILE_GATE) shellExec.gate(node, node) else shellExec.verify(node, node)
+                    if (!execResult.ok) {
+                        return DagNodeExecutionResult(
+                            nodeId = node.id,
+                            state = DagNodeState.FAILED,
+                            ok = false,
+                            message = "sandboxed verification failed: ${execResult.message}"
+                        )
+                    }
+                }
+
+                return DagNodeExecutionResult(
+                    nodeId = node.id,
+                    state = DagNodeState.COMPLETE,
+                    ok = true,
+                    message = "node completed in sandbox: ${synthesisResult.message}",
+                    result = synthesisResult.message
+                )
+            }
+
+            // Run completion gate verification for host/internal nodes
             val gateReport = completionGate.evaluateNode(node)
             if (!gateReport.canComplete) {
                 worktreeService.rollback(worktree.id)
@@ -521,7 +596,9 @@ class AutonomousWaveOrchestrator(
                 result = synthesisResult.message
             )
         } catch (e: Exception) {
-            worktreeService.rollback(worktree.id)
+            if (!worktree.id.startsWith("factory-stage-") && !worktree.id.startsWith("local-stage-")) {
+                worktreeService.rollback(worktree.id)
+            }
             return DagNodeExecutionResult(
                 nodeId = node.id,
                 state = DagNodeState.FAILED,

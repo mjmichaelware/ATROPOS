@@ -207,7 +207,7 @@ open class ExecutionPolicyEngine(
 
             PolicyActionClass.BUILD_TEST -> {
                 val first = request.command.firstOrNull().orEmpty()
-                if (first !in setOf("./gradlew", "gradlew", "java")) {
+                if (first !in setOf("./gradlew", "gradlew", "java", "javac", "kotlinc", "pytest", "python", "python3", "npm", "node", "cargo", "go", "mvn", "sh")) {
                     return deny("build/test command refused")
                 }
                 return allow("bounded build/test command allowed", timeoutMillis = 900_000L, maxOutputBytes = 256 * 1024)

@@ -6,6 +6,7 @@ import atropos.core.dag.DagDefinition
 import atropos.core.dag.DagNode
 import atropos.core.dag.DagNodeAction
 import atropos.core.dag.DagNodeState
+import atropos.core.factory.ProjectLanguage
 import atropos.core.orchestration.WaveExecutionRequest
 import atropos.core.planning.PartitionCluster
 import atropos.core.research.ResearchDocument
@@ -103,9 +104,50 @@ CREATE INDEX IF NOT EXISTS idx_entities_kind ON entities(kind);
         val ddlPath = targetDir.resolve("schema.sql")
         Files.writeString(ddlPath, ddlContent)
 
-        // Bidirectional runtime codec generation rejecting unknown fields (SD7-R-040)
-        val codecPath = targetDir.resolve("RuntimeBoundaryCodec.kt")
-        val codecContent = """/* SPDX-License-Identifier: AGPL-3.0-only */
+        // Bidirectional runtime codec generation respecting detected language (SD7-R-040)
+        val language = ProjectLanguage.layoutFor(ProjectLanguage.detect(request.projectSpec.prompt))
+        val codecFileName = when (language) {
+            ProjectLanguage.PYTHON -> "runtime_boundary_codec.py"
+            ProjectLanguage.TYPESCRIPT -> "RuntimeBoundaryCodec.ts"
+            else -> "RuntimeBoundaryCodec.kt"
+        }
+        val codecPath = targetDir.resolve(codecFileName)
+        val codecContent = when (language) {
+            ProjectLanguage.PYTHON -> """# Generated Wave-0 Runtime Boundary Codec
+import json
+
+class RuntimeBoundaryCodec:
+    @staticmethod
+    def serialize(payload: dict) -> str:
+        return json.dumps(payload)
+
+    @staticmethod
+    def deserialize(raw: str, allowed_keys: set) -> dict:
+        clean = raw.strip()
+        if not clean: return {}
+        data = json.loads(clean)
+        for k in data:
+            if k not in allowed_keys:
+                raise ValueError(f"Unknown field rejected at boundary: {k}")
+        return data
+"""
+            ProjectLanguage.TYPESCRIPT -> """// Generated Wave-0 Runtime Boundary Codec
+export const RuntimeBoundaryCodec = {
+    serialize(payload: Record<string, any>): string {
+        return JSON.stringify(payload);
+    },
+    deserialize(raw: string, allowedKeys: Set<string>): Record<string, string> {
+        const clean = raw.trim();
+        if (!clean) return {};
+        const data = JSON.parse(clean);
+        for (const k of Object.keys(data)) {
+            if (!allowedKeys.has(k)) throw new Error(`Unknown field rejected at boundary: ${'$'}{k}`);
+        }
+        return data;
+    }
+};
+"""
+            else -> """/* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.generated.codec
 
 object RuntimeBoundaryCodec {
@@ -133,6 +175,7 @@ object RuntimeBoundaryCodec {
     }
 }
 """
+        }
         Files.writeString(codecPath, codecContent)
 
         val nodes = listOf(
@@ -147,7 +190,7 @@ object RuntimeBoundaryCodec {
                 id = "wave0-ddl-schema-${request.requestId}",
                 label = "Compile Relational DDL and ORM Mappings",
                 dependencies = listOf("wave0-contract-lattice-${request.requestId}"),
-                territory = listOf("schema.sql", "RuntimeBoundaryCodec.kt"),
+                territory = listOf("schema.sql", codecFileName),
                 action = DagNodeAction.RUN_BUILD,
                 state = DagNodeState.PENDING
             )
