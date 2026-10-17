@@ -86,6 +86,18 @@ fun main(args: Array<String>) {
         return
     }
 
+    if (args.any { it == "--systemic-seal" }) {
+        val gate = atropos.core.doctor.SystemicSealAuditGate(java.nio.file.Path.of("."))
+        val passed = gate.verifySeal()
+        if (passed) {
+            println("SEAL_STATUS = THE_ARCHITECTURE_IS_DEFINITIVELY_COMPLETE_AND_CLOSED")
+            return
+        } else {
+            println("SEAL_STATUS = SEAL_VERIFICATION_FAILED")
+            exitProcess(1)
+        }
+    }
+
     // ALPHA-OMEGA: ProviderDaemon - synchronous blocking health validation at boot time
     val config = AtroposConfig.load()
     val providerOnboarding = atropos.core.provider.ProviderOnboardingService()

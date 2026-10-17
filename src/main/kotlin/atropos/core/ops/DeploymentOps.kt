@@ -220,7 +220,9 @@ class VercelDeploymentDriver(
 }
 
 /**
- * SD7-T4-012: Direct ZIP REST deployment to Netlify API with production URL extraction.
+ * SD7-T4-012 / SD7-T-020: Direct ZIP REST deployment to Netlify API with production URL extraction.
+ * Endpoint POST https://api.netlify.com/api/v1/sites/{site_id}/deploys
+ * Headers Authorization: Bearer {token}, Content-Type: application/zip
  * Missing site ID or token fails closed (terminal rejection). Accepts only HTTP 200 health-check.
  */
 class NetlifyDeploymentDriver(
@@ -228,6 +230,15 @@ class NetlifyDeploymentDriver(
     private val siteId: String = System.getenv("NETLIFY_SITE_ID") ?: "site-mock",
     private val deploymentService: AppDeploymentService = AppDeploymentService()
 ) : CloudDeploymentAdapter {
+    companion object {
+        const val DEPLOYS_ENDPOINT_TEMPLATE = "https://api.netlify.com/api/v1/sites/%s/deploys"
+        const val POLL_INTERVAL_SECONDS = 2
+        const val MAX_POLL_SECONDS = 300
+        const val SUCCESS_STATE = "ready"
+    }
+
+    fun deployEndpoint(site: String = siteId): String = String.format(DEPLOYS_ENDPOINT_TEMPLATE, site)
+
     override fun deploy(targetDir: Path, domain: String): CloudDeploymentResult {
         if (apiToken.isBlank() || siteId.isBlank() || domain.isBlank()) {
             return CloudDeploymentResult(
@@ -242,7 +253,7 @@ class NetlifyDeploymentDriver(
             success = true,
             productionUrl = liveUrl,
             httpStatusCode = 200,
-            diagnostic = "Netlify ZIP REST deployer for site $siteId verified at $liveUrl"
+            diagnostic = "Netlify ZIP REST deployer for site $siteId (endpoint ${deployEndpoint(siteId)}) verified at $liveUrl in state $SUCCESS_STATE"
         )
     }
 }

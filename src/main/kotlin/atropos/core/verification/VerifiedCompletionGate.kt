@@ -56,6 +56,9 @@ class VerifiedCompletionGate(
     )
 
     private var nativeToolchains: NativeToolchainRegistry = NativeToolchainRegistry
+    private val tlcHarness: atropos.core.neurosymbolic.TlcModelCheckerHarness = atropos.core.neurosymbolic.TlcModelCheckerHarness()
+    private val concolicInversion: ConcolicPathInversion = ConcolicPathInversion()
+    private val heapResidualEvaluator: atropos.core.neurosymbolic.HeapResidualEvaluator = atropos.core.neurosymbolic.HeapResidualEvaluator()
 
     fun bindNativeToolchains(registry: NativeToolchainRegistry) {
         this.nativeToolchains = registry
@@ -64,6 +67,10 @@ class VerifiedCompletionGate(
     fun evaluateNativeExitCode(result: ToolchainResult): Boolean {
         return result.exitCode == 0 && result.passed
     }
+
+    fun evaluateTlcSpec(spec: String): Boolean = tlcHarness.check(spec)
+    fun invertPath(path: String): String = concolicInversion.invert(path)
+    fun evaluateHeapResidual(heapDump: String): Boolean = heapResidualEvaluator.evaluate(heapDump)
 
     fun mergeProviderProposals(proposals: List<WorkerCodeProposal>): ProviderProposalMergeReport {
         if (proposals.isEmpty()) return ProviderProposalMergeReport(false, emptyList(), "no provider proposals")

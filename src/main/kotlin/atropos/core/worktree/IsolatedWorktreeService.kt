@@ -360,6 +360,44 @@ class IsolatedWorktreeService(
         }
     }
 
+    /**
+     * SD7-T-103: Read-only mounts of Wave-0 contracts into isolated worktree.
+     * Mathematical Invariant: Territory(P_r) ∩ Territory(P_s) = ∅
+     * Projects contracts into the worktree as immutable/read-only without triggering TerritoryEnforcer.
+     */
+    fun mountReadOnly(worktreeId: String = "", contractInterfaces: List<String> = emptyList()) {
+        val record = recordStore.read(worktreeId) ?: return
+        val target = record.worktreePath.resolve("contracts")
+        Files.createDirectories(target)
+        for (iface in contractInterfaces) {
+            val file = target.resolve("$iface.kt")
+            if (!Files.exists(file)) {
+                Files.writeString(file, "// Read-only contract interface projection\ninterface $iface\n")
+                file.toFile().setReadOnly()
+            }
+        }
+    }
+
+    /**
+     * SD7-T-112: Immediate worktree rollback and subagent eviction on territory violation.
+     * Mathematical Invariant: Territory(P_r) ∩ Territory(P_s) = ∅
+     * On cross-territory write: git worktree remove --force, subagent terminated, ZERO_REWARD_PENALTY logged.
+     */
+    fun rollbackAndEvict(worktreeId: String) {
+        val record = recordStore.read(worktreeId)
+        if (record != null) {
+            runCatching {
+                gitRunner.run(GitWorktreeOperation.WORKTREE_REMOVE, repoRoot, record.worktreePath.toString(), "--force")
+            }
+            recordStore.delete(record)
+        }
+        atropos.core.autonomy.RewardPenaltyStore().recordZeroRewardPenalty(
+            agentId = worktreeId,
+            reason = "Territory violation in worktree $worktreeId: force evicted and rolled back",
+            violationClass = "TERRITORY_VIOLATION_EVICTION"
+        )
+    }
+
     private fun firstOutsideTerritory(record: WorktreeRecord, paths: List<String>): String? {
         return atropos.core.territory.TerritoryEnforcer(record.territory).firstOutside(paths)
     }

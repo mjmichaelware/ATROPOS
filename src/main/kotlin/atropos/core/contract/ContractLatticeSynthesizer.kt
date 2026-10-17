@@ -207,6 +207,8 @@ object RuntimeBoundaryCodec {
         atropos.core.neurosymbolic.AdversarialGoalExpansion().expand(lattice)
         atropos.core.neurosymbolic.TlaAlloyStateMachineChecker().checkStateMachine(lattice)
         atropos.core.neurosymbolic.DloiDomainContractExtrapolation(atropos.dloi.DloiService()).extrapolate(lattice)
+        val tlaSpec = atropos.core.neurosymbolic.TlaAlloyGenerator().generateFromLattice(lattice)
+        atropos.core.neurosymbolic.TlcModelCheckerHarness().checkSpec(tlaSpec)
 
         return lattice
     }

@@ -43,8 +43,12 @@ class ProviderCascadeRouter(
     private val localOnly: () -> Boolean = { AtroposConfig.load().runtime.localOnly },
     private val paidGate: EmergencyPaidGate = EmergencyPaidGate(),
     /** Reads secrets from environment, config, AND vault. Null defaults to env-only. */
-    private val secretReader: ((String) -> String?)? = null
+    private val secretReader: ((String) -> String?)? = null,
+    private val astDistanceCalculator: atropos.core.verification.AstEditDistanceCalculator = atropos.core.verification.AstEditDistanceCalculator()
 ) {
+    fun arbitrateTriModelOutputs(outA: String, outB: String, outC: String): atropos.core.verification.TriModelDisputationResult =
+        astDistanceCalculator.arbitrateTriModel(outA, outB, outC)
+
     /** Returns the documented chain through the canonical route owner. */
     fun declaredFallbackChain(capability: ApiCapability): FallbackChain? =
         FallbackChainRegistry.canonicalChain(capability)

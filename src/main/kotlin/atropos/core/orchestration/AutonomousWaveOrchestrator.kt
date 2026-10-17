@@ -562,6 +562,18 @@ class AutonomousWaveOrchestrator(
         return deployment
     }
 
+    /**
+     * SD7-T-101: Fail-closed credential check for cloud platforms.
+     * Aborts with terminal error code 78 if platform token is missing. Never returns Success with deploymentUrl = null.
+     */
+    fun validateTokens() {
+        val vercel = System.getenv("VERCEL_TOKEN")
+        val netlify = System.getenv("NETLIFY_TOKEN")
+        if (vercel.isNullOrBlank() && netlify.isNullOrBlank()) {
+            throw IllegalStateException("Terminal rejection (exit code 78): Required platform token is null or empty. Fail-closed enforced.")
+        }
+    }
+
     fun verifyVercelWireContract(driver: VercelDeploymentDriver, sampleBytes: ByteArray): Map<String, String> {
         return driver.uploadFileContract(sampleBytes)
     }

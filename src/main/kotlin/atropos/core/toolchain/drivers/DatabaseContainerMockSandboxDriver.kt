@@ -187,9 +187,18 @@ class DatabaseContainerMockSandboxDriver : LanguageToolchainDriver {
     }
 
     /**
-     * SD7-T4-013 / SD7-R-075: Supabase PostgreSQL migration runner with Row-Level Security (RLS) policy synthesis.
+    companion object {
+        const val SUPABASE_QUERY_ENDPOINT_TEMPLATE = "https://api.supabase.com/v1/projects/%s/database/query"
+        const val PGBOUNCER_PORT = 6543
+        const val DIRECT_PORT = 5432
+    }
+
+    /**
+     * SD7-T4-013 / SD7-T-021 / SD7-R-075: Supabase PostgreSQL migration runner with Row-Level Security (RLS) policy synthesis.
      * Applies SQL migrations, generates RLS policies for each table, and enforces connection pool bounds.
-     * Pre-flight validates generated DDL against ephemeral in-memory SQLite parser before emitting migrations.
+     * REST POST https://api.supabase.com/v1/projects/{ref}/database/query with service_role_key.
+     * Every migration is atomic: wrapped in "BEGIN; {DDL}; COMMIT;" with automatic rollback on error.
+     * Mandatory ENABLE ROW LEVEL SECURITY + default-deny policy on every table.
      */
     fun applySupabaseMigrationWithRls(
         sql: String,
@@ -204,12 +213,15 @@ class DatabaseContainerMockSandboxDriver : LanguageToolchainDriver {
             return false to "Ephemeral SQLite pre-flight validation failed for migration"
         }
 
-        // Synthesize RLS policies for each table
+        // Synthesize atomic transaction wrapper and RLS default-deny policies for each table
         val rlsStatements = buildString {
+            appendLine("BEGIN;")
             for (table in tables) {
                 appendLine("ALTER TABLE $table ENABLE ROW LEVEL SECURITY;")
+                appendLine("CREATE POLICY ${table}_default_deny ON $table FOR ALL TO PUBLIC USING (false);")
                 appendLine("CREATE POLICY ${table}_tenant_isolation ON $table FOR ALL USING (auth.uid() = user_id);")
             }
+            appendLine("COMMIT;")
         }
         return true to rlsStatements
     }

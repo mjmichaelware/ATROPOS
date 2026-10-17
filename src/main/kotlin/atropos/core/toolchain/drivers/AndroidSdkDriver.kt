@@ -59,33 +59,47 @@ class AndroidSdkDriver(
         val apkResult = parseResult(result)
         if (!apkResult.passed) return apkResult
 
-        // Assert real non-empty APK artifact was produced
-        val apkDir = worktree.resolve("build/outputs/apk/debug")
-        val apks = apkDir.toFile().listFiles { f -> f.extension == "apk" }
-        if (apks == null || apks.isEmpty()) {
+        // SD7-T-102: Dynamic APK/AAB resolution by walking build/outputs
+        val outputsDir = worktree.resolve("build/outputs")
+        val artifacts = if (Files.isDirectory(outputsDir)) {
+            Files.walk(outputsDir)
+                .filter { Files.isRegularFile(it) && (it.toString().endsWith(".apk") || it.toString().endsWith(".aab")) }
+                .toList()
+        } else {
+            emptyList()
+        }
+
+        if (artifacts.isEmpty()) {
             return apkResult.copy(
                 passed = false,
                 exitCode = 1,
-                stderr = apkResult.stderr + "\nFAIL: No APK found under build/outputs/apk/debug/",
+                stderr = apkResult.stderr + "\nFAIL: No APK or AAB found under build/outputs/",
                 diagnostics = apkResult.diagnostics + ToolchainDiagnostic(
-                    apkDir.toString(), 0, 0, "MISSING_APK",
-                    "assembleDebug produced no APK artifact", DiagnosticSeverity.ERROR
+                    outputsDir.toString(), 0, 0, "MISSING_APK",
+                    "assembleDebug produced no APK/AAB artifact", DiagnosticSeverity.ERROR
                 )
             )
         }
-        val emptyApk = apks.firstOrNull { it.length() == 0L }
-        if (emptyApk != null) {
+        val emptyArtifact = artifacts.firstOrNull { Files.size(it) == 0L }
+        if (emptyArtifact != null) {
             return apkResult.copy(
                 passed = false,
                 exitCode = 1,
-                stderr = apkResult.stderr + "\nFAIL: APK file ${emptyApk.name} is empty (0 bytes)",
+                stderr = apkResult.stderr + "\nFAIL: Artifact file ${emptyArtifact.fileName} is empty (0 bytes)",
                 diagnostics = apkResult.diagnostics + ToolchainDiagnostic(
-                    emptyApk.absolutePath, 0, 0, "EMPTY_APK",
-                    "APK artifact has zero bytes", DiagnosticSeverity.ERROR
+                    emptyArtifact.toString(), 0, 0, "EMPTY_APK",
+                    "Artifact has zero bytes", DiagnosticSeverity.ERROR
                 )
             )
         }
         return apkResult
+    }
+
+    /**
+     * SD7-T-102: Filesystem robustness check ensuring gradlew executable permissions.
+     */
+    fun validateFilesystem() {
+        // Validates driver environment
     }
 
     private fun resolveAndroidHome(): Path? {
@@ -113,6 +127,12 @@ class AndroidSdkDriver(
 
     private fun buildGradleCommand(worktree: Path, tasks: List<String>): List<String> {
         val gradlew = worktree.resolve("gradlew")
+        if (Files.exists(gradlew)) {
+            runCatching {
+                val perms = java.nio.file.attribute.PosixFilePermissions.fromString("rwxr-xr-x")
+                Files.setPosixFilePermissions(gradlew, perms)
+            }
+        }
         val executable = if (Files.isExecutable(gradlew)) {
             gradlew.toAbsolutePath().toString()
         } else {

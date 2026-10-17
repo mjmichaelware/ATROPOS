@@ -26,6 +26,10 @@ data class ComponentCompletion(
     val evidencePercent: Double
 )
 
+/**
+ * SD7-T-013: Dedicated completion-calculus computing four independent scalars.
+ * Mathematical Invariant: C_real = min(C_impl, C_int, C_ver, C_ev)
+ */
 object CompletionCalculus {
     fun compute(cImpl: Int, cInt: Int, cVer: Int, cEv: Int): DiscreteCompletionVector {
         return DiscreteCompletionVector(cImpl, cInt, cVer, cEv)
@@ -34,9 +38,15 @@ object CompletionCalculus {
     fun isComplete(vector: DiscreteCompletionVector): Boolean = vector.cReal == 1
 
     fun calculateRealCompletion(comp: ComponentCompletion): Double {
-        return min(
-            min(comp.implementationPercent, comp.integrationPercent),
-            min(comp.verificationPercent, comp.evidencePercent)
+        return computeCReal(
+            comp.implementationPercent,
+            comp.integrationPercent,
+            comp.verificationPercent,
+            comp.evidencePercent
         )
+    }
+
+    fun computeCReal(cImpl: Double, cInt: Double, cVer: Double, cEv: Double): Double {
+        return min(min(cImpl, cInt), min(cVer, cEv))
     }
 }
