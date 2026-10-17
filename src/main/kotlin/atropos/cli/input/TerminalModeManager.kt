@@ -132,6 +132,7 @@ class TerminalModeManager(
 
         try {
             controlWriter(DISABLE_BRACKETED_PASTE)
+            controlWriter(DISABLE_MOUSE_TRACKING)
         } catch (_: Exception) {
             successful = false
         }
@@ -184,5 +185,8 @@ class TerminalModeManager(
 
         private const val DISABLE_BRACKETED_PASTE =
             "\u001B[?2004l"
+
+        private const val DISABLE_MOUSE_TRACKING =
+            "\u001B[?1006l\u001B[?1002l\u001B[?1000l"
     }
 }

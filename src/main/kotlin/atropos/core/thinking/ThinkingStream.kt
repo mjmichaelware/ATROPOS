@@ -111,6 +111,11 @@ object Thinking {
      * a run: a trace that takes down the work it was describing is worse than
      * no trace.
      */
+    /** Milestone or high-level outline (L1). What operators see at minimal verbosity. */
+    fun outline(category: String, text: String) {
+        runCatching { stream.emit(ThinkingDepth.L1, text, category = category) }
+    }
+
     fun step(category: String, text: String) {
         runCatching { stream.emit(ThinkingDepth.L2, text, category = category) }
     }

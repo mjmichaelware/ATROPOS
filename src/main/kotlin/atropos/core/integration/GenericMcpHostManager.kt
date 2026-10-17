@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicLong
 import org.json.JSONArray
 import org.json.JSONObject
 
-data class McpServerConfig(
+data class GenericMcpServerConfig(
     val id: String,
     val command: String,
     val args: List<String>,
@@ -21,7 +21,7 @@ data class McpServerConfig(
     val workingDir: String? = null
 )
 
-data class McpToolDescriptor(
+data class GenericMcpToolDescriptor(
     val serverId: String,
     val name: String,
     val description: String,
@@ -38,12 +38,12 @@ class GenericMcpHostManager(private val configRoot: Path) {
         val reader: BufferedReader
     )
 
-    fun loadServerConfigs(): List<McpServerConfig> {
+    fun loadServerConfigs(): List<GenericMcpServerConfig> {
         val configFile = configRoot.resolve("mcp.json").toFile()
         if (!configFile.exists()) return emptyList()
         val root = JSONObject(configFile.readText(StandardCharsets.UTF_8))
         val servers = root.optJSONObject("mcpServers") ?: return emptyList()
-        return servers.keySet().map { key ->
+        val configs = servers.keySet().map { key ->
             val obj = servers.getJSONObject(key)
             val cmd = obj.getString("command")
             val args = obj.optJSONArray("args")?.let { arr ->
@@ -52,13 +52,18 @@ class GenericMcpHostManager(private val configRoot: Path) {
             val env = obj.optJSONObject("env")?.let { envObj ->
                 envObj.keySet().associateWith { envObj.getString(it) }
             } ?: emptyMap()
-            McpServerConfig(key, cmd, args, env)
+            GenericMcpServerConfig(key, cmd, args, env)
         }
+        atropos.core.thinking.Thinking.detail("mcp", "Loaded ${configs.size} MCP server configurations from ${configFile.name}")
+        return configs
     }
 
     @Synchronized
-    fun startServer(config: McpServerConfig): Boolean {
+    fun startServer(config: GenericMcpServerConfig): Boolean {
         if (sessions.containsKey(config.id)) return true
+        atropos.core.thinking.Thinking.outline("mcp", "Connecting MCP integration: ${config.id}")
+        atropos.core.thinking.Thinking.step("mcp", "Starting MCP server ${config.id}")
+        atropos.core.thinking.Thinking.detail("mcp", "Spawning MCP process for ${config.id}: ${config.command} ${config.args.joinToString(" ")}")
         val pb = ProcessBuilder(listOf(config.command) + config.args)
         config.workingDir?.let { pb.directory(File(it)) }
         pb.environment().putAll(config.env)
@@ -101,7 +106,7 @@ class GenericMcpHostManager(private val configRoot: Path) {
         return true
     }
 
-    fun listTools(serverId: String): List<McpToolDescriptor> {
+    fun listTools(serverId: String): List<GenericMcpToolDescriptor> {
         val session = sessions[serverId] ?: return emptyList()
         val id = requestId.getAndIncrement()
         val req = JSONObject().apply {
@@ -114,19 +119,24 @@ class GenericMcpHostManager(private val configRoot: Path) {
         val result = resp.optJSONObject("result") ?: return emptyList()
         val toolsArray = result.optJSONArray("tools") ?: return emptyList()
 
-        return (0 until toolsArray.length()).map { i ->
+        val descriptors = (0 until toolsArray.length()).map { i ->
             val t = toolsArray.getJSONObject(i)
-            McpToolDescriptor(
+            GenericMcpToolDescriptor(
                 serverId = serverId,
                 name = t.getString("name"),
                 description = t.optString("description", ""),
                 inputSchemaJson = t.optJSONObject("inputSchema")?.toString() ?: "{}"
             )
         }
+        atropos.core.thinking.Thinking.step("mcp", "Registered ${descriptors.size} tools from MCP server $serverId")
+        atropos.core.thinking.Thinking.detail("mcp", "Server $serverId tool catalog: [${descriptors.joinToString { it.name }}]")
+        return descriptors
     }
 
     fun callTool(serverId: String, toolName: String, argumentsJson: String, timeoutSeconds: Long = 15): String {
         val session = sessions[serverId] ?: return "ERROR: Server $serverId not running"
+        atropos.core.thinking.Thinking.step("mcp", "Invoking MCP tool $toolName on server $serverId")
+        atropos.core.thinking.Thinking.detail("mcp", "Dispatched JSON-RPC 2.0 call to $serverId:$toolName (${argumentsJson.length} bytes payload)")
         val id = requestId.getAndIncrement()
         val req = JSONObject().apply {
             put("jsonrpc", "2.0")
@@ -143,10 +153,12 @@ class GenericMcpHostManager(private val configRoot: Path) {
         }
         val result = resp.optJSONObject("result") ?: return "{}"
         val content = result.optJSONArray("content") ?: return "{}"
-        return (0 until content.length()).map { i ->
+        val output = (0 until content.length()).map { i ->
             val item = content.getJSONObject(i)
             item.optString("text", item.toString())
         }.joinToString("\n")
+        atropos.core.thinking.Thinking.detail("mcp", "Received response from $serverId:$toolName (${output.length} characters)")
+        return output
     }
 
     private fun sendAndAwait(session: ActiveProcessSession, req: JSONObject, timeoutSeconds: Long): JSONObject? {
@@ -169,6 +181,7 @@ class GenericMcpHostManager(private val configRoot: Path) {
     fun shutdownServer(serverId: String) {
         sessions.remove(serverId)?.let { session ->
             try {
+                atropos.core.thinking.Thinking.detail("mcp", "Terminating MCP server $serverId process")
                 session.writer.close()
                 session.reader.close()
                 session.process.destroyForcibly()

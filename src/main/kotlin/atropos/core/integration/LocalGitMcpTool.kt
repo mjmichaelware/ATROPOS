@@ -8,6 +8,7 @@ data class GitCommandResult(val exitCode: Int, val stdout: String, val stderr: S
 
 class LocalGitMcpTool(private val repoRoot: Path) {
     private fun execute(vararg args: String): GitCommandResult {
+        atropos.core.thinking.Thinking.detail("mcp", "Local git cmd: git ${args.joinToString(" ")}")
         val pb = ProcessBuilder("git", *args)
         pb.directory(repoRoot.toFile())
         val proc = pb.start()
@@ -25,6 +26,7 @@ class LocalGitMcpTool(private val repoRoot: Path) {
     }
 
     fun statusPorcelain(): List<String> {
+        atropos.core.thinking.Thinking.step("mcp", "Querying local git status")
         val res = execute("status", "--porcelain=v1")
         if (res.exitCode != 0) return emptyList()
         return res.stdout.lines().filter { it.isNotBlank() }
@@ -32,6 +34,7 @@ class LocalGitMcpTool(private val repoRoot: Path) {
 
     fun diff(paths: List<String>): String {
         paths.forEach { assertSafeRelativePath(it) }
+        atropos.core.thinking.Thinking.step("mcp", "Generating diff for ${paths.size} path(s)")
         val cmd = mutableListOf("diff", "--no-color", "--")
         cmd.addAll(paths)
         return execute(*cmd.toTypedArray()).stdout
@@ -46,6 +49,7 @@ class LocalGitMcpTool(private val repoRoot: Path) {
 
     fun commit(message: String): GitCommandResult {
         require(message.isNotBlank()) { "Commit message cannot be blank" }
+        atropos.core.thinking.Thinking.step("mcp", "Creating git commit: ${message.take(60)}")
         return execute("commit", "-m", message)
     }
 }

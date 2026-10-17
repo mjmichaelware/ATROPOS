@@ -49,6 +49,8 @@ sealed class KeyEvent {
      */
     object PageUp : KeyEvent()
     object PageDown : KeyEvent()
+    data class ScrollUp(val lines: Int = 3) : KeyEvent()
+    data class ScrollDown(val lines: Int = 3) : KeyEvent()
 }
 
 class RawKeyReader(

@@ -99,6 +99,8 @@ class TerminalCanvas(
             alternateScreen = true
         }
 
+        // Enable SGR mouse tracking so scroll gestures send mouse scroll events instead of arrow keys
+        out.print("\u001B[?1000h\u001B[?1002h\u001B[?1006h")
         out.print("\u001B[H\u001B[2J")
         out.flush()
         renderer.invalidate()
@@ -131,6 +133,9 @@ class TerminalCanvas(
         }
 
         renderer.restoreCursor()
+
+        // Disable SGR mouse tracking
+        out.print("\u001B[?1006l\u001B[?1002l\u001B[?1000l")
 
         if (alternateScreen) {
             out.print("\u001B[?1049l")

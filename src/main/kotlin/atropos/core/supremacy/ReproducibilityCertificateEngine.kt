@@ -71,6 +71,7 @@ class ReproducibilityCertificateEngine {
         relativeFiles: List<String>,
         environmentVariables: Map<String, String>
     ): ZeroEntropyCertificate {
+        atropos.core.thinking.Thinking.step("verify", "Generating bit-exact Merkle certificate")
         val leaves = relativeFiles.map { computeLeaf(repoRoot, repoRoot.resolve(it).normalize()) }
         val tree = buildMerkleTree(leaves)
 
@@ -80,6 +81,7 @@ class ReproducibilityCertificateEngine {
         val envPayload = envEntries.entries.joinToString(";") { "${it.key}=${it.value}" }
         val envHash = bytesToHex(sha256(envPayload.toByteArray(StandardCharsets.UTF_8)))
 
+        atropos.core.thinking.Thinking.detail("verify", "Computed Merkle root: ${tree.rootHashHex.take(16)}... across ${tree.leafCount} leaves")
         return ZeroEntropyCertificate(
             rootHash = tree.rootHashHex,
             sourceTreeHash = tree.rootHashHex,
@@ -90,13 +92,16 @@ class ReproducibilityCertificateEngine {
     }
 
     fun verifyCertificate(certificate: ZeroEntropyCertificate, repoRoot: Path): Boolean {
+        atropos.core.thinking.Thinking.step("verify", "Verifying ZeroEntropyCertificate against repo root")
         val currentLeaves = certificate.leafManifest.map { leaf ->
             val file = repoRoot.resolve(leaf.relativePath).normalize()
             if (!Files.exists(file)) return false
             computeLeaf(repoRoot, file)
         }
         val reconstructedTree = buildMerkleTree(currentLeaves)
-        return reconstructedTree.rootHashHex == certificate.rootHash
+        val matched = reconstructedTree.rootHashHex == certificate.rootHash
+        atropos.core.thinking.Thinking.detail("verify", "Certificate verification result: $matched (root=${certificate.rootHash.take(16)}...)")
+        return matched
     }
 
     private fun compareByteArrays(a: ByteArray, b: ByteArray): Int {

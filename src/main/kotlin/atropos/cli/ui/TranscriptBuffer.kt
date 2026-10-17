@@ -30,6 +30,10 @@ class TranscriptBuffer(
     val currentScrollOffset: Int
         get() = scrollOffset
 
+    fun setRenderedWidth(width: Int) {
+        if (width > 0) lastRenderedWidth = width
+    }
+
     fun append(value: String) {
         append(TranscriptEntry.Text(value))
     }

@@ -3,7 +3,7 @@ package atropos.core.integration
 import org.json.JSONObject
 
 data class FilteredToolBundle(
-    val activeTools: List<McpToolDescriptor>,
+    val activeTools: List<GenericMcpToolDescriptor>,
     val truncatedCharsCount: Int,
     val droppedToolsCount: Int
 )
@@ -12,7 +12,7 @@ class McpToolBudgetGuard(
     private val maxToolsTotal: Int = 32,
     private val maxCharacterLimit: Int = 4000
 ) {
-    fun pruneAndEnforce(tools: List<McpToolDescriptor>, userQuery: String): FilteredToolBundle {
+    fun pruneAndEnforce(tools: List<GenericMcpToolDescriptor>, userQuery: String): FilteredToolBundle {
         if (tools.isEmpty()) return FilteredToolBundle(emptyList(), 0, 0)
         val queryKeywords = userQuery.lowercase().split(Regex("[^a-zA-Z0-9_]")).filter { it.length > 2 }.toSet()
 
@@ -25,7 +25,7 @@ class McpToolBudgetGuard(
         val cappedTools = scoredTools.take(maxToolsTotal)
         val dropped = tools.size - cappedTools.size
 
-        val finalizedTools = mutableListOf<McpToolDescriptor>()
+        val finalizedTools = mutableListOf<GenericMcpToolDescriptor>()
         var totalChars = 0
         var truncatedChars = 0
 
@@ -50,6 +50,9 @@ class McpToolBudgetGuard(
                 break
             }
         }
+
+        atropos.core.thinking.Thinking.step("mcp", "Tool budget guard active: ${finalizedTools.size} tools admitted")
+        atropos.core.thinking.Thinking.detail("mcp", "Budget evaluation: ${tools.size} input -> ${finalizedTools.size} active, $truncatedChars chars trimmed, $dropped dropped")
 
         return FilteredToolBundle(
             activeTools = finalizedTools,

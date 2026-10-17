@@ -28,8 +28,10 @@ class McpEvidenceAndAuthorityPolicy(private val repoRoot: Path) {
         if (normalized == "AGENTS.md" || normalized == "SWARM.md" ||
             normalized.startsWith(".atropos/ledger") || normalized.startsWith(".git")
         ) {
+            atropos.core.thinking.Thinking.step("security", "Authority check blocked modification to $normalized")
             throw SecurityException("Authority Violation: Protected sovereign path: $normalized")
         }
+        atropos.core.thinking.Thinking.detail("security", "Authority path validation passed for $normalized")
     }
 
     fun appendToLedger(toolName: String, callerId: String, payload: String): CasEvidencePointer {
@@ -52,6 +54,8 @@ class McpEvidenceAndAuthorityPolicy(private val repoRoot: Path) {
                 StandardOpenOption.CREATE,
                 StandardOpenOption.APPEND
             )
+            atropos.core.thinking.Thinking.step("mcp", "Recording CAS evidence for $toolName")
+            atropos.core.thinking.Thinking.detail("mcp", "CAS evidence anchored: hash=${hash.take(12)}... offset=$offset")
             return CasEvidencePointer(hash, offset, now)
         }
     }
@@ -62,6 +66,9 @@ class McpEvidenceAndAuthorityPolicy(private val repoRoot: Path) {
         if (!lockFile.exists()) return true
         val expected = lockFile.readText(StandardCharsets.UTF_8).trim()
         val actual = sha256Hex(Files.readAllBytes(agentsMd))
-        return expected.equals(actual, ignoreCase = true)
+        val matched = expected.equals(actual, ignoreCase = true)
+        atropos.core.thinking.Thinking.step("security", "Verifying AGENTS.md authority integrity")
+        atropos.core.thinking.Thinking.detail("security", "AGENTS.md hash integrity verified: $matched")
+        return matched
     }
 }

@@ -109,7 +109,10 @@ class AnsiTerminalEngine(
         state.reactive = capabilities.isInteractiveTerminal &&
             OutputModeDetector.detect() != OutputMode.HEADLESS
         if (!state.reactive) return
-        canvas.initialize(useAlternateScreen = useAlternateScreen)
+        val effectiveAltScreen = useAlternateScreen &&
+            System.getenv("ATROPOS_NO_ALT_SCREEN").isNullOrBlank() &&
+            System.getenv("ATROPOS_WINDOW_SCROLL").isNullOrBlank()
+        canvas.initialize(useAlternateScreen = effectiveAltScreen)
         resizePoller.scheduleAtFixedRate({
             // Guarded for the same reason the spinner is: one throw and
             // scheduleAtFixedRate cancels the schedule for the rest of the

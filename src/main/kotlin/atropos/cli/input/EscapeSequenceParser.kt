@@ -70,6 +70,8 @@ class EscapeSequenceParser(
                     // Also support Shift/Ctrl+Up/Down for scrollback navigation.
                     "5~", "5;2~", "5;5~", "1;2A", "1;5A" -> KeyEvent.PageUp
                     "6~", "6;2~", "6;5~", "1;2B", "1;5B" -> KeyEvent.PageDown
+                    "1;3A" -> KeyEvent.ScrollUp(3)
+                    "1;3B" -> KeyEvent.ScrollDown(3)
                     "Z" -> KeyEvent.ShiftTab
                     "9;5u", "27;5;9~", "1;5I" -> KeyEvent.CtrlTab
                     "200~" -> parseBracketedPaste()
@@ -78,10 +80,10 @@ class EscapeSequenceParser(
                             BoundedRenderingController.resetPasteSuspension()
                         }
                         if (code.startsWith("<64;")) {
-                            return KeyEvent.PageUp
+                            return KeyEvent.ScrollUp(3)
                         }
                         if (code.startsWith("<65;")) {
-                            return KeyEvent.PageDown
+                            return KeyEvent.ScrollDown(3)
                         }
                         KeyEvent.UnknownEscape("\u001B[$code")
                     }

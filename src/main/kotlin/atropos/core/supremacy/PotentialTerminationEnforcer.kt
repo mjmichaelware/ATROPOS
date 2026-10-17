@@ -31,6 +31,8 @@ class PotentialTerminationEnforcer(private val maxStagnantIterations: Int = 2) {
         val currPhi = current.phi
 
         if (currPhi < prevPhi) {
+            atropos.core.thinking.Thinking.step("autonomy", "Lyapunov potential descent confirmed: Φ=$currPhi")
+            atropos.core.thinking.Thinking.detail("autonomy", "Iteration $iteration: unverified=${current.unverifiedNodes}, failing=${current.failingDiagnostics}, phi=$currPhi (delta=${currPhi - prevPhi})")
             stagnantCount = 0
             lastVector = current
             return

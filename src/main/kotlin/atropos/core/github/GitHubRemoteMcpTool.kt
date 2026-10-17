@@ -22,11 +22,12 @@ class GitHubRemoteMcpTool(private val tokenProvider: () -> String) {
     }
 
     fun listOpenPullRequests(owner: String, repo: String): List<PullRequestRecord> {
+        atropos.core.thinking.Thinking.step("mcp", "Querying GitHub PRs for $owner/$repo")
         val conn = openConnection("/repos/$owner/$repo/pulls?state=open", "GET")
         if (conn.responseCode !in 200..299) return emptyList()
         val body = conn.inputStream.bufferedReader(StandardCharsets.UTF_8).use { it.readText() }
         val arr = JSONArray(body)
-        return (0 until arr.length()).map { i ->
+        val records = (0 until arr.length()).map { i ->
             val obj = arr.getJSONObject(i)
             PullRequestRecord(
                 number = obj.getInt("number"),
@@ -35,9 +36,12 @@ class GitHubRemoteMcpTool(private val tokenProvider: () -> String) {
                 author = obj.getJSONObject("user").getString("login")
             )
         }
+        atropos.core.thinking.Thinking.detail("mcp", "Found ${records.size} open PRs on $owner/$repo")
+        return records
     }
 
     fun createPullRequest(owner: String, repo: String, head: String, base: String, title: String, body: String): Int {
+        atropos.core.thinking.Thinking.step("mcp", "Creating GitHub PR: $title")
         val conn = openConnection("/repos/$owner/$repo/pulls", "POST")
         conn.doOutput = true
         conn.setRequestProperty("Content-Type", "application/json")
@@ -53,15 +57,20 @@ class GitHubRemoteMcpTool(private val tokenProvider: () -> String) {
             throw IllegalStateException("PR Creation failed: $err")
         }
         val resp = JSONObject(conn.inputStream.bufferedReader().readText())
-        return resp.getInt("number")
+        val prNumber = resp.getInt("number")
+        atropos.core.thinking.Thinking.detail("mcp", "Created PR #$prNumber ($head -> $base)")
+        return prNumber
     }
 
     fun postComment(owner: String, repo: String, issueOrPrNumber: Int, comment: String): Boolean {
+        atropos.core.thinking.Thinking.step("mcp", "Posting comment on PR/issue #$issueOrPrNumber")
         val conn = openConnection("/repos/$owner/$repo/issues/$issueOrPrNumber/comments", "POST")
         conn.doOutput = true
         conn.setRequestProperty("Content-Type", "application/json")
         val payload = JSONObject().apply { put("body", comment) }
         conn.outputStream.use { it.write(payload.toString().toByteArray(StandardCharsets.UTF_8)) }
-        return conn.responseCode in 200..299
+        val ok = conn.responseCode in 200..299
+        atropos.core.thinking.Thinking.detail("mcp", "GitHub comment posted on #$issueOrPrNumber: ok=$ok")
+        return ok
     }
 }

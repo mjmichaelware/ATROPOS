@@ -10,12 +10,14 @@ import java.nio.file.Path
 import org.json.JSONArray
 import org.json.JSONObject
 
-data class SentryStackFrame(val filename: String, val lineno: Int, val colno: Int, val function: String, val inApp: Boolean)
-data class SentryCrashContext(val issueId: String, val title: String, val culpritPath: String, val errorType: String, val frames: List<SentryStackFrame>)
+data class SentryTraceFrame(val filename: String, val lineno: Int, val colno: Int, val function: String, val inApp: Boolean)
+data class SentryCrashContext(val issueId: String, val title: String, val culpritPath: String, val errorType: String, val frames: List<SentryTraceFrame>)
 data class SentryRepairResult(val issueId: String, val targetFile: String, val patchPrompt: String, val proposedFixLocation: String)
 
 class SentryRepairCoordinator(private val repoRoot: Path) {
     fun fetchIssueDetails(organizationSlug: String, issueId: String, authToken: String): SentryCrashContext {
+        atropos.core.thinking.Thinking.outline("repair", "Fetching Sentry issue details for $issueId")
+        atropos.core.thinking.Thinking.step("repair", "Querying Sentry API for issue $issueId in $organizationSlug")
         val uri = URI("https://sentry.io/api/0/issues/$issueId/events/latest/").toURL()
         val conn = uri.openConnection() as HttpURLConnection
         conn.requestMethod = "GET"
@@ -35,7 +37,7 @@ class SentryRepairCoordinator(private val repoRoot: Path) {
         val title = root.optString("title", "Sentry Error $issueId")
         val culprit = root.optString("culprit", "")
 
-        val frames = mutableListOf<SentryStackFrame>()
+        val frames = mutableListOf<SentryTraceFrame>()
         val entries = root.optJSONArray("entries") ?: JSONArray()
         for (i in 0 until entries.length()) {
             val entry = entries.getJSONObject(i)
@@ -49,7 +51,7 @@ class SentryRepairCoordinator(private val repoRoot: Path) {
                     for (k in 0 until rawFrames.length()) {
                         val f = rawFrames.getJSONObject(k)
                         frames.add(
-                            SentryStackFrame(
+                            SentryTraceFrame(
                                 filename = f.optString("filename", ""),
                                 lineno = f.optInt("lineno", 0),
                                 colno = f.optInt("colno", 0),
@@ -62,16 +64,19 @@ class SentryRepairCoordinator(private val repoRoot: Path) {
             }
         }
 
+        atropos.core.thinking.Thinking.detail("repair", "Retrieved ${frames.size} stack frames for issue $issueId: $title")
         return SentryCrashContext(issueId, title, culprit, root.optString("message", "Exception"), frames)
     }
 
-    fun extractInAppCulprit(context: SentryCrashContext): SentryStackFrame? =
+    fun extractInAppCulprit(context: SentryCrashContext): SentryTraceFrame? =
         context.frames.reversed().firstOrNull { it.inApp && it.filename.isNotBlank() }
             ?: context.frames.lastOrNull()
 
     fun generateRepairPrompt(context: SentryCrashContext): SentryRepairResult {
         val culprit = extractInAppCulprit(context)
             ?: throw IllegalStateException("Could not identify culprit frame for Sentry issue ${context.issueId}")
+        atropos.core.thinking.Thinking.step("repair", "Culprit identified: ${culprit.filename}:${culprit.lineno}")
+        atropos.core.thinking.Thinking.detail("repair", "Synthesizing minimal patch repair prompt for ${culprit.function}")
 
         val sourceLines = try {
             val file = repoRoot.resolve(culprit.filename).normalize()

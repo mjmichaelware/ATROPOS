@@ -22,6 +22,9 @@ object OpenCoreAirGapController {
         val host = targetUri.host?.lowercase() ?: throw AirGapViolationException("URI missing valid host: $targetUri")
         val isLoopback = host == "localhost" || host == "127.0.0.1" || host == "::1"
 
+        atropos.core.thinking.Thinking.step("airgap", "Egress network validation for destination")
+        atropos.core.thinking.Thinking.detail("airgap", "Air-gap check: target=$host, loopback=$isLoopback")
+
         if (!isLoopback) {
             throw AirGapViolationException("Network call blocked by Open-Core Air-Gap policy: Destination [$host] is non-local.")
         }
@@ -31,6 +34,7 @@ object OpenCoreAirGapController {
         val mode = currentMode()
         if (!mode.isZeroRetention) return existingHeaders
 
+        atropos.core.thinking.Thinking.detail("security", "Zero-retention privacy headers injected into outbound request")
         val enriched = existingHeaders.toMutableMap()
         enriched["X-Data-Retention"] = "zero"
         enriched["OpenAI-Organization-Store"] = "false"

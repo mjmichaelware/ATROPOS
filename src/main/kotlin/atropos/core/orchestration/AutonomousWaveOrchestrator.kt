@@ -6,6 +6,7 @@ import atropos.core.agent.AgentJobStore
 import atropos.core.dag.DagDefinition
 import atropos.core.dag.DagExecutionService
 import atropos.core.dag.DagNode
+import atropos.core.dag.DagNodeAction
 import atropos.core.dag.DagNodeState
 import atropos.core.dag.DagStore
 import atropos.core.dag.DagNodeExecutionResult
@@ -536,10 +537,14 @@ class AutonomousWaveOrchestrator(
 
             // Strict sandboxed verification for App Factory nodes
             if (worktree.id.startsWith("factory-stage-")) {
+                atropos.core.thinking.Thinking.outline("sandbox", "Sandboxing node ${node.id} execution")
+                atropos.core.thinking.Thinking.step("sandbox", "Enforcing isolated worktree at ${worktree.worktreePath.fileName}")
+                atropos.core.thinking.Thinking.detail("sandbox", "Host containment intact: worktree=${worktree.worktreePath}")
                 if (node.action == DagNodeAction.VERIFY || node.action == DagNodeAction.RUN_TEST || node.action == DagNodeAction.COMPILE_GATE) {
                     val lang = atropos.core.factory.ProjectLanguage.layoutFor(
                         atropos.core.factory.ProjectLanguage.detect(request.projectSpec.prompt)
                     )
+                    atropos.core.thinking.Thinking.step("exec", "Running sandboxed verification [${lang.name}]")
                     val shellExec = atropos.core.dag.DagNodeShellExecutor(
                         repoRoot = repoRoot,
                         store = dagStore,
@@ -557,6 +562,7 @@ class AutonomousWaveOrchestrator(
                         projectLanguage = lang
                     )
                     val execResult = if (node.action == DagNodeAction.COMPILE_GATE) shellExec.gate(node, node) else shellExec.verify(node, node)
+                    atropos.core.thinking.Thinking.detail("exec", "Sandboxed verify result: ok=${execResult.ok}, msg=${execResult.message.take(120)}")
                     if (!execResult.ok) {
                         return DagNodeExecutionResult(
                             nodeId = node.id,

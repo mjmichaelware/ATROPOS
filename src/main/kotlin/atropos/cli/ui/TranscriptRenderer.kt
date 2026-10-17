@@ -119,6 +119,7 @@ class TranscriptRenderer(
         height: Int
     ): List<String> {
         if (buffer.isEmpty) return emptyList()
+        buffer.setRenderedWidth(width)
         val lines = mutableListOf<String>()
         var currentDepth = 1
         for (entry in buffer.entries()) {

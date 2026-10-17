@@ -26,6 +26,8 @@ class CapabilityAttenuationSandbox(private val masterSecret: ByteArray) {
         val id = "tok-root-${System.currentTimeMillis()}"
         val expires = Instant.now().plusSeconds(ttlSeconds)
         val sig = hmac("$id:ROOT:${operations.sorted().joinToString(",")}:${paths.sorted().joinToString(",")}:$expires")
+        atropos.core.thinking.Thinking.step("sandbox", "Created root capability token: $id")
+        atropos.core.thinking.Thinking.detail("sandbox", "Root token $id: ops=[${operations.joinToString()}], ttl=${ttlSeconds}s")
         return AttenuatedToken(id, null, operations, paths, ttlSeconds, expires, sig)
     }
 
@@ -42,6 +44,8 @@ class CapabilityAttenuationSandbox(private val masterSecret: ByteArray) {
         val childExpires = minOf(parent.expiresAt, Instant.now().plusSeconds(reducedTtlSeconds))
         val childId = "tok-sub-${System.currentTimeMillis()}"
         val sig = hmac("${parent.hmacSignature}:$childId:${operationsSubset.sorted().joinToString(",")}:${pathSubsets.sorted().joinToString(",")}:$childExpires")
+        atropos.core.thinking.Thinking.step("sandbox", "Attenuated capability token to $childId")
+        atropos.core.thinking.Thinking.detail("sandbox", "Token $childId derived from ${parent.tokenId}: ops=[${operationsSubset.joinToString()}]")
         return AttenuatedToken(childId, parent.tokenId, operationsSubset, pathSubsets, reducedTtlSeconds, childExpires, sig)
     }
 
@@ -49,6 +53,8 @@ class CapabilityAttenuationSandbox(private val masterSecret: ByteArray) {
         if (Instant.now().isAfter(token.expiresAt)) return false
         if (operation !in token.allowedOperations) return false
         val normalizedTarget = targetPath.replace('\\', '/')
-        return token.allowedPathPrefixes.any { prefix -> normalizedTarget.startsWith(prefix) }
+        val valid = token.allowedPathPrefixes.any { prefix -> normalizedTarget.startsWith(prefix) }
+        atropos.core.thinking.Thinking.detail("sandbox", "Capability check for $operation on $targetPath: allowed=$valid")
+        return valid
     }
 }

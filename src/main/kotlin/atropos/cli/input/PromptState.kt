@@ -73,6 +73,8 @@ class PromptState(
         // reported upward untouched rather than editing the prompt.
         is KeyEvent.PageUp -> PromptEffect.Scroll(-SCROLL_LINES)
         is KeyEvent.PageDown -> PromptEffect.Scroll(SCROLL_LINES)
+        is KeyEvent.ScrollUp -> PromptEffect.Scroll(-event.lines)
+        is KeyEvent.ScrollDown -> PromptEffect.Scroll(event.lines)
         is KeyEvent.Printable -> insertEvent(event.text)
         is KeyEvent.Paste -> insertEvent(
             // A large paste goes into the registry and a summary goes into the

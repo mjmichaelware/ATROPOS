@@ -152,6 +152,13 @@ class LiveThinkingRenderer(
         "gate" -> Role.STATUS_PENDING
         "dag" -> Role.ACCENT_FOCUS
         "goal" -> Role.STATUS_COMPLETE
+        "sandbox" -> Role.STATUS_WARNING
+        "mcp" -> Role.ACCENT_FOCUS
+        "verify" -> Role.STATUS_COMPLETE
+        "security" -> Role.STATUS_ERROR
+        "autonomy" -> Role.BRAND
+        "context" -> Role.TEXT_MUTED
+        "patch" -> Role.ACCENT_FOCUS
         else -> Role.TEXT_SECONDARY
     }
 
@@ -159,7 +166,7 @@ class LiveThinkingRenderer(
         const val SURFACE = "cli"
 
         /** Widest category name, so the message column lines up. */
-        const val CATEGORY_CELLS = 8
+        const val CATEGORY_CELLS = 9
     }
 }
 

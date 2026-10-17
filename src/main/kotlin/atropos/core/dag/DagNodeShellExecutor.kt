@@ -180,6 +180,9 @@ class DagNodeShellExecutor(
         val running = store.writeNode(node.copy(state = if (verifying) DagNodeState.VERIFYING else DagNodeState.RUNNING))
         return try {
             val workingDir = resolveWorkingDir(original)
+            atropos.core.thinking.Thinking.outline("exec", "Running DAG node: ${original.label}")
+            atropos.core.thinking.Thinking.step("exec", "Executing ${node.action} in ${workingDir.fileName}")
+            atropos.core.thinking.Thinking.detail("exec", "Sandboxed execution: dir=$workingDir, cmd=$command")
 
             // STRICT SANDBOXING INVARIANT:
             // Under no circumstances should DagNodeShellExecutor run build or test commands in the ATROPOS root.
@@ -193,6 +196,8 @@ class DagNodeShellExecutor(
             ) || command.contains("./gradlew") || command.contains("pytest") || command.contains("npm test")
 
             if (isBuildOrTest && workingDir.normalize() == repoRoot.normalize()) {
+                atropos.core.thinking.Thinking.step("sandbox", "Containment check refused execution in host root")
+                atropos.core.thinking.Thinking.detail("sandbox", "Containment violation blocked: node ${original.id} in root $repoRoot")
                 return finisher.fail(
                     running,
                     original,
@@ -227,6 +232,8 @@ class DagNodeShellExecutor(
                 .trimEnd()
             val exitCode = bounded.exitCode
             val success = exitCode == 0 && !bounded.timedOut && !bounded.outputTruncated && bounded.launchError == null
+            atropos.core.thinking.Thinking.step("exec", "Node ${original.id} ${if (success) "succeeded" else "failed"}")
+            atropos.core.thinking.Thinking.detail("exec", "Process exited with code $exitCode (${bounded.stdout.length}b out, ${bounded.stderr.length}b err)")
             val state = if (success) DagNodeState.COMPLETE else DagNodeState.FAILED
             val failureDetail = when {
                 bounded.launchError != null -> "launch failed: ${redactionFilter.redact(bounded.launchError)}"
