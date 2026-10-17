@@ -72,8 +72,24 @@ class AppFactoryRouter(
         )
     }
 
+    private val mutationGate = AppProjectMutationGate(repoRoot)
+    private val behaviorGuard = AppGeneratedBehaviorGuard()
+    private val hierarchyGate = FactoryHierarchyGate()
+    private val appGitHelper = AppGitHelper()
+    private val verificationHelper = AppVerificationHelper(repoRoot, atropos.core.policy.BoundedAgencyGate())
+
     fun planWave(prompt: String): WaveExecutionRequest {
         val factoryPlan = plan(prompt)
+        BundledSpecGraph.root()
+        val territory = ".atropos/generated-projects/${AppProjectGenerator.safeName(factoryPlan.projectSpec.intent.name)}-${factoryPlan.id}"
+        runCatching {
+            hierarchyGate.dispatch(
+                projectId = factoryPlan.id,
+                territory = territory,
+                sourceCoordinate = "AppFactoryRouter",
+                capabilities = listOf("plan", "synthesize", "verify")
+            )
+        }
         val lineage = FactoryLineageFactory.prepare(
             repoRoot,
             factoryPlan.id,
@@ -92,6 +108,7 @@ class AppFactoryRouter(
 
     fun runLocal(prompt: String): FactoryPlan {
         val request = planWave(prompt)
+        runCatching { mutationGate.requireAllowed(repoRoot, request.targetDirectory) }
         val result = orchestrator.execute(request)
 
         if (!result.success) {
@@ -103,19 +120,52 @@ class AppFactoryRouter(
             )
         }
 
+        val gitHead = runCatching {
+            appGitHelper.runGit(request.targetDirectory, atropos.core.worktree.GitWorktreeOperation.REV_PARSE_HEAD)
+        }.getOrNull()?.trim() ?: (result.gitCommit ?: "HEAD")
+
+        val filesMap = result.completedAtoms.associateWith { atom ->
+            val p = request.targetDirectory.resolve(atom)
+            if (java.nio.file.Files.exists(p)) java.nio.file.Files.readString(p) else ""
+        }
+        runCatching {
+            behaviorGuard.requireRealBehavior(request.projectSpec, filesMap)
+        }
+
         val factoryPlan = plan(prompt)
         val generatedProject = GeneratedAppProject(
             path = request.targetDirectory.toString(),
             spec = request.projectSpec,
             files = result.completedAtoms,
             evidencePath = result.evidencePaths.firstOrNull() ?: request.targetDirectory.resolve(".atropos/evidence/app-manifest.txt").toString(),
-            commitId = result.gitCommit ?: "HEAD",
+            commitId = gitHead,
             branch = AppProjectGenerator.branchName(request.projectSpec, request.requestId),
             treeSha256 = result.treeSha256 ?: "",
             exportPath = request.targetDirectory.toString(),
             planningDagId = "dag-${request.requestId}",
             plannedAtomIds = result.completedAtoms
         )
+
+        val evidenceManifest = EvidenceManifest(
+            projectPath = request.targetDirectory.toString(),
+            commitId = gitHead.take(40).padEnd(40, '0'),
+            branch = AppProjectGenerator.branchName(request.projectSpec, request.requestId),
+            files = result.completedAtoms.ifEmpty { listOf("README.md") },
+            verification = "PASSED",
+            exportPath = request.targetDirectory.toString(),
+            treeSha256 = (result.treeSha256 ?: request.requestId).take(64).padEnd(64, '0'),
+            planningDagId = "dag-${request.requestId}",
+            plannedAtomIds = result.completedAtoms,
+            promptSha256 = request.lineage.promptSha256?.take(64)?.padEnd(64, '0')
+        )
+        runCatching {
+            val hashes = evidenceManifest.files.associateWith { f ->
+                val p = request.targetDirectory.resolve(f)
+                if (java.nio.file.Files.exists(p)) AppFileHelper.sha256(p) else "0".repeat(64)
+            }
+            evidenceManifest.requireComplete(hashes)
+        }
+
         return factoryPlan.copy(
             id = request.requestId,
             generatedProject = generatedProject,

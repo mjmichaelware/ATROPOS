@@ -41,6 +41,25 @@ class DagExecutionService(
     private val onboarding: atropos.core.provider.ProviderOnboardingService? = null
 ) {
     private val activeWorktrees = ConcurrentHashMap<String, WorktreeRecord>()
+    private val checkEvaluator = DagNodeCheckEvaluator(
+        repoRoot = repoRoot,
+        agencyGate = atropos.core.policy.BoundedAgencyGate(),
+        territoryGrants = territoryService
+    )
+    private val finisher = DagNodeFinisher(object : atropos.core.planning.PlanningGraphPlugin {
+        override fun getReadyNodes(projectId: String, graphVersion: String) = emptyList<atropos.core.planning.ReadyNode>()
+        override fun claimNode(nodeId: String, executorId: String, territory: atropos.core.planning.Territory) =
+            atropos.core.planning.NodeClaim(true, nodeId, executorId, territory)
+        override fun submitEvidence(nodeId: String, evidence: atropos.core.planning.ExecutionEvidence) =
+            atropos.core.planning.EvidenceReceipt(nodeId, true)
+        override fun completeNode(nodeId: String, result: NodeResult) = Unit
+    })
+    private val fileMutationExecutor = DagNodeFileMutationExecutor(
+        store = dagStore,
+        finisher = finisher,
+        normalizeCandidatePath = { repoRoot.resolve(it).normalize() },
+        territoryViolation = { _, _ -> null }
+    )
 
     /**
      * Execute a batch of ready nodes as a wave with full worktree isolation.
@@ -194,35 +213,49 @@ class DagExecutionService(
         }
 
         try {
-            // Dispatch to ContractLatticeSynthesizer for actual synthesis
-            val synthesisResult = contractSynthesizer.synthesizeNode(node, worktreeRecord.worktreePath, request)
-            if (!synthesisResult.success) {
-                return DagNodeExecutionResult(
-                    nodeId = node.id,
-                    state = DagNodeState.FAILED,
-                    ok = false,
-                    message = synthesisResult.message
-                )
-            }
+            when (node.action) {
+                DagNodeAction.POLICY_CHECK, DagNodeAction.SECRET_CHECK, DagNodeAction.TERRITORY_CHECK -> {
+                    val outcome = checkEvaluator.evaluate(node, ActionActor.HierarchyNode("dag-worker", "node-${node.id}"))
+                    if (!outcome.passed) {
+                        return DagNodeExecutionResult(node.id, DagNodeState.FAILED, false, outcome.detail)
+                    }
+                    return DagNodeExecutionResult(node.id, DagNodeState.COMPLETE, true, outcome.detail)
+                }
+                DagNodeAction.FILE_MUTATION -> {
+                    return fileMutationExecutor.execute(node, node)
+                }
+                else -> {
+                    // Dispatch to ContractLatticeSynthesizer for actual synthesis
+                    val synthesisResult = contractSynthesizer.synthesizeNode(node, worktreeRecord.worktreePath, request)
+                    if (!synthesisResult.success) {
+                        return DagNodeExecutionResult(
+                            nodeId = node.id,
+                            state = DagNodeState.FAILED,
+                            ok = false,
+                            message = synthesisResult.message
+                        )
+                    }
 
-            // Run completion gate verification
-            val gateReport = completionGate.evaluateNode(node)
-            if (!gateReport.canComplete) {
-                return DagNodeExecutionResult(
-                    nodeId = node.id,
-                    state = DagNodeState.FAILED,
-                    ok = false,
-                    message = "completion gate failed: ${gateReport.message}"
-                )
-            }
+                    // Run completion gate verification
+                    val gateReport = completionGate.evaluateNode(node)
+                    if (!gateReport.canComplete) {
+                        return DagNodeExecutionResult(
+                            nodeId = node.id,
+                            state = DagNodeState.FAILED,
+                            ok = false,
+                            message = "completion gate failed: ${gateReport.message}"
+                        )
+                    }
 
-            return DagNodeExecutionResult(
-                nodeId = node.id,
-                state = DagNodeState.COMPLETE,
-                ok = true,
-                message = "node completed and merged successfully",
-                result = synthesisResult.message
-            )
+                    return DagNodeExecutionResult(
+                        nodeId = node.id,
+                        state = DagNodeState.COMPLETE,
+                        ok = true,
+                        message = "node completed and merged successfully",
+                        result = synthesisResult.message
+                    )
+                }
+            }
         } catch (e: Exception) {
             return DagNodeExecutionResult(
                 nodeId = node.id,

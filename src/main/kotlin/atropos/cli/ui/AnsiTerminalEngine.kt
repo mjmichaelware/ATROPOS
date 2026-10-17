@@ -7,15 +7,11 @@ import atropos.core.AtroposConfig
 import atropos.core.verification.VerificationResult
 import atropos.core.output.OutputMode
 import atropos.core.output.OutputModeDetector
-import atropos.cli.ui.chrome.CheckpointAge
-import atropos.cli.ui.design.HoeStatusVocabulary
-import atropos.cli.ui.design.AgentInspector
-import atropos.core.observability.BackgroundProcessPanel
 import atropos.core.observability.BoundedRenderingController
 import atropos.core.security.RedactionFilter
-import atropos.core.recovery.RestartCoordinator
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 
 class AnsiTerminalEngine(
     private val capabilities: ConfigurationManager = ConfigurationManager(),
@@ -27,7 +23,6 @@ class AnsiTerminalEngine(
     private val transcript = TranscriptRenderer(theme)
     private val markdown = MarkdownRenderer(capabilities.isColorEnabled)
     private val welcome = WelcomePanel(theme)
-    private val dashboardWorkspaceInspector = CachingGitWorkspaceInspector()
     private val transcriptBuffer = TranscriptBuffer()
     private val composer = ComposerViewport(theme)
     private val statusBar = StatusBarRenderer(theme)
@@ -36,43 +31,34 @@ class AnsiTerminalEngine(
     private val help = CommandHelpRenderer(theme)
     private val errors = ErrorRenderer(theme)
     private val toasts = ToastRenderer(theme)
-    private val errorRenderer = ErrorRenderer(theme)
-    private val toastRenderer = ToastRenderer(theme)
     private val dialogRenderer = DialogRenderer(theme)
     private val redactionFilter = RedactionFilter()
-    private val dagReactorRenderer = DagReactorRenderer(theme)
-    private val backgroundProcesses = BackgroundProcessPanel()
     private val boundedRendering = BoundedRenderingController
-    private val quotaFuelCellRenderer = QuotaFuelCellRenderer(theme)
-    private val startupSequence = StartupSequence(theme)
-    private var startupPlayed = false
+    private val startupPlayer = AnsiStartupPlayer(theme, canvas)
+    private val competitiveErrorLedger = CompetitiveErrorLedger(redactionFilter)
+
     private val rendering = TerminalRenderingFacade(
         plainOutput, canvas, theme, transcript, markdown, welcome, statusBar, verification, help, transcriptBuffer
     )
-    private val restartCoordinator = RestartCoordinator()
-    /**
-     * Whether the engine behind the spinner is actually producing anything.
-     *
-     * Owned here because the spinner is drawn here and the thing that observes
-     * output ([LiveThinkingRenderer]) is a different object with a different
-     * lifetime. One sentinel per terminal, marked from wherever output
-     * appears.
-     */
-    val stallSentinel = StallSentinel()
 
+    private val statusPresenter = AnsiStatusPresenter(
+        theme = theme,
+        canvas = canvas,
+        plainOutput = plainOutput,
+        transcriptBuffer = transcriptBuffer,
+        transcript = transcript,
+        welcome = welcome,
+        statusBar = statusBar,
+        rendering = rendering,
+        redactionFilter = redactionFilter
+    )
+
+    val stallSentinel = StallSentinel()
     private val threadProgress = ThreadProgress(theme)
 
     @Volatile
     private var runProgress: Triple<Int, Int, Boolean>? = null
 
-    /**
-     * How far through the work the run is, for the indicator to draw.
-     *
-     * Set from whatever knows -- today the per-item narration the pipeline
-     * already emits, which carries `[3/390]` by contract. Cleared with a null
-     * total, because a stale bar left over from a finished run claims progress
-     * on work nobody is doing.
-     */
     fun setRunProgress(done: Int, total: Int, cut: Boolean = false) {
         runProgress = if (total <= 0) null else Triple(done, total, cut)
     }
@@ -83,9 +69,6 @@ class AnsiTerminalEngine(
 
     private val spinner = SpinnerEngine(
         annotate = {
-            // The thread first, then the sentinel: how far along, and whether
-            // it is still moving. Either can be empty and the separator only
-            // appears between two things that are both present.
             listOf(
                 runProgress?.let { (done, total, cut) ->
                     TerminalText.stripAnsi(threadProgress.render(done, total, PROGRESS_CELLS, cut))
@@ -99,6 +82,7 @@ class AnsiTerminalEngine(
             requestFrameLocked()
         }
     }
+
     private val resizePoller = Executors.newSingleThreadScheduledExecutor { task ->
         Thread(task, "atropos-viewport").apply { isDaemon = true }
     }
@@ -114,10 +98,6 @@ class AnsiTerminalEngine(
             System.getenv("ATROPOS_WINDOW_SCROLL").isNullOrBlank()
         canvas.initialize(useAlternateScreen = effectiveAltScreen)
         resizePoller.scheduleAtFixedRate({
-            // Guarded for the same reason the spinner is: one throw and
-            // scheduleAtFixedRate cancels the schedule for the rest of the
-            // session, so the window would stop tracking resizes with no sign
-            // that anything had gone wrong.
             try {
                 synchronized(this) {
                     if (state.reactive && !boundedRendering.isPasteSuspended() && canvas.refreshGeometry()) requestFrameLocked()
@@ -139,91 +119,12 @@ class AnsiTerminalEngine(
     fun renderWelcome(config: AtroposConfig, activeProvider: String) {
         state.provider = activeProvider
         if (state.reactive) {
-            playStartupSequence(config, activeProvider)
+            startupPlayer.play(config, activeProvider, state.workspace)
             requestFrameLocked()
         } else {
             rendering.renderWelcomePlain(state.provider, state.workspace)
         }
     }
-
-    /**
-     * The opening animation, played once into the canvas.
-     *
-     * It runs before the first real frame and is skipped whenever it would be
-     * rude: on a pipe, on a terminal too small to hold it, and whenever
-     * `ATROPOS_NO_ANIMATION` is set — a startup a script has to wait out is a
-     * startup someone will disable by not launching the tool. Interruption
-     * cuts it short rather than swallowing the flag; Ctrl-C during the opening
-     * must still mean Ctrl-C.
-     */
-    private fun playStartupSequence(config: AtroposConfig, activeProvider: String) {
-        if (startupPlayed) return
-        startupPlayed = true
-        if (!System.getenv("ATROPOS_NO_ANIMATION").isNullOrBlank()) return
-        if (canvas.height < MINIMUM_ANIMATION_ROWS || canvas.width < MINIMUM_ANIMATION_COLUMNS) return
-
-        val facts = StartupSequence.Facts(
-            version = versionLabel(),
-            provider = activeProvider,
-            // Counted from the descriptor registry, not from the legacy
-            // four-field key struct.
-            //
-            // `config.keys` holds exactly groq, openai, anthropic and xai, so
-            // the opening screen reported "4 configured" on a machine with
-            // twenty-three providers keyed and would have reported 4 on a
-            // machine with none of those four but all the others. The number
-            // was a constant wearing a fact's clothing, on the first screen an
-            // operator ever reads.
-            providerCount = configuredProviderCount(config),
-            workspace = state.workspace
-        )
-
-        for (lines in startupSequence.frames(canvas.width, canvas.height, facts)) {
-            val frame = ScreenFrame(canvas.width, canvas.height)
-            lines.forEachIndexed(frame::setLine)
-            frame.showCursor = false
-            canvas.render(frame)
-            if (!pause(FRAME_MILLIS)) return
-        }
-        pause(SETTLE_MILLIS)
-    }
-
-    /**
-     * How many providers actually hold credentials.
-     *
-     * A provider counts when every environment variable its descriptor
-     * declares is present, or when the legacy config file carries its key.
-     * Local providers declare no key and are counted when they are reachable
-     * at all, because "configured" for Ollama means installed, not keyed.
-     */
-    private fun configuredProviderCount(config: AtroposConfig): Int {
-        val legacy = with(config.keys) {
-            listOf("groq" to groq, "openai" to openai, "anthropic" to anthropic, "xai" to xai)
-                .filter { it.second.isNotBlank() }
-                .map { it.first }
-        }.toSet()
-
-        return atropos.core.provider.StaticProviderDescriptorRegistry().getAll().count { descriptor ->
-            when {
-                descriptor.id in legacy -> true
-                descriptor.requiredEnv.any { it == "OLLAMA_HOST" || it == "OLLAMA_MODEL" } -> true
-                descriptor.requiredEnv.isEmpty() -> false
-                else -> descriptor.requiredEnv.all { !System.getenv(it).isNullOrBlank() }
-            }
-        }
-    }
-
-    private fun pause(millis: Long): Boolean = try {
-        Thread.sleep(millis)
-        true
-    } catch (_: InterruptedException) {
-        Thread.currentThread().interrupt()
-        false
-    }
-
-    /** The jar's manifest version, or `dev` when running from classes. */
-    private fun versionLabel(): String =
-        javaClass.`package`?.implementationVersion?.takeIf(String::isNotBlank) ?: "dev"
 
     @Synchronized
     fun redrawPrompt(
@@ -247,14 +148,6 @@ class AnsiTerminalEngine(
     fun redrawPrompt(buffer: String, cursor: Int, provider: String, tracker: QuotaSessionTracker) =
         redrawPrompt(buffer, cursor, "", state.mode, provider, tracker, 0, state.activeScreen, state.activeTab, state.openTabCount)
 
-    /**
-     * The open tabs, as the tab bar should show them.
-     *
-     * Called whenever a tab is opened, closed, or switched. Trust is reported
-     * as UNKNOWN rather than guessed: a tab bar that showed every tab as
-     * attested because nothing had checked would be a §0.6 violation drawn in
-     * the chrome, and the indicator exists precisely to be believed.
-     */
     @Synchronized
     fun setTabs(tabs: List<ViewportLayout.TabState>) {
         state.tabs = tabs
@@ -262,14 +155,6 @@ class AnsiTerminalEngine(
         requestFrameLocked()
     }
 
-    /**
-     * Moves the transcript's viewport.
-     *
-     * [TranscriptBuffer] has had `scrollUp`, `scrollDown` and `followTail`
-     * since it was written and nothing ever called them, so output that
-     * scrolled past was simply gone. On a phone viewport that is most of a
-     * run.
-     */
     @Synchronized
     fun scrollTranscript(lines: Int) {
         when {
@@ -302,9 +187,6 @@ class AnsiTerminalEngine(
 
     @Synchronized
     fun startSpinner(message: String) {
-        // A fresh run starts honest: the clock for "how long has it been
-        // quiet" begins when the work does, not when the terminal was created,
-        // and no progress is claimed until something reports some.
         stallSentinel.observedOutput()
         clearRunProgress()
         if (state.reactive) spinner.start(message) else rendering.renderSpinnerPlain(message)
@@ -322,50 +204,23 @@ class AnsiTerminalEngine(
 
     @Synchronized
     fun renderDashboard(activeProvider: String, activeTab: String, activeScreen: String, openTabCount: Int) {
-        state.provider = activeProvider
-        state.activeTab = activeTab
-        state.activeScreen = activeScreen
-        state.openTabCount = openTabCount
-        transcriptBuffer.append(transcript.notice(AgentInspector.inspectAgent(activeTab, activeScreen)))
-        if (state.reactive) {
-            val presentationState = SessionPresentationState(
-                provider = state.provider, mode = state.mode, workspace = state.workspace,
-                commands = listOf("/agent status", "/tabs", "/status", "/verify"),
-                tokens = state.tracker.estimatedTokens.takeIf { it > 0 }?.let { MetricValue.Known(it.toString()) } ?: MetricValue.Unknown,
-                cost = state.tracker.estimatedCostUsd().takeIf { it > 0.0 }?.let { MetricValue.Known("$" + String.format("%.4f", it)) } ?: MetricValue.Unknown,
-                activeOperation = null, repository = dashboardWorkspaceInspector.inspect(state.workspace),
-                activeScreen = activeScreen, activeTab = activeTab, openTabCount = openTabCount, activePatchId = state.activePatchId
-            )
-            welcome.render(presentationState, canvas.width, (canvas.height * 2 / 3).coerceAtLeast(14)).forEach(transcriptBuffer::append)
+        statusPresenter.renderDashboard(state, activeProvider, activeTab, activeScreen, openTabCount) {
             requestFrameLocked()
-        } else {
-            rendering.renderDashboardPlain(
-                activeTab, activeScreen, state.provider, state.workspace, state.mode,
-                listOf("/agent status", "/tabs", "/status", "/verify")
-            )
         }
     }
 
     @Synchronized
     fun renderStatusMatrix(config: AtroposConfig, activeProvider: String) {
-        state.provider = activeProvider
-        if (state.reactive) {
-            val checkpointAge = restartCoordinator.latestSnapshot()?.let { CheckpointAge.ofEpochMillis(it.capturedAt.toEpochMilli(), java.time.Clock.systemUTC()) } ?: CheckpointAge.Unknown
-            transcriptBuffer.append(statusBar.footer(state.provider, state.mode, state.workspace, state.tracker, state.verificationState, canvas.width, checkpointAge))
+        statusPresenter.renderStatusMatrix(state, activeProvider) {
             requestFrameLocked()
-        } else {
-            rendering.renderStatusPlain(state.provider, state.workspace, state.mode, state.tracker)
         }
     }
 
     @Synchronized
     fun renderStatus(activeProvider: String, tracker: QuotaSessionTracker?) {
-        state.provider = activeProvider
-        tracker?.let { state.tracker = it }
-        val checkpointAge = restartCoordinator.latestSnapshot()?.let { CheckpointAge.ofEpochMillis(it.capturedAt.toEpochMilli(), java.time.Clock.systemUTC()) } ?: CheckpointAge.Unknown
-        transcriptBuffer.append(statusBar.footer(state.provider, state.mode, state.workspace, state.tracker, state.verificationState, canvas.width, checkpointAge))
-        transcriptBuffer.append(theme.subdued("checkpoint ${checkpointAge.label()} · ${quotaFuelCellRenderer.render(QuotaFuelCellRenderer.QuotaState(0.0, 0.0), canvas.width.coerceAtMost(24))}"))
-        requestFrameLocked()
+        statusPresenter.renderStatus(state, activeProvider, tracker) {
+            requestFrameLocked()
+        }
     }
 
     @Synchronized
@@ -395,6 +250,9 @@ class AnsiTerminalEngine(
     fun renderVerificationResult(result: VerificationResult) {
         stopSpinner()
         state.verificationState = null
+        if (!result.passed) {
+            competitiveErrorLedger.recordVerificationError(result.message, "Review gate test failures and evidence")
+        }
         rendering.renderVerificationReactive(result)
         requestFrameLocked()
     }
@@ -419,40 +277,14 @@ class AnsiTerminalEngine(
 
     @Synchronized
     fun renderExecutionEvent(stage: String, detail: String? = null) {
-        backgroundProcesses.registerProcess(stage)
-
-        // Every execution event is also a full-trace thought.
-        //
-        // `/thinking 3` promises "everything, including evidence detail" and
-        // was delivering a dozen lines for an entire self-host run, because
-        // almost nothing published to the stream -- the depth filter was fine,
-        // there was simply nothing to filter. This is the widest funnel the
-        // engine already has: provider attempts, gate results, DAG advances
-        // and repair steps all pass through it, so routing it here makes the
-        // back end visible without a publish call at each of a hundred sites.
-        //
-        // L3, not lower: at L1 and L2 this volume would bury the outline the
-        // operator asked for.
-        atropos.core.thinking.Thinking.stream.emit(
-            atropos.core.thinking.ThinkingDepth.L3,
-            if (detail.isNullOrBlank()) stage else "$stage — ${detail.trim()}"
+        statusPresenter.renderExecutionEvent(
+            state = state,
+            stage = stage,
+            detail = detail,
+            onNotice = ::renderNotice,
+            onBlock = ::renderBlock,
+            onSignalAttention = ::signalAttention
         )
-        val summary = "execution: $stage"
-        if (state.verboseExecution) {
-            if (detail.isNullOrBlank()) {
-                renderNotice(summary)
-            } else {
-                renderNotice("$summary\n  ${detail.trim()}")
-            }
-            val status = when {
-                stage.contains("fail", ignoreCase = true) -> "failed"
-                stage.contains("complete", ignoreCase = true) -> "completed"
-                else -> "working"
-            }
-            renderBlock(dagReactorRenderer.render(listOf(DagReactorRenderer.ReactorNode(stage, status, detail)), canvas.width))
-            renderBlock(toastRenderer.render(Toast(null, summary), canvas.width))
-            if (status == "completed" || status == "failed") signalAttention()
-        }
     }
 
     @Synchronized
@@ -476,15 +308,6 @@ class AnsiTerminalEngine(
         if (state.reactive) requestFrameLocked()
     }
 
-    /**
-     * A failure with its recovery path, rather than one line of text.
-     *
-     * [renderError] takes a string and can only ever show what went wrong.
-     * Section E asks for the suggestion and the copyable detail alongside it,
-     * and [ErrorRenderer] produces all three — including the redaction pass
-     * over the copy block, which matters because that block exists to be
-     * pasted into a bug report.
-     */
     @Synchronized
     fun renderErrorDetail(error: ErrorRenderer.ErrorInfo, critical: Boolean = false) {
         renderedErrors.incrementAndGet()
@@ -495,29 +318,13 @@ class AnsiTerminalEngine(
         renderBlock(lines)
     }
 
-    /**
-     * A transient notice, in the pinned reference's toast chrome.
-     *
-     * Rendered into the transcript rather than overlaid: ATROPOS has no
-     * absolute-positioning compositor, and a toast that scrolls away with the
-     * rest of the output is honest about that, where one drawn at a fixed
-     * offset over a scrolling canvas would smear.
-     */
     @Synchronized
     fun renderToast(toast: Toast) {
         val lines = toasts.render(toast, canvas.width)
         if (lines.isNotEmpty()) renderBlock(lines)
     }
 
-    /**
-     * Errors rendered since [resetErrorCount].
-     *
-     * Exists so a one-shot `atropos <command>` invocation can exit non-zero
-     * when the command failed. Without it every one-shot exits 0, which makes
-     * the binary unusable in a script or a CI step: `atropos auth verify &&
-     * deploy` would deploy on a tampered authority document.
-     */
-    private val renderedErrors = java.util.concurrent.atomic.AtomicInteger(0)
+    private val renderedErrors = AtomicInteger(0)
 
     val errorCount: Int get() = renderedErrors.get()
 
@@ -530,6 +337,7 @@ class AnsiTerminalEngine(
         renderedErrors.incrementAndGet()
         stopSpinner()
         val safeMessage = redactionFilter.redact(message)
+        competitiveErrorLedger.recordExecutionError(safeMessage, "Review command input and provider status")
         if (safeMessage.contains("approval", ignoreCase = true) || safeMessage.contains("confirm", ignoreCase = true)) {
             state.verificationState = "awaiting approval"
             signalAttention()
@@ -545,7 +353,7 @@ class AnsiTerminalEngine(
             if (state.reactive) requestFrameLocked()
             return
         }
-        val lines = errorRenderer.render(
+        val lines = errors.render(
             ErrorRenderer.ErrorInfo(title = "Command failed", message = safeMessage),
             canvas.width
         )
@@ -576,29 +384,6 @@ class AnsiTerminalEngine(
         canvas.close()
     }
 
-    private companion object {
-        /**
-         * Two threads, five rows of wordmark, a greeting, four facts and the
-         * blank rows between them come to sixteen; below eighteen the opening
-         * would be cropped, and a cropped opening is worse than none.
-         */
-        const val MINIMUM_ANIMATION_ROWS = 18
-        const val MINIMUM_ANIMATION_COLUMNS = 24
-
-        /** ~60 frames at this cadence is between three and four seconds. */
-        const val FRAME_MILLIS = 50L
-
-        /**
-         * Cells the thread occupies beside the indicator.
-         *
-         * Narrow on purpose: this sits next to a spinner and a message, not on
-         * a row of its own, and a bar wide enough to be precise would push the
-         * message it annotates off the screen.
-         */
-        const val PROGRESS_CELLS = 22
-        const val SETTLE_MILLIS = 400L
-    }
-
     private fun requestFrameLocked() {
         if (!state.reactive || boundedRendering.isPasteSuspended()) return
         val frame = layout.build(
@@ -612,12 +397,15 @@ class AnsiTerminalEngine(
         }
     }
 
-    /** A terminal bell is optional attention, never a requirement for progress. */
     private fun signalAttention() {
         if (!state.reactive || !System.getenv("ATROPOS_DISABLE_BELL").isNullOrBlank()) return
         synchronized(plainOutput.lock) {
             plainOutput.out.print('\u0007')
             plainOutput.out.flush()
         }
+    }
+
+    private companion object {
+        const val PROGRESS_CELLS = 22
     }
 }

@@ -176,12 +176,15 @@ class ProviderCascadeRouter(
                     contextEnvelope = contextEnvelope
                 )
             } catch (failure: Exception) {
+                val universalError = UniversalErrorParser.parseAny(failure)
+                atropos.core.thinking.Thinking.stream.emit(
+                    atropos.core.thinking.ThinkingDepth.L3,
+                    "provider $provider failed [${universalError.category}]: ${universalError.message} (raw=${universalError.raw})"
+                )
+
                 val classifiedError: ProviderError = classifier.classify(provider, failure)
                 errors.add(classifiedError)
                 onFailure(classifiedError)
-                // Named at L2, not L3. A provider dropping out changes which
-                // model answered, which is a fact about the result and not a
-                // detail of how it was obtained.
                 val errorType: FailureType = classifiedError.type
                 val errorCleanMessage: String = classifiedError.cleanMessage
                 atropos.core.thinking.Thinking.step(
@@ -190,7 +193,20 @@ class ProviderCascadeRouter(
                 )
 
                 val parsedError = FallbackChainRegistry.parseError(failure)
-                val decision = FallbackChainRegistry.routeNext(provider, parsedError, candidates.toList())
+                var decision = FallbackChainRegistry.routeNext(provider, parsedError, candidates.toList())
+
+                if (universalError.category == UniversalErrorCategory.CONTEXT_EXCEEDED && decision.action != RoutingAction.ROUTE_HIGH_CONTEXT) {
+                    atropos.core.thinking.Thinking.stream.emit(
+                        atropos.core.thinking.ThinkingDepth.L3,
+                        "UniversalErrorParser detected CONTEXT_EXCEEDED on $provider — overriding route to ROUTE_HIGH_CONTEXT"
+                    )
+                    decision = RoutingDecision(
+                        action = RoutingAction.ROUTE_HIGH_CONTEXT,
+                        targetProvider = "gemini",
+                        reason = "UniversalErrorParser: context window exceeded"
+                    )
+                }
+
                 atropos.core.thinking.Thinking.detail(
                     "provider",
                     "routing decision: ${decision.action} (${decision.reason})"

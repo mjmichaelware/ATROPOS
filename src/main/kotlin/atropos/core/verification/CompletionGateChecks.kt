@@ -150,8 +150,44 @@ class CompletionGateChecks(
         if (node.expectedOutputs.isEmpty()) {
             return nothingToInspect(node, EXPECTED_OUTPUTS, "node declared no expected outputs")
         }
-        val allExist = node.expectedOutputs.all { path -> Files.exists(repoRoot.resolve(path)) }
-        return GateResult(node.id, allExist, EXPECTED_OUTPUTS, if (allExist) "all outputs exist" else "missing: ${node.expectedOutputs.filter { !Files.exists(repoRoot.resolve(it)) }.joinToString(", ")}", clock())
+        val certificateEngine = atropos.core.supremacy.ReproducibilityCertificateEngine()
+        val missingOrInvalid = mutableListOf<String>()
+        val verifiedLeaves = mutableListOf<atropos.core.supremacy.MerkleLeaf>()
+
+        for (outputSpec in node.expectedOutputs) {
+            val expectedPath = outputSpec.substringBefore('#').substringBefore(':').trim()
+            val expectedHash = if (outputSpec.contains(':') && !outputSpec.startsWith(":")) {
+                outputSpec.substringAfter(':').trim()
+            } else null
+
+            val resolved = repoRoot.resolve(expectedPath).normalize()
+            if (!Files.exists(resolved) || !Files.isRegularFile(resolved)) {
+                missingOrInvalid += "$expectedPath (missing regular file)"
+                continue
+            }
+            try {
+                val leaf = certificateEngine.computeLeaf(repoRoot, resolved)
+                if (expectedHash != null && !leaf.sha256Hex.equals(expectedHash, ignoreCase = true)) {
+                    missingOrInvalid += "$expectedPath (hash mismatch: expected $expectedHash, got ${leaf.sha256Hex})"
+                } else {
+                    verifiedLeaves += leaf
+                    atropos.core.thinking.Thinking.stream.emit(
+                        atropos.core.thinking.ThinkingDepth.L3,
+                        "merkle physical verified: ${leaf.relativePath} [${leaf.sha256Hex.take(16)}] size=${leaf.sizeBytes}B"
+                    )
+                }
+            } catch (e: Exception) {
+                missingOrInvalid += "$expectedPath (io error: ${e.message})"
+            }
+        }
+
+        val allPassed = missingOrInvalid.isEmpty()
+        val detail = if (allPassed) {
+            "all ${verifiedLeaves.size} outputs physically exist with verified Merkle leaves"
+        } else {
+            "failed Merkle physical checks: ${missingOrInvalid.joinToString("; ")}"
+        }
+        return GateResult(node.id, allPassed, EXPECTED_OUTPUTS, detail, clock())
     }
 
     fun checkUnresolvedDimensions(node: DagNode): GateResult {
