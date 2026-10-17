@@ -19,7 +19,7 @@ sealed class TypedProposalSchema {
 sealed class ActionProposal(
     open val id: String = UUID.randomUUID().toString(),
     open val actionClass: PolicyActionClass = PolicyActionClass.FILE_MUTATION,
-    open val actor: ActionActor = ActionActor.AutonomousDirector,
+    open val actor: ActionActor = ActionActor.SystemService("AutonomousDirector"),
     open val command: List<String> = emptyList(),
     open val cwd: String? = null,
     open val targetPaths: List<String> = emptyList(),
@@ -34,7 +34,7 @@ sealed class ActionProposal(
         val path: String,
         val content: String,
         val sha256: String,
-        override val actor: ActionActor = ActionActor.AutonomousDirector,
+        override val actor: ActionActor = ActionActor.SystemService("AutonomousDirector"),
         override val capabilityProof: String = ""
     ) : ActionProposal(
         id = UUID.randomUUID().toString(),
@@ -49,7 +49,7 @@ sealed class ActionProposal(
         val path: String,
         val diff: String,
         val baseSha256: String,
-        override val actor: ActionActor = ActionActor.AutonomousDirector,
+        override val actor: ActionActor = ActionActor.SystemService("AutonomousDirector"),
         override val capabilityProof: String = ""
     ) : ActionProposal(
         id = UUID.randomUUID().toString(),
@@ -62,7 +62,7 @@ sealed class ActionProposal(
 
     data class DeleteFile(
         val path: String,
-        override val actor: ActionActor = ActionActor.AutonomousDirector,
+        override val actor: ActionActor = ActionActor.SystemService("AutonomousDirector"),
         override val capabilityProof: String = ""
     ) : ActionProposal(
         id = UUID.randomUUID().toString(),
@@ -75,7 +75,7 @@ sealed class ActionProposal(
     data class ExecuteToolchain(
         override val command: List<String>,
         val worktreeId: String,
-        override val actor: ActionActor = ActionActor.AutonomousDirector,
+        override val actor: ActionActor = ActionActor.SystemService("AutonomousDirector"),
         override val capabilityProof: String = ""
     ) : ActionProposal(
         id = UUID.randomUUID().toString(),
@@ -89,7 +89,7 @@ sealed class ActionProposal(
     data class MergeWorktree(
         val worktreeId: String,
         val targetBranch: String,
-        override val actor: ActionActor = ActionActor.AutonomousDirector,
+        override val actor: ActionActor = ActionActor.SystemService("AutonomousDirector"),
         override val capabilityProof: String = ""
     ) : ActionProposal(
         id = UUID.randomUUID().toString(),
@@ -98,7 +98,7 @@ sealed class ActionProposal(
         capabilityProof = capabilityProof
     )
 
-    data class Generic(
+    class Generic(
         override val id: String = UUID.randomUUID().toString(),
         override val actionClass: PolicyActionClass,
         override val actor: ActionActor,

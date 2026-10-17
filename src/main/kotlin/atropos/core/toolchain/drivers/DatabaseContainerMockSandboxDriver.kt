@@ -176,7 +176,7 @@ class DatabaseContainerMockSandboxDriver : LanguageToolchainDriver {
                     stmt.execute(sql)
                     conn.rollback()
                     true
-                } catch (_: SQLException) {
+                } catch (e: SQLException) {
                     conn.rollback()
                     false
                 }
@@ -186,7 +186,6 @@ class DatabaseContainerMockSandboxDriver : LanguageToolchainDriver {
         }
     }
 
-    /**
     companion object {
         const val SUPABASE_QUERY_ENDPOINT_TEMPLATE = "https://api.supabase.com/v1/projects/%s/database/query"
         const val PGBOUNCER_PORT = 6543

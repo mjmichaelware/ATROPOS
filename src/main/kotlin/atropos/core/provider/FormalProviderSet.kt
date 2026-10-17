@@ -13,7 +13,7 @@ object FormalProviderSet {
 
         // Pure route function over mathematical model M
         val eligible = m.filter { descriptor ->
-            descriptor.contextLimitTokens > 0
+            descriptor.isFreeEligible() || descriptor.hasCapability(ApiCapability.CODE)
         }
         val selected = eligible.minByOrNull { it.quotaTier } ?: m.first()
         return selected.id

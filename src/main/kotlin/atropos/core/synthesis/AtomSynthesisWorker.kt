@@ -4,6 +4,9 @@ package atropos.core.synthesis
 import atropos.core.dag.DagNode
 import atropos.core.provider.ProviderCascadeRouter
 import atropos.core.provider.RoutePolicy
+import atropos.core.provider.ProviderTask
+import atropos.core.provider.ProviderTaskKind
+import atropos.core.provider.ApiCapability
 import atropos.core.util.CodeFenceExtractor
 import atropos.core.worktree.WorktreeRecord
 import java.nio.file.Files
@@ -24,8 +27,8 @@ data class NodeSynthesisResult(
  * Max 3 repair attempts with DiagnosticLocationExtractor scoping and CodeFenceExtractor cleanup.
  */
 class AtomSynthesisWorker(
-    private val router: ProviderCascadeRouter = ProviderCascadeRouter(),
-    private val routePolicy: RoutePolicy = RoutePolicy(),
+    private val router: ProviderCascadeRouter? = null,
+    private val routePolicy: RoutePolicy? = null,
     private val patcher: AstSurgicalPatcher = AstSurgicalPatcher()
 ) {
     companion object {
@@ -33,7 +36,9 @@ class AtomSynthesisWorker(
     }
 
     fun synthesize(node: DagNode, worktree: WorktreeRecord, prompt: String = ""): NodeSynthesisResult {
-        val selectedProvider = routePolicy.selectProvider(emptyList())
+        val selectedProvider = routePolicy?.decide(
+            ProviderTask(ProviderTaskKind.FAST_CODE_DRAFT, ApiCapability.CODE, prompt)
+        )?.selectedProviderId ?: "groq"
         val cleanPrompt = CodeFenceExtractor.cleanCodeFences(prompt)
         
         // Execute synthesis through dynamic cascade router
@@ -43,7 +48,7 @@ class AtomSynthesisWorker(
             NodeSynthesisResult(
                 nodeId = node.id,
                 success = true,
-                message = "Synthesized via dynamic provider dispatch: ${selectedProvider?.id ?: "local"}",
+                message = "Synthesized via dynamic provider dispatch: $selectedProvider",
                 outputFiles = listOf(node.id)
             )
         }

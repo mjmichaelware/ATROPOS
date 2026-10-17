@@ -391,10 +391,9 @@ class IsolatedWorktreeService(
             }
             recordStore.delete(record)
         }
-        atropos.core.autonomy.RewardPenaltyStore().recordZeroRewardPenalty(
+        atropos.core.autonomy.RewardPenaltyStore().recordZeroRewardFraudPenalty(
             agentId = worktreeId,
-            reason = "Territory violation in worktree $worktreeId: force evicted and rolled back",
-            violationClass = "TERRITORY_VIOLATION_EVICTION"
+            reason = "Territory violation in worktree $worktreeId: force evicted and rolled back"
         )
     }
 
