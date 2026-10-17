@@ -1,5 +1,8 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
-package atropos.core.observability
+package atropos.cli.ui
+
+import atropos.core.observability.BoundedRenderingController
+import atropos.core.observability.TerminalPasteSuspensionLock
 
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest

@@ -1,6 +1,9 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
-package atropos.cli.input
+package atropos.cli.ui
 
+import atropos.cli.input.EscapeSequenceParser
+import atropos.cli.input.KeyEvent
+import atropos.cli.input.RawKeyReader
 import atropos.core.observability.BoundedRenderingController
 import atropos.core.observability.TerminalPasteSuspensionLock
 import java.io.ByteArrayInputStream

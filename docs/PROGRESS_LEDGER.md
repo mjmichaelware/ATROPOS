@@ -15566,8 +15566,8 @@ End of AGENTS.md
   - `src/main/kotlin/atropos/cli/ui/AnsiTerminalEngine.kt` (+2/-3 lines)
   - `src/main/kotlin/atropos/cli/input/EscapeSequenceParser.kt` (+35 lines)
   - `src/main/kotlin/atropos/cli/input/RawKeyReader.kt` (+18 lines)
-  - `src/test/kotlin/atropos/core/observability/TerminalPasteSuspensionLockTest.kt` (+67 lines)
-  - `src/test/kotlin/atropos/cli/input/EscapeSequencePasteSuspensionTest.kt` (+62 lines)
+  - `src/test/kotlin/atropos/cli/ui/TerminalPasteSuspensionLockTest.kt` (+67 lines)
+  - `src/test/kotlin/atropos/cli/ui/EscapeSequencePasteSuspensionTest.kt` (+62 lines)
   - `docs/PROGRESS_LEDGER.md`
 - Atoms / phases affected: HOE-B01/CLI terminal interactive input, Bracketed Paste mode, TerminalModeManager, BoundedRenderingController, SttyTerminalGeometryProvider, CachingGitWorkspaceInspector
 - Predicate moved:
