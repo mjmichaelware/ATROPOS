@@ -65,6 +65,7 @@ class CommandRouter(
         localOnly = config.runtime.localOnly
     )
     private val backendDoctor = BackendDoctor(config, providerOnboarding, mcpHostManager)
+    val preferredProviderIds = { providerOnboarding.preferredProviderIds() }
 
     private var activeProvider = providerResolver(config.runtime.defaultProvider)
 
@@ -98,6 +99,9 @@ class CommandRouter(
         agentCommand = agentCommand,
         onPatchStateUpdated = { uiEngine.updateAgentPatchState(it) }
     )
+
+    private val firstRunProbe = FirstRunProbe(config, onboarding = providerOnboarding)
+    private val authCommand = atropos.cli.commands.AuthCommandHandler(uiEngine, config = config)
 
     private val secondaryDispatcher = CommandSecondaryDispatcher(
         uiEngine = uiEngine,
@@ -260,7 +264,7 @@ class CommandRouter(
 
         val first = routedTokens.first().lowercase()
         if (first in setOf("?", "/?", "help", "/help", "usage", "/usage")) {
-            promptSupport.renderHelpPage(routedTokens.drop(1).joinToString(" "))
+            renderHelpPage(routedTokens.drop(1).joinToString(" "))
             return RouterOutcome.CONTINUE
         }
 
@@ -442,6 +446,13 @@ class CommandRouter(
         } catch (failure: RuntimeException) {
             uiEngine.renderError(failure.message ?: "provider switch failed")
         }
+    }
+
+    fun renderHelpPage(query: String = "") {
+        val words = query.trim().split(' ').filter { it.isNotBlank() }
+        val level = atropos.cli.help.HelpLevel.fromCanonical(words.firstOrNull())
+        promptSupport.renderHelpPage(query)
+        if (words.isEmpty()) atropos.cli.help.HelpGenerator().render(level)
     }
 
     internal fun allowFuzzyExecution(input: String, resolved: String): Boolean =

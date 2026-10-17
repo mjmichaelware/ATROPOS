@@ -470,6 +470,10 @@ class FactoryRunOrchestrator(
         )
     }
 
+    private fun repairAfterVerificationFailure(failure: Throwable) {
+        // FactoryRepairExecutor(obligationLoop).repairAndResume
+    }
+
     private fun persistResumeArtifacts(plan: FactoryPlan, freeze: FactoryAcceptanceFreeze) {
         val runRoot = repoRoot.toAbsolutePath().normalize()
             .resolve(".atropos/research/factory").resolve(plan.id).normalize()

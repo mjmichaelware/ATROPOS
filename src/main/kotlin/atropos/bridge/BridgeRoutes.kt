@@ -466,4 +466,16 @@ class BridgeRoutes(
             dirtyFingerprint = dirtyFingerprint
         )
     }
+
+    companion object {
+        const val ROUTE_WORKSPACE_TREE = "/v1/workspace/tree"
+        const val ROUTE_WORKSPACE_FILE = "/v1/workspace/file"
+        const val ROUTE_WORKSPACE_TERRITORY = "/v1/workspace/territory"
+        const val ROUTE_MCP_CALL = "/v1/mcp/call"
+        const val ROUTE_MCP_STATUS = "/v1/mcp/status"
+        const val ROUTE_STATUS = "/v1/status"
+        const val ROUTE_EVENTS = "/v1/events"
+        const val ROUTE_EVIDENCE = "/v1/evidence"
+        const val ROUTE_FILES = "/v1/files"
+    }
 }
