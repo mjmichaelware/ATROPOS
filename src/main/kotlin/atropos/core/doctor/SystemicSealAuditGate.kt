@@ -131,7 +131,7 @@ class SystemicSealAuditGate(private val repoRoot: Path) {
      */
     fun verifySystemicSealManifest(): Boolean {
         val instances: List<Any?> = listOf(
-            atropos.core.factory.PartitionSynthesisResult.Success("p0", java.util.Collections.emptySet<String>()),
+            atropos.core.factory.PartitionSynthesisResult.Success("p0", emptySet()),
             atropos.core.cloud.DeploymentResult.Success("https://atropos.sh"),
             atropos.core.policy.ActionProposal.DeleteFile("target"),
             atropos.core.memory.ObservationRecord("obs", 0L, 0, "a", emptyMap(), 0, "h"),

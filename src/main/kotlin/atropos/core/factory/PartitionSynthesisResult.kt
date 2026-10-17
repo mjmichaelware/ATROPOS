@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.factory
 
-import java.util.Set
 
 /**
  * SD7-T-001: Sealed partition synthesis result hierarchy.
