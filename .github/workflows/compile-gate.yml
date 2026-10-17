@@ -1,21 +1,16 @@
-# The compile gate, run on GitHub's hardware.
-#
-# ATROPOS runs on a phone, where `./gradlew compileKotlin` exits 127 -- there is
-# no JDK toolchain to run it. A self-host run there mutates source, cannot
-# compile it, and correctly refuses to promote anything, which leaves the engine
-# unable to finish its own loop on the only machine its operator has.
-#
-# This workflow is the other half of GitHubActionsCompileRunner: the engine
-# pushes a snapshot of the mutated tree to a scratch ref and dispatches this,
-# then reads the conclusion as the gate's exit code. Nothing here decides
-# anything the local gate would not have decided -- it is the same command, on a
-# machine that can run it.
+# The compile gate, run on your self-hosted hardware to bypass minute quotas.
 name: compile gate
 
 on:
   push:
     branches: [main, master]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
   pull_request:
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
   workflow_dispatch:
     inputs:
       reason:
@@ -25,10 +20,11 @@ on:
 
 permissions:
   contents: read
+  actions: write # Required for GitHub CLI cache deletion
 
 jobs:
   compile:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -40,18 +36,23 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      # Install ripgrep for hosted-test-selector-contract.sh
       - name: Install ripgrep
         run: sudo apt-get update && sudo apt-get install -y ripgrep
+
+      - name: Clean redundant GitHub caches
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Sweeping redundant 20 MiB Gradle home fragments and Java installations..."
+          gh cache list --json key -q '.[].key' | grep -iE 'gradle|java' | while read -r key; do
+            gh cache delete "$key" || true
+          done
 
       - uses: gradle/actions/setup-gradle@v4
 
       - name: Clean Gradle cache
         run: ./gradlew --no-daemon clean
 
-      # Keep production and test compilation in the hosted lane. The local
-      # phone lane remains allowed to use the same command through its remote
-      # compile gate when the device cannot finish Gradle in its heap budget.
       - name: compileKotlin
         env:
           GRADLE_OPTS: -Xmx4g
@@ -65,11 +66,11 @@ jobs:
         with:
           name: compilation-log
           path: compile.log
-          retention-days: 7
+          retention-days: 3
 
   focused-backend-tests:
     needs: compile
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
         with:
@@ -80,7 +81,6 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      # Install ripgrep for hosted-test-selector-contract.sh
       - name: Install ripgrep
         run: sudo apt-get update && sudo apt-get install -y ripgrep
 
