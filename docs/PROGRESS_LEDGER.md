@@ -15716,3 +15716,24 @@ End of AGENTS.md
 - % delta: HOE CLI Viewport & Factory Reliability moved from PARTIAL to GREEN; overall estimate unchanged.
 - Why justified: Eliminates silent execution stops, guarantees persistent run diagnostics for every stopped run, fixes viewport scrolling math, exhausts all configured provider keys, and ensures seamless resumption.
 - Fingerprints: Verified across 10 touched paths.
+### 2026-10-17T08:50:00Z · Agent: Antigravity (Advanced Agentic Coding) · Batch: fix-cli-dag-persistent-l3-autopsy-handoff
+- Paths touched:
+  - `src/main/kotlin/atropos/cli/ui/TerminalText.kt` (+1/-1): Swapped carriage return `\r` for strict newline `\n` in `emitSpinner`, preventing spinner lines from overwriting preceding terminal output.
+  - `src/main/kotlin/atropos/cli/ui/LiveThinkingRenderer.kt` (+9/-13): Dispatched L3 thoughts directly into the transcript buffer via `uiEngine.renderNotice` with newlines, ensuring full trace logs, byte counts, and provider attempts are permanently saved in scrollback.
+  - `src/main/kotlin/atropos/core/factory/AppFactoryRouter.kt` (+15/-6): Routed `runLocal`, `runClarified`, and `resumePlan` directly into `AutonomousWaveOrchestrator.execute` instead of calling extirpated `AppProjectGenerator`; added detailed artifact logging on resume via `Thinking.step` and `Thinking.detail`.
+  - `src/main/kotlin/atropos/core/orchestration/AutonomousWaveOrchestrator.kt` (+95/-15): Fixed silent halt by aligning DAG IDs across `dagStore.createDag` and `obligationLoop.executeUntilSettled`; persisted `plan.md` and `acceptance-freeze.md` research artifacts; added durable snapshot recording on handoff; implemented `resume(request, dagId, freeze)`; added staging worktree fallback for Termux storage.
+  - `src/main/kotlin/atropos/cli/FactoryCommandHandler.kt` (+65/-20): Implemented `handlePipelineHalt` with explicit reason logging and interactive `Pipeline halted: [Exact Reason]. Generate comprehensive failure artifact? (y/n)` prompt; implemented `dumpComprehensiveFailureArtifact` capturing full RunState, DAG node details from `DagStore`, exception stack trace, and L3 thinking trace; enhanced `resumeRun` to reconstruct wave execution requests and resume unfinished DAGs.
+  - `src/main/kotlin/atropos/cli/InterruptCommandHandler.kt` (+2/-12): Connected `/resume` command directly to `FactoryCommandHandler.execute` to resume the latest factory run when no frozen interrupt state is pending.
+- Atoms / phases affected: Phase 19 App Factory DAG Execution Loop, HOE CLI L3 Trace Persistence, Autopsy Artifact Dump & User Prompting, Factory Resumption.
+- Predicate moved:
+  - The App Factory pipeline no longer silently halts after Wave 0 DAG synthesis; generated DAG nodes execute through the obligation loop and worktree/staging runners.
+  - L3 thinking logs (`ThinkingDepth.L3`) never overwrite with `\r`; all byte counts, provider attempts, and routing decisions are permanently committed to the scrollback buffer above the prompt.
+  - The CLI never halts without printing the exact cause: `Pipeline halted: [Exact Reason]`.
+  - Halting prompts the user `Generate comprehensive failure artifact? (y/n)`; if confirmed, writes a complete failure artifact containing RunState, DAG node status, full exception stack trace, active keys, and L3 trace to `.atropos/research/factory/<runId>/failure-artifact.md`.
+  - Resumption logic verified: `/resume` and `/factory resume` restore the DAG from `DagStore`, verify exact-hash continuity on acceptance freeze and prompt fingerprints, and resume execution of uncompleted atoms.
+  - Mathematical invariants & atropos-rules: exact-hash continuity preserved on Wave-0 contracts, zero hollow AST returns, Lakehouse soft-fail honored, and all touched files respect the 350-500 LOC limits.
+- Verification: `bash scripts/backend-atom-contract-test.sh` passed (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`).
+- % delta: App Factory DAG Execution Handoff & L3 Persistence moved from BLOCKED to GREEN; overall estimate unchanged.
+- Why justified: Resolves the silent halt after Wave 0 DAG synthesis, ensures complete visibility of L3 thinking without carriage return overwrites, enforces autopsy & artifact dumping on any pipeline halt, and delivers end-to-end DAG resumption.
+- Fingerprints: Verified across 6 touched source files.
+

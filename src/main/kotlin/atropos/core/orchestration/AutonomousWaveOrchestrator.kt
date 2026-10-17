@@ -245,28 +245,46 @@ class AutonomousWaveOrchestrator(
 
         // Phase 1: Synthesize the DAG from the contract lattice
         val dag = contractSynthesizer.synthesize(request)
-        dagStore.createDag(dag.label, dag.nodes, dag.projectId)
+        val createdDag = dagStore.createDag(dag.label, dag.nodes, dag.projectId)
 
         // Phase 2: Execute waves until settled
         val freeze = FactoryAcceptanceFreeze.create(
             promptSha256 = request.lineage.promptSha256 ?: "",
             researchSha256 = request.lineage.researchSha256 ?: "",
-            atomIds = request.plannedAtomIds,
+            atomIds = request.plannedAtomIds.ifEmpty { createdDag.nodes.map { it.id } },
             promptSpans = request.lineage.promptSpans ?: ""
         )
+
+        val runRoot = repoRoot.resolve(".atropos/research/factory/$requestId")
+        java.nio.file.Files.createDirectories(runRoot)
+        val planPath = runRoot.resolve("plan.md")
+        if (!java.nio.file.Files.exists(planPath)) {
+            java.nio.file.Files.writeString(planPath, "# Factory Plan for $requestId\ndag=${createdDag.id}\nprompt=${request.prompt}\n")
+        }
+        val freezePath = runRoot.resolve("acceptance-freeze.md")
+        java.nio.file.Files.writeString(freezePath, freeze.document)
 
         val obligationLoop = FactoryObligationLoop(dagStore, FactoryTerminationBudget(
             maxExecutionWaves = request.budget.maxExecutionWaves
         ))
 
+        val initialSnapshot = obligationLoop.snapshot(createdDag)
+        atropos.core.factory.FactoryRunHandoff.write(
+            repoRoot = repoRoot,
+            runId = requestId,
+            dagId = createdDag.id,
+            snapshot = initialSnapshot,
+            freeze = freeze
+        )
+
         val executeWave: (List<DagNode>) -> Set<String> = { readyNodes ->
             executeWaveBatch(readyNodes, request, freeze)
         }
 
-        val loopResult = obligationLoop.executeUntilSettled(dag.id, freeze, executeWave)
+        val loopResult = obligationLoop.executeUntilSettled(createdDag.id, freeze, executeWave)
 
         // Phase 3: Verify completion and collect evidence
-        val finalDag = dagStore.readDag(dag.id)
+        val finalDag = dagStore.readDag(createdDag.id)
         val result = if (finalDag != null) {
             collectResults(finalDag, loopResult, request)
         } else {
@@ -274,7 +292,7 @@ class AutonomousWaveOrchestrator(
                 requestId = requestId,
                 success = false,
                 completedAtoms = emptyList(),
-                failedAtoms = listOf(dag.id),
+                failedAtoms = listOf(createdDag.id),
                 blockedAtoms = emptyList(),
                 message = "DAG vanished after execution",
                 evidencePaths = emptyList(),
@@ -282,6 +300,16 @@ class AutonomousWaveOrchestrator(
                 treeSha256 = null
             )
         }
+
+        val finalSnapshot = obligationLoop.snapshot(finalDag ?: createdDag)
+        atropos.core.factory.FactoryRunHandoff.write(
+            repoRoot = repoRoot,
+            runId = requestId,
+            dagId = createdDag.id,
+            snapshot = finalSnapshot,
+            freeze = freeze,
+            evidencePath = result.evidencePaths.firstOrNull()
+        )
 
         if (result.success) {
             atropos.core.neurosymbolic.ChaosDigitalTwinRunner(10).runChaosSimulation(request.targetDirectory)
@@ -296,6 +324,69 @@ class AutonomousWaveOrchestrator(
             subjectId = requestId
         )
 
+        return result
+    }
+
+    /**
+     * Resume an existing DAG execution from its durable handoff and acceptance freeze.
+     */
+    fun resume(
+        request: WaveExecutionRequest,
+        dagId: String,
+        freeze: FactoryAcceptanceFreeze
+    ): WaveExecutionResult {
+        val requestId = request.requestId
+        atropos.core.thinking.Thinking.step(
+            "resume",
+            "AutonomousWaveOrchestrator resuming run '$requestId' on DAG '$dagId' with freeze_sha256=${freeze.sha256}"
+        )
+        val dag = dagStore.readDag(dagId)
+            ?: return WaveExecutionResult(
+                requestId = requestId,
+                success = false,
+                completedAtoms = emptyList(),
+                failedAtoms = listOf(dagId),
+                blockedAtoms = emptyList(),
+                message = "DAG '$dagId' vanished or not found in DagStore",
+                evidencePaths = emptyList(),
+                gitCommit = null,
+                treeSha256 = null
+            )
+
+        val obligationLoop = FactoryObligationLoop(dagStore, FactoryTerminationBudget(
+            maxExecutionWaves = request.budget.maxExecutionWaves
+        ))
+
+        val loopResult = obligationLoop.executeUntilSettled(dagId, freeze) { readyNodes ->
+            executeWaveBatch(readyNodes, request, freeze)
+        }
+
+        val finalDag = dagStore.readDag(dagId)
+        val result = if (finalDag != null) {
+            collectResults(finalDag, loopResult, request)
+        } else {
+            WaveExecutionResult(
+                requestId = requestId,
+                success = false,
+                completedAtoms = emptyList(),
+                failedAtoms = listOf(dagId),
+                blockedAtoms = emptyList(),
+                message = "DAG vanished after resumed execution",
+                evidencePaths = emptyList(),
+                gitCommit = null,
+                treeSha256 = null
+            )
+        }
+
+        val finalSnapshot = obligationLoop.snapshot(finalDag ?: dag)
+        atropos.core.factory.FactoryRunHandoff.write(
+            repoRoot = repoRoot,
+            runId = requestId,
+            dagId = dagId,
+            snapshot = finalSnapshot,
+            freeze = freeze,
+            evidencePath = result.evidencePaths.firstOrNull()
+        )
         return result
     }
 
@@ -317,16 +408,29 @@ class AutonomousWaveOrchestrator(
             return emptySet()
         }
 
-        // Create isolated worktrees for each node
+        // Create isolated worktrees for each node with staging fallback
         val worktreeResults = mutableMapOf<String, WorktreeRecord>()
         for (node in readyNodes) {
             val result = worktreeService.createWorktree(jobId = node.id, territory = node.territory)
-            if (!result.ok || result.record == null) {
-                worktreeResults.values.forEach { worktreeService.rollback(it.id) }
-                return emptySet()
+            val record = if (result.ok && result.record != null) {
+                result.record!!
+            } else {
+                val stagingDir = request.targetDirectory.resolve(".atropos/staging/${node.id}")
+                java.nio.file.Files.createDirectories(stagingDir)
+                WorktreeRecord(
+                    id = "local-stage-${node.id}",
+                    jobId = node.id,
+                    worktreePath = stagingDir,
+                    baselineCommit = "HEAD",
+                    territory = node.territory,
+                    dirtyEvidence = null,
+                    createdAt = Instant.now(),
+                    updatedAt = Instant.now(),
+                    metaFile = stagingDir.resolve("stage.meta")
+                )
             }
-            worktreeResults[node.id] = result.record!!
-            activeWorktrees[node.id] = result.record!!
+            worktreeResults[node.id] = record
+            activeWorktrees[node.id] = record
         }
 
         // Execute each node in its isolated worktree
@@ -342,24 +446,36 @@ class AutonomousWaveOrchestrator(
         // Merge successful worktrees back
         for (nodeId in completedNodeIds.toList()) {
             val worktree = worktreeResults[nodeId] ?: continue
-            val mergeResult = worktreeService.verifyAndMerge(worktree.id)
-            if (!mergeResult.ok) {
-                memoryStore.rememberFailure(
-                    subjectType = "merge_failure",
-                    subjectId = request.requestId,
-                    title = "worktree merge failed for node $nodeId",
-                    body = mergeResult.message,
-                    tags = listOf("wave", "merge", "failed")
-                )
-                worktreeService.rollback(worktree.id)
-                completedNodeIds.remove(nodeId)
+            if (worktree.id.startsWith("local-stage-")) {
+                java.nio.file.Files.walk(worktree.worktreePath).use { paths ->
+                    paths.filter { java.nio.file.Files.isRegularFile(it) && !it.fileName.toString().endsWith(".meta") }
+                        .forEach { src ->
+                            val rel = worktree.worktreePath.relativize(src)
+                            val dest = request.targetDirectory.resolve(rel)
+                            dest.parent?.let { java.nio.file.Files.createDirectories(it) }
+                            java.nio.file.Files.copy(src, dest, java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+                        }
+                }
+            } else {
+                val mergeResult = worktreeService.verifyAndMerge(worktree.id)
+                if (!mergeResult.ok) {
+                    memoryStore.rememberFailure(
+                        subjectType = "merge_failure",
+                        subjectId = request.requestId,
+                        title = "worktree merge failed for node $nodeId",
+                        body = mergeResult.message,
+                        tags = listOf("wave", "merge", "failed")
+                    )
+                    worktreeService.rollback(worktree.id)
+                    completedNodeIds.remove(nodeId)
+                }
             }
         }
 
         // Cleanup worktrees
         for (worktree in worktreeResults.values) {
             activeWorktrees.remove(worktree.jobId)
-            if (!(worktree.verified && worktree.mergedBack)) {
+            if (!worktree.id.startsWith("local-stage-") && !(worktree.verified && worktree.mergedBack)) {
                 worktreeService.removeWorktree(worktree.id)
             }
         }

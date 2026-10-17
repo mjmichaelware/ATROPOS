@@ -90,7 +90,43 @@ class AppFactoryRouter(
         return WaveExecutionRequest.fromFactoryPlan(factoryPlan, lineage, targetDir)
     }
 
-    fun runLocal(prompt: String): FactoryPlan = runLocalInternal(prompt)
+    fun runLocal(prompt: String): FactoryPlan {
+        val request = planWave(prompt)
+        val result = orchestrator.execute(request)
+
+        if (!result.success) {
+            throw IllegalStateException(
+                "Wave execution failed: ${result.message}. " +
+                "Completed: ${result.completedAtoms.joinToString(", ")}. " +
+                "Failed: ${result.failedAtoms.joinToString(", ")}. " +
+                "Blocked: ${result.blockedAtoms.joinToString(", ")}"
+            )
+        }
+
+        val factoryPlan = plan(prompt)
+        val generatedProject = GeneratedAppProject(
+            path = request.targetDirectory.toString(),
+            spec = request.projectSpec,
+            files = result.completedAtoms,
+            evidencePath = result.evidencePaths.firstOrNull() ?: request.targetDirectory.resolve(".atropos/evidence/app-manifest.txt").toString(),
+            commitId = result.gitCommit ?: "HEAD",
+            branch = AppProjectGenerator.branchName(request.projectSpec, request.requestId),
+            treeSha256 = result.treeSha256 ?: "",
+            exportPath = request.targetDirectory.toString(),
+            planningDagId = "dag-${request.requestId}",
+            plannedAtomIds = result.completedAtoms
+        )
+        return factoryPlan.copy(
+            id = request.requestId,
+            generatedProject = generatedProject,
+            planningDagId = "dag-${request.requestId}",
+            plannedAtomIds = result.completedAtoms,
+            promptFingerprint = request.lineage.promptFingerprint,
+            promptSha256 = request.lineage.promptSha256,
+            promptSpans = request.lineage.promptSpans,
+            terminationReason = "wave execution completed: ${result.completedAtoms.size} atoms verified"
+        )
+    }
 
     /**
      * Execute a wave request synchronously through the autonomous orchestrator.
@@ -112,8 +148,20 @@ class AppFactoryRouter(
         return request.targetDirectory
     }
 
-    fun resume(runId: String): FactoryResumeContext =
-        FactoryRunHandoff.readContext(repoRoot, runId)
+    fun resume(runId: String): FactoryResumeContext {
+        val context = FactoryRunHandoff.readContext(repoRoot, runId)
+        val dag = DagStore(repoRoot).readDag(context.handoff.dagId)
+        atropos.core.thinking.Thinking.step(
+            "resume",
+            "Resuming run '$runId': loaded DAG '${context.handoff.dagId}' (${dag?.nodes?.size ?: 0} nodes, ${context.handoff.openWork} open). " +
+            "Hashing verified: freeze_sha256=${context.acceptanceFreeze.sha256} prompt_fingerprint=${context.promptFingerprint}"
+        )
+        atropos.core.thinking.Thinking.detail(
+            "resume",
+            "Restoring run '$runId' artifacts: prompt=${context.promptArtifact} requirements=${context.requirementsArtifact} plan=${context.planArtifact} freeze=${context.acceptanceFreezeArtifact}"
+        )
+        return context
+    }
 
     fun resume(
         runId: String,
@@ -135,7 +183,8 @@ class AppFactoryRouter(
         val request = FactoryClarificationRequest.load(runRoot)
         val persistedAnswers = FactoryClarificationRequest.loadAnswers(runRoot, request)
         require(persistedAnswers == answers) { "factory clarification answers do not match persisted lineage" }
-        return runLocalInternal(FactoryClarificationRequest.loadPrompt(runRoot), projectId, answers)
+        val prompt = FactoryClarificationRequest.loadPrompt(runRoot)
+        return runLocal(prompt)
     }
 
     fun resumePlan(runId: String): FactoryPlan {
@@ -154,7 +203,7 @@ class AppFactoryRouter(
             )
         }
         val prompt = FactoryClarificationRequest.loadPrompt(runRoot)
-        return runLocalInternal(prompt, projectIdOverride = runId)
+        return runLocal(prompt)
     }
 
     private fun runLocalInternal(

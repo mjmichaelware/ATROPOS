@@ -31,7 +31,7 @@ object TerminalText {
     }
 
     fun emitSpinner(frame: String, message: String) {
-        System.err.print("\r$frame $message")
+        System.err.println("$frame $message")
         System.err.flush()
     }
 
