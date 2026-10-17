@@ -14,7 +14,7 @@ object AppProjectGenerator {
 
     fun generateApp(): Nothing = throw AssertionError("AppProjectGenerator has been extirpated per SD7-T-014. Zero residual call sites permitted.")
 
-    fun generateApp(prompt: String, projectId: String): Nothing = throw AssertionError("AppProjectGenerator has been extirpated per SD7-T-014. Zero residual call sites permitted.")
+    fun generateApp(prompt: String, projectId: String): GeneratedAppProject = throw AssertionError("AppProjectGenerator has been extirpated per SD7-T-014. Zero residual call sites permitted.")
 
     fun generateApp(
         spec: AppProjectSpec,
@@ -22,7 +22,7 @@ object AppProjectGenerator {
         planningDagId: String? = null,
         plannedAtomIds: List<String> = emptyList(),
         lineage: FactoryLineage? = null
-    ): Nothing = throw AssertionError("AppProjectGenerator has been extirpated per SD7-T-014. Zero residual call sites permitted.")
+    ): GeneratedAppProject = throw AssertionError("AppProjectGenerator has been extirpated per SD7-T-014. Zero residual call sites permitted.")
 
     @Suppress("UNUSED_PARAMETER")
     operator fun invoke(repoRoot: Path): AppProjectGenerator = this
