@@ -73,6 +73,97 @@ class ClipboardService {
     }
 
     /**
+     * Reads text from the system clipboard.
+     * Returns null if clipboard is empty or unsupported.
+     */
+    fun paste(): String? {
+        if (isTermux) {
+            val text = pasteTermux()
+            if (!text.isNullOrBlank()) return text
+        }
+        return when {
+            osName.contains("linux") -> pasteLinux()
+            osName.contains("mac") -> pasteMac()
+            osName.contains("windows") -> pasteWindows()
+            else -> pasteTermux()
+        }
+    }
+
+    private fun pasteTermux(): String? {
+        return runCatching {
+            val process = ProcessBuilder("termux-clipboard-get").start()
+            val text = process.inputStream.bufferedReader(StandardCharsets.UTF_8).use { it.readText() }
+            if (process.waitFor() == 0 && text.isNotBlank()) text else null
+        }.getOrNull()
+    }
+
+    private fun pasteLinux(): String? {
+        return runCatching {
+            val wayland = runCatching {
+                val p = ProcessBuilder("wl-paste").start()
+                val text = p.inputStream.bufferedReader(StandardCharsets.UTF_8).use { it.readText() }
+                if (p.waitFor() == 0 && text.isNotBlank()) text else null
+            }.getOrNull()
+            if (wayland != null) return wayland
+
+            val p = ProcessBuilder("xclip", "-selection", "clipboard", "-o").start()
+            val text = p.inputStream.bufferedReader(StandardCharsets.UTF_8).use { it.readText() }
+            if (p.waitFor() == 0 && text.isNotBlank()) text else null
+        }.getOrNull()
+    }
+
+    private fun pasteMac(): String? {
+        return runCatching {
+            val p = ProcessBuilder("pbpaste").start()
+            val text = p.inputStream.bufferedReader(StandardCharsets.UTF_8).use { it.readText() }
+            if (p.waitFor() == 0 && text.isNotBlank()) text else null
+        }.getOrNull()
+    }
+
+    private fun pasteWindows(): String? {
+        return runCatching {
+            val p = ProcessBuilder("powershell", "-command", "Get-Clipboard").start()
+            val text = p.inputStream.bufferedReader(StandardCharsets.UTF_8).use { it.readText() }
+            if (p.waitFor() == 0 && text.isNotBlank()) text else null
+        }.getOrNull()
+    }
+
+    /**
+     * Performs speech-to-text recognition via Android/Termux API.
+     * Returns transcribed text or null on failure.
+     */
+    fun speechToText(): String? {
+        return runCatching {
+            val process = ProcessBuilder("termux-speech-to-text").start()
+            val text = process.inputStream.bufferedReader(StandardCharsets.UTF_8).use { it.readText() }.trim()
+            if (process.waitFor() == 0 && text.isNotBlank()) text else null
+        }.getOrNull()
+    }
+
+    /**
+     * Opens native Android multi-line dialog with swipe-to-text and voice typing enabled.
+     * Returns the composed text or null on cancel.
+     */
+    fun composeDialog(title: String = "Atropos Composer"): String? {
+        return runCatching {
+            val process = ProcessBuilder("termux-dialog", "text", "-t", title, "-m").start()
+            val json = process.inputStream.bufferedReader(StandardCharsets.UTF_8).use { it.readText() }.trim()
+            if (process.waitFor() == 0 && json.isNotBlank()) {
+                val textMarker = "\"text\":"
+                val idx = json.indexOf(textMarker)
+                if (idx >= 0) {
+                    val after = json.substring(idx + textMarker.length).trim()
+                    if (after.startsWith("\"")) {
+                        val end = after.indexOf('"', 1)
+                        if (end > 1) after.substring(1, end).replace("\\n", "\n").replace("\\\"", "\"")
+                        else null
+                    } else null
+                } else null
+            } else null
+        }.getOrNull()
+    }
+
+    /**
      * Checks if clipboard is available on the current platform.
      */
     fun isAvailable(): Boolean {

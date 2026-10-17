@@ -15580,3 +15580,25 @@ End of AGENTS.md
 - Why justified: Eliminates terminal input stream corruption and swallowed Enter keys caused by concurrent background execution of `stty size` and `git status` during bracketed paste.
 - Fingerprints: Cleanly tracked across 9 paths.
 
+### 2026-10-17T03:08:00Z · Agent: Antigravity (Gemini 3.8 Flash High) · Batch: cli-paste-collapse-app-routing-voice-swipe
+- Paths touched:
+  - `src/main/kotlin/atropos/cli/input/CollapsedPasteRegistry.kt` (+5 lines)
+  - `src/main/kotlin/atropos/cli/input/RawKeyReader.kt` (+2 lines)
+  - `src/main/kotlin/atropos/cli/input/PromptState.kt` (+1 line)
+  - `src/main/kotlin/atropos/cli/input/CommandCatalog.kt` (+7 lines)
+  - `src/main/kotlin/atropos/cli/ui/ClipboardService.kt` (+91 lines)
+  - `src/main/kotlin/atropos/cli/CommandRouter.kt` (+44 lines)
+  - `src/main/kotlin/atropos/Main.kt` (+10 lines)
+  - `src/test/kotlin/atropos/cli/input/CollapsedPasteRegistryTest.kt` (+7 lines)
+  - `src/test/kotlin/atropos/cli/CommandRouterHelpTest.kt` (+6 lines)
+  - `docs/PROGRESS_LEDGER.md`
+- Atoms / phases affected: HOE-B01/CLI terminal interactive input, Phase 19 App Factory routing, Android/Termux mobile input accessibility.
+- Predicate moved:
+  - Slash command paste collapse exemption: `CollapsedPasteRegistry.shouldCollapse()` now strictly returns false for any input starting with `/` or `!`. Multiline commands pasted into the composer remain fully visible, editable, and uncorrupted rather than disappearing into a placeholder token.
+  - App Factory command aliasing: Added canonical `/app` route and aliases (`/app factory run`, `/app run`) routing directly to `FactoryCommandHandler`, fixing the "unknown command: /app" rejection when operators invoke the App Factory via `/app`.
+  - Android swipe & speech-to-text integration: Extended `ClipboardService` with native clipboard paste (`paste()`), Termux voice recognition (`speechToText()`), and native modal multi-line Android composer (`composeDialog()`).
+  - Terminal shortcuts & commands: Exposed `/voice` (speech-to-text), `/swipe` (native Android dialog with gesture/voice typing), `/paste`, and `Ctrl+V` (byte 22) shortcut directly in the interactive prompt loop.
+  - Termux environment configuration: Initialized `~/.termux/termux.properties` enabling extra-keys toolbar and clarifying touch swipe toggle for Android Text Input View.
+- % delta: CLI/TUI usability and input parity verified; overall estimate unchanged.
+- Why justified: Definitively resolves the issue where pasted multi-line factory commands collapsed into placeholders and failed silently on `/app` routing, and enables native swipe/voice typing on mobile CLI.
+- Fingerprints: Cleanly tracked across 9 paths.

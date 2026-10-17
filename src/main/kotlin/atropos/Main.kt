@@ -268,6 +268,7 @@ private fun runInteractive(
     // nothing for a file it would have read.
     val completer = CommandCompleter(router.ingestRoots)
     val tabs = router.tabs
+    val clipboardService = atropos.cli.ui.ClipboardService()
 
     // Commands run here, not on the key loop.
     //
@@ -455,6 +456,15 @@ private fun runInteractive(
                             "tab ${tabs.active.id}: ${tabs.active.title}"
                         )
                         redraw()
+                        continue@inputLoop
+                    }
+
+                    KeyEvent.CtrlV -> {
+                        val clip = clipboardService.paste()
+                        if (!clip.isNullOrBlank()) {
+                            prompt.insert(clip)
+                            redraw()
+                        }
                         continue@inputLoop
                     }
 

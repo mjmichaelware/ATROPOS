@@ -52,6 +52,10 @@ class CollapsedPasteRegistry(
      */
     fun shouldCollapse(text: String): Boolean {
         if (text.isEmpty()) return false
+        val trimmed = text.trimStart()
+        // Explicit CLI commands (/... or !...) must never be collapsed into placeholders
+        // so the operator can review, edit, and see the full command structure before execution.
+        if (trimmed.startsWith("/") || trimmed.startsWith("!")) return false
         if (retained + text.length > maxRetainedChars) return false
         return lineCount(text) >= lineThreshold || wordCount(text) >= wordThreshold
     }

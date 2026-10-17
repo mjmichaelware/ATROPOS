@@ -206,11 +206,14 @@ object CommandCatalog {
             keywords = listOf("handoff", "report", "download", "artifact", "share"),
             example = "/export handoff --downloads"
         ),
-        CommandEntry("/factory", "factory status"),
-        CommandEntry("/factory plan", "bounded app-factory plan"),
-        CommandEntry("/factory run", "queue app-factory run"),
-        CommandEntry("/factory resume <run-id>", "resume an attested factory handoff"),
+        CommandEntry("/factory", "factory status", aliases = listOf("/app", "/app factory")),
+        CommandEntry("/factory plan", "bounded app-factory plan", aliases = listOf("/app plan", "/app factory plan")),
+        CommandEntry("/factory run", "queue app-factory run", aliases = listOf("/app run", "/app factory run")),
+        CommandEntry("/factory resume <run-id>", "resume an attested factory handoff", aliases = listOf("/app resume <run-id>")),
         CommandEntry("/factory answer", "persist YES/NO factory clarification answers", "Build", keywords = listOf("factory", "confidence", "clarification", "yes", "no")),
+        CommandEntry("/paste", "paste text from system clipboard directly into composer", "Session"),
+        CommandEntry("/voice", "record speech-to-text input via Termux:API", "Session", aliases = listOf("/speech", "/dictate")),
+        CommandEntry("/swipe", "open native Android composer with swipe and voice typing enabled", "Session", aliases = listOf("/compose", "/input")),
         CommandEntry(
             "/self-host",
             "run the Phase 11 self-build loop (use /self-host status for read-only status)",

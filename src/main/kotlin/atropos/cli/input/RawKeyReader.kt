@@ -30,6 +30,7 @@ sealed class KeyEvent {
     object CtrlR : KeyEvent()
     object CtrlT : KeyEvent()
     object CtrlTab : KeyEvent()
+    object CtrlV : KeyEvent()
     object ArrowLeft : KeyEvent()
     object ArrowRight : KeyEvent()
     object ArrowUp : KeyEvent()
@@ -111,6 +112,7 @@ class RawKeyReader(
             4 -> KeyEvent.CtrlD
             18 -> KeyEvent.CtrlR
             20 -> KeyEvent.CtrlT
+            22 -> KeyEvent.CtrlV
             9 -> KeyEvent.Tab
             13 -> {
                 // If followed immediately by \n (10) as CRLF, consume \n so it registers as a single Enter

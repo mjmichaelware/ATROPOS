@@ -178,6 +178,7 @@ class PromptState(
 
         KeyEvent.CtrlT -> PromptEffect.None
         KeyEvent.CtrlTab -> PromptEffect.None
+        KeyEvent.CtrlV -> PromptEffect.None
 
         KeyEvent.Escape -> {
             suggestions.dismiss()

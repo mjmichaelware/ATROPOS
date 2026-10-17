@@ -523,6 +523,15 @@ class CommandRouter(
 
             "/factory" -> factoryCommand.execute(tokens)
 
+            "/app" -> {
+                val sub = tokens.getOrNull(1)?.lowercase()
+                if (sub == "factory") {
+                    factoryCommand.execute(listOf("/factory") + tokens.drop(2))
+                } else {
+                    factoryCommand.execute(listOf("/factory") + tokens.drop(1))
+                }
+            }
+
             "/verbose", "/debug" -> {
                 uiEngine.toggleVerboseExecution()
                 RouterOutcome.CONTINUE
@@ -549,6 +558,41 @@ class CommandRouter(
 
             "/copy" -> {
                 uiEngine.renderNotice(copyLastResponse())
+                RouterOutcome.CONTINUE
+            }
+
+            "/paste" -> {
+                val clip = clipboardService.paste()
+                if (clip.isNullOrBlank()) {
+                    uiEngine.renderNotice("clipboard is empty or unavailable")
+                } else {
+                    uiEngine.renderNotice("pasting ${clip.lines().size} line(s) from clipboard...")
+                    handleInput(clip)
+                }
+                RouterOutcome.CONTINUE
+            }
+
+            "/voice", "/speech", "/dictate" -> {
+                uiEngine.renderNotice("listening for speech input (Termux:API)...")
+                val spoken = clipboardService.speechToText()
+                if (spoken.isNullOrBlank()) {
+                    uiEngine.renderNotice("speech recognition cancelled or no text received")
+                } else {
+                    uiEngine.renderNotice("voice input: $spoken")
+                    handleSingleInput(spoken)
+                }
+                RouterOutcome.CONTINUE
+            }
+
+            "/swipe", "/compose", "/input" -> {
+                uiEngine.renderNotice("opening native Android composer dialog (swipe/voice enabled)...")
+                val composed = clipboardService.composeDialog("Atropos Composer (Swipe & Voice)")
+                if (composed.isNullOrBlank()) {
+                    uiEngine.renderNotice("composer dialog cancelled")
+                } else {
+                    uiEngine.renderNotice("input received (${composed.length} chars)")
+                    handleInput(composed)
+                }
                 RouterOutcome.CONTINUE
             }
 

@@ -97,6 +97,12 @@ class CommandRouterHelpTest {
         assertEquals("build a simple notes CLI with tests and README", factoryPrompt)
         assertEquals(0, providerCalls)
         assertTrue(out.toString().contains("generated_project"), out.toString())
+
+        router.handleInput("/app factory run build a simple notes CLI with tests and README")
+        assertEquals("build a simple notes CLI with tests and README", factoryPrompt)
+
+        router.handleInput("/app run build a simple notes CLI with tests and README")
+        assertEquals("build a simple notes CLI with tests and README", factoryPrompt)
     }
 
     @Test

@@ -104,4 +104,11 @@ class CollapsedPasteRegistryTest {
         assertEquals(token, registry.expand(token))
         assertFalse(registry.hasCollapsedText(token))
     }
+
+    @Test
+    fun commands_starting_with_slash_never_collapse() {
+        val registry = CollapsedPasteRegistry()
+        val command = "/app factory run \"Build a distributed store\n1) Domain Contracts\n2) Core Models\n3) WAL Engine\n4) LSM\n5) Raft\n6) Ledger\n7) Transport\n8) CLI\n9) Tests\n10) Assets\""
+        assertFalse(registry.shouldCollapse(command))
+    }
 }
