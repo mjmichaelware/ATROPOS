@@ -586,7 +586,8 @@ class CommandRouter(
 
             "/swipe", "/compose", "/input" -> {
                 uiEngine.renderNotice("opening native Android composer dialog (swipe/voice enabled)...")
-                val composed = clipboardService.composeDialog("Atropos Composer (Swipe & Voice)")
+                val hint = tokens.drop(1).joinToString(" ").ifBlank { "Type, swipe, or use keyboard mic..." }
+                val composed = clipboardService.composeDialog("Atropos Composer (Swipe & Voice)", hint)
                 if (composed.isNullOrBlank()) {
                     uiEngine.renderNotice("composer dialog cancelled")
                 } else {

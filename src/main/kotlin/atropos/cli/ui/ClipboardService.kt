@@ -130,9 +130,20 @@ class ClipboardService {
 
     /**
      * Performs speech-to-text recognition via Android/Termux API.
-     * Returns transcribed text or null on failure.
+     * Uses termux-dialog speech first for full native dialog UI, falling back to termux-speech-to-text.
+     * Returns transcribed text or null on failure/cancel.
      */
     fun speechToText(): String? {
+        val dialogSpeech = runCatching {
+            val process = ProcessBuilder("termux-dialog", "speech", "-t", "Atropos Voice Input", "-i", "Speak now...").start()
+            val json = process.inputStream.bufferedReader(StandardCharsets.UTF_8).use { it.readText() }.trim()
+            if (process.waitFor() == 0 && json.isNotBlank()) {
+                extractDialogText(json)
+            } else null
+        }.getOrNull()
+
+        if (!dialogSpeech.isNullOrBlank()) return dialogSpeech
+
         return runCatching {
             val process = ProcessBuilder("termux-speech-to-text").start()
             val text = process.inputStream.bufferedReader(StandardCharsets.UTF_8).use { it.readText() }.trim()
@@ -144,23 +155,64 @@ class ClipboardService {
      * Opens native Android multi-line dialog with swipe-to-text and voice typing enabled.
      * Returns the composed text or null on cancel.
      */
-    fun composeDialog(title: String = "Atropos Composer"): String? {
+    fun composeDialog(
+        title: String = "Atropos Composer (Swipe & Voice)",
+        hint: String = "Type, swipe, or use keyboard mic..."
+    ): String? {
         return runCatching {
-            val process = ProcessBuilder("termux-dialog", "text", "-t", title, "-m").start()
+            val process = ProcessBuilder("termux-dialog", "text", "-t", title, "-i", hint, "-m").start()
             val json = process.inputStream.bufferedReader(StandardCharsets.UTF_8).use { it.readText() }.trim()
             if (process.waitFor() == 0 && json.isNotBlank()) {
-                val textMarker = "\"text\":"
-                val idx = json.indexOf(textMarker)
-                if (idx >= 0) {
-                    val after = json.substring(idx + textMarker.length).trim()
-                    if (after.startsWith("\"")) {
-                        val end = after.indexOf('"', 1)
-                        if (end > 1) after.substring(1, end).replace("\\n", "\n").replace("\\\"", "\"")
-                        else null
-                    } else null
-                } else null
+                extractDialogText(json)
             } else null
         }.getOrNull()
+    }
+
+    internal fun extractDialogText(json: String): String? {
+        val codeMatch = Regex("\"code\"\\s*:\\s*(-?\\d+)").find(json)
+        val code = codeMatch?.groupValues?.get(1)?.toIntOrNull()
+        if (code != null && code != -1) return null
+
+        val textIndex = json.indexOf("\"text\"")
+        if (textIndex < 0) return null
+        val colonIndex = json.indexOf(':', textIndex)
+        if (colonIndex < 0) return null
+        val quoteStart = json.indexOf('"', colonIndex)
+        if (quoteStart < 0) return null
+
+        val sb = StringBuilder()
+        var i = quoteStart + 1
+        var escaped = false
+        while (i < json.length) {
+            val c = json[i]
+            if (escaped) {
+                when (c) {
+                    'n' -> sb.append('\n')
+                    'r' -> sb.append('\r')
+                    't' -> sb.append('\t')
+                    '"' -> sb.append('"')
+                    '\\' -> sb.append('\\')
+                    '/' -> sb.append('/')
+                    'u' -> {
+                        if (i + 4 < json.length) {
+                            val hex = json.substring(i + 1, i + 5)
+                            hex.toIntOrNull(16)?.let { sb.append(it.toChar()) }
+                            i += 4
+                        }
+                    }
+                    else -> sb.append(c)
+                }
+                escaped = false
+            } else if (c == '\\') {
+                escaped = true
+            } else if (c == '"') {
+                return sb.toString().takeIf { it.isNotBlank() }
+            } else {
+                sb.append(c)
+            }
+            i++
+        }
+        return sb.toString().takeIf { it.isNotBlank() }
     }
 
     /**

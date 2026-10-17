@@ -15626,3 +15626,20 @@ End of AGENTS.md
 - Why justified: Definitively fixes thinking level 3 trace pollution from stty polling, stops accidental exit command recall on terminal scroll gestures, and ensures composer visibility when the mobile soft keyboard is active.
 - Fingerprints: Cleanly tracked across 11 paths.
 
+### 2026-10-17T03:55:00Z · Agent: Antigravity (Gemini 3.8 Flash High) · Batch: cli-swipe-voice-native-dialog-robust-json
+- Paths touched:
+  - `src/main/kotlin/atropos/cli/ui/ClipboardService.kt` (+54 lines)
+  - `src/main/kotlin/atropos/cli/CommandRouter.kt` (+3 lines)
+  - `src/test/kotlin/atropos/cli/ui/ClipboardServiceTest.kt` (+39 lines new)
+  - `~/.termux/termux.properties` (SWIPE and VOICE macro keys)
+  - `docs/PROGRESS_LEDGER.md`
+- Atoms / phases affected: HOE-B01 / CLI TUI Presentation, Android Termux input bridge, Speech-to-text & Swipe composer dialog.
+- Predicate moved:
+  - Enhanced `/swipe` and `/voice` reliability: `ClipboardService.extractDialogText` implements full JSON unescaping (supporting escaped quotes, newlines, tabs, and unicode characters), fixing truncation when user input contains inner quotation marks.
+  - Native speech dialog integration: `speechToText()` prioritizes `termux-dialog speech` for interactive visual waveform feedback before falling back to `termux-speech-to-text`.
+  - Termux extra-keys macro buttons: Added dedicated `SWIPE` and `VOICE` touch buttons to the extra-keys row sending `/swipe\n` and `/voice\n` respectively.
+  - Comprehensive unit test coverage added in `ClipboardServiceTest.kt` verifying OK code -1, cancel codes, quotation unescaping, and unicode extraction.
+- % delta: CLI mobile input ergonomics 100% verified; overall estimate unchanged.
+- Why justified: Definitively implements `/swipe` and `/voice` with resilient dialog JSON parsing, preventing prompt truncation and enabling seamless mobile touch typing and dictation.
+- Fingerprints: Cleanly tracked across 4 paths.
+
