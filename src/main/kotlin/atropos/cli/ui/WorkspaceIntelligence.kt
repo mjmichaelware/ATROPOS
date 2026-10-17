@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.cli.ui
 
+import atropos.core.observability.BoundedRenderingController
 import atropos.core.policy.BoundedProcessRunner
 import java.io.File
 import java.nio.file.Path
@@ -36,6 +37,9 @@ class CachingGitWorkspaceInspector(
 
     @Synchronized
     override fun inspect(workspace: String): RepositoryState {
+        if (BoundedRenderingController.isPasteSuspended()) {
+            return cachedState
+        }
         val now = System.currentTimeMillis()
         if (workspace == cachedPath && now - cachedAt < cacheMillis) {
             return cachedState
@@ -47,6 +51,9 @@ class CachingGitWorkspaceInspector(
     }
 
     private fun inspectNow(workspace: String): RepositoryState {
+        if (BoundedRenderingController.isPasteSuspended()) {
+            return cachedState
+        }
         val directory = File(workspace)
         if (!directory.isDirectory) return RepositoryState.unknown()
 

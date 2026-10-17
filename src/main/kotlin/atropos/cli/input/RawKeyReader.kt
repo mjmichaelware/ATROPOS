@@ -84,8 +84,17 @@ class RawKeyReader(
 
     private val escapeParser = EscapeSequenceParser(
         pollByte = { this.pollByte() },
-        takeByte = { this.takeByte() }
+        takeByte = { this.takeByte() },
+        settleBuffer = { this.settleBuffer() }
     )
+
+    private fun settleBuffer() {
+        try {
+            Thread.sleep(25)
+        } catch (_: InterruptedException) {
+            Thread.currentThread().interrupt()
+        }
+    }
 
     fun readKey(): KeyEvent? {
         val value = takeByte()
@@ -103,7 +112,14 @@ class RawKeyReader(
             18 -> KeyEvent.CtrlR
             20 -> KeyEvent.CtrlT
             9 -> KeyEvent.Tab
-            10, 13 -> KeyEvent.Enter
+            13 -> {
+                // If followed immediately by \n (10) as CRLF, consume \n so it registers as a single Enter
+                if (bytes.peek() == 10) {
+                    bytes.poll()
+                }
+                KeyEvent.Enter
+            }
+            10 -> KeyEvent.Enter
             8, 127 -> KeyEvent.Backspace
             27 -> escapeParser.parseEscape()
 

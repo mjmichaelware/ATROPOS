@@ -2,6 +2,7 @@
 package atropos.cli.ui
 
 import atropos.cli.config.ConfigurationManager
+import atropos.core.observability.BoundedRenderingController
 import atropos.core.policy.BoundedProcessRunner
 import java.io.File
 import java.io.PrintStream
@@ -22,6 +23,7 @@ class SttyTerminalGeometryProvider :
     private val processRunner = BoundedProcessRunner()
 
     override fun read(): TerminalGeometry? {
+        if (BoundedRenderingController.isPasteSuspended()) return null
         val tty = File("/dev/tty")
         if (!tty.canRead()) return null
 
@@ -62,7 +64,7 @@ class TerminalCanvas(
     private var alternateScreen = false
 
     fun refreshGeometry(): Boolean {
-        if (!capabilities.isInteractiveTerminal) {
+        if (!capabilities.isInteractiveTerminal || BoundedRenderingController.isPasteSuspended()) {
             return false
         }
 

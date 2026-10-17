@@ -109,7 +109,26 @@ object VirtualizedLogEngine {
 }
 
 object BoundedRenderingController {
+    val suspensionLock = TerminalPasteSuspensionLock
+
+    fun suspendForPaste() {
+        TerminalPasteSuspensionLock.acquire()
+    }
+
+    fun resumeAfterSettled(settleDurationMillis: Long = 150L) {
+        TerminalPasteSuspensionLock.release(settleDurationMillis)
+    }
+
+    fun isPasteSuspended(): Boolean = TerminalPasteSuspensionLock.isSuspended()
+
+    fun resetPasteSuspension() {
+        TerminalPasteSuspensionLock.reset()
+    }
+
     fun controlBackgroundUpdate(isActiveScreen: Boolean, updateLambda: () -> Unit): Boolean {
+        if (TerminalPasteSuspensionLock.isSuspended()) {
+            return false
+        }
         if (isActiveScreen) {
             updateLambda()
             return true

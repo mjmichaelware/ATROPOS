@@ -1,9 +1,12 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.cli.input
 
+import atropos.core.observability.BoundedRenderingController
+
 class EscapeSequenceParser(
     private val pollByte: () -> Int?,
-    private val takeByte: () -> Int
+    private val takeByte: () -> Int,
+    private val settleBuffer: () -> Unit = {}
 ) {
     private val MAX_ESCAPE_BYTES = 32
     private val PASTE_END = byteArrayOf(
@@ -29,7 +32,7 @@ class EscapeSequenceParser(
         return when (next) {
             '['.code -> parseCsi()
             'O'.code -> parseSs3()
-            else -> KeyEvent.UnknownEscape("${next.toChar()}")
+            else -> KeyEvent.UnknownEscape("\u001B${next.toChar()}")
         }
     }
 
@@ -38,13 +41,17 @@ class EscapeSequenceParser(
 
         repeat(MAX_ESCAPE_BYTES) {
             val value = pollByte()
-                ?: return KeyEvent.UnknownEscape("[$sequence")
+                ?: return onUnrecognizedCsi(sequence)
 
             if (value < 0) {
-                return KeyEvent.UnknownEscape("[$sequence")
+                return onUnrecognizedCsi(sequence)
             }
 
             sequence.append(value.toChar())
+
+            if (sequence.length == 3 && sequence.toString() == "200") {
+                BoundedRenderingController.suspendForPaste()
+            }
 
             if (value in 0x40..0x7E) {
                 val code = sequence.toString()
@@ -65,12 +72,24 @@ class EscapeSequenceParser(
                     "Z" -> KeyEvent.ShiftTab
                     "9;5u", "27;5;9~", "1;5I" -> KeyEvent.CtrlTab
                     "200~" -> parseBracketedPaste()
-                    else -> KeyEvent.UnknownEscape("[$code")
+                    else -> {
+                        if (code.startsWith("200")) {
+                            BoundedRenderingController.resetPasteSuspension()
+                        }
+                        KeyEvent.UnknownEscape("\u001B[$code")
+                    }
                 }
             }
         }
 
-        return KeyEvent.UnknownEscape("[$sequence")
+        return onUnrecognizedCsi(sequence)
+    }
+
+    private fun onUnrecognizedCsi(sequence: StringBuilder): KeyEvent {
+        if (sequence.startsWith("200")) {
+            BoundedRenderingController.resetPasteSuspension()
+        }
+        return KeyEvent.UnknownEscape("\u001B[$sequence")
     }
 
     private fun parseSs3(): KeyEvent {
@@ -83,56 +102,62 @@ class EscapeSequenceParser(
             'D'.code -> KeyEvent.ArrowLeft
             'H'.code -> KeyEvent.Home
             'F'.code -> KeyEvent.End
-            null, -1 -> KeyEvent.UnknownEscape("O")
-            else -> KeyEvent.UnknownEscape("O${value.toChar()}")
+            null, -1 -> KeyEvent.UnknownEscape("\u001BO")
+            else -> KeyEvent.UnknownEscape("\u001BO${value.toChar()}")
         }
     }
 
     private fun parseBracketedPaste(): KeyEvent {
+        BoundedRenderingController.suspendForPaste()
         val output = java.io.ByteArrayOutputStream()
         var matched = 0
 
-        while (output.size() <= 1024 * 1024) {
-            val value = takeByte()
+        try {
+            while (output.size() <= 1024 * 1024) {
+                val value = takeByte()
 
-            if (value == -1) {
-                return KeyEvent.InvalidInput("unterminated bracketed paste")
-            }
-
-            if (value == -2) {
-                return KeyEvent.InvalidInput("input failed during paste")
-            }
-
-            if (value == PASTE_END[matched].toInt()) {
-                matched++
-
-                if (matched == PASTE_END.size) {
-                    return decodePaste(output.toByteArray())
+                if (value == -1) {
+                    return KeyEvent.InvalidInput("unterminated bracketed paste")
                 }
 
-                continue
-            }
+                if (value == -2) {
+                    return KeyEvent.InvalidInput("input failed during paste")
+                }
 
-            if (matched > 0) {
-                output.write(PASTE_END, 0, matched)
-                matched = 0
+                if (value == PASTE_END[matched].toInt()) {
+                    matched++
 
-                if (value == PASTE_END[0].toInt()) {
-                    matched = 1
+                    if (matched == PASTE_END.size) {
+                        return decodePaste(output.toByteArray())
+                    }
+
                     continue
                 }
+
+                if (matched > 0) {
+                    output.write(PASTE_END, 0, matched)
+                    matched = 0
+
+                    if (value == PASTE_END[0].toInt()) {
+                        matched = 1
+                        continue
+                    }
+                }
+
+                output.write(value)
             }
 
-            output.write(value)
+            return KeyEvent.InvalidInput("bracketed paste exceeded 1048576 bytes")
+        } finally {
+            settleBuffer()
+            BoundedRenderingController.resumeAfterSettled(150L)
         }
-
-        return KeyEvent.InvalidInput("bracketed paste exceeded 1048576 bytes")
     }
 
     private fun decodePaste(encoded: ByteArray): KeyEvent {
         return when (val decoded = decodeUtf8(encoded)) {
             null -> KeyEvent.InvalidInput("paste contained invalid UTF-8")
-            else -> KeyEvent.Paste(decoded)
+            else -> KeyEvent.Paste(decoded.replace("\r\n", "\n").replace('\r', '\n'))
         }
     }
 

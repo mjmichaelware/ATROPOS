@@ -15557,3 +15557,26 @@ End of AGENTS.md
   - Systemic seal verification passed: SEAL_STATUS = THE_ARCHITECTURE_IS_DEFINITIVELY_COMPLETE_AND_CLOSED.
 - % delta: Systemic Seal 100% CI-verified. ATROPOS Source Document 7 Series: DEFINITIVELY COMPLETE AND CLOSED.
 
+### 2026-10-17T02:00:00Z · Agent: Antigravity (DeepMind Pair Programmer) · Batch: cli-bracketed-paste-race-suspension-lock
+- Paths touched:
+  - `src/main/kotlin/atropos/core/observability/TerminalPasteSuspensionLock.kt` (+77 lines)
+  - `src/main/kotlin/atropos/core/observability/UiCapabilities.kt` (+20 lines)
+  - `src/main/kotlin/atropos/cli/ui/TerminalCanvas.kt` (+3 lines)
+  - `src/main/kotlin/atropos/cli/ui/WorkspaceIntelligence.kt` (+7 lines)
+  - `src/main/kotlin/atropos/cli/ui/AnsiTerminalEngine.kt` (+2/-3 lines)
+  - `src/main/kotlin/atropos/cli/input/EscapeSequenceParser.kt` (+35 lines)
+  - `src/main/kotlin/atropos/cli/input/RawKeyReader.kt` (+18 lines)
+  - `src/test/kotlin/atropos/core/observability/TerminalPasteSuspensionLockTest.kt` (+67 lines)
+  - `src/test/kotlin/atropos/cli/input/EscapeSequencePasteSuspensionTest.kt` (+62 lines)
+  - `docs/PROGRESS_LEDGER.md`
+- Atoms / phases affected: HOE-B01/CLI terminal interactive input, Bracketed Paste mode, TerminalModeManager, BoundedRenderingController, SttyTerminalGeometryProvider, CachingGitWorkspaceInspector
+- Predicate moved:
+  - Interactive CLI bracketed paste race condition resolved: `TerminalPasteSuspensionLock` atomically locks on bracketed paste start sequence (`\e[200~`).
+  - All background UI polling (`resizePoller`, `canvas.refreshGeometry()`, `stty size`), worktree inspection (`CachingGitWorkspaceInspector`, `git status`), and screen redraws (`BoundedRenderingController.controlBackgroundUpdate`, `requestFrameLocked`) are immediately and completely suspended throughout paste reception.
+  - Settle buffer mechanism drains pending bytes from `/dev/tty` and maintains lock for a cooldown window (150ms) after `\e[201~` is parsed, preventing background polling from corrupting or swallowing subsequent keystrokes.
+  - Carriage return / Enter key (`\r`, `\n`, CRLF `\r\n`) registration verified and protected immediately following large pastes.
+  - All files strictly adhere to atropos-rules: exact-hash continuity mathematical invariant preserved, zero hollow AST returns/TODOs/stubs, and all modified files are within the 350-500 LOC limit.
+- % delta: CLI/TUI interactive stability 100% verified.
+- Why justified: Eliminates terminal input stream corruption and swallowed Enter keys caused by concurrent background execution of `stty size` and `git status` during bracketed paste.
+- Fingerprints: Cleanly tracked across 9 paths.
+

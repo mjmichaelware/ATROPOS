@@ -117,7 +117,7 @@ class AnsiTerminalEngine(
             // that anything had gone wrong.
             try {
                 synchronized(this) {
-                    if (state.reactive && canvas.refreshGeometry()) requestFrameLocked()
+                    if (state.reactive && !boundedRendering.isPasteSuspended() && canvas.refreshGeometry()) requestFrameLocked()
                 }
             } catch (_: Throwable) {
                 // Next tick will try again.
@@ -590,7 +590,7 @@ class AnsiTerminalEngine(
     }
 
     private fun requestFrameLocked() {
-        if (!state.reactive) return
+        if (!state.reactive || boundedRendering.isPasteSuspended()) return
         val frame = layout.build(
             width = canvas.width, height = canvas.height, transcript = transcriptBuffer, composer = composer,
             provider = state.provider, workspace = state.workspace, tracker = state.tracker, activity = state.activity,
