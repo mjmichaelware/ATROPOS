@@ -1,7 +1,13 @@
+/* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.core.sentry
 
-import java.io.BufferedReader
-import java.io.InputStreamReader
+import atropos.core.AtroposRepoRootLocator
+import atropos.core.agent.WorkerCodeProposal
+import atropos.core.agent.WorkerCodeProposalService
+import atropos.core.evaluation.EvidenceKind
+import atropos.core.evaluation.EvidenceStore
+import atropos.core.security.RedactionFilter
+import atropos.core.territory.TerritoryEnforcer
 import java.net.HttpURLConnection
 import java.net.URI
 import java.nio.charset.StandardCharsets
@@ -12,9 +18,94 @@ import org.json.JSONObject
 
 data class SentryTraceFrame(val filename: String, val lineno: Int, val colno: Int, val function: String, val inApp: Boolean)
 data class SentryCrashContext(val issueId: String, val title: String, val culpritPath: String, val errorType: String, val frames: List<SentryTraceFrame>)
-data class SentryRepairResult(val issueId: String, val targetFile: String, val patchPrompt: String, val proposedFixLocation: String)
+data class SentryPromptRepairResult(val issueId: String, val targetFile: String, val patchPrompt: String, val proposedFixLocation: String)
 
-class SentryRepairCoordinator(private val repoRoot: Path) {
+data class SentryRepairContext(
+    val issue: SentryIssue,
+    val relativeFile: String,
+    val lineNumber: Int?,
+    val territory: List<String>,
+    val evidenceHash: String,
+    val goal: String
+)
+
+data class SentryRepairResult(
+    val context: SentryRepairContext,
+    val proposal: WorkerCodeProposal,
+    val proposalEvidenceHash: String
+)
+
+/** Composes Sentry evidence with the existing worker proposal/gate path. */
+class SentryRepairCoordinator(
+    private val repoRoot: Path = AtroposRepoRootLocator.resolve(),
+    private val evidenceStore: EvidenceStore = EvidenceStore(repoRoot),
+    private val workerProposals: WorkerCodeProposalService = WorkerCodeProposalService(repoRoot = repoRoot),
+    private val redactionFilter: RedactionFilter = RedactionFilter()
+) {
+    fun prepare(issue: SentryIssue, declaredTerritory: List<String>): SentryRepairContext {
+        require(declaredTerritory.isNotEmpty()) { "Sentry repair requires declared territory" }
+        val frame = issue.frames.firstOrNull { it.filename.isNotBlank() }
+            ?: error("Sentry issue has no usable stack frame; repair cannot be proposed")
+        val relative = mapFrame(frame.filename)
+        val outside = TerritoryEnforcer(declaredTerritory).firstOutside(listOf(relative))
+        require(outside == null) { "Sentry stack frame is outside declared territory: $relative" }
+        val evidenceHash = evidenceStore.put(
+            redactionFilter.redact(
+                "sentry_issue=${issue.id}\ntitle=${issue.title}\nculprit=${issue.culprit}\nframe=$relative:${frame.lineNumber ?: "?"}"
+            ),
+            EvidenceKind.RECEIPT
+        )
+        atropos.core.thinking.Thinking.step("repair", "Prepared Sentry repair context for issue ${issue.id}")
+        atropos.core.thinking.Thinking.detail("repair", "Target frame: $relative:${frame.lineNumber ?: "?"}, evidence=$evidenceHash")
+        return SentryRepairContext(
+            issue = issue,
+            relativeFile = relative,
+            lineNumber = frame.lineNumber,
+            territory = declaredTerritory,
+            evidenceHash = evidenceHash,
+            goal = "Repair Sentry issue ${issue.id}: ${issue.title}; culprit=${issue.culprit}; " +
+                "top frame=$relative:${frame.lineNumber ?: "?"}; evidence=$evidenceHash"
+        )
+    }
+
+    fun propose(context: SentryRepairContext, activeProvider: String): SentryRepairResult {
+        atropos.core.thinking.Thinking.step("repair", "Proposing fix for Sentry issue ${context.issue.id}")
+        val proposal = workerProposals.propose(
+            workerId = "sentry-${context.issue.id}",
+            activeProvider = activeProvider,
+            task = context.goal,
+            territory = context.territory
+        )
+        val proposalEvidenceHash = evidenceStore.put(
+            redactionFilter.redact(
+                "sentry_issue=${context.issue.id}\nproposal_accepted=${proposal.accepted}\n" +
+                    "proposal_sha256=${proposal.proposalSha256 ?: "none"}\nreason=${proposal.reason}"
+            ),
+            EvidenceKind.RECEIPT
+        )
+        atropos.core.thinking.Thinking.detail("repair", "Proposal accepted=${proposal.accepted}, evidence=$proposalEvidenceHash")
+        return SentryRepairResult(context, proposal, proposalEvidenceHash)
+    }
+
+    private fun mapFrame(raw: String): String {
+        var candidate = raw.trim()
+            .removePrefix("file://")
+            .replace('\\', '/')
+        val root = repoRoot.toAbsolutePath().normalize()
+        val absolute = runCatching { Path.of(candidate).toAbsolutePath().normalize() }.getOrNull()
+        if (absolute != null && absolute.startsWith(root)) {
+            candidate = root.relativize(absolute).toString().replace('\\', '/')
+        } else {
+            candidate = candidate.substringAfterLast("/src/", candidate).let { value ->
+                if (value == candidate) candidate.trimStart('/') else "src/$value"
+            }
+        }
+        require(candidate.isNotBlank() && !candidate.startsWith("../") && !candidate.contains("/../")) {
+            "Sentry stack frame cannot be mapped inside the repository"
+        }
+        return candidate
+    }
+
     fun fetchIssueDetails(organizationSlug: String, issueId: String, authToken: String): SentryCrashContext {
         atropos.core.thinking.Thinking.outline("repair", "Fetching Sentry issue details for $issueId")
         atropos.core.thinking.Thinking.step("repair", "Querying Sentry API for issue $issueId in $organizationSlug")
@@ -72,7 +163,7 @@ class SentryRepairCoordinator(private val repoRoot: Path) {
         context.frames.reversed().firstOrNull { it.inApp && it.filename.isNotBlank() }
             ?: context.frames.lastOrNull()
 
-    fun generateRepairPrompt(context: SentryCrashContext): SentryRepairResult {
+    fun generateRepairPrompt(context: SentryCrashContext): SentryPromptRepairResult {
         val culprit = extractInAppCulprit(context)
             ?: throw IllegalStateException("Could not identify culprit frame for Sentry issue ${context.issueId}")
         atropos.core.thinking.Thinking.step("repair", "Culprit identified: ${culprit.filename}:${culprit.lineno}")
@@ -107,6 +198,6 @@ class SentryRepairCoordinator(private val repoRoot: Path) {
             OBJECTIVE: Generate minimal unified diff resolving this crash without altering unaffected contracts.
         """.trimIndent()
 
-        return SentryRepairResult(context.issueId, culprit.filename, prompt, "${culprit.filename}:${culprit.lineno}")
+        return SentryPromptRepairResult(context.issueId, culprit.filename, prompt, "${culprit.filename}:${culprit.lineno}")
     }
 }

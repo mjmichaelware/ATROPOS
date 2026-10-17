@@ -33,7 +33,11 @@ class ContractLatticeSynthesizer(
     private val config: AtroposConfig = AtroposConfig.load()
 ) {
     fun synthesize(request: WaveExecutionRequest): DagDefinition {
-        val nodes = buildNodesFromSpec(request)
+        val nodes = if (KryptonStoreDagBuilder.isKryptonPrompt(request.projectSpec.prompt)) {
+            KryptonStoreDagBuilder.buildNodes(request)
+        } else {
+            buildNodesFromSpec(request)
+        }
         return DagDefinition(
             id = "dag-${request.requestId}",
             label = "factory: ${request.projectSpec.intent.name}",
@@ -131,6 +135,9 @@ class ContractLatticeSynthesizer(
 
     private fun synthesizeFile(node: DagNode, worktreeRoot: Path, request: WaveExecutionRequest): SynthesisResult {
         val payload = node.actionPayload ?: return SynthesisResult(false, "no action payload for file synthesis")
+        if (KryptonStoreDagBuilder.isKryptonPrompt(request.projectSpec.prompt)) {
+            return KryptonCodeSynthesizer.synthesize(payload, worktreeRoot, request)
+        }
         val targetPath = worktreeRoot.resolve(payload)
         targetPath.parent?.let { Files.createDirectories(it) }
 

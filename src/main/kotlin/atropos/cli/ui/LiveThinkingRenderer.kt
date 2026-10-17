@@ -152,7 +152,7 @@ class LiveThinkingRenderer(
         "gate" -> Role.STATUS_PENDING
         "dag" -> Role.ACCENT_FOCUS
         "goal" -> Role.STATUS_COMPLETE
-        "sandbox" -> Role.STATUS_WARNING
+        "sandbox" -> Role.STATUS_WAITING
         "mcp" -> Role.ACCENT_FOCUS
         "verify" -> Role.STATUS_COMPLETE
         "security" -> Role.STATUS_ERROR

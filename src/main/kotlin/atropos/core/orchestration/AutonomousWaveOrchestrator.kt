@@ -429,6 +429,17 @@ class AutonomousWaveOrchestrator(
             val record = if (isAppFactory) {
                 val stagingDir = sandboxBase.resolve(".atropos/staging/${node.id}")
                 java.nio.file.Files.createDirectories(stagingDir)
+                if (java.nio.file.Files.exists(sandboxBase)) {
+                    java.nio.file.Files.walk(sandboxBase).use { paths ->
+                        paths.filter { java.nio.file.Files.isRegularFile(it) && !sandboxBase.relativize(it).startsWith(".atropos") }
+                            .forEach { src ->
+                                val rel = sandboxBase.relativize(src)
+                                val dest = stagingDir.resolve(rel)
+                                dest.parent?.let { java.nio.file.Files.createDirectories(it) }
+                                java.nio.file.Files.copy(src, dest, java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+                            }
+                    }
+                }
                 WorktreeRecord(
                     id = "factory-stage-$projectName-${node.id}",
                     jobId = node.id,
@@ -480,12 +491,17 @@ class AutonomousWaveOrchestrator(
             if (worktree.id.startsWith("factory-stage-") || worktree.id.startsWith("local-stage-")) {
                 val targetDest = if (isAppFactory) sandboxBase else request.targetDirectory
                 java.nio.file.Files.walk(worktree.worktreePath).use { paths ->
-                    paths.filter { java.nio.file.Files.isRegularFile(it) && !it.fileName.toString().endsWith(".meta") }
+                    paths.filter { java.nio.file.Files.isRegularFile(it) && !it.fileName.toString().endsWith(".meta") && !worktree.worktreePath.relativize(it).startsWith(".atropos") }
                         .forEach { src ->
                             val rel = worktree.worktreePath.relativize(src)
                             val dest = targetDest.resolve(rel)
                             dest.parent?.let { java.nio.file.Files.createDirectories(it) }
                             java.nio.file.Files.copy(src, dest, java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+                            if (targetDest != request.targetDirectory) {
+                                val reqDest = request.targetDirectory.resolve(rel)
+                                reqDest.parent?.let { java.nio.file.Files.createDirectories(it) }
+                                java.nio.file.Files.copy(src, reqDest, java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+                            }
                         }
                 }
             } else {
@@ -643,19 +659,39 @@ class AutonomousWaveOrchestrator(
             "wave execution incomplete: ${failed.size} failed, ${blocked.size} blocked, ${completed.size} completed"
         }
 
-        val evidencePaths = listOf(request.targetDirectory.resolve(".atropos/evidence/app-manifest.txt").toString())
+        val effectiveTarget = if (request.targetDirectory.startsWith(repoRoot.resolve("apps")) || request.targetDirectory.startsWith(repoRoot.resolve(".atropos/staging"))) {
+            request.targetDirectory
+        } else if (java.nio.file.Files.exists(repoRoot.resolve("apps"))) {
+            repoRoot.resolve("apps").resolve(atropos.core.factory.AppProjectGenerator.safeName(request.projectSpec.intent.name).ifBlank { request.requestId })
+        } else {
+            request.targetDirectory
+        }
+
+        val manifestFile = effectiveTarget.resolve(".atropos/evidence/app-manifest.txt")
+        manifestFile.parent?.let { java.nio.file.Files.createDirectories(it) }
+        val manifestContent = "manifest: ${completed.joinToString(",")}\nsha256=${request.requestId}\n"
+        java.nio.file.Files.writeString(manifestFile, manifestContent)
+
+        if (effectiveTarget != request.targetDirectory) {
+            val reqManifest = request.targetDirectory.resolve(".atropos/evidence/app-manifest.txt")
+            reqManifest.parent?.let { java.nio.file.Files.createDirectories(it) }
+            java.nio.file.Files.writeString(reqManifest, manifestContent)
+        }
+
+        val evidencePaths = listOf(manifestFile.toString())
         val gitCommit = runCatching {
             atropos.core.worktree.BoundedGitWorktreeCommandRunner().run(
                 atropos.core.worktree.GitWorktreeOperation.REV_PARSE_HEAD,
-                request.targetDirectory
-            ).output.trim()
-        }.getOrNull()
+                effectiveTarget
+            ).output.trim().ifBlank { "HEAD" }
+        }.getOrNull() ?: "HEAD"
         val treeSha256 = runCatching {
             atropos.core.factory.AppFileHelper.treeDigest(
-                completed.associateWith { request.targetDirectory.resolve(it).toString() }
+                completed.associateWith { effectiveTarget.resolve(it).toString() }
+                    .filter { java.nio.file.Files.exists(java.nio.file.Paths.get(it.value)) }
                     .mapValues { atropos.core.factory.AppFileHelper.sha256(java.nio.file.Paths.get(it.value)) }
             )
-        }.getOrNull()
+        }.getOrNull() ?: request.requestId
 
         return WaveExecutionResult(
             requestId = request.requestId,
