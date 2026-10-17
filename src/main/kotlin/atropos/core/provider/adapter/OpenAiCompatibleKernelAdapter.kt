@@ -1,6 +1,7 @@
 package atropos.core.provider.adapter
 
 import atropos.core.provider.ApiCapability
+import atropos.core.provider.FallbackChainRegistry
 import atropos.core.security.CredentialBootstrap
 import atropos.core.provider.NormalizedProviderFailureType
 import atropos.core.provider.ProviderCallResult
@@ -108,13 +109,14 @@ internal class OpenAiCompatibleKernelAdapter(
         request.deadlineEpochMs - System.currentTimeMillis()
 
     private fun configuredKey(): String? =
-        ProviderEnvironmentAliases.names(spec.apiKeyEnv)
-            .asSequence()
-            .mapNotNull { candidate ->
-                CredentialBootstrap.get().get(candidate)?.takeIf(String::isNotBlank)
-                    ?: env[candidate]?.takeIf(String::isNotBlank)
-            }
-            .firstOrNull()
+        FallbackChainRegistry.getActiveKey(descriptor.id)
+            ?: ProviderEnvironmentAliases.names(spec.apiKeyEnv)
+                .asSequence()
+                .mapNotNull { candidate ->
+                    CredentialBootstrap.get().get(candidate)?.takeIf(String::isNotBlank)
+                        ?: env[candidate]?.takeIf(String::isNotBlank)
+                }
+                .firstOrNull()
 
     private companion object {
         const val MAX_RESPONSE_BYTES = 8 * 1024 * 1024

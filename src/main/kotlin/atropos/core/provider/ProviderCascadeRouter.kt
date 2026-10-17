@@ -88,8 +88,10 @@ class ProviderCascadeRouter(
         allowPaidProvider: Boolean = paidGate.status().active != null
     ): ProviderCascadeResult {
         val order = providerOrder(requestedProvider, providerOrderOverride, allowPaidProvider)
+        val candidates = ArrayDeque(order)
         val errors = mutableListOf<ProviderError>()
         val blocked = mutableSetOf<String>()
+        val keyAttempts = mutableMapOf<String, Int>()
 
         // Which providers will be tried, and in what order. A run that waits
         // on a model has to say what it is waiting on -- an operator watching
@@ -99,8 +101,8 @@ class ProviderCascadeRouter(
             "cascade order: " + order.joinToString(" → ")
         )
 
-        for (providerName in order) {
-            val provider = providerName.lowercase()
+        while (candidates.isNotEmpty()) {
+            val provider = candidates.removeFirst().lowercase()
             if (provider in blocked) continue
 
             atropos.core.thinking.Thinking.step("provider", "asking $provider")
@@ -118,6 +120,7 @@ class ProviderCascadeRouter(
             }
 
             try {
+                ActiveProvider.set(provider)
                 beforeAttempt(provider)
                 val aiProvider = providerResolver?.invoke(provider) ?: factory.getProvider(provider)
 
@@ -186,11 +189,60 @@ class ProviderCascadeRouter(
                     "$provider did not answer ($errorType): $errorCleanMessage"
                 )
 
-                if (
-                    classifiedError.type == FailureType.AUTH_INVALID ||
-                    classifiedError.type == FailureType.MISSING_KEY
-                ) {
-                    blocked.add(provider)
+                val parsedError = FallbackChainRegistry.parseError(failure)
+                val decision = FallbackChainRegistry.routeNext(provider, parsedError, candidates.toList())
+                atropos.core.thinking.Thinking.detail(
+                    "provider",
+                    "routing decision: ${decision.action} (${decision.reason})"
+                )
+
+                when (decision.action) {
+                    RoutingAction.ROUTE_HIGH_CONTEXT -> {
+                        candidates.removeAll { it.lowercase() in FallbackChainRegistry.LOW_CONTEXT_MODELS }
+                        blocked.add(provider)
+                        val frontier = decision.targetProvider ?: "gemini"
+                        if (frontier !in blocked) {
+                            candidates.remove(frontier)
+                            candidates.addFirst(frontier)
+                            ActiveProvider.set(frontier)
+                        }
+                    }
+                    RoutingAction.ROTATE_KEY -> {
+                        val attempts = keyAttempts.getOrDefault(provider, 0) + 1
+                        keyAttempts[provider] = attempts
+                        if (attempts < 10 && FallbackChainRegistry.getActiveKey(provider) != null) {
+                            candidates.addFirst(provider)
+                        } else {
+                            blocked.add(provider)
+                        }
+                    }
+                    RoutingAction.NEXT_PARALLEL_PROVIDER -> {
+                        blocked.add(provider)
+                        decision.targetProvider?.let { next ->
+                            if (next !in blocked) {
+                                candidates.remove(next)
+                                candidates.addFirst(next)
+                                ActiveProvider.set(next)
+                            }
+                        }
+                    }
+                    RoutingAction.RELIABLE_FALLBACK -> {
+                        blocked.add(provider)
+                        decision.targetProvider?.let { next ->
+                            if (next !in blocked && !candidates.contains(next)) {
+                                candidates.addFirst(next)
+                                ActiveProvider.set(next)
+                            }
+                        }
+                    }
+                    RoutingAction.PIPELINE_EXHAUSTED -> {
+                        blocked.add(provider)
+                        candidates.clear()
+                        atropos.core.thinking.Thinking.step(
+                            "provider",
+                            "total pipeline failure: all configured API keys and fallback providers exhausted"
+                        )
+                    }
                 }
             }
         }

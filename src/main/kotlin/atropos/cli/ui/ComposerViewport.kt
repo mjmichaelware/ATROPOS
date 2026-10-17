@@ -147,19 +147,21 @@ class ComposerViewport(
         // compiled catalog default is in play: this bar is the only place the
         // model is stated, and stating a guess here would be worse than
         // stating nothing.
+        val activeEngine = provider.takeIf { it.isNotBlank() && it != "--" && it != "unknown" }
+            ?: atropos.core.provider.ActiveProvider.get()
         val model = atropos.core.provider.ProviderModelResolver.DEFAULT
-            .resolveWithSource(provider.lowercase(), "")
+            .resolveWithSource(activeEngine.lowercase(), "")
             .takeIf { it.source != atropos.core.provider.ProviderModelResolver.Source.CATALOG_DEFAULT }
             ?.model
             ?.takeIf(String::isNotBlank)
 
         val suffix = if (model == null) "" else " · $model"
-        val label = modeStyle.label.lowercase() + " · " + provider.lowercase() + suffix
+        val label = modeStyle.label.lowercase() + " - " + activeEngine.lowercase() + suffix
         val painted = theme.paint(modeStyle.role, modeStyle.label.lowercase()) +
-            theme.subdued(" · ") + theme.metadata(provider.lowercase()) +
+            theme.subdued(" - ") + theme.metadata(activeEngine.lowercase()) +
             (if (model == null) "" else theme.subdued(" · ") + theme.metadata(model))
 
-        // `╰─ ask · groq ──────╯`: corners, one lead dash, the label, then fill.
+        // `╰─ ask - openrouter ──────╯`: corners, one lead dash, the label, then fill.
         val decoration = 2 + edge.horizontal.length + 2
         val fill = (safeWidth - decoration - TerminalText.cellWidth(label)).coerceAtLeast(0)
         val body =

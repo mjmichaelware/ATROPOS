@@ -13,7 +13,7 @@ class StatusBarRenderer(
 
     fun header(width: Int): String = headerRenderer.render(
         SessionPresentationState(
-            provider = "--",
+            provider = atropos.core.provider.ActiveProvider.get(),
             mode = "ASK",
             workspace = "--",
             commands = emptyList(),
@@ -28,7 +28,7 @@ class StatusBarRenderer(
         headerRenderer.render(state, width)
 
     fun footer(
-        provider: String,
+        provider: String = atropos.core.provider.ActiveProvider.get(),
         mode: String,
         workspace: String,
         tracker: QuotaSessionTracker,
@@ -71,8 +71,10 @@ class StatusBarRenderer(
 
         // Right-hand pills, least important last so they shed first.
         val pills = buildList {
-            add(theme.metadata("◆ ") + theme.strong(state.provider.lowercase()))
-            add(theme.metadata("▸ ") + theme.strong(state.mode.lowercase()))
+            val engine = (state.provider.takeIf { it.isNotBlank() && it != "--" && it != "unknown" }
+                ?: atropos.core.provider.ActiveProvider.get()).lowercase()
+            val mode = state.mode.lowercase()
+            add(theme.metadata("◆ ") + theme.strong("$mode - $engine"))
             add(theme.metadata("▤ ") + theme.strong(tab))
             if (state.repository.available) {
                 state.repository.branch?.let { branch ->

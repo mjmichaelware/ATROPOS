@@ -2,6 +2,7 @@
 package atropos.core.provider.adapter
 
 import atropos.core.provider.ApiCapability
+import atropos.core.provider.FallbackChainRegistry
 import atropos.core.provider.NormalizedProviderFailureType
 import atropos.core.provider.ProviderCallResult
 import atropos.core.provider.ProviderEnvironmentAliases
@@ -20,10 +21,11 @@ internal class AnthropicKernelAdapter(
         request.task.capability in setOf(ApiCapability.CHAT, ApiCapability.PLAN, ApiCapability.LARGE_CONTEXT, ApiCapability.VISION)
 
     override fun liveComplete(request: AdapterRequest): ProviderCallResult {
-        val key = ProviderEnvironmentAliases.names("ANTHROPIC_API_KEY")
-            .asSequence()
-            .mapNotNull { env[it]?.takeIf(String::isNotBlank) }
-            .firstOrNull()
+        val key = FallbackChainRegistry.getActiveKey(descriptor.id)
+            ?: ProviderEnvironmentAliases.names("ANTHROPIC_API_KEY")
+                .asSequence()
+                .mapNotNull { env[it]?.takeIf(String::isNotBlank) }
+                .firstOrNull()
             ?: return missingSecret()
         return try {
             val connection = CredentialSafeHttpTransport.open(URI(spec.endpoint))

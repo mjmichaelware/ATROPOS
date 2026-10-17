@@ -37,10 +37,10 @@ class ProviderFactory(private val configProvider: () -> AtroposConfig = { Atropo
         val currentConfig = config
         val providerId = name.trim().lowercase()
         return when (providerId) {
-            "groq" -> GroqProvider(currentConfig.keys.groq)
-            "openai" -> OpenAiProvider(currentConfig.keys.openai)
-            "anthropic" -> AnthropicProvider(currentConfig.keys.anthropic)
-            "xai" -> XAiProvider(currentConfig.keys.xai)
+            "groq" -> GroqProvider(atropos.core.provider.FallbackChainRegistry.getActiveKey("groq") ?: currentConfig.keys.groq)
+            "openai" -> OpenAiProvider(atropos.core.provider.FallbackChainRegistry.getActiveKey("openai") ?: currentConfig.keys.openai)
+            "anthropic" -> AnthropicProvider(atropos.core.provider.FallbackChainRegistry.getActiveKey("anthropic") ?: currentConfig.keys.anthropic)
+            "xai" -> XAiProvider(atropos.core.provider.FallbackChainRegistry.getActiveKey("xai") ?: currentConfig.keys.xai)
             "github_models" -> GitHubModelsProvider()
             "cloudflare_ai" -> CloudflareAiProvider()
             "sambanova" -> SambaNovaProvider()
@@ -56,10 +56,14 @@ class ProviderFactory(private val configProvider: () -> AtroposConfig = { Atropo
 
     private fun providerEnvironment(config: AtroposConfig): Map<String, String> = buildMap {
         putAll(System.getenv())
-        config.keys.groq.takeIf { it.isNotBlank() }?.let { put("GROQ_API_KEY", it) }
-        config.keys.openai.takeIf { it.isNotBlank() }?.let { put("OPENAI_API_KEY", it) }
-        config.keys.anthropic.takeIf { it.isNotBlank() }?.let { put("ANTHROPIC_API_KEY", it) }
-        config.keys.xai.takeIf { it.isNotBlank() }?.let { put("XAI_API_KEY", it) }
+        (atropos.core.provider.FallbackChainRegistry.getActiveKey("groq") ?: config.keys.groq)
+            .takeIf { it.isNotBlank() }?.let { put("GROQ_API_KEY", it) }
+        (atropos.core.provider.FallbackChainRegistry.getActiveKey("openai") ?: config.keys.openai)
+            .takeIf { it.isNotBlank() }?.let { put("OPENAI_API_KEY", it) }
+        (atropos.core.provider.FallbackChainRegistry.getActiveKey("anthropic") ?: config.keys.anthropic)
+            .takeIf { it.isNotBlank() }?.let { put("ANTHROPIC_API_KEY", it) }
+        (atropos.core.provider.FallbackChainRegistry.getActiveKey("xai") ?: config.keys.xai)
+            .takeIf { it.isNotBlank() }?.let { put("XAI_API_KEY", it) }
         runCatching { atropos.core.security.CredentialBootstrap.get().getAll() }
             .getOrDefault(emptyMap())
             .forEach { (name, value) -> if (value.isNotBlank()) putIfAbsent(name, value) }

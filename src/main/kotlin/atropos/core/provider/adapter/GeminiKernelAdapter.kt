@@ -1,6 +1,7 @@
 package atropos.core.provider.adapter
 
 import atropos.core.provider.ApiCapability
+import atropos.core.provider.FallbackChainRegistry
 import atropos.core.provider.NormalizedProviderFailureType
 import atropos.core.provider.ProviderCallResult
 import atropos.core.provider.ProviderEnvironmentAliases
@@ -19,10 +20,11 @@ internal class GeminiKernelAdapter(
         request.task.capability in setOf(ApiCapability.CHAT, ApiCapability.PLAN, ApiCapability.LARGE_CONTEXT, ApiCapability.VISION)
 
     override fun liveComplete(request: AdapterRequest): ProviderCallResult {
-        val key = ProviderEnvironmentAliases.names("GEMINI_API_KEY")
-            .asSequence()
-            .mapNotNull { env[it]?.takeIf(String::isNotBlank) }
-            .firstOrNull()
+        val key = FallbackChainRegistry.getActiveKey(descriptor.id)
+            ?: ProviderEnvironmentAliases.names("GEMINI_API_KEY")
+                .asSequence()
+                .mapNotNull { env[it]?.takeIf(String::isNotBlank) }
+                .firstOrNull()
             ?: return missingSecret()
         return try {
             val url = spec.endpoint.replace("{model}", spec.defaultModel) + "?key=$key"

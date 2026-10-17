@@ -123,6 +123,12 @@ class AnsiTerminalEngine(
                 // Next tick will try again.
             }
         }, 250, 250, TimeUnit.MILLISECONDS)
+        atropos.core.provider.ActiveProvider.addListener { newEngine ->
+            synchronized(this) {
+                state.provider = newEngine
+                if (state.reactive && !boundedRendering.isPasteSuspended()) requestFrameLocked()
+            }
+        }
         requestFrameLocked()
     }
 
@@ -395,6 +401,7 @@ class AnsiTerminalEngine(
     @Synchronized
     fun setProvider(activeProvider: String) {
         state.provider = activeProvider
+        atropos.core.provider.ActiveProvider.set(activeProvider)
         requestFrameLocked()
     }
 

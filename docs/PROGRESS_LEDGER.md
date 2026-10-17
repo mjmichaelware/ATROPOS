@@ -15655,3 +15655,40 @@ End of AGENTS.md
 - % delta: Phase 19 factory pipeline stability moved from PARTIAL to GREEN; overall estimate unchanged.
 - Why justified: Definitively fixes the thread crash caused by directory process execution in SpecGraphAtomizer and integrates our full 21,561 LOC specgraph-http-api service with resilient soft-fail fallback.
 - Fingerprints: `src/main/kotlin/atropos/core/factory/SpecGraphAtomizer.kt`.
+
+### 2026-10-17T05:30:00Z · Agent: Antigravity (Gemini 3.8 Flash High) · Batch: provider-universal-error-routing-and-localized-cli-init
+- Paths touched:
+  - `src/main/kotlin/atropos/core/provider/ActiveProvider.kt` (new, 55 LOC)
+  - `src/main/kotlin/atropos/core/provider/UniversalErrorTaxonomy.kt` (new, 63 LOC)
+  - `src/main/kotlin/atropos/core/provider/UniversalErrorParser.kt` (new, 148 LOC)
+  - `src/main/kotlin/atropos/core/provider/ProviderKeyRegistry.kt` (new, 199 LOC)
+  - `src/main/kotlin/atropos/core/provider/FallbackChainRegistry.kt` (refactored, 266 LOC)
+  - `src/main/kotlin/atropos/core/provider/ProviderCascadeRouter.kt` (refactored, 373 LOC)
+  - `src/main/kotlin/atropos/core/Provider.kt` (refactored, 310 LOC)
+  - `src/main/kotlin/atropos/core/provider/adapter/OpenAiCompatibleKernelAdapter.kt` (refactored, 124 LOC)
+  - `src/main/kotlin/atropos/core/provider/adapter/GeminiKernelAdapter.kt` (refactored, 48 LOC)
+  - `src/main/kotlin/atropos/core/provider/adapter/AnthropicKernelAdapter.kt` (refactored, 58 LOC)
+  - `src/main/kotlin/atropos/cli/ui/StartupSequence.kt` (refactored, 279 LOC)
+  - `src/main/kotlin/atropos/cli/ui/StatusBarRenderer.kt` (refactored, 140 LOC)
+  - `src/main/kotlin/atropos/cli/ui/ComposerViewport.kt` (refactored, 326 LOC)
+  - `src/main/kotlin/atropos/cli/ui/AnsiTerminalEngine.kt` (refactored)
+  - `src/main/kotlin/atropos/cli/ProviderChatDispatcher.kt` (refactored)
+  - `src/main/kotlin/atropos/Main.kt` (refactored)
+  - `src/test/kotlin/atropos/cli/ui/StartupSequenceTest.kt` (extended)
+  - `src/test/kotlin/atropos/core/provider/FallbackChainRegistryTest.kt` (extended, 123 LOC)
+  - `docs/PROGRESS_LEDGER.md`
+- Atoms / phases affected: Core Engine Provider Fallback Matrix, Universal Error Taxonomy, Multi-Key Rotation, Globally Localized CLI Initialization, Dynamic TUI Status Binding.
+- Predicate moved:
+  - Globally Localized Greeting: Startup sequence binds to `java.time.LocalTime.now(java.time.ZoneId.systemDefault())`, rendering "Good morning" (00:00-11:59), "Good afternoon" (12:00-16:59), and "Good evening" (17:00-23:59), explicitly excluding "Good night".
+  - Dynamic UI Status Binding: Replaced static hardcoded provider strings with thread-safe `ActiveProvider` state and listeners in `StatusBarRenderer` and `ComposerViewport`, updating real-time pills and composer borders (e.g. `ask - openrouter`).
+  - Universal Error Taxonomy & Parsing: Implemented `UniversalErrorParser` parsing raw network exceptions (Timeouts, ConnectExceptions, broken pipes) and HTTP JSON error payloads (extracting `error.message`, `error.type`, and HTTP codes).
+  - Deterministic Context-Aware Routing: Implemented `routeNext` handling:
+    - Context/token bounds exceeded (413/400) -> immediately hops to high-context frontier models (`gemini`, `openrouter`), eliminating futile retries on low-context models (`groq`, `cerebras`, `sambanova`, `ollama_small`).
+    - Rate limits (429) & server overload (503) -> shifts to next API key in configured arrays or next parallel provider.
+    - Authentication / dead key (401/403) -> marks key dead in registry and rotates to next key.
+    - Network timeouts/drops -> reliable fallback.
+  - Multi-Key Array Support & Total Exhaustion: Configured key arrays and comma-separated strings loaded from config, env, and vault; every key is exhausted before declaring pipeline failure.
+  - Lakehouse Soft-Fail Law & Architecture Rules: No thread crashes, exact-hash continuity on Wave-0 contracts, zero hollow AST returns, all files strictly comply with 350-500 LOC caps.
+- % delta: Provider fallback resilience & CLI dynamic status moved from PARTIAL to GREEN; overall estimate unchanged.
+- Why justified: Definitively completes universal error handling and deterministic provider fallback routing across multi-key arrays, and dynamically binds CLI greeting and status bar to local user context and real-time execution state.
+- Fingerprints: Cleanly tracked across 18 paths.

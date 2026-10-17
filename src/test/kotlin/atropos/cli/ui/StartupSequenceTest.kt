@@ -107,6 +107,22 @@ class StartupSequenceTest {
     }
 
     @Test
+    fun greeting_matches_time_of_day_boundaries() {
+        val morningSeq = StartupSequence(theme, clock = { java.time.LocalTime.of(8, 30) })
+        val morningSettled = plain(morningSeq.finalFrame(80, 24, facts)).joinToString("\n")
+        assertTrue(morningSettled.contains("Good morning"), "Expected Good morning at 08:30")
+
+        val afternoonSeq = StartupSequence(theme, clock = { java.time.LocalTime.of(14, 0) })
+        val afternoonSettled = plain(afternoonSeq.finalFrame(80, 24, facts)).joinToString("\n")
+        assertTrue(afternoonSettled.contains("Good afternoon"), "Expected Good afternoon at 14:00")
+
+        val eveningSeq = StartupSequence(theme, clock = { java.time.LocalTime.of(21, 15) })
+        val eveningSettled = plain(eveningSeq.finalFrame(80, 24, facts)).joinToString("\n")
+        assertTrue(eveningSettled.contains("Good evening"), "Expected Good evening at 21:15")
+        assertTrue(!eveningSettled.contains("Good night"), "Must never display Good night")
+    }
+
+    @Test
     fun the_settled_screen_says_how_to_start() {
         val settled = plain(sequence.finalFrame(80, 24, facts)).joinToString("\n")
 

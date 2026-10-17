@@ -60,6 +60,8 @@ class ProviderChatDispatcher(
                 context = "",
                 allowPaidProvider = isUnlocked || (isExplicitPaid && isUnlocked),
                 beforeAttempt = { candidate ->
+                    atropos.core.provider.ActiveProvider.set(candidate)
+                    uiEngine.setProvider(candidate)
                     if (candidate != routedProvider) {
                         uiEngine.renderExecutionEvent("provider", "falling back to $candidate")
                     }

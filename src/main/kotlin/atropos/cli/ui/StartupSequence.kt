@@ -28,7 +28,7 @@ import java.time.LocalTime
  */
 class StartupSequence(
     private val theme: TerminalTheme,
-    private val clock: () -> LocalTime = LocalTime::now
+    private val clock: () -> LocalTime = { java.time.LocalTime.now(java.time.ZoneId.systemDefault()) }
 ) {
 
     /**
@@ -133,8 +133,8 @@ class StartupSequence(
     private fun greetingLine(): String {
         val hour = clock().hour
         val greeting = when {
-            hour < 12 -> "Good morning"
-            hour < 18 -> "Good afternoon"
+            hour in 0..11 -> "Good morning"
+            hour in 12..16 -> "Good afternoon"
             else -> "Good evening"
         }
         return theme.strong(greeting) + theme.subdued(" — the thread is yours to cut.")
