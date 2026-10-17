@@ -77,4 +77,21 @@ class EscapeSequencePasteSuspensionTest {
         val key4 = reader2.readKey()
         assertEquals(KeyEvent.Printable("b"), key4)
     }
+
+    @Test
+    fun `EscapeSequenceParser translates Shift-Up, Shift-Down, and mouse wheel to PageUp and PageDown`() {
+        fun parse(seq: String): KeyEvent {
+            val q = ConcurrentLinkedQueue<Int>()
+            q.addAll(seq.map { it.code })
+            val p = EscapeSequenceParser(pollByte = { q.poll() }, takeByte = { q.poll() ?: -1 })
+            return p.parseEscape()
+        }
+
+        assertEquals(KeyEvent.PageUp, parse("[1;2A"))
+        assertEquals(KeyEvent.PageUp, parse("[1;5A"))
+        assertEquals(KeyEvent.PageDown, parse("[1;2B"))
+        assertEquals(KeyEvent.PageDown, parse("[1;5B"))
+        assertEquals(KeyEvent.PageUp, parse("[<64;10;20M"))
+        assertEquals(KeyEvent.PageDown, parse("[<65;10;20M"))
+    }
 }

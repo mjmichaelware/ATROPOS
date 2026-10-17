@@ -34,13 +34,14 @@ class SttyTerminalGeometryProvider :
                 timeoutMillis = 250L,
                 maxOutputBytes = 128,
                 maxOutputLines = 4,
-                inputRedirect = tty.toPath()
+                inputRedirect = tty.toPath(),
+                narrate = false
             )
             if (result.timedOut || result.launchError != null || result.exitCode != 0) return@runCatching null
             val parts = result.stdout.trim().split(Regex("\\s+"))
             val rows = parts.getOrNull(0)?.toIntOrNull() ?: return@runCatching null
             val columns = parts.getOrNull(1)?.toIntOrNull() ?: return@runCatching null
-            TerminalGeometry(rows.coerceAtLeast(12), columns.coerceAtLeast(1))
+            TerminalGeometry(rows.coerceAtLeast(6), columns.coerceAtLeast(1))
         }.getOrNull()
     }
 }

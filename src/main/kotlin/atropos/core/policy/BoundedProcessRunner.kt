@@ -62,15 +62,22 @@ class BoundedProcessRunner(
         removeEnvironmentKeys: Set<String> = emptySet(),
         evidenceDirectory: Path? = null,
         standardInput: ByteArray? = null,
-        inputRedirect: Path? = null
+        inputRedirect: Path? = null,
+        narrate: Boolean = true
     ): BoundedProcessResult {
         validate(command, directory, timeoutMillis, maxOutputBytes, maxOutputLines)
+
+        // Internal maintenance/geometry probes (such as `stty size`) poll continuously
+        // and must never flood the operator's thinking/process narration trace.
+        val shouldNarrate = narrate && command.firstOrNull() != "stty"
 
         // Every subprocess the engine runs passes through here -- gradle, git,
         // python, the atomizer. Narrating at this one point is what turns a
         // full trace from a dozen summary lines into an account of what the
         // run actually did, without a publish call at each of a hundred sites.
-        atropos.core.thinking.Thinking.detail("process", command.joinToString(" "))
+        if (shouldNarrate) {
+            atropos.core.thinking.Thinking.detail("process", command.joinToString(" "))
+        }
 
         val started = System.nanoTime()
         val process = try {
@@ -84,7 +91,7 @@ class BoundedProcessRunner(
                 stderr = "",
                 outputTruncated = false,
                 launchError = "${failure.javaClass.simpleName}: ${failure.message ?: "process launch failed"}"
-                    .also { atropos.core.thinking.Thinking.detail("process", "launch failed — $it") }
+                    .also { if (shouldNarrate) atropos.core.thinking.Thinking.detail("process", "launch failed — $it") }
             )
         }
         if (standardInput == null) {
@@ -112,13 +119,15 @@ class BoundedProcessRunner(
         // "gradle is not runnable here", which reads nothing like a compile
         // failure and was previously invisible.
         val code = if (finished) process.exitValue() else null
-        atropos.core.thinking.Thinking.detail(
-            "process",
-            command.first() + " " +
-                (if (finished) "exit=$code" else "timed out") +
-                " in ${elapsed(started)}ms" +
-                (err.text.lineSequence().firstOrNull { it.isNotBlank() }?.let { " — ${it.take(120)}" } ?: "")
-        )
+        if (shouldNarrate) {
+            atropos.core.thinking.Thinking.detail(
+                "process",
+                command.first() + " " +
+                    (if (finished) "exit=$code" else "timed out") +
+                    " in ${elapsed(started)}ms" +
+                    (err.text.lineSequence().firstOrNull { it.isNotBlank() }?.let { " — ${it.take(120)}" } ?: "")
+            )
+        }
 
         return BoundedProcessResult(
             exitCode = code,

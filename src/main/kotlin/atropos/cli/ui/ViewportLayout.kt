@@ -92,8 +92,9 @@ class ViewportLayout(
         // showed them a third time. Two of those three were noise. The chrome
         // stays for surfaces that render no tabs at all, which is where it is
         // the only thing carrying that information.
+        val isCompactHeight = safeHeight <= 14
         val chrome =
-            if (tabs.isEmpty()) stickyHeader.render(activeTab, openTabCount, safeWidth, isDensity)
+            if (tabs.isEmpty() && !isCompactHeight) stickyHeader.render(activeTab, openTabCount, safeWidth, isDensity)
             else StickyHeader.Frame(emptyList())
         val chromeHeight = chrome.height
         chrome.lines.forEachIndexed { idx, line -> place(idx, line) }
@@ -103,7 +104,7 @@ class ViewportLayout(
         // Height is measured from what the bar actually produced rather than
         // assumed to be one row: the renderer can add a territory line, and a
         // hardcoded 1 put the transcript's first row on top of it.
-        val tabLines = tabBar.render(tabs, safeWidth)
+        val tabLines = if (safeHeight < 10) emptyList() else tabBar.render(tabs, safeWidth)
         val tabBarHeight = tabLines.size
         tabLines.forEachIndexed { idx, line -> place(chromeHeight + idx, line) }
 
@@ -154,10 +155,11 @@ class ViewportLayout(
                 paletteRows
             )
         }
-        val composerHeight = composerSnapshot.lines.size + metaLines.size
+        val effectiveMetaLines = if (isCompactHeight && safeHeight <= 10) emptyList() else metaLines
+        val composerHeight = composerSnapshot.lines.size + effectiveMetaLines.size
         val paletteHeight = paletteLines.size
-        val composerStart = footerRow - composerHeight
-        val paletteStart = composerStart - paletteHeight
+        val composerStart = (footerRow - composerHeight).coerceAtLeast(contentStart)
+        val paletteStart = (composerStart - paletteHeight).coerceAtLeast(contentStart)
         val separatorRow = (paletteStart - 1).coerceAtLeast(contentStart + 2)
         val transcriptStart = contentStart
         val transcriptHeight = (separatorRow - transcriptStart).coerceAtLeast(1)
@@ -175,7 +177,7 @@ class ViewportLayout(
         val solvedTranscriptStart = stickyRegions?.transcript?.start ?: transcriptStart
         val solvedTranscriptHeight = stickyRegions?.transcript?.rows?.coerceAtLeast(1) ?: transcriptHeight
         val solvedPaletteStart = stickyRegions?.input?.start?.let { it + 0 } ?: paletteStart
-        val solvedComposerStart = stickyRegions?.input?.endExclusive?.minus(composerHeight + 1) ?: composerStart
+        val solvedComposerStart = stickyRegions?.input?.endExclusive?.minus(composerHeight + 1)?.coerceAtLeast(contentStart) ?: composerStart
 
         if (transcript.isEmpty) {
             welcomePanel.render(state, safeWidth, solvedTranscriptHeight)
@@ -208,7 +210,7 @@ class ViewportLayout(
         composerSnapshot.lines.forEachIndexed { index, line ->
             place(solvedComposerStart + index, line)
         }
-        metaLines.forEachIndexed { index, line ->
+        effectiveMetaLines.forEachIndexed { index, line ->
             place(solvedComposerStart + composerSnapshot.lines.size + index, line)
         }
 
@@ -221,7 +223,7 @@ class ViewportLayout(
         // while every row index in this layout counts from zero. Without it the
         // caret was drawn one row above the composer — sitting on the box's own
         // top border instead of on the line being typed.
-        frame.cursorY = solvedComposerStart + composerSnapshot.cursorRow + 1
+        frame.cursorY = (solvedComposerStart + composerSnapshot.cursorRow + 1).coerceIn(1, safeHeight)
         frame.showCursor = true
         return frame
     }

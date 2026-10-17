@@ -40,4 +40,38 @@ class CommandHistoryStoreTest {
         second.historyUp()
         assertTrue(second.text == "/status")
     }
+
+    @Test
+    fun exit_commands_are_never_persisted_or_loaded_into_history() {
+        val root = Files.createTempDirectory("atropos-command-history-exit-")
+        val path = root.resolve("history.tsv")
+        val store = CommandHistoryStore(path)
+
+        store.record(PromptHistoryLane.SLASH, "/exit")
+        store.record(PromptHistoryLane.SLASH, "/quit")
+        store.record(PromptHistoryLane.PROMPT, "exit")
+        store.record(PromptHistoryLane.PROMPT, "quit")
+
+        assertTrue(store.isEmpty(PromptHistoryLane.SLASH))
+        assertTrue(store.isEmpty(PromptHistoryLane.PROMPT))
+
+        // Pre-populate with a base64-encoded exit command and verify load filters it out
+        Files.writeString(path, "SLASH\t" + java.util.Base64.getEncoder().encodeToString("/exit".toByteArray()) + "\n")
+        val reloaded = CommandHistoryStore(path)
+        assertTrue(reloaded.isEmpty(PromptHistoryLane.SLASH))
+    }
+
+    @Test
+    fun prompt_state_commit_never_records_exit_commands() {
+        val root = Files.createTempDirectory("atropos-prompt-exit-")
+        val path = root.resolve("history.tsv")
+        val prompt = PromptState(historyStore = CommandHistoryStore(path))
+
+        "/exit".forEach { prompt.apply(KeyEvent.Printable(it.toString())) }
+        prompt.apply(KeyEvent.Enter)
+
+        val reloaded = PromptState(historyStore = CommandHistoryStore(path))
+        reloaded.historyUp()
+        assertEquals("", reloaded.text, "historyUp recalled /exit instead of staying blank")
+    }
 }

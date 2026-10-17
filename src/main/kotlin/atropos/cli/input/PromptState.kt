@@ -248,7 +248,7 @@ class PromptState(
         // once the registry had been cleared, and would send a prompt with the
         // document silently missing.
         val result = collapsedPastes.expand(line.text)
-        if (result.isNotBlank()) {
+        if (result.isNotBlank() && !isIgnoredFromHistory(result)) {
             val lane = PromptHistoryLane.classify(result)
             lastCommittedLane = lane
             history.record(lane, result)
@@ -256,6 +256,9 @@ class PromptState(
         clear()
         return result
     }
+
+    private fun isIgnoredFromHistory(command: String): Boolean =
+        command.trim().lowercase() in IGNORED_HISTORY_COMMANDS
 
     /** What the line stands for beyond what it shows, or null when nothing. */
     fun collapsedPasteSummary(): String? =
@@ -327,5 +330,6 @@ class PromptState(
          * survive the jump and the operator can tell where they landed.
          */
         const val SCROLL_LINES = 6
+        val IGNORED_HISTORY_COMMANDS = setOf("/exit", "/quit", "exit", "quit")
     }
 }

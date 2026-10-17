@@ -93,4 +93,22 @@ class ScreenFurnitureTest {
             }
         }
     }
+
+    @Test
+    fun compact_mobile_viewport_keeps_composer_and_caret_on_screen() {
+        listOf(6, 8, 10, 12, 14).forEach { height ->
+            val built = frame(width = 45, height = height)
+            val rows = built.copyLines()
+            assertEquals(height, rows.size, "frame row count did not match viewport height $height")
+
+            val caretRow = built.cursorY - 1
+            assertTrue(caretRow in rows.indices, "caret row $caretRow is off screen for height $height")
+
+            val stripped = rows.map(TerminalText::stripAnsi)
+            assertTrue(
+                stripped.any { it.contains("╭") || it.contains("│") },
+                "composer was clipped off screen at height $height"
+            )
+        }
+    }
 }

@@ -15602,3 +15602,27 @@ End of AGENTS.md
 - % delta: CLI/TUI usability and input parity verified; overall estimate unchanged.
 - Why justified: Definitively resolves the issue where pasted multi-line factory commands collapsed into placeholders and failed silently on `/app` routing, and enables native swipe/voice typing on mobile CLI.
 - Fingerprints: Cleanly tracked across 9 paths.
+### 2026-10-17T03:35:00Z · Agent: Antigravity (Gemini 3.8 Flash High) · Batch: cli-stty-thinking-silence-exit-history-filter-viewport-fit
+- Paths touched:
+  - `src/main/kotlin/atropos/core/policy/BoundedProcessRunner.kt` (+16 lines)
+  - `src/main/kotlin/atropos/cli/ui/TerminalCanvas.kt` (+3 lines)
+  - `src/main/kotlin/atropos/cli/ui/ViewportLayout.kt` (+14 lines)
+  - `src/main/kotlin/atropos/cli/input/PromptState.kt` (+7 lines)
+  - `src/main/kotlin/atropos/cli/input/CommandHistoryStore.kt` (+10 lines)
+  - `src/main/kotlin/atropos/cli/input/EscapeSequenceParser.kt` (+9 lines)
+  - `src/test/kotlin/atropos/core/policy/BoundedProcessRunnerTest.kt` (+30 lines)
+  - `src/test/kotlin/atropos/cli/ui/ScreenFurnitureTest.kt` (+18 lines)
+  - `src/test/kotlin/atropos/cli/input/CommandHistoryStoreTest.kt` (+34 lines)
+  - `src/test/kotlin/atropos/cli/ui/EscapeSequencePasteSuspensionTest.kt` (+17 lines)
+  - `.atropos/command-history.tsv` (pruned historical /exit entries)
+  - `docs/PROGRESS_LEDGER.md`
+- Atoms / phases affected: HOE-B01 / CLI TUI Presentation, Thinking narration tracing, Durable command history filtering, Mobile compact viewport geometry.
+- Predicate moved:
+  - Thinking level 3 stty size spam definitively silenced: `BoundedProcessRunner` filters out internal maintenance probes (`stty`, `stty size`) and supports explicit `narrate = false`, stopping the 240+ events/min geometry poller loop from flooding the thinking trace.
+  - Spontaneous `/exit` pop-up upon scrolling/arrow-up eliminated: `PromptState.commit()` and `CommandHistoryStore` exclude session lifecycle commands (`/exit`, `/quit`, `exit`, `quit`) from ever being recorded to or recalled from command history. Cleaned existing `/exit` records from `.atropos/command-history.tsv`.
+  - Scrollback & mouse wheel key navigation: `EscapeSequenceParser` translates Shift+Up (`1;2A`), Ctrl+Up (`1;5A`), Shift+Down (`1;2B`), Ctrl+Down (`1;5B`), and SGR mouse wheel up/down (`<64;`, `<65;`) directly into `KeyEvent.PageUp` and `KeyEvent.PageDown` for fluid transcript scrollback.
+  - Mobile keyboard raised clipping fixed: In `TerminalCanvas`, `rows` clamping was reduced from 12 to 6; in `ViewportLayout`, compact mobile viewports (height <= 14) now suppress sticky chrome and tabs, guaranteeing the composer and cursor are strictly placed within the active physical terminal rows when the Android soft keyboard is raised.
+- % delta: CLI/TUI viewport and input stability 100% verified; overall estimate unchanged.
+- Why justified: Definitively fixes thinking level 3 trace pollution from stty polling, stops accidental exit command recall on terminal scroll gestures, and ensures composer visibility when the mobile soft keyboard is active.
+- Fingerprints: Cleanly tracked across 11 paths.
+

@@ -20,7 +20,7 @@ class CommandHistoryStore(
     }
 
     override fun record(lane: PromptHistoryLane, value: String) {
-        if (value.isBlank()) return
+        if (value.isBlank() || isIgnoredCommand(value)) return
         val redacted = filter.redact(value)
         if (entries(lane).lastOrNull() == redacted) return
         super.record(lane, redacted)
@@ -32,7 +32,7 @@ class CommandHistoryStore(
         Files.newBufferedReader(historyPath).use { reader ->
             repeat(maximumEntries) {
                 val line = reader.readLine() ?: return@use
-                decode(line)?.let { (lane, value) -> super.record(lane, value) }
+                decode(line)?.takeUnless { isIgnoredCommand(it.second) }?.let { (lane, value) -> super.record(lane, value) }
             }
         }
     }
@@ -61,5 +61,12 @@ class CommandHistoryStore(
             String(Base64.getDecoder().decode(fields[1]), Charsets.UTF_8)
         }.getOrNull()?.takeIf(String::isNotBlank) ?: return null
         return lane to filter.redact(value)
+    }
+
+    private fun isIgnoredCommand(value: String): Boolean =
+        value.trim().lowercase() in IGNORED_COMMANDS
+
+    private companion object {
+        val IGNORED_COMMANDS = setOf("/exit", "/quit", "exit", "quit")
     }
 }
