@@ -147,7 +147,8 @@ class TranscriptRenderer(
         }
         val scrollOffset = buffer.currentScrollOffset
         val maximumOffset = (lines.size - height).coerceAtLeast(0)
-        val start = scrollOffset.coerceIn(0, maximumOffset)
+        val tailStart = (lines.size - height).coerceAtLeast(0)
+        val start = (tailStart - scrollOffset).coerceIn(0, maximumOffset)
         val end = (start + height).coerceAtMost(lines.size)
         return lines.subList(start, end)
     }

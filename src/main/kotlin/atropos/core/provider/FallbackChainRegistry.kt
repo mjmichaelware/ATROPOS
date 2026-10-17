@@ -27,7 +27,7 @@ object FallbackChainRegistry {
     const val LOCAL_TOOLCHAIN = 0
     const val CUSTOM_USER_API = 29
 
-    val HIGH_CONTEXT_FRONTIER_MODELS = listOf("gemini", "gemini-2.5-pro", "anthropic", "openrouter", "OpenRouter-Claude")
+    val HIGH_CONTEXT_FRONTIER_MODELS = listOf("gemini", "gemini-2.5-pro", "anthropic", "openrouter", "deepseek_direct", "openai", "OpenRouter-Claude")
     val LOW_CONTEXT_MODELS = setOf("groq", "cerebras", "sambanova", "ollama_small")
 
     val providers = listOf(
@@ -148,7 +148,9 @@ object FallbackChainRegistry {
 
         return when (error.category) {
             UniversalErrorCategory.CONTEXT_EXCEEDED -> {
-                val frontier = HIGH_CONTEXT_FRONTIER_MODELS.firstOrNull { it.lowercase() != cleanCurrent } ?: "gemini"
+                val frontier = HIGH_CONTEXT_FRONTIER_MODELS.firstOrNull { it.lowercase() != cleanCurrent && getActiveKey(it) != null }
+                    ?: HIGH_CONTEXT_FRONTIER_MODELS.firstOrNull { it.lowercase() != cleanCurrent }
+                    ?: "gemini"
                 RoutingDecision(
                     action = RoutingAction.ROUTE_HIGH_CONTEXT,
                     targetProvider = frontier,

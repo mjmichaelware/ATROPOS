@@ -51,4 +51,18 @@ class TranscriptBufferTest {
         assertTrue(buffer.isFollowingTail)
         assertEquals(0, buffer.newOutputCount)
     }
+
+    @Test
+    fun renderTranscript_shows_tail_lines_when_following_tail() {
+        val theme = TerminalTheme(atropos.cli.config.ConfigurationManager(envProvider = { null }, hasConsole = false))
+        val renderer = TranscriptRenderer(theme)
+        val buffer = TranscriptBuffer()
+        repeat(50) { buffer.append("message-$it") }
+
+        val visible = renderer.renderTranscript(buffer, width = 80, height = 10)
+        assertEquals(10, visible.size)
+        assertTrue(visible.last().contains("message-49"), "Latest line must be visible at bottom of transcript")
+        assertTrue(visible.first().contains("message-40"), "Tenth-to-last line must be at top of viewport")
+        assertFalse(visible.any { it.contains("message-0") }, "Oldest lines must not be in tail viewport")
+    }
 }

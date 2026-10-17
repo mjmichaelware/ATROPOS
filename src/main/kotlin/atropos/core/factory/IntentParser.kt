@@ -21,7 +21,10 @@ class IntentParser(
         // the stop-word vocabulary corrupts both at once: "build me a todo list
         // app" named the application `me` and spent half the twelve-feature
         // budget on function words. See [AppPromptStopWords].
-        val name = AppPromptStopWords.firstMeaningful(words, actionRegistry::isAction) ?: "generated-app"
+        val explicitName = EXPLICIT_NAME_REGEX.find(prompt)?.groupValues?.get(1)?.lowercase(Locale.US)
+        val name = explicitName?.takeIf { it.isNotBlank() }
+            ?: AppPromptStopWords.firstMeaningful(words, actionRegistry::isAction)
+            ?: "generated-app"
         val features = words
             .filter { !AppPromptStopWords.isStopWord(it) && !actionRegistry.isAction(it) && it.length > 1 }
             .distinct()
@@ -37,5 +40,6 @@ class IntentParser(
         val WEB_WORDS = setOf("web", "website", "frontend")
         val SERVICE_WORDS = setOf("api", "service", "backend")
         val DESKTOP_WORDS = setOf("desktop", "android", "mobile")
+        val EXPLICIT_NAME_REGEX = Regex("""(?:named|called|name:)\s+['"`]?([a-zA-Z0-9_-]+)['"`]?""", RegexOption.IGNORE_CASE)
     }
 }

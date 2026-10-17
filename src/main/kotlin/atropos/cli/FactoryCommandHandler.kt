@@ -45,11 +45,12 @@ class FactoryCommandHandler(
     }
 
     private fun renderResume(parts: List<String>) {
-        val runId = parts.singleOrNull()?.trim()
+        val runId = parts.singleOrNull()?.trim() ?: findLatestFactoryRunId()
         if (runId.isNullOrBlank()) {
-            uiEngine.renderError("usage: /factory resume <run-id>")
+            uiEngine.renderError("usage: /factory resume <run-id> (no past factory runs located)")
             return
         }
+        uiEngine.renderNotice("resuming factory run: $runId")
         runCatching { resumeRun(runId) }
             .onSuccess(uiEngine::renderNotice)
             .onFailure { uiEngine.renderError(redactionFilter.compact(it.message ?: "factory resume failed")) }
@@ -75,15 +76,22 @@ class FactoryCommandHandler(
                 runFactory(prompt)
             } catch (failure: FactoryClarificationRequired) {
                 live.stop()
+                val artifact = persistDiagnosticArtifact(failure.request.runId, prompt, "Clarification Required", failure)
                 val questions = failure.questions.joinToString(" | ") { "YES/NO: $it" }
                 uiEngine.renderError(
                     "factory clarification required: $questions; artifact=${failure.request.path}"
                 )
+                uiEngine.renderNotice("Diagnostic artifact with complete run trace saved: ${artifact ?: failure.request.path}")
+                uiEngine.renderNotice("To answer and resume, run: /factory answer ${failure.request.runId} <YES|NO>")
                 return
-            } catch (failure: RuntimeException) {
+            } catch (failure: Throwable) {
                 live.stop()
-                val detail = redactionFilter.compact(failure.message ?: "unknown failure")
+                val runId = "factory-${atropos.core.factory.FactoryLineage.sha256(prompt.trim()).take(16)}"
+                val detail = redactionFilter.compact(failure.message ?: failure.javaClass.simpleName)
+                val artifact = persistDiagnosticArtifact(runId, prompt, "Execution Stopped: $detail", failure)
                 uiEngine.renderError("factory run failed: ${detail.ifBlank { "unknown failure" }}")
+                uiEngine.renderNotice("Diagnostic artifact with complete run trace saved: ${artifact ?: "none"}")
+                uiEngine.renderNotice("To attempt resuming this run, run: /factory resume $runId")
                 return
             }
             live.stop()
@@ -91,6 +99,58 @@ class FactoryCommandHandler(
             uiEngine.renderNotice(redactionFilter.redact(result))
         }
     }
+
+    private fun findLatestFactoryRunId(): String? = findLatestFactoryRunId(repoRoot)
+
+    private fun persistDiagnosticArtifact(
+        runId: String?,
+        prompt: String,
+        reason: String,
+        failure: Throwable?
+    ): Path? = runCatching {
+        val targetDir = if (!runId.isNullOrBlank()) {
+            repoRoot.resolve(".atropos/research/factory").resolve(runId)
+        } else {
+            repoRoot.resolve(".atropos/research/factory/latest")
+        }
+        java.nio.file.Files.createDirectories(targetDir)
+        val artifactPath = targetDir.resolve("run-diagnostic.md")
+
+        val traceLines = atropos.core.thinking.Thinking.stream.replay(atropos.core.thinking.ThinkingDepth.L3)
+            .joinToString("\n") { "  [${it.at}] [${it.depth}] ${it.category.padEnd(8)}: ${it.text}" }
+
+        val activeKeys = atropos.core.provider.FallbackChainRegistry.getAllActiveKeys()
+            .map { (p, k) -> "  - $p: ${k.take(6)}...${k.takeLast(4)}" }
+            .joinToString("\n")
+
+        val content = buildString {
+            appendLine("# ATROPOS Factory Run Diagnostic Artifact")
+            appendLine("timestamp: ${java.time.Instant.now()}")
+            appendLine("run_id: ${runId ?: "unknown"}")
+            appendLine("reason: $reason")
+            appendLine("exception: ${failure?.javaClass?.name ?: "none"}")
+            appendLine("exception_message: ${failure?.message ?: "none"}")
+            appendLine()
+            appendLine("## Configured Provider Keys")
+            appendLine(activeKeys.ifBlank { "  none recorded" })
+            appendLine()
+            appendLine("## User Prompt")
+            appendLine("```")
+            appendLine(prompt)
+            appendLine("```")
+            appendLine()
+            appendLine("## Full L3 Thinking & Execution Trace")
+            appendLine("```")
+            appendLine(traceLines.ifBlank { "  no thinking trace recorded" })
+            appendLine("```")
+            appendLine()
+            appendLine("## Resumption")
+            appendLine("To resume this run from durable lineage:")
+            appendLine("`/factory resume ${runId ?: ""}`")
+        }
+        java.nio.file.Files.writeString(artifactPath, content, Charsets.UTF_8)
+        artifactPath
+    }.getOrNull()
 
     private fun renderClarificationAnswer(parts: List<String>) {
         val projectId = parts.firstOrNull()?.trim().orEmpty()
@@ -132,7 +192,20 @@ class FactoryCommandHandler(
         }
     }
 
-    private companion object {
+    companion object {
         val PROJECT_ID = Regex("[A-Za-z0-9][A-Za-z0-9._-]{0,127}")
+
+        fun findLatestFactoryRunId(repoRoot: Path = Path.of(".")): String? {
+            val factoryDir = repoRoot.resolve(".atropos/research/factory")
+            if (!java.nio.file.Files.isDirectory(factoryDir)) return null
+            return runCatching {
+                java.nio.file.Files.list(factoryDir)
+                    .filter { java.nio.file.Files.isDirectory(it) }
+                    .sorted { a, b -> java.nio.file.Files.getLastModifiedTime(b).compareTo(java.nio.file.Files.getLastModifiedTime(a)) }
+                    .map { it.fileName.toString() }
+                    .findFirst()
+                    .orElse(null)
+            }.getOrNull()
+        }
     }
 }

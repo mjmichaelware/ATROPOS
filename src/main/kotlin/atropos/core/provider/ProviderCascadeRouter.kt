@@ -318,8 +318,10 @@ class ProviderCascadeRouter(
             ?: preferredProviderIds?.invoke().orEmpty()
                 .ifEmpty { registry.getAll().map { it.id } }
 
+        val activeKeyProviders = FallbackChainRegistry.getAllActiveKeys().keys.map { it.lowercase() }
+
         return ProviderCascadeOrder.order(
-            (listOf(requestedProvider.lowercase()) + configured)
+            (listOf(requestedProvider.lowercase()) + configured + activeKeyProviders)
                 .filter { registry.getById(it) != null }
                 .filter { !localOnly() }
                 .distinct(),

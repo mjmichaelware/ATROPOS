@@ -102,7 +102,15 @@ class SpecGraphCanonicalAtomProvider(
         // for the provider-backed dimension contract. Every atom is classified
         // so partial or collapsed upstream labels cannot silently become a
         // false-green execution plan.
-        val finalStaged = fillDimensions(staged, promptFingerprint, sourcePath)
+        val finalStaged = try {
+            fillDimensions(staged, promptFingerprint, sourcePath)
+        } catch (failure: Exception) {
+            evidenceSink(
+                "specgraph source=$sourcePath degraded_mode=internal_dimension_fallback " +
+                    "reason=${failure.message}"
+            )
+            staged
+        }
         evidenceSink(
             "specgraph source=$sourcePath provider filled atom dimensions " +
                 "count=${finalStaged.size} categories=${finalStaged.map { it.dimension }.distinct().size}"
@@ -167,16 +175,12 @@ class SpecGraphCanonicalAtomProvider(
     ): List<atropos.core.planning.InternalAtom>? {
         return try {
             fillDimensions(atoms, promptFingerprint, sourcePath)
-        } catch (failure: IllegalStateException) {
-            if (failure.message?.startsWith("NO_ELIGIBLE_DIMENSION_PROVIDER") == true) {
-                evidenceSink(
-                    "specgraph source=$sourcePath fallback dimensions=deterministic_keyword_classification " +
-                        "reason=${failure.message}"
-                )
-                null
-            } else {
-                throw failure
-            }
+        } catch (failure: Exception) {
+            evidenceSink(
+                "specgraph source=$sourcePath fallback dimensions=deterministic_keyword_classification " +
+                    "reason=${failure.message}"
+            )
+            null
         }
     }
 

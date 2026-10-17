@@ -26,8 +26,8 @@ fun interface WorkspaceInspector {
 }
 
 class CachingGitWorkspaceInspector(
-    private val cacheMillis: Long = 2_000,
-    private val timeoutMillis: Long = 750,
+    private val cacheMillis: Long = 10_000,
+    private val timeoutMillis: Long = 5_000,
     private val outputLimit: Int = 256 * 1024
 ) : WorkspaceInspector {
     private val processRunner = BoundedProcessRunner()

@@ -94,6 +94,22 @@ class InterruptCommandHandler(private val uiEngine: AnsiTerminalEngine) {
         val width = uiEngine.viewportWidth
         val frozen = InterruptRegistry.resume()
         if (frozen == null) {
+            val factoryRunId = FactoryCommandHandler.findLatestFactoryRunId()
+            if (factoryRunId != null) {
+                uiEngine.renderBlock(
+                    surface.block(
+                        "RESUME ADVISORY",
+                        listOf(
+                            surface.statusRow("status", "No frozen interrupt state active.", atropos.cli.ui.design.Health.PENDING, width),
+                            surface.hint("Recent App Factory run detected: $factoryRunId", width),
+                            surface.hint("Run '/factory resume $factoryRunId' or '/factory resume' to resume factory execution.", width)
+                        ),
+                        width,
+                        atropos.cli.ui.design.Role.BRAND
+                    )
+                )
+                return
+            }
             uiEngine.renderBlock(
                 surface.block(
                     "RESUME REFUSED",

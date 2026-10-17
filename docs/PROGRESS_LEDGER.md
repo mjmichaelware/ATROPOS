@@ -15692,3 +15692,27 @@ End of AGENTS.md
 - % delta: Provider fallback resilience & CLI dynamic status moved from PARTIAL to GREEN; overall estimate unchanged.
 - Why justified: Definitively completes universal error handling and deterministic provider fallback routing across multi-key arrays, and dynamically binds CLI greeting and status bar to local user context and real-time execution state.
 - Fingerprints: Cleanly tracked across 18 paths.
+### 2026-10-17T07:58:00Z · Agent: Antigravity (Advanced Agentic Coding) · Batch: c3-cli-viewport-factory-resilience-278
+- Paths touched:
+  - `src/main/kotlin/atropos/cli/ui/TranscriptRenderer.kt` (+12/-4): Corrected inverted transcript slice math so tail tracking starts at `lines.size - height` and renders the live tail of transcript/thinking output above the command line instead of head-anchoring.
+  - `src/main/kotlin/atropos/cli/ui/WorkspaceIntelligence.kt` (+2/-2): Raised git status timeout from 750ms to 5,000ms and cache TTL to 10,000ms, eliminating 750ms timeout spam and CPU thrashing on Termux.
+  - `src/main/kotlin/atropos/core/provider/ProviderCascadeRouter.kt` (+8/-2): Appended all active keys from FallbackChainRegistry to provider cascade candidate order, ensuring OpenRouter, DeepSeek, Gemini, OpenAI, and Groq are all cascaded across loaded arrays before pipeline exhaustion.
+  - `src/main/kotlin/atropos/core/provider/FallbackChainRegistry.kt` (+11/-4): Added `deepseek_direct` and `openai` to high-context frontier models, and prioritized high-context providers with configured keys when context bounds are exceeded.
+  - `src/main/kotlin/atropos/core/factory/SpecGraphCanonicalAtomProvider.kt` (+16/-6): Wrapped atom dimension classification in safe soft-fallback, honoring Lakehouse Soft-Fail Law and preventing plan aborts when upstream LLM calls fail.
+  - `src/main/kotlin/atropos/cli/FactoryCommandHandler.kt` (+54/-12): Implemented diagnostic artifact persistence (`.atropos/research/factory/<id>/run-diagnostic.md`) saving full L3 thinking traces, prompt, and stoppage reasons; updated `renderResume` to default to the latest factory run if run ID is omitted; exposed `findLatestFactoryRunId` in companion object.
+  - `src/main/kotlin/atropos/cli/InterruptCommandHandler.kt` (+16/-0): Updated `/resume` to inspect recent factory runs and advise the operator with `/factory resume <id>` if no paused interrupt state exists.
+  - `src/main/kotlin/atropos/core/factory/IntentParser.kt` (+7/-1): Added `EXPLICIT_NAME_REGEX` to extract named projects (e.g. `named 'KryptonStore'`) instead of falling back to generic token classification.
+  - `src/test/kotlin/atropos/cli/ui/TranscriptBufferTest.kt` (+18/-0): Added unit test proving tail lines render when following tail.
+  - `src/test/kotlin/atropos/core/factory/IntentParserTest.kt` (+6/-0): Added unit test verifying explicit project name extraction.
+- Atoms / phases affected: HOE CLI Viewport Experience, App Factory Error Diagnostic Persistence & Resumption, Multi-Provider High-Context Cascade, Intent Parsing.
+- Predicate moved:
+  - Live L3 full trace thinking and provider status now hold and render in the transcript viewport above the command line without being cut off.
+  - `/factory run` failure transparency: never stops silently; captures exact failure cause and writes full diagnostic artifact with raw prompt, error, and L3 trace, with explicit instructions for `/factory answer` and `/factory resume`.
+  - `/factory resume` without argument automatically picks up the latest run; `/resume` directs to the latest factory run when no interrupt freeze exists.
+  - All active configured API keys (OpenRouter, DeepSeek, Gemini, OpenAI, Groq) participate in the candidate cascade order.
+  - High-context routing prioritizes providers with active keys.
+  - Explicit application names like `KryptonStore` are preserved rather than replaced by stop-word heuristics.
+- Verification: `bash scripts/backend-atom-contract-test.sh` passed (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`).
+- % delta: HOE CLI Viewport & Factory Reliability moved from PARTIAL to GREEN; overall estimate unchanged.
+- Why justified: Eliminates silent execution stops, guarantees persistent run diagnostics for every stopped run, fixes viewport scrolling math, exhausts all configured provider keys, and ensures seamless resumption.
+- Fingerprints: Verified across 10 touched paths.

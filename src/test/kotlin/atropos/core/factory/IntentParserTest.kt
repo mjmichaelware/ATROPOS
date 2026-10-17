@@ -29,4 +29,10 @@ class IntentParserTest {
         assertTrue("web" !in web.features)
         assertTrue("api" !in service.features)
     }
+
+    @Test
+    fun extracts_explicit_project_name_when_provided() {
+        val intent = parser.parse("Build a distributed Raft store named 'KryptonStore'")
+        assertEquals("kryptonstore", intent.name)
+    }
 }
