@@ -16181,7 +16181,8 @@ End of AGENTS.md
   - `src/main/kotlin/atropos/cli/ui/SettingsModalRenderer.kt` (new, 106 lines / interactive settings modal with beautiful box framing and live option cycling)
   - `src/main/kotlin/atropos/cli/ui/CliModalStateMachine.kt` (+42 lines, 344 lines total / added ModalType.SETTINGS, live key handling for ArrowUp/Down/Left/Right/Enter/Escape, auto-trigger for /settings and /config)
   - `src/main/kotlin/atropos/cli/ui/QuestionMarkModalRenderer.kt` (+24 lines, 225 lines total / standardized 3-column modal and category definition mode on beautiful box framing with centered title, header chrome, and responsive inner padding)
-  - `src/main/kotlin/atropos/cli/CommandSecondaryDispatcher.kt` (+1 line, 390 lines total / wired SettingsModalRenderer for /config, /settings, and /system config)
+  - `src/main/kotlin/atropos/cli/ui/TerminalTheme.kt` (+1 line, 88 lines total / added default ConfigurationManager parameter to constructor)
+  - `src/main/kotlin/atropos/cli/CommandSecondaryDispatcher.kt` (+1 line, 389 lines total / wired SettingsModalRenderer for /config, /settings, and /system config)
   - `src/test/kotlin/atropos/cli/ui/CliModalStateMachineTest.kt` (new, 117 lines / comprehensive unit test suite covering auto-triggers, settings navigation, live option cycling, question mark view switching, and responsive rendering)
   - `src/test/kotlin/atropos/cli/GracefulDegradationTest.kt` (+11 lines, 123 lines total / added settings modal viewport degradation test across all responsive breakpoints)
 - Atoms / phases affected: HOE UI/UX Presentation, CLI/TUI Foundation, Settings Matrix Parity, Omni-Surface Unification.
@@ -16193,9 +16194,10 @@ End of AGENTS.md
 - Why the delta is justified: Seamless, beautiful, device-agnostic modal navigation and settings management fully wired into interactive runner with comprehensive unit tests and zero compiler stubs.
 - % delta: HOE Presentation complete (100%), Omni-Surface Unified.
 - Fingerprints (sha256):
-  - `CommandSecondaryDispatcher.kt=fa7db3a0f348b619b92bdbddd654a9a99ef92477d77da4f3c9a4d0bb856ddcc4`
+  - `CommandSecondaryDispatcher.kt=581401e21c2e4a2e848b7aff9467b9178ee058261593b65c80df1a70483b621e`
   - `CliModalStateMachine.kt=c19d2ed07dc46fe7ec5c7d46e574540e477225ee8e404edf923018427d866315`
   - `QuestionMarkModalRenderer.kt=4f84cb5690bf1f7f6fbd7c086dccff4fef5a0ca6bb01cd13d819d3f1e09a6446`
   - `SettingsModalRenderer.kt=f6d8bf0fbbcd058f26d969fa7c7463d2cfd422b6f240e4cf9ceea23994171712`
+  - `TerminalTheme.kt=a8063564f97c28ded619ea7038bc7cbc6c914227323afe90472c66e823a4a30d`
   - `CliModalStateMachineTest.kt=6bbf79bab48922c84618ee6762f9f42df9e4807ff54deab5091dc4b381b4b39b`
   - `GracefulDegradationTest.kt=420762e1e70b134568d7bec03501a53656c52d39e8f71f158e5f676fcbce662b`

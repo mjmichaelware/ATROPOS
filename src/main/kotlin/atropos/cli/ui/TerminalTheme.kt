@@ -21,7 +21,7 @@ import atropos.core.observability.AccessibilitySettings
  * prefer [surface] and [paint] directly.
  */
 class TerminalTheme(
-    private val capabilities: ConfigurationManager,
+    private val capabilities: ConfigurationManager = ConfigurationManager(),
     /**
      * Re-resolved per instance from [ThemePreference], so a theme chosen with
      * `/theme` applies to renderers built after it without a restart, and
