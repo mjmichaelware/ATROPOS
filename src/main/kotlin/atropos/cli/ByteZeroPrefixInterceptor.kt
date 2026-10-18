@@ -39,15 +39,16 @@ object ByteZeroPrefixInterceptor {
 
         when (trimmed[0]) {
             '$' -> {
+                val tokens = tracker.estimatedTokens.toLong()
                 val metrics = CostPeekModalRenderer.CostMetrics(
-                    totalTokensUsed = tracker.sessionTokens(),
-                    promptTokens = tracker.sessionPromptTokens(),
-                    completionTokens = tracker.sessionCompletionTokens(),
+                    totalTokensUsed = tokens,
+                    promptTokens = tokens,
+                    completionTokens = 0L,
                     providerName = currentProviderName(),
                     requestsRemainingMinute = 60,
                     tokensRemainingMinute = 100_000,
                     costClass = "FREE_LOCAL",
-                    estimatedCostUsd = tracker.sessionTokens() * 0.000002
+                    estimatedCostUsd = tracker.estimatedCostUsd()
                 )
                 uiEngine.renderBlock(CostPeekModalRenderer(theme).render(metrics, uiEngine.viewportWidth))
                 return RouterOutcome.CONTINUE

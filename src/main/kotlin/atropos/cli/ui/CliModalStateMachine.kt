@@ -95,7 +95,7 @@ class CliModalStateMachine(
         if (!isModalActive()) return ModalOutcome.None
 
         when (key) {
-            KeyEvent.Esc -> {
+            KeyEvent.Escape -> {
                 dismiss()
                 return ModalOutcome.Dismiss
             }
@@ -114,7 +114,7 @@ class CliModalStateMachine(
                 }
             }
 
-            KeyEvent.Left -> {
+            KeyEvent.ArrowLeft -> {
                 when (activeModal) {
                     ModalType.QUESTION_MARK -> {
                         if (questionIsExpanded) {
@@ -145,7 +145,7 @@ class CliModalStateMachine(
                 }
             }
 
-            KeyEvent.Right -> {
+            KeyEvent.ArrowRight -> {
                 when (activeModal) {
                     ModalType.QUESTION_MARK -> {
                         if (questionActiveView == ActiveView.COMMANDS) {
@@ -179,7 +179,7 @@ class CliModalStateMachine(
                 }
             }
 
-            KeyEvent.Up -> {
+            KeyEvent.ArrowUp -> {
                 when (activeModal) {
                     ModalType.QUESTION_MARK -> {
                         questionSelectedIndex = (questionSelectedIndex - 1).coerceAtLeast(0)
@@ -201,7 +201,7 @@ class CliModalStateMachine(
                 }
             }
 
-            KeyEvent.Down -> {
+            KeyEvent.ArrowDown -> {
                 when (activeModal) {
                     ModalType.QUESTION_MARK -> {
                         questionSelectedIndex = questionSelectedIndex + 1
