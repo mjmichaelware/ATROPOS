@@ -227,7 +227,15 @@ class AppFactoryRouter(
         executeWave: (List<atropos.core.dag.DagNode>) -> Set<String>
     ): FactoryLoopResult {
         val handoff = FactoryRunHandoff.read(repoRoot, runId)
-        return FactoryObligationLoop(DagStore(repoRoot)).resume(handoff, freeze, executeWave)
+        val repairRouter = FactoryRepairRouter(repoRoot, DagStore(repoRoot), memory)
+        return FactoryObligationLoop(DagStore(repoRoot)).resume(
+            handoff = handoff,
+            freeze = freeze,
+            repairHandler = { dagId, failedNode, errorLog, attempt ->
+                repairRouter.repair(dagId, failedNode, errorLog, attempt)
+            },
+            executeWave = executeWave
+        )
     }
 
     fun runClarified(projectId: String, answers: List<Boolean>): FactoryPlan {

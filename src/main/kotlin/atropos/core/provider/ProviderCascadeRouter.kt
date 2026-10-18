@@ -322,7 +322,7 @@ class ProviderCascadeRouter(
         if (!providerOrderOverride.isNullOrEmpty()) {
             return providerOrderOverride.map { it.trim().lowercase() }
                 .filter { it.isNotBlank() }
-                .filter { !localOnly() }
+                .filter { !localOnly() || it == "ollama" }
                 .filter { !ModelDiscoveryEngine.isPruned(it) }
                 .distinct()
                 .let { ProviderCascadeOrder.order(it, registry, allowPaidProvider, paidGate) }
@@ -340,7 +340,7 @@ class ProviderCascadeRouter(
         return ProviderCascadeOrder.order(
             (listOf(requestedProvider.lowercase()) + configured + activeKeyProviders)
                 .filter { registry.getById(it) != null }
-                .filter { !localOnly() }
+                .filter { !localOnly() || it == "ollama" }
                 .filter { !ModelDiscoveryEngine.isPruned(it) }
                 .distinct(),
             registry,

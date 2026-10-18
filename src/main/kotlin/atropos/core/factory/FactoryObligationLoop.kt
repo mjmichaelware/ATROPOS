@@ -76,8 +76,16 @@ class FactoryObligationLoop(
         dagId: String,
         freeze: FactoryAcceptanceFreeze,
         executeWave: (List<atropos.core.dag.DagNode>) -> Set<String>
+    ): FactoryLoopResult = executeUntilSettled(dagId, freeze, null, executeWave)
+
+    fun executeUntilSettled(
+        dagId: String,
+        freeze: FactoryAcceptanceFreeze,
+        repairHandler: ((dagId: String, failedNode: DagNode, errorLog: String, attempt: Int) -> RepairAtomResult)?,
+        executeWave: (List<atropos.core.dag.DagNode>) -> Set<String>
     ): FactoryLoopResult {
         var waves = 0
+        var repairWaves = 0
         while (true) {
             val dag = dagStore.readDag(dagId) ?: return FactoryLoopResult(
                 FactoryObligationSnapshot(0, emptyList(), emptyList(), emptyList(), emptyList(), "DAG missing during resume"),
@@ -87,6 +95,24 @@ class FactoryObligationLoop(
             val current = snapshot(dag)
             if (current.openWork == 0) return FactoryLoopResult(current, waves, "open_work=0")
             if (current.blockedAtomIds.isNotEmpty() || current.failedAtomIds.isNotEmpty()) {
+                val failedNodes = dag.nodes.filter { it.state == DagNodeState.FAILED }
+                if (failedNodes.isNotEmpty() && repairHandler != null && repairWaves < budget.maxRepairWaves) {
+                    val target = failedNodes.first()
+                    val errorLog = target.result ?: target.failureReason ?: "verification failed"
+                    repairWaves++
+                    val repairResult = repairHandler(dagId, target, errorLog, repairWaves)
+                    if (repairResult.success) {
+                        dagStore.writeNode(target.copy(
+                            state = DagNodeState.READY,
+                            attempts = target.attempts + 1,
+                            result = null,
+                            failureReason = null,
+                            updatedAt = Instant.now()
+                        ))
+                        waves++
+                        continue
+                    }
+                }
                 return FactoryLoopResult(current, waves, "blocked_or_failed_atoms")
             }
             if (waves >= budget.maxExecutionWaves) {
@@ -95,7 +121,28 @@ class FactoryObligationLoop(
             val ready = dag.findReadyNodes()
             if (ready.isEmpty()) return FactoryLoopResult(current.copy(stopReason = "open atoms are not runnable"), waves, "no_runnable_atoms")
             val completed = executeWave(ready)
-            require(completed.isNotEmpty()) { "factory wave executed without completing an atom" }
+            if (completed.isEmpty()) {
+                val refreshedDag = dagStore.readDag(dagId) ?: dag
+                val failedInWave = refreshedDag.nodes.firstOrNull { it.id in ready.map { r -> r.id } && (it.state == DagNodeState.FAILED || it.id !in completed) }
+                    ?: ready.first()
+                val errorLog = failedInWave.result ?: failedInWave.failureReason ?: "verification failed without output"
+                if (repairHandler != null && repairWaves < budget.maxRepairWaves) {
+                    repairWaves++
+                    val repairResult = repairHandler(dagId, failedInWave, errorLog, repairWaves)
+                    if (repairResult.success) {
+                        dagStore.writeNode(failedInWave.copy(
+                            state = DagNodeState.READY,
+                            attempts = failedInWave.attempts + 1,
+                            result = null,
+                            failureReason = null,
+                            updatedAt = Instant.now()
+                        ))
+                        waves++
+                        continue
+                    }
+                }
+                require(completed.isNotEmpty()) { "factory wave executed without completing an atom" }
+            }
             require(completed.all { id -> ready.any { it.id == id } }) { "factory wave completed an atom outside its runnable wave" }
             completed.forEach { id ->
                 val node = dag.findNode(id) ?: error("factory wave returned unknown atom=$id")
@@ -113,9 +160,16 @@ class FactoryObligationLoop(
         handoff: FactoryRunHandoffState,
         freeze: FactoryAcceptanceFreeze,
         executeWave: (List<atropos.core.dag.DagNode>) -> Set<String>
+    ): FactoryLoopResult = resume(handoff, freeze, null, executeWave)
+
+    fun resume(
+        handoff: FactoryRunHandoffState,
+        freeze: FactoryAcceptanceFreeze,
+        repairHandler: ((dagId: String, failedNode: DagNode, errorLog: String, attempt: Int) -> RepairAtomResult)?,
+        executeWave: (List<atropos.core.dag.DagNode>) -> Set<String>
     ): FactoryLoopResult {
         require(handoff.acceptanceFreezeSha256 == freeze.sha256) { "resume acceptance freeze does not match handoff" }
-        return executeUntilSettled(handoff.dagId, freeze, executeWave)
+        return executeUntilSettled(handoff.dagId, freeze, repairHandler, executeWave)
     }
 
     fun recordRepairEvidence(

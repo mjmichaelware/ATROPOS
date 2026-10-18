@@ -15936,3 +15936,32 @@ End of AGENTS.md
   - `OpenAiCompatibleKernelAdapter.kt=b8b66b1b4084`
   - `OpenAiCompatibleProviderCatalog.kt=4075229551ff`
   - `ProviderImplementations.kt=d63bde6292a2`
+
+### 2026-10-18T06:20:00Z · Agent: Antigravity (agy, Advanced Agentic Coding) · Batch: restore-repair-atom-generation-on-test-gate-failure
+- Paths touched:
+  - `src/main/kotlin/atropos/core/factory/FactoryRepairRouter.kt` (+254 / new explicit repair router and typed RepairAtom lifecycle generator)
+  - `src/main/kotlin/atropos/core/factory/FactoryObligationLoop.kt` (+53 / wired repairHandler in executeUntilSettled and resume, preventing wave abort on verification failure)
+  - `src/main/kotlin/atropos/core/factory/AppFactoryRouter.kt` (+7 / wired FactoryRepairRouter into resume pipeline)
+  - `src/main/kotlin/atropos/core/orchestration/AutonomousWaveOrchestrator.kt` (+19 / routed test failure stack traces to FactoryRepairRouter across execute and resume)
+  - `src/main/kotlin/atropos/core/orchestration/WaveBatchExecutionCoordinator.kt` (+7 / recorded FAILED node state and diagnostic output in dagStore on verification failure)
+  - `src/main/kotlin/atropos/core/provider/ModelDiscoveryEngine.kt` (+23 / added hasCredentials safeguard ensuring providers with active API keys are not erroneously pruned)
+  - `src/main/kotlin/atropos/core/provider/ProviderCascadeRouter.kt` (+2 / preserved local and active credentialed providers in cascade order)
+  - `docs/PROGRESS_LEDGER.md` (appended batch record)
+- Atoms / phases affected: Phase 19 App Factory (FTY-03, FTY-05), Phase 2 Provider Transport & Dynamic Routing.
+- Predicate moved:
+  - Restored explicit `RepairAtom` generation on DAG verification failure (e.g. Python test suite returning exit code 1), eliminating premature `IllegalArgumentException: factory wave executed without completing an atom`.
+  - Routed stack traces and error logs directly to the active verified provider (e.g. Groq) via `FactoryRepairRouter` to generate and apply code patches.
+  - Ensured provider interception logic in `ModelDiscoveryEngine` does not swallow or bypass repair wave generation when valid provider credentials exist.
+  - Preserved existing contract behavior: empty wave runs without repair handlers continue to fail closed per `FactoryObligationLoopTest`.
+  - All modified/created Kotlin files strictly adhere to the <= 500 LOC invariant.
+- Why the delta is justified: Closed the fatal repair collapse at DAG Node 24 by restoring typed RepairAtom spawning, full error diagnostic routing to the LLM provider, and automated patching before wave re-verification.
+- % delta: Phase 19 (App Factory) 55% -> 70% (+15). Overall baseline recalculated accordingly.
+- Fingerprints:
+  - `FactoryRepairRouter.kt=cde64ec1e3da`
+  - `FactoryObligationLoop.kt=12a12ba80784`
+  - `AppFactoryRouter.kt=64cb99b369ab`
+  - `AutonomousWaveOrchestrator.kt=aa5e15b103e4`
+  - `WaveBatchExecutionCoordinator.kt=b68d2e613c52`
+  - `ModelDiscoveryEngine.kt=0faf74b4f0d1`
+  - `ProviderCascadeRouter.kt=76f9f62c6ceb`
+

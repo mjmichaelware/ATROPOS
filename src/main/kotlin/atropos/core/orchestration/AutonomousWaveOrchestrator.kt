@@ -273,7 +273,20 @@ class AutonomousWaveOrchestrator(
             waveBatchCoordinator.executeWaveBatch(readyNodes, request, freeze)
         }
 
-        val loopResult = obligationLoop.executeUntilSettled(createdDag.id, freeze, executeWave)
+        val repairRouter = atropos.core.factory.FactoryRepairRouter(
+            repoRoot = repoRoot,
+            dagStore = dagStore,
+            memoryStore = memoryStore
+        )
+
+        val loopResult = obligationLoop.executeUntilSettled(
+            dagId = createdDag.id,
+            freeze = freeze,
+            repairHandler = { dagId, failedNode, errorLog, attempt ->
+                repairRouter.repair(dagId, failedNode, errorLog, attempt, request.targetDirectory)
+            },
+            executeWave = executeWave
+        )
 
         val finalDag = dagStore.readDag(createdDag.id)
         val result = if (finalDag != null) {
@@ -348,9 +361,16 @@ class AutonomousWaveOrchestrator(
             maxExecutionWaves = request.budget.maxExecutionWaves
         ))
 
-        val loopResult = obligationLoop.executeUntilSettled(dagId, freeze) { readyNodes ->
-            waveBatchCoordinator.executeWaveBatch(readyNodes, request, freeze)
-        }
+        val loopResult = obligationLoop.executeUntilSettled(
+            dagId = dagId,
+            freeze = freeze,
+            repairHandler = { dId, failedNode, errorLog, attempt ->
+                repairRouter.repair(dId, failedNode, errorLog, attempt, request.targetDirectory)
+            },
+            executeWave = { readyNodes ->
+                waveBatchCoordinator.executeWaveBatch(readyNodes, request, freeze)
+            }
+        )
 
         val finalDag = dagStore.readDag(dagId)
         val result = if (finalDag != null) {

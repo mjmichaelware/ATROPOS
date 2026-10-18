@@ -56,8 +56,14 @@ object ModelDiscoveryEngine {
         "qwen" to listOf("Qwen/Qwen2.5-72B-Instruct", "Qwen/Qwen2.5-7B-Instruct", "qwen-2.5-72b-instruct")
     )
 
-    fun isPruned(providerId: String): Boolean =
-        prunedProviders.contains(providerId.trim().lowercase(Locale.US))
+    fun isPruned(providerId: String): Boolean {
+        val clean = providerId.trim().lowercase(Locale.US)
+        if (clean.isBlank()) return false
+        if (hasCredentials(clean)) {
+            return false
+        }
+        return prunedProviders.contains(clean)
+    }
 
     fun pruneReason(providerId: String): String? =
         pruneReasons[providerId.trim().lowercase(Locale.US)]
@@ -84,13 +90,31 @@ object ModelDiscoveryEngine {
     fun filterActiveCascade(candidates: List<String>): List<String> =
         candidates.filterNot { isPruned(it) }
 
+    fun hasCredentials(providerId: String): Boolean {
+        val clean = providerId.trim().lowercase(Locale.US)
+        val spec = OpenAiCompatibleProviderCatalog.get(clean)
+        val envKey = spec?.apiKeyEnv
+        if (envKey != null && !resolveKey(clean, envKey).isNullOrBlank()) {
+            return true
+        }
+        return FallbackChainRegistry.getActiveKey(clean) != null ||
+            !resolveKey(clean, "${clean.uppercase(Locale.US)}_API_KEY").isNullOrBlank()
+    }
+
     fun resolveActiveProvider(defaultProvider: String): String {
         val cleanDefault = defaultProvider.trim().lowercase(Locale.US)
-        if (!isPruned(cleanDefault) && hasDiscoveredModels(cleanDefault)) {
+        if (cleanDefault.isNotBlank() && cleanDefault != "default" && hasCredentials(cleanDefault)) {
             return cleanDefault
         }
-        val healthy = discoveredModels.keys().toList().filterNot { isPruned(it) }
-        return healthy.firstOrNull() ?: cleanDefault
+        val healthy = discoveredModels.keys().toList().filterNot { prunedProviders.contains(it) }
+        if (healthy.isNotEmpty()) {
+            return healthy.first()
+        }
+        val preferred = listOf("groq", "openai", "anthropic", "together_ai", "cerebras", "deepseek", "mistral", "ollama")
+        for (cand in preferred) {
+            if (hasCredentials(cand)) return cand
+        }
+        return if (cleanDefault.isNotBlank()) cleanDefault else "groq"
     }
 
     fun ensureDiscovered(timeoutMs: Long = 3000L) {

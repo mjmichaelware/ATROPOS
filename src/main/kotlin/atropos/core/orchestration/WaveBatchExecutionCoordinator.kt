@@ -171,6 +171,13 @@ class WaveBatchExecutionCoordinator(
                         completedNodeIds.remove(node.id)
                     }
                 }
+            } else {
+                dagStore.writeNode(node.copy(
+                    state = DagNodeState.FAILED,
+                    result = nodeResult.result ?: nodeResult.message,
+                    failureReason = nodeResult.message,
+                    finishedAt = Instant.now()
+                ))
             }
 
             activeWorktrees.remove(record.jobId)
@@ -232,7 +239,8 @@ class WaveBatchExecutionCoordinator(
                             nodeId = node.id,
                             state = DagNodeState.FAILED,
                             ok = false,
-                            message = "sandboxed verification failed: ${execResult.message}"
+                            message = "sandboxed verification failed: ${execResult.message}",
+                            result = execResult.result ?: execResult.message
                         )
                     }
                 }
