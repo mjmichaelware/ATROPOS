@@ -282,7 +282,7 @@ class AutonomousWaveOrchestrator(
         val loopResult = obligationLoop.executeUntilSettled(
             dagId = createdDag.id,
             freeze = freeze,
-            repairHandler = { dagId, failedNode, errorLog, attempt ->
+            repairHandler = { dagId: String, failedNode: DagNode, errorLog: String, attempt: Int ->
                 repairRouter.repair(dagId, failedNode, errorLog, attempt, request.targetDirectory)
             },
             executeWave = executeWave
@@ -361,10 +361,16 @@ class AutonomousWaveOrchestrator(
             maxExecutionWaves = request.budget.maxExecutionWaves
         ))
 
+        val repairRouter = atropos.core.factory.FactoryRepairRouter(
+            repoRoot = repoRoot,
+            dagStore = dagStore,
+            memoryStore = memoryStore
+        )
+
         val loopResult = obligationLoop.executeUntilSettled(
             dagId = dagId,
             freeze = freeze,
-            repairHandler = { dId, failedNode, errorLog, attempt ->
+            repairHandler = { dId: String, failedNode: DagNode, errorLog: String, attempt: Int ->
                 repairRouter.repair(dId, failedNode, errorLog, attempt, request.targetDirectory)
             },
             executeWave = { readyNodes ->

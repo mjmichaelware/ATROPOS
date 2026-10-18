@@ -231,7 +231,7 @@ class AppFactoryRouter(
         return FactoryObligationLoop(DagStore(repoRoot)).resume(
             handoff = handoff,
             freeze = freeze,
-            repairHandler = { dagId, failedNode, errorLog, attempt ->
+            repairHandler = { dagId: String, failedNode: atropos.core.dag.DagNode, errorLog: String, attempt: Int ->
                 repairRouter.repair(dagId, failedNode, errorLog, attempt)
             },
             executeWave = executeWave

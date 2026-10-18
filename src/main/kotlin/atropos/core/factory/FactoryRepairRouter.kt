@@ -8,12 +8,8 @@ import atropos.core.dag.DagNodeAction
 import atropos.core.dag.DagNodeState
 import atropos.core.dag.DagStore
 import atropos.core.memory.LocalMemoryStore
-import atropos.core.provider.EmergencyPaidGate
 import atropos.core.provider.ModelDiscoveryEngine
-import atropos.core.provider.OllamaHealthProbe
 import atropos.core.provider.ProviderCascadeRouter
-import atropos.core.provider.ProviderFailureClassifier
-import atropos.core.provider.StaticProviderDescriptorRegistry
 import atropos.core.thinking.Thinking
 import java.nio.file.Files
 import java.nio.file.Path
@@ -76,12 +72,7 @@ class FactoryRepairRouter(
     private val dagStore: DagStore,
     private val memoryStore: LocalMemoryStore? = null,
     private val cascadeRouter: ProviderCascadeRouter = ProviderCascadeRouter(
-        factory = ProviderFactory({ AtroposConfig.load() }),
-        classifier = ProviderFailureClassifier(),
-        registry = StaticProviderDescriptorRegistry(),
-        localHealth = { OllamaHealthProbe().probe().online },
-        localOnly = { AtroposConfig.load().runtime.localOnly },
-        paidGate = EmergencyPaidGate()
+        factory = ProviderFactory()
     )
 ) {
     fun repair(

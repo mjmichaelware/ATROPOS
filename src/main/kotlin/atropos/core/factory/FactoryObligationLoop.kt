@@ -2,6 +2,7 @@
 package atropos.core.factory
 
 import atropos.core.dag.DagDefinition
+import atropos.core.dag.DagNode
 import atropos.core.dag.DagNodeState
 import atropos.core.dag.DagStore
 import java.time.Instant
