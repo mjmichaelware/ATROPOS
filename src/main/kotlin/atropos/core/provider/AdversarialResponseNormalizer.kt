@@ -111,7 +111,7 @@ class AdversarialResponseNormalizer(
         if (files.isEmpty() && (trimmed.contains("diff --git ") || (trimmed.contains("--- a/") && trimmed.contains("+++ b/")))) {
             val diffTarget = extractPathFromDiff(trimmed)
             if (diffTarget.isNotBlank()) {
-                files.add(ExtractedPatchFile(diffTarget, trimmed, isDiff = true))
+                files.add(ExtractedPatchFile(diffTarget, trimmed, isUnifiedDiff = true))
             }
         }
 

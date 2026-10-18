@@ -16164,12 +16164,12 @@ End of AGENTS.md
 - Fingerprints (sha256):
   - `ByteZeroPrefixInterceptor.kt=b438357a5a629091871585abc3d1d2f8508a1766cb07e7042dcac18d45aee917`
   - `CommandRouter.kt=0a4aecc02a0f78f50710bfe711ece9dd548aea3b32f85b4bfcf9ffdee150323f`
-  - `FactoryRepairRouter.kt=587696c5fef6a3cc63f44ba68c47c136a5a64b0f95ec13ad7a1bdaab8f31e56c`
+  - `FactoryRepairRouter.kt=fec2ae02ffd8c24a99badf8fdb19f05d225f8b523c03af7f6591c9955b121beb`
   - `SelfBuildValidationRule.kt=119c2d1fc00241ec963b567ff6d2aad1af2d34a103426782e8e71779c2b8f60c`
   - `ProviderCascadeRouter.kt=dba25cc0406006e4348c7e3d4aeef0c59b60a0b0ef4af03e5820090a990a30f5`
   - `ProviderDopamineRewardTracker.kt=577ae349aa105cf5b6b4dd7aac1d0395d91b04f0959930fa6c45976b9f61171c`
   - `Phase20StructuralMetaAdapter.kt=6b6e0b1f2589b5ac53473c8bb6c4e2bfb619eb699324c0c58c664ba1c3577e7d`
-  - `AdversarialResponseNormalizer.kt=0aecb01e1b4d6eb7f0451ea60a19c4f7f441bc1bbc9219bc7192f9dcb9aeeaa9`
+  - `AdversarialResponseNormalizer.kt=72978777c774e93a053e9c60bf1b580ace83e3bb2a4ed30f56c74bad44996e2d`
   - `ProviderFailureMemoryStore.kt=bce974e3a208cb83ede4a55ed07f581198953f429ecb8a04631a175250910b63`
   - `ProviderDopamineRewardTrackerTest.kt=b5dd1e7b1a487037bfa0fc4c04236c0ea642aff9e722e89b663e750bce04ac79`
   - `Phase20StructuralMetaAdapterTest.kt=8290cb378a58735de1d1893f7ba3ce2d9399ed864d58ec6b72a32eb7d11e5785`

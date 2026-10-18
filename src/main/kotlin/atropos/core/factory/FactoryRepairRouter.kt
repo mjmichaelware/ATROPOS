@@ -10,6 +10,9 @@ import atropos.core.dag.DagStore
 import atropos.core.memory.LocalMemoryStore
 import atropos.core.provider.ModelDiscoveryEngine
 import atropos.core.provider.ProviderCascadeRouter
+import atropos.core.dopamine.ProviderDopamineRewardTracker
+import atropos.core.provider.AdversarialResponseNormalizer
+import atropos.core.provider.PatchApplicationResult
 import atropos.core.thinking.Thinking
 import java.nio.file.Files
 import java.nio.file.Path
@@ -67,9 +70,6 @@ data class RepairAtomResult(
  * Routes verification errors and stack traces through the active LLM provider cascade
  * to spawn RepairAtoms and patch the project filesystem.
  */
-import atropos.core.dopamine.ProviderDopamineRewardTracker
-import atropos.core.provider.AdversarialResponseNormalizer
-import atropos.core.provider.PatchApplicationResult
 
 class FactoryRepairRouter(
     private val repoRoot: Path,
