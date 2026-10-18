@@ -39,27 +39,34 @@ class SpinnerEngine(
         stop()
         message.set(value)
 
+        val config = runCatching { atropos.core.config.AtroposUnifiedConfig.load() }.getOrNull()
+        val speed = config?.get("Animation_Speed")?.lowercase() ?: "fast"
+
+        // Reduced-motion respect: if 'off' or 'instant', do not animate; render static frame once
+        if (speed == "off" || speed == "instant") {
+            val note = runCatching(annotate).getOrDefault("")
+            val line = if (note.isBlank()) value else "$value  ·  $note"
+            runCatching { renderer("• $line") }
+            return
+        }
+
+        val intervalMillis = when (speed) {
+            "fast" -> 40L
+            "medium" -> 120L
+            else -> 80L
+        }
+
         var frame = 0
         task = executor.scheduleAtFixedRate({
-            // Guarded, because scheduleAtFixedRate cancels the schedule
-            // permanently and silently the first time its task throws. One
-            // exception anywhere under renderer() — a layout arithmetic slip,
-            // a resize mid-frame — and the spinner drew exactly one frame and
-            // then sat there forever. The operator sees a thinking indicator
-            // that never moves and no error explaining why, which is the worst
-            // of both: it looks alive and it is not.
             val current = message.get() ?: return@scheduleAtFixedRate
             try {
                 val note = runCatching(annotate).getOrDefault("")
                 val line = if (note.isBlank()) current else "$current  ·  $note"
                 renderer(thinkingBuffer.render(frame, line))
             } catch (_: Throwable) {
-                // Dropped on purpose. A frame that cannot be drawn is not
-                // worth ending the animation over, and there is nowhere to
-                // report it from here that would not itself be a render.
             }
             frame++
-        }, 0, FRAME_INTERVAL_MILLIS, TimeUnit.MILLISECONDS)
+        }, 0, intervalMillis, TimeUnit.MILLISECONDS)
     }
 
     fun update(value: String) {

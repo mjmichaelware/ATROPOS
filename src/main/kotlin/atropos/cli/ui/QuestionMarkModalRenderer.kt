@@ -21,6 +21,7 @@ class QuestionMarkModalRenderer(
     }
 
     private val taxonomy = HierarchicalCommandTaxonomy()
+    private val mostUsedHeaderRenderer = MostUsedHeaderRenderer(theme)
 
     fun render(
         activeView: ActiveView,
@@ -30,7 +31,8 @@ class QuestionMarkModalRenderer(
         conversationHash: String = "0x8f2a...c319",
         version: String = "10.0.1",
         branch: String = "main",
-        provider: String = "gemini-2.5-pro"
+        provider: String = "gemini-2.5-pro",
+        isLeafExpanded: Boolean = false
     ): List<String> {
         val safeWidth = width.coerceAtLeast(60)
         val lines = mutableListOf<String>()
@@ -51,36 +53,48 @@ class QuestionMarkModalRenderer(
 
         when (activeView) {
             ActiveView.SHORTCUTS -> renderShortcuts(lines, selectedIndex, safeWidth)
-            ActiveView.COMMANDS -> renderCommands(lines, selectedIndex, safeWidth)
+            ActiveView.COMMANDS -> renderCommands(lines, selectedIndex, safeWidth, isLeafExpanded)
             ActiveView.GENERAL_INFO -> renderGeneralInfo(lines, safeWidth, project, conversationHash, version, branch, provider)
         }
 
         lines.add(theme.subdued("  " + "─".repeat((safeWidth - 4).coerceAtLeast(10))))
-        val navKey = "Keyboard: ↑/↓ Navigate  ←/→ Switch View  enter Select  esc Close"
+        val navKey = "Keyboard: ↑/↓ Navigate  ←/→ Switch View/Expand  enter Select  esc Close"
         lines.add(theme.paint(Role.TEXT_MUTED, "  $navKey"))
         return lines
     }
 
-    fun renderCategoryDefinitions(categoryQuery: String = "", width: Int): List<String> {
-        val safeWidth = width.coerceAtLeast(40)
+    fun renderCategoryDefinitions(categoryQuery: String = "", selectedIndex: Int = 0, width: Int = 80): List<String> {
+        val safeWidth = width.coerceAtLeast(50)
         val lines = mutableListOf<String>()
+
         lines.add(theme.paint(Role.BRAND, " ATROPOS — Category Definition Mode (/?) "))
         lines.add(theme.subdued("  " + "─".repeat((safeWidth - 4).coerceAtLeast(10))))
 
         val nodes = taxonomy.stepInto(listOf(categoryQuery).filter { it.isNotBlank() })
-        if (nodes.isEmpty()) {
-            taxonomy.root.forEach { (name, node) ->
-                lines.add("  " + theme.paint(Role.ACCENT_FOCUS, name.uppercase().padEnd(14)) + theme.strong(node.description))
+        if (nodes.isEmpty() || categoryQuery.isBlank()) {
+            val rootEntries = taxonomy.root.entries.sortedBy { it.key }
+            rootEntries.forEachIndexed { index, (name, node) ->
+                val isSelected = index == selectedIndex
+                val cursor = if (isSelected) "❯ " else "  "
+                val catStyled = if (isSelected) theme.paint(Role.ACCENT_FOCUS, name.uppercase().padEnd(16)) else theme.paint(Role.TEXT_PRIMARY, name.uppercase().padEnd(16))
+                val actionsCount = "[${node.children.size} actions]"
+                val desc = "${node.description} $actionsCount"
+                val descStyled = if (isSelected) theme.strong(desc) else theme.subdued(desc)
+                lines.add(TerminalText.ellipsize("$cursor$catStyled $descStyled", safeWidth))
             }
         } else {
-            nodes.forEach { node ->
+            nodes.forEachIndexed { index, node ->
+                val isSelected = index == selectedIndex
+                val cursor = if (isSelected) "❯ " else "  "
+                val tokStyled = if (isSelected) theme.paint(Role.ACCENT_FOCUS, node.token.padEnd(16)) else theme.paint(Role.TEXT_PRIMARY, node.token.padEnd(16))
                 val desc = node.leafResolution ?: node.description
-                lines.add("  " + theme.paint(Role.ACCENT_FOCUS, node.token.padEnd(14)) + theme.strong(desc))
+                val descStyled = if (isSelected) theme.strong(desc) else theme.subdued(desc)
+                lines.add(TerminalText.ellipsize("$cursor$tokStyled $descStyled", safeWidth))
             }
         }
 
         lines.add(theme.subdued("  " + "─".repeat((safeWidth - 4).coerceAtLeast(10))))
-        lines.add(theme.paint(Role.TEXT_MUTED, "  Arrow Right to step into category | esc to return"))
+        lines.add(theme.paint(Role.TEXT_MUTED, "  Keyboard: ↑/↓ Navigate  enter Step into  esc Return"))
         return lines
     }
 
@@ -126,7 +140,7 @@ class QuestionMarkModalRenderer(
         }
     }
 
-    private fun renderCommands(lines: MutableList<String>, selectedIndex: Int, safeWidth: Int) {
+    private fun renderCommands(lines: MutableList<String>, selectedIndex: Int, safeWidth: Int, isLeafExpanded: Boolean = false) {
         val commands = listOf(
             "/agent" to "Autonomous agent lifecycle and parallel dispatch",
             "/repo" to "CAS-backed repository inspection and atomic mutation",
@@ -136,14 +150,24 @@ class QuestionMarkModalRenderer(
             "/session" to "Context compact, transcript export, and web teleport",
             "/system" to "Theme selection, verbosity levels, aliases, and config",
             "/verify" to "Deterministic verification gate and test suite runner",
-            "/help" to "Hierarchical command taxonomy and interactive guides"
+            "/help" to "Hierarchical command taxonomy and interactive guides",
+            "/plan" to "Read-only plan mode without filesystem mutations",
+            "/architect" to "2-model planner gate: plan vs verify",
+            "/goal" to "Set long-horizon target and autonomous goal bounds",
+            "/compact" to "LLM context reduction and context window pruning",
+            "/batch" to "Schedule parallel wave lanes with disjoint locks",
+            "/simplify" to "Refactor AST for complexity reduction",
+            "/map" to "Semantic repository map across AST symbol lattices",
+            "/lint" to "Execute syntax and AST linters emitting diagnostic vectors"
         )
 
-        commands.forEachIndexed { index, (cmd, desc) ->
-            val prefix = if (index == selectedIndex) "❯ " else "  "
-            val cmdStyled = theme.paint(Role.ACCENT_FOCUS, cmd.padEnd(16))
-            val descStyled = if (index == selectedIndex) theme.paint(Role.TEXT_PRIMARY, desc) else theme.subdued(desc)
-            lines.add(TerminalText.ellipsize("$prefix$cmdStyled $descStyled", safeWidth))
+        val rendered = mostUsedHeaderRenderer.render(commands, selectedIndex, safeWidth)
+        lines.addAll(rendered)
+
+        if (isLeafExpanded && selectedIndex in commands.indices) {
+            val selectedCmd = commands[selectedIndex].first
+            val leaf = atropos.cli.help.CommandLeafRegistry.getOrDefault(selectedCmd, commands[selectedIndex].second)
+            lines.addAll(atropos.cli.help.CommandLeafRegistry.render(leaf, isExpanded = true, theme = theme, width = safeWidth))
         }
     }
 

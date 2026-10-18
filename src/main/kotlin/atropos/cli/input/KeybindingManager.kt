@@ -55,6 +55,12 @@ class KeybindingManager(
             ShortcutDefinition("f12", "TELEPORT", "Bind terminal to Web Cockpit socket mirror")
         )
 
+        val RESERVED_PREFIXES: Set<String> = setOf("#", "@", "/", "?", "!", "+", "$")
+        val RESERVED_MACROS: Set<String> = setOf(
+            "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12",
+            "ESC", "TAB", "ENTER", "UP", "DOWN", "LEFT", "RIGHT"
+        )
+
         fun keybindingsFile(): File {
             val home = System.getProperty("user.home") ?: "."
             val dir = File(home, ".atropos")
@@ -63,26 +69,75 @@ class KeybindingManager(
         }
     }
 
+    private val memoryLattice = atropos.core.memory.MemoryLayerLattice()
+
     init {
         loadCustomBindings()
     }
 
-    fun bind(shortcutString: String, targetAction: String): Boolean {
+    sealed class BindResult {
+        data class Success(val macro: String, val action: String) : BindResult()
+        data class Collision(val macro: String, val reason: String) : BindResult()
+        data class Invalid(val reason: String) : BindResult()
+    }
+
+    fun bind(shortcutString: String, targetAction: String, force: Boolean = false): Boolean {
+        return when (bindWithResult(shortcutString, targetAction, force)) {
+            is BindResult.Success -> true
+            else -> false
+        }
+    }
+
+    fun bindWithResult(shortcutString: String, targetAction: String, force: Boolean = false): BindResult {
         val clean = shortcutString.trim().uppercase().removePrefix("#")
-        if (!clean.matches(Regex("[A-Z0-9_-]{1,16}"))) return false
+        if (!clean.matches(Regex("[A-Z0-9_-]{1,16}"))) {
+            return BindResult.Invalid("invalid macro key: must be 1-16 alphanumeric chars")
+        }
+        if (!force) {
+            if (clean in RESERVED_MACROS) {
+                return BindResult.Collision(clean, "collides with reserved hardware macro #$clean (confirmation required)")
+            }
+            if (RESERVED_PREFIXES.any { clean.startsWith(it) }) {
+                return BindResult.Collision(clean, "collides with reserved prefix character")
+            }
+        }
+        val before = macroEngine.resolveMacro("#$clean") ?: "none"
         macroEngine.registerMacro(clean, targetAction)
         saveCustomBindings()
-        return true
+        emitEvidenceReceipt("KEYBIND_MACRO_BOUND", clean, before, targetAction)
+        return BindResult.Success(clean, targetAction)
     }
 
     fun unbind(shortcutString: String): Boolean {
         val clean = shortcutString.trim().uppercase().removePrefix("#")
+        val before = macroEngine.resolveMacro("#$clean") ?: "none"
         val removed = macroEngine.removeMacro(clean)
-        if (removed) saveCustomBindings()
+        if (removed) {
+            saveCustomBindings()
+            emitEvidenceReceipt("KEYBIND_MACRO_UNBOUND", clean, before, "none")
+        }
         return removed
     }
 
     fun listBindings(): Map<String, String> = macroEngine.listMacros()
+
+    fun listAlphabetical(): List<Pair<String, String>> =
+        macroEngine.listMacros().entries.sortedBy { it.key }.map { it.key to it.value }
+
+    fun expand(macro: String): String? = macroEngine.resolveMacro(macro)
+
+    private fun emitEvidenceReceipt(action: String, macro: String, before: String, after: String) {
+        val timestamp = System.currentTimeMillis()
+        val payload = "$timestamp:$action:$macro:$before:$after"
+        val sha256 = atropos.core.memory.MemoryLayerLattice.sha256(payload)
+        val json = "{\"timestamp\":$timestamp,\"sha256\":\"$sha256\",\"action\":\"$action\"," +
+            "\"actor\":\"KeybindingManager\",\"surface\":\"CLI\",\"before\":\"$before\",\"after\":\"$after\"}"
+        memoryLattice.put(
+            layer = atropos.core.memory.MemoryLayerLattice.LayerType.EVIDENCE_LAYER,
+            key = "keybind_mutation_$timestamp",
+            content = json
+        )
+    }
 
     fun renderMenu(width: Int = 80): String {
         val sb = StringBuilder()

@@ -11,10 +11,31 @@ class ShellCommandHandler(
 ) {
     fun currentDirectory(): String = shellRunner.currentDirectory()
 
+    private val memoryLattice = atropos.core.memory.MemoryLayerLattice()
+
     fun bang(original: String): RouterOutcome {
         val command = original.trimStart().removePrefix("!").trim()
         if (command.isBlank()) {
             uiEngine.renderError("usage: !<command>")
+            return RouterOutcome.CONTINUE
+        }
+
+        val config = atropos.core.config.AtroposUnifiedConfig.load()
+        val permission = config.get("Tool_Permission")
+
+        // 1. Strict mode blocks all shell inject
+        if (permission.equals("strict", ignoreCase = true)) {
+            uiEngine.renderError("shell inject (!) blocked by Tool_Permission = strict policy gate")
+            emitPolicyReceipt("SHELL_INJECT_BLOCKED", command, "strict_policy")
+            return RouterOutcome.CONTINUE
+        }
+
+        // 2. High-risk command pattern gating
+        val dangerous = listOf("rm -rf", "sudo", "mkfs", "dd if=", ":(){ :|:& };:", "chmod -R 777")
+        val isDangerous = dangerous.any { command.contains(it) }
+        if (isDangerous) {
+            uiEngine.renderError("shell inject (!) refused: command matches dangerous destructive invariant")
+            emitPolicyReceipt("SHELL_INJECT_REFUSED_DANGEROUS", command, "high_risk_pattern")
             return RouterOutcome.CONTINUE
         }
 
@@ -24,10 +45,24 @@ class ShellCommandHandler(
                 RouterOutcome.CONTINUE
             }
             is LexResult.Success -> {
+                emitPolicyReceipt("SHELL_INJECT_EXECUTED", command, "policy_cleared")
                 render(shellRunner.run(result.tokens))
                 RouterOutcome.CONTINUE
             }
         }
+    }
+
+    private fun emitPolicyReceipt(action: String, command: String, decision: String) {
+        val timestamp = System.currentTimeMillis()
+        val payload = "$timestamp:$action:$command:$decision"
+        val sha256 = atropos.core.memory.MemoryLayerLattice.sha256(payload)
+        val json = "{\"timestamp\":$timestamp,\"sha256\":\"$sha256\",\"action\":\"$action\"," +
+            "\"actor\":\"ShellCommandHandler\",\"surface\":\"CLI\",\"before\":\"$command\",\"after\":\"$decision\"}"
+        memoryLattice.put(
+            layer = atropos.core.memory.MemoryLayerLattice.LayerType.EVIDENCE_LAYER,
+            key = "shell_policy_$timestamp",
+            content = json
+        )
     }
 
     fun pwd(): RouterOutcome {

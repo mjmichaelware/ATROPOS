@@ -88,7 +88,7 @@ object CommandCatalog {
         CommandEntry("/agent job", "agent job details (use --raw for full record)"),
         CommandEntry("/agent job --raw", "full raw agent job record"),
         CommandEntry("/agent ask", "agent bridge ask"),
-        CommandEntry("/agent context import <path>", "import redacted, hash-attested cursor rules or copilot instructions as context-only"),
+        CommandEntry("/agent context import <path>", "import redacted, hash-attested external rules or instructions as context-only"),
         CommandEntry("/agent patch", "agent bridge patch placeholder"),
         CommandEntry(
             "/agent worker propose",
@@ -428,6 +428,14 @@ object CommandCatalog {
         CommandEntry("/history", "navigate the session execution timeline", "Session",
             aliases = listOf("/timeline"),
             example = "/history",
-            nlHint = "show history, what happened, timeline")
+            nlHint = "show history, what happened, timeline"),
+        CommandEntry("/plan", "enter read-only plan mode without filesystem mutations", "Agent"),
+        CommandEntry("/architect", "activate 2-model planner gate: plan vs verify", "Agent"),
+        CommandEntry("/goal", "set long-horizon target and autonomous goal bounds", "Autonomous"),
+        CommandEntry("/compact", "execute LLM context reduction and context window pruning", "Session"),
+        CommandEntry("/batch", "schedule parallel wave lanes with disjoint locks", "Agent"),
+        CommandEntry("/simplify", "refactor AST for complexity reduction", "Agent"),
+        CommandEntry("/map", "semantic repository map across AST symbol lattices", "Repository"),
+        CommandEntry("/lint", "execute syntax and AST linters emitting diagnostic vectors", "Verification")
     )
 }

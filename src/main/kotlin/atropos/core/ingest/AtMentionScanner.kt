@@ -17,7 +17,7 @@ package atropos.core.ingest
  * The grammar is deliberately narrow. `@` is common in prose — email
  * addresses, handles, decorators — so a mention must look like a path: it
  * needs a dot with an extension after it, and it stops at whitespace. An
- * over-eager scanner would send `@anthropic.com` to the resolver, which would
+ * over-eager scanner would send `@example.com` to the resolver, which would
  * refuse it, producing a confusing error for text that was never a mention.
  */
 object AtMentionScanner {

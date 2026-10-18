@@ -4,8 +4,7 @@ package atropos.cli.taxonomy
 /**
  * ATOM-TAX-013: Deduplicated Synonym Trie & Variant Mapping Engine.
  *
- * Maps competitive command variants across Claude Code, Aider, Goose, SWE-Agent,
- * and Cursor/Antigravity to canonical ATROPOS command namespaces.
+ * Maps standard and alternative command variants to canonical ATROPOS command namespaces.
  */
 class CommandSynonymTrie {
 
@@ -69,119 +68,119 @@ class CommandSynonymTrie {
     }
 
     private fun registerAllSynonyms() {
-        // /session status
+        // status maps usage cost tokens context info stats telemetry
         listOf("usage", "cost", "tokens", "context", "info", "stats", "telemetry").forEach {
-            register(it, "/session status")
+            register(it, "/status")
         }
 
-        // /repo diff
+        // diff maps changes patch uncommitted diff-view
         listOf("changes", "patch", "uncommitted", "diff-view").forEach {
-            register(it, "/repo diff")
+            register(it, "/diff")
         }
 
-        // /agent pause
-        listOf("pause", "interrupt", "freeze", "halt", "stop", "suspend").forEach {
-            register(it, "/agent pause")
+        // interrupt maps pause freeze halt stop suspend
+        listOf("pause", "freeze", "halt", "stop", "suspend").forEach {
+            register(it, "/interrupt")
         }
 
-        // /agent resume
-        listOf("continue", "unpause", "thaw", "session_resume").forEach {
-            register(it, "/agent resume")
+        // resume maps continue unpause thaw
+        listOf("continue", "unpause", "thaw").forEach {
+            register(it, "/resume")
         }
 
-        // /system storage
-        listOf("gc", "compact", "clear", "purge", "prune", "reclaim", "local-models_delete").forEach {
-            register(it, "/system storage")
+        // storage maps gc compact clear purge prune reclaim
+        listOf("gc", "compact", "clear", "purge", "prune", "reclaim").forEach {
+            register(it, "/storage")
         }
 
-        // /memory search
-        listOf("context-store", "recall", "learned", "codebase-query", "@codebase", "@docs").forEach {
-            register(it, "/memory search")
+        // memory maps context-store recall learned codebase-query
+        listOf("context-store", "recall", "learned", "codebase-query").forEach {
+            register(it, "/memory")
         }
 
-        // /session history
+        // history maps timeline trajectory log session-list
         listOf("timeline", "trajectory", "log", "session-list", "session_list").forEach {
-            register(it, "/session history")
+            register(it, "/history")
         }
 
-        // /toolchain doctor
+        // doctor maps checkup probe health diagnostics
         listOf("checkup", "probe", "health", "diagnostics").forEach {
-            register(it, "/toolchain doctor")
+            register(it, "/doctor")
         }
 
-        // /verify run
+        // verify maps test lint validate check test-matrix
         listOf("test", "lint", "validate", "check", "test-matrix").forEach {
-            register(it, "/verify run")
+            register(it, "/verify")
         }
 
-        // /system verbosity
+        // verbosity maps debug trace-level log-level
         listOf("debug", "trace-level", "log-level", "--verbose").forEach {
             register(it, "/system verbosity")
         }
 
-        // /system theme
+        // theme maps color-scheme palette colors
         listOf("color-scheme", "palette", "colors").forEach {
-            register(it, "/system theme")
+            register(it, "/theme")
         }
 
-        // /agent ask-isolated
+        // ask-isolated maps btw side-query parallel-ask
         listOf("btw", "side-query", "parallel-ask").forEach {
-            register(it, "/agent ask-isolated")
+            register(it, "/ps")
         }
 
-        // /session compact
+        // compact maps squash condense summarize
         listOf("squash", "condense", "summarize", "auto-compact").forEach {
-            register(it, "/session compact")
+            register(it, "/compact")
         }
 
-        // /agent batch
+        // batch maps parallel fan-out multi-lane
         listOf("parallel", "fan-out", "multi-lane", "--workers").forEach {
-            register(it, "/agent batch")
+            register(it, "/batch")
         }
 
-        // /session fork
+        // fork maps branch split duplicate
         listOf("branch", "split", "duplicate").forEach {
             register(it, "/session fork")
         }
 
-        // /repo rollback
+        // rollback maps rewind undo revert restore
         listOf("rewind", "undo", "revert", "restore").forEach {
             register(it, "/repo rollback")
         }
 
-        // /github pr-fix
+        // pr-fix maps autofix-pr review-pr pr-lint
         listOf("autofix-pr", "review-pr", "pr-lint", "actions.open_pr").forEach {
             register(it, "/github pr-fix")
         }
 
-        // /agent architect
-        listOf("dual-model", "plan-execute", "ultraplan", "plan").forEach {
-            register(it, "/agent architect")
+        // architect maps dual-model plan-execute ultraplan
+        listOf("dual-model", "plan-execute", "ultraplan").forEach {
+            register(it, "/architect")
         }
 
-        // /session teleport
+        // teleport maps tp web-lift mirror-open
         listOf("tp", "web-lift", "mirror-open", "web").forEach {
             register(it, "/session teleport")
         }
 
-        // /agent simplify
+        // simplify maps clean refactor de-duplicate
         listOf("clean", "refactor", "de-duplicate").forEach {
-            register(it, "/agent simplify")
+            register(it, "/simplify")
         }
 
-        // /system grep
+        // grep maps search find-text rg code-search
         listOf("search", "find-text", "rg", "code-search").forEach {
             register(it, "/system grep")
         }
 
-        // /system alias
+        // alias maps bind-cmd shortcut-set
         listOf("bind-cmd", "shortcut-set", "macro").forEach {
             register(it, "/system alias")
         }
 
-        // /system config
+        // config maps settings preferences set get configure
         listOf("settings", "preferences", "set", "get", "configure").forEach {
-            register(it, "/system config")
+            register(it, "/config")
         }
 
         // /session exit

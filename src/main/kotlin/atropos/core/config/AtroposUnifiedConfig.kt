@@ -7,7 +7,7 @@ import java.nio.file.Path
 
 /**
  * Authoritative Unified Configuration Matrix for ATROPOS (atropos.config.json).
- * Maps 24 settings across competitive CLI capabilities (Claude Code, Aider, Goose, Cursor)
+ * Maps global settings matrix across supported CLI capabilities
  * to deterministic runtime options with safe defaults and validation.
  */
 class AtroposUnifiedConfig(
@@ -126,12 +126,16 @@ class AtroposUnifiedConfig(
         }
     }
 
+    private val memoryLattice = atropos.core.memory.MemoryLayerLattice()
+
     fun get(key: String): String = values[key] ?: defaultValues()[key].orEmpty()
 
     fun set(key: String, value: String): Boolean {
         val allowed = ALLOWED_OPTIONS[key] ?: return false
         val matched = allowed.firstOrNull { it.equals(value, ignoreCase = true) } ?: return false
+        val before = values[key] ?: defaultValues()[key].orEmpty()
         values[key] = matched
+        emitEvidenceReceipt("CONFIG_SET", key, before, matched)
         return true
     }
 
@@ -146,7 +150,21 @@ class AtroposUnifiedConfig(
         }
         val nextVal = allowed[nextIndex]
         values[key] = nextVal
+        emitEvidenceReceipt("CONFIG_CYCLE", key, current, nextVal)
         return nextVal
+    }
+
+    private fun emitEvidenceReceipt(action: String, key: String, before: String, after: String) {
+        val timestamp = System.currentTimeMillis()
+        val payload = "$timestamp:$action:$key:$before:$after"
+        val sha256 = atropos.core.memory.MemoryLayerLattice.sha256(payload)
+        val json = "{\"timestamp\":$timestamp,\"sha256\":\"$sha256\",\"action\":\"$action\"," +
+            "\"actor\":\"AtroposUnifiedConfig\",\"surface\":\"CLI\",\"before\":\"$before\",\"after\":\"$after\"}"
+        memoryLattice.put(
+            layer = atropos.core.memory.MemoryLayerLattice.LayerType.EVIDENCE_LAYER,
+            key = "config_mutation_$timestamp",
+            content = json
+        )
     }
 
     fun save(file: File = configFile()) {
@@ -162,15 +180,30 @@ class AtroposUnifiedConfig(
     }
 
     fun renderMatrix(width: Int = 80): String {
+        val safeWidth = width.coerceAtLeast(60)
+        val innerWidth = safeWidth - 4
         val sb = StringBuilder()
-        sb.append("┌─ ATROPOS UNIFIED CONFIGURATION MATRIX (atropos.config.json) ─┐\n")
+
+        val title = " ATROPOS CLI — Configuration Matrix (atropos.config.json) "
+        val remaining = (safeWidth - title.length - 2).coerceAtLeast(2)
+        val left = remaining / 2
+        val right = remaining - left
+        sb.append("╭").append("─".repeat(left)).append(title).append("─".repeat(right)).append("╮\n")
+
+        val nav = "Keyboard: ↑/↓ Navigate  ←/→ Cycle options  enter Select  esc Exit"
+        sb.append("│ ").append(nav.padEnd(innerWidth)).append(" │\n")
+        sb.append("├").append("─".repeat(safeWidth - 2)).append("┤\n")
+
         for ((key, value) in values) {
-            val keyCol = key.padEnd(26)
-            val valCol = value.padEnd(20)
+            val keyCol = key.padEnd(28)
+            val valCol = value.padEnd(16)
             val options = ALLOWED_OPTIONS[key]?.joinToString("|") ?: ""
-            sb.append("│ $keyCol $valCol [$options]\n")
+            val row = "$keyCol $valCol [$options]"
+            val clipped = if (row.length > innerWidth) row.take(innerWidth - 3) + "..." else row
+            sb.append("│ ").append(clipped.padEnd(innerWidth)).append(" │\n")
         }
-        sb.append("└" + "─".repeat((width - 2).coerceAtLeast(40)) + "┘\n")
+
+        sb.append("╰").append("─".repeat(safeWidth - 2)).append("╯\n")
         return sb.toString()
     }
 }

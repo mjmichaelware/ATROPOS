@@ -93,11 +93,15 @@ class HierarchicalCommandTaxonomy {
         register("agent", "dispatch", "architect", "Activates 2-model planner gate: plan vs verify")
         register("agent", "dispatch", "batch", "Schedules parallel wave lanes with disjoint locks")
         register("agent", "dispatch", "simplify", "Refactors AST for complexity reduction")
+        register("agent", "dispatch", "goal", "Sets long-horizon target")
+        register("agent", "dispatch", "plan", "Read-only plan mode")
+        register("agent", "dispatch", "compact", "LLM context reduction")
 
         // Domain 2: repo
         register("repo", "inspection", "status", "Verifies SSD against CAS root and reports untracked files")
         register("repo", "inspection", "diff", "Shows syntax-colored hunks with authority attribution")
         register("repo", "inspection", "log", "Sequential commit provenance with SHA-256 signatures")
+        register("repo", "inspection", "map", "Semantic repository map")
         register("repo", "mutation", "init", "Initializes local git tree with ATROPOS verification hooks")
         register("repo", "mutation", "commit", "Authoritative CAS write gate requiring deterministic receipt")
         register("repo", "mutation", "rollback", "Reverts tree to target CAS hash")
@@ -135,14 +139,19 @@ class HierarchicalCommandTaxonomy {
         register("session", "io", "paste", "Injects clipboard into composer")
         register("session", "io", "voice", "Records speech-to-text input")
         register("session", "io", "teleport", "Binds terminal to web socket on port 8787")
+        register("session", "io", "keybinding", "Registers user runtime macros")
 
         // Domain 7: system
         register("system", "environment", "config", "Live parameter inspector/setter in atropos.config.json")
         register("system", "environment", "theme", "Selects terminal ANSI palette")
         register("system", "environment", "verbosity", "Adjusts L1/L2/L3 output trace")
+        register("system", "environment", "animation", "Sets Animation_Speed instant|fast|medium|off")
         register("system", "shell", "grep", "Executes bounded regex search")
         register("system", "shell", "alias", "Registers user runtime macros")
         register("system", "shell", "clear", "Emits ANSI screen clear sequence")
         register("system", "shell", "exit", "Terminates CLI process cleanly")
+        register("system", "cost", "$", "Token usage provider limits peek")
+        register("system", "interrupt", "+", "Three-level queue|interrupt|context-shift")
+        register("system", "shell", "!", "Policy-gated shell inject")
     }
 }
