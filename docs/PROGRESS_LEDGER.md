@@ -15826,3 +15826,20 @@ End of AGENTS.md
   - Resolved `apps/web/next.config.ts` ESM runtime crash `ReferenceError: __dirname is not defined in ES module scope` via standard Node URL shim.
   - Resolved Android APK compile dependencies for `DirectInProcessEngineBridge.kt` with explicit in-process contract types.
 - Verification: `scripts/backend-atom-contract-test.sh` passed (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`). All files strictly $\le 500$ LOC.
+
+### 2026-10-18T02:22Z · Agent: Antigravity (agy, Advanced Agentic Coding) · Batch: batch-2-4tier-taxonomy-modal-engine-number-sign-macros
+- Paths touched:
+  - `src/main/kotlin/atropos/cli/taxonomy/CommandSynonymTrie.kt` (+192 / new competitor synonym trie)
+  - `src/main/kotlin/atropos/cli/taxonomy/HierarchicalCommandTaxonomy.kt` (+54/-28 / 4-tier taxonomy domain/subcategory/action leaves)
+  - `src/main/kotlin/atropos/cli/input/NumberSignMacroEngine.kt` (+80 / new hashtag file mentions and #<ABC> mobile keyboard macros)
+  - `src/main/kotlin/atropos/cli/ui/QuestionMarkModalRenderer.kt` (+176 / new 3-column modal engine and /? category definitions)
+  - `src/main/kotlin/atropos/cli/CommandRouter.kt` (+17/-5 / integrated synonym trie, macro engine, and modal rendering)
+  - `docs/PROGRESS_LEDGER.md` (appended batch record)
+- Atoms / phases affected: CLI Command Taxonomy, UX Modal Engine, Mobile Input Macros, Synonym Resolution.
+- Predicate moved:
+  - Implemented 4-tier hierarchical command taxonomy across 7 domains (`agent`, `repo`, `memory`, `governance`, `toolchain`, `session`, `system`) with subcategories and leaf documentation.
+  - Integrated competitor variant synonym trie mapping commands from Claude Code, Aider, Goose, SWE-Agent, and Cursor to canonical ATROPOS actions.
+  - Added 3-column interactive modal rendering (`?`) for Shortcuts, Commands, and General Info, plus category definitions (`/? <category>`).
+  - Implemented number sign macro engine for `#` file mentions with marquee scrolling and `#<ABC>` mobile hardware key compensation macros.
+  - Enforced strict $\le 500$ LOC ceiling across all modified/created Kotlin files.
+- Verification: `scripts/backend-atom-contract-test.sh` passed (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`).

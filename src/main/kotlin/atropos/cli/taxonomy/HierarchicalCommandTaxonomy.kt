@@ -82,41 +82,67 @@ class HierarchicalCommandTaxonomy {
     }
 
     private fun bootstrapDefaultTaxonomy() {
-        // Domain 1: repo
-        register("repo", "rollback", "<hash>", "Rolls back repository workspace to commit <hash> with CAS baseline invalidation")
-        register("repo", "status", "workspace", "Displays working tree state and uncommitted file modifications")
-        register("repo", "diff", "staged", "Computes AST-level diff against authoritative content-addressed storage")
-        register("repo", "commit", "<message>", "Records deterministic immutable tree commit into CAS receipt ledger")
+        // Domain 1: agent
+        register("agent", "lifecycle", "start", "Spawns autonomous daemon run with isolated CAS branch")
+        register("agent", "lifecycle", "stop", "Halts running execution loop and cleans worktrees")
+        register("agent", "lifecycle", "pause", "Freezes execution state to CAS")
+        register("agent", "lifecycle", "resume", "Restores loop from CAS token without re-evaluation")
+        register("agent", "dispatch", "ask", "Queries provider with context")
+        register("agent", "dispatch", "patch", "Generates atomic unified diff")
+        register("agent", "dispatch", "repair", "Executes bounded AST repair via Tree-Sitter grammar")
+        register("agent", "dispatch", "architect", "Activates 2-model planner gate: plan vs verify")
+        register("agent", "dispatch", "batch", "Schedules parallel wave lanes with disjoint locks")
+        register("agent", "dispatch", "simplify", "Refactors AST for complexity reduction")
 
-        // Domain 2: factory
-        register("factory", "generate", "<spec>", "Synthesizes multi-tier application architecture adhering to formal contracts")
-        register("factory", "repair", "<error>", "Invokes Sentry repair coordinator to synthesize corrective mutations")
-        register("factory", "resume", "<run_id>", "Restores speculative synthesis wave from persistent event journal")
-        register("factory", "audit", "loc", "Enforces strict 500-LOC ceiling across all synthesized source files")
+        // Domain 2: repo
+        register("repo", "inspection", "status", "Verifies SSD against CAS root and reports untracked files")
+        register("repo", "inspection", "diff", "Shows syntax-colored hunks with authority attribution")
+        register("repo", "inspection", "log", "Sequential commit provenance with SHA-256 signatures")
+        register("repo", "mutation", "init", "Initializes local git tree with ATROPOS verification hooks")
+        register("repo", "mutation", "commit", "Authoritative CAS write gate requiring deterministic receipt")
+        register("repo", "mutation", "rollback", "Reverts tree to target CAS hash")
+        register("repo", "mutation", "stage", "Stages files to write boundary")
 
-        // Domain 3: agent
-        register("agent", "run", "<goal>", "Launches autonomous multi-turn goal execution within attenuated sandbox")
-        register("agent", "status", "active", "Queries live execution status and active concurrency lane metrics")
-        register("agent", "cancel", "<task_id>", "Terminates active synthesis lane and purges speculative workspaces")
+        // Domain 3: memory
+        register("memory", "inspection", "search", "Vector & lexical recall query over episodic store")
+        register("memory", "inspection", "stats", "Displays active memory bounds and token consumption")
+        register("memory", "maintenance", "compact", "Deduplicates stored episodes via sentence embeddings")
+        register("memory", "maintenance", "prune", "Removes expired working context past retention TTL")
+        register("memory", "governance", "dloi", "Queries DLOI index lattice for grounded fact retrieval")
+        register("memory", "governance", "learn", "Commits verified heuristic to durable knowledge base")
 
-        // Domain 4: memory
-        register("memory", "query", "<key>", "Retrieves stored AST symbols and learned conflict lemmas from CAS")
-        register("memory", "prune", "stale", "Removes unreferenced ephemeral hypothesis nodes from constraint store")
+        // Domain 4: governance
+        register("governance", "policy", "audit", "Scans secrets and territories")
+        register("governance", "policy", "territory", "Verifies prefix boundaries against domain locks")
+        register("governance", "policy", "hr", "Inspects cross-boundary risk before message delivery")
+        register("governance", "policy", "paid", "Checks emergency unlock budget and token velocity")
+        register("governance", "lifecycle", "custodian", "Sweeps compiler temp artifacts and orphaned sockets")
+        register("governance", "lifecycle", "amend", "Applies formal authority rule amendment")
 
-        // Domain 5: governance
-        register("governance", "attest", "agents.md", "Validates cryptographic root signature of authoritative AGENTS.md ledger")
-        register("governance", "verify", "cas", "Calculates zero-entropy Merkle root over physical workspace bytes")
+        // Domain 5: toolchain
+        register("toolchain", "local", "doctor", "Audits compiler environments and credentials")
+        register("toolchain", "local", "test", "Runs local test suite runner with timeout bounding")
+        register("toolchain", "local", "lint", "Executes syntax and AST linters emitting diagnostic vectors")
+        register("toolchain", "integrations", "mcp", "Audits active MCP server states and tool budgets")
+        register("toolchain", "integrations", "sentry", "Ingests crash frame diagnostics")
 
-        // Domain 6: toolchain
-        register("toolchain", "detect", "native", "Scans system PATH via PlatformAdapterRegistry for portable compilers")
-        register("toolchain", "doctor", "env", "Verifies cross-platform toolchain isolation and memory limits")
+        // Domain 6: session
+        register("session", "context", "clear", "Purges context buffer resetting prompt scratchpad")
+        register("session", "context", "compact", "Executes LLM context reduction")
+        register("session", "context", "export", "Dumps transcript to file/json")
+        register("session", "context", "history", "Traverses turn execution tree with branching timeline")
+        register("session", "io", "copy", "Yanks response to clipboard")
+        register("session", "io", "paste", "Injects clipboard into composer")
+        register("session", "io", "voice", "Records speech-to-text input")
+        register("session", "io", "teleport", "Binds terminal to web socket on port 8787")
 
-        // Domain 7: system (including missing grep, undo, alias, history, config, clear)
-        register("system", "grep", "<pattern>", "Searches indexed repository content using bounded regex pattern")
-        register("system", "undo", "<step>", "Reverts the last speculative workspace mutation step")
-        register("system", "alias", "<name>", "Defines or inspects user command shortcut aliases")
-        register("system", "history", "<limit>", "Displays chronological command and execution history")
-        register("system", "config", "<key>", "Inspects or updates runtime configuration key-value store")
-        register("system", "clear", "screen", "Clears active viewport buffer and resets cursor position")
+        // Domain 7: system
+        register("system", "environment", "config", "Live parameter inspector/setter in atropos.config.json")
+        register("system", "environment", "theme", "Selects terminal ANSI palette")
+        register("system", "environment", "verbosity", "Adjusts L1/L2/L3 output trace")
+        register("system", "shell", "grep", "Executes bounded regex search")
+        register("system", "shell", "alias", "Registers user runtime macros")
+        register("system", "shell", "clear", "Emits ANSI screen clear sequence")
+        register("system", "shell", "exit", "Terminates CLI process cleanly")
     }
 }

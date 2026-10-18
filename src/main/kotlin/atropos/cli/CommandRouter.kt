@@ -241,19 +241,31 @@ class CommandRouter(
 
     private fun route(original: String, tokens: List<String>): RouterOutcome {
         if (tokens.isEmpty()) return RouterOutcome.CONTINUE
-        if (original.trimStart().startsWith("!")) return shellCommand.bang(original)
-
-        val alias = atropos.core.intent.AliasResolver.resolve(tokens.first())
-        val routedTokens = if (alias == null || tokens.first() == alias.keyword) {
-            tokens
+        val macroResolved = atropos.cli.input.NumberSignMacroEngine().resolveMacro(tokens.first()) ?: tokens.first()
+        val synonymResolved = atropos.cli.taxonomy.CommandSynonymTrie().resolve(macroResolved)
+        val normalizedTokens = if (synonymResolved != null) {
+            synonymResolved.split(" ") + tokens.drop(1)
         } else {
-            listOf(alias.keyword) + tokens.drop(1)
+            listOf(macroResolved) + tokens.drop(1)
+        }
+
+        val alias = atropos.core.intent.AliasResolver.resolve(normalizedTokens.first())
+        val routedTokens = if (alias == null || normalizedTokens.first() == alias.keyword) {
+            normalizedTokens
+        } else {
+            listOf(alias.keyword) + normalizedTokens.drop(1)
         }
 
         val first = routedTokens.first().lowercase()
         if (first in setOf("?", "/?", "help", "/help", "usage", "/usage")) {
-            if (first == "?" || first == "/?") {
-                uiEngine.renderNotice(atropos.cli.taxonomy.HierarchicalCommandTaxonomy().cheatsheet())
+            if (first == "?") {
+                val modal = atropos.cli.ui.QuestionMarkModalRenderer(theme)
+                uiEngine.renderBlock(modal.render(atropos.cli.ui.QuestionMarkModalRenderer.ActiveView.SHORTCUTS, 0, uiEngine.viewportWidth))
+                return RouterOutcome.CONTINUE
+            } else if (first == "/?") {
+                val modal = atropos.cli.ui.QuestionMarkModalRenderer(theme)
+                uiEngine.renderBlock(modal.renderCategoryDefinitions(routedTokens.drop(1).firstOrNull().orEmpty(), uiEngine.viewportWidth))
+                return RouterOutcome.CONTINUE
             }
             renderHelpPage(routedTokens.drop(1).joinToString(" "))
             return RouterOutcome.CONTINUE
