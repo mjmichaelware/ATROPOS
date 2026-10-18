@@ -2,19 +2,7 @@
 package atropos.cli
 
 import atropos.cli.commands.AgentCommand
-import atropos.cli.commands.AssetCommandHandler
-import atropos.cli.commands.CiCommandHandler
-import atropos.cli.commands.FactoryCommandHandler
-import atropos.cli.commands.GitHubCommandHandler
-import atropos.cli.commands.McpCommandHandler
-import atropos.cli.commands.MemoryCommandHandler
-import atropos.cli.commands.PaidCommandHandler
 import atropos.cli.commands.ProjectCommandHandler
-import atropos.cli.commands.ProviderCommandHandler
-import atropos.cli.commands.SentryCommandHandler
-import atropos.cli.commands.ShellCommandHandler
-import atropos.cli.commands.StatusCommandHandler
-import atropos.cli.commands.TabCommandHandler
 import atropos.cli.commands.VerifyCommand
 import atropos.cli.commands.VerifyCommandHandler
 import atropos.cli.session.QuotaSessionTracker
@@ -101,7 +89,7 @@ class CommandRouter(
     )
 
     private val firstRunProbe = FirstRunProbe(config, onboarding = providerOnboarding)
-    private val authCommand = atropos.cli.commands.AuthCommandHandler(uiEngine, config = config)
+    private val authCommand = AuthCommandHandler(uiEngine, config = config)
 
     private val secondaryDispatcher = CommandSecondaryDispatcher(
         uiEngine = uiEngine,

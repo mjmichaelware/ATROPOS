@@ -13,7 +13,7 @@ import java.time.Instant
 /**
  * Catalog builder for Bridge HTTP routes, decoupling route definitions from BridgeRoutes state management.
  */
-object BridgeRouteCatalog {
+internal object BridgeRouteCatalog {
 
     fun buildGovernanceAndLifecycleRoutes(
         governanceView: atropos.bridge.projection.GovernanceProjection,

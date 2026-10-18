@@ -38,6 +38,6 @@ class SweBenchCloudEvaluator(
     }
 
     fun prepareRunnerDisk(targetScript: Path = Path.of("scripts/clean-runner-disk.sh")): Path {
-        return RunnerDiskOptimizer.writeCleansingScript(targetScript)
+        return RunnerDiskOptimizer.writeScriptTo(targetScript)
     }
 }
