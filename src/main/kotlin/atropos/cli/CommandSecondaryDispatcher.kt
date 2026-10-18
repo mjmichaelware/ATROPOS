@@ -206,6 +206,55 @@ class CommandSecondaryDispatcher(
             RouterOutcome.CONTINUE
         }
 
+        "/config", "/settings" -> {
+            val sub = tokens.drop(1)
+            val unified = atropos.core.config.AtroposUnifiedConfig.load()
+            if (sub.isEmpty()) {
+                uiEngine.renderBlock(unified.renderMatrix(uiEngine.viewportWidth))
+            } else if (sub.first().lowercase() == "set" && sub.size >= 3) {
+                val key = sub[1]
+                val value = sub[2]
+                val ok = unified.set(key, value)
+                if (ok) {
+                    unified.save()
+                    uiEngine.renderNotice("config updated: $key = $value")
+                } else {
+                    val allowed = atropos.core.config.AtroposUnifiedConfig.ALLOWED_OPTIONS[key]?.joinToString("|")
+                    uiEngine.renderNotice("invalid config key or value. Allowed for '$key': ${allowed ?: "unknown key"}")
+                }
+            } else if (sub.first().lowercase() == "get" && sub.size >= 2) {
+                val key = sub[1]
+                uiEngine.renderNotice("$key = ${unified.get(key)}")
+            } else {
+                uiEngine.renderNotice("usage: /config | /config get <key> | /config set <key> <value>")
+            }
+            RouterOutcome.CONTINUE
+        }
+
+        "/keybinding", "/keybindings" -> {
+            val sub = tokens.drop(1)
+            val mgr = atropos.cli.input.KeybindingManager()
+            if (sub.isEmpty()) {
+                uiEngine.renderBlock(mgr.renderMenu(uiEngine.viewportWidth))
+            } else if (sub.first().lowercase() == "bind" && sub.size >= 3) {
+                val macro = sub[1]
+                val action = sub.drop(2).joinToString(" ")
+                val ok = mgr.bind(macro, action)
+                if (ok) {
+                    uiEngine.renderNotice("bound #$macro to '$action'")
+                } else {
+                    uiEngine.renderNotice("invalid macro key: must be 1-16 alphanumeric chars")
+                }
+            } else if (sub.first().lowercase() == "unbind" && sub.size >= 2) {
+                val macro = sub[1]
+                val ok = mgr.unbind(macro)
+                if (ok) uiEngine.renderNotice("unbound #$macro") else uiEngine.renderNotice("macro #$macro not found")
+            } else {
+                uiEngine.renderNotice("usage: /keybinding | /keybinding bind <#macro> <action> | /keybinding unbind <#macro>")
+            }
+            RouterOutcome.CONTINUE
+        }
+
         else -> null
     }
 }

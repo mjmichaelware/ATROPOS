@@ -15843,3 +15843,20 @@ End of AGENTS.md
   - Implemented number sign macro engine for `#` file mentions with marquee scrolling and `#<ABC>` mobile hardware key compensation macros.
   - Enforced strict $\le 500$ LOC ceiling across all modified/created Kotlin files.
 - Verification: `scripts/backend-atom-contract-test.sh` passed (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`).
+
+### 2026-10-18T03:06Z · Agent: Antigravity (agy, Advanced Agentic Coding) · Batch: batch-1-3-unified-config-keybinding-memory-lattice-execution-gates
+- Paths touched:
+  - `src/main/kotlin/atropos/core/config/AtroposUnifiedConfig.kt` (+126 / new 24-setting unified matrix for atropos.config.json)
+  - `src/main/kotlin/atropos/cli/input/KeybindingManager.kt` (+145 / new 34 canonical shortcuts and mobile macro engine)
+  - `src/main/kotlin/atropos/core/memory/MemoryLayerLattice.kt` (+135 / new 8-layer knowledge matrix and local CAS storage)
+  - `src/main/kotlin/atropos/core/verification/ExecutionGatePipeline.kt` (+95 / new 5-stage formal execution gate pipeline & FakeSuccessException)
+  - `src/main/kotlin/atropos/cli/CommandSecondaryDispatcher.kt` (+48 / wired /config matrix inspector and /keybinding manager)
+  - `docs/PROGRESS_LEDGER.md` (appended batch record)
+- Atoms / phases affected: Batch 1 Unified Config, Batch 1 Keybinding Matrix, Batch 3 Memory Layers, Batch 3 Execution Gates Pipeline.
+- Predicate moved:
+  - Implemented 24-setting Unified Configuration Matrix (`atropos.config.json`) with validation, CLI inspection, and live persistence via `/config`.
+  - Implemented 34-item canonical shortcut inventory and mobile `#<ABC>` macro binding persistence via `/keybinding`.
+  - Implemented 8-Layer Knowledge Matrix & Memory Lattice (`TEMPORARY_MEMORY`, `CONVERSATION_MEMORY`, `PROJECT_MEMORY`, `WORKSPACE_MEMORY`, `KNOWLEDGE_LAYER`, `AUTHORITY_AND_POLICY`, `LEARNING_OBSERVATIONS`, `EVIDENCE_LAYER`) with CAS SHA-256 evidence logging.
+  - Implemented 5-Stage Execution Gate Pipeline (`TOIG`, `MUTATION_TESTING`, `GOVERNED_COMPILE`, `CAPABILITY_ATTENUATION`, `REPRODUCIBILITY_CERTIFICATE`) with `FakeSuccessException`.
+  - Enforced strict $\le 500$ LOC ceiling across all modified/created Kotlin files.
+- Verification: `scripts/backend-atom-contract-test.sh` passed (`ATROPOS_BACKEND_ATOM_CONTRACT_OK`).
