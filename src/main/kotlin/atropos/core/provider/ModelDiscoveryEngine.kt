@@ -59,9 +59,7 @@ object ModelDiscoveryEngine {
     fun isPruned(providerId: String): Boolean {
         val clean = providerId.trim().lowercase(Locale.US)
         if (clean.isBlank()) return false
-        if (hasCredentials(clean)) {
-            return false
-        }
+        if (!hasCredentials(clean)) return true
         return prunedProviders.contains(clean)
     }
 
@@ -87,11 +85,29 @@ object ModelDiscoveryEngine {
     fun getLiveModels(providerId: String): List<String> =
         discoveredModels[providerId.trim().lowercase(Locale.US)]?.map { it.id } ?: emptyList()
 
-    fun filterActiveCascade(candidates: List<String>): List<String> =
-        candidates.filterNot { isPruned(it) }
+    fun filterActiveCascade(candidates: List<String>): List<String> {
+        val unpruned = candidates.filterNot { isPruned(it) }
+        return if (unpruned.isEmpty() && candidates.isNotEmpty()) candidates else unpruned
+    }
+
+    fun dropsModelFamily(providerId: String, family: String): Boolean {
+        val clean = providerId.trim().lowercase(Locale.US)
+        val live = discoveredModels[clean] ?: return false
+        if (live.isEmpty()) return true
+        val cleanFamily = family.trim().lowercase(Locale.US)
+        return live.none { it.id.lowercase(Locale.US).contains(cleanFamily) }
+    }
+
+    fun pruneIfDropsFamily(providerId: String, family: String) {
+        val clean = providerId.trim().lowercase(Locale.US)
+        if (dropsModelFamily(clean, family)) {
+            prune(clean, "drops model family: $family")
+        }
+    }
 
     fun hasCredentials(providerId: String): Boolean {
         val clean = providerId.trim().lowercase(Locale.US)
+        if (clean == "ollama" || clean == "local" || clean == "localtoolchain") return true
         val spec = OpenAiCompatibleProviderCatalog.get(clean)
         val envKey = spec?.apiKeyEnv
         if (envKey != null && !resolveKey(clean, envKey).isNullOrBlank()) {
@@ -103,7 +119,7 @@ object ModelDiscoveryEngine {
 
     fun resolveActiveProvider(defaultProvider: String): String {
         val cleanDefault = defaultProvider.trim().lowercase(Locale.US)
-        if (cleanDefault.isNotBlank() && cleanDefault != "default" && hasCredentials(cleanDefault)) {
+        if (cleanDefault.isNotBlank() && cleanDefault != "default" && !isPruned(cleanDefault) && hasCredentials(cleanDefault)) {
             return cleanDefault
         }
         val healthy = discoveredModels.keys().toList().filterNot { prunedProviders.contains(it) }
@@ -111,6 +127,9 @@ object ModelDiscoveryEngine {
             return healthy.first()
         }
         val preferred = listOf("groq", "openai", "anthropic", "together_ai", "cerebras", "deepseek", "mistral", "ollama")
+        for (cand in preferred) {
+            if (!isPruned(cand) && hasCredentials(cand)) return cand
+        }
         for (cand in preferred) {
             if (hasCredentials(cand)) return cand
         }

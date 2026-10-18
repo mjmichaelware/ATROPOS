@@ -320,12 +320,13 @@ class ProviderCascadeRouter(
         allowPaidProvider: Boolean = false
     ): List<String> {
         if (!providerOrderOverride.isNullOrEmpty()) {
-            return providerOrderOverride.map { it.trim().lowercase() }
+            val candidates = providerOrderOverride.map { it.trim().lowercase() }
                 .filter { it.isNotBlank() }
                 .filter { !localOnly() || it == "ollama" }
-                .filter { !ModelDiscoveryEngine.isPruned(it) }
                 .distinct()
-                .let { ProviderCascadeOrder.order(it, registry, allowPaidProvider, paidGate) }
+            val active = candidates.filter { !ModelDiscoveryEngine.isPruned(it) }
+            val effective = if (active.isEmpty() && candidates.isNotEmpty()) candidates else active
+            return ProviderCascadeOrder.order(effective, registry, allowPaidProvider, paidGate)
         }
 
         val configured = System.getenv("ATROPOS_PROVIDER_ORDER")
@@ -337,12 +338,15 @@ class ProviderCascadeRouter(
 
         val activeKeyProviders = FallbackChainRegistry.getAllActiveKeys().keys.map { it.lowercase() }
 
+        val candidates = (listOf(requestedProvider.lowercase()) + configured + activeKeyProviders)
+            .filter { registry.getById(it) != null }
+            .filter { !localOnly() || it == "ollama" }
+            .distinct()
+        val active = candidates.filter { !ModelDiscoveryEngine.isPruned(it) }
+        val effective = if (active.isEmpty() && candidates.isNotEmpty()) candidates else active
+
         return ProviderCascadeOrder.order(
-            (listOf(requestedProvider.lowercase()) + configured + activeKeyProviders)
-                .filter { registry.getById(it) != null }
-                .filter { !localOnly() || it == "ollama" }
-                .filter { !ModelDiscoveryEngine.isPruned(it) }
-                .distinct(),
+            effective,
             registry,
             allowPaidProvider,
             paidGate

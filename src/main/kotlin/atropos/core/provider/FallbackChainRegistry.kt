@@ -249,8 +249,8 @@ object FallbackChainRegistry {
     }
 
     private fun getNextParallelProvider(current: String, chain: List<String>): String? {
-        val candidates = (if (chain.isNotEmpty()) chain else FallbackChain.CHAT.links.filterNot { it in ChainLink.TERMINAL })
-            .filterNot { ModelDiscoveryEngine.isPruned(it) }
+        val baseCandidates = (if (chain.isNotEmpty()) chain else FallbackChain.CHAT.links.filterNot { it in ChainLink.TERMINAL })
+        val candidates = baseCandidates.filterNot { ModelDiscoveryEngine.isPruned(it) }.ifEmpty { baseCandidates }
         val currentIdx = candidates.indexOfFirst { it.equals(current, ignoreCase = true) }
         val remaining = if (currentIdx >= 0) candidates.drop(currentIdx + 1) else candidates
         return remaining.firstOrNull { it.lowercase() != current && !areKeysExhausted(it) }
@@ -258,8 +258,8 @@ object FallbackChainRegistry {
     }
 
     private fun getNextFallbackProvider(current: String, chain: List<String>): String? {
-        val candidates = (if (chain.isNotEmpty()) chain else FallbackChain.CHAT.links.filterNot { it in ChainLink.TERMINAL })
-            .filterNot { ModelDiscoveryEngine.isPruned(it) }
+        val baseCandidates = (if (chain.isNotEmpty()) chain else FallbackChain.CHAT.links.filterNot { it in ChainLink.TERMINAL })
+        val candidates = baseCandidates.filterNot { ModelDiscoveryEngine.isPruned(it) }.ifEmpty { baseCandidates }
         val currentIdx = candidates.indexOfFirst { it.equals(current, ignoreCase = true) }
         return if (currentIdx >= 0 && currentIdx + 1 < candidates.size) {
             candidates[currentIdx + 1]

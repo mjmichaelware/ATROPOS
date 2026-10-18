@@ -155,7 +155,9 @@ class ContractLatticeSynthesizer(
             localOnly = { config.runtime.localOnly },
             paidGate = EmergencyPaidGate()
         )
-        val cascadeResult = cascadeRouter.completeWithCascade("default", prompt = node.label, context = "Synthesizing node ${node.id}")
+        atropos.core.provider.ModelDiscoveryEngine.ensureDiscovered()
+        val activeProvider = atropos.core.provider.ModelDiscoveryEngine.resolveActiveProvider("default")
+        val cascadeResult = cascadeRouter.completeWithCascade(activeProvider, prompt = node.label, context = "Synthesizing node ${node.id}")
         if (cascadeResult.queued || cascadeResult.paidApproval != null) {
             return SynthesisResult(false, "no eligible provider resolved: ${cascadeResult.queueReason ?: cascadeResult.response}")
         }

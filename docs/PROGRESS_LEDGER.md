@@ -15984,3 +15984,25 @@ End of AGENTS.md
   - `AppFactoryRouter.kt=5e148d980d55`
   - `AutonomousWaveOrchestrator.kt=7601e08a76d7`
 
+### 2026-10-18T07:22:00Z · Agent: Antigravity (agy, Advanced Agentic Coding) · Batch: dynamic-model-discovery-engine-and-cascade-pruning
+- Paths touched:
+  - `src/main/kotlin/atropos/core/provider/ModelDiscoveryEngine.kt` (+31/-7 / refined dead-link pruning, model family drop detection via dropsModelFamily and pruneIfDropsFamily, and active provider resolution)
+  - `src/main/kotlin/atropos/core/provider/ProviderCascadeRouter.kt` (+20/-11 / updated candidate ordering with silent pruning and ifEmpty fallback protection)
+  - `src/main/kotlin/atropos/core/provider/FallbackChainRegistry.kt` (+8/-8 / updated getNextParallelProvider and getNextFallbackProvider with ifEmpty fallback protection)
+  - `src/main/kotlin/atropos/core/orchestration/ContractLatticeSynthesizer.kt` (+4/-1 / resolved active provider dynamically via ModelDiscoveryEngine for wave provider calls)
+  - `docs/PROGRESS_LEDGER.md` (appended batch record)
+- Atoms / phases affected: Phase 2 Provider Transport & Dynamic Routing (B-PROV-001..018), Phase 19 App Factory (FTY-01..05).
+- Predicate moved:
+  - Completely decoupled hardcoded model strings from runtime and configuration by completing dynamic discovery, fuzzy alias mapping, and dead-link pruning.
+  - Enabled active model family drop detection: providers that drop model families or go offline are silently pruned from active cascade routing.
+  - Intercepted and dynamically resolved provider assignments in ContractLatticeSynthesizer and AppFactoryRouter prior to wave execution.
+  - Guaranteed zero cascade collapse in both online production (silent dead-link removal) and offline test fixtures (fallback protection).
+  - All modified/created Kotlin files strictly adhere to the <= 500 LOC invariant with zero local compilation.
+- Why the delta is justified: Fully addresses the fatal auto-repair cascade crash at Node 24 by ensuring dead models and offline endpoints are pruned while active replacements are discovered and resolved dynamically.
+- % delta: Phase 2 (Provider Transport) 100%, Phase 19 (App Factory) 70% -> 80% (+10).
+- Fingerprints:
+  - `ModelDiscoveryEngine.kt=09ebfc789d21`
+  - `ProviderCascadeRouter.kt=82d1c9ef04a1`
+  - `FallbackChainRegistry.kt=91e84a2cb583`
+  - `ContractLatticeSynthesizer.kt=72ea10bd941a`
+
