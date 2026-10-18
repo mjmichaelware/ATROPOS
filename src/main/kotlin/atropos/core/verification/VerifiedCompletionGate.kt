@@ -118,21 +118,21 @@ class VerifiedCompletionGate(
     }
 
     fun evaluateNode(node: DagNode): CompletionGateReport {
-        val report = IndependentVerificationGate(config, repoRoot, processRunner).verify(node)
-        if (!report.passed) return report
+        val report = evaluateNodeInternal(node)
+        if (!report.canComplete) return report
         val oracle = MutationTestingOracle()
         val score = runCatching {
             val candidateFiles = (node.territory + node.expectedOutputs).map { repoRoot.resolve(it) }
             oracle.evaluateMutationScore(
                 worktree = repoRoot,
-                testRunner = { report.passed },
+                testRunner = { evaluateNodeInternal(node).canComplete },
                 sourceFiles = candidateFiles
             )
         }.getOrDefault(1.0)
         return if (score >= 0.85) {
             report
         } else {
-            report.copy(passed = false, status = "BLOCKED", summary = "Node completion blocked: mutation score $score < 0.85")
+            report.copy(canComplete = false, message = "Node completion blocked: mutation score $score < 0.85")
         }
     }
 

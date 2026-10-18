@@ -4,6 +4,7 @@ package atropos.cli.ui
 import atropos.cli.session.QuotaSessionTracker
 import atropos.cli.ui.chrome.CheckpointAge
 import atropos.cli.ui.design.AgentInspector
+import atropos.cli.ui.design.ThemeCatalog
 import atropos.core.AtroposConfig
 import atropos.core.observability.BackgroundProcessPanel
 import atropos.core.observability.BoundedRenderingController
@@ -30,9 +31,10 @@ class AnsiStatusPresenter(
     private val backgroundProcesses = BackgroundProcessPanel()
     private val dagReactorRenderer = DagReactorRenderer(theme)
     private val toastRenderer = ToastRenderer(theme)
-    private val intentDetector = IntentConflictDetector()
-    private val intentBannerRenderer = IntentConflictBannerRenderer(theme.palette)
-    private val uncertaintyRenderer = UncertaintyCalibratedRenderer(theme.palette)
+    private val palette = ThemeCatalog.byId(theme.themeId)
+    private val intentDetector = IntentConflictDetector(IntentConflictBanner(redactionFilter), redactionFilter)
+    private val intentBannerRenderer = IntentConflictBannerRenderer(palette)
+    private val uncertaintyRenderer = UncertaintyCalibratedRenderer(palette)
     private val bottomStatusBar = BottomStatusBar(theme)
 
     fun renderDashboard(
@@ -139,9 +141,9 @@ class AnsiStatusPresenter(
                 stage.contains("complete", ignoreCase = true) -> "completed"
                 else -> "working"
             }
-            val conflict = intentDetector.check(stage, emptyList())
+            val conflict = intentDetector.detect(stage)
             if (conflict != null) {
-                onBlock(intentBannerRenderer.render(conflict, canvas.width))
+                onBlock(listOf(intentBannerRenderer.render(conflict)))
             }
             onBlock(dagReactorRenderer.render(listOf(DagReactorRenderer.ReactorNode(stage, status, detail)), canvas.width))
             onBlock(toastRenderer.render(Toast(null, summary), canvas.width))

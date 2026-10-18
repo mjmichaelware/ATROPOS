@@ -221,7 +221,7 @@ class DagExecutionService(
                     }
                     return DagNodeExecutionResult(node.id, DagNodeState.COMPLETE, true, outcome.detail)
                 }
-                DagNodeAction.FILE_MUTATION -> {
+                DagNodeAction.CREATE_FILE, DagNodeAction.EDIT_FILE -> {
                     return fileMutationExecutor.execute(node, node)
                 }
                 else -> {

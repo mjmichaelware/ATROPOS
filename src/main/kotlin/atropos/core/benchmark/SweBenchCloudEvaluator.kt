@@ -36,4 +36,8 @@ class SweBenchCloudEvaluator(
         val result = runner.run(command, workingDir)
         return result.exitCode ?: 0
     }
+
+    fun prepareRunnerDisk(targetScript: Path = Path.of("scripts/clean-runner-disk.sh")): Path {
+        return RunnerDiskOptimizer.writeCleansingScript(targetScript)
+    }
 }

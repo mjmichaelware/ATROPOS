@@ -152,4 +152,8 @@ class AutonomousDeploymentSeam(
     fun verifyVercelWireContract(driver: VercelDeploymentDriver, sampleBytes: ByteArray): Map<String, String> {
         return driver.uploadFileContract(sampleBytes)
     }
+
+    fun wireOrphanSubsystems(repoRoot: Path, orchestrator: AutonomousWaveOrchestrator): WiredSubsystems {
+        return SystemicOrphanDoctor(repoRoot).wireAll(orchestrator)
+    }
 }

@@ -264,8 +264,9 @@ class AnsiTerminalEngine(
     fun renderVerificationResult(result: VerificationResult) {
         stopSpinner()
         state.verificationState = null
-        if (!result.passed) {
-            competitiveErrorLedger.recordVerificationError(result.message, "Review gate test failures and evidence")
+        if (!result.successful) {
+            val errMsg = result.execution.launchError ?: result.report.diagnostics.firstOrNull()?.message ?: "Verification failed with exit code ${result.execution.exitCode}"
+            competitiveErrorLedger.recordVerificationError(errMsg, "Review gate test failures and evidence")
         }
         rendering.renderVerificationReactive(result)
         requestFrameLocked()

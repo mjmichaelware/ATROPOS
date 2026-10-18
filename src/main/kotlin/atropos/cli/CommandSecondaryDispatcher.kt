@@ -1,23 +1,8 @@
 /* SPDX-License-Identifier: AGPL-3.0-only */
 package atropos.cli
 
-import atropos.cli.commands.AstCommandHandler
-import atropos.cli.commands.AuthCommandHandler
 import atropos.cli.commands.CheckpointCommandHandler
-import atropos.cli.commands.DiffCommandHandler
-import atropos.cli.commands.DloiCommandHandler
-import atropos.cli.commands.ExportCommandHandler
 import atropos.cli.commands.HierarchyCommand
-import atropos.cli.commands.HistoryCommandHandler
-import atropos.cli.commands.InterruptCommandHandler
-import atropos.cli.commands.KeysCommandHandler
-import atropos.cli.commands.OpsCommandHandler
-import atropos.cli.commands.RouteCommandHandler
-import atropos.cli.commands.SecurityCommandHandler
-import atropos.cli.commands.StorageCommandHandler
-import atropos.cli.commands.TestsCommandHandler
-import atropos.cli.commands.ThemeCommandHandler
-import atropos.cli.commands.ThinkingCommandHandler
 import atropos.cli.ui.AnsiTerminalEngine
 import atropos.cli.ui.ClipboardService
 import atropos.cli.ui.FirstRunGuide
