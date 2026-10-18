@@ -67,13 +67,19 @@ data class RepairAtomResult(
  * Routes verification errors and stack traces through the active LLM provider cascade
  * to spawn RepairAtoms and patch the project filesystem.
  */
+import atropos.core.dopamine.ProviderDopamineRewardTracker
+import atropos.core.provider.AdversarialResponseNormalizer
+import atropos.core.provider.PatchApplicationResult
+
 class FactoryRepairRouter(
     private val repoRoot: Path,
     private val dagStore: DagStore,
     private val memoryStore: LocalMemoryStore? = null,
     private val cascadeRouter: ProviderCascadeRouter = ProviderCascadeRouter(
         factory = ProviderFactory()
-    )
+    ),
+    private val normalizer: AdversarialResponseNormalizer = AdversarialResponseNormalizer(),
+    private val dopamineTracker: ProviderDopamineRewardTracker = ProviderDopamineRewardTracker.SHARED
 ) {
     fun repair(
         dagId: String,
@@ -106,6 +112,12 @@ class FactoryRepairRouter(
             )
         } catch (e: Exception) {
             Thinking.detail("repair", "Provider repair call failed: ${e.message}")
+            dopamineTracker.recordFailure(
+                provider = activeProvider,
+                action = "factory.repair",
+                errorType = "PROVIDER_CALL_CRASH",
+                exactMistake = e.message ?: "provider call crashed"
+            )
             dagStore.writeNode(repairNode.copy(
                 state = DagNodeState.FAILED,
                 result = "Provider repair call crashed: ${e.message}",
@@ -119,17 +131,38 @@ class FactoryRepairRouter(
             )
         }
 
-        val patched = applyPatch(cascadeResult.response, targetDir)
-        val success = patched.isNotEmpty()
+        // Adversarial normalization & AST pre-flight gate: only write to disk if valid
+        val patchOutcome = normalizer.applyValidatedPatches(cascadeResult.response, targetDir)
+        val success = patchOutcome is PatchApplicationResult.Success
+        val patched = if (patchOutcome is PatchApplicationResult.Success) patchOutcome.patchedFiles else emptyList()
+
+        if (success) {
+            dopamineTracker.recordSuccess(
+                provider = cascadeResult.providerName,
+                action = "factory.repair",
+                rewardValue = ProviderDopamineRewardTracker.REWARD_DEFAULT,
+                details = "AST pre-flight passed; successfully patched ${patched.size} file(s)"
+            )
+        } else {
+            val failureDetail = (patchOutcome as PatchApplicationResult.Failure).let { fail ->
+                "${fail.reason}${if (fail.violations.isNotEmpty()) " -> Violations: " + fail.violations.joinToString("; ") else ""}"
+            }
+            dopamineTracker.recordFailure(
+                provider = cascadeResult.providerName,
+                action = "factory.repair",
+                errorType = "AST_SYNTAX_OR_PATCH_FAILURE",
+                exactMistake = failureDetail
+            )
+        }
 
         val finalNode = repairNode.copy(
             state = if (success) DagNodeState.COMPLETE else DagNodeState.FAILED,
             result = if (success) {
-                "Successfully patched ${patched.size} file(s): ${patched.joinToString(", ")}"
+                "Successfully patched ${patched.size} file(s) with verified AST syntax: ${patched.joinToString(", ")}"
             } else {
-                "Provider answered but no file patches could be extracted: ${cascadeResult.response.take(200)}"
+                "Provider response rejected by adversarial AST normalizer: ${(patchOutcome as PatchApplicationResult.Failure).reason}"
             },
-            failureReason = if (success) null else "No patch extracted from provider response",
+            failureReason = if (success) null else (patchOutcome as PatchApplicationResult.Failure).reason,
             finishedAt = Instant.now()
         )
         runCatching { dagStore.writeNode(finalNode) }
@@ -145,7 +178,7 @@ class FactoryRepairRouter(
                 subjectId = repairAtom.id
             )
         } else {
-            Thinking.step("repair", "RepairAtom [${repairAtom.id}] could not produce valid patch")
+            Thinking.step("repair", "RepairAtom [${repairAtom.id}] rejected invalid patch from [${cascadeResult.providerName}]")
         }
 
         return RepairAtomResult(
@@ -199,47 +232,5 @@ class FactoryRepairRouter(
         appendLine("<complete code>")
         appendLine("--- END FILE ---")
         appendLine("Do not include markdown chat explanations. Output only the file blocks.")
-    }
-
-    private fun applyPatch(response: String, targetDir: Path): List<String> {
-        val patched = mutableListOf<String>()
-        val fileBlockRegex = Regex("--- FILE:\\s*([^\\n\\r]+)\\s*---[\\r\\n]+([\\s\\S]*?)[\\r\\n]+--- END FILE ---")
-        val matches = fileBlockRegex.findAll(response).toList()
-
-        for (match in matches) {
-            val relPath = match.groupValues[1].trim().trimStart('/')
-            val content = match.groupValues[2].trim()
-            if (relPath.isNotBlank() && content.isNotBlank()) {
-                val dest = targetDir.resolve(relPath)
-                dest.parent?.let { Files.createDirectories(it) }
-                Files.writeString(dest, content)
-                patched.add(relPath)
-            }
-        }
-
-        if (patched.isEmpty()) {
-            val codeBlockRegex = Regex("```(?:[a-zA-Z0-9_-]+)?[:\\s]*([a-zA-Z0-9_./-]+\\.[a-zA-Z0-9]+)?[\\r\\n]+([\\s\\S]*?)```")
-            for (match in codeBlockRegex.findAll(response)) {
-                var filePath = match.groupValues[1].trim()
-                val code = match.groupValues[2].trim()
-                if (filePath.isBlank()) {
-                    val firstLine = code.lineSequence().firstOrNull().orEmpty().trim()
-                    if (firstLine.startsWith("#") || firstLine.startsWith("//")) {
-                        val candidate = firstLine.trimStart('#', '/', ' ').trim()
-                        if (candidate.contains(".") && !candidate.contains(" ")) {
-                            filePath = candidate
-                        }
-                    }
-                }
-                if (filePath.isNotBlank() && code.isNotBlank()) {
-                    val dest = targetDir.resolve(filePath)
-                    dest.parent?.let { Files.createDirectories(it) }
-                    Files.writeString(dest, code)
-                    patched.add(filePath)
-                }
-            }
-        }
-
-        return patched
     }
 }

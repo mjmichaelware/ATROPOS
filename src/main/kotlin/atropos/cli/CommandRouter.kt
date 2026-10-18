@@ -214,7 +214,7 @@ class CommandRouter(
         }
 
         val trimmedForMention = input.trimStart()
-        if (trimmedForMention.startsWith("/") && trimmedForMention.contains('@')) {
+        if (input.contains('@') && !trimmedForMention.startsWith("@")) {
             val expansion = nlEntryPipeline.expandMentions(input)
             if (expansion.changed) {
                 expansion.notice()?.let(uiEngine::renderNotice)
@@ -229,7 +229,8 @@ class CommandRouter(
             repoRoot = AtroposRepoRootLocator.resolve(),
             currentProviderName = { currentProviderName },
             tracker = sessionTracker,
-            shellCommand = shellCommand
+            shellCommand = shellCommand,
+            commandExecutor = { handleSingleInput(it) }
         )
         if (prefixOutcome != null) return prefixOutcome
 

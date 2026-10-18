@@ -32,7 +32,8 @@ object ByteZeroPrefixInterceptor {
         repoRoot: Path,
         currentProviderName: () -> String,
         tracker: QuotaSessionTracker,
-        shellCommand: ShellCommandHandler
+        shellCommand: ShellCommandHandler,
+        commandExecutor: ((String) -> RouterOutcome)? = null
     ): RouterOutcome? {
         val trimmed = input.trimStart()
         if (trimmed.isEmpty()) return null
@@ -116,8 +117,26 @@ object ByteZeroPrefixInterceptor {
                 val resolved = macroEngine.resolveMacro(token)
                 if (resolved != null) {
                     uiEngine.renderNotice("Executing macro $token -> $resolved")
+                    if (commandExecutor != null) {
+                        return commandExecutor(resolved)
+                    }
                     return null
                 } else {
+                    val query = trimmed.removePrefix("#").trim()
+                    val candidates = macroEngine.findMentionCandidates(query, 16)
+                    if (candidates.isNotEmpty()) {
+                        val lines = mutableListOf<String>()
+                        lines.add("╭─ ATROPOS # Keybinds & Files ──────────────────────────────────────╮")
+                        lines.add("│ Keyboard: ↑/↓ Select  → Horizontally Expand  enter Insert  esc Close│")
+                        lines.add("├────────────────────────────────────────────────────────────────────┤")
+                        candidates.forEachIndexed { idx, path ->
+                            val cursor = if (idx == 0) "❯ " else "  "
+                            lines.add("│ $cursor#${path.padEnd(64)}│")
+                        }
+                        lines.add("╰────────────────────────────────────────────────────────────────────╯")
+                        uiEngine.renderBlock(lines)
+                        return RouterOutcome.CONTINUE
+                    }
                     uiEngine.renderNotice("macro $token not registered; use /keybinding bind $token <action>")
                     return RouterOutcome.CONTINUE
                 }

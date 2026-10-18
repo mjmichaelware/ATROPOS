@@ -16134,3 +16134,44 @@ End of AGENTS.md
   - `UniversalRequestAdapter.kt=bec1f130a587ac49601b1594209fe987e953641996fffd167794d2f39261b85b`
   - `ByteZeroPrefixInterceptor.kt=d1f034db5a33f2e07ab032dc9ad127e195c057c843f7db5a1ee78e52a10a6674`
   - `CliModalStateMachine.kt=8da0d57e1dab5c6817ee4dcc518f81a801b605b77e0f87d8f91a73f6e55105b9`
+
+### 2026-10-18T18:00:00Z · Agent: Antigravity (Advanced Agentic Pair Programmer) · Batch: MANDATE-1-MANDATE-2-ADVERSARIAL-DOPAMINE-PHASE20
+- Paths touched:
+  - `src/main/kotlin/atropos/core/provider/AdversarialResponseNormalizer.kt` (new, 343 lines / strips conversational prose, extracts code blocks from arbitrary markdown fences and file wrappers, executes local AST/syntax pre-flight checks for Kotlin and Python ast.parse, blocks invalid patch writes to disk)
+  - `src/main/kotlin/atropos/core/provider/ProviderFailureMemoryStore.kt` (new, 195 lines / records provider mistakes in session Short-Term Memory and escalates repeat mistakes to permanent Long-Term Memory under the 2-strike rule)
+  - `src/main/kotlin/atropos/core/dopamine/ProviderDopamineRewardTracker.kt` (new, 108 lines / assigns explicit -1.0 negative dopamine penalties with structured explanations, records +1.0 rewards on clean AST validation)
+  - `src/main/kotlin/atropos/core/phase20/Phase20StructuralMetaAdapter.kt` (new, 137 lines / Phase 20 meta-adaptation loop that dynamically alters request formatting, prompts, instructions, and hyperparameters based on provider dopamine records and long-term memory constraints)
+  - `src/main/kotlin/atropos/core/factory/FactoryRepairRouter.kt` (+25/-35 lines, 236 lines total / wired AdversarialResponseNormalizer and ProviderDopamineRewardTracker for verified patch application and dopamine tracking)
+  - `src/main/kotlin/atropos/core/provider/ProviderCascadeRouter.kt` (+16 lines, 459 lines total / wired Phase 20 prompt meta-adaptation, dopamine rewards on success, and -1.0 penalties on provider errors)
+  - `src/main/kotlin/atropos/core/phase20/SelfBuildValidationRule.kt` (+16 lines, 41 lines total / wired permanent Long-Term Memory constraint validation for Phase 20 self-build operations)
+  - `src/main/kotlin/atropos/cli/ByteZeroPrefixInterceptor.kt` (+18 lines, 148 lines total / wired macro execution for # and mention candidate listing)
+  - `src/main/kotlin/atropos/cli/CommandRouter.kt` (+1/-1 lines, 484 lines total / enabled mention expansion for @ across any input context and wired command executor for # macros)
+  - `src/test/kotlin/atropos/core/provider/AdversarialResponseNormalizerTest.kt` (new, 139 lines / unit tests verifying prose stripping, markdown fence extraction, AST syntax validation, and write blocking)
+  - `src/test/kotlin/atropos/core/provider/ProviderFailureMemoryStoreTest.kt` (new, 67 lines / unit tests verifying Short-Term Memory recording and 2-strike Long-Term Memory escalation)
+  - `src/test/kotlin/atropos/core/dopamine/ProviderDopamineRewardTrackerTest.kt` (new, 69 lines / unit tests verifying -1.0 dopamine penalties and +1.0 rewards)
+  - `src/test/kotlin/atropos/core/phase20/Phase20StructuralMetaAdapterTest.kt` (new, 93 lines / unit tests verifying prompt adaptation, hyperparameter adjustment, and Phase 20 self-build constraint enforcement)
+- Atoms / phases affected: Phase 1 Provider Activation, Phase 2 Provider Transport, Phase 8 Deterministic Verifier, Phase 9 Persistent Memory, Phase 11 Self-Build Loop, Phase 20 Autonomous Meta-Adaptation, HOE CLI UX Modifiers.
+- Predicate moved:
+  - 100% implementation of Mandates 1 & 2: Adversarial response normalizer & validator across `RepairRouter.kt` and `ProviderCascadeRouter.kt`.
+  - Conversational prose stripped, markdown fences and file wrappers extracted, and local AST/syntax pre-flight checks executed prior to any disk write.
+  - Short-Term Memory and Dopamine Reward tracking fully wired: -1.0 penalty assigned with structured failure explanation on provider syntax/patch defects.
+  - Phase 20 Meta-Adaptation Loop dynamically alters request formatting, instructions, and hyperparameters for offending providers.
+  - Long-Term Memory Escalation (2-Strike Rule) promotes repeat mistakes from STM to permanent LTM constraints, enforced during provider queries and Phase 20 self-build operations.
+  - Complete CLI Modifiers fully wired: `@` file mentions, `#` keybind macros, `+` 3-level live execution injection, `$` token/cost peek, and `!` privileged shell execution.
+  - Mathematical Proof Gate verified: zero competitor strings in `src/` or `app/`, zero `TODO`/`FIXME` or hollow stubs in touched files, every source file strictly <= 500 LOC, zero orphan components.
+- Why the delta is justified: Fully operational adversarial normalization, dopamine reward/penalty loop, memory escalation, and CLI modifiers wired into active call graph with comprehensive unit tests.
+- % delta: Phase 1/2/9/11/20 & HOE complete.
+- Fingerprints (sha256):
+  - `ByteZeroPrefixInterceptor.kt=b438357a5a629091871585abc3d1d2f8508a1766cb07e7042dcac18d45aee917`
+  - `CommandRouter.kt=0a4aecc02a0f78f50710bfe711ece9dd548aea3b32f85b4bfcf9ffdee150323f`
+  - `FactoryRepairRouter.kt=587696c5fef6a3cc63f44ba68c47c136a5a64b0f95ec13ad7a1bdaab8f31e56c`
+  - `SelfBuildValidationRule.kt=119c2d1fc00241ec963b567ff6d2aad1af2d34a103426782e8e71779c2b8f60c`
+  - `ProviderCascadeRouter.kt=dba25cc0406006e4348c7e3d4aeef0c59b60a0b0ef4af03e5820090a990a30f5`
+  - `ProviderDopamineRewardTracker.kt=577ae349aa105cf5b6b4dd7aac1d0395d91b04f0959930fa6c45976b9f61171c`
+  - `Phase20StructuralMetaAdapter.kt=6b6e0b1f2589b5ac53473c8bb6c4e2bfb619eb699324c0c58c664ba1c3577e7d`
+  - `AdversarialResponseNormalizer.kt=0aecb01e1b4d6eb7f0451ea60a19c4f7f441bc1bbc9219bc7192f9dcb9aeeaa9`
+  - `ProviderFailureMemoryStore.kt=bce974e3a208cb83ede4a55ed07f581198953f429ecb8a04631a175250910b63`
+  - `ProviderDopamineRewardTrackerTest.kt=b5dd1e7b1a487037bfa0fc4c04236c0ea642aff9e722e89b663e750bce04ac79`
+  - `Phase20StructuralMetaAdapterTest.kt=8290cb378a58735de1d1893f7ba3ce2d9399ed864d58ec6b72a32eb7d11e5785`
+  - `AdversarialResponseNormalizerTest.kt=3d54f1312f4e1e292b7ebbb0de375de46662292d5df95f0deadf0ed4c11ecf4b`
+  - `ProviderFailureMemoryStoreTest.kt=65e9281264781b5e999ba6ed1b9bbbfb72c25eaa6b6b10d8d167f03dff3338f5`

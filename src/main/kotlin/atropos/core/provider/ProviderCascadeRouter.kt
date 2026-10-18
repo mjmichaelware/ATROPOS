@@ -118,9 +118,10 @@ class ProviderCascadeRouter(
                     ?: FallbackChainRegistry.getActiveKey(provider)
                     ?: UniversalRequestAdapter.resolveApiKey(provider)
 
+                val adaptedPrompt = atropos.core.phase20.Phase20StructuralMetaAdapter.SHARED.adaptPrompt(provider, prompt)
                 val formatted = UniversalRequestAdapter.translate(
                     providerId = provider,
-                    prompt = prompt,
+                    prompt = adaptedPrompt,
                     context = context,
                     apiKey = activeKey
                 )
@@ -135,19 +136,19 @@ class ProviderCascadeRouter(
 
                 atropos.core.thinking.Narrate.provider.lookup(
                     store = provider,
-                    query = firstLine(prompt),
+                    query = firstLine(adaptedPrompt),
                     hits = 0
                 )
                 atropos.core.thinking.Thinking.detail(
                     "provider",
-                    "$provider: sending ${prompt.length} chars with native ${formatted.schemaType} schema"
+                    "$provider: sending ${adaptedPrompt.length} chars with native ${formatted.schemaType} schema"
                 )
 
                 val startedAt = System.currentTimeMillis()
                 val execResult: UniversalExecutionResult = try {
                     if (providerResolver != null) {
                         val aiProvider = providerResolver.invoke(provider)
-                        val res = aiProvider.complete(prompt, context)
+                        val res = aiProvider.complete(adaptedPrompt, context)
                         UniversalExecutionResult.Success(
                             providerId = provider,
                             text = res,
@@ -175,6 +176,10 @@ class ProviderCascadeRouter(
 
                 if (execResult is UniversalExecutionResult.Success && acceptResponse(execResult.text)) {
                     val elapsed = execResult.durationMs
+                    atropos.core.dopamine.ProviderDopamineRewardTracker.SHARED.recordSuccess(
+                        provider = provider,
+                        action = "provider.chat"
+                    )
                     atropos.core.thinking.Thinking.step(
                         "provider",
                         "$provider answered in ${elapsed}ms, ${execResult.text.length} characters"
@@ -200,6 +205,12 @@ class ProviderCascadeRouter(
                 )
 
                 val classifiedError = if (isInvalid) {
+                    atropos.core.dopamine.ProviderDopamineRewardTracker.SHARED.recordFailure(
+                        provider = provider,
+                        action = "provider.chat",
+                        errorType = "INVALID_RESPONSE",
+                        exactMistake = "Response rejected by acceptance predicate"
+                    )
                     ProviderError(
                         provider = provider,
                         type = FailureType.INVALID_RESPONSE,
@@ -207,6 +218,12 @@ class ProviderCascadeRouter(
                     )
                 } else {
                     val failure = execResult as UniversalExecutionResult.Failure
+                    atropos.core.dopamine.ProviderDopamineRewardTracker.SHARED.recordFailure(
+                        provider = provider,
+                        action = "provider.chat",
+                        errorType = "PROVIDER_EXECUTION_FAILURE",
+                        exactMistake = failure.message
+                    )
                     classifier.classify(provider, failure.cause ?: RuntimeException(failure.message))
                 }
 
