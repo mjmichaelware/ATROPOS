@@ -5,6 +5,8 @@ import atropos.core.dag.DagDefinition
 import atropos.core.dag.DagNode
 import atropos.core.dag.DagNodeState
 import atropos.core.dag.DagStore
+import atropos.core.orchestration.WaveCheckpointLattice
+import java.nio.file.Path
 import java.time.Instant
 
 data class FactoryTerminationBudget(
@@ -42,7 +44,8 @@ data class FactoryLoopResult(
 class FactoryObligationLoop(
     private val dagStore: DagStore,
     private val budget: FactoryTerminationBudget = FactoryTerminationBudget(),
-    private val progressGuard: FactoryProgressGuard = FactoryProgressGuard(dagStore)
+    private val progressGuard: FactoryProgressGuard = FactoryProgressGuard(dagStore),
+    private val repoRoot: Path = runCatching { atropos.core.AtroposRepoRootLocator.resolve() }.getOrDefault(Path.of("."))
 ) {
     fun recordFailure(dagId: String, atomId: String, failure: String): FactoryObligationSnapshot {
         val decision = progressGuard.observeFailure(dagId, atomId, failure)
@@ -127,6 +130,7 @@ class FactoryObligationLoop(
                 val failedInWave = refreshedDag.nodes.firstOrNull { it.id in ready.map { r -> r.id } && (it.state == DagNodeState.FAILED || it.id !in completed) }
                     ?: ready.first()
                 val errorLog = failedInWave.result ?: failedInWave.failureReason ?: "verification failed without output"
+                val subDag = WaveCheckpointLattice.isolateSubDag(dag, failedInWave.id)
                 if (repairHandler != null && repairWaves < budget.maxRepairWaves) {
                     repairWaves++
                     val repairResult = repairHandler(dagId, failedInWave, errorLog, repairWaves)
@@ -142,7 +146,9 @@ class FactoryObligationLoop(
                         continue
                     }
                 }
-                require(completed.isNotEmpty()) { "factory wave executed without completing an atom" }
+                require(completed.isNotEmpty() || WaveCheckpointLattice.hasProgress(repoRoot, dagId, refreshedDag.nodes)) {
+                    "factory wave executed without completing an atom"
+                }
             }
             require(completed.all { id -> ready.any { it.id == id } }) { "factory wave completed an atom outside its runnable wave" }
             completed.forEach { id ->
@@ -153,6 +159,7 @@ class FactoryObligationLoop(
                     finishedAt = Instant.now()
                 ))
             }
+            WaveCheckpointLattice.persistCheckpoint(repoRoot, dagId, dag.nodes, freeze.sha256)
             waves++
         }
     }

@@ -10,10 +10,12 @@ import atropos.core.dag.DagStore
 import atropos.core.memory.LocalMemoryStore
 import atropos.core.provider.ModelDiscoveryEngine
 import atropos.core.provider.ProviderCascadeRouter
+import atropos.core.provider.ProviderTokenBudgeter
 import atropos.core.dopamine.ProviderDopamineRewardTracker
 import atropos.core.provider.AdversarialResponseNormalizer
 import atropos.core.provider.PatchApplicationResult
 import atropos.core.thinking.Thinking
+import atropos.core.verification.DiagnosticSymbolSlicer
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
@@ -67,10 +69,9 @@ data class RepairAtomResult(
 )
 
 /**
- * Routes verification errors and stack traces through the active LLM provider cascade
- * to spawn RepairAtoms and patch the project filesystem.
+ * Routes verification errors and stack traces through deterministic heuristic repair
+ * or the active LLM provider cascade to spawn RepairAtoms and patch the project filesystem.
  */
-
 class FactoryRepairRouter(
     private val repoRoot: Path,
     private val dagStore: DagStore,
@@ -96,19 +97,50 @@ class FactoryRepairRouter(
         Thinking.step("repair", "Writing repair atom to DAG obligation store (attempt $attempt)")
         runCatching { dagStore.writeNode(repairNode) }
 
+        // Step 3: Zero-LLM Deterministic Heuristic Repair Gate
+        val heuristic = DeterministicHeuristicRepairEngine.attemptDeterministicRepair(targetDir, failedNode, errorLog)
+        if (heuristic.repaired) {
+            Thinking.step("repair", "Deterministic heuristic repair succeeded locally via ${heuristic.ruleApplied}; 0 LLM tokens spent")
+            dagStore.writeNode(repairNode.copy(
+                state = DagNodeState.COMPLETE,
+                result = "Heuristically repaired without external LLM via ${heuristic.ruleApplied}: ${heuristic.patchedFiles.joinToString()}",
+                finishedAt = Instant.now()
+            ))
+            return RepairAtomResult(
+                success = true,
+                repairAtom = repairAtom,
+                message = "Heuristically repaired without LLM: ${heuristic.ruleApplied}",
+                patchedFiles = heuristic.patchedFiles
+            )
+        }
+
         ModelDiscoveryEngine.ensureDiscovered()
         val activeProvider = ModelDiscoveryEngine.resolveActiveProvider("default")
         Thinking.detail("repair", "Active verified provider resolved for repair: $activeProvider")
 
-        val sourceFiles = collectSourceFiles(targetDir)
-        val prompt = buildRepairPrompt(failedNode, errorLog, attempt, sourceFiles)
+        // Step 2: AST Symbol Slicing & Diagnostic Error Distillation
+        val sliced = DiagnosticSymbolSlicer.slice(targetDir, errorLog, failedNode.label)
+        val prompt = if (sliced.compressedPrompt.isNotBlank() && sliced.compressedPrompt.length < 1000) {
+            sliced.compressedPrompt
+        } else {
+            val sourceFiles = collectSourceFiles(targetDir)
+            buildRepairPrompt(failedNode, errorLog, attempt, sourceFiles)
+        }
+
+        // Step 1: Dynamic Token Budgeting for Repair Atom
+        val targetFileLines = sliced.targetFile?.let { rel ->
+            val file = targetDir.resolve(rel)
+            if (Files.isRegularFile(file)) Files.readAllLines(file).size else null
+        } ?: 50
+        val repairBudget = ProviderTokenBudgeter.calculateRepairBudget(targetFileLines)
+        Thinking.detail("repair", "Calculated repair token budget for ${sliced.targetFile}: $repairBudget tokens")
 
         val cascadeResult = try {
-            Thinking.step("repair", "Querying provider cascade ($activeProvider) with failure stack trace")
+            Thinking.step("repair", "Querying provider cascade ($activeProvider) with distilled diagnostic (${prompt.length} chars)")
             cascadeRouter.completeWithCascade(
                 requestedProvider = activeProvider,
                 prompt = prompt,
-                context = errorLog.take(2000)
+                context = sliced.assertionError
             )
         } catch (e: Exception) {
             Thinking.detail("repair", "Provider repair call failed: ${e.message}")
@@ -131,7 +163,6 @@ class FactoryRepairRouter(
             )
         }
 
-        // Adversarial normalization & AST pre-flight gate: only write to disk if valid
         val patchOutcome = normalizer.applyValidatedPatches(cascadeResult.response, targetDir)
         val success = patchOutcome is PatchApplicationResult.Success
         val patched = if (patchOutcome is PatchApplicationResult.Success) patchOutcome.patchedFiles else emptyList()
@@ -196,9 +227,7 @@ class FactoryRepairRouter(
             paths.filter { Files.isRegularFile(it) && !targetDir.relativize(it).startsWith(".atropos") && !targetDir.relativize(it).startsWith(".git") }
                 .forEach { file ->
                     val rel = targetDir.relativize(file).toString().replace('\\', '/')
-                    runCatching {
-                        files[rel] = Files.readString(file)
-                    }
+                    runCatching { files[rel] = Files.readString(file) }
                 }
         }
         return files
@@ -216,21 +245,20 @@ class FactoryRepairRouter(
         appendLine("Attempt: $attempt / 3")
         appendLine()
         appendLine("[FAILURE DIAGNOSTIC / STACK TRACE / ERROR LOGS]")
-        appendLine(errorLog.take(4000))
+        appendLine(errorLog.take(2000))
         appendLine()
         appendLine("[CURRENT PROJECT SOURCE FILES]")
-        sourceFiles.entries.take(12).forEach { (path, code) ->
+        sourceFiles.entries.take(8).forEach { (path, code) ->
             appendLine("--- FILE: $path ---")
-            appendLine(code.take(3000))
+            appendLine(code.take(1500))
             appendLine("--- END FILE ---")
             appendLine()
         }
         appendLine("[INSTRUCTION]")
-        appendLine("Analyze the failure diagnostic and stack trace. Provide the complete corrected file content for the file(s) that need fixing.")
+        appendLine("Analyze the failure diagnostic and provide the complete corrected file content for the file(s) that need fixing.")
         appendLine("Format every modified or created file strictly as:")
         appendLine("--- FILE: <relative_path> ---")
         appendLine("<complete code>")
         appendLine("--- END FILE ---")
-        appendLine("Do not include markdown chat explanations. Output only the file blocks.")
     }
 }

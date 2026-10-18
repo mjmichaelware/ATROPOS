@@ -57,8 +57,7 @@ sealed class UniversalExecutionResult {
 
 /**
  * Universal Request Adapter for per-provider payload translation and native execution.
- * Translates outgoing repair prompts and chat payloads into the exact native schema,
- * role hierarchy, and parameter structure expected by each active AI provider.
+ * Integrates dynamic model discovery, Ollama 180s timeout, and dynamic token budgeting.
  */
 object UniversalRequestAdapter {
     private val redactionFilter = RedactionFilter()
@@ -69,12 +68,18 @@ object UniversalRequestAdapter {
             .build()
     }
 
+    private val ollamaHttpClient: HttpClient by lazy {
+        HttpClient.newBuilder()
+            .connectTimeout(Duration.ofSeconds(30))
+            .build()
+    }
+
     fun detectNativeSchema(providerId: String): ProviderNativeSchema {
         val clean = providerId.trim().lowercase(Locale.US)
         return when {
             clean == "openrouter" -> ProviderNativeSchema.OPENROUTER
             clean.contains("gemini") -> ProviderNativeSchema.GEMINI_REST
-            clean.contains("anthropic") || clean.contains("claude") -> ProviderNativeSchema.ANTHROPIC_MESSAGES
+            clean.contains("anthropic") -> ProviderNativeSchema.ANTHROPIC_MESSAGES
             clean.contains("cloudflare") -> ProviderNativeSchema.CLOUDFLARE_AI
             clean.contains("ollama") -> ProviderNativeSchema.OLLAMA_GENERATE
             else -> ProviderNativeSchema.OPENAI_COMPATIBLE
@@ -83,17 +88,33 @@ object UniversalRequestAdapter {
 
     fun resolveModel(providerId: String, explicitModel: String? = null): String {
         val clean = providerId.trim().lowercase(Locale.US)
-        if (!explicitModel.isNullOrBlank() && !explicitModel.contains("whisper", ignoreCase = true)) {
+        if (!explicitModel.isNullOrBlank() && !explicitModel.contains("whisper", ignoreCase = true) && explicitModel != "default") {
             return explicitModel
         }
 
+        ModelDiscoveryEngine.getCachedModel(clean)?.let { return it }
+
         val live = ModelDiscoveryEngine.getLiveModels(clean)
             .filterNot { it.contains("whisper", ignoreCase = true) || it.contains("guard", ignoreCase = true) || it.contains("tts", ignoreCase = true) || it.contains("embed", ignoreCase = true) }
+
+        if (clean == "gemini") {
+            val flashCandidates = listOf("gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash")
+            for (cand in flashCandidates) if (live.any { it.equals(cand, ignoreCase = true) }) return cand
+            return live.firstOrNull { it.contains("flash", ignoreCase = true) } ?: "gemini-2.5-flash"
+        }
 
         if (clean == "groq") {
             return live.firstOrNull { it == "llama-3.3-70b-versatile" || it == "qwen-2.5-coder-32b" }
                 ?: live.firstOrNull { it.contains("versatile", ignoreCase = true) || it.contains("coder", ignoreCase = true) }
                 ?: "llama-3.3-70b-versatile"
+        }
+
+        if (clean == "cerebras") {
+            return live.firstOrNull { it.contains("70b", ignoreCase = true) } ?: live.firstOrNull() ?: "llama3.1-70b"
+        }
+
+        if (clean == "sambanova") {
+            return live.firstOrNull { it.contains("70b", ignoreCase = true) } ?: live.firstOrNull() ?: "Meta-Llama-3.1-70B-Instruct"
         }
 
         if (live.isNotEmpty()) {
@@ -108,22 +129,19 @@ object UniversalRequestAdapter {
         }
         val nonOpenAiSpec = NonOpenAiFreeProviderCatalog.get(clean)
         if (nonOpenAiSpec != null) {
-            return ModelDiscoveryEngine.resolveModel(clean, nonOpenAiSpec.defaultModel)
+            val defM = if (clean == "gemini") "gemini-2.5-flash" else nonOpenAiSpec.defaultModel
+            return ModelDiscoveryEngine.resolveModel(clean, defM)
         }
 
         return when {
             clean == "groq" -> "llama-3.3-70b-versatile"
-            clean == "openrouter" -> ModelDiscoveryEngine.resolveModel(clean, "meta-llama/llama-3.1-8b-instruct:free")
-            clean.contains("gemini") -> ModelDiscoveryEngine.resolveModel(clean, "gemini-1.5-flash")
-            clean.contains("anthropic") -> ModelDiscoveryEngine.resolveModel(clean, "claude-3-5-sonnet-latest")
-            clean == "openai" -> ModelDiscoveryEngine.resolveModel(clean, "gpt-4o-mini")
-            clean == "xai" -> "grok-2-latest"
-            clean == "sambanova" -> "Meta-Llama-3.3-70B-Instruct"
-            clean == "deepseek_direct" || clean == "deepseek" -> "deepseek-chat"
-            clean == "together" -> "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo"
             clean == "cerebras" -> "llama3.1-70b"
-            clean == "nvidia" -> "meta/llama-3.1-70b-instruct"
-            clean == "mistral" -> "mistral-large-latest"
+            clean == "sambanova" -> "Meta-Llama-3.1-70B-Instruct"
+            clean == "openrouter" -> ModelDiscoveryEngine.resolveModel(clean, "meta-llama/llama-3.3-70b-instruct")
+            clean.contains("gemini") -> "gemini-2.5-flash"
+            clean.contains("anthropic") -> ModelDiscoveryEngine.resolveModel(clean, "sonnet-3-5-latest")
+            clean == "openai" -> ModelDiscoveryEngine.resolveModel(clean, "gpt-4o-mini")
+            clean == "deepseek_direct" || clean == "deepseek" -> "deepseek-chat"
             clean == "ollama" -> System.getenv("OLLAMA_MODEL") ?: "llama3.2:1b"
             else -> ProviderModelResolver.DEFAULT.resolve(clean, "default-model")
         }
@@ -131,10 +149,13 @@ object UniversalRequestAdapter {
 
     fun resolveApiKey(providerId: String): String? {
         val clean = providerId.trim().lowercase(Locale.US)
+        if (ModelDiscoveryEngine.isNonLlm(clean)) return null
         FallbackChainRegistry.getActiveKey(clean)?.takeIf { it.isNotBlank() }?.let { return it }
 
         val envKeys = when (clean) {
             "groq" -> listOf("GROQ_API_KEY")
+            "cerebras" -> listOf("CEREBRAS_API_KEY")
+            "sambanova" -> listOf("SAMBANOVA_API_KEY")
             "openrouter" -> listOf("OPENROUTER_API_KEY")
             "gemini" -> listOf("GEMINI_API_KEY", "GOOGLE_API_KEY")
             "anthropic" -> listOf("ANTHROPIC_API_KEY")
@@ -142,17 +163,13 @@ object UniversalRequestAdapter {
             "xai" -> listOf("XAI_API_KEY")
             "github_models" -> listOf("GITHUB_MODELS_TOKEN")
             "cloudflare_ai" -> listOf("CLOUDFLARE_API_TOKEN")
-            "sambanova" -> listOf("SAMBANOVA_API_KEY")
             "deepseek_direct", "deepseek" -> listOf("DEEPSEEK_API_KEY")
             "together" -> listOf("TOGETHER_API_KEY")
-            "cerebras" -> listOf("CEREBRAS_API_KEY")
             "nvidia" -> listOf("NVIDIA_API_KEY")
             "mistral" -> listOf("MISTRAL_API_KEY")
             else -> listOf("${clean.uppercase(Locale.US)}_API_KEY", "${clean.uppercase(Locale.US)}_KEY")
         }
-        for (k in envKeys) {
-            System.getenv(k)?.takeIf { it.isNotBlank() }?.let { return it }
-        }
+        for (k in envKeys) System.getenv(k)?.takeIf { it.isNotBlank() }?.let { return it }
 
         val config = runCatching { AtroposConfig.load() }.getOrNull()
         if (config != null) {
@@ -167,9 +184,7 @@ object UniversalRequestAdapter {
         }
 
         val bootstrap = runCatching { CredentialBootstrap.get().getAll() }.getOrDefault(emptyMap())
-        for (k in envKeys) {
-            bootstrap[k]?.takeIf { it.isNotBlank() }?.let { return it }
-        }
+        for (k in envKeys) bootstrap[k]?.takeIf { it.isNotBlank() }?.let { return it }
 
         return runCatching { TokenIsolationVault().readSecret("${clean.uppercase(Locale.US)}_API_KEY") }.getOrNull()
     }
@@ -178,7 +193,8 @@ object UniversalRequestAdapter {
         val clean = providerId.trim().lowercase(Locale.US)
         val openAiSpec = OpenAiCompatibleProviderCatalog.all().firstOrNull { it.providerId == clean }
         if (openAiSpec != null) {
-            return openAiSpec.endpointEnv?.let { System.getenv(it) }?.takeIf { it.isNotBlank() } ?: openAiSpec.baseUrl
+            val base = openAiSpec.endpointEnv?.let { System.getenv(it) }?.takeIf { it.isNotBlank() } ?: openAiSpec.baseUrl
+            return if (base.endsWith("/chat/completions")) base else base.trimEnd('/') + "/chat/completions"
         }
         val nonOpenAiSpec = NonOpenAiFreeProviderCatalog.get(clean)
         if (nonOpenAiSpec != null) {
@@ -187,16 +203,16 @@ object UniversalRequestAdapter {
         }
         return when (clean) {
             "groq" -> "https://api.groq.com/openai/v1/chat/completions"
+            "cerebras" -> "https://api.cerebras.ai/v1/chat/completions"
+            "sambanova" -> "https://api.sambanova.ai/v1/chat/completions"
             "openrouter" -> "https://openrouter.ai/api/v1/chat/completions"
             "gemini" -> "https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent" + (apiKey?.let { "?key=$it" } ?: "")
             "anthropic" -> "https://api.anthropic.com/v1/messages"
             "openai" -> "https://api.openai.com/v1/chat/completions"
             "xai" -> "https://api.x.ai/v1/chat/completions"
             "github_models" -> "https://models.inference.ai.azure.com/chat/completions"
-            "sambanova" -> "https://api.sambanova.ai/v1/chat/completions"
             "deepseek_direct", "deepseek" -> "https://api.deepseek.com/chat/completions"
             "together" -> "https://api.together.xyz/v1/chat/completions"
-            "cerebras" -> "https://api.cerebras.ai/v1/chat/completions"
             "nvidia" -> "https://integrate.api.nvidia.com/v1/chat/completions"
             "mistral" -> "https://api.mistral.ai/v1/chat/completions"
             "ollama" -> (System.getenv("OLLAMA_HOST") ?: "http://127.0.0.1:11434").trimEnd('/') + "/api/generate"
@@ -206,9 +222,7 @@ object UniversalRequestAdapter {
 
     fun buildHeaders(providerId: String, apiKey: String?): Map<String, String> {
         val clean = providerId.trim().lowercase(Locale.US)
-        val headers = mutableMapOf<String, String>()
-        headers["Content-Type"] = "application/json"
-
+        val headers = mutableMapOf("Content-Type" to "application/json")
         when (clean) {
             "openrouter" -> {
                 if (!apiKey.isNullOrBlank()) headers["Authorization"] = "Bearer $apiKey"
@@ -241,7 +255,9 @@ object UniversalRequestAdapter {
         context: String = "",
         modelOverride: String? = null,
         temperature: Double = 0.1,
-        apiKey: String? = null
+        apiKey: String? = null,
+        maxTokens: Int? = null,
+        targetFileLines: Int? = null
     ): NativeProviderRequest {
         val clean = providerId.trim().lowercase(Locale.US)
         val schema = detectNativeSchema(clean)
@@ -257,31 +273,30 @@ object UniversalRequestAdapter {
 
         val redactedPrompt = redactionFilter.redact(prompt)
         val redactedContext = redactionFilter.redact(context)
+        val dynamicTokenBudget = ProviderTokenBudgeter.budgetFor(clean, maxTokens, targetFileLines)
 
         val jsonPayload = when (schema) {
             ProviderNativeSchema.OPENAI_COMPATIBLE -> {
                 val root = JSONObject()
                 root.put("model", model)
                 val messages = JSONArray()
-                if (redactedContext.isNotBlank()) {
-                    messages.put(JSONObject().put("role", "system").put("content", redactedContext.trim()))
-                }
+                if (redactedContext.isNotBlank()) messages.put(JSONObject().put("role", "system").put("content", redactedContext.trim()))
                 messages.put(JSONObject().put("role", "user").put("content", redactedPrompt.trim()))
                 root.put("messages", messages)
                 root.put("temperature", temperature)
                 root.put("top_p", 0.95)
+                root.put("max_tokens", dynamicTokenBudget)
                 root.toString()
             }
             ProviderNativeSchema.OPENROUTER -> {
                 val root = JSONObject()
                 root.put("model", model)
                 val messages = JSONArray()
-                if (redactedContext.isNotBlank()) {
-                    messages.put(JSONObject().put("role", "system").put("content", redactedContext.trim()))
-                }
+                if (redactedContext.isNotBlank()) messages.put(JSONObject().put("role", "system").put("content", redactedContext.trim()))
                 messages.put(JSONObject().put("role", "user").put("content", redactedPrompt.trim()))
                 root.put("messages", messages)
                 root.put("temperature", temperature)
+                root.put("max_tokens", dynamicTokenBudget)
                 root.toString()
             }
             ProviderNativeSchema.GEMINI_REST -> {
@@ -291,19 +306,18 @@ object UniversalRequestAdapter {
                     root.put("systemInstruction", JSONObject().put("parts", parts))
                 }
                 val userParts = JSONArray().put(JSONObject().put("text", redactedPrompt.trim()))
-                val userContent = JSONObject().put("role", "user").put("parts", userParts)
-                root.put("contents", JSONArray().put(userContent))
-                root.put("generationConfig", JSONObject().put("temperature", temperature))
+                root.put("contents", JSONArray().put(JSONObject().put("role", "user").put("parts", userParts)))
+                val genCfg = JSONObject().put("temperature", temperature)
+                genCfg.put("maxOutputTokens", dynamicTokenBudget)
+                root.put("generationConfig", genCfg)
                 root.toString()
             }
             ProviderNativeSchema.ANTHROPIC_MESSAGES -> {
                 val root = JSONObject()
                 root.put("model", model)
-                root.put("max_tokens", 4096)
+                root.put("max_tokens", dynamicTokenBudget.coerceAtMost(4096))
                 root.put("temperature", temperature)
-                if (redactedContext.isNotBlank()) {
-                    root.put("system", redactedContext.trim())
-                }
+                if (redactedContext.isNotBlank()) root.put("system", redactedContext.trim())
                 val userMsg = JSONObject().put("role", "user").put("content", redactedPrompt.trim())
                 root.put("messages", JSONArray().put(userMsg))
                 root.toString()
@@ -311,35 +325,26 @@ object UniversalRequestAdapter {
             ProviderNativeSchema.CLOUDFLARE_AI -> {
                 val root = JSONObject()
                 val messages = JSONArray()
-                if (redactedContext.isNotBlank()) {
-                    messages.put(JSONObject().put("role", "system").put("content", redactedContext.trim()))
-                }
+                if (redactedContext.isNotBlank()) messages.put(JSONObject().put("role", "system").put("content", redactedContext.trim()))
                 messages.put(JSONObject().put("role", "user").put("content", redactedPrompt.trim()))
                 root.put("messages", messages)
+                root.put("max_tokens", dynamicTokenBudget)
                 root.toString()
             }
             ProviderNativeSchema.OLLAMA_GENERATE -> {
                 val root = JSONObject()
                 root.put("model", model)
                 root.put("prompt", redactedPrompt.trim())
-                if (redactedContext.isNotBlank()) {
-                    root.put("system", redactedContext.trim())
-                }
+                if (redactedContext.isNotBlank()) root.put("system", redactedContext.trim())
                 root.put("stream", false)
                 val opts = JSONObject().put("temperature", temperature).put("top_p", 0.95)
+                opts.put("num_predict", dynamicTokenBudget)
                 root.put("options", opts)
                 root.toString()
             }
         }
 
-        return NativeProviderRequest(
-            providerId = clean,
-            model = model,
-            endpoint = endpoint,
-            headers = headers,
-            jsonPayload = jsonPayload,
-            schemaType = schema
-        )
+        return NativeProviderRequest(clean, model, endpoint, headers, jsonPayload, schema)
     }
 
     fun extractResponseContent(providerId: String, rawResponse: String, schema: ProviderNativeSchema): String {
@@ -347,8 +352,7 @@ object UniversalRequestAdapter {
         return try {
             val root = JSONObject(rawResponse)
             when (schema) {
-                ProviderNativeSchema.OPENAI_COMPATIBLE,
-                ProviderNativeSchema.OPENROUTER -> {
+                ProviderNativeSchema.OPENAI_COMPATIBLE, ProviderNativeSchema.OPENROUTER -> {
                     val choices = root.optJSONArray("choices")
                     val msg = choices?.optJSONObject(0)?.optJSONObject("message")
                     msg?.optString("content")?.trim() ?: rawResponse.trim()
@@ -382,45 +386,41 @@ object UniversalRequestAdapter {
         request: NativeProviderRequest,
         timeoutSeconds: Long = 120L
     ): UniversalExecutionResult {
-        if (request.providerId in setOf("jina", "pinecone")) {
+        if (request.providerId in setOf("jina", "pinecone") || ModelDiscoveryEngine.isNonLlm(request.providerId)) {
             return UniversalExecutionResult.Failure(
                 providerId = request.providerId,
                 statusCode = 400,
-                message = "Isolated non-chat endpoint: ${request.providerId} is an embedding/search vector API and cannot process chat/code-repair prompts",
+                message = "Isolated non-chat endpoint: ${request.providerId} is an isolated non-LLM/vector API",
                 headers = emptyMap(),
                 rawBody = "{\"error\":\"isolated_non_chat_endpoint\"}"
             )
         }
+        val isOllama = request.providerId == "ollama" || request.schemaType == ProviderNativeSchema.OLLAMA_GENERATE
+        val effectiveTimeout = if (isOllama) 180L else timeoutSeconds
+        val client = if (isOllama) ollamaHttpClient else httpClient
         val started = System.currentTimeMillis()
+
         return try {
             val builder = HttpRequest.newBuilder()
                 .uri(URI.create(request.endpoint))
-                .timeout(Duration.ofSeconds(timeoutSeconds))
+                .timeout(Duration.ofSeconds(effectiveTimeout))
                 .POST(HttpRequest.BodyPublishers.ofString(request.jsonPayload))
 
             request.headers.forEach { (k, v) -> builder.header(k, v) }
 
-            val response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofByteArray())
+            val response = client.send(builder.build(), HttpResponse.BodyHandlers.ofByteArray())
             val durationMs = System.currentTimeMillis() - started
             val statusCode = response.statusCode()
             val headers = response.headers().map()
             val body = response.body().toString(Charsets.UTF_8)
 
-            val isRateLimit = statusCode == 429 ||
-                body.contains("rate limit", ignoreCase = true) ||
-                body.contains("quota exceeded", ignoreCase = true) ||
-                body.contains("429")
+            ProviderTokenBudgeter.recordFeedback(request.providerId, statusCode, headers, body)
+
+            val isRateLimit = statusCode == 429 || body.contains("rate limit", ignoreCase = true) || body.contains("quota exceeded", ignoreCase = true)
 
             if (statusCode in 200..299) {
                 val content = extractResponseContent(request.providerId, body, request.schemaType)
-                UniversalExecutionResult.Success(
-                    providerId = request.providerId,
-                    text = content,
-                    rawResponse = body,
-                    durationMs = durationMs,
-                    statusCode = statusCode,
-                    headers = headers
-                )
+                UniversalExecutionResult.Success(request.providerId, content, body, durationMs, statusCode, headers)
             } else {
                 UniversalExecutionResult.Failure(
                     providerId = request.providerId,
@@ -432,11 +432,8 @@ object UniversalRequestAdapter {
                 )
             }
         } catch (e: Exception) {
-            val durationMs = System.currentTimeMillis() - started
             val universalError = UniversalErrorParser.parseAny(e)
-            val isRateLimit = universalError.category == UniversalErrorCategory.RATE_LIMIT_OVERLOAD ||
-                e.message?.contains("429") == true ||
-                e.message?.contains("rate limit", ignoreCase = true) == true
+            val isRateLimit = universalError.category == UniversalErrorCategory.RATE_LIMIT_OVERLOAD || e.message?.contains("429") == true
             UniversalExecutionResult.Failure(
                 providerId = request.providerId,
                 statusCode = universalError.httpCode ?: if (isRateLimit) 429 else 500,

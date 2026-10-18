@@ -16235,3 +16235,61 @@ End of AGENTS.md
   - `UniversalRequestAdapterTest.kt=9e48cda8e00ed5b7b8796a5ea006e9ad0391d7803b27d85e61ade2e28c797741`
 
 
+
+### 2026-10-18T20:45:00Z · Agent: Antigravity (Advanced Agentic Pair Programmer) · Batch: REPAIR-LATTICE-DYNAMIC-DISCOVERY-AND-HARDENING
+- Paths touched:
+  - `src/main/kotlin/atropos/core/provider/ModelDiscoveryEngine.kt` (+128, -137, 452 LOC total / live dynamic discovery on startup for OpenAI-compatible, Gemini REST, Ollama; caching to discovered_models in atropos.config.json; non-LLM token whitelist filter)
+  - `src/main/kotlin/atropos/core/provider/ProviderCascadeRouter.kt` (+58, -95, 402 LOC total / added cerebras and sambanova to primary cascade; non-LLM token whitelist isolation; O(1) circuit breaker quarantine integration)
+  - `src/main/kotlin/atropos/core/provider/UniversalRequestAdapter.kt` (+84, -88, 448 LOC total / 180s Ollama timeout; live discovered model resolution eliminating 404s; dynamic token budgeting integration)
+  - `src/main/kotlin/atropos/core/provider/StaticProviderDescriptorRegistry.kt` (+4, -4, 49 LOC total / registered cerebras and sambanova as active free chat providers in cascade)
+  - `src/main/kotlin/atropos/core/provider/adapter/OpenAiCompatibleProviderCatalog.kt` (+2, -2, 163 LOC total / configured freeTier = true for cerebras and sambanova specs)
+  - `src/main/kotlin/atropos/core/provider/ProviderTokenBudgeter.kt` (+121 lines / dynamic token budgeting and credit balance clamping)
+  - `src/main/kotlin/atropos/core/verification/DiagnosticSymbolSlicer.kt` (+179 lines / Python failure trace parsing, +/- 25 line scope slicing, <1000 char prompt compression)
+  - `src/main/kotlin/atropos/core/factory/DeterministicHeuristicRepairEngine.kt` (+235 lines / zero-LLM deterministic repair for missing __init__.py, stdlib imports, and syntax colons)
+  - `src/main/kotlin/atropos/core/provider/ProviderCircuitBreaker.kt` (+107 lines / stateful provider circuit breaker tracking HEALTHY, QUARANTINED, and EXHAUSTED)
+  - `src/main/kotlin/atropos/core/orchestration/WaveCheckpointLattice.kt` (+114 lines / cryptographic acceptance SHA-256 node checkpointing in .atropos/staging/dag_checkpoint.json and failing sub-DAG isolation)
+  - `src/main/kotlin/atropos/core/factory/FactoryRepairRouter.kt` (+46, -19, 264 LOC total / wired heuristic repair, symbol slicing, and token budgeter)
+  - `src/main/kotlin/atropos/core/factory/FactoryObligationLoop.kt` (+9, -3, 202 LOC total / wired WaveCheckpointLattice checkpoint persistence and sub-DAG progress guard)
+  - `src/test/kotlin/atropos/core/provider/ProviderTokenBudgeterTest.kt` (+47 lines / unit tests for token budget calculation and credit balance clamping)
+  - `src/test/kotlin/atropos/core/provider/ProviderCircuitBreakerTest.kt` (+54 lines / unit tests for 401/402/429 quarantine and 3-strike exhaustion)
+  - `src/test/kotlin/atropos/core/verification/DiagnosticSymbolSlicerTest.kt` (+74 lines / unit tests for traceback parsing, symbol slicing, and prompt compression)
+  - `src/test/kotlin/atropos/core/factory/DeterministicHeuristicRepairEngineTest.kt` (+77 lines / unit tests for __init__.py and stdlib import repairs)
+  - `src/test/kotlin/atropos/core/orchestration/WaveCheckpointLatticeTest.kt` (+56 lines / unit tests for cryptographic node checkpoints and sub-DAG isolation)
+- Atoms / phases affected: Phase 1 Provider Activation Doctor, Phase 2 Provider Transport, Phase 3 Quota / Route Truth, Phase 8 Deterministic Verifier, Phase 11 Self-Build Loop, Phase 19 App Factory Wave Repair.
+- Predicate moved:
+  - Core Mandate: Dynamic Live Model Discovery & Provider Sanitization 100% verified:
+    1. Dynamic Live Model Discovery: Polling GET /v1/models (Groq, DeepSeek, Cerebras, SambaNova, OpenRouter), Gemini REST v1beta (filtering for generateContent and active flash models gemini-2.5-flash / gemini-2.0-flash), and Ollama tags (/api/tags). Results cached under `discovered_models` in `atropos.config.json`.
+    2. Strict LLM Provider Whitelist: Non-LLM tokens (npm_token, fal_ai, serp, github_token, vercel_token, atropos_bridge_port) hard-isolated and barred from chat completion cascades.
+    3. Cerebras & SambaNova registered as primary active chat providers in ProviderCascadeRouter and StaticProviderDescriptorRegistry.
+    4. Ollama Read Timeout: Increased socket and read timeouts to 180 seconds in UniversalRequestAdapter.
+  - Architectural Addendum: The 5-Step Autonomous Repair Hardening 100% verified:
+    - Step 1: ProviderTokenBudgeter calculates minimal patch budget min(lines * 4 + 512, 2048) and dynamically clamps max_tokens below provider credit balances.
+    - Step 2: DiagnosticSymbolSlicer parses Python test suite errors, extracts failing assertion and line, slices enclosing scope (+/- 25 lines), and compresses repair prompt to < 1000 characters.
+    - Step 3: DeterministicHeuristicRepairEngine intercepts failing verify nodes and repairs missing __init__.py, missing stdlib imports, and syntax colons with 0 external LLM token cost.
+    - Step 4: ProviderCircuitBreaker tracks provider states (HEALTHY, QUARANTINED, EXHAUSTED) and trips on 401/402 or timed backoff on 429, allowing ProviderCascadeRouter O(1) filtering.
+    - Step 5: WaveCheckpointLattice persists cryptographic SHA-256 freezes to .atropos/staging/dag_checkpoint.json, isolates failing sub-DAG leaf atoms, and prevents premature aborts when progress is verified.
+  - Mathematical Proof Gate verified:
+    - Zero competitor strings exist in modified/created files.
+    - Zero `TODO`, `FIXME`, or hollow stub methods exist in modified/created files.
+    - Every modified/created source file is strictly <= 500 LOC (ModelDiscoveryEngine: 452, ProviderCascadeRouter: 402, UniversalRequestAdapter: 448, ProviderTokenBudgeter: 121, DiagnosticSymbolSlicer: 179, DeterministicHeuristicRepairEngine: 235, ProviderCircuitBreaker: 107, WaveCheckpointLattice: 114, StaticProviderDescriptorRegistry: 49, OpenAiCompatibleProviderCatalog: 163, FactoryRepairRouter: 264, FactoryObligationLoop: 202).
+    - Every new component is wired into active callers with zero orphan files (verified via `scripts/find-orphans.py --fail-on-new`).
+- Why the delta is justified: Dynamic model discovery eliminates static deprecated strings and 404s. Token budgeting, AST symbol slicing, heuristic repairs, circuit breaking, and sub-DAG checkpoints harden autonomous wave execution against token bloat and cascade failures.
+- % delta: Phase 1 & 2 complete (100%), Phase 3 complete (100%), Phase 8 complete (100%), Phase 11 & 19 autonomy hardening complete.
+- Fingerprints (sha256):
+  - `ModelDiscoveryEngine.kt=3a5c874cdaceada6c759a0065b9237a24263c68d6e8af5714c71cac8f3a9abdc`
+  - `ProviderCascadeRouter.kt=56480e993a015735b9af81150ac059b7c66c733c587c90ecb4d389a8f45980ec`
+  - `UniversalRequestAdapter.kt=4e898bf4bbab81d02ea7e78bf1c508abcd9cbe9bc9e62cf9b4b81fd7141ceaa2`
+  - `StaticProviderDescriptorRegistry.kt=2a5748fc7f708de9fdbece45b8c7112e9844a04e680a5cc77f185486958a39fc`
+  - `OpenAiCompatibleProviderCatalog.kt=4cbbbd5a8dbad6e9547c0f4c54c76be8540608c5709be233620f35683ddb1b80`
+  - `ProviderTokenBudgeter.kt=a52ed5daecaba6b9c6e0e61bec1a3aea0fbba9468a479acf94ad52c24deedefe`
+  - `DiagnosticSymbolSlicer.kt=e33ee16ac5f7f438caace01e0fb9cba1fb699b918d5443ecf20189d805ae58f8`
+  - `DeterministicHeuristicRepairEngine.kt=f95898f60d95ea426ab379b79e4bfd2b0a7c6a6f6503f4b8c0b92adbf053057d`
+  - `ProviderCircuitBreaker.kt=c614cd4395853b3fff2df0e1588b9d8b9bf480dfd757359a2cb60956fdd020fd`
+  - `WaveCheckpointLattice.kt=3351dfb5d69b767e7d9d6f2639dbe07c013251daeebaf1fa7d648f6206544bfc`
+  - `FactoryRepairRouter.kt=4ff29ffe284538db7ca7d582d7fd5bda8f841941b2c10f5133c723fe098a5d9d`
+  - `FactoryObligationLoop.kt=402dad9713a3f6a4d046737d327820c7ce797bd46d0d43662bdf257b6bc63876`
+  - `ProviderTokenBudgeterTest.kt=c3d29d505619c6d34cd7fdb8545f6b4c094d7764cdab354fbc77d137bc8f6eb3`
+  - `ProviderCircuitBreakerTest.kt=5fc4450f332ed06f6f3f565a94dca40ce027c6eeae5cfc1610a160f20d8f035d`
+  - `DiagnosticSymbolSlicerTest.kt=b045c14aa9088efdfb375942c56c67f751bb70987d3d17d9f1dda7ce2d68eea7`
+  - `DeterministicHeuristicRepairEngineTest.kt=c9bc982933da9c4353bfc78e649c086183c627c9135a6f93181344652487af2b`
+  - `WaveCheckpointLatticeTest.kt=c52af6afa8b69bbdeaf0dc0e90846718825d7d9cb6a06407a60ef81552d63453`

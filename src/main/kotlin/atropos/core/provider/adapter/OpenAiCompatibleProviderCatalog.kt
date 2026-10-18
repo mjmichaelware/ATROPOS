@@ -134,7 +134,7 @@ object OpenAiCompatibleProviderCatalog {
             defaultModel = "llama3.1-8b",
             fallbackModels = listOf("llama3.1-70b"),
             apiKeyEnv = "CEREBRAS_API_KEY",
-            freeTier = false
+            freeTier = true
         ),
         OpenAiCompatibleProviderSpec(
             providerId = "nvidia",
@@ -152,7 +152,7 @@ object OpenAiCompatibleProviderCatalog {
             defaultModel = "Meta-Llama-3.1-8B-Instruct",
             fallbackModels = listOf("Meta-Llama-3.1-70B-Instruct"),
             apiKeyEnv = "SAMBANOVA_API_KEY",
-            freeTier = false
+            freeTier = true
         )
     )
 
